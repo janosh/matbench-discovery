@@ -954,4 +954,29 @@ describe(`MetricsTable`, () => {
       ).toBeTruthy()
     })
   })
+
+  describe(`regression tests for default values`, () => {
+    it(`verifies critical default prop values to catch regressions`, () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: { col_filter: () => true, show_non_compliant: true },
+      })
+
+      // Verify table renders with data (filters allow content)
+      const rows = document.body.querySelectorAll(`tbody tr`)
+      expect(rows.length, `show_non_compliant=true & col_filter=true should show rows`)
+        .toBeGreaterThan(0)
+
+      // Verify heatmap is enabled by default
+      const table_controls = document.body.querySelector(`table-controls`)
+      if (table_controls) {
+        const heatmap_checkbox = table_controls.querySelector<HTMLInputElement>(
+          `input[type="checkbox"]`,
+        )
+        expect(heatmap_checkbox?.checked, `show_heatmap should default to true`).toBe(
+          true,
+        )
+      }
+    })
+  })
 })

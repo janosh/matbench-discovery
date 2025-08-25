@@ -1,8 +1,8 @@
 import { default as DATASETS } from '$data/datasets.yml'
+import type { Author, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
 import { get_org_logo } from './labels'
-import type { Author, ModelData } from './types'
 
 export const MODEL_METADATA_PATHS = import.meta.glob(`$root/models/[^_]**/[^_]*.yml`, {
   eager: true,

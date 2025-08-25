@@ -1,18 +1,18 @@
 import { DATASETS, format_date, MODELS } from '$lib'
-import type { ModelMetadata, TargetType } from '$lib/model-schema'
-import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
-import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { max, min } from 'd3-array'
-import { scaleLog, scaleSequential } from 'd3-scale'
-import * as d3sc from 'd3-scale-chromatic'
-import { format_num, pick_color_for_contrast } from 'matterviz'
 import {
   ALL_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
   HYPERPARAMS,
   METADATA_COLS,
-} from './labels'
-import type { DiscoverySet, LinkData, ModelData } from './types'
+} from '$lib/labels'
+import type { ModelMetadata, TargetType } from '$lib/model-schema'
+import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
+import type { DiscoverySet, LinkData, ModelData } from '$lib/types'
+import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
+import { max, min } from 'd3-array'
+import { scaleLog, scaleSequential } from 'd3-scale'
+import * as d3sc from 'd3-scale-chromatic'
+import { format_num, pick_color_for_contrast } from 'matterviz'
 
 // model target type descriptions
 export const targets_tooltips: { [key in TargetType]: string } = {

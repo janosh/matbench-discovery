@@ -1,3 +1,4 @@
+import type { DiscoverySet, Label } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import type {
   DatasetMetadataLabels,
@@ -6,7 +7,6 @@ import type {
   HyperparamLabels,
   MetadataLabels,
 } from './label-schema.d.ts'
-import type { DiscoverySet, Label } from './types'
 
 export const RMSD_BASELINE = 0.15 // baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
 
