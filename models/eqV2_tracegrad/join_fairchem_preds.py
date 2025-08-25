@@ -59,7 +59,7 @@ def join_predictions(
     df_fairchem = pd.concat(dfs.values()).round(4)
 
     df_fairchem_ori = pd.read_csv(
-        "/data/fywang/code/matbench-discovery/pred_results/eqV2-small-dens/test/eqV2-s-dens-mp-ori.csv.gz",
+        "eqV2-s-dens-mp-ori.csv.gz",
         compression="gzip",
     ).set_index(Key.mat_id)  # 开源结果
 
