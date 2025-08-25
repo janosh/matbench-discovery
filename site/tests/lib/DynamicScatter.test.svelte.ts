@@ -343,4 +343,39 @@ describe(`DynamicScatter.svelte`, () => {
       expect(link_strength_input?.value, `Link Strength after change`).toBe(`8`)
     })
   })
+
+  describe(`regression tests for default values`, () => {
+    it(`verifies all critical default UI state to catch regressions`, () => {
+      mount(DynamicScatter, { target: document.body, props: { models: mock_models } })
+
+      // Verify axis controls structure (4 select controls for x, y, color, size)
+      const controls_grid = document.body.querySelector(`.controls-grid`)
+      expect(controls_grid?.querySelectorAll(`[role="listbox"]`)).toHaveLength(4)
+
+      // Open extra controls and test all defaults
+      document.body.querySelector<HTMLButtonElement>(`.settings-toggle`)?.click()
+      const pane = doc_query(pane_selector)
+
+      // Test all checkbox defaults (these often regress)
+      const checkboxes = pane?.querySelectorAll<HTMLInputElement>(
+        `input[type="checkbox"]`,
+      )
+      expect(checkboxes?.[0]?.checked, `show_model_labels default`).toBe(true)
+      expect(checkboxes?.[1]?.checked, `x_grid default`).toBe(true)
+      expect(checkboxes?.[2]?.checked, `y_grid default`).toBe(true)
+
+      // Test all input defaults (these often regress)
+      expect(doc_query<HTMLInputElement>(`#x-ticks`, pane)?.value).toBe(`5`)
+      expect(doc_query<HTMLInputElement>(`#y-ticks`, pane)?.value).toBe(`5`)
+      expect(doc_query<HTMLInputElement>(`#size-multiplier`, pane)?.value).toBe(`1`)
+      expect(doc_query<HTMLInputElement>(`#label-font-size`, pane)?.value).toBe(`14`)
+      expect(doc_query<HTMLInputElement>(`#min-link-distance`, pane)?.value).toBe(`15`)
+      expect(doc_query<HTMLInputElement>(`#max-link-distance`, pane)?.value).toBe(`20`)
+      expect(doc_query<HTMLInputElement>(`#link-strength`, pane)?.value).toBe(`5`)
+
+      // Verify plot container and color controls render
+      expect(document.body.querySelector(`div.bleed-1400[style]`)).toBeDefined()
+      expect(pane?.querySelector(`.color-scale-select`)).toBeDefined()
+    })
+  })
 })

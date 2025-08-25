@@ -4,8 +4,7 @@ import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
 export const heatmap_class = `heatmap`
 
 type ExportOptions = { show_non_compliant?: boolean; discovery_set?: string }
-
-type ExportResult = { filename: string; url: string } | null
+type ExportResult = { filename: string; url: string }
 
 // Helper function to create a filtered table clone excluding SVG icon columns
 function create_filtered_table_clone(): HTMLElement {
@@ -194,7 +193,7 @@ function log_export_error(
 export async function generate_svg({
   show_non_compliant = false,
   discovery_set = `unique_prototypes`,
-}: ExportOptions): Promise<ExportResult> {
+}: ExportOptions): Promise<ExportResult | null> {
   try {
     // Find the metrics table
     const table_el = document.querySelector(`.${heatmap_class}`)
@@ -252,7 +251,7 @@ export async function generate_svg({
 export async function generate_png({
   show_non_compliant = false,
   discovery_set = `unique_prototypes`,
-}: ExportOptions): Promise<ExportResult> {
+}: ExportOptions): Promise<ExportResult | null> {
   try {
     // Create and clean table clone
     const table_clone = create_filtered_table_clone()
@@ -455,7 +454,7 @@ function format_value_for_export(value: number, header: string): number | string
 export function generate_csv({
   show_non_compliant = false,
   discovery_set = `unique_prototypes`,
-}: ExportOptions): Promise<ExportResult> {
+}: ExportOptions): ExportResult | null {
   try {
     const { headers, rows } = extract_table_data()
 
@@ -505,7 +504,7 @@ export function generate_csv({
 export async function generate_excel({
   show_non_compliant = false,
   discovery_set = `unique_prototypes`,
-}: ExportOptions): Promise<ExportResult> {
+}: ExportOptions): Promise<ExportResult | null> {
   try {
     // Dynamic import of xlsx library
     const XLSX = await import(`xlsx`)
@@ -570,7 +569,7 @@ export async function generate_excel({
 }
 
 export const handle_export = <T extends ExportOptions>(
-  generator: (args: T) => Promise<ExportResult>,
+  generator: (args: T) => Promise<ExportResult | null>,
   fmt: string,
   state: { export_error: string | null } & T,
 ) =>
