@@ -1,10 +1,10 @@
 <script lang="ts">
+  import { calc_cell_color } from '$lib/metrics'
+  import type { CellSnippetArgs, CellVal, Label, RowData } from '$lib/types'
   import { format_num } from 'matterviz'
   import type { Snippet } from 'svelte'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
-  import { calc_cell_color } from './metrics'
-  import type { CellSnippetArgs, CellVal, Label, RowData } from './types'
 
   interface Props {
     data: RowData[]

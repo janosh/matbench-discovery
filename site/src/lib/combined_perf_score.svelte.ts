@@ -1,5 +1,5 @@
-import { ALL_METRICS, RMSD_BASELINE } from './labels'
-import type { Label } from './types'
+import { ALL_METRICS, RMSD_BASELINE } from '$lib/labels'
+import type { Label } from '$lib/types'
 
 export const DEFAULT_CPS_CONFIG = {
   F1: { ...ALL_METRICS.F1, weight: 0.5 },

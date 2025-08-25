@@ -1,19 +1,19 @@
 <script lang="ts">
   import { HeatmapTable, Icon, IconList, TableControls } from '$lib'
   import { metric_better_as } from '$lib/metrics'
-  import type { Snippet } from 'svelte'
-  import { click_outside } from 'svelte-multiselect/attachments'
-  import { SvelteSet } from 'svelte/reactivity'
-  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
-  import { assemble_row_data } from './metrics'
-  import { heatmap_class } from './table-export'
   import type {
     CellSnippetArgs,
     DiscoverySet,
     Label,
     LinkData,
     ModelData,
-  } from './types'
+  } from '$lib/types'
+  import type { Snippet } from 'svelte'
+  import { click_outside } from 'svelte-multiselect/attachments'
+  import { SvelteSet } from 'svelte/reactivity'
+  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
+  import { assemble_row_data } from './metrics'
+  import { heatmap_class } from './table-export'
 
   interface Props {
     discovery_set?: DiscoverySet
@@ -119,9 +119,13 @@
     active_model_name = links.pred_files.name
     active_files = links.pred_files.files
 
-    // Position dropdown relative to viewport
+    // Position dropdown relative to the button's position in the document
     const { name } = links.pred_files
-    pred_files_dropdown_pos = { x: rect.left, y: rect.bottom, name }
+    pred_files_dropdown_pos = {
+      x: rect.left + window.scrollX,
+      y: rect.bottom + window.scrollY,
+      name,
+    }
   }
   const close_dropdown = () => (pred_files_dropdown_pos = null)
 
@@ -213,7 +217,7 @@
 
 {#if pred_files_dropdown_pos}
   {@const { x, y } = pred_files_dropdown_pos}
-  {@const style = `position: fixed; left: ${x}px; top: ${y}px;`}
+  {@const style = `position: absolute; left: ${x}px; top: ${y}px;`}
   <div
     class="pred-files-dropdown"
     {style}
@@ -243,7 +247,7 @@
     background: var(--page-bg);
     border: 1px solid var(--border);
     border-radius: 5px;
-    padding: 0.75em;
+    padding: 4pt 11pt;
   }
   .pred-files-dropdown h4 {
     margin: 0;
