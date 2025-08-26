@@ -1,6 +1,6 @@
 model_name: GRACE-2L-OAM
 model_key: grace-2l-oam
-model_version: GRACE_2L_OAM_28Jan25
+model_version: 0.4.5
 date_added: '2025-02-06'
 date_published: '2025-02-06'
 authors:

@@ -113,7 +113,7 @@
       {lower_is_better ? `best` : `worst`}
     </span>
     <ColorBar
-      title="Model names colored by {sort_by.label}"
+      title="Card titles colored by {sort_by.label}"
       title_style="font-size: 1.5em;"
       color_scale={lower_is_better ? (t) => interpolateRdBu(1 - t) : interpolateRdBu}
       style="min-width: min(70vw, 400px); height: 14pt"

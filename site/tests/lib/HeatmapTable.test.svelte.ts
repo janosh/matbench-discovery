@@ -339,6 +339,35 @@ describe(`HeatmapTable`, () => {
     expect(cells[2].textContent?.trim()).toBe(`n/a`)
   })
 
+  it(`handles NaN values by displaying them as 'n/a'`, () => {
+    const data = [
+      { Model: `Model A`, Score: 1.5, Value: NaN },
+      { Model: `Model B`, Score: NaN, Value: 2.7 },
+    ]
+
+    mount(HeatmapTable, {
+      target: document.body,
+      props: { data, columns: sample_columns },
+    })
+
+    const cells = document.body.querySelectorAll(`td`)
+    expect(cells).toHaveLength(6) // 2 rows × 3 columns
+
+    // Get all cell text content
+    const all_text = Array.from(cells).map((cell) => cell.textContent?.trim())
+
+    // Check that NaN values are displayed as 'n/a', not 'NaN'
+    expect(all_text.filter((text) => text === `n/a`).length).toBe(2) // Two NaN values should show as 'n/a'
+    expect(all_text).not.toContain(`NaN`) // Should not contain the literal string 'NaN'
+
+    // Check that normal values are still displayed (with any formatting)
+    expect(all_text).toContain(`Model A`)
+    expect(all_text).toContain(`Model B`)
+    // Check that normal numbers are formatted properly (not as 'n/a')
+    expect(all_text.some((text) => text?.includes(`1.5`))).toBe(true) // 1.5 or 1.50
+    expect(all_text.some((text) => text?.includes(`2.7`))).toBe(true) // 2.7 or 2.70
+  })
+
   it(`prevents HTML strings from being used as data-sort-value attributes`, () => {
     const html_data = [
       {

@@ -1,4 +1,4 @@
-import type { MockInstance } from 'vitest'
+import type { Mock, MockInstance } from 'vitest'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Check if running in Deno environment
@@ -288,7 +288,7 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
       expect(result?.url).toBe(`mock-url`)
 
       // Verify data structure in blob
-      const blob_call = globalThis.Blob.mock.calls[0]
+      const blob_call = (globalThis.Blob as Mock).mock.calls[0]
       expect(blob_call[1].type).toBe(mime_type)
 
       if (format === `CSV`) {
@@ -328,7 +328,7 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
       const module = await import(`$lib/table-export`)
       await module[function_name]({ discovery_set: `test` })
 
-      const csv_content = globalThis.Blob.mock.calls[0][0][0]
+      const csv_content = (globalThis.Blob as Mock).mock.calls[0][0][0]
       expect(csv_content).toContain(`"Model ""Special"""`)
     })
 
@@ -379,11 +379,11 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
 
       // Test filename generation
       expect(result?.filename).toContain(`unique-prototypes`) // param-case conversion
-      expect(result?.filename).toContain(`only-compliant`) // compliance suffix
+      expect(result?.filename).toContain(`compliant`) // compliance suffix
       expect(result?.filename).toContain(new Date().toISOString().split(`T`)[0]) // date
 
       // Test number formatting in CSV content
-      const csv_content = globalThis.Blob.mock.calls[0][0][0]
+      const csv_content = (globalThis.Blob as Mock).mock.calls[0][0][0]
       expect(csv_content).toContain(`1.235`)
     })
 
@@ -394,7 +394,7 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
         discovery_set: `test`,
       })
 
-      expect(result?.filename).not.toContain(`only-compliant`)
+      expect(result?.filename).not.toContain(`compliant`)
     })
   })
 

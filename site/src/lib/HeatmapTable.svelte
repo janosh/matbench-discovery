@@ -113,7 +113,7 @@
         }
       }
 
-      return val1 < val2 ? -1 * modifier : 1 * modifier
+      return (val1 ?? 0) < (val2 ?? 0) ? -1 * modifier : 1 * modifier
     })
   })
 
@@ -134,19 +134,20 @@
   }
 
   function calc_color(val: CellVal, col: Label) {
-    // Skip color calculation for null values or if color_scale is null
+    // Skip color calculation for null values, NaN, or if color_scale is null
     if (
       val === null ||
       val === undefined ||
       col.color_scale === null ||
       typeof val !== `number` ||
+      Number.isNaN(val) ||
       !show_heatmap // Disable heatmap colors if show_heatmap is false
     ) return { bg: null, text: null }
 
     const col_id = get_col_id(col)
     const numeric_vals = sorted_data
       .map((row) => row[col_id])
-      .filter((val) => typeof val === `number`) // Type guard to ensure we only get numbers
+      .filter((val) => typeof val === `number` && !Number.isNaN(val)) // Type guard to ensure we only get valid numbers
 
     // Using the shared helper function for color calculation
     return calc_cell_color(
@@ -246,10 +247,12 @@
                 {@render special_cells[col.label]({ row, col, val })}
               {:else if cell}
                 {@render cell({ row, col, val })}
-              {:else if typeof val === `number`}
+              {:else if typeof val === `number` && !Number.isNaN(val)}
                 {format_num(val, col.format ?? default_num_format)}
-              {:else if val === undefined || val === null}
-                n/a
+              {:else if val === undefined || val === null || Number.isNaN(val)}
+                <span {@attach tooltip({ content: `Not available` })}>
+                  n/a
+                </span>
               {:else}
                 {@html val}
               {/if}
