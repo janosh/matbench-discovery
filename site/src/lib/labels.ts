@@ -12,13 +12,11 @@ export const RMSD_BASELINE = 0.15 // baseline for poor performance given worst p
 
 // Helper function to format scientific notation with superscript
 // used e.g. for symprec in geo_opt metrics
-export const format_power_ten = (text: string): string => {
-  return text
-    .replace(/(\d+(?:\.\d+)?)e\+?(-?\d+)/gi, (_, base, exponent) => {
-      return `${base}×10<sup>${exponent}</sup>`
-    })
+export const format_power_ten = (text: string): string =>
+  text
+    .replace(/(\d+(?:\.\d+)?)e\+?(-?\d+)/gi, (_, base, exponent) =>
+      `${base}×10<sup>${exponent}</sup>`)
     .replace(`1×10`, `10`)
-}
 
 export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
   Accuracy: {

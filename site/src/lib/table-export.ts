@@ -6,6 +6,23 @@ export const heatmap_class = `heatmap`
 type ExportOptions = { show_non_compliant?: boolean; discovery_set?: string }
 type ExportResult = { filename: string; url: string }
 
+// Simple function to generate descriptive filename with current table state
+function generate_filename(
+  format: string,
+  show_non_compliant: boolean = false,
+  discovery_set: string = `unique_prototypes`,
+): string {
+  const date = new Date().toISOString().split(`T`)[0]
+  const compliance = show_non_compliant ? `all` : `compliant`
+  const discovery = discovery_set.replaceAll(`_`, `-`)
+
+  // Get current table state for context
+  const table_el = document.querySelector(`.${heatmap_class}`) as HTMLTableElement
+  const model_count = table_el?.querySelectorAll(`tbody tr`).length || 0
+
+  return `matbench-${discovery}-${compliance}-${model_count}models-${date}.${format.toLowerCase()}`
+}
+
 // Helper function to create a filtered table clone excluding SVG icon columns
 function create_filtered_table_clone(): HTMLElement {
   const table_el = document.querySelector(`.${heatmap_class}`) as HTMLTableElement
@@ -112,46 +129,101 @@ function clean_table_for_export(table_clone: HTMLElement): void {
       }
     })
 
-    // Clean up problematic styling
+    // Clean up problematic styling that could cause scrollbars and extra width
     const html_el = el as HTMLElement
     if (html_el.style) {
       html_el.style.removeProperty(`grid-column`)
       html_el.style.removeProperty(`grid-row`)
       html_el.style.removeProperty(`grid-area`)
+      html_el.style.removeProperty(`overflow`)
+      html_el.style.removeProperty(`overflow-x`)
+      html_el.style.removeProperty(`overflow-y`)
+      html_el.style.removeProperty(`max-width`)
+      html_el.style.removeProperty(`max-height`)
+      html_el.style.removeProperty(`min-width`)
+      html_el.style.removeProperty(`flex`)
+      html_el.style.removeProperty(`flex-grow`)
+      html_el.style.removeProperty(`flex-basis`)
+
+      // Ensure elements don't restrict their size
+      html_el.style.overflow = `visible`
+      html_el.style.whiteSpace = `nowrap`
+
+      // For table cells, apply compact sizing
+      if (html_el.tagName === `TD` || html_el.tagName === `TH`) {
+        html_el.style.width = `auto`
+        html_el.style.padding = `2px 4px`
+        html_el.style.textAlign = `left`
+        html_el.style.verticalAlign = `middle`
+      }
     }
   })
 }
 
+// Detect current theme and get appropriate colors
+function get_theme_colors(): { background: string; text: string } {
+  const root_styles = getComputedStyle(document.documentElement)
+
+  // Check if dark mode is active by looking for the correct indicators
+  const theme_data = document.documentElement.dataset.theme
+  const color_scheme = document.documentElement.style.colorScheme
+  const prefers_dark = globalThis.matchMedia?.(`(prefers-color-scheme: dark)`).matches
+
+  const is_dark_mode = theme_data === `dark` ||
+    color_scheme === `dark` ||
+    (theme_data === undefined && color_scheme === undefined && prefers_dark)
+
+  if (is_dark_mode) {
+    const background = root_styles.getPropertyValue(`--dark-page-bg`) || `#061e25`
+    const text = root_styles.getPropertyValue(`--dark-text`) || `rgb(208, 208, 208)`
+    return { background, text }
+  } else {
+    const background = root_styles.getPropertyValue(`--light-page-bg`) || `#fefefe`
+    const text = root_styles.getPropertyValue(`--light-text`) || `#1f2937`
+    return { background, text }
+  }
+}
+
 // Create export container with proper styling
 function create_export_container(table_clone: HTMLElement): HTMLElement {
-  const night_color =
-    getComputedStyle(document.documentElement).getPropertyValue(`--night`).trim() ||
-    `#061e25`
+  const theme_colors = get_theme_colors()
 
   const container = document.createElement(`div`)
-  container.style.backgroundColor = night_color
+  container.style.backgroundColor = theme_colors.background
+  container.style.color = theme_colors.text
   container.style.display = `inline-block`
   container.style.whiteSpace = `nowrap`
+  container.style.overflow = `visible`
+  container.style.position = `relative`
+  container.style.width = `fit-content`
+  container.style.height = `fit-content`
+  container.style.margin = `0`
+  container.style.padding = `0`
+
+  // Ensure no scrollbars appear
+  container.style.overflowX = `visible`
+  container.style.overflowY = `visible`
 
   const inner = document.createElement(`div`)
-  inner.style.padding = `15px`
+  inner.style.padding = `0`
+  inner.style.margin = `0`
   inner.style.boxSizing = `border-box`
+  inner.style.overflow = `visible`
+  inner.style.width = `fit-content`
+  inner.style.height = `fit-content`
   inner.appendChild(table_clone)
   container.appendChild(inner)
 
-  return container
-}
+  // Ensure the table itself doesn't create scrollbars or extra spacing
+  table_clone.style.overflow = `visible`
+  table_clone.style.width = `fit-content`
+  table_clone.style.height = `auto`
+  table_clone.style.margin = `0`
+  table_clone.style.border = `none`
+  table_clone.style.tableLayout = `auto`
+  table_clone.style.borderCollapse = `collapse`
 
-// Generate filename for export
-function generate_filename(
-  format: string,
-  show_non_compliant: boolean = false,
-  discovery_set: string = `unique_prototypes`,
-): string {
-  const date = new Date().toISOString().split(`T`)[0]
-  const suffix = show_non_compliant ? `` : `-only-compliant`
-  const param_case_discovery_set = discovery_set.replaceAll(`_`, `-`)
-  return `metrics-table-${param_case_discovery_set}${suffix}-${date}.${format.toLowerCase()}`
+  return container
 }
 
 // Common filter function for html-to-image
@@ -261,29 +333,28 @@ export async function generate_png({
     const container = create_export_container(table_clone)
     container.style.fontFamily = `Arial, sans-serif`
     container.style.fontSize = `14px`
-    container.style.color = `#ffffff`
+    // Color is already set by create_export_container based on theme
 
     document.body.appendChild(container)
 
-    // Calculate dimensions for high-quality output
-    const table_rect = table_clone.getBoundingClientRect()
-    const padding = 15
-    const width_with_padding = table_rect.width + padding * 2
-    const height_with_padding = table_rect.height + padding * 2
-
-    container.style.width = `${width_with_padding}px`
-    container.style.height = `${height_with_padding}px`
-
     try {
-      // Generate PNG
+      // Get container dimensions for PNG generation
+      const container_rect = container.getBoundingClientRect()
+
+      // Generate PNG with precise dimensions
       const png_data_url = await toPng(container, {
         backgroundColor: container.style.backgroundColor,
         pixelRatio: 2, // High resolution
-        width: width_with_padding,
-        height: height_with_padding,
+        width: Math.ceil(container_rect.width),
+        height: Math.ceil(container_rect.height),
         skipFonts: true,
         quality: 0.95,
         filter: create_export_filter(),
+        style: {
+          overflow: `visible`,
+          margin: `0`,
+          padding: `0`,
+        },
         imagePlaceholder:
           `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==`,
       })

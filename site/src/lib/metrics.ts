@@ -7,7 +7,7 @@ import {
 } from '$lib/labels'
 import type { ModelMetadata, TargetType } from '$lib/model-schema'
 import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
-import type { DiscoverySet, LinkData, ModelData } from '$lib/types'
+import type { CellVal, DiscoverySet, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
@@ -168,7 +168,7 @@ export function make_combined_filter(
 // Calculate table cell background color based on its value and column config
 export function calc_cell_color(
   val: number | null | undefined, // cell value
-  all_values: (number | null | undefined)[], // all values in the column
+  all_values: CellVal[], // all values in the column
   better: `higher` | `lower` | undefined, // sort direction
   color_scale: string | null = `interpolateViridis`, // color scale name
   scale_type: `linear` | `log` = `linear`, // scale type

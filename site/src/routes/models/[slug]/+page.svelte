@@ -68,7 +68,7 @@
       </span>
 
       {#if model.n_estimators > 1}
-        <span><Icon icon="Forest" /> Ensemble {model.n_estimators} models</span>
+        <span><Icon icon="Forest" /> Ensemble of {model.n_estimators} models</span>
       {/if}
 
       {#if missing_preds != undefined}
