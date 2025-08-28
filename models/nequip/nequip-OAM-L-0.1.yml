@@ -1,0 +1,166 @@
+model_name: Nequip-OAM-L # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
+model_key: nequip-OAM-L-0.1 # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
+model_version: 0.1
+date_added: '2025-08-28'
+date_published: '2025-08-28'
+authors:
+  - name: Seán R. Kavanagh
+    affiliation: Center for the Environment, Harvard University
+    email: skavanagh@seas.harvard.edu
+    orcid: https://orcid.org/0000-0003-4577-9647
+    url: https://seankavanagh.com
+    corresponding: true
+    role: Model & PR
+  - name: Chuin Wei Tan
+    affiliation: Harvard University
+    role: Code Development
+  - name: Albert Musaelian
+    affiliation: Harvard University & Mirian Technologies
+    role: Code Development & Design
+  - name: William C. Witt
+    affiliation: Harvard University
+    role: Code Development & Model Testing
+  - name: Gabriel de Miranda Nascimento
+    affiliation: MIT
+    role: Model Testing
+  - name: Ulrik Unneberg
+    affiliation: MIT
+    role: Model Testing
+  - name: Marc L. Descoteaux
+    affiliation: Harvard University
+    role: Code Development & Testing
+  - name: Boris Kozinsky
+    affiliation: Harvard University
+    role: Funding Acquisition
+
+repo: https://github.com/mir-group/nequip
+url: https://nequip.readthedocs.io/en/latest/
+doi: https://doi.org/10.5281/zenodo.16980200
+# preprint: https://arxiv.org/abs/xxxx.xxxxx  # TBA...
+checkpoint_url: https://www.nequip.net/models/mir-group/NequIP-OAM-L:0.1
+
+openness: OSOD # see `Open` enum in matbench_discovery/enums.py
+train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
+test_task: IS2RE-SR # see `Task` enum in matbench_discovery/enums.py
+targets: EFS_G # see `Targets` enum in matbench_discovery/enums.py
+model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
+model_params: 9_600_000
+trained_for_benchmark: true
+n_estimators: 1
+
+license:
+  code: MIT
+  code_url: https://github.com/mir-group/nequip/blob/main/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+hyperparams: # strongly recommended to list relaxation hyperparams
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: GOQN  # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
+  cell_filter: FrechetCellFilter
+  optimizer: AdamW
+  weight_decay: 1e-8
+  graph_construction_radius: 6.0
+  sph_harmonics_l_max: 3
+  n_layers: 6
+  n_features: 128 (l=0 scalars), 64 (l=1 vectors), 32 (l=2,3 tensors)
+  parity: false
+  zbl_potential: true
+  type_embed_num_features: 48
+  polynomial_cutoff: 5
+  n_radial_bessel_basis: 8
+  loss: Huber - delta=0.01 for energy, delta=0.1 for stress, stratified delta (0.01, 0.007, 0.004, 0.001) for force
+  loss_weights:
+    energy: 1.0
+    force: 5.0
+    stress: 0.01
+  batch_size: 640 # 4 (gpus) * 160 (batch per gpu) = 640 (total batch size)
+  initial_learning_rate: 0.005
+  gradient_clip_val: 1
+  learning_rate_schedule: ReduceLROnPlateau - factor=0.1, patience=10, min_lr=1e-6
+  epochs: 30
+  max_neighbors: .inf
+
+training_cost: # list any hardware used to train the model and for how long
+  Nvidia H100 GPUs: {amount: 4, hours: 100, cost: 400}
+
+requirements: # strongly recommended
+  torch: 2
+  nequip: 0.7.0  # >=0.14.0 recommended
+  allegro: 0.5.0  # >=0.7.1 recommended
+
+training_set: [OMat24, sAlex, MPtrj]
+
+notes:
+  description: Large NequIP foundation potential; see https://www.nequip.net/models/mir-group/NequIP-OAM-L:0.1 for details and https://arxiv.org/abs/2504.16068 for model/training infrastructure.
+  steps: |
+    Training performed by: (1) pre-training on OMat24; (2) fine-tuning on MPtrj+sAlex, with a reduced learning rate (1e-4), energy-loss-upweighting (1:1:0.01 instead of 1:5:0.01) and `StochasticWeightAveraging` (SWA).
+
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05.json.gz
+      pred_file_url: https://figshare.com/files/57475504
+  geo_opt:
+    pred_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-wbm-IS2RE-GOQN.jsonl.gz
+    pred_file_url: https://figshare.com/files/57475498
+    struct_col: nequip_structure  # same for NequIP/Allegro
+  discovery:
+    pred_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/57475501
+    pred_col: e_form_per_atom_nequip  # same for NequIP/Allegro
+    full_test_set:
+      F1: 0.87 # fraction
+      DAF: 5.06 # dimensionless
+      Precision: 0.868 # fraction
+      Recall: 0.872 # fraction
+      Accuracy: 0.955 # fraction
+      TPR: 0.872 # fraction
+      FPR: 0.027 # fraction
+      TNR: 0.973 # fraction
+      FNR: 0.128 # fraction
+      TP: 38456.0 # count
+      FP: 5835.0 # count
+      TN: 207036.0 # count
+      FN: 5636.0 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.858 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.893 # fraction
+      DAF: 5.823 # dimensionless
+      Precision: 0.89 # fraction
+      Recall: 0.895 # fraction
+      Accuracy: 0.967 # fraction
+      TPR: 0.895 # fraction
+      FPR: 0.02 # fraction
+      TNR: 0.98 # fraction
+      FNR: 0.105 # fraction
+      TP: 29867.0 # count
+      FP: 3684.0 # count
+      TN: 178430.0 # count
+      FN: 3507.0 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.865 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.985 # fraction
+      DAF: 6.344 # dimensionless
+      Precision: 0.97 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.97 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9698.0 # count
+      FP: 302.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.083 # eV/atom
+      R2: 0.854 # dimensionless
+      missing_preds: 0 # count

@@ -337,6 +337,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # original MEGNet straight from publication, not re-trained
     megnet = auto(), "megnet/megnet.yml"
 
+    # NequIP
+    nequip_oam_l_0_1 = auto(), "nequip/nequip-OAM-L-0.1.yml"
+    nequip_mp_l_0_1 = auto(), "nequip/nequip-MP-L-0.1.yml"
+
     # ORB
     orb_v2 = auto(), "orb/orb-v2.yml"
     orb_v2_mptrj = auto(), "orb/orb-v2-mptrj.yml"
