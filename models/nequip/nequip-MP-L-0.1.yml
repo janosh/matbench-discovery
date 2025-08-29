@@ -1,6 +1,6 @@
 model_name: Nequip-MP-L # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
 model_key: nequip-MP-L-0.1 # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
-model_version: 0.1
+model_version: "0.1"
 date_added: '2025-08-28'
 date_published: '2025-08-28'
 authors:
@@ -86,7 +86,7 @@ training_cost: # list any hardware used to train the model and for how long
   Nvidia H100 GPUs: {amount: 4, hours: 72, cost: 288}
 
 requirements: # strongly recommended
-  torch: 2
+  torch: "2"
   nequip: 0.7.0  # >=0.14.0 recommended
 
 training_set: [MPtrj]

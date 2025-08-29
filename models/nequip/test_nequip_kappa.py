@@ -304,14 +304,12 @@ if slurm_array_task_count > 1:
 # Save run parameters
 remote_params = dict(
     # model_name=model_name,
-    compile_path=compiled_model_file,
     ase_optimizer=ase_optimizer,
     ase_filter=ase_filter,
     max_steps=max_steps,
     force_max=fmax,
     symprec=symprec,
     enforce_relax_symm=enforce_relax_symm,
-    conductivity_broken_symm=conductivity_broken_symm,
     temperatures=temperatures,
     out_dir=out_dir,
     displacement_distance=displacement_distance,
@@ -332,8 +330,10 @@ kappa_results: dict[str, dict[str, Any]] = {}
 force_results: dict[str, dict[str, Any]] = {}
 
 for idx, atoms in enumerate(tqdm(atoms_list, desc="Calculating kappa...")):
-    mat_id, result_dict, force_dict = calc_kappa_for_structure(
-        atoms=atoms, **remote_params, task_id=idx
+    mat_id, result_dict, force_dict = calc_kappa_for_structure(  # ty: ignore
+        atoms=atoms,
+        **remote_params,
+        task_id=idx,
     )
     kappa_results[mat_id] = result_dict
     if force_dict is not None:
