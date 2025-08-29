@@ -17,7 +17,6 @@ data_transforms:
   - _target_: nequip.data.transforms.ChemicalSpeciesToAtomTypeMapper
     chemical_symbols: ${chemical_symbols}
 
-
 data:
   _target_: nequip.data.datamodule.NequIPDataModule
 
@@ -76,19 +75,19 @@ data:
   seed: ${seed}
   train_dataloader:
     _target_: torch.utils.data.DataLoader
-    batch_size: 80  # usually overwritten in job script
-    num_workers: 7  # should be num CPUs per GPU (process)
+    batch_size: 80 # usually overwritten in job script
+    num_workers: 7 # should be num CPUs per GPU (process)
   val_dataloader:
     _target_: torch.utils.data.DataLoader
-    batch_size: ${data.train_dataloader.batch_size}  # same batch size
-    num_workers: ${data.train_dataloader.num_workers}  # same num_workers
+    batch_size: ${data.train_dataloader.batch_size} # same batch size
+    num_workers: ${data.train_dataloader.num_workers} # same num_workers
 
-    #  stats_manager:  # stats already known
-    #    _target_: nequip.data.CommonDataStatisticsManager
-    #    dataloader_kwargs:
-    #      batch_size: ${data.train_dataloader.batch_size}
-    #      num_workers: ${data.train_dataloader.num_workers}
-    #    type_names: ${model_type_names}
+#  stats_manager:  # stats already known
+#    _target_: nequip.data.CommonDataStatisticsManager
+#    dataloader_kwargs:
+#      batch_size: ${data.train_dataloader.batch_size}
+#      num_workers: ${data.train_dataloader.num_workers}
+#    type_names: ${model_type_names}
 
 trainer:
   _target_: lightning.Trainer
@@ -98,7 +97,7 @@ trainer:
     _target_: nequip.train.SimpleDDPStrategy
   accelerator: gpu
   enable_checkpointing: true
-  max_time: "30:00:00:00"
+  max_time: '30:00:00:00'
   max_epochs: 1000
   check_val_every_n_epoch: 1
   log_every_n_steps: 10000
@@ -106,7 +105,7 @@ trainer:
     - _target_: lightning.pytorch.callbacks.ModelCheckpoint
       monitor: ${monitored_metric}
       dirpath: ${hydra:runtime.output_dir}
-      filename: "weighted_metric_{${monitored_metric}:.4f}-{epoch}"
+      filename: 'weighted_metric_{${monitored_metric}:.4f}-{epoch}'
       auto_insert_metric_name: false
       save_last: true
       verbose: true
@@ -116,8 +115,8 @@ trainer:
       verbose: true
       log_rank_zero_only: true
       monitor: ${monitored_metric}
-      min_delta: 1e-5                         # how much to be considered a "change"
-      patience: 80                           # how many instances of "no change" before stopping
+      min_delta: 1e-5 # how much to be considered a "change"
+      patience: 80 # how many instances of "no change" before stopping
 
     - _target_: lightning.pytorch.callbacks.LearningRateMonitor
       logging_interval: epoch
@@ -166,7 +165,7 @@ training_module:
           delta: ${S_Huber_delta}
 
   val_metrics:
-    _target_: nequip.train.EnergyForceStressMetrics  # default coeffs of 1:1:1 for total-energy:force:stress RMSEs for weighted sum
+    _target_: nequip.train.EnergyForceStressMetrics # default coeffs of 1:1:1 for total-energy:force:stress RMSEs for weighted sum
     coeffs:
       per_atom_energy_rmse: 1.0
       forces_rmse: 1.0
@@ -175,7 +174,7 @@ training_module:
       per_atom_energy_mae: 5.0
       forces_mae: 5.0
       stress_mae: 2.5
-  train_metrics: ${training_module.val_metrics}  # use variable interpolation
+  train_metrics: ${training_module.val_metrics} # use variable interpolation
 
   optimizer:
     _target_: torch.optim.AdamW
@@ -202,15 +201,15 @@ training_module:
       _target_: nequip.model.FullNequIPGNNModel
       compile_mode: compile
 
-      irreps_edge_sh: "1x0e+1x1o+1x2e+1x3o"
-      type_embed_num_features: 48  # total param count quite sensitive to this, but negligible effect on speed
+      irreps_edge_sh: '1x0e+1x1o+1x2e+1x3o'
+      type_embed_num_features: 48 # total param count quite sensitive to this, but negligible effect on speed
       feature_irreps_hidden:
-        - "128x0e+64x1o+32x2e+32x3o"
-        - "128x0e+64x1o+32x2e+32x3o"
-        - "128x0e+64x1o+32x2e+32x3o"
-        - "128x0e+64x1o+32x2e+32x3o"
-        - "128x0e+64x1o+32x2e+32x3o"
-        - "128x0e"
+        - '128x0e+64x1o+32x2e+32x3o'
+        - '128x0e+64x1o+32x2e+32x3o'
+        - '128x0e+64x1o+32x2e+32x3o'
+        - '128x0e+64x1o+32x2e+32x3o'
+        - '128x0e+64x1o+32x2e+32x3o'
+        - '128x0e'
       radial_mlp_depth: [1, 1, 1, 1, 1, 1]
       radial_mlp_width: [128, 128, 128, 128, 128, 128]
 
@@ -229,7 +228,7 @@ training_module:
       per_type_energy_shifts_trainable: false
       per_type_energy_scales: ${per_type_energy_scales}
       per_type_energy_scales_trainable: true
-      avg_num_neighbors: ${num_neighbours_mean}  # 61.99263166031629  # for R = 6 Å
+      avg_num_neighbors: ${num_neighbours_mean} # 61.99263166031629  # for R = 6 Å
 
       pair_potential:
         _target_: nequip.nn.pair_potential.ZBL
@@ -239,7 +238,7 @@ training_module:
 global_options:
   allow_tf32: true
 
-per_type_energy_shifts:  # Omat24 reference energies, switch to MP_ephemera_Isolated_E0s after; from https://github.com/facebookresearch/fairchem/blob/main/configs/uma/training_release/element_refs/iso_atom_elem_refs.yaml
+per_type_energy_shifts: # Omat24 reference energies, switch to MP_ephemera_Isolated_E0s after; from https://github.com/facebookresearch/fairchem/blob/main/configs/uma/training_release/element_refs/iso_atom_elem_refs.yaml
   H: -1.11700253
   He: 0.00079886
   Li: -0.29731164
@@ -419,7 +418,7 @@ per_type_energy_shifts:  # Omat24 reference energies, switch to MP_ephemera_Isol
   #  Np: -7.7017
   #  Pu: -10.8084
 
-per_type_energy_scales:  # MPTrj per-type forces RMS sqrt
+per_type_energy_scales: # MPTrj per-type forces RMS sqrt
   H: 1.2479
   He: 0.0284
   Li: 0.2406
@@ -510,5 +509,6 @@ per_type_energy_scales:  # MPTrj per-type forces RMS sqrt
   Np: 0.271
   Pu: 0.3288
 
+# deno-fmt-ignore
 chemical_symbols: ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu']
 model_type_names: ${chemical_symbols}

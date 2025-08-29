@@ -10,8 +10,8 @@ seed: 1
 cutoff_radius: 6
 monitored_metric: val0_epoch/weighted_sum
 
-num_neighbours_mean: 61.99263166031629  # value for 6 Å
-num_neighbours_mean_squared: 3843.08638017165  # value for 6 Å
+num_neighbours_mean: 61.99263166031629 # value for 6 Å
+num_neighbours_mean_squared: 3843.08638017165 # value for 6 Å
 
 data:
   _target_: nequip.data.datamodule.NequIPDataModule
@@ -34,29 +34,29 @@ data:
   seed: ${seed}
   train_dataloader:
     _target_: torch.utils.data.DataLoader
-    batch_size: 80  # usually overwritten in job script
-    num_workers: 7  # should be num CPUs per GPU (process)
+    batch_size: 80 # usually overwritten in job script
+    num_workers: 7 # should be num CPUs per GPU (process)
   val_dataloader:
     _target_: torch.utils.data.DataLoader
-    batch_size: ${data.train_dataloader.batch_size}  # same batch size
-    num_workers: ${data.train_dataloader.num_workers}  # same num_workers
+    batch_size: ${data.train_dataloader.batch_size} # same batch size
+    num_workers: ${data.train_dataloader.num_workers} # same num_workers
 
-    #  stats_manager:  # data stats not needed now, skip for speed
-    #    _target_: nequip.data.CommonDataStatisticsManager
-    #    dataloader_kwargs:
-    #      batch_size: ${data.train_dataloader.batch_size}
-    #      num_workers: ${data.train_dataloader.num_workers}
-    #    type_names: ${model_type_names}
+#  stats_manager:  # data stats not needed now, skip for speed
+#    _target_: nequip.data.CommonDataStatisticsManager
+#    dataloader_kwargs:
+#      batch_size: ${data.train_dataloader.batch_size}
+#      num_workers: ${data.train_dataloader.num_workers}
+#    type_names: ${model_type_names}
 
 trainer:
   _target_: lightning.Trainer
-  precision: bf16-mixed  # automatic mixed precision
+  precision: bf16-mixed # automatic mixed precision
   gradient_clip_val: 0.015
   strategy:
     _target_: nequip.train.SimpleDDPStrategy
   accelerator: gpu
   enable_checkpointing: true
-  max_time: "30:00:00:00"
+  max_time: '30:00:00:00'
   max_epochs: 2000
   check_val_every_n_epoch: 1
   log_every_n_steps: 1000
@@ -64,7 +64,7 @@ trainer:
     - _target_: lightning.pytorch.callbacks.ModelCheckpoint
       monitor: ${monitored_metric}
       dirpath: ${hydra:runtime.output_dir}
-      filename: "weighted_metric_{${monitored_metric}:.4f}-{epoch}"
+      filename: 'weighted_metric_{${monitored_metric}:.4f}-{epoch}'
       auto_insert_metric_name: false
       save_last: true
       verbose: true
@@ -74,8 +74,8 @@ trainer:
       verbose: true
       log_rank_zero_only: true
       monitor: ${monitored_metric}
-      min_delta: 1e-5                         # how much to be considered a "change"
-      patience: 200                           # how many instances of "no change" before stopping
+      min_delta: 1e-5 # how much to be considered a "change"
+      patience: 200 # how many instances of "no change" before stopping
 
     - _target_: lightning.pytorch.callbacks.LearningRateMonitor
       logging_interval: epoch
@@ -112,7 +112,7 @@ training_module:
         metric:
           _target_: nequip.train.metrics.StratifiedHuberForceLoss
           delta_dict:
-            0:   0.01
+            0: 0.01
             100: 0.007
             200: 0.004
             300: 0.001
@@ -180,7 +180,7 @@ training_module:
       l_max: 3
       parity: false
 
-      radial_chemical_embed:  # radial network basis
+      radial_chemical_embed: # radial network basis
         _target_: allegro.nn.TwoBodyBesselScalarEmbed
         num_bessels: 12
         bessel_trainable: true
@@ -198,7 +198,7 @@ training_module:
 global_options:
   allow_tf32: true
 
-per_type_energy_shifts:  # MP_ephemera_Isolated_E0s
+per_type_energy_shifts: # MP_ephemera_Isolated_E0s
   H: -1.1176
   He: -0.0005
   Li: -0.2974
@@ -289,7 +289,7 @@ per_type_energy_shifts:  # MP_ephemera_Isolated_E0s
   Np: -7.7017
   Pu: -10.8084
 
-per_type_energy_scales:  # MPTrj per-type forces RMS sqrt
+per_type_energy_scales: # MPTrj per-type forces RMS sqrt
   H: 1.2479
   He: 0.0284
   Li: 0.2406
@@ -380,5 +380,6 @@ per_type_energy_scales:  # MPTrj per-type forces RMS sqrt
   Np: 0.271
   Pu: 0.3288
 
+# deno-fmt-ignore
 chemical_symbols: ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu']
 model_type_names: ${chemical_symbols}
