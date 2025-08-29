@@ -10,34 +10,34 @@ authors:
     orcid: https://orcid.org/0000-0003-4577-9647
     url: https://seankavanagh.com
     corresponding: true
-    role: Model & PR
   - name: Chuin Wei Tan
     affiliation: MIR Group, Harvard University
-    role: Code Development
   - name: Albert Musaelian
     affiliation: MIR Group, Harvard University & Mirian Technologies
-    role: Code Development & Design
   - name: William C. Witt
     affiliation: MIR Group, Harvard University
-    role: Code Development & Model Testing
   - name: Gabriel de Miranda Nascimento
     affiliation: MIR Group, Harvard University & MIT
-    role: Model Testing
   - name: Ulrik Unneberg
     affiliation: MIR Group, Harvard University & MIT
-    role: Model Testing
   - name: Marc L. Descoteaux
     affiliation: MIR Group, Harvard University
-    role: Code Development & Testing
   - name: Boris Kozinsky
     affiliation: MIR Group, Harvard University
-    role: Funding Acquisition
+trained_by:
+  - name: Seán R. Kavanagh
+    affiliation: Center for the Environment, Harvard University & MIR Group, Harvard University
+    email: skavanagh@seas.harvard.edu
+    orcid: https://orcid.org/0000-0003-4577-9647
+    url: https://seankavanagh.com
+    corresponding: true
 
 repo: https://github.com/mir-group/allegro
 url: https://allegro.readthedocs.io/en/latest/
 doi: https://doi.org/10.5281/zenodo.16980200
-# preprint: https://arxiv.org/abs/xxxx.xxxxx  # TBA...
+paper: https://arxiv.org/abs/2504.16068  # To be updated...
 checkpoint_url: https://www.allegro.net/models/mir-group/Allegro-MP-L:0.1
+pr_url: https://github.com/janosh/matbench-discovery/pull/282
 
 openness: OSOD # see `Open` enum in matbench_discovery/enums.py
 train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
@@ -104,6 +104,7 @@ notes: # notes can have any key, be multiline and support markdown.
 metrics:
   phonons:
     kappa_103:
+      k_SRME: 0.45
       pred_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-kappa-103-FIRE-dist_0_03-fmax_0_0001-symprec_1e-05.json.gz
       pred_file_url: https://figshare.com/files/57498649
   geo_opt:
