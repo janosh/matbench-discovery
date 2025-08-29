@@ -277,6 +277,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # see models/alignn_ff/readme.md
     # alignn_ff = auto(), "alignn/alignn-ff.yml"
 
+    # Allegro (NequIP arch)
+    allegro_oam_l_0_1 = auto(), "allegro/allegro-OAM-L-0.1.yml"
+    allegro_mp_l_0_1 = auto(), "allegro/allegro-MP-L-0.1.yml"
+
     # BOWSR optimizer coupled with original megnet
     bowsr_megnet = auto(), "bowsr/bowsr.yml"
 

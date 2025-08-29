@@ -110,3 +110,57 @@ metrics:
     pred_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/57482908
     pred_col: e_form_per_atom_nequip  # same for NequIP/Allegro
+    full_test_set:
+      F1: 0.752 # fraction
+      DAF: 4.136 # dimensionless
+      Precision: 0.71 # fraction
+      Recall: 0.8 # fraction
+      Accuracy: 0.909 # fraction
+      TPR: 0.8 # fraction
+      FPR: 0.068 # fraction
+      TNR: 0.932 # fraction
+      FNR: 0.2 # fraction
+      TP: 35263.0 # count
+      FP: 14430.0 # count
+      TN: 198441.0 # count
+      FN: 8829.0 # count
+      MAE: 0.041 # eV/atom
+      RMSE: 0.083 # eV/atom
+      R2: 0.787 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.761 # fraction
+      DAF: 4.704 # dimensionless
+      Precision: 0.719 # fraction
+      Recall: 0.809 # fraction
+      Accuracy: 0.921 # fraction
+      TPR: 0.809 # fraction
+      FPR: 0.058 # fraction
+      TNR: 0.942 # fraction
+      FNR: 0.191 # fraction
+      TP: 27002.0 # count
+      FP: 10546.0 # count
+      TN: 171568.0 # count
+      FN: 6372.0 # count
+      MAE: 0.043 # eV/atom
+      RMSE: 0.084 # eV/atom
+      R2: 0.791 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.957 # fraction
+      DAF: 6.0 # dimensionless
+      Precision: 0.917 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.917 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9172.0 # count
+      FP: 828.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.044 # eV/atom
+      RMSE: 0.096 # eV/atom
+      R2: 0.812 # dimensionless
+      missing_preds: 0 # count
