@@ -474,6 +474,7 @@ export const org_logos = {
     `/logos/ict-cas-beijing.svg`,
   'Massachusetts Institute of Technology': `/logos/mit.svg`,
   'Microsoft Research': `icon:Microsoft`,
+  'MIR Group, Harvard University': `/logos/mir-group-harvard.svg`,
   'National Institute of Standards and Technology': `/logos/nist.svg`,
   'Northwestern University': `/logos/northwestern-university.svg`,
   'Orbital Materials': `/logos/orbital-materials.svg`,

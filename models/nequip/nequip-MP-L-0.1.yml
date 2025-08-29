@@ -5,32 +5,32 @@ date_added: '2025-08-28'
 date_published: '2025-08-28'
 authors:
   - name: Seán R. Kavanagh
-    affiliation: Center for the Environment, Harvard University
+    affiliation: Center for the Environment, Harvard University & MIR Group, Harvard University
     email: skavanagh@seas.harvard.edu
     orcid: https://orcid.org/0000-0003-4577-9647
     url: https://seankavanagh.com
     corresponding: true
     role: Model & PR
   - name: Chuin Wei Tan
-    affiliation: Harvard University
+    affiliation: MIR Group, Harvard University
     role: Code Development
   - name: Albert Musaelian
-    affiliation: Harvard University & Mirian Technologies
+    affiliation: MIR Group, Harvard University & Mirian Technologies
     role: Code Development & Design
   - name: William C. Witt
-    affiliation: Harvard University
+    affiliation: MIR Group, Harvard University
     role: Code Development & Model Testing
   - name: Gabriel de Miranda Nascimento
-    affiliation: MIT
+    affiliation: MIR Group, Harvard University & MIT
     role: Model Testing
   - name: Ulrik Unneberg
-    affiliation: MIT
+    affiliation: MIR Group, Harvard University & MIT
     role: Model Testing
   - name: Marc L. Descoteaux
-    affiliation: Harvard University
+    affiliation: MIR Group, Harvard University
     role: Code Development & Testing
   - name: Boris Kozinsky
-    affiliation: Harvard University
+    affiliation: MIR Group, Harvard University
     role: Funding Acquisition
 
 repo: https://github.com/mir-group/nequip
