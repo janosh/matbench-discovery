@@ -1,6 +1,6 @@
 model_name: Allegro-MP-L # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
 model_key: allegro-MP-L-0.1 # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
-model_version: "0.1"
+model_version: '0.1'
 date_added: '2025-08-28'
 date_published: '2025-08-28'
 authors:
@@ -35,7 +35,7 @@ trained_by:
 repo: https://github.com/mir-group/allegro
 url: https://allegro.readthedocs.io/en/latest/
 doi: https://doi.org/10.5281/zenodo.16980200
-paper: https://arxiv.org/abs/2504.16068  # To be updated...
+paper: https://arxiv.org/abs/2504.16068 # To be updated...
 checkpoint_url: https://www.allegro.net/models/mir-group/Allegro-MP-L:0.1
 pr_url: https://github.com/janosh/matbench-discovery/pull/282
 
@@ -53,12 +53,12 @@ license:
   code_url: https://github.com/mir-group/nequip/blob/main/LICENSE
   checkpoint: CC-BY-4.0
   # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
-  checkpoint_url: https://url.of/model-checkpoint-license  # TODO: Zenodo? / Nequip.net
+  checkpoint_url: https://url.of/model-checkpoint-license # TODO: Zenodo? / Nequip.net
 
 hyperparams: # strongly recommended to list relaxation hyperparams
   max_force: 0.05
   max_steps: 500
-  ase_optimizer: GOQN  # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
+  ase_optimizer: GOQN # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
   cell_filter: FrechetCellFilter
   optimizer: AdamW
   weight_decay: 1e-3
@@ -85,14 +85,13 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   epochs: 250
   max_neighbors: .inf
 
-
 training_cost: # list any hardware used to train the model and for how long
-  Nvidia H100 GPUs: {amount: 8, hours: 50, cost: 400}
+  Nvidia H100 GPUs: { amount: 8, hours: 50, cost: 400 }
 
 requirements: # strongly recommended
-  torch: "2"
-  nequip: 0.7.0  # >=0.14.0 recommended
-  allegro: 0.5.0  # >=0.7.1 recommended
+  torch: '2'
+  nequip: 0.7.0 # >=0.14.0 recommended
+  allegro: 0.5.0 # >=0.7.1 recommended
 
 training_set: [MPtrj]
 
@@ -110,11 +109,29 @@ metrics:
   geo_opt:
     pred_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-wbm-IS2RE-GOQN.jsonl.gz
     pred_file_url: https://figshare.com/files/57498655
-    struct_col: nequip_structure  # same for NequIP/Allegro
+    struct_col: nequip_structure # same for NequIP/Allegro
+    symprec=1e-5:
+      rmsd: 0.0816 # unitless
+      n_sym_ops_mae: 1.902 # unitless
+      symmetry_decrease: 0.0712 # fraction
+      symmetry_match: 0.7211 # fraction
+      symmetry_increase: 0.2015 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
+      analysis_file_url:
+    symprec=1e-2:
+      rmsd: 0.0816 # unitless
+      n_sym_ops_mae: 1.7918 # unitless
+      symmetry_decrease: 0.0572 # fraction
+      symmetry_match: 0.8125 # fraction
+      symmetry_increase: 0.123 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
+      analysis_file_url:
   discovery:
     pred_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/57498652
-    pred_col: e_form_per_atom_nequip  # same for NequIP/Allegro
+    pred_col: e_form_per_atom_nequip # same for NequIP/Allegro
     full_test_set:
       F1: 0.742 # fraction
       DAF: 3.998 # dimensionless

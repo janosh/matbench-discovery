@@ -455,7 +455,7 @@ export const title_case = (str: string) =>
   str.replaceAll(`_`, ` `).split(` `).map(to_title).join(` `)
 
 // Map of author affiliations in model YAMLs to SVG icons (either inline symbol ID
-// or external file path under /static/logos/) and full affiliation names for tooltips. Each item can have SVG ID from app.html OR src path under /static/logos/.
+// or external file path under /static/logos/) and full affiliation names for tooltips.
 export const org_logos = {
   'AI for Science Institute, Beijing': `/logos/beijing-ai-for-science-institute.svg`,
   'Argonne National Laboratory': `/logos/argonne-national-lab.svg`,

@@ -1,6 +1,6 @@
 model_name: Nequip-MP-L # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
 model_key: nequip-MP-L-0.1 # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
-model_version: "0.1"
+model_version: '0.1'
 date_added: '2025-08-28'
 date_published: '2025-08-28'
 authors:
@@ -35,7 +35,7 @@ trained_by:
 repo: https://github.com/mir-group/nequip
 url: https://nequip.readthedocs.io/en/latest/
 doi: https://doi.org/10.5281/zenodo.16980200
-paper: https://arxiv.org/abs/2504.16068  # To be updated...
+paper: https://arxiv.org/abs/2504.16068 # To be updated...
 checkpoint_url: https://www.nequip.net/models/mir-group/NequIP-MP-L:0.1
 pr_url: https://github.com/janosh/matbench-discovery/pull/282
 
@@ -57,7 +57,7 @@ license:
 hyperparams: # strongly recommended to list relaxation hyperparams
   max_force: 0.05
   max_steps: 500
-  ase_optimizer: GOQN  # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
+  ase_optimizer: GOQN # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
   cell_filter: FrechetCellFilter
   optimizer: AdamW
   weight_decay: 1e-3
@@ -83,11 +83,11 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   max_neighbors: .inf
 
 training_cost: # list any hardware used to train the model and for how long
-  Nvidia H100 GPUs: {amount: 4, hours: 72, cost: 288}
+  Nvidia H100 GPUs: { amount: 4, hours: 72, cost: 288 }
 
 requirements: # strongly recommended
-  torch: "2"
-  nequip: 0.7.0  # >=0.14.0 recommended
+  torch: '2'
+  nequip: 0.7.0 # >=0.14.0 recommended
 
 training_set: [MPtrj]
 
@@ -105,11 +105,29 @@ metrics:
   geo_opt:
     pred_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE-GOQN.jsonl.gz
     pred_file_url: https://figshare.com/files/57482911
-    struct_col: nequip_structure  # same for NequIP/Allegro
+    struct_col: nequip_structure # same for NequIP/Allegro
+    symprec=1e-2:
+      rmsd: 0.0856 # unitless
+      n_sym_ops_mae: 1.8175 # unitless
+      symmetry_decrease: 0.0592 # fraction
+      symmetry_match: 0.8109 # fraction
+      symmetry_increase: 0.1227 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
+      analysis_file_url:
+    symprec=1e-5:
+      rmsd: 0.0856 # unitless
+      n_sym_ops_mae: 1.9003 # unitless
+      symmetry_decrease: 0.0788 # fraction
+      symmetry_match: 0.7163 # fraction
+      symmetry_increase: 0.1982 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
+      analysis_file_url:
   discovery:
     pred_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/57482908
-    pred_col: e_form_per_atom_nequip  # same for NequIP/Allegro
+    pred_col: e_form_per_atom_nequip # same for NequIP/Allegro
     full_test_set:
       F1: 0.752 # fraction
       DAF: 4.136 # dimensionless
