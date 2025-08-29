@@ -1,10 +1,14 @@
 """
-Script for testing predictions of a trained Nequip model on the WBM test dataset (used as the matbench-discovery
-test set for models trained on MPTrj).
-Copied from the 7net script here: https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/test_sevennet.py
-Then refactored for nequip and SLURM on the Frontier HPC (allowing parallelisation over many GPUs/nodes).
+Script for testing predictions of a trained Nequip model on the WBM test dataset
+(used as the matbench-discovery test set for models trained on MPTrj).
+Copied from the 7net script here:
+https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/test_sevennet.py
+Then refactored for nequip and SLURM on the Frontier HPC
+(allowing parallelisation over many GPUs/nodes).
 """
-# uses matbench-discovery matbench-discovery commit ID 012ccfe, k_srme commit ID 0269a946, pymatviz v0.15.1
+
+# uses matbench-discovery matbench-discovery commit ID 012ccfe,
+# k_srme commit ID 0269a946, pymatviz v0.15.1
 
 import contextlib
 import os
@@ -29,8 +33,10 @@ from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_z
 from matbench_discovery.enums import Task
 
 with contextlib.suppress(ImportError):
-    # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use in ASE calculators, if model was compiled with these accelerations
-    # (see NequIP/Allegro docs), so here we try to import them in case models were compiled with these settings
+    # OpenEquivariance/CuEquivariance libraries need to be loaded to allow
+    # their use in ASE calculators, if model was compiled with these accelerations
+    # (see NequIP/Allegro docs), so here we try to import them in case models were
+    # compiled with these settings
     pass
 
 
@@ -39,14 +45,15 @@ compile_path = "*.nequip.pt2"
 smoke_test = False  # True
 model_name = "nequip-0"
 task_type = Task.IS2RE
-ase_optimizer = "GOQN"  # faster than "FIRE" from tests, gives the same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
+ase_optimizer = "GOQN"  # faster than "FIRE" from tests, gives the same results;
+# see SI of https:/doi.org/10.1088/2515-7655/ade916
 ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
 
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 
-slurm_nodes = int(os.getenv("SLURM_NNODES", 1))
-slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", 1))
+slurm_nodes = int(os.getenv("SLURM_NNODES", "1"))
+slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", "1"))
 slurm_array_task_count = int(os.getenv("NGPUS", slurm_nodes * slurm_tasks_per_node))
 slurm_array_task_id = int(
     os.getenv(
@@ -55,8 +62,9 @@ slurm_array_task_id = int(
 )
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", os.getenv("SLURM_JOBID", "debug"))
 
-# Note that we can also manually override some slurm IDs here if we need to rerun just a single subset that failed
-# on a previous eval run, for any reason, setting job_id to 0, task_id to the failed task, and task_count to match
+# Note that we can also manually override some slurm IDs here if we need to rerun
+# just a single subset that failed on a previous eval run, for any reason, setting
+# job_id to 0, task_id to the failed task, and task_count to match
 # whatever the previous task count was (to ensure the same data splitting):
 # slurm_array_job_id = 0
 # slurm_array_task_id = 104

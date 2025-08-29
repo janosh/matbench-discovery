@@ -1,5 +1,10 @@
-"""Investigate NequIP/Allegro energy underpredictions, templated from the MACE analysis script from Janosh."""
-# uses matbench-discovery matbench-discovery commit ID 012ccfe, k_srme commit ID 0269a946, pymatviz v0.15.1
+"""
+Investigate NequIP/Allegro energy underpredictions, templated from the
+MACE analysis script from Janosh.
+"""
+
+# uses matbench-discovery matbench-discovery commit ID 012ccfe,
+# k_srme commit ID 0269a946, pymatviz v0.15.1
 
 
 # %%
@@ -69,11 +74,6 @@ fig.show()
 
 pmv.save_fig(fig, "allegro-too-low-spacegroup-sunburst.png")
 
-
-"""
-Space groups of Nequip underpredictions look unremarkable but unusually heavy in Silicon,
-Lanthanide and heavy alkali metals.
-"""
 
 # %%
 bad_mask = (df_allegro[e_form_allegro_col] - df_allegro[MbdKey.e_form_dft]) < -5

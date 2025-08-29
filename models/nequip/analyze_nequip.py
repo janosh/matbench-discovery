@@ -1,5 +1,10 @@
-"""Investigate NequIP energy underpredictions, templated from the MACE analysis script from Janosh."""
-# uses matbench-discovery matbench-discovery commit ID 012ccfe, k_srme commit ID 0269a946, pymatviz v0.15.1
+"""
+Investigate NequIP energy underpredictions, templated from the
+MACE analysis script from Janosh.
+"""
+
+# uses matbench-discovery matbench-discovery commit ID 012ccfe,
+# k_srme commit ID 0269a946, pymatviz v0.15.1
 
 
 # %%
@@ -67,11 +72,6 @@ fig.show()
 
 pmv.save_fig(fig, "nequip-too-low-spacegroup-sunburst.png")
 
-
-"""
-Space groups of Nequip underpredictions look unremarkable but unusually heavy in Silicon,
-Lanthanide and heavy alkali metals.
-"""
 
 # %%
 bad_mask = (df_nequip[e_form_nequip_col] - df_nequip[MbdKey.e_form_dft]) < -5

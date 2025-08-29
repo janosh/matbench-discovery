@@ -1,12 +1,15 @@
 """
-This processing script has been copied from the 7net script here: https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/join_7net_preds.py
-And then slightly refactored for NequIP/Allegro, and changing the WBM missing structures error to a warning.
+This processing script has been copied from the 7net script here:
+https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/join_7net_preds.py
+And then slightly refactored for NequIP/Allegro, and changing the WBM missing structures
+error to a warning.
 Note that it requires pymatviz >=0.15.0
 
 Takes about 4.5 mins to run.
 """
 
-# uses matbench-discovery matbench-discovery commit ID 012ccfe, k_srme commit ID 0269a946, pymatviz v0.15.1
+# uses matbench-discovery matbench-discovery commit ID 012ccfe,
+# k_srme commit ID 0269a946, pymatviz v0.15.1
 import warnings
 from glob import glob
 
@@ -37,7 +40,9 @@ df_allegro = pd.concat(dfs.values()).round(4)
 
 if len(df_allegro) != len(df_wbm):  # make sure there is no missing structure
     warnings.warn(
-        f"Some missing structures in results, {len(df_allegro)} in df_allegro, {len(df_wbm)} in df_wbm, likely due to some crashed relaxations"
+        f"Some missing structures in results, {len(df_allegro)} in df_allegro, "
+        f"{len(df_wbm)} in df_wbm, likely due to some crashed relaxations",
+        stacklevel=2,
     )
     # raise ValueError("Missing structures in results")
 

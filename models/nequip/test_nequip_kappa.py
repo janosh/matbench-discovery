@@ -1,22 +1,23 @@
 """
-Script for generating the predicted kappa-SRME values for the 103 structures in the PhononDB-PBE dataset,
-using a NequIP model.
+Script for generating the predicted kappa-SRME values for the 103 structures in the
+PhononDB-PBE dataset, using a NequIP model.
 
 Templated from https://github.com/janosh/matbench-discovery/blob/main/models/mace/calc_kappa_mace_ray_parallelized.py
 """
-# uses matbench-discovery matbench-discovery commit ID 012ccfe, k_srme commit ID 0269a946, pymatviz v0.15.1
+
+# uses matbench-discovery matbench-discovery commit ID 012ccfe,
+# k_srme commit ID 0269a946, pymatviz v0.15.1
 
 import contextlib
 import json
 import os
 import traceback
 import warnings
-from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
 from glob import glob
 from importlib.metadata import version
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import ase.io
 import ase.optimize as opt
@@ -35,9 +36,14 @@ from matbench_discovery.data import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 with contextlib.suppress(ImportError):
-    # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use in ASE calculators, if model was compiled with these accelerations
-    # (see NequIP/Allegro docs), so here we try to import them in case models were compiled with these settings
+    # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use in
+    # ASE calculators, if model was compiled with these accelerations (see
+    # NequIP/Allegro docs), so here we try to import them in case models were compiled
+    # with these settings
     pass
 
 module_dir = os.path.dirname(__file__)
@@ -61,8 +67,8 @@ displacement_distance = 0.03
 ignore_imaginary_freqs = True
 
 # Task splitting:
-slurm_nodes = int(os.getenv("SLURM_NNODES", 1))
-slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", 1))
+slurm_nodes = int(os.getenv("SLURM_NNODES", "1"))
+slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", "1"))
 slurm_array_task_count = int(os.getenv("NGPUS", slurm_nodes * slurm_tasks_per_node))
 slurm_array_task_id = int(
     os.getenv(
@@ -71,8 +77,9 @@ slurm_array_task_id = int(
 )
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", os.getenv("SLURM_JOBID", "debug"))
 
-# Note that we can also manually override some slurm IDs here if we need to rerun just a single subset that failed
-# on a previous eval run, for any reason, setting job_id to 0, task_id to the failed task, and task_count to match
+# Note that we can also manually override some slurm IDs here if we need to rerun just a
+# single subset that failed on a previous eval run, for any reason, setting job_id to 0,
+# task_id to the failed task, and task_count to match
 # whatever the previous task count was (to ensure the same data splitting):
 # slurm_array_job_id = 0
 # slurm_array_task_id = 104
@@ -91,7 +98,6 @@ def calc_kappa_for_structure(
     *,  # force keyword-only arguments
     atoms: Atoms,
     displacement_distance: float,
-    compile_path: str,
     temperatures: list[float],
     ase_optimizer: str,
     ase_filter: str,
@@ -99,7 +105,6 @@ def calc_kappa_for_structure(
     force_max: float,
     symprec: float,
     enforce_relax_symm: bool,
-    conductivity_broken_symm: bool,
     save_forces: bool,
     out_dir: str,
     task_id: int,
@@ -244,7 +249,9 @@ def calc_kappa_for_structure(
             ph3.produce_fc3(symmetrize_fc3r=True)
         else:
             warnings.warn(
-                f"Imaginary frequencies calculated for {mat_id}, skipping FC3 and LTC calculation!"
+                f"Imaginary frequencies calculated for {mat_id}, "
+                f"skipping FC3 and LTC calculation!",
+                stacklevel=2,
             )
             fc3_set = []
 
