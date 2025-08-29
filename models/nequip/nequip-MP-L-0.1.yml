@@ -88,7 +88,6 @@ training_cost: # list any hardware used to train the model and for how long
 requirements: # strongly recommended
   torch: 2
   nequip: 0.7.0  # >=0.14.0 recommended
-  allegro: 0.5.0  # >=0.7.1 recommended
 
 training_set: [MPtrj]
 
