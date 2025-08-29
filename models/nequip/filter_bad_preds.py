@@ -1,5 +1,7 @@
-import pandas as pd
 import os
+
+import pandas as pd
+
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey
 

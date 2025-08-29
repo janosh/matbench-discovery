@@ -1,16 +1,17 @@
 """Investigate NequIP energy underpredictions, templated from the MACE analysis script from Janosh."""
 # uses matbench-discovery matbench-discovery commit ID 012ccfe, k_srme commit ID 0269a946, pymatviz v0.15.1
 
+
 # %%
-import pandas as pd
 import os
 
+import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
 
 from matbench_discovery import SITE_FIGS
 from matbench_discovery import plots as plots
-from matbench_discovery.data import Model, df_wbm
+from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey
 
 __author__ = "Janosh Riebesell, Seán Kavanagh"
@@ -24,7 +25,9 @@ if not os.path.exists(filtered_csv_path):
 
 df_nequip = pd.read_csv(filtered_csv_path)
 df_nequip = df_nequip.set_index("material_id")
-df_wbm["e_form_per_atom_nequip_error"] = df_wbm["e_form_per_atom_mp2020_corrected"] - df_nequip["e_form_per_atom_nequip"]
+df_wbm["e_form_per_atom_nequip_error"] = (
+    df_wbm["e_form_per_atom_mp2020_corrected"] - df_nequip["e_form_per_atom_nequip"]
+)
 
 df_nequip[list(df_wbm)] = df_wbm
 

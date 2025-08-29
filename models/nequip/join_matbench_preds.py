@@ -1,13 +1,14 @@
 """
 This processing script has been copied from the 7net script here: https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/join_7net_preds.py
-And then slightly refactored for nequip, and changing the WBM missing structures error to a warning. 
-Note that it requires pymatviz >=0.15.0 
+And then slightly refactored for nequip, and changing the WBM missing structures error to a warning.
+Note that it requires pymatviz >=0.15.0
 
 Takes about 4.5 mins to run.
 """
+
 # uses matbench-discovery matbench-discovery commit ID 012ccfe, k_srme commit ID 0269a946, pymatviz v0.15.1
-from glob import glob
 import warnings
+from glob import glob
 
 import pandas as pd
 from pymatgen.core import Structure
@@ -35,16 +36,21 @@ for file_path in tqdm(files, desc="Loading results"):
 df_nequip = pd.concat(dfs.values()).round(4)
 
 if len(df_nequip) != len(df_wbm):  # make sure there is no missing structure
-    warnings.warn(f"Some missing structures in results, {len(df_nequip)} in df_nequip, {len(df_wbm)} in df_wbm, likely due to some crashed relaxations")
-    #raise ValueError("Missing structures in results")
+    warnings.warn(
+        f"Some missing structures in results, {len(df_nequip)} in df_nequip, {len(df_wbm)} in df_wbm, likely due to some crashed relaxations"
+    )
+    # raise ValueError("Missing structures in results")
 
 print("Loading reference WBM dataset")
 df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
     Key.mat_id
 )
 df_cse[Key.computed_structure_entry] = [
-    ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.computed_structure_entry], 
-        desc="Generating WBM reference ComputedStructureEntrys")
+    ComputedStructureEntry.from_dict(dct)
+    for dct in tqdm(
+        df_cse[Key.computed_structure_entry],
+        desc="Generating WBM reference ComputedStructureEntrys",
+    )
 ]
 
 # trained on 'uncorrected energy' of MPtrj,
@@ -54,7 +60,11 @@ df_cse[Key.computed_structure_entry] = [
 # %% transfer energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
 cse: ComputedStructureEntry
-for row in tqdm(df_nequip.itertuples(), total=len(df_nequip),  desc="Generating ML-predicted ComputedStructureEntrys"):
+for row in tqdm(
+    df_nequip.itertuples(),
+    total=len(df_nequip),
+    desc="Generating ML-predicted ComputedStructureEntrys",
+):
     mat_id, struct_dict, energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
     cse = df_cse.loc[mat_id, Key.computed_structure_entry]
@@ -65,8 +75,14 @@ for row in tqdm(df_nequip.itertuples(), total=len(df_nequip),  desc="Generating 
 
 orig_len = len(df_nequip)
 print("Applying MP 2020 Compatibility corrections")
-df_nequip[Key.computed_structure_entry] = MaterialsProject2020Compatibility().process_entries(  # change in-place
-    df_nequip[Key.computed_structure_entry], verbose=True, clean=True, inplace=False, n_workers=8  # faster processing
+df_nequip[Key.computed_structure_entry] = (
+    MaterialsProject2020Compatibility().process_entries(  # change in-place
+        df_nequip[Key.computed_structure_entry],
+        verbose=True,
+        clean=True,
+        inplace=False,
+        n_workers=8,  # faster processing
+    )
 )
 if len(df_nequip) != orig_len:
     raise ValueError("Some structures were removed during energy correction")
@@ -80,8 +96,9 @@ df_nequip[e_form_nequip_col] = [
         dict(energy=cse.energy, composition=formula), mp_elemental_ref_energies
     )
     for formula, cse in tqdm(
-        df_nequip.set_index(Key.formula)[Key.computed_structure_entry].items(), total=len(df_nequip),
-        desc="Getting formation energies"
+        df_nequip.set_index(Key.formula)[Key.computed_structure_entry].items(),
+        total=len(df_nequip),
+        desc="Getting formation energies",
     )
 ]
 df_nequip = df_nequip.round(4)

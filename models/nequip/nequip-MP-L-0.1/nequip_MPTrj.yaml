@@ -3,7 +3,7 @@ run: [val, train] # val first to get validation metrics
 
 E_coeff: 1
 F_coeff: 5
-S_coeff: 0.1 
+S_coeff: 0.1
 S_Huber_delta: 0.1
 
 seed: 42
@@ -38,7 +38,7 @@ data:
     _target_: torch.utils.data.DataLoader
     batch_size: ${data.train_dataloader.batch_size}  # same batch size
     num_workers: ${data.train_dataloader.num_workers}  # same num_workers
- 
+
     #stats_manager:  # stats already known
     #  _target_: nequip.data.CommonDataStatisticsManager
     #  dataloader_kwargs:
@@ -70,7 +70,7 @@ trainer:
     - _target_: lightning.pytorch.callbacks.EarlyStopping
       verbose: true
       log_rank_zero_only: true
-      monitor: ${monitored_metric} 
+      monitor: ${monitored_metric}
       min_delta: 1e-5                         # how much to be considered a "change"
       patience: 250                           # how many instances of "no change" before stopping
 
@@ -81,7 +81,7 @@ trainer:
       frequency: 1
       interval: epoch
 
-  logger: 
+  logger:
     _target_: lightning.pytorch.loggers.wandb.WandbLogger
     save_dir: ${hydra:runtime.output_dir}
     project: MPTrj
@@ -92,7 +92,7 @@ training_module:
 
   ema_decay: 0.995
 
-  loss: 
+  loss:
     _target_: nequip.train.MetricsManager
     metrics:
       - name: peratom_E_Huber
@@ -101,7 +101,7 @@ training_module:
           field: total_energy
         coeff: ${E_coeff}
         metric:
-          _target_: nequip.train.HuberLoss  
+          _target_: nequip.train.HuberLoss
           delta: 0.01
       - name: force_strat_E_huber
         field: forces
@@ -115,9 +115,9 @@ training_module:
             300: 0.001
       - name: stress_E_Huber
         field: stress
-        coeff: ${S_coeff} 
+        coeff: ${S_coeff}
         metric:
-          _target_: nequip.train.HuberLoss  
+          _target_: nequip.train.HuberLoss
           delta: ${S_Huber_delta}
 
   val_metrics:
@@ -136,16 +136,16 @@ training_module:
     _target_: torch.optim.AdamW
     lr: 0.02
     weight_decay: 1e-3
-    amsgrad: false 
+    amsgrad: false
 
   lr_scheduler:
     scheduler:
       _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
       factor: 0.1
-      patience: 100 
+      patience: 100
       #threshold: 1e-4  # default
       min_lr: 1e-6
-    monitor: ${monitored_metric} 
+    monitor: ${monitored_metric}
     interval: epoch
     frequency: 1
 
@@ -155,7 +155,7 @@ training_module:
       - modifier: enable_OpenEquivariance
     model:
       _target_: nequip.model.FullNequIPGNNModel
-      compile_mode: compile  
+      compile_mode: compile
 
       irreps_edge_sh: "1x0e+1x1o+1x2e+1x3o"
       type_embed_num_features: 48  # total param count quite sensitive to this, but negligible effect on speed
@@ -166,9 +166,9 @@ training_module:
         - "128x0e+64x1o+32x2e+32x3o"
         - "128x0e+64x1o+32x2e+32x3o"
         - "128x0e"
-      radial_mlp_depth: [1, 1, 1, 1, 1, 1]  
-      radial_mlp_width: [128, 128, 128, 128, 128, 128]  
-      
+      radial_mlp_depth: [1, 1, 1, 1, 1, 1]
+      radial_mlp_width: [128, 128, 128, 128, 128, 128]
+
       seed: ${seed}
       type_names: ${model_type_names}
       model_dtype: float32
@@ -176,12 +176,12 @@ training_module:
 
       r_max: ${cutoff_radius}
 
-      num_bessels: 8 
+      num_bessels: 8
       bessel_trainable: true
-      polynomial_cutoff_p: 5 
-      
+      polynomial_cutoff_p: 5
+
       per_type_energy_shifts: ${per_type_energy_shifts}
-      per_type_energy_shifts_trainable: false 
+      per_type_energy_shifts_trainable: false
       per_type_energy_scales: ${per_type_energy_scales}
       per_type_energy_scales_trainable: true
       avg_num_neighbors: ${num_neighbours_mean}  # 62, for R = 6 Å

@@ -3,10 +3,10 @@ run: [val, train] # val first to get validation metrics
 
 E_coeff: 1
 F_coeff: 5
-S_coeff: 0.1 
+S_coeff: 0.1
 S_Huber_delta: 0.1
 
-seed: 1 
+seed: 1
 cutoff_radius: 6
 monitored_metric: val0_epoch/weighted_sum
 
@@ -40,7 +40,7 @@ data:
     _target_: torch.utils.data.DataLoader
     batch_size: ${data.train_dataloader.batch_size}  # same batch size
     num_workers: ${data.train_dataloader.num_workers}  # same num_workers
- 
+
     #  stats_manager:  # data stats not needed now, skip for speed
     #    _target_: nequip.data.CommonDataStatisticsManager
     #    dataloader_kwargs:
@@ -73,7 +73,7 @@ trainer:
     - _target_: lightning.pytorch.callbacks.EarlyStopping
       verbose: true
       log_rank_zero_only: true
-      monitor: ${monitored_metric} 
+      monitor: ${monitored_metric}
       min_delta: 1e-5                         # how much to be considered a "change"
       patience: 200                           # how many instances of "no change" before stopping
 
@@ -84,7 +84,7 @@ trainer:
       frequency: 1
       interval: epoch
 
-  logger: 
+  logger:
     _target_: lightning.pytorch.loggers.wandb.WandbLogger
     save_dir: ${hydra:runtime.output_dir}
     project: Allegro_MPTrj
@@ -104,7 +104,7 @@ training_module:
           field: total_energy
         coeff: ${E_coeff}
         metric:
-          _target_: nequip.train.HuberLoss  
+          _target_: nequip.train.HuberLoss
           delta: 0.01
       - name: force_strat_E_huber
         field: forces
@@ -118,7 +118,7 @@ training_module:
             300: 0.001
       - name: stress_E_Huber
         field: stress
-        coeff: ${S_coeff} 
+        coeff: ${S_coeff}
         metric:
           _target_: nequip.train.HuberLoss
           delta: ${S_Huber_delta}
@@ -139,7 +139,7 @@ training_module:
     _target_: torch.optim.AdamW
     lr: 0.01
     weight_decay: 1e-3
-    amsgrad: false 
+    amsgrad: false
 
   lr_scheduler:
     scheduler:
@@ -148,7 +148,7 @@ training_module:
       patience: 250
       #threshold: 1e-4  # default
       min_lr: 1e-6
-    monitor: ${monitored_metric} 
+    monitor: ${monitored_metric}
     interval: epoch
     frequency: 1
 
@@ -158,16 +158,16 @@ training_module:
       - modifier: enable_CuEquivarianceContracter
     model:
       _target_: allegro.model.allegro_models.AllegroModel
-      compile_mode: compile 
+      compile_mode: compile
 
       num_scalar_features: 256
       num_tensor_features: 96
       tp_path_channel_coupling: true
-      
+
       allegro_mlp_hidden_layers_depth: 3
       allegro_mlp_hidden_layers_width: 1024
       readout_mlp_hidden_layers_depth: 1
-      readout_mlp_hidden_layers_width: 128 
+      readout_mlp_hidden_layers_width: 128
 
       seed: ${seed}
       type_names: ${model_type_names}
@@ -176,21 +176,21 @@ training_module:
 
       r_max: ${cutoff_radius}
 
-      num_layers: 5 
-      l_max: 3 
-      parity: false  
+      num_layers: 5
+      l_max: 3
+      parity: false
 
       radial_chemical_embed:  # radial network basis
         _target_: allegro.nn.TwoBodyBesselScalarEmbed
-        num_bessels: 12 
+        num_bessels: 12
         bessel_trainable: true
-        polynomial_cutoff_p: 8  
-      
+        polynomial_cutoff_p: 8
+
       radial_chemical_embed_dim: 512
       scalar_embed_mlp_hidden_layers_width: 512
 
       per_type_energy_shifts: ${per_type_energy_shifts}
-      per_type_energy_shifts_trainable: false 
+      per_type_energy_shifts_trainable: false
       per_type_energy_scales: ${per_type_energy_scales}
       per_type_energy_scales_trainable: true
       avg_num_neighbors: ${num_neighbours_mean_squared}
@@ -382,4 +382,3 @@ per_type_energy_scales:  # MPTrj per-type forces RMS sqrt
 
 chemical_symbols: ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu']
 model_type_names: ${chemical_symbols}
-

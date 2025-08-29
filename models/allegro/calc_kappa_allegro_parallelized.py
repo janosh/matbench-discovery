@@ -6,25 +6,27 @@ Templated from https://github.com/janosh/matbench-discovery/blob/main/models/mac
 """
 # uses matbench-discovery matbench-discovery commit ID 012ccfe, k_srme commit ID 0269a946, pymatviz v0.15.1
 
+import contextlib
 import json
-from glob import glob
 import os
 import traceback
 import warnings
-import contextlib
+from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
+from glob import glob
 from importlib.metadata import version
-from typing import TYPE_CHECKING, Any, Literal, Callable
+from typing import Any, Literal
 
 import ase.io
+import ase.optimize as opt
 import pandas as pd
 import torch
 from ase import Atoms
 from ase.constraints import FixSymmetry
 from ase.filters import ExpCellFilter, FrechetCellFilter
-import ase.optimize as opt
 from nequip.ase import NequIPCalculator
+from pymatgen.core.structure import Structure
 from pymatviz.enums import Key
 from tqdm import tqdm
 
@@ -32,24 +34,18 @@ from matbench_discovery import today
 from matbench_discovery.data import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
-from pymatgen.core.structure import Structure
-
-if TYPE_CHECKING:
-    from ase.filters import Filter
-    from ase.optimize.optimize import Optimizer
 
 with contextlib.suppress(ImportError):
-# OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use in ASE calculators, if model was compiled with these accelerations
-# (see NequIP/Allegro docs), so here we try to import them in case models were compiled with these settings
-    import openequivariance  # suppress import error for CPU, will crash later anyway if trying to run an Oeq model with CPU
-    import cuequivariance_torch
+    # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use in ASE calculators, if model was compiled with these accelerations
+    # (see NequIP/Allegro docs), so here we try to import them in case models were compiled with these settings
+    pass
 
 module_dir = os.path.dirname(__file__)
 compile_path = "*.nequip.pt2"
 model_name = "allegro-0"
 
 # Relaxation parameters
-ase_optimizer = "FIRE" 
+ase_optimizer = "FIRE"
 ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
 max_steps = 300
 fmax = 1e-4  # Run until the forces are smaller than this in eV/A
@@ -68,15 +64,19 @@ ignore_imaginary_freqs = True
 slurm_nodes = int(os.getenv("SLURM_NNODES", 1))
 slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", 1))
 slurm_array_task_count = int(os.getenv("NGPUS", slurm_nodes * slurm_tasks_per_node))
-slurm_array_task_id = int(os.getenv("TASK_ID", os.getenv("SLURM_ARRAY_TASK_ID", os.getenv("SLURM_PROCID", "0"))))
+slurm_array_task_id = int(
+    os.getenv(
+        "TASK_ID", os.getenv("SLURM_ARRAY_TASK_ID", os.getenv("SLURM_PROCID", "0"))
+    )
+)
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", os.getenv("SLURM_JOBID", "debug"))
 
 # Note that we can also manually override some slurm IDs here if we need to rerun just a single subset that failed
 # on a previous eval run, for any reason, setting job_id to 0, task_id to the failed task, and task_count to match
 # whatever the previous task count was (to ensure the same data splitting):
-#slurm_array_job_id = 0
-#slurm_array_task_id = 104
-#slurm_array_task_count = 128
+# slurm_array_job_id = 0
+# slurm_array_task_id = 104
+# slurm_array_task_count = 128
 
 matching_files = glob(f"{compile_path}")
 if len(matching_files) == 1:
@@ -85,6 +85,7 @@ elif os.path.exists(f"{compile_path}"):
     compiled_model_file = f"{compile_path}"
 else:
     raise FileNotFoundError(f"No compiled model file was not found at {compile_path}!")
+
 
 def calc_kappa_for_structure(
     *,  # force keyword-only arguments
@@ -242,7 +243,9 @@ def calc_kappa_for_structure(
             )
             ph3.produce_fc3(symmetrize_fc3r=True)
         else:
-            warnings.warn(f"Imaginary frequencies calculated for {mat_id}, skipping FC3 and LTC calculation!")
+            warnings.warn(
+                f"Imaginary frequencies calculated for {mat_id}, skipping FC3 and LTC calculation!"
+            )
             fc3_set = []
 
         force_results = (
@@ -283,9 +286,13 @@ timestamp = f"{datetime.now().astimezone():%Y-%m-%d@%H-%M-%S}"
 print(f"\nJob {job_name} with {model_name} started {timestamp}")
 
 atoms_list = ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":")
-atoms_list = sorted(atoms_list, key=len)  # sort by size to get roughly even distribution of comp cost across GPUs
+atoms_list = sorted(
+    atoms_list, key=len
+)  # sort by size to get roughly even distribution of comp cost across GPUs
 if slurm_array_task_count > 1:
-    atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]  # even distribution of rough comp cost, based on size
+    atoms_list = atoms_list[
+        slurm_array_task_id::slurm_array_task_count
+    ]  # even distribution of rough comp cost, based on size
 
 # Save run parameters
 remote_params = dict(
@@ -318,7 +325,9 @@ kappa_results: dict[str, dict[str, Any]] = {}
 force_results: dict[str, dict[str, Any]] = {}
 
 for idx, atoms in enumerate(tqdm(atoms_list, desc="Calculating kappa...")):
-    mat_id, result_dict, force_dict = calc_kappa_for_structure(atoms=atoms, **remote_params, task_id=idx)
+    mat_id, result_dict, force_dict = calc_kappa_for_structure(
+        atoms=atoms, **remote_params, task_id=idx
+    )
     kappa_results[mat_id] = result_dict
     if force_dict is not None:
         force_results[mat_id] = force_dict
@@ -332,6 +341,8 @@ for idx, atoms in enumerate(tqdm(atoms_list, desc="Calculating kappa...")):
         df_force = pd.DataFrame(force_results).T
         df_force = pd.concat([df_kappa, df_force], axis=1)
         df_force.index.name = Key.mat_id
-        df_force.reset_index().to_json(f"{out_dir}/{slurm_array_task_id}_force-sets.json.gz")
+        df_force.reset_index().to_json(
+            f"{out_dir}/{slurm_array_task_id}_force-sets.json.gz"
+        )
 
 print(f"\nResults saved to {out_dir!r}")
