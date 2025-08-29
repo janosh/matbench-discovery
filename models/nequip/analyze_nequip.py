@@ -6,8 +6,6 @@ MACE analysis script from Janosh.
 # uses matbench-discovery matbench-discovery commit ID 012ccfe,
 # k_srme commit ID 0269a946, pymatviz v0.15.1
 
-
-# %%
 import os
 
 import pandas as pd
@@ -41,13 +39,11 @@ df_nequip[Key.spg_num] = (
 )
 
 
-# %%
 fig = pmv.density_scatter_plotly(df=df_nequip, x=MbdKey.e_form_dft, y=e_form_nequip_col)
 fig.layout.title = f"{len(df_nequip):,} Nequipsevere energy underpredictions"
 pmv.save_fig(fig, "nequip-hull-dist-scatter.png")
 
 
-# %%
 df_low = df_nequip.query(f"{MbdKey.e_form_dft} - {e_form_nequip_col} > 2")
 
 fig = pmv.density_scatter_plotly(df=df_low, x=MbdKey.e_form_dft, y=e_form_nequip_col)
@@ -55,7 +51,6 @@ fig.layout.title = f"{len(df_low):,} Nequip severe energy underpredictions"
 pmv.save_fig(fig, "nequip-too-low-hull-dist-scatter.png")
 
 
-# %%
 fig = pmv.ptable_heatmap_plotly(df_low[Key.formula])
 title = f"Elements in {len(df_low):,} Nequip severe energy underpredictions"
 fig.layout.title.update(text=title, x=0.4, y=0.95)
@@ -64,7 +59,6 @@ fig.show()
 pmv.save_fig(fig, "nequip-too-low-elements-heatmap.png")
 
 
-# %%
 fig = pmv.spacegroup_sunburst(df_low[Key.spg_num], title="Nequip spacegroups")
 title = f"Spacegroup sunburst of {len(df_low):,} Nequip severe energy underpredictions"
 fig.layout.title.update(text=title, x=0.5)
@@ -73,7 +67,6 @@ fig.show()
 pmv.save_fig(fig, "nequip-too-low-spacegroup-sunburst.png")
 
 
-# %%
 bad_mask = (df_nequip[e_form_nequip_col] - df_nequip[MbdKey.e_form_dft]) < -5
 print(f"{sum(bad_mask)=}")
 
@@ -88,7 +81,6 @@ fig.show()
 pmv.save_fig(fig, f"{SITE_FIGS}/nequip-wbm-IS2RE-e-form-parity.png")
 
 
-# %%
 print(df_nequip.columns)
 fig = pmv.density_scatter_plotly(
     df_nequip[~bad_mask], x="uncorrected_energy", y="nequip_energy", log_density=log
