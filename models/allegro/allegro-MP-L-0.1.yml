@@ -103,9 +103,10 @@ notes: # notes can have any key, be multiline and support markdown.
 metrics:
   phonons:
     kappa_103:
-      k_SRME: 0.45
       pred_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-kappa-103-FIRE-dist_0_03-fmax_0_0001-symprec_1e-05.json.gz
-      pred_file_url: https://figshare.com/files/57498649
+      pred_file_url: https://figshare.com/files/57576301
+      κ_SRME: 0.5039
+      κ_SRE: 0.2309
   geo_opt:
     pred_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-wbm-IS2RE-GOQN.jsonl.gz
     pred_file_url: https://figshare.com/files/57498655
@@ -130,7 +131,7 @@ metrics:
       analysis_file_url:
   discovery:
     pred_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/57498652
+    pred_file_url: https://figshare.com/files/57575095
     pred_col: e_form_per_atom_nequip # same for NequIP/Allegro
     full_test_set:
       F1: 0.742 # fraction

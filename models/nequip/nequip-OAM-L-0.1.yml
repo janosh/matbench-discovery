@@ -99,9 +99,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      k_SRME: 0.169
       pred_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05.json.gz
       pred_file_url: https://figshare.com/files/57475504
+      κ_SRME: 0.1657
+      κ_SRE: 0.0812
   geo_opt:
     pred_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-wbm-IS2RE-GOQN.jsonl.gz
     pred_file_url: https://figshare.com/files/57475498
@@ -114,7 +115,7 @@ metrics:
       symmetry_increase: 0.2018 # fraction
       n_structures: 256963 # count
       analysis_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
-      analysis_file_url:
+      analysis_file_url: https://figshare.com/files/57576145
     symprec=1e-2:
       rmsd: 0.0647 # unitless
       n_sym_ops_mae: 1.7483 # unitless
@@ -123,10 +124,10 @@ metrics:
       symmetry_increase: 0.1226 # fraction
       n_structures: 256963 # count
       analysis_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
-      analysis_file_url:
+      analysis_file_url: https://figshare.com/files/57576151
   discovery:
     pred_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/57475501
+    pred_file_url: https://figshare.com/files/57574462
     pred_col: e_form_per_atom_nequip # same for NequIP/Allegro
     full_test_set:
       F1: 0.87 # fraction

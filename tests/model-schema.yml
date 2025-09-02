@@ -65,13 +65,15 @@ definitions:
         type: object
         additionalProperties: false
         properties:
-          κ_SRME:
-            type: number
           pred_file:
             type: [string, 'null']
           pred_file_url:
             type: [string, 'null']
             $ref: '#/definitions/http_url'
+          κ_SRME:
+            type: number
+          κ_SRE:
+            type: number
         allOf:
           - if:
               properties:

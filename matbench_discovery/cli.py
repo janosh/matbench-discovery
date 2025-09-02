@@ -42,6 +42,12 @@ cli_parser.add_argument(
     action="store_true",
     help="Print what would be done without actually doing it.",
 )
+cli_parser.add_argument(
+    "--timeout",
+    type=int,
+    default=30,
+    help="Timeout in seconds for HTTP requests (default: 30).",
+)
 
 plot_group = cli_parser.add_argument_group(
     "plot", "Arguments for controlling figure generation"
