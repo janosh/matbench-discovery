@@ -37,7 +37,6 @@ def join_predictions(
     e_form_fairchem_col = f"e_form_per_atom_{model_name}"
     struct_col = f"{model_name}_structure"
 
-    # glob_pattern = f"{model_name}*.json.gz"
     glob_pattern = f"{model_name}*.json.gz"
 
     file_paths = sorted(glob(f"{input_path}/{glob_pattern}"))
@@ -63,7 +62,7 @@ def join_predictions(
         compression="gzip",
     ).set_index(Key.mat_id)  # 开源结果
 
-    # 合并df_fairchem_ori中的pred_energy到df_fairchem，根据mat_id匹配
+    # 合并df_fairchem_ori中的pred_energy到df_fairchem,根据mat_id匹配
     df_fairchem = df_fairchem.merge(
         df_fairchem_ori[["eqV2-31M-dens-MP-p5_energy"]],
         left_index=True,
@@ -71,7 +70,7 @@ def join_predictions(
     )
 
     wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-    df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+    df_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
     computed_structure_entry_key = "computed_structure_entry"  # added by fywang
     df_cse[computed_structure_entry_key] = [
