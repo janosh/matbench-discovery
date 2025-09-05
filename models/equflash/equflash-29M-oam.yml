@@ -4,7 +4,12 @@ model_version: v2025.06.23
 date_added: '2025-06-23'
 date_published: '2025-06-23'
 pr_url: https://github.com/janosh/matbench-discovery/pull/269
-
+repo: TBD
+doi: TBD
+paper: TBD
+checkpoint_url: TBD
+requirements: TBD
+license: unreleased
 authors:
   - name: Hyuntae Cho
     affiliation: Materials AI Lab at Samsung Electronics
