@@ -109,7 +109,7 @@ metrics:
       κ_SRE: 0.2309
   geo_opt:
     pred_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-wbm-IS2RE-GOQN.jsonl.gz
-    pred_file_url: https://figshare.com/files/57498655
+    pred_file_url: https://figshare.com/files/57731014
     struct_col: nequip_structure # same for NequIP/Allegro
     symprec=1e-5:
       rmsd: 0.0816 # unitless
@@ -119,7 +119,7 @@ metrics:
       symmetry_increase: 0.2015 # fraction
       n_structures: 256963 # count
       analysis_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
-      analysis_file_url:
+      analysis_file_url: https://figshare.com/files/57731050
     symprec=1e-2:
       rmsd: 0.0816 # unitless
       n_sym_ops_mae: 1.7918 # unitless
@@ -128,7 +128,7 @@ metrics:
       symmetry_increase: 0.123 # fraction
       n_structures: 256963 # count
       analysis_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
-      analysis_file_url:
+      analysis_file_url: https://figshare.com/files/57731053
   discovery:
     pred_file: models/allegro/Allegro-MP-L-0.1/Allegro-MP-L-0.1-2025-08-27-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/57575095

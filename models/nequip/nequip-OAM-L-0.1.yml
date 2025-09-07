@@ -105,7 +105,7 @@ metrics:
       κ_SRE: 0.0812
   geo_opt:
     pred_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-wbm-IS2RE-GOQN.jsonl.gz
-    pred_file_url: https://figshare.com/files/57475498
+    pred_file_url: https://figshare.com/files/57731005
     struct_col: nequip_structure # same for NequIP/Allegro
     symprec=1e-5:
       rmsd: 0.0647 # unitless
@@ -115,7 +115,7 @@ metrics:
       symmetry_increase: 0.2018 # fraction
       n_structures: 256963 # count
       analysis_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
-      analysis_file_url: https://figshare.com/files/57576145
+      analysis_file_url: https://figshare.com/files/57731032
     symprec=1e-2:
       rmsd: 0.0647 # unitless
       n_sym_ops_mae: 1.7483 # unitless
@@ -124,7 +124,7 @@ metrics:
       symmetry_increase: 0.1226 # fraction
       n_structures: 256963 # count
       analysis_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
-      analysis_file_url: https://figshare.com/files/57576151
+      analysis_file_url: https://figshare.com/files/57731035
   discovery:
     pred_file: models/nequip/nequip-OAM-L-0.1/2025-08-27-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/57574462
