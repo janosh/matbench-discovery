@@ -36,7 +36,7 @@ repo: https://github.com/mir-group/allegro
 url: https://allegro.readthedocs.io/en/latest/
 doi: https://doi.org/10.5281/zenodo.16980200
 paper: https://arxiv.org/abs/2504.16068 # To be updated...
-checkpoint_url: https://www.allegro.net/models/mir-group/Allegro-OAM-L:0.1
+checkpoint_url: https://www.nequip.net/models/mir-group/Allegro-OAM-L:0.1
 pr_url: https://github.com/janosh/matbench-discovery/pull/282
 
 openness: OSOD # see `Open` enum in matbench_discovery/enums.py
