@@ -345,9 +345,6 @@ def main(raw_args: Sequence[str] | None = None) -> int:
 
     args, _unknown = cli_parser.parse_known_args(raw_args)
 
-    # Apply timeout to Figshare helper (from central CLI parser)
-    figshare.set_timeout(float(args.timeout))
-
     # Process exclusion prefixes for tasks
     all_tasks = list(modeling_tasks)
     args.tasks = process_exclusion_prefixes(args.tasks, all_tasks)

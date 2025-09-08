@@ -302,8 +302,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
     # FAIR-Chem
-    eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
-    eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
+    eqv2_s_dens_mp = auto(), "eqV2/eqV2-s-dens-mp.yml"
+    eqv2_m_omat_salex_mp = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
     esen_30m_mp = auto(), "eSEN/eSEN-30m-mp.yml"
     esen_30m_oam = auto(), "eSEN/eSEN-30m-oam.yml"
 
@@ -334,7 +334,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # MatRIS-v0.5.0-MPtrj
     matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
 
-    # MatterSim - M3gNet architecture trained on propertary MSFT data. Weights
+    # MatterSim - M3gNet architecture trained on proprietary MSFT data. Weights
     # are open-sourced.
     mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5M.yml"
 
@@ -477,6 +477,21 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def is_complete(self) -> bool:
         """Check if model has all required metrics."""
         return self.metadata.get("status", "complete") == "complete"
+
+    @classmethod
+    def _missing_(cls, value: str) -> Self | None:
+        """Normalizing casing and dashes before matching enum values.
+        If no match is found, return None.
+
+        This allows CLI arguments like --models mace-mp-0 to be recognized as mace_mp_0.
+        """
+        if isinstance(value, str):  # convert dashes to underscores and case fold
+            converted_value = value.replace("-", "_").casefold()
+
+            if converted_value in cls._value2member_map_:
+                return cls._value2member_map_[converted_value]
+
+        return None
 
 
 class DataFiles(Files):

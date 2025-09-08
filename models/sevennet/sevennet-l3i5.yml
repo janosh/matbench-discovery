@@ -92,7 +92,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52134881
   geo_opt:
     pred_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062056
+    pred_file_url: https://figshare.com/files/57753580
     struct_col: sevennet_structure
     symprec=1e-5:
       rmsd: 0.0847 # unitless

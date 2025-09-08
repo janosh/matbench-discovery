@@ -96,7 +96,7 @@ metrics:
       pred_file_url: https://figshare.com/files/53090600
   geo_opt:
     pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53000177
+    pred_file_url: https://figshare.com/files/57751045
     struct_col: matris_structure
     symprec=1e-5:
       rmsd: 0.0773 # unitless
