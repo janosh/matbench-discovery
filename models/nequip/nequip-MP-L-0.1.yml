@@ -92,7 +92,7 @@ requirements: # strongly recommended
 training_set: [MPtrj]
 
 notes:
-  description: Large 'compliant' NequIP foundation potential; see https://www.nequip.net/models/mir-group/NequIP-MP-L:0.1 for details and https://arxiv.org/abs/2504.16068 for model/training infrastructure.
+  description: Large 'compliant' NequIP foundation potential; see <https://www.nequip.net/models/mir-group/NequIP-MP-L:0.1> for details and <https://arxiv.org/abs/2504.16068> for model/training infrastructure.
   steps: |
     Single training run on MPtrj with specified parameters.
 

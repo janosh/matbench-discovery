@@ -96,7 +96,7 @@ requirements: # strongly recommended
 training_set: [OMat24, sAlex, MPtrj]
 
 notes: # notes can have any key, be multiline and support markdown.
-  description: Large Allegro foundation potential; see https://www.nequip.net/models/mir-group/Allegro-OAM-L:0.1 for details and https://arxiv.org/abs/2504.16068 for model/training infrastructure.
+  description: Large Allegro foundation potential; see <https://www.nequip.net/models/mir-group/Allegro-OAM-L:0.1> for details and <https://arxiv.org/abs/2504.16068> for model/training infrastructure.
   steps: |
     Training performed by: (1) pre-training on OMat24; (2) fine-tuning on MPtrj+sAlex, with a reduced learning rate (1e-4), energy-loss-upweighting (1:1:0.01 instead of 1:5:0.01) and `StochasticWeightAveraging` (SWA).
 
