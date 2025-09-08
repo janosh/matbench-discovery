@@ -20,7 +20,7 @@ repos:
         name: ty check
         entry: ty check
         language: python
-        additional_dependencies: [ty, ase, pymatgen, pymatviz]
+        additional_dependencies: [ty, ase, pymatgen]
         args: [--output-format, concise, --ignore, unresolved-import]
 
   - repo: https://github.com/janosh/format-ipy-cells
