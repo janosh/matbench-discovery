@@ -84,7 +84,7 @@ requirements:
 training_set: [MPtrj]
 training_cost: missing
 
-notes: # notes can have any key, be multiline and support markdown.
+notes:
   description: |
     MatRIS is a foundation model for materials representation and interaction simulation.
 

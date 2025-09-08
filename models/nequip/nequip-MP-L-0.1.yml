@@ -54,7 +54,7 @@ license:
   checkpoint: CC-BY-4.0
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
-hyperparams: # strongly recommended to list relaxation hyperparams
+hyperparams:
   max_force: 0.05
   max_steps: 500
   ase_optimizer: GOQN # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
@@ -82,10 +82,10 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   epochs: 300
   max_neighbors: .inf
 
-training_cost: # list any hardware used to train the model and for how long
+training_cost:
   Nvidia H100 GPUs: { amount: 4, hours: 72, cost: 288 }
 
-requirements: # strongly recommended
+requirements:
   torch: '2'
   nequip: 0.7.0 # >=0.14.0 recommended
 

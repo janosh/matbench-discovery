@@ -96,7 +96,7 @@ training_set: [MPtrj]
 training_cost:
   Nvidia A100 GPUs: { amount: 4, hours: 500 }
 
-notes: # notes can have any key, be multiline and support markdown.
+notes:
   description: |
     eqnorm is a graph neural network model designed for predicting the energy, forces, and stresses of materials.
     The model utilizes a combination of invariant and equivariant layers to effectively capture the symmetries present in material structures.

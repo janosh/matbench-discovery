@@ -52,10 +52,9 @@ license:
   code: MIT
   code_url: https://github.com/mir-group/nequip/blob/main/LICENSE
   checkpoint: CC-BY-4.0
-  # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
-  checkpoint_url: https://url.of/model-checkpoint-license # TODO: Zenodo? / Nequip.net
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
-hyperparams: # strongly recommended to list relaxation hyperparams
+hyperparams:
   max_force: 0.05
   max_steps: 500
   ase_optimizer: GOQN # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
@@ -85,17 +84,17 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   epochs: 15
   max_neighbors: .inf
 
-training_cost: # list any hardware used to train the model and for how long
+training_cost:
   Nvidia H100 GPUs: { amount: 12, hours: 100, cost: 1200 }
 
-requirements: # strongly recommended
+requirements:
   torch: '2'
   nequip: 0.7.0 # >=0.14.0 recommended
   allegro: 0.5.0 # >=0.7.1 recommended
 
 training_set: [OMat24, sAlex, MPtrj]
 
-notes: # notes can have any key, be multiline and support markdown.
+notes:
   description: Large Allegro foundation potential; see <https://www.nequip.net/models/mir-group/Allegro-OAM-L:0.1> for details and <https://arxiv.org/abs/2504.16068> for model/training infrastructure.
   steps: |
     Training performed by: (1) pre-training on OMat24; (2) fine-tuning on MPtrj+sAlex, with a reduced learning rate (1e-4), energy-loss-upweighting (1:1:0.01 instead of 1:5:0.01) and `StochasticWeightAveraging` (SWA).
