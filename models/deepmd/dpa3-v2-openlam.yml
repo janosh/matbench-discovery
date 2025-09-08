@@ -113,7 +113,7 @@ metrics:
   geo_opt:
     pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt.jsonl.gz
     struct_col: dp_structure
-    pred_file_url: https://figshare.com/files/53018852
+    pred_file_url: https://figshare.com/files/53153465
     symprec=1e-5:
       rmsd: 0.0679 # unitless
       n_sym_ops_mae: 2.1607 # unitless

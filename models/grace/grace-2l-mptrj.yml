@@ -67,7 +67,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52134896
   geo_opt:
     pred_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062590
+    pred_file_url: https://figshare.com/files/53153483
     struct_col: grace2l_r6_structure
     symprec=1e-5:
       rmsd: 0.0897 # unitless

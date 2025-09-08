@@ -1,0 +1,185 @@
+model_name: Nequip-MP-L # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
+model_key: nequip-MP-L-0.1 # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
+model_version: '0.1'
+date_added: '2025-09-08'
+date_published: '2025-08-28'
+authors:
+  - name: Seán R. Kavanagh
+    affiliation: Center for the Environment, Harvard University & MIR Group, Harvard University
+    email: skavanagh@seas.harvard.edu
+    orcid: https://orcid.org/0000-0003-4577-9647
+    url: https://seankavanagh.com
+    corresponding: true
+  - name: Chuin Wei Tan
+    affiliation: MIR Group, Harvard University
+  - name: Albert Musaelian
+    affiliation: MIR Group, Harvard University & Mirian Technologies
+  - name: William C. Witt
+    affiliation: MIR Group, Harvard University
+  - name: Gabriel de Miranda Nascimento
+    affiliation: MIR Group, Harvard University & MIT
+  - name: Ulrik Unneberg
+    affiliation: MIR Group, Harvard University & MIT
+  - name: Marc L. Descoteaux
+    affiliation: MIR Group, Harvard University
+  - name: Boris Kozinsky
+    affiliation: MIR Group, Harvard University
+trained_by:
+  - name: Seán R. Kavanagh
+    affiliation: Center for the Environment, Harvard University & MIR Group, Harvard University
+    email: skavanagh@seas.harvard.edu
+    orcid: https://orcid.org/0000-0003-4577-9647
+    url: https://seankavanagh.com
+    corresponding: true
+
+repo: https://github.com/mir-group/nequip
+url: https://nequip.readthedocs.io/en/latest/
+doi: https://doi.org/10.5281/zenodo.16980200
+paper: https://arxiv.org/abs/2504.16068 # To be updated...
+checkpoint_url: https://www.nequip.net/models/mir-group/NequIP-MP-L:0.1
+pr_url: https://github.com/janosh/matbench-discovery/pull/282
+
+openness: OSOD # see `Open` enum in matbench_discovery/enums.py
+train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
+test_task: IS2RE-SR # see `Task` enum in matbench_discovery/enums.py
+targets: EFS_G # see `Targets` enum in matbench_discovery/enums.py
+model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
+model_params: 9_600_000
+trained_for_benchmark: true
+n_estimators: 1
+
+license:
+  code: MIT
+  code_url: https://github.com/mir-group/nequip/blob/main/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+hyperparams:
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: GOQN # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
+  cell_filter: FrechetCellFilter
+  optimizer: AdamW
+  weight_decay: 1e-3
+  graph_construction_radius: 6.0
+  sph_harmonics_l_max: 3
+  n_layers: 6
+  n_features: 128 (l=0 scalars), 64 (l=1 vectors), 32 (l=2,3 tensors)
+  parity: false
+  zbl_potential: true
+  type_embed_num_features: 48
+  polynomial_cutoff: 5
+  n_radial_bessel_basis: 8
+  loss: Huber - delta=0.01 for energy, delta=0.1 for stress, stratified delta (0.01, 0.007, 0.004, 0.001) for force
+  loss_weights:
+    energy: 1.0
+    force: 5.0
+    stress: 0.01
+  batch_size: 640 # 4 (gpus) * 160 (batch per gpu) = 640 (total batch size)
+  initial_learning_rate: 0.02
+  gradient_clip_val: 0.01
+  learning_rate_schedule: ReduceLROnPlateau - factor=0.1, patience=100, min_lr=1e-6
+  epochs: 300
+  max_neighbors: .inf
+
+training_cost:
+  Nvidia H100 GPUs: { amount: 4, hours: 72, cost: 288 }
+
+requirements:
+  torch: '2'
+  nequip: 0.7.0 # >=0.14.0 recommended
+
+training_set: [MPtrj]
+
+notes:
+  Description: Large 'compliant' NequIP foundation potential; see <https://www.nequip.net/models/mir-group/NequIP-MP-L:0.1> for details and <https://arxiv.org/abs/2504.16068> for model/training infrastructure.
+  Steps: |
+    Single training run on MPtrj with specified parameters.
+
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/nequip/nequip-MP-L-0.1/2025-08-27-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05.json.gz
+      pred_file_url: https://figshare.com/files/57576187
+      κ_SRME: 0.4517
+      κ_SRE: 0.3065
+  geo_opt:
+    pred_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE-GOQN.jsonl.gz
+    pred_file_url: https://figshare.com/files/57731008
+    struct_col: nequip_structure # same for NequIP/Allegro
+    symprec=1e-2:
+      rmsd: 0.0856 # unitless
+      n_sym_ops_mae: 1.8175 # unitless
+      symmetry_decrease: 0.0592 # fraction
+      symmetry_match: 0.8109 # fraction
+      symmetry_increase: 0.1227 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
+      analysis_file_url: https://figshare.com/files/57731038
+    symprec=1e-5:
+      rmsd: 0.0856 # unitless
+      n_sym_ops_mae: 1.9003 # unitless
+      symmetry_decrease: 0.0788 # fraction
+      symmetry_match: 0.7163 # fraction
+      symmetry_increase: 0.1982 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
+      analysis_file_url: https://figshare.com/files/57731041
+  discovery:
+    pred_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/57574483
+    pred_col: e_form_per_atom_nequip # same for NequIP/Allegro
+    full_test_set:
+      F1: 0.752 # fraction
+      DAF: 4.136 # dimensionless
+      Precision: 0.71 # fraction
+      Recall: 0.8 # fraction
+      Accuracy: 0.909 # fraction
+      TPR: 0.8 # fraction
+      FPR: 0.068 # fraction
+      TNR: 0.932 # fraction
+      FNR: 0.2 # fraction
+      TP: 35263.0 # count
+      FP: 14430.0 # count
+      TN: 198441.0 # count
+      FN: 8829.0 # count
+      MAE: 0.041 # eV/atom
+      RMSE: 0.083 # eV/atom
+      R2: 0.787 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.761 # fraction
+      DAF: 4.704 # dimensionless
+      Precision: 0.719 # fraction
+      Recall: 0.809 # fraction
+      Accuracy: 0.921 # fraction
+      TPR: 0.809 # fraction
+      FPR: 0.058 # fraction
+      TNR: 0.942 # fraction
+      FNR: 0.191 # fraction
+      TP: 27002.0 # count
+      FP: 10546.0 # count
+      TN: 171568.0 # count
+      FN: 6372.0 # count
+      MAE: 0.043 # eV/atom
+      RMSE: 0.084 # eV/atom
+      R2: 0.791 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.957 # fraction
+      DAF: 6.0 # dimensionless
+      Precision: 0.917 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.917 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9172.0 # count
+      FP: 828.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.044 # eV/atom
+      RMSE: 0.096 # eV/atom
+      R2: 0.812 # dimensionless
+      missing_preds: 0 # count
