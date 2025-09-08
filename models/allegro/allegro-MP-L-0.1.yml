@@ -1,7 +1,7 @@
 model_name: Allegro-MP-L # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
 model_key: allegro-MP-L-0.1 # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
 model_version: '0.1'
-date_added: '2025-08-28'
+date_added: '2025-09-08'
 date_published: '2025-08-28'
 authors:
   - name: Seán R. Kavanagh
