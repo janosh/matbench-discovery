@@ -1,9 +1,7 @@
 <script lang="ts">
-  import { Icon, TableColumnToggleMenu } from '$lib'
+  import { Icon, type Label, TableColumnToggleMenu } from '$lib'
   import { tooltip } from 'svelte-multiselect/attachments'
-  import type { Label } from './types'
 
-  // Props for this component
   interface Props {
     show_energy_only?: boolean
     columns?: Label[]
@@ -16,8 +14,6 @@
     ) => void | undefined
     [key: string]: unknown
   }
-
-  // Extract props with defaults
   let {
     show_energy_only = $bindable(false),
     columns = $bindable([]),
@@ -27,18 +23,6 @@
     on_filter_change = undefined,
     ...rest
   }: Props = $props()
-
-  // Column panel state
-  let column_panel_open = $state(false)
-
-  function handle_energy_only_change(event: Event) {
-    const target = event.target as HTMLInputElement
-    const checked = target.checked
-
-    // Update both local state and call callback
-    show_energy_only = checked
-    on_filter_change?.(checked, false)
-  }
 </script>
 
 <div class="table-controls" {...rest}>
@@ -91,9 +75,14 @@
     <input
       type="checkbox"
       checked={show_energy_only}
-      onchange={handle_energy_only_change}
+      onchange={(event: Event) => {
+        const target = event.target as HTMLInputElement
+        // Update both local state and trigger callback (if passed)
+        show_energy_only = target.checked
+        on_filter_change?.(target.checked, false)
+      }}
     />
-    <span>Energy-only models</span>
+    Energy-only models
     <span
       title="Include models that only predict energy (no forces or stress)"
       {@attach tooltip()}
@@ -108,10 +97,10 @@
       bind:checked={show_heatmap}
       aria-label="Toggle heatmap colors"
     />
-    <span>Heatmap</span>
+    Heatmap
   </label>
 
-  <TableColumnToggleMenu bind:columns bind:column_panel_open />
+  <TableColumnToggleMenu bind:columns />
 </div>
 
 <style>

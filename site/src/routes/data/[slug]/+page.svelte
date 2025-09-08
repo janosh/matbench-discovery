@@ -11,7 +11,7 @@
   }
   let { data }: Props = $props()
   const { dataset } = data
-  const ext_link_props = { target: `_blank`, rel: `noopener noreferrer` }
+  const link_props = { target: `_blank`, rel: `noopener noreferrer` }
 
   let days_created = calculate_days_ago(dataset.date_created)
   let days_added = calculate_days_ago(dataset.date_added ?? ``)
@@ -34,69 +34,49 @@
 
 <section class="meta-info">
   {#if dataset.version}
-    <div>Version: {dataset.version}</div>
+    <span>Version: {dataset.version}</span>
   {/if}
 
-  <div>
-    <Icon icon="Calendar" />
-    Created: <span title="{days_created} days ago" {@attach tooltip()}>
-      {format_date(dataset.date_created)}
-    </span>
-  </div>
+  <span title="{days_created} days ago" {@attach tooltip()}>
+    <Icon icon="Calendar" /> Created: {format_date(dataset.date_created)}
+  </span>
 
   {#if dataset.date_added}
-    <div>
-      <Icon icon="CalendarPlus" />
-      Added: <span title="{days_added} days ago" {@attach tooltip()}>
-        {format_date(dataset.date_added)}
-      </span>
-    </div>
+    <span title="{days_added} days ago" {@attach tooltip()}>
+      <Icon icon="CalendarPlus" /> Added: {format_date(dataset.date_added)}
+    </span>
   {/if}
 
-  <div>
-    <Icon icon="Database" />
-    <span title={dataset.n_structures.toLocaleString()} {@attach tooltip()}>
-      {format_num(dataset.n_structures, `.3~s`)}
-    </span> structures
-  </div>
+  <span title={dataset.n_structures.toLocaleString()} {@attach tooltip()}>
+    <Icon icon="Database" /> {format_num(dataset.n_structures, `.3~s`)} structures
+  </span>
 
   {#if dataset.n_materials}
-    <div>
-      <Icon icon="Lattice" />
-      <span title={dataset.n_materials.toLocaleString()} {@attach tooltip()}>
-        {format_num(dataset.n_materials, `.3~s`)}
-      </span> materials
-    </div>
+    <span title={dataset.n_materials.toLocaleString()} {@attach tooltip()}>
+      <Icon icon="Lattice" /> {format_num(dataset.n_materials, `.3~s`)} materials
+    </span>
   {/if}
 
-  <div
+  <span
     title="The dataset is {dataset.open ? `freely ` : `in`}accessible"
     {@attach tooltip()}
   >
     <Icon icon={dataset.open ? `Unlock` : `Lock`} />
     {dataset.open ? `Open` : `Closed`}
-  </div>
+  </span>
 
-  <div>
-    <Icon icon="License" />
-    {dataset.license}
-  </div>
+  <span><Icon icon="License" /> {dataset.license}</span>
 </section>
 
 <section class="links">
-  <a
-    href={dataset.url}
-    {...ext_link_props}
-    title="View dataset website"
-    {@attach tooltip()}
-  >
+  <a href={dataset.url} {...link_props} title="View dataset website" {@attach tooltip()}>
     <Icon icon="Globe" /> Website
   </a>
 
   {#if dataset.download_url}
     <a
       href={dataset.download_url}
-      {...ext_link_props}
+      {...link_props}
       title="Download dataset"
       {@attach tooltip()}
     >
@@ -107,7 +87,7 @@
   {#if dataset.doi}
     <a
       href={dataset.doi}
-      {...ext_link_props}
+      {...link_props}
       title="Digital Object Identifier"
       {@attach tooltip()}
     >
@@ -117,7 +97,7 @@
 
   <a
     href="{pkg.repository}/blob/main/data/datasets.yml"
-    {...ext_link_props}
+    {...link_props}
     title="View source YAML file"
     {@attach tooltip()}
   >
@@ -197,16 +177,16 @@
             </a>
           {/if}
           {#if person.github}
-            <a href={person.github} {...ext_link_props} aria-label="GitHub">
+            <a href={person.github} {...link_props} aria-label="GitHub">
               <Icon icon="GitHub" />
             </a>
           {/if}
           {#if person.orcid}
-            <a href={person.orcid} {...ext_link_props} aria-label="ORCID">
+            <a href={person.orcid} {...link_props} aria-label="ORCID">
               <Icon icon="Orcid" />
             </a>{/if}
           {#if person.url}
-            <a href={person.url} {...ext_link_props} aria-label="Website">
+            <a href={person.url} {...link_props} aria-label="Website">
               <Icon icon="Globe" />
             </a>{/if}
         </li>
@@ -221,7 +201,7 @@
 
 <p>
   See incorrect or missing data? Suggest an edit to
-  <a href="{pkg.repository}/blob/-/data/datasets.yml" {...ext_link_props}>
+  <a href="{pkg.repository}/blob/-/data/datasets.yml" {...link_props}>
     datasets.yml
   </a>
 </p>
@@ -246,7 +226,7 @@
     list-style: none;
   }
   section.method-info ul li {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--nav-bg);
     padding: 2pt 6pt;
     border-radius: 3pt;
     text-align: center;
@@ -255,11 +235,10 @@
     max-width: 12em;
   }
   .links a {
-    gap: 5px;
-    padding: 2pt 6pt;
-    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0 5pt;
+    background-color: var(--nav-bg);
     border-radius: 5px;
-    color: lightgray;
+    color: var(--text-color);
   }
   .affiliation {
     color: gray;

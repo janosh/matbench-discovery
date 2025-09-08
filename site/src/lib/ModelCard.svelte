@@ -35,7 +35,7 @@
       : {}),
     CPS: model.CPS,
   })
-  let { missing_preds, missing_percent } = $derived(all_metrics)
+  let { missing_preds } = $derived(all_metrics)
 
   let links = $derived(
     [
@@ -48,15 +48,20 @@
   )
   const target = { target: `_blank`, rel: `noopener` }
   let n_model_params = $derived(format_num(model_params, `.3~s`))
+  let expand_title = $derived(
+    `${show_details ? `Hide` : `Show`} authors and package versions`,
+  )
 </script>
 
 <h2 style={title_style}>
   <a href="/models/{model_key}">{model_name}</a>
   <button
     onclick={() => (show_details = !show_details)}
-    title="{show_details ? `Hide` : `Show`} authors and package versions"
+    aria-expanded={show_details}
+    aria-label={expand_title}
+    title={expand_title}
+    style={title_style}
   >
-    <!-- change between expand/collapse icon -->
     <Icon icon="Arrow{show_details ? `Up` : `Down`}" />
   </button>
 </h2>
@@ -120,10 +125,15 @@
       </span>
     </span>
   {/if}
-  <span>
+  <span
+    {@attach tooltip()}
+    title="Out of {format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, {format_num(missing_preds ?? 0, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances."
+  >
     <Icon icon="MissingMetadata" /> Missing preds:
     {format_num(missing_preds ?? 0, `,.0f`)}
-    <small>({missing_percent})</small>
+    {#if missing_preds && missing_preds > 0}
+      <small>({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})</small>
+    {/if}
   </span>
 </section>
 {#if show_details}
@@ -148,7 +158,7 @@
       <h3>Package versions</h3>
       <ul>
         {#each Object.entries(model.requirements ?? {}) as [name, version] (name)}
-          {@const [href, link_text] = version.startsWith(`http`)
+          {@const [href, link_text] = version?.startsWith(`http`)
           // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
           ? [version, version.split(`/`).at(-1)]
           : [`https://pypi.org/project/${name}/${version}`, version]}
@@ -162,7 +172,7 @@
 {/if}
 
 <section class="metrics" style={metrics_style || null}>
-  <h3>Metrics</h3>
+  <h3 style="margin: 0; font-weight: normal">Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->
     {#each metrics as metric (JSON.stringify(metric))}
@@ -190,9 +200,6 @@
     background: none;
     padding: 0;
     font: inherit;
-  }
-  h3 {
-    margin: 0;
   }
   ul {
     list-style: disc;
@@ -242,12 +249,6 @@
   section.metrics > ul > li > :is(label, strong) {
     padding: 0 4pt;
     border-radius: 3pt;
-  }
-  section.metrics > ul > li > strong {
-    background-color: rgba(0, 0, 0, 0.25);
-  }
-  section.metrics > ul > li.active > strong {
-    background-color: teal;
   }
   section.metrics > ul > li.active > label {
     font-weight: bold;

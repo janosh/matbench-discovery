@@ -83,7 +83,6 @@ class MbdKey(LabelEnum):
 
     # keep in sync with model-schema.yml
     missing_preds = "missing_preds", "Missing predictions"
-    missing_percent = "missing_percent", "Missing predictions (percent)"
 
     aflow_prototype = "aflow_prototype", "Aflow prototype"
     canonical_proto = "canonical_proto", "Canonical prototype"
@@ -278,6 +277,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # see models/alignn_ff/readme.md
     # alignn_ff = auto(), "alignn/alignn-ff.yml"
 
+    # Allegro (NequIP arch)
+    allegro_oam_l_0_1 = auto(), "allegro/allegro-OAM-L-0.1.yml"
+    allegro_mp_l_0_1 = auto(), "allegro/allegro-MP-L-0.1.yml"
+
     # BOWSR optimizer coupled with original megnet
     bowsr_megnet = auto(), "bowsr/bowsr.yml"
 
@@ -299,8 +302,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
     # FAIR-Chem
-    eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
-    eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
+    eqv2_s_dens_mp = auto(), "eqV2/eqV2-s-dens-mp.yml"
+    eqv2_m_omat_salex_mp = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
     esen_30m_mp = auto(), "eSEN/eSEN-30m-mp.yml"
     esen_30m_oam = auto(), "eSEN/eSEN-30m-oam.yml"
 
@@ -334,12 +337,16 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # MatRIS-v0.5.0-MPtrj
     matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
 
-    # MatterSim - M3gNet architecture trained on propertary MSFT data. Weights
+    # MatterSim - M3gNet architecture trained on proprietary MSFT data. Weights
     # are open-sourced.
     mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5M.yml"
 
     # original MEGNet straight from publication, not re-trained
     megnet = auto(), "megnet/megnet.yml"
+
+    # NequIP
+    nequip_oam_l_0_1 = auto(), "nequip/nequip-OAM-L-0.1.yml"
+    nequip_mp_l_0_1 = auto(), "nequip/nequip-MP-L-0.1.yml"
 
     # ORB
     orb_v2 = auto(), "orb/orb-v2.yml"
@@ -374,7 +381,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def metadata(self) -> dict[str, Any]:
         """Metadata associated with the model."""
         yaml_path = f"{type(self).base_dir}/{self.rel_path}"
-        with open(yaml_path) as file:
+        with open(yaml_path, encoding="utf-8") as file:
             data = yaml.safe_load(file)
 
         if not isinstance(data, dict):
@@ -474,6 +481,21 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """Check if model has all required metrics."""
         return self.metadata.get("status", "complete") == "complete"
 
+    @classmethod
+    def _missing_(cls, value: str) -> Self | None:
+        """Normalizing casing and dashes before matching enum values.
+        If no match is found, return None.
+
+        This allows CLI arguments like --models mace-mp-0 to be recognized as mace_mp_0.
+        """
+        if isinstance(value, str):  # convert dashes to underscores and case fold
+            converted_value = value.replace("-", "_").casefold()
+
+            if converted_value in cls._value2member_map_:
+                return cls._value2member_map_[converted_value]
+
+        return None
+
 
 class DataFiles(Files):
     """Enum of data files with associated file directories and URLs."""
@@ -525,7 +547,7 @@ class DataFiles(Files):
         """YAML data associated with the file."""
         yaml_path = f"{PKG_DIR}/data-files.yml"
 
-        with open(yaml_path) as file:
+        with open(yaml_path, encoding="utf-8") as file:
             yaml_data = yaml.safe_load(file)
 
         if self.name not in yaml_data:

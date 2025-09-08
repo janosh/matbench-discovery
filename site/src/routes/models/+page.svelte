@@ -113,7 +113,7 @@
       {lower_is_better ? `best` : `worst`}
     </span>
     <ColorBar
-      title="Model names colored by {sort_by.label}"
+      title="Card titles colored by {sort_by.label}"
       title_style="font-size: 1.5em;"
       color_scale={lower_is_better ? (t) => interpolateRdBu(1 - t) : interpolateRdBu}
       style="min-width: min(70vw, 400px); height: 14pt"
@@ -181,10 +181,9 @@
   }
   ul > li button {
     transition: all 0.2s;
-    background-color: rgba(255, 255, 255, 0.1);
   }
   ul > li.active button {
-    background-color: darkcyan;
+    background-color: var(--btn-bg);
   }
   ol {
     display: grid;
@@ -192,7 +191,7 @@
     grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   }
   ol > li {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--blockquote-bg);
     padding: 6pt 10pt 14pt;
     border-radius: 3pt;
     display: grid;

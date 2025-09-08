@@ -101,7 +101,7 @@ run_params = dict(
 try:  # load checkpoint to get number of parameters
     runs[0].file("checkpoint.pth").download(root=module_dir)
     state_dict = torch.load(f"{module_dir}/checkpoint.pth", map_location="cpu")
-    model = CrystalGraphConvNet(**state_dict["model_params"])
+    model = CrystalGraphConvNet(**state_dict["model_params"])  # type: ignore[arg-type]
     run_params[Key.model_params] = model.num_params
 except Exception as exc:
     print(exc)
@@ -117,7 +117,7 @@ data_loader = DataLoader(
 
 
 # %%
-df_in, ensemble_metrics = predict_from_wandb_checkpoints(
+out = predict_from_wandb_checkpoints(
     runs,
     # dropping isolated-atom structs means len(cg_data.df) < len(df)
     cache_dir=CHECKPOINT_DIR,
@@ -126,6 +126,10 @@ df_in, ensemble_metrics = predict_from_wandb_checkpoints(
     model_cls=CrystalGraphConvNet,
     data_loader=data_loader,
 )
+# type narrow for ty's benefit, better would be to properly overload predict_from_wandb_checkpoints  # noqa: E501
+if not (isinstance(out, tuple) and len(out) == 2):
+    raise TypeError(f"{out=} should be 2-tuple")
+df_in, ensemble_metrics = out
 
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
 df_in.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")

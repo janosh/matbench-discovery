@@ -1,10 +1,10 @@
 <script lang="ts">
+  import { calc_cell_color } from '$lib/metrics'
+  import type { CellSnippetArgs, CellVal, Label, RowData } from '$lib/types'
   import { format_num } from 'matterviz'
   import type { Snippet } from 'svelte'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
-  import { calc_cell_color } from './metrics'
-  import type { CellSnippetArgs, CellVal, Label, RowData } from './types'
 
   interface Props {
     data: RowData[]
@@ -113,7 +113,7 @@
         }
       }
 
-      return val1 < val2 ? -1 * modifier : 1 * modifier
+      return (val1 ?? 0) < (val2 ?? 0) ? -1 * modifier : 1 * modifier
     })
   })
 
@@ -134,19 +134,20 @@
   }
 
   function calc_color(val: CellVal, col: Label) {
-    // Skip color calculation for null values or if color_scale is null
+    // Skip color calculation for null values, NaN, or if color_scale is null
     if (
       val === null ||
       val === undefined ||
       col.color_scale === null ||
       typeof val !== `number` ||
+      Number.isNaN(val) ||
       !show_heatmap // Disable heatmap colors if show_heatmap is false
     ) return { bg: null, text: null }
 
     const col_id = get_col_id(col)
     const numeric_vals = sorted_data
       .map((row) => row[col_id])
-      .filter((val) => typeof val === `number`) // Type guard to ensure we only get numbers
+      .filter((val) => typeof val === `number` && !Number.isNaN(val)) // Type guard to ensure we only get valid numbers
 
     // Using the shared helper function for color calculation
     return calc_cell_color(
@@ -246,10 +247,12 @@
                 {@render special_cells[col.label]({ row, col, val })}
               {:else if cell}
                 {@render cell({ row, col, val })}
-              {:else if typeof val === `number`}
+              {:else if typeof val === `number` && !Number.isNaN(val)}
                 {format_num(val, col.format ?? default_num_format)}
-              {:else if val === undefined || val === null}
-                n/a
+              {:else if val === undefined || val === null || Number.isNaN(val)}
+                <span {@attach tooltip({ content: `Not available` })}>
+                  n/a
+                </span>
               {:else}
                 {@html val}
               {/if}
@@ -287,21 +290,21 @@
     text-overflow: ellipsis;
   }
   th {
-    background: var(--heatmap-header-bg, var(--night));
+    background: var(--heatmap-header-bg, var(--page-bg));
     position: sticky;
     cursor: pointer;
   }
   th:hover {
-    background: var(--heatmap-header-hover-bg, var(--night-lighter, #2a2a2a));
+    background: var(--heatmap-header-hover-bg, var(--nav-bg));
   }
   .sticky-col {
     position: sticky;
     left: 0;
-    background: var(--heatmap-header-bg, var(--night));
+    background: var(--heatmap-header-bg, var(--page-bg));
     z-index: 1;
   }
   tr:nth-child(odd) td.sticky-col {
-    background: var(--heatmap-row-odd-bg, rgb(15, 14, 14));
+    background: var(--heatmap-row-odd-bg, var(--table-odd));
   }
   tbody tr:hover {
     filter: var(--heatmap-row-hover-filter, brightness(1.1));
@@ -310,7 +313,7 @@
     cursor: default;
   }
   .group-header th {
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid var(--border);
     text-align: center;
   }
   /* Styles for the table header with sort hint and controls */
@@ -318,13 +321,14 @@
     grid-column: 2;
     width: 100%;
     display: flex;
+    place-items: center;
     margin: 10pt auto;
     gap: 2em;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border);
     justify-content: space-between;
   }
   span.sort-hint {
-    color: var(--text-muted, #aaa);
+    color: var(--text-muted);
     margin: 0;
   }
   .not-sortable {

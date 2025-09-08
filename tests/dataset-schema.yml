@@ -94,6 +94,14 @@ definitions:
         type: integer
         minimum: 1
         description: Number of unique materials in the dataset
+      n_stable_materials:
+        type: integer
+        minimum: 1
+        description: Number of stable materials in the dataset
+      n_uniq_stable_materials:
+        type: integer
+        minimum: 1
+        description: Number of unique stable materials in the dataset
       elements:
         type: array
         items:

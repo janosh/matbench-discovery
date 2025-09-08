@@ -180,4 +180,19 @@ describe(`ModelCard`, () => {
       }
     })
   })
+
+  describe(`regression tests for default values`, () => {
+    it(`verifies show_details defaults to false to catch regressions`, () => {
+      mount(ModelCard, {
+        target: document.body,
+        props: { model, metrics, sort_by: `F1` },
+      })
+
+      // Test show_details default (should be false - no detail sections visible)
+      const detail_sections = document.body.querySelectorAll(
+        `section:not(.metrics):not(.metadata) h3`,
+      )
+      expect(detail_sections.length, `show_details should default to false`).toBe(0)
+    })
+  })
 })

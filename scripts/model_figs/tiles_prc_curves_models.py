@@ -4,6 +4,7 @@
 import math
 
 import pandas as pd
+import plotly.express as px
 import pymatviz as pmv
 from pymatviz.enums import Key
 from sklearn.metrics import precision_recall_curve
@@ -69,20 +70,21 @@ for model in (pbar := tqdm(models_to_plot, desc="Calculating ROC curves")):
 
 
 # %%
-fig = df_prc.iloc[:: len(df_prc) // 500 or 1].plot.scatter(
+fig = px.scatter(
+    df_prc.iloc[:: len(df_prc) // 500 or 1],
     x=Key.recall,
     y=Key.precision,
     facet_col=facet_col,
     facet_col_wrap=n_cols,
     facet_col_spacing=0.04,
     facet_row_spacing=0.04,
-    backend="plotly",
     width=280 * n_cols,
     height=230 * n_rows,
     color=color_col,
     range_color=(-0.5, 1),
     hover_name=facet_col,
     hover_data={facet_col: False},
+    category_orders={facet_col: models_to_plot},
 )
 
 for anno in fig.layout.annotations:

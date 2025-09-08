@@ -21,7 +21,6 @@ import json
 import os
 import traceback
 import warnings
-from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
@@ -91,9 +90,7 @@ with open(f"{out_dir}/run_params.json", mode="w") as file:
     json.dump(run_params, file, indent=4)
 
 # Set up the relaxation and force set calculation
-optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}[
-    ase_optimizer
-]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}[ase_optimizer]
 force_results: dict[str, dict[str, Any]] = {}
 kappa_results: dict[str, dict[str, Any]] = {}
 tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)

@@ -96,8 +96,8 @@ training_set: [MPtrj]
 training_cost:
   Nvidia A100 GPUs: { amount: 4, hours: 500 }
 
-notes: # notes can have any key, be multiline and support markdown.
-  description: |
+notes:
+  Description: |
     eqnorm is a graph neural network model designed for predicting the energy, forces, and stresses of materials.
     The model utilizes a combination of invariant and equivariant layers to effectively capture the symmetries present in material structures.
 
@@ -151,7 +151,6 @@ metrics:
       RMSE: 0.081 # eV/atom
       R2: 0.796 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.786 # fraction
       DAF: 4.844 # dimensionless
@@ -170,7 +169,6 @@ metrics:
       RMSE: 0.083 # eV/atom
       R2: 0.799 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.97 # fraction
       DAF: 6.156 # dimensionless
@@ -189,4 +187,3 @@ metrics:
       RMSE: 0.105 # eV/atom
       R2: 0.775 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction

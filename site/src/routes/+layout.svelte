@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import { Footer, Nav } from '$lib'
+  import { Footer, Nav, ThemeToggle } from '$lib'
   import pkg from '$site/package.json'
   import { type Snippet } from 'svelte'
   import { CmdPalette, CopyButton, GitHubCorner } from 'svelte-multiselect'
@@ -65,12 +65,11 @@
     {headingSelector}
     breakpoint={1600}
     minItems={3}
-    aside_style="position: fixed; left: calc(50vw + var(--main-max-width) / 2 - 2em); max-width: 16em;"
+    aside_style="max-width: 16em; z-index: 1"
     nav_style="font-size: 9pt"
-    open_button_style="right: 2em;"
-    --toc-mobile-bg="rgba(0, 0, 0, 0.3)"
     --toc-mobile-width="22em"
-    --toc-active-bg="none"
+    --toc-active-bg="transparent"
+    --toc-active-color="var(--link-color)"
   />
 {/if}
 
@@ -83,10 +82,28 @@
     [`/paper`, pkg.paper],
   ]}
   style="padding: 0 var(--main-padding)"
-/>
+>
+  <ThemeToggle />
+</Nav>
 
 <main>
   {@render children?.()}
 </main>
 
 <Footer />
+
+<style>
+  :global(aside.toc.desktop) {
+    position: fixed;
+    left: calc(50vw + var(--main-max-width) / 2 - 2em);
+  }
+  :global(aside.toc.mobile > nav) {
+    box-shadow: 0 0 20px var(--shadow);
+    border: 1px solid var(--border);
+    background-color: var(--page-bg);
+    padding: 1ex;
+    right: 1em;
+    position: fixed;
+    bottom: 1em;
+  }
+</style>

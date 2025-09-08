@@ -111,7 +111,7 @@ metrics:
   geo_opt:
     pred_file: models/deepmd/dpa3-v2-mptrj/2025-03-14-wbm-geo-opt.jsonl.gz
     struct_col: dp_structure
-    pred_file_url: https://figshare.com/files/53018849
+    pred_file_url: https://figshare.com/files/53153462
     symprec=1e-2:
       rmsd: 0.0823 # unitless
       n_sym_ops_mae: 1.968 # unitless
@@ -152,7 +152,6 @@ metrics:
       RMSE: 0.08 # eV/atom
       R2: 0.801 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.98 # fraction
       DAF: 6.28 # dimensionless
@@ -171,7 +170,6 @@ metrics:
       RMSE: 0.078 # eV/atom
       R2: 0.866 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.786 # fraction
       DAF: 4.822 # dimensionless
@@ -190,4 +188,3 @@ metrics:
       RMSE: 0.081 # eV/atom
       R2: 0.804 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction

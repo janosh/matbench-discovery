@@ -1,18 +1,18 @@
 import { DATASETS, format_date, MODELS } from '$lib'
-import type { ModelMetadata, TargetType } from '$lib/model-schema'
-import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
-import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { max, min } from 'd3-array'
-import { scaleLog, scaleSequential } from 'd3-scale'
-import * as d3sc from 'd3-scale-chromatic'
-import { format_num, pick_color_for_contrast } from 'matterviz'
 import {
   ALL_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
   HYPERPARAMS,
   METADATA_COLS,
-} from './labels'
-import type { DiscoverySet, LinkData, ModelData } from './types'
+} from '$lib/labels'
+import type { ModelMetadata, TargetType } from '$lib/model-schema'
+import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
+import type { CellVal, DiscoverySet, LinkData, ModelData } from '$lib/types'
+import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
+import { max, min } from 'd3-array'
+import { scaleLog, scaleSequential } from 'd3-scale'
+import * as d3sc from 'd3-scale-chromatic'
+import { format_num, pick_contrast_color } from 'matterviz'
 
 // model target type descriptions
 export const targets_tooltips: { [key in TargetType]: string } = {
@@ -168,7 +168,7 @@ export function make_combined_filter(
 // Calculate table cell background color based on its value and column config
 export function calc_cell_color(
   val: number | null | undefined, // cell value
-  all_values: (number | null | undefined)[], // all values in the column
+  all_values: CellVal[], // all values in the column
   better: `higher` | `lower` | undefined, // sort direction
   color_scale: string | null = `interpolateViridis`, // color scale name
   scale_type: `linear` | `log` = `linear`, // scale type
@@ -203,7 +203,7 @@ export function calc_cell_color(
 
     const normalized_val = color_scale_fn(val)
     const bg = interpolator(normalized_val)
-    const text = pick_color_for_contrast(null, bg)
+    const text = pick_contrast_color({ bg_color: bg })
 
     return { bg, text }
   } else {
@@ -211,7 +211,7 @@ export function calc_cell_color(
     color_scale_fn = scaleSequential().domain(range).interpolator(interpolator)
 
     const bg = color_scale_fn(val)
-    const text = pick_color_for_contrast(null, bg)
+    const text = pick_contrast_color({ bg_color: bg })
 
     return { bg, text }
   }

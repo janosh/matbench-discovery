@@ -326,7 +326,7 @@ def smoothness_test_data() -> dict[str, EnergyCurve]:
 
 
 @pytest.mark.parametrize(
-    "metric_func,curve_name,expected_value",
+    "metric_func,curve_name,expected_val",
     [
         # Second derivative should be very close to 0 for constant and linear curves
         (calc_second_deriv_smoothness, "constant", pytest.approx(0, abs=1e-10)),
@@ -340,7 +340,7 @@ def smoothness_test_data() -> dict[str, EnergyCurve]:
 def test_smoothness_exact_values(
     metric_func: Callable[[np.ndarray, np.ndarray], float],
     curve_name: str,
-    expected_value: float,
+    expected_val: object,
     smoothness_test_data: dict[str, tuple[np.ndarray, np.ndarray]],
 ) -> None:
     """Test exact values of smoothness metrics for well-understood curves.
@@ -348,12 +348,12 @@ def test_smoothness_exact_values(
     Args:
         metric_func (Callable): Smoothness metric function to test
         curve_name (str): Name of curve to test
-        expected_value (float): Expected metric value
+        expected_val (float): Expected metric value
         smoothness_test_data (dict): Test curves
     """
     x, y = smoothness_test_data[curve_name]
     metric = metric_func(x, y)
-    assert metric == expected_value
+    assert metric == expected_val
 
 
 @pytest.mark.parametrize(
@@ -416,11 +416,12 @@ def test_smoothness_scale_invariance(
 
     # Test scaling behavior
     scale = 1.1
+    metric_name = getattr(metric_func, "__name__", None)
     curv_scale = {
         "calc_second_deriv_smoothness": 1,
         "calc_total_variation_smoothness": 2,
         "calc_curvature_smoothness": 1.389141,
-    }[metric_func.__name__]
+    }[metric_name]
     x_scaled = scale * x
     y_scaled = scale**2 * y  # maintain quadratic relationship
 
@@ -434,8 +435,7 @@ def test_smoothness_scale_invariance(
 
     if scaled_metric / base_metric != pytest.approx(curv_scale):
         raise AssertionError(
-            f"{metric_func.__name__} did not scale correctly:\n"
-            f"scale={scale:.1f}\n"
+            f"{metric_name} did not scale correctly:\nscale={scale:.1f}\n"
             f"base_metric={base_metric:.6f}\n"
             f"scaled_metric={scaled_metric:.6f}\n"
             f"ratio={scaled_metric / base_metric:.6f}\n"

@@ -84,8 +84,8 @@ requirements:
 training_set: [MPtrj]
 training_cost: missing
 
-notes: # notes can have any key, be multiline and support markdown.
-  description: |
+notes:
+  Description: |
     MatRIS is a foundation model for materials representation and interaction simulation.
 
 metrics:
@@ -96,7 +96,7 @@ metrics:
       pred_file_url: https://figshare.com/files/53090600
   geo_opt:
     pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53000177
+    pred_file_url: https://figshare.com/files/57751045
     struct_col: matris_structure
     symprec=1e-5:
       rmsd: 0.0773 # unitless
@@ -138,7 +138,6 @@ metrics:
       RMSE: 0.08 # eV/atom
       R2: 0.8 # dimensionless
       missing_preds: 6 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.984 # fraction
       DAF: 6.341 # dimensionless
@@ -157,7 +156,6 @@ metrics:
       RMSE: 0.057 # eV/atom
       R2: 0.926 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.809 # fraction
       DAF: 5.049 # dimensionless
@@ -176,4 +174,3 @@ metrics:
       RMSE: 0.082 # eV/atom
       R2: 0.803 # dimensionless
       missing_preds: 4 # count
-      missing_percent: 0.00% # fraction

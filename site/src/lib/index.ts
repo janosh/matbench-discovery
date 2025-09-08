@@ -26,6 +26,7 @@ export { default as References } from './References.svelte'
 export { default as SelectToggle } from './SelectToggle.svelte'
 export { default as TableColumnToggleMenu } from './TableColumnToggleMenu.svelte'
 export { default as TableControls } from './TableControls.svelte'
+export { default as ThemeToggle } from './ThemeToggle.svelte'
 export * from './types'
 export { data_files, DATASETS }
 

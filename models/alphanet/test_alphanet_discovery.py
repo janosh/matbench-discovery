@@ -1,13 +1,11 @@
 import os
-from collections.abc import Callable
 from typing import Any, Literal
 
 import pandas as pd
 import torch
 from alphanet.config import All_Config
 from alphanet.infer.calc import AlphaNetCalculator
-from ase import Atoms
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from ase.io import read
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
@@ -52,11 +50,11 @@ print(f"Read data from {data_path}")
 atoms_list = read(data_path, index=":", format="extxyz")
 relax_results: dict[str, dict[str, Any]] = {}
 
-filter_cls: Callable[[Atoms], Atoms] = {
+filter_cls: type[Filter] = {
     "frechet": FrechetCellFilter,
     "exp": ExpCellFilter,
 }[ase_filter]
-optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 for atoms in tqdm(atoms_list, desc="Relaxing"):
     mat_id = atoms.info[Key.mat_id]

@@ -70,7 +70,9 @@ class DiatomicCurves:
         dists = data["distances"] = np.asarray(data["distances"])
         for key in {"homo-nuclear", "hetero-nuclear"} & set(data):
             data[key.replace("-", "_")] = {
-                formula: DiatomicCurve(**dct, distances=dists)
+                formula: DiatomicCurve(
+                    energies=dct["energies"], forces=dct["forces"], distances=dists
+                )
                 for formula, dct in data.pop(key).items()
                 if len(dct["energies"]) > 0
             }

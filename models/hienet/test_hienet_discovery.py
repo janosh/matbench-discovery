@@ -17,12 +17,10 @@
 # ///
 
 import os
-from collections.abc import Callable
 from typing import Any, Literal
 
 import pandas as pd
-from ase import Atoms
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
 from hienet.hienet_calculator import HIENetCalculator
@@ -83,11 +81,11 @@ atoms_list = atoms_list[left:right]
 
 relax_results: dict[str, dict[str, Any]] = {}
 
-filter_cls: Callable[[Atoms], Atoms] = {
+filter_cls: type[Filter] = {
     "frechet": FrechetCellFilter,
     "exp": ExpCellFilter,
 }[ase_filter]
-optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 
 for atoms in tqdm(atoms_list, desc="Relaxing"):

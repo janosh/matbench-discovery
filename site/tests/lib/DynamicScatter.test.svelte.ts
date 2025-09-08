@@ -1,8 +1,10 @@
 import DynamicScatter from '$lib/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { mount } from 'svelte'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { doc_query } from '../index'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { doc_query, is_hidden } from '../index'
+
+const pane_selector = `[aria-label="Draggable pane"]`
 
 const mock_models: ModelData[] = [
   {
@@ -59,6 +61,28 @@ const mock_models: ModelData[] = [
 ]
 
 describe(`DynamicScatter.svelte`, () => {
+  beforeEach(() => {
+    // Mock fullscreen API
+    let fullscreen_element: Element | null = null
+    Object.defineProperty(document, `fullscreenElement`, {
+      get: () => fullscreen_element,
+      configurable: true,
+    })
+    // Mock requestFullscreen and exitFullscreen methods
+    Element.prototype.requestFullscreen = vi.fn().mockImplementation(
+      function (this: Element) {
+        fullscreen_element = this // eslint-disable-line @typescript-eslint/no-this-alias
+        document.dispatchEvent(new Event(`fullscreenchange`))
+        return Promise.resolve()
+      },
+    )
+    document.exitFullscreen = vi.fn().mockImplementation(() => {
+      fullscreen_element = null
+      document.dispatchEvent(new Event(`fullscreenchange`))
+      return Promise.resolve()
+    })
+  })
+
   afterEach(() => {
     document.body.innerHTML = ``
     vi.restoreAllMocks()
@@ -103,7 +127,9 @@ describe(`DynamicScatter.svelte`, () => {
 
   // Helper function to check fullscreen state
   async function check_fullscreen_state(expected_state: boolean): Promise<void> {
-    const button = document.body.querySelector<HTMLButtonElement>(`.fullscreen-toggle`)
+    const button = document.body.querySelector<HTMLButtonElement>(
+      `button[title$="fullscreen"]`,
+    )
     const button_icon = button?.querySelector(`button > svg`)
 
     await vi.waitFor(() => {
@@ -114,13 +140,13 @@ describe(`DynamicScatter.svelte`, () => {
     })
   }
 
-  it(`handles fullscreen toggle via button click and Escape key`, async () => {
+  it(`handles fullscreen toggle via button click`, async () => {
     mount(DynamicScatter, {
       target: document.body,
       props: { models: mock_models },
     })
 
-    const button = doc_query<HTMLButtonElement>(`.fullscreen-toggle`)
+    const button = doc_query<HTMLButtonElement>(`button[title$="fullscreen"]`)
 
     // 1. Initial state: Not fullscreen
     await check_fullscreen_state(false)
@@ -157,17 +183,14 @@ describe(`DynamicScatter.svelte`, () => {
       const settings_button = document.body.querySelector<HTMLButtonElement>(
         `.settings-toggle`,
       )
-      let extra_controls = document.body.querySelector(`.controls`)
+      let extra_controls = document.body.querySelector(pane_selector)
 
       // 1. Initial state: Controls hidden (element may exist but be hidden)
-      if (extra_controls) {
-        const css_display = (extra_controls as HTMLElement).style.display
-        expect([`none`, ``].includes(css_display)).toBe(true)
-      } else expect(extra_controls).toBeNull()
+      expect(is_hidden(extra_controls)).toBe(true)
 
       // 2. Show controls via button click
       await settings_button?.click()
-      extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
+      extra_controls = doc_query<HTMLElement>(pane_selector)
       expect(extra_controls).toBeDefined()
 
       // 3. Hide controls via Escape key
@@ -175,15 +198,14 @@ describe(`DynamicScatter.svelte`, () => {
         new KeyboardEvent(`keydown`, { key: `Escape`, bubbles: true }),
       )
       await vi.waitFor(() => {
-        extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
-        // The panel should be hidden but still in DOM
-        const css_display = (extra_controls as HTMLElement)?.style.display
-        expect([`none`, ``].includes(css_display)).toBe(true)
+        extra_controls = doc_query<HTMLElement>(pane_selector)
+        // The pane should be hidden but still in DOM
+        expect(is_hidden(extra_controls)).toBe(true)
       })
 
       // 4. Re-show controls via button click
       await settings_button?.click()
-      extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
+      extra_controls = doc_query<HTMLElement>(pane_selector)
       expect(extra_controls).toBeDefined()
     })
 
@@ -201,20 +223,19 @@ describe(`DynamicScatter.svelte`, () => {
       const settings_button = document.body.querySelector<HTMLButtonElement>(
         `.settings-toggle`,
       )
-      let extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
+      let extra_controls = doc_query<HTMLElement>(pane_selector)
 
       // 1. Show controls
       await settings_button?.click()
-      extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
+      extra_controls = doc_query<HTMLElement>(pane_selector)
       expect(extra_controls).toBeDefined()
 
       // 2. Click the explicit outside element
       await outside_element.click() // Simulate click outside
       await vi.waitFor(() => {
-        extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
-        // The panel should be hidden but still in DOM
-        const css_display = (extra_controls as HTMLElement)?.style.display
-        expect([`none`, ``].includes(css_display)).toBe(true)
+        extra_controls = doc_query<HTMLElement>(pane_selector)
+        // The pane should be hidden but still in DOM
+        expect(is_hidden(extra_controls)).toBe(true)
       })
 
       // Clean up the outside element
@@ -232,8 +253,7 @@ describe(`DynamicScatter.svelte`, () => {
       )
       await settings_button?.click() // Show controls
 
-      const extra_controls = doc_query(`[aria-label="Draggable pane"]`)
-      expect(extra_controls, `Extra controls panel should exist`).toBeDefined()
+      const extra_controls = doc_query(pane_selector)
 
       // --- Find Controls ---
       const color_scale_select_el = extra_controls?.querySelector(`.color-scale-select`)
@@ -321,6 +341,41 @@ describe(`DynamicScatter.svelte`, () => {
       link_strength_input.value = `8`
       await link_strength_input?.dispatchEvent(new Event(`input`))
       expect(link_strength_input?.value, `Link Strength after change`).toBe(`8`)
+    })
+  })
+
+  describe(`regression tests for default values`, () => {
+    it(`verifies all critical default UI state to catch regressions`, () => {
+      mount(DynamicScatter, { target: document.body, props: { models: mock_models } })
+
+      // Verify axis controls structure (4 select controls for x, y, color, size)
+      const controls_grid = document.body.querySelector(`.controls-grid`)
+      expect(controls_grid?.querySelectorAll(`[role="listbox"]`)).toHaveLength(4)
+
+      // Open extra controls and test all defaults
+      document.body.querySelector<HTMLButtonElement>(`.settings-toggle`)?.click()
+      const pane = doc_query(pane_selector)
+
+      // Test all checkbox defaults (these often regress)
+      const checkboxes = pane?.querySelectorAll<HTMLInputElement>(
+        `input[type="checkbox"]`,
+      )
+      expect(checkboxes?.[0]?.checked, `show_model_labels default`).toBe(true)
+      expect(checkboxes?.[1]?.checked, `x_grid default`).toBe(true)
+      expect(checkboxes?.[2]?.checked, `y_grid default`).toBe(true)
+
+      // Test all input defaults (these often regress)
+      expect(doc_query<HTMLInputElement>(`#x-ticks`, pane)?.value).toBe(`5`)
+      expect(doc_query<HTMLInputElement>(`#y-ticks`, pane)?.value).toBe(`5`)
+      expect(doc_query<HTMLInputElement>(`#size-multiplier`, pane)?.value).toBe(`1`)
+      expect(doc_query<HTMLInputElement>(`#label-font-size`, pane)?.value).toBe(`14`)
+      expect(doc_query<HTMLInputElement>(`#min-link-distance`, pane)?.value).toBe(`15`)
+      expect(doc_query<HTMLInputElement>(`#max-link-distance`, pane)?.value).toBe(`20`)
+      expect(doc_query<HTMLInputElement>(`#link-strength`, pane)?.value).toBe(`5`)
+
+      // Verify plot container and color controls render
+      expect(document.body.querySelector(`div.bleed-1400[style]`)).toBeDefined()
+      expect(pane?.querySelector(`.color-scale-select`)).toBeDefined()
     })
   })
 })

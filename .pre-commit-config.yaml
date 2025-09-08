@@ -8,7 +8,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.8
+    rev: v0.12.12
     hooks:
       - id: ruff
         args: [--fix]
@@ -21,6 +21,7 @@ repos:
         entry: ty check
         language: python
         additional_dependencies: [ty]
+        args: [--output-format, concise, --ignore, unresolved-import]
 
   - repo: https://github.com/janosh/format-ipy-cells
     rev: v0.1.11
@@ -75,7 +76,7 @@ repos:
         exclude: changelog\.md$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.33.0
+    rev: v9.35.0
     hooks:
       - id: eslint
         types: [file]
@@ -90,7 +91,7 @@ repos:
           - '@stylistic/eslint-plugin'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.2
+    rev: 0.33.3
     hooks:
       - id: check-jsonschema
         files: ^models/.+/.+\.yml$

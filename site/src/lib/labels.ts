@@ -1,3 +1,4 @@
+import type { DiscoverySet, Label } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import type {
   DatasetMetadataLabels,
@@ -6,19 +7,16 @@ import type {
   HyperparamLabels,
   MetadataLabels,
 } from './label-schema.d.ts'
-import type { DiscoverySet, Label } from './types'
 
 export const RMSD_BASELINE = 0.15 // baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
 
 // Helper function to format scientific notation with superscript
 // used e.g. for symprec in geo_opt metrics
-export const format_power_ten = (text: string): string => {
-  return text
-    .replace(/(\d+(?:\.\d+)?)e\+?(-?\d+)/gi, (_, base, exponent) => {
-      return `${base}×10<sup>${exponent}</sup>`
-    })
+export const format_power_ten = (text: string): string =>
+  text
+    .replace(/(\d+(?:\.\d+)?)e\+?(-?\d+)/gi, (_, base, exponent) =>
+      `${base}×10<sup>${exponent}</sup>`)
     .replace(`1×10`, `10`)
-}
 
 export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
   Accuracy: {
@@ -170,12 +168,6 @@ export const METADATA_COLS: MetadataLabels = {
     key: `missing_preds`,
     label: `Missing Predictions`,
     description: `Number of missing predictions`,
-    visible: false,
-  },
-  missing_percent: {
-    key: `missing_percent`,
-    label: `Missing %`,
-    description: `Percentage of missing predictions`,
     visible: false,
   },
   'Run Time (h)': {
@@ -463,7 +455,7 @@ export const title_case = (str: string) =>
   str.replaceAll(`_`, ` `).split(` `).map(to_title).join(` `)
 
 // Map of author affiliations in model YAMLs to SVG icons (either inline symbol ID
-// or external file path under /static/logos/) and full affiliation names for tooltips. Each item can have SVG ID from app.html OR src path under /static/logos/.
+// or external file path under /static/logos/) and full affiliation names for tooltips.
 export const org_logos = {
   'AI for Science Institute, Beijing': `/logos/beijing-ai-for-science-institute.svg`,
   'Argonne National Laboratory': `/logos/argonne-national-lab.svg`,
@@ -482,6 +474,7 @@ export const org_logos = {
     `/logos/ict-cas-beijing.svg`,
   'Massachusetts Institute of Technology': `/logos/mit.svg`,
   'Microsoft Research': `icon:Microsoft`,
+  'MIR Group, Harvard University': `/logos/mir-group-harvard.svg`,
   'National Institute of Standards and Technology': `/logos/nist.svg`,
   'Northwestern University': `/logos/northwestern-university.svg`,
   'Orbital Materials': `/logos/orbital-materials.svg`,
