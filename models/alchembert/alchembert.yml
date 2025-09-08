@@ -43,7 +43,7 @@ training_set: [MP 2022]
 training_cost: missing
 
 notes:
-  description: We tested BERT on the IS2RE task of Matbench Discovery.
+  Description: We tested BERT on the IS2RE task of Matbench Discovery.
 
 metrics:
   discovery:

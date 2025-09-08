@@ -82,7 +82,7 @@ training_cost:
 training_set: [MPtrj]
 
 notes:
-  description: Nequix is a simplified version of NequIP with added RMSnorm, implemented in JAX, and trained with Muon optimizer.
+  Description: Nequix is a simplified version of NequIP with added RMSnorm, implemented in JAX, and trained with Muon optimizer.
 
 requirements:
   jax: 0.6.2

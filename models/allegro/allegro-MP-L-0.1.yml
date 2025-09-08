@@ -95,8 +95,8 @@ requirements:
 training_set: [MPtrj]
 
 notes:
-  description: Large  'compliant' Allegro foundation potential; see <https://www.nequip.net/models/mir-group/Allegro-MP-L:0.1> for details and <https://arxiv.org/abs/2504.16068> for model/training infrastructure.
-  steps: Single training run on MPtrj with specified parameters.
+  Description: Large  'compliant' Allegro foundation potential; see <https://www.nequip.net/models/mir-group/Allegro-MP-L:0.1> for details and <https://arxiv.org/abs/2504.16068> for model/training infrastructure.
+  Steps: Single training run on MPtrj with specified parameters.
 
 metrics:
   phonons:

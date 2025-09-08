@@ -85,7 +85,7 @@ training_set: [MPtrj]
 training_cost: missing
 
 notes:
-  description: |
+  Description: |
     MatRIS is a foundation model for materials representation and interaction simulation.
 
 metrics:
