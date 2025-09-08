@@ -90,7 +90,7 @@ print(f"\nJob {job_name!r} running {timestamp}", flush=True)
 print(f"{data_path=}", flush=True)
 print(f"{slurm_array_task_id} of {slurm_array_task_count}")
 
-# Initialize Nequip ASE Calculator from checkpoint
+# Initialize ASE Calculator from checkpoint
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", "Trying to use model type names")
     calculator = NequIPCalculator.from_compiled_model(

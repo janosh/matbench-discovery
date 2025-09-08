@@ -1,5 +1,5 @@
 """
-Investigate NequIP/Allegro energy underpredictions, templated from the
+Investigate Allegro energy underpredictions, templated from the
 MACE analysis script from Janosh.
 """
 
@@ -42,27 +42,27 @@ df_allegro[Key.spg_num] = (
 fig = pmv.density_scatter_plotly(
     df=df_allegro, x=MbdKey.e_form_dft, y=e_form_allegro_col
 )
-fig.layout.title = f"{len(df_allegro):,} Nequipsevere energy underpredictions"
+fig.layout.title = f"{len(df_allegro):,} Allegro severe energy underpredictions"
 pmv.save_fig(fig, "allegro-hull-dist-scatter.png")
 
 
 df_low = df_allegro.query(f"{MbdKey.e_form_dft} - {e_form_allegro_col} > 2")
 
 fig = pmv.density_scatter_plotly(df=df_low, x=MbdKey.e_form_dft, y=e_form_allegro_col)
-fig.layout.title = f"{len(df_low):,} Nequip severe energy underpredictions"
+fig.layout.title = f"{len(df_low):,} Allegro severe energy underpredictions"
 pmv.save_fig(fig, "allegro-too-low-hull-dist-scatter.png")
 
 
 fig = pmv.ptable_heatmap_plotly(df_low[Key.formula])
-title = f"Elements in {len(df_low):,} Nequip severe energy underpredictions"
+title = f"Elements in {len(df_low):,} Allegro severe energy underpredictions"
 fig.layout.title.update(text=title, x=0.4, y=0.95)
 fig.show()
 
 pmv.save_fig(fig, "allegro-too-low-elements-heatmap.png")
 
 
-fig = pmv.spacegroup_sunburst(df_low[Key.spg_num], title="Nequip spacegroups")
-title = f"Spacegroup sunburst of {len(df_low):,} Nequip severe energy underpredictions"
+fig = pmv.spacegroup_sunburst(df_low[Key.spg_num], title="Allegro spacegroups")
+title = f"Spacegroup sunburst of {len(df_low):,} Allegro severe energy underpredictions"
 fig.layout.title.update(text=title, x=0.5)
 fig.show()
 
@@ -78,7 +78,7 @@ fig = pmv.density_scatter_plotly(
     y=e_form_allegro_col,
     log_density=(log := True),
 )
-fig.layout.yaxis.title = MbdKey.e_form_dft.replace("DFT", "Nequip")
+fig.layout.yaxis.title = MbdKey.e_form_dft.replace("DFT", "Allegro")
 fig.show()
 pmv.save_fig(fig, f"{SITE_FIGS}/allegro-wbm-IS2RE-e-form-parity.png")
 
@@ -87,7 +87,7 @@ print(df_allegro.columns)
 fig = pmv.density_scatter_plotly(
     df_allegro[~bad_mask], x="uncorrected_energy", y="allegro_energy", log_density=log
 )
-fig.layout.yaxis.title = "Nequip energy"
+fig.layout.yaxis.title = "Allegro energy"
 
 fig.show()
 pmv.save_fig(fig, f"{SITE_FIGS}/allegro-wbm-IS2RE-raw-energy-parity.png")

@@ -7,6 +7,8 @@ from pymatviz.enums import Key
 
 from matbench_discovery.enums import Model, TestSubset
 
+CLI_TIMEOUT = 30
+
 cli_parser = ArgumentParser(
     description="CLI flags for eval, plot and analysis scripts."
 )
@@ -45,7 +47,7 @@ cli_parser.add_argument(
 cli_parser.add_argument(
     "--timeout",
     type=int,
-    default=30,
+    default=CLI_TIMEOUT,
     help="Timeout in seconds for HTTP requests (default: 30).",
 )
 

@@ -11,6 +11,7 @@ import requests
 from tqdm import tqdm
 
 from matbench_discovery import ROOT
+from matbench_discovery.cli import CLI_TIMEOUT
 
 ENV_PATH: Final[str] = f"{ROOT}/site/.env"
 BASE_URL: Final[str] = "https://api.figshare.com/v2"
@@ -49,7 +50,7 @@ def make_request(
     *,
     data: Any = None,
     binary: bool = False,
-    timeout: float = 30.0,
+    timeout: float = CLI_TIMEOUT,
 ) -> Any:
     """Make a token-authorized HTTP request to the Figshare API.
 
@@ -58,7 +59,7 @@ def make_request(
         url (str): URL to send the request to.
         data (Any, optional): Data to send in the request body. Defaults to None.
         binary (bool, optional): Whether the data is binary. Defaults to False.
-        timeout (float, optional): Timeout in seconds. Defaults to 30.0.
+        timeout (float, optional): Timeout in seconds. Defaults to CLI_TIMEOUT = 30.
 
     Returns:
         Any: JSON response data or binary data.

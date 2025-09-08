@@ -141,7 +141,7 @@ def calc_kappa_for_structure(
         device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device=}")
 
-    # Initialize Nequip ASE Calculator from checkpoint
+    # Initialize ASE Calculator from checkpoint
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", "Trying to use model type names")
         calc = NequIPCalculator.from_compiled_model(
