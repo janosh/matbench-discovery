@@ -26,14 +26,14 @@ describe(`HeatmapTable`, () => {
       props: { data: sample_data, columns },
     })
 
-    const headers = document.body.querySelectorAll(`th`)
+    const headers = document.querySelectorAll(`th`)
     expect(headers).toHaveLength(3)
     expect(
       Array.from(headers).map((h) => h.textContent?.replace(/\s+/g, ` `).trim()),
     ).toEqual([`Model`, `Score ↑`, `Value ↓`])
 
-    expect(document.body.querySelectorAll(`tbody tr`)).toHaveLength(3)
-    expect(document.body.querySelectorAll(`td[data-col="Hidden"]`)).toHaveLength(0)
+    expect(document.querySelectorAll(`tbody tr`)).toHaveLength(3)
+    expect(document.querySelectorAll(`td[data-col="Hidden"]`)).toHaveLength(0)
   })
 
   it(`handles empty data and filters undefined rows`, async () => {
@@ -44,11 +44,11 @@ describe(`HeatmapTable`, () => {
       props: { data: data_with_empty, columns: sample_columns },
     })
 
-    expect(document.body.querySelectorAll(`tbody tr`)).toHaveLength(3)
+    expect(document.querySelectorAll(`tbody tr`)).toHaveLength(3)
 
     data_with_empty = []
     await tick()
-    expect(document.body.querySelectorAll(`tbody tr`)).toHaveLength(3)
+    expect(document.querySelectorAll(`tbody tr`)).toHaveLength(3)
   })
 
   describe(`Sorting and Data Updates`, () => {
@@ -65,12 +65,12 @@ describe(`HeatmapTable`, () => {
       })
 
       // Test initial sort
-      const value_header = document.body.querySelectorAll(`th`)[2]
+      const value_header = document.querySelectorAll(`th`)[2]
       value_header.click()
       await tick()
 
       const values = Array.from(
-        document.body.querySelectorAll(`td[data-col="Value"]`),
+        document.querySelectorAll(`td[data-col="Value"]`),
       ).map((cell) => cell.textContent?.trim())
       expect(values).toEqual([`100`, `300`, `n/a`])
 
@@ -78,7 +78,7 @@ describe(`HeatmapTable`, () => {
       value_header.click()
       await tick()
       const reversed = Array.from(
-        document.body.querySelectorAll(`td[data-col="Value"]`),
+        document.querySelectorAll(`td[data-col="Value"]`),
       ).map((cell) => cell.textContent?.trim())
       expect(reversed).toEqual([`300`, `100`, `n/a`])
     })
@@ -90,7 +90,7 @@ describe(`HeatmapTable`, () => {
         props: { data, columns: sample_columns },
       })
 
-      const score_header = document.body.querySelectorAll(`th`)[1]
+      const score_header = document.querySelectorAll(`th`)[1]
       score_header.click() // Sort by Score
       await tick()
 
@@ -98,7 +98,7 @@ describe(`HeatmapTable`, () => {
       await tick()
 
       const scores = Array.from(
-        document.body.querySelectorAll(`td[data-col="Score"]`),
+        document.querySelectorAll(`td[data-col="Score"]`),
       ).map((cell) => cell.textContent?.trim())
       expect(scores).toEqual([`0.95`, `0.85`, `0.75`])
     })
@@ -118,7 +118,7 @@ describe(`HeatmapTable`, () => {
       })
 
       // Initial data should already be in order
-      const initial_dates = Array.from(document.body.querySelectorAll(`td`)).map((cell) =>
+      const initial_dates = Array.from(document.querySelectorAll(`td`)).map((cell) =>
         cell.textContent?.trim()
       )
 
@@ -140,7 +140,7 @@ describe(`HeatmapTable`, () => {
       })
 
       // Initial data
-      const initial_numbers = Array.from(document.body.querySelectorAll(`td`)).map(
+      const initial_numbers = Array.from(document.querySelectorAll(`td`)).map(
         (cell) => cell.textContent?.trim(),
       )
       expect(initial_numbers).toEqual([`50`, `1,000`, `10,000`])
@@ -166,12 +166,12 @@ describe(`HeatmapTable`, () => {
         props: { data, columns },
       })
 
-      const headers = Array.from(document.body.querySelectorAll(`th`))
+      const headers = Array.from(document.querySelectorAll(`th`))
       const actions_header = headers[2]
 
       // Check initial values
       const initial_values = Array.from(
-        document.body.querySelectorAll(`td[data-col="Value"]`),
+        document.querySelectorAll(`td[data-col="Value"]`),
       ).map((cell) => cell.textContent?.trim())
 
       expect(initial_values).toEqual([`100`, `200`, `300`])
@@ -182,7 +182,7 @@ describe(`HeatmapTable`, () => {
 
       // Capture values after clicking unsortable column
       const unchanged_values = Array.from(
-        document.body.querySelectorAll(`td[data-col="Value"]`),
+        document.querySelectorAll(`td[data-col="Value"]`),
       ).map((cell) => cell.textContent?.trim())
 
       // Values should be unchanged since Actions is unsortable
@@ -194,7 +194,7 @@ describe(`HeatmapTable`, () => {
 
       // Values should be sorted by Value column
       const post_sort_values = Array.from(
-        document.body.querySelectorAll(`td[data-col="Value"]`),
+        document.querySelectorAll(`td[data-col="Value"]`),
       ).map((cell) => cell.textContent?.trim())
 
       // Check if values are sorted - the actual order depends on implementation
@@ -214,7 +214,7 @@ describe(`HeatmapTable`, () => {
 
       // Initial data should be sorted by Score in descending order
       const scores = Array.from(
-        document.body.querySelectorAll(`td[data-col="Score"]`),
+        document.querySelectorAll(`td[data-col="Score"]`),
       ).map((cell) => cell.textContent?.trim())
 
       expect(scores).toEqual([`0.95`, `0.85`, `0.75`])
@@ -316,7 +316,7 @@ describe(`HeatmapTable`, () => {
       },
     })
 
-    const header = document.body.querySelector(`th`)
+    const header = document.querySelector(`th`)
     expect(header?.getAttribute(`title`) || header?.getAttribute(`data-title`)).toBe(
       `Description`,
     )
@@ -332,7 +332,7 @@ describe(`HeatmapTable`, () => {
       props: { data, columns: sample_columns },
     })
 
-    const cells = document.body.querySelectorAll(`td`)
+    const cells = document.querySelectorAll(`td`)
     expect(cells).toHaveLength(3)
     expect(cells[0].textContent?.trim()).toBe(`Empty Model`)
     expect(cells[1].textContent?.trim()).toBe(`n/a`)
@@ -350,7 +350,7 @@ describe(`HeatmapTable`, () => {
       props: { data, columns: sample_columns },
     })
 
-    const cells = document.body.querySelectorAll(`td`)
+    const cells = document.querySelectorAll(`td`)
     expect(cells).toHaveLength(6) // 2 rows × 3 columns
 
     // Get all cell text content
@@ -390,8 +390,8 @@ describe(`HeatmapTable`, () => {
     })
 
     // Get the cells with HTML content
-    const html_cell = document.body.querySelector(`td[data-col="HTML"]`)
-    const complex_cell = document.body.querySelector(`td[data-col="Complex"]`)
+    const html_cell = document.querySelector(`td[data-col="HTML"]`)
+    const complex_cell = document.querySelector(`td[data-col="Complex"]`)
 
     // Verify cells exist and contain the expected HTML
     expect(html_cell).not.toBeNull()
@@ -511,7 +511,7 @@ describe(`HeatmapTable`, () => {
       })
 
       // Should have two rows in the header
-      const header_rows = document.body.querySelectorAll(`thead tr`)
+      const header_rows = document.querySelectorAll(`thead tr`)
       expect(header_rows).toHaveLength(2)
 
       // First row should contain the group headers
@@ -572,7 +572,7 @@ describe(`HeatmapTable`, () => {
       })
 
       // Should have two rows in the header
-      const header_rows = document.body.querySelectorAll(`thead tr`)
+      const header_rows = document.querySelectorAll(`thead tr`)
       expect(header_rows).toHaveLength(2)
 
       // Check the group header row
@@ -606,11 +606,11 @@ describe(`HeatmapTable`, () => {
         props: { data: [{ Col1: `a`, Col2: `b` }], columns: styled_columns },
       })
 
-      const header = document.body.querySelector(`th`)
+      const header = document.querySelector(`th`)
       expect(header?.getAttribute(`style`)).toContain(`color: red`)
       expect(header?.getAttribute(`style`)).toContain(`font-weight: lighter`)
       // Check that style is also applied to cells
-      const cell = document.body.querySelector(`td[data-col="Col1"]`)
+      const cell = document.querySelector(`td[data-col="Col1"]`)
       expect(cell?.getAttribute(`style`)).toContain(`font-weight: lighter;`)
     })
 
@@ -625,7 +625,7 @@ describe(`HeatmapTable`, () => {
         },
       })
 
-      const row = document.body.querySelector(`tbody tr`)
+      const row = document.querySelector(`tbody tr`)
       expect(row?.getAttribute(`style`)).toContain(`background-color: yellow`)
     })
 
@@ -639,7 +639,7 @@ describe(`HeatmapTable`, () => {
         },
       })
 
-      const container = document.body.querySelector(`.table-container`)
+      const container = document.querySelector(`.table-container`)
       expect(container?.getAttribute(`style`)).toContain(`max-height: 200px`)
       expect(container?.getAttribute(`style`)).toContain(`border: 1px solid blue`)
     })

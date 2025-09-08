@@ -5,8 +5,9 @@
   import type { Snippet } from 'svelte'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
+  import type { HTMLAttributes } from 'svelte/elements'
 
-  interface Props {
+  interface Props extends HTMLAttributes<HTMLDivElement> {
     data: RowData[]
     columns?: Label[]
     sort_hint?: string
@@ -19,7 +20,7 @@
     default_num_format?: string
     show_heatmap?: boolean
     heatmap_class?: string
-    [key: string]: unknown
+    onrowdblclick?: (event: MouseEvent, row: RowData) => void
   }
   let {
     data,
@@ -34,6 +35,7 @@
     default_num_format = `.3`,
     show_heatmap = $bindable(true),
     heatmap_class = `heatmap`,
+    onrowdblclick,
     ...rest
   }: Props = $props()
 
@@ -180,7 +182,7 @@
   }
 </script>
 
-<div class="table-container" {@attach tooltip()} {...rest}>
+<div {@attach tooltip()} {...rest} class="table-container {rest.class ?? ``}">
   {#if (sort_state && sort_hint) || controls}
     <div class="table-header">
       {#if sort_state && sort_hint}
@@ -231,7 +233,12 @@
     </thead>
     <tbody>
       {#each sorted_data as row (JSON.stringify(row))}
-        <tr animate:flip={{ duration: 500 }} style={row.style}>
+        <tr
+          animate:flip={{ duration: 500 }}
+          style={row.style}
+          class={String(row.class) ?? null}
+          ondblclick={onrowdblclick ? (event) => onrowdblclick(event, row) : undefined}
+        >
           {#each visible_columns as col (col.label + col.group)}
             {@const val = row[get_col_id(col)]}
             {@const color = calc_color(val, col)}
@@ -266,22 +273,21 @@
 
 <style>
   .table-container {
-    overflow-x: auto;
     display: grid;
     grid-template-columns: 1fr min-content 1fr;
     font-size: var(--heatmap-font-size, 0.9em);
-    /* https://stackoverflow.com/a/38994837 */
-    scrollbar-width: none; /* Firefox */
-    max-width: 90vw;
   }
   .table-container::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
   }
   table {
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* https://stackoverflow.com/a/38994837 */
+    scrollbar-width: none; /* Firefox */
+    max-width: 90vw;
   }
-  th,
-  td {
+  th, td {
     padding: var(--heatmap-cell-padding, 1pt 5pt);
     text-align: var(--heatmap-text-align, left);
     border: var(--heatmap-cell-border, none);
@@ -302,9 +308,6 @@
     left: 0;
     background: var(--heatmap-header-bg, var(--page-bg));
     z-index: 1;
-  }
-  tr:nth-child(odd) td.sticky-col {
-    background: var(--heatmap-row-odd-bg, var(--table-odd));
   }
   tbody tr:hover {
     filter: var(--heatmap-row-hover-filter, brightness(1.1));
@@ -333,5 +336,11 @@
   }
   .not-sortable {
     cursor: default;
+  }
+  tr.highlight {
+    background-color: var(--nav-bg) !important;
+  }
+  tr.highlight, tr.highlight :global(a) {
+    color: var(--highlight) !important;
   }
 </style>

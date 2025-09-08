@@ -15,11 +15,11 @@ describe(`TableControls`, () => {
     })
 
     // Check filter checkboxes
-    const filter_checkboxes = document.body.querySelectorAll(`input[type="checkbox"]`)
+    const filter_checkboxes = document.querySelectorAll(`input[type="checkbox"]`)
     expect(filter_checkboxes.length).toBeGreaterThan(0)
 
     // Check column toggle button exists
-    const col_toggle_btn = document.body.querySelector(
+    const col_toggle_btn = document.querySelector(
       `[aria-label="Toggle column visibility"]`,
     )
     expect(col_toggle_btn).toBeDefined()
@@ -34,7 +34,7 @@ describe(`TableControls`, () => {
     })
 
     // Find filter checkboxes
-    const checkboxes = document.body.querySelectorAll(`input[type="checkbox"]`)
+    const checkboxes = document.querySelectorAll(`input[type="checkbox"]`)
     expect(checkboxes.length).toBeGreaterThan(0)
 
     // Click first checkbox (energy-only) and check if callback is called
@@ -67,7 +67,7 @@ describe(`TableControls`, () => {
     })
 
     // Find column toggle button
-    const toggle_btn = document.body.querySelector(
+    const toggle_btn = document.querySelector(
       `[aria-label="Toggle column visibility"]`,
     ) as HTMLButtonElement
     expect(toggle_btn).toBeDefined()
@@ -78,7 +78,7 @@ describe(`TableControls`, () => {
 
       // Check if column menu or panel is visible
       // The component might use different class names, so we try multiple options
-      const column_menu = document.body.querySelector(`.column-menu, .column-panel`)
+      const column_menu = document.querySelector(`.column-menu, .column-panel`)
       expect(column_menu).toBeDefined()
 
       // Click outside to close (if the component uses a click-outside pattern)
@@ -95,14 +95,14 @@ describe(`TableControls`, () => {
     })
 
     // Open column menu/panel (if it exists)
-    const toggle_btn = document.body.querySelector(
+    const toggle_btn = document.querySelector(
       `[aria-label="Toggle column visibility"]`,
     ) as HTMLButtonElement
     if (toggle_btn) {
       toggle_btn.click()
 
       // Click column checkbox and check if callback is called
-      const column_checkboxes = document.body.querySelectorAll(`input[type="checkbox"]`)
+      const column_checkboxes = document.querySelectorAll(`input[type="checkbox"]`)
       if (column_checkboxes.length > 0) {
         on_col_change.mockReset()
         ;(column_checkboxes[0] as HTMLInputElement).click()
@@ -118,7 +118,7 @@ describe(`TableControls`, () => {
     })
 
     // Check for info icons in the document
-    const info_icons = document.body.querySelectorAll(`.info-icon, [aria-label*="info"]`)
+    const info_icons = document.querySelectorAll(`.info-icon, [aria-label*="info"]`)
 
     // If info icons exist, try simulating a hover
     if (info_icons.length > 0) {

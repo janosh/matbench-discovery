@@ -1,13 +1,13 @@
 <script lang="ts">
   import type { Reference } from '$lib'
+  import type { HTMLAttributes } from 'svelte/elements'
 
-  interface Props {
+  interface Props extends HTMLAttributes<HTMLOListElement> {
     references: Reference[]
     ref_selector?: string
     found_on_page?: Reference[]
     n_authors?: number
     first_name_mode?: `initial` | `full` | `none`
-    [key: string]: unknown
   }
   let {
     references,

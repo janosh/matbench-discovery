@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Icon } from '$lib'
+  import type { HTMLAttributes } from 'svelte/elements'
   import type { IconName } from './icons'
 
-  interface Props {
+  interface Props extends HTMLAttributes<HTMLSpanElement> {
     icons: { id?: string; src?: string; name: string }[] | undefined
-    [key: string]: unknown
   }
   let { icons = $bindable([]), ...rest }: Props = $props()
 </script>

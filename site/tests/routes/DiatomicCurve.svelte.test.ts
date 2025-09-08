@@ -32,7 +32,7 @@ describe(`DiatomicCurve`, () => {
     })
 
     // Verify component renders with expected content
-    expect(document.body.querySelector(`h3, .title, .formula`)).toBeDefined()
+    expect(document.querySelector(`h3, .title, .formula`)).toBeDefined()
     expect(document.body.textContent).toContain(`H₂`)
   })
 
@@ -43,7 +43,7 @@ describe(`DiatomicCurve`, () => {
       props: { formula: `H₂`, curves: sample_curves, style },
     })
 
-    const curve_container = document.body.querySelector(`.plot`)
+    const curve_container = document.querySelector(`.plot`)
     expect(curve_container).toBeDefined()
     expect(curve_container?.getAttribute(`style`)).toContain(style)
   })
