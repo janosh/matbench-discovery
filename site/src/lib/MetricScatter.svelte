@@ -4,18 +4,17 @@
   import { get_nested_value } from '$lib/metrics'
   import type { Label } from '$lib/types'
   import { type DataSeries, type PointStyle, ScatterPlot } from 'matterviz'
+  import type { HTMLAttributes } from 'svelte/elements'
   import { METADATA_COLS } from './labels'
 
-  interface Props {
+  interface Props extends HTMLAttributes<HTMLDivElement> {
     x_prop: Label
     y_prop: Label
     models?: ModelData[]
     model_filter?: (model: ModelData) => boolean
     point_style?: PointStyle
     date_range?: [Date | null, Date | null]
-    style?: string
     show_model_labels?: boolean | `auto-placement`
-    [key: string]: unknown
   }
   let {
     x_prop,
@@ -24,7 +23,6 @@
     models = Object.values(MODELS),
     point_style = {},
     date_range = [null, null],
-    style = ``,
     show_model_labels = true,
     ...rest
   }: Props = $props()
@@ -104,7 +102,6 @@
   {y_label}
   x_format={x_prop?.format ?? `.1s`}
   y_format={y_prop?.format ?? `.3f`}
-  {style}
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata })}

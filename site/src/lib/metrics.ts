@@ -281,6 +281,7 @@ export function assemble_row_data(
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,
       Prec: discovery_metrics?.Precision,
+      Recall: discovery_metrics?.Recall,
       Acc: discovery_metrics?.Accuracy,
       TPR: discovery_metrics?.TPR,
       TNR: discovery_metrics?.TNR,

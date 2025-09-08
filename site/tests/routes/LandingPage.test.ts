@@ -8,7 +8,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`renders discovery set toggle buttons`, () => {
-    const buttons = document.body.querySelectorAll(`.selection-toggle button`)
+    const buttons = document.querySelectorAll(`.selection-toggle button`)
     expect(buttons).toHaveLength(3) // 3 from test set select
 
     const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
@@ -18,7 +18,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles discovery set when clicking buttons`, async () => {
-    const buttons = Array.from(document.body.querySelectorAll(`.selection-toggle button`))
+    const buttons = Array.from(document.querySelectorAll(`.selection-toggle button`))
     const [full_test_btn, unique_protos_btn] = buttons
 
     // Initially Unique Prototypes should be active
@@ -34,8 +34,10 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles column visibility panel`, () => {
-    const columns_btn = document.body.querySelector(`details.column-toggles summary`)
-    const column_menu = document.body.querySelector(`.column-menu`)
+    const columns_btn = document.querySelector(
+      `details.column-toggles summary`,
+    ) as HTMLButtonElement
+    const column_menu = document.querySelector(`.column-menu`)
 
     // Column menu should be hidden initially
     expect(column_menu?.closest(`details`)?.open).toBe(false)
@@ -50,35 +52,35 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles non-compliant models`, async () => {
-    const toggle = document.body.querySelector(
+    const toggle = document.querySelector(
       `.table-controls label input[type="checkbox"]`,
-    )
+    ) as HTMLInputElement
     expect(toggle).toBeDefined()
 
     // Should be unchecked by default
     expect(toggle?.checked).toBe(true)
     // get number of table rows
-    const n_models_on_load = document.body.querySelectorAll(`tbody tr`).length
+    const n_models_on_load = document.querySelectorAll(`tbody tr`).length
 
     // Click to show non-compliant models
     toggle?.click()
     expect(toggle?.checked).toBe(false)
     await tick()
-    const n_all_models = document.body.querySelectorAll(`tbody tr`).length
+    const n_all_models = document.querySelectorAll(`tbody tr`).length
     expect(n_all_models).toBeLessThan(n_models_on_load)
   })
 
   it(`updates column visibility when toggling checkboxes`, async () => {
-    const columns_btn = document.body.querySelector(`details.column-toggles summary`)
+    const columns_btn = document.querySelector(`details.column-toggles summary`)
     columns_btn?.click()
     // Table should reflect column visibility changes
-    let f1_cells = document.body.querySelectorAll(`th, td`)
+    let f1_cells = document.querySelectorAll(`th, td`)
     let has_f1_column = Array.from(f1_cells).some((cell) =>
       cell.textContent?.includes(`F1`)
     )
     expect(has_f1_column).toBe(true)
 
-    const checkboxes = document.body.querySelectorAll(
+    const checkboxes = document.querySelectorAll(
       `.column-menu input[type="checkbox"]`,
     )
     const f1_checkbox = Array.from(checkboxes).find((cb) =>
@@ -92,20 +94,20 @@ describe(`Landing Page`, () => {
     expect(f1_checkbox?.checked).toBe(false)
 
     // Table should reflect column visibility changes
-    f1_cells = document.body.querySelectorAll(`th, td`)
+    f1_cells = document.querySelectorAll(`th, td`)
     has_f1_column = Array.from(f1_cells).some((cell) => cell.textContent?.includes(`F1`))
     expect(has_f1_column).toBe(false)
   })
 
   it(`displays best model information`, () => {
-    const best_model_info = document.body.querySelector(`#best-report`)
+    const best_model_info = document.querySelector(`#best-report`)
     expect(best_model_info?.textContent).toMatch(/highest F1 score/)
     expect(best_model_info?.textContent).toMatch(/discovery acceleration factor/)
   })
 
   it(`renders table downloads section`, () => {
     // Check that the download buttons section exists
-    const download_section = document.body.querySelector(`.downloads`)
+    const download_section = document.querySelector(`.downloads`)
     expect(download_section).not.toBeNull()
 
     // Check that it contains SVG, PNG, CSV, Excel buttons plus RSS link
@@ -121,7 +123,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`displays valid metric values`, () => {
-    const best_model_info = document.body.querySelector(`#best-report`)
+    const best_model_info = document.querySelector(`#best-report`)
     const text = best_model_info?.textContent || ``
 
     // Extract F1 and DAF values using regex

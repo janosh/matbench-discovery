@@ -1,13 +1,13 @@
 <script lang="ts">
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
+  import type { HTMLAttributes } from 'svelte/elements'
   import { format_num } from 'matterviz'
 
-  interface Props {
+  interface Props extends HTMLAttributes<HTMLElementTagNameMap[`strong`]> {
     element: ChemicalElement
     elem_counts: number[] | Record<ElementSymbol, number>
     show_percent?: boolean
     unit?: string
-    [key: string]: unknown
   }
   let { element, elem_counts, show_percent = true, unit = ``, ...rest }: Props =
     $props()

@@ -21,14 +21,14 @@ describe(`ModelCard`, () => {
         props: { model, metrics, sort_by: `F1` },
       })
 
-      const header = document.body.querySelector(`h2`)
+      const header = document.querySelector(`h2`)
       expect(header?.textContent).toContain(`MACE`)
 
-      const links = document.body.querySelectorAll<HTMLAnchorElement>(`nav a`)
+      const links = document.querySelectorAll<HTMLAnchorElement>(`nav a`)
       expect(links.length).toBeGreaterThan(0)
       expect(links[0].href).toBe(model.repo)
 
-      const info_spans = document.body.querySelectorAll(`section.metadata > span`)
+      const info_spans = document.querySelectorAll(`section.metadata > span`)
       // Training set is now first in the metadata section, so we need to check other spans
       // Find the date_added span by its content
       const date_added_span = Array.from(info_spans).find((span) =>
@@ -64,7 +64,7 @@ describe(`ModelCard`, () => {
         props: { model: minimal_model, metrics, sort_by: `F1` },
       })
 
-      const links = document.body.querySelectorAll(`nav a`)
+      const links = document.querySelectorAll(`nav a`)
       expect(links.length).toBeGreaterThan(0)
       expect(document.body.textContent).not.toContain(`Published`)
     })
@@ -81,7 +81,7 @@ describe(`ModelCard`, () => {
 
     // Look for span containing "Training set" text
     const training_set = Array.from(
-      document.body.querySelectorAll(`section.metadata span`),
+      document.querySelectorAll(`section.metadata span`),
     ).find((span) => span.textContent?.includes(`Training data`))
     expect(training_set).toBeDefined()
     expect(training_set?.textContent).toContain(`Training data:`)
@@ -108,7 +108,7 @@ describe(`ModelCard`, () => {
         props: { model, metrics, sort_by: `F1` },
       })
 
-      const metrics_lis = document.body.querySelectorAll(`.metrics li`)
+      const metrics_lis = document.querySelectorAll(`.metrics li`)
       expect(metrics_lis.length).toBeGreaterThan(0)
 
       const f1_metric = Array.from(metrics_lis).find((m) => m.textContent?.includes(`F1`))
@@ -135,7 +135,7 @@ describe(`ModelCard`, () => {
         props: { model: model_without_metrics, metrics, sort_by: `F1` },
       })
 
-      const metrics_li_strong = document.body.querySelectorAll(`.metrics li strong`)[0]
+      const metrics_li_strong = document.querySelectorAll(`.metrics li strong`)[0]
       expect(metrics_li_strong.textContent?.trim()).toBe(`n/a`)
     })
   })
@@ -149,11 +149,11 @@ describe(`ModelCard`, () => {
       })
 
       // Initially only metrics section should be visible
-      const initial_sections = document.body.querySelectorAll(`section:not(.metrics) h3`)
+      const initial_sections = document.querySelectorAll(`section:not(.metrics) h3`)
       expect(initial_sections).toHaveLength(0)
 
       show_details = true
-      const sections = document.body.querySelectorAll(`section h3`)
+      const sections = document.querySelectorAll(`section h3`)
       const section_titles = Array.from(sections).map((h3) => h3.textContent)
       expect(section_titles).toEqual([`Metrics`])
     })
@@ -165,12 +165,12 @@ describe(`ModelCard`, () => {
       })
 
       // Check author info within the list item
-      const author_li = document.body.querySelector(`section:first-child ul li`)
+      const author_li = document.querySelector(`section:first-child ul li`)
       expect(author_li?.textContent?.trim()).toContain(model.authors[0].name)
 
       // Check package versions
       const packages = Array.from(
-        document.body.querySelectorAll(`section:nth-child(2) li`),
+        document.querySelectorAll(`section:nth-child(2) li`),
       )
       expect(packages.length > 0).toBe(true)
       const first_package = Object.entries(model.requirements ?? {})[0]
@@ -189,7 +189,7 @@ describe(`ModelCard`, () => {
       })
 
       // Test show_details default (should be false - no detail sections visible)
-      const detail_sections = document.body.querySelectorAll(
+      const detail_sections = document.querySelectorAll(
         `section:not(.metrics):not(.metadata) h3`,
       )
       expect(detail_sections.length, `show_details should default to false`).toBe(0)

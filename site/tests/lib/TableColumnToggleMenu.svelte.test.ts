@@ -17,11 +17,11 @@ describe(`TableColumnToggleMenu`, () => {
     })
 
     // Verify basic elements and structure
-    const summary = document.body.querySelector(`summary`)
+    const summary = document.querySelector(`summary`)
     expect(summary?.textContent?.trim()).toBe(`Columns`)
 
     // Verify checkboxes match columns config
-    const checkboxes = document.body.querySelectorAll(`input[type="checkbox"]`)
+    const checkboxes = document.querySelectorAll(`input[type="checkbox"]`)
     expect(checkboxes).toHaveLength(3)
     expect((checkboxes[0] as HTMLInputElement).checked).toBe(true)
   })
@@ -33,9 +33,9 @@ describe(`TableColumnToggleMenu`, () => {
     })
 
     // Click first checkbox via its label and verify state update
-    const labels = document.body.querySelectorAll(`label`)
+    const labels = document.querySelectorAll(`label`)
     expect(
-      (document.body.querySelectorAll(`input[type="checkbox"]`)[0] as HTMLInputElement)
+      (document.querySelectorAll(`input[type="checkbox"]`)[0] as HTMLInputElement)
         .checked,
     ).toBe(true)
 
@@ -50,11 +50,11 @@ describe(`TableColumnToggleMenu`, () => {
       props: { columns, column_panel_open: false },
     })
 
-    const details = document.body.querySelector(`details`)
+    const details = document.querySelector(`details`)
     expect(details?.open).toBe(false)
 
     // Open panel and verify state
-    document.body.querySelector(`summary`)?.click()
+    document.querySelector(`summary`)?.click()
     await tick()
     expect(details?.open).toBe(true)
   })
@@ -73,7 +73,7 @@ describe(`TableColumnToggleMenu`, () => {
     })
 
     // Verify HTML elements are properly rendered
-    expect(document.body.querySelector(`sub`)).toBeDefined()
-    expect(document.body.querySelector(`sup`)).toBeDefined()
+    expect(document.querySelector(`sub`)).toBeDefined()
+    expect(document.querySelector(`sup`)).toBeDefined()
   })
 })

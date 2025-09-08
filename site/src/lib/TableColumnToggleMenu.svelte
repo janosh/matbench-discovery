@@ -6,7 +6,6 @@
     columns: Label[]
     column_panel_open?: boolean
   }
-
   let { columns = $bindable([]), column_panel_open = $bindable(false) }: Props =
     $props()
 

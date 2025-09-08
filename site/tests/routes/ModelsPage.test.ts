@@ -8,21 +8,21 @@ describe(`Models Page`, () => {
   })
 
   it(`renders model sorting controls`, () => {
-    const toggle = document.body.querySelector(`input[type="checkbox"]`)
+    const toggle = document.querySelector(`input[type="checkbox"]`)
     expect(toggle).toBeDefined()
     expect(toggle?.parentElement?.textContent).toMatch(/show non-compliant models/i)
 
-    const n_best_input = document.body.querySelector(
+    const n_best_input = document.querySelector(
       `input[type="number"]`,
     ) as HTMLInputElement
     expect(n_best_input).toBeDefined()
 
-    const radio_buttons = document.body.querySelectorAll(`input[type="radio"]`)
+    const radio_buttons = document.querySelectorAll(`input[type="radio"]`)
     expect(radio_buttons).toHaveLength(2)
   })
 
   it(`renders metric sorting buttons`, () => {
-    const buttons = document.body.querySelectorAll(`ul button`)
+    const buttons = document.querySelectorAll(`ul button`)
     const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
 
     expect(button_texts).toContain(`Model Name`)
@@ -32,7 +32,7 @@ describe(`Models Page`, () => {
   })
 
   it(`renders model cards`, () => {
-    const model_cards = document.body.querySelectorAll(`ol > li`)
+    const model_cards = document.querySelectorAll(`ol > li`)
     expect(model_cards.length).toBeGreaterThan(0)
 
     // Test first model card structure
@@ -44,19 +44,19 @@ describe(`Models Page`, () => {
 
   it(`sorts models by selected metric`, async () => {
     // Get initial order of models
-    const initial_models = Array.from(document.body.querySelectorAll(`ol > li h2 a`)).map(
+    const initial_models = Array.from(document.querySelectorAll(`ol > li h2 a`)).map(
       (a) => a.textContent,
     )
 
     // Click DAF button to sort by DAF
-    const daf_btn = document.body.querySelector(`button#DAF`) as HTMLButtonElement
+    const daf_btn = document.querySelector(`button#DAF`) as HTMLButtonElement
     expect(daf_btn).toBeDefined()
     daf_btn?.click()
     await tick() // wait for re-render
 
     // Get new order of models
-    const sorted_models = Array.from(document.body.querySelectorAll(`ol > li h2 a`)).map(
-      (a) => a.textContent,
+    const sorted_models = Array.from(document.querySelectorAll(`ol > li h2 a`)).map((a) =>
+      a.textContent
     )
 
     // Order should be different
@@ -64,7 +64,7 @@ describe(`Models Page`, () => {
   })
 
   it(`toggles model details`, async () => {
-    const first_card = document.body.querySelector(`ol > li`)
+    const first_card = document.querySelector(`ol > li`)
     const details_btn = first_card?.querySelector(`h2 button`) as HTMLButtonElement
     expect(details_btn).toBeDefined()
 
@@ -92,7 +92,7 @@ describe(`Models Page`, () => {
 
   it(`binds show_details state between page and model cards`, async () => {
     const model_cards = Array.from(
-      document.body.querySelectorAll<HTMLElement>(`ol > li`),
+      document.querySelectorAll<HTMLElement>(`ol > li`),
     )
     expect(model_cards.length).toBeGreaterThan(1)
 
@@ -117,7 +117,7 @@ describe(`Models Page`, () => {
   })
 
   it(`limits number of displayed models`, () => {
-    const n_best_input = document.body.querySelector(
+    const n_best_input = document.querySelector(
       `input[type="number"]`,
     ) as HTMLInputElement
     expect(n_best_input).toBeDefined()
@@ -126,12 +126,12 @@ describe(`Models Page`, () => {
     n_best_input.value = `3`
     n_best_input.dispatchEvent(new Event(`input`))
 
-    const displayed_models = document.body.querySelectorAll(`ol > li`)
+    const displayed_models = document.querySelectorAll(`ol > li`)
     expect(displayed_models.length > 7).toBe(true)
   })
 
   it(`renders color legend`, () => {
-    const legend = document.body.querySelector(`legend`)
+    const legend = document.querySelector(`legend`)
     expect(legend?.textContent).toContain(`best`)
     expect(legend?.textContent).toContain(`worst`)
 
@@ -143,7 +143,7 @@ describe(`Models Page`, () => {
     expect(color_bar).toBeDefined()
 
     const model_cards_h2 = Array.from(
-      document.body.querySelectorAll<HTMLElement>(`ol > li h2`),
+      document.querySelectorAll<HTMLElement>(`ol > li h2`),
     )
     expect(model_cards_h2.length).toBeGreaterThan(0)
 

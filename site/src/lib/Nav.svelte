@@ -1,11 +1,11 @@
 <script lang="ts">
   import { page } from '$app/state'
+  import type { HTMLAttributes } from 'svelte/elements'
   import type { Snippet } from 'svelte'
 
-  interface Props {
+  interface Props extends HTMLAttributes<HTMLNavElement> {
     routes: (string | [string, string])[]
     children?: Snippet
-    [key: string]: unknown
   }
   let { routes, children, ...rest }: Props = $props()
 

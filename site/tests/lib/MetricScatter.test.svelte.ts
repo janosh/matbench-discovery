@@ -12,7 +12,7 @@ describe(`MetricScatter`, () => {
       target: document.body,
       props: { x_prop: HYPERPARAMS.model_params, y_prop: ALL_METRICS.CPS },
     })
-    expect(document.body.querySelector(`svg`)).toBeDefined()
+    expect(document.querySelector(`svg`)).toBeDefined()
   })
 
   // Test rendering points with specific columns
@@ -21,7 +21,7 @@ describe(`MetricScatter`, () => {
       target: document.body,
       props: { x_prop: HYPERPARAMS.model_params, y_prop: ALL_METRICS.F1 },
     })
-    expect(document.body.querySelector(`svg`)).toBeDefined()
+    expect(document.querySelector(`svg`)).toBeDefined()
   })
 
   // Test model filtering
@@ -35,7 +35,7 @@ describe(`MetricScatter`, () => {
         model_filter: (model: ModelData) => model.model_name === `Test Model 1`,
       },
     })
-    expect(document.body.querySelector(`svg`)).toBeDefined()
+    expect(document.querySelector(`svg`)).toBeDefined()
   })
 
   // Test point radius styling
@@ -49,7 +49,7 @@ describe(`MetricScatter`, () => {
         point_radius: custom_radius,
       },
     })
-    expect(document.body.querySelector(`svg`)).toBeDefined()
+    expect(document.querySelector(`svg`)).toBeDefined()
   })
 
   // Test handling different metric columns
@@ -59,14 +59,14 @@ describe(`MetricScatter`, () => {
       target: document.body,
       props: { x_prop: HYPERPARAMS.model_params, y_prop: ALL_METRICS.RMSD },
     })
-    expect(document.body.querySelector(`svg`)).toBeDefined()
+    expect(document.querySelector(`svg`)).toBeDefined()
 
     // Test with Kappa
     mount(MetricScatter, {
       target: document.body,
       props: { x_prop: HYPERPARAMS.model_params, y_prop: ALL_METRICS.κ_SRME },
     })
-    expect(document.body.querySelector(`svg`)).toBeDefined()
+    expect(document.querySelector(`svg`)).toBeDefined()
   })
 
   // Test handling different property columns for X axis
@@ -79,7 +79,7 @@ describe(`MetricScatter`, () => {
         config: DEFAULT_CPS_CONFIG,
       },
     })
-    expect(document.body.querySelector(`svg`)).toBeDefined()
+    expect(document.querySelector(`svg`)).toBeDefined()
   })
 
   // Test rendering with date on X axis
@@ -88,7 +88,7 @@ describe(`MetricScatter`, () => {
       target: document.body,
       props: { x_prop: METADATA_COLS.date_added, y_prop: ALL_METRICS.F1 },
     })
-    expect(document.body.querySelector(`svg`)).toBeDefined()
+    expect(document.querySelector(`svg`)).toBeDefined()
   })
 
   // Test date range filtering
@@ -104,7 +104,7 @@ describe(`MetricScatter`, () => {
         date_range: [start_date, end_date],
       },
     })
-    expect(document.body.querySelector(`svg`)).toBeDefined()
+    expect(document.querySelector(`svg`)).toBeDefined()
   })
 
   // Test custom styles
@@ -118,6 +118,6 @@ describe(`MetricScatter`, () => {
         style: custom_style,
       },
     })
-    expect(document.body.querySelector(`svg`)).toBeDefined()
+    expect(document.querySelector(`svg`)).toBeDefined()
   })
 })

@@ -7,6 +7,7 @@
   import type { D3ColorSchemeName } from 'matterviz/colors'
   import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
+  import type { HTMLAttributes } from 'svelte/elements'
   import {
     ALL_METRICS,
     format_property_path,
@@ -15,12 +16,11 @@
   } from './labels'
   import { get_nested_value } from './metrics'
 
-  interface Props {
+  interface Props extends HTMLAttributes<HTMLDivElement> {
     models: ModelData[]
     model_filter?: (model: ModelData) => boolean
     point_color?: string | null
     show_model_labels?: boolean
-    [key: string]: unknown
   }
   let {
     models,

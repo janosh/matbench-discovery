@@ -1,18 +1,18 @@
 <script lang="ts">
   import { MODELS } from '$lib'
   import { type InternalPoint, ScatterPlot } from 'matterviz'
+  import type { HTMLAttributes } from 'svelte/elements'
 
-  interface Props {
+  interface Props extends HTMLAttributes<HTMLDivElement> {
     formula: string
-    curves: Array<{
+    curves: {
       model_key: string
       distances: number[]
       energies: number[]
       color: string
-    }>
+    }[]
     tooltip_point?: InternalPoint | null
     hovered?: boolean
-    [key: string]: unknown
   }
   let {
     formula,
@@ -85,7 +85,7 @@
 </script>
 
 <!-- TODO increase font size of axes titles and tick labels -->
-<div class="plot" {...rest}>
+<div {...rest} class="plot {rest.class ?? ``}">
   <h3>{formula}</h3>
   <ScatterPlot
     {series}
