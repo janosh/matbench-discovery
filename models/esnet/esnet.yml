@@ -64,8 +64,8 @@ hyperparams:
   graph_construction_radius: 8.0
   max_neighbors: 25
 
-notes: # notes can have any key, be multiline and support markdown.
-  description: |
+notes:
+  Description: |
     ESNet is a graph neural network model designed for predicting the energy.
     The model builds on existing models based on crystal structure graph, to provide an in-depth analysis of how material elemental composition and crystal structure work together to influence material properties.
 

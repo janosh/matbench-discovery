@@ -4,7 +4,6 @@ import json
 import os
 import traceback
 import warnings
-from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
@@ -32,8 +31,7 @@ if TYPE_CHECKING:
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
-# EDITABLE CONFIG
-
+# Editable config
 model_name = "alphanet"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = "float64"
@@ -107,7 +105,7 @@ with open(f"{out_dir}/run_params.json", "w") as f:
     json.dump(run_params, f, indent=4)
 
 # Set up the relaxation and force set calculation
-optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 force_results: dict[str, dict[str, Any]] = {}
 kappa_results: dict[str, dict[str, Any]] = {}
 tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)

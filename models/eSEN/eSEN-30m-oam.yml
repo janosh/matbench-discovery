@@ -76,7 +76,7 @@ metrics:
       pred_file_url: https://figshare.com/files/53090591
   geo_opt:
     pred_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53054672
+    pred_file_url: https://figshare.com/files/53153477
     struct_col: pred_structure_esen
     symprec=1e-2:
       rmsd: 0.0608 # unitless

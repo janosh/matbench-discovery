@@ -105,7 +105,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52869011
   geo_opt:
     pred_file: models/alphanet/mptrj/2025-03-04-wbm-geo-opt-fire.jsonl.gz
-    pred_file_url: https://figshare.com/files/52858202
+    pred_file_url: https://figshare.com/files/53153453
     struct_col: alphanet_structure
     symprec=1e-5:
       rmsd: 0.1067 # unitless

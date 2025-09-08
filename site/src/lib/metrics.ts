@@ -12,7 +12,7 @@ import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
 import * as d3sc from 'd3-scale-chromatic'
-import { format_num, pick_color_for_contrast } from 'matterviz'
+import { format_num, pick_contrast_color } from 'matterviz'
 
 // model target type descriptions
 export const targets_tooltips: { [key in TargetType]: string } = {
@@ -203,7 +203,7 @@ export function calc_cell_color(
 
     const normalized_val = color_scale_fn(val)
     const bg = interpolator(normalized_val)
-    const text = pick_color_for_contrast(null, bg)
+    const text = pick_contrast_color({ bg_color: bg })
 
     return { bg, text }
   } else {
@@ -211,7 +211,7 @@ export function calc_cell_color(
     color_scale_fn = scaleSequential().domain(range).interpolator(interpolator)
 
     const bg = color_scale_fn(val)
-    const text = pick_color_for_contrast(null, bg)
+    const text = pick_contrast_color({ bg_color: bg })
 
     return { bg, text }
   }

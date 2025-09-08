@@ -67,7 +67,7 @@ hyperparams:
   n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
   n_radial_bessel_basis: 8
   graph_construction_radius: 5.0 # Å, from sevennet-0/hyperparams.yaml
-  max_neighbors: .Inf
+  max_neighbors: .inf
   sph_harmonics_l_max: 2
 
 requirements:
@@ -94,7 +94,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52134878
   geo_opt:
     pred_file: models/sevennet/sevennet-0/2024-07-11-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062035
+    pred_file_url: https://figshare.com/files/57753571
     struct_col: sevennet_structure
     symprec=1e-5:
       rmsd: 0.0193 # unitless

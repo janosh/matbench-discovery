@@ -87,7 +87,7 @@ elif slurm_array_task_count > 1:
     ]
 
 relax_results: dict[str, dict[str, Any]] = {}
-optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 
 # %%

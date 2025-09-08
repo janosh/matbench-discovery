@@ -31,7 +31,7 @@
   κ<sub>SRME</sub> ranges from 0 to 2, the lower the better. This metric was introduced in
   <a href="https://arxiv.org/abs/2408.00755v4">arXiv:2408.00755v4</a>. This modeling task
   would not have been possible without the
-  <a href="https://github.com/materialsproject/PhononDB">PhononDB</a>
+  <a href="https://github.com/atztogo/phonondb">PhononDB</a>
   and the help of Atsushi Togo who kindly shared the
   <a
     href="https://github.com/atztogo/phonondb/blob/main/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe"

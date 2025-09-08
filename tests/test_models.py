@@ -116,11 +116,44 @@ def test_model_enum() -> None:
 
 
 @pytest.mark.parametrize(
+    "input_value, expected_model",
+    [
+        # Exact matches
+        ("mace_mp_0", Model.mace_mp_0),
+        ("eqv2_s_dens_mp", Model.eqv2_s_dens_mp),
+        # Dash conversion
+        ("mace-mp-0", Model.mace_mp_0),
+        ("eqV2-s-dens-mp", Model.eqv2_s_dens_mp),
+        # Case insensitive
+        ("MACE-MP-0", Model.mace_mp_0),
+        ("EQV2-S-DENS-MP", Model.eqv2_s_dens_mp),
+        # Mixed separators
+        ("mace-mp_0", Model.mace_mp_0),
+        ("mace_mp-0", Model.mace_mp_0),
+    ],
+)
+def test_model_missing_valid_inputs(input_value: str, expected_model: Model) -> None:
+    """Test that _missing_ method correctly handles valid inputs."""
+    assert Model._missing_(input_value) is expected_model
+
+
+@pytest.mark.parametrize(
+    "input_value",
+    [123, None, [], {}, "nonexistent", "mace-mp-1", "eqv2-s-dens", "", "   "],
+)
+def test_model_missing_invalid_inputs(
+    input_value: str | int | None | list | dict,
+) -> None:
+    """Test that _missing_ method returns None for invalid inputs."""
+    assert Model._missing_(input_value) is None  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
     "model, is_compliant",
     [
         (Model.megnet, True),
-        (Model.eqv2_m, False),
-        (Model.eqv2_s_dens, True),
+        (Model.eqv2_m_omat_salex_mp, False),
+        (Model.eqv2_s_dens_mp, True),
         (Model.orb_v2, False),
         (Model.wrenformer, True),
         (Model.voronoi_rf, True),

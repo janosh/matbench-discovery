@@ -432,15 +432,8 @@
 {/if}
 
 <style>
-  section {
-    margin-bottom: 1em;
-  }
   h2 {
-    margin: 1em auto 0;
-    padding: 0;
-  }
-  h3 {
-    margin: 1em 0;
+    margin: 2ex auto 0;
   }
   section:is(.deps, .model-info) ul {
     display: flex;
@@ -482,12 +475,12 @@
   }
   .links .dropdown {
     position: absolute;
-    margin-top: 5px;
     background-color: var(--page-bg);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border);
     border-radius: 5px;
     z-index: 3;
     min-width: max-content;
+    box-shadow: 0 0 10px var(--shadow);
   }
   .links .dropdown a {
     display: block;

@@ -125,7 +125,7 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 # %% time
 relax_results: dict[str, dict[str, Any]] = {}
-optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
     mat_id = atoms.info[Key.mat_id]

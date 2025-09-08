@@ -104,7 +104,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52151558
   geo_opt:
     pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062392
+    pred_file_url: https://figshare.com/files/53153468
     struct_col: eqV2-86M-omat-salex-mp_structure
     symprec=1e-5:
       rmsd: 0.0757 # unitless

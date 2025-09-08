@@ -137,7 +137,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52134884
   geo_opt:
     pred_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062176
+    pred_file_url: https://figshare.com/files/57753373
     struct_col: mattersim_5M_structure
     symprec=1e-2:
       rmsd: 0.0733 # unitless

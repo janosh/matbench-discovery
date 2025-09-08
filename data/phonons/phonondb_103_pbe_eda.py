@@ -46,5 +46,5 @@ for atoms in atoms_list:
     moyo_data = MoyoDataset(MoyoAdapter.from_atoms(atoms))
     spg_nums[atoms.info["material_id"]] = moyo_data.number
 
-fig = pmv.spacegroup_sunburst(spg_nums.values(), show_counts="value+percent")
+fig = pmv.spacegroup_sunburst(list(spg_nums.values()), show_counts="value+percent")
 fig.show()

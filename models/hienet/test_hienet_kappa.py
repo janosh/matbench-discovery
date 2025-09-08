@@ -24,7 +24,6 @@ import json
 import os
 import traceback
 import warnings
-from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
@@ -60,7 +59,7 @@ args = parser.parse_args()
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
-# EDITABLE CONFIG
+# Editable config
 model_name = "HIENet-V3.pth"
 
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
@@ -131,7 +130,7 @@ with open(
     json.dump(run_params, file, indent=4)
 
 # Set up the relaxation and force set calculation
-optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 force_results: dict[str, dict[str, Any]] = {}
 kappa_results: dict[str, dict[str, Any]] = {}
 tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)

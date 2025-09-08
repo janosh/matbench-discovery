@@ -91,7 +91,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52134890
   geo_opt:
     pred_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062317
+    pred_file_url: https://figshare.com/files/57753379
     struct_col: orb_structure
     symprec=1e-5:
       rmsd: 0.1007 # unitless
