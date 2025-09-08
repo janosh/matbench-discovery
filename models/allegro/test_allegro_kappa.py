@@ -21,12 +21,13 @@ from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Literal
 
 import ase.io
-import ase.optimize as opt
+import ase.optimize
+import ase.optimize.sciopt
 import pandas as pd
 import torch
 from ase import Atoms
 from ase.constraints import FixSymmetry
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from nequip.ase import NequIPCalculator
 from pymatgen.core.structure import Structure
 from pymatviz.enums import Key
@@ -38,7 +39,7 @@ from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from ase.optimize import Optimizer
 
 with contextlib.suppress(ImportError):
     # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use
@@ -161,24 +162,24 @@ def calc_kappa_for_structure(
         "error_traceback": [],
     }
 
-    filter_cls: Callable[[Atoms], Atoms] = {
+    filter_cls: type[Filter] = {
         "frechet": FrechetCellFilter,
         "exp": ExpCellFilter,
     }[ase_filter]
     optimizer_dict = {
-        "GPMin": opt.GPMin,
-        "GOQN": opt.GoodOldQuasiNewton,
-        "BFGSLineSearch": opt.BFGSLineSearch,
-        "QuasiNewton": opt.BFGSLineSearch,
-        "SciPyFminBFGS": opt.sciopt.SciPyFminBFGS,
-        "BFGS": opt.BFGS,
-        "LBFGSLineSearch": opt.LBFGSLineSearch,
-        "SciPyFminCG": opt.sciopt.SciPyFminCG,
-        "FIRE2": opt.fire2.FIRE2,
-        "FIRE": opt.fire.FIRE,
-        "LBFGS": opt.LBFGS,
+        "GPMin": ase.optimize.GPMin,
+        "GOQN": ase.optimize.GoodOldQuasiNewton,
+        "BFGSLineSearch": ase.optimize.BFGSLineSearch,
+        "QuasiNewton": ase.optimize.BFGSLineSearch,
+        "SciPyFminBFGS": ase.optimize.sciopt.SciPyFminBFGS,
+        "BFGS": ase.optimize.BFGS,
+        "LBFGSLineSearch": ase.optimize.LBFGSLineSearch,
+        "SciPyFminCG": ase.optimize.sciopt.SciPyFminCG,
+        "FIRE2": ase.optimize.FIRE2,
+        "FIRE": ase.optimize.FIRE,
+        "LBFGS": ase.optimize.LBFGS,
     }
-    optim_cls: Callable[..., opt.optimize.Optimizer] = optimizer_dict[ase_optimizer]
+    optim_cls: type[Optimizer] = optimizer_dict[ase_optimizer]
 
     # Initialize variables that might be needed in error handling
     relax_dict = {"max_stress": None, "reached_max_steps": False}

@@ -14,16 +14,16 @@ parallelisation over many GPUs/nodes).
 import contextlib
 import os
 import warnings
-from collections.abc import Callable
 from glob import glob
 from typing import Any, Literal
 
-import ase.optimize as opt
+import ase.optimize
+import ase.optimize.sciopt
 import numpy as np
 import pandas as pd
 import torch
-from ase import Atoms
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
+from ase.optimize import Optimizer
 from nequip.ase import NequIPCalculator
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
@@ -118,24 +118,24 @@ elif slurm_array_task_count > 1:
 
 relax_results: dict[str, dict[str, Any]] = {}
 
-filter_cls: Callable[[Atoms], Atoms] = {
+filter_cls: type[Filter] = {
     "frechet": FrechetCellFilter,
     "exp": ExpCellFilter,
 }[ase_filter]
 optimizer_dict = {
-    "GPMin": opt.GPMin,
-    "GOQN": opt.GoodOldQuasiNewton,
-    "BFGSLineSearch": opt.BFGSLineSearch,
-    "QuasiNewton": opt.BFGSLineSearch,
-    "SciPyFminBFGS": opt.sciopt.SciPyFminBFGS,
-    "BFGS": opt.BFGS,
-    "LBFGSLineSearch": opt.LBFGSLineSearch,
-    "SciPyFminCG": opt.sciopt.SciPyFminCG,
-    "FIRE2": opt.fire2.FIRE2,
-    "FIRE": opt.fire.FIRE,
-    "LBFGS": opt.LBFGS,
+    "GPMin": ase.optimize.GPMin,
+    "GOQN": ase.optimize.GoodOldQuasiNewton,
+    "BFGSLineSearch": ase.optimize.BFGSLineSearch,
+    "QuasiNewton": ase.optimize.BFGSLineSearch,
+    "SciPyFminBFGS": ase.optimize.sciopt.SciPyFminBFGS,
+    "BFGS": ase.optimize.BFGS,
+    "LBFGSLineSearch": ase.optimize.LBFGSLineSearch,
+    "SciPyFminCG": ase.optimize.sciopt.SciPyFminCG,
+    "FIRE2": ase.optimize.FIRE2,
+    "FIRE": ase.optimize.FIRE,
+    "LBFGS": ase.optimize.LBFGS,
 }
-optim_cls: Callable[..., opt.optimize.Optimizer] = optimizer_dict[ase_optimizer]
+optim_cls: type[Optimizer] = optimizer_dict[ase_optimizer]
 
 
 # %%
