@@ -39,17 +39,15 @@ df_allegro[Key.spg_num] = (
 )
 
 
-fig = pmv.density_scatter_plotly(
-    df=df_allegro, x=MbdKey.e_form_dft, y=e_form_allegro_col
-)
+fig = pmv.density_scatter(df=df_allegro, x=MbdKey.e_form_dft, y=e_form_allegro_col)
 fig.layout.title = f"{len(df_allegro):,} Allegro severe energy underpredictions"
 pmv.save_fig(fig, "allegro-hull-dist-scatter.png")
 
 
 df_low = df_allegro.query(f"{MbdKey.e_form_dft} - {e_form_allegro_col} > 2")
 
-fig = pmv.density_scatter_plotly(df=df_low, x=MbdKey.e_form_dft, y=e_form_allegro_col)
-fig.layout.title = f"{len(df_low):,} Allegro severe energy underpredictions"
+fig = pmv.density_scatter(df=df_low, x=MbdKey.e_form_dft, y=e_form_allegro_col)
+df = fig.layout.title = f"{len(df_low):,} Allegro severe energy underpredictions"
 pmv.save_fig(fig, "allegro-too-low-hull-dist-scatter.png")
 
 
@@ -72,8 +70,8 @@ pmv.save_fig(fig, "allegro-too-low-spacegroup-sunburst.png")
 bad_mask = (df_allegro[e_form_allegro_col] - df_allegro[MbdKey.e_form_dft]) < -5
 print(f"{sum(bad_mask)=}")
 
-fig = pmv.density_scatter_plotly(
-    df_allegro[~bad_mask],
+fig = pmv.density_scatter(
+    df=df_allegro[~bad_mask],
     x=MbdKey.e_form_dft,
     y=e_form_allegro_col,
     log_density=(log := True),
@@ -84,8 +82,11 @@ pmv.save_fig(fig, f"{SITE_FIGS}/allegro-wbm-IS2RE-e-form-parity.png")
 
 
 print(df_allegro.columns)
-fig = pmv.density_scatter_plotly(
-    df_allegro[~bad_mask], x="uncorrected_energy", y="allegro_energy", log_density=log
+fig = pmv.density_scatter(
+    df=df_allegro[~bad_mask],
+    x="uncorrected_energy",
+    y="allegro_energy",
+    log_density=log,
 )
 fig.layout.yaxis.title = "Allegro energy"
 

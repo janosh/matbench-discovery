@@ -435,6 +435,9 @@
   h2 {
     margin: 2ex auto 0;
   }
+  section {
+    text-wrap: balance;
+  }
   section:is(.deps, .model-info) ul {
     display: flex;
     flex-wrap: wrap;
