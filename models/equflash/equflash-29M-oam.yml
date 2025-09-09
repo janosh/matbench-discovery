@@ -59,8 +59,8 @@ hyperparams:
   max_neighbors: .inf
 notes:
   Description: |
-    EquFlash is an E(3)-equivariant model based on the SevenNet-0 architecture, with tensor products accelerated by FlashTP. 
-    FlashTP achieves up to 41.6× and 60.8× kernel speedups over e3nn and NVIDIA cuEquivariance, respectively, while reducing memory usage by 6×. 
+    EquFlash is an E(3)-equivariant model based on the SevenNet-0 architecture, with tensor products accelerated by FlashTP.
+    FlashTP achieves up to 41.6× and 60.8× kernel speedups over e3nn and NVIDIA cuEquivariance, respectively, while reducing memory usage by 6×.
     Leveraging these gains, we scaled EquFlash to a larger capacity than the original SevenNet-0.
   Training: EquFlash, a scaled-up model derived from SevenNet-0 and accelerated with FlashTP, was pretrained on OMat24 and finetuned on MPtrj and sAlex.
 
