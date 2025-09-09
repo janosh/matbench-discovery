@@ -9,10 +9,8 @@ Then refactored for GRACE
 # uses matbench-discovery matbench-discovery commit ID 012ccfe,
 # k_srme commit ID 0269a946, pymatviz v0.15.1
 
-import contextlib
 import os
 import warnings
-from glob import glob
 from typing import Any, Literal
 
 import ase.optimize
@@ -21,19 +19,14 @@ import numpy as np
 import pandas as pd
 from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from ase.optimize.optimize import Optimizer
-
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
+from tensorpotential.calculator import grace_fm
 from tqdm import tqdm
 
 from matbench_discovery import timestamp
 from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import Task
-
-
-from tensorpotential.calculator import grace_fm
-
-
 
 
 # %% this config is editable
@@ -75,7 +68,9 @@ job_name = f"{model_name}-wbm-{task_type}-{slurm_array_task_id:>03}"
 
 #####
 
-out_path = f"{out_dir}/{model_name}/{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
+out_path = (
+    f"{out_dir}/{model_name}/{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
+)
 
 os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
@@ -90,10 +85,9 @@ print(f"{slurm_array_task_id} of {slurm_array_task_count}")
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", "Trying to use model type names")
     calculator = grace_fm(
-        full_model_name,   
-        pad_neighbors_fraction=0.15,
-        pad_atoms_number=10,
-        min_dist=0.5 )
+        full_model_name, pad_neighbors_fraction=0.15, pad_atoms_number=10, min_dist=0.5
+    )
+
 
 # %%
 print(f"Read data from {data_path}")
@@ -165,5 +159,6 @@ df_out.index.name = Key.mat_id
 
 # %%
 # if not smoke_test:
-df_out.reset_index().to_json(out_path, default_handler=as_dict_handler,
-                                orient="records", lines=True)
+df_out.reset_index().to_json(
+    out_path, default_handler=as_dict_handler, orient="records", lines=True
+)

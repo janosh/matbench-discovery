@@ -20,7 +20,7 @@ from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 
 pot_name = "grace_2l_oam_l"
-pot_name=pot_name.lower()
+pot_name = pot_name.lower()
 e_form_potential_col = f"e_form_per_atom_{pot_name}"
 results = "./results"
 
@@ -45,9 +45,9 @@ if len(df_potential) != len(df_wbm):  # make sure there is no missing structure
     # raise ValueError("Missing structures in results")
 
 print("Loading reference WBM dataset")
-df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path, orient="records", lines=True).set_index(
-    Key.mat_id
-)
+df_cse = pd.read_json(
+    DataFiles.wbm_computed_structure_entries.path, orient="records", lines=True
+).set_index(Key.mat_id)
 df_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(
@@ -110,4 +110,6 @@ print(f"Saving to file {out_path}.csv.gz")
 df_potential.select_dtypes("number").to_csv(f"{out_path}.csv.gz")  # save csv storable
 # we can also save the full computed structure entries to file if desired:
 print(f"Saving to file {out_path}.json.gz")
-df_potential.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+df_potential.reset_index().to_json(
+    f"{out_path}.json.gz", default_handler=as_dict_handler
+)

@@ -10,7 +10,7 @@ from matbench_discovery.enums import MbdKey
 pot_name = "grace_2l_oam_l"
 
 
-pot_name=pot_name.lower()
+pot_name = pot_name.lower()
 e_form_potential_col = f"e_form_per_atom_{pot_name}"
 csv_path = f"./results/{pot_name}.csv.gz"
 if not os.path.exists(csv_path):
