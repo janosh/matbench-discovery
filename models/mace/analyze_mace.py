@@ -29,7 +29,7 @@ df_mace[Key.spg_num] = (
 
 
 # %%
-fig = pmv.density_scatter_plotly(df=df_mace, x=MbdKey.e_form_dft, y=e_form_mace_col)
+fig = pmv.density_scatter(df=df_mace, x=MbdKey.e_form_dft, y=e_form_mace_col)
 fig.layout.title = f"{len(df_mace):,} MACE severe energy underpredictions"
 pmv.save_fig(fig, "mace-hull-dist-scatter.pdf")
 
@@ -37,7 +37,7 @@ pmv.save_fig(fig, "mace-hull-dist-scatter.pdf")
 # %%
 df_low = df_mace.query(f"{MbdKey.e_form_dft} - {e_form_mace_col} > 2")
 
-fig = pmv.density_scatter_plotly(df=df_low, x=MbdKey.e_form_dft, y=e_form_mace_col)
+fig = pmv.density_scatter(df=df_low, x=MbdKey.e_form_dft, y=e_form_mace_col)
 fig.layout.title = f"{len(df_low):,} MACE severe energy underpredictions"
 pmv.save_fig(fig, "mace-too-low-hull-dist-scatter.pdf")
 
@@ -69,8 +69,8 @@ Lanthanide and heavy alkali metals.
 bad_mask = (df_mace[e_form_mace_col] - df_mace[MbdKey.e_form_dft]) < -5
 print(f"{sum(bad_mask)=}")
 
-fig = pmv.density_scatter_plotly(
-    df_mace[~bad_mask],
+fig = pmv.density_scatter(
+    df=df_mace[~bad_mask],
     x=MbdKey.e_form_dft,
     y=e_form_mace_col,
     log_density=(log := True),
@@ -81,8 +81,8 @@ pmv.save_fig(fig, f"{SITE_FIGS}/mace-wbm-IS2RE-e-form-parity.svelte")
 
 
 # %%
-fig = pmv.density_scatter_plotly(
-    df_mace[~bad_mask], x="uncorrected_energy", y="mace_energy", log_density=log
+fig = pmv.density_scatter(
+    df=df_mace[~bad_mask], x="uncorrected_energy", y="mace_energy", log_density=log
 )
 fig.layout.yaxis.title = "MACE energy"
 

@@ -39,14 +39,14 @@ df_nequip[Key.spg_num] = (
 )
 
 
-fig = pmv.density_scatter_plotly(df=df_nequip, x=MbdKey.e_form_dft, y=e_form_nequip_col)
+fig = pmv.density_scatter(df=df_nequip, x=MbdKey.e_form_dft, y=e_form_nequip_col)
 fig.layout.title = f"{len(df_nequip):,} Nequipsevere energy underpredictions"
 pmv.save_fig(fig, "nequip-hull-dist-scatter.png")
 
 
 df_low = df_nequip.query(f"{MbdKey.e_form_dft} - {e_form_nequip_col} > 2")
 
-fig = pmv.density_scatter_plotly(df=df_low, x=MbdKey.e_form_dft, y=e_form_nequip_col)
+fig = pmv.density_scatter(df=df_low, x=MbdKey.e_form_dft, y=e_form_nequip_col)
 fig.layout.title = f"{len(df_low):,} Nequip severe energy underpredictions"
 pmv.save_fig(fig, "nequip-too-low-hull-dist-scatter.png")
 
@@ -70,8 +70,8 @@ pmv.save_fig(fig, "nequip-too-low-spacegroup-sunburst.png")
 bad_mask = (df_nequip[e_form_nequip_col] - df_nequip[MbdKey.e_form_dft]) < -5
 print(f"{sum(bad_mask)=}")
 
-fig = pmv.density_scatter_plotly(
-    df_nequip[~bad_mask],
+fig = pmv.density_scatter(
+    df=df_nequip[~bad_mask],
     x=MbdKey.e_form_dft,
     y=e_form_nequip_col,
     log_density=(log := True),
@@ -82,8 +82,8 @@ pmv.save_fig(fig, f"{SITE_FIGS}/nequip-wbm-IS2RE-e-form-parity.png")
 
 
 print(df_nequip.columns)
-fig = pmv.density_scatter_plotly(
-    df_nequip[~bad_mask], x="uncorrected_energy", y="nequip_energy", log_density=log
+fig = pmv.density_scatter(
+    df=df_nequip[~bad_mask], x="uncorrected_energy", y="nequip_energy", log_density=log
 )
 fig.layout.yaxis.title = "Nequip energy"
 
