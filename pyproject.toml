@@ -33,7 +33,7 @@ dependencies = [
   "ase>=3.25",
   "numpy>=1.26",
   "pandas>=2.2.2",
-  "plotly>=6.1,<6.2",   # <6.2 pin pending https://github.com/plotly/plotly.py/issues/5253
+  "plotly>=6.3",
   "pymatgen>=2024.8.9",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209
   "pymatviz[df-pdf-export,df-svg-export]==0.17.1",
@@ -120,8 +120,6 @@ ignore = [
   "TRY301",
 ]
 pydocstyle.convention = "google"
-isort.known-first-party = ["matbench_discovery"]
-isort.known-third-party = ["wandb"]
 isort.split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]

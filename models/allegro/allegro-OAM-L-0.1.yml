@@ -44,7 +44,7 @@ train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
 test_task: IS2RE-SR # see `Task` enum in matbench_discovery/enums.py
 targets: EFS_G # see `Targets` enum in matbench_discovery/enums.py
 model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
-model_params: 5_000_000
+model_params: 9_700_000
 trained_for_benchmark: true
 n_estimators: 1
 
