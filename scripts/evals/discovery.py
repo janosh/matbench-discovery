@@ -169,10 +169,7 @@ for model_label in models:
                 else ""
             )
 
-            title = (
-                f"{n_materials_total:,} materials in training set{new_line}"
-                f"{dataset_tooltip}"
-            )
+            title = f"{n_materials_total:,} materials in training set{new_line}{dataset_tooltip}"  # noqa: E501
             train_size_str = (
                 f"<span {title=} data-sort-value={n_materials_total}>"
                 f"{si_fmt(n_materials_total, fmt='.0f')} ({dataset_str})</span>"

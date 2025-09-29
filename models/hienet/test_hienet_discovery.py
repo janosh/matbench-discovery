@@ -60,7 +60,7 @@ os.makedirs(out_dir := "./results", exist_ok=True)
 
 task_type = Task.IS2RE
 ase_optimizer = "FIRE"
-os.environ["CUDA_VISIBLE_DEVICES"] = f"{args.gpu}"
+os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 device = "cpu"  # "cuda" if torch.cuda.is_available() else "cpu"
 ase_filter: Literal["frechet", "exp"] = "frechet"
 
