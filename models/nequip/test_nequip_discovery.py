@@ -4,7 +4,7 @@ Script for testing predictions of a trained Nequip model on the WBM test dataset
 Copied from the 7net script here:
 https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/test_sevennet.py
 Then refactored for nequip and SLURM on the Frontier HPC
-(allowing parallelisation over many GPUs/nodes).
+(allowing parallelization over many GPUs/nodes).
 """
 
 # uses matbench-discovery matbench-discovery commit ID 012ccfe,

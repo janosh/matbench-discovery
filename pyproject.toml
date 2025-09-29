@@ -146,4 +146,4 @@ include = ["models/**/test_*.py", "models/**/train_*.py"]
 unresolved-import = "ignore"
 
 [dependency-groups]
-dev = ["pre-commit>=4.3.0", "ty>=0.0.1a19"]
+dev = ["prek>=0.2.2", "ty>=0.0.1a19"]

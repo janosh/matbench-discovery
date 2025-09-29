@@ -104,7 +104,7 @@ class MatBert(lightning.LightningModule):
     def predict_step(
         self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]
     ) -> torch.Tensor:
-        input_ids, attention_mask, y = batch
+        input_ids, attention_mask, _y = batch
         return self(input_ids, attention_mask)
 
     def configure_optimizers(self) -> torch.optim.Optimizer:

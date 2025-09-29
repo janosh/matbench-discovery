@@ -310,7 +310,7 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
     # Test pred_col not in predictions file
     with (
         patch("pandas.read_csv", return_value=df_float),
-        pytest.raises(ValueError, match="pred_col.*not found in"),
+        pytest.raises(ValueError, match=r"pred_col.*not found in"),
     ):
         load_df_wbm_with_preds(models=["alignn"])
 

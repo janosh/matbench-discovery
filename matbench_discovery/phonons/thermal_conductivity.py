@@ -17,6 +17,7 @@ import numpy as np
 from ase import Atoms
 from ase.calculators.calculator import Calculator
 from phono3py.api_phono3py import Phono3py
+from phono3py.conductivity.wigner_rta import ConductivityWignerRTA
 from phonopy.structure.atoms import PhonopyAtoms
 from pymatviz.enums import Key
 from tqdm import tqdm
@@ -218,7 +219,7 @@ def calculate_conductivity(
     boundary_mfp: float = 1e6,
     mode_kappa_thresh: float = 1e-6,
     **kwargs: Any,
-) -> tuple[Phono3py, dict[str, np.ndarray], Any]:
+) -> tuple[Phono3py, dict[str, np.ndarray], ConductivityWignerRTA]:
     """Calculate thermal conductivity.
 
     Args:
