@@ -8,8 +8,8 @@ Note that it requires pymatviz >=0.15.0
 Takes about 4.5 mins to run.
 """
 
-# uses matbench-discovery matbench-discovery commit ID 012ccfe,
-# k_srme commit ID 0269a946, pymatviz v0.15.1
+# uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
+
 from glob import glob
 
 import pandas as pd

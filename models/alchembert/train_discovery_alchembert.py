@@ -36,8 +36,6 @@ test_pad_cased_path = "test_nl_pad_cased_inputs.json"
 
 
 df_mp = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
-# test target column: MbdKey.e_form_dft
-df_wbm = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
 
 
 # %%

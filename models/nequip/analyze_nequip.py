@@ -3,8 +3,7 @@ Investigate NequIP energy underpredictions, templated from the
 MACE analysis script from Janosh.
 """
 
-# uses matbench-discovery matbench-discovery commit ID 012ccfe,
-# k_srme commit ID 0269a946, pymatviz v0.15.1
+# uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
 
 import os
 

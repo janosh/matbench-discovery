@@ -6,8 +6,7 @@ Templated from
 https://github.com/janosh/matbench-discovery/blob/main/models/mace/calc_kappa_mace_ray_parallelized.py
 """
 
-# uses matbench-discovery matbench-discovery commit ID 012ccfe,
-# k_srme commit ID 0269a946, pymatviz v0.15.1
+# uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
 
 import contextlib
 import json
@@ -93,7 +92,7 @@ if len(matching_files) == 1:
 elif os.path.isfile(compile_path):
     compiled_model_file = compile_path
 else:
-    raise FileNotFoundError(f"No compiled model file was not found at {compile_path}!")
+    raise FileNotFoundError(f"Compiled model file not found at {compile_path}!")
 
 
 def calc_kappa_for_structure(

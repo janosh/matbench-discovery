@@ -5,8 +5,7 @@ import pandas as pd
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey
 
-# uses matbench-discovery matbench-discovery commit ID 012ccfe,
-# k_srme commit ID 0269a946, pymatviz v0.15.1
+# uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
 
 e_form_nequip_col = "e_form_per_atom_nequip"
 csv_path = "./results/nequip.csv.gz"
