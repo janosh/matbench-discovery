@@ -36,8 +36,6 @@ test_pad_cased_path = "test_nl_pad_cased_inputs.json"
 
 
 df_mp = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
-# test target column: MbdKey.e_form_dft
-df_wbm = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
 
 
 # %%
@@ -104,7 +102,7 @@ class MatBert(lightning.LightningModule):
     def predict_step(
         self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]
     ) -> torch.Tensor:
-        input_ids, attention_mask, y = batch
+        input_ids, attention_mask, _y = batch
         return self(input_ids, attention_mask)
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
@@ -113,7 +111,7 @@ class MatBert(lightning.LightningModule):
 
 # %% data
 def main() -> None:
-    if os.path.exists(train_pad_cased_path):
+    if os.path.isfile(train_pad_cased_path):
         print(f"file {train_pad_cased_path} exists")
         train_inputs = pd.read_json(train_pad_cased_path)
         train_outputs = df_mp[Key.formation_energy_per_atom]

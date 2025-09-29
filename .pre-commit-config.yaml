@@ -1,14 +1,10 @@
-ci:
-  autoupdate_schedule: quarterly
-  skip: [deno-fmt, deno-lint, eslint]
-
 default_stages: [pre-commit]
 
 default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.12
+    rev: v0.13.2
     hooks:
       - id: ruff
         args: [--fix]
@@ -76,7 +72,7 @@ repos:
         exclude: changelog\.md$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.35.0
+    rev: v9.36.0
     hooks:
       - id: eslint
         types: [file]
@@ -91,7 +87,7 @@ repos:
           - '@stylistic/eslint-plugin'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.3
+    rev: 0.34.0
     hooks:
       - id: check-jsonschema
         files: ^models/.+/.+\.yml$

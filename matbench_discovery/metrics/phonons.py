@@ -152,7 +152,7 @@ def calc_kappa_srme_dataframes(
                 srme_list.append(2)
                 continue
         result = calc_kappa_srme(row_pred, row_true)
-        srme_list.append(result[0])  # append the first temperature's SRME
+        srme_list.append(float(result[0]))  # append the first temperature's SRME
 
     return srme_list
 

@@ -3,8 +3,7 @@ Investigate NequIP energy underpredictions, templated from the
 MACE analysis script from Janosh.
 """
 
-# uses matbench-discovery matbench-discovery commit ID 012ccfe,
-# k_srme commit ID 0269a946, pymatviz v0.15.1
+# uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
 
 import os
 
@@ -23,7 +22,7 @@ module_dir = os.path.dirname(__file__)
 e_form_nequip_col = "e_form_per_atom_nequip"
 
 filtered_csv_path = "./results/nequip-filtered_preds.csv.gz"
-if not os.path.exists(filtered_csv_path):
+if not os.path.isfile(filtered_csv_path):
     filtered_csv_path = "./nequip-filtered_preds.csv.gz"
 
 df_nequip = pd.read_csv(filtered_csv_path)

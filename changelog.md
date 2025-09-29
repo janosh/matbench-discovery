@@ -168,7 +168,6 @@ All notable changes to this project will be documented in this file. Dates are d
 > 7 July 2023
 
 - v0.1.5 [`#44`](https://github.com/janosh/matbench-discovery/pull/44)
-- [pre-commit.ci] pre-commit autoupdate [`#42`](https://github.com/janosh/matbench-discovery/pull/42)
 - Update site to show ALIGNN results [`#38`](https://github.com/janosh/matbench-discovery/pull/38)
 - ALIGNN test on WBM data [`#37`](https://github.com/janosh/matbench-discovery/pull/37)
 - Add PDF versions of all SI figures [`#36`](https://github.com/janosh/matbench-discovery/pull/36)

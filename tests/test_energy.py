@@ -37,8 +37,8 @@ def test_get_elemental_ref_entries(
     entries = [
         ("Fe1 O1", -2.5),
         ("Fe1", -1.0),
-        ("Fe1", -2.0),
-        ("O1", -1.0),
+        (comp1 := "Fe1", energy1 := -2.0),
+        (comp2 := "O1", energy2 := -1.0),
         ("O3", -2.0),
     ]
     elemental_ref_entries = get_elemental_ref_entries(
@@ -46,9 +46,8 @@ def test_get_elemental_ref_entries(
         verbose=verbose,
     )
     if getattr(constructor, "__name__", None) == "<lambda>":
-        expected = {"Fe": PDEntry(*entries[2]), "O": PDEntry(*entries[3])}
-    else:
-        expected = {"Fe": constructor(*entries[2]), "O": constructor(*entries[3])}
+        constructor = PDEntry
+    expected = {"Fe": constructor(comp1, energy1), "O": constructor(comp2, energy2)}
     assert elemental_ref_entries == expected
 
 

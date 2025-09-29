@@ -62,7 +62,7 @@ def test_classify_stable_input_types() -> None:
     """Test classify_stable with different input types including NaN/None values."""
     # Test with Python lists containing NaN and None
     result = classify_stable(
-        [-0.1, 0.0, 0.1, np.nan, None],
+        [-0.1, 0.0, 0.1, np.nan, None],  # type: ignore[invalid-argument-type]
         [-0.1, 0.0, 0.1, 0.2, -0.2],
         stability_threshold=0.0,
         fillna=True,

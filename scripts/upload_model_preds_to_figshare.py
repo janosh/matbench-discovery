@@ -224,7 +224,7 @@ def update_one_modeling_task_article(
 
             # Upload file if it doesn't exist or force_reupload is True
             if not dry_run:
-                file_id, was_uploaded = figshare.upload_file_if_needed(
+                file_id, _was_uploaded = figshare.upload_file_if_needed(
                     article_id,
                     file_path,
                     file_name=filename,

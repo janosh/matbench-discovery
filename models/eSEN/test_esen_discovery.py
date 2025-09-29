@@ -134,7 +134,7 @@ class MBDRunner:
             "optimizer_params": self.optimizer_params,
         }
         wandb.init(
-            project="matbench-discovery", config=run_params, name=f"{self.identifier}"
+            project="matbench-discovery", config=run_params, name=self.identifier
         )
 
         self._ase_relax(

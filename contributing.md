@@ -189,7 +189,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
        pred_col: e_form_per_atom_<model_name>
    ```
 
-   Arbitrary other keys can be added as needed. The above keys will be schema-validated with `pre-commit` (if installed) with errors for missing keys.
+   Arbitrary other keys can be added as needed. The above keys will be schema-validated with `prek` (if installed) with errors for missing keys.
 
 Please see any of the subdirectories in [`models/`](https://github.com/janosh/matbench-discovery/blob/-/models) for example submissions. More detailed step-by-step instructions below.
 
