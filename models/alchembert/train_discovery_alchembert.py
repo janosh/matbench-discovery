@@ -113,7 +113,7 @@ class MatBert(lightning.LightningModule):
 
 # %% data
 def main() -> None:
-    if os.path.exists(train_pad_cased_path):
+    if os.path.isfile(train_pad_cased_path):
         print(f"file {train_pad_cased_path} exists")
         train_inputs = pd.read_json(train_pad_cased_path)
         train_outputs = df_mp[Key.formation_energy_per_atom]

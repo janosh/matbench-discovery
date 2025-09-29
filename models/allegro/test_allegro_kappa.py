@@ -87,11 +87,11 @@ slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", os.getenv("SLURM_JOBID", "d
 # slurm_array_task_id = 104
 # slurm_array_task_count = 128
 
-matching_files = glob(f"{compile_path}")
+matching_files = glob(compile_path)
 if len(matching_files) == 1:
     compiled_model_file = next(iter(matching_files))
-elif os.path.exists(f"{compile_path}"):
-    compiled_model_file = f"{compile_path}"
+elif os.path.isfile(compile_path):
+    compiled_model_file = compile_path
 else:
     raise FileNotFoundError(f"No compiled model file was not found at {compile_path}!")
 

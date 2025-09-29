@@ -23,7 +23,7 @@ module_dir = os.path.dirname(__file__)
 e_form_allegro_col = "e_form_per_atom_allegro"
 
 filtered_csv_path = "./results/allegro-filtered_preds.csv.gz"
-if not os.path.exists(filtered_csv_path):
+if not os.path.isfile(filtered_csv_path):
     filtered_csv_path = "./allegro-filtered_preds.csv.gz"
 
 df_allegro = pd.read_csv(filtered_csv_path)

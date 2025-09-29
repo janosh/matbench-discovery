@@ -23,7 +23,7 @@ module_dir = os.path.dirname(__file__)
 e_form_nequip_col = "e_form_per_atom_nequip"
 
 filtered_csv_path = "./results/nequip-filtered_preds.csv.gz"
-if not os.path.exists(filtered_csv_path):
+if not os.path.isfile(filtered_csv_path):
     filtered_csv_path = "./nequip-filtered_preds.csv.gz"
 
 df_nequip = pd.read_csv(filtered_csv_path)

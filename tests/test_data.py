@@ -75,7 +75,7 @@ def test_glob_to_df(
     df_mixed: pd.DataFrame,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    os.makedirs(f"{tmp_path}", exist_ok=True)
+    os.makedirs(tmp_path, exist_ok=True)
     df_mixed.to_csv(f"{tmp_path}/dummy_df.csv", index=False)
     df_mixed.to_json(f"{tmp_path}/dummy_df.json")
 

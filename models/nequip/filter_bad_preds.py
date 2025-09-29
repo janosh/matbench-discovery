@@ -10,7 +10,7 @@ from matbench_discovery.enums import MbdKey
 
 e_form_nequip_col = "e_form_per_atom_nequip"
 csv_path = "./results/nequip.csv.gz"
-if not os.path.exists(csv_path):
+if not os.path.isfile(csv_path):
     csv_path = "./nequip.csv.gz"
 
 df_preds = pd.read_csv(csv_path).set_index("material_id")
