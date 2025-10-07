@@ -37,7 +37,7 @@ crys_sys_letters: Final[dict[str, str]] = {
 def get_prototype_formula(composition: Composition, amt_tol: float = 1e-8) -> str:
     """Get anonymized formula for a Composition where species are in alphabetical
     order and assigned ascending letters. This format is used in the Aflow
-    structure prototype labelling scheme.
+    structure prototype labeling scheme.
 
     Args:
         composition (Composition): Pymatgen Composition to process

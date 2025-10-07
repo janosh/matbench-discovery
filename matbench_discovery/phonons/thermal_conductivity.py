@@ -239,17 +239,15 @@ def calculate_conductivity(
     """
     ph3.init_phph_interaction(symmetrize_fc3q=False)
 
-    kwargs = dict(
+    ph3.run_thermal_conductivity(
+        **kwargs,
         temperatures=temperatures,
         is_isotope=True,
         # use type="wigner" to include both wave-like coherence (kappa_c) and
         # particle-like (kappa_p) conductivity contributions
         conductivity_type="wigner",
         boundary_mfp=boundary_mfp,
-        **kwargs,
     )
-
-    ph3.run_thermal_conductivity(**kwargs)
 
     kappa = ph3.thermal_conductivity
 

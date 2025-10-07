@@ -26,15 +26,14 @@ model_name = "sevennet"
 model_variant = "sevennet-mf-ompa"  # choose 7net model variant to eval
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-calculator_kwargs = {
-    "sevennet-0": {"model": "7net-0"},
-    "sevennet-l3i5": {"model": "7net-l3i5"},
-    "sevennet-mf-ompa": {"model": "7net-mf-ompa", "modal": "mpa"},
-}["model_variant"]
-calculator_kwargs["device"] = device
+model, modal = {
+    "sevennet-0": ("7net-0", None),
+    "sevennet-l3i5": ("7net-l3i5", None),
+    "sevennet-mf-ompa": ("7net-mf-ompa", "mpa"),
+}[model_variant]
 
 dtype = "float32"
-calculator = SevenNetCalculator(**calculator_kwargs)
+calculator = SevenNetCalculator(model=model, device=device, modal=modal)
 
 json_path = f"{ROOT}/models/{model_name}/{model_variant}/{today}-diatomics.json.gz"
 existing_paths = glob(json_path.replace(today, "*-*-*"))
