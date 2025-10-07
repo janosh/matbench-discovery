@@ -178,8 +178,8 @@
         is_fullscreen = true
       }
     }}
-    aria-label={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
-    title={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
+    aria-label="{is_fullscreen ? `Exit` : `Enter`} fullscreen"
+    title="{is_fullscreen ? `Exit` : `Enter`} fullscreen"
   >
     <Icon icon="{is_fullscreen ? `Exit` : ``}Fullscreen" />
   </button>
@@ -385,6 +385,7 @@
       point_events={{
         onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
       }}
+      controls_toggle_props={{ style: `position: absolute; top: 10px; right: 50px` }}
       {...rest}
     >
       {#snippet tooltip({ x_formatted, y_formatted, metadata })}

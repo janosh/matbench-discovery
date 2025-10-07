@@ -5,7 +5,6 @@
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
   import { ColorBar, luminance } from 'matterviz'
-  import { RadioButtons } from 'svelte-multiselect'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
@@ -74,7 +73,13 @@
     &ensp; &emsp;&emsp; Sort
     <input type="number" min={min_models} max={models.length} bind:value={show_n_best} />
     best models
-    <RadioButtons bind:selected={order} options={[`asc`, `desc`]} /> by:
+    <span class="radio-group">
+      {#each [`asc`, `desc`] as value (value)}
+        <label>
+          <input type="radio" name="order" {value} bind:group={order} /> {value}
+        </label>
+      {/each}
+    </span> by:
   </span>
 
   <ul>
@@ -205,8 +210,8 @@
     place-items: center;
     place-content: center;
   }
-  span :global(div.zoo-radio-btn span) {
-    padding: 1pt 4pt;
+  .radio-group {
+    gap: 5pt;
   }
   input[type='number'] {
     text-align: center;

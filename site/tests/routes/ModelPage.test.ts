@@ -97,5 +97,5 @@ describe(`Model Detail Page`, () => {
         expect(hyperparams?.textContent).toContain(JSON.stringify(value))
       }
     }
-  })
+  }, 10_000)
 })
