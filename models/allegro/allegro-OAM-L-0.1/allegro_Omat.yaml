@@ -10,8 +10,8 @@ seed: 1
 cutoff_radius: 7.0
 monitored_metric: val0_epoch/weighted_sum
 
-num_neighbours_mean: 99.93090820014581 # value for 7.0 Å
-num_neighbours_mean_squared: 9986 # value for 7.0 Å
+num_neighbors_mean: 99.93090820014581 # value for 7.0 Å
+num_neighbors_mean_squared: 9986 # value for 7.0 Å
 
 data_transforms:
   - _target_: nequip.data.transforms.NeighborListTransform
@@ -241,7 +241,7 @@ training_module:
       per_type_energy_shifts_trainable: false
       per_type_energy_scales: ${per_type_energy_scales}
       per_type_energy_scales_trainable: true
-      avg_num_neighbors: ${num_neighbours_mean_squared} # using MPTrj values
+      avg_num_neighbors: ${num_neighbors_mean_squared} # using MPTrj values
 
 global_options:
   allow_tf32: true

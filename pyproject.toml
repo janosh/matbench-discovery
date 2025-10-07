@@ -146,4 +146,26 @@ include = ["models/**/test_*.py", "models/**/train_*.py"]
 unresolved-import = "ignore"
 
 [dependency-groups]
-dev = ["prek>=0.2.2", "ty>=0.0.1a19"]
+dev = ["prek>=0.2.5", "ty>=0.0.1a22"]
+
+[tool.typos.default]
+locale = "en-us"
+extend-ignore-re = [
+  "`[0-9a-f]{7,40}`", # Git commit SHAs in backticks
+]
+extend-ignore-words-re = [
+  "\\b(Skelton|Ono|Noe|Vaid)\\b", # Names
+  "\\b[Bb]a\\b",                  # Chemical element: Barium
+  "\\b[Cc]om(mun|put)\\b",        # Journal: Commun, Comput
+  "\\b[Ff]ormates?\\b",           # Chemistry: formate(s)
+  "\\b[Nn]d\\b",                  # Chemical element: Neodymium
+  "\\bmatris\\b",                 # Model name
+]
+extend-ignore-identifiers-re = [
+  "\\b[Ff][Pp][Rr]\\b",          # False Positive Rate
+  "\\balph_\\w+\\b",             # alph_* identifiers
+  "\\bi?[Cc]om[Ff]ormer\\w*\\b", # (i)Comformer, comformer + Config suffix
+  "\\btitel\\b",                 # titel
+  "\\w*[Cc]ontracter\\w*\\b",    # *Contracter* variations
+  "\\w*strat\\w*\\b",            # *strat* variations
+]

@@ -118,13 +118,12 @@ for atoms in tqdm_bar:
     spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
     mat_desc = f"{mat_name}-{spg_num}"
 
-    info_dict = {
+    info_dict: dict[str, Any] = {
         "desc": mat_desc,
         "name": mat_name,
-        "initial_space_group_number": spg_num,
-        "errors": [],
-        "error_traceback": [],
+        str(Key.spg_num): spg_num,
     }
+    err_dict: dict[str, list[str]] = {"errors": [], "error_traceback": []}
 
     tqdm_bar.set_postfix_str(mat_desc, refresh=True)
 
@@ -150,7 +149,7 @@ for atoms in tqdm_bar:
             )
             optimizer.run(fmax=force_max, steps=max_steps)
 
-            reached_max_steps = optimizer.step >= max_steps
+            reached_max_steps = int(optimizer.step) >= max_steps
             if reached_max_steps:
                 print(f"Material {mat_desc=} reached {max_steps=} during relaxation.")
 
@@ -172,9 +171,9 @@ for atoms in tqdm_bar:
     except Exception as exc:
         warnings.warn(f"Failed to relax {mat_name=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"].append(f"RelaxError: {exc!r}")
-        info_dict["error_traceback"].append(traceback.format_exc())
-        kappa_results[mat_id] = info_dict | relax_dict
+        err_dict["errors"].append(f"RelaxError: {exc!r}")
+        err_dict["error_traceback"].append(traceback.format_exc())
+        kappa_results[mat_id] = info_dict | relax_dict | err_dict
         continue
 
     # Calculation of force sets
@@ -233,9 +232,9 @@ for atoms in tqdm_bar:
     except Exception as exc:
         warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"].append(f"ForceConstantError: {exc!r}")
-        info_dict["error_traceback"].append(traceback.format_exc())
-        kappa_results[mat_id] = info_dict | relax_dict
+        err_dict["errors"].append(f"ForceConstantError: {exc!r}")
+        err_dict["error_traceback"].append(traceback.format_exc())
+        kappa_results[mat_id] = info_dict | relax_dict | err_dict
         continue
 
     try:  # Calculate thermal conductivity
@@ -248,12 +247,12 @@ for atoms in tqdm_bar:
             f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
         )
         traceback.print_exc()
-        info_dict["errors"].append(f"ConductivityError: {exc!r}")
-        info_dict["error_traceback"].append(traceback.format_exc())
-        kappa_results[mat_id] = info_dict | relax_dict | freqs_dict
+        err_dict["errors"].append(f"ConductivityError: {exc!r}")
+        err_dict["error_traceback"].append(traceback.format_exc())
+        kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
         continue
 
-    kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | kappa_dict
+    kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | kappa_dict | err_dict
 
 # Save results
 df_kappa = pd.DataFrame(kappa_results).T

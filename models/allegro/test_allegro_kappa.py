@@ -154,12 +154,12 @@ def calc_kappa_for_structure(
 
     mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
-    mat_name = atoms.info["name"]
+    formula = atoms.get_chemical_formula()
     info_dict: dict[str, Any] = {
-        "name": mat_name,
-        "errors": [],
-        "error_traceback": [],
+        str(Key.mat_id): mat_id,
+        str(Key.formula): formula,
     }
+    err_dict: dict[str, list[str]] = {"errors": [], "error_traceback": []}
 
     filter_cls: type[Filter] = {
         "frechet": FrechetCellFilter,
@@ -216,10 +216,10 @@ def calc_kappa_for_structure(
             }
 
     except Exception as exc:
-        warnings.warn(f"Failed to relax {mat_name=}, {mat_id=}: {exc!r}", stacklevel=2)
+        warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"] += [f"RelaxError: {exc!r}"]
-        info_dict["error_traceback"] += [traceback.format_exc()]
+        err_dict["errors"] += [f"RelaxError: {exc!r}"]
+        err_dict["error_traceback"] += [traceback.format_exc()]
         return mat_id, info_dict | relax_dict, None
 
     # Calculation of force sets
@@ -261,13 +261,13 @@ def calc_kappa_for_structure(
         )
 
         if not ltc_condition:
-            return mat_id, info_dict | relax_dict | freqs_dict, force_results
+            return mat_id, info_dict | relax_dict | freqs_dict | err_dict, force_results
 
     except Exception as exc:
         warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"] += [f"ForceConstantError: {exc!r}"]
-        info_dict["error_traceback"] += [traceback.format_exc()]
+        err_dict["errors"] += [f"ForceConstantError: {exc!r}"]
+        err_dict["error_traceback"] += [traceback.format_exc()]
         return mat_id, info_dict | relax_dict, force_results
 
     # Calculation of conductivity
@@ -282,8 +282,8 @@ def calc_kappa_for_structure(
             f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
         )
         traceback.print_exc()
-        info_dict["errors"] += [f"ConductivityError: {exc!r}"]
-        info_dict["error_traceback"] += [traceback.format_exc()]
+        err_dict["errors"] += [f"ConductivityError: {exc!r}"]
+        err_dict["error_traceback"] += [traceback.format_exc()]
         return mat_id, info_dict | relax_dict | freqs_dict, force_results
 
 
@@ -331,9 +331,9 @@ kappa_results: dict[str, dict[str, Any]] = {}
 force_results: dict[str, dict[str, Any]] = {}
 
 for idx, atoms in enumerate(tqdm(atoms_list, desc="Calculating kappa...")):
-    mat_id, result_dict, force_dict = calc_kappa_for_structure(  # ty: ignore
+    mat_id, result_dict, force_dict = calc_kappa_for_structure(  # type: ignore[missing-argument]
         atoms=atoms,
-        **remote_params,
+        **remote_params,  # type: ignore[invalid-argument-type]
         task_id=idx,
     )
     kappa_results[mat_id] = result_dict

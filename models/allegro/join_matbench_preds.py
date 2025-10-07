@@ -54,7 +54,7 @@ df_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(
         df_cse[Key.computed_structure_entry],
-        desc="Generating WBM reference ComputedStructureEntrys",
+        desc="Generating WBM reference ComputedStructureEntries",
     )
 ]
 
@@ -68,7 +68,7 @@ cse: ComputedStructureEntry
 for row in tqdm(
     df_allegro.itertuples(),
     total=len(df_allegro),
-    desc="Generating ML-predicted ComputedStructureEntrys",
+    desc="Generating ML-predicted ComputedStructureEntries",
 ):
     mat_id, struct_dict, energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)

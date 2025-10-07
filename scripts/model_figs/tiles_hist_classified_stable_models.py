@@ -73,7 +73,7 @@ fig = hist_classified_stable_vs_hull_dist(
     each_pred_col=Key.each_pred,
     which_energy=which_energy,
     rolling_acc=None,
-    **hist_clf_kwargs,
+    **hist_clf_kwargs,  # type: ignore[invalid-argument-type]
 )
 
 metrics_in_plot_titles = True

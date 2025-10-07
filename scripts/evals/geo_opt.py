@@ -297,11 +297,11 @@ fig_sym_ops_diff.show()
 display(
     df_geo_metrics.round(3)
     .rename(columns=lambda col: col.removeprefix("symmetry_"))
-    .style.format(lambda x: f"{x:.1%}" if isinstance(x, float) else si_fmt(x))
-    .background_gradient(cmap="Oranges", subset="decrease")
+    .style.background_gradient(cmap="Oranges", subset="decrease")
     .background_gradient(cmap="Greens", subset="match")
     .background_gradient(cmap="Blues", subset="increase")
     .set_caption("Symmetry changes vs DFT")
+    .format(lambda x: f"{x:.1%}" if isinstance(x, float) else si_fmt(x))
 )
 
 

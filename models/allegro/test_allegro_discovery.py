@@ -156,7 +156,8 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
 
         energy = atoms.get_potential_energy()  # relaxed energy
         # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
-        relaxed_struct = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
+        unwrapped = atoms.atoms if hasattr(atoms, "atoms") else atoms
+        relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except Exception as exc:
         print(f"Failed to relax {mat_id}: {exc!r}")
