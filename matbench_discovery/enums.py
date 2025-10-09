@@ -317,6 +317,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
     grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
     grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
+    grace_2l_oam_l = auto(), "grace/grace-2l-oam-l.yml"
 
     # GNoME - Nequip architecture trained on Google's proprietary data. Weights
     # are not publicly available and so these results cannot be reproduced.
