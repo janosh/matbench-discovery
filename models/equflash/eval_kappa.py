@@ -100,5 +100,5 @@ with open(txt_path, "w") as f:
 
 
 print(f"MODEL: {model_name}")
-print(f"\tmean SRME: {mSRME}")
-print(f"\tmean SRE: {mSRE}")
+print(f"\tmean SRME: {msrme}")
+print(f"\tmean SRE: {msre}")
