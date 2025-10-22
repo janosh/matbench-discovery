@@ -60,7 +60,6 @@ def load_trainer_from_ckpt(checkpoint_path):
 
         # Calculate the edge indices on the fly
     config["model"]["otf_graph"] = True
-    ### backwards compatability with OCP v<2.0
     config = update_config(config)
     config["checkpoint"] = str(checkpoint_path)
     del config["dataset"]["src"]

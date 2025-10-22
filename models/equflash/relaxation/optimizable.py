@@ -123,7 +123,7 @@ def compare_batches(
         excluded_properties: list of properties to exclude from comparison
 
     Returns:
-        list of system changes, property names that are differente between batch1 and batch2
+        list of system changes, property names that are difference between batch1 and batch2
     """
     system_changes = []
 

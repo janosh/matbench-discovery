@@ -6,6 +6,7 @@ This source code is licensed under the MIT license.
 You may obtain a copy of the license at:
 https://opensource.org/licenses/MIT
 """
+
 from __future__ import annotations
 
 import logging
@@ -40,7 +41,7 @@ def ml_relax(
     relax_cell: bool = False,
     relax_volume: bool = False,
     save_full_traj: bool = True,
-):
+) -> tuple[torch.Tensor, Batch]:
     """Runs ML-based relaxations.
 
     Args:
@@ -124,7 +125,7 @@ def ml_relax(
     OptimizableBatch.ignored_changes = {}
 
     relaxed_batch = Batch.from_data_list(relaxed_batches)
-    relaxed_batch._num_graphs=relaxed_batch.batch.max()+1
+    relaxed_batch._num_graphs = relaxed_batch.batch.max() + 1
     n_trajs = torch.cat(n_trajs)
     # Batch.from_data_list is not intended to be used with a list of batches, so when sid is a list of str
     # it will be incorrectly collated as a list of lists for each batch.
@@ -133,4 +134,4 @@ def ml_relax(
     if isinstance(relaxed_batch.sid, list):
         relaxed_batch.sid = [sid for sid_list in relaxed_batch.sid for sid in sid_list]
 
-    return n_trajs,relaxed_batch
+    return n_trajs, relaxed_batch

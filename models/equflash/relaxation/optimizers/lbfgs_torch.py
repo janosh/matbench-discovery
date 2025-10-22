@@ -43,7 +43,7 @@ class LBFGS:
             memory: Number of steps to be stored in memory
             damping: The calculated step is multiplied with this number before added to the positions.
             alpha: Initial guess for the Hessian (curvature of energy surface)
-            save_full_traj: wether to save full trajectory
+            save_full_traj: whether to save full trajectory
             traj_dir: path to save trajectories in
             traj_names: list of trajectory files names
         """

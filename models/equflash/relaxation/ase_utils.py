@@ -13,34 +13,17 @@ Environment (ASE)
 
 from __future__ import annotations
 
-import copy
-import logging
 from types import MappingProxyType
-from typing import TYPE_CHECKING
 
 import torch
 from ase import Atoms
-from ase.calculators.calculator import Calculator
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.constraints import FixAtoms
 from ase.geometry import wrap_positions
 
-from fairchem.core.common.registry import registry
-from fairchem.core.common.utils import (
-    load_config,
-    setup_imports,
-    setup_logging,
-    update_config,
-)
-from fairchem.core.datasets import data_list_collater
-from fairchem.core.models.model_registry import model_name_to_local_file
-from fairchem.core.preprocessing import AtomsToGraphs
+from pathlib import Path
 
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from torch_geometric.data import Batch
+from torch_geometric.data import Batch
 
 
 # system level model predictions have different shapes than expected by ASE
@@ -59,7 +42,8 @@ def batch_to_atoms(
 
     Args:
         batch: data batch
-        results: dictionary with predicted result tensors that will be added to a SinglePointCalculator. If no results
+        results: dictionary with predicted result tensors that 
+        will be added to a SinglePointCalculator. If no results
             are given no calculator will be added to the atoms objects.
         wrap_pos: wrap positions back into the cell.
         eps: Small number to prevent slightly negative coordinates from being wrapped.
