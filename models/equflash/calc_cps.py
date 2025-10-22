@@ -40,7 +40,6 @@ def main():
     )
     df_preds = df_wbm.copy()
     df_preds["e_form_per_atom_mlff"] = df_merge["mlff_e_per_form"]
-    df_preds = df_preds
     df_uniq = df_preds[df_wbm["unique_prototype"]].copy()
     df_uniq["e_form_per_atom_mlff_above_hull"] = (
         df_uniq["e_above_hull_mp2020_corrected_ppd_mp"]
@@ -54,20 +53,15 @@ def main():
     TP = model_true & actual_true
     FN = actual_true & model_false
     FP = actual_false & model_true
-    TN = actual_false & model_false
     n_true_pos = TP.sum()
     n_false_pos = FP.sum()
     n_false_neg = FN.sum()
-    n_true_neg = TN.sum()
     n_total_pos = n_true_pos + n_false_neg
-    n_total_neg = n_true_neg + n_false_pos
-    prevalence = n_total_pos / (n_total_pos + n_total_neg)
     precision = n_true_pos / (n_true_pos + n_false_pos)  # model's discovery rate
     recall = n_true_pos / n_total_pos
     f1 = 2 * (precision * recall) / (precision + recall)
 
     print(f"F1\t:\t{f1:.4f}\nRMSD\t:\t{rmsd:.4f}")
-
 
 
 if __name__ == "__main__":
