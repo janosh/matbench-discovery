@@ -4,16 +4,16 @@
   import pkg from '$site/package.json'
   import { format_num } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
+  import type { HTMLAttributes } from 'svelte/elements'
   import { fade, slide } from 'svelte/transition'
 
-  interface Props {
+  interface Props extends HTMLAttributes<HTMLElementTagNameMap[`section`]> {
     model: ModelData
     metrics: readonly Label[]
     sort_by: keyof ModelData
     show_details?: boolean
     metrics_style?: string
     title_style?: string
-    [key: string]: unknown
   }
   let {
     model,

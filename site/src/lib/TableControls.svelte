@@ -1,18 +1,20 @@
 <script lang="ts">
   import { Icon, type Label, TableColumnToggleMenu } from '$lib'
   import { tooltip } from 'svelte-multiselect/attachments'
+  import type { HTMLAttributes } from 'svelte/elements'
 
-  interface Props {
+  interface Props extends HTMLAttributes<HTMLDivElement> {
     show_energy_only?: boolean
     columns?: Label[]
     show_heatmap?: boolean
     show_compliant?: boolean
     show_non_compliant?: boolean
+    show_selected_only?: boolean
+    selected_count?: number
     on_filter_change?: (
       show_energy: boolean,
       show_non_compliant: boolean,
     ) => void | undefined
-    [key: string]: unknown
   }
   let {
     show_energy_only = $bindable(false),
@@ -20,12 +22,25 @@
     show_heatmap = $bindable(true),
     show_compliant = $bindable(true),
     show_non_compliant = $bindable(true),
+    show_selected_only = $bindable(false),
+    selected_count = 0,
     on_filter_change = undefined,
     ...rest
   }: Props = $props()
 </script>
 
 <div class="table-controls" {...rest}>
+  {#if selected_count > 0}
+    <label>
+      <input
+        type="checkbox"
+        bind:checked={show_selected_only}
+        aria-label="Toggle between showing only selected models and all models"
+      />
+      {show_selected_only ? `Show all` : `Show only ${selected_count} selected`}
+    </label>
+  {/if}
+
   <label class="legend-item" title="Toggle visibility of compliant models">
     <span class="color-swatch" style="background-color: var(--compliant-color)"></span>
     <input

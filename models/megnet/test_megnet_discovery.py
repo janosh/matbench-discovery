@@ -131,7 +131,7 @@ df_megnet.add_suffix(f"_{task_type.lower()}").round(4).to_csv(out_path)
 
 
 # %% compare MEGNet predictions with old and new MP corrections
-fig = pmv.density_scatter_plotly(df=df_megnet, x=pred_col, y=f"{pred_col}_old_corr")
+fig = pmv.density_scatter(df=df_megnet, x=pred_col, y=f"{pred_col}_old_corr")
 pmv.save_fig(fig, "megnet-e-form-preds-old-vs-new-corr.png")
 
 

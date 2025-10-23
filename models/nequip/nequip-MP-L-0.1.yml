@@ -57,7 +57,7 @@ license:
 hyperparams:
   max_force: 0.05
   max_steps: 500
-  ase_optimizer: GOQN # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
+  ase_optimizer: GOQN # faster than FIRE with same results; see SI of https://doi.org/10.1088/2515-7655/ade916
   cell_filter: FrechetCellFilter
   optimizer: AdamW
   weight_decay: 1e-3
@@ -105,7 +105,7 @@ metrics:
       κ_SRE: 0.3065
   geo_opt:
     pred_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE-GOQN.jsonl.gz
-    pred_file_url: https://figshare.com/files/57731008
+    pred_file_url: https://figshare.com/files/57810907
     struct_col: nequip_structure # same for NequIP/Allegro
     symprec=1e-2:
       rmsd: 0.0856 # unitless

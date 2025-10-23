@@ -5,11 +5,10 @@ MPTrj).
 Copied from the 7net script here:
 https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/test_sevennet.py
 Then refactored for NequIP/Allegro and SLURM on the Frontier HPC (allowing
-parallelisation over many GPUs/nodes).
+parallelization over many GPUs/nodes).
 """
 
-# uses matbench-discovery matbench-discovery commit ID 012ccfe,
-# k_srme commit ID 0269a946, pymatviz v0.15.1
+# uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
 
 import contextlib
 import os
@@ -47,7 +46,7 @@ smoke_test = False  # True
 model_name = "allegro-0"
 task_type = Task.IS2RE
 ase_optimizer = "GOQN"  # faster than "FIRE" from tests, gives the same results;
-# see SI of https:/doi.org/10.1088/2515-7655/ade916
+# see SI of https://doi.org/10.1088/2515-7655/ade916
 ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
 
 max_steps = 500
@@ -71,13 +70,13 @@ slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", os.getenv("SLURM_JOBID", "d
 # slurm_array_task_id = 104
 # slurm_array_task_count = 128
 
-matching_files = glob(f"{compile_path}")
+matching_files = glob(compile_path)
 if len(matching_files) == 1:
     compiled_model_file = next(iter(matching_files))
-elif os.path.exists(f"{compile_path}"):
-    compiled_model_file = f"{compile_path}"
+elif os.path.isfile(compile_path):
+    compiled_model_file = compile_path
 else:
-    raise FileNotFoundError(f"No compiled model file was not found at {compile_path}!")
+    raise FileNotFoundError(f"Compiled model file not found at {compile_path}!")
 
 os.makedirs(out_dir := "./results", exist_ok=True)
 out_path = f"{out_dir}/{model_name}-{slurm_array_task_id:>03}.json.gz"
@@ -157,7 +156,8 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
 
         energy = atoms.get_potential_energy()  # relaxed energy
         # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
-        relaxed_struct = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
+        unwrapped = atoms.atoms if hasattr(atoms, "atoms") else atoms
+        relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except Exception as exc:
         print(f"Failed to relax {mat_id}: {exc!r}")

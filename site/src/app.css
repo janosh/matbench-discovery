@@ -12,7 +12,7 @@
   --light-btn-bg-hover: rgba(0, 0, 0, 0.1);
   --light-btn-text: #27323f; /* readable on teal */
   --light-border: rgba(0, 0, 0, 0.15);
-  --light-highlight: #1194a6; /* cyan-teal accent */
+  --light-highlight: seagreen; /* cyan-teal accent */
   --light-blockquote-bg: rgba(0, 0, 0, 0.03);
   --light-table-odd: rgba(0, 0, 0, 0.03);
   --light-nav-bg: rgba(0, 0, 0, 0.06); /* lighter surface tint */
@@ -98,7 +98,6 @@
   /* Defaults for tables/heatmaps */
   --heatmap-header-bg: var(--page-bg);
   --heatmap-header-hover-bg: var(--nav-bg);
-  --heatmap-row-odd-bg: var(--table-odd);
   --text-muted: var(--text-secondary);
 }
 

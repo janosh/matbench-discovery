@@ -1,16 +1,12 @@
-ci:
-  autoupdate_schedule: quarterly
-  skip: [deno-fmt, deno-lint, eslint]
-
 default_stages: [pre-commit]
 
 default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.12
+    rev: v0.14.0
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: [--fix]
       - id: ruff-format
 
@@ -61,7 +57,7 @@ repos:
       - id: codespell
         stages: [pre-commit, commit-msg]
         exclude_types: [csv, json, svg, bib]
-        exclude: ^site/src/figs/.+$
+        exclude: ^(site/src/figs/.+|pyproject\.toml)$
         args: [--check-filenames]
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
@@ -76,7 +72,7 @@ repos:
         exclude: changelog\.md$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.35.0
+    rev: v9.37.0
     hooks:
       - id: eslint
         types: [file]
@@ -91,7 +87,7 @@ repos:
           - '@stylistic/eslint-plugin'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.3
+    rev: 0.34.0
     hooks:
       - id: check-jsonschema
         files: ^models/.+/.+\.yml$
@@ -100,3 +96,12 @@ repos:
         files: ^data/datasets\.yml$
         args: [--schemafile, tests/dataset-schema.yml]
       - id: check-github-actions
+
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.38.1
+    hooks:
+      - id: typos
+        types: [text]
+        exclude_types: [csv]
+        exclude: ^(site/src/figs/.+|.+element-counts.*\.json)$
+        args: []

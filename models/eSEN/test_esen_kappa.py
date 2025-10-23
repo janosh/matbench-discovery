@@ -127,12 +127,12 @@ class KappaSRMERunner:
             init_info = deepcopy(atoms.info)
             formula = atoms.get_chemical_formula()
             spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
-            info_dict = {
-                Key.formula: formula,
-                Key.spg_num: spg_num,
-                "errors": [],
-                "error_traceback": [],
+            info_dict: dict[str, Any] = {
+                str(Key.mat_id): mat_id,
+                str(Key.formula): formula,
+                str(Key.spg_num): spg_num,
             }
+            err_dict: dict[str, list[str]] = {"errors": [], "error_traceback": []}
 
             tqdm_bar.set_postfix_str(mat_id, refresh=True)
 
@@ -186,9 +186,9 @@ class KappaSRMERunner:
                     f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2
                 )
                 traceback.print_exc()
-                info_dict["errors"].append(f"RelaxError: {exc!r}")
-                info_dict["error_traceback"].append(traceback.format_exc())
-                kappa_results[mat_id] = info_dict | relax_dict
+                err_dict["errors"].append(f"RelaxError: {exc!r}")
+                err_dict["error_traceback"].append(traceback.format_exc())
+                kappa_results[mat_id] = info_dict | relax_dict | err_dict
                 continue
 
             # Calculation of force sets
@@ -249,9 +249,9 @@ class KappaSRMERunner:
                     f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2
                 )
                 traceback.print_exc()
-                info_dict["errors"].append(f"ForceConstantError: {exc!r}")
-                info_dict["error_traceback"].append(traceback.format_exc())
-                kappa_results[mat_id] = info_dict | relax_dict
+                err_dict["errors"].append(f"ForceConstantError: {exc!r}")
+                err_dict["error_traceback"].append(traceback.format_exc())
+                kappa_results[mat_id] = info_dict | relax_dict | err_dict
                 continue
 
             try:  # Calculate thermal conductivity
@@ -264,12 +264,14 @@ class KappaSRMERunner:
                     f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
                 )
                 traceback.print_exc()
-                info_dict["errors"].append(f"ConductivityError: {exc!r}")
-                info_dict["error_traceback"].append(traceback.format_exc())
+                err_dict["errors"].append(f"ConductivityError: {exc!r}")
+                err_dict["error_traceback"].append(traceback.format_exc())
                 kappa_results[mat_id] = info_dict | relax_dict | freqs_dict
                 continue
 
-            kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | kappa_dict
+            kappa_results[mat_id] = (
+                info_dict | relax_dict | freqs_dict | kappa_dict | err_dict
+            )
 
         elapsed = time.time() - start_time
         test_metrics["running_time"] = elapsed

@@ -98,14 +98,14 @@ describe(`ThemeToggle`, () => {
     await tick()
     expect(document.documentElement.style.colorScheme).toBe(expected)
     expect(document.documentElement.dataset.theme).toBe(expected)
-    const button_el = document.body.querySelector(`button`)
+    const button_el = document.querySelector(`button`)
     const next = { light: `dark`, dark: `light` }[expected]
     expect(button_el?.getAttribute(`title`)).toContain(`Switch to ${next} theme`)
   })
 
   it(`toggles theme when clicked and updates colorScheme and data-theme`, () => {
     mount(ThemeToggle, { target: document.body })
-    const button = document.body.querySelector(`button`)
+    const button = document.querySelector(`button`)
     expect(document.documentElement.style.colorScheme).toBe(`dark`)
     expect(document.documentElement.dataset.theme).toBe(`dark`)
     expect(button?.getAttribute(`title`)).toContain(`Switch to light theme`)

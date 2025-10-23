@@ -44,7 +44,7 @@ train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
 test_task: IS2RE-SR # see `Task` enum in matbench_discovery/enums.py
 targets: EFS_G # see `Targets` enum in matbench_discovery/enums.py
 model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
-model_params: 5_000_000
+model_params: 18_700_000
 trained_for_benchmark: true
 n_estimators: 1
 
@@ -57,7 +57,7 @@ license:
 hyperparams:
   max_force: 0.05
   max_steps: 500
-  ase_optimizer: GOQN # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
+  ase_optimizer: GOQN # faster than FIRE with same results; see SI of https://doi.org/10.1088/2515-7655/ade916
   cell_filter: FrechetCellFilter
   optimizer: AdamW
   weight_decay: 1e-3

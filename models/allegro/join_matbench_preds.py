@@ -8,8 +8,8 @@ Note that it requires pymatviz >=0.15.0
 Takes about 4.5 mins to run.
 """
 
-# uses matbench-discovery matbench-discovery commit ID 012ccfe,
-# k_srme commit ID 0269a946, pymatviz v0.15.1
+# uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
+
 import warnings
 from glob import glob
 
@@ -54,7 +54,7 @@ df_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(
         df_cse[Key.computed_structure_entry],
-        desc="Generating WBM reference ComputedStructureEntrys",
+        desc="Generating WBM reference ComputedStructureEntries",
     )
 ]
 
@@ -68,7 +68,7 @@ cse: ComputedStructureEntry
 for row in tqdm(
     df_allegro.itertuples(),
     total=len(df_allegro),
-    desc="Generating ML-predicted ComputedStructureEntrys",
+    desc="Generating ML-predicted ComputedStructureEntries",
 ):
     mat_id, struct_dict, energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
