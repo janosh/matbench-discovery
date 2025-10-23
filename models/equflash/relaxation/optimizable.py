@@ -11,9 +11,8 @@ Code based on ase.optimize
 
 from __future__ import annotations
 
-
-from types import SimpleNamespace
-from typing import ClassVar, Sequence
+from types import MappingProxyType, SimpleNamespace
+from typing import TYPE_CHECKING, ClassVar
 
 import numpy as np
 import torch
@@ -22,18 +21,14 @@ from ase.calculators.calculator import PropertyNotImplementedError
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.geometry import wrap_positions
 from ase.stress import voigt_6_to_full_3x3_stress
-from ase.optimize.optimize import Optimizable
-from fairchem.core.common.utils import (
-    update_config,
-)
-from torch_geometric.data import Batch
+from torch_scatter import scatter
 
-from torch_scatter import scatter, segment_coo, segment_csr
-from types import MappingProxyType
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
+    from GGNN.trainer.utrainer import OCPTrainer
+    from torch_geometric.data import Batch
 
-from fairchem.core.common.utils import get_pbc_distances
-from GGNN.preprocessing.atoms_to_graphs import AtomsToGraphs
 
 ASE_PROP_RESHAPE = MappingProxyType(
     {"stress": (-1, 3, 3), "dielectric_tensor": (-1, 3, 3)}
@@ -46,6 +41,7 @@ ALL_CHANGES: set[str] = {
 def batch_to_atoms(
     batch: Batch,
     results: dict[str, torch.Tensor] | None = None,
+    *,
     wrap_pos: bool = True,
     eps: float = 1e-7,
 ) -> list[Atoms]:
@@ -53,7 +49,8 @@ def batch_to_atoms(
 
     Args:
         batch: data batch
-        results: dictionary with predicted result tensors that will be added to a SinglePointCalculator. If no results
+        results: dictionary with predicted result tensors that will be added to a
+            SinglePointCalculator. If no results
             are given no calculator will be added to the atoms objects.
         wrap_pos: wrap positions back into the cell.
         eps: Small number to prevent slightly negative coordinates from being wrapped.
@@ -123,7 +120,8 @@ def compare_batches(
         excluded_properties: list of properties to exclude from comparison
 
     Returns:
-        list of system changes, property names that are difference between batch1 and batch2
+        list of system changes,
+          property names that are difference between batch1 and batch2
     """
     system_changes = []
 
@@ -146,12 +144,11 @@ def compare_batches(
     return system_changes
 
 
-
-
 class OptimizableBatch:
     """A Batch version of ase Optimizable Atoms
 
-    This class can be used with ML relaxations in fairchem.core.relaxations.ml_relaxation
+    This class can be used with ML relaxations
+    in fairchem.core.relaxations.ml_relaxation
     or in ase relaxations classes, i.e. ase.optimize.lbfgs
     """
 
@@ -159,24 +156,28 @@ class OptimizableBatch:
 
     def __init__(
         self,
-        batch,  # list of ase atoms
-        trainer,  
+        batch: Batch,  # list of ase atoms
+        trainer: OCPTrainer,
         transform: torch.nn.Module | None = None,
+        *,
         mask_converged: bool = True,
         numpy: bool = False,
         masked_eps: float = 1e-8,
         device: str = "cuda",
-    ):
+    ) -> None:
         """Initialize Optimizable Batch
 
         Args:
             batch: A batch of atoms graph data
             model: An instance of a BaseTrainer derived class
             transform: graph transform
-            mask_converged: if true will mask systems in batch that are already converged
+            mask_converged: if true will mask systems in batch
+                that are already converged
             numpy: whether to cast results to numpy arrays
-            masked_eps: masking systems that are converged when using ASE optimizers results in divisions by zero
-                from zero differences in masked positions at future steps, we add a small number to prevent this.
+            masked_eps: masking systems that are converged
+                when using ASE optimizers results in divisions by zero
+                from zero differences in masked positions at future steps,
+                we add a small number to prevent this.
         """
 
         self.device = device
@@ -201,21 +202,20 @@ class OptimizableBatch:
 
         self.cell_factor = self.batch.natoms
 
-
-
     @property
-    def batch_indices(self):
-        """Get the batch indices specifying which position/force corresponds to which batch."""
+    def batch_indices(self) -> torch.Tensor:
+        """Get the batch indices specifying
+        which position/force corresponds to which batch."""
         return self.batch.batch
 
     @property
-    def converged_mask(self):
+    def converged_mask(self) -> torch.Tensor | None:
         if self._update_mask is not None:
             return torch.logical_not(self._update_mask)
         return None
 
     @property
-    def update_mask(self):
+    def update_mask(self) -> torch.Tensor:
         if self._update_mask is None:
             return torch.ones(len(self.batch), dtype=bool)
         return self._update_mask
@@ -236,7 +236,7 @@ class OptimizableBatch:
             # convert batch to fp32
             batch_fp32 = self.batch.clone()
             for k, v in batch_fp32:
-                if type(v) == torch.Tensor and v.dtype == torch.float64:
+                if isinstance(v, torch.Tensor) and v.dtype == torch.float64:
                     batch_fp32[k] = v.to(torch.float32)
             res = self.trainer.predict(batch_fp32, per_image=False, disable_tqdm=True)
             stress = res["stress"].reshape(-1, 3, 3)
@@ -248,13 +248,14 @@ class OptimizableBatch:
             }  # reorder stress to voigt notation}
 
             # set batch key w.r.t ocp convention
-            # save only subset of props in simple namespace instead of cloning the whole batch to save memory
+            # save only subset of props in simple namespace instead of
+            # cloning the whole batch to save memory
             changes = ALL_CHANGES - set(self.ignored_changes)
             self._cached_batch = SimpleNamespace(
                 **{prop: self.batch[prop].clone() for prop in changes}
             )
 
-    def get_property(self, name, no_numpy: bool = False) -> torch.Tensor | NDArray:
+    def get_property(self, name: str, *, no_numpy: bool = False) -> torch.Tensor:
         """Get a predicted property by name."""
         self._predict()
         if self.numpy:
@@ -274,7 +275,7 @@ class OptimizableBatch:
             else self.torch_results[name].detach()
         )
 
-    def get_positions(self) -> torch.Tensor | NDArray:
+    def get_positions(self) -> torch.Tensor:
         """Get the batch positions"""
         pos = self.batch.pos.clone()
         if self.numpy:
@@ -284,7 +285,7 @@ class OptimizableBatch:
 
         return pos
 
-    def set_positions(self, positions: torch.Tensor | NDArray) -> None:
+    def set_positions(self, positions: torch.Tensor) -> None:
         """Set the atom positions in the batch."""
         if isinstance(positions, np.ndarray):
             positions = torch.tensor(positions)
@@ -299,35 +300,19 @@ class OptimizableBatch:
 
         self.update_graph()
 
-    def get_forces(
-        self, apply_constraint: bool = False, no_numpy: bool = False
-    ) -> torch.Tensor | NDArray:
+    def get_forces(self, *, no_numpy: bool = False) -> torch.Tensor:
         """Get predicted batch forces."""
-        forces = self.get_property("forces", no_numpy=no_numpy)
+        return self.get_property("forces", no_numpy=no_numpy)
 
-        # fixed atom disabled for matbench
-
-        # if apply_constraint:
-        #     fixed_idx = torch.where(self.batch.fixed == 1)[0]
-        #     if isinstance(forces, np.ndarray):
-        #         fixed_idx = fixed_idx.tolist()
-        #     forces[fixed_idx] = 0.0
-        return forces
-
-    def get_potential_energy(self, **kwargs) -> torch.Tensor | NDArray:
+    def get_potential_energy(self) -> torch.Tensor:
         """Get predicted energy as the sum of all batch energies."""
-        # ASE 3.22.1 expects a check for force_consistent calculations
-        if kwargs.get("force_consistent", False) is True:
-            raise PropertyNotImplementedError(
-                "force_consistent calculations are not implemented"
-            )
         if (
             len(self.batch) == 1
         ):  # unfortunately batch size 1 returns a float, not a tensor
             return self.get_property("energy")
         return self.get_property("energy").sum()
 
-    def get_potential_energies(self) -> torch.Tensor | NDArray:
+    def get_potential_energies(self) -> torch.Tensor:
         """Get the predicted energy for each system in batch."""
         return self.get_property("energy")
 
@@ -335,9 +320,10 @@ class OptimizableBatch:
         """Get batch crystallographic cells."""
         return self.batch.cell
 
-    def set_cells(self, cells: torch.Tensor | NDArray) -> None:
+    def set_cells(self, cells: torch.Tensor) -> None:
         """Set batch cells."""
-        assert self.batch.cell.shape == cells.shape, "Cell shape mismatch"
+        if self.batch.cell.shape != cells.shape:
+            raise ValueError("Cell shape mismatch")
         if isinstance(cells, np.ndarray):
             cells = torch.tensor(cells, dtype=torch.float64, device=self.device)
         cells = cells.to(dtype=torch.float64, device=self.device)
@@ -349,20 +335,17 @@ class OptimizableBatch:
         return torch.linalg.det(cells)
 
     def iterimages(self) -> Batch:
-        # XXX document purpose of iterimages - this is just needed to work with ASE optimizers
         yield self.batch
 
-    def get_max_forces(
-        self, forces: torch.Tensor | None = None, apply_constraint: bool = False
-    ) -> torch.Tensor:
+    def get_max_forces(self, forces: torch.Tensor | None = None) -> torch.Tensor:
         """Get the maximum forces per structure in batch"""
         if forces is None:
-            forces = self.get_forces(apply_constraint=apply_constraint, no_numpy=True)
+            forces = self.get_forces(no_numpy=True)
         return scatter((forces**2).sum(axis=1).sqrt(), self.batch_indices, reduce="max")
 
     def converged(
         self,
-        forces: torch.Tensor | NDArray | None,
+        forces: torch.Tensor | None,
         fmax: float,
         max_forces: torch.Tensor | None = None,
     ) -> bool:
@@ -380,8 +363,9 @@ class OptimizableBatch:
             if self._update_mask is None:
                 self._update_mask = update_mask
             else:
-                # some models can have random noise in their predictions, so the mask is updated by
-                # keeping all previously converged structures masked even if new force predictions
+                # some models can have random noise in their predictions,
+                # so the mask is updated by keeping all previously
+                # converged structures masked even if new force predictions
                 # push it slightly above threshold
                 self._update_mask = torch.logical_and(self._update_mask, update_mask)
             update_mask = self._update_mask
@@ -394,7 +378,7 @@ class OptimizableBatch:
         # self._predict()  # in case no predictions have been run
         return batch_to_atoms(self.batch, results=self.torch_results)
 
-    def update_graph(self):
+    def update_graph(self) -> None:
         """Update the graph if model does not use otf_graph."""
         return
 
@@ -411,9 +395,10 @@ class OptimizableUnitCellBatch(OptimizableBatch):
 
     def __init__(
         self,
-        batch,  # list of ase atoms
-        trainer,  
+        batch: Batch,  # list of ase atoms
+        trainer: OCPTrainer,
         transform: torch.nn.Module | None = None,
+        *,
         numpy: bool = False,
         mask_converged: bool = True,
         mask: Sequence[bool] | None = None,
@@ -422,9 +407,8 @@ class OptimizableUnitCellBatch(OptimizableBatch):
         constant_volume: bool = False,
         scalar_pressure: float = 0.0,
         masked_eps: float = 1e-8,
-        device="cuda",
-    ):
-
+        device: torch.device | str = "cuda",
+    ) -> None:
         super().__init__(
             batch=batch,
             trainer=trainer,
@@ -468,19 +452,10 @@ class OptimizableUnitCellBatch(OptimizableBatch):
             .to(torch.float64)
         )
 
-    def reset(self, list_of_atoms):
-        super().reset(list_of_atoms)
-        self.orig_cells = self.get_cells().clone()
-        self.cell_factor = self.batch.natoms.repeat_interleave(3).unsqueeze(dim=1)
-        self.deform_grad_ = (
-            torch.stack([torch.eye(3) for i in range(self.orig_cells.shape[0])])
-            .to(self.device)
-            .to(torch.float64)
-        )
-
     @property
-    def batch_indices(self):
-        """Get the batch indices specifying which position/force corresponds to which batch.
+    def batch_indices(self) -> torch.Tensor:
+        """Get the batch indices specifying
+        which position/force corresponds to which batch.
 
         We augment this to specify the batch indices for augmented positions and forces.
         """
@@ -492,14 +467,15 @@ class OptimizableUnitCellBatch(OptimizableBatch):
         )
         return torch.cat([self.batch.batch, augmented_batch])
 
-    def deform_grad(self):
+    @property
+    def deform_grad(self) -> torch.Tensor:
         """Get the cell deformation matrix"""
         return self.deform_grad_
         # return torch.transpose(
         #     torch.linalg.solve(self.orig_cells, self.get_cells()), 1, 2
         # )
 
-    def get_positions(self):
+    def get_positions(self) -> torch.Tensor:
         """Get positions and cell deformation gradient."""
         cur_deform_grad = self.deform_grad()
         natoms = self.batch.num_nodes
@@ -509,7 +485,8 @@ class OptimizableUnitCellBatch(OptimizableBatch):
             device=self.device,
         )
 
-        # Augmented positions are the self.atoms.positions but without the applied deformation gradient
+        # Augmented positions are the self.atoms.positions
+        #  but without the applied deformation gradient
 
         pos[:natoms] = torch.linalg.solve(
             cur_deform_grad[self.batch.batch, :, :],
@@ -520,11 +497,12 @@ class OptimizableUnitCellBatch(OptimizableBatch):
         pos[natoms:] = self.cell_factor * cur_deform_grad.view(-1, 3)
         return pos.cpu().numpy() if self.numpy else pos
 
-    def set_positions(self, positions: torch.Tensor | NDArray):
+    def set_positions(self, positions: torch.Tensor) -> None:
         """Set positions and cell.
 
         positions has shape (natoms + ncells * 3, 3).
-        the first natoms rows are the positions of the atoms, the last nsystems * three rows are the deformation tensor
+        the first natoms rows are the positions of the atoms,
+        the last nsystems * three rows are the deformation tensor
         for each cell.
         """
         if isinstance(positions, np.ndarray):
@@ -538,15 +516,16 @@ class OptimizableUnitCellBatch(OptimizableBatch):
         self.deform_grad_ = new_deform_grad
 
         # TODO check that in fact symmetry is preserved setting cells and positions
-        # Set the new cell from the original cell and the new deformation gradient.  Both current and final structures
-        # should preserve symmetry.
+        # Set the new cell from the original cell and the new deformation gradient.
+        # Both current and final structures should preserve symmetry.
 
         new_cells = torch.bmm(
             self.orig_cells.to(torch.float64), torch.transpose(new_deform_grad, 1, 2)
         )
         self.set_cells(new_cells.to(torch.float64))
 
-        # Set the positions from the ones passed in (which are without the deformation gradient applied) and the new
+        # Set the positions from the ones passed in
+        # (which are without the deformation gradient applied) and the new
         # deformation gradient. This should also preserve symmetry
         new_atom_positions = torch.bmm(
             new_atom_positions.view(-1, 1, 3),
@@ -557,16 +536,16 @@ class OptimizableUnitCellBatch(OptimizableBatch):
 
         super().set_positions(new_atom_positions.view(-1, 3))
 
-    def get_potential_energy(self, **kwargs):
+    def get_potential_energy(
+        self,
+    ) -> torch.Tensor:
         """
         returns potential energy including enthalpy PV term.
         """
-        atoms_energy = super().get_potential_energy(**kwargs)
+        atoms_energy = super().get_potential_energy()
         return atoms_energy + self.pressure[0, 0] * self.get_volumes().sum()
 
-    def get_forces(
-        self, apply_constraint: bool = False, no_numpy: bool = False
-    ) -> torch.Tensor | NDArray:
+    def get_forces(self, *, no_numpy: bool = False) -> torch.Tensor:
         """Get forces and unit cell stress."""
         stress = self.get_property("stress", no_numpy=True).view(-1, 3, 3).detach()
         atom_forces = self.get_property("forces", no_numpy=True).detach()
@@ -611,7 +590,7 @@ class OptimizableUnitCellBatch(OptimizableBatch):
 
         return augmented_forces
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.batch.pos) + 3 * len(self.batch)
 
 
@@ -623,9 +602,10 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
 
     def __init__(
         self,
-        batch,  # list of ase atoms
-        trainer,  
+        batch: Batch,  # list of ase atoms
+        trainer: OCPTrainer,
         transform: torch.nn.Module | None = None,
+        *,
         numpy: bool = False,
         mask_converged: bool = True,
         mask: Sequence[bool] | None = None,
@@ -634,9 +614,8 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
         constant_volume: bool = False,
         scalar_pressure: float = 0.0,
         masked_eps: float = 1e-8,
-        device="cuda",
-    ):
-
+        device: torch.device | str = "cuda",
+    ) -> None:
         super().__init__(
             batch=batch,
             trainer=trainer,
@@ -653,11 +632,7 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
         )
         self.exp_cell_factor = self.cell_factor
 
-    def reset(self, list_of_atoms):
-        OptimizableUnitCellBatch.reset(self, list_of_atoms)
-        self.exp_cell_factor = self.cell_factor
-
-    def get_positions(self):
+    def get_positions(self) -> torch.Tensor:
         pos = OptimizableUnitCellBatch.get_positions(self)
         natoms = self.batch.num_nodes
         cells = pos[natoms:].reshape(-1, 3, 3)
@@ -666,14 +641,14 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
         pos[natoms:] = self.exp_cell_factor * cells.reshape(-1, 3)
         return pos
 
-    def set_positions(self, new):
+    def set_positions(self, new: torch.Tensor) -> None:
         natoms = self.batch.num_nodes
         new2 = new.clone()
         batched_cell = (new[natoms:] / self.exp_cell_factor).reshape(-1, 3, 3)
         new2[natoms:] = self.expm(batched_cell).reshape(-1, 3)
         OptimizableUnitCellBatch.set_positions(self, new2)
 
-    def get_forces(self, **kwargs):
+    def get_forces(self) -> torch.Tensor:
         # forces on atoms are same as UnitCellFilter, we just
         # need to modify the stress contribution
         stress = self.get_property("stress", no_numpy=True).view(-1, 3, 3)
@@ -720,26 +695,22 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
         )
         return augmented_forces
 
-    def logm(self, A):
+    def logm(self, a: torch.Tensor) -> torch.Tensor:
         # ensure A is symmetric
-        sym_er = torch.abs(A.transpose(1, 2) - A)
 
         #
-        s, V = torch.linalg.eigh(A)
-        log_A = torch.bmm(
+        s, V = torch.linalg.eigh(a)
+        return torch.bmm(
             torch.bmm(V, torch.diag_embed(torch.log(torch.abs(s)))), V.transpose(-1, -2)
         )
-        return log_A
 
-    def expm(self, A):
-        return torch.linalg.matrix_exp(A)
+    def expm(self, a: torch.Tensor) -> torch.Tensor:
+        return torch.linalg.matrix_exp(a)
 
-    def expm_frechet(self, A, H):
-        Z = torch.zeros(A.shape[0], 6, 6, dtype=torch.float64, device=self.device)
-        Z[:, 0:3, 0:3] = A.detach()
-        Z[:, 3:6, 3:6] = A.detach()
-        Z[:, 0:3, 3:6] = H.detach()
-        fretchet_grad = torch.linalg.matrix_exp(Z)[:, 0:3, 3:6]
-        # jacob = torch.autograd.functional.jacobian(torch.matrix_exp, A)
-        # fretchet_grad2=(jacob*H.unsqueeze(0).unsqueeze(0).unsqueeze(0)).sum(axis=[-1,-2,-3])
-        return fretchet_grad
+    def expm_frechet(self, a: torch.Tensor, h: torch.Tensor) -> torch.Tensor:
+        Z = torch.zeros(a.shape[0], 6, 6, dtype=torch.float64, device=self.device)
+        Z[:, 0:3, 0:3] = a.detach()
+        Z[:, 3:6, 3:6] = a.detach()
+        Z[:, 0:3, 3:6] = h.detach()
+
+        return torch.linalg.matrix_exp(Z)[:, 0:3, 3:6]

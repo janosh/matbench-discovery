@@ -14,6 +14,7 @@ Environment (ASE)
 from __future__ import annotations
 
 from types import MappingProxyType
+from typing import TYPE_CHECKING
 
 import torch
 from ase import Atoms
@@ -21,10 +22,8 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.constraints import FixAtoms
 from ase.geometry import wrap_positions
 
-from pathlib import Path
-
-from torch_geometric.data import Batch
-
+if TYPE_CHECKING:
+    from torch_geometric.data import Batch
 
 # system level model predictions have different shapes than expected by ASE
 ASE_PROP_RESHAPE = MappingProxyType(
@@ -35,6 +34,7 @@ ASE_PROP_RESHAPE = MappingProxyType(
 def batch_to_atoms(
     batch: Batch,
     results: dict[str, torch.Tensor] | None = None,
+    *,
     wrap_pos: bool = True,
     eps: float = 1e-7,
 ) -> list[Atoms]:
@@ -42,7 +42,7 @@ def batch_to_atoms(
 
     Args:
         batch: data batch
-        results: dictionary with predicted result tensors that 
+        results: dictionary with predicted result tensors that
         will be added to a SinglePointCalculator. If no results
             are given no calculator will be added to the atoms objects.
         wrap_pos: wrap positions back into the cell.
@@ -57,9 +57,11 @@ def batch_to_atoms(
     fixed = torch.split(batch.fixed.to(torch.bool), natoms)
     if results is not None:
         results = {
-            key: val.view(ASE_PROP_RESHAPE.get(key, -1)).tolist()
-            if len(val) == len(batch)
-            else [v.cpu().detach().numpy() for v in torch.split(val, natoms)]
+            key: (
+                val.view(ASE_PROP_RESHAPE.get(key, -1)).tolist()
+                if len(val) == len(batch)
+                else [v.cpu().detach().numpy() for v in torch.split(val, natoms)]
+            )
             for key, val in results.items()
         }
 
@@ -94,4 +96,3 @@ def batch_to_atoms(
         atoms_objects.append(atoms)
 
     return atoms_objects
-

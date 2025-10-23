@@ -1,10 +1,11 @@
-import pandas as pd
-from glob import glob
 import argparse
 import os
+from glob import glob
+
+import pandas as pd
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--results", required=True)
     args = parser.parse_args()

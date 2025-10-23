@@ -1,43 +1,36 @@
-import torch
-from pathlib import Path
-from copy import deepcopy
-from pymatgen.io.ase import AseAtomsAdaptor
-from pymatviz.enums import Key
-import tqdm
+import argparse
+import json
+import multiprocessing as mp
+import os
+import pickle
 from typing import Any
 
+import numpy as np
+import pandas as pd
+import torch
+import tqdm
+from fairchem.core.common.utils import update_config
+from GGNN.trainer.utrainer import OCPTrainer
+from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core import Structure
+from pymatgen.io.ase import AseAtomsAdaptor
+from pymatviz.enums import Key
+from relaxation.ase_utils import batch_to_atoms
+from relaxation.ml_relaxation import ml_relax
 
-def split_df(df, batch_size):
+BASEDIR = "/home/gpu1/zetta/aixsim/1_umlff/datasets/matbench-discovery/1.0.0"
+with open(f"{BASEDIR}/wbm/2025-03-26-wbm-relaxed-structures.pkl", "rb") as f:
+    structs_wbm = pickle.load(f)  # noqa: S301 safe internal data
+
+
+def split_df(df: pd.DataFrame, batch_size: int) -> list[pd.DataFrame]:
     return [df[i : i + batch_size] for i in range(0, len(df), batch_size)]
 
 
 # Example usage:
 
-import argparse
-import os
-import pickle
-import pandas as pd
-from pymatgen.core import Structure
-import numpy as np
-import json
 
-import multiprocessing as mp
-import pickle
-import os
-from fairchem.core.common.utils import (
-    update_config,
-)
-from relaxation.ml_relaxation import ml_relax
-from GGNN.trainer.utrainer import OCPTrainer
-
-BASEDIR = "/home/gpu1/zetta/aixsim/1_umlff/datasets/matbench-discovery/1.0.0"
-with open(f"{BASEDIR}/wbm/2025-03-26-wbm-relaxed-structures.pkl", "rb") as f:
-    structs_wbm = pickle.load(f)
-from pymatgen.analysis.structure_matcher import StructureMatcher
-from relaxation.ase_utils import batch_to_atoms
-
-
-def compute_rmsd(struct_pred, struct_og):
+def compute_rmsd(struct_pred: Structure, struct_og: Structure) -> tuple[float, float]:
     structure_matcher = StructureMatcher(stol=1.0, scale=False)
     rmsd, max_dist = structure_matcher.get_rms_dist(struct_pred, struct_og) or (
         None,
@@ -46,7 +39,7 @@ def compute_rmsd(struct_pred, struct_og):
     return (rmsd, max_dist)
 
 
-def load_trainer_from_ckpt(checkpoint_path):
+def load_trainer_from_ckpt(checkpoint_path: str) -> OCPTrainer:
     checkpoint = torch.load(
         checkpoint_path,
         map_location=torch.device("cpu"),
@@ -99,19 +92,18 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
         # removes e.g. non-serializable AseAtoms from M3GNet relaxation trajectories
 
 
-def load_pickle(file_path):
+def load_pickle(file_path: str) -> Any:
     """Function to load a single pickle file."""
     with open(file_path, "rb") as f:
-        return pickle.load(f)
+        return pickle.load(f)  # noqa: S301 safe internal data
 
 
-def load_multiple_pickles(file_paths):
+def load_multiple_pickles(file_paths: list[str]) -> list[Any]:
     with mp.Pool(processes=32) as pool:
-        results = pool.map(load_pickle, file_paths)
-    return results
+        return pool.map(load_pickle, file_paths)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser("batched matbench evaluate")
     parser.add_argument("--ckpt", required=True)
     parser.add_argument("--out", required=True)
@@ -119,12 +111,10 @@ def parse_args():
     parser.add_argument("--fmax", type=float, default=0.05)
     parser.add_argument("--worldsize", type=int, default=1)
     parser.add_argument("--batchsize", type=int, default=32)
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
-def main():
-
+def main() -> None:
     args = parse_args()
     os.makedirs(args.out, exist_ok=True)
     metadata = {
@@ -139,11 +129,14 @@ def main():
         args.out, f"metadata_{args.rank:03d}_{args.worldsize}.json"
     )
     if os.path.isfile(metadata_json_path):
-        with open(metadata_json_path, "r") as f:
+        with open(metadata_json_path) as f:
             metadata_old = json.load(f)
         for k, v in metadata.items():
             if v != metadata_old[k]:
-                assert (), "output folder already exists. Please change --out"
+                raise FileExistsError(
+                    "Output folder already exists with "
+                    "conflicting metadata. Please change --out."
+                )
     else:
         with open(metadata_json_path, "w") as f:
             json.dump(metadata, f)
@@ -165,7 +158,6 @@ def main():
 
     # split atoms w.r.t worldsize and rank
     input_col = "initial_structure"
-    structs = df[input_col].map(Structure.from_dict).to_dict()
     batch_size = args.batchsize
 
     batch_lists = split_df(df, batch_size)
@@ -177,13 +169,12 @@ def main():
     a2g = AtomsToGraphs(r_edges=False)
     relax_results = {}
     for batch_df in tqdm.tqdm(batch_lists):
-
         atoms_list = [
             a2g.convert(Structure.from_dict(a).to_ase_atoms())
-            for a in batch_df[input_col].values.tolist()
+            for a in batch_df[input_col].to_numpy().tolist()
         ]
         mat_idx = batch_df.index.tolist()
-        for mat_id, stct in zip(mat_idx, atoms_list):
+        for mat_id, stct in zip(mat_idx, atoms_list, strict=False):
             stct.sid = mat_id
         batch = Batch.from_data_list(atoms_list)
         n_traj, batch = ml_relax(batch, trainer, 500, args.fmax, relax_cell=True)
@@ -194,7 +185,9 @@ def main():
         )
         # optimizable.reset(atoms_list)
 
-        for mat_id, atoms, ntraj in zip(mat_idx, atoms_list, n_traj.numpy()):
+        for mat_id, atoms, ntraj in zip(
+            mat_idx, atoms_list, n_traj.numpy(), strict=False
+        ):
             relaxed_struct = AseAtomsAdaptor.get_structure(
                 getattr(atoms, "atoms", atoms)
             )

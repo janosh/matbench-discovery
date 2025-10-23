@@ -9,17 +9,17 @@ https://opensource.org/licenses/MIT
 
 from __future__ import annotations
 
-import logging
-from collections import deque
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union, IO, Callable
+from typing import TYPE_CHECKING
 
 import ase
 import torch
 from torch_scatter import scatter
 
 if TYPE_CHECKING:
-    from ..optimizable import OptimizableBatch
+    from collections.abc import Callable
+
+    from ..optimizable import OptimizableBatch  # noqa: TID252
 
 
 class FIRE:
@@ -28,32 +28,30 @@ class FIRE:
     def __init__(
         self,
         optimizable_batch: OptimizableBatch,
-        restart: Optional[str] = None,
-        logfile: Union[IO, str] = "-",
-        trajectory: Optional[str] = None,
         dt: float = 0.1,
-        maxstep: Optional[float] = None,
-        maxmove: Optional[float] = None,
+        maxstep: float | None = None,
         dtmax: float = 1.0,
-        Nmin: int = 5,
+        nmin: int = 5,
         finc: float = 1.1,
         fdec: float = 0.5,
         astart: float = 0.1,
         fa: float = 0.99,
         a: float = 0.1,
-        master: Optional[bool] = None,
+        *,
         downhill_check: bool = False,
-        position_reset_callback: Optional[Callable] = None,
+        position_reset_callback: Callable | None = None,
         save_full_traj: bool = True,
         traj_dir: Path | None = None,
         traj_names: list[str] | None = None,
     ) -> None:
         """
         Args:
-            optimizable_batch: an optimizable batch which includes a model and a batch of data
+            optimizable_batch: an optimizable batch which
+            includes a model and a batch of data
             maxstep: largest step that any atom is allowed to move
             memory: Number of steps to be stored in memory
-            damping: The calculated step is multiplied with this number before added to the positions.
+            damping: The calculated step is
+            multiplied with this number before added to the positions.
             alpha: Initial guess for the Hessian (curvature of energy surface)
             save_full_traj: whether to save full trajectory
             traj_dir: path to save trajectories in
@@ -89,7 +87,7 @@ class FIRE:
             self.maxstep = 0.2
 
         self.dtmax = torch.tensor(dtmax)
-        self.Nmin = Nmin
+        self.Nmin = nmin
         self.finc = finc
         self.fdec = fdec
         self.astart = astart
@@ -104,12 +102,12 @@ class FIRE:
 
         self.downhill_check = downhill_check
         self.position_reset_callback = position_reset_callback
+        if self.traj_dir and (not traj_dir or not len(traj_names)):
+            raise ValueError(
+                "Trajectory names should be specified to save trajectories"
+            )
 
-        assert not self.traj_dir or (
-            traj_dir and len(traj_names)
-        ), "Trajectory names should be specified to save trajectories"
-
-    def run(self, fmax, steps):
+    def run(self, fmax: float, steps: int) -> tuple[torch.Tensor, torch.Tensor]:
         self.fmax = fmax
         self.steps = steps
 
@@ -122,29 +120,24 @@ class FIRE:
             ]
 
         iteration = 0
-        max_forces = self.optimizable.get_max_forces(apply_constraint=True)
-        logging.info("Step   Fmax(eV/A)")
-        n_traj=torch.zeros(self.optimizable.batch.batch.max()+1,dtype=torch.int)
+        max_forces = self.optimizable.get_max_forces()
+        n_traj = torch.zeros(self.optimizable.batch.batch.max() + 1, dtype=torch.int)
         while iteration < steps and not self.optimizable.converged(
             forces=None, fmax=self.fmax, max_forces=max_forces
         ):
-            
-            logging.info(
-                f"{iteration} " + " ".join(f"{x:0.3f}" for x in max_forces.tolist())
-            )
             self.iteration = iteration
             if self.trajectories is not None and (
                 self.save_full is True or iteration == 0
             ):
                 self.write()
-            self.step(iteration)
-            max_forces = self.optimizable.get_max_forces(apply_constraint=True)
+            self.step()
+            max_forces = self.optimizable.get_max_forces()
             iteration += 1
-            n_traj= n_traj +torch.ones_like(n_traj)*self.optimizable._update_mask.detach().cpu()
-
-        logging.info(
-            f"{iteration} " + " ".join(f"{x:0.3f}" for x in max_forces.tolist())
-        )
+            n_traj = (
+                n_traj
+                + torch.ones_like(n_traj)
+                * self.optimizable.update_mask().detach().cpu()
+            )
 
         # save after converged or all iterations ran
         if iteration > 0 and self.trajectories is not None:
@@ -165,11 +158,11 @@ class FIRE:
         for name, value in self.optimizable.results.items():
             setattr(self.optimizable.batch, name, value)
 
-        return n_traj,self.optimizable.converged(
+        return n_traj, self.optimizable.converged(
             forces=None, fmax=self.fmax, max_forces=max_forces
         )
 
-    def determine_step(self, dr):
+    def determine_step(self, dr: torch.Tensor) -> torch.Tensor:
         steplengths = torch.norm(dr, dim=1)
         longest_steps = scatter(
             steplengths, self.optimizable.batch_indices, reduce="max"
@@ -180,12 +173,12 @@ class FIRE:
         dr *= scale.unsqueeze(1)
         return dr * self.damping
 
-    def _batched_dot(self, x: torch.Tensor, y: torch.Tensor):
+    def _batched_dot(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         return scatter(
             (x * y).sum(dim=-1), self.optimizable.batch_indices, reduce="sum"
         )
 
-    def step(self, iteration: int) -> None:
+    def step(self) -> None:
         f = self.optimizable.get_forces()
         if self.v is None:
             self.v = torch.zeros(
@@ -221,25 +214,27 @@ class FIRE:
                 self.dt.shape[0], dtype=torch.bool, device=self.dt.device
             )
             batch_idx_ = batch_idx_ * (vf > 0.0)
-            
+
             # update v
-            denorm = (torch.sqrt(self._batched_dot(f, f))/torch.sqrt(self._batched_dot(self.v, self.v))) [self.optimizable.batch_indices].unsqueeze(1)
-            
+            denorm = (
+                torch.sqrt(self._batched_dot(f, f))
+                / torch.sqrt(self._batched_dot(self.v, self.v))
+            )[self.optimizable.batch_indices].unsqueeze(1)
+
             coef = self.a[self.optimizable.batch_indices].unsqueeze(1)
             self.v = (1 - coef) * self.v + coef * f / denorm
             self.v = self.v * batch_idx_[self.optimizable.batch_indices].unsqueeze(1)
 
-            
-
-
             self.a[~batch_idx_] = self.astart
             self.dt[~batch_idx_] = self.dt[~batch_idx_] * self.fdec
             self.Nsteps[~batch_idx_] = 0
-            
+
             update_dt_idx = batch_idx_ * self.Nsteps > self.Nmin
 
             self.a[update_dt_idx] = self.a[update_dt_idx] * self.fa
-            self.dt[update_dt_idx] = torch.minimum(self.dt[update_dt_idx] * self.finc, self.dtmax)
+            self.dt[update_dt_idx] = torch.minimum(
+                self.dt[update_dt_idx] * self.finc, self.dtmax
+            )
             self.Nsteps[batch_idx_] = self.Nsteps[batch_idx_] + 1
 
             # if vf > 0.0 and not is_uphill:
@@ -256,8 +251,7 @@ class FIRE:
             #     self.dt *= self.fdec
             #     self.Nsteps = 0
         batch_to_node_idx = self.optimizable.batch_indices
-        
-        
+
         self.v += self.dt[batch_to_node_idx].unsqueeze(1) * f
 
         dr = self.dt[batch_to_node_idx].unsqueeze(1) * self.v
@@ -270,53 +264,12 @@ class FIRE:
 
         r = self.optimizable.get_positions()
         self.optimizable.set_positions(r + dr)
-        # forces = self.optimizable.get_forces(apply_constraint=True).to(
-        #     dtype=torch.float64
-        # )
-        # pos = self.optimizable.get_positions().to(dtype=torch.float64)
-        # if iteration > 0:
-        #     s0 = pos - self.r0
-        #     self.s.append(s0)
 
-        #     y0 = -(forces - self.f0)
-        #     self.y.append(y0)
-
-        #     self.rho.append(1.0 / self._batched_dot(y0, s0))
-
-        # loopmax = min(self.memory, iteration)
-        # alpha = forces.new_empty(loopmax, self.optimizable.batch.natoms.shape[0])
-        # q = -forces
-        # for i in range(loopmax - 1, -1, -1):
-
-        #     alpha[i] = self.rho[i] * self._batched_dot(self.s[i], q)  # b
-        #     # print(alpha[i])
-        #     q -= alpha[i][self.optimizable.batch_indices, ..., None] * self.y[i]
-        # # torch.save(q,f"meta_logs/q_{iteration}.pt")
-        # z = self.H0 * q
-        # for i in range(loopmax):
-        #     beta = self.rho[i] * self._batched_dot(self.y[i], z)
-        #     z += self.s[i] * (
-        #         alpha[i][self.optimizable.batch_indices, ..., None]
-        #         - beta[self.optimizable.batch_indices, ..., None]
-        #     )
-        # # torch.save(z,f"meta_logs/z_{iteration}.pt")
-        # # descent direction
-        # p = -z
-        # dr = self.determine_step(p)
-        # if torch.abs(dr).max() < 1e-7:
-        #     # Same configuration again (maybe a restart):
-        #     return
-        # self.optimizable.set_positions(pos + dr)
-        # self.r0 = pos
-        # self.f0 = forces
-
-    def write(self, force_write=False) -> None:
+    def write(self, *, force_write: bool = False) -> None:
         atoms_objects = self.optimizable.get_atoms_list()
         # import pdb;pdb.set_trace()
         for atm, traj, mask in zip(
-            atoms_objects, self.trajectories, self.optimizable.update_mask
+            atoms_objects, self.trajectories, self.optimizable.update_mask, strict=False
         ):
-            if mask:
-                traj.write(atm)
-            elif force_write:
+            if mask or force_write:
                 traj.write(atm)

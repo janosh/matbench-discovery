@@ -1,11 +1,9 @@
-import os
-from glob import glob
-import pandas as pd
-
-from k_srme import glob2df, ID, DFT_NONAC_REF
-from k_srme.benchmark import get_metrics, process_benchmark_descriptors
-
 import argparse
+import os
+
+import pandas as pd
+from k_srme import DFT_NONAC_REF, ID, glob2df
+from k_srme.benchmark import get_metrics, process_benchmark_descriptors
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--name", "-n", default="SevenNet")
@@ -76,8 +74,8 @@ with open(txt_path, "w") as f:
     print(f"\tmean SRE: {msre}", file=f)
 
     print(df_mlp_print.round(4), file=f)
-    print("", file=f)
-    print("", file=f)
+    print(file=f)
+    print(file=f)
     id_index = df_mlp_print[df_mlp_print["kappa_TOT_ave"].isna()].index.tolist()
     for mat_id in id_index:
         print(mat_id, end=":\t", file=f)

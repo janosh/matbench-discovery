@@ -1,117 +1,96 @@
-import os
+import argparse
 import datetime
-import warnings
-from pathlib import Path
-from typing import Literal, Any
-from collections.abc import Callable
+import json
+import os
 import traceback
+import warnings
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ase.optimize.optimize import Optimizer
 from copy import deepcopy
 from importlib.metadata import version
-import json
+from typing import Any, Literal
 
-from torch_geometric.data import Batch
+import ase
+import numpy as np
 import pandas as pd
-from k_srme.conductivity import calculate_conductivity
-from tqdm import tqdm
-
+from ase import Atoms
+from ase.calculators.calculator import Calculator
 from ase.constraints import FixSymmetry
 from ase.filters import ExpCellFilter, FrechetCellFilter
-from ase.optimize import FIRE, LBFGS
-from ase.optimize.optimize import Optimizer
-from ase import Atoms
 from ase.io import read
-from GGNN.common.calculator import UCalculator
-
-
-from ase.calculators.calculator import Calculator
-import ase
+from ase.optimize import FIRE, LBFGS
 from ase.spacegroup import get_spacegroup
 from ase.utils import atoms_to_spglib_cell
+from GGNN.common.calculator import UCalculator
+from k_srme.conductivity import calculate_conductivity
 from spglib import get_symmetry_dataset
-from thermal_conductivity import init_phono3py, get_fc2_and_freqs, get_fc3_batch
-from phono3py.api_phono3py import Phono3py
-import torch
-import argparse
-import numpy as np
+from thermal_conductivity import get_fc2_and_freqs, get_fc3_batch, init_phono3py
+from tqdm import tqdm
 
-STRUCTURES = f"/home/gpu1/zetta/aixsim/1_umlff/datasets/matbench-discovery/1.0.0/phononDB-PBE-structures.extxyz"
 ID = "mp_id"
 NO_TILT_MASK = [True, True, True, False, False, False]
 symm_name_map = {225: "rs", 186: "wz", 216: "zb"}
 FREQUENCY_THRESHOLD = -1e-2
 
 
-def log_symmetry(atoms: Atoms, symprec: float, output) -> Any:
-    dataset = get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
-
-    return dataset
+def log_symmetry(atoms: Atoms, symprec: float) -> Any:
+    return get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
 
 
 def two_stage_relax(
-    atoms,
+    atoms: Atoms,
     calculator: Calculator = None,
     fmax_stage1: float = 1e-4,
     fmax_stage2: float = 1e-4,
     steps_stage1: int = 300,
     steps_stage2: int = 300,
+    *,
     enforce_symmetry: bool = True,
     symprec: float = 1e-5,
     allow_tilt: bool = False,
-    Optimizer: type[ase.optimize.optimize.Optimizer] = LBFGS,
-    Filter: type[ase.filters.Filter] = FrechetCellFilter,
-    filter_kwargs: dict | None = None,
-    optim_kwargs: dict | None = None,
-    log: str | Path | bool = True,  # NOT WORKING FOR FILES FOR SYMMETRIES
-    return_stage1: bool = False,
-    symprec_tests: list[float] = [1e-5, 1e-4, 1e-3, 1e-1],
-):
+    optimizer: type[ase.optimize.optimize.Optimizer] = LBFGS,
+    filter_ase: type[ase.filters.Filter] = FrechetCellFilter,
+    symprec_tests: list[float] | None = None,
+) -> tuple[Atoms, dict[str, Any]]:
     if calculator is not None:
         atoms.calc = calculator
     elif atoms.calc is None:
         raise ValueError("Atoms object does not have a calculator assigned")
+    if symprec_tests is None:
+        symprec_tests = [1e-5, 1e-4, 1e-3, 1e-1]
 
-    if filter_kwargs is None:
-        _filter_kwargs = {}
-    else:
-        _filter_kwargs = filter_kwargs
-
-    if optim_kwargs is None:
-        _optim_kwargs = {}
-    else:
-        _optim_kwargs = optim_kwargs
-
-    if not log:
-        ase_logfile = None
-    elif log is True:
-        ase_logfile = "-"
-    else:
-        ase_logfile = log
+    _filter_kwargs = {}
+    _optim_kwargs = {}
 
     if "name" in atoms.info:
         mat_name = atoms.info["name"]
     else:
-        mat_name = f'{atoms.get_chemical_formula(mode="metal",empirical=True)}-{get_spacegroup(atoms,symprec=symprec).no}'
+        mat_name = f"{atoms.get_chemical_formula(mode='metal', empirical=True)}"
+        f"-{get_spacegroup(atoms, symprec=symprec).no}"
 
     tilt_mask = None
     if not allow_tilt:
         tilt_mask = NO_TILT_MASK
 
-    input_cellpar = atoms.cell.cellpar().copy()
-    sym_init = log_symmetry(atoms, symprec, output=log)
+    sym_init = log_symmetry(atoms, symprec)
 
     atoms.set_constraint(FixSymmetry(atoms))
 
-    total_filter = Filter(atoms, mask=tilt_mask, **_filter_kwargs)
-    dyn_stage1 = Optimizer(total_filter, **_optim_kwargs, logfile=ase_logfile)
+    total_filter = filter_ase(atoms, mask=tilt_mask, **_filter_kwargs)
+    dyn_stage1 = optimizer(total_filter, **_optim_kwargs)
     dyn_stage1.run(fmax=fmax_stage1, steps=steps_stage1)
 
-    cell_diff = (atoms.cell.cellpar() / input_cellpar - 1.0) * 100
-
-    sym_stage1 = log_symmetry(atoms, symprec, output=log)
+    sym_stage1 = log_symmetry(atoms, symprec)
 
     if sym_stage1["number"] != sym_init["number"]:
         warnings.warn(
-            f"Symmetry is not kept during FixSymmetry relaxation of material {mat_name} in folder {os.getcwd()}"
+            f"Symmetry is not kept during FixSymmetry "
+            f"relaxation of material {mat_name} in folder {os.getcwd()}",
+            stacklevel=2,
         )
 
     max_stress_stage1 = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
@@ -120,22 +99,25 @@ def two_stage_relax(
     atoms.constraints = None
 
     # Stage 2
-    dyn_stage2 = Optimizer(total_filter, **_optim_kwargs, logfile=ase_logfile)
+    dyn_stage2 = optimizer(total_filter, **_optim_kwargs)
     dyn_stage2.run(fmax=fmax_stage2, steps=steps_stage2)
 
-    sym_stage2 = log_symmetry(atoms, symprec, output=log)
-    cell_diff = (atoms.cell.cellpar() / input_cellpar - 1.0) * 100
+    sym_stage2 = log_symmetry(
+        atoms,
+        symprec,
+    )
 
     # Test symmetries with various symprec if stage2 is different
     sym_tests = {}
     if sym_init.number != sym_stage2.number:
         for symprec_test in symprec_tests:
-            dataset_tests = log_symmetry(atoms, symprec_test, output=log)
+            dataset_tests = log_symmetry(
+                atoms,
+                symprec_test,
+            )
             sym_tests[symprec_test] = dataset_tests.number
 
     max_stress_stage2 = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
-
-    atoms_stage2 = atoms.copy()
 
     # compare symmetries and redirect to stage 1
     if sym_stage1.number != sym_stage2.number and enforce_symmetry:
@@ -144,7 +126,10 @@ def two_stage_relax(
         max_stress = max_stress_stage1
         sym_final = sym_stage1
         warnings.warn(
-            f"Symmetry is not kept after deleting FixSymmetry constraint, redirecting to structure with symmetry of material {mat_name}, in folder {os.getcwd()}"
+            f"Symmetry is not kept after deleting FixSymmetry constraint,"
+            f" redirecting to structure with symmetry of material {mat_name},"
+            " in folder {os.getcwd()}",
+            stacklevel=2,
         )
 
     else:
@@ -152,7 +137,6 @@ def two_stage_relax(
         sym_final = sym_stage2
         max_stress = max_stress_stage2
 
-    # maximum residual stress component in for xx,yy,zz and xy,yz,xz components separately
     # result is a array of 2 elements
     reached_max_steps = (
         dyn_stage1.step == steps_stage1 or dyn_stage2.step == steps_stage2
@@ -167,11 +151,7 @@ def two_stage_relax(
         "redirected_to_symm": redirected_to_symm,
     }
 
-    if return_stage1:
-        # first return is final, second is stage 1, third is stage 2
-        return_atoms = [atoms, atoms_stage1, atoms_stage2]
-    else:
-        return_atoms = atoms
+    return_atoms = atoms
 
     return return_atoms, relax_dict
 
@@ -195,20 +175,25 @@ def check_imaginary_freqs(frequencies: np.ndarray) -> bool:
         if np.any(frequencies[1:] < 0):
             return True
     except Exception as e:
-        warnings.warn(f"Failed to check imaginary frequencies: {e!r}")
-        warnings.warn(traceback.format_exc())
+        warnings.warn(f"Failed to check imaginary frequencies: {e!r}", stacklevel=2)
+        warnings.warn(traceback.format_exc(), stacklevel=2)
 
     return False
 
 
-def main():
-
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", "-c", required=True)
     parser.add_argument("--outdir", "-o", required=True)
     parser.add_argument("--displacement", type=float, default=0.03)
     parser.add_argument("--rank", type=int, default=0)
     parser.add_argument("--worldsize", type=int, default=1)
+    parser.add_argument(
+        "--structures",
+        type=str,
+        default="/home/gpu1/zetta/aixsim/1_umlff/"
+        "datasets/matbench-discovery/1.0.0/phononDB-PBE-structures.extxyz",
+    )
 
     args = parser.parse_args()
 
@@ -237,14 +222,13 @@ def main():
     save_forces = True  # Save force sets to file
 
     task_type = "LTC"  # lattice thermal conductivity
-    module_dir = os.path.dirname(__file__)
     out_dir = args.outdir
     os.makedirs(out_dir, exist_ok=True)
 
     out_path = f"{out_dir}/conductivity-{args.rank:>03}.json.gz"
 
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    struct_data_path = STRUCTURES
+    timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")
+    struct_data_path = args.structures
     atoms_list: list[Atoms] = read(struct_data_path, format="extxyz", index=":")
 
     run_params = {
@@ -285,8 +269,6 @@ def main():
     force_results: dict[str, dict[str, Any]] = {}
     kappa_results: dict[str, dict[str, Any]] = {}
 
-    # tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)
-
     print(f"{len(atoms_list)} on {rank}")
     for atoms in tqdm(atoms_list):
         mat_id = atoms.info[ID]
@@ -304,83 +286,75 @@ def main():
         # tqdm_bar.set_postfix_str(mat_desc, refresh=True)
 
         # Relaxation
-        if True:
-            atoms.calc = calc
-            if max_steps > 0:
-                if not if_two_stage_relax:
-                    if enforce_relax_symm:
-                        atoms.set_constraint(FixSymmetry(atoms))
-                        filtered_atoms = filter_cls(atoms, mask=NO_TILT_MASK)
-                    else:
-                        filtered_atoms = filter_cls(atoms)
 
-                    optimizer = optim_cls(
-                        filtered_atoms, logfile=f"{out_dir}/relax_{rank}.log"
-                    )
-                    optimizer.run(fmax=force_max, steps=max_steps)
-
-                    reached_max_steps = False
-                    if optimizer.step == max_steps:
-                        reached_max_steps = True
-                        print(
-                            f"Material {mat_desc=}, {mat_id=} reached max step {max_steps=} during relaxation."
-                        )
-
-                    # maximum residual stress component in for xx,yy,zz and xy,yz,xz components separately
-                    # result is a array of 2 elements
-                    max_stress = (
-                        atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
-                    )
-
-                    atoms.calc = None
-                    atoms.constraints = None
-                    atoms.info = init_info | atoms.info
-
-                    symm_no = get_spacegroup_number(atoms, symprec=symprec)
-
-                    relax_dict = {
-                        "structure": atoms,
-                        "max_stress": max_stress,
-                        "reached_max_steps": reached_max_steps,
-                        "relaxed_space_group_number": symm_no,
-                        "broken_symmetry": symm_no
-                        != init_info["initial_space_group_number"],
-                    }
-
+        atoms.calc = calc
+        if max_steps > 0:
+            if not if_two_stage_relax:
+                if enforce_relax_symm:
+                    atoms.set_constraint(FixSymmetry(atoms))
+                    filtered_atoms = filter_cls(atoms, mask=NO_TILT_MASK)
                 else:
-                    atoms, relax_dict = two_stage_relax(
-                        atoms,
-                        fmax_stage1=force_max,
-                        fmax_stage2=force_max,
-                        steps_stage1=max_steps,
-                        steps_stage2=max_steps,
-                        Optimizer=optim_cls,
-                        Filter=filter_cls,
-                        allow_tilt=False,
-                        log=f"{out_dir}/relax_{rank}.log",
-                        enforce_symmetry=enforce_relax_symm,
+                    filtered_atoms = filter_cls(atoms)
+
+                optimizer = optim_cls(
+                    filtered_atoms, logfile=f"{out_dir}/relax_{rank}.log"
+                )
+                optimizer.run(fmax=force_max, steps=max_steps)
+
+                reached_max_steps = False
+                if optimizer.step == max_steps:
+                    reached_max_steps = True
+                    print(
+                        f"Material {mat_desc=}, {mat_id=} reached max step "
+                        f"{max_steps=} during relaxation."
                     )
-                    # relax_dict['structures']=atoms
-                    import numpy as np
 
-                    relax_dict["ase_fc2_supercell"] = atoms.info["fc2_supercell"]
-                    relax_dict["ase_fc3_supercell"] = atoms.info["fc3_supercell"]
-                    relax_dict["ase_symbols"] = str(atoms.symbols)
-                    relax_dict["ase_cell"] = np.array(atoms.cell)
-                    relax_dict["ase_positions"] = atoms.positions
-                    relax_dict["ase_q_mesh"] = atoms.info["q_mesh"]
+                # maximum residual stress component in for xx,yy,zz and
+                # xy,yz,xz components separately
+                # result is a array of 2 elements
+                max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
 
-                    atoms.calc = None
+                atoms.calc = None
+                atoms.constraints = None
+                atoms.info = init_info | atoms.info
+
+                symm_no = get_spacegroup_number(atoms, symprec=symprec)
+
+                relax_dict = {
+                    "structure": atoms,
+                    "max_stress": max_stress,
+                    "reached_max_steps": reached_max_steps,
+                    "relaxed_space_group_number": symm_no,
+                    "broken_symmetry": symm_no
+                    != init_info["initial_space_group_number"],
+                }
+
+            else:
+                atoms, relax_dict = two_stage_relax(
+                    atoms,
+                    fmax_stage1=force_max,
+                    fmax_stage2=force_max,
+                    steps_stage1=max_steps,
+                    steps_stage2=max_steps,
+                    Optimizer=optim_cls,
+                    Filter=filter_cls,
+                    allow_tilt=False,
+                    log=f"{out_dir}/relax_{rank}.log",
+                    enforce_symmetry=enforce_relax_symm,
+                )
+                # relax_dict['structures']=atoms
+                import numpy as np
+
+                relax_dict["ase_fc2_supercell"] = atoms.info["fc2_supercell"]
+                relax_dict["ase_fc3_supercell"] = atoms.info["fc3_supercell"]
+                relax_dict["ase_symbols"] = str(atoms.symbols)
+                relax_dict["ase_cell"] = np.array(atoms.cell)
+                relax_dict["ase_positions"] = atoms.positions
+                relax_dict["ase_q_mesh"] = atoms.info["q_mesh"]
+
+                atoms.calc = None
 
         # except Exception as exc:
-        else:
-            warnings.warn(f"Failed to relax {mat_name=}, {mat_id=}: {exc!r}")
-            traceback.print_exc()
-            info_dict["errors"].append(f"RelaxError: {exc!r}")
-            info_dict["error_traceback"].append(traceback.format_exc())
-
-            kappa_results[mat_id] = info_dict
-            continue
 
         # Calculation of force sets
         info_dict["displacement"] = args.displacement
@@ -426,7 +400,9 @@ def main():
                 continue
 
         except Exception as exc:
-            warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}")
+            warnings.warn(
+                f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2
+            )
             traceback.print_exc()
             info_dict["errors"].append(f"ForceConstantError: {exc!r}")
             info_dict["error_traceback"].append(traceback.format_exc())

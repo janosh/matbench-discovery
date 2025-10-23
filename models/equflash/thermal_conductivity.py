@@ -8,29 +8,31 @@ implement parallelization across input structures which allows scaling thermal
 conductivity metric to larger test sets.
 """
 
-import warnings
-from collections.abc import Sequence
-from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 from ase import Atoms
 from ase.calculators.calculator import Calculator
+from fairchem.core.preprocessing.atoms_to_graphs import AtomsToGraphs
 from phono3py.api_phono3py import Phono3py
 from phonopy.structure.atoms import PhonopyAtoms
-from pymatviz.enums import Key
+from torch_geometric.data import Batch
 from tqdm import tqdm
 
 
-def aseatoms2phonoatoms(atoms):
-    phonoatoms = PhonopyAtoms(
+def aseatoms2phonoatoms(atoms: Atoms) -> PhonopyAtoms:
+    return PhonopyAtoms(
         atoms.symbols, cell=atoms.cell, positions=atoms.positions, pbc=True
     )
-    return phonoatoms
 
 
 def aseatoms2phono3py(
-    atoms, fc2_supercell, fc3_supercell, primitive_matrix=None, **kwargs
+    atoms: Atoms,
+    fc2_supercell: np.array,
+    fc3_supercell: np.array,
+    primitive_matrix: np.array | None = None,
+    **kwargs: Any,
 ) -> Phono3py:
     unitcell = aseatoms2phonoatoms(atoms)
     return Phono3py(
@@ -127,7 +129,8 @@ def calculate_fc3_set(
 
 def init_phono3py(
     atoms: Atoms,
-    log = True,
+    *,
+    log: bool = True,
     symprec: float = 1e-5,
     displacement_distance: float = 0.03,
     **kwargs: Any,
@@ -151,17 +154,20 @@ def init_phono3py(
     formula = atoms.get_chemical_formula(mode="metal")
     if "fc2_supercell" not in atoms.info:
         raise ValueError(
-            f'{formula} "fc2_supercell" was not found in atoms.info when calculating force sets.'
+            f'{formula} "fc2_supercell" was not found in atoms.info'
+            "when calculating force sets."
         )
 
     if "fc3_supercell" not in atoms.info:
         raise ValueError(
-            f'{formula} "fc3_supercell" was not found in atoms.info when calculating force sets.'
+            f'{formula} "fc3_supercell" was not found in atoms.info'
+            "when calculating force sets."
         )
 
     if "fc3_supercell" not in atoms.info:
         raise ValueError(
-            f'{formula} "q_mesh" was not found in atoms.info when calculating force sets.'
+            f'{formula} "q_mesh" was not found in atoms.info '
+            "when calculating force sets."
         )
 
     # Initialise Phono3py object
@@ -270,20 +276,14 @@ def calc_mode_kappa_tot(
     return mode_kappa_c_per_mode + mode_kappa_p_rta
 
 
-
-
-from fairchem.core.preprocessing.atoms_to_graphs import AtomsToGraphs
-from torch_geometric.data import Batch
-from pathlib import Path
-
 def calculate_fc3_set_batch(
     ph3: Phono3py,
-    calculator,
-    log: bool = True,
-    pbar_kwargs: dict[str, Any] = {},
+    calculator: Calculator,
+    pbar_kwargs: dict[str, Any] | None = None,
 ) -> np.ndarray:
     # calculate FC3 force set
-
+    if pbar_kwargs is None:
+        pbar_kwargs = {}
     forces = []
     nat = len(ph3.supercell)
     graph_list = []
@@ -310,7 +310,7 @@ def calculate_fc3_set_batch(
     forces = []
     import os
 
-    maximum_natom = int(os.environ.get("natoms", 128))
+    maximum_natom = int(os.environ.get("NATOMS", "128"))
     batchsize = max(maximum_natom // nat, 1)
 
     device = "cuda"
@@ -333,10 +333,12 @@ def calculate_fc3_set_batch(
 
 def get_fc3_batch(
     ph3: Phono3py,
-    calculator,
+    calculator: Calculator,
+    *,
     log: str | Path | bool = True,
-    pbar_kwargs: dict[str, Any] = {"leave": False},
+    pbar_kwargs: dict[str, Any] | None = None,
 ) -> tuple[Phono3py, np.ndarray]:
+    if pbar_kwargs is None:
+        pbar_kwargs = {"leave": False}
     fc3_set = calculate_fc3_set_batch(ph3, calculator, log=log, pbar_kwargs=pbar_kwargs)
     return ph3, fc3_set
-

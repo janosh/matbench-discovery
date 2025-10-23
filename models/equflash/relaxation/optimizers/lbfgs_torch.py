@@ -9,7 +9,6 @@ https://opensource.org/licenses/MIT
 
 from __future__ import annotations
 
-import logging
 from collections import deque
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -19,7 +18,7 @@ import torch
 from torch_scatter import scatter
 
 if TYPE_CHECKING:
-    from ..optimizable import OptimizableBatch
+    from ..optimizable import OptimizableBatch  # noqa: TID252
 
 
 class LBFGS:
@@ -32,16 +31,19 @@ class LBFGS:
         memory: int = 100,
         damping: float = 1.2,
         alpha: float = 100.0,
+        *,
         save_full_traj: bool = True,
         traj_dir: Path | None = None,
         traj_names: list[str] | None = None,
     ) -> None:
         """
         Args:
-            optimizable_batch: an optimizable batch which includes a model and a batch of data
+            optimizable_batch: an optimizable batch which includes
+            a model and a batch of data
             maxstep: largest step that any atom is allowed to move
             memory: Number of steps to be stored in memory
-            damping: The calculated step is multiplied with this number before added to the positions.
+            damping: The calculated step is multiplied with
+            this number before added to the positions.
             alpha: Initial guess for the Hessian (curvature of energy surface)
             save_full_traj: whether to save full trajectory
             traj_dir: path to save trajectories in
@@ -66,15 +68,15 @@ class LBFGS:
         self.rho = deque(maxlen=self.memory)
         self.r0 = None
         self.f0 = None
+        if self.traj_dir and (not traj_dir or not len(traj_names)):
+            raise ValueError(
+                "Trajectory names should be specified to save trajectories"
+            )
 
-        assert not self.traj_dir or (
-            traj_dir and len(traj_names)
-        ), "Trajectory names should be specified to save trajectories"
-
-    def run(self, fmax, steps):
+    def run(self, fmax: float, steps: int) -> tuple[torch.Tensor, torch.Tensor]:
         self.fmax = fmax
         self.steps = steps
-        
+
         self.s.clear()
         self.y.clear()
         self.rho.clear()
@@ -89,29 +91,19 @@ class LBFGS:
             ]
 
         iteration = 0
-        max_forces = self.optimizable.get_max_forces(apply_constraint=True)
-        logging.info("Step   Fmax(eV/A)")
-
+        max_forces = self.optimizable.get_max_forces()
         while iteration < steps and not self.optimizable.converged(
             forces=None, fmax=self.fmax, max_forces=max_forces
         ):
-            
-            logging.info(
-                f"{iteration} " + " ".join(f"{x:0.3f}" for x in max_forces.tolist())
-            )
-            self.iteration=iteration
+            self.iteration = iteration
             if self.trajectories is not None and (
                 self.save_full is True or iteration == 0
             ):
                 self.write()
 
             self.step(iteration)
-            max_forces = self.optimizable.get_max_forces(apply_constraint=True)
+            max_forces = self.optimizable.get_max_forces()
             iteration += 1
-
-        logging.info(
-            f"{iteration} " + " ".join(f"{x:0.3f}" for x in max_forces.tolist())
-        )
 
         # save after converged or all iterations ran
         if iteration > 0 and self.trajectories is not None:
@@ -136,24 +128,24 @@ class LBFGS:
             forces=None, fmax=self.fmax, max_forces=max_forces
         )
 
-    def determine_step(self, dr):
+    def determine_step(self, dr: torch.Tensor) -> torch.Tensor:
         steplengths = torch.norm(dr, dim=1)
-        longest_steps = scatter(steplengths, self.optimizable.batch_indices, reduce="max")
+        longest_steps = scatter(
+            steplengths, self.optimizable.batch_indices, reduce="max"
+        )
         longest_steps = longest_steps[self.optimizable.batch_indices]
         maxstep = longest_steps.new_tensor(self.maxstep)
         scale = (longest_steps + 1e-12).reciprocal() * torch.min(longest_steps, maxstep)
         dr *= scale.unsqueeze(1)
         return dr * self.damping
 
-    def _batched_dot(self, x: torch.Tensor, y: torch.Tensor):
+    def _batched_dot(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         return scatter(
             (x * y).sum(dim=-1), self.optimizable.batch_indices, reduce="sum"
         )
 
     def step(self, iteration: int) -> None:
-        forces = self.optimizable.get_forces(apply_constraint=True).to(
-            dtype=torch.float64
-        )
+        forces = self.optimizable.get_forces().to(dtype=torch.float64)
         pos = self.optimizable.get_positions().to(dtype=torch.float64)
         if iteration > 0:
             s0 = pos - self.r0
@@ -163,18 +155,16 @@ class LBFGS:
             self.y.append(y0)
 
             self.rho.append(1.0 / self._batched_dot(y0, s0))
-        
-        
+
         loopmax = min(self.memory, iteration)
         alpha = forces.new_empty(loopmax, self.optimizable.batch.natoms.shape[0])
         q = -forces
         for i in range(loopmax - 1, -1, -1):
-
             alpha[i] = self.rho[i] * self._batched_dot(self.s[i], q)  # b
             # print(alpha[i])
             q -= alpha[i][self.optimizable.batch_indices, ..., None] * self.y[i]
         # torch.save(q,f"meta_logs/q_{iteration}.pt")
-        
+
         z = self.H0 * q
         for i in range(loopmax):
             beta = self.rho[i] * self._batched_dot(self.y[i], z)
@@ -193,13 +183,11 @@ class LBFGS:
         self.r0 = pos
         self.f0 = forces
 
-    def write(self,force_write=False) -> None:
+    def write(self, *, force_write: bool = False) -> None:
         atoms_objects = self.optimizable.get_atoms_list()
         # import pdb;pdb.set_trace()
         for atm, traj, mask in zip(
-            atoms_objects, self.trajectories, self.optimizable.update_mask
+            atoms_objects, self.trajectories, self.optimizable.update_mask, strict=False
         ):
-            if mask:
-                traj.write(atm)
-            elif force_write:
+            if mask or force_write:
                 traj.write(atm)
