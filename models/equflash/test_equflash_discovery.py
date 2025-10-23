@@ -30,7 +30,9 @@ def split_df(df: pd.DataFrame, batch_size: int) -> list[pd.DataFrame]:
 # Example usage:
 
 
-def compute_rmsd(struct_pred: Structure, struct_og: Structure) -> tuple[float, float]:
+def compute_rmsd(
+    struct_pred: Structure, struct_og: Structure
+) -> tuple[float | None, float | None]:
     structure_matcher = StructureMatcher(stol=1.0, scale=False)
     rmsd, max_dist = structure_matcher.get_rms_dist(struct_pred, struct_og) or (
         None,

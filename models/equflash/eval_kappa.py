@@ -6,10 +6,9 @@ from k_srme import DFT_NONAC_REF, ID, glob2df
 from k_srme.benchmark import get_metrics, process_benchmark_descriptors
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--name", "-n", default="SevenNet")
-parser.add_argument("--outdir", required="True")
+parser.add_argument("--outdir", required=True)
 args = parser.parse_args()
-model_name = args.name
+model_name = "EquFlash"
 
 
 json_file = f"{args.outdir}/k_srme.json.gz"

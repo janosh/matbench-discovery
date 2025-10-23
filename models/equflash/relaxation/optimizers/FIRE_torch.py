@@ -102,7 +102,7 @@ class FIRE:
 
         self.downhill_check = downhill_check
         self.position_reset_callback = position_reset_callback
-        if self.traj_dir and (not traj_dir or not len(traj_names)):
+        if self.traj_dir and (not traj_dir or not traj_names or not len(traj_names)):
             raise ValueError(
                 "Trajectory names should be specified to save trajectories"
             )
@@ -135,8 +135,7 @@ class FIRE:
             iteration += 1
             n_traj = (
                 n_traj
-                + torch.ones_like(n_traj)
-                * self.optimizable.update_mask.detach().cpu()
+                + torch.ones_like(n_traj) * self.optimizable.update_mask.detach().cpu()
             )
 
         # save after converged or all iterations ran

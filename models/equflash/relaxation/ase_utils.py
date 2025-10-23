@@ -55,7 +55,7 @@ def batch_to_atoms(
     natoms = batch.natoms.tolist()
     numbers = torch.split(batch.atomic_numbers, natoms)
     fixed = torch.split(batch.fixed.to(torch.bool), natoms)
-    bs=int((batch.batch.max()+1).detach().cpu())
+    bs = int((batch.batch.max() + 1).detach().cpu())
     if results is not None:
         results = {
             key: (

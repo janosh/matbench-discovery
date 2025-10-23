@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections import deque
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import torch
 from fairchem.core.common.typing import assert_is_instance
@@ -30,7 +30,7 @@ def ml_relax(
     model: BaseTrainer,
     steps: int,
     fmax: float,
-    relax_opt: dict[str] | None = None,
+    relax_opt: dict[str, Any] | None = None,
     *,
     relax_cell: bool = False,
     relax_volume: bool = False,
@@ -125,7 +125,7 @@ def ml_relax(
             )
 
     # reset for good measure
-    OptimizableBatch.ignored_changes = {}
+    OptimizableBatch.ignored_changes = set()
 
     relaxed_batch = Batch.from_data_list(relaxed_batches)
     n_trajs = torch.cat(n_trajs)

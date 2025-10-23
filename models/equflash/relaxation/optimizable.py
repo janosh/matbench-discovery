@@ -110,7 +110,7 @@ def compare_batches(
     batch2: Batch,
     tol: float = 1e-6,
     excluded_properties: set[str] | None = None,
-) -> list[str]:
+) -> bool:
     """Compare properties between two batches
 
     Args:
@@ -141,7 +141,7 @@ def compare_batches(
                 ):
                     system_changes.append(prop)
 
-    return system_changes
+    return len(system_changes) > 0
 
 
 class OptimizableBatch:
@@ -648,7 +648,7 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
         new2[natoms:] = self.expm(batched_cell).reshape(-1, 3)
         OptimizableUnitCellBatch.set_positions(self, new2)
 
-    def get_forces(self,*,no_numpy: bool = False) -> torch.Tensor:
+    def get_forces(self, *, no_numpy: bool = False) -> torch.Tensor:
         # forces on atoms are same as UnitCellFilter, we just
         # need to modify the stress contribution
         stress = self.get_property("stress", no_numpy=True).view(-1, 3, 3)
@@ -693,7 +693,7 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
         augmented_forces[natoms:] = (
             deform_grad_log_force.reshape(-1, 3) / self.exp_cell_factor
         )
-        
+
         if self.numpy and not no_numpy:
             augmented_forces = augmented_forces.cpu().numpy()
         return augmented_forces

@@ -8,7 +8,6 @@ implement parallelization across input structures which allows scaling thermal
 conductivity metric to larger test sets.
 """
 
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -64,7 +63,9 @@ def calculate_fc2_set(
 
     displacements = ph3.phonon_supercells_with_displacements
     for supercell in tqdm(
-        displacements, desc=f"FC2 calculation: {ph3.unitcell.formula}", **pbar_kwargs
+        displacements,
+        desc=f"FC2 calculation: {ph3.unitcell.formula}",
+        **(pbar_kwargs or {}),
     ):
         if supercell is not None:
             atoms = Atoms(
@@ -338,5 +339,5 @@ def get_fc3_batch(
 ) -> tuple[Phono3py, np.ndarray]:
     if pbar_kwargs is None:
         pbar_kwargs = {"leave": False}
-    fc3_set = calculate_fc3_set_batch(ph3, calculator,  pbar_kwargs=pbar_kwargs)
+    fc3_set = calculate_fc3_set_batch(ph3, calculator, pbar_kwargs=pbar_kwargs)
     return ph3, fc3_set

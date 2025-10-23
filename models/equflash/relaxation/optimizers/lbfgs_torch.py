@@ -68,7 +68,7 @@ class LBFGS:
         self.rho = deque(maxlen=self.memory)
         self.r0 = None
         self.f0 = None
-        if self.traj_dir and (not traj_dir or not len(traj_names)):
+        if self.traj_dir and (not traj_dir or not traj_names or not len(traj_names)):
             raise ValueError(
                 "Trajectory names should be specified to save trajectories"
             )
