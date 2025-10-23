@@ -170,7 +170,7 @@ def init_phono3py(
             "when calculating force sets."
         )
 
-    # Initialise Phono3py object
+    # Initialize Phono3py object
     ph3 = aseatoms2phono3py(
         atoms,
         fc2_supercell=atoms.info["fc2_supercell"],

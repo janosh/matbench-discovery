@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 import torch
 from fairchem.core.common.typing import assert_is_instance
-from GGNN.datasets.lmdb_dataset import data_list_collater
+from GGNN.datasets.lmdb_dataset import data_list_collator
 from torch_geometric.data import Batch
 
 from .optimizable import OptimizableBatch, OptimizableFretchetBatch
@@ -118,10 +118,10 @@ def ml_relax(
             )
             mid = len(data_list) // 2
             batches.appendleft(
-                data_list_collater(data_list[:mid], otf_graph=optimizable.otf_graph)
+                data_list_collator(data_list[:mid], otf_graph=optimizable.otf_graph)
             )
             batches.appendleft(
-                data_list_collater(data_list[mid:], otf_graph=optimizable.otf_graph)
+                data_list_collator(data_list[mid:], otf_graph=optimizable.otf_graph)
             )
 
     # reset for good measure
