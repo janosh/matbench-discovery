@@ -108,7 +108,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ckpt", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--rank", type=int, default=0)
-    parser.add_argument("--fmax", type=float, default=0.05)
+    parser.add_argument("--fmax", type=float, default=0.02)
     parser.add_argument("--worldsize", type=int, default=1)
     parser.add_argument("--batchsize", type=int, default=32)
     return parser.parse_args()

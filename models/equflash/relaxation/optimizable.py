@@ -477,7 +477,7 @@ class OptimizableUnitCellBatch(OptimizableBatch):
 
     def get_positions(self) -> torch.Tensor:
         """Get positions and cell deformation gradient."""
-        cur_deform_grad = self.deform_grad()
+        cur_deform_grad = self.deform_grad
         natoms = self.batch.num_nodes
         pos = torch.zeros(
             (natoms + 3 * len(self.get_cells()), 3),
@@ -552,7 +552,7 @@ class OptimizableUnitCellBatch(OptimizableBatch):
 
         volumes = self.get_volumes().view(-1, 1, 1)
         virial = -volumes * stress + self.pressure.view(-1, 3, 3)
-        cur_deform_grad = self.deform_grad()
+        cur_deform_grad = self.deform_grad
         atom_forces = torch.bmm(
             atom_forces.view(-1, 1, 3),
             cur_deform_grad[self.batch.batch, :, :].view(-1, 3, 3),
@@ -648,14 +648,14 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
         new2[natoms:] = self.expm(batched_cell).reshape(-1, 3)
         OptimizableUnitCellBatch.set_positions(self, new2)
 
-    def get_forces(self) -> torch.Tensor:
+    def get_forces(self,*,no_numpy: bool = False) -> torch.Tensor:
         # forces on atoms are same as UnitCellFilter, we just
         # need to modify the stress contribution
         stress = self.get_property("stress", no_numpy=True).view(-1, 3, 3)
         atom_forces = self.get_property("forces", no_numpy=True)
         volumes = self.get_volumes().view(-1, 1, 1)
         virial = -volumes * stress + self.pressure.view(-1, 3, 3)
-        cur_deform_grad = self.deform_grad()
+        cur_deform_grad = self.deform_grad
 
         cur_deform_grad_log = self.logm(cur_deform_grad)
         atom_forces = torch.bmm(
@@ -693,6 +693,9 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
         augmented_forces[natoms:] = (
             deform_grad_log_force.reshape(-1, 3) / self.exp_cell_factor
         )
+        
+        if self.numpy and not no_numpy:
+            augmented_forces = augmented_forces.cpu().numpy()
         return augmented_forces
 
     def logm(self, a: torch.Tensor) -> torch.Tensor:

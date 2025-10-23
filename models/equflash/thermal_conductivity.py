@@ -29,9 +29,9 @@ def aseatoms2phonoatoms(atoms: Atoms) -> PhonopyAtoms:
 
 def aseatoms2phono3py(
     atoms: Atoms,
-    fc2_supercell: np.array,
-    fc3_supercell: np.array,
-    primitive_matrix: np.array | None = None,
+    fc2_supercell: np.typing.NDArray,
+    fc3_supercell: np.typing.NDArray,
+    primitive_matrix: np.typing.NDArray | None = None,
     **kwargs: Any,
 ) -> Phono3py:
     unitcell = aseatoms2phonoatoms(atoms)
@@ -58,7 +58,6 @@ def calculate_fc2_set(
     Returns:
         np.ndarray: Array of forces for each displacement
     """
-    print(f"Computing FC2 force set in {ph3.unitcell.formula}.")
 
     forces = []
     n_atoms = len(ph3.phonon_supercell)
@@ -335,10 +334,9 @@ def get_fc3_batch(
     ph3: Phono3py,
     calculator: Calculator,
     *,
-    log: str | Path | bool = True,
     pbar_kwargs: dict[str, Any] | None = None,
 ) -> tuple[Phono3py, np.ndarray]:
     if pbar_kwargs is None:
         pbar_kwargs = {"leave": False}
-    fc3_set = calculate_fc3_set_batch(ph3, calculator, log=log, pbar_kwargs=pbar_kwargs)
+    fc3_set = calculate_fc3_set_batch(ph3, calculator,  pbar_kwargs=pbar_kwargs)
     return ph3, fc3_set

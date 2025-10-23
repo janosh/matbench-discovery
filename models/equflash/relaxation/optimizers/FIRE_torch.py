@@ -136,7 +136,7 @@ class FIRE:
             n_traj = (
                 n_traj
                 + torch.ones_like(n_traj)
-                * self.optimizable.update_mask().detach().cpu()
+                * self.optimizable.update_mask.detach().cpu()
             )
 
         # save after converged or all iterations ran

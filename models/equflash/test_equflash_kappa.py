@@ -336,10 +336,9 @@ def main() -> None:
                     fmax_stage2=force_max,
                     steps_stage1=max_steps,
                     steps_stage2=max_steps,
-                    Optimizer=optim_cls,
-                    Filter=filter_cls,
+                    optimizer=optim_cls,
+                    filter_ase=filter_cls,
                     allow_tilt=False,
-                    log=f"{out_dir}/relax_{rank}.log",
                     enforce_symmetry=enforce_relax_symm,
                 )
                 # relax_dict['structures']=atoms
@@ -383,7 +382,6 @@ def main() -> None:
                 ph3, fc3_set = get_fc3_batch(
                     ph3,
                     calculator=calc,
-                    log=False,
                     pbar_kwargs={"leave": False, "disable": not prog_bar},
                 )
                 ph3.forces = fc3_set
