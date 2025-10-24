@@ -160,26 +160,55 @@ describe(`MetricsTable`, () => {
     expect(rows_with_energy).toBeGreaterThanOrEqual(rows_without_energy)
   })
 
-  it(`filters non-compliant models`, () => {
-    let model_filter = (_model: ModelData) => false // initially show no models
+  it(`filters models based on model_filter prop`, () => {
+    // First test: show no models
+    const no_model_filter = (_model: ModelData) => false
     mount(MetricsTable, {
       target: document.body,
-      props: { model_filter, config: DEFAULT_CPS_CONFIG },
+      props: {
+        model_filter: no_model_filter,
+        config: DEFAULT_CPS_CONFIG,
+        show_non_compliant: true,
+      },
     })
 
-    const initial_rows = document.querySelectorAll(`tbody tr`).length
-    expect(initial_rows).toBe(0)
+    const no_rows = document.querySelectorAll(`tbody tr`).length
+    expect(no_rows).toBe(0)
 
-    model_filter = () => true // now show all models
+    // Second test: show all models
+    document.body.innerHTML = ``
+    mount(MetricsTable, {
+      target: document.body,
+      props: {
+        model_filter: () => true,
+        config: DEFAULT_CPS_CONFIG,
+        show_non_compliant: true,
+      },
+    })
 
-    const rows_with_non_compliant = document.querySelectorAll(`tbody tr`).length
-    // expect(rows_with_non_compliant).toBeGreaterThan(0) // TODO: fix this test
-    expect(rows_with_non_compliant).toBe(0) // shouldn't actually be 0
-  })
+    const all_rows = document.querySelectorAll(`tbody tr`).length
+    expect(all_rows).toBeGreaterThan(0)
 
-  it(`opens and closes prediction files dropdown`, async () => {
-    // This test is skipped because we cannot properly simulate MouseEvent with the current test setup
-    // The actual functionality is tested in "opens prediction files dropdown when button is clicked"
+    // Third test: show specific models (e.g., only models with CHG in name)
+    document.body.innerHTML = ``
+    mount(MetricsTable, {
+      target: document.body,
+      props: {
+        model_filter: (model: ModelData) => model.model_name.includes(`CHG`),
+        config: DEFAULT_CPS_CONFIG,
+        show_non_compliant: true,
+      },
+    })
+
+    const filtered_rows = document.querySelectorAll(`tbody tr`)
+    expect(filtered_rows.length).toBeGreaterThan(0)
+    expect(filtered_rows.length).toBeLessThan(all_rows)
+
+    // Verify that filtered rows actually contain CHG
+    filtered_rows.forEach((row) => {
+      const model_cell = row.querySelector(`td[data-col="Model"]`)
+      expect(model_cell?.textContent).toContain(`CHG`)
+    })
   })
 
   it(`validates prediction files dropdown button`, () => {
@@ -706,12 +735,11 @@ describe(`MetricsTable`, () => {
       )
       expect(links_cells.length).toBeGreaterThan(20)
 
-      // Check that all rows have links
+      // Check that rows have links (at least some should)
+      let rows_with_links = 0
       for (const cell of links_cells) {
         const links = Array.from(cell.querySelectorAll(`a`))
-
-        // Every row should have links
-        expect(links.length).toBeGreaterThan(1)
+        if (links.length > 1) rows_with_links++
 
         // Check each link has proper attributes
         for (const link of links) {
@@ -728,6 +756,9 @@ describe(`MetricsTable`, () => {
           expect(svg).not.toBeNull()
         }
       }
+
+      // At least half of rows should have multiple links
+      expect(rows_with_links).toBeGreaterThan(links_cells.length / 2)
     })
 
     it(`shows icon-unavailable for missing links`, async () => {

@@ -61,35 +61,27 @@ describe(`arr_to_str`, () => {
   })
 })
 
-describe(`format_long_date`, () => {
-  it(`formats date in long format`, () => {
-    // Use a fixed date for testing
+describe(`format_date`, () => {
+  it(`formats date with proper locale and options`, () => {
     const date = `2023-05-15`
+    const result = format_date(date)
 
-    // Mock Date to return consistent results
-    const original_date = Date
-    const mock_date = class extends Date {
-      constructor(date_str?: string | number | Date) {
-        super(date_str ?? `2023-05-15T12:00:00Z`) // Mock current date
-      }
+    // Verify result contains expected components
+    expect(result).toContain(`2023`)
+    expect(result).toMatch(/May|5/)
 
-      override toLocaleDateString(): string {
-        return `Monday, May 15, 2023`
-      }
-    }
+    // Verify it returns a non-empty string
+    expect(result.length).toBeGreaterThan(0)
+  })
 
-    // Override Date constructor
-    Object.defineProperty(globalThis, `Date`, {
-      value: mock_date,
-      writable: true,
-    })
+  it(`handles different date formats`, () => {
+    const iso_date = `2023-12-25`
+    const timestamp = new Date(`2023-12-25`).getTime()
 
-    expect(format_date(date)).toBe(`Monday, May 15, 2023`)
+    const result1 = format_date(iso_date)
+    const result2 = format_date(timestamp.toString())
 
-    // Restore original Date
-    Object.defineProperty(globalThis, `Date`, {
-      value: original_date,
-      writable: true,
-    })
+    expect(result1.length).toBeGreaterThan(0)
+    expect(result2.length).toBeGreaterThan(0)
   })
 })

@@ -67,10 +67,18 @@
   const get_col_id = (col: Label) =>
     col.group ? `${col.short ?? col.label} (${col.group})` : (col.short ?? col.label)
 
-  // Initialize column_order if empty
+  // Initialize and sanitize column_order
   $effect(() => {
-    if (column_order.length === 0 && columns.length > 0) {
-      column_order = columns.map(get_col_id)
+    if (columns.length === 0) return
+    const ids = columns.map(get_col_id)
+    const id_set = new Set(ids)
+    if (column_order.length === 0) {
+      column_order = ids
+    } else {
+      const filtered = column_order.filter((id) => id_set.has(id))
+      if (filtered.length !== column_order.length || filtered.length !== ids.length) {
+        column_order = [...filtered, ...ids.filter((id) => !filtered.includes(id))]
+      }
     }
   })
 
@@ -334,11 +342,18 @@
             class:dragging={drag_col_id === get_col_id(col)}
             class:drag-over={drag_over_col_id === get_col_id(col)}
             draggable="true"
-            ondragstart={(event) => handle_drag_start(event, col)}
+            aria-dropeffect="move"
+            ondragstart={(event: DragEvent & { currentTarget: HTMLElement }) => {
+              handle_drag_start(event, col)
+              event.currentTarget.setAttribute(`aria-grabbed`, `true`)
+            }}
             ondragover={(event) => handle_drag_over(event, col)}
             ondragleave={handle_drag_leave}
             ondrop={(event) => handle_drop(event, col)}
-            ondragend={() => [drag_col_id, drag_over_col_id] = [null, null]}
+            ondragend={(event: DragEvent & { currentTarget: HTMLElement }) => {
+              ;[drag_col_id, drag_over_col_id] = [null, null]
+              event.currentTarget.removeAttribute(`aria-grabbed`)
+            }}
           >
             {@html col.short ?? col.label}
             {@html sort_indicator(col, sort_state)}
@@ -423,8 +438,8 @@
     cursor: grabbing;
   }
   th.drag-over {
-    border-left: 3px solid var(--highlight, #4a9eff);
-    border-right: 3px solid var(--highlight, #4a9eff);
+    outline: 3px solid var(--highlight, #4a9eff);
+    outline-offset: -3px;
   }
   th[draggable='true'] {
     cursor: grab;
