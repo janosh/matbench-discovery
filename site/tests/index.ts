@@ -33,9 +33,7 @@ beforeAll(() => {
     pause: () => {},
     play: () => {},
     effect: {
-      getComputedTiming: () => {
-        return {}
-      },
+      getComputedTiming: () => ({}),
       getKeyframes: () => [],
     },
     cancel: () => {},
@@ -67,15 +65,9 @@ export function is_hidden(el: Element | null): boolean {
     el.getAttribute(`aria-hidden`) === `true` || el.hasAttribute(`hidden`))
 }
 
-// mock matchMedia browser API
-globalThis.matchMedia = vi.fn()
-
 // ResizeObserver mock
 globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
 }
-
-// TODO remove pending https://github.com/sveltejs/kit/issues/14143#issuecomment-3179138497
-vi.stubGlobal(`__SVELTEKIT_PAYLOAD__`, { data: null })
