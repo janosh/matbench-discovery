@@ -1,5 +1,33 @@
 import { beforeAll, beforeEach, vi } from 'vitest'
 
+// Mock $app modules for SvelteKit - must be at top level before any imports
+vi.mock(`$app/state`, () => ({
+  page: {
+    url: {
+      pathname: `/`,
+      searchParams: new URLSearchParams(),
+    },
+    params: {},
+    route: {
+      id: null,
+    },
+  },
+}))
+
+vi.mock(`$app/environment`, () => ({}))
+
+vi.mock(`$app/navigation`, () => ({
+  goto: vi.fn(),
+  invalidate: vi.fn(),
+  invalidateAll: vi.fn(),
+  preloadData: vi.fn(),
+  preloadCode: vi.fn(),
+  beforeNavigate: vi.fn(),
+  afterNavigate: vi.fn(),
+  pushState: vi.fn(),
+  replaceState: vi.fn(),
+}))
+
 beforeAll(() => {
   const animation = {
     pause: () => {},

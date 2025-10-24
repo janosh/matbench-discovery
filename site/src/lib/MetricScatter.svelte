@@ -76,6 +76,7 @@
   let series: DataSeries = $derived({
     x: plot_data.map((item) => item.x) as number[],
     y: plot_data.map((item) => item.y) as number[],
+    markers: `points` as const,
     metadata: plot_data.map((item) => item.metadata),
     point_style: plot_data.map((item) => ({
       fill: item.color ?? `#4dabf7`,
@@ -97,11 +98,8 @@
 
 <ScatterPlot
   series={[series]}
-  markers="points"
-  {x_label}
-  {y_label}
-  x_format={x_prop?.format ?? `.1s`}
-  y_format={y_prop?.format ?? `.3f`}
+  x_axis={{ label: x_label, format: x_prop?.format ?? `.1s` }}
+  y_axis={{ label: y_label, format: y_prop?.format ?? `.3f` }}
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata })}

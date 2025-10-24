@@ -180,9 +180,7 @@ describe(`DynamicScatter.svelte`, () => {
         props: { models: mock_models },
       })
 
-      const settings_button = document.querySelector<HTMLButtonElement>(
-        `.settings-toggle`,
-      )
+      const settings_button = doc_query<HTMLButtonElement>(`.settings-toggle`)
       let extra_controls = document.querySelector(pane_selector)
 
       // 1. Initial state: Controls hidden (element may exist but be hidden)
@@ -220,9 +218,7 @@ describe(`DynamicScatter.svelte`, () => {
         props: { models: mock_models },
       })
 
-      const settings_button = document.querySelector<HTMLButtonElement>(
-        `.settings-toggle`,
-      )
+      const settings_button = doc_query<HTMLButtonElement>(`.settings-toggle`)
       let extra_controls = doc_query<HTMLElement>(pane_selector)
 
       // 1. Show controls
@@ -248,9 +244,7 @@ describe(`DynamicScatter.svelte`, () => {
         props: { models: mock_models },
       })
 
-      const settings_button = document.querySelector<HTMLButtonElement>(
-        `.settings-toggle`,
-      )
+      const settings_button = doc_query<HTMLButtonElement>(`.settings-toggle`)
       await settings_button?.click() // Show controls
 
       const extra_controls = doc_query(pane_selector)
@@ -353,7 +347,7 @@ describe(`DynamicScatter.svelte`, () => {
       expect(controls_grid?.querySelectorAll(`[role="listbox"]`)).toHaveLength(4)
 
       // Open extra controls and test all defaults
-      document.querySelector<HTMLButtonElement>(`.settings-toggle`)?.click()
+      doc_query<HTMLButtonElement>(`.settings-toggle`)?.click()
       const pane = doc_query(pane_selector)
 
       // Test all checkbox defaults (these often regress)
