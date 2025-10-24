@@ -8,7 +8,7 @@ from __future__ import annotations
 import pickle
 from glob import glob
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pandas as pd
 from ase.filters import FrechetCellFilter
@@ -44,12 +44,16 @@ class Relaxer:
         self.ase_adaptor = AseAtomsAdaptor()
 
     def relax(
-        self, atoms: Atoms, fmax: float, steps: int, traj_file: str | None = None
+        self,
+        atoms: Atoms | Structure | Molecule,
+        fmax: float,
+        steps: int,
+        traj_file: str | None = None,
     ) -> dict[str, Any]:
         """Relax atomic structure using ASE optimizer.
 
         Args:
-            atoms (Atoms): Atomic structure to relax.
+            atoms (Atoms | Structure | Molecule): Atomic structure to relax.
             fmax (float): Maximum force criterion for convergence.
             steps (int): Maximum number of optimization steps.
             traj_file (str | None, optional): Path to save trajectory. Defaults to None.
@@ -57,8 +61,8 @@ class Relaxer:
         Returns:
             dict[str, Any]: Dictionary containing final structure and trajectory.
         """
-        if isinstance(atoms, Structure | Molecule):
-            atoms = self.ase_adaptor.get_atoms(atoms)
+        if isinstance(atoms, (Structure, Molecule)):
+            atoms = cast("Atoms", self.ase_adaptor.get_atoms(atoms))
 
         atoms.calc = self.calculator
         obs = TrajectoryObserver(atoms)
