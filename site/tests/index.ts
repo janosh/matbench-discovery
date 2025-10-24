@@ -14,7 +14,7 @@ vi.mock(`$app/state`, () => ({
   },
 }))
 
-vi.mock(`$app/environment`, () => ({}))
+vi.mock(`$app/environment`, () => ({ browser: false, building: false, version: `test` }))
 
 vi.mock(`$app/navigation`, () => ({
   goto: vi.fn(),

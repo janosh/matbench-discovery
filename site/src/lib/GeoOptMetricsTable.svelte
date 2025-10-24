@@ -1,10 +1,14 @@
 <script lang="ts">
   import { HeatmapTable } from '$lib'
   import type { ModelData } from '$lib/types'
+  import type { HTMLAttributes } from 'svelte/elements'
   import { ALL_METRICS, GEO_OPT_SYMMETRY_METRICS, METADATA_COLS } from './labels'
   import { assemble_row_data } from './metrics'
 
-  let { column_order = $bindable([]), ...rest } = $props()
+  let { column_order = $bindable([]), ...rest }: HTMLAttributes<HTMLDivElement> & {
+    column_order?: string[]
+  } = $props()
+
   let columns = $derived([
     METADATA_COLS.model_name,
     ALL_METRICS.RMSD,
@@ -30,12 +34,7 @@
       show_compliant,
     ),
   )
+  let style = $derived(`margin-block: 2em; ${rest.style ?? ``}`)
 </script>
 
-<HeatmapTable
-  data={metrics_data}
-  {columns}
-  bind:column_order
-  {...rest}
-  style="margin: 2em 0"
-/>
+<HeatmapTable data={metrics_data} {columns} bind:column_order {...rest} {style} />

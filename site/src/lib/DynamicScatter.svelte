@@ -16,19 +16,18 @@
   } from './labels'
   import { get_nested_value } from './metrics'
 
-  interface Props extends HTMLAttributes<HTMLDivElement> {
-    models: ModelData[]
-    model_filter?: (model: ModelData) => boolean
-    point_color?: string | null
-    show_model_labels?: boolean
-  }
   let {
     models,
     model_filter = () => true,
     point_color = null,
     show_model_labels = true,
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLDivElement> & {
+    models: ModelData[]
+    model_filter?: (model: ModelData) => boolean
+    point_color?: string | null
+    show_model_labels?: boolean
+  } = $props()
 
   const date_key = METADATA_COLS.date_added.key
   const params_key = HYPERPARAMS.model_params.key

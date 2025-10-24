@@ -3,7 +3,13 @@
   import { type InternalPoint, ScatterPlot } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
 
-  interface Props extends HTMLAttributes<HTMLDivElement> {
+  let {
+    formula,
+    curves,
+    tooltip_point = $bindable(null),
+    hovered = $bindable(false),
+    ...rest
+  }: HTMLAttributes<HTMLDivElement> & {
     formula: string
     curves: {
       model_key: string
@@ -13,14 +19,7 @@
     }[]
     tooltip_point?: InternalPoint | null
     hovered?: boolean
-  }
-  let {
-    formula,
-    curves,
-    tooltip_point = $bindable(null),
-    hovered = $bindable(false),
-    ...rest
-  }: Props = $props()
+  } = $props()
 
   // Create a map of model keys to labels from MODELS
   // Extract base model name by removing version suffix

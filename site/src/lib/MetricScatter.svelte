@@ -7,15 +7,6 @@
   import type { HTMLAttributes } from 'svelte/elements'
   import { METADATA_COLS } from './labels'
 
-  interface Props extends HTMLAttributes<HTMLDivElement> {
-    x_prop: Label
-    y_prop: Label
-    models?: ModelData[]
-    model_filter?: (model: ModelData) => boolean
-    point_style?: PointStyle
-    date_range?: [Date | null, Date | null]
-    show_model_labels?: boolean | `auto-placement`
-  }
   let {
     x_prop,
     y_prop,
@@ -25,7 +16,15 @@
     date_range = [null, null],
     show_model_labels = true,
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLDivElement> & {
+    x_prop: Label
+    y_prop: Label
+    models?: ModelData[]
+    model_filter?: (model: ModelData) => boolean
+    point_style?: PointStyle
+    date_range?: [Date | null, Date | null]
+    show_model_labels?: boolean | `auto-placement`
+  } = $props()
 
   // Add date range state for time series
   const now = new Date()

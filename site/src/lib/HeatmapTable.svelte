@@ -8,22 +8,6 @@
   import type { HTMLAttributes } from 'svelte/elements'
   import { SvelteMap } from 'svelte/reactivity'
 
-  interface Props extends HTMLAttributes<HTMLDivElement> {
-    data: RowData[]
-    columns?: Label[]
-    sort_hint?: string
-    cell?: Snippet<[CellSnippetArgs]>
-    special_cells?: Record<string, Snippet<[CellSnippetArgs]>>
-    controls?: Snippet
-    initial_sort_column?: string
-    initial_sort_direction?: `asc` | `desc`
-    fixed_header?: boolean
-    default_num_format?: string
-    show_heatmap?: boolean
-    heatmap_class?: string
-    onrowdblclick?: (event: MouseEvent, row: RowData) => void
-    column_order?: string[]
-  }
   let {
     data,
     columns = [],
@@ -40,7 +24,22 @@
     onrowdblclick,
     column_order = $bindable([]),
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLDivElement> & {
+    data: RowData[]
+    columns?: Label[]
+    sort_hint?: string
+    cell?: Snippet<[CellSnippetArgs]>
+    special_cells?: Record<string, Snippet<[CellSnippetArgs]>>
+    controls?: Snippet
+    initial_sort_column?: string
+    initial_sort_direction?: `asc` | `desc`
+    fixed_header?: boolean
+    default_num_format?: string
+    show_heatmap?: boolean
+    heatmap_class?: string
+    onrowdblclick?: (event: MouseEvent, row: RowData) => void
+    column_order?: string[]
+  } = $props()
 
   // Hacky helper function to detect if a string contains HTML, TODO revisit in future
   function is_html_str(val: unknown): boolean {
@@ -112,6 +111,17 @@
     event.preventDefault()
     if (!event.dataTransfer) return
     event.dataTransfer.dropEffect = `move`
+
+    // Prevent cross-group drag-over to keep group headers contiguous
+    const drag_group = ordered_columns.find((c) => get_col_id(c) === drag_col_id)
+      ?.group
+    const over_group = col.group
+    if (drag_group !== over_group) {
+      event.dataTransfer.dropEffect = `none`
+      drag_over_col_id = null
+      return
+    }
+
     drag_over_col_id = get_col_id(col)
   }
 
@@ -123,6 +133,15 @@
     event.preventDefault()
 
     if (!drag_col_id) return
+
+    // Block cross-group (or group→ungroup) reorders to preserve group contiguity
+    const drag_group = ordered_columns.find((c) => get_col_id(c) === drag_col_id)
+      ?.group
+    if (drag_group !== target_col.group) {
+      drag_col_id = null
+      drag_over_col_id = null
+      return
+    }
 
     const target_col_id = get_col_id(target_col)
     if (drag_col_id === target_col_id) {

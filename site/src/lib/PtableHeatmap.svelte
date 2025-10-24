@@ -9,13 +9,6 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
 
-  interface Props extends ComponentProps<typeof PeriodicTable> {
-    heatmap_values: Record<string, number>
-    color_scale?: D3InterpolateName
-    active_element?: ChemicalElement | null
-    log?: boolean // log color scale
-    colorbar?: ComponentProps<typeof ColorBar>
-  }
   let {
     heatmap_values,
     color_scale = $bindable(`interpolateViridis`),
@@ -23,7 +16,13 @@
     log = $bindable(false),
     colorbar = {},
     ...rest
-  }: Props = $props()
+  }: ComponentProps<typeof PeriodicTable> & {
+    heatmap_values: Record<string, number>
+    color_scale?: D3InterpolateName
+    active_element?: ChemicalElement | null
+    log?: boolean // log color scale
+    colorbar?: ComponentProps<typeof ColorBar>
+  } = $props()
 
   export const snapshot = {
     capture: () => ({ color_scale, log }),

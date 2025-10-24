@@ -16,21 +16,6 @@
   import { assemble_row_data } from './metrics'
   import { heatmap_class } from './table-export'
 
-  interface Props extends HTMLAttributes<HTMLDivElement> {
-    discovery_set?: DiscoverySet
-    model_filter?: (model: ModelData) => boolean
-    col_filter?: (col: Label) => boolean
-    show_energy_only?: boolean
-    show_non_compliant?: boolean
-    show_heatmap?: boolean
-    show_compliant?: boolean
-    show_selected_only?: boolean
-    active_files?: { name: string; url: string }[]
-    active_model_name?: string
-    pred_files_dropdown_pos?: { x: number; y: number; name: string } | null
-    selected_models?: Set<string>
-    column_order?: string[]
-  }
   let {
     discovery_set = $bindable(`unique_prototypes`),
     model_filter = $bindable(() => true),
@@ -46,7 +31,21 @@
     selected_models = $bindable(new SvelteSet<string>()),
     column_order = $bindable([]),
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLDivElement> & {
+    discovery_set?: DiscoverySet
+    model_filter?: (model: ModelData) => boolean
+    col_filter?: (col: Label) => boolean
+    show_energy_only?: boolean
+    show_non_compliant?: boolean
+    show_heatmap?: boolean
+    show_compliant?: boolean
+    show_selected_only?: boolean
+    active_files?: { name: string; url: string }[]
+    active_model_name?: string
+    pred_files_dropdown_pos?: { x: number; y: number; name: string } | null
+    selected_models?: Set<string>
+    column_order?: string[]
+  } = $props()
 
   const { model_name, training_set, targets, date_added, links } = METADATA_COLS
   const { checkpoint_license, code_license, org } = METADATA_COLS
