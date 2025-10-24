@@ -16,7 +16,7 @@
   import { assemble_row_data } from './metrics'
   import { heatmap_class } from './table-export'
 
-  interface Props extends HTMLAttributes<HTMLTableElement> {
+  interface Props extends HTMLAttributes<HTMLDivElement> {
     discovery_set?: DiscoverySet
     model_filter?: (model: ModelData) => boolean
     col_filter?: (col: Label) => boolean
@@ -29,6 +29,7 @@
     active_model_name?: string
     pred_files_dropdown_pos?: { x: number; y: number; name: string } | null
     selected_models?: Set<string>
+    column_order?: string[]
   }
   let {
     discovery_set = $bindable(`unique_prototypes`),
@@ -43,6 +44,7 @@
     active_model_name = $bindable(``),
     pred_files_dropdown_pos = $bindable(null),
     selected_models = $bindable(new SvelteSet<string>()),
+    column_order = $bindable([]),
     ...rest
   }: Props = $props()
 
@@ -196,6 +198,7 @@
   }}
   default_num_format=".3f"
   bind:show_heatmap
+  bind:column_order
   {heatmap_class}
   onrowdblclick={(event, row) => {
     const model_name = String((row as ModelData).Model)

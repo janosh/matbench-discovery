@@ -4,7 +4,7 @@
   import { ALL_METRICS, GEO_OPT_SYMMETRY_METRICS, METADATA_COLS } from './labels'
   import { assemble_row_data } from './metrics'
 
-  let { ...rest } = $props()
+  let { column_order = $bindable([]), ...rest } = $props()
   let columns = $derived([
     METADATA_COLS.model_name,
     ALL_METRICS.RMSD,
@@ -32,4 +32,10 @@
   )
 </script>
 
-<HeatmapTable data={metrics_data} {columns} {...rest} style="margin: 2em 0" />
+<HeatmapTable
+  data={metrics_data}
+  {columns}
+  bind:column_order
+  {...rest}
+  style="margin: 2em 0"
+/>

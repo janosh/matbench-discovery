@@ -6,6 +6,7 @@
   import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
   import type { HTMLAttributes } from 'svelte/elements'
+  import { SvelteMap } from 'svelte/reactivity'
 
   interface Props extends HTMLAttributes<HTMLDivElement> {
     data: RowData[]
@@ -21,6 +22,7 @@
     show_heatmap?: boolean
     heatmap_class?: string
     onrowdblclick?: (event: MouseEvent, row: RowData) => void
+    column_order?: string[]
   }
   let {
     data,
@@ -36,6 +38,7 @@
     show_heatmap = $bindable(true),
     heatmap_class = `heatmap`,
     onrowdblclick,
+    column_order = $bindable([]),
     ...rest
   }: Props = $props()
 
@@ -65,6 +68,89 @@
   const get_col_id = (col: Label) =>
     col.group ? `${col.short ?? col.label} (${col.group})` : (col.short ?? col.label)
 
+  // Initialize column_order if empty
+  $effect(() => {
+    if (column_order.length === 0 && columns.length > 0) {
+      column_order = columns.map(get_col_id)
+    }
+  })
+
+  // Reorder columns based on column_order
+  let ordered_columns = $derived.by(() => {
+    if (column_order.length === 0) return columns
+
+    const col_map = new SvelteMap(columns.map((col) => [get_col_id(col), col]))
+    const ordered: Label[] = []
+
+    // First add columns in the specified order
+    for (const col_id of column_order) {
+      const col = col_map.get(col_id)
+      if (col) {
+        ordered.push(col)
+        col_map.delete(col_id)
+      }
+    }
+
+    // Then add any remaining columns that weren't in the order list
+    for (const col of col_map.values()) ordered.push(col)
+
+    return ordered
+  })
+
+  // Drag state
+  let drag_col_id = $state<string | null>(null)
+  let drag_over_col_id = $state<string | null>(null)
+
+  function handle_drag_start(event: DragEvent, col: Label) {
+    if (!event.dataTransfer) return
+    drag_col_id = get_col_id(col)
+    event.dataTransfer.effectAllowed = `move`
+    event.dataTransfer.setData(`text/html`, ``)
+  }
+
+  function handle_drag_over(event: DragEvent, col: Label) {
+    event.preventDefault()
+    if (!event.dataTransfer) return
+    event.dataTransfer.dropEffect = `move`
+    drag_over_col_id = get_col_id(col)
+  }
+
+  function handle_drag_leave() {
+    drag_over_col_id = null
+  }
+
+  function handle_drop(event: DragEvent, target_col: Label) {
+    event.preventDefault()
+
+    if (!drag_col_id) return
+
+    const target_col_id = get_col_id(target_col)
+    if (drag_col_id === target_col_id) {
+      drag_col_id = null
+      drag_over_col_id = null
+      return
+    }
+
+    // Create new order array
+    const new_order = [...column_order]
+    const drag_idx = new_order.indexOf(drag_col_id)
+    const target_idx = new_order.indexOf(target_col_id)
+
+    if (drag_idx === -1 || target_idx === -1) {
+      drag_col_id = null
+      drag_over_col_id = null
+      return
+    }
+
+    // Remove dragged column and insert at new position
+    new_order.splice(drag_idx, 1)
+    new_order.splice(target_idx, 0, drag_col_id)
+
+    column_order = new_order
+    drag_col_id = null
+    drag_over_col_id = null
+  }
+
   let sorted_data = $derived.by(() => {
     const filtered_data = data?.filter?.((row) =>
       Object.values(row).some((val) => val !== undefined)
@@ -72,7 +158,7 @@
 
     if (!sort_state.column) return filtered_data
 
-    const col = columns.find((c) => get_col_id(c) === sort_state.column)
+    const col = ordered_columns.find((c) => get_col_id(c) === sort_state.column)
     if (!col) return filtered_data
 
     const col_id = get_col_id(col)
@@ -121,7 +207,7 @@
 
   function sort_rows(column: string, group?: string) {
     // Find the column using both label and group if provided
-    const col = columns.find(
+    const col = ordered_columns.find(
       (c) => c.label === column && (c.group === group || c.group === undefined),
     )
 
@@ -161,7 +247,9 @@
     )
   }
 
-  let visible_columns = $derived(columns.filter((col) => col.visible !== false))
+  let visible_columns = $derived(
+    ordered_columns.filter((col) => col.visible !== false),
+  )
 
   const sort_indicator = (col: Label, sort_state: SortState) => {
     const col_id = get_col_id(col)
@@ -224,6 +312,14 @@
             style={col.style}
             class:sticky-col={col.sticky}
             class:not-sortable={col.sortable === false}
+            class:dragging={drag_col_id === get_col_id(col)}
+            class:drag-over={drag_over_col_id === get_col_id(col)}
+            draggable="true"
+            ondragstart={(event) => handle_drag_start(event, col)}
+            ondragover={(event) => handle_drag_over(event, col)}
+            ondragleave={handle_drag_leave}
+            ondrop={(event) => handle_drop(event, col)}
+            ondragend={() => [drag_col_id, drag_over_col_id] = [null, null]}
           >
             {@html col.short ?? col.label}
             {@html sort_indicator(col, sort_state)}
@@ -302,6 +398,17 @@
   }
   th:hover {
     background: var(--heatmap-header-hover-bg, var(--nav-bg));
+  }
+  th.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+  th.drag-over {
+    border-left: 3px solid var(--highlight, #4a9eff);
+    border-right: 3px solid var(--highlight, #4a9eff);
+  }
+  th[draggable='true'] {
+    cursor: grab;
   }
   .sticky-col {
     position: sticky;
