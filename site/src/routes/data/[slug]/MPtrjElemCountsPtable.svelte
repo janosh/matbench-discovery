@@ -2,10 +2,9 @@
   import { data_files, PtableHeatmap } from '$lib'
   import type { ComponentProps } from 'svelte'
 
-  interface Props extends Partial<ComponentProps<typeof PtableHeatmap>> {
-    count_mode?: string
-  }
-  let { count_mode = `occurrence`, ...rest }: Props = $props()
+  let { count_mode = `occurrence`, ...rest }:
+    & Partial<ComponentProps<typeof PtableHeatmap>>
+    & { count_mode?: string } = $props()
 
   const elem_counts = import.meta.glob(`../mp-trj-element-counts-by-*.json`, {
     eager: true,
