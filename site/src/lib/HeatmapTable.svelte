@@ -115,6 +115,15 @@
   let drag_col_id = $state<string | null>(null)
   let drag_over_col_id = $state<string | null>(null)
 
+  // Returns 'left' or 'right' to indicate which side of target to insert dragged column
+  function get_drag_side(target_col_id: string) {
+    if (!drag_col_id) return null
+    const drag_idx = column_order.indexOf(drag_col_id)
+    const target_idx = column_order.indexOf(target_col_id)
+    if (drag_idx === -1 || target_idx === -1) return null
+    return drag_idx < target_idx ? `right` : `left`
+  }
+
   function reset_drag_state() {
     drag_col_id = null
     drag_over_col_id = null
@@ -166,19 +175,18 @@
 
     const target_col_id = get_col_id(target_col)
     const drag_idx = column_order.indexOf(drag_col_id)
-    let target_idx = column_order.indexOf(target_col_id)
+    const target_idx = column_order.indexOf(target_col_id)
 
     if (drag_idx === -1 || target_idx === -1) {
       reset_drag_state()
       return
     }
 
-    // Reorder: remove dragged column and insert at target position
-    // Adjust target_idx if dragging from left to right (removing shifts indices left)
-    const insert_at = drag_idx < target_idx ? target_idx - 1 : target_idx
+    // Reorder: remove dragged column, then insert at target position
+    // After removal, target_idx naturally points to the correct insertion spot
     const new_order = [...column_order]
     new_order.splice(drag_idx, 1)
-    new_order.splice(insert_at, 0, drag_col_id)
+    new_order.splice(target_idx, 0, drag_col_id)
     column_order = new_order
     reset_drag_state()
   }
@@ -334,6 +342,10 @@
       <!-- Second level headers -->
       <tr>
         {#each visible_columns as col (col.label + col.group)}
+          {@const col_id = get_col_id(col)}
+          {@const drag_side = drag_over_col_id === col_id
+            ? get_drag_side(col_id)
+            : null}
           <th
             title={col.description}
             onclick={() => {
@@ -342,11 +354,11 @@
             style={col.style}
             class:sticky-col={col.sticky}
             class:not-sortable={col.sortable === false}
-            class:dragging={drag_col_id === get_col_id(col)}
-            class:drag-over={drag_over_col_id === get_col_id(col)}
+            class:dragging={drag_col_id === col_id}
+            data-drag-side={drag_side}
             draggable="true"
             aria-dropeffect="move"
-            aria-sort={sort_state.column === get_col_id(col)
+            aria-sort={sort_state.column === col_id
             ? (sort_state.ascending ? `ascending` : `descending`)
             : `none`}
             ondragstart={(event: DragEvent & { currentTarget: HTMLElement }) => {
@@ -443,9 +455,11 @@
     opacity: 0.4;
     cursor: grabbing;
   }
-  th.drag-over {
-    outline: 3px solid var(--highlight, #4a9eff);
-    outline-offset: -3px;
+  th[data-drag-side='left'] {
+    border-left: 4px solid var(--highlight, #4a9eff);
+  }
+  th[data-drag-side='right'] {
+    border-right: 4px solid var(--highlight, #4a9eff);
   }
   th[draggable='true'] {
     cursor: grab;
