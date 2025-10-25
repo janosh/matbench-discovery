@@ -1227,4 +1227,176 @@ describe(`MetricsTable`, () => {
       }
     })
   })
+
+  describe(`Column Reordering`, () => {
+    it(`initializes column_order with all columns, not just visible ones`, async () => {
+      const state = { column_order: [] as string[] }
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          get column_order() {
+            return state.column_order
+          },
+          set column_order(val) {
+            state.column_order = val
+          },
+          col_filter: (col: Label) =>
+            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+          show_non_compliant: true,
+        },
+      })
+      await tick()
+
+      // After mounting, column_order should be initialized with ALL columns
+      // (not just visible ones - the visible filter is separate)
+      expect(state.column_order.length).toBeGreaterThan(10)
+      expect(state.column_order).toContain(`Model`)
+      expect(state.column_order).toContain(`F1`)
+      expect(state.column_order).toContain(`DAF`)
+
+      const visible_headers = Array.from(document.querySelectorAll(`th`)).map(
+        (h) => h.textContent?.split(` `)[0],
+      )
+      expect(visible_headers).toEqual([`Model`, `F1`, `DAF`])
+    })
+
+    it.each([
+      { columns: [`Model`, `F1`, `DAF`], name: `basic columns` },
+      { columns: [`Model`, `F1`, `DAF`, `CPS`], name: `with CPS` },
+    ])(`maintains Model column first with $name`, async ({ columns }) => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: Label) => columns.includes(col.short ?? col.label),
+          show_non_compliant: true,
+        },
+      })
+      await tick()
+
+      const headers = Array.from(document.querySelectorAll(`th`))
+      expect(headers[0].textContent?.split(` `)[0]).toBe(`Model`)
+      expect(headers[0].classList.contains(`sticky-col`)).toBe(true)
+    })
+
+    it(`respects column_order for visible column display order`, async () => {
+      const state = { column_order: [] as string[] }
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          get column_order() {
+            return state.column_order
+          },
+          set column_order(val) {
+            state.column_order = val
+          },
+          col_filter: (col: Label) =>
+            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+          show_non_compliant: true,
+        },
+      })
+      await tick()
+
+      const f1_idx = state.column_order.indexOf(`F1`)
+      const daf_idx = state.column_order.indexOf(`DAF`)
+      expect(f1_idx).toBeGreaterThanOrEqual(0)
+      expect(daf_idx).toBeGreaterThanOrEqual(0)
+
+      const headers = Array.from(document.querySelectorAll(`th`)).map(
+        (h) => h.textContent?.split(` `)[0],
+      )
+      expect(headers[0]).toBe(`Model`)
+
+      // F1 and DAF should appear in the order specified by column_order
+      const visible_f1_pos = headers.indexOf(`F1`)
+      const visible_daf_pos = headers.indexOf(`DAF`)
+      if (f1_idx < daf_idx) {
+        expect(visible_f1_pos).toBeLessThan(visible_daf_pos)
+      } else {
+        expect(visible_f1_pos).toBeGreaterThan(visible_daf_pos)
+      }
+    })
+
+    it(`preserves column_order when toggling column visibility`, async () => {
+      const state = {
+        col_filter: (col: Label) =>
+          [`Model`, `F1`, `DAF`, `CPS`].includes(col.short ?? col.label),
+        column_order: [] as string[],
+      }
+
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          get col_filter() {
+            return state.col_filter
+          },
+          get column_order() {
+            return state.column_order
+          },
+          set column_order(val) {
+            state.column_order = val
+          },
+          show_non_compliant: true,
+        },
+      })
+      await tick()
+
+      const initial_order = [...state.column_order]
+      expect(initial_order.length).toBeGreaterThan(10)
+      const [f1_idx, daf_idx, cps_idx] = [
+        initial_order.indexOf(`F1`),
+        initial_order.indexOf(`DAF`),
+        initial_order.indexOf(`CPS`),
+      ]
+
+      state.col_filter = (col: Label) =>
+        [`Model`, `F1`, `DAF`].includes(col.short ?? col.label)
+      await tick()
+
+      expect(state.column_order.length).toBe(initial_order.length)
+      expect(state.column_order).toContain(`CPS`) // Still in order, just not visible
+
+      // Positions should be unchanged
+      expect(state.column_order.indexOf(`F1`)).toBe(f1_idx)
+      expect(state.column_order.indexOf(`DAF`)).toBe(daf_idx)
+      expect(state.column_order.indexOf(`CPS`)).toBe(cps_idx)
+    })
+
+    it(`sets columns as draggable with correct attributes`, () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: Label) =>
+            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+          show_non_compliant: true,
+        },
+      })
+
+      const headers = Array.from(document.querySelectorAll(`th`))
+      expect(headers.length).toBeGreaterThan(0)
+      headers.forEach((header) => {
+        expect(header.getAttribute(`draggable`)).toBe(`true`)
+        expect(header.getAttribute(`aria-dropeffect`)).toBe(`move`)
+      })
+    })
+
+    it(`initializes without drag state classes`, async () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: Label) =>
+            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+          show_non_compliant: true,
+        },
+      })
+      await tick()
+
+      const headers = Array.from(document.querySelectorAll(`th`)) as HTMLElement[]
+
+      // Initially no drag classes should be present
+      headers.forEach((header) => {
+        expect(header.classList.contains(`dragging`)).toBe(false)
+        expect(header.classList.contains(`drag-over`)).toBe(false)
+      })
+    })
+  })
 })

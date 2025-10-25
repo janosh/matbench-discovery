@@ -66,12 +66,9 @@ describe(`format_date`, () => {
     const date = `2023-05-15`
     const result = format_date(date)
 
-    // Verify result contains expected components
     expect(result).toContain(`2023`)
-    expect(result).toMatch(/May|5/)
-
-    // Verify it returns a non-empty string
-    expect(result.length).toBeGreaterThan(0)
+    expect(result).toMatch(/May/)
+    expect(result).toMatch(/15/)
   })
 
   it(`handles different date formats`, () => {
@@ -79,9 +76,22 @@ describe(`format_date`, () => {
     const timestamp = new Date(`2023-12-25`).getTime()
 
     const result1 = format_date(iso_date)
-    const result2 = format_date(timestamp.toString())
+    const result2 = format_date(timestamp)
 
-    expect(result1.length).toBeGreaterThan(0)
-    expect(result2.length).toBeGreaterThan(0)
+    // Both should produce valid date strings (not "Invalid Date")
+    expect(result1).not.toBe(`Invalid Date`)
+    expect(result2).not.toBe(`Invalid Date`)
+
+    // Both should contain the year
+    expect(result1).toContain(`2023`)
+    expect(result2).toContain(`2023`)
+
+    // Both should contain December or 12
+    expect(result1).toMatch(/Dec/)
+    expect(result2).toMatch(/Dec/)
+
+    // Both should contain the day
+    expect(result1).toMatch(/25/)
+    expect(result2).toMatch(/25/)
   })
 })

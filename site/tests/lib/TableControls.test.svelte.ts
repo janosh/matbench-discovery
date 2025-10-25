@@ -1,131 +1,127 @@
-import { TableControls } from '$lib'
+import { type Label, TableControls } from '$lib'
 import { mount } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
 
 describe(`TableControls`, () => {
-  const sample_cols = { Model: true, F1: true, DAF: true, RMSE: false }
+  const sample_columns: Label[] = [
+    { key: `model`, label: `Model`, description: `Model name`, visible: true },
+    { key: `f1`, label: `F1`, description: `F1 Score`, visible: true },
+    { key: `daf`, label: `DAF`, description: `DAF Score`, visible: true },
+    { key: `rmse`, label: `RMSE`, description: `RMSE`, visible: false },
+  ]
+
+  // Helper to find checkbox by parent label text
+  const find_checkbox_by_label = (text: string): HTMLInputElement | null => {
+    const labels = document.querySelectorAll(`label`)
+    const label = Array.from(labels).find((lbl) => lbl.textContent?.includes(text))
+    return label?.querySelector(`input[type="checkbox"]`) as HTMLInputElement | null
+  }
 
   it(`renders filter controls with correct initial state`, () => {
-    const on_filter_change = vi.fn()
-    const on_col_change = vi.fn()
-
     mount(TableControls, {
       target: document.body,
-      props: { visible_cols: sample_cols, on_filter_change, on_col_change },
+      props: { on_filter_change: vi.fn() },
     })
 
-    // Verify specific filter checkboxes are present
-    const filter_checkboxes = document.querySelectorAll(`input[type="checkbox"]`)
-    expect(filter_checkboxes.length).toBeGreaterThan(2) // at least energy-only, non-compliant, heatmap
+    // Verify filter checkboxes are present
+    expect(document.querySelectorAll(`input[type="checkbox"]`).length).toBeGreaterThan(2)
 
-    // Verify column toggle button exists
-    const col_toggle_btn = document.querySelector(
-      `[aria-label="Toggle column visibility"]`,
-    )
-    expect(col_toggle_btn).toBeDefined()
+    // Verify column toggle exists
+    expect(document.querySelector(`.column-toggles summary`)).toBeTruthy()
   })
 
-  it(`calls on_filter_change with correct parameters when filters are toggled`, () => {
+  it(`calls on_filter_change when energy-only filter is toggled`, () => {
     const on_filter_change = vi.fn()
 
     mount(TableControls, {
       target: document.body,
-      props: { visible_cols: sample_cols, on_filter_change },
+      props: { on_filter_change },
     })
 
-    const checkboxes = document.querySelectorAll(`input[type="checkbox"]`)
-    expect(checkboxes.length).toBeGreaterThan(0)
+    const energy_checkbox = find_checkbox_by_label(`Energy-only`)
+    expect(energy_checkbox).toBeTruthy()
+    if (!energy_checkbox) return
 
-    // Test energy-only filter toggle
-    const energy_checkbox = Array.from(checkboxes).find((checkbox) =>
-      checkbox.id?.includes(`energy`)
-    ) as HTMLInputElement
+    const initial_checked = energy_checkbox.checked
+    energy_checkbox.click()
 
-    if (energy_checkbox) {
-      const initial_checked = energy_checkbox.checked
-      energy_checkbox.click()
-
-      // Verify callback was called
-      expect(on_filter_change).toHaveBeenCalled()
-
-      // Verify checkbox state changed
-      expect(energy_checkbox.checked).toBe(!initial_checked)
-    }
-
-    // Test non-compliant filter toggle
-    on_filter_change.mockReset()
-    const noncomp_checkbox = Array.from(checkboxes).find((checkbox) =>
-      checkbox.id?.includes(`compliant`)
-    ) as HTMLInputElement
-
-    if (noncomp_checkbox) {
-      const initial_checked = noncomp_checkbox.checked
-      noncomp_checkbox.click()
-
-      expect(on_filter_change).toHaveBeenCalled()
-      expect(noncomp_checkbox.checked).toBe(!initial_checked)
-    }
+    expect(on_filter_change).toHaveBeenCalledWith(!initial_checked, false)
+    expect(energy_checkbox.checked).toBe(!initial_checked)
   })
 
-  it(`toggles column visibility panel`, () => {
-    mount(TableControls, {
-      target: document.body,
-      props: { visible_cols: sample_cols },
-    })
+  it(`toggles compliance filter checkboxes`, () => {
+    mount(TableControls, { target: document.body })
 
-    // Find column toggle button
-    const toggle_btn = document.querySelector(
-      `[aria-label="Toggle column visibility"]`,
-    ) as HTMLButtonElement
-    expect(toggle_btn).toBeDefined()
+    const compliant_checkbox = find_checkbox_by_label(`Compliant`)
+    const noncompliant_checkbox = find_checkbox_by_label(`Non-compliant`)
 
-    // Click button to show the panel
-    if (toggle_btn) {
-      toggle_btn.click()
+    expect(compliant_checkbox).toBeTruthy()
+    expect(noncompliant_checkbox).toBeTruthy()
+    if (!compliant_checkbox || !noncompliant_checkbox) return
 
-      // Check if column menu or panel is visible
-      // The component might use different class names, so we try multiple options
-      const column_menu = document.querySelector(`.column-menu, .column-panel`)
-      expect(column_menu).toBeDefined()
+    // Both should start checked
+    expect(compliant_checkbox.checked).toBe(true)
+    expect(noncompliant_checkbox.checked).toBe(true)
 
-      // Click outside to close (if the component uses a click-outside pattern)
-      document.body.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
-    }
+    // Toggle non-compliant off
+    noncompliant_checkbox.click()
+    expect(noncompliant_checkbox.checked).toBe(false)
+
+    // Toggle back on
+    noncompliant_checkbox.click()
+    expect(noncompliant_checkbox.checked).toBe(true)
   })
 
-  it(`calls on_col_change when column visibility is toggled`, () => {
-    const on_col_change = vi.fn()
-
+  it(`opens and closes column visibility panel`, () => {
     mount(TableControls, {
       target: document.body,
-      props: { visible_cols: { ...sample_cols }, on_col_change },
+      props: { columns: sample_columns },
     })
 
-    const toggle_btn = document.querySelector(
-      `[aria-label="Toggle column visibility"]`,
-    ) as HTMLButtonElement
+    const toggle_btn = document.querySelector(`.column-toggles summary`) as HTMLElement
+    const details = document.querySelector(`.column-toggles`) as HTMLDetailsElement
+    expect(toggle_btn).toBeTruthy()
+    expect(details).toBeTruthy()
 
-    if (!toggle_btn) {
-      // Skip test if component doesn't have toggle button
-      return
-    }
+    // Should start closed
+    expect(details.open).toBe(false)
 
-    // Open column panel
+    // Open panel
+    toggle_btn.click()
+    expect(details.open).toBe(true)
+
+    // Verify column menu is visible
+    expect(document.querySelector(`.column-menu`)).toBeTruthy()
+
+    // Close panel
+    toggle_btn.click()
+    expect(details.open).toBe(false)
+  })
+
+  it(`toggles column visibility checkboxes`, () => {
+    mount(TableControls, {
+      target: document.body,
+      props: { columns: [...sample_columns] },
+    })
+
+    const toggle_btn = document.querySelector(`.column-toggles summary`) as HTMLElement
     toggle_btn.click()
 
-    // Find and toggle a column checkbox
-    const column_checkboxes = document.querySelectorAll(`input[type="checkbox"]`)
-    expect(column_checkboxes.length).toBeGreaterThan(0)
+    const column_menu = document.querySelector(`.column-menu`)
+    expect(column_menu).toBeTruthy()
 
-    const first_checkbox = column_checkboxes[0] as HTMLInputElement
-    const initial_checked = first_checkbox.checked
+    const column_checkboxes = column_menu?.querySelectorAll(`input[type="checkbox"]`)
+    expect(column_checkboxes?.length).toBe(sample_columns.length)
+
+    // Test toggling first checkbox (Model column, initially visible)
+    const first_checkbox = column_checkboxes?.[0] as HTMLInputElement
+    expect(first_checkbox?.checked).toBe(true)
 
     first_checkbox.click()
+    expect(first_checkbox.checked).toBe(false)
 
-    // Verify callback was called
-    expect(on_col_change).toHaveBeenCalled()
-
-    // Verify checkbox state actually changed
-    expect(first_checkbox.checked).toBe(!initial_checked)
+    first_checkbox.click()
+    // Verify checkbox state changed
+    expect(first_checkbox.checked).toBe(true)
   })
 })

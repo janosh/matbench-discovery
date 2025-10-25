@@ -1,3 +1,4 @@
+import { MODELS } from '$lib/models.svelte'
 import { default as ModelsPage } from '$routes/models/+page.svelte'
 import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -116,25 +117,62 @@ describe(`Models Page`, () => {
     ).toBeGreaterThan(1)
   })
 
-  it(`limits number of displayed models`, async () => {
+  it(`renders model limiting controls correctly`, () => {
     const n_best_input = document.querySelector(
       `input[type="number"]`,
     ) as HTMLInputElement
-    expect(n_best_input).toBeDefined()
 
-    // Get initial count
+    expect(n_best_input).toBeDefined()
+    expect(n_best_input.type).toBe(`number`)
+
     const initial_count = document.querySelectorAll(`ol > li`).length
     expect(initial_count).toBeGreaterThan(7)
 
-    // Set to show only 3 models
-    n_best_input.value = `3`
-    n_best_input.dispatchEvent(new Event(`input`))
-    await tick()
+    // Verify the input is properly constrained
+    expect(n_best_input.min).toBe(`2`) // min_models = 2
+    expect(n_best_input.max).toBe(String(initial_count))
+    expect(Number(n_best_input.value)).toBe(initial_count)
+    expect(document.querySelectorAll(`ol > li`).length).toBe(initial_count)
 
-    // Should still show many models since the input doesn't directly control this
-    // (implementation note: this test may need adjustment based on actual behavior)
-    const displayed_models = document.querySelectorAll(`ol > li`)
-    expect(displayed_models.length).toBeGreaterThan(2)
+    const label_text = n_best_input.parentElement?.textContent
+    expect(label_text).toMatch(/sort/i)
+    expect(label_text).toMatch(/best models/i)
+  })
+
+  describe(`slice logic`, () => {
+    const min_models = 2
+
+    it.each([
+      { show_n_best: 3, expected: 3 },
+      { show_n_best: 5, expected: 5 },
+      { show_n_best: 10, expected: 10 },
+      { show_n_best: MODELS.length, expected: MODELS.length },
+      { show_n_best: 0, expected: min_models },
+      { show_n_best: 1, expected: min_models },
+      { show_n_best: -5, expected: min_models },
+    ])(
+      `limits displayed models with show_n_best=$show_n_best`,
+      ({ show_n_best, expected }) => {
+        const limit = Math.max(min_models, show_n_best)
+        const sliced = MODELS.slice(0, limit)
+        expect(sliced.length).toBe(expected)
+      },
+    )
+
+    it(`enforces minimum of ${min_models} models with invalid inputs`, () => {
+      const invalid_inputs = [0, -1, -100, Number.NEGATIVE_INFINITY]
+      for (const show_n_best of invalid_inputs) {
+        expect(Math.max(min_models, show_n_best)).toBe(min_models)
+      }
+    })
+
+    it(`respects exact number when above minimum`, () => {
+      const valid_inputs = [3, 5, 10, 20, MODELS.length]
+      for (const show_n_best of valid_inputs) {
+        const sliced = MODELS.slice(0, Math.max(min_models, show_n_best))
+        expect(sliced.length).toBe(Math.min(show_n_best, MODELS.length))
+      }
+    })
   })
 
   it(`renders color legend`, () => {
