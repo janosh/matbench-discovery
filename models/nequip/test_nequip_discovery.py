@@ -46,7 +46,7 @@ smoke_test = False  # True
 model_name = "nequip-0"
 task_type = Task.IS2RE
 ase_optimizer = "GOQN"  # faster than "FIRE" from tests, gives the same results;
-# see SI of https:/doi.org/10.1088/2515-7655/ade916
+# see SI of https://doi.org/10.1088/2515-7655/ade916
 ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
 
 max_steps = 500
@@ -146,13 +146,11 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         atoms.calc = calculator
         if max_steps > 0:
             atoms = filter_cls(atoms)
-            with optim_cls(atoms, logfile="/dev/null") as optimizer:
+            with optim_cls(atoms, logfile=None) as optimizer:
                 for _ in optimizer.irun(fmax=force_max, steps=max_steps):
-                    forces = atoms.get_forces()
-                    if np.max(np.linalg.norm(forces, axis=1)) > 1e6:
-                        raise RuntimeError(
-                            "Forces are exorbitant, exploding relaxation!"
-                        )
+                    f_norm = np.linalg.norm(atoms.get_forces(), axis=1).max()
+                    if f_norm > 1e6:
+                        raise RuntimeError("Force divergence detected")
 
         energy = atoms.get_potential_energy()  # relaxed energy
         # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr

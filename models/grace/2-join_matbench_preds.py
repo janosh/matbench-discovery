@@ -55,7 +55,7 @@ df_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(
         df_cse[Key.computed_structure_entry],
-        desc="Generating WBM reference ComputedStructureEntrys",
+        desc="Generating WBM reference ComputedStructureEntries",
     )
 ]
 
@@ -65,13 +65,12 @@ df_cse[Key.computed_structure_entry] = [
 
 # %% transfer energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
-computed_struct_entry: ComputedStructureEntry
-for row in tqdm(
-    df_model.itertuples(),
+struct_key, energy_key = f"{model_name}_structure", f"{model_name}_energy"
+for mat_id, struct_dict, energy in tqdm(
+    df_model[[struct_key, energy_key]].itertuples(index=True, name=None),
     total=len(df_model),
-    desc="Generating ML-predicted ComputedStructureEntrys",
+    desc="Transferring ML-predicted energies and structures to WBM CSEs",
 ):
-    mat_id, struct_dict, energy, *_rest = row
     mlip_struct = Structure.from_dict(struct_dict)
     computed_struct_entry = df_cse.loc[mat_id, Key.computed_structure_entry]
     # computed_struct_entry._energy is the uncorrected energy from MPtrj dataset

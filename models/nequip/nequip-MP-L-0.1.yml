@@ -57,7 +57,7 @@ license:
 hyperparams:
   max_force: 0.05
   max_steps: 500
-  ase_optimizer: GOQN # faster than FIRE with same results; see SI of https:/doi.org/10.1088/2515-7655/ade916
+  ase_optimizer: GOQN # faster than FIRE with same results; see SI of https://doi.org/10.1088/2515-7655/ade916
   cell_filter: FrechetCellFilter
   optimizer: AdamW
   weight_decay: 1e-3

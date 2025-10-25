@@ -2,17 +2,17 @@
 
 ########## HOW-TO ############
 #
-# STAGE 1
-# 1. set GPUS to list of available GPUs
-# 2. set model_name=....
-# 3. adjust SLURM_ARRAY_TASK_COUNT= if needed
-# 4. run locally or submit to the queue
+# Stage 1
+#   1. set GPUS to list of available GPUs
+#   2. set model_name=....
+#   3. adjust SLURM_ARRAY_TASK_COUNT= if needed
+#   4. run locally or submit to the queue
 #
-# STAGE 2
-# python join_grace_preds.py  2025-02-06-GRACE-1L-OAM_2Feb25-wbm-IS2RE-FIRE  # or other path
+# Stage 2
+#   python join_grace_preds.py  2025-02-06-GRACE-1L-OAM_2Feb25-wbm-IS2RE-FIRE  # or other path
 #
-# STAGE 3
-# upload large files to fileshare, commit models' YAML files
+# Stage 3
+#   upload large files to figshare, commit models' YAML files
 ################################
 
 
