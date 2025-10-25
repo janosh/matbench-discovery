@@ -1,6 +1,7 @@
 import { type Label, TableControls } from '$lib'
 import { mount } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
+import { doc_query } from '../index.ts'
 
 describe(`TableControls`, () => {
   const sample_columns: Label[] = [
@@ -14,7 +15,7 @@ describe(`TableControls`, () => {
   const find_checkbox_by_label = (text: string): HTMLInputElement | null => {
     const labels = document.querySelectorAll(`label`)
     const label = Array.from(labels).find((lbl) => lbl.textContent?.includes(text))
-    return label?.querySelector(`input[type="checkbox"]`) as HTMLInputElement | null
+    return doc_query<HTMLInputElement>(`input[type="checkbox"]`, label)
   }
 
   it(`renders filter controls with correct initial state`, () => {
@@ -78,8 +79,8 @@ describe(`TableControls`, () => {
       props: { columns: sample_columns },
     })
 
-    const toggle_btn = document.querySelector(`.column-toggles summary`) as HTMLElement
-    const details = document.querySelector(`.column-toggles`) as HTMLDetailsElement
+    const toggle_btn = doc_query(`.column-toggles summary`)
+    const details = doc_query<HTMLDetailsElement>(`.column-toggles`)
     expect(toggle_btn).toBeTruthy()
     expect(details).toBeTruthy()
 
@@ -104,7 +105,7 @@ describe(`TableControls`, () => {
       props: { columns: [...sample_columns] },
     })
 
-    const toggle_btn = document.querySelector(`.column-toggles summary`) as HTMLElement
+    const toggle_btn = doc_query(`.column-toggles summary`)
     toggle_btn.click()
 
     const column_menu = document.querySelector(`.column-menu`)

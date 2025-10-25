@@ -1,5 +1,6 @@
 import { handle_export } from '$lib/table-export'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { doc_query } from '../index'
 
 type ExportState = {
   export_error: string | null
@@ -58,7 +59,7 @@ describe(`Download Buttons UI`, () => {
         .mockResolvedValue({ filename: `test.${id}`, url: `mock-url` })
       const handle_export_fn = handle_export(generate_spy, format, { ...default_state })
 
-      const button = document.querySelector(`#${id}-btn`) as HTMLButtonElement
+      const button = doc_query<HTMLButtonElement>(`#${id}-btn`)
       button.addEventListener(`click`, handle_export_fn)
       await button.click()
 
@@ -69,7 +70,7 @@ describe(`Download Buttons UI`, () => {
       })
 
       await Promise.resolve() // Allow async handler to complete
-      const error_el = document.querySelector(`.export-error`) as HTMLElement
+      const error_el = doc_query(`.export-error`)
       expect(error_el.style.display).toBe(`none`)
     },
   )
@@ -87,7 +88,7 @@ describe(`Download Buttons UI`, () => {
       ? vi.fn().mockRejectedValue(mock_result)
       : vi.fn().mockResolvedValue(mock_result)
 
-    const error_el = document.querySelector(`.export-error`) as HTMLElement
+    const error_el = doc_query(`.export-error`)
     const state = { ...default_state }
 
     const update_error_display = (err: string | null) => {
@@ -112,7 +113,7 @@ describe(`Download Buttons UI`, () => {
   })
 
   it(`has error element hidden initially`, () => {
-    const error_el = document.querySelector(`.export-error`) as HTMLElement
+    const error_el = doc_query(`.export-error`)
     expect(error_el.style.display).toBe(`none`)
   })
 })

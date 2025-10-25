@@ -1,6 +1,7 @@
 import Page from '$routes/+page.svelte'
 import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { doc_query } from '../index'
 
 describe(`Landing Page`, () => {
   beforeEach(() => {
@@ -34,9 +35,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles column visibility panel`, () => {
-    const columns_btn = document.querySelector(
-      `details.column-toggles summary`,
-    ) as HTMLButtonElement
+    const columns_btn = doc_query<HTMLButtonElement>(`details.column-toggles summary`)
     const column_menu = document.querySelector(`.column-menu`)
 
     // Column menu should be hidden initially
@@ -52,9 +51,9 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles non-compliant models`, async () => {
-    const toggle = document.querySelector(
+    const toggle = doc_query<HTMLInputElement>(
       `.table-controls label input[type="checkbox"]`,
-    ) as HTMLInputElement
+    )
     expect(toggle).toBeDefined()
 
     // Should be unchecked by default
@@ -71,7 +70,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`updates column visibility when toggling checkboxes`, async () => {
-    const columns_btn = document.querySelector(`details.column-toggles summary`)
+    const columns_btn = doc_query<HTMLButtonElement>(`details.column-toggles summary`)
     columns_btn?.click()
     // Table should reflect column visibility changes
     let f1_cells = document.querySelectorAll(`th, td`)

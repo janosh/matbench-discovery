@@ -4,6 +4,7 @@ import MetricsTable from '$lib/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
+import { doc_query } from '../index'
 
 describe(`MetricsTable`, () => {
   it(`renders with default props`, async () => {
@@ -39,9 +40,7 @@ describe(`MetricsTable`, () => {
     }
 
     // Test prediction files dropdown interaction
-    const pred_files_button = document.querySelector(
-      `tbody .pred-files-btn`,
-    ) as HTMLButtonElement | null
+    const pred_files_button = doc_query<HTMLButtonElement>(`tbody .pred-files-btn`)
     expect(pred_files_button).toBeDefined() // Ensure at least one button exists
 
     if (pred_files_button) {
@@ -894,9 +893,9 @@ describe(`MetricsTable`, () => {
       })
 
       // Find the heatmap toggle checkbox within TableControls
-      const heatmap_checkbox = document.querySelector(
+      const heatmap_checkbox = doc_query<HTMLInputElement>(
         `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
-      ) as HTMLInputElement | null
+      )
 
       expect(heatmap_checkbox).not.toBeNull()
       if (!heatmap_checkbox) return // Type guard
@@ -989,9 +988,9 @@ describe(`MetricsTable`, () => {
   describe(`Double-click selection functionality`, () => {
     const get_rows = () => document.querySelectorAll(`tbody tr`)
     const get_toggle = () =>
-      document.querySelector(
+      doc_query<HTMLInputElement>(
         `input[aria-label="Toggle between showing only selected models and all models"]`,
-      ) as HTMLInputElement
+      )
     const get_toggle_label = () => get_toggle()?.closest(`label`)
     const double_click_row = (row: Element) => {
       row.dispatchEvent(new MouseEvent(`dblclick`, { bubbles: true }))

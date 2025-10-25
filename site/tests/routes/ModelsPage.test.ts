@@ -47,7 +47,7 @@ describe(`Models Page`, () => {
       (a) => a.textContent,
     )
 
-    const daf_btn = document.querySelector(`button#DAF`) as HTMLButtonElement
+    const daf_btn = doc_query<HTMLButtonElement>(`button#DAF`)
     expect(daf_btn).toBeDefined()
     daf_btn?.click()
     await tick()
@@ -62,8 +62,8 @@ describe(`Models Page`, () => {
   it(`toggles model details`, async () => {
     mount(ModelsPage, { target: document.body })
 
-    const first_card = document.querySelector(`ol > li`)
-    const details_btn = first_card?.querySelector(`h2 button`) as HTMLButtonElement
+    const first_card = doc_query<HTMLLIElement>(`ol > li`)
+    const details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
     expect(details_btn).toBeDefined()
 
     // Initially no authors section visible
@@ -96,7 +96,7 @@ describe(`Models Page`, () => {
     expect(first_card).toBeDefined()
     expect(second_card).toBeDefined()
 
-    const first_details_btn = first_card.querySelector(`h2 button`) as HTMLButtonElement
+    const first_details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
 
     // Initially no details visible on either card
     // Check if the details sections are present by looking for non-metrics h3
@@ -160,9 +160,7 @@ describe(`Models Page`, () => {
         })
 
         const model_cards = document.querySelectorAll(`ol > li`)
-        const n_best_input = document.querySelector(
-          `input[type="number"]`,
-        ) as HTMLInputElement
+        const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
         const effective = Math.min(Math.max(min_models, input), MODELS.length)
 
         expect(model_cards.length).toBe(expected)
@@ -199,13 +197,11 @@ describe(`Models Page`, () => {
       props: { data: { initial_show_n_best: limit } },
     })
 
-    const n_best_input = document.querySelector(
-      `input[type="number"]`,
-    ) as HTMLInputElement
+    const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
     expect(Number(n_best_input.value)).toBe(limit)
 
-    const daf_btn = document.querySelector(`button#DAF`) as HTMLButtonElement
-    daf_btn?.click()
+    const daf_btn = doc_query<HTMLButtonElement>(`button#DAF`)
+    daf_btn.click()
     await tick()
 
     const cards = document.querySelectorAll(`ol > li`)
@@ -241,19 +237,19 @@ describe(`Models Page`, () => {
     mount(ModelsPage, { target: document.body })
 
     expect(document.querySelectorAll(`ol > li`).length).toBe(MODELS.length)
-    const checkbox = document.querySelector(`input[type="checkbox"]`) as HTMLInputElement
+    const checkbox = doc_query<HTMLInputElement>(`input[type="checkbox"]`)
     expect(checkbox.checked).toBe(true)
   })
 
   it(`renders color legend`, () => {
     mount(ModelsPage, { target: document.body })
 
-    const legend = document.querySelector(`legend`)
-    expect(legend?.textContent).toContain(`best`)
-    expect(legend?.textContent).toContain(`worst`)
+    const legend = doc_query(`legend`)
+    expect(legend.textContent).toContain(`best`)
+    expect(legend.textContent).toContain(`worst`)
 
-    expect(legend?.querySelector(`svg`)).toBeDefined()
-    expect(legend?.querySelector(`.matterviz-color-bar`)).toBeDefined()
+    expect(legend.querySelector(`svg`)).toBeDefined()
+    expect(legend.querySelector(`.matterviz-color-bar`)).toBeDefined()
 
     const model_cards_h2 = Array.from(
       document.querySelectorAll<HTMLElement>(`ol > li h2`),
