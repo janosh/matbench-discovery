@@ -82,10 +82,10 @@ def alignn_relax(structure: Structure) -> Structure:
         jarvis_atoms=JarvisAtomsAdaptor.get_atoms(Structure.from_dict(structure)),
         model_path=default_path(),
         device=f"cuda:{task_id % 4}" if torch.cuda.is_available() else "cpu",
-        logfile="/dev/null",
+        logfile=None,
     )
     # Relax structure
-    opt, _, _ = ff.optimize_atoms(trajectory=None, logfile="/dev/null")
+    opt, _, _ = ff.optimize_atoms(trajectory=None, logfile=None)
 
     return JarvisAtomsAdaptor.get_structure(opt)
 

@@ -101,9 +101,8 @@ with warnings.catch_warnings():
 # %%
 print(f"Read data from {data_path}")
 atoms_list = ase_atoms_from_zip(data_path)
-atoms_list = sorted(
-    atoms_list, key=len
-)  # sort by size to get roughly even distribution of comp cost across GPUs
+# sort by size to get roughly even distribution of comp cost across GPUs
+atoms_list = sorted(atoms_list, key=len)
 
 if slurm_array_job_id == "debug":  # if running a quick smoke test
     if smoke_test:
@@ -111,9 +110,8 @@ if slurm_array_job_id == "debug":  # if running a quick smoke test
     else:
         pass
 elif slurm_array_task_count > 1:
-    atoms_list = atoms_list[
-        slurm_array_task_id::slurm_array_task_count
-    ]  # even distribution of rough comp cost, based on size
+    # even distribution of rough comp cost, based on size
+    atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]
 
 relax_results: dict[str, dict[str, Any]] = {}
 
@@ -146,13 +144,11 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         atoms.calc = calculator
         if max_steps > 0:
             atoms = filter_cls(atoms)
-            with optim_cls(atoms, logfile="/dev/null") as optimizer:
+            with optim_cls(atoms, logfile=None) as optimizer:
                 for _ in optimizer.irun(fmax=force_max, steps=max_steps):
-                    forces = atoms.get_forces()
-                    if np.max(np.linalg.norm(forces, axis=1)) > 1e6:
-                        raise RuntimeError(
-                            "Forces are exorbitant, exploding relaxation!"
-                        )
+                    f_norm = np.linalg.norm(atoms.get_forces(), axis=1).max()
+                    if f_norm > 1e6:
+                        raise RuntimeError("Force divergence detected")
 
         energy = atoms.get_potential_energy()  # relaxed energy
         # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr

@@ -50,8 +50,9 @@ beforeEach(() => {
 
 export function doc_query<T extends HTMLElement>(
   selector: string,
-  parent: ParentNode = document,
+  parent: ParentNode | null = document,
 ): T {
+  if (!parent) throw new Error(`No parent node provided`)
   const node = parent.querySelector(selector)
   if (!node) throw new Error(`No element found for selector: ${selector}`)
   return node as T

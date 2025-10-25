@@ -36,7 +36,7 @@ def process_and_save(atoms_list: list[Atoms], out_dir: str, job_id: int) -> None
             atoms.calc = calc
             if max_steps > 0:
                 atoms = FrechetCellFilter(atoms)
-                optimizer = optim_cls(atoms, logfile="/dev/null")
+                optimizer = optim_cls(atoms, logfile=None)
                 optimizer.run(fmax=force_max, steps=max_steps)
             energy = atoms.get_potential_energy()  # relaxed energy
             # if max_steps > 0, atoms is wrapped by FrechetCellFilter
