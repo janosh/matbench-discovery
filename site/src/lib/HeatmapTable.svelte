@@ -38,6 +38,10 @@
     show_heatmap?: boolean
     heatmap_class?: string
     onrowdblclick?: (event: MouseEvent, row: RowData) => void
+    // Array of column IDs to control display order. IDs are derived as:
+    // - Ungrouped columns: col.short ?? col.label
+    // - Grouped columns: `${col.short ?? col.label} (${col.group})`
+    // This allows persisting/restoring column order across sessions.
     column_order?: string[]
   } = $props()
 
@@ -79,7 +83,12 @@
       filtered.length !== column_order.length ||
       filtered.length !== ids.length
 
-    if (needs_update) {
+    // Guard against unnecessary churn: skip update if order is already identical
+    if (
+      needs_update &&
+      !(column_order.length && filtered.length === ids.length &&
+        column_order.every((val, idx) => val === ids[idx]))
+    ) {
       column_order = column_order.length === 0
         ? ids
         : [...filtered, ...ids.filter((id) => !filtered.includes(id))]
@@ -103,7 +112,6 @@
     return [...ordered, ...remaining]
   })
 
-  // Drag state
   let drag_col_id = $state<string | null>(null)
   let drag_over_col_id = $state<string | null>(null)
 
@@ -158,7 +166,7 @@
 
     const target_col_id = get_col_id(target_col)
     const drag_idx = column_order.indexOf(drag_col_id)
-    const target_idx = column_order.indexOf(target_col_id)
+    let target_idx = column_order.indexOf(target_col_id)
 
     if (drag_idx === -1 || target_idx === -1) {
       reset_drag_state()
@@ -166,9 +174,11 @@
     }
 
     // Reorder: remove dragged column and insert at target position
+    // Adjust target_idx if dragging from left to right (removing shifts indices left)
+    const insert_at = drag_idx < target_idx ? target_idx - 1 : target_idx
     const new_order = [...column_order]
     new_order.splice(drag_idx, 1)
-    new_order.splice(target_idx, 0, drag_col_id)
+    new_order.splice(insert_at, 0, drag_col_id)
     column_order = new_order
     reset_drag_state()
   }
@@ -212,13 +222,15 @@
 
           // Use numeric comparison if both parse as numbers
           if (!isNaN(num1) && !isNaN(num2)) {
+            if (num1 === num2) return 0
             return num1 < num2 ? -modifier : modifier
           }
 
-          // Otherwise sort strings case-insensitively
-          return sort_val1.toLowerCase() > sort_val2.toLowerCase()
-            ? modifier
-            : -modifier
+          // Otherwise sort strings using localeCompare for natural ordering
+          return sort_val1.localeCompare(sort_val2, undefined, {
+            numeric: true,
+            sensitivity: `base`,
+          }) * modifier
         }
       }
 
@@ -324,7 +336,9 @@
         {#each visible_columns as col (col.label + col.group)}
           <th
             title={col.description}
-            onclick={() => sort_rows(col.label, col.group)}
+            onclick={() => {
+              if (!drag_col_id) sort_rows(col.label, col.group)
+            }}
             style={col.style}
             class:sticky-col={col.sticky}
             class:not-sortable={col.sortable === false}
@@ -332,6 +346,9 @@
             class:drag-over={drag_over_col_id === get_col_id(col)}
             draggable="true"
             aria-dropeffect="move"
+            aria-sort={sort_state.column === get_col_id(col)
+            ? (sort_state.ascending ? `ascending` : `descending`)
+            : `none`}
             ondragstart={(event: DragEvent & { currentTarget: HTMLElement }) => {
               handle_drag_start(event, col)
               event.currentTarget.setAttribute(`aria-grabbed`, `true`)

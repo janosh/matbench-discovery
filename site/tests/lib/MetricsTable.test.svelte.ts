@@ -1371,7 +1371,7 @@ describe(`MetricsTable`, () => {
         },
       })
 
-      const headers = Array.from(document.querySelectorAll(`th`))
+      const headers = Array.from(document.querySelectorAll(`thead tr:last-child th`))
       expect(headers.length).toBeGreaterThan(0)
       headers.forEach((header) => {
         expect(header.getAttribute(`draggable`)).toBe(`true`)

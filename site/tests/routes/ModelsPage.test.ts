@@ -1,14 +1,16 @@
 import { MODELS } from '$lib/models.svelte'
 import { default as ModelsPage } from '$routes/models/+page.svelte'
 import { mount, tick } from 'svelte'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 describe(`Models Page`, () => {
-  beforeEach(() => {
-    mount(ModelsPage, { target: document.body })
+  afterEach(() => {
+    document.body.innerHTML = ``
   })
 
   it(`renders model sorting controls`, () => {
+    mount(ModelsPage, { target: document.body })
+
     const toggle = document.querySelector(`input[type="checkbox"]`)
     expect(toggle).toBeDefined()
     expect(toggle?.parentElement?.textContent).toMatch(/show non-compliant models/i)
@@ -23,6 +25,8 @@ describe(`Models Page`, () => {
   })
 
   it(`renders metric sorting buttons`, () => {
+    mount(ModelsPage, { target: document.body })
+
     const buttons = document.querySelectorAll(`ul button`)
     const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
 
@@ -33,6 +37,8 @@ describe(`Models Page`, () => {
   })
 
   it(`renders model cards`, () => {
+    mount(ModelsPage, { target: document.body })
+
     const model_cards = document.querySelectorAll(`ol > li`)
     expect(model_cards.length).toBeGreaterThan(0)
 
@@ -44,6 +50,8 @@ describe(`Models Page`, () => {
   })
 
   it(`sorts models by selected metric`, async () => {
+    mount(ModelsPage, { target: document.body })
+
     // Get initial order of models
     const initial_models = Array.from(document.querySelectorAll(`ol > li h2 a`)).map(
       (a) => a.textContent,
@@ -65,6 +73,8 @@ describe(`Models Page`, () => {
   })
 
   it(`toggles model details`, async () => {
+    mount(ModelsPage, { target: document.body })
+
     const first_card = document.querySelector(`ol > li`)
     const details_btn = first_card?.querySelector(`h2 button`) as HTMLButtonElement
     expect(details_btn).toBeDefined()
@@ -92,6 +102,8 @@ describe(`Models Page`, () => {
   })
 
   it(`binds show_details state between page and model cards`, async () => {
+    mount(ModelsPage, { target: document.body })
+
     const model_cards = Array.from(
       document.querySelectorAll<HTMLElement>(`ol > li`),
     )
@@ -118,6 +130,8 @@ describe(`Models Page`, () => {
   })
 
   it(`renders model limiting controls correctly`, () => {
+    mount(ModelsPage, { target: document.body })
+
     const n_best_input = document.querySelector(
       `input[type="number"]`,
     ) as HTMLInputElement
@@ -139,7 +153,7 @@ describe(`Models Page`, () => {
     expect(label_text).toMatch(/best models/i)
   })
 
-  describe(`slice logic`, () => {
+  describe(`model limiting behavior`, () => {
     const min_models = 2
 
     it.each([
@@ -151,31 +165,33 @@ describe(`Models Page`, () => {
       { show_n_best: 1, expected: min_models },
       { show_n_best: -5, expected: min_models },
     ])(
-      `limits displayed models with show_n_best=$show_n_best`,
+      `limits displayed models to $expected when initial_show_n_best=$show_n_best`,
       ({ show_n_best, expected }) => {
-        const limit = Math.max(min_models, show_n_best)
-        const sliced = MODELS.slice(0, limit)
-        expect(sliced.length).toBe(expected)
+        mount(ModelsPage, {
+          target: document.body,
+          props: { initial_show_n_best: show_n_best },
+        })
+
+        // Query the number input element
+        const n_best_input = document.querySelector(
+          `input[type="number"]`,
+        ) as HTMLInputElement
+        expect(n_best_input).toBeDefined()
+
+        // Assert the rendered number of model cards
+        const model_cards = document.querySelectorAll(`ol > li`)
+        expect(model_cards.length).toBe(expected)
+
+        // Verify the input shows the effective value (after Math.max)
+        const effective_value = Math.max(min_models, show_n_best)
+        expect(Number(n_best_input.value)).toBe(effective_value)
       },
     )
-
-    it(`enforces minimum of ${min_models} models with invalid inputs`, () => {
-      const invalid_inputs = [0, -1, -100, Number.NEGATIVE_INFINITY]
-      for (const show_n_best of invalid_inputs) {
-        expect(Math.max(min_models, show_n_best)).toBe(min_models)
-      }
-    })
-
-    it(`respects exact number when above minimum`, () => {
-      const valid_inputs = [3, 5, 10, 20, MODELS.length]
-      for (const show_n_best of valid_inputs) {
-        const sliced = MODELS.slice(0, Math.max(min_models, show_n_best))
-        expect(sliced.length).toBe(Math.min(show_n_best, MODELS.length))
-      }
-    })
   })
 
   it(`renders color legend`, () => {
+    mount(ModelsPage, { target: document.body })
+
     const legend = document.querySelector(`legend`)
     expect(legend?.textContent).toContain(`best`)
     expect(legend?.textContent).toContain(`worst`)
