@@ -82,12 +82,10 @@ describe(`RadarChart`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check that the weight percentages are displayed correctly
-    // Since we use foreignObject with HTML, we need to look for small elements
-    const weight_values = Array.from(
-      document.querySelectorAll(`svg foreignObject small`),
-    ).map((el) => el.textContent)
+    const weight_values = Array.from(document.querySelectorAll(`svg foreignObject`))
+      .map((el) => el.querySelector(`small`)?.textContent)
+      .filter(Boolean)
 
-    // Should match the default weights from DEFAULT_CPS_CONFIG
     const expected_values = Object.values(DEFAULT_CPS_CONFIG).map(
       (part) => `${((part.weight as number) * 100).toFixed(0)}%`,
     )

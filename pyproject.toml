@@ -72,7 +72,7 @@ symmetry = ["moyopy>=0.3.4"]
 phonons = ["phono3py>=3.12", "phonopy>=2.35"]
 
 [build-system]
-requires = ["uv_build>=0.7.5"]
+requires = ["uv_build>=0.9.5"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -146,7 +146,7 @@ include = ["models/**/test_*.py", "models/**/train_*.py"]
 unresolved-import = "ignore"
 
 [dependency-groups]
-dev = ["prek>=0.2.5", "ty>=0.0.1a22"]
+dev = ["prek>=0.2.10", "ty>=0.0.1a24"]
 
 [tool.typos.default]
 locale = "en-us"

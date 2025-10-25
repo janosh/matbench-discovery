@@ -88,7 +88,7 @@ for (const key of Object.keys(data_files).filter((key) => !key.startsWith(`_`)))
 }
 
 // Format date string into human-readable format
-export function format_date(date: string, options?: Intl.DateTimeFormatOptions): string {
+export function format_date(date: string | number, options?: Intl.DateTimeFormatOptions) {
   return new Date(date).toLocaleDateString(undefined, {
     year: `numeric`,
     month: `short`,

@@ -9,12 +9,21 @@
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
 
+  // Accept data prop for SvelteKit compliance (used for testing initial_show_n_best)
+  let { data }: { data?: { initial_show_n_best?: number } } = $props()
+
   let sort_by: Label = $state(ALL_METRICS.CPS)
   let show_non_compliant: boolean = $state(true)
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
-  let show_n_best: number = $state(MODELS.length) // show only best models
   const min_models: number = 2
+  // Enforce minimum and maximum when initializing from prop
+  let show_n_best: number = $state(
+    Math.min(
+      MODELS.length,
+      Math.max(min_models, data?.initial_show_n_best ?? MODELS.length),
+    ),
+  )
   let sort_by_path: string = $derived(
     `${sort_by.path ?? ``}.${sort_by.key}`.replace(/^\./, ``),
   )

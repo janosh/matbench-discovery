@@ -6,10 +6,7 @@
   import { tooltip } from 'svelte-multiselect/attachments'
   import MptrjTargetDistros from './MptrjTargetDistros.svelte'
 
-  interface Props {
-    data: { dataset: Dataset }
-  }
-  let { data }: Props = $props()
+  let { data }: { data: { dataset: Dataset } } = $props()
   const { dataset } = data
   const link_props = { target: `_blank`, rel: `noopener noreferrer` }
 

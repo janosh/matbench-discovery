@@ -168,19 +168,18 @@ describe(`Datasets Page`, () => {
     await tick()
 
     // Get order after clicking Links column
-    const new_datasets_links = Array.from(
+    const datasets_after_clicking_links = Array.from(
       document.querySelectorAll(`.${heatmap_class} tbody tr`),
     ).map((row) => {
       const cells = row.querySelectorAll(`td`)
       return cells[0]?.textContent?.trim() || ``
     })
-    // Order should remain the same after clicking Links (non-sortable)
-    expect(new_datasets_links, `Order changed after clicking Links header`).toEqual(
-      initial_datasets,
-    )
 
-    // Order should remain the same
-    expect(new_datasets_links).toEqual(initial_datasets)
+    // Order should remain the same after clicking Links (non-sortable)
+    expect(datasets_after_clicking_links, `Order changed after clicking Links header`)
+      .toEqual(
+        initial_datasets,
+      )
   })
 
   it(`has correct styling for sortable and non-sortable columns`, () => {

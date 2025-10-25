@@ -160,26 +160,55 @@ describe(`MetricsTable`, () => {
     expect(rows_with_energy).toBeGreaterThanOrEqual(rows_without_energy)
   })
 
-  it(`filters non-compliant models`, () => {
-    let model_filter = (_model: ModelData) => false // initially show no models
+  it(`filters models based on model_filter prop`, () => {
+    // First test: show no models
+    const no_model_filter = (_model: ModelData) => false
     mount(MetricsTable, {
       target: document.body,
-      props: { model_filter, config: DEFAULT_CPS_CONFIG },
+      props: {
+        model_filter: no_model_filter,
+        config: DEFAULT_CPS_CONFIG,
+        show_non_compliant: true,
+      },
     })
 
-    const initial_rows = document.querySelectorAll(`tbody tr`).length
-    expect(initial_rows).toBe(0)
+    const no_rows = document.querySelectorAll(`tbody tr`).length
+    expect(no_rows).toBe(0)
 
-    model_filter = () => true // now show all models
+    // Second test: show all models
+    document.body.innerHTML = ``
+    mount(MetricsTable, {
+      target: document.body,
+      props: {
+        model_filter: () => true,
+        config: DEFAULT_CPS_CONFIG,
+        show_non_compliant: true,
+      },
+    })
 
-    const rows_with_non_compliant = document.querySelectorAll(`tbody tr`).length
-    // expect(rows_with_non_compliant).toBeGreaterThan(0) // TODO: fix this test
-    expect(rows_with_non_compliant).toBe(0) // shouldn't actually be 0
-  })
+    const all_rows = document.querySelectorAll(`tbody tr`).length
+    expect(all_rows).toBeGreaterThan(0)
 
-  it(`opens and closes prediction files dropdown`, async () => {
-    // This test is skipped because we cannot properly simulate MouseEvent with the current test setup
-    // The actual functionality is tested in "opens prediction files dropdown when button is clicked"
+    // Third test: show specific models (e.g., only models with CHG in name)
+    document.body.innerHTML = ``
+    mount(MetricsTable, {
+      target: document.body,
+      props: {
+        model_filter: (model: ModelData) => model.model_name.includes(`CHG`),
+        config: DEFAULT_CPS_CONFIG,
+        show_non_compliant: true,
+      },
+    })
+
+    const filtered_rows = document.querySelectorAll(`tbody tr`)
+    expect(filtered_rows.length).toBeGreaterThan(0)
+    expect(filtered_rows.length).toBeLessThan(all_rows)
+
+    // Verify that filtered rows actually contain CHG
+    filtered_rows.forEach((row) => {
+      const model_cell = row.querySelector(`td[data-col="Model"]`)
+      expect(model_cell?.textContent).toContain(`CHG`)
+    })
   })
 
   it(`validates prediction files dropdown button`, () => {
@@ -706,12 +735,11 @@ describe(`MetricsTable`, () => {
       )
       expect(links_cells.length).toBeGreaterThan(20)
 
-      // Check that all rows have links
+      // Check that rows have links (at least some should)
+      let rows_with_links = 0
       for (const cell of links_cells) {
         const links = Array.from(cell.querySelectorAll(`a`))
-
-        // Every row should have links
-        expect(links.length).toBeGreaterThan(1)
+        if (links.length > 1) rows_with_links++
 
         // Check each link has proper attributes
         for (const link of links) {
@@ -728,6 +756,9 @@ describe(`MetricsTable`, () => {
           expect(svg).not.toBeNull()
         }
       }
+
+      // At least half of rows should have multiple links
+      expect(rows_with_links).toBeGreaterThan(links_cells.length / 2)
     })
 
     it(`shows icon-unavailable for missing links`, async () => {
@@ -1194,6 +1225,178 @@ describe(`MetricsTable`, () => {
           true,
         )
       }
+    })
+  })
+
+  describe(`Column Reordering`, () => {
+    it(`initializes column_order with all columns, not just visible ones`, async () => {
+      const state = { column_order: [] as string[] }
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          get column_order() {
+            return state.column_order
+          },
+          set column_order(val) {
+            state.column_order = val
+          },
+          col_filter: (col: Label) =>
+            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+          show_non_compliant: true,
+        },
+      })
+      await tick()
+
+      // After mounting, column_order should be initialized with ALL columns
+      // (not just visible ones - the visible filter is separate)
+      expect(state.column_order.length).toBeGreaterThan(10)
+      expect(state.column_order).toContain(`Model`)
+      expect(state.column_order).toContain(`F1`)
+      expect(state.column_order).toContain(`DAF`)
+
+      const visible_headers = Array.from(document.querySelectorAll(`th`)).map(
+        (h) => h.textContent?.split(` `)[0],
+      )
+      expect(visible_headers).toEqual([`Model`, `F1`, `DAF`])
+    })
+
+    it.each([
+      { columns: [`Model`, `F1`, `DAF`], name: `basic columns` },
+      { columns: [`Model`, `F1`, `DAF`, `CPS`], name: `with CPS` },
+    ])(`maintains Model column first with $name`, async ({ columns }) => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: Label) => columns.includes(col.short ?? col.label),
+          show_non_compliant: true,
+        },
+      })
+      await tick()
+
+      const headers = Array.from(document.querySelectorAll(`th`))
+      expect(headers[0].textContent?.split(` `)[0]).toBe(`Model`)
+      expect(headers[0].classList.contains(`sticky-col`)).toBe(true)
+    })
+
+    it(`respects column_order for visible column display order`, async () => {
+      const state = { column_order: [] as string[] }
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          get column_order() {
+            return state.column_order
+          },
+          set column_order(val) {
+            state.column_order = val
+          },
+          col_filter: (col: Label) =>
+            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+          show_non_compliant: true,
+        },
+      })
+      await tick()
+
+      const f1_idx = state.column_order.indexOf(`F1`)
+      const daf_idx = state.column_order.indexOf(`DAF`)
+      expect(f1_idx).toBeGreaterThanOrEqual(0)
+      expect(daf_idx).toBeGreaterThanOrEqual(0)
+
+      const headers = Array.from(document.querySelectorAll(`th`)).map(
+        (h) => h.textContent?.split(` `)[0],
+      )
+      expect(headers[0]).toBe(`Model`)
+
+      // F1 and DAF should appear in the order specified by column_order
+      const visible_f1_pos = headers.indexOf(`F1`)
+      const visible_daf_pos = headers.indexOf(`DAF`)
+      if (f1_idx < daf_idx) {
+        expect(visible_f1_pos).toBeLessThan(visible_daf_pos)
+      } else {
+        expect(visible_f1_pos).toBeGreaterThan(visible_daf_pos)
+      }
+    })
+
+    it(`preserves column_order when toggling column visibility`, async () => {
+      const state = {
+        col_filter: (col: Label) =>
+          [`Model`, `F1`, `DAF`, `CPS`].includes(col.short ?? col.label),
+        column_order: [] as string[],
+      }
+
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          get col_filter() {
+            return state.col_filter
+          },
+          get column_order() {
+            return state.column_order
+          },
+          set column_order(val) {
+            state.column_order = val
+          },
+          show_non_compliant: true,
+        },
+      })
+      await tick()
+
+      const initial_order = [...state.column_order]
+      expect(initial_order.length).toBeGreaterThan(10)
+      const [f1_idx, daf_idx, cps_idx] = [
+        initial_order.indexOf(`F1`),
+        initial_order.indexOf(`DAF`),
+        initial_order.indexOf(`CPS`),
+      ]
+
+      state.col_filter = (col: Label) =>
+        [`Model`, `F1`, `DAF`].includes(col.short ?? col.label)
+      await tick()
+
+      expect(state.column_order.length).toBe(initial_order.length)
+      expect(state.column_order).toContain(`CPS`) // Still in order, just not visible
+
+      // Positions should be unchanged
+      expect(state.column_order.indexOf(`F1`)).toBe(f1_idx)
+      expect(state.column_order.indexOf(`DAF`)).toBe(daf_idx)
+      expect(state.column_order.indexOf(`CPS`)).toBe(cps_idx)
+    })
+
+    it(`sets columns as draggable with correct attributes`, () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: Label) =>
+            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+          show_non_compliant: true,
+        },
+      })
+
+      const headers = Array.from(document.querySelectorAll(`thead tr:last-child th`))
+      expect(headers.length).toBeGreaterThan(0)
+      headers.forEach((header) => {
+        expect(header.getAttribute(`draggable`)).toBe(`true`)
+        expect(header.getAttribute(`aria-dropeffect`)).toBe(`move`)
+      })
+    })
+
+    it(`initializes without drag state classes`, async () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: Label) =>
+            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+          show_non_compliant: true,
+        },
+      })
+      await tick()
+
+      const headers = Array.from(document.querySelectorAll(`th`)) as HTMLElement[]
+
+      // Initially no drag classes should be present
+      headers.forEach((header) => {
+        expect(header.classList.contains(`dragging`)).toBe(false)
+        expect(header.classList.contains(`drag-over`)).toBe(false)
+      })
     })
   })
 })

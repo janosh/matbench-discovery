@@ -1,5 +1,5 @@
 import type { Mock, MockInstance } from 'vitest'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Check if running in Deno environment
 const IS_DENO = `Deno` in globalThis
@@ -49,7 +49,6 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
   let create_element_spy: MockInstance
   let query_selector_spy: MockInstance
   const mock_click = vi.fn()
-  const mock_blob = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -71,19 +70,12 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
       .spyOn(document, `querySelector`)
       .mockImplementation(() => create_mock_table())
 
-    globalThis.Blob = vi.fn().mockImplementation(() => mock_blob)
-    Object.defineProperty(window, `URL`, {
-      value: {
-        createObjectURL: vi.fn().mockReturnValue(`mock-url`),
-        revokeObjectURL: vi.fn(),
-      },
-      writable: true,
-    })
-  })
+    globalThis.Blob = vi.fn() as unknown as typeof Blob
 
-  afterEach(() => {
-    vi.clearAllMocks()
-    vi.unstubAllGlobals()
+    // Mock URL methods on globalThis.URL
+    if (!globalThis.URL) globalThis.URL = {} as typeof URL
+    globalThis.URL.createObjectURL = vi.fn().mockReturnValue(`mock-url`)
+    globalThis.URL.revokeObjectURL = vi.fn()
   })
 
   // Test image exports (SVG, PNG) with parameterized testing
@@ -269,10 +261,6 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
           write: vi.fn().mockReturnValue(new ArrayBuffer(100)),
         }))
       }
-    })
-
-    afterEach(() => {
-      if (format === `Excel`) vi.doUnmock(`xlsx`)
     })
 
     it(`generates ${format} with proper data and excludes SVG columns`, async () => {

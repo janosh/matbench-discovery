@@ -8,11 +8,10 @@
     tooltip?: string
     link?: string
   }
-  interface Props {
+  let { selected = $bindable(``), options = [] }: {
     selected: string // currently selected value
     options: OptionInfo[] // options to display, either a record or an array of tuples
-  }
-  let { selected = $bindable(``), options = [] }: Props = $props()
+  } = $props()
 </script>
 
 <div class="selection-toggle">

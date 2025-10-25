@@ -1,13 +1,12 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import type { HTMLAttributes } from 'svelte/elements'
   import type { Snippet } from 'svelte'
+  import type { HTMLAttributes } from 'svelte/elements'
 
-  interface Props extends HTMLAttributes<HTMLNavElement> {
+  let { routes, children, ...rest }: HTMLAttributes<HTMLElementTagNameMap[`nav`]> & {
     routes: (string | [string, string])[]
     children?: Snippet
-  }
-  let { routes, children, ...rest }: Props = $props()
+  } = $props()
 
   let is_current = $derived((path: string) => {
     if (path === page.url.pathname) return `page`

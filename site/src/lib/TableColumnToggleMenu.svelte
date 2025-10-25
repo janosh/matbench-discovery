@@ -2,12 +2,10 @@
   import { Icon, type Label } from '$lib'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
 
-  interface Props {
+  let { columns = $bindable([]), column_panel_open = $bindable(false) }: {
     columns: Label[]
     column_panel_open?: boolean
-  }
-  let { columns = $bindable([]), column_panel_open = $bindable(false) }: Props =
-    $props()
+  } = $props()
 
   function toggle_column_visibility(idx: number, event: Event) {
     columns[idx].visible = (event.target as HTMLInputElement).checked

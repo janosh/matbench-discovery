@@ -7,15 +7,6 @@
   import type { HTMLAttributes } from 'svelte/elements'
   import { METADATA_COLS } from './labels'
 
-  interface Props extends HTMLAttributes<HTMLDivElement> {
-    x_prop: Label
-    y_prop: Label
-    models?: ModelData[]
-    model_filter?: (model: ModelData) => boolean
-    point_style?: PointStyle
-    date_range?: [Date | null, Date | null]
-    show_model_labels?: boolean | `auto-placement`
-  }
   let {
     x_prop,
     y_prop,
@@ -25,7 +16,15 @@
     date_range = [null, null],
     show_model_labels = true,
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLDivElement> & {
+    x_prop: Label
+    y_prop: Label
+    models?: ModelData[]
+    model_filter?: (model: ModelData) => boolean
+    point_style?: PointStyle
+    date_range?: [Date | null, Date | null]
+    show_model_labels?: boolean | `auto-placement`
+  } = $props()
 
   // Add date range state for time series
   const now = new Date()
@@ -76,6 +75,7 @@
   let series: DataSeries = $derived({
     x: plot_data.map((item) => item.x) as number[],
     y: plot_data.map((item) => item.y) as number[],
+    markers: `points` as const,
     metadata: plot_data.map((item) => item.metadata),
     point_style: plot_data.map((item) => ({
       fill: item.color ?? `#4dabf7`,
@@ -97,11 +97,8 @@
 
 <ScatterPlot
   series={[series]}
-  markers="points"
-  {x_label}
-  {y_label}
-  x_format={x_prop?.format ?? `.1s`}
-  y_format={y_prop?.format ?? `.3f`}
+  x_axis={{ label: x_label, format: x_prop?.format ?? `.1s` }}
+  y_axis={{ label: y_label, format: y_prop?.format ?? `.3f` }}
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata })}

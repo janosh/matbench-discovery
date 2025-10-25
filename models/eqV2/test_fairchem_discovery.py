@@ -11,7 +11,6 @@ import pandas as pd
 import torch
 import typer
 import wandb
-from ase import Atoms
 from ase.filters import Filter, FrechetCellFilter, UnitCellFilter
 from ase.optimize import BFGS, FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
@@ -22,7 +21,6 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from submitit import AutoExecutor
 from submitit.helpers import Checkpointable
-from torch.utils.data import Subset
 from tqdm import trange
 
 from matbench_discovery import timestamp, today
@@ -41,11 +39,6 @@ FILTER_CLS: dict[str, type[Filter]] = {
     "unit": UnitCellFilter,
 }
 OPTIM_CLS: dict[str, type[Optimizer]] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
-
-
-class AseDBSubset(Subset):
-    def get_atoms(self, idx: int) -> Atoms:
-        return self.dataset.get_atoms(self.indices[idx])
 
 
 class RelaxJob(Checkpointable):
@@ -87,12 +80,11 @@ class RelaxJob(Checkpointable):
         data_path = DATABASE_PATH[task_type]
         dataset = AseDBDataset(dict(src=data_path))
 
+        indices = None
         if debug:
             indices = np.array_split(range(len(dataset)), 10000)[job_number]
-            dataset = AseDBSubset(dataset, indices)
         elif num_jobs > 1:
             indices = np.array_split(range(len(dataset)), num_jobs)[job_number]
-            dataset = AseDBSubset(dataset, indices)
 
         optimizer_params = optimizer_params or {}
         run_params = {
@@ -114,6 +106,7 @@ class RelaxJob(Checkpointable):
 
         self._ase_relax(
             dataset=dataset,
+            indices=indices,
             calculator=calc,
             optimizer=optimizer,
             cell_filter=cell_filter,
@@ -143,7 +136,8 @@ class RelaxJob(Checkpointable):
 
     def _ase_relax(
         self,
-        dataset: AseDBDataset | AseDBSubset,
+        dataset: AseDBDataset,
+        indices: np.ndarray | None,
         calculator: OCPCalculator,
         optimizer: Literal["FIRE", "LBFGS", "BFGS"],
         cell_filter: Literal["frechet", "unit"] | None,
@@ -155,8 +149,12 @@ class RelaxJob(Checkpointable):
         filter_cls = FILTER_CLS.get(cell_filter or "")
         optim_cls = OPTIM_CLS[optimizer]
 
-        for idx in trange(len(dataset), desc="Relaxing with ASE"):
-            atoms = dataset.get_atoms(idx)
+        # iterate over indices if provided, otherwise over full dataset
+        iteration_indices = indices if indices is not None else range(len(dataset))
+
+        for idx in trange(len(iteration_indices), desc="Relaxing with ASE"):
+            dataset_idx = int(iteration_indices[idx])
+            atoms = dataset.get_atoms(dataset_idx)
             material_id = atoms.info["sid"]
             if material_id in self.relax_results:
                 print(f"Structure {material_id} has already been relaxed.")

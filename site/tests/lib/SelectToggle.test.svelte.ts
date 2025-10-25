@@ -1,14 +1,8 @@
 import SelectToggle from '$lib/SelectToggle.svelte'
 import { mount } from 'svelte'
-import { afterEach, describe, expect, it, test, vi } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 
 describe(`SelectToggle.svelte`, () => {
-  // Clean up after each test
-  afterEach(() => {
-    document.body.innerHTML = ``
-    vi.restoreAllMocks()
-  })
-
   test.each([
     {
       name: `basic options`,
@@ -100,36 +94,6 @@ describe(`SelectToggle.svelte`, () => {
     buttons = document.querySelectorAll(`button`)
     expect(buttons[0].classList.contains(`active`)).toBe(false)
     expect(buttons[1].classList.contains(`active`)).toBe(true)
-  })
-
-  it(`buttons have proper properties for interaction`, () => {
-    const options = [
-      { value: `option1`, label: `Option 1` },
-      { value: `option2`, label: `Option 2` },
-    ]
-
-    mount(SelectToggle, {
-      target: document.body,
-      props: {
-        selected: `option1`,
-        options,
-      },
-    })
-
-    // Get buttons
-    const buttons = document.querySelectorAll(`button`)
-
-    // Verify the buttons have the correct classes to indicate they're interactive
-    expect(buttons[0].tagName).toBe(`BUTTON`)
-    expect(buttons[1].tagName).toBe(`BUTTON`)
-
-    // Buttons should be accessible with proper roles
-    expect(buttons[0].getAttribute(`role`) || `button`).toBe(`button`)
-    expect(buttons[1].getAttribute(`role`) || `button`).toBe(`button`)
-
-    // Verify the buttons have the correct active state initially
-    expect(buttons[0].classList.contains(`active`)).toBe(true)
-    expect(buttons[1].classList.contains(`active`)).toBe(false)
   })
 
   test.each([
