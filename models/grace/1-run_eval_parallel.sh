@@ -30,7 +30,6 @@ GPUS=(0 1 2 3)  # Set the specific GPU IDs you want to use here
 NGPU=${#GPUS[@]}  # Calculate the number of GPUs based on the array length
 
 export MODEL_NAME="GRACE-2L-OAM-L"
-echo "MODEL_NAME=${MODEL_NAME}"
 export MKL_NUM_THREADS=${THREADS}
 export NUMEXPR_NUM_THREADS=${THREADS}
 export OMP_NUM_THREADS=${THREADS}

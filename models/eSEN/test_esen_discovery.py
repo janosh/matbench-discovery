@@ -188,12 +188,10 @@ class MBDRunner:
 
                 if filter_cls is not None:
                     optimizer = optim_cls(
-                        filter_cls(atoms), logfile="/dev/null", **optimizer_params
+                        filter_cls(atoms), logfile=None, **optimizer_params
                     )
                 else:
-                    optimizer = optim_cls(
-                        atoms, logfile="/dev/null", **optimizer_params
-                    )
+                    optimizer = optim_cls(atoms, logfile=None, **optimizer_params)
 
                 optimizer.run(fmax=force_max, steps=max_steps)
 

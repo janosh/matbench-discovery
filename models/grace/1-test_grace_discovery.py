@@ -41,8 +41,6 @@ ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 
-# slurm_nodes = int(os.getenv("SLURM_NNODES", "1"))
-slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", "1"))
 slurm_array_task_count = int(
     os.getenv("SLURM_ARRAY_TASK_COUNT", "1")
 )  # will be set to the number of tasks in the job array.
@@ -89,9 +87,8 @@ with warnings.catch_warnings():
 # %%
 print(f"Read data from {data_path}")
 atoms_list = ase_atoms_from_zip(data_path)
-atoms_list = sorted(
-    atoms_list, key=len
-)  # sort by size to get roughly even distribution of comp cost across GPUs
+# sort by size to get roughly even distribution of comp cost across GPUs
+atoms_list = sorted(atoms_list, key=len)
 
 if slurm_array_job_id == "debug":  # if running a quick smoke test
     if smoke_test:
@@ -99,9 +96,8 @@ if slurm_array_job_id == "debug":  # if running a quick smoke test
     else:
         pass
 elif slurm_array_task_count > 1:
-    atoms_list = atoms_list[
-        slurm_array_task_id::slurm_array_task_count
-    ]  # even distribution of rough comp cost, based on size
+    # even distribution of rough comp cost, based on size
+    atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]
 
 relax_results: dict[str, dict[str, Any]] = {}
 

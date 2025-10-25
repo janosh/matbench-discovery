@@ -25,7 +25,7 @@ repo: https://github.com/ICAMS/grace-tensorpotential
 doi: https://doi.org/10.48550/arXiv.2508.17936
 paper: https://arxiv.org/abs/2508.17936
 url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation
-# pr_url:
+pr_url: https://github.com/janosh/matbench-discovery/pull/283
 # checkpoint URL copied from https://github.com/ICAMS/grace-tensorpotential/blob/3115a931/tensorpotential/calculator/foundation_models.py#L89
 checkpoint_url: https://ruhr-uni-bochum.sciebo.de/s/s6YrAAk9aTjQBd8
 
@@ -65,9 +65,9 @@ hyperparams:
 metrics:
   phonons:
     kappa_103:
-    κ_SRME: 0.169
-    pred_file: models/grace/grace-2l-oam-l/grace_2l_oam_l_LTC_FIRE_2SR_force1e-05_sym1e-05_k_srme.json.gz
-    pred_file_url: https://figshare.com/files/57799810
+      κ_SRME: 0.169
+      pred_file: models/grace/grace-2l-oam-l/grace_2l_oam_l_LTC_FIRE_2SR_force1e-05_sym1e-05_k_srme.json.gz
+      pred_file_url: https://figshare.com/files/57799810
   geo_opt:
     pred_file: models/grace/grace-2l-oam-l/grace_2l_oam_l-wbm-IS2RE-FIRE.jsonl.gz
     pred_file_url: https://figshare.com/files/57799696
