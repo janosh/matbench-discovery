@@ -6,13 +6,14 @@ import pandas as pd
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 from pymatviz.enums import Key
+from pymatviz.typing import AnyStructure
 from tqdm import tqdm
 
 from matbench_discovery.enums import MbdKey
 
 
 def get_sym_info_from_structs(
-    structures: dict[str, Structure],
+    structures: dict[str, AnyStructure],
     *,
     pbar: bool | dict[str, Any] = True,
     symprec: float = 1e-2,
@@ -36,7 +37,7 @@ def get_sym_info_from_structs(
     import moyopy
     from moyopy.interface import MoyoAdapter
 
-    results: dict[str, dict[str, str | int | list[str]]] = {}
+    results: dict[str, dict[str, str | int | list[str] | float | None]] = {}
     iterator = structures.items()
     if pbar:
         pbar_kwargs = pbar if isinstance(pbar, dict) else {}

@@ -91,10 +91,10 @@ def calc_kappa_for_structure(
     init_info = deepcopy(atoms.info)
     formula = atoms.get_chemical_formula()
     info_dict: dict[str, Any] = {
-        Key.formula: formula,
-        "errors": [],
-        "error_traceback": [],
+        str(Key.mat_id): mat_id,
+        str(Key.formula): formula,
     }
+    err_dict: dict[str, list[str]] = {"errors": [], "error_traceback": []}
     optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
     # Initialize variables that might be needed in error handling
@@ -135,9 +135,9 @@ def calc_kappa_for_structure(
     except Exception as exc:
         warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"] += [f"RelaxError: {exc!r}"]
-        info_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict, None
+        err_dict["errors"] += [f"RelaxError: {exc!r}"]
+        err_dict["error_traceback"] += [traceback.format_exc()]
+        return mat_id, info_dict | relax_dict | err_dict, None
 
     # Calculation of force sets
     try:
@@ -175,13 +175,13 @@ def calc_kappa_for_structure(
         )
 
         if not ltc_condition:
-            return mat_id, info_dict | relax_dict | freqs_dict, force_results
+            return mat_id, info_dict | relax_dict | freqs_dict | err_dict, force_results
 
     except Exception as exc:
         warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"] += [f"ForceConstantError: {exc!r}"]
-        info_dict["error_traceback"] += [traceback.format_exc()]
+        err_dict["errors"] += [f"ForceConstantError: {exc!r}"]
+        err_dict["error_traceback"] += [traceback.format_exc()]
         return mat_id, info_dict | relax_dict, force_results
 
     # Calculation of conductivity
@@ -189,16 +189,20 @@ def calc_kappa_for_structure(
         ph3, kappa_dict, _cond = ltc.calculate_conductivity(
             ph3, temperatures=temperatures
         )
-        return mat_id, info_dict | relax_dict | freqs_dict | kappa_dict, force_results
+        return (
+            mat_id,
+            info_dict | relax_dict | freqs_dict | kappa_dict | err_dict,
+            force_results,
+        )
 
     except Exception as exc:
         warnings.warn(
             f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
         )
         traceback.print_exc()
-        info_dict["errors"] += [f"ConductivityError: {exc!r}"]
-        info_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict | freqs_dict, force_results
+        err_dict["errors"] += [f"ConductivityError: {exc!r}"]
+        err_dict["error_traceback"] += [traceback.format_exc()]
+        return mat_id, info_dict | relax_dict | freqs_dict | err_dict, force_results
 
 
 # Relaxation parameters

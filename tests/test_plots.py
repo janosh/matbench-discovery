@@ -52,7 +52,7 @@ def test_cumulative_metrics(
 def test_cumulative_metrics_raises() -> None:
     with pytest.raises(
         ValueError,
-        match="invalid_metrics={'invalid'}, should be case-insensitive subset of",
+        match=r"invalid_metrics=\{'invalid'\}, should be case-insensitive subset of",
     ):
         cumulative_metrics(
             e_above_hull_true=df_wbm[MbdKey.each_true],

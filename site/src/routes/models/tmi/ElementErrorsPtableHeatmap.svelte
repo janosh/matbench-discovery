@@ -7,16 +7,6 @@
   import Select from 'svelte-multiselect'
   import per_elem_each_errors from '../per-element-each-errors.json'
 
-  interface Props extends ComponentProps<typeof PeriodicTable> {
-    color_scale?: D3InterpolateName | ((num: number) => string)
-    active_element?: ChemicalElement | null
-    models?: string[]
-    // must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
-    current_model?: string[]
-    manual_cbar_max?: boolean
-    normalized?: boolean
-    cbar_max?: number | null
-  }
   let {
     color_scale = $bindable(`interpolateViridis`),
     active_element = $bindable(null),
@@ -26,7 +16,16 @@
     normalized = $bindable(true),
     cbar_max = $bindable(0.3),
     ...rest
-  }: Props = $props()
+  }: ComponentProps<typeof PeriodicTable> & {
+    color_scale?: D3InterpolateName | ((num: number) => string)
+    active_element?: ChemicalElement | null
+    models?: string[]
+    // must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
+    current_model?: string[]
+    manual_cbar_max?: boolean
+    normalized?: boolean
+    cbar_max?: number | null
+  } = $props()
 
   const test_set_std_key = `Test set standard deviation`
 

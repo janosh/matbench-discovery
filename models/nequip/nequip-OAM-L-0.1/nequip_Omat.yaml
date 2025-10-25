@@ -8,7 +8,7 @@ S_Huber_delta: 0.1
 
 seed: 42
 cutoff_radius: 6.0
-num_neighbours_mean: 62.012104256525795
+num_neighbors_mean: 62.012104256525795
 monitored_metric: val0_epoch/weighted_sum
 
 data_transforms:
@@ -228,7 +228,7 @@ training_module:
       per_type_energy_shifts_trainable: false
       per_type_energy_scales: ${per_type_energy_scales}
       per_type_energy_scales_trainable: true
-      avg_num_neighbors: ${num_neighbours_mean} # 61.99263166031629  # for R = 6 Å
+      avg_num_neighbors: ${num_neighbors_mean} # 61.99263166031629  # for R = 6 Å
 
       pair_potential:
         _target_: nequip.nn.pair_potential.ZBL

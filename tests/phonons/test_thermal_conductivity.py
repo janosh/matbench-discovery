@@ -7,6 +7,7 @@ from ase.build import bulk
 from ase.calculators.calculator import Calculator
 from ase.calculators.emt import EMT
 from phono3py.api_phono3py import Phono3py
+from phono3py.conductivity.wigner_rta import ConductivityWignerRTA
 from phonopy.structure.atoms import PhonopyAtoms
 from pymatviz.enums import Key
 
@@ -201,6 +202,10 @@ def test_calculate_conductivity(
     }
     assert set(kappa_dict) >= required_keys
     assert all(isinstance(val, np.ndarray) for val in kappa_dict.values())
+    assert isinstance(kappa, ConductivityWignerRTA)
+    assert kappa.frequencies.shape == (3, 3)
+    assert kappa.grid_points.shape == (3,)
+    assert kappa.gamma.shape == (1, 1, 3, 3)
 
 
 def test_calculate_mode_kappa_tot() -> None:

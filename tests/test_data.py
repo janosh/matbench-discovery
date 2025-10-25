@@ -75,7 +75,7 @@ def test_glob_to_df(
     df_mixed: pd.DataFrame,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    os.makedirs(f"{tmp_path}", exist_ok=True)
+    os.makedirs(tmp_path, exist_ok=True)
     df_mixed.to_csv(f"{tmp_path}/dummy_df.csv", index=False)
     df_mixed.to_json(f"{tmp_path}/dummy_df.json")
 
@@ -310,7 +310,7 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
     # Test pred_col not in predictions file
     with (
         patch("pandas.read_csv", return_value=df_float),
-        pytest.raises(ValueError, match="pred_col.*not found in"),
+        pytest.raises(ValueError, match=r"pred_col.*not found in"),
     ):
         load_df_wbm_with_preds(models=["alignn"])
 

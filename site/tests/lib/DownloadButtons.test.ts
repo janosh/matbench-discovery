@@ -1,5 +1,5 @@
 import { handle_export } from '$lib/table-export'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 type ExportState = {
   export_error: string | null
@@ -32,11 +32,6 @@ describe(`Download Buttons UI`, () => {
         ? ({ href: ``, download: ``, click: mock_click } as unknown as HTMLAnchorElement)
         : document.createElement(tag)
     )
-  })
-
-  afterEach(() => {
-    vi.clearAllMocks()
-    document.body.innerHTML = ``
   })
 
   it(`has all download buttons with correct structure and formatting`, () => {

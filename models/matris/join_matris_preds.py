@@ -61,7 +61,7 @@ df_preds[e_form_matris_col] = df_matris[e_form_matris_col]
 
 
 # %%
-fig = pmv.density_scatter_plotly(
+fig = pmv.density_scatter(
     df=df_preds, x=MbdKey.e_form_dft, y=e_form_matris_col, template="pymatviz_white"
 )
 img_path = f"{module_dir}/{Model.matris_v050_mptrj.key}-e-form-parity.html"

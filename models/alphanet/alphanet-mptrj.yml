@@ -78,7 +78,7 @@ hyperparams:
   epochs: 200
   n_layers: 6
   n_hidden_channels: 256
-  n_radial_guassian_basis: 256
+  n_radial_gaussian_basis: 256
   n_heads: 24
   graph_construction_radius: 6.0 # Å, from table 6 in arXiv:2501.07155
   max_neighbors: .inf # max_num_neighbors_threshold seems to be unused in https://github.com/zmyybc/AlphaNet/blob/243fe71cb9/alphanet/models/graph.py#L28

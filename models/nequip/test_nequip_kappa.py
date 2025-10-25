@@ -5,8 +5,7 @@ PhononDB-PBE dataset, using a NequIP model.
 Templated from https://github.com/janosh/matbench-discovery/blob/main/models/mace/calc_kappa_mace_ray_parallelized.py
 """
 
-# uses matbench-discovery matbench-discovery commit ID 012ccfe,
-# k_srme commit ID 0269a946, pymatviz v0.15.1
+# uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
 
 import contextlib
 import json
@@ -86,13 +85,13 @@ slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", os.getenv("SLURM_JOBID", "d
 # slurm_array_task_id = 104
 # slurm_array_task_count = 128
 
-matching_files = glob(f"{compile_path}")
+matching_files = glob(compile_path)
 if len(matching_files) == 1:
     compiled_model_file = next(iter(matching_files))
-elif os.path.exists(f"{compile_path}"):
-    compiled_model_file = f"{compile_path}"
+elif os.path.isfile(compile_path):
+    compiled_model_file = compile_path
 else:
-    raise FileNotFoundError(f"No compiled model file was not found at {compile_path}!")
+    raise FileNotFoundError(f"Compiled model file not found at {compile_path}!")
 
 
 def calc_kappa_for_structure(
@@ -156,10 +155,10 @@ def calc_kappa_for_structure(
     init_info = deepcopy(atoms.info)
     mat_name = atoms.info["name"]
     info_dict: dict[str, Any] = {
-        "name": mat_name,
-        "errors": [],
-        "error_traceback": [],
+        str(Key.mat_id): mat_id,
+        str(Key.formula): mat_name,
     }
+    err_dict: dict[str, list[str]] = {"errors": [], "error_traceback": []}
 
     filter_cls: type[Filter] = {
         "frechet": FrechetCellFilter,
@@ -218,9 +217,9 @@ def calc_kappa_for_structure(
     except Exception as exc:
         warnings.warn(f"Failed to relax {mat_name=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"] += [f"RelaxError: {exc!r}"]
-        info_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict, None
+        err_dict["errors"] += [f"RelaxError: {exc!r}"]
+        err_dict["error_traceback"] += [traceback.format_exc()]
+        return mat_id, info_dict | relax_dict | err_dict, None
 
     # Calculation of force sets
     try:
@@ -261,30 +260,34 @@ def calc_kappa_for_structure(
         )
 
         if not ltc_condition:
-            return mat_id, info_dict | relax_dict | freqs_dict, force_results
+            return mat_id, info_dict | relax_dict | freqs_dict | err_dict, force_results
 
     except Exception as exc:
         warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"] += [f"ForceConstantError: {exc!r}"]
-        info_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict, force_results
+        err_dict["errors"] += [f"ForceConstantError: {exc!r}"]
+        err_dict["error_traceback"] += [traceback.format_exc()]
+        return mat_id, info_dict | relax_dict | err_dict, force_results
 
     # Calculation of conductivity
     try:
         ph3, kappa_dict, _cond = ltc.calculate_conductivity(
             ph3, temperatures=temperatures
         )
-        return mat_id, info_dict | relax_dict | freqs_dict | kappa_dict, force_results
+        return (
+            mat_id,
+            info_dict | relax_dict | freqs_dict | kappa_dict | err_dict,
+            force_results,
+        )
 
     except Exception as exc:
         warnings.warn(
             f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
         )
         traceback.print_exc()
-        info_dict["errors"] += [f"ConductivityError: {exc!r}"]
-        info_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict | freqs_dict, force_results
+        err_dict["errors"] += [f"ConductivityError: {exc!r}"]
+        err_dict["error_traceback"] += [traceback.format_exc()]
+        return mat_id, info_dict | relax_dict | freqs_dict | err_dict, force_results
 
 
 job_name = f"kappa-103-{ase_optimizer}-dist={displacement_distance}-{fmax=}-{symprec=}"
@@ -329,9 +332,9 @@ kappa_results: dict[str, dict[str, Any]] = {}
 force_results: dict[str, dict[str, Any]] = {}
 
 for idx, atoms in enumerate(tqdm(atoms_list, desc="Calculating kappa...")):
-    mat_id, result_dict, force_dict = calc_kappa_for_structure(  # ty: ignore
+    mat_id, result_dict, force_dict = calc_kappa_for_structure(  # type: ignore[missing-argument]
         atoms=atoms,
-        **remote_params,
+        **remote_params,  # type: ignore[invalid-argument-type]
         task_id=idx,
     )
     kappa_results[mat_id] = result_dict

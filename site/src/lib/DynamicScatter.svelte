@@ -16,19 +16,18 @@
   } from './labels'
   import { get_nested_value } from './metrics'
 
-  interface Props extends HTMLAttributes<HTMLDivElement> {
-    models: ModelData[]
-    model_filter?: (model: ModelData) => boolean
-    point_color?: string | null
-    show_model_labels?: boolean
-  }
   let {
     models,
     model_filter = () => true,
     point_color = null,
     show_model_labels = true,
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLDivElement> & {
+    models: ModelData[]
+    model_filter?: (model: ModelData) => boolean
+    point_color?: string | null
+    show_model_labels?: boolean
+  } = $props()
 
   const date_key = METADATA_COLS.date_added.key
   const params_key = HYPERPARAMS.model_params.key
@@ -42,6 +41,7 @@
   })
   let log = $state({ x: false, y: false, color_value: false, size_value: false })
   let is_fullscreen = $state(false)
+  let show_extra_controls = $state(false)
   let container_el: HTMLDivElement | null = null
 
   // State for plot controls
@@ -145,6 +145,7 @@
   let series = $derived({
     x: plot_data.map((item) => item.x as number),
     y: plot_data.map((item) => item.y as number),
+    markers: `points` as const,
     point_style: plot_data.map((item) => ({ fill: point_color ?? item.color })),
     metadata: plot_data.map((item) => item.metadata),
     color_values: point_color === null
@@ -178,19 +179,22 @@
         is_fullscreen = true
       }
     }}
-    aria-label={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
-    title={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
+    aria-label="{is_fullscreen ? `Exit` : `Enter`} fullscreen"
+    title="{is_fullscreen ? `Exit` : `Enter`} fullscreen"
   >
     <Icon icon="{is_fullscreen ? `Exit` : ``}Fullscreen" />
   </button>
 
   <DraggablePane
+    bind:show={show_extra_controls}
     toggle_props={{
+      class: `settings-toggle`,
       style:
         `position: absolute; top: 20px; right: 20px; background-color: var(--btn-bg); border-radius: 50%; padding: 4pt;`,
     }}
     pane_props={{
       style: `border: 1px solid var(--border);`,
+      'aria-hidden': !show_extra_controls,
     }}
   >
     <div style="display: grid; grid-template-columns: auto 1fr; gap: 8pt 1em">
@@ -350,21 +354,26 @@
   >
     <ScatterPlot
       series={[series]}
-      x_label={axes.x?.label}
-      y_label={axes.y?.label}
-      x_lim={axes.x?.range ? [...axes.x.range] : undefined}
-      y_lim={axes.y?.range ? [...axes.y.range] : undefined}
-      x_format={axes.x?.format}
-      y_format={axes.y?.format}
-      markers="points"
-      x_scale_type={log.x ? `log` : `linear`}
-      y_scale_type={log.y ? `log` : `linear`}
-      x_label_shift={{ y: -50 }}
-      y_label_shift={{ x: 50, y: [date_key, params_key].includes(axes.y?.key ?? ``) ? -40 : -10 }}
-      {x_ticks}
-      {y_ticks}
-      {x_grid}
-      {y_grid}
+      x_axis={{
+        label: axes.x?.label,
+        format: axes.x?.format,
+        range: axes.x?.range,
+        scale_type: log.x ? `log` : `linear`,
+        label_shift: { y: -50 },
+        ticks: x_ticks,
+      }}
+      y_axis={{
+        label: axes.y?.label,
+        format: axes.y?.format,
+        range: axes.y?.range,
+        scale_type: log.y ? `log` : `linear`,
+        label_shift: {
+          x: 50,
+          y: [date_key, params_key].includes(axes.y?.key ?? ``) ? -40 : -10,
+        },
+        ticks: y_ticks,
+      }}
+      display={{ x_grid, y_grid }}
       color_scale={{ scheme: color_scheme, type: log.color_value ? `log` : `linear` }}
       size_scale={{
         radius_range: [5 * size_multiplier, 20 * size_multiplier],
@@ -385,6 +394,7 @@
       point_events={{
         onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
       }}
+      controls={{ toggle_props: { style: `position: absolute; top: 10px; right: 50px` } }}
       {...rest}
     >
       {#snippet tooltip({ x_formatted, y_formatted, metadata })}

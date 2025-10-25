@@ -5,17 +5,25 @@
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
   import { ColorBar, luminance } from 'matterviz'
-  import { RadioButtons } from 'svelte-multiselect'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
+
+  // Accept data prop for SvelteKit compliance (used for testing initial_show_n_best)
+  let { data }: { data?: { initial_show_n_best?: number } } = $props()
 
   let sort_by: Label = $state(ALL_METRICS.CPS)
   let show_non_compliant: boolean = $state(true)
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
-  let show_n_best: number = $state(MODELS.length) // show only best models
   const min_models: number = 2
+  // Enforce minimum and maximum when initializing from prop
+  let show_n_best: number = $state(
+    Math.min(
+      MODELS.length,
+      Math.max(min_models, data?.initial_show_n_best ?? MODELS.length),
+    ),
+  )
   let sort_by_path: string = $derived(
     `${sort_by.path ?? ``}.${sort_by.key}`.replace(/^\./, ``),
   )
@@ -74,7 +82,13 @@
     &ensp; &emsp;&emsp; Sort
     <input type="number" min={min_models} max={models.length} bind:value={show_n_best} />
     best models
-    <RadioButtons bind:selected={order} options={[`asc`, `desc`]} /> by:
+    <span class="radio-group">
+      {#each [`asc`, `desc`] as value (value)}
+        <label>
+          <input type="radio" name="order" {value} bind:group={order} /> {value}
+        </label>
+      {/each}
+    </span> by:
   </span>
 
   <ul>
@@ -205,8 +219,8 @@
     place-items: center;
     place-content: center;
   }
-  span :global(div.zoo-radio-btn span) {
-    padding: 1pt 4pt;
+  .radio-group {
+    gap: 5pt;
   }
   input[type='number'] {
     text-align: center;
