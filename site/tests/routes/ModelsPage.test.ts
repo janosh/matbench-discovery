@@ -1,13 +1,10 @@
 import { MODELS } from '$lib/models.svelte'
 import { default as ModelsPage } from '$routes/models/+page.svelte'
 import { mount, tick } from 'svelte'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { doc_query } from '../index'
 
 describe(`Models Page`, () => {
-  afterEach(() => {
-    document.body.innerHTML = ``
-  })
-
   it(`renders model sorting controls`, () => {
     mount(ModelsPage, { target: document.body })
 
@@ -120,9 +117,7 @@ describe(`Models Page`, () => {
   it(`renders model limiting controls correctly`, () => {
     mount(ModelsPage, { target: document.body })
 
-    const n_best_input = document.querySelector(
-      `input[type="number"]`,
-    ) as HTMLInputElement
+    const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
 
     expect(n_best_input).toBeDefined()
     expect(n_best_input.type).toBe(`number`)

@@ -1,7 +1,7 @@
 import DynamicScatter from '$lib/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { mount } from 'svelte'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { doc_query, is_hidden } from '../index'
 
 const pane_selector = `[aria-label="Draggable pane"]`
@@ -81,11 +81,6 @@ describe(`DynamicScatter.svelte`, () => {
       document.dispatchEvent(new Event(`fullscreenchange`))
       return Promise.resolve()
     })
-  })
-
-  afterEach(() => {
-    document.body.innerHTML = ``
-    vi.restoreAllMocks()
   })
 
   it(`mounts correctly with default props`, () => {

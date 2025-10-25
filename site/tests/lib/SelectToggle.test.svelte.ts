@@ -1,14 +1,8 @@
 import SelectToggle from '$lib/SelectToggle.svelte'
 import { mount } from 'svelte'
-import { afterEach, describe, expect, it, test, vi } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 
 describe(`SelectToggle.svelte`, () => {
-  // Clean up after each test
-  afterEach(() => {
-    document.body.innerHTML = ``
-    vi.restoreAllMocks()
-  })
-
   test.each([
     {
       name: `basic options`,

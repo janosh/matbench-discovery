@@ -1,5 +1,5 @@
 import type { Mock, MockInstance } from 'vitest'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Check if running in Deno environment
 const IS_DENO = `Deno` in globalThis
@@ -261,10 +261,6 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
           write: vi.fn().mockReturnValue(new ArrayBuffer(100)),
         }))
       }
-    })
-
-    afterEach(() => {
-      if (format === `Excel`) vi.doUnmock(`xlsx`)
     })
 
     it(`generates ${format} with proper data and excludes SVG columns`, async () => {
