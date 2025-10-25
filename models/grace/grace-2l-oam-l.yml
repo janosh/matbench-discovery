@@ -84,5 +84,5 @@ metrics:
     unique_prototypes:
 
   diatomics:
-    # pred_file: models/grace/grace-2l-oam/2025-02-19-diatomics.json.gz
-    # pred_file_url: https://figshare.com/files/52467527
+    pred_file: models/grace/grace-2l-oam/2025-02-19-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/52467527

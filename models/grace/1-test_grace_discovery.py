@@ -6,9 +6,6 @@ https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/test_seve
 Then refactored for GRACE
 """
 
-# uses matbench-discovery matbench-discovery commit ID 012ccfe,
-# k_srme commit ID 0269a946, pymatviz v0.15.1
-
 import os
 import warnings
 from typing import Any, Literal
@@ -28,13 +25,13 @@ from matbench_discovery import timestamp
 from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import Task
 
+# uses matbench-discovery matbench-discovery commit ID 012ccfe,
+# k_srme commit ID 0269a946, pymatviz v0.15.1
+
 
 # %% this config is editable
 smoke_test = False  # True
-
-pot_name = "grace_2l_oam_l"
-model_name = pot_name.lower()
-
+model_name = "grace_2l_oam_l"
 full_model_name = "GRACE-2L-OMAT-large-ft-AM"
 task_type = Task.IS2RE
 ase_optimizer = "GOQN"  # faster than "FIRE" from tests, gives the same results;
