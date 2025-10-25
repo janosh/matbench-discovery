@@ -1,4 +1,4 @@
-model_name: GRACE-2L-OAM-L
+model_name: GRACE-2L-OAM-L # GRACE-2L-OMAT-large-ft-AM
 model_key: grace_2l_oam_l
 model_version: 0.5.2
 date_added: '2025-09-09'
@@ -65,24 +65,91 @@ hyperparams:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.169
+      κ_SRME: 0.1688
       pred_file: models/grace/grace-2l-oam-l/grace_2l_oam_l_LTC_FIRE_2SR_force1e-05_sym1e-05_k_srme.json.gz
-      pred_file_url: https://figshare.com/files/57799810
+      pred_file_url: https://figshare.com/files/59046998
+      κ_SRE: 0.064
   geo_opt:
     pred_file: models/grace/grace-2l-oam-l/grace_2l_oam_l-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/57799696
+    pred_file_url: https://figshare.com/files/59046950
     struct_col: grace_2l_oam_l_structure
-
+    symprec=1e-2:
+      rmsd: 0.0639 # unitless
+      n_sym_ops_mae: 1.7371 # unitless
+      symmetry_decrease: 0.0537 # fraction
+      symmetry_match: 0.8166 # fraction
+      symmetry_increase: 0.1226 # fraction
+      n_structures: 256958 # count
+      analysis_file: models/grace/grace-2l-oam-l/grace_2l_oam_l-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.4.csv.gz
+      analysis_file_url: https://figshare.com/files/59046989
+    symprec=1e-5:
+      rmsd: 0.0639 # unitless
+      n_sym_ops_mae: 1.8197 # unitless
+      symmetry_decrease: 0.0539 # fraction
+      symmetry_match: 0.7343 # fraction
+      symmetry_increase: 0.2067 # fraction
+      n_structures: 256958 # count
+      analysis_file: models/grace/grace-2l-oam-l/grace_2l_oam_l-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.4.csv.gz
+      analysis_file_url: https://figshare.com/files/59046995
   discovery:
     pred_file: models/grace/grace-2l-oam-l/grace_2l_oam_l-preds.csv.gz
-    pred_file_url: https://figshare.com/files/57799834
+    pred_file_url: https://figshare.com/files/59046947
     pred_col: e_form_per_atom_grace_2l_oam_l
     full_test_set:
-
+      F1: 0.862 # fraction
+      DAF: 5.093 # dimensionless
+      Precision: 0.874 # fraction
+      Recall: 0.851 # fraction
+      Accuracy: 0.953 # fraction
+      TPR: 0.851 # fraction
+      FPR: 0.025 # fraction
+      TNR: 0.975 # fraction
+      FNR: 0.149 # fraction
+      TP: 37509.0 # count
+      FP: 5415.0 # count
+      TN: 207456.0 # count
+      FN: 6583.0 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.856 # dimensionless
+      missing_preds: 7 # count
     most_stable_10k:
-
+      F1: 0.98 # fraction
+      DAF: 6.28 # dimensionless
+      Precision: 0.96 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.96 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9600.0 # count
+      FP: 400.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.025 # eV/atom
+      RMSE: 0.088 # eV/atom
+      R2: 0.835 # dimensionless
+      missing_preds: 0 # count
     unique_prototypes:
+      F1: 0.883 # fraction
+      DAF: 5.84 # dimensionless
+      Precision: 0.893 # fraction
+      Recall: 0.874 # fraction
+      Accuracy: 0.964 # fraction
+      TPR: 0.874 # fraction
+      FPR: 0.019 # fraction
+      TNR: 0.981 # fraction
+      FNR: 0.126 # fraction
+      TP: 29178.0 # count
+      FP: 3506.0 # count
+      TN: 178608.0 # count
+      FN: 4196.0 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.862 # dimensionless
+      missing_preds: 5 # count
 
   diatomics:
     pred_file: models/grace/grace-2l-oam/2025-02-19-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/52467527
+    pred_file_url: https://figshare.com/files/59047001

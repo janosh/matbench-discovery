@@ -8,6 +8,7 @@ Uses matbench-discovery commit ID 012ccfe, k_srme commit ID 0269a946,
 pymatviz v0.15.1.
 """
 
+import os
 import warnings
 from glob import glob
 
@@ -26,6 +27,7 @@ e_form_potential_col = f"e_form_per_atom_{model_name}"
 results_dir = "./results"
 
 out_path = f"{results_dir}/{model_name}"
+os.makedirs(os.path.dirname(out_path), exist_ok=True)
 files = sorted(glob(f"{results_dir}/{model_name}/*.json.gz"))
 
 dfs_loaded = {}

@@ -395,7 +395,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def pr_url(self) -> str:
         """Pull request URL in which the model was originally added to the repo."""
-        return self.metadata["pr_url"]
+        try:
+            return self.metadata["pr_url"]
+        except KeyError as exc:
+            exc.add_note(f"{self.rel_path!r} missing required field 'pr_url'")
+            raise
 
     @property
     def key(self) -> str:
@@ -457,8 +461,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             "not applicable",
         ):
             return None
-        rel_path = phonons_metrics.get("kappa_103", {}).get("pred_file")
-        file_url = phonons_metrics.get("kappa_103", {}).get("pred_file_url")
+        kappa103 = phonons_metrics.get("kappa_103") or {}
+        rel_path = kappa103.get("pred_file")
+        file_url = kappa103.get("pred_file_url", "")
         if not rel_path:
             raise ValueError(
                 f"metrics.phonons.kappa_103.pred_file not found in {self.rel_path!r}"

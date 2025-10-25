@@ -18,8 +18,6 @@
 #   Upload large files to figshare, commit models' YAML files
 ################################
 
-
-
 ## This script imitates SLURM task arrays on a local machine with multiple GPUs
 export TF_CPP_MIN_LOG_LEVEL=3
 
@@ -43,7 +41,7 @@ export SLURM_JOB_ID="production"
 # Function to kill all child processes when the script receives a termination signal
 cleanup() {
   echo "Terminating all child processes..."
-  pkill -P $$
+  kill -- -$$ 2>/dev/null  # Kill the entire process group
   exit 1
 }
 
@@ -52,8 +50,8 @@ trap cleanup SIGINT SIGTERM
 
 echo "MODEL_NAME=${MODEL_NAME}"
 echo "SLURM_ARRAY_TASK_COUNT=${SLURM_ARRAY_TASK_COUNT}"
-
 echo "Running 1-test_grace_discovery.py"
+
 for task_id in $(seq 0 $((SLURM_ARRAY_TASK_COUNT - 1))); do
   # Calculate the GPU index using the modulo operator
   gpu_index=$((task_id % NGPU))
