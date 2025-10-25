@@ -4,6 +4,7 @@ import { ALL_METRICS } from '$lib/labels'
 import { update_models_cps } from '$lib/models.svelte'
 import { mount } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { doc_query } from '../index'
 
 describe(`RadarChart`, () => {
   beforeEach(() => {
@@ -64,7 +65,7 @@ describe(`RadarChart`, () => {
     CPS_CONFIG.RMSD.weight = 0.1
 
     // Find and click the reset button
-    const reset_button = document.querySelector(`.reset-button`) as HTMLButtonElement
+    const reset_button = doc_query<HTMLButtonElement>(`.reset-button`)
     expect(reset_button).toBeDefined()
 
     reset_button.click()

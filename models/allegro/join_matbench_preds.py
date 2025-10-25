@@ -103,7 +103,7 @@ df_allegro[e_form_allegro_col] = [
     for formula, cse in tqdm(
         df_allegro.set_index(Key.formula)[Key.computed_structure_entry].items(),
         total=len(df_allegro),
-        desc="Getting formation energies",
+        desc="Computing corrected formation energies",
     )
 ]
 df_allegro = df_allegro.round(4)

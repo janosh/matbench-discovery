@@ -143,7 +143,7 @@ def main(
             if cell_opt:
                 atoms = FrechetCellFilter(atoms)
             optim_cls = OPTIMIZERS[ase_optimizer]
-            optimizer = optim_cls(atoms, logfile="/dev/null")
+            optimizer = optim_cls(atoms, logfile=None)
 
             optimizer.run(fmax=force_max, steps=max_steps)
             energy = atoms.get_potential_energy()  # relaxed energy
