@@ -19,8 +19,8 @@ from relaxation.ase_utils import batch_to_atoms
 from relaxation.ml_relaxation import ml_relax
 
 BASEDIR = "/home/gpu1/zetta/aixsim/1_umlff/datasets/matbench-discovery/1.0.0"
-with open(f"{BASEDIR}/wbm/2025-03-26-wbm-relaxed-structures.pkl", "rb") as f:
-    structs_wbm = pickle.load(f)  # noqa: S301 safe internal data
+with open(f"{BASEDIR}/wbm/2025-03-26-wbm-relaxed-structures.pkl", "rb") as file:
+    structs_wbm = pickle.load(file)  # noqa: S301 safe internal data
 
 
 def split_df(df: pd.DataFrame, batch_size: int) -> list[pd.DataFrame]:
@@ -131,17 +131,17 @@ def main() -> None:
         args.out, f"metadata_{args.rank:03d}_{args.worldsize}.json"
     )
     if os.path.isfile(metadata_json_path):
-        with open(metadata_json_path) as f:
-            metadata_old = json.load(f)
-        for k, v in metadata.items():
-            if v != metadata_old[k]:
+        with open(metadata_json_path) as file:
+            metadata_old = json.load(file)
+        for key, val in metadata.items():
+            if val != metadata_old[key]:
                 raise FileExistsError(
                     "Output folder already exists with "
                     "conflicting metadata. Please change --out."
                 )
     else:
-        with open(metadata_json_path, "w") as f:
-            json.dump(metadata, f)
+        with open(metadata_json_path, "w") as file:
+            json.dump(metadata, file)
 
     if os.path.isfile(output_jsonfile_name):
         print("results already exists!")
@@ -172,12 +172,12 @@ def main() -> None:
     relax_results = {}
     for batch_df in tqdm.tqdm(batch_lists):
         atoms_list = [
-            a2g.convert(Structure.from_dict(a).to_ase_atoms())
-            for a in batch_df[input_col].to_numpy().tolist()
+            a2g.convert(Structure.from_dict(atoms_dict).to_ase_atoms())
+            for atoms_dict in batch_df[input_col].to_numpy().tolist()
         ]
         mat_idx = batch_df.index.tolist()
-        for mat_id, stct in zip(mat_idx, atoms_list, strict=False):
-            stct.sid = mat_id
+        for mat_id, struct in zip(mat_idx, atoms_list, strict=False):
+            struct.sid = mat_id
         batch = Batch.from_data_list(atoms_list)
         n_traj, batch = ml_relax(batch, trainer, 500, args.fmax, relax_cell=True)
 
