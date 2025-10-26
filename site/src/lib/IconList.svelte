@@ -1,12 +1,11 @@
 <script lang="ts">
   import { Icon } from '$lib'
+  import type { HTMLAttributes } from 'svelte/elements'
   import type { IconName } from './icons'
 
-  interface Props {
-    icons: { id?: string; src?: string; name: string }[] | undefined
-    [key: string]: unknown
-  }
-  let { icons = $bindable([]), ...rest }: Props = $props()
+  let { icons = $bindable([]), ...rest }: HTMLAttributes<HTMLSpanElement> & {
+    icons?: { id?: string; src?: string; name: string }[]
+  } = $props()
 </script>
 
 {#each icons ?? [] as logo (logo.id ?? logo.src)}
@@ -15,21 +14,22 @@
       <Icon icon={logo.id.replace(`icon:`, ``) as IconName} />
     </span>
   {:else if logo.src}
-    {@const style = `margin: 0; height: 1em; ${rest.style ?? ``}`}
     <img
       src={logo.src}
       alt="{logo.name} logo"
       title={logo.name}
       {...rest}
-      {style}
+      style={`margin: 0; height: 1em; ${rest.style ?? ``}`}
     />
   {/if}
 {/each}
 
 <style>
-  span,
-  img {
-    filter: grayscale(100%);
+  :root[data-theme='light'] {
+    --logo-brightness: 0.5;
+  }
+  span, img {
+    filter: grayscale(100%) brightness(var(--logo-brightness, 1));
     height: 1em;
     width: auto;
     vertical-align: middle;

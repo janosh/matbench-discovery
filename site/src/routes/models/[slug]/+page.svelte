@@ -15,10 +15,7 @@
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import per_elem_each_errors from '../per-element-each-errors.json'
 
-  interface Props {
-    data: { model: ModelData }
-  }
-  let { data }: Props = $props()
+  let { data }: { data: { model: ModelData } } = $props()
 
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
@@ -33,13 +30,13 @@
 
 {#if data.model}
   {@const model = data.model}
-  {@const { missing_preds, missing_percent } = model.metrics?.discovery?.unique_prototypes ??
+  {@const { missing_preds } = model.metrics?.discovery?.unique_prototypes ??
     {}}
   <div class="model-detail">
-    <h1 style="font-size: 2.5em">{model.model_name}</h1>
+    <h1 style="font-size: 2.5em; margin: 0">{model.model_name}</h1>
 
     <section class="meta-info">
-      <div>
+      <span>
         <Icon icon="Versions" />
         Version: {#if model.repo?.startsWith(`http`)}
           <a
@@ -52,50 +49,41 @@
         {:else}
           {model.model_version}
         {/if}
-      </div>
+      </span>
 
-      <div>
-        <Icon icon="Calendar" />
-        Added: <span title="{days_added} days ago" {@attach tooltip()}>
-          {model.date_added}
-        </span>
-      </div>
+      <span title="{days_added} days ago" {@attach tooltip()}><Icon icon="Calendar" />
+        Added: {model.date_added}
+      </span>
 
-      <div>
-        <Icon icon="CalendarCheck" />
-        Published: <span title="{days_published} days ago" {@attach tooltip()}>
-          {model.date_published}
-        </span>
-      </div>
+      <span title="{days_published} days ago" {@attach tooltip()}>
+        <Icon icon="CalendarCheck" /> Published: {model.date_published}
+      </span>
 
-      <div>
-        <Icon icon="NeuralNetwork" />
-        <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
-          {format_num(model.model_params, `.3~s`)}
-        </span> parameters
-      </div>
+      <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
+        <Icon icon="NeuralNetwork" /> {format_num(model.model_params, `.3~s`)}
+        parameters
+      </span>
 
       {#if model.n_estimators > 1}
-        <div>
-          <Icon icon="Forest" />
-          <span>Ensemble {model.n_estimators} models</span>
-        </div>
+        <span><Icon icon="Forest" /> Ensemble of {model.n_estimators} models</span>
       {/if}
 
       {#if missing_preds != undefined}
-        <div>
+        <span
+          {@attach tooltip()}
+          title="Out of {format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, {format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances."
+        >
           <Icon icon="MissingMetadata" />
-          <span>
-            Missing preds: {format_num(missing_preds, `,.0f`)}
-            {#if missing_preds != 0}
-              <small> ({missing_percent})</small>
-            {/if}
-          </span>
-        </div>
+          Missing preds: {format_num(missing_preds, `,.0f`)}
+          {#if missing_preds != 0}
+            <small>
+              ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})</small>
+          {/if}
+        </span>
       {/if}
 
       {#if model.pypi}
-        <code style="background-color: transparent">
+        <code style="padding: 0 4pt; place-content: center">
           pip install {model.pypi.split(`/`).pop()}
           <CopyButton
             content={`pip install ${model.pypi.split(`/`).pop()}`}
@@ -110,7 +98,7 @@
     </section>
 
     <section class="links" {@attach tooltip()}>
-      {#if model.repo.startsWith(`http`)}
+      {#if model.repo?.startsWith(`http`)}
         <a
           href={model.repo}
           target="_blank"
@@ -191,13 +179,9 @@
         {#if pred_files.length > 0}
           <details
             class="pred-files"
-            use:click_outside={{
-              callback: (node) => {
-                if (node.open) node.open = false
-              },
-            }}
+            {@attach click_outside({ callback: (node) => node.open = false })}
           >
-            <summary title="Download model prediction files">
+            <summary>
               <Icon icon="Graph" /> Predictions
             </summary>
             <div class="dropdown">
@@ -222,8 +206,8 @@
           then ParityPlot
         }
           <!-- negative margin-bottom corrects for display: none plot title -->
-          <h3 style="margin: 1em auto -2em; text-align: center">
-            DFT vs ML {title}
+          <h3 style="margin: 1em auto -2em; text-align: center" class="toc-exclude">
+            ML vs DFT {title}
           </h3>
           <ParityPlot.default height="500" />
         {/await}
@@ -232,7 +216,7 @@
 
     {#if model.model_name in per_elem_each_errors}
       {@const heatmap_values = per_elem_each_errors?.[model.model_name]}
-      <h3 style="margin: 1em auto -1em; text-align: center">
+      <h3 style="margin: 1em auto -1em; text-align: center" class="toc-exclude">
         Convex hull distance prediction errors projected onto elements
       </h3>
       <PeriodicTable
@@ -277,11 +261,11 @@
             {#if author.affiliation}<span class="affiliation">
                 &ensp;{author.affiliation}
                 {#if org_logo}
-                  <IconList icons={[org_logo]} />
+                  &nbsp;<IconList icons={[org_logo]} />
                 {/if}
               </span>{/if}
             {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
-                <Icon icon="Contact" />
+                &nbsp;<Icon icon="Contact" />
               </a>{/if}
             {#if author.github}<a
                 href={author.github}
@@ -289,7 +273,7 @@
                 rel="noopener noreferrer"
                 aria-label="GitHub"
               >
-                <Icon icon="GitHub" />
+                &nbsp;<Icon icon="GitHub" />
               </a>{/if}
             {#if author.orcid}
               <a
@@ -298,7 +282,7 @@
                 rel="noopener noreferrer"
                 aria-label="ORCID"
               >
-                <Icon icon="Orcid" />
+                &nbsp;<Icon icon="Orcid" />
               </a>{/if}
           </li>
         {/each}
@@ -428,7 +412,7 @@
         <h2>Dependencies</h2>
         <ul>
           {#each Object.entries(model.requirements) as [pkg, version] (pkg)}
-            {@const href = version.startsWith(`http`)
+            {@const href = version?.startsWith(`http`)
           ? version
           : `https://pypi.org/project/${pkg}/${version}`}
             <li>
@@ -445,15 +429,11 @@
 {/if}
 
 <style>
-  section {
-    margin-bottom: 1em;
-  }
   h2 {
-    margin: 1em auto 0;
-    padding: 0;
+    margin: 2ex auto 0;
   }
-  h3 {
-    margin: 1em 0;
+  section {
+    text-wrap: balance;
   }
   section:is(.deps, .model-info) ul {
     display: flex;
@@ -462,7 +442,7 @@
     padding: 0;
   }
   section:is(.deps, .model-info) ul li {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--card-bg);
     padding: 2pt 6pt;
     border-radius: 3pt;
     text-align: center;
@@ -474,23 +454,20 @@
     display: block;
     font-weight: bold;
   }
-  .meta-info,
-  .links {
+  .meta-info, .links {
     display: flex;
     flex-wrap: wrap;
-    gap: 3ex;
+    gap: 2ex;
     place-content: center;
     margin: 2em auto;
   }
   .links :is(a, summary) {
     display: inline-flex;
-    align-items: center;
+    place-items: center;
     gap: 5px;
-    padding: 5px 10px;
-    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0 5pt;
+    background-color: var(--card-bg);
     border-radius: 5px;
-    text-decoration: none;
-    color: lightgray;
   }
   .links details {
     position: relative;
@@ -498,19 +475,15 @@
   }
   .links .dropdown {
     position: absolute;
-    margin-top: 5px;
-    background-color: var(--light-bg);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 5px;
     z-index: 3;
     min-width: max-content;
+    box-shadow: 0 0 10px var(--shadow);
   }
   .links .dropdown a {
     display: block;
-    background: none;
-  }
-  .links .dropdown a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
   }
   li {
     margin: 1ex 0;

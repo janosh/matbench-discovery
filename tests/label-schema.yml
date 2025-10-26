@@ -38,7 +38,6 @@ definitions:
       cell_style: { type: string, description: 'CSS string for cell style' }
       style: { type: string, description: 'CSS string for cell style' }
       symprec: { type: string, description: 'Symprec value for the metric' }
-      svg_label: { type: string, description: 'SVG label for the metric' }
       scale_type:
         type: string
         enum: ['log', 'linear']
@@ -76,7 +75,6 @@ definitions:
       checkpoint_license: { $ref: '#/definitions/Label' }
       code_license: { $ref: '#/definitions/Label' }
       missing_preds: { $ref: '#/definitions/Label' }
-      missing_percent: { $ref: '#/definitions/Label' }
       'Run Time (h)': { $ref: '#/definitions/Label' }
       org: { $ref: '#/definitions/Label' }
     required:
@@ -91,7 +89,6 @@ definitions:
       - checkpoint_license
       - code_license
       - missing_preds
-      - missing_percent
       - 'Run Time (h)'
       - org
     additionalProperties: false

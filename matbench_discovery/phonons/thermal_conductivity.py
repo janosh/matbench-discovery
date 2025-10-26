@@ -11,7 +11,7 @@ conductivity metric to larger test sets.
 import warnings
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from ase import Atoms
@@ -23,11 +23,15 @@ from tqdm import tqdm
 
 from matbench_discovery.enums import MbdKey
 
+if TYPE_CHECKING:
+    from phono3py.conductivity.wigner_rta import ConductivityWignerRTA
+
 
 def calculate_fc2_set(
     ph3: Phono3py, calculator: Calculator, pbar_kwargs: dict[str, Any] | None = None
 ) -> np.ndarray:
-    """Calculate 2nd order force constants.
+    """Calculate 2nd order force constants. Requires initializing Phono3py with an FC2
+    supercell matrix.
 
     Args:
         ph3 (Phono3py): Phono3py object for which to calculate force constants.
@@ -40,12 +44,14 @@ def calculate_fc2_set(
     """
     print(f"Computing FC2 force set in {ph3.unitcell.formula}.")
 
-    forces = []
+    forces: list[np.ndarray] = []
     n_atoms = len(ph3.phonon_supercell)
 
     displacements = ph3.phonon_supercells_with_displacements
     for supercell in tqdm(
-        displacements, desc=f"FC2 calculation: {ph3.unitcell.formula}", **pbar_kwargs
+        displacements,
+        desc=f"FC2 calculation: {ph3.unitcell.formula}",
+        **pbar_kwargs or {},
     ):
         if supercell is not None:
             atoms = Atoms(
@@ -215,7 +221,7 @@ def calculate_conductivity(
     boundary_mfp: float = 1e6,
     mode_kappa_thresh: float = 1e-6,
     **kwargs: Any,
-) -> tuple[Phono3py, dict[str, np.ndarray], Any]:
+) -> tuple[Phono3py, dict[str, np.ndarray], "ConductivityWignerRTA"]:
     """Calculate thermal conductivity.
 
     Args:
@@ -228,19 +234,19 @@ def calculate_conductivity(
         **kwargs (Any): Passed to Phono3py.run_thermal_conductivity().
 
     Returns:
-        tuple[Phono3py, dict[str, np.ndarray], Any]: (Phono3py object, conductivity
-            dict, conductivity object)
+        tuple[Phono3py, dict[str, np.ndarray], ConductivityWignerRTA]: (Phono3py object,
+            conductivity dict, conductivity object)
     """
     ph3.init_phph_interaction(symmetrize_fc3q=False)
 
     ph3.run_thermal_conductivity(
+        **kwargs,
         temperatures=temperatures,
         is_isotope=True,
         # use type="wigner" to include both wave-like coherence (kappa_c) and
         # particle-like (kappa_p) conductivity contributions
         conductivity_type="wigner",
         boundary_mfp=boundary_mfp,
-        **kwargs,
     )
 
     kappa = ph3.thermal_conductivity
@@ -264,7 +270,7 @@ def calculate_conductivity(
     ) / np.sum(kappa_dict[Key.mode_weights])
 
     kappa_p_rta = kappa_dict[MbdKey.kappa_p_rta]
-    if np.any((sum_mode_kappa_tot - kappa_p_rta) > mode_kappa_thresh):
+    if np.any(np.abs(sum_mode_kappa_tot - kappa_p_rta) > mode_kappa_thresh):
         warnings.warn(
             f"Total mode kappa does not sum to total kappa. {sum_mode_kappa_tot=}, "
             f"{kappa_p_rta=}",

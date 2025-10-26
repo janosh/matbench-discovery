@@ -1,7 +1,5 @@
 """Test metrics/__init__.py module."""
 
-import sys
-
 from matbench_discovery.enums import TestSubset
 from matbench_discovery.metrics import metrics_df_from_yaml
 
@@ -19,9 +17,10 @@ def test_metrics_df_from_yaml_discovery() -> None:
 def test_metrics_df_from_yaml_phonons() -> None:
     """Test extracting phonon metrics."""
     df_metrics = metrics_df_from_yaml(["phonons.kappa_103"])
-    # need different char encoding on Windows and linux
-    kappa_col = "\xce\xba_SRME" if sys.platform == "win32" else "\u03ba_SRME"
-    assert kappa_col in df_metrics
+    # Find the kappa column regardless of exact string representation
+    kappa_cols = [col for col in df_metrics if col.endswith("_SRME")]
+    assert len(kappa_cols) == 1, f"{df_metrics.columns=}"
+    kappa_col = kappa_cols[0]
     assert df_metrics.shape >= (16, 3)
     assert all(df_metrics[kappa_col] >= 0), f"{df_metrics[kappa_col]=}"
 

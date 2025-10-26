@@ -21,7 +21,7 @@ def download_file(file_path: str, url: str) -> None:
 
         with open(file_path, mode="wb") as file:
             file.write(response.content)
-    except requests.exceptions.RequestException:
+    except requests.RequestException:
         print(f"Error downloading {url=}\nto {file_path=}.\n{traceback.format_exc()}")
 
 

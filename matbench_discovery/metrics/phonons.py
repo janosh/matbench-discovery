@@ -9,12 +9,11 @@ The metrics include:
   Overpredictions of kappa-contributions from one mode will not cancel against
   underpredictions from another mode.
 
-Code in this module is adapted from https://github.com/MPA2suite/k_SRME/blob/6ff4c867/k_srme/benchmark.py.
-All credit to Balázs Póta, Paramvir Ahlawat, Gábor Csányi, Michele Simoncelli. See
-https://arxiv.org/abs/2408.00755 for details.
+Code in this module is adapted from https://github.com/MPA2suite/k_SRME/blob/6ff4c867/k_srme/benchmark.py,
+published in https://arxiv.org/abs/2408.00755.
 It was ported to this repo in https://github.com/janosh/matbench-discovery/pull/196 to
 implement parallelization across input structures which allows scaling thermal
-conductivity metric to larger test sets.
+conductivity metrics to larger test sets.
 """
 
 import traceback
@@ -24,7 +23,7 @@ import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
 
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
 
@@ -153,7 +152,7 @@ def calc_kappa_srme_dataframes(
                 srme_list.append(2)
                 continue
         result = calc_kappa_srme(row_pred, row_true)
-        srme_list.append(result[0])  # append the first temperature's SRME
+        srme_list.append(float(result[0]))  # append the first temperature's SRME
 
     return srme_list
 
@@ -181,10 +180,10 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
         kappas_true: Series containing DFT reference data with same structure
 
     Returns:
-        SRME value between 0 and 2, where:
+        np.ndarray: SRME values per temperature, each between 0 and 2, where:
         - 0 indicates perfect agreement in both total κ and mode-resolved properties
         - 2 indicates complete disagreement or invalid results
-        - Returns [2] for various error conditions (missing data, NaN values)
+        On error conditions (missing data, NaN values), returns np.array([2.0]).
     """
     if np.any(np.isnan(kappas_true[MbdKey.kappa_tot_avg])):
         raise ValueError("found NaNs in kappa_tot_avg reference values")
@@ -196,7 +195,7 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
         # some mode weights are NaN
         or np.any(np.isnan(kappas_pred[Key.mode_weights]))
     ):
-        return [2]
+        return np.array([2.0])
 
     mode_kappa_tot_avgs = {}  # store results for pred and true
     # Try different data sources in order of preference for both pred and true data
@@ -231,3 +230,45 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
 
     denominator = kappas_pred[MbdKey.kappa_tot_avg] + kappas_true[MbdKey.kappa_tot_avg]
     return 2 * microscopic_error / denominator
+
+
+def write_metrics_to_yaml(
+    model: Model, metrics: dict[str, float], pred_file_path: str
+) -> None:
+    """Write kappa metrics to model's YAML file under the phonons section.
+
+    Args:
+        model: Model to write metrics for.
+        metrics: Kappa metrics for this model.
+        pred_file_path: Path to prediction file.
+    """
+    import os
+
+    from ruamel.yaml import YAML
+
+    # Convert absolute path to relative path
+    pred_file_path = pred_file_path.removeprefix(f"{os.getcwd()}/")
+
+    # Update YAML file
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    yaml.width = 1000
+    yaml.indent(mapping=2, sequence=4, offset=2)
+
+    with open(model.yaml_path) as file:
+        data = yaml.load(file)
+
+    # Ensure nested structure exists and update non-destructively
+    data.setdefault("metrics", {}).setdefault("phonons", {}).setdefault("kappa_103", {})
+    data["metrics"]["phonons"]["kappa_103"].update(
+        κ_SRME=float(round(metrics["srme"], 4)),
+        κ_SRE=float(round(metrics["sre"], 4)),
+    )
+
+    # Set pred_file if missing
+    if "pred_file" not in data["metrics"]["phonons"]["kappa_103"]:
+        data["metrics"]["phonons"]["kappa_103"]["pred_file"] = pred_file_path
+
+    # Write back to file
+    with open(model.yaml_path, "w") as file:
+        yaml.dump(data, file)

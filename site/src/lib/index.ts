@@ -26,6 +26,7 @@ export { default as References } from './References.svelte'
 export { default as SelectToggle } from './SelectToggle.svelte'
 export { default as TableColumnToggleMenu } from './TableColumnToggleMenu.svelte'
 export { default as TableControls } from './TableControls.svelte'
+export { default as ThemeToggle } from './ThemeToggle.svelte'
 export * from './types'
 export { data_files, DATASETS }
 
@@ -87,7 +88,7 @@ for (const key of Object.keys(data_files).filter((key) => !key.startsWith(`_`)))
 }
 
 // Format date string into human-readable format
-export function format_date(date: string, options?: Intl.DateTimeFormatOptions): string {
+export function format_date(date: string | number, options?: Intl.DateTimeFormatOptions) {
   return new Date(date).toLocaleDateString(undefined, {
     year: `numeric`,
     month: `short`,

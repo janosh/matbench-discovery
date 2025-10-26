@@ -84,7 +84,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52134857
   geo_opt:
     pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52061999
+    pred_file_url: https://figshare.com/files/53153459
     struct_col: chgnet_structure
     symprec=1e-5:
       rmsd: 0.0949 # unitless
@@ -126,7 +126,6 @@ metrics:
       RMSE: 0.1 # eV/atom
       R2: 0.69 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.92 # fraction
       DAF: 5.567 # dimensionless
@@ -145,7 +144,6 @@ metrics:
       RMSE: 0.095 # eV/atom
       R2: 0.816 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.613 # fraction
       DAF: 3.361 # dimensionless
@@ -164,4 +162,3 @@ metrics:
       RMSE: 0.103 # eV/atom
       R2: 0.689 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction

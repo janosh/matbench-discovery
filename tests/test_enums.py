@@ -235,13 +235,17 @@ def test_files_enum_auto_download(
         def raise_for_status(self) -> None:
             """Mock the raise_for_status method."""
             if self.status_code >= 400:
-                raise requests.exceptions.HTTPError(f"HTTP Error: {self.status_code}")
+                raise requests.HTTPError(f"HTTP Error: {self.status_code}")
 
     # Mock stdin to simulate non-interactive mode
     class MockStdin:
         def isatty(self) -> bool:
             """Mock isatty to simulate non-interactive mode."""
             return False
+
+        def readline(self) -> str:
+            """Mock readline method."""
+            return "y\n"  # Default to yes for testing
 
     monkeypatch.setattr(requests, "get", lambda *_args, **_kwargs: MockResponse())
     monkeypatch.setattr(sys, "stdin", MockStdin())

@@ -34,7 +34,7 @@ out_path = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}.csv.gz")
 slurm_array_task_count = 1
 
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path=} already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exiting early")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -131,7 +131,7 @@ df_megnet.add_suffix(f"_{task_type.lower()}").round(4).to_csv(out_path)
 
 
 # %% compare MEGNet predictions with old and new MP corrections
-fig = pmv.density_scatter_plotly(df=df_megnet, x=pred_col, y=f"{pred_col}_old_corr")
+fig = pmv.density_scatter(df=df_megnet, x=pred_col, y=f"{pred_col}_old_corr")
 pmv.save_fig(fig, "megnet-e-form-preds-old-vs-new-corr.png")
 
 

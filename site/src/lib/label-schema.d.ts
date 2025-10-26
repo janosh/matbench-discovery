@@ -120,10 +120,6 @@ export interface Label1 {
    */
   symprec?: string
   /**
-   * SVG label for the metric
-   */
-  svg_label?: string
-  /**
    * Scale type for the metric
    */
   scale_type?: `log` | `linear`
@@ -160,7 +156,6 @@ export interface MetadataLabels {
   checkpoint_license: Label1
   code_license: Label1
   missing_preds: Label1
-  missing_percent: Label1
   'Run Time (h)': Label1
   org: Label1
 }

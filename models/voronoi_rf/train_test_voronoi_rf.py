@@ -22,7 +22,7 @@ from matbench_discovery.plots import wandb_scatter
 
 sys.path.append(f"{ROOT}/models")
 
-from voronoi_rf import featurizer
+from . import featurizer
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-26"
@@ -38,7 +38,7 @@ os.makedirs(out_dir, exist_ok=True)
 out_path = f"{out_dir}/e-form-preds-{task_type}.csv.gz"
 model_path = f"{out_dir}/voronoi-rf-model.joblib"  # Path to save the model
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path=} already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exiting early")
 
 job_name = "train-test-voronoi-rf"
 
@@ -92,6 +92,8 @@ run_params = dict(
 )
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
+if wandb.run is None:
+    raise RuntimeError("wandb.run is None")
 
 
 # %%
@@ -144,7 +146,9 @@ table = wandb.Table(
     dataframe=df_wbm[[Key.formula, MbdKey.e_form_dft, pred_col]].reset_index()
 )
 
-df_wbm[pred_col].isna().sum()
+n_nans = df_wbm[pred_col].isna().sum()
+print(f"NaNs in predictions: {n_nans:,} / {len(df_wbm):,} = {n_nans / len(df_wbm):.2%}")
+
 MAE = (df_wbm[MbdKey.e_form_dft] - df_wbm[pred_col]).abs().mean()
 R2 = r2_score(*df_wbm[[MbdKey.e_form_dft, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.3} {R2=:.3}"

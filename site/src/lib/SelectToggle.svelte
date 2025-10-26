@@ -8,27 +8,26 @@
     tooltip?: string
     link?: string
   }
-  interface Props {
+  let { selected = $bindable(``), options = [] }: {
     selected: string // currently selected value
     options: OptionInfo[] // options to display, either a record or an array of tuples
-  }
-  let { selected = $bindable(``), options = [] }: Props = $props()
+  } = $props()
 </script>
 
 <div class="selection-toggle">
-  {#each options as { value, label: option_label, tooltip, link } (value)}
+  {#each options as { value, label, tooltip, link } (value)}
     <button class:active={selected === value} onclick={() => (selected = value)}>
-      {@html option_label}
+      {@html label}
       {#if link}
         <a
           href={link}
           target="_blank"
           rel="noopener noreferrer"
           onclick={(event) => event.stopPropagation()}
+          {@attach tooltip_attachment({ content: tooltip })}
         >
           <Icon
             icon="Info"
-            {@attach tooltip_attachment({ content: tooltip })}
             style="transform: scale(1.2) translateY(-1px)"
           />
         </a>
@@ -46,14 +45,14 @@
   }
   .selection-toggle button {
     padding: 4px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--border);
     background: transparent;
     cursor: pointer;
   }
   .selection-toggle button:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--nav-bg);
   }
   .selection-toggle button.active {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--nav-bg);
   }
 </style>

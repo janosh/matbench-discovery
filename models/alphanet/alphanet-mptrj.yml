@@ -1,6 +1,6 @@
-model_name: AlphaNet-MPtrj
-model_key: alphanet-mptrj
-model_version: v0
+model_name: AlphaNet-v1-MPtrj
+model_key: alphanet-v1-mptrj
+model_version: v1
 date_added: '2025-03-05'
 date_published: '2025-03-05'
 authors:
@@ -78,7 +78,7 @@ hyperparams:
   epochs: 200
   n_layers: 6
   n_hidden_channels: 256
-  n_radial_guassian_basis: 256
+  n_radial_gaussian_basis: 256
   n_heads: 24
   graph_construction_radius: 6.0 # Å, from table 6 in arXiv:2501.07155
   max_neighbors: .inf # max_num_neighbors_threshold seems to be unused in https://github.com/zmyybc/AlphaNet/blob/243fe71cb9/alphanet/models/graph.py#L28
@@ -105,7 +105,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52869011
   geo_opt:
     pred_file: models/alphanet/mptrj/2025-03-04-wbm-geo-opt-fire.jsonl.gz
-    pred_file_url: https://figshare.com/files/52858202
+    pred_file_url: https://figshare.com/files/53153453
     struct_col: alphanet_structure
     symprec=1e-5:
       rmsd: 0.1067 # unitless
@@ -147,7 +147,6 @@ metrics:
       RMSE: 0.091 # eV/atom
       R2: 0.747 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.799 # fraction
       DAF: 4.863 # dimensionless
@@ -166,7 +165,6 @@ metrics:
       RMSE: 0.093 # eV/atom
       R2: 0.745 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.96 # fraction
       DAF: 6.042 # dimensionless
@@ -185,7 +183,6 @@ metrics:
       RMSE: 0.115 # eV/atom
       R2: 0.746 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
   diatomics:
     pred_file: models/alphanet/2025-03-08-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52868972

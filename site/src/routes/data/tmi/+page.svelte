@@ -6,7 +6,7 @@
   import type { ChemicalElement } from 'matterviz'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { RadioButtons, Toggle } from 'svelte-multiselect'
+  import { Toggle } from 'svelte-multiselect'
 
   const elem_counts = $state(
     import.meta.glob(`../wbm-element-counts-*=*.json`, {
@@ -29,8 +29,6 @@
   let normalized_bar_counts: boolean = $state(false)
 
   const style = `display: flex; place-items: center; place-content: center;`
-
-  const radio_style = `display: inline-flex; margin: 2pt 8pt; border-radius: 3pt;`
 </script>
 
 <h1>Too Much Information</h1>
@@ -50,23 +48,21 @@
 <form>
   <span>
     number of elements
-    <RadioButtons style={radio_style} options={arity_keys} bind:selected={filter}>
-      {#snippet children(
-        { option, active }: { option: string; active: boolean },
-      )}
-        <strong class:active>{option.split(`=`).at(-1)}</strong>
-      {/snippet}
-    </RadioButtons>
+    {#each arity_keys as value (value)}
+      <label>
+        <input type="radio" name="filter" {value} bind:group={filter} />
+        <strong class:active={filter === value}>{value.split(`=`).at(-1)}</strong>
+      </label>
+    {/each}
   </span>
   <span>
     batch index
-    <RadioButtons style={radio_style} options={batch_keys} bind:selected={filter}>
-      {#snippet children(
-        { option, active }: { option: string; active: boolean },
-      )}
-        <strong class:active>{option.split(`=`).at(-1)}</strong>
-      {/snippet}
-    </RadioButtons>
+    {#each batch_keys as value (value)}
+      <label>
+        <input type="radio" name="filter" {value} bind:group={filter} />
+        <strong class:active={filter === value}>{value.split(`=`).at(-1)}</strong>
+      </label>
+    {/each}
   </span>
 </form>
 
@@ -112,17 +108,11 @@
     gap: 5cqw;
     place-content: center;
   }
-  form > span strong {
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 3pt 4pt;
-  }
   form > span strong.active {
-    background-color: teal;
+    background-color: var(--btn-bg);
   }
   label {
     display: flex;
-    gap: 1ex;
-    place-content: center;
-    place-items: center;
+    gap: 4pt;
   }
 </style>

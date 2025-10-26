@@ -33,10 +33,10 @@ dependencies = [
   "ase>=3.25",
   "numpy>=1.26",
   "pandas>=2.2.2",
-  "plotly>=6.1,<6.2",   # <6.2 pin pending https://github.com/plotly/plotly.py/issues/5253
+  "plotly>=6.3",
   "pymatgen>=2024.8.9",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209
-  "pymatviz[df-pdf-export,df-svg-export]==0.16.0",
+  "pymatviz[df-pdf-export,df-svg-export]==0.17.1",
   "ruamel.yaml>=0.18.6",
   "scikit-learn>=1.5",
   "scipy>=1.13",
@@ -72,7 +72,7 @@ symmetry = ["moyopy>=0.3.4"]
 phonons = ["phono3py>=3.12", "phonopy>=2.35"]
 
 [build-system]
-requires = ["uv_build>=0.7.5"]
+requires = ["uv_build>=0.9.5"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -120,8 +120,6 @@ ignore = [
   "TRY301",
 ]
 pydocstyle.convention = "google"
-isort.known-first-party = ["matbench_discovery"]
-isort.known-third-party = ["wandb"]
 isort.split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
@@ -131,16 +129,6 @@ isort.split-on-trailing-comma = false
 "models/*" = ["D", "ERA001"]
 "data/*" = ["ERA001", "S101"]
 
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-disallow_any_generics = true
-disallow_incomplete_defs = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-allow_redefinition = true
-no_namespace_packages = true
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-p no:warnings -m 'not slow'"
@@ -148,11 +136,36 @@ markers = [
   "slow: tests marked slow are skipped by default (unskip with pytest -m slow)",
 ]
 
-[tool.pyright]
-typeCheckingMode = "off"
-reportPossiblyUnboundVariable = true
-reportUnboundVariable = true
-reportMissingImports = false
-
 [tool.codespell]
-ignore-words-list = "nd,te,fpr,matris,noe,hart,titel"
+ignore-words-list = "nd,te,fpr,matris,titel"
+
+[[tool.ty.overrides]]
+include = ["models/**/test_*.py", "models/**/train_*.py"]
+
+[tool.ty.overrides.rules]
+unresolved-import = "ignore"
+
+[dependency-groups]
+dev = ["prek>=0.2.10", "ty>=0.0.1a24"]
+
+[tool.typos.default]
+locale = "en-us"
+extend-ignore-re = [
+  "`[0-9a-f]{7,40}`", # Git commit SHAs in backticks
+]
+extend-ignore-words-re = [
+  "\\b(Skelton|Ono|Noe|Vaid)\\b", # Names
+  "\\b[Bb]a\\b",                  # Chemical element: Barium
+  "\\b[Cc]om(mun|put)\\b",        # Journal: Commun, Comput
+  "\\b[Ff]ormates?\\b",           # Chemistry: formate(s)
+  "\\b[Nn]d\\b",                  # Chemical element: Neodymium
+  "\\bmatris\\b",                 # Model name
+]
+extend-ignore-identifiers-re = [
+  "\\b[Ff][Pp][Rr]\\b",          # False Positive Rate
+  "\\balph_\\w+\\b",             # alph_* identifiers
+  "\\bi?[Cc]om[Ff]ormer\\w*\\b", # (i)Comformer, comformer + Config suffix
+  "\\btitel\\b",                 # titel
+  "\\w*[Cc]ontracter\\w*\\b",    # *Contracter* variations
+  "\\w*strat\\w*\\b",            # *strat* variations
+]

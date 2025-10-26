@@ -4,11 +4,9 @@ from copy import deepcopy
 from importlib.metadata import version
 from typing import Any, Final
 
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import wandb
-from ase import Atoms
 from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
@@ -72,7 +70,7 @@ slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
 out_path = f"{out_dir}/{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
 
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path=} already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exiting early")
 
 
 # %%
@@ -88,7 +86,7 @@ dtype = "float64"
 mace_calc = mace_mp(model=checkpoint, device=device, default_dtype=dtype)
 
 print(f"Read data from {data_path}")
-atoms_list: list[Atoms] = np.array(ase_atoms_from_zip(data_path), dtype=object)
+atoms_list = ase_atoms_from_zip(data_path)
 
 if slurm_array_job_id == "debug":
     if smoke_test:
@@ -127,7 +125,7 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 # %% time
 relax_results: dict[str, dict[str, Any]] = {}
-optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
     mat_id = atoms.info[Key.mat_id]
@@ -137,7 +135,7 @@ for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
         atoms.calc = mace_calc
         if max_steps > 0:
             filtered_atoms = FrechetCellFilter(atoms)
-            optimizer = optim_cls(filtered_atoms, logfile="/dev/null")
+            optimizer = optim_cls(filtered_atoms, logfile=None)
 
             if record_traj:
                 coords, lattices, energies = [], [], []

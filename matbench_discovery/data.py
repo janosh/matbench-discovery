@@ -30,13 +30,17 @@ from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from tqdm import tqdm
 
-from matbench_discovery import TEST_FILES
+from matbench_discovery import DATA_DIR, TEST_FILES
 from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
 round_trip_yaml.preserve_quotes = True
 round_trip_yaml.width = 1000  # avoid changing line wrapping
 round_trip_yaml.indent(mapping=2, sequence=4, offset=2)
+
+
+with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
+    DATASETS = yaml.safe_load(stream=file)
 
 
 def as_dict_handler(obj: Any) -> dict[str, Any] | None:
@@ -92,7 +96,7 @@ def glob_to_df(
             # .set_index( "material_id" )
             # make sure pred_cols for all models are present in df_mock
             for model in Model:
-                with open(model.yaml_path) as file:
+                with open(model.yaml_path, encoding="utf-8") as file:
                     model_data = yaml.safe_load(file)
 
                 pred_col = (
@@ -252,8 +256,6 @@ def load_df_wbm_with_preds(
         raise ValueError(f"{unknown_models=}, expected subset of {valid_models}")
 
     model_name: str = ""
-    from matbench_discovery.data import df_wbm
-
     df_out = df_wbm.copy()
 
     try:
@@ -266,7 +268,7 @@ def load_df_wbm_with_preds(
 
             df_preds = glob_to_df(model.discovery_path, pbar=False, **kwargs)
 
-            with open(model.yaml_path) as file:
+            with open(model.yaml_path, encoding="utf-8") as file:
                 model_data = yaml.safe_load(file)
 
             pred_col = (
@@ -335,7 +337,7 @@ def update_yaml_file(
     if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
         raise ValueError(f"Invalid {dotted_path=}")
 
-    with open(file_path) as file:
+    with open(file_path, encoding="utf-8") as file:
         yaml_data = round_trip_yaml.load(file)
 
     # Navigate to the correct nested level
@@ -348,7 +350,7 @@ def update_yaml_file(
         current = current[part]
 
     # Update the data at the final level
-    if last not in current:
+    if last not in current or current[last] is None:
         current[last] = {}
     for key, val in current[last].items():
         data.setdefault(key, val)
@@ -356,7 +358,7 @@ def update_yaml_file(
     current[last] = data
 
     # Write back to file
-    with open(file_path, mode="w") as file:
+    with open(file_path, mode="w", encoding="utf-8") as file:
         round_trip_yaml.dump(yaml_data, file)
 
     return yaml_data

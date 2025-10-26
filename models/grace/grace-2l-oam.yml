@@ -1,6 +1,6 @@
 model_name: GRACE-2L-OAM
 model_key: grace-2l-oam
-model_version: GRACE_2L_OAM_28Jan25
+model_version: 0.4.5
 date_added: '2025-02-06'
 date_published: '2025-02-06'
 authors:
@@ -70,7 +70,7 @@ metrics:
       pred_file_url: https://figshare.com/files/53090594
   geo_opt:
     pred_file: models/grace/grace-2l-oam/2025-01-28-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52204907
+    pred_file_url: https://figshare.com/files/53504576
     struct_col: grace_structure
     symprec=1e-5:
       rmsd: 0.0666 # unitless
@@ -112,7 +112,6 @@ metrics:
       RMSE: 0.068 # eV/atom
       R2: 0.856 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.985 # fraction
       DAF: 6.352 # dimensionless
@@ -131,7 +130,6 @@ metrics:
       RMSE: 0.081 # eV/atom
       R2: 0.861 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.88 # fraction
       DAF: 5.774 # dimensionless
@@ -150,7 +148,6 @@ metrics:
       RMSE: 0.068 # eV/atom
       R2: 0.862 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
   diatomics:
     pred_file: models/grace/grace-2l-oam/2025-02-19-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52467527

@@ -1,6 +1,13 @@
 <script lang="ts">
   import type { DiscoverySet, ModelData } from '$lib'
-  import { DynamicScatter, Icon, MetricsTable, RadarChart, SelectToggle } from '$lib'
+  import {
+    DATASETS,
+    DynamicScatter,
+    Icon,
+    MetricsTable,
+    RadarChart,
+    SelectToggle,
+  } from '$lib'
   import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
@@ -18,7 +25,7 @@
   import type { Snapshot } from './$types'
 
   let n_wbm_stable_uniq_protos = 32_942
-  let n_wbm_uniq_protos = 215_488
+  let n_wbm_uniq_protos = DATASETS.WBM.n_materials
 
   let table = $state({
     show_non_compliant: true,
@@ -79,8 +86,8 @@
   }
 </script>
 
-<h1 style="line-height: 0; margin-block: -1.2em 1em">
-  <img src="/favicon.svg" alt="Logo" width="60px" /><br />
+<h1>
+  <img src="/favicon.svg" alt="Matbench Discovery Logo" width="60px" />
   Matbench Discovery
 </h1>
 
@@ -148,7 +155,7 @@
 
   <figcaption class="caption-radar-container">
     <div
-      style="background-color: var(--light-bg); padding: 0.2em 0.5em; border-radius: 4px"
+      style="background-color: var(--card-bg); padding: 0.2em 0.5em; border-radius: 4px"
     >
       The <strong>CPS</strong> (Combined Performance Score) is a metric that weights
       discovery performance (F1), geometry optimization quality (RMSD), and thermal
@@ -180,7 +187,6 @@
 <DynamicScatter
   models={MODELS}
   model_filter={(model) => table.show_non_compliant || model_is_compliant(model)}
-  {discovery_set}
 />
 
 <Readme>
@@ -210,6 +216,19 @@
 <KappaNote warning={false} />
 
 <style>
+  h1 {
+    margin-block: -1.2em 1em;
+    display: flex;
+    align-items: center;
+    place-content: center;
+    gap: 7pt;
+  }
+  h1 img {
+    filter: brightness(0.8);
+  }
+  :root[data-theme='light'] h1 img {
+    filter: brightness(0.2);
+  }
   figure {
     margin: 0;
     display: grid;
@@ -224,20 +243,14 @@
     align-items: center;
   }
   div.downloads .download-btn {
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 0 6pt;
-    border-radius: 4pt;
+    padding: 1pt 6pt;
     font: inherit;
-    transition: background-color 0.2s ease;
-  }
-  div.downloads .download-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
   }
   div.export-error {
     color: #ff6b6b;
     margin-top: 0.5em;
     flex-basis: 100%;
-    background-color: rgba(255, 107, 107, 0.1);
+    background-color: color-mix(in oklab, #ff6b6b 10%, transparent);
     padding: 1em;
     border-radius: 4px;
     border-left: 4px solid #ff6b6b;

@@ -137,7 +137,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52134884
   geo_opt:
     pred_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062176
+    pred_file_url: https://figshare.com/files/57753373
     struct_col: mattersim_5M_structure
     symprec=1e-2:
       rmsd: 0.0733 # unitless
@@ -181,7 +181,6 @@ metrics:
       RMSE: 0.069 # eV/atom
       R2: 0.854 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.984 # fraction
       DAF: 6.339 # dimensionless
@@ -200,7 +199,6 @@ metrics:
       RMSE: 0.078 # eV/atom
       R2: 0.869 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.862 # fraction
       DAF: 5.852 # dimensionless
@@ -219,7 +217,6 @@ metrics:
       RMSE: 0.068 # eV/atom
       R2: 0.863 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
   diatomics:
     pred_file: models/mattersim/mattersim-v1-5M/2025-02-19-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52468178

@@ -4,19 +4,9 @@
   import { get_nested_value } from '$lib/metrics'
   import type { Label } from '$lib/types'
   import { type DataSeries, type PointStyle, ScatterPlot } from 'matterviz'
+  import type { HTMLAttributes } from 'svelte/elements'
   import { METADATA_COLS } from './labels'
 
-  interface Props {
-    x_prop: Label
-    y_prop: Label
-    models?: ModelData[]
-    model_filter?: (model: ModelData) => boolean
-    point_style?: PointStyle
-    date_range?: [Date | null, Date | null]
-    style?: string
-    show_model_labels?: boolean | `auto-placement`
-    [key: string]: unknown
-  }
   let {
     x_prop,
     y_prop,
@@ -24,10 +14,17 @@
     models = Object.values(MODELS),
     point_style = {},
     date_range = [null, null],
-    style = ``,
     show_model_labels = true,
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLDivElement> & {
+    x_prop: Label
+    y_prop: Label
+    models?: ModelData[]
+    model_filter?: (model: ModelData) => boolean
+    point_style?: PointStyle
+    date_range?: [Date | null, Date | null]
+    show_model_labels?: boolean | `auto-placement`
+  } = $props()
 
   // Add date range state for time series
   const now = new Date()
@@ -38,8 +35,8 @@
   let x_path = $derived(`${x_prop?.path ?? ``}.${x_prop?.key}`.replace(/^\./, ``))
   let y_path = $derived(`${y_prop?.path ?? ``}.${y_prop?.key}`.replace(/^\./, ``))
   // Determine labels
-  let x_label = $derived(x_prop?.svg_label ?? x_prop?.label ?? x_prop?.key ?? `X`)
-  let y_label = $derived(y_prop?.svg_label ?? y_prop?.label ?? y_prop?.key ?? `Y`)
+  let x_label = $derived(x_prop?.label ?? x_prop?.key ?? `X`)
+  let y_label = $derived(y_prop?.label ?? y_prop?.key ?? `Y`)
 
   // Apply date range filter if needed
   function date_filter(model: ModelData): boolean {
@@ -78,6 +75,7 @@
   let series: DataSeries = $derived({
     x: plot_data.map((item) => item.x) as number[],
     y: plot_data.map((item) => item.y) as number[],
+    markers: `points` as const,
     metadata: plot_data.map((item) => item.metadata),
     point_style: plot_data.map((item) => ({
       fill: item.color ?? `#4dabf7`,
@@ -99,12 +97,8 @@
 
 <ScatterPlot
   series={[series]}
-  markers="points"
-  {x_label}
-  {y_label}
-  x_format={x_prop?.format ?? `.1s`}
-  y_format={y_prop?.format ?? `.3f`}
-  {style}
+  x_axis={{ label: x_label, format: x_prop?.format ?? `.1s` }}
+  y_axis={{ label: y_label, format: y_prop?.format ?? `.3f` }}
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata })}

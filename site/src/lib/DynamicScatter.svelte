@@ -1,13 +1,13 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import type { ModelData } from '$lib'
-  import { calculate_days_ago, Icon } from '$lib'
+  import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
-  import { DraggablePanel, format_num } from 'matterviz'
+  import { DraggablePane, format_num, Icon } from 'matterviz'
   import type { D3ColorSchemeName } from 'matterviz/colors'
   import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
-  import { tooltip } from 'svelte-multiselect/attachments'
+  import type { HTMLAttributes } from 'svelte/elements'
   import {
     ALL_METRICS,
     format_property_path,
@@ -16,22 +16,18 @@
   } from './labels'
   import { get_nested_value } from './metrics'
 
-  interface Props {
-    models: ModelData[]
-    model_filter?: (model: ModelData) => boolean
-    point_color?: string | null
-    show_model_labels?: boolean
-    style?: string
-    [key: string]: unknown
-  }
   let {
     models,
     model_filter = () => true,
     point_color = null,
     show_model_labels = true,
-    style = ``,
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLDivElement> & {
+    models: ModelData[]
+    model_filter?: (model: ModelData) => boolean
+    point_color?: string | null
+    show_model_labels?: boolean
+  } = $props()
 
   const date_key = METADATA_COLS.date_added.key
   const params_key = HYPERPARAMS.model_params.key
@@ -45,6 +41,8 @@
   })
   let log = $state({ x: false, y: false, color_value: false, size_value: false })
   let is_fullscreen = $state(false)
+  let show_extra_controls = $state(false)
+  let container_el: HTMLDivElement | null = null
 
   // State for plot controls
   let color_scheme: D3ColorSchemeName = $state(`Viridis`)
@@ -147,6 +145,7 @@
   let series = $derived({
     x: plot_data.map((item) => item.x as number),
     y: plot_data.map((item) => item.y as number),
+    markers: `points` as const,
     point_style: plot_data.map((item) => ({ fill: point_color ?? item.color })),
     metadata: plot_data.map((item) => item.metadata),
     color_values: point_color === null
@@ -167,143 +166,139 @@
       auto_placement: true,
     })),
   })
-
-  function handle_keydown(event: KeyboardEvent): void {
-    if (event.key === `Escape`) {
-      if (is_fullscreen) {
-        is_fullscreen = false
-        document.body.classList.remove(`fullscreen`)
-      }
-    }
-  }
 </script>
 
-<svelte:window on:keydown={handle_keydown} />
+<div class="plot-container" bind:this={container_el}>
+  <button
+    onclick={() => {
+      if (document.fullscreenElement === container_el) {
+        document.exitFullscreen()
+        is_fullscreen = false
+      } else {
+        container_el?.requestFullscreen?.()
+        is_fullscreen = true
+      }
+    }}
+    aria-label="{is_fullscreen ? `Exit` : `Enter`} fullscreen"
+    title="{is_fullscreen ? `Exit` : `Enter`} fullscreen"
+  >
+    <Icon icon="{is_fullscreen ? `Exit` : ``}Fullscreen" />
+  </button>
 
-<div class="plot-container" class:fullscreen={is_fullscreen}>
-  <div class="top-buttons">
-    <button
-      class="fullscreen-toggle icon-button"
-      onclick={() => {
-        is_fullscreen = !is_fullscreen
-        document.body.classList.toggle(`fullscreen`, is_fullscreen)
-      }}
-      aria-label={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
-      title={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
-    >
-      <Icon icon={is_fullscreen ? `Close` : `Maximize`} />
-    </button>
-
-    <DraggablePanel
-      toggle_props={{
-        style:
-          `background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; padding: 4pt;`,
-      }}
-      icon_style="width: 1.4em; height: 1.4em;"
-    >
-      <div class="controls" {@attach tooltip()}>
-        <label
-          style="grid-column: 1/-1"
-          title="Toggle visibility of model name labels on the scatter plot points"
-        >
-          <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
-        </label>
-        <ColorScaleSelect
-          bind:value={color_scheme}
-          selected={[color_scheme]}
-          style="margin: 0; grid-column: 1/-1"
-        />
-        <label title="Toggle the visibility of vertical grid lines">
-          <input type="checkbox" bind:checked={x_grid} /> X Grid
-        </label>
-        <label
-          title="Set the approximate number of ticks on the X axis"
-        >Ticks:
-          <input
-            id="x-ticks"
-            type="number"
-            min="0"
-            max="20"
-            bind:value={x_ticks}
-            style="width: 50px"
-          /></label>
-
-        <label title="Toggle the visibility of horizontal grid lines">
-          <input type="checkbox" bind:checked={y_grid} /> Y Grid
-        </label>
-        <label
-          title="Set the approximate number of ticks on the Y axis"
-        >Ticks:
-          <input
-            id="y-ticks"
-            type="number"
-            min="0"
-            max="20"
-            bind:value={y_ticks}
-            style="width: 50px"
-          />
-        </label>
-        <label
-          for="size-multiplier"
-          title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
-        >Point Size</label>
+  <DraggablePane
+    bind:show={show_extra_controls}
+    toggle_props={{
+      class: `settings-toggle`,
+      style:
+        `position: absolute; top: 20px; right: 20px; background-color: var(--btn-bg); border-radius: 50%; padding: 4pt;`,
+    }}
+    pane_props={{
+      style: `border: 1px solid var(--border);`,
+      'aria-hidden': !show_extra_controls,
+    }}
+  >
+    <div style="display: grid; grid-template-columns: auto 1fr; gap: 8pt 1em">
+      <label
+        style="grid-column: 1/-1"
+        title="Toggle visibility of model name labels on the scatter plot points"
+      >
+        <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
+      </label>
+      <ColorScaleSelect
+        bind:value={color_scheme}
+        selected={[color_scheme]}
+        style="margin: 0; grid-column: 1/-1"
+      />
+      <label title="Toggle the visibility of vertical grid lines">
+        <input type="checkbox" bind:checked={x_grid} /> X Grid
+      </label>
+      <label
+        title="Set the approximate number of ticks on the X axis"
+      >Ticks:
         <input
-          id="size-multiplier"
+          id="x-ticks"
+          type="number"
+          min="0"
+          max="20"
+          bind:value={x_ticks}
+          style="width: 50px"
+        /></label>
+
+      <label title="Toggle the visibility of horizontal grid lines">
+        <input type="checkbox" bind:checked={y_grid} /> Y Grid
+      </label>
+      <label
+        title="Set the approximate number of ticks on the Y axis"
+      >Ticks:
+        <input
+          id="y-ticks"
+          type="number"
+          min="0"
+          max="20"
+          bind:value={y_ticks}
+          style="width: 50px"
+        />
+      </label>
+      <label
+        for="size-multiplier"
+        title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
+      >Point Size</label>
+      <input
+        id="size-multiplier"
+        type="range"
+        min="0.1"
+        max="5"
+        step="0.1"
+        bind:value={size_multiplier}
+      />
+      <label
+        for="label-font-size"
+        title="Adjust the font size of the model name labels (in pixels)"
+      >Label Size</label>
+      <input
+        id="label-font-size"
+        type="range"
+        min="8"
+        max="24"
+        step="1"
+        bind:value={label_font_size}
+        style="grid-column: 2"
+      />
+      <label
+        title="Configure the distance range and strength of the links connecting labels to their points"
+        for="min-link-distance"
+      >Label Link</label>
+      <div class="combined-link-controls">
+        <input
+          id="min-link-distance"
+          type="number"
+          min="0"
+          max="100"
+          bind:value={min_link_distance}
+          title="Minimum distance"
+        />
+        <span>-</span>
+        <input
+          id="max-link-distance"
+          type="number"
+          min="0"
+          max="100"
+          bind:value={max_link_distance}
+          title="Maximum distance"
+        />
+        <input
+          id="link-strength"
           type="range"
           min="0.1"
-          max="5"
+          max="10"
           step="0.1"
-          bind:value={size_multiplier}
+          bind:value={link_strength}
+          title="Strength (higher = stronger pull)"
+          style="flex: 1"
         />
-        <label
-          for="label-font-size"
-          title="Adjust the font size of the model name labels (in pixels)"
-        >Label Size</label>
-        <input
-          id="label-font-size"
-          type="range"
-          min="8"
-          max="24"
-          step="1"
-          bind:value={label_font_size}
-          style="grid-column: 2"
-        />
-        <label
-          title="Configure the distance range and strength of the links connecting labels to their points"
-          for="min-link-distance"
-        >Label Link</label>
-        <div class="combined-link-controls">
-          <input
-            id="min-link-distance"
-            type="number"
-            min="0"
-            max="100"
-            bind:value={min_link_distance}
-            title="Minimum distance"
-          />
-          <span>-</span>
-          <input
-            id="max-link-distance"
-            type="number"
-            min="0"
-            max="100"
-            bind:value={max_link_distance}
-            title="Maximum distance"
-          />
-          <input
-            id="link-strength"
-            type="range"
-            min="0.1"
-            max="10"
-            step="0.1"
-            bind:value={link_strength}
-            title="Strength (higher = stronger pull)"
-            style="flex: 1"
-          />
-        </div>
       </div>
-    </DraggablePanel>
-  </div>
+    </div>
+  </DraggablePane>
 
   <div class="controls-grid">
     {#each [
@@ -331,11 +326,8 @@
         minSelect={1}
         style="width: 100%; max-width: none; margin: 0"
         liSelectedStyle="font-size: 16px;"
-        ulSelectedStyle="padding: 0;"
-        --sms-selected-bg="none"
-        --sms-border="1px solid rgba(255, 255, 255, 0.15)"
       >
-        {#snippet children({ option: prop })}
+        {#snippet children({ option: prop }: { option: typeof options[number] })}
           {@html format_property_path(
           `${prop.path ?? ``}.${prop.label ?? prop.label}`.replace(/^\./, ``),
         )}
@@ -356,35 +348,32 @@
   </div>
 
   <div
-    class:full-bleed-1400={!is_fullscreen}
-    style="margin-block: 1em"
+    class="{is_fullscreen ? `` : `bleed-1400`} {rest.class ?? ``}"
     style:height={is_fullscreen ? `100%` : `600px`}
+    style="margin-block: 2em"
   >
     <ScatterPlot
       series={[series]}
-      x_label="{axes.x?.svg_label ?? axes.x?.label} {axes.x?.better
-        ? `<tspan style='font-size: 0.8em;'>(${axes.x?.better}=better)</tspan>`
-        : ``}"
-      y_label="{axes.y?.svg_label ?? axes.y?.label} {axes.y?.better
-        ? `<tspan style='font-size: 0.8em;'>(${axes.y?.better}=better)</tspan>`
-        : ``}"
-      x_lim={axes.x?.range ? [...axes.x.range] : undefined}
-      y_lim={axes.y?.range ? [...axes.y.range] : undefined}
-      x_format={axes.x?.format}
-      y_format={axes.y?.format}
-      markers="points"
-      {style}
-      x_scale_type={log.x ? `log` : `linear`}
-      y_scale_type={log.y ? `log` : `linear`}
-      x_label_shift={{ y: -50 }}
-      y_label_shift={{
-        y: [date_key, params_key].includes(axes.y?.key ?? ``) ? -40 : -10,
-        x: 90,
+      x_axis={{
+        label: axes.x?.label,
+        format: axes.x?.format,
+        range: axes.x?.range,
+        scale_type: log.x ? `log` : `linear`,
+        label_shift: { y: -50 },
+        ticks: x_ticks,
       }}
-      {x_ticks}
-      {y_ticks}
-      {x_grid}
-      {y_grid}
+      y_axis={{
+        label: axes.y?.label,
+        format: axes.y?.format,
+        range: axes.y?.range,
+        scale_type: log.y ? `log` : `linear`,
+        label_shift: {
+          x: 50,
+          y: [date_key, params_key].includes(axes.y?.key ?? ``) ? -40 : -10,
+        },
+        ticks: y_ticks,
+      }}
+      display={{ x_grid, y_grid }}
       color_scale={{ scheme: color_scheme, type: log.color_value ? `log` : `linear` }}
       size_scale={{
         radius_range: [5 * size_multiplier, 20 * size_multiplier],
@@ -405,6 +394,7 @@
       point_events={{
         onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
       }}
+      controls={{ toggle_props: { style: `position: absolute; top: 10px; right: 50px` } }}
       {...rest}
     >
       {#snippet tooltip({ x_formatted, y_formatted, metadata })}
@@ -433,66 +423,33 @@
 </div>
 
 <style>
-  /* Add styles globally to hide body scrollbar when a component is fullscreen */
-  :global(body.fullscreen) {
-    overflow: hidden;
-  }
   .plot-container {
-    position: relative; /* Needed for absolute positioning of the button */
-    /* Use site background */
-    background: var(--bg);
+    position: relative; /* Needed for absolute positioning of buttons */
+    --scatter-min-height: 600px;
   }
-  .plot-container.fullscreen {
-    /* Ensure fixed positioning covers the entire viewport */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 1000;
-    /* Explicitly set background for fullscreen using the site's main background color */
-    background: var(--night); /* Use --night from app.css */
+  .plot-container:fullscreen {
+    background: var(--page-bg);
     overflow: auto; /* Allow scrolling within the fullscreen container if content overflows */
     padding: 2em;
     box-sizing: border-box;
-    /* Use flexbox for layout */
     display: flex;
     flex-direction: column;
-    gap: 1em; /* Add gap between controls and plot */
+    gap: 1em;
   }
-  .top-buttons {
+  button {
     position: absolute;
-    top: 0;
-    right: -5em;
+    top: 20px;
+    right: -20px;
     display: flex;
-    gap: 1ex;
-  }
-  .top-buttons button {
-    cursor: pointer;
     padding: 8px;
     border-radius: 50%;
-    transition: background-color 0.2s;
-    background-color: rgba(255, 255, 255, 0.15);
   }
-  .icon-button:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+  button[title='Exit fullscreen'] {
+    right: 3.5em;
   }
-  :global(body.fullscreen) .top-buttons {
-    top: 1em;
-    right: 1em;
-  }
-  .controls {
+  div.controls-grid {
     display: grid;
-    grid-template-columns: auto 1fr; /* Label | Control Area */
-    gap: 8pt 1em;
-  }
-  .controls > *:nth-child(odd):not(label) {
-    grid-column: 2;
-  }
-  input[type='checkbox'] {
-    transform: scale(1.2);
-  }
-  .controls input[type='range'] {
-    margin-left: 0 !important;
+    grid-template-columns: auto 1fr auto;
+    gap: 1ex;
   }
 </style>

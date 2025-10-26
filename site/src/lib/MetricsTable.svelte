@@ -1,33 +1,21 @@
 <script lang="ts">
   import { HeatmapTable, Icon, IconList, TableControls } from '$lib'
   import { metric_better_as } from '$lib/metrics'
-  import type { Snippet } from 'svelte'
-  import { click_outside } from 'svelte-multiselect/attachments'
-  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
-  import { assemble_row_data } from './metrics'
-  import { heatmap_class } from './table-export'
   import type {
     CellSnippetArgs,
     DiscoverySet,
     Label,
     LinkData,
     ModelData,
-  } from './types'
+  } from '$lib/types'
+  import type { Snippet } from 'svelte'
+  import { click_outside } from 'svelte-multiselect/attachments'
+  import type { HTMLAttributes } from 'svelte/elements'
+  import { SvelteSet } from 'svelte/reactivity'
+  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
+  import { assemble_row_data } from './metrics'
+  import { heatmap_class } from './table-export'
 
-  interface Props {
-    discovery_set?: DiscoverySet
-    model_filter?: (model: ModelData) => boolean
-    col_filter?: (col: Label) => boolean
-    show_energy_only?: boolean
-    show_non_compliant?: boolean
-    show_heatmap?: boolean
-    show_compliant?: boolean
-    active_files?: { name: string; url: string }[]
-    active_model_name?: string
-    pred_files_dropdown_pos?: { x: number; y: number; name: string } | null
-    selected_models?: Set<string>
-    [key: string]: unknown
-  }
   let {
     discovery_set = $bindable(`unique_prototypes`),
     model_filter = $bindable(() => true),
@@ -36,25 +24,32 @@
     show_non_compliant = $bindable(true),
     show_heatmap = $bindable(true),
     show_compliant = $bindable(true),
+    show_selected_only = $bindable(false),
     active_files = $bindable([]),
     active_model_name = $bindable(``),
     pred_files_dropdown_pos = $bindable(null),
-    selected_models = $bindable(new Set<string>()),
+    selected_models = $bindable(new SvelteSet<string>()),
+    column_order = $bindable([]),
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLDivElement> & {
+    discovery_set?: DiscoverySet
+    model_filter?: (model: ModelData) => boolean
+    col_filter?: (col: Label) => boolean
+    show_energy_only?: boolean
+    show_non_compliant?: boolean
+    show_heatmap?: boolean
+    show_compliant?: boolean
+    show_selected_only?: boolean
+    active_files?: { name: string; url: string }[]
+    active_model_name?: string
+    pred_files_dropdown_pos?: { x: number; y: number; name: string } | null
+    selected_models?: Set<string>
+    column_order?: string[]
+  } = $props()
 
   const { model_name, training_set, targets, date_added, links } = METADATA_COLS
   const { checkpoint_license, code_license, org } = METADATA_COLS
   const { graph_construction_radius, model_params } = HYPERPARAMS
-
-  // Define the select column
-  const select_column: Label = {
-    key: `select`,
-    label: `Select`,
-    description: `Select models to highlight`,
-    visible: false, // Hidden by default
-    sortable: false,
-  }
 
   let columns = $derived(
     [
@@ -69,7 +64,6 @@
       checkpoint_license,
       code_license,
       org,
-      select_column,
     ]
       .map((col) => {
         const better = col.better ?? metric_better_as(col.label)
@@ -89,6 +83,8 @@
       .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
   )
 
+  let selected_count = $derived(selected_models.size)
+
   let metrics_data = $derived(
     assemble_row_data(
       discovery_set,
@@ -96,16 +92,23 @@
       show_energy_only,
       show_non_compliant,
       show_compliant,
-    ).map((row) => {
-      const model_data = row as ModelData
-      const model_name = String(model_data.Model)
-      const is_selected = selected_models.has(model_name)
-      row.style = is_selected
-        ? `background-color: rgba(255, 255, 255, 0.1); color: rgb(255, 202, 135);`
-        : undefined
-
-      return row
-    }),
+    )
+      .filter((row) => {
+        // If show_selected_only is true, only show selected models
+        if (show_selected_only) {
+          const model_name = String((row as ModelData).Model)
+          return selected_models.has(model_name)
+        }
+        return true
+      })
+      .map((row) => {
+        const model_data = row as ModelData
+        const model_name = String(model_data.Model)
+        const is_selected = selected_models.has(model_name)
+        // Only apply selected styles when not filtering to show only selected models
+        row.class = is_selected && !show_selected_only ? `highlight` : null
+        return row
+      }),
   )
 
   function show_dropdown(event: MouseEvent, links: LinkData) {
@@ -118,23 +121,26 @@
     active_model_name = links.pred_files.name
     active_files = links.pred_files.files
 
-    // Position dropdown relative to the viewport
+    // Position dropdown relative to the button's position in the document
+    const { name } = links.pred_files
     pred_files_dropdown_pos = {
-      x: rect.left,
-      y: rect.bottom,
-      name: links.pred_files.name,
+      x: rect.left + window.scrollX,
+      y: rect.bottom + window.scrollY,
+      name,
     }
   }
   const close_dropdown = () => (pred_files_dropdown_pos = null)
 
   function toggle_model_selection(model_name: string) {
-    const new_selected = new Set(selected_models)
-    if (new_selected.has(model_name)) {
-      new_selected.delete(model_name)
-    } else {
-      new_selected.add(model_name)
-    }
+    const new_selected = new SvelteSet(selected_models)
+    if (new_selected.has(model_name)) new_selected.delete(model_name)
+    else new_selected.add(model_name)
     selected_models = new_selected
+  }
+
+  function handle_row_double_click(event: MouseEvent, model_name: string) {
+    event.preventDefault()
+    toggle_model_selection(model_name)
   }
 </script>
 
@@ -146,16 +152,6 @@
     }
   }}
 />
-
-{#snippet select_cell({ row }: CellSnippetArgs)}
-  {@const model_name = String((row as ModelData).Model)}
-  <input
-    type="checkbox"
-    checked={selected_models.has(model_name)}
-    onchange={() => toggle_model_selection(model_name)}
-    aria-label="Select {model_name} for highlighting"
-  />
-{/snippet}
 
 {#snippet affiliation_cell({ row }: CellSnippetArgs)}
   <IconList icons={(row as ModelData).org_logos} />
@@ -196,13 +192,17 @@
   initial_sort_direction="desc"
   sort_hint="Click on column headers to sort table rows"
   special_cells={{
-    Select: select_cell as unknown as Snippet<[CellSnippetArgs]>,
     Links: links_cell as unknown as Snippet<[CellSnippetArgs]>,
     Org: affiliation_cell as unknown as Snippet<[CellSnippetArgs]>,
   }}
   default_num_format=".3f"
   bind:show_heatmap
+  bind:column_order
   {heatmap_class}
+  onrowdblclick={(event, row) => {
+    const model_name = String((row as ModelData).Model)
+    handle_row_double_click(event, model_name)
+  }}
   {...rest}
 >
   {#snippet controls()}
@@ -212,13 +212,15 @@
       bind:show_heatmap
       bind:show_compliant
       bind:show_non_compliant
+      bind:show_selected_only
+      {selected_count}
     />
   {/snippet}
 </HeatmapTable>
 
 {#if pred_files_dropdown_pos}
   {@const { x, y } = pred_files_dropdown_pos}
-  {@const style = `position: fixed; left: ${x}px; top: ${y}px;`}
+  {@const style = `position: absolute; left: ${x}px; top: ${y}px;`}
   <div
     class="pred-files-dropdown"
     {style}
@@ -245,10 +247,10 @@
   .pred-files-dropdown {
     transform: translateX(-100%);
     margin-left: 20px;
-    background: var(--light-bg, white);
-    color: var(--text-color, black);
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 5px;
-    padding: 0.75em;
+    padding: 4pt 11pt;
   }
   .pred-files-dropdown h4 {
     margin: 0;

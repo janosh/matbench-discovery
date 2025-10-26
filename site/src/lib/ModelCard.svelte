@@ -4,17 +4,9 @@
   import pkg from '$site/package.json'
   import { format_num } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
+  import type { HTMLAttributes } from 'svelte/elements'
   import { fade, slide } from 'svelte/transition'
 
-  interface Props {
-    model: ModelData
-    metrics: readonly Label[]
-    sort_by: keyof ModelData
-    show_details?: boolean
-    metrics_style?: string
-    title_style?: string
-    [key: string]: unknown
-  }
   let {
     model,
     metrics,
@@ -23,11 +15,16 @@
     metrics_style = ``,
     title_style = ``,
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLElementTagNameMap[`section`]> & {
+    model: ModelData
+    metrics: readonly Label[]
+    sort_by: keyof ModelData
+    show_details?: boolean
+    metrics_style?: string
+    title_style?: string
+  } = $props()
 
-  let { model_name, model_key, model_params, training_set, n_estimators } = $derived(
-    model,
-  )
+  let { model_name, model_key, model_params, training_set } = $derived(model)
   let all_metrics = $derived({
     ...(typeof model.metrics?.discovery === `object`
       ? model.metrics.discovery.unique_prototypes
@@ -37,7 +34,7 @@
       : {}),
     CPS: model.CPS,
   })
-  let { missing_preds, missing_percent } = $derived(all_metrics)
+  let { missing_preds } = $derived(all_metrics)
 
   let links = $derived(
     [
@@ -50,15 +47,20 @@
   )
   const target = { target: `_blank`, rel: `noopener` }
   let n_model_params = $derived(format_num(model_params, `.3~s`))
+  let expand_title = $derived(
+    `${show_details ? `Hide` : `Show`} authors and package versions`,
+  )
 </script>
 
-<h2 id={model_key} style={title_style}>
+<h2 style={title_style}>
   <a href="/models/{model_key}">{model_name}</a>
   <button
     onclick={() => (show_details = !show_details)}
-    title="{show_details ? `Hide` : `Show`} authors and package versions"
+    aria-expanded={show_details}
+    aria-label={expand_title}
+    title={expand_title}
+    style={title_style}
   >
-    <!-- change between expand/collapse icon -->
     <Icon icon="Arrow{show_details ? `Up` : `Down`}" />
   </button>
 </h2>
@@ -110,22 +112,27 @@
   <span>
     <Icon icon="NeuralNetwork" /> {n_model_params} params
   </span>
-  {#if n_estimators > 1}
+  {#if model.n_estimators > 1}
     <span>
       <Icon icon="Forest" />
-      Ensemble of {n_estimators}
+      Ensemble of {model.n_estimators}
       <span
-        title="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
+        title="This result used a model ensemble with {model.n_estimators} members with {n_model_params} parameters each."
         {@attach tooltip()}
       >
         &nbsp;<Icon icon="Info" />
       </span>
     </span>
   {/if}
-  <span>
+  <span
+    {@attach tooltip()}
+    title="Out of {format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, {format_num(missing_preds ?? 0, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances."
+  >
     <Icon icon="MissingMetadata" /> Missing preds:
     {format_num(missing_preds ?? 0, `,.0f`)}
-    <small>({missing_percent})</small>
+    {#if missing_preds && missing_preds > 0}
+      <small>({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})</small>
+    {/if}
   </span>
 </section>
 {#if show_details}
@@ -150,7 +157,7 @@
       <h3>Package versions</h3>
       <ul>
         {#each Object.entries(model.requirements ?? {}) as [name, version] (name)}
-          {@const [href, link_text] = version.startsWith(`http`)
+          {@const [href, link_text] = version?.startsWith(`http`)
           // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
           ? [version, version.split(`/`).at(-1)]
           : [`https://pypi.org/project/${name}/${version}`, version]}
@@ -164,7 +171,7 @@
 {/if}
 
 <section class="metrics" style={metrics_style || null}>
-  <h3>Metrics</h3>
+  <h3 style="margin: 0; font-weight: normal">Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->
     {#each metrics as metric (JSON.stringify(metric))}
@@ -192,9 +199,6 @@
     background: none;
     padding: 0;
     font: inherit;
-  }
-  h3 {
-    margin: 0;
   }
   ul {
     list-style: disc;
@@ -244,12 +248,6 @@
   section.metrics > ul > li > :is(label, strong) {
     padding: 0 4pt;
     border-radius: 3pt;
-  }
-  section.metrics > ul > li > strong {
-    background-color: rgba(0, 0, 0, 0.25);
-  }
-  section.metrics > ul > li.active > strong {
-    background-color: teal;
   }
   section.metrics > ul > li.active > label {
     font-weight: bold;

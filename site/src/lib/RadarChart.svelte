@@ -2,16 +2,12 @@
   import { Icon } from '$lib'
   import type { CpsConfig } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS } from '$lib/labels'
-  import type { Point } from 'matterviz'
+  import { format_num, type Point } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from './combined_perf_score.svelte'
   import { MODELS, update_models_cps } from './models.svelte'
 
-  // Define props interface
-  interface Props {
-    size?: number
-  }
-  let { size = 200 }: Props = $props()
+  let { size = 200 }: { size?: number } = $props()
 
   // State for the draggable point
   let is_dragging = $state(false)
@@ -31,9 +27,9 @@
   }
 
   const colors = [
-    `rgba(255, 99, 132, 0.7)`, // red for F1
-    `rgba(255, 206, 86, 0.7)`, // yellow for kappa
-    `rgba(54, 162, 235, 0.7)`, // blue for RMSD
+    `rgb(255, 99, 132)`, // red for F1
+    `rgb(255, 206, 86)`, // yellow for kappa
+    `rgb(54, 162, 235)`, // blue for RMSD
   ]
 
   // Compute axes points coordinates
@@ -142,7 +138,7 @@
 
   // Move point to a position with triangle constraints
   // during dragging, don't update weights - only move the point visually
-  // this prevents table rerendering during drag which causes the viewport to scroll (terrible UX)
+  // this prevents table rerendering during drag which causes viewport to scroll (terrible UX)
   function move_point_to_position(x: number, y: number) {
     const [a, b, c] = axis_points
     if (
@@ -251,9 +247,9 @@
 </script>
 
 <div class="radar-chart">
-  <span class="metric-name">
-    {ALL_METRICS.CPS.label}
-    <Icon icon="Info" {@attach tooltip({ content: ALL_METRICS.CPS.description })} />
+  <span class="metric-name" title={ALL_METRICS.CPS.description} {@attach tooltip()}>
+    {ALL_METRICS.CPS.key}
+    <Icon icon="Info" />
   </span>
 
   <button class="reset-button" onclick={reset_weights} title="Reset to default weights">
@@ -279,31 +275,25 @@
       {@const label_radius = idx === 2 ? radius * 1.0 : radius * 0.9}
       {@const label_x = center.x + Math.cos(angle) * label_radius}
       {@const label_y = center.y + Math.sin(angle) * label_radius}
-      {@const spacing = idx === 1 ? `1.5em` : `1.2em`}
-
       <line
         x1={center.x}
         y1={center.y}
         x2={x}
         y2={y}
-        stroke="rgba(255, 255, 255, 0.4)"
+        stroke="var(--border)"
         stroke-width="1"
       />
 
       <!-- Axis labels -->
-      <text
+      <foreignObject
         x={label_x}
         y={label_y}
-        text-anchor="middle"
-        dominant-baseline="middle"
-        font-size="14"
-        fill={colors[idx]}
+        style="font-size: 14px; transform: translate(-1ex, -1em); overflow: visible; white-space: nowrap"
+        style:color={colors[idx]}
       >
-        {@html weight.svg_label ?? weight.short ?? weight.label}
-        <tspan dy={spacing} x={label_x} font-size="12" font-weight="bold">
-          {((weight.weight as number) * 100).toFixed(0)}%
-        </tspan>
-      </text>
+        {@html weight.short ?? weight.label}
+        <small>{format_num(weight.weight, `.0%`)}</small>
+      </foreignObject>
     {/each}
 
     <!-- Triangle area -->
@@ -311,8 +301,8 @@
       <path
         d="M {axis_points[0].x} {axis_points[0].y} L {axis_points[1].x} {axis_points[1]
           .y} L {axis_points[2].x} {axis_points[2].y} Z"
-        fill="rgba(255, 255, 255, 0.1)"
-        stroke="rgba(255, 255, 255, 0.3)"
+        fill="var(--nav-bg)"
+        stroke="var(--border)"
         stroke-width="1"
       />
     {/if}
@@ -324,7 +314,7 @@
         cy={center.y}
         r={radius * grid_radius}
         fill="none"
-        stroke="rgba(255, 255, 255, 0.1)"
+        stroke="var(--border)"
         stroke-width="1"
       />
     {/each}
@@ -341,7 +331,7 @@
     <!-- Draggable knob: first element is larger invisible hit area for the smaller visible knob above it -->
     {#each [
         { fill: `transparent`, r: 20 },
-        { fill: `white`, stroke: `black`, r: 8 },
+        { fill: `var(--card-bg)`, stroke: `var(--text-color)`, r: 8 },
       ] as
       knob_style
       (knob_style.r)
@@ -363,15 +353,16 @@
 
 <style>
   .radar-chart {
-    padding: 1em 1em 0 0;
+    padding: 1em 3ex 0 0;
     margin: 0;
     position: relative;
-    background: var(--light-bg);
+    background: var(--card-bg);
     border-radius: 4px;
   }
   svg {
     touch-action: none; /* Prevents default touch behaviors */
     cursor: pointer; /* Show pointer cursor to hint clickability */
+    overflow: visible;
   }
   span.metric-name {
     position: absolute;
@@ -383,7 +374,7 @@
     top: 4pt;
     right: 5pt;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--border);
     border-radius: 3px;
     cursor: pointer;
     padding: 0.15em 0.35em;
@@ -391,6 +382,6 @@
     margin-left: auto;
   }
   .reset-button:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--nav-bg);
   }
 </style>

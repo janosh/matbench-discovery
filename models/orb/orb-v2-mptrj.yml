@@ -91,7 +91,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52134890
   geo_opt:
     pred_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062317
+    pred_file_url: https://figshare.com/files/57753379
     struct_col: orb_structure
     symprec=1e-5:
       rmsd: 0.1007 # unitless
@@ -133,7 +133,6 @@ metrics:
       RMSE: 0.09 # eV/atom
       R2: 0.752 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.971 # fraction
       DAF: 6.173 # dimensionless
@@ -152,7 +151,6 @@ metrics:
       RMSE: 0.098 # eV/atom
       R2: 0.801 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.765 # fraction
       DAF: 4.702 # dimensionless
@@ -171,4 +169,3 @@ metrics:
       RMSE: 0.091 # eV/atom
       R2: 0.756 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction

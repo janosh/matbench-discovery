@@ -1,10 +1,10 @@
 <script lang="ts">
   import { type Author, Icon } from '$lib'
+  import type { SVGAttributes } from 'svelte/elements'
 
-  interface Props {
+  let { author, ...rest }: SVGAttributes<SVGSVGElement> & {
     author: Author
-  }
-  let { author }: Props = $props()
+  } = $props()
 </script>
 
 {#if author}
@@ -12,22 +12,22 @@
   <small title={affiliation}>{name}</small>
   {#if email}
     <a aria-label="Email" href="mailto:{email}">
-      <Icon icon="Contact" />
+      <Icon icon="Contact" {...rest} />
     </a>
   {/if}
   {#if orcid}
     <a aria-label="Orcid" href={orcid}>
-      <Icon icon="Orcid" />
+      <Icon icon="Orcid" {...rest} />
     </a>
   {/if}
   {#if url}
     <a aria-label="Website" href={url}>
-      <Icon icon="Globe" />
+      <Icon icon="Globe" {...rest} />
     </a>
   {/if}
   {#if github}
     <a aria-label="GitHub" href={github}>
-      <Icon icon="GitHub" />
+      <Icon icon="GitHub" {...rest} />
     </a>
   {/if}
 {/if}

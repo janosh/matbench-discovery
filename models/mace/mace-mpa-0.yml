@@ -85,7 +85,7 @@ metrics:
       pred_file_url: https://figshare.com/files/52134875
   geo_opt:
     pred_file: models/mace/mace-mpa-0/2025-01-30-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/52305026
+    pred_file_url: https://figshare.com/files/57751036
     struct_col: mace_structure
     symprec=1e-2:
       rmsd: 0.0731 # unitless
@@ -127,7 +127,6 @@ metrics:
       RMSE: 0.073 # eV/atom
       R2: 0.837 # dimensionless
       missing_preds: 4 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.978 # fraction
       DAF: 6.258 # dimensionless
@@ -146,7 +145,6 @@ metrics:
       RMSE: 0.105 # eV/atom
       R2: 0.776 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.852 # fraction
       DAF: 5.582 # dimensionless
@@ -165,7 +163,6 @@ metrics:
       RMSE: 0.073 # eV/atom
       R2: 0.842 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
   diatomics:
     pred_file: models/mace/mace-mpa-0/2025-02-13-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52449437

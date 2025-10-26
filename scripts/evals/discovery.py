@@ -8,26 +8,22 @@ the site.
 
 # %%
 import itertools
-import sys
+import traceback
 from datetime import date
 
 import numpy as np
 import pandas as pd
+import pymatviz as pmv
 import yaml
-from pymatviz import IS_IPYTHON
 from pymatviz.enums import Key, eV_per_atom
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import DATA_DIR, PKG_DIR
-from matbench_discovery.data import df_wbm
+from matbench_discovery import PKG_DIR
+from matbench_discovery.cli import cli_args
+from matbench_discovery.data import DATASETS, df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets, TestSubset
 from matbench_discovery.metrics import discovery
-
-try:
-    from IPython.display import display
-except ImportError:
-    display = print
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -39,30 +35,35 @@ if __name__ == "__main__":
 
     uniq_protos_idx = df_wbm.query(MbdKey.uniq_proto).index
 
-    models_to_write = [
-        Model[model] for model in sys.argv[1:] if hasattr(Model, model)
-    ] or Model
-    for model in models_to_write:
-        model_preds = preds.df_preds[model.label]
-        for test_subset, (metrics, subset_idx) in {
-            TestSubset.full_test_set: (
-                preds.df_metrics[model.label].to_dict(),
-                slice(None),
-            ),
-            TestSubset.uniq_protos: (
-                preds.df_metrics_uniq_protos[model.label].to_dict(),
-                uniq_protos_idx,
-            ),
-            TestSubset.most_stable_10k: (
-                preds.df_metrics_10k[model.label].to_dict(),
-                model_preds.loc[uniq_protos_idx].nsmallest(10_000).index,
-            ),
-        }.items():
-            discovery.write_metrics_to_yaml(
-                model, metrics, model_preds.loc[subset_idx], test_subset
-            )
+    models_to_write = cli_args.models or list(Model)
 
-    if not IS_IPYTHON:
+    for model in models_to_write:
+        try:
+            print(f"\nProcessing {model.label}...")
+            model_preds = preds.df_preds[model.label]
+            for test_subset, (metrics, subset_idx) in {
+                TestSubset.full_test_set: (
+                    preds.df_metrics[model.label].to_dict(),
+                    slice(None),
+                ),
+                TestSubset.uniq_protos: (
+                    preds.df_metrics_uniq_protos[model.label].to_dict(),
+                    uniq_protos_idx,
+                ),
+                TestSubset.most_stable_10k: (
+                    preds.df_metrics_10k[model.label].to_dict(),
+                    model_preds.loc[uniq_protos_idx].nsmallest(10_000).index,
+                ),
+            }.items():
+                discovery.write_metrics_to_yaml(
+                    model, metrics, model_preds.loc[subset_idx], test_subset
+                )
+            print(f"\t✓ Updated discovery metrics for {test_subset}")
+        except Exception:
+            print(f"\t✗ Error processing {model.label}: {traceback.format_exc()}")
+            continue
+
+    if not pmv.IS_IPYTHON:
         raise SystemExit(0)
 
 
@@ -78,9 +79,6 @@ model_name_col = "Model"
 non_compliant_models = [
     model.label for model in Model if model.is_complete and not model.is_compliant
 ]
-
-with open(f"{DATA_DIR}/datasets.yml") as file:
-    DATASETS = yaml.safe_load(file)
 
 # Add model metadata to df_metrics(_10k|_uniq_protos)
 models = discovery.df_metrics_uniq_protos.columns
@@ -172,10 +170,7 @@ for model_label in models:
                 else ""
             )
 
-            title = (
-                f"{n_materials_total:,} materials in training set{new_line}"
-                f"{dataset_tooltip}"
-            )
+            title = f"{n_materials_total:,} materials in training set{new_line}{dataset_tooltip}"  # noqa: E501
             train_size_str = (
                 f"<span {title=} data-sort-value={n_materials_total}>"
                 f"{si_fmt(n_materials_total, fmt='.0f')} ({dataset_str})</span>"
@@ -261,7 +256,7 @@ for df_in, df_out, col in (
 
     # important: regression metrics from dummy_clf are meaningless, we overwrite them
     # with correct values here. don't remove!
-    dummy_metrics[Key.daf.symbol] = 1
+    dummy_metrics[str(Key.daf.symbol)] = 1
     dummy_metrics["R2"] = 0
     dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
     dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
@@ -270,7 +265,7 @@ for df_in, df_out, col in (
 
 
 # %%
-with open(f"{PKG_DIR}/modeling-tasks.yml") as file:
+with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
     discovery_metrics = yaml.safe_load(file)["discovery"]["metrics"]
 
 R2_col = "R<sup>2</sup>"
@@ -408,4 +403,7 @@ for (label, df_met), show_non_compliant in itertools.product(
     # model_name_col also has HTML title attributes for hover tooltips
     styler.hide(axis="index")
     non_compliant_idx = [*set(styler.index) & set(non_compliant_models)]
-    display(styler.set_caption(df_met.attrs["title"]))
+    if pmv.IS_IPYTHON:
+        from IPython.display import display
+
+        display(styler.set_caption(df_met.attrs["title"]))

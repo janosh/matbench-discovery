@@ -1,13 +1,12 @@
 <script lang="ts">
+  import type { SVGAttributes } from 'svelte/elements'
   import { icon_data, type IconName } from './icons'
 
-  interface Props {
+  let { icon, ...rest }: SVGAttributes<SVGSVGElement> & {
     icon: IconName
-    [key: string]: unknown
-  }
-  let { icon, ...rest }: Props = $props()
+  } = $props()
 
-  const { path, ...data } = $derived.by(() => {
+  const { path, ...svg_props } = $derived.by(() => {
     if (!(icon in icon_data)) {
       console.error(`Icon '${icon}' not found`)
       return icon_data.Alert // fallback
@@ -16,7 +15,7 @@
   })
 </script>
 
-<svg fill="currentColor" {...data} {...rest}>
+<svg fill="currentColor" aria-hidden="true" {...svg_props} {...rest}>
   {#if path.trim().startsWith(`<`)}
     {@html path}
   {:else}
@@ -30,6 +29,5 @@
     height: 1em;
     display: inline-block;
     vertical-align: middle;
-    transform: translateY(-1px);
   }
 </style>

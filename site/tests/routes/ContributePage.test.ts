@@ -9,12 +9,12 @@ describe(`Contribute Page`, () => {
 
   it(`renders markdown content with correct structure`, () => {
     // Check main heading
-    expect(document.body.querySelector(`h1`)?.textContent).toBe(
+    expect(document.querySelector(`h1`)?.textContent).toBe(
       `How to submit new models to Matbench Discovery`,
     )
 
     // Check section headings
-    const headings = Array.from(document.body.querySelectorAll(`h2`))
+    const headings = Array.from(document.querySelectorAll(`h2`))
     expect(headings.length).toBeGreaterThanOrEqual(2)
 
     const expected_headings = [`Installation`, `Troubleshooting`]
@@ -28,12 +28,12 @@ describe(`Contribute Page`, () => {
     // Check installation section
     const install_section = get_heading_section(document.body, `Installation`)
     expect(install_section?.textContent).toContain(
-      `Clone the repo and install matbench_discovery`,
+      `Clone the repo and install matbench-discovery`,
     )
 
     // Check code blocks and PyPI link
-    expect(document.body.querySelectorAll(`pre`).length).toBeGreaterThanOrEqual(2)
-    const pypi_link = document.body.querySelector(
+    expect(document.querySelectorAll(`pre`).length).toBeGreaterThanOrEqual(2)
+    const pypi_link = document.querySelector(
       `a[href*='pypi.org/project/matbench-discovery']`,
     )
     expect(pypi_link).toBeDefined()
@@ -44,7 +44,7 @@ describe(`Contribute Page`, () => {
   })
 
   it(`renders API examples and code snippets`, () => {
-    const code_content = Array.from(document.body.querySelectorAll(`pre`))
+    const code_content = Array.from(document.querySelectorAll(`pre`))
       .map((block) => block.textContent || ``)
       .join(`\n`)
 

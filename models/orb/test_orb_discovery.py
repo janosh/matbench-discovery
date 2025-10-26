@@ -80,7 +80,7 @@ def main(
         out_path = f"{out_dir}/{model_name_}-{today}-shard-{shard:>03}.json.gz"
 
     if os.path.isfile(out_path):
-        raise SystemExit(f"{out_path=} already exists, exciting early")
+        raise SystemExit(f"{out_path=} already exists, exiting early")
 
     # This is inside the script because accessing the variables causes a download
     # to be triggered if they are not present, meaning it's better to only load them
@@ -143,13 +143,13 @@ def main(
             if cell_opt:
                 atoms = FrechetCellFilter(atoms)
             optim_cls = OPTIMIZERS[ase_optimizer]
-            optimizer = optim_cls(atoms, logfile="/dev/null")
+            optimizer = optim_cls(atoms, logfile=None)
 
             optimizer.run(fmax=force_max, steps=max_steps)
             energy = atoms.get_potential_energy()  # relaxed energy
-            optimized_structure = AseAtomsAdaptor.get_structure(
-                getattr(atoms, "atoms", atoms)  # atoms might be wrapped in ase filter
-            )
+            # Handle case where atoms might be wrapped in FrechetCellFilter
+            unwrapped = atoms.atoms if hasattr(atoms, "atoms") else atoms
+            optimized_structure = AseAtomsAdaptor.get_structure(unwrapped)
 
             relax_results[material_id] = {
                 "structure": optimized_structure,

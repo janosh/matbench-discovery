@@ -10,12 +10,12 @@ import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
 from pymatgen.core import Composition, Structure
-from pymatviz.enums import Key
+from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
-from matbench_discovery.data import df_wbm
+from matbench_discovery.data import DATASETS, df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import DataFiles, MbdKey
 from matbench_discovery.preds.discovery import df_each_err
@@ -33,15 +33,23 @@ df_mp = df_mp.set_index(Key.mat_id)
 
 
 # %%
-wbm_occu_counts = pmv.count_elements(df_wbm[Key.formula], count_mode="occurrence")
+wbm_occu_counts = pmv.count_elements(
+    df_wbm[Key.formula], count_mode=ElemCountMode.occurrence
+)
 wbm_occu_counts = wbm_occu_counts.dropna().astype(int)
-wbm_comp_counts = pmv.count_elements(df_wbm[Key.formula], count_mode="composition")
+wbm_comp_counts = pmv.count_elements(
+    df_wbm[Key.formula], count_mode=ElemCountMode.composition
+)
 wbm_comp_counts = wbm_comp_counts.dropna().astype(int)
 
-mp_occu_counts = pmv.count_elements(df_mp[Key.formula], count_mode="occurrence")
+mp_occu_counts = pmv.count_elements(
+    df_mp[Key.formula], count_mode=ElemCountMode.occurrence
+)
 mp_occu_counts = mp_occu_counts.dropna().astype(int)
 
-mp_comp_counts = pmv.count_elements(df_mp[Key.formula], count_mode="composition")
+mp_comp_counts = pmv.count_elements(
+    df_mp[Key.formula], count_mode=ElemCountMode.composition
+)
 mp_comp_counts = mp_comp_counts.dropna().astype(int)
 
 all_counts = (
@@ -54,11 +62,16 @@ all_counts = (
 
 # %% print prevalence of stable structures in full WBM and uniq-prototypes only
 print(f"{STABILITY_THRESHOLD=}")
-for df, label in (
-    (df_wbm, "full WBM"),
-    (df_wbm.query(MbdKey.uniq_proto), "WBM unique prototypes"),
+for df, label, n_expected in (
+    (df_wbm, "full WBM", DATASETS["WBM"]["n_stable_materials"]),
+    (
+        df_wbm.query(MbdKey.uniq_proto),
+        "WBM unique prototypes",
+        DATASETS["WBM"]["n_uniq_stable_materials"],
+    ),
 ):
     n_stable = sum(df[MbdKey.each_true] <= STABILITY_THRESHOLD)
+    assert n_stable == n_expected, f"{label}: {n_stable=} != {n_expected=}"
     stable_rate = n_stable / len(df)
     print(f"{label}: {stable_rate=:.1%} ({n_stable:,} out of {len(df):,})")
 
@@ -85,10 +98,9 @@ for dataset, count_mode, elem_counts in all_counts:
 
 # %% ratio of WBM to MP counts
 normalized = True
-ax_ptable = pmv.ptable_heatmap_ratio(
-    wbm_occu_counts / (len(df_wbm) if normalized else 1),
-    mp_occu_counts / (len(df_mp) if normalized else 1),
-    zero_color="#efefef",
+ax_ptable = pmv.ptable_heatmap_plotly(
+    values=(wbm_occu_counts / (len(df_wbm) if normalized else 1))
+    / (mp_occu_counts / (len(df_mp) if normalized else 1)),
     exclude_elements=("Xe", "Th", "Pa", "U", "Np", "Pu"),
 )
 img_name = "wbm-mp-ratio-element-counts-by-occurrence"
