@@ -1,30 +1,26 @@
+import { MODELS } from '$lib/models.svelte'
 import { default as ModelsPage } from '$routes/models/+page.svelte'
 import { mount, tick } from 'svelte'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { doc_query } from '../index'
 
 describe(`Models Page`, () => {
-  beforeEach(() => {
-    mount(ModelsPage, { target: document.body })
-  })
-
   it(`renders model sorting controls`, () => {
+    mount(ModelsPage, { target: document.body })
+
     const toggle = document.querySelector(`input[type="checkbox"]`)
-    expect(toggle).toBeDefined()
     expect(toggle?.parentElement?.textContent).toMatch(/show non-compliant models/i)
 
-    const n_best_input = document.querySelector(
-      `input[type="number"]`,
-    ) as HTMLInputElement
-    expect(n_best_input).toBeDefined()
-
-    const radio_buttons = document.querySelectorAll(`input[type="radio"]`)
-    expect(radio_buttons).toHaveLength(2)
+    expect(document.querySelector(`input[type="number"]`)).toBeDefined()
+    expect(document.querySelectorAll(`input[type="radio"]`)).toHaveLength(2)
   })
 
   it(`renders metric sorting buttons`, () => {
-    const buttons = document.querySelectorAll(`ul button`)
-    const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
+    mount(ModelsPage, { target: document.body })
 
+    const button_texts = Array.from(document.querySelectorAll(`ul button`)).map(
+      (btn) => btn.textContent?.trim(),
+    )
     expect(button_texts).toContain(`Model Name`)
     expect(button_texts).toContain(`F1`)
     expect(button_texts).toContain(`DAF`)
@@ -32,6 +28,8 @@ describe(`Models Page`, () => {
   })
 
   it(`renders model cards`, () => {
+    mount(ModelsPage, { target: document.body })
+
     const model_cards = document.querySelectorAll(`ol > li`)
     expect(model_cards.length).toBeGreaterThan(0)
 
@@ -43,29 +41,29 @@ describe(`Models Page`, () => {
   })
 
   it(`sorts models by selected metric`, async () => {
-    // Get initial order of models
+    mount(ModelsPage, { target: document.body })
+
     const initial_models = Array.from(document.querySelectorAll(`ol > li h2 a`)).map(
       (a) => a.textContent,
     )
 
-    // Click DAF button to sort by DAF
-    const daf_btn = document.querySelector(`button#DAF`) as HTMLButtonElement
+    const daf_btn = doc_query<HTMLButtonElement>(`button#DAF`)
     expect(daf_btn).toBeDefined()
     daf_btn?.click()
-    await tick() // wait for re-render
+    await tick()
 
-    // Get new order of models
-    const sorted_models = Array.from(document.querySelectorAll(`ol > li h2 a`)).map((a) =>
-      a.textContent
+    const sorted_models = Array.from(document.querySelectorAll(`ol > li h2 a`)).map(
+      (a) => a.textContent,
     )
-
     // Order should be different
     expect(sorted_models).not.toEqual(initial_models)
   })
 
   it(`toggles model details`, async () => {
-    const first_card = document.querySelector(`ol > li`)
-    const details_btn = first_card?.querySelector(`h2 button`) as HTMLButtonElement
+    mount(ModelsPage, { target: document.body })
+
+    const first_card = doc_query<HTMLLIElement>(`ol > li`)
+    const details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
     expect(details_btn).toBeDefined()
 
     // Initially no authors section visible
@@ -82,22 +80,23 @@ describe(`Models Page`, () => {
     // Should now show authors and package versions
     const sections = first_card?.querySelectorAll(`section`)
     expect(sections?.length).toBeGreaterThan(0)
-    expect(
-      Array.from(sections ?? []).some((s) => s.textContent?.includes(`Authors`)),
-    ).toBe(true)
+    expect(Array.from(sections ?? []).some((s) => s.textContent?.includes(`Authors`)))
+      .toBe(
+        true,
+      )
     expect(
       Array.from(sections ?? []).some((s) => s.textContent?.includes(`Package versions`)),
     ).toBe(true)
   })
 
   it(`binds show_details state between page and model cards`, async () => {
-    const model_cards = Array.from(
-      document.querySelectorAll<HTMLElement>(`ol > li`),
-    )
-    expect(model_cards.length).toBeGreaterThan(1)
+    mount(ModelsPage, { target: document.body })
 
-    const [first_card, second_card] = model_cards
-    const first_details_btn = first_card.querySelector(`h2 button`) as HTMLButtonElement
+    const [first_card, second_card] = Array.from(document.querySelectorAll(`ol > li`))
+    expect(first_card).toBeDefined()
+    expect(second_card).toBeDefined()
+
+    const first_details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
 
     // Initially no details visible on either card
     // Check if the details sections are present by looking for non-metrics h3
@@ -106,41 +105,151 @@ describe(`Models Page`, () => {
 
     first_details_btn.click()
     await tick()
+
     // Now both cards should show details (shared state)
     // After clicking, details sections with h3 elements should be visible
-    expect(
-      first_card.querySelectorAll(`section:not(.metrics) h3`).length,
-    ).toBeGreaterThan(1)
-    expect(
-      second_card.querySelectorAll(`section:not(.metrics) h3`).length,
-    ).toBeGreaterThan(1)
+    expect(first_card.querySelectorAll(`section:not(.metrics) h3`).length)
+      .toBeGreaterThan(1)
+    expect(second_card.querySelectorAll(`section:not(.metrics) h3`).length)
+      .toBeGreaterThan(1)
   })
 
-  it(`limits number of displayed models`, () => {
-    const n_best_input = document.querySelector(
-      `input[type="number"]`,
-    ) as HTMLInputElement
+  it(`renders model limiting controls correctly`, () => {
+    mount(ModelsPage, { target: document.body })
+
+    const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
+
     expect(n_best_input).toBeDefined()
+    expect(n_best_input.type).toBe(`number`)
 
-    // Set to show only 3 models
-    n_best_input.value = `3`
-    n_best_input.dispatchEvent(new Event(`input`))
+    const initial_count = document.querySelectorAll(`ol > li`).length
+    expect(initial_count).toBeGreaterThan(7)
 
-    const displayed_models = document.querySelectorAll(`ol > li`)
-    expect(displayed_models.length > 7).toBe(true)
+    expect(n_best_input.min).toBe(`2`) // min_models = 2
+    expect(n_best_input.max).toBe(String(initial_count))
+    expect(Number(n_best_input.value)).toBe(initial_count)
+    expect(document.querySelectorAll(`ol > li`).length).toBe(initial_count)
+
+    const label_text = n_best_input.parentElement?.textContent
+    expect(label_text).toMatch(/sort/i)
+    expect(label_text).toMatch(/best models/i)
+  })
+
+  describe(`model limiting behavior`, () => {
+    const min_models = 2
+
+    it.each([
+      { input: 3, expected: 3 },
+      { input: 5, expected: 5 },
+      { input: 10, expected: 10 },
+      { input: MODELS.length - 1, expected: MODELS.length - 1 },
+      { input: MODELS.length, expected: MODELS.length },
+      { input: MODELS.length + 1, expected: MODELS.length }, // capped at max
+      { input: MODELS.length + 100, expected: MODELS.length }, // far above max
+      { input: 999, expected: MODELS.length }, // very large
+      { input: 0, expected: min_models }, // below min
+      { input: 1, expected: min_models }, // below min
+      { input: -5, expected: min_models }, // negative
+      { input: -999, expected: min_models }, // very negative
+    ])(
+      `displays $expected models when initial_show_n_best=$input`,
+      ({ input, expected }) => {
+        mount(ModelsPage, {
+          target: document.body,
+          props: { data: { initial_show_n_best: input } },
+        })
+
+        const model_cards = document.querySelectorAll(`ol > li`)
+        const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
+        const effective = Math.min(Math.max(min_models, input), MODELS.length)
+
+        expect(model_cards.length).toBe(expected)
+        expect(Number(n_best_input.value)).toBe(effective)
+        expect(n_best_input.min).toBe(String(min_models))
+        expect(n_best_input.max).toBe(String(MODELS.length))
+      },
+    )
+
+    it(`renders valid card structure with unique model names`, () => {
+      mount(ModelsPage, {
+        target: document.body,
+        props: { data: { initial_show_n_best: 10 } },
+      })
+
+      const cards = document.querySelectorAll(`ol > li`)
+      const names = Array.from(cards).map((card) => {
+        expect(card.querySelector(`h2 a`)).toBeDefined()
+        expect(card.querySelector(`.metrics`)).toBeDefined()
+        const name = card.querySelector(`h2 a`)?.textContent?.trim()
+        expect(name).toBeTruthy()
+        return name
+      })
+
+      expect(new Set(names).size).toBe(names.length)
+      expect(names.length).toBe(10)
+    })
+  })
+
+  it(`maintains limit and structure when sorting changes`, async () => {
+    const limit = 5
+    mount(ModelsPage, {
+      target: document.body,
+      props: { data: { initial_show_n_best: limit } },
+    })
+
+    const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
+    expect(Number(n_best_input.value)).toBe(limit)
+
+    const daf_btn = doc_query<HTMLButtonElement>(`button#DAF`)
+    daf_btn.click()
+    await tick()
+
+    const cards = document.querySelectorAll(`ol > li`)
+    expect(cards.length).toBeGreaterThan(0)
+    expect(cards.length).toBeLessThanOrEqual(MODELS.length)
+    cards.forEach((card) => {
+      expect(card.querySelector(`h2 a`)).toBeDefined()
+      expect(card.querySelector(`.metrics`)).toBeDefined()
+    })
+    expect(Number(n_best_input.value)).toBe(limit)
+  })
+
+  it(`shows correct subset when limiting models`, () => {
+    mount(ModelsPage, {
+      target: document.body,
+      props: { data: { initial_show_n_best: 3 } },
+    })
+
+    const limited_names = Array.from(document.querySelectorAll(`ol > li h2 a`)).map((a) =>
+      a.textContent
+    )
+
+    document.body.innerHTML = ``
+    mount(ModelsPage, { target: document.body })
+
+    const all_names = Array.from(document.querySelectorAll(`ol > li h2 a`)).map((a) =>
+      a.textContent
+    )
+    expect(all_names.slice(0, 3)).toEqual(limited_names)
+  })
+
+  it(`defaults to showing all models with compliance filter checked`, () => {
+    mount(ModelsPage, { target: document.body })
+
+    expect(document.querySelectorAll(`ol > li`).length).toBe(MODELS.length)
+    const checkbox = doc_query<HTMLInputElement>(`input[type="checkbox"]`)
+    expect(checkbox.checked).toBe(true)
   })
 
   it(`renders color legend`, () => {
-    const legend = document.querySelector(`legend`)
-    expect(legend?.textContent).toContain(`best`)
-    expect(legend?.textContent).toContain(`worst`)
+    mount(ModelsPage, { target: document.body })
 
-    // Check that the ColorBar component rendered its SVG
-    const color_bar_svg = legend?.querySelector(`svg`)
-    expect(color_bar_svg).toBeDefined()
+    const legend = doc_query(`legend`)
+    expect(legend.textContent).toContain(`best`)
+    expect(legend.textContent).toContain(`worst`)
 
-    const color_bar = legend?.querySelector(`.matterviz-color-bar`)
-    expect(color_bar).toBeDefined()
+    expect(legend.querySelector(`svg`)).toBeDefined()
+    expect(legend.querySelector(`.matterviz-color-bar`)).toBeDefined()
 
     const model_cards_h2 = Array.from(
       document.querySelectorAll<HTMLElement>(`ol > li h2`),

@@ -350,7 +350,7 @@ def update_yaml_file(
         current = current[part]
 
     # Update the data at the final level
-    if last not in current:
+    if last not in current or current[last] is None:
         current[last] = {}
     for key, val in current[last].items():
         data.setdefault(key, val)

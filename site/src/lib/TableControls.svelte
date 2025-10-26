@@ -3,7 +3,17 @@
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
-  interface Props extends HTMLAttributes<HTMLDivElement> {
+  let {
+    show_energy_only = $bindable(false),
+    columns = $bindable([]),
+    show_heatmap = $bindable(true),
+    show_compliant = $bindable(true),
+    show_non_compliant = $bindable(true),
+    show_selected_only = $bindable(false),
+    selected_count = 0,
+    on_filter_change = undefined,
+    ...rest
+  }: HTMLAttributes<HTMLDivElement> & {
     show_energy_only?: boolean
     columns?: Label[]
     show_heatmap?: boolean
@@ -15,18 +25,7 @@
       show_energy: boolean,
       show_non_compliant: boolean,
     ) => void | undefined
-  }
-  let {
-    show_energy_only = $bindable(false),
-    columns = $bindable([]),
-    show_heatmap = $bindable(true),
-    show_compliant = $bindable(true),
-    show_non_compliant = $bindable(true),
-    show_selected_only = $bindable(false),
-    selected_count = 0,
-    on_filter_change = undefined,
-    ...rest
-  }: Props = $props()
+  } = $props()
 </script>
 
 <div class="table-controls" {...rest}>

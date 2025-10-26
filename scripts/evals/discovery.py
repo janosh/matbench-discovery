@@ -8,6 +8,7 @@ the site.
 
 # %%
 import itertools
+import traceback
 from datetime import date
 
 import numpy as np
@@ -58,8 +59,8 @@ if __name__ == "__main__":
                     model, metrics, model_preds.loc[subset_idx], test_subset
                 )
             print(f"\t✓ Updated discovery metrics for {test_subset}")
-        except Exception as exc:
-            print(f"\t✗ Error processing {model.label}: {exc}")
+        except Exception:
+            print(f"\t✗ Error processing {model.label}: {traceback.format_exc()}")
             continue
 
     if not pmv.IS_IPYTHON:

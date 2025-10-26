@@ -15,10 +15,7 @@
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import per_elem_each_errors from '../per-element-each-errors.json'
 
-  interface Props {
-    data: { model: ModelData }
-  }
-  let { data }: Props = $props()
+  let { data }: { data: { model: ModelData } } = $props()
 
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)

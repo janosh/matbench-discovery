@@ -103,7 +103,7 @@ df_nequip[e_form_nequip_col] = [
     for formula, cse in tqdm(
         df_nequip.set_index(Key.formula)[Key.computed_structure_entry].items(),
         total=len(df_nequip),
-        desc="Getting formation energies",
+        desc="Computing corrected formation energies",
     )
 ]
 df_nequip = df_nequip.round(4)
