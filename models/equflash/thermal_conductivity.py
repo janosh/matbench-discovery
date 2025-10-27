@@ -3,8 +3,8 @@ Batchwise computation for FC3 computation
 
 """
 
-from typing import Any
 import os
+from typing import Any
 
 import numpy as np
 from ase import Atoms
@@ -45,7 +45,6 @@ def calculate_fc3_set_batch(
             m_idx = m_idx + 1
             g_idx = g_idx + 1
     forces = []
-    
 
     maximum_natom = int(os.environ.get("NATOMS", "128"))
     batchsize = max(maximum_natom // nat, 1)
