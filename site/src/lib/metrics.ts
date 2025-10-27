@@ -274,6 +274,12 @@ export function assemble_row_data(
     const r_cut = model.hyperparams?.graph_construction_radius
     const r_cut_str = r_cut ? `<span data-sort-value="${r_cut}">${r_cut} Å</span>` : `n/a`
 
+    // Get geometry optimization hyperparameters
+    const { ase_optimizer, max_steps, max_force, cell_filter } = model.hyperparams ?? {}
+    const cell_filter_display = cell_filter && typeof cell_filter === `string`
+      ? cell_filter.replace(/CellFilter$/, ``)
+      : null
+
     return {
       Model:
         `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
@@ -293,9 +299,19 @@ export function assemble_row_data(
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.short as string]: `<span title="${
         format_num(model.model_params, `,`)
-      }" trainable model parameters" data-sort-value="${model.model_params}">${
+      } trainable model parameters" data-sort-value="${model.model_params}">${
         format_num(model.model_params)
       }</span>`,
+      [HYPERPARAMS.ase_optimizer.short ?? ``]: ase_optimizer ?? `n/a`,
+      [HYPERPARAMS.max_steps.short ?? ``]: max_steps !== undefined
+        ? `<span data-sort-value="${max_steps}">${max_steps}</span>`
+        : `n/a`,
+      [HYPERPARAMS.max_force.short ?? ``]: max_force !== undefined
+        ? `<span data-sort-value="${max_force}">${max_force}</span>`
+        : `n/a`,
+      [HYPERPARAMS.cell_filter.label]: cell_filter_display
+        ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
+        : `n/a`,
       Targets: targets_str,
       'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${
         new Date(model.date_added).getTime()

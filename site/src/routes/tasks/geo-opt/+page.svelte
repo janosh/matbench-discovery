@@ -20,7 +20,9 @@
 
 <GeoOptReadme>
   {#snippet geo_opt_metrics_table()}
-    <GeoOptMetricsTable show_non_compliant />
+    <section class="full-bleed">
+      <GeoOptMetricsTable show_non_compliant />
+    </section>
   {/snippet}
   {#snippet min_relaxed_structures()}
     <span>{format_num(n_min_relaxed_structures)}</span>

@@ -168,6 +168,8 @@ export interface HyperparamLabels {
   graph_construction_radius: Label1
   max_force: Label1
   max_steps: Label1
+  ase_optimizer: Label1
+  cell_filter: Label1
   batch_size: Label1
   epochs: Label1
   n_layers: Label1

@@ -3,6 +3,7 @@
   import {
     DATASETS,
     DynamicScatter,
+    GitHubActivityScatter,
     Icon,
     MetricsTable,
     RadarChart,
@@ -23,6 +24,7 @@
   import { format_num } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { Snapshot } from './$types'
+  import github_activity_data from './models/mlip-github-activity.json'
 
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = DATASETS.WBM.n_materials
@@ -214,6 +216,13 @@
   {/snippet}
 </Readme>
 <KappaNote warning={false} />
+
+<h2>GitHub Activity</h2>
+<p>
+  Development activity and community engagement of MLIP GitHub repos. Points are sized by
+  number of contributors and colored by number of commits over the last year.
+</p>
+<GitHubActivityScatter github_data={github_activity_data} />
 
 <style>
   h1 {

@@ -208,16 +208,33 @@ export const HYPERPARAMS: HyperparamLabels = {
   max_force: {
     label: `Max force`,
     key: `max_force`,
+    short: `f<sub>max</sub>`,
     path: `hyperparams`,
     description:
-      `Max remaining force allowed on any atom in the structure for geometry optimization`,
+      `Max remaining force allowed on any atom in the structure for geometry optimization convergence`,
     unit: `eV/Å`,
   },
   max_steps: {
     label: `Max relaxation steps`,
     key: `max_steps`,
+    short: `Steps`,
     path: `hyperparams`,
-    description: `Maximum number of steps`,
+    description: `Maximum number of optimization steps allowed`,
+  },
+  ase_optimizer: {
+    label: `ASE optimizer`,
+    key: `ase_optimizer`,
+    short: `Optimizer`,
+    path: `hyperparams`,
+    description:
+      `ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)`,
+  },
+  cell_filter: {
+    label: `Cell filter`,
+    key: `cell_filter`,
+    path: `hyperparams`,
+    description:
+      `ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)`,
   },
   batch_size: {
     label: `Batch size`,

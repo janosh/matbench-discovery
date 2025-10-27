@@ -100,6 +100,8 @@ definitions:
       graph_construction_radius: { $ref: '#/definitions/Label' }
       max_force: { $ref: '#/definitions/Label' }
       max_steps: { $ref: '#/definitions/Label' }
+      ase_optimizer: { $ref: '#/definitions/Label' }
+      cell_filter: { $ref: '#/definitions/Label' }
       batch_size: { $ref: '#/definitions/Label' }
       epochs: { $ref: '#/definitions/Label' }
       n_layers: { $ref: '#/definitions/Label' }
@@ -111,6 +113,8 @@ definitions:
       - graph_construction_radius
       - max_force
       - max_steps
+      - ase_optimizer
+      - cell_filter
       - batch_size
       - epochs
       - n_layers

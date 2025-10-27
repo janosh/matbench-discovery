@@ -387,12 +387,18 @@ properties:
     properties:
       max_force:
         type: number
+        description: Maximum remaining force allowed on any atom in eV/Å for geometry optimization convergence
       max_steps:
         type: number
+        description: Maximum number of optimization steps allowed
       optimizer:
         type: string
       ase_optimizer:
         type: string
+        description: ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)
+      cell_filter:
+        type: string
+        description: ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)
       learning_rate:
         type: number
       batch_size:
