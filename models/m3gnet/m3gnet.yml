@@ -46,10 +46,12 @@ n_estimators: 1
 
 hyperparams:
   batch_size: 32
-  learning_rate: 1e-3
+  learning_rate: 0.001
   optimizer: Adam
   ase_optimizer: FIRE
   cell_filter: ExpCellFilter # see https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd/m3gnet/models/_dynamics.py#L122
+  max_steps: 500
+  max_force: 0.05 # eV/Å
   loss_weights:
     energy: 1
     force: 1

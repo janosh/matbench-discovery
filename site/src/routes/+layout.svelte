@@ -57,7 +57,7 @@
   <meta name="description" content={description} />
 </svelte:head>
 
-{#if ![`/`, `/models`].includes(url)}
+{#if ![`/`, `/models`, `/tasks/geo-opt`].includes(url)}
   <Toc
     {headingSelector}
     breakpoint={1600}

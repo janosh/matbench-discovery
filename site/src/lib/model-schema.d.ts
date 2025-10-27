@@ -77,10 +77,23 @@ export type ModelMetadata = {
     | `OpenLAM`
   )[]
   hyperparams?: {
+    /**
+     * Maximum remaining force allowed on any atom in eV/Å for geometry optimization convergence
+     */
     max_force?: number
+    /**
+     * Maximum number of optimization steps allowed
+     */
     max_steps?: number
     optimizer?: string
+    /**
+     * ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)
+     */
     ase_optimizer?: string
+    /**
+     * ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)
+     */
+    cell_filter?: string
     learning_rate?: number
     batch_size?: number
     epochs?: number
