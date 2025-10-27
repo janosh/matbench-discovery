@@ -10,8 +10,8 @@
     SelectToggle,
   } from '$lib'
   import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
-  import github_activity_data from '$lib/github-activity.json'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
+  import github_activity_data from '$lib/mlip-github-activity.json'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import {
     generate_csv,

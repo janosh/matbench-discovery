@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno task fetch-mlip-activity && deno run -A --node-modules-dir npm:vite dev",
+    "dev": "deno task fetch-mlip-activity || deno run -A --node-modules-dir npm:vite dev",
     "build": "deno task fetch-mlip-activity && deno run -A --node-modules-dir npm:vite build",
     "preview": "deno run -A --node-modules-dir npm:vite preview",
     "serve": "deno task build && deno task preview",

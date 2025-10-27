@@ -1,28 +1,25 @@
 #!/usr/bin/env -S deno run -A
-// Fetch GitHub activity data for MLIP repositories during site builds
-
 // deno-lint-ignore-file no-await-in-loop
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+// Fetch GitHub activity (stars, forks, commits, contributors) for MLIP repos from models/*.yml
+// Usage: deno run -A scripts/fetch-mlip-repos-github-activity.ts [--force-refresh]
+// Set GITHUB_TOKEN env var to avoid rate limits
+import { parse as parseYAML } from 'jsr:@std/yaml@^1.0.5'
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const site_root = join(__dirname, `..`)
+const project_root = join(site_root, `..`)
 const cache_dir = join(site_root, `.cache`)
-const output_file = join(site_root, `src/lib/github-activity.json`)
-const mlip_models_path = join(
-  site_root,
-  `../../papers/foundation-models-chem-rev/figs/mlip_models.json`,
-)
+const output_file = join(site_root, `src/lib/mlip-github-activity.json`)
+const models_dir = join(project_root, `models`)
 
-interface GitHubRepoData {
-  stargazers_count: number
-  forks_count: number
-  commits_last_year?: number
-  contributors?: number
-}
-interface RepoActivityData {
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+const force_refresh = process.argv.includes(`--force-refresh`)
+
+type RepoData = {
   name: string
   repo: string
   stars: number
@@ -31,137 +28,174 @@ interface RepoActivityData {
   contributors: number
 }
 
-type MlipModelsData = Record<string, [string, string]>
+const extract_github_repo = (url: string | null): string | null => {
+  if (!url) return null
+  const match = /github\.com\/([^/]+\/[^/]+)/.exec(url)
+  return match ? match[1].replace(/\.git$/, ``) : null
+}
 
-// Extract last page number from GitHub API Link header
-function get_last_page(link_header: string | null): number | null {
-  const match = /page=(\d+)>; rel="last"/.exec(link_header || ``)
+const load_repos_from_models = async (): Promise<{ name: string; repo: string }[]> => {
+  const repos_map = new Map<string, string>() // repo -> name
+
+  try {
+    const model_dirs = await readdir(models_dir, { withFileTypes: true })
+
+    for (const dir_entry of model_dirs) {
+      if (!dir_entry.isDirectory()) continue
+
+      const model_dir = join(models_dir, dir_entry.name)
+      const files = await readdir(model_dir)
+
+      // Find all .yml files in this directory
+      const yml_files = files.filter((file) => file.endsWith(`.yml`))
+
+      for (const yml_file of yml_files) {
+        try {
+          const yml_path = join(model_dir, yml_file)
+          const yml_content = await readFile(yml_path, `utf-8`)
+          const data = parseYAML(yml_content) as {
+            model_name?: string
+            repo?: string
+          }
+
+          const repo_url = extract_github_repo(data.repo ?? null)
+          if (repo_url && data.model_name) {
+            // Only keep the first occurrence (deduplicate by repo)
+            if (!repos_map.has(repo_url)) {
+              // Extract a shorter label from model_name (e.g., "MACE-MP-0" -> "MACE")
+              const label = data.model_name.split(`-`)[0] || data.model_name
+              repos_map.set(repo_url, label)
+            }
+          }
+        } catch (err) {
+          // Skip files that can't be parsed
+          console.warn(`  Warning: ${yml_file} - ${(err as Error).message}`)
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`Error reading models directory:`, (err as Error).message)
+  }
+
+  return Array.from(repos_map.entries()).map(([repo, name]) => ({ name, repo }))
+}
+
+const get_cached = async (cache_file: string): Promise<RepoData | null> => {
+  if (force_refresh) return null
+  try {
+    const age_ms = Date.now() - (await stat(cache_file)).mtimeMs
+    if (age_ms < CACHE_TTL_MS) {
+      const cached = JSON.parse(await readFile(cache_file, `utf-8`))
+      // Validate that it has the new format with required fields
+      if (cached.name && cached.repo && cached.stars !== undefined) {
+        return cached as RepoData
+      }
+    }
+  } catch {
+    // Cache miss or invalid format
+  }
+  return null
+}
+
+const fetch_github = async (url: string, headers: Record<string, string>) => {
+  const res = await fetch(url, { headers })
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return res
+}
+
+const get_count_from_pagination = (link: string | null) => {
+  const match = /page=(\d+)>; rel="last"/.exec(link || ``)
   return match ? parseInt(match[1]) : null
 }
 
-// Get GitHub stats with caching
-async function get_github_stats(
+const get_github_stats = async (
+  name: string,
   repo: string,
-  token: string | null = null,
-): Promise<GitHubRepoData | null> {
+  token: string | null,
+): Promise<RepoData | null> => {
   const cache_file = join(cache_dir, `${repo.replace(`/`, `_`)}.json`)
-
-  // Check cache first
-  try {
-    const cached = await readFile(cache_file, `utf-8`)
-    console.log(`✓ Using cached data for ${repo}`)
-    return JSON.parse(cached) as GitHubRepoData
-  } catch {
-    // Cache miss, fetch from API
+  const cached = await get_cached(cache_file)
+  if (cached) {
+    console.log(`✓ ${repo} (cached)`)
+    return cached
   }
 
-  const headers: Record<string, string> = { Accept: `application/vnd.github.v3+json` }
+  const headers: Record<string, string> = { Accept: `application/vnd.github+json` }
   if (token) headers.Authorization = `Bearer ${token}`
 
   try {
-    const response = await fetch(`https://api.github.com/repos/${repo}`, { headers })
-    if (!response.ok) {
-      console.error(`Error fetching ${repo}: ${response.statusText}`)
-      return null
-    }
+    // Fetch repo info
+    const repo_res = await fetch_github(`https://api.github.com/repos/${repo}`, headers)
+    const repo_data = await repo_res.json()
 
-    const data = (await response.json()) as GitHubRepoData
-    const one_year_ago = new Date()
-    one_year_ago.setFullYear(one_year_ago.getFullYear() - 1)
-
-    // Get commits in the last year
-    // Use per_page=1 so the Link header's last page number equals the exact total commits
-    const commits_res = await fetch(
-      `https://api.github.com/repos/${repo}/commits?since=${one_year_ago.toISOString()}&per_page=1`,
-      { headers },
+    // Fetch commit count (last year)
+    const year_ago = new Date()
+    year_ago.setFullYear(year_ago.getFullYear() - 1)
+    const commits_res = await fetch_github(
+      `https://api.github.com/repos/${repo}/commits?since=${year_ago.toISOString()}&per_page=1`,
+      headers,
     )
-    if (commits_res.ok) {
-      const last_page = get_last_page(commits_res.headers.get(`Link`))
-      if (last_page) {
-        data.commits_last_year = last_page
-      } else {
-        const commits = (await commits_res.json()) as unknown[]
-        data.commits_last_year = commits.length
-      }
-    } else {
-      console.warn(`Warning: Could not fetch commits for ${repo}`)
-      data.commits_last_year = 0
-    }
+    const commits_count = get_count_from_pagination(commits_res.headers.get(`Link`)) ??
+      (await commits_res.json()).length
 
-    // Get number of contributors
-    const contrib_res = await fetch(
+    // Fetch contributor count
+    const contrib_res = await fetch_github(
       `https://api.github.com/repos/${repo}/contributors?per_page=1&anon=true`,
-      { headers },
+      headers,
     )
-    if (contrib_res.ok) {
-      const last_page = get_last_page(contrib_res.headers.get(`Link`))
-      data.contributors = last_page || ((await contrib_res.json()) as unknown[]).length
-    } else {
-      console.warn(`Warning: Could not fetch contributors for ${repo}`)
-      data.contributors = 0
+    const contrib_count = get_count_from_pagination(contrib_res.headers.get(`Link`)) ??
+      (await contrib_res.json()).length
+
+    const data: RepoData = {
+      name,
+      repo,
+      stars: repo_data.stargazers_count || 0,
+      forks: repo_data.forks_count || 0,
+      commits_last_year: commits_count || 0,
+      contributors: contrib_count || 0,
     }
 
     // Cache the result
     await mkdir(cache_dir, { recursive: true })
-    await writeFile(cache_file, JSON.stringify(data)).catch(() => {})
-
+    await writeFile(cache_file, JSON.stringify(data))
+    console.log(
+      `✓ ${repo}: ${data.stars}★ ${data.forks}f ${data.commits_last_year}c ${data.contributors}contrib`,
+    )
     return data
-  } catch (error) {
-    console.error(`Error fetching ${repo}:`, (error as Error).message)
+  } catch (err) {
+    console.error(`✗ ${repo}:`, (err as Error).message)
     return null
   }
 }
 
-// Main function
-async function main(): Promise<void> {
-  console.log(`Fetching GitHub repository data...`)
+const main = async () => {
+  console.log(`Fetching GitHub data...${force_refresh ? ` (force refresh)` : ``}`)
 
-  // Read mlip_models.json
-  let mlip_models: MlipModelsData
+  // Ensure output file exists
   try {
-    mlip_models = JSON.parse(await readFile(mlip_models_path, `utf-8`)) as MlipModelsData
-  } catch (error) {
-    console.error(
-      `Error reading mlip_models.json from ${mlip_models_path}:`,
-      (error as Error).message,
-    )
-    console.log(`Creating empty github-activity.json`)
+    await stat(output_file)
+  } catch {
     await writeFile(output_file, JSON.stringify([]))
-    return
   }
 
-  // Extract repositories
-  const repos = Object.values(mlip_models)
-    .filter(([, repo]) => repo)
-    .map(([name, repo]) => ({ name, repo }))
+  // Load repos from model YAML files
+  const repos = await load_repos_from_models()
+  console.log(`Found ${repos.length} unique repos from models/`)
 
   const token = process.env.GITHUB_TOKEN ?? null
-  const repo_data: RepoActivityData[] = []
+  const results: RepoData[] = []
 
-  // TODO might need to add delay here to avoid rate limiting
   for (const { name, repo } of repos) {
-    const stats = await get_github_stats(repo, token)
-    if (stats) {
-      console.log(
-        `✓ ${repo}: ${stats.stargazers_count || 0} stars, ${
-          stats.forks_count || 0
-        } forks, ${stats.commits_last_year || 0} commits, ${
-          stats.contributors || 0
-        } contributors`,
-      )
-      repo_data.push({
-        name,
-        repo,
-        stars: stats.stargazers_count || 0,
-        forks: stats.forks_count || 0,
-        commits_last_year: stats.commits_last_year || 0,
-        contributors: stats.contributors || 0,
-      })
-    }
+    const stats = await get_github_stats(name, repo, token)
+    if (stats) results.push(stats)
+    await new Promise((resolve) => setTimeout(resolve, 300)) // Rate limit delay
   }
 
-  await writeFile(output_file, JSON.stringify(repo_data, null, 2))
-  console.log(`✓ GitHub activity data saved to ${output_file}`)
+  await writeFile(output_file, JSON.stringify(results, null, 2))
+  console.log(`\n✓ Saved ${results.length}/${repos.length} repos to ${output_file}`)
 }
 
-main().catch(console.error)
+main().catch((err) => {
+  console.error(`Fatal:`, err)
+  writeFile(output_file, JSON.stringify([])).catch(() => {})
+})

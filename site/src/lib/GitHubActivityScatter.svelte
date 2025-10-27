@@ -25,7 +25,6 @@
     show_model_labels?: boolean
   } = $props()
 
-  // GitHub metrics configuration
   const github_metrics = {
     stars: {
       key: `stars`,
@@ -36,7 +35,7 @@
     },
     forks: {
       key: `forks`,
-      label: `Forks`,
+      label: `GitHub Forks`,
       better: `higher`,
       format: `,.0f`,
       description: ``,
@@ -91,10 +90,7 @@
       }))
       .filter(
         ({ x, y, color_value, size_value }) =>
-          typeof x === `number` &&
-          typeof y === `number` &&
-          typeof color_value === `number` &&
-          typeof size_value === `number`,
+          x != null && y != null && color_value != null && size_value != null,
       ),
   )
 
@@ -163,7 +159,7 @@
         </label>
         <ColorScaleSelect
           bind:value={color_scheme}
-          selected={[color_scheme]}
+          selected={color_scheme}
           style="margin: 0; grid-column: 1/-1"
         />
         <label title="Toggle the visibility of vertical grid lines">
@@ -270,8 +266,7 @@
         ? `X Axis`
         : `Y Axis`}
         {@const [min, max] = extent(plot_data, (d) => d[control])}
-        {@const disable_log = min === undefined || max === undefined || min <= 0 ||
-        100 * min > max}
+        {@const disable_log = min == null || max == null || min <= 0 || 100 * min > max}
         <label for={control}>{control_label}</label>
         <Select
           {options}

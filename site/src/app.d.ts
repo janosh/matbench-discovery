@@ -72,7 +72,7 @@ declare module '*modeling-tasks.yml' {
   export const diatomics: ModelingTask
 }
 
-declare module '*github-activity.json' {
+declare module '*mlip-github-activity.json' {
   const data: import('$lib/types').GitHubActivityData[]
   export default data
 }
