@@ -1,13 +1,13 @@
 {
   "tasks": {
-    "dev": "deno run -A --node-modules-dir npm:vite dev",
-    "fetch-github": "deno run -A scripts/fetch-github-activity.js",
-    "build": "deno task fetch-github && deno run -A --node-modules-dir npm:vite build",
+    "dev": "deno task fetch-mlip-activity && deno run -A --node-modules-dir npm:vite dev",
+    "build": "deno task fetch-mlip-activity && deno run -A --node-modules-dir npm:vite build",
     "preview": "deno run -A --node-modules-dir npm:vite preview",
     "serve": "deno task build && deno task preview",
     "vitest": "deno run -A --node-modules-dir npm:vitest",
     "package": "svelte-package",
-    "changelog": "deno run -A https://github.com/janosh/workflows/raw/refs/heads/main/scripts/make-release-notes.ts"
+    "changelog": "deno run -A https://github.com/janosh/workflows/raw/refs/heads/main/scripts/make-release-notes.ts",
+    "fetch-mlip-activity": "deno run -A scripts/fetch-mlip-repos-github-activity.ts"
   },
   "lock": false,
   "imports": { "$lib": "./src/lib", "$lib/": "./src/lib/" },
