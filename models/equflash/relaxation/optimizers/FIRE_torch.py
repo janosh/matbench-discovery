@@ -60,7 +60,10 @@ class FIRE:
         self.maxstep = maxstep
         self.save_full = save_full_traj
         self.traj_dir = traj_dir
-        self.traj_names = traj_names
+        if traj_names is None:
+            self.traj_names = []
+        else:
+            self.traj_names = traj_names
         self.trajectories = None
 
         self.fmax = None
@@ -148,9 +151,10 @@ class FIRE:
         if self.trajectories is not None:
             for traj in self.trajectories:
                 traj.close()
-            for name in self.traj_names:
-                traj_fl = Path(self.traj_dir / f"{name}.traj_tmp", mode="w")
-                traj_fl.rename(traj_fl.with_suffix(".traj"))
+            if self.traj_dir is not None:
+                for name in self.traj_names:
+                    traj_fl = Path(self.traj_dir / f"{name}.traj_tmp", mode="w")
+                    traj_fl.rename(traj_fl.with_suffix(".traj"))
 
         # set predicted values to batch
         for name, value in self.optimizable.results.items():
@@ -253,10 +257,14 @@ class FIRE:
         self.optimizable.set_positions(r + dr)
 
     def write(self, *, force_write: bool = False) -> None:
-        atoms_objects = self.optimizable.get_atoms_list()
-        # import pdb;pdb.set_trace()
-        for atm, traj, mask in zip(
-            atoms_objects, self.trajectories, self.optimizable.update_mask, strict=False
-        ):
-            if mask or force_write:
-                traj.write(atm)
+        if self.traj_dir:
+            trajectories = [
+                ase.io.Trajectory(self.traj_dir / f"{name}.traj_tmp", mode="w")
+                for name in self.traj_names
+            ]
+            atoms_objects = self.optimizable.get_atoms_list()
+            for atm, traj, mask in zip(
+                atoms_objects, trajectories, self.optimizable.update_mask, strict=False
+            ):
+                if mask or force_write:
+                    traj.write(atm)
