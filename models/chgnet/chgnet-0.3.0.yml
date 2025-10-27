@@ -65,6 +65,7 @@ hyperparams:
   ase_optimizer: FIRE
   cell_filter: FrechetCellFilter
   max_steps: 500
+  max_force: 0.05 # eV/Å
   graph_construction_radius: 5.0 # Å, from sec. B. Model design in arXiv:2302.14231
   three_body_cutoff: 3.0 # Å
   max_neighbors: .inf

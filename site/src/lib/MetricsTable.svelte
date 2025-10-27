@@ -213,6 +213,7 @@
       bind:show_compliant
       bind:show_non_compliant
       bind:show_selected_only
+      show_energy_only_toggle
       {selected_count}
     />
   {/snippet}
