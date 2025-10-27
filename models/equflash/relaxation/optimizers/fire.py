@@ -1,4 +1,5 @@
-# models/equflash/relaxation/optimizers/fire.py
+"""FIRE optimizer for batched ML relaxations."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
-    from ..optimizable import OptimizableBatch  # noqa: TID252
+    from models.equflash.relaxation.optimizable import OptimizableBatch
 
 
 class FIRE(BaseBatchOptimizer):
@@ -61,6 +62,7 @@ class FIRE(BaseBatchOptimizer):
         self.position_reset_callback = position_reset_callback
 
     def run(self, fmax: float, steps: int) -> tuple[torch.Tensor, bool]:
+        """Run FIRE optimization."""
         self.fmax = fmax
         self.steps = steps
 
@@ -73,7 +75,7 @@ class FIRE(BaseBatchOptimizer):
             forces=None, fmax=self.fmax, max_forces=max_forces
         ):
             self.iteration = iteration
-            if self._should_write(iteration):
+            if self.trajectories is not None and (self.save_full or iteration == 0):
                 self.write()
             self.step()
             max_forces = self.optimizable.get_max_forces()
@@ -87,15 +89,17 @@ class FIRE(BaseBatchOptimizer):
         if iteration > 0 and self.trajectories is not None:
             self.write(force_write=True)
 
-        self._teardown_cuda_cache()
+        torch.cuda.empty_cache()
         self._finalize_trajs()
-        self._apply_results_to_batch()
+        for name, value in self.optimizable.results.items():
+            setattr(self.optimizable.batch, name, value)
 
         return n_traj, self.optimizable.converged(
             forces=None, fmax=self.fmax, max_forces=max_forces
         )
 
     def step(self) -> None:
+        """Perform one FIRE optimization step."""
         f = self.optimizable.get_forces()
         if self.v is None:
             self.v = torch.zeros(

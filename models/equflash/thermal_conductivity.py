@@ -1,7 +1,4 @@
-"""
-Batchwise computation for FC3 computation
-
-"""
+"""Batch-wise computation for third-order force constants (FC3)."""
 
 import os
 from typing import Any
@@ -19,51 +16,46 @@ def calculate_fc3_set_batch(
     calculator: Calculator,
     pbar_kwargs: dict[str, Any] | None = None,
 ) -> np.ndarray:
-    # calculate FC3 force set
-    if pbar_kwargs is None:
-        pbar_kwargs = {}
-    forces = []
-    nat = len(ph3.supercell)
+    """Calculate 3rd order force constants in batches for efficiency."""
+    pbar_kwargs = pbar_kwargs or {}
+    n_atoms = len(ph3.supercell)
     graph_list = []
-    multiply_0 = []
-    a2g = AtomsToGraphs(r_edges=False)
-    for sc in ph3.supercells_with_displacements:
-        if sc is not None:
-            atoms = Atoms(sc.symbols, cell=sc.cell, positions=sc.positions, pbc=True)
+    skip_supercell = []
+    atoms_to_graphs = AtomsToGraphs(r_edges=False)
 
-            graph = a2g.convert(atoms)
-            graph_list.append(graph)
-            multiply_0.append(False)
+    for supercell in ph3.supercells_with_displacements:
+        if supercell is not None:
+            atoms = Atoms(
+                supercell.symbols,
+                cell=supercell.cell,
+                positions=supercell.positions,
+                pbc=True,
+            )
+            graph_list.append(atoms_to_graphs.convert(atoms))
+            skip_supercell.append(False)
         else:
-            multiply_0.append(True)
-    if len(multiply_0) != len(graph_list):
-        g_idx = 0
-        m_idx = 0
-        while m_idx < len(multiply_0):
-            if multiply_0[m_idx]:
-                graph_list.insert(g_idx, graph_list[0].clone())
-            m_idx = m_idx + 1
-            g_idx = g_idx + 1
-    forces = []
+            skip_supercell.append(True)
 
-    maximum_natom = int(os.environ.get("NATOMS", "128"))
-    batchsize = max(maximum_natom // nat, 1)
+    if len(skip_supercell) != len(graph_list):
+        for idx, should_skip in enumerate(skip_supercell):
+            if should_skip:
+                graph_list.insert(idx, graph_list[0].clone())
 
+    max_atoms_per_batch = int(os.environ.get("N_ATOMS", "128"))
+    batch_size = max(max_atoms_per_batch // n_atoms, 1)
     device = "cuda"
 
-    sidx = 0
-    while sidx < len(graph_list):
-        eidx = min(sidx + batchsize, len(graph_list))
-        batch = Batch.from_data_list(graph_list[sidx:eidx]).to(device)
-        res = calculator.trainer.predict(batch, per_image=False, disable_tqdm=True)
-        forces.append(res["forces"].detach().cpu().numpy().reshape(-1, nat, 3))
-        sidx = eidx
+    forces = []
+    start_idx = 0
+    while start_idx < len(graph_list):
+        end_idx = min(start_idx + batch_size, len(graph_list))
+        batch = Batch.from_data_list(graph_list[start_idx:end_idx]).to(device)
+        result = calculator.trainer.predict(batch, per_image=False, disable_tqdm=True)
+        forces.append(result["forces"].detach().cpu().numpy().reshape(-1, n_atoms, 3))
+        start_idx = end_idx
 
-    forces2 = forces
-
-    batch_force = np.concatenate(forces2)
-    idx = np.array(multiply_0)
-    batch_force[idx, :, :] = 0
+    batch_force = np.concatenate(forces)
+    batch_force[np.array(skip_supercell)] = 0
     return batch_force
 
 
@@ -73,7 +65,16 @@ def get_fc3_batch(
     *,
     pbar_kwargs: dict[str, Any] | None = None,
 ) -> tuple[Phono3py, np.ndarray]:
-    if pbar_kwargs is None:
-        pbar_kwargs = {"leave": False}
+    """Calculate 3rd order force constants using batched computation.
+
+    Args:
+        ph3: Phono3py object for which to calculate force constants.
+        calculator: ASE calculator to compute forces.
+        pbar_kwargs: Arguments passed to progress bar. Defaults to None.
+
+    Returns:
+        tuple[Phono3py, np.ndarray]: (Phono3py object, FC3 force set array)
+    """
+    pbar_kwargs = {"leave": False} | (pbar_kwargs or {})
     fc3_set = calculate_fc3_set_batch(ph3, calculator, pbar_kwargs=pbar_kwargs)
     return ph3, fc3_set

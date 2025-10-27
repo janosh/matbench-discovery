@@ -1,3 +1,5 @@
+"""Calculate discovery metrics (F1, precision, recall) for model predictions."""
+
 import argparse
 import os
 from glob import glob
@@ -6,51 +8,43 @@ import pandas as pd
 
 
 def main() -> None:
+    """Calculate F1 score and RMSD for matbench-discovery predictions."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--results", required=True)
+    parser.add_argument("--results", required=True, help="Results directory")
     parser.add_argument(
         "--dataset-root",
         default=os.environ.get(
             "DISCOVERY_DATASET_ROOT", "data/matbench-discovery/1.0.0"
         ),
-        help="Root dir containing wbm CSVs (wbm_formation_correction_natom.csv.gz"
-        " and wbm summary).",
+        help="Root dir containing wbm CSVs",
     )
     parser.add_argument(
         "--wbm-summary",
         default="wbm/2023-12-13-wbm-summary.csv.gz",
-        help="Path relative to --dataset-root for WBM summary CSV.",
+        help="Path relative to --dataset-root for WBM summary CSV",
     )
     args = parser.parse_args()
     files = sorted(glob(f"{args.results}/0*_*.json.gz"))
-    dfs = {}
-    for file_path in files:
-        if file_path in dfs:
-            continue
-        df_i = pd.read_json(file_path).set_index("material_id")
-        dfs[file_path] = df_i
-    df_cat = pd.concat(dfs.values()).round(4)
-    rmsd = df_cat["mlff_rmsd"].fillna(1.0).mean()
+    dataframes = [
+        pd.read_json(file_path).set_index("material_id") for file_path in files
+    ]
+    df_concat = pd.concat(dataframes).round(4)
+    rmsd = df_concat["mlff_rmsd"].fillna(1.0).mean()
 
-    df_7net = pd.concat(dfs.values())
-    meta_csv = os.path.join(
-        args.dataset_root, "wbm/wbm_formation_correction_natom.csv.gz"
-    )
-    df_metadatas = pd.read_csv(meta_csv)
-    df_metadatas = df_metadatas.set_index("material_id")
-    df_merge = pd.concat([df_metadatas, df_7net], axis=1)
+    df_model = pd.concat(dataframes)
+    meta_csv = f"{args.dataset_root}/wbm/wbm_formation_correction_natom.csv.gz"
+    df_metadata = pd.read_csv(meta_csv).set_index("material_id")
+    df_merge = pd.concat([df_metadata, df_model], axis=1)
     df_merge["mlff_e_per_form"] = (
         df_merge["mlff_energy"]
         + df_merge["correction"]
         - df_merge["formation_ref_energy"]
     ) / df_merge["num_atoms"]
 
-    df_preds = df_merge.select_dtypes("number")
-    df_wbm = (
-        pd.read_csv(os.path.join(args.dataset_root, args.wbm_summary))
-        .set_index("material_id")
-        .round(3)
+    df_wbm = pd.read_csv(os.path.join(args.dataset_root, args.wbm_summary)).set_index(
+        "material_id"
     )
+
     df_preds = df_wbm.copy()
     df_preds["e_form_per_atom_mlff"] = df_merge["mlff_e_per_form"]
     df_uniq = df_preds[df_wbm["unique_prototype"]].copy()
@@ -59,22 +53,19 @@ def main() -> None:
         + df_uniq["e_form_per_atom_mlff"]
         - df_uniq["e_form_per_atom_mp2020_corrected"]
     )
-    model_true = df_uniq["e_form_per_atom_mlff_above_hull"] <= 0
-    model_false = df_uniq["e_form_per_atom_mlff_above_hull"] > 0
-    actual_true = df_uniq["e_above_hull_mp2020_corrected_ppd_mp"] <= 0
-    actual_false = df_uniq["e_above_hull_mp2020_corrected_ppd_mp"] > 0
-    TP = model_true & actual_true
-    FN = actual_true & model_false
-    FP = actual_false & model_true
-    n_true_pos = TP.sum()
-    n_false_pos = FP.sum()
-    n_false_neg = FN.sum()
-    n_total_pos = n_true_pos + n_false_neg
-    precision = n_true_pos / (n_true_pos + n_false_pos)  # model's discovery rate
-    recall = n_true_pos / n_total_pos
-    f1 = 2 * (precision * recall) / (precision + recall)
 
-    print(f"F1\t:\t{f1:.4f}\nRMSD\t:\t{rmsd:.4f}")
+    model_pred_stable = df_uniq["e_form_per_atom_mlff_above_hull"] <= 0
+    actual_stable = df_uniq["e_above_hull_mp2020_corrected_ppd_mp"] <= 0
+
+    n_true_pos = (model_pred_stable & actual_stable).sum()
+    n_false_pos = (model_pred_stable & ~actual_stable).sum()
+    n_false_neg = (~model_pred_stable & actual_stable).sum()
+
+    precision = n_true_pos / (n_true_pos + n_false_pos)
+    recall = n_true_pos / (n_true_pos + n_false_neg)
+    f1_score = 2 * (precision * recall) / (precision + recall)
+
+    print(f"F1\t:\t{f1_score:.4f}\nRMSD\t:\t{rmsd:.4f}")
 
 
 if __name__ == "__main__":

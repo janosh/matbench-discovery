@@ -1,4 +1,5 @@
-# models/equflash/relaxation/optimizers/lbfgs_torch.py
+"""L-BFGS optimizer for batched ML relaxations."""
+
 from __future__ import annotations
 
 from collections import deque
@@ -12,7 +13,7 @@ from .base_optimizer import BaseBatchOptimizer
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ..optimizable import OptimizableBatch  # noqa: TID252
+    from models.equflash.relaxation.optimizable import OptimizableBatch
 
 
 class LBFGS(BaseBatchOptimizer):
@@ -49,6 +50,7 @@ class LBFGS(BaseBatchOptimizer):
         self.f0 = None
 
     def run(self, fmax: float, steps: int) -> tuple[torch.Tensor, bool]:
+        """Run L-BFGS optimization."""
         self.fmax = fmax
         self.steps = steps
 
@@ -58,7 +60,6 @@ class LBFGS(BaseBatchOptimizer):
         self.rho.clear()
         self.r0 = self.f0 = None
 
-        # open trajectories
         self._open_trajs()
 
         iteration = 0
@@ -68,7 +69,7 @@ class LBFGS(BaseBatchOptimizer):
             forces=None, fmax=self.fmax, max_forces=max_forces
         ):
             self.iteration = iteration
-            if self._should_write(iteration):
+            if self.trajectories is not None and (self.save_full or iteration == 0):
                 self.write()
             self.step(iteration)
             max_forces = self.optimizable.get_max_forces()
@@ -83,17 +84,17 @@ class LBFGS(BaseBatchOptimizer):
             self.write(force_write=True)
 
         # teardown & finalize
-        self._teardown_cuda_cache()
+        torch.cuda.empty_cache()
         self._finalize_trajs()
-
-        # set predicted values to batch
-        self._apply_results_to_batch()
+        for name, value in self.optimizable.results.items():
+            setattr(self.optimizable.batch, name, value)
 
         return n_traj, self.optimizable.converged(
             forces=None, fmax=self.fmax, max_forces=max_forces
         )
 
     def determine_step(self, dr: torch.Tensor) -> torch.Tensor:
+        """Determine step size respecting maxstep constraint."""
         steplengths = torch.norm(dr, dim=1)
         longest_steps = scatter(
             steplengths, self.optimizable.batch_indices, reduce="max"
@@ -105,6 +106,7 @@ class LBFGS(BaseBatchOptimizer):
         return dr * self.damping
 
     def step(self, iteration: int) -> None:
+        """Perform one L-BFGS optimization step."""
         forces = self.optimizable.get_forces().to(dtype=torch.float64)
         pos = self.optimizable.get_positions().to(dtype=torch.float64)
         if iteration > 0:

@@ -4,15 +4,9 @@ import json
 import os
 import traceback
 import warnings
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from ase.optimize.optimize import Optimizer
 from copy import deepcopy
 from importlib.metadata import version
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import ase
 import numpy as np
@@ -31,24 +25,30 @@ from spglib import get_symmetry_dataset
 from thermal_conductivity import get_fc3_batch
 from tqdm import tqdm
 
+from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons.thermal_conductivity import (
     get_fc2_and_freqs,
     init_phono3py,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ase.optimize.optimize import Optimizer
+
 ID = "mp_id"
 NO_TILT_MASK = [True, True, True, False, False, False]
-symm_name_map = {225: "rs", 186: "wz", 216: "zb"}
-FREQUENCY_THRESHOLD = -1e-2
+SYMM_NAME_MAP = {225: "rs", 186: "wz", 216: "zb"}
 
 
 def log_symmetry(atoms: Atoms, symprec: float) -> Any:
+    """Get symmetry dataset from atoms using spglib."""
     return get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
 
 
 def two_stage_relax(
     atoms: Atoms,
-    calculator: Calculator = None,
+    calculator: Calculator | None = None,
     fmax_stage1: float = 1e-4,
     fmax_stage2: float = 1e-4,
     steps_stage1: int = 300,
@@ -57,10 +57,11 @@ def two_stage_relax(
     enforce_symmetry: bool = True,
     symprec: float = 1e-5,
     allow_tilt: bool = False,
-    optimizer: type[ase.optimize.optimize.Optimizer] = LBFGS,
+    optimizer: type["Optimizer"] = LBFGS,
     filter_ase: type[ase.filters.Filter] = FrechetCellFilter,
     symprec_tests: list[float] | None = None,
 ) -> tuple[Atoms, dict[str, Any]]:
+    """Two-stage relaxation enforcing symmetry in first stage."""
     if calculator is not None:
         atoms.calc = calculator
     elif atoms.calc is None:
@@ -88,7 +89,6 @@ def two_stage_relax(
     total_filter = filter_ase(atoms, mask=tilt_mask, **_filter_kwargs)
     dyn_stage1 = optimizer(total_filter, **_optim_kwargs)
     dyn_stage1.run(fmax=fmax_stage1, steps=steps_stage1)
-
     sym_stage1 = log_symmetry(atoms, symprec)
 
     if sym_stage1["number"] != sym_init["number"]:
@@ -103,46 +103,32 @@ def two_stage_relax(
     atoms_stage1 = atoms.copy()
     atoms.constraints = None
 
-    # Stage 2
     dyn_stage2 = optimizer(total_filter, **_optim_kwargs)
     dyn_stage2.run(fmax=fmax_stage2, steps=steps_stage2)
+    sym_stage2 = log_symmetry(atoms, symprec)
 
-    sym_stage2 = log_symmetry(
-        atoms,
-        symprec,
-    )
-
-    # Test symmetries with various symprec if stage2 is different
     sym_tests = {}
     if sym_init.number != sym_stage2.number:
         for symprec_test in symprec_tests:
-            dataset_tests = log_symmetry(
-                atoms,
-                symprec_test,
-            )
+            dataset_tests = log_symmetry(atoms, symprec_test)
             sym_tests[symprec_test] = dataset_tests.number
 
     max_stress_stage2 = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
-
-    # compare symmetries and redirect to stage 1
     if sym_stage1.number != sym_stage2.number and enforce_symmetry:
         redirected_to_symm = True
         atoms = atoms_stage1
         max_stress = max_stress_stage1
         sym_final = sym_stage1
         warnings.warn(
-            f"Symmetry is not kept after deleting FixSymmetry constraint,"
-            f" redirecting to structure with symmetry of material {mat_name},"
-            " in folder {os.getcwd()}",
+            f"Symmetry not kept after removing FixSymmetry constraint for "
+            f"{mat_name} in {os.getcwd()}, redirecting to stage1",
             stacklevel=2,
         )
-
     else:
         redirected_to_symm = False
         sym_final = sym_stage2
         max_stress = max_stress_stage2
 
-    # result is a array of 2 elements
     reached_max_steps = (
         dyn_stage1.step == steps_stage1 or dyn_stage2.step == steps_stage2
     )
@@ -162,71 +148,38 @@ def two_stage_relax(
 
 
 def get_spacegroup_number(atoms: Atoms, symprec: float = 1e-5) -> int:
+    """Get space group number from atoms."""
     dataset = get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
     return dataset.number
 
 
-def check_imaginary_freqs(frequencies: np.ndarray) -> bool:
-    try:
-        if np.all(pd.isna(frequencies)):
-            return True
-
-        if np.any(frequencies[0, 3:] < 0):
-            return True
-
-        if np.any(frequencies[0, :3] < FREQUENCY_THRESHOLD):
-            return True
-
-        if np.any(frequencies[1:] < 0):
-            return True
-    except Exception as e:
-        warnings.warn(f"Failed to check imaginary frequencies: {e!r}", stacklevel=2)
-        warnings.warn(traceback.format_exc(), stacklevel=2)
-
-    return False
-
-
 def main() -> None:
+    """Run thermal conductivity calculations with EquFlash model."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint", "-c", required=True)
-    parser.add_argument("--outdir", "-o", required=True)
+    parser.add_argument("--checkpoint", "-c", required=True, help="Model checkpoint")
+    parser.add_argument("--outdir", "-o", required=True, help="Output directory")
     parser.add_argument("--displacement", type=float, default=0.03)
     parser.add_argument("--rank", type=int, default=0)
     parser.add_argument("--worldsize", type=int, default=1)
-    parser.add_argument(
-        "--structures",
-        type=str,
-        default="/home/gpu1/zetta/aixsim/1_umlff/"
-        "datasets/matbench-discovery/1.0.0/phononDB-PBE-structures.extxyz",
-    )
+    parser.add_argument("--structures", type=str, required=True)
 
     args = parser.parse_args()
 
-    # EDITABLE CONFIG
     checkpoint = args.checkpoint
-
-    # device = "cuda" if torch.cuda.is_available() else "cpu"
     device = "cuda"
     calc = UCalculator(checkpoint_path=checkpoint, cpu=False)
 
-    # Relaxation parameters
     ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
     ase_filter: Literal["frechet", "exp"] = "frechet"
-    if_two_stage_relax = True  # Use two-stage relaxation enforcing symmetries
+    if_two_stage_relax = True
     max_steps = 300
-    force_max = 1e-4  # Run until the forces are smaller than this in eV/A
-
-    # Symmetry parameters
-    # symmetry precision for enforcing relaxation and conductivity calculation
+    force_max = 1e-4
     symprec = 1e-5
-    # Enforce symmetry with during relaxation if broken
     enforce_relax_symm = True
-    # Conductivity to be calculated if symmetry group changed during relaxation
     conductivity_broken_symm = False
     prog_bar = True
-    save_forces = True  # Save force sets to file
-
-    task_type = "LTC"  # lattice thermal conductivity
+    save_forces = True
+    task_type = "LTC"
     out_dir = args.outdir
     os.makedirs(out_dir, exist_ok=True)
 
@@ -279,7 +232,7 @@ def main() -> None:
         mat_id = atoms.info[ID]
         init_info = deepcopy(atoms.info)
         mat_name = atoms.info["name"]
-        mat_desc = f"{mat_name}-{symm_name_map[atoms.info['symm.no']]}"
+        mat_desc = f"{mat_name}-{SYMM_NAME_MAP[atoms.info['symm.no']]}"
         info_dict = {
             "desc": mat_desc,
             "name": mat_name,
@@ -287,10 +240,6 @@ def main() -> None:
             "errors": [],
             "error_traceback": [],
         }
-
-        # tqdm_bar.set_postfix_str(mat_desc, refresh=True)
-
-        # Relaxation
 
         atoms.calc = calc
         if max_steps > 0:
@@ -314,9 +263,6 @@ def main() -> None:
                         f"{max_steps=} during relaxation."
                     )
 
-                # maximum residual stress component in for xx,yy,zz and
-                # xy,yz,xz components separately
-                # result is a array of 2 elements
                 max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
 
                 atoms.calc = None
@@ -346,9 +292,6 @@ def main() -> None:
                     allow_tilt=False,
                     enforce_symmetry=enforce_relax_symm,
                 )
-                # relax_dict['structures']=atoms
-                import numpy as np
-
                 relax_dict["ase_fc2_supercell"] = atoms.info["fc2_supercell"]
                 relax_dict["ase_fc3_supercell"] = atoms.info["fc3_supercell"]
                 relax_dict["ase_symbols"] = str(atoms.symbols)
@@ -358,9 +301,6 @@ def main() -> None:
 
                 atoms.calc = None
 
-        # except Exception as exc:
-
-        # Calculation of force sets
         info_dict["displacement"] = args.displacement
         try:
             ph3 = init_phono3py(
@@ -377,10 +317,9 @@ def main() -> None:
                 calculator=calc,
                 pbar_kwargs={"leave": False, "disable": not prog_bar},
             )
-            imaginary_freqs = check_imaginary_freqs(freqs)
+            imaginary_freqs = check_imaginary_freqs(freqs, threshold=-1e-2)
             freqs_dict = {"imaginary_freqs": imaginary_freqs, "frequencies": freqs}
 
-            # if conductivity condition is met, calculate fc3
             ltc_condition = not imaginary_freqs and (
                 not relax_dict["broken_symmetry"] or conductivity_broken_symm
             )
