@@ -6,8 +6,19 @@ import pandas as pd
 
 
 def main() -> None:
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--results", required=True)
+    parser.add_argument(
+        "--dataset-root",
+        default=os.environ.get("DISCOVERY_DATASET_ROOT", "data/matbench-discovery/1.0.0"),
+        help="Root dir containing wbm CSVs (wbm_formation_correction_natom.csv.gz and wbm summary).",
+    )
+    parser.add_argument(
+        "--wbm-summary",
+        default="wbm/2023-12-13-wbm-summary.csv.gz",
+        help="Path relative to --dataset-root for WBM summary CSV.",
+    )
     args = parser.parse_args()
     files = sorted(glob(f"{args.results}/0*_*.json.gz"))
     dfs = {}
@@ -20,9 +31,8 @@ def main() -> None:
     rmsd = df_cat["mlff_rmsd"].fillna(1.0).mean()
 
     df_7net = pd.concat(dfs.values())
-    df_metadatas = pd.read_csv(
-        "/home/gpu1/zetta/aixsim/1_umlff/datasets/matbench-discovery/1.0.0/wbm/wbm_formation_correction_natom.csv.gz"
-    )
+    meta_csv = os.path.join(args.dataset_root, "wbm/wbm_formation_correction_natom.csv.gz")
+    df_metadatas = pd.read_csv(meta_csv)
     df_metadatas = df_metadatas.set_index("material_id")
     df_merge = pd.concat([df_metadatas, df_7net], axis=1)
     df_merge["mlff_e_per_form"] = (
@@ -32,12 +42,9 @@ def main() -> None:
     ) / df_merge["num_atoms"]
 
     df_preds = df_merge.select_dtypes("number")
-
-    BASEDIR = "/home/gpu1/zetta/aixsim/1_umlff/datasets/matbench-discovery/1.0.0"
-    df_wbm = (
-        pd.read_csv(os.path.join(BASEDIR, "wbm/2023-12-13-wbm-summary.csv.gz"))
-        .set_index("material_id")
-        .round(3)
+    df_wbm = (pd.read_csv(os.path.join(args.dataset_root, args.wbm_summary))
+         .set_index("material_id")
+         .round(3)
     )
     df_preds = df_wbm.copy()
     df_preds["e_form_per_atom_mlff"] = df_merge["mlff_e_per_form"]

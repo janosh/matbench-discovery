@@ -4,6 +4,7 @@ Batchwise computation for FC3 computation
 """
 
 from typing import Any
+import os
 
 import numpy as np
 from ase import Atoms
@@ -36,7 +37,6 @@ def calculate_fc3_set_batch(
         else:
             multiply_0.append(True)
     if len(multiply_0) != len(graph_list):
-        print("msg from robert.cho : Bug may happen do not trust the result ")
         g_idx = 0
         m_idx = 0
         while m_idx < len(multiply_0):
@@ -45,7 +45,7 @@ def calculate_fc3_set_batch(
             m_idx = m_idx + 1
             g_idx = g_idx + 1
     forces = []
-    import os
+    
 
     maximum_natom = int(os.environ.get("NATOMS", "128"))
     batchsize = max(maximum_natom // nat, 1)

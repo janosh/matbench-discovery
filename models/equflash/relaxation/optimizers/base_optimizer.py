@@ -29,7 +29,7 @@ class BaseBatchOptimizer:
         self.traj_names = traj_names or []
         self.trajectories: list[ase.io.trajectory.Trajectory] | None = None
 
-        if self.traj_dir and (not traj_dir or not self.traj_names):
+        if self.traj_dir and not self.traj_names:
             raise ValueError(
                 "Trajectory names should be specified to save trajectories"
             )

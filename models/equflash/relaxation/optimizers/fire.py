@@ -60,7 +60,7 @@ class FIRE(BaseBatchOptimizer):
         self.downhill_check = downhill_check
         self.position_reset_callback = position_reset_callback
 
-    def run(self, fmax: float, steps: int) -> tuple[torch.Tensor, torch.Tensor]:
+    def run(self, fmax: float, steps: int) -> tuple[torch.Tensor, bool]:
         self.fmax = fmax
         self.steps = steps
 

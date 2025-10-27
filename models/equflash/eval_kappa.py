@@ -33,7 +33,7 @@ df_mlp_processed = process_benchmark_descriptors(df_mlp_filtered, df_dft_results
 msre, msrme, _, _ = get_metrics(df_mlp_filtered)
 
 # Save results
-df_mlp_processed.round(5)
+df_mlp_processed=df_mlp_processed.round(5)
 df_mlp_processed.index.name = ID
 df_mlp_processed.reset_index().to_json(out_path)
 

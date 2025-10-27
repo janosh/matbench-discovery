@@ -48,7 +48,7 @@ class LBFGS(BaseBatchOptimizer):
         self.r0 = None
         self.f0 = None
 
-    def run(self, fmax: float, steps: int) -> tuple[torch.Tensor, torch.Tensor]:
+    def run(self, fmax: float, steps: int) -> tuple[torch.Tensor, bool]:
         self.fmax = fmax
         self.steps = steps
 
