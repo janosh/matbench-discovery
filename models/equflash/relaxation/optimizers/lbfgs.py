@@ -1,27 +1,21 @@
-"""
-Copyright (c) Meta, Inc. and its affiliates.
-Modifications Copyright (c) 2025 Samsung Electronics Co., Ltd.
-
-This source code is licensed under the MIT license.
-You may obtain a copy of the license at:
-https://opensource.org/licenses/MIT
-"""
-
+# models/equflash/relaxation/optimizers/lbfgs_torch.py
 from __future__ import annotations
 
 from collections import deque
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-import ase
 import torch
 from torch_scatter import scatter
 
+from .base_optimizer import BaseBatchOptimizer
+
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from ..optimizable import OptimizableBatch  # noqa: TID252
 
 
-class LBFGS:
+class LBFGS(BaseBatchOptimizer):
     """Limited memory BFGS optimizer for batch ML relaxations."""
 
     def __init__(
@@ -36,95 +30,66 @@ class LBFGS:
         traj_dir: Path | None = None,
         traj_names: list[str] | None = None,
     ) -> None:
-        """
-        Args:
-            optimizable_batch: an optimizable batch which includes
-            a model and a batch of data
-            maxstep: largest step that any atom is allowed to move
-            memory: Number of steps to be stored in memory
-            damping: The calculated step is multiplied with
-            this number before added to the positions.
-            alpha: Initial guess for the Hessian (curvature of energy surface)
-            save_full_traj: whether to save full trajectory
-            traj_dir: path to save trajectories in
-            traj_names: list of trajectory files names
-        """
-        self.optimizable = optimizable_batch
+        super().__init__(
+            optimizable_batch,
+            save_full_traj=save_full_traj,
+            traj_dir=traj_dir,
+            traj_names=traj_names,
+        )
         self.maxstep = maxstep
         self.memory = memory
         self.damping = damping
         self.alpha = alpha
         self.H0 = 1.0 / self.alpha
-        self.save_full = save_full_traj
-        self.traj_dir = traj_dir
-        self.traj_names = traj_names
-        self.trajectories = None
-
-        self.fmax = None
-        self.steps = None
 
         self.s = deque(maxlen=self.memory)
         self.y = deque(maxlen=self.memory)
         self.rho = deque(maxlen=self.memory)
         self.r0 = None
         self.f0 = None
-        if self.traj_dir and (not traj_dir or not traj_names or not len(traj_names)):
-            raise ValueError(
-                "Trajectory names should be specified to save trajectories"
-            )
 
     def run(self, fmax: float, steps: int) -> tuple[torch.Tensor, torch.Tensor]:
         self.fmax = fmax
         self.steps = steps
 
+        # reset memory
         self.s.clear()
         self.y.clear()
         self.rho.clear()
         self.r0 = self.f0 = None
 
-        self.trajectories = None
-        if self.traj_dir:
-            self.traj_dir.mkdir(exist_ok=True, parents=True)
-            self.trajectories = [
-                ase.io.Trajectory(self.traj_dir / f"{name}.traj_tmp", mode="w")
-                for name in self.traj_names
-            ]
+        # open trajectories
+        self._open_trajs()
 
         iteration = 0
         max_forces = self.optimizable.get_max_forces()
+        n_traj = torch.zeros(self.optimizable.batch.batch.max() + 1, dtype=torch.int)
         while iteration < steps and not self.optimizable.converged(
             forces=None, fmax=self.fmax, max_forces=max_forces
         ):
             self.iteration = iteration
-            if self.trajectories is not None and (
-                self.save_full is True or iteration == 0
-            ):
+            if self._should_write(iteration):
                 self.write()
-
             self.step(iteration)
             max_forces = self.optimizable.get_max_forces()
             iteration += 1
+            n_traj = (
+                n_traj
+                + torch.ones_like(n_traj) * self.optimizable.update_mask.detach().cpu()
+            )
 
         # save after converged or all iterations ran
         if iteration > 0 and self.trajectories is not None:
             self.write(force_write=True)
 
-        # GPU memory usage as per nvidia-smi seems to gradually build up as
-        # batches are processed. This releases unoccupied cached memory.
-        torch.cuda.empty_cache()
-
-        if self.trajectories is not None:
-            for traj in self.trajectories:
-                traj.close()
-            for name in self.traj_names:
-                traj_fl = Path(self.traj_dir / f"{name}.traj_tmp", mode="w")
-                traj_fl.rename(traj_fl.with_suffix(".traj"))
+        # teardown & finalize
+        self._teardown_cuda_cache()
+        self._finalize_trajs()
 
         # set predicted values to batch
-        for name, value in self.optimizable.results.items():
-            setattr(self.optimizable.batch, name, value)
+        self._apply_results_to_batch()
 
-        return self.optimizable.converged(
+        return n_traj, self.optimizable.converged(
             forces=None, fmax=self.fmax, max_forces=max_forces
         )
 
@@ -138,11 +103,6 @@ class LBFGS:
         scale = (longest_steps + 1e-12).reciprocal() * torch.min(longest_steps, maxstep)
         dr *= scale.unsqueeze(1)
         return dr * self.damping
-
-    def _batched_dot(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        return scatter(
-            (x * y).sum(dim=-1), self.optimizable.batch_indices, reduce="sum"
-        )
 
     def step(self, iteration: int) -> None:
         forces = self.optimizable.get_forces().to(dtype=torch.float64)
@@ -161,33 +121,20 @@ class LBFGS:
         q = -forces
         for i in range(loopmax - 1, -1, -1):
             alpha[i] = self.rho[i] * self._batched_dot(self.s[i], q)  # b
-            # print(alpha[i])
             q -= alpha[i][self.optimizable.batch_indices, ..., None] * self.y[i]
-        # torch.save(q,f"meta_logs/q_{iteration}.pt")
 
-        z = self.H0 * q
+        z = (1.0 / self.alpha) * q  # self.H0 * q
         for i in range(loopmax):
             beta = self.rho[i] * self._batched_dot(self.y[i], z)
             z += self.s[i] * (
                 alpha[i][self.optimizable.batch_indices, ..., None]
                 - beta[self.optimizable.batch_indices, ..., None]
             )
-        # torch.save(z,f"meta_logs/z_{iteration}.pt")
-        # descent direction
+
         p = -z
         dr = self.determine_step(p)
         if torch.abs(dr).max() < 1e-7:
-            # Same configuration again (maybe a restart):
             return
         self.optimizable.set_positions(pos + dr)
         self.r0 = pos
         self.f0 = forces
-
-    def write(self, *, force_write: bool = False) -> None:
-        atoms_objects = self.optimizable.get_atoms_list()
-        # import pdb;pdb.set_trace()
-        for atm, traj, mask in zip(
-            atoms_objects, self.trajectories, self.optimizable.update_mask, strict=False
-        ):
-            if mask or force_write:
-                traj.write(atm)
