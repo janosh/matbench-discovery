@@ -276,7 +276,6 @@ export function assemble_row_data(
 
     // Get geometry optimization hyperparameters
     const { ase_optimizer, max_steps, max_force, cell_filter } = model.hyperparams ?? {}
-    // Remove redundant "Filter" suffix from cell filter names
     const cell_filter_display = cell_filter && typeof cell_filter === `string`
       ? cell_filter.replace(/CellFilter$/, ``)
       : null
@@ -300,16 +299,14 @@ export function assemble_row_data(
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.short as string]: `<span title="${
         format_num(model.model_params, `,`)
-      }" trainable model parameters" data-sort-value="${model.model_params}">${
+      } trainable model parameters" data-sort-value="${model.model_params}">${
         format_num(model.model_params)
       }</span>`,
-      [HYPERPARAMS.ase_optimizer.label]: ase_optimizer
-        ? `<span data-sort-value="${ase_optimizer}">${ase_optimizer}</span>`
-        : `n/a`,
-      [HYPERPARAMS.max_steps.label]: max_steps !== undefined
+      [HYPERPARAMS.ase_optimizer.short ?? ``]: ase_optimizer ?? `n/a`,
+      [HYPERPARAMS.max_steps.short ?? ``]: max_steps !== undefined
         ? `<span data-sort-value="${max_steps}">${max_steps}</span>`
         : `n/a`,
-      [HYPERPARAMS.max_force.label]: max_force !== undefined
+      [HYPERPARAMS.max_force.short ?? ``]: max_force !== undefined
         ? `<span data-sort-value="${max_force}">${max_force}</span>`
         : `n/a`,
       [HYPERPARAMS.cell_filter.label]: cell_filter_display

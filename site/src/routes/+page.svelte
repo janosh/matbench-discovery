@@ -3,12 +3,14 @@
   import {
     DATASETS,
     DynamicScatter,
+    GitHubActivityScatter,
     Icon,
     MetricsTable,
     RadarChart,
     SelectToggle,
   } from '$lib'
   import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
+  import github_activity_data from '$lib/github-activity.json'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import {
@@ -214,6 +216,14 @@
   {/snippet}
 </Readme>
 <KappaNote warning={false} />
+
+<h2>GitHub Activity</h2>
+<p>
+  Explore the development activity and community engagement of machine learning
+  interatomic potential repositories. Points are sized by number of contributors and
+  colored by commits in the last year.
+</p>
+<GitHubActivityScatter github_data={github_activity_data} />
 
 <style>
   h1 {

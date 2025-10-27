@@ -71,3 +71,8 @@ declare module '*modeling-tasks.yml' {
   export const phonons: ModelingTask
   export const diatomics: ModelingTask
 }
+
+declare module '*github-activity.json' {
+  const data: import('$lib/types').GitHubActivityData[]
+  export default data
+}

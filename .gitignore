@@ -6,6 +6,7 @@ build
 
 # cache
 __pycache__
+.cache
 
 # datasets
 *.pth.tar
@@ -38,6 +39,7 @@ models/_*
 
 # auto-generated docs
 site/src/routes/api/*.md
+site/src/lib/github-activity.json
 
 # large files
 data/*-models-geo-opt-analysis-symprec=*.csv.gz

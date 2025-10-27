@@ -23,6 +23,12 @@
     show_non_compliant?: boolean
   } = $props()
 
+  const hyperparam_cols = [
+    HYPERPARAMS.ase_optimizer,
+    HYPERPARAMS.max_steps,
+    HYPERPARAMS.max_force,
+    HYPERPARAMS.cell_filter,
+  ]
   let columns = $state<Label[]>([
     METADATA_COLS.model_name,
     ALL_METRICS.RMSD,
@@ -30,26 +36,7 @@
       ...col,
       visible: true,
     })),
-    {
-      ...HYPERPARAMS.ase_optimizer,
-      visible: true,
-      sortable: true,
-    },
-    {
-      ...HYPERPARAMS.max_steps,
-      visible: true,
-      sortable: true,
-    },
-    {
-      ...HYPERPARAMS.max_force,
-      visible: true,
-      sortable: true,
-    },
-    {
-      ...HYPERPARAMS.cell_filter,
-      visible: true,
-      sortable: true,
-    },
+    ...hyperparam_cols.map((col) => ({ ...col, visible: true, sortable: true })),
   ])
 
   const discovery_set = `full_test_set`
