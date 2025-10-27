@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections import deque
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import torch
 from fairchem.core.common.typing import assert_is_instance
@@ -19,7 +19,8 @@ from GGNN.datasets.lmdb_dataset import data_list_collator
 from torch_geometric.data import Batch
 
 from .optimizable import OptimizableBatch, OptimizableFretchetBatch
-from .optimizers.FIRE_torch import FIRE
+from .optimizers.fire import FIRE
+from .optimizers.lbfgs import LBFGS
 
 if TYPE_CHECKING:
     from fairchem.core.trainers import BaseTrainer
@@ -31,6 +32,7 @@ def ml_relax(
     steps: int,
     fmax: float,
     relax_opt: dict[str, Any] | None = None,
+    opt_algorithm: Literal["fire", "lbfgs"] = "fire",
     *,
     relax_cell: bool = False,
     relax_volume: bool = False,
@@ -82,13 +84,20 @@ def ml_relax(
         # Run ML-based relaxation
         traj_dir = relax_opt.get("traj_dir")
         relax_opt.update({"traj_dir": Path(traj_dir) if traj_dir is not None else None})
-
-        optimizer = FIRE(
-            optimizable_batch=optimizable,
-            save_full_traj=save_full_traj,
-            traj_names=batch.sid,
-            **relax_opt,
-        )
+        if opt_algorithm == "fire":
+            optimizer = FIRE(
+                optimizable_batch=optimizable,
+                save_full_traj=save_full_traj,
+                traj_names=batch.sid,
+                **relax_opt,
+            )
+        else:
+            optimizer = LBFGS(
+                optimizable_batch=optimizable,
+                save_full_traj=save_full_traj,
+                traj_names=batch.sid,
+                **relax_opt,
+            )
 
         e: RuntimeError | None = None
         try:

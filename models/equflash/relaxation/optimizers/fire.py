@@ -79,7 +79,6 @@ class FIRE(BaseBatchOptimizer):
             max_forces = self.optimizable.get_max_forces()
             iteration += 1
 
-            # update trajectory counter (update_mask가 텐서라 가정)
             n_traj = (
                 n_traj
                 + torch.ones_like(n_traj) * self.optimizable.update_mask.detach().cpu()
