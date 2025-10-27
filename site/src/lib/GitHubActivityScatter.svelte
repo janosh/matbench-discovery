@@ -16,14 +16,10 @@
     contributors: number
   }
 
-  let {
-    github_data = [],
-    show_model_labels = true,
-    ...rest
-  }: HTMLAttributes<HTMLDivElement> & {
+  let { github_data = [], show_model_labels = true, ...rest }: {
     github_data?: GitHubData[]
     show_model_labels?: boolean
-  } = $props()
+  } & HTMLAttributes<HTMLDivElement> = $props()
 
   const github_metrics = {
     stars: {
@@ -54,14 +50,13 @@
       description: ``,
     },
   } as const satisfies Record<string, Label>
-
-  const options = Object.values(github_metrics)
+  type GitHubMetricKey = keyof Omit<GitHubData, `name` | `repo`>
 
   let axes = $state({
-    x: github_metrics.forks,
-    y: github_metrics.stars,
-    color_value: github_metrics.commits_last_year,
-    size_value: github_metrics.contributors,
+    x: github_metrics.forks as Label,
+    y: github_metrics.stars as Label,
+    color_value: github_metrics.commits_last_year as Label,
+    size_value: github_metrics.contributors as Label,
   })
   let log = $state({ x: false, y: false, color_value: false, size_value: false })
   let is_fullscreen = $state(false)
@@ -82,15 +77,14 @@
   let plot_data = $derived(
     github_data
       .map((item) => ({
-        x: item[axes.x.key as keyof GitHubData] as number,
-        y: item[axes.y.key as keyof GitHubData] as number,
-        color_value: item[axes.color_value.key as keyof GitHubData] as number,
-        size_value: item[axes.size_value.key as keyof GitHubData] as number,
+        x: item[axes.x.key as GitHubMetricKey],
+        y: item[axes.y.key as GitHubMetricKey],
+        color_value: item[axes.color_value.key as GitHubMetricKey],
+        size_value: item[axes.size_value.key as GitHubMetricKey],
         metadata: { name: item.name, repo: item.repo },
       }))
-      .filter(
-        ({ x, y, color_value, size_value }) =>
-          x != null && y != null && color_value != null && size_value != null,
+      .filter(({ x, y, color_value, size_value }) =>
+        [x, y, color_value, size_value].every((val) => val != null)
       ),
   )
 
@@ -159,7 +153,6 @@
         </label>
         <ColorScaleSelect
           bind:value={color_scheme}
-          selected={color_scheme}
           style="margin: 0; grid-column: 1/-1"
         />
         <label title="Toggle the visibility of vertical grid lines">
@@ -258,22 +251,20 @@
 
     <div class="controls-grid">
       {#each [`x`, `y`, `color_value`, `size_value`] as const as control (control)}
-        {@const control_label = control === `color_value`
-        ? `Color`
-        : control === `size_value`
-        ? `Size`
-        : control === `x`
-        ? `X Axis`
-        : `Y Axis`}
+        {@const labels = {
+        x: `X Axis`,
+        y: `Y Axis`,
+        color_value: `Color`,
+        size_value: `Size`,
+      }}
         {@const [min, max] = extent(plot_data, (d) => d[control])}
         {@const disable_log = min == null || max == null || min <= 0 || 100 * min > max}
-        <label for={control}>{control_label}</label>
+        <label for={control}>{labels[control]}</label>
         <Select
-          {options}
+          options={Object.values(github_metrics)}
           id={control}
-          selected={[axes[control]]}
           bind:value={axes[control]}
-          placeholder="Select {control_label}"
+          placeholder="Select {labels[control]}"
           maxSelect={1}
           minSelect={1}
           style="width: 100%; max-width: none; margin: 0"
@@ -338,10 +329,8 @@
         }}
         point_events={{
           onclick: ({ point }) =>
-            globalThis.open(
-              `https://github.com/${point.metadata?.repo ?? ``}`,
-              `_blank`,
-            ),
+            point.metadata?.repo &&
+            globalThis.open(`https://github.com/${point.metadata.repo}`, `_blank`),
         }}
         controls={{
           toggle_props: { style: `position: absolute; top: 10px; right: 50px` },

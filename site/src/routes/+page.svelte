@@ -11,7 +11,6 @@
   } from '$lib'
   import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
-  import github_activity_data from '$lib/mlip-github-activity.json'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import {
     generate_csv,
@@ -25,6 +24,7 @@
   import { format_num } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { Snapshot } from './$types'
+  import github_activity_data from './models/mlip-github-activity.json'
 
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = DATASETS.WBM.n_materials
@@ -219,9 +219,8 @@
 
 <h2>GitHub Activity</h2>
 <p>
-  Explore the development activity and community engagement of machine learning
-  interatomic potential repositories. Points are sized by number of contributors and
-  colored by commits in the last year.
+  Development activity and community engagement of MLIP GitHub repos. Points are sized by
+  number of contributors and colored by number of commits over the last year.
 </p>
 <GitHubActivityScatter github_data={github_activity_data} />
 

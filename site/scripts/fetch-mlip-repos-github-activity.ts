@@ -13,7 +13,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const site_root = join(__dirname, `..`)
 const project_root = join(site_root, `..`)
 const cache_dir = join(site_root, `.cache`)
-const output_file = join(site_root, `src/lib/mlip-github-activity.json`)
+const output_file = join(site_root, `src/routes/models/mlip-github-activity.json`)
 const models_dir = join(project_root, `models`)
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
@@ -37,44 +37,29 @@ const extract_github_repo = (url: string | null): string | null => {
 const load_repos_from_models = async (): Promise<{ name: string; repo: string }[]> => {
   const repos_map = new Map<string, string>() // repo -> name
 
-  try {
-    const model_dirs = await readdir(models_dir, { withFileTypes: true })
+  const model_dirs = await readdir(models_dir, { withFileTypes: true })
 
-    for (const dir_entry of model_dirs) {
-      if (!dir_entry.isDirectory()) continue
+  for (const dir_entry of model_dirs) {
+    if (!dir_entry.isDirectory()) continue
 
-      const model_dir = join(models_dir, dir_entry.name)
-      const files = await readdir(model_dir)
+    const model_dir = join(models_dir, dir_entry.name)
+    const files = await readdir(model_dir)
+    const yml_files = files.filter((file) => file.endsWith(`.yml`))
 
-      // Find all .yml files in this directory
-      const yml_files = files.filter((file) => file.endsWith(`.yml`))
+    for (const yml_file of yml_files) {
+      try {
+        const yml_content = await readFile(join(model_dir, yml_file), `utf-8`)
+        const data = parseYAML(yml_content) as { model_name?: string; repo?: string }
 
-      for (const yml_file of yml_files) {
-        try {
-          const yml_path = join(model_dir, yml_file)
-          const yml_content = await readFile(yml_path, `utf-8`)
-          const data = parseYAML(yml_content) as {
-            model_name?: string
-            repo?: string
-          }
-
-          const repo_url = extract_github_repo(data.repo ?? null)
-          if (repo_url && data.model_name) {
-            // Only keep the first occurrence (deduplicate by repo)
-            if (!repos_map.has(repo_url)) {
-              // Extract a shorter label from model_name (e.g., "MACE-MP-0" -> "MACE")
-              const label = data.model_name.split(`-`)[0] || data.model_name
-              repos_map.set(repo_url, label)
-            }
-          }
-        } catch (err) {
-          // Skip files that can't be parsed
-          console.warn(`  Warning: ${yml_file} - ${(err as Error).message}`)
+        const repo_url = extract_github_repo(data.repo ?? null)
+        if (repo_url && data.model_name && !repos_map.has(repo_url)) {
+          const label = data.model_name.split(`-`)[0] || data.model_name
+          repos_map.set(repo_url, label)
         }
+      } catch (err) {
+        console.warn(`  Warning: ${yml_file} - ${(err as Error).message}`)
       }
     }
-  } catch (err) {
-    console.error(`Error reading models directory:`, (err as Error).message)
   }
 
   return Array.from(repos_map.entries()).map(([repo, name]) => ({ name, repo }))
@@ -86,7 +71,6 @@ const get_cached = async (cache_file: string): Promise<RepoData | null> => {
     const age_ms = Date.now() - (await stat(cache_file)).mtimeMs
     if (age_ms < CACHE_TTL_MS) {
       const cached = JSON.parse(await readFile(cache_file, `utf-8`))
-      // Validate that it has the new format with required fields
       if (cached.name && cached.repo && cached.stars !== undefined) {
         return cached as RepoData
       }
