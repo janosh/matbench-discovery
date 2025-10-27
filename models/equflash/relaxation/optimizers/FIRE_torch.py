@@ -50,7 +50,6 @@ class FIRE:
             includes a model and a batch of data
             maxstep: largest step that any atom is allowed to move
             memory: Number of steps to be stored in memory
-            damping: The calculated step is
             multiplied with this number before added to the positions.
             alpha: Initial guess for the Hessian (curvature of energy surface)
             save_full_traj: whether to save full trajectory
@@ -160,17 +159,6 @@ class FIRE:
         return n_traj, self.optimizable.converged(
             forces=None, fmax=self.fmax, max_forces=max_forces
         )
-
-    def determine_step(self, dr: torch.Tensor) -> torch.Tensor:
-        steplengths = torch.norm(dr, dim=1)
-        longest_steps = scatter(
-            steplengths, self.optimizable.batch_indices, reduce="max"
-        )
-        longest_steps = longest_steps[self.optimizable.batch_indices]
-        maxstep = longest_steps.new_tensor(self.maxstep)
-        scale = (longest_steps + 1e-12).reciprocal() * torch.min(longest_steps, maxstep)
-        dr *= scale.unsqueeze(1)
-        return dr * self.damping
 
     def _batched_dot(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         return scatter(

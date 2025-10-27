@@ -10,13 +10,15 @@ import pandas as pd
 import torch
 import tqdm
 from fairchem.core.common.utils import update_config
+from GGNN.preprocessing.atoms_to_graphs import AtomsToGraphs
 from GGNN.trainer.utrainer import OCPTrainer
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
-from relaxation.ase_utils import batch_to_atoms
 from relaxation.ml_relaxation import ml_relax
+from relaxation.optimizable import batch_to_atoms
+from torch_geometric.data import Batch
 
 BASEDIR = "/home/gpu1/zetta/aixsim/1_umlff/datasets/matbench-discovery/1.0.0"
 with open(f"{BASEDIR}/wbm/2025-03-26-wbm-relaxed-structures.pkl", "rb") as file:
@@ -25,9 +27,6 @@ with open(f"{BASEDIR}/wbm/2025-03-26-wbm-relaxed-structures.pkl", "rb") as file:
 
 def split_df(df: pd.DataFrame, batch_size: int) -> list[pd.DataFrame]:
     return [df[i : i + batch_size] for i in range(0, len(df), batch_size)]
-
-
-# Example usage:
 
 
 def compute_rmsd(
@@ -165,8 +164,6 @@ def main() -> None:
     batch_lists = split_df(df, batch_size)
 
     trainer = load_trainer_from_ckpt(checkpoint_path=args.ckpt)
-    from GGNN.preprocessing.atoms_to_graphs import AtomsToGraphs
-    from torch_geometric.data import Batch
 
     a2g = AtomsToGraphs(r_edges=False)
     relax_results = {}

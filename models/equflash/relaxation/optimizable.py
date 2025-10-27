@@ -49,8 +49,8 @@ def batch_to_atoms(
 
     Args:
         batch: data batch
-        results: dictionary with predicted result tensors that will be added to a
-            SinglePointCalculator. If no results
+        results: dictionary with predicted result tensors that
+        will be added to a SinglePointCalculator. If no results
             are given no calculator will be added to the atoms objects.
         wrap_pos: wrap positions back into the cell.
         eps: Small number to prevent slightly negative coordinates from being wrapped.
@@ -61,20 +61,18 @@ def batch_to_atoms(
     n_systems = batch.natoms.shape[0]
     natoms = batch.natoms.tolist()
     numbers = torch.split(batch.atomic_numbers, natoms)
-    # fixed = torch.split(batch.fixed.to(torch.bool), natoms)
+    bs = int((batch.batch.max() + 1).detach().cpu())
     if results is not None:
         results = {
             key: (
                 val.view(ASE_PROP_RESHAPE.get(key, -1)).tolist()
-                if len(val) == len(batch)
+                if len(val) == bs
                 else [v.cpu().detach().numpy() for v in torch.split(val, natoms)]
             )
             for key, val in results.items()
         }
 
     positions = torch.split(batch.pos, natoms)
-    # tags = torch.split(batch.tags, natoms) disable tags for matbench discovery
-
     cells = batch.cell
 
     atoms_objects = []
@@ -90,7 +88,6 @@ def batch_to_atoms(
             numbers=numbers[idx].tolist(),
             cell=cell,
             positions=pos,
-            #       tags=tags[idx].tolist(), disable tags for matbench discovery
             pbc=[True, True, True],
         )
 
@@ -232,7 +229,7 @@ class OptimizableBatch:
     def _predict(self) -> None:
         """Run prediction if batch has any changes."""
         system_changes = self.check_state(self.batch)
-        if len(system_changes) > 0:
+        if system_changes:
             # convert batch to fp32
             batch_fp32 = self.batch.clone()
             for k, v in batch_fp32:
@@ -597,7 +594,7 @@ class OptimizableUnitCellBatch(OptimizableBatch):
 class OptimizableFretchetBatch(OptimizableUnitCellBatch):
     """Modify the supercell and the atom positions in relaxations.
 
-    Based on ase UnitCellFilter to work on data batches
+    Based on ase FretchetCellFilter to work on data batches
     """
 
     def __init__(

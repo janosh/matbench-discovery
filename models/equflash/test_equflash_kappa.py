@@ -28,8 +28,13 @@ from ase.utils import atoms_to_spglib_cell
 from GGNN.common.calculator import UCalculator
 from k_srme.conductivity import calculate_conductivity
 from spglib import get_symmetry_dataset
-from thermal_conductivity import get_fc2_and_freqs, get_fc3_batch, init_phono3py
+from thermal_conductivity import get_fc3_batch
 from tqdm import tqdm
+
+from matbench_discovery.phonons.thermal_conductivity import (
+    get_fc2_and_freqs,
+    init_phono3py,
+)
 
 ID = "mp_id"
 NO_TILT_MASK = [True, True, True, False, False, False]
@@ -360,7 +365,9 @@ def main() -> None:
         try:
             ph3 = init_phono3py(
                 atoms,
-                log=False,
+                fc2_supercell=atoms.info["fc2_supercell"],
+                fc3_supercell=atoms.info["fc3_supercell"],
+                q_point_mesh=atoms.info["q_mesh"],
                 symprec=symprec,
                 displacement_distance=args.displacement,
             )

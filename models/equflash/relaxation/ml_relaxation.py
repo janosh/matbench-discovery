@@ -52,13 +52,7 @@ def ml_relax(
             the given model must predict stress.
         save_full_traj: Whether to save out the full ASE trajectory.
             If False, only save out initial and final frames.
-        mask_converged: whether to mask batches where all atoms
-                    are below convergence threshold
-        cumulative_mask: if true, once system is masked then it r
-                        emains masked even if new predictions give forces
-                above threshold, ie. once masked always masked.
-                Note if this is used make sure to check convergence with
-                the same fmax always
+
     """
     relax_opt = relax_opt or {}
     # if not pbc is set, ignore it when comparing batches
