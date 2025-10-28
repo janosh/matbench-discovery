@@ -18,7 +18,7 @@ from fairchem.core.common.typing import assert_is_instance
 from GGNN.datasets.lmdb_dataset import data_list_collator
 from torch_geometric.data import Batch
 
-from .optimizable import OptimizableBatch, OptimizableFretchetBatch
+from .optimizable import OptimizableBatch, OptimizableFrechetBatch
 from .optimizers.fire import FIRE
 from .optimizers.lbfgs import LBFGS
 
@@ -66,12 +66,12 @@ def ml_relax(
     n_trajs = []
     while batches:
         batch = batches.popleft()
-        oom = False
+        out_of_mem = False
 
         # clone the batch otherwise you can not run batch.to_data_list
         # see https://github.com/pyg-team/pytorch_geometric/issues/8439#issuecomment-1826747915
         if relax_cell or relax_volume:
-            optimizable = OptimizableFretchetBatch(
+            optimizable = OptimizableFrechetBatch(
                 batch.clone(),
                 trainer=model,
             )
@@ -99,22 +99,22 @@ def ml_relax(
                 **relax_opt,
             )
 
-        e: RuntimeError | None = None
+        exc: RuntimeError | None = None
         try:
             n_traj, _ = optimizer.run(fmax=fmax, steps=steps)
             n_trajs.append(n_traj)
             relaxed_batches.append(optimizable.batch)
         except RuntimeError as err:
-            e = err
-            oom = True
+            exc = err
+            out_of_mem = True
             torch.cuda.empty_cache()
 
-        if oom:
+        if out_of_mem:
             # move OOM recovery code outside off except clause to allow
             # tensors to be freed.
             data_list = batch.to_data_list()
             if len(data_list) == 1:
-                raise assert_is_instance(e, RuntimeError)
+                raise assert_is_instance(exc, RuntimeError)
             print(
                 f"Failed to relax batch with size: {len(data_list)}, "
                 "splitting into two..."

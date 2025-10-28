@@ -59,36 +59,33 @@ def batch_to_atoms(
         list of Atoms
     """
     n_systems = batch.natoms.shape[0]
-    natoms = batch.natoms.tolist()
-    numbers = torch.split(batch.atomic_numbers, natoms)
+    n_atoms = batch.natoms.tolist()
+    atomic_nums = torch.split(batch.atomic_numbers, n_atoms)
     bs = int((batch.batch.max() + 1).detach().cpu())
     if results is not None:
         results = {
             key: (
                 val.view(ASE_PROP_RESHAPE.get(key, -1)).tolist()
                 if len(val) == bs
-                else [v.cpu().detach().numpy() for v in torch.split(val, natoms)]
+                else [v.cpu().detach().numpy() for v in torch.split(val, n_atoms)]
             )
             for key, val in results.items()
         }
 
-    positions = torch.split(batch.pos, natoms)
-    cells = batch.cell
+    positions = torch.split(batch.pos, n_atoms)
 
     atoms_objects = []
     for idx in range(n_systems):
         pos = positions[idx].cpu().detach().numpy()
-        cell = cells[idx].cpu().detach().numpy()
+        cell = batch.cell[idx].cpu().detach().numpy()
 
         # TODO take pbc from data
         if wrap_pos:
             pos = wrap_positions(pos, cell, pbc=[True, True, True], eps=eps)
 
+        pbc = [True, True, True]
         atoms = Atoms(
-            numbers=numbers[idx].tolist(),
-            cell=cell,
-            positions=pos,
-            pbc=[True, True, True],
+            numbers=atomic_nums[idx].tolist(), cell=cell, positions=pos, pbc=pbc
         )
 
         if results is not None:
@@ -475,9 +472,9 @@ class OptimizableUnitCellBatch(OptimizableBatch):
     def get_positions(self) -> torch.Tensor:
         """Get positions and cell deformation gradient."""
         cur_deform_grad = self.deform_grad
-        natoms = self.batch.num_nodes
+        n_atoms = self.batch.num_nodes
         pos = torch.zeros(
-            (natoms + 3 * len(self.get_cells()), 3),
+            (n_atoms + 3 * len(self.get_cells()), 3),
             dtype=self.batch.pos.dtype,
             device=self.device,
         )
@@ -485,21 +482,21 @@ class OptimizableUnitCellBatch(OptimizableBatch):
         # Augmented positions are the self.atoms.positions
         #  but without the applied deformation gradient
 
-        pos[:natoms] = torch.linalg.solve(
+        pos[:n_atoms] = torch.linalg.solve(
             cur_deform_grad[self.batch.batch, :, :],
             self.batch.pos.view(-1, 3, 1).detach(),
         ).view(-1, 3)
         # cell DOFs are the deformation gradient times a scaling factor
 
-        pos[natoms:] = self.cell_factor * cur_deform_grad.view(-1, 3)
+        pos[n_atoms:] = self.cell_factor * cur_deform_grad.view(-1, 3)
         return pos.cpu().numpy() if self.numpy else pos
 
     def set_positions(self, positions: torch.Tensor) -> None:
         """Set positions and cell.
 
-        positions has shape (natoms + ncells * 3, 3).
-        the first natoms rows are the positions of the atoms,
-        the last nsystems * three rows are the deformation tensor
+        positions has shape (n_atoms + n_cells * 3, 3).
+        the first n_atoms rows are the positions of the atoms,
+        the last n_cells * three rows are the deformation tensor
         for each cell.
         """
         if isinstance(positions, np.ndarray):
@@ -507,9 +504,9 @@ class OptimizableUnitCellBatch(OptimizableBatch):
 
         # fp64
         # positions = positions.to(dtype=torch.float64, device=self.device)
-        natoms = self.batch.num_nodes
-        new_atom_positions = positions[:natoms]
-        new_deform_grad = (positions[natoms:] / self.cell_factor).view(-1, 3, 3)
+        n_atoms = self.batch.num_nodes
+        new_atom_positions = positions[:n_atoms]
+        new_deform_grad = (positions[n_atoms:] / self.cell_factor).view(-1, 3, 3)
         self.deform_grad_ = new_deform_grad
 
         # TODO check that in fact symmetry is preserved setting cells and positions
@@ -571,14 +568,14 @@ class OptimizableUnitCellBatch(OptimizableBatch):
         if self.constant_volume:
             virial[:, range(3), range(3)] -= self._batch_trace(virial).view(3, -1) / 3.0
 
-        natoms = self.batch.num_nodes
+        n_atoms = self.batch.num_nodes
         augmented_forces = torch.zeros(
-            (natoms + 3 * len(self.get_cells()), 3),
+            (n_atoms + 3 * len(self.get_cells()), 3),
             device=self.device,
             dtype=atom_forces.dtype,
         )
-        augmented_forces[:natoms] = atom_forces.view(-1, 3)
-        augmented_forces[natoms:] = virial.view(-1, 3) / self.cell_factor
+        augmented_forces[:n_atoms] = atom_forces.view(-1, 3)
+        augmented_forces[n_atoms:] = virial.view(-1, 3) / self.cell_factor
 
         self.stress = -virial.view(-1, 9) / volumes.view(-1, 1)
 
@@ -591,7 +588,7 @@ class OptimizableUnitCellBatch(OptimizableBatch):
         return len(self.batch.pos) + 3 * len(self.batch)
 
 
-class OptimizableFretchetBatch(OptimizableUnitCellBatch):
+class OptimizableFrechetBatch(OptimizableUnitCellBatch):
     """Modify the supercell and the atom positions in relaxations.
 
     Based on ase FretchetCellFilter to work on data batches
@@ -631,18 +628,18 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
 
     def get_positions(self) -> torch.Tensor:
         pos = OptimizableUnitCellBatch.get_positions(self)
-        natoms = self.batch.num_nodes
-        cells = pos[natoms:].reshape(-1, 3, 3)
+        n_atoms = self.batch.num_nodes
+        cells = pos[n_atoms:].reshape(-1, 3, 3)
         cells = self.logm(cells)
 
-        pos[natoms:] = self.exp_cell_factor * cells.reshape(-1, 3)
+        pos[n_atoms:] = self.exp_cell_factor * cells.reshape(-1, 3)
         return pos
 
     def set_positions(self, new: torch.Tensor) -> None:
-        natoms = self.batch.num_nodes
+        n_atoms = self.batch.num_nodes
         new2 = new.clone()
-        batched_cell = (new[natoms:] / self.exp_cell_factor).reshape(-1, 3, 3)
-        new2[natoms:] = self.expm(batched_cell).reshape(-1, 3)
+        batched_cell = (new[n_atoms:] / self.exp_cell_factor).reshape(-1, 3, 3)
+        new2[n_atoms:] = self.expm(batched_cell).reshape(-1, 3)
         OptimizableUnitCellBatch.set_positions(self, new2)
 
     def get_forces(self, *, no_numpy: bool = False) -> torch.Tensor:
@@ -680,14 +677,14 @@ class OptimizableFretchetBatch(OptimizableUnitCellBatch):
         if self.constant_volume:
             raise NotImplementedError
 
-        natoms = self.batch.num_nodes
+        n_atoms = self.batch.num_nodes
         augmented_forces = torch.zeros(
-            (natoms + 3 * len(self.get_cells()), 3),
+            (n_atoms + 3 * len(self.get_cells()), 3),
             device=self.device,
             dtype=atom_forces.dtype,
         )
-        augmented_forces[:natoms] = atom_forces.view(-1, 3)
-        augmented_forces[natoms:] = (
+        augmented_forces[:n_atoms] = atom_forces.view(-1, 3)
+        augmented_forces[n_atoms:] = (
             deform_grad_log_force.reshape(-1, 3) / self.exp_cell_factor
         )
 
