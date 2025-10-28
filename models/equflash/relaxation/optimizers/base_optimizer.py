@@ -44,7 +44,6 @@ class BaseBatchOptimizer:
     def _open_trajs(self) -> None:
         """Open trajectory files for writing."""
         if not self.traj_dir:
-            self.trajectories = []
             return
         self.traj_dir.mkdir(exist_ok=True, parents=True)
         self.trajectories = [
@@ -64,7 +63,7 @@ class BaseBatchOptimizer:
 
     def write(self, *, force_write: bool = False) -> None:
         """Write current state to trajectory file."""
-        if self.traj_dir is None:
+        if self.trajectories is None:
             return
         atoms_objects = self.optimizable.get_atoms_list()
         mask_iter = self.optimizable.update_mask
