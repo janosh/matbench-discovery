@@ -64,7 +64,7 @@ class BaseBatchOptimizer:
 
     def write(self, *, force_write: bool = False) -> None:
         """Write current state to trajectory file."""
-        if self.trajectories is None:
+        if self.traj_dir is None:
             return
         atoms_objects = self.optimizable.get_atoms_list()
         mask_iter = self.optimizable.update_mask
