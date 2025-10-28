@@ -22,12 +22,12 @@ class FIRE(BaseBatchOptimizer):
         self,
         optimizable_batch: OptimizableBatch,
         dt: float = 0.1,
-        maxstep: float | None = None,
-        dtmax: float = 1.0,
-        nmin: int = 5,
-        finc: float = 1.1,
-        fdec: float = 0.5,
-        astart: float = 0.1,
+        max_step: float | None = None,
+        dt_max: float = 1.0,
+        n_min: int = 5,
+        f_inc: float = 1.1,
+        f_dec: float = 0.5,
+        a_start: float = 0.1,
         fa: float = 0.99,
         a: float = 0.1,
         *,
@@ -43,19 +43,19 @@ class FIRE(BaseBatchOptimizer):
             traj_dir=traj_dir,
             traj_names=traj_names,
         )
-        self.maxstep = 0.2 if maxstep is None else maxstep
-        self.dtmax = torch.tensor(dtmax)
-        self.Nmin = nmin
-        self.finc = finc
-        self.fdec = fdec
-        self.astart = astart
+        self.max_step = 0.2 if max_step is None else max_step
+        self.dt_max = torch.tensor(dt_max)
+        self.n_min = n_min
+        self.f_inc = f_inc
+        self.f_dec = f_dec
+        self.a_start = a_start
         self.fa = fa
 
         self.v = None
         batch_size = len(self.optimizable.batch.natoms)
         device = self.optimizable.batch.batch.device
         self.dt = dt * torch.ones(batch_size, dtype=torch.float64, device=device)
-        self.Nsteps = torch.zeros(batch_size, dtype=torch.int, device=device)
+        self.n_steps = torch.zeros(batch_size, dtype=torch.int, device=device)
         self.a = a * torch.ones(batch_size, dtype=torch.float64, device=device)
 
         self.downhill_check = downhill_check
@@ -100,10 +100,10 @@ class FIRE(BaseBatchOptimizer):
 
     def step(self) -> None:
         """Perform one FIRE optimization step."""
-        f = self.optimizable.get_forces()
+        forces = self.optimizable.get_forces()
         if self.v is None:
             self.v = torch.zeros(
-                (len(self.optimizable), 3), device=f.device, dtype=f.dtype
+                (len(self.optimizable), 3), device=forces.device, dtype=forces.dtype
             )
             if self.downhill_check:
                 self.e_last = self.optimizable.get_potential_energy()
@@ -114,7 +114,7 @@ class FIRE(BaseBatchOptimizer):
             if self.downhill_check:
                 raise NotImplementedError
 
-            vf = self._batched_dot(f, self.v)
+            vf = self._batched_dot(forces, self.v)
 
             batch_idx_ = (not is_uphill) * torch.ones(
                 self.dt.shape[0], dtype=torch.bool, device=self.dt.device
@@ -122,35 +122,35 @@ class FIRE(BaseBatchOptimizer):
             batch_idx_ = batch_idx_ * (vf > 0.0)
 
             denorm = (
-                torch.sqrt(self._batched_dot(f, f))
+                torch.sqrt(self._batched_dot(forces, forces))
                 / torch.sqrt(self._batched_dot(self.v, self.v))
             )[self.optimizable.batch_indices].unsqueeze(1)
 
             coef = self.a[self.optimizable.batch_indices].unsqueeze(1)
-            self.v = (1 - coef) * self.v + coef * f / denorm
+            self.v = (1 - coef) * self.v + coef * forces / denorm
             self.v = self.v * batch_idx_[self.optimizable.batch_indices].unsqueeze(1)
 
-            self.a[~batch_idx_] = self.astart
-            self.dt[~batch_idx_] = self.dt[~batch_idx_] * self.fdec
-            self.Nsteps[~batch_idx_] = 0
+            self.a[~batch_idx_] = self.a_start
+            self.dt[~batch_idx_] = self.dt[~batch_idx_] * self.f_dec
+            self.n_steps[~batch_idx_] = 0
 
-            update_dt_idx = batch_idx_ * self.Nsteps > self.Nmin
+            update_dt_idx = batch_idx_ * self.n_steps > self.n_min
             self.a[update_dt_idx] = self.a[update_dt_idx] * self.fa
             self.dt[update_dt_idx] = torch.minimum(
-                self.dt[update_dt_idx] * self.finc, self.dtmax
+                self.dt[update_dt_idx] * self.f_inc, self.dt_max
             )
-            self.Nsteps[batch_idx_] = self.Nsteps[batch_idx_] + 1
+            self.n_steps[batch_idx_] = self.n_steps[batch_idx_] + 1
 
         batch_to_node_idx = self.optimizable.batch_indices
 
-        self.v += self.dt[batch_to_node_idx].unsqueeze(1) * f
+        self.v += self.dt[batch_to_node_idx].unsqueeze(1) * forces
 
         dr = self.dt[batch_to_node_idx].unsqueeze(1) * self.v
-        normdr = torch.sqrt(self._batched_dot(dr, dr))
+        norm_dr = torch.sqrt(self._batched_dot(dr, dr))
 
-        batch_idx_ = normdr > self.maxstep
+        batch_idx_ = norm_dr > self.max_step
         dr_update = torch.ones_like(self.dt)
-        dr_update[batch_idx_] = self.maxstep / normdr[batch_idx_]
+        dr_update[batch_idx_] = self.max_step / norm_dr[batch_idx_]
         dr = dr * dr_update[batch_to_node_idx].unsqueeze(1)
 
         r = self.optimizable.get_positions()

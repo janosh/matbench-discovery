@@ -6,7 +6,7 @@ import traceback
 import warnings
 from copy import deepcopy
 from importlib.metadata import version
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import ase
 import numpy as np
@@ -14,7 +14,7 @@ import pandas as pd
 from ase import Atoms
 from ase.calculators.calculator import Calculator
 from ase.constraints import FixSymmetry
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from ase.io import read
 from ase.optimize import FIRE, LBFGS
 from ase.spacegroup import get_spacegroup
@@ -32,8 +32,6 @@ from matbench_discovery.phonons.thermal_conductivity import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from ase.optimize.optimize import Optimizer
 
 ID = "mp_id"
@@ -187,7 +185,7 @@ def main() -> None:
 
     timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")
     struct_data_path = args.structures
-    atoms_list: list[Atoms] = read(struct_data_path, format="extxyz", index=":")
+    atoms_list = cast("list[Atoms]", read(struct_data_path, format="extxyz", index=":"))
 
     run_params = {
         "timestamp": timestamp,
@@ -208,26 +206,24 @@ def main() -> None:
         "struct_data_path": os.path.basename(struct_data_path),
         "n_structures": len(atoms_list),
     }
-    rank = args.rank
-    worldsize = args.worldsize
 
-    if rank == 0:
+    if args.rank == 0:
         with open(f"{out_dir}/run_params.json", "w") as f:
             json.dump(run_params, f, indent=4)
 
-    atoms_list = atoms_list[rank::worldsize]
+    atoms_list = atoms_list[args.rank :: args.worldsize]
 
     # Set up the relaxation and force set calculation
-    filter_cls: Callable[[Atoms], Atoms] = {
+    filter_cls: type[Filter] = {
         "frechet": FrechetCellFilter,
         "exp": ExpCellFilter,
     }[ase_filter]
-    optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+    optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
     force_results: dict[str, dict[str, Any]] = {}
     kappa_results: dict[str, dict[str, Any]] = {}
 
-    print(f"{len(atoms_list)} on {rank}")
+    print(f"{len(atoms_list)} on {args.rank}")
     for atoms in tqdm(atoms_list):
         mat_id = atoms.info[ID]
         init_info = deepcopy(atoms.info)
@@ -251,7 +247,7 @@ def main() -> None:
                     filtered_atoms = filter_cls(atoms)
 
                 optimizer = optim_cls(
-                    filtered_atoms, logfile=f"{out_dir}/relax_{rank}.log"
+                    filtered_atoms, logfile=f"{out_dir}/relax_{args.rank}.log"
                 )
                 optimizer.run(fmax=force_max, steps=max_steps)
 

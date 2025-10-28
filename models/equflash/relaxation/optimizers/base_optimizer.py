@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import ase
-import ase.io
+import ase.io.trajectory
 from torch_scatter import scatter
 
 if TYPE_CHECKING:
+    from ase.io.trajectory import TrajectoryWriter
     from torch import Tensor
 
     from models.equflash.relaxation.optimizable import OptimizableBatch
@@ -30,7 +31,7 @@ class BaseBatchOptimizer:
         self.save_full = save_full_traj
         self.traj_dir = traj_dir
         self.traj_names = traj_names or []
-        self.trajectories: list[ase.io.trajectory.Trajectory] | None = None
+        self.trajectories: list[TrajectoryWriter] | None = None
 
         if self.traj_dir and not self.traj_names:
             raise ValueError(
