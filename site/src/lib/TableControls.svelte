@@ -3,7 +3,18 @@
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
-  interface Props extends HTMLAttributes<HTMLDivElement> {
+  let {
+    show_energy_only = $bindable(false),
+    columns = $bindable([]),
+    show_heatmap = $bindable(true),
+    show_compliant = $bindable(true),
+    show_non_compliant = $bindable(true),
+    show_selected_only = $bindable(false),
+    selected_count = 0,
+    on_filter_change = undefined,
+    show_energy_only_toggle = false,
+    ...rest
+  }: HTMLAttributes<HTMLDivElement> & {
     show_energy_only?: boolean
     columns?: Label[]
     show_heatmap?: boolean
@@ -15,18 +26,8 @@
       show_energy: boolean,
       show_non_compliant: boolean,
     ) => void | undefined
-  }
-  let {
-    show_energy_only = $bindable(false),
-    columns = $bindable([]),
-    show_heatmap = $bindable(true),
-    show_compliant = $bindable(true),
-    show_non_compliant = $bindable(true),
-    show_selected_only = $bindable(false),
-    selected_count = 0,
-    on_filter_change = undefined,
-    ...rest
-  }: Props = $props()
+    show_energy_only_toggle?: boolean
+  } = $props()
 </script>
 
 <div class="table-controls" {...rest}>
@@ -86,25 +87,27 @@
       <Icon icon="Info" />
     </span>
   </label>
-  <label>
-    <input
-      type="checkbox"
-      checked={show_energy_only}
-      onchange={(event: Event) => {
-        const target = event.target as HTMLInputElement
-        // Update both local state and trigger callback (if passed)
-        show_energy_only = target.checked
-        on_filter_change?.(target.checked, false)
-      }}
-    />
-    Energy-only models
-    <span
-      title="Include models that only predict energy (no forces or stress)"
-      {@attach tooltip()}
-    >
-      <Icon icon="Info" />
-    </span>
-  </label>
+  {#if show_energy_only_toggle}
+    <label>
+      <input
+        type="checkbox"
+        checked={show_energy_only}
+        onchange={(event: Event) => {
+          const target = event.target as HTMLInputElement
+          // Update both local state and trigger callback (if passed)
+          show_energy_only = target.checked
+          on_filter_change?.(target.checked, false)
+        }}
+      />
+      Energy-only models
+      <span
+        title="Include models that only predict energy (no forces or stress)"
+        {@attach tooltip()}
+      >
+        <Icon icon="Info" />
+      </span>
+    </label>
+  {/if}
 
   <label>
     <input

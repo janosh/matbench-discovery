@@ -7,11 +7,7 @@
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from './combined_perf_score.svelte'
   import { MODELS, update_models_cps } from './models.svelte'
 
-  // Define props interface
-  interface Props {
-    size?: number
-  }
-  let { size = 200 }: Props = $props()
+  let { size = 200 }: { size?: number } = $props()
 
   // State for the draggable point
   let is_dragging = $state(false)

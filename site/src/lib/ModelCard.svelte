@@ -7,14 +7,6 @@
   import type { HTMLAttributes } from 'svelte/elements'
   import { fade, slide } from 'svelte/transition'
 
-  interface Props extends HTMLAttributes<HTMLElementTagNameMap[`section`]> {
-    model: ModelData
-    metrics: readonly Label[]
-    sort_by: keyof ModelData
-    show_details?: boolean
-    metrics_style?: string
-    title_style?: string
-  }
   let {
     model,
     metrics,
@@ -23,7 +15,14 @@
     metrics_style = ``,
     title_style = ``,
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLElementTagNameMap[`section`]> & {
+    model: ModelData
+    metrics: readonly Label[]
+    sort_by: keyof ModelData
+    show_details?: boolean
+    metrics_style?: string
+    title_style?: string
+  } = $props()
 
   let { model_name, model_key, model_params, training_set } = $derived(model)
   let all_metrics = $derived({

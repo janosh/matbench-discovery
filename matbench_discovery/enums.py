@@ -307,18 +307,22 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     esen_30m_mp = auto(), "eSEN/eSEN-30m-mp.yml"
     esen_30m_oam = auto(), "eSEN/eSEN-30m-oam.yml"
 
-    # eqnorm
+    # Materials AI Lab at Samsung Electronics
+    equflash_29m_oam = auto(), "equflash/equflash-29M-oam.yml"
+
+    # Zhejiang Lab
     eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
 
-    # HIENet
+    # Texas A&M University
     hienet = auto(), "hienet/hienet.yml"
 
-    # GRACE: https://arxiv.org/abs/2311.16326v2
+    # ICAMS, Ruhr University Bochum https://arxiv.org/abs/2311.16326v2
     grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
     grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
     grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
+    grace_2l_oam_l = auto(), "grace/grace-2l-oam-l.yml"
 
-    # GNoME - Nequip architecture trained on Google's proprietary data. Weights
+    # Google DeepMind; GNoME is a Nequip architecture trained on Google's proprietary data. Weights
     # are not publicly available and so these results cannot be reproduced.
     gnome = auto(), "gnome/gnome.yml"
 
@@ -394,7 +398,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def pr_url(self) -> str:
         """Pull request URL in which the model was originally added to the repo."""
-        return self.metadata["pr_url"]
+        try:
+            return self.metadata["pr_url"]
+        except KeyError as exc:
+            exc.add_note(f"{self.rel_path!r} missing required field 'pr_url'")
+            raise
 
     @property
     def key(self) -> str:
@@ -456,8 +464,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             "not applicable",
         ):
             return None
-        rel_path = phonons_metrics.get("kappa_103", {}).get("pred_file")
-        file_url = phonons_metrics.get("kappa_103", {}).get("pred_file_url")
+        kappa103 = phonons_metrics.get("kappa_103") or {}
+        rel_path = kappa103.get("pred_file")
+        file_url = kappa103.get("pred_file_url", "")
         if not rel_path:
             raise ValueError(
                 f"metrics.phonons.kappa_103.pred_file not found in {self.rel_path!r}"

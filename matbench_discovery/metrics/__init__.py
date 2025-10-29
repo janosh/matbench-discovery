@@ -27,7 +27,7 @@ def metrics_df_from_yaml(nested_keys: Sequence[str]) -> pd.DataFrame:
                 for sub_key in nested_key.split("."):
                     if not isinstance(metrics, dict):
                         break  # go straight to next model if sub_key returned non-dict
-                    metrics = metrics.get(sub_key, {})
+                    metrics = metrics.get(sub_key) or {}
                 if isinstance(metrics, dict):
                     combined_metrics |= metrics
             if combined_metrics:

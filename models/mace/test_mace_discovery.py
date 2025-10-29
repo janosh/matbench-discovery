@@ -135,7 +135,7 @@ for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
         atoms.calc = mace_calc
         if max_steps > 0:
             filtered_atoms = FrechetCellFilter(atoms)
-            optimizer = optim_cls(filtered_atoms, logfile="/dev/null")
+            optimizer = optim_cls(filtered_atoms, logfile=None)
 
             if record_traj:
                 coords, lattices, energies = [], [], []

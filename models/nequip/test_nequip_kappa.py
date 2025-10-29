@@ -297,13 +297,11 @@ timestamp = f"{datetime.now().astimezone():%Y-%m-%d@%H-%M-%S}"
 print(f"\nJob {job_name} with {model_name} started {timestamp}")
 
 atoms_list = ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":")
-atoms_list = sorted(
-    atoms_list, key=len
-)  # sort by size to get roughly even distribution of comp cost across GPUs
+# sort by size to get roughly even distribution of comp cost across GPUs
+atoms_list = sorted(atoms_list, key=len)
 if slurm_array_task_count > 1:
-    atoms_list = atoms_list[
-        slurm_array_task_id::slurm_array_task_count
-    ]  # even distribution of rough comp cost, based on size
+    # even distribution of rough comp cost, based on size
+    atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]
 
 # Save run parameters
 remote_params = dict(

@@ -1,13 +1,39 @@
 import { beforeAll, beforeEach, vi } from 'vitest'
 
+// Mock $app modules for SvelteKit - must be at top level before any imports
+vi.mock(`$app/state`, () => ({
+  page: {
+    url: {
+      pathname: `/`,
+      searchParams: new URLSearchParams(),
+    },
+    params: {},
+    route: {
+      id: null,
+    },
+  },
+}))
+
+vi.mock(`$app/environment`, () => ({ browser: false, building: false, version: `test` }))
+
+vi.mock(`$app/navigation`, () => ({
+  goto: vi.fn(),
+  invalidate: vi.fn(),
+  invalidateAll: vi.fn(),
+  preloadData: vi.fn(),
+  preloadCode: vi.fn(),
+  beforeNavigate: vi.fn(),
+  afterNavigate: vi.fn(),
+  pushState: vi.fn(),
+  replaceState: vi.fn(),
+}))
+
 beforeAll(() => {
   const animation = {
     pause: () => {},
     play: () => {},
     effect: {
-      getComputedTiming: () => {
-        return {}
-      },
+      getComputedTiming: () => ({}),
       getKeyframes: () => [],
     },
     cancel: () => {},
@@ -24,8 +50,9 @@ beforeEach(() => {
 
 export function doc_query<T extends HTMLElement>(
   selector: string,
-  parent: ParentNode = document,
+  parent: ParentNode | null = document,
 ): T {
+  if (!parent) throw new Error(`No parent node provided`)
   const node = parent.querySelector(selector)
   if (!node) throw new Error(`No element found for selector: ${selector}`)
   return node as T
@@ -39,15 +66,9 @@ export function is_hidden(el: Element | null): boolean {
     el.getAttribute(`aria-hidden`) === `true` || el.hasAttribute(`hidden`))
 }
 
-// mock matchMedia browser API
-globalThis.matchMedia = vi.fn()
-
 // ResizeObserver mock
 globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
 }
-
-// TODO remove pending https://github.com/sveltejs/kit/issues/14143#issuecomment-3179138497
-vi.stubGlobal(`__SVELTEKIT_PAYLOAD__`, { data: null })

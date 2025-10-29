@@ -1,130 +1,128 @@
-import { TableControls } from '$lib'
+import { type Label, TableControls } from '$lib'
 import { mount } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
+import { doc_query } from '../index.ts'
 
 describe(`TableControls`, () => {
-  const sample_cols = { Model: true, F1: true, DAF: true, RMSE: false }
+  const sample_columns: Label[] = [
+    { key: `model`, label: `Model`, description: `Model name`, visible: true },
+    { key: `f1`, label: `F1`, description: `F1 Score`, visible: true },
+    { key: `daf`, label: `DAF`, description: `DAF Score`, visible: true },
+    { key: `rmse`, label: `RMSE`, description: `RMSE`, visible: false },
+  ]
 
-  it(`renders with default props`, () => {
+  // Helper to find checkbox by parent label text
+  const find_checkbox_by_label = (text: string): HTMLInputElement | null => {
+    const labels = document.querySelectorAll(`label`)
+    const label = Array.from(labels).find((lbl) => lbl.textContent?.includes(text))
+    return doc_query<HTMLInputElement>(`input[type="checkbox"]`, label)
+  }
+
+  it(`renders filter controls with correct initial state`, () => {
+    mount(TableControls, {
+      target: document.body,
+      props: { on_filter_change: vi.fn() },
+    })
+
+    // Verify filter checkboxes are present
+    expect(document.querySelectorAll(`input[type="checkbox"]`).length).toBeGreaterThan(2)
+
+    // Verify column toggle exists
+    expect(document.querySelector(`.column-toggles summary`)).toBeTruthy()
+  })
+
+  it(`calls on_filter_change when energy-only filter is toggled`, () => {
     const on_filter_change = vi.fn()
-    const on_col_change = vi.fn()
 
     mount(TableControls, {
       target: document.body,
-      props: { visible_cols: sample_cols, on_filter_change, on_col_change },
+      props: { on_filter_change },
     })
 
-    // Check filter checkboxes
-    const filter_checkboxes = document.querySelectorAll(`input[type="checkbox"]`)
-    expect(filter_checkboxes.length).toBeGreaterThan(0)
+    const energy_checkbox = find_checkbox_by_label(`Energy-only`)
+    expect(energy_checkbox).toBeTruthy()
+    if (!energy_checkbox) return
 
-    // Check column toggle button exists
-    const col_toggle_btn = document.querySelector(
-      `[aria-label="Toggle column visibility"]`,
-    )
-    expect(col_toggle_btn).toBeDefined()
+    const initial_checked = energy_checkbox.checked
+    energy_checkbox.click()
+
+    expect(on_filter_change).toHaveBeenCalledWith(!initial_checked, false)
+    expect(energy_checkbox.checked).toBe(!initial_checked)
   })
 
-  it(`responds to filter changes`, () => {
-    const on_filter_change = vi.fn()
+  it(`toggles compliance filter checkboxes`, () => {
+    mount(TableControls, { target: document.body })
 
-    mount(TableControls, {
-      target: document.body,
-      props: { visible_cols: sample_cols, on_filter_change },
-    })
+    const compliant_checkbox = find_checkbox_by_label(`Compliant`)
+    const noncompliant_checkbox = find_checkbox_by_label(`Non-compliant`)
 
-    // Find filter checkboxes
-    const checkboxes = document.querySelectorAll(`input[type="checkbox"]`)
-    expect(checkboxes.length).toBeGreaterThan(0)
+    expect(compliant_checkbox).toBeTruthy()
+    expect(noncompliant_checkbox).toBeTruthy()
+    if (!compliant_checkbox || !noncompliant_checkbox) return
 
-    // Click first checkbox (energy-only) and check if callback is called
-    on_filter_change.mockReset()
-    const energy_checkbox = Array.from(checkboxes).find((checkbox) =>
-      checkbox.id?.includes(`energy`)
-    ) as HTMLInputElement
+    // Both should start checked
+    expect(compliant_checkbox.checked).toBe(true)
+    expect(noncompliant_checkbox.checked).toBe(true)
 
-    if (energy_checkbox) {
-      energy_checkbox.click()
-      expect(on_filter_change).toHaveBeenCalled()
-    }
+    // Toggle non-compliant off
+    noncompliant_checkbox.click()
+    expect(noncompliant_checkbox.checked).toBe(false)
 
-    // Click second checkbox (noncompliant) and check if callback is called
-    on_filter_change.mockReset()
-    const noncomp_checkbox = Array.from(checkboxes).find((checkbox) =>
-      checkbox.id?.includes(`compliant`)
-    ) as HTMLInputElement
-
-    if (noncomp_checkbox) {
-      noncomp_checkbox.click()
-      expect(on_filter_change).toHaveBeenCalled()
-    }
+    // Toggle back on
+    noncompliant_checkbox.click()
+    expect(noncompliant_checkbox.checked).toBe(true)
   })
 
-  it(`toggles column visibility panel`, () => {
+  it(`opens and closes column visibility panel`, () => {
     mount(TableControls, {
       target: document.body,
-      props: { visible_cols: sample_cols },
+      props: { columns: sample_columns },
     })
 
-    // Find column toggle button
-    const toggle_btn = document.querySelector(
-      `[aria-label="Toggle column visibility"]`,
-    ) as HTMLButtonElement
-    expect(toggle_btn).toBeDefined()
+    const toggle_btn = doc_query(`.column-toggles summary`)
+    const details = doc_query<HTMLDetailsElement>(`.column-toggles`)
+    expect(toggle_btn).toBeTruthy()
+    expect(details).toBeTruthy()
 
-    // Click button to show the panel
-    if (toggle_btn) {
-      toggle_btn.click()
+    // Should start closed
+    expect(details.open).toBe(false)
 
-      // Check if column menu or panel is visible
-      // The component might use different class names, so we try multiple options
-      const column_menu = document.querySelector(`.column-menu, .column-panel`)
-      expect(column_menu).toBeDefined()
+    // Open panel
+    toggle_btn.click()
+    expect(details.open).toBe(true)
 
-      // Click outside to close (if the component uses a click-outside pattern)
-      document.body.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
-    }
+    // Verify column menu is visible
+    expect(document.querySelector(`.column-menu`)).toBeTruthy()
+
+    // Close panel
+    toggle_btn.click()
+    expect(details.open).toBe(false)
   })
 
-  it(`handles column visibility changes`, () => {
-    const on_col_change = vi.fn()
-
+  it(`toggles column visibility checkboxes`, () => {
     mount(TableControls, {
       target: document.body,
-      props: { visible_cols: { ...sample_cols }, on_col_change },
+      props: { columns: [...sample_columns] },
     })
 
-    // Open column menu/panel (if it exists)
-    const toggle_btn = document.querySelector(
-      `[aria-label="Toggle column visibility"]`,
-    ) as HTMLButtonElement
-    if (toggle_btn) {
-      toggle_btn.click()
+    const toggle_btn = doc_query(`.column-toggles summary`)
+    toggle_btn.click()
 
-      // Click column checkbox and check if callback is called
-      const column_checkboxes = document.querySelectorAll(`input[type="checkbox"]`)
-      if (column_checkboxes.length > 0) {
-        on_col_change.mockReset()
-        ;(column_checkboxes[0] as HTMLInputElement).click()
-        expect(on_col_change).toHaveBeenCalled()
-      }
-    }
-  })
+    const column_menu = document.querySelector(`.column-menu`)
+    expect(column_menu).toBeTruthy()
 
-  it(`renders tooltip info icons`, () => {
-    mount(TableControls, {
-      target: document.body,
-      props: { visible_cols: sample_cols },
-    })
+    const column_checkboxes = column_menu?.querySelectorAll(`input[type="checkbox"]`)
+    expect(column_checkboxes?.length).toBe(sample_columns.length)
 
-    // Check for info icons in the document
-    const info_icons = document.querySelectorAll(`.info-icon, [aria-label*="info"]`)
+    // Test toggling first checkbox (Model column, initially visible)
+    const first_checkbox = column_checkboxes?.[0] as HTMLInputElement
+    expect(first_checkbox?.checked).toBe(true)
 
-    // If info icons exist, try simulating a hover
-    if (info_icons.length > 0) {
-      const info_icon = info_icons[0] as HTMLElement
-      const mouseenter_event = new MouseEvent(`mouseenter`)
-      info_icon.dispatchEvent(mouseenter_event)
-    }
+    first_checkbox.click()
+    expect(first_checkbox.checked).toBe(false)
+
+    first_checkbox.click()
+    // Verify checkbox state changed
+    expect(first_checkbox.checked).toBe(true)
   })
 })

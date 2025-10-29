@@ -99,7 +99,7 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         atoms.calc = seven_net_calc
         if max_steps > 0:
             atoms = FrechetCellFilter(atoms)
-            optimizer = optim_cls(atoms, logfile="/dev/null")
+            optimizer = optim_cls(atoms, logfile=None)
             optimizer.run(fmax=force_max, steps=max_steps)
         energy = atoms.get_potential_energy()  # relaxed energy
         # if max_steps > 0, atoms is wrapped by FrechetCellFilter, so need to getattr
