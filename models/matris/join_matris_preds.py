@@ -4,28 +4,32 @@ single file."""
 # %%
 import os
 from glob import glob
-
+import re
 import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
 from tqdm import tqdm
+from pymatgen.core import Structure
 
-from matbench_discovery.data import as_dict_handler
+from matbench_discovery.data import DataFiles, as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey, Model, Task
 from matbench_discovery.preds.discovery import df_preds
 
-module_dir = os.path.dirname(__file__)
+from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
+from pymatgen.entries.computed_entries import ComputedStructureEntry
 
+module_dir = os.path.dirname(__file__)
 
 # %%
 task_type = Task.IS2RE
-date = "2025-03-12"
-glob_pattern = f"{Model.matris_v050_mptrj}/{date}-wbm-{task_type}*/*.json.gz"
+date = "2025-10-29"
+Matris_Key = "MatRIS_10M_MP"  # or MatRIS_10M_OAM
+
+glob_pattern = f"{Matris_Key}/{date}-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 dfs: dict[str, pd.DataFrame] = {}
-
 
 # %%
 failed = {}
@@ -33,45 +37,66 @@ for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
     try:
-        df_i = pd.read_json(file_path).set_index(Key.mat_id)
+        #df_i = pd.read_json(file_path).set_index(Key.mat_id)
+        df_i = pd.read_json(file_path, lines=True).set_index(Key.mat_id)
     except Exception as exc:
         failed[file_path] = str(exc)
         continue
     # drop trajectory to save memory
-    dfs[file_path] = df_i.drop(columns="matris_mp_trajectory", errors="ignore")
-
+    dfs[file_path] = df_i.drop(columns="matris_trajectory", errors="ignore")
 
 err_counts = pd.Series(failed).value_counts()
 print(f"{err_counts=}")
 
 df_matris = pd.concat(dfs.values()).round(4)
 
+df_wbm_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path, lines=True).set_index(
+    Key.mat_id
+)
 
-# %% compute corrected formation energies
-e_pred_col = "matris_mp_energy"
-e_form_matris_col = f"e_form_per_atom_{e_pred_col.split('_energy')[0]}"
-df_matris[Key.formula] = df_preds[Key.formula]
-df_matris[e_form_matris_col] = [
-    get_e_form_per_atom(dict(energy=ene, composition=formula))
-    for formula, ene in tqdm(
-        df_matris.set_index(Key.formula)[e_pred_col].items(), total=len(df_matris)
-    )
+CSE = "computed_structure_entry" # Key.cse occurs error: type object 'Key' has no attribute 'cse'. pymatviz==0.17.2
+df_wbm_cse[CSE] = [
+    ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm_cse[CSE])
 ]
+cse: ComputedStructureEntry
+e_col = "matris_energy"
+struct_col = "matris_structure" 
+e_form_matris_col = f"e_form_per_atom_matris"
+
+for mat_id in tqdm(df_matris.index):
+    matris_energy = df_matris.loc[mat_id, e_col]
+    mlip_struct = Structure.from_dict(df_matris.loc[mat_id, struct_col])
+    cse = df_wbm_cse.loc[mat_id, CSE]
+    cse._energy = matris_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
+    cse._structure = mlip_struct  # noqa: SLF001
+    df_matris.loc[mat_id, CSE] = cse
+
+# MP2020
+processed = MaterialsProject2020Compatibility().process_entries(
+    df_matris[CSE], verbose=True, clean=True
+)
+if len(processed) != len(df_matris):
+    raise ValueError(f"not all entries processed: {len(processed)=} {len(df_matris)=}")
+
+df_matris[e_form_matris_col] = [
+    get_e_form_per_atom(cse) for cse in tqdm(df_matris[CSE])
+]
+
 df_preds[e_form_matris_col] = df_matris[e_form_matris_col]
 
-
-# %%
-fig = pmv.density_scatter(
-    df=df_preds, x=MbdKey.e_form_dft, y=e_form_matris_col, template="pymatviz_white"
-)
-img_path = f"{module_dir}/{Model.matris_v050_mptrj.key}-e-form-parity.html"
-fig.write_html(img_path, include_plotlyjs="cdn")
-
-
-# %%
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_matris = df_matris.round(4)
 df_matris.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 df_matris.reset_index().to_json(
     f"{out_path}.json.gz", default_handler=as_dict_handler, orient="records", lines=True
 )
+"""
+fig = pmv.density_scatter_plotly(
+    df=df_preds, 
+    x=MbdKey.e_form_dft, 
+    y=e_form_matris_col, 
+    template="pymatviz_white"
+)
+img_path = f"{module_dir}/{Matris_Key}-e-form-parity.html"
+fig.write_html(img_path)
+"""
