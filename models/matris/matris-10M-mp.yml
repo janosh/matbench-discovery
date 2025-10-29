@@ -1,8 +1,8 @@
 model_name: MatRIS-10M-MP
 model_key: matris-10m-mp
-model_version: v1.0.0
-date_added: '2025-10-14'
-date_published: '2025-10-14'
+model_version: v1
+date_added: '2025-10-29'
+date_published: '2025-10-29'
 authors:
   - name: Yuanchang Zhou
     affiliation: Institute of Computing Technology, Chinese Academy of Sciences
@@ -12,10 +12,6 @@ authors:
     affiliation: Institute of Computing Technology, Chinese Academy of Sciences
     email: husiyu@ict.ac.cn
     orcid: https://orcid.org/0009-0008-6085-4645
-  - name: Chen Wang
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: wangchen246@mails.ucas.ac.cn
-    orcid: https://orcid.org/0009-0006-7542-8281
   - name: Guangming Tan
     affiliation: Institute of Computing Technology, Chinese Academy of Sciences
     email: tgm@ict.ac.cn
@@ -32,24 +28,24 @@ trained_by:
     orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
-url: #
-doi: #
-paper: #
-pr_url: https://github.com/janosh/matbench-discovery/pull/**
-checkpoint_url: 
+url: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
+doi: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
+paper: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
+pr_url: https://github.com/janosh/matbench-discovery/pull/2xx
+checkpoint_url: https://figshare.com/files/59143058
 
 license:
-  code: unreleased
-  code_url: missing
-  checkpoint: unreleased
-  checkpoint_url: missing
+  code: BSD-3-Clause
+  code_url: https://github.com/HPC-AI-Team/MatRIS/blob/main/LICENSE
+  checkpoint: BSD-3-Clause
+  checkpoint_url: https://github.com/HPC-AI-Team/MatRIS/blob/main/LICENSE
 
 openness: OSOD
 train_task: S2EFSM
 test_task: IS2RE-SR
 targets: EFS_GM
 model_type: UIP
-model_params: 10,443,505
+model_params: 10_443_505
 trained_for_benchmark: true
 n_estimators: 1
 
@@ -57,23 +53,26 @@ hyperparams:
   max_force: 0.05
   max_steps: 500
   ase_optimizer: FIRE
-  optimizer: AdamW(wd=0.01)
-  loss: MAE/L2MAE/MAE/MAE (E/F/S/M)
+  optimizer: AdamW(wd=1e-2)
+  loss: MAE/L2MAE
   loss_weights:
     energy: 5.0
     force: 5.0
     stress: 0.1
     magmom: 0.1
-  batch_size(avg): 256 # average batch size since using 'load-balancing'.
+  batch_size: 512
   initial_learning_rate: 0.0003
-  learning_rate_schedule: CosineAnnealingLR(T_max=300)
-  epochs: 100
+  learning_rate_schedule: CosineAnnealingLR(T_max=100)
   n_layers: 10
-  n_features: 128
-  n_radial_bessel_basis: 7
   graph_construction_radius: 6.0 # Å
   three_body_cutoff: 4.5 # Å
-  max_neighbors: .inf
+  max_neighbors: .inf # see sec. 3.2 in arXiv:2502.12147
+
+requirements:
+  torch: 2.6.0
+  ase: 3.26.0
+  pymatgen: 2025.10.07
+  numpy: 2.3.4
 
 training_set: [MPtrj]
 training_cost: missing
@@ -85,12 +84,18 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 
+      pred_file: models/matris/matris-10m-mp/2025-10-29-kappa-103-fire-dist=0.03-fmax1e-5-symprec1e-5.json.gz
+      pred_file_url: https://figshare.com/files/59154056
   geo_opt:
-    pred_file: 
-    pred_file_url: 
+    pred_file: models/matris/matris-10m-mp/2025-10-29-wbm-IS2RE.json.gz
+    pred_file_url: https://figshare.com/files/59154068
     struct_col: matris_structure
+
   discovery:
-    pred_file: #
-    pred_file_url: #
-    pred_col: e_form_per_atom_matris_mp
+    pred_file: models/matris/matris-10m-mp/2025-10-29-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/59154059
+    pred_col: e_form_per_atom_matris
+
+  #diatomics:
+  #  pred_file: models/matris/matris-10m-mp/2025-10-29-diatomics.json.gz
+  #  pred_file_url: https://figshare.com/files/59154065
