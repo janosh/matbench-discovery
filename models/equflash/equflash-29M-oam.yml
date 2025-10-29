@@ -31,7 +31,7 @@ paper: https://openreview.net/pdf?id=wiQe95BPaB
 pr_url: https://github.com/janosh/matbench-discovery/pull/269
 checkpoint_url: missing
 license:
-  code: unreleased
+  code: MIT
   code_url: https://github.com/SNU-ARC/flashTP/blob/main/LICENSE
   checkpoint: unreleased
 

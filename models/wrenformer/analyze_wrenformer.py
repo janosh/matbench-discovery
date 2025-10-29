@@ -4,7 +4,6 @@
 import numpy as np
 import pandas as pd
 import pymatviz as pmv
-from aviary.wren.utils import get_prototype_from_protostructure
 from IPython.display import display
 from pymatviz.enums import Key
 
@@ -12,6 +11,7 @@ from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
+from matbench_discovery.structure.prototype import get_protostructure_label
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-20"
@@ -38,7 +38,7 @@ title = f"{len(df_bad)} {model} preds<br>with {max_each_true=}, {min_each_pred=}
 df_mp = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
 df_mp[Key.spg_num] = df_mp[MbdKey.wyckoff_spglib].str.split("_").str[2].astype(int)
 df_mp["isopointal_proto_from_aflow"] = df_mp[MbdKey.wyckoff_spglib].map(
-    get_prototype_from_protostructure
+    get_protostructure_label
 )
 df_mp.isopointal_proto_from_aflow.value_counts().head(12)
 
@@ -55,7 +55,7 @@ fig.show()
 proto_col = "Isopointal Prototypes"
 df_proto_counts = (
     df_bad[MbdKey.init_wyckoff_spglib]
-    .map(get_prototype_from_protostructure)
+    .map(get_protostructure_label)
     .value_counts()
     .to_frame()
 )

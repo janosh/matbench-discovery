@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.11,<3.13"
 # dependencies = [
-# "torch==2.8.0+cu126 ",
+# "torch==2.8.0+cu126",
 # "torch-geometric==2.6.1",
 # "numpy==1.26.0",
 # "scikit-learn==1.7.2",
@@ -113,7 +113,8 @@ def load_pickle(file_path: str) -> Any:
 
 def load_multiple_pickles(file_paths: list[str]) -> list[Any]:
     """Load multiple pickle files in parallel."""
-    with mp.Pool(processes=32) as pool:
+    n_proc = min(32, mp.cpu_count())
+    with mp.Pool(processes=n_proc) as pool:
         return pool.map(load_pickle, file_paths)
 
 

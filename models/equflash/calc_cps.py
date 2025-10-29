@@ -37,10 +37,9 @@ def main() -> None:
     dataframes = [
         pd.read_json(file_path).set_index("material_id") for file_path in files
     ]
-    df_concat = pd.concat(dataframes).round(4)
-    rmsd = df_concat["mlff_rmsd"].fillna(1.0).mean()
+    df_model = pd.concat(dataframes).round(4)
+    rmsd = df_model["mlff_rmsd"].fillna(1.0).mean()
 
-    df_model = pd.concat(dataframes)
     meta_csv = f"{args.dataset_root}/wbm/wbm_formation_correction_natom.csv.gz"
     df_metadata = pd.read_csv(meta_csv).set_index("material_id")
     df_merge = pd.concat([df_metadata, df_model], axis=1)

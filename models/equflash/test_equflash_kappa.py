@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.11,<3.13"
 # dependencies = [
-# "torch==2.8.0+cu126 ",
+# "torch==2.8.0+cu126",
 # "torch-geometric==2.6.1",
 # "numpy==1.26.0",
 # "scikit-learn==1.7.2",
@@ -10,7 +10,7 @@
 # "ase==3.26.0",
 # "pymatgen==2025.10.7",
 # "pymatviz>=0.16.0",
-# "phono3py"==3.19.3,
+# "phono3py==3.19.3",
 # "flashTP_e3nn==0.1.0",
 # "fairchem-core==1.10.0",
 # "lmdb==1.6.2",
