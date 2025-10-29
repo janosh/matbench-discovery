@@ -9,6 +9,7 @@
 # [tool.uv.sources]
 # matbench-discovery = { path = "../../", editable = true }
 # ///
+
 import argparse
 import os
 from glob import glob
@@ -69,9 +70,21 @@ def main() -> None:
     n_false_pos = (model_pred_stable & ~actual_stable).sum()
     n_false_neg = (~model_pred_stable & actual_stable).sum()
 
-    precision = n_true_pos / (n_true_pos + n_false_pos)
-    recall = n_true_pos / (n_true_pos + n_false_neg)
-    f1_score = 2 * (precision * recall) / (precision + recall)
+    precision = (
+        n_true_pos / (n_true_pos + n_false_pos)
+        if (n_true_pos + n_false_pos) > 0
+        else 0.0
+    )
+    recall = (
+        n_true_pos / (n_true_pos + n_false_neg)
+        if (n_true_pos + n_false_neg) > 0
+        else 0.0
+    )
+    f1_score = (
+        2 * (precision * recall) / (precision + recall)
+        if (precision + recall) > 0
+        else 0.0
+    )
 
     print(f"F1\t:\t{f1_score:.4f}\nRMSD\t:\t{rmsd:.4f}")
 

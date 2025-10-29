@@ -22,6 +22,7 @@
 # flashTP_e3nn = { git = "https://github.com/SNU-ARC/flashTP" }
 # matbench-discovery = { path = "../../", editable = true }
 # ///
+
 import argparse
 import datetime
 import json
@@ -97,8 +98,10 @@ def two_stage_relax(
     if "name" in atoms.info:
         mat_name = atoms.info["name"]
     else:
-        mat_name = f"{atoms.get_chemical_formula(mode='metal', empirical=True)}"
-        f"-{get_spacegroup(atoms, symprec=symprec).no}"
+        mat_name = (
+            f"{atoms.get_chemical_formula(mode='metal', empirical=True)}"
+            f"-{get_spacegroup(atoms, symprec=symprec).no}"
+        )
 
     tilt_mask = None
     if not allow_tilt:
@@ -377,7 +380,6 @@ def main() -> None:
 
     df_kappa = pd.DataFrame(kappa_results).T
     df_kappa.index.name = ID
-    df_kappa.reset_index().to_json(out_path)
 
     df_force = pd.DataFrame(force_results).T
     df_force = pd.concat([df_kappa, df_force], axis=1)
