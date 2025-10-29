@@ -36,8 +36,9 @@ license:
   checkpoint: unreleased
 
 requirements:
-  flashTP: TBD
-  torch: TBD
+  flashTP_e3nn: 0.1.0
+  torch: 2.8.0+cu126
+  fairchem-core: 1.10.0
 
 openness: CSOD
 trained_for_benchmark: false
@@ -62,7 +63,7 @@ notes:
     EquFlash is an E(3)-equivariant model based on the SevenNet-0 architecture, with tensor products accelerated by FlashTP.
     FlashTP achieves up to 41.6× and 60.8× kernel speedups over e3nn and NVIDIA cuEquivariance, respectively, while reducing memory usage by 6×.
     Leveraging these gains, we scaled EquFlash to a larger capacity than the original SevenNet-0.
-  Training: EquFlash, a scaled-up model derived from SevenNet-0 and accelerated with FlashTP, was pretrained on OMat24 and finetuned on MPtrj and sAlex.
+  Training: EquFlash, a scaled-up model derived from SevenNet-0 and       accelerated with FlashTP, was pretrained on OMat24 and finetuned on MPtrj and sAlex.
 
 metrics:
   phonons:
