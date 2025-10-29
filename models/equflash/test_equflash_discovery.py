@@ -138,7 +138,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
+if __name__ == "__main__":
     """Run IS2RE evaluation on matbench-discovery WBM test set."""
     args = parse_args()
     os.makedirs(args.out, exist_ok=True)
@@ -169,7 +169,7 @@ def main() -> None:
 
     if os.path.isfile(output_jsonfile_name):
         print("Results already exist!")
-        return
+        raise SystemExit(0)
 
     file_lists = [
         f"{args.init_structs_dir}/{fname}"
@@ -204,9 +204,8 @@ def main() -> None:
         for mat_id, atoms, ntraj in zip(
             mat_idx, atoms_list, n_traj.numpy(), strict=True
         ):
-            relaxed_struct = AseAtomsAdaptor.get_structure(
-                getattr(atoms, "atoms", atoms)
-            )
+            unwrapped = getattr(atoms, "atoms", atoms)
+            relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
             rmsd, max_dist = compute_rmsd(relaxed_struct, structs_wbm[mat_id])
             relax_results[mat_id] = {
                 "energy": atoms.get_total_energy(),
@@ -219,7 +218,3 @@ def main() -> None:
     df_out.index.name = Key.mat_id
 
     df_out.reset_index().to_json(output_jsonfile_name, default_handler=as_dict_handler)
-
-
-if __name__ == "__main__":
-    main()

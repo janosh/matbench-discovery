@@ -8,12 +8,13 @@ Then refactored for GRACE
 
 import os
 import warnings
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import ase.optimize
 import ase.optimize.sciopt
 import numpy as np
 import pandas as pd
+from ase import Atoms
 from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from ase.optimize.optimize import Optimizer
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -138,7 +139,8 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
 
         energy = atoms.get_potential_energy()  # relaxed energy
         # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
-        relaxed_struct = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
+        atoms_obj = cast("Atoms", getattr(atoms, "atoms", atoms))
+        relaxed_struct = AseAtomsAdaptor.get_structure(atoms_obj)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except Exception as exc:
         print(f"Failed to relax {mat_id}: {exc!r}")

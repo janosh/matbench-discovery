@@ -24,7 +24,7 @@ from ase.stress import voigt_6_to_full_3x3_stress
 from torch_scatter import scatter
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Generator, Sequence
 
     from GGNN.trainer.utrainer import OCPTrainer
     from torch_geometric.data import Batch
@@ -58,10 +58,10 @@ def batch_to_atoms(
     Returns:
         list of Atoms
     """
-    n_systems = batch.natoms.shape[0]
-    n_atoms = batch.natoms.tolist()
-    atomic_nums = torch.split(batch.atomic_numbers, n_atoms)
-    bs = int((batch.batch.max() + 1).detach().cpu())
+    n_systems = batch.natoms.shape[0]  # type: ignore[attr-defined]
+    n_atoms = batch.natoms.tolist()  # type: ignore[attr-defined]
+    atomic_nums = torch.split(batch.atomic_numbers, n_atoms)  # type: ignore[attr-defined]
+    bs = int((batch.batch.max() + 1).detach().cpu())  # type: ignore[attr-defined]
     if results is not None:
         results = {
             key: (
@@ -72,12 +72,12 @@ def batch_to_atoms(
             for key, val in results.items()
         }
 
-    positions = torch.split(batch.pos, n_atoms)
+    positions = torch.split(batch.pos, n_atoms)  # type: ignore[attr-defined]
 
     atoms_objects = []
     for idx in range(n_systems):
         pos = positions[idx].cpu().detach().numpy()
-        cell = batch.cell[idx].cpu().detach().numpy()
+        cell = batch.cell[idx].cpu().detach().numpy()  # type: ignore[attr-defined]
 
         # TODO take pbc from data
         if wrap_pos:
@@ -100,7 +100,7 @@ def batch_to_atoms(
 
 
 def compare_batches(
-    batch1: Batch | None,
+    batch1: Batch | SimpleNamespace | None,
     batch2: Batch,
     tol: float = 1e-6,
     excluded_properties: set[str] | None = None,
@@ -157,7 +157,7 @@ class OptimizableBatch:
         mask_converged: bool = True,
         numpy: bool = False,
         masked_eps: float = 1e-8,
-        device: str = "cuda",
+        device: torch.device | str = "cuda",
     ) -> None:
         """Initialize Optimizable Batch
 
@@ -179,12 +179,11 @@ class OptimizableBatch:
         self.trainer = trainer
         torch.set_default_dtype(torch.float64)
 
-        self.batch = batch.to(self.device)
-
+        self.batch = batch.to(self.device)  # type: ignore[attr-defined]
         self.transform = transform
         self.numpy = numpy
         self.mask_converged = mask_converged
-        self._cached_batch = None
+        self._cached_batch: Batch | SimpleNamespace | None = None
         self._update_mask = None
         self.torch_results = {}
         self.results = {}
@@ -211,7 +210,7 @@ class OptimizableBatch:
     @property
     def update_mask(self) -> torch.Tensor:
         if self._update_mask is None:
-            return torch.ones(len(self.batch), dtype=bool)
+            return torch.ones(len(self.batch)).bool()
         return self._update_mask
 
     def check_state(self, batch: Batch, tol: float = 1e-12) -> bool:
@@ -328,14 +327,14 @@ class OptimizableBatch:
         cells = self.get_cells()
         return torch.linalg.det(cells)
 
-    def iterimages(self) -> Batch:
+    def iterimages(self) -> Generator[Batch, None, None]:
         yield self.batch
 
     def get_max_forces(self, forces: torch.Tensor | None = None) -> torch.Tensor:
         """Get the maximum forces per structure in batch"""
         if forces is None:
             forces = self.get_forces(no_numpy=True)
-        return scatter((forces**2).sum(axis=1).sqrt(), self.batch_indices, reduce="max")
+        return scatter((forces**2).sum(dim=1).sqrt(), self.batch_indices, reduce="max")
 
     def converged(
         self,
@@ -395,7 +394,7 @@ class OptimizableUnitCellBatch(OptimizableBatch):
         *,
         numpy: bool = False,
         mask_converged: bool = True,
-        mask: Sequence[bool] | None = None,
+        mask: torch.Tensor | Sequence[bool] | None = None,
         cell_factor: float | torch.Tensor | None = None,
         hydrostatic_strain: bool = False,
         constant_volume: bool = False,
@@ -417,16 +416,18 @@ class OptimizableUnitCellBatch(OptimizableBatch):
         self.stress = None
 
         if mask is None:
-            mask = torch.ones((3, 3), device=self.device)
+            mask_tensor = torch.ones((3, 3), device=self.device)
+        else:
+            mask_tensor = torch.tensor(mask, device=self.device)
 
         # TODO make sure mask is on GPU
-        if mask.shape == (6,):
+        if mask_tensor.shape == (6,):
             self.mask = torch.tensor(
-                voigt_6_to_full_3x3_stress(mask.detach().cpu()),
+                voigt_6_to_full_3x3_stress(mask_tensor.detach().cpu()),
                 device=self.device,
             )
-        elif mask.shape == (3, 3):
-            self.mask = mask
+        elif mask_tensor.shape == (3, 3):
+            self.mask = mask_tensor
         else:
             raise ValueError("shape of mask should be (3,3) or (6,)")
 
@@ -602,7 +603,7 @@ class OptimizableFrechetBatch(OptimizableUnitCellBatch):
         *,
         numpy: bool = False,
         mask_converged: bool = True,
-        mask: Sequence[bool] | None = None,
+        mask: torch.Tensor | Sequence[bool] | None = None,
         cell_factor: float | torch.Tensor | None = None,
         hydrostatic_strain: bool = False,
         constant_volume: bool = False,
