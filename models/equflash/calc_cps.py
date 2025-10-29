@@ -1,5 +1,13 @@
 """Calculate discovery metrics (F1, precision, recall) for model predictions."""
-
+# /// script
+# requires-python = ">=3.11,<3.13"
+# dependencies = [
+# "matbench-discovery"==1.3.1,
+# ]
+#
+# [tool.uv.sources]
+# matbench-discovery = { path = "../../", editable = true }
+# ///
 import argparse
 import os
 from glob import glob

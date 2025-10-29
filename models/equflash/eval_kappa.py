@@ -1,5 +1,13 @@
 """Evaluate thermal conductivity predictions against DFT reference."""
-
+# /// script
+# requires-python = ">=3.11,<3.13"
+# dependencies = [
+# "matbench-discovery"==1.3.1,
+# ]
+#
+# [tool.uv.sources]
+# matbench-discovery = { path = "../../", editable = true }
+# ///
 import argparse
 
 import pandas as pd

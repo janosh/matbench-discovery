@@ -1,4 +1,27 @@
 """Test EquFlash model on matbench-discovery IS2RE task."""
+# /// script
+# requires-python = ">=3.11,<3.13"
+# dependencies = [
+# "torch==2.8.0+cu126 ",
+# "torch-geometric==2.6.1",
+# "numpy==1.26.0",
+# "scikit-learn==1.7.2",
+# "spglib==2.6.0",
+# "e3nn==0.5.6",
+# "ase==3.26.0",
+# "pymatgen==2025.10.7",
+# "pymatviz>=0.16.0",
+# "flashTP_e3nn==0.1.0",
+# "fairchem-core==1.10.0",
+# "lmdb==1.6.2",
+# "submitit==1.5.3",
+# "matbench-discovery"==1.3.1,
+# ]
+#
+# [tool.uv.sources]
+# flashTP_e3nn = { git = "https://github.com/SNU-ARC/flashTP" }
+# matbench-discovery = { path = "../../", editable = true }
+# ///
 
 import argparse
 import json
