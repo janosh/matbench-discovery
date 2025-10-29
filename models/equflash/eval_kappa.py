@@ -1,4 +1,5 @@
 """Evaluate thermal conductivity predictions against DFT reference."""
+
 # /// script
 # requires-python = ">=3.11,<3.13"
 # dependencies = [

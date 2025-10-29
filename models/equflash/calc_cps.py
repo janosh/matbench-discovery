@@ -1,4 +1,5 @@
 """Calculate discovery metrics (F1, precision, recall) for model predictions."""
+
 # /// script
 # requires-python = ">=3.11,<3.13"
 # dependencies = [
