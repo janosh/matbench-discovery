@@ -335,8 +335,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     mace_mp_0 = auto(), "mace/mace-mp-0.yml"
     mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
-    # MatRIS-v0.5.0-MPtrj
-    matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
+    # MatRIS
+    #matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
+    matris_10m_oam = auto(), "matris/matris-10m-oam.yml"
+    matris_10m_mp = auto(), "matris/matris-10m-mp.yml"
 
     # MatterSim - M3gNet architecture trained on proprietary MSFT data. Weights
     # are open-sourced.
