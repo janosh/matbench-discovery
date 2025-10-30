@@ -331,8 +331,8 @@ def run_kappa(
     atom_disp: Annotated[float, typer.Option(help="用于计算声子性质的位移距离")] = 0.03,
     seed: Annotated[int, typer.Option(help="随机种子")] = 42,
     num_jobs: Annotated[int, typer.Option(help="并行任务数")] = 10,
-    debug: Annotated[bool, typer.Option(help="调试模式，仅运行一个 job")] = False,
-    slurm_timeout: Annotated[int, typer.Option(help="slurm 超时时间（小时）")] = 80,
+    debug: Annotated[bool, typer.Option(help="调试模式,仅运行一个 job")] = False,
+    slurm_timeout: Annotated[int, typer.Option(help="slurm 超时时间(小时)")] = 80,
 ) -> None:
     # 设置输出路径
     base_dir = Path(out_path) / model_name / f"{identifier}_{seed}"
@@ -353,7 +353,7 @@ def run_kappa(
 
     # 继续填充函数
     if debug:
-        # 调试模式，只运行一个任务，使用GPU 0
+        # 调试模式,只运行一个任务,使用GPU 0
         env_vars = {"CUDA_VISIBLE_DEVICES": "0"}
         job = executor.submit(
             KappaSRMERunner(
@@ -369,7 +369,7 @@ def run_kappa(
             job_number=0,
         )
     else:
-        # 正常模式，提交多个任务
+        # 正常模式,提交多个任务
         jobs = []
         with executor.batch():
             for job_number in range(num_jobs):
