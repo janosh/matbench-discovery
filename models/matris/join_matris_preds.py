@@ -50,11 +50,13 @@ print(f"{err_counts=}")
 
 df_matris = pd.concat(dfs.values()).round(4)
 
-df_wbm_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path, lines=True).set_index(
-    Key.mat_id
-)
+df_wbm_cse = pd.read_json(
+    DataFiles.wbm_computed_structure_entries.path, lines=True
+).set_index(Key.mat_id)
 
-CSE = "computed_structure_entry" # Key.cse occurs error: type object 'Key' has no attribute 'cse'. pymatviz==0.17.2
+# Key.cse occurs error (pymatviz==0.17.2):
+# type object 'Key' has no attribute 'cse'. 
+CSE = "computed_structure_entry" 
 df_wbm_cse[CSE] = [
     ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm_cse[CSE])
 ]
@@ -92,9 +94,9 @@ df_matris.reset_index().to_json(
 )
 """
 fig = pmv.density_scatter_plotly(
-    df=df_preds, 
-    x=MbdKey.e_form_dft, 
-    y=e_form_matris_col, 
+    df=df_preds,
+    x=MbdKey.e_form_dft,
+    y=e_form_matris_col,
     template="pymatviz_white"
 )
 img_path = f"{module_dir}/{Matris_Key}-e-form-parity.html"
