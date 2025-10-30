@@ -88,9 +88,9 @@ def join_predictions(
         mlip_struct = Structure.from_dict(struct_dict)
         cse = df_cse.loc[mat_id, computed_structure_entry_key]
         # cse._energy is the uncorrected energy
-        cse._energy = pred_energy  # noqa: SLF001
+        cse._energy = pred_energy  # noqa:SLF001
         # cse._energy = pred_energy_ori  # added by fywang
-        cse._structure = mlip_struct  # noqa: SLF001
+        cse._structure = mlip_struct  # noqa:SLF001
         df_fairchem.loc[mat_id, computed_structure_entry_key] = cse
 
     # apply corrections for models that were not trained on MP corrected energies
