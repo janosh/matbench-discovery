@@ -221,7 +221,7 @@ class KappaSRMERunner:
                     Key.ph_freqs: freqs,
                 }
 
-                # If conductivity condition is met, calculate fc3
+                # If conductivity condition is met,calculate fc3
                 ltc_condition = not has_imaginary_freqs and (
                     not relax_dict["broken_symmetry"] or conductivity_broken_symm
                 )
@@ -331,8 +331,8 @@ def run_kappa(
     atom_disp: Annotated[float, typer.Option(help="用于计算声子性质的位移距离")] = 0.03,
     seed: Annotated[int, typer.Option(help="随机种子")] = 42,
     num_jobs: Annotated[int, typer.Option(help="并行任务数")] = 10,
-    debug: Annotated[bool, typer.Option(help="调试模式，仅运行一个 job")] = False,
-    slurm_timeout: Annotated[int, typer.Option(help="slurm 超时时间（小时）")] = 80,
+    debug: Annotated[bool, typer.Option(help="调试模式,仅运行一个 job")] = False,
+    slurm_timeout: Annotated[int, typer.Option(help="slurm 超时时间(小时)")] = 80,
 ) -> None:
     # 设置输出路径
     base_dir = Path(out_path) / model_name / f"{identifier}_{seed}"
