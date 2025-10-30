@@ -105,9 +105,13 @@ atoms_list = atoms_list[
     slurm_array_task_id - slurm_array_task_min :: slurm_array_task_count
 ]
 
-tqdm_bar = tqdm(enumerate(atoms_list), desc="Conductivity calculation: ", disable=not prog_bar)
+tqdm_bar = tqdm(
+    enumerate(atoms_list), 
+    desc="Conductivity calculation: ", 
+    disable=not prog_bar
+)
 print(f"====={slurm_array_task_id}=======")
-for idx, atoms in tqdm_bar:
+for _, atoms in tqdm_bar:
 
     mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
