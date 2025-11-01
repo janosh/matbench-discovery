@@ -107,8 +107,8 @@ class FIRE(BaseBatchOptimizer):
             )
             if self.downhill_check:
                 self.e_last = self.optimizable.get_potential_energy()
-                self.r_last = self.optimizable.get_positions().copy()
-                self.v_last = self.v.copy()
+                self.r_last = self.optimizable.get_positions().clone()
+                self.v_last = self.v.clone()
         else:
             is_uphill = False
             if self.downhill_check:

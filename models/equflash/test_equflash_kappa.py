@@ -33,7 +33,6 @@ from copy import deepcopy
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-import ase
 import numpy as np
 import pandas as pd
 from ase import Atoms
@@ -46,6 +45,8 @@ from ase.spacegroup import get_spacegroup
 from ase.utils import atoms_to_spglib_cell
 from GGNN.common.calculator import UCalculator
 from k_srme.conductivity import calculate_conductivity
+from moyopy import MoyoDataset
+from moyopy.interface import MoyoAdapter
 from spglib import get_symmetry_dataset
 from thermal_conductivity import get_fc3_batch
 from tqdm import tqdm
@@ -81,7 +82,7 @@ def two_stage_relax(
     symprec: float = 1e-5,
     allow_tilt: bool = False,
     optimizer: type["Optimizer"] = LBFGS,
-    filter_ase: type[ase.filters.Filter] = FrechetCellFilter,
+    filter_ase: type[Filter] = FrechetCellFilter,
     symprec_tests: list[float] | None = None,
 ) -> tuple[Atoms, dict[str, Any]]:
     """Two-stage relaxation enforcing symmetry in first stage."""
@@ -172,12 +173,6 @@ def two_stage_relax(
     return return_atoms, relax_dict
 
 
-def get_spacegroup_number(atoms: Atoms, symprec: float = 1e-5) -> int:
-    """Get space group number from atoms."""
-    dataset = get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
-    return dataset.number
-
-
 def main() -> None:
     """Run thermal conductivity calculations with EquFlash model."""
     parser = argparse.ArgumentParser()
@@ -260,9 +255,8 @@ def main() -> None:
             "desc": mat_desc,
             "name": mat_name,
             "initial_space_group_number": atoms.info["symm.no"],
-            "errors": [],
-            "error_traceback": [],
         }
+        err_dict: dict[str, list[str]] = {"errors": [], "error_traceback": []}
 
         atoms.calc = calc
         if max_steps > 0:
@@ -292,7 +286,9 @@ def main() -> None:
                 atoms.constraints = None
                 atoms.info = init_info | atoms.info
 
-                symm_no = get_spacegroup_number(atoms, symprec=symprec)
+                moyo_cell = MoyoAdapter.from_atoms(atoms)
+                symmetry_data = MoyoDataset(moyo_cell, symprec=symprec)
+                symm_no = symmetry_data.number
 
                 relax_dict = {
                     "structure": atoms,
@@ -363,7 +359,7 @@ def main() -> None:
                 force_results[mat_id] = {"fc2_set": fc2_set, "fc3_set": fc3_set}
 
             if not ltc_condition:
-                kappa_results[mat_id] = info_dict | relax_dict | freqs_dict
+                kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
                 continue
 
         except Exception as exc:
@@ -371,12 +367,14 @@ def main() -> None:
                 f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2
             )
             traceback.print_exc()
-            info_dict["errors"].append(f"ForceConstantError: {exc!r}")
-            info_dict["error_traceback"].append(traceback.format_exc())
-            kappa_results[mat_id] = info_dict | relax_dict
+            err_dict["errors"].append(f"ForceConstantError: {exc!r}")
+            err_dict["error_traceback"].append(traceback.format_exc())
+            kappa_results[mat_id] = info_dict | relax_dict | err_dict
             continue
 
-        kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | kappa_dict
+        kappa_results[mat_id] = (
+            info_dict | relax_dict | freqs_dict | kappa_dict | err_dict
+        )
 
     df_kappa = pd.DataFrame(kappa_results).T
     df_kappa.index.name = ID
