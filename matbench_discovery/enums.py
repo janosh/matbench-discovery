@@ -336,7 +336,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
     # MatRIS
-    #matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
+    # matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
     matris_10m_oam = auto(), "matris/matris-10m-oam.yml"
     matris_10m_mp = auto(), "matris/matris-10m-mp.yml"
 

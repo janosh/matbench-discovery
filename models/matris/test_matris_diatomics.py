@@ -20,11 +20,12 @@ from matbench_discovery.diatomics import calc_diatomic_curve, homo_nuc
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
+
 # %% editable config
 model_name = "matris"
 model_variant = "matris_10m_oam"
 device = "cuda" if torch.cuda.is_available() else "cpu"
-calc = MatRISCalculator(model=model_variant,device=device)
+calc = MatRISCalculator(model=model_variant, device=device)
 
 json_path = f"{ROOT}/models/{model_name}/{model_variant}/{today}-diatomics.json.gz"
 existing_paths = glob(json_path.replace(today, "*-*-*"))

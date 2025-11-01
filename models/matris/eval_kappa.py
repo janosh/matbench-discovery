@@ -8,7 +8,6 @@ import os
 import pandas as pd
 from pymatviz.enums import Key
 
-from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import phonons
 
@@ -17,11 +16,10 @@ def main() -> None:
     """Evaluate kappa metrics and update model YAML files."""
     models_to_evaluate = [Model.matris_10m_oam, Model.matris_10m_mp]
     for model in models_to_evaluate:
-
         if not os.path.isfile(model.kappa_103_path or ""):
             print(f"Skipping {model.label}: no kappa_103_path found")
             continue
-        
+
         try:
             print(f"\nProcessing {model.label}...")
 
@@ -34,7 +32,7 @@ def main() -> None:
             """
             df_dft = pd.read_json(
                 DataFiles.phonondb_pbe_103_kappa_no_nac.path
-            ).set_index("mp_id") # Key.mat_id 
+            ).set_index("mp_id")  # Key.mat_id
             df_ml_metrics = phonons.calc_kappa_metrics_from_dfs(df_ml, df_dft)
 
             # Calculate metrics
@@ -45,10 +43,9 @@ def main() -> None:
 
             # Update YAML file
             metrics_dict = {"srme": kappa_srme, "sre": kappa_sre}
-            phonons.write_metrics_to_yaml(model, 
-                                          metrics_dict, 
-                                          str(model.kappa_103_path)
-                                         )
+            phonons.write_metrics_to_yaml(
+                model, metrics_dict, str(model.kappa_103_path)
+            )
             print(f"\t✓ Updated {model.yaml_path}")
 
         except Exception as exc:

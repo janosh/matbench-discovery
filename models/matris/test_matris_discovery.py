@@ -8,21 +8,21 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import torch
-
+from matris.applications.relax import StructOptimizer
 from pymatgen.core import Structure
 from pymatviz.enums import Key
 from tqdm import tqdm
+
 from matbench_discovery import timestamp, today
 from matbench_discovery.data import as_dict_handler
-from matbench_discovery.enums import DataFiles, Model, Task
+from matbench_discovery.enums import DataFiles, Task
 from matbench_discovery.hpc import slurm_submit
-from matris.applications.relax import StructOptimizer
 
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
 slurm_array_task_count = 45
 
-model_name = "MatRIS_10M_MP" # or MatRIS_10M_OAM
+model_name = "MatRIS_10M_MP"  # or MatRIS_10M_OAM
 device = "cuda" if torch.cuda.is_available() else "cpu"
 matris = StructOptimizer(model=model_name, device=device)
 
@@ -35,9 +35,8 @@ slurm_vars = slurm_submit(
     time="47:55:0",
     partition="gpu",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags="--job-name WBM_Relax --nodes 1 --gres gpu:1 "
-    "--cpus-per-task 1",
-    submit_as_temp_file = False,
+    slurm_flags="--job-name WBM_Relax --nodes 1 --gres gpu:1 --cpus-per-task 1",
+    submit_as_temp_file=False,
 )
 
 
@@ -48,6 +47,7 @@ slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
 out_path = f"{out_dir}/{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exiting early")
+
 
 # %%
 data_path = {
@@ -73,16 +73,17 @@ run_params = {
     "max_steps": max_steps,
     "fmax": fmax,
     "device": device,
-    #Key.model_params: matris.n_params,
+    # Key.model_params: matris.n_params,
 }
 
 run_name = f"{job_name}-{slurm_array_task_id}"
 
+
 # %%
 relax_results: dict[str, dict[str, Any]] = {}
-#input_col = {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[task_type]
+# input_col = {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[task_type]
 
-input_col = "initial_structure" # Key.initial_struct #initial_structure 
+input_col = "initial_structure"  # Key.initial_struct #initial_structure
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
 for material_id in tqdm(structures, desc="Relaxing"):
@@ -107,8 +108,8 @@ for material_id in tqdm(structures, desc="Relaxing"):
         filename = f"error_crystals/{model_name}/"
         if not os.path.exists(filename):
             os.makedirs(filename)
-        structures[material_id].to(filename=filename + str(material_id)+".cif")
-        
+        structures[material_id].to(filename=filename + str(material_id) + ".cif")
+
         print(f"Failed to relax {material_id}: {exc!r}")
 
 

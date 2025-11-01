@@ -29,9 +29,9 @@ from matbench_discovery.phonons import thermal_conductivity as ltc
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
-model_name = "MatRIS_10M_MP" # or MatRIS_10M_OAM
+model_name = "MatRIS_10M_MP"  # or MatRIS_10M_OAM
 device = "cuda" if torch.cuda.is_available() else "cpu"
-calc = MatRISCalculator(model=model_name,device=device)
+calc = MatRISCalculator(model=model_name, device=device)
 
 
 # Relaxation parameters
@@ -95,7 +95,7 @@ with open(f"{out_dir}/run_params.json", mode="w") as file:
 if slurm_array_task_id == slurm_array_task_min:
     with open(f"{out_dir}/run_params.json", "w") as f:
         json.dump(run_params, f, indent=4)
-    
+
 # Set up the relaxation and force set calculation
 optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 force_results: dict[str, dict[str, Any]] = {}
@@ -106,13 +106,10 @@ atoms_list = atoms_list[
 ]
 
 tqdm_bar = tqdm(
-    enumerate(atoms_list), 
-    desc="Conductivity calculation: ", 
-    disable=not prog_bar
+    enumerate(atoms_list), desc="Conductivity calculation: ", disable=not prog_bar
 )
 print(f"====={slurm_array_task_id}=======")
 for _, atoms in tqdm_bar:
-
     mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
     formula = atoms.get_chemical_formula()
@@ -226,7 +223,7 @@ for _, atoms in tqdm_bar:
                 f"{mat_id=} has imaginary frequencies or broken symmetry", stacklevel=2
             )
             continue
-    
+
     except Exception as exc:
         warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
         traceback.print_exc()
@@ -251,11 +248,11 @@ for _, atoms in tqdm_bar:
         continue
 
     kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | kappa_dict | err_dict
-    
+
 # Save results
 df_kappa = pd.DataFrame(kappa_results).T
 df_kappa.index.name = Key.mat_id
-#df_kappa.reset_index().to_json(out_path)
+# df_kappa.reset_index().to_json(out_path)
 df_kappa.to_json(out_path)
 
 if save_forces:
