@@ -84,6 +84,8 @@ notes:
 metrics:
   phonons:
     kappa_103:
+      κ_SRME: 0.4892
+      κ_SRE: 0.388
       pred_file: models/matris/matris-10m-mp/2025-10-29-kappa-103-fire-dist=0.03-fmax1e-5-symprec1e-5.json.gz
       pred_file_url: https://figshare.com/files/59154056
   geo_opt:
