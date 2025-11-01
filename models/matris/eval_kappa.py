@@ -45,7 +45,10 @@ def main() -> None:
 
             # Update YAML file
             metrics_dict = {"srme": kappa_srme, "sre": kappa_sre}
-            phonons.write_metrics_to_yaml(model, metrics_dict, model.kappa_103_path)
+            phonons.write_metrics_to_yaml(model, 
+                                          metrics_dict, 
+                                          str(model.kappa_103_path)
+                                         )
             print(f"\t✓ Updated {model.yaml_path}")
 
         except Exception as exc:
