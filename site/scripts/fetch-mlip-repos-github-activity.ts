@@ -119,25 +119,20 @@ const get_github_stats = async (
       `https://api.github.com/repos/${repo}/commits?since=${year_ago.toISOString()}&per_page=1`,
       headers,
     )
-    const commits_count = get_count_from_pagination(commits_res.headers.get(`Link`)) ??
-      (await commits_res.json()).length
+    const commits_last_year =
+      get_count_from_pagination(commits_res.headers.get(`Link`)) ??
+        ((await commits_res.json()).length || 0)
 
     // Fetch contributor count
     const contrib_res = await fetch_github(
       `https://api.github.com/repos/${repo}/contributors?per_page=1&anon=true`,
       headers,
     )
-    const contrib_count = get_count_from_pagination(contrib_res.headers.get(`Link`)) ??
-      (await contrib_res.json()).length
-
-    const data: RepoData = {
-      name,
-      repo,
-      stars: repo_data.stargazers_count || 0,
-      forks: repo_data.forks_count || 0,
-      commits_last_year: commits_count || 0,
-      contributors: contrib_count || 0,
-    }
+    const contributors = get_count_from_pagination(contrib_res.headers.get(`Link`)) ??
+      ((await contrib_res.json()).length || 0)
+    const stars = repo_data.stargazers_count || 0
+    const forks = repo_data.forks_count || 0
+    const data: RepoData = { name, repo, stars, forks, commits_last_year, contributors }
 
     // Cache the result
     await mkdir(cache_dir, { recursive: true })
@@ -153,30 +148,41 @@ const get_github_stats = async (
 }
 
 const main = async () => {
-  console.log(`Fetching GitHub data...${force_refresh ? ` (force refresh)` : ``}`)
-
-  // Ensure output file exists
+  let existing_map = new Map<string, RepoData>()
   try {
-    await stat(output_file)
+    const data = JSON.parse(await readFile(output_file, `utf-8`)) as RepoData[]
+    existing_map = new Map(data.map((entry) => [entry.repo, entry]))
   } catch {
-    await writeFile(output_file, JSON.stringify([]))
+    // File doesn't exist yet, start fresh
   }
 
-  // Load repos from model YAML files
   const repos = await load_repos_from_models()
-  console.log(`Found ${repos.length} unique repos from models/`)
-
   const token = process.env.GITHUB_TOKEN ?? null
   const results: RepoData[] = []
 
   for (const { name, repo } of repos) {
+    const existing = existing_map.get(repo)
+    if (existing && !force_refresh) {
+      const cache_file = join(cache_dir, `${repo.replace(`/`, `_`)}.json`)
+      try {
+        const age_ms = Date.now() - (await stat(cache_file)).mtimeMs
+        if (age_ms < CACHE_TTL_MS) {
+          results.push(existing)
+          continue
+        }
+      } catch {
+        // Cache file missing, refetch from GitHub
+      }
+    }
+
     const stats = await get_github_stats(name, repo, token)
     if (stats) results.push(stats)
-    await new Promise((resolve) => setTimeout(resolve, 300)) // Rate limit delay
+    else if (existing) results.push(existing)
+    await new Promise((resolve) => setTimeout(resolve, 300))
   }
 
   await writeFile(output_file, JSON.stringify(results, null, 2))
-  console.log(`\n✓ Saved ${results.length}/${repos.length} repos to ${output_file}`)
+  console.log(`Saved ${results.length}/${repos.length} repos`)
 }
 
 main().catch((err) => {

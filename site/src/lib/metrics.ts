@@ -5,7 +5,7 @@ import {
   HYPERPARAMS,
   METADATA_COLS,
 } from '$lib/labels'
-import type { ModelMetadata, TargetType } from '$lib/model-schema'
+import type { ModelMetadata, ModelType, TargetType } from '$lib/model-schema'
 import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
 import type { CellVal, DiscoverySet, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
@@ -23,6 +23,15 @@ export const targets_tooltips: { [key in TargetType]: string } = {
   EFS_D: `Energy with direct forces and stress`,
   EFS_GM: `Energy with gradient-based forces, stress, and magmoms`,
   EFS_DM: `Energy with direct forces, stress, and magmoms`,
+} as const
+
+export const model_type_tooltips: { [key in ModelType]: string } = {
+  GNN: `Graph Neural Network`,
+  UIP: `Universal Interatomic Potential`,
+  'BO-GNN': `Bayesian Optimization with Graph Neural Network`,
+  Fingerprint: `Handcrafted feature-based model`,
+  Transformer: `Attention-based transformer architecture`,
+  RF: `Random Forest`,
 } as const
 
 export const openness_tooltips: { [key in ModelMetadata[`openness`]]: string } = {
