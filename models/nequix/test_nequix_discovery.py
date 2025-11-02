@@ -79,7 +79,7 @@ if __name__ == "__main__":
     os.makedirs(out_dir, exist_ok=True)
 
     slurm_array_task_count = int(os.getenv("SLURM_ARRAY_TASK_COUNT", "1"))
-    slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
+    slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
     print(f"slurm_array_task_id: {slurm_array_task_id}")
     print(f"slurm_array_task_count: {slurm_array_task_count}")
 

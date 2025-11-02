@@ -45,7 +45,7 @@ force_max = 0.05  # Run until the forces are smaller than this in eV/A
 slurm_array_task_count = int(
     os.getenv("SLURM_ARRAY_TASK_COUNT", "1")
 )  # will be set to the number of tasks in the job array.
-slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
 # will be set to the first job ID of the array.
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
 
