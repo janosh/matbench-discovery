@@ -1,6 +1,6 @@
 model_name: eSEN-30M-OAM
 model_key: eSEN-30m-oam
-model_version: v2025.03.17
+model_version: fairchem_core-1.10.0
 date_added: '2025-03-17'
 date_published: '2025-03-17'
 authors:

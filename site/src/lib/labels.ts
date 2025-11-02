@@ -493,6 +493,8 @@ export const org_logos = {
   'Microsoft Research': `icon:Microsoft`,
   'MIR Group, Harvard University': `/logos/mir-group-harvard.svg`,
   'National Institute of Standards and Technology': `/logos/nist.svg`,
+  'Ningbo Institute of Artificial Intelligence Industry':
+    `/logos/ningbo-institute-of-artificial-intelligence-industry.svg`,
   'Northwestern University': `/logos/northwestern-university.svg`,
   'Orbital Materials': `/logos/orbital-materials.svg`,
   'Seoul National University': `/logos/seoul-national-university.svg`,

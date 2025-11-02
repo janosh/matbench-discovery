@@ -1,4 +1,4 @@
-#import "template.typ": arkheion, arkheion-appendices, pdf-img, subfigure
+#import "template.typ": arkheion, arkheion-appendices, subfigure
 
 #let pyproject = toml(read("../pyproject.toml", encoding: none))
 #let citation = yaml(read("../citation.cff", encoding: none))
@@ -65,7 +65,7 @@ OCP is a large-scale initiative aimed at discovering substrate-adsorbate combina
 We believe that addressing these four challenges will result in benchmarks that enable future ML-guided discovery efforts to confidently select appropriate models and methodologies for the expansion of computational materials databases.
 
 #figure(
-  pdf-img("figs/overview.pdf"),
+  image("figs/overview.pdf"),
   caption: [
     An overview of how data is used in Matbench-Discovery. a) shows a conventional prototype-based discovery workflow where different elemental assignments to the sites in a known prototype are used to create a candidate structure. This candidate is relaxed using DFT to arrive at a relaxed structure that can be compared against a reference convex hull. This sort of workflow was used to construct the WBM data set. b) highlights that databases such as the Materials Project provide a rich set of data which different academic groups have used to explore different types of models. While prior work tended to focus on individual modalities, our framework enables consistent model comparisons across modalities. c) shows the proposed test evaluation framework where the end user takes a machine learning model and uses it to predict a relaxed energy given an initial structure (IS2RE). This energy is then used to make a prediction as to whether the material will be stable or unstable with respect to a reference convex hull. From an applications perspective, this classification performance is better aligned with intended use cases in screening workflows.
   ],
@@ -78,7 +78,7 @@ We believe that addressing these four challenges will result in benchmarks that 
 A notable performance gap emerges between models predicting energy directly from unrelaxed inputs (MEGNet, Wrenformer, CGCNN, CGCNN+P, ALIGNN, Voronoi RF) and FFFs, which leverage force and stress data to emulate DFT relaxation for final energy prediction. While the energy-only models exhibit surprisingly strong classification metrics (F1, DAF), their regression performance ($R^2$, RMSE) is considerably poorer. Notably, only ALIGNN, BOWSR, and CGCNN+P among the energy-only models achieve a positive coefficient of determination ($R^2$). Negative $R^2$ means model predictions explain the observed variation in the data less than simply predicting the test set mean. In other words, these models are not predictive in a global sense (across the full dataset range). Nevertheless, models with negative $R^2$ may still show predictive capability for materials far from the stability threshold (i.e., in the distribution tails). Their performance suffers most near the 0~eV/atom stability threshold, the region with the highest concentration of materials. This illustrates a limitation of using $R^2$ alone to evaluate models for classification tasks such as stability prediction.
 
 #figure(
-  pdf-img("figs/cumulative-precision-recall-only-compliant.pdf"),
+  image("figs/cumulative-precision-recall-only-compliant.pdf"),
   caption: [
     Precision and recall as a function of the number of model predictions validated. A typical discovery campaign will rank hypothetical materials by model-predicted hull distance from most to least stable and validate the most stable predictions first. A higher fraction of correct stable predictions corresponds to higher precision and fewer stable materials overlooked correspond to higher recall. Precision is calculated based only on the selected materials up to that point, whilst the cumulative recall depends on knowing the total number of positives upfront. Models like eqV2 S DeNS and Orb #mptrj perform better for exhaustive discovery campaigns (screening a higher share of the candidate pool), others like CHGNet do better when validating a smaller percentage of the materials predicted to be most stable. FFFs offer substantially improved precision on shorter campaigns of $~$20k or less materials validated, as they are less prone to false positive predictions among highly stable materials.
   ],
@@ -95,7 +95,7 @@ The diagonal 'Optimal Recall' line on the recall plot in @fig:cumulative-precisi
 Examining the precision plot in @fig:cumulative-precision-recall, we observe that the energy-only models exhibit a much more pronounced drop in their precision early-on, falling to 0.6 or less in the first 5k screened materials. Many of these models (all except BOWSR, Wrenformer and Voronoi RF) display an interesting hook shape in their cumulative precision, recovering again slightly in the middle of the simulated campaign between ~5k and up to ~30k before dropping again until the end.
 
 #figure(
-  pdf-img("figs/rolling-mae-vs-hull-dist-models-only-compliant.pdf", width: 400pt),
+  image("figs/rolling-mae-vs-hull-dist-models-only-compliant.pdf", width: 400pt),
   caption: [
     Universal potentials are more reliable classifiers because they exit the red triangle earliest. The lines represent rolling mean absolute error (MAE) on the WBM test set as a function of distance to the MP training set convex hull. The red 'triangle of peril' indicates regions where the mean error exceeds the distance to the stability threshold (0 eV). Within this triangle, models are more likely to misclassify materials as the errors can flip classifications. Earlier exit from the triangle correlates with fewer false positives (right side) or false negatives (left side). The width of the 'rolling window' indicates the range over which prediction errors were averaged.
   ],
@@ -168,7 +168,7 @@ As WBM explores regions of materials space not well sampled by MP, many of the d
 == Models
 <sec:models>
 #figure(
-  pdf-img("figs/metrics-table-uniq-protos-only-compliant.pdf"),
+  image("figs/metrics-table-uniq-protos-only-compliant.pdf"),
   caption: [
     Metrics on the unique prototype test set. Training targets are indicated as: E - Energy, F - Forces, S - Stresses, M - Magnetic moments. Subscripts G and D refer to gradient-based or direct prediction methods. Prec = Precision, Acc = Accuracy. Models are evaluated on their ability to classify crystal stability and predict formation energies.
   ],
@@ -289,7 +289,7 @@ As discussed in the first author's PhD thesis @riebesell_machine_2024, unlike @t
 While protostructures are non-trivial to match, thus potentially introducing bias into the test set by trying to deduplicate them, we still opted to feature @tab:metrics-table-uniq-protos in the main text since the removal of overlapping protostructures with MP makes it more closely reflect a model's true ability to extrapolate to out-of-domain materials. Protostructure assignment is based on a combination of Aflow-style prototype labels and the chemical system @hicks_aflow_2021 we use the `get_protostructure_label` implemented in #link("https://github.com/janosh/matbench-discovery/blob/f26f1345bea/matbench_discovery/structure/prototype.py#L105")[`matbench-discovery`] @goodall_aviary_2022. This string encodes the crystal's prototype and chemical system and is invariant to symmetry preserving changes to the structure. Consequently structures with different lattice parameters are flagged as protostructure duplicates as they would both be expected to relax to the same ground state in experimental conditions.
 
 #figure(
-  pdf-img("figs/metrics-table-only-compliant.pdf", height: 280pt),
+  image("figs/metrics-table-only-compliant.pdf", height: 280pt),
   caption: [
     Metrics on the full test set and for 10k materials predicted most stable.
   ],
@@ -298,7 +298,7 @@ While protostructures are non-trivial to match, thus potentially introducing bia
 A real-world discovery campaign is unlikely to validate all stable predictions from a given model as we did in the main text. Presumably, it will rank model predictions from most to least stable and follow that list as far as time and compute budget permits. Assuming that increases in compute resources will allow average future discovery campaigns to grow in scope, we believe 10k model validations to be a reasonable scope for average campaigns. This is what @tab:metrics-table-first-10k simulates by calculating classification and regression metrics for the 10k test set materials predicted to be most stable by each model. We again show dummy performance in the bottom row. Note that each model is now evaluated on a different slice of the data. However, the bottom row still shows dummy performance across the whole dataset.
 
 #figure(
-  pdf-img("figs/metrics-table-first-10k-only-compliant.pdf", height: 300pt),
+  image("figs/metrics-table-first-10k-only-compliant.pdf", height: 300pt),
   caption: [
     Metrics on the full test set and for 10k materials predicted most stable.
   ],
@@ -309,7 +309,7 @@ A real-world discovery campaign is unlikely to validate all stable predictions f
 A material is classified as stable if the predicted $E_(upright("above hull"))$ is below the stability threshold. Since all models predict $E_(upright("form"))$, they are insensitive to changes in the threshold $t$. The receiver operating characteristic (ROC) curve for each model is plotted in @fig:roc-models. The diagonal 'No skill' line shows the performance of a dummy model that randomly ranks material stability.
 
 #figure(
-  pdf-img("figs/roc-models-only-compliant.pdf"),
+  image("figs/roc-models-only-compliant.pdf"),
   caption: [
     Receiver operating characteristic (ROC) curve for each model. The false positive rate (FPR) on the $x$ axis is the fraction of unstable structures classified as stable. The true positive rate (TPR) on the $y$ axis is the fraction of stable structures classified as stable.
   ],
@@ -318,14 +318,14 @@ A material is classified as stable if the predicted $E_(upright("above hull"))$ 
 = Parity Plots
 <sec:parity-plots>
 #figure(
-  pdf-img("figs/each-parity-models-4x3-only-compliant.pdf"),
+  image("figs/each-parity-models-4x3-only-compliant.pdf"),
   caption: [
     Parity plots of model-predicted energy distance to the convex hull (based on their formation energy predictions) vs DFT ground truth, color-coded by log density of points. Models are sorted left to right and top to bottom by MAE. For parity plots of formation energy predictions, see @fig:e-form-parity-models.
   ],
 )<fig:each-parity-models>
 
 #figure(
-  pdf-img("figs/e-form-parity-models-4x3-only-compliant.pdf"),
+  image("figs/e-form-parity-models-4x3-only-compliant.pdf"),
   caption: [
     Parity plots of model-predicted formation energies vs DFT formation energies, color-coded by log density of points. The models are sorted from left to right and top to bottom by MAE. While similar to the parity plots in @fig:each-parity-models which shows the predicted distance to the convex hull vs DFT ground truth, this figure better visualizes the point density due to formation energy's wider spread. We observe broadly the same failure modes with occasional high DFT energy outliers predicted as near 0 formation energy by the models.
   ],
@@ -344,7 +344,7 @@ Beyond these MACE outliers visible in the plot, MACE exhibits another rare but r
 = Hull Distance Box plot
 <sec:hull-distance-box-plot>
 #figure(
-  pdf-img("figs/box-hull-dist-errors-only-compliant.pdf"),
+  image("figs/box-hull-dist-errors-only-compliant.pdf"),
   caption: [
     Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the 5th and 95th percentiles. The horizontal line inside the box shows the median. BOWSR has the highest median error, while Voronoi RF has the highest IQR.
   ],
@@ -355,7 +355,7 @@ Beyond these MACE outliers visible in the plot, MACE exhibits another rare but r
 = Classification Histograms using Model-Predicted Energies
 <sec:classification-histograms-using-model-predicted-energies>
 #figure(
-  pdf-img("figs/hist-clf-pred-hull-dist-models-4x3-only-compliant.pdf"),
+  image("figs/hist-clf-pred-hull-dist-models-4x3-only-compliant.pdf"),
   caption: [
     Distribution of model-predicted hull distance colored by stability classification. Models are sorted from top to bottom by F1 score. The thickness of the red and yellow bands shows how often models misclassify as a function of how far away from the convex hull they place a material.
   ],
@@ -370,7 +370,7 @@ As a reminder, the WBM test set was generated in 5 successive batches, each step
 @fig:rolling-mae-vs-hull-dist-wbm-batches-models shows the rolling MAE as a function of distance to the convex hull for each of the 5 WBM rounds of elemental substitution. These plots show a stronger performance decrease for Wrenformer and Voronoi RF than for FFFs and even force-less GNNs with larger errors like ALIGNN, MEGNet and CGCNN.
 
 #figure(
-  pdf-img("figs/tile-rolling-mae-batches-4x3-only-compliant.pdf"),
+  image("figs/tile-rolling-mae-batches-4x3-only-compliant.pdf"),
   caption: [
     Rolling MAE as a function of distance to the convex hull for different models. Most models considered show a predictable decrease in performance from batch 1 to batch 5. The effect is larger for some models than others but batches 4 and 5 consistently incur the highest convex hull distance errors for all models. The FFFs show stronger extrapolative performance, as they show minimal deterioration in performance on later batches that move further away from the original MP training distribution. Wrenformer, by contrast, exhibits a pronounced increase in MAE with batch count. We view these plots as a strong indicator that Matbench Discovery is indeed testing out-of-distribution extrapolation performance as it is Occam's razor explanation for the observed model performance drop with increasing batch count.
   ],
@@ -385,7 +385,7 @@ Given its strong performance on batch 1, it is possible that given sufficiently 
 Given the large variety of models tested, we asked whether any additional insight into the errors can be gained from looking at how the predictions vary between different models. In @fig:scatter-largest-errors-models-mean-vs-true-hull-dist-all we see two distinct groupings emerge when looking at the 200 structures with the largest errors. This clustering is particularly apparent when points are colored by model disagreement.
 
 #figure(
-  pdf-img(
+  image(
     "figs/scatter-largest-errors-models-mean-vs-true-hull-dist-all-only-compliant.pdf",
     width: 350pt,
   ),
@@ -402,9 +402,9 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
 
 #figure(
   [
-    #pdf-img("figs/mp-element-counts-by-occurrence-log.pdf")
+    #image("figs/mp-element-counts-by-occurrence-log.pdf")
     #v(-4pt)
-    #pdf-img("figs/wbm-element-counts-by-occurrence-log.pdf")
+    #image("figs/wbm-element-counts-by-occurrence-log.pdf")
   ],
   caption: [
     The number of structures containing a given element in the MP training set and WBM test set @wang_predicting_2021. The WBM test set in relative terms contains noticeably fewer oxides than MP (and, by extension, #mptrj) with just 11% rather than 53% of structures containing oxygen. Made with pymatviz @riebesell_pymatviz_2022.
@@ -413,9 +413,9 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
 
 #figure(
   [
-    #pdf-img("figs/wbm-mp-ratio-element-counts-by-occurrence-normalized.pdf")
+    #image("figs/wbm-mp-ratio-element-counts-by-occurrence-normalized.pdf")
     #v(-4pt)
-    #pdf-img("figs/mp-trj-mp-ratio-element-counts-by-occurrence-normalized.pdf")
+    #image("figs/mp-trj-mp-ratio-element-counts-by-occurrence-normalized.pdf")
   ],
   gap: 1em,
   caption: [
@@ -424,7 +424,7 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
 )<fig:element-counts-ratio-by-occurrence>
 
 #figure(
-  pdf-img("figs/mp-vs-mp-trj-vs-wbm-arity-hist.pdf", width: 320pt),
+  image("figs/mp-vs-mp-trj-vs-wbm-arity-hist.pdf", width: 320pt),
   caption: [
     Distributions of unique elements per structure in MP, #mptrj and the WBM test set. The bar heights are normalized by the total number of structures in each dataset. WBM is dominated by ternary phases making up 75% of the dataset followed by about 13% for quaternaries and 12% for binaries. MP has a more even distribution, in particular with more than double the relative share of quaternary phases and a significant number of quinternaries which are almost absent from WBM. Not shown in this plot for visual clarity are 3% of MP structures containing more than 5 elements (up to 9). We also include #mptrj in this plot to show a slight drop in the relative abundance of quinternaries and higher phases vs MP ground states. This may be due to a poor choice of convergence criteria in early MP relaxation workflows that scaled with the size of the structure (see `EDIFF_PER_ATOM` parameter in `pymatgen` VASP input sets), resulting in unconverged large structures with short relaxation trajectories entering the database. Short relaxations would result in fewer frames of such structures selected for #mptrj. This assumes structures of higher arity correlate with larger structures.
   ],
@@ -436,14 +436,14 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
     column-gutter: 9pt,
     row-gutter: 3pt,
     subfigure(
-      pdf-img("figs/hist-MP-e-form.pdf"),
+      image("figs/hist-MP-e-form.pdf"),
       caption: [
         MP formation energy distribution
       ],
       label: <fig:hist-mp-e-form-per-atom>,
     ),
     subfigure(
-      pdf-img("figs/hist-MP-hull-dist.pdf"),
+      image("figs/hist-MP-hull-dist.pdf"),
       caption: [
         MP decomposition energy distribution
       ],
@@ -451,14 +451,14 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
     ),
 
     subfigure(
-      pdf-img("figs/hist-WBM-e-form.pdf"),
+      image("figs/hist-WBM-e-form.pdf"),
       caption: [
         WBM formation energy distribution
       ],
       label: <fig:hist-wbm-e-form-per-atom>,
     ),
     subfigure(
-      pdf-img("figs/hist-WBM-hull-dist.pdf"),
+      image("figs/hist-WBM-hull-dist.pdf"),
       caption: [
         WBM convex hull distance distribution
       ],
@@ -477,7 +477,7 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
     column-gutter: 3pt,
     row-gutter: 2em,
     subfigure(
-      pdf-img("figs/mp-trj-e-form-hist.pdf"),
+      image("figs/mp-trj-e-form-hist.pdf"),
       caption: [
         #mptrj formation energy distribution
       ],
@@ -485,7 +485,7 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
       dy: 10pt,
     ),
     subfigure(
-      pdf-img("figs/mp-trj-forces-hist.pdf"),
+      image("figs/mp-trj-forces-hist.pdf"),
       caption: [
         #mptrj force distribution
       ],
@@ -493,7 +493,7 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
       dy: 10pt,
     ),
     subfigure(
-      pdf-img("figs/mp-trj-stresses-hist.pdf"),
+      image("figs/mp-trj-stresses-hist.pdf"),
       caption: [
         #mptrj stress distribution
       ],
@@ -502,7 +502,7 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
     ),
 
     subfigure(
-      pdf-img("figs/mp-trj-magmoms-hist.pdf"),
+      image("figs/mp-trj-magmoms-hist.pdf"),
       caption: [
         #mptrj magnetic moment distribution
       ],
@@ -510,7 +510,7 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
       dy: 10pt,
     ),
     subfigure(
-      pdf-img("figs/mp-trj-n-sites-hist.pdf"),
+      image("figs/mp-trj-n-sites-hist.pdf"),
       caption: [
         #mptrj structure size distribution
       ],
@@ -526,9 +526,9 @@ Finally, believing #mptrj to be an influential dataset for the near-term continu
 
 #figure(
   [
-    #pdf-img("figs/mp-trj-magmoms-ptable-hists.pdf")
+    #image("figs/mp-trj-magmoms-ptable-hists.pdf")
     #v(-4pt)
-    #pdf-img("figs/mp-trj-forces-ptable-hists.pdf")
+    #image("figs/mp-trj-forces-ptable-hists.pdf")
   ],
   caption: [
     Distribution of magnetic moments and forces for each element #mptrj. This data is used as training targets for all interatomic potentials in this work (only CHGNet uses the absolute value of magnetic moments as targets). The number in the top right corner of each element tile counts the number of target values for that element in all of #mptrj. $y$-axes are log-scaled to reveal the tail of high magnetic moments in some elements. ) reveals rare erroneous data points in #mptrj. For instance, has a single-point calculation with a highly unphysical magnetic moment of 17$mu_(upright("B"))$. For visualization purposes, the $y$-axes are again log-scaled and distributions are truncated at 10~eV/Å. Oxygen has the largest outliers with mean absolute forces of up to 160~eV/Å.

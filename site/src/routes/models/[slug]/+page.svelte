@@ -2,6 +2,7 @@
   import { calculate_days_ago, DATASETS, Icon, IconList, PtableInset } from '$lib'
   import {
     discovery_task_tooltips,
+    model_type_tooltips,
     openness_tooltips,
     targets_tooltips,
   } from '$lib/metrics'
@@ -325,7 +326,7 @@
       <ul>
         {#each [
           [`Model Version`, model.model_version],
-          [`Model Type`, model.model_type],
+          [`Model Type`, model.model_type, model_type_tooltips[model.model_type]],
           [`Targets`, model.targets, targets_tooltips[model.targets]],
           [`Openness`, model.openness, openness_tooltips[model.openness]],
           [
@@ -345,7 +346,11 @@
         }
           <li {title} {@attach tooltip()}>
             {key}
-            <strong>{value}</strong>
+            {#if key === `Targets`}
+              <strong>{@html value.replace(/_(.)/g, `<sub>$1</sub>`)}</strong>
+            {:else}
+              <strong>{value}</strong>
+            {/if}
           </li>
         {/each}
       </ul>
