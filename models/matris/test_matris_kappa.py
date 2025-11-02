@@ -54,7 +54,7 @@ slurm_array_task_count = int(
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", os.getenv("SLURM_JOB_ID", "debug"))
 slurm_array_task_min = int(
-    os.getenv("K_SRME_RESTART_ARRAY_TASK_MIN", os.getenv("SLURM_ARRAY_TASK_MIN", "0"))
+    os.getenv("K_SRME_RESTART_ARRAY_TASK_MIN", os.getenv("SLURM_ARRAY_TASK_MIN", "1"))
 )
 
 task_type = "LTC"  # lattice thermal conductivity

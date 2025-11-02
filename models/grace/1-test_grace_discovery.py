@@ -98,7 +98,7 @@ if slurm_array_job_id == "debug":  # if running a quick smoke test
         pass
 elif slurm_array_task_count > 1:
     # even distribution of rough comp cost, based on size
-    atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]
+    atoms_list = atoms_list[slurm_array_task_id - 1 :: slurm_array_task_count]
 
 relax_results: dict[str, dict[str, Any]] = {}
 

@@ -87,7 +87,8 @@ if __name__ == "__main__":
     data_path = DataFiles.wbm_initial_atoms.path
     zip_filename = f"{WBM_DIR}/2024-08-04-wbm-initial-atoms.extxyz.zip"
     atoms_list = ase_atoms_from_zip(zip_filename)
-    atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]
+    if slurm_array_task_count > 1:
+        atoms_list = atoms_list[slurm_array_task_id - 1 :: slurm_array_task_count]
 
     calc = NequixCalculator("nequix-mp-1")
     process_and_save(atoms_list, out_dir, slurm_array_task_id)

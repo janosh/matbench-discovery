@@ -35,7 +35,7 @@ slurm_vars = slurm_submit(
     time="47:55:0",
     partition="gpu",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags="--job-name WBM_Relax --nodes 1 --gres gpu:1 --cpus-per-task 1",
+    slurm_flags="--nodes 1 --gres gpu:1 --cpus-per-task 1",
     submit_as_temp_file=False,
 )
 
