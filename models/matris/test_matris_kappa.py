@@ -252,8 +252,7 @@ for _, atoms in tqdm_bar:
 # Save results
 df_kappa = pd.DataFrame(kappa_results).T
 df_kappa.index.name = Key.mat_id
-# df_kappa.reset_index().to_json(out_path)
-df_kappa.to_json(out_path)
+df_kappa.reset_index().to_json(out_path)
 
 if save_forces:
     force_out_path = (

@@ -108,7 +108,7 @@ for material_id in tqdm(structures, desc="Relaxing"):
         filename = f"error_crystals/{model_name}/"
         if not os.path.exists(filename):
             os.makedirs(filename)
-        structures[material_id].to(filename=filename + str(material_id) + ".cif")
+        structures[material_id].to(filename=f"{filename}{material_id}.cif")
 
         print(f"Failed to relax {material_id}: {exc!r}")
 
