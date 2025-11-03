@@ -1,22 +1,21 @@
-"""MatRIS thermal conductivity calculation script."""
 # /// script
 # requires-python = ">=3.10,<3.14"
 # dependencies = [
-# "torch==2.6.0",
-# "numpy==2.3.4",
-# "ase==3.26.0",
-# "pymatgen==2025.10.7",
-# "pymatviz==0.17.2",
-# "scikit-learn==1.7.2",
-# "tqdm==4.67.1",
-# "phono3py==3.19.3",
-# "phonopy==2.43.5",
-# "matbench-discovery"==1.3.1,
+# "torch>=2.6.0",
+# "numpy>=2.3.4",
+# "ase>=3.26.0",
+# "pymatgen>=2025.10.7",
+# "pymatviz>=0.17.2",
+# "scikit-learn>=1.7.2",
+# "tqdm>=4.67.1",
+# "phono3py>=3.19.3",
+# "phonopy>=2.43.5",
+# "matbench-discovery>=1.3.1",
 # ]
-#
 # [tool.uv.sources]
 # matbench-discovery = { path = "../../", editable = true }
 # ///
+"""MatRIS thermal conductivity calculation script."""
 
 import json
 import os
@@ -110,7 +109,7 @@ run_params = {
 with open(f"{out_dir}/run_params.json", mode="w") as file:
     json.dump(run_params, file, indent=4)
 """
-if slurm_array_task_id == slurm_array_task_min:
+if slurm_array_task_id >= slurm_array_task_min:
     with open(f"{out_dir}/run_params.json", "w") as f:
         json.dump(run_params, f, indent=4)
 
@@ -126,7 +125,7 @@ atoms_list = atoms_list[
 tqdm_bar = tqdm(
     enumerate(atoms_list), desc="Conductivity calculation: ", disable=not prog_bar
 )
-print(f"====={slurm_array_task_id}=======")
+print(f">=>=={slurm_array_task_id}>=>=>==")
 for _, atoms in tqdm_bar:
     mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
