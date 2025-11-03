@@ -16,7 +16,7 @@ single file."""
 # [tool.uv.sources]
 # matbench-discovery = { path = "../../", editable = true }
 # ///
-# %%
+
 import os
 from glob import glob
 
