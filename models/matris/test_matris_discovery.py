@@ -15,7 +15,7 @@
 # [tool.uv.sources]
 # matbench-discovery = { path = "../../", editable = true }
 # ///
-# %%
+
 import os
 from importlib.metadata import version
 from typing import Any
