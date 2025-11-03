@@ -15,8 +15,7 @@
 # [tool.uv.sources]
 # matbench-discovery = { path = "../../", editable = true }
 # ///
-# %%
-# %%
+
 from __future__ import annotations
 
 import gzip
