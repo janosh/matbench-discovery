@@ -230,8 +230,8 @@ def main() -> None:
     }
 
     if args.rank == 0:
-        with open(f"{out_dir}/run_params.json", "w") as f:
-            json.dump(run_params, f, indent=4)
+        with open(f"{out_dir}/run_params.json", mode="w", encoding="utf-8") as file:
+            json.dump(run_params, file, indent=4)
 
     atoms_list = atoms_list[args.rank :: args.worldsize]
 

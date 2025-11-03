@@ -55,8 +55,8 @@ module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 
-with open("models/esnet/config.json") as f:
-    config = json.load(f)
+with open("models/esnet/config.json", encoding="utf-8") as file:
+    config = json.load(file)
 
 esnet_config = iComformerConfig(**config["model"])
 
@@ -123,8 +123,8 @@ for structure in df_in[input_col]:
 
 df_wbm["atoms"] = atoms
 
-with open("/home/sl/project/ESNet/graphs/RotatE_128_64.pkl", "rb") as f:
-    ele2emb = pk.load(f)  # noqa: S301
+with open("/home/sl/project/ESNet/graphs/RotatE_128_64.pkl", mode="rb") as file:
+    ele2emb = pk.load(file)  # noqa: S301
 
 graphs = []
 for structure in df_in[input_col]:
