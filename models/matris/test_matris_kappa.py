@@ -17,7 +17,7 @@
 # [tool.uv.sources]
 # matbench-discovery = { path = "../../", editable = true }
 # ///
-# %%
+
 import json
 import os
 import traceback
