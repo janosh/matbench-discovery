@@ -1,5 +1,21 @@
 """Generate diatomic potential energy curves for a ML force field."""
-
+# /// script
+# requires-python = ">=3.10,<3.14"
+# dependencies = [
+# "torch==2.6.0",
+# "numpy==2.3.4",
+# "ase==3.26.0",
+# "pymatgen==2025.10.7",
+# "pymatviz==0.17.2",
+# "scikit-learn==1.7.2",
+# "tqdm==4.67.1",
+# "matbench-discovery"==1.3.1,
+# ]
+#
+# [tool.uv.sources]
+# matbench-discovery = { path = "../../", editable = true }
+# ///
+# %%
 # %%
 from __future__ import annotations
 
