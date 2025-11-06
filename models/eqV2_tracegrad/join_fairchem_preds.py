@@ -122,6 +122,7 @@ def join_predictions(
     df_fairchem = df_fairchem.round(4)
 
     out_path = Path(out_path)
+    out_path = str(out_path)    # 将其重新转换为字符串
 
     df_fairchem.select_dtypes("number").to_csv(out_path / f"{model_name}.csv.gz")
     df_bad = df_fairchem[bad_mask].drop(
