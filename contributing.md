@@ -81,16 +81,27 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    ### Script Dependencies Declaration (Required)
 
-   All test scripts should include a script dependencies section at the top using the [PEP 723 inline metadata format](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies). This ensures others can easily rerun it with `uv run test_<model_name>_<task>.py` without worrying about virtual environments or manually installing dependencies:
+   **All test scripts must include a script dependencies section** using the [PEP 723 inline metadata format](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies). This is critical for reproducibility and allows others to easily rerun your code with `uv run test_<model_name>_<task>.py` without manually setting up virtual environments or installing dependencies.
+
+   #### Why This Matters
+
+   - **Reproducibility**: Future readers can still run your scripts even if there are breaking changes in package releases
+   - **Convenience**: One command (`uv run script.py`) installs dependencies and runs the script
+   - **Documentation**: Makes it clear which exact package versions were used for your submission
 
    ```python
    # /// script
+   # requires-python = ">=3.11,<3.13"
    # dependencies = [
-   #   "numpy>=1.20.0",
-   #   "torch>=1.13.0,<2.0.0",
-   #   "ase>=3.22.1",
-   #   "requests>=2.25.0",
+   #   "numpy>=2.3.4",
+   #   "torch>=2.8.0",
+   #   "ase>=3.26.0",
+   #   "pymatgen>=2025.10.7",
+   #   "matbench-discovery>=1.3.1",
    # ]
+   #
+   # [tool.uv.sources]
+   # matbench-discovery = { path = "../../", editable = true }
    # ///
 
    import numpy as np
