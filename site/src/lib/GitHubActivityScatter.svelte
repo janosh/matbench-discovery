@@ -98,10 +98,11 @@
   bind:this={container_el}
   class:fullscreen={is_fullscreen}
   class:bleed-1400={!is_fullscreen}
-  style:height={is_fullscreen ? `100%` : `600px`}
+  style:height={is_fullscreen ? `100%` : `auto`}
   style="margin-block: 2em"
 >
   <ScatterPlot
+    style={`height: ${is_fullscreen ? `100%` : `600px`}`}
     series={[series]}
     x_axis={{ label: axes.x.label, format: axes.x.format, label_shift: { y: -50 } }}
     y_axis={{
@@ -155,10 +156,10 @@
     padding: 2em;
     box-sizing: border-box;
   }
-  button {
+  button[title$='fullscreen'] {
     position: absolute;
-    top: 20px;
-    right: 3.5em;
+    top: 1em;
+    right: 3.3em;
     display: flex;
     padding: 8px;
     border-radius: 50%;

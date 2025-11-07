@@ -9,7 +9,6 @@
     RadarChart,
     SelectToggle,
   } from '$lib'
-  import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import {
@@ -115,7 +114,6 @@
       bind:show_non_compliant={table.show_non_compliant}
       bind:show_compliant={table.show_compliant}
       bind:show_heatmap={table.show_heatmap}
-      cps_config={CPS_CONFIG}
     />
   </section>
 

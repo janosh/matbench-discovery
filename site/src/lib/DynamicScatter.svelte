@@ -378,7 +378,6 @@
     </DraggablePane>
 
     <button
-      class="fullscreen-button"
       onclick={() => {
         if (document.fullscreenElement === container_el) {
           document.exitFullscreen()
@@ -426,7 +425,7 @@
     flex-direction: column;
     gap: 1em;
   }
-  button.fullscreen-button {
+  button[title$='fullscreen'] {
     position: absolute;
     top: 1em;
     right: 3.3em;
