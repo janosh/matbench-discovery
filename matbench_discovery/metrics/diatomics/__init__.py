@@ -13,7 +13,7 @@ import numpy as np
 
 from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import MbdKey, Model
-from matbench_discovery.metrics.diatomics import energy, force  # noqa: F401
+from matbench_discovery.metrics.diatomics import energy, force
 from matbench_discovery.metrics.diatomics.energy import (
     calc_curve_diff_auc,
     calc_energy_diff_flips,

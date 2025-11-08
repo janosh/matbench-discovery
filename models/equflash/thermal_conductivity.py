@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 from ase import Atoms
 from ase.calculators.calculator import Calculator
-from fairchem.core.preprocessing.atoms_to_graphs import AtomsToGraphs
+from fairchem.core.preprocessing import AtomsToGraphs
 from phono3py.api_phono3py import Phono3py
 from torch_geometric.data import Batch
 
