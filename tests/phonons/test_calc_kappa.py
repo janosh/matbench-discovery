@@ -30,7 +30,7 @@ def mock_calculator() -> MagicMock:
 
 
 @pytest.fixture
-def common_kappa_kwargs() -> dict:
+def common_kappa_kwargs(tmp_path_factory: pytest.TempPathFactory) -> dict:
     """Common kwargs for calc_kappa_for_structure calls."""
     return {
         "displacement_distance": 0.01,
@@ -41,7 +41,7 @@ def common_kappa_kwargs() -> dict:
         "symprec": 1e-5,
         "enforce_relax_symm": False,
         "save_forces": False,
-        "out_dir": "/tmp/test_kappa",
+        "out_dir": str(tmp_path_factory.mktemp("test_kappa")),
         "task_id": 0,
     }
 

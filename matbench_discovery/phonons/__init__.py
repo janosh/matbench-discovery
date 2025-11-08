@@ -1,6 +1,6 @@
 """This package contains phonon-related functionality."""
 
-from typing import Final, Literal, TypedDict
+from typing import Final, Literal, NotRequired, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -15,7 +15,7 @@ spg_num_q_mesh_map: Final[dict[int, tuple[int, int, int]]] = {
 }
 
 
-class KappaCalcParams(TypedDict, total=False):
+class KappaCalcParams(TypedDict):
     """Parameters for thermal conductivity calculation across all models.
 
     This TypedDict provides type safety for parameters passed to kappa calculation
@@ -49,9 +49,9 @@ class KappaCalcParams(TypedDict, total=False):
     save_forces: bool
     out_dir: str
     # Optional model-specific parameters
-    ase_filter: Literal["frechet", "exp"]
-    checkpoint: str
-    conductivity_broken_symm: bool
+    ase_filter: NotRequired[Literal["frechet", "exp"]]
+    checkpoint: NotRequired[str]
+    conductivity_broken_symm: NotRequired[bool]
 
 
 def check_imaginary_freqs(frequencies: np.ndarray, threshold: float = -0.01) -> bool:

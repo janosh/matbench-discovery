@@ -141,7 +141,12 @@ def calc_kappa_for_structure(
             optimizer = optim_cls(filtered_atoms, logfile=f"{relax_dir}/{task_id}.log")
             optimizer.run(fmax=force_max, steps=max_steps)
 
-            reached_max_steps = optimizer.step == max_steps
+            step_count = getattr(optimizer, "nsteps", None)  # Get optimizer step count
+            if step_count is None:  # fallback to extract from state_dict if available
+                state = getattr(optimizer, "state_dict", dict)()
+                step_count = state.get("step", 0)
+
+            reached_max_steps = step_count >= max_steps
             if reached_max_steps:
                 print(f"Material {mat_id=} reached {max_steps=} during relaxation")
 
@@ -165,7 +170,7 @@ def calc_kappa_for_structure(
                 "relaxed_space_group_number": relaxed_spg_num,
             }
 
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
         err_dict["errors"] += [f"RelaxError: {exc!r}"]
@@ -229,7 +234,7 @@ def calc_kappa_for_structure(
         if not ltc_condition:
             return mat_id, info_dict | relax_dict | freqs_dict | err_dict, force_results
 
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
         traceback.print_exc()
         err_dict["errors"] += [f"ForceConstantError: {exc!r}"]
@@ -247,7 +252,7 @@ def calc_kappa_for_structure(
             force_results,
         )
 
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         warnings.warn(
             f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
         )

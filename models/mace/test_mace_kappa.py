@@ -91,7 +91,6 @@ for idx, atoms in enumerate(
     mat_id, result_dict, force_dict = calc_kappa_for_structure(
         atoms=atoms,
         calculator=mace_calc,
-        conductivity_broken_symm=conductivity_broken_symm,
         **kappa_params,  # type: ignore[arg-type]
         task_id=idx,
     )
