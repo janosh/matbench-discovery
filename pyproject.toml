@@ -63,12 +63,12 @@ running-models = [
   "mace-torch>=0.3.6",
   "maml>=2023.9.9",
   "megnet>=1.3.2",
+  "moyopy>=0.3.4",
 ]
 3d-structures = ["crystal-toolkit>=2024.10.22"]
 plots = ["dash>=2.18"]
 fetch-wbm-data = ["gdown>=5.2"]
 make-wbm-umap = ["umap-learn>=0.5.5"]
-symmetry = ["moyopy>=0.3.4"]
 phonons = ["phono3py>=3.12", "phonopy>=2.35"]
 
 [build-system]

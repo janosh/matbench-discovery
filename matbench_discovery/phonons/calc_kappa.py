@@ -13,6 +13,8 @@ from ase import Atoms
 from ase.calculators.calculator import Calculator
 from ase.constraints import FixSymmetry
 from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
+from moyopy import MoyoDataset
+from moyopy.interface import MoyoAdapter
 from pymatgen.core.structure import Structure
 from pymatviz.enums import Key
 
@@ -74,10 +76,7 @@ def calc_kappa_for_structure(
         tuple[str, dict[str, Any], dict[str, Any] | None]:
             material ID, results dict, force results dict
     """
-    if formula_getter is None:
-        formula = atoms.get_chemical_formula()
-    else:
-        formula = formula_getter(atoms)
+    formula = formula_getter(atoms) if formula_getter else atoms.get_chemical_formula()
 
     print(f"Calculating {Structure.from_ase_atoms(atoms).reduced_formula}")
 
@@ -119,8 +118,14 @@ def calc_kappa_for_structure(
     optim_cls: type[Optimizer] = optimizer_dict[ase_optimizer]
 
     # Initialize variables that might be needed in error handling
-    relax_dict: dict[str, Any] = {"max_stress": None, "reached_max_steps": False}
+    relax_dict: dict[str, Any] = {
+        "max_stress": None,
+        "reached_max_steps": False,
+        "broken_symmetry": False,
+    }
     force_results = None
+    # initial space group for symmetry breaking detection
+    init_spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms), symprec=symprec).number
 
     # Relaxation
     try:
@@ -148,9 +153,16 @@ def calc_kappa_for_structure(
             atoms.constraints = None
             atoms.info = init_info | atoms.info
 
+            # Check if symmetry was broken during relaxation
+            moyo_cell = MoyoAdapter.from_atoms(atoms)
+            relaxed_spg_num = MoyoDataset(moyo_cell, symprec=symprec).number
+            broken_symmetry = init_spg_num != relaxed_spg_num
+
             relax_dict = {
                 "max_stress": max_stress,
                 "reached_max_steps": reached_max_steps,
+                "broken_symmetry": broken_symmetry,
+                "relaxed_space_group_number": relaxed_spg_num,
             }
 
     except Exception as exc:
