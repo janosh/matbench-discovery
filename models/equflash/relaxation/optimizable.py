@@ -33,9 +33,7 @@ if TYPE_CHECKING:
 ASE_PROP_RESHAPE = MappingProxyType(
     {"stress": (-1, 3, 3), "dielectric_tensor": (-1, 3, 3)}
 )
-ALL_CHANGES: set[str] = {
-    "pos",
-}
+ALL_CHANGES: set[str] = {"pos"}
 
 
 def batch_to_atoms(
