@@ -16,7 +16,7 @@ cli_parser = ArgumentParser(
 cli_parser.add_argument(
     "--models",
     nargs="*",
-    type=Model,  # type: ignore[arg-type]
+    type=Model,
     choices=Model,
     default=list(Model),
     help="Models to analyze. If none specified, analyzes all models.",

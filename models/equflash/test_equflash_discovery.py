@@ -35,7 +35,7 @@ import pandas as pd
 import torch
 import tqdm
 from fairchem.core.common.utils import update_config
-from GGNN.preprocessing.atoms_to_graphs import AtomsToGraphs
+from GGNN.preprocessing import AtomsToGraphs
 from GGNN.trainer.utrainer import OCPTrainer
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure

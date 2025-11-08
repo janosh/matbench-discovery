@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import plotly.express as px
 import plotly.io as pio
-import pymatviz as pmv  # needed for pymatviz_dark template  # noqa: F401
+import pymatviz as pmv  # needed for pymatviz_dark template
 
 PKG_NAME = "matbench-discovery"
 __version__ = "1.3.1"

@@ -104,7 +104,7 @@ model_params = dict(
     task_dict={target_col: task_type},  # e.g. {'exfoliation_en': 'regression'}
     robust=robust,
 )
-model = CrystalGraphConvNet(**model_params)  # type: ignore[arg-type]
+model = CrystalGraphConvNet(**model_params)
 
 run_params = dict(
     data_path=data_path,

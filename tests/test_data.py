@@ -309,6 +309,10 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
 
     # Test pred_col not in predictions file
     with (
+        # Make glob return a non-empty list to skip the mock data loading path
+        patch("matbench_discovery.data.glob", return_value=["dummy_file.csv"]),
+        # Patch only the specific read_csv call in glob_to_df that loads predictions,
+        # not the one that loads mock data
         patch("pandas.read_csv", return_value=df_float),
         pytest.raises(ValueError, match=r"pred_col.*not found in"),
     ):

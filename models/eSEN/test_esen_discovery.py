@@ -27,6 +27,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm, trange
 
+from matbench_discovery import ROOT
 from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
@@ -38,12 +39,7 @@ def seed_everywhere(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
-BASE_PATH = Path("Matbench-Discovery_data_rootpath")
-
-DATABASE_PATH = {
-    "is2re": str(BASE_PATH / "WBM_IS2RE.aselmdb"),
-}
-
+DB_PATH = {"is2re": f"{ROOT}/WBM_IS2RE.aselmdb"}
 FILTER_CLS = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
 OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
@@ -102,7 +98,7 @@ class MBDRunner:
         calc.trainer.scaler = None
         num_model_params = sum(p.numel() for p in calc.trainer.model.parameters())
 
-        data_path = DATABASE_PATH[self.task_type]
+        data_path = DB_PATH[self.task_type]
         dataset = AseDBDataset(dict(src=data_path))
 
         indices = None
