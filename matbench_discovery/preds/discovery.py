@@ -97,14 +97,14 @@ energies, not from model predictions. This is a critical methodological choice t
 differs from some other benchmarking approaches (e.g., Nature Communications 11:3793
 (2020) where hulls are built from model predictions).
 
-The formation energy of a material is the difference in energy between a material and
-its constituent elements in their standard states. The distance to the convex hull is
-defined as the difference between a material's formation energy and the minimum
-formation energy of all possible stable materials made from the same elements. Since
-the formation energy of a material is used to calculate the distance to the convex
-hull, AND both are measured relative to the same DFT reference hull, the error of a
-formation energy prediction directly determines the error in the distance to the convex
-hull prediction.
+The formation energy of a material is calculated as the difference in energy between a
+material and the lowest energy structures of its constituent elements, as obtained from
+the Materials Project. The distance to the convex hull is defined as the difference
+between a material's formation energy and the minimum formation energy of all possible
+stable materials with the same composition. Since the formation energy of a material
+is used to calculate the distance to the convex hull, AND both are measured relative to
+the same DFT reference hull, the error of a formation energy prediction directly
+determines the error in the distance to the convex hull prediction.
 
 Mathematically, this is because both quantities are related by a linear transformation
 (adding a constant that depends on the composition), and linear transformations leave
