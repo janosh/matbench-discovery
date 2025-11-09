@@ -73,7 +73,7 @@
 <GitHubCorner href={pkg.repository} />
 
 <Nav
-  routes={[`/`, ...routes.filter((route) => route != `/changelog`), `/paper`]}
+  routes={[`/`, ...routes.filter((route) => route != `/changelog`), [pkg.paper, `Paper`]]}
   style="left: initial; margin-block: 1em 0"
   menu_props={{ style: `gap: 1.5em; place-items: center` }}
   labels={{ '/': `Home`, '/api': `API` }}
