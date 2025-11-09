@@ -1,10 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import { Footer, Nav, ThemeToggle } from '$lib'
+  import { Footer, ThemeToggle } from '$lib'
   import pkg from '$site/package.json'
   import type { Snippet } from 'svelte'
-  import { CmdPalette, CopyButton, GitHubCorner } from 'svelte-multiselect'
+  import { CmdPalette, CopyButton, GitHubCorner, Nav } from 'svelte-multiselect'
   import Toc from 'svelte-toc'
   import '../app.css'
 
@@ -73,12 +73,13 @@
 <GitHubCorner href={pkg.repository} />
 
 <Nav
-  routes={[
-    [`/home`, `/`],
-    ...routes.filter((route) => route != `/changelog`),
-    [`/paper`, pkg.paper],
-  ]}
-  style="padding: 0 var(--main-padding)"
+  routes={[`/`, ...routes.filter((route) => route != `/changelog`), `/paper`]}
+  style="left: initial; margin-block: 1em 0"
+  menu_props={{ style: `gap: 1.5em; place-items: center` }}
+  labels={{ '/': `Home`, '/api': `API` }}
+  link_props={{
+    style: `background-color: var(--nav-bg); display: inline-flex; place-items: center`,
+  }}
 >
   <ThemeToggle />
 </Nav>
