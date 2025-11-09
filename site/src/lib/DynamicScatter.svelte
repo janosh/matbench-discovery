@@ -73,7 +73,7 @@
     batch_size,
     epochs,
     n_layers,
-  ] as const
+  ]
 
   let model_counts_by_prop = $derived(
     options.reduce(
@@ -191,7 +191,6 @@
       <Select
         {options}
         id={control.id}
-        selected={[axes[control.id]]}
         bind:value={axes[control.id]}
         placeholder="Select {control.label}"
         maxSelect={1}
@@ -287,7 +286,6 @@
         </label>
         <ColorScaleSelect
           bind:value={color_scheme}
-          selected={[color_scheme]}
           style="margin: 0; grid-column: 1/-1"
         />
         <label title="Toggle the visibility of vertical grid lines">

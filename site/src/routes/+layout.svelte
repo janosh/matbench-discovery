@@ -3,7 +3,7 @@
   import { page } from '$app/state'
   import { Footer, Nav, ThemeToggle } from '$lib'
   import pkg from '$site/package.json'
-  import { type Snippet } from 'svelte'
+  import type { Snippet } from 'svelte'
   import { CmdPalette, CopyButton, GitHubCorner } from 'svelte-multiselect'
   import Toc from 'svelte-toc'
   import '../app.css'
