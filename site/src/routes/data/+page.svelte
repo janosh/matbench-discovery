@@ -7,10 +7,11 @@
   import MPvsMPtrjVsWBMArityHist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.svelte'
   import SpacegroupSunburstMp from '$figs/spacegroup-sunburst-mp.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
-  import { PtableHeatmap } from '$lib'
+  import { Icon, PtableHeatmap } from '$lib'
   import { ColorScaleSelect } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import Select from 'svelte-multiselect'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
   import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
@@ -62,19 +63,23 @@
     >Count Mode</label>
     <Select
       id="count-mode"
-      selected={[count_mode]}
       bind:value={count_mode}
       options={count_modes}
       minSelect={1}
       maxSelect={1}
-    />
+    >
+      {#snippet children({ option })}
+        {option}&nbsp;<span
+          title="The difference between count modes is best explained by example.
+          <code>occurrence</code> mode maps Fe<sub>2</sub>O<sub>3</sub> to <code>{`{Fe: 1, O: 1}`}</code>,
+          <code>composition</code> mode maps it to <code>{`{Fe: 2, O: 3}`}</code>."
+          {@attach tooltip()}
+        >
+          <Icon icon="Info" style="color: var(--link-color)" />
+        </span>
+      {/snippet}
+    </Select>
     <ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />
-    <p style="text-align: center; margin: 2em; font-size: smaller">
-      The difference between count modes is best explained by example.
-      <code>occurrence</code> mode maps Fe<sub>2</sub>O<sub>3</sub> to {`{Fe: 1, O: 1}`},
-      <code>composition</code>
-      mode maps it to {`{Fe: 2, O: 3}`}.
-    </p>
     <PtableHeatmap
       heatmap_values={wbm_elem_counts}
       {color_scale}
