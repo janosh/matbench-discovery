@@ -27,12 +27,13 @@ from matbench_discovery import today
 from matbench_discovery.data import DataFiles
 from matbench_discovery.phonons import KappaCalcParams, calc_kappa_for_structure
 
-with contextlib.suppress(ImportError):
+with contextlib.suppress(Exception):
     # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use in
     # ASE calculators, if model was compiled with these accelerations (see
     # NequIP/Allegro docs), so here we try to import them in case models were compiled
     # with these settings
-    pass
+    import openequivariance
+    import cuequivariance_torch
 
 module_dir = os.path.dirname(__file__)
 compile_path = "*.nequip.pt2"

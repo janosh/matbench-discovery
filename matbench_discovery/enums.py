@@ -346,6 +346,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     megnet = auto(), "megnet/megnet.yml"
 
     # NequIP
+    nequip_oam_xl_0_1 = auto(), "nequip/nequip-OAM-XL-0.1.yml"
     nequip_oam_l_0_1 = auto(), "nequip/nequip-OAM-L-0.1.yml"
     nequip_mp_l_0_1 = auto(), "nequip/nequip-MP-L-0.1.yml"
 

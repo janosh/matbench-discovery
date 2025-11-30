@@ -36,8 +36,8 @@ with contextlib.suppress(ImportError):
     # their use in ASE calculators, if model was compiled with these accelerations
     # (see NequIP/Allegro docs), so here we try to import them in case models were
     # compiled with these settings
-    pass
-
+    import openequivariance
+    import cuequivariance_torch
 
 # %% this config is editable
 compile_path = "*.nequip.pt2"
@@ -49,7 +49,7 @@ ase_optimizer = "GOQN"  # faster than "FIRE" from tests, gives the same results;
 ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
 
 max_steps = 500
-force_max = 0.05  # Run until the forces are smaller than this in eV/A
+force_max = 0.005  # Run until the forces are smaller than this in eV/A
 
 slurm_nodes = int(os.getenv("SLURM_NNODES", "1"))
 slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", "1"))
