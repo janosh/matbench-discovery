@@ -48,7 +48,9 @@ def get_sym_info_from_structs(
 
     for struct_key, struct in iterator:
         if not isinstance(struct, (Structure, ase.atoms.Atoms)):
-            raise TypeError(f"Expected Structure or Atoms, got {type(struct)}")
+            raise TypeError(
+                f"Expected Structure or Atoms for {struct_key!r}, got {type(struct)}"
+            )
         moyo_cell = MoyoAdapter.from_py_obj(struct)
 
         sym_data = moyopy.MoyoDataset(

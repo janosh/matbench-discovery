@@ -81,15 +81,16 @@ df_wbm = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
 # more accurate energy corrections that take into account peroxide/superoxide nature
 # of materials (and same for sulfides) based on atomic distances in the structure
+filtered_entries = list(
+    df_wbm.query("n_elements > 1").cse.map(ComputedStructureEntry.from_dict)
+)
 wbm_computed_entries = MaterialsProject2020Compatibility().process_entries(
-    df_wbm.query("n_elements > 1").cse.map(ComputedStructureEntry.from_dict),
-    verbose=True,
-    clean=True,
+    filtered_entries, verbose=True, clean=True
 )
 
-n_skipped = len(df_wbm) - len(wbm_computed_entries)
-assert n_skipped == 0
-print(f"{n_skipped:,} ({n_skipped / len(df_wbm):.1%}) entries not processed")
+n_skipped = len(filtered_entries) - len(wbm_computed_entries)
+assert n_skipped == 0, f"process_entries() unexpectedly filtered {n_skipped} entries"
+print(f"{n_skipped:,} ({n_skipped / len(filtered_entries):.1%}) entries not processed")
 
 
 # %% merge MP and WBM entries into a single PatchedPhaseDiagram

@@ -7,7 +7,7 @@ S_Huber_delta: 0.1
 
 seed: 7
 cutoff_radius: 6.0
-num_neighbours_mean: 62.012104256525795
+num_neighbors_mean: 62.012104256525795
 monitored_metric: val0_epoch/weighted_sum
 
 data_transforms:
@@ -216,7 +216,7 @@ training_module:
       per_type_energy_shifts_trainable: false
       per_type_energy_scales: ${per_type_energy_scales}
       per_type_energy_scales_trainable: true
-      avg_num_neighbors: ${num_neighbours_mean}
+      avg_num_neighbors: ${num_neighbors_mean}
 
       pair_potential:
         _target_: nequip.nn.pair_potential.ZBL
@@ -494,95 +494,6 @@ per_type_energy_scales: # MPTrj per-type forces RMS sqrt
   Np: 0.271
   Pu: 0.3288
 
-chemical_symbols: [
-  'H',
-  'He',
-  'Li',
-  'Be',
-  'B',
-  'C',
-  'N',
-  'O',
-  'F',
-  'Ne',
-  'Na',
-  'Mg',
-  'Al',
-  'Si',
-  'P',
-  'S',
-  'Cl',
-  'Ar',
-  'K',
-  'Ca',
-  'Sc',
-  'Ti',
-  'V',
-  'Cr',
-  'Mn',
-  'Fe',
-  'Co',
-  'Ni',
-  'Cu',
-  'Zn',
-  'Ga',
-  'Ge',
-  'As',
-  'Se',
-  'Br',
-  'Kr',
-  'Rb',
-  'Sr',
-  'Y',
-  'Zr',
-  'Nb',
-  'Mo',
-  'Tc',
-  'Ru',
-  'Rh',
-  'Pd',
-  'Ag',
-  'Cd',
-  'In',
-  'Sn',
-  'Sb',
-  'Te',
-  'I',
-  'Xe',
-  'Cs',
-  'Ba',
-  'La',
-  'Ce',
-  'Pr',
-  'Nd',
-  'Pm',
-  'Sm',
-  'Eu',
-  'Gd',
-  'Tb',
-  'Dy',
-  'Ho',
-  'Er',
-  'Tm',
-  'Yb',
-  'Lu',
-  'Hf',
-  'Ta',
-  'W',
-  'Re',
-  'Os',
-  'Ir',
-  'Pt',
-  'Au',
-  'Hg',
-  'Tl',
-  'Pb',
-  'Bi',
-  'Ac',
-  'Th',
-  'Pa',
-  'U',
-  'Np',
-  'Pu',
-]
+# deno-fmt-ignore
+chemical_symbols: ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu']
 model_type_names: ${chemical_symbols}
