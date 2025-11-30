@@ -34,7 +34,7 @@ trained_by:
 
 repo: https://github.com/mir-group/nequip
 url: https://nequip.readthedocs.io/en/latest/
-doi: https://doi.org/10.5281/zenodo.16980200  # TODO: Update
+doi: https://doi.org/10.5281/zenodo.16980200
 paper: https://arxiv.org/abs/2504.16068 # To be updated...
 checkpoint_url: https://www.nequip.net/models/mir-group/NequIP-OAM-XL:0.1
 pr_url: https://github.com/janosh/matbench-discovery/pull/297
@@ -83,7 +83,7 @@ hyperparams:
   max_neighbors: .inf
 
 training_cost:
-  Nvidia H100 GPUs: { amount: 8, hours: 300, cost: 2400 }  # ~9.8h per epoch, 30 epochs plus fine-tune
+  Nvidia H100 GPUs: {amount: 8, hours: 300, cost: 2400}    # ~9.8h per epoch, 30 epochs plus fine-tune
 
 requirements:
   torch: '2'
@@ -98,14 +98,14 @@ notes:
 
 metrics:
   phonons:
-    kappa_103:  # TODO: Update names
-      pred_file: models/nequip/nequip-OAM-XL-0.1/2025-08-27-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05.json.gz
-      pred_file_url: https://figshare.com/files/57475504  # TODO: Update
+    kappa_103:
+      pred_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05.json.gz
+      pred_file_url: https://figshare.com/files/59985404
       κ_SRME: 0.125
       κ_SRE: 0
-  geo_opt:  # TODO: Update names
-    pred_file: models/nequip/nequip-OAM-XL-0.1/2025-08-27-wbm-IS2RE-GOQN.jsonl.gz
-    pred_file_url: https://figshare.com/files/57731005  # TODO: Update
+  geo_opt:
+    pred_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-wbm-IS2RE-GOQN.jsonl.gz
+    pred_file_url: https://figshare.com/files/59985410
     struct_col: nequip_structure # same for NequIP/Allegro
     symprec=1e-5:
       rmsd: 0.0647 # unitless
@@ -114,7 +114,7 @@ metrics:
       symmetry_match: 0.7125 # fraction
       symmetry_increase: 0.2018 # fraction
       n_structures: 256963 # count
-      analysis_file: models/nequip/nequip-OAM-XL-0.1/2025-08-27-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
+      analysis_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
       analysis_file_url: https://figshare.com/files/57731032
     symprec=1e-2:
       rmsd: 0.0647 # unitless
@@ -123,51 +123,51 @@ metrics:
       symmetry_match: 0.816 # fraction
       symmetry_increase: 0.1226 # fraction
       n_structures: 256963 # count
-      analysis_file: models/nequip/nequip-OAM-XL-0.1/2025-08-27-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
+      analysis_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
       analysis_file_url: https://figshare.com/files/57731035
-  discovery: # TODO: Update names
-    pred_file: models/nequip/nequip-OAM-XL-0.1/2025-08-27-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/57574462
+  discovery:
+    pred_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/59985407
     pred_col: e_form_per_atom_nequip # same for NequIP/Allegro
     full_test_set:
-      F1: 0.87 # fraction
-      DAF: 5.06 # dimensionless
-      Precision: 0.868 # fraction
-      Recall: 0.872 # fraction
-      Accuracy: 0.955 # fraction
-      TPR: 0.872 # fraction
+      F1: 0.885 # fraction
+      DAF: 5.098 # dimensionless
+      Precision: 0.875 # fraction
+      Recall: 0.895 # fraction
+      Accuracy: 0.96 # fraction
+      TPR: 0.895 # fraction
       FPR: 0.027 # fraction
       TNR: 0.973 # fraction
-      FNR: 0.128 # fraction
-      TP: 38456.0 # count
-      FP: 5835.0 # count
-      TN: 207036.0 # count
-      FN: 5636.0 # count
-      MAE: 0.022 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.858 # dimensionless
+      FNR: 0.105 # fraction
+      TP: 39450.0 # count
+      FP: 5647.0 # count
+      TN: 207224.0 # count
+      FN: 4642.0 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.866 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.893 # fraction
-      DAF: 5.823 # dimensionless
-      Precision: 0.89 # fraction
-      Recall: 0.895 # fraction
-      Accuracy: 0.967 # fraction
-      TPR: 0.895 # fraction
-      FPR: 0.02 # fraction
-      TNR: 0.98 # fraction
-      FNR: 0.105 # fraction
-      TP: 29867.0 # count
-      FP: 3684.0 # count
-      TN: 178430.0 # count
-      FN: 3507.0 # count
-      MAE: 0.022 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.865 # dimensionless
+      F1: 0.906 # fraction
+      DAF: 5.869 # dimensionless
+      Precision: 0.897 # fraction
+      Recall: 0.915 # fraction
+      Accuracy: 0.971 # fraction
+      TPR: 0.915 # fraction
+      FPR: 0.019 # fraction
+      TNR: 0.981 # fraction
+      FNR: 0.085 # fraction
+      TP: 30545.0 # count
+      FP: 3500.0 # count
+      TN: 178614.0 # count
+      FN: 2829.0 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.872 # dimensionless
       missing_preds: 0 # count
     most_stable_10k:
       F1: 0.985 # fraction
-      DAF: 6.344 # dimensionless
+      DAF: 6.342 # dimensionless
       Precision: 0.97 # fraction
       Recall: 1.0 # fraction
       Accuracy: 0.97 # fraction
@@ -175,11 +175,11 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 9698.0 # count
-      FP: 302.0 # count
+      TP: 9695.0 # count
+      FP: 305.0 # count
       TN: 0.0 # count
       FN: 0.0 # count
-      MAE: 0.021 # eV/atom
-      RMSE: 0.083 # eV/atom
-      R2: 0.854 # dimensionless
+      MAE: 0.019 # eV/atom
+      RMSE: 0.075 # eV/atom
+      R2: 0.878 # dimensionless
       missing_preds: 0 # count
