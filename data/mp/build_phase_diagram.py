@@ -81,12 +81,10 @@ df_wbm = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
 # more accurate energy corrections that take into account peroxide/superoxide nature
 # of materials (and same for sulfides) based on atomic distances in the structure
-wbm_computed_entries: list[ComputedStructureEntry] = df_wbm.query(
-    "n_elements > 1"
-).cse.map(ComputedStructureEntry.from_dict)
-
 wbm_computed_entries = MaterialsProject2020Compatibility().process_entries(
-    wbm_computed_entries, verbose=True, clean=True
+    df_wbm.query("n_elements > 1").cse.map(ComputedStructureEntry.from_dict),
+    verbose=True,
+    clean=True,
 )
 
 n_skipped = len(df_wbm) - len(wbm_computed_entries)

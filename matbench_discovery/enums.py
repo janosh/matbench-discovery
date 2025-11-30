@@ -489,7 +489,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return self.metadata.get("status", "complete") == "complete"
 
     @classmethod
-    def _missing_(cls, value: str) -> Self | None:
+    def _missing_(cls, value: object) -> Self | None:
         """Normalizing casing and dashes before matching enum values.
         If no match is found, return None.
 
