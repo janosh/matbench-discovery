@@ -2,10 +2,10 @@ run: [val, train] # val first to get validation metrics
 
 E_coeff: 1
 F_coeff: 5
-S_coeff: 0.1 
+S_coeff: 0.1
 S_Huber_delta: 0.1
 
-seed: 7 
+seed: 7
 cutoff_radius: 6.0
 num_neighbours_mean: 62.012104256525795
 monitored_metric: val0_epoch/weighted_sum
@@ -75,15 +75,15 @@ data:
   seed: ${seed}
   train_dataloader:
     _target_: torch.utils.data.DataLoader
-    batch_size: 80  # using 8 nodes -> 640 total batch size
-    num_workers: 7  # should be num CPUs per GPU (process)
-    shuffle: true  # default
+    batch_size: 80 # using 8 nodes -> 640 total batch size
+    num_workers: 7 # should be num CPUs per GPU (process)
+    shuffle: true # default
   val_dataloader:
     _target_: torch.utils.data.DataLoader
     batch_size: ${data.train_dataloader.batch_size}
     num_workers: ${data.train_dataloader.num_workers}
- 
-  stats_manager:  
+
+  stats_manager:
     _target_: nequip.data.CommonDataStatisticsManager
     dataloader_kwargs:
       batch_size: ${data.train_dataloader.batch_size}
@@ -97,7 +97,7 @@ trainer:
     _target_: nequip.train.SimpleDDPStrategy
   accelerator: gpu
   enable_checkpointing: true
-  max_time: "30:00:00:00"
+  max_time: '30:00:00:00'
   max_epochs: 100
   check_val_every_n_epoch: 1
   log_every_n_steps: 10000
@@ -105,7 +105,7 @@ trainer:
     - _target_: lightning.pytorch.callbacks.ModelCheckpoint
       monitor: ${monitored_metric}
       dirpath: ${hydra:runtime.output_dir}
-      filename: "weighted_metric_{${monitored_metric}:.4f}-{epoch}"
+      filename: 'weighted_metric_{${monitored_metric}:.4f}-{epoch}'
       auto_insert_metric_name: false
       save_last: true
       verbose: true
@@ -114,9 +114,9 @@ trainer:
     - _target_: lightning.pytorch.callbacks.EarlyStopping
       verbose: true
       log_rank_zero_only: true
-      monitor: ${monitored_metric} 
-      min_delta: 1e-5                         # how much to be considered a "change"
-      patience: 80                           # how many instances of "no change" before stopping
+      monitor: ${monitored_metric}
+      min_delta: 1e-5 # how much to be considered a "change"
+      patience: 80 # how many instances of "no change" before stopping
 
     - _target_: lightning.pytorch.callbacks.LearningRateMonitor
       logging_interval: epoch
@@ -127,9 +127,9 @@ trainer:
 
     - _target_: nequip.train.callbacks.TF32Scheduler
       schedule:
-        0: true  # use TF32 for training
+        0: true # use TF32 for training
 
-  logger: 
+  logger:
     _target_: lightning.pytorch.loggers.wandb.WandbLogger
     save_dir: ${hydra:runtime.output_dir}
     project: OMat24
@@ -139,7 +139,7 @@ training_module:
   _target_: nequip.train.EMALightningModule
   ema_decay: 0.995
 
-  loss: 
+  loss:
     _target_: nequip.train.MetricsManager
     metrics:
       - name: peratom_E_Huber
@@ -148,7 +148,7 @@ training_module:
           field: total_energy
         coeff: ${E_coeff}
         metric:
-          _target_: nequip.train.HuberLoss  
+          _target_: nequip.train.HuberLoss
           delta: 0.01
       - name: force_strat_E_huber
         field: forces
@@ -162,28 +162,28 @@ training_module:
             300: 0.001
       - name: stress_E_Huber
         field: stress
-        coeff: ${S_coeff} 
+        coeff: ${S_coeff}
         metric:
-          _target_: nequip.train.HuberLoss  
+          _target_: nequip.train.HuberLoss
           delta: ${S_Huber_delta}
 
   val_metrics:
     _target_: nequip.train.EnergyForceStressMetrics
-  train_metrics: ${training_module.val_metrics}  # same metrics
+  train_metrics: ${training_module.val_metrics} # same metrics
 
   optimizer:
     _target_: torch.optim.AdamW
     lr: 5e-3
     weight_decay: 1e-8
-    amsgrad: false 
+    amsgrad: false
 
   lr_scheduler:
     scheduler:
       _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
       factor: 0.1
-      patience: 100  # no LR drop on OMat training
+      patience: 100 # no LR drop on OMat training
       min_lr: 1e-6
-    monitor: ${monitored_metric} 
+    monitor: ${monitored_metric}
     interval: epoch
     frequency: 1
 
@@ -193,7 +193,7 @@ training_module:
       - modifier: enable_OpenEquivariance
     model:
       _target_: nequip.model.NequIPGNNModel
-      compile_mode: compile  
+      compile_mode: compile
       l_max: 4
       parity: false
       num_layers: 6
@@ -201,19 +201,19 @@ training_module:
       type_embed_num_features: 32
       radial_mlp_depth: 1
       radial_mlp_width: 128
-      
+
       seed: ${seed}
       type_names: ${model_type_names}
       model_dtype: float32
 
       r_max: ${cutoff_radius}
 
-      num_bessels: 8 
+      num_bessels: 8
       bessel_trainable: true
-      polynomial_cutoff_p: 5 
-      
+      polynomial_cutoff_p: 5
+
       per_type_energy_shifts: ${per_type_energy_shifts}
-      per_type_energy_shifts_trainable: false 
+      per_type_energy_shifts_trainable: false
       per_type_energy_scales: ${per_type_energy_scales}
       per_type_energy_scales_trainable: true
       avg_num_neighbors: ${num_neighbours_mean}
@@ -223,7 +223,7 @@ training_module:
         units: metal
         chemical_species: ${chemical_symbols}
 
-per_type_energy_shifts:  # Omat24 reference energies, switch to MP_ephemera_Isolated_E0s after; from https://github.com/facebookresearch/fairchem/blob/main/configs/uma/training_release/element_refs/iso_atom_elem_refs.yaml
+per_type_energy_shifts: # Omat24 reference energies, switch to MP_ephemera_Isolated_E0s after; from https://github.com/facebookresearch/fairchem/blob/main/configs/uma/training_release/element_refs/iso_atom_elem_refs.yaml
   H: -1.11700253
   He: 0.00079886
   Li: -0.29731164
@@ -403,7 +403,7 @@ per_type_energy_shifts:  # Omat24 reference energies, switch to MP_ephemera_Isol
   #  Np: -7.7017
   #  Pu: -10.8084
 
-per_type_energy_scales:  # MPTrj per-type forces RMS sqrt
+per_type_energy_scales: # MPTrj per-type forces RMS sqrt
   H: 1.2479
   He: 0.0284
   Li: 0.2406
@@ -494,5 +494,95 @@ per_type_energy_scales:  # MPTrj per-type forces RMS sqrt
   Np: 0.271
   Pu: 0.3288
 
-chemical_symbols: ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu']
+chemical_symbols: [
+  'H',
+  'He',
+  'Li',
+  'Be',
+  'B',
+  'C',
+  'N',
+  'O',
+  'F',
+  'Ne',
+  'Na',
+  'Mg',
+  'Al',
+  'Si',
+  'P',
+  'S',
+  'Cl',
+  'Ar',
+  'K',
+  'Ca',
+  'Sc',
+  'Ti',
+  'V',
+  'Cr',
+  'Mn',
+  'Fe',
+  'Co',
+  'Ni',
+  'Cu',
+  'Zn',
+  'Ga',
+  'Ge',
+  'As',
+  'Se',
+  'Br',
+  'Kr',
+  'Rb',
+  'Sr',
+  'Y',
+  'Zr',
+  'Nb',
+  'Mo',
+  'Tc',
+  'Ru',
+  'Rh',
+  'Pd',
+  'Ag',
+  'Cd',
+  'In',
+  'Sn',
+  'Sb',
+  'Te',
+  'I',
+  'Xe',
+  'Cs',
+  'Ba',
+  'La',
+  'Ce',
+  'Pr',
+  'Nd',
+  'Pm',
+  'Sm',
+  'Eu',
+  'Gd',
+  'Tb',
+  'Dy',
+  'Ho',
+  'Er',
+  'Tm',
+  'Yb',
+  'Lu',
+  'Hf',
+  'Ta',
+  'W',
+  'Re',
+  'Os',
+  'Ir',
+  'Pt',
+  'Au',
+  'Hg',
+  'Tl',
+  'Pb',
+  'Bi',
+  'Ac',
+  'Th',
+  'Pa',
+  'U',
+  'Np',
+  'Pu',
+]
 model_type_names: ${chemical_symbols}

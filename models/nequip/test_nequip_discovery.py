@@ -9,7 +9,6 @@ Then refactored for nequip and SLURM on the Frontier HPC
 
 # uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
 
-import contextlib
 import os
 import warnings
 from glob import glob
@@ -31,13 +30,15 @@ from matbench_discovery import timestamp
 from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import Task
 
-with contextlib.suppress(ImportError):
-    # OpenEquivariance/CuEquivariance libraries need to be loaded to allow
-    # their use in ASE calculators, if model was compiled with these accelerations
-    # (see NequIP/Allegro docs), so here we try to import them in case models were
-    # compiled with these settings
-    import openequivariance
-    import cuequivariance_torch
+try:  # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use
+    # in ASE calculators, if model was compiled with these accelerations (see
+    # NequIP/Allegro docs), so here we try to import them in case models were compiled
+    # with these settings
+    import cuequivariance_torch  # noqa: F401
+    import openequivariance  # noqa: F401
+except ImportError:
+    pass
+
 
 # %% this config is editable
 compile_path = "*.nequip.pt2"

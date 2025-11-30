@@ -83,7 +83,8 @@ hyperparams:
   max_neighbors: .inf
 
 training_cost:
-  Nvidia H100 GPUs: {amount: 8, hours: 300, cost: 2400}    # ~9.8h per epoch, 30 epochs plus fine-tune
+  # ~9.8h per epoch, 30 epochs plus fine-tune
+  Nvidia H100 GPUs: { amount: 8, hours: 300, cost: 2400 }
 
 requirements:
   torch: '2'
