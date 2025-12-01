@@ -102,9 +102,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.317
+      κ_SRME: 0.3171
       pred_file: models/sevennet/sevennet-mf-ompa/2025-03-11-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/53090603
+      κ_SRE: 0.21
   geo_opt:
     pred_file: models/sevennet/sevennet-mf-ompa/2025-03-11-wbm-geo-opt-FIRE.jsonl.gz
     pred_file_url: https://figshare.com/files/52983491

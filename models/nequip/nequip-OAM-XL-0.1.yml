@@ -109,23 +109,23 @@ metrics:
     pred_file_url: https://figshare.com/files/59985410
     struct_col: nequip_structure # same for NequIP/Allegro
     symprec=1e-5:
-      rmsd: 0.0647 # unitless
-      n_sym_ops_mae: 1.9352 # unitless
-      symmetry_decrease: 0.0792 # fraction
-      symmetry_match: 0.7125 # fraction
-      symmetry_increase: 0.2018 # fraction
+      rmsd: 0.063 # unitless
+      n_sym_ops_mae: 2.0821 # unitless
+      symmetry_decrease: 0.0975 # fraction
+      symmetry_match: 0.6834 # fraction
+      symmetry_increase: 0.2117 # fraction
       n_structures: 256963 # count
-      analysis_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
-      analysis_file_url: https://figshare.com/files/57731032
+      analysis_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.7.3.csv.gz
+      analysis_file_url:
     symprec=1e-2:
-      rmsd: 0.0647 # unitless
-      n_sym_ops_mae: 1.7483 # unitless
-      symmetry_decrease: 0.0543 # fraction
-      symmetry_match: 0.816 # fraction
-      symmetry_increase: 0.1226 # fraction
+      rmsd: 0.063 # unitless
+      n_sym_ops_mae: 1.6986 # unitless
+      symmetry_decrease: 0.0253 # fraction
+      symmetry_match: 0.8223 # fraction
+      symmetry_increase: 0.1437 # fraction
       n_structures: 256963 # count
-      analysis_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
-      analysis_file_url: https://figshare.com/files/57731035
+      analysis_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.7.3.csv.gz
+      analysis_file_url:
   discovery:
     pred_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/59985407

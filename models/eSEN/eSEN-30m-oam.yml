@@ -74,6 +74,7 @@ metrics:
       κ_SRME: 0.1704
       pred_file: models/eSEN/eSEN-30m-oam/2025-03-18-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/53090591
+      κ_SRE: 0.0858
   geo_opt:
     pred_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/53153477
