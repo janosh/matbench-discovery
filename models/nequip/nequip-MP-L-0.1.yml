@@ -87,7 +87,7 @@ training_cost:
 
 requirements:
   torch: '2'
-  nequip: 0.7.0 # >=0.14.0 recommended
+  nequip: '>=0.7.0' # >=0.14.0 recommended
 
 training_set: [MPtrj]
 

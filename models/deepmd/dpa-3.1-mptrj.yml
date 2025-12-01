@@ -103,9 +103,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.650
+      κ_SRME: 0.6503
       pred_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/55426289
+      κ_SRE: 0.4966
   geo_opt:
     pred_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
     struct_col: dp_structure

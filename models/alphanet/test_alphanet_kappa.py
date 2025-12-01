@@ -149,7 +149,7 @@ for atoms in tqdm_bar:
             )
             optimizer.run(fmax=force_max, steps=max_steps)
 
-            reached_max_steps = int(optimizer.step) >= max_steps
+            reached_max_steps = optimizer.nsteps >= max_steps
             if reached_max_steps:
                 print(f"Material {mat_desc=} reached {max_steps=} during relaxation.")
 

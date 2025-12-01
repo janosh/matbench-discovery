@@ -97,9 +97,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 1.771
+      κ_SRME: 1.7707
       pred_file: models/eqV2/eqV2-m-omat-salex-mp/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134893
+      κ_SRE: 1.4827
   geo_opt:
     pred_file: models/eqV2/eqV2-m-omat-salex-mp/2024-10-18-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/53153471

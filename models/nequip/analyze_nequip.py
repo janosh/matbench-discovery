@@ -21,11 +21,8 @@ __author__ = "Janosh Riebesell, Seán Kavanagh"
 module_dir = os.path.dirname(__file__)
 e_form_nequip_col = "e_form_per_atom_nequip"
 
-filtered_csv_path = "./results/nequip-filtered_preds.csv.gz"
-if not os.path.isfile(filtered_csv_path):
-    filtered_csv_path = "./nequip-filtered_preds.csv.gz"
-
-df_nequip = pd.read_csv(filtered_csv_path)
+csv_path = f"{module_dir}/results/nequip-preds.csv.gz"
+df_nequip = pd.read_csv(csv_path)
 df_nequip = df_nequip.set_index("material_id")
 df_wbm["e_form_per_atom_nequip_error"] = (
     df_wbm["e_form_per_atom_mp2020_corrected"] - df_nequip["e_form_per_atom_nequip"]
