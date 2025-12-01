@@ -346,6 +346,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     megnet = auto(), "megnet/megnet.yml"
 
     # NequIP
+    nequip_oam_xl_0_1 = auto(), "nequip/nequip-OAM-XL-0.1.yml"
     nequip_oam_l_0_1 = auto(), "nequip/nequip-OAM-L-0.1.yml"
     nequip_mp_l_0_1 = auto(), "nequip/nequip-MP-L-0.1.yml"
 
@@ -488,7 +489,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return self.metadata.get("status", "complete") == "complete"
 
     @classmethod
-    def _missing_(cls, value: str) -> Self | None:
+    def _missing_(cls, value: object) -> Self | None:
         """Normalizing casing and dashes before matching enum values.
         If no match is found, return None.
 

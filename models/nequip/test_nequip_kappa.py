@@ -7,7 +7,6 @@ Templated from https://github.com/janosh/matbench-discovery/blob/main/models/mac
 
 # uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
 
-import contextlib
 import json
 import os
 import warnings
@@ -27,12 +26,15 @@ from matbench_discovery import today
 from matbench_discovery.data import DataFiles
 from matbench_discovery.phonons import KappaCalcParams, calc_kappa_for_structure
 
-with contextlib.suppress(ImportError):
-    # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use in
-    # ASE calculators, if model was compiled with these accelerations (see
+try:  # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use
+    # in ASE calculators, if model was compiled with these accelerations (see
     # NequIP/Allegro docs), so here we try to import them in case models were compiled
     # with these settings
+    import cuequivariance_torch  # noqa: F401
+    import openequivariance  # noqa: F401
+except ImportError:
     pass
+
 
 module_dir = os.path.dirname(__file__)
 compile_path = "*.nequip.pt2"

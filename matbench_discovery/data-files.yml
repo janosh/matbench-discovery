@@ -90,10 +90,10 @@ phonondb_pbe_103_structures:
   md5: a396d4c517fa6d57defeffc6c83f0118
 
 phonondb_pbe_103_kappa_no_nac:
-  url: https://figshare.com/files/52014656
+  url: https://figshare.com/files/59988539
   path: phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz
   description: 103 phononDB structures run by Togo with PBE settings received in private communication. See https://github.com/atztogo/phonondb/blob/bba206/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe for details.
-  md5: a396d4c517fa6d57defeffc6c83f0118
+  md5: 70c7a8b0df4cbb4d98f12aea5f61aeee
 
 _links: |
   [`PatchedPhaseDiagram`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814

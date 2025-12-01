@@ -99,9 +99,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.644
+      κ_SRME: 0.6435
       pred_file: models/alphanet/oma/2025-04-20-oma-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/56871824
+      κ_SRE: 0.4914
   geo_opt:
     pred_file: models/alphanet/oma/2025-07-24-wbm-oma-IS2RE.json.gz
     pred_file_url: https://figshare.com/files/56871812

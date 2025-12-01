@@ -22,7 +22,7 @@ class LBFGS(BaseBatchOptimizer):
     def __init__(
         self,
         optimizable_batch: OptimizableBatch,
-        maxstep: float = 0.2,
+        max_step: float = 0.2,
         memory: int = 100,
         damping: float = 1.2,
         alpha: float = 100.0,
@@ -37,7 +37,7 @@ class LBFGS(BaseBatchOptimizer):
             traj_dir=traj_dir,
             traj_names=traj_names,
         )
-        self.maxstep = maxstep
+        self.max_step = max_step
         self.memory = memory
         self.damping = damping
         self.alpha = alpha
@@ -46,8 +46,8 @@ class LBFGS(BaseBatchOptimizer):
         self.s = deque(maxlen=self.memory)
         self.y = deque(maxlen=self.memory)
         self.rho = deque(maxlen=self.memory)
-        self.r0 = None
-        self.f0 = None
+        self.r0 = float("nan")
+        self.f0 = float("nan")
 
     def run(self, fmax: float, steps: int) -> tuple[torch.Tensor, bool]:
         """Run L-BFGS optimization."""
@@ -58,7 +58,7 @@ class LBFGS(BaseBatchOptimizer):
         self.s.clear()
         self.y.clear()
         self.rho.clear()
-        self.r0 = self.f0 = None
+        self.r0 = self.f0 = float("nan")
 
         self._open_trajs()
 
@@ -94,14 +94,14 @@ class LBFGS(BaseBatchOptimizer):
         )
 
     def determine_step(self, dr: torch.Tensor) -> torch.Tensor:
-        """Determine step size respecting maxstep constraint."""
-        steplengths = torch.norm(dr, dim=1)
-        longest_steps = scatter(
-            steplengths, self.optimizable.batch_indices, reduce="max"
-        )
+        """Determine step size respecting max_step constraint."""
+        step_lens = torch.norm(dr, dim=1)
+        longest_steps = scatter(step_lens, self.optimizable.batch_indices, reduce="max")
         longest_steps = longest_steps[self.optimizable.batch_indices]
-        maxstep = longest_steps.new_tensor(self.maxstep)
-        scale = (longest_steps + 1e-12).reciprocal() * torch.min(longest_steps, maxstep)
+        max_step = longest_steps.new_tensor(self.max_step)
+        scale = (longest_steps + 1e-12).reciprocal() * torch.min(
+            longest_steps, max_step
+        )
         dr *= scale.unsqueeze(1)
         return dr * self.damping
 
@@ -118,15 +118,15 @@ class LBFGS(BaseBatchOptimizer):
 
             self.rho.append(1.0 / self._batched_dot(y0, s0))
 
-        loopmax = min(self.memory, iteration)
-        alpha = forces.new_empty(loopmax, self.optimizable.batch.natoms.shape[0])
+        loop_max = min(self.memory, iteration)
+        alpha = forces.new_empty(loop_max, self.optimizable.batch.natoms.shape[0])
         q = -forces
-        for i in range(loopmax - 1, -1, -1):
+        for i in range(loop_max - 1, -1, -1):
             alpha[i] = self.rho[i] * self._batched_dot(self.s[i], q)  # b
             q -= alpha[i][self.optimizable.batch_indices, ..., None] * self.y[i]
 
         z = (1.0 / self.alpha) * q  # self.H0 * q
-        for i in range(loopmax):
+        for i in range(loop_max):
             beta = self.rho[i] * self._batched_dot(self.y[i], z)
             z += self.s[i] * (
                 alpha[i][self.optimizable.batch_indices, ..., None]

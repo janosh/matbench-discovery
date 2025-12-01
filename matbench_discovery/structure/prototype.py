@@ -124,13 +124,22 @@ def get_protostructure_label(
             is False.
     """
     import moyopy.interface
+    from pymatgen.core import Structure
 
+    pmg_struct: Structure
     if isinstance(struct, ase.Atoms):
         from pymatgen.io.ase import AseAtomsAdaptor
 
-        struct = AseAtomsAdaptor.get_structure(struct)
+        converted = AseAtomsAdaptor.get_structure(struct)
+        if not isinstance(converted, Structure):
+            raise TypeError(f"Expected Structure, got {type(converted)}")
+        pmg_struct = converted
+    elif isinstance(struct, Structure):
+        pmg_struct = struct
+    else:
+        raise TypeError(f"Expected Structure or Atoms, got {type(struct)}")
 
-    moyo_cell = moyopy.interface.MoyoAdapter.from_py_obj(struct)
+    moyo_cell = moyopy.interface.MoyoAdapter.from_py_obj(pmg_struct)
     symmetry_data = moyopy.MoyoDataset(moyo_cell, symprec=symprec)
     spg_num = symmetry_data.number
 
@@ -148,7 +157,7 @@ def get_protostructure_label(
 
     equivalent_wyckoff_labels: list[tuple[str, int, str]] = [
         (
-            struct.species[orbit[0]].symbol,
+            pmg_struct.species[orbit[0]].symbol,
             len(orbit),
             symmetry_data.wyckoffs[orbit[0]].translate(
                 str.maketrans("", "", string.digits)
@@ -179,17 +188,17 @@ def get_protostructure_label(
 
     # Build prototype label
     prototype_label = (
-        f"{get_prototype_formula(struct.composition)}_"
+        f"{get_prototype_formula(pmg_struct.composition)}_"
         f"{symmetry_data.pearson_symbol}_"
-        f"{spg_num}_{all_wyckoffs}:{struct.chemical_system}"
+        f"{spg_num}_{all_wyckoffs}:{pmg_struct.chemical_system}"
     )
 
     # Verify multiplicities match composition
     observed_formula = Composition(element_dict).reduced_formula
-    if observed_formula != struct.reduced_formula:
+    if observed_formula != pmg_struct.reduced_formula:
         err_msg = (
             f"Invalid WP multiplicities - {prototype_label}, expected "
-            f"{observed_formula} to be {struct.reduced_formula}"
+            f"{observed_formula} to be {pmg_struct.reduced_formula}"
         )
         if raise_errors:
             raise ValueError(err_msg)

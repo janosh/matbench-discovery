@@ -107,6 +107,7 @@ metrics:
       κ_SRME: 0.4079
       pred_file: models/eqnorm/eqnorm-mptrj/2025-06-16-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/55429706
+      κ_SRE: 0.2722
   geo_opt:
     pred_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE-FIRE.jsonl.gz
     pred_file_url: https://figshare.com/files/55550972

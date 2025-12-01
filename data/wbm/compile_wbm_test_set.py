@@ -315,7 +315,7 @@ col_map = {
 # WBM summary was shared twice, once on google drive, once on materials cloud
 # download both and check for consistency
 df_summary = pd.read_csv(
-    f"{WBM_DIR}/raw/wbm-summary.txt", sep="\t", names=col_map.values()
+    f"{WBM_DIR}/raw/wbm-summary.txt", sep="\t", names=list(col_map.values())
 ).set_index(Key.mat_id)
 
 df_summary_bz2 = pd.read_csv(

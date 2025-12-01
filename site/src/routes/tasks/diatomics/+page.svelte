@@ -1,6 +1,6 @@
 <script lang="ts">
   import { DiatomicCurve, type ModelData } from '$lib'
-  import { elem_symbols } from 'matterviz'
+  import { ELEM_SYMBOLS } from 'matterviz/labels'
 
   let { data } = $props()
   let { diatomic_models = [], diatomic_curves = {}, errors = {} } = data ?? {}
@@ -30,7 +30,7 @@
   const [humu_nuc_key, _hetero_nuc_key] = [`homo-nuclear`, `hetero-nuclear`] as const
 
   // Generate list of homo-nuclear diatomic formulas for elements 1-119
-  const homo_diatomic_formulas = elem_symbols.map((symbol) => `${symbol}-${symbol}`)
+  const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
 
   // Create a Map to store model colors consistently
   const model_colors = new Map<string, ColorType>(
