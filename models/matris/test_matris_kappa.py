@@ -11,6 +11,7 @@
 # "phono3py>=3.19.3",
 # "phonopy>=2.43.5",
 # "matbench-discovery>=1.3.1",
+# "matris @ git+https://github.com/HPC-AI-Team/MatRIS.git",
 # ]
 # [tool.uv.sources]
 # matbench-discovery = { path = "../../", editable = true }
