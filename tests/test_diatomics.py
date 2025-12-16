@@ -143,7 +143,7 @@ def test_calc_diatomic_curve_prior_results() -> None:
     }
 
     # Calculate new results but with same pair
-    results = calc_diatomic_curve(pairs, calculator, "test", distances, initial_results)  # type: ignore[arg-type]
+    results = calc_diatomic_curve(pairs, calculator, "test", distances, initial_results)
 
     # Cu2 results should be recalculated since it's in pairs
     assert len(results["Cu-Cu"]["energies"]) == 1

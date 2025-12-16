@@ -68,7 +68,7 @@
 
   /* Component variables and layout */
   --github-corner-color: var(--page-bg);
-  --github-corner-bg: white;
+  --github-corner-bg: var(--text-color);
   --tooltip-bg: var(--surface-bg);
   --tooltip-shadow: drop-shadow(0 1px 8px var(--shadow));
 

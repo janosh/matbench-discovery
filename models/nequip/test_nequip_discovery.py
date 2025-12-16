@@ -9,7 +9,6 @@ Then refactored for nequip and SLURM on the Frontier HPC
 
 # uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
 
-import contextlib
 import os
 import warnings
 from glob import glob
@@ -31,11 +30,13 @@ from matbench_discovery import timestamp
 from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import Task
 
-with contextlib.suppress(ImportError):
-    # OpenEquivariance/CuEquivariance libraries need to be loaded to allow
-    # their use in ASE calculators, if model was compiled with these accelerations
-    # (see NequIP/Allegro docs), so here we try to import them in case models were
-    # compiled with these settings
+try:  # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use
+    # in ASE calculators, if model was compiled with these accelerations (see
+    # NequIP/Allegro docs), so here we try to import them in case models were compiled
+    # with these settings
+    import cuequivariance_torch  # noqa: F401
+    import openequivariance  # noqa: F401
+except ImportError:
     pass
 
 
@@ -49,7 +50,7 @@ ase_optimizer = "GOQN"  # faster than "FIRE" from tests, gives the same results;
 ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
 
 max_steps = 500
-force_max = 0.05  # Run until the forces are smaller than this in eV/A
+force_max = 0.005  # Run until the forces are smaller than this in eV/A
 
 slurm_nodes = int(os.getenv("SLURM_NNODES", "1"))
 slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", "1"))

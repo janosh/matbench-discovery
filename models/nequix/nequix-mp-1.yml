@@ -105,6 +105,7 @@ metrics:
       pred_file: models/nequix/nequix-mp-1/2025-08-17-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/57262724
       κ_SRME: 0.4461
+      κ_SRE: 0.2901
   geo_opt:
     pred_file: models/nequix/nequix-mp-1/2025-08-17-wbm-IS2RE-FIRE.jsonl.gz
     pred_file_url: https://figshare.com/files/57262715

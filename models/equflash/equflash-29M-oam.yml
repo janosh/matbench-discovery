@@ -71,6 +71,7 @@ metrics:
       pred_file: models/equflash/2025-06-23-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/57277382
       κ_SRME: 0.1583
+      κ_SRE: 0.0772
   geo_opt:
     pred_file: models/equflash/2025-06-23-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/57277370

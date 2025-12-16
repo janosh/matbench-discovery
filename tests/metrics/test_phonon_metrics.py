@@ -1,5 +1,7 @@
 """Tests for thermal conductivity metrics."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -506,7 +508,7 @@ def test_write_metrics_to_yaml(
 
         with patch("builtins.open", mock_open()):
             phonon_metrics.write_metrics_to_yaml(
-                mock_model,  # type: ignore[arg-type]
+                cast("Model", mock_model),
                 metrics_data,
                 "models/test/kappa-103.json.gz",
             )

@@ -43,7 +43,7 @@ def validate_model_metadata(metadata: dict[str, Any], metadata_file: str) -> Non
         raise ValueError(f"Model {metadata_file} has status != 'complete'")
 
     try:  # check if model_type is valid
-        ModelType(metadata.get("model_type"))  # type: ignore[arg-type]
+        ModelType(metadata.get("model_type"))
     except ValueError as exc:
         exc.add_note(f"{metadata_file=}\nPick from {', '.join(ModelType)}")
         raise

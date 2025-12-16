@@ -97,10 +97,12 @@ def test_get_protostructure_label(struct: Structure, label: str) -> None:
 
 def test_get_protostructure_label_with_ase_atoms() -> None:
     """Test that get_protostructure_label() works with ASE Atoms input."""
+    from ase import Atoms
     from pymatgen.io.ase import AseAtomsAdaptor
 
     # Convert NaCl structure to ASE Atoms
     NaCl_atoms = AseAtomsAdaptor.get_atoms(NaCl)
+    assert isinstance(NaCl_atoms, Atoms)
     # Get prototype label for both Structure and Atoms versions
     struct_label = prototype.get_protostructure_label(NaCl)
     atoms_label = prototype.get_protostructure_label(NaCl_atoms)
@@ -110,6 +112,7 @@ def test_get_protostructure_label_with_ase_atoms() -> None:
 
     # Test with a more complex structure
     SrTiO3_atoms = AseAtomsAdaptor.get_atoms(SrTiO3_perovskite)
+    assert isinstance(SrTiO3_atoms, Atoms)
     atoms_label = prototype.get_protostructure_label(SrTiO3_atoms)
     assert atoms_label == "A3BC_cP5_221_c_a_b:O-Sr-Ti"
 

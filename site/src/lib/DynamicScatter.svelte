@@ -73,7 +73,7 @@
     batch_size,
     epochs,
     n_layers,
-  ] as const
+  ]
 
   let model_counts_by_prop = $derived(
     options.reduce(
@@ -191,7 +191,6 @@
       <Select
         {options}
         id={control.id}
-        selected={[axes[control.id]]}
         bind:value={axes[control.id]}
         placeholder="Select {control.label}"
         maxSelect={1}
@@ -287,7 +286,6 @@
         </label>
         <ColorScaleSelect
           bind:value={color_scheme}
-          selected={[color_scheme]}
           style="margin: 0; grid-column: 1/-1"
         />
         <label title="Toggle the visibility of vertical grid lines">
@@ -378,7 +376,6 @@
     </DraggablePane>
 
     <button
-      class="fullscreen-button"
       onclick={() => {
         if (document.fullscreenElement === container_el) {
           document.exitFullscreen()
@@ -426,7 +423,7 @@
     flex-direction: column;
     gap: 1em;
   }
-  button.fullscreen-button {
+  button[title$='fullscreen'] {
     position: absolute;
     top: 1em;
     right: 3.3em;

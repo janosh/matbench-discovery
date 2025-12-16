@@ -89,8 +89,8 @@ training_cost:
 
 requirements:
   torch: '2'
-  nequip: 0.7.0 # >=0.14.0 recommended
-  allegro: 0.5.0 # >=0.7.1 recommended
+  nequip: '>=0.7.0' # >=0.14.0 recommended
+  allegro: '>=0.5.0' # >=0.7.1 recommended
 
 training_set: [MPtrj]
 

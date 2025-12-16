@@ -100,19 +100,18 @@
       <li class:active={prop.key == sort_by.key}>
         <button
           id={prop.key}
-          onclick={() => {
-            // Handle the case where key is 'model_name'
+          onclick={() => { // Handle the case where key is 'model_name'
             sort_by = prop
             if (key === `model_name`) order = `asc`
             else order = metric_better_as(key) === `lower` ? `asc` : `desc`
           }}
-          style="font-size: large; height: 26pt; position: relative"
+          style="position: relative"
         >
           {@html short ?? label ?? key}
           {#if description}
             <span
               {@attach tooltip({ content: description })}
-              style="width: 14pt; height: 14pt; position: absolute; top: -7pt; right: -7pt; opacity: 0.6"
+              style="width: 10pt; height: 10pt; position: absolute; top: -5pt; right: -5pt; opacity: 0.6"
             >
               <Icon icon="Info" />
             </span>

@@ -90,9 +90,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.21
+      κ_SRME: 0.2102
       pred_file: models/orb/orb-v3/2025-04-04-kappa-103-disp0.03-float64-orb-v3-con-inf-mpa.json.gz
       pred_file_url: https://figshare.com/files/53461061
+      κ_SRE: 0.1258
   geo_opt:
     pred_file: models/orb/orb-v3/2025-04-04-wbm-geo-opt-orb-v3-con-inf-mpa.jsonl.gz
     pred_file_url: https://figshare.com/files/53461040

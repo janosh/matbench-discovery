@@ -7,44 +7,34 @@ Templated from https://github.com/janosh/matbench-discovery/blob/main/models/mac
 
 # uses commits matbench-discovery 012ccfe, k_srme commit 0269a946, pymatviz v0.15.1
 
-import contextlib
 import json
 import os
-import traceback
 import warnings
-from copy import deepcopy
 from datetime import datetime
 from glob import glob
 from importlib.metadata import version
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import ase.io
-import ase.optimize
-import ase.optimize.sciopt
 import pandas as pd
 import torch
-from ase import Atoms
-from ase.constraints import FixSymmetry
-from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from nequip.ase import NequIPCalculator
-from pymatgen.core.structure import Structure
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import today
 from matbench_discovery.data import DataFiles
-from matbench_discovery.phonons import check_imaginary_freqs
-from matbench_discovery.phonons import thermal_conductivity as ltc
+from matbench_discovery.phonons import KappaCalcParams, calc_kappa_for_structure
 
-if TYPE_CHECKING:
-    from ase.optimize import Optimizer
-
-with contextlib.suppress(ImportError):
-    # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use in
-    # ASE calculators, if model was compiled with these accelerations (see
+try:  # OpenEquivariance/CuEquivariance libraries need to be loaded to allow their use
+    # in ASE calculators, if model was compiled with these accelerations (see
     # NequIP/Allegro docs), so here we try to import them in case models were compiled
     # with these settings
+    import cuequivariance_torch  # noqa: F401
+    import openequivariance  # noqa: F401
+except ImportError:
     pass
+
 
 module_dir = os.path.dirname(__file__)
 compile_path = "*.nequip.pt2"
@@ -93,201 +83,14 @@ elif os.path.isfile(compile_path):
 else:
     raise FileNotFoundError(f"Compiled model file not found at {compile_path}!")
 
-
-def calc_kappa_for_structure(
-    *,  # force keyword-only arguments
-    atoms: Atoms,
-    displacement_distance: float,
-    temperatures: list[float],
-    ase_optimizer: str,
-    ase_filter: str,
-    max_steps: int,
-    force_max: float,
-    symprec: float,
-    enforce_relax_symm: bool,
-    save_forces: bool,
-    out_dir: str,
-    task_id: int,
-    device: str | None = None,
-) -> tuple[str, dict[str, Any], dict[str, Any] | None]:
-    """Predict ML kappa for single structure with ray.
-
-    Args:
-        atoms (Atoms): ASE Atoms object with fc2_supercell, fc3_supercell,
-            q_point_mesh keys in its info dict.
-        displacement_distance (float): Displacement distance for phono3py
-        compile_path (str): File path to compiled model checkpoint
-        temperatures (list[float]): Which temperatures to calculate kappa at in Kelvin
-        ase_optimizer (str): ASE optimizer to use
-        ase_filter (str): ASE filter to use
-        max_steps (int): Maximum number of optimization steps
-        force_max (float): Maximum force tolerance
-        symprec (float): Symmetry precision
-        enforce_relax_symm (bool): Whether to enforce symmetry during relaxation
-        conductivity_broken_symm (bool): Whether to calculate conductivity if
-            symmetry broken
-        save_forces (bool): Whether to save force sets
-        out_dir (str): Output directory
-        task_id (int): Task ID for logging
-
-    Returns:
-        tuple[str, dict[str, Any], dict[str, Any] | None]:
-            material ID, results dict, force results dict
-    """
-    print(f"Calculating {Structure.from_ase_atoms(atoms).reduced_formula}")
-    warnings.filterwarnings("ignore", category=FutureWarning, module="torch")
-    if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Using {device=}")
-
-    # Initialize Nequip ASE Calculator from checkpoint
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "Trying to use model type names")
-        calc = NequIPCalculator.from_compiled_model(
-            compile_path=compiled_model_file,
-            device="cuda" if torch.cuda.is_available() else "cpu",
-        )
-
-    # Ensure arrays are writable
-    atoms.arrays = {key: val.copy() for key, val in atoms.arrays.items()}
-
-    mat_id = atoms.info[Key.mat_id]
-    init_info = deepcopy(atoms.info)
-    mat_name = atoms.info["name"]
-    info_dict: dict[str, Any] = {
-        str(Key.mat_id): mat_id,
-        str(Key.formula): mat_name,
-    }
-    err_dict: dict[str, list[str]] = {"errors": [], "error_traceback": []}
-
-    filter_cls: type[Filter] = {
-        "frechet": FrechetCellFilter,
-        "exp": ExpCellFilter,
-    }[ase_filter]
-    optimizer_dict = {
-        "GPMin": ase.optimize.GPMin,
-        "GOQN": ase.optimize.GoodOldQuasiNewton,
-        "BFGSLineSearch": ase.optimize.BFGSLineSearch,
-        "QuasiNewton": ase.optimize.BFGSLineSearch,
-        "SciPyFminBFGS": ase.optimize.sciopt.SciPyFminBFGS,
-        "BFGS": ase.optimize.BFGS,
-        "LBFGSLineSearch": ase.optimize.LBFGSLineSearch,
-        "SciPyFminCG": ase.optimize.sciopt.SciPyFminCG,
-        "FIRE2": ase.optimize.FIRE2,
-        "FIRE": ase.optimize.FIRE,
-        "LBFGS": ase.optimize.LBFGS,
-    }
-    optim_cls: type[Optimizer] = optimizer_dict[ase_optimizer]
-
-    # Initialize variables that might be needed in error handling
-    relax_dict = {"max_stress": None, "reached_max_steps": False}
-    force_results = None
-
-    # Relaxation
-    try:
-        atoms.calc = calc
-        if max_steps > 0:
-            if enforce_relax_symm:
-                atoms.set_constraint(FixSymmetry(atoms))
-                filtered_atoms = filter_cls(atoms, mask=[True] * 3 + [False] * 3)
-            else:
-                filtered_atoms = filter_cls(atoms)
-
-            os.makedirs(relax_dir := f"{out_dir}/relaxations", exist_ok=True)
-            optimizer = optim_cls(filtered_atoms, logfile=f"{relax_dir}/{task_id}.log")
-            optimizer.run(fmax=force_max, steps=max_steps)
-
-            reached_max_steps = optimizer.step == max_steps
-            if reached_max_steps:
-                print(f"Material {mat_id=} reached {max_steps=} during relaxation")
-
-            # maximum residual stress component in for xx,yy,zz and xy,yz,xz
-            # components separately result is a array of 2 elements
-            max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
-
-            atoms.calc = None
-            atoms.constraints = None
-            atoms.info = init_info | atoms.info
-
-            relax_dict = {
-                "max_stress": max_stress,
-                "reached_max_steps": reached_max_steps,
-            }
-
-    except Exception as exc:
-        warnings.warn(f"Failed to relax {mat_name=}, {mat_id=}: {exc!r}", stacklevel=2)
-        traceback.print_exc()
-        err_dict["errors"] += [f"RelaxError: {exc!r}"]
-        err_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict | err_dict, None
-
-    # Calculation of force sets
-    try:
-        ph3 = ltc.init_phono3py(
-            atoms,
-            fc2_supercell=atoms.info["fc2_supercell"],
-            fc3_supercell=atoms.info["fc3_supercell"],
-            q_point_mesh=atoms.info["q_point_mesh"],
-            displacement_distance=displacement_distance,
-            symprec=symprec,
-        )
-
-        ph3, fc2_set, freqs = ltc.get_fc2_and_freqs(
-            ph3, calculator=calc, pbar_kwargs={"disable": True}
-        )
-
-        has_imaginary_freqs = check_imaginary_freqs(freqs)
-        freqs_dict = {Key.has_imag_ph_modes: has_imaginary_freqs, Key.ph_freqs: freqs}
-
-        # if conductivity condition is met, calculate fc3
-        ltc_condition = ignore_imaginary_freqs or not has_imaginary_freqs
-
-        if ltc_condition:
-            fc3_set = ltc.calculate_fc3_set(
-                ph3, calculator=calc, pbar_kwargs={"position": task_id}
-            )
-            ph3.produce_fc3(symmetrize_fc3r=True)
-        else:
-            warnings.warn(
-                f"Imaginary frequencies calculated for {mat_id}, "
-                f"skipping FC3 and LTC calculation!",
-                stacklevel=2,
-            )
-            fc3_set = []
-
-        force_results = (
-            {"fc2_set": fc2_set, "fc3_set": fc3_set} if save_forces else None
-        )
-
-        if not ltc_condition:
-            return mat_id, info_dict | relax_dict | freqs_dict | err_dict, force_results
-
-    except Exception as exc:
-        warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
-        traceback.print_exc()
-        err_dict["errors"] += [f"ForceConstantError: {exc!r}"]
-        err_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict | err_dict, force_results
-
-    # Calculation of conductivity
-    try:
-        ph3, kappa_dict, _cond = ltc.calculate_conductivity(
-            ph3, temperatures=temperatures
-        )
-        return (
-            mat_id,
-            info_dict | relax_dict | freqs_dict | kappa_dict | err_dict,
-            force_results,
-        )
-
-    except Exception as exc:
-        warnings.warn(
-            f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
-        )
-        traceback.print_exc()
-        err_dict["errors"] += [f"ConductivityError: {exc!r}"]
-        err_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict | freqs_dict | err_dict, force_results
+# Initialize calculator once for all structures
+print("Loading NequIP model...")
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", "Trying to use model type names")
+    nequip_calc = NequIPCalculator.from_compiled_model(
+        compile_path=compiled_model_file,
+        device="cuda" if torch.cuda.is_available() else "cpu",
+    )
 
 
 job_name = f"kappa-103-{ase_optimizer}-dist={displacement_distance}-{fmax=}-{symprec=}"
@@ -304,21 +107,20 @@ if slurm_array_task_count > 1:
     atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]
 
 # Save run parameters
-remote_params = dict(
-    # model_name=model_name,
-    ase_optimizer=ase_optimizer,
-    ase_filter=ase_filter,
-    max_steps=max_steps,
-    force_max=fmax,
-    symprec=symprec,
-    enforce_relax_symm=enforce_relax_symm,
-    temperatures=temperatures,
-    out_dir=out_dir,
-    displacement_distance=displacement_distance,
-    save_forces=save_forces,
-)
+kappa_params: KappaCalcParams = {
+    "ase_optimizer": ase_optimizer,
+    "ase_filter": ase_filter,
+    "max_steps": max_steps,
+    "force_max": fmax,
+    "symprec": symprec,
+    "enforce_relax_symm": enforce_relax_symm,
+    "temperatures": temperatures,
+    "out_dir": out_dir,
+    "displacement_distance": displacement_distance,
+    "save_forces": save_forces,
+}
 run_params = dict(
-    **remote_params,
+    **kappa_params,
     n_structures=len(atoms_list),
     struct_data_path=DataFiles.phonondb_pbe_103_structures.path,
     versions={dep: version(dep) for dep in ("numpy", "torch", "nequip")},
@@ -332,9 +134,12 @@ kappa_results: dict[str, dict[str, Any]] = {}
 force_results: dict[str, dict[str, Any]] = {}
 
 for idx, atoms in enumerate(tqdm(atoms_list, desc="Calculating kappa...")):
-    mat_id, result_dict, force_dict = calc_kappa_for_structure(  # type: ignore[missing-argument]
+    mat_id, result_dict, force_dict = calc_kappa_for_structure(
         atoms=atoms,
-        **remote_params,  # type: ignore[invalid-argument-type]
+        calculator=nequip_calc,
+        ignore_imaginary_freqs=ignore_imaginary_freqs,
+        formula_getter=lambda a: a.info.get("name", a.get_chemical_formula()),
+        **kappa_params,
         task_id=idx,
     )
     kappa_results[mat_id] = result_dict
