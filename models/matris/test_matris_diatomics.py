@@ -9,7 +9,7 @@
 # "pymatviz==0.17.2",
 # "scikit-learn==1.7.2",
 # "tqdm==4.67.1",
-# "matbench-discovery"==1.3.1,
+# "matbench-discovery==1.3.1",
 # "matris @ git+https://github.com/HPC-AI-Team/MatRIS.git",
 # ]
 #

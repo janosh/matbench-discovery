@@ -8,6 +8,8 @@
 # "pymatviz>=0.17.2",
 # "scikit-learn>=1.7.2",
 # "tqdm>=4.67.1",
+# "pandas>=2.2.0",
+# "moyopy>=0.7.0",
 # "phono3py>=3.19.3",
 # "phonopy>=2.43.5",
 # "matbench-discovery>=1.3.1",
