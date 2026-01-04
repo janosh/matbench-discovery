@@ -61,7 +61,7 @@ def batch_to_atoms(
     atomic_nums = torch.split(batch.atomic_numbers, n_atoms)  # type: ignore[attr-defined]
     bs = int((batch.batch.max() + 1).detach().cpu())  # type: ignore[attr-defined]
     if results is not None:
-        results = {
+        results = {  # type: ignore[assignment]
             key: (
                 val.view(ASE_PROP_RESHAPE.get(key, -1)).tolist()
                 if len(val) == bs
@@ -634,7 +634,7 @@ class OptimizableFrechetBatch(OptimizableUnitCellBatch):
         pos[n_atoms:] = self.exp_cell_factor * cells.reshape(-1, 3)
         return pos
 
-    def set_positions(self, new: torch.Tensor) -> None:
+    def set_positions(self, new: torch.Tensor) -> None:  # type: ignore[override]
         n_atoms = self.batch.num_nodes
         new2 = new.clone()
         batched_cell = (new[n_atoms:] / self.exp_cell_factor).reshape(-1, 3, 3)

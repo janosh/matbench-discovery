@@ -49,7 +49,7 @@ def calculate_fc3_set_batch(
     start_idx = 0
     while start_idx < len(graph_list):
         end_idx = min(start_idx + batch_size, len(graph_list))
-        batch = Batch.from_data_list(graph_list[start_idx:end_idx]).to(device)
+        batch = Batch.from_data_list(graph_list[start_idx:end_idx]).to(device)  # type: ignore[attr-defined]
         result = calculator.trainer.predict(batch, per_image=False, disable_tqdm=True)  # type: ignore[attr-defined]
         forces.append(result["forces"].detach().cpu().numpy().reshape(-1, n_atoms, 3))
         start_idx = end_idx

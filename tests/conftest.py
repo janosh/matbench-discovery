@@ -45,7 +45,10 @@ def monoclinic_struct() -> Structure:
 def df_float() -> pd.DataFrame:
     rng = np.random.default_rng(seed=0)
 
-    return pd.DataFrame(rng.normal(size=(10, 5)), columns=[*"ABCDE"])
+    # ty false positive: list[str] is valid for columns
+    return pd.DataFrame(
+        rng.normal(size=(10, 5)), columns=["A", "B", "C", "D", "E"]  # type: ignore[arg-type]
+    )
 
 
 @pytest.fixture

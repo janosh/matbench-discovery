@@ -82,7 +82,7 @@ if slurm_array_job_id == "debug":
     else:
         pass
 elif slurm_array_task_count > 1:
-    atoms_list = np.array_split(atoms_list, slurm_array_task_count)[
+    atoms_list = np.array_split(atoms_list, slurm_array_task_count)[  # type: ignore[arg-type]
         slurm_array_task_id - 1
     ]
 

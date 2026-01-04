@@ -133,7 +133,7 @@ def ml_relax(
     # (since they have been changed, see linked comment above).
     # So instead just manually fix it for now.
     # Remove this once pyg dependency is removed
-    if isinstance(relaxed_batch.sid, list):
-        relaxed_batch.sid = [sid for sid_list in relaxed_batch.sid for sid in sid_list]
+    if isinstance(relaxed_batch.sid, list):  # type: ignore[union-attr]
+        relaxed_batch.sid = [sid for sid_list in relaxed_batch.sid for sid in sid_list]  # type: ignore[union-attr]
 
     return n_trajs, relaxed_batch

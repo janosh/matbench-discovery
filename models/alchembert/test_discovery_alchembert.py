@@ -39,7 +39,7 @@ def main(best_epoch: int, val_mae: float) -> None:
     if predictions is None:
         raise ValueError("Predictions are None")
 
-    predictions = [tensor.cpu().item() for tensor in predictions]
+    predictions = [tensor.cpu().item() for tensor in predictions]  # type: ignore[union-attr]
     df_preds = pd.DataFrame({"e_form_per_atom_alchembert": predictions})
     df_wbm = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
     df_preds[Key.mat_id] = df_wbm.index.to_numpy()

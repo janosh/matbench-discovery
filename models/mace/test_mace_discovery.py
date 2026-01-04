@@ -112,7 +112,7 @@ run_params = {
     "force_max": force_max,
     "ase_optimizer": ase_optimizer,
     "device": device,
-    Key.model_params: count_parameters(mace_calc.models[0]),
+    Key.model_params: count_parameters(mace_calc.models[0]),  # type: ignore[arg-type]
     "model_name": model_name,
     "dtype": dtype,
     "cell_filter": "FrechetCellFilter",

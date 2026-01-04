@@ -138,9 +138,10 @@ def hist_classified_stable_vs_hull_dist(
         )
 
         # combine histograms into a single dataframe
+        # ty false positive: list[str] is valid for index
         df_hist = pd.DataFrame(
             (hist_true_pos, hist_false_neg, hist_false_pos, hist_true_neg),
-            index=clf_labels,
+            index=list(clf_labels),  # type: ignore[arg-type]
         ).T
         df_hist[x_col] = bin_edges[:-1]
         df_melt = df_hist.melt(
@@ -283,7 +284,10 @@ def rolling_mae_vs_hull_dist(
     models: list[str] = list(e_above_hull_preds)
 
     if df_rolling_err is None or df_err_std is None:
-        df_rolling_err = pd.DataFrame(columns=models, index=bins)
+        # ty false positive: list[str] is valid for columns
+        df_rolling_err = pd.DataFrame(
+            index=bins, columns=models  # type: ignore[arg-type]
+        )
         df_err_std = df_rolling_err.copy()
 
         for model in (
