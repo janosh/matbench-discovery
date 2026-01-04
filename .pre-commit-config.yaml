@@ -16,7 +16,9 @@ repos:
         name: ty check
         entry: ty check
         language: python
-        additional_dependencies: [ty==0.0.1a26]
+        types: [python]
+        additional_dependencies:
+          [ty, numpy @ git+https://github.com/numpy/numpy]
         args: [--output-format, concise, --ignore, unresolved-import]
 
   - repo: https://github.com/janosh/format-ipy-cells
