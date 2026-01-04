@@ -55,7 +55,7 @@ def get_prototype_formula(composition: Composition, amt_tol: float = 1e-8) -> st
         f"{elem}{int(amt) if abs(amt % 1) < amt_tol else amt}" if amt != 1 else elem
         for elem, amt in zip(
             string.ascii_uppercase,
-            [reduced[key] for key in sorted(reduced, key=str)],  # type: ignore[arg-type]
+            [reduced[key] for key in sorted(reduced, key=str)],
             strict=False,
         )
     )

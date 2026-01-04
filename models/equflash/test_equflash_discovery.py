@@ -198,7 +198,7 @@ if __name__ == "__main__":
         n_traj, batch = ml_relax(batch, trainer, 500, args.fmax, relax_cell=True)
         atoms_list = batch_to_atoms(
             batch,
-            {"forces": batch.forces, "energy": batch.energy, "stress": batch.stress},  # type: ignore[attr-defined]
+            {"forces": batch.forces, "energy": batch.energy, "stress": batch.stress},
         )
 
         for mat_id, atoms, ntraj in zip(
@@ -206,7 +206,7 @@ if __name__ == "__main__":
         ):
             unwrapped = getattr(atoms, "atoms", atoms)
             relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
-            rmsd, max_dist = compute_rmsd(relaxed_struct, structs_wbm[mat_id])  # type: ignore[arg-type]
+            rmsd, max_dist = compute_rmsd(relaxed_struct, structs_wbm[mat_id])
             relax_results[mat_id] = {
                 "energy": atoms.get_total_energy(),
                 "rmsd": rmsd,

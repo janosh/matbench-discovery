@@ -71,9 +71,9 @@ def ml_relax(
         # clone the batch otherwise you can not run batch.to_data_list
         # see https://github.com/pyg-team/pytorch_geometric/issues/8439#issuecomment-1826747915
         if relax_cell or relax_volume:
-            optimizable = OptimizableFrechetBatch(batch.clone(), trainer=model)  # type: ignore[attr-defined]
+            optimizable = OptimizableFrechetBatch(batch.clone(), trainer=model)
         else:
-            optimizable = OptimizableBatch(batch.clone(), trainer=model)  # type: ignore[attr-defined]
+            optimizable = OptimizableBatch(batch.clone(), trainer=model)
 
         # Run ML-based relaxation
         traj_dir = relax_opt.get("traj_dir")
@@ -133,7 +133,7 @@ def ml_relax(
     # (since they have been changed, see linked comment above).
     # So instead just manually fix it for now.
     # Remove this once pyg dependency is removed
-    if isinstance(relaxed_batch.sid, list):  # type: ignore[union-attr]
-        relaxed_batch.sid = [sid for sid_list in relaxed_batch.sid for sid in sid_list]  # type: ignore[union-attr]
+    if isinstance(relaxed_batch.sid, list):
+        relaxed_batch.sid = [sid for sid_list in relaxed_batch.sid for sid in sid_list]
 
     return n_trajs, relaxed_batch

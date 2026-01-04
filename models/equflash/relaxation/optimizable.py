@@ -56,12 +56,12 @@ def batch_to_atoms(
     Returns:
         list of Atoms
     """
-    n_systems = batch.natoms.shape[0]  # type: ignore[attr-defined]
-    n_atoms = batch.natoms.tolist()  # type: ignore[attr-defined]
-    atomic_nums = torch.split(batch.atomic_numbers, n_atoms)  # type: ignore[attr-defined]
-    bs = int((batch.batch.max() + 1).detach().cpu())  # type: ignore[attr-defined]
+    n_systems = batch.natoms.shape[0]
+    n_atoms = batch.natoms.tolist()
+    atomic_nums = torch.split(batch.atomic_numbers, n_atoms)
+    bs = int((batch.batch.max() + 1).detach().cpu())
     if results is not None:
-        results = {  # type: ignore[assignment]
+        results = {
             key: (
                 val.view(ASE_PROP_RESHAPE.get(key, -1)).tolist()
                 if len(val) == bs
@@ -70,12 +70,12 @@ def batch_to_atoms(
             for key, val in results.items()
         }
 
-    positions = torch.split(batch.pos, n_atoms)  # type: ignore[attr-defined]
+    positions = torch.split(batch.pos, n_atoms)
 
     atoms_objects = []
     for idx in range(n_systems):
         pos = positions[idx].cpu().detach().numpy()
-        cell = batch.cell[idx].cpu().detach().numpy()  # type: ignore[attr-defined]
+        cell = batch.cell[idx].cpu().detach().numpy()
 
         # TODO take pbc from data
         if wrap_pos:
@@ -177,7 +177,7 @@ class OptimizableBatch:
         self.trainer = trainer
         torch.set_default_dtype(torch.float64)
 
-        self.batch = batch.to(self.device)  # type: ignore[attr-defined]
+        self.batch = batch.to(self.device)
         self.transform = transform
         self.numpy = numpy
         self.mask_converged = mask_converged

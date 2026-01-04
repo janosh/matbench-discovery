@@ -110,7 +110,7 @@ for material_id in tqdm(structures, desc="Relaxing"):
             cell_filter="FrechetCellFilter",
         )
         relax_results[material_id] = {
-            e_pred_col: relax_result["trajectory"].energies[-1]  # type: ignore[union-attr]
+            e_pred_col: relax_result["trajectory"].energies[-1]
         }
         if max_steps > 0:
             relax_struct = relax_result["final_structure"]
