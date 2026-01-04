@@ -30,7 +30,8 @@ all_mp_computed_structure_entries = MPRester().get_entries("")
 # save all ComputedStructureEntries to disk
 # mp-15590 appears twice so we drop_duplicates()
 df_mp_cse = pd.DataFrame(
-    all_mp_computed_structure_entries, columns=["entry"]  # type: ignore[arg-type]
+    all_mp_computed_structure_entries,
+    columns=["entry"],
 )
 df_mp_cse.index.name = Key.mat_id
 df_mp_cse.index = [e.entry_id for e in df_mp_cse.entry]

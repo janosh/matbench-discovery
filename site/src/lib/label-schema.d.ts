@@ -22,27 +22,27 @@ export type HttpUrl = string
  * via the `definition` "license_enum".
  */
 export type LicenseEnum =
-  | `MIT`
-  | `Apache-2.0`
-  | `CC-BY-4.0`
-  | `CC-BY-SA-4.0`
-  | `CC-BY-NC-4.0`
-  | `GPL-3.0`
-  | `BSD-3-Clause`
-  | `LGPL-3.0`
-  | `Meta Research`
-  | `ASL`
-  | `unreleased`
+  | 'MIT'
+  | 'Apache-2.0'
+  | 'CC-BY-4.0'
+  | 'CC-BY-SA-4.0'
+  | 'CC-BY-NC-4.0'
+  | 'GPL-3.0'
+  | 'BSD-3-Clause'
+  | 'LGPL-3.0'
+  | 'Meta Research'
+  | 'ASL'
+  | 'unreleased'
 /**
  * This interface was referenced by `Label`'s JSON-Schema
  * via the `definition` "ModelType".
  */
-export type ModelType = `GNN` | `UIP` | `BO-GNN` | `Fingerprint` | `Transformer` | `RF`
+export type ModelType = 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
 /**
  * This interface was referenced by `Label`'s JSON-Schema
  * via the `definition` "TargetType".
  */
-export type TargetType = `E` | `EF_G` | `EF_D` | `EFS_G` | `EFS_D` | `EFS_GM` | `EFS_DM`
+export type TargetType = 'E' | 'EF_G' | 'EF_D' | 'EFS_G' | 'EFS_D' | 'EFS_GM' | 'EFS_DM'
 
 export interface Label {
   [k: string]: unknown
@@ -106,7 +106,7 @@ export interface Label1 {
   /**
    * Sort direction: higher is better, lower is better, or null for no sorting
    */
-  better?: `higher` | `lower` | null
+  better?: 'higher' | 'lower' | null
   /**
    * CSS string for cell style
    */
@@ -122,7 +122,7 @@ export interface Label1 {
   /**
    * Scale type for the metric
    */
-  scale_type?: `log` | `linear`
+  scale_type?: 'log' | 'linear'
 }
 /**
  * This interface was referenced by `Label`'s JSON-Schema
