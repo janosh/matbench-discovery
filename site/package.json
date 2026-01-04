@@ -42,7 +42,7 @@
     "jsdom": "^27.4.0",
     "json-schema-to-typescript": "^15.0.4",
     "katex": "^0.16.27",
-    "matterviz": "^0.2.0",
+    "matterviz": "^0.2.1",
     "mdsvex": "^0.12.6",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-katex-svelte": "^1.2.0",
