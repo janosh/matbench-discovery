@@ -96,7 +96,7 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        col_filter: (col: Label) => !metadata_cols.includes(col.short ?? col.label),
+        col_filter: (col: Label) => !metadata_cols.includes(col.key ?? col.label),
         show_non_compliant: true,
       },
     })
@@ -119,7 +119,7 @@ describe(`MetricsTable`, () => {
   })
 
   it(`filters specified columns`, () => {
-    const col_filter = (col: Label) => ![`F1`, `DAF`].includes(col.short ?? col.label)
+    const col_filter = (col: Label) => ![`F1`, `DAF`].includes(col.key ?? col.label)
     mount(MetricsTable, {
       target: document.body,
       props: { col_filter, show_non_compliant: true },
@@ -245,12 +245,12 @@ describe(`MetricsTable`, () => {
     },
     {
       name: `specific columns`,
-      col_filter: (col: Label) => [`Model`, `F1`].includes(col.short ?? col.label),
+      col_filter: (col: Label) => [`Model`, `F1`].includes(col.key ?? col.label),
       expected_headers: [`Model`, `F1`],
     },
     {
       name: `Model always first`,
-      col_filter: (col: Label) => [`F1`, `Model`, `DAF`].includes(col.short ?? col.label),
+      col_filter: (col: Label) => [`F1`, `Model`, `DAF`].includes(col.key ?? col.label),
       expected_headers: [`Model`, `F1`, `DAF`],
     },
   ])(`handles col_filter: $name`, ({ col_filter, expected_headers }) => {
@@ -264,13 +264,13 @@ describe(`MetricsTable`, () => {
   it.each([
     {
       model_filter: (model: ModelData) => model.model_name.includes(`CHG`),
-      col_filter: (col: Label) => col.label === `Model` || col.short === `F1`,
+      col_filter: (col: Label) => col.label === `Model` || col.key === `F1`,
       expected_model_match: `CHG`,
       expected_headers: [`Model`, `F1`],
     },
     {
       model_filter: (model: ModelData) => model.model_name.includes(`MACE`),
-      col_filter: (col: Label) => [`Model`, `DAF`].includes(col.short ?? col.label),
+      col_filter: (col: Label) => [`Model`, `DAF`].includes(col.key ?? col.label),
       expected_model_match: `MACE`,
       expected_headers: [`Model`, `DAF`],
     },
@@ -298,7 +298,7 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        col_filter: (col: Label) => [`Model`, `F1`].includes(col.short ?? col.label),
+        col_filter: (col: Label) => [`Model`, `F1`].includes(col.key ?? col.label),
         show_non_compliant: true,
       },
     })
@@ -312,8 +312,7 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        col_filter: (col: Label) =>
-          [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+        col_filter: (col: Label) => [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
         show_non_compliant: true,
       },
     })
@@ -482,7 +481,7 @@ describe(`MetricsTable`, () => {
         props: {
           show_non_compliant: true,
           col_filter: (col: Label) =>
-            [`Model`, HYPERPARAMS.model_params.short].includes(col.short),
+            [`Model`, HYPERPARAMS.model_params.key].includes(col.key),
         },
       })
 
@@ -681,7 +680,7 @@ describe(`MetricsTable`, () => {
         props: {
           show_non_compliant: true,
           col_filter: (col: Label) =>
-            [`Model`, `CPS`, `Links`].includes(col.short ?? col.label),
+            [`Model`, `CPS`, `Links`].includes(col.key ?? col.label),
         },
       })
 
@@ -1240,7 +1239,7 @@ describe(`MetricsTable`, () => {
             state.column_order = val
           },
           col_filter: (col: Label) =>
-            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+            [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
           show_non_compliant: true,
         },
       })
@@ -1266,7 +1265,7 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          col_filter: (col: Label) => columns.includes(col.short ?? col.label),
+          col_filter: (col: Label) => columns.includes(col.key ?? col.label),
           show_non_compliant: true,
         },
       })
@@ -1289,7 +1288,7 @@ describe(`MetricsTable`, () => {
             state.column_order = val
           },
           col_filter: (col: Label) =>
-            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+            [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
           show_non_compliant: true,
         },
       })
@@ -1318,7 +1317,7 @@ describe(`MetricsTable`, () => {
     it(`preserves column_order when toggling column visibility`, async () => {
       const state = {
         col_filter: (col: Label) =>
-          [`Model`, `F1`, `DAF`, `CPS`].includes(col.short ?? col.label),
+          [`Model`, `F1`, `DAF`, `CPS`].includes(col.key ?? col.label),
         column_order: [] as string[],
       }
 
@@ -1348,7 +1347,7 @@ describe(`MetricsTable`, () => {
       ]
 
       state.col_filter = (col: Label) =>
-        [`Model`, `F1`, `DAF`].includes(col.short ?? col.label)
+        [`Model`, `F1`, `DAF`].includes(col.key ?? col.label)
       await tick()
 
       expect(state.column_order.length).toBe(initial_order.length)
@@ -1365,7 +1364,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           col_filter: (col: Label) =>
-            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+            [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
           show_non_compliant: true,
         },
       })
@@ -1383,7 +1382,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           col_filter: (col: Label) =>
-            [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
+            [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
           show_non_compliant: true,
         },
       })

@@ -295,27 +295,29 @@ export function assemble_row_data(
       CPS: model[CPS.key],
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,
-      Prec: discovery_metrics?.Precision,
+      Precision: discovery_metrics?.Precision,
       Recall: discovery_metrics?.Recall,
-      Acc: discovery_metrics?.Accuracy,
+      Accuracy: discovery_metrics?.Accuracy,
       TPR: discovery_metrics?.TPR,
       TNR: discovery_metrics?.TNR,
       MAE: discovery_metrics?.MAE,
       RMSE: discovery_metrics?.RMSE,
-      'R<sup>2</sup>': discovery_metrics?.R2,
-      'κ<sub>SRME</sub>': kappa,
-      RMSD: get_nested_value(model, `${RMSD.path}.${RMSD.key}`) as number | undefined,
+      R2: discovery_metrics?.R2,
+      [ALL_METRICS.κ_SRME.key]: kappa,
+      [RMSD.key]: get_nested_value(model, `${RMSD.path}.${RMSD.key}`) as
+        | number
+        | undefined,
       'Training Set': format_train_set(model.training_set, model),
-      [HYPERPARAMS.model_params.short as string]: `<span title="${
+      [HYPERPARAMS.model_params.key as string]: `<span title="${
         format_num(model.model_params, `,`)
       } trainable model parameters" data-sort-value="${model.model_params}">${
         format_num(model.model_params)
       }</span>`,
-      [HYPERPARAMS.ase_optimizer.short ?? ``]: ase_optimizer ?? `n/a`,
-      [HYPERPARAMS.max_steps.short ?? ``]: max_steps !== undefined
+      [HYPERPARAMS.ase_optimizer.key ?? ``]: ase_optimizer ?? `n/a`,
+      [HYPERPARAMS.max_steps.key ?? ``]: max_steps !== undefined
         ? `<span data-sort-value="${max_steps}">${max_steps}</span>`
         : `n/a`,
-      [HYPERPARAMS.max_force.short ?? ``]: max_force !== undefined
+      [HYPERPARAMS.max_force.key ?? ``]: max_force !== undefined
         ? `<span data-sort-value="${max_force}">${max_force}</span>`
         : `n/a`,
       [HYPERPARAMS.cell_filter.label]: cell_filter_display
@@ -354,15 +356,15 @@ export function assemble_row_data(
       } as LinkData,
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
-      [HYPERPARAMS.graph_construction_radius.short as string]: r_cut_str,
+      [HYPERPARAMS.graph_construction_radius.key as string]: r_cut_str,
       style: `border-left: 3px solid var(--${
         is_compliant ? `` : `non-`
       }compliant-color);`,
       org_logos: model.org_logos,
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
-          col.short,
-          get_nested_value(model, `${col.path}.${col.key}`) as number | undefined,
+          col.key,
+          get_nested_value(model, col.path ?? ``) as number | undefined,
         ]),
       ),
     }
@@ -389,9 +391,9 @@ export const sort_models =
   (model_1: ModelData, model_2: ModelData): number => {
     const sort_factor = order === `asc` ? -1 : 1
 
-    // Special case for model_name sorting
-    if (sort_by === `model_name`) {
-      // For model_name, directly use localeCompare with sort_factor
+    // Special case for Model sorting (by model_name)
+    if (sort_by === `Model`) {
+      // For Model, directly use localeCompare with sort_factor
       return sort_factor * model_1.model_name.localeCompare(model_2.model_name)
     }
 
@@ -410,7 +412,7 @@ export const sort_models =
       return sort_factor * (val_1 as string).localeCompare(val_2 as string)
     } else if (typeof val_1 === `number` && typeof val_2 === `number`) {
       // interpret run_time === 0 as infinity
-      if (sort_by === `Run Time (h)`) {
+      if (sort_by === `Run Time`) {
         if (val_1 === 0) return -sort_factor
         if (val_2 === 0) return sort_factor
       }

@@ -291,7 +291,7 @@
         style="font-size: 14px; transform: translate(-1ex, -1em); overflow: visible; white-space: nowrap"
         style:color={colors[idx]}
       >
-        {@html weight.short ?? weight.label}
+        {@html weight.label ?? weight.key}
         <small>{format_num(weight.weight, `.0%`)}</small>
       </foreignObject>
     {/each}

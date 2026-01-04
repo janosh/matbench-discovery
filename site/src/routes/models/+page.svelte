@@ -96,18 +96,18 @@
       prop
       (prop.key)
     }
-      {@const { key, label, short, description } = prop}
+      {@const { key, label, description } = prop}
       <li class:active={prop.key == sort_by.key}>
         <button
           id={prop.key}
           onclick={() => { // Handle the case where key is 'model_name'
             sort_by = prop
-            if (key === `model_name`) order = `asc`
+            if (key === `Model`) order = `asc`
             else order = metric_better_as(key) === `lower` ? `asc` : `desc`
           }}
           style="position: relative"
         >
-          {@html short ?? label ?? key}
+          {@html label ?? key}
           {#if description}
             <span
               {@attach tooltip({ content: description })}

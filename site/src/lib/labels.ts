@@ -21,8 +21,7 @@ export const format_power_ten = (text: string): string =>
 export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
   Accuracy: {
     key: `Accuracy`,
-    short: `Acc`,
-    label: `Accuracy`,
+    label: `Acc`,
     description:
       `Accuracy of classifying crystals as thermodynamically stable or unstable`,
     better: `higher`,
@@ -30,11 +29,10 @@ export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
   },
   F1: {
     key: `F1`,
-    short: `F1`,
-    label: `F1 Score`,
+    label: `F1`,
     path: `metrics.discovery.unique_prototypes`,
     description:
-      `Harmonic mean of precision and recall for stable/unstable material classification`,
+      `F1 Score: Harmonic mean of precision and recall for stable/unstable material classification`,
     range: [0, 1],
     better: `higher`,
   },
@@ -48,8 +46,7 @@ export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
   },
   Precision: {
     key: `Precision`,
-    short: `Prec`,
-    label: `Precision`,
+    label: `Prec`,
     description: `Precision of classifying thermodynamic stability`,
     path: `metrics.discovery.unique_prototypes`,
     better: `higher`,
@@ -103,75 +100,74 @@ export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
 
 export const METADATA_COLS: MetadataLabels = {
   model_name: {
+    key: `Model`,
     label: `Model`,
-    key: `model_name`,
     description: `Model name`,
     sticky: true,
     sortable: true,
     better: null,
   },
   training_set: {
+    key: `Training Set`,
     label: `Training Set`,
-    key: `training_set`,
     description: `Size of and link to model training set`,
   },
   targets: {
+    key: `Targets`,
     label: `Targets`,
-    key: `targets`,
     description: `Target property used to train the model`,
   },
   date_added: {
+    key: `Date Added`,
     label: `Date Added`,
-    key: `date_added`,
     format: `%b %y`,
     description: `Submission date to the leaderboard`,
   },
   links: {
+    key: `Links`,
     label: `Links`,
-    key: `links`,
     description: `Model resources: paper, code repository and submission pull request`,
     sortable: false,
   },
   r_cut: {
+    key: `r<sub>cut</sub>`,
     label: `r<sub>cut</sub>`,
-    key: `r_cut`,
     description:
       `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
     unit: `Å`,
-    visible: false,
   },
   n_training_materials: {
-    label: `Number of Training Materials`,
-    key: `n_training_materials`,
+    key: `Training Materials`,
+    label: `Training Materials`,
     description: `Number of training materials`,
     format: `~s`,
   },
   n_training_structures: {
-    label: `Number of Training Structures`,
-    key: `n_training_structures`,
+    key: `Training Structures`,
+    label: `Training Structures`,
     description: `Number of training structures`,
     format: `~s`,
   },
   checkpoint_license: {
-    label: `Checkpoint License`,
-    key: `checkpoint_license`,
+    key: `Ckpt License`,
+    label: `Ckpt License`,
     description: `Model checkpoint license`,
     visible: false,
   },
   code_license: {
+    key: `Code License`,
     label: `Code License`,
-    key: `code_license`,
     description: `Model code license`,
     visible: false,
   },
   missing_preds: {
-    key: `missing_preds`,
-    label: `Missing Predictions`,
+    key: `Missing Preds`,
+    label: `Missing Preds`,
     description: `Number of missing predictions`,
     visible: false,
   },
   'Run Time (h)': {
-    key: `run_time_h`,
+    key: `Run Time`,
     label: `Run Time`,
     description: `Runtime in hours`,
     unit: `h`,
@@ -179,7 +175,7 @@ export const METADATA_COLS: MetadataLabels = {
     better: `lower`,
   },
   org: {
-    key: `org`,
+    key: `Org`,
     label: `Org`,
     sortable: false,
     description: `Most common author affiliations`,
@@ -191,95 +187,89 @@ export const METADATA_COLS: MetadataLabels = {
 
 export const HYPERPARAMS: HyperparamLabels = {
   model_params: {
-    label: `Number of model parameters`,
     key: `model_params`,
-    short: `Params`,
+    label: `Params`,
     description: `Number of trainable model parameters`,
     format: `~s`,
   },
   graph_construction_radius: {
-    label: `Graph construction radius r<sub>cut</sub>`,
-    key: `graph_construction_radius`,
-    short: `r<sub>cut</sub>`,
+    key: `r<sub>cut</sub>`,
+    label: `r<sub>cut</sub>`,
     path: `hyperparams`,
     description:
       `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
   },
   max_force: {
-    label: `Max force`,
-    key: `max_force`,
-    short: `f<sub>max</sub>`,
+    key: `f<sub>max</sub>`,
+    label: `f<sub>max</sub>`,
     path: `hyperparams`,
     description:
       `Max remaining force allowed on any atom in the structure for geometry optimization convergence`,
     unit: `eV/Å`,
   },
   max_steps: {
-    label: `Max relaxation steps`,
-    key: `max_steps`,
-    short: `Steps`,
+    key: `Steps`,
+    label: `Steps`,
     path: `hyperparams`,
     description: `Maximum number of optimization steps allowed`,
   },
   ase_optimizer: {
-    label: `ASE optimizer`,
-    key: `ase_optimizer`,
-    short: `Optimizer`,
+    key: `Optimizer`,
+    label: `Optimizer`,
     path: `hyperparams`,
     description:
       `ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)`,
   },
   cell_filter: {
+    key: `Cell filter`,
     label: `Cell filter`,
-    key: `cell_filter`,
     path: `hyperparams`,
     description:
       `ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)`,
   },
   batch_size: {
+    key: `Batch size`,
     label: `Batch size`,
-    key: `batch_size`,
     path: `hyperparams`,
     description: `Batch size`,
   },
   epochs: {
-    label: `Training epochs`,
-    key: `epochs`,
+    key: `Epochs`,
+    label: `Epochs`,
     path: `hyperparams`,
     description: `Number of training epochs`,
   },
   n_layers: {
-    label: `Number of layers`,
-    key: `n_layers`,
+    key: `Layers`,
+    label: `Layers`,
     path: `hyperparams`,
     description: `Number of (usually message passing) layers`,
   },
   learning_rate: {
-    label: `Learning rate`,
-    key: `learning_rate`,
+    key: `LR`,
+    label: `LR`,
     path: `hyperparams`,
     description: `Learning rate`,
   },
   max_neighbors: {
-    label: `Max number of neighbors during graph construction`,
-    key: `max_neighbors`,
+    key: `Max neighbors`,
+    label: `Max neighbors`,
     path: `hyperparams`,
-    description: `Maximum number of neighbors`,
+    description: `Maximum number of neighbors during graph construction`,
   },
   n_estimators: {
-    label: `Number of estimators`,
-    key: `n_estimators`,
+    key: `Estimators`,
+    label: `Estimators`,
     path: `hyperparams`,
     description: `Number of estimators`,
   },
 } as const
 
 export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
-  name: { key: `name`, label: `Name`, description: `Name of the dataset`, sticky: true },
+  name: { key: `Name`, label: `Name`, description: `Name of the dataset`, sticky: true },
   structures: {
-    key: `n_structures`,
-    label: `Number of Structures`,
-    short: `Structures`,
+    key: `Structures`,
+    label: `Structures`,
     description:
       `Number of structures in the dataset. Any system with atomic positions and energy/force/stress labels is counted as a structure incl. successive ionic steps in MD/geometry optimization trajectories.`,
     better: `higher`,
@@ -287,16 +277,15 @@ export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
     format: `.3s`,
   },
   materials: {
-    key: `n_materials`,
-    label: `Number of Materials`,
-    short: `Materials`,
+    key: `Materials`,
+    label: `Materials`,
     description: `Number of unique materials/prototypes in the dataset.`,
     better: `higher`,
     scale_type: `log`,
     format: `.3s`,
   },
   created: {
-    key: `created`,
+    key: `Created`,
     label: `Created`,
     description: `Date the dataset was created/started`,
   },
@@ -314,12 +303,12 @@ export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
     style: `text-align: center;`,
   },
   license: {
-    key: `license`,
+    key: `License`,
     label: `License`,
     description: `License under which the dataset is published`,
   },
   method: {
-    key: `method`,
+    key: `Method`,
     label: `Method`,
     description: `Method(s) used to generate the data`,
     style: `max-width: 5em;`,
@@ -331,7 +320,7 @@ export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
     sortable: false,
   },
   links: {
-    key: `links`,
+    key: `Links`,
     label: `Links`,
     description: `Relevant links for the dataset`,
     sortable: false,
@@ -347,14 +336,13 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
         [`symmetry_increase`, `↑`, null, `higher symmetry than`, symprec] as const,
       ],
     )
-    .map(([key, symbol, better, desc, symprec]) => [
-      `${key}_${symprec}`,
+    .map(([metric_key, symbol, better, desc, symprec]) => [
+      `${metric_key}_${symprec}`,
       {
-        key,
+        key: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
         symprec,
-        path: `metrics.geo_opt.symprec=${symprec}`,
-        short: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
-        label: `Σ<sub>${symbol}</sub> (symprec=${format_power_ten(symprec)})`,
+        path: `metrics.geo_opt.symprec=${symprec}.${metric_key}`,
+        label: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
         description:
           `Fraction of structures where ML ground state has ${desc} DFT ground state at ${
             format_power_ten(symprec)
@@ -375,8 +363,7 @@ export const ALL_METRICS: AllMetrics = {
   // Dynamic metrics
   CPS: {
     key: `CPS`,
-    short: `CPS`,
-    label: `Combined Performance Score`,
+    label: `CPS`,
     description:
       `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights. Warning: This is not a stable metric. Further prediction tasks will be added to it in the future with the goal of making it a more holistic measure of overall model utility over time. When referring to it in papers, best include the benchmark version to avoid confusion (e.g. CPS-1 for the first version of CPS introduced in Matbench Discovery v1)`,
     range: [0, 1],
@@ -434,7 +421,7 @@ export const DISCOVERY_SET_LABELS: Record<
 
 export const PROPERTY_LABELS = Object.fromEntries(
   Object.values({ ...ALL_METRICS, ...METADATA_COLS, ...HYPERPARAMS }).map((prop) => [
-    prop.key,
+    prop.key ?? prop.label,
     prop.label,
   ]),
 )
