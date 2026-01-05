@@ -1,11 +1,15 @@
 <script lang="ts">
-  import type { DiscoverySet, ModelData } from '$lib'
+  import { goto } from '$app/navigation'
+  import { page } from '$app/state'
   import {
     DATASETS,
+    DISCOVERY_SETS,
+    type DiscoverySet,
     DynamicScatter,
     GitHubActivityScatter,
     Icon,
     MetricsTable,
+    type ModelData,
     RadarChart,
     SelectToggle,
   } from '$lib'
@@ -28,11 +32,20 @@
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = DATASETS.WBM.n_materials
 
+  // Read initial state from URL query params
+  const url_params = page.url.searchParams
+  const initial_set = url_params.get(`set`)
+  const initial_sort = url_params.get(`sort`)
+  const initial_dir = url_params.get(`dir`)
+  const initial_energy_only = url_params.get(`energy_only`)
+  const initial_non_compliant = url_params.get(`non_compliant`)
+  const initial_compliant = url_params.get(`compliant`)
+
   let table = $state({
-    show_non_compliant: true,
-    show_energy_only: false,
+    show_non_compliant: initial_non_compliant !== `0`,
+    show_energy_only: initial_energy_only === `1`,
     show_combined_controls: true,
-    show_compliant: true,
+    show_compliant: initial_compliant !== `0`,
     show_heatmap: true,
   })
   let export_error: string | null = $state(null)
@@ -50,7 +63,46 @@
     RMSE: false,
   })
 
-  let discovery_set: DiscoverySet = $state(`unique_prototypes`)
+  // Initialize from URL or use defaults
+  let discovery_set: DiscoverySet = $state(
+    DISCOVERY_SETS.includes(initial_set as DiscoverySet)
+      ? (initial_set as DiscoverySet)
+      : `unique_prototypes`,
+  )
+  let sort = $state<{ column: string; dir: `asc` | `desc` }>({
+    column: initial_sort ?? `CPS`,
+    dir: initial_dir === `asc` || initial_dir === `desc` ? initial_dir : `desc`,
+  })
+
+  // Track if we're initializing to avoid triggering URL update on mount
+  let is_mounted = $state(false)
+
+  // Sync state changes to URL
+  $effect(() => {
+    // Skip URL sync during initialization
+    if (!is_mounted) {
+      is_mounted = true
+      return
+    }
+
+    const params = new URLSearchParams()
+
+    // Only add params that differ from defaults
+    if (discovery_set !== `unique_prototypes`) params.set(`set`, discovery_set)
+    if (sort.column !== `CPS`) params.set(`sort`, sort.column)
+    if (sort.dir !== `desc`) params.set(`dir`, sort.dir)
+    if (table.show_energy_only) params.set(`energy_only`, `1`)
+    if (!table.show_non_compliant) params.set(`non_compliant`, `0`)
+    if (!table.show_compliant) params.set(`compliant`, `0`)
+
+    const query_string = params.toString()
+    const new_url = query_string ? `?${query_string}` : page.url.pathname
+
+    // Only update if URL actually changed
+    if (new_url !== `${page.url.pathname}${page.url.search}`) {
+      goto(new_url, { replaceState: true, keepFocus: true, noScroll: true })
+    }
+  })
 
   // Export state object for handle_export
   let export_state = $derived({
@@ -82,8 +134,10 @@
   )
 
   export const snapshot: Snapshot = {
-    capture: () => ({ discovery_set, table }),
-    restore: (values) => ({ discovery_set, table } = values),
+    capture: () => ({ discovery_set, table, sort }),
+    restore: (values) => {
+      ;({ discovery_set, table, sort } = values)
+    },
   }
 </script>
 
@@ -110,6 +164,7 @@
       col_filter={(col) => visible_cols[col.label] ?? true}
       model_filter={() => true}
       {discovery_set}
+      bind:sort
       bind:show_energy_only={table.show_energy_only}
       bind:show_non_compliant={table.show_non_compliant}
       bind:show_compliant={table.show_compliant}

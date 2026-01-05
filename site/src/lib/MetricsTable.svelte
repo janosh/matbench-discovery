@@ -17,6 +17,8 @@
   import { assemble_row_data } from './metrics'
   import { heatmap_class } from './table-export'
 
+  type SortDir = `asc` | `desc`
+
   let {
     discovery_set = $bindable(`unique_prototypes`),
     model_filter = $bindable(() => true),
@@ -31,6 +33,7 @@
     pred_files_dropdown_pos = $bindable(null),
     selected_models = $bindable(new SvelteSet<string>()),
     column_order = $bindable([]),
+    sort = $bindable({ column: `CPS`, dir: `desc` }),
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     discovery_set?: DiscoverySet
@@ -46,6 +49,7 @@
     pred_files_dropdown_pos?: { x: number; y: number; name: string } | null
     selected_models?: Set<string>
     column_order?: string[]
+    sort?: { column: string; dir: SortDir }
   } = $props()
 
   const { model_name, training_set, targets, date_added, links } = METADATA_COLS
@@ -191,8 +195,7 @@
 <HeatmapTable
   data={metrics_data}
   {columns}
-  initial_sort_column="CPS"
-  initial_sort_direction="desc"
+  bind:sort
   sort_hint="Click on column headers to sort table rows"
   special_cells={{
     Links: links_cell as unknown as Snippet<[CellSnippetArgs]>,

@@ -93,11 +93,12 @@ describe(`DynamicScatter.svelte`, () => {
     const controls_grid = document.querySelector(`.controls-grid`)
     expect(controls_grid).toBeDefined()
 
-    // Check that checkboxes are rendered
+    // Check that log-scale checkboxes are rendered in the controls grid
+    // (detailed checkbox state validation is in "regression tests for default values")
     const checkboxes = document.querySelectorAll<HTMLInputElement>(
-      `input[type="checkbox"]`,
+      `.controls-grid input[type="checkbox"]`,
     )
-    expect(checkboxes.length).toBeGreaterThan(0)
+    expect(checkboxes.length).toBe(4) // 4 checkboxes: x-axis log, y-axis log, color log, size log
 
     // Check that the scatter plot container is rendered
     const plot_container = document.querySelector(`div.bleed-1400[style]`)
