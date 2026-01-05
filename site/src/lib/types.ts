@@ -85,6 +85,8 @@ export const DISCOVERY_SETS = [
 ] as const
 export type DiscoverySet = (typeof DISCOVERY_SETS)[number]
 
+export type SortDir = `asc` | `desc`
+
 export type DiatomicsCurves = {
   distances: number[]
   'homo-nuclear': Record<string, { energies: number[]; forces: number[][] }>

@@ -36,7 +36,7 @@ describe(`TableControls`, () => {
 
     mount(TableControls, {
       target: document.body,
-      props: { on_filter_change },
+      props: { on_filter_change, show_energy_only_toggle: true },
     })
 
     const energy_checkbox = find_checkbox_by_label(`Energy-only`)
