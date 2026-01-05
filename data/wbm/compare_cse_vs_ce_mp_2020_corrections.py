@@ -149,7 +149,7 @@ with gzip.open(f"{ROOT}/tmp/cse-wbm-2-34803.json.zip") as file:
 
 cse_mp2020 = cse.copy()
 cse_legacy = cse.copy()
-ce_mp2020 = ComputedEntry.from_dict(cse.to_dict())
+ce_mp2020 = ComputedEntry.from_dict(cse.as_dict())
 ce_legacy = ce_mp2020.copy()
 
 

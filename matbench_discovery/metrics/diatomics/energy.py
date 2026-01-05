@@ -202,7 +202,7 @@ def calc_second_deriv_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     sort_idx = np.argsort(seps)[::-1]  # sort in descending order
     seps = seps[sort_idx]
     energies = energies[sort_idx]
-    d2y = np.gradient(np.gradient(energies, seps), seps)
+    d2y = np.gradient(np.gradient(energies, seps), seps)  # type: ignore[no-matching-overload]
     return float(np.sqrt(np.mean(d2y**2)))
 
 

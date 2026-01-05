@@ -499,7 +499,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             converted_value = value.replace("-", "_").casefold()
 
             if converted_value in cls._value2member_map_:
-                return cls._value2member_map_[converted_value]
+                return cls._value2member_map_[converted_value]  # type: ignore[return-value]
 
         return None
 

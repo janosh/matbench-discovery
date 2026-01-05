@@ -97,8 +97,8 @@
 
 <ScatterPlot
   series={[series]}
-  x_axis={{ label: x_label, format: x_prop?.format ?? `.1s` }}
-  y_axis={{ label: y_label, format: y_prop?.format ?? `.3f` }}
+  x_axis={{ label: x_label, format: x_prop?.format ?? `.1s`, range: [0, null] }}
+  y_axis={{ label: y_label, format: y_prop?.format ?? `.3f`, range: [0, null] }}
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata })}

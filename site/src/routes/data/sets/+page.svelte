@@ -1,10 +1,10 @@
 <script lang="ts">
   import { arr_to_str, DATASETS, format_date, Icon } from '$lib'
-  import HeatmapTable from '$lib/HeatmapTable.svelte'
   import { icon_data } from '$lib/icons'
   import { DATASET_METADATA_COLS, title_case } from '$lib/labels'
   import type { RowData } from '$lib/types'
   import pkg from '$site/package.json'
+  import { HeatmapTable } from 'matterviz'
 
   const license_map: Record<string, string> = {
     'CC-BY-4.0': `Creative Commons Attribution 4.0 International`,

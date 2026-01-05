@@ -62,8 +62,8 @@
     {headingSelector}
     breakpoint={1600}
     minItems={3}
-    aside_style="max-width: 16em; z-index: 1"
-    nav_style="font-size: 9pt"
+    aside_style="max-width: 22em; z-index: 1"
+    nav_style="font-size: 7pt"
     --toc-mobile-width="22em"
     --toc-active-bg="transparent"
     --toc-active-color="var(--link-color)"
@@ -93,7 +93,7 @@
 <style>
   :global(aside.toc.desktop) {
     position: fixed;
-    left: calc(50vw + var(--main-max-width) / 2 - 2em);
+    left: calc(50vw + var(--main-max-width) / 2 + 1em);
   }
   :global(aside.toc.mobile > nav) {
     box-shadow: 0 0 20px var(--shadow);

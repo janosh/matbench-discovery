@@ -145,7 +145,7 @@ train_loader, val_loader = df_to_loader(df_train), df_to_loader(df_val, shuffle=
 
 
 # %%
-prepare_batch = train_loader.dataset.prepare_batch  # type: ignore[unresolved-attribute]
+prepare_batch = train_loader.dataset.prepare_batch
 # triggers error in alignn/train.py line 1059 in train_dgl()
 # f.write("%s, %6f, %6f\n" % (id, target, out_data))
 # TypeError: must be real number, not list

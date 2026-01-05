@@ -29,5 +29,11 @@ export default [
       },
     },
   },
+  {
+    files: [`**/*.d.ts`], // TypeScript declaration files use single quotes for import() types
+    rules: {
+      '@stylistic/quotes': [`error`, `single`, { avoidEscape: true }],
+    },
+  },
   { ignores: [`build/`] },
 ]

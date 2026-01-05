@@ -11,7 +11,7 @@ export type HttpUrl = string
  * This interface was referenced by `DatasetRecord`'s JSON-Schema
  * via the `definition` "method_enum".
  */
-export type MethodEnum = `DFT` | `experiment` | `ML` | `GW` | `DMFT` | `MD`
+export type MethodEnum = 'DFT' | 'experiment' | 'ML' | 'GW' | 'DMFT' | 'MD'
 /**
  * DFT code used for calculations
  *
@@ -19,13 +19,13 @@ export type MethodEnum = `DFT` | `experiment` | `ML` | `GW` | `DMFT` | `MD`
  * via the `definition` "dft_code_enum".
  */
 export type DftCodeEnum =
-  | `VASP`
-  | `Quantum ESPRESSO`
-  | `CASTEP`
-  | `AbInit`
-  | `FHI-aims`
-  | `CP2K`
-  | `Various`
+  | 'VASP'
+  | 'Quantum ESPRESSO'
+  | 'CASTEP'
+  | 'AbInit'
+  | 'FHI-aims'
+  | 'CP2K'
+  | 'Various'
 /**
  * Exchange-correlation functional used in DFT calculations
  *
@@ -33,24 +33,24 @@ export type DftCodeEnum =
  * via the `definition` "functional_enum".
  */
 export type FunctionalEnum =
-  | `PBE`
-  | `PBEsol`
-  | `PBE+U`
-  | `SCAN`
-  | `SCAN+U`
-  | `r2SCAN`
-  | `r2SCAN+U`
-  | `HSE`
-  | `HSE06`
-  | `PBE0`
-  | `Various`
+  | 'PBE'
+  | 'PBEsol'
+  | 'PBE+U'
+  | 'SCAN'
+  | 'SCAN+U'
+  | 'r2SCAN'
+  | 'r2SCAN+U'
+  | 'HSE'
+  | 'HSE06'
+  | 'PBE0'
+  | 'Various'
 /**
  * Pseudopotentials used in DFT calculations
  *
  * This interface was referenced by `DatasetRecord`'s JSON-Schema
  * via the `definition` "pseudo_potentials_enum".
  */
-export type PseudoPotentialsEnum = `PBE` | `PBE_52` | `PBE_54` | `PBE_64` | `Various`
+export type PseudoPotentialsEnum = 'PBE' | 'PBE_52' | 'PBE_54' | 'PBE_64' | 'Various'
 /**
  * License type:
  * - MIT: Massachusetts Institute of Technology
@@ -68,17 +68,17 @@ export type PseudoPotentialsEnum = `PBE` | `PBE_52` | `PBE_54` | `PBE_64` | `Var
  * via the `definition` "license_enum".
  */
 export type LicenseEnum =
-  | `MIT`
-  | `Apache-2.0`
-  | `CC-BY-4.0`
-  | `CC-BY-SA-4.0`
-  | `CC-BY-NC-4.0`
-  | `GPL-3.0`
-  | `BSD-3-Clause`
-  | `LGPL-3.0`
-  | `Meta Research`
-  | `ASL`
-  | `unreleased`
+  | 'MIT'
+  | 'Apache-2.0'
+  | 'CC-BY-4.0'
+  | 'CC-BY-SA-4.0'
+  | 'CC-BY-NC-4.0'
+  | 'GPL-3.0'
+  | 'BSD-3-Clause'
+  | 'LGPL-3.0'
+  | 'Meta Research'
+  | 'ASL'
+  | 'unreleased'
 
 export interface DatasetRecord {
   [k: string]: Dataset
@@ -170,17 +170,17 @@ export interface Dataset {
    * License under which the dataset is published
    */
   license:
-    | `MIT`
-    | `Apache-2.0`
-    | `CC-BY-4.0`
-    | `CC-BY-SA-4.0`
-    | `CC-BY-NC-4.0`
-    | `GPL-3.0`
-    | `BSD-3-Clause`
-    | `LGPL-3.0`
-    | `Meta Research`
-    | `ASL`
-    | `unreleased`
+    | 'MIT'
+    | 'Apache-2.0'
+    | 'CC-BY-4.0'
+    | 'CC-BY-SA-4.0'
+    | 'CC-BY-NC-4.0'
+    | 'GPL-3.0'
+    | 'BSD-3-Clause'
+    | 'LGPL-3.0'
+    | 'Meta Research'
+    | 'ASL'
+    | 'unreleased'
   /**
    * URL to the OPTIMADE API endpoint or null if none
    */

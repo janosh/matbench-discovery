@@ -41,7 +41,7 @@ declare module '*data-files.yml' {
     md5?: string
   }
   type DataFiles = {
-    [K in string]: K extends `_links` ? string : DataFile
+    [K in string]: K extends '_links' ? string : DataFile
   }
   export const data_files: DataFiles
 }
