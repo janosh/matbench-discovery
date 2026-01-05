@@ -63,6 +63,7 @@ export function get_nested_value(
   dotted_path: string, // dotted path to nested value to extract
 ): unknown {
   const keys = dotted_path.split(`.`).filter(Boolean) // remove empty parts
+  if (keys.length === 0) return undefined // empty path returns undefined, not the whole model
   let value: unknown = model
 
   for (const key of keys) {
@@ -364,7 +365,7 @@ export function assemble_row_data(
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
           col.key,
-          get_nested_value(model, col.path ?? ``) as number | undefined,
+          get_nested_value(model, col.path) as number | undefined,
         ]),
       ),
     }
