@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { browser } from '$app/environment'
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
   import {
@@ -32,25 +33,14 @@
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = DATASETS.WBM.n_materials
 
-  // Read initial state from URL query params
-  const url_params = page.url.searchParams
-  const initial_set = url_params.get(`set`)
-  const initial_sort = url_params.get(`sort`)
-  const initial_dir = url_params.get(`dir`)
-  const initial_energy_only = url_params.get(`energy_only`)
-  const initial_non_compliant = url_params.get(`non_compliant`)
-  const initial_compliant = url_params.get(`compliant`)
-
   let table = $state({
-    show_non_compliant: initial_non_compliant !== `0`,
-    show_energy_only: initial_energy_only === `1`,
+    show_non_compliant: true,
+    show_energy_only: false,
     show_combined_controls: true,
-    show_compliant: initial_compliant !== `0`,
+    show_compliant: true,
     show_heatmap: true,
   })
   let export_error: string | null = $state(null)
-
-  // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
     ...Object.fromEntries(
       [...Object.values(ALL_METRICS), ...Object.values(METADATA_COLS)].map((col) => [
@@ -62,43 +52,38 @@
     TNR: false,
     RMSE: false,
   })
+  let discovery_set: DiscoverySet = $state(`unique_prototypes`)
+  let sort = $state({ column: `CPS`, dir: `desc` as `asc` | `desc` })
+  let url_initialized = false
 
-  // Initialize from URL or use defaults
-  let discovery_set: DiscoverySet = $state(
-    DISCOVERY_SETS.includes(initial_set as DiscoverySet)
-      ? (initial_set as DiscoverySet)
-      : `unique_prototypes`,
-  )
-  let sort = $state<{ column: string; dir: `asc` | `desc` }>({
-    column: initial_sort ?? `CPS`,
-    dir: initial_dir === `asc` || initial_dir === `desc` ? initial_dir : `desc`,
-  })
-
-  // Track if we're initializing to avoid triggering URL update on mount
-  let is_mounted = $state(false)
-
-  // Sync state changes to URL
+  // Sync table state with URL query params (read on mount, write on change)
   $effect(() => {
-    // Skip URL sync during initialization
-    if (!is_mounted) {
-      is_mounted = true
+    if (!browser) return
+    const params = page.url.searchParams
+
+    if (!url_initialized) {
+      url_initialized = true
+      const param_set = params.get(`set`) as DiscoverySet
+      if (DISCOVERY_SETS.includes(param_set)) discovery_set = param_set
+      const param_sort = params.get(`sort`)
+      if (param_sort) sort.column = param_sort
+      const param_dir = params.get(`dir`)
+      if (param_dir === `asc` || param_dir === `desc`) sort.dir = param_dir
+      if (params.get(`energy_only`) === `1`) table.show_energy_only = true
+      if (params.get(`non_compliant`) === `0`) table.show_non_compliant = false
+      if (params.get(`compliant`) === `0`) table.show_compliant = false
       return
     }
 
-    const params = new URLSearchParams()
+    const new_params = new URLSearchParams()
+    if (discovery_set !== `unique_prototypes`) new_params.set(`set`, discovery_set)
+    if (sort.column !== `CPS`) new_params.set(`sort`, sort.column)
+    if (sort.dir !== `desc`) new_params.set(`dir`, sort.dir)
+    if (table.show_energy_only) new_params.set(`energy_only`, `1`)
+    if (!table.show_non_compliant) new_params.set(`non_compliant`, `0`)
+    if (!table.show_compliant) new_params.set(`compliant`, `0`)
 
-    // Only add params that differ from defaults
-    if (discovery_set !== `unique_prototypes`) params.set(`set`, discovery_set)
-    if (sort.column !== `CPS`) params.set(`sort`, sort.column)
-    if (sort.dir !== `desc`) params.set(`dir`, sort.dir)
-    if (table.show_energy_only) params.set(`energy_only`, `1`)
-    if (!table.show_non_compliant) params.set(`non_compliant`, `0`)
-    if (!table.show_compliant) params.set(`compliant`, `0`)
-
-    const query_string = params.toString()
-    const new_url = query_string ? `?${query_string}` : page.url.pathname
-
-    // Only update if URL actually changed
+    const new_url = new_params.size ? `?${new_params}` : page.url.pathname
     if (new_url !== `${page.url.pathname}${page.url.search}`) {
       goto(new_url, { replaceState: true, keepFocus: true, noScroll: true })
     }
@@ -136,7 +121,9 @@
   export const snapshot: Snapshot = {
     capture: () => ({ discovery_set, table, sort }),
     restore: (values) => {
-      ;({ discovery_set, table, sort } = values)
+      discovery_set = values.discovery_set ?? discovery_set
+      table = values.table ?? table
+      sort = values.sort ?? sort
     },
   }
 </script>
