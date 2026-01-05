@@ -38,7 +38,7 @@ from fairchem.core.common.utils import update_config
 from GGNN.preprocessing import AtomsToGraphs
 from GGNN.trainer.utrainer import OCPTrainer
 from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.core import Structure
+from pymatgen.core import SiteCollection, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from relaxation.ml_relaxation import ml_relax
@@ -52,7 +52,7 @@ def split_df(df: pd.DataFrame, batch_size: int) -> list[pd.DataFrame]:
 
 
 def compute_rmsd(
-    struct_pred: Structure, struct_og: Structure
+    struct_pred: SiteCollection, struct_og: SiteCollection
 ) -> tuple[float | None, float | None]:
     """Compute RMSD between predicted and ground truth structures."""
     structure_matcher = StructureMatcher(stol=1.0, scale=False)

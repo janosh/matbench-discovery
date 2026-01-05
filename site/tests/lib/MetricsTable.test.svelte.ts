@@ -82,12 +82,13 @@ describe(`MetricsTable`, () => {
   })
 
   it(`toggles metadata columns`, () => {
-    const metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`, `Links`]
+    // These are actual METADATA_COLS (not HYPERPARAMS) - key and label are the same
+    const metadata_cols = [`Training Set`, `Targets`, `Date Added`, `Links`]
     const col_filter = (_col: Label) => true // show all columns initially
     mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
     let header_texts = Array.from(document.querySelectorAll(`th`)).map((h) =>
-      h.textContent?.trim()
+      h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim()
     )
     expect(header_texts).toEqual(expect.arrayContaining(metadata_cols))
 
@@ -103,7 +104,7 @@ describe(`MetricsTable`, () => {
 
     // Check metadata columns are hidden
     header_texts = Array.from(document.querySelectorAll(`th`)).map((h) =>
-      h.textContent?.trim()
+      h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim()
     )
 
     // Each metadata column should be hidden
@@ -111,8 +112,8 @@ describe(`MetricsTable`, () => {
       expect(header_texts).not.toContain(col)
     }
 
-    // Check metric columns are still visible
-    const metric_cols = [`CPS ↑`, `F1 ↑`, `DAF ↑`, `Prec ↑`, `Acc ↑`]
+    // Check metric columns are still visible (strip sort indicators)
+    const metric_cols = [`CPS`, `F1`, `DAF`, `Prec`, `Acc`]
     for (const col of metric_cols) {
       expect(header_texts).toContain(col)
     }
@@ -964,8 +965,8 @@ describe(`MetricsTable`, () => {
     const header_elements = document.querySelectorAll(`thead th`)
     const actual_core_columns = new Set(
       Array.from(header_elements).map((th) =>
-        // Get text content, remove sort indicator (↑/↓), trim
-        (th.textContent ?? ``).replace(/[↑↓]$/, ``).trim()
+        // Get text content, remove sort indicator (↑/↓) and any trailing spaces
+        (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim()
       ),
     )
 
@@ -987,7 +988,7 @@ describe(`MetricsTable`, () => {
   describe(`Double-click selection functionality`, () => {
     const get_rows = () => document.querySelectorAll(`tbody tr`)
     const get_toggle = () =>
-      doc_query<HTMLInputElement>(
+      document.querySelector<HTMLInputElement>(
         `input[aria-label="Toggle between showing only selected models and all models"]`,
       )
     const get_toggle_label = () => get_toggle()?.closest(`label`)
@@ -1001,32 +1002,29 @@ describe(`MetricsTable`, () => {
         props: { col_filter: () => true, show_non_compliant: true },
       })
 
-      const [row1, row2] = Array.from(get_rows())
-      expect(row1).toBeDefined()
-      expect(row2).toBeDefined()
+      // Use fresh row references each time to avoid stale DOM after re-renders
+      expect(get_rows().length).toBeGreaterThanOrEqual(2)
 
       // Initially no selection
-      expect(row1.classList.contains(`highlight`)).toBe(false)
-      expect(row2.classList.contains(`highlight`)).toBe(false)
+      expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
+      expect(get_rows()[1].classList.contains(`highlight`)).toBe(false)
 
       // Select first row
-      double_click_row(row1)
+      double_click_row(get_rows()[0])
       await tick()
       expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
 
       // Select second row
-      double_click_row(row2)
+      double_click_row(get_rows()[1])
       await tick()
-      const rows_after_selection = get_rows()
-      expect(rows_after_selection[0].classList.contains(`highlight`)).toBe(true)
-      expect(rows_after_selection[1].classList.contains(`highlight`)).toBe(true)
+      expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
+      expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
 
       // Deselect first row
-      double_click_row(rows_after_selection[0])
+      double_click_row(get_rows()[0])
       await tick()
-      const rows_after_deselection = get_rows()
-      expect(rows_after_deselection[0].classList.contains(`highlight`)).toBe(false)
-      expect(rows_after_deselection[1].classList.contains(`highlight`)).toBe(true)
+      expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
+      expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
     })
 
     it(`manages toggle visibility and count dynamically`, async () => {
@@ -1132,27 +1130,25 @@ describe(`MetricsTable`, () => {
         props: { col_filter: () => true, show_non_compliant: true },
       })
 
-      const rows = Array.from(get_rows())
-      expect(rows.length).toBeGreaterThanOrEqual(2)
+      expect(get_rows().length).toBeGreaterThanOrEqual(2)
 
       // Test that toggle appears/disappears correctly
       expect(get_toggle()).toBeNull()
 
-      // Select first row
-      double_click_row(rows[0])
+      // Select first row - use fresh references each time to avoid stale DOM
+      double_click_row(get_rows()[0])
       await tick()
       expect(get_toggle()).not.toBeNull()
       expect(get_toggle_label()?.textContent).toContain(`1 selected`)
 
-      // Select second row
-      double_click_row(rows[1])
+      // Select second row - get fresh reference
+      double_click_row(get_rows()[1])
       await tick()
       expect(get_toggle_label()?.textContent).toContain(`2 selected`)
 
-      // Test that deselecting works (this should fail with our breaking change)
+      // Test that deselecting works
       double_click_row(get_rows()[0])
       await tick()
-      // This should be 1 selected, but with our breaking change it will be 2
       expect(get_toggle_label()?.textContent).toContain(`1 selected`)
 
       // Deselect all models by double-clicking each selected row

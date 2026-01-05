@@ -61,79 +61,35 @@ describe(`format_power_ten`, () => {
 })
 
 describe(`format_property_path`, () => {
-  test(`handles direct properties`, () => {
-    expect(format_property_path(`model_params`)).toBe(`Number of model parameters`)
-    expect(format_property_path(`date_added`)).toBe(`Date Added`)
-    expect(format_property_path(`n_estimators`)).toBe(`Number of estimators`)
-  })
-
-  test(`returns the original path for unknown direct properties`, () => {
-    expect(format_property_path(`unknown_property`)).toBe(`unknown property`)
-  })
-
-  test(`formats discovery metrics correctly`, () => {
-    expect(format_property_path(`discovery.unique_prototypes.F1`)).toBe(
-      `Discovery > Unique Prototypes > F1 Score`,
-    )
-    expect(format_property_path(`discovery.full_test_set.RMSE`)).toBe(
-      `Discovery > Full Test Set > RMSE`,
-    )
-    expect(format_property_path(`discovery.most_stable_10k.Precision`)).toBe(
-      `Discovery > 10k Most Stable > Precision`,
-    )
-  })
-
-  test(`formats hyperparameter paths correctly`, () => {
-    expect(format_property_path(`hyperparams.learning_rate`)).toBe(
-      `Hyperparams > Learning rate`,
-    )
-    expect(format_property_path(`hyperparams.graph_construction_radius`)).toBe(
-      `Hyperparams > Graph construction radius r<sub>cut</sub>`,
-    )
-    expect(format_property_path(`hyperparams.max_neighbors`)).toBe(
-      `Hyperparams > Max number of neighbors during graph construction`,
-    )
-    expect(format_property_path(`hyperparams.custom_param`)).toBe(
-      `Hyperparams > custom param`,
-    )
-  })
-
-  test(`formats geo_opt metrics with symprec pattern correctly`, () => {
-    expect(format_property_path(`geo_opt.symprec=1e-5.rmsd`)).toBe(
-      `Geometry Optimization > RMSD`,
-    )
-  })
-
-  test(`formats phonon metrics correctly`, () => {
-    expect(format_property_path(`phonons.kappa_103.κ_SRME`)).toBe(
-      `Phonons > κ<sub>SRME</sub>`,
-    )
-    expect(format_property_path(`phonons.other.property`)).toBe(
-      `Phonons > other > property`,
-    )
-  })
-
-  test(`handles generic dotted paths correctly`, () => {
-    expect(format_property_path(`category.subcategory.property`)).toBe(
-      `category > subcategory > property`,
-    )
-  })
-
-  test(`handles special formatting in path parts`, () => {
-    expect(format_property_path(`category.value_1e-5.property`)).toBe(
-      `category > value 10<sup>-5</sup> > property`,
-    )
-  })
-
-  test(`handles edge cases correctly`, () => {
-    // Empty path
-    expect(format_property_path(``)).toBe(``)
-
-    // Path with empty segments
-    expect(format_property_path(`..`)).toBe(``)
-
-    // Path with single dot
-    expect(format_property_path(`.`)).toBe(``)
+  test.each([
+    // Direct properties
+    [`model_params`, `Params`],
+    [`date_added`, `date added`],
+    [`n_estimators`, `Estimators`],
+    [`unknown_property`, `unknown property`],
+    // Discovery metrics
+    [`discovery.unique_prototypes.F1`, `Discovery > Unique Prototypes > F1`],
+    [`discovery.full_test_set.RMSE`, `Discovery > Full Test Set > RMSE`],
+    [`discovery.most_stable_10k.Precision`, `Discovery > 10k Most Stable > Prec`],
+    // Hyperparameters
+    [`hyperparams.learning_rate`, `Hyperparams > LR`],
+    [`hyperparams.graph_construction_radius`, `Hyperparams > r<sub>cut</sub>`],
+    [`hyperparams.max_neighbors`, `Hyperparams > Max neighbors`],
+    [`hyperparams.custom_param`, `Hyperparams > custom param`],
+    // Geo-opt metrics
+    [`geo_opt.symprec=1e-5.rmsd`, `Geometry Optimization > RMSD`],
+    // Phonon metrics
+    [`phonons.kappa_103.κ_SRME`, `Phonons > κ<sub>SRME</sub>`],
+    [`phonons.other.property`, `Phonons > other > property`],
+    // Generic paths
+    [`category.subcategory.property`, `category > subcategory > property`],
+    [`category.value_1e-5.property`, `category > value 10<sup>-5</sup> > property`],
+    // Edge cases
+    [``, ``],
+    [`..`, ``],
+    [`.`, ``],
+  ])(`formats '%s' → '%s'`, (input, expected) => {
+    expect(format_property_path(input)).toBe(expected)
   })
 })
 

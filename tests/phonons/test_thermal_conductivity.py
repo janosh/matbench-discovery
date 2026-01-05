@@ -232,7 +232,7 @@ class MockCalculator(Calculator):
         super().__init__()
         self.forces = forces
 
-    def get_forces(self, _atoms: Atoms | None = None) -> np.ndarray:
+    def get_forces(self, atoms: Atoms | None = None) -> np.ndarray:  # noqa: ARG002
         """Return predefined forces."""
         return self.forces
 

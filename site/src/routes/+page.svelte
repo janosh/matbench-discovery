@@ -1,7 +1,10 @@
 <script lang="ts">
-  import type { DiscoverySet, ModelData } from '$lib'
+  import { browser } from '$app/environment'
+  import { goto } from '$app/navigation'
+  import { page } from '$app/state'
   import {
     DATASETS,
+    DISCOVERY_SETS,
     DynamicScatter,
     GitHubActivityScatter,
     Icon,
@@ -18,6 +21,7 @@
     generate_svg,
     handle_export,
   } from '$lib/table-export'
+  import type { DiscoverySet, ModelData, SortDir } from '$lib/types'
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/tasks/phonons/kappa-note.md'
   import { format_num } from 'matterviz'
@@ -36,8 +40,6 @@
     show_heatmap: true,
   })
   let export_error: string | null = $state(null)
-
-  // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
     ...Object.fromEntries(
       [...Object.values(ALL_METRICS), ...Object.values(METADATA_COLS)].map((col) => [
@@ -49,8 +51,42 @@
     TNR: false,
     RMSE: false,
   })
-
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
+  let sort = $state({ column: `CPS`, dir: `desc` as SortDir })
+  let url_initialized = false
+
+  // Sync table state with URL query params (read on mount, write on change)
+  $effect(() => {
+    if (!browser) return
+    const params = page.url.searchParams
+
+    if (!url_initialized) {
+      url_initialized = true
+      const param_set = params.get(`set`) as DiscoverySet
+      if (DISCOVERY_SETS.includes(param_set)) discovery_set = param_set
+      const param_sort = params.get(`sort`)
+      if (param_sort) sort.column = param_sort
+      const param_dir = params.get(`dir`)
+      if (param_dir === `asc` || param_dir === `desc`) sort.dir = param_dir
+      if (params.get(`energy_only`) === `1`) table.show_energy_only = true
+      if (params.get(`non_compliant`) === `0`) table.show_non_compliant = false
+      if (params.get(`compliant`) === `0`) table.show_compliant = false
+      return
+    }
+
+    const new_params = new URLSearchParams()
+    if (discovery_set !== `unique_prototypes`) new_params.set(`set`, discovery_set)
+    if (sort.column !== `CPS`) new_params.set(`sort`, sort.column)
+    if (sort.dir !== `desc`) new_params.set(`dir`, sort.dir)
+    if (table.show_energy_only) new_params.set(`energy_only`, `1`)
+    if (!table.show_non_compliant) new_params.set(`non_compliant`, `0`)
+    if (!table.show_compliant) new_params.set(`compliant`, `0`)
+
+    const new_url = new_params.size ? `?${new_params}` : page.url.pathname
+    if (new_url !== `${page.url.pathname}${page.url.search}`) {
+      goto(new_url, { replaceState: true, keepFocus: true, noScroll: true })
+    }
+  })
 
   // Export state object for handle_export
   let export_state = $derived({
@@ -82,8 +118,12 @@
   )
 
   export const snapshot: Snapshot = {
-    capture: () => ({ discovery_set, table }),
-    restore: (values) => ({ discovery_set, table } = values),
+    capture: () => ({ discovery_set, table, sort }),
+    restore: (values) => {
+      discovery_set = values.discovery_set ?? discovery_set
+      table = values.table ?? table
+      sort = values.sort ?? sort
+    },
   }
 </script>
 
@@ -110,6 +150,7 @@
       col_filter={(col) => visible_cols[col.label] ?? true}
       model_filter={() => true}
       {discovery_set}
+      bind:sort
       bind:show_energy_only={table.show_energy_only}
       bind:show_non_compliant={table.show_non_compliant}
       bind:show_compliant={table.show_compliant}

@@ -114,5 +114,14 @@ export default defineConfig(({ mode }) => ({
 
   resolve: {
     conditions: mode === `test` ? [`browser`] : undefined,
+    alias: mode === `test`
+      ? [
+        // Mock wasm-dependent modules to avoid loading issues in jsdom
+        {
+          find: /^@spglib\/moyo-wasm.*/,
+          replacement: new URL(`./tests/mocks/moyo-wasm.ts`, import.meta.url).pathname,
+        },
+      ]
+      : [],
   },
 }))

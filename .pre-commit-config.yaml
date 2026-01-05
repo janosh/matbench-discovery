@@ -18,7 +18,7 @@ repos:
         language: python
         types: [python]
         additional_dependencies:
-          # TODO: remove numpy from git once np.array_split fix in PR #30450 is released
+          # TODO: remove numpy once np.array_split type fix in PR #30450 is released
           [ty, numpy @ git+https://github.com/numpy/numpy]
         args: [--output-format, concise, --ignore, unresolved-import]
 

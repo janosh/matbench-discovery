@@ -1,4 +1,5 @@
 from typing import Literal
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -13,6 +14,7 @@ from matbench_discovery.plots import (
     plotly_line_styles,
     plotly_markers,
     rolling_mae_vs_hull_dist,
+    wandb_scatter,
 )
 
 AxLine = Literal["x", "y", "xy", ""]
@@ -127,9 +129,70 @@ def test_hist_classified_stable_vs_hull_dist(
 
 
 def test_plotly_markers_line_styles() -> None:
+    """Test plotly markers and line styles are populated correctly."""
     assert len(plotly_markers) > 100
     assert len(plotly_line_styles) > 100
     assert {*map(type, plotly_markers)} == {str}, "expect all markers are strings"
     assert {*map(type, plotly_line_styles)} == {str}
     assert "longdashdot" in plotly_line_styles
     assert "circle" in plotly_markers
+
+
+@pytest.mark.parametrize(
+    "legend_loc, should_raise",
+    [("figure", False), ("below", False), ("default", False), ("invalid", True)],
+)
+def test_rolling_mae_vs_hull_dist_legend_loc(
+    legend_loc: str, should_raise: bool
+) -> None:
+    """Test rolling_mae_vs_hull_dist with valid/invalid legend locations."""
+    call_fn = lambda: rolling_mae_vs_hull_dist(
+        e_above_hull_true=df_wbm[models[0]],
+        e_above_hull_preds=df_preds,
+        x_lim=(0, 0.6),
+        window=0.02,
+        bin_width=0.1,
+        legend_loc=legend_loc,  # type: ignore[arg-type]
+    )
+    if should_raise:
+        with pytest.raises(ValueError, match=f"Unexpected legend_loc='{legend_loc}'"):
+            call_fn()
+    else:
+        fig, df_err, df_std = call_fn()
+        assert isinstance(fig, go.Figure)
+        assert isinstance(df_err, pd.DataFrame)
+        assert isinstance(df_std, pd.DataFrame)
+
+
+@pytest.mark.parametrize(
+    "fields, should_raise, check_labels",
+    [
+        ({"x": "col_x"}, True, False),  # missing 'y'
+        ({"y": "col_y"}, True, False),  # missing 'x'
+        ({"x": "col_x", "y": "col_y"}, False, False),  # basic valid case
+        ({"x": "e_form_true", "y": "e_form_pred"}, False, True),  # formation energy
+    ],
+)
+def test_wandb_scatter(fields: dict, should_raise: bool, check_labels: bool) -> None:
+    """Test wandb_scatter with valid/invalid fields and label defaults."""
+    mock_table = MagicMock()
+
+    if should_raise:
+        with pytest.raises(ValueError, match="must specify x=str and y=str"):
+            wandb_scatter(mock_table, fields)
+    else:
+        with patch("matbench_discovery.plots.wandb") as mock_wandb:
+            mock_wandb.plot_table.return_value = MagicMock()
+            wandb_scatter(mock_table, fields)
+
+            mock_wandb.plot_table.assert_called_once()
+            mock_wandb.log.assert_called_once()
+
+            if check_labels:
+                call_kwargs = mock_wandb.plot_table.call_args.kwargs
+                assert call_kwargs["string_fields"]["x_label"] == (
+                    "DFT formation energy (eV/atom)"
+                )
+                assert call_kwargs["string_fields"]["y_label"] == (
+                    "Predicted formation energy (eV/atom)"
+                )

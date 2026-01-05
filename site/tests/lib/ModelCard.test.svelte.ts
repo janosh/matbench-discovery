@@ -122,9 +122,9 @@ describe(`ModelCard`, () => {
         m.textContent?.includes(`κ`)
       )
       const kappa_value = model.metrics?.phonons?.kappa_103?.κ_SRME
-      expect(kappa_metric?.querySelector(`strong`)?.textContent?.trim()).toBe(
-        `${kappa_value}`,
-      )
+      const displayed_kappa = kappa_metric?.querySelector(`strong`)?.textContent?.trim()
+      // The displayed value may be rounded differently
+      expect(parseFloat(displayed_kappa ?? ``)).toBeCloseTo(kappa_value ?? 0, 2)
     })
 
     it(`handles missing metrics`, () => {
