@@ -6,7 +6,7 @@ import yaml
 
 from matbench_discovery import DATA_DIR, ROOT
 from matbench_discovery.enums import Model
-from matbench_discovery.models import model_is_compliant
+from matbench_discovery.models import model_is_compliant, validate_model_metadata
 
 with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
     DATASETS = yaml.safe_load(file)
@@ -162,6 +162,29 @@ def test_model_missing_invalid_inputs(
     ],
 )
 def test_model_is_compliant(model: Model, is_compliant: bool) -> None:
+    """Test model compliance checking."""
     assert model.is_compliant is is_compliant
     # Also test the function directly for consistency
     assert model_is_compliant(model.metadata) is is_compliant
+
+
+def test_model_is_compliant_invalid_training_set() -> None:
+    """Test that model_is_compliant raises TypeError for non-list training_set."""
+    metadata = {"openness": "OSOD", "training_set": "MPtrj", "model_name": "test_model"}
+    with pytest.raises(TypeError, match="expected list of training sets"):
+        model_is_compliant(metadata)
+
+
+@pytest.mark.parametrize(
+    "metadata, error_match",
+    [
+        ({"status": "incomplete"}, "has status != 'complete'"),
+        ({"model_type": "InvalidType"}, "is not a valid ModelType"),
+    ],
+)
+def test_validate_model_metadata_errors(
+    metadata: dict[str, str], error_match: str
+) -> None:
+    """Test validate_model_metadata raises ValueError for invalid metadata."""
+    with pytest.raises(ValueError, match=error_match):
+        validate_model_metadata(metadata, "test_model.yml")
