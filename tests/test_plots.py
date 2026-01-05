@@ -9,7 +9,6 @@ from pymatviz.enums import Key
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.plots import (
-    LegendLoc,
     cumulative_metrics,
     hist_classified_stable_vs_hull_dist,
     plotly_line_styles,
@@ -139,71 +138,61 @@ def test_plotly_markers_line_styles() -> None:
     assert "circle" in plotly_markers
 
 
-@pytest.mark.parametrize("legend_loc", ["figure", "below", "default"])
-def test_rolling_mae_vs_hull_dist_legend_loc(legend_loc: LegendLoc) -> None:
-    """Test rolling_mae_vs_hull_dist with different legend locations."""
-    fig, df_err, df_std = rolling_mae_vs_hull_dist(
+@pytest.mark.parametrize(
+    "legend_loc, should_raise",
+    [("figure", False), ("below", False), ("default", False), ("invalid", True)],
+)
+def test_rolling_mae_vs_hull_dist_legend_loc(
+    legend_loc: str, should_raise: bool
+) -> None:
+    """Test rolling_mae_vs_hull_dist with valid/invalid legend locations."""
+    call_fn = lambda: rolling_mae_vs_hull_dist(
         e_above_hull_true=df_wbm[models[0]],
         e_above_hull_preds=df_preds,
         x_lim=(0, 0.6),
         window=0.02,
         bin_width=0.1,
-        legend_loc=legend_loc,
+        legend_loc=legend_loc,  # type: ignore[arg-type]
     )
-    assert isinstance(fig, go.Figure)
-    assert isinstance(df_err, pd.DataFrame)
-    assert isinstance(df_std, pd.DataFrame)
+    if should_raise:
+        with pytest.raises(ValueError, match=f"Unexpected legend_loc='{legend_loc}'"):
+            call_fn()
+    else:
+        fig, df_err, df_std = call_fn()
+        assert isinstance(fig, go.Figure)
+        assert isinstance(df_err, pd.DataFrame)
+        assert isinstance(df_std, pd.DataFrame)
 
 
-def test_rolling_mae_vs_hull_dist_invalid_legend_loc() -> None:
-    """Test rolling_mae_vs_hull_dist raises for invalid legend_loc."""
-    with pytest.raises(ValueError, match="Unexpected legend_loc='invalid'"):
-        rolling_mae_vs_hull_dist(
-            e_above_hull_true=df_wbm[models[0]],
-            e_above_hull_preds=df_preds,
-            x_lim=(0, 0.6),
-            window=0.02,
-            bin_width=0.1,
-            legend_loc="invalid",  # type: ignore[arg-type]
-        )
-
-
-def test_wandb_scatter_missing_fields() -> None:
-    """Test wandb_scatter raises ValueError when fields missing x or y."""
-    mock_table = MagicMock()
-    with pytest.raises(ValueError, match="must specify x=str and y=str"):
-        wandb_scatter(mock_table, {"x": "col_x"})  # missing 'y'
-
-    with pytest.raises(ValueError, match="must specify x=str and y=str"):
-        wandb_scatter(mock_table, {"y": "col_y"})  # missing 'x'
-
-
-def test_wandb_scatter_with_formation_energy_labels() -> None:
-    """Test wandb_scatter sets default labels for formation energy columns."""
+@pytest.mark.parametrize(
+    "fields, should_raise, check_labels",
+    [
+        ({"x": "col_x"}, True, False),  # missing 'y'
+        ({"y": "col_y"}, True, False),  # missing 'x'
+        ({"x": "col_x", "y": "col_y"}, False, False),  # basic valid case
+        ({"x": "e_form_true", "y": "e_form_pred"}, False, True),  # formation energy
+    ],
+)
+def test_wandb_scatter(fields: dict, should_raise: bool, check_labels: bool) -> None:
+    """Test wandb_scatter with valid/invalid fields and label defaults."""
     mock_table = MagicMock()
 
-    with patch("matbench_discovery.plots.wandb") as mock_wandb:
-        mock_wandb.plot_table.return_value = MagicMock()
-        wandb_scatter(mock_table, {"x": "e_form_true", "y": "e_form_pred"})
+    if should_raise:
+        with pytest.raises(ValueError, match="must specify x=str and y=str"):
+            wandb_scatter(mock_table, fields)
+    else:
+        with patch("matbench_discovery.plots.wandb") as mock_wandb:
+            mock_wandb.plot_table.return_value = MagicMock()
+            wandb_scatter(mock_table, fields)
 
-        # Check that plot_table was called with correct string_fields
-        call_kwargs = mock_wandb.plot_table.call_args.kwargs
-        assert call_kwargs["string_fields"]["x_label"] == (
-            "DFT formation energy (eV/atom)"
-        )
-        assert call_kwargs["string_fields"]["y_label"] == (
-            "Predicted formation energy (eV/atom)"
-        )
-        mock_wandb.log.assert_called_once()
+            mock_wandb.plot_table.assert_called_once()
+            mock_wandb.log.assert_called_once()
 
-
-def test_wandb_scatter_basic() -> None:
-    """Test wandb_scatter basic functionality."""
-    mock_table = MagicMock()
-
-    with patch("matbench_discovery.plots.wandb") as mock_wandb:
-        mock_wandb.plot_table.return_value = MagicMock()
-        wandb_scatter(mock_table, {"x": "col_x", "y": "col_y"})
-
-        mock_wandb.plot_table.assert_called_once()
-        mock_wandb.log.assert_called_once()
+            if check_labels:
+                call_kwargs = mock_wandb.plot_table.call_args.kwargs
+                assert call_kwargs["string_fields"]["x_label"] == (
+                    "DFT formation energy (eV/atom)"
+                )
+                assert call_kwargs["string_fields"]["y_label"] == (
+                    "Predicted formation energy (eV/atom)"
+                )

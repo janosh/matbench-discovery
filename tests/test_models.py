@@ -168,23 +168,37 @@ def test_model_is_compliant(model: Model, is_compliant: bool) -> None:
     assert model_is_compliant(model.metadata) is is_compliant
 
 
-def test_model_is_compliant_invalid_training_set() -> None:
-    """Test that model_is_compliant raises TypeError for non-list training_set."""
-    metadata = {"openness": "OSOD", "training_set": "MPtrj", "model_name": "test_model"}
-    with pytest.raises(TypeError, match="expected list of training sets"):
-        model_is_compliant(metadata)
-
-
 @pytest.mark.parametrize(
-    "metadata, error_match",
+    "func, metadata, error_type, error_match",
     [
-        ({"status": "incomplete"}, "has status != 'complete'"),
-        ({"model_type": "InvalidType"}, "is not a valid ModelType"),
+        # model_is_compliant errors
+        (
+            model_is_compliant,
+            {"openness": "OSOD", "training_set": "MPtrj", "model_name": "test"},
+            TypeError,
+            "expected list of training sets",
+        ),
+        # validate_model_metadata errors
+        (
+            lambda m: validate_model_metadata(m, "test.yml"),
+            {"status": "incomplete"},
+            ValueError,
+            "has status != 'complete'",
+        ),
+        (
+            lambda m: validate_model_metadata(m, "test.yml"),
+            {"model_type": "InvalidType"},
+            ValueError,
+            "is not a valid ModelType",
+        ),
     ],
 )
-def test_validate_model_metadata_errors(
-    metadata: dict[str, str], error_match: str
+def test_model_validation_errors(
+    func: object,
+    metadata: dict[str, str],
+    error_type: type[Exception],
+    error_match: str,
 ) -> None:
-    """Test validate_model_metadata raises ValueError for invalid metadata."""
-    with pytest.raises(ValueError, match=error_match):
-        validate_model_metadata(metadata, "test_model.yml")
+    """Test model validation functions raise appropriate errors."""
+    with pytest.raises(error_type, match=error_match):
+        func(metadata)  # type: ignore[operator]
