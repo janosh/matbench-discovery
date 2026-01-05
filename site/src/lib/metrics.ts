@@ -313,11 +313,11 @@ export function assemble_row_data(
       } trainable model parameters" data-sort-value="${model.model_params}">${
         format_num(model.model_params)
       }</span>`,
-      [HYPERPARAMS.ase_optimizer.key ?? ``]: ase_optimizer ?? `n/a`,
-      [HYPERPARAMS.max_steps.key ?? ``]: max_steps !== undefined
+      [HYPERPARAMS.ase_optimizer.key]: ase_optimizer ?? `n/a`,
+      [HYPERPARAMS.max_steps.key]: max_steps !== undefined
         ? `<span data-sort-value="${max_steps}">${max_steps}</span>`
         : `n/a`,
-      [HYPERPARAMS.max_force.key ?? ``]: max_force !== undefined
+      [HYPERPARAMS.max_force.key]: max_force !== undefined
         ? `<span data-sort-value="${max_force}">${max_force}</span>`
         : `n/a`,
       [HYPERPARAMS.cell_filter.label]: cell_filter_display
