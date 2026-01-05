@@ -308,7 +308,7 @@ export function assemble_row_data(
         | number
         | undefined,
       'Training Set': format_train_set(model.training_set, model),
-      [HYPERPARAMS.model_params.key as string]: `<span title="${
+      [HYPERPARAMS.model_params.key]: `<span title="${
         format_num(model.model_params, `,`)
       } trainable model parameters" data-sort-value="${model.model_params}">${
         format_num(model.model_params)
@@ -356,7 +356,7 @@ export function assemble_row_data(
       } as LinkData,
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
-      [HYPERPARAMS.graph_construction_radius.key as string]: r_cut_str,
+      [HYPERPARAMS.graph_construction_radius.key]: r_cut_str,
       style: `border-left: 3px solid var(--${
         is_compliant ? `` : `non-`
       }compliant-color);`,

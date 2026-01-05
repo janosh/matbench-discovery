@@ -100,9 +100,9 @@
       <li class:active={prop.key == sort_by.key}>
         <button
           id={prop.key}
-          onclick={() => { // Handle the case where key is 'model_name'
+          onclick={() => {
             sort_by = prop
-            if (key === `Model`) order = `asc`
+            if (key === `Model`) order = `asc` // default to ascending for model name
             else order = metric_better_as(key) === `lower` ? `asc` : `desc`
           }}
           style="position: relative"

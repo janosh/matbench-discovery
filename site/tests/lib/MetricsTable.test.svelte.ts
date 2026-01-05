@@ -264,7 +264,7 @@ describe(`MetricsTable`, () => {
   it.each([
     {
       model_filter: (model: ModelData) => model.model_name.includes(`CHG`),
-      col_filter: (col: Label) => col.label === `Model` || col.key === `F1`,
+      col_filter: (col: Label) => [`Model`, `F1`].includes(col.key ?? col.label),
       expected_model_match: `CHG`,
       expected_headers: [`Model`, `F1`],
     },
@@ -481,7 +481,7 @@ describe(`MetricsTable`, () => {
         props: {
           show_non_compliant: true,
           col_filter: (col: Label) =>
-            [`Model`, HYPERPARAMS.model_params.key].includes(col.key),
+            [`Model`, HYPERPARAMS.model_params.key].includes(col.key ?? col.label),
         },
       })
 
