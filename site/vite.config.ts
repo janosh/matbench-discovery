@@ -107,7 +107,7 @@ export default defineConfig(({ mode }) => ({
     server: {
       deps: {
         // Force Vitest to inline packages with directory imports to handle them properly
-        inline: [`matterviz`, `svelte-multiselect`, `@threlte/core`, `@threlte/extras`],
+        inline: [`matterviz`, `svelte-multiselect`],
       },
     },
   },
