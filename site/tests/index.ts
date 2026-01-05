@@ -1,34 +1,18 @@
 import { beforeAll, beforeEach, vi } from 'vitest'
 
-// Mock matterviz to avoid wasm loading issues in tests
-vi.mock(`matterviz`, () => {
-  return {
-    // Components
-    StructureViz: () => null,
-    ColorBar: () => null,
-    ColorScaleSelect: () => null,
-    Scatter: () => null,
-    ScatterPlot: () => null,
-    DraggablePane: () => null,
-    Icon: () => null,
-    HeatmapTable: () => null,
-    PeriodicTable: () => null,
-    TableInset: () => null,
-    // Functions
-    format_num: (value: number) => String(value),
-    luminance: () => 0.5,
-    pick_contrast_color: () => `#000000`,
-    // Data/types
-    element_colors: {},
-    element_data: {},
-  }
-})
-
-vi.mock(`matterviz/plot`, () => {
-  return {
-    ColorScaleSelect: () => null,
-    ScatterPlot: () => null,
-  }
+// matchMedia mock for Svelte MediaQuery - needed for svelte-multiselect
+Object.defineProperty(window, `matchMedia`, {
+  writable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => true,
+  }),
 })
 
 // Mock $app modules for SvelteKit - must be at top level before any imports
@@ -103,18 +87,3 @@ globalThis.ResizeObserver = class ResizeObserver {
   unobserve() {}
   disconnect() {}
 }
-
-// matchMedia mock for Svelte MediaQuery
-Object.defineProperty(window, `matchMedia`, {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => true,
-  }),
-})
