@@ -71,9 +71,9 @@ def ml_relax(
         # clone the batch otherwise you can not run batch.to_data_list
         # see https://github.com/pyg-team/pytorch_geometric/issues/8439#issuecomment-1826747915
         if relax_cell or relax_volume:
-            optimizable = OptimizableFrechetBatch(batch.clone(), trainer=model)  # type: ignore[attr-defined]
+            optimizable = OptimizableFrechetBatch(batch.clone(), trainer=model)
         else:
-            optimizable = OptimizableBatch(batch.clone(), trainer=model)  # type: ignore[attr-defined]
+            optimizable = OptimizableBatch(batch.clone(), trainer=model)
 
         # Run ML-based relaxation
         traj_dir = relax_opt.get("traj_dir")

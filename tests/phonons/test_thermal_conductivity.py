@@ -61,6 +61,7 @@ def test_init_phono3py(test_atoms: Atoms) -> None:
     assert ph3.mesh_numbers.tolist() == [2, 2, 2]
     assert ph3.supercell_matrix.tolist() == np.eye(3).tolist()
     # Check that both supercells were created correctly
+    assert ph3.phonon_supercell_matrix is not None
     assert np.allclose(ph3.phonon_supercell_matrix, fc2_supercell)
     assert np.allclose(ph3.supercell_matrix, fc3_supercell)
     # Verify supercell sizes
@@ -231,7 +232,7 @@ class MockCalculator(Calculator):
         super().__init__()
         self.forces = forces
 
-    def get_forces(self, _atoms: Atoms) -> np.ndarray:
+    def get_forces(self, _atoms: Atoms | None = None) -> np.ndarray:
         """Return predefined forces."""
         return self.forces
 

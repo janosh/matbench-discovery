@@ -140,7 +140,7 @@ def hist_classified_stable_vs_hull_dist(
         # combine histograms into a single dataframe
         df_hist = pd.DataFrame(
             (hist_true_pos, hist_false_neg, hist_false_pos, hist_true_neg),
-            index=clf_labels,
+            index=list(clf_labels),
         ).T
         df_hist[x_col] = bin_edges[:-1]
         df_melt = df_hist.melt(
@@ -283,7 +283,10 @@ def rolling_mae_vs_hull_dist(
     models: list[str] = list(e_above_hull_preds)
 
     if df_rolling_err is None or df_err_std is None:
-        df_rolling_err = pd.DataFrame(columns=models, index=bins)
+        df_rolling_err = pd.DataFrame(
+            index=bins,
+            columns=models,
+        )
         df_err_std = df_rolling_err.copy()
 
         for model in (
@@ -565,9 +568,9 @@ def cumulative_metrics(
             ),
         )
 
-        n_total_pos_cum = n_true_pos_cum + n_false_neg_cum
+        n_total_pos_cum = n_true_pos_cum + n_false_neg_cum  # type: ignore[unsupported-operator]
         # n_total_neg_cum = n_true_neg_cum + n_false_pos_cum
-        n_pred_pos_cum = n_true_pos_cum + n_false_pos_cum
+        n_pred_pos_cum = n_true_pos_cum + n_false_pos_cum  # type: ignore[unsupported-operator]
 
         # prevalence_cum = n_total_pos_cum / (n_total_pos_cum + n_total_neg_cum)
         precision_cum = n_true_pos_cum / n_pred_pos_cum  # model's discovery rate

@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { HeatmapTable, TableControls } from '$lib'
+  import { TableControls } from '$lib'
   import type { Label, ModelData } from '$lib/types'
+  import { HeatmapTable } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
   import {
     ALL_METRICS,

@@ -5,6 +5,7 @@
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
   import { ColorBar, luminance } from 'matterviz'
+  import { untrack } from 'svelte'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
@@ -17,11 +18,13 @@
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
   const min_models: number = 2
-  // Enforce minimum and maximum when initializing from prop
+  // Enforce minimum and maximum when initializing from prop (intentionally captures initial value only)
   let show_n_best: number = $state(
-    Math.min(
-      MODELS.length,
-      Math.max(min_models, data?.initial_show_n_best ?? MODELS.length),
+    untrack(() =>
+      Math.min(
+        MODELS.length,
+        Math.max(min_models, data?.initial_show_n_best ?? MODELS.length),
+      )
     ),
   )
   let sort_by_path: string = $derived(
@@ -96,18 +99,18 @@
       prop
       (prop.key)
     }
-      {@const { key, label, short, description } = prop}
+      {@const { key, label, description } = prop}
       <li class:active={prop.key == sort_by.key}>
         <button
           id={prop.key}
-          onclick={() => { // Handle the case where key is 'model_name'
+          onclick={() => {
             sort_by = prop
-            if (key === `model_name`) order = `asc`
+            if (key === `Model`) order = `asc` // default to ascending for model name
             else order = metric_better_as(key) === `lower` ? `asc` : `desc`
           }}
           style="position: relative"
         >
-          {@html short ?? label ?? key}
+          {@html label ?? key}
           {#if description}
             <span
               {@attach tooltip({ content: description })}
@@ -129,7 +132,8 @@
       title="Card titles colored by {sort_by.label}"
       title_style="font-size: 1.5em;"
       color_scale={lower_is_better ? (t) => interpolateRdBu(1 - t) : interpolateRdBu}
-      style="min-width: min(70vw, 400px); height: 14pt"
+      style="min-width: min(70vw, 400px)"
+      bar_style="height: 14pt;"
       range={lower_is_better ? [worst_val, best_val] : [best_val, worst_val]}
     />
     <span>
