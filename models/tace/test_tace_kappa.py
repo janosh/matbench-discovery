@@ -35,7 +35,7 @@ if False: # If you can autodownload, set this to True
         raise RuntimeError(
             "Failed to load TACE-v1-OAM-M.\n"
             "Please manual download the model from:\n"
-            "https://huggingface.co/xvzemin/tace-oam/resolve/main/TACE-v1-OAM-M.pt\n, "
+            "https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-v1-OAM-M.pt\n, "
             "and put the model into ~/.cache/tace/TACE-v1-OAM-M.pt"
         ) from e
 else:
