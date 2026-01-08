@@ -52,13 +52,13 @@ def process_results(path: str) -> None:
         return  # Exit if no files are found
 
     dfs: list[pd.DataFrame] = []
-    for fn in file_paths:
-        print(fn)
+    for filename in file_paths:
+        print(filename)
         try:
-            dfs.append(pd.read_json(fn))
-        except Exception as e:
-            print(f"Error reading {fn}: {e}")  # Print any errors during file reading.
-            continue  # Continue to the next file
+            dfs.append(pd.read_json(filename))
+        except Exception as exc:
+            print(f"Error reading {filename}: {exc}")
+            continue  # Continue to next file
 
     tot_df = pd.concat(dfs)
     tot_df["id_tuple"] = (

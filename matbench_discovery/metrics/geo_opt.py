@@ -32,12 +32,12 @@ def write_metrics_to_yaml(
 
     # Get metrics for this model
     metrics_for_symprec = {
-        str(Key.rmsd): float(round(df_geo_opt[MbdKey.structure_rmsd_vs_dft], 4)),
-        str(Key.n_sym_ops_mae): float(round(df_geo_opt[Key.n_sym_ops_mae], 4)),
-        str(Key.symmetry_decrease): float(round(df_geo_opt[Key.symmetry_decrease], 4)),
-        str(Key.symmetry_match): float(round(df_geo_opt[Key.symmetry_match], 4)),
-        str(Key.symmetry_increase): float(round(df_geo_opt[Key.symmetry_increase], 4)),
-        str(Key.n_structures): int(df_geo_opt[Key.n_structures]),
+        str(Key.rmsd): round(df_geo_opt[MbdKey.structure_rmsd_vs_dft].iloc[0], 4),
+        str(Key.n_sym_ops_mae): round(df_geo_opt[Key.n_sym_ops_mae].iloc[0], 4),
+        str(Key.symmetry_decrease): round(df_geo_opt[Key.symmetry_decrease].iloc[0], 4),
+        str(Key.symmetry_match): round(df_geo_opt[Key.symmetry_match].iloc[0], 4),
+        str(Key.symmetry_increase): round(df_geo_opt[Key.symmetry_increase].iloc[0], 4),
+        str(Key.n_structures): int(df_geo_opt[Key.n_structures].iloc[0]),
         "analysis_file": analysis_file_path,
         "analysis_file_url": None,  # to be filled after uploading to figshare
     }

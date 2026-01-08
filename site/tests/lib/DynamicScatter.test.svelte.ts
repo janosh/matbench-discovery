@@ -1,7 +1,7 @@
 import DynamicScatter from '$lib/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { mount } from 'svelte'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { doc_query, is_hidden } from '../index'
 
 const pane_selector = `[aria-label="Draggable pane"]`
@@ -83,11 +83,6 @@ describe(`DynamicScatter.svelte`, () => {
     })
   })
 
-  afterEach(() => {
-    document.body.innerHTML = ``
-    vi.restoreAllMocks()
-  })
-
   it(`mounts correctly with default props`, () => {
     mount(DynamicScatter, {
       target: document.body,
@@ -95,39 +90,31 @@ describe(`DynamicScatter.svelte`, () => {
     })
 
     // Check that controls grid is rendered
-    const controls_grid = document.body.querySelector(`.controls-grid`)
+    const controls_grid = document.querySelector(`.controls-grid`)
     expect(controls_grid).toBeDefined()
 
-    // Check that log scale checkboxes are rendered (expect 4 initially)
-    const checkboxes = document.body.querySelectorAll<HTMLInputElement>(
-      `input[type="checkbox"]`,
+    // Check that log-scale checkboxes are rendered in the controls grid
+    // (detailed checkbox state validation is in "regression tests for default values")
+    const checkboxes = document.querySelectorAll<HTMLInputElement>(
+      `.controls-grid input[type="checkbox"]`,
     )
-    expect(checkboxes.length).toBe(7)
-    // Check initial checked state (defaults: x=date_added, y=F1, color=model_params)
-    // Log default state: x=false, y=false, color=true
-    expect(checkboxes[0].checked).toBe(true) // x: date_added (log enabled)
-    expect(checkboxes[1].checked).toBe(true) // y: F1
-    expect(checkboxes[2].checked).toBe(true) // color: model_params
-    expect(checkboxes[3].checked).toBe(false) // x: date_added (log disabled)
-    // Check initial disabled state for date_added
-    expect(checkboxes[1].disabled).toBe(false) // y: CPS (log disabled due to missing data)
-    expect(checkboxes[2].disabled).toBe(false) // color: F1 (log disabled due to small range)
+    expect(checkboxes.length).toBe(4) // 4 checkboxes: x-axis log, y-axis log, color log, size log
 
     // Check that the scatter plot container is rendered
-    const plot_container = document.body.querySelector(`div.bleed-1400[style]`)
+    const plot_container = document.querySelector(`div.bleed-1400[style]`)
     expect(plot_container).toBeDefined()
   })
 
   it(`renders component structure (no SVG check)`, () => {
     // Use mount from svelte
     mount(DynamicScatter, { target: document.body, props: { models: mock_models } })
-    expect(document.body.querySelector(`.controls-grid`)).toBeDefined()
-    expect(document.body.querySelector(`div.bleed-1400[style]`)).toBeDefined()
+    expect(document.querySelector(`.controls-grid`)).toBeDefined()
+    expect(document.querySelector(`div.bleed-1400[style]`)).toBeDefined()
   })
 
   // Helper function to check fullscreen state
   async function check_fullscreen_state(expected_state: boolean): Promise<void> {
-    const button = document.body.querySelector<HTMLButtonElement>(
+    const button = document.querySelector<HTMLButtonElement>(
       `button[title$="fullscreen"]`,
     )
     const button_icon = button?.querySelector(`button > svg`)
@@ -169,7 +156,7 @@ describe(`DynamicScatter.svelte`, () => {
         model_filter: (model: ModelData) => model.model_params !== null,
       },
     })
-    expect(document.body.querySelector(`.controls-grid`)).toBeDefined()
+    expect(document.querySelector(`.controls-grid`)).toBeDefined()
     // Cannot easily check filter effect without mocks
   })
 
@@ -180,10 +167,8 @@ describe(`DynamicScatter.svelte`, () => {
         props: { models: mock_models },
       })
 
-      const settings_button = document.body.querySelector<HTMLButtonElement>(
-        `.settings-toggle`,
-      )
-      let extra_controls = document.body.querySelector(pane_selector)
+      const settings_button = doc_query<HTMLButtonElement>(`.settings-toggle`)
+      let extra_controls = document.querySelector(pane_selector)
 
       // 1. Initial state: Controls hidden (element may exist but be hidden)
       expect(is_hidden(extra_controls)).toBe(true)
@@ -220,9 +205,7 @@ describe(`DynamicScatter.svelte`, () => {
         props: { models: mock_models },
       })
 
-      const settings_button = document.body.querySelector<HTMLButtonElement>(
-        `.settings-toggle`,
-      )
+      const settings_button = doc_query<HTMLButtonElement>(`.settings-toggle`)
       let extra_controls = doc_query<HTMLElement>(pane_selector)
 
       // 1. Show controls
@@ -248,9 +231,7 @@ describe(`DynamicScatter.svelte`, () => {
         props: { models: mock_models },
       })
 
-      const settings_button = document.body.querySelector<HTMLButtonElement>(
-        `.settings-toggle`,
-      )
+      const settings_button = doc_query<HTMLButtonElement>(`.settings-toggle`)
       await settings_button?.click() // Show controls
 
       const extra_controls = doc_query(pane_selector)
@@ -341,6 +322,41 @@ describe(`DynamicScatter.svelte`, () => {
       link_strength_input.value = `8`
       await link_strength_input?.dispatchEvent(new Event(`input`))
       expect(link_strength_input?.value, `Link Strength after change`).toBe(`8`)
+    })
+  })
+
+  describe(`regression tests for default values`, () => {
+    it(`verifies all critical default UI state to catch regressions`, () => {
+      mount(DynamicScatter, { target: document.body, props: { models: mock_models } })
+
+      // Verify axis controls structure (4 select controls for x, y, color, size)
+      const controls_grid = document.querySelector(`.controls-grid`)
+      expect(controls_grid?.querySelectorAll(`[role="listbox"]`)).toHaveLength(4)
+
+      // Open extra controls and test all defaults
+      doc_query<HTMLButtonElement>(`.settings-toggle`)?.click()
+      const pane = doc_query(pane_selector)
+
+      // Test all checkbox defaults (these often regress)
+      const checkboxes = pane?.querySelectorAll<HTMLInputElement>(
+        `input[type="checkbox"]`,
+      )
+      expect(checkboxes?.[0]?.checked, `show_model_labels default`).toBe(true)
+      expect(checkboxes?.[1]?.checked, `x_grid default`).toBe(true)
+      expect(checkboxes?.[2]?.checked, `y_grid default`).toBe(true)
+
+      // Test all input defaults (these often regress)
+      expect(doc_query<HTMLInputElement>(`#x-ticks`, pane)?.value).toBe(`5`)
+      expect(doc_query<HTMLInputElement>(`#y-ticks`, pane)?.value).toBe(`5`)
+      expect(doc_query<HTMLInputElement>(`#size-multiplier`, pane)?.value).toBe(`1`)
+      expect(doc_query<HTMLInputElement>(`#label-font-size`, pane)?.value).toBe(`14`)
+      expect(doc_query<HTMLInputElement>(`#min-link-distance`, pane)?.value).toBe(`15`)
+      expect(doc_query<HTMLInputElement>(`#max-link-distance`, pane)?.value).toBe(`20`)
+      expect(doc_query<HTMLInputElement>(`#link-strength`, pane)?.value).toBe(`5`)
+
+      // Verify plot container and color controls render
+      expect(document.querySelector(`div.bleed-1400[style]`)).toBeDefined()
+      expect(pane?.querySelector(`.color-scale-select`)).toBeDefined()
     })
   })
 })

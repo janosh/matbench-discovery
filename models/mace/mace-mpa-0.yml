@@ -80,12 +80,13 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.412
+      κ_SRME: 0.4123
       pred_file: models/mace/mace-mpa-0/2024-11-25-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134875
+      κ_SRE: 0.2048
   geo_opt:
     pred_file: models/mace/mace-mpa-0/2025-01-30-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/52305026
+    pred_file_url: https://figshare.com/files/57751036
     struct_col: mace_structure
     symprec=1e-2:
       rmsd: 0.0731 # unitless

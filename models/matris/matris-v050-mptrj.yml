@@ -57,6 +57,7 @@ hyperparams:
   max_force: 0.05
   max_steps: 500
   ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
   optimizer: Adam
   loss: MAE
   loss_weights:
@@ -84,19 +85,20 @@ requirements:
 training_set: [MPtrj]
 training_cost: missing
 
-notes: # notes can have any key, be multiline and support markdown.
-  description: |
+notes:
+  Description: |
     MatRIS is a foundation model for materials representation and interaction simulation.
 
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.861
+      κ_SRME: 0.8651
       pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-kappa-103-fire-dist=0.01-fmax1e-4-symprec1e-5.json.gz
       pred_file_url: https://figshare.com/files/53090600
+      κ_SRE: 0.7711
   geo_opt:
     pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53000177
+    pred_file_url: https://figshare.com/files/57751045
     struct_col: matris_structure
     symprec=1e-5:
       rmsd: 0.0773 # unitless

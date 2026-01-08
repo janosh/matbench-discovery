@@ -18,8 +18,8 @@ __date__ = "2023-02-01"
 
 
 def classify_stable(
-    each_true: Sequence[float] | pd.Series,
-    each_pred: Sequence[float] | pd.Series,
+    each_true: Sequence[float | None] | pd.Series | np.ndarray,
+    each_pred: Sequence[float | None] | pd.Series | np.ndarray,
     *,
     stability_threshold: float = STABILITY_THRESHOLD,
     fillna: bool = True,
@@ -84,8 +84,8 @@ def classify_stable(
 
 
 def stable_metrics(
-    each_true: Sequence[float] | pd.Series,
-    each_pred: Sequence[float] | pd.Series,
+    each_true: Sequence[float] | pd.Series | np.ndarray,
+    each_pred: Sequence[float] | pd.Series | np.ndarray,
     *,
     stability_threshold: float = STABILITY_THRESHOLD,
     fillna: bool = True,

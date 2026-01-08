@@ -1,16 +1,12 @@
-ci:
-  autoupdate_schedule: quarterly
-  skip: [deno-fmt, deno-lint, eslint]
-
 default_stages: [pre-commit]
 
 default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.8
+    rev: v0.14.10
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: [--fix]
       - id: ruff-format
 
@@ -20,7 +16,10 @@ repos:
         name: ty check
         entry: ty check
         language: python
-        additional_dependencies: [ty]
+        types: [python]
+        additional_dependencies:
+          # TODO: remove numpy once np.array_split type fix in PR #30450 is released
+          [ty, numpy @ git+https://github.com/numpy/numpy]
         args: [--output-format, concise, --ignore, unresolved-import]
 
   - repo: https://github.com/janosh/format-ipy-cells
@@ -61,11 +60,11 @@ repos:
       - id: codespell
         stages: [pre-commit, commit-msg]
         exclude_types: [csv, json, svg, bib]
-        exclude: ^site/src/figs/.+$
+        exclude: ^(site/src/figs/.+|pyproject\.toml)$
         args: [--check-filenames]
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.45.0
+    rev: v0.47.0
     hooks:
       - id: markdownlint
         # MD013: line too long
@@ -76,7 +75,7 @@ repos:
         exclude: changelog\.md$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.33.0
+    rev: v10.0.0-beta.0
     hooks:
       - id: eslint
         types: [file]
@@ -91,7 +90,7 @@ repos:
           - '@stylistic/eslint-plugin'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.2
+    rev: 0.36.0
     hooks:
       - id: check-jsonschema
         files: ^models/.+/.+\.yml$
@@ -100,3 +99,12 @@ repos:
         files: ^data/datasets\.yml$
         args: [--schemafile, tests/dataset-schema.yml]
       - id: check-github-actions
+
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.41.0
+    hooks:
+      - id: typos
+        types: [text]
+        exclude_types: [csv]
+        exclude: ^(site/src/figs/.+|.+element-counts.*\.json)$
+        args: []

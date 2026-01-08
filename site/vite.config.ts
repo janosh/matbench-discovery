@@ -104,9 +104,24 @@ export default defineConfig(({ mode }) => ({
     setupFiles: `tests/index.ts`,
     dir: `tests`,
     include: [`**/*.test.ts`, `**/*.test.svelte.ts`],
+    server: {
+      deps: {
+        // Force Vitest to inline packages with directory imports to handle them properly
+        inline: [`matterviz`, `svelte-multiselect`, `@threlte/core`, `@threlte/extras`],
+      },
+    },
   },
 
   resolve: {
     conditions: mode === `test` ? [`browser`] : undefined,
+    alias: mode === `test`
+      ? [
+        // Mock wasm-dependent modules to avoid loading issues in jsdom
+        {
+          find: /^@spglib\/moyo-wasm.*/,
+          replacement: new URL(`./tests/mocks/moyo-wasm.ts`, import.meta.url).pathname,
+        },
+      ]
+      : [],
   },
 }))

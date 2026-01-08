@@ -6,7 +6,7 @@
   import type { ChemicalElement } from 'matterviz'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { RadioButtons, Toggle } from 'svelte-multiselect'
+  import { Toggle } from 'svelte-multiselect'
 
   const elem_counts = $state(
     import.meta.glob(`../wbm-element-counts-*=*.json`, {
@@ -23,14 +23,12 @@
   let batch_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`batch=`))
   let log = $state(false) // log color scale
   let filter = $state(arity_keys[0])
-  let color_scale = $state<D3InterpolateName[]>([`interpolateViridis`])
+  let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
-  let active_counts = $derived(elem_counts[filter])
+  let active_counts = $derived(elem_counts[filter] as Record<string, number>)
   let normalized_bar_counts: boolean = $state(false)
 
   const style = `display: flex; place-items: center; place-content: center;`
-
-  const radio_style = `display: inline-flex; margin: 2pt 8pt; border-radius: 3pt;`
 </script>
 
 <h1>Too Much Information</h1>
@@ -45,35 +43,33 @@
   structure was generated in).
 </p>
 
-<ColorScaleSelect bind:selected={color_scale} />
+<ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />
 
 <form>
   <span>
     number of elements
-    <RadioButtons style={radio_style} options={arity_keys} bind:selected={filter}>
-      {#snippet children(
-        { option, active }: { option: string; active: boolean },
-      )}
-        <strong class:active>{option.split(`=`).at(-1)}</strong>
-      {/snippet}
-    </RadioButtons>
+    {#each arity_keys as value (value)}
+      <label>
+        <input type="radio" name="filter" {value} bind:group={filter} />
+        <strong class:active={filter === value}>{value.split(`=`).at(-1)}</strong>
+      </label>
+    {/each}
   </span>
   <span>
     batch index
-    <RadioButtons style={radio_style} options={batch_keys} bind:selected={filter}>
-      {#snippet children(
-        { option, active }: { option: string; active: boolean },
-      )}
-        <strong class:active>{option.split(`=`).at(-1)}</strong>
-      {/snippet}
-    </RadioButtons>
+    {#each batch_keys as value (value)}
+      <label>
+        <input type="radio" name="filter" {value} bind:group={filter} />
+        <strong class:active={filter === value}>{value.split(`=`).at(-1)}</strong>
+      </label>
+    {/each}
   </span>
 </form>
 
 <PeriodicTable
   heatmap_values={active_counts}
   {log}
-  color_scale={color_scale[0]}
+  {color_scale}
   bind:active_element
   show_photo={false}
   missing_color="rgba(255,255,255,0.3)"
@@ -112,17 +108,11 @@
     gap: 5cqw;
     place-content: center;
   }
-  form > span strong {
-    background-color: var(--nav-bg);
-    padding: 3pt 4pt;
-  }
   form > span strong.active {
     background-color: var(--btn-bg);
   }
   label {
     display: flex;
-    gap: 1ex;
-    place-content: center;
-    place-items: center;
+    gap: 4pt;
   }
 </style>

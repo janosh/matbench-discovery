@@ -18,6 +18,7 @@ from tqdm import tqdm
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    import numpy as np
     from ase.calculators.calculator import Calculator
 
 __date__ = "2024-03-31"
@@ -28,7 +29,7 @@ atom_num_symbol_map = dict(enumerate(chemical_symbols, start=0))
 
 
 def generate_diatomics(
-    elem1: str, elem2: str, distances: Sequence[float]
+    elem1: str, elem2: str, distances: Sequence[float | int] | np.ndarray
 ) -> list[Atoms]:
     """Build diatomic molecules in vacuum for given distances.
 
@@ -50,7 +51,7 @@ def calc_diatomic_curve(
     pairs: Sequence[tuple[str | int, str | int]],
     calculator: Calculator,
     model_name: str,
-    distances: Sequence[float],
+    distances: Sequence[float | int] | np.ndarray,
     results: dict[str, dict[str, list[float | list[list[float]]]]],
 ) -> dict[str, dict[str, list[float | list[list[float]]]]]:
     """Generate potential energy and forces data for diatomic molecules.

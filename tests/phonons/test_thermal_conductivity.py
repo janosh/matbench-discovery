@@ -7,6 +7,7 @@ from ase.build import bulk
 from ase.calculators.calculator import Calculator
 from ase.calculators.emt import EMT
 from phono3py.api_phono3py import Phono3py
+from phono3py.conductivity.wigner_rta import ConductivityWignerRTA
 from phonopy.structure.atoms import PhonopyAtoms
 from pymatviz.enums import Key
 
@@ -60,6 +61,7 @@ def test_init_phono3py(test_atoms: Atoms) -> None:
     assert ph3.mesh_numbers.tolist() == [2, 2, 2]
     assert ph3.supercell_matrix.tolist() == np.eye(3).tolist()
     # Check that both supercells were created correctly
+    assert ph3.phonon_supercell_matrix is not None
     assert np.allclose(ph3.phonon_supercell_matrix, fc2_supercell)
     assert np.allclose(ph3.supercell_matrix, fc3_supercell)
     # Verify supercell sizes
@@ -201,6 +203,10 @@ def test_calculate_conductivity(
     }
     assert set(kappa_dict) >= required_keys
     assert all(isinstance(val, np.ndarray) for val in kappa_dict.values())
+    assert isinstance(kappa, ConductivityWignerRTA)
+    assert kappa.frequencies.shape == (3, 3)
+    assert kappa.grid_points.shape == (3,)
+    assert kappa.gamma.shape == (1, 1, 3, 3)
 
 
 def test_calculate_mode_kappa_tot() -> None:
@@ -226,7 +232,7 @@ class MockCalculator(Calculator):
         super().__init__()
         self.forces = forces
 
-    def get_forces(self, _atoms: Atoms) -> np.ndarray:
+    def get_forces(self, atoms: Atoms | None = None) -> np.ndarray:  # noqa: ARG002
         """Return predefined forces."""
         return self.forces
 
@@ -275,11 +281,9 @@ def test_calculate_fc2_set_forces() -> None:
     force_set = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})
 
     # Test shape of returned force set
-    expected_shape = (
-        len(ph3.phonon_supercells_with_displacements),
-        len(ph3.phonon_supercell),
-        3,
-    )
+    n_displacements = len(ph3.phonon_supercells_with_displacements)
+    n_atoms = len(ph3.phonon_supercell)
+    expected_shape = (n_displacements, n_atoms, 3)
     assert force_set.shape == expected_shape, f"{force_set.shape=} != {expected_shape=}"
 
     # Test that forces sum to zero for each displacement (conservation of momentum)
@@ -342,9 +346,9 @@ def test_calculate_fc2_set_with_various_supercells(
     calc = MockCalculator(np.zeros((len(ph3.phonon_supercell), 3)))
     force_set = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})
 
-    # Expected atoms in phonon supercell is natoms * det(fc2_matrix)
-    natoms = len(atoms)
-    assert len(ph3.phonon_supercell) == natoms * expected_det
+    # Expected atoms in phonon supercell is n_atoms * det(fc2_matrix)
+    n_atoms = len(atoms)
+    assert len(ph3.phonon_supercell) == n_atoms * expected_det
 
     expected_shape = (
         len(ph3.phonon_supercells_with_displacements),

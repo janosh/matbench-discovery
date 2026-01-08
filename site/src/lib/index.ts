@@ -10,7 +10,7 @@ export { default as DiatomicCurve } from './DiatomicCurve.svelte'
 export { default as DynamicScatter } from './DynamicScatter.svelte'
 export { default as Footer } from './Footer.svelte'
 export { default as GeoOptMetricsTable } from './GeoOptMetricsTable.svelte'
-export { default as HeatmapTable } from './HeatmapTable.svelte'
+export { default as GitHubActivityScatter } from './GitHubActivityScatter.svelte'
 export { default as Icon } from './Icon.svelte'
 export { default as IconList } from './IconList.svelte'
 export { default as MetricScatter } from './MetricScatter.svelte'
@@ -18,7 +18,6 @@ export { default as MetricsTable } from './MetricsTable.svelte'
 export { default as AuthorBrief } from './ModelAuthor.svelte'
 export { default as ModelCard } from './ModelCard.svelte'
 export { MODELS } from './models.svelte'
-export { default as Nav } from './Nav.svelte'
 export { default as PtableHeatmap } from './PtableHeatmap.svelte'
 export { default as PtableInset } from './PtableInset.svelte'
 export { default as RadarChart } from './RadarChart.svelte'
@@ -88,7 +87,7 @@ for (const key of Object.keys(data_files).filter((key) => !key.startsWith(`_`)))
 }
 
 // Format date string into human-readable format
-export function format_date(date: string, options?: Intl.DateTimeFormatOptions): string {
+export function format_date(date: string | number, options?: Intl.DateTimeFormatOptions) {
   return new Date(date).toLocaleDateString(undefined, {
     year: `numeric`,
     month: `short`,

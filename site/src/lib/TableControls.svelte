@@ -1,47 +1,47 @@
 <script lang="ts">
-  import { Icon, TableColumnToggleMenu } from '$lib'
+  import { Icon, type Label, TableColumnToggleMenu } from '$lib'
   import { tooltip } from 'svelte-multiselect/attachments'
-  import type { Label } from './types'
+  import type { HTMLAttributes } from 'svelte/elements'
 
-  // Props for this component
-  interface Props {
-    show_energy_only?: boolean
-    columns?: Label[]
-    show_heatmap?: boolean
-    show_compliant?: boolean
-    show_non_compliant?: boolean
-    on_filter_change?: (
-      show_energy: boolean,
-      show_non_compliant: boolean,
-    ) => void | undefined
-    [key: string]: unknown
-  }
-
-  // Extract props with defaults
   let {
     show_energy_only = $bindable(false),
     columns = $bindable([]),
     show_heatmap = $bindable(true),
     show_compliant = $bindable(true),
     show_non_compliant = $bindable(true),
+    show_selected_only = $bindable(false),
+    selected_count = 0,
     on_filter_change = undefined,
+    show_energy_only_toggle = false,
     ...rest
-  }: Props = $props()
-
-  // Column panel state
-  let column_panel_open = $state(false)
-
-  function handle_energy_only_change(event: Event) {
-    const target = event.target as HTMLInputElement
-    const checked = target.checked
-
-    // Update both local state and call callback
-    show_energy_only = checked
-    on_filter_change?.(checked, false)
-  }
+  }: HTMLAttributes<HTMLDivElement> & {
+    show_energy_only?: boolean
+    columns?: Label[]
+    show_heatmap?: boolean
+    show_compliant?: boolean
+    show_non_compliant?: boolean
+    show_selected_only?: boolean
+    selected_count?: number
+    on_filter_change?: (
+      show_energy: boolean,
+      show_non_compliant: boolean,
+    ) => void | undefined
+    show_energy_only_toggle?: boolean
+  } = $props()
 </script>
 
 <div class="table-controls" {...rest}>
+  {#if selected_count > 0}
+    <label>
+      <input
+        type="checkbox"
+        bind:checked={show_selected_only}
+        aria-label="Toggle between showing only selected models and all models"
+      />
+      {show_selected_only ? `Show all` : `Show only ${selected_count} selected`}
+    </label>
+  {/if}
+
   <label class="legend-item" title="Toggle visibility of compliant models">
     <span class="color-swatch" style="background-color: var(--compliant-color)"></span>
     <input
@@ -87,20 +87,27 @@
       <Icon icon="Info" />
     </span>
   </label>
-  <label>
-    <input
-      type="checkbox"
-      checked={show_energy_only}
-      onchange={handle_energy_only_change}
-    />
-    <span>Energy-only models</span>
-    <span
-      title="Include models that only predict energy (no forces or stress)"
-      {@attach tooltip()}
-    >
-      <Icon icon="Info" />
-    </span>
-  </label>
+  {#if show_energy_only_toggle}
+    <label>
+      <input
+        type="checkbox"
+        checked={show_energy_only}
+        onchange={(event: Event) => {
+          const target = event.target as HTMLInputElement
+          // Update both local state and trigger callback (if passed)
+          show_energy_only = target.checked
+          on_filter_change?.(target.checked, false)
+        }}
+      />
+      Energy-only models
+      <span
+        title="Include models that only predict energy (no forces or stress)"
+        {@attach tooltip()}
+      >
+        <Icon icon="Info" />
+      </span>
+    </label>
+  {/if}
 
   <label>
     <input
@@ -108,10 +115,10 @@
       bind:checked={show_heatmap}
       aria-label="Toggle heatmap colors"
     />
-    <span>Heatmap</span>
+    Heatmap
   </label>
 
-  <TableColumnToggleMenu bind:columns bind:column_panel_open />
+  <TableColumnToggleMenu bind:columns />
 </div>
 
 <style>

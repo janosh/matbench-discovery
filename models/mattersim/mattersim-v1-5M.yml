@@ -107,7 +107,9 @@ hyperparams:
   optimizer: AdamW
   ase_optimizer: FIRE
   cell_filter: ExpCellFilter
-  learning_rate: 5e-4 # initial value, linearly decayed to 0
+  max_steps: 500
+  max_force: 0.02 # eV/Å
+  learning_rate: 0.0005 # initial value, linearly decayed to 0
   seed: 42
   batch_size: 128
   units: 256
@@ -132,12 +134,13 @@ notes:
 metrics:
   phonons:
     kappa_103: # https://github.com/MPA2suite/k_SRME/pull/13
-      κ_SRME: 0.574 # dimensionless
+      κ_SRME: 0.5745 # dimensionless
       pred_file: models/mattersim/mattersim-v1-5M/2024-12-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134884
+      κ_SRE: 0.4126
   geo_opt:
     pred_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062176
+    pred_file_url: https://figshare.com/files/57753373
     struct_col: mattersim_5M_structure
     symprec=1e-2:
       rmsd: 0.0733 # unitless

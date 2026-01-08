@@ -12,7 +12,6 @@ https://github.com/FAIR-Chem/fairchem/blob/6329e922/src/fairchem/core/modules/ev
 """
 
 # %%
-import importlib.metadata
 import os
 
 import numpy as np
@@ -27,17 +26,13 @@ from pymatviz.utils import si_fmt
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, today
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.metrics import geo_opt
 
 symprec = 1e-5
 model_lvl, metric_lvl = "model", "metric"
 symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
-moyo_version = importlib.metadata.version("moyopy")
-dft_analysis_file = (
-    f"{ROOT}/data/wbm/dft-geo-opt-{symprec_str}-moyo={moyo_version}.csv.gz"
-)
-df_dft_analysis = pd.read_csv(dft_analysis_file, index_col=0)
+df_dft_analysis = pd.read_csv(DataFiles.wbm_dft_geo_opt_symprec_1e_5.path, index_col=0)
 
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
@@ -297,11 +292,11 @@ fig_sym_ops_diff.show()
 display(
     df_geo_metrics.round(3)
     .rename(columns=lambda col: col.removeprefix("symmetry_"))
-    .style.format(lambda x: f"{x:.1%}" if isinstance(x, float) else si_fmt(x))
-    .background_gradient(cmap="Oranges", subset="decrease")
+    .style.background_gradient(cmap="Oranges", subset="decrease")
     .background_gradient(cmap="Greens", subset="match")
     .background_gradient(cmap="Blues", subset="increase")
     .set_caption("Symmetry changes vs DFT")
+    .format(lambda x: f"{x:.1%}" if isinstance(x, float) else si_fmt(x))
 )
 
 

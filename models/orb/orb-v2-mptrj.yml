@@ -86,12 +86,13 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 1.725
+      κ_SRME: 1.7255
       pred_file: models/orb/orbff-mptrj-v2/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134890
+      κ_SRE: 1.4544
   geo_opt:
     pred_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062317
+    pred_file_url: https://figshare.com/files/57753379
     struct_col: orb_structure
     symprec=1e-5:
       rmsd: 0.1007 # unitless

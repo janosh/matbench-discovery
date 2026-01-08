@@ -1,5 +1,6 @@
 # %%
 import os
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -65,11 +66,11 @@ else:
 
 
 # %% Relax structures
-def alignn_relax(structure: Structure) -> Structure:
+def alignn_relax(structure: dict[str, Any]) -> Structure:
     """Relax structure using Alignn FF.
 
     Args:
-        structure (Structure): pymatgen object to relax.
+        structure (dict[str, Any]): pymatgen Structure as dict to relax.
 
     Returns:
         Structure: Relaxed structure.
@@ -78,14 +79,15 @@ def alignn_relax(structure: Structure) -> Structure:
     import torch
     from alignn.ff.ff import ForceField, default_path
 
+    pmg_struct = Structure.from_dict(structure)
     ff = ForceField(
-        jarvis_atoms=JarvisAtomsAdaptor.get_atoms(Structure.from_dict(structure)),
+        jarvis_atoms=JarvisAtomsAdaptor.get_atoms(pmg_struct),
         model_path=default_path(),
         device=f"cuda:{task_id % 4}" if torch.cuda.is_available() else "cpu",
-        logfile="/dev/null",
+        logfile=None,
     )
     # Relax structure
-    opt, _, _ = ff.optimize_atoms(trajectory=None, logfile="/dev/null")
+    opt, _, _ = ff.optimize_atoms(trajectory=None, logfile=None)
 
     return JarvisAtomsAdaptor.get_structure(opt)
 

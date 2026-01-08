@@ -1,12 +1,11 @@
 <script lang="ts">
   import { Icon } from '$lib'
+  import type { HTMLAttributes } from 'svelte/elements'
   import type { IconName } from './icons'
 
-  interface Props {
-    icons: { id?: string; src?: string; name: string }[] | undefined
-    [key: string]: unknown
-  }
-  let { icons = $bindable([]), ...rest }: Props = $props()
+  let { icons = $bindable([]), ...rest }: HTMLAttributes<HTMLSpanElement> & {
+    icons?: { id?: string; src?: string; name: string }[]
+  } = $props()
 </script>
 
 {#each icons ?? [] as logo (logo.id ?? logo.src)}

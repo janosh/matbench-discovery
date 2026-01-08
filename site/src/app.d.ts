@@ -41,7 +41,7 @@ declare module '*data-files.yml' {
     md5?: string
   }
   type DataFiles = {
-    [K in string]: K extends `_links` ? string : DataFile
+    [K in string]: K extends '_links' ? string : DataFile
   }
   export const data_files: DataFiles
 }
@@ -70,4 +70,9 @@ declare module '*modeling-tasks.yml' {
   export const discovery: ModelingTask
   export const phonons: ModelingTask
   export const diatomics: ModelingTask
+}
+
+declare module '*mlip-github-activity.json' {
+  const data: import('$lib/types').GitHubActivityData[]
+  export default data
 }

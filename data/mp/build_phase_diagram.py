@@ -29,7 +29,10 @@ all_mp_computed_structure_entries = MPRester().get_entries("")
 
 # save all ComputedStructureEntries to disk
 # mp-15590 appears twice so we drop_duplicates()
-df_mp_cse = pd.DataFrame(all_mp_computed_structure_entries, columns=["entry"])
+df_mp_cse = pd.DataFrame(
+    all_mp_computed_structure_entries,
+    columns=["entry"],
+)
 df_mp_cse.index.name = Key.mat_id
 df_mp_cse.index = [e.entry_id for e in df_mp_cse.entry]
 df_mp_cse.reset_index().to_json(
@@ -81,17 +84,16 @@ df_wbm = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
 # more accurate energy corrections that take into account peroxide/superoxide nature
 # of materials (and same for sulfides) based on atomic distances in the structure
-wbm_computed_entries: list[ComputedStructureEntry] = df_wbm.query(
-    "n_elements > 1"
-).cse.map(ComputedStructureEntry.from_dict)
-
+filtered_entries = list(
+    df_wbm.query("n_elements > 1").cse.map(ComputedStructureEntry.from_dict)
+)
 wbm_computed_entries = MaterialsProject2020Compatibility().process_entries(
-    wbm_computed_entries, verbose=True, clean=True
+    filtered_entries, verbose=True, clean=True
 )
 
-n_skipped = len(df_wbm) - len(wbm_computed_entries)
-assert n_skipped == 0
-print(f"{n_skipped:,} ({n_skipped / len(df_wbm):.1%}) entries not processed")
+n_skipped = len(filtered_entries) - len(wbm_computed_entries)
+assert n_skipped == 0, f"process_entries() unexpectedly filtered {n_skipped} entries"
+print(f"{n_skipped:,} ({n_skipped / len(filtered_entries):.1%}) entries not processed")
 
 
 # %% merge MP and WBM entries into a single PatchedPhaseDiagram
@@ -125,7 +127,7 @@ df_mp[e_form_us] = [
 
 
 # make sure get_form_energy_per_atom() reproduces MP formation energies
-fig = pmv.density_scatter_plotly(df=df_mp, x=Key.form_energy, y=e_form_us)
+fig = pmv.density_scatter(df=df_mp, x=Key.form_energy, y=e_form_us)
 fig.layout.title = "Formation Energy Comparison"
 fig.layout.xaxis.title = "MP Formation Energy (eV/atom)"
 fig.layout.yaxis.title = "Our Formation Energy (eV/atom)"

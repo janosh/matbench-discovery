@@ -17,12 +17,10 @@
 # ///
 
 import os
-from collections.abc import Callable
 from typing import Any, Literal
 
 import pandas as pd
-from ase import Atoms
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
 from hienet.hienet_calculator import HIENetCalculator
@@ -62,7 +60,7 @@ os.makedirs(out_dir := "./results", exist_ok=True)
 
 task_type = Task.IS2RE
 ase_optimizer = "FIRE"
-os.environ["CUDA_VISIBLE_DEVICES"] = f"{args.gpu}"
+os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 device = "cpu"  # "cuda" if torch.cuda.is_available() else "cpu"
 ase_filter: Literal["frechet", "exp"] = "frechet"
 
@@ -83,11 +81,11 @@ atoms_list = atoms_list[left:right]
 
 relax_results: dict[str, dict[str, Any]] = {}
 
-filter_cls: Callable[[Atoms], Atoms] = {
+filter_cls: type[Filter] = {
     "frechet": FrechetCellFilter,
     "exp": ExpCellFilter,
 }[ase_filter]
-optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 
 for atoms in tqdm(atoms_list, desc="Relaxing"):
@@ -99,11 +97,12 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
 
         if max_steps > 0:
             atoms = filter_cls(atoms)
-            optimizer = optim_cls(atoms, logfile="/dev/null")
+            optimizer = optim_cls(atoms, logfile=None)
             optimizer.run(fmax=force_max, steps=max_steps)
         energy = atoms.get_potential_energy()  # relaxed energy
         # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
-        relaxed_struct = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
+        unwrapped = atoms.atoms if hasattr(atoms, "atoms") else atoms
+        relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except Exception as exc:
         print(f"Failed to relax {mat_id}: {exc!r}")

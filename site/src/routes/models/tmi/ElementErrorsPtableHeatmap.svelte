@@ -7,16 +7,6 @@
   import Select from 'svelte-multiselect'
   import per_elem_each_errors from '../per-element-each-errors.json'
 
-  interface Props extends ComponentProps<typeof PeriodicTable> {
-    color_scale?: D3InterpolateName | ((num: number) => string)
-    active_element?: ChemicalElement | null
-    models?: string[]
-    // must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
-    current_model?: string[]
-    manual_cbar_max?: boolean
-    normalized?: boolean
-    cbar_max?: number | null
-  }
   let {
     color_scale = $bindable(`interpolateViridis`),
     active_element = $bindable(null),
@@ -26,32 +16,43 @@
     normalized = $bindable(true),
     cbar_max = $bindable(0.3),
     ...rest
-  }: Props = $props()
+  }: ComponentProps<typeof PeriodicTable> & {
+    color_scale?: D3InterpolateName | ((num: number) => string)
+    active_element?: ChemicalElement | null
+    models?: string[]
+    // must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
+    current_model?: string[]
+    manual_cbar_max?: boolean
+    normalized?: boolean
+    cbar_max?: number | null
+  } = $props()
 
   const test_set_std_key = `Test set standard deviation`
-
   const test_set_std = per_elem_each_errors[test_set_std_key]
 
+  let model_errors = $derived(
+    per_elem_each_errors[current_model[0] as keyof typeof per_elem_each_errors],
+  )
   let heatmap_values = $derived(
-    Object.entries(per_elem_each_errors[current_model[0]]).map(([key, val]) => {
-      const denom = normalized ? test_set_std[key] : 1
-      if (denom) return val / denom
-      return null
+    Object.keys(model_errors).map((key) => {
+      const val = model_errors[key as keyof typeof model_errors]
+      const denom = normalized ? test_set_std[key as keyof typeof test_set_std] : 1
+      return denom ? (val ?? 0) / denom : 0
     }),
   )
   let current_data_max = $derived(Math.max(...heatmap_values))
-  let cs_range = $derived([0, manual_cbar_max ? cbar_max : current_data_max])
+  let cs_range = $derived<[number, number]>([
+    0,
+    manual_cbar_max ? (cbar_max ?? 0) : current_data_max,
+  ])
 
+  const snapshot_data = () => (
+    { color_scale, current_model, cbar_max, manual_cbar_max, normalized }
+  )
   export const snapshot = {
-    capture: () => ({
-      color_scale,
-      current_model,
-      cbar_max,
-      manual_cbar_max,
-      normalized,
-    }),
+    capture: snapshot_data,
     restore: (
-      values,
+      values: ReturnType<typeof snapshot_data>,
     ) => ({ color_scale, current_model, cbar_max, manual_cbar_max, normalized } =
       values),
   }
@@ -97,28 +98,30 @@
   {color_scale}
   bind:active_element
   color_scale_range={cs_range}
-  tile_props={{ precision: `0.2` }}
+  tile_props={{ float_fmt: `.2` }}
   show_photo={false}
   missing_color="rgba(255,255,255,0.3)"
   {...rest}
 >
   {#snippet inset()}
-    <TableInset style="align-content: center">
-      <PtableInset
-        element={active_element}
-        elem_counts={heatmap_values}
-        show_percent={false}
-        unit="<small style='font-weight: lighter;'>eV / atom</small>"
-      />
-      <ColorBar
-        title="{current_model[0]} ({normalized ? `normalized` : `eV/atom`})"
-        title_side="top"
-        {color_scale}
-        tick_labels={5}
-        range={cs_range}
-        style="width: 85%; margin: 0 2em"
-      />
-    </TableInset>
+    {#if active_element}
+      <TableInset style="align-content: center">
+        <PtableInset
+          element={active_element}
+          elem_counts={heatmap_values}
+          show_percent={false}
+          unit="<small style='font-weight: lighter;'>eV / atom</small>"
+        />
+        <ColorBar
+          title="{current_model[0]} ({normalized ? `normalized` : `eV/atom`})"
+          title_side="top"
+          {color_scale}
+          tick_labels={5}
+          range={cs_range}
+          style="width: 85%; margin: 0 2em"
+        />
+      </TableInset>
+    {/if}
   {/snippet}
 </PeriodicTable>
 

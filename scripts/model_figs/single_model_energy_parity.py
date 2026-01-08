@@ -61,7 +61,7 @@ for model, which_energy in itertools.product(models_to_plot, (Key.e_form, Key.ea
     df_in = df_in.rename(columns={model.label: e_pred_col})
     n_points = len(df_in.dropna(subset=[e_true_col, e_pred_col]))
 
-    fig = pmv.density_scatter_plotly(
+    fig = pmv.density_scatter(
         df=df_in.reset_index(drop=True),
         x=e_true_col,
         y=e_pred_col,
@@ -70,13 +70,7 @@ for model, which_energy in itertools.product(models_to_plot, (Key.e_form, Key.ea
         opacity=0.7,
         color_continuous_scale="agsunset",
         colorbar_kwargs=dict(orientation="h", thickness=15, x=0.3, y=0.8, len=0.5),
-        stats=dict(
-            prefix=f"N={n_points:,}<br>",
-            x=0.99,
-            xanchor="right",
-            y=0.07,
-            font_color="black",
-        ),
+        stats=dict(prefix=f"N={n_points:,}<br>", x=0.99, xanchor="right", y=0.07),
         best_fit_line=dict(annotate_params=dict(y=0.01, font_size=16, x=0.99)),
     )
     x_title = f"PBE {energy_labels[which_energy]} (eV/atom)"

@@ -8,6 +8,7 @@ the site.
 
 # %%
 import itertools
+import traceback
 from datetime import date
 
 import numpy as np
@@ -58,8 +59,8 @@ if __name__ == "__main__":
                     model, metrics, model_preds.loc[subset_idx], test_subset
                 )
             print(f"\t✓ Updated discovery metrics for {test_subset}")
-        except Exception as exc:
-            print(f"\t✗ Error processing {model.label}: {exc}")
+        except Exception:
+            print(f"\t✗ Error processing {model.label}: {traceback.format_exc()}")
             continue
 
     if not pmv.IS_IPYTHON:
@@ -169,10 +170,7 @@ for model_label in models:
                 else ""
             )
 
-            title = (
-                f"{n_materials_total:,} materials in training set{new_line}"
-                f"{dataset_tooltip}"
-            )
+            title = f"{n_materials_total:,} materials in training set{new_line}{dataset_tooltip}"  # noqa: E501
             train_size_str = (
                 f"<span {title=} data-sort-value={n_materials_total}>"
                 f"{si_fmt(n_materials_total, fmt='.0f')} ({dataset_str})</span>"

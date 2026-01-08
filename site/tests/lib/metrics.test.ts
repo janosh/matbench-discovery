@@ -732,11 +732,11 @@ describe(`METADATA_COLS`, () => {
       `Date Added`,
       `Links`,
       `r<sub>cut</sub>`,
-      `Number of Training Materials`,
-      `Number of Training Structures`,
-      `Checkpoint License`,
+      `Training Materials`,
+      `Training Structures`,
+      `Ckpt License`,
       `Code License`,
-      `Missing Predictions`,
+      `Missing Preds`,
       `Run Time`,
       `Org`,
     ]
@@ -757,7 +757,8 @@ describe(`METADATA_COLS`, () => {
     const r_cut_col = METADATA_COLS.r_cut
     expect(r_cut_col).toBeDefined()
     expect(r_cut_col?.description).toContain(`Graph construction radius`)
-    expect(r_cut_col?.visible).toBe(false)
+    // visible is undefined for r_cut, meaning it's visible by default
+    expect(r_cut_col?.visible).toBeUndefined()
   })
 })
 
@@ -964,12 +965,12 @@ describe(`Model Sorting Logic`, () => {
     const models = Object.entries({ a: 10, b: 0, c: 5, d: 0 }).map(
       ([model_key, run_time]) => ({
         model_key: `model_${model_key}`,
-        'Run Time (h)': run_time,
+        'Run Time': run_time,
       }),
     ) as unknown as ModelData[]
 
     // Test ascending sort (runtime 0 should be last)
-    const sorted_asc = [...models].sort(sort_models(`Run Time (h)`, `asc`))
+    const sorted_asc = [...models].sort(sort_models(`Run Time`, `asc`))
     // Check the non-zero values are sorted correctly first
     expect(sorted_asc.slice(0, 2).map((m) => m.model_key)).toEqual([`model_c`, `model_a`])
     // Check the zero values are at the end (order between them is not guaranteed)
@@ -981,7 +982,7 @@ describe(`Model Sorting Logic`, () => {
     ).toEqual([`model_b`, `model_d`])
 
     // Test descending sort (runtime 0 should be first)
-    const sorted_desc = [...models].sort(sort_models(`Run Time (h)`, `desc`))
+    const sorted_desc = [...models].sort(sort_models(`Run Time`, `desc`))
     // Check the zero values are at the beginning (order between them is not guaranteed)
     expect(
       sorted_desc

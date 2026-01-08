@@ -21,40 +21,40 @@ export type ModelMetadata = {
   url?: string
   pypi?: string
   pr_url: string
-  checkpoint_url: string | `missing`
+  checkpoint_url: string | 'missing'
   license: {
     /**
      * License for the model code
      */
     code:
-      | `MIT`
-      | `Apache-2.0`
-      | `CC-BY-4.0`
-      | `CC-BY-SA-4.0`
-      | `CC-BY-NC-4.0`
-      | `GPL-3.0`
-      | `BSD-3-Clause`
-      | `LGPL-3.0`
-      | `Meta Research`
-      | `ASL`
-      | `unreleased`
-    code_url?: string | `missing`
+      | 'MIT'
+      | 'Apache-2.0'
+      | 'CC-BY-4.0'
+      | 'CC-BY-SA-4.0'
+      | 'CC-BY-NC-4.0'
+      | 'GPL-3.0'
+      | 'BSD-3-Clause'
+      | 'LGPL-3.0'
+      | 'Meta Research'
+      | 'ASL'
+      | 'unreleased'
+    code_url?: string | 'missing'
     /**
      * License for the model checkpoint
      */
     checkpoint:
-      | `MIT`
-      | `Apache-2.0`
-      | `CC-BY-4.0`
-      | `CC-BY-SA-4.0`
-      | `CC-BY-NC-4.0`
-      | `GPL-3.0`
-      | `BSD-3-Clause`
-      | `LGPL-3.0`
-      | `Meta Research`
-      | `ASL`
-      | `unreleased`
-    checkpoint_url?: string | `missing`
+      | 'MIT'
+      | 'Apache-2.0'
+      | 'CC-BY-4.0'
+      | 'CC-BY-SA-4.0'
+      | 'CC-BY-NC-4.0'
+      | 'GPL-3.0'
+      | 'BSD-3-Clause'
+      | 'LGPL-3.0'
+      | 'Meta Research'
+      | 'ASL'
+      | 'unreleased'
+    checkpoint_url?: string | 'missing'
   }
   requirements: {
     /**
@@ -65,22 +65,35 @@ export type ModelMetadata = {
   }
   trained_for_benchmark: boolean
   training_set: (
-    | `MP 2022`
-    | `MPtrj`
-    | `MPF`
-    | `MP Graphs`
-    | `GNoME`
-    | `MatterSim`
-    | `Alex`
-    | `OMat24`
-    | `sAlex`
-    | `OpenLAM`
+    | 'MP 2022'
+    | 'MPtrj'
+    | 'MPF'
+    | 'MP Graphs'
+    | 'GNoME'
+    | 'MatterSim'
+    | 'Alex'
+    | 'OMat24'
+    | 'sAlex'
+    | 'OpenLAM'
   )[]
   hyperparams?: {
+    /**
+     * Maximum remaining force allowed on any atom in eV/Å for geometry optimization convergence
+     */
     max_force?: number
+    /**
+     * Maximum number of optimization steps allowed
+     */
     max_steps?: number
     optimizer?: string
+    /**
+     * ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)
+     */
     ase_optimizer?: string
+    /**
+     * ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)
+     */
+    cell_filter?: string
     learning_rate?: number
     batch_size?: number
     epochs?: number
@@ -92,7 +105,7 @@ export type ModelMetadata = {
     /**
      * Maximum number of neighbors to consider in graph construction (required for GNN and UIP models)
      */
-    max_neighbors?: number | `missing`
+    max_neighbors?: number | 'missing'
     [k: string]: unknown
   }
   notes?: {
@@ -115,30 +128,30 @@ export type ModelMetadata = {
           cost?: number
         }
       }
-    | `missing`
-  train_task: `RP2RE` | `RS2RE` | `S2E` | `S2RE` | `S2EF` | `S2EFS` | `S2EFSM`
-  test_task: `IP2E` | `IS2E` | `IS2RE` | `IS2RE-SR`
+    | 'missing'
+  train_task: 'RP2RE' | 'RS2RE' | 'S2E' | 'S2RE' | 'S2EF' | 'S2EFS' | 'S2EFSM'
+  test_task: 'IP2E' | 'IS2E' | 'IS2RE' | 'IS2RE-SR'
   model_type: ModelType
   targets: TargetType
-  openness: `OSOD` | `OSCD` | `CSOD` | `CSCD`
-  status?: `aborted` | `complete` | `deprecated` | `pending` | `superseded`
+  openness: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
+  status?: 'aborted' | 'complete' | 'deprecated' | 'pending' | 'superseded'
   metrics?: {
-    phonons?: PhononMetrics | (`not applicable` | `not available`)
-    geo_opt?: GeoOptMetrics | (`not applicable` | `not available`)
-    discovery?: DiscoveryMetrics | `not available`
-    diatomics?: DiatomicsMetrics | (`not applicable` | `not available`)
+    phonons?: PhononMetrics | ('not applicable' | 'not available')
+    geo_opt?: GeoOptMetrics | ('not applicable' | 'not available')
+    discovery?: DiscoveryMetrics | 'not available'
+    diatomics?: DiatomicsMetrics | ('not applicable' | 'not available')
   }
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "ModelType".
  */
-export type ModelType = `GNN` | `UIP` | `BO-GNN` | `Fingerprint` | `Transformer` | `RF`
+export type ModelType = 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "TargetType".
  */
-export type TargetType = `E` | `EF_G` | `EF_D` | `EFS_G` | `EFS_D` | `EFS_GM` | `EFS_DM`
+export type TargetType = 'E' | 'EF_G' | 'EF_D' | 'EFS_G' | 'EFS_D' | 'EFS_GM' | 'EFS_DM'
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "GeoOptMetrics".
@@ -234,17 +247,17 @@ export type PredFiles = {
  * via the `definition` "license_enum".
  */
 export type LicenseEnum =
-  | `MIT`
-  | `Apache-2.0`
-  | `CC-BY-4.0`
-  | `CC-BY-SA-4.0`
-  | `CC-BY-NC-4.0`
-  | `GPL-3.0`
-  | `BSD-3-Clause`
-  | `LGPL-3.0`
-  | `Meta Research`
-  | `ASL`
-  | `unreleased`
+  | 'MIT'
+  | 'Apache-2.0'
+  | 'CC-BY-4.0'
+  | 'CC-BY-SA-4.0'
+  | 'CC-BY-NC-4.0'
+  | 'GPL-3.0'
+  | 'BSD-3-Clause'
+  | 'LGPL-3.0'
+  | 'Meta Research'
+  | 'ASL'
+  | 'unreleased'
 
 /**
  * This interface was referenced by `undefined`'s JSON-Schema

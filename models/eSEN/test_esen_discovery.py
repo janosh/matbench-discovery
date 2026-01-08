@@ -10,7 +10,7 @@ from __future__ import annotations
 import random
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -25,20 +25,12 @@ from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
-from torch.utils.data import Subset
 from tqdm import tqdm, trange
 
+from matbench_discovery import ROOT
 from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
-
-if TYPE_CHECKING:
-    from ase import Atoms
-
-
-class AseDBSubset(Subset):
-    def get_atoms(self, idx: int) -> Atoms:
-        return self.dataset.get_atoms(self.indices[idx])
 
 
 def seed_everywhere(seed: int) -> None:
@@ -47,12 +39,7 @@ def seed_everywhere(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
-BASE_PATH = Path("Matbench-Discovery_data_rootpath")
-
-DATABASE_PATH = {
-    "is2re": str(BASE_PATH / "WBM_IS2RE.aselmdb"),
-}
-
+DB_PATH = {"is2re": f"{ROOT}/WBM_IS2RE.aselmdb"}
 FILTER_CLS = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
 OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
@@ -111,12 +98,12 @@ class MBDRunner:
         calc.trainer.scaler = None
         num_model_params = sum(p.numel() for p in calc.trainer.model.parameters())
 
-        data_path = DATABASE_PATH[self.task_type]
+        data_path = DB_PATH[self.task_type]
         dataset = AseDBDataset(dict(src=data_path))
 
+        indices = None
         if self.num_jobs > 1:
             indices = np.array_split(range(len(dataset)), self.num_jobs)[job_number]
-            dataset = AseDBSubset(dataset, indices)
 
         optimizer_params = self.optimizer_params or {}
         run_params = {
@@ -134,11 +121,12 @@ class MBDRunner:
             "optimizer_params": self.optimizer_params,
         }
         wandb.init(
-            project="matbench-discovery", config=run_params, name=f"{self.identifier}"
+            project="matbench-discovery", config=run_params, name=self.identifier
         )
 
         self._ase_relax(
             dataset=dataset,
+            indices=indices,
             calculator=calc,
             optimizer_cls=self.optimizer,
             cell_filter=self.cell_filter,
@@ -166,7 +154,8 @@ class MBDRunner:
 
     def _ase_relax(
         self,
-        dataset: AseDBDataset | AseDBSubset,
+        dataset: AseDBDataset,
+        indices: np.ndarray | None,
         calculator: OCPCalculator,
         optimizer_cls: Literal["FIRE", "LBFGS", "BFGS"],
         cell_filter: Literal["frechet", "unit"],
@@ -178,8 +167,12 @@ class MBDRunner:
         filter_cls = FILTER_CLS.get(cell_filter)
         optim_cls = OPTIM_CLS[optimizer_cls]
 
-        for i in trange(len(dataset), desc="Relaxing with ASE"):
-            atoms = dataset.get_atoms(i)
+        # iterate over indices if provided, otherwise over full dataset
+        iteration_indices = indices if indices is not None else range(len(dataset))
+
+        for idx in trange(len(iteration_indices), desc="Relaxing with ASE"):
+            dataset_idx = int(iteration_indices[idx])
+            atoms = dataset.get_atoms(dataset_idx)
             material_id = atoms.info["sid"]
             if material_id in self.relax_results:
                 continue
@@ -188,12 +181,10 @@ class MBDRunner:
 
                 if filter_cls is not None:
                     optimizer = optim_cls(
-                        filter_cls(atoms), logfile="/dev/null", **optimizer_params
+                        filter_cls(atoms), logfile=None, **optimizer_params
                     )
                 else:
-                    optimizer = optim_cls(
-                        atoms, logfile="/dev/null", **optimizer_params
-                    )
+                    optimizer = optim_cls(atoms, logfile=None, **optimizer_params)
 
                 optimizer.run(fmax=force_max, steps=max_steps)
 

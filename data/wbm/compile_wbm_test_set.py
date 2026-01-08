@@ -36,7 +36,7 @@ try:
     import gdown
 except ImportError as exc:
     exc.add_note(
-        "gdown not installed. Needed for downloading WBM initial + relaxed structures "
+        "pip install gdown. Needed for downloading WBM initial + relaxed structures "
         "from Google Drive."
     )
     raise
@@ -315,7 +315,7 @@ col_map = {
 # WBM summary was shared twice, once on google drive, once on materials cloud
 # download both and check for consistency
 df_summary = pd.read_csv(
-    f"{WBM_DIR}/raw/wbm-summary.txt", sep="\t", names=col_map.values()
+    f"{WBM_DIR}/raw/wbm-summary.txt", sep="\t", names=list(col_map.values())
 ).set_index(Key.mat_id)
 
 df_summary_bz2 = pd.read_csv(
@@ -451,9 +451,7 @@ diff_e_cse_e_summary = (
 assert diff_e_cse_e_summary.max() < 0.15
 assert sum(diff_e_cse_e_summary > 0.1) == 2
 
-pmv.density_scatter_plotly(
-    df_summary, x=MbdKey.dft_energy, y="uncorrected_energy_from_cse"
-)
+pmv.density_scatter(df=df_summary, x=MbdKey.dft_energy, y="uncorrected_energy_from_cse")
 
 
 # %% remove suspicious formation energy outliers

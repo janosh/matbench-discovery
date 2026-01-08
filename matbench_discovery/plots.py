@@ -140,7 +140,7 @@ def hist_classified_stable_vs_hull_dist(
         # combine histograms into a single dataframe
         df_hist = pd.DataFrame(
             (hist_true_pos, hist_false_neg, hist_false_pos, hist_true_neg),
-            index=clf_labels,
+            index=list(clf_labels),
         ).T
         df_hist[x_col] = bin_edges[:-1]
         df_melt = df_hist.melt(
@@ -177,6 +177,10 @@ def hist_classified_stable_vs_hull_dist(
 
         # --- moving average of the accuracy
         # compute rolling accuracy in rolling_acc-sized intervals
+        if each_true_pos is None:
+            raise ValueError(f"{each_true_pos=}")
+        if each_true_neg is None:
+            raise ValueError(f"{each_true_neg=}")
         bins = np.arange(df[x_col].min(), df[x_col].max(), rolling_acc)
         bin_counts = np.histogram(df[each_true_col], bins)[0]
         bin_true_pos = np.histogram(each_true_pos, bins)[0]
@@ -276,10 +280,13 @@ def rolling_mae_vs_hull_dist(
             e_above_hull_errors and the rolling standard error in the mean.
     """
     bins = np.arange(*x_lim, bin_width)
-    models = list(e_above_hull_preds)
+    models: list[str] = list(e_above_hull_preds)
 
     if df_rolling_err is None or df_err_std is None:
-        df_rolling_err = pd.DataFrame(columns=models, index=bins)
+        df_rolling_err = pd.DataFrame(
+            index=bins,
+            columns=models,
+        )
         df_err_std = df_rolling_err.copy()
 
         for model in (
@@ -561,9 +568,9 @@ def cumulative_metrics(
             ),
         )
 
-        n_total_pos_cum = n_true_pos_cum + n_false_neg_cum
+        n_total_pos_cum = n_true_pos_cum + n_false_neg_cum  # type: ignore[unsupported-operator]
         # n_total_neg_cum = n_true_neg_cum + n_false_pos_cum
-        n_pred_pos_cum = n_true_pos_cum + n_false_pos_cum
+        n_pred_pos_cum = n_true_pos_cum + n_false_pos_cum  # type: ignore[unsupported-operator]
 
         # prevalence_cum = n_total_pos_cum / (n_total_pos_cum + n_total_neg_cum)
         precision_cum = n_true_pos_cum / n_pred_pos_cum  # model's discovery rate

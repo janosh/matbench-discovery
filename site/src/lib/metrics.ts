@@ -1,18 +1,18 @@
 import { DATASETS, format_date, MODELS } from '$lib'
-import type { ModelMetadata, TargetType } from '$lib/model-schema'
-import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
-import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { max, min } from 'd3-array'
-import { scaleLog, scaleSequential } from 'd3-scale'
-import * as d3sc from 'd3-scale-chromatic'
-import { format_num, pick_color_for_contrast } from 'matterviz'
 import {
   ALL_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
   HYPERPARAMS,
   METADATA_COLS,
-} from './labels'
-import type { DiscoverySet, LinkData, ModelData } from './types'
+} from '$lib/labels'
+import type { ModelMetadata, ModelType, TargetType } from '$lib/model-schema'
+import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
+import type { CellVal, DiscoverySet, LinkData, ModelData } from '$lib/types'
+import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
+import { max, min } from 'd3-array'
+import { scaleLog, scaleSequential } from 'd3-scale'
+import * as d3sc from 'd3-scale-chromatic'
+import { format_num, pick_contrast_color } from 'matterviz'
 
 // model target type descriptions
 export const targets_tooltips: { [key in TargetType]: string } = {
@@ -23,6 +23,15 @@ export const targets_tooltips: { [key in TargetType]: string } = {
   EFS_D: `Energy with direct forces and stress`,
   EFS_GM: `Energy with gradient-based forces, stress, and magmoms`,
   EFS_DM: `Energy with direct forces, stress, and magmoms`,
+} as const
+
+export const model_type_tooltips: { [key in ModelType]: string } = {
+  GNN: `Graph Neural Network`,
+  UIP: `Universal Interatomic Potential`,
+  'BO-GNN': `Bayesian Optimization with Graph Neural Network`,
+  Fingerprint: `Handcrafted feature-based model`,
+  Transformer: `Attention-based transformer architecture`,
+  RF: `Random Forest`,
 } as const
 
 export const openness_tooltips: { [key in ModelMetadata[`openness`]]: string } = {
@@ -54,6 +63,7 @@ export function get_nested_value(
   dotted_path: string, // dotted path to nested value to extract
 ): unknown {
   const keys = dotted_path.split(`.`).filter(Boolean) // remove empty parts
+  if (keys.length === 0) return undefined // empty path returns undefined, not the whole model
   let value: unknown = model
 
   for (const key of keys) {
@@ -168,7 +178,7 @@ export function make_combined_filter(
 // Calculate table cell background color based on its value and column config
 export function calc_cell_color(
   val: number | null | undefined, // cell value
-  all_values: (number | null | undefined)[], // all values in the column
+  all_values: CellVal[], // all values in the column
   better: `higher` | `lower` | undefined, // sort direction
   color_scale: string | null = `interpolateViridis`, // color scale name
   scale_type: `linear` | `log` = `linear`, // scale type
@@ -203,7 +213,7 @@ export function calc_cell_color(
 
     const normalized_val = color_scale_fn(val)
     const bg = interpolator(normalized_val)
-    const text = pick_color_for_contrast(null, bg)
+    const text = pick_contrast_color({ bg_color: bg })
 
     return { bg, text }
   } else {
@@ -211,7 +221,7 @@ export function calc_cell_color(
     color_scale_fn = scaleSequential().domain(range).interpolator(interpolator)
 
     const bg = color_scale_fn(val)
-    const text = pick_color_for_contrast(null, bg)
+    const text = pick_contrast_color({ bg_color: bg })
 
     return { bg, text }
   }
@@ -274,27 +284,46 @@ export function assemble_row_data(
     const r_cut = model.hyperparams?.graph_construction_radius
     const r_cut_str = r_cut ? `<span data-sort-value="${r_cut}">${r_cut} Å</span>` : `n/a`
 
+    // Get geometry optimization hyperparameters
+    const { ase_optimizer, max_steps, max_force, cell_filter } = model.hyperparams ?? {}
+    const cell_filter_display = cell_filter && typeof cell_filter === `string`
+      ? cell_filter.replace(/CellFilter$/, ``)
+      : null
+
     return {
       Model:
         `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
       CPS: model[CPS.key],
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,
-      Prec: discovery_metrics?.Precision,
-      Acc: discovery_metrics?.Accuracy,
+      Precision: discovery_metrics?.Precision,
+      Recall: discovery_metrics?.Recall,
+      Accuracy: discovery_metrics?.Accuracy,
       TPR: discovery_metrics?.TPR,
       TNR: discovery_metrics?.TNR,
       MAE: discovery_metrics?.MAE,
       RMSE: discovery_metrics?.RMSE,
-      'R<sup>2</sup>': discovery_metrics?.R2,
-      'κ<sub>SRME</sub>': kappa,
-      RMSD: get_nested_value(model, `${RMSD.path}.${RMSD.key}`) as number | undefined,
+      R2: discovery_metrics?.R2,
+      [ALL_METRICS.κ_SRME.key]: kappa,
+      [RMSD.key]: get_nested_value(model, `${RMSD.path}.${RMSD.key}`) as
+        | number
+        | undefined,
       'Training Set': format_train_set(model.training_set, model),
-      [HYPERPARAMS.model_params.short as string]: `<span title="${
+      [HYPERPARAMS.model_params.key]: `<span title="${
         format_num(model.model_params, `,`)
-      }" trainable model parameters" data-sort-value="${model.model_params}">${
+      } trainable model parameters" data-sort-value="${model.model_params}">${
         format_num(model.model_params)
       }</span>`,
+      [HYPERPARAMS.ase_optimizer.key]: ase_optimizer ?? `n/a`,
+      [HYPERPARAMS.max_steps.key]: max_steps !== undefined
+        ? `<span data-sort-value="${max_steps}">${max_steps}</span>`
+        : `n/a`,
+      [HYPERPARAMS.max_force.key]: max_force !== undefined
+        ? `<span data-sort-value="${max_force}">${max_force}</span>`
+        : `n/a`,
+      [HYPERPARAMS.cell_filter.label]: cell_filter_display
+        ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
+        : `n/a`,
       Targets: targets_str,
       'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${
         new Date(model.date_added).getTime()
@@ -328,15 +357,15 @@ export function assemble_row_data(
       } as LinkData,
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
-      [HYPERPARAMS.graph_construction_radius.short as string]: r_cut_str,
+      [HYPERPARAMS.graph_construction_radius.key]: r_cut_str,
       style: `border-left: 3px solid var(--${
         is_compliant ? `` : `non-`
       }compliant-color);`,
       org_logos: model.org_logos,
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
-          col.short,
-          get_nested_value(model, `${col.path}.${col.key}`) as number | undefined,
+          col.key,
+          get_nested_value(model, col.path) as number | undefined,
         ]),
       ),
     }
@@ -363,9 +392,9 @@ export const sort_models =
   (model_1: ModelData, model_2: ModelData): number => {
     const sort_factor = order === `asc` ? -1 : 1
 
-    // Special case for model_name sorting
-    if (sort_by === `model_name`) {
-      // For model_name, directly use localeCompare with sort_factor
+    // Special case for Model sorting (by model_name)
+    if (sort_by === `Model`) {
+      // For Model, directly use localeCompare with sort_factor
       return sort_factor * model_1.model_name.localeCompare(model_2.model_name)
     }
 
@@ -384,7 +413,7 @@ export const sort_models =
       return sort_factor * (val_1 as string).localeCompare(val_2 as string)
     } else if (typeof val_1 === `number` && typeof val_2 === `number`) {
       // interpret run_time === 0 as infinity
-      if (sort_by === `Run Time (h)`) {
+      if (sort_by === `Run Time`) {
         if (val_1 === 0) return -sort_factor
         if (val_2 === 0) return sort_factor
       }

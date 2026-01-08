@@ -36,12 +36,14 @@ def main(best_epoch: int, val_mae: float) -> None:
     test_dataset = MyDataset(test_input_ids, test_attention_mask, test_outputs)
     test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
     predictions = trainer.predict(model, test_loader)
+    if predictions is None:
+        raise ValueError("Predictions are None")
 
     predictions = [tensor.cpu().item() for tensor in predictions]
     df_preds = pd.DataFrame({"e_form_per_atom_alchembert": predictions})
     df_wbm = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
-    df_preds = pd.concat([df_wbm.index, df_preds], axis=1)
-    df_preds.to_csv(preds_path)
+    df_preds[Key.mat_id] = df_wbm.index.to_numpy()
+    df_preds.to_csv(preds_path, index=False)
     print(f"Results saved to {preds_path}")
 
 
