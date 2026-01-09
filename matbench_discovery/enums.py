@@ -335,6 +335,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     mace_mp_0 = auto(), "mace/mace-mp-0.yml"
     mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
+    # MACE-Osaka24-large as published in https://arxiv.org/abs/2412.13088 trained on MPtrj and OFF23 (extended SPICE)
+    mace_osaka24_large = auto(), "mace/mace-osaka24-large.yml" # MPtrj/OFF23 data is split into train: 2,324,357, val: 129,070, test: 128,168
+
+
     # MatRIS-v0.5.0-MPtrj
     matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
 
