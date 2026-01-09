@@ -94,7 +94,7 @@ run_params = {
 
 run_name = f"{job_name}-{slurm_array_task_id}"
 
-print(df_in)
+
 # %%
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[task_type]
