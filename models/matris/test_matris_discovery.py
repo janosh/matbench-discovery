@@ -2,14 +2,14 @@
 # /// script
 # requires-python = ">=3.10,<3.14"
 # dependencies = [
-# "torch==2.6.0",
-# "numpy==2.3.4",
-# "ase==3.26.0",
-# "pymatgen==2025.10.7",
-# "pymatviz==0.17.2",
-# "scikit-learn==1.7.2",
+# "torch>=2.6.0",
+# "numpy>=2.3.4",
+# "ase>=3.26.0",
+# "pymatgen>=2025.10.7",
+# "pymatviz>=0.17.2",
+# "scikit-learn>=1.7.2",
 # "tqdm==4.67.1",
-# "matbench-discovery==1.3.1",
+# "matbench-discovery>=1.3.1",
 # "matris @ git+https://github.com/HPC-AI-Team/MatRIS.git",
 # ]
 #
@@ -94,7 +94,7 @@ run_params = {
 
 run_name = f"{job_name}-{slurm_array_task_id}"
 
-
+print(df_in)
 # %%
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[task_type]
