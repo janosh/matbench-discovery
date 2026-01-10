@@ -13,7 +13,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from ase import Atoms
 from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
@@ -78,7 +77,7 @@ calc = MetatomicCalculator("pet-oam-xl-v1.0.0.pt", device=device)
 calc = SymmetrizedCalculator(calc, batch_size=16, include_inversion=False)
 
 print(f"Read data from {data_path}")
-atoms_list: list[Atoms] = ase_atoms_from_zip(data_path)
+atoms_list = ase_atoms_from_zip(data_path)
 atoms_list = np.array(atoms_list, dtype="object")
 
 if slurm_array_job_id == "debug":

@@ -1,3 +1,5 @@
+# deno-fmt-ignore-file
+
 seed: 42
 device: cuda
 base_precision: 32
