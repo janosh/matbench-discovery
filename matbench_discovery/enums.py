@@ -355,6 +355,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     orb_v2_mptrj = auto(), "orb/orb-v2-mptrj.yml"
     orb_v3 = auto(), "orb/orb-v3.yml"
 
+    # PET
+    pet = auto(), "pet/pet.yml"
+
     # SevenNet trained on MPtrj
     # sevennet_0 = auto(), "sevennet/sevennet-0.yml"
     sevennet_l3i5 = auto(), "sevennet/sevennet-l3i5.yml"
