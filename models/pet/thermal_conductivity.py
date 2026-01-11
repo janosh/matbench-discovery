@@ -1,5 +1,5 @@
 from typing import Any
-from matbench_discovery.phonons.thermal_conductivity import calculate_conductivity
+
 import numpy as np
 from ase.atoms import Atoms
 from ase.calculators.calculator import Calculator
