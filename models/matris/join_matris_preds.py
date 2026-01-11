@@ -95,7 +95,7 @@ if len(processed) != len(df_matris):
     raise ValueError(f"not all entries processed: {len(processed)=} {len(df_matris)=}")
 
 df_matris[e_form_matris_col] = [
-    calc_energy_from_e_refs(cse, ref_energies=mp_elemental_ref_energies) 
+    calc_energy_from_e_refs(cse, ref_energies=mp_elemental_ref_energies)
     for cse in tqdm(df_matris[Key.computed_structure_entry])
 ]
 
@@ -109,5 +109,4 @@ df_matris.reset_index().to_json(
 )
 fig = pmv.density_scatter(df=df_preds, x=MbdKey.e_form_dft, y=e_form_matris_col)
 img_path = f"{module_dir}/{model_key}-e-form-parity.html"
-fig.show()
 pmv.save_fig(fig, img_path)
