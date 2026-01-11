@@ -1,12 +1,12 @@
 model_name: PET-OAM-XL
-model_key: pet
+model_key: pet-oam-xl-1.0.0
 model_version: 1.0.0
-date_added: "2026-01-10"
-date_published: "2026-01-10"
+date_added: '2026-01-10'
+date_published: '2026-01-10'
 authors:
   - name: Filippo Bigi
     affiliation: COSMO, EPFL
-    email: filippo.bigi@epf.ch
+    email: filippo.bigi@epfl.ch
   - name: Paolo Pegolo
     affiliation: COSMO, EPFL
     email: paolo.pegolo@epfl.ch
@@ -16,12 +16,12 @@ authors:
   - name: Michele Ceriotti
     affiliation: COSMO, EPFL
     email: michele.ceriotti@epfl.ch
-repo: https://github.com/lab-cosmo/pet-mad
-checkpoint_url: https://huggingface.co/lab-cosmo/pet-mad/resolve/b0234f3/models/pet-mad-latest.ckpt
-url: https://nequip.readthedocs.io/en/latest/
+repo: https://github.com/lab-cosmo/upet
+checkpoint_url: https://huggingface.co/lab-cosmo/upet/blob/main/models/pet-oam-xl-v1.0.0.ckpt
+url: https://github.com/lab-cosmo/upet
 doi: https://doi.org/10.1038/s41467-025-65662-7
 paper: https://www.nature.com/articles/s41467-025-65662-7
-pr_url:
+pr_url: https://github.com/janosh/matbench-discovery/pull/303
 
 openness: OSOD
 train_task: S2EFS
@@ -35,7 +35,7 @@ n_estimators: 1
 license:
   checkpoint: BSD-3-Clause
   code: BSD-3-Clause
-  code_url: https://github.com/metatensor/metatrain/blob/main/LICENSE
+  code_url: https://github.com/lab-cosmo/upet/blob/main/LICENSE
 
 hyperparams:
   d_pet: 640
@@ -50,10 +50,10 @@ hyperparams:
   cutoff_function: Bump
 
 training_cost:
-  Nvidia H100 GPUs: {amount: 512, hours: 40}
+  Nvidia H100 GPUs: { amount: 512, hours: 40 }
 
 requirements:
-  metatrain: '2026.1'
+  upet: '0.1.0'
 
 training_set: [OMat24, sAlex, MPtrj]
 
@@ -61,12 +61,12 @@ metrics:
   phonons:
     kappa_103:
       pred_file: models/pet/pet-kappa.json.gz
-      pred_file_url: https://figshare.com/files/31043308
+      pred_file_url: https://figshare.com/files/60934819
       κ_SRME: 0.1192
       κ_SRE: 0.0603
   geo_opt:
     pred_file: models/pet/pet-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/31043347
+    pred_file_url: https://figshare.com/files/60934831
     struct_col: pet_structure
     symprec=1e-2:
       rmsd: 0.0596 # unitless
@@ -76,7 +76,7 @@ metrics:
       symmetry_increase: 0.1185 # fraction
       n_structures: 256963 # count
       analysis_file: models/pet/pet-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.4.csv.gz
-      analysis_file_url: https://figshare.com/files/31043314
+      analysis_file_url: https://figshare.com/files/60934825
     symprec=1e-5:
       rmsd: 0.0596 # unitless
       n_sym_ops_mae: 10.1237 # unitless
@@ -85,10 +85,10 @@ metrics:
       symmetry_increase: 0.0009 # fraction
       n_structures: 256963 # count
       analysis_file: models/pet/pet-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.4.csv.gz
-      analysis_file_url: https://figshare.com/files/31043320
+      analysis_file_url: https://figshare.com/files/60934822
   discovery:
     pred_file: models/pet/pet.csv.gz
-    pred_file_url: https://figshare.com/files/31043323
+    pred_file_url: https://figshare.com/files/60934828
     pred_col: e_form_per_atom_pet
     full_test_set:
       F1: 0.904 # fraction
