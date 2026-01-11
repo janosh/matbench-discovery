@@ -50,7 +50,6 @@ def process_and_save(atoms_list: list[Atoms], out_dir: str, job_id: int) -> None
     df_out = pd.DataFrame(relax_results).T.add_prefix(f"{model_name}_")
     df_out.index.name = Key.mat_id
 
-    # %%
     df_out.reset_index().to_json(
         out_path, default_handler=as_dict_handler, orient="records", lines=True
     )
@@ -69,7 +68,7 @@ if __name__ == "__main__":
     force_max = 0.02
 
     slurm_array_task_count = int(os.getenv("TOTAL_TASKS", "1"))
-    slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
+    slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
 
     task_type = Task.IS2RE
     job_name = f"{model_name}-wbm-{task_type}"
@@ -83,7 +82,6 @@ if __name__ == "__main__":
 
     atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]
 
-    # load my own calculator
     calc = EqnormCalculator(
         model_name=model_name,
         model_variant=model_variant,

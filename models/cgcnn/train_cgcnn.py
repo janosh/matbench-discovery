@@ -52,7 +52,7 @@ optimizer = "AdamW"
 learning_rate = 3e-4
 batch_size = 128
 swa_start = None
-slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
 task_type: TaskType = "regression"
 
 

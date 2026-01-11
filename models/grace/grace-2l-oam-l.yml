@@ -149,7 +149,6 @@ metrics:
       RMSE: 0.068 # eV/atom
       R2: 0.862 # dimensionless
       missing_preds: 5 # count
-
   diatomics:
     pred_file: models/grace/grace-2l-oam/2025-02-19-diatomics.json.gz
     pred_file_url: https://figshare.com/files/59047001

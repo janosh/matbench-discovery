@@ -1,6 +1,22 @@
 """Test MatRIS model for matbench-discovery"""
+# /// script
+# requires-python = ">=3.10,<3.14"
+# dependencies = [
+# "torch>=2.6.0",
+# "numpy>=2.3.4",
+# "ase>=3.26.0",
+# "pymatgen>=2025.10.7",
+# "pymatviz>=0.17.2",
+# "scikit-learn>=1.7.2",
+# "tqdm==4.67.1",
+# "matbench-discovery>=1.3.1",
+# "matris @ git+https://github.com/HPC-AI-Team/MatRIS.git",
+# ]
+#
+# [tool.uv.sources]
+# matbench-discovery = { path = "../../", editable = true }
+# ///
 
-# %%
 import os
 from importlib.metadata import version
 from typing import Any
@@ -8,42 +24,43 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import torch
-from matris.model import StructOptimizer
+from matris.applications.relax import StructOptimizer
 from pymatgen.core import Structure
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import timestamp, today
 from matbench_discovery.data import as_dict_handler
-from matbench_discovery.enums import DataFiles, Model, Task
+from matbench_discovery.enums import DataFiles, Task
 from matbench_discovery.hpc import slurm_submit
 
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
-slurm_array_task_count = 32
+slurm_array_task_count = 45
+
+model_name = "MatRIS_10M_MP"  # or MatRIS_10M_OAM
 device = "cuda" if torch.cuda.is_available() else "cpu"
-matris = StructOptimizer(use_device=device)
-job_name = f"{Model.matris_v050_mptrj}/{today}-wbm-{task_type}"
+matris = StructOptimizer(model=model_name, device=device)
+
+job_name = f"{model_name}_Discovery/{today}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
-    account="matgen",
     time="47:55:0",
-    partition="a800",
+    partition="gpu",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags="--job-name Test --nodes 1 --nodelist g07 --gres gpu:1 "
-    "--cpus-per-task 1",
+    slurm_flags="--nodes 1 --gres gpu:1 --cpus-per-task 1",
+    submit_as_temp_file=False,
 )
 
 
 # %%
-slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
 
 out_path = f"{out_dir}/{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
-
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exiting early")
 
@@ -55,9 +72,9 @@ data_path = {
 }[task_type]
 print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path=}")
-e_pred_col = "matris_mp_energy"
+e_pred_col = "matris_energy"
 max_steps = 500
-fmax = 0.05
+fmax = 0.02
 
 df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
@@ -72,7 +89,6 @@ run_params = {
     "max_steps": max_steps,
     "fmax": fmax,
     "device": device,
-    Key.model_params: matris.n_params,
 }
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -81,12 +97,7 @@ run_name = f"{job_name}-{slurm_array_task_id}"
 # %%
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[task_type]
-
-if task_type == Task.RS2RE:
-    df_in[input_col] = [cse["structure"] for cse in df_in[Key.computed_structure_entry]]
-
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
-
 
 for material_id in tqdm(structures, desc="Relaxing"):
     if material_id in relax_results:
@@ -107,6 +118,10 @@ for material_id in tqdm(structures, desc="Relaxing"):
             relax_struct = relax_result["final_structure"]
             relax_results[material_id]["matris_structure"] = relax_struct
     except Exception as exc:
+        error_dir = f"error_crystals/{model_name}"
+        os.makedirs(error_dir, exist_ok=True)
+        structures[material_id].to(filename=f"{error_dir}/{material_id}.cif")
+
         print(f"Failed to relax {material_id}: {exc!r}")
 
 
