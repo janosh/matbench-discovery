@@ -29,7 +29,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.data import DataFiles, as_dict_handler
-from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey, Model, Task
 from matbench_discovery.preds.discovery import df_preds
 
@@ -70,11 +70,9 @@ df_wbm_cse = pd.read_json(
     DataFiles.wbm_computed_structure_entries.path, lines=True
 ).set_index(Key.mat_id)
 
-# Key.cse occurs error (pymatviz==0.17.2):
-# type object 'Key' has no attribute 'cse'.
-CSE = "computed_structure_entry"
-df_wbm_cse[CSE] = [
-    ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm_cse[CSE])
+df_wbm_cse[Key.computed_structure_entry] = [
+    ComputedStructureEntry.from_dict(dct)
+    for dct in tqdm(df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
 ]
 cse: ComputedStructureEntry
 e_col = "matris_energy"
@@ -85,8 +83,8 @@ for mat_id in tqdm(df_matris.index):
     matris_energy = df_matris.loc[mat_id, e_col]
     mlip_struct = Structure.from_dict(df_matris.loc[mat_id, struct_col])
     cse = df_wbm_cse.loc[mat_id, CSE]
-    cse._energy = matris_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
-    cse._structure = mlip_struct  # noqa: SLF001
+    cse._energy = matris_energy  # cse._energy is the uncorrected energy
+    cse._structure = mlip_struct
     df_matris.loc[mat_id, CSE] = cse
 
 # MP2020
@@ -97,7 +95,8 @@ if len(processed) != len(df_matris):
     raise ValueError(f"not all entries processed: {len(processed)=} {len(df_matris)=}")
 
 df_matris[e_form_matris_col] = [
-    get_e_form_per_atom(cse) for cse in tqdm(df_matris[CSE])
+    calc_energy_from_e_refs(cse, ref_energies=mp_elemental_ref_energies) 
+    for cse in tqdm(df_matris[CSE])
 ]
 
 df_preds[e_form_matris_col] = df_matris[e_form_matris_col]

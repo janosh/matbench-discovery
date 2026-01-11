@@ -89,7 +89,6 @@ run_params = {
     "max_steps": max_steps,
     "fmax": fmax,
     "device": device,
-    # Key.model_params: matris.n_params,
 }
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -119,10 +118,9 @@ for material_id in tqdm(structures, desc="Relaxing"):
             relax_struct = relax_result["final_structure"]
             relax_results[material_id]["matris_structure"] = relax_struct
     except Exception as exc:
-        filename = f"error_crystals/{model_name}/"
-        if not os.path.exists(filename):
-            os.makedirs(filename)
-        structures[material_id].to(filename=f"{filename}{material_id}.cif")
+        error_dir = f"error_crystals/{model_name}"
+        os.makedirs(error_dir, exist_ok=True)
+        structures[material_id].to(filename=f"{error_dir}/{material_id}.cif")
 
         print(f"Failed to relax {material_id}: {exc!r}")
 

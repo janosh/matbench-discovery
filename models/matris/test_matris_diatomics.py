@@ -52,7 +52,7 @@ if existing_paths:
 # distances in Angstrom
 distances = np.linspace(0.1, 6, 100)
 
-# only consider elements up to atomic number 10 (Ne) for now
+# consider all elements up to atomic number 92 (U)
 atomic_nums = range(1, 93)
 
 # generate list of homonuclear pairs [(1, 1), (2, 2), ...]
