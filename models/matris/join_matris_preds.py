@@ -82,21 +82,21 @@ e_form_matris_col = "e_form_per_atom_matris"
 for mat_id in tqdm(df_matris.index):
     matris_energy = df_matris.loc[mat_id, e_col]
     mlip_struct = Structure.from_dict(df_matris.loc[mat_id, struct_col])
-    cse = df_wbm_cse.loc[mat_id, CSE]
-    cse._energy = matris_energy  # cse._energy is the uncorrected energy
-    cse._structure = mlip_struct
-    df_matris.loc[mat_id, CSE] = cse
+    cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
+    cse._energy = matris_energy  # noqa: SLF001 cse._energy is the uncorrected energy
+    cse._structure = mlip_struct # noqa: SLF001
+    df_matris.loc[mat_id, Key.computed_structure_entry] = cse
 
 # MP2020
 processed = MaterialsProject2020Compatibility().process_entries(
-    df_matris[CSE], verbose=True, clean=True
+    df_matris[Key.computed_structure_entry], verbose=True, clean=True
 )
 if len(processed) != len(df_matris):
     raise ValueError(f"not all entries processed: {len(processed)=} {len(df_matris)=}")
 
 df_matris[e_form_matris_col] = [
     calc_energy_from_e_refs(cse, ref_energies=mp_elemental_ref_energies) 
-    for cse in tqdm(df_matris[CSE])
+    for cse in tqdm(df_matris[Key.computed_structure_entry])
 ]
 
 df_preds[e_form_matris_col] = df_matris[e_form_matris_col]
