@@ -9,9 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 import ase.optimize
 import ase.optimize.sciopt
-
 import thermal_conductivity as ltc
-from matbench_discovery.phonons.thermal_conductivity import calculate_conductivity
 from ase import Atoms
 from ase.calculators.calculator import Calculator
 from ase.constraints import FixSymmetry
@@ -20,6 +18,8 @@ from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from pymatgen.core.structure import Structure
 from pymatviz.enums import Key
+
+from matbench_discovery.phonons.thermal_conductivity import calculate_conductivity
 
 if TYPE_CHECKING:
     from ase.optimize.optimize import Optimizer
