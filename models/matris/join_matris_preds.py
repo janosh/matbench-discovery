@@ -84,7 +84,7 @@ for mat_id in tqdm(df_matris.index):
     mlip_struct = Structure.from_dict(df_matris.loc[mat_id, struct_col])
     cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
     cse._energy = matris_energy  # noqa: SLF001 cse._energy is the uncorrected energy
-    cse._structure = mlip_struct # noqa: SLF001
+    cse._structure = mlip_struct  # noqa: SLF001
     df_matris.loc[mat_id, Key.computed_structure_entry] = cse
 
 # MP2020
