@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any
 import ase.optimize
 import ase.optimize.sciopt
 
-# from matbench_discovery.phonons import thermal_conductivity as ltc
 import thermal_conductivity as ltc
+from matbench_discovery.phonons.thermal_conductivity import calculate_conductivity
 from ase import Atoms
 from ase.calculators.calculator import Calculator
 from ase.constraints import FixSymmetry
@@ -250,9 +250,7 @@ def calc_kappa_for_structure(
 
     # Calculation of conductivity
     try:
-        ph3, kappa_dict, _cond = ltc.calculate_conductivity(
-            ph3, temperatures=temperatures
-        )
+        ph3, kappa_dict, _cond = calculate_conductivity(ph3, temperatures=temperatures)
         return (
             mat_id,
             info_dict | relax_dict | freqs_dict | kappa_dict | err_dict,
