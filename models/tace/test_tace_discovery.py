@@ -25,21 +25,21 @@ from tace.interface.ase import TACEAseCalc
 
 # %% this config is editable
 
-dtype = "float64"; device="cuda" if torch.cuda.is_available() else "cpu"
+dtype = "float64"
+device="cuda" if torch.cuda.is_available() else "cpu"
 model_name = "TACE-v1-OAM-M"
-if False: # If you can autodownload, set this to True
-    try:
-        from tace.foundations import tace_foundations
-        model_path = tace_foundations[model_name]
-    except Exception as e:
-        raise RuntimeError(
-            "Failed to load TACE-v1-OAM-L.\n"
-            "Please manual download the model from:\n"
-            "https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-v1-OAM-M.pt\n, "
-            "and put the model into ~/.cache/tace/TACE-v1-OAM-L.pt"
-        ) from e
-else:
-    model_path = model_name + ".pt"
+
+try:
+    from tace.foundations import tace_foundations
+    model_path = tace_foundations[model_name]
+except Exception as e:
+    raise RuntimeError(
+        f"Failed to load {model_name}.\n"
+        f"Please manual download the model from:\n"
+        f"https://huggingface.co/xvzemin/tace-foundations/"
+        f"resolve/main/{model_name}.pt\n"
+        f"and put the model into ~/.cache/tace/{model_name}.pt"
+    ) from e
     
 smoke_test = False
 task_type = Task.IS2RE

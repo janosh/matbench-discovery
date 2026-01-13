@@ -1,5 +1,5 @@
-model_name: TACE-v1-OAM-M # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
-model_key: TACE-v1-OAM-M # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
+model_name: TACE-v1-OAM-M
+model_key: tace-v1-oam-m 
 model_version: '0.1.0'
 date_added: '2026-01-06'
 date_published: '2026-01-06'
@@ -26,7 +26,7 @@ trained_by:
     github: https://github.com/xvzemin
     corresponding: false
 
-repo: https://github.com/xvzemin
+repo: https://github.com/xvzemin/tace
 url: https://tace.readthedocs.io/en/latest
 doi: 10.57967/hf/7458
 preprint: https://arxiv.org/abs/2509.14961
