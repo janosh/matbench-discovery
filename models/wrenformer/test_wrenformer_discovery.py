@@ -85,7 +85,7 @@ run_params = dict(
 try:  # load checkpoint to get number of parameters
     runs[0].file("checkpoint.pth").download(root=module_dir)
     state_dict = torch.load(f"{module_dir}/checkpoint.pth", map_location="cpu")
-    model = Wrenformer(**state_dict["model_params"])  # type: ignore[arg-type]
+    model = Wrenformer(**state_dict["model_params"])
     run_params[Key.model_params] = model.num_params
 except Exception as exc:
     print(exc)
@@ -94,18 +94,14 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%
-data_loader_kwargs = dict(
-    input_col=Key.wyckoff,
-    target_col=MbdKey.e_form_dft,
-    id_col=Key.mat_id,
-    embedding_type="wyckoff",
-)
-
 data_loader = df_to_in_mem_dataloader(
     df=df_wbm_clean,
     batch_size=1024,
     shuffle=False,  # False is default but best be explicit
-    **data_loader_kwargs,  # type: ignore[invalid-argument-type]
+    input_col=Key.wyckoff,
+    target_col=MbdKey.e_form_dft,
+    id_col=Key.mat_id,
+    embedding_type="wyckoff",
 )
 
 

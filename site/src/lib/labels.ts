@@ -208,16 +208,33 @@ export const HYPERPARAMS: HyperparamLabels = {
   max_force: {
     label: `Max force`,
     key: `max_force`,
+    short: `f<sub>max</sub>`,
     path: `hyperparams`,
     description:
-      `Max remaining force allowed on any atom in the structure for geometry optimization`,
+      `Max remaining force allowed on any atom in the structure for geometry optimization convergence`,
     unit: `eV/Å`,
   },
   max_steps: {
     label: `Max relaxation steps`,
     key: `max_steps`,
+    short: `Steps`,
     path: `hyperparams`,
-    description: `Maximum number of steps`,
+    description: `Maximum number of optimization steps allowed`,
+  },
+  ase_optimizer: {
+    label: `ASE optimizer`,
+    key: `ase_optimizer`,
+    short: `Optimizer`,
+    path: `hyperparams`,
+    description:
+      `ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)`,
+  },
+  cell_filter: {
+    label: `Cell filter`,
+    key: `cell_filter`,
+    path: `hyperparams`,
+    description:
+      `ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)`,
   },
   batch_size: {
     label: `Batch size`,
@@ -396,20 +413,22 @@ export const DISCOVERY_SET_LABELS: Record<
 > = {
   full_test_set: {
     label: `Full Test Set`,
-    description:
-      `Metrics computed on the full 257k WBM test set including duplicate structure prototypes`,
+    description: `<strong>257k total structures</strong><br/>
+      Metrics computed on all WBM structures including duplicate structure prototypes`,
   },
   unique_prototypes: {
     label: `Unique Prototypes`,
-    description:
-      `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
+    description: `<strong>~215k unique prototypes</strong><br/>
+      Deduplicated by matching Aflow-style prototypes.<br/>
+      Use this to avoid counting similar structures that should relax to same ground state multiple times.`,
     link:
       `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
   },
   most_stable_10k: {
     label: `10k Most Stable`,
-    description:
-      `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
+    description: `<strong>Top 10k predictions by model</strong><br/>
+      Each model's structures by lowest predicted energy above hull.<br/>
+      Use this to evaluate discovery performance in an actual discovery campaign at fixed compute budget e.g. for DFT validation.`,
   },
 } as const
 
@@ -476,9 +495,12 @@ export const org_logos = {
   'Microsoft Research': `icon:Microsoft`,
   'MIR Group, Harvard University': `/logos/mir-group-harvard.svg`,
   'National Institute of Standards and Technology': `/logos/nist.svg`,
+  'Ningbo Institute of Artificial Intelligence Industry':
+    `/logos/ningbo-institute-of-artificial-intelligence-industry.svg`,
   'Northwestern University': `/logos/northwestern-university.svg`,
   'Orbital Materials': `/logos/orbital-materials.svg`,
   'Seoul National University': `/logos/seoul-national-university.svg`,
+  'Materials AI Lab at Samsung Electronics': `/logos/samsung-electronics.svg`,
   'Texas A&M University': `/logos/texas-a&m.svg`,
   'Tsinghua University': `/logos/tsinghua-university.svg`,
   'UC San Diego': `/logos/uc-san-diego.svg`,

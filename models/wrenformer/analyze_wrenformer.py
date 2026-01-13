@@ -4,7 +4,6 @@
 import numpy as np
 import pandas as pd
 import pymatviz as pmv
-from aviary.wren.utils import get_prototype_from_protostructure
 from IPython.display import display
 from pymatviz.enums import Key
 
@@ -35,12 +34,10 @@ title = f"{len(df_bad)} {model} preds<br>with {max_each_true=}, {min_each_pred=}
 
 
 # %%
+moyo_proto_col = "protostructure_moyo"
 df_mp = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
-df_mp[Key.spg_num] = df_mp[MbdKey.wyckoff_spglib].str.split("_").str[2].astype(int)
-df_mp["isopointal_proto_from_aflow"] = df_mp[MbdKey.wyckoff_spglib].map(
-    get_prototype_from_protostructure
-)
-df_mp.isopointal_proto_from_aflow.value_counts().head(12)
+df_mp[Key.spg_num] = df_mp[moyo_proto_col].str.split("_").str[2].astype(int)
+df_mp[moyo_proto_col].value_counts().head(12)
 
 
 # %%
@@ -53,16 +50,11 @@ fig.show()
 
 # %%
 proto_col = "Isopointal Prototypes"
-df_proto_counts = (
-    df_bad[MbdKey.init_wyckoff_spglib]
-    .map(get_prototype_from_protostructure)
-    .value_counts()
-    .to_frame()
-)
+df_proto_counts = df_bad[MbdKey.init_wyckoff_spglib].value_counts().to_frame()
 
 
 df_proto_counts["MP occurrences"] = 0
-mp_proto_counts = df_mp.isopointal_proto_from_aflow.value_counts()
+mp_proto_counts = df_mp[moyo_proto_col].value_counts()
 for proto in df_proto_counts.index:
     df_proto_counts.loc[proto, "MP occurrences"] = mp_proto_counts.get(proto, 0)
 

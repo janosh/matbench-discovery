@@ -113,3 +113,13 @@ export type CellVal =
   }[]
 export type RowData = { style?: string; [key: string]: CellVal }
 export type CellSnippetArgs = { row: RowData; col: Label; val: CellVal }
+
+export type GitHubActivityData = {
+  name: string
+  repo: string
+  stars: number
+  forks: number
+  commits_last_year: number
+  contributors: number
+  color?: string
+}

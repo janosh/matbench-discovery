@@ -46,10 +46,12 @@ n_estimators: 1
 
 hyperparams:
   batch_size: 32
-  learning_rate: 1e-3
+  learning_rate: 0.001
   optimizer: Adam
   ase_optimizer: FIRE
   cell_filter: ExpCellFilter # see https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd/m3gnet/models/_dynamics.py#L122
+  max_steps: 500
+  max_force: 0.05 # eV/Å
   loss_weights:
     energy: 1
     force: 1
@@ -70,9 +72,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 1.412
+      κ_SRME: 2.0
       pred_file: models/m3gnet/m3gnet-matgl-mp-2021-2-8-pes/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134866
+      κ_SRE: 2.0
   geo_opt:
     pred_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/57751024

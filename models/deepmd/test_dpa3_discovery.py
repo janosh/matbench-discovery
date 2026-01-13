@@ -72,7 +72,17 @@ class Relaxer:
         opt.run(fmax=fmax, steps=steps)
         obs()
         if traj_file is not None:
-            obs.save(traj_file)
+            with open(traj_file, mode="wb") as file:
+                data = {
+                    "energy": obs.energies,
+                    "forces": obs.forces,
+                    "stresses": obs.stresses,
+                    "atom_positions": obs.atom_positions,
+                    "cell": obs.cells,
+                    "atomic_number": obs.atoms.get_atomic_numbers(),
+                }
+                pickle.dump(data, file)
+
         atoms = getattr(filtered_atoms, "atoms", atoms)
         final_struct = self.ase_adaptor.get_structure(atoms)
         return {"final_structure": final_struct.as_dict(), "trajectory": obs}
@@ -111,25 +121,6 @@ class TrajectoryObserver:
             float: Potential energy of the system.
         """
         return self.atoms.get_potential_energy()
-
-    def save(self, filename: str) -> None:
-        """Save the trajectory to file.
-
-        Args:
-            filename (str): Filename to save the trajectory.
-        """
-        with open(filename, mode="wb") as f:
-            pickle.dump(
-                {
-                    "energy": self.energies,
-                    "forces": self.forces,
-                    "stresses": self.stresses,
-                    "atom_positions": self.atom_positions,
-                    "cell": self.cells,
-                    "atomic_number": self.atoms.get_atomic_numbers(),
-                },
-                f,
-            )
 
 
 def relax_run(

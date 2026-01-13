@@ -101,8 +101,8 @@ run_params = {
     "n_structures": len(atoms_list),
 }
 
-with open(f"{out_dir}/run_params.json", "w") as f:
-    json.dump(run_params, f, indent=4)
+with open(f"{out_dir}/run_params.json", mode="w", encoding="utf-8") as file:
+    json.dump(run_params, file, indent=4)
 
 # Set up the relaxation and force set calculation
 optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
@@ -149,7 +149,7 @@ for atoms in tqdm_bar:
             )
             optimizer.run(fmax=force_max, steps=max_steps)
 
-            reached_max_steps = int(optimizer.step) >= max_steps
+            reached_max_steps = optimizer.nsteps >= max_steps
             if reached_max_steps:
                 print(f"Material {mat_desc=} reached {max_steps=} during relaxation.")
 

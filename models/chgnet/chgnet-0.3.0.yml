@@ -65,6 +65,7 @@ hyperparams:
   ase_optimizer: FIRE
   cell_filter: FrechetCellFilter
   max_steps: 500
+  max_force: 0.05 # eV/Å
   graph_construction_radius: 5.0 # Å, from sec. B. Model design in arXiv:2302.14231
   three_body_cutoff: 3.0 # Å
   max_neighbors: .inf
@@ -79,9 +80,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 1.717
+      κ_SRME: 2.0
       pred_file: models/chgnet/chgnet-0.3.0/2024-11-09-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134857
+      κ_SRE: 2.0
   geo_opt:
     pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/53153459

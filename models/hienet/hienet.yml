@@ -36,6 +36,7 @@ hyperparams:
   max_force: 0.05
   max_steps: 500
   ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
   epochs: 200
   optimizer: AdamW
   loss: Huber - delta=0.01
@@ -101,6 +102,7 @@ metrics:
       κ_SRME: 0.6423
       pred_file: models/hienet/hienet/2025-07-01-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/55909451
+      κ_SRE: 0.4898
   geo_opt:
     pred_file: models/hienet/hienet/2025-07-01-wbm-geo-opt-IS2RE-FIRE.json.gz
     struct_col: hienet_structure

@@ -2,6 +2,7 @@
   import { MetricScatter, MetricsTable, SelectToggle } from '$lib'
   import * as labels from '$lib/labels'
   import type { DiscoverySet } from '$lib/types'
+  import HullConstructionNote from './hull-construction-note.md'
 
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
 </script>
@@ -31,6 +32,8 @@
     {discovery_set}
   />
 </section>
+
+<HullConstructionNote />
 
 <h3>F1 classification score vs model parameters</h3>
 

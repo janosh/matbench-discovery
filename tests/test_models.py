@@ -145,7 +145,7 @@ def test_model_missing_invalid_inputs(
     input_value: str | int | None | list | dict,
 ) -> None:
     """Test that _missing_ method returns None for invalid inputs."""
-    assert Model._missing_(input_value) is None  # type: ignore[arg-type]
+    assert Model._missing_(input_value) is None
 
 
 @pytest.mark.parametrize(

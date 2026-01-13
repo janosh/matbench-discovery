@@ -307,19 +307,22 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     esen_30m_mp = auto(), "eSEN/eSEN-30m-mp.yml"
     esen_30m_oam = auto(), "eSEN/eSEN-30m-oam.yml"
 
-    # eqnorm
+    # Materials AI Lab at Samsung Electronics
+    equflash_29m_oam = auto(), "equflash/equflash-29M-oam.yml"
+
+    # Zhejiang Lab
     eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
 
-    # HIENet
+    # Texas A&M University
     hienet = auto(), "hienet/hienet.yml"
 
-    # GRACE: https://arxiv.org/abs/2311.16326v2
+    # ICAMS, Ruhr University Bochum https://arxiv.org/abs/2311.16326v2
     grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
     grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
     grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
     grace_2l_oam_l = auto(), "grace/grace-2l-oam-l.yml"
 
-    # GNoME - Nequip architecture trained on Google's proprietary data. Weights
+    # Google DeepMind; GNoME is a Nequip architecture trained on Google's proprietary data. Weights
     # are not publicly available and so these results cannot be reproduced.
     gnome = auto(), "gnome/gnome.yml"
 
@@ -343,6 +346,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     megnet = auto(), "megnet/megnet.yml"
 
     # NequIP
+    nequip_oam_xl_0_1 = auto(), "nequip/nequip-OAM-XL-0.1.yml"
     nequip_oam_l_0_1 = auto(), "nequip/nequip-OAM-L-0.1.yml"
     nequip_mp_l_0_1 = auto(), "nequip/nequip-MP-L-0.1.yml"
 
@@ -485,7 +489,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return self.metadata.get("status", "complete") == "complete"
 
     @classmethod
-    def _missing_(cls, value: str) -> Self | None:
+    def _missing_(cls, value: object) -> Self | None:
         """Normalizing casing and dashes before matching enum values.
         If no match is found, return None.
 

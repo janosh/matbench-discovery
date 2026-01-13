@@ -23,9 +23,9 @@
   let batch_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`batch=`))
   let log = $state(false) // log color scale
   let filter = $state(arity_keys[0])
-  let color_scale = $state<D3InterpolateName[]>([`interpolateViridis`])
+  let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
-  let active_counts = $derived(elem_counts[filter])
+  let active_counts = $derived(elem_counts[filter] as Record<string, number>)
   let normalized_bar_counts: boolean = $state(false)
 
   const style = `display: flex; place-items: center; place-content: center;`
@@ -43,7 +43,7 @@
   structure was generated in).
 </p>
 
-<ColorScaleSelect bind:selected={color_scale} />
+<ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />
 
 <form>
   <span>
@@ -69,7 +69,7 @@
 <PeriodicTable
   heatmap_values={active_counts}
   {log}
-  color_scale={color_scale[0]}
+  {color_scale}
   bind:active_element
   show_photo={false}
   missing_color="rgba(255,255,255,0.3)"
