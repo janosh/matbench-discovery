@@ -25,11 +25,7 @@ trained_by:
 repo: https://github.com/atomicarchitects/nequix
 url: https://github.com/atomicarchitects/nequix
 doi: https://doi.org/10.48550/arXiv.2508.16067
-<<<<<<< HEAD
-paper: https://www.arxiv.org/abs/2508.16067
-=======
 paper: https://arxiv.org/abs/2508.16067
->>>>>>> 74c10c8c054cba122a856cdf295cc2c109e31480
 pr_url: https://github.com/janosh/matbench-discovery/pull/276
 checkpoint_url: https://figshare.com/files/57245573
 

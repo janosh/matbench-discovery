@@ -151,6 +151,7 @@ class Targets(LabelEnum):
     EFS_D = "EFS_D", "EFS<sub>D</sub>", "Energy with direct Forces and Stress"
     EFS_GM = "EFS_GM", "EFS<sub>G</sub>M", "Energy with gradient-based Forces and Stress; plus Magmoms"  # fmt: skip
     EFS_DM = "EFS_DM", "EFS<sub>D</sub>M", "Energy with direct Forces and Stress; plus Magmoms"  # fmt: skip
+    EFSH_G = "EFSH_G", "EFSH<sub>G</sub>", "Energy with gradient-based Forces, Stress, and Hessian"  # fmt: skip
 
 
 @unique
@@ -371,6 +372,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # Nequix model
     nequix_mp_1 = auto(), "nequix/nequix-mp-1.yml"
+    nequix_mp_1_pft = auto(), "nequix/nequix-mp-1-pft.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction

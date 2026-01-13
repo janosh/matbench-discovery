@@ -1,0 +1,126 @@
+model_name: Nequix MP PFT
+model_key: nequix-mp-1-pft
+model_version: '0.1.0'
+date_added: '2026-01-08'
+date_published: '2026-01-08'
+authors:
+  - name: Teddy Koker
+    affiliation: Massachusetts Institute of Technology
+    email: tekoker@mit.edu
+    url: https://teddykoker.com
+    orcid: https://orcid.org/0000-0001-8861-9788
+  - name: Abhijeet Gangan
+    affiliation: University of California, Los Angeles
+    email: abhijeetgangan@g.ucla.edu
+    orcid: https://orcid.org/0000-0002-8937-7984
+  - name: Mit Kotak
+    affiliation: Massachusetts Institute of Technology
+    email: mkotak@mit.edu
+    orcid: https://orcid.org/0000-0002-6999-1055
+  - name: Jaime Marian
+    affiliation: University of California, Los Angeles
+    email: jmarian@g.ucla.edu
+    orcid: https://orcid.org/0000-0001-9000-3405
+  - name: Tess Smidt
+    affiliation: Massachusetts Institute of Technology
+    email: tsmidt@mit.edu
+    url: https://blondegeek.github.io/
+    orcid: https://orcid.org/0000-0001-5581-5344
+
+trained_by:
+  - name: Teddy Koker
+    affiliation: Massachusetts Institute of Technology
+    email: tekoker@mit.edu
+    url: https://teddykoker.com
+    orcid: https://orcid.org/0000-0001-8861-9788
+
+repo: https://github.com/atomicarchitects/nequix
+url: https://github.com/atomicarchitects/nequix
+doi: https://doi.org/10.48550/arXiv.2601.07742
+paper: https://arxiv.org/abs/2601.07742
+pr_url: TODO
+checkpoint_url: https://figshare.com/files/60965527
+
+openness: OSOD
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFSH_G
+model_type: UIP
+model_params: 707_658
+trained_for_benchmark: true
+n_estimators: 1
+
+license:
+  code: MIT
+  code_url: https://github.com/atomicarchitects/nequix/blob/main/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/
+
+hyperparams:
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  hidden_irreps: 128x0e+64x1o+32x2e+32x3o
+  graph_construction_radius: 6.0
+  max_neighbors: .inf
+  lmax: 3
+  radial_basis_size: 8
+  radial_mlp_size: 64
+  radial_mlp_layers: 2
+  radial_polynomial_p: 6.0
+  layer_norm: true
+
+  optimizer: muon
+  weight_decay: 0.001
+  warmup_epochs: 0.1
+  warmup_factor: 0.2
+  grad_clip_norm: 100
+  batch_size: 256
+  n_epochs: 100
+  loss:
+    energy: mae
+    force: l2
+    stress: mae
+  loss_weights:
+    energy: 20.0
+    force: 20.0
+    stress: 5.0
+  ema_decay: 0.999
+
+training_cost:
+  Nvidia A100 GPUs: { amount: 4, hours: 125 }
+
+training_set: [MPtrj, MDR Phonon PBE Train]
+
+notes:
+  Description: Nequix MP PFT is a fine-tuned version of Nequix MP 1, which was fine-tuned using phonon fine-tuning (PFT) on a subset of the MDR Phonon PBE dataset that is contained within MPtrj.
+
+requirements:
+  jax: 0.6.2
+  e3nn-jax: 0.20.7
+  jraph: 0.0.6.dev0
+  equinox: 0.11.11
+  optax: 0.2.5
+  ase: 3.24.0
+  tqdm: 4.67.1
+  wandb: 0.19.11
+  pyyaml: 6.0.2
+  matscipy: 1.1.1
+  h5py: 3.14.0
+  wandb-osh: 1.2.2
+  cloudpickle: 3.1.1
+
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/nequix/nequix-mp-1-pft/2026-01-12-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/60965506
+  geo_opt:
+    pred_file: models/nequix/nequix-mp-1-pft/2026-01-12-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file_url: https://figshare.com/files/60965515
+    struct_col: nequix_structure
+  discovery:
+    pred_file: models/nequix/nequix-mp-1-pft/2026-01-12-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/60965509
+    pred_col: e_form_per_atom_nequix
