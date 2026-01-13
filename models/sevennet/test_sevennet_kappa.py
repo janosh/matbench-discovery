@@ -52,11 +52,11 @@ if model_variant in checkpoint_urls:
     if not checkpoint_path.exists():
         print(f"Downloading {model_variant} checkpoint to {checkpoint_path}...")
         import requests
-        response = requests.get(checkpoint_urls[model_variant], stream=True)
+
+        response = requests.get(checkpoint_urls[model_variant], stream=True, timeout=30)
         response.raise_for_status()
         with open(checkpoint_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+            f.writelines(response.iter_content(chunk_size=8192))
         print("Download complete.")
     else:
         print(f"Using cached checkpoint: {checkpoint_path}")

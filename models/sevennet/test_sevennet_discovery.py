@@ -2,6 +2,7 @@
 
 # %%
 import os
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -31,7 +32,7 @@ __date__ = "2026-01-12"
 
 
 model_name = "sevennet"
-model_variant = "sevennet-mf-ompa"  # choose 7net model variant to eval
+model_variant = "sevennet-omni-i12"  # choose 7net model variant to eval
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 calc_kwargs = {
@@ -54,15 +55,16 @@ if model_variant in checkpoint_urls:
     if not checkpoint_path.exists():
         print(f"Downloading {model_variant} checkpoint to {checkpoint_path}...")
         import requests
-        response = requests.get(checkpoint_urls[model_variant], stream=True)
+
+        response = requests.get(checkpoint_urls[model_variant], stream=True, timeout=30)
         response.raise_for_status()
         with open(checkpoint_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+            f.writelines(response.iter_content(chunk_size=8192))
         print("Download complete.")
     else:
         print(f"Using cached checkpoint: {checkpoint_path}")
     calc_kwargs["model"] = str(checkpoint_path)
+
 
 # %% this config is editable
 smoke_test = True
