@@ -82,14 +82,20 @@ hyperparams:
     energy: mae
     force: l2
     stress: mae
+    hessian: mae
   loss_weights:
-    energy: 20.0
+    energy: 0.0
     force: 20.0
     stress: 5.0
+    hessian: 100.0
+  cotrain_loss_weights:
+    energy: 500.0
+    force: 200.0
+    stress: 50.0
   ema_decay: 0.999
 
 training_cost:
-  Nvidia A100 GPUs: { amount: 4, hours: 125 }
+  Nvidia A100 GPUs: { amount: 1, hours: 140 }
 
 training_set: [MPtrj, MDR Phonon PBE Train]
 
