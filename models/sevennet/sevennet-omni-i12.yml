@@ -1,0 +1,192 @@
+model_name: SevenNet-Omni-i12
+model_key: sevennet-omni-i12
+model_version: v0.12.0
+date_added: '2026-01-12'
+date_published: '2026-01-12'
+authors:
+  - name: Jaesun Kim
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0009-0000-6646-1318
+  - name: Jinmu You
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0009-0003-7152-7774
+  - name: Yutack Park
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0009-0008-8690-935X
+  - name: Suyeon Ju
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0000-0001-7033-8769
+  - name: Haekwan Jeon
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0009-0000-3088-7499
+  - name: Seungwu Han
+    affiliation: Seoul National University, Korea Institute for Advanced Study
+    email: hansw@snu.ac.kr
+    orcid: https://orcid.org/0000-0003-3958-0922
+    corresponding: true
+trained_by:
+  - name: Jinmu You
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0009-0003-7152-7774
+
+repo: https://github.com/MDIL-SNU/SevenNet
+url: https://figshare.com/account/articles/31054558
+doi: https://doi.org/10.48550/arXiv.2510.11241
+paper: https://arxiv.org/abs/2510.11241
+pypi: https://pypi.org/project/sevenn
+# pr_url: https://github.com/janosh/matbench-discovery/pull/XXX
+checkpoint_url: https://figshare.com/files/60977863
+
+license:
+  code: MIT
+  code_url: https://github.com/MDIL-SNU/SevenNet/blob/main/LICENSE
+  checkpoint: MIT
+  checkpoint_url: https://figshare.com/files/60977863
+
+openness: OSOD
+trained_for_benchmark: false
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 54_921_363
+n_estimators: 1
+
+hyperparams:
+  max_force: 0.02
+  max_steps: 800
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  optimizer: Adam
+  loss: MAE/L2MAE/L2MAE
+  loss_weights:
+    energy: 1.0
+    force: 1.0
+    stress: 0.0005
+  batch_size: 256
+  initial_learning_rate: 0.0001
+  learning_rate_schedule: onecyclelr - max_lr=0.0001, pct_start=0.05, anneal_strategy=cos, div_factor=25, final_div_factor=1e4
+  epochs: 2
+  n_layers: 12
+  n_features:
+    - 128x0e
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e
+  n_radial_bessel_basis: 8
+  graph_construction_radius: 6.0 # Å, from SevenNet-mf-ompa/hyperparams.yaml
+  max_neighbors: .inf
+  sph_harmonics_l_max: 3
+
+requirements:
+  torch: 2.7.0
+  torch-geometric: 2.6.1
+  ase: 3.23.0
+  pymatgen: 2025.10.7
+  numpy: 1.26.4
+
+training_set: [COSMOSDataset]
+training_cost: missing
+
+notes:
+  Description: |
+    SevenNet is a graph neural network interatomic potential package that supports parallel molecular dynamics simulations. The SevenNet-Omni model employs a multi-task training strategy that jointly optimizes universal and task-specific parameters via selective regularization and domain-bridging strategies, enabling robust transferability across molecules, bulk crystals, and surfaces.
+    Trained on 15 open datasets spanning molecular, inorganic, and interfacial chemistries, SevenNet-Omni achieves state-of-the-art cross-domain accuracy while maintaining high in-domain fidelity.
+
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/sevennet/sevennet-omni-i12/2026-01-12-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-05.json.gz
+      pred_file_url: https://figshare.com/files/60977131
+      κ_SRME: 0.1917
+      κ_SRE: 0.0963
+  geo_opt:
+    pred_file: models/sevennet/sevennet-omni-i12/2026-01-12-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file_url: https://figshare.com/files/60979039
+  
+    struct_col: sevennet_structure
+    symprec=1e-2:
+      rmsd: 0.0618 # unitless
+      n_sym_ops_mae: 1.7097 # unitless
+      symmetry_decrease: 0.0469 # fraction
+      symmetry_match: 0.8187 # fraction
+      symmetry_increase: 0.1272 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/sevennet/sevennet-omni-i12/2026-01-12-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.7.3.csv.gz
+      analysis_file_url: https://figshare.com/files/60979033
+    symprec=1e-5:
+      rmsd: 0.0618 # unitless
+      n_sym_ops_mae: 2.0291 # unitless
+      symmetry_decrease: 0.0439 # fraction
+      symmetry_match: 0.7056 # fraction
+      symmetry_increase: 0.2454 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/sevennet/sevennet-omni-i12/2026-01-12-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.7.3.csv.gz
+      analysis_file_url: https://figshare.com/files/60979036
+  discovery:
+    pred_file: models/sevennet/sevennet-omni-i12/2026-01-12-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/60977137
+    pred_col: e_form_per_atom_sevennet
+    full_test_set:
+      F1: 0.887 # fraction
+      DAF: 5.203 # dimensionless
+      Precision: 0.893 # fraction
+      Recall: 0.882 # fraction
+      Accuracy: 0.962 # fraction
+      TPR: 0.882 # fraction
+      FPR: 0.022 # fraction
+      TNR: 0.978 # fraction
+      FNR: 0.118 # fraction
+      TP: 38875.0 # count
+      FP: 4668.0 # count
+      TN: 208203.0 # count
+      FN: 5217.0 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.862 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.906 # fraction
+      DAF: 5.954 # dimensionless
+      Precision: 0.91 # fraction
+      Recall: 0.901 # fraction
+      Accuracy: 0.971 # fraction
+      TPR: 0.901 # fraction
+      FPR: 0.016 # fraction
+      TNR: 0.984 # fraction
+      FNR: 0.099 # fraction
+      TP: 30084.0 # count
+      FP: 2969.0 # count
+      TN: 179145.0 # count
+      FN: 3290.0 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.868 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.985 # fraction
+      DAF: 6.352 # dimensionless
+      Precision: 0.971 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.971 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9711.0 # count
+      FP: 289.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.078 # eV/atom
+      R2: 0.868 # dimensionless
+      missing_preds: 0 # count

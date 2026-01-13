@@ -23,17 +23,41 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
 # %% editable config
 model_name = "sevennet"
-model_variant = "sevennet-mf-ompa"  # choose 7net model variant to eval
+model_variant = "sevennet-omni-i12"  # choose 7net model variant to eval
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-model, modal = {
-    "sevennet-0": ("7net-0", None),
-    "sevennet-l3i5": ("7net-l3i5", None),
-    "sevennet-mf-ompa": ("7net-mf-ompa", "mpa"),
+calc_kwargs = {
+    "sevennet-0": {"model": "7net-0"},
+    "sevennet-l3i5": {"model": "7net-l3i5"},
+    "sevennet-mf-ompa": {"model": "7net-mf-ompa", "modal": "mpa"},
+    "sevennet-omni-i12": {"model": "7net-omni-i12", "modal": "mpa"},
 }[model_variant]
+calc_kwargs["device"] = device
+
+# Will be removed after integrating model checkpoint download into sevenn package
+checkpoint_urls = {
+    "sevennet-omni-i12": "https://figshare.com/ndownloader/files/60977863",
+}
+if model_variant in checkpoint_urls:
+    cache_dir = Path.home() / ".cache" / "sevennet"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = cache_dir / f"checkpoint_{model_variant.replace('-', '_')}.pth"
+
+    if not checkpoint_path.exists():
+        print(f"Downloading {model_variant} checkpoint to {checkpoint_path}...")
+        import requests
+        response = requests.get(checkpoint_urls[model_variant], stream=True)
+        response.raise_for_status()
+        with open(checkpoint_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print("Download complete.")
+    else:
+        print(f"Using cached checkpoint: {checkpoint_path}")
+    calc_kwargs["model"] = str(checkpoint_path)
 
 dtype = "float32"
-calculator = SevenNetCalculator(model=model, device=device, modal=modal)
+calculator = SevenNetCalculator(**calc_kwargs)
 
 json_path = f"{ROOT}/models/{model_name}/{model_variant}/{today}-diatomics.json.gz"
 existing_paths = glob(json_path.replace(today, "*-*-*"))
