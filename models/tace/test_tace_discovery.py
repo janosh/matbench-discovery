@@ -26,7 +26,7 @@ from tace.interface.ase import TACEAseCalc
 # %% this config is editable
 
 dtype = "float64"
-device="cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 model_name = "TACE-v1-OAM-M"
 
 try:

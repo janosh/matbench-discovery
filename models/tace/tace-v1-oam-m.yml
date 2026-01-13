@@ -1,5 +1,5 @@
 model_name: TACE-v1-OAM-M
-model_key: tace-v1-oam-m 
+model_key: tace-v1-oam-m
 model_version: '0.1.0'
 date_added: '2026-01-06'
 date_published: '2026-01-06'
@@ -16,7 +16,7 @@ authors:
     corresponding: true
   - name: P. Hu
     affiliation: ShanghaiTech University
-    email: p.hu@qub.ac.uk, hupj@shanghaitech.edu.cn
+    email: hupj@shanghaitech.edu.cn
     orcid: https://orcid.org/0000-0002-6318-1051
     corresponding: true
 trained_by:
@@ -27,10 +27,12 @@ trained_by:
     corresponding: false
 
 repo: https://github.com/xvzemin/tace
-url: https://tace.readthedocs.io/en/latest
-doi: 10.57967/hf/7458
-preprint: https://arxiv.org/abs/2509.14961
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-v1-OAM-M.pt
+url: https://github.com/xvzemin/tace
+doi: https://doi.org/10.57967/hf/7458
+paper: https://arxiv.org/abs/2509.14961
+pr_url: https://github.com/janosh/matbench-discovery/pull/301
+
 
 openness: OSOD # see `Open` enum in matbench_discovery/enums.py
 train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py

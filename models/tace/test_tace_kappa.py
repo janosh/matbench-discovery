@@ -1,7 +1,5 @@
 """
 Templated from test_nequip_kappa.py and test_orb_kappa.py.
-
-Debug: ValueError: cannot insert material_id, already exists
 """
 
 # uses commits matbench-discovery f0e54b7, pymatviz v0.17.3, phono3py 3.22.0
@@ -26,7 +24,7 @@ from matbench_discovery.metrics.phonons import calc_kappa_metrics_from_dfs, writ
 from tace.interface.ase import TACEAseCalc
 
 dtype = "float64" 
-device="cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 model_name = "TACE-v1-OAM-M"
 
 try:
@@ -146,29 +144,12 @@ for idx, atoms in enumerate(tqdm(atoms_list, desc="Calculating kappa...")):
 # Save intermediate results
 df_kappa = pd.DataFrame(kappa_results).T
 df_kappa.index.name = Key.mat_id
-# df_kappa = df_kappa.set_index(Key.mat_id) # debug 
 df_kappa.reset_index().to_json(f"{out_dir}/{slurm_array_task_id}_kappa.json.gz")
 
 if save_forces:
     df_force = pd.DataFrame(force_results).T
     df_force = pd.concat([pd.DataFrame(kappa_results).T, df_force], axis=1)
     df_force.index.name = Key.mat_id
-    # df_force = df_force.set_index(Key.mat_id) # debug 
     df_force.reset_index().to_json(
         f"{out_dir}/{slurm_array_task_id}_force-sets.json.gz"
     )
-
-# try:
-#     print("Computing metrics against reference data...")
-#     df_dft = pd.read_json(
-#         DataFiles.phonondb_pbe_103_kappa_no_nac.path
-#     ).set_index(Key.mat_id)
-#     df_ml_metrics = calc_kappa_metrics_from_dfs(df_kappa, df_dft)
-#     kappa_sre = df_ml_metrics[Key.sre].mean()
-#     kappa_srme = df_ml_metrics[Key.srme].mean()
-#     print(f"{kappa_sre=:.4f}")
-#     print(f"{kappa_srme=:.4f}")
-#     metrics_dict = {"srme": kappa_srme, "sre": kappa_sre}
-#     write_metrics_to_yaml(eval_model, metrics_dict, eval_model.kappa_103_path)
-# except Exception as exc:
-#     warnings.warn(f"Failed to calculate metrics: {exc!r}", stacklevel=2)
