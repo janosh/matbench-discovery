@@ -1,0 +1,112 @@
+# deno-fmt-ignore-file
+
+seed: 42
+device: cuda
+base_precision: 32
+
+architecture:
+  atomic_types: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 89, 90, 91, 92, 93, 94]
+  name: pet
+  model:
+    d_pet: 640
+    d_node: 2560
+    d_feedforward: 1280
+    d_head: 640
+    num_gnn_layers: 5
+    num_attention_layers: 3
+    cutoff: 10.0
+    num_neighbors_adaptive: 40
+    cutoff_width: 0.5
+    cutoff_function: Bump
+  training:
+    finetune:
+      method: full
+      read_from: pet-omat-xl.ckpt
+    distributed: True
+    warmup_fraction: 0.1
+    num_epochs: 1
+    learning_rate: 5e-5
+    checkpoint_interval: 1
+    grad_clip_norm: 1.0
+    batch_size: 4
+    batch_atom_bounds: [null, 350]
+    per_structure_targets: ["non_conservative_stress"]
+    loss:
+      energy:
+        weight: 1.0
+        type: huber
+        delta: 0.010
+        forces:
+          weight: 1.0
+          type: huber
+          delta: 0.050
+        virial:
+          weight: 1.0
+          type: huber
+          delta: 0.050
+      non_conservative_forces:
+        weight: 0.01
+        type: huber
+        delta: 0.050
+      non_conservative_stress:
+        weight: 0.001
+        type: huber
+        delta: 0.005
+
+training_set:
+  systems:
+    read_from: /tmp/mpa_train_mm/
+    length_unit: angstrom
+  targets:
+    energy:
+      key: e
+      unit: eV
+      forces:
+        key: f
+      stress:
+        key: s
+    non_conservative_forces:
+      key: f
+      quantity: force
+      unit: eV/A
+      per_atom: true
+      type:
+        cartesian:
+          rank: 1
+    non_conservative_stress:
+      key: s
+      quantity: pressure
+      unit: eV/A^3
+      type:
+        cartesian:
+          rank: 2
+
+validation_set:
+  systems:
+    read_from: /tmp/salex_val_mm/
+    length_unit: angstrom
+  targets:
+    energy:
+      key: e
+      unit: eV
+      forces:
+        key: f
+      stress:
+        key: s
+    non_conservative_forces:
+      key: f
+      quantity: force
+      unit: eV/A
+      per_atom: true
+      type:
+        cartesian:
+          rank: 1
+    non_conservative_stress:
+      key: s
+      quantity: pressure
+      unit: eV/A^3
+      type:
+        cartesian:
+          rank: 2
+
+test_set: 0.0
