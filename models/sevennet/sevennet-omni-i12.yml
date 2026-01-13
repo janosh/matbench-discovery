@@ -6,18 +6,23 @@ date_published: '2026-01-12'
 authors:
   - name: Jaesun Kim
     affiliation: Seoul National University
+    email: sunny990912@snu.ac.kr
     orcid: https://orcid.org/0009-0000-6646-1318
   - name: Jinmu You
     affiliation: Seoul National University
+    email: alphalm4@snu.ac.kr
     orcid: https://orcid.org/0009-0003-7152-7774
   - name: Yutack Park
     affiliation: Seoul National University
+    email: parkyutack@snu.ac.kr
     orcid: https://orcid.org/0009-0008-8690-935X
   - name: Suyeon Ju
     affiliation: Seoul National University
+    email: cindy2069@snu.ac.kr
     orcid: https://orcid.org/0000-0001-7033-8769
   - name: Haekwan Jeon
     affiliation: Seoul National University
+    email: haekwan98@snu.ac.kr
     orcid: https://orcid.org/0009-0000-3088-7499
   - name: Seungwu Han
     affiliation: Seoul National University, Korea Institute for Advanced Study
@@ -27,6 +32,7 @@ authors:
 trained_by:
   - name: Jinmu You
     affiliation: Seoul National University
+    email: alphalm4@snu.ac.kr
     orcid: https://orcid.org/0009-0003-7152-7774
 
 repo: https://github.com/MDIL-SNU/SevenNet
