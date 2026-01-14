@@ -15,7 +15,7 @@
 # "fairchem-core==1.10.0",
 # "lmdb==1.6.2",
 # "submitit==1.5.3",
-# "matbench-discovery"==1.3.1,
+# "matbench-discovery==1.3.1",
 # ]
 #
 # [tool.uv.sources]
