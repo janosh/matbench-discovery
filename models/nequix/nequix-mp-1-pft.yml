@@ -38,7 +38,7 @@ repo: https://github.com/atomicarchitects/nequix
 url: https://github.com/atomicarchitects/nequix
 doi: https://doi.org/10.48550/arXiv.2601.07742
 paper: https://arxiv.org/abs/2601.07742
-pr_url: TODO
+pr_url: https://github.com/janosh/matbench-discovery/pull/304
 checkpoint_url: https://figshare.com/files/60965527
 
 openness: OSOD
@@ -71,12 +71,11 @@ hyperparams:
   radial_polynomial_p: 6.0
   layer_norm: true
 
-  optimizer: muon
+  optimizer: adamw
+  learning_rate: 0.0001
   weight_decay: 0.001
-  warmup_epochs: 0.1
-  warmup_factor: 0.2
   grad_clip_norm: 100
-  batch_size: 256
+  batch_size: 16
   n_epochs: 100
   loss:
     energy: mae

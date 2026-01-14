@@ -645,6 +645,7 @@ MDR Phonon PBE:
     are Ready for Phonons".
     
 MDR Phonon PBE Train:
+  name: MDR Phonon PBE Train
   contains: [MDR Phonon PBE]
   url: https://figshare.com/articles/dataset/Preprocessed_data_for_Phonon_Fine-tuning_PFT_/31049869
   download_url: https://figshare.com/files/60964675
