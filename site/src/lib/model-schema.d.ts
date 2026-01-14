@@ -75,6 +75,7 @@ export type ModelMetadata = {
     | 'OMat24'
     | 'sAlex'
     | 'OpenLAM'
+    | 'COSMOSDataset'
   )[]
   hyperparams?: {
     /**

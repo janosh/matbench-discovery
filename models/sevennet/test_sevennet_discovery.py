@@ -2,6 +2,7 @@
 
 # %%
 import os
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -12,33 +13,57 @@ from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
-from sevenn.sevennet_calculator import SevenNetCalculator
+from sevenn.calculator import SevenNetCalculator
 from tqdm import tqdm
 
 from matbench_discovery import WBM_DIR, timestamp
 from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import DataFiles, Task
 
-__author__ = "Yutack Park"
-__date__ = "2025-03-14"
+__author__ = "Jinmu You"
+__date__ = "2026-01-12"
 
 """History
-2024-06-25: SevenNet-0, first version
-2024-12-10: SevenNet-l3i5
-2025-03-14: SevenNet-mf-ompa. Different variants can be selected.
+2024-06-25 (Yutack Park): SevenNet-0, first version
+2024-12-10 (Yutack Park): SevenNet-l3i5
+2025-03-14 (Yutack Park): SevenNet-mf-ompa. Different variants can be selected.
+2026-01-12 (Jinmu You): SevenNet-omni-i12 added.
 """
 
 
 model_name = "sevennet"
-model_variant = "sevennet-mf-ompa"  # choose 7net model variant to eval
+model_variant = "sevennet-omni-i12"  # choose 7net model variant to eval
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-calculator_kwargs = {
+calc_kwargs = {
     "sevennet-0": {"model": "7net-0"},
     "sevennet-l3i5": {"model": "7net-l3i5"},
     "sevennet-mf-ompa": {"model": "7net-mf-ompa", "modal": "mpa"},
+    "sevennet-omni-i12": {"model": "7net-omni-i12", "modal": "mpa"},
 }[model_variant]
-calculator_kwargs["device"] = device
+calc_kwargs["device"] = device
+
+# Will be removed after integrating model checkpoint download into sevenn package
+checkpoint_urls = {
+    "sevennet-omni-i12": "https://figshare.com/ndownloader/files/60977863",
+}
+if model_variant in checkpoint_urls:
+    cache_dir = Path.home() / ".cache" / "sevennet"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = cache_dir / f"checkpoint_{model_variant.replace('-', '_')}.pth"
+
+    if not checkpoint_path.exists():
+        print(f"Downloading {model_variant} checkpoint to {checkpoint_path}...")
+        import requests
+
+        response = requests.get(checkpoint_urls[model_variant], stream=True, timeout=30)
+        response.raise_for_status()
+        with open(checkpoint_path, "wb") as f:
+            f.writelines(response.iter_content(chunk_size=8192))
+        print("Download complete.")
+    else:
+        print(f"Using cached checkpoint: {checkpoint_path}")
+    calc_kwargs["model"] = str(checkpoint_path)
 
 
 # %% this config is editable
@@ -50,8 +75,8 @@ ase_optimizer = "FIRE"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # They gives almost the same results. These values are for reproducibility.
-max_steps = 800 if model_variant == "sevennet-mf-ompa" else 500
-force_max = 0.02 if model_variant == "sevennet-mf-ompa" else 0.05
+max_steps = 800 if model_variant in ["sevennet-mf-ompa", "sevennet-omni-i12"] else 500
+force_max = 0.02 if model_variant in ["sevennet-mf-ompa", "sevennet-omni-i12"] else 0.05
 
 slurm_array_task_count = 32
 
@@ -68,7 +93,7 @@ print(f"\nJob {job_name!r} running {timestamp}", flush=True)
 print(f"{data_path=}", flush=True)
 
 # Initialize ASE SevenNet Calculator from checkpoint
-seven_net_calc = SevenNetCalculator(model=model_name)
+seven_net_calc = SevenNetCalculator(**calc_kwargs)
 
 
 # %%
