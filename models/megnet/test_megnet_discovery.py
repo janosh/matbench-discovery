@@ -50,7 +50,7 @@ slurm_vars = slurm_submit(
 
 
 # %%
-slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
 data_path = {
     Task.IS2RE: DataFiles.wbm_initial_structures.path,
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,

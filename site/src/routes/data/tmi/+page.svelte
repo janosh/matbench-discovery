@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import BarElementCounts from '$figs/bar-element-counts-mp+wbm-normalized=False.svelte'
-  import BarElementCountsNormalized from '$figs/bar-element-counts-mp+wbm-normalized=True.svelte'
+  import BarElementCounts from '$figs/tmi/bar-element-counts-mp+wbm-normalized=False.svelte'
+  import BarElementCountsNormalized from '$figs/tmi/bar-element-counts-mp+wbm-normalized=True.svelte'
   import { PtableInset } from '$lib'
   import type { ChemicalElement } from 'matterviz'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'

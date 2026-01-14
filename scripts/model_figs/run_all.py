@@ -6,20 +6,22 @@ model-comparison figure.
 # %%
 import os
 import runpy
+import sys
 from glob import glob
 
-import plotly.graph_objects as go
-from dash import Dash
 from tqdm import tqdm
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-07-14"
 
-module_dir = os.path.dirname(__file__)
+# Inject --no-show to suppress Plotly figures opening in browser
+if "--no-show" not in sys.argv:
+    sys.argv.append("--no-show")
 
-# monkey patch go.Figure.show() and Dash.run() to prevent them from opening browser
-go.Figure.show = lambda *_args, **_kwargs: None  # type: ignore[method-assign]
-Dash.run = lambda *_args, **_kwargs: None  # type: ignore[method-assign]
+# Import cli after modifying sys.argv to apply the monkey-patch
+from matbench_discovery.cli import cli_args  # noqa: F401
+
+module_dir = os.path.dirname(__file__)
 
 # subtract __file__ to prevent this file from calling itself
 scripts = set(glob(f"{module_dir}/*.py")) - {__file__}

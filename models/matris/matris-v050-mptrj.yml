@@ -32,17 +32,17 @@ trained_by:
     orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
-url: missing # to be released soon
-doi: missing # to be released soon
-paper: missing # to be released soon
-pr_url: https://github.com/janosh/matbench-discovery/pull/220
-checkpoint_url: missing # https://github.com/HPC-AI-Team/MatRIS/issues/1
+url: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
+doi: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
+paper: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
+pr_url: https://github.com/janosh/matbench-discovery/pull/293
+checkpoint_url: https://figshare.com/files/59143058
 
 license:
-  code: unreleased
-  code_url: missing
-  checkpoint: unreleased
-  checkpoint_url: missing
+  code: BSD-3-Clause
+  code_url: https://github.com/HPC-AI-Team/MatRIS/blob/main/LICENSE
+  checkpoint: BSD-3-Clause
+  checkpoint_url: https://github.com/HPC-AI-Team/MatRIS/blob/main/LICENSE
 
 openness: OSOD
 train_task: S2EFSM
@@ -52,6 +52,7 @@ model_type: UIP
 model_params: 5825620
 trained_for_benchmark: true
 n_estimators: 1
+status: superseded
 
 hyperparams:
   max_force: 0.05
@@ -83,7 +84,9 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj]
-training_cost: missing
+
+training_cost:
+  Nvidia A100 GPUs: { amount: 16, hours: 120 }
 
 notes:
   Description: |

@@ -382,6 +382,7 @@ properties:
         - sAlex
         - OpenLAM
         - MDR Phonon PBE Train
+        - COSMOSDataset
   hyperparams:
     type: object
     additionalProperties: true

@@ -336,8 +336,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     mace_mp_0 = auto(), "mace/mace-mp-0.yml"
     mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
-    # MatRIS-v0.5.0-MPtrj
-    matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
+    # MatRIS
+    # matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
+    matris_10m_oam = auto(), "matris/matris-10m-oam.yml"
+    matris_10m_mp = auto(), "matris/matris-10m-mp.yml"
 
     # MatterSim - M3gNet architecture trained on proprietary MSFT data. Weights
     # are open-sourced.
@@ -356,10 +358,18 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     orb_v2_mptrj = auto(), "orb/orb-v2-mptrj.yml"
     orb_v3 = auto(), "orb/orb-v3.yml"
 
+    # PET
+    pet_oam_xl_1_0_0 = auto(), "pet/pet-oam-xl-1.0.0.yml"
+
     # SevenNet trained on MPtrj
     # sevennet_0 = auto(), "sevennet/sevennet-0.yml"
     sevennet_l3i5 = auto(), "sevennet/sevennet-l3i5.yml"
-    sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
+    # sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
+    sevennet_omni_i12 = auto(), "sevennet/sevennet-omni-i12.yml"
+
+    # Tensor Atomic Cluster Expansion (Irreducible Cartesian tensor)
+    # https://arxiv.org/abs/2509.14961 and https://arxiv.org/abs/2512.16882
+    tace_v1_oam_m = auto(), "tace/tace-v1-oam-m.yml"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = auto(), "voronoi_rf/voronoi-rf.yml"
