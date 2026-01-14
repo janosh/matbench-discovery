@@ -55,7 +55,7 @@ definitions:
 
   TargetType:
     type: string
-    enum: [E, EF_G, EF_D, EFS_G, EFS_D, EFS_GM, EFS_DM]
+    enum: [E, EF_G, EF_D, EFS_G, EFSH_G, EFS_D, EFS_GM, EFS_DM]
 
   PhononMetrics:
     type: object
@@ -381,6 +381,7 @@ properties:
         - OMat24
         - sAlex
         - OpenLAM
+        - MDR Phonon PBE Train
   hyperparams:
     type: object
     additionalProperties: true
