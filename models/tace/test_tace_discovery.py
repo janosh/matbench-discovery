@@ -2,6 +2,7 @@
 Templated from test_nequip_discovery.py
 """
 
+# %% this config is editable
 # uses commits matbench-discovery f0e54b7
 
 import os
@@ -16,14 +17,12 @@ import torch
 from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
+from tace.interface.ase import TACEAseCalc
 from tqdm import tqdm
 
 from matbench_discovery import timestamp
 from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import Task
-from tace.interface.ase import TACEAseCalc
-
-# %% this config is editable
 
 dtype = "float64"
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -31,6 +30,7 @@ model_name = "TACE-v1-OAM-M"
 
 try:
     from tace.foundations import tace_foundations
+
     model_path = tace_foundations[model_name]
 except Exception as e:
     raise RuntimeError(
@@ -40,7 +40,9 @@ except Exception as e:
         f"resolve/main/{model_name}.pt\n"
         f"and put the model into ~/.cache/tace/{model_name}.pt"
     ) from e
-    
+
+
+# %% this config is editable
 smoke_test = False
 task_type = Task.IS2RE
 ase_optimizer = "GOQN"  # faster than "FIRE" from tests, gives the same results;
