@@ -618,11 +618,26 @@ def cumulative_metrics(
     # subselect rows for speed, plot has sufficient precision with 1k rows
     n_stable = sum(e_above_hull_true <= STABILITY_THRESHOLD)
 
+    # Melt dataframe to long format for plotly express
+    # Keep index (x values) and metric column, melt model columns
+    model_cols = [col for col in df_cumu_metrics.columns if col != "metric"]
+    df_cumu_metrics = df_cumu_metrics.reset_index()
+    # Get the name of the index column (will be "index" if index had no name)
+    index_col_name = df_cumu_metrics.columns[0]
+    df_cumu_metrics_long = df_cumu_metrics.melt(
+        id_vars=[index_col_name, "metric"],
+        value_vars=model_cols,
+        var_name="model",
+        value_name="value",
+    )
+
     n_cols = kwargs.pop("facet_col_wrap", 2)
     kwargs.setdefault("facet_col_spacing", 0.03)
     fig = px.line(
-        df_cumu_metrics,
-        x=df_cumu_metrics.index,
+        df_cumu_metrics_long,
+        x=index_col_name,
+        y="value",
+        color="model",
         facet_col="metric",
         facet_col_wrap=n_cols,
         category_orders={"metric": list(metrics)},

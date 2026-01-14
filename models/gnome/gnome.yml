@@ -80,7 +80,7 @@ metrics:
       DAF: 4.81 # dimensionless
       Precision: 0.825 # fraction
       Recall: 0.796 # fraction
-      Accuracy: 0.942 # fraction
+      Accuracy: 0.936 # fraction
       TPR: 0.796 # fraction
       FPR: 0.035 # fraction
       TNR: 0.965 # fraction
@@ -116,7 +116,7 @@ metrics:
       DAF: 5.523 # dimensionless
       Precision: 0.844 # fraction
       Recall: 0.814 # fraction
-      Accuracy: 0.955 # fraction
+      Accuracy: 0.948 # fraction
       TPR: 0.814 # fraction
       FPR: 0.028 # fraction
       TNR: 0.972 # fraction

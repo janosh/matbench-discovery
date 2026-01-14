@@ -1,3 +1,23 @@
+# /// script
+# requires-python = ">=3.10,<3.14"
+# dependencies = [
+# "torch>=2.6.0",
+# "numpy>=2.3.4",
+# "ase>=3.26.0",
+# "pymatgen>=2025.10.7",
+# "pymatviz>=0.17.2",
+# "scikit-learn>=1.7.2",
+# "tqdm>=4.67.1",
+# "pandas>=2.2.0",
+# "moyopy>=0.7.0",
+# "phono3py>=3.19.3",
+# "phonopy>=2.43.5",
+# "matbench-discovery>=1.3.1",
+# "matris @ git+https://github.com/HPC-AI-Team/MatRIS.git",
+# ]
+# [tool.uv.sources]
+# matbench-discovery = { path = "../../", editable = true }
+# ///
 """MatRIS thermal conductivity calculation script."""
 
 import json
@@ -16,7 +36,7 @@ from ase.filters import FrechetCellFilter
 from ase.io import read
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
-from matris.model.dynamics import MatRISCalculator
+from matris.applications.base import MatRISCalculator
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
@@ -29,21 +49,33 @@ from matbench_discovery.phonons import thermal_conductivity as ltc
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
-model_name = "matris"
+model_name = "MatRIS_10M_MP"  # or MatRIS_10M_OAM
 device = "cuda" if torch.cuda.is_available() else "cpu"
-calc = MatRISCalculator(use_device=device)
+calc = MatRISCalculator(model=model_name, device=device)
+
 
 # Relaxation parameters
 ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
 max_steps = 300
-force_max = 1e-4
+force_max = 1e-5
 symprec = 1e-5
 enforce_relax_symm = True
 conductivity_broken_symm = False
 prog_bar = True
 save_forces = False  # Save force sets to file
 temperatures = [300]  # Temperatures to calculate conductivity at in Kelvin
-displacement_distance = 0.01  # Displacement distance for phono3py
+displacement_distance = 0.03  # Displacement distance for phono3py
+
+slurm_array_task_count = int(
+    os.getenv(
+        "K_SRME_RESTART_ARRAY_TASK_COUNT", os.getenv("SLURM_ARRAY_TASK_COUNT", "1")
+    )
+)
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
+slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", os.getenv("SLURM_JOB_ID", "debug"))
+slurm_array_task_min = int(
+    os.getenv("K_SRME_RESTART_ARRAY_TASK_MIN", os.getenv("SLURM_ARRAY_TASK_MIN", "1"))
+)
 
 task_type = "LTC"  # lattice thermal conductivity
 job_name = (
@@ -51,9 +83,9 @@ job_name = (
     f"fmax={force_max}-{symprec=}"
 )
 module_dir = os.path.dirname(__file__)
-out_dir = "./kappa_results"
+out_dir = f"./{model_name}/{today}_kappa_results"
 os.makedirs(out_dir, exist_ok=True)
-out_path = f"{out_dir}/{job_name}.json.gz"
+out_path = f"{out_dir}/kappa_{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
 atoms_list = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
@@ -76,17 +108,28 @@ run_params = {
     "job_name": job_name,
     "n_structures": len(atoms_list),
 }
-
+"""
 with open(f"{out_dir}/run_params.json", mode="w") as file:
     json.dump(run_params, file, indent=4)
+"""
+if slurm_array_task_id >= slurm_array_task_min:
+    with open(f"{out_dir}/run_params.json", "w") as f:
+        json.dump(run_params, f, indent=4)
 
 # Set up the relaxation and force set calculation
 optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 force_results: dict[str, dict[str, Any]] = {}
 kappa_results: dict[str, dict[str, Any]] = {}
-tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)
 
-for atoms in tqdm_bar:
+atoms_list = atoms_list[
+    slurm_array_task_id - slurm_array_task_min :: slurm_array_task_count
+]
+
+tqdm_bar = tqdm(
+    enumerate(atoms_list), desc="Conductivity calculation: ", disable=not prog_bar
+)
+print(f">=>=={slurm_array_task_id}>=>=>==")
+for _, atoms in tqdm_bar:
     mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
     formula = atoms.get_chemical_formula()
@@ -232,7 +275,9 @@ df_kappa.index.name = Key.mat_id
 df_kappa.reset_index().to_json(out_path)
 
 if save_forces:
-    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets.json.gz"
+    force_out_path = (
+        f"{out_dir}/force_sets_{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
+    )
     df_force = pd.DataFrame(force_results).T
     df_force.index.name = Key.mat_id
     df_force.reset_index().to_json(force_out_path)

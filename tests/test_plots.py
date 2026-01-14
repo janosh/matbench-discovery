@@ -44,7 +44,7 @@ def test_cumulative_metrics(
     )
 
     assert isinstance(df_cumu_metrics, pd.DataFrame)
-    assert list(df_cumu_metrics) == [*models, "metric"]
+    assert list(df_cumu_metrics) == ["index", *models, "metric"]
 
     assert isinstance(fig, go.Figure)
     subplot_titles = {anno.text.split("=")[-1] for anno in fig.layout.annotations}
