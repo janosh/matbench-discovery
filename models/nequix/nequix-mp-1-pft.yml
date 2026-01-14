@@ -127,6 +127,24 @@ metrics:
     pred_file: models/nequix/nequix-mp-1-pft/2026-01-12-wbm-IS2RE-FIRE.jsonl.gz
     pred_file_url: https://figshare.com/files/61019686
     struct_col: nequix-mp-pft-1yqa7d5t-200epochs_structure
+    symprec=1e-2:
+      rmsd: 0.0866 # unitless
+      n_sym_ops_mae: 1.7984 # unitless
+      symmetry_decrease: 0.054 # fraction
+      symmetry_match: 0.8109 # fraction
+      symmetry_increase: 0.1276 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/nequix/nequix-mp-1-pft/2026-01-12-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.7.4.csv.gz
+      analysis_file_url: https://figshare.com/files/61021306
+    symprec=1e-5:
+      rmsd: 0.0866 # unitless
+      n_sym_ops_mae: 2.0578 # unitless
+      symmetry_decrease: 0.0602 # fraction
+      symmetry_match: 0.6976 # fraction
+      symmetry_increase: 0.2362 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/nequix/nequix-mp-1-pft/2026-01-12-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.7.4.csv.gz
+      analysis_file_url: https://figshare.com/files/61021309
   discovery:
     pred_file: models/nequix/nequix-mp-1-pft/2026-01-12-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/61019521
