@@ -13,7 +13,7 @@ Please check the following items before submitting your PR:
 - [ ] I uploaded the phonon predictions to Figshare or another cloud storage service (`<yyyy-mm-dd>-kappa-103-FIRE-<values-of-dist|fmax|symprec>.gz`).
 - [ ] I included the urls to the Figshare files in the YAML metadata file (`models/<arch_name>/<model_variant>.yml`). If not using Figshare I have included the urls to the cloud storage service in the description of the PR.
 - [ ] I included the test script (`test_<arch_name>_<task>.py` for `task` in `discovery`, `kappa`, `diatomics`) that generated the prediction files.
-- [ ] I have generated the minimal figures needed to build the site. `uv run python scripts/model_figs/single_model_energy_parity.py --models <model_name> --update-existing` and `uv run python scripts/per_element_errors.py`
+- [ ] I have generated the minimal figures and data files needed to build the site. `uv run python scripts/model_figs/single_model_energy_parity.py --models <model_name> --update-existing --no-show` and `uv run python scripts/model_figs/single_model_per_element_errors.py --models <model_name> --no-show`
 
 ## Additional Information (Optional)
 

@@ -14,7 +14,7 @@ from pymatgen.core import Composition, Structure
 from pymatviz.enums import ElemCountMode, Key
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR
+from matbench_discovery import PDF_FIGS, WBM_DIR
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey
 from matbench_discovery.metrics.discovery import classify_stable, df_metrics
@@ -225,80 +225,6 @@ df_each_err.abs().mean(axis=1).nlargest(25)
 
 
 # %%
-n_points = 1000
-df_largest_fp_diff = df_wbm[fp_diff_col].nlargest(n_points)
-
-fig = go.Figure()
-colors = px.colors.qualitative.Plotly
-
-for idx, model in enumerate(df_metrics):
-    color = colors[idx]
-    model_mae = df_each_err[model].loc[df_largest_fp_diff.index].abs().mean()
-
-    visible = "legendonly" if idx else True
-    fig.add_scatter(
-        x=df_largest_fp_diff.values,
-        y=df_each_err[model].loc[df_largest_fp_diff.index].abs(),
-        mode="markers",
-        name=f"{model} · MAE={model_mae:.2f}",
-        visible=visible,
-        hovertemplate=(
-            "ID: %{customdata[0]}<br>"
-            "formula: %{customdata[1]}<br>"
-            "FP diff: %{x}<br>"
-            "error: %{y}<extra></extra>"
-        ),
-        customdata=df_preds[[Key.mat_id, Key.formula]]
-        .loc[df_largest_fp_diff.index]
-        .values,
-        legendgroup=model,
-        marker=dict(color=color),
-        legendrank=model_mae,
-    )
-    # add dashed mean line for each model that toggles with the scatter plot
-    # fig.add_hline(
-    #     y=model_mae,
-    #     line=dict(dash="dash"),
-    #     annotation=dict(text=f"{model} mean", x=0, xanchor="left", font_size=10),
-    # )
-    # get color from scatter plot
-    fig.add_scatter(
-        x=[df_largest_fp_diff.min(), df_largest_fp_diff.max()],
-        y=[model_mae, model_mae],
-        line=dict(dash="dash", width=2, color=color),
-        legendgroup=model,
-        showlegend=False,
-        visible=visible,
-    )
-
-
-title = (
-    f"Absolute errors in model-predicted E<sub>above hull</sub> for {n_points} "
-    "structures<br>with largest norm-diff of initial/final SiteStatsFingerprint in WBM "
-    "test set"
-)
-fig.layout.title.update(text=title, xanchor="center", x=0.5)
-fig.layout.legend.update(
-    title="",
-    yanchor="top",
-    y=0.98,
-    xanchor="right",
-    x=0.98,
-    font_size=14,
-    tracegroupgap=0,
-)
-fig.layout.xaxis.title = "|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|"
-fig.layout.yaxis.title = "|E<sub>above hull</sub> error| (eV/atom)"
-fig.layout.margin = dict(t=40, b=0, l=0, r=0)
-fig.show()
-
-
-# %%
-pmv.save_fig(fig, f"{SITE_FIGS}/largest-fp-diff-each-error-models.svelte")
-pmv.save_fig(fig, f"{PDF_FIGS}/large-fp-diff-vs-each-error.pdf")
-
-
-# %%
 tsne_cols = ["t-SNE 1", "t-SNE 2"]
 tsne_comp_2d_path = f"{WBM_DIR}/tsne/onehot-112-composition-2d.csv"
 df_wbm[tsne_cols] = pd.read_csv(tsne_comp_2d_path, index_col=0)
@@ -321,6 +247,10 @@ pmv.save_fig(fig, f"{PDF_FIGS}/tsne-2d-composition-by-wbm-step-bandgap.png", sca
 
 
 # %% violin plot of EACH error for largest norm-diff FP structures for each model
+n_points = 1000
+df_largest_fp_diff = df_wbm[fp_diff_col].nlargest(n_points)
+
+
 y_label = "E<sub>above hull</sub> error (eV/atom)"
 df_melt = (
     df_each_err.loc[df_largest_fp_diff.index]

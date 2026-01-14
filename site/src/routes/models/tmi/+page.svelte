@@ -1,10 +1,10 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import EachErrorVsLeastPrevalentElementInStruct from '$figs/each-error-vs-least-prevalent-element-in-struct.svelte'
-  import ElementPrevalenceVsErr from '$figs/element-prevalence-vs-error.svelte'
-  import HistLargestEachErrorsFpDiffModels from '$figs/hist-largest-each-errors-fp-diff-models.svelte'
-  import ScatterLargestEachErrorsFpDiffModels from '$figs/scatter-largest-each-errors-fp-diff-models.svelte'
-  import ScatterLargeFpDiffVsEachError from '$figs/scatter-largest-fp-diff-each-error-models.svelte'
+  import EachErrorVsLeastPrevalentElementInStruct from '$figs/tmi/each-error-vs-least-prevalent-element-in-struct.svelte'
+  import ElementPrevalenceVsErr from '$figs/tmi/element-prevalence-vs-error.svelte'
+  import HistLargestEachErrorsFpDiffModels from '$figs/tmi/hist-largest-each-errors-fp-diff-models.svelte'
+  import ScatterLargestEachErrorsFpDiffModels from '$figs/tmi/scatter-largest-each-errors-fp-diff-models.svelte'
+  import ScatterLargeFpDiffVsEachError from '$figs/tmi/scatter-largest-fp-diff-each-error-models.svelte'
   import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
   import DiscoveryMetricFigs from './discovery-metric-figs.md'
 </script>

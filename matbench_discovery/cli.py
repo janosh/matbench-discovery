@@ -87,8 +87,14 @@ plot_group.add_argument(
     help="Whether to update figures whose file paths already exist.",
 )
 plot_group.add_argument(
-    "--model-figures-only",
+    "--no-show",
     action="store_true",
-    help="Only generate model-specific figures, skip dataset-level figures.",
+    help="Suppress Plotly figures from opening in browser.",
 )
 cli_args, _ignore_unknown = cli_parser.parse_known_args()
+
+# Monkey-patch Plotly to suppress browser opening when --no-show is passed
+if cli_args.no_show:
+    import plotly.graph_objects as go
+
+    go.Figure.show = lambda *_args, **_kwargs: None  # type: ignore[method-assign]
