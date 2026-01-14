@@ -82,7 +82,7 @@ slurm_array_task_count = 32
 
 
 # %%
-slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
 
 os.makedirs(out_dir := "./results", exist_ok=True)
