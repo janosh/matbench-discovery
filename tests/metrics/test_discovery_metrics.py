@@ -1,13 +1,18 @@
 import math
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 from pymatviz.enums import Key
 
-from matbench_discovery.enums import Model
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics import discovery
-from matbench_discovery.metrics.discovery import classify_stable, stable_metrics
+from matbench_discovery.metrics.discovery import (
+    classify_stable,
+    stable_metrics,
+    write_metrics_to_yaml,
+)
 
 
 @pytest.mark.parametrize(
@@ -62,7 +67,7 @@ def test_classify_stable_input_types() -> None:
     """Test classify_stable with different input types including NaN/None values."""
     # Test with Python lists containing NaN and None
     result = classify_stable(
-        [-0.1, 0.0, 0.1, np.nan, None],  # type: ignore[invalid-argument-type]
+        [-0.1, 0.0, 0.1, np.nan, None],
         [-0.1, 0.0, 0.1, 0.2, -0.2],
         stability_threshold=0.0,
         fillna=True,
@@ -199,6 +204,7 @@ def test_stable_metrics() -> None:
 
 
 def test_df_discovery_metrics() -> None:
+    """Test df_metrics dataframe is valid."""
     missing_cols = {*discovery.df_metrics} - {model.label for model in Model}
     assert missing_cols == set(), f"{missing_cols=}"
     assert discovery.df_metrics.T.MAE.between(0, 0.2).all(), (
@@ -211,3 +217,45 @@ def test_df_discovery_metrics() -> None:
         f"unexpected {discovery.df_metrics.T.RMSE=}"
     )
     assert discovery.df_metrics.T.isna().sum().sum() == 0, "NaNs in metrics"
+
+
+def test_write_metrics_to_yaml(tmp_path: Path) -> None:
+    """Test write_metrics_to_yaml writes metrics with comments to YAML file."""
+    from pathlib import Path
+    from unittest.mock import MagicMock, patch
+
+    # Create mock model with yaml_path pointing to temp file
+    mock_model = MagicMock(spec=Model)
+    test_yaml = tmp_path / "test_model.yml"
+    test_yaml.write_text("metrics:\n  discovery: {}\n")
+    mock_model.yaml_path = str(test_yaml)
+
+    # Create test metrics and predictions
+    test_metrics: dict[str, str | float] = {
+        "MAE": 0.05,
+        "RMSE": 0.08,
+        "Precision": 0.9,
+        "Recall": 0.85,
+    }
+    test_preds = pd.Series([0.1, 0.2, np.nan, 0.4])  # 1 missing prediction
+
+    with patch.object(Model, "__instancecheck__", return_value=True):
+        result = write_metrics_to_yaml(
+            mock_model,  # type: ignore[arg-type]
+            test_metrics,
+            test_preds,
+            TestSubset.full_test_set,
+        )
+
+    # Check that missing_preds was added
+    assert str(MbdKey.missing_preds) in result
+    assert result[str(MbdKey.missing_preds)] == 1
+
+    # Check original metrics are preserved
+    assert result["MAE"] == 0.05
+    assert result["Precision"] == 0.9
+
+    # Verify YAML file was updated
+    content = Path(test_yaml).read_text()
+    assert "MAE" in content
+    assert "full_test_set" in content

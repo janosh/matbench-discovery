@@ -176,7 +176,11 @@ if not os.path.isfile(umap_out_path):
     # transform everything
     umap_points = reducer.transform(df_all)
     umap_cols = [f"UMAP {idx + 1}" for idx in range(umap_points.shape[1])]
-    df_umap = pd.DataFrame(umap_points, index=df_all.index, columns=umap_cols)
+    df_umap = pd.DataFrame(
+        umap_points,
+        index=df_all.index,
+        columns=umap_cols,
+    )
 
     df_umap.to_csv(umap_out_path)
 

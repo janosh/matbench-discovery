@@ -502,15 +502,14 @@ function format_value_for_export(value: number, header: string): number | string
 
   let format_spec: string | undefined
 
-  // Find matching label by key, label, or short name
+  // Find matching label by key or label name
   for (const label of Object.values(all_labels)) {
     const label_text = label.label?.replace(/<[^>]*>/g, ``).trim()
-    const short_text = label.short?.replace(/<[^>]*>/g, ``).trim()
+    const key_text = label.key?.replace(/<[^>]*>/g, ``).trim()
 
     if (
       label_text === clean_header ||
-      short_text === clean_header ||
-      label.key === clean_header
+      key_text === clean_header
     ) {
       format_spec = label.format
       break

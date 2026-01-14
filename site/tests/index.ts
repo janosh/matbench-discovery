@@ -1,5 +1,20 @@
 import { beforeAll, beforeEach, vi } from 'vitest'
 
+// matchMedia mock for Svelte MediaQuery - needed for svelte-multiselect
+Object.defineProperty(window, `matchMedia`, {
+  writable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => true,
+  }),
+})
+
 // Mock $app modules for SvelteKit - must be at top level before any imports
 vi.mock(`$app/state`, () => ({
   page: {

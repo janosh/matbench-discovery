@@ -13,8 +13,8 @@
   let is_dragging = $state(false)
   let point = $state<Point>({ x: 0, y: 0 })
   let svg_element: SVGSVGElement
-  let radius = size / 2
-  let center = { x: radius, y: radius }
+  let radius = $derived(size / 2)
+  let center = $derived({ x: radius, y: radius })
 
   // Reset to initial weights
   function reset_weights() {
@@ -291,7 +291,7 @@
         style="font-size: 14px; transform: translate(-1ex, -1em); overflow: visible; white-space: nowrap"
         style:color={colors[idx]}
       >
-        {@html weight.short ?? weight.label}
+        {@html weight.label ?? weight.key}
         <small>{format_num(weight.weight, `.0%`)}</small>
       </foreignObject>
     {/each}
