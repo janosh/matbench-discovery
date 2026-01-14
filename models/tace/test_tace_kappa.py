@@ -15,20 +15,20 @@ import ase.io
 import pandas as pd
 import torch
 from pymatviz.enums import Key
+from tace.interface.ase import TACEAseCalc
 from tqdm import tqdm
 
 from matbench_discovery import today
 from matbench_discovery.data import DataFiles, Model
 from matbench_discovery.phonons import KappaCalcParams, calc_kappa_for_structure
-from matbench_discovery.metrics.phonons import calc_kappa_metrics_from_dfs, write_metrics_to_yaml
-from tace.interface.ase import TACEAseCalc
 
-dtype = "float64" 
+dtype = "float64"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model_name = "TACE-v1-OAM-M"
 
 try:
     from tace.foundations import tace_foundations
+
     model_path = tace_foundations[model_name]
 except Exception as e:
     raise RuntimeError(
@@ -136,7 +136,7 @@ for idx, atoms in enumerate(tqdm(atoms_list, desc="Calculating kappa...")):
         formula_getter=lambda a: a.info.get("name", a.get_chemical_formula()),
         **kappa_params,
         task_id=idx,
-    ) # mat_id like mp-7631
+    )  # mat_id like mp-7631
     kappa_results[mat_id] = result_dict
     if force_dict is not None:
         force_results[mat_id] = force_dict

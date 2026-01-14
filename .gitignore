@@ -44,3 +44,6 @@ site/src/routes/models/mlip-github-activity.json
 # large files
 data/*-models-geo-opt-analysis-symprec=*.csv.gz
 .cursor
+
+# astral
+uv.lock

@@ -11,7 +11,6 @@ import pandas as pd
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey
 
-
 e_form_tace_col = "e_form_per_atom_tace"
 csv_path = "results/tace.csv.gz"
 if not os.path.isfile(csv_path):

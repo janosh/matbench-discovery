@@ -33,7 +33,6 @@ doi: https://doi.org/10.57967/hf/7458
 paper: https://arxiv.org/abs/2509.14961
 pr_url: https://github.com/janosh/matbench-discovery/pull/301
 
-
 openness: OSOD # see `Open` enum in matbench_discovery/enums.py
 train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
 test_task: IS2RE-SR # see `Task` enum in matbench_discovery/enums.py
@@ -57,7 +56,7 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   optimizer: AdamW
   graph_construction_radius: 6.0
   max_neighbors: .inf
-  epochs: 4   # 4 for OMat24, 2 for sAlex+MPtrj
+  epochs: 4 # 4 for OMat24, 2 for sAlex+MPtrj
   loss_weights:
     energy: 1
     force: 8
@@ -68,12 +67,12 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   num_channel: 48 # same for every l
   Lmax: 2
   lmax: 3
-  l1l2: <= # when tp, only l1 < l2 are allowed 
+  l1l2: <= # when tp, only l1 < l2 are allowed
   num_layers: 5
   correlation: 2
 
 training_cost: # list any hardware used to train the model and for how long
-  Nvidia H100 GPUs: {amount: 8, hours: 120, cost: 960}
+  Nvidia H100 GPUs: { amount: 8, hours: 120, cost: 960 }
 
 requirements: # strongly recommended
   python: '3.12.11'
@@ -126,7 +125,7 @@ metrics:
       analysis_file: models/tace/tace-v1-oam-m/2026-01-06-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.7.4.csv.gz
       analysis_file_url: https://figshare.com/files/60807373
   discovery:
-    pred_file: models/tace/tace-v1-oam-m/2026-01-06-wbm-IS2RE.csv.gz  # tace-filtered_preds.csv.gz tace-preds.csv.gz
+    pred_file: models/tace/tace-v1-oam-m/2026-01-06-wbm-IS2RE.csv.gz # tace-filtered_preds.csv.gz tace-preds.csv.gz
     pred_file_url: https://figshare.com/files/60806971
     pred_col: e_form_per_atom_tace
     full_test_set:

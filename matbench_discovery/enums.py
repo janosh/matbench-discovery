@@ -363,7 +363,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # Tensor Atomic Cluster Expansion (Irreducible Cartesian tensor)
     # https://arxiv.org/abs/2509.14961 and https://arxiv.org/abs/2512.16882
     tace_v1_oam_m = auto(), "tace/tace-v1-oam-m.yml"
-    
+
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = auto(), "voronoi_rf/voronoi-rf.yml"
 
