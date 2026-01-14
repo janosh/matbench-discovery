@@ -86,4 +86,9 @@ plot_group.add_argument(
     action="store_true",
     help="Whether to update figures whose file paths already exist.",
 )
+plot_group.add_argument(
+    "--model-figures-only",
+    action="store_true",
+    help="Only generate model-specific figures, skip dataset-level figures.",
+)
 cli_args, _ignore_unknown = cli_parser.parse_known_args()
