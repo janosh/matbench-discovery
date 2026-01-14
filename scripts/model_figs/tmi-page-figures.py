@@ -263,7 +263,7 @@ fig = go.Figure()
 for idx, model in enumerate(model_labels):
     large_errors = df_each_err[model].abs().nlargest(n_structs)
     small_errors = df_each_err[model].abs().nsmallest(n_structs)
-    for label, errors in (("min", large_errors), ("max", small_errors)):
+    for label, errors in (("min", small_errors), ("max", large_errors)):
         fig.add_histogram(
             x=df_wbm.loc[errors.index][fp_diff_col].values,
             name=f"{model} err<sub>{label}</sub>",
@@ -294,7 +294,8 @@ fig.show()
 pmv.save_fig(fig, f"{SITE_FIGS}/tmi/hist-largest-each-errors-fp-diff-models.svelte")
 
 
-# %% scatter plot: FP diff vs error for highest-error structures
+# %% scatter plot:
+# FP diff vs error for highest-error structures
 n_structs = 100
 fig = go.Figure()
 for idx, model in enumerate(model_labels):
