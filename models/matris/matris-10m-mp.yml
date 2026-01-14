@@ -1,0 +1,178 @@
+model_name: MatRIS-10M-MP
+model_key: matris-10m-mp
+model_version: v1
+date_added: '2025-10-29'
+date_published: '2025-10-29'
+authors:
+  - name: Yuanchang Zhou
+    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+    email: zhouyuanchang23s@ict.ac.cn
+    orcid: https://orcid.org/0009-0004-6801-7033
+  - name: Siyu Hu
+    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+    email: husiyu@ict.ac.cn
+    orcid: https://orcid.org/0009-0008-6085-4645
+  - name: Guangming Tan
+    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+    email: tgm@ict.ac.cn
+    orcid: https://orcid.org/0000-0002-6361-5948
+  - name: Weile Jia
+    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+    email: jiaweile@ict.ac.cn
+    orcid: https://orcid.org/0000-0001-8539-8326
+    corresponding: true
+trained_by:
+  - name: Yuanchang Zhou
+    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+    email: zhouyuanchang23s@ict.ac.cn
+    orcid: https://orcid.org/0009-0004-6801-7033
+
+repo: https://github.com/HPC-AI-Team/MatRIS
+url: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
+doi: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
+paper: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
+pr_url: https://github.com/janosh/matbench-discovery/pull/293
+checkpoint_url: https://figshare.com/files/59143058
+
+license:
+  code: BSD-3-Clause
+  code_url: https://github.com/HPC-AI-Team/MatRIS/blob/main/LICENSE
+  checkpoint: BSD-3-Clause
+  checkpoint_url: https://github.com/HPC-AI-Team/MatRIS/blob/main/LICENSE
+
+openness: OSOD
+train_task: S2EFSM
+test_task: IS2RE-SR
+targets: EFS_GM
+model_type: UIP
+model_params: 10_443_505
+trained_for_benchmark: true
+n_estimators: 1
+
+hyperparams:
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: FIRE
+  optimizer: AdamW(wd=1e-2)
+  cell_filter: FrechetCellFilter
+  loss: MAE/L2MAE
+  loss_weights:
+    energy: 5.0
+    force: 5.0
+    stress: 0.1
+    magmom: 0.1
+  batch_size: 512
+  initial_learning_rate: 0.0003
+  learning_rate_schedule: CosineAnnealingLR(T_max=100)
+  n_layers: 10
+  graph_construction_radius: 6.0 # Å
+  three_body_cutoff: 4.5 # Å
+  max_neighbors: .inf # see sec. 3.2 in arXiv:2502.12147
+
+requirements:
+  torch: 2.6.0
+  ase: 3.26.0
+  pymatgen: 2025.10.07
+  numpy: 2.3.4
+
+training_set: [MPtrj]
+
+training_cost:
+  Nvidia A100 GPUs: { amount: 32, hours: 170 }
+
+notes:
+  Description: |
+    MatRIS is a foundation model for materials representation and interaction simulation.
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.4892
+      κ_SRE: 0.388
+      pred_file: models/matris/matris-10m-mp/2025-10-29-kappa-103-fire-dist=0.03-fmax1e-5-symprec1e-5.json.gz
+      pred_file_url: https://figshare.com/files/59234210
+  geo_opt:
+    pred_file: models/matris/matris-10m-mp/2025-10-29-wbm-IS2RE.json.gz
+    pred_file_url: https://figshare.com/files/59234108
+    struct_col: matris_structure
+
+    symprec=1e-5:
+      rmsd: 0.0717 # unitless
+      n_sym_ops_mae: 3.1952 # unitless
+      symmetry_decrease: 0.2395 # fraction
+      symmetry_match: 0.5766 # fraction
+      symmetry_increase: 0.172 # fraction
+      n_structures: 256932 # count
+      analysis_file: models/matris/matris-10m-mp/2025-10-29-wbm-IS2RE-symprec=1e-5-moyo=0.4.6.csv.gz
+      analysis_file_url: https://figshare.com/files/59234123
+    symprec=1e-2:
+      rmsd: 0.0717 # unitless
+      n_sym_ops_mae: 1.9203 # unitless
+      symmetry_decrease: 0.0789 # fraction
+      symmetry_match: 0.7992 # fraction
+      symmetry_increase: 0.1145 # fraction
+      n_structures: 256932 # count
+      analysis_file: models/matris/matris-10m-mp/2025-10-29-wbm-IS2RE-symprec=1e-2-moyo=0.4.6.csv.gz
+      analysis_file_url: https://figshare.com/files/59234135
+  discovery:
+    pred_file: models/matris/matris-10m-mp/2025-10-29-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/59233859
+    pred_col: e_form_per_atom_matris
+
+    #diatomics:
+    #  pred_file: models/matris/matris-10m-mp/2025-10-29-diatomics.json.gz
+    #  pred_file_url: https://figshare.com/files/59154065
+    full_test_set:
+      F1: 0.832 # fraction
+      DAF: 4.744 # dimensionless
+      Precision: 0.814 # fraction
+      Recall: 0.852 # fraction
+      Accuracy: 0.941 # fraction
+      TPR: 0.852 # fraction
+      FPR: 0.04 # fraction
+      TNR: 0.96 # fraction
+      FNR: 0.148 # fraction
+      TP: 37548.0 # count
+      FP: 8583.0 # count
+      TN: 204288.0 # count
+      FN: 6544.0 # count
+      MAE: 0.03 # eV/atom
+      RMSE: 0.076 # eV/atom
+      R2: 0.821 # dimensionless
+      missing_preds: 33 # count
+    unique_prototypes:
+      F1: 0.847 # fraction
+      DAF: 5.422 # dimensionless
+      Precision: 0.829 # fraction
+      Recall: 0.865 # fraction
+      Accuracy: 0.951 # fraction
+      TPR: 0.865 # fraction
+      FPR: 0.033 # fraction
+      TNR: 0.967 # fraction
+      FNR: 0.135 # fraction
+      TP: 28872.0 # count
+      FP: 5960.0 # count
+      TN: 176154.0 # count
+      FN: 4502.0 # count
+      MAE: 0.031 # eV/atom
+      RMSE: 0.077 # eV/atom
+      R2: 0.824 # dimensionless
+      missing_preds: 25 # count
+    most_stable_10k:
+      F1: 0.99 # fraction
+      DAF: 6.414 # dimensionless
+      Precision: 0.98 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.98 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9805.0 # count
+      FP: 195.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.05 # eV/atom
+      R2: 0.942 # dimensionless
+      missing_preds: 0 # count
