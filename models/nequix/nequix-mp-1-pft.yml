@@ -94,7 +94,7 @@ hyperparams:
   ema_decay: 0.999
 
 training_cost:
-  Nvidia A100 GPUs: { amount: 1, hours: 140 }
+  Nvidia A100 GPUs: {amount: 1, hours: 140}
 
 training_set: [MPtrj, MDR Phonon PBE Train]
 
@@ -121,6 +121,8 @@ metrics:
     kappa_103:
       pred_file: models/nequix/nequix-mp-1-pft/2026-01-12-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/61019518
+      κ_SRME: 0.3066
+      κ_SRE: 0.1689
   geo_opt:
     pred_file: models/nequix/nequix-mp-1-pft/2026-01-12-wbm-IS2RE-FIRE.jsonl.gz
     pred_file_url: https://figshare.com/files/61019686
