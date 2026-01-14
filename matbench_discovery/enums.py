@@ -363,7 +363,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # SevenNet trained on MPtrj
     # sevennet_0 = auto(), "sevennet/sevennet-0.yml"
     sevennet_l3i5 = auto(), "sevennet/sevennet-l3i5.yml"
-    sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
+    # sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
     sevennet_omni_i12 = auto(), "sevennet/sevennet-omni-i12.yml"
 
     # Tensor Atomic Cluster Expansion (Irreducible Cartesian tensor)
