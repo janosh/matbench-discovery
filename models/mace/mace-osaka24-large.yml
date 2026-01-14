@@ -1,0 +1,172 @@
+model_name: mace-osaka24-large
+model_key: mace-osaka24-large
+model_version: v0.3.6
+date_added: '2025-12-23'
+date_published: '2024-12-18'
+authors:
+  - name: Tomoya Shiota
+    affiliation: Center for Quantum Information and Quantum Biology, The University of Osaka
+    email: shiota.tomoya.ss@gmail.com
+    orcid: https://orcid.org/0009-0002-7044-4558
+  - name: Kenji Ishihara
+    affiliation: Center for Quantum Information and Quantum Biology, The University of Osaka
+    email: ishiharak25@chem.sci.osaka-u.ac.jp
+    orcid: https://orcid.org/0009-0004-5404-521X
+  - name: Tuan Minh Do
+    affiliation: Center for Quantum Information and Quantum Biology, The University of Osaka
+    email: do.tuan.minh.qiqb@osaka-u.ac.jp
+    orcid: https://orcid.org/0009-0006-2454-4899
+  - name: Toshio Mori
+    affiliation: Center for Quantum Information and Quantum Biology, The University of Osaka
+    email: t.mori.qiqb@osaka-u.ac.jp
+    orcid: https://orcid.org/0009-0004-0149-1224
+  - name: Wataru Mizukami
+    affiliation: Center for Quantum Information and Quantum Biology, The University of Osaka
+    email: mizukami.wataru.qiqb@osaka-u.ac.jp
+    orcid: https://orcid.org/0000-0003-3538-3542
+trained_by:
+  - name: Tomoya Shiota
+    affiliation: Center for Quantum Information and Quantum Biology, The University of Osaka
+    email: shiota.tomoya.ss@gmail.com
+    orcid: https://orcid.org/0009-0002-7044-4558
+  - name: Kenji Ishihara
+    affiliation: Center for Quantum Information and Quantum Biology, The University of Osaka
+    email: ishiharak25@chem.sci.osaka-u.ac.jp
+    orcid: https://orcid.org/0009-0004-5404-521X
+  - name: Toshio Mori
+    affiliation: Center for Quantum Information and Quantum Biology, The University of Osaka
+    email: t.mori.qiqb@osaka-u.ac.jp
+    orcid: https://orcid.org/0009-0004-0149-1224
+
+repo: https://github.com/ACEsuit/mace
+doi: https://doi.org/10.48550/arXiv.2412.13088
+paper: https://arxiv.org/pdf/2412.13088v2
+pypi: https://pypi.org/project/mace-torch
+pr_url: ## I will add after pr.
+checkpoint_url: https://github.com/qiqb-osaka/mace-osaka24/releases/tag/v0.0.1/
+
+license:
+  code: MIT
+  code_url: https://github.com/ACEsuit/mace/blob/b0fa4ef7c/LICENSE.md
+  checkpoint: MIT
+  checkpoint_url: https://github.com/qiqb-osaka/mace-osaka24/blob/main/LICENSE
+
+requirements:
+  mace-torch: 0.3.6
+  torch: 2.2.0
+  ase: 3.23.0
+  numpy: 1.26.4
+
+openness: OSOD
+trained_for_benchmark: false
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 5_725_072
+n_estimators: 1
+
+training_set: [MPtrj, Extended-SPICE(with Total Energy Alignment)]
+training_cost: missing
+
+hyperparams:
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  graph_construction_radius: 4.5 # Å
+  max_neighbors: .inf
+
+notes:
+  Description: |
+    MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields. 
+  Training: MACE-Osaka24 model is the first MLIP model trained on a unified dataset covering molecular and crystalline systems, utilizing the MACE architecture developed by Batatia et al..
+
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.7785
+      pred_file: models/mace/mace-osaka24-large/2025-11-21-kappa-103-FIRE-dist=0.01-fmax=0.0001-symprec=1e-05/reformated_force-sets.json.gz
+      pred_file_url:https://figshare.com/ndownloader/files/60020837 
+      κ_SRE: 0.6499
+  geo_opt:
+    pred_file: models/mace/mace-osaka24-large/2025-11-22-wbm-IS2RE-FIRE.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/60021551
+    struct_col: mace_structure
+    symprec=1e-2:
+      rmsd: 0.0889 # unitless
+      n_sym_ops_mae: 1.8531 # unitless
+      symmetry_decrease: 0.0628 # fraction
+      symmetry_match: 0.8105 # fraction
+      symmetry_increase: 0.12 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/mace/mace-osaka24-large/2025-11-22-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.7.1.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/60020843
+    symprec=1e-5:
+      rmsd: 0.0889 # unitless
+      n_sym_ops_mae: 1.835 # unitless
+      symmetry_decrease: 0.0378 # fraction
+      symmetry_match: 0.7355 # fraction
+      symmetry_increase: 0.2221 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/mace/mace-osaka24-large/2025-11-22-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.7.1.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/60020846
+  discovery:
+    pred_file: models/mace/mace-osaka24-large/2025-11-22-wbm-IS2RE-FIRE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/60020840
+    pred_col: e_form_per_atom_mace
+    full_test_set:
+      F1: 0.645 # fraction
+      DAF: 3.375 # dimensionless
+      Precision: 0.579 # fraction
+      Recall: 0.728 # fraction
+      Accuracy: 0.863 # fraction
+      TPR: 0.728 # fraction
+      FPR: 0.11 # fraction
+      TNR: 0.89 # fraction
+      FNR: 0.272 # fraction
+      TP: 32088.0 # count
+      FP: 23319.0 # count
+      TN: 189552.0 # count
+      FN: 12004.0 # count
+      MAE: 0.058 # eV/atom
+      RMSE: 0.105 # eV/atom
+      R2: 0.66 # dimensionless
+      missing_preds: 16 # count
+    most_stable_10k:
+      F1: 0.855 # fraction
+      DAF: 4.887 # dimensionless
+      Precision: 0.747 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.747 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 7471.0 # count
+      FP: 2529.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.118 # eV/atom
+      RMSE: 0.209 # eV/atom
+      R2: 0.321 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.65 # fraction
+      DAF: 3.769 # dimensionless
+      Precision: 0.576 # fraction
+      Recall: 0.746 # fraction
+      Accuracy: 0.876 # fraction
+      TPR: 0.746 # fraction
+      FPR: 0.1 # fraction
+      TNR: 0.9 # fraction
+      FNR: 0.254 # fraction
+      TP: 24887.0 # count
+      FP: 18302.0 # count
+      TN: 163812.0 # count
+      FN: 8487.0 # count
+      MAE: 0.061 # eV/atom
+      RMSE: 0.108 # eV/atom
+      R2: 0.657 # dimensionless
+      missing_preds: 14 # count
