@@ -381,6 +381,7 @@ properties:
         - OMat24
         - sAlex
         - OpenLAM
+        - COSMOSDataset
   hyperparams:
     type: object
     additionalProperties: true

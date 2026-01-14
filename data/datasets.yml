@@ -377,6 +377,38 @@ OpenLAM:
     and other open repositories to pre-train large atomic models (LAMs),
     while intentionally excluding overlap with WBM benchmark systems (e.g., Alex3D structures).
 
+COSMOSDataset:
+  name: COSMOSDataset
+  contains: [MPtrj, OMat24, sAlex, OC20, MatPES PBE, MatPES r2SCAN]
+  url: https://figshare.com/articles/software/SevenNet-Omni_checkpoint/30399814
+  download_url: https://figshare.com/articles/software/SevenNet-Omni_checkpoint/30399814
+  doi: https://doi.org/10.48550/arXiv.2510.11241
+  n_structures: 242_788_218
+  open: true
+  static: true
+  optimade_api: null
+  native_api: null
+  date_created: 2025-10-21
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: Various
+    functional: Various
+    pseudopotentials: Various
+  created_by:
+    - name: Jaesun Kim
+      affiliation: Seoul National University
+      orcid: https://orcid.org/0009-0000-6646-1318
+    - name: Jinmu You
+      affiliation: Seoul National University
+      orcid: https://orcid.org/0009-0003-7152-7774
+    - name: Seungwu Han
+      affiliation: Seoul National University, Korea Institute for Advanced Study
+      email: hansw@snu.ac.kr
+      orcid: https://orcid.org/0000-0003-3958-0922
+  description: |
+    COSMOS Dataset (Combined Organic, Surface and Materials Open Source Dataset) aggregates 15 publicly available ab initio databases spanning molecules, inorganic crystals, metal and oxide surfaces, and metal-organic frameworks, covering levels of theory from generalized gradient approximation to hybrid functionals. It also includes a domain-bridging set, sampled from OC20, OC22, MatPES, ODAC23, OMol25, and QCML dataset and recomputed with MPtrj-consistent computational settings, which facilitates cross-domain knowledge transfer in a multi-task training framework. For detailed information about the dataset composition, see Table 1 from [the paper](https://arxiv.org/abs/2510.11241).
+
 OC20:
   name: Open Catalyst 2020
   url: https://opencatalystproject.org/leaderboard.html

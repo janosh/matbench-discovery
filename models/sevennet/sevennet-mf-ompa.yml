@@ -56,6 +56,7 @@ targets: EFS_G
 model_type: UIP
 model_params: 25_734_966
 n_estimators: 1
+status: superseded
 
 hyperparams:
   max_force: 0.02
