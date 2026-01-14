@@ -499,6 +499,9 @@ export const org_logos = {
   'Beijing Information Science and Technology University':
     `/logos/beijing-information-science-and-technology-university.svg`,
   'Zhejiang Lab': `/logos/zhejiang-lab.svg`,
+  'EPFL': `/logos/epfl.svg`,
+  'ShanghaiTech University': `/logos/shanghaitech-university.svg`,
+  'Nanjing University': `/logos/nanjing-university.svg`,
 } as const
 
 // Attempts to find a matching logo data (ID or src) and name for a given affiliation string.
