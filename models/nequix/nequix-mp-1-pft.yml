@@ -126,7 +126,7 @@ metrics:
   geo_opt:
     pred_file: models/nequix/nequix-mp-1-pft/2026-01-12-wbm-IS2RE-FIRE.jsonl.gz
     pred_file_url: https://figshare.com/files/61019686
-    struct_col: nequix_structure
+    struct_col: nequix-mp-pft-1yqa7d5t-200epochs_structure
   discovery:
     pred_file: models/nequix/nequix-mp-1-pft/2026-01-12-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/61019521
