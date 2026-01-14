@@ -101,7 +101,10 @@ requirements:
   numpy: 1.26.4
 
 training_set: [COSMOSDataset]
-training_cost: missing
+#
+# curriculum learning: ompa (260) -> intermediate (130) -> omni (410)
+training_cost:
+  Nvidia H200 GPUs: { amount: 8, hours: 800, cost: 6400 }
 
 notes:
   Description: |
