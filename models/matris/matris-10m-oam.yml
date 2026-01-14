@@ -76,7 +76,9 @@ requirements:
   numpy: 2.3.4
 
 training_set: [OMat24, sAlex, MPtrj]
-training_cost: missing
+
+training_cost:
+  Nvidia H100 GPUs: { amount: 64, hours: 80 }
 
 notes:
   Description: |

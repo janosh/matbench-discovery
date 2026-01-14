@@ -76,7 +76,9 @@ requirements:
   numpy: 2.3.4
 
 training_set: [MPtrj]
-training_cost: missing
+
+training_cost:
+  Nvidia A100 GPUs: { amount: 32, hours: 170 }
 
 notes:
   Description: |
