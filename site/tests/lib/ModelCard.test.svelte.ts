@@ -6,12 +6,13 @@ import { describe, expect, it } from 'vitest'
 
 describe(`ModelCard`, () => {
   // Get a real model from MODELS
-  const model = MODELS.find((m) => m.model_key === `mace-mp-0`)
-  if (!model) throw new Error(`Could not find mace-mp-0 model in MODELS`)
+  const found_model = MODELS.find((m) => m.model_key === `mace-mp-0`)
+  if (!found_model) throw new Error(`Could not find mace-mp-0 model in MODELS`)
+  const model = found_model
 
-  const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((key) => ({
-    key,
-    ...ALL_METRICS[key],
+  const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((metric_key) => ({
+    ...ALL_METRICS[metric_key],
+    key: metric_key,
   }))
 
   describe(`Basic Rendering`, () => {
@@ -52,12 +53,11 @@ describe(`ModelCard`, () => {
     })
 
     it(`handles missing optional fields gracefully`, () => {
-      const minimal_model = {
-        ...model,
+      const minimal_model = Object.assign({}, model, {
         date_published: undefined,
         paper: undefined,
         url: undefined,
-      }
+      })
 
       mount(ModelCard, {
         target: document.body,
@@ -112,7 +112,10 @@ describe(`ModelCard`, () => {
       expect(metrics_lis.length).toBeGreaterThan(0)
 
       const f1_metric = Array.from(metrics_lis).find((m) => m.textContent?.includes(`F1`))
-      const f1_value = model.metrics?.discovery?.unique_prototypes?.F1
+      const discovery_metrics = model.metrics?.discovery
+      const f1_value = discovery_metrics && typeof discovery_metrics === `object`
+        ? discovery_metrics.unique_prototypes?.F1
+        : undefined
       expect(f1_metric?.querySelector(`strong`)?.textContent?.trim()).toBe(
         f1_value?.toString(),
       )
@@ -121,14 +124,17 @@ describe(`ModelCard`, () => {
       const kappa_metric = Array.from(metrics_lis).find((m) =>
         m.textContent?.includes(`κ`)
       )
-      const kappa_value = model.metrics?.phonons?.kappa_103?.κ_SRME
+      const phonon_metrics = model.metrics?.phonons
+      const kappa_value = phonon_metrics && typeof phonon_metrics === `object`
+        ? Number(phonon_metrics.kappa_103?.κ_SRME)
+        : undefined
       const displayed_kappa = kappa_metric?.querySelector(`strong`)?.textContent?.trim()
       // The displayed value may be rounded differently
       expect(parseFloat(displayed_kappa ?? ``)).toBeCloseTo(kappa_value ?? 0, 2)
     })
 
     it(`handles missing metrics`, () => {
-      const model_without_metrics = { ...model, metrics: undefined }
+      const model_without_metrics = Object.assign({}, model, { metrics: undefined })
 
       mount(ModelCard, {
         target: document.body,

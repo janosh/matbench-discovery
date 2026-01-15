@@ -30,7 +30,7 @@
   import github_activity_data from './models/mlip-github-activity.json'
 
   let n_wbm_stable_uniq_protos = 32_942
-  let n_wbm_uniq_protos = DATASETS.WBM.n_materials
+  let n_wbm_uniq_protos = DATASETS.WBM.n_materials ?? 0
 
   let table = $state({
     show_non_compliant: true,

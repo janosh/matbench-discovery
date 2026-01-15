@@ -1,6 +1,6 @@
 import { default as DATASETS } from '$data/datasets.yml'
 import type { Author, ModelData } from '$lib/types'
-import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
+import MODELINGS_TASKS, { type ModelingTask } from '$pkg/modeling-tasks.yml'
 import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
 import { get_org_logo } from './labels'
 
@@ -74,10 +74,11 @@ export const MODELS = $state(
         if (!author.affiliation) continue
 
         const org_logos = get_org_logo(author.affiliation)
-        if (org_logos) {
-          affiliation_counts[org_logos.id] = (affiliation_counts[org_logos.id] || 0) + 1
-          if (!(org_logos.id in affiliation_data)) {
-            affiliation_data[org_logos.id] = org_logos
+        if (org_logos?.id) {
+          const logo_id = org_logos.id
+          affiliation_counts[logo_id] = (affiliation_counts[logo_id] || 0) + 1
+          if (!(logo_id in affiliation_data)) {
+            affiliation_data[logo_id] = org_logos
           }
         } else if (!import.meta.env.PROD) {
           // only warn about missing logos in dev mode
@@ -99,15 +100,18 @@ export const MODELS = $state(
         n_training_materials: sizes.total_materials,
         n_training_structures: sizes.total_structures,
         org_logos: frequent_logos,
-      }
+      } as ModelData
     }),
-) as ModelData[]
+)
 
 // Update CPSs of models based on current CPS weights
 export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
   models.forEach((model: ModelData) => {
     // Extract required metrics for CPS calculation
-    const f1 = model.metrics?.discovery?.[`unique_prototypes`]?.F1
+    const discovery = model.metrics?.discovery
+    const f1 = typeof discovery === `object`
+      ? discovery?.[`unique_prototypes`]?.F1
+      : undefined
     const rmsd = model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
       ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
       : undefined
@@ -153,18 +157,19 @@ export function get_pred_file_urls(model: ModelData) {
 
   // Recursively look up labels in the MODELINGS_TASKS object
   function get_label_for_key_path(key_path: string): string {
-    if (key_path in MODELINGS_TASKS) return MODELINGS_TASKS[key_path]?.label || key_path
+    const tasks = MODELINGS_TASKS as Record<string, ModelingTask>
+    if (key_path in tasks) return tasks[key_path].label
 
     // Check if it's a subtask by searching all tasks
-    for (const task_value of Object.values(MODELINGS_TASKS)) {
-      if (task_value?.subtasks?.[key_path]) {
-        return task_value.subtasks[key_path].label || key_path
+    for (const task_value of Object.values(tasks)) {
+      if (task_value.subtasks?.[key_path]) {
+        return task_value.subtasks[key_path].label
       }
     }
 
     return key_path // Default to key itself if no label is found
   }
 
-  find_pred_files(model.metrics)
+  if (model.metrics) find_pred_files(model.metrics)
   return files
 }

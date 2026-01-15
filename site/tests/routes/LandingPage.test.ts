@@ -19,7 +19,9 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles discovery set when clicking buttons`, async () => {
-    const buttons = Array.from(document.querySelectorAll(`.selection-toggle button`))
+    const buttons = Array.from(
+      document.querySelectorAll<HTMLButtonElement>(`.selection-toggle button`),
+    )
     const [full_test_btn, unique_protos_btn] = buttons
 
     // Initially Unique Prototypes should be active
@@ -79,7 +81,7 @@ describe(`Landing Page`, () => {
     )
     expect(has_f1_column).toBe(true)
 
-    const checkboxes = document.querySelectorAll(
+    const checkboxes = document.querySelectorAll<HTMLInputElement>(
       `.column-menu input[type="checkbox"]`,
     )
     const f1_checkbox = Array.from(checkboxes).find((cb) =>
@@ -113,7 +115,9 @@ describe(`Landing Page`, () => {
     const download_buttons = download_section?.querySelectorAll(`.download-btn`)
     expect(download_buttons?.length).toBe(5)
 
-    const buttons = Array.from(download_buttons).map((btn) => btn.textContent?.trim())
+    const buttons = Array.from(download_buttons ?? []).map((btn) =>
+      btn.textContent?.trim()
+    )
     expect(buttons).toContain(`SVG`)
     expect(buttons).toContain(`PNG`)
     expect(buttons).toContain(`CSV`)

@@ -7,11 +7,11 @@
   import MptrjTargetDistros from './MptrjTargetDistros.svelte'
 
   let { data }: { data: { dataset: Dataset } } = $props()
-  const { dataset } = data
+  let dataset = $derived(data.dataset)
   const link_props = { target: `_blank`, rel: `noopener noreferrer` }
 
-  let days_created = calculate_days_ago(dataset.date_created)
-  let days_added = calculate_days_ago(dataset.date_added ?? ``)
+  let days_created = $derived(calculate_days_ago(dataset.date_created))
+  let days_added = $derived(calculate_days_ago(dataset.date_added ?? ``))
 
   // Format the params object into a readable list
   function format_params(params: Record<string, unknown> | undefined): string[] {
