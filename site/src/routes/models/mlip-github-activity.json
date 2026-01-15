@@ -1,0 +1,202 @@
+[
+  {
+    "name": "GRACE",
+    "repo": "ICAMS/grace-tensorpotential",
+    "stars": 75,
+    "forks": 6,
+    "commits_last_year": 52,
+    "contributors": 4
+  },
+  {
+    "name": "HIENet",
+    "repo": "divelab/AIRS",
+    "stars": 701,
+    "forks": 81,
+    "commits_last_year": 100,
+    "contributors": 36
+  },
+  {
+    "name": "Wrenformer",
+    "repo": "CompRhys/aviary",
+    "stars": 61,
+    "forks": 13,
+    "commits_last_year": 17,
+    "contributors": 6
+  },
+  {
+    "name": "eqV2 S DeNS",
+    "repo": "FAIR-Chem/fairchem",
+    "stars": 1818,
+    "forks": 402,
+    "commits_last_year": 301,
+    "contributors": 60
+  },
+  {
+    "name": "DPA3",
+    "repo": "deepmodeling/deepmd-kit",
+    "stars": 1785,
+    "forks": 575,
+    "commits_last_year": 341,
+    "contributors": 84
+  },
+  {
+    "name": "Nequip",
+    "repo": "mir-group/nequip",
+    "stars": 816,
+    "forks": 180,
+    "commits_last_year": 1096,
+    "contributors": 31
+  },
+  {
+    "name": "Eqnorm MPtrj",
+    "repo": "yzchen08/eqnorm",
+    "stars": 14,
+    "forks": 3,
+    "commits_last_year": 37,
+    "contributors": 1
+  },
+  {
+    "name": "MACE",
+    "repo": "ACEsuit/mace",
+    "stars": 922,
+    "forks": 339,
+    "commits_last_year": 588,
+    "contributors": 63
+  },
+  {
+    "name": "Nequix MP",
+    "repo": "atomicarchitects/nequix",
+    "stars": 50,
+    "forks": 6,
+    "commits_last_year": 41,
+    "contributors": 2
+  },
+  {
+    "name": "Voronoi RF",
+    "repo": "janosh/matbench-discovery",
+    "stars": 197,
+    "forks": 49,
+    "commits_last_year": 148,
+    "contributors": 25
+  },
+  {
+    "name": "MatterSim v1 5M",
+    "repo": "microsoft/mattersim",
+    "stars": 476,
+    "forks": 66,
+    "commits_last_year": 124,
+    "contributors": 18
+  },
+  {
+    "name": "ALIGNN FF",
+    "repo": "usnistgov/alignn",
+    "stars": 285,
+    "forks": 103,
+    "commits_last_year": 60,
+    "contributors": 8
+  },
+  {
+    "name": "GNoME",
+    "repo": "google-deepmind/materials_discovery",
+    "stars": 1063,
+    "forks": 174,
+    "commits_last_year": 3,
+    "contributors": 2
+  },
+  {
+    "name": "MatRIS v0.5.0 MPtrj",
+    "repo": "HPC-AI-Team/MatRIS",
+    "stars": 13,
+    "forks": 1,
+    "commits_last_year": 31,
+    "contributors": 3
+  },
+  {
+    "name": "BOWSR",
+    "repo": "materialsvirtuallab/maml",
+    "stars": 436,
+    "forks": 91,
+    "commits_last_year": 97,
+    "contributors": 39
+  },
+  {
+    "name": "MEGNet",
+    "repo": "materialsvirtuallab/megnet",
+    "stars": 544,
+    "forks": 159,
+    "commits_last_year": 0,
+    "contributors": 14
+  },
+  {
+    "name": "M3GNet",
+    "repo": "materialsvirtuallab/m3gnet",
+    "stars": 301,
+    "forks": 69,
+    "commits_last_year": 1,
+    "contributors": 16
+  },
+  {
+    "name": "CHGNet",
+    "repo": "CederGroupHub/chgnet",
+    "stars": 343,
+    "forks": 86,
+    "commits_last_year": 20,
+    "contributors": 12
+  },
+  {
+    "name": "EquFlash",
+    "repo": "SNU-ARC/flashTP",
+    "stars": 34,
+    "forks": 1,
+    "commits_last_year": 17,
+    "contributors": 1
+  },
+  {
+    "name": "ORB v2",
+    "repo": "orbital-materials/orb-models",
+    "stars": 510,
+    "forks": 69,
+    "commits_last_year": 41,
+    "contributors": 13
+  },
+  {
+    "name": "CGCNN+P",
+    "repo": "JasonGibsonUfl/Augmented_CGCNN",
+    "stars": 9,
+    "forks": 0,
+    "commits_last_year": 0,
+    "contributors": 1
+  },
+  {
+    "name": "SevenNet",
+    "repo": "MDIL-SNU/SevenNet",
+    "stars": 200,
+    "forks": 40,
+    "commits_last_year": 364,
+    "contributors": 18
+  },
+  {
+    "name": "Allegro",
+    "repo": "mir-group/allegro",
+    "stars": 438,
+    "forks": 68,
+    "commits_last_year": 281,
+    "contributors": 8
+  },
+  {
+    "name": "AlphaNet",
+    "repo": "zmyybc/AlphaNet",
+    "stars": 111,
+    "forks": 22,
+    "commits_last_year": 18,
+    "contributors": 2
+  },
+  {
+    "name": "ESNet",
+    "repo": "zzz-sl/ESNet",
+    "stars": 4,
+    "forks": 1,
+    "commits_last_year": 41,
+    "contributors": 1
+  }
+]

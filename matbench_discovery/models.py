@@ -2,7 +2,15 @@
 
 from typing import Any
 
+from matbench_discovery.data import DATASETS
 from matbench_discovery.enums import ModelType, Open
+
+# Compute compliant training sets from datasets.yml (datasets with compliant: true)
+COMPLIANT_TRAINING_SETS: frozenset[str] = frozenset(
+    key
+    for key, val in DATASETS.items()
+    if isinstance(val, dict) and val.get("compliant")
+)
 
 
 def model_is_compliant(metadata: dict[str, str | list[str]]) -> bool:
@@ -26,7 +34,7 @@ def model_is_compliant(metadata: dict[str, str | list[str]]) -> bool:
             f"{model_name}: expected list of training sets, got {training_sets=}"
         )
 
-    return set(training_sets) <= {"MP 2022", "MPtrj", "MPF", "MP Graphs"}
+    return set(training_sets) <= COMPLIANT_TRAINING_SETS
 
 
 def validate_model_metadata(metadata: dict[str, Any], metadata_file: str) -> None:

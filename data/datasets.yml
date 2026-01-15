@@ -40,6 +40,7 @@ MP 2022:
   n_structures: 154_719
   open: true
   static: true
+  compliant: true
   optimade_api: null
   native_api: null
   date_created: 2022-10-28
@@ -64,6 +65,7 @@ MPtrj:
   n_materials: 145_923
   open: true
   static: true
+  compliant: true
   optimade_api: null
   native_api: null
   date_created: 2023-07-19
@@ -94,6 +96,7 @@ MPF:
   n_materials: 62_783
   open: true
   static: true
+  compliant: true
   optimade_api: null
   native_api: null
   date_created: 2022-03-05
@@ -120,6 +123,7 @@ MP Graphs:
   n_structures: 133_420
   open: true
   static: true
+  compliant: true
   optimade_api: null
   native_api: null
   date_created: 2019-06-06
@@ -646,3 +650,53 @@ MatPES r2SCAN:
   description: |
     A dataset containing 387,897 structures from ~300K molecular dynamics simulations,
     providing potential energy surfaces that are valuable for training ML interatomic potentials.
+
+MDR Phonon PBE:
+  name: MDR Phonon PBE
+  url: https://alexandria.icams.rub.de/data/phonon_benchmark/pbe
+  download_url: https://alexandria.icams.rub.de/data/phonon_benchmark/
+  doi: https://doi.org/10.48550/arXiv.2412.16551
+  n_structures: 9_959
+  open: true
+  static: true
+  optimade_api: null
+  native_api: null
+  date_created: 2024-12-21
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Antoine Loew
+    - name: Dewen Sun
+    - name: Hai-Chen Wang
+    - name: Silvana Botti
+    - name: Miguel A. L. Marques
+  description: |
+    PBE recalculations of the MDR Phonon dataset
+    (https://mdr.nims.go.jp/collections/d7aab932-8512-4b9a-b93d-b61f6e5e7019),
+    introduced in the paper "Universal Machine Learning Interatomic Potentials
+    are Ready for Phonons".
+
+MDR PBE Phonons in MPtrj:
+  name: MDR PBE Phonons in MPtrj
+  contains: [MDR Phonon PBE]
+  url: https://figshare.com/articles/dataset/Preprocessed_data_for_Phonon_Fine-tuning_PFT_/31049869
+  download_url: https://figshare.com/files/60964675
+  doi: https://doi.org/10.48550/arXiv.2601.07742
+  n_structures: 8_510
+  open: true
+  static: true
+  compliant: true
+  date_created: 2026-01-08
+  license: CC-BY-4.0
+  created_by:
+    - name: Teddy Koker
+  description: |
+    Subset of the MDR Phonon PBE dataset to be used for phonon fine-tuning, as
+    introduced in "PFT: Phonon Fine-tuning for Machine Learning Interatomic
+    Potentials". This dataset was constructed by randomly sampling 8,510
+    structures with overlapping mp-id's with MPtrj and preprocessing into
+    .aselmbd files with the Hessian stored in atoms.info["hessian"].

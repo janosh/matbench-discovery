@@ -115,7 +115,7 @@ with open(
 
 
 relax_results: dict[str, dict[str, Any]] = {}
-optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 atoms_list = sorted(atoms_list, key=lambda at: len(at))
 # print(atoms_list)
 for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing", mininterval=5):
