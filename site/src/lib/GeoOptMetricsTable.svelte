@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TableControls } from '$lib'
   import type { Label, ModelData } from '$lib/types'
-  import { HeatmapTable } from 'matterviz'
+  import { HeatmapTable, type Label as MattervizLabel } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
   import {
     ALL_METRICS,
@@ -58,7 +58,7 @@
 
 <HeatmapTable
   data={metrics_data}
-  {columns}
+  columns={columns as MattervizLabel[]}
   bind:column_order
   bind:show_heatmap
   {...rest}

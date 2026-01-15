@@ -3,6 +3,19 @@
 
 declare module '*.md'
 
+// Auto-generated Svelte figure components (excluded from TS checking in tsconfig.json)
+declare module '$figs/*.svelte' {
+  import type { Component } from 'svelte'
+  const component: Component<{ style?: string; name?: string }>
+  export default component
+}
+
+declare module '$figs/tmi/*.svelte' {
+  import type { Component } from 'svelte'
+  const component: Component<{ style?: string; name?: string }>
+  export default component
+}
+
 declare module '*package.json' {
   const pkg: Record<string, unknown>
   export default pkg
@@ -32,7 +45,7 @@ declare module '*model-schema.yml' {
 } // model metadata schema
 
 declare module '*data-files.yml' {
-  type DataFile = {
+  export type DataFile = {
     url: string
     path: string
     description: string
@@ -40,10 +53,14 @@ declare module '*data-files.yml' {
     figshare?: string
     md5?: string
   }
+  // Index signature allows DataFile entries, _links is the only string metadata field
+  // Code filters keys starting with '_' when iterating over file entries
   type DataFiles = {
-    [K in string]: K extends '_links' ? string : DataFile
+    [K: string]: DataFile | string
+    _links: string
   }
-  export const data_files: DataFiles
+  const data_files: DataFiles
+  export default data_files
 }
 
 declare module '*element-counts.json' {
@@ -52,12 +69,12 @@ declare module '*element-counts.json' {
 } // element counts for different datasets
 
 declare module '*modeling-tasks.yml' {
-  type SubTask = {
+  export type SubTask = {
     label: string
     description: string
   }
 
-  type ModelingTask = {
+  export type ModelingTask = {
     label: string
     description: string
     metrics: {
@@ -66,10 +83,15 @@ declare module '*modeling-tasks.yml' {
     }
     subtasks?: Record<string, SubTask>
   }
-  export const geo_opt: ModelingTask
-  export const discovery: ModelingTask
-  export const phonons: ModelingTask
-  export const diatomics: ModelingTask
+
+  type ModelingTasks = {
+    geo_opt: ModelingTask
+    discovery: ModelingTask
+    phonons: ModelingTask
+    diatomics: ModelingTask
+  }
+  const tasks: ModelingTasks
+  export default tasks
 }
 
 declare module '*mlip-github-activity.json' {

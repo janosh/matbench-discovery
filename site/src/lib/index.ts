@@ -1,5 +1,5 @@
 import { default as DATASETS } from '$data/datasets.yml'
-import { default as data_files } from '$pkg/data-files.yml'
+import { type DataFile, default as data_files } from '$pkg/data-files.yml'
 import rehypeStringify from 'rehype-stringify'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
@@ -80,10 +80,9 @@ for (const { notes, metadata_file } of MODELS) {
   }
 }
 
-for (const key of Object.keys(data_files).filter((key) => !key.startsWith(`_`))) {
-  data_files[key].html = md_to_html(
-    data_files[key].description + `\n\n${data_files._links}`,
-  )
+for (const key of Object.keys(data_files).filter((k) => !k.startsWith(`_`))) {
+  const file = data_files[key] as DataFile
+  file.html = md_to_html(file.description + `\n\n${data_files._links}`)
 }
 
 // Format date string into human-readable format

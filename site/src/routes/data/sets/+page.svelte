@@ -2,9 +2,8 @@
   import { arr_to_str, DATASETS, format_date, Icon } from '$lib'
   import { icon_data } from '$lib/icons'
   import { DATASET_METADATA_COLS, title_case } from '$lib/labels'
-  import type { RowData } from '$lib/types'
   import pkg from '$site/package.json'
-  import { HeatmapTable } from 'matterviz'
+  import { HeatmapTable, type RowData } from 'matterviz'
 
   const license_map: Record<string, string> = {
     'CC-BY-4.0': `Creative Commons Attribution 4.0 International`,
@@ -102,8 +101,7 @@
   <HeatmapTable
     data={table_data}
     columns={Object.values(DATASET_METADATA_COLS)}
-    initial_sort_column="Created"
-    initial_sort_direction="desc"
+    initial_sort={{ column: `Created`, direction: `desc` }}
     fixed_header={true}
     sort_hint=""
   />

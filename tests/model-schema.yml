@@ -427,7 +427,9 @@ properties:
       Training:
         type: string
       html:
-        type: string
+        type: object
+        additionalProperties:
+          type: string
   model_params:
     type: number
     minimum: 0
