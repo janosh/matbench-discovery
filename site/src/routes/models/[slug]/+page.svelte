@@ -251,7 +251,7 @@
               title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
               title_side="top"
               {color_scale}
-              range={[0, Math.max(...(Object.values(heatmap_values) as number[]))]}
+              range={[0, Math.max(0, ...(Object.values(heatmap_values) as number[]))]}
               style="width: 80%; margin: 0 2em"
             />
           </TableInset>

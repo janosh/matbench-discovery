@@ -53,7 +53,10 @@ declare module '*data-files.yml' {
     figshare?: string
     md5?: string
   }
-  type DataFiles = Omit<Record<string, DataFile>, '_links'> & {
+  // Index signature allows DataFile entries, _links is the only string metadata field
+  // Code filters keys starting with '_' when iterating over file entries
+  type DataFiles = {
+    [K: string]: DataFile | string
     _links: string
   }
   const data_files: DataFiles

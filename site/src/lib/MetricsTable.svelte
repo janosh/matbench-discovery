@@ -198,7 +198,7 @@
 <HeatmapTable
   data={metrics_data}
   columns={columns as MattervizLabel[]}
-  initial_sort={{ column: sort.column, direction: sort.dir }}
+  bind:sort
   sort_hint="Click on column headers to sort table rows"
   special_cells={{
     Links: links_cell as unknown as Snippet<[MattervizCellSnippetArgs]>,
