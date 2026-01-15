@@ -12,6 +12,7 @@ jobs:
       - uses: actions/stale@v9
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-issue-stale: -1 # Disable issue staleness, only manage PRs
           days-before-pr-stale: 90 # Days of inactivity before marking as stale
           days-before-pr-close: 30 # Days of inactivity after 'stale' label before closing
           stale-pr-message: 'This pull request has been marked as stale because it has been inactive for more than 90 days. Please update it or it will be automatically closed in 30 days.'
