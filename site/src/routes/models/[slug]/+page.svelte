@@ -20,19 +20,22 @@
 
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
-  let days_added = calculate_days_ago(data.model.date_added ?? ``)
-  let days_published = calculate_days_ago(data.model.date_published ?? ``)
+  let days_added = $derived(calculate_days_ago(data.model.date_added ?? ``))
+  let days_published = $derived(calculate_days_ago(data.model.date_published ?? ``))
 
   export const snapshot = {
     capture: () => ({ color_scale }),
-    restore: (values) => ({ color_scale } = values),
+    restore: (
+      values: { color_scale: D3InterpolateName },
+    ) => ({ color_scale } = values),
   }
 </script>
 
 {#if data.model}
   {@const model = data.model}
-  {@const { missing_preds } = model.metrics?.discovery?.unique_prototypes ??
-    {}}
+  {@const discovery = model.metrics?.discovery}
+  {@const { missing_preds } =
+    (typeof discovery === `object` ? discovery?.unique_prototypes : undefined) ?? {}}
   <div class="model-detail">
     <h1 style="font-size: 2.5em; margin: 0">{model.model_name}</h1>
 
@@ -198,7 +201,7 @@
     </section>
 
     <!-- check if Plotly undefined needed for model-page.test.ts since vitest with JSDOM doesn't mock some Browser APIs that Plotly needs -->
-    {#if typeof globalThis.Plotly != `undefined`}
+    {#if typeof (globalThis as { Plotly?: unknown }).Plotly !== `undefined`}
       {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as
         [which_energy, title]
         (which_energy)
@@ -216,7 +219,11 @@
     {/if}
 
     {#if model.model_name in per_elem_each_errors}
-      {@const heatmap_values = per_elem_each_errors?.[model.model_name]}
+      {@const raw_heatmap =
+      per_elem_each_errors[model.model_name as keyof typeof per_elem_each_errors]}
+      {@const heatmap_values = Object.fromEntries(
+      Object.entries(raw_heatmap).filter(([, val]) => val !== null),
+    ) as Record<string, number>}
       <h3 style="margin: 1em auto -1em; text-align: center" class="toc-exclude">
         Convex hull distance prediction errors projected onto elements
       </h3>
@@ -224,25 +231,27 @@
         {heatmap_values}
         {color_scale}
         bind:active_element
-        tile_props={{ precision: `.2` }}
+        tile_props={{ float_fmt: `.2f` }}
         show_photo={false}
         missing_color="rgba(255,255,255,0.3)"
       >
         {#snippet inset()}
           {@const style = `height: 2em; visibility: ${active_element ? `visible` : `hidden`};`}
           <TableInset style="align-content: center">
-            <PtableInset
-              element={active_element}
-              elem_counts={heatmap_values}
-              show_percent={false}
-              unit="<small style='font-weight: lighter;'>eV / atom</small>"
-              {style}
-            />
+            {#if active_element}
+              <PtableInset
+                element={active_element}
+                elem_counts={heatmap_values}
+                show_percent={false}
+                unit="<small style='font-weight: lighter;'>eV / atom</small>"
+                {style}
+              />
+            {/if}
             <ColorBar
               title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
               title_side="top"
               {color_scale}
-              range={[0, Math.max(...(Object.values(heatmap_values) as number[]))]}
+              range={[0, Math.max(0, ...(Object.values(heatmap_values) as number[]))]}
               style="width: 80%; margin: 0 2em"
             />
           </TableInset>
@@ -378,9 +387,17 @@
       </section>
     {/if}
 
-    {#if model.notes?.html}
+    {#if model.notes?.html && typeof model.notes.html === `object`}
       <section class="notes">
-        {#each Object.entries(model.notes.html) as [key, note] (key)}
+        {#each Object.entries(
+        model.notes.html as Record<
+          string,
+          string | string[] | Record<string, unknown>
+        >,
+      ) as
+          [key, note]
+          (key)
+        }
           <h2>{key}</h2>
           {#if typeof note === `string`}
             <p>{@html note}</p>
@@ -390,10 +407,10 @@
                 <li>{@html val}</li>
               {/each}
             </ol>
-          {:else}
+          {:else if note && typeof note === `object`}
             <ul>
-              {#each Object.entries(note) as [key, val] (key)}
-                <li><strong>{key}:</strong> {val}</li>
+              {#each Object.entries(note) as [sub_key, val] (sub_key)}
+                <li><strong>{sub_key}:</strong> {val}</li>
               {/each}
             </ul>
           {/if}

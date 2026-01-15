@@ -4,7 +4,7 @@
   import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
   import { DraggablePane, format_num, Icon } from 'matterviz'
-  import type { D3ColorSchemeName } from 'matterviz/colors'
+  import type { D3InterpolateName } from 'matterviz/colors'
   import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import Select from 'svelte-multiselect'
@@ -43,7 +43,7 @@
   let show_extra_controls = $state(false)
   let container_el: HTMLDivElement | null = null
 
-  let color_scheme: D3ColorSchemeName = $state(`Viridis`)
+  let color_scheme: D3InterpolateName = $state(`interpolateViridis`)
   let x_ticks = $state(5)
   let y_ticks = $state(5)
   let x_grid = $state(true)

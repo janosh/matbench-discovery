@@ -37,7 +37,7 @@ export const load: PageServerLoad = async () => {
 
   await Promise.all(
     diatomic_models.map(async (model) => {
-      const { diatomics } = model.metrics
+      const diatomics = model.metrics?.diatomics
       if (typeof diatomics !== `object` || !diatomics?.pred_file_url) {
         errors[model.model_name] = `No prediction file URL`
         return

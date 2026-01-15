@@ -105,7 +105,7 @@ export const METADATA_COLS: MetadataLabels = {
     description: `Model name`,
     sticky: true,
     sortable: true,
-    better: null,
+    better: undefined,
   },
   training_set: {
     key: `Training Set`,
@@ -181,7 +181,7 @@ export const METADATA_COLS: MetadataLabels = {
     description: `Most common author affiliations`,
     cell_style: `text-align: center; max-width: 2em; transform: scale(1.3);`,
     visible: true,
-    better: null,
+    better: undefined,
   },
 } as const
 

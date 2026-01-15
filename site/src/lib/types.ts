@@ -1,24 +1,21 @@
 import * as d3sc from 'd3-scale-chromatic'
 import type { IconName } from './icons'
 import type { Label1 as LabelType } from './label-schema.d.ts'
-import type { AllMetrics } from './labels'
 import type { ModelMetadata } from './model-schema.d.ts'
 
 export type { Dataset } from './dataset-schema.d.ts'
 export type { ModelMetadata } from './model-schema.d.ts'
 
-export type ModelData =
-  & ModelMetadata
-  & keyof AllMetrics
-  & {
-    // these fields are populated in MODELS variable in models.svelte.ts
-    dirname: string
-    metadata_file: string
-    color?: string
-    n_training_materials?: number
-    n_training_structures?: number
-    org_logos?: { name: string; id?: string; src?: string }[]
-  }
+export type ModelData = ModelMetadata & {
+  // these fields are populated in MODELS variable in models.svelte.ts
+  dirname: string
+  metadata_file: string
+  color?: string
+  n_training_materials?: number
+  n_training_structures?: number
+  org_logos?: { name: string; id?: string; src?: string }[]
+  CPS?: number
+}
 
 export type Author = {
   name: string

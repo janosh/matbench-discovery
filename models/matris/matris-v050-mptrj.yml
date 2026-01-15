@@ -32,9 +32,9 @@ trained_by:
     orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
-url: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
-doi: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
-paper: https://github.com/HPC-AI-Team/MatRIS # to be updated soon
+url: https://github.com/HPC-AI-Team/MatRIS
+doi: https://github.com/HPC-AI-Team/MatRIS # no paper yet, using repo URL
+paper: https://github.com/HPC-AI-Team/MatRIS # no paper yet, using repo URL
 pr_url: https://github.com/janosh/matbench-discovery/pull/293
 checkpoint_url: https://figshare.com/files/59143058
 

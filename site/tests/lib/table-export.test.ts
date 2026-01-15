@@ -195,9 +195,11 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
       expect(captured_container).toBeDefined()
       // The key test: verify sub/sup elements are preserved in the structure
       // Since we mocked the cleanup to preserve these elements, they should still be present
-      const preserved_elements = captured_container?.querySelectorAll?.(`sub, sup`)
-      // Note: In our simplified mock, we simulate that sub/sup elements are preserved
-      expect(preserved_elements || []).toBeDefined()
+      const container = captured_container as HTMLElement | null
+      const preserved_elements = container ? container.querySelectorAll(`sub, sup`) : null
+      // Verify query executes without error; mock returns 2 elements
+      expect(preserved_elements).not.toBeNull()
+      expect(preserved_elements?.length).toBe(2)
     })
 
     it(`handles table not found error for ${format}`, async () => {
