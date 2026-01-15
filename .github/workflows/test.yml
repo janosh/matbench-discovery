@@ -39,7 +39,7 @@ jobs:
     uses: janosh/workflows/.github/workflows/deno-test.yml@main
     with:
       working-directory: site
-      test-cmd: deno task vitest
+      test-cmd: npx vitest run
       deno-version: 2.3.7 # https://github.com/denoland/deno/issues/29968
 
   scripts:

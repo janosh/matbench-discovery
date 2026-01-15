@@ -1,9 +1,12 @@
 <script lang="ts">
   import { DiatomicCurve, type ModelData } from '$lib'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
+  import { SvelteSet } from 'svelte/reactivity'
 
   let { data } = $props()
-  let { diatomic_models = [], diatomic_curves = {}, errors = {} } = data ?? {}
+  let diatomic_models = $derived(data?.diatomic_models ?? [])
+  let diatomic_curves = $derived(data?.diatomic_curves ?? {})
+  let errors = $derived(data?.errors ?? {})
 
   // Define a sequence of colors to use for models
   const colors = [
@@ -33,18 +36,27 @@
   const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
 
   // Create a Map to store model colors consistently
-  const model_colors = new Map<string, ColorType>(
-    diatomic_models.map((model: ModelData, idx: number) => [
-      model.model_name,
-      colors[idx % colors.length],
-    ]),
+  let model_colors = $derived(
+    new Map<string, ColorType>(
+      diatomic_models.map((model: ModelData, idx: number) => [
+        model.model_name,
+        colors[idx % colors.length],
+      ]),
+    ),
   )
 
   let plot_width = $state(400)
   let plot_height = $state(300)
 
-  // Start with pre-loaded models selected
-  let selected_models = $state(new Set(Object.keys(diatomic_curves)))
+  // Start with pre-loaded models selected, reset when data changes
+  const selected_models = new SvelteSet<string>()
+  $effect(() => {
+    // Clear and repopulate when diatomic_curves changes (e.g., on page load)
+    selected_models.clear()
+    for (const key of Object.keys(diatomic_curves)) {
+      selected_models.add(key)
+    }
+  })
   let diatomics_to_render = $derived(
     // only render diatomics where at least one model has data
     homo_diatomic_formulas.filter((formula) =>
@@ -57,12 +69,8 @@
 
   function toggle_model(model: ModelData) {
     const { model_name } = model
-    if (selected_models.has(model_name)) {
-      selected_models.delete(model_name)
-    } else {
-      selected_models.add(model_name)
-    }
-    selected_models = selected_models // trigger reactivity
+    if (selected_models.has(model_name)) selected_models.delete(model_name)
+    else selected_models.add(model_name)
   }
 </script>
 

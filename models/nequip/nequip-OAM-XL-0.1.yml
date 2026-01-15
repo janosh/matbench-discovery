@@ -102,8 +102,8 @@ metrics:
     kappa_103:
       pred_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05.json.gz
       pred_file_url: https://figshare.com/files/60007844
-      κ_SRME: 0.125
-      κ_SRE: 0
+      κ_SRME: 0.1252
+      κ_SRE: 0.0537
   geo_opt:
     pred_file: models/nequip/nequip-OAM-XL-0.1/2025-11-30-wbm-IS2RE-GOQN.jsonl.gz
     pred_file_url: https://figshare.com/files/60007799

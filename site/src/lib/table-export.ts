@@ -639,7 +639,7 @@ export async function generate_excel({
 }
 
 export const handle_export = <T extends ExportOptions>(
-  generator: (args: T) => Promise<ExportResult | null>,
+  generator: (args: T) => ExportResult | null | Promise<ExportResult | null>,
   fmt: string,
   state: { export_error: string | null } & T,
 ) =>

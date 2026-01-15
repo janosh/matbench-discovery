@@ -112,7 +112,9 @@ export type ModelMetadata = {
   notes?: {
     Description?: string
     Training?: string
-    html?: string
+    html?: {
+      [k: string]: string
+    }
     [k: string]: unknown
   }
   model_params: number

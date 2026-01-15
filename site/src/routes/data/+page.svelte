@@ -8,6 +8,7 @@
   import SpacegroupSunburstMp from '$figs/spacegroup-sunburst-mp.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import { Icon, PtableHeatmap } from '$lib'
+  import type { ElementSymbol } from 'matterviz'
   import { ColorScaleSelect } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import Select from 'svelte-multiselect'
@@ -16,7 +17,7 @@
   import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
 
-  const elem_counts: Record<string, Record<string, number>> = import.meta.glob(
+  const elem_counts: Record<string, Record<ElementSymbol, number>> = import.meta.glob(
     `./*-element-counts-by-{occurrence,composition}*.json`,
     { eager: true, import: `default` },
   )

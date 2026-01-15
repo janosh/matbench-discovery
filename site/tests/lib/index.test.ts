@@ -38,8 +38,7 @@ describe(`arr_to_str`, () => {
       [true, `true`],
     ] as const,
   )(`converts %s → '%s'`, (input, expected) => {
-    // @ts-expect-error testing various input types
-    expect(arr_to_str(input)).toBe(expected)
+    expect(arr_to_str(input as Parameters<typeof arr_to_str>[0])).toBe(expected)
   })
 })
 

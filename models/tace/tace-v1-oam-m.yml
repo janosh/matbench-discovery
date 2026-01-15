@@ -53,6 +53,7 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   max_force: 0.05
   max_steps: 500
   ase_optimizer: GOQN # faster than FIRE with same results; see SI of https://doi.org/10.1088/2515-7655/ade916
+  cell_filter: FrechetCellFilter
   optimizer: AdamW
   graph_construction_radius: 6.0
   max_neighbors: .inf

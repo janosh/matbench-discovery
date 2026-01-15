@@ -76,7 +76,9 @@
 >
   {#snippet inset()}
     <TableInset>
-      <PtableInset element={active_element} elem_counts={active_counts} />
+      {#if active_element}
+        <PtableInset element={active_element} elem_counts={active_counts} />
+      {/if}
       <span {style}>Log color scale<Toggle bind:checked={log} /></span>
     </TableInset>
   {/snippet}

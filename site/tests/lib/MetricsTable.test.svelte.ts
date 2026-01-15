@@ -1078,6 +1078,7 @@ describe(`MetricsTable`, () => {
       const toggle = get_toggle()
       const label = get_toggle_label()
       expect(toggle).not.toBeNull()
+      if (!toggle) return // Type guard
 
       // Test toggle states
       expect(toggle.checked).toBe(false)
@@ -1108,7 +1109,9 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Enable filter
-      get_toggle().click()
+      const toggle_enable = get_toggle()
+      if (!toggle_enable) throw new Error(`Toggle not found`)
+      toggle_enable.click()
       await tick()
 
       // Should show only selected row
@@ -1116,7 +1119,9 @@ describe(`MetricsTable`, () => {
       expect(get_rows()[0].classList.contains(`highlight`)).toBe(false) // No highlight when filtering
 
       // Disable filter
-      get_toggle().click()
+      const toggle_disable = get_toggle()
+      if (!toggle_disable) throw new Error(`Toggle not found`)
+      toggle_disable.click()
       await tick()
 
       // Should show all rows with highlight

@@ -21,7 +21,7 @@
 <h1>MLFF Phonon Modeling Metrics</h1>
 
 <section class="full-bleed">
-  <MetricsTable col_filter={(col) => visible_cols[col.label] ?? true} sort_hint="" />
+  <MetricsTable col_filter={(col) => visible_cols[col.label] ?? true} />
 </section>
 
 <KappaNote />
