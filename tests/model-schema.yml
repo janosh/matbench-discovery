@@ -526,6 +526,25 @@ allOf:
       properties:
         hyperparams:
           required: [graph_construction_radius, max_neighbors]
+  # Require geo_opt hyperparams for MLIPs with force predictions that have geo_opt metrics
+  - if:
+      properties:
+        model_type:
+          enum: [GNN, UIP]
+        targets:
+          # Any target type that includes forces (F in the name)
+          enum: [EF_G, EF_D, EFS_G, EFSH_G, EFS_D, EFS_GM, EFS_DM]
+        metrics:
+          properties:
+            geo_opt:
+              type: object
+          required: [geo_opt]
+      required: [model_type, targets, metrics]
+    then:
+      required: [hyperparams]
+      properties:
+        hyperparams:
+          required: [ase_optimizer, max_steps, max_force, cell_filter]
 
 required:
   - authors
