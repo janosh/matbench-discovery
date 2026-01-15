@@ -112,65 +112,55 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
     })
 
     it(`preserves subscripts and superscripts in ${format} export`, async () => {
-      // Create table with sub/sup elements
-      const table_with_formatting = {
-        querySelectorAll: vi.fn((selector: string) => {
-          if (selector === `thead tr`) {
-            return [
-              {
-                querySelectorAll: () => [
-                  { textContent: `Model` },
-                  {
-                    textContent: `R²`,
-                    innerHTML: `R<sup>2</sup>`,
-                    children: [{ tagName: `SUP`, textContent: `2` }],
-                  },
-                  {
-                    textContent: `κSRME`,
-                    innerHTML: `κ<sub>SRME</sub>`,
-                    children: [{ tagName: `SUB`, textContent: `SRME` }],
-                  },
-                ],
-              },
-            ]
-          }
-          if (selector === `tbody tr`) {
-            return [
-              {
-                querySelectorAll: () => [
-                  { getAttribute: () => `Test Model`, textContent: `Test Model` },
-                  { getAttribute: () => `0.85`, textContent: `0.85` },
-                  { getAttribute: () => `1.23`, textContent: `1.23` },
-                ],
-              },
-            ]
-          }
-          return []
-        }),
-        cloneNode: vi.fn(() => {
-          const clone = {
-            style: {},
-            querySelectorAll: vi.fn((sel) => {
-              if (sel === `sub, sup`) {
-                return [
-                  { tagName: `SUP`, textContent: `2`, parentNode: { tagName: `TH` } },
-                  { tagName: `SUB`, textContent: `SRME`, parentNode: { tagName: `TH` } },
-                ]
-              }
-              if (sel === `span, small`) return []
-              if (sel === `svg, img, button, a[href]`) return []
-              if (sel === `*`) return []
-              return []
-            }),
-            getBoundingClientRect: () => ({ height: 300, width: 500 }),
-          }
-          return clone
-        }),
-      }
+      // Reset modules and restore spies to use real DOM operations
+      vi.resetModules()
+      create_element_spy.mockRestore()
+      query_selector_spy.mockRestore()
 
-      query_selector_spy.mockReturnValue(table_with_formatting as unknown as Element)
+      // Create real DOM table with sub/sup elements
+      const real_table = document.createElement(`table`)
+      real_table.className = `heatmap`
 
-      // Mock the image generation library to verify the container structure
+      const thead = document.createElement(`thead`)
+      const header_row = document.createElement(`tr`)
+
+      const th1 = document.createElement(`th`)
+      th1.textContent = `Model`
+      header_row.appendChild(th1)
+
+      const th2 = document.createElement(`th`)
+      th2.innerHTML = `R<sup>2</sup>`
+      header_row.appendChild(th2)
+
+      const th3 = document.createElement(`th`)
+      th3.innerHTML = `κ<sub>SRME</sub>`
+      header_row.appendChild(th3)
+
+      thead.appendChild(header_row)
+      real_table.appendChild(thead)
+
+      const tbody = document.createElement(`tbody`)
+      const body_row = document.createElement(`tr`)
+
+      const td1 = document.createElement(`td`)
+      td1.textContent = `Test Model`
+      body_row.appendChild(td1)
+
+      const td2 = document.createElement(`td`)
+      td2.textContent = `0.85`
+      body_row.appendChild(td2)
+
+      const td3 = document.createElement(`td`)
+      td3.textContent = `1.23`
+      body_row.appendChild(td3)
+
+      tbody.appendChild(body_row)
+      real_table.appendChild(tbody)
+
+      // Append to document so querySelector can find it
+      document.body.appendChild(real_table)
+
+      // Mock the image generation library to capture the container
       let captured_container: HTMLElement | null = null
       const mock_lib = format === `SVG`
         ? {
@@ -191,15 +181,17 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
       const module = await import(`$lib/table-export`)
       await module[function_name]({ discovery_set: `test` })
 
+      // Clean up - remove the table from DOM
+      real_table.remove()
+
       // Verify that the function was called and container was processed
-      expect(captured_container).toBeDefined()
+      expect(captured_container).not.toBeNull()
+      const container = captured_container as unknown as HTMLElement
+
       // The key test: verify sub/sup elements are preserved in the structure
-      // Since we mocked the cleanup to preserve these elements, they should still be present
-      const container = captured_container as HTMLElement | null
-      const preserved_elements = container ? container.querySelectorAll(`sub, sup`) : null
-      // Verify query executes without error; mock returns 2 elements
-      expect(preserved_elements).not.toBeNull()
-      expect(preserved_elements?.length).toBe(2)
+      // clean_table_for_export should NOT remove sub/sup elements
+      const preserved_elements = container.querySelectorAll(`sub, sup`)
+      expect(preserved_elements.length).toBe(2)
     })
 
     it(`handles table not found error for ${format}`, async () => {

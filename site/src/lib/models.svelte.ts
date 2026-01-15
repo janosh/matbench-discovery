@@ -129,12 +129,15 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
 // Calculate initial CPS for all models
 update_models_cps(MODELS, CPS_CONFIG)
 
+// Compute compliant training sets from datasets.yml (datasets with compliant: true)
+export const COMPLIANT_TRAINING_SETS: string[] = Object.entries(DATASETS)
+  .filter(([_, val]) => typeof val === `object` && !Array.isArray(val) && val.compliant)
+  .map(([key]) => key)
+
 export function model_is_compliant(model: ModelData): boolean {
   if ((model.openness ?? `OSOD`) !== `OSOD`) return false
 
-  const allowed_sets = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`]
-
-  return model.training_set.every((itm) => allowed_sets.includes(itm))
+  return model.training_set.every((set) => COMPLIANT_TRAINING_SETS.includes(set))
 }
 
 export function get_pred_file_urls(model: ModelData) {

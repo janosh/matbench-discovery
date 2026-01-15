@@ -167,6 +167,10 @@ export interface Dataset {
    */
   static?: boolean
   /**
+   * Whether the dataset is allowed for compliant model submissions
+   */
+  compliant?: boolean
+  /**
    * License under which the dataset is published
    */
   license:

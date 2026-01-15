@@ -35,7 +35,7 @@ model_name = "sevennet"
 model_variant = "sevennet-omni-i12"  # choose 7net model variant to eval
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-calc_kwargs = {
+calc_kwargs: dict[str, Any] = {
     "sevennet-0": {"model": "7net-0"},
     "sevennet-l3i5": {"model": "7net-l3i5"},
     "sevennet-mf-ompa": {"model": "7net-mf-ompa", "modal": "mpa"},
@@ -93,7 +93,7 @@ print(f"\nJob {job_name!r} running {timestamp}", flush=True)
 print(f"{data_path=}", flush=True)
 
 # Initialize ASE SevenNet Calculator from checkpoint
-seven_net_calc = SevenNetCalculator(**calc_kwargs)
+seven_net_calc = SevenNetCalculator(**calc_kwargs)  # type: ignore[arg-type]
 
 
 # %%

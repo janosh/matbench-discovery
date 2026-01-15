@@ -24,7 +24,7 @@ atoms_list = ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":")
 
 
 # %% visually inspect first 12 structures
-fig = pmv.structure_3d_plotly(atoms_list[:12], n_cols=3, scale=0.5)
+fig = pmv.structure_3d(atoms_list[:12], n_cols=3, scale=0.5)
 fig.show()
 
 

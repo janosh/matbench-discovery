@@ -32,7 +32,7 @@ model_name = "sevennet"
 model_variant = "sevennet-omni-i12"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-calc_kwargs = {
+calc_kwargs: dict[str, Any] = {
     "sevennet-0": {"model": "7net-0"},
     "sevennet-l3i5": {"model": "7net-l3i5"},
     "sevennet-mf-ompa": {"model": "7net-mf-ompa", "modal": "mpa"},
@@ -62,7 +62,7 @@ if model_variant in checkpoint_urls:
         print(f"Using cached checkpoint: {checkpoint_path}")
     calc_kwargs["model"] = str(checkpoint_path)
 
-calc = SevenNetCalculator(**calc_kwargs)
+calc = SevenNetCalculator(**calc_kwargs)  # type: ignore[arg-type]
 
 # Relaxation parameters. These params are for reproducing 7net-mf-ompa.
 ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"

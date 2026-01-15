@@ -141,6 +141,9 @@ definitions:
       static:
         type: boolean
         description: Whether the dataset is a static release or dynamically updated
+      compliant:
+        type: boolean
+        description: Whether the dataset is allowed for compliant model submissions
       license:
         $ref: '#/definitions/license_enum'
         description: License under which the dataset is published

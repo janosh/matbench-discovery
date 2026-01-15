@@ -24,12 +24,13 @@ describe(`targets_tooltips`, () => {
     [`EFS_DM`, `Energy with direct forces, stress, and magmoms`],
     [`EF_D`, `Energy with direct forces`],
     [`EFS_G`, `Energy with gradient-based forces and stress`],
+    [`EFSH_G`, `Energy with gradient-based forces, stress, and Hessian`],
   ])(`contains tooltip for %s target type`, (target, expected) => {
     expect(targets_tooltips[target as TargetType]).toBe(expected)
   })
 
   it(`contains all expected tooltip keys`, () => {
-    expect(Object.keys(targets_tooltips).length).toBe(7)
+    expect(Object.keys(targets_tooltips).length).toBe(8)
   })
 })
 

@@ -94,7 +94,9 @@ def calculate_fc2_set(
             )
             for supercell in batch_displacements
         ]
-        res = calculator.compute_energy(batch_atoms, compute_forces_and_stresses=True)
+        res = calculator.compute_energy(  # type: ignore[attr-defined]
+            batch_atoms, compute_forces_and_stresses=True
+        )
         f = res["forces"]
         forces.extend(f)
 
@@ -142,7 +144,9 @@ def calculate_fc3_set(
             )
             for supercell in batch_displacements
         ]
-        res = calculator.compute_energy(batch_atoms, compute_forces_and_stresses=True)
+        res = calculator.compute_energy(  # type: ignore[attr-defined]
+            batch_atoms, compute_forces_and_stresses=True
+        )
         f = res["forces"]
         forces.extend(f)
 
