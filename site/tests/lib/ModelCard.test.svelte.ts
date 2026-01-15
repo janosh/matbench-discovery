@@ -70,9 +70,6 @@ describe(`ModelCard`, () => {
     })
   })
 
-  // Rest of the tests remain similar but use real_model instead of real_model
-  // and adjust expectations based on actual model data...
-
   it(`handles training set display`, () => {
     mount(ModelCard, {
       target: document.body,
@@ -126,8 +123,8 @@ describe(`ModelCard`, () => {
       )
       const phonon_metrics = model.metrics?.phonons
       const kappa_value = phonon_metrics && typeof phonon_metrics === `object`
-        ? Number(phonon_metrics.kappa_103?.κ_SRME)
-        : undefined
+        ? (Number(phonon_metrics.kappa_103?.κ_SRME) || 0)
+        : 0
       const displayed_kappa = kappa_metric?.querySelector(`strong`)?.textContent?.trim()
       // The displayed value may be rounded differently
       expect(parseFloat(displayed_kappa ?? ``)).toBeCloseTo(kappa_value ?? 0, 2)

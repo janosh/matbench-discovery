@@ -3,46 +3,6 @@
 
 declare module '*.md'
 
-declare module 'svelte-toc' {
-  import type { Component, Snippet } from 'svelte'
-  import type { HTMLAttributes } from 'svelte/elements'
-
-  export interface TocProps extends HTMLAttributes<HTMLElement> {
-    title?: string
-    open?: boolean
-    headings?: { id: string; text: string; level: number }[]
-    headingSelector?: string
-    sticky?: boolean
-    activeHeading?: string
-    activeHeadingScrollOffset?: number
-    breakpoint?: number
-    minItems?: number
-    desktop?: boolean
-    flashClickedHeadingsFor?: number
-    getHeadingIds?: (node: HTMLElement) => string
-    getHeadingLevels?: (node: HTMLElement) => number
-    getHeadingText?: (node: HTMLElement) => string
-    hide?: boolean
-    keepActiveHeadingOnScroll?: boolean
-    nav?: Snippet
-    open_desktop?: Snippet
-    open_mobile?: Snippet
-    target_element?: HTMLElement
-    warnOnEmpty?: boolean
-    aside_style?: string
-    nav_style?: string
-  }
-
-  const Toc: Component<TocProps>
-  export default Toc
-}
-
-declare module 'svelte-toc/dist/MenuIcon.svelte' {
-  import type { Component } from 'svelte'
-  const MenuIcon: Component<Record<string, unknown>>
-  export default MenuIcon
-}
-
 // Auto-generated Svelte figure components (excluded from TS checking in tsconfig.json)
 declare module '$figs/*.svelte' {
   import type { Component } from 'svelte'

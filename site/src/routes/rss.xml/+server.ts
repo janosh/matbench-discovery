@@ -13,8 +13,8 @@ const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
 function format_model_for_rss(model: ModelData): string {
   // Extract metrics from the 'full_test_set' or fallback to first available discovery set
   const discovery = model.metrics?.discovery
-  const discovery_metrics = typeof discovery === `object`
-    ? (discovery?.full_test_set || Object.values(discovery)[0])
+  const discovery_metrics = discovery && typeof discovery === `object`
+    ? (discovery.full_test_set || Object.values(discovery)[0])
     : null
 
   const training_set = format_train_set(model.training_set, model)

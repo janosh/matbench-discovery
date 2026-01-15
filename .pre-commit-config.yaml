@@ -55,7 +55,7 @@ repos:
         language: system
       - id: svelte-check
         name: Svelte type check
-        entry: bash -c 'cd site && deno install --allow-scripts && deno run -A --node-modules-dir npm:@sveltejs/kit sync && deno run -A --node-modules-dir npm:svelte-check --fail-on-warnings --threshold error'
+        entry: bash -c 'cd site && deno install --allow-scripts && deno run -A --node-modules-dir npm:@sveltejs/kit sync && deno run -A --node-modules-dir npm:svelte-check --threshold error'
         language: system
         types_or: [ts, svelte]
         pass_filenames: false

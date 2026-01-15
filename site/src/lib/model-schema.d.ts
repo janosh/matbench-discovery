@@ -112,7 +112,9 @@ export type ModelMetadata = {
   notes?: {
     Description?: string
     Training?: string
-    html?: Record<string, string> // auto-generated HTML versions of markdown notes
+    html?: {
+      [k: string]: string
+    }
     [k: string]: unknown
   }
   model_params: number

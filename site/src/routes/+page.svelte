@@ -29,8 +29,8 @@
   import type { Snapshot } from './$types'
   import github_activity_data from './models/mlip-github-activity.json'
 
-  let n_wbm_stable_uniq_protos = 32_942
-  let n_wbm_uniq_protos = DATASETS.WBM.n_materials ?? 0
+  const n_wbm_stable_uniq_protos = 32_942
+  const n_wbm_uniq_protos = DATASETS.WBM.n_materials
 
   let table = $state({
     show_non_compliant: true,
@@ -210,13 +210,17 @@
       shows the number of estimators if an ensemble was used. DAF = Discovery Acceleration
       Factor measures how many more stable materials a model finds compared to random
       selection from the test set. The unique structure prototypes in the WBM test set
-      have a
-      <code>{format_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
-      rate of stable crystals, meaning the max possible DAF is
-      <code>
-        ({format_num(n_wbm_stable_uniq_protos)} / {format_num(n_wbm_uniq_protos)})^−1 ≈
-        {format_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}
-      </code>.
+      {#if n_wbm_uniq_protos}
+        have a
+        <code>{format_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
+        rate of stable crystals, meaning the max possible DAF is
+        <code>
+          ({format_num(n_wbm_stable_uniq_protos)} / {format_num(n_wbm_uniq_protos)})^−1 ≈
+          {format_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}
+        </code>.
+      {:else}
+        have an unknown rate of stable crystals (WBM n_materials unavailable).
+      {/if}
     </div>
     <!-- CPS weight controls -->
     <RadarChart size={260} />
