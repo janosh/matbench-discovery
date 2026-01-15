@@ -381,7 +381,7 @@ properties:
         - OMat24
         - sAlex
         - OpenLAM
-        - MDR Phonon PBE Train
+        - MDR PBE Phonons in MPtrj
         - COSMOSDataset
   hyperparams:
     type: object

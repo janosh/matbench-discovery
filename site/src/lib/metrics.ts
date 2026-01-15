@@ -20,6 +20,7 @@ export const targets_tooltips: { [key in TargetType]: string } = {
   EF_G: `Energy with gradient-based forces`,
   EF_D: `Energy with direct forces`,
   EFS_G: `Energy with gradient-based forces and stress`,
+  EFSH_G: `Energy with gradient-based forces, stress, and Hessian`,
   EFS_D: `Energy with direct forces and stress`,
   EFS_GM: `Energy with gradient-based forces, stress, and magmoms`,
   EFS_DM: `Energy with direct forces, stress, and magmoms`,

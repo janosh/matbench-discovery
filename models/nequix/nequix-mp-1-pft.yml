@@ -94,12 +94,17 @@ hyperparams:
   ema_decay: 0.999
 
 training_cost:
-  Nvidia A100 GPUs: {amount: 1, hours: 140}
+  Nvidia A100 GPUs: { amount: 1, hours: 140 }
 
-training_set: [MPtrj, MDR Phonon PBE Train]
+training_set: [MPtrj, MDR PBE Phonons in MPtrj]
 
 notes:
   Description: Nequix MP PFT is a fine-tuned version of Nequix MP 1, which was fine-tuned using phonon fine-tuning (PFT) on a subset of the MDR Phonon PBE dataset that is contained within MPtrj.
+  Reproduction: |
+    git clone https://github.com/atomicarchitects/nequix.git && cd nequix
+    uv sync --extra pft
+    bash data/download_pbe_mdr_preprocessed.sh
+    uv run nequix/pft/train.py configs/nequix-mp-1-pft.yml
 
 requirements:
   jax: 0.6.2

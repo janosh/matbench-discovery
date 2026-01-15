@@ -2,16 +2,17 @@ import os
 from glob import glob
 
 import pytest
-import yaml
 
-from matbench_discovery import DATA_DIR, ROOT
+from matbench_discovery import ROOT
+from matbench_discovery.data import DATASETS
 from matbench_discovery.enums import Model
 from matbench_discovery.models import model_is_compliant, validate_model_metadata
 
-with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
-    DATASETS = yaml.safe_load(file)
-
-OPEN_DATASETS = {dataset["name"] for dataset in DATASETS.values() if dataset["open"]}
+OPEN_DATASETS = {
+    dataset["name"]
+    for dataset in DATASETS.values()
+    if isinstance(dataset, dict) and dataset.get("open")
+}
 
 # Get model directories for testing
 MODEL_DIRS = sorted(glob(f"{ROOT}/models/[!_]*/"))
@@ -159,6 +160,7 @@ def test_model_missing_invalid_inputs(
         (Model.voronoi_rf, True),
         (Model.gnome, False),
         (Model.mattersim_v1_5m, False),
+        (Model.nequix_mp_1_pft, True),
     ],
 )
 def test_model_is_compliant(model: Model, is_compliant: bool) -> None:

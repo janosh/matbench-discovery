@@ -1,6 +1,7 @@
 import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import {
   calculate_training_sizes,
+  model_is_compliant,
   MODEL_METADATA_PATHS,
   MODELS,
   update_models_cps,
@@ -71,6 +72,59 @@ describe(`MODEL_METADATA_PATHS`, () => {
   it(`should be defined and be an object`, () => {
     expect(MODEL_METADATA_PATHS).toBeDefined()
     expect(typeof MODEL_METADATA_PATHS).toBe(`object`)
+  })
+})
+
+describe(`model_is_compliant`, () => {
+  it.each([
+    { training_set: [`MPtrj`], openness: `OSOD`, expected: true },
+    { training_set: [`MP 2022`], openness: `OSOD`, expected: true },
+    { training_set: [`MPF`], openness: `OSOD`, expected: true },
+    { training_set: [`MP Graphs`], openness: `OSOD`, expected: true },
+    { training_set: [`MPtrj`, `MP 2022`], openness: `OSOD`, expected: true },
+    // MDR PBE Phonons in MPtrj is compliant (phonon fine-tuning on MPtrj subset)
+    { training_set: [`MDR PBE Phonons in MPtrj`], openness: `OSOD`, expected: true },
+    {
+      training_set: [`MPtrj`, `MDR PBE Phonons in MPtrj`],
+      openness: `OSOD`,
+      expected: true,
+    },
+  ])(
+    `returns true for compliant training_set=$training_set`,
+    ({ training_set, openness, expected }) => {
+      const model = { training_set, openness } as Parameters<typeof model_is_compliant>[0]
+      expect(model_is_compliant(model)).toBe(expected)
+    },
+  )
+
+  it.each([
+    { training_set: [`OMat24`], openness: `OSOD`, expected: false },
+    { training_set: [`GNoME`], openness: `OSOD`, expected: false },
+    { training_set: [`MPtrj`, `OMat24`], openness: `OSOD`, expected: false },
+    { training_set: [`Alex`], openness: `OSOD`, expected: false },
+  ])(
+    `returns false for non-compliant training_set=$training_set`,
+    ({ training_set, openness, expected }) => {
+      const model = { training_set, openness } as Parameters<typeof model_is_compliant>[0]
+      expect(model_is_compliant(model)).toBe(expected)
+    },
+  )
+
+  it.each([
+    { training_set: [`MPtrj`], openness: `CSOD`, expected: false },
+    { training_set: [`MPtrj`], openness: `OSCD`, expected: false },
+    { training_set: [`MPtrj`], openness: `CSCD`, expected: false },
+  ])(
+    `returns false for non-OSOD openness=$openness`,
+    ({ training_set, openness, expected }) => {
+      const model = { training_set, openness } as Parameters<typeof model_is_compliant>[0]
+      expect(model_is_compliant(model)).toBe(expected)
+    },
+  )
+
+  it(`defaults to OSOD when openness is undefined`, () => {
+    const model = { training_set: [`MPtrj`] } as Parameters<typeof model_is_compliant>[0]
+    expect(model_is_compliant(model)).toBe(true)
   })
 })
 

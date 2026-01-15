@@ -42,7 +42,15 @@ export type ModelType = 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer'
  * This interface was referenced by `Label`'s JSON-Schema
  * via the `definition` "TargetType".
  */
-export type TargetType = 'E' | 'EF_G' | 'EF_D' | 'EFS_G' | 'EFS_D' | 'EFS_GM' | 'EFS_DM'
+export type TargetType =
+  | 'E'
+  | 'EF_G'
+  | 'EF_D'
+  | 'EFS_G'
+  | 'EFSH_G'
+  | 'EFS_D'
+  | 'EFS_GM'
+  | 'EFS_DM'
 
 export interface Label {
   [k: string]: unknown
