@@ -1,6 +1,7 @@
 import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import {
   calculate_training_sizes,
+  COMPLIANT_TRAINING_SETS,
   model_is_compliant,
   MODEL_METADATA_PATHS,
   MODELS,
@@ -125,6 +126,19 @@ describe(`model_is_compliant`, () => {
   it(`defaults to OSOD when openness is undefined`, () => {
     const model = { training_set: [`MPtrj`] } as Parameters<typeof model_is_compliant>[0]
     expect(model_is_compliant(model)).toBe(true)
+  })
+})
+
+describe(`COMPLIANT_TRAINING_SETS`, () => {
+  it(`matches expected compliant datasets from datasets.yml`, () => {
+    // This test ensures Python and TypeScript compute the same compliant sets
+    // Both should derive from datasets.yml where compliant: true
+    const expected = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`, `MDR PBE Phonons in MPtrj`]
+    expect(COMPLIANT_TRAINING_SETS.sort()).toEqual(expected.sort())
+  })
+
+  it(`is exported as an array`, () => {
+    expect(Array.isArray(COMPLIANT_TRAINING_SETS)).toBe(true)
   })
 })
 

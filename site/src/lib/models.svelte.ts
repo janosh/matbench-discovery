@@ -130,7 +130,7 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
 update_models_cps(MODELS, CPS_CONFIG)
 
 // Compute compliant training sets from datasets.yml (datasets with compliant: true)
-const COMPLIANT_TRAINING_SETS: string[] = Object.entries(DATASETS)
+export const COMPLIANT_TRAINING_SETS: string[] = Object.entries(DATASETS)
   .filter(([_, val]) => typeof val === `object` && !Array.isArray(val) && val.compliant)
   .map(([key]) => key)
 

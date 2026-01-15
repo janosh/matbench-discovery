@@ -653,7 +653,7 @@ MatPES r2SCAN:
 
 MDR Phonon PBE:
   name: MDR Phonon PBE
-  url: https://alexandria.icams.rub.de/
+  url: https://alexandria.icams.rub.de/data/phonon_benchmark/pbe
   download_url: https://alexandria.icams.rub.de/data/phonon_benchmark/
   doi: https://doi.org/10.48550/arXiv.2412.16551
   n_structures: 9_959
