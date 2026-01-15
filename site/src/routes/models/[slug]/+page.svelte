@@ -231,7 +231,7 @@
         {heatmap_values}
         {color_scale}
         bind:active_element
-        tile_props={{ float_fmt: `.2` }}
+        tile_props={{ float_fmt: `.2f` }}
         show_photo={false}
         missing_color="rgba(255,255,255,0.3)"
       >

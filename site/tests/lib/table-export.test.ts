@@ -198,7 +198,8 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
       const container = captured_container as HTMLElement | null
       const preserved_elements = container ? container.querySelectorAll(`sub, sup`) : null
       // Verify query executes without error; mock returns 2 elements
-      expect(preserved_elements?.length).toBeGreaterThanOrEqual(0)
+      expect(preserved_elements).not.toBeNull()
+      expect(preserved_elements?.length).toBe(2)
     })
 
     it(`handles table not found error for ${format}`, async () => {
