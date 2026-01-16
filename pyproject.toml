@@ -139,7 +139,7 @@ markers = [
 ]
 
 [tool.codespell]
-ignore-words-list = "nd,te,fpr,matris,titel,FPR"
+ignore-words-list = "nd,te,fpr,matris,titel"
 
 [tool.ty.rules]
 unused-ignore-comment = "warn"
