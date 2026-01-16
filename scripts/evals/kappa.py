@@ -52,19 +52,19 @@ def main() -> int:
             # Update YAML file
             metrics_dict = {"srme": kappa_srme, "sre": kappa_sre}
             phonons.write_metrics_to_yaml(model, metrics_dict, model.kappa_103_path)
-            print(f"\t✓ Updated {model.yaml_path}")
+            print(f"\tUpdated {model.yaml_path}")
             n_success += 1
 
         except Exception as exc:
-            print(f"\t✗ Error processing {model.label}: {exc}")
+            print(f"\tError processing {model.label}: {exc}")
             n_skipped += 1
             continue
 
     # Exit with error if no models were successfully evaluated
     if n_success == 0:
-        print(f"\n✗ No models evaluated successfully ({n_skipped} skipped)")
+        print(f"\nNo models evaluated successfully ({n_skipped} skipped)")
         return 1
-    print(f"\n✓ Successfully evaluated {n_success} model(s), {n_skipped} skipped")
+    print(f"\nSuccessfully evaluated {n_success} model(s), {n_skipped} skipped")
     return 0
 
 

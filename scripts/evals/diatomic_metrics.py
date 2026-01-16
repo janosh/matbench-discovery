@@ -62,14 +62,14 @@ for model in models_to_evaluate:
 
     # Write metrics to YAML
     mean_metrics = diatomics.write_metrics_to_yaml(model, metrics)
-    print(f"✓ {model.label}:")
+    print(f"{model.label}:")
     for metric, val in mean_metrics.items():
         print(f"  {metric}: {val:.5}")
     n_success += 1
 
 # Exit with error if no models were successfully evaluated
 if n_success == 0:
-    print(f"\n✗ No models evaluated successfully ({n_skipped} skipped)")
+    print(f"\nNo models evaluated successfully ({n_skipped} skipped)")
     sys.exit(1)
 else:
-    print(f"\n✓ Successfully evaluated {n_success} model(s), {n_skipped} skipped")
+    print(f"\nSuccessfully evaluated {n_success} model(s), {n_skipped} skipped")
