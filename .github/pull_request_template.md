@@ -4,7 +4,7 @@
 
 ## Checklist
 
-Please check the following items before submitting your PR:
+Please open PRs as `draft` and only mark as `ready to review` after checking off the following items:
 
 - [ ] I created a new folder and YAML metadata file `models/<arch_name>/<model_variant>.yml` for my submission. `arch_name` is the name of the architecture and `model_variant.yml` includes things like author details, training set names and important hyperparameters.
 - [ ] I added the new model as a new attribute [`Model.<model_variant>` enum](https://github.com/janosh/matbench-discovery/blob/57d0d0c8a14cd317/matbench_discovery/enums.py#L274) on the `Model` enum in `enums.py`.
@@ -15,7 +15,9 @@ Please check the following items before submitting your PR:
 - [ ] I included the urls to the Figshare files in the YAML metadata file (`models/<arch_name>/<model_variant>.yml`). If not using Figshare I have included the urls to the cloud storage service in the description of the PR.
 - [ ] I included the test script (`test_<arch_name>_<task>.py` for `task` in `discovery`, `kappa`, `diatomics`) that generated the prediction files.
 - [ ] I have run `just prepare-model-submission <model_variant>` as described in the [contributing guide](https://github.com/janosh/matbench-discovery/blob/main/contributing.md) to check metadata and generate the plots needed for submission.
-- [ ] I have installed/run the pre-commit hooks (`prek install` or `uvx prek`)
+- [ ] I have installed/run the pre-commit hooks (`prek install` or `uvx prek`) and ensured all checks are passing.
+
+Marking your PR as `ready to review` will trigger an automated code review, please address any issues raised by the automated review. For the maintainers minimizing the final human review process enables us to merge your submissions much faster!
 
 ## Additional Information (Optional)
 
