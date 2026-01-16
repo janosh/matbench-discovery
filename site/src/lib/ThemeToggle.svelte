@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Icon } from '$lib'
+  import { Icon } from 'matterviz'
   import { onMount } from 'svelte'
 
   let theme: `light` | `dark` = $state(`dark`)

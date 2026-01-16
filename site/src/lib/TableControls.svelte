@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Icon, type Label, TableColumnToggleMenu } from '$lib'
+  import { type Label, TableColumnToggleMenu } from '$lib'
+  import { Icon } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 

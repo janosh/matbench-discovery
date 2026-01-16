@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { Icon } from '$lib'
+  import { Icon, type IconName } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
-  import type { IconName } from './icons'
 
   let { icons = $bindable([]), ...rest }: HTMLAttributes<HTMLSpanElement> & {
     icons?: { id?: string; src?: string; name: string }[]

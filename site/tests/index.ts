@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, vi } from 'vitest'
 
 // matchMedia mock for Svelte MediaQuery - needed for svelte-multiselect
-Object.defineProperty(window, `matchMedia`, {
+Object.defineProperty(globalThis, `matchMedia`, {
   writable: true,
   value: (query: string) => ({
     matches: false,
@@ -15,33 +15,32 @@ Object.defineProperty(window, `matchMedia`, {
   }),
 })
 
-// Mock $app modules for SvelteKit - must be at top level before any imports
-vi.mock(`$app/state`, () => ({
-  page: {
-    url: {
-      pathname: `/`,
-      searchParams: new URLSearchParams(),
+// Hoisted mocks for SvelteKit $app modules - more efficient than vi.mock at top level
+const app_mocks = vi.hoisted(() => ({
+  state: {
+    page: {
+      url: { pathname: `/`, searchParams: new URLSearchParams() },
+      params: {},
+      route: { id: null },
     },
-    params: {},
-    route: {
-      id: null,
-    },
+  },
+  environment: { browser: false, building: false, version: `test` },
+  navigation: {
+    goto: vi.fn(),
+    invalidate: vi.fn(),
+    invalidateAll: vi.fn(),
+    preloadData: vi.fn(),
+    preloadCode: vi.fn(),
+    beforeNavigate: vi.fn(),
+    afterNavigate: vi.fn(),
+    pushState: vi.fn(),
+    replaceState: vi.fn(),
   },
 }))
 
-vi.mock(`$app/environment`, () => ({ browser: false, building: false, version: `test` }))
-
-vi.mock(`$app/navigation`, () => ({
-  goto: vi.fn(),
-  invalidate: vi.fn(),
-  invalidateAll: vi.fn(),
-  preloadData: vi.fn(),
-  preloadCode: vi.fn(),
-  beforeNavigate: vi.fn(),
-  afterNavigate: vi.fn(),
-  pushState: vi.fn(),
-  replaceState: vi.fn(),
-}))
+vi.mock(`$app/state`, () => app_mocks.state)
+vi.mock(`$app/environment`, () => app_mocks.environment)
+vi.mock(`$app/navigation`, () => app_mocks.navigation)
 
 beforeAll(() => {
   const animation = {

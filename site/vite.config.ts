@@ -96,8 +96,9 @@ export default defineConfig(({ mode }) => ({
   },
 
   test: {
-    environment: `jsdom`,
+    environment: `happy-dom`, // Faster than jsdom
     css: true,
+    pool: `threads`, // Parallel test execution
     coverage: {
       reporter: [`text`, `json-summary`],
     },

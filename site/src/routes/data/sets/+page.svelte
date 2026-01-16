@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { arr_to_str, DATASETS, format_date, Icon } from '$lib'
-  import { icon_data } from '$lib/icons'
+  import { arr_to_str, DATASETS, format_date } from '$lib'
   import { DATASET_METADATA_COLS, title_case } from '$lib/labels'
   import pkg from '$site/package.json'
-  import { HeatmapTable, type RowData } from 'matterviz'
+  import type { IconName, RowData } from 'matterviz'
+  import { HeatmapTable, Icon, ICON_DATA } from 'matterviz'
 
   const license_map: Record<string, string> = {
     'CC-BY-4.0': `Creative Commons Attribution 4.0 International`,
@@ -11,8 +11,8 @@
     MIT: `MIT License`,
   }
 
-  const icon = (name: keyof typeof icon_data, color?: string) => {
-    const data = icon_data[name]
+  const icon = (name: IconName, color?: string) => {
+    const data = ICON_DATA[name]
     const fill = `stroke` in data ? `none` : `currentColor`
     const stroke = `stroke` in data ? `stroke="currentColor"` : ``
     return `<svg fill="${fill}" ${stroke} ${

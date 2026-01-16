@@ -472,14 +472,14 @@ export const org_logos = {
   'DAMO Academy, Alibaba Inc': `/logos/damo-alibaba-logo.svg`,
   'Deep Principle': `/logos/deep-principle.svg`,
   DeePMD: `/logos/deepmd.svg`,
-  'FAIR at Meta': `icon:Meta`,
+  'FAIR at Meta': `icon:LogoMeta`,
   'Google DeepMind': `/logos/deepmind.svg`,
   'ICAMS, Ruhr University Bochum': `/logos/icams-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
   'Institute of Computing Technology, Chinese Academy of Science, Beijing':
     `/logos/ict-cas-beijing.svg`,
   'Massachusetts Institute of Technology': `/logos/mit.svg`,
-  'Microsoft Research': `icon:Microsoft`,
+  'Microsoft Research': `icon:LogoMicrosoft`,
   'MIR Group, Harvard University': `/logos/mir-group-harvard.svg`,
   'National Institute of Standards and Technology': `/logos/nist.svg`,
   'Ningbo Institute of Artificial Intelligence Industry':
@@ -492,6 +492,7 @@ export const org_logos = {
   'Tsinghua University': `/logos/tsinghua-university.svg`,
   'UC San Diego': `/logos/uc-san-diego.svg`,
   'UC Berkeley': `/logos/uc-berkeley.svg`,
+  'University of California, Los Angeles': `/logos/ucla.svg`,
   'University of Cambridge': `/logos/cambridge-university.svg`,
   'University of Florida': `/logos/university-of-florida.svg`,
   'University of Minnesota': `/logos/university-of-minnesota.svg`,
@@ -514,7 +515,7 @@ export function get_org_logo(
 
   for (const [key_val, logo_val] of Object.entries(org_logos)) {
     // Check if lowercased affiliation string includes lowercased org key
-    if (affiliation.includes(key_val)) {
+    if (affiliation.toLowerCase().includes(key_val.toLowerCase())) {
       if (logo_val.startsWith(`/logos/`)) return { name: key_val, src: logo_val }
       else return { name: key_val, id: logo_val }
     }
