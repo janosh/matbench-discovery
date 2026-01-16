@@ -492,6 +492,7 @@ export const org_logos = {
   'Tsinghua University': `/logos/tsinghua-university.svg`,
   'UC San Diego': `/logos/uc-san-diego.svg`,
   'UC Berkeley': `/logos/uc-berkeley.svg`,
+  'University of California, Los Angeles': `/logos/ucla.svg`,
   'University of Cambridge': `/logos/cambridge-university.svg`,
   'University of Florida': `/logos/university-of-florida.svg`,
   'University of Minnesota': `/logos/university-of-minnesota.svg`,
