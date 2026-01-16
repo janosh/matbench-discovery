@@ -21,6 +21,7 @@ def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     mock_response = requests.Response()
     mock_response.status_code = 200
     mock_response._content = test_content  # noqa: SLF001
+    mock_response.iter_content = lambda chunk_size: [test_content]  # noqa: ARG005
 
     with patch("requests.get", return_value=mock_response):
         download_file(str(dest_path), url)
@@ -30,6 +31,7 @@ def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     mock_response = requests.Response()
     mock_response.status_code = 404
     mock_response._content = b"Not found"  # noqa: SLF001
+    mock_response.iter_content = lambda chunk_size: [b"Not found"]  # noqa: ARG005
 
     with patch("requests.get", return_value=mock_response):
         download_file(str(dest_path), url)  # Should print error but not raise
@@ -51,6 +53,7 @@ def test_maybe_auto_download_file(
     mock_response = requests.Response()
     mock_response.status_code = 200
     mock_response._content = b"test content"  # noqa: SLF001
+    mock_response.iter_content = lambda chunk_size: [b"test content"]  # noqa: ARG005
 
     # Test 1: Auto-download enabled (default)
     monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")

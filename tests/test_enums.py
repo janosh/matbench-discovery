@@ -237,6 +237,10 @@ def test_files_enum_auto_download(
             if self.status_code >= 400:
                 raise requests.HTTPError(f"HTTP Error: {self.status_code}")
 
+        def iter_content(self, chunk_size: int = 8192) -> list[bytes]:  # noqa: ARG002
+            """Mock iter_content for streaming."""
+            return [self.content]
+
     # Mock stdin to simulate non-interactive mode
     class MockStdin:
         def isatty(self) -> bool:

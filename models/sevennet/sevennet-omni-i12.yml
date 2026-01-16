@@ -121,7 +121,6 @@ metrics:
   geo_opt:
     pred_file: models/sevennet/sevennet-omni-i12/2026-01-12-wbm-IS2RE-FIRE.jsonl.gz
     pred_file_url: https://figshare.com/files/60979039
-
     struct_col: sevennet_structure
     symprec=1e-2:
       rmsd: 0.0618 # unitless

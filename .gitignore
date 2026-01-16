@@ -45,4 +45,4 @@ data/*-models-geo-opt-analysis-symprec=*.csv.gz
 .cursor
 
 # astral
-uv.lock
+*.lock

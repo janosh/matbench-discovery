@@ -4,6 +4,7 @@ import pandas as pd
 from pymatviz.enums import Key
 
 from matbench_discovery import STABILITY_THRESHOLD
+from matbench_discovery.cli import cli_args
 from matbench_discovery.data import Model, df_wbm, load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics.discovery import stable_metrics
@@ -13,7 +14,8 @@ __date__ = "2023-02-04"
 
 
 # load WBM summary dataframe with all models' formation energy predictions (eV/atom)
-df_preds = load_df_wbm_with_preds().round(3)
+models_to_load = cli_args.models or list(Model)
+df_preds = load_df_wbm_with_preds(models=models_to_load).round(3)
 
 
 df_metrics = pd.DataFrame()
@@ -33,7 +35,7 @@ uniq_proto_prevalence = (
     df_wbm.query(MbdKey.uniq_proto)[MbdKey.each_true] <= STABILITY_THRESHOLD
 ).mean()
 
-for model in Model:
+for model in models_to_load:
     if not model.is_complete:
         continue
 
@@ -79,7 +81,7 @@ df_metrics_uniq_protos = df_metrics_uniq_protos.round(3).sort_values(
 
 # dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()
-for model in Model:
+for model in models_to_load:
     if not model.is_complete:
         continue
 
@@ -122,7 +124,7 @@ the hull and negative for stable materials below it.
 
 # dataframe of all model prediction errors for energy above convex hull (EACH) (eV/atom)
 df_each_err = pd.DataFrame()
-for model in Model:
+for model in models_to_load:
     if not model.is_complete:
         continue
 

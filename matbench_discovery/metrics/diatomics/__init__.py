@@ -41,10 +41,18 @@ class DiatomicCurve:
     forces: np.ndarray  # shape (n_distances, n_atoms, 3)
 
     def __post_init__(self) -> None:
-        """Convert inputs to numpy arrays."""
+        """Convert inputs to numpy arrays and reshape forces if needed."""
         self.energies = np.asarray(self.energies)
         self.forces = np.asarray(self.forces)
         self.distances = np.asarray(self.distances)
+
+        n_dists = len(self.distances)
+        n_atoms = 2  # diatomic molecule
+
+        # Handle forces stored as (1, n_distances*n_atoms, 3)
+        # instead of (n_distances, n_atoms, 3)
+        if self.forces.shape == (1, n_dists * n_atoms, 3):
+            self.forces = self.forces.reshape(n_dists, n_atoms, 3)
 
 
 @dataclass
@@ -225,7 +233,7 @@ def calc_diatomic_metrics(
 
 def write_metrics_to_yaml(
     model: Model, metrics: dict[str, dict[str, float]]
-) -> dict[str, float]:
+) -> dict[str, str | float | None]:
     """Write diatomic metrics to model YAML file.
 
     Args:
@@ -234,7 +242,7 @@ def write_metrics_to_yaml(
             metric values.
 
     Returns:
-        dict[str, dict[str, float]]: Mean metrics across all elements.
+        dict[str, str | float | None]: Mean metrics across all elements.
     """
     # Calculate mean metrics across all elements
     mean_metrics = {
@@ -245,6 +253,20 @@ def write_metrics_to_yaml(
     }
 
     if mean_metrics:
+        # Preserve pred_file and pred_file_url - these reference the source data
+        # file, not the computed metrics, so they remain valid on recalculation
+        existing = model.metrics.get("diatomics", {})
+        if isinstance(existing, dict):
+            ordered_metrics: dict[str, str | float | None] = {}
+            # Put file paths first
+            if "pred_file" in existing:
+                ordered_metrics["pred_file"] = existing["pred_file"]
+            if "pred_file_url" in existing:
+                ordered_metrics["pred_file_url"] = existing["pred_file_url"]
+            # Then add computed metrics
+            ordered_metrics.update(mean_metrics)
+            mean_metrics = ordered_metrics
+
         update_yaml_file(model.yaml_path, "metrics.diatomics", mean_metrics)
         print(f"Wrote {model.label} diatomic metrics to {model.yaml_path}")
     return mean_metrics

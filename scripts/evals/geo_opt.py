@@ -65,7 +65,7 @@ for model in Model:
         continue
 
     print(
-        f"Found {model.label} analysis file:\n➤ {analysis_path.split('/models/')[-1]}"
+        f"Found {model.label} analysis file:\n  {analysis_path.split('/models/')[-1]}"
     )
     df_model = pd.read_csv(analysis_path, index_col=0)
     model_data[model.label] = df_model

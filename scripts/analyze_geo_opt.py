@@ -31,6 +31,7 @@ from matbench_discovery.cli import cli_parser
 from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import geo_opt
+from matbench_discovery.remote.fetch import maybe_auto_download_file
 from matbench_discovery.structure import symmetry
 
 if TYPE_CHECKING:
@@ -134,6 +135,25 @@ def analyze_model_symprec(
             geo_opt_filename = geo_opt_filename.removesuffix(suffix)
             break
     geo_opt_csv_path = f"{geo_opt_filename}-{symprec_str}-{moyo_version}.csv.gz"
+
+    # Try to download existing analysis file only if path matches exactly
+    symprec_metrics = geo_opt_metrics.get(symprec_str, {})
+    if isinstance(symprec_metrics, dict):
+        analysis_url = symprec_metrics.get("analysis_file_url")
+        analysis_file = symprec_metrics.get("analysis_file")
+        analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
+
+        if analysis_file_path == geo_opt_csv_path:
+            # Paths match - try to download if file missing
+            if not os.path.isfile(geo_opt_csv_path) and analysis_url:
+                maybe_auto_download_file(
+                    analysis_url, geo_opt_csv_path, label=f"{model.label} {symprec_str}"
+                )
+        elif analysis_file:
+            # Paths differ (moyo version change, etc.) - will recompute
+            print(f"⚠️ {model.label} {symprec_str=} path mismatch, will recompute")
+            print(f"  - Expected: {geo_opt_csv_path}")
+            print(f"  - Found: {analysis_file_path}")
 
     if os.path.isfile(geo_opt_csv_path) and not overwrite:
         print(f"{model.label} already analyzed at {geo_opt_csv_path}")
