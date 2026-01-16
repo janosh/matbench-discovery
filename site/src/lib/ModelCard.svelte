@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Label, ModelData } from '$lib'
-  import { AuthorBrief, DATASETS, Icon } from '$lib'
+  import { AuthorBrief, DATASETS } from '$lib'
+  import { Icon } from 'matterviz'
   import pkg from '$site/package.json'
   import { format_num } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'

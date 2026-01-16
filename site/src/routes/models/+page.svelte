@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Icon, type Label, ModelCard } from '$lib'
+  import { type Label, ModelCard } from '$lib'
+  import { Icon } from 'matterviz'
   import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'

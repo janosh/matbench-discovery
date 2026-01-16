@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Icon, type Label } from '$lib'
+  import { type Label } from '$lib'
+  import { Icon } from 'matterviz'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
 
   let { columns = $bindable([]), column_panel_open = $bindable(false) }: {

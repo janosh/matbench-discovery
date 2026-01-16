@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Icon } from '$lib'
+  import { Icon } from 'matterviz'
   import type { CpsConfig } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS } from '$lib/labels'
   import { format_num, type Point } from 'matterviz'

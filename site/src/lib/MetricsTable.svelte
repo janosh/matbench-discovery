@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Icon, IconList, TableControls } from '$lib'
+  import { IconList, TableControls } from '$lib'
   import { metric_better_as } from '$lib/metrics'
   import type {
     CellSnippetArgs,
@@ -9,11 +9,11 @@
     ModelData,
     SortDir,
   } from '$lib/types'
-  import {
-    type CellSnippetArgs as MattervizCellSnippetArgs,
-    HeatmapTable,
-    type Label as MattervizLabel,
+  import type {
+    CellSnippetArgs as MattervizCellSnippetArgs,
+    Label as MattervizLabel,
   } from 'matterviz'
+  import { HeatmapTable, Icon } from 'matterviz'
   import type { Snippet } from 'svelte'
   import { click_outside } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
