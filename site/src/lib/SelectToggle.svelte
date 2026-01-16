@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Icon } from '$lib'
+  import { Icon } from 'matterviz'
   import { tooltip as tip } from 'svelte-multiselect/attachments'
 
   interface OptionInfo {

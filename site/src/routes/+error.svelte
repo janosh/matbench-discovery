@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { Icon } from '$lib'
+  import { Icon } from 'matterviz'
   import pkg from '$site/package.json'
 
   let online: boolean = $state(true)

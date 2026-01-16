@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Icon } from '$lib'
   import pkg from '$site/package.json'
+  import { Icon } from 'matterviz'
 </script>
 
 <footer>

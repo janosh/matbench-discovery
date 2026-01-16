@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { type Author, Icon } from '$lib'
+  import { type Author } from '$lib'
+  import { Icon } from 'matterviz'
   import type { SVGAttributes } from 'svelte/elements'
 
   let { author, ...rest }: SVGAttributes<SVGSVGElement> & {

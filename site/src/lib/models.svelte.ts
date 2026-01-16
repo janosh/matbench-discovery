@@ -68,17 +68,20 @@ export const MODELS = $state(
 
       // Get top affiliations with logos
       const affiliation_counts: Record<string, number> = {}
-      const affiliation_data: Record<string, { name: string; id?: string }> = {}
+      const affiliation_data: Record<
+        string,
+        { name: string; id?: string; src?: string }
+      > = {}
 
       for (const author of metadata.authors ?? ([] as Author[])) {
         if (!author.affiliation) continue
 
-        const org_logos = get_org_logo(author.affiliation)
-        if (org_logos?.id) {
-          const logo_id = org_logos.id
-          affiliation_counts[logo_id] = (affiliation_counts[logo_id] || 0) + 1
-          if (!(logo_id in affiliation_data)) {
-            affiliation_data[logo_id] = org_logos
+        const org_logo = get_org_logo(author.affiliation)
+        const logo_key = org_logo?.id ?? org_logo?.src
+        if (logo_key && org_logo) {
+          affiliation_counts[logo_key] = (affiliation_counts[logo_key] || 0) + 1
+          if (!(logo_key in affiliation_data)) {
+            affiliation_data[logo_key] = org_logo
           }
         } else if (!import.meta.env.PROD) {
           // only warn about missing logos in dev mode
@@ -87,9 +90,9 @@ export const MODELS = $state(
       }
 
       const frequent_logos = Object.entries(affiliation_counts)
-        .sort(([_id_a, count_a], [_id_b, count_b]) => count_b - count_a)
+        .sort(([_key_a, count_a], [_key_b, count_b]) => count_b - count_a)
         .slice(0, 3)
-        .map(([id]) => affiliation_data[id])
+        .map(([key]) => affiliation_data[key])
 
       return {
         ...metadata,

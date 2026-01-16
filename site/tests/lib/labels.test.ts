@@ -96,7 +96,7 @@ describe(`format_property_path`, () => {
 describe(`get_org_logo`, () => {
   test.each([
     [`Google DeepMind`, { name: `Google DeepMind`, src: `/logos/deepmind.svg` }],
-    [`FAIR at Meta`, { name: `FAIR at Meta`, id: `icon:Meta` }],
+    [`FAIR at Meta`, { name: `FAIR at Meta`, id: `icon:LogoMeta` }],
     [`Some unknown university`, undefined],
     [
       `Massachusetts Institute of Technology, USA`,

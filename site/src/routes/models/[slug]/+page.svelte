@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { calculate_days_ago, DATASETS, Icon, IconList, PtableInset } from '$lib'
+  import { calculate_days_ago, DATASETS, IconList, PtableInset } from '$lib'
+  import { Icon } from 'matterviz'
   import {
     discovery_task_tooltips,
     model_type_tooltips,

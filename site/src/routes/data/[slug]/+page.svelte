@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { arr_to_str, calculate_days_ago, DATASETS, format_date, Icon } from '$lib'
+  import { arr_to_str, calculate_days_ago, DATASETS, format_date } from '$lib'
+  import { Icon } from 'matterviz'
   import type { Dataset } from '$lib/types'
   import pkg from '$site/package.json'
   import { format_num } from 'matterviz'

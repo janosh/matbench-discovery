@@ -7,11 +7,11 @@
     DISCOVERY_SETS,
     DynamicScatter,
     GitHubActivityScatter,
-    Icon,
     MetricsTable,
     RadarChart,
     SelectToggle,
   } from '$lib'
+  import { Icon } from 'matterviz'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import {
