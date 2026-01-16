@@ -239,6 +239,9 @@ You can include arbitrary other supporting files like metadata and model feature
 
 Add the model to the `Model` enum in [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/57d0d0c8a14cd3/matbench_discovery/enums.py#L274) pointing to the correct metadata file.
 
+> [!WARNING]
+> Do not include a `filter_bad_preds.py` script or equivalent. This was a historical flaw in the evaluation and now all OOM outlier prediction handling is handled internally and consistently removing the need for this filtering stage.
+
 ### Step 3: Upload results files to Zenodo
 
 Upload the files for the predictions, optimized geometries and phonons to Zenodo and share the links in your PR description.
@@ -254,7 +257,58 @@ git commit -m 'add <model_name> to Matbench Discovery leaderboard'
 
 And you're done! Once tests pass and the PR is merged, your model will be added to the leaderboard! 🎉
 
-### Step 5 (optional): Copy WandB runs into our project
+### Step 5: Validate your submission with the justfile
+
+We provide a [`justfile`](https://github.com/casey/just) at the repository root to help validate your submission before opening a PR. The `prepare-model-submission` command runs all evaluation scripts, generates required figures, and checks the PR checklist requirements.
+
+#### Installing just
+
+If you don't have `just` installed, you can install it with:
+
+```sh
+# macOS
+brew install just
+
+# Linux (via cargo)
+cargo install just
+
+# Or with pipx
+pipx install rust-just
+
+# Or see https://github.com/casey/just#installation for more options
+```
+
+#### Running the validation
+
+```sh
+just prepare-model-submission <model_name>
+```
+
+For example:
+
+```sh
+just prepare-model-submission mace-mpa-0
+# or with underscores (both work)
+just prepare-model-submission mace_mpa_0
+```
+
+This command will:
+
+1. **Check PR requirements**: Verify your YAML file exists, model is registered in the `Model` enum, prediction URLs are in the YAML, and test scripts exist
+2. **Run evaluation scripts**: Execute discovery, kappa (phonon), and diatomic metrics evaluation for your model
+3. **Generate figures**: Create the required energy parity and per-element error plots
+
+You can also run individual steps:
+
+```sh
+# Run only evaluation scripts
+just eval-model <model_name>
+
+# Run only plot generation
+just plot-model <model_name>
+```
+
+### Step 6 (optional): Copy WandB runs into our project
 
 [Weights and Biases](https://wandb.ai) ([GitHub](https://github.com/wandb/wandb)) is a tool for logging training and test runs of ML models. It auto-collects metadata like:
 

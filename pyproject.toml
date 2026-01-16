@@ -31,6 +31,7 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
   "ase>=3.25",
+  "filelock>=3.13",
   "numpy>=1.26",
   "pandas>=2.2.2",
   "plotly>=6.3",
@@ -138,7 +139,7 @@ markers = [
 ]
 
 [tool.codespell]
-ignore-words-list = "nd,te,fpr,matris,titel"
+ignore-words-list = "nd,te,fpr,matris,titel,FPR"
 
 [tool.ty.rules]
 unused-ignore-comment = "warn"

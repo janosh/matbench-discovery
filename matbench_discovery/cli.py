@@ -1,6 +1,7 @@
 """Central argument parser for Matbench Discovery scripts."""
 
 import multiprocessing as mp
+import os
 from argparse import ArgumentParser
 
 from pymatviz.enums import Key
@@ -11,6 +12,12 @@ CLI_TIMEOUT = 30
 
 cli_parser = ArgumentParser(
     description="CLI flags for eval, plot and analysis scripts."
+)
+
+cli_parser.add_argument(
+    "--auto-download",
+    action="store_true",
+    help="Auto-confirm file downloads without prompting.",
 )
 
 cli_parser.add_argument(
@@ -93,8 +100,12 @@ plot_group.add_argument(
 )
 cli_args, _ignore_unknown = cli_parser.parse_known_args()
 
+# Set env var to auto-confirm file downloads when --auto-download is passed
+if cli_args.auto_download:
+    os.environ["MBD_AUTO_DOWNLOAD_FILES"] = "true"
+
 # Monkey-patch Plotly to suppress browser opening when --no-show is passed
 if cli_args.no_show:
     import plotly.graph_objects as go
 
-    go.Figure.show = lambda *_args, **_kwargs: None  # type: ignore[method-assign]
+    go.Figure.show = lambda *_args, **_kwargs: None

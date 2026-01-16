@@ -222,6 +222,16 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
     model = Model.mace_mp_0
     monkeypatch.setattr(Model, "yaml_path", yaml_path)
+    monkeypatch.setattr(
+        Model,
+        "metrics",
+        {
+            "diatomics": {
+                "pred_file": "models/mace/mace-mp-0/2025-02-13-test-diatomics.json.gz",
+                "pred_file_url": "https://figshare.com/files/fake-url-00000",
+            }
+        },
+    )
 
     # Test with empty metrics
     result = diatomics.write_metrics_to_yaml(model, {})
@@ -253,4 +263,10 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
     # Check the returned dictionary
     assert isinstance(result, dict)
-    assert result == {"conservation": 4.5, "smoothness": 2.5, "tortuosity": 3.5}
+    assert result == {
+        "pred_file": "models/mace/mace-mp-0/2025-02-13-test-diatomics.json.gz",
+        "pred_file_url": "https://figshare.com/files/fake-url-00000",
+        "conservation": 4.5,
+        "smoothness": 2.5,
+        "tortuosity": 3.5,
+    }

@@ -26,6 +26,7 @@ import ase.io
 import pandas as pd
 import yaml
 from ase import Atoms
+from filelock import FileLock
 from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from tqdm import tqdm
@@ -318,6 +319,9 @@ def update_yaml_file(
 ) -> dict[str, Any]:
     """Update a YAML file at a specific dotted path with new data.
 
+    Uses file locking to prevent race conditions when multiple processes
+    try to update the same file simultaneously.
+
     Args:
         file_path (str | Path): Path to YAML file to update
         dotted_path (str): Dotted path to update (e.g. 'metrics.discovery')
@@ -337,28 +341,31 @@ def update_yaml_file(
     if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
         raise ValueError(f"Invalid {dotted_path=}")
 
-    with open(file_path, encoding="utf-8") as file:
-        yaml_data = round_trip_yaml.load(file)
+    # Use a lock file to prevent race conditions
+    lock_path = f"{file_path}.lock"
+    with FileLock(lock_path):
+        with open(file_path, encoding="utf-8") as file:
+            yaml_data = round_trip_yaml.load(file)
 
-    # Navigate to the correct nested level
-    current = yaml_data
-    *parts, last = dotted_path.split(".")
+        # Navigate to the correct nested level
+        current = yaml_data
+        *parts, last = dotted_path.split(".")
 
-    for part in parts:
-        if part not in current:
-            current[part] = {}
-        current = current[part]
+        for part in parts:
+            if part not in current:
+                current[part] = {}
+            current = current[part]
 
-    # Update the data at the final level
-    if last not in current or current[last] is None:
-        current[last] = {}
-    for key, val in current[last].items():
-        data.setdefault(key, val)
-    # Replace the entire current[last] section to preserve comments
-    current[last] = data
+        # Update the data at the final level
+        if last not in current or current[last] is None:
+            current[last] = {}
+        for key, val in current[last].items():
+            data.setdefault(key, val)
+        # Replace the entire current[last] section to preserve comments
+        current[last] = data
 
-    # Write back to file
-    with open(file_path, mode="w", encoding="utf-8") as file:
-        round_trip_yaml.dump(yaml_data, file)
+        # Write back to file
+        with open(file_path, mode="w", encoding="utf-8") as file:
+            round_trip_yaml.dump(yaml_data, file)
 
-    return yaml_data
+        return yaml_data

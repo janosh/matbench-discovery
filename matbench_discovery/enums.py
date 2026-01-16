@@ -604,15 +604,17 @@ class DataFiles(Files):
 
         abs_path = f"{type(self).base_dir}/{rel_path}"
         if not os.path.isfile(abs_path):
+            # whether to auto-download files without prompting
+            auto_download = os.getenv("MBD_AUTO_DOWNLOAD_FILES", "").lower() == "true"
             is_ipython = hasattr(builtins, "__IPYTHON__")
-            # default to 'y' if not in interactive session, and user can't answer
+            # default to 'y' if auto-download enabled or not in interactive session
             answer = (
-                input(
+                "y"
+                if auto_download or not (is_ipython or sys.stdin.isatty())
+                else input(
                     f"{abs_path!r} associated with {key=} does not exist. Download it "
                     "now? This will cache the file for future use. [y/n] "
                 )
-                if is_ipython or sys.stdin.isatty()
-                else "y"
             )
             if answer.lower().strip() == "y":
                 print(f"Downloading {key!r} from {self.url} to {abs_path}")
