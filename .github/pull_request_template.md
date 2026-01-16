@@ -14,7 +14,7 @@ Please check the following items before submitting your PR:
 - [ ] I have uploaded the diatomic predictions to Figshare or another cloud storage service (`<yyyy-mm-dd>-diatomics.json.gz`).
 - [ ] I included the urls to the Figshare files in the YAML metadata file (`models/<arch_name>/<model_variant>.yml`). If not using Figshare I have included the urls to the cloud storage service in the description of the PR.
 - [ ] I included the test script (`test_<arch_name>_<task>.py` for `task` in `discovery`, `kappa`, `diatomics`) that generated the prediction files.
-- [ ] I have run `just prepare-model-submission <model_variant>` as described in the [contributing guide](https://github.com/janosh/matbench-discovery/contributing.md) to check metadata and generate the plots needed for submission.
+- [ ] I have run `just prepare-model-submission <model_variant>` as described in the [contributing guide](https://github.com/janosh/matbench-discovery/blob/main/contributing.md) to check metadata and generate the plots needed for submission.
 - [ ] I have installed/run the pre-commit hooks (`prek install` or `uvx prek`)
 
 ## Additional Information (Optional)
