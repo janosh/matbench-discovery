@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { Label } from '$lib'
+  // TODO remove @ts-ignore after next matterviz release exports ToggleMenu
+  // @ts-ignore
   import { Icon, ToggleMenu } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
