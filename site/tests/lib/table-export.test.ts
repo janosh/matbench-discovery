@@ -45,6 +45,9 @@ const create_mock_table = () =>
     }),
   }) as unknown as Element
 
+// Save original createElement before any mocks
+const original_create_element = document.createElement.bind(document)
+
 describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
   let create_element_spy: MockInstance
   let query_selector_spy: MockInstance
@@ -53,7 +56,7 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Common mocks
+    // Common mocks - use original_create_element to avoid infinite recursion
     create_element_spy = vi
       .spyOn(document, `createElement`)
       .mockImplementation((tag: string) =>
@@ -63,7 +66,7 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
             download: ``,
             click: mock_click,
           } as unknown as HTMLAnchorElement)
-          : document.createElement(tag)
+          : original_create_element(tag)
       )
 
     query_selector_spy = vi
