@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { type Label, TableColumnToggleMenu } from '$lib'
-  import { Icon } from 'matterviz'
+  import type { Label } from '$lib'
+  import { Icon, ToggleMenu } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
@@ -119,7 +119,7 @@
     Heatmap
   </label>
 
-  <TableColumnToggleMenu bind:columns />
+  <ToggleMenu bind:columns />
 </div>
 
 <style>
