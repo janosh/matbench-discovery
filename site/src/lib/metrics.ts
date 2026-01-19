@@ -326,7 +326,9 @@ export function assemble_row_data(
         ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
         : `n/a`,
       Targets: targets_str,
-      'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${
+      [METADATA_COLS.date_added.key]: `<span title="${
+        format_date(model.date_added)
+      }" data-sort-value="${
         new Date(model.date_added).getTime()
       }">${model.date_added}</span>`,
       // Add Links as a special property

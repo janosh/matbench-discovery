@@ -73,6 +73,7 @@ export type TrainingSet =
 
 export type Label = LabelType & {
   color_scale?: keyof typeof d3sc // d3-scale-chromatic color scale name
+  property?: string // actual property name for data access (when different from key)
 }
 
 export const DISCOVERY_SETS = [

@@ -119,7 +119,7 @@ export const METADATA_COLS: MetadataLabels = {
     description: `Target property used to train the model`,
   },
   date_added: {
-    key: `Date Added`,
+    key: `date_added`,
     label: `Date Added`,
     format: `%b %y`,
     description: `Submission date to the leaderboard`,
@@ -138,13 +138,13 @@ export const METADATA_COLS: MetadataLabels = {
     unit: `Å`,
   },
   n_training_materials: {
-    key: `Training Materials`,
+    key: `n_training_materials`,
     label: `Training Materials`,
     description: `Number of training materials`,
     format: `~s`,
   },
   n_training_structures: {
-    key: `Training Structures`,
+    key: `n_training_structures`,
     label: `Training Structures`,
     description: `Number of training structures`,
     format: `~s`,
@@ -194,14 +194,14 @@ export const HYPERPARAMS: HyperparamLabels = {
     format: `~s`,
   },
   graph_construction_radius: {
-    key: `r<sub>cut</sub>`,
+    key: `graph_construction_radius`,
     label: `r<sub>cut</sub>`,
     path: `hyperparams`,
     description:
       `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
   },
   max_force: {
-    key: `f<sub>max</sub>`,
+    key: `max_force`,
     label: `f<sub>max</sub>`,
     path: `hyperparams`,
     description:
@@ -209,7 +209,7 @@ export const HYPERPARAMS: HyperparamLabels = {
     unit: `eV/Å`,
   },
   max_steps: {
-    key: `Steps`,
+    key: `max_steps`,
     label: `Steps`,
     path: `hyperparams`,
     description: `Maximum number of optimization steps allowed`,
@@ -229,19 +229,19 @@ export const HYPERPARAMS: HyperparamLabels = {
       `ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)`,
   },
   batch_size: {
-    key: `Batch size`,
+    key: `batch_size`,
     label: `Batch size`,
     path: `hyperparams`,
     description: `Batch size`,
   },
   epochs: {
-    key: `Epochs`,
+    key: `epochs`,
     label: `Epochs`,
     path: `hyperparams`,
     description: `Number of training epochs`,
   },
   n_layers: {
-    key: `Layers`,
+    key: `n_layers`,
     label: `Layers`,
     path: `hyperparams`,
     description: `Number of (usually message passing) layers`,
@@ -340,9 +340,10 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
     .map(([metric_key, symbol, better, desc, symprec]) => [
       `${metric_key}_${symprec}`,
       {
-        key: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
+        key: `${metric_key}_${symprec}`,
+        property: metric_key,
         symprec,
-        path: `metrics.geo_opt.symprec=${symprec}.${metric_key}`,
+        path: `metrics.geo_opt.symprec=${symprec}`,
         label: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
         description:
           `Fraction of structures where ML ground state has ${desc} DFT ground state at ${

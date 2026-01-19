@@ -16,6 +16,21 @@
     METADATA_COLS,
   } from './labels'
   import { get_nested_value } from './metrics'
+  import type { Label } from './types'
+
+  // Build data access path from label, handling property vs key distinction
+  function get_label_path(label: Label | undefined): string {
+    const prop_name = label?.property ?? label?.key ?? ``
+    return `${label?.path ?? ``}.${prop_name}`.replace(/^\./, ``)
+  }
+
+  // Get value from model using label's path, converting dates to timestamps
+  function get_label_value(model: ModelData, label: Label | undefined): unknown {
+    const path = get_label_path(label)
+    let val = get_nested_value(model, path)
+    if (path.includes(`date`)) val = new Date(val as string).getTime()
+    return val
+  }
 
   let {
     models,
@@ -97,7 +112,7 @@
   let model_counts_by_prop = $derived(
     options.reduce(
       (acc, prop) => {
-        const path = `${prop.path ?? ``}.${prop.key}`.replace(/^\./, ``)
+        const path = get_label_path(prop)
         acc[prop.key] = models.filter(
           (model) => get_nested_value(model, path) !== undefined,
         ).length
@@ -147,25 +162,10 @@
     models
       .filter(model_filter)
       .map((model) => {
-        let x_path = `${axes.x?.path ?? ``}.${axes.x?.key ?? ``}`.replace(/^\./, ``)
-        let x_val = get_nested_value(model, x_path)
-        if (x_path.includes(`date`)) x_val = new Date(x_val as string).getTime()
-
-        let y_path = `${axes.y?.path ?? ``}.${axes.y?.key ?? ``}`.replace(/^\./, ``)
-        let y_val = get_nested_value(model, y_path)
-        if (y_path.includes(`date`)) y_val = new Date(y_val as string).getTime()
-
-        let color_path = `${axes.color_value?.path ?? ``}.${
-          axes.color_value?.key ?? ``
-        }`.replace(/^\./, ``)
-        let color_value = get_nested_value(model, color_path)
-        if (color_path.includes(`date`)) {
-          color_value = new Date(color_value as string).getTime()
-        }
-
-        let size_path = `${axes.size_value?.path ?? ``}.${axes.size_value?.key ?? ``}`
-          .replace(/^\./, ``)
-        let size_value = get_nested_value(model, size_path)
+        const x_val = get_label_value(model, axes.x)
+        const y_val = get_label_value(model, axes.y)
+        let color_value = get_label_value(model, axes.color_value)
+        let size_value = get_label_value(model, axes.size_value)
         if (axes.size_value?.key === date_key) {
           const timestamp = new Date(String(size_value)).getTime()
           if (!isNaN(timestamp)) size_value = timestamp
@@ -223,7 +223,7 @@
   style="margin-block: 2em"
 >
   <div class="controls-row">
-    <label for="size-select">Size</label>
+    <label for="size-select">Marker Size</label>
     <Select
       {options}
       id="size-select"
@@ -285,7 +285,19 @@
       tick_format: axes.color_value?.format,
       property_options: color_options,
       selected_property_key: color_key,
-      on_property_change: (key) => (color_key = key),
+      data_loader: async (key) => {
+        color_key = key
+        const prop = options_by_key[key]
+        const values = models
+          .filter(model_filter)
+          .map((model) => get_label_value(model, prop))
+          .filter((val): val is number => typeof val === `number` && !isNaN(val))
+        const [min, max] = extent(values) as [number, number]
+        const title = `${prop?.label}${
+          prop?.better ? ` (${prop?.better}=better)` : ``
+        }`
+        return { range: [min ?? 0, max ?? 1], title }
+      },
     }}
     label_placement_config={{
       link_strength,
@@ -311,7 +323,7 @@
       }}
     >
       <div style="display: grid; grid-template-columns: auto 1fr; gap: 8pt 1em">
-        <!-- Log scale toggles -->
+        <!-- Log scale toggles - {#if true} creates scope for {@const} declarations -->
         {#if true}
           {@const x_extent = extent(plot_data, (d) => d.x as number)}
           {@const y_extent = extent(plot_data, (d) => d.y as number)}
@@ -470,7 +482,7 @@
         {@html axes.y?.label}: {y_formatted}<br />
         {#if ![`model_params`, `date_added`].includes(axes.color_value?.key ?? ``) &&
         point?.color_value !== undefined}
-          {@html axes.color_value.label}:
+          {@html axes.color_value?.label}:
           {format_num(point.color_value as number)}<br />
         {/if}
         {#if axes.size_value && point?.size_value !== undefined}
