@@ -1,4 +1,5 @@
 <script lang="ts">
+  // TODO 2026-01-18 replace this file after next matterviz release with ToggleMenu
   import { type Label } from '$lib'
   import { Icon } from 'matterviz'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'

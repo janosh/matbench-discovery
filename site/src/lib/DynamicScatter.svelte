@@ -5,8 +5,9 @@
   import { extent } from 'd3-array'
   import { DraggablePane, format_num, Icon } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
+  import { type AxisConfig, ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
+  import { tick } from 'svelte'
   import Select from 'svelte-multiselect'
   import {
     ALL_METRICS,
@@ -32,13 +33,50 @@
   const date_key = METADATA_COLS.date_added.key
   const params_key = HYPERPARAMS.model_params.key
 
-  let axes = $state({
-    x: ALL_METRICS.κ_SRME,
-    y: ALL_METRICS.CPS,
-    color_value: ALL_METRICS.F1,
-    size_value: HYPERPARAMS.model_params,
+  const { model_params, graph_construction_radius, max_force, max_steps } =
+    HYPERPARAMS
+  const { batch_size, epochs, n_layers } = HYPERPARAMS
+  const { date_added, n_training_materials, n_training_structures } = METADATA_COLS
+
+  const options = [
+    ...Object.values(ALL_METRICS),
+    model_params,
+    date_added,
+    n_training_materials,
+    n_training_structures,
+    graph_construction_radius,
+    max_force,
+    max_steps,
+    batch_size,
+    epochs,
+    n_layers,
+  ]
+
+  // Create lookup map from key to full property object
+  const options_by_key = Object.fromEntries(options.map((opt) => [opt.key, opt]))
+
+  // Track selected axis keys for x/y (used by ScatterPlot's built-in axis selection)
+  let selected = $state({
+    x: ALL_METRICS.κ_SRME.key,
+    y: ALL_METRICS.CPS.key,
   })
-  let log = $state({ x: false, y: false, color_value: false, size_value: false })
+
+  // Color and Size are managed separately (not part of ScatterPlot's built-in axis selection)
+  let color_key = $state(ALL_METRICS.F1.key)
+  let size_prop = $state(HYPERPARAMS.model_params)
+
+  // Derive color_prop from key
+  let color_prop = $derived(options_by_key[color_key])
+
+  // Derive full axes object for use in plot_data computation
+  let axes = $derived({
+    x: options_by_key[selected.x],
+    y: options_by_key[selected.y],
+    color_value: color_prop,
+    size_value: size_prop,
+  })
+
+  let log = $state({ x: false, y: false, color: false, size: false })
   let is_fullscreen = $state(false)
   let show_extra_controls = $state(false)
   let container_el: HTMLDivElement | null = null
@@ -56,25 +94,6 @@
   let min_link_distance = $state(15)
   let max_link_distance = $state(20)
 
-  const { model_params, graph_construction_radius, max_force, max_steps } =
-    HYPERPARAMS
-  const { batch_size, epochs, n_layers } = HYPERPARAMS
-
-  const { date_added, n_training_materials, n_training_structures } = METADATA_COLS
-  const options = [
-    ...Object.values(ALL_METRICS),
-    model_params,
-    date_added,
-    n_training_materials,
-    n_training_structures,
-    graph_construction_radius,
-    max_force,
-    max_steps,
-    batch_size,
-    epochs,
-    n_layers,
-  ]
-
   let model_counts_by_prop = $derived(
     options.reduce(
       (acc, prop) => {
@@ -87,6 +106,36 @@
       {} as Record<string, number>,
     ),
   )
+
+  // Convert options to format expected by ScatterPlot axis options
+  let axis_options = $derived(
+    options.map((prop) => ({
+      key: prop.key,
+      label: `${prop.label} (${model_counts_by_prop[prop.key]} models)`,
+    })),
+  )
+
+  // Options for ColorBar property select
+  let color_options = $derived(
+    options.map((prop) => ({
+      key: prop.key,
+      label: `${prop.label} (${model_counts_by_prop[prop.key]} models)`,
+      unit: prop.unit,
+    })),
+  )
+
+  // Data loader for interactive axis selection
+  const data_loader = async (axis: `x` | `y` | `y2`, key: string) => {
+    // Update the selected key
+    if (axis === `x`) selected.x = key
+    else if (axis === `y`) selected.y = key
+
+    // Wait for reactive derivations to update
+    await tick()
+
+    // Return updated series
+    return { series: [series], axis_label: options_by_key[key]?.label }
+  }
 
   function is_num_or_date(val: unknown): boolean {
     if (typeof val === `number` && !isNaN(val)) return true
@@ -144,9 +193,9 @@
     metadata: plot_data.map((item) => item.metadata),
     color_values: point_color === null
       ? (plot_data
-        .map((item) => item.color_value) // Map to potential Date or number
-        .filter((val): val is number | Date => val !== undefined) // Filter out undefined
-        .map((val) => (val instanceof Date ? val.getTime() : val)) as number[]) // Convert Dates to timestamps
+        .map((item) => item.color_value)
+        .filter((val): val is number | Date => val !== undefined)
+        .map((val) => (val instanceof Date ? val.getTime() : val)) as number[])
       : undefined,
     size_values: axes.size_value
       ? plot_data.map((item) => item.size_value as number)
@@ -173,51 +222,27 @@
   style:height={is_fullscreen ? `100%` : `auto`}
   style="margin-block: 2em"
 >
-  <div class="controls-grid">
-    {#each [
-        { id: `x`, label: `X Axis`, log_state: log.x },
-        { id: `y`, label: `Y Axis`, log_state: log.y },
-        { id: `color_value`, label: `Color`, log_state: log.color_value },
-        { id: `size_value`, label: `Size`, log_state: log.size_value },
-      ] as const as
-      control
-      (control.id)
-    }
-      {@const [min, max] = extent(plot_data, (d) => d[control.id] as number)}
-      {@const disable_log = Boolean(
-        min === undefined || max === undefined || min <= 0 || 100 * min > max,
-      )}
-      <label for={control.id}>{control.label}</label>
-      <Select
-        {options}
-        id={control.id}
-        bind:value={axes[control.id]}
-        placeholder="Select {control.label}"
-        maxSelect={1}
-        minSelect={1}
-        style="width: 100%; max-width: none; margin: 0"
-        liSelectedStyle="font-size: 16px;"
-      >
-        {#snippet children(
-        { option: prop }: { option: typeof options[number] },
-      )}
-          {@html format_property_path(
+  <div class="controls-row">
+    <label for="size-select">Size</label>
+    <Select
+      {options}
+      id="size-select"
+      bind:value={size_prop}
+      placeholder="Select Size"
+      maxSelect={1}
+      minSelect={1}
+      style="flex: 1; max-width: 300px; margin: 0"
+      liSelectedStyle="font-size: 14px;"
+    >
+      {#snippet children({ option: prop }: { option: typeof options[number] })}
+        {@html format_property_path(
           `${prop.path ?? ``}.${prop.label ?? prop.label}`.replace(/^\./, ``),
         )}
-          <span style="font-size: smaller; color: gray; margin-left: 0.5em">
-            ({model_counts_by_prop[prop.key]} models)
-          </span>
-        {/snippet}
-      </Select>
-      <label
-        aria-disabled={disable_log}
-        style="transition: opacity 0.2s"
-        style:visibility={disable_log ? `hidden` : `visible`}
-      >
-        <input type="checkbox" bind:checked={log[control.id]} disabled={disable_log} />
-        Log scale
-      </label>
-    {/each}
+        <span style="font-size: smaller; color: gray; margin-left: 0.5em">
+          ({model_counts_by_prop[prop.key]} models)
+        </span>
+      {/snippet}
+    </Select>
   </div>
 
   <ScatterPlot
@@ -230,7 +255,9 @@
       scale_type: log.x ? `log` : `linear`,
       label_shift: { y: -50 },
       ticks: x_ticks,
-    }}
+      options: axis_options,
+      selected_key: selected.x,
+    } as AxisConfig}
     y_axis={{
       label: axes.y?.label,
       format: axes.y?.format,
@@ -241,12 +268,14 @@
         y: [date_key, params_key].includes(axes.y?.key ?? ``) ? -40 : -10,
       },
       ticks: y_ticks,
-    }}
+      options: axis_options,
+      selected_key: selected.y,
+    } as AxisConfig}
     display={{ x_grid, y_grid }}
-    color_scale={{ scheme: color_scheme, type: log.color_value ? `log` : `linear` }}
+    color_scale={{ scheme: color_scheme, type: log.color ? `log` : `linear` }}
     size_scale={{
       radius_range: [5 * size_multiplier, 20 * size_multiplier],
-      type: log.size_value ? `log` : `linear`,
+      type: log.size ? `log` : `linear`,
     }}
     color_bar={{
       title: `${axes.color_value?.label}${
@@ -254,6 +283,9 @@
       }`,
       margin: { t: 30, l: 80, b: 80, r: 50 },
       tick_format: axes.color_value?.format,
+      property_options: color_options,
+      selected_property_key: color_key,
+      on_property_change: (key) => (color_key = key),
     }}
     label_placement_config={{
       link_strength,
@@ -264,6 +296,7 @@
       onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
     }}
     {...rest}
+    {...{ data_loader }}
   >
     <DraggablePane
       bind:show={show_extra_controls}
@@ -278,6 +311,42 @@
       }}
     >
       <div style="display: grid; grid-template-columns: auto 1fr; gap: 8pt 1em">
+        <!-- Log scale toggles -->
+        {#if true}
+          {@const x_extent = extent(plot_data, (d) => d.x as number)}
+          {@const y_extent = extent(plot_data, (d) => d.y as number)}
+          {@const color_extent = extent(plot_data, (d) => d.color_value as number)}
+          {@const size_extent = extent(plot_data, (d) => d.size_value as number)}
+          {@const can_log_x = x_extent[0] !== undefined && x_extent[0] > 0 &&
+            100 * x_extent[0] <= (x_extent[1] ?? 0)}
+          {@const can_log_y = y_extent[0] !== undefined && y_extent[0] > 0 &&
+            100 * y_extent[0] <= (y_extent[1] ?? 0)}
+          {@const can_log_color = color_extent[0] !== undefined &&
+            color_extent[0] > 0 &&
+            100 * color_extent[0] <= (color_extent[1] ?? 0)}
+          {@const can_log_size = size_extent[0] !== undefined && size_extent[0] > 0 &&
+            100 * size_extent[0] <= (size_extent[1] ?? 0)}
+          <div
+            class="log-toggles"
+            style="grid-column: 1/-1; display: flex; gap: 1em; flex-wrap: wrap"
+          >
+            <label style:visibility={can_log_x ? `visible` : `hidden`}>
+              <input type="checkbox" bind:checked={log.x} disabled={!can_log_x} /> Log X
+            </label>
+            <label style:visibility={can_log_y ? `visible` : `hidden`}>
+              <input type="checkbox" bind:checked={log.y} disabled={!can_log_y} /> Log Y
+            </label>
+            <label style:visibility={can_log_color ? `visible` : `hidden`}>
+              <input type="checkbox" bind:checked={log.color} disabled={!can_log_color} />
+              Log Color
+            </label>
+            <label style:visibility={can_log_size ? `visible` : `hidden`}>
+              <input type="checkbox" bind:checked={log.size} disabled={!can_log_size} />
+              Log Size
+            </label>
+          </div>
+        {/if}
+
         <label
           style="grid-column: 1/-1"
           title="Toggle visibility of model name labels on the scatter plot points"
@@ -423,6 +492,17 @@
     flex-direction: column;
     gap: 1em;
   }
+  div.controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1ex 2em;
+    margin: 0 3em 1em;
+    justify-content: center;
+  }
+  div.controls-row label {
+    font-weight: 500;
+  }
   button[title$='fullscreen'] {
     position: absolute;
     top: 1em;
@@ -430,14 +510,6 @@
     display: flex;
     padding: 8px;
     border-radius: 50%;
-  }
-  div.controls-grid {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 1ex;
-    margin: 1em 3em;
-    max-width: 900px;
-    place-self: center;
   }
   div.combined-link-controls {
     display: flex;

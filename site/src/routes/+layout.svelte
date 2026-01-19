@@ -5,6 +5,7 @@
   import pkg from '$site/package.json'
   import type { Snippet } from 'svelte'
   import { CmdPalette, CopyButton, GitHubCorner, Nav } from 'svelte-multiselect'
+  import { heading_anchors } from 'svelte-multiselect/heading-anchors'
   import Toc from 'svelte-toc'
   import '../app.css'
 
@@ -84,7 +85,7 @@
   <ThemeToggle />
 </Nav>
 
-<main>
+<main {@attach heading_anchors()}>
   {@render children?.()}
 </main>
 

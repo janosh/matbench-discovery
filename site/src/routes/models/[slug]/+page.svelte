@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { calculate_days_ago, DATASETS, IconList, PtableInset } from '$lib'
-  import { Icon } from 'matterviz'
+  import { calculate_days_ago, DATASETS, PtableInset } from '$lib'
   import {
     discovery_task_tooltips,
     model_type_tooltips,
@@ -10,8 +9,8 @@
   import { get_pred_file_urls } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
-  import type { ChemicalElement } from 'matterviz'
-  import { ColorBar, format_num, PeriodicTable, TableInset } from 'matterviz'
+  import type { ChemicalElement, IconName } from 'matterviz'
+  import { ColorBar, format_num, Icon, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { CopyButton } from 'svelte-multiselect'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
@@ -271,8 +270,17 @@
             <span>{author.name}</span>
             {#if author.affiliation}<span class="affiliation">
                 &ensp;{author.affiliation}
-                {#if org_logo}
-                  &nbsp;<IconList icons={[org_logo]} />
+                {#if org_logo?.id?.startsWith(`icon:`)}
+                  &nbsp;<span title={org_logo.name} class="org-logo">
+                    <Icon icon={org_logo.id.replace(`icon:`, ``) as IconName} />
+                  </span>
+                {:else if org_logo?.src}
+                  &nbsp;<img
+                    src={org_logo.src}
+                    alt="{org_logo.name} logo"
+                    title={org_logo.name}
+                    class="org-logo"
+                  />
                 {/if}
               </span>{/if}
             {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
@@ -514,6 +522,16 @@
   .affiliation {
     font-style: italic;
     color: gray;
+  }
+  .org-logo {
+    filter: grayscale(100%) brightness(var(--logo-brightness, 1));
+    height: 1em;
+    width: auto;
+    vertical-align: middle;
+    margin: 0;
+  }
+  :root[data-theme='light'] {
+    --logo-brightness: 0.5;
   }
   ul li {
     overflow: hidden;

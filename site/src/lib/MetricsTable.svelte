@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { IconList, TableControls } from '$lib'
+  import { TableControls } from '$lib'
   import { metric_better_as } from '$lib/metrics'
   import type {
     CellSnippetArgs,
@@ -13,7 +13,7 @@
     CellSnippetArgs as MattervizCellSnippetArgs,
     Label as MattervizLabel,
   } from 'matterviz'
-  import { HeatmapTable, Icon } from 'matterviz'
+  import { HeatmapTable, Icon, type IconName } from 'matterviz'
   import type { Snippet } from 'svelte'
   import { click_outside } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -162,7 +162,20 @@
 />
 
 {#snippet affiliation_cell({ row }: CellSnippetArgs)}
-  <IconList icons={(row as ModelData).org_logos} />
+  {#each (row as ModelData).org_logos ?? [] as logo (logo.id ?? logo.src)}
+    {#if logo.id?.startsWith(`icon:`)}
+      <span title={logo.name} class="org-logo">
+        <Icon icon={logo.id.replace(`icon:`, ``) as IconName} />
+      </span>
+    {:else if logo.src}
+      <img
+        src={logo.src}
+        alt="{logo.name} logo"
+        title={logo.name}
+        class="org-logo"
+      />
+    {/if}
+  {/each}
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}
@@ -250,6 +263,16 @@
 {/if}
 
 <style>
+  .org-logo {
+    filter: grayscale(100%) brightness(var(--logo-brightness, 1));
+    height: 1em;
+    width: auto;
+    vertical-align: middle;
+    margin: 0;
+  }
+  :global(:root[data-theme='light']) {
+    --logo-brightness: 0.5;
+  }
   .pred-files-btn {
     background: none;
     padding: 0;
