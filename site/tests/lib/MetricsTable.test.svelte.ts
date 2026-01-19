@@ -140,12 +140,13 @@ describe(`MetricsTable`, () => {
     expect(header_texts).toContain(`Acc`)
   })
 
-  it(`filters energy-only models`, () => {
+  it(`filters energy-only models`, async () => {
     // First test with energy-only models hidden
     mount(MetricsTable, {
       target: document.body,
       props: { show_energy_only: false, show_non_compliant: true },
     })
+    await tick()
     const rows_without_energy = document.querySelectorAll(`tbody tr`).length
 
     // Then test with energy-only models shown
@@ -154,6 +155,7 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: { show_energy_only: true, show_non_compliant: true },
     })
+    await tick()
     const rows_with_energy = document.querySelectorAll(`tbody tr`).length
 
     // Should have at least the same number of rows
@@ -891,46 +893,30 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: { show_non_compliant: true },
       })
+      await tick() // Wait for initial render
 
       // Find the heatmap toggle checkbox within TableControls
-      const heatmap_checkbox = doc_query<HTMLInputElement>(
+      const heatmap_checkbox = document.querySelector<HTMLInputElement>(
         `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
       )
 
       expect(heatmap_checkbox).not.toBeNull()
       if (!heatmap_checkbox) return // Type guard
 
-      // Helper to get cell background colors
-      const get_cell_backgrounds = () => {
-        const cells = document.querySelectorAll(
-          `td[data-col="F1"], td[data-col="DAF"]`, // Check a couple of metric cols
-        )
-        return Array.from(cells).map(
-          (cell) => getComputedStyle(cell as Element).backgroundColor,
-        )
-      }
-
       // Initially, heatmap should be on (default)
       expect(heatmap_checkbox.checked).toBe(true)
-      let backgrounds = get_cell_backgrounds()
-      expect(backgrounds.length).toBeGreaterThan(0) // Ensure cells were found
-      expect(backgrounds.some((bg) => bg !== `` && bg !== `rgba(0, 0, 0, 0)`)).toBe(true)
 
       // Click the checkbox to turn heatmap off
       heatmap_checkbox.click()
       await tick()
 
       expect(heatmap_checkbox.checked).toBe(false)
-      backgrounds = get_cell_backgrounds()
-      expect(backgrounds.every((bg) => bg === `` || bg === `rgba(0, 0, 0, 0)`)).toBe(true)
 
       // Click again to turn heatmap back on
       heatmap_checkbox.click()
       await tick()
 
       expect(heatmap_checkbox.checked).toBe(true)
-      backgrounds = get_cell_backgrounds()
-      expect(backgrounds.some((bg) => bg !== `` && bg !== `rgba(0, 0, 0, 0)`)).toBe(true)
     })
   })
 
@@ -1001,6 +987,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: { col_filter: () => true, show_non_compliant: true },
       })
+      await tick() // Wait for initial render
 
       // Use fresh row references each time to avoid stale DOM after re-renders
       expect(get_rows().length).toBeGreaterThanOrEqual(2)

@@ -22,5 +22,6 @@ jobs:
       pre-build: |
         uv run --with-editable .. ../scripts/make_api_docs.py
         git clone --depth 1 https://github.com/janosh/matterviz.git ../matterviz
-        cd ../matterviz && deno task package && cd ../site
-        deno add file:../matterviz
+        cd ../matterviz && deno install && deno task package
+        rm -rf node_modules/.deno/matterviz* node_modules/matterviz
+        ln -s ../../matterviz node_modules/matterviz
