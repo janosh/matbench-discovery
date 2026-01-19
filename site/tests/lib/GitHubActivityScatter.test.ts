@@ -4,10 +4,14 @@ import { mount } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { doc_query } from '../index'
 
-vi.mock(`matterviz`, () => ({
-  format_num: (val: number) => String(val),
-  Icon: vi.fn(),
-}))
+vi.mock(`matterviz`, async (importOriginal) => {
+  const actual = await importOriginal<typeof import('matterviz')>()
+  return {
+    ...actual,
+    format_num: (val: number) => String(val),
+    Icon: vi.fn(),
+  }
+})
 vi.mock(`matterviz/plot`, () => ({ ScatterPlot: vi.fn() }))
 
 function create_mock_github_data(

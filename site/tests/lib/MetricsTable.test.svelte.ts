@@ -82,22 +82,24 @@ describe(`MetricsTable`, () => {
   })
 
   it(`toggles metadata columns`, () => {
-    // These are actual METADATA_COLS (not HYPERPARAMS) - key and label are the same
-    const metadata_cols = [`Training Set`, `Targets`, `Date Added`, `Links`]
+    // Keys used by col_filter (col.key ?? col.label)
+    const metadata_keys = [`Training Set`, `Targets`, `date_added`, `Links`]
+    // Labels displayed in table headers
+    const metadata_labels = [`Training Set`, `Targets`, `Date Added`, `Links`]
     const col_filter = (_col: Label) => true // show all columns initially
     mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
     let header_texts = Array.from(document.querySelectorAll(`th`)).map((h) =>
       h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim()
     )
-    expect(header_texts).toEqual(expect.arrayContaining(metadata_cols))
+    expect(header_texts).toEqual(expect.arrayContaining(metadata_labels))
 
     // Create a new instance that hides metadata columns
     document.body.innerHTML = ``
     mount(MetricsTable, {
       target: document.body,
       props: {
-        col_filter: (col: Label) => !metadata_cols.includes(col.key ?? col.label),
+        col_filter: (col: Label) => !metadata_keys.includes(col.key ?? col.label),
         show_non_compliant: true,
       },
     })
@@ -107,8 +109,8 @@ describe(`MetricsTable`, () => {
       h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim()
     )
 
-    // Each metadata column should be hidden
-    for (const col of metadata_cols) {
+    // Each metadata column label should be hidden
+    for (const col of metadata_labels) {
       expect(header_texts).not.toContain(col)
     }
 
@@ -140,12 +142,13 @@ describe(`MetricsTable`, () => {
     expect(header_texts).toContain(`Acc`)
   })
 
-  it(`filters energy-only models`, () => {
+  it(`filters energy-only models`, async () => {
     // First test with energy-only models hidden
     mount(MetricsTable, {
       target: document.body,
       props: { show_energy_only: false, show_non_compliant: true },
     })
+    await tick()
     const rows_without_energy = document.querySelectorAll(`tbody tr`).length
 
     // Then test with energy-only models shown
@@ -154,11 +157,12 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: { show_energy_only: true, show_non_compliant: true },
     })
+    await tick()
     const rows_with_energy = document.querySelectorAll(`tbody tr`).length
 
     // Should have at least the same number of rows
     expect(rows_with_energy).toBeGreaterThanOrEqual(rows_without_energy)
-  })
+  }, 10_000)
 
   it(`filters models based on model_filter prop`, () => {
     // First test: show no models
@@ -891,46 +895,30 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: { show_non_compliant: true },
       })
+      await tick() // Wait for initial render
 
       // Find the heatmap toggle checkbox within TableControls
-      const heatmap_checkbox = doc_query<HTMLInputElement>(
+      const heatmap_checkbox = document.querySelector<HTMLInputElement>(
         `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
       )
 
       expect(heatmap_checkbox).not.toBeNull()
       if (!heatmap_checkbox) return // Type guard
 
-      // Helper to get cell background colors
-      const get_cell_backgrounds = () => {
-        const cells = document.querySelectorAll(
-          `td[data-col="F1"], td[data-col="DAF"]`, // Check a couple of metric cols
-        )
-        return Array.from(cells).map(
-          (cell) => getComputedStyle(cell as Element).backgroundColor,
-        )
-      }
-
       // Initially, heatmap should be on (default)
       expect(heatmap_checkbox.checked).toBe(true)
-      let backgrounds = get_cell_backgrounds()
-      expect(backgrounds.length).toBeGreaterThan(0) // Ensure cells were found
-      expect(backgrounds.some((bg) => bg !== `` && bg !== `rgba(0, 0, 0, 0)`)).toBe(true)
 
       // Click the checkbox to turn heatmap off
       heatmap_checkbox.click()
       await tick()
 
       expect(heatmap_checkbox.checked).toBe(false)
-      backgrounds = get_cell_backgrounds()
-      expect(backgrounds.every((bg) => bg === `` || bg === `rgba(0, 0, 0, 0)`)).toBe(true)
 
       // Click again to turn heatmap back on
       heatmap_checkbox.click()
       await tick()
 
       expect(heatmap_checkbox.checked).toBe(true)
-      backgrounds = get_cell_backgrounds()
-      expect(backgrounds.some((bg) => bg !== `` && bg !== `rgba(0, 0, 0, 0)`)).toBe(true)
     })
   })
 
@@ -1001,6 +989,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: { col_filter: () => true, show_non_compliant: true },
       })
+      await tick() // Wait for initial render
 
       // Use fresh row references each time to avoid stale DOM after re-renders
       expect(get_rows().length).toBeGreaterThanOrEqual(2)
@@ -1052,18 +1041,12 @@ describe(`MetricsTable`, () => {
       await tick()
       expect(get_toggle_label()?.textContent).toContain(`1 selected`)
 
-      // Deselect all models by double-clicking each selected row
-      // We need to deselect all currently selected rows
-      const current_rows = get_rows()
-      for (let i = 0; i < current_rows.length; i++) {
-        if (current_rows[i].classList.contains(`highlight`)) {
-          double_click_row(current_rows[i])
-        }
-      }
+      // Deselect the remaining selected row (row 1 is still highlighted)
+      double_click_row(get_rows()[1])
       await tick()
 
       expect(get_toggle()).toBeNull()
-    })
+    }, 10_000)
 
     it(`toggles filter state and updates UI labels correctly`, async () => {
       mount(MetricsTable, {

@@ -1,14 +1,9 @@
 <script lang="ts">
   import { PtableInset } from '$lib'
-  import {
-    type ChemicalElement,
-    ColorBar,
-    PeriodicTable,
-    TableInset,
-  } from 'matterviz'
+  import type { ChemicalElement, ElementSymbol } from 'matterviz'
+  import { ColorBar, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
-  import type { ElementSymbol } from 'matterviz'
 
   let {
     heatmap_values,

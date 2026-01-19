@@ -64,7 +64,7 @@ describe(`format_property_path`, () => {
   test.each([
     // Direct properties
     [`model_params`, `Params`],
-    [`date_added`, `date added`],
+    [`date_added`, `Date Added`],
     [`n_estimators`, `Estimators`],
     [`unknown_property`, `unknown property`],
     // Discovery metrics
@@ -96,7 +96,10 @@ describe(`format_property_path`, () => {
 describe(`get_org_logo`, () => {
   test.each([
     [`Google DeepMind`, { name: `Google DeepMind`, src: `/logos/deepmind.svg` }],
-    [`FAIR at Meta`, { name: `FAIR at Meta`, id: `icon:LogoMeta` }],
+    [
+      `FAIR at Meta`,
+      { name: `FAIR at Meta`, id: `icon:LogoMeta`, validated_icon: `LogoMeta` },
+    ],
     [`Some unknown university`, undefined],
     [
       `Massachusetts Institute of Technology, USA`,

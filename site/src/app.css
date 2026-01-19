@@ -242,16 +242,20 @@ blockquote > :is(:first-child, :last-child) {
   scroll-margin-top: 50px;
   transition: 0.3s;
 }
+:where(h1, h2, h3, h4, h5, h6):target {
+  color: var(--accent-color, cornflowerblue);
+}
 :where(h2, h3, h4, h5, h6).toc-clicked {
   color: var(--link-hover);
 }
-/* style heading anchors added by rehype-autolink-headings, see svelte.config.js */
+/* style heading anchors added by heading_anchors attachment from svelte-multiselect */
 :where(h2, h3, h4, h5, h6, strong) a[aria-hidden='true'] {
   transition: 0.3s;
   margin-left: 4pt;
   opacity: 0;
 }
-:where(h2, h3, h4, h5, h6, strong):hover a[aria-hidden='true'] {
+:where(h2, h3, h4, h5, h6, strong):is(:hover, :focus-within) a[aria-hidden='true'],
+:where(h2, h3, h4, h5, h6, strong) a[aria-hidden='true']:focus-visible {
   opacity: 1;
 }
 strong a[aria-hidden='true'] {
