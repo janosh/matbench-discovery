@@ -5,7 +5,7 @@
   import { extent } from 'd3-array'
   import { DraggablePane, format_num, Icon } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { type AxisConfig, ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
+  import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
   import Select from 'svelte-multiselect'
@@ -124,7 +124,7 @@
     })),
   )
 
-  // Data loader for interactive axis selection
+  // Data loader for interactive axis selection (y2 not supported in this scatter plot)
   const data_loader = async (axis: `x` | `y` | `y2`, key: string) => {
     // Update the selected key
     if (axis === `x`) selected.x = key
@@ -236,7 +236,7 @@
     >
       {#snippet children({ option: prop }: { option: typeof options[number] })}
         {@html format_property_path(
-          `${prop.path ?? ``}.${prop.label ?? prop.label}`.replace(/^\./, ``),
+          `${prop.path ?? ``}.${prop.key}`.replace(/^\./, ``),
         )}
         <span style="font-size: smaller; color: gray; margin-left: 0.5em">
           ({model_counts_by_prop[prop.key]} models)
@@ -257,7 +257,7 @@
       ticks: x_ticks,
       options: axis_options,
       selected_key: selected.x,
-    } as AxisConfig}
+    }}
     y_axis={{
       label: axes.y?.label,
       format: axes.y?.format,
@@ -270,7 +270,7 @@
       ticks: y_ticks,
       options: axis_options,
       selected_key: selected.y,
-    } as AxisConfig}
+    }}
     display={{ x_grid, y_grid }}
     color_scale={{ scheme: color_scheme, type: log.color ? `log` : `linear` }}
     size_scale={{
@@ -296,7 +296,7 @@
       onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
     }}
     {...rest}
-    {...{ data_loader }}
+    {data_loader}
   >
     <DraggablePane
       bind:show={show_extra_controls}
@@ -464,10 +464,10 @@
       {#if metadata}
         {@const point = plot_data.find((m) => m.metadata.model_name === metadata.model_name)}
         <strong>{metadata.model_name}</strong><br />
-        {@html axes.x.label}: {x_formatted}
-        {#if axes.x.key === `date_added` && metadata.days_ago}
+        {@html axes.x?.label}: {x_formatted}
+        {#if axes.x?.key === `date_added` && metadata.days_ago}
           <small>({metadata.days_ago} days ago)</small>{/if}<br />
-        {@html axes.y.label}: {y_formatted}<br />
+        {@html axes.y?.label}: {y_formatted}<br />
         {#if ![`model_params`, `date_added`].includes(axes.color_value?.key ?? ``) &&
         point?.color_value !== undefined}
           {@html axes.color_value.label}:

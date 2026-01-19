@@ -1039,14 +1039,8 @@ describe(`MetricsTable`, () => {
       await tick()
       expect(get_toggle_label()?.textContent).toContain(`1 selected`)
 
-      // Deselect all models by double-clicking each selected row
-      // We need to deselect all currently selected rows
-      const current_rows = get_rows()
-      for (let i = 0; i < current_rows.length; i++) {
-        if (current_rows[i].classList.contains(`highlight`)) {
-          double_click_row(current_rows[i])
-        }
-      }
+      // Deselect the remaining selected row (row 1 is still highlighted)
+      double_click_row(get_rows()[1])
       await tick()
 
       expect(get_toggle()).toBeNull()

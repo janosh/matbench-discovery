@@ -13,7 +13,7 @@ export type ModelData = ModelMetadata & {
   color?: string
   n_training_materials?: number
   n_training_structures?: number
-  org_logos?: { name: string; id?: string; src?: string }[]
+  org_logos?: { name: string; id?: string; src?: string; validated_icon?: IconName }[]
   CPS?: number
 }
 

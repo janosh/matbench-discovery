@@ -1,5 +1,6 @@
 import type { DiscoverySet, Label } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
+import { ICON_DATA, type IconName } from 'matterviz'
 import type {
   DatasetMetadataLabels,
   DiscoveryMetricsLabels,
@@ -460,6 +461,22 @@ export const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice
 export const title_case = (str: string) =>
   str.replaceAll(`_`, ` `).split(` `).map(to_title).join(` `)
 
+// Set of valid matterviz icon names for runtime validation
+const VALID_ICON_NAMES = new Set(Object.keys(ICON_DATA)) as Set<IconName>
+
+// Validates an icon name and returns it if valid, or undefined if not
+function validate_icon_name(name: string): IconName | undefined {
+  return VALID_ICON_NAMES.has(name as IconName) ? (name as IconName) : undefined
+}
+
+// Return type for get_org_logo function
+export type OrgLogo = {
+  name: string
+  id?: string
+  src?: string
+  validated_icon?: IconName
+}
+
 // Map of author affiliations in model YAMLs to SVG icons (either inline symbol ID
 // or external file path under /static/logos/) and full affiliation names for tooltips.
 export const org_logos = {
@@ -508,16 +525,28 @@ export const org_logos = {
 // Attempts to find a matching logo data (ID or src) and name for a given affiliation string.
 // Performs a case-insensitive search for keywords defined in org_logos.
 // Returns object with logo name and either SVG ID or src path, or undefined if no match.
-export function get_org_logo(
-  affiliation: string,
-): { name: string; id?: string; src?: string } | undefined {
+// For icon references (icon:*), validates against matterviz IconName and includes validated_icon.
+export function get_org_logo(affiliation: string): OrgLogo | undefined {
   if (!affiliation) return undefined
 
   for (const [key_val, logo_val] of Object.entries(org_logos)) {
     // Check if lowercased affiliation string includes lowercased org key
     if (affiliation.toLowerCase().includes(key_val.toLowerCase())) {
-      if (logo_val.startsWith(`/logos/`)) return { name: key_val, src: logo_val }
-      else return { name: key_val, id: logo_val }
+      if (logo_val.startsWith(`/logos/`)) {
+        return { name: key_val, src: logo_val }
+      } else if (logo_val.startsWith(`icon:`)) {
+        const icon_name = logo_val.replace(`icon:`, ``)
+        const validated_icon = validate_icon_name(icon_name)
+        if (!validated_icon && !import.meta.env.PROD) {
+          console.warn(
+            `Invalid icon name "${icon_name}" for org "${key_val}". ` +
+              `Valid names: ${[...VALID_ICON_NAMES].slice(0, 10).join(`, `)}...`,
+          )
+        }
+        return { name: key_val, id: logo_val, validated_icon }
+      } else {
+        return { name: key_val, id: logo_val }
+      }
     }
   }
   return undefined
