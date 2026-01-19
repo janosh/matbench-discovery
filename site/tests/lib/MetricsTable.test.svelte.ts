@@ -82,22 +82,24 @@ describe(`MetricsTable`, () => {
   })
 
   it(`toggles metadata columns`, () => {
-    // These are actual METADATA_COLS (not HYPERPARAMS) - key and label are the same
-    const metadata_cols = [`Training Set`, `Targets`, `Date Added`, `Links`]
+    // Keys used by col_filter (col.key ?? col.label)
+    const metadata_keys = [`Training Set`, `Targets`, `date_added`, `Links`]
+    // Labels displayed in table headers
+    const metadata_labels = [`Training Set`, `Targets`, `Date Added`, `Links`]
     const col_filter = (_col: Label) => true // show all columns initially
     mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
     let header_texts = Array.from(document.querySelectorAll(`th`)).map((h) =>
       h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim()
     )
-    expect(header_texts).toEqual(expect.arrayContaining(metadata_cols))
+    expect(header_texts).toEqual(expect.arrayContaining(metadata_labels))
 
     // Create a new instance that hides metadata columns
     document.body.innerHTML = ``
     mount(MetricsTable, {
       target: document.body,
       props: {
-        col_filter: (col: Label) => !metadata_cols.includes(col.key ?? col.label),
+        col_filter: (col: Label) => !metadata_keys.includes(col.key ?? col.label),
         show_non_compliant: true,
       },
     })
@@ -107,8 +109,8 @@ describe(`MetricsTable`, () => {
       h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim()
     )
 
-    // Each metadata column should be hidden
-    for (const col of metadata_cols) {
+    // Each metadata column label should be hidden
+    for (const col of metadata_labels) {
       expect(header_texts).not.toContain(col)
     }
 
