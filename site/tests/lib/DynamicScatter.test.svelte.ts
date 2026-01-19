@@ -1,6 +1,6 @@
 import DynamicScatter from '$lib/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
-import { mount } from 'svelte'
+import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { doc_query, is_hidden } from '../index'
 
@@ -89,27 +89,28 @@ describe(`DynamicScatter.svelte`, () => {
       props: { models: mock_models },
     })
 
-    // Check that controls grid is rendered
-    const controls_grid = document.querySelector(`.controls-grid`)
-    expect(controls_grid).toBeDefined()
-
-    // Check that log-scale checkboxes are rendered in the controls grid
-    // (detailed checkbox state validation is in "regression tests for default values")
-    const checkboxes = document.querySelectorAll<HTMLInputElement>(
-      `.controls-grid input[type="checkbox"]`,
-    )
-    expect(checkboxes.length).toBe(4) // 4 checkboxes: x-axis log, y-axis log, color log, size log
+    // Check that controls row is rendered (contains Size select)
+    const controls_row = document.querySelector(`.controls-row`)
+    expect(controls_row).not.toBeNull()
 
     // Check that the scatter plot container is rendered
     const plot_container = document.querySelector(`div.bleed-1400[style]`)
-    expect(plot_container).toBeDefined()
+    expect(plot_container).not.toBeNull()
+
+    // Check that fullscreen button is rendered
+    const fullscreen_button = document.querySelector(`button[title$="fullscreen"]`)
+    expect(fullscreen_button).not.toBeNull()
+
+    // Check that settings toggle button is rendered
+    const settings_button = document.querySelector(`.settings-toggle`)
+    expect(settings_button).not.toBeNull()
   })
 
   it(`renders component structure (no SVG check)`, () => {
     // Use mount from svelte
     mount(DynamicScatter, { target: document.body, props: { models: mock_models } })
-    expect(document.querySelector(`.controls-grid`)).toBeDefined()
-    expect(document.querySelector(`div.bleed-1400[style]`)).toBeDefined()
+    expect(document.querySelector(`.controls-row`)).not.toBeNull()
+    expect(document.querySelector(`div.bleed-1400[style]`)).not.toBeNull()
   })
 
   // Helper function to check fullscreen state
@@ -120,7 +121,7 @@ describe(`DynamicScatter.svelte`, () => {
     const button_icon = button?.querySelector(`button > svg`)
 
     await vi.waitFor(() => {
-      expect(button_icon, `Button icon`).toBeDefined()
+      expect(button_icon, `Button icon`).not.toBeNull()
       expect(button?.getAttribute(`aria-label`), `Button label`).toBe(
         `${expected_state ? `Exit` : `Enter`} fullscreen`,
       )
@@ -156,7 +157,7 @@ describe(`DynamicScatter.svelte`, () => {
         model_filter: (model: ModelData) => model.model_params !== null,
       },
     })
-    expect(document.querySelector(`.controls-grid`)).toBeDefined()
+    expect(document.querySelector(`.controls-row`)).not.toBeNull()
     // Cannot easily check filter effect without mocks
   })
 
@@ -176,7 +177,7 @@ describe(`DynamicScatter.svelte`, () => {
       // 2. Show controls via button click
       await settings_button?.click()
       extra_controls = doc_query<HTMLElement>(pane_selector)
-      expect(extra_controls).toBeDefined()
+      expect(extra_controls).not.toBeNull()
 
       // 3. Hide controls via Escape key
       document.dispatchEvent(
@@ -191,7 +192,7 @@ describe(`DynamicScatter.svelte`, () => {
       // 4. Re-show controls via button click
       await settings_button?.click()
       extra_controls = doc_query<HTMLElement>(pane_selector)
-      expect(extra_controls).toBeDefined()
+      expect(extra_controls).not.toBeNull()
     })
 
     it(`toggles extra controls visibility via click outside`, async () => {
@@ -211,7 +212,7 @@ describe(`DynamicScatter.svelte`, () => {
       // 1. Show controls
       await settings_button?.click()
       extra_controls = doc_query<HTMLElement>(pane_selector)
-      expect(extra_controls).toBeDefined()
+      expect(extra_controls).not.toBeNull()
 
       // 2. Click the explicit outside element
       await outside_element.click() // Simulate click outside
@@ -237,17 +238,20 @@ describe(`DynamicScatter.svelte`, () => {
       const extra_controls = doc_query(pane_selector)
 
       // --- Find Controls ---
-      const color_scale_select_el = extra_controls?.querySelector(`.color-scale-select`)
+      // ColorScaleSelect wraps svelte-multiselect's Select which renders a .multiselect div
+      const color_scale_select_el = extra_controls?.querySelector(`.multiselect`)
+      // Select checkboxes by their parent label's title attribute for stability
       const show_labels_checkbox = extra_controls?.querySelector<HTMLInputElement>(
-        `input[type="checkbox"]`,
+        `label[title*="model name labels"] input[type="checkbox"]`,
       )
-      const x_grid_checkbox = extra_controls?.querySelectorAll<HTMLInputElement>(
-        `input[type="checkbox"]`,
-      )[1]
+      const x_grid_checkbox = extra_controls?.querySelector<HTMLInputElement>(
+        `label[title*="vertical grid"] input[type="checkbox"]`,
+      )
+      const y_grid_checkbox = extra_controls?.querySelector<HTMLInputElement>(
+        `label[title*="horizontal grid"] input[type="checkbox"]`,
+      )
+
       const x_ticks_input = doc_query<HTMLInputElement>(`#x-ticks`, extra_controls)
-      const y_grid_checkbox = extra_controls?.querySelectorAll<HTMLInputElement>(
-        `input[type="checkbox"]`,
-      )[2]
       const y_ticks_input = doc_query<HTMLInputElement>(`#y-ticks`, extra_controls)
       const size_multiplier_input = doc_query<HTMLInputElement>(
         `#size-multiplier`,
@@ -271,7 +275,7 @@ describe(`DynamicScatter.svelte`, () => {
       )
 
       // --- Verify Initial States ---
-      expect(color_scale_select_el, `ColorScaleSelect should be rendered`).toBeDefined()
+      expect(color_scale_select_el, `ColorScaleSelect should be rendered`).not.toBeNull()
       expect(show_labels_checkbox?.checked, `Show Labels default`).toBe(true)
       expect(x_grid_checkbox?.checked, `X Grid default`).toBe(true)
       expect(x_ticks_input?.value, `X Ticks default`).toBe(`5`)
@@ -326,24 +330,38 @@ describe(`DynamicScatter.svelte`, () => {
   })
 
   describe(`regression tests for default values`, () => {
-    it(`verifies all critical default UI state to catch regressions`, () => {
+    it(`verifies all critical default UI state to catch regressions`, async () => {
       mount(DynamicScatter, { target: document.body, props: { models: mock_models } })
 
-      // Verify axis controls structure (4 select controls for x, y, color, size)
-      const controls_grid = document.querySelector(`.controls-grid`)
-      expect(controls_grid?.querySelectorAll(`[role="listbox"]`)).toHaveLength(4)
+      // Verify controls row is rendered with Size select
+      const controls_row = document.querySelector(`.controls-row`)
+      expect(controls_row).not.toBeNull()
+
+      // Size select should be in controls row (uses svelte-multiselect)
+      const size_select = controls_row?.querySelector(`#size-select`)
+      expect(size_select).not.toBeNull()
 
       // Open extra controls and test all defaults
-      doc_query<HTMLButtonElement>(`.settings-toggle`)?.click()
+      const settings_button = doc_query<HTMLButtonElement>(`.settings-toggle`)
+      await settings_button?.click()
+      await tick() // Wait for pane render
       const pane = doc_query(pane_selector)
 
-      // Test all checkbox defaults (these often regress)
-      const checkboxes = pane?.querySelectorAll<HTMLInputElement>(
-        `input[type="checkbox"]`,
+      // Select checkboxes by their parent label's title attribute for stability
+      const show_labels_checkbox = pane?.querySelector<HTMLInputElement>(
+        `label[title*="model name labels"] input[type="checkbox"]`,
       )
-      expect(checkboxes?.[0]?.checked, `show_model_labels default`).toBe(true)
-      expect(checkboxes?.[1]?.checked, `x_grid default`).toBe(true)
-      expect(checkboxes?.[2]?.checked, `y_grid default`).toBe(true)
+      const x_grid_checkbox = pane?.querySelector<HTMLInputElement>(
+        `label[title*="vertical grid"] input[type="checkbox"]`,
+      )
+      const y_grid_checkbox = pane?.querySelector<HTMLInputElement>(
+        `label[title*="horizontal grid"] input[type="checkbox"]`,
+      )
+
+      // Test checkbox defaults
+      expect(show_labels_checkbox?.checked, `show_model_labels default`).toBe(true)
+      expect(x_grid_checkbox?.checked, `x_grid default`).toBe(true)
+      expect(y_grid_checkbox?.checked, `y_grid default`).toBe(true)
 
       // Test all input defaults (these often regress)
       expect(doc_query<HTMLInputElement>(`#x-ticks`, pane)?.value).toBe(`5`)
@@ -355,8 +373,9 @@ describe(`DynamicScatter.svelte`, () => {
       expect(doc_query<HTMLInputElement>(`#link-strength`, pane)?.value).toBe(`5`)
 
       // Verify plot container and color controls render
-      expect(document.querySelector(`div.bleed-1400[style]`)).toBeDefined()
-      expect(pane?.querySelector(`.color-scale-select`)).toBeDefined()
+      expect(document.querySelector(`div.bleed-1400[style]`)).not.toBeNull()
+      // ColorScaleSelect wraps svelte-multiselect's Select which renders a .multiselect div
+      expect(pane?.querySelector(`.multiselect`)).not.toBeNull()
     })
   })
 })

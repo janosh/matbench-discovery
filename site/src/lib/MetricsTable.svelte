@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { IconList, TableControls } from '$lib'
+  import { Logo, TableControls } from '$lib'
   import { metric_better_as } from '$lib/metrics'
   import type {
     CellSnippetArgs,
@@ -162,7 +162,9 @@
 />
 
 {#snippet affiliation_cell({ row }: CellSnippetArgs)}
-  <IconList icons={(row as ModelData).org_logos} />
+  {#each (row as ModelData).org_logos ?? [] as logo, idx (logo.id ?? logo.src ?? idx)}
+    <Logo {logo} />
+  {/each}
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}

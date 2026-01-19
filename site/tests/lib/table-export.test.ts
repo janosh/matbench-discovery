@@ -1,5 +1,5 @@
 import type { Mock, MockInstance } from 'vitest'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Check if running in Deno environment
 const IS_DENO = `Deno` in globalThis
@@ -48,12 +48,19 @@ const create_mock_table = () =>
 describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
   let create_element_spy: MockInstance
   let query_selector_spy: MockInstance
+  let original_create_element: typeof document.createElement
   const mock_click = vi.fn()
+
+  beforeAll(() => {
+    // Save original createElement before any mocks - must be inside describe block
+    // to avoid import-time errors in non-DOM environments (Deno)
+    original_create_element = document.createElement.bind(document)
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Common mocks
+    // Common mocks - use original_create_element to avoid infinite recursion
     create_element_spy = vi
       .spyOn(document, `createElement`)
       .mockImplementation((tag: string) =>
@@ -63,7 +70,7 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
             download: ``,
             click: mock_click,
           } as unknown as HTMLAnchorElement)
-          : document.createElement(tag)
+          : original_create_element(tag)
       )
 
     query_selector_spy = vi

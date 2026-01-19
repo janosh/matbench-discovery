@@ -3,7 +3,10 @@ import { mount } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
 import { doc_query } from '../index'
 
-vi.mock(`matterviz`, () => ({ ScatterPlot: vi.fn() }))
+vi.mock(`matterviz`, async (importOriginal) => {
+  const actual = await importOriginal<typeof import('matterviz')>()
+  return { ...actual, ScatterPlot: vi.fn() }
+})
 
 const create_mock_curve = (overrides: Partial<{
   model_key: string

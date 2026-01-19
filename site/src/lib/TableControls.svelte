@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { type Label, TableColumnToggleMenu } from '$lib'
+  import type { Label } from '$lib'
   import { Icon } from 'matterviz'
+  // @ts-expect-error TODO remove after next matterviz release exports ToggleMenu
+  import { ToggleMenu } from 'matterviz/table'
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
@@ -119,7 +121,7 @@
     Heatmap
   </label>
 
-  <TableColumnToggleMenu bind:columns />
+  <ToggleMenu bind:columns />
 </div>
 
 <style>
