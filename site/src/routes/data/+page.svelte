@@ -42,9 +42,12 @@
     if (!wbm_elem_counts) throw `No WBM data for count mode ${count_mode}!`
   })
 
+  const capture_state = () => ({ color_scale, log_scale, count_mode })
   export const snapshot = {
-    capture: () => ({ color_scale, log_scale, count_mode }),
-    restore: (values) => ({ color_scale, log_scale, count_mode } = values),
+    capture: capture_state,
+    restore: (
+      values: ReturnType<typeof capture_state>,
+    ) => ({ color_scale, log_scale, count_mode } = values),
   }
 </script>
 

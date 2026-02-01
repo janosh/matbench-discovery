@@ -48,4 +48,7 @@
     vertical-align: middle;
     margin: 0 1pt 0 3pt;
   }
+  :root[data-theme='light'] p img {
+    filter: invert(1);
+  }
 </style>

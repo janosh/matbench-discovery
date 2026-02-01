@@ -1,54 +1,61 @@
 [
   {
     "name": "GRACE",
+    "model_key": "grace_2l_oam_l",
     "repo": "ICAMS/grace-tensorpotential",
-    "stars": 75,
-    "forks": 6,
-    "commits_last_year": 52,
+    "stars": 82,
+    "forks": 8,
+    "commits_last_year": 42,
     "contributors": 4
   },
   {
     "name": "HIENet",
+    "model_key": "hienet",
     "repo": "divelab/AIRS",
-    "stars": 701,
-    "forks": 81,
-    "commits_last_year": 100,
+    "stars": 726,
+    "forks": 88,
+    "commits_last_year": 92,
     "contributors": 36
   },
   {
     "name": "Wrenformer",
+    "model_key": "wrenformer",
     "repo": "CompRhys/aviary",
     "stars": 61,
     "forks": 13,
-    "commits_last_year": 17,
+    "commits_last_year": 13,
     "contributors": 6
   },
   {
     "name": "eqV2 S DeNS",
+    "model_key": "eqV2-s-dens-mp",
     "repo": "FAIR-Chem/fairchem",
-    "stars": 1818,
-    "forks": 402,
-    "commits_last_year": 301,
-    "contributors": 60
+    "stars": 1928,
+    "forks": 425,
+    "commits_last_year": 337,
+    "contributors": 63
   },
   {
-    "name": "DPA3",
+    "name": "DPA",
+    "model_key": "dpa-3.1-mptrj",
     "repo": "deepmodeling/deepmd-kit",
-    "stars": 1785,
-    "forks": 575,
-    "commits_last_year": 341,
+    "stars": 1862,
+    "forks": 588,
+    "commits_last_year": 309,
     "contributors": 84
   },
   {
     "name": "Nequip",
+    "model_key": "nequip-OAM-L-0.1",
     "repo": "mir-group/nequip",
-    "stars": 816,
-    "forks": 180,
-    "commits_last_year": 1096,
-    "contributors": 31
+    "stars": 857,
+    "forks": 198,
+    "commits_last_year": 1262,
+    "contributors": 38
   },
   {
     "name": "Eqnorm MPtrj",
+    "model_key": "eqnorm-mptrj",
     "repo": "yzchen08/eqnorm",
     "stars": 14,
     "forks": 3,
@@ -57,70 +64,88 @@
   },
   {
     "name": "MACE",
+    "model_key": "mace-mp-0",
     "repo": "ACEsuit/mace",
-    "stars": 922,
-    "forks": 339,
-    "commits_last_year": 588,
-    "contributors": 63
+    "stars": 1028,
+    "forks": 372,
+    "commits_last_year": 471,
+    "contributors": 67
   },
   {
     "name": "Nequix MP",
+    "model_key": "nequix-mp-1",
     "repo": "atomicarchitects/nequix",
-    "stars": 50,
-    "forks": 6,
-    "commits_last_year": 41,
-    "contributors": 2
+    "stars": 64,
+    "forks": 10,
+    "commits_last_year": 90,
+    "contributors": 3
   },
   {
     "name": "Voronoi RF",
+    "model_key": "voronoi-rf",
     "repo": "janosh/matbench-discovery",
-    "stars": 197,
-    "forks": 49,
-    "commits_last_year": 148,
-    "contributors": 25
+    "stars": 211,
+    "forks": 54,
+    "commits_last_year": 120,
+    "contributors": 28
   },
   {
     "name": "MatterSim v1 5M",
+    "model_key": "mattersim-v1-5M",
     "repo": "microsoft/mattersim",
-    "stars": 476,
-    "forks": 66,
-    "commits_last_year": 124,
+    "stars": 509,
+    "forks": 73,
+    "commits_last_year": 19,
     "contributors": 18
   },
   {
-    "name": "ALIGNN FF",
-    "repo": "usnistgov/alignn",
-    "stars": 285,
-    "forks": 103,
-    "commits_last_year": 60,
-    "contributors": 8
-  },
-  {
     "name": "GNoME",
+    "model_key": "gnome",
     "repo": "google-deepmind/materials_discovery",
-    "stars": 1063,
+    "stars": 1120,
     "forks": 174,
-    "commits_last_year": 3,
+    "commits_last_year": 1,
     "contributors": 2
   },
   {
-    "name": "MatRIS v0.5.0 MPtrj",
+    "name": "MatRIS",
+    "model_key": "matris-10m-oam",
     "repo": "HPC-AI-Team/MatRIS",
-    "stars": 13,
-    "forks": 1,
+    "stars": 25,
+    "forks": 4,
     "commits_last_year": 31,
     "contributors": 3
   },
   {
+    "name": "TACE",
+    "model_key": "tace-v1-oam-m",
+    "repo": "xvzemin/tace",
+    "stars": 19,
+    "forks": 2,
+    "commits_last_year": 51,
+    "contributors": 1
+  },
+  {
     "name": "BOWSR",
+    "model_key": "bowsr",
     "repo": "materialsvirtuallab/maml",
-    "stars": 436,
-    "forks": 91,
-    "commits_last_year": 97,
+    "stars": 447,
+    "forks": 94,
+    "commits_last_year": 99,
     "contributors": 39
   },
   {
+    "name": "PET",
+    "model_key": "pet-oam-xl-1.0.0",
+    "repo": "lab-cosmo/upet",
+    "stars": 120,
+    "forks": 13,
+    "commits_last_year": 219,
+    "contributors": 12
+  },
+  {
     "name": "MEGNet",
+    "model_key": "megnet",
     "repo": "materialsvirtuallab/megnet",
     "stars": 544,
     "forks": 159,
@@ -129,6 +154,7 @@
   },
   {
     "name": "M3GNet",
+    "model_key": "m3gnet",
     "repo": "materialsvirtuallab/m3gnet",
     "stars": 301,
     "forks": 69,
@@ -136,7 +162,17 @@
     "contributors": 16
   },
   {
+    "name": "ALIGNN",
+    "model_key": "alignn",
+    "repo": "usnistgov/alignn",
+    "stars": 285,
+    "forks": 103,
+    "commits_last_year": 60,
+    "contributors": 8
+  },
+  {
     "name": "CHGNet",
+    "model_key": "chgnet-0.3.0",
     "repo": "CederGroupHub/chgnet",
     "stars": 343,
     "forks": 86,
@@ -145,6 +181,7 @@
   },
   {
     "name": "EquFlash",
+    "model_key": "equflash-29M-oam",
     "repo": "SNU-ARC/flashTP",
     "stars": 34,
     "forks": 1,
@@ -153,6 +190,7 @@
   },
   {
     "name": "ORB v2",
+    "model_key": "orb-v2",
     "repo": "orbital-materials/orb-models",
     "stars": 510,
     "forks": 69,
@@ -161,6 +199,7 @@
   },
   {
     "name": "CGCNN+P",
+    "model_key": "cgcnn+p",
     "repo": "JasonGibsonUfl/Augmented_CGCNN",
     "stars": 9,
     "forks": 0,
@@ -169,6 +208,7 @@
   },
   {
     "name": "SevenNet",
+    "model_key": "sevennet-omni-i12",
     "repo": "MDIL-SNU/SevenNet",
     "stars": 200,
     "forks": 40,
@@ -177,6 +217,7 @@
   },
   {
     "name": "Allegro",
+    "model_key": "allegro-OAM-L-0.1",
     "repo": "mir-group/allegro",
     "stars": 438,
     "forks": 68,
@@ -185,6 +226,7 @@
   },
   {
     "name": "AlphaNet",
+    "model_key": "alphanet-v1-oma",
     "repo": "zmyybc/AlphaNet",
     "stars": 111,
     "forks": 22,
@@ -193,6 +235,7 @@
   },
   {
     "name": "ESNet",
+    "model_key": "esnet",
     "repo": "zzz-sl/ESNet",
     "stars": 4,
     "forks": 1,
