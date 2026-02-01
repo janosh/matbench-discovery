@@ -143,9 +143,10 @@
     </button>
 
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-      {#if metadata}
-        {@const point = plot_data_by_name.get(metadata.name)}
-        <strong>{metadata.name}</strong><br />
+      {@const name = (metadata as { name?: string })?.name}
+      {#if name}
+        {@const point = plot_data_by_name.get(name)}
+        <strong>{name}</strong><br />
         {axes.x.label}: {x_formatted}<br />
         {axes.y.label}: {y_formatted}<br />
         {#if point?.color_value != null}

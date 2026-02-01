@@ -4,6 +4,12 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 // Check if running in Deno environment
 const IS_DENO = `Deno` in globalThis
 
+// Mock html-to-image at module level to ensure it's available before any imports
+vi.mock(`html-to-image`, () => ({
+  toSvg: vi.fn().mockResolvedValue(`data:image/svg+xml;base64,test`),
+  toPng: vi.fn().mockResolvedValue(`data:image/png;base64,test`),
+}))
+
 // Mock DOM table structure for testing
 const create_mock_table = () =>
   ({
@@ -59,6 +65,7 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.resetModules()
 
     // Common mocks - use original_create_element to avoid infinite recursion
     create_element_spy = vi
@@ -119,8 +126,7 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
     })
 
     it(`preserves subscripts and superscripts in ${format} export`, async () => {
-      // Reset modules and restore spies to use real DOM operations
-      vi.resetModules()
+      // Restore spies to use real DOM operations
       create_element_spy.mockRestore()
       query_selector_spy.mockRestore()
 
@@ -167,23 +173,21 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
       // Append to document so querySelector can find it
       document.body.appendChild(real_table)
 
-      // Mock the image generation library to capture the container
+      // Get the mocked html-to-image module and override with container capture
+      const html_to_image = await import(`html-to-image`)
       let captured_container: HTMLElement | null = null
-      const mock_lib = format === `SVG`
-        ? {
-          toSvg: vi.fn().mockImplementation((container) => {
-            captured_container = container
-            return Promise.resolve(`data:image/svg+xml;base64,test`)
-          }),
-        }
-        : {
-          toPng: vi.fn().mockImplementation((container) => {
-            captured_container = container
-            return Promise.resolve(`data:image/png;base64,test`)
-          }),
-        }
 
-      vi.doMock(`html-to-image`, () => mock_lib)
+      if (format === `SVG`) {
+        vi.mocked(html_to_image.toSvg).mockImplementation((container) => {
+          captured_container = container as HTMLElement
+          return Promise.resolve(`data:image/svg+xml;base64,test`)
+        })
+      } else {
+        vi.mocked(html_to_image.toPng).mockImplementation((container) => {
+          captured_container = container as HTMLElement
+          return Promise.resolve(`data:image/png;base64,test`)
+        })
+      }
 
       const module = await import(`$lib/table-export`)
       await module[function_name]({ discovery_set: `test` })
@@ -205,7 +209,6 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
       query_selector_spy.mockReturnValue(null)
       const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
 
-      vi.resetModules()
       const module = await import(`$lib/table-export`)
       const result = await module[function_name]({ discovery_set: `test` })
 
@@ -216,11 +219,14 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
 
     it(`handles library errors gracefully for ${format}`, async () => {
       const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
-      const mock_lib = format === `SVG`
-        ? { toSvg: vi.fn().mockRejectedValue(new Error(`Library failed`)) }
-        : { toPng: vi.fn().mockRejectedValue(new Error(`Library failed`)) }
 
-      vi.doMock(`html-to-image`, () => mock_lib)
+      // Override the mock to reject
+      const html_to_image = await import(`html-to-image`)
+      if (format === `SVG`) {
+        vi.mocked(html_to_image.toSvg).mockRejectedValue(new Error(`Library failed`))
+      } else {
+        vi.mocked(html_to_image.toPng).mockRejectedValue(new Error(`Library failed`))
+      }
 
       const module = await import(`$lib/table-export`)
       const result = await module[function_name]({ discovery_set: `test` })
@@ -418,7 +424,6 @@ describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
 
         const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
 
-        vi.resetModules()
         const module = await import(`$lib/table-export`)
 
         const handler = module.handle_export(generator_spy, `fmt`, state)

@@ -337,7 +337,9 @@ def check_url(session: requests.Session, url: str, desc: str) -> None:
     try:
         response = session.head(url, allow_redirects=True)
         http_status = response.status_code
-        assert http_status in {200, 403, 429}
+        # 200: OK, 202: Accepted (async processing, common for figshare),
+        # 403: Forbidden (valid URL but access restricted), 429: Rate limited
+        assert http_status in {200, 202, 403, 429}
         if http_status == 429:
             assert "Too Many Requests" in response.reason, f"{response.reason=}"
             warnings.warn(f"{response.reason=}", stacklevel=2)

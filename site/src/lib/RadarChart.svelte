@@ -256,16 +256,17 @@
     Reset
   </button>
 
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <svg
     bind:this={svg_element}
     width={size}
     height={size}
     viewBox="0 0 {size} {size}"
     onclick={handle_svg_click}
-    role="img"
-    aria-label="Radar chart for adjusting metric weights"
+    onkeydown={(event) =>
+    event.key === `Enter` && handle_svg_click(event as unknown as MouseEvent)}
+    tabindex="0"
+    role="button"
+    aria-label="Radar chart for adjusting metric weights. Click to adjust."
   >
     <!-- Axes -->
     {#each Object.values(CPS_CONFIG) as weight, idx (weight.label)}
