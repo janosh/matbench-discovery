@@ -148,6 +148,16 @@ def test_files_enum() -> None:
     class SubFiles(Files, base_dir="foo"):
         test_file = auto(), "test/file.txt"
 
+        @property
+        def url(self) -> str:
+            """URL associated with the file."""
+            return "https://example.com/file.txt"
+
+        @property
+        def label(self) -> str:
+            """Label associated with the file."""
+            return "test"
+
     assert SubFiles.base_dir == "foo"
 
     # Test __repr__ and __str__ methods
