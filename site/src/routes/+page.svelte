@@ -11,7 +11,6 @@
     RadarChart,
     SelectToggle,
   } from '$lib'
-  import { Icon } from 'matterviz'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import {
@@ -24,7 +23,7 @@
   import type { DiscoverySet, ModelData, SortDir } from '$lib/types'
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/tasks/phonons/kappa-note.md'
-  import { format_num } from 'matterviz'
+  import { format_num, Icon } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { Snapshot } from './$types'
   import github_activity_data from './models/mlip-github-activity.json'

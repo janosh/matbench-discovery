@@ -210,9 +210,9 @@
           then ParityPlot
         }
           <!-- negative margin-bottom corrects for display: none plot title -->
-          <h3 style="margin: 1em auto -2em; text-align: center" class="toc-exclude">
+          <h2 style="margin: 1em auto -2em; text-align: center" class="toc-exclude">
             ML vs DFT {title}
-          </h3>
+          </h2>
           <ParityPlot.default height="500" />
         {/await}
       {/each}

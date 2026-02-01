@@ -111,7 +111,7 @@ def test_calc_energy_from_e_refs_error_cases(
 
     # Invalid input type
     with pytest.raises(TypeError, match="Expected Entry, Structure"):
-        calc_energy_from_e_refs([1, 2, 3], ref_energies, total_energy=-5.0)  # type: ignore[arg-type]
+        calc_energy_from_e_refs([1, 2, 3], ref_energies, total_energy=-5.0)
 
 
 def test_calc_energy_from_e_refs_equivalence_with_get_e_form(

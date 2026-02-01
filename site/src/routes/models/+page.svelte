@@ -1,11 +1,10 @@
 <script lang="ts">
   import { type Label, ModelCard } from '$lib'
-  import { Icon } from 'matterviz'
   import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
-  import { ColorBar, luminance } from 'matterviz'
+  import { ColorBar, Icon, luminance } from 'matterviz'
   import { untrack } from 'svelte'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
@@ -47,9 +46,12 @@
   ] as const
   const metrics = metric_keys.map((key) => ALL_METRICS[key])
 
+  const capture_state = () => ({ show_details, sort_by, order, show_n_best })
   export const snapshot = {
-    capture: () => ({ show_details, sort_by, order, show_n_best }),
-    restore: (values) => ({ show_details, sort_by, order, show_n_best } = values),
+    capture: capture_state,
+    restore: (
+      values: ReturnType<typeof capture_state>,
+    ) => ({ show_details, sort_by, order, show_n_best } = values),
   }
 
   function bg_color(val: number, min: number, max: number) {

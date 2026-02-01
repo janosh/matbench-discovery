@@ -35,7 +35,7 @@
 
 <HullConstructionNote />
 
-<h3>F1 classification score vs model parameters</h3>
+<h2>F1 classification score vs model parameters</h2>
 
 The F1 score is the harmonic mean of precision and recall. It is a measure of the model's
 ability to correctly identify hypothetical crystals in the WBM test set as lying on or

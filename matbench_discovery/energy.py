@@ -112,7 +112,7 @@ def calc_energy_from_e_refs(
         ValueError: If missing reference energies for some elements
     """
     if isinstance(struct_or_entry, dict):  # entry dict case
-        energy = struct_or_entry["energy"]
+        energy: float = struct_or_entry["energy"]
         comp = Composition(struct_or_entry["composition"])
     # Entry/ComputedEntry/ComputedStructureEntry instance case
     elif isinstance(struct_or_entry, Entry):

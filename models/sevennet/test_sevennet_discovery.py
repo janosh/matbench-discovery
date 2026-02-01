@@ -93,7 +93,7 @@ print(f"\nJob {job_name!r} running {timestamp}", flush=True)
 print(f"{data_path=}", flush=True)
 
 # Initialize ASE SevenNet Calculator from checkpoint
-seven_net_calc = SevenNetCalculator(**calc_kwargs)  # type: ignore[arg-type]
+seven_net_calc = SevenNetCalculator(**calc_kwargs)
 
 
 # %%

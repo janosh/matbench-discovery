@@ -17,7 +17,7 @@
 
   let url = $derived(page.url.pathname)
   let headingSelector = $derived(
-    `main :is(${{ '/api': `h1, ` }[url] ?? ``}h2, h3, h4):not(.toc-exclude)`,
+    `main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4):not(.toc-exclude)`,
   )
 
   const base_description =
@@ -61,11 +61,10 @@
 {#if ![`/`, `/models`, `/tasks/geo-opt`].includes(url)}
   <Toc
     {headingSelector}
-    breakpoint={1600}
+    breakpoint={1350}
     minItems={3}
-    aside_style="max-width: 22em; z-index: 1"
+    aside_style="max-width: 22em"
     nav_style="font-size: 7pt"
-    --toc-mobile-width="22em"
     --toc-active-bg="transparent"
     --toc-active-color="var(--link-color)"
   />
@@ -75,11 +74,11 @@
 
 <Nav
   routes={[`/`, ...routes.filter((route) => route != `/changelog`), [pkg.paper, `Paper`]]}
-  style="left: initial; margin-block: 1em 0"
-  menu_props={{ style: `gap: 1.5em; place-items: center` }}
+  style="margin-block: 1em 0"
+  menu_props={{ style: `gap: 1.5em` }}
   labels={{ '/': `Home`, '/api': `API` }}
   link_props={{
-    style: `background-color: var(--nav-bg); display: inline-flex; place-items: center`,
+    style: `padding: 0 3pt`,
   }}
 >
   <ThemeToggle />
@@ -94,7 +93,7 @@
 <style>
   :global(aside.toc.desktop) {
     position: fixed;
-    left: calc(50vw + var(--main-max-width) / 2 + 1em);
+    left: calc(50vw + var(--main-max-width) / 2);
   }
   :global(aside.toc.mobile > nav) {
     box-shadow: 0 0 20px var(--shadow);

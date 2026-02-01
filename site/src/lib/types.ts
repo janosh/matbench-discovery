@@ -121,5 +121,6 @@ export type GitHubActivityData = {
   forks: number
   commits_last_year: number
   contributors: number
+  model_key?: string // URL slug for model detail page
   color?: string
 }

@@ -62,7 +62,7 @@ if model_variant in checkpoint_urls:
         print(f"Using cached checkpoint: {checkpoint_path}")
     calc_kwargs["model"] = str(checkpoint_path)
 
-calc = SevenNetCalculator(**calc_kwargs)  # type: ignore[arg-type]
+calc = SevenNetCalculator(**calc_kwargs)
 
 # Relaxation parameters. These params are for reproducing 7net-mf-ompa.
 ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
