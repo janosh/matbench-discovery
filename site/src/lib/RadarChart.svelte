@@ -120,7 +120,19 @@
     const click_x = event.clientX - svg_rect.left
     const click_y = event.clientY - svg_rect.top
 
-    // Check if click is inside the triangle
+    move_to_position(click_x, click_y)
+  }
+
+  // Handle keyboard activation - move to SVG center (equal weights)
+  function handle_keyboard_click(event: KeyboardEvent) {
+    if (event.key === `Enter` || event.key === ` `) {
+      event.preventDefault()
+      move_to_position(center.x, center.y)
+    }
+  }
+
+  // Move the point to a position, constraining to triangle if needed
+  function move_to_position(click_x: number, click_y: number) {
     const [a, b, c] = axis_points
     const click_point = { x: click_x, y: click_y }
 
@@ -262,11 +274,10 @@
     height={size}
     viewBox="0 0 {size} {size}"
     onclick={handle_svg_click}
-    onkeydown={(event) =>
-    event.key === `Enter` && handle_svg_click(event as unknown as MouseEvent)}
+    onkeydown={handle_keyboard_click}
     tabindex="0"
     role="button"
-    aria-label="Radar chart for adjusting metric weights. Click to adjust."
+    aria-label="Radar chart for adjusting metric weights. Click to set custom weights. Press Enter or Space to reset to equal weights."
   >
     <!-- Axes -->
     {#each Object.values(CPS_CONFIG) as weight, idx (weight.label)}
