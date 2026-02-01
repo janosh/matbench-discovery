@@ -368,7 +368,7 @@ export function assemble_row_data(
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
           col.key,
-          get_nested_value(model, col.path) as number | undefined,
+          get_nested_value(model, `${col.path}.${col.property}`) as number | undefined,
         ]),
       ),
     }

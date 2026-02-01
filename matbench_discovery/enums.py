@@ -1,6 +1,5 @@
 """Enums used as keys/accessors for dicts and dataframes across Matbench Discovery."""
 
-import abc
 import builtins
 import functools
 import os
@@ -232,14 +231,18 @@ class Files(StrEnum, metaclass=MetaFiles):
         return self.name
 
     @property
-    @abc.abstractmethod
     def url(self) -> str:
         """URL associated with the file."""
+        raise NotImplementedError(
+            f"{type(self).__name__} must implement 'url' property"
+        )
 
     @property
-    @abc.abstractmethod
     def label(self) -> str:
         """Label associated with the file."""
+        raise NotImplementedError(
+            f"{type(self).__name__} must implement 'label' property"
+        )
 
     @property
     def rel_path(self) -> str:

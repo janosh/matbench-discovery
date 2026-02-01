@@ -63,7 +63,7 @@ for good_or_bad, init_or_final in itertools.product(
         )
         structures[title] = struct
 
-    fig = pmv.structure_3d(structures, n_cols=2)  # type: ignore[arg-type]
+    fig = pmv.structure_3d(structures, n_cols=2)
 
     title = (
         f"{good_or_bad.title()} {len(errors)} {init_or_final} structures (across "

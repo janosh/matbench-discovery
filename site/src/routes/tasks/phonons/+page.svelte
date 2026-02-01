@@ -26,7 +26,7 @@
 
 <KappaNote />
 
-<h3>κ<sub>SRME</sub> vs Model Parameters</h3>
+<h2>κ<sub>SRME</sub> vs Model Parameters</h2>
 <p>
   κ<sub>SRME</sub> ranges from 0 to 2, the lower the better. This metric was introduced in
   <a href="https://arxiv.org/abs/2408.00755v4">arXiv:2408.00755v4</a>. This modeling task

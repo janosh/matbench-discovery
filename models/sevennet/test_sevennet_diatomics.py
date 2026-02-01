@@ -58,7 +58,7 @@ if model_variant in checkpoint_urls:
     calc_kwargs["model"] = str(checkpoint_path)
 
 dtype = "float32"
-calculator = SevenNetCalculator(**calc_kwargs)  # type: ignore[arg-type]
+calculator = SevenNetCalculator(**calc_kwargs)
 
 json_path = f"{ROOT}/models/{model_name}/{model_variant}/{today}-diatomics.json.gz"
 existing_paths = glob(json_path.replace(today, "*-*-*"))

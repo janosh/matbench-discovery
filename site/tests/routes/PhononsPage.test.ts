@@ -16,8 +16,11 @@ describe(`Phonons Task Page`, () => {
     expect(table).not.toBeNull()
     expect(document.querySelectorAll(`tbody tr`).length).toBeGreaterThan(0)
 
-    // MetricScatter with h3 heading
-    expect(document.querySelector(`h3`)?.textContent).toContain(`vs Model Parameters`)
+    // MetricScatter with h2 heading
+    const scatter_heading = Array.from(document.querySelectorAll(`h2`)).find((heading) =>
+      heading.textContent?.includes(`vs Model Parameters`)
+    )
+    expect(scatter_heading).toBeTruthy()
     expect(document.querySelector(`[style*="height: 400px"]`)).not.toBeNull()
   })
 

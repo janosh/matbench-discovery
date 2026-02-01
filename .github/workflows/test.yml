@@ -41,12 +41,6 @@ jobs:
       working-directory: site
       test-cmd: npx vitest run
       deno-version: 2.3.7 # https://github.com/denoland/deno/issues/29968
-      install-cmd: |
-        git clone --depth 1 https://github.com/janosh/matterviz ../matterviz
-        (cd ../matterviz && deno install && deno run -A npm:@sveltejs/kit sync && deno task package)
-        deno install
-        rm -rf node_modules/.deno/matterviz* node_modules/matterviz
-        ln -s ../../matterviz node_modules/matterviz
 
   scripts:
     runs-on: ubuntu-latest

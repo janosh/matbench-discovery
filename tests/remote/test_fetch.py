@@ -8,32 +8,31 @@ import requests
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 
+def make_mock_response(content: bytes, status_code: int = 200) -> requests.Response:
+    """Create a mock requests.Response with given content and status code."""
+    response = requests.Response()
+    response.status_code = status_code
+    response._content = content  # noqa: SLF001
+    response.iter_content = (
+        lambda chunk_size=1, decode_unicode=False: [content]  # noqa: ARG005
+    )
+    return response
+
+
 def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     """Test download_file function."""
-
     from matbench_discovery.remote.fetch import download_file
 
     url = "https://example.com/test.txt"
     test_content = b"test content"
     dest_path = tmp_path / "test.txt"
 
-    # Mock successful request
-    mock_response = requests.Response()
-    mock_response.status_code = 200
-    mock_response._content = test_content  # noqa: SLF001
-    mock_response.iter_content = lambda chunk_size: [test_content]  # noqa: ARG005
-
-    with patch("requests.get", return_value=mock_response):
+    with patch("requests.get", return_value=make_mock_response(test_content)):
         download_file(str(dest_path), url)
         assert dest_path.read_bytes() == test_content
 
     # Mock failed request
-    mock_response = requests.Response()
-    mock_response.status_code = 404
-    mock_response._content = b"Not found"  # noqa: SLF001
-    mock_response.iter_content = lambda chunk_size: [b"Not found"]  # noqa: ARG005
-
-    with patch("requests.get", return_value=mock_response):
+    with patch("requests.get", return_value=make_mock_response(b"Not found", 404)):
         download_file(str(dest_path), url)  # Should print error but not raise
 
     stdout, stderr = capsys.readouterr()
@@ -49,11 +48,7 @@ def test_maybe_auto_download_file(
     abs_path = f"{tmp_path}/test/file.txt"
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
 
-    # Mock successful request
-    mock_response = requests.Response()
-    mock_response.status_code = 200
-    mock_response._content = b"test content"  # noqa: SLF001
-    mock_response.iter_content = lambda chunk_size: [b"test content"]  # noqa: ARG005
+    mock_response = make_mock_response(b"test content")
 
     # Test 1: Auto-download enabled (default)
     monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
