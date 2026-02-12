@@ -18,7 +18,7 @@ def download_file(file_path: str, url: str) -> None:
     # Convert Figshare URLs to API download URLs to avoid WAF bot detection
     # https://figshare.com/files/12345 -> https://api.figshare.com/v2/file/download/12345
     if "figshare.com/files/" in url:
-        file_id = url.split("/files/")[-1]
+        file_id = url.rsplit("/files/", maxsplit=1)[-1]
         url = f"https://api.figshare.com/v2/file/download/{file_id}"
 
     try:

@@ -4,7 +4,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
+    rev: v0.15.0
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -82,7 +82,7 @@ repos:
         exclude: changelog\.md$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v10.0.0-rc.2
+    rev: v10.0.0
     hooks:
       - id: eslint
         types: [file]
@@ -108,7 +108,7 @@ repos:
       - id: check-github-actions
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.42.3
+    rev: v1.43.4
     hooks:
       - id: typos
         types: [text]

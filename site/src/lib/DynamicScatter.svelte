@@ -3,7 +3,7 @@
   import type { ModelData } from '$lib'
   import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
-  import { DraggablePane, format_num, Icon } from 'matterviz'
+  import { format_num } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
@@ -76,14 +76,11 @@
     y: ALL_METRICS.CPS.key,
   })
 
-  // Color and Size are managed separately (not part of ScatterPlot's built-in axis selection)
   let color_key = $state(ALL_METRICS.F1.key)
-  let size_prop = $state(HYPERPARAMS.model_params)
+  let size_prop = $state(HYPERPARAMS.model_params as typeof options[number])
 
-  // Derive color_prop from key
   let color_prop = $derived(options_by_key[color_key])
 
-  // Derive full axes object for use in plot_data computation
   let axes = $derived({
     x: options_by_key[selected.x],
     y: options_by_key[selected.y],
@@ -92,9 +89,6 @@
   })
 
   let log = $state({ x: false, y: false, color: false, size: false })
-  let is_fullscreen = $state(false)
-  let show_extra_controls = $state(false)
-  let container_el: HTMLDivElement | null = null
 
   let color_scheme: D3InterpolateName = $state(`interpolateViridis`)
   let x_ticks = $state(5)
@@ -105,7 +99,6 @@
   let size_multiplier = $state(1)
   let label_font_size = $state(14)
   let link_strength = $state(5)
-  let link_distance = $state(5)
   let min_link_distance = $state(15)
   let max_link_distance = $state(20)
 
@@ -141,14 +134,10 @@
 
   // Data loader for interactive axis selection (y2 not supported in this scatter plot)
   const data_loader = async (axis: `x` | `y` | `y2`, key: string) => {
-    // Update the selected key
     if (axis === `x`) selected.x = key
     else if (axis === `y`) selected.y = key
 
-    // Wait for reactive derivations to update
     await tick()
-
-    // Return updated series
     return { series: [series], axis_label: options_by_key[key]?.label }
   }
 
@@ -211,24 +200,13 @@
   })
 </script>
 
-<svelte:window
-  onfullscreenchange={() => is_fullscreen = document.fullscreenElement === container_el}
-/>
-
-<div
-  bind:this={container_el}
-  class:fullscreen={is_fullscreen}
-  class:bleed-1400={!is_fullscreen}
-  style:height={is_fullscreen ? `100%` : `auto`}
-  style="margin-block: 2em"
->
+<div class="bleed-1400" style="margin-block: 2em">
   <div class="controls-row">
     <label for="size-select">Marker Size</label>
     <Select
       {options}
       id="size-select"
       bind:value={size_prop}
-      placeholder="Select Size"
       maxSelect={1}
       minSelect={1}
       style="flex: 1; max-width: 300px; margin: 0"
@@ -246,7 +224,7 @@
   </div>
 
   <ScatterPlot
-    style={`height: ${is_fullscreen ? `100%` : `600px`}`}
+    style="height: 600px"
     series={[series]}
     x_axis={{
       label: axes.x?.label,
@@ -301,7 +279,6 @@
     }}
     label_placement_config={{
       link_strength,
-      link_distance,
       link_distance_range: [min_link_distance, max_link_distance],
     }}
     point_events={{
@@ -310,167 +287,108 @@
     {...rest}
     {data_loader}
   >
-    <DraggablePane
-      bind:show={show_extra_controls}
-      toggle_props={{
-        class: `settings-toggle`,
-        style:
-          `position: absolute; top: 15px; right: 4.3em; background-color: var(--btn-bg); border-radius: 50%; padding: 4pt;`,
-      }}
-      pane_props={{
-        style: `border: 1px solid var(--border);`,
-        'aria-hidden': !show_extra_controls,
-      }}
-    >
-      <div style="display: grid; grid-template-columns: auto 1fr; gap: 8pt 1em">
-        <!-- Log scale toggles - {#if true} creates scope for {@const} declarations -->
-        {#if true}
-          {@const x_extent = extent(plot_data, (d) => d.x as number)}
-          {@const y_extent = extent(plot_data, (d) => d.y as number)}
-          {@const color_extent = extent(plot_data, (d) => d.color_value as number)}
-          {@const size_extent = extent(plot_data, (d) => d.size_value as number)}
-          {@const can_log_x = x_extent[0] !== undefined && x_extent[0] > 0 &&
-            100 * x_extent[0] <= (x_extent[1] ?? 0)}
-          {@const can_log_y = y_extent[0] !== undefined && y_extent[0] > 0 &&
-            100 * y_extent[0] <= (y_extent[1] ?? 0)}
-          {@const can_log_color = color_extent[0] !== undefined &&
-            color_extent[0] > 0 &&
-            100 * color_extent[0] <= (color_extent[1] ?? 0)}
-          {@const can_log_size = size_extent[0] !== undefined && size_extent[0] > 0 &&
-            100 * size_extent[0] <= (size_extent[1] ?? 0)}
-          <div
-            class="log-toggles"
-            style="grid-column: 1/-1; display: flex; gap: 1em; flex-wrap: wrap"
-          >
-            <label style:visibility={can_log_x ? `visible` : `hidden`}>
-              <input type="checkbox" bind:checked={log.x} disabled={!can_log_x} /> Log X
-            </label>
-            <label style:visibility={can_log_y ? `visible` : `hidden`}>
-              <input type="checkbox" bind:checked={log.y} disabled={!can_log_y} /> Log Y
-            </label>
-            <label style:visibility={can_log_color ? `visible` : `hidden`}>
-              <input type="checkbox" bind:checked={log.color} disabled={!can_log_color} />
-              Log Color
-            </label>
-            <label style:visibility={can_log_size ? `visible` : `hidden`}>
-              <input type="checkbox" bind:checked={log.size} disabled={!can_log_size} />
-              Log Size
-            </label>
-          </div>
-        {/if}
-
-        <label
-          style="grid-column: 1/-1"
-          title="Toggle visibility of model name labels on the scatter plot points"
+    {#snippet controls_extra()}
+      <!-- Log scale toggles - {#if true} creates scope for {@const} declarations -->
+      {#if true}
+        {@const x_extent = extent(plot_data, (d) => d.x as number)}
+        {@const y_extent = extent(plot_data, (d) => d.y as number)}
+        {@const color_extent = extent(plot_data, (d) => d.color_value as number)}
+        {@const size_extent = extent(plot_data, (d) => d.size_value as number)}
+        {@const can_log_x = x_extent[0] !== undefined && x_extent[0] > 0 &&
+        100 * x_extent[0] <= (x_extent[1] ?? 0)}
+        {@const can_log_y = y_extent[0] !== undefined && y_extent[0] > 0 &&
+        100 * y_extent[0] <= (y_extent[1] ?? 0)}
+        {@const can_log_color = color_extent[0] !== undefined &&
+        color_extent[0] > 0 &&
+        100 * color_extent[0] <= (color_extent[1] ?? 0)}
+        {@const can_log_size = size_extent[0] !== undefined && size_extent[0] > 0 &&
+        100 * size_extent[0] <= (size_extent[1] ?? 0)}
+        <div
+          class="log-toggles"
+          style="display: flex; gap: 1em; flex-wrap: wrap"
         >
-          <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
-        </label>
-        <ColorScaleSelect
-          bind:value={color_scheme}
-          style="margin: 0; grid-column: 1/-1"
-        />
-        <label title="Toggle the visibility of vertical grid lines">
-          <input type="checkbox" bind:checked={x_grid} /> X Grid
-        </label>
-        <label title="Set the approximate number of ticks on the X axis">Ticks:
-          <input
-            id="x-ticks"
-            type="number"
-            min="0"
-            max="20"
-            bind:value={x_ticks}
-            style="width: 50px"
-          /></label>
+          <label style:visibility={can_log_x ? `visible` : `hidden`}>
+            <input type="checkbox" bind:checked={log.x} disabled={!can_log_x} /> Log X
+          </label>
+          <label style:visibility={can_log_y ? `visible` : `hidden`}>
+            <input type="checkbox" bind:checked={log.y} disabled={!can_log_y} /> Log Y
+          </label>
+          <label style:visibility={can_log_color ? `visible` : `hidden`}>
+            <input type="checkbox" bind:checked={log.color} disabled={!can_log_color} />
+            Log Color
+          </label>
+          <label style:visibility={can_log_size ? `visible` : `hidden`}>
+            <input type="checkbox" bind:checked={log.size} disabled={!can_log_size} />
+            Log Size
+          </label>
+        </div>
+      {/if}
 
-        <label title="Toggle the visibility of horizontal grid lines">
-          <input type="checkbox" bind:checked={y_grid} /> Y Grid
-        </label>
-        <label title="Set the approximate number of ticks on the Y axis">Ticks:
-          <input
-            id="y-ticks"
-            type="number"
-            min="0"
-            max="20"
-            bind:value={y_ticks}
-            style="width: 50px"
-          />
-        </label>
-        <label
-          for="size-multiplier"
-          title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
-        >Point Size</label>
+      <label title="Toggle visibility of model name labels on the scatter plot points">
+        <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
+      </label>
+      <ColorScaleSelect
+        bind:value={color_scheme}
+        style="margin: 0"
+      />
+      <label
+        for="size-multiplier"
+        title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
+      >Point Size</label>
+      <input
+        id="size-multiplier"
+        type="range"
+        min="0.1"
+        max="5"
+        step="0.1"
+        bind:value={size_multiplier}
+      />
+      <label
+        for="label-font-size"
+        title="Adjust the font size of the model name labels (in pixels)"
+      >Label Size</label>
+      <input
+        id="label-font-size"
+        type="range"
+        min="8"
+        max="24"
+        step="1"
+        bind:value={label_font_size}
+      />
+      <label
+        title="Configure the distance range and strength of the links connecting labels to their points"
+        for="min-link-distance"
+      >Label Link</label>
+      <div class="combined-link-controls">
         <input
-          id="size-multiplier"
+          id="min-link-distance"
+          type="number"
+          min="0"
+          max="100"
+          bind:value={min_link_distance}
+          title="Minimum distance"
+        />
+        <span>-</span>
+        <input
+          id="max-link-distance"
+          type="number"
+          min="0"
+          max="100"
+          bind:value={max_link_distance}
+          title="Maximum distance"
+        />
+        <input
+          id="link-strength"
           type="range"
           min="0.1"
-          max="5"
+          max="10"
           step="0.1"
-          bind:value={size_multiplier}
+          bind:value={link_strength}
+          title="Strength (higher = stronger pull)"
+          style="flex: 1"
         />
-        <label
-          for="label-font-size"
-          title="Adjust the font size of the model name labels (in pixels)"
-        >Label Size</label>
-        <input
-          id="label-font-size"
-          type="range"
-          min="8"
-          max="24"
-          step="1"
-          bind:value={label_font_size}
-          style="grid-column: 2"
-        />
-        <label
-          title="Configure the distance range and strength of the links connecting labels to their points"
-          for="min-link-distance"
-        >Label Link</label>
-        <div class="combined-link-controls">
-          <input
-            id="min-link-distance"
-            type="number"
-            min="0"
-            max="100"
-            bind:value={min_link_distance}
-            title="Minimum distance"
-          />
-          <span>-</span>
-          <input
-            id="max-link-distance"
-            type="number"
-            min="0"
-            max="100"
-            bind:value={max_link_distance}
-            title="Maximum distance"
-          />
-          <input
-            id="link-strength"
-            type="range"
-            min="0.1"
-            max="10"
-            step="0.1"
-            bind:value={link_strength}
-            title="Strength (higher = stronger pull)"
-            style="flex: 1"
-          />
-        </div>
       </div>
-    </DraggablePane>
-
-    <button
-      onclick={() => {
-        if (document.fullscreenElement === container_el) {
-          document.exitFullscreen()
-          is_fullscreen = false
-        } else {
-          container_el?.requestFullscreen?.()
-          is_fullscreen = true
-        }
-      }}
-      aria-label="{is_fullscreen ? `Exit` : `Enter`} fullscreen"
-      title="{is_fullscreen ? `Exit` : `Enter`} fullscreen"
-    >
-      <Icon icon="{is_fullscreen ? `Exit` : ``}Fullscreen" />
-    </button>
+    {/snippet}
 
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
       {#if metadata}
@@ -495,15 +413,6 @@
 </div>
 
 <style>
-  div.fullscreen {
-    background: var(--page-bg);
-    overflow: auto;
-    padding: 2em;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-  }
   div.controls-row {
     display: flex;
     flex-wrap: wrap;
@@ -514,14 +423,6 @@
   }
   div.controls-row label {
     font-weight: 500;
-  }
-  button[title$='fullscreen'] {
-    position: absolute;
-    top: 1em;
-    right: 3.3em;
-    display: flex;
-    padding: 8px;
-    border-radius: 50%;
   }
   div.combined-link-controls {
     display: flex;
