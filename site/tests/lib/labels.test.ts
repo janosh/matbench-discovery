@@ -99,11 +99,8 @@ describe(`format_property_path`, () => {
 })
 
 describe(`ALL_METRICS`, () => {
-  test(`RMSD has unit Å`, () => {
-    expect(ALL_METRICS.RMSD.unit).toBe(`Å`)
-  })
-
   test.each([
+    [`RMSD`, `Å`],
     [`MAE`, `eV / atom`],
     [`RMSE`, `eV / atom`],
   ])(`%s has unit '%s'`, (key, expected_unit) => {

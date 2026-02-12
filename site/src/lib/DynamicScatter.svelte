@@ -45,12 +45,15 @@
     show_model_labels?: boolean
   } = $props()
 
-  const date_key = METADATA_COLS.date_added.key
-  const params_key = HYPERPARAMS.model_params.key
-
-  const { model_params, graph_construction_radius, max_force, max_steps } =
-    HYPERPARAMS
-  const { batch_size, epochs, n_layers } = HYPERPARAMS
+  const {
+    model_params,
+    graph_construction_radius,
+    max_force,
+    max_steps,
+    batch_size,
+    epochs,
+    n_layers,
+  } = HYPERPARAMS
   const { date_added, n_training_materials, n_training_structures } = METADATA_COLS
 
   const options = [
@@ -79,22 +82,18 @@
   let color_key = $state(ALL_METRICS.F1.key)
   let size_prop = $state(HYPERPARAMS.model_params as typeof options[number])
 
-  let color_prop = $derived(options_by_key[color_key])
-
   let axes = $derived({
     x: options_by_key[selected.x],
     y: options_by_key[selected.y],
-    color_value: color_prop,
+    color_value: options_by_key[color_key],
     size_value: size_prop,
   })
 
   let log = $state({ x: false, y: false, color: false, size: false })
 
   let color_scheme: D3InterpolateName = $state(`interpolateViridis`)
-  let x_ticks = $state(5)
-  let y_ticks = $state(5)
-  let x_grid = $state(true)
-  let y_grid = $state(true)
+  // Grid/tick settings are initial values — PlotControls handles the UI
+  const [x_ticks, y_ticks, x_grid, y_grid] = [5, 5, true, true]
 
   let size_multiplier = $state(1)
   let label_font_size = $state(14)
@@ -115,16 +114,8 @@
     ),
   )
 
-  // Convert options to format expected by ScatterPlot axis options
-  let axis_options = $derived(
-    options.map((prop) => ({
-      key: prop.key,
-      label: `${prop.label} (${model_counts_by_prop[prop.key]} models)`,
-    })),
-  )
-
-  // Options for ColorBar property select
-  let color_options = $derived(
+  // Options for axis selects and color bar property select
+  let prop_options = $derived(
     options.map((prop) => ({
       key: prop.key,
       label: `${prop.label} (${model_counts_by_prop[prop.key]} models)`,
@@ -141,11 +132,9 @@
     return { series: [series], axis_label: options_by_key[key]?.label }
   }
 
-  function is_num_or_date(val: unknown): boolean {
-    if (typeof val === `number` && !isNaN(val)) return true
-    if (val instanceof Date) return !isNaN(val.getTime())
-    return false
-  }
+  // get_label_value already converts dates to timestamps, so only numbers reach here
+  const is_finite_num = (val: unknown): val is number =>
+    typeof val === `number` && isFinite(val)
 
   let plot_data = $derived(
     models
@@ -153,25 +142,17 @@
       .map((model) => {
         const x_val = get_label_value(model, axes.x)
         const y_val = get_label_value(model, axes.y)
-        let color_value = get_label_value(model, axes.color_value)
-        let size_value = get_label_value(model, axes.size_value)
-        if (axes.size_value?.key === date_key) {
-          const timestamp = new Date(String(size_value)).getTime()
-          if (!isNaN(timestamp)) size_value = timestamp
-        }
+        const color_value = get_label_value(model, axes.color_value)
+        const size_value = get_label_value(model, axes.size_value)
 
-        const { model_name, date_added, color, model_key } = model
+        const { model_name, date_added: model_date, color, model_key } = model
         const days_ago = calculate_days_ago(model.date_added)
-        const metadata = { model_name, date_added, days_ago, model_key }
+        const metadata = { model_name, date_added: model_date, days_ago, model_key }
         return { x: x_val, y: y_val, color_value, size_value, metadata, color }
       })
-      .filter((item) => {
-        const x_valid = is_num_or_date(item.x)
-        const y_valid = is_num_or_date(item.y)
-        const color_valid = is_num_or_date(item.color_value)
-        const size_valid = is_num_or_date(item.size_value)
-        return x_valid && y_valid && color_valid && size_valid
-      }),
+      .filter((item) =>
+        [item.x, item.y, item.color_value, item.size_value].every(is_finite_num)
+      ),
   )
 
   let series = $derived({
@@ -181,10 +162,7 @@
     point_style: plot_data.map((item) => ({ fill: point_color ?? item.color })),
     metadata: plot_data.map((item) => item.metadata),
     color_values: point_color === null
-      ? (plot_data
-        .map((item) => item.color_value)
-        .filter((val): val is number | Date => val !== undefined)
-        .map((val) => (val instanceof Date ? val.getTime() : val)) as number[])
+      ? plot_data.map((item) => item.color_value as number)
       : undefined,
     size_values: axes.size_value
       ? plot_data.map((item) => item.size_value as number)
@@ -213,9 +191,7 @@
       liSelectedStyle="font-size: 14px;"
     >
       {#snippet children({ option: prop }: { option: typeof options[number] })}
-        {@html format_property_path(
-          `${prop.path ?? ``}.${prop.key}`.replace(/^\./, ``),
-        )}
+        {@html format_property_path(get_label_path(prop))}
         <span style="font-size: smaller; color: gray; margin-left: 0.5em">
           ({model_counts_by_prop[prop.key]} models)
         </span>
@@ -233,7 +209,7 @@
       scale_type: log.x ? `log` : `linear`,
       label_shift: { y: -50 },
       ticks: x_ticks,
-      options: axis_options,
+      options: prop_options,
       selected_key: selected.x,
     }}
     y_axis={{
@@ -243,10 +219,10 @@
       scale_type: log.y ? `log` : `linear`,
       label_shift: {
         x: 50,
-        y: [date_key, params_key].includes(axes.y?.key ?? ``) ? -40 : -10,
+        y: [`date_added`, `model_params`].includes(axes.y?.key ?? ``) ? -40 : -10,
       },
       ticks: y_ticks,
-      options: axis_options,
+      options: prop_options,
       selected_key: selected.y,
     }}
     display={{ x_grid, y_grid }}
@@ -261,7 +237,7 @@
       }`,
       margin: { t: 30, l: 80, b: 80, r: 50 },
       tick_format: axes.color_value?.format,
-      property_options: color_options,
+      property_options: prop_options,
       selected_property_key: color_key,
       data_loader: async (key) => {
         color_key = key
@@ -269,7 +245,7 @@
         const values = models
           .filter(model_filter)
           .map((model) => get_label_value(model, prop))
-          .filter((val): val is number => typeof val === `number` && !isNaN(val))
+          .filter((val): val is number => typeof val === `number` && isFinite(val))
         const [min, max] = extent(values) as [number, number]
         const title = `${prop?.label}${
           prop?.better ? ` (${prop?.better}=better)` : ``

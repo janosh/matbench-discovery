@@ -323,7 +323,7 @@ export function assemble_row_data(
       [HYPERPARAMS.max_force.key]: max_force !== undefined
         ? `<span data-sort-value="${max_force}">${max_force}</span>`
         : `n/a`,
-      [HYPERPARAMS.cell_filter.label]: cell_filter_display
+      [HYPERPARAMS.cell_filter.key]: cell_filter_display
         ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
         : `n/a`,
       [HYPERPARAMS.n_layers.key]: n_layers !== undefined

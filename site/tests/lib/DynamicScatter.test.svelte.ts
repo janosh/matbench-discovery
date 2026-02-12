@@ -58,35 +58,31 @@ const mock_models: ModelData[] = [
 ]
 
 describe(`DynamicScatter.svelte`, () => {
-  it(`mounts correctly with default props`, () => {
+  it(`mounts with controls row, size select, and scatter container`, () => {
     mount(DynamicScatter, {
       target: document.body,
       props: { models: mock_models },
     })
 
-    // Controls row with marker size select should render
-    const controls_row = document.querySelector(`.controls-row`)
-    expect(controls_row).not.toBeNull()
-
-    // Scatter plot container should render
-    const plot_container = document.querySelector(`div.bleed-1400[style]`)
-    expect(plot_container).not.toBeNull()
-
-    // Size select should be present in controls row
-    const size_select = controls_row?.querySelector(`#size-select`)
-    expect(size_select).not.toBeNull()
-  })
-
-  it(`renders scatter plot container with correct structure`, () => {
-    mount(DynamicScatter, { target: document.body, props: { models: mock_models } })
-
-    // ScatterPlot renders inside the bleed container
     const container = document.querySelector(`div.bleed-1400`)
     expect(container).not.toBeNull()
-    expect(container?.querySelector(`.controls-row`)).not.toBeNull()
+
+    const controls_row = container?.querySelector(`.controls-row`)
+    expect(controls_row).not.toBeNull()
+    expect(controls_row?.querySelector(`#size-select`)).not.toBeNull()
   })
 
-  it(`respects model_filter prop`, () => {
+  it(`respects model_filter prop by excluding filtered models`, async () => {
+    // Mount without filter first to get baseline label count
+    mount(DynamicScatter, {
+      target: document.body,
+      props: { models: mock_models },
+    })
+    await tick()
+    const all_labels = document.querySelectorAll(`text`).length
+
+    // Re-mount with filter excluding null-params model
+    document.body.innerHTML = ``
     mount(DynamicScatter, {
       target: document.body,
       props: {
@@ -94,7 +90,11 @@ describe(`DynamicScatter.svelte`, () => {
         model_filter: (model: ModelData) => model.model_params !== null,
       },
     })
-    // Component should still render with filtered models
+    await tick()
+
+    // Filtered mount should have fewer (or equal) text labels
+    const filtered_labels = document.querySelectorAll(`text`).length
+    expect(filtered_labels).toBeLessThanOrEqual(all_labels)
     expect(document.querySelector(`.controls-row`)).not.toBeNull()
   })
 

@@ -46,7 +46,7 @@
     "remark-math": "3.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
-    "svelte": "^5.50.2",
+    "svelte": "^5.50.0",
     "svelte-check-rs": "^0.9.1",
     "svelte-multiselect": "^11.6.1",
     "svelte-preprocess": "^6.0.3",

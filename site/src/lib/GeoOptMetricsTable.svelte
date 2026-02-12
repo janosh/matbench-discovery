@@ -30,12 +30,12 @@
     if (col.unit) {
       label = `${label} <span style="font-weight: 200">(${col.unit})</span>`
     }
-    if (col.better === `higher` || col.better === `lower`) {
+    if (col.better) {
       description = description
         ? `${description} (${col.better}=better)`
         : `${col.better}=better`
     }
-    return { ...col, label, description, ...overrides }
+    return { ...col, ...overrides, label, description }
   }
 
   // Define grouped columns: [source_cols, group_name, extra_overrides]
@@ -67,8 +67,8 @@
     ...grouped_defs.flatMap(([cols, group, extras]) =>
       cols.map((col) =>
         enrich_col(col, {
-          visible: !hidden_hyperparam_keys.has(col.key),
           ...extras,
+          visible: extras.visible ?? !hidden_hyperparam_keys.has(col.key),
           group,
         })
       )
@@ -79,7 +79,7 @@
   // so remap data keys to match
   const key_remap: Record<string, string> = Object.fromEntries(
     grouped_defs.flatMap(([cols, group]) =>
-      cols.map((col) => [col.key ?? col.label, `${col.key ?? col.label} (${group})`])
+      cols.map((col) => [col.key, `${col.key} (${group})`])
     ),
   )
 
@@ -105,7 +105,7 @@
 <HeatmapTable
   data={metrics_data}
   columns={columns as MattervizLabel[]}
-  initial_sort={{ column: `rmsd`, direction: `asc` }}
+  initial_sort={{ column: ALL_METRICS.RMSD.key, direction: `asc` }}
   sort_hint="Click column headers to sort"
   default_num_format=".3f"
   bind:column_order
