@@ -387,6 +387,7 @@ export const ALL_METRICS: AllMetrics = {
     key: `rmsd`,
     path: `metrics.geo_opt.symprec=1e-2`,
     label: `RMSD`,
+    unit: `Å`,
     range: [0, RMSD_BASELINE],
     better: `lower`,
     description:

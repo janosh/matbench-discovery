@@ -706,9 +706,9 @@ describe(`assemble_row_data`, () => {
     expect(mace_row?.[`graph_construction_radius`]).toBe(
       `<span data-sort-value="6">6 Å</span>`,
     )
-    // n_layers should be present in row data (as HTML span or 'n/a')
-    expect(mace_row).toHaveProperty(`n_layers`)
-    expect(typeof mace_row?.[`n_layers`]).toBe(`string`)
+    // n_layers should be present as either a sortable span or 'n/a'
+    const n_layers_val = mace_row?.[`n_layers`] as string
+    expect(n_layers_val).toMatch(/^(<span data-sort-value="\d+">\d+<\/span>|n\/a)$/)
     expect(chgnet_row?.Model).toContain(`chgnet-0.3.0`)
   })
 
