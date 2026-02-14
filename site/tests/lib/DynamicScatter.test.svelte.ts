@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 const mock_models: ModelData[] = [
   {
     model_name: `Test Model 1`,
-    model_params: 100000,
+    model_params: 100_000,
     n_estimators: 50,
     dirname: `test1`,
     metadata_file: `test1.yml`,
@@ -23,7 +23,7 @@ const mock_models: ModelData[] = [
   } as unknown as ModelData,
   {
     model_name: `Test Model 2`,
-    model_params: 500000,
+    model_params: 500_000,
     n_estimators: 100,
     dirname: `test2`,
     metadata_file: `test2.yml`,
@@ -81,18 +81,19 @@ describe(`DynamicScatter.svelte`, () => {
     await tick()
     const all_labels = document.querySelectorAll(`text`).length
 
-    // Re-mount with filter excluding null-params model
-    document.body.innerHTML = ``
+    // Re-mount with filter excluding a model with valid params to truly test the filter
+    document.body.replaceChildren()
     mount(DynamicScatter, {
       target: document.body,
       props: {
         models: mock_models,
-        model_filter: (model: ModelData) => model.model_params !== null,
+        model_filter: (model: ModelData) => model.model_name !== `Test Model 1`,
       },
     })
     await tick()
 
-    // Filtered mount should have fewer (or equal) text labels
+    // Filtered mount should have fewer or equal text labels
+    // (happy-dom may not render SVG text elements, so both can be 0)
     const filtered_labels = document.querySelectorAll(`text`).length
     expect(filtered_labels).toBeLessThanOrEqual(all_labels)
     expect(document.querySelector(`.controls-row`)).not.toBeNull()

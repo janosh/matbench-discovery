@@ -150,9 +150,12 @@
         const metadata = { model_name, date_added: model_date, days_ago, model_key }
         return { x: x_val, y: y_val, color_value, size_value, metadata, color }
       })
-      .filter((item) =>
-        [item.x, item.y, item.color_value, item.size_value].every(is_finite_num)
-      ),
+      .filter((item) => {
+        const required = [item.x, item.y, item.size_value]
+        // only require finite color_value when no fixed point_color is set
+        if (point_color === null) required.push(item.color_value)
+        return required.every(is_finite_num)
+      }),
   )
 
   let series = $derived({

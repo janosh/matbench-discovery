@@ -688,7 +688,7 @@ def cumulative_metrics(
             last_idx = pd.Series(trace.y).last_valid_index()
             last_x = trace.x[last_idx]
             last_y = trace.y[last_idx]
-            color = dict(color=trace.line.color)
+            color = dict(color=trace.line["color"])
 
             fig.add_scatter(
                 x=[last_x],

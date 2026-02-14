@@ -421,7 +421,7 @@ for x0, y0, x1, y1 in (
         xref="x3",
         yref="y3",
     )
-fig.layout.yaxis3.update(showgrid=False, rangemode="tozero")
+fig.update_layout(yaxis3=dict(showgrid=False, rangemode="tozero"))
 
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.layout.legend.update(x=0.96, y=0.18, xanchor="right", bgcolor="rgba(0,0,0,0)")
