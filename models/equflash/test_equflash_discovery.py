@@ -57,7 +57,7 @@ def compute_rmsd(
     """Compute RMSD between predicted and ground truth structures."""
     structure_matcher = StructureMatcher(stol=1.0, scale=False)
     result = structure_matcher.get_rms_dist(struct_pred, struct_og)
-    return result if result else (None, None)
+    return result or (None, None)
 
 
 def load_trainer_from_ckpt(checkpoint_path: str) -> OCPTrainer:

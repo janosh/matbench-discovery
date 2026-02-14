@@ -88,7 +88,7 @@ def test_curve_shifts(expected: dict[str, float | str]) -> None:
     """Test metrics for various curve modifications."""
     name = str(expected.pop("name"))
     curve_func = {
-        "no_mod": lambda xs: base_curve(xs),
+        "no_mod": base_curve,
         "vertical_shift": lambda xs: base_curve(xs) + 1.0,
         "morse": lambda xs: 5 * (1 - np.exp(-2 * (xs - 2.0))) ** 2 - 5,
     }[name]

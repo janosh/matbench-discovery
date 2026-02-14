@@ -46,7 +46,7 @@ WANDB_PATH = "janosh/matbench-discovery"
 STABILITY_THRESHOLD = 0
 
 timestamp = f"{datetime.now(tz=UTC):%Y-%m-%d@%H-%M-%S}"
-today = timestamp.split("@")[0]
+today = timestamp.split("@", maxsplit=1)[0]
 
 # filter pymatgen warnings that spam the logs when e.g. applying corrections to
 # ComputedStructureEntries or using PatchedPhaseDiagram to get e_above_hull

@@ -286,7 +286,8 @@ export function assemble_row_data(
     const r_cut_str = r_cut ? `<span data-sort-value="${r_cut}">${r_cut} Å</span>` : `n/a`
 
     // Get geometry optimization hyperparameters
-    const { ase_optimizer, max_steps, max_force, cell_filter } = model.hyperparams ?? {}
+    const { ase_optimizer, max_steps, max_force, cell_filter, n_layers } =
+      model.hyperparams ?? {}
     const cell_filter_display = cell_filter && typeof cell_filter === `string`
       ? cell_filter.replace(/CellFilter$/, ``)
       : null
@@ -322,8 +323,11 @@ export function assemble_row_data(
       [HYPERPARAMS.max_force.key]: max_force !== undefined
         ? `<span data-sort-value="${max_force}">${max_force}</span>`
         : `n/a`,
-      [HYPERPARAMS.cell_filter.label]: cell_filter_display
+      [HYPERPARAMS.cell_filter.key]: cell_filter_display
         ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
+        : `n/a`,
+      [HYPERPARAMS.n_layers.key]: n_layers !== undefined
+        ? `<span data-sort-value="${n_layers}">${n_layers}</span>`
         : `n/a`,
       Targets: targets_str,
       [METADATA_COLS.date_added.key]: `<span title="${

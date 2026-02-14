@@ -1,4 +1,3 @@
-import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import { HYPERPARAMS } from '$lib/labels'
 import MetricsTable from '$lib/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
@@ -171,7 +170,6 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         model_filter: no_model_filter,
-        config: DEFAULT_CPS_CONFIG,
         show_non_compliant: true,
       },
     })
@@ -185,7 +183,6 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         model_filter: () => true,
-        config: DEFAULT_CPS_CONFIG,
         show_non_compliant: true,
       },
     })
@@ -199,7 +196,6 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         model_filter: (model: ModelData) => model.model_name.includes(`CHG`),
-        config: DEFAULT_CPS_CONFIG,
         show_non_compliant: true,
       },
     })
@@ -331,11 +327,10 @@ describe(`MetricsTable`, () => {
     ])
   })
 
-  it(`updates the table when CPS weights change`, async () => {
-    // Test with default config
+  it(`renders table rows with default config`, async () => {
     mount(MetricsTable, {
       target: document.body,
-      props: { config: DEFAULT_CPS_CONFIG, show_non_compliant: true },
+      props: { show_non_compliant: true },
     })
     await tick()
     const rows = document.querySelectorAll(`tbody tr`)

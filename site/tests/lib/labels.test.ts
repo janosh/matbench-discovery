@@ -1,4 +1,9 @@
-import { format_power_ten, format_property_path, get_org_logo } from '$lib/labels'
+import {
+  ALL_METRICS,
+  format_power_ten,
+  format_property_path,
+  get_org_logo,
+} from '$lib/labels'
 import { describe, expect, test } from 'vitest'
 
 describe(`format_power_ten`, () => {
@@ -91,6 +96,23 @@ describe(`format_property_path`, () => {
   ])(`formats '%s' → '%s'`, (input, expected) => {
     expect(format_property_path(input)).toBe(expected)
   })
+})
+
+describe(`ALL_METRICS`, () => {
+  test.each([
+    [`RMSD`, `Å`],
+    [`MAE`, `eV / atom`],
+    [`RMSE`, `eV / atom`],
+  ])(`%s has unit '%s'`, (key, expected_unit) => {
+    expect(ALL_METRICS[key as keyof typeof ALL_METRICS].unit).toBe(expected_unit)
+  })
+
+  test.each([`CPS`, `F1`, `DAF`, `Precision`, `Recall`, `Accuracy`])(
+    `%s has no unit`,
+    (key) => {
+      expect(ALL_METRICS[key as keyof typeof ALL_METRICS].unit).toBeUndefined()
+    },
+  )
 })
 
 describe(`get_org_logo`, () => {

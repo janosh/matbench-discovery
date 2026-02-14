@@ -21,6 +21,11 @@ jobs:
         with:
           deno-version: 2.3.7
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Run prek
         uses: j178/prek-action@v1
         env: # skip eslint because it's additional deps are not installed correctly

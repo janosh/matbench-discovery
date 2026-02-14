@@ -4,7 +4,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
+    rev: v0.15.0
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -55,7 +55,7 @@ repos:
         language: system
       - id: svelte-check
         name: Svelte type check
-        entry: bash -c 'cd site && deno install --allow-scripts && deno run -A --node-modules-dir npm:@sveltejs/kit sync && deno run -A --node-modules-dir npm:svelte-check-rs@latest --threshold error'
+        entry: bash -c 'cd site && pnpm install && pnpm exec svelte-kit sync && pnpm exec svelte-check-rs --threshold error'
         language: system
         types_or: [ts, svelte]
         pass_filenames: false
@@ -82,7 +82,7 @@ repos:
         exclude: changelog\.md$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v10.0.0-rc.2
+    rev: v10.0.0
     hooks:
       - id: eslint
         types: [file]
@@ -108,7 +108,7 @@ repos:
       - id: check-github-actions
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.42.3
+    rev: v1.43.4
     hooks:
       - id: typos
         types: [text]

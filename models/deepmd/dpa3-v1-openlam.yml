@@ -70,7 +70,7 @@ hyperparams:
       virial: 0.02 -> 1
     initial_learning_rate: 0.001
     learning_rate_schedule: ExpLR - start_lr=0.001, decay_steps=5000, stop_lr=0.00001
-    training_steps: 1600000
+    training_steps: 1_600_000
     batch_size: 960 # 120 (gpus) * 8 (batch per gpu) = 960 (total batch size)
     epochs: 9.4
   finetune:
@@ -81,7 +81,7 @@ hyperparams:
       virial: 2.5
     initial_learning_rate: 0.0001
     learning_rate_schedule: ExpLR - start_lr=0.0001, decay_steps=5000, stop_lr=0.000006
-    training_steps: 400000
+    training_steps: 400_000
     batch_size: 256 # 64 (gpus) * 4 (batch per gpu) = 256 (total batch size)
     epochs: 9
     loss_continue: Huber
@@ -91,7 +91,7 @@ hyperparams:
       virial: 2.5
     initial_learning_rate_continue: 0.0001
     learning_rate_schedule_continue: ExpLR - start_lr=0.0001, decay_steps=5000, stop_lr=0.000000001
-    training_steps_continue: 600000
+    training_steps_continue: 600_000
     batch_size_continue: 256 # 64 (gpus) * 4 (batch per gpu) = 256 (total batch size)
     epochs_continue: 13.5
   graph_construction_radius: 6.0 # Å

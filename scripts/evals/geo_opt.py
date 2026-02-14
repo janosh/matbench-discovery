@@ -64,9 +64,8 @@ for model in Model:
         print(f"Warning: {model.label} analysis file not found at {analysis_path}")
         continue
 
-    print(
-        f"Found {model.label} analysis file:\n  {analysis_path.split('/models/')[-1]}"
-    )
+    rel_path = analysis_path.rsplit("/models/", maxsplit=1)[-1]
+    print(f"Found {model.label} analysis file:\n  {rel_path}")
     df_model = pd.read_csv(analysis_path, index_col=0)
     model_data[model.label] = df_model
     model_metrics[model.label] = geo_opt.calc_geo_opt_metrics(df_model)

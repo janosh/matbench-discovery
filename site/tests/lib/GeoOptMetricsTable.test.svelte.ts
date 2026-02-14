@@ -1,11 +1,11 @@
 import GeoOptMetricsTable from '$lib/GeoOptMetricsTable.svelte'
-import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
+import { ALL_METRICS, GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query } from '../index'
 
 describe(`GeoOptMetricsTable`, () => {
-  it(`renders table with correct structure and columns`, async () => {
+  it(`renders table with correct structure, columns, groups, and units`, async () => {
     mount(GeoOptMetricsTable, { target: document.body })
     await tick()
 
@@ -18,22 +18,55 @@ describe(`GeoOptMetricsTable`, () => {
     const header_texts = headers.map((h) => h.textContent?.trim())
     const header_html = headers.map((h) => h.innerHTML)
 
-    // Model should be first column
-    expect(header_texts[0]).toBe(`Model`)
+    // Model column present
+    expect(header_texts).toContain(`Model`)
 
-    // RMSD and geo-opt hyperparams should be present
-    expect(header_texts.some((t) => t?.includes(`RMSD`))).toBe(true)
+    // RMSD header includes unit in thin font
+    const rmsd_header = header_html.find((h) => h.includes(`RMSD`))
+    expect(rmsd_header).toContain(`(${ALL_METRICS.RMSD.unit})`)
+    expect(rmsd_header).toContain(`font-weight: 200`)
+
+    // f_max header includes unit
+    const fmax_header = header_html.find((h) => h.includes(`f<sub>max</sub>`))
+    expect(fmax_header).toContain(`(${HYPERPARAMS.max_force.unit})`)
+
+    // Visible hyperparams present
     expect(header_texts).toContain(HYPERPARAMS.ase_optimizer.label)
     expect(header_texts).toContain(HYPERPARAMS.max_steps.label)
     expect(header_texts).toContain(HYPERPARAMS.cell_filter.label)
-    expect(header_html.some((h) => h.includes(`f<sub>max</sub>`))).toBe(true)
 
-    // At least some symmetry metrics should be present
+    // Hidden-by-default columns absent
+    expect(header_texts).not.toContain(HYPERPARAMS.n_layers.label)
+    expect(
+      header_html.some((h) => h.includes(HYPERPARAMS.graph_construction_radius.label)),
+    ).toBe(false)
+
+    // At least some symmetry metrics present
     const symmetry_labels = Object.values(GEO_OPT_SYMMETRY_METRICS).map((m) => m.label)
-    const found_symmetry =
-      symmetry_labels.filter((label) => header_html.some((html) => html.includes(label)))
-        .length
+    const found_symmetry = symmetry_labels.filter(
+      (label) => header_html.some((html) => html.includes(label)),
+    ).length
     expect(found_symmetry).toBeGreaterThan(0)
+
+    // Group headers for Symmetry and Hyperparams
+    const group_texts = Array.from(document.querySelectorAll(`tr.group-header th`))
+      .map((h) => h.textContent?.trim())
+      .filter(Boolean)
+    expect(group_texts).toContain(`Symmetry`)
+    expect(group_texts).toContain(`Hyperparams`)
+  })
+
+  it(`sets initial sort to RMSD ascending`, async () => {
+    mount(GeoOptMetricsTable, {
+      target: document.body,
+      props: { show_compliant: true, show_non_compliant: true },
+    })
+    await tick()
+
+    const headers = Array.from(document.querySelectorAll(`th`))
+    const rmsd_header = headers.find((h) => h.innerHTML?.includes(`RMSD`))
+    expect(rmsd_header).toBeDefined()
+    expect(rmsd_header?.getAttribute(`aria-sort`)).toBe(`ascending`)
   })
 
   it(`renders rows with model data and links`, async () => {
@@ -49,16 +82,18 @@ describe(`GeoOptMetricsTable`, () => {
     // Model cells should have links to model pages
     const model_cells = Array.from(document.querySelectorAll(`td[data-col="Model"]`))
     expect(model_cells.length).toBeGreaterThan(0)
-    const first_link = model_cells[0]?.querySelector(`a`)
-    expect(first_link?.getAttribute(`href`)).toMatch(/^\/models\//)
+    expect(model_cells[0]?.querySelector(`a`)?.getAttribute(`href`)).toMatch(
+      /^\/models\//,
+    )
 
-    // RMSD cells should have numeric values
-    const rmsd_cells = Array.from(document.querySelectorAll(`td[data-col="RMSD"]`))
-    const has_numeric = rmsd_cells.some((cell) => {
+    // RMSD cells should have numeric values (data-col includes enriched label with unit)
+    const rmsd_cells = Array.from(document.querySelectorAll(`td`)).filter(
+      (td) => td.getAttribute(`data-col`)?.includes(`RMSD`),
+    )
+    expect(rmsd_cells.some((cell) => {
       const text = cell.textContent?.trim()
       return text && !isNaN(parseFloat(text))
-    })
-    expect(has_numeric).toBe(true)
+    })).toBe(true)
   })
 
   it(`toggles heatmap colors`, async () => {
