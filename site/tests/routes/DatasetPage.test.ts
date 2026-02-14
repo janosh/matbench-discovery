@@ -19,7 +19,7 @@ describe(`Dataset Detail Page`, () => {
   it(`renders a dataset correctly with all optional fields`, () => {
     mount(Page, {
       target: document.body,
-      props: { data: { dataset: mp_dataset, key: mp2022_key } },
+      props: { data: { dataset: mp_dataset } },
     })
 
     // Check title is displayed
@@ -48,7 +48,7 @@ describe(`Dataset Detail Page`, () => {
 
     mount(Page, {
       target: document.body,
-      props: { data: { dataset: minimal_dataset, key: minimal_key } },
+      props: { data: { dataset: minimal_dataset } },
     })
 
     // Check title and basic content

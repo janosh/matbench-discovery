@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { format_num, Icon } from 'matterviz'
+  import { format_num } from 'matterviz'
   import { ScatterPlot } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import type { Label } from './types'
@@ -51,9 +51,6 @@
     size_value: github_metrics.contributors as Label,
   })
 
-  let is_fullscreen = $state(false)
-  let container_el = $state<HTMLDivElement | null>(null)
-
   type PlotPoint = {
     x: number
     y: number
@@ -96,19 +93,9 @@
   })
 </script>
 
-<svelte:window
-  onfullscreenchange={() => is_fullscreen = document.fullscreenElement === container_el}
-/>
-
-<div
-  bind:this={container_el}
-  class:fullscreen={is_fullscreen}
-  class:bleed-1400={!is_fullscreen}
-  style:height={is_fullscreen ? `100%` : `auto`}
-  style="margin-block: 2em"
->
+<div class="bleed-1400" style="margin-block: 2em">
   <ScatterPlot
-    style={`height: ${is_fullscreen ? `100%` : `600px`}`}
+    style="height: 600px"
     series={[series]}
     x_axis={{
       label: axes.x.label,
@@ -131,17 +118,6 @@
     }}
     {...rest}
   >
-    <button
-      onclick={() => {
-        if (is_fullscreen) document.exitFullscreen()
-        else container_el?.requestFullscreen?.()
-      }}
-      aria-label="{is_fullscreen ? `Exit` : `Enter`} fullscreen"
-      title="{is_fullscreen ? `Exit` : `Enter`} fullscreen"
-    >
-      <Icon icon="{is_fullscreen ? `Exit` : ``}Fullscreen" />
-    </button>
-
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
       {@const name = (metadata as { name?: string })?.name}
       {#if name}
@@ -159,20 +135,3 @@
     {/snippet}
   </ScatterPlot>
 </div>
-
-<style>
-  div.fullscreen {
-    background: var(--page-bg);
-    overflow: auto;
-    padding: 2em;
-    box-sizing: border-box;
-  }
-  button[title$='fullscreen'] {
-    position: absolute;
-    top: 1em;
-    right: 3.3em;
-    display: flex;
-    padding: 8px;
-    border-radius: 50%;
-  }
-</style>

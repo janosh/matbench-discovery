@@ -72,7 +72,7 @@ def main(
 
     out_dir.mkdir(exist_ok=True, parents=True)
 
-    model_name_ = model_name.split("/")[-1]
+    model_name_ = model_name.rsplit("/", maxsplit=1)[-1]
     model_name_ = model_name_.replace(":", "-")
     out_path = f"{out_dir}/{model_name_}-{today}.json.gz"
 

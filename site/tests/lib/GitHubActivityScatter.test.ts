@@ -88,9 +88,9 @@ describe(`GitHubActivityScatter`, () => {
   it.each([
     [`zero values`, { stars: 0, forks: 0, commits_last_year: 0, contributors: 1 }],
     [`large values`, {
-      stars: 999999,
-      forks: 100000,
-      commits_last_year: 10000,
+      stars: 999_999,
+      forks: 100_000,
+      commits_last_year: 10_000,
       contributors: 1000,
     }],
   ])(`handles edge case: %s`, (_, values) => {
