@@ -416,12 +416,14 @@ def test_smoothness_scale_invariance(
 
     # Test scaling behavior
     scale = 1.1
-    metric_name = getattr(metric_func, "__name__", None)
-    curv_scale = {
+    metric_name = getattr(metric_func, "__name__", "")
+    curv_scale_by_metric = {
         "calc_second_deriv_smoothness": 1,
         "calc_total_variation_smoothness": 2,
         "calc_curvature_smoothness": 1.389141,
-    }[metric_name]
+    }
+    assert metric_name in curv_scale_by_metric
+    curv_scale = curv_scale_by_metric[metric_name]
     x_scaled = scale * x
     y_scaled = scale**2 * y  # maintain quadratic relationship
 
@@ -429,7 +431,7 @@ def test_smoothness_scale_invariance(
     base_metric = metric_func(x, y)
     scaled_metric = metric_func(x_scaled, y_scaled)
 
-    # For logspace, the scaling behavior is different, so we just check that
+    # For logspaced distances, scaling behaves differently, so we only check
     # the metric changes in a reasonable way
     assert abs(scaled_metric) > 0
 
