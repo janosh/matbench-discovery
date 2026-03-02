@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { Icon } from 'matterviz'
   import type { CpsConfig } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS } from '$lib/labels'
-  import { format_num, type Point } from 'matterviz'
+  import { format_num, Icon, type Point } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from './combined_perf_score.svelte'
   import { MODELS, update_models_cps } from './models.svelte'
@@ -334,7 +333,7 @@
     <!-- Colored areas for each metric -->
     {#if Object.values(CPS_CONFIG).length === 3}
       {@const [{ x, y }, { x: px, y: py }] = [center, point]}
-      {#each axis_points as { x: x0, y: y0 }, idx ([x0, y0])}
+      {#each axis_points as { x: x0, y: y0 }, idx (idx)}
         {@const path = `M ${x} ${y} L ${x0} ${y0} L ${px} ${py} Z`}
         <path d={path} fill={colors[idx]} stroke="none" opacity="0.5" />
       {/each}
