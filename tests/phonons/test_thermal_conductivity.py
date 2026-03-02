@@ -20,8 +20,13 @@ NP_RNG = np.random.default_rng(seed=0)
 
 @pytest.fixture
 def test_atoms() -> Atoms:
-    """Create a simple cubic test structure using Al (supported by EMT)."""
-    atoms = bulk("Al", "fcc", a=4.05)
+    """Create a simple FCC test structure using Cu (supported by EMT).
+
+    Cu is used instead of Al because Al is mono-isotopic and triggers a
+    phonopy bug where single-isotope entries lack a trailing comma, causing
+    ``((27, 26.98, 1.0))`` to be parsed as a flat tuple instead of a nested one.
+    """
+    atoms = bulk("Cu", "fcc", a=3.615)
     atoms.info["fc2_supercell"] = 2 * np.eye(3)
     atoms.info["fc3_supercell"] = np.eye(3)
     atoms.info["q_point_mesh"] = (2, 2, 2)
