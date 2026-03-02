@@ -40,14 +40,14 @@
   )
   let title = $derived(url == `/` ? `` : `${url} • `)
 
-  const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`)).map(
-    (filename) => {
+  const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
+    .filter((filename) => !filename.includes(`[`))
+    .map((filename) => {
       const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`)) // remove hidden route segments
       const route = `/${parts.slice(1, -1).join(`/`)}`
 
       return { label: route, action: () => goto(route) }
-    },
-  )
+    })
 </script>
 
 <CmdPalette {actions} placeholder="Go to..." />
@@ -63,8 +63,8 @@
     {headingSelector}
     breakpoint={1350}
     minItems={3}
-    aside_style="max-width: 22em"
-    nav_style="font-size: 7pt"
+    asideStyle="max-width: 22em"
+    navStyle="font-size: 7pt"
     --toc-active-bg="transparent"
     --toc-active-color="var(--link-color)"
   />

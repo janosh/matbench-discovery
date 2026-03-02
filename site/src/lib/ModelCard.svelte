@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { Label, ModelData } from '$lib'
   import { AuthorBrief, DATASETS } from '$lib'
-  import { Icon } from 'matterviz'
   import pkg from '$site/package.json'
-  import { format_num } from 'matterviz'
+  import { format_num, Icon } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
   import { fade, slide } from 'svelte/transition'
@@ -86,17 +85,21 @@
         {#if idx > 0}
           &nbsp;+&nbsp;
         {/if}
-        {@const training_set = DATASETS[train_set_key]}
-        {@const { n_structures, name, slug, n_materials } = training_set}
-        {@const pretty_n_mat = typeof n_materials == `number`
+        {@const dataset = DATASETS[train_set_key]}
+        {#if dataset}
+          {@const { n_structures, name, slug, n_materials } = dataset}
+          {@const pretty_n_mat = typeof n_materials == `number`
         ? format_num(n_materials)
         : n_materials}
-        {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
-        <a
-          href="/data/{slug}"
-          title="{name}: {format_num(n_structures)} structures{n_mat_str}"
-          {@attach tooltip()}
-        >{train_set_key}</a>
+          {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
+          <a
+            href="/data/{slug}"
+            title="{name}: {format_num(n_structures)} structures{n_mat_str}"
+            {@attach tooltip()}
+          >{train_set_key}</a>
+        {:else}
+          <span title="Unknown dataset key: {train_set_key}">{train_set_key}</span>
+        {/if}
       {/each}
     </span>
   {/if}

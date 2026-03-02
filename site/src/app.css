@@ -72,6 +72,10 @@
   --tooltip-bg: var(--surface-bg);
   --tooltip-shadow: drop-shadow(0 1px 8px var(--shadow));
 
+  --dropdown-bg: var(--page-bg);
+  --dropdown-color: var(--text-color);
+  --dropdown-border: var(--border);
+
   --sms-margin: 1em auto;
   --sms-border: 1px solid var(--border);
   --sms-options-bg: var(--page-bg);

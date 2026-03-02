@@ -20,12 +20,13 @@ function normalize_f1(value: number | undefined): number {
   return value // Already in [0,1] range
 }
 
-// RMSD is lower=better, with current models in the range of ~0.01-0.25 Å
+// RMSD is lower=better, with current models in the range of ~0.01-0.25 (unitless)
 // We invert this so that better performance = higher score
 function normalize_rmsd(value: number | undefined): number {
   if (value === undefined || isNaN(value)) return 0
 
-  // Fixed reference points for RMSD (in Å)
+  // Fixed reference points for StructureMatcher normalized RMSD:
+  // RMS displacement divided by (V/N)^(1/3) (cell volume per atom), so unitless
   const excellent = 0 // Perfect performance (atoms in exact correct positions)
 
   // Linear interpolation between fixed points with clamping

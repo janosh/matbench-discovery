@@ -74,10 +74,7 @@
   const options_by_key = Object.fromEntries(options.map((opt) => [opt.key, opt]))
 
   // Track selected axis keys for x/y (used by ScatterPlot's built-in axis selection)
-  let selected = $state({
-    x: ALL_METRICS.κ_SRME.key,
-    y: ALL_METRICS.CPS.key,
-  })
+  let selected = $state({ x: ALL_METRICS.κ_SRME.key, y: ALL_METRICS.CPS.key })
 
   let color_key = $state(ALL_METRICS.F1.key)
   let size_prop = $state(HYPERPARAMS.model_params as typeof options[number])
@@ -92,25 +89,25 @@
   let log = $state({ x: false, y: false, color: false, size: false })
 
   let color_scheme: D3InterpolateName = $state(`interpolateViridis`)
-  // Grid/tick settings are initial values — PlotControls handles the UI
-  const [x_ticks, y_ticks, x_grid, y_grid] = [5, 5, true, true]
+  const ticks = 5
+  let display = $state({ x_grid: true, y_grid: true })
 
   let size_multiplier = $state(1)
   let label_font_size = $state(14)
-  let link_strength = $state(5)
-  let min_link_distance = $state(15)
-  let max_link_distance = $state(20)
+  let link_config = $state({ strength: 5, min_dist: 15, max_dist: 20 })
+
+  // Check if data range spans enough for log scale to be useful (min > 0 and max/min >= 100)
+  function can_log(ext: [number | undefined, number | undefined]): boolean {
+    return ext[0] !== undefined && ext[0] > 0 && 100 * ext[0] <= (ext[1] ?? 0)
+  }
 
   let model_counts_by_prop = $derived(
-    options.reduce(
-      (acc, prop) => {
-        const path = get_label_path(prop)
-        acc[prop.key] = models.filter(
-          (model) => get_nested_value(model, path) !== undefined,
-        ).length
-        return acc
-      },
-      {} as Record<string, number>,
+    Object.fromEntries(
+      options.map((prop) => [
+        prop.key,
+        models.filter((m) => get_nested_value(m, get_label_path(prop)) !== undefined)
+          .length,
+      ]),
     ),
   )
 
@@ -123,13 +120,17 @@
     })),
   )
 
-  // Data loader for interactive axis selection (y2 not supported in this scatter plot)
-  const data_loader = async (axis: `x` | `y` | `y2`, key: string) => {
+  // Data loader for interactive axis selection (only x/y handled in this scatter plot)
+  const data_loader = async (axis: string, key: string) => {
     if (axis === `x`) selected.x = key
     else if (axis === `y`) selected.y = key
 
     await tick()
     return { series: [series], axis_label: options_by_key[key]?.label }
+  }
+
+  function format_label_title(prop: Label | undefined): string {
+    return `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
   }
 
   // get_label_value already converts dates to timestamps, so only numbers reach here
@@ -156,6 +157,15 @@
         if (point_color === null) required.push(item.color_value)
         return required.every(is_finite_num)
       }),
+  )
+
+  let can_log_x = $derived(can_log(extent(plot_data, (d) => d.x as number)))
+  let can_log_y = $derived(can_log(extent(plot_data, (d) => d.y as number)))
+  let can_log_color = $derived(
+    can_log(extent(plot_data, (d) => d.color_value as number)),
+  )
+  let can_log_size = $derived(
+    can_log(extent(plot_data, (d) => d.size_value as number)),
   )
 
   let series = $derived({
@@ -191,12 +201,13 @@
       maxSelect={1}
       minSelect={1}
       style="flex: 1; max-width: 300px; margin: 0"
-      liSelectedStyle="font-size: 14px;"
+      liSelectedStyle="font-size: 14px; display: flex; align-items: baseline; gap: 0.5em;"
+      liOptionStyle="font-size: 13px;"
     >
       {#snippet children({ option: prop }: { option: typeof options[number] })}
         {@html format_property_path(get_label_path(prop))}
-        <span style="font-size: smaller; color: gray; margin-left: 0.5em">
-          ({model_counts_by_prop[prop.key]} models)
+        <span style="font-size: smaller; color: gray; display: block">
+          {model_counts_by_prop[prop.key]} models
         </span>
       {/snippet}
     </Select>
@@ -211,7 +222,7 @@
       range: axes.x?.range,
       scale_type: log.x ? `log` : `linear`,
       label_shift: { y: -50 },
-      ticks: x_ticks,
+      ticks,
       options: prop_options,
       selected_key: selected.x,
     }}
@@ -221,23 +232,21 @@
       range: axes.y?.range,
       scale_type: log.y ? `log` : `linear`,
       label_shift: {
-        x: 50,
+        x: -10,
         y: [`date_added`, `model_params`].includes(axes.y?.key ?? ``) ? -40 : -10,
       },
-      ticks: y_ticks,
+      ticks,
       options: prop_options,
       selected_key: selected.y,
     }}
-    display={{ x_grid, y_grid }}
+    bind:display
     color_scale={{ scheme: color_scheme, type: log.color ? `log` : `linear` }}
     size_scale={{
       radius_range: [5 * size_multiplier, 20 * size_multiplier],
       type: log.size ? `log` : `linear`,
     }}
     color_bar={{
-      title: `${axes.color_value?.label}${
-        axes.color_value?.better ? ` (${axes.color_value?.better}=better)` : ``
-      }`,
+      title: format_label_title(axes.color_value),
       margin: { t: 30, l: 80, b: 80, r: 50 },
       tick_format: axes.color_value?.format,
       property_options: prop_options,
@@ -250,15 +259,12 @@
           .map((model) => get_label_value(model, prop))
           .filter((val): val is number => typeof val === `number` && isFinite(val))
         const [min, max] = extent(values) as [number, number]
-        const title = `${prop?.label}${
-          prop?.better ? ` (${prop?.better}=better)` : ``
-        }`
-        return { range: [min ?? 0, max ?? 1], title }
+        return { range: [min ?? 0, max ?? 1], title: format_label_title(prop) }
       },
     }}
     label_placement_config={{
-      link_strength,
-      link_distance_range: [min_link_distance, max_link_distance],
+      link_strength: link_config.strength,
+      link_distance_range: [link_config.min_dist, link_config.max_dist],
     }}
     point_events={{
       onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
@@ -267,41 +273,22 @@
     {data_loader}
   >
     {#snippet controls_extra()}
-      <!-- Log scale toggles - {#if true} creates scope for {@const} declarations -->
-      {#if true}
-        {@const x_extent = extent(plot_data, (d) => d.x as number)}
-        {@const y_extent = extent(plot_data, (d) => d.y as number)}
-        {@const color_extent = extent(plot_data, (d) => d.color_value as number)}
-        {@const size_extent = extent(plot_data, (d) => d.size_value as number)}
-        {@const can_log_x = x_extent[0] !== undefined && x_extent[0] > 0 &&
-        100 * x_extent[0] <= (x_extent[1] ?? 0)}
-        {@const can_log_y = y_extent[0] !== undefined && y_extent[0] > 0 &&
-        100 * y_extent[0] <= (y_extent[1] ?? 0)}
-        {@const can_log_color = color_extent[0] !== undefined &&
-        color_extent[0] > 0 &&
-        100 * color_extent[0] <= (color_extent[1] ?? 0)}
-        {@const can_log_size = size_extent[0] !== undefined && size_extent[0] > 0 &&
-        100 * size_extent[0] <= (size_extent[1] ?? 0)}
-        <div
-          class="log-toggles"
-          style="display: flex; gap: 1em; flex-wrap: wrap"
-        >
-          <label style:visibility={can_log_x ? `visible` : `hidden`}>
-            <input type="checkbox" bind:checked={log.x} disabled={!can_log_x} /> Log X
-          </label>
-          <label style:visibility={can_log_y ? `visible` : `hidden`}>
-            <input type="checkbox" bind:checked={log.y} disabled={!can_log_y} /> Log Y
-          </label>
-          <label style:visibility={can_log_color ? `visible` : `hidden`}>
-            <input type="checkbox" bind:checked={log.color} disabled={!can_log_color} />
-            Log Color
-          </label>
-          <label style:visibility={can_log_size ? `visible` : `hidden`}>
-            <input type="checkbox" bind:checked={log.size} disabled={!can_log_size} />
-            Log Size
-          </label>
-        </div>
-      {/if}
+      <div class="log-toggles" style="display: flex; gap: 1em; flex-wrap: wrap">
+        <label style:visibility={can_log_x ? `visible` : `hidden`}>
+          <input type="checkbox" bind:checked={log.x} disabled={!can_log_x} /> Log X
+        </label>
+        <label style:visibility={can_log_y ? `visible` : `hidden`}>
+          <input type="checkbox" bind:checked={log.y} disabled={!can_log_y} /> Log Y
+        </label>
+        <label style:visibility={can_log_color ? `visible` : `hidden`}>
+          <input type="checkbox" bind:checked={log.color} disabled={!can_log_color} />
+          Log Color
+        </label>
+        <label style:visibility={can_log_size ? `visible` : `hidden`}>
+          <input type="checkbox" bind:checked={log.size} disabled={!can_log_size} />
+          Log Size
+        </label>
+      </div>
 
       <label title="Toggle visibility of model name labels on the scatter plot points">
         <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
@@ -343,17 +330,17 @@
           id="min-link-distance"
           type="number"
           min="0"
-          max="100"
-          bind:value={min_link_distance}
+          max={link_config.max_dist}
+          bind:value={link_config.min_dist}
           title="Minimum distance"
         />
         <span>-</span>
         <input
           id="max-link-distance"
           type="number"
-          min="0"
+          min={link_config.min_dist}
           max="100"
-          bind:value={max_link_distance}
+          bind:value={link_config.max_dist}
           title="Maximum distance"
         />
         <input
@@ -362,7 +349,7 @@
           min="0.1"
           max="10"
           step="0.1"
-          bind:value={link_strength}
+          bind:value={link_config.strength}
           title="Strength (higher = stronger pull)"
           style="flex: 1"
         />

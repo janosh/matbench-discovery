@@ -387,11 +387,11 @@ export const ALL_METRICS: AllMetrics = {
     key: `rmsd`,
     path: `metrics.geo_opt.symprec=1e-2`,
     label: `RMSD`,
-    unit: `Å`,
+    unit: `unitless`,
     range: [0, RMSD_BASELINE],
     better: `lower`,
     description:
-      `Root mean squared displacement between predicted and reference structures after relaxation`,
+      `Normalized, unitless StructureMatcher RMSD between ML- and DFT-relaxed structures after matching; unmatched structures are assigned 1.0`,
     style: `border-left: 1px solid black;`,
   },
   ...GEO_OPT_SYMMETRY_METRICS,

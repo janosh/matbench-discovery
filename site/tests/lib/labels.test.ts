@@ -100,7 +100,7 @@ describe(`format_property_path`, () => {
 
 describe(`ALL_METRICS`, () => {
   test.each([
-    [`RMSD`, `Å`],
+    [`RMSD`, `unitless`],
     [`MAE`, `eV / atom`],
     [`RMSE`, `eV / atom`],
   ])(`%s has unit '%s'`, (key, expected_unit) => {

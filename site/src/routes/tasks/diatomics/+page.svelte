@@ -45,8 +45,7 @@
     ),
   )
 
-  let plot_width = $state(400)
-  let plot_height = $state(300)
+  let plot_size = $state({ width: 400, height: 300 })
 
   // Start with pre-loaded models selected, reset when data changes
   const selected_models = new SvelteSet<string>()
@@ -87,13 +86,13 @@
   <div class="plot-controls">
     <label>
       Plot width:
-      <input type="range" min="200" max="600" bind:value={plot_width} />
-      {plot_width}px
+      <input type="range" min="200" max="600" bind:value={plot_size.width} />
+      {plot_size.width}px
     </label>
     <label>
       Plot height:
-      <input type="range" min="100" max="500" bind:value={plot_height} />
-      {plot_height}px
+      <input type="range" min="100" max="500" bind:value={plot_size.height} />
+      {plot_size.height}px
     </label>
   </div>
 
@@ -113,9 +112,8 @@
   </div>
 </div>
 
-<div class="grid" style="--plot-width: {plot_width}px">
+<div class="grid" style="--plot-width: {plot_size.width}px">
   {#each diatomics_to_render as formula (formula)}
-    {@const style = `height: ${plot_height}px`}
     <DiatomicCurve
       {formula}
       curves={[...selected_models]
@@ -130,7 +128,7 @@
         energies: diatomic_curves[model][humu_nuc_key][formula].energies,
         color: model_colors.get(model) ?? `gray`,
       }))}
-      {style}
+      style={`height: ${plot_size.height}px`}
     />
   {/each}
 </div>

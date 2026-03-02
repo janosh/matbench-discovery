@@ -60,7 +60,10 @@ describe(`Models Page`, () => {
   })
 
   it(`toggles model details`, async () => {
-    mount(ModelsPage, { target: document.body })
+    mount(ModelsPage, {
+      target: document.body,
+      props: { data: { initial_show_n_best: 3 } },
+    })
 
     const first_card = doc_query<HTMLLIElement>(`ol > li`)
     const details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
@@ -90,7 +93,10 @@ describe(`Models Page`, () => {
   })
 
   it(`binds show_details state between page and model cards`, async () => {
-    mount(ModelsPage, { target: document.body })
+    mount(ModelsPage, {
+      target: document.body,
+      props: { data: { initial_show_n_best: 3 } },
+    })
 
     const [first_card, second_card] = Array.from(document.querySelectorAll(`ol > li`))
     expect(first_card).toBeDefined()
