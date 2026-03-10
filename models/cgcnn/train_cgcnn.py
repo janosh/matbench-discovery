@@ -52,7 +52,7 @@ optimizer = "AdamW"
 learning_rate = 3e-4
 batch_size = 128
 swa_start = None
-slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
 task_type: TaskType = "regression"
 
 
@@ -95,7 +95,7 @@ test_loader = DataLoader(
 )
 
 # 1 for regression, n_classes for classification
-n_targets = [1 if task_type == "regression" else df_in[target_col].max() + 1]
+n_targets = [1 if task_type == "regression" else int(df_in[target_col].max()) + 1]
 
 model_params = dict(
     n_targets=n_targets,

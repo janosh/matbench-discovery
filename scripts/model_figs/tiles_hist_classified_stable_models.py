@@ -48,7 +48,7 @@ facet_col = "Model"
 
 # 'true' or 'pred': whether to put DFT or model-predicted hull distances on the x-axis
 which_energy: Final = "pred"
-kwds = dict(
+hist_clf_kwargs = dict(
     facet_col=facet_col,
     facet_col_wrap=n_cols,
     category_orders={facet_col: [m.label for m in models_to_plot]},
@@ -73,8 +73,7 @@ fig = hist_classified_stable_vs_hull_dist(
     each_pred_col=Key.each_pred,
     which_energy=which_energy,
     rolling_acc=None,
-    stability_threshold=None,
-    **kwds,  # type: ignore[arg-type]
+    **hist_clf_kwargs,  # type: ignore[invalid-argument-type]
 )
 
 metrics_in_plot_titles = True

@@ -1,20 +1,29 @@
 """Central argument parser for Matbench Discovery scripts."""
 
 import multiprocessing as mp
+import os
 from argparse import ArgumentParser
 
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import Model, TestSubset
 
+CLI_TIMEOUT = 30
+
 cli_parser = ArgumentParser(
     description="CLI flags for eval, plot and analysis scripts."
 )
 
 cli_parser.add_argument(
+    "--auto-download",
+    action="store_true",
+    help="Auto-confirm file downloads without prompting.",
+)
+
+cli_parser.add_argument(
     "--models",
     nargs="*",
-    type=Model,  # type: ignore[arg-type]
+    type=Model,
     choices=Model,
     default=list(Model),
     help="Models to analyze. If none specified, analyzes all models.",
@@ -41,6 +50,12 @@ cli_parser.add_argument(
     "--dry-run",
     action="store_true",
     help="Print what would be done without actually doing it.",
+)
+cli_parser.add_argument(
+    "--timeout",
+    type=int,
+    default=CLI_TIMEOUT,
+    help="Timeout in seconds for HTTP requests (default: 30).",
 )
 
 plot_group = cli_parser.add_argument_group(
@@ -78,4 +93,19 @@ plot_group.add_argument(
     action="store_true",
     help="Whether to update figures whose file paths already exist.",
 )
+plot_group.add_argument(
+    "--no-show",
+    action="store_true",
+    help="Suppress Plotly figures from opening in browser.",
+)
 cli_args, _ignore_unknown = cli_parser.parse_known_args()
+
+# Set env var to auto-confirm file downloads when --auto-download is passed
+if cli_args.auto_download:
+    os.environ["MBD_AUTO_DOWNLOAD_FILES"] = "true"
+
+# Monkey-patch Plotly to suppress browser opening when --no-show is passed
+if cli_args.no_show:
+    import plotly.graph_objects as go
+
+    go.Figure.show = lambda *_args, **_kwargs: None

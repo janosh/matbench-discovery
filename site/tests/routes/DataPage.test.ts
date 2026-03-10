@@ -8,7 +8,7 @@ describe(`Data Page`, () => {
   })
 
   it(`renders data files list with correct structure and content`, () => {
-    const data_files_list = document.body.querySelector(`.data-files-list`)
+    const data_files_list = document.querySelector(`.data-files-list`)
     expect(data_files_list?.tagName.toLowerCase()).toBe(`ol`)
 
     // Verify proper number of data files are listed
@@ -48,7 +48,7 @@ describe(`Data Page`, () => {
   })
 
   it(`renders data files with valid and correctly formatted URLs`, () => {
-    const file_links = document.body.querySelectorAll(`.data-files-list a`)
+    const file_links = Array.from(document.querySelectorAll(`.data-files-list a`))
     expect(file_links.length).toBeGreaterThanOrEqual(16)
 
     // Verify all links have proper format
@@ -70,7 +70,7 @@ describe(`Data Page`, () => {
 
   it(`renders file descriptions`, () => {
     // Extract descriptions from list items
-    const descriptions = Array.from(document.body.querySelectorAll(`.data-files-list li`))
+    const descriptions = Array.from(document.querySelectorAll(`.data-files-list li`))
       .map((item) => {
         const link_text = item.querySelector(`a`)?.textContent || ``
         return item.textContent?.replace(link_text, ``).trim()

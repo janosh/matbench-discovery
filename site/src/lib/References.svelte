@@ -1,14 +1,7 @@
 <script lang="ts">
   import type { Reference } from '$lib'
+  import type { HTMLAttributes } from 'svelte/elements'
 
-  interface Props {
-    references: Reference[]
-    ref_selector?: string
-    found_on_page?: Reference[]
-    n_authors?: number
-    first_name_mode?: `initial` | `full` | `none`
-    [key: string]: unknown
-  }
   let {
     references,
     ref_selector = `a.ref[href^='#']`,
@@ -16,7 +9,13 @@
     n_authors = 1,
     first_name_mode = `none`,
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLOListElement> & {
+    references: Reference[]
+    ref_selector?: string
+    found_on_page?: Reference[]
+    n_authors?: number
+    first_name_mode?: `initial` | `full` | `none`
+  } = $props()
 
   function filter_refs() {
     const ref_links = document.querySelectorAll<HTMLAnchorElement>(ref_selector)
@@ -33,16 +32,16 @@
         <p {id}>{title}</p>
         <span>
           {@html author
-            .slice(0, n_authors)
-            .map(({ given, family }) => {
-              const first_name = {
-                initial: `${given[0]}. `,
-                full: `${given} `,
-                none: ``,
-              }[first_name_mode]
-              return `${first_name ?? ``}${family}`
-            })
-            .join(`,&thinsp; `)}
+          .slice(0, n_authors)
+          .map(({ given, family }) => {
+            const first_name = {
+              initial: `${given[0]}. `,
+              full: `${given} `,
+              none: ``,
+            }[first_name_mode]
+            return `${first_name ?? ``}${family}`
+          })
+          .join(`,&thinsp; `)}
           {#if author.length > n_authors}
             <em>et al.</em>
           {/if}

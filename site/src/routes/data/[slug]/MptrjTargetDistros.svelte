@@ -25,7 +25,7 @@
       {@const title = name.split(`mp-trj-`)[1].split(`-hist.svelte`)[0]}
       <div>
         <h3>{title_map[title] ?? title}</h3>
-        <Plot {title} style="width: 100%; max-width: 700px; height: 300px;" />
+        <Plot {title} style="width: 100%; max-width: 700px; height: 300px" />
       </div>
     {/each}
   </ul>

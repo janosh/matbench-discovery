@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy as np
 import pandas as pd
 from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE
@@ -120,9 +119,7 @@ def parse_relaxed_atoms_list_as_df(
 
 
 if __name__ == "__main__":
-    init_wbm_atoms_list: list[ase.Atoms] = np.array(
-        ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path), dtype=object
-    )
+    init_wbm_atoms_list = ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path)
     relaxed_wbm_atoms_list = relax_atoms_list(init_wbm_atoms_list)
     parse_relaxed_atoms_list_as_df(relaxed_wbm_atoms_list).to_csv(
         f"{today}-MatterSim-V1-5M-wbm-IS2RE.csv.gz"

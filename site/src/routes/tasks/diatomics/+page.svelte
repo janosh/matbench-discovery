@@ -1,9 +1,12 @@
 <script lang="ts">
   import { DiatomicCurve, type ModelData } from '$lib'
-  import { elem_symbols } from 'matterviz'
+  import { ELEM_SYMBOLS } from 'matterviz/labels'
+  import { SvelteSet } from 'svelte/reactivity'
 
   let { data } = $props()
-  let { diatomic_models = [], diatomic_curves = {}, errors = {} } = data ?? {}
+  let diatomic_models = $derived(data?.diatomic_models ?? [])
+  let diatomic_curves = $derived(data?.diatomic_curves ?? {})
+  let errors = $derived(data?.errors ?? {})
 
   // Define a sequence of colors to use for models
   const colors = [
@@ -29,40 +32,44 @@
 
   const [humu_nuc_key, _hetero_nuc_key] = [`homo-nuclear`, `hetero-nuclear`] as const
 
-  // Generate list of homonuclear diatomic formulas for elements 1-119
-  const homo_diatomic_formulas = elem_symbols.map((symbol) => `${symbol}-${symbol}`)
+  // Generate list of homo-nuclear diatomic formulas for elements 1-119
+  const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
 
   // Create a Map to store model colors consistently
-  const model_colors = new Map<string, ColorType>(
-    diatomic_models.map((model: ModelData, idx: number) => [
-      model.model_name,
-      colors[idx % colors.length],
-    ]),
+  let model_colors = $derived(
+    new Map<string, ColorType>(
+      diatomic_models.map((model: ModelData, idx: number) => [
+        model.model_name,
+        colors[idx % colors.length],
+      ]),
+    ),
   )
 
-  let plot_width = $state(400)
-  let plot_height = $state(300)
+  let plot_size = $state({ width: 400, height: 300 })
 
-  // Start with pre-loaded models selected
-  let selected_models = $state(new Set(Object.keys(diatomic_curves)))
+  // Start with pre-loaded models selected, reset when data changes
+  const selected_models = new SvelteSet<string>()
+  $effect(() => {
+    // Clear and repopulate when diatomic_curves changes (e.g., on page load)
+    selected_models.clear()
+    for (const key of Object.keys(diatomic_curves)) {
+      selected_models.add(key)
+    }
+  })
   let diatomics_to_render = $derived(
     // only render diatomics where at least one model has data
     homo_diatomic_formulas.filter((formula) =>
       [...selected_models].some(
         (model) =>
           diatomic_curves[model]?.[humu_nuc_key]?.[formula]?.energies?.length > 0,
-      ),
+      )
     ),
   )
 
   function toggle_model(model: ModelData) {
     const { model_name } = model
-    if (selected_models.has(model_name)) {
-      selected_models.delete(model_name)
-    } else {
-      selected_models.add(model_name)
-    }
-    selected_models = selected_models // trigger reactivity
+    if (selected_models.has(model_name)) selected_models.delete(model_name)
+    else selected_models.add(model_name)
   }
 </script>
 
@@ -79,13 +86,13 @@
   <div class="plot-controls">
     <label>
       Plot width:
-      <input type="range" min="200" max="600" bind:value={plot_width} />
-      {plot_width}px
+      <input type="range" min="200" max="600" bind:value={plot_size.width} />
+      {plot_size.width}px
     </label>
     <label>
       Plot height:
-      <input type="range" min="100" max="500" bind:value={plot_height} />
-      {plot_height}px
+      <input type="range" min="100" max="500" bind:value={plot_size.height} />
+      {plot_size.height}px
     </label>
   </div>
 
@@ -105,23 +112,23 @@
   </div>
 </div>
 
-<div class="grid" style="--plot-width: {plot_width}px">
+<div class="grid" style="--plot-width: {plot_size.width}px">
   {#each diatomics_to_render as formula (formula)}
     <DiatomicCurve
       {formula}
       curves={[...selected_models]
-        .filter((model) => {
-          const { energies = [] } =
-            diatomic_curves[model]?.[humu_nuc_key]?.[formula] ?? {}
-          return energies.length > 0
-        })
-        .map((model) => ({
-          model_key: model,
-          distances: diatomic_curves[model].distances,
-          energies: diatomic_curves[model][humu_nuc_key][formula].energies,
-          color: model_colors.get(model) ?? `gray`,
-        }))}
-      style="height: {plot_height}px"
+      .filter((model) => {
+        const { energies = [] } = diatomic_curves[model]?.[humu_nuc_key]?.[formula] ??
+          {}
+        return energies.length > 0
+      })
+      .map((model) => ({
+        model_key: model,
+        distances: diatomic_curves[model].distances,
+        energies: diatomic_curves[model][humu_nuc_key][formula].energies,
+        color: model_colors.get(model) ?? `gray`,
+      }))}
+      style={`height: ${plot_size.height}px`}
     />
   {/each}
 </div>

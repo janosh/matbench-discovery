@@ -1,3 +1,38 @@
+WBM:
+  name: WBM Benchmark Test Set
+  url: https://github.com/janosh/matbench-discovery/blob/main/data/wbm/readme.md
+  doi: https://doi.org/10.1038/s41524-020-00481-6
+  n_structures: 256_963 # 257_487 before filtering suspicious data, see data/wbm/compile_wbm_test_set.py
+  n_materials: 215_488 # based on number of unique Aflow-style structure prototypes
+  n_stable_materials: 42_825
+  n_uniq_stable_materials: 32_942
+  open: true
+  static: true
+  optimade_api: null
+  native_api: null
+  date_created: 2021-01-01
+  license: CC-BY-4.0
+  description: |
+    Benchmark test set for Matbench Discovery containing 256,963 structures generated via chemical
+    similarity-based elemental substitution of MP source structures followed by DFT relaxation and
+    calculating each structure's formation energy. This is the primary test set used to evaluate
+    model performance on materials discovery tasks.
+  method: DFT
+  params:
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Hai-Chen Wang
+      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+    - name: Silvana Botti
+      affiliation: Friedrich-Schiller-Universität Jena, Germany
+      email: silvana.botti@uni-jena.de
+      url: https://wikipedia.org/wiki/Silvana_Botti
+    - name: Miguel A. L. Marques
+      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+      orcid: https://orcid.org/0000-0003-0170-8222
+
 MP 2022:
   name: MP v2022.10.28
   url: https://docs.materialsproject.org/changes/database-versions#v2022.10.28
@@ -5,6 +40,7 @@ MP 2022:
   n_structures: 154_719
   open: true
   static: true
+  compliant: true
   optimade_api: null
   native_api: null
   date_created: 2022-10-28
@@ -29,6 +65,7 @@ MPtrj:
   n_materials: 145_923
   open: true
   static: true
+  compliant: true
   optimade_api: null
   native_api: null
   date_created: 2023-07-19
@@ -59,10 +96,10 @@ MPF:
   n_materials: 62_783
   open: true
   static: true
+  compliant: true
   optimade_api: null
   native_api: null
   date_created: 2022-03-05
-  date_added: 2022-03-05
   license: CC-BY-4.0
   description: Materials Project Force dataset used to train the M3GNet model reported in https://arxiv.org/abs/2202.02450.
   method: DFT
@@ -86,6 +123,7 @@ MP Graphs:
   n_structures: 133_420
   open: true
   static: true
+  compliant: true
   optimade_api: null
   native_api: null
   date_created: 2019-06-06
@@ -254,7 +292,7 @@ OMat24:
       corresponding: true
 
 sAlex:
-  name: subsampled Alexandria
+  name: Subsampled Alexandria
   contains: [Alex]
   url: https://huggingface.co/datasets/fairchem/OMAT24#salex-dataset
   download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/omat/241018/sAlex/train.tar.gz
@@ -281,7 +319,7 @@ sAlex:
       github: https://github.com/lbluque
 
 sAlex Validation:
-  name: subsampled Alexandria Validation Set
+  name: Subsampled Alexandria Validation Set
   contains: [Alex]
   url: https://huggingface.co/datasets/fairchem/OMAT24#salex-dataset
   download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/omat/241018/sAlex/val.tar.gz
@@ -309,7 +347,8 @@ sAlex Validation:
 
 OpenLAM:
   name: OpenLAM dataset v1
-  contains: [OMat24, MPtrj, Alex] # strictly speaking contains Alex2D, not the Alex in this file which refers to Alex3D
+  # strictly speaking contains Alex2D, not the Alex in this file which refers to Alex3D
+  contains: [OMat24, MPtrj, Alex]
   url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308
   download_url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308 # will be combined for downloading soon
   doi: https://doi.org/10.48550/arXiv.2501.16358
@@ -338,14 +377,46 @@ OpenLAM:
     - name: Han Wang
       affiliation: HEDPS, CAPT, College of Engineering, Peking University, Beijing, China
   description: |
-    This dataset integrates multidisciplinary DFT data sourced from Deep Modeling community (https://deepmodeling.com)
+    This dataset integrates multidisciplinary DFT data sourced from Deep Modeling community (https://github.com/deepmodeling)
     and other open repositories to pre-train large atomic models (LAMs),
     while intentionally excluding overlap with WBM benchmark systems (e.g., Alex3D structures).
+
+COSMOSDataset:
+  name: COSMOSDataset
+  contains: [MPtrj, OMat24, sAlex, OC20, MatPES PBE, MatPES r2SCAN]
+  url: https://figshare.com/articles/software/SevenNet-Omni_checkpoint/30399814
+  download_url: https://figshare.com/articles/software/SevenNet-Omni_checkpoint/30399814
+  doi: https://doi.org/10.48550/arXiv.2510.11241
+  n_structures: 242_788_218
+  open: true
+  static: true
+  optimade_api: null
+  native_api: null
+  date_created: 2025-10-21
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: Various
+    functional: Various
+    pseudopotentials: Various
+  created_by:
+    - name: Jaesun Kim
+      affiliation: Seoul National University
+      orcid: https://orcid.org/0009-0000-6646-1318
+    - name: Jinmu You
+      affiliation: Seoul National University
+      orcid: https://orcid.org/0009-0003-7152-7774
+    - name: Seungwu Han
+      affiliation: Seoul National University, Korea Institute for Advanced Study
+      email: hansw@snu.ac.kr
+      orcid: https://orcid.org/0000-0003-3958-0922
+  description: |
+    COSMOS Dataset (Combined Organic, Surface and Materials Open Source Dataset) aggregates 15 publicly available ab initio databases spanning molecules, inorganic crystals, metal and oxide surfaces, and metal-organic frameworks, covering levels of theory from generalized gradient approximation to hybrid functionals. It also includes a domain-bridging set, sampled from OC20, OC22, MatPES, ODAC23, OMol25, and QCML dataset and recomputed with MPtrj-consistent computational settings, which facilitates cross-domain knowledge transfer in a multi-task training framework. For detailed information about the dataset composition, see Table 1 from [the paper](https://arxiv.org/abs/2510.11241).
 
 OC20:
   name: Open Catalyst 2020
   url: https://opencatalystproject.org/leaderboard.html
-  download_url: https://fair-chem.github.io/core/datasets/oc20.html#per-adsorbate-trajectories
+  download_url: https://fair-chem.github.io/catalysts/datasets/oc20.html#per-adsorbate-trajectories-optional-download
   doi: https://doi.org/10.1021/acscatal.0c04525
   n_structures: 133_934_018
   open: true
@@ -374,7 +445,7 @@ NOMAD:
   n_materials: 4_335_728
   open: true
   static: false
-  contains: [Alexandria, OQMD]
+  contains: [Alex, OQMD]
   optimade_api: https://optimade.org/providers-dashboard/providers/nmd
   native_api: https://nomad-lab.eu/prod/v1/gui/analyze/apis
   date_created: 2019-06-01
@@ -389,7 +460,7 @@ NOMAD:
       orcid: https://orcid.org/0000-0002-8038-2277
     - name: Lauri Himanen
       orcid: https://orcid.org/0000-0002-3130-8193
-    - name: Alvin Noe Ladines
+    - name: Alvin Noe Ladines # codespell:ignore
       orcid: https://orcid.org/0000-0003-0077-2097
     - name: David Sikter
       orcid: https://orcid.org/0000-0002-2102-7160
@@ -467,7 +538,7 @@ AFLOW:
   created_by:
     - name: Stefano Curtarolo
     - name: Wahyu Setyawan
-    - name: Gus L.W. Hart
+    - name: Gus L.W. Hart # codespell:ignore
     - name: Michal Jahnatek
     - name: Roman V. Chepulskii
     - name: Richard H. Taylor
@@ -579,3 +650,53 @@ MatPES r2SCAN:
   description: |
     A dataset containing 387,897 structures from ~300K molecular dynamics simulations,
     providing potential energy surfaces that are valuable for training ML interatomic potentials.
+
+MDR Phonon PBE:
+  name: MDR Phonon PBE
+  url: https://alexandria.icams.rub.de/data/phonon_benchmark/pbe
+  download_url: https://alexandria.icams.rub.de/data/phonon_benchmark/
+  doi: https://doi.org/10.48550/arXiv.2412.16551
+  n_structures: 9_959
+  open: true
+  static: true
+  optimade_api: null
+  native_api: null
+  date_created: 2024-12-21
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Antoine Loew
+    - name: Dewen Sun
+    - name: Hai-Chen Wang
+    - name: Silvana Botti
+    - name: Miguel A. L. Marques
+  description: |
+    PBE recalculations of the MDR Phonon dataset
+    (https://mdr.nims.go.jp/collections/d7aab932-8512-4b9a-b93d-b61f6e5e7019),
+    introduced in the paper "Universal Machine Learning Interatomic Potentials
+    are Ready for Phonons".
+
+MDR PBE Phonons in MPtrj:
+  name: MDR PBE Phonons in MPtrj
+  contains: [MDR Phonon PBE]
+  url: https://figshare.com/articles/dataset/Preprocessed_data_for_Phonon_Fine-tuning_PFT_/31049869
+  download_url: https://figshare.com/files/60964675
+  doi: https://doi.org/10.48550/arXiv.2601.07742
+  n_structures: 8_510
+  open: true
+  static: true
+  compliant: true
+  date_created: 2026-01-08
+  license: CC-BY-4.0
+  created_by:
+    - name: Teddy Koker
+  description: |
+    Subset of the MDR Phonon PBE dataset to be used for phonon fine-tuning, as
+    introduced in "PFT: Phonon Fine-tuning for Machine Learning Interatomic
+    Potentials". This dataset was constructed by randomly sampling 8,510
+    structures with overlapping mp-id's with MPtrj and preprocessing into
+    .aselmbd files with the Hessian stored in atoms.info["hessian"].

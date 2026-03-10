@@ -1,21 +1,18 @@
 <script lang="ts">
-  import { arr_to_str, calculate_days_ago, format_date, slugify } from '$lib'
+  import { arr_to_str, calculate_days_ago, DATASETS, format_date } from '$lib'
+  import { Icon } from 'matterviz'
   import type { Dataset } from '$lib/types'
   import pkg from '$site/package.json'
   import { format_num } from 'matterviz'
-  import { Tooltip } from 'svelte-zoo'
-  import { titles_as_tooltips } from 'svelte-zoo/actions'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import MptrjTargetDistros from './MptrjTargetDistros.svelte'
 
-  interface Props {
-    data: { dataset: Dataset }
-  }
-  let { data }: Props = $props()
-  const { dataset } = data
-  const ext_link_props = { target: `_blank`, rel: `noopener noreferrer` }
+  let { data }: { data: { dataset: Dataset } } = $props()
+  let dataset = $derived(data.dataset)
+  const link_props = { target: `_blank`, rel: `noopener noreferrer` }
 
-  let days_created = calculate_days_ago(dataset.date_created)
-  let days_added = calculate_days_ago(dataset.date_added ?? ``)
+  let days_created = $derived(calculate_days_ago(dataset.date_created))
+  let days_added = $derived(calculate_days_ago(dataset.date_added ?? ``))
 
   // Format the params object into a readable list
   function format_params(params: Record<string, unknown> | undefined): string[] {
@@ -31,95 +28,78 @@
   }
 </script>
 
-<h1 style="font-size: 2.5em;">{dataset.name}</h1>
+<h1 style="font-size: 2.5em">{dataset.name}</h1>
 
 <section class="meta-info">
   {#if dataset.version}
-    <div>Version: {dataset.version}</div>
+    <span>Version: {dataset.version}</span>
   {/if}
 
-  <div>
-    <svg><use href="#icon-calendar"></use></svg>
-    Created: <Tooltip text="{days_created} days ago">
-      {format_date(dataset.date_created)}
-    </Tooltip>
-  </div>
+  <span title="{days_created} days ago" {@attach tooltip()}>
+    <Icon icon="Calendar" /> Created: {format_date(dataset.date_created)}
+  </span>
 
   {#if dataset.date_added}
-    <div>
-      <svg><use href="#icon-calendar-plus"></use></svg>
-      Added: <Tooltip text="{days_added} days ago">
-        {format_date(dataset.date_added)}
-      </Tooltip>
-    </div>
+    <span title="{days_added} days ago" {@attach tooltip()}>
+      <Icon icon="CalendarPlus" /> Added: {format_date(dataset.date_added)}
+    </span>
   {/if}
 
-  <div>
-    <svg><use href="#icon-database"></use></svg>
-    <Tooltip text={dataset.n_structures.toLocaleString()}>
-      {format_num(dataset.n_structures, `.3~s`)}
-    </Tooltip> structures
-  </div>
+  <span title={dataset.n_structures.toLocaleString()} {@attach tooltip()}>
+    <Icon icon="Database" /> {format_num(dataset.n_structures, `.3~s`)} structures
+  </span>
 
   {#if dataset.n_materials}
-    <div>
-      <svg><use href="#icon-lattice"></use></svg>
-      <Tooltip text={dataset.n_materials.toLocaleString()}>
-        {format_num(dataset.n_materials, `.3~s`)}
-      </Tooltip> materials
-    </div>
+    <span title={dataset.n_materials.toLocaleString()} {@attach tooltip()}>
+      <Icon icon="Lattice" /> {format_num(dataset.n_materials, `.3~s`)} materials
+    </span>
   {/if}
 
-  <div>
-    <svg><use href="#icon-{dataset.open ? `unlock` : `lock`}"></use></svg>
+  <span
+    title="The dataset is {dataset.open ? `freely ` : `in`}accessible"
+    {@attach tooltip()}
+  >
+    <Icon icon={dataset.open ? `Unlock` : `Lock`} />
     {dataset.open ? `Open` : `Closed`}
-  </div>
+  </span>
 
-  <div>
-    <svg><use href="#icon-license"></use></svg>
-    {dataset.license}
-  </div>
+  <span><Icon icon="License" /> {dataset.license}</span>
 </section>
 
 <section class="links">
-  <a
-    href={dataset.url}
-    {...ext_link_props}
-    title="View dataset website"
-    use:titles_as_tooltips
-  >
-    <svg><use href="#icon-globe"></use></svg> Website
+  <a href={dataset.url} {...link_props} title="View dataset website" {@attach tooltip()}>
+    <Icon icon="Globe" /> Website
   </a>
 
   {#if dataset.download_url}
     <a
       href={dataset.download_url}
-      {...ext_link_props}
+      {...link_props}
       title="Download dataset"
-      use:titles_as_tooltips
+      {@attach tooltip()}
     >
-      <svg><use href="#icon-download"></use></svg> Download
+      <Icon icon="Download" /> Download
     </a>
   {/if}
 
   {#if dataset.doi}
     <a
       href={dataset.doi}
-      {...ext_link_props}
+      {...link_props}
       title="Digital Object Identifier"
-      use:titles_as_tooltips
+      {@attach tooltip()}
     >
-      <svg><use href="#icon-doi"></use></svg> DOI
+      <Icon icon="DOI" /> DOI
     </a>
   {/if}
 
   <a
     href="{pkg.repository}/blob/main/data/datasets.yml"
-    {...ext_link_props}
+    {...link_props}
     title="View source YAML file"
-    use:titles_as_tooltips
+    {@attach tooltip()}
   >
-    <svg><use href="#icon-code"></use></svg> Source
+    <Icon icon="Code" /> Source
   </a>
 </section>
 
@@ -146,16 +126,17 @@
   </section>
 {/if}
 
-{#if dataset.derived_from}
+{#if dataset.contains}
   <section class="derived-from">
     <h2>Derived From</h2>
-    <ul>
-      {#each dataset.derived_from as source (source)}
+    <ol>
+      {#each dataset.contains as source (source)}
+        {@const contained_data = DATASETS[source]}
         <li>
-          <a href="/data/{slugify(source)}">{source}</a>
+          <a href="/data/{contained_data.slug}">{contained_data.name}</a>
         </li>
       {/each}
-    </ul>
+    </ol>
   </section>
 {/if}
 
@@ -190,21 +171,21 @@
           {/if}
           {#if person.email}
             <a href="mailto:{person.email}" aria-label="Email">
-              <svg><use href="#icon-mail"></use></svg>
+              <Icon icon="Contact" />
             </a>
           {/if}
           {#if person.github}
-            <a href={person.github} {...ext_link_props} aria-label="GitHub">
-              <svg><use href="#icon-github"></use></svg>
+            <a href={person.github} {...link_props} aria-label="GitHub">
+              <Icon icon="GitHub" />
             </a>
           {/if}
           {#if person.orcid}
-            <a href={person.orcid} {...ext_link_props} aria-label="ORCID">
-              <svg><use href="#icon-orcid"></use></svg>
+            <a href={person.orcid} {...link_props} aria-label="ORCID">
+              <Icon icon="Orcid" />
             </a>{/if}
           {#if person.url}
-            <a href={person.url} {...ext_link_props} aria-label="Website">
-              <svg><use href="#icon-globe"></use></svg>
+            <a href={person.url} {...link_props} aria-label="Website">
+              <Icon icon="Globe" />
             </a>{/if}
         </li>
       {/each}
@@ -218,7 +199,7 @@
 
 <p>
   See incorrect or missing data? Suggest an edit to
-  <a href="{pkg.repository}/blob/-/data/datasets.yml" {...ext_link_props}>
+  <a href="{pkg.repository}/blob/-/data/datasets.yml" {...link_props}>
     datasets.yml
   </a>
 </p>
@@ -235,15 +216,15 @@
     place-content: center;
     margin: 2em auto;
   }
-  section:is(.method-info) ul {
+  section.method-info ul {
     display: flex;
     flex-wrap: wrap;
     gap: 1em;
     padding: 0;
     list-style: none;
   }
-  section:is(.method-info) ul li {
-    background-color: rgba(255, 255, 255, 0.1);
+  section.method-info ul li {
+    background-color: var(--nav-bg);
     padding: 2pt 6pt;
     border-radius: 3pt;
     text-align: center;
@@ -252,11 +233,10 @@
     max-width: 12em;
   }
   .links a {
-    gap: 5px;
-    padding: 2pt 6pt;
-    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0 5pt;
+    background-color: var(--nav-bg);
     border-radius: 5px;
-    color: lightgray;
+    color: var(--text-color);
   }
   .affiliation {
     color: gray;

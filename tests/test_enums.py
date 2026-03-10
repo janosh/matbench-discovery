@@ -148,6 +148,16 @@ def test_files_enum() -> None:
     class SubFiles(Files, base_dir="foo"):
         test_file = auto(), "test/file.txt"
 
+        @property
+        def url(self) -> str:
+            """URL associated with the file."""
+            return "https://example.com/file.txt"
+
+        @property
+        def label(self) -> str:
+            """Label associated with the file."""
+            return "test"
+
     assert SubFiles.base_dir == "foo"
 
     # Test __repr__ and __str__ methods
@@ -235,13 +245,21 @@ def test_files_enum_auto_download(
         def raise_for_status(self) -> None:
             """Mock the raise_for_status method."""
             if self.status_code >= 400:
-                raise requests.exceptions.HTTPError(f"HTTP Error: {self.status_code}")
+                raise requests.HTTPError(f"HTTP Error: {self.status_code}")
+
+        def iter_content(self, chunk_size: int = 8192) -> list[bytes]:  # noqa: ARG002
+            """Mock iter_content for streaming."""
+            return [self.content]
 
     # Mock stdin to simulate non-interactive mode
     class MockStdin:
         def isatty(self) -> bool:
             """Mock isatty to simulate non-interactive mode."""
             return False
+
+        def readline(self) -> str:
+            """Mock readline method."""
+            return "y\n"  # Default to yes for testing
 
     monkeypatch.setattr(requests, "get", lambda *_args, **_kwargs: MockResponse())
     monkeypatch.setattr(sys, "stdin", MockStdin())
@@ -319,7 +337,9 @@ def check_url(session: requests.Session, url: str, desc: str) -> None:
     try:
         response = session.head(url, allow_redirects=True)
         http_status = response.status_code
-        assert http_status in {200, 403, 429}
+        # 200: OK, 202: Accepted (async processing, common for figshare),
+        # 403: Forbidden (valid URL but access restricted), 429: Rate limited
+        assert http_status in {200, 202, 403, 429}
         if http_status == 429:
             assert "Too Many Requests" in response.reason, f"{response.reason=}"
             warnings.warn(f"{response.reason=}", stacklevel=2)

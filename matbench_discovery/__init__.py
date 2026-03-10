@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import plotly.express as px
 import plotly.io as pio
-import pymatviz as pmv  # needed for pymatviz_dark template  # noqa: F401
+import pymatviz as pmv  # needed for pymatviz_dark template
 
 PKG_NAME = "matbench-discovery"
 __version__ = "1.3.1"
@@ -46,7 +46,7 @@ WANDB_PATH = "janosh/matbench-discovery"
 STABILITY_THRESHOLD = 0
 
 timestamp = f"{datetime.now(tz=UTC):%Y-%m-%d@%H-%M-%S}"
-today = timestamp.split("@")[0]
+today = timestamp.split("@", maxsplit=1)[0]
 
 # filter pymatgen warnings that spam the logs when e.g. applying corrections to
 # ComputedStructureEntries or using PatchedPhaseDiagram to get e_above_hull

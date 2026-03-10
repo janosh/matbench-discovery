@@ -10,9 +10,9 @@ finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe for detail
 from collections import defaultdict
 
 import ase.io
-import moyopy
-import moyopy.interface
 import pymatviz as pmv
+from moyopy import MoyoDataset
+from moyopy.interface import MoyoAdapter
 
 from matbench_discovery.enums import DataFiles
 
@@ -24,7 +24,7 @@ atoms_list = ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":")
 
 
 # %% visually inspect first 12 structures
-fig = pmv.structure_3d_plotly(atoms_list[:12], n_cols=3, scale=0.5)
+fig = pmv.structure_3d(atoms_list[:12], n_cols=3, scale=0.5)
 fig.show()
 
 
@@ -43,9 +43,8 @@ fig.show()
 # %% plot spacegroup distribution
 spg_nums: dict[str, int] = {}
 for atoms in atoms_list:
-    moyo_cell = moyopy.interface.MoyoAdapter.from_atoms(atoms).data
-    moyo_data = moyopy.MoyoDataset(moyo_cell)
+    moyo_data = MoyoDataset(MoyoAdapter.from_atoms(atoms))
     spg_nums[atoms.info["material_id"]] = moyo_data.number
 
-fig = pmv.spacegroup_sunburst(spg_nums.values(), show_counts="value+percent")
+fig = pmv.spacegroup_sunburst(list(spg_nums.values()), show_counts="value+percent")
 fig.show()

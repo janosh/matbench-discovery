@@ -2,7 +2,7 @@
 
 ## 🔨 &thinsp; Installation
 
-Clone the repo and install `matbench_discovery` into your Python environment:
+Clone [the repo](https://github.com/janosh/matbench-discovery) and install `matbench-discovery` into your Python environment:
 
 ```zsh
 git clone https://github.com/janosh/matbench-discovery --depth 1
@@ -81,16 +81,27 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    ### Script Dependencies Declaration (Required)
 
-   All test scripts should include a script dependencies section at the top using the [PEP 723 inline metadata format](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies). This ensures others can easily rerun it with `uv run test_<model_name>_<task>.py` without worrying about virtual environments or manually installing dependencies:
+   **All test scripts must include a script dependencies section** using the [PEP 723 inline metadata format](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies). This is critical for reproducibility and allows others to easily rerun your code with `uv run test_<model_name>_<task>.py` without manually setting up virtual environments or installing dependencies.
+
+   #### Why This Matters
+
+   - **Reproducibility**: Future readers can still run your scripts even if there are breaking changes in package releases
+   - **Convenience**: One command (`uv run script.py`) installs dependencies and runs the script
+   - **Documentation**: Makes it clear which exact package versions were used for your submission
 
    ```python
    # /// script
+   # requires-python = ">=3.11,<3.13"
    # dependencies = [
-   #   "numpy>=1.20.0",
-   #   "torch>=1.13.0,<2.0.0",
-   #   "ase>=3.22.1",
-   #   "requests>=2.25.0",
+   #   "numpy>=2.3.4",
+   #   "torch>=2.8.0",
+   #   "ase>=3.26.0",
+   #   "pymatgen>=2025.10.7",
+   #   "matbench-discovery>=1.3.1",
    # ]
+   #
+   # [tool.uv.sources]
+   # matbench-discovery = { path = "../../", editable = true }
    # ///
 
    import numpy as np
@@ -109,8 +120,8 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    model_name: My new model # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
    model_key: my-new-model # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
    model_version: 1.0.0
-   date_added: "2023-01-01"
-   date_published: "2022-12-05"
+   date_added: '2023-01-01'
+   date_published: '2022-12-05'
    authors:
      - name: John Doe
        affiliation: Some University, Some National Lab
@@ -148,13 +159,13 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
      checkpoint_url: https://url.of/model-checkpoint-license
 
    hyperparams: # strongly recommended to list relaxation hyperparams
-      max_force: 0.05
-      max_steps: 500
-      ase_optimizer: FIRE
-      optimizer: Adam
-      graph_construction_radius: 6.0
-      max_neighbors: 50
-      ... # additional hyperparameters describing training and inference
+     max_force: 0.05
+     max_steps: 500
+     ase_optimizer: FIRE
+     optimizer: Adam
+     graph_construction_radius: 6.0
+     max_neighbors: 50
+       ... # additional hyperparameters describing training and inference
 
    training_cost: # list any hardware used to train the model and for how long
      # hardware: { amount: float, hours: float, cost: float [USD] }
@@ -165,14 +176,14 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    requirements: # strongly recommended
      torch: 1.13.0
      torch-geometric: 2.0.9
-     ...
+       ...
 
    training_set: [MPtrj] # list of keys from data/datasets.yml
 
    notes: # notes can have any key, be multiline and support markdown.
      description: This is how my model works...
      steps: |
-      Optional *free-form* [markdown](example.com) notes.
+       Optional *free-form* [markdown](example.com) notes.
 
    metrics:
      phonons:
@@ -189,7 +200,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
        pred_col: e_form_per_atom_<model_name>
    ```
 
-   Arbitrary other keys can be added as needed. The above keys will be schema-validated with `pre-commit` (if installed) with errors for missing keys.
+   Arbitrary other keys can be added as needed. The above keys will be schema-validated with `prek` (if installed) with errors for missing keys.
 
 Please see any of the subdirectories in [`models/`](https://github.com/janosh/matbench-discovery/blob/-/models) for example submissions. More detailed step-by-step instructions below.
 
@@ -228,6 +239,9 @@ You can include arbitrary other supporting files like metadata and model feature
 
 Add the model to the `Model` enum in [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/57d0d0c8a14cd3/matbench_discovery/enums.py#L274) pointing to the correct metadata file.
 
+> [!WARNING]
+> Do not include a `filter_bad_preds.py` script or equivalent. This was a historical flaw in the evaluation and now all OOM outlier prediction handling is handled internally and consistently removing the need for this filtering stage.
+
 ### Step 3: Upload results files to Zenodo
 
 Upload the files for the predictions, optimized geometries and phonons to Zenodo and share the links in your PR description.
@@ -243,7 +257,58 @@ git commit -m 'add <model_name> to Matbench Discovery leaderboard'
 
 And you're done! Once tests pass and the PR is merged, your model will be added to the leaderboard! 🎉
 
-### Step 5 (optional): Copy WandB runs into our project
+### Step 5: Validate your submission with the justfile
+
+We provide a [`justfile`](https://github.com/casey/just) at the repository root to help validate your submission before opening a PR. The `prepare-model-submission` command runs all evaluation scripts, generates required figures, and checks the PR checklist requirements.
+
+#### Installing just
+
+If you don't have `just` installed, you can install it with:
+
+```sh
+# macOS
+brew install just
+
+# Linux (via cargo)
+cargo install just
+
+# Or with pipx
+pipx install rust-just
+
+# Or see https://github.com/casey/just#installation for more options
+```
+
+#### Running the validation
+
+```sh
+just prepare-model-submission <model_name>
+```
+
+For example:
+
+```sh
+just prepare-model-submission mace-mpa-0
+# or with underscores (both work)
+just prepare-model-submission mace_mpa_0
+```
+
+This command will:
+
+1. **Check PR requirements**: Verify your YAML file exists, model is registered in the `Model` enum, prediction URLs are in the YAML, and test scripts exist
+2. **Run evaluation scripts**: Execute discovery, kappa (phonon), and diatomic metrics evaluation for your model
+3. **Generate figures**: Create the required energy parity and per-element error plots
+
+You can also run individual steps:
+
+```sh
+# Run only evaluation scripts
+just eval-model <model_name>
+
+# Run only plot generation
+just plot-model <model_name>
+```
+
+### Step 6 (optional): Copy WandB runs into our project
 
 [Weights and Biases](https://wandb.ai) ([GitHub](https://github.com/wandb/wandb)) is a tool for logging training and test runs of ML models. It auto-collects metadata like:
 

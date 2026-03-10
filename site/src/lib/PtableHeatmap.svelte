@@ -1,16 +1,10 @@
 <script lang="ts">
   import { PtableInset } from '$lib'
-  import { ColorBar, PeriodicTable, TableInset, type ChemicalElement } from 'matterviz'
+  import type { ChemicalElement, ElementSymbol } from 'matterviz'
+  import { ColorBar, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
 
-  interface Props extends ComponentProps<typeof PeriodicTable> {
-    heatmap_values: Record<string, number>
-    color_scale?: D3InterpolateName
-    active_element?: ChemicalElement | null
-    log?: boolean // log color scale
-    colorbar?: ComponentProps<typeof ColorBar>
-  }
   let {
     heatmap_values,
     color_scale = $bindable(`interpolateViridis`),
@@ -18,11 +12,19 @@
     log = $bindable(false),
     colorbar = {},
     ...rest
-  }: Props = $props()
+  }: ComponentProps<typeof PeriodicTable> & {
+    heatmap_values: Record<ElementSymbol, number>
+    color_scale?: D3InterpolateName
+    active_element?: ChemicalElement | null
+    log?: boolean // log color scale
+    colorbar?: ComponentProps<typeof ColorBar>
+  } = $props()
 
   export const snapshot = {
     capture: () => ({ color_scale, log }),
-    restore: (values) => ({ color_scale, log } = values),
+    restore: (
+      values: { color_scale: D3InterpolateName; log: boolean },
+    ) => ({ color_scale, log } = values),
   }
 </script>
 
@@ -36,22 +38,23 @@
   {...rest}
 >
   {#snippet inset()}
+    {@const style = `height: 1.5em; visibility: ${active_element ? `visible` : `hidden`};`}
     <TableInset>
       <label for="log">
         Log color scale<input id="log" type="checkbox" bind:checked={log} />
       </label>
-      <PtableInset
-        element={active_element}
-        elem_counts={heatmap_values}
-        style="height: 1.5em; visibility: {active_element ? `visible` : `hidden`};"
-      />
+      {#if active_element}
+        <PtableInset element={active_element} elem_counts={heatmap_values} {style} />
+      {:else}
+        <span {style}></span>
+      {/if}
       <ColorBar
         title="Count"
         title_side="top"
         {color_scale}
         tick_labels={5}
-        range={[0, Math.max(...Object.values(heatmap_values))]}
-        style="width: 85%; margin: 0 2em 2em;"
+        range={[0, Math.max(0, ...(Object.values(heatmap_values) as number[]))]}
+        style="width: 85%; margin: 0 2em 2em"
         {...colorbar}
       />
     </TableInset>

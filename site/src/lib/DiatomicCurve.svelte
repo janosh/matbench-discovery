@@ -1,26 +1,25 @@
 <script lang="ts">
   import { MODELS } from '$lib'
-  import { ScatterPlot, type InternalPoint } from 'matterviz'
+  import { type InternalPoint, ScatterPlot } from 'matterviz'
+  import type { HTMLAttributes } from 'svelte/elements'
 
-  interface Props {
-    formula: string
-    curves: Array<{
-      model_key: string
-      distances: number[]
-      energies: number[]
-      color: string
-    }>
-    tooltip_point?: InternalPoint | null
-    hovered?: boolean
-    [key: string]: unknown
-  }
   let {
     formula,
     curves,
     tooltip_point = $bindable(null),
     hovered = $bindable(false),
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLDivElement> & {
+    formula: string
+    curves: {
+      model_key: string
+      distances: number[]
+      energies: number[]
+      color: string
+    }[]
+    tooltip_point?: InternalPoint | null
+    hovered?: boolean
+  } = $props()
 
   // Create a map of model keys to labels from MODELS
   // Extract base model name by removing version suffix
@@ -36,22 +35,21 @@
   // Function to get model label, handling version suffixes
   function get_model_label(model_key: string): string {
     // Try to match the model key to known base names
-    const base_name = MODELS.find((model) =>
-      model_key?.startsWith(model.dirname),
-    )?.dirname
+    const base_name = MODELS.find((model) => model_key?.startsWith(model.dirname))
+      ?.dirname
 
     return base_name ? (model_labels.get(base_name) ?? model_key) : model_key
   }
 
-  const x_lim: [number, number] = [0.2, 6]
-  const y_lim: [number, number] = [-8, 20]
+  const x_range: [number, number] = [0.2, 6]
+  const y_range: [number, number] = [-8, 20]
 
   let series = $derived(
     curves.map((curve) => {
       // Filter out points outside the x_lim range
       const filtered_indices = curve.distances
         .map((dist, idx) => [dist, idx])
-        .filter(([dist]) => dist >= x_lim[0] && dist <= x_lim[1])
+        .filter(([dist]) => dist >= x_range[0] && dist <= x_range[1])
         .map(([_, idx]) => idx)
 
       const filtered_distances = filtered_indices.map((i) => curve.distances[i])
@@ -65,6 +63,7 @@
       return {
         x: filtered_distances,
         y: shifted_energies,
+        markers: `line+points` as const,
         metadata: {
           model_key: curve.model_key,
           model_label: get_model_label(curve.model_key),
@@ -86,29 +85,22 @@
 </script>
 
 <!-- TODO increase font size of axes titles and tick labels -->
-<div class="plot" {...rest}>
+<div {...rest} class="plot {rest.class ?? ``}">
   <h3>{formula}</h3>
   <ScatterPlot
     {series}
-    x_label="Distance (Å)"
-    y_label="Energy (eV)"
-    x_format=".1f"
-    y_format=".2f"
-    markers="line+points"
-    {x_lim}
-    {y_lim}
+    x_axis={{ label: `Distance (Å)`, format: `.1f`, range: x_range }}
+    y_axis={{ label: `Energy (eV)`, format: `.2f`, range: y_range }}
     bind:tooltip_point
     bind:hovered
     legend={null}
   >
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
       <div
-        style="min-width: 10em; background: rgba(255, 255, 255, 0.1); padding: 2pt 4pt; border-radius: 3pt;"
+        style="min-width: 10em; background: rgba(255, 255, 255, 0.1); padding: 2pt 4pt; border-radius: 3pt"
       >
-        <strong>{metadata?.model_label ?? ``}</strong>
-        <br />
-        Distance = {x_formatted} Å
-        <br />
+        <strong>{metadata?.model_label ?? ``}</strong><br />
+        Distance = {x_formatted} Å<br />
         Energy = {y_formatted} eV
       </div>
     {/snippet}

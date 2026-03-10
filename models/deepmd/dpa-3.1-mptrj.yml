@@ -1,8 +1,8 @@
 model_name: DPA-3.1-MPtrj
 model_key: dpa-3.1-mptrj
 model_version: v0.3 # 2025-06-05
-date_added: "2025-06-05"
-date_published: "2025-06-05"
+date_added: '2025-06-05'
+date_published: '2025-06-05'
 authors:
   - name: Duo Zhang
     affiliation: AI for Science Institute, Beijing
@@ -68,7 +68,7 @@ hyperparams:
       virial: 0.02 -> 1
     initial_learning_rate: 0.001
     learning_rate_schedule: ExpLR - start_lr=0.001, decay_steps=5000, stop_lr=0.00001
-    training_steps: 2000000
+    training_steps: 2_000_000
   round2:
     loss: Huber
     loss_weights:
@@ -77,7 +77,7 @@ hyperparams:
       virial: 2.5
     initial_learning_rate: 0.0002
     learning_rate_schedule: ExpLR - start_lr=0.0002, decay_steps=5000, stop_lr=0.00001
-    training_steps: 1000000
+    training_steps: 1_000_000
   batch_size: 64 # 16 (gpus) * 4 (batch per gpu) = 64 (total batch size)
   epochs: 120 # round1 80 + round2 40
   graph_construction_radius: 6.0 # Å
@@ -103,9 +103,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.650
+      κ_SRME: 0.6503
       pred_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/55426289
+      κ_SRE: 0.4966
   geo_opt:
     pred_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
     struct_col: dp_structure
@@ -150,7 +151,6 @@ metrics:
       RMSE: 0.079 # eV/atom
       R2: 0.809 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.98 # fraction
       DAF: 6.288 # dimensionless
@@ -169,7 +169,6 @@ metrics:
       RMSE: 0.087 # eV/atom
       R2: 0.838 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.803 # fraction
       DAF: 5.024 # dimensionless
@@ -188,4 +187,3 @@ metrics:
       RMSE: 0.08 # eV/atom
       R2: 0.812 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction

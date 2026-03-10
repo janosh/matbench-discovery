@@ -1,8 +1,8 @@
 model_name: eqV2 M
 model_key: eqV2-m-omat-salex-mp
 model_version: v2024.10.18
-date_added: "2024-10-18"
-date_published: "2024-10-18"
+date_added: '2024-10-18'
+date_published: '2024-10-18'
 authors:
   - name: Luis Barroso-Luque
     affiliation: FAIR at Meta
@@ -97,12 +97,13 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 1.771
+      κ_SRME: 1.7707
       pred_file: models/eqV2/eqV2-m-omat-salex-mp/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134893
+      κ_SRE: 1.4827
   geo_opt:
     pred_file: models/eqV2/eqV2-m-omat-salex-mp/2024-10-18-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/51607436
+    pred_file_url: https://figshare.com/files/53153471
     struct_col: eqV2-86M-omat-salex-mp_structure
     symprec=1e-5:
       rmsd: 0.0691 # unitless
@@ -144,7 +145,6 @@ metrics:
       RMSE: 0.071 # eV/atom
       R2: 0.842 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.988 # fraction
       DAF: 6.382 # dimensionless
@@ -163,7 +163,6 @@ metrics:
       RMSE: 0.066 # eV/atom
       R2: 0.904 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.917 # fraction
       DAF: 6.047 # dimensionless
@@ -182,4 +181,3 @@ metrics:
       RMSE: 0.072 # eV/atom
       R2: 0.848 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction

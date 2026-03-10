@@ -1,8 +1,8 @@
 model_name: eqV2 S DeNS
 model_key: eqV2-s-dens-mp
 model_version: v2024.10.18
-date_added: "2024-10-18"
-date_published: "2024-10-18"
+date_added: '2024-10-18'
+date_published: '2024-10-18'
 authors:
   - name: Luis Barroso-Luque
     affiliation: FAIR at Meta
@@ -99,12 +99,13 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 1.676 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
+      κ_SRME: 1.6763 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
       pred_file: models/eqV2/eqV2-s-dens-mp/2024-11-08-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52151558
+      κ_SRE: 1.3866
   geo_opt:
     pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062392
+    pred_file_url: https://figshare.com/files/53153468
     struct_col: eqV2-86M-omat-salex-mp_structure
     symprec=1e-5:
       rmsd: 0.0757 # unitless
@@ -133,7 +134,7 @@ metrics:
       DAF: 4.362 # dimensionless
       Precision: 0.748 # fraction
       Recall: 0.855 # fraction
-      Accuracy: 0.927 # fraction
+      Accuracy: 0.926 # fraction
       TPR: 0.855 # fraction
       FPR: 0.059 # fraction
       TNR: 0.941 # fraction
@@ -146,7 +147,6 @@ metrics:
       RMSE: 0.084 # eV/atom
       R2: 0.785 # dimensionless
       missing_preds: 351 # count
-      missing_percent: 0.14% # fraction
     most_stable_10k:
       F1: 0.983 # fraction
       DAF: 6.326 # dimensionless
@@ -165,13 +165,12 @@ metrics:
       RMSE: 0.091 # eV/atom
       R2: 0.823 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.815 # fraction
       DAF: 5.042 # dimensionless
       Precision: 0.771 # fraction
       Recall: 0.864 # fraction
-      Accuracy: 0.941 # fraction
+      Accuracy: 0.939 # fraction
       TPR: 0.864 # fraction
       FPR: 0.047 # fraction
       TNR: 0.953 # fraction
@@ -184,4 +183,3 @@ metrics:
       RMSE: 0.085 # eV/atom
       R2: 0.788 # dimensionless
       missing_preds: 309 # count
-      missing_percent: 0.14% # fraction

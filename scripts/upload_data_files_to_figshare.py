@@ -195,7 +195,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Upload data files to Figshare")
     parser.add_argument(
         "--files",
-        type=DataFiles,  # type: ignore[arg-type]
+        type=DataFiles,
         nargs="+",
         choices=DataFiles,
         default=tuple(DataFiles),

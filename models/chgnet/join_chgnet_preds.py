@@ -52,7 +52,7 @@ df_chgnet = pd.concat(dfs.values()).round(4)
 
 # %% compute corrected formation energies
 e_pred_col = "chgnet_energy"
-e_form_chgnet_col = f"e_form_per_atom_{e_pred_col.split('_energy')[0]}"
+e_form_chgnet_col = f"e_form_per_atom_{e_pred_col.split('_energy', maxsplit=1)[0]}"
 df_chgnet[Key.formula] = df_preds[Key.formula]
 df_chgnet[e_form_chgnet_col] = [
     get_e_form_per_atom(dict(energy=ene, composition=formula))
@@ -64,12 +64,7 @@ df_preds[e_form_chgnet_col] = df_chgnet[e_form_chgnet_col]
 
 
 # %%
-pmv.density_scatter_plotly(
-    df=df_preds,
-    x=MbdKey.e_form_dft,
-    y=e_form_chgnet_col,
-    template="pymatviz_white",
-)
+pmv.density_scatter(df=df_preds, x=MbdKey.e_form_dft, y=e_form_chgnet_col)
 
 
 # %%

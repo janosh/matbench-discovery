@@ -1,8 +1,8 @@
 model_name: SevenNet-l3i5
 model_key: sevennet-l3i5
 model_version: v0.10.3 # 2024-07-11
-date_added: "2024-12-10"
-date_published: "2024-02-06"
+date_added: '2024-12-10'
+date_published: '2024-02-06'
 authors:
   - name: Yutack Park
     affiliation: Seoul National University
@@ -87,12 +87,13 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.550
+      κ_SRME: 0.5496
       pred_file: models/sevennet/sevennet-l3i5/2024-12-10-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134881
+      κ_SRE: 0.3993
   geo_opt:
     pred_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062056
+    pred_file_url: https://figshare.com/files/57753580
     struct_col: sevennet_structure
     symprec=1e-5:
       rmsd: 0.0847 # unitless
@@ -134,7 +135,6 @@ metrics:
       RMSE: 0.086 # eV/atom
       R2: 0.773 # dimensionless
       missing_preds: 3 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.952 # fraction
       DAF: 5.945 # dimensionless
@@ -153,7 +153,6 @@ metrics:
       RMSE: 0.114 # eV/atom
       R2: 0.745 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.76 # fraction
       DAF: 4.629 # dimensionless
@@ -172,4 +171,3 @@ metrics:
       RMSE: 0.087 # eV/atom
       R2: 0.776 # dimensionless
       missing_preds: 1 # count
-      missing_percent: 0.00% # fraction

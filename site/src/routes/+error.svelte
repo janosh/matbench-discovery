@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state'
+  import { Icon } from 'matterviz'
   import pkg from '$site/package.json'
 
   let online: boolean = $state(true)
@@ -20,10 +21,10 @@
       Thanks! 🙏
     </p>
   {/if}
-  {#if online === false}
+  {#if !online}
     Looks like you're offline. If you think your connection is fine, check the
     <a href="https://githubstatus.com">GitHub status page</a>
-    as this site is hosted by &thinsp;<svg><use href="#icon-github"></use></svg>
+    as this site is hosted by &thinsp;<Icon icon="GitHub" />
     &thinsp;GitHub Pages.
   {/if}
 
@@ -46,5 +47,8 @@
   p img {
     vertical-align: middle;
     margin: 0 1pt 0 3pt;
+  }
+  :root[data-theme='light'] p img {
+    filter: invert(1);
   }
 </style>

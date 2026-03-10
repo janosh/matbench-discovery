@@ -26,17 +26,22 @@ import ase.io
 import pandas as pd
 import yaml
 from ase import Atoms
+from filelock import FileLock
 from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from tqdm import tqdm
 
-from matbench_discovery import TEST_FILES
+from matbench_discovery import DATA_DIR, TEST_FILES
 from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
 round_trip_yaml.preserve_quotes = True
 round_trip_yaml.width = 1000  # avoid changing line wrapping
 round_trip_yaml.indent(mapping=2, sequence=4, offset=2)
+
+
+with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
+    DATASETS = yaml.safe_load(stream=file)
 
 
 def as_dict_handler(obj: Any) -> dict[str, Any] | None:
@@ -92,7 +97,7 @@ def glob_to_df(
             # .set_index( "material_id" )
             # make sure pred_cols for all models are present in df_mock
             for model in Model:
-                with open(model.yaml_path) as file:
+                with open(model.yaml_path, encoding="utf-8") as file:
                     model_data = yaml.safe_load(file)
 
                 pred_col = (
@@ -252,8 +257,6 @@ def load_df_wbm_with_preds(
         raise ValueError(f"{unknown_models=}, expected subset of {valid_models}")
 
     model_name: str = ""
-    from matbench_discovery.data import df_wbm
-
     df_out = df_wbm.copy()
 
     try:
@@ -266,7 +269,7 @@ def load_df_wbm_with_preds(
 
             df_preds = glob_to_df(model.discovery_path, pbar=False, **kwargs)
 
-            with open(model.yaml_path) as file:
+            with open(model.yaml_path, encoding="utf-8") as file:
                 model_data = yaml.safe_load(file)
 
             pred_col = (
@@ -309,12 +312,15 @@ def load_df_wbm_with_preds(
     return df_out
 
 
-def update_yaml_at_path(
+def update_yaml_file(
     file_path: str | Path,
     dotted_path: str,
     data: dict[str, Any],
 ) -> dict[str, Any]:
     """Update a YAML file at a specific dotted path with new data.
+
+    Uses file locking to prevent race conditions when multiple processes
+    try to update the same file simultaneously.
 
     Args:
         file_path (str | Path): Path to YAML file to update
@@ -325,7 +331,7 @@ def update_yaml_at_path(
         dict[str, Any]: The complete updated YAML data written to file.
 
     Example:
-        update_yaml_at_path(
+        update_yaml_file(
             "models/mace/mace-mp-0.yml",
             "metrics.discovery",
             dict(mae=0.1, rmse=0.2),
@@ -335,28 +341,31 @@ def update_yaml_at_path(
     if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
         raise ValueError(f"Invalid {dotted_path=}")
 
-    with open(file_path) as file:
-        yaml_data = round_trip_yaml.load(file)
+    # Use a lock file to prevent race conditions
+    lock_path = f"{file_path}.lock"
+    with FileLock(lock_path):
+        with open(file_path, encoding="utf-8") as file:
+            yaml_data = round_trip_yaml.load(file)
 
-    # Navigate to the correct nested level
-    current = yaml_data
-    *parts, last = dotted_path.split(".")
+        # Navigate to the correct nested level
+        current = yaml_data
+        *parts, last = dotted_path.split(".")
 
-    for part in parts:
-        if part not in current:
-            current[part] = {}
-        current = current[part]
+        for part in parts:
+            if part not in current:
+                current[part] = {}
+            current = current[part]
 
-    # Update the data at the final level
-    if last not in current:
-        current[last] = {}
-    for key, val in current[last].items():
-        data.setdefault(key, val)
-    # Replace the entire current[last] section to preserve comments
-    current[last] = data
+        # Update the data at the final level
+        if last not in current or current[last] is None:
+            current[last] = {}
+        for key, val in current[last].items():
+            data.setdefault(key, val)
+        # Replace the entire current[last] section to preserve comments
+        current[last] = data
 
-    # Write back to file
-    with open(file_path, mode="w") as file:
-        round_trip_yaml.dump(yaml_data, file)
+        # Write back to file
+        with open(file_path, mode="w", encoding="utf-8") as file:
+            round_trip_yaml.dump(yaml_data, file)
 
-    return yaml_data
+        return yaml_data

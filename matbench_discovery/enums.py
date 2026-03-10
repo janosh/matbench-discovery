@@ -1,6 +1,5 @@
 """Enums used as keys/accessors for dicts and dataframes across Matbench Discovery."""
 
-import abc
 import builtins
 import functools
 import os
@@ -83,7 +82,6 @@ class MbdKey(LabelEnum):
 
     # keep in sync with model-schema.yml
     missing_preds = "missing_preds", "Missing predictions"
-    missing_percent = "missing_percent", "Missing predictions (percent)"
 
     aflow_prototype = "aflow_prototype", "Aflow prototype"
     canonical_proto = "canonical_proto", "Canonical prototype"
@@ -152,6 +150,7 @@ class Targets(LabelEnum):
     EFS_D = "EFS_D", "EFS<sub>D</sub>", "Energy with direct Forces and Stress"
     EFS_GM = "EFS_GM", "EFS<sub>G</sub>M", "Energy with gradient-based Forces and Stress; plus Magmoms"  # fmt: skip
     EFS_DM = "EFS_DM", "EFS<sub>D</sub>M", "Energy with direct Forces and Stress; plus Magmoms"  # fmt: skip
+    EFSH_G = "EFSH_G", "EFSH<sub>G</sub>", "Energy with gradient-based Forces, Stress, and Hessian"  # fmt: skip
 
 
 @unique
@@ -232,14 +231,18 @@ class Files(StrEnum, metaclass=MetaFiles):
         return self.name
 
     @property
-    @abc.abstractmethod
     def url(self) -> str:
         """URL associated with the file."""
+        raise NotImplementedError(
+            f"{type(self).__name__} must implement 'url' property"
+        )
 
     @property
-    @abc.abstractmethod
     def label(self) -> str:
         """Label associated with the file."""
+        raise NotImplementedError(
+            f"{type(self).__name__} must implement 'label' property"
+        )
 
     @property
     def rel_path(self) -> str:
@@ -262,14 +265,14 @@ class Files(StrEnum, metaclass=MetaFiles):
 
 # ruff: noqa: E501, ERA001 (ignore long lines in class Model)
 class Model(Files, base_dir=f"{ROOT}/models"):
-    """Data files provided by Matbench Discovery.
-    See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
+    """Enum of file paths to model YAML files. These files are the single source of truth (SSoT) for model metrics and
+    metadata such as hyperparameters, package versions, code and paper links, submission times, etc.
     """
 
     alchembert = auto(), "alchembert/alchembert.yml"
 
     # AlphaNet: https://arxiv.org/abs/2501.07155
-    alphanet_oma = auto(), "alphanet/alphanet-oma.yml"
+    alphanet_v1_oma = auto(), "alphanet/alphanet-v1-oma.yml"
     # alignn with global pooling: https://arxiv.org/abs/2106.01829
     alignn = auto(), "alignn/alignn.yml"
 
@@ -277,6 +280,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # Commented out because the model could not be evaluated due to OOM errors
     # see models/alignn_ff/readme.md
     # alignn_ff = auto(), "alignn/alignn-ff.yml"
+
+    # Allegro (NequIP arch)
+    allegro_oam_l_0_1 = auto(), "allegro/allegro-OAM-L-0.1.yml"
+    allegro_mp_l_0_1 = auto(), "allegro/allegro-MP-L-0.1.yml"
 
     # BOWSR optimizer coupled with original megnet
     bowsr_megnet = auto(), "bowsr/bowsr.yml"
@@ -299,17 +306,27 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
     # FAIR-Chem
-    eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
-    eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
+    eqv2_s_dens_mp = auto(), "eqV2/eqV2-s-dens-mp.yml"
+    eqv2_m_omat_salex_mp = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
     esen_30m_mp = auto(), "eSEN/eSEN-30m-mp.yml"
     esen_30m_oam = auto(), "eSEN/eSEN-30m-oam.yml"
 
-    # GRACE: https://arxiv.org/abs/2311.16326v2
+    # Materials AI Lab at Samsung Electronics
+    equflash_29m_oam = auto(), "equflash/equflash-29M-oam.yml"
+
+    # Zhejiang Lab
+    eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
+
+    # Texas A&M University
+    hienet = auto(), "hienet/hienet.yml"
+
+    # ICAMS, Ruhr University Bochum https://arxiv.org/abs/2311.16326v2
     grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
     grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
     grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
+    grace_2l_oam_l = auto(), "grace/grace-2l-oam-l.yml"
 
-    # GNoME - Nequip architecture trained on Google's proprietary data. Weights
+    # Google DeepMind; GNoME is a Nequip architecture trained on Google's proprietary data. Weights
     # are not publicly available and so these results cannot be reproduced.
     gnome = auto(), "gnome/gnome.yml"
 
@@ -322,25 +339,40 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     mace_mp_0 = auto(), "mace/mace-mp-0.yml"
     mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
-    # MatRIS-v0.5.0-MPtrj
-    matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
+    # MatRIS
+    # matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
+    matris_10m_oam = auto(), "matris/matris-10m-oam.yml"
+    matris_10m_mp = auto(), "matris/matris-10m-mp.yml"
 
-    # MatterSim - M3gNet architecture trained on propertary MSFT data. Weights
+    # MatterSim - M3gNet architecture trained on proprietary MSFT data. Weights
     # are open-sourced.
     mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5M.yml"
 
     # original MEGNet straight from publication, not re-trained
     megnet = auto(), "megnet/megnet.yml"
 
+    # NequIP
+    nequip_oam_xl_0_1 = auto(), "nequip/nequip-OAM-XL-0.1.yml"
+    nequip_oam_l_0_1 = auto(), "nequip/nequip-OAM-L-0.1.yml"
+    nequip_mp_l_0_1 = auto(), "nequip/nequip-MP-L-0.1.yml"
+
     # ORB
     orb_v2 = auto(), "orb/orb-v2.yml"
     orb_v2_mptrj = auto(), "orb/orb-v2-mptrj.yml"
     orb_v3 = auto(), "orb/orb-v3.yml"
 
+    # PET
+    pet_oam_xl_1_0_0 = auto(), "pet/pet-oam-xl-1.0.0.yml"
+
     # SevenNet trained on MPtrj
     # sevennet_0 = auto(), "sevennet/sevennet-0.yml"
     sevennet_l3i5 = auto(), "sevennet/sevennet-l3i5.yml"
-    sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
+    # sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
+    sevennet_omni_i12 = auto(), "sevennet/sevennet-omni-i12.yml"
+
+    # Tensor Atomic Cluster Expansion (Irreducible Cartesian tensor)
+    # https://arxiv.org/abs/2509.14961 and https://arxiv.org/abs/2512.16882
+    tace_v1_oam_m = auto(), "tace/tace-v1-oam-m.yml"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = auto(), "voronoi_rf/voronoi-rf.yml"
@@ -351,6 +383,13 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # ESNet model
     esnet = auto(), "esnet/esnet.yml"
 
+<<<<<<< HEAD
+=======
+    # Nequix model
+    nequix_mp_1 = auto(), "nequix/nequix-mp-1.yml"
+    nequix_mp_1_pft = auto(), "nequix/nequix-mp-1-pft.yml"
+
+>>>>>>> upstream/main
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
     # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz"
@@ -362,7 +401,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def metadata(self) -> dict[str, Any]:
         """Metadata associated with the model."""
         yaml_path = f"{type(self).base_dir}/{self.rel_path}"
-        with open(yaml_path) as file:
+        with open(yaml_path, encoding="utf-8") as file:
             data = yaml.safe_load(file)
 
         if not isinstance(data, dict):
@@ -378,7 +417,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def pr_url(self) -> str:
         """Pull request URL in which the model was originally added to the repo."""
-        return self.metadata["pr_url"]
+        try:
+            return self.metadata["pr_url"]
+        except KeyError as exc:
+            exc.add_note(f"{self.rel_path!r} missing required field 'pr_url'")
+            raise
 
     @property
     def key(self) -> str:
@@ -440,8 +483,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             "not applicable",
         ):
             return None
-        rel_path = phonons_metrics.get("kappa_103", {}).get("pred_file")
-        file_url = phonons_metrics.get("kappa_103", {}).get("pred_file_url")
+        kappa103 = phonons_metrics.get("kappa_103") or {}
+        rel_path = kappa103.get("pred_file")
+        file_url = kappa103.get("pred_file_url", "")
         if not rel_path:
             raise ValueError(
                 f"metrics.phonons.kappa_103.pred_file not found in {self.rel_path!r}"
@@ -461,6 +505,21 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def is_complete(self) -> bool:
         """Check if model has all required metrics."""
         return self.metadata.get("status", "complete") == "complete"
+
+    @classmethod
+    def _missing_(cls, value: object) -> Self | None:
+        """Normalizing casing and dashes before matching enum values.
+        If no match is found, return None.
+
+        This allows CLI arguments like --models mace-mp-0 to be recognized as mace_mp_0.
+        """
+        if isinstance(value, str):  # convert dashes to underscores and case fold
+            converted_value = value.replace("-", "_").casefold()
+
+            if converted_value in cls._value2member_map_:
+                return cls._value2member_map_[converted_value]  # type: ignore[return-value]
+
+        return None
 
 
 class DataFiles(Files):
@@ -513,7 +572,7 @@ class DataFiles(Files):
         """YAML data associated with the file."""
         yaml_path = f"{PKG_DIR}/data-files.yml"
 
-        with open(yaml_path) as file:
+        with open(yaml_path, encoding="utf-8") as file:
             yaml_data = yaml.safe_load(file)
 
         if self.name not in yaml_data:
@@ -551,15 +610,17 @@ class DataFiles(Files):
 
         abs_path = f"{type(self).base_dir}/{rel_path}"
         if not os.path.isfile(abs_path):
+            # whether to auto-download files without prompting
+            auto_download = os.getenv("MBD_AUTO_DOWNLOAD_FILES", "").lower() == "true"
             is_ipython = hasattr(builtins, "__IPYTHON__")
-            # default to 'y' if not in interactive session, and user can't answer
+            # default to 'y' if auto-download enabled or not in interactive session
             answer = (
-                input(
+                "y"
+                if auto_download or not (is_ipython or sys.stdin.isatty())
+                else input(
                     f"{abs_path!r} associated with {key=} does not exist. Download it "
                     "now? This will cache the file for future use. [y/n] "
                 )
-                if is_ipython or sys.stdin.isatty()
-                else "y"
             )
             if answer.lower().strip() == "y":
                 print(f"Downloading {key!r} from {self.url} to {abs_path}")

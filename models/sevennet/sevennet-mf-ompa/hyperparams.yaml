@@ -120,10 +120,10 @@ data:
   load_trainset_path:
     - data_modality: omat24
       file_list:
-        - file: "**path_to_omat24**"
+        - file: '**path_to_omat24**'
     - data_modality: mpa
       file_list:
-        - file: "**path_to_mpa**"
-  load_validset_path: "**path_to_validset**"
-  shift: "**failed to infer shift, should be set**"
-  scale: "**failed to infer scale, should be set**"
+        - file: '**path_to_mpa**'
+  load_validset_path: '**path_to_validset**'
+  shift: '**failed to infer shift, should be set**'
+  scale: '**failed to infer scale, should be set**'

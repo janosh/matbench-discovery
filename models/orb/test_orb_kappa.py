@@ -2,7 +2,6 @@ import json
 import os
 import traceback
 import warnings
-from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
@@ -112,7 +111,7 @@ if deterministic:
 
 
 # Set up the optimizer class from string
-optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 force_results: dict[str, dict[str, Any]] = {}
 kappa_results: dict[str, dict[str, Any]] = {}
@@ -131,11 +130,11 @@ for idx, atoms in tqdm_bar:
     tqdm_bar.set_postfix_str(mat_id, refresh=True)
 
     # Initialize info dictionary with material details
-    info_dict = {
-        "name": formula,
-        "errors": [],
-        "error_traceback": [],
+    info_dict: dict[str, Any] = {
+        str(Key.mat_id): mat_id,
+        str(Key.formula): formula,
     }
+    err_dict: dict[str, list[str]] = {"errors": [], "error_traceback": []}
 
     # Initialize variables that might be needed in error handling
     relax_dict = {"max_stress": None, "reached_max_steps": False}
@@ -184,9 +183,9 @@ for idx, atoms in tqdm_bar:
     except Exception as exc:
         warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"].append(f"RelaxError: {exc!r}")
-        info_dict["error_traceback"].append(traceback.format_exc())
-        kappa_results[mat_id] = info_dict | relax_dict
+        err_dict["errors"].append(f"RelaxError: {exc!r}")
+        err_dict["error_traceback"].append(traceback.format_exc())
+        kappa_results[mat_id] = info_dict | relax_dict | err_dict
         continue
 
     # Force constants calculation
@@ -239,7 +238,7 @@ for idx, atoms in tqdm_bar:
             force_results_item = {"fc2_set": fc2_set, "fc3_set": fc3_set}
 
         if not continue_computing_conductivity:
-            kappa_results[mat_id] = info_dict | relax_dict | freqs_dict
+            kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
             warnings.warn(
                 f"Skipping {mat_id} due to imaginary frequencies", stacklevel=2
             )
@@ -250,9 +249,9 @@ for idx, atoms in tqdm_bar:
     except Exception as exc:
         warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"].append(f"ForceConstantError: {exc!r}")
-        info_dict["error_traceback"].append(traceback.format_exc())
-        kappa_results[mat_id] = info_dict | relax_dict
+        err_dict["errors"].append(f"ForceConstantError: {exc!r}")
+        err_dict["error_traceback"].append(traceback.format_exc())
+        kappa_results[mat_id] = info_dict | relax_dict | err_dict
         continue
 
     # Thermal conductivity calculation
@@ -260,7 +259,9 @@ for idx, atoms in tqdm_bar:
         ph3, kappa_dict, _cond = ltc.calculate_conductivity(
             ph3, temperatures=temperatures
         )
-        kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | kappa_dict
+        kappa_results[mat_id] = (
+            info_dict | relax_dict | freqs_dict | kappa_dict | err_dict
+        )
         if force_results_item is not None:
             force_results[mat_id] = force_results_item
     except Exception as exc:
@@ -268,9 +269,9 @@ for idx, atoms in tqdm_bar:
             f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
         )
         traceback.print_exc()
-        info_dict["errors"].append(f"ConductivityError: {exc!r}")
-        info_dict["error_traceback"].append(traceback.format_exc())
-        kappa_results[mat_id] = info_dict | relax_dict | freqs_dict
+        err_dict["errors"].append(f"ConductivityError: {exc!r}")
+        err_dict["error_traceback"].append(traceback.format_exc())
+        kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
         if force_results_item is not None:
             force_results[mat_id] = force_results_item
 

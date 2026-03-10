@@ -2,19 +2,11 @@
   import type { Label, ModelData } from '$lib'
   import { AuthorBrief, DATASETS } from '$lib'
   import pkg from '$site/package.json'
-  import { format_num } from 'matterviz'
-  import { Tooltip } from 'svelte-zoo'
+  import { format_num, Icon } from 'matterviz'
+  import { tooltip } from 'svelte-multiselect/attachments'
+  import type { HTMLAttributes } from 'svelte/elements'
   import { fade, slide } from 'svelte/transition'
 
-  interface Props {
-    model: ModelData
-    metrics: readonly Label[]
-    sort_by: keyof ModelData
-    show_details?: boolean
-    metrics_style?: string
-    title_style?: string
-    [key: string]: unknown
-  }
   let {
     model,
     metrics,
@@ -23,10 +15,16 @@
     metrics_style = ``,
     title_style = ``,
     ...rest
-  }: Props = $props()
+  }: HTMLAttributes<HTMLElementTagNameMap[`section`]> & {
+    model: ModelData
+    metrics: readonly Label[]
+    sort_by: keyof ModelData
+    show_details?: boolean
+    metrics_style?: string
+    title_style?: string
+  } = $props()
 
-  let { model_name, model_key, model_params, training_set, n_estimators } =
-    $derived(model)
+  let { model_name, model_key, model_params, training_set } = $derived(model)
   let all_metrics = $derived({
     ...(typeof model.metrics?.discovery === `object`
       ? model.metrics.discovery.unique_prototypes
@@ -36,33 +34,43 @@
       : {}),
     CPS: model.CPS,
   })
-  let { missing_preds, missing_percent } = $derived(all_metrics)
+  let { missing_preds } = $derived(all_metrics)
 
-  let links = $derived([
-    [model.repo, `Repo`, `#icon-github`],
-    [model.paper, `Paper`, `#icon-paper`],
-    [model.url, `Docs`, `#icon-docs`],
-    [model.checkpoint_url, `Checkpoint`, `#icon-download`],
-    [`${pkg.repository}/blob/-/models/${model.dirname}`, `Files`, `#icon-directory`],
-  ])
+  let links = $derived(
+    [
+      [model.repo, `Repo`, `GitHub`],
+      [model.paper, `Paper`, `Paper`],
+      [model.url, `Docs`, `Docs`],
+      [model.checkpoint_url, `Checkpoint`, `Download`],
+      [`${pkg.repository}/blob/-/models/${model.dirname}`, `Files`, `Directory`],
+    ] as const,
+  )
   const target = { target: `_blank`, rel: `noopener` }
   let n_model_params = $derived(format_num(model_params, `.3~s`))
+  let expand_title = $derived(
+    `${show_details ? `Hide` : `Show`} authors and package versions`,
+  )
 </script>
 
-<h2 id={model_key} style={title_style}>
+<h2 style={title_style}>
   <a href="/models/{model_key}">{model_name}</a>
   <button
     onclick={() => (show_details = !show_details)}
-    title="{show_details ? `Hide` : `Show`} authors and package versions"
+    aria-expanded={show_details}
+    aria-label={expand_title}
+    title={expand_title}
+    style={title_style}
   >
-    <!-- change between expand/collapse icon -->
-    <svg><use href="#icon-arrow-{show_details ? `up` : `down`}"></use></svg>
+    <Icon icon="Arrow{show_details ? `Up` : `Down`}" />
   </button>
 </h2>
 <nav>
-  {#each links.filter( ([href]) => href?.startsWith(`http`), ) as [href, title, icon] (title)}
+  {#each links.filter(([href]) => href?.startsWith(`http`)) as
+    [href, title, icon]
+    (title)
+  }
     <span>
-      <svg><use href={icon}></use></svg>
+      <Icon {icon} />
       <a {href} {...target}>{title}</a>
     </span>
   {/each}
@@ -70,54 +78,65 @@
 
 <section class="metadata" {...rest}>
   {#if training_set}
-    <span style="grid-column: span 2;">
-      <svg><use href="#icon-database"></use></svg>
+    <span style="grid-column: span 2">
+      <Icon icon="Database" />
       Training data:
       {#each training_set as train_set_key, idx (train_set_key)}
         {#if idx > 0}
           &nbsp;+&nbsp;
         {/if}
-        {@const training_set = DATASETS[train_set_key]}
-        {@const { n_structures, title, slug, n_materials } = training_set}
-        {@const pretty_n_mat =
-          typeof n_materials == `number` ? format_num(n_materials) : n_materials}
-        {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
-        <Tooltip text="{title}: {format_num(n_structures)} structures{n_mat_str}">
-          <a href="/data/{slug}">{train_set_key}</a>
-        </Tooltip>
+        {@const dataset = DATASETS[train_set_key]}
+        {#if dataset}
+          {@const { n_structures, name, slug, n_materials } = dataset}
+          {@const pretty_n_mat = typeof n_materials == `number`
+        ? format_num(n_materials)
+        : n_materials}
+          {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
+          <a
+            href="/data/{slug}"
+            title="{name}: {format_num(n_structures)} structures{n_mat_str}"
+            {@attach tooltip()}
+          >{train_set_key}</a>
+        {:else}
+          <span title="Unknown dataset key: {train_set_key}">{train_set_key}</span>
+        {/if}
       {/each}
     </span>
   {/if}
   <span title="Date added">
-    <svg><use href="#icon-calendar"></use></svg>
+    <Icon icon="Calendar" />
     Added {model.date_added}
   </span>
   {#if model.date_published}
     <span title="Date published">
-      <svg><use href="#icon-calendar-check"></use></svg>
+      <Icon icon="CalendarCheck" />
       Published {model.date_published}
     </span>
   {/if}
   <span>
-    <svg><use href="#icon-neural-network"></use></svg>
-    {n_model_params} params
+    <Icon icon="NeuralNetwork" /> {n_model_params} params
   </span>
-  {#if n_estimators > 1}
+  {#if model.n_estimators > 1}
     <span>
-      <svg><use href="#icon-forest"></use></svg>
-      Ensemble of {n_estimators > 1 ? n_estimators : ``}
-      <Tooltip
-        text="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
+      <Icon icon="Forest" />
+      Ensemble of {model.n_estimators}
+      <span
+        title="This result used a model ensemble with {model.n_estimators} members with {n_model_params} parameters each."
+        {@attach tooltip()}
       >
-        &nbsp;<svg><use href="#icon-info"></use></svg>
-      </Tooltip>
+        &nbsp;<Icon icon="Info" />
+      </span>
     </span>
   {/if}
-  <span>
-    <svg><use href="#icon-missing-metadata"></use></svg>
-    Missing preds:
+  <span
+    {@attach tooltip()}
+    title="Out of {format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, {format_num(missing_preds ?? 0, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances."
+  >
+    <Icon icon="MissingMetadata" /> Missing preds:
     {format_num(missing_preds ?? 0, `,.0f`)}
-    <small>({missing_percent})</small>
+    {#if missing_preds && missing_preds > 0}
+      <small>({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})</small>
+    {/if}
   </span>
 </section>
 {#if show_details}
@@ -126,18 +145,14 @@
       <h3>Authors</h3>
       <ul>
         {#each model.authors as author (author.name)}
-          <li>
-            <AuthorBrief {author} />
-          </li>
+          <li><AuthorBrief {author} /></li>
         {/each}
       </ul>
       {#if model.trained_by}
         <h3>Trained By</h3>
         <ul>
           {#each model.trained_by as author (author.name)}
-            <li>
-              <AuthorBrief {author} />
-            </li>
+            <li><AuthorBrief {author} /></li>
           {/each}
         </ul>
       {/if}
@@ -146,11 +161,11 @@
       <h3>Package versions</h3>
       <ul>
         {#each Object.entries(model.requirements ?? {}) as [name, version] (name)}
-          {@const [href, link_text] = version.startsWith(`http`)
-            ? // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
-              [version, version.split(`/`).at(-1)]
-            : [`https://pypi.org/project/${name}/${version}`, version]}
-          <li style="font-size: smaller;">
+          {@const [href, link_text] = version?.startsWith(`http`)
+          // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
+          ? [version, version.split(`/`).at(-1)]
+          : [`https://pypi.org/project/${name}/${version}`, version]}
+          <li style="font-size: smaller">
             {name}: <a {href} {...target}>{link_text}</a>
           </li>
         {/each}
@@ -160,14 +175,16 @@
 {/if}
 
 <section class="metrics" style={metrics_style || null}>
-  <h3>Metrics</h3>
+  <h3 style="margin: 0; font-weight: normal">Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->
     {#each metrics as metric (JSON.stringify(metric))}
-      {@const { key, label, short, unit } = metric}
+      {@const { key, label, unit } = metric}
+      {@const value = all_metrics[key as keyof typeof all_metrics] as number}
       <li class:active={sort_by == key}>
-        <label for={key}>{@html short ?? label ?? key}</label>
-        <strong>{format_num(all_metrics[key])} <small>{unit ?? ``}</small></strong>
+        <label for={key}>{@html label ?? key}</label>
+        <strong>{isNaN(value) ? `n/a` : format_num(value)}
+          <small>{unit ?? ``}</small></strong>
       </li>
     {/each}
   </ul>
@@ -186,9 +203,6 @@
     background: none;
     padding: 0;
     font: inherit;
-  }
-  h3 {
-    margin: 0;
   }
   ul {
     list-style: disc;
@@ -238,12 +252,6 @@
   section.metrics > ul > li > :is(label, strong) {
     padding: 0 4pt;
     border-radius: 3pt;
-  }
-  section.metrics > ul > li > strong {
-    background-color: rgba(0, 0, 0, 0.25);
-  }
-  section.metrics > ul > li.active > strong {
-    background-color: teal;
   }
   section.metrics > ul > li.active > label {
     font-weight: bold;

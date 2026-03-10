@@ -1,20 +1,32 @@
 <script lang="ts">
-  import { ModelCard, type Label } from '$lib'
+  import { type Label, ModelCard } from '$lib'
   import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
-  import { ColorBar, luminance } from 'matterviz'
-  import { RadioButtons, Tooltip } from 'svelte-zoo'
+  import { ColorBar, Icon, luminance } from 'matterviz'
+  import { untrack } from 'svelte'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
+
+  // Accept data prop for SvelteKit compliance (used for testing initial_show_n_best)
+  let { data }: { data?: { initial_show_n_best?: number } } = $props()
 
   let sort_by: Label = $state(ALL_METRICS.CPS)
   let show_non_compliant: boolean = $state(true)
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
-  let show_n_best: number = $state(MODELS.length) // show only best models
   const min_models: number = 2
+  // Enforce minimum and maximum when initializing from prop (intentionally captures initial value only)
+  let show_n_best: number = $state(
+    untrack(() =>
+      Math.min(
+        MODELS.length,
+        Math.max(min_models, data?.initial_show_n_best ?? MODELS.length),
+      )
+    ),
+  )
   let sort_by_path: string = $derived(
     `${sort_by.path ?? ``}.${sort_by.key}`.replace(/^\./, ``),
   )
@@ -34,9 +46,12 @@
   ] as const
   const metrics = metric_keys.map((key) => ALL_METRICS[key])
 
+  const capture_state = () => ({ show_details, sort_by, order, show_n_best })
   export const snapshot = {
-    capture: () => ({ show_details, sort_by, order, show_n_best }),
-    restore: (values) => ({ show_details, sort_by, order, show_n_best } = values),
+    capture: capture_state,
+    restore: (
+      values: ReturnType<typeof capture_state>,
+    ) => ({ show_details, sort_by, order, show_n_best } = values),
   }
 
   function bg_color(val: number, min: number, max: number) {
@@ -67,38 +82,47 @@
   )
 </script>
 
-<div style="display: grid;">
+<div style="display: grid">
   <span>
     <input type="checkbox" bind:checked={show_non_compliant} />Show non-compliant models
     &ensp; &emsp;&emsp; Sort
     <input type="number" min={min_models} max={models.length} bind:value={show_n_best} />
     best models
-    <RadioButtons bind:selected={order} options={[`asc`, `desc`]} /> by:
+    <span class="radio-group">
+      {#each [`asc`, `desc`] as value (value)}
+        <label>
+          <input type="radio" name="order" {value} bind:group={order} /> {value}
+        </label>
+      {/each}
+    </span> by:
   </span>
 
   <ul>
-    {#each [{ ...METADATA_COLS.model_name, label: `Model Name` }, ...metrics] as prop (prop.key)}
-      {@const { key, label, short, description } = prop}
+    {#each [{ ...METADATA_COLS.model_name, label: `Model Name` }, ...metrics] as
+      prop
+      (prop.key)
+    }
+      {@const { key, label, description } = prop}
       <li class:active={prop.key == sort_by.key}>
         <button
           id={prop.key}
           onclick={() => {
-            // Handle the case where key is 'model_name'
             sort_by = prop
-            if (key === `model_name`) order = `asc`
+            if (key === `Model`) order = `asc` // default to ascending for model name
             else order = metric_better_as(key) === `lower` ? `asc` : `desc`
           }}
-          style="font-size: large; height: 26pt;"
+          style="position: relative"
         >
-          {@html short ?? label ?? key}
-        </button>
-        {#if description}
-          <Tooltip text={description} max_width="20em">
-            <span style="position: absolute; top: -11pt; left: -6pt; opacity: 0.6;">
-              <svg><use href="#icon-info"></use></svg>
+          {@html label ?? key}
+          {#if description}
+            <span
+              {@attach tooltip({ content: description })}
+              style="width: 10pt; height: 10pt; position: absolute; top: -5pt; right: -5pt; opacity: 0.6"
+            >
+              <Icon icon="Info" />
             </span>
-          </Tooltip>
-        {/if}
+          {/if}
+        </button>
       </li>
     {/each}
   </ul>
@@ -108,10 +132,11 @@
       {lower_is_better ? `best` : `worst`}
     </span>
     <ColorBar
-      title="Model names colored by {sort_by.label}"
+      title="Card titles colored by {sort_by.label}"
       title_style="font-size: 1.5em;"
       color_scale={lower_is_better ? (t) => interpolateRdBu(1 - t) : interpolateRdBu}
-      style="min-width: min(70vw, 400px); height: 14pt;"
+      style="min-width: min(70vw, 400px)"
+      bar_style="height: 14pt;"
       range={lower_is_better ? [worst_val, best_val] : [best_val, worst_val]}
     />
     <span>
@@ -119,7 +144,7 @@
     </span>
   </legend>
 
-  <ol class="models">
+  <ol class="models full-bleed">
     {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
       {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
       {@const bg_clr = bg_color(metric_val as number, best_val, worst_val)}
@@ -128,7 +153,7 @@
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}
         out:fade={{ delay: 100 }}
-        style="grid-row: span {show_details ? 5 : 4};"
+        style:grid-row="span {show_details ? 5 : 4}"
       >
         <ModelCard
           {model}
@@ -176,10 +201,9 @@
   }
   ul > li button {
     transition: all 0.2s;
-    background-color: rgba(255, 255, 255, 0.1);
   }
   ul > li.active button {
-    background-color: darkcyan;
+    background-color: var(--btn-bg);
   }
   ol {
     display: grid;
@@ -187,7 +211,7 @@
     grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   }
   ol > li {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--blockquote-bg);
     padding: 6pt 10pt 14pt;
     border-radius: 3pt;
     display: grid;
@@ -201,8 +225,8 @@
     place-items: center;
     place-content: center;
   }
-  span :global(div.zoo-radio-btn span) {
-    padding: 1pt 4pt;
+  .radio-group {
+    gap: 5pt;
   }
   input[type='number'] {
     text-align: center;

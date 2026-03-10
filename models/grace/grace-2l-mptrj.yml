@@ -1,8 +1,8 @@
 model_name: GRACE-2L-MPtrj
 model_key: grace-2l-mptrj
-model_version: MP_GRACE_2L_r6_11Nov2024
-date_added: "2024-11-21"
-date_published: "2024-11-21"
+model_version: 0.4.4
+date_added: '2024-11-21'
+date_published: '2024-11-21'
 authors:
   - name: Anton Bochkarev
     affiliation: ICAMS, Ruhr University Bochum
@@ -62,12 +62,13 @@ hyperparams:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.525 # https://github.com/MPA2suite/k_SRME/pull/11/files
+      κ_SRME: 0.5255 # https://github.com/MPA2suite/k_SRME/pull/11/files
       pred_file: models/grace/grace-2l-mptrj/2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134896
+      κ_SRE: 0.3186
   geo_opt:
     pred_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062590
+    pred_file_url: https://figshare.com/files/53153483
     struct_col: grace2l_r6_structure
     symprec=1e-5:
       rmsd: 0.0897 # unitless
@@ -109,7 +110,6 @@ metrics:
       RMSE: 0.092 # eV/atom
       R2: 0.74 # dimensionless
       missing_preds: 128 # count
-      missing_percent: 0.05% # fraction
     most_stable_10k:
       F1: 0.914 # fraction
       DAF: 5.503 # dimensionless
@@ -128,13 +128,12 @@ metrics:
       RMSE: 0.133 # eV/atom
       R2: 0.641 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.691 # fraction
       DAF: 4.163 # dimensionless
       Precision: 0.636 # fraction
       Recall: 0.757 # fraction
-      Accuracy: 0.896 # fraction
+      Accuracy: 0.895 # fraction
       TPR: 0.757 # fraction
       FPR: 0.079 # fraction
       TNR: 0.921 # fraction
@@ -147,7 +146,6 @@ metrics:
       RMSE: 0.094 # eV/atom
       R2: 0.741 # dimensionless
       missing_preds: 110 # count
-      missing_percent: 0.05% # fraction
   diatomics:
     pred_file: models/grace/grace-2l-mptrj/2025-02-19-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52467524

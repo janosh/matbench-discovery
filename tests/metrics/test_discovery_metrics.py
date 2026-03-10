@@ -1,13 +1,18 @@
 import math
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 from pymatviz.enums import Key
 
-from matbench_discovery.enums import Model
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics import discovery
-from matbench_discovery.metrics.discovery import classify_stable, stable_metrics
+from matbench_discovery.metrics.discovery import (
+    classify_stable,
+    stable_metrics,
+    write_metrics_to_yaml,
+)
 
 
 @pytest.mark.parametrize(
@@ -20,18 +25,116 @@ def test_classify_stable(
     df_float: pd.DataFrame,
 ) -> None:
     true_pos, false_neg, false_pos, true_neg = classify_stable(
-        e_above_hull_true=df_float.A,
-        e_above_hull_pred=df_float.B,
+        each_true=df_float.A,
+        each_pred=df_float.B,
         stability_threshold=stability_threshold,
     )
+    assert all(
+        out.index.equals(df_float.index)
+        for out in (true_pos, false_neg, false_pos, true_neg)
+    )
+    assert all(out.dtype == bool for out in (true_pos, false_neg, false_pos, true_neg))
+
     n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(
         sum, (true_pos, false_neg, false_pos, true_neg)
     )
 
     assert (n_true_pos, n_false_neg, n_false_pos, n_true_neg) == expected
     assert n_true_pos + n_false_neg + n_false_pos + n_true_neg == len(df_float)
-    assert n_true_neg + n_false_pos == sum(stability_threshold < df_float.A)
-    assert n_true_pos + n_false_neg == sum(stability_threshold >= df_float.A)
+    assert n_true_neg + n_false_pos == np.sum(stability_threshold < df_float.A)
+    assert n_true_pos + n_false_neg == np.sum(stability_threshold >= df_float.A)
+
+
+def test_classify_stable_edge_cases() -> None:
+    """Test edge cases for classify_stable function."""
+    # Test with None threshold (defaults to 0.0)
+    result = classify_stable([-0.1, 0.0, 0.1], [-0.1, 0.0, 0.1])
+    # true_pos, false_neg, false_pos, true_neg
+    assert [sum(x) for x in result] == [2, 0, 0, 1]
+
+    # Test with NaN threshold (should raise ValueError)
+    with pytest.raises(ValueError, match="stability_threshold must be a real number"):
+        classify_stable([-0.1, 0.0, 0.1], [-0.1, 0.0, 0.1], stability_threshold=np.nan)
+
+    # Test with numeric threshold
+    result = classify_stable(
+        [-0.1, 0.0, 0.1], [-0.1, 0.0, 0.1], stability_threshold=0.05
+    )
+    assert [sum(x) for x in result] == [2, 0, 0, 1]
+
+
+def test_classify_stable_input_types() -> None:
+    """Test classify_stable with different input types including NaN/None values."""
+    # Test with Python lists containing NaN and None
+    result = classify_stable(
+        [-0.1, 0.0, 0.1, np.nan, None],
+        [-0.1, 0.0, 0.1, 0.2, -0.2],
+        stability_threshold=0.0,
+        fillna=True,
+    )
+    # With fillna=True, NaN/None treated as unstable
+    assert [sum(x) for x in result] == [2, 0, 0, 1]
+
+    # Test with NumPy arrays containing NaN
+    result = classify_stable(
+        np.array([-0.1, 0.0, 0.1, np.nan]),
+        np.array([-0.1, 0.0, 0.1, 0.2]),
+        stability_threshold=0.0,
+        fillna=False,
+    )
+    assert [sum(x) for x in result] == [2, 0, 0, 1]  # With fillna=False, NaN preserved
+
+
+def test_stable_metrics_edge_cases() -> None:
+    """Test edge cases for stable_metrics function."""
+    # Test with all negative predictions (zero positives)
+    metrics = stable_metrics(
+        [0.1, 0.2, 0.3], [-0.1, -0.2, -0.3], stability_threshold=0.0
+    )
+    assert metrics["Precision"] == 0.0
+    assert metrics["FPR"] == 1.0
+    assert metrics["TNR"] == 0.0
+    assert np.isnan(metrics["Recall"])
+    assert np.isnan(metrics["FNR"])
+
+    assert np.isnan(metrics["DAF"])
+
+    # Test with all positive predictions (zero negatives)
+    metrics = stable_metrics(
+        [-0.1, -0.2, -0.3], [0.1, 0.2, 0.3], stability_threshold=0.0
+    )
+    assert np.isnan(metrics["Precision"])
+    assert np.isnan(metrics["FPR"])
+    assert np.isnan(metrics["TNR"])
+    assert metrics["Recall"] == 0.0
+    assert metrics["FNR"] == 1.0
+    assert np.isnan(metrics["DAF"])
+
+    # Test with single data point and all NaN inputs
+    assert np.isnan(stable_metrics([0.1], [0.2], stability_threshold=0.0)["R2"])
+    all_nan_metrics = stable_metrics(
+        [np.nan, np.nan], [np.nan, np.nan], stability_threshold=0.0
+    )
+    assert all(np.isnan(all_nan_metrics[key]) for key in ["MAE", "RMSE", "R2"])
+
+
+def test_stable_metrics_nan_handling() -> None:
+    """Test stable_metrics with various NaN handling scenarios."""
+    true_vals, pred_vals = [0.1, -0.1, 0.2, -0.2], [0.1, -0.1, np.nan, np.nan]
+
+    metrics_fillna = stable_metrics(
+        true_vals, pred_vals, stability_threshold=0.0, fillna=True
+    )
+    metrics_no_fillna = stable_metrics(
+        true_vals, pred_vals, stability_threshold=0.0, fillna=False
+    )
+
+    # Classification metrics differ due to NaN handling
+    assert metrics_fillna["Recall"] != metrics_no_fillna["Recall"]
+
+    # Regression metrics same (NaN values dropped in both cases)
+    assert metrics_fillna["MAE"] == metrics_no_fillna["MAE"]
+    assert metrics_fillna["RMSE"] == metrics_no_fillna["RMSE"]
 
 
 def test_stable_metrics() -> None:
@@ -85,7 +188,7 @@ def test_stable_metrics() -> None:
     assert metrics["R2"] == r2_score(y_true, y_pred)
 
     # test stable_metrics docstring is up to date, all returned metrics should be listed
-    assert stable_metrics.__doc__  # for mypy
+    assert stable_metrics.__doc__  # for ty
     assert all(key in stable_metrics.__doc__ for key in metrics)
 
     # test discovery acceleration factor (DAF)
@@ -97,10 +200,11 @@ def test_stable_metrics() -> None:
         n_true_pos + n_false_pos + n_false_neg + n_true_neg
     )
     precision = n_true_pos / (n_true_pos + n_false_pos)
-    assert metrics[Key.daf.symbol] == precision / dummy_hit_rate
+    assert metrics[str(Key.daf.symbol)] == precision / dummy_hit_rate
 
 
 def test_df_discovery_metrics() -> None:
+    """Test df_metrics dataframe is valid."""
     missing_cols = {*discovery.df_metrics} - {model.label for model in Model}
     assert missing_cols == set(), f"{missing_cols=}"
     assert discovery.df_metrics.T.MAE.between(0, 0.2).all(), (
@@ -113,3 +217,45 @@ def test_df_discovery_metrics() -> None:
         f"unexpected {discovery.df_metrics.T.RMSE=}"
     )
     assert discovery.df_metrics.T.isna().sum().sum() == 0, "NaNs in metrics"
+
+
+def test_write_metrics_to_yaml(tmp_path: Path) -> None:
+    """Test write_metrics_to_yaml writes metrics with comments to YAML file."""
+    from pathlib import Path
+    from unittest.mock import MagicMock, patch
+
+    # Create mock model with yaml_path pointing to temp file
+    mock_model = MagicMock(spec=Model)
+    test_yaml = tmp_path / "test_model.yml"
+    test_yaml.write_text("metrics:\n  discovery: {}\n")
+    mock_model.yaml_path = str(test_yaml)
+
+    # Create test metrics and predictions
+    test_metrics: dict[str, str | float] = {
+        "MAE": 0.05,
+        "RMSE": 0.08,
+        "Precision": 0.9,
+        "Recall": 0.85,
+    }
+    test_preds = pd.Series([0.1, 0.2, np.nan, 0.4])  # 1 missing prediction
+
+    with patch.object(Model, "__instancecheck__", return_value=True):
+        result = write_metrics_to_yaml(
+            mock_model,  # type: ignore[arg-type]
+            test_metrics,
+            test_preds,
+            TestSubset.full_test_set,
+        )
+
+    # Check that missing_preds was added
+    assert str(MbdKey.missing_preds) in result
+    assert result[str(MbdKey.missing_preds)] == 1
+
+    # Check original metrics are preserved
+    assert result["MAE"] == 0.05
+    assert result["Precision"] == 0.9
+
+    # Verify YAML file was updated
+    content = Path(test_yaml).read_text()
+    assert "MAE" in content
+    assert "full_test_set" in content

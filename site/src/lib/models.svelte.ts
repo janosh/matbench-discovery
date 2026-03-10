@@ -1,8 +1,8 @@
 import { default as DATASETS } from '$data/datasets.yml'
-import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { CPS_CONFIG, calculate_cps, type CpsConfig } from './combined_perf_score.svelte'
+import type { Author, ModelData } from '$lib/types'
+import MODELINGS_TASKS, { type ModelingTask } from '$pkg/modeling-tasks.yml'
+import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
 import { get_org_logo } from './labels'
-import type { Author, ModelData } from './types'
 
 export const MODEL_METADATA_PATHS = import.meta.glob(`$root/models/[^_]**/[^_]*.yml`, {
   eager: true,
@@ -58,7 +58,7 @@ export const MODELS = $state(
   Object.entries(MODEL_METADATA_PATHS)
     .filter(
       // ignore models with status != completed (the default status)
-      ([_key, metadata]) => (metadata?.status ?? `complete`) == `complete`,
+      ([_key, metadata]) => (metadata?.status ?? `complete`) === `complete`,
     )
     .map(([key, metadata], index) => {
       // Assign color to each model for consistent coloring across plots
@@ -68,16 +68,20 @@ export const MODELS = $state(
 
       // Get top affiliations with logos
       const affiliation_counts: Record<string, number> = {}
-      const affiliation_data: Record<string, { name: string; id: string }> = {}
+      const affiliation_data: Record<
+        string,
+        { name: string; id?: string; src?: string }
+      > = {}
 
       for (const author of metadata.authors ?? ([] as Author[])) {
         if (!author.affiliation) continue
 
-        const org_logos = get_org_logo(author.affiliation)
-        if (org_logos) {
-          affiliation_counts[org_logos.id] = (affiliation_counts[org_logos.id] || 0) + 1
-          if (!(org_logos.id in affiliation_data)) {
-            affiliation_data[org_logos.id] = org_logos
+        const org_logo = get_org_logo(author.affiliation)
+        const logo_key = org_logo?.id ?? org_logo?.src
+        if (logo_key && org_logo) {
+          affiliation_counts[logo_key] = (affiliation_counts[logo_key] || 0) + 1
+          if (!(logo_key in affiliation_data)) {
+            affiliation_data[logo_key] = org_logo
           }
         } else if (!import.meta.env.PROD) {
           // only warn about missing logos in dev mode
@@ -85,10 +89,10 @@ export const MODELS = $state(
         }
       }
 
-      const top_affiliations = Object.entries(affiliation_counts)
-        .sort(([_id_a, count_a], [_id_b, count_b]) => count_b - count_a)
+      const frequent_logos = Object.entries(affiliation_counts)
+        .sort(([_key_a, count_a], [_key_b, count_b]) => count_b - count_a)
         .slice(0, 3)
-        .map(([id]) => affiliation_data[id])
+        .map(([key]) => affiliation_data[key])
 
       return {
         ...metadata,
@@ -98,26 +102,27 @@ export const MODELS = $state(
         CPS: NaN, // Initial CPS placeholder
         n_training_materials: sizes.total_materials,
         n_training_structures: sizes.total_structures,
-        org_logos: top_affiliations,
-      }
+        org_logos: frequent_logos,
+      } as ModelData
     }),
-) as ModelData[]
+)
 
 // Update CPSs of models based on current CPS weights
 export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
   models.forEach((model: ModelData) => {
     // Extract required metrics for CPS calculation
-    const f1 = model.metrics?.discovery?.[`unique_prototypes`]?.F1
-    const rmsd =
-      model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
-        ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
+    const discovery = model.metrics?.discovery
+    const f1 = typeof discovery === `object`
+      ? discovery?.[`unique_prototypes`]?.F1
+      : undefined
+    const rmsd = model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
+      ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
+      : undefined
+    const kappa = model.metrics?.phonons && typeof model.metrics.phonons !== `string`
+      ? model.metrics.phonons.kappa_103?.κ_SRME !== undefined
+        ? Number(model.metrics.phonons.kappa_103.κ_SRME)
         : undefined
-    const kappa =
-      model.metrics?.phonons && typeof model.metrics.phonons !== `string`
-        ? model.metrics.phonons.kappa_103?.κ_SRME !== undefined
-          ? Number(model.metrics.phonons.kappa_103.κ_SRME)
-          : undefined
-        : undefined
+      : undefined
 
     // Calculate and update CPS
     model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? NaN
@@ -127,12 +132,15 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
 // Calculate initial CPS for all models
 update_models_cps(MODELS, CPS_CONFIG)
 
+// Compute compliant training sets from datasets.yml (datasets with compliant: true)
+export const COMPLIANT_TRAINING_SETS: string[] = Object.entries(DATASETS)
+  .filter(([_, val]) => typeof val === `object` && !Array.isArray(val) && val.compliant)
+  .map(([key]) => key)
+
 export function model_is_compliant(model: ModelData): boolean {
-  if ((model.openness ?? `OSOD`) != `OSOD`) return false
+  if ((model.openness ?? `OSOD`) !== `OSOD`) return false
 
-  const allowed_sets = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`]
-
-  return model.training_set.every((itm) => allowed_sets.includes(itm))
+  return model.training_set.every((set) => COMPLIANT_TRAINING_SETS.includes(set))
 }
 
 export function get_pred_file_urls(model: ModelData) {
@@ -143,7 +151,7 @@ export function get_pred_file_urls(model: ModelData) {
     if (!obj || typeof obj !== `object`) return
 
     for (const [key, val] of Object.entries(obj)) {
-      if (key == `pred_file_url` && val && typeof val === `string`) {
+      if (key === `pred_file_url` && val && typeof val === `string`) {
         // Look up the label by traversing the MODELINGS_TASKS hierarchy
         const pretty_label = get_label_for_key_path(parent_key)
         files.push({ name: pretty_label, url: val })
@@ -155,18 +163,19 @@ export function get_pred_file_urls(model: ModelData) {
 
   // Recursively look up labels in the MODELINGS_TASKS object
   function get_label_for_key_path(key_path: string): string {
-    if (key_path in MODELINGS_TASKS) return MODELINGS_TASKS[key_path]?.label || key_path
+    const tasks = MODELINGS_TASKS as Record<string, ModelingTask>
+    if (key_path in tasks) return tasks[key_path].label
 
     // Check if it's a subtask by searching all tasks
-    for (const task_value of Object.values(MODELINGS_TASKS)) {
-      if (task_value?.subtasks?.[key_path]) {
-        return task_value.subtasks[key_path].label || key_path
+    for (const task_value of Object.values(tasks)) {
+      if (task_value.subtasks?.[key_path]) {
+        return task_value.subtasks[key_path].label
       }
     }
 
     return key_path // Default to key itself if no label is found
   }
 
-  find_pred_files(model.metrics)
+  if (model.metrics) find_pred_files(model.metrics)
   return files
 }

@@ -94,18 +94,14 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%
-data_loader_kwargs = dict(
-    input_col=Key.wyckoff,
-    target_col=MbdKey.e_form_dft,
-    id_col=Key.mat_id,
-    embedding_type="wyckoff",
-)
-
 data_loader = df_to_in_mem_dataloader(
     df=df_wbm_clean,
     batch_size=1024,
     shuffle=False,  # False is default but best be explicit
-    **data_loader_kwargs,
+    input_col=Key.wyckoff,
+    target_col=MbdKey.e_form_dft,
+    id_col=Key.mat_id,
+    embedding_type="wyckoff",
 )
 
 

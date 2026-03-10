@@ -9,7 +9,7 @@ ML-relaxed structures, and symmetry analysis files.
 import os
 import tomllib
 from collections.abc import Sequence
-from typing import Any, Final, Literal
+from typing import Any, Literal
 
 import yaml
 from tqdm import tqdm
@@ -19,12 +19,6 @@ from matbench_discovery import PKG_DIR, ROOT
 from matbench_discovery.cli import cli_parser
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
-
-with open(f"{PKG_DIR}/modeling-tasks.yml") as file:
-    MODELING_TASKS: Final = yaml.safe_load(file)
-    # remove 'cps' task as it's a dynamic metric with changing weights
-    # no point in uploading to figshare
-    MODELING_TASKS.pop("cps", None)
 
 with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
     pyproject = tomllib.load(toml_file)["project"]
@@ -57,9 +51,8 @@ def process_exclusion_prefixes(items: list[str], all_items: list[str]) -> list[s
     return result
 
 
-def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
+def get_article_metadata(task_info: dict[str, Any]) -> dict[str, Sequence[object]]:
     """Get metadata for creating a new Figshare article for a modeling task."""
-    task_info = MODELING_TASKS[task]
     return {
         "title": f"Matbench Discovery - Model Predictions for {task_info['label']}",
         "description": f"""
@@ -72,7 +65,7 @@ def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
         https://github.com/janosh/matbench-discovery.
         """.strip(),
         "defined_type": "dataset",
-        "tags": [*pyproject["keywords"], f"task-{task}"],
+        "tags": [*pyproject["keywords"], f"task-{task_info['label']}"],
         "categories": list(figshare.CATEGORIES),
     }
 
@@ -88,12 +81,18 @@ def update_one_modeling_task_article(
     task: str,
     models: list[Model],
     *,
+    modeling_tasks: dict[str, dict[str, str]],
     dry_run: bool = False,
     file_type: Literal["all", "analysis", "pred"] = "all",
     force_reupload: bool = False,
     interactive: bool = True,
 ) -> None:
     """Update or create a Figshare article for a modeling task."""
+    if (task_info := modeling_tasks.get(task)) is None:
+        raise KeyError(
+            f"Missing task metadata for {task!r}. "
+            f"Available tasks: {list(modeling_tasks)}"
+        )
     article_id = figshare.ARTICLE_IDS[f"model_preds_{task}"]
     article_is_new = False
 
@@ -110,7 +109,7 @@ def update_one_modeling_task_article(
             print(f"\nWould create new article for {task=}")
             article_id = 0
         else:
-            metadata = get_article_metadata(task)
+            metadata = get_article_metadata(task_info)
             article_id = figshare.create_article(metadata)
             article_is_new = True
             print(
@@ -175,7 +174,7 @@ def update_one_modeling_task_article(
                 )
                 continue
 
-            filename = file_path.removeprefix(f"{ROOT}/")
+            filename = str(os.path.relpath(file_path, ROOT))
 
             # First check if the exact same file already exists
             if not force_reupload and not dry_run:
@@ -217,13 +216,15 @@ def update_one_modeling_task_article(
                                 article_id, similar_id
                             ):
                                 deleted_files[similar_name] = similar_id
+                                # keep local view in sync to classify uploads correctly
+                                existing_files.pop(similar_name, None)
                                 print(f"Deleted similar file: {similar_name}")
                 else:
                     print("Skipping deletion of similar files (non-interactive mode)")
 
             # Upload file if it doesn't exist or force_reupload is True
             if not dry_run:
-                file_id, was_uploaded = figshare.upload_file_if_needed(
+                file_id, _was_uploaded = figshare.upload_file_if_needed(
                     article_id,
                     file_path,
                     file_name=filename,
@@ -296,15 +297,21 @@ def update_one_modeling_task_article(
         print("\nNo files were added or updated.")
 
 
-def main(args: Sequence[str] | None = None) -> int:
+def main(raw_args: Sequence[str] | None = None) -> int:
     """Main function to upload model prediction files to Figshare.
 
     Args:
-        args: Command line arguments. If None, sys.argv[1:] will be used.
+        raw_args: Command line arguments. If None, sys.argv[1:] will be used.
 
     Returns:
         int: Exit code (0 for success).
     """
+    with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
+        modeling_tasks = yaml.safe_load(file)
+    # remove 'cps' task as it's a dynamic metric with changing weights
+    # no point in uploading to figshare
+    modeling_tasks.pop("cps", None)
+
     # Add figshare-specific arguments to the central CLI parser
     figshare_group = cli_parser.add_argument_group(
         "figshare", "Arguments for Figshare upload functionality"
@@ -313,7 +320,7 @@ def main(args: Sequence[str] | None = None) -> int:
         "--tasks",
         nargs="+",
         type=str,
-        default=list(MODELING_TASKS),
+        default=list(modeling_tasks),
         help="Space-separated list of modeling tasks to update. Defaults to all tasks. "
         "Prefix with '!' to exclude. Note: exclamation mark needs to be "
         "backslash-escaped in shell.",
@@ -330,16 +337,16 @@ def main(args: Sequence[str] | None = None) -> int:
         help="Force reupload of files even if they already exist with the same hash",
     )
     figshare_group.add_argument(
-        "--interactive",
+        "--no-interactive",
         action="store_true",
-        default=True,
-        help="Enable interactive prompts for file deletion",
+        default=False,
+        help="Disable interactive prompts for file deletion (files will be skipped)",
     )
 
-    args = cli_parser.parse_known_args(args)[0]
+    args, _unknown = cli_parser.parse_known_args(raw_args)
 
     # Process exclusion prefixes for tasks
-    all_tasks = list(MODELING_TASKS)
+    all_tasks = list(modeling_tasks)
     args.tasks = process_exclusion_prefixes(args.tasks, all_tasks)
 
     # Process exclusion prefixes for models
@@ -369,15 +376,16 @@ def main(args: Sequence[str] | None = None) -> int:
             update_one_modeling_task_article(
                 task,
                 models_to_update,
+                modeling_tasks=modeling_tasks,
                 dry_run=dry_run,
                 file_type=args.file_type,
                 force_reupload=args.force_reupload,
-                interactive=args.interactive,
+                interactive=not args.no_interactive,
             )
         except Exception as exc:  # prompt to delete article if something went wrong
             state = {
                 key: locals().get(key)
-                for key in ("task", "model_name", "models_to_update", "tasks_to_update")
+                for key in ("task", "models_to_update", "tasks_to_update")
             }
             exc.add_note(f"Upload failed with {state=}")
             raise

@@ -1,18 +1,26 @@
-ci:
-  autoupdate_schedule: quarterly
-  skip: [pyright, eslint]
-
 default_stages: [pre-commit]
 
 default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.0
+    rev: v0.15.4
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: [--fix]
       - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty check
+        entry: ty check
+        language: python
+        types: [python]
+        additional_dependencies:
+          # TODO: remove numpy once np.array_split type fix in PR #30450 is released
+          [ty, numpy @ git+https://github.com/numpy/numpy]
+        args: [--output-format, concise, --ignore, unresolved-import]
 
   - repo: https://github.com/janosh/format-ipy-cells
     rev: v0.1.11
@@ -20,21 +28,37 @@ repos:
       - id: format-ipy-cells
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-case-conflict
       - id: check-symlinks
       - id: check-yaml
       - id: destroyed-symlinks
       - id: end-of-file-fixer
+      - id: forbid-new-submodules
       - id: mixed-line-ending
       - id: trailing-whitespace
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.16.1
+  - repo: local
     hooks:
-      - id: mypy
-        additional_dependencies: [types-pyyaml, types-requests]
+      - id: deno-fmt
+        name: Deno format
+        entry: deno fmt
+        types: [file]
+        args: [--config, site/deno.jsonc, --permit-no-files]
+        language: system
+      - id: deno-lint
+        name: Deno lint
+        entry: deno lint
+        types: [file]
+        args: [--config, site/deno.jsonc, --permit-no-files, --fix]
+        language: system
+      - id: svelte-check
+        name: Svelte type check
+        entry: bash -c 'cd site && pnpm install && pnpm exec svelte-kit sync && pnpm exec svelte-check-rs --threshold error'
+        language: system
+        types_or: [ts, svelte]
+        pass_filenames: false
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
@@ -42,22 +66,23 @@ repos:
       - id: codespell
         stages: [pre-commit, commit-msg]
         exclude_types: [csv, json, svg, bib]
-        exclude: ^site/src/figs/.+$
-        args: [--check-filenames]
+        exclude: ^(site/src/figs/.+|pyproject\.toml)$
+        args: [--toml=pyproject.toml, --check-filenames]
+        additional_dependencies: [tomli]
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.8
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.47.0
     hooks:
-      - id: prettier
-        args: [--write] # edit files in-place
-        additional_dependencies:
-          - prettier
-          - prettier-plugin-svelte
-          - svelte
-        exclude: ^(site/src/figs/.+\.svelte|site/src/(routes|figs).+\.json|changelog.md)$
+      - id: markdownlint
+        # MD013: line too long
+        # MD033: no inline HTML
+        # MD041: first line in a file should be a top-level heading
+        # MD034: no bare urls
+        args: [--disable, MD013, MD033, MD034, MD041, '--']
+        exclude: changelog\.md$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.29.0
+    rev: v10.0.2
     hooks:
       - id: eslint
         types: [file]
@@ -69,10 +94,10 @@ repos:
           - svelte
           - typescript
           - typescript-eslint
-          - "@stylistic/eslint-plugin"
+          - '@stylistic/eslint-plugin'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.0
+    rev: 0.37.0
     hooks:
       - id: check-jsonschema
         files: ^models/.+/.+\.yml$
@@ -82,8 +107,11 @@ repos:
         args: [--schemafile, tests/dataset-schema.yml]
       - id: check-github-actions
 
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.402
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.44.0
     hooks:
-      - id: pyright
-        args: [--level, error]
+      - id: typos
+        types: [text]
+        exclude_types: [csv]
+        exclude: ^(site/src/figs/.+|.+element-counts.*\.json)$
+        args: []

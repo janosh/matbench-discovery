@@ -1,8 +1,8 @@
 model_name: MACE-MP-0
 model_key: mace-mp-0
 model_version: v0.3.5
-date_added: "2023-07-14"
-date_published: "2022-05-13"
+date_added: '2023-07-14'
+date_published: '2022-05-13'
 authors:
   - name: Ilyes Batatia
     affiliation: University of Cambridge
@@ -81,12 +81,13 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.647
+      κ_SRME: 0.6823
       pred_file: models/mace/mace-mp-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134872
+      κ_SRE: 0.471
   geo_opt:
     pred_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062020
+    pred_file_url: https://figshare.com/files/57751033
     struct_col: mace_structure
     symprec=1e-5:
       rmsd: 0.0915 # unitless
@@ -128,7 +129,6 @@ metrics:
       RMSE: 0.099 # eV/atom
       R2: 0.698 # dimensionless
       missing_preds: 38 # count
-      missing_percent: 0.01% # fraction
     most_stable_10k:
       F1: 0.888 # fraction
       DAF: 5.221 # dimensionless
@@ -147,7 +147,6 @@ metrics:
       RMSE: 0.165 # eV/atom
       R2: 0.508 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.669 # fraction
       DAF: 3.777 # dimensionless
@@ -166,7 +165,6 @@ metrics:
       RMSE: 0.101 # eV/atom
       R2: 0.697 # dimensionless
       missing_preds: 34 # count
-      missing_percent: 0.02% # fraction
   diatomics:
     pred_file: models/mace/mace-mp-0/2025-02-13-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52449434

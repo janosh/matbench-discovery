@@ -1,8 +1,8 @@
 model_name: M3GNet
 model_key: m3gnet
 model_version: v2022.9.20
-date_added: "2022-09-20"
-date_published: "2022-02-05"
+date_added: '2022-09-20'
+date_published: '2022-02-05'
 authors:
   - name: Chi Chen
     affiliation: UC San Diego
@@ -46,10 +46,12 @@ n_estimators: 1
 
 hyperparams:
   batch_size: 32
-  learning_rate: 1e-3
+  learning_rate: 0.001
   optimizer: Adam
   ase_optimizer: FIRE
   cell_filter: ExpCellFilter # see https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd/m3gnet/models/_dynamics.py#L122
+  max_steps: 500
+  max_force: 0.05 # eV/Å
   loss_weights:
     energy: 1
     force: 1
@@ -70,12 +72,13 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 1.412
+      κ_SRME: 2.0
       pred_file: models/m3gnet/m3gnet-matgl-mp-2021-2-8-pes/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134866
+      κ_SRE: 2.0
   geo_opt:
     pred_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/52062011
+    pred_file_url: https://figshare.com/files/57751024
     struct_col: m3gnet_structure
     symprec=1e-5:
       rmsd: 0.1117 # unitless
@@ -104,7 +107,7 @@ metrics:
       DAF: 2.647 # dimensionless
       Precision: 0.454 # fraction
       Recall: 0.788 # fraction
-      Accuracy: 0.802 # fraction
+      Accuracy: 0.801 # fraction
       TPR: 0.788 # fraction
       FPR: 0.196 # fraction
       TNR: 0.804 # fraction
@@ -117,7 +120,6 @@ metrics:
       RMSE: 0.115 # eV/atom
       R2: 0.588 # dimensionless
       missing_preds: 355 # count
-      missing_percent: 0.14% # fraction
     most_stable_10k:
       F1: 0.868 # fraction
       DAF: 5.02 # dimensionless
@@ -136,13 +138,12 @@ metrics:
       RMSE: 0.158 # eV/atom
       R2: 0.551 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.569 # fraction
       DAF: 2.882 # dimensionless
       Precision: 0.441 # fraction
       Recall: 0.803 # fraction
-      Accuracy: 0.813 # fraction
+      Accuracy: 0.812 # fraction
       TPR: 0.803 # fraction
       FPR: 0.187 # fraction
       TNR: 0.813 # fraction
@@ -155,4 +156,3 @@ metrics:
       RMSE: 0.118 # eV/atom
       R2: 0.585 # dimensionless
       missing_preds: 299 # count
-      missing_percent: 0.14% # fraction

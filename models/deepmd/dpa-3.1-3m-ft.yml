@@ -1,8 +1,8 @@
 model_name: DPA-3.1-3M-FT
 model_key: dpa-3.1-3m-ft
 model_version: v0.3 # 2025-06-05
-date_added: "2025-06-05"
-date_published: "2025-06-05"
+date_added: '2025-06-05'
+date_published: '2025-06-05'
 authors:
   - name: Duo Zhang
     affiliation: AI for Science Institute, Beijing
@@ -68,7 +68,7 @@ hyperparams:
       virial: 0.02 -> 1
     initial_learning_rate: 0.001
     learning_rate_schedule: ExpLR - start_lr=0.001, decay_steps=5000, stop_lr=0.00001
-    training_steps: 4000000
+    training_steps: 4_000_000
     batch_size: 960 # 120 (gpus) * 8 (batch per gpu) = 960 (total batch size)
     epochs: 23.5
   finetune:
@@ -79,7 +79,7 @@ hyperparams:
       virial: 2.5
     initial_learning_rate: 0.0001
     learning_rate_schedule: ExpLR - start_lr=0.0001, decay_steps=5000, stop_lr=0.000006
-    training_steps: 2000000
+    training_steps: 2_000_000
     batch_size: 256 # 32 (gpus) * 8 (batch per gpu) = 256 (total batch size)
     epochs: 45
   graph_construction_radius: 6.0 # Å
@@ -105,9 +105,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.469
+      κ_SRME: 0.4695
       pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/55426286
+      κ_SRE: 0.3095
   geo_opt:
     pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
     struct_col: dp_structure
@@ -152,7 +153,6 @@ metrics:
       RMSE: 0.067 # eV/atom
       R2: 0.862 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.987 # fraction
       DAF: 6.369 # dimensionless
@@ -171,7 +171,6 @@ metrics:
       RMSE: 0.067 # eV/atom
       R2: 0.901 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.884 # fraction
       DAF: 5.667 # dimensionless
@@ -190,4 +189,3 @@ metrics:
       RMSE: 0.067 # eV/atom
       R2: 0.869 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction

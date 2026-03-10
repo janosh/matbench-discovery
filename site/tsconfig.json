@@ -12,7 +12,11 @@
 
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+
+    // Skip type checking of declaration files in node_modules
+    // (e.g. svelte-toc has broken Svelte 5 types)
+    "skipLibCheck": true
   },
   "exclude": ["node_modules/*", ".svelte-kit/*", "build/*", "dist/*", "**/figs/*"]
 }

@@ -1,8 +1,8 @@
 model_name: MatRIS v0.5.0 MPtrj
 model_key: matris-v050-mptrj
 model_version: v0.5.0
-date_added: "2025-03-13"
-date_published: "2025-03-13"
+date_added: '2025-03-13'
+date_published: '2025-03-13'
 authors:
   - name: Yuanchang Zhou
     affiliation: Institute of Computing Technology, Chinese Academy of Sciences
@@ -32,17 +32,17 @@ trained_by:
     orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
-url: missing # to be released soon
-doi: missing # to be released soon
-paper: missing # to be released soon
-pr_url: https://github.com/janosh/matbench-discovery/pull/220
-checkpoint_url: missing # https://github.com/HPC-AI-Team/MatRIS/issues/1
+url: https://github.com/HPC-AI-Team/MatRIS
+doi: https://github.com/HPC-AI-Team/MatRIS # no paper yet, using repo URL
+paper: https://github.com/HPC-AI-Team/MatRIS # no paper yet, using repo URL
+pr_url: https://github.com/janosh/matbench-discovery/pull/293
+checkpoint_url: https://figshare.com/files/59143058
 
 license:
-  code: unreleased
-  code_url: missing
-  checkpoint: unreleased
-  checkpoint_url: missing
+  code: BSD-3-Clause
+  code_url: https://github.com/HPC-AI-Team/MatRIS/blob/main/LICENSE
+  checkpoint: BSD-3-Clause
+  checkpoint_url: https://github.com/HPC-AI-Team/MatRIS/blob/main/LICENSE
 
 openness: OSOD
 train_task: S2EFSM
@@ -52,11 +52,13 @@ model_type: UIP
 model_params: 5825620
 trained_for_benchmark: true
 n_estimators: 1
+status: superseded
 
 hyperparams:
   max_force: 0.05
   max_steps: 500
   ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
   optimizer: Adam
   loss: MAE
   loss_weights:
@@ -82,21 +84,24 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj]
-training_cost: missing
 
-notes: # notes can have any key, be multiline and support markdown.
-  description: |
+training_cost:
+  Nvidia A100 GPUs: { amount: 16, hours: 120 }
+
+notes:
+  Description: |
     MatRIS is a foundation model for materials representation and interaction simulation.
 
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.861
+      κ_SRME: 0.8651
       pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-kappa-103-fire-dist=0.01-fmax1e-4-symprec1e-5.json.gz
       pred_file_url: https://figshare.com/files/53090600
+      κ_SRE: 0.7711
   geo_opt:
     pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53000177
+    pred_file_url: https://figshare.com/files/57751045
     struct_col: matris_structure
     symprec=1e-5:
       rmsd: 0.0773 # unitless
@@ -138,7 +143,6 @@ metrics:
       RMSE: 0.08 # eV/atom
       R2: 0.8 # dimensionless
       missing_preds: 6 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.984 # fraction
       DAF: 6.341 # dimensionless
@@ -157,7 +161,6 @@ metrics:
       RMSE: 0.057 # eV/atom
       R2: 0.926 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.809 # fraction
       DAF: 5.049 # dimensionless
@@ -176,4 +179,3 @@ metrics:
       RMSE: 0.082 # eV/atom
       R2: 0.803 # dimensionless
       missing_preds: 4 # count
-      missing_percent: 0.00% # fraction

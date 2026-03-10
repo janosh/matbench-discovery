@@ -1,26 +1,26 @@
-import { MODELS, type DiatomicsCurves } from '$lib'
+// deno-lint-ignore-file no-await-in-loop
+import { type DiatomicsCurves, MODELS } from '$lib'
 import type { PageServerLoad } from './$types'
 
-async function fetch_diatomics(file_url: string): Promise<DiatomicsCurves> {
-  const response = await fetch(file_url)
+async function fetch_diatomics(file_url: string, retries = 3): Promise<DiatomicsCurves> {
+  let last_err: unknown
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await fetch(file_url)
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
 
-  if (!response.ok) {
-    throw new Error(
-      `request for ${file_url} failed: ${response.status} ${response.statusText}`,
-    )
+      const decompressed = response.body?.pipeThrough(new DecompressionStream(`gzip`))
+      if (!decompressed) throw new Error(`Failed to decompress response`)
+      return JSON.parse(await new Response(decompressed).text())
+    } catch (err) {
+      last_err = err
+      if (attempt < retries - 1) {
+        // exponential backoff: 1s, 2s, 4s
+        await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt))
+      }
+    }
   }
-
-  // Get response as a stream and decompress it
-  const ds = new DecompressionStream(`gzip`)
-  const decompressed_stream = response.body?.pipeThrough(ds)
-  if (!decompressed_stream) {
-    throw new Error(`Failed to decompress response`)
-  }
-
-  // Convert the stream to text
-  const decompressed_response = new Response(decompressed_stream)
-  const text = await decompressed_response.text()
-  return JSON.parse(text)
+  throw new Error(`${file_url} failed after ${retries} attempts: ${last_err}`)
 }
 
 export const load: PageServerLoad = async () => {
@@ -37,7 +37,7 @@ export const load: PageServerLoad = async () => {
 
   await Promise.all(
     diatomic_models.map(async (model) => {
-      const { diatomics } = model.metrics
+      const diatomics = model.metrics?.diatomics
       if (typeof diatomics !== `object` || !diatomics?.pred_file_url) {
         errors[model.model_name] = `No prediction file URL`
         return

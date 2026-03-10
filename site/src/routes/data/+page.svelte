@@ -1,21 +1,23 @@
 <script lang="ts">
   import { browser } from '$app/environment'
   import DataReadme from '$data/wbm/readme.md'
-  import FormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
+  import WbmFormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
   import HistWbmHullDist from '$figs/hist-wbm-hull-dist.svelte'
   import MPtrjNSitesHist from '$figs/mp-trj-n-sites-hist.svelte'
   import MPvsMPtrjVsWBMArityHist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.svelte'
   import SpacegroupSunburstMp from '$figs/spacegroup-sunburst-mp.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import { PtableHeatmap } from '$lib'
-  import { ColorScaleSelect } from 'matterviz'
+  import type { ElementSymbol } from 'matterviz'
+  import { ColorScaleSelect, Icon } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import Select from 'svelte-multiselect'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
   import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
 
-  const elem_counts: Record<string, Record<string, number>> = import.meta.glob(
+  const elem_counts: Record<string, Record<ElementSymbol, number>> = import.meta.glob(
     `./*-element-counts-by-{occurrence,composition}*.json`,
     { eager: true, import: `default` },
   )
@@ -25,7 +27,9 @@
   const count_modes = [`occurrence`, `composition`]
   let count_mode = $state(count_modes[0])
 
-  let mp_elem_counts = $derived(elem_counts[`./mp-element-counts-by-${count_mode}.json`])
+  let mp_elem_counts = $derived(
+    elem_counts[`./mp-element-counts-by-${count_mode}.json`],
+  )
   let mp_trj_elem_counts = $derived(
     elem_counts[`./mp-trj-element-counts-by-${count_mode}.json`],
   )
@@ -38,9 +42,12 @@
     if (!wbm_elem_counts) throw `No WBM data for count mode ${count_mode}!`
   })
 
+  const capture_state = () => ({ color_scale, log_scale, count_mode })
   export const snapshot = {
-    capture: () => ({ color_scale, log_scale, count_mode }),
-    restore: (values) => ({ color_scale, log_scale, count_mode } = values),
+    capture: capture_state,
+    restore: (
+      values: ReturnType<typeof capture_state>,
+    ) => ({ color_scale, log_scale, count_mode } = values),
   }
 </script>
 
@@ -49,30 +56,34 @@
 <DataReadme>
   {#snippet hist_e_form_per_atom()}
     {#if browser}
-      <FormEnergyHist />
+      <WbmFormEnergyHist />
     {/if}
   {/snippet}
 
   {#snippet wbm_elements_heatmap()}
     <label
       for="count-mode"
-      style="display: inline-block; transform: translate(10cqw, 5ex);">Count Mode</label
-    >
+      style="display: inline-block; transform: translate(10cqw, 5ex)"
+    >Count Mode</label>
     <Select
       id="count-mode"
-      selected={[count_mode]}
       bind:value={count_mode}
       options={count_modes}
       minSelect={1}
       maxSelect={1}
-    />
+    >
+      {#snippet children({ option })}
+        {option}&nbsp;<span
+          title="The difference between count modes is best explained by example.
+          <code>occurrence</code> mode maps Fe<sub>2</sub>O<sub>3</sub> to <code>{`{Fe: 1, O: 1}`}</code>,
+          <code>composition</code> mode maps it to <code>{`{Fe: 2, O: 3}`}</code>."
+          {@attach tooltip()}
+        >
+          <Icon icon="Info" style="color: var(--link-color)" />
+        </span>
+      {/snippet}
+    </Select>
     <ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />
-    <p style="text-align: center; margin: 2em; font-size: smaller;">
-      The difference between count modes is best explained by example.
-      <code>occurrence</code> mode maps Fe<sub>2</sub>O<sub>3</sub> to {`{Fe: 1, O: 1}`},
-      <code>composition</code>
-      mode maps it to {`{Fe: 2, O: 3}`}.
-    </p>
     <PtableHeatmap
       heatmap_values={wbm_elem_counts}
       {color_scale}
@@ -108,7 +119,7 @@
 
   {#snippet spacegroup_sunbursts()}
     {#if browser}
-      <div style="display: flex; gap: 2em; place-content: center;">
+      <div style="display: flex; gap: 2em; place-content: center">
         <SpacegroupSunburstMp />
         <SpacegroupSunburstWbm />
       </div>
@@ -119,7 +130,7 @@
 <MpElementalReferenceEnergies />
 
 {#if browser}
-  <MPvsMPtrjVsWBMArityHist style="margin: auto; max-width: 60cqw; padding-right: 2em;" />
+  <MPvsMPtrjVsWBMArityHist style="margin: auto; max-width: 60cqw; padding-right: 2em" />
 {/if}
 <p>
   Distribution of unique elements per structure in MP, MPtrj and WBM. The bar heights are
@@ -133,7 +144,7 @@
   ground states.
 </p>
 
-<MPtrjNSitesHist style="margin: auto; max-width: 80cqw; padding-right: 2em;" />
+<MPtrjNSitesHist style="margin: auto; max-width: 80cqw; padding-right: 2em" />
 <p>
   Histogram of number of atoms per structure. The inset shows the same distribution
   log-scaled to visualize the tail of large structures. The green cumulative line in the

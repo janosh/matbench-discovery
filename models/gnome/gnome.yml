@@ -1,8 +1,8 @@
 model_name: GNoME
 model_key: gnome
 model_version: n/a
-date_added: "2024-02-03"
-date_published: "2023-11-29"
+date_added: '2024-02-03'
+date_published: '2023-11-29'
 authors:
   - name: Amil Merchant
     affiliation: Google DeepMind
@@ -80,7 +80,7 @@ metrics:
       DAF: 4.81 # dimensionless
       Precision: 0.825 # fraction
       Recall: 0.796 # fraction
-      Accuracy: 0.942 # fraction
+      Accuracy: 0.936 # fraction
       TPR: 0.796 # fraction
       FPR: 0.035 # fraction
       TNR: 0.965 # fraction
@@ -93,7 +93,6 @@ metrics:
       RMSE: 0.083 # eV/atom
       R2: 0.786 # dimensionless
       missing_preds: 1744 # count
-      missing_percent: 0.68% # fraction
     most_stable_10k:
       F1: 0.967 # fraction
       DAF: 6.127 # dimensionless
@@ -112,13 +111,12 @@ metrics:
       RMSE: 0.089 # eV/atom
       R2: 0.836 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.829 # fraction
       DAF: 5.523 # dimensionless
       Precision: 0.844 # fraction
       Recall: 0.814 # fraction
-      Accuracy: 0.955 # fraction
+      Accuracy: 0.948 # fraction
       TPR: 0.814 # fraction
       FPR: 0.028 # fraction
       TNR: 0.972 # fraction
@@ -131,4 +129,3 @@ metrics:
       RMSE: 0.085 # eV/atom
       R2: 0.785 # dimensionless
       missing_preds: 1517 # count
-      missing_percent: 0.70% # fraction

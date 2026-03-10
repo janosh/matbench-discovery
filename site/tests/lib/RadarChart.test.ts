@@ -4,6 +4,7 @@ import { ALL_METRICS } from '$lib/labels'
 import { update_models_cps } from '$lib/models.svelte'
 import { mount } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { doc_query } from '../index'
 
 describe(`RadarChart`, () => {
   beforeEach(() => {
@@ -14,48 +15,48 @@ describe(`RadarChart`, () => {
     })
   })
 
-  it(`renders with default props`, async () => {
+  it(`renders with default props`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check that the component rendered with an SVG element
-    const svg = document.body.querySelector(`svg`)
+    const svg = document.querySelector(`svg`)
     expect(svg).toBeDefined()
 
     // Check that all three axis lines are rendered (for F1, kappa, RMSD)
-    const axis_lines = document.body.querySelectorAll(`line`)
+    const axis_lines = document.querySelectorAll(`line`)
     expect(axis_lines).toHaveLength(3)
     // Verify stroke properties for each axis line
     axis_lines.forEach((line) => {
-      expect(line.getAttribute(`stroke`)).toBe(`rgba(255, 255, 255, 0.4)`)
+      expect(line.getAttribute(`stroke`)).toBe(`var(--border)`)
       expect(line.getAttribute(`stroke-width`)).toBe(`1`)
     })
 
     // Check that the triangle area is rendered
-    const triangle_area = document.body.querySelector(
-      `path[fill="rgba(255, 255, 255, 0.1)"]`,
+    const triangle_area = document.querySelector(
+      `path[fill="var(--nav-bg)"]`,
     )
     expect(triangle_area).toBeDefined()
 
     // Check that the draggable point is rendered
-    const draggable_point = document.body.querySelector(`circle[role="button"]`)
+    const draggable_point = document.querySelector(`circle[role="button"]`)
     expect(draggable_point).toBeDefined()
   })
 
-  it(`accepts size prop`, async () => {
+  it(`accepts size prop`, () => {
     const custom_size = 300
 
     mount(RadarChart, { target: document.body, props: { size: custom_size } })
 
-    const svg = document.body.querySelector(`svg`)
+    const svg = document.querySelector(`svg`)
     expect(svg).toBeDefined()
 
     // Verify that at least one circle is rendered, which indirectly confirms
     // that the component initialized properly with the size prop
-    const circles = document.body.querySelectorAll(`circle`)
+    const circles = document.querySelectorAll(`circle`)
     expect(circles.length).toBeGreaterThan(0)
   })
 
-  it(`resets weights when reset button is clicked`, async () => {
+  it(`resets weights when reset button is clicked`, () => {
     mount(RadarChart, { target: document.body })
 
     // Modify weights to non-default values
@@ -64,7 +65,7 @@ describe(`RadarChart`, () => {
     CPS_CONFIG.RMSD.weight = 0.1
 
     // Find and click the reset button
-    const reset_button = document.body.querySelector(`.reset-button`) as HTMLButtonElement
+    const reset_button = doc_query<HTMLButtonElement>(`.reset-button`)
     expect(reset_button).toBeDefined()
 
     reset_button.click()
@@ -78,15 +79,14 @@ describe(`RadarChart`, () => {
     expect(update_models_cps).toHaveBeenCalled()
   })
 
-  it(`displays correct weight percentages`, async () => {
+  it(`displays correct weight percentages`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check that the weight percentages are displayed correctly
-    const weight_values = Array.from(
-      document.body.querySelectorAll(`svg tspan:last-child`),
-    ).map((el) => el.textContent)
+    const weight_values = Array.from(document.querySelectorAll(`svg foreignObject`))
+      .map((el) => el.querySelector(`small`)?.textContent)
+      .filter(Boolean)
 
-    // Should match the default weights from DEFAULT_CPS_CONFIG
     const expected_values = Object.values(DEFAULT_CPS_CONFIG).map(
       (part) => `${((part.weight as number) * 100).toFixed(0)}%`,
     )
@@ -94,65 +94,64 @@ describe(`RadarChart`, () => {
     expect(weight_values).toEqual(expected_values)
   })
 
-  it(`renders axis labels with correct content`, async () => {
+  it(`renders axis labels with correct content`, () => {
     mount(RadarChart, { target: document.body })
 
-    // Check that axis labels are rendered
-    const text_elements = document.body.querySelectorAll(`svg text`)
-    expect(text_elements.length).toBe(3)
+    // Check that axis labels are rendered using foreignObject
+    const foreign_objects = document.querySelectorAll(`svg foreignObject`)
+    expect(foreign_objects.length).toBe(3)
 
-    // In the actual component, labels also include the percentage value
-    // So we need to get the full text content
-    const label_texts = Array.from(text_elements).map((el) => el.textContent?.trim())
+    // Get the text content from foreignObject elements
+    const label_texts = Array.from(foreign_objects).map((el) => el.textContent?.trim())
 
-    // Verify that each label contains the respective metric name
+    // Verify that each label contains the respective metric name and percentage
     expect(label_texts).toEqual([`F1 50%`, `κSRME 40%`, `RMSD 10%`])
   })
 
-  it(`renders tooltip with config description`, async () => {
+  it(`renders tooltip with config description`, () => {
     mount(RadarChart, {
       target: document.body,
     })
 
     // Check that the info icon exists (which is part of the tooltip)
-    const info_icon = document.body.querySelector(`svg use[href="#icon-info"]`)
+    const info_icon = document.querySelector(`svg[data-title="Info"]`)
     expect(info_icon).toBeDefined()
   })
 
-  it(`renders correct visualization elements`, async () => {
+  it(`renders correct visualization elements`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check for the triangle path
-    const triangle = document.body.querySelector(`path[d^="M"][d$="Z"]`)
+    const triangle = document.querySelector(`path[d^="M"][d$="Z"]`)
     expect(triangle).toBeDefined()
 
     // Check for the colored metric areas (should be 3 paths)
-    const colored_areas = document.body.querySelectorAll(
-      `path[fill^="rgba"][opacity="0.5"]`,
+    const colored_areas = document.querySelectorAll(
+      `path[fill^="rgb"][opacity="0.5"]`,
     )
     expect(colored_areas.length).toBe(3)
 
     // Check for the grid circles
-    const grid_circles = document.body.querySelectorAll(`circle[fill="none"]`)
+    const grid_circles = document.querySelectorAll(`circle[fill="none"]`)
     expect(grid_circles.length).toBe(4) // Should be 4 grid circles
     // Verify stroke properties for each grid circle
     grid_circles.forEach((circle) => {
-      expect(circle.getAttribute(`stroke`)).toBe(`rgba(255, 255, 255, 0.1)`)
+      expect(circle.getAttribute(`stroke`)).toBe(`var(--border)`)
     })
   })
 
-  it(`displays the metric name`, async () => {
+  it(`displays the metric name`, () => {
     mount(RadarChart, { target: document.body })
 
-    const metric_name = document.body.querySelector(`.metric-name`)
+    const metric_name = document.querySelector(`.metric-name`)
     expect(metric_name).toBeDefined()
-    expect(metric_name?.textContent?.trim()).toContain(ALL_METRICS.CPS.label)
+    expect(metric_name?.textContent?.trim()).toContain(ALL_METRICS.CPS.key)
   })
 
-  it(`renders reset button with correct attributes`, async () => {
+  it(`renders reset button with correct attributes`, () => {
     mount(RadarChart, { target: document.body })
 
-    const reset_button = document.body.querySelector(`.reset-button`)
+    const reset_button = document.querySelector(`.reset-button`)
     expect(reset_button).toBeDefined()
     expect(reset_button?.getAttribute(`title`)).toBe(`Reset to default weights`)
     expect(reset_button?.textContent?.trim()).toBe(`Reset`)

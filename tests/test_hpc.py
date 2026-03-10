@@ -174,9 +174,9 @@ def test_chunk_size_distribution(make_obj: Callable[[int], Atoms | Structure]) -
 def test_order_preservation(make_obj: Callable[[int], Atoms | Structure]) -> None:
     """Test that relative order of equal-sized structures is preserved within chunks."""
     # Create 6 identical objects but with different info
-    objects = [make_obj(1) for _ in range(6)]
+    objects: list[Atoms | Structure] = [make_obj(1) for _ in range(6)]
     for idx, obj in enumerate(objects):
-        if hasattr(obj, "info"):
+        if isinstance(obj, Atoms):
             obj.info["index"] = idx  # ASE Atoms
         else:
             obj.site_properties["index"] = [idx] * len(obj)  # pymatgen Structure
@@ -185,9 +185,9 @@ def test_order_preservation(make_obj: Callable[[int], Atoms | Structure]) -> Non
 
     # Within each chunk, indices should be monotonically decreasing
     for chunk in chunks:
-        indices = []
+        indices: list[int] = []
         for obj in chunk:
-            if hasattr(obj, "info"):
+            if isinstance(obj, Atoms):
                 indices.append(obj.info["index"])  # ASE Atoms
             else:
                 indices.append(obj.site_properties["index"][0])  # pymatgen Structure

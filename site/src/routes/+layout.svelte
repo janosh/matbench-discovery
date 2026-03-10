@@ -1,18 +1,15 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import { Footer, Nav } from '$lib'
+  import { Footer, ThemeToggle } from '$lib'
   import pkg from '$site/package.json'
-  import { type Snippet } from 'svelte'
-  import { CmdPalette } from 'svelte-multiselect'
+  import type { Snippet } from 'svelte'
+  import { CmdPalette, CopyButton, GitHubCorner, Nav } from 'svelte-multiselect'
+  import { heading_anchors } from 'svelte-multiselect/heading-anchors'
   import Toc from 'svelte-toc'
-  import { GitHubCorner } from 'svelte-zoo'
   import '../app.css'
 
-  interface Props {
-    children?: Snippet
-  }
-  let { children }: Props = $props()
+  let { children }: { children?: Snippet } = $props()
 
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`)).map(
     (filename) => `/` + filename.split(`/`)[1],
@@ -20,78 +17,91 @@
 
   let url = $derived(page.url.pathname)
   let headingSelector = $derived(
-    `main :is(${{ '/api': `h1, ` }[url] ?? ``}h2, h3, h4):not(.toc-exclude)`,
+    `main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4):not(.toc-exclude)`,
   )
 
+  const base_description =
+    `Matbench Discovery - Benchmarking machine learning energy models for materials discovery.`
+  const descriptions: Record<string, string> = {
+    '/': base_description,
+    '/data':
+      `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
+    '/data/tmi': `Too much information on the benchmark's data.`,
+    '/api': `API docs for the Matbench Discovery PyPI package.`,
+    '/contribute': `Steps for contributing a new model to the benchmark.`,
+    '/models': `Details on each model sortable by metrics.`,
+    '/tasks/diatomics': `Metrics and analysis of predicting diatomic energies.`,
+    '/tasks/phonons':
+      `Metrics and analysis of predicting phonon modes and frequencies.`,
+    '/tasks/geo-opt': `Metrics and analysis of predicting ground state geometries.`,
+  }
   let description = $derived(
-    {
-      '/': `Benchmarking machine learning energy models for materials discovery.`,
-      '/data': `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
-      '/data/tmi': `Too much information on the benchmark's data.`,
-      '/api': `API docs for the Matbench Discovery PyPI package.`,
-      '/contribute': `Steps for contributing a new model to the benchmark.`,
-      '/models': `Details on each model sortable by metrics.`,
-      '/tasks/diatomics': `Metrics and analysis of predicting diatomic energies.`,
-      '/tasks/phonons': `Metrics and analysis of predicting phonon modes and frequencies.`,
-      '/tasks/geo-opt': `Metrics and analysis of predicting ground state geometries.`,
-    }[url ?? ``],
+    descriptions[url ?? ``] ?? base_description,
   )
-  $effect(() => {
-    if (url && !description) console.warn(`No description for url=${url}`)
-  })
   let title = $derived(url == `/` ? `` : `${url} • `)
 
-  const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`)).map(
-    (filename) => {
+  const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
+    .filter((filename) => !filename.includes(`[`))
+    .map((filename) => {
       const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`)) // remove hidden route segments
       const route = `/${parts.slice(1, -1).join(`/`)}`
 
       return { label: route, action: () => goto(route) }
-    },
-  )
-  $effect.pre(() => {
-    if (page.url.pathname == `/models`) {
-      document.documentElement.style.setProperty(`--main-max-width`, `90em`)
-    } else {
-      document.documentElement.style.setProperty(`--main-max-width`, `50em`)
-    }
-    // TODO restore svelte-zoo CopyButton on code blocks
-  })
+    })
 </script>
 
 <CmdPalette {actions} placeholder="Go to..." />
+<CopyButton global />
 
 <svelte:head>
   <title>{title}Matbench Discovery</title>
   <meta name="description" content={description} />
 </svelte:head>
 
-{#if ![`/`, `/models`].includes(url)}
+{#if ![`/`, `/models`, `/tasks/geo-opt`].includes(url)}
   <Toc
     {headingSelector}
-    breakpoint={1600}
+    breakpoint={1350}
     minItems={3}
-    aside_style="min-width: 25em; left: calc(50vw + var(--main-max-width) / 2 + 160px); line-height: 1.8;"
-    open_button_style="right: 2em;"
-    --toc-mobile-bg="rgba(0, 0, 0, 0.3)"
-    --toc-mobile-width="22em"
-    --toc-active-bg="none"
+    asideStyle="max-width: 22em"
+    navStyle="font-size: 7pt"
+    --toc-active-bg="transparent"
+    --toc-active-color="var(--link-color)"
   />
 {/if}
 
 <GitHubCorner href={pkg.repository} />
 
 <Nav
-  routes={[
-    [`/home`, `/`],
-    ...routes.filter((route) => route != `/changelog`),
-    [`/preprint`, pkg.preprint],
-  ]}
-  style="padding: 0 var(--main-padding);"
-/>
+  routes={[`/`, ...routes.filter((route) => route != `/changelog`), [pkg.paper, `Paper`]]}
+  style="margin-block: 1em 0"
+  menu_props={{ style: `gap: 1.5em` }}
+  labels={{ '/': `Home`, '/api': `API` }}
+  link_props={{
+    style: `padding: 0 3pt`,
+  }}
+>
+  <ThemeToggle />
+</Nav>
 
-<main>
+<main {@attach heading_anchors()}>
   {@render children?.()}
 </main>
 
 <Footer />
+
+<style>
+  :global(aside.toc.desktop) {
+    position: fixed;
+    left: calc(50vw + var(--main-max-width) / 2);
+  }
+  :global(aside.toc.mobile > nav) {
+    box-shadow: 0 0 20px var(--shadow);
+    border: 1px solid var(--border);
+    background-color: var(--page-bg);
+    padding: 1ex;
+    right: 1em;
+    position: fixed;
+    bottom: 1em;
+  }
+</style>

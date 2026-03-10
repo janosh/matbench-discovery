@@ -15,6 +15,7 @@ export default [
       ],
       '@stylistic/quotes': [`error`, `backtick`, { avoidEscape: true }],
       'svelte/no-at-html-tags': `off`,
+      'svelte/no-navigation-without-resolve': `off`,
     },
   },
   {
@@ -29,6 +30,10 @@ export default [
     },
   },
   {
-    ignores: [`build/`],
+    files: [`**/*.d.ts`], // TypeScript declaration files use single quotes for import() types
+    rules: {
+      '@stylistic/quotes': [`error`, `single`, { avoidEscape: true }],
+    },
   },
+  { ignores: [`build/`] },
 ]

@@ -28,8 +28,10 @@ from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
 from matbench_discovery.cli import cli_parser
+from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import geo_opt
+from matbench_discovery.remote.fetch import maybe_auto_download_file
 from matbench_discovery.structure import symmetry
 
 if TYPE_CHECKING:
@@ -68,6 +70,29 @@ def analyze_model_symprec(
         )
         return None
 
+    # Convert to JSON lines format if needed
+    jsonl_path = ml_relaxed_structs_path
+    if not ml_relaxed_structs_path.endswith((".jsonl", ".jsonl.gz")):
+        # Try reading as JSON lines first (file might already be in correct format)
+        try:
+            pd.read_json(ml_relaxed_structs_path, lines=True)
+        except ValueError:
+            # Not JSON lines format, convert it
+            jsonl_path = ml_relaxed_structs_path.rsplit(".", 2)[0] + ".jsonl.gz"
+            if not os.path.isfile(jsonl_path):
+                print(f"Converting {ml_relaxed_structs_path} to JSON lines format...")
+                df = pd.read_json(ml_relaxed_structs_path)
+                df.to_json(jsonl_path, orient="records", lines=True, compression="gzip")
+                # Update model yaml with new path
+                yaml_path = f"models/{model.name}/{model.name}.yml"
+                if os.path.isfile(yaml_path):
+                    update_yaml_file(
+                        yaml_path,
+                        "metrics.geo_opt.struct_file",
+                        {"metrics": {"geo_opt": {"struct_file": jsonl_path}}},
+                    )
+            ml_relaxed_structs_path = jsonl_path
+
     # Load model structures
     try:
         df_ml_structs = pd.read_json(ml_relaxed_structs_path, lines=True)
@@ -89,7 +114,7 @@ def analyze_model_symprec(
 
     struct_col = geo_opt_metrics.get("struct_col")
     if struct_col not in df_ml_structs:
-        struct_cols = [col for col in df_ml_structs if Key.structure in col]
+        struct_cols = [col for col in df_ml_structs if Key.structure in str(col)]
         print(
             f"⚠️ {struct_col=} not found in {model.label}-relaxed structures loaded "
             f"from {ml_relaxed_structs_path}. Did you mean one of {struct_cols}?"
@@ -103,8 +128,32 @@ def analyze_model_symprec(
     }
 
     symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
-    geo_opt_filename = model.geo_opt_path.removesuffix(".jsonl.gz")
+    # Remove common file extensions properly
+    geo_opt_filename = model.geo_opt_path
+    for suffix in [".jsonl.gz", ".json.gz", ".jsonl", ".json"]:
+        if geo_opt_filename.endswith(suffix):
+            geo_opt_filename = geo_opt_filename.removesuffix(suffix)
+            break
     geo_opt_csv_path = f"{geo_opt_filename}-{symprec_str}-{moyo_version}.csv.gz"
+
+    # Try to download existing analysis file only if path matches exactly
+    symprec_metrics = geo_opt_metrics.get(symprec_str, {})
+    if isinstance(symprec_metrics, dict):
+        analysis_url = symprec_metrics.get("analysis_file_url")
+        analysis_file = symprec_metrics.get("analysis_file")
+        analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
+
+        if analysis_file_path == geo_opt_csv_path:
+            # Paths match - try to download if file missing
+            if not os.path.isfile(geo_opt_csv_path) and analysis_url:
+                maybe_auto_download_file(
+                    analysis_url, geo_opt_csv_path, label=f"{model.label} {symprec_str}"
+                )
+        elif analysis_file:
+            # Paths differ (moyo version change, etc.) - will recompute
+            print(f"⚠️ {model.label} {symprec_str=} path mismatch, will recompute")
+            print(f"  - Expected: {geo_opt_csv_path}")
+            print(f"  - Found: {analysis_file_path}")
 
     if os.path.isfile(geo_opt_csv_path) and not overwrite:
         print(f"{model.label} already analyzed at {geo_opt_csv_path}")
@@ -139,16 +188,17 @@ def analyze_model_symprec(
     print(f"Completed {model.label} {symprec=} and saved results to {geo_opt_csv_path}")
 
     # Calculate metrics and write to YAML
-    df_metrics = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
+    metrics_dict = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
+    df_metrics = pd.DataFrame([metrics_dict])
     geo_opt.write_metrics_to_yaml(df_metrics, model, symprec, geo_opt_csv_path)
     return df_metrics
 
 
-def main(args: list[str] | None = None) -> int:
+def main(raw_args: list[str] | None = None) -> int:
     """Main function to analyze geometry optimization results.
 
     Args:
-        args: Command line arguments. If None, sys.argv[1:] will be used.
+        raw_args: Command line arguments. If None, sys.argv[1:] will be used.
 
     Returns:
         int: Exit code (0 for success).
@@ -164,7 +214,7 @@ def main(args: list[str] | None = None) -> int:
         default=[1e-2, 1e-5],
         help="Symmetry precision values to analyze.",
     )
-    args, _unknown = cli_parser.parse_known_args(args)
+    args, _unknown = cli_parser.parse_known_args(raw_args)
 
     # set to > 0 to activate debug mode, only that many structures will be analyzed
     debug_mode: Final[int] = args.debug

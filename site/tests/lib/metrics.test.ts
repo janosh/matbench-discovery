@@ -24,12 +24,13 @@ describe(`targets_tooltips`, () => {
     [`EFS_DM`, `Energy with direct forces, stress, and magmoms`],
     [`EF_D`, `Energy with direct forces`],
     [`EFS_G`, `Energy with gradient-based forces and stress`],
+    [`EFSH_G`, `Energy with gradient-based forces, stress, and Hessian`],
   ])(`contains tooltip for %s target type`, (target, expected) => {
     expect(targets_tooltips[target as TargetType]).toBe(expected)
   })
 
   it(`contains all expected tooltip keys`, () => {
-    expect(Object.keys(targets_tooltips).length).toBe(7)
+    expect(Object.keys(targets_tooltips).length).toBe(8)
   })
 })
 
@@ -124,8 +125,9 @@ describe(`format_train_set`, () => {
         dataset.n_materials !== dataset.n_structures,
     )
 
-    if (!dataset_with_both)
-      throw `No dataset with different n_materials and n_structures found`
+    if (!dataset_with_both) {
+      throw new Error(`No dataset with different n_materials and n_structures found`)
+    }
 
     const [key, _dataset] = dataset_with_both
     const mock_model = {
@@ -701,7 +703,12 @@ describe(`assemble_row_data`, () => {
     const chgnet_row = rows.find((row) => row.Model.includes(`chgnet-0.3.0`))
 
     expect(mace_row?.Model).toContain(`mace-mp-0`)
-    expect(mace_row?.[`r<sub>cut</sub>`]).toBe(`<span data-sort-value="6">6 Å</span>`)
+    expect(mace_row?.[`graph_construction_radius`]).toBe(
+      `<span data-sort-value="6">6 Å</span>`,
+    )
+    // n_layers should be present as either a sortable span or 'n/a'
+    const n_layers_val = mace_row?.[`n_layers`] as string
+    expect(n_layers_val).toMatch(/^(<span data-sort-value="\d+">\d+<\/span>|n\/a)$/)
     expect(chgnet_row?.Model).toContain(`chgnet-0.3.0`)
   })
 
@@ -731,12 +738,11 @@ describe(`METADATA_COLS`, () => {
       `Date Added`,
       `Links`,
       `r<sub>cut</sub>`,
-      `Number of Training Materials`,
-      `Number of Training Structures`,
-      `Checkpoint License`,
+      `Training Materials`,
+      `Training Structures`,
+      `Ckpt License`,
       `Code License`,
-      `Missing Predictions`,
-      `Missing %`,
+      `Missing Preds`,
       `Run Time`,
       `Org`,
     ]
@@ -757,7 +763,8 @@ describe(`METADATA_COLS`, () => {
     const r_cut_col = METADATA_COLS.r_cut
     expect(r_cut_col).toBeDefined()
     expect(r_cut_col?.description).toContain(`Graph construction radius`)
-    expect(r_cut_col?.visible).toBe(false)
+    // visible is undefined for r_cut, meaning it's visible by default
+    expect(r_cut_col?.visible).toBeUndefined()
   })
 })
 
@@ -770,7 +777,7 @@ describe(`Model Sorting Logic`, () => {
         model_key: `aaa_model`,
         metrics: {
           discovery: {
-            unique_prototypes: { F1: 0.9, Accuracy: 0.85 },
+            unique_prototypes: { F1: 0.9, Accuracy: 0.85, missing_preds: 0 },
             pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.9 } },
@@ -781,7 +788,7 @@ describe(`Model Sorting Logic`, () => {
         model_key: `mmm_model`,
         metrics: {
           discovery: {
-            unique_prototypes: { F1: 0.7, Accuracy: NaN }, // Test NaN handling
+            unique_prototypes: { F1: 0.7, Accuracy: NaN, missing_preds: 2 }, // NaN Accuracy + non-zero missing_preds
             pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.5 } },
@@ -792,7 +799,7 @@ describe(`Model Sorting Logic`, () => {
         model_key: `zzz_model`,
         metrics: {
           discovery: {
-            unique_prototypes: { F1: 0.5, Accuracy: 0.6 },
+            unique_prototypes: { F1: 0.5, Accuracy: 0.6, missing_preds: 5 },
             pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.2 } },
@@ -891,6 +898,17 @@ describe(`Model Sorting Logic`, () => {
         expect(sorted_models[idx].model_key, metric).toBe(model_key)
       })
     }
+
+    // Add descending-Accuracy test to assert NaN handling is symmetric
+    const sorted_desc = test_models.sort(
+      sort_models(`${Accuracy.path}.${Accuracy.key}`, `desc`),
+    )
+    expect(sorted_desc.map((m) => m.model_key)).toEqual([
+      `aaa_model`,
+      `zzz_model`,
+      `mmm_model`,
+      `missing_model`,
+    ])
   })
 
   it(`sorts models by model_name correctly`, () => {
@@ -922,6 +940,19 @@ describe(`Model Sorting Logic`, () => {
     )
   })
 
+  it(`sorts models by missing predictions (asc)`, () => {
+    const models = create_test_models()
+    const sorted = models.sort(
+      sort_models(`metrics.discovery.unique_prototypes.missing_preds`, `asc`),
+    )
+    expect(sorted.map((m) => m.model_key)).toEqual([
+      `aaa_model`,
+      `mmm_model`,
+      `zzz_model`,
+      `missing_model`,
+    ])
+  })
+
   it(`handles edge cases with missing or extreme metric values`, () => {
     const edge_case_models = create_edge_case_models()
     const regular_models = create_test_models()
@@ -940,12 +971,12 @@ describe(`Model Sorting Logic`, () => {
     const models = Object.entries({ a: 10, b: 0, c: 5, d: 0 }).map(
       ([model_key, run_time]) => ({
         model_key: `model_${model_key}`,
-        'Run Time (h)': run_time,
+        'Run Time': run_time,
       }),
     ) as unknown as ModelData[]
 
     // Test ascending sort (runtime 0 should be last)
-    const sorted_asc = [...models].sort(sort_models(`Run Time (h)`, `asc`))
+    const sorted_asc = [...models].sort(sort_models(`Run Time`, `asc`))
     // Check the non-zero values are sorted correctly first
     expect(sorted_asc.slice(0, 2).map((m) => m.model_key)).toEqual([`model_c`, `model_a`])
     // Check the zero values are at the end (order between them is not guaranteed)
@@ -957,7 +988,7 @@ describe(`Model Sorting Logic`, () => {
     ).toEqual([`model_b`, `model_d`])
 
     // Test descending sort (runtime 0 should be first)
-    const sorted_desc = [...models].sort(sort_models(`Run Time (h)`, `desc`))
+    const sorted_desc = [...models].sort(sort_models(`Run Time`, `desc`))
     // Check the zero values are at the beginning (order between them is not guaranteed)
     expect(
       sorted_desc
@@ -1018,9 +1049,8 @@ describe(`Model Sorting Logic`, () => {
     ] as unknown as ModelData[]
 
     // Expect an error when trying to sort number and string
-    expect(() =>
-      models_with_mixed_types.sort(sort_models(`some_metric`, `desc`)),
-    ).toThrow(/Unexpected type.*encountered sorting by key/)
+    expect(() => models_with_mixed_types.sort(sort_models(`some_metric`, `desc`)))
+      .toThrow(/Unexpected type.*encountered sorting by key/)
   })
 
   it(`handles sorting when both compared values are null`, () => {

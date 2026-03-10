@@ -1,7 +1,14 @@
 <script lang="ts">
+<<<<<<< HEAD
   import { calculate_days_ago, DATASETS, IconList, PtableInset } from '$lib'
   import {
     discovery_task_tooltips,
+=======
+  import { calculate_days_ago, DATASETS, Logo, PtableInset } from '$lib'
+  import {
+    discovery_task_tooltips,
+    model_type_tooltips,
+>>>>>>> upstream/main
     openness_tooltips,
     targets_tooltips,
   } from '$lib/metrics'
@@ -9,37 +16,38 @@
   import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'matterviz'
-  import { ColorBar, format_num, PeriodicTable, TableInset } from 'matterviz'
+  import { ColorBar, format_num, Icon, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { CopyButton, Tooltip } from 'svelte-zoo'
-  import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
+  import { CopyButton } from 'svelte-multiselect'
+  import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import per_elem_each_errors from '../per-element-each-errors.json'
 
-  interface Props {
-    data: { model: ModelData }
-  }
-  let { data }: Props = $props()
+  let { data }: { data: { model: ModelData } } = $props()
 
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
-  let days_added = calculate_days_ago(data.model.date_added ?? ``)
-  let days_published = calculate_days_ago(data.model.date_published ?? ``)
+  let days_added = $derived(calculate_days_ago(data.model.date_added ?? ``))
+  let days_published = $derived(calculate_days_ago(data.model.date_published ?? ``))
 
   export const snapshot = {
     capture: () => ({ color_scale }),
-    restore: (values) => ({ color_scale } = values),
+    restore: (
+      values: { color_scale: D3InterpolateName },
+    ) => ({ color_scale } = values),
   }
 </script>
 
 {#if data.model}
   {@const model = data.model}
-  {@const { missing_preds, missing_percent } =
-    model.metrics?.discovery?.unique_prototypes ?? {}}
+  {@const discovery = model.metrics?.discovery}
+  {@const { missing_preds } =
+    (typeof discovery === `object` ? discovery?.unique_prototypes : undefined) ?? {}}
   <div class="model-detail">
-    <h1 style="font-size: 2.5em;">{model.model_name}</h1>
+    <h1 style="font-size: 2.5em; margin: 0">{model.model_name}</h1>
 
     <section class="meta-info">
-      <div>
+      <span>
+        <Icon icon="Versions" />
         Version: {#if model.repo?.startsWith(`http`)}
           <a
             href="{model.repo}/releases/tag/{model.model_version}"
@@ -51,55 +59,46 @@
         {:else}
           {model.model_version}
         {/if}
-      </div>
+      </span>
 
-      <div>
-        <svg><use href="#icon-calendar"></use></svg>
-        Added: <Tooltip text="{days_added} days ago">
-          {model.date_added}
-        </Tooltip>
-      </div>
+      <span title="{days_added} days ago" {@attach tooltip()}><Icon icon="Calendar" />
+        Added: {model.date_added}
+      </span>
 
-      <div>
-        <svg><use href="#icon-calendar-check"></use></svg>
-        Published: <Tooltip text="{days_published} days ago">
-          {model.date_published}
-        </Tooltip>
-      </div>
+      <span title="{days_published} days ago" {@attach tooltip()}>
+        <Icon icon="CalendarCheck" /> Published: {model.date_published}
+      </span>
 
-      <div>
-        <svg><use href="#icon-neural-network"></use></svg>
-        <Tooltip text={model.model_params.toLocaleString()}>
-          {format_num(model.model_params, `.3~s`)}
-        </Tooltip> parameters
-      </div>
+      <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
+        <Icon icon="NeuralNetwork" /> {format_num(model.model_params, `.3~s`)}
+        parameters
+      </span>
 
       {#if model.n_estimators > 1}
-        <div>
-          <svg><use href="#icon-forest"></use></svg>
-          <span>Ensemble {model.n_estimators} models</span>
-        </div>
+        <span><Icon icon="Forest" /> Ensemble of {model.n_estimators} models</span>
       {/if}
 
       {#if missing_preds != undefined}
-        <div>
-          <svg><use href="#icon-missing-metadata"></use></svg>
-          <span>
-            Missing preds: {format_num(missing_preds, `,.0f`)}
-            {#if missing_preds != 0}
-              <small> ({missing_percent})</small>
-            {/if}
-          </span>
-        </div>
+        <span
+          {@attach tooltip()}
+          title="Out of {format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, {format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances."
+        >
+          <Icon icon="MissingMetadata" />
+          Missing preds: {format_num(missing_preds, `,.0f`)}
+          {#if missing_preds != 0}
+            <small>
+              ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})</small>
+          {/if}
+        </span>
       {/if}
 
       {#if model.pypi}
-        <code style="background-color: transparent;">
+        <code style="padding: 0 4pt; place-content: center">
           pip install {model.pypi.split(`/`).pop()}
           <CopyButton
             content={`pip install ${model.pypi.split(`/`).pop()}`}
             labels={{
-              default: { icon: `Copy`, text: `` },
+              ready: { icon: `Copy`, text: `` },
               success: { icon: `Check`, text: `` },
               error: { icon: `Alert`, text: `` },
             }}
@@ -108,15 +107,15 @@
       {/if}
     </section>
 
-    <section class="links" use:titles_as_tooltips>
-      {#if model.repo.startsWith(`http`)}
+    <section class="links" {@attach tooltip()}>
+      {#if model.repo?.startsWith(`http`)}
         <a
           href={model.repo}
           target="_blank"
           rel="noopener noreferrer"
           title="View source code repository"
         >
-          <svg><use href="#icon-github"></use></svg> Repo
+          <Icon icon="GitHub" /> Repo
         </a>
       {/if}
       {#if model.paper?.startsWith(`http`)}
@@ -126,7 +125,7 @@
           rel="noopener noreferrer"
           title="Read model paper"
         >
-          <svg><use href="#icon-paper"></use></svg> Paper
+          <Icon icon="Paper" /> Paper
         </a>
       {/if}
       {#if model.url?.startsWith(`http`)}
@@ -136,7 +135,7 @@
           rel="noopener noreferrer"
           title="View model documentation"
         >
-          <svg><use href="#icon-docs"></use></svg> Docs
+          <Icon icon="Docs" /> Docs
         </a>
       {/if}
       {#if model.doi?.startsWith(`http`)}
@@ -146,7 +145,7 @@
           rel="noopener noreferrer"
           title="Digital Object Identifier"
         >
-          <svg><use href="#icon-doi"></use></svg> DOI
+          <Icon icon="DOI" /> DOI
         </a>
       {/if}
       <a
@@ -155,7 +154,7 @@
         rel="noopener noreferrer"
         title="Browse model submission files"
       >
-        <svg><use href="#icon-directory"></use></svg> Files
+        <Icon icon="Directory" /> Files
       </a>
       {#if model.pypi?.startsWith(`http`)}
         <a
@@ -164,7 +163,7 @@
           rel="noopener noreferrer"
           title="Python package on PyPI"
         >
-          <svg><use href="#icon-pypi"></use></svg> PyPI
+          <Icon icon="PyPI" /> PyPI
         </a>
       {/if}
       <a
@@ -173,7 +172,7 @@
         rel="noopener noreferrer"
         title="View pull request"
       >
-        <svg><use href="#icon-pull-request"></use></svg> PR
+        <Icon icon="PullRequest" /> PR
       </a>
       {#if model.checkpoint_url?.startsWith(`http`)}
         <a
@@ -182,7 +181,7 @@
           rel="noopener noreferrer"
           title="Download model checkpoint"
         >
-          <svg><use href="#icon-download"></use></svg> Checkpoint
+          <Icon icon="Download" /> Checkpoint
         </a>
       {/if}
       {#if model.metrics}
@@ -190,14 +189,10 @@
         {#if pred_files.length > 0}
           <details
             class="pred-files"
-            use:click_outside={{
-              callback: (node) => {
-                if (node.open) node.open = false
-              },
-            }}
+            {@attach click_outside({ callback: (node) => node.open = false })}
           >
-            <summary title="Download model prediction files">
-              <svg><use href="#icon-graph"></use></svg> Predictions
+            <summary>
+              <Icon icon="Graph" /> Predictions
             </summary>
             <div class="dropdown">
               {#each pred_files as { name, url } (url)}
@@ -212,46 +207,58 @@
     </section>
 
     <!-- check if Plotly undefined needed for model-page.test.ts since vitest with JSDOM doesn't mock some Browser APIs that Plotly needs -->
-    {#if typeof globalThis.Plotly != `undefined`}
-      {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title] (which_energy)}
-        {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
+    {#if typeof (globalThis as { Plotly?: unknown }).Plotly !== `undefined`}
+      {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as
+        [which_energy, title]
+        (which_energy)
+      }
+        {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`)
+          then ParityPlot
+        }
           <!-- negative margin-bottom corrects for display: none plot title -->
-          <h3 style="margin: 1em auto -2em; text-align: center;">
-            DFT vs ML {title}
-          </h3>
+          <h2 style="margin: 1em auto -2em; text-align: center" class="toc-exclude">
+            ML vs DFT {title}
+          </h2>
           <ParityPlot.default height="500" />
         {/await}
       {/each}
     {/if}
 
     {#if model.model_name in per_elem_each_errors}
-      {@const heatmap_values = per_elem_each_errors?.[model.model_name]}
-      <h3 style="margin: 1em auto -1em; text-align: center;">
+      {@const raw_heatmap =
+      per_elem_each_errors[model.model_name as keyof typeof per_elem_each_errors]}
+      {@const heatmap_values = Object.fromEntries(
+      Object.entries(raw_heatmap).filter(([, val]) => val !== null),
+    ) as Record<string, number>}
+      <h3 style="margin: 1em auto -1em; text-align: center" class="toc-exclude">
         Convex hull distance prediction errors projected onto elements
       </h3>
       <PeriodicTable
         {heatmap_values}
         {color_scale}
         bind:active_element
-        tile_props={{ precision: `.2` }}
+        tile_props={{ float_fmt: `.2f` }}
         show_photo={false}
         missing_color="rgba(255,255,255,0.3)"
       >
         {#snippet inset()}
-          <TableInset style="align-content: center;">
-            <PtableInset
-              element={active_element}
-              elem_counts={heatmap_values}
-              show_percent={false}
-              unit="<small style='font-weight: lighter;'>eV / atom</small>"
-              style="height: 2em; visibility: {active_element ? `visible` : `hidden`};"
-            />
+          {@const style = `height: 2em; visibility: ${active_element ? `visible` : `hidden`};`}
+          <TableInset style="align-content: center">
+            {#if active_element}
+              <PtableInset
+                element={active_element}
+                elem_counts={heatmap_values}
+                show_percent={false}
+                unit="<small style='font-weight: lighter;'>eV / atom</small>"
+                {style}
+              />
+            {/if}
             <ColorBar
               title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
               title_side="top"
               {color_scale}
-              range={[0, Math.max(...(Object.values(heatmap_values) as number[]))]}
-              style="width: 80%; margin: 0 2em;"
+              range={[0, Math.max(0, ...(Object.values(heatmap_values) as number[]))]}
+              style="width: 80%; margin: 0 2em"
             />
           </TableInset>
         {/snippet}
@@ -263,18 +270,16 @@
       <ol>
         {#each model.authors as author (author.name)}
           {@const org_logo = model.org_logos?.find(
-            (logo) => logo.name === author.affiliation,
-          )}
+          (logo) => logo.name === author.affiliation,
+        )}
           <li>
             <span>{author.name}</span>
             {#if author.affiliation}<span class="affiliation">
                 &ensp;{author.affiliation}
-                {#if org_logo}
-                  <IconList icons={[org_logo]} />
-                {/if}
+                {#if org_logo}&nbsp;<Logo logo={org_logo} />{/if}
               </span>{/if}
             {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
-                <svg><use href="#icon-mail"></use></svg>
+                &nbsp;<Icon icon="Contact" />
               </a>{/if}
             {#if author.github}<a
                 href={author.github}
@@ -282,7 +287,7 @@
                 rel="noopener noreferrer"
                 aria-label="GitHub"
               >
-                <svg><use href="#icon-github"></use></svg>
+                &nbsp;<Icon icon="GitHub" />
               </a>{/if}
             {#if author.orcid}
               <a
@@ -291,7 +296,7 @@
                 rel="noopener noreferrer"
                 aria-label="ORCID"
               >
-                <svg><use href="#icon-orcid"></use></svg>
+                &nbsp;<Icon icon="Orcid" />
               </a>{/if}
           </li>
         {/each}
@@ -306,15 +311,14 @@
             <li>
               <span>{trainer.name}</span>
               {#if trainer.affiliation}<span class="affiliation"
-                  >({trainer.affiliation})</span
-                >{/if}
+                >({trainer.affiliation})</span>{/if}
               {#if trainer.orcid}<a
                   href={trainer.orcid}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="ORCID"
                 >
-                  <svg><use href="#icon-orcid"></use></svg>
+                  <Icon icon="Orcid" />
                 </a>{/if}
               {#if trainer.github}<a
                   href={trainer.github}
@@ -322,7 +326,7 @@
                   rel="noopener noreferrer"
                   aria-label="GitHub"
                 >
-                  <svg><use href="#icon-github"></use></svg>
+                  <Icon icon="GitHub" />
                 </a>{/if}
             </li>
           {/each}
@@ -333,10 +337,38 @@
     <section class="model-info">
       <h2>Model Info</h2>
       <ul>
+<<<<<<< HEAD
         {#each [[`Model Version`, model.model_version], [`Model Type`, model.model_type], [`Targets`, model.targets, targets_tooltips[model.targets]], [`Openness`, model.openness, openness_tooltips[model.openness]], [`Train Task`, model.train_task, discovery_task_tooltips[model.train_task]], [`Test Task`, model.test_task, discovery_task_tooltips[model.test_task]], [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`]] as [key, value, title = null] (key)}
           <li {title} use:titles_as_tooltips>
+=======
+        {#each [
+          [`Model Version`, model.model_version],
+          [`Model Type`, model.model_type, model_type_tooltips[model.model_type]],
+          [`Targets`, model.targets, targets_tooltips[model.targets]],
+          [`Openness`, model.openness, openness_tooltips[model.openness]],
+          [
+            `Train Task`,
+            model.train_task,
+            discovery_task_tooltips[model.train_task],
+          ],
+          [
+            `Test Task`,
+            model.test_task,
+            discovery_task_tooltips[model.test_task],
+          ],
+          [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`],
+        ] as
+          [key, value, title = null]
+          (key)
+        }
+          <li {title} {@attach tooltip()}>
+>>>>>>> upstream/main
             {key}
-            <strong>{value}</strong>
+            {#if key === `Targets`}
+              <strong>{@html value.replace(/_(.)/g, `<sub>$1</sub>`)}</strong>
+            {:else}
+              <strong>{value}</strong>
+            {/if}
           </li>
         {/each}
       </ul>
@@ -350,23 +382,31 @@
           {@const { n_structures, name, slug, n_materials } = dataset}
           <p>
             <a href="/data/{slug}">{name}</a>:
-            <Tooltip text={n_structures.toLocaleString()}>
+            <span title={n_structures.toLocaleString()} {@attach tooltip()}>
               <strong>{format_num(n_structures)}</strong>
-            </Tooltip>
+            </span>
             structures
             {#if typeof n_materials == `number`}
-              from <Tooltip text={n_materials.toLocaleString()}>
+              from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
                 <strong>{format_num(n_materials)}</strong>
-              </Tooltip> materials
+              </span> materials
             {/if}
           </p>
         {/each}
       </section>
     {/if}
 
-    {#if model.notes?.html}
+    {#if model.notes?.html && typeof model.notes.html === `object`}
       <section class="notes">
-        {#each Object.entries(model.notes.html) as [key, note] (key)}
+        {#each Object.entries(
+        model.notes.html as Record<
+          string,
+          string | string[] | Record<string, unknown>
+        >,
+      ) as
+          [key, note]
+          (key)
+        }
           <h2>{key}</h2>
           {#if typeof note === `string`}
             <p>{@html note}</p>
@@ -376,10 +416,10 @@
                 <li>{@html val}</li>
               {/each}
             </ol>
-          {:else}
+          {:else if note && typeof note === `object`}
             <ul>
-              {#each Object.entries(note) as [key, val] (key)}
-                <li><strong>{key}:</strong> {val}</li>
+              {#each Object.entries(note) as [sub_key, val] (sub_key)}
+                <li><strong>{sub_key}:</strong> {val}</li>
               {/each}
             </ul>
           {/if}
@@ -403,9 +443,9 @@
         <h2>Dependencies</h2>
         <ul>
           {#each Object.entries(model.requirements) as [pkg, version] (pkg)}
-            {@const href = version.startsWith(`http`)
-              ? version
-              : `https://pypi.org/project/${pkg}/${version}`}
+            {@const href = version?.startsWith(`http`)
+          ? version
+          : `https://pypi.org/project/${pkg}/${version}`}
             <li>
               {pkg}
               <a {href} target="_blank" rel="noopener noreferrer">{version}</a>
@@ -420,15 +460,11 @@
 {/if}
 
 <style>
-  section {
-    margin-bottom: 1em;
-  }
   h2 {
-    margin: 1em auto 0;
-    padding: 0;
+    margin: 2ex auto 0;
   }
-  h3 {
-    margin: 1em 0;
+  section {
+    text-wrap: balance;
   }
   section:is(.deps, .model-info) ul {
     display: flex;
@@ -437,7 +473,7 @@
     padding: 0;
   }
   section:is(.deps, .model-info) ul li {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--card-bg);
     padding: 2pt 6pt;
     border-radius: 3pt;
     text-align: center;
@@ -449,23 +485,20 @@
     display: block;
     font-weight: bold;
   }
-  .meta-info,
-  .links {
+  .meta-info, .links {
     display: flex;
     flex-wrap: wrap;
-    gap: 3ex;
+    gap: 2ex;
     place-content: center;
     margin: 2em auto;
   }
   .links :is(a, summary) {
     display: inline-flex;
-    align-items: center;
+    place-items: center;
     gap: 5px;
-    padding: 5px 10px;
-    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0 5pt;
+    background-color: var(--card-bg);
     border-radius: 5px;
-    text-decoration: none;
-    color: lightgray;
   }
   .links details {
     position: relative;
@@ -473,19 +506,15 @@
   }
   .links .dropdown {
     position: absolute;
-    margin-top: 5px;
-    background-color: var(--light-bg);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 5px;
     z-index: 3;
     min-width: max-content;
+    box-shadow: 0 0 10px var(--shadow);
   }
   .links .dropdown a {
     display: block;
-    background: none;
-  }
-  .links .dropdown a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
   }
   li {
     margin: 1ex 0;

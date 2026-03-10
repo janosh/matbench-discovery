@@ -1,18 +1,23 @@
 """Functions to analyze symmetry of sets of structures."""
 
+from collections.abc import Mapping
+from typing import Any
+
+import ase.atoms
 import pandas as pd
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 from pymatviz.enums import Key
+from pymatviz.typing import AnyStructure
 from tqdm import tqdm
 
 from matbench_discovery.enums import MbdKey
 
 
 def get_sym_info_from_structs(
-    structures: dict[str, Structure],
+    structures: Mapping[str, AnyStructure | Structure],
     *,
-    pbar: bool | dict[str, str | float | bool] = True,
+    pbar: bool | dict[str, Any] = True,
     symprec: float = 1e-2,
     angle_tolerance: float | None = None,
 ) -> pd.DataFrame:
@@ -22,8 +27,8 @@ def get_sym_info_from_structs(
     Args:
         structures (dict[str, Structure | Atoms]): Map of material IDs to pymatgen
             Structures or ASE Atoms objects
-        pbar (bool | dict[str, str | float | bool], optional): Whether to show progress
-            bar. Defaults to True.
+        pbar (bool | dict[str, Any], optional): Whether to show progress bar. Defaults
+            to True.
         symprec (float, optional): Symmetry precision of moyopy. Defaults to 1e-2.
         angle_tolerance (float, optional): Angle tolerance of moyopy (in radians unlike
             spglib which uses degrees!). Defaults to None.
@@ -34,7 +39,7 @@ def get_sym_info_from_structs(
     import moyopy
     from moyopy.interface import MoyoAdapter
 
-    results: dict[str, dict[str, str | int | list[str]]] = {}
+    results: dict[str, dict[str, str | int | list[str] | float | None]] = {}
     iterator = structures.items()
     if pbar:
         pbar_kwargs = pbar if isinstance(pbar, dict) else {}
@@ -42,6 +47,10 @@ def get_sym_info_from_structs(
         iterator = tqdm(iterator, total=len(structures), **pbar_kwargs)
 
     for struct_key, struct in iterator:
+        if not isinstance(struct, (Structure, ase.atoms.Atoms)):
+            raise TypeError(
+                f"Expected Structure or Atoms for {struct_key!r}, got {type(struct)}"
+            )
         moyo_cell = MoyoAdapter.from_py_obj(struct)
 
         sym_data = moyopy.MoyoDataset(
@@ -77,7 +86,7 @@ def pred_vs_ref_struct_symmetry(
     pred_structs: dict[str, Structure],
     ref_structs: dict[str, Structure],
     *,
-    pbar: bool | dict[str, str | float | bool] = True,
+    pbar: bool | dict[str, Any] = True,
 ) -> pd.DataFrame:
     """Get RMSD and compare symmetry between ML and DFT reference structures.
 
@@ -91,8 +100,8 @@ def pred_vs_ref_struct_symmetry(
             analyze_symmetry.
         pred_structs (dict[str, Structure]): Map material IDs to ML-relaxed structures
         ref_structs (dict[str, Structure]): Map material IDs to reference structures
-        pbar (bool | dict[str, str | float | bool], optional): Whether to show progress
-            bar. Defaults to True.
+        pbar (bool | dict[str, Any], optional): Whether to show progress bar. Defaults
+            to True.
 
     Returns:
         pd.DataFrame: with added columns for symmetry differences
