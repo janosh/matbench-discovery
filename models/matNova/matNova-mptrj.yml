@@ -1,0 +1,153 @@
+model_name: matNova-mptrj
+model_key: matNova-mptrj
+model_version: v2026.03.10
+date_added: '2026-03-12'
+date_published: '2026-03-12'
+authors:
+  - name: Ling Shi
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+    email: shiling@nbicc.com
+  - name: Chunyan Chen
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+  - name: Chen Chen
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+  - name: Yi Zhao
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+  - name: Jiahui Chen
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+  - name: Huichen Xiao
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+  - name: Yenjie Fan
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+  - name: Daojin Lin
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+  - name: Jun Xu
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+    
+trained_by:
+  - name: Ling Shi
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+    orcid: https://orcid.org/0000-0002-7185-5044
+    github: https://github.com/zzz-sl/
+
+repo: https://github.com/zzz-sl/matNova
+doi: https://github.com/zzz-sl/matNova
+paper: https://github.com/zzz-sl/matNova
+
+
+openness: OSOD
+trained_for_benchmark: false
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 32867458
+n_estimators: 1
+
+
+requirements:
+  torch: 2.4.0
+  ase: 3.27.0
+  pymatgen: 2025.10.27
+  e3nn: 0.6.0
+
+
+training_set: [MPtrj]
+training_cost: missing
+
+hyperparams:
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  graph_construction_radius: 6.0 
+  max_neighbors: .inf
+notes:
+  Description: |
+    MatNova is a foundation model designed for high-precision simulation of material microscopic characterization and particle interactions. 
+
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/matNova/2026-03-09-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/62689957
+  geo_opt:
+    pred_file: models/matNova/2026-03-11-matnova-wbm-geo-opt.jsonl.gz
+    pred_file_url: https://figshare.com/files/62689990
+    struct_col: pred_structure
+    symprec=1e-5:
+      rmsd: 0.0826
+      n_sym_ops_mae: 3.3315
+      symmetry_decrease: 0.4333
+      symmetry_match: 0.3892
+      symmetry_increase: 0.1224
+      n_structures: 256963
+      analysis_file: models/matNova/models_matNova_matNova-mptrj-2026-03-12-wbm-geo-opt-symprec=1e-5-moyo=0.5.0.csv.gz
+      analysis_file_url: https://figshare.com/files/62690050
+    symprec=1e-2:
+      rmsd: 0.0826
+      n_sym_ops_mae: 3.0700
+      symmetry_decrease: 0.3119
+      symmetry_match: 0.5885
+      symmetry_increase: 0.0744
+      n_structures: 256963
+      analysis_file: models/matNova/models_matNova_matNova-mptrj-2026-03-12-wbm-geo-opt-symprec=1e-2-moyo=0.5.0.csv.gz
+      analysis_file_url: https://figshare.com/files/62690044
+  discovery:
+    pred_file: models/matNova/2026-03-08-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/62690089
+    pred_col: pred_e_form_per_atom_matNova
+    full_test_set:
+      F1: 0.790
+      DAF: 4.595
+      Precision: 0.766
+      Recall: 0.817
+      Accuracy: 0.928
+      TPR: 0.817
+      FPR: 0.049
+      FNR: 0.183
+      TNR: 0.950
+      TP: 34981.0
+      FP: 10698.0
+      TN: 203440.0
+      FN: 7844.0
+      MAE: 0.037
+      RMSE: 0.081
+      R2: 0.799
+      missing_preds: 2
+    unique_prototypes:
+      F1: 0.802
+      DAF: 5.064
+      Precision: 0.774
+      Recall: 0.831
+      Accuracy: 0.937
+      TPR: 0.831
+      FPR: 0.044
+      TNR: 0.956
+      FNR: 0.168
+      TP: 27379.0
+      FP: 7989.0
+      TN: 174557.0
+      FN: 5563.0
+      MAE: 0.038
+      RMSE: 0.081
+      R2: 0.807
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.977
+      DAF: 6.250
+      Precision: 0.955
+      Recall: 1.0
+      Accuracy: 0.955
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 9555.0
+      FP: 445.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.032
+      RMSE: 0.087
+      R2: 0.839
+      missing_preds: 0

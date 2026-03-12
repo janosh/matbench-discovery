@@ -383,6 +383,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # ESNet model
     esnet = auto(), "esnet/esnet.yml"
 
+    # MatNova
+    matNova_mptrj = auto(), "matNova/matNova-mptrj.yml"
+
 <<<<<<< HEAD
 =======
     # Nequix model
