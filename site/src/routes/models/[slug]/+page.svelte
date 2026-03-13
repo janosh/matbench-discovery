@@ -1,14 +1,8 @@
 <script lang="ts">
-<<<<<<< HEAD
-  import { calculate_days_ago, DATASETS, IconList, PtableInset } from '$lib'
-  import {
-    discovery_task_tooltips,
-=======
   import { calculate_days_ago, DATASETS, Logo, PtableInset } from '$lib'
   import {
     discovery_task_tooltips,
     model_type_tooltips,
->>>>>>> upstream/main
     openness_tooltips,
     targets_tooltips,
   } from '$lib/metrics'
@@ -337,10 +331,6 @@
     <section class="model-info">
       <h2>Model Info</h2>
       <ul>
-<<<<<<< HEAD
-        {#each [[`Model Version`, model.model_version], [`Model Type`, model.model_type], [`Targets`, model.targets, targets_tooltips[model.targets]], [`Openness`, model.openness, openness_tooltips[model.openness]], [`Train Task`, model.train_task, discovery_task_tooltips[model.train_task]], [`Test Task`, model.test_task, discovery_task_tooltips[model.test_task]], [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`]] as [key, value, title = null] (key)}
-          <li {title} use:titles_as_tooltips>
-=======
         {#each [
           [`Model Version`, model.model_version],
           [`Model Type`, model.model_type, model_type_tooltips[model.model_type]],
@@ -362,7 +352,6 @@
           (key)
         }
           <li {title} {@attach tooltip()}>
->>>>>>> upstream/main
             {key}
             {#if key === `Targets`}
               <strong>{@html value.replace(/_(.)/g, `<sub>$1</sub>`)}</strong>
