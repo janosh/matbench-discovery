@@ -55,13 +55,8 @@ module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 
-<<<<<<< HEAD
-with open("models/esnet/config.json") as f:
-    config = json.load(f)
-=======
 with open("models/esnet/config.json", encoding="utf-8") as file:
     config = json.load(file)
->>>>>>> upstream/main
 
 esnet_config = iComformerConfig(**config["model"])
 
@@ -91,11 +86,7 @@ data_path = {
     Task.IS2RE: DataFiles.wbm_initial_structures.path,
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
 }[task_type]
-<<<<<<< HEAD
-input_col = {Task.IS2RE: "initial_structure", Task.RS2RE: Key.final_struct}[task_type]
-=======
 input_col = {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[task_type]
->>>>>>> upstream/main
 
 df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 
@@ -132,13 +123,8 @@ for structure in df_in[input_col]:
 
 df_wbm["atoms"] = atoms
 
-<<<<<<< HEAD
-with open("/home/sl/project/ESNet/graphs/RotatE_128_64.pkl", "rb") as f:
-    ele2emb = pk.load(f)  # noqa: S301
-=======
 with open("/home/sl/project/ESNet/graphs/RotatE_128_64.pkl", mode="rb") as file:
     ele2emb = pk.load(file)  # noqa: S301
->>>>>>> upstream/main
 
 graphs = []
 for structure in df_in[input_col]:
