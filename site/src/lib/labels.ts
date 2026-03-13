@@ -495,12 +495,8 @@ export const org_logos = {
   'Google DeepMind': `/logos/deepmind.svg`,
   'ICAMS, Ruhr University Bochum': `/logos/icams-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
-<<<<<<< HEAD
-  'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/ict-cas-beijing.svg`,
-=======
   'Institute of Computing Technology, Chinese Academy of Science, Beijing':
     `/logos/ict-cas-beijing.svg`,
->>>>>>> upstream/main
   'Massachusetts Institute of Technology': `/logos/mit.svg`,
   'Microsoft Research': `icon:LogoMicrosoft`,
   'MIR Group, Harvard University': `/logos/mir-group-harvard.svg`,
