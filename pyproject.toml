@@ -159,9 +159,6 @@ extend-ignore-re = [
   "`[0-9a-f]{7,40}`", # Git commit SHAs in backticks
   ".idea/",
 ]
-extend-ignore-words = [
-    "certifi",
-]
 extend-ignore-words-re = [
   "\\b(Skelton|Ono|Noe|Vaid)\\b", # Names
   "\\b[Bb]a\\b",                  # Chemical element: Barium
