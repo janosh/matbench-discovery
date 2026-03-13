@@ -96,7 +96,7 @@ class MBDRunner:
         self.relax_results: dict[str, Any] = {}
 
         save_dir = (
-            Path(self.model_dir) / self.save_name / f"{self.identifier}_{self.seed}"
+            Path(self.model_dir) / f"{self.identifier}_{self.seed}"
         )
         (save_dir).mkdir(parents=True, exist_ok=True)
         self.save_dir = save_dir
@@ -196,7 +196,7 @@ class MBDRunner:
 
                 if filter_cls is not None:
                     optimizer = optim_cls(
-                        filter_cls(atoms), logfile="/dev/null", **optimizer_params
+                        filter_cls(atoms), logfile="/dev/null", 
                     )
                 else:
                     optimizer = optim_cls(
@@ -226,8 +226,8 @@ class MBDRunner:
         for file_path in tqdm(file_paths, desc="Loading prediction files"):
             if file_path in dfs:
                 continue
-            dfs[file_path] = pd.read_json(file_path, lines=True)
-                            .set_index(Key.mat_id.value)
+            read_file = pd.read_json(file_path, lines=True)
+            dfs[file_path] = read_file.set_index(Key.mat_id.value)
 
         df_fairchem = pd.concat(dfs.values()).round(4)
 
@@ -243,14 +243,17 @@ class MBDRunner:
         df_wbm_cse[Key.computed_structure_entry] = [
             ComputedStructureEntry.from_dict(dct)
             for dct in tqdm(
-                df_wbm_cse[Key.computed_structure_entry], desc="Creating pmg CSEs"
+                df_wbm_cse[Key.computed_structure_entry], 
+                desc="Creating pmg CSEs"
             )
         ]
 
-        # corrections applied below are structure-dependent (for oxides and sulfides)
+
         cse: ComputedStructureEntry
         for row in tqdm(
-            df_fairchem.itertuples(), total=len(df_fairchem), desc="ML energies to CSEs"
+            df_fairchem.itertuples(), 
+            total=len(df_fairchem), 
+            desc="ML energies to CSEs"
         ):
             *_, mat_id, struct_dict, pred_energy= row
             mlip_struct = Structure.from_dict(struct_dict)
@@ -291,9 +294,9 @@ class MBDRunner:
         df_wbm[[*df_fairchem]] = df_fairchem
 
         # %%
-        bad_mask = abs(df_wbm["pred_e_form_per_atom"] - df_wbm[MbdKey.e_form_dft]) > 5
+        temp_mask = abs(df_wbm["pred_e_form_per_atom"] - df_wbm[MbdKey.e_form_dft])
+        bad_mask = temp_mask > 5
         n_preds = len(df_wbm["pred_e_form_per_atom"].dropna())
-        print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
         df_fairchem = df_fairchem.round(4)
 
         df_fairchem.select_dtypes("number").to_csv(
