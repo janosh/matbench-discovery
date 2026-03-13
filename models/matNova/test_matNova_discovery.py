@@ -1,30 +1,26 @@
 import random
-import swanlab
-import numpy as np
-import pandas as pd
 from importlib.metadata import version
 from pathlib import Path
-from tqdm import tqdm, trange
-
+from typing import Any, Literal
+import numpy as np
+import pandas as pd
+import swanlab
 import torch
-from torch.utils.data import Subset
-from typing import TYPE_CHECKING, Any, Literal
 from ase import Atoms
 from ase.filters import FrechetCellFilter, UnitCellFilter
 from ase.optimize import BFGS, FIRE, LBFGS
-from pymatviz.enums import Key
-from pymatgen.io.ase import AseAtomsAdaptor
+from matnova.core.common.relaxation.ase_utils import OCPCalculator
+from matnova.core.datasets import AseDBDataset
 from pymatgen.core import Structure
-from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
-
+from pymatgen.entries.computed_entries import ComputedStructureEntry
+from pymatgen.io.ase import AseAtomsAdaptor
+from pymatviz.enums import Key
+from torch.utils.data import Subset
+from tqdm import tqdm, trange
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
-
-
-from matnova.core.datasets import AseDBDataset
-from matnova.core.common.relaxation.ase_utils import OCPCalculator
 
 def as_dict_handler(obj: Any) -> dict[str, Any] | None:
     try:
@@ -32,24 +28,17 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
     except AttributeError:
         return None
 
-
 class AseDBSubset(Subset):
     def get_atoms(self, idx: int) -> Atoms:
         return self.dataset.get_atoms(self.indices[idx])
     
-
 def seed_everywhere(seed: int) -> None:
     random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-
 ROOT = "/mnt/public/LiuLiu/fairchem/dataset/wbm"
-
-DATABASE_PATH = {
-    "is2re": f"{ROOT}/WBM_IS2RE.lmdb"
-}
-
+DATABASE_PATH = {"is2re": f"{ROOT}/WBM_IS2RE.lmdb"}
 FILTER_CLS = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
 OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
@@ -95,9 +84,7 @@ class MBDRunner:
     def run(self, job_number: int = 0) -> None:
         self.relax_results: dict[str, Any] = {}
 
-        save_dir = (
-            Path(self.model_dir) / f"{self.identifier}_{self.seed}"
-        )
+        save_dir = Path(self.model_dir) / f"{self.identifier}_{self.seed}"
         (save_dir).mkdir(parents=True, exist_ok=True)
         self.save_dir = save_dir
 
@@ -113,16 +100,15 @@ class MBDRunner:
 
 
         if self.num_jobs > 1:
-            indices = np.array_split(range(min(100, len(dataset))), 
-                                     self.num_jobs)[job_number]
+            indices = np.array_split(range(min(100, len(dataset))), self.num_jobs)[
+                job_number
+           ]
             dataset = AseDBSubset(dataset, indices)
 
         optimizer_params = self.optimizer_params or {}
         run_params = {
             "data_path": data_path,
-            "versions": {
-                dep: version(dep) for dep in ("numpy", "torch")
-            },
+            "versions": {dep: version(dep) for dep in ("numpy", "torch")},
             Key.task_type: self.task_type,
             "max_steps": self.max_steps,
             "force_max": self.force_max,
@@ -180,8 +166,6 @@ class MBDRunner:
         filter_cls = FILTER_CLS.get(cell_filter)
         optim_cls = OPTIM_CLS[optimizer_cls]  # 'ase.optimize.fire.FIRE'
 
-        # import pdb; pdb.set_trace()
-
         skip_num = 0
         for i in trange(len(dataset), desc="Relaxing with ASE"):
             
@@ -196,7 +180,8 @@ class MBDRunner:
 
                 if filter_cls is not None:
                     optimizer = optim_cls(
-                        filter_cls(atoms), logfile="/dev/null", 
+                        filter_cls(atoms), 
+                        logfile="/dev/null", 
                     )
                 else:
                     optimizer = optim_cls(
@@ -216,9 +201,6 @@ class MBDRunner:
                 skip_num += 1
                 print(f"Failed to relax {material_id}: {e}")
                 continue
-                
-        print(f"Skipping {skip_num} materials.")
-
 
     def join_prediction(self, file_paths: list[Path] | None = None) -> None:
         dfs: dict[str, pd.DataFrame] = {}
@@ -230,7 +212,6 @@ class MBDRunner:
             dfs[file_path] = read_file.set_index(Key.mat_id.value)
 
         df_fairchem = pd.concat(dfs.values()).round(4)
-
         self._save_relaxed_structures_to_csv(df_fairchem)
         
         # %%
@@ -238,24 +219,18 @@ class MBDRunner:
             DataFiles.wbm_computed_structure_entries.path, lines=True
         ).set_index(Key.mat_id)
 
-        df_wbm_cse = df_wbm_cse.head(100)
-
         df_wbm_cse[Key.computed_structure_entry] = [
             ComputedStructureEntry.from_dict(dct)
             for dct in tqdm(
-                df_wbm_cse[Key.computed_structure_entry], 
-                desc="Creating pmg CSEs"
+                df_wbm_cse[Key.computed_structure_entry], desc="Creating pmg CSEs"
             )
         ]
 
-
         cse: ComputedStructureEntry
         for row in tqdm(
-            df_fairchem.itertuples(), 
-            total=len(df_fairchem), 
-            desc="ML energies to CSEs"
+            df_fairchem.itertuples(), total=len(df_fairchem), desc="ML energies to CSEs"
         ):
-            *_, mat_id, struct_dict, pred_energy= row
+            *_, mat_id, struct_dict, pred_energy = row
             mlip_struct = Structure.from_dict(struct_dict)
             cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
             cse._energy = pred_energy  # noqa: SLF001
@@ -264,10 +239,9 @@ class MBDRunner:
 
         entries_col = df_fairchem[Key.computed_structure_entry]
 
-        mask = (
-            entries_col.notna()
-            & entries_col.apply(lambda x: isinstance(x, ComputedStructureEntry))
-        )
+         mask = entries_col.notna() & entries_col.apply(
+            lambda x: isinstance(x, ComputedStructureEntry)
+         )
 
         df_fairchem = df_fairchem[mask]
 
@@ -317,22 +291,22 @@ class MBDRunner:
         )
 
     def _save_relaxed_structures_to_csv(self, df_out: pd.DataFrame) -> None:
-            try:
-                csv_data = []
-                for material_id, row in df_out.iterrows():
-                    if 'pred_structure' in row and 'pred_energy' in row:
-                        energy = row['pred_energy']                        
-                        structure_info = {
-                            'material_id': material_id,
-                            'pred_energy': energy,
-                        }
-                        
-                        csv_data.append(structure_info)
-                
-                if csv_data:
-                    df_csv = pd.DataFrame(csv_data)
-                    csv_filename = f"{self.identifier}_relaxed_structures.csv"
-                    df_csv.to_csv(csv_filename, index=False)
-                    
-            except Exception as e:
-                print(f"error: {e}")
+        try:
+            csv_data = []
+            for material_id, row in df_out.iterrows():
+                if "pred_structure" in row and "pred_energy" in row:
+                    energy = row["pred_energy"]
+                    structure_info = {
+                        "material_id": material_id,
+                        "pred_energy": energy,
+                    }
+
+                    csv_data.append(structure_info)
+
+            if csv_data:
+                df_csv = pd.DataFrame(csv_data)
+                csv_filename = f"{self.identifier}_relaxed_structures.csv"
+                df_csv.to_csv(csv_filename, index=False)
+
+        except Exception as e:
+            print(f"error: {e}")
