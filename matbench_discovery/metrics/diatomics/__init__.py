@@ -233,7 +233,7 @@ def calc_diatomic_metrics(
 
 def write_metrics_to_yaml(
     model: Model, metrics: dict[str, dict[str, float]]
-) -> dict[str, str | float | None]:
+) -> dict[str, str | float]:
     """Write diatomic metrics to model YAML file.
 
     Args:
