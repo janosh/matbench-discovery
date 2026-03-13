@@ -296,7 +296,6 @@ class MBDRunner:
         # %%
         temp_mask = abs(df_wbm["pred_e_form_per_atom"] - df_wbm[MbdKey.e_form_dft])
         bad_mask = temp_mask > 5
-        n_preds = len(df_wbm["pred_e_form_per_atom"].dropna())
         df_fairchem = df_fairchem.round(4)
 
         df_fairchem.select_dtypes("number").to_csv(
