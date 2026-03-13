@@ -226,7 +226,8 @@ class MBDRunner:
         for file_path in tqdm(file_paths, desc="Loading prediction files"):
             if file_path in dfs:
                 continue
-            dfs[file_path] = pd.read_json(file_path, lines=True).set_index(Key.mat_id.value)
+            dfs[file_path] = pd.read_json(file_path, lines=True)
+                            .set_index(Key.mat_id.value)
 
         df_fairchem = pd.concat(dfs.values()).round(4)
 
@@ -328,7 +329,7 @@ class MBDRunner:
                 
                 if csv_data:
                     df_csv = pd.DataFrame(csv_data)
-                    csv_filename = self.save_dir / f"{self.identifier}_relaxed_structures.csv"
+                    csv_filename = f"{self.identifier}_relaxed_structures.csv"
                     df_csv.to_csv(csv_filename, index=False)
                     
             except Exception as e:
