@@ -1,13 +1,10 @@
 model_name: ESNet
 model_key: esnet
 model_version: 2025.03.14
-<<<<<<< HEAD
 date_added: "2025-06-20"
 date_published: "2025-06-20"
-=======
 date_added: '2025-06-20'
 date_published: '2025-06-20'
->>>>>>> upstream/main
 authors:
   - name: Chao Huang
     affiliation: Institute of Computing Technology, Chinese Academy of Science, Beijing
@@ -69,13 +66,8 @@ hyperparams:
   graph_construction_radius: 8.0
   max_neighbors: 25
 
-<<<<<<< HEAD
-notes: # notes can have any key, be multiline and support markdown.
-  description: |
-=======
 notes:
   Description: |
->>>>>>> upstream/main
     ESNet is a graph neural network model designed for predicting the energy.
     The model builds on existing models based on crystal structure graph, to provide an in-depth analysis of how material elemental composition and crystal structure work together to influence material properties.
 
@@ -104,10 +96,6 @@ metrics:
       RMSE: 0.193 # eV/atom
       R2: -0.148 # dimensionless
       missing_preds: 1 # count
-<<<<<<< HEAD
-      missing_percent: 0.00% # fraction
-=======
->>>>>>> upstream/main
     most_stable_10k:
       F1: 0.879 # fraction
       DAF: 5.132 # dimensionless
@@ -126,10 +114,6 @@ metrics:
       RMSE: 0.113 # eV/atom
       R2: 0.754 # dimensionless
       missing_preds: 0 # count
-<<<<<<< HEAD
-      missing_percent: 0.00% # fraction
-=======
->>>>>>> upstream/main
     unique_prototypes:
       F1: 0.572 # fraction
       DAF: 3.498 # dimensionless
@@ -148,7 +132,3 @@ metrics:
       RMSE: 0.194 # eV/atom
       R2: -0.114 # dimensionless
       missing_preds: 0 # count
-<<<<<<< HEAD
-      missing_percent: 0.00% # fraction
-=======
->>>>>>> upstream/main
