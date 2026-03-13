@@ -416,12 +416,12 @@ def test_smoothness_scale_invariance(
 
     # Test scaling behavior
     scale = 1.1
-    metric_name = metric_func.__name__
+    metric_name: str = metric_func.__name__
     curv_scale = {
         "calc_second_deriv_smoothness": 1,
         "calc_total_variation_smoothness": 2,
         "calc_curvature_smoothness": 1.389141,
-    }[metric_name]
+    }.get(metric_name, 1)
     x_scaled = scale * x
     y_scaled = scale**2 * y  # maintain quadratic relationship
 
