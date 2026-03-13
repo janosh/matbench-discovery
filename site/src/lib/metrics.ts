@@ -1,14 +1,4 @@
 import { DATASETS, format_date, MODELS } from '$lib'
-<<<<<<< HEAD
-import type { ModelMetadata, TargetType } from '$lib/model-schema'
-import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
-import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { max, min } from 'd3-array'
-import { scaleLog, scaleSequential } from 'd3-scale'
-import * as d3sc from 'd3-scale-chromatic'
-import { choose_bw_for_contrast, format_num } from 'matterviz/labels'
-=======
->>>>>>> upstream/main
 import {
   ALL_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
@@ -36,8 +26,6 @@ export const targets_tooltips: { [key in TargetType]: string } = {
   EFS_DM: `Energy with direct forces, stress, and magmoms`,
 } as const
 
-<<<<<<< HEAD
-=======
 export const model_type_tooltips: { [key in ModelType]: string } = {
   GNN: `Graph Neural Network`,
   UIP: `Universal Interatomic Potential`,
@@ -47,7 +35,6 @@ export const model_type_tooltips: { [key in ModelType]: string } = {
   RF: `Random Forest`,
 } as const
 
->>>>>>> upstream/main
 export const openness_tooltips: { [key in ModelMetadata[`openness`]]: string } = {
   OSOD: `Open source, open data`,
   OSCD: `Open source, closed data`,
