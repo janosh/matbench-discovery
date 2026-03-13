@@ -22,27 +22,22 @@ authors:
   - name: Daojin Lin
     affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
   - name: Jun Xu
-    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
-    
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China 
 trained_by:
   - name: Ling Shi
     affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
     orcid: https://orcid.org/0000-0002-7185-5044
     github: https://github.com/zzz-sl/
-
 repo: https://github.com/zzz-sl/matNova
 doi: https://github.com/zzz-sl/matNova
 paper: https://github.com/zzz-sl/matNova
 pr_url: https://github.com/janosh/matbench-discovery/pull/318
 checkpoint_url: https://github.com/zzz-sl/matNova
-
 license:
   code: MIT
   code_url: https://github.com/zzz-sl/matNova
   checkpoint: MIT
   checkpoint_url: https://github.com/zzz-sl/matNova
-
-
 openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFS
@@ -51,18 +46,13 @@ targets: EFS_G
 model_type: UIP
 model_params: 32867458
 n_estimators: 1
-
-
 requirements:
   torch: 2.4.0
   ase: 3.27.0
   pymatgen: 2025.10.27
   e3nn: 0.6.0
-
-
 training_set: [MPtrj]
 training_cost: missing
-
 hyperparams:
   max_force: 0.02
   max_steps: 500
@@ -73,7 +63,6 @@ hyperparams:
 notes:
   Description: |
     MatNova is a foundation model designed for high-precision simulation of material microscopic characterization and particle interactions. 
-
 metrics:
   phonons:
     kappa_103:
