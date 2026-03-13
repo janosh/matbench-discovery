@@ -132,15 +132,9 @@ export type ModelMetadata = {
           cost?: number
         }
       }
-<<<<<<< HEAD
-    | `missing`
-  train_task: `RP2RE` | `RS2RE` | `S2E` | `S2RE` | `S2EF` | `S2EFS` | `S2EFSM`
-  test_task: `IP2E` | `IS2E` | `IS2RE` | `IS2RE-SR`
-=======
     | 'missing'
   train_task: 'RP2RE' | 'RS2RE' | 'S2E' | 'S2RE' | 'S2EF' | 'S2EFS' | 'S2EFSM'
   test_task: 'IP2E' | 'IS2E' | 'IS2RE' | 'IS2RE-SR'
->>>>>>> upstream/main
   model_type: ModelType
   targets: TargetType
   openness: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
