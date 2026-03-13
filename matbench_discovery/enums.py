@@ -388,7 +388,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     nequix_mp_1_pft = auto(), "nequix/nequix-mp-1-pft.yml"
 
     # MatNova
-    matNova_mptrj = auto(), "matNova/matNova-mptrj.yml"
+    matnova_mptrj = auto(), "matNova/matNova-mptrj.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
