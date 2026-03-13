@@ -39,6 +39,7 @@ checkpoint_url: https://github.com/zzz-sl/matNova
 license:
   code: MIT
   code_url: https://github.com/zzz-sl/matNova
+  checkpoint: MIT
   checkpoint_url: https://github.com/zzz-sl/matNova
 
 
@@ -76,8 +77,10 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      pred_file: models/matNova/2026-03-09-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/62689957
+      κ_SRME: 0.4298
+      pred_file: models/matNova/2026-03-12-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz 
+      pred_file_url: https://figshare.com/files/62745916
+      κ_SRE: 0.1954
   geo_opt:
     pred_file: models/matNova/2026-03-11-matnova-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/62689990
