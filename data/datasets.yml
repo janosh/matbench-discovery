@@ -416,7 +416,7 @@ COSMOSDataset:
 OC20:
   name: Open Catalyst 2020
   url: https://opencatalystproject.org/leaderboard.html
-  download_url: https://fair-chem.github.io/catalysts/datasets/oc20.html#per-adsorbate-trajectories-optional-download
+  download_url: https://open-catalyst-project.github.io/ocp/
   doi: https://doi.org/10.1021/acscatal.0c04525
   n_structures: 133_934_018
   open: true
