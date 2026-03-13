@@ -18,7 +18,7 @@ from pymatgen.core import Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 
-from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
 
@@ -113,8 +113,8 @@ class MBDRunner:
 
 
         if self.num_jobs > 1:
-            # indices = np.array_split(range(len(dataset)), self.num_jobs)[job_number]
-            indices = np.array_split(range(min(100, len(dataset))), self.num_jobs)[job_number]
+            indices = np.array_split(range(min(100, len(dataset))), 
+                                     self.num_jobs)[job_number]
             dataset = AseDBSubset(dataset, indices)
 
         optimizer_params = self.optimizer_params or {}
@@ -156,10 +156,6 @@ class MBDRunner:
         e_pred_col = "pred_energy"
         
         self._save_relaxed_structures_to_csv(df_out)
-
-        # import pdb; pdb.set_trace()
-        print("df_out columns:", df_out.columns.tolist())
-        print("df_wbm columns:", df_wbm.columns.tolist())
 
         df_wbm[e_pred_col] = df_out[e_pred_col]
 
@@ -320,13 +316,9 @@ class MBDRunner:
     def _save_relaxed_structures_to_csv(self, df_out: pd.DataFrame) -> None:
             try:
                 csv_data = []
-                
                 for material_id, row in df_out.iterrows():
                     if 'pred_structure' in row and 'pred_energy' in row:
-                        structure = row['pred_structure']
-                        energy = row['pred_energy']
-                        
-                        # 提取结构的基本信息
+                        energy = row['pred_energy']                        
                         structure_info = {
                             'material_id': material_id,
                             'pred_energy': energy,
@@ -341,4 +333,3 @@ class MBDRunner:
                     
             except Exception as e:
                 print(f"error: {e}")
-
