@@ -166,6 +166,7 @@ extend-ignore-words-re = [
   "\\b[Ff]ormates?\\b",           # Chemistry: formate(s)
   "\\b[Nn]d\\b",                  # Chemical element: Neodymium
   "\\bmatris\\b",                 # Model name
+  "certifi",
 ]
 extend-ignore-identifiers-re = [
   "\\b[Ff][Pp][Rr]\\b",          # False Positive Rate
