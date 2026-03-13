@@ -33,6 +33,13 @@ trained_by:
 repo: https://github.com/zzz-sl/matNova
 doi: https://github.com/zzz-sl/matNova
 paper: https://github.com/zzz-sl/matNova
+pr_url: https://github.com/janosh/matbench-discovery/pull/318
+checkpoint_url: https://github.com/zzz-sl/matNova
+
+license:
+  code: MIT
+  code_url: https://github.com/zzz-sl/matNova
+  checkpoint_url: https://github.com/zzz-sl/matNova
 
 
 openness: OSOD
