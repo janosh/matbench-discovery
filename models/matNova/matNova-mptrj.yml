@@ -22,7 +22,7 @@ authors:
   - name: Daojin Lin
     affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
   - name: Jun Xu
-    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China 
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
 trained_by:
   - name: Ling Shi
     affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
@@ -58,16 +58,16 @@ hyperparams:
   max_steps: 500
   ase_optimizer: FIRE
   cell_filter: FrechetCellFilter
-  graph_construction_radius: 6.0 
+  graph_construction_radius: 6.0
   max_neighbors: .inf
 notes:
   Description: |
-    MatNova is a foundation model designed for high-precision simulation of material microscopic characterization and particle interactions. 
+    MatNova is a foundation model designed for high-precision simulation of material microscopic characterization and particle interactions.
 metrics:
   phonons:
     kappa_103:
       κ_SRME: 0.4298
-      pred_file: models/matNova/2026-03-12-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz 
+      pred_file: models/matNova/2026-03-12-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/62745916
       κ_SRE: 0.1954
   geo_opt:
