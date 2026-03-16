@@ -18,26 +18,16 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from torch.utils.data import Subset
 from tqdm import tqdm, trange
-from matbench_discovery.data import DataFiles, df_wbm
+from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
-
-def as_dict_handler(obj: Any) -> dict[str, Any] | None:
-    try:
-        return obj.as_dict()  # all MSONable objects implement as_dict()
-    except AttributeError:
-        return None
-
-class AseDBSubset(Subset):
-    def get_atoms(self, idx: int) -> Atoms:
-        return self.dataset.get_atoms(self.indices[idx])
+from matbench_discovery import ROOT
     
 def seed_everywhere(seed: int) -> None:
     random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-ROOT = "/mnt/public/LiuLiu/fairchem/dataset/wbm"
 DATABASE_PATH = {"is2re": f"{ROOT}/WBM_IS2RE.lmdb"}
 FILTER_CLS = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
 OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
@@ -91,24 +81,20 @@ class MBDRunner:
         seed_everywhere(self.seed)
         model_ckpt = str(Path(self.model_dir) / "checkpoint.pt")
         calc = OCPCalculator(checkpoint_path=model_ckpt, cpu=False, seed=0)
-
-        # calc.trainer.scaler = None
         num_model_params = sum(p.numel() for p in calc.trainer.model.parameters())
 
         data_path = DATABASE_PATH[self.task_type]
         dataset = AseDBDataset(dict(src=data_path))
 
-
         if self.num_jobs > 1:
-            indices = np.array_split(range(min(100, len(dataset))), self.num_jobs)[
-                job_number
-           ]
-            dataset = AseDBSubset(dataset, indices)
+            indices = np.array_split(range(len(dataset)), self.num_jobs)[job_number]
 
         optimizer_params = self.optimizer_params or {}
         run_params = {
             "data_path": data_path,
-            "versions": {dep: version(dep) for dep in ("numpy", "torch")},
+            "versions": {
+                dep: version(dep) for dep in ("fairchem-core", "numpy", "torch")
+            },
             Key.task_type: self.task_type,
             "max_steps": self.max_steps,
             "force_max": self.force_max,
@@ -140,21 +126,16 @@ class MBDRunner:
             lines=True,
         )
         e_pred_col = "pred_energy"
-        
-        self._save_relaxed_structures_to_csv(df_out)
-
         df_wbm[e_pred_col] = df_out[e_pred_col]
 
         file_paths = list(self.save_dir.glob(f"{self.identifier}_*.json.gz"))
         num_job_finished = len(file_paths)
-
         if num_job_finished == self.num_jobs:
             self.join_prediction(file_paths)
 
-
     def _ase_relax(
         self,
-        dataset: AseDBDataset | AseDBSubset,
+        dataset: AseDBDataset,
         calculator: OCPCalculator,
         optimizer_cls: Literal["FIRE", "LBFGS", "BFGS"],
         cell_filter: Literal["frechet", "unit"],
@@ -167,8 +148,7 @@ class MBDRunner:
         optim_cls = OPTIM_CLS[optimizer_cls]  # 'ase.optimize.fire.FIRE'
 
         skip_num = 0
-        for i in trange(len(dataset), desc="Relaxing with ASE"):
-            
+        for i in trange(len(dataset), desc="Relaxing with ASE"):  
             atoms = dataset.get_atoms(i)
             material_id = atoms.info["material_id"]
             if material_id in self.relax_results:
@@ -204,7 +184,6 @@ class MBDRunner:
 
     def join_prediction(self, file_paths: list[Path] | None = None) -> None:
         dfs: dict[str, pd.DataFrame] = {}
-        
         for file_path in tqdm(file_paths, desc="Loading prediction files"):
             if file_path in dfs:
                 continue
@@ -212,13 +191,11 @@ class MBDRunner:
             dfs[file_path] = read_file.set_index(Key.mat_id.value)
 
         df_fairchem = pd.concat(dfs.values()).round(4)
-        self._save_relaxed_structures_to_csv(df_fairchem)
         
         # %%
         df_wbm_cse = pd.read_json(
             DataFiles.wbm_computed_structure_entries.path, lines=True
         ).set_index(Key.mat_id)
-
         df_wbm_cse[Key.computed_structure_entry] = [
             ComputedStructureEntry.from_dict(dct)
             for dct in tqdm(
@@ -268,8 +245,7 @@ class MBDRunner:
         df_wbm[[*df_fairchem]] = df_fairchem
 
         # %%
-        temp_mask = abs(df_wbm["pred_e_form_per_atom"] - df_wbm[MbdKey.e_form_dft])
-        bad_mask = temp_mask > 5
+        bad_mask = abs(df_wbm["pred_e_form_per_atom"] - df_wbm[MbdKey.e_form_dft]) > 5
         df_fairchem = df_fairchem.round(4)
 
         df_fairchem.select_dtypes("number").to_csv(
@@ -282,31 +258,9 @@ class MBDRunner:
         df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
         df_bad.to_csv(self.save_dir / "bad.csv")
 
-
         df_fairchem.reset_index().to_json(
             self.save_dir / f"{self.identifier}.json.gz",
             default_handler=as_dict_handler,
             orient="records",
             lines=True,
         )
-
-    def _save_relaxed_structures_to_csv(self, df_out: pd.DataFrame) -> None:
-        try:
-            csv_data = []
-            for material_id, row in df_out.iterrows():
-                if "pred_structure" in row and "pred_energy" in row:
-                    energy = row["pred_energy"]
-                    structure_info = {
-                        "material_id": material_id,
-                        "pred_energy": energy,
-                    }
-
-                    csv_data.append(structure_info)
-
-            if csv_data:
-                df_csv = pd.DataFrame(csv_data)
-                csv_filename = f"{self.identifier}_relaxed_structures.csv"
-                df_csv.to_csv(csv_filename, index=False)
-
-        except Exception as e:
-            print(f"error: {e}")
