@@ -1,36 +1,48 @@
+"""
+Copyright (c) Meta Platforms, Inc. and its affiliates.
+
+This source code is licensed under the MIT license found in the
+LICENSE file in the root directory of this source tree.
+"""
+
+from __future__ import annotations
+
 import random
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Literal
+
 import numpy as np
 import pandas as pd
-import swanlab
 import torch
-from ase import Atoms
+import wandb
 from ase.filters import FrechetCellFilter, UnitCellFilter
 from ase.optimize import BFGS, FIRE, LBFGS
-from matnova.core.common.relaxation.ase_utils import OCPCalculator
-from matnova.core.datasets import AseDBDataset
+from fairchem.core import OCPCalculator
+from fairchem.core.datasets import AseDBDataset
 from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
-from torch.utils.data import Subset
 from tqdm import tqdm, trange
+
+from matbench_discovery import ROOT
 from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
-from matbench_discovery import ROOT
-    
+
+
 def seed_everywhere(seed: int) -> None:
     random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-DATABASE_PATH = {"is2re": f"{ROOT}/WBM_IS2RE.lmdb"}
+
+DB_PATH = {"is2re": f"{ROOT}/WBM_IS2RE.aselmdb"}
 FILTER_CLS = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
 OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
+
 
 class MBDRunner:
     """
@@ -74,18 +86,22 @@ class MBDRunner:
     def run(self, job_number: int = 0) -> None:
         self.relax_results: dict[str, Any] = {}
 
-        save_dir = Path(self.model_dir) / f"{self.identifier}_{self.seed}"
+        save_dir = (
+            Path(self.model_dir) / self.save_name / f"{self.identifier}_{self.seed}"
+        )
         (save_dir).mkdir(parents=True, exist_ok=True)
         self.save_dir = save_dir
 
         seed_everywhere(self.seed)
         model_ckpt = str(Path(self.model_dir) / "checkpoint.pt")
         calc = OCPCalculator(checkpoint_path=model_ckpt, cpu=False, seed=0)
+        calc.trainer.scaler = None
         num_model_params = sum(p.numel() for p in calc.trainer.model.parameters())
 
-        data_path = DATABASE_PATH[self.task_type]
+        data_path = DB_PATH[self.task_type]
         dataset = AseDBDataset(dict(src=data_path))
 
+        indices = None
         if self.num_jobs > 1:
             indices = np.array_split(range(len(dataset)), self.num_jobs)[job_number]
 
@@ -104,11 +120,13 @@ class MBDRunner:
             "filter": self.cell_filter,
             "optimizer_params": self.optimizer_params,
         }
-
-        swanlab.init(project="matbench-discovery", config=run_params)
+        wandb.init(
+            project="matbench-discovery", config=run_params, name=self.identifier
+        )
 
         self._ase_relax(
             dataset=dataset,
+            indices=indices,
             calculator=calc,
             optimizer_cls=self.optimizer,
             cell_filter=self.cell_filter,
@@ -128,6 +146,7 @@ class MBDRunner:
         e_pred_col = "pred_energy"
         df_wbm[e_pred_col] = df_out[e_pred_col]
 
+        # join prediction
         file_paths = list(self.save_dir.glob(f"{self.identifier}_*.json.gz"))
         num_job_finished = len(file_paths)
         if num_job_finished == self.num_jobs:
@@ -136,6 +155,7 @@ class MBDRunner:
     def _ase_relax(
         self,
         dataset: AseDBDataset,
+        indices: np.ndarray | None,
         calculator: OCPCalculator,
         optimizer_cls: Literal["FIRE", "LBFGS", "BFGS"],
         cell_filter: Literal["frechet", "unit"],
@@ -145,28 +165,26 @@ class MBDRunner:
     ) -> None:
         """Run WBM relaxations using an ASE optimizer."""
         filter_cls = FILTER_CLS.get(cell_filter)
-        optim_cls = OPTIM_CLS[optimizer_cls]  # 'ase.optimize.fire.FIRE'
+        optim_cls = OPTIM_CLS[optimizer_cls]
 
-        skip_num = 0
-        for i in trange(len(dataset), desc="Relaxing with ASE"):  
-            atoms = dataset.get_atoms(i)
-            material_id = atoms.info["material_id"]
+        # iterate over indices if provided, otherwise over full dataset
+        iteration_indices = indices if indices is not None else range(len(dataset))
+
+        for idx in trange(len(iteration_indices), desc="Relaxing with ASE"):
+            dataset_idx = int(iteration_indices[idx])
+            atoms = dataset.get_atoms(dataset_idx)
+            material_id = atoms.info["sid"]
             if material_id in self.relax_results:
-                skip_num += 1
-                print(f"Skipping {material_id}, already relaxed")
                 continue
             try:
                 atoms.calc = calculator
 
                 if filter_cls is not None:
                     optimizer = optim_cls(
-                        filter_cls(atoms), 
-                        logfile="/dev/null", 
+                        filter_cls(atoms), logfile=None, **optimizer_params
                     )
                 else:
-                    optimizer = optim_cls(
-                        atoms, logfile="/dev/null", **optimizer_params
-                    )
+                    optimizer = optim_cls(atoms, logfile=None, **optimizer_params)
 
                 optimizer.run(fmax=force_max, steps=max_steps)
 
@@ -177,9 +195,7 @@ class MBDRunner:
                     "pred_structure": structure,
                     "pred_energy": energy,
                 }
-            except Exception as e:
-                skip_num += 1
-                print(f"Failed to relax {material_id}: {e}")
+            except Exception:
                 continue
 
     def join_prediction(self, file_paths: list[Path] | None = None) -> None:
@@ -187,11 +203,10 @@ class MBDRunner:
         for file_path in tqdm(file_paths, desc="Loading prediction files"):
             if file_path in dfs:
                 continue
-            read_file = pd.read_json(file_path, lines=True)
-            dfs[file_path] = read_file.set_index(Key.mat_id.value)
+            dfs[file_path] = pd.read_json(file_path).set_index(Key.mat_id)
 
         df_fairchem = pd.concat(dfs.values()).round(4)
-        
+
         # %%
         df_wbm_cse = pd.read_json(
             DataFiles.wbm_computed_structure_entries.path, lines=True
@@ -203,34 +218,28 @@ class MBDRunner:
             )
         ]
 
+        # corrections applied below are structure-dependent (for oxides and sulfides)
         cse: ComputedStructureEntry
         for row in tqdm(
             df_fairchem.itertuples(), total=len(df_fairchem), desc="ML energies to CSEs"
         ):
-            *_, mat_id, struct_dict, pred_energy = row
+            mat_id, struct_dict, pred_energy, *_ = row
             mlip_struct = Structure.from_dict(struct_dict)
             cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
             cse._energy = pred_energy  # noqa: SLF001
             cse._structure = mlip_struct  # noqa: SLF001
             df_fairchem.loc[mat_id, Key.computed_structure_entry] = cse
 
-        entries_col = df_fairchem[Key.computed_structure_entry]
-
-         mask = entries_col.notna() & entries_col.apply(
-            lambda x: isinstance(x, ComputedStructureEntry)
-         )
-
-        df_fairchem = df_fairchem[mask]
-
+        # %% apply energy corrections
         processed = MaterialsProject2020Compatibility().process_entries(
             df_fairchem[Key.computed_structure_entry], verbose=True, clean=True
         )
-
         if len(processed) != len(df_fairchem):
             raise ValueError(
                 f"not all entries processed: {len(processed)=} {len(df_fairchem)=}"
             )
 
+        # %% compute corrected formation energies
         df_fairchem[Key.formula] = df_wbm[Key.formula]
         df_fairchem["pred_e_form_per_atom"] = [
             get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
@@ -246,6 +255,8 @@ class MBDRunner:
 
         # %%
         bad_mask = abs(df_wbm["pred_e_form_per_atom"] - df_wbm[MbdKey.e_form_dft]) > 5
+        n_preds = len(df_wbm["pred_e_form_per_atom"].dropna())
+        print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
         df_fairchem = df_fairchem.round(4)
 
         df_fairchem.select_dtypes("number").to_csv(
