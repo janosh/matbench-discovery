@@ -134,7 +134,7 @@ fig_rmsd = px.violin(
     points=False,
 )
 fig_rmsd.layout.xaxis.title = "Model"
-fig_rmsd.layout.yaxis.title = "RMSD (Å)"
+fig_rmsd.layout.yaxis.title = "RMSD (unitless)"
 fig_rmsd.update_traces(orientation="h", side="positive", width=1.8)
 
 # add annotation for mean for each model
@@ -332,8 +332,10 @@ for model in models:
         y=sampled_cumulative,
         name=f"{model} · {AUC=:.3}",
         mode="lines",
-        hovertemplate=f"<b>{model}</b><br>RMSD: %{{x:.3f}} Å<br>Cumulative: %{{y:.1%}}"
-        "<extra></extra>",
+        hovertemplate=(
+            f"<b>{model}</b><br>RMSD: %{{x:.3f}} (unitless)<br>"
+            "Cumulative: %{y:.1%}<extra></extra>"
+        ),
     )
 
 # sort by AUC
@@ -341,7 +343,7 @@ fig_rmsd_cdf.data = sorted(
     fig_rmsd_cdf.data, key=lambda trace: -float(trace.name.split("AUC=")[1])
 )
 
-fig_rmsd_cdf.layout.xaxis.update(title="RMSD (Å)", range=[0, x_max])
+fig_rmsd_cdf.layout.xaxis.update(title="RMSD (unitless)", range=[0, x_max])
 fig_rmsd_cdf.layout.yaxis.update(title="Cumulative", tickformat=".0%", range=[0, 1])
 fig_rmsd_cdf.layout.legend = dict(y=0, xanchor="right", x=1)
 

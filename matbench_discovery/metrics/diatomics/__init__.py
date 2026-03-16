@@ -245,7 +245,7 @@ def write_metrics_to_yaml(
         dict[str, str | float | None]: Mean metrics across all elements.
     """
     # Calculate mean metrics across all elements
-    mean_metrics: dict[str, str | int | float | None] = {
+    mean_metrics: dict[str, str | float | None] = {
         str(metric): float(
             f"{np.mean([elem_metrics[metric] for elem_metrics in metrics.values()]):.4}"
         )

@@ -138,7 +138,7 @@ def test_calc_diatomic_curve_prior_results() -> None:
     distances = [1.0]
     pairs = [("Cu", "Cu")]  # Only test Cu-Cu
     # Pre-populate results with Cu2
-    initial_results = {
+    initial_results: dict[str, dict[str, list[float | list[list[float]]]]] = {
         "Cu-Cu": {"energies": [-1.0], "forces": [[[0.1, 0, 0], [-0.1, 0, 0]]]}
     }
 
