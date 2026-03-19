@@ -134,7 +134,7 @@ describe(`COMPLIANT_TRAINING_SETS`, () => {
     // This test ensures Python and TypeScript compute the same compliant sets
     // Both should derive from datasets.yml where compliant: true
     const expected = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`, `MDR PBE Phonons in MPtrj`]
-    expect(COMPLIANT_TRAINING_SETS.sort()).toEqual(expected.sort())
+    expect(COMPLIANT_TRAINING_SETS.toSorted()).toEqual(expected.toSorted())
   })
 
   it(`is exported as an array`, () => {

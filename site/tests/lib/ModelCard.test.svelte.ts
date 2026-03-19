@@ -33,21 +33,21 @@ describe(`ModelCard`, () => {
       // Training set is now first in the metadata section, so we need to check other spans
       // Find the date_added span by its content
       const date_added_span = Array.from(info_spans).find((span) =>
-        span.textContent?.includes(`Added ${model.date_added}`)
+        span.textContent?.includes(`Added ${model.date_added}`),
       )
       expect(date_added_span).toBeDefined()
       expect(date_added_span?.textContent).toContain(model.date_added)
 
       if (model.date_published) {
         const date_published_span = Array.from(info_spans).find((span) =>
-          span.textContent?.includes(`Published ${model.date_published}`)
+          span.textContent?.includes(`Published ${model.date_published}`),
         )
         expect(date_published_span).toBeDefined()
         expect(date_published_span?.textContent).toContain(model.date_published)
       }
 
       const params_span = Array.from(info_spans).find((span) =>
-        span.textContent?.includes(`${format_num(model.model_params, `.3~s`)} params`)
+        span.textContent?.includes(`${format_num(model.model_params, `.3~s`)} params`),
       )
       expect(params_span).toBeDefined()
     })
@@ -110,21 +110,23 @@ describe(`ModelCard`, () => {
 
       const f1_metric = Array.from(metrics_lis).find((m) => m.textContent?.includes(`F1`))
       const discovery_metrics = model.metrics?.discovery
-      const f1_value = discovery_metrics && typeof discovery_metrics === `object`
-        ? discovery_metrics.unique_prototypes?.F1
-        : undefined
+      const f1_value =
+        discovery_metrics && typeof discovery_metrics === `object`
+          ? discovery_metrics.unique_prototypes?.F1
+          : undefined
       expect(f1_metric?.querySelector(`strong`)?.textContent?.trim()).toBe(
         f1_value?.toString(),
       )
       expect(f1_metric?.classList.contains(`active`)).toBe(true)
 
       const kappa_metric = Array.from(metrics_lis).find((m) =>
-        m.textContent?.includes(`κ`)
+        m.textContent?.includes(`κ`),
       )
       const phonon_metrics = model.metrics?.phonons
-      const kappa_value = phonon_metrics && typeof phonon_metrics === `object`
-        ? (Number(phonon_metrics.kappa_103?.κ_SRME) || 0)
-        : 0
+      const kappa_value =
+        phonon_metrics && typeof phonon_metrics === `object`
+          ? Number(phonon_metrics.kappa_103?.κ_SRME) || 0
+          : 0
       const displayed_kappa = kappa_metric?.querySelector(`strong`)?.textContent?.trim()
       // The displayed value may be rounded differently
       expect(parseFloat(displayed_kappa ?? ``)).toBeCloseTo(kappa_value ?? 0, 2)
@@ -172,9 +174,7 @@ describe(`ModelCard`, () => {
       expect(author_li?.textContent?.trim()).toContain(model.authors[0].name)
 
       // Check package versions
-      const packages = Array.from(
-        document.querySelectorAll(`section:nth-child(2) li`),
-      )
+      const packages = Array.from(document.querySelectorAll(`section:nth-child(2) li`))
       expect(packages.length > 0).toBe(true)
       const first_package = Object.entries(model.requirements ?? {})[0]
       if (first_package) {

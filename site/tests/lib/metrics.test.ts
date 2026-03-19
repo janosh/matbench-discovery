@@ -79,9 +79,9 @@ describe(`format_train_set`, () => {
   // Get actual keys from DATASETS to use in tests
   const dataset_keys = Object.keys(DATASETS)
   const mp2022_key = dataset_keys.find((key) => key.includes(`MP 2022`))
-  if (!mp2022_key) throw `No MP 2022 key found in DATASETS`
+  if (!mp2022_key) throw new Error(`No MP 2022 key found in DATASETS`)
   const mptrj_key = dataset_keys.find((key) => key.includes(`MPtrj`))
-  if (!mptrj_key) throw `No MPtrj key found in DATASETS`
+  if (!mptrj_key) throw new Error(`No MPtrj key found in DATASETS`)
 
   const mp2022 = DATASETS[mp2022_key]
 
@@ -94,7 +94,7 @@ describe(`format_train_set`, () => {
 
     // Check that the result contains key information without hardcoding values
     expect(result).toContain(
-      `data-sort-value="${mp2022.n_materials || mp2022.n_structures}"`,
+      `data-sort-value="${mp2022.n_materials ?? mp2022.n_structures}"`,
     )
     expect(result).toContain(mp2022_key)
     expect(result).toContain(`materials in training set`)
@@ -102,18 +102,18 @@ describe(`format_train_set`, () => {
 
   it(`formats multiple training sets correctly`, () => {
     const mptrj = DATASETS[mptrj_key]
-    const combined_materials = mptrj.n_materials || mptrj.n_structures
+    const combined_materials = mptrj.n_materials ?? mptrj.n_structures
 
     const mock_model = {
-      n_training_structures: (mp2022.n_structures || 0) + (mptrj.n_structures || 0),
-      n_training_materials: (mp2022.n_materials || 0) + (mptrj.n_materials || 0),
+      n_training_structures: (mp2022.n_structures ?? 0) + (mptrj.n_structures ?? 0),
+      n_training_materials: (mp2022.n_materials ?? 0) + (mptrj.n_materials ?? 0),
     }
     const result = format_train_set([mp2022_key, mptrj_key], mock_model as ModelData)
 
     // Check that the result contains combined information
     expect(result).toContain(`data-sort-value="${combined_materials}"`)
     expect(result).toContain(mp2022.name)
-    expect(result).toContain(mptrj.name || mptrj_key)
+    expect(result).toContain(mptrj.name ?? mptrj_key)
   })
 
   it(`shows materials and structures when they differ`, () => {
@@ -724,7 +724,7 @@ describe(`assemble_row_data`, () => {
     expect(rows.length).toBe(test_model_keys.length)
 
     const cps_vals = rows.map((row) => row.CPS) as number[]
-    const sorted_cps_vals = [...cps_vals].sort((cps1, cps2) => cps2 - cps1)
+    const sorted_cps_vals = cps_vals.toSorted((cps1, cps2) => cps2 - cps1)
     expect(cps_vals).toEqual(sorted_cps_vals)
   })
 })
@@ -891,7 +891,7 @@ describe(`Model Sorting Logic`, () => {
     ]
 
     for (const { metric, order, expected_order } of test_cases) {
-      const sorted_models = test_models.sort(sort_models(metric, order))
+      const sorted_models = test_models.toSorted(sort_models(metric, order))
 
       // Verify the order matches expected
       expected_order.forEach((model_key, idx) => {
@@ -900,7 +900,7 @@ describe(`Model Sorting Logic`, () => {
     }
 
     // Add descending-Accuracy test to assert NaN handling is symmetric
-    const sorted_desc = test_models.sort(
+    const sorted_desc = test_models.toSorted(
       sort_models(`${Accuracy.path}.${Accuracy.key}`, `desc`),
     )
     expect(sorted_desc.map((m) => m.model_key)).toEqual([
@@ -923,7 +923,7 @@ describe(`Model Sorting Logic`, () => {
     models_for_desc.sort(sort_models(`model_name`, `desc`))
 
     // Check that ascending and descending are opposites of each other
-    expect(models_for_asc.map((m) => m.model_key).reverse()).toEqual(
+    expect(models_for_asc.map((m) => m.model_key).toReversed()).toEqual(
       models_for_desc.map((m) => m.model_key),
     )
 
@@ -931,18 +931,19 @@ describe(`Model Sorting Logic`, () => {
     const expected_model_keys = [`aaa_model`, `missing_model`, `mmm_model`, `zzz_model`]
 
     // Just check that all expected models are in the result, without caring about exact order
-    expect(models_for_asc.map((m) => m.model_key).sort()).toEqual(
-      expected_model_keys.sort(),
+    const str_cmp = (a?: string, b?: string) => (a ?? ``).localeCompare(b ?? ``)
+    expect(models_for_asc.map((m) => m.model_key).toSorted(str_cmp)).toEqual(
+      expected_model_keys.toSorted(str_cmp),
     )
 
-    expect(models_for_desc.map((m) => m.model_key).sort()).toEqual(
-      expected_model_keys.sort(),
+    expect(models_for_desc.map((m) => m.model_key).toSorted(str_cmp)).toEqual(
+      expected_model_keys.toSorted(str_cmp),
     )
   })
 
   it(`sorts models by missing predictions (asc)`, () => {
     const models = create_test_models()
-    const sorted = models.sort(
+    const sorted = models.toSorted(
       sort_models(`metrics.discovery.unique_prototypes.missing_preds`, `asc`),
     )
     expect(sorted.map((m) => m.model_key)).toEqual([
@@ -961,7 +962,7 @@ describe(`Model Sorting Logic`, () => {
     // Test sorting with κ_SRME where one model has zero value
     const { κ_SRME } = ALL_METRICS
     const sort_by_path = `${κ_SRME.path}.${κ_SRME.key}`
-    const sorted_by_kappa = combined_models.sort(sort_models(sort_by_path, `asc`))
+    const sorted_by_kappa = combined_models.toSorted(sort_models(sort_by_path, `asc`))
 
     // Zero value should be first for asc
     expect(sorted_by_kappa[0].model_key).toBe(`extreme_model`)
@@ -976,7 +977,7 @@ describe(`Model Sorting Logic`, () => {
     ) as unknown as ModelData[]
 
     // Test ascending sort (runtime 0 should be last)
-    const sorted_asc = [...models].sort(sort_models(`Run Time`, `asc`))
+    const sorted_asc = models.toSorted(sort_models(`Run Time`, `asc`))
     // Check the non-zero values are sorted correctly first
     expect(sorted_asc.slice(0, 2).map((m) => m.model_key)).toEqual([`model_c`, `model_a`])
     // Check the zero values are at the end (order between them is not guaranteed)
@@ -984,17 +985,17 @@ describe(`Model Sorting Logic`, () => {
       sorted_asc
         .slice(2)
         .map((m) => m.model_key)
-        .sort(),
+        .toSorted((a, b) => (a ?? ``).localeCompare(b ?? ``)),
     ).toEqual([`model_b`, `model_d`])
 
     // Test descending sort (runtime 0 should be first)
-    const sorted_desc = [...models].sort(sort_models(`Run Time`, `desc`))
+    const sorted_desc = models.toSorted(sort_models(`Run Time`, `desc`))
     // Check the zero values are at the beginning (order between them is not guaranteed)
     expect(
       sorted_desc
         .slice(0, 2)
         .map((m) => m.model_key)
-        .sort(),
+        .toSorted((a, b) => (a ?? ``).localeCompare(b ?? ``)),
     ).toEqual([`model_b`, `model_d`])
     // Check the non-zero values are sorted correctly after
     expect(sorted_desc.slice(2).map((m) => m.model_key)).toEqual([`model_a`, `model_c`])
@@ -1007,7 +1008,7 @@ describe(`Model Sorting Logic`, () => {
     ] as unknown as ModelData[]
 
     // Sort by a metric that none of the models have
-    const sorted_models = all_missing_models.sort(sort_models(`F1`, `desc`))
+    const sorted_models = all_missing_models.toSorted(sort_models(`F1`, `desc`))
 
     // Order should be preserved when all models are missing the metric
     expect(sorted_models[0].model_key).toBe(`model_a`)
@@ -1034,7 +1035,7 @@ describe(`Model Sorting Logic`, () => {
     ] as unknown as ModelData[]
 
     // Sort models with identical F1 values
-    const sorted_models = models_with_same_values.sort(sort_models(`F1`, `desc`))
+    const sorted_models = models_with_same_values.toSorted(sort_models(`F1`, `desc`))
 
     // Original order should be preserved
     expect(sorted_models[0].model_key).toBe(`model_1`)
@@ -1049,8 +1050,9 @@ describe(`Model Sorting Logic`, () => {
     ] as unknown as ModelData[]
 
     // Expect an error when trying to sort number and string
-    expect(() => models_with_mixed_types.sort(sort_models(`some_metric`, `desc`)))
-      .toThrow(/Unexpected type.*encountered sorting by key/)
+    expect(() =>
+      models_with_mixed_types.sort(sort_models(`some_metric`, `desc`)),
+    ).toThrow(/Unexpected type.*encountered sorting by key/)
   })
 
   it(`handles sorting when both compared values are null`, () => {
@@ -1061,11 +1063,11 @@ describe(`Model Sorting Logic`, () => {
     ] as unknown as ModelData[]
 
     // Ascending sort
-    const sorted_asc = [...models_with_null].sort(sort_models(`metric`, `asc`))
+    const sorted_asc = models_with_null.toSorted(sort_models(`metric`, `asc`))
     expect(sorted_asc.map((m) => m.model_key)).toEqual([`val_1`, `null_1`, `null_2`])
 
     // Descending sort
-    const sorted_desc = [...models_with_null].sort(sort_models(`metric`, `desc`))
+    const sorted_desc = models_with_null.toSorted(sort_models(`metric`, `desc`))
     expect(sorted_desc.map((m) => m.model_key)).toEqual([`val_1`, `null_1`, `null_2`])
   })
 })

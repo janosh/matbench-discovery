@@ -12,22 +12,22 @@ async function fetch_diatomics(file_url: string, retries = 3): Promise<Diatomics
       const decompressed = response.body?.pipeThrough(new DecompressionStream(`gzip`))
       if (!decompressed) throw new Error(`Failed to decompress response`)
       return JSON.parse(await new Response(decompressed).text())
-    } catch (err) {
-      last_err = err
+    } catch (error) {
+      last_err = error
       if (attempt < retries - 1) {
         // exponential backoff: 1s, 2s, 4s
         await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt))
       }
     }
   }
-  throw new Error(`${file_url} failed after ${retries} attempts: ${last_err}`)
+  throw new Error(`${file_url} failed after ${retries} attempts: ${String(last_err)}`)
 }
 
 export const load: PageServerLoad = async () => {
   // Filter models that have diatomics metrics
   const diatomic_models = MODELS.filter(
     (model) => model.metrics?.diatomics && typeof model.metrics.diatomics === `object`,
-  ).sort(
+  ).toSorted(
     (m1, m2) => new Date(m2.date_added).getTime() - new Date(m1.date_added).getTime(), // Sort by date added, newest first
   )
 
@@ -50,9 +50,9 @@ export const load: PageServerLoad = async () => {
           return
         }
         diatomic_curves[model.model_name] = await fetch_diatomics(pred_file_url)
-      } catch (err) {
-        console.error(`Failed to fetch data for ${model.model_name}:`, err)
-        errors[model.model_name] = err instanceof Error ? err.message : String(err)
+      } catch (error) {
+        console.error(`Failed to fetch data for ${model.model_name}:`, error)
+        errors[model.model_name] = error instanceof Error ? error.message : String(error)
       }
     }),
   )

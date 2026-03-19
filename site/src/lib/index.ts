@@ -46,14 +46,16 @@ export function md_to_html(md: string) {
 
 // Function to slugify text for URLs
 export function slugify(text: string): string {
-  return text.toLowerCase().replace(/[\s_]+/g, `-`)
+  return text.toLowerCase().replaceAll(/[\s_]+/g, `-`)
 }
 
 // convert array types to strings and handle missing values
 export function arr_to_str(value: unknown): string {
-  if (!value) return `n/a`
+  if (value === null || value === undefined || value === ``) return `n/a`
   if (Array.isArray(value)) return value.join(`, `)
-  return String(value)
+  if (typeof value === `string`) return value
+  if (typeof value === `number` || typeof value === `boolean`) return `${value}`
+  return JSON.stringify(value)
 }
 
 // Process datasets to add slugs and convert descriptions to HTML
@@ -65,7 +67,7 @@ for (const [key, dataset] of Object.entries(DATASETS)) {
 // parse markdown notes to html with remark/rehype
 for (const { notes, metadata_file } of MODELS) {
   if (!notes) continue
-  if (!notes.html) notes.html = {}
+  notes.html ??= {}
 
   for (const [key, note] of Object.entries(notes)) {
     // skip if note was already parsed to HTML or is not a string

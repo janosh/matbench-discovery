@@ -1,9 +1,8 @@
 <script lang="ts">
   import { arr_to_str, calculate_days_ago, DATASETS, format_date } from '$lib'
-  import { Icon } from 'matterviz'
+  import { Icon, format_num } from 'matterviz'
   import type { Dataset } from '$lib/types'
   import pkg from '$site/package.json'
-  import { format_num } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import MptrjTargetDistros from './MptrjTargetDistros.svelte'
 

@@ -108,9 +108,10 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 
     if (n_materials !== n_structures) {
       tooltip.push(
-        `${name}: ${format_num(n_materials, `,`)} materials (${
-          format_num(n_structures, `,`)
-        } structures)`,
+        `${name}: ${format_num(n_materials, `,`)} materials (${format_num(
+          n_structures,
+          `,`,
+        )} structures)`,
       )
     } else {
       tooltip.push(`${name}: ${format_num(n_materials, `,`)} materials`)
@@ -121,32 +122,26 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
     .map(([key, href]) => `<a href="${href}">${key}</a>`)
     .join(`+`)
   const new_line = `&#013;` // line break that works in title attribute
-  const dataset_tooltip = tooltip.length > 1
-    ? `${new_line}• ${tooltip.join(new_line + `• `)}`
-    : ``
+  const dataset_tooltip =
+    tooltip.length > 1 ? `${new_line}• ${tooltip.join(new_line + `• `)}` : ``
 
-  let title = `${
-    format_num(n_training_materials, `,`)
-  } materials in training set${new_line}${dataset_tooltip}`
-  let train_size_str =
-    `<span title="${title}" data-sort-value="${n_training_materials}">${
-      format_num(n_training_materials)
-    } <small>${dataset_links}</small></span>`
+  let title = `${format_num(
+    n_training_materials,
+    `,`,
+  )} materials in training set${new_line}${dataset_tooltip}`
+  let train_size_str = `<span title="${title}" data-sort-value="${n_training_materials}">${format_num(
+    n_training_materials,
+  )} <small>${dataset_links}</small></span>`
 
   if (n_training_materials !== n_training_structures) {
-    title = `${format_num(n_training_materials, `,`)} materials in training set ` +
-      `(${
-        format_num(n_training_structures, `,`)
-      } structures counting all DFT relaxation ` +
+    title =
+      `${format_num(n_training_materials, `,`)} materials in training set ` +
+      `(${format_num(n_training_structures, `,`)} structures counting all DFT relaxation ` +
       `frames per material)${dataset_tooltip}`
 
     train_size_str =
-      `<span title="${title}" data-sort-value="${
-        n_training_materials || n_training_structures
-      }">` +
-      `${format_num(n_training_materials)} <small>(${
-        format_num(n_training_structures)
-      })</small> ` +
+      `<span title="${title}" data-sort-value="${n_training_materials || n_training_structures}">` +
+      `${format_num(n_training_materials)} <small>(${format_num(n_training_structures)})</small> ` +
       `<small>${dataset_links}</small></span>`
   }
 
@@ -200,32 +195,17 @@ export function calc_cell_color(
   // Reverse the range if lower values are better
   if (better === `lower`) range.reverse()
 
-  // Use custom color scale if specified, otherwise fall back to viridis
-  const scale_name = color_scale || `interpolateViridis`
-  // Cast to ensure TypeScript recognizes it as a valid interpolator function
-  const interpolator = (d3sc[scale_name as keyof typeof d3sc] ||
+  const interpolator = (d3sc[color_scale as keyof typeof d3sc] ??
     d3sc.interpolateViridis) as (t: number) => string
 
-  let color_scale_fn
-
+  let bg: string
   if (scale_type === `log` && range[0] > 0 && range[1] > 0) {
-    // Use log scale for positive values
-    color_scale_fn = scaleLog().domain(range).range([0, 1]).clamp(true)
-
-    const normalized_val = color_scale_fn(val)
-    const bg = interpolator(normalized_val)
-    const text = pick_contrast_color({ bg_color: bg })
-
-    return { bg, text }
+    bg = interpolator(scaleLog().domain(range).range([0, 1]).clamp(true)(val))
   } else {
-    // Use sequential scale for linear mapping
-    color_scale_fn = scaleSequential().domain(range).interpolator(interpolator)
-
-    const bg = color_scale_fn(val)
-    const text = pick_contrast_color({ bg_color: bg })
-
-    return { bg, text }
+    bg = scaleSequential().domain(range).interpolator(interpolator)(val)
   }
+  const text = pick_contrast_color({ bg_color: bg })
+  return { bg, text }
 }
 
 // Calculate table data for the metrics table with combined scores
@@ -257,22 +237,22 @@ export function assemble_row_data(
 
   const all_metrics = filtered_models.map((model) => {
     const { license, metrics } = model
-    const discovery_metrics = typeof metrics?.discovery === `object`
-      ? metrics.discovery[discovery_set]
-      : undefined
+    const discovery_metrics =
+      typeof metrics?.discovery === `object`
+        ? metrics.discovery[discovery_set]
+        : undefined
     const is_compliant = model_is_compliant(model)
     const { RMSD, CPS } = ALL_METRICS
 
     // Get kappa from phonon metrics
     const phonons = metrics?.phonons
-    const kappa = phonons && typeof phonons === `object` && `kappa_103` in phonons
-      ? (phonons.kappa_103?.κ_SRME as number | undefined)
-      : undefined
+    const kappa =
+      phonons && typeof phonons === `object` && `kappa_103` in phonons
+        ? (phonons.kappa_103?.κ_SRME as number | undefined)
+        : undefined
 
-    const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
-    const targets_str = `<span title="${
-      targets_tooltips[model.targets]
-    }">${targets}</span>`
+    const targets = model.targets.replaceAll(/_(.)/g, `<sub>$1</sub>`)
+    const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
 
     // Add model links
     const code_license = license?.code
@@ -288,13 +268,13 @@ export function assemble_row_data(
     // Get geometry optimization hyperparameters
     const { ase_optimizer, max_steps, max_force, cell_filter, n_layers } =
       model.hyperparams ?? {}
-    const cell_filter_display = cell_filter && typeof cell_filter === `string`
-      ? cell_filter.replace(/CellFilter$/, ``)
-      : null
+    const cell_filter_display =
+      cell_filter && typeof cell_filter === `string`
+        ? cell_filter.replace(/CellFilter$/, ``)
+        : null
 
     return {
-      Model:
-        `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
+      Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
       CPS: model[CPS.key],
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,
@@ -311,30 +291,32 @@ export function assemble_row_data(
         | number
         | undefined,
       'Training Set': format_train_set(model.training_set, model),
-      [HYPERPARAMS.model_params.key]: `<span title="${
-        format_num(model.model_params, `,`)
-      } trainable model parameters" data-sort-value="${model.model_params}">${
-        format_num(model.model_params)
-      }</span>`,
+      [HYPERPARAMS.model_params.key]: `<span title="${format_num(
+        model.model_params,
+        `,`,
+      )} trainable model parameters" data-sort-value="${model.model_params}">${format_num(
+        model.model_params,
+      )}</span>`,
       [HYPERPARAMS.ase_optimizer.key]: ase_optimizer ?? `n/a`,
-      [HYPERPARAMS.max_steps.key]: max_steps !== undefined
-        ? `<span data-sort-value="${max_steps}">${max_steps}</span>`
-        : `n/a`,
-      [HYPERPARAMS.max_force.key]: max_force !== undefined
-        ? `<span data-sort-value="${max_force}">${max_force}</span>`
-        : `n/a`,
+      [HYPERPARAMS.max_steps.key]:
+        max_steps !== undefined
+          ? `<span data-sort-value="${max_steps}">${max_steps}</span>`
+          : `n/a`,
+      [HYPERPARAMS.max_force.key]:
+        max_force !== undefined
+          ? `<span data-sort-value="${max_force}">${max_force}</span>`
+          : `n/a`,
       [HYPERPARAMS.cell_filter.key]: cell_filter_display
         ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
         : `n/a`,
-      [HYPERPARAMS.n_layers.key]: n_layers !== undefined
-        ? `<span data-sort-value="${n_layers}">${n_layers}</span>`
-        : `n/a`,
+      [HYPERPARAMS.n_layers.key]:
+        n_layers !== undefined
+          ? `<span data-sort-value="${n_layers}">${n_layers}</span>`
+          : `n/a`,
       Targets: targets_str,
-      [METADATA_COLS.date_added.key]: `<span title="${
-        format_date(model.date_added)
-      }" data-sort-value="${
-        new Date(model.date_added).getTime()
-      }">${model.date_added}</span>`,
+      [METADATA_COLS.date_added.key]: `<span title="${format_date(
+        model.date_added,
+      )}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
       // Add Links as a special property
       Links: {
         paper: {
@@ -365,9 +347,7 @@ export function assemble_row_data(
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
       [HYPERPARAMS.graph_construction_radius.key]: r_cut_str,
-      style: `border-left: 3px solid var(--${
-        is_compliant ? `` : `non-`
-      }compliant-color);`,
+      style: `border-left: 3px solid var(--${is_compliant ? `` : `non-`}compliant-color);`,
       org_logos: model.org_logos,
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
@@ -379,7 +359,7 @@ export function assemble_row_data(
   })
 
   // Sort by combined performance score (descending)
-  return all_metrics.sort((row1, row2) => {
+  return all_metrics.toSorted((row1, row2) => {
     const [score1, score2] = [row1[`CPS`], row2[`CPS`]]
 
     // Handle undefined or null values (they should be sorted to the bottom)
@@ -410,14 +390,14 @@ export const sort_models =
     const val_2 = get_nested_value(model_2, sort_by)
 
     // Handle null, undefined, or NaN values by sorting last
-    if (
-      (val_1 === null || val_1 === undefined) && (val_2 === null || val_2 === undefined)
-    ) return 0
-    if (val_1 === null || val_1 === undefined || Number.isNaN(val_1)) return 1 // Always sort nulls/undefined/NaN to the end
-    if (val_2 === null || val_2 === undefined || Number.isNaN(val_2)) return -1 // Always sort nulls/undefined/NaN to the end
+    const nil_1 = val_1 === null || val_1 === undefined
+    const nil_2 = val_2 === null || val_2 === undefined
+    if (nil_1 && nil_2) return 0
+    if (nil_1 || Number.isNaN(val_1)) return 1
+    if (nil_2 || Number.isNaN(val_2)) return -1
 
     if (typeof val_1 === `string` && typeof val_2 === `string`) {
-      return sort_factor * (val_1 as string).localeCompare(val_2 as string)
+      return sort_factor * val_1.localeCompare(val_2)
     } else if (typeof val_1 === `number` && typeof val_2 === `number`) {
       // interpret run_time === 0 as infinity
       if (sort_by === `Run Time`) {
@@ -426,6 +406,8 @@ export const sort_models =
       }
       return sort_factor * (val_2 - val_1)
     } else {
-      throw `Unexpected type '${typeof val_1}' encountered sorting by key '${sort_by}'`
+      throw new TypeError(
+        `Unexpected type '${typeof val_1}' encountered sorting by key '${sort_by}'`,
+      )
     }
   }

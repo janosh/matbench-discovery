@@ -32,9 +32,7 @@ describe(`RadarChart`, () => {
     })
 
     // Check that the triangle area is rendered
-    const triangle_area = document.querySelector(
-      `path[fill="var(--nav-bg)"]`,
-    )
+    const triangle_area = document.querySelector(`path[fill="var(--nav-bg)"]`)
     expect(triangle_area).toBeDefined()
 
     // Check that the draggable point is rendered
@@ -126,9 +124,7 @@ describe(`RadarChart`, () => {
     expect(triangle).toBeDefined()
 
     // Check for the colored metric areas (should be 3 paths)
-    const colored_areas = document.querySelectorAll(
-      `path[fill^="rgb"][opacity="0.5"]`,
-    )
+    const colored_areas = document.querySelectorAll(`path[fill^="rgb"][opacity="0.5"]`)
     expect(colored_areas.length).toBe(3)
 
     // Check for the grid circles

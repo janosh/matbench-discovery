@@ -79,7 +79,7 @@ describe(`Landing Page`, () => {
     // Table should reflect column visibility changes
     let f1_cells = document.querySelectorAll(`th, td`)
     let has_f1_column = Array.from(f1_cells).some((cell) =>
-      cell.textContent?.includes(`F1`)
+      cell.textContent?.includes(`F1`),
     )
     expect(has_f1_column).toBe(true)
 
@@ -87,7 +87,7 @@ describe(`Landing Page`, () => {
       `.column-menu input[type="checkbox"]`,
     )
     const f1_checkbox = Array.from(checkboxes).find((cb) =>
-      cb.parentElement?.textContent?.includes(`F1`)
+      cb.parentElement?.textContent?.includes(`F1`),
     )
     expect(f1_checkbox?.checked).toBe(true)
 
@@ -118,7 +118,7 @@ describe(`Landing Page`, () => {
     expect(download_buttons?.length).toBe(5)
 
     const buttons = Array.from(download_buttons ?? []).map((btn) =>
-      btn.textContent?.trim()
+      btn.textContent?.trim(),
     )
     expect(buttons).toContain(`SVG`)
     expect(buttons).toContain(`PNG`)
@@ -129,7 +129,7 @@ describe(`Landing Page`, () => {
 
   it(`displays valid metric values`, () => {
     const best_model_info = document.querySelector(`#best-report`)
-    const text = best_model_info?.textContent || ``
+    const text = best_model_info?.textContent ?? ``
 
     // Extract F1 and DAF values using regex
     const f1_match = text.match(/F1 score of ([\d.]+)/)

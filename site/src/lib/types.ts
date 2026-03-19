@@ -63,13 +63,13 @@ export type Citation = {
 export type TrainingSet =
   | (`MP 2022` | `MPtrj` | `MPF` | `MP Graphs` | `GNoME` | `MatterSim` | `Alex`)
   | {
-    title: string
-    url: string
-    download_url: string
-    n_structures: number
-    n_materials?: number
-    [k: string]: unknown
-  }
+      title: string
+      url: string
+      download_url: string
+      n_structures: number
+      n_materials?: number
+      [k: string]: unknown
+    }
 
 export type Label = LabelType & {
   color_scale?: keyof typeof d3sc // d3-scale-chromatic color scale name
@@ -109,8 +109,8 @@ export type CellVal =
   | Record<string, unknown>
   | LinkData
   | {
-    [key: string]: string | number | LinkData | null | undefined | boolean
-  }[]
+      [key: string]: string | number | LinkData | null | undefined | boolean
+    }[]
 export type RowData = { style?: string; [key: string]: CellVal }
 export type CellSnippetArgs = { row: RowData; col: Label; val: CellVal }
 

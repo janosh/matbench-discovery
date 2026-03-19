@@ -41,21 +41,21 @@ repos:
 
   - repo: local
     hooks:
-      - id: deno-fmt
-        name: Deno format
-        entry: deno fmt
-        types: [file]
-        args: [--config, site/deno.jsonc, --permit-no-files]
+      - id: vp-fmt
+        name: Format (oxfmt)
+        entry: bash -c 'cd site && vp fmt --write'
+        types_or: [ts, javascript, json, css, html, svelte]
         language: system
-      - id: deno-lint
-        name: Deno lint
-        entry: deno lint
-        types: [file]
-        args: [--config, site/deno.jsonc, --permit-no-files, --fix]
+        pass_filenames: false
+      - id: vp-lint
+        name: Lint (oxlint)
+        entry: bash -c 'cd site && vp lint --fix'
+        types_or: [ts, javascript, json, css, html, svelte]
         language: system
+        pass_filenames: false
       - id: svelte-check
         name: Svelte type check
-        entry: bash -c 'cd site && pnpm install && pnpm exec svelte-kit sync && pnpm exec svelte-check-rs --threshold error'
+        entry: bash -c 'cd site && npx svelte-kit sync && npx svelte-check-rs --threshold error'
         language: system
         types_or: [ts, svelte]
         pass_filenames: false
@@ -78,23 +78,8 @@ repos:
         # MD033: no inline HTML
         # MD041: first line in a file should be a top-level heading
         # MD034: no bare urls
-        args: [--disable, MD013, MD033, MD034, MD041, '--']
+        args: [--disable, MD013, MD033, MD034, MD041, "--"]
         exclude: changelog\.md$
-
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v10.0.3
-    hooks:
-      - id: eslint
-        types: [file]
-        args: [--fix, --config, site/eslint.config.js]
-        files: \.(js|ts|svelte)$
-        additional_dependencies:
-          - eslint
-          - eslint-plugin-svelte
-          - svelte
-          - typescript
-          - typescript-eslint
-          - '@stylistic/eslint-plugin'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.37.0

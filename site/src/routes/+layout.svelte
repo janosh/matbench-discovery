@@ -38,7 +38,7 @@
   let description = $derived(
     descriptions[url ?? ``] ?? base_description,
   )
-  let title = $derived(url == `/` ? `` : `${url} • `)
+  let title = $derived(url === `/` ? `` : `${url} • `)
 
   const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
     .filter((filename) => !filename.includes(`[`))

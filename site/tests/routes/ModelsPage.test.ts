@@ -18,8 +18,8 @@ describe(`Models Page`, () => {
   it(`renders metric sorting buttons`, () => {
     mount(ModelsPage, { target: document.body })
 
-    const button_texts = Array.from(document.querySelectorAll(`ul button`)).map(
-      (btn) => btn.textContent?.trim(),
+    const button_texts = Array.from(document.querySelectorAll(`ul button`)).map((btn) =>
+      btn.textContent?.trim(),
     )
     expect(button_texts).toContain(`Model Name`)
     expect(button_texts).toContain(`F1`)
@@ -83,10 +83,9 @@ describe(`Models Page`, () => {
     // Should now show authors and package versions
     const sections = first_card?.querySelectorAll(`section`)
     expect(sections?.length).toBeGreaterThan(0)
-    expect(Array.from(sections ?? []).some((s) => s.textContent?.includes(`Authors`)))
-      .toBe(
-        true,
-      )
+    expect(
+      Array.from(sections ?? []).some((s) => s.textContent?.includes(`Authors`)),
+    ).toBe(true)
     expect(
       Array.from(sections ?? []).some((s) => s.textContent?.includes(`Package versions`)),
     ).toBe(true)
@@ -114,10 +113,12 @@ describe(`Models Page`, () => {
 
     // Now both cards should show details (shared state)
     // After clicking, details sections with h3 elements should be visible
-    expect(first_card.querySelectorAll(`section:not(.metrics) h3`).length)
-      .toBeGreaterThan(1)
-    expect(second_card.querySelectorAll(`section:not(.metrics) h3`).length)
-      .toBeGreaterThan(1)
+    expect(
+      first_card.querySelectorAll(`section:not(.metrics) h3`).length,
+    ).toBeGreaterThan(1)
+    expect(
+      second_card.querySelectorAll(`section:not(.metrics) h3`).length,
+    ).toBeGreaterThan(1)
   })
 
   it(`renders model limiting controls correctly`, () => {
@@ -226,15 +227,15 @@ describe(`Models Page`, () => {
       props: { data: { initial_show_n_best: 3 } },
     })
 
-    const limited_names = Array.from(document.querySelectorAll(`ol > li h2 a`)).map((a) =>
-      a.textContent
+    const limited_names = Array.from(document.querySelectorAll(`ol > li h2 a`)).map(
+      (a) => a.textContent,
     )
 
     document.body.innerHTML = ``
     mount(ModelsPage, { target: document.body })
 
-    const all_names = Array.from(document.querySelectorAll(`ol > li h2 a`)).map((a) =>
-      a.textContent
+    const all_names = Array.from(document.querySelectorAll(`ol > li h2 a`)).map(
+      (a) => a.textContent,
     )
     expect(all_names.slice(0, 3)).toEqual(limited_names)
   })

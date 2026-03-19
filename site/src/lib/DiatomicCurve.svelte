@@ -57,7 +57,7 @@
 
       // Shift energies so the energy at infinite separation (last point) is 0
       const shifted_energies = filtered_energies.map(
-        (energy) => energy - filtered_energies[filtered_energies.length - 1],
+        (energy) => energy - (filtered_energies.at(-1) ?? 0),
       )
 
       return {

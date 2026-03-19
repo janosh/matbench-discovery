@@ -20,7 +20,7 @@ describe(`MetricsTable`, () => {
 
     // Check essential columns are present (with sort indicators)
     const header_texts = Array.from(document.querySelectorAll(`th`)).map((h) =>
-      h.textContent?.trim()
+      h.textContent?.trim(),
     )
     const required_cols = [
       `Model`,
@@ -82,14 +82,14 @@ describe(`MetricsTable`, () => {
 
   it(`toggles metadata columns`, () => {
     // Keys used by col_filter (col.key ?? col.label)
-    const metadata_keys = [`Training Set`, `Targets`, `date_added`, `Links`]
+    const metadata_keys = new Set([`Training Set`, `Targets`, `date_added`, `Links`])
     // Labels displayed in table headers
     const metadata_labels = [`Training Set`, `Targets`, `Date Added`, `Links`]
     const col_filter = (_col: Label) => true // show all columns initially
     mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
     let header_texts = Array.from(document.querySelectorAll(`th`)).map((h) =>
-      h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim()
+      h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
     expect(header_texts).toEqual(expect.arrayContaining(metadata_labels))
 
@@ -98,14 +98,14 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        col_filter: (col: Label) => !metadata_keys.includes(col.key ?? col.label),
+        col_filter: (col: Label) => !metadata_keys.has(col.key ?? col.label),
         show_non_compliant: true,
       },
     })
 
     // Check metadata columns are hidden
     header_texts = Array.from(document.querySelectorAll(`th`)).map((h) =>
-      h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim()
+      h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
 
     // Each metadata column label should be hidden
@@ -373,9 +373,9 @@ describe(`MetricsTable`, () => {
       const timestamps = date_cells
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1]) : null
+          return match ? parseInt(match[1], 10) : null
         })
-        .filter((timestamp) => timestamp !== null) as number[]
+        .filter((timestamp) => timestamp !== null)
 
       // Instead of checking order, verify we're extracting timestamps correctly
       expect(timestamps.length).toBeGreaterThan(0)
@@ -393,9 +393,9 @@ describe(`MetricsTable`, () => {
       )
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1]) : null
+          return match ? parseInt(match[1], 10) : null
         })
-        .filter((timestamp) => timestamp !== null) as number[]
+        .filter((timestamp) => timestamp !== null)
 
       // Verify we have timestamps
       expect(descending_timestamps.length).toBeGreaterThan(0)
@@ -414,7 +414,7 @@ describe(`MetricsTable`, () => {
       // Find Training Set column header
       const headers = Array.from(document.querySelectorAll(`th`))
       const training_set_header = headers.find((h) =>
-        h.textContent?.includes(`Training Set`)
+        h.textContent?.includes(`Training Set`),
       )
 
       if (!training_set_header) throw new Error(`Training Set column not found`)
@@ -423,14 +423,12 @@ describe(`MetricsTable`, () => {
       training_set_header.click()
 
       // Get training set sizes from data-sort-value
-      const sizes = Array.from(
-        document.querySelectorAll(`td[data-col="Training Set"]`),
-      )
+      const sizes = Array.from(document.querySelectorAll(`td[data-col="Training Set"]`))
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1]) : null
+          return match ? parseInt(match[1], 10) : null
         })
-        .filter((size) => size !== null) as number[]
+        .filter((size) => size !== null)
 
       if (sizes.length < 2) {
         throw new Error(`Not enough data for testing training set sorting`)
@@ -456,9 +454,9 @@ describe(`MetricsTable`, () => {
       )
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1]) : null
+          return match ? parseInt(match[1], 10) : null
         })
-        .filter((size) => size !== null) as number[]
+        .filter((size) => size !== null)
 
       // Verify we have the same number of items
       expect(new_sizes.length).toBe(initial_order.length)
@@ -500,15 +498,13 @@ describe(`MetricsTable`, () => {
 
       // Get parameter counts from data-sort-value using the correct column label
       const param_counts = Array.from(
-        document.querySelectorAll(
-          `td[data-col="${HYPERPARAMS.model_params.label}"]`,
-        ),
+        document.querySelectorAll(`td[data-col="${HYPERPARAMS.model_params.label}"]`),
       )
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1]) : null
+          return match ? parseInt(match[1], 10) : null
         })
-        .filter((count) => count !== null) as number[]
+        .filter((count) => count !== null)
 
       if (param_counts.length < 2) {
         throw new Error(`Not enough data for testing parameter count sorting`)
@@ -530,15 +526,13 @@ describe(`MetricsTable`, () => {
 
       // Get updated counts using the correct column label
       const new_counts = Array.from(
-        document.querySelectorAll(
-          `td[data-col="${HYPERPARAMS.model_params.label}"]`,
-        ),
+        document.querySelectorAll(`td[data-col="${HYPERPARAMS.model_params.label}"]`),
       )
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1]) : null
+          return match ? parseInt(match[1], 10) : null
         })
-        .filter((count) => count !== null) as number[]
+        .filter((count) => count !== null)
 
       // Verify we have the same number of items
       expect(new_counts.length).toBe(initial_order.length)
@@ -659,19 +653,24 @@ describe(`MetricsTable`, () => {
         // Check that we have enough models to test sorting
         expect(sorted_model_names.length).toBeGreaterThan(5)
 
-        // check that order changed from sorting
-        // TODO find out why this is failing
-        // expect(sorted_model_names).not.toEqual(initial_model_names)
-        // check that sorted_model_names is sorted
-        expect(sorted_model_names).toEqual(sorted_model_names.sort())
+        // Verify sorted in some alphabetical order (ascending or descending)
+        const ascending = [...sorted_model_names].toSorted((a, b) => a.localeCompare(b))
+        const is_ascending =
+          JSON.stringify(sorted_model_names) === JSON.stringify(ascending)
+        const is_descending =
+          JSON.stringify(sorted_model_names) === JSON.stringify(ascending.toReversed())
+        expect(is_ascending || is_descending).toBe(true)
 
-        // Click again to reverse sort (descending Z-A)
+        // Click again to reverse sort direction
         model_header.click()
         await tick()
 
         const reverse_sorted_model_names = get_model_names()
         expect(reverse_sorted_model_names).not.toEqual(sorted_model_names)
-        expect(reverse_sorted_model_names.sort()).toEqual(sorted_model_names)
+        // Should be in the opposite direction - verify both contain same elements
+        expect(
+          [...reverse_sorted_model_names].toSorted((a, b) => a.localeCompare(b)),
+        ).toEqual(ascending)
       },
     )
 
@@ -729,9 +728,7 @@ describe(`MetricsTable`, () => {
       await tick() // Wait for component to process data
 
       // Find all links cells
-      const links_cells = Array.from(
-        document.querySelectorAll(`td[data-col="Links"]`),
-      )
+      const links_cells = Array.from(document.querySelectorAll(`td[data-col="Links"]`))
       expect(links_cells.length).toBeGreaterThan(20)
 
       // Check that rows have links (at least some should)
@@ -772,18 +769,14 @@ describe(`MetricsTable`, () => {
       await tick() // Wait for component to process data
 
       // Find all links cells
-      const links_cells = Array.from(
-        document.querySelectorAll(`td[data-col="Links"]`),
-      )
+      const links_cells = Array.from(document.querySelectorAll(`td[data-col="Links"]`))
 
       // Check for unavailable icon for missing links
       let found_missing_icon = false
 
       for (const cell of links_cells) {
         const missing_icons = Array.from(
-          cell.querySelectorAll(
-            `span[data-original-title$="not available"] svg`,
-          ),
+          cell.querySelectorAll(`span[data-original-title$="not available"] svg`),
         )
 
         if (missing_icons.length > 0) {
@@ -815,9 +808,7 @@ describe(`MetricsTable`, () => {
       await tick() // Wait for component to process data
 
       // Find all pred_files buttons
-      const pred_file_buttons = Array.from(
-        document.querySelectorAll(`.pred-files-btn`),
-      )
+      const pred_file_buttons = Array.from(document.querySelectorAll(`.pred-files-btn`))
 
       // Some models should have prediction files
       expect(pred_file_buttons.length).toBeGreaterThan(0)
@@ -863,7 +854,7 @@ describe(`MetricsTable`, () => {
 
       // Verify that links have SVG icons
       expect(reference_icons.length).toBeGreaterThan(0)
-      expect(reference_icons.some((has_icon) => has_icon)).toBe(true)
+      expect(reference_icons.some(Boolean)).toBe(true)
 
       // Check that the order of links is consistent across cells
       // (not checking all cells as some might have missing links)
@@ -879,7 +870,7 @@ describe(`MetricsTable`, () => {
           })
 
           // All links should have icons
-          expect(second_icons.every((has_icon) => has_icon)).toBe(true)
+          expect(second_icons.every(Boolean)).toBe(true)
         }
       }
     })
@@ -950,7 +941,7 @@ describe(`MetricsTable`, () => {
     const actual_core_columns = new Set(
       Array.from(header_elements).map((th) =>
         // Get text content, remove sort indicator (↑/↓) and any trailing spaces
-        (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim()
+        (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim(),
       ),
     )
 
@@ -1187,15 +1178,16 @@ describe(`MetricsTable`, () => {
 
       // Verify table renders with data (filters allow content)
       const rows = document.querySelectorAll(`tbody tr`)
-      expect(rows.length, `show_non_compliant=true & col_filter=true should show rows`)
-        .toBeGreaterThan(0)
+      expect(
+        rows.length,
+        `show_non_compliant=true & col_filter=true should show rows`,
+      ).toBeGreaterThan(0)
 
       // Verify heatmap is enabled by default
       const table_controls = document.querySelector(`table-controls`)
       if (table_controls) {
-        const heatmap_checkbox = table_controls.querySelector<HTMLInputElement>(
-          `input[type="checkbox"]`,
-        )
+        const heatmap_checkbox =
+          table_controls.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
         expect(heatmap_checkbox?.checked, `show_heatmap should default to true`).toBe(
           true,
         )

@@ -4,10 +4,10 @@ import MODELINGS_TASKS, { type ModelingTask } from '$pkg/modeling-tasks.yml'
 import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
 import { get_org_logo } from './labels'
 
-export const MODEL_METADATA_PATHS = import.meta.glob(`$root/models/[^_]**/[^_]*.yml`, {
-  eager: true,
-  import: `default`,
-}) as Record<string, ModelData>
+export const MODEL_METADATA_PATHS: Record<string, ModelData> = import.meta.glob(
+  `$root/models/[^_]**/[^_]*.yml`,
+  { eager: true, import: `default` },
+)
 
 // visually distinct color palette
 export const MODEL_COLORS = [
@@ -90,7 +90,7 @@ export const MODELS = $state(
       }
 
       const frequent_logos = Object.entries(affiliation_counts)
-        .sort(([_key_a, count_a], [_key_b, count_b]) => count_b - count_a)
+        .toSorted(([_key_a, count_a], [_key_b, count_b]) => count_b - count_a)
         .slice(0, 3)
         .map(([key]) => affiliation_data[key])
 
@@ -112,17 +112,18 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
   models.forEach((model: ModelData) => {
     // Extract required metrics for CPS calculation
     const discovery = model.metrics?.discovery
-    const f1 = typeof discovery === `object`
-      ? discovery?.[`unique_prototypes`]?.F1
-      : undefined
-    const rmsd = model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
-      ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
-      : undefined
-    const kappa = model.metrics?.phonons && typeof model.metrics.phonons !== `string`
-      ? model.metrics.phonons.kappa_103?.κ_SRME !== undefined
-        ? Number(model.metrics.phonons.kappa_103.κ_SRME)
+    const f1 =
+      typeof discovery === `object` ? discovery?.[`unique_prototypes`]?.F1 : undefined
+    const rmsd =
+      model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
+        ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
         : undefined
-      : undefined
+    const kappa =
+      model.metrics?.phonons && typeof model.metrics.phonons !== `string`
+        ? model.metrics.phonons.kappa_103?.κ_SRME !== undefined
+          ? Number(model.metrics.phonons.kappa_103.κ_SRME)
+          : undefined
+        : undefined
 
     // Calculate and update CPS
     model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? NaN

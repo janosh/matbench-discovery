@@ -17,8 +17,7 @@
 
   // Reset to initial weights
   function reset_weights() {
-    let key: keyof typeof CPS_CONFIG
-    for (key in CPS_CONFIG) {
+    for (const key of Object.keys(CPS_CONFIG) as (keyof typeof CPS_CONFIG)[]) {
       CPS_CONFIG[key].weight = DEFAULT_CPS_CONFIG[key].weight
     }
     update_point_from_weights(CPS_CONFIG)
@@ -170,10 +169,10 @@
     is_dragging = true
 
     // Add global event listeners
-    window.addEventListener(`mousemove`, handle_drag)
-    window.addEventListener(`touchmove`, handle_drag, { passive: false })
-    window.addEventListener(`mouseup`, end_drag)
-    window.addEventListener(`touchend`, end_drag)
+    globalThis.addEventListener(`mousemove`, handle_drag)
+    globalThis.addEventListener(`touchmove`, handle_drag, { passive: false })
+    globalThis.addEventListener(`mouseup`, end_drag)
+    globalThis.addEventListener(`touchend`, end_drag)
   }
 
   function handle_drag(event: MouseEvent | TouchEvent) {
@@ -206,10 +205,10 @@
       is_dragging = false
       // Update weights when drag ends
       update_weights_from_point()
-      window.removeEventListener(`mousemove`, handle_drag)
-      window.removeEventListener(`touchmove`, handle_drag)
-      window.removeEventListener(`mouseup`, end_drag)
-      window.removeEventListener(`touchend`, end_drag)
+      globalThis.removeEventListener(`mousemove`, handle_drag)
+      globalThis.removeEventListener(`touchmove`, handle_drag)
+      globalThis.removeEventListener(`mouseup`, end_drag)
+      globalThis.removeEventListener(`touchend`, end_drag)
     }
   }
 

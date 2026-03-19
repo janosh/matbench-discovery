@@ -19,8 +19,8 @@
 
   function filter_refs() {
     const ref_links = document.querySelectorAll<HTMLAnchorElement>(ref_selector)
-    const hashes = Array.from(ref_links).map((ref) => ref.hash)
-    found_on_page = references.filter((ref) => hashes.includes(`#${ref.id}`))
+    const hashes = new Set(Array.from(ref_links).map((ref) => ref.hash))
+    found_on_page = references.filter((ref) => hashes.has(`#${ref.id}`))
   }
   $effect.pre(filter_refs)
 </script>

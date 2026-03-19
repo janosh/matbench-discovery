@@ -29,7 +29,7 @@
     ...(typeof model.metrics?.discovery === `object`
       ? model.metrics.discovery.unique_prototypes
       : {}),
-    ...(typeof model.metrics?.phonons == `object`
+    ...(typeof model.metrics?.phonons === `object`
       ? model.metrics?.phonons.kappa_103
       : {}),
     CPS: model.CPS,

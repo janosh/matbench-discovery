@@ -24,12 +24,12 @@ describe(`Datasets Page`, () => {
     expect(tbody).not.toBeNull()
 
     // Check header columns
-    const header_cols = thead?.querySelectorAll(`th`) || []
+    const header_cols = thead?.querySelectorAll(`th`) ?? []
     expect(header_cols.length).toBe(10)
 
     // Verify expected column headers are present
     const column_headers = Array.from(header_cols).map(
-      (col) => col.textContent?.trim().replace(/[↑↓]/g, ``) || ``,
+      (col) => col.textContent?.trim().replaceAll(/[↑↓]/g, ``) ?? ``,
     )
     expect(column_headers.some((header) => header.includes(`Name`))).toBe(true)
     expect(column_headers.some((header) => header.includes(`Structures`))).toBe(true)
@@ -39,7 +39,7 @@ describe(`Datasets Page`, () => {
     expect(column_headers.some((header) => header.includes(`Links`))).toBe(true)
 
     // Check that we have rows in the table
-    const rows = tbody?.querySelectorAll(`tr`) || []
+    const rows = tbody?.querySelectorAll(`tr`) ?? []
     expect(rows.length).toBeGreaterThan(0)
   })
 
@@ -51,7 +51,7 @@ describe(`Datasets Page`, () => {
     const dataset_names = Array.from(rows).map((row) => {
       // Title is always the first cell
       const title_cell = row.querySelector(`td:first-child`)
-      return title_cell?.textContent?.trim() || ``
+      return title_cell?.textContent?.trim() ?? ``
     })
 
     expect(dataset_names.some((name) => name.includes(`MP`))).toBe(true)
@@ -61,7 +61,7 @@ describe(`Datasets Page`, () => {
   it(`properly renders resource links for datasets`, () => {
     // Links column is the last column (10th, index 9)
     const tbody = document.querySelector(`.${heatmap_class} tbody`)
-    const rows = tbody?.querySelectorAll(`tr`) || []
+    const rows = tbody?.querySelectorAll(`tr`) ?? []
 
     // Count resource links (Website, Download, DOI)
     let resource_link_count = 0
@@ -124,13 +124,13 @@ describe(`Datasets Page`, () => {
     ).map((row) => {
       // First cell is Title column
       const cells = row.querySelectorAll(`td`)
-      return cells[0]?.textContent?.trim() || ``
+      return cells[0]?.textContent?.trim() ?? ``
     })
 
     // Find and click the Structures column header to sort (usually the 2nd header)
     const headers = document.querySelectorAll(`.${heatmap_class} th`)
     const structures_header = Array.from(headers).find((th) =>
-      th.textContent?.includes(`Structures`)
+      th.textContent?.includes(`Structures`),
     )
     if (structures_header) {
       ;(structures_header as HTMLElement).click()
@@ -142,7 +142,7 @@ describe(`Datasets Page`, () => {
       document.querySelectorAll(`.${heatmap_class} tbody tr`),
     ).map((row) => {
       const cells = row.querySelectorAll(`td`)
-      return cells[0]?.textContent?.trim() || ``
+      return cells[0]?.textContent?.trim() ?? ``
     })
 
     // Order should have changed
@@ -155,7 +155,7 @@ describe(`Datasets Page`, () => {
       document.querySelectorAll(`.${heatmap_class} tbody tr`),
     ).map((row) => {
       const cells = row.querySelectorAll(`td`)
-      return cells[0]?.textContent?.trim() || ``
+      return cells[0]?.textContent?.trim() ?? ``
     })
 
     // Find and click the Links column header (which should be non-sortable)
@@ -172,14 +172,14 @@ describe(`Datasets Page`, () => {
       document.querySelectorAll(`.${heatmap_class} tbody tr`),
     ).map((row) => {
       const cells = row.querySelectorAll(`td`)
-      return cells[0]?.textContent?.trim() || ``
+      return cells[0]?.textContent?.trim() ?? ``
     })
 
     // Order should remain the same after clicking Links (non-sortable)
-    expect(datasets_after_clicking_links, `Order changed after clicking Links header`)
-      .toEqual(
-        initial_datasets,
-      )
+    expect(
+      datasets_after_clicking_links,
+      `Order changed after clicking Links header`,
+    ).toEqual(initial_datasets)
   })
 
   it(`has correct styling for sortable and non-sortable columns`, () => {
@@ -194,13 +194,13 @@ describe(`Datasets Page`, () => {
 
     // The Links header should have the not-sortable class
     const links_header = Array.from(all_headers).find((th) =>
-      th.textContent?.includes(`Links`)
+      th.textContent?.includes(`Links`),
     )
     expect(links_header?.classList.contains(`not-sortable`)).toBe(true)
 
     // The API header should have the not-sortable class
     const api_header = Array.from(all_headers).find((th) =>
-      th.textContent?.includes(`API`)
+      th.textContent?.includes(`API`),
     )
     expect(api_header?.classList.contains(`sortable`)).toBe(false)
   })
@@ -208,7 +208,7 @@ describe(`Datasets Page`, () => {
   it(`formats numbers correctly in the table`, () => {
     // Find Structures column (usually 2nd column) cells
     const tbody = document.querySelector(`.${heatmap_class} tbody`)
-    const rows = tbody?.querySelectorAll(`tr`) || []
+    const rows = tbody?.querySelectorAll(`tr`) ?? []
 
     // Get cells from second column (Structures)
     const structures_cells = Array.from(rows).map((row) => {
@@ -219,7 +219,7 @@ describe(`Datasets Page`, () => {
     // Check that at least some cells have formatted numbers
     let has_formatted_number = false
     structures_cells.forEach((cell) => {
-      const cell_text = cell?.textContent?.trim() || ``
+      const cell_text = cell?.textContent?.trim() ?? ``
       if (cell_text !== `n/a`) {
         // Should use K or M for thousands/millions
         has_formatted_number = has_formatted_number || /\d+(\.\d+)?[KM]/.test(cell_text)
@@ -232,7 +232,7 @@ describe(`Datasets Page`, () => {
   it(`correctly displays method information in the table`, () => {
     // Method is usually the 8th column (index 7)
     const tbody = document.querySelector(`.${heatmap_class} tbody`)
-    const rows = tbody?.querySelectorAll(`tr`) || []
+    const rows = tbody?.querySelectorAll(`tr`) ?? []
 
     // Get cells from the Method column
     const method_cells = Array.from(rows).map((row) => {

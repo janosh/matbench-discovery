@@ -37,9 +37,9 @@
     elem_counts[`./wbm-element-counts-by-${count_mode}.json`],
   )
   $effect.pre(() => {
-    if (!mp_elem_counts) throw `No MP data for count mode ${count_mode}!`
-    if (!mp_trj_elem_counts) throw `No MPtrj data for count mode ${count_mode}!`
-    if (!wbm_elem_counts) throw `No WBM data for count mode ${count_mode}!`
+    if (!mp_elem_counts) throw new Error(`No MP data for count mode ${count_mode}!`)
+    if (!mp_trj_elem_counts) throw new Error(`No MPtrj data for count mode ${count_mode}!`)
+    if (!wbm_elem_counts) throw new Error(`No WBM data for count mode ${count_mode}!`)
   })
 
   const capture_state = () => ({ color_scale, log_scale, count_mode })

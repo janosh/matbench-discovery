@@ -68,7 +68,7 @@
         metadata: { name: item.name, repo: item.repo, model_key: item.model_key },
       }))
       .filter(({ x, y, color_value, size_value }) =>
-        [x, y, color_value, size_value].every((val) => val != null)
+        [x, y, color_value, size_value].every((val) => val !== null)
       ) as PlotPoint[],
   )
   // O(1) lookup for tooltip by model name

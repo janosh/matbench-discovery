@@ -45,7 +45,7 @@ describe(`Contribute Page`, () => {
 
   it(`renders API examples and code snippets`, () => {
     const code_content = Array.from(document.querySelectorAll(`pre`))
-      .map((block) => block.textContent || ``)
+      .map((block) => block.textContent ?? ``)
       .join(`\n`)
 
     expect(code_content).toMatch(/import|from|def|class|matbench|pip/i)
@@ -68,7 +68,7 @@ describe(`Contribute Page`, () => {
 
     // If no community links, should have instructions for filing issues
     const has_community_links = Array.from(
-      trouble_section?.querySelectorAll(`a`) || [],
+      trouble_section?.querySelectorAll(`a`) ?? [],
     ).some(
       (link) =>
         link.textContent?.includes(`@`) ||
@@ -84,7 +84,7 @@ describe(`Contribute Page`, () => {
 // Helper function to get a section following a heading with specific text
 function get_heading_section(element: Element, heading_text: string): Element | null {
   const target_heading = Array.from(element.querySelectorAll(`h2`)).find((h) =>
-    h.textContent?.includes(heading_text)
+    h.textContent?.includes(heading_text),
   )
 
   if (!target_heading) return null
@@ -94,7 +94,7 @@ function get_heading_section(element: Element, heading_text: string): Element | 
   let current_node = target_heading.nextElementSibling
 
   while (current_node && current_node.tagName !== `H2`) {
-    content.appendChild(current_node.cloneNode(true))
+    content.append(current_node.cloneNode(true))
     current_node = current_node.nextElementSibling
   }
 

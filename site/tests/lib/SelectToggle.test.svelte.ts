@@ -130,7 +130,7 @@ describe(`SelectToggle.svelte`, () => {
         const link = links[0]
 
         // Check link attributes
-        Object.entries(expectedLinkAttributes || {}).forEach(([attr, value]) => {
+        Object.entries(expectedLinkAttributes ?? {}).forEach(([attr, value]) => {
           expect(link.getAttribute(attr)).toBe(value)
         })
       }

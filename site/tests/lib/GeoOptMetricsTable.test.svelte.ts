@@ -43,8 +43,8 @@ describe(`GeoOptMetricsTable`, () => {
 
     // At least some symmetry metrics present
     const symmetry_labels = Object.values(GEO_OPT_SYMMETRY_METRICS).map((m) => m.label)
-    const found_symmetry = symmetry_labels.filter(
-      (label) => header_html.some((html) => html.includes(label)),
+    const found_symmetry = symmetry_labels.filter((label) =>
+      header_html.some((html) => html.includes(label)),
     ).length
     expect(found_symmetry).toBeGreaterThan(0)
 
@@ -87,13 +87,15 @@ describe(`GeoOptMetricsTable`, () => {
     )
 
     // RMSD cells should have numeric values (data-col includes enriched label with unit)
-    const rmsd_cells = Array.from(document.querySelectorAll(`td`)).filter(
-      (td) => td.getAttribute(`data-col`)?.includes(`RMSD`),
+    const rmsd_cells = Array.from(document.querySelectorAll(`td`)).filter((td) =>
+      td.getAttribute(`data-col`)?.includes(`RMSD`),
     )
-    expect(rmsd_cells.some((cell) => {
-      const text = cell.textContent?.trim()
-      return text && !isNaN(parseFloat(text))
-    })).toBe(true)
+    expect(
+      rmsd_cells.some((cell) => {
+        const text = cell.textContent?.trim()
+        return text && !isNaN(parseFloat(text))
+      }),
+    ).toBe(true)
   })
 
   it(`toggles heatmap colors`, async () => {
@@ -144,8 +146,9 @@ describe(`GeoOptMetricsTable`, () => {
 
     const column_menu = document.querySelector(`.column-menu`)
     expect(column_menu).not.toBeNull()
-    expect(column_menu?.querySelectorAll(`input[type="checkbox"]`).length)
-      .toBeGreaterThan(0)
+    expect(
+      column_menu?.querySelectorAll(`input[type="checkbox"]`).length,
+    ).toBeGreaterThan(0)
   })
 
   it.each([`RMSD`, `Model`])(`sorts by %s when header is clicked`, async (col_name) => {
@@ -159,13 +162,13 @@ describe(`GeoOptMetricsTable`, () => {
     const header = headers.find((h) =>
       col_name === `Model`
         ? h.textContent?.trim() === `Model`
-        : h.textContent?.includes(col_name)
+        : h.textContent?.includes(col_name),
     )
     if (!header) throw new Error(`${col_name} header not found`)
 
     const get_order = () =>
-      Array.from(document.querySelectorAll(`td[data-col="Model"]`)).map(
-        (c) => c.textContent?.trim(),
+      Array.from(document.querySelectorAll(`td[data-col="Model"]`)).map((c) =>
+        c.textContent?.trim(),
       )
 
     const initial = get_order()
@@ -177,7 +180,8 @@ describe(`GeoOptMetricsTable`, () => {
     const after_second = get_order()
 
     if (initial.length > 1) {
-      const changed = JSON.stringify(initial) !== JSON.stringify(after_click) ||
+      const changed =
+        JSON.stringify(initial) !== JSON.stringify(after_click) ||
         JSON.stringify(after_click) !== JSON.stringify(after_second)
       expect(changed).toBe(true)
     }

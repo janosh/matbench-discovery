@@ -20,8 +20,8 @@ export const load: PageServerLoad = async ({ params }) => {
     try {
       // deno-lint-ignore no-await-in-loop
       await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`)
-    } catch (exc) {
-      throw error(404, { message: (exc as Error).message })
+    } catch (error_) {
+      throw error(404, { message: (error_ as Error).message })
     }
   }
 

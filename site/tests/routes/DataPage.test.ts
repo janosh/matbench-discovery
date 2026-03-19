@@ -16,8 +16,8 @@ describe(`Data Page`, () => {
     expect(list_items?.length).toBeGreaterThanOrEqual(16)
 
     // Check for expected data files in the list
-    const list_text = Array.from(list_items || [])
-      .map((item) => item.textContent || ``)
+    const list_text = Array.from(list_items ?? [])
+      .map((item) => item.textContent ?? ``)
       .join(``)
 
     const essential_files = [
@@ -59,7 +59,7 @@ describe(`Data Page`, () => {
       // Check URL has correct pattern
       const is_valid_url =
         /^https:\/\/(figshare\.com|.*materialsproject\.(org|com)|github\.com)\/.*$/.test(
-          url || ``,
+          url ?? ``,
         )
       expect(is_valid_url, `Invalid URL format: ${url}`).toBe(true)
 
@@ -72,7 +72,7 @@ describe(`Data Page`, () => {
     // Extract descriptions from list items
     const descriptions = Array.from(document.querySelectorAll(`.data-files-list li`))
       .map((item) => {
-        const link_text = item.querySelector(`a`)?.textContent || ``
+        const link_text = item.querySelector(`a`)?.textContent ?? ``
         return item.textContent?.replace(link_text, ``).trim()
       })
       .filter((desc) => desc && desc.length > 0)
@@ -80,7 +80,7 @@ describe(`Data Page`, () => {
     // Verify descriptions exist and contain expected keywords
     expect(descriptions.length).toBeGreaterThan(5)
     expect(
-      descriptions.some((desc) => /summary|structure|energy/i.test(desc || ``)),
+      descriptions.some((desc) => /summary|structure|energy/i.test(desc ?? ``)),
     ).toBe(true)
   })
 })

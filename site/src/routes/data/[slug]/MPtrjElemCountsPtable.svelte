@@ -24,7 +24,7 @@
 
   const mp_trj_data = data_files[`mp_trj_json_gz`] as DataFile | undefined
   if (!mp_trj_data) {
-    throw `mp_trj_json_gz not found in data-files.yml`
+    throw new Error(`mp_trj_json_gz not found in data-files.yml`)
   }
 </script>
 
