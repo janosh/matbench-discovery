@@ -14,13 +14,13 @@
     color_scale?: D3InterpolateName
   } = $props()
 
-  const elem_counts = import.meta.glob(`../mp-trj-element-counts-by-*.json`, {
-    eager: true,
-    import: `default`,
-  }) as Record<string, Record<ElementSymbol, number>>
+  const elem_counts = import.meta.glob<{ default: Record<ElementSymbol, number> }>(
+    `../mp-trj-element-counts-by-*.json`,
+    { eager: true },
+  )
 
   const elem_counts_key = $derived(`../mp-trj-element-counts-by-${count_mode}.json`)
-  let mp_trj_elem_counts = $derived(elem_counts[elem_counts_key] ?? {})
+  let mp_trj_elem_counts = $derived(elem_counts[elem_counts_key]?.default ?? {})
 
   const mp_trj_data = data_files[`mp_trj_json_gz`] as DataFile | undefined
   if (!mp_trj_data) {

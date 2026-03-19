@@ -4,10 +4,10 @@
   import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
   import MptrjTargetCounts from './mptrj-target-counts.md'
 
-  const plots = import.meta.glob(`$figs/mp-trj-*.svelte`, {
-    eager: true,
-    import: `default`,
-  }) as Record<string, typeof SvelteComponent>
+  const plots = import.meta.glob<{ default: typeof SvelteComponent }>(
+    `$figs/mp-trj-*.svelte`,
+    { eager: true },
+  )
 
   const title_map: Record<string, string> = {
     'e-form': `Formation Energy`,
@@ -21,7 +21,8 @@
 
 {#if browser}
   <ul>
-    {#each Object.entries(plots) as [name, Plot] (name)}
+    {#each Object.entries(plots) as [name, mod] (name)}
+      {@const Plot = mod.default}
       {@const title = name.split(`mp-trj-`)[1].split(`-hist.svelte`)[0]}
       <div>
         <h3>{title_map[title] ?? title}</h3>

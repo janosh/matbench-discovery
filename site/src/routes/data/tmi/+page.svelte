@@ -8,15 +8,13 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import { Toggle } from 'svelte-multiselect'
 
-  const elem_counts = $state(
-    import.meta.glob(`../wbm-element-counts-*=*.json`, {
-      eager: true,
-      import: `default`,
-    }),
-  )
-  for (const key of Object.keys(elem_counts)) {
-    const new_key = key?.split(`-`).at(-1)?.split(`.`)[0] as string
-    elem_counts[new_key] = elem_counts[key]
+  const raw_counts = import.meta.glob<{ default: unknown }>(`../wbm-element-counts-*=*.json`, {
+    eager: true,
+  })
+  const elem_counts: Record<string, unknown> = $state({})
+  for (const [key, mod] of Object.entries(raw_counts)) {
+    const short_key = key.split(`-`).at(-1)?.split(`.`)[0] as string
+    elem_counts[short_key] = mod.default
   }
 
   let arity_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`arity=`))

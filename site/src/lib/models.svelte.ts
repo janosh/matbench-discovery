@@ -4,9 +4,12 @@ import MODELINGS_TASKS, { type ModelingTask } from '$pkg/modeling-tasks.yml'
 import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
 import { get_org_logo } from './labels'
 
-export const MODEL_METADATA_PATHS: Record<string, ModelData> = import.meta.glob(
+const model_modules = import.meta.glob<{ default: ModelData }>(
   `$root/models/[^_]**/[^_]*.yml`,
-  { eager: true, import: `default` },
+  { eager: true },
+)
+export const MODEL_METADATA_PATHS: Record<string, ModelData> = Object.fromEntries(
+  Object.entries(model_modules).map(([key, mod]) => [key, mod.default]),
 )
 
 // visually distinct color palette

@@ -6,10 +6,10 @@
   import type { SvelteComponent } from 'svelte'
   import GeoOptReadme from './geo-opt-readme.md'
 
-  const plots = import.meta.glob(`$figs/spg-sankey-*symprec=1e-05.svelte`, {
-    eager: true,
-    import: `default`,
-  }) as Record<string, typeof SvelteComponent>
+  const plots = import.meta.glob<{ default: typeof SvelteComponent }>(
+    `$figs/spg-sankey-*symprec=1e-05.svelte`,
+    { eager: true },
+  )
 
   const n_min_relaxed_structures: number = MODELS.reduce((acc, model) => {
     const geo_opt = model.metrics?.geo_opt
@@ -36,7 +36,7 @@
 </GeoOptReadme>
 
 <ul>
-  {#each Object.entries(plots) as [name, Plot], idx (name + idx)}
+  {#each Object.entries(plots) as [name, {default: Plot}], idx (name + idx)}
     <Plot {name} style="width: 100%; place-self: center" />
   {/each}
 </ul>

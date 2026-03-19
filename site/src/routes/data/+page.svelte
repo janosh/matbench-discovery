@@ -17,9 +17,9 @@
   import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
 
-  const elem_counts: Record<string, Record<ElementSymbol, number>> = import.meta.glob(
+  const elem_counts = import.meta.glob<{ default: Record<ElementSymbol, number> }>(
     `./*-element-counts-by-{occurrence,composition}*.json`,
-    { eager: true, import: `default` },
+    { eager: true },
   )
 
   let log_scale = $state(false) // log color scale
@@ -28,13 +28,13 @@
   let count_mode = $state(count_modes[0])
 
   let mp_elem_counts = $derived(
-    elem_counts[`./mp-element-counts-by-${count_mode}.json`],
+    elem_counts[`./mp-element-counts-by-${count_mode}.json`]?.default,
   )
   let mp_trj_elem_counts = $derived(
-    elem_counts[`./mp-trj-element-counts-by-${count_mode}.json`],
+    elem_counts[`./mp-trj-element-counts-by-${count_mode}.json`]?.default,
   )
   let wbm_elem_counts = $derived(
-    elem_counts[`./wbm-element-counts-by-${count_mode}.json`],
+    elem_counts[`./wbm-element-counts-by-${count_mode}.json`]?.default,
   )
   $effect.pre(() => {
     if (!mp_elem_counts) throw new Error(`No MP data for count mode ${count_mode}!`)

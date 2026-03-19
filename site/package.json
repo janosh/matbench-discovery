@@ -56,6 +56,9 @@
     "vite-plus": "latest",
     "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
   },
+  "overrides": {
+    "svelte": "^5.54.0"
+  },
   "pnpm": {
     "overrides": {
       "svelte": "$svelte",

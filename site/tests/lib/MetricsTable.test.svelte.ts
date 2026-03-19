@@ -666,11 +666,12 @@ describe(`MetricsTable`, () => {
         await tick()
 
         const reverse_sorted_model_names = get_model_names()
-        expect(reverse_sorted_model_names).not.toEqual(sorted_model_names)
-        // Should be in the opposite direction - verify both contain same elements
-        expect(
-          [...reverse_sorted_model_names].toSorted((a, b) => a.localeCompare(b)),
-        ).toEqual(ascending)
+        // Second click should reverse the sort direction
+        if (is_ascending) {
+          expect(reverse_sorted_model_names).toEqual(ascending.toReversed())
+        } else {
+          expect(reverse_sorted_model_names).toEqual(ascending)
+        }
       },
     )
 
