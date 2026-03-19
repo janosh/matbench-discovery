@@ -67,8 +67,11 @@
         size_value: item[axes.size_value.key as GitHubMetricKey],
         metadata: { name: item.name, repo: item.repo, model_key: item.model_key },
       }))
-      .filter(({ x, y, color_value, size_value }) =>
-        [x, y, color_value, size_value].every((val) => val !== null)
+      .filter(
+        ({ x, y, color_value, size_value }) =>
+          [x, y, color_value, size_value].every(
+            (val): val is number => typeof val === `number` && Number.isFinite(val),
+          ),
       ) as PlotPoint[],
   )
   // O(1) lookup for tooltip by model name

@@ -88,7 +88,7 @@
         {@const dataset = DATASETS[train_set_key]}
         {#if dataset}
           {@const { n_structures, name, slug, n_materials } = dataset}
-          {@const pretty_n_mat = typeof n_materials == `number`
+          {@const pretty_n_mat = typeof n_materials === `number`
         ? format_num(n_materials)
         : n_materials}
           {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}

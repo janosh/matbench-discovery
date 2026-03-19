@@ -6,7 +6,7 @@ import { sveltekit } from '@sveltejs/kit/vite'
 import yaml from 'js-yaml'
 import type { JSONSchema4 } from 'json-schema'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
-import { execFile } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import type { Plugin } from 'vite'
@@ -50,7 +50,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
 
       // Format generated schema file
       const vp_cmd = path.resolve(`./node_modules/.bin/vp`)
-      execFile(vp_cmd, [`fmt`, `--write`, dts_file])
+      execFileSync(vp_cmd, [`fmt`, `--write`, dts_file])
       return true
     } catch (error) {
       console.error(`Error processing schema file ${file}:`, error)

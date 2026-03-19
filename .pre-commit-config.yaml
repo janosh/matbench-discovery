@@ -43,13 +43,13 @@ repos:
     hooks:
       - id: vp-fmt
         name: Format (oxfmt)
-        entry: bash -c 'cd site && vp fmt --write'
+        entry: bash -c 'cd site && npx --no-install vp fmt --write'
         types_or: [ts, javascript, json, css, html, svelte]
         language: system
         pass_filenames: false
       - id: vp-lint
         name: Lint (oxlint)
-        entry: bash -c 'cd site && vp lint --fix'
+        entry: bash -c 'cd site && npx --no-install vp lint --fix'
         types_or: [ts, javascript, json, css, html, svelte]
         language: system
         pass_filenames: false

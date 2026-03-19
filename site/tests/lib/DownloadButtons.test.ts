@@ -28,10 +28,11 @@ describe(`Download Buttons UI`, () => {
         <div class="export-error" style="display: none;"></div>
       </div>
     `
+    const original_create_element = document.createElement.bind(document)
     vi.spyOn(document, `createElement`).mockImplementation((tag: string) =>
       tag === `a`
         ? ({ href: ``, download: ``, click: mock_click } as unknown as HTMLAnchorElement)
-        : document.createElement(tag),
+        : original_create_element(tag),
     )
   })
 

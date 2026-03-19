@@ -214,7 +214,5 @@ const main = async () => {
 
 main().catch((error) => {
   console.error(`Fatal:`, error)
-  writeFile(output_file, JSON.stringify([])).catch((write_error) =>
-    console.error(`Failed to write empty output:`, write_error),
-  )
+  process.exitCode = 1
 })

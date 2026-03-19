@@ -102,16 +102,14 @@ describe(`format_train_set`, () => {
 
   it(`formats multiple training sets correctly`, () => {
     const mptrj = DATASETS[mptrj_key]
-    const combined_materials = mptrj.n_materials ?? mptrj.n_structures
-
     const mock_model = {
       n_training_structures: (mp2022.n_structures ?? 0) + (mptrj.n_structures ?? 0),
       n_training_materials: (mp2022.n_materials ?? 0) + (mptrj.n_materials ?? 0),
     }
     const result = format_train_set([mp2022_key, mptrj_key], mock_model as ModelData)
 
-    // Check that the result contains combined information
-    expect(result).toContain(`data-sort-value="${combined_materials}"`)
+    // data-sort-value uses model.n_training_materials (the combined total)
+    expect(result).toContain(`data-sort-value="${mock_model.n_training_materials}"`)
     expect(result).toContain(mp2022.name)
     expect(result).toContain(mptrj.name ?? mptrj_key)
   })
