@@ -81,7 +81,7 @@
     if (!table.show_non_compliant) new_params.set(`non_compliant`, `0`)
     if (!table.show_compliant) new_params.set(`compliant`, `0`)
 
-    const new_url = new_params.size ? `?${new_params}` : page.url.pathname
+    const new_url = new_params.size > 0 ? `?${new_params}` : page.url.pathname
     if (new_url !== `${page.url.pathname}${page.url.search}`) {
       goto(new_url, { replaceState: true, keepFocus: true, noScroll: true })
     }

@@ -284,14 +284,14 @@ def test_slurm_submit(
         submit_as_temp_file=submit_as_temp_file,
     )
 
-    hpc.slurm_submit(**kwargs)  # type: ignore[arg-type]
+    hpc.slurm_submit(**kwargs)  # ty: ignore[invalid-argument-type]
 
     stdout, stderr = capsys.readouterr()
     # check slurm_submit() did nothing in normal mode
     assert stdout == stderr == ""
 
     with patch.dict(os.environ, {"SLURM_JOB_ID": "1234"}, clear=True):
-        slurm_vars = hpc.slurm_submit(**kwargs)  # type: ignore[arg-type]
+        slurm_vars = hpc.slurm_submit(**kwargs)  # ty: ignore[invalid-argument-type]
     expected_slurm_vars = dict(slurm_job_id="1234", slurm_flags="--foo")
     if time is not None:
         expected_slurm_vars["slurm_timelimit"] = time
@@ -314,7 +314,7 @@ def test_slurm_submit(
         patch("builtins.open", mock_open()),
         patch.dict(os.environ, {"SLURM_JOB_ID": "1234"}, clear=True),
     ):
-        hpc.slurm_submit(**kwargs)  # type: ignore[arg-type]
+        hpc.slurm_submit(**kwargs)  # ty: ignore[invalid-argument-type]
 
     assert mock_subprocess_run.call_count == 1
 

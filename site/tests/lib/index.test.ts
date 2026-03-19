@@ -29,15 +29,16 @@ describe(`slugify`, () => {
 })
 
 describe(`arr_to_str`, () => {
-  it.each(
-    [
-      [null, `n/a`],
-      [undefined, `n/a`],
-      [[`a`, `b`, `c`], `a, b, c`],
-      [123, `123`],
-      [true, `true`],
-    ] as const,
-  )(`converts %s → '%s'`, (input, expected) => {
+  it.each([
+    [null, `n/a`],
+    [undefined, `n/a`],
+    [``, `n/a`],
+    [[`a`, `b`, `c`], `a, b, c`],
+    [123, `123`],
+    [0, `0`],
+    [true, `true`],
+    [false, `false`],
+  ] as const)(`converts %s → '%s'`, (input, expected) => {
     expect(arr_to_str(input as Parameters<typeof arr_to_str>[0])).toBe(expected)
   })
 })

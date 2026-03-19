@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, vi } from 'vitest'
 
-// matchMedia mock for Svelte MediaQuery - needed for svelte-multiselect
+// MatchMedia mock for Svelte MediaQuery - needed for svelte-multiselect
 Object.defineProperty(globalThis, `matchMedia`, {
   writable: true,
   value: (query: string) => ({
@@ -47,7 +47,7 @@ vi.mock(`matterviz/table`, async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>().catch(() => ({}))
   return {
     ...actual,
-    ToggleMenu: () => null, // stub component
+    ToggleMenu: () => null, // Stub component
   }
 })
 
@@ -85,8 +85,12 @@ export function doc_query<T extends HTMLElement>(
 export function is_hidden(el: Element | null): boolean {
   if (!el) return true
   const style = getComputedStyle(el as HTMLElement)
-  return (style.display === `none` || style.visibility === `hidden` ||
-    el.getAttribute(`aria-hidden`) === `true` || el.hasAttribute(`hidden`))
+  return (
+    style.display === `none` ||
+    style.visibility === `hidden` ||
+    el.getAttribute(`aria-hidden`) === `true` ||
+    el.hasAttribute(`hidden`)
+  )
 }
 
 // ResizeObserver mock

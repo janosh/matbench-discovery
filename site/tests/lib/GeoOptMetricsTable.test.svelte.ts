@@ -14,7 +14,7 @@ describe(`GeoOptMetricsTable`, () => {
     expect(table?.querySelector(`thead`)).not.toBeNull()
     expect(table?.querySelector(`tbody`)).not.toBeNull()
 
-    const headers = Array.from(document.querySelectorAll(`th`))
+    const headers = [...document.querySelectorAll(`th`)]
     const header_texts = headers.map((h) => h.textContent?.trim())
     const header_html = headers.map((h) => h.innerHTML)
 
@@ -43,13 +43,13 @@ describe(`GeoOptMetricsTable`, () => {
 
     // At least some symmetry metrics present
     const symmetry_labels = Object.values(GEO_OPT_SYMMETRY_METRICS).map((m) => m.label)
-    const found_symmetry = symmetry_labels.filter(
-      (label) => header_html.some((html) => html.includes(label)),
+    const found_symmetry = symmetry_labels.filter((label) =>
+      header_html.some((html) => html.includes(label)),
     ).length
     expect(found_symmetry).toBeGreaterThan(0)
 
     // Group headers for Symmetry and Hyperparams
-    const group_texts = Array.from(document.querySelectorAll(`tr.group-header th`))
+    const group_texts = [...document.querySelectorAll(`tr.group-header th`)]
       .map((h) => h.textContent?.trim())
       .filter(Boolean)
     expect(group_texts).toContain(`Symmetry`)
@@ -63,7 +63,7 @@ describe(`GeoOptMetricsTable`, () => {
     })
     await tick()
 
-    const headers = Array.from(document.querySelectorAll(`th`))
+    const headers = [...document.querySelectorAll(`th`)]
     const rmsd_header = headers.find((h) => h.innerHTML?.includes(`RMSD`))
     expect(rmsd_header).toBeDefined()
     expect(rmsd_header?.getAttribute(`aria-sort`)).toBe(`ascending`)
@@ -80,20 +80,22 @@ describe(`GeoOptMetricsTable`, () => {
     expect(rows.length).toBeGreaterThan(0)
 
     // Model cells should have links to model pages
-    const model_cells = Array.from(document.querySelectorAll(`td[data-col="Model"]`))
+    const model_cells = [...document.querySelectorAll(`td[data-col="Model"]`)]
     expect(model_cells.length).toBeGreaterThan(0)
     expect(model_cells[0]?.querySelector(`a`)?.getAttribute(`href`)).toMatch(
       /^\/models\//,
     )
 
     // RMSD cells should have numeric values (data-col includes enriched label with unit)
-    const rmsd_cells = Array.from(document.querySelectorAll(`td`)).filter(
-      (td) => td.getAttribute(`data-col`)?.includes(`RMSD`),
+    const rmsd_cells = [...document.querySelectorAll(`td`)].filter((td) =>
+      td.getAttribute(`data-col`)?.includes(`RMSD`),
     )
-    expect(rmsd_cells.some((cell) => {
-      const text = cell.textContent?.trim()
-      return text && !isNaN(parseFloat(text))
-    })).toBe(true)
+    expect(
+      rmsd_cells.some((cell) => {
+        const text = cell.textContent?.trim()
+        return text && !isNaN(parseFloat(text))
+      }),
+    ).toBe(true)
   })
 
   it(`toggles heatmap colors`, async () => {
@@ -144,8 +146,9 @@ describe(`GeoOptMetricsTable`, () => {
 
     const column_menu = document.querySelector(`.column-menu`)
     expect(column_menu).not.toBeNull()
-    expect(column_menu?.querySelectorAll(`input[type="checkbox"]`).length)
-      .toBeGreaterThan(0)
+    expect(
+      column_menu?.querySelectorAll(`input[type="checkbox"]`).length,
+    ).toBeGreaterThan(0)
   })
 
   it.each([`RMSD`, `Model`])(`sorts by %s when header is clicked`, async (col_name) => {
@@ -155,17 +158,17 @@ describe(`GeoOptMetricsTable`, () => {
     })
     await tick()
 
-    const headers = Array.from(document.querySelectorAll(`th`))
+    const headers = [...document.querySelectorAll(`th`)]
     const header = headers.find((h) =>
       col_name === `Model`
         ? h.textContent?.trim() === `Model`
-        : h.textContent?.includes(col_name)
+        : h.textContent?.includes(col_name),
     )
     if (!header) throw new Error(`${col_name} header not found`)
 
     const get_order = () =>
-      Array.from(document.querySelectorAll(`td[data-col="Model"]`)).map(
-        (c) => c.textContent?.trim(),
+      [...document.querySelectorAll(`td[data-col="Model"]`)].map((c) =>
+        c.textContent?.trim(),
       )
 
     const initial = get_order()
@@ -177,7 +180,8 @@ describe(`GeoOptMetricsTable`, () => {
     const after_second = get_order()
 
     if (initial.length > 1) {
-      const changed = JSON.stringify(initial) !== JSON.stringify(after_click) ||
+      const changed =
+        JSON.stringify(initial) !== JSON.stringify(after_click) ||
         JSON.stringify(after_click) !== JSON.stringify(after_second)
       expect(changed).toBe(true)
     }
@@ -223,7 +227,7 @@ describe(`GeoOptMetricsTable`, () => {
     })
     await tick()
 
-    const labels = Array.from(document.querySelectorAll(`label`))
+    const labels = [...document.querySelectorAll(`label`)]
     const label = labels.find((l) => label_match.test(l.textContent ?? ``))
     const checkbox = label?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
 

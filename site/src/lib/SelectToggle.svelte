@@ -9,8 +9,8 @@
     link?: string
   }
   let { selected = $bindable(``), options = [] }: {
-    selected: string // currently selected value
-    options: OptionInfo[] // options to display, either a record or an array of tuples
+    selected: string // Currently selected value
+    options: OptionInfo[] // Options to display, either a record or an array of tuples
   } = $props()
   const target = { target: `_blank`, rel: `noopener noreferrer` }
 </script>

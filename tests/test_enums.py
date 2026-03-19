@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 import warnings
 from enum import auto
 from pathlib import Path
@@ -331,26 +332,35 @@ def get_urls_from_dict(
     return urls
 
 
+MAX_RETRIES = 3
+TIMEOUT = 30
+
+
 def check_url(session: requests.Session, url: str, desc: str) -> None:
-    """Check if a URL is valid."""
+    """Check if a URL is reachable, retrying on transient failures."""
     http_status = None
-    try:
-        response = session.head(url, allow_redirects=True)
-        http_status = response.status_code
-        # 200: OK, 202: Accepted (async processing, common for figshare),
-        # 403: Forbidden (valid URL but access restricted), 429: Rate limited
-        assert http_status in {200, 202, 403, 429}
-        if http_status == 429:
-            assert "Too Many Requests" in response.reason, f"{response.reason=}"
-            warnings.warn(f"{response.reason=}", stacklevel=2)
-    except (requests.RequestException, AssertionError) as exc:
-        exc.add_note(f"Failed to validate\n{url}\n{desc}\n{http_status=}")
-        raise
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response = session.head(url, allow_redirects=True, timeout=TIMEOUT)
+            http_status = response.status_code
+            # 200: OK, 202: Accepted (figshare async), 403: access restricted,
+            # 429: rate limited
+            assert http_status in {200, 202, 403, 429}
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == MAX_RETRIES:
+                raise
+            time.sleep(2**attempt)
+        except (requests.RequestException, AssertionError) as exc:
+            exc.add_note(f"Failed to validate\n{url}\n{desc}\n{http_status=}")
+            raise
+        else:
+            if http_status == 429:
+                warnings.warn(f"{url}: {response.reason}", stacklevel=2)
+            return
 
 
 def test_model_prediction_urls() -> None:
     """Test that all model prediction file URLs are valid."""
-    import asyncio
     import concurrent.futures
     import multiprocessing as mp
 
@@ -358,53 +368,36 @@ def test_model_prediction_urls() -> None:
     for model in Model:
         if model.name == Model.mace_mpa_0.name:
             continue
-
-        # Check model PR URL
         tasks[model.pr_url] = model.name
-
-        # Check all URLs in metrics
         metrics = model.metrics
         if not metrics:
             continue
-
         for key_path, url in get_urls_from_dict(metrics):
             tasks[url] = f"{model.name}.{key_path}"
 
-    # Create session with connection pooling and adaptive settings
     session = requests.Session()
     session.headers["User-Agent"] = "unit test"
-
-    # Determine optimal pool size based on system resources and environment
-    # Use min of CPU count and number of tasks to avoid over-allocation
     n_workers = min(len(tasks), mp.cpu_count())
-
-    # Configure connection pooling with adaptive settings
     adapter = requests.adapters.HTTPAdapter(
-        pool_connections=n_workers,
-        pool_maxsize=n_workers * 2,  # Allow some room for growth
-        max_retries=0,  # We handle retries at a higher level
-        pool_block=False,  # don't block main thread waiting for connections
+        pool_connections=n_workers, pool_maxsize=n_workers * 2
     )
     session.mount("https://", adapter)
     session.mount("http://", adapter)
 
-    # Create event loop for async execution
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    errors: list[Exception] = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
+        futures = {
+            executor.submit(check_url, session, url, desc): (url, desc)
+            for url, desc in tasks.items()
+        }
+        for future in concurrent.futures.as_completed(futures):
+            url, desc = futures[future]
+            try:
+                future.result()
+            except Exception as exc:
+                exc.add_note(f"Failed to validate\n{url}\n{desc}")
+                errors.append(exc)
 
-    async def check_urls_async() -> None:
-        """Check URLs concurrently using asyncio and thread pool."""
-        # Use ThreadPoolExecutor for I/O-bound HTTP requests
-        with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
-            futures = [  # Create futures for all URL checks
-                loop.run_in_executor(executor, check_url, *(session, url, desc))
-                for url, desc in tasks.items()
-            ]
-            # Wait for all futures to complete
-            await asyncio.gather(*futures)
-
-    try:
-        # Run the async checks
-        loop.run_until_complete(check_urls_async())
-    finally:
-        loop.close()
+    if errors:
+        msg = f"{len(errors)}/{len(tasks)} URLs failed validation"
+        raise ExceptionGroup(msg, errors)

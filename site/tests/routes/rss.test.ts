@@ -1,4 +1,5 @@
 import { MODELS } from '$lib'
+import type { ModelData } from '$lib/types'
 import { GET } from '$routes/rss.xml/+server'
 import pkg from '$site/package.json'
 import { describe, expect, it } from 'vitest'
@@ -34,7 +35,7 @@ describe(`RSS feed endpoint`, () => {
     expect(items).not.toBeNull()
     expect(items?.length).toBeGreaterThan(0)
 
-    const first_item = items?.[0] || ``
+    const first_item = items?.[0] ?? ``
     expect(first_item).toMatch(/<title>.*<\/title>/)
     expect(first_item).toMatch(/<link>.*<\/link>/)
     expect(first_item).toMatch(/<description><!\[CDATA\[[\s\S]*?\]\]><\/description>/)
@@ -58,7 +59,7 @@ describe(`RSS feed endpoint`, () => {
     )
     expect(cdata_match).not.toBeNull()
 
-    const cdata_content = cdata_match?.[1] || ``
+    const cdata_content = cdata_match?.[1] ?? ``
 
     // Check for expected model details in the correct order
     expect(cdata_content).toMatch(/<h2>[^<]+<\/h2>/) // Model name heading
@@ -110,7 +111,7 @@ describe(`RSS feed endpoint`, () => {
     const cdata_match = xml.match(
       /<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/,
     )
-    const cdata_content = cdata_match?.[1] || ``
+    const cdata_content = cdata_match?.[1] ?? ``
 
     // Check for link patterns
     if (cdata_content.includes(`paper`)) {
@@ -129,13 +130,13 @@ describe(`RSS feed endpoint`, () => {
     const xml = await response.text()
 
     // Find models with different dates
-    const sorted_models = [...MODELS].sort(
+    const sorted_models = MODELS.toSorted(
       (a, b) => new Date(b.date_added).getTime() - new Date(a.date_added).getTime(),
     )
 
     // Take the first two models with different dates
-    let newer_model = null
-    let older_model = null
+    let newer_model: ModelData | null = null
+    let older_model: ModelData | null = null
 
     // Use for...of loop instead of index-based loop
     let prev_model = sorted_models[0]
@@ -182,10 +183,10 @@ describe(`RSS feed endpoint`, () => {
     }
 
     // Additional check: all items should have a pubDate in correct format
-    const pub_dates = xml.match(/<pubDate>[^<]+<\/pubDate>/g) || []
+    const pub_dates = xml.match(/<pubDate>[^<]+<\/pubDate>/g) ?? []
     expect(pub_dates.length).toBeGreaterThan(0)
     for (const date_str of pub_dates) {
-      const date_content = date_str.replace(/<\/?pubDate>/g, ``)
+      const date_content = date_str.replaceAll(/<\/?pubDate>/g, ``)
       // Check that this parses as a valid date
       expect(new Date(date_content).toString()).not.toBe(`Invalid Date`)
     }
@@ -202,16 +203,16 @@ describe(`RSS feed endpoint`, () => {
 
     // Extract descriptions to check for relative URLs
     const descriptions =
-      xml.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/g) || []
+      xml.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/g) ?? []
     expect(descriptions.length).toBeGreaterThan(0)
 
     // URLs in descriptions should be absolute
-    const url_matches = (descriptions[0] || ``).match(/href="([^"]+)"/g) || []
+    const url_matches = (descriptions[0] ?? ``).match(/href="([^"]+)"/g) ?? []
     expect(url_matches.length).toBeGreaterThan(0)
 
     // All URLs should be absolute (start with https://)
     for (const url_match of url_matches) {
-      const url = url_match.replace(/href="|"/g, ``)
+      const url = url_match.replaceAll(/href="|"/g, ``)
       expect(url.startsWith(`https://`)).toBe(true)
     }
   })

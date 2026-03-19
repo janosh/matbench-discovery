@@ -62,7 +62,7 @@
   let lower_is_better = $derived(metric_better_as(sort_by.key) === `lower`)
 
   let models = $derived(
-    MODELS.filter((model) => show_non_compliant || model_is_compliant(model)).sort(
+    MODELS.filter((model) => show_non_compliant || model_is_compliant(model)).toSorted(
       sort_models(sort_by_path, order),
     ),
   )
@@ -73,7 +73,7 @@
     const vals = models
       .map((model) => get_nested_value(model, sort_by_path))
       .filter((val) => typeof val === `number` && !isNaN(val))
-      .sort() as number[]
+      .toSorted() as number[]
 
     return [vals.at(0) ?? 0, vals.at(-1) ?? 1]
   })

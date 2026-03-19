@@ -29,7 +29,7 @@
     ...(typeof model.metrics?.discovery === `object`
       ? model.metrics.discovery.unique_prototypes
       : {}),
-    ...(typeof model.metrics?.phonons == `object`
+    ...(typeof model.metrics?.phonons === `object`
       ? model.metrics?.phonons.kappa_103
       : {}),
     CPS: model.CPS,
@@ -88,7 +88,7 @@
         {@const dataset = DATASETS[train_set_key]}
         {#if dataset}
           {@const { n_structures, name, slug, n_materials } = dataset}
-          {@const pretty_n_mat = typeof n_materials == `number`
+          {@const pretty_n_mat = typeof n_materials === `number`
         ? format_num(n_materials)
         : n_materials}
           {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
@@ -183,7 +183,7 @@
       {@const value = all_metrics[key as keyof typeof all_metrics] as number}
       <li class:active={sort_by == key}>
         <label for={key}>{@html label ?? key}</label>
-        <strong>{isNaN(value) ? `n/a` : format_num(value)}
+        <strong>{isNaN(Number(value)) ? `n/a` : format_num(value)}
           <small>{unit ?? ``}</small></strong>
       </li>
     {/each}

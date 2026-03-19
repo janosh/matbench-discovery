@@ -14,7 +14,7 @@ describe(`TableControls`, () => {
   // Helper to find checkbox by parent label text
   const find_checkbox_by_label = (text: string): HTMLInputElement | null => {
     const labels = document.querySelectorAll(`label`)
-    const label = Array.from(labels).find((lbl) => lbl.textContent?.includes(text))
+    const label = [...labels].find((lbl) => lbl.textContent?.includes(text))
     return doc_query<HTMLInputElement>(`input[type="checkbox"]`, label)
   }
 

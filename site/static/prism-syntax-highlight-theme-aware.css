@@ -27,7 +27,8 @@
   --prism-dark-punctuation: #808080;
 }
 
-pre[class*='language-'], code[class*='language-'] {
+pre[class*='language-'],
+code[class*='language-'] {
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
   font-size: 0.85rem; /* ~14px */
   text-align: left;
@@ -189,11 +190,13 @@ code[class*='language-tsx'] {
   color: light-dark(var(--prism-light-text), var(--prism-dark-variable));
 }
 
-pre[class*='language-css'], code[class*='language-css'] {
+pre[class*='language-css'],
+code[class*='language-css'] {
   color: light-dark(var(--prism-light-string), var(--prism-dark-string));
 }
 
-pre[class*='language-html'], code[class*='language-html'] {
+pre[class*='language-html'],
+code[class*='language-html'] {
   color: light-dark(var(--prism-light-text), var(--prism-dark-text));
 }
 
@@ -201,7 +204,8 @@ pre[class*='language-html'], code[class*='language-html'] {
   color: light-dark(var(--prism-light-function), var(--prism-dark-function));
 }
 
-pre[data-line], pre[class*='language-'] > code[class*='language-'] {
+pre[data-line],
+pre[class*='language-'] > code[class*='language-'] {
   position: relative;
 }
 

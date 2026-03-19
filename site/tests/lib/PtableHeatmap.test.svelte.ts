@@ -67,7 +67,7 @@ describe(`PtableHeatmap.svelte`, () => {
       },
     })
 
-    expect(component.snapshot.capture()).toEqual({
+    expect(component.snapshot.capture()).toStrictEqual({
       color_scale: `interpolateViridis`,
       log: false,
     })
@@ -75,7 +75,7 @@ describe(`PtableHeatmap.svelte`, () => {
     component.snapshot.restore({ color_scale: `interpolatePlasma`, log: true })
     await tick()
 
-    expect(component.snapshot.capture()).toEqual({
+    expect(component.snapshot.capture()).toStrictEqual({
       color_scale: `interpolatePlasma`,
       log: true,
     })

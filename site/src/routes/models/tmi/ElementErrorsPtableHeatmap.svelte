@@ -20,7 +20,7 @@
     color_scale?: D3InterpolateName | ((num: number) => string)
     active_element?: ChemicalElement | null
     models?: string[]
-    // must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
+    // Must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
     current_model?: string[]
     manual_cbar_max?: boolean
     normalized?: boolean

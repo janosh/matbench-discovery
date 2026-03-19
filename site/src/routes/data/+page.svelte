@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { browser } from '$app/environment'
   import DataReadme from '$data/wbm/readme.md'
   import WbmFormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
   import HistWbmHullDist from '$figs/hist-wbm-hull-dist.svelte'
@@ -17,12 +16,12 @@
   import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
 
-  const elem_counts: Record<string, Record<ElementSymbol, number>> = import.meta.glob(
+  const elem_counts = import.meta.glob<Record<ElementSymbol, number>>(
     `./*-element-counts-by-{occurrence,composition}*.json`,
-    { eager: true, import: `default` },
+    { eager: true, import: 'default' },
   )
 
-  let log_scale = $state(false) // log color scale
+  let log_scale = $state(false) // Log color scale
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   const count_modes = [`occurrence`, `composition`]
   let count_mode = $state(count_modes[0])
@@ -37,9 +36,9 @@
     elem_counts[`./wbm-element-counts-by-${count_mode}.json`],
   )
   $effect.pre(() => {
-    if (!mp_elem_counts) throw `No MP data for count mode ${count_mode}!`
-    if (!mp_trj_elem_counts) throw `No MPtrj data for count mode ${count_mode}!`
-    if (!wbm_elem_counts) throw `No WBM data for count mode ${count_mode}!`
+    if (!mp_elem_counts) throw new Error(`No MP data for count mode ${count_mode}!`)
+    if (!mp_trj_elem_counts) throw new Error(`No MPtrj data for count mode ${count_mode}!`)
+    if (!wbm_elem_counts) throw new Error(`No WBM data for count mode ${count_mode}!`)
   })
 
   const capture_state = () => ({ color_scale, log_scale, count_mode })
@@ -55,9 +54,7 @@
 
 <DataReadme>
   {#snippet hist_e_form_per_atom()}
-    {#if browser}
-      <WbmFormEnergyHist />
-    {/if}
+    <WbmFormEnergyHist />
   {/snippet}
 
   {#snippet wbm_elements_heatmap()}
@@ -112,26 +109,20 @@
   {/snippet}
 
   {#snippet hist_wbm_hull_dist()}
-    {#if browser}
-      <HistWbmHullDist />
-    {/if}
+    <HistWbmHullDist />
   {/snippet}
 
   {#snippet spacegroup_sunbursts()}
-    {#if browser}
-      <div style="display: flex; gap: 2em; place-content: center">
-        <SpacegroupSunburstMp />
-        <SpacegroupSunburstWbm />
-      </div>
-    {/if}
+    <div style="display: flex; gap: 2em; place-content: center">
+      <SpacegroupSunburstMp />
+      <SpacegroupSunburstWbm />
+    </div>
   {/snippet}
 </DataReadme>
 
 <MpElementalReferenceEnergies />
 
-{#if browser}
-  <MPvsMPtrjVsWBMArityHist style="margin: auto; max-width: 60cqw; padding-right: 2em" />
-{/if}
+<MPvsMPtrjVsWBMArityHist style="margin: auto; max-width: 60cqw; padding-right: 2em" />
 <p>
   Distribution of unique elements per structure in MP, MPtrj and WBM. The bar heights are
   normalized by the total number of structures in each data set. WBM is dominated by

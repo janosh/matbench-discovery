@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { browser } from '$app/environment'
   import BarElementCounts from '$figs/tmi/bar-element-counts-mp+wbm-normalized=False.svelte'
   import BarElementCountsNormalized from '$figs/tmi/bar-element-counts-mp+wbm-normalized=True.svelte'
   import { PtableInset } from '$lib'
@@ -8,20 +7,19 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import { Toggle } from 'svelte-multiselect'
 
-  const elem_counts = $state(
-    import.meta.glob(`../wbm-element-counts-*=*.json`, {
-      eager: true,
-      import: `default`,
-    }),
-  )
-  for (const key of Object.keys(elem_counts)) {
-    const new_key = key?.split(`-`).at(-1)?.split(`.`)[0] as string
-    elem_counts[new_key] = elem_counts[key]
+  const raw_counts = import.meta.glob<unknown>(`../wbm-element-counts-*=*.json`, {
+    eager: true,
+    import: 'default',
+  })
+  const elem_counts: Record<string, unknown> = $state({})
+  for (const [key, value] of Object.entries(raw_counts)) {
+    const short_key = key.split(`-`).at(-1)?.split(`.`)[0] as string
+    elem_counts[short_key] = value
   }
 
   let arity_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`arity=`))
   let batch_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`batch=`))
-  let log = $state(false) // log color scale
+  let log = $state(false) // Log color scale
   let filter = $state(arity_keys[0])
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
@@ -91,12 +89,10 @@
   <input type="checkbox" bind:checked={normalized_bar_counts} />
 </label>
 
-{#if browser}
-  {#if normalized_bar_counts}
-    <BarElementCountsNormalized />
-  {:else}
-    <BarElementCounts />
-  {/if}
+{#if normalized_bar_counts}
+  <BarElementCountsNormalized />
+{:else}
+  <BarElementCounts />
 {/if}
 
 <style>

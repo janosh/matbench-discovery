@@ -18,8 +18,8 @@ describe(`Models Page`, () => {
   it(`renders metric sorting buttons`, () => {
     mount(ModelsPage, { target: document.body })
 
-    const button_texts = Array.from(document.querySelectorAll(`ul button`)).map(
-      (btn) => btn.textContent?.trim(),
+    const button_texts = [...document.querySelectorAll(`ul button`)].map((btn) =>
+      btn.textContent?.trim(),
     )
     expect(button_texts).toContain(`Model Name`)
     expect(button_texts).toContain(`F1`)
@@ -43,7 +43,7 @@ describe(`Models Page`, () => {
   it(`sorts models by selected metric`, async () => {
     mount(ModelsPage, { target: document.body })
 
-    const initial_models = Array.from(document.querySelectorAll(`ol > li h2 a`)).map(
+    const initial_models = [...document.querySelectorAll(`ol > li h2 a`)].map(
       (a) => a.textContent,
     )
 
@@ -52,11 +52,11 @@ describe(`Models Page`, () => {
     daf_btn?.click()
     await tick()
 
-    const sorted_models = Array.from(document.querySelectorAll(`ol > li h2 a`)).map(
+    const sorted_models = [...document.querySelectorAll(`ol > li h2 a`)].map(
       (a) => a.textContent,
     )
     // Order should be different
-    expect(sorted_models).not.toEqual(initial_models)
+    expect(sorted_models).not.toStrictEqual(initial_models)
   })
 
   it(`toggles model details`, async () => {
@@ -71,7 +71,7 @@ describe(`Models Page`, () => {
 
     // Initially no authors section visible
     const initial_sections = first_card?.querySelectorAll(`section`)
-    const has_authors = Array.from(initial_sections ?? []).some(
+    const has_authors = [...initial_sections ?? []].some(
       (section) => section.querySelector(`h3`)?.textContent === `Authors`,
     )
     expect(has_authors).toBe(false)
@@ -83,12 +83,11 @@ describe(`Models Page`, () => {
     // Should now show authors and package versions
     const sections = first_card?.querySelectorAll(`section`)
     expect(sections?.length).toBeGreaterThan(0)
-    expect(Array.from(sections ?? []).some((s) => s.textContent?.includes(`Authors`)))
-      .toBe(
-        true,
-      )
     expect(
-      Array.from(sections ?? []).some((s) => s.textContent?.includes(`Package versions`)),
+      [...sections ?? []].some((s) => s.textContent?.includes(`Authors`)),
+    ).toBe(true)
+    expect(
+      [...sections ?? []].some((s) => s.textContent?.includes(`Package versions`)),
     ).toBe(true)
   })
 
@@ -98,7 +97,7 @@ describe(`Models Page`, () => {
       props: { data: { initial_show_n_best: 3 } },
     })
 
-    const [first_card, second_card] = Array.from(document.querySelectorAll(`ol > li`))
+    const [first_card, second_card] = [...document.querySelectorAll(`ol > li`)]
     expect(first_card).toBeDefined()
     expect(second_card).toBeDefined()
 
@@ -106,18 +105,20 @@ describe(`Models Page`, () => {
 
     // Initially no details visible on either card
     // Check if the details sections are present by looking for non-metrics h3
-    expect(first_card.querySelectorAll(`section:not(.metrics) h3`).length).toBe(0)
-    expect(second_card.querySelectorAll(`section:not(.metrics) h3`).length).toBe(0)
+    expect(first_card.querySelectorAll(`section:not(.metrics) h3`)).toHaveLength(0)
+    expect(second_card.querySelectorAll(`section:not(.metrics) h3`)).toHaveLength(0)
 
     first_details_btn.click()
     await tick()
 
     // Now both cards should show details (shared state)
     // After clicking, details sections with h3 elements should be visible
-    expect(first_card.querySelectorAll(`section:not(.metrics) h3`).length)
-      .toBeGreaterThan(1)
-    expect(second_card.querySelectorAll(`section:not(.metrics) h3`).length)
-      .toBeGreaterThan(1)
+    expect(
+      first_card.querySelectorAll(`section:not(.metrics) h3`).length,
+    ).toBeGreaterThan(1)
+    expect(
+      second_card.querySelectorAll(`section:not(.metrics) h3`).length,
+    ).toBeGreaterThan(1)
   })
 
   it(`renders model limiting controls correctly`, () => {
@@ -134,7 +135,7 @@ describe(`Models Page`, () => {
     expect(n_best_input.min).toBe(`2`) // min_models = 2
     expect(n_best_input.max).toBe(String(initial_count))
     expect(Number(n_best_input.value)).toBe(initial_count)
-    expect(document.querySelectorAll(`ol > li`).length).toBe(initial_count)
+    expect(document.querySelectorAll(`ol > li`)).toHaveLength(initial_count)
 
     const label_text = n_best_input.parentElement?.textContent
     expect(label_text).toMatch(/sort/i)
@@ -169,7 +170,7 @@ describe(`Models Page`, () => {
         const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
         const effective = Math.min(Math.max(min_models, input), MODELS.length)
 
-        expect(model_cards.length).toBe(expected)
+        expect(model_cards).toHaveLength(expected)
         expect(Number(n_best_input.value)).toBe(effective)
         expect(n_best_input.min).toBe(String(min_models))
         expect(n_best_input.max).toBe(String(MODELS.length))
@@ -183,7 +184,7 @@ describe(`Models Page`, () => {
       })
 
       const cards = document.querySelectorAll(`ol > li`)
-      const names = Array.from(cards).map((card) => {
+      const names = [...cards].map((card) => {
         expect(card.querySelector(`h2 a`)).toBeDefined()
         expect(card.querySelector(`.metrics`)).toBeDefined()
         const name = card.querySelector(`h2 a`)?.textContent?.trim()
@@ -192,7 +193,7 @@ describe(`Models Page`, () => {
       })
 
       expect(new Set(names).size).toBe(names.length)
-      expect(names.length).toBe(10)
+      expect(names).toHaveLength(10)
     })
   })
 
@@ -226,23 +227,23 @@ describe(`Models Page`, () => {
       props: { data: { initial_show_n_best: 3 } },
     })
 
-    const limited_names = Array.from(document.querySelectorAll(`ol > li h2 a`)).map((a) =>
-      a.textContent
+    const limited_names = [...document.querySelectorAll(`ol > li h2 a`)].map(
+      (a) => a.textContent,
     )
 
     document.body.innerHTML = ``
     mount(ModelsPage, { target: document.body })
 
-    const all_names = Array.from(document.querySelectorAll(`ol > li h2 a`)).map((a) =>
-      a.textContent
+    const all_names = [...document.querySelectorAll(`ol > li h2 a`)].map(
+      (a) => a.textContent,
     )
-    expect(all_names.slice(0, 3)).toEqual(limited_names)
+    expect(all_names.slice(0, 3)).toStrictEqual(limited_names)
   })
 
   it(`defaults to showing all models with compliance filter checked`, () => {
     mount(ModelsPage, { target: document.body })
 
-    expect(document.querySelectorAll(`ol > li`).length).toBe(MODELS.length)
+    expect(document.querySelectorAll(`ol > li`)).toHaveLength(MODELS.length)
     const checkbox = doc_query<HTMLInputElement>(`input[type="checkbox"]`)
     expect(checkbox.checked).toBe(true)
   })
@@ -257,9 +258,7 @@ describe(`Models Page`, () => {
     expect(legend.querySelector(`svg`)).toBeDefined()
     expect(legend.querySelector(`.matterviz-color-bar`)).toBeDefined()
 
-    const model_cards_h2 = Array.from(
-      document.querySelectorAll<HTMLElement>(`ol > li h2`),
-    )
+    const model_cards_h2 = [...document.querySelectorAll<HTMLElement>(`ol > li h2`)]
     expect(model_cards_h2.length).toBeGreaterThan(0)
 
     // applies background color to model card titles based on active metric value

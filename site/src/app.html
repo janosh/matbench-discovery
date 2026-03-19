@@ -1,16 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta name="author" content="Janosh Riebesell" />
     <script>
       // Set theme immediately to prevent flashing
-      const prefers_dark =
-        window.matchMedia('(prefers-color-scheme: dark)').matches
+      const prefers_dark = globalThis.matchMedia('(prefers-color-scheme: dark)').matches
       try {
         const stored = localStorage.theme
         const theme = ['light', 'dark'].includes(stored)
           ? stored
-          : (prefers_dark ? 'dark' : 'light')
+          : prefers_dark
+            ? 'dark'
+            : 'light'
         document.documentElement.style.colorScheme = theme
         document.documentElement.dataset.theme = theme
       } catch {

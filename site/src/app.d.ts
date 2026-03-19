@@ -24,7 +24,7 @@ declare module '*package.json' {
 declare module 'models/*.yml' {
   const data: import('$lib/model-schema').ModelMetadata
   export default data
-} // model metadata files
+} // Model metadata files
 
 declare module '*/datasets.yml' {
   const data: Record<string, import('$lib/types').Dataset>
@@ -34,28 +34,28 @@ declare module '*/datasets.yml' {
 declare module '*citation.cff' {
   const data: import('$lib').Citation
   export default data
-} // paper metadata
+} // Paper metadata
 
 declare module '*references.yaml' {
   export const references: import('$lib').Reference[]
-} // paper references (auto-exported by Zotero)
+} // Paper references (auto-exported by Zotero)
 
 declare module '*model-schema.yml' {
   export const ModelMetadata: import('$lib/model-schema').ModelMetadata
-} // model metadata schema
+} // Model metadata schema
 
 declare module '*data-files.yml' {
-  export type DataFile = {
+  export interface DataFile {
     url: string
     path: string
     description: string
-    html?: string // auto-generated after ESM import in lib/index.ts
+    html?: string // Auto-generated after ESM import in lib/index.ts
     figshare?: string
     md5?: string
   }
   // Index signature allows DataFile entries, _links is the only string metadata field
   // Code filters keys starting with '_' when iterating over file entries
-  type DataFiles = {
+  interface DataFiles {
     [K: string]: DataFile | string
     _links: string
   }
@@ -66,15 +66,15 @@ declare module '*data-files.yml' {
 declare module '*element-counts.json' {
   const map: Record<string, number>
   export default map
-} // element counts for different datasets
+} // Element counts for different datasets
 
 declare module '*modeling-tasks.yml' {
-  export type SubTask = {
+  export interface SubTask {
     label: string
     description: string
   }
 
-  export type ModelingTask = {
+  export interface ModelingTask {
     label: string
     description: string
     metrics: {
@@ -84,7 +84,8 @@ declare module '*modeling-tasks.yml' {
     subtasks?: Record<string, SubTask>
   }
 
-  type ModelingTasks = {
+  interface ModelingTasks {
+    [key: string]: ModelingTask
     geo_opt: ModelingTask
     discovery: ModelingTask
     phonons: ModelingTask

@@ -120,7 +120,9 @@ body {
   flex-direction: column;
   min-height: 100vh;
   /* smooth transition between dark/light theme  */
-  transition: color 0.2s, background-color 0.2s;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
 }
 main {
   padding: var(--main-padding);
@@ -139,7 +141,9 @@ button {
   border-radius: 3pt;
   background: var(--btn-bg);
   padding: 2pt 4pt;
-  transition: color 0.2s, background-color 0.2s;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
 }
 button:hover {
   background: var(--btn-bg-hover);

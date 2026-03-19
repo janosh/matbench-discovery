@@ -203,4 +203,4 @@ def test_model_validation_errors(
 ) -> None:
     """Test model validation functions raise appropriate errors."""
     with pytest.raises(error_type, match=error_match):
-        func(metadata)  # type: ignore[operator]
+        func(metadata)  # ty: ignore[call-non-callable]

@@ -1,12 +1,12 @@
 <script lang="ts">
   import type { Component } from 'svelte'
 
-  const modules = import.meta.glob<{ default: Component }>(`./*.md`, { eager: true })
+  const modules = import.meta.glob<Component>(`./*.md`, { eager: true, import: 'default' })
 </script>
 
 <h1 class="toc-exclude">API</h1>
 
-{#each Object.entries(modules) as [path, { default: MdFile }] (path)}
+{#each Object.entries(modules) as [path, MdFile] (path)}
   <MdFile />
 {/each}
 

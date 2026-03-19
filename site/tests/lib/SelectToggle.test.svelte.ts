@@ -1,9 +1,9 @@
 import SelectToggle from '$lib/SelectToggle.svelte'
 import { mount } from 'svelte'
-import { describe, expect, it, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 describe(`SelectToggle.svelte`, () => {
-  test.each([
+  it.each([
     {
       name: `basic options`,
       options: [
@@ -42,7 +42,7 @@ describe(`SelectToggle.svelte`, () => {
 
       // Check that all options are rendered as buttons
       const buttons = document.querySelectorAll(`button`)
-      expect(buttons.length).toBe(options.length)
+      expect(buttons).toHaveLength(options.length)
 
       // Verify active state
       options.forEach((_, idx) => {
@@ -96,7 +96,7 @@ describe(`SelectToggle.svelte`, () => {
     expect(buttons[1].classList.contains(`active`)).toBe(true)
   })
 
-  test.each([
+  it.each([
     {
       name: `with link`,
       options: [{ value: `option1`, label: `Option 1`, link: `https://example.com` }],
@@ -124,13 +124,13 @@ describe(`SelectToggle.svelte`, () => {
       const links = document.querySelectorAll(`a`)
 
       if (expectNoLink) {
-        expect(links.length).toBe(0)
+        expect(links).toHaveLength(0)
       } else {
         expect(links.length).toBeGreaterThan(0)
         const link = links[0]
 
         // Check link attributes
-        Object.entries(expectedLinkAttributes || {}).forEach(([attr, value]) => {
+        Object.entries(expectedLinkAttributes ?? {}).forEach(([attr, value]) => {
           expect(link.getAttribute(attr)).toBe(value)
         })
       }

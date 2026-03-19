@@ -3,13 +3,13 @@
   import SymOpsDiffBar from '$figs/sym-ops-diff-bar-symprec=1e-05.svelte'
   import { GeoOptMetricsTable, MODELS } from '$lib'
   import { format_num } from 'matterviz'
-  import type { SvelteComponent } from 'svelte'
+  import type { Component } from 'svelte'
   import GeoOptReadme from './geo-opt-readme.md'
 
-  const plots = import.meta.glob(`$figs/spg-sankey-*symprec=1e-05.svelte`, {
-    eager: true,
-    import: `default`,
-  }) as Record<string, typeof SvelteComponent>
+  const plots = import.meta.glob<Component>(
+    `$figs/spg-sankey-*symprec=1e-05.svelte`,
+    { eager: true, import: 'default' },
+  )
 
   const n_min_relaxed_structures: number = MODELS.reduce((acc, model) => {
     const geo_opt = model.metrics?.geo_opt
@@ -36,7 +36,7 @@
 </GeoOptReadme>
 
 <ul>
-  {#each Object.entries(plots) as [name, Plot], idx (name + idx)}
+  {#each Object.entries(plots) as [name, Plot] (name)}
     <Plot {name} style="width: 100%; place-self: center" />
   {/each}
 </ul>

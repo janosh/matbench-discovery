@@ -4,10 +4,10 @@ import {
   format_property_path,
   get_org_logo,
 } from '$lib/labels'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 describe(`format_power_ten`, () => {
-  test.each([
+  it.each([
     {
       input: `1.23e-4`,
       expected: `1.23×10<sup>-4</sup>`,
@@ -43,16 +43,16 @@ describe(`format_power_ten`, () => {
       expected: `multiple 1.2×10<sup>3</sup> and 4.5×10<sup>-6</sup> values`,
       description: `multiple scientific notations`,
     },
-  ])(`formats '$input' to '$expected' ($description)`, ({ input, expected }) => {
+  ])(`formats '$input' to '$expected' ($description)`, ({ input, expected }: { input: string; expected: string }) => {
     expect(format_power_ten(input)).toBe(expected)
   })
 
-  test(`returns input string when no scientific notation is present`, () => {
+  it(`returns input string when no scientific notation is present`, () => {
     const input = `just a regular string with numbers 123.456`
     expect(format_power_ten(input)).toBe(input)
   })
 
-  test(`handles edge cases correctly`, () => {
+  it(`handles edge cases correctly`, () => {
     // Empty string
     expect(format_power_ten(``)).toBe(``)
 
@@ -66,7 +66,7 @@ describe(`format_power_ten`, () => {
 })
 
 describe(`format_property_path`, () => {
-  test.each([
+  it.each([
     // Direct properties
     [`model_params`, `Params`],
     [`date_added`, `Date Added`],
@@ -93,21 +93,21 @@ describe(`format_property_path`, () => {
     [``, ``],
     [`..`, ``],
     [`.`, ``],
-  ])(`formats '%s' → '%s'`, (input, expected) => {
+  ])(`formats '%s' → '%s'`, (input: string, expected: string) => {
     expect(format_property_path(input)).toBe(expected)
   })
 })
 
 describe(`ALL_METRICS`, () => {
-  test.each([
+  it.each([
     [`RMSD`, `unitless`],
     [`MAE`, `eV / atom`],
     [`RMSE`, `eV / atom`],
-  ])(`%s has unit '%s'`, (key, expected_unit) => {
+  ])(`%s has unit '%s'`, (key: string, expected_unit: string) => {
     expect(ALL_METRICS[key as keyof typeof ALL_METRICS].unit).toBe(expected_unit)
   })
 
-  test.each([`CPS`, `F1`, `DAF`, `Precision`, `Recall`, `Accuracy`])(
+  it.each([`CPS`, `F1`, `DAF`, `Precision`, `Recall`, `Accuracy`])(
     `%s has no unit`,
     (key) => {
       expect(ALL_METRICS[key as keyof typeof ALL_METRICS].unit).toBeUndefined()
@@ -116,7 +116,7 @@ describe(`ALL_METRICS`, () => {
 })
 
 describe(`get_org_logo`, () => {
-  test.each([
+  it.each([
     [`Google DeepMind`, { name: `Google DeepMind`, src: `/logos/deepmind.svg` }],
     [
       `FAIR at Meta`,
@@ -128,14 +128,14 @@ describe(`get_org_logo`, () => {
       { name: `Massachusetts Institute of Technology`, src: `/logos/mit.svg` },
     ],
     [`DeePMD`, { name: `DeePMD`, src: `/logos/deepmd.svg` }],
-  ])(`returns correct logo data for '%s'`, (input, expected) => {
-    expect(get_org_logo(input)).toEqual(expected)
+  ])(`returns correct logo data for '%s'`, (input: string, expected: unknown) => {
+    expect(get_org_logo(input)).toStrictEqual(expected)
   })
 
-  test(`returns undefined for empty or undefined input`, () => {
+  it(`returns undefined for empty or undefined input`, () => {
     expect(get_org_logo(``)).toBeUndefined()
     // @ts-expect-error testing undefined input
-    expect(get_org_logo(undefined)).toBeUndefined()
+    expect(get_org_logo()).toBeUndefined()
     // @ts-expect-error testing null input
     expect(get_org_logo(null)).toBeUndefined()
   })

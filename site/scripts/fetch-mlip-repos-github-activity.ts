@@ -1,9 +1,7 @@
-#!/usr/bin/env -S deno run -A
-// deno-lint-ignore-file no-await-in-loop
 // Auto-generates mlip-github-activity.json from models/*.yml (non-superseded only)
-// Usage: deno run -A scripts/fetch-mlip-repos-github-activity.ts [--force-refresh]
+// Usage: npx tsx scripts/fetch-mlip-repos-github-activity.ts [--force-refresh]
 // Set GITHUB_TOKEN env var to avoid rate limits
-import { parse as parseYAML } from 'jsr:@std/yaml@^1.0.5'
+import { load as parseYAML } from 'js-yaml'
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
@@ -66,19 +64,17 @@ const load_repos_from_models = async (): Promise<ModelInfo[]> => {
         if ([`superseded`, `aborted`].includes(data.status ?? ``)) continue
 
         const repo_url = extract_github_repo(data.repo ?? null)
-        if (repo_url && data.model_name && data.model_key) {
+        if (repo_url && data.model_name && data.model_key && !repos_map.has(repo_url)) {
           // Only add if repo not already present (first non-superseded model wins)
-          if (!repos_map.has(repo_url)) {
-            const label = data.model_name.split(`-`)[0] || data.model_name
-            repos_map.set(repo_url, {
-              name: label,
-              model_key: data.model_key,
-              repo: repo_url,
-            })
-          }
+          const label = data.model_name.split(`-`)[0] || data.model_name
+          repos_map.set(repo_url, {
+            name: label,
+            model_key: data.model_key,
+            repo: repo_url,
+          })
         }
-      } catch (err) {
-        console.warn(`  Warning: ${yml_file} - ${(err as Error).message}`)
+      } catch (error) {
+        console.warn(`  Warning: ${yml_file} - ${(error as Error).message}`)
       }
     }
   }
@@ -148,14 +144,15 @@ const get_github_stats = async (
     )
     const commits_last_year =
       get_count_from_pagination(commits_res.headers.get(`Link`)) ??
-        ((await commits_res.json()).length || 0)
+      ((await commits_res.json()).length || 0)
 
     // Fetch contributor count
     const contrib_res = await fetch_github(
       `https://api.github.com/repos/${repo}/contributors?per_page=1&anon=true`,
       headers,
     )
-    const contributors = get_count_from_pagination(contrib_res.headers.get(`Link`)) ??
+    const contributors =
+      get_count_from_pagination(contrib_res.headers.get(`Link`)) ??
       ((await contrib_res.json()).length || 0)
     const stars = repo_data.stargazers_count || 0
     const forks = repo_data.forks_count || 0
@@ -176,8 +173,8 @@ const get_github_stats = async (
       `✓ ${repo}: ${data.stars}★ ${data.forks}f ${data.commits_last_year}c ${data.contributors}contrib`,
     )
     return data
-  } catch (err) {
-    console.error(`✗ ${repo}:`, (err as Error).message)
+  } catch (error) {
+    console.error(`✗ ${repo}:`, (error as Error).message)
     return null
   }
 }
@@ -215,9 +212,7 @@ const main = async () => {
   console.log(`Saved ${results.length}/${repos.length} repos`)
 }
 
-main().catch((err) => {
-  console.error(`Fatal:`, err)
-  writeFile(output_file, JSON.stringify([])).catch((write_err) =>
-    console.error(`Failed to write empty output:`, write_err)
-  )
+main().catch((error) => {
+  console.error(`Fatal:`, error)
+  process.exitCode = 1
 })

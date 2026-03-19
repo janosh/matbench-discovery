@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 const model_keys = MODELS.map((m) => m.model_key)
 const model_key = model_keys[0]
 const test_model = MODELS.find((m) => m.model_key === model_key)
-if (!test_model) throw `missing test model`
+if (!test_model) throw new Error(`missing test model`)
 
 describe(`Model Detail Page`, () => {
   it(`renders model details correctly`, () => {

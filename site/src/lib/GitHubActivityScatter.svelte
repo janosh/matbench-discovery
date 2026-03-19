@@ -5,7 +5,7 @@
   import type { ComponentProps } from 'svelte'
   import type { Label } from './types'
 
-  type GitHubData = {
+  interface GitHubData {
     name: string
     repo: string
     stars: number
@@ -51,7 +51,7 @@
     size_value: github_metrics.contributors as Label,
   })
 
-  type PlotPoint = {
+  interface PlotPoint {
     x: number
     y: number
     color_value: number
@@ -67,9 +67,12 @@
         size_value: item[axes.size_value.key as GitHubMetricKey],
         metadata: { name: item.name, repo: item.repo, model_key: item.model_key },
       }))
-      .filter(({ x, y, color_value, size_value }) =>
-        [x, y, color_value, size_value].every((val) => val != null)
-      ) as PlotPoint[],
+      .filter(
+        ({ x, y, color_value, size_value }) =>
+          [x, y, color_value, size_value].every(
+            (val): val is number => typeof val === `number` && isFinite(val),
+          ),
+      ),
   )
   // O(1) lookup for tooltip by model name
   let plot_data_by_name = $derived(

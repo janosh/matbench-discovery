@@ -16,7 +16,7 @@
     heatmap_values: Record<ElementSymbol, number>
     color_scale?: D3InterpolateName
     active_element?: ChemicalElement | null
-    log?: boolean // log color scale
+    log?: boolean // Log color scale
     colorbar?: ComponentProps<typeof ColorBar>
   } = $props()
 

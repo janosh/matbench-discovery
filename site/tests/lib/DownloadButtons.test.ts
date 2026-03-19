@@ -28,10 +28,11 @@ describe(`Download Buttons UI`, () => {
         <div class="export-error" style="display: none;"></div>
       </div>
     `
+    const original_create_element = document.createElement.bind(document)
     vi.spyOn(document, `createElement`).mockImplementation((tag: string) =>
       tag === `a`
         ? ({ href: ``, download: ``, click: mock_click } as unknown as HTMLAnchorElement)
-        : document.createElement(tag)
+        : original_create_element(tag),
     )
   })
 
@@ -51,7 +52,12 @@ describe(`Download Buttons UI`, () => {
   })
 
   // Test all export formats with parameterized testing
-  it.each([[`SVG`, `svg`], [`PNG`, `png`], [`CSV`, `csv`], [`Excel`, `excel`]] as const)(
+  it.each([
+    [`SVG`, `svg`],
+    [`PNG`, `png`],
+    [`CSV`, `csv`],
+    [`Excel`, `excel`],
+  ] as const)(
     `triggers %s export correctly when button clicked`,
     async (format: string, id: string) => {
       const generate_spy = vi
@@ -60,8 +66,8 @@ describe(`Download Buttons UI`, () => {
       const handle_export_fn = handle_export(generate_spy, format, { ...default_state })
 
       const button = doc_query<HTMLButtonElement>(`#${id}-btn`)
-      button.addEventListener(`click`, handle_export_fn)
-      await button.click()
+      button.addEventListener(`click`, () => void handle_export_fn())
+      button.click()
 
       expect(generate_spy).toHaveBeenCalledTimes(1)
       expect(generate_spy).toHaveBeenCalledWith({
@@ -84,9 +90,10 @@ describe(`Download Buttons UI`, () => {
     ],
     [`null return`, null, `Failed to generate Test. The export function returned null.`],
   ])(`handles export %s correctly`, async (scenario, mock_result, expected_message) => {
-    const mock_fn = scenario === `error`
-      ? vi.fn().mockRejectedValue(mock_result)
-      : vi.fn().mockResolvedValue(mock_result)
+    const mock_fn =
+      scenario === `error`
+        ? vi.fn().mockRejectedValue(mock_result)
+        : vi.fn().mockResolvedValue(mock_result)
 
     const error_el = doc_query(`.export-error`)
     const state = { ...default_state }

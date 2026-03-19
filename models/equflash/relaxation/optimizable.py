@@ -634,7 +634,7 @@ class OptimizableFrechetBatch(OptimizableUnitCellBatch):
         pos[n_atoms:] = self.exp_cell_factor * cells.reshape(-1, 3)
         return pos
 
-    def set_positions(self, new: torch.Tensor) -> None:  # type: ignore[override]
+    def set_positions(self, new: torch.Tensor) -> None:  # ty: ignore[invalid-method-override]
         n_atoms = self.batch.num_nodes
         new2 = new.clone()
         batched_cell = (new[n_atoms:] / self.exp_cell_factor).reshape(-1, 3, 3)

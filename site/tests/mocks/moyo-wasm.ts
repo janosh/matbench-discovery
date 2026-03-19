@@ -4,7 +4,7 @@
 export default async function init(): Promise<void> {}
 
 export class MoyoDataset {
-  constructor() {}
+  name = `mock`
 }
 
 export const get_version = (): string => `0.0.0-mock`

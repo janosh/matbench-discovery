@@ -17,8 +17,7 @@
 
   // Reset to initial weights
   function reset_weights() {
-    let key: keyof typeof CPS_CONFIG
-    for (key in CPS_CONFIG) {
+    for (const key of Object.keys(CPS_CONFIG) as (keyof typeof CPS_CONFIG)[]) {
       CPS_CONFIG[key].weight = DEFAULT_CPS_CONFIG[key].weight
     }
     update_point_from_weights(CPS_CONFIG)
@@ -26,9 +25,9 @@
   }
 
   const colors = [
-    `rgb(255, 99, 132)`, // red for F1
-    `rgb(255, 206, 86)`, // yellow for kappa
-    `rgb(54, 162, 235)`, // blue for RMSD
+    `rgb(255, 99, 132)`, // Red for F1
+    `rgb(255, 206, 86)`, // Yellow for kappa
+    `rgb(54, 162, 235)`, // Blue for RMSD
   ]
 
   // Compute axes points coordinates
@@ -89,9 +88,7 @@
     ]
 
     // Handle center point specially - equal weights
-    const dist_from_center = Math.sqrt(
-      Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2),
-    )
+    const dist_from_center = Math.hypot(point.x - center.x, point.y - center.y)
 
     // If very close to center, use equal weights
     if (dist_from_center < radius * 0.05) {
@@ -148,8 +145,8 @@
   }
 
   // Move point to a position with triangle constraints
-  // during dragging, don't update weights - only move the point visually
-  // this prevents table rerendering during drag which causes viewport to scroll (terrible UX)
+  // During dragging, don't update weights - only move the point visually
+  // This prevents table rerendering during drag which causes viewport to scroll (terrible UX)
   function move_point_to_position(x: number, y: number) {
     const [a, b, c] = axis_points
     if (
@@ -170,10 +167,10 @@
     is_dragging = true
 
     // Add global event listeners
-    window.addEventListener(`mousemove`, handle_drag)
-    window.addEventListener(`touchmove`, handle_drag, { passive: false })
-    window.addEventListener(`mouseup`, end_drag)
-    window.addEventListener(`touchend`, end_drag)
+    globalThis.addEventListener(`mousemove`, handle_drag)
+    globalThis.addEventListener(`touchmove`, handle_drag, { passive: false })
+    globalThis.addEventListener(`mouseup`, end_drag)
+    globalThis.addEventListener(`touchend`, end_drag)
   }
 
   function handle_drag(event: MouseEvent | TouchEvent) {
@@ -197,7 +194,7 @@
     const x = client_x - rect.left
     const y = client_y - rect.top
 
-    // update point position during drag
+    // Update point position during drag
     move_point_to_position(x, y)
   }
 
@@ -206,10 +203,10 @@
       is_dragging = false
       // Update weights when drag ends
       update_weights_from_point()
-      window.removeEventListener(`mousemove`, handle_drag)
-      window.removeEventListener(`touchmove`, handle_drag)
-      window.removeEventListener(`mouseup`, end_drag)
-      window.removeEventListener(`touchend`, end_drag)
+      globalThis.removeEventListener(`mousemove`, handle_drag)
+      globalThis.removeEventListener(`touchmove`, handle_drag)
+      globalThis.removeEventListener(`mouseup`, end_drag)
+      globalThis.removeEventListener(`touchend`, end_drag)
     }
   }
 
@@ -236,9 +233,9 @@
     const p31 = closest_point_on_line(pt, c3, c1)
 
     // Then, find which of those points is closest to p
-    const dist_p12 = Math.pow(p12.x - pt.x, 2) + Math.pow(p12.y - pt.y, 2)
-    const dist_p23 = Math.pow(p23.x - pt.x, 2) + Math.pow(p23.y - pt.y, 2)
-    const dist_p31 = Math.pow(p31.x - pt.x, 2) + Math.pow(p31.y - pt.y, 2)
+    const dist_p12 = (p12.x - pt.x) ** 2 + (p12.y - pt.y) ** 2
+    const dist_p23 = (p23.x - pt.x) ** 2 + (p23.y - pt.y) ** 2
+    const dist_p31 = (p31.x - pt.x) ** 2 + (p31.y - pt.y) ** 2
 
     if (dist_p12 <= dist_p23 && dist_p12 <= dist_p31) return p12
     if (dist_p23 <= dist_p12 && dist_p23 <= dist_p31) return p23
