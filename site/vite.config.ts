@@ -85,6 +85,12 @@ export default defineConfig({
     semi: false,
     singleQuote: true,
     printWidth: 90,
+    ignorePatterns: [
+      `src/figs/**/*.svelte`,
+      `src/figs/**/*.json`,
+      `src/routes/**/*.json`,
+      `src/lib/*.d.ts`,
+    ],
   },
   lint: {
     plugins: [`oxc`, `typescript`, `unicorn`, `import`, `jest`],
