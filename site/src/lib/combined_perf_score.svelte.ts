@@ -31,8 +31,8 @@ function normalize_rmsd(value: number | undefined): number {
 
   // Linear interpolation between fixed points with clamping
   // Inverse mapping since lower RMSD is better
-  if (value <= excellent) return 1.0
-  if (value >= RMSD_BASELINE) return 0.0
+  if (value <= excellent) return 1
+  if (value >= RMSD_BASELINE) return 0
   return (RMSD_BASELINE - value) / (RMSD_BASELINE - excellent)
 }
 
@@ -53,12 +53,12 @@ function normalize_kappa_srme(value: number | undefined): number {
 // - F1 score for discovery already in [0,1] range, higher is better
 // - RMSD Root mean square displacement in range 0 (perfect) to RMSD_BASELINE, lower is better
 // - κ_SRME symmetric relative mean error for lattice thermal conductivity,
-//    range [0,2] linearly mapped to [1,0], lower is better
+//    Range [0,2] linearly mapped to [1,0], lower is better
 export function calculate_cps(
   f1: number | undefined,
   rmsd: number | undefined,
   kappa: number | undefined,
-  cps_config: CpsConfig, // weights for each metric
+  cps_config: CpsConfig, // Weights for each metric
 ): number | null {
   // Find weights from config by metric names
   const { F1, RMSD, κ_SRME } = cps_config
@@ -68,7 +68,8 @@ export function calculate_cps(
     (F1.weight > 0 && (f1 === undefined || isNaN(f1))) ||
     (RMSD.weight > 0 && (rmsd === undefined || isNaN(rmsd))) ||
     (κ_SRME.weight > 0 && (kappa === undefined || isNaN(kappa)))
-  ) return null
+  )
+    return null
 
   // Skip the calculation if all weights are zero
   const total_weight = F1.weight + RMSD.weight + κ_SRME.weight

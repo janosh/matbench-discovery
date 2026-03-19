@@ -134,7 +134,7 @@ describe(`COMPLIANT_TRAINING_SETS`, () => {
     // This test ensures Python and TypeScript compute the same compliant sets
     // Both should derive from datasets.yml where compliant: true
     const expected = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`, `MDR PBE Phonons in MPtrj`]
-    expect(COMPLIANT_TRAINING_SETS.sort()).toEqual(expected.sort())
+    expect(COMPLIANT_TRAINING_SETS.toSorted()).toStrictEqual(expected.toSorted())
   })
 
   it(`is exported as an array`, () => {
@@ -210,7 +210,7 @@ describe(`update_models_cps`, () => {
 
     const rmsd_cps_values = MODELS.map((model) => Number(model.CPS))
 
-    expect(f1_cps_values).not.toEqual(rmsd_cps_values)
+    expect(f1_cps_values).not.toStrictEqual(rmsd_cps_values)
 
     CPS_CONFIG.F1.weight = 0.5
     CPS_CONFIG.RMSD.weight = 0
@@ -218,7 +218,7 @@ describe(`update_models_cps`, () => {
     update_models_cps(MODELS, CPS_CONFIG)
 
     const f1_rmsd_cps_values = MODELS.map((model) => Number(model.CPS))
-    expect(f1_rmsd_cps_values).not.toEqual(f1_cps_values)
-    expect(f1_rmsd_cps_values).not.toEqual(rmsd_cps_values)
+    expect(f1_rmsd_cps_values).not.toStrictEqual(f1_cps_values)
+    expect(f1_rmsd_cps_values).not.toStrictEqual(rmsd_cps_values)
   })
 })

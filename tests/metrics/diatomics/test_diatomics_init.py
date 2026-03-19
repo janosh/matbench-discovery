@@ -22,7 +22,7 @@ def test_diatomic_classes() -> None:
 
     # Test DiatomicCurve initialization and array conversion
     curve = DiatomicCurve(
-        distances=dists,  # type: ignore[arg-type]
+        distances=dists,  # ty: ignore[invalid-argument-type]
         energies=energies,
         forces=forces,
     )

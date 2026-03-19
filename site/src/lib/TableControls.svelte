@@ -13,7 +13,7 @@
     show_non_compliant = $bindable(true),
     show_selected_only = $bindable(false),
     selected_count = 0,
-    on_filter_change = undefined,
+    on_filter_change,
     show_energy_only_toggle = false,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {

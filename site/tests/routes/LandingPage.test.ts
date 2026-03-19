@@ -12,16 +12,14 @@ describe(`Landing Page`, () => {
     const buttons = document.querySelectorAll(`.selection-toggle button`)
     expect(buttons).toHaveLength(3) // 3 from test set select
 
-    const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
+    const button_texts = [...buttons].map((btn) => btn.textContent?.trim())
     expect(button_texts).toContain(`Full Test Set`)
     expect(button_texts).toContain(`Unique Prototypes`)
     expect(button_texts).toContain(`10k Most Stable`)
   })
 
   it(`toggles discovery set when clicking buttons`, async () => {
-    const buttons = Array.from(
-      document.querySelectorAll<HTMLButtonElement>(`.selection-toggle button`),
-    )
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>(`.selection-toggle button`)]
     const [full_test_btn, unique_protos_btn] = buttons
 
     // Initially Unique Prototypes should be active
@@ -78,16 +76,16 @@ describe(`Landing Page`, () => {
     columns_btn?.click()
     // Table should reflect column visibility changes
     let f1_cells = document.querySelectorAll(`th, td`)
-    let has_f1_column = Array.from(f1_cells).some((cell) =>
-      cell.textContent?.includes(`F1`)
+    let has_f1_column = [...f1_cells].some((cell) =>
+      cell.textContent?.includes(`F1`),
     )
     expect(has_f1_column).toBe(true)
 
     const checkboxes = document.querySelectorAll<HTMLInputElement>(
       `.column-menu input[type="checkbox"]`,
     )
-    const f1_checkbox = Array.from(checkboxes).find((cb) =>
-      cb.parentElement?.textContent?.includes(`F1`)
+    const f1_checkbox = [...checkboxes].find((cb) =>
+      cb.parentElement?.textContent?.includes(`F1`),
     )
     expect(f1_checkbox?.checked).toBe(true)
 
@@ -98,7 +96,7 @@ describe(`Landing Page`, () => {
 
     // Table should reflect column visibility changes
     f1_cells = document.querySelectorAll(`th, td`)
-    has_f1_column = Array.from(f1_cells).some((cell) => cell.textContent?.includes(`F1`))
+    has_f1_column = [...f1_cells].some((cell) => cell.textContent?.includes(`F1`))
     expect(has_f1_column).toBe(false)
   })
 
@@ -117,8 +115,8 @@ describe(`Landing Page`, () => {
     const download_buttons = download_section?.querySelectorAll(`.download-btn`)
     expect(download_buttons?.length).toBe(5)
 
-    const buttons = Array.from(download_buttons ?? []).map((btn) =>
-      btn.textContent?.trim()
+    const buttons = [...download_buttons ?? []].map((btn) =>
+      btn.textContent?.trim(),
     )
     expect(buttons).toContain(`SVG`)
     expect(buttons).toContain(`PNG`)
@@ -129,7 +127,7 @@ describe(`Landing Page`, () => {
 
   it(`displays valid metric values`, () => {
     const best_model_info = document.querySelector(`#best-report`)
-    const text = best_model_info?.textContent || ``
+    const text = best_model_info?.textContent ?? ``
 
     // Extract F1 and DAF values using regex
     const f1_match = text.match(/F1 score of ([\d.]+)/)
@@ -139,8 +137,8 @@ describe(`Landing Page`, () => {
       const f1_value = parseFloat(f1_match[1])
       const daf_value = parseFloat(daf_match[1])
 
-      expect(0 < f1_value && f1_value < 1, `F1=${f1_value} is out of range`).toBe(true)
-      expect(0 < daf_value && daf_value < 10, `DAF=${daf_value} is out of range`).toBe(
+      expect(f1_value > 0 && f1_value < 1, `F1=${f1_value} is out of range`).toBe(true)
+      expect(daf_value > 0 && daf_value < 10, `DAF=${daf_value} is out of range`).toBe(
         true,
       )
     } else {

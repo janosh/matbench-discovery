@@ -47,13 +47,10 @@ describe(`calculate_cps`, () => {
     { metric: `F1`, weights: [0, 0.5, 0.5], f1: undefined, rmsd: 0, kappa: 0 },
     { metric: `RMSD`, weights: [0.5, 0, 0.5], f1: 1.0, rmsd: undefined, kappa: 0 },
     { metric: `κ_SRME`, weights: [0.5, 0.5, 0], f1: 1.0, rmsd: 0, kappa: undefined },
-  ])(
-    `ignores missing $metric when its weight is 0`,
-    ({ weights, f1, rmsd, kappa }) => {
-      const config = make_config(weights[0], weights[1], weights[2])
-      expect(calculate_cps(f1, rmsd, kappa, config)).toBeCloseTo(1.0, 5)
-    },
-  )
+  ])(`ignores missing $metric when its weight is 0`, ({ weights, f1, rmsd, kappa }) => {
+    const config = make_config(weights[0], weights[1], weights[2])
+    expect(calculate_cps(f1, rmsd, kappa, config)).toBeCloseTo(1.0, 5)
+  })
 
   it(`returns 0 when all weights are 0`, () => {
     expect(calculate_cps(0.8, 0.05, 0.5, make_config(0, 0, 0))).toBe(0)
@@ -104,7 +101,8 @@ describe(`DEFAULT_CPS_CONFIG`, () => {
     expect(DEFAULT_CPS_CONFIG.F1.weight).toBe(0.5)
     expect(DEFAULT_CPS_CONFIG.κ_SRME.weight).toBe(0.4)
     expect(DEFAULT_CPS_CONFIG.RMSD.weight).toBe(0.1)
-    const sum = DEFAULT_CPS_CONFIG.F1.weight +
+    const sum =
+      DEFAULT_CPS_CONFIG.F1.weight +
       DEFAULT_CPS_CONFIG.κ_SRME.weight +
       DEFAULT_CPS_CONFIG.RMSD.weight
     expect(sum).toBeCloseTo(1.0, 5)

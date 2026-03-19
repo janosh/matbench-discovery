@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { browser } from '$app/environment'
   import EachErrorVsLeastPrevalentElementInStruct from '$figs/tmi/each-error-vs-least-prevalent-element-in-struct.svelte'
   import ElementPrevalenceVsErr from '$figs/tmi/element-prevalence-vs-error.svelte'
   import HistLargestEachErrorsFpDiffModels from '$figs/tmi/hist-largest-each-errors-fp-diff-models.svelte'
@@ -31,9 +30,7 @@ is all over the place as a function of elemental training set prevalence. Could 
 the error is dominated by the least abundant element in composition or the model errors
 are more dependent on geometry than chemistry.
 
-{#if browser}
-  <ElementPrevalenceVsErr style="margin: 2em 0" />
-{/if}
+<ElementPrevalenceVsErr style="margin: 2em 0" />
 
 <h2>Does error correlate with relaxation change?</h2>
 
@@ -47,18 +44,14 @@ relaxation as measured by<code>matminer</code>'s
 (which is volume independent so changes in fingerprint require ion migration or similar)
 and plotting against that the absolute E<sub>above hull</sub> errors for each model.
 
-{#if browser}
-  <ScatterLargeFpDiffVsEachError style="margin: 2em 0" />
-{/if}
+<ScatterLargeFpDiffVsEachError style="margin: 2em 0" />
 
 Same plot except taking the structures with largest difference in atomic environments
 (again measured by
 <code>SiteStatsFingerprint</code> before vs after relaxation) and plotting all model
 errors.
 
-{#if browser}
-  <ScatterLargestEachErrorsFpDiffModels style="margin: 2em 0" />
-{/if}
+<ScatterLargestEachErrorsFpDiffModels style="margin: 2em 0" />
 
 Another way to plot this is as a histogram. This shows the difference in
 SiteStatsFingerprint before vs after relaxation for structures with the largest (err<sub
@@ -66,9 +59,7 @@ SiteStatsFingerprint before vs after relaxation for structures with the largest 
   hull</sub>
 for each model and the mean of all models.
 
-{#if browser}
-  <HistLargestEachErrorsFpDiffModels style="margin: 2em 0" />
-{/if}
+<HistLargestEachErrorsFpDiffModels style="margin: 2em 0" />
 
 <h2>
   Does model error correlate with structure's least prevalent element in training set?
@@ -78,6 +69,4 @@ Answer: a little. The fact that structures containing only elements with high pr
 in the training set consistently see low errors across all models suggests that to get a
 universally robust model, it needs to be trained on lots of examples for every element.
 
-{#if browser}
-  <EachErrorVsLeastPrevalentElementInStruct style="margin: 2em 0" />
-{/if}
+<EachErrorVsLeastPrevalentElementInStruct style="margin: 2em 0" />

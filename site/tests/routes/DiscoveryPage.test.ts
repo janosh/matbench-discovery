@@ -26,7 +26,7 @@ describe(`Discovery Task Page`, () => {
     mount(DiscoveryPage, { target: document.body })
 
     const buttons = document.querySelectorAll(`button`)
-    const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
+    const button_texts = [...buttons].map((btn) => btn.textContent?.trim())
 
     expect(button_texts).toContain(`Unique Prototypes`)
     expect(button_texts).toContain(`Full Test Set`)
@@ -41,8 +41,9 @@ describe(`Discovery Task Page`, () => {
   it(`toggles discovery sets on button click`, async () => {
     mount(DiscoveryPage, { target: document.body })
 
-    const full_test_btn = Array.from(document.querySelectorAll(`button`))
-      .find((btn) => btn.textContent?.trim() === `Full Test Set`)
+    const full_test_btn = [...document.querySelectorAll(`button`)].find(
+      (btn) => btn.textContent?.trim() === `Full Test Set`,
+    )
 
     full_test_btn?.click()
     await tick()
@@ -55,8 +56,9 @@ describe(`Discovery Task Page`, () => {
   it(`shows discovery-specific columns in MetricsTable`, () => {
     mount(DiscoveryPage, { target: document.body })
 
-    const headers = Array.from(document.querySelectorAll(`th`))
-      .map((th) => th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim())
+    const headers = [...document.querySelectorAll(`th`)].map((th) =>
+      th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
+    )
 
     for (const col of [`Model`, `F1`, `DAF`, `Links`, `Date Added`]) {
       expect(headers).toContain(col)

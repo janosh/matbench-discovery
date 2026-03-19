@@ -52,7 +52,7 @@
     )
   }
 
-  // prepare and filter data
+  // Prepare and filter data
   let plot_data = $derived(
     models
       .filter((model) => model_filter(model) && date_filter(model))

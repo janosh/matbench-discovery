@@ -14,7 +14,7 @@ describe(`Contribute Page`, () => {
     )
 
     // Check section headings
-    const headings = Array.from(document.querySelectorAll(`h2`))
+    const headings = [...document.querySelectorAll(`h2`)]
     expect(headings.length).toBeGreaterThanOrEqual(2)
 
     const expected_headings = [`Installation`, `Troubleshooting`]
@@ -44,8 +44,8 @@ describe(`Contribute Page`, () => {
   })
 
   it(`renders API examples and code snippets`, () => {
-    const code_content = Array.from(document.querySelectorAll(`pre`))
-      .map((block) => block.textContent || ``)
+    const code_content = [...document.querySelectorAll(`pre`)]
+      .map((block) => block.textContent ?? ``)
       .join(`\n`)
 
     expect(code_content).toMatch(/import|from|def|class|matbench|pip/i)
@@ -67,9 +67,7 @@ describe(`Contribute Page`, () => {
     expect(trouble_section?.textContent).toMatch(/problem|issue|error|help|support/i)
 
     // If no community links, should have instructions for filing issues
-    const has_community_links = Array.from(
-      trouble_section?.querySelectorAll(`a`) || [],
-    ).some(
+    const has_community_links = [...trouble_section?.querySelectorAll(`a`) ?? []].some(
       (link) =>
         link.textContent?.includes(`@`) ||
         [`slack`, `forum`, `gitter`].some((term) => link.href?.includes(term)),
@@ -83,8 +81,8 @@ describe(`Contribute Page`, () => {
 
 // Helper function to get a section following a heading with specific text
 function get_heading_section(element: Element, heading_text: string): Element | null {
-  const target_heading = Array.from(element.querySelectorAll(`h2`)).find((h) =>
-    h.textContent?.includes(heading_text)
+  const target_heading = [...element.querySelectorAll(`h2`)].find((h) =>
+    h.textContent?.includes(heading_text),
   )
 
   if (!target_heading) return null
@@ -94,7 +92,7 @@ function get_heading_section(element: Element, heading_text: string): Element | 
   let current_node = target_heading.nextElementSibling
 
   while (current_node && current_node.tagName !== `H2`) {
-    content.appendChild(current_node.cloneNode(true))
+    content.append(current_node.cloneNode(true))
     current_node = current_node.nextElementSibling
   }
 

@@ -1,15 +1,16 @@
 <script lang="ts">
-  import { goto } from '$app/navigation'
-  import { page } from '$app/state'
-  import { Footer, ThemeToggle } from '$lib'
-  import pkg from '$site/package.json'
-  import type { Snippet } from 'svelte'
-  import { CmdPalette, CopyButton, GitHubCorner, Nav } from 'svelte-multiselect'
-  import { heading_anchors } from 'svelte-multiselect/heading-anchors'
-  import Toc from 'svelte-toc'
-  import '../app.css'
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
+  import { Footer } from '$lib';
+  import pkg from '$site/package.json';
+  import type { Snippet } from 'svelte';
+  import { CmdPalette, CopyButton, GitHubCorner, Nav, ThemeToggle } from 'svelte-multiselect';
+  import { heading_anchors } from 'svelte-multiselect/heading-anchors';
+  import Toc from 'svelte-toc';
+  import '../app.css';
 
   let { children }: { children?: Snippet } = $props()
+  let toc_desktop = $state(true)
 
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`)).map(
     (filename) => `/` + filename.split(`/`)[1],
@@ -38,12 +39,12 @@
   let description = $derived(
     descriptions[url ?? ``] ?? base_description,
   )
-  let title = $derived(url == `/` ? `` : `${url} • `)
+  let title = $derived(url === `/` ? `` : `${url} • `)
 
   const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
     .filter((filename) => !filename.includes(`[`))
     .map((filename) => {
-      const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`)) // remove hidden route segments
+      const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`)) // Remove hidden route segments
       const route = `/${parts.slice(1, -1).join(`/`)}`
 
       return { label: route, action: () => goto(route) }
@@ -63,10 +64,14 @@
     {headingSelector}
     breakpoint={1350}
     minItems={3}
-    asideStyle="max-width: 22em"
-    navStyle="font-size: 7pt"
-    --toc-active-bg="transparent"
+    bind:desktop={toc_desktop}
+    asideStyle={toc_desktop ? `max-width: 22em; position: fixed; left: calc(50vw + var(--main-max-width) / 2); top: 2em;` : `z-index: 10;`}
+    navStyle={toc_desktop ? `font-size: 7pt;` : `font-size: 7pt; z-index: 10; background: var(--page-bg);`}
     --toc-active-color="var(--link-color)"
+    --toc-padding="1em 1em 0 1.5em"
+    --toc-mobile-width="min(80vw, 30em)"
+    --toc-mobile-border="1px solid var(--border)"
+    --toc-mobile-shadow="0 0 20px var(--shadow)"
   />
 {/if}
 
@@ -89,19 +94,3 @@
 </main>
 
 <Footer />
-
-<style>
-  :global(aside.toc.desktop) {
-    position: fixed;
-    left: calc(50vw + var(--main-max-width) / 2);
-  }
-  :global(aside.toc.mobile > nav) {
-    box-shadow: 0 0 20px var(--shadow);
-    border: 1px solid var(--border);
-    background-color: var(--page-bg);
-    padding: 1ex;
-    right: 1em;
-    position: fixed;
-    bottom: 1em;
-  }
-</style>

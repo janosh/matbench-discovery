@@ -1,4 +1,4 @@
-import { DATASETS, ModelCard, MODELS } from '$lib'
+import { DATASETS, ModelCard, MODELS, type ModelData } from '$lib'
 import { ALL_METRICS } from '$lib/labels'
 import { format_num } from 'matterviz'
 import { mount } from 'svelte'
@@ -32,36 +32,30 @@ describe(`ModelCard`, () => {
       const info_spans = document.querySelectorAll(`section.metadata > span`)
       // Training set is now first in the metadata section, so we need to check other spans
       // Find the date_added span by its content
-      const date_added_span = Array.from(info_spans).find((span) =>
-        span.textContent?.includes(`Added ${model.date_added}`)
+      const date_added_span = [...info_spans].find((span) =>
+        span.textContent?.includes(`Added ${model.date_added}`),
       )
       expect(date_added_span).toBeDefined()
       expect(date_added_span?.textContent).toContain(model.date_added)
 
       if (model.date_published) {
-        const date_published_span = Array.from(info_spans).find((span) =>
-          span.textContent?.includes(`Published ${model.date_published}`)
+        const date_published_span = [...info_spans].find((span) =>
+          span.textContent?.includes(`Published ${model.date_published}`),
         )
         expect(date_published_span).toBeDefined()
         expect(date_published_span?.textContent).toContain(model.date_published)
       }
 
-      const params_span = Array.from(info_spans).find((span) =>
-        span.textContent?.includes(`${format_num(model.model_params, `.3~s`)} params`)
+      const params_span = [...info_spans].find((span) =>
+        span.textContent?.includes(`${format_num(model.model_params, `.3~s`)} params`),
       )
       expect(params_span).toBeDefined()
     })
 
     it(`handles missing optional fields gracefully`, () => {
-      const minimal_model = Object.assign({}, model, {
-        date_published: undefined,
-        paper: undefined,
-        url: undefined,
-      })
-
       mount(ModelCard, {
         target: document.body,
-        props: { model: minimal_model, metrics, sort_by: `F1` },
+        props: { model: { ...model, date_published: undefined, paper: undefined, url: undefined } as unknown as ModelData, metrics, sort_by: `F1` },
       })
 
       const links = document.querySelectorAll(`nav a`)
@@ -77,9 +71,7 @@ describe(`ModelCard`, () => {
     })
 
     // Look for span containing "Training set" text
-    const training_set = Array.from(
-      document.querySelectorAll(`section.metadata span`),
-    ).find((span) => span.textContent?.includes(`Training data`))
+    const training_set = [...document.querySelectorAll(`section.metadata span`)].find((span) => span.textContent?.includes(`Training data`))
     expect(training_set).toBeDefined()
     expect(training_set?.textContent).toContain(`Training data:`)
 
@@ -108,30 +100,32 @@ describe(`ModelCard`, () => {
       const metrics_lis = document.querySelectorAll(`.metrics li`)
       expect(metrics_lis.length).toBeGreaterThan(0)
 
-      const f1_metric = Array.from(metrics_lis).find((m) => m.textContent?.includes(`F1`))
+      const f1_metric = [...metrics_lis].find((m) => m.textContent?.includes(`F1`))
       const discovery_metrics = model.metrics?.discovery
-      const f1_value = discovery_metrics && typeof discovery_metrics === `object`
-        ? discovery_metrics.unique_prototypes?.F1
-        : undefined
+      const f1_value =
+        discovery_metrics && typeof discovery_metrics === `object`
+          ? discovery_metrics.unique_prototypes?.F1
+          : undefined
       expect(f1_metric?.querySelector(`strong`)?.textContent?.trim()).toBe(
         f1_value?.toString(),
       )
       expect(f1_metric?.classList.contains(`active`)).toBe(true)
 
-      const kappa_metric = Array.from(metrics_lis).find((m) =>
-        m.textContent?.includes(`κ`)
+      const kappa_metric = [...metrics_lis].find((m) =>
+        m.textContent?.includes(`κ`),
       )
       const phonon_metrics = model.metrics?.phonons
-      const kappa_value = phonon_metrics && typeof phonon_metrics === `object`
-        ? (Number(phonon_metrics.kappa_103?.κ_SRME) || 0)
-        : 0
+      const kappa_value =
+        phonon_metrics && typeof phonon_metrics === `object`
+          ? Number(phonon_metrics.kappa_103?.κ_SRME) || 0
+          : 0
       const displayed_kappa = kappa_metric?.querySelector(`strong`)?.textContent?.trim()
       // The displayed value may be rounded differently
       expect(parseFloat(displayed_kappa ?? ``)).toBeCloseTo(kappa_value ?? 0, 2)
     })
 
     it(`handles missing metrics`, () => {
-      const model_without_metrics = Object.assign({}, model, { metrics: undefined })
+      const model_without_metrics = { ...model, metrics: undefined}
 
       mount(ModelCard, {
         target: document.body,
@@ -157,8 +151,8 @@ describe(`ModelCard`, () => {
 
       show_details = true
       const sections = document.querySelectorAll(`section h3`)
-      const section_titles = Array.from(sections).map((h3) => h3.textContent)
-      expect(section_titles).toEqual([`Metrics`])
+      const section_titles = [...sections].map((h3) => h3.textContent)
+      expect(section_titles).toStrictEqual([`Metrics`])
     })
 
     it(`displays authors and package versions correctly`, () => {
@@ -172,10 +166,8 @@ describe(`ModelCard`, () => {
       expect(author_li?.textContent?.trim()).toContain(model.authors[0].name)
 
       // Check package versions
-      const packages = Array.from(
-        document.querySelectorAll(`section:nth-child(2) li`),
-      )
-      expect(packages.length > 0).toBe(true)
+      const packages = [...document.querySelectorAll(`section:nth-child(2) li`)]
+      expect(packages.length).toBeGreaterThan(0)
       const first_package = Object.entries(model.requirements ?? {})[0]
       if (first_package) {
         const [pkg_name, pkg_version] = first_package
@@ -195,7 +187,7 @@ describe(`ModelCard`, () => {
       const detail_sections = document.querySelectorAll(
         `section:not(.metrics):not(.metadata) h3`,
       )
-      expect(detail_sections.length, `show_details should default to false`).toBe(0)
+      expect(detail_sections).toHaveLength(0)
     })
   })
 })

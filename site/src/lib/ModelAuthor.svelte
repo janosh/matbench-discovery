@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Author } from '$lib'
+  import type { Author } from '$lib'
   import { Icon } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
 

@@ -1,4 +1,4 @@
-import { RadarChart } from '$lib'
+import { MODELS, RadarChart } from '$lib'
 import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import { ALL_METRICS } from '$lib/labels'
 import { update_models_cps } from '$lib/models.svelte'
@@ -32,9 +32,7 @@ describe(`RadarChart`, () => {
     })
 
     // Check that the triangle area is rendered
-    const triangle_area = document.querySelector(
-      `path[fill="var(--nav-bg)"]`,
-    )
+    const triangle_area = document.querySelector(`path[fill="var(--nav-bg)"]`)
     expect(triangle_area).toBeDefined()
 
     // Check that the draggable point is rendered
@@ -76,14 +74,14 @@ describe(`RadarChart`, () => {
     expect(CPS_CONFIG.RMSD.weight).toBe(DEFAULT_CPS_CONFIG.RMSD.weight)
 
     // Check that update_models_cps was called
-    expect(update_models_cps).toHaveBeenCalled()
+    expect(update_models_cps).toHaveBeenCalledWith(MODELS, CPS_CONFIG)
   })
 
   it(`displays correct weight percentages`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check that the weight percentages are displayed correctly
-    const weight_values = Array.from(document.querySelectorAll(`svg foreignObject`))
+    const weight_values = [...document.querySelectorAll(`svg foreignObject`)]
       .map((el) => el.querySelector(`small`)?.textContent)
       .filter(Boolean)
 
@@ -91,7 +89,7 @@ describe(`RadarChart`, () => {
       (part) => `${((part.weight as number) * 100).toFixed(0)}%`,
     )
 
-    expect(weight_values).toEqual(expected_values)
+    expect(weight_values).toStrictEqual(expected_values)
   })
 
   it(`renders axis labels with correct content`, () => {
@@ -99,13 +97,13 @@ describe(`RadarChart`, () => {
 
     // Check that axis labels are rendered using foreignObject
     const foreign_objects = document.querySelectorAll(`svg foreignObject`)
-    expect(foreign_objects.length).toBe(3)
+    expect(foreign_objects).toHaveLength(3)
 
     // Get the text content from foreignObject elements
-    const label_texts = Array.from(foreign_objects).map((el) => el.textContent?.trim())
+    const label_texts = [...foreign_objects].map((el) => el.textContent?.trim())
 
     // Verify that each label contains the respective metric name and percentage
-    expect(label_texts).toEqual([`F1 50%`, `κSRME 40%`, `RMSD 10%`])
+    expect(label_texts).toStrictEqual([`F1 50%`, `κSRME 40%`, `RMSD 10%`])
   })
 
   it(`renders tooltip with config description`, () => {
@@ -126,14 +124,12 @@ describe(`RadarChart`, () => {
     expect(triangle).toBeDefined()
 
     // Check for the colored metric areas (should be 3 paths)
-    const colored_areas = document.querySelectorAll(
-      `path[fill^="rgb"][opacity="0.5"]`,
-    )
-    expect(colored_areas.length).toBe(3)
+    const colored_areas = document.querySelectorAll(`path[fill^="rgb"][opacity="0.5"]`)
+    expect(colored_areas).toHaveLength(3)
 
     // Check for the grid circles
     const grid_circles = document.querySelectorAll(`circle[fill="none"]`)
-    expect(grid_circles.length).toBe(4) // Should be 4 grid circles
+    expect(grid_circles).toHaveLength(4) // Should be 4 grid circles
     // Verify stroke properties for each grid circle
     grid_circles.forEach((circle) => {
       expect(circle.getAttribute(`stroke`)).toBe(`var(--border)`)

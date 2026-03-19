@@ -76,14 +76,14 @@
   ])
 
   // HeatmapTable uses `"${key} (${group})"` as col ID when group is set,
-  // so remap data keys to match
+  // So remap data keys to match
   const key_remap: Record<string, string> = Object.fromEntries(
     grouped_defs.flatMap(([cols, group]) =>
       cols.map((col) => [col.key, `${col.key} (${group})`])
     ),
   )
 
-  // recalculate metrics_data whenever filter settings change
+  // Recalculate metrics_data whenever filter settings change
   let metrics_data = $derived(
     assemble_row_data(
       `full_test_set`,
@@ -106,7 +106,6 @@
   data={metrics_data}
   columns={columns as MattervizLabel[]}
   initial_sort={{ column: ALL_METRICS.RMSD.key, direction: `asc` }}
-  sort_hint="Click column headers to sort"
   default_num_format=".3f"
   bind:column_order
   bind:show_heatmap

@@ -1,7 +1,7 @@
 """Test Eqnorm relaxation on the WBM dataset.
 
 History:
-- 2025-03-28 (Yuzhuo Chen): Eqnorm Mptrj, first version
+- 2025-03-28 (Yuzhuo Chen): Eqnorm MPtrj, first version
 """
 
 # %%

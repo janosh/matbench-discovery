@@ -1,36 +1,36 @@
 import { default as DATASETS } from '$data/datasets.yml'
 import type { Author, ModelData } from '$lib/types'
-import MODELINGS_TASKS, { type ModelingTask } from '$pkg/modeling-tasks.yml'
+import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
 import { get_org_logo } from './labels'
 
-export const MODEL_METADATA_PATHS = import.meta.glob(`$root/models/[^_]**/[^_]*.yml`, {
-  eager: true,
-  import: `default`,
-}) as Record<string, ModelData>
+export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(
+  `$root/models/[^_]**/[^_]*.yml`,
+  { eager: true, import: 'default' },
+)
 
-// visually distinct color palette
+// Visually distinct color palette
 export const MODEL_COLORS = [
-  `#4285F4`, // blue
-  `#EA4335`, // red
-  `#FBBC05`, // yellow
-  `#34A853`, // green
-  `#8A2BE2`, // blueviolet
-  `#FF7F50`, // coral
-  `#1E90FF`, // dodgerblue
-  `#FF1493`, // deeppink
-  `#32CD32`, // limegreen
-  `#FF8C00`, // darkorange
-  `#9370DB`, // mediumpurple
-  `#3CB371`, // mediumseagreen
-  `#DC143C`, // crimson
-  `#6495ED`, // cornflowerblue
-  `#FFD700`, // gold
-  `#8B008B`, // darkmagenta
-  `#00CED1`, // darkturquoise
-  `#FF4500`, // orangered
-  `#2E8B57`, // seagreen
-  `#BA55D3`, // mediumorchid
+  `#4285F4`, // Blue
+  `#EA4335`, // Red
+  `#FBBC05`, // Yellow
+  `#34A853`, // Green
+  `#8A2BE2`, // Blueviolet
+  `#FF7F50`, // Coral
+  `#1E90FF`, // Dodgerblue
+  `#FF1493`, // Deeppink
+  `#32CD32`, // Limegreen
+  `#FF8C00`, // Darkorange
+  `#9370DB`, // Mediumpurple
+  `#3CB371`, // Mediumseagreen
+  `#DC143C`, // Crimson
+  `#6495ED`, // Cornflowerblue
+  `#FFD700`, // Gold
+  `#8B008B`, // Darkmagenta
+  `#00CED1`, // Darkturquoise
+  `#FF4500`, // Orangered
+  `#2E8B57`, // Seagreen
+  `#BA55D3`, // Mediumorchid
 ]
 
 // Calculate the total number of materials and structures in a model's training set
@@ -57,7 +57,7 @@ export function calculate_training_sizes(model_train_sets: string[] = []): {
 export const MODELS = $state(
   Object.entries(MODEL_METADATA_PATHS)
     .filter(
-      // ignore models with status != completed (the default status)
+      // Ignore models with status != completed (the default status)
       ([_key, metadata]) => (metadata?.status ?? `complete`) === `complete`,
     )
     .map(([key, metadata], index) => {
@@ -84,13 +84,13 @@ export const MODELS = $state(
             affiliation_data[logo_key] = org_logo
           }
         } else if (!import.meta.env.PROD) {
-          // only warn about missing logos in dev mode
+          // Only warn about missing logos in dev mode
           console.warn(`No logo found for affiliation: ${author.affiliation}`)
         }
       }
 
       const frequent_logos = Object.entries(affiliation_counts)
-        .sort(([_key_a, count_a], [_key_b, count_b]) => count_b - count_a)
+        .toSorted(([_key_a, count_a], [_key_b, count_b]) => count_b - count_a)
         .slice(0, 3)
         .map(([key]) => affiliation_data[key])
 
@@ -99,7 +99,7 @@ export const MODELS = $state(
         dirname: key.split(`/`)[2],
         metadata_file: key.replace(/^..\//, ``),
         color: model_color,
-        CPS: NaN, // Initial CPS placeholder
+        CPS: Number.NaN, // Initial CPS placeholder
         n_training_materials: sizes.total_materials,
         n_training_structures: sizes.total_structures,
         org_logos: frequent_logos,
@@ -112,20 +112,21 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
   models.forEach((model: ModelData) => {
     // Extract required metrics for CPS calculation
     const discovery = model.metrics?.discovery
-    const f1 = typeof discovery === `object`
-      ? discovery?.[`unique_prototypes`]?.F1
-      : undefined
-    const rmsd = model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
-      ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
-      : undefined
-    const kappa = model.metrics?.phonons && typeof model.metrics.phonons !== `string`
-      ? model.metrics.phonons.kappa_103?.κ_SRME !== undefined
-        ? Number(model.metrics.phonons.kappa_103.κ_SRME)
+    const f1 =
+      typeof discovery === `object` ? discovery?.[`unique_prototypes`]?.F1 : undefined
+    const rmsd =
+      model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
+        ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
         : undefined
-      : undefined
+    const kappa =
+      model.metrics?.phonons && typeof model.metrics.phonons !== `string`
+        ? model.metrics.phonons.kappa_103?.κ_SRME !== undefined
+          ? Number(model.metrics.phonons.kappa_103.κ_SRME)
+          : undefined
+        : undefined
 
     // Calculate and update CPS
-    model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? NaN
+    model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? Number.NaN
   })
 }
 
@@ -144,7 +145,7 @@ export function model_is_compliant(model: ModelData): boolean {
 }
 
 export function get_pred_file_urls(model: ModelData) {
-  // get all pred_file_url from model.metrics
+  // Get all pred_file_url from model.metrics
   const files: { name: string; url: string }[] = []
 
   function find_pred_files(obj: object, parent_key = ``) {
@@ -163,7 +164,7 @@ export function get_pred_file_urls(model: ModelData) {
 
   // Recursively look up labels in the MODELINGS_TASKS object
   function get_label_for_key_path(key_path: string): string {
-    const tasks = MODELINGS_TASKS as Record<string, ModelingTask>
+    const tasks = MODELINGS_TASKS
     if (key_path in tasks) return tasks[key_path].label
 
     // Check if it's a subtask by searching all tasks
