@@ -23,7 +23,6 @@ export { default as RadarChart } from './RadarChart.svelte'
 export { default as References } from './References.svelte'
 export { default as SelectToggle } from './SelectToggle.svelte'
 export { default as TableControls } from './TableControls.svelte'
-export { default as ThemeToggle } from './ThemeToggle.svelte'
 export * from './types'
 export { data_files, DATASETS }
 
@@ -53,8 +52,6 @@ export function slugify(text: string): string {
 export function arr_to_str(value: unknown): string {
   if (value === null || value === undefined || value === ``) return `n/a`
   if (Array.isArray(value)) return value.join(`, `)
-  if (typeof value === `string`) return value
-  if (typeof value === `number` || typeof value === `boolean`) return `${value}`
   return JSON.stringify(value)
 }
 

@@ -36,11 +36,24 @@ jobs:
         uv pip install git+https://github.com/janosh/pymatviz --system
 
   vitest:
-    uses: janosh/workflows/.github/workflows/deno-test.yml@main
-    with:
-      working-directory: site
-      test-cmd: npx vitest run
-      deno-version: 2.3.7 # https://github.com/denoland/deno/issues/29968
+    defaults:
+      run:
+        working-directory: site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests
+        run: npm test
 
   scripts:
     runs-on: ubuntu-latest

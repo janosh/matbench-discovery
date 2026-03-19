@@ -106,7 +106,6 @@
   data={metrics_data}
   columns={columns as MattervizLabel[]}
   initial_sort={{ column: ALL_METRICS.RMSD.key, direction: `asc` }}
-  sort_hint="Click column headers to sort"
   default_num_format=".3f"
   bind:column_order
   bind:show_heatmap

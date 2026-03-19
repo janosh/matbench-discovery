@@ -89,7 +89,6 @@ export default defineConfig({
       `src/figs/**/*.svelte`,
       `src/figs/**/*.json`,
       `src/routes/**/*.json`,
-      `src/lib/*.d.ts`,
     ],
   },
   lint: {

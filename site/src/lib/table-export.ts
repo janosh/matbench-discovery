@@ -46,26 +46,12 @@ function create_filtered_table_clone(): HTMLElement {
     }
   })
 
-  // Remove columns from all header rows (working backwards to maintain indices)
-  columns_to_remove.toReversed().forEach((col_index) => {
-    header_rows.forEach((row) => {
-      const cells = row.querySelectorAll(`th`)
-      if (cells[col_index]) {
-        cells[col_index].remove()
-      }
-    })
-  })
-
-  // Remove columns from all body rows (working backwards to maintain indices)
-  const body_rows = table_clone.querySelectorAll(`tbody tr`)
-  columns_to_remove.toReversed().forEach((col_index) => {
-    body_rows.forEach((row) => {
-      const cells = row.querySelectorAll(`td`)
-      if (cells[col_index]) {
-        cells[col_index].remove()
-      }
-    })
-  })
+  // Remove columns from all rows (working backwards to maintain indices)
+  for (const col_index of columns_to_remove.toReversed()) {
+    for (const row of table_clone.querySelectorAll(`tr`)) {
+      row.children[col_index]?.remove()
+    }
+  }
 
   return table_clone
 }
@@ -76,10 +62,7 @@ function remove_comments(node: Node): void {
     ;(node as ChildNode).remove()
     return
   }
-
-  // Recursively process child nodes (make a copy of the list since we're modifying it)
-  const children = Array.from(node.childNodes)
-  children.forEach(remove_comments)
+  for (const child of Array.from(node.childNodes)) remove_comments(child)
 }
 
 // Clean up Svelte-specific artifacts and problematic elements

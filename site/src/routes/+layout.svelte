@@ -1,10 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import { Footer, ThemeToggle } from '$lib'
+  import { Footer } from '$lib'
   import pkg from '$site/package.json'
   import type { Snippet } from 'svelte'
-  import { CmdPalette, CopyButton, GitHubCorner, Nav } from 'svelte-multiselect'
+  import { CmdPalette, CopyButton, GitHubCorner, Nav, ThemeToggle } from 'svelte-multiselect'
   import { heading_anchors } from 'svelte-multiselect/heading-anchors'
   import Toc from 'svelte-toc'
   import '../app.css'

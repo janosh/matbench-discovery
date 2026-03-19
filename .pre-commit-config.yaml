@@ -43,19 +43,19 @@ repos:
     hooks:
       - id: vp-fmt
         name: Format (oxfmt)
-        entry: bash -c 'cd site && npx --no-install vp fmt --write'
+        entry: bash -c 'cd site && node_modules/.bin/vp fmt --write'
         types_or: [ts, javascript, json, css, html, svelte]
         language: system
         pass_filenames: false
       - id: vp-lint
         name: Lint (oxlint)
-        entry: bash -c 'cd site && npx --no-install vp lint --fix'
+        entry: bash -c 'cd site && node_modules/.bin/vp lint --fix'
         types_or: [ts, javascript, json, css, html, svelte]
         language: system
         pass_filenames: false
       - id: svelte-check
         name: Svelte type check
-        entry: bash -c 'cd site && npx svelte-kit sync && npx svelte-check-rs --threshold error'
+        entry: bash -c 'cd site && node_modules/.bin/svelte-kit sync && node_modules/.bin/svelte-check-rs --threshold error'
         language: system
         types_or: [ts, svelte]
         pass_filenames: false

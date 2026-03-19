@@ -201,7 +201,6 @@
   data={metrics_data}
   columns={columns as MattervizLabel[]}
   bind:sort
-  sort_hint="Click on column headers to sort table rows"
   special_cells={{
     Links: links_cell as unknown as Snippet<[MattervizCellSnippetArgs]>,
     Org: affiliation_cell as unknown as Snippet<[MattervizCellSnippetArgs]>,
