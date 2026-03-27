@@ -10,10 +10,9 @@ describe(`ModelCard`, () => {
   if (!found_model) throw new Error(`Could not find mace-mp-0 model in MODELS`)
   const model = found_model
 
-  const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((metric_key) => ({
-    ...ALL_METRICS[metric_key],
-    key: metric_key,
-  }))
+  const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((metric_key) =>
+    Object.assign({}, ALL_METRICS[metric_key], { key: metric_key }),
+  )
 
   describe(`Basic Rendering`, () => {
     it(`renders model header and basic info`, () => {

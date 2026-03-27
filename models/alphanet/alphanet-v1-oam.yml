@@ -1,5 +1,5 @@
-model_name: AlphaNet-v1-OMA
-model_key: alphanet-v1-oma
+model_name: AlphaNet-v1-OAM
+model_key: alphanet-v1-oam
 model_version: v1
 date_added: '2025-05-12'
 date_published: '2025-05-12'
@@ -100,11 +100,11 @@ metrics:
   phonons:
     kappa_103:
       κ_SRME: 0.6435
-      pred_file: models/alphanet/oma/2025-04-20-oma-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file: models/alphanet/oam/2025-04-20-oam-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/56871824
       κ_SRE: 0.4914
   geo_opt:
-    pred_file: models/alphanet/oma/2025-07-24-wbm-oma-IS2RE.json.gz
+    pred_file: models/alphanet/oam/2025-07-24-wbm-oam-IS2RE.json.gz
     pred_file_url: https://figshare.com/files/56871812
     struct_col: alphanet_structure
     symprec=1e-5:
@@ -114,7 +114,7 @@ metrics:
       symmetry_match: 0.1416 # fraction
       symmetry_increase: 0.0067 # fraction
       n_structures: 256963 # count
-      analysis_file: models/alphanet/oma/2025-07-24-wbm-oma-IS2RE-symprec=1e-5-moyo=0.4.4.csv.gz
+      analysis_file: models/alphanet/oam/2025-07-24-wbm-oam-IS2RE-symprec=1e-5-moyo=0.4.4.csv.gz
       analysis_file_url: https://figshare.com/files/56871815
     symprec=1e-2:
       rmsd: 0.0793 # unitless
@@ -123,10 +123,10 @@ metrics:
       symmetry_match: 0.7431 # fraction
       symmetry_increase: 0.1037 # fraction
       n_structures: 256963 # count
-      analysis_file: models/alphanet/oma/2025-07-24-wbm-oma-IS2RE-symprec=1e-2-moyo=0.4.4.csv.gz
+      analysis_file: models/alphanet/oam/2025-07-24-wbm-oam-IS2RE-symprec=1e-2-moyo=0.4.4.csv.gz
       analysis_file_url: https://figshare.com/files/56871818
   discovery:
-    pred_file: models/alphanet/oma/2025-07-24-wbm-oma-IS2RE.csv.gz
+    pred_file: models/alphanet/oam/2025-07-24-wbm-oam-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/56871809
     pred_col: e_form_per_atom_alphanet
     full_test_set:

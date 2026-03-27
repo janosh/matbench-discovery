@@ -17,10 +17,12 @@
     elem_counts[short_key] = value
   }
 
-  let arity_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`arity=`))
-  let batch_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`batch=`))
+  const all_keys = Object.keys(elem_counts)
+  const starts_with_arity = (key: string) => key.startsWith(`arity=`)
+  let arity_keys = all_keys.filter(starts_with_arity)
+  let batch_keys = all_keys.filter((key) => key.startsWith(`batch=`))
   let log = $state(false) // Log color scale
-  let filter = $state(arity_keys[0])
+  let filter = $state(all_keys.find(starts_with_arity) as string)
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
   let active_counts = $derived(elem_counts[filter] as Record<string, number>)

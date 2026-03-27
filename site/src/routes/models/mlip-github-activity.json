@@ -226,7 +226,7 @@
   },
   {
     "name": "AlphaNet",
-    "model_key": "alphanet-v1-oma",
+    "model_key": "alphanet-v1-oam",
     "repo": "zmyybc/AlphaNet",
     "stars": 111,
     "forks": 22,

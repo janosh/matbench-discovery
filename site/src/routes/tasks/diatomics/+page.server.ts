@@ -1,25 +1,28 @@
 import { type DiatomicsCurves, MODELS } from '$lib'
 import type { PageServerLoad } from './$types'
 
-async function fetch_diatomics(file_url: string, retries = 3): Promise<DiatomicsCurves> {
-  let last_err: unknown
-  for (let attempt = 0; attempt < retries; attempt++) {
-    try {
-      const response = await fetch(file_url)
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
+async function fetch_diatomics(
+  file_url: string,
+  retries = 3,
+  attempt = 0,
+): Promise<DiatomicsCurves> {
+  try {
+    const response = await fetch(file_url)
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
 
-      const decompressed = response.body?.pipeThrough(new DecompressionStream(`gzip`))
-      if (!decompressed) throw new Error(`Failed to decompress response`)
-      return JSON.parse(await new Response(decompressed).text())
-    } catch (error) {
-      last_err = error
-      if (attempt < retries - 1) {
-        // Exponential backoff: 1s, 2s, 4s
-        await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt))
-      }
+    const decompressed = response.body?.pipeThrough(new DecompressionStream(`gzip`))
+    if (!decompressed) throw new Error(`Failed to decompress response`)
+    return await new Response(decompressed).json()
+  } catch (error) {
+    if (attempt + 1 >= retries) {
+      throw new Error(`${file_url} failed after ${retries} attempts: ${String(error)}`, {
+        cause: error,
+      })
     }
+    // Exponential backoff: 1s, 2s, 4s
+    await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt))
+    return fetch_diatomics(file_url, retries, attempt + 1)
   }
-  throw new Error(`${file_url} failed after ${retries} attempts: ${String(last_err)}`)
 }
 
 export const load: PageServerLoad = async () => {

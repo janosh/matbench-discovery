@@ -16,13 +16,16 @@ export const load: PageServerLoad = async ({ params }) => {
   }
 
   // Fail site build if energy parity plots are missing
-  for (const which_energy of [`e-form`, `each`]) {
-    try {
-      await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`)
-    } catch (err) {
-      throw error(404, { message: err instanceof Error ? err.message : `Unknown error` })
-    }
-  }
+  const parity_imports = [`e-form`, `each`].map((which_energy) =>
+    import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`).catch(
+      (err) => {
+        throw error(404, {
+          message: err instanceof Error ? err.message : `Unknown error`,
+        })
+      },
+    ),
+  )
+  await Promise.all(parity_imports)
 
   return { model }
 }

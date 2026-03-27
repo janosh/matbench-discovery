@@ -93,11 +93,10 @@
       show_compliant,
     )
       .map((row) => {
-        const remapped = { ...row }
         for (const [from, to] of Object.entries(key_remap)) {
-          if (from in remapped) remapped[to] = remapped[from]
+          if (from in row) row[to] = row[from]
         }
-        return remapped
+        return row
       }),
   )
 </script>

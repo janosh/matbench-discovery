@@ -5,14 +5,14 @@ import pkg from '$site/package.json'
 import { describe, expect, it } from 'vitest'
 
 describe(`RSS feed endpoint`, () => {
-  it(`should return response with correct content type`, async () => {
-    const response = await GET()
+  it(`should return response with correct content type`, () => {
+    const response = GET()
     expect(response.headers.get(`Content-Type`)).toBe(`application/xml`)
     expect(response.status).toBe(200)
   })
 
   it(`should return valid XML with expected structure`, async () => {
-    const response = await GET()
+    const response = GET()
     const xml = await response.text()
 
     // Check RSS basics with exact matches
@@ -50,7 +50,7 @@ describe(`RSS feed endpoint`, () => {
       return
     }
 
-    const response = await GET()
+    const response = GET()
     const xml = await response.text()
 
     // Extract the CDATA content from the first item
@@ -89,7 +89,7 @@ describe(`RSS feed endpoint`, () => {
       return
     }
 
-    const response = await GET()
+    const response = GET()
     const xml = await response.text()
 
     const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
@@ -126,7 +126,7 @@ describe(`RSS feed endpoint`, () => {
       return
     }
 
-    const response = await GET()
+    const response = GET()
     const xml = await response.text()
 
     // Find models with different dates
@@ -193,7 +193,7 @@ describe(`RSS feed endpoint`, () => {
   })
 
   it(`should have correct self-reference URL and absolute URLs in descriptions`, async () => {
-    const response = await GET()
+    const response = GET()
     const xml = await response.text()
 
     // Check that the self-reference URL matches document URL

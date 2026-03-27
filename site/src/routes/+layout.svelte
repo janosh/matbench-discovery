@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { Footer } from '$lib';
+  import { MODELS } from '$lib/models.svelte';
   import pkg from '$site/package.json';
   import type { Snippet } from 'svelte';
   import { CmdPalette, CopyButton, GitHubCorner, Nav, ThemeToggle } from 'svelte-multiselect';
@@ -49,6 +50,12 @@
 
       return { label: route, action: () => goto(route) }
     })
+    .concat(
+      MODELS.map((model) => ({
+        label: `/models/${model.model_key}`,
+        action: () => goto(`/models/${model.model_key}`),
+      }))
+    )
 </script>
 
 <CmdPalette {actions} placeholder="Go to..." />
