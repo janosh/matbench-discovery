@@ -697,8 +697,8 @@ describe(`assemble_row_data`, () => {
 
     // Expect only the selected models
     expect(rows).toHaveLength(test_model_keys.length)
-    const mace_row = rows.find((row) => row.Model.includes(`mace-mp-0`))
-    const chgnet_row = rows.find((row) => row.Model.includes(`chgnet-0.3.0`))
+    const mace_row = rows.find((row) => (row.Model ?? ``).includes(`mace-mp-0`))
+    const chgnet_row = rows.find((row) => (row.Model ?? ``).includes(`chgnet-0.3.0`))
 
     expect(mace_row?.Model).toContain(`mace-mp-0`)
     expect(mace_row?.[`graph_construction_radius`]).toBe(

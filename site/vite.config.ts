@@ -3,7 +3,7 @@
 
 import yaml_plugin from '@rollup/plugin-yaml'
 import { sveltekit } from '@sveltejs/kit/vite'
-import yaml from 'js-yaml'
+import { load as yaml_load } from 'js-yaml'
 import type { JSONSchema4 } from 'json-schema'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
 import { execFileSync } from 'node:child_process'
@@ -22,7 +22,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const file_dir = path.dirname(file)
 
       // Replace relative file paths in $refs with absolute file URIs
-      const parsed_yaml = yaml.load(yaml_content) as JSONSchema4
+      const parsed_yaml = yaml_load(yaml_content) as JSONSchema4
       const base_name = path.basename(file, `.yml`)
 
       // Convert model schema to TypeScript
@@ -93,73 +93,51 @@ export default defineConfig({
     ],
   },
   lint: {
-    categories: {
-      correctness: `error`,
-      suspicious: `error`,
-      pedantic: `error`,
-      perf: `error`,
-    },
+    plugins: [`oxc`, `typescript`, `unicorn`, `import`],
+    options: { typeAware: true, typeCheck: true },
+    categories: { correctness: `error`, suspicious: `error`, perf: `error` },
     ignorePatterns: [
-      `build/`,
-      `.svelte-kit/`,
-      `src/figs/`,
-      `dist/`,
+      `build/**`,
+      `.svelte-kit/**`,
+      `dist/**`,
+      `src/figs/**`,
       `src/lib/*.d.ts`,
-      `scripts/`,
+      `scripts/**`,
     ],
-    options: {
-      typeAware: true,
-      typeCheck: true,
-    },
-    plugins: [`oxc`, `typescript`, `unicorn`, `import`, `jest`],
     rules: {
+      // Extra rules not in the enabled categories
       'no-console': [`error`, { allow: [`warn`, `error`] }],
+      'no-template-curly-in-string': `error`,
+      'no-constructor-return': `error`,
+      'default-param-last': `error`,
+      'guard-for-in': `error`,
       'no-unused-vars': `off`,
       '@typescript-eslint/no-unused-vars': [
         `error`,
         { argsIgnorePattern: `^_`, varsIgnorePattern: `^_` },
       ],
-      'no-self-assign': `off`,
-      'no-await-in-loop': `off`,
+      'eslint-plugin-unicorn/prefer-array-find': `error`,
+      'eslint-plugin-unicorn/no-typeof-undefined': `error`,
+      'eslint-plugin-unicorn/prefer-optional-catch-binding': `error`,
+      'eslint-plugin-unicorn/no-length-as-slice-end': `error`,
+      'eslint-plugin-unicorn/prefer-node-protocol': `error`,
+      'eslint-plugin-unicorn/throw-new-error': `error`,
+      'eslint-plugin-unicorn/prefer-type-error': `error`,
+      'eslint-plugin-unicorn/prefer-date-now': `error`,
+      'eslint-plugin-unicorn/require-number-to-fixed-digits-argument': `error`,
+      'eslint-plugin-unicorn/no-useless-promise-resolve-reject': `error`,
+      'eslint-plugin-import/no-duplicates': `error`,
+      '@typescript-eslint/no-non-null-assertion': `error`,
+      '@typescript-eslint/no-redundant-type-constituents': `warn`,
+
+      // Svelte framework patterns — NOT bugs
+      'no-unassigned-vars': `off`, // `bind:` variables
       'no-shadow': `off`,
-      'prefer-const': `off`,
-      'no-unassigned-vars': `off`,
-      '@typescript-eslint/no-unnecessary-condition': `off`,
-      '@typescript-eslint/consistent-type-imports': `off`,
-      'eslint-plugin-unicorn/consistent-function-scoping': `off`,
-      'eslint-plugin-unicorn/no-new-array': `off`,
-      'eslint-plugin-unicorn/prefer-array-find': `off`,
-      'eslint-plugin-import/no-self-import': `off`,
-      'eslint-plugin-import/no-unassigned-import': `off`,
-      'eslint-plugin-import/no-named-as-default-member': `off`,
-      '@typescript-eslint/no-unsafe-argument': `off`,
-      '@typescript-eslint/no-unsafe-assignment': `off`,
-      '@typescript-eslint/no-unsafe-call': `off`,
-      '@typescript-eslint/no-unsafe-member-access': `off`,
-      '@typescript-eslint/no-unsafe-return': `off`,
-      'no-confusing-void-expression': `off`,
-      'max-lines-per-function': `off`,
-      'strict-boolean-expressions': `off`,
-      'eslint-plugin-jest/no-conditional-in-test': `off`,
-      'eslint-plugin-jest/no-conditional-expect': `off`,
-      'eslint-plugin-jest/no-disabled-tests': `off`,
-      'eslint-plugin-jest/valid-expect': `off`,
+      'eslint-plugin-unicorn/consistent-function-scoping': `off`, // Svelte reactive closures
+      // Pervasive intentional patterns
       '@typescript-eslint/no-unsafe-type-assertion': `off`,
-      '@typescript-eslint/only-throw-error': `off`,
-      '@typescript-eslint/no-misused-promises': `off`,
-      '@typescript-eslint/no-deprecated': `off`,
-      '@typescript-eslint/await-thenable': `off`,
-      'eslint-plugin-unicorn/no-array-callback-reference': `off`,
-      'eslint-plugin-unicorn/no-useless-undefined': `off`,
-      'eslint-plugin-unicorn/no-object-as-default-parameter': `off`,
-      'eslint-plugin-import/max-dependencies': `off`,
-      'no-inline-comments': `off`,
-      'no-negated-condition': `off`,
-      'no-warning-comments': `off`,
-      'no-promise-executor-return': `off`,
+      'eslint-plugin-import/no-unassigned-import': `off`, // CSS side-effect imports
       'oxc/no-map-spread': `off`,
-      'max-lines': `off`,
-      'max-depth': `off`,
     },
   },
   staged: {

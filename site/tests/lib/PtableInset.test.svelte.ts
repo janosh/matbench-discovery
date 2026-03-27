@@ -20,7 +20,7 @@ describe(`PtableInset.svelte`, () => {
   })
 
   it(`renders element count from array using atomic number index`, () => {
-    const counts = new Array(120).fill(0)
+    const counts = Array.from({ length: 120 }, () => 0)
     counts[0] = 200 // H (number 1, index 0)
 
     mount(PtableInset, {

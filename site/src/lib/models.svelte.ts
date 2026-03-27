@@ -94,8 +94,7 @@ export const MODELS = $state(
         .slice(0, 3)
         .map(([key]) => affiliation_data[key])
 
-      return {
-        ...metadata,
+      return Object.assign({}, metadata, {
         dirname: key.split(`/`)[2],
         metadata_file: key.replace(/^..\//, ``),
         color: model_color,
@@ -103,7 +102,7 @@ export const MODELS = $state(
         n_training_materials: sizes.total_materials,
         n_training_structures: sizes.total_structures,
         org_logos: frequent_logos,
-      } as ModelData
+      }) as ModelData
     }),
 )
 

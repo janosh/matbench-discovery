@@ -321,7 +321,7 @@ describe.skip(`Table Export Functionality`, () => {
       } as unknown as Element)
 
       const module = await import(`$lib/table-export`)
-      await module[function_name]({ discovery_set: `test` })
+      module[function_name]({ discovery_set: `test` })
 
       const csv_content = (globalThis.Blob as Mock).mock.calls[0][0][0]
       expect(csv_content).toContain(`"Model ""Special"""`)
@@ -332,7 +332,7 @@ describe.skip(`Table Export Functionality`, () => {
       const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
 
       const module = await import(`$lib/table-export`)
-      const result = await module[function_name]({ discovery_set: `test` })
+      const result = module[function_name]({ discovery_set: `test` })
 
       expect(result).toBeNull()
       expect(console_spy).toHaveBeenCalledWith(
@@ -368,7 +368,7 @@ describe.skip(`Table Export Functionality`, () => {
         }),
       } as unknown as Element)
 
-      const result = await module.generate_csv({
+      const result = module.generate_csv({
         show_non_compliant: false,
         discovery_set: `unique_prototypes`,
       })
@@ -385,7 +385,7 @@ describe.skip(`Table Export Functionality`, () => {
 
     it(`excludes compliance suffix when showing all models`, async () => {
       const module = await import(`$lib/table-export`)
-      const result = await module.generate_csv({
+      const result = module.generate_csv({
         show_non_compliant: true,
         discovery_set: `test`,
       })

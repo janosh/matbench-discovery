@@ -85,7 +85,7 @@
         }
         const visible = col.visible !== false && col_filter(col)
 
-        return { ...col, better, description, visible } as Label
+        return Object.assign({}, col, { better, description, visible }) as Label
       })
       // Ensure Model column comes first
       .toSorted((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
