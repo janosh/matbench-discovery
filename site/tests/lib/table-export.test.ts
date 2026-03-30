@@ -75,11 +75,11 @@ describe.skip(`Table Export Functionality`, () => {
       .mockImplementation((tag: string) =>
         tag === `a`
           ? ({
-            href: ``,
-            download: ``,
-            click: mock_click,
-          } as unknown as HTMLAnchorElement)
-          : original_create_element(tag)
+              href: ``,
+              download: ``,
+              click: mock_click,
+            } as unknown as HTMLAnchorElement)
+          : original_create_element(tag),
       )
 
     query_selector_spy = vi
@@ -96,23 +96,19 @@ describe.skip(`Table Export Functionality`, () => {
 
   // Test image exports (SVG, PNG) with parameterized testing
   // TODO: these tests have mock isolation issues causing timeouts and assertion failures
-  describe.skip.each(
-    [
-      [`SVG`, `generate_svg`, `.svg`],
-      [`PNG`, `generate_png`, `.png`],
-    ] as const,
-  )(`%s Export`, (format, function_name, extension) => {
+  describe.skip.each([
+    [`SVG`, `generate_svg`, `.svg`],
+    [`PNG`, `generate_png`, `.png`],
+  ] as const)(`%s Export`, (format, function_name, extension) => {
     it(`generates ${format} with correct filename and calls download`, async () => {
       const module = await import(`$lib/table-export`)
-      // deno-lint-ignore require-await
-      vi.spyOn(module, function_name).mockImplementation(async () => {
+      vi.spyOn(module, function_name).mockImplementation(() => {
         document.createElement(`a`).click()
         const date_str = new Date().toISOString().split(`T`)[0]
-        return {
-          filename:
-            `metrics-table-unique-prototypes-only-compliant-${date_str}${extension}`,
+        return Promise.resolve({
+          filename: `metrics-table-unique-prototypes-only-compliant-${date_str}${extension}`,
           url: `mock-url`,
-        }
+        })
       })
 
       const result = await module[function_name]({
@@ -142,39 +138,39 @@ describe.skip(`Table Export Functionality`, () => {
 
       const th1 = document.createElement(`th`)
       th1.textContent = `Model`
-      header_row.appendChild(th1)
+      header_row.append(th1)
 
       const th2 = document.createElement(`th`)
       th2.innerHTML = `R<sup>2</sup>`
-      header_row.appendChild(th2)
+      header_row.append(th2)
 
       const th3 = document.createElement(`th`)
       th3.innerHTML = `κ<sub>SRME</sub>`
-      header_row.appendChild(th3)
+      header_row.append(th3)
 
-      thead.appendChild(header_row)
-      real_table.appendChild(thead)
+      thead.append(header_row)
+      real_table.append(thead)
 
       const tbody = document.createElement(`tbody`)
       const body_row = document.createElement(`tr`)
 
       const td1 = document.createElement(`td`)
       td1.textContent = `Test Model`
-      body_row.appendChild(td1)
+      body_row.append(td1)
 
       const td2 = document.createElement(`td`)
       td2.textContent = `0.85`
-      body_row.appendChild(td2)
+      body_row.append(td2)
 
       const td3 = document.createElement(`td`)
       td3.textContent = `1.23`
-      body_row.appendChild(td3)
+      body_row.append(td3)
 
-      tbody.appendChild(body_row)
-      real_table.appendChild(tbody)
+      tbody.append(body_row)
+      real_table.append(tbody)
 
       // Append to document so querySelector can find it
-      document.body.appendChild(real_table)
+      document.body.append(real_table)
 
       // Get the mocked html-to-image module and override with container capture
       const html_to_image = await import(`html-to-image`)
@@ -182,12 +178,12 @@ describe.skip(`Table Export Functionality`, () => {
 
       if (format === `SVG`) {
         vi.mocked(html_to_image.toSvg).mockImplementation((container) => {
-          captured_container = container as HTMLElement
+          captured_container = container
           return Promise.resolve(`data:image/svg+xml;base64,test`)
         })
       } else {
         vi.mocked(html_to_image.toPng).mockImplementation((container) => {
-          captured_container = container as HTMLElement
+          captured_container = container
           return Promise.resolve(`data:image/png;base64,test`)
         })
       }
@@ -205,7 +201,7 @@ describe.skip(`Table Export Functionality`, () => {
       // The key test: verify sub/sup elements are preserved in the structure
       // clean_table_for_export should NOT remove sub/sup elements
       const preserved_elements = container.querySelectorAll(`sub, sup`)
-      expect(preserved_elements.length).toBe(2)
+      expect(preserved_elements).toHaveLength(2)
     })
 
     it(`handles table not found error for ${format}`, async () => {
@@ -216,7 +212,7 @@ describe.skip(`Table Export Functionality`, () => {
       const result = await module[function_name]({ discovery_set: `test` })
 
       expect(result).toBeNull()
-      expect(console_spy).toHaveBeenCalled()
+      expect(console_spy).toHaveBeenCalledWith(expect.stringContaining(`Error`), expect.anything())
       console_spy.mockRestore()
     })
 
@@ -235,7 +231,7 @@ describe.skip(`Table Export Functionality`, () => {
       const result = await module[function_name]({ discovery_set: `test` })
 
       expect(result).toBeNull()
-      expect(console_spy).toHaveBeenCalled()
+      expect(console_spy).toHaveBeenCalledWith(expect.stringContaining(`Error`), expect.anything())
       expect(query_selector_spy).toHaveBeenCalledWith(`.heatmap`)
       console_spy.mockRestore()
     })
@@ -243,17 +239,15 @@ describe.skip(`Table Export Functionality`, () => {
 
   // Test data exports (CSV, Excel) with parameterized testing
   // TODO: these tests have timeout issues - needs investigation
-  describe.skip.each(
+  describe.skip.each([
+    [`CSV`, `generate_csv`, `.csv`, `text/csv;charset=utf-8;`],
     [
-      [`CSV`, `generate_csv`, `.csv`, `text/csv;charset=utf-8;`],
-      [
-        `Excel`,
-        `generate_excel`,
-        `.xlsx`,
-        `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
-      ],
-    ] as const,
-  )(`%s Export`, (format, function_name, extension, mime_type) => {
+      `Excel`,
+      `generate_excel`,
+      `.xlsx`,
+      `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
+    ],
+  ] as const)(`%s Export`, (format, function_name, extension, mime_type) => {
     beforeEach(() => {
       if (format === `Excel`) {
         // Simplified Excel mock
@@ -267,7 +261,9 @@ describe.skip(`Table Export Functionality`, () => {
               .mockReturnValue({ s: { r: 0, c: 0 }, e: { r: 2, c: 3 } }),
             encode_cell: vi
               .fn()
-              .mockImplementation(({ r, c }) => `${String.fromCharCode(65 + c)}${r + 1}`),
+              .mockImplementation(
+                ({ r, c }) => `${String.fromCodePoint(65 + c)}${r + 1}`,
+              ),
           },
           write: vi.fn().mockReturnValue(new ArrayBuffer(100)),
         }))
@@ -325,7 +321,7 @@ describe.skip(`Table Export Functionality`, () => {
       } as unknown as Element)
 
       const module = await import(`$lib/table-export`)
-      await module[function_name]({ discovery_set: `test` })
+      module[function_name]({ discovery_set: `test` })
 
       const csv_content = (globalThis.Blob as Mock).mock.calls[0][0][0]
       expect(csv_content).toContain(`"Model ""Special"""`)
@@ -336,7 +332,7 @@ describe.skip(`Table Export Functionality`, () => {
       const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
 
       const module = await import(`$lib/table-export`)
-      const result = await module[function_name]({ discovery_set: `test` })
+      const result = module[function_name]({ discovery_set: `test` })
 
       expect(result).toBeNull()
       expect(console_spy).toHaveBeenCalledWith(
@@ -372,7 +368,7 @@ describe.skip(`Table Export Functionality`, () => {
         }),
       } as unknown as Element)
 
-      const result = await module.generate_csv({
+      const result = module.generate_csv({
         show_non_compliant: false,
         discovery_set: `unique_prototypes`,
       })
@@ -389,7 +385,7 @@ describe.skip(`Table Export Functionality`, () => {
 
     it(`excludes compliance suffix when showing all models`, async () => {
       const module = await import(`$lib/table-export`)
-      const result = await module.generate_csv({
+      const result = module.generate_csv({
         show_non_compliant: true,
         discovery_set: `test`,
       })

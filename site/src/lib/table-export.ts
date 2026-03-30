@@ -17,55 +17,45 @@ function generate_filename(
   const discovery = discovery_set.replaceAll(`_`, `-`)
 
   // Get current table state for context
-  const table_el = document.querySelector(`.${heatmap_class}`) as HTMLTableElement
-  const model_count = table_el?.querySelectorAll(`tbody tr`).length || 0
+  const table_el = document.querySelector(`.${heatmap_class}`)
+  const model_count = table_el?.querySelectorAll(`tbody tr`).length ?? 0
 
   return `matbench-${discovery}-${compliance}-${model_count}models-${date}.${format.toLowerCase()}`
 }
 
 // Helper function to create a filtered table clone excluding SVG icon columns
 function create_filtered_table_clone(): HTMLElement {
-  const table_el = document.querySelector(`.${heatmap_class}`) as HTMLTableElement
+  const table_el = document.querySelector(`.${heatmap_class}`)
 
   if (!table_el) throw new Error(`Table element not found for export`)
 
   // Clone the entire table
-  const table_clone = table_el.cloneNode(true) as HTMLTableElement
+  const cloned_node = table_el.cloneNode(true)
+  if (!(cloned_node instanceof HTMLTableElement)) {
+    throw new Error(`Cloned node is not an HTMLTableElement`)
+  }
+  const table_clone = cloned_node
 
   // Get header row to identify columns to remove
   const header_rows = table_clone.querySelectorAll(`thead tr`)
-  const main_header_row = header_rows[header_rows.length - 1]
-  const all_headers = Array.from(main_header_row.querySelectorAll(`th`))
+  const main_header_row = header_rows.item(header_rows.length - 1)
+  const all_headers = [...(main_header_row?.querySelectorAll(`th`) ?? [])]
 
   // Find column indices to remove (SVG icon columns)
   const columns_to_remove: number[] = []
   all_headers.forEach((th, index) => {
-    const header_text = th.textContent?.replace(/[↑↓]/g, ``).trim() || ``
+    const header_text = th.textContent?.replaceAll(/[↑↓]/g, ``).trim() || ``
     if (header_text === `Org` || header_text === `Links`) {
       columns_to_remove.push(index)
     }
   })
 
-  // Remove columns from all header rows (working backwards to maintain indices)
-  columns_to_remove.reverse().forEach((col_index) => {
-    header_rows.forEach((row) => {
-      const cells = row.querySelectorAll(`th`)
-      if (cells[col_index]) {
-        cells[col_index].remove()
-      }
-    })
-  })
-
-  // Remove columns from all body rows
-  const body_rows = table_clone.querySelectorAll(`tbody tr`)
-  columns_to_remove.forEach((col_index) => {
-    body_rows.forEach((row) => {
-      const cells = row.querySelectorAll(`td`)
-      if (cells[col_index]) {
-        cells[col_index].remove()
-      }
-    })
-  })
+  // Remove columns from all rows (working backwards to maintain indices)
+  for (const col_index of columns_to_remove.toReversed()) {
+    for (const row of table_clone.querySelectorAll(`tr`)) {
+      row.children[col_index]?.remove()
+    }
+  }
 
   return table_clone
 }
@@ -73,13 +63,10 @@ function create_filtered_table_clone(): HTMLElement {
 // Remove HTML comments recursively (Svelte generates many of these)
 function remove_comments(node: Node): void {
   if (node.nodeType === Node.COMMENT_NODE) {
-    node.parentNode?.removeChild(node)
+    ;(node as ChildNode).remove()
     return
   }
-
-  // Recursively process child nodes (make a copy of the list since we're modifying it)
-  const children = Array.from(node.childNodes)
-  children.forEach(remove_comments)
+  for (const child of node.childNodes) remove_comments(child)
 }
 
 // Clean up Svelte-specific artifacts and problematic elements
@@ -111,8 +98,8 @@ function clean_table_for_export(table_clone: HTMLElement): void {
   })
 
   // Simplify class names and remove data attributes
-  const all_elements = [table_clone, ...Array.from(table_clone.querySelectorAll(`*`))]
-  all_elements.forEach((el) => {
+  const all_elements = [table_clone, ...table_clone.querySelectorAll(`*`)]
+  for (const el of all_elements) {
     // Remove Svelte-generated dynamic classes
     if (el.className) {
       const classes = el.className.split(` `).filter((cls) => !cls.startsWith(`s-`))
@@ -120,44 +107,44 @@ function clean_table_for_export(table_clone: HTMLElement): void {
     }
 
     // Remove Svelte-specific data attributes
-    Array.from(el.attributes).forEach((attr) => {
+    for (const attr of el.attributes) {
       if (
         attr.name.startsWith(`data-`) &&
         ![`data-sort-value`, `data-title`].includes(attr.name)
       ) {
         el.removeAttribute(attr.name)
       }
-    })
+    }
 
     // Clean up problematic styling that could cause scrollbars and extra width
-    const html_el = el as HTMLElement
-    if (html_el.style) {
-      html_el.style.removeProperty(`grid-column`)
-      html_el.style.removeProperty(`grid-row`)
-      html_el.style.removeProperty(`grid-area`)
-      html_el.style.removeProperty(`overflow`)
-      html_el.style.removeProperty(`overflow-x`)
-      html_el.style.removeProperty(`overflow-y`)
-      html_el.style.removeProperty(`max-width`)
-      html_el.style.removeProperty(`max-height`)
-      html_el.style.removeProperty(`min-width`)
-      html_el.style.removeProperty(`flex`)
-      html_el.style.removeProperty(`flex-grow`)
-      html_el.style.removeProperty(`flex-basis`)
+    if (!(el instanceof HTMLElement)) continue
+    if (el.style) {
+      el.style.removeProperty(`grid-column`)
+      el.style.removeProperty(`grid-row`)
+      el.style.removeProperty(`grid-area`)
+      el.style.removeProperty(`overflow`)
+      el.style.removeProperty(`overflow-x`)
+      el.style.removeProperty(`overflow-y`)
+      el.style.removeProperty(`max-width`)
+      el.style.removeProperty(`max-height`)
+      el.style.removeProperty(`min-width`)
+      el.style.removeProperty(`flex`)
+      el.style.removeProperty(`flex-grow`)
+      el.style.removeProperty(`flex-basis`)
 
       // Ensure elements don't restrict their size
-      html_el.style.overflow = `visible`
-      html_el.style.whiteSpace = `nowrap`
+      el.style.overflow = `visible`
+      el.style.whiteSpace = `nowrap`
 
       // For table cells, apply compact sizing
-      if (html_el.tagName === `TD` || html_el.tagName === `TH`) {
-        html_el.style.width = `auto`
-        html_el.style.padding = `2px 4px`
-        html_el.style.textAlign = `left`
-        html_el.style.verticalAlign = `middle`
+      if (el.tagName === `TD` || el.tagName === `TH`) {
+        el.style.width = `auto`
+        el.style.padding = `2px 4px`
+        el.style.textAlign = `left`
+        el.style.verticalAlign = `middle`
       }
     }
-  })
+  }
 }
 
 // Detect current theme and get appropriate colors
@@ -169,7 +156,8 @@ function get_theme_colors(): { background: string; text: string } {
   const color_scheme = document.documentElement.style.colorScheme
   const prefers_dark = globalThis.matchMedia?.(`(prefers-color-scheme: dark)`).matches
 
-  const is_dark_mode = theme_data === `dark` ||
+  const is_dark_mode =
+    theme_data === `dark` ||
     color_scheme === `dark` ||
     (theme_data === undefined && color_scheme === undefined && prefers_dark)
 
@@ -177,11 +165,10 @@ function get_theme_colors(): { background: string; text: string } {
     const background = root_styles.getPropertyValue(`--dark-page-bg`) || `#061e25`
     const text = root_styles.getPropertyValue(`--dark-text`) || `rgb(208, 208, 208)`
     return { background, text }
-  } else {
-    const background = root_styles.getPropertyValue(`--light-page-bg`) || `#fefefe`
-    const text = root_styles.getPropertyValue(`--light-text`) || `#1f2937`
-    return { background, text }
   }
+  const background = root_styles.getPropertyValue(`--light-page-bg`) || `#fefefe`
+  const text = root_styles.getPropertyValue(`--light-text`) || `#1f2937`
+  return { background, text }
 }
 
 // Create export container with proper styling
@@ -211,8 +198,8 @@ function create_export_container(table_clone: HTMLElement): HTMLElement {
   inner.style.overflow = `visible`
   inner.style.width = `fit-content`
   inner.style.height = `fit-content`
-  inner.appendChild(table_clone)
-  container.appendChild(inner)
+  inner.append(table_clone)
+  container.append(inner)
 
   // Ensure the table itself doesn't create scrollbars or extra spacing
   table_clone.style.overflow = `visible`
@@ -234,9 +221,11 @@ function create_export_filter() {
     // Skip external stylesheets
     if (
       node_name === `LINK` &&
-      (node as Element).getAttribute(`rel`) === `stylesheet` &&
-      (node as Element).getAttribute(`href`)?.startsWith(`http`)
-    ) return false
+      node instanceof Element &&
+      node.getAttribute(`rel`) === `stylesheet` &&
+      node.getAttribute(`href`)?.startsWith(`http`)
+    )
+      return false
 
     // Skip problematic elements
     if ([`SVG`, `IMG`].includes(node_name)) return false
@@ -280,7 +269,7 @@ export async function generate_svg({
 
     // Create export container
     const container = create_export_container(table_clone)
-    document.body.appendChild(container)
+    document.body.append(container)
 
     try {
       // Generate SVG
@@ -304,13 +293,13 @@ export async function generate_svg({
       return { filename, url }
     } catch (error) {
       log_export_error(error, `SVG`, {
-        containerHTML: container.outerHTML.substring(0, 1000) + `...`,
-        tableCloneHTML: table_clone.outerHTML.substring(0, 1000) + `...`,
+        containerHTML: container.outerHTML.slice(0, 1000) + `...`,
+        tableCloneHTML: table_clone.outerHTML.slice(0, 1000) + `...`,
       })
       return null
     } finally {
       if (document.body.contains(container)) {
-        document.body.removeChild(container)
+        container.remove()
       }
     }
   } catch (error) {
@@ -335,7 +324,7 @@ export async function generate_png({
     container.style.fontSize = `14px`
     // Color is already set by create_export_container based on theme
 
-    document.body.appendChild(container)
+    document.body.append(container)
 
     try {
       // Get container dimensions for PNG generation
@@ -355,8 +344,7 @@ export async function generate_png({
           margin: `0`,
           padding: `0`,
         },
-        imagePlaceholder:
-          `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==`,
+        imagePlaceholder: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==`,
       })
 
       // Create download
@@ -369,13 +357,13 @@ export async function generate_png({
       return { filename, url: png_data_url }
     } catch (error) {
       log_export_error(error, `PNG`, {
-        containerHTML: container.outerHTML.substring(0, 1000) + `...`,
-        tableCloneHTML: table_clone.outerHTML.substring(0, 1000) + `...`,
+        containerHTML: container.outerHTML.slice(0, 1000) + `...`,
+        tableCloneHTML: table_clone.outerHTML.slice(0, 1000) + `...`,
       })
       return null
     } finally {
       if (document.body.contains(container)) {
-        document.body.removeChild(container)
+        container.remove()
       }
     }
   } catch (error) {
@@ -386,7 +374,7 @@ export async function generate_png({
 
 // Helper function to extract table data excluding SVG icon columns
 function extract_table_data(): { headers: string[]; rows: (string | number)[][] } {
-  const table_el = document.querySelector(`.${heatmap_class}`) as HTMLTableElement
+  const table_el = document.querySelector(`.${heatmap_class}`)
 
   if (!table_el) {
     throw new Error(`Table element not found for export`)
@@ -394,15 +382,15 @@ function extract_table_data(): { headers: string[]; rows: (string | number)[][] 
 
   // Extract headers from table
   const header_rows = table_el.querySelectorAll(`thead tr`)
-  const main_header_row = header_rows[header_rows.length - 1]
-  const all_headers = Array.from(main_header_row.querySelectorAll(`th`))
+  const main_header_row = header_rows.item(header_rows.length - 1)
+  const all_headers = [...(main_header_row?.querySelectorAll(`th`) ?? [])]
 
   // Filter out columns with SVG icons (Org and Links columns)
   const text_headers: string[] = []
   const included_column_indices: number[] = []
 
   all_headers.forEach((th, index) => {
-    const header_text = th.textContent?.replace(/[↑↓]/g, ``).trim() || ``
+    const header_text = th.textContent?.replaceAll(/[↑↓]/g, ``).trim() || ``
 
     // Exclude columns that typically contain only SVG icons
     if (header_text !== `Org` && header_text !== `Links`) {
@@ -416,7 +404,7 @@ function extract_table_data(): { headers: string[]; rows: (string | number)[][] 
   const formatted_rows: (string | number)[][] = []
 
   data_rows.forEach((row) => {
-    const all_cells = Array.from(row.querySelectorAll(`td`))
+    const all_cells = [...row.querySelectorAll(`td`)]
     const row_data: (string | number)[] = []
 
     // Only include cells from columns we want to export
@@ -448,10 +436,10 @@ function extract_table_data(): { headers: string[]; rows: (string | number)[][] 
             cell_value = format_value_for_export(num_value, header)
           } else {
             cell_value = text_content
-              .replace(/&lt;/g, `<`)
-              .replace(/&gt;/g, `>`)
-              .replace(/&amp;/g, `&`)
-              .replace(/\s+/g, ` `)
+              .replaceAll(`&lt;`, `<`)
+              .replaceAll(`&gt;`, `>`)
+              .replaceAll(`&amp;`, `&`)
+              .replaceAll(/\s+/g, ` `)
               .trim()
           }
         }
@@ -498,19 +486,16 @@ function format_value_for_export(value: number, header: string): number | string
   const all_labels = { ...ALL_METRICS, ...METADATA_COLS, ...HYPERPARAMS }
 
   // Look for label by header text (may need to handle HTML in headers)
-  const clean_header = header.replace(/<[^>]*>/g, ``).trim()
+  const clean_header = header.replaceAll(/<[^>]*>/g, ``).trim()
 
   let format_spec: string | undefined
 
   // Find matching label by key or label name
   for (const label of Object.values(all_labels)) {
-    const label_text = label.label?.replace(/<[^>]*>/g, ``).trim()
-    const key_text = label.key?.replace(/<[^>]*>/g, ``).trim()
+    const label_text = label.label?.replaceAll(/<[^>]*>/g, ``).trim()
+    const key_text = label.key?.replaceAll(/<[^>]*>/g, ``).trim()
 
-    if (
-      label_text === clean_header ||
-      key_text === clean_header
-    ) {
+    if (label_text === clean_header || key_text === clean_header) {
       format_spec = label.format
       break
     }
@@ -541,11 +526,11 @@ export function generate_csv({
               cell_str.includes(`"`) ||
               cell_str.includes(`\n`)
             ) {
-              return `"${cell_str.replace(/"/g, `""`)}"`
+              return `"${cell_str.replaceAll(`"`, `""`)}"`
             }
             return cell_str
           })
-          .join(`,`)
+          .join(`,`),
       )
       .join(`\n`)
 
@@ -592,7 +577,7 @@ export async function generate_excel({
       const column_widths: { wch: number }[] = []
 
       for (let col = range.s.c; col <= range.e.c; col++) {
-        let max_width = 10 // minimum width
+        let max_width = 10 // Minimum width
 
         for (let row = range.s.r; row <= range.e.r; row++) {
           const cell_address = XLSX.utils.encode_cell({ r: row, c: col })
@@ -600,7 +585,7 @@ export async function generate_excel({
 
           if (cell && cell.v) {
             const cell_length = String(cell.v).length
-            max_width = Math.max(max_width, Math.min(cell_length, 50)) // cap at 50 chars
+            max_width = Math.max(max_width, Math.min(cell_length, 50)) // Cap at 50 chars
           }
         }
 
@@ -638,27 +623,28 @@ export async function generate_excel({
   }
 }
 
-export const handle_export = <T extends ExportOptions>(
-  generator: (args: T) => ExportResult | null | Promise<ExportResult | null>,
-  fmt: string,
-  state: { export_error: string | null } & T,
-) =>
-async () => {
-  try {
-    state.export_error = null // Reset error state before trying
-    // Pass only the relevant properties expected by the generator
-    const generator_args: T = {
-      show_non_compliant: state.show_non_compliant,
-      discovery_set: state.discovery_set,
-    } as T // Cast needed as state has extra key
-    const result = await generator(generator_args)
-    if (!result) {
-      state.export_error = `Failed to generate ${fmt}. The export function returned null.`
+export const handle_export =
+  <T extends ExportOptions>(
+    generator: (args: T) => ExportResult | null | Promise<ExportResult | null>,
+    fmt: string,
+    state: { export_error: string | null } & T,
+  ) =>
+  async () => {
+    try {
+      state.export_error = null // Reset error state before trying
+      // Extract only ExportOptions keys — T extends ExportOptions so this is safe
+      const generator_args = {
+        show_non_compliant: state.show_non_compliant,
+        discovery_set: state.discovery_set,
+      } as T // unavoidable: TS can't prove ExportOptions subset satisfies generic T
+      const result = await generator(generator_args)
+      if (!result) {
+        state.export_error = `Failed to generate ${fmt}. The export function returned null.`
+      }
+    } catch (error) {
+      state.export_error = `Error exporting ${fmt}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+      console.error(`Error exporting ${fmt}:`, error)
     }
-  } catch (err) {
-    state.export_error = `Error exporting ${fmt}: ${
-      err instanceof Error ? err.message : String(err)
-    }`
-    console.error(`Error exporting ${fmt}:`, err)
   }
-}

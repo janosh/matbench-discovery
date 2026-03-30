@@ -17,8 +17,8 @@ describe(`Phonons Task Page`, () => {
     expect(document.querySelectorAll(`tbody tr`).length).toBeGreaterThan(0)
 
     // MetricScatter with h2 heading
-    const scatter_heading = Array.from(document.querySelectorAll(`h2`)).find((heading) =>
-      heading.textContent?.includes(`vs Model Parameters`)
+    const scatter_heading = [...document.querySelectorAll(`h2`)].find((heading) =>
+      heading.textContent?.includes(`vs Model Parameters`),
     )
     expect(scatter_heading).toBeTruthy()
     expect(document.querySelector(`[style*="height: 400px"]`)).not.toBeNull()
@@ -27,8 +27,9 @@ describe(`Phonons Task Page`, () => {
   it(`shows κ_SRME and metadata columns, hides discovery metrics`, () => {
     mount(PhononsPage, { target: document.body })
 
-    const headers = Array.from(document.querySelectorAll(`th`))
-      .map((th) => th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim())
+    const headers = [...document.querySelectorAll(`th`)].map((th) =>
+      th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
+    )
 
     // Should show κ_SRME and metadata
     expect(headers).toContain(`Model`)

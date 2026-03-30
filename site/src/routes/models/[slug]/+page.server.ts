@@ -15,15 +15,17 @@ export const load: PageServerLoad = async ({ params }) => {
     throw error(404, { message })
   }
 
-  // fail site build if energy parity plots are missing
-  for (const which_energy of [`e-form`, `each`]) {
-    try {
-      // deno-lint-ignore no-await-in-loop
-      await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`)
-    } catch (exc) {
-      throw error(404, { message: (exc as Error).message })
-    }
-  }
+  // Fail site build if energy parity plots are missing
+  const parity_imports = [`e-form`, `each`].map((which_energy) =>
+    import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`).catch(
+      (err) => {
+        throw error(404, {
+          message: err instanceof Error ? err.message : `Unknown error`,
+        })
+      },
+    ),
+  )
+  await Promise.all(parity_imports)
 
   return { model }
 }

@@ -152,7 +152,7 @@ def test_rolling_mae_vs_hull_dist_legend_loc(
         x_lim=(0, 0.6),
         window=0.02,
         bin_width=0.1,
-        legend_loc=legend_loc,  # type: ignore[arg-type]
+        legend_loc=legend_loc,  # ty: ignore[invalid-argument-type]
     )
     if should_raise:
         with pytest.raises(ValueError, match=f"Unexpected legend_loc='{legend_loc}'"):

@@ -76,7 +76,7 @@
       .map((col) => {
         const better = col.better ?? metric_better_as(col.label)
 
-        // append better=higher/lower to tooltip if applicable
+        // Append better=higher/lower to tooltip if applicable
         let description = col.description ?? ``
         if (better === `higher` || better === `lower`) {
           description = description
@@ -85,10 +85,10 @@
         }
         const visible = col.visible !== false && col_filter(col)
 
-        return { ...col, better, description, visible } as Label
+        return Object.assign({}, col, { better, description, visible }) as Label
       })
       // Ensure Model column comes first
-      .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
+      .toSorted((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
   )
 
   let selected_count = $derived(selected_models.size)
@@ -201,7 +201,6 @@
   data={metrics_data}
   columns={columns as MattervizLabel[]}
   bind:sort
-  sort_hint="Click on column headers to sort table rows"
   special_cells={{
     Links: links_cell as unknown as Snippet<[MattervizCellSnippetArgs]>,
     Org: affiliation_cell as unknown as Snippet<[MattervizCellSnippetArgs]>,

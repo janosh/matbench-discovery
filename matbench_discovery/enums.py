@@ -272,7 +272,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     alchembert = auto(), "alchembert/alchembert.yml"
 
     # AlphaNet: https://arxiv.org/abs/2501.07155
-    alphanet_v1_oma = auto(), "alphanet/alphanet-v1-oma.yml"
+    alphanet_v1_oam = auto(), "alphanet/alphanet-v1-oam.yml"
     # alignn with global pooling: https://arxiv.org/abs/2106.01829
     alignn = auto(), "alignn/alignn.yml"
 
@@ -517,7 +517,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             converted_value = value.replace("-", "_").casefold()
 
             if converted_value in cls._value2member_map_:
-                return cls._value2member_map_[converted_value]  # type: ignore[return-value]
+                return cls._value2member_map_[converted_value]  # ty: ignore[invalid-return-type]
 
         return None
 

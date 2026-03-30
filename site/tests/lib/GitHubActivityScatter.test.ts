@@ -8,7 +8,7 @@ vi.mock(`matterviz`, async (importOriginal) => {
   const actual = await importOriginal<typeof import('matterviz')>()
   return {
     ...actual,
-    format_num: (val: number) => String(val),
+    format_num: String,
     Icon: vi.fn(),
   }
 })
@@ -30,17 +30,20 @@ function create_mock_github_data(
 
 describe(`GitHubActivityScatter`, () => {
   beforeEach(() => {
-    document.exitFullscreen = vi.fn().mockResolvedValue(undefined)
-    Element.prototype.requestFullscreen = vi.fn().mockResolvedValue(undefined)
+    document.exitFullscreen = vi.fn(() => Promise.resolve())
+    Element.prototype.requestFullscreen = vi.fn(() => Promise.resolve())
   })
 
   it.each([
     [`empty data`, []],
     [`single point`, [create_mock_github_data()]],
-    [`multiple points`, [
-      create_mock_github_data({ name: `A`, stars: 5000 }),
-      create_mock_github_data({ name: `B`, stars: 2500 }),
-    ]],
+    [
+      `multiple points`,
+      [
+        create_mock_github_data({ name: `A`, stars: 5000 }),
+        create_mock_github_data({ name: `B`, stars: 2500 }),
+      ],
+    ],
   ])(`renders with %s`, (_, github_data) => {
     mount(GitHubActivityScatter, { target: document.body, props: { github_data } })
     expect(document.body.firstElementChild).toBeDefined()
@@ -87,12 +90,15 @@ describe(`GitHubActivityScatter`, () => {
 
   it.each([
     [`zero values`, { stars: 0, forks: 0, commits_last_year: 0, contributors: 1 }],
-    [`large values`, {
-      stars: 999_999,
-      forks: 100_000,
-      commits_last_year: 10_000,
-      contributors: 1000,
-    }],
+    [
+      `large values`,
+      {
+        stars: 999_999,
+        forks: 100_000,
+        commits_last_year: 10_000,
+        contributors: 1000,
+      },
+    ],
   ])(`handles edge case: %s`, (_, values) => {
     const instance = mount(GitHubActivityScatter, {
       target: document.body,

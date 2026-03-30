@@ -10,22 +10,22 @@
 
   // Define a sequence of colors to use for models
   const colors = [
-    `#2ca02c`, // green
-    `#ff7f0e`, // orange
-    `#d62728`, // red
-    `#1f77b4`, // blue
-    `#9467bd`, // purple
-    `#8c564b`, // brown
-    `#e377c2`, // pink
-    `#7f7f7f`, // gray
-    `#bcbd22`, // yellow
-    `#17becf`, // cyan
-    `#e6194B`, // red
-    `#3cb44b`, // green
-    `#ffe119`, // yellow
-    `#4363d8`, // blue
-    `#f58231`, // orange 2
-    `#911eb4`, // purple 2
+    `#2ca02c`, // Green
+    `#ff7f0e`, // Orange
+    `#d62728`, // Red
+    `#1f77b4`, // Blue
+    `#9467bd`, // Purple
+    `#8c564b`, // Brown
+    `#e377c2`, // Pink
+    `#7f7f7f`, // Gray
+    `#bcbd22`, // Yellow
+    `#17becf`, // Cyan
+    `#e6194B`, // Red
+    `#3cb44b`, // Green
+    `#ffe119`, // Yellow
+    `#4363d8`, // Blue
+    `#f58231`, // Orange 2
+    `#911eb4`, // Purple 2
   ] as const
 
   type ColorType = (typeof colors)[number]
@@ -57,7 +57,7 @@
     }
   })
   let diatomics_to_render = $derived(
-    // only render diatomics where at least one model has data
+    // Only render diatomics where at least one model has data
     homo_diatomic_formulas.filter((formula) =>
       [...selected_models].some(
         (model) =>

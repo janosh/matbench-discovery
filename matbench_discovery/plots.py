@@ -568,9 +568,9 @@ def cumulative_metrics(
             ),
         )
 
-        n_total_pos_cum = n_true_pos_cum + n_false_neg_cum  # type: ignore[unsupported-operator]
+        n_total_pos_cum = n_true_pos_cum + n_false_neg_cum  # ty: ignore[unsupported-operator]
         # n_total_neg_cum = n_true_neg_cum + n_false_pos_cum
-        n_pred_pos_cum = n_true_pos_cum + n_false_pos_cum  # type: ignore[unsupported-operator]
+        n_pred_pos_cum = n_true_pos_cum + n_false_pos_cum  # ty: ignore[unsupported-operator]
 
         # prevalence_cum = n_total_pos_cum / (n_total_pos_cum + n_total_neg_cum)
         precision_cum = n_true_pos_cum / n_pred_pos_cum  # model's discovery rate

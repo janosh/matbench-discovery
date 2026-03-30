@@ -120,7 +120,7 @@ def test_calc_diatomic_curve_force_directions() -> None:
 
     results = calc_diatomic_curve(pairs, calculator, "test", distances, results)
 
-    forces: list[list[list[float]]] = results["Cu-Cu"]["forces"]  # type: ignore[assignment]
+    forces: list[list[list[float]]] = results["Cu-Cu"]["forces"]  # ty: ignore[invalid-assignment]
     # At short distance, forces should point away from each other
     assert forces[0][0][0] < 0  # first atom, x component
     assert forces[0][1][0] > 0  # second atom, x component

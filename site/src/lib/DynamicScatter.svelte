@@ -133,7 +133,7 @@
     return `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
   }
 
-  // get_label_value already converts dates to timestamps, so only numbers reach here
+  // Get_label_value already converts dates to timestamps, so only numbers reach here
   const is_finite_num = (val: unknown): val is number =>
     typeof val === `number` && isFinite(val)
 
@@ -153,7 +153,7 @@
       })
       .filter((item) => {
         const required = [item.x, item.y, item.size_value]
-        // only require finite color_value when no fixed point_color is set
+        // Only require finite color_value when no fixed point_color is set
         if (point_color === null) required.push(item.color_value)
         return required.every(is_finite_num)
       }),

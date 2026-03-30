@@ -9,22 +9,23 @@ import type {
   MetadataLabels,
 } from './label-schema.d.ts'
 
-export const RMSD_BASELINE = 0.15 // baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
+export const RMSD_BASELINE = 0.15 // Baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
 
 // Helper function to format scientific notation with superscript
-// used e.g. for symprec in geo_opt metrics
+// Used e.g. for symprec in geo_opt metrics
 export const format_power_ten = (text: string): string =>
   text
-    .replace(/(\d+(?:\.\d+)?)e\+?(-?\d+)/gi, (_, base, exponent) =>
-      `${base}×10<sup>${exponent}</sup>`)
+    .replaceAll(
+      /(\d+(?:\.\d+)?)e\+?(-?\d+)/gi,
+      (_, base, exponent) => `${base}×10<sup>${exponent}</sup>`,
+    )
     .replace(`1×10`, `10`)
 
 export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
   Accuracy: {
     key: `Accuracy`,
     label: `Acc`,
-    description:
-      `Accuracy of classifying crystals as thermodynamically stable or unstable`,
+    description: `Accuracy of classifying crystals as thermodynamically stable or unstable`,
     better: `higher`,
     path: `metrics.discovery.unique_prototypes`,
   },
@@ -32,16 +33,14 @@ export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
     key: `F1`,
     label: `F1`,
     path: `metrics.discovery.unique_prototypes`,
-    description:
-      `F1 Score: Harmonic mean of precision and recall for stable/unstable material classification`,
+    description: `F1 Score: Harmonic mean of precision and recall for stable/unstable material classification`,
     range: [0, 1],
     better: `higher`,
   },
   DAF: {
     key: `DAF`,
     label: `DAF`,
-    description:
-      `Discovery Acceleration Factor measuring how much better ML models classify thermodynamic stability compared to random guessing`,
+    description: `Discovery Acceleration Factor measuring how much better ML models classify thermodynamic stability compared to random guessing`,
     better: `higher`,
     path: `metrics.discovery.unique_prototypes`,
   },
@@ -133,8 +132,7 @@ export const METADATA_COLS: MetadataLabels = {
   r_cut: {
     key: `r<sub>cut</sub>`,
     label: `r<sub>cut</sub>`,
-    description:
-      `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
+    description: `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
     unit: `Å`,
   },
   n_training_materials: {
@@ -197,15 +195,13 @@ export const HYPERPARAMS: HyperparamLabels = {
     key: `graph_construction_radius`,
     label: `r<sub>cut</sub>`,
     path: `hyperparams`,
-    description:
-      `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
+    description: `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
   },
   max_force: {
     key: `max_force`,
     label: `f<sub>max</sub>`,
     path: `hyperparams`,
-    description:
-      `Max remaining force allowed on any atom in the structure for geometry optimization convergence`,
+    description: `Max remaining force allowed on any atom in the structure for geometry optimization convergence`,
     unit: `eV/Å`,
   },
   max_steps: {
@@ -218,15 +214,13 @@ export const HYPERPARAMS: HyperparamLabels = {
     key: `Optimizer`,
     label: `Optimizer`,
     path: `hyperparams`,
-    description:
-      `ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)`,
+    description: `ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)`,
   },
   cell_filter: {
     key: `Cell filter`,
     label: `Cell filter`,
     path: `hyperparams`,
-    description:
-      `ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)`,
+    description: `ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)`,
   },
   batch_size: {
     key: `batch_size`,
@@ -271,8 +265,7 @@ export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
   structures: {
     key: `Structures`,
     label: `Structures`,
-    description:
-      `Number of structures in the dataset. Any system with atomic positions and energy/force/stress labels is counted as a structure incl. successive ionic steps in MD/geometry optimization trajectories.`,
+    description: `Number of structures in the dataset. Any system with atomic positions and energy/force/stress labels is counted as a structure incl. successive ionic steps in MD/geometry optimization trajectories.`,
     better: `higher`,
     scale_type: `log`,
     format: `.3s`,
@@ -299,8 +292,7 @@ export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
   static: {
     key: `Static`,
     label: `Static`,
-    description:
-      `Whether the dataset is static (fixed version) or dynamic (continuously updated).`,
+    description: `Whether the dataset is static (fixed version) or dynamic (continuously updated).`,
     style: `text-align: center;`,
   },
   license: {
@@ -328,15 +320,15 @@ export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
   },
 } as const
 
+// Object.fromEntries loses key specificity, returning Record<string, V>.
+// Cast is unavoidable since the keys are dynamically constructed template literals.
 export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
   [`1e-2`, `1e-5`]
-    .flatMap(
-      (symprec) => [
-        [`symmetry_match`, `=`, `higher`, `identical symmetry as`, symprec] as const,
-        [`symmetry_decrease`, `↓`, `lower`, `lower symmetry than`, symprec] as const,
-        [`symmetry_increase`, `↑`, null, `higher symmetry than`, symprec] as const,
-      ],
-    )
+    .flatMap((symprec) => [
+      [`symmetry_match`, `=`, `higher`, `identical symmetry as`, symprec] as const,
+      [`symmetry_decrease`, `↓`, `lower`, `lower symmetry than`, symprec] as const,
+      [`symmetry_increase`, `↑`, null, `higher symmetry than`, symprec] as const,
+    ])
     .map(([metric_key, symbol, better, desc, symprec]) => [
       `${metric_key}_${symprec}`,
       {
@@ -345,10 +337,9 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
         symprec,
         path: `metrics.geo_opt.symprec=${symprec}`,
         label: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
-        description:
-          `Fraction of structures where ML ground state has ${desc} DFT ground state at ${
-            format_power_ten(symprec)
-          } symprec`,
+        description: `Fraction of structures where ML ground state has ${desc} DFT ground state at ${format_power_ten(
+          symprec,
+        )} symprec`,
         better,
         format: `~%`,
         visible: false,
@@ -356,18 +347,15 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
     ]),
 ) as unknown as GeoOptSymmetryMetricsLabels
 
-export type AllMetrics =
-  & DiscoveryMetricsLabels
-  & GeoOptSymmetryMetricsLabels
-  & { CPS: Label; κ_SRME: Label; RMSD: Label }
+export type AllMetrics = DiscoveryMetricsLabels &
+  GeoOptSymmetryMetricsLabels & { CPS: Label; κ_SRME: Label; RMSD: Label }
 
 export const ALL_METRICS: AllMetrics = {
   // Dynamic metrics
   CPS: {
     key: `CPS`,
     label: `CPS`,
-    description:
-      `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights. Warning: This is not a stable metric. Further prediction tasks will be added to it in the future with the goal of making it a more holistic measure of overall model utility over time. When referring to it in papers, best include the benchmark version to avoid confusion (e.g. CPS-1 for the first version of CPS introduced in Matbench Discovery v1)`,
+    description: `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights. Warning: This is not a stable metric. Further prediction tasks will be added to it in the future with the goal of making it a more holistic measure of overall model utility over time. When referring to it in papers, best include the benchmark version to avoid confusion (e.g. CPS-1 for the first version of CPS introduced in Matbench Discovery v1)`,
     range: [0, 1],
     better: `higher`,
     format: `.3f`,
@@ -377,8 +365,7 @@ export const ALL_METRICS: AllMetrics = {
   κ_SRME: {
     key: `κ_SRME`,
     label: `κ<sub>SRME</sub>`,
-    description:
-      `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
+    description: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
     path: `metrics.phonons.kappa_103`,
     better: `lower`,
   },
@@ -390,8 +377,7 @@ export const ALL_METRICS: AllMetrics = {
     unit: `unitless`,
     range: [0, RMSD_BASELINE],
     better: `lower`,
-    description:
-      `Normalized, unitless StructureMatcher RMSD between ML- and DFT-relaxed structures after matching; unmatched structures are assigned 1.0`,
+    description: `Normalized, unitless StructureMatcher RMSD between ML- and DFT-relaxed structures after matching; unmatched structures are assigned 1.0`,
     style: `border-left: 1px solid black;`,
   },
   ...GEO_OPT_SYMMETRY_METRICS,
@@ -411,8 +397,7 @@ export const DISCOVERY_SET_LABELS: Record<
     description: `<strong>~215k unique prototypes</strong><br/>
       Deduplicated by matching Aflow-style prototypes.<br/>
       Use this to avoid counting similar structures that should relax to same ground state multiple times.`,
-    link:
-      `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
+    link: `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
   },
   most_stable_10k: {
     label: `10k Most Stable`,
@@ -436,7 +421,7 @@ export function format_property_path(path: string): string {
     .split(`.`)
     .filter((part) => ![`metrics`, `kappa_103`].includes(part) && part)
 
-  // remove symprec value preceding rmsd
+  // Remove symprec value preceding rmsd
   if (parts.at(-1)?.toUpperCase() === `RMSD`) {
     parts = parts.filter((part) => !part.includes(`symprec`))
   }
@@ -463,16 +448,8 @@ export const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice
 export const title_case = (str: string) =>
   str.replaceAll(`_`, ` `).split(` `).map(to_title).join(` `)
 
-// Set of valid matterviz icon names for runtime validation
-const VALID_ICON_NAMES = new Set(Object.keys(ICON_DATA)) as Set<IconName>
-
-// Validates an icon name and returns it if valid, or undefined if not
-function validate_icon_name(name: string): IconName | undefined {
-  return VALID_ICON_NAMES.has(name as IconName) ? (name as IconName) : undefined
-}
-
 // Return type for get_org_logo function
-export type OrgLogo = {
+export interface OrgLogo {
   name: string
   id?: string
   src?: string
@@ -480,12 +457,11 @@ export type OrgLogo = {
 }
 
 // Map of author affiliations in model YAMLs to SVG icons (either inline symbol ID
-// or external file path under /static/logos/) and full affiliation names for tooltips.
+// Or external file path under /static/logos/) and full affiliation names for tooltips.
 export const org_logos = {
   'AI for Science Institute, Beijing': `/logos/beijing-ai-for-science-institute.svg`,
   'Argonne National Laboratory': `/logos/argonne-national-lab.svg`,
-  'Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)':
-    `/logos/beijing-iapcm.svg`,
+  'Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)': `/logos/beijing-iapcm.svg`,
   'Chinese Academy of Sciences': `/logos/chinese-academy-of-sciences.svg`,
   'Cornell University': `/logos/cornell-university.svg`,
   'DAMO Academy, Alibaba Inc': `/logos/damo-alibaba-logo.svg`,
@@ -495,14 +471,12 @@ export const org_logos = {
   'Google DeepMind': `/logos/deepmind.svg`,
   'ICAMS, Ruhr University Bochum': `/logos/icams-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
-  'Institute of Computing Technology, Chinese Academy of Science, Beijing':
-    `/logos/ict-cas-beijing.svg`,
+  'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/ict-cas-beijing.svg`,
   'Massachusetts Institute of Technology': `/logos/mit.svg`,
   'Microsoft Research': `icon:LogoMicrosoft`,
   'MIR Group, Harvard University': `/logos/mir-group-harvard.svg`,
   'National Institute of Standards and Technology': `/logos/nist.svg`,
-  'Ningbo Institute of Artificial Intelligence Industry':
-    `/logos/ningbo-institute-of-artificial-intelligence-industry.svg`,
+  'Ningbo Institute of Artificial Intelligence Industry': `/logos/ningbo-institute-of-artificial-intelligence-industry.svg`,
   'Northwestern University': `/logos/northwestern-university.svg`,
   'Orbital Materials': `/logos/orbital-materials.svg`,
   'Seoul National University': `/logos/seoul-national-university.svg`,
@@ -516,10 +490,9 @@ export const org_logos = {
   'University of Florida': `/logos/university-of-florida.svg`,
   'University of Minnesota': `/logos/university-of-minnesota.svg`,
   'University of Texas at Austin': `/logos/university-of-texas-austin.svg`,
-  'Beijing Information Science and Technology University':
-    `/logos/beijing-information-science-and-technology-university.svg`,
+  'Beijing Information Science and Technology University': `/logos/beijing-information-science-and-technology-university.svg`,
   'Zhejiang Lab': `/logos/zhejiang-lab.svg`,
-  'EPFL': `/logos/epfl.svg`,
+  EPFL: `/logos/epfl.svg`,
   'ShanghaiTech University': `/logos/shanghaitech-university.svg`,
   'Nanjing University': `/logos/nanjing-university.svg`,
 } as const
@@ -538,17 +511,17 @@ export function get_org_logo(affiliation: string): OrgLogo | undefined {
         return { name: key_val, src: logo_val }
       } else if (logo_val.startsWith(`icon:`)) {
         const icon_name = logo_val.replace(`icon:`, ``)
-        const validated_icon = validate_icon_name(icon_name)
+        const validated_icon =
+          icon_name in ICON_DATA ? (icon_name as IconName) : undefined
         if (!validated_icon && !import.meta.env.PROD) {
           console.warn(
             `Invalid icon name "${icon_name}" for org "${key_val}". ` +
-              `Valid names: ${[...VALID_ICON_NAMES].slice(0, 10).join(`, `)}...`,
+              `Valid names: ${Object.keys(ICON_DATA).slice(0, 10).join(`, `)}...`,
           )
         }
         return { name: key_val, id: logo_val, validated_icon }
-      } else {
-        return { name: key_val, id: logo_val }
       }
+      return { name: key_val, id: logo_val }
     }
   }
   return undefined
