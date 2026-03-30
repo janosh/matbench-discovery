@@ -157,6 +157,7 @@ dev = ["prek>=0.2.13", "ty>=0.0.1a25"]
 locale = "en-us"
 extend-ignore-re = [
   "`[0-9a-f]{7,40}`", # Git commit SHAs in backticks
+  ".idea/",
 ]
 extend-ignore-words-re = [
   "\\b(Skelton|Ono|Noe|Vaid)\\b", # Names
@@ -165,6 +166,7 @@ extend-ignore-words-re = [
   "\\b[Ff]ormates?\\b",           # Chemistry: formate(s)
   "\\b[Nn]d\\b",                  # Chemical element: Neodymium
   "\\bmatris\\b",                 # Model name
+  "certifi",
 ]
 extend-ignore-identifiers-re = [
   "\\b[Ff][Pp][Rr]\\b",          # False Positive Rate

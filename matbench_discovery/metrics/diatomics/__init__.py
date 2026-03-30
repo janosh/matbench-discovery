@@ -233,7 +233,7 @@ def calc_diatomic_metrics(
 
 def write_metrics_to_yaml(
     model: Model, metrics: dict[str, dict[str, float]]
-) -> dict[str, str | float | None]:
+) -> dict[str, str | int | float | None]:
     """Write diatomic metrics to model YAML file.
 
     Args:
@@ -257,7 +257,7 @@ def write_metrics_to_yaml(
         # file, not the computed metrics, so they remain valid on recalculation
         existing = model.metrics.get("diatomics", {})
         if isinstance(existing, dict):
-            ordered_metrics: dict[str, str | float | None] = {}
+            ordered_metrics: dict[str, str | int | float | None] = {}
             # Put file paths first
             if "pred_file" in existing:
                 ordered_metrics["pred_file"] = existing["pred_file"]

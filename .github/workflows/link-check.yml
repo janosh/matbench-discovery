@@ -26,6 +26,7 @@ jobs:
             --exclude 'https://api.figshare.com/v2'
             --exclude 'https://figshare.com/articles/(dataset|files)'
             --exclude 'https://github.com/stenczelt/MACE-MP-work'
+            --exclude 'https://fair-chem.github.io/catalysts/datasets/oc20.html'
             -- ./**/*.{md,py,svelte,ts,yml,yaml,json}
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
