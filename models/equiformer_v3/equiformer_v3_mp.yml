@@ -1,0 +1,192 @@
+model_name: EquiformerV3-MP
+model_key: equiformer_v3_mp
+model_version: v2026.04.07
+date_added: '2026-04-07'
+date_published: '2026-04-07'
+authors:
+  - name: Yi-Lun Liao
+    affiliation: Massachusetts Institute of Technology
+    email: ylliao@mit.edu
+    github: https://github.com/yilunliao
+    corresponding: true
+  - name: Alexander J. Hoffman
+    affiliation: Mirror Physics
+  - name: Sabrina C. Shen
+    affiliation: Mirror Physics
+  - name: Sam Walton Norwood
+    affiliation: Mirror Physics
+    email: sam@mirrorphysics.com
+    corresponding: true
+  - name: Tess Smidt
+    affiliation: Massachusetts Institute of Technology
+    email: tsmidt@mit.edu
+    url: https://blondegeek.github.io/
+    orcid: https://orcid.org/0000-0001-5581-5344
+    corresponding: true
+
+
+trained_by:
+  - name: Yi-Lun Liao
+    affiliation: Massachusetts Institute of Technology
+    email: ylliao@mit.edu
+
+
+repo: https://github.com/atomicarchitects/equiformer_v3
+doi: https://github.com/atomicarchitects/equiformer_v3
+paper: https://github.com/atomicarchitects/equiformer_v3
+url: https://github.com/atomicarchitects/equiformer_v3
+pr_url: https://github.com/janosh/matbench-discovery/pull/320
+checkpoint_url: https://github.com/atomicarchitects/equiformer_v3
+
+
+license:
+  code: MIT
+  code_url: https://github.com/atomicarchitects/equiformer_v3
+  checkpoint: MIT
+  checkpoint_url: https://github.com/atomicarchitects/equiformer_v3
+
+
+openness: OSOD
+trained_for_benchmark: true
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 30_278_113
+n_estimators: 1
+
+
+training_set: [MPtrj]
+
+
+training_cost:
+  Nvidia H100 GPUs: {amount: 16, hours: 66.875}
+
+
+hyperparams:
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  graph_construction_radius: 6.0
+  max_neighbors: .inf
+
+  num_blocks: 7
+  lmax: 4
+  mmax: 2
+  embedding_dimension: 128
+  attention_value_hidden_size: 32
+  num_attention_heads: 8
+  attention_alpha_hidden_size: 64
+  attention_value_size_per_head: 16
+  ffn_hidden_size_after_swiglu_s2_activation: 512
+  grid_resolution_attention: (14, 8)
+  grid_resolution_ffn: (14, 14)
+
+  DeNS_probability: 0.5
+  DeNS_coefficient: 10
+  DeNS_noise_std: 0.025
+  DeNS_corruption_ratio: 0.5
+
+
+notes:
+  Description: EquiformerV3 is the third generation of SE(3)-equivariant graph attention Transformers. Please refer to our paper for more details.
+
+
+requirements:
+  ase: 3.25.0
+  ase-db-backends: 0.10.0
+  e3nn: 0.5.6
+  tqdm: 4.67.1
+  wandb: 0.21.0
+  pyyaml: 6.0.2
+  torch: 2.7.1
+
+
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/equiformer_v3/equiformer-v3-mp/2026-04-07-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/63515175
+      κ_SRME: 0.2753
+      κ_SRE: 0.1136
+  geo_opt:
+    pred_file: models/equiformer_v3/equiformer-v3-mp/2026-04-07-wbm-IS2RE-FIRE.json.gz
+    pred_file_url: https://figshare.com/files/63515178
+    struct_col: structure
+    symprec=1e-5:
+      rmsd: 0.0701 # unitless
+      n_sym_ops_mae: 3.3334 # unitless
+      symmetry_decrease: 0.4223 # fraction
+      symmetry_match: 0.3919 # fraction
+      symmetry_increase: 0.1308 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/equiformer_v3/equiformer-v3-mp/2026-04-07-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.7.9.csv.gz
+      analysis_file_url: https://figshare.com/files/63520452
+    symprec=1e-2:
+      rmsd: 0.0701 # unitless
+      n_sym_ops_mae: 2.4068 # unitless
+      symmetry_decrease: 0.2301 # fraction
+      symmetry_match: 0.6413 # fraction
+      symmetry_increase: 0.1022 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/equiformer_v3/equiformer-v3-mp/2026-04-07-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.7.9.csv.gz
+      analysis_file_url: https://figshare.com/files/63520449
+  discovery:
+    pred_file: models/equiformer_v3/equiformer-v3-mp/2026-04-07-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/63515172
+    pred_col: e_form_per_atom_fairchem
+    full_test_set:
+      F1: 0.848 # fraction
+      DAF: 4.778 # dimensionless
+      Precision: 0.82 # fraction
+      Recall: 0.878 # fraction
+      Accuracy: 0.946 # fraction
+      TPR: 0.878 # fraction
+      FPR: 0.04 # fraction
+      TNR: 0.96 # fraction
+      FNR: 0.122 # fraction
+      TP: 38706.0 # count
+      FP: 8508.0 # count
+      TN: 204363.0 # count
+      FN: 5386.0 # count
+      MAE: 0.028 # eV/atom
+      RMSE: 0.073 # eV/atom
+      R2: 0.836 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.863 # fraction
+      DAF: 5.479 # dimensionless
+      Precision: 0.838 # fraction
+      Recall: 0.89 # fraction
+      Accuracy: 0.956 # fraction
+      TPR: 0.89 # fraction
+      FPR: 0.032 # fraction
+      TNR: 0.968 # fraction
+      FNR: 0.11 # fraction
+      TP: 29708.0 # count
+      FP: 5759.0 # count
+      TN: 176355.0 # count
+      FN: 3666.0 # count
+      MAE: 0.029 # eV/atom
+      RMSE: 0.074 # eV/atom
+      R2: 0.84 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.989 # fraction
+      DAF: 6.396 # dimensionless
+      Precision: 0.978 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.978 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9777.0 # count
+      FP: 223.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.069 # eV/atom
+      R2: 0.895 # dimensionless
+      missing_preds: 0 # count
