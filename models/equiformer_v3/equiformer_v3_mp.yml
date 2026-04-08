@@ -35,7 +35,7 @@ repo: https://github.com/atomicarchitects/equiformer_v3
 doi: https://github.com/atomicarchitects/equiformer_v3
 paper: https://github.com/atomicarchitects/equiformer_v3
 url: https://github.com/atomicarchitects/equiformer_v3
-pr_url:
+pr_url: https://github.com/janosh/matbench-discovery/pull/320
 checkpoint_url: https://github.com/atomicarchitects/equiformer_v3
 
 
