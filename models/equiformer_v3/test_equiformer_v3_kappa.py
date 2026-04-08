@@ -40,8 +40,8 @@ def seed_everywhere(seed: int) -> None:
 class KappaSRMERunner:
     def __init__(
         self,
-        checkpoint_path,
-        output_dir,
+        checkpoint_path: str | Path,
+        output_dir: str | Path,
     ) -> None:
 
         self.checkpoint_path = str(checkpoint_path)
@@ -289,7 +289,9 @@ class KappaSRMERunner:
             print(f"Saved force results to {force_out_path}")
 
 
-def save_kappa_results(kappa_results, save_dir):
+def save_kappa_results(
+    kappa_results: dict[str, dict[str, Any]], save_dir: str | Path
+) -> None:
     df_kappa = pd.DataFrame(kappa_results).T
     df_kappa.index.name = Key.mat_id
     json_path = f"{save_dir}/conductivity.json.gz"
@@ -297,7 +299,7 @@ def save_kappa_results(kappa_results, save_dir):
     print(f"Saved kappa results to {json_path}")
 
 
-def evaluate_tednet_kappa(path):
+def evaluate_tednet_kappa(path: str | Path) -> None:
     pred_file = path
     df_ml = pd.read_json(pred_file).set_index("material_id")
 
@@ -310,8 +312,8 @@ def evaluate_tednet_kappa(path):
     kappa_sre = df_ml_metrics[Key.sre].mean()
     kappa_srme = df_ml_metrics[Key.srme].mean()
 
-    dir = os.path.dirname(path)
-    output_path = os.path.join(dir, "results.txt")
+    parent_dir = os.path.dirname(path)
+    output_path = os.path.join(parent_dir, "results.txt")
     with open(output_path, "a") as file:
         file.write(f"kappa_srme for each structure: {kappa_srme_list}\n")
         file.write(f"kappa_srme: \t{kappa_srme}\n")

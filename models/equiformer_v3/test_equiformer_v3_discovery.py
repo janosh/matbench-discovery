@@ -1,18 +1,19 @@
-"""
-    1. To perform multiple relaxations in parallel on multiple GPUs, run:
-        for i in $(seq 0 31); do
-            device=$((i % 8))
-            CUDA_VISIBLE_DEVICES=$device python experimental/tasks/matbench_discovery/test_discovery.py \
-                --checkpoint-path $CHECKPOINT_PATH \
-                --output-path $OUTPUT_DIR \
-                --data-path $DATA_PATH \
-                --num-jobs 32 \
-                --job-index $i \
-                &
-        done
+"""Perform multiple relaxations in parallel on multiple GPUs.
 
-    2. To terminate all the parallel relaxations, run:
-        pkill -f "python.*test_discovery.py"
+Example::
+
+    for i in $(seq 0 31); do
+        device=$((i % 8))
+        CUDA_VISIBLE_DEVICES=$device python test_discovery.py \
+            --checkpoint-path $CHECKPOINT_PATH \
+            --output-path $OUTPUT_DIR \
+            --data-path $DATA_PATH \
+            --num-jobs 32 --job-index $i &
+    done
+
+To terminate all parallel relaxations::
+
+    pkill -f "python.*test_discovery.py"
 """
 
 import json
@@ -55,14 +56,18 @@ FILTER_CLS: dict[str, type[Filter]] = {
 OPTIM_CLS: dict[str, type[Optimizer]] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
 
+_rng = np.random.default_rng(0)
+
+
 def seed_everywhere(seed: int) -> None:
+    global _rng  # noqa: PLW0603
     random.seed(seed)
-    np.random.seed(seed)
+    _rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
 
-def setup_distributed():
+def setup_distributed() -> tuple[int, int, int] | None:
     if "RANK" in os.environ:
         rank = int(os.environ["RANK"])
         world_size = int(os.environ["WORLD_SIZE"])
@@ -74,6 +79,7 @@ def setup_distributed():
                 world_size=world_size,
             )
         return rank, world_size, local_rank
+    return None
 
 
 class AseDBSubset(Subset):
@@ -98,6 +104,7 @@ class RelaxJob(Checkpointable):
         max_steps: int = 500,
         optimizer_params: dict[str, Any] | None = None,
         device: Literal["cuda", "cpu"] = "cuda",
+        *,
         use_amp: bool = False,
         num_jobs: int = 1,
         job_index: int = 0,
@@ -123,7 +130,7 @@ class RelaxJob(Checkpointable):
         dataset = AseDBDataset(dict(src=str(data_path)))
 
         if debug:
-            indices = np.random.permutation(len(dataset))
+            indices = _rng.permutation(len(dataset))
             indices = indices[0:1000]
             indices = np.array_split(indices, num_jobs)[job_index]
         else:
@@ -135,11 +142,11 @@ class RelaxJob(Checkpointable):
 
         optimizer_params = optimizer_params or {}
         run_params = {
-            "data_path": data_path,
+            "data_path": str(data_path),
             "versions": {
                 dep: version(dep) for dep in ("fairchem-core", "numpy", "torch")
             },
-            Key.task_type: "IS2RE",  # task_type,
+            Key.task_type: "IS2RE",
             "max_steps": max_steps,
             "force_max": force_max,
             "device": device,
@@ -148,6 +155,8 @@ class RelaxJob(Checkpointable):
             "filter": cell_filter,
             "optimizer_params": optimizer_params,
         }
+        with open(output_path / "run_params.json", mode="w") as file:
+            json.dump(run_params, file, indent=4)
 
         self._ase_relax(
             dataset=dataset,
@@ -197,7 +206,7 @@ class RelaxJob(Checkpointable):
 
                 filtered_atoms = atoms if filter_cls is None else filter_cls(atoms)
                 optim_inst = optim_cls(
-                    filtered_atoms,  # type: ignore[arg-type]
+                    filtered_atoms,
                     logfile="/dev/null",
                     **optimizer_params,
                 )
@@ -218,7 +227,7 @@ class RelaxJob(Checkpointable):
                     f"error_index@{self.job_index}_total@{self.num_jobs}.txt"
                 )
                 with open((self.output_path / output_err_filename), "a") as txt_file:
-                    txt_file.write(f"{mat_id}\n")
+                    txt_file.write(f"{material_id}\n")
                 continue
 
 
@@ -229,10 +238,12 @@ def run_relax(
         Path, typer.Option(help="Output path to write results files")
     ],
     optimizer: Annotated[
-        str, typer.Option(help="Optimizer for relaxations: 'FIRE', 'BFGS', 'LBFGS'")
+        Literal["FIRE", "LBFGS", "BFGS"],
+        typer.Option(help="Optimizer for relaxations: 'FIRE', 'BFGS', 'LBFGS'"),
     ] = "FIRE",
     cell_filter: Annotated[
-        str | None, typer.Option(help="Filter for cell relaxation")
+        Literal["frechet", "unit"] | None,
+        typer.Option(help="Filter for cell relaxation"),
     ] = "frechet",
     force_max: Annotated[
         float, typer.Option(help="Force relaxation convergence threshold")
@@ -244,7 +255,10 @@ def run_relax(
         str | None,
         typer.Option(help="Optimizer parameters as a json string dictionary"),
     ] = None,
-    device: Annotated[str, typer.Option(help="Device to use torch")] = "cuda",
+    device: Annotated[
+        Literal["cuda", "cpu"], typer.Option(help="Device to use torch")
+    ] = "cuda",
+    *,
     use_amp: Annotated[
         bool, typer.Option(help="Use automatic mixed precision")
     ] = False,
@@ -263,7 +277,7 @@ def run_relax(
     if is_master():
         os.makedirs(output_path, exist_ok=True)
 
-    args = (
+    RelaxJob()(
         data_path,
         checkpoint_path,
         output_path,
@@ -273,12 +287,11 @@ def run_relax(
         max_steps,
         {} if optimizer_params is None else json.loads(optimizer_params),
         device,
-        use_amp,
-        num_jobs,
-        job_index,
-        debug,
+        use_amp=use_amp,
+        num_jobs=num_jobs,
+        job_index=job_index,
+        debug=debug,
     )
-    RelaxJob()(*args)
     return
 
 
