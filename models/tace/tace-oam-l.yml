@@ -1,0 +1,178 @@
+model_name: TACE-OAM-L
+model_key: tace-oam-l
+model_version: '0.2.0'
+date_added: '2026-04-09'
+date_published: '2026-04-09'
+authors:
+  - name: Zemin Xu
+    affiliation: ShanghaiTech University, Nanjing University
+    email: xv_chana@foxmail.com
+    github: https://github.com/xvzemin
+    corresponding: false
+  - name: Wenbo Xie
+    affiliation: ShanghaiTech University
+    email: xiewb1@shanghaitech.edu.cn
+    orcid: https://orcid.org/0000-0001-5321-2494
+    corresponding: true
+  - name: P. Hu
+    affiliation: ShanghaiTech University
+    email: hupj@shanghaitech.edu.cn
+    orcid: https://orcid.org/0000-0002-6318-1051
+    corresponding: true
+trained_by:
+  - name: Zemin Xu
+    affiliation: ShanghaiTech University, Nanjing University
+    email: xv_chana@foxmail.com
+    github: https://github.com/xvzemin
+    corresponding: false
+
+repo: https://github.com/xvzemin/tace
+checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-OAM-L.pt
+url: https://github.com/xvzemin/tace
+doi: https://doi.org/10.57967/hf/7458
+paper: https://arxiv.org/abs/2509.14961
+
+openness: OSOD # see `Open` enum in matbench_discovery/enums.py
+train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
+test_task: IS2RE-SR # see `Task` enum in matbench_discovery/enums.py
+targets: EFS_G # see `Targets` enum in matbench_discovery/enums.py
+model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
+model_params: 82_899_905
+trained_for_benchmark: false
+n_estimators: 1
+
+license:
+  code: MIT
+  code_url: https://github.com/xvzemin/tace/blob/main/LICENSE.md
+  checkpoint: CC-BY-4.0
+  # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+hyperparams: # strongly recommended to list relaxation hyperparams
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE # faster than FIRE with same results; see SI of https://doi.org/10.1088/2515-7655/ade916
+  cell_filter: FrechetCellFilter
+  optimizer: AdamW
+  graph_construction_radius: 6.0
+  max_neighbors: .inf
+  epochs: 3
+  batch: 1024
+  loss_weights:
+    energy: 1
+    force: 1
+    stress: 0.1
+  huber_delta: [0.015, 0.040, 0.1]
+  initial_learning_rate: 0.008
+  num_channel: 64
+  Lmax: 5
+  lmax: 5
+  l1l2: <= # when tp, only l1 < l2 are allowed
+  num_layers: 5
+  correlation: 2
+
+training_cost: # list any hardware used to train the model and for how long
+  Nvidia H20 GPUs: {amount: 8, hours: 105, cost: 840}
+
+requirements: # strongly recommended
+  python: '3.12.11'
+  torch: '2.9.1'
+  torch-geometric: '2.7.0'
+  pytorch-lightning: '2.5.5'
+  tace: '>=0.2.0' # recommended newest github commit
+
+training_set: [OMat24, sAlex, MPtrj]
+
+notes:
+  Description: |
+    Support both Spherical tensor and irreducible Cartesian tensor.
+  Steps: |
+    Training performed by: (1) pre-training on 3 epoch OMat24 (lr-8e-3, loss-1:1:0.1); (2) fine-tuning on on 3 epoch MPtrj+sAlex (lr-1e-4, loss-1:1:0.1).
+
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/tace/tace-oam-l/2026-04-09-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05.json.gz
+      pred_file_url: https://figshare.com/files/63590373
+      κ_SRME: 0.126
+      κ_SRE: 0.0502
+  geo_opt:
+    pred_file: models/tace/tace-oam-l/2026-04-09-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file_url: https://figshare.com/files/63590307
+    struct_col: tace_structure
+    symprec=1e-2:
+      rmsd: 0.0606 # unitless
+      n_sym_ops_mae: 1.7042 # unitless
+      symmetry_decrease: 0.0479 # fraction
+      symmetry_match: 0.8188 # fraction
+      symmetry_increase: 0.126 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/tace/tace-oam-l/2026-04-09-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.7.9.csv.gz
+      analysis_file_url:
+    symprec=1e-5:
+      rmsd: 0.0606 # unitless
+      n_sym_ops_mae: 2.1326 # unitless
+      symmetry_decrease: 0.0603 # fraction
+      symmetry_match: 0.6922 # fraction
+      symmetry_increase: 0.2415 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/tace/tace-oam-l/2026-04-09-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.7.9.csv.gz
+      analysis_file_url:
+  discovery:
+    pred_file: models/tace/tace-oam-l/2026-04-09-wbm-IS2RE.csv.gz # tace-filtered_preds.csv.gz tace-preds.csv.gz
+    pred_file_url: https://figshare.com/files/63590511
+    pred_col: e_form_per_atom_tace
+    full_test_set:
+      F1: 0.892 # fraction
+      DAF: 5.127 # dimensionless
+      Precision: 0.88 # fraction
+      Recall: 0.904 # fraction
+      Accuracy: 0.962 # fraction
+      TPR: 0.904 # fraction
+      FPR: 0.026 # fraction
+      TNR: 0.974 # fraction
+      FNR: 0.096 # fraction
+      TP: 39872.0 # count
+      FP: 5454.0 # count
+      TN: 207417.0 # count
+      FN: 4220.0 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.862 # dimensionless
+      missing_preds: 3 # count
+    most_stable_10k:
+      F1: 0.985 # fraction
+      DAF: 6.347 # dimensionless
+      Precision: 0.97 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.97 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9702.0 # count
+      FP: 298.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.079 # eV/atom
+      R2: 0.867 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.91 # fraction
+      DAF: 5.898 # dimensionless
+      Precision: 0.902 # fraction
+      Recall: 0.919 # fraction
+      Accuracy: 0.972 # fraction
+      TPR: 0.919 # fraction
+      FPR: 0.018 # fraction
+      TNR: 0.982 # fraction
+      FNR: 0.081 # fraction
+      TP: 30661.0 # count
+      FP: 3344.0 # count
+      TN: 178770.0 # count
+      FN: 2713.0 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.868 # dimensionless
+      missing_preds: 1 # count

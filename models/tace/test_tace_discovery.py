@@ -8,6 +8,7 @@ Templated from test_nequip_discovery.py
 import os
 import warnings
 from typing import Any, Literal
+    
 
 import ase.optimize
 import ase.optimize.sciopt
@@ -24,9 +25,9 @@ from matbench_discovery import timestamp
 from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import Task
 
-dtype = "float64"
+dtype = "float32"
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model_name = "TACE-v1-OAM-M"
+model_name = "TACE-OAM-L"
 
 try:
     from tace.foundations import tace_foundations
@@ -45,12 +46,12 @@ except Exception as e:
 # %% this config is editable
 smoke_test = False
 task_type = Task.IS2RE
-ase_optimizer = "GOQN"  # faster than "FIRE" from tests, gives the same results;
+ase_optimizer = "FIRE"  # faster than "FIRE" from tests, gives the same results;
 # see SI of https://doi.org/10.1088/2515-7655/ade916
 ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
 
 max_steps = 500
-force_max = 0.005  # Run until the forces are smaller than this in eV/A
+force_max = 0.02  # Run until the forces are smaller than this in eV/A
 
 slurm_nodes = int(os.getenv("SLURM_NNODES", "1"))
 slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", "1"))
