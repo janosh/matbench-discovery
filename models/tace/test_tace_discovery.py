@@ -8,7 +8,6 @@ Templated from test_nequip_discovery.py
 import os
 import warnings
 from typing import Any, Literal
-    
 
 import ase.optimize
 import ase.optimize.sciopt

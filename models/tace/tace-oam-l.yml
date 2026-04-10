@@ -29,6 +29,7 @@ trained_by:
 repo: https://github.com/xvzemin/tace
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-OAM-L.pt
 url: https://github.com/xvzemin/tace
+pr_url: https://github.com/janosh/matbench-discovery/pull/321
 doi: https://doi.org/10.57967/hf/7458
 paper: https://arxiv.org/abs/2509.14961
 
@@ -98,7 +99,7 @@ metrics:
       κ_SRE: 0.0502
   geo_opt:
     pred_file: models/tace/tace-oam-l/2026-04-09-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/63590307
+    pred_file_url: https://figshare.com/files/63594915
     struct_col: tace_structure
     symprec=1e-2:
       rmsd: 0.0606 # unitless
@@ -108,7 +109,7 @@ metrics:
       symmetry_increase: 0.126 # fraction
       n_structures: 256963 # count
       analysis_file: models/tace/tace-oam-l/2026-04-09-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.7.9.csv.gz
-      analysis_file_url:
+      analysis_file_url: https://figshare.com/files/63594918
     symprec=1e-5:
       rmsd: 0.0606 # unitless
       n_sym_ops_mae: 2.1326 # unitless
@@ -117,7 +118,7 @@ metrics:
       symmetry_increase: 0.2415 # fraction
       n_structures: 256963 # count
       analysis_file: models/tace/tace-oam-l/2026-04-09-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.7.9.csv.gz
-      analysis_file_url:
+      analysis_file_url: https://figshare.com/files/63594921
   discovery:
     pred_file: models/tace/tace-oam-l/2026-04-09-wbm-IS2RE.csv.gz # tace-filtered_preds.csv.gz tace-preds.csv.gz
     pred_file_url: https://figshare.com/files/63590511

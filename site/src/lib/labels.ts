@@ -474,6 +474,7 @@ export const org_logos = {
   'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/ict-cas-beijing.svg`,
   'Massachusetts Institute of Technology': `/logos/mit.svg`,
   'Microsoft Research': `icon:LogoMicrosoft`,
+  'Mirror Physics': `/logos/mirror-physics.svg`,
   'MIR Group, Harvard University': `/logos/mir-group-harvard.svg`,
   'National Institute of Standards and Technology': `/logos/nist.svg`,
   'Ningbo Institute of Artificial Intelligence Industry': `/logos/ningbo-institute-of-artificial-intelligence-industry.svg`,

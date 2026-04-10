@@ -24,32 +24,33 @@ def _validate_diatomic_curve(
     Raises:
         ValueError: If input data is invalid
     """
-    xs, ys = map(np.asarray, (xs, ys))
+    xs_arr: np.ndarray = np.asarray(xs)
+    ys_arr: np.ndarray = np.asarray(ys)
 
-    if len(xs) != len(ys):
-        raise ValueError(f"{len(xs)=} != {len(ys)=}")
-    if len(xs) < 2:
-        raise ValueError(f"Input must have at least 2 points, got {len(xs)=}")
-    n_x_nan, n_y_nan = int(np.isnan(xs).sum()), int(np.isnan(ys).sum())
+    if len(xs_arr) != len(ys_arr):
+        raise ValueError(f"{len(xs_arr)=} != {len(ys_arr)=}")
+    if len(xs_arr) < 2:
+        raise ValueError(f"Input must have at least 2 points, got {len(xs_arr)=}")
+    n_x_nan, n_y_nan = int(np.isnan(xs_arr).sum()), int(np.isnan(ys_arr).sum())
     if n_x_nan or n_y_nan:
         raise ValueError(f"Input contains NaN values: {n_x_nan=}, {n_y_nan=}")
-    n_x_inf, n_y_inf = int(np.isinf(xs).sum()), int(np.isinf(ys).sum())
+    n_x_inf, n_y_inf = int(np.isinf(xs_arr).sum()), int(np.isinf(ys_arr).sum())
     if n_x_inf or n_y_inf:
         raise ValueError(f"Input contains infinite values: {n_x_inf=}, {n_y_inf=}")
-    if len(np.unique(xs)) != len(xs):
-        n_x_dup = int((np.diff(xs) == 0).sum())
+    if len(np.unique(xs_arr)) != len(xs_arr):
+        n_x_dup = int((np.diff(xs_arr) == 0).sum())
         raise ValueError(f"xs contains {n_x_dup} duplicates")
 
-    sort_idx = np.argsort(xs)  # ascending order
-    xs = xs[sort_idx]
-    ys = ys[sort_idx]
+    sort_idx = np.argsort(xs_arr)  # ascending order
+    xs_arr = xs_arr[sort_idx]
+    ys_arr = ys_arr[sort_idx]
 
     # If these are energies (rank 1 array), normalize to zero at far field
-    if normalize_energy and ys.ndim == 1:
+    if normalize_energy and ys_arr.ndim == 1:
         # shift to zero at largest separation (last after ascending sort)
-        ys = ys - ys[-1]
+        ys_arr = ys_arr - ys_arr[-1]
 
-    return xs, ys
+    return xs_arr, ys_arr
 
 
 def calc_curve_diff_auc(
@@ -198,11 +199,12 @@ def calc_energy_mae(
 
 def calc_second_deriv_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate smoothness using RMS of second derivative (lower is smoother)."""
-    seps, energies = map(np.asarray, (seps, energies))
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    seps = seps[sort_idx]
-    energies = energies[sort_idx]
-    d2y = np.gradient(np.gradient(energies, seps), seps)  # ty: ignore[no-matching-overload]
+    seps_arr: np.ndarray = np.asarray(seps)
+    energies_arr: np.ndarray = np.asarray(energies)
+    sort_idx = np.argsort(seps_arr)[::-1]  # sort in descending order
+    seps_arr = seps_arr[sort_idx]
+    energies_arr = energies_arr[sort_idx]
+    d2y = np.gradient(np.gradient(energies_arr, seps_arr), seps_arr)  # ty: ignore[no-matching-overload]
     return float(np.sqrt(np.mean(d2y**2)))
 
 
