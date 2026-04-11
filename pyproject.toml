@@ -70,7 +70,7 @@ running-models = [
 plots = ["dash>=2.18"]
 fetch-wbm-data = ["gdown>=5.2"]
 make-wbm-umap = ["umap-learn>=0.5.5"]
-phonons = ["phono3py>=3.12", "phonopy>=2.35"]
+phonons = ["phono3py>=3.30", "phonopy>=2.35"]
 
 [build-system]
 requires = ["uv_build>=0.9.5"]
