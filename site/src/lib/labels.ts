@@ -374,7 +374,7 @@ export const ALL_METRICS: AllMetrics = {
     key: `rmsd`,
     path: `metrics.geo_opt.symprec=1e-2`,
     label: `RMSD`,
-    unit: `unitless`,
+    // Unit intentionally hidden for concise table column headers.
     range: [0, RMSD_BASELINE],
     better: `lower`,
     description: `Normalized, unitless StructureMatcher RMSD between ML- and DFT-relaxed structures after matching; unmatched structures are assigned 1.0`,
@@ -475,6 +475,7 @@ export const org_logos = {
   'Massachusetts Institute of Technology': `/logos/mit.svg`,
   'Microsoft Research': `icon:LogoMicrosoft`,
   'MIR Group, Harvard University': `/logos/mir-group-harvard.svg`,
+  'Mirror Physics': `/logos/mirror-physics.svg`,
   'National Institute of Standards and Technology': `/logos/nist.svg`,
   'Ningbo Institute of Artificial Intelligence Industry': `/logos/ningbo-institute-of-artificial-intelligence-industry.svg`,
   'Northwestern University': `/logos/northwestern-university.svg`,

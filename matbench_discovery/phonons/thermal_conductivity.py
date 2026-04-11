@@ -24,7 +24,7 @@ from tqdm import tqdm
 from matbench_discovery.enums import MbdKey
 
 if TYPE_CHECKING:
-    from phono3py.conductivity.wigner_rta import ConductivityWignerRTA
+    from phono3py.conductivity.calculators import RTACalculator
 
 
 def calculate_fc2_set(
@@ -221,7 +221,7 @@ def calculate_conductivity(
     boundary_mfp: float = 1e6,
     mode_kappa_thresh: float = 1e-6,
     **kwargs: Any,
-) -> tuple[Phono3py, dict[str, np.ndarray], "ConductivityWignerRTA"]:
+) -> tuple[Phono3py, dict[str, np.ndarray], "RTACalculator"]:
     """Calculate thermal conductivity.
 
     Args:
@@ -234,7 +234,7 @@ def calculate_conductivity(
         **kwargs (Any): Passed to Phono3py.run_thermal_conductivity().
 
     Returns:
-        tuple[Phono3py, dict[str, np.ndarray], ConductivityWignerRTA]: (Phono3py object,
+        tuple[Phono3py, dict[str, np.ndarray], RTACalculator]: (Phono3py object,
             conductivity dict, conductivity object)
     """
     ph3.init_phph_interaction(symmetrize_fc3q=False)
@@ -243,25 +243,26 @@ def calculate_conductivity(
         **kwargs,
         temperatures=temperatures,
         is_isotope=True,
-        # use type="wigner" to include both wave-like coherence (kappa_c) and
-        # particle-like (kappa_p) conductivity contributions
-        conductivity_type="wigner",
+        # use MS-SMM19 (Wigner transport equation) to include both wave-like
+        # coherence (kappa_c) and particle-like (kappa_p) conductivity contributions
+        transport_type="MS-SMM19",
         boundary_mfp=boundary_mfp,
     )
 
     kappa = ph3.thermal_conductivity
+    extra = kappa.get_extra_kappa_output()
 
     kappa_dict = {
-        MbdKey.kappa_tot_rta: deepcopy(kappa.kappa_TOT_RTA[0]),
-        MbdKey.kappa_p_rta: deepcopy(kappa.kappa_P_RTA[0]),
-        MbdKey.kappa_c: deepcopy(kappa.kappa_C[0]),
+        MbdKey.kappa_tot_rta: deepcopy(extra["kappa_TOT_RTA"][0]),
+        MbdKey.kappa_p_rta: deepcopy(extra["kappa_P_RTA"][0]),
+        MbdKey.kappa_c: deepcopy(extra["kappa_C"][0]),
         Key.mode_weights: deepcopy(kappa.grid_weights),
         Key.q_points: deepcopy(kappa.qpoints),
         Key.ph_freqs: deepcopy(kappa.frequencies),
     }
     mode_kappa_total = kappa_dict[MbdKey.mode_kappa_tot_rta] = calc_mode_kappa_tot(
-        deepcopy(kappa.mode_kappa_P_RTA[0]),
-        deepcopy(kappa.mode_kappa_C[0]),
+        deepcopy(extra["mode_kappa_P_RTA"][0]),
+        deepcopy(extra["mode_kappa_C"][0]),
         deepcopy(kappa.mode_heat_capacities),
     )
 
@@ -269,11 +270,11 @@ def calculate_conductivity(
         axis=tuple(range(1, mode_kappa_total.ndim - 1))
     ) / np.sum(kappa_dict[Key.mode_weights])
 
-    kappa_p_rta = kappa_dict[MbdKey.kappa_p_rta]
-    if np.any(np.abs(sum_mode_kappa_tot - kappa_p_rta) > mode_kappa_thresh):
+    kappa_tot_rta = kappa_dict[MbdKey.kappa_tot_rta]
+    if np.any(np.abs(sum_mode_kappa_tot - kappa_tot_rta) > mode_kappa_thresh):
         warnings.warn(
             f"Total mode kappa does not sum to total kappa. {sum_mode_kappa_tot=}, "
-            f"{kappa_p_rta=}",
+            f"{kappa_tot_rta=}",
             stacklevel=2,
         )
 

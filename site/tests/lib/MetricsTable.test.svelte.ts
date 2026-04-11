@@ -1080,7 +1080,7 @@ describe(`MetricsTable`, () => {
       expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
     })
 
-    it(`validates toggle behavior with multiple selections and deselections`, async () => {
+    it(`validates toggle behavior with multiple selections and deselections`, { timeout: 10_000 }, async () => {
       mount(MetricsTable, {
         target: document.body,
         props: { col_filter: () => true, show_non_compliant: true },

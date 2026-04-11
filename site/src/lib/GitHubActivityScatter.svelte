@@ -90,7 +90,7 @@
     size_values: plot_data.map((d) => d.size_value) as number[],
     point_label: (show_model_labels ? plot_data : []).map((d) => ({
       text: d.metadata.name,
-      font_size: `14px`,
+      font_size: `11px`,
       auto_placement: true,
     })),
   })

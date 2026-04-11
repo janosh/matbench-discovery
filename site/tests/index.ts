@@ -7,10 +7,10 @@ Object.defineProperty(globalThis, `matchMedia`, {
     matches: false,
     media: query,
     onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
+    addListener: () => { },
+    removeListener: () => { },
+    addEventListener: () => { },
+    removeEventListener: () => { },
     dispatchEvent: () => true,
   }),
 })
@@ -53,13 +53,13 @@ vi.mock(`matterviz/table`, async (importOriginal) => {
 
 beforeAll(() => {
   const animation = {
-    pause: () => {},
-    play: () => {},
+    pause: () => { },
+    play: () => { },
     effect: {
       getComputedTiming: () => ({}),
       getKeyframes: () => [],
     },
-    cancel: () => {},
+    cancel: () => { },
     currentTime: 0,
   } as unknown as Animation
 
@@ -74,10 +74,14 @@ beforeEach(() => {
 export function doc_query<T extends HTMLElement>(
   selector: string,
   parent: ParentNode | null = document,
+  element_type?: abstract new (...args: never[]) => T,
 ): T {
   if (!parent) throw new Error(`No parent node provided`)
   const node = parent.querySelector(selector)
   if (!node) throw new Error(`No element found for selector: ${selector}`)
+  if (element_type && !(node instanceof element_type)) {
+    throw new Error(`Element for selector ${selector} has unexpected type`)
+  }
   return node as T
 }
 
@@ -95,7 +99,7 @@ export function is_hidden(el: Element | null): boolean {
 
 // ResizeObserver mock
 globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() { }
+  unobserve() { }
+  disconnect() { }
 }

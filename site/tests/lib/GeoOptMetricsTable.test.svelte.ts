@@ -1,5 +1,5 @@
 import GeoOptMetricsTable from '$lib/GeoOptMetricsTable.svelte'
-import { ALL_METRICS, GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
+import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query } from '../index'
@@ -21,10 +21,10 @@ describe(`GeoOptMetricsTable`, () => {
     // Model column present
     expect(header_texts).toContain(`Model`)
 
-    // RMSD header includes unit in thin font
+    // RMSD header omits the unit for a concise default column header
     const rmsd_header = header_html.find((h) => h.includes(`RMSD`))
-    expect(rmsd_header).toContain(`(${ALL_METRICS.RMSD.unit})`)
-    expect(rmsd_header).toContain(`font-weight: 200`)
+    expect(rmsd_header).not.toContain(`unitless`)
+    expect(rmsd_header).not.toContain(`font-weight: 200`)
 
     // f_max header includes unit
     const fmax_header = header_html.find((h) => h.includes(`f<sub>max</sub>`))

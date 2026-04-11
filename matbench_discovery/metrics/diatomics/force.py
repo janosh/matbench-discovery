@@ -3,7 +3,10 @@
 import numpy as np
 from numpy.typing import ArrayLike
 
-from matbench_discovery.metrics.diatomics.energy import _validate_diatomic_curve
+from matbench_discovery.metrics.diatomics.energy import (
+    _threshold_diff_signs,
+    _validate_diatomic_curve,
+)
 
 
 def calc_force_mae(
@@ -83,19 +86,12 @@ def calc_force_flips(
     Returns:
         float: Number of force direction changes.
     """
-    # Sort by separations in descending order
     _, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
 
-    fs = forces[:, 0, 0]
-
-    rounded_fs = np.copy(fs)
-    rounded_fs[np.abs(rounded_fs) < threshold] = 0
-    fs_sign = np.sign(rounded_fs)
-    mask = fs_sign != 0
-    rounded_fs = rounded_fs[mask]
-    fs_sign = fs_sign[mask]
-    f_flip = np.diff(fs_sign) != 0
-    return float(np.sum(f_flip))
+    fs = forces[:, 0, 0].copy()
+    fs[np.abs(fs) < threshold] = 0
+    fs_sign = np.sign(fs[fs != 0])
+    return float(np.sum(np.diff(fs_sign) != 0))
 
 
 def calc_force_total_variation(seps: ArrayLike, forces: np.ndarray) -> float:
@@ -124,19 +120,8 @@ def calc_force_jump(seps: ArrayLike, forces: np.ndarray) -> float:
         float: Sum of absolute force differences at flip points.
     """
     _, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
-    forces_x = forces[:, 0, 0]  # x-component of force on first atom
-
-    f_diff = np.diff(forces_x)
-    f_diff_sign = np.sign(f_diff)
-    mask = f_diff_sign != 0
-    f_diff = f_diff[mask]
-    f_diff_sign = f_diff_sign[mask]
-    f_diff_flip = np.diff(f_diff_sign) != 0
-
-    force_jumps = (
-        np.abs(f_diff[:-1][f_diff_flip]).sum() + np.abs(f_diff[1:][f_diff_flip]).sum()
-    )
-    return float(force_jumps)
+    diffs, _, flips = _threshold_diff_signs(forces[:, 0, 0], threshold=0)
+    return float(np.abs(diffs[:-1][flips]).sum() + np.abs(diffs[1:][flips]).sum())
 
 
 def calc_conservation_deviation(
@@ -160,9 +145,7 @@ def calc_conservation_deviation(
     Returns:
         float: Mean absolute deviation between forces and -dE/dr.
     """
-    _sorted_seps, energies = _validate_diatomic_curve(
-        seps, energies, normalize_energy=False
-    )
+    _, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
     seps, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
 
     if interpolate:

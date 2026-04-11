@@ -24,18 +24,18 @@ from matbench_discovery import timestamp
 from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import Task
 
-dtype = "float64"
+dtype = "float32"
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model_name = "TACE-v1-OAM-M"
+model_name = "TACE-OAM-L"
 
 try:
     from tace.foundations import tace_foundations
 
     model_path = tace_foundations[model_name]
-except Exception as e:
+except (ImportError, KeyError, FileNotFoundError) as e:
     raise RuntimeError(
         f"Failed to load {model_name}.\n"
-        f"Please manual download the model from:\n"
+        f"Please manually download the model from:\n"
         f"https://huggingface.co/xvzemin/tace-foundations/"
         f"resolve/main/{model_name}.pt\n"
         f"and put the model into ~/.cache/tace/{model_name}.pt"
@@ -45,12 +45,11 @@ except Exception as e:
 # %% this config is editable
 smoke_test = False
 task_type = Task.IS2RE
-ase_optimizer = "GOQN"  # faster than "FIRE" from tests, gives the same results;
-# see SI of https://doi.org/10.1088/2515-7655/ade916
+ase_optimizer = "FIRE"
 ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
 
 max_steps = 500
-force_max = 0.005  # Run until the forces are smaller than this in eV/A
+force_max = 0.02  # Run until the forces are smaller than this in eV/A
 
 slurm_nodes = int(os.getenv("SLURM_NNODES", "1"))
 slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", "1"))
@@ -75,9 +74,7 @@ os.makedirs(out_dir := "./results", exist_ok=True)
 out_path = f"{out_dir}/{model_name}-{slurm_array_task_id:>03}.json.gz"
 job_name = f"{model_name}-wbm-{task_type}-{slurm_array_task_id:>03}"
 
-data_path = {Task.IS2RE: DataFiles.wbm_initial_atoms.path}[
-    task_type
-]  # automatically downloaded if not already present in cache
+data_path = DataFiles.wbm_initial_atoms.path
 print(f"\nJob {job_name!r} running {timestamp}", flush=True)
 print(f"{data_path=}", flush=True)
 print(f"{slurm_array_task_id} of {slurm_array_task_count}")
@@ -102,8 +99,6 @@ atoms_list = sorted(atoms_list, key=len)
 if slurm_array_job_id == "debug":  # if running a quick smoke test
     if smoke_test:
         atoms_list = atoms_list[:128]
-    else:
-        pass
 elif slurm_array_task_count > 1:
     # even distribution of rough comp cost, based on size
     atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]

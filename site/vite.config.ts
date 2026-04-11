@@ -1,6 +1,3 @@
-// Type declarations for Node.js modules
-/// <reference types="node" />
-
 import yaml_plugin from '@rollup/plugin-yaml'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { load as yaml_load } from 'js-yaml'
@@ -146,6 +143,11 @@ export default defineConfig({
     '*.{js,ts,svelte,html,css,md,json,yaml}': `vp check --fix`,
     '*.{ts,svelte}': `sh -c 'npx svelte-kit sync && npx svelte-check-rs --threshold error'`,
   },
+  build: {
+    // Default cssTarget is chrome111 which doesn't support light-dark(),
+    cssTarget: `esnext`, // causing LightningCSS to polyfill it with broken space toggles
+  },
+
   plugins: [
     sveltekit(),
     yaml_plugin({ extensions: [`.yml`, `.yaml`, `.cff`] }),

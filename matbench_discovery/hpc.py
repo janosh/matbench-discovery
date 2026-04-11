@@ -227,7 +227,7 @@ def chunk_by_lens(
         print(
             f"Split {len(inputs):,} structures into {n_chunks:,} chunks:\n"
             f"Mean sum(len({cls_name})) per chunk: {mean:,.1f} ± {std:,.1f}, "
-            f"min: {chunk_sizes.min():,.0f}, max: {chunk_sizes.max():,.0f}"
+            f"min: {chunk_sizes.min():,.0f}, max: {chunk_sizes.max():,.0f}"  # ty: ignore[invalid-argument-type]
         )
 
     return chunks
