@@ -123,7 +123,7 @@ metrics:
       symmetry_increase: 0.1299 # fraction
       n_structures: 256963 # count
       analysis_file: models/equiformer_v3/equiformer-v3-oam/2026-04-07-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.7.9.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/63520848
+      analysis_file_url: https://figshare.com/files/63520848
     symprec=1e-2:
       rmsd: 0.0595 # unitless
       n_sym_ops_mae: 1.9824 # unitless
@@ -132,7 +132,7 @@ metrics:
       symmetry_increase: 0.1137 # fraction
       n_structures: 256963 # count
       analysis_file: models/equiformer_v3/equiformer-v3-oam/2026-04-07-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.7.9.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/63520845
+      analysis_file_url: https://figshare.com/files/63520845
   discovery:
     pred_file: models/equiformer_v3/equiformer-v3-oam/2026-04-07-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/63518862

@@ -2,8 +2,6 @@
 Templated from test_nequip_kappa.py and test_orb_kappa.py.
 """
 
-# uses commits matbench-discovery f0e54b7, pymatviz v0.17.3, phono3py 3.22.0
-
 import json
 import os
 import warnings
@@ -22,24 +20,24 @@ from matbench_discovery import today
 from matbench_discovery.data import DataFiles, Model
 from matbench_discovery.phonons import KappaCalcParams, calc_kappa_for_structure
 
-dtype = "float64"
+dtype = "float32"
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model_name = "TACE-v1-OAM-M"
+model_name = "TACE-OAM-L"
 
 try:
     from tace.foundations import tace_foundations
 
     model_path = tace_foundations[model_name]
-except Exception as e:
+except (ImportError, KeyError, FileNotFoundError) as e:
     raise RuntimeError(
         f"Failed to load {model_name}.\n"
-        f"Please manual download the model from:\n"
+        f"Please manually download the model from:\n"
         f"https://huggingface.co/xvzemin/tace-foundations/"
         f"resolve/main/{model_name}.pt\n"
         f"and put the model into ~/.cache/tace/{model_name}.pt"
     ) from e
 
-eval_model = Model.tace_v1_oam_m
+eval_model = Model.tace_oam_l
 # Relaxation parameters
 ase_optimizer = "FIRE"
 ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
