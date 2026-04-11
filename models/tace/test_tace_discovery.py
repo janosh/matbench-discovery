@@ -74,9 +74,7 @@ os.makedirs(out_dir := "./results", exist_ok=True)
 out_path = f"{out_dir}/{model_name}-{slurm_array_task_id:>03}.json.gz"
 job_name = f"{model_name}-wbm-{task_type}-{slurm_array_task_id:>03}"
 
-data_path = {Task.IS2RE: DataFiles.wbm_initial_atoms.path}[
-    task_type
-]  # automatically downloaded if not already present in cache
+data_path = DataFiles.wbm_initial_atoms.path
 print(f"\nJob {job_name!r} running {timestamp}", flush=True)
 print(f"{data_path=}", flush=True)
 print(f"{slurm_array_task_id} of {slurm_array_task_count}")
