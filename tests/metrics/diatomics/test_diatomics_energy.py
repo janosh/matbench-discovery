@@ -1,13 +1,11 @@
 """Test diatomic curve metrics calculation functions."""
 
-import json
 import re
 from collections.abc import Callable
 
 import numpy as np
 import pytest
 
-from matbench_discovery import ROOT
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
 from matbench_discovery.metrics.diatomics.energy import (
@@ -156,83 +154,29 @@ def test_energy_grad_norm_max(pred_ref_e_curves: PredRefEnergies) -> None:
     assert grad_max >= 0  # Maximum gradient norm should be non-negative
 
 
-@pytest.fixture
-def mace_data() -> tuple[
-    dict[str, tuple[np.ndarray, np.ndarray]], dict[str, tuple[np.ndarray, np.ndarray]]
-]:
-    """Load MACE model diatomic curve data.
-
-    Returns:
-        tuple[dict[str, tuple], dict[str, tuple]]: Reference and predicted curves for
-            each element.
-    """
-    json_path = (
-        f"{ROOT}/models/mace/mace-mp-0/mace-mlip-arena-homonuclear-diatomics.json"
-    )
-    with open(json_path) as file:
-        data = json.load(file)
-
-    # Convert data to required format
-    ref_curves = {}
-    pred_curves = {}
-
-    for elem_data in data:
-        distances = np.array(elem_data["R"])
-        energies = np.array(elem_data["E"])
-        # Shift energies so the energy at largest separation is 0
-        shifted_energies = energies - energies[-1]
-
-        elem_symbol = elem_data["name"][: len(elem_data["name"]) // 2]
-
-        # For this test, use the same data for reference and prediction
-        # In practice, you would use different models' predictions
-        ref_curves[elem_symbol] = (distances, shifted_energies)
-        pred_curves[elem_symbol] = (distances, shifted_energies)
-
-    return ref_curves, pred_curves
-
-
 def test_simple_cases() -> None:
     """Test metrics with simple, easy-to-reason-about cases."""
     dists = np.arange(1, 6)
     e_linear = np.arange(1, 6)
 
-    # Linear curve should have zero second derivative, constant force and tortuosity = 1
-    assert diatomics.calc_second_deriv_smoothness(dists, e_linear) == 0
-    assert diatomics.calc_tortuosity(dists, e_linear) == 1
-
-    # Constant curve should have zero force and zero total variation
     e_const = np.ones_like(dists)
-
-    # Test with quadratic curve
-    quad_smoothness = diatomics.calc_second_deriv_smoothness(dists, dists**2)
-    assert quad_smoothness == pytest.approx(1.4491376)
-    assert diatomics.calc_tortuosity(dists, dists**2) == 1
-
-    # Step function with a more gradual transition
     e_step = np.array([1, 1, 1.5, 2, 2])
 
-    # Test smoothness
+    # Smoothness: constant and linear should be zero, step should be higher
     linear_smoothness = diatomics.calc_second_deriv_smoothness(dists, e_linear)
     const_smoothness = diatomics.calc_second_deriv_smoothness(dists, e_const)
     step_smoothness = diatomics.calc_second_deriv_smoothness(dists, e_step)
-
-    # Linear curve should be smoother than step function
-    assert linear_smoothness < step_smoothness
-    # Constant and linear curve should be perfectly smooth (zero second derivative)
     assert linear_smoothness == const_smoothness == 0
+    assert linear_smoothness < step_smoothness
+    assert diatomics.calc_second_deriv_smoothness(dists, dists**2) == pytest.approx(
+        1.4491376
+    )
 
-    # Test tortuosity
-    linear_tort = diatomics.calc_tortuosity(dists, e_linear)
-    const_tort = diatomics.calc_tortuosity(dists, e_const)
-    step_tort = diatomics.calc_tortuosity(dists, e_step)
-
-    # Linear curve should have minimal tortuosity (arc length = direct distance)
-    assert linear_tort == pytest.approx(1)
-    # Constant curve should have infinite tortuosity (no direct energy difference)
-    assert np.isnan(const_tort)
-    # Step function should have intermediate tortuosity
-    assert step_tort == 1
+    # Tortuosity: linear and quadratic = 1, constant = NaN (zero denominator)
+    assert diatomics.calc_tortuosity(dists, e_linear) == pytest.approx(1)
+    assert diatomics.calc_tortuosity(dists, dists**2) == 1
+    assert np.isnan(diatomics.calc_tortuosity(dists, e_const))
+    assert diatomics.calc_tortuosity(dists, e_step) == 1
 
     seps = np.logspace(1, -1, 40)
     energies = np.zeros_like(seps)  # flat potential
@@ -331,15 +275,14 @@ def smoothness_test_data() -> dict[str, EnergyCurve]:
         dict[str, EnergyCurve]: Map of curve names to EnergyCurve tuples.
     """
     x = np.logspace(1, -1, 40)
-    x_lj = np.logspace(1, -1, 40)  # special range for LJ potential
 
     return {
         "constant": (x, np.ones_like(x)),
         "linear": (x, x),
         "quadratic": (x, x**2),
         "lennard_jones": (
-            x_lj,
-            4 * ((1 / x_lj) ** 12 - (1 / x_lj) ** 6),
+            x,
+            4 * ((1 / x) ** 12 - (1 / x) ** 6),
         ),
         "noisy_sine": (
             x,
@@ -398,18 +341,8 @@ def test_smoothness_ordering(
         metric_func (Callable): Smoothness metric function to test
         smoothness_test_data (dict): Test curves
     """
-    # Calculate metric for each curve
     metrics = {name: metric_func(x, y) for name, (x, y) in smoothness_test_data.items()}
-
-    # Print all metrics for debugging
-    if not (
-        metrics["linear"] < metrics["quadratic"]
-        and metrics["quadratic"] < metrics["noisy_sine"]
-    ):
-        raise AssertionError(
-            "\nSmooth to rough ordering failed. Metric values:\n"
-            + "\n".join(f"{name}: {value:.6f}" for name, value in metrics.items())
-        )
+    assert metrics["linear"] < metrics["quadratic"] < metrics["noisy_sine"], metrics
 
 
 @pytest.mark.parametrize(
@@ -458,14 +391,10 @@ def test_smoothness_scale_invariance(
     # the metric changes in a reasonable way
     assert abs(scaled_metric) > 0
 
-    if scaled_metric / base_metric != pytest.approx(curv_scale):
-        raise AssertionError(
-            f"{metric_name} did not scale correctly:\nscale={scale:.1f}\n"
-            f"base_metric={base_metric:.6f}\n"
-            f"scaled_metric={scaled_metric:.6f}\n"
-            f"ratio={scaled_metric / base_metric:.6f}\n"
-            f"expected_ratio={curv_scale:.6f}"
-        )
+    ratio = scaled_metric / base_metric
+    assert ratio == pytest.approx(curv_scale), (
+        f"{metric_name}: {ratio=:.6f} != expected {curv_scale:.6f}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -489,25 +418,16 @@ def test_smoothness_noise_sensitivity(
     base = np.sin(2 * np.pi * xs)
     noise_amplitudes = [0, 0.1, 0.2]  # Removed 0.3 as it might cause instability
 
-    # Calculate metrics for increasing noise levels
-    metrics = []
-    for amp in noise_amplitudes:
-        ys = base + amp * np.sin(20 * np.pi * xs)
-        metrics.append(metric_func(xs, ys))
+    metrics = [
+        metric_func(xs, base + amp * np.sin(20 * np.pi * xs))
+        for amp in noise_amplitudes
+    ]
 
-    # Check that metric increases monotonically with noise
     for idx in range(len(metrics) - 1):
-        if not metrics[idx] < metrics[idx + 1]:
-            raise AssertionError(
-                f"\nMetric did not increase monotonically with noise:\n"
-                f"{noise_amplitudes[idx]=:.1f} -> {metrics[idx]=:.6f}\n"
-                f"{noise_amplitudes[idx + 1]=:.1f} -> {metrics[idx + 1]=:.6f}\n"
-                f"Metric values for all noise amplitudes:\n"
-                + "\n".join(
-                    f"  amp={amp:.1f}: {metric:.6f}"
-                    for amp, metric in zip(noise_amplitudes, metrics, strict=True)
-                )
-            )
+        assert metrics[idx] < metrics[idx + 1], (
+            f"amp={noise_amplitudes[idx]:.1f} ({metrics[idx]:.6f}) "
+            f">= amp={noise_amplitudes[idx + 1]:.1f} ({metrics[idx + 1]:.6f})"
+        )
 
 
 def test_energy_mae(pred_ref_e_curves: PredRefEnergies) -> None:
