@@ -31,7 +31,7 @@ try:
 except Exception as e:
     raise RuntimeError(
         f"Failed to load {model_name}.\n"
-        f"Please manual download the model from:\n"
+        f"Please manually download the model from:\n"
         f"https://huggingface.co/xvzemin/tace-foundations/"
         f"resolve/main/{model_name}.pt\n"
         f"and put the model into ~/.cache/tace/{model_name}.pt"

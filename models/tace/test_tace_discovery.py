@@ -35,7 +35,7 @@ try:
 except Exception as e:
     raise RuntimeError(
         f"Failed to load {model_name}.\n"
-        f"Please manual download the model from:\n"
+        f"Please manually download the model from:\n"
         f"https://huggingface.co/xvzemin/tace-foundations/"
         f"resolve/main/{model_name}.pt\n"
         f"and put the model into ~/.cache/tace/{model_name}.pt"
@@ -45,8 +45,7 @@ except Exception as e:
 # %% this config is editable
 smoke_test = False
 task_type = Task.IS2RE
-ase_optimizer = "FIRE"  # faster than "FIRE" from tests, gives the same results;
-# see SI of https://doi.org/10.1088/2515-7655/ade916
+ase_optimizer = "FIRE"
 ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
 
 max_steps = 500

@@ -276,7 +276,8 @@ def test_edge_cases() -> None:
     x_single = np.array([1])
     y_single = np.array([1])
     with pytest.raises(
-        ValueError, match=re.escape("Input must have at least 2 points, got len(xs)=1")
+        ValueError,
+        match=re.escape("Input must have at least 2 points, got len(xs_arr)=1"),
     ):
         diatomics.calc_curve_diff_auc(x_single, y_single, x_single, y_single)
 
@@ -289,7 +290,7 @@ def test_edge_cases() -> None:
     # Test with mismatched array sizes
     x_short = np.array([1, 2, 3])
     y_long = np.array([1, 2, 3, 4, 5])
-    with pytest.raises(ValueError, match=re.escape("len(xs)=3 != len(ys)=5")):
+    with pytest.raises(ValueError, match=re.escape("len(xs_arr)=3 != len(ys_arr)=5")):
         diatomics.calc_curve_diff_auc(x_short, y_long, x_short, y_long)
 
     # Test with unsorted x values (should work, sorting is handled internally)

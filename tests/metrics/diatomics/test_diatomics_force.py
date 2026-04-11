@@ -173,7 +173,7 @@ def test_invalid_inputs() -> None:
         diatomics.calc_conservation_deviation(np.array([1, 1]), energies, forces)
 
     # Test with mismatched array sizes
-    with pytest.raises(ValueError, match=re.escape("len(xs)=2 != len(ys)=1")):
+    with pytest.raises(ValueError, match=re.escape("len(xs_arr)=2 != len(ys_arr)=1")):
         diatomics.calc_conservation_deviation(seps, np.array([0]), forces)
 
     # Test with single point

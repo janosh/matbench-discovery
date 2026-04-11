@@ -52,7 +52,7 @@ license:
 hyperparams: # strongly recommended to list relaxation hyperparams
   max_force: 0.02
   max_steps: 500
-  ase_optimizer: FIRE # faster than FIRE with same results; see SI of https://doi.org/10.1088/2515-7655/ade916
+  ase_optimizer: FIRE
   cell_filter: FrechetCellFilter
   optimizer: AdamW
   graph_construction_radius: 6.0
