@@ -154,6 +154,110 @@ def test_energy_grad_norm_max(pred_ref_e_curves: PredRefEnergies) -> None:
     assert grad_max >= 0  # Maximum gradient norm should be non-negative
 
 
+@pytest.mark.parametrize(
+    "vals, threshold, expected_n_flips, expected_diffs_len",
+    [
+        # Monotone increasing: no flips
+        (np.array([1.0, 2.0, 3.0, 4.0]), 1e-3, 0, 3),
+        # Single oscillation: 1 flip (up then down)
+        (np.array([1.0, 3.0, 2.0]), 1e-3, 1, 2),
+        # Multiple oscillations: 3 flips
+        (np.array([1.0, 3.0, 2.0, 4.0, 1.0]), 1e-3, 3, 4),
+        # Diffs below threshold get zeroed → no flips
+        (np.array([1.0, 1.0004, 1.0002, 1.0006]), 1e-3, 0, 0),
+        # Two points: 1 diff, 0 flips
+        (np.array([1.0, 2.0]), 1e-3, 0, 1),
+    ],
+)
+def test_threshold_diff_signs(
+    vals: np.ndarray, threshold: float, expected_n_flips: int, expected_diffs_len: int
+) -> None:
+    """Test _threshold_diff_signs with known inputs."""
+    from matbench_discovery.metrics.diatomics.energy import _threshold_diff_signs
+
+    diffs, signs, flips = _threshold_diff_signs(vals, threshold)
+    assert len(diffs) == expected_diffs_len
+    assert len(signs) == expected_diffs_len
+    assert int(np.sum(flips)) == expected_n_flips
+    # signs should only be -1 or +1 (zeros are filtered)
+    if len(signs) > 0:
+        assert set(signs.tolist()) <= {-1.0, 1.0}
+
+
+@pytest.mark.parametrize(
+    "energies, expected_flips, expected_jump",
+    [
+        # Monotone: 0 flips, 0 jump
+        (np.array([1.0, 2.0, 3.0, 4.0, 5.0]), 0, 0.0),
+        # diffs=[2,-1,2,1], signs=[+,-,+,+], flips at positions 0,1 → 2 flips
+        # jump = |diffs[0]|+|diffs[1]| + |diffs[1]|+|diffs[2]| = 2+1+1+2 = 6
+        (np.array([1.0, 3.0, 2.0, 4.0, 5.0]), 2, 6.0),
+        # diffs=[2,-1,2,-2.5], signs=[+,-,+,-], 3 flips
+        # jump = |2|+|1| + |1|+|2| + |2|+|2.5| = 3+3+4.5 = 10.5
+        (np.array([0.0, 2.0, 1.0, 3.0, 0.5]), 3, 10.5),
+    ],
+)
+def test_energy_flips_and_jumps_concrete(
+    energies: np.ndarray, expected_flips: int, expected_jump: float
+) -> None:
+    """Test calc_energy_diff_flips and calc_energy_jump with concrete values."""
+    seps = np.arange(1, len(energies) + 1, dtype=float)
+    assert calc_energy_diff_flips(seps, energies) == expected_flips
+    assert calc_energy_jump(seps, energies) == pytest.approx(expected_jump)
+
+
+@pytest.mark.parametrize(
+    "energies, expected_grad_max",
+    [
+        (np.array([5.0, 5.0, 5.0, 5.0]), 0.0),  # constant: gradient = 0
+        # Linear slope=2: gradient = 2 everywhere
+        (np.array([2.0, 4.0, 6.0, 8.0]), 2.0),
+        # Quadratic x^2 at x=1..4: max gradient at endpoint = 7
+        (np.array([1.0, 4.0, 9.0, 16.0]), 7.0),
+    ],
+)
+def test_energy_grad_norm_max_concrete(
+    energies: np.ndarray, expected_grad_max: float
+) -> None:
+    """Test calc_energy_grad_norm_max with analytically known gradients."""
+    seps = np.arange(1, len(energies) + 1, dtype=float)
+    assert calc_energy_grad_norm_max(seps, energies) == pytest.approx(expected_grad_max)
+
+
+def test_curve_diff_auc_identical_curves() -> None:
+    """AUC between identical curves should be exactly 0."""
+    seps = np.linspace(1, 5, 20)
+    energies = np.sin(seps)
+    assert diatomics.calc_curve_diff_auc(seps, energies, seps, energies) == 0.0
+
+
+def test_curve_diff_auc_normalize_false() -> None:
+    """Test AUC without normalization returns raw eV*Å."""
+    seps = np.array([1.0, 2.0, 3.0, 4.0])
+    e_ref = np.array([0.0, 0.0, 0.0, 0.0])
+    e_pred = np.array([1.0, 1.0, 1.0, 1.0])
+    # Constant difference of 1 eV over range [1, 4] = 3 Å → AUC = 3 eV·Å
+    auc = diatomics.calc_curve_diff_auc(seps, e_ref, seps, e_pred, normalize=False)
+    assert auc == pytest.approx(3.0)
+
+
+def test_validate_normalize_energy() -> None:
+    """Test that normalize_energy shifts energies to zero at far field."""
+    from matbench_discovery.metrics.diatomics.energy import _validate_diatomic_curve
+
+    seps = np.array([1.0, 2.0, 3.0, 4.0])
+    energies = np.array([10.0, 5.0, 2.0, 1.0])
+    _, normed = _validate_diatomic_curve(seps, energies, normalize_energy=True)
+    # After sort ascending, last value (at sep=4) should be 0
+    assert normed[-1] == 0.0
+    assert normed[0] == pytest.approx(9.0)  # 10 - 1
+
+    # Forces (ndim > 1) should NOT be normalized even with flag set
+    forces = np.ones((4, 2, 3))
+    _, forces_out = _validate_diatomic_curve(seps, forces, normalize_energy=True)
+    np.testing.assert_array_equal(forces_out, forces)
+
+
 def test_simple_cases() -> None:
     """Test metrics with simple, easy-to-reason-about cases."""
     dists = np.arange(1, 6)
