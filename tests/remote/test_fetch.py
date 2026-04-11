@@ -23,13 +23,25 @@ def make_mock_response(content: bytes, status_code: int = 200) -> requests.Respo
     "input_url, expected_url",
     [
         # Standard figshare.com/files/ format
-        ("https://figshare.com/files/12345", "https://api.figshare.com/v2/file/download/12345"),
+        (
+            "https://figshare.com/files/12345",
+            "https://api.figshare.com/v2/file/download/12345",
+        ),
         # ndownloader path variant
-        ("https://figshare.com/ndownloader/files/99999", "https://api.figshare.com/v2/file/download/99999"),
+        (
+            "https://figshare.com/ndownloader/files/99999",
+            "https://api.figshare.com/v2/file/download/99999",
+        ),
         # ndownloader subdomain variant
-        ("https://ndownloader.figshare.com/files/55555", "https://api.figshare.com/v2/file/download/55555"),
+        (
+            "https://ndownloader.figshare.com/files/55555",
+            "https://api.figshare.com/v2/file/download/55555",
+        ),
         # Query params stripped
-        ("https://ndownloader.figshare.com/files/55555?access_token=abc", "https://api.figshare.com/v2/file/download/55555"),
+        (
+            "https://ndownloader.figshare.com/files/55555?access_token=abc",
+            "https://api.figshare.com/v2/file/download/55555",
+        ),
         # Non-figshare URL unchanged
         ("https://example.com/files/test.gz", "https://example.com/files/test.gz"),
     ],
@@ -42,7 +54,9 @@ def test_figshare_url_conversion(
     """Test that Figshare URL variants are converted to the API download endpoint."""
     dest = tmp_path / "out.gz"
     test_content = b"mock data"
-    with patch("requests.get", return_value=make_mock_response(test_content)) as mock_get:
+    with patch(
+        "requests.get", return_value=make_mock_response(test_content)
+    ) as mock_get:
         download_file(str(dest), input_url)
         assert mock_get.call_args[0][0] == expected_url
 
