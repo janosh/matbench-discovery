@@ -3,8 +3,6 @@ import { mdsvex } from 'mdsvex'
 import katex from 'rehype-katex-svelte'
 import math from 'remark-math' // Remark-math@3.0.0 pinned due to mdsvex, see https://github.com/kwshi/rehype-katex-svelte#usage
 import { heading_ids } from 'svelte-multiselect/heading-anchors' // Adds IDs to headings at build time
-import { sveltePreprocess } from 'svelte-preprocess'
-
 const { default: pkg } = await import(`./package.json`, {
   with: { type: `json` },
 })
@@ -16,7 +14,9 @@ export default {
   preprocess: [
     // Replace readme links to docs with site-internal links
     // (which don't require browser navigation)
-    sveltePreprocess({ replace: [[pkg.homepage, ``]] }),
+    {
+      markup: ({ content }) => ({ code: content.replaceAll(pkg.homepage, ``) }),
+    },
     mdsvex({
       rehypePlugins: [katex],
       remarkPlugins: [math],
@@ -27,7 +27,7 @@ export default {
       markup: (file) => {
         const route = file.filename.split(`site/src/routes/`)[1]
 
-        if (!route?.includes(`discovery-metric-figs`)) return
+        if (!route?.includes(`discovery-metric-figs`)) return { code: file.content }
 
         const fig_index = []
         const ref_index = []

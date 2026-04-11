@@ -114,7 +114,7 @@ metrics:
     pred_file_url: https://figshare.com/files/57754501
     symprec=1e-5:
       analysis_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt-symprec=1e-5-moyo=0.3.3.csv.gz
-      analysis_file_url: https://figshare.com/files/52291967
+      analysis_file_url: https://figshare.com/files/52291967 # deleted from Figshare (model superseded by dpa3-v2)
       rmsd: 0.0172 # unitless
       n_sym_ops_mae: 2.1671 # unitless
       symmetry_decrease: 0.0804 # fraction
@@ -123,7 +123,7 @@ metrics:
       n_structures: 256955 # count
     symprec=1e-2:
       analysis_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt-symprec=1e-2-moyo=0.3.3.csv.gz
-      analysis_file_url: https://figshare.com/files/52291970
+      analysis_file_url: https://figshare.com/files/52291970 # deleted from Figshare (model superseded by dpa3-v2)
       rmsd: 0.0172 # unitless
       n_sym_ops_mae: 1.992 # unitless
       symmetry_decrease: 0.0609 # fraction

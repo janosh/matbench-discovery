@@ -100,14 +100,13 @@ describe(`format_property_path`, () => {
 
 describe(`ALL_METRICS`, () => {
   it.each([
-    [`RMSD`, `unitless`],
     [`MAE`, `eV / atom`],
     [`RMSE`, `eV / atom`],
   ])(`%s has unit '%s'`, (key: string, expected_unit: string) => {
     expect(ALL_METRICS[key as keyof typeof ALL_METRICS].unit).toBe(expected_unit)
   })
 
-  it.each([`CPS`, `F1`, `DAF`, `Precision`, `Recall`, `Accuracy`])(
+  it.each([`CPS`, `F1`, `DAF`, `Precision`, `Recall`, `Accuracy`, `RMSD`])(
     `%s has no unit`,
     (key) => {
       expect(ALL_METRICS[key as keyof typeof ALL_METRICS].unit).toBeUndefined()
