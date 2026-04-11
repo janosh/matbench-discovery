@@ -66,7 +66,6 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   huber_delta: [0.015, 0.040, 0.1]
   initial_learning_rate: 0.008
   num_channel: 64
-  Lmax: 5
   lmax: 5
   l1l2: <= # when tp, only l1 < l2 are allowed
   num_layers: 5

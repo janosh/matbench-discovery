@@ -32,7 +32,7 @@ try:
     from tace.foundations import tace_foundations
 
     model_path = tace_foundations[model_name]
-except Exception as e:
+except (ImportError, KeyError, FileNotFoundError) as e:
     raise RuntimeError(
         f"Failed to load {model_name}.\n"
         f"Please manually download the model from:\n"
@@ -101,8 +101,6 @@ atoms_list = sorted(atoms_list, key=len)
 if slurm_array_job_id == "debug":  # if running a quick smoke test
     if smoke_test:
         atoms_list = atoms_list[:128]
-    else:
-        pass
 elif slurm_array_task_count > 1:
     # even distribution of rough comp cost, based on size
     atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]

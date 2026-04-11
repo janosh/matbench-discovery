@@ -37,9 +37,9 @@ def _validate_diatomic_curve(
     n_x_inf, n_y_inf = int(np.isinf(xs_arr).sum()), int(np.isinf(ys_arr).sum())
     if n_x_inf or n_y_inf:
         raise ValueError(f"Input contains infinite values: {n_x_inf=}, {n_y_inf=}")
-    if len(np.unique(xs_arr)) != len(xs_arr):
-        n_x_dup = int((np.diff(xs_arr) == 0).sum())
-        raise ValueError(f"xs contains {n_x_dup} duplicates")
+    n_unique = len(np.unique(xs_arr))
+    if n_unique != len(xs_arr):
+        raise ValueError(f"xs contains {len(xs_arr) - n_unique} duplicates")
 
     sort_idx = np.argsort(xs_arr)  # ascending order
     xs_arr = xs_arr[sort_idx]
@@ -132,10 +132,11 @@ def calc_curve_diff_auc(
         auc = np.trapezoid(diff, seps_ref)
 
     if normalize:
-        # Get bounding box area of reference curve on the same domain
+        # Normalize by bounding box of reference curve on the (possibly masked) domain.
+        # When interpolate=True, uses full ref range; when False, uses masked subset.
         seps_span, e_span = np.ptp(seps_ref), np.ptp(e_ref)
         box_area = seps_span * e_span
-        if box_area > 0:  # If reference curve is flat, don't normalize
+        if box_area > 0:
             auc = auc / box_area
 
     # Ensure AUC is always positive
@@ -199,11 +200,9 @@ def calc_energy_mae(
 
 def calc_second_deriv_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate smoothness using RMS of second derivative (lower is smoother)."""
-    seps_arr: np.ndarray = np.asarray(seps)
-    energies_arr: np.ndarray = np.asarray(energies)
-    sort_idx = np.argsort(seps_arr)[::-1]  # sort in descending order
-    seps_arr = seps_arr[sort_idx]
-    energies_arr = energies_arr[sort_idx]
+    seps_arr, energies_arr = _validate_diatomic_curve(
+        seps, energies, normalize_energy=False
+    )
     d2y = np.gradient(np.gradient(energies_arr, seps_arr), seps_arr)  # ty: ignore[no-matching-overload]
     return float(np.sqrt(np.mean(d2y**2)))
 
@@ -211,9 +210,6 @@ def calc_second_deriv_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
 def calc_total_variation_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate smoothness using mean absolute gradient (lower is smoother)."""
     seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    seps = seps[sort_idx]
-    energies = energies[sort_idx]
     dy = np.gradient(energies, seps)
     return float(np.log10(np.mean(np.abs(dy))))
 
@@ -221,9 +217,6 @@ def calc_total_variation_smoothness(seps: ArrayLike, energies: ArrayLike) -> flo
 def calc_curvature_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate smoothness using mean absolute curvature (lower is smoother)."""
     seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    seps = seps[sort_idx]
-    energies = energies[sort_idx]
     dy = np.gradient(energies, seps)
     d2y = np.gradient(dy, seps)
     curvature = np.abs(d2y) / (1 + dy**2) ** 1.5

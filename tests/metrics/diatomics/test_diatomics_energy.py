@@ -281,11 +281,27 @@ def test_edge_cases() -> None:
     ):
         diatomics.calc_curve_diff_auc(x_single, y_single, x_single, y_single)
 
-    # Test with duplicate x values
+    # Test with adjacent duplicate x values
     x_dup = np.array([1, 1, 2, 3, 4])
     y_dup = np.array([1, 2, 3, 4, 5])
     with pytest.raises(ValueError, match="xs contains 1 duplicates"):
         diatomics.calc_curve_diff_auc(x_dup, y_dup, x_dup, y_dup)
+
+    # Test with non-adjacent duplicate x values (regression: np.diff misses these)
+    x_non_adj_dup = np.array([1, 3, 2, 1, 4])
+    y_non_adj_dup = np.array([1, 2, 3, 4, 5])
+    with pytest.raises(ValueError, match="xs contains 1 duplicates"):
+        diatomics.calc_curve_diff_auc(
+            x_non_adj_dup, y_non_adj_dup, x_non_adj_dup, y_non_adj_dup
+        )
+
+    # Test with multiple non-adjacent duplicates
+    x_multi_dup = np.array([1, 2, 1, 3, 2])
+    y_multi_dup = np.array([1, 2, 3, 4, 5])
+    with pytest.raises(ValueError, match="xs contains 2 duplicates"):
+        diatomics.calc_curve_diff_auc(
+            x_multi_dup, y_multi_dup, x_multi_dup, y_multi_dup
+        )
 
     # Test with mismatched array sizes
     x_short = np.array([1, 2, 3])
@@ -298,6 +314,12 @@ def test_edge_cases() -> None:
     y_unsorted = np.array([1, 3, 2, 5, 4])
     auc = diatomics.calc_curve_diff_auc(xs, ys, x_unsorted, y_unsorted)
     assert np.isfinite(auc)
+
+    # calc_second_deriv_smoothness should reject NaN/inf (regression: no validation)
+    with pytest.raises(ValueError, match="Input contains NaN"):
+        calc_second_deriv_smoothness(xs, y_nan)
+    with pytest.raises(ValueError, match="Input contains infinite"):
+        calc_second_deriv_smoothness(xs, y_inf)
 
 
 # Test data for smoothness metrics

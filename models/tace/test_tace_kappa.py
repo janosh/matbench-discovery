@@ -28,7 +28,7 @@ try:
     from tace.foundations import tace_foundations
 
     model_path = tace_foundations[model_name]
-except Exception as e:
+except (ImportError, KeyError, FileNotFoundError) as e:
     raise RuntimeError(
         f"Failed to load {model_name}.\n"
         f"Please manually download the model from:\n"
