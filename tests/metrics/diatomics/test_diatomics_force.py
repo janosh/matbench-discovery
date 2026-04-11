@@ -99,10 +99,24 @@ def test_force_jump(pred_ref_forces: PredRefForces) -> None:
     _, pred_curves = pred_ref_forces
     dists, forces = pred_curves["H"]
 
-    # Test with default parameters
     jump = diatomics.calc_force_jump(dists, forces)
     assert isinstance(jump, float)
-    assert jump >= 0  # Force jump should be non-negative
+    assert jump >= 0
+
+    # Concrete case: forces with one sign change → measurable jump
+    seps = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    forces_osc = np.zeros((5, 2, 3))
+    forces_osc[:, 0, 0] = [1.0, 2.0, -1.0, 3.0, -2.0]  # two flips
+    jump_concrete = diatomics.calc_force_jump(seps, forces_osc)
+    assert jump_concrete > 0
+    # diffs=[1,-3,4,-5], signs=[+,-,+,-], all 3 flips
+    # jump = |1|+|3| + |3|+|4| + |4|+|5| = 4+7+9 = 20
+    assert jump_concrete == pytest.approx(20.0)
+
+    # Monotone forces: zero jump
+    forces_mono = np.zeros((5, 2, 3))
+    forces_mono[:, 0, 0] = [1.0, 2.0, 3.0, 4.0, 5.0]
+    assert diatomics.calc_force_jump(seps, forces_mono) == pytest.approx(0.0)
 
 
 def test_force_mae(pred_ref_forces: PredRefForces) -> None:
