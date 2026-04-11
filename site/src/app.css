@@ -79,6 +79,8 @@
   --sms-margin: 1em auto;
   --sms-border: 1px solid var(--border);
   --sms-options-bg: var(--page-bg);
+  --sms-options-border: 1px solid var(--border);
+  --sms-options-shadow: 0 2px 8px var(--shadow);
   --sms-text-color: var(--text-color);
   --sms-max-width: 23em;
   --sms-focus-border: 1px solid var(--link-color);
@@ -157,6 +159,10 @@ button:hover {
 :is(div.multiselect) ul sub {
   /* fixes κ<sub>SRME</sub> looking more like super than subscript in multiselect */
   transform: translateY(0.5em);
+}
+:is(ul.options) {
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
 }
 a {
   color: var(--link-color);

@@ -5,7 +5,12 @@
   import { extent } from 'd3-array'
   import { format_num } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
+  import {
+    ColorScaleSelect,
+    type DataSeries,
+    type LabelPlacementConfig,
+    ScatterPlot,
+  } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
   import Select from 'svelte-multiselect'
@@ -93,8 +98,10 @@
   let display = $state({ x_grid: true, y_grid: true })
 
   let size_multiplier = $state(1)
-  let label_font_size = $state(14)
-  let link_config = $state({ strength: 5, min_dist: 15, max_dist: 20 })
+  let label_font_size = $state(12)
+  let label_placement_config: LabelPlacementConfig = $state({
+    leader_line_threshold: 15,
+  })
 
   // Check if data range spans enough for log scale to be useful (min > 0 and max/min >= 100)
   function can_log(ext: [number | undefined, number | undefined]): boolean {
@@ -168,7 +175,14 @@
     can_log(extent(plot_data, (d) => d.size_value as number)),
   )
 
-  let series = $derived({
+  interface PointMetadata extends Record<string, unknown> {
+    model_name: string
+    date_added: string
+    days_ago: string
+    model_key?: string
+  }
+
+  let series: DataSeries<PointMetadata> = $derived({
     x: plot_data.map((item) => item.x as number),
     y: plot_data.map((item) => item.y as number),
     markers: `points` as const,
@@ -182,10 +196,8 @@
       : undefined,
     point_label: (show_model_labels ? plot_data : []).map((item) => ({
       text: item.metadata.model_name,
-      offset_y: 0,
-      offset_x: 10,
+      offset: { x: 10, y: 0 },
       font_size: `${label_font_size}px`,
-      color: `black`,
       auto_placement: true,
     })),
   })
@@ -201,13 +213,18 @@
       maxSelect={1}
       minSelect={1}
       style="flex: 1; max-width: 300px; margin: 0"
-      liSelectedStyle="font-size: 14px; display: flex; align-items: baseline; gap: 0.5em;"
+      ulSelectedStyle="flex-wrap: nowrap; overflow: hidden; min-width: 0;"
+      liSelectedStyle="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"
       liOptionStyle="font-size: 13px;"
     >
-      {#snippet children({ option: prop }: { option: typeof options[number] })}
-        {@html format_property_path(get_label_path(prop))}
-        <span style="font-size: smaller; color: gray; display: block">
-          {model_counts_by_prop[prop.key]} models
+      {#snippet children(
+        { option: prop, type }: { option: typeof options[number]; type: string },
+      )}
+        <span class:selected-label={type === `selected`}>
+          {@html format_property_path(get_label_path(prop))}
+          <span style="font-size: smaller; color: gray">
+            {model_counts_by_prop[prop.key]} models
+          </span>
         </span>
       {/snippet}
     </Select>
@@ -263,8 +280,7 @@
       },
     }}
     label_placement_config={{
-      link_strength: link_config.strength,
-      link_distance_range: [link_config.min_dist, link_config.max_dist],
+      leader_line_threshold: label_placement_config.leader_line_threshold,
     }}
     point_events={{
       onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
@@ -322,36 +338,17 @@
         bind:value={label_font_size}
       />
       <label
-        title="Configure the distance range and strength of the links connecting labels to their points"
-        for="min-link-distance"
-      >Label Link</label>
+        title="Minimum label displacement in pixels before drawing a leader line"
+        for="leader-line-threshold"
+      >Leader Line</label>
       <div class="combined-link-controls">
         <input
-          id="min-link-distance"
+          id="leader-line-threshold"
           type="number"
           min="0"
-          max={link_config.max_dist}
-          bind:value={link_config.min_dist}
-          title="Minimum distance"
-        />
-        <span>-</span>
-        <input
-          id="max-link-distance"
-          type="number"
-          min={link_config.min_dist}
           max="100"
-          bind:value={link_config.max_dist}
-          title="Maximum distance"
-        />
-        <input
-          id="link-strength"
-          type="range"
-          min="0.1"
-          max="10"
-          step="0.1"
-          bind:value={link_config.strength}
-          title="Strength (higher = stronger pull)"
-          style="flex: 1"
+          bind:value={label_placement_config.leader_line_threshold}
+          title="Leader line threshold"
         />
       </div>
     {/snippet}
@@ -397,5 +394,11 @@
   }
   div.combined-link-controls input[type='number'] {
     width: 50px;
+  }
+  span.selected-label {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>

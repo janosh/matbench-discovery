@@ -29,7 +29,9 @@ if test_subset == TestSubset.uniq_protos:
 
 
 # %%
-metrics: tuple[str, ...] = globals().get("metrics", ("Precision", "Recall"))
+metrics: tuple[str] | tuple[str, str] = globals().get(
+    "metrics", ("Precision", "Recall")
+)
 # metrics = ("MAE",)
 range_y = {
     ("MAE",): (0, 0.7),

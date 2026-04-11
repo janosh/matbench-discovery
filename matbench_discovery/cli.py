@@ -23,7 +23,7 @@ cli_parser.add_argument(
 cli_parser.add_argument(
     "--models",
     nargs="*",
-    type=Model,
+    type=Model._value2member_map_.__getitem__,
     choices=Model,
     default=list(Model),
     help="Models to analyze. If none specified, analyzes all models.",
@@ -108,4 +108,4 @@ if cli_args.auto_download:
 if cli_args.no_show:
     import plotly.graph_objects as go
 
-    go.Figure.show = lambda *_args, **_kwargs: None
+    go.Figure.show = lambda *_args, **_kwargs: None  # ty: ignore[invalid-assignment]
