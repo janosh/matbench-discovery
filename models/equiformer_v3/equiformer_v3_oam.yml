@@ -1,4 +1,4 @@
-model_name: EquiformerV3-OAM
+model_name: EquiformerV3+DeNS-OAM
 model_key: equiformer_v3_oam
 model_version: v2026.04.07
 date_added: '2026-04-07'
@@ -32,8 +32,8 @@ trained_by:
 
 
 repo: https://github.com/atomicarchitects/equiformer_v3
-doi: https://github.com/atomicarchitects/equiformer_v3
-paper: https://github.com/atomicarchitects/equiformer_v3
+doi: https://doi.org/10.48550/arXiv.2604.09130
+paper: https://arxiv.org/abs/2604.09130
 url: https://github.com/atomicarchitects/equiformer_v3
 pr_url: https://github.com/janosh/matbench-discovery/pull/320
 checkpoint_url: https://github.com/atomicarchitects/equiformer_v3
