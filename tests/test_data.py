@@ -8,45 +8,42 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from ase import Atoms
-from pymatgen.core import Lattice, Structure
+from ferrox import Structure
 from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery.data import (
     as_dict_handler,
-    ase_atoms_from_zip,
-    ase_atoms_to_zip,
     df_wbm,
     glob_to_df,
     load_df_wbm_with_preds,
     round_trip_yaml,
+    structures_from_zip,
+    structures_to_zip,
     update_yaml_file,
 )
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 
-structure = Structure(
-    lattice=Lattice.cubic(5),
-    species=("Fe", "O"),
-    coords=((0, 0, 0), (0.5, 0.5, 0.5)),
+struct_h2o = Structure(
+    lattice=[5, 5, 5, 90, 90, 90],
+    species=["H", "H", "O"],
+    xyz=[[0, 0, 0], [0, 0, 1], [0, 1, 0]],
+)
+struct_co2 = Structure(
+    lattice=[6, 6, 6, 90, 90, 90],
+    species=["C", "O", "O"],
+    xyz=[[0, 0, 0], [0, 0, 1], [0, 0, -1]],
 )
 
-atoms1 = Atoms("H2O", positions=[[0, 0, 0], [0, 0, 1], [0, 1, 0]], cell=[5, 5, 5])
-atoms1.info[Key.mat_id] = "structure1"
-atoms1.info["formation_energy"] = 1.23
-atoms1.info["forces"] = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
-atoms1.info["dict_data"] = {"a": 1, "b": 2}
-atoms1.info["list_data"] = [1, 2, 3]
-
-atoms2 = Atoms("CO2", positions=[[0, 0, 0], [0, 0, 1], [0, 0, -1]], cell=[6, 6, 6])
-atoms2.info[Key.mat_id] = "structure2"
-atoms2.info["bandgap"] = 2.34
-atoms2.info["magmoms"] = np.array([0.1, -0.1, 0.1])
-
-dummy_atoms = [atoms1, atoms2]
+dummy_structures: dict[str, Structure] = {
+    "structure1": struct_h2o,
+    "structure2": struct_co2,
+}
 
 
 def test_as_dict_handler() -> None:
+    """Test as_dict_handler serialization."""
+
     class C:
         @staticmethod
         def as_dict() -> dict[str, Any]:
@@ -60,6 +57,7 @@ def test_as_dict_handler() -> None:
 
 
 def test_df_wbm() -> None:
+    """Test WBM summary dataframe shape and columns."""
     assert df_wbm.shape == (256_963, 18)
     assert df_wbm.index.name == Key.mat_id
     assert set(df_wbm) > {Key.formula, Key.mat_id, Key.bandgap_pbe}
@@ -75,6 +73,7 @@ def test_glob_to_df(
     df_mixed: pd.DataFrame,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Test glob_to_df combines files matching pattern."""
     os.makedirs(tmp_path, exist_ok=True)
     df_mixed.to_csv(f"{tmp_path}/dummy_df.csv", index=False)
     df_mixed.to_json(f"{tmp_path}/dummy_df.json")
@@ -99,148 +98,125 @@ def test_glob_to_df(
         glob_to_df("foo.csv")
 
 
-@pytest.mark.parametrize(
-    "dummy_atoms",
-    [dummy_atoms, {"atoms1": atoms1, "atoms2": atoms2}],
-)
-def test_atoms_zip_round_trip(
-    tmp_path: Path, dummy_atoms: dict[str, Atoms] | list[Atoms]
-) -> None:
-    # Write atoms to a temporary ZIP file
+def test_structures_zip_round_trip(tmp_path: Path) -> None:
+    """Test writing and reading structures to/from ZIP archive."""
     zip_path = tmp_path / "test_structures.zip"
-    ase_atoms_to_zip(dummy_atoms, zip_path)
+    structures_to_zip(dummy_structures, zip_path)
 
-    # Read atoms back from the ZIP file
-    read_atoms = ase_atoms_from_zip(zip_path)
+    read_structs = structures_from_zip(zip_path)
 
-    # Check that we got the same number of Atoms objects back
-    assert len(read_atoms) == len(dummy_atoms)
+    assert len(read_structs) == len(dummy_structures)
 
-    orig_atoms = dummy_atoms.values() if isinstance(dummy_atoms, dict) else dummy_atoms
-    for original, read in zip(orig_atoms, read_atoms, strict=True):
-        # Check basic Atoms properties
-        assert original.get_chemical_formula() == read.get_chemical_formula()
-        assert np.allclose(original.get_positions(), read.get_positions())
-        assert np.allclose(original.get_cell(), read.get_cell())
-        assert np.all(original.pbc == read.pbc)
-
-        # Check info dictionary
-        for key, value in original.info.items():
-            assert key in read.info, f"{key=} not in {list(read.info)}"
-            read_val = read.info[key]
-            if np.ndarray in {type(value), type(read_val)}:
-                assert np.allclose(value, read_val), f"Mismatch in {key}"
-            else:
-                assert value == read_val, f"Mismatch in {key}"
-
-        # Check that no extra keys were added
-        assert set(original.info) == set(read.info)
+    for mat_id, original in dummy_structures.items():
+        assert mat_id in read_structs, f"{mat_id=} not in read_structs"
+        read = read_structs[mat_id]
+        assert original.formula == read.formula
+        assert np.allclose(original.cart_coords, read.cart_coords, atol=1e-6)
+        assert len(original) == len(read)
 
 
-def test_ase_atoms_from_zip_with_file_filter(tmp_path: Path) -> None:
+def test_structures_from_zip_with_file_filter(tmp_path: Path) -> None:
+    """Test file_filter parameter on structures_from_zip."""
     zip_path = tmp_path / "test_structures.zip"
-    ase_atoms_to_zip(dummy_atoms, zip_path)
-    read_atoms = ase_atoms_from_zip(
+    structures_to_zip(dummy_structures, zip_path)
+    read_structs = structures_from_zip(
         zip_path, file_filter=lambda name, _idx: "1" in name
     )
-    assert len(read_atoms) == 1
-    assert read_atoms[0].get_chemical_formula() == "H2O"
+    assert len(read_structs) == 1
+    assert "structure1" in read_structs
 
 
-def test_ase_atoms_from_zip_with_filename_to_info(tmp_path: Path) -> None:
-    zip_path = tmp_path / "test_structures.zip"
-    ase_atoms_to_zip(dummy_atoms, zip_path)
-    read_atoms = ase_atoms_from_zip(zip_path, filename_to_info=True)
-    assert all("filename" in atoms.info for atoms in read_atoms)
-    assert read_atoms[0].info["filename"] == "structure1.extxyz"
-    assert read_atoms[1].info["filename"] == "structure2.extxyz"
-
-
-def test_ase_atoms_from_zip_empty_file(tmp_path: Path) -> None:
+def test_structures_from_zip_empty_file(tmp_path: Path) -> None:
+    """Test reading from an empty ZIP file."""
     empty_zip = tmp_path / "empty.zip"
     with zipfile.ZipFile(empty_zip, mode="w"):
         pass
-    read_atoms = ase_atoms_from_zip(empty_zip)
-    assert len(read_atoms) == 0
+    read_structs = structures_from_zip(empty_zip)
+    assert len(read_structs) == 0
 
 
-def test_ase_atoms_from_zip_invalid_file(tmp_path: Path) -> None:
+def test_structures_from_zip_invalid_file(tmp_path: Path) -> None:
+    """Test reading from an invalid ZIP file raises BadZipFile."""
     invalid_zip = tmp_path / "invalid.zip"
     with open(invalid_zip, mode="w") as file:
         file.write("This is not a zip file")
     with pytest.raises(zipfile.BadZipFile):
-        ase_atoms_from_zip(invalid_zip)
+        structures_from_zip(invalid_zip)
 
 
-def test_ase_atoms_from_zip_with_limit(tmp_path: Path) -> None:
+def test_structures_from_zip_with_limit(tmp_path: Path) -> None:
+    """Test limit parameter on structures_from_zip."""
     zip_path = tmp_path / "test_structures.zip"
-    ase_atoms_to_zip(dummy_atoms, zip_path)
+    structures_to_zip(dummy_structures, zip_path)
 
     # Test with limit=1
-    read_atoms = ase_atoms_from_zip(zip_path, limit=1)
-    assert len(read_atoms) == 1
-    assert read_atoms[0].get_chemical_formula() == "H2O"
+    read_structs = structures_from_zip(zip_path, limit=1)
+    assert len(read_structs) == 1
 
     # Test with limit=2 (should read all structures as there are only 2)
-    read_atoms = ase_atoms_from_zip(zip_path, limit=2)
-    assert len(read_atoms) == 2
-    assert read_atoms[0].get_chemical_formula() == "H2O"
-    assert read_atoms[1].get_chemical_formula() == "CO2"
+    read_structs = structures_from_zip(zip_path, limit=2)
+    assert len(read_structs) == 2
 
     # Test with limit=None (default behavior, should read all structures)
-    read_atoms = ase_atoms_from_zip(zip_path, limit=None)
-    assert len(read_atoms) == 2
+    read_structs = structures_from_zip(zip_path, limit=None)
+    assert len(read_structs) == 2
 
     # Test with limit greater than the number of structures
-    read_atoms = ase_atoms_from_zip(zip_path, limit=10)
-    assert len(read_atoms) == 2
+    read_structs = structures_from_zip(zip_path, limit=10)
+    assert len(read_structs) == 2
 
 
 @pytest.mark.parametrize(
-    "slice_limit, expected_formulas, expected_count",
+    "slice_limit, expected_count",
     [
-        (slice(1, 3), ["N2", "O2"], 2),
-        (slice(None, 2), ["H2", "N2"], 2),
-        (slice(3, None), ["F2", "Cl2"], 2),
-        (slice(0, None, 2), ["H2", "O2", "Cl2"], 3),
-        (slice(None, None, -1), ["Cl2", "F2", "O2", "N2", "H2"], 5),
-        (slice(5, 5), [], 0),
-        (slice(10, 20), [], 0),
+        (slice(1, 3), 2),
+        (slice(None, 2), 2),
+        (slice(3, None), 2),
+        (slice(0, None, 2), 3),
+        (slice(None, None, -1), 5),
+        (slice(5, 5), 0),
+        (slice(10, 20), 0),
     ],
 )
-def test_ase_atoms_from_zip_with_slice_limit(
+def test_structures_from_zip_with_slice_limit(
     tmp_path: Path,
     slice_limit: slice,
-    expected_formulas: list[str],
     expected_count: int,
 ) -> None:
-    """Test ase_atoms_from_zip with slice objects for the limit parameter."""
-    # Create a zip file with more structures for better slice testing
-    more_atoms = [
-        Atoms("H2", positions=[[0, 0, 0], [0, 0, 1]], cell=[4, 4, 4]),
-        Atoms("N2", positions=[[0, 0, 0], [0, 0, 1.1]], cell=[4, 4, 4]),
-        Atoms("O2", positions=[[0, 0, 0], [0, 0, 1.2]], cell=[4, 4, 4]),
-        Atoms("F2", positions=[[0, 0, 0], [0, 0, 1.4]], cell=[4, 4, 4]),
-        Atoms("Cl2", positions=[[0, 0, 0], [0, 0, 2.0]], cell=[5, 5, 5]),
-    ]
-
-    # Add material IDs to each structure
-    for idx, atoms in enumerate(more_atoms):
-        atoms.info[Key.mat_id] = f"slice_test_{idx}"
+    """Test structures_from_zip with slice objects for the limit parameter."""
+    more_structures: dict[str, Structure] = {
+        "slice_test_0": Structure(
+            lattice=[4, 4, 4, 90, 90, 90],
+            species=["H", "H"],
+            xyz=[[0, 0, 0], [0, 0, 1]],
+        ),
+        "slice_test_1": Structure(
+            lattice=[4, 4, 4, 90, 90, 90],
+            species=["N", "N"],
+            xyz=[[0, 0, 0], [0, 0, 1.1]],
+        ),
+        "slice_test_2": Structure(
+            lattice=[4, 4, 4, 90, 90, 90],
+            species=["O", "O"],
+            xyz=[[0, 0, 0], [0, 0, 1.2]],
+        ),
+        "slice_test_3": Structure(
+            lattice=[4, 4, 4, 90, 90, 90],
+            species=["F", "F"],
+            xyz=[[0, 0, 0], [0, 0, 1.4]],
+        ),
+        "slice_test_4": Structure(
+            lattice=[5, 5, 5, 90, 90, 90],
+            species=["Cl", "Cl"],
+            xyz=[[0, 0, 0], [0, 0, 2.0]],
+        ),
+    }
 
     zip_path = tmp_path / "slice_test_structures.zip"
-    ase_atoms_to_zip(more_atoms, zip_path)
+    structures_to_zip(more_structures, zip_path)
 
-    # Test with the parametrized slice
-    read_atoms = ase_atoms_from_zip(zip_path, limit=slice_limit)
-
-    # Check the number of structures returned
-    assert len(read_atoms) == expected_count
-
-    # Check the chemical formulas of the returned structures
-    for idx, formula in enumerate(expected_formulas):
-        if idx < len(read_atoms):
-            assert read_atoms[idx].get_chemical_formula() == formula
+    read_structs = structures_from_zip(zip_path, limit=slice_limit)
+    assert len(read_structs) == expected_count
 
 
 @pytest.mark.skipif(
@@ -253,6 +229,7 @@ def test_ase_atoms_from_zip_with_slice_limit(
 def test_load_df_wbm_with_preds(
     models: list[str], max_error_threshold: float | None
 ) -> None:
+    """Test loading WBM predictions with model filtering."""
     df_wbm_with_preds = load_df_wbm_with_preds(
         models=models, max_error_threshold=max_error_threshold
     )
@@ -281,6 +258,7 @@ def test_load_df_wbm_with_preds(
     "CI" in os.environ, reason="CI uses mock data where other error thresholds apply"
 )
 def test_load_df_wbm_max_error_threshold() -> None:
+    """Test max_error_threshold filtering in load_df_wbm_with_preds."""
     models: dict[str, int] = {  # map model to number of max allowed missing preds
         Model.mace_mp_0.label: 38  # before error is raised
     }

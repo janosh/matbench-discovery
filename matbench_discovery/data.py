@@ -16,16 +16,14 @@ import os
 import re
 import sys
 import zipfile
-from collections import defaultdict
 from collections.abc import Callable, Sequence
 from glob import glob
 from pathlib import Path
 from typing import Any
 
-import ase.io
 import pandas as pd
 import yaml
-from ase import Atoms
+from ferrox import Structure
 from filelock import FileLock
 from pymatviz.enums import Key
 from ruamel.yaml import YAML
@@ -115,32 +113,31 @@ def glob_to_df(
     return pd.concat(sub_dfs.values())
 
 
-def ase_atoms_from_zip(
+def structures_from_zip(
     zip_filename: str | Path,
     *,
     file_filter: Callable[[str, int], bool] = lambda filename, _idx: filename.endswith(
         ".extxyz"
     ),
-    filename_to_info: bool = False,
     limit: int | slice | None = None,
-) -> list[Atoms]:
-    """Read ASE Atoms objects from a ZIP file containing extXYZ files.
+) -> dict[str, Structure]:
+    """Read ferrox Structure objects from a ZIP file containing extXYZ files.
+
+    Returns a dict mapping material ID (derived from filename) to Structure.
 
     Args:
         zip_filename (str): Path to the ZIP file.
         file_filter (Callable[[str, int], bool], optional): Function to check if a file
             should be read. Defaults to lambda fname: fname.endswith(".extxyz").
-        filename_to_info (bool, optional): If True, assign filename to Atoms.info.
-            Defaults to False.
         limit (int, optional): Maximum number of files to read. Defaults to None.
             Use a small number to speed up debugging runs.
 
     Returns:
-        list[Atoms]: ASE Atoms objects.
+        dict[str, Structure]: Mapping of material ID to ferrox Structure.
     """
-    atoms_list = []
+    result: dict[str, Structure] = {}
     with zipfile.ZipFile(zip_filename) as zip_file:
-        desc = f"Reading ASE Atoms from {zip_filename=}"
+        desc = f"Reading structures from {zip_filename=}"
         filenames = zip_file.namelist()
         if limit is not None:
             slice_lim = slice(limit) if isinstance(limit, int) else limit
@@ -149,62 +146,30 @@ def ase_atoms_from_zip(
         for idx, filename in tqdm(enumerate(filenames), desc=desc, mininterval=5):
             if not file_filter(filename, idx):
                 continue
+            mat_id = filename.removesuffix(".extxyz")
             with zip_file.open(filename) as file:
                 content = io.TextIOWrapper(file, encoding="utf-8").read()
-                atoms = ase.io.read(
-                    io.StringIO(content), format="extxyz", index=slice(None)
-                )  # reads multiple Atoms objects as frames if file contains trajectory
-                if isinstance(atoms, Atoms):
-                    atoms = [atoms]  # Wrap single Atoms object in a list
-                if filename_to_info:
-                    for atom in atoms:
-                        atom.info["filename"] = filename
-                atoms_list.extend(atoms)
-    return atoms_list
+                structure = Structure.from_xyz(content)
+                result[mat_id] = structure
+    return result
 
 
-def ase_atoms_to_zip(
-    atoms_set: list[Atoms] | dict[str, Atoms], zip_filename: str | Path
+def structures_to_zip(
+    structures: dict[str, Structure], zip_filename: str | Path
 ) -> None:
-    """Write ASE Atoms objects to a ZIP archive with each Atoms object as a separate
-    extXYZ file, grouped by mat_id.
+    """Write ferrox Structure objects to a ZIP archive as extXYZ files.
 
     Args:
-        atoms_set (list[Atoms] | dict[str, Atoms]): Either a list of ASE Atoms objects
-            (which should have a 'material_id' in their Atoms.info dictionary) or a
-            dictionary mapping material IDs to Atoms objects.
+        structures (dict[str, Structure]): Mapping of material IDs to Structure objects.
         zip_filename (str | Path): Path to the ZIP file to write.
     """
-    # Group atoms by mat_id to avoid overwriting files with the same name
-
-    if isinstance(atoms_set, dict):
-        atoms_dict = atoms_set
-    else:
-        atoms_dict = defaultdict(list)
-
-        # If input is a list, get material ID from atoms.info falling back to formula
-        # if missing
-        for atoms in atoms_set:
-            mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
-            atoms_dict[mat_id] += [atoms]
-
-    # Write grouped atoms to the ZIP archive
     with zipfile.ZipFile(
         zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED
     ) as zip_file:
-        for mat_id, atoms_or_list in tqdm(
-            atoms_dict.items(), desc=f"Writing ASE Atoms to {zip_filename=}"
+        for mat_id, structure in tqdm(
+            structures.items(), desc=f"Writing structures to {zip_filename=}"
         ):
-            buffer = io.StringIO()  # string buffer to write the extxyz content
-            for atoms in (
-                atoms_or_list if isinstance(atoms_or_list, list) else [atoms_or_list]
-            ):
-                ase.io.write(
-                    buffer, atoms, format="extxyz", append=True, write_info=True
-                )
-
-            # Write the combined buffer content to the ZIP file
-            zip_file.writestr(f"{mat_id}.extxyz", buffer.getvalue())
+            zip_file.writestr(f"{mat_id}.extxyz", structure.to_extxyz())
 
 
 df_wbm = pd.read_csv(DataFiles.wbm_summary.path)

@@ -1,24 +1,23 @@
 # %%
 import os
-from copy import deepcopy
 from importlib.metadata import version
 from typing import Any, Final
 
 import pandas as pd
 import plotly.express as px
+import torch
 import wandb
-from ase.filters import FrechetCellFilter
-from ase.optimize import FIRE, LBFGS
-from ase.optimize.optimize import Optimizer
-from mace.calculators import mace_mp
+from ferrox import SimLogLevel, Structure
+from ferrox.mlff import MaceModel
+from ferrox.relax import relax
+from ferrox.trajectory import Trajectory
+from mace.calculators.foundations_models import download_mace_mp_checkpoint
 from mace.tools import count_parameters
-from pymatgen.core.trajectory import Trajectory
-from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import hpc, timestamp, today
-from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip, df_wbm
+from matbench_discovery.data import as_dict_handler, df_wbm, structures_from_zip
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 from matbench_discovery.plots import wandb_scatter
 
@@ -33,14 +32,13 @@ if smoke_test:
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = 200
-ase_optimizer = "FIRE"
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-device = "cpu"
-# whether to record intermediate structures into pymatgen Trajectory
-record_traj = True  # has no effect if relax_cell is False
-model_name = os.getenv("MODEL_NAME", Model.mace_mp_0)
-job_name = f"{model_name}/{today}-wbm-{task_type}-{ase_optimizer}"
+slurm_array_task_count = 52
+optimizer_name = "fire"
+device = "cuda" if torch.cuda.is_available() else "cpu"
+# whether to record intermediate structures into ferrox Trajectory
+record_traj = False  # skip trajectory recording for full benchmark run
+model_name = os.getenv("MODEL_NAME", Model.mace_mpa_0)
+job_name = f"{model_name}/{today}-wbm-{task_type}-{optimizer_name.upper()}"
 out_dir = f"{module_dir}/{job_name}"
 os.makedirs(out_dir, exist_ok=True)
 checkpoint_urls: Final[set[str]] = {
@@ -58,9 +56,8 @@ slurm_vars = hpc.slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
     array=f"1-{slurm_array_task_count}",
-    # slurm_flags="--qos shared --constraint gpu --gpus 1",
-    slurm_flags="--ntasks=1 --cpus-per-task=1 --partition high-priority",
-    submit_as_temp_file=False,
+    slurm_flags="--gpus=1 --partition=h100 --cpus-per-task=4 --mem=32G --time=02:00:00",
+    pre_cmd="source ~/periodic-mono/.venv/bin/activate && source ~/.cargo/env",
 )
 
 
@@ -83,20 +80,31 @@ e_pred_col = "mace_energy"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 dtype = "float64"
-mace_calc = mace_mp(model=checkpoint, device=device, default_dtype=dtype)
+
+# Download checkpoint and load model via ferrox (no ASE calculator needed)
+model_path = download_mace_mp_checkpoint(checkpoint)
+raw_model = torch.load(model_path, map_location="cpu", weights_only=False)
+if dtype == "float64":
+    raw_model = raw_model.double()
+raw_model = raw_model.to(device)
+raw_model.eval()
+mace_model = MaceModel.from_model(raw_model, device)
 
 print(f"Read data from {data_path}")
-atoms_list = ase_atoms_from_zip(data_path)
+struct_dict = structures_from_zip(data_path)
 
 if slurm_array_job_id == "debug":
     if smoke_test:
-        atoms_list = atoms_list[:128]
-    else:
-        pass
+        struct_dict = dict(list(struct_dict.items())[:128])
 elif slurm_array_task_count > 1:
-    atoms_list = hpc.chunk_by_lens(atoms_list, n_chunks=slurm_array_task_count)[
-        slurm_array_task_id - 1
-    ]
+    structures = list(struct_dict.values())
+    chunks = hpc.chunk_by_lens(structures, n_chunks=slurm_array_task_count)
+    my_chunk_ids = {id(struct) for struct in chunks[slurm_array_task_id - 1]}
+    struct_dict = {
+        mat_id: struct
+        for mat_id, struct in struct_dict.items()
+        if id(struct) in my_chunk_ids
+    }
 
 
 # %%
@@ -105,14 +113,14 @@ run_params = {
     "versions": {dep: version(dep) for dep in ("mace-torch", "numpy", "torch")},
     "checkpoint": checkpoint,
     Key.task_type: task_type,
-    "n_structures": len(atoms_list),
+    "n_structures": len(struct_dict),
     "slurm_vars": slurm_vars,
     "max_steps": max_steps,
     "record_traj": record_traj,
     "force_max": force_max,
-    "ase_optimizer": ase_optimizer,
+    "optimizer": optimizer_name,
     "device": device,
-    Key.model_params: count_parameters(mace_calc.models[0]),
+    Key.model_params: count_parameters(mace_model.model),
     "model_name": model_name,
     "dtype": dtype,
     "cell_filter": "FrechetCellFilter",
@@ -125,41 +133,39 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 # %% time
 relax_results: dict[str, dict[str, Any]] = {}
-optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
-for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
-    mat_id = atoms.info[Key.mat_id]
+for mat_id, structure in tqdm(struct_dict.items(), desc="Relaxing"):
     if mat_id in relax_results:
         continue
     try:
-        atoms.calc = mace_calc
-        if max_steps > 0:
-            filtered_atoms = FrechetCellFilter(atoms)
-            optimizer = optim_cls(filtered_atoms, logfile=None)
-
-            if record_traj:
-                coords, lattices, energies = [], [], []
-                # attach observer functions to the optimizer
-                optimizer.attach(lambda: coords.append(atoms.get_positions()))  # noqa: B023
-                optimizer.attach(lambda: lattices.append(atoms.get_cell()))  # noqa: B023
-                optimizer.attach(lambda: energies.append(atoms.get_potential_energy()))  # noqa: B023
-
-            optimizer.run(fmax=force_max, steps=max_steps)
-        energy = atoms.get_potential_energy()  # relaxed energy
-        # if max_steps > 0, atoms is wrapped by FrechetCellFilter, so need to getattr
-        relaxed_struct = AseAtomsAdaptor.get_structure(atoms)
+        result = relax(
+            structure,
+            mace_model,
+            optimizer=optimizer_name,
+            fmax=force_max,
+            max_steps=max_steps,
+            relax_cell=True,
+            log=SimLogLevel.NONE,
+        )
+        relaxed_struct: Structure = result.final_structure
+        energy: float = result.final_energy
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
 
-        coords = locals().get("coords", [])
-        lattices = locals().get("lattices", [])
-        energies = locals().get("energies", [])
-        if record_traj and coords and lattices and energies:
+        if record_traj and result.history:
+            # Build ferrox Trajectory from optimization history
+            coords = [step.positions.tolist() for step in result.history]
+            lattice_rows: list[list[float]] = []
+            for step in result.history:
+                if step.cell is not None:
+                    lattice_rows.extend(step.cell.tolist())
+            energies_list = [step.energy for step in result.history]
+
             mace_traj = Trajectory(
-                species=atoms.get_chemical_symbols(),
+                species=structure.species_strings,
                 coords=coords,
-                lattice=lattices,
+                lattice=lattice_rows,
                 constant_lattice=False,
-                frame_properties=[{"energy": energy} for energy in energies],
+                frame_properties=[{"energy": eng} for eng in energies_list],
             )
             relax_results[mat_id]["trajectory"] = mace_traj
     except Exception as exc:
