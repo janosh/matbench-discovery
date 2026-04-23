@@ -41,15 +41,11 @@ model_name = os.getenv("MODEL_NAME", Model.mace_mpa_0)
 job_name = f"{model_name}/{today}-wbm-{task_type}-{optimizer_name.upper()}"
 out_dir = f"{module_dir}/{job_name}"
 os.makedirs(out_dir, exist_ok=True)
-checkpoint_urls: Final[set[str]] = {
-    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_omat_0/mace-omat-0-medium.model",
-    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mp_0b3/mace-mp-0b3-medium.model",
-    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mpa_0/mace-mpa-0-medium.model",
-    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mp_0/2023-12-03-mace-128-L1_epoch-199.model",
+checkpoint_urls: Final[dict[str, str]] = {
+    Model.mace_mpa_0: "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mpa_0/mace-mpa-0-medium.model",
+    Model.mace_mp_0: "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mp_0/2023-12-03-mace-128-L1_epoch-199.model",
 }
-checkpoint = {url.split("/")[-1].rsplit(".model")[0]: url for url in checkpoint_urls}[
-    model_name
-]
+checkpoint = checkpoint_urls[model_name]
 print(f"{model_name=}")
 
 slurm_vars = hpc.slurm_submit(
