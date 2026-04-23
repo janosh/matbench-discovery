@@ -53,7 +53,8 @@ slurm_vars = hpc.slurm_submit(
     out_dir=out_dir,
     array=f"1-{slurm_array_task_count}",
     slurm_flags="--gpus=1 --partition=h100 --cpus-per-task=4 --mem=32G --time=02:00:00",
-    pre_cmd="source ~/periodic-mono/.venv/bin/activate && source ~/.cargo/env",
+    pre_cmd=". ~/periodic-mono/.venv/bin/activate && . ~/.cargo/env",
+    submit_as_temp_file=False,
 )
 
 
