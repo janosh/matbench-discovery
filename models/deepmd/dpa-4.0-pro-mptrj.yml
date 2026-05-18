@@ -1,0 +1,219 @@
+model_name: DPA-4.0-Pro-MPtrj
+model_key: dpa-4.0-pro-mptrj
+model_version: v2026.05.12
+date_added: '2026-05-18'
+date_published: '2026-05-18'
+
+authors:
+  - name: Tiancheng Li
+    affiliation: Peking University; AI for Science Institute, Beijing
+    email: LTC201806070316@outlook.com
+    github: https://github.com/OutisLi
+  - name: Duo Zhang
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0001-9591-2659
+  - name: Linfeng Zhang
+    affiliation: AI for Science Institute, Beijing; DP Technology
+    email: linfeng.zhang.zlf@gmail.com
+    corresponding: true
+  - name: Han Wang
+    affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
+    email: wang_han@iapcm.ac.cn
+    corresponding: true
+
+trained_by:
+  - name: Li Tiancheng
+    affiliation: Peking University; AI for Science Institute, Beijing
+    email: LTC201806070316@outlook.com
+    github: https://github.com/OutisLi
+
+repo: https://github.com/deepmodeling/deepmd-kit
+url: https://github.com/deepmodeling/deepmd-kit
+# TODO: replace with the DPA-4.0 DOI when public. Keep as URL for schema validation.
+doi: https://github.com/deepmodeling/deepmd-kit
+# TODO: replace with the DPA-4.0 paper/preprint URL when public.
+paper: https://github.com/deepmodeling/deepmd-kit
+# TODO: replace after opening the Matbench Discovery PR.
+pr_url: https://github.com/janosh/matbench-discovery/pulls
+# TODO: upload the DPA-4.0-Pro-MPtrj checkpoint and replace this URL.
+checkpoint_url: missing
+
+license:
+  code: LGPL-3.0
+  code_url: https://github.com/deepmodeling/deepmd-kit/blob/master/LICENSE
+  # TODO: confirm checkpoint license before submission.
+  checkpoint: unreleased
+  checkpoint_url: missing
+
+openness: OSOD
+trained_for_benchmark: true
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 32_724_908
+n_estimators: 1
+
+training_set: [MPtrj]
+
+# TODO: replace with actual training hardware and wall time if available.
+training_cost: missing
+# Example:
+# training_cost:
+#   Nvidia H20 GPUs: {amount: 8, hours: 120}
+
+hyperparams:
+  # Matbench Discovery relaxation settings used for the submitted WBM IS2RE results.
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  graph_construction_radius: 6.0
+  max_neighbors: 384
+
+  architecture:
+    type: DPA4
+    n_blocks: 8
+    lmax: 5
+    mmax: 1
+    channels: 96
+    n_radial: 16
+    so2_layers: 4
+    n_focus: 1
+    n_atten_head: 1
+    ffn_blocks: 1
+    sandwich_norm: [true, false, true, false]
+    s2_activation: [false, true]
+    activation_function: silu
+    glu_activation: true
+    use_amp: true
+    use_compile: true
+    enable_tf32: true
+    precision: float32
+
+  learning_rate:
+    type: wsd
+    start_lr: 0.00043
+    stop_lr: 0.000001
+    warmup_steps: 5000
+    warmup_start_factor: 0.2
+    decay_phase_ratio: 0.65
+    decay_type: cosine
+
+  loss:
+    type: ener
+    loss_func: mae
+    f_use_norm: true
+    loss_weights:
+      energy: 20
+      force: 20
+      virial: 5
+
+  optimizer:
+    type: Muon
+    weight_decay: 0.001
+
+  training:
+    numb_steps: 3_000_000
+    batch_size: filter:500
+    gradient_max_norm: 5
+
+requirements:
+  deepmd-kit: 3.1.4.dev113+g0efbbb53c
+  torch: 2.11.0+cu128
+  numpy: 2.4.4
+  pandas: 2.3.3
+  ase: 3.28.0
+  pymatgen: 2026.3.23
+  moyopy: 0.7.9
+  phono3py: 3.30.1
+  phonopy: 3.5.0
+  k_srme: 1.0.0
+
+notes:
+  Description: |
+    DPA-4.0-Pro-MPtrj is a DeePMD-kit universal interatomic potential trained
+    on the MPtrj dataset.
+  Architecture: |
+    The model uses the DPA4 architecture with 8 blocks, lmax=5, mmax=1,
+    96 channels, 16 radial basis functions, and a 6.0 Å cutoff with up to
+    384 selected neighbors.
+  Training: |
+    The model was trained for 3,000,000 steps using the Muon optimizer, WSD
+    learning-rate schedule, MAE energy/force/virial loss weights 20/20/5,
+    with AMP, TF32, and compile enabled.
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.2414
+      κ_SRE: 0.1323
+      pred_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-14-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      # TODO: upload `2026-05-14-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz`.
+      pred_file_url: https://figshare.com/files/TODO_DPA4_KAPPA
+  geo_opt:
+    pred_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-wbm-IS2RE-FIRE.json.gz
+    # TODO: upload `2026-05-12-wbm-IS2RE-FIRE.json.gz`.
+    pred_file_url: https://figshare.com/files/TODO_DPA4_GEO_OPT
+    struct_col: dpa4_structure
+    # TODO: run `just prepare-model-submission dpa_4_0_pro_mptrj` after upload
+    # to generate geo-opt symmetry analysis files and populate symprec=1e-5/1e-2.
+  discovery:
+    pred_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-dpa-4.0-pro-mptrj-preds.csv.gz
+    # TODO: upload `2026-05-12-dpa-4.0-pro-mptrj-preds.csv.gz`.
+    pred_file_url: https://figshare.com/files/TODO_DPA4_DISCOVERY
+    pred_col: e_form_per_atom_dp
+    full_test_set:
+      F1: 0.832 # fraction
+      DAF: 4.943 # dimensionless
+      Precision: 0.848 # fraction
+      Recall: 0.816 # fraction
+      Accuracy: 0.943 # fraction
+      TPR: 0.816 # fraction
+      FPR: 0.03 # fraction
+      TNR: 0.97 # fraction
+      FNR: 0.184 # fraction
+      TP: 35987.0 # count
+      FP: 6440.0 # count
+      TN: 206431.0 # count
+      FN: 8105.0 # count
+      MAE: 0.029 # eV/atom
+      RMSE: 0.078 # eV/atom
+      R2: 0.814 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.85 # fraction
+      DAF: 5.628 # dimensionless
+      Precision: 0.86 # fraction
+      Recall: 0.841 # fraction
+      Accuracy: 0.954 # fraction
+      TPR: 0.841 # fraction
+      FPR: 0.025 # fraction
+      TNR: 0.975 # fraction
+      FNR: 0.159 # fraction
+      TP: 28052.0 # count
+      FP: 4554.0 # count
+      TN: 177560.0 # count
+      FN: 5322.0 # count
+      MAE: 0.03 # eV/atom
+      RMSE: 0.078 # eV/atom
+      R2: 0.823 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.982 # fraction
+      DAF: 6.307 # dimensionless
+      Precision: 0.964 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.964 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9641.0 # count
+      FP: 359.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.033 # eV/atom
+      RMSE: 0.122 # eV/atom
+      R2: 0.698 # dimensionless
+      missing_preds: 0 # count
