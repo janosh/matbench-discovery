@@ -1,7 +1,9 @@
 import os
+from collections.abc import Iterator
 from pathlib import Path
 from queue import Queue
 from threading import Barrier, Thread
+from typing import Self
 from unittest.mock import patch
 
 import pytest
@@ -104,6 +106,79 @@ def test_download_file_keeps_existing_file_on_stream_error(
 
     stdout, stderr = capsys.readouterr()
     assert f"Error downloading {url=}" in stdout
+    assert stderr == ""
+    assert dest_path.read_bytes() == b"old content"
+    assert not list(tmp_path.glob("test.txt.*.part"))
+
+
+def test_download_file_cleans_partial_file_after_truncated_stream(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """Mid-stream truncation should not replace an existing cached file."""
+    url = "https://example.com/test.txt"
+    dest_path = tmp_path / "test.txt"
+    dest_path.write_bytes(b"old content")
+
+    response = make_mock_response(b"")
+
+    def truncated_iter_content(
+        chunk_size: int = 8192, decode_unicode: bool = False  # noqa: ARG001
+    ) -> Iterator[bytes]:
+        yield b"partial content"
+        raise requests.exceptions.ChunkedEncodingError("stream ended early")
+
+    response.iter_content = truncated_iter_content
+
+    with patch("requests.get", return_value=response):
+        download_file(str(dest_path), url)
+
+    stdout, stderr = capsys.readouterr()
+    assert f"Error downloading {url=}" in stdout
+    assert "stream ended early" in stdout
+    assert stderr == ""
+    assert dest_path.read_bytes() == b"old content"
+    assert not list(tmp_path.glob("test.txt.*.part"))
+
+
+def test_download_file_cleans_partial_file_after_write_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """Write failures such as ENOSPC should clean up temporary files."""
+    url = "https://example.com/test.txt"
+    dest_path = tmp_path / "test.txt"
+    dest_path.write_bytes(b"old content")
+    real_open = open
+
+    class FailingWriteFile:
+        def __init__(self, file_path: str) -> None:
+            self.file = real_open(file_path, mode="wb")
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *_exc_info: object) -> None:
+            self.file.close()
+
+        def write(self, data: bytes) -> int:
+            self.file.write(data[:1])
+            raise OSError("No space left on device")
+
+    def failing_open(
+        file: str, mode: str = "r", *args: object, **kwargs: object
+    ) -> object:
+        if mode == "wb" and str(file).startswith(str(dest_path)):
+            return FailingWriteFile(str(file))
+        return real_open(file, mode, *args, **kwargs)
+
+    with (
+        patch("requests.get", return_value=make_mock_response(b"test content")),
+        patch("builtins.open", side_effect=failing_open),
+    ):
+        download_file(str(dest_path), url)
+
+    stdout, stderr = capsys.readouterr()
+    assert f"Error downloading {url=}" in stdout
+    assert "No space left on device" in stdout
     assert stderr == ""
     assert dest_path.read_bytes() == b"old content"
     assert not list(tmp_path.glob("test.txt.*.part"))
