@@ -5,21 +5,12 @@
   import { extent } from 'd3-array'
   import { format_num } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import {
-    ColorScaleSelect,
-    type DataSeries,
-    type LabelPlacementConfig,
-    ScatterPlot,
-  } from 'matterviz/plot'
+  import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
+  import type { DataSeries, LabelPlacementConfig } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
   import Select from 'svelte-multiselect'
-  import {
-    ALL_METRICS,
-    format_property_path,
-    HYPERPARAMS,
-    METADATA_COLS,
-  } from './labels'
+  import { ALL_METRICS, format_property_path, HYPERPARAMS, METADATA_COLS } from './labels'
   import { get_nested_value } from './metrics'
   import type { Label } from './types'
 
@@ -50,15 +41,8 @@
     show_model_labels?: boolean
   } = $props()
 
-  const {
-    model_params,
-    graph_construction_radius,
-    max_force,
-    max_steps,
-    batch_size,
-    epochs,
-    n_layers,
-  } = HYPERPARAMS
+  const { model_params, graph_construction_radius, max_force, } = HYPERPARAMS
+  const { max_steps, batch_size, epochs, n_layers } = HYPERPARAMS
   const { date_added, n_training_materials, n_training_structures } = METADATA_COLS
 
   const options = [
@@ -104,9 +88,8 @@
   })
 
   // Check if data range spans enough for log scale to be useful (min > 0 and max/min >= 100)
-  function can_log(ext: [number | undefined, number | undefined]): boolean {
-    return ext[0] !== undefined && ext[0] > 0 && 100 * ext[0] <= (ext[1] ?? 0)
-  }
+  const can_log = (ext: [number | undefined, number | undefined]): boolean =>
+    ext[0] !== undefined && ext[0] > 0 && 100 * ext[0] <= (ext[1] ?? 0)
 
   let model_counts_by_prop = $derived(
     Object.fromEntries(
@@ -136,9 +119,8 @@
     return { series: [series], axis_label: options_by_key[key]?.label }
   }
 
-  function format_label_title(prop: Label | undefined): string {
-    return `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
-  }
+  const format_label_title = (prop: Label | undefined): string =>
+    `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
 
   // Get_label_value already converts dates to timestamps, so only numbers reach here
   const is_finite_num = (val: unknown): val is number =>

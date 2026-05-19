@@ -52,10 +52,17 @@ def test_cli_parser(
         ["--energy-type", "invalid_type"],
     ],
 )
-def test_cli_parser_invalid_args(bad_args: list[str]) -> None:
+def test_cli_parser_invalid_args(
+    bad_args: list[str], capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test CLI parser raises SystemExit on invalid arguments."""
     with pytest.raises(SystemExit), patch.object(sys, "argv", ["script.py", *bad_args]):
         cli_parser.parse_known_args()
+
+    if bad_args[0] == "--models":
+        error = capsys.readouterr().err
+        assert "invalid model: invalid_model" in error
+        assert "None" not in error
 
 
 def test_cli_parser_jupyter_compat() -> None:

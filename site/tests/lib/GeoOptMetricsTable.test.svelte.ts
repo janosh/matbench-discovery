@@ -46,7 +46,7 @@ describe(`GeoOptMetricsTable`, () => {
     const found_symmetry = symmetry_labels.filter((label) =>
       header_html.some((html) => html.includes(label)),
     ).length
-    expect(found_symmetry).toBeGreaterThan(0)
+    expect(found_symmetry).toBe(symmetry_labels.length)
 
     // Group headers for Symmetry and Hyperparams
     const group_texts = [...document.querySelectorAll(`tr.group-header th`)]
@@ -63,10 +63,11 @@ describe(`GeoOptMetricsTable`, () => {
     })
     await tick()
 
-    const headers = [...document.querySelectorAll(`th`)]
-    const rmsd_header = headers.find((h) => h.innerHTML?.includes(`RMSD`))
-    expect(rmsd_header).toBeDefined()
-    expect(rmsd_header?.getAttribute(`aria-sort`)).toBe(`ascending`)
+    const rmsd_header = [...document.querySelectorAll(`th`)].find((header) =>
+      header.innerHTML.includes(`RMSD`),
+    )
+    if (!rmsd_header) throw new Error(`RMSD header not found`)
+    expect(rmsd_header.getAttribute(`aria-sort`)).toBe(`ascending`)
   })
 
   it(`renders rows with model data and links`, async () => {
@@ -81,7 +82,7 @@ describe(`GeoOptMetricsTable`, () => {
 
     // Model cells should have links to model pages
     const model_cells = [...document.querySelectorAll(`td[data-col="Model"]`)]
-    expect(model_cells.length).toBeGreaterThan(0)
+    expect(model_cells).toHaveLength(rows.length)
     expect(model_cells[0]?.querySelector(`a`)?.getAttribute(`href`)).toMatch(
       /^\/models\//,
     )
@@ -135,8 +136,7 @@ describe(`GeoOptMetricsTable`, () => {
     expect(state.column_order).toContain(`Model`)
   })
 
-  // TODO: re-enable after matterviz release exports ToggleMenu with testable DOM
-  it.skip(`opens column visibility panel with checkboxes`, async () => {
+  it(`opens column visibility panel with checkboxes`, async () => {
     mount(GeoOptMetricsTable, { target: document.body })
     await tick()
 
@@ -144,11 +144,13 @@ describe(`GeoOptMetricsTable`, () => {
     toggle_btn.click()
     await tick()
 
-    const column_menu = document.querySelector(`.column-menu`)
-    expect(column_menu).not.toBeNull()
+    const column_menu = doc_query(`.sections-container`)
+    expect([...column_menu.querySelectorAll(`.section-header`)].map((button) =>
+      button.textContent?.trim().replace(/^[▶▼]\s*/, ``),
+    )).toStrictEqual([`Symmetry`, `Hyperparams`])
     expect(
-      column_menu?.querySelectorAll(`input[type="checkbox"]`).length,
-    ).toBeGreaterThan(0)
+      column_menu.querySelectorAll(`input[type="checkbox"]`).length,
+    ).toBeGreaterThan(Object.keys(GEO_OPT_SYMMETRY_METRICS).length)
   })
 
   it.each([`RMSD`, `Model`])(`sorts by %s when header is clicked`, async (col_name) => {
@@ -199,8 +201,8 @@ describe(`GeoOptMetricsTable`, () => {
     })
     await tick()
 
-    const table = document.querySelector(`table`)
-    expect(table).not.toBeNull()
+    const table = doc_query(`table`)
+    expect(table.querySelector(`thead`)).not.toBeNull()
 
     const rows = document.querySelectorAll(`tbody tr`)
     if (!show_compliant && !show_non_compliant) {

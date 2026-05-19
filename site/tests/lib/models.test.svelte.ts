@@ -7,6 +7,7 @@ import {
   MODELS,
   update_models_cps,
 } from '$lib/models.svelte'
+import { get_org_logo } from '$lib/labels'
 import { describe, expect, it, vi } from 'vitest'
 
 describe(`calculate_training_sizes`, () => {
@@ -66,6 +67,17 @@ describe(`MODELS array`, () => {
     expect(model).toHaveProperty(`color`)
     expect(model).toHaveProperty(`n_training_materials`)
     expect(model).toHaveProperty(`n_training_structures`)
+  })
+
+  it(`uses only the first author's affiliation logo`, () => {
+    for (const model of MODELS) {
+      const first_author_affiliation = model.authors?.[0]?.affiliation
+      const expected_logo = first_author_affiliation
+        ? get_org_logo(first_author_affiliation)
+        : undefined
+
+      expect(model.org_logos).toStrictEqual(expected_logo ? [expected_logo] : [])
+    }
   })
 })
 

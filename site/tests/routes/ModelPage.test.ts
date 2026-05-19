@@ -49,13 +49,13 @@ describe(`Model Detail Page`, () => {
         expect(author_elem.textContent).toContain(yaml_author.affiliation)
       }
       if (yaml_author.email) {
-        expect(author_elem.querySelector(`[href^="mailto:"]`)).toBeTruthy()
+        expect(author_elem.querySelector(`[href^="mailto:"]`)).not.toBeNull()
       }
       if (yaml_author.github) {
-        expect(author_elem.querySelector(`[href="${yaml_author.github}"]`)).toBeTruthy()
+        expect(author_elem.querySelector(`[href="${yaml_author.github}"]`)).not.toBeNull()
       }
       if (yaml_author.orcid) {
-        expect(author_elem.querySelector(`[href="${yaml_author.orcid}"]`)).toBeTruthy()
+        expect(author_elem.querySelector(`[href="${yaml_author.orcid}"]`)).not.toBeNull()
       }
     }
 
@@ -81,7 +81,7 @@ describe(`Model Detail Page`, () => {
     // Check training set section if present
     if (test_model.training_set) {
       const training_set = document.querySelector(`.training-set`)
-      expect(training_set).toBeTruthy()
+      expect(training_set).not.toBeNull()
       const train_set_links = training_set?.querySelectorAll(`a`)
       expect(train_set_links?.length).toBe(
         Array.isArray(test_model.training_set) ? test_model.training_set.length : 1,
@@ -91,7 +91,7 @@ describe(`Model Detail Page`, () => {
     // Check hyperparameters section if present
     if (test_model.hyperparams) {
       const hyperparams = document.querySelector(`.hyperparams`)
-      expect(hyperparams).toBeTruthy()
+      expect(hyperparams).not.toBeNull()
       for (const [key, value] of Object.entries(test_model.hyperparams)) {
         expect(hyperparams?.textContent).toContain(key)
         expect(hyperparams?.textContent).toContain(JSON.stringify(value))

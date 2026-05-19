@@ -39,14 +39,12 @@ export function calculate_days_ago(date_str: string): string {
 }
 
 const md_parser = unified().use(remarkParse).use(remarkRehype).use(rehypeStringify)
-export function md_to_html(md: string) {
-  return String(md_parser.processSync(md)?.value ?? ``)
-}
+export const md_to_html = (md: string): string =>
+  String(md_parser.processSync(md)?.value ?? ``)
 
 // Function to slugify text for URLs
-export function slugify(text: string): string {
-  return text.toLowerCase().replaceAll(/[\s_]+/g, `-`)
-}
+export const slugify = (text: string): string =>
+  text.toLowerCase().replaceAll(/[\s_]+/g, `-`)
 
 // Convert array types to strings and handle missing values
 export function arr_to_str(value: unknown): string {
@@ -77,19 +75,24 @@ for (const { notes, metadata_file } of MODELS) {
   }
 }
 
-for (const key of Object.keys(data_files).filter((k) => !k.startsWith(`_`))) {
-  const entry = data_files[key]
-  if (typeof entry === `object`) {
-    entry.html = md_to_html(entry.description + `\n\n${data_files._links}`)
-  }
+const data_file_links = data_files[`_links`]
+if (typeof data_file_links !== `string`) {
+  throw new TypeError(`data-files.yml: _links must be a string`)
+}
+
+for (const [key, entry] of Object.entries(data_files)) {
+  if (key.startsWith(`_`) || typeof entry !== `object`) continue
+  entry.html = md_to_html(`${entry.description}\n\n${data_file_links}`)
 }
 
 // Format date string into human-readable format
-export function format_date(date: string | number, options?: Intl.DateTimeFormatOptions) {
-  return new Date(date).toLocaleDateString(undefined, {
+export const format_date = (
+  date: string | number,
+  options?: Intl.DateTimeFormatOptions,
+): string =>
+  new Date(date).toLocaleDateString(undefined, {
     year: `numeric`,
     month: `short`,
     day: `numeric`,
     ...options,
   })
-}

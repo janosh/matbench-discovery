@@ -1,5 +1,5 @@
 import { default as DATASETS } from '$data/datasets.yml'
-import type { Author, ModelData } from '$lib/types'
+import type { ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
 import { get_org_logo } from './labels'
@@ -66,33 +66,16 @@ export const MODELS = $state(
 
       const sizes = calculate_training_sizes(metadata.training_set)
 
-      // Get top affiliations with logos
-      const affiliation_counts: Record<string, number> = {}
-      const affiliation_data: Record<
-        string,
-        { name: string; id?: string; src?: string }
-      > = {}
+      // Use the lead author's affiliation as the model's org badge
+      const first_author = metadata.authors?.[0]
+      const org_logo = first_author?.affiliation
+        ? get_org_logo(first_author.affiliation)
+        : undefined
 
-      for (const author of metadata.authors ?? ([] as Author[])) {
-        if (!author.affiliation) continue
-
-        const org_logo = get_org_logo(author.affiliation)
-        const logo_key = org_logo?.id ?? org_logo?.src
-        if (logo_key && org_logo) {
-          affiliation_counts[logo_key] = (affiliation_counts[logo_key] || 0) + 1
-          if (!(logo_key in affiliation_data)) {
-            affiliation_data[logo_key] = org_logo
-          }
-        } else if (!import.meta.env.PROD) {
-          // Only warn about missing logos in dev mode
-          console.warn(`No logo found for affiliation: ${author.affiliation}`)
-        }
+      if (first_author?.affiliation && !org_logo && !import.meta.env.PROD) {
+        // Only warn about missing logos in dev mode
+        console.warn(`No logo found for affiliation: ${first_author.affiliation}`)
       }
-
-      const frequent_logos = Object.entries(affiliation_counts)
-        .toSorted(([_key_a, count_a], [_key_b, count_b]) => count_b - count_a)
-        .slice(0, 3)
-        .map(([key]) => affiliation_data[key])
 
       return Object.assign({}, metadata, {
         dirname: key.split(`/`)[2],
@@ -101,7 +84,7 @@ export const MODELS = $state(
         CPS: Number.NaN, // Initial CPS placeholder
         n_training_materials: sizes.total_materials,
         n_training_structures: sizes.total_structures,
-        org_logos: frequent_logos,
+        org_logos: org_logo ? [org_logo] : [],
       }) as ModelData
     }),
 )

@@ -7,6 +7,10 @@
   let diatomic_models = $derived(data?.diatomic_models ?? [])
   let diatomic_curves = $derived(data?.diatomic_curves ?? {})
   let errors = $derived(data?.errors ?? {})
+  let error_entries = $derived(Object.entries(errors))
+  let error_title = $derived(
+    error_entries.map(([model_name, error]) => `${model_name}: ${error}`).join(`\n`),
+  )
 
   // Define a sequence of colors to use for models
   const colors = [
@@ -68,6 +72,7 @@
 
   function toggle_model(model: ModelData) {
     const { model_name } = model
+    if (errors[model_name]) return
     if (selected_models.has(model_name)) selected_models.delete(model_name)
     else selected_models.add(model_name)
   }
@@ -81,6 +86,13 @@
 </blockquote>
 
 <h2>Diatomic Energy Curves</h2>
+
+{#if error_entries.length > 0}
+  <p class="error-summary" role="alert" title={error_title}>
+    Failed to load diatomics data for {error_entries.length}
+    {error_entries.length === 1 ? `model` : `models`}.
+  </p>
+{/if}
 
 <div class="controls">
   <div class="plot-controls">
@@ -103,6 +115,7 @@
         class:selected={selected_models.has(model.model_name)}
         class:error
         onclick={() => toggle_model(model)}
+        disabled={Boolean(error)}
         style:--model-color={model_colors.get(model.model_name) ?? `gray`}
         title={error}
       >
@@ -182,7 +195,14 @@
     cursor: not-allowed;
     border-style: dashed;
   }
-  button:hover:not(.error) {
+  .error-summary {
+    margin: 1em auto;
+    max-width: 80ch;
+    padding: 0.75em 1em;
+    border: 1px solid var(--danger, #b91c1c);
+    border-radius: 4px;
+  }
+  button:hover:not(.error, :disabled) {
     opacity: 0.8;
   }
 </style>

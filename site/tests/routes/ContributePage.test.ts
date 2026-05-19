@@ -36,11 +36,11 @@ describe(`Contribute Page`, () => {
     const pypi_link = document.querySelector(
       `a[href*='pypi.org/project/matbench-discovery']`,
     )
-    expect(pypi_link).toBeDefined()
+    expect(pypi_link).not.toBeNull()
     expect(pypi_link?.getAttribute(`href`)).toMatch(
       /^https:\/\/pypi\.org\/project\/matbench-discovery\/?$/,
     )
-    expect(pypi_link?.textContent).toBeTruthy()
+    expect(pypi_link?.textContent).not.toBe(``)
   })
 
   it(`renders API examples and code snippets`, () => {
@@ -58,7 +58,7 @@ describe(`Contribute Page`, () => {
     const github_issue_link = trouble_section?.querySelector(
       `a[href*="github.com"][href*="issues"]`,
     )
-    expect(github_issue_link).toBeDefined()
+    expect(github_issue_link).not.toBeNull()
     expect(github_issue_link?.getAttribute(`href`)).toMatch(
       /^https:\/\/github\.com\/.*\/issues/,
     )

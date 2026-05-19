@@ -9,13 +9,11 @@ import { RMSD_BASELINE } from '$lib/labels'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 // Helper to create a test config with custom weights
-function make_config(f1: number, rmsd: number, kappa: number): CpsConfig {
-  return {
+const make_config = (f1: number, rmsd: number, kappa: number): CpsConfig => ({
     F1: { ...DEFAULT_CPS_CONFIG.F1, weight: f1 },
     RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: rmsd },
     κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: kappa },
-  }
-}
+  })
 
 describe(`calculate_cps`, () => {
   it(`returns weighted average when all metrics are perfect`, () => {

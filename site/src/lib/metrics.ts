@@ -159,13 +159,14 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 }
 
 // Combined filter function that respects both prediction type and compliance filters
-export function make_combined_filter(
-  model_filter: (model: ModelData) => boolean, // Custom model filter function
-  show_energy: boolean, // Whether to show energy-only models
-  show_compliant: boolean, // Whether to show compliant models
-  show_non_compliant: boolean, // Whether to show non-compliant models
-): (model: ModelData) => boolean {
-  return (model: ModelData) => {
+export const make_combined_filter =
+  (
+    model_filter: (model: ModelData) => boolean, // Custom model filter function
+    show_energy: boolean, // Whether to show energy-only models
+    show_compliant: boolean, // Whether to show compliant models
+    show_non_compliant: boolean, // Whether to show non-compliant models
+  ): ((model: ModelData) => boolean) =>
+  (model: ModelData) => {
     if (!model_filter(model)) return false // Apply user-provided model_filter first
 
     // Filter energy-only models if not shown
@@ -179,7 +180,6 @@ export function make_combined_filter(
 
     return true
   }
-}
 
 // Calculate table cell background color based on its value and column config
 export function calc_cell_color(

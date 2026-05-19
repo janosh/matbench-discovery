@@ -5,6 +5,11 @@ import pkg from '$site/package.json'
 import { describe, expect, it } from 'vitest'
 
 describe(`RSS feed endpoint`, () => {
+  const extract_first_cdata = (xml: string): string => {
+    const match = /<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/.exec(xml)
+    return match?.[1] ?? ``
+  }
+
   it(`should return response with correct content type`, () => {
     const response = GET()
     expect(response.headers.get(`Content-Type`)).toBe(`application/xml`)
@@ -31,11 +36,10 @@ describe(`RSS feed endpoint`, () => {
     expect(xml).toMatch(/<link>.*<\/link>/)
 
     // Validate item structure
-    const items = xml.match(/<item>[\s\S]*?<\/item>/g)
-    expect(items).not.toBeNull()
-    expect(items?.length).toBeGreaterThan(0)
+    const items = [...xml.matchAll(/<item>[\s\S]*?<\/item>/g)]
+    expect(items.length).toBeGreaterThan(0)
 
-    const first_item = items?.[0] ?? ``
+    const first_item = items[0]?.[0] ?? ``
     expect(first_item).toMatch(/<title>.*<\/title>/)
     expect(first_item).toMatch(/<link>.*<\/link>/)
     expect(first_item).toMatch(/<description><!\[CDATA\[[\s\S]*?\]\]><\/description>/)
@@ -54,12 +58,8 @@ describe(`RSS feed endpoint`, () => {
     const xml = await response.text()
 
     // Extract the CDATA content from the first item
-    const cdata_match = xml.match(
-      /<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/,
-    )
-    expect(cdata_match).not.toBeNull()
-
-    const cdata_content = cdata_match?.[1] ?? ``
+    const cdata_content = extract_first_cdata(xml)
+    expect(cdata_content).not.toBe(``)
 
     // Check for expected model details in the correct order
     expect(cdata_content).toMatch(/<h2>[^<]+<\/h2>/) // Model name heading
@@ -75,11 +75,11 @@ describe(`RSS feed endpoint`, () => {
     expect(metrics_pos).toBeLessThan(authors_pos)
 
     // Check for proper HTML structure
-    const strongTags = cdata_content.match(/<strong>/g)
-    const strongCloseTags = cdata_content.match(/<\/strong>/g)
+    const strongTags = [...cdata_content.matchAll(/<strong>/g)]
+    const strongCloseTags = [...cdata_content.matchAll(/<\/strong>/g)]
 
-    expect(strongTags?.length ?? 0).toBeGreaterThanOrEqual(5)
-    expect(strongCloseTags?.length ?? 0).toBeGreaterThanOrEqual(5)
+    expect(strongTags.length).toBeGreaterThanOrEqual(5)
+    expect(strongCloseTags.length).toBeGreaterThanOrEqual(5)
   })
 
   it(`should include links to model resources`, async () => {
@@ -108,10 +108,7 @@ describe(`RSS feed endpoint`, () => {
     }
 
     // Check for links to paper and repo in the description if available
-    const cdata_match = xml.match(
-      /<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/,
-    )
-    const cdata_content = cdata_match?.[1] ?? ``
+    const cdata_content = extract_first_cdata(xml)
 
     // Check for link patterns
     if (cdata_content.includes(`paper`)) {
@@ -183,9 +180,9 @@ describe(`RSS feed endpoint`, () => {
     }
 
     // Additional check: all items should have a pubDate in correct format
-    const pub_dates = xml.match(/<pubDate>[^<]+<\/pubDate>/g) ?? []
+    const pub_dates = [...xml.matchAll(/<pubDate>[^<]+<\/pubDate>/g)]
     expect(pub_dates.length).toBeGreaterThan(0)
-    for (const date_str of pub_dates) {
+    for (const [date_str] of pub_dates) {
       const date_content = date_str.replaceAll(/<\/?pubDate>/g, ``)
       // Check that this parses as a valid date
       expect(new Date(date_content).toString()).not.toBe(`Invalid Date`)
@@ -202,17 +199,18 @@ describe(`RSS feed endpoint`, () => {
     )
 
     // Extract descriptions to check for relative URLs
-    const descriptions =
-      xml.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/g) ?? []
+    const descriptions = [
+      ...xml.matchAll(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/g),
+    ]
     expect(descriptions.length).toBeGreaterThan(0)
 
     // URLs in descriptions should be absolute
-    const url_matches = (descriptions[0] ?? ``).match(/href="([^"]+)"/g) ?? []
+    const description = descriptions[0]?.[1] ?? ``
+    const url_matches = [...description.matchAll(/href="([^"]+)"/g)]
     expect(url_matches.length).toBeGreaterThan(0)
 
     // All URLs should be absolute (start with https://)
-    for (const url_match of url_matches) {
-      const url = url_match.replaceAll(/href="|"/g, ``)
+    for (const [, url] of url_matches) {
       expect(url.startsWith(`https://`)).toBe(true)
     }
   })

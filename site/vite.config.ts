@@ -90,7 +90,7 @@ export default defineConfig({
     ],
   },
   lint: {
-    plugins: [`oxc`, `typescript`, `unicorn`, `import`],
+    plugins: [`oxc`, `typescript`, `unicorn`, `import`, `vitest`],
     options: { typeAware: true, typeCheck: true },
     categories: { correctness: `error`, suspicious: `error`, perf: `error` },
     ignorePatterns: [
@@ -103,12 +103,11 @@ export default defineConfig({
     ],
     rules: {
       // Extra rules not in the enabled categories
-      'no-console': [`error`, { allow: [`warn`, `error`] }],
+      'no-console': [`error`, { allow: [`info`, `warn`, `error`] }],
       'no-template-curly-in-string': `error`,
       'no-constructor-return': `error`,
       'default-param-last': `error`,
       'guard-for-in': `error`,
-      'no-unused-vars': `off`,
       '@typescript-eslint/no-unused-vars': [
         `error`,
         { argsIgnorePattern: `^_`, varsIgnorePattern: `^_` },
@@ -123,18 +122,28 @@ export default defineConfig({
       'eslint-plugin-unicorn/prefer-date-now': `error`,
       'eslint-plugin-unicorn/require-number-to-fixed-digits-argument': `error`,
       'eslint-plugin-unicorn/no-useless-promise-resolve-reject': `error`,
+      'eslint-plugin-unicorn/custom-error-definition': `error`,
       'eslint-plugin-import/no-duplicates': `error`,
       '@typescript-eslint/no-non-null-assertion': `error`,
+      '@typescript-eslint/prefer-string-starts-ends-with': `error`,
+      '@typescript-eslint/prefer-readonly': `error`,
+      '@typescript-eslint/prefer-regexp-exec': `error`,
+      '@typescript-eslint/prefer-find': `error`,
+      'no-useless-computed-key': `error`,
+      'eslint-plugin-vitest/prefer-strict-boolean-matchers': `error`,
+      'eslint-plugin-vitest/prefer-called-exactly-once-with': `error`,
+      'eslint-plugin-vitest/require-awaited-expect-poll': `error`,
       '@typescript-eslint/no-redundant-type-constituents': `warn`,
 
-      // Svelte framework patterns — NOT bugs
+      'eslint-plugin-vitest/require-mock-type-parameters': `off`,
       'no-unassigned-vars': `off`, // `bind:` variables
       'no-shadow': `off`,
       'eslint-plugin-unicorn/consistent-function-scoping': `off`, // Svelte reactive closures
-      // Pervasive intentional patterns
       '@typescript-eslint/no-unsafe-type-assertion': `off`,
       'eslint-plugin-import/no-unassigned-import': `off`, // CSS side-effect imports
       'oxc/no-map-spread': `off`,
+      'eslint-plugin-vitest/no-conditional-expect': `off`,
+      'eslint-plugin-vitest/valid-expect': [`error`, { maxArgs: 2 }],
     },
   },
   staged: {

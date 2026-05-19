@@ -3,27 +3,27 @@ import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import { ALL_METRICS } from '$lib/labels'
 import { update_models_cps } from '$lib/models.svelte'
 import { mount } from 'svelte'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { doc_query } from '../index'
 
-describe(`RadarChart`, () => {
-  beforeEach(() => {
-    // Mock the update_models_cps function to avoid side effects
-    vi.mock(`$lib/models.svelte`, async () => {
-      const actual = await vi.importActual(`$lib/models.svelte`)
-      return { ...actual, update_models_cps: vi.fn() }
-    })
-  })
+// Mock the update_models_cps function to avoid side effects
+vi.mock(`$lib/models.svelte`, async () => {
+  const actual = await vi.importActual(`$lib/models.svelte`)
+  return { ...actual, update_models_cps: vi.fn() }
+})
 
+describe(`RadarChart`, () => {
   it(`renders with default props`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check that the component rendered with an SVG element
-    const svg = document.querySelector(`svg`)
-    expect(svg).toBeDefined()
+    const svg = document.querySelector(`svg[aria-label^="Radar chart"]`)
+    if (!(svg instanceof SVGSVGElement)) throw new Error(`Radar chart SVG not found`)
+    expect(svg.getAttribute(`viewBox`)).toBe(`0 0 200 200`)
+    expect(svg.getAttribute(`aria-label`)).toContain(`adjusting metric weights`)
 
     // Check that all three axis lines are rendered (for F1, kappa, RMSD)
-    const axis_lines = document.querySelectorAll(`line`)
+    const axis_lines = svg.querySelectorAll(`line`)
     expect(axis_lines).toHaveLength(3)
     // Verify stroke properties for each axis line
     axis_lines.forEach((line) => {
@@ -32,12 +32,12 @@ describe(`RadarChart`, () => {
     })
 
     // Check that the triangle area is rendered
-    const triangle_area = document.querySelector(`path[fill="var(--nav-bg)"]`)
-    expect(triangle_area).toBeDefined()
+    const triangle_area = svg.querySelector(`path[fill="var(--nav-bg)"]`)
+    if (!(triangle_area instanceof SVGPathElement)) throw new Error(`Triangle path not found`)
+    expect(triangle_area.getAttribute(`stroke`)).toBe(`var(--border)`)
 
     // Check that the draggable point is rendered
-    const draggable_point = document.querySelector(`circle[role="button"]`)
-    expect(draggable_point).toBeDefined()
+    expect(svg.querySelectorAll(`circle[role="button"]`)).toHaveLength(2)
   })
 
   it(`accepts size prop`, () => {
@@ -45,13 +45,15 @@ describe(`RadarChart`, () => {
 
     mount(RadarChart, { target: document.body, props: { size: custom_size } })
 
-    const svg = document.querySelector(`svg`)
-    expect(svg).toBeDefined()
+    const svg = document.querySelector(`svg[aria-label^="Radar chart"]`)
+    if (!(svg instanceof SVGSVGElement)) throw new Error(`Radar chart SVG not found`)
+    expect(svg.getAttribute(`viewBox`)).toBe(`0 0 ${custom_size} ${custom_size}`)
+    expect(svg.getAttribute(`width`)).toBe(String(custom_size))
+    expect(svg.getAttribute(`height`)).toBe(String(custom_size))
 
     // Verify that at least one circle is rendered, which indirectly confirms
     // that the component initialized properly with the size prop
-    const circles = document.querySelectorAll(`circle`)
-    expect(circles.length).toBeGreaterThan(0)
+    expect(svg.querySelectorAll(`circle`)).toHaveLength(6)
   })
 
   it(`resets weights when reset button is clicked`, () => {
@@ -64,7 +66,8 @@ describe(`RadarChart`, () => {
 
     // Find and click the reset button
     const reset_button = doc_query<HTMLButtonElement>(`.reset-button`)
-    expect(reset_button).toBeDefined()
+    expect(reset_button.textContent?.trim()).toBe(`Reset`)
+    expect(reset_button.title).toBe(`Reset to default weights`)
 
     reset_button.click()
 

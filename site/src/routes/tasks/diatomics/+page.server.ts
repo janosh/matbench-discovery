@@ -1,29 +1,6 @@
 import { type DiatomicsCurves, MODELS } from '$lib'
+import { fetch_diatomics_data } from '$lib/server/diatomics'
 import type { PageServerLoad } from './$types'
-
-async function fetch_diatomics(
-  file_url: string,
-  retries = 3,
-  attempt = 0,
-): Promise<DiatomicsCurves> {
-  try {
-    const response = await fetch(file_url)
-    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
-
-    const decompressed = response.body?.pipeThrough(new DecompressionStream(`gzip`))
-    if (!decompressed) throw new Error(`Failed to decompress response`)
-    return await new Response(decompressed).json()
-  } catch (error) {
-    if (attempt + 1 >= retries) {
-      throw new Error(`${file_url} failed after ${retries} attempts: ${String(error)}`, {
-        cause: error,
-      })
-    }
-    // Exponential backoff: 1s, 2s, 4s
-    await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt))
-    return fetch_diatomics(file_url, retries, attempt + 1)
-  }
-}
 
 export const load: PageServerLoad = async () => {
   // Filter models that have diatomics metrics
@@ -40,18 +17,24 @@ export const load: PageServerLoad = async () => {
   await Promise.all(
     diatomic_models.map(async (model) => {
       const diatomics = model.metrics?.diatomics
-      if (typeof diatomics !== `object` || !diatomics?.pred_file_url) {
-        errors[model.model_name] = `No prediction file URL`
+      if (typeof diatomics !== `object` || diatomics === null) return
+
+      const source = diatomics as Record<string, unknown>
+      const pred_file =
+        typeof source.pred_file === `string` ? source.pred_file : undefined
+      const pred_file_url =
+        typeof source.pred_file_url === `string` ? source.pred_file_url : undefined
+
+      if (!pred_file && !pred_file_url) {
+        errors[model.model_name] = `No prediction file path or URL`
         return
       }
 
       try {
-        const { pred_file_url } = diatomics
-        if (typeof pred_file_url !== `string`) {
-          errors[model.model_name] = `Invalid prediction file URL`
-          return
-        }
-        diatomic_curves[model.model_name] = await fetch_diatomics(pred_file_url)
+        diatomic_curves[model.model_name] = await fetch_diatomics_data({
+          pred_file,
+          pred_file_url,
+        })
       } catch (error) {
         console.error(`Failed to fetch data for ${model.model_name}:`, error)
         errors[model.model_name] = error instanceof Error ? error.message : String(error)

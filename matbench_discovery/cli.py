@@ -2,13 +2,22 @@
 
 import multiprocessing as mp
 import os
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import Model, TestSubset
 
 CLI_TIMEOUT = 30
+
+
+def parse_model(value: str) -> Model:
+    """Parse a CLI model name into a Model enum member."""
+    model = Model._missing_(value)
+    if model is None:
+        raise ArgumentTypeError(f"invalid model: {value}")
+    return model
+
 
 cli_parser = ArgumentParser(
     description="CLI flags for eval, plot and analysis scripts."
@@ -23,7 +32,7 @@ cli_parser.add_argument(
 cli_parser.add_argument(
     "--models",
     nargs="*",
-    type=Model._value2member_map_.__getitem__,
+    type=parse_model,
     choices=Model,
     default=list(Model),
     help="Models to analyze. If none specified, analyzes all models.",
