@@ -60,7 +60,7 @@ export async function fetch_diatomics_data(
 
   if (!pred_file_url) throw new Error(`No local diatomics file or remote URL`)
 
-  const max_attempts = Math.max(1, retries)
+  const max_attempts = Number.isFinite(retries) ? Math.max(1, Math.floor(retries)) : 1
   const fetch_with_retry = async (attempt = 0): Promise<DiatomicsCurves> => {
     try {
       return await fetch_remote_diatomics_once(pred_file_url, fetch_fn)

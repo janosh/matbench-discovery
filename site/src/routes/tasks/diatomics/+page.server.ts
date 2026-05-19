@@ -1,6 +1,5 @@
 import { type DiatomicsCurves, MODELS } from '$lib'
 import { fetch_diatomics_data } from '$lib/server/diatomics'
-import type { DiatomicsMetrics } from '$lib/model-schema.d.ts'
 import type { PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async () => {
@@ -17,8 +16,14 @@ export const load: PageServerLoad = async () => {
 
   await Promise.all(
     diatomic_models.map(async (model) => {
-      const diatomics = model.metrics?.diatomics as DiatomicsMetrics
-      const { pred_file, pred_file_url } = diatomics
+      const diatomics = model.metrics?.diatomics
+      if (typeof diatomics !== `object` || diatomics === null) return
+
+      const source = diatomics as Record<string, unknown>
+      const pred_file =
+        typeof source.pred_file === `string` ? source.pred_file : undefined
+      const pred_file_url =
+        typeof source.pred_file_url === `string` ? source.pred_file_url : undefined
 
       if (!pred_file && !pred_file_url) {
         errors[model.model_name] = `No prediction file path or URL`
