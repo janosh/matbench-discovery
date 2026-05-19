@@ -44,13 +44,17 @@
 
     const resource_links = [
       set.url &&
-      `<a href="${set.url}" target="_blank" title="Website">${icon(`Globe`)}</a>`,
+      `<a href="${set.url}" target="_blank" rel="noopener noreferrer" title="Website" aria-label="Website">${
+        icon(`Globe`)
+      }</a>`,
       set.download_url &&
-      `<a href="${set.download_url}" target="_blank" title="Download">${
+      `<a href="${set.download_url}" target="_blank" rel="noopener noreferrer" title="Download" aria-label="Download">${
         icon(`Download`)
       }</a>`,
       set.doi &&
-      `<a href="${set.doi}" target="_blank" title="DOI">${icon(`DOI`)}</a>`,
+      `<a href="${set.doi}" target="_blank" rel="noopener noreferrer" title="DOI" aria-label="DOI">${
+        icon(`DOI`)
+      }</a>`,
     ].filter(Boolean).join(` `)
 
     return {

@@ -13,9 +13,11 @@ describe(`Landing Page`, () => {
     expect(buttons).toHaveLength(3) // 3 from test set select
 
     const button_texts = [...buttons].map((btn) => btn.textContent?.trim())
-    expect(button_texts).toContain(`Full Test Set`)
-    expect(button_texts).toContain(`Unique Prototypes`)
-    expect(button_texts).toContain(`10k Most Stable`)
+    expect(button_texts).toStrictEqual([
+      `Full Test Set`,
+      `Unique Prototypes`,
+      `10k Most Stable`,
+    ])
   })
 
   it(`toggles discovery set when clicking buttons`, async () => {
@@ -34,46 +36,46 @@ describe(`Landing Page`, () => {
     expect(full_test_btn.classList.contains(`active`)).toBe(true)
   })
 
-  // TODO: re-enable after matterviz release exports ToggleMenu with testable DOM
-  it.skip(`toggles column visibility panel`, () => {
+  it(`toggles column visibility panel`, () => {
     const columns_btn = doc_query<HTMLButtonElement>(`details.column-toggles summary`)
-    const column_menu = document.querySelector(`.column-menu`)
+    const column_menu = doc_query(`.column-menu`)
+    const details = doc_query<HTMLDetailsElement>(`details.column-toggles`)
 
     // Column menu should be hidden initially
-    expect(column_menu?.closest(`details`)?.open).toBe(false)
+    expect(column_menu.closest(`details`)).toBe(details)
+    expect(details.open).toBe(false)
 
     // Click columns button to open menu
-    columns_btn?.click()
-    expect(column_menu?.closest(`details`)?.open).toBeTruthy()
+    columns_btn.click()
+    expect(details.open).toBe(true)
 
     // Click outside to close menu
-    columns_btn?.click()
-    expect(column_menu?.closest(`details`)?.open).toBe(false)
+    columns_btn.click()
+    expect(details.open).toBe(false)
   })
 
   it(`toggles non-compliant models`, async () => {
     const toggle = doc_query<HTMLInputElement>(
       `.table-controls label input[type="checkbox"]`,
     )
-    expect(toggle).toBeDefined()
+    expect(toggle.parentElement?.textContent).toContain(`Compliant models`)
 
     // Should be unchecked by default
-    expect(toggle?.checked).toBe(true)
+    expect(toggle.checked).toBe(true)
     // get number of table rows
     const n_models_on_load = document.querySelectorAll(`tbody tr`).length
 
     // Click to show non-compliant models
-    toggle?.click()
-    expect(toggle?.checked).toBe(false)
+    toggle.click()
+    expect(toggle.checked).toBe(false)
     await tick()
     const n_all_models = document.querySelectorAll(`tbody tr`).length
     expect(n_all_models).toBeLessThan(n_models_on_load)
   })
 
-  // TODO: re-enable after matterviz release exports ToggleMenu with testable DOM
-  it.skip(`updates column visibility when toggling checkboxes`, async () => {
+  it(`updates column visibility when toggling checkboxes`, async () => {
     const columns_btn = doc_query<HTMLButtonElement>(`details.column-toggles summary`)
-    columns_btn?.click()
+    columns_btn.click()
     // Table should reflect column visibility changes
     let f1_cells = document.querySelectorAll(`th, td`)
     let has_f1_column = [...f1_cells].some((cell) =>
@@ -87,12 +89,13 @@ describe(`Landing Page`, () => {
     const f1_checkbox = [...checkboxes].find((cb) =>
       cb.parentElement?.textContent?.includes(`F1`),
     )
-    expect(f1_checkbox?.checked).toBe(true)
+    if (!f1_checkbox) throw new Error(`F1 checkbox not found`)
+    expect(f1_checkbox.checked).toBe(true)
 
     // Uncheck F1
-    f1_checkbox?.click()
+    f1_checkbox.click()
     await tick()
-    expect(f1_checkbox?.checked).toBe(false)
+    expect(f1_checkbox.checked).toBe(false)
 
     // Table should reflect column visibility changes
     f1_cells = document.querySelectorAll(`th, td`)
@@ -101,37 +104,31 @@ describe(`Landing Page`, () => {
   })
 
   it(`displays best model information`, () => {
-    const best_model_info = document.querySelector(`#best-report`)
-    expect(best_model_info?.textContent).toMatch(/highest F1 score/)
-    expect(best_model_info?.textContent).toMatch(/discovery acceleration factor/)
+    const best_model_info = doc_query(`#best-report`)
+    expect(best_model_info.textContent).toMatch(/highest F1 score/)
+    expect(best_model_info.textContent).toMatch(/discovery acceleration factor/)
   })
 
   it(`renders table downloads section`, () => {
     // Check that the download buttons section exists
-    const download_section = document.querySelector(`.downloads`)
-    expect(download_section).not.toBeNull()
+    const download_section = doc_query(`.downloads`)
 
     // Check that it contains SVG, PNG, CSV, Excel buttons plus RSS link
-    const download_buttons = download_section?.querySelectorAll(`.download-btn`)
-    expect(download_buttons?.length).toBe(5)
+    const download_buttons = download_section.querySelectorAll(`.download-btn`)
+    expect(download_buttons).toHaveLength(5)
 
-    const buttons = [...download_buttons ?? []].map((btn) =>
+    const buttons = [...download_buttons].map((btn) =>
       btn.textContent?.trim(),
     )
-    expect(buttons).toContain(`SVG`)
-    expect(buttons).toContain(`PNG`)
-    expect(buttons).toContain(`CSV`)
-    expect(buttons).toContain(`Excel`)
-    expect(buttons).toContain(`RSS`)
+    expect(buttons).toStrictEqual([`SVG`, `PNG`, `CSV`, `Excel`, `RSS`])
   })
 
   it(`displays valid metric values`, () => {
-    const best_model_info = document.querySelector(`#best-report`)
-    const text = best_model_info?.textContent ?? ``
+    const text = doc_query(`#best-report`).textContent ?? ``
 
     // Extract F1 and DAF values using regex
-    const f1_match = text.match(/F1 score of ([\d.]+)/)
-    const daf_match = text.match(/DAF\) of ([\d.]+)/)
+    const f1_match = /F1 score of ([\d.]+)/.exec(text)
+    const daf_match = /DAF\) of ([\d.]+)/.exec(text)
 
     if (f1_match && daf_match) {
       const f1_value = parseFloat(f1_match[1])

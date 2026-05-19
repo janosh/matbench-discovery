@@ -6,6 +6,14 @@ import { describe, expect, it } from 'vitest'
 import { doc_query } from '../index'
 
 describe(`MetricsTable`, () => {
+  const parse_integer_sort_value = (cell: Element): number | null => {
+    const sort_value = cell.getAttribute(`data-sort-value`)
+    if (!sort_value) return null
+
+    const parsed_value = Number.parseInt(sort_value, 10)
+    return Number.isNaN(parsed_value) ? null : parsed_value
+  }
+
   it(`renders with default props`, async () => {
     mount(MetricsTable, {
       target: document.body,
@@ -361,7 +369,9 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Get all date cells
-      const date_cells = [...document.querySelectorAll(`td[data-col="Date Added"]`)]
+      const date_cells = [
+        ...document.querySelectorAll(`td[data-col="Date Added"] [data-sort-value]`),
+      ]
 
       if (date_cells.length < 2) {
         throw new Error(`Not enough data for testing date sorting`)
@@ -369,10 +379,7 @@ describe(`MetricsTable`, () => {
 
       // Get dates as timestamps from data-sort-value
       const timestamps = date_cells
-        .map((cell) => {
-          const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1], 10) : null
-        })
+        .map(parse_integer_sort_value)
         .filter((timestamp) => timestamp !== null)
 
       // Instead of checking order, verify we're extracting timestamps correctly
@@ -386,11 +393,10 @@ describe(`MetricsTable`, () => {
       date_header.click()
 
       // Get updated timestamps
-      const descending_timestamps = [...document.querySelectorAll(`td[data-col="Date Added"]`)]
-        .map((cell) => {
-          const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1], 10) : null
-        })
+      const descending_timestamps = [
+        ...document.querySelectorAll(`td[data-col="Date Added"] [data-sort-value]`),
+      ]
+        .map(parse_integer_sort_value)
         .filter((timestamp) => timestamp !== null)
 
       // Verify we have timestamps
@@ -419,11 +425,10 @@ describe(`MetricsTable`, () => {
       training_set_header.click()
 
       // Get training set sizes from data-sort-value
-      const sizes = [...document.querySelectorAll(`td[data-col="Training Set"]`)]
-        .map((cell) => {
-          const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1], 10) : null
-        })
+      const sizes = [
+        ...document.querySelectorAll(`td[data-col="Training Set"] [data-sort-value]`),
+      ]
+        .map(parse_integer_sort_value)
         .filter((size) => size !== null)
 
       if (sizes.length < 2) {
@@ -445,11 +450,10 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Get updated sizes
-      const new_sizes = [...document.querySelectorAll(`td[data-col="Training Set"]`)]
-        .map((cell) => {
-          const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1], 10) : null
-        })
+      const new_sizes = [
+        ...document.querySelectorAll(`td[data-col="Training Set"] [data-sort-value]`),
+      ]
+        .map(parse_integer_sort_value)
         .filter((size) => size !== null)
 
       // Verify we have the same number of items
@@ -491,11 +495,12 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Get parameter counts from data-sort-value using the correct column label
-      const param_counts = [...document.querySelectorAll(`td[data-col="${HYPERPARAMS.model_params.label}"]`)]
-        .map((cell) => {
-          const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1], 10) : null
-        })
+      const param_counts = [
+        ...document.querySelectorAll(
+          `td[data-col="${HYPERPARAMS.model_params.label}"] [data-sort-value]`,
+        ),
+      ]
+        .map(parse_integer_sort_value)
         .filter((count) => count !== null)
 
       if (param_counts.length < 2) {
@@ -517,11 +522,12 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Get updated counts using the correct column label
-      const new_counts = [...document.querySelectorAll(`td[data-col="${HYPERPARAMS.model_params.label}"]`)]
-        .map((cell) => {
-          const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
-          return match ? parseInt(match[1], 10) : null
-        })
+      const new_counts = [
+        ...document.querySelectorAll(
+          `td[data-col="${HYPERPARAMS.model_params.label}"] [data-sort-value]`,
+        ),
+      ]
+        .map(parse_integer_sort_value)
         .filter((count) => count !== null)
 
       // Verify we have the same number of items
@@ -590,7 +596,7 @@ describe(`MetricsTable`, () => {
       expect(cells_with_tooltips.length).toBeGreaterThan(0)
       cells_with_tooltips.forEach((cell) => {
         const span = cell.querySelector(`span[data-original-title]`)
-        expect(span?.getAttribute(`data-original-title`)).toBeTruthy()
+        expect(span?.getAttribute(`data-original-title`)).not.toBeNull()
       })
     })
 
@@ -729,8 +735,10 @@ describe(`MetricsTable`, () => {
 
           const title = link.getAttribute(`data-original-title`)
           const href = link.getAttribute(`href`)
-          expect(title).toBeTruthy()
-          expect(href).toBeTruthy()
+          expect(title).not.toBeNull()
+          expect(title).not.toBe(``)
+          expect(href).not.toBeNull()
+          expect(href).not.toBe(``)
 
           // Each link should have an SVG icon - use a more general selector
           const svg = link.querySelector(`svg`)
@@ -769,7 +777,7 @@ describe(`MetricsTable`, () => {
           for (const icon of missing_icons) {
             const span = icon.closest(`span`)
             const title = span?.getAttribute(`data-original-title`)
-            expect(title).toBeTruthy()
+            expect(title).not.toBeNull()
             expect(title).toMatch(/not available/)
           }
         }
@@ -937,7 +945,7 @@ describe(`MetricsTable`, () => {
       expect(
         th.getAttribute(`title`),
         `Header ${th.textContent} has no title attribute`,
-      ).toBeTruthy()
+      ).not.toBeNull()
     })
   })
 

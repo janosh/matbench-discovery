@@ -1,5 +1,5 @@
 import { type Label, TableControls } from '$lib'
-import { mount } from 'svelte'
+import { mount, tick } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
 import { doc_query } from '../index'
 
@@ -11,10 +11,10 @@ describe(`TableControls`, () => {
     { key: `rmse`, label: `RMSE`, description: `RMSE`, visible: false },
   ]
 
-  // Helper to find checkbox by parent label text
-  const find_checkbox_by_label = (text: string): HTMLInputElement | null => {
+  const find_checkbox_by_label = (text: string): HTMLInputElement => {
     const labels = document.querySelectorAll(`label`)
     const label = [...labels].find((lbl) => lbl.textContent?.includes(text))
+    if (!label) throw new Error(`No checkbox label found containing: ${text}`)
     return doc_query<HTMLInputElement>(`input[type="checkbox"]`, label)
   }
 
@@ -25,7 +25,12 @@ describe(`TableControls`, () => {
     })
 
     // Verify filter checkboxes are present
-    expect(document.querySelectorAll(`input[type="checkbox"]`).length).toBeGreaterThan(2)
+    const labels = [...document.querySelectorAll(`label`)].map((label) =>
+      label.textContent?.replace(/\s+/g, ` `).trim(),
+    )
+    expect(labels).toContain(`Compliant models`)
+    expect(labels).toContain(`Non-compliant models`)
+    expect(labels).toContain(`Heatmap`)
   })
 
   it(`calls on_filter_change when energy-only filter is toggled`, () => {
@@ -37,13 +42,11 @@ describe(`TableControls`, () => {
     })
 
     const energy_checkbox = find_checkbox_by_label(`Energy-only`)
-    expect(energy_checkbox).toBeTruthy()
-    if (!energy_checkbox) return
 
     const initial_checked = energy_checkbox.checked
     energy_checkbox.click()
 
-    expect(on_filter_change).toHaveBeenCalledWith(!initial_checked, false)
+    expect(on_filter_change).toHaveBeenCalledExactlyOnceWith(!initial_checked, false)
     expect(energy_checkbox.checked).toBe(!initial_checked)
   })
 
@@ -52,10 +55,6 @@ describe(`TableControls`, () => {
 
     const compliant_checkbox = find_checkbox_by_label(`Compliant`)
     const noncompliant_checkbox = find_checkbox_by_label(`Non-compliant`)
-
-    expect(compliant_checkbox).toBeTruthy()
-    expect(noncompliant_checkbox).toBeTruthy()
-    if (!compliant_checkbox || !noncompliant_checkbox) return
 
     // Both should start checked
     expect(compliant_checkbox.checked).toBe(true)
@@ -70,17 +69,16 @@ describe(`TableControls`, () => {
     expect(noncompliant_checkbox.checked).toBe(true)
   })
 
-  // TODO: re-enable after matterviz release exports ToggleMenu with testable DOM
-  it.skip(`opens and closes column visibility panel`, () => {
+  it(`opens and closes column visibility panel`, async () => {
     mount(TableControls, {
       target: document.body,
       props: { columns: sample_columns },
     })
+    await tick()
 
     const toggle_btn = doc_query(`.column-toggles summary`)
     const details = doc_query<HTMLDetailsElement>(`.column-toggles`)
-    expect(toggle_btn).toBeTruthy()
-    expect(details).toBeTruthy()
+    expect(toggle_btn.textContent?.trim()).toBe(`Columns`)
 
     // Should start closed
     expect(details.open).toBe(false)
@@ -90,32 +88,38 @@ describe(`TableControls`, () => {
     expect(details.open).toBe(true)
 
     // Verify column menu is visible
-    expect(document.querySelector(`.column-menu`)).toBeTruthy()
+    expect(doc_query(`.column-menu`).querySelectorAll(`input[type="checkbox"]`)).toHaveLength(
+      sample_columns.length,
+    )
 
     // Close panel
     toggle_btn.click()
     expect(details.open).toBe(false)
   })
 
-  // TODO: re-enable after matterviz release exports ToggleMenu with testable DOM
-  it.skip(`toggles column visibility checkboxes`, () => {
+  it(`toggles column visibility checkboxes`, async () => {
     mount(TableControls, {
       target: document.body,
       props: { columns: [...sample_columns] },
     })
+    await tick()
 
     const toggle_btn = doc_query(`.column-toggles summary`)
     toggle_btn.click()
 
-    const column_menu = document.querySelector(`.column-menu`)
-    expect(column_menu).toBeTruthy()
+    const column_menu = doc_query(`.column-menu`)
+    expect(column_menu.getAttribute(`role`)).toBe(`group`)
 
-    const column_checkboxes = column_menu?.querySelectorAll(`input[type="checkbox"]`)
-    expect(column_checkboxes?.length).toBe(sample_columns.length)
+    const column_checkboxes = column_menu.querySelectorAll<HTMLInputElement>(`input[type="checkbox"]`)
+    expect(column_checkboxes).toHaveLength(sample_columns.length)
+    const checkbox_labels = [...column_menu.querySelectorAll(`label`)].map((label) =>
+      label.textContent?.trim(),
+    )
+    expect(checkbox_labels).toStrictEqual(sample_columns.map((column) => column.label))
 
     // Test toggling first checkbox (Model column, initially visible)
-    const first_checkbox = column_checkboxes?.[0] as HTMLInputElement
-    expect(first_checkbox?.checked).toBe(true)
+    const [first_checkbox] = column_checkboxes
+    expect(first_checkbox.checked).toBe(true)
 
     first_checkbox.click()
     expect(first_checkbox.checked).toBe(false)
