@@ -12,7 +12,11 @@ import pymatviz as pmv
 import yaml
 
 from matbench_discovery import DEFAULT_CACHE_DIR, PKG_DIR, ROOT
-from matbench_discovery.remote.fetch import download_file, maybe_auto_download_file
+from matbench_discovery.remote.fetch import (
+    download_file,
+    is_non_empty_file,
+    maybe_auto_download_file,
+)
 
 eV_per_atom = pmv.enums.eV_per_atom  # noqa: N816
 T = TypeVar("T", bound="Files")
@@ -610,7 +614,7 @@ class DataFiles(Files):
             raise ValueError(f"{rel_path=} does not match {self.yaml[key]['path']}")
 
         abs_path = f"{type(self).base_dir}/{rel_path}"
-        if not os.path.isfile(abs_path):
+        if not is_non_empty_file(abs_path):
             # whether to auto-download files without prompting
             auto_download = os.getenv("MBD_AUTO_DOWNLOAD_FILES", "").lower() == "true"
             is_ipython = hasattr(builtins, "__IPYTHON__")
@@ -626,6 +630,11 @@ class DataFiles(Files):
             if answer.lower().strip() == "y":
                 print(f"Downloading {key!r} from {self.url} to {abs_path}")
                 download_file(abs_path, self.url)
+                if not is_non_empty_file(abs_path):
+                    raise FileNotFoundError(
+                        f"Download failed for {key!r}: expected non-empty file at "
+                        f"{abs_path!r}"
+                    )
         return abs_path
 
 

@@ -8,12 +8,18 @@ import traceback
 import requests
 
 
+def is_non_empty_file(file_path: str) -> bool:
+    """Return whether file_path points to an existing non-empty file."""
+    return os.path.isfile(file_path) and os.path.getsize(file_path) > 0
+
+
 def download_file(file_path: str, url: str) -> None:
     """Download the file from the given URL to the given file path.
     Prints rather than raises if the file cannot be downloaded.
     """
     file_dir = os.path.dirname(file_path)
     os.makedirs(file_dir, exist_ok=True)
+    tmp_path = f"{file_path}.part"
 
     # Convert any Figshare URL variant to the API download endpoint to avoid WAF
     # Handles: figshare.com/files/ID, figshare.com/ndownloader/files/ID,
@@ -27,15 +33,24 @@ def download_file(file_path: str, url: str) -> None:
         response = requests.get(url, timeout=600, stream=True)
         response.raise_for_status()
 
-        with open(file_path, mode="wb") as file:
-            file.writelines(response.iter_content(chunk_size=8192))
-    except requests.RequestException:
+        with open(tmp_path, mode="wb") as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    file.write(chunk)
+
+        if not is_non_empty_file(tmp_path):
+            raise RuntimeError(f"Downloaded empty file from {url!r}")
+
+        os.replace(tmp_path, file_path)
+    except (OSError, requests.RequestException, RuntimeError):
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
         print(f"Error downloading {url=}\nto {file_path=}.\n{traceback.format_exc()}")
 
 
 def maybe_auto_download_file(url: str, abs_path: str, label: str | None = None) -> None:
     """Download file if not exist and user confirms or auto-download is enabled."""
-    if os.path.isfile(abs_path):
+    if is_non_empty_file(abs_path):
         return
 
     # whether to auto-download model prediction files without prompting
@@ -55,3 +70,8 @@ def maybe_auto_download_file(url: str, abs_path: str, label: str | None = None) 
     if answer.lower().strip() == "y":
         print(f"Downloading {label!r} from {url!r} to {abs_path!r}")
         download_file(abs_path, url)
+        if not is_non_empty_file(abs_path):
+            raise FileNotFoundError(
+                f"Download failed for {label!r}: expected non-empty file at "
+                f"{abs_path!r}"
+            )

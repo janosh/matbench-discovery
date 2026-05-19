@@ -290,6 +290,62 @@ def test_files_enum_auto_download(
     assert os.path.isfile(abs_path)  # file should now be downloaded
 
 
+def test_data_files_path_replaces_empty_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """DataFiles.path should treat empty cache files as missing."""
+    data_file = DataFiles.wbm_summary
+    abs_path = tmp_path / data_file.rel_path
+    abs_path.parent.mkdir(parents=True)
+    abs_path.touch()
+
+    class MockResponse:
+        content = b"test content"
+        status_code = 200
+
+        def raise_for_status(self) -> None:
+            """Mock the raise_for_status method."""
+
+        def iter_content(self, chunk_size: int = 8192) -> list[bytes]:  # noqa: ARG002
+            """Mock iter_content for streaming."""
+            return [self.content]
+
+    monkeypatch.setattr(DataFiles, "_base_dir", str(tmp_path))
+    monkeypatch.setattr(requests, "get", lambda *_args, **_kwargs: MockResponse())
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+
+    assert data_file.path == str(abs_path)
+    stdout, stderr = capsys.readouterr()
+    assert f"Downloading {data_file.name!r} from {data_file.url}" in stdout
+    assert stderr == ""
+    assert abs_path.read_bytes() == b"test content"
+
+
+def test_data_files_path_raises_after_failed_download(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """DataFiles.path should fail fast if download does not produce a file."""
+    data_file = DataFiles.wbm_summary
+    abs_path = tmp_path / data_file.rel_path
+
+    class MockResponse:
+        status_code = 404
+
+        def raise_for_status(self) -> None:
+            """Mock the raise_for_status method."""
+            raise requests.HTTPError("HTTP Error: 404")
+
+    monkeypatch.setattr(DataFiles, "_base_dir", str(tmp_path))
+    monkeypatch.setattr(requests, "get", lambda *_args, **_kwargs: MockResponse())
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+
+    err_msg = f"Download failed for {data_file.name!r}"
+    with pytest.raises(FileNotFoundError, match=err_msg):
+        _ = data_file.path
+
+    assert not abs_path.exists()
+
+
 def test_model_enum() -> None:
     """Test Model enum functionality."""
     # Test basic model attributes

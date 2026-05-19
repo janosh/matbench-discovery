@@ -80,6 +80,127 @@ def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     assert stderr == ""
 
 
+def test_download_file_keeps_existing_file_on_stream_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """Failed streamed downloads should not corrupt existing cached files."""
+    url = "https://example.com/test.txt"
+    dest_path = tmp_path / "test.txt"
+    dest_path.write_bytes(b"old content")
+
+    response = make_mock_response(b"")
+
+    def broken_iter_content(
+        chunk_size: int = 8192, decode_unicode: bool = False  # noqa: ARG001
+    ) -> list[bytes]:
+        raise requests.ConnectionError("stream failed")
+
+    response.iter_content = broken_iter_content
+
+    with patch("requests.get", return_value=response):
+        download_file(str(dest_path), url)
+
+    stdout, stderr = capsys.readouterr()
+    assert f"Error downloading {url=}" in stdout
+    assert stderr == ""
+    assert dest_path.read_bytes() == b"old content"
+    assert not (tmp_path / "test.txt.part").exists()
+
+
+def test_download_file_removes_part_file_after_empty_response(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """HTTP 200 with an empty body should not create a cached file."""
+    url = "https://example.com/test.txt"
+    dest_path = tmp_path / "test.txt"
+
+    with patch("requests.get", return_value=make_mock_response(b"")):
+        download_file(str(dest_path), url)
+
+    stdout, stderr = capsys.readouterr()
+    assert f"Error downloading {url=}" in stdout
+    assert "Downloaded empty file" in stdout
+    assert stderr == ""
+    assert not dest_path.exists()
+    assert not (tmp_path / "test.txt.part").exists()
+
+
+def test_maybe_auto_download_file_raises_when_request_fails_before_streaming(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Request failures before streaming should leave no cache artifacts."""
+    url = "https://example.com/file.txt"
+    abs_path = tmp_path / "test" / "file.txt"
+    abs_path.parent.mkdir()
+
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+    with (
+        patch("requests.get", side_effect=requests.ConnectionError("connect failed")),
+        pytest.raises(FileNotFoundError, match="Download failed for 'test'"),
+    ):
+        maybe_auto_download_file(url, str(abs_path), label="test")
+
+    assert not abs_path.exists()
+    assert not (tmp_path / "test" / "file.txt.part").exists()
+
+
+def test_download_file_ignores_empty_keepalive_chunks(tmp_path: Path) -> None:
+    """Empty streaming chunks should be ignored before real content arrives."""
+    url = "https://example.com/test.txt"
+    dest_path = tmp_path / "test.txt"
+    response = make_mock_response(b"")
+
+    def iter_content_with_keepalive(
+        chunk_size: int = 8192, decode_unicode: bool = False  # noqa: ARG001
+    ) -> list[bytes]:
+        return [b"", b"test content"]
+
+    response.iter_content = iter_content_with_keepalive
+
+    with patch("requests.get", return_value=response):
+        download_file(str(dest_path), url)
+
+    assert dest_path.read_bytes() == b"test content"
+    assert not (tmp_path / "test.txt.part").exists()
+
+
+def test_maybe_auto_download_file_replaces_empty_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """Empty cache files should be treated as invalid and downloaded again."""
+    url = "https://example.com/file.txt"
+    abs_path = tmp_path / "test" / "file.txt"
+    abs_path.parent.mkdir()
+    abs_path.touch()
+
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+    with patch("requests.get", return_value=make_mock_response(b"test content")):
+        maybe_auto_download_file(url, str(abs_path), label="test")
+
+    stdout, stderr = capsys.readouterr()
+    assert f"Downloading 'test' from {url!r}" in stdout
+    assert stderr == ""
+    assert abs_path.read_bytes() == b"test content"
+
+
+def test_maybe_auto_download_file_raises_after_failed_download(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Download helpers should fail fast if no non-empty file was written."""
+    url = "https://example.com/file.txt"
+    abs_path = tmp_path / "test" / "file.txt"
+    abs_path.parent.mkdir()
+
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+    with (
+        patch("requests.get", return_value=make_mock_response(b"Not found", 404)),
+        pytest.raises(FileNotFoundError, match="Download failed for 'test'"),
+    ):
+        maybe_auto_download_file(url, str(abs_path), label="test")
+
+    assert not abs_path.exists()
+
+
 def test_maybe_auto_download_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
