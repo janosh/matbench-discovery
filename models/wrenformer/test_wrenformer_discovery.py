@@ -42,12 +42,10 @@ slurm_vars = slurm_submit(
 
 
 # %%
-df_wbm_clean = df_wbm.dropna(subset=MbdKey.init_wyckoff_spglib)
+df_wbm_clean = df_wbm.dropna(subset=MbdKey.init_protostructure_spglib)
 
 if MbdKey.e_form_dft not in df_wbm_clean:
     raise KeyError(f"{MbdKey.e_form_dft!s} not in {df_wbm_clean.columns=}")
-if MbdKey.wyckoff_spglib not in df_wbm_clean:
-    raise KeyError(f"{MbdKey.wyckoff_spglib!s} not in {df_wbm_clean.columns=}")
 
 
 # %%
@@ -76,7 +74,7 @@ run_params = dict(
     ensemble_size=len(runs),
     task_type=task_type,
     target_col=MbdKey.e_form_dft,
-    input_col=Key.wyckoff,
+    input_col=MbdKey.init_protostructure_spglib,
     wandb_run_filters=filters,
     slurm_vars=slurm_vars,
     training_run_ids=[run.id for run in runs],
@@ -98,7 +96,7 @@ data_loader = df_to_in_mem_dataloader(
     df=df_wbm_clean,
     batch_size=1024,
     shuffle=False,  # False is default but best be explicit
-    input_col=Key.wyckoff,
+    input_col=MbdKey.init_protostructure_spglib,
     target_col=MbdKey.e_form_dft,
     id_col=Key.mat_id,
     embedding_type="wyckoff",

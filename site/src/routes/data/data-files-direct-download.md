@@ -23,7 +23,7 @@ assert tuple(df_wbm) == (
     "e_form_per_atom_wbm",
     "e_above_hull_wbm",
     "bandgap_pbe",
-    "wyckoff_spglib_initial_structure",
+    "protostructure_spglib_initial_structure",
     "uncorrected_energy_from_cse",
     "e_correction_per_atom_mp2020",
     "e_correction_per_atom_mp_legacy",
@@ -31,7 +31,7 @@ assert tuple(df_wbm) == (
     "e_form_per_atom_mp2020_corrected",
     "e_above_hull_mp2020_corrected_ppd_mp",
     "site_stats_fingerprint_init_final_norm_diff",
-    "wyckoff_spglib",
+    "protostructure_spglib",
     "unique_prototype"
 )
 
@@ -51,8 +51,8 @@ assert len(wbm_init_atoms) == 256_963
 1. **`uncorrected_energy`**: Raw VASP-computed energy
 1. **`e_form_per_atom_wbm`**: Original formation energy per atom from [WBM paper]
 1. **`e_above_hull_wbm`**: Original energy above the convex hull in (eV/atom) from [WBM paper]
-1. **`wyckoff_spglib`**: Aflow label strings built from spacegroup and Wyckoff positions of the DFT-relaxed structure as computed by [spglib](https://spglib.readthedocs.io/en/stable/api/python-api.html#spglib.spglib.get_symmetry_dataset).
-1. **`wyckoff_spglib_initial_structure`**: Same as `wyckoff_spglib` but computed from the initial structure.
+1. **`protostructure_spglib`**: Aflow label strings built from spacegroup and Wyckoff positions of the DFT-relaxed structure as computed by [spglib](https://spglib.readthedocs.io/en/stable/api/python-api.html#spglib.spglib.get_symmetry_dataset).
+1. **`protostructure_spglib_initial_structure`**: Same as `protostructure_spglib` but computed from the initial structure.
 1. **`bandgap_pbe`**: PBE-level DFT band gap from [WBM paper]
 1. **`uncorrected_energy_from_cse`**: Uncorrected DFT energy stored in `ComputedStructureEntries`. Should be the same as `uncorrected_energy`. There are 2 cases where the absolute difference reported in the summary file and in the computed structure entries exceeds 0.1 eV (`wbm-2-3218`, `wbm-1-56320`) which we attribute to rounding errors.
 1. **`e_form_per_atom_uncorrected`**: Uncorrected DFT formation energy per atom in eV/atom.

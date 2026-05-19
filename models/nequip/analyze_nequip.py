@@ -31,7 +31,7 @@ df_wbm["e_form_per_atom_nequip_error"] = (
 df_nequip[list(df_wbm)] = df_wbm
 
 df_nequip[Key.spg_num] = (
-    df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
+    df_wbm[MbdKey.init_protostructure_spglib].str.split("_").str[2].astype(int)
 )
 
 

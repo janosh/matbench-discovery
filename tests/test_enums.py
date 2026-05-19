@@ -38,6 +38,10 @@ def test_mbd_key() -> None:
     )
     assert MbdKey.each_true == "e_above_hull_mp2020_corrected_ppd_mp"
     assert MbdKey.each_true.label == "E<sub>MP hull dist</sub>"
+    assert MbdKey.init_protostructure_spglib == (
+        "protostructure_spglib_initial_structure"
+    )
+    assert MbdKey.protostructure_spglib == "protostructure_spglib"
 
     # Test that all keys have values and labels
     for key in MbdKey:
@@ -180,6 +184,7 @@ def test_data_files_enum() -> None:
 
     # Test that paths are constructed correctly
     assert DataFiles.mp_energies.rel_path == "mp/2025-02-01-mp-energies.csv.gz"
+    assert DataFiles.mp_patched_phase_diagram.rel_path == "mp/2023-02-07-ppd-mp.pkl.gz"
     assert DataFiles.mp_energies.name == "mp_energies"
     assert DataFiles.mp_energies.url.startswith("https://figshare.com/files/")
 

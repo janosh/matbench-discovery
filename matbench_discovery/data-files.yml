@@ -66,10 +66,10 @@ wbm_initial_atoms:
   md5: 2a292211ca6acb30ed8416178d644098
 
 wbm_summary:
-  url: https://figshare.com/files/44225498
+  url: https://figshare.com/files/64706751
   path: wbm/2023-12-13-wbm-summary.csv.gz
   description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.
-  md5: fb23d85dab61fab001b92cb0ac4f8f3d
+  md5: 1555268d3aa59d20262cb9d01ce0994b
 
 wbm_dft_geo_opt_symprec_1e_2:
   url: https://figshare.com/files/52066799

@@ -34,7 +34,7 @@ df_wbm["e_form_per_atom_allegro_error"] = (
 df_allegro[list(df_wbm)] = df_wbm
 
 df_allegro[Key.spg_num] = (
-    df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
+    df_wbm[MbdKey.init_protostructure_spglib].str.split("_").str[2].astype(int)
 )
 
 
