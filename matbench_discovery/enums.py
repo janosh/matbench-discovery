@@ -66,12 +66,12 @@ class MbdKey(LabelEnum):
         f"Error in E<sub>hull dist</sub> {eV_per_atom}",
     )
 
-    init_wyckoff_spglib = (
-        "wyckoff_spglib_initial_structure",
+    init_protostructure_spglib = (
+        "protostructure_spglib_initial_structure",
         "Protostructure Label for Initial Structure using spglib",
     )
-    wyckoff_spglib = (
-        "wyckoff_spglib",
+    protostructure_spglib = (
+        "protostructure_spglib",
         "Protostructure Label for Relaxed Structure using spglib",
     )
     international_spg_name = "international_spg_name", "International space group name"
