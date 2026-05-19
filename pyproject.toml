@@ -30,19 +30,19 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-  "ase>=3.25",
-  "filelock>=3.13",
-  "numpy>=1.26",
-  "pandas>=2.2.2",
-  "plotly>=6.3",
-  "pymatgen>=2024.8.9",
+  "ase>=3.28",
+  "filelock>=3.29",
+  "numpy>=2",
+  "pandas>=3",
+  "plotly>=6.7",
+  "pymatgen>=2026.5.4",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209
-  "pymatviz[df-pdf-export,df-svg-export]==0.17.3",
-  "ruamel.yaml>=0.18.6",
-  "scikit-learn>=1.5",
-  "scipy>=1.13",
-  "tqdm>=4.67",
-  "wandb>=0.19",
+  "pymatviz[df-pdf-export,df-svg-export]==0.17.6",
+  "ruamel.yaml>=0.19.1",
+  "scikit-learn>=1.8",
+  "scipy>=1.17.1",
+  "tqdm>=4.67.3",
+  "wandb>=0.27",
 ]
 
 [project.urls]
@@ -64,12 +64,9 @@ running-models = [
   "mace-torch>=0.3.6",
   "maml>=2023.9.9",
   "megnet>=1.3.2",
-  "moyopy>=0.3.4",
+  "moyopy>=0.9",
 ]
-3d-structures = ["crystal-toolkit>=2024.10.22"]
-plots = ["dash>=2.18"]
 fetch-wbm-data = ["gdown>=5.2"]
-make-wbm-umap = ["umap-learn>=0.5.5"]
 phonons = ["phono3py>=3.30", "phonopy>=2.35"]
 
 [build-system]
