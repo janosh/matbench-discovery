@@ -42,15 +42,6 @@ vi.mock(`$app/state`, () => app_mocks.state)
 vi.mock(`$app/environment`, () => app_mocks.environment)
 vi.mock(`$app/navigation`, () => app_mocks.navigation)
 
-// Mock matterviz/table for ToggleMenu component
-vi.mock(`matterviz/table`, async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>().catch(() => ({}))
-  return {
-    ...actual,
-    ToggleMenu: () => null, // Stub component
-  }
-})
-
 beforeAll(() => {
   const animation = {
     pause: () => { },

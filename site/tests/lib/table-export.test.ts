@@ -1,400 +1,166 @@
-import type { Mock, MockInstance } from 'vitest'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  generate_csv,
+  generate_excel,
+  generate_png,
+  generate_svg,
+  handle_export,
+} from '$lib/table-export'
+import { toPng, toSvg } from 'html-to-image'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock html-to-image at module level to ensure it's available before any imports
 vi.mock(`html-to-image`, () => ({
-  toSvg: vi.fn().mockResolvedValue(`data:image/svg+xml;base64,test`),
-  toPng: vi.fn().mockResolvedValue(`data:image/png;base64,test`),
+  toSvg: vi.fn(),
+  toPng: vi.fn(),
 }))
 
-// Mock DOM table structure for testing
-const create_mock_table = () =>
-  ({
-    querySelectorAll: vi.fn((selector: string) => {
-      if (selector === `thead tr`) {
-        return [
-          {
-            querySelectorAll: () => [
-              { textContent: `Model` },
-              { textContent: `F1` },
-              { textContent: `Org` },
-              { textContent: `DAF` },
-              { textContent: `Links` },
-              { textContent: `CPS` },
-            ],
-          },
-        ]
-      }
-      if (selector === `tbody tr`) {
-        return [
-          {
-            querySelectorAll: () => [
-              { getAttribute: () => `Model A`, textContent: `Model A` },
-              { getAttribute: () => `0.851`, textContent: `0.851` },
-              { getAttribute: () => null, textContent: `<svg>...</svg>` },
-              { getAttribute: () => `2.346`, textContent: `2.346` },
-              { getAttribute: () => null, textContent: `<svg>...</svg>` },
-              { getAttribute: () => `1.235`, textContent: `1.235` },
-            ],
-          },
-        ]
-      }
-      return []
-    }),
-    cloneNode: () => ({
-      style: {},
-      querySelectorAll: () => [],
-      getBoundingClientRect: () => ({ height: 300, width: 500 }),
-    }),
-  }) as unknown as Element
+const today = () => new Date().toISOString().split(`T`)[0]
 
-// TODO: all tests in this file have timeout issues - needs investigation
-describe.skip(`Table Export Functionality`, () => {
-  let create_element_spy: MockInstance
-  let query_selector_spy: MockInstance
-  let original_create_element: typeof document.createElement
-  const mock_click = vi.fn()
+const mount_table = (): HTMLTableElement => {
+  document.body.innerHTML = `
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>F1</th>
+          <th>Org</th>
+          <th>DAF</th>
+          <th>Links</th>
+          <th>CPS</th>
+          <th>R<sup>2</sup></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-sort-value="Model A"><a href="/models/a">Model A</a></td>
+          <td data-sort-value="0.851">0.851</td>
+          <td><svg aria-label="Org"></svg></td>
+          <td data-sort-value="2.346">2.346</td>
+          <td><a href="https://example.com">Link</a></td>
+          <td data-sort-value="1.235">1.235</td>
+          <td>0.75</td>
+        </tr>
+        <tr>
+          <td data-sort-value='Model "Special"'>Model "Special"</td>
+          <td data-sort-value="0.123">0.123</td>
+          <td><svg aria-label="Org"></svg></td>
+          <td data-sort-value="1.234">1.234</td>
+          <td><a href="https://example.org">Link</a></td>
+          <td data-sort-value="0.987">0.987</td>
+          <td>0.25</td>
+        </tr>
+      </tbody>
+    </table>
+  `
 
-  beforeAll(() => {
-    // Save original createElement before any mocks - must be inside describe block
-    // to avoid import-time errors in non-DOM environments (Deno)
-    original_create_element = document.createElement.bind(document)
+  const table = document.querySelector<HTMLTableElement>(`.heatmap`)
+  if (!table) throw new Error(`Failed to mount test table`)
+  return table
+}
+
+describe(`Table Export Functionality`, () => {
+  let click_spy: ReturnType<typeof vi.spyOn>
+  let create_object_url_spy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    mount_table()
+
+    vi.mocked(toSvg).mockResolvedValue(`data:image/svg+xml;base64,test`)
+    vi.mocked(toPng).mockResolvedValue(`data:image/png;base64,test`)
+    click_spy = vi
+      .spyOn(HTMLAnchorElement.prototype, `click`)
+      .mockImplementation(() => {})
+    globalThis.URL.createObjectURL = (() => `mock-url`) as typeof URL.createObjectURL
+    globalThis.URL.revokeObjectURL = (() => {}) as typeof URL.revokeObjectURL
+    create_object_url_spy = vi
+      .spyOn(globalThis.URL, `createObjectURL`)
+      .mockReturnValue(`mock-url`)
   })
 
-  beforeEach(async () => {
-    vi.clearAllMocks()
-
-    // Re-establish html-to-image mocks after clearAllMocks
-    const html_to_image = await import(`html-to-image`)
-    vi.mocked(html_to_image.toSvg).mockResolvedValue(`data:image/svg+xml;base64,test`)
-    vi.mocked(html_to_image.toPng).mockResolvedValue(`data:image/png;base64,test`)
-
-    // Common mocks - use original_create_element to avoid infinite recursion
-    create_element_spy = vi
-      .spyOn(document, `createElement`)
-      .mockImplementation((tag: string) =>
-        tag === `a`
-          ? ({
-              href: ``,
-              download: ``,
-              click: mock_click,
-            } as unknown as HTMLAnchorElement)
-          : original_create_element(tag),
-      )
-
-    query_selector_spy = vi
-      .spyOn(document, `querySelector`)
-      .mockImplementation(() => create_mock_table())
-
-    globalThis.Blob = vi.fn() as unknown as typeof Blob
-
-    // Mock URL methods on globalThis.URL
-    if (!globalThis.URL) globalThis.URL = {} as typeof URL
-    globalThis.URL.createObjectURL = vi.fn().mockReturnValue(`mock-url`)
-    globalThis.URL.revokeObjectURL = vi.fn()
-  })
-
-  // Test image exports (SVG, PNG) with parameterized testing
-  // TODO: these tests have mock isolation issues causing timeouts and assertion failures
-  describe.skip.each([
-    [`SVG`, `generate_svg`, `.svg`],
-    [`PNG`, `generate_png`, `.png`],
-  ] as const)(`%s Export`, (format, function_name, extension) => {
-    it(`generates ${format} with correct filename and calls download`, async () => {
-      const module = await import(`$lib/table-export`)
-      vi.spyOn(module, function_name).mockImplementation(() => {
-        document.createElement(`a`).click()
-        const date_str = new Date().toISOString().split(`T`)[0]
-        return Promise.resolve({
-          filename: `metrics-table-unique-prototypes-only-compliant-${date_str}${extension}`,
-          url: `mock-url`,
-        })
+  it.each([
+    [`SVG`, generate_svg, toSvg, `.svg`],
+    [`PNG`, generate_png, toPng, `.png`],
+  ] as const)(
+    `generates %s export with a cleaned table clone`,
+    async (_format, generator, encoder, extension) => {
+      let captured_container: HTMLElement | undefined
+      vi.mocked(encoder).mockImplementation((container) => {
+        captured_container = container
+        return Promise.resolve(`data:image/${extension.slice(1)};base64,test`)
       })
 
-      const result = await module[function_name]({
+      const result = await generator({
         show_non_compliant: false,
         discovery_set: `unique_prototypes`,
       })
 
-      expect(create_element_spy).toHaveBeenCalledWith(`a`)
-      expect(mock_click).toHaveBeenCalledTimes(1)
-      expect(result?.filename).toContain(`unique-prototypes-only-compliant`)
-      expect(result?.filename).toContain(extension)
-      expect(result?.filename).toContain(new Date().toISOString().split(`T`)[0])
-      expect(result?.url).toBe(`mock-url`)
-    })
+      if (!result) throw new Error(`${_format} export returned null`)
+      if (!captured_container) throw new Error(`${_format} export did not call encoder`)
 
-    it(`preserves subscripts and superscripts in ${format} export`, async () => {
-      // Restore spies to use real DOM operations
-      create_element_spy.mockRestore()
-      query_selector_spy.mockRestore()
+      expect(result.filename).toBe(
+        `matbench-unique-prototypes-compliant-2models-${today()}${extension}`,
+      )
+      expect(result.url).toBe(extension === `.svg` ? `mock-url` : `data:image/png;base64,test`)
+      expect(click_spy).toHaveBeenCalled()
+      expect(captured_container.querySelectorAll(`svg, a[href]`)).toHaveLength(0)
+      expect(captured_container.querySelectorAll(`sub, sup`)).toHaveLength(1)
+    },
+  )
 
-      // Create real DOM table with sub/sup elements
-      const real_table = document.createElement(`table`)
-      real_table.className = `heatmap`
+  it.each([
+    [`SVG`, generate_svg],
+    [`PNG`, generate_png],
+    [`CSV`, generate_csv],
+    [`Excel`, generate_excel],
+  ] as const)(`returns null when table is missing for %s export`, async (_format, generator) => {
+    document.body.innerHTML = ``
+    const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
 
-      const thead = document.createElement(`thead`)
-      const header_row = document.createElement(`tr`)
-
-      const th1 = document.createElement(`th`)
-      th1.textContent = `Model`
-      header_row.append(th1)
-
-      const th2 = document.createElement(`th`)
-      th2.innerHTML = `R<sup>2</sup>`
-      header_row.append(th2)
-
-      const th3 = document.createElement(`th`)
-      th3.innerHTML = `κ<sub>SRME</sub>`
-      header_row.append(th3)
-
-      thead.append(header_row)
-      real_table.append(thead)
-
-      const tbody = document.createElement(`tbody`)
-      const body_row = document.createElement(`tr`)
-
-      const td1 = document.createElement(`td`)
-      td1.textContent = `Test Model`
-      body_row.append(td1)
-
-      const td2 = document.createElement(`td`)
-      td2.textContent = `0.85`
-      body_row.append(td2)
-
-      const td3 = document.createElement(`td`)
-      td3.textContent = `1.23`
-      body_row.append(td3)
-
-      tbody.append(body_row)
-      real_table.append(tbody)
-
-      // Append to document so querySelector can find it
-      document.body.append(real_table)
-
-      // Get the mocked html-to-image module and override with container capture
-      const html_to_image = await import(`html-to-image`)
-      let captured_container: HTMLElement | null = null
-
-      if (format === `SVG`) {
-        vi.mocked(html_to_image.toSvg).mockImplementation((container) => {
-          captured_container = container
-          return Promise.resolve(`data:image/svg+xml;base64,test`)
-        })
-      } else {
-        vi.mocked(html_to_image.toPng).mockImplementation((container) => {
-          captured_container = container
-          return Promise.resolve(`data:image/png;base64,test`)
-        })
-      }
-
-      const module = await import(`$lib/table-export`)
-      await module[function_name]({ discovery_set: `test` })
-
-      // Clean up - remove the table from DOM
-      real_table.remove()
-
-      // Verify that the function was called and container was processed
-      expect(captured_container).not.toBeNull()
-      const container = captured_container as unknown as HTMLElement
-
-      // The key test: verify sub/sup elements are preserved in the structure
-      // clean_table_for_export should NOT remove sub/sup elements
-      const preserved_elements = container.querySelectorAll(`sub, sup`)
-      expect(preserved_elements).toHaveLength(2)
-    })
-
-    it(`handles table not found error for ${format}`, async () => {
-      query_selector_spy.mockReturnValue(null)
-      const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
-
-      const module = await import(`$lib/table-export`)
-      const result = await module[function_name]({ discovery_set: `test` })
-
-      expect(result).toBeNull()
-      expect(console_spy).toHaveBeenCalledWith(expect.stringContaining(`Error`), expect.anything())
-      console_spy.mockRestore()
-    })
-
-    it(`handles library errors gracefully for ${format}`, async () => {
-      const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
-
-      // Override the mock to reject
-      const html_to_image = await import(`html-to-image`)
-      if (format === `SVG`) {
-        vi.mocked(html_to_image.toSvg).mockRejectedValue(new Error(`Library failed`))
-      } else {
-        vi.mocked(html_to_image.toPng).mockRejectedValue(new Error(`Library failed`))
-      }
-
-      const module = await import(`$lib/table-export`)
-      const result = await module[function_name]({ discovery_set: `test` })
-
-      expect(result).toBeNull()
-      expect(console_spy).toHaveBeenCalledWith(expect.stringContaining(`Error`), expect.anything())
-      expect(query_selector_spy).toHaveBeenCalledWith(`.heatmap`)
-      console_spy.mockRestore()
-    })
+    await expect(Promise.resolve(generator({ discovery_set: `test` }))).resolves.toBeNull()
+    expect(console_spy).toHaveBeenCalled()
   })
 
-  // Test data exports (CSV, Excel) with parameterized testing
-  // TODO: these tests have timeout issues - needs investigation
-  describe.skip.each([
-    [`CSV`, `generate_csv`, `.csv`, `text/csv;charset=utf-8;`],
-    [
-      `Excel`,
-      `generate_excel`,
-      `.xlsx`,
+  it(`generates CSV with formatted data and excludes icon columns`, async () => {
+    const result = generate_csv({
+      show_non_compliant: false,
+      discovery_set: `unique_prototypes`,
+    })
+
+    if (!result) throw new Error(`CSV export returned null`)
+
+    expect(result.filename).toBe(`matbench-unique-prototypes-compliant-2models-${today()}.csv`)
+    expect(result.url).toBe(`mock-url`)
+    expect(click_spy).toHaveBeenCalled()
+
+    const blob = create_object_url_spy.mock.calls[0]?.[0]
+    expect(blob).toBeInstanceOf(Blob)
+    const csv_content = await (blob as Blob).text()
+    expect(csv_content).toContain(`Model,F1,DAF,CPS,R2`)
+    expect(csv_content).not.toContain(`Org`)
+    expect(csv_content).not.toContain(`Links`)
+    expect(csv_content).toContain(`Model A`)
+    expect(csv_content).toContain(`"Model ""Special"""`)
+  })
+
+  it(`generates Excel with the expected MIME type`, async () => {
+    const result = await generate_excel({
+      show_non_compliant: true,
+      discovery_set: `test_set`,
+    })
+
+    if (!result) throw new Error(`Excel export returned null`)
+
+    expect(result.filename).toBe(`matbench-test-set-all-2models-${today()}.xlsx`)
+    expect(result.url).toBe(`mock-url`)
+    expect(click_spy).toHaveBeenCalled()
+
+    const blob = create_object_url_spy.mock.calls[0]?.[0]
+    expect(blob).toBeInstanceOf(Blob)
+    expect((blob as Blob).type).toBe(
       `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
-    ],
-  ] as const)(`%s Export`, (format, function_name, extension, mime_type) => {
-    beforeEach(() => {
-      if (format === `Excel`) {
-        // Simplified Excel mock
-        vi.doMock(`xlsx`, () => ({
-          utils: {
-            book_new: vi.fn().mockReturnValue({}),
-            aoa_to_sheet: vi.fn().mockReturnValue({ '!ref': `A1:D3` }),
-            book_append_sheet: vi.fn(),
-            decode_range: vi
-              .fn()
-              .mockReturnValue({ s: { r: 0, c: 0 }, e: { r: 2, c: 3 } }),
-            encode_cell: vi
-              .fn()
-              .mockImplementation(
-                ({ r, c }) => `${String.fromCodePoint(65 + c)}${r + 1}`,
-              ),
-          },
-          write: vi.fn().mockReturnValue(new ArrayBuffer(100)),
-        }))
-      }
-    })
-
-    it(`generates ${format} with proper data and excludes SVG columns`, async () => {
-      const module = await import(`$lib/table-export`)
-      const result = await module[function_name]({
-        show_non_compliant: false,
-        discovery_set: `unique_prototypes`,
-      })
-
-      expect(create_element_spy).toHaveBeenCalledWith(`a`)
-      expect(mock_click).toHaveBeenCalledTimes(1)
-      expect(result?.filename).toContain(extension)
-      expect(result?.url).toBe(`mock-url`)
-
-      // Verify data structure in blob
-      const blob_call = (globalThis.Blob as Mock).mock.calls[0]
-      expect(blob_call[1].type).toBe(mime_type)
-
-      if (format === `CSV`) {
-        const csv_content = blob_call[0][0]
-        expect(csv_content).toContain(`Model,F1,DAF,CPS`) // Headers without SVG columns
-        expect(csv_content).not.toContain(`Org`)
-        expect(csv_content).not.toContain(`Links`)
-        expect(csv_content).toContain(`Model A`)
-      }
-    })
-
-    it(`handles special characters correctly for ${format}`, async () => {
-      // Test only for CSV since Excel handles this differently
-      if (format !== `CSV`) return
-
-      query_selector_spy.mockReturnValue({
-        querySelectorAll: vi.fn((selector: string) => {
-          if (selector === `thead tr`) {
-            return [{ querySelectorAll: () => [{ textContent: `Model` }] }]
-          }
-          if (selector === `tbody tr`) {
-            return [
-              {
-                querySelectorAll: () => [
-                  {
-                    getAttribute: () => `Model "Special"`,
-                    textContent: `Model "Special"`,
-                  },
-                ],
-              },
-            ]
-          }
-          return []
-        }),
-      } as unknown as Element)
-
-      const module = await import(`$lib/table-export`)
-      module[function_name]({ discovery_set: `test` })
-
-      const csv_content = (globalThis.Blob as Mock).mock.calls[0][0][0]
-      expect(csv_content).toContain(`"Model ""Special"""`)
-    })
-
-    it(`handles errors when table not found for ${format}`, async () => {
-      query_selector_spy.mockReturnValue(null)
-      const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
-
-      const module = await import(`$lib/table-export`)
-      const result = module[function_name]({ discovery_set: `test` })
-
-      expect(result).toBeNull()
-      expect(console_spy).toHaveBeenCalledWith(
-        `Error generating ${format}:`,
-        expect.any(Error),
-      )
-      console_spy.mockRestore()
-    })
+    )
   })
 
-  // Combined utility function tests
-  // TODO: these tests call generate_csv which has timeout issues
-  describe.skip(`Utility Functions`, () => {
-    it(`formats numbers and generates filenames correctly`, async () => {
-      const module = await import(`$lib/table-export`)
-
-      // Test through CSV generation with known values
-      query_selector_spy.mockReturnValue({
-        querySelectorAll: vi.fn((selector: string) => {
-          if (selector === `thead tr`) {
-            return [{ querySelectorAll: () => [{ textContent: `CPS` }] }]
-          }
-          if (selector === `tbody tr`) {
-            return [
-              {
-                querySelectorAll: () => [
-                  { getAttribute: () => `1.23456789`, textContent: `1.235` },
-                ],
-              },
-            ]
-          }
-          return []
-        }),
-      } as unknown as Element)
-
-      const result = module.generate_csv({
-        show_non_compliant: false,
-        discovery_set: `unique_prototypes`,
-      })
-
-      // Test filename generation
-      expect(result?.filename).toContain(`unique-prototypes`) // param-case conversion
-      expect(result?.filename).toContain(`compliant`) // compliance suffix
-      expect(result?.filename).toContain(new Date().toISOString().split(`T`)[0]) // date
-
-      // Test number formatting in CSV content
-      const csv_content = (globalThis.Blob as Mock).mock.calls[0][0][0]
-      expect(csv_content).toContain(`1.235`)
-    })
-
-    it(`excludes compliance suffix when showing all models`, async () => {
-      const module = await import(`$lib/table-export`)
-      const result = module.generate_csv({
-        show_non_compliant: true,
-        discovery_set: `test`,
-      })
-
-      expect(result?.filename).not.toContain(`compliant`)
-    })
-  })
-
-  // Combined handle_export tests
   describe(`handle_export Function`, () => {
     it.each([
       [`success`, { filename: `test.fmt`, url: `some-url` }, null],
@@ -424,10 +190,7 @@ describe.skip(`Table Export Functionality`, () => {
         }
 
         const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
-
-        const module = await import(`$lib/table-export`)
-
-        const handler = module.handle_export(generator_spy, `fmt`, state)
+        const handler = handle_export(generator_spy, `fmt`, state)
         await handler()
 
         expect(generator_spy).toHaveBeenCalledWith({

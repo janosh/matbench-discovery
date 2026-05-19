@@ -1,4 +1,6 @@
 import { MODELS } from '$lib/models.svelte'
+import { ALL_METRICS } from '$lib/labels'
+import { sort_models } from '$lib/metrics'
 import { default as ModelsPage } from '$routes/models/+page.svelte'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -8,11 +10,18 @@ describe(`Models Page`, () => {
   it(`renders model sorting controls`, () => {
     mount(ModelsPage, { target: document.body })
 
-    const toggle = document.querySelector(`input[type="checkbox"]`)
-    expect(toggle?.parentElement?.textContent).toMatch(/show non-compliant models/i)
+    const toggle = doc_query<HTMLInputElement>(`input[type="checkbox"]`)
+    expect(toggle.checked).toBe(true)
+    expect(toggle.parentElement?.textContent).toMatch(/show non-compliant models/i)
 
-    expect(document.querySelector(`input[type="number"]`)).toBeDefined()
-    expect(document.querySelectorAll(`input[type="radio"]`)).toHaveLength(2)
+    const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
+    expect(n_best_input.value).toBe(String(MODELS.length))
+    expect([...document.querySelectorAll<HTMLInputElement>(`input[type="radio"]`)].map(
+      (radio) => [radio.value, radio.checked],
+    )).toStrictEqual([ // default sort direction is descending
+      [`asc`, false],
+      [`desc`, true],
+    ])
   })
 
   it(`renders metric sorting buttons`, () => {
@@ -21,23 +30,35 @@ describe(`Models Page`, () => {
     const button_texts = [...document.querySelectorAll(`ul button`)].map((btn) =>
       btn.textContent?.trim(),
     )
-    expect(button_texts).toContain(`Model Name`)
-    expect(button_texts).toContain(`F1`)
-    expect(button_texts).toContain(`DAF`)
-    expect(button_texts).toContain(`R2`)
+    expect(button_texts).toStrictEqual([
+      `Model Name`,
+      `CPS`,
+      `Acc`,
+      `DAF`,
+      `F1`,
+      `MAE`,
+      `Prec`,
+      `R2`,
+      `RMSE`,
+      `TNR`,
+      `TPR`,
+      `κSRME`,
+    ])
   })
 
   it(`renders model cards`, () => {
     mount(ModelsPage, { target: document.body })
 
     const model_cards = document.querySelectorAll(`ol > li`)
-    expect(model_cards.length).toBeGreaterThan(0)
+    expect(model_cards).toHaveLength(MODELS.length)
 
     // Test first model card structure
     const first_card = model_cards[0]
-    expect(first_card.querySelector(`h2 a`)).toBeDefined() // model name link
-    expect(first_card.querySelector(`nav`)).toBeDefined() // links nav
-    expect(first_card.querySelector(`.metrics`)).toBeDefined() // metrics section
+    const first_link = doc_query<HTMLAnchorElement>(`h2 a`, first_card)
+    expect(first_link.getAttribute(`href`)).toMatch(/^\/models\/[^/]+$/)
+    expect(first_link.textContent?.trim()).toMatch(/\S/)
+    expect(doc_query(`nav`, first_card).querySelectorAll(`a`).length).toBeGreaterThan(0)
+    expect(doc_query(`.metrics`, first_card).textContent).toContain(`CPS`)
   })
 
   it(`sorts models by selected metric`, async () => {
@@ -48,8 +69,8 @@ describe(`Models Page`, () => {
     )
 
     const daf_btn = doc_query<HTMLButtonElement>(`button#DAF`)
-    expect(daf_btn).toBeDefined()
-    daf_btn?.click()
+    expect(daf_btn.textContent?.trim()).toBe(`DAF`)
+    daf_btn.click()
     await tick()
 
     const sorted_models = [...document.querySelectorAll(`ol > li h2 a`)].map(
@@ -67,7 +88,8 @@ describe(`Models Page`, () => {
 
     const first_card = doc_query<HTMLLIElement>(`ol > li`)
     const details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
-    expect(details_btn).toBeDefined()
+    expect(details_btn.getAttribute(`aria-label`)).toBe(`Show authors and package versions`)
+    expect(details_btn.getAttribute(`aria-expanded`)).toBe(`false`)
 
     // Initially no authors section visible
     const initial_sections = first_card?.querySelectorAll(`section`)
@@ -77,8 +99,9 @@ describe(`Models Page`, () => {
     expect(has_authors).toBe(false)
 
     // Click to show details
-    details_btn?.click()
+    details_btn.click()
     await tick()
+    expect(details_btn.getAttribute(`aria-expanded`)).toBe(`true`)
 
     // Should now show authors and package versions
     const sections = first_card?.querySelectorAll(`section`)
@@ -98,8 +121,8 @@ describe(`Models Page`, () => {
     })
 
     const [first_card, second_card] = [...document.querySelectorAll(`ol > li`)]
-    expect(first_card).toBeDefined()
-    expect(second_card).toBeDefined()
+    expect(first_card).toBeInstanceOf(HTMLLIElement)
+    expect(second_card).toBeInstanceOf(HTMLLIElement)
 
     const first_details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
 
@@ -126,7 +149,6 @@ describe(`Models Page`, () => {
 
     const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
 
-    expect(n_best_input).toBeDefined()
     expect(n_best_input.type).toBe(`number`)
 
     const initial_count = document.querySelectorAll(`ol > li`).length
@@ -184,16 +206,15 @@ describe(`Models Page`, () => {
       })
 
       const cards = document.querySelectorAll(`ol > li`)
-      const names = [...cards].map((card) => {
-        expect(card.querySelector(`h2 a`)).toBeDefined()
-        expect(card.querySelector(`.metrics`)).toBeDefined()
-        const name = card.querySelector(`h2 a`)?.textContent?.trim()
-        expect(name).toBeTruthy()
-        return name
+      const expected_models = MODELS.toSorted(sort_models(ALL_METRICS.CPS.key, `desc`)).slice(0, 10)
+      const names = [...cards].map((card, idx) => {
+        const link = doc_query<HTMLAnchorElement>(`h2 a`, card)
+        expect(link.getAttribute(`href`)).toBe(`/models/${expected_models[idx].model_key}`)
+        expect(doc_query(`.metrics`, card).textContent).toContain(`CPS`)
+        return link.textContent?.trim()
       })
 
-      expect(new Set(names).size).toBe(names.length)
-      expect(names).toHaveLength(10)
+      expect(names).toStrictEqual(expected_models.map((model) => model.model_name))
     })
   })
 
@@ -212,11 +233,14 @@ describe(`Models Page`, () => {
     await tick()
 
     const cards = document.querySelectorAll(`ol > li`)
-    expect(cards.length).toBeGreaterThan(0)
+    // Svelte transitions can briefly keep outgoing list items in the DOM after sorting.
+    expect(cards.length).toBeGreaterThanOrEqual(limit)
     expect(cards.length).toBeLessThanOrEqual(MODELS.length)
     cards.forEach((card) => {
-      expect(card.querySelector(`h2 a`)).toBeDefined()
-      expect(card.querySelector(`.metrics`)).toBeDefined()
+      expect(doc_query<HTMLAnchorElement>(`h2 a`, card).getAttribute(`href`)).toMatch(
+        /^\/models\/[^/]+$/,
+      )
+      expect(doc_query(`.metrics`, card).textContent).toContain(`DAF`)
     })
     expect(Number(n_best_input.value)).toBe(limit)
   })
@@ -255,8 +279,7 @@ describe(`Models Page`, () => {
     expect(legend.textContent).toContain(`best`)
     expect(legend.textContent).toContain(`worst`)
 
-    expect(legend.querySelector(`svg`)).toBeDefined()
-    expect(legend.querySelector(`.matterviz-color-bar`)).toBeDefined()
+    expect(doc_query(`.colorbar`, legend).textContent).toContain(`Card titles colored by CPS`)
 
     const model_cards_h2 = [...document.querySelectorAll<HTMLElement>(`ol > li h2`)]
     expect(model_cards_h2.length).toBeGreaterThan(0)

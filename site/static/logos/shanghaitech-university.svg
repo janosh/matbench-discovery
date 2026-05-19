@@ -7,6 +7,13 @@
   viewBox="0 0 252 252"
   version="1.1"
 >
+  <style>
+    @media (prefers-color-scheme: dark) {
+      use {
+        filter: brightness(3);
+      }
+    }
+  </style>
   <defs>
     <image
       id="image5"

@@ -14,10 +14,9 @@ vi.mock(`matterviz`, async (importOriginal) => {
 })
 vi.mock(`matterviz/plot`, () => ({ ScatterPlot: vi.fn() }))
 
-function create_mock_github_data(
+const create_mock_github_data = (
   overrides: Partial<GitHubActivityData> = {},
-): GitHubActivityData {
-  return {
+): GitHubActivityData => ({
     name: `Test Model`,
     repo: `test-org/test-model`,
     stars: 1500,
@@ -25,8 +24,7 @@ function create_mock_github_data(
     commits_last_year: 120,
     contributors: 15,
     ...overrides,
-  }
-}
+  })
 
 describe(`GitHubActivityScatter`, () => {
   beforeEach(() => {

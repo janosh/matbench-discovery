@@ -255,31 +255,30 @@ describe(`calc_cell_color`, () => {
     },
   )
 
-  it.each([
-    {
-      case: `linear scale with 'higher' better`,
-      val: 10,
-      all_values: [1, 5, 10],
-      better: `higher` as const,
-      scale_type: `linear` as const,
-    },
-    {
-      case: `linear scale with 'lower' better`,
-      val: 1,
-      all_values: [1, 5, 10],
-      better: `lower` as const,
-      scale_type: `linear` as const,
-    },
-    {
-      case: `log scale with 'higher' better`,
-      val: 1000,
-      all_values: [1, 10, 100, 1000],
-      better: `higher` as const,
-      scale_type: `log` as const,
-    },
-  ])(
+  it.each(
+    [
+      { scale_type: `linear` as const, all_values: [1, 5, 10] },
+      { scale_type: `log` as const, all_values: [1, 10, 100, 1000] },
+    ].flatMap(({ scale_type, all_values }) =>
+      ([`higher`, `lower`] as const).flatMap((better) =>
+        ([`best`, `worst`] as const).map((rank) => {
+          const [min_value, max_value] = [all_values[0], all_values.at(-1) ?? all_values[0]]
+          const use_max_value = better === `higher` ? rank === `best` : rank === `worst`
+          const val = use_max_value ? max_value : min_value
+          return {
+            case: `${scale_type} scale with '${better}' better ${rank} value`,
+            val,
+            all_values,
+            better,
+            scale_type,
+            expected_text_color: rank === `best` ? `black` : `white`,
+          }
+        }),
+      ),
+    ),
+  )(
     `correctly calculates colors with $case`,
-    ({ val, all_values, better, scale_type }) => {
+    ({ val, all_values, better, scale_type, expected_text_color }) => {
       const result = calc_cell_color(
         val,
         all_values,
@@ -290,7 +289,7 @@ describe(`calc_cell_color`, () => {
 
       // Should have valid color values
       expect(result.bg).toMatch(/^rgb\(|rgba\(|#/)
-      expect(result.text).toBeTruthy()
+      expect(result.text).toBe(expected_text_color)
 
       // Compare with a different value
       const diff_val =
