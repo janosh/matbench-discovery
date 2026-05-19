@@ -32,8 +32,8 @@ requires-python = ">=3.11"
 dependencies = [
   "ase>=3.28",
   "filelock>=3.29",
-  "numpy>=2",
-  "pandas>=3",
+  "numpy>=2,<3",
+  "pandas>=3,<4",
   "plotly>=6.7",
   "pymatgen>=2026.5.4",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209
