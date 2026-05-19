@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+from queue import Queue
+from threading import Barrier, Thread
 from unittest.mock import patch
 
 import pytest
@@ -104,7 +106,7 @@ def test_download_file_keeps_existing_file_on_stream_error(
     assert f"Error downloading {url=}" in stdout
     assert stderr == ""
     assert dest_path.read_bytes() == b"old content"
-    assert not (tmp_path / "test.txt.part").exists()
+    assert not list(tmp_path.glob("test.txt.*.part"))
 
 
 def test_download_file_removes_part_file_after_empty_response(
@@ -122,7 +124,7 @@ def test_download_file_removes_part_file_after_empty_response(
     assert "Downloaded empty file" in stdout
     assert stderr == ""
     assert not dest_path.exists()
-    assert not (tmp_path / "test.txt.part").exists()
+    assert not list(tmp_path.glob("test.txt.*.part"))
 
 
 def test_maybe_auto_download_file_raises_when_request_fails_before_streaming(
@@ -138,10 +140,12 @@ def test_maybe_auto_download_file_raises_when_request_fails_before_streaming(
         patch("requests.get", side_effect=requests.ConnectionError("connect failed")),
         pytest.raises(FileNotFoundError, match="Download failed for 'test'"),
     ):
-        maybe_auto_download_file(url, str(abs_path), label="test")
+        maybe_auto_download_file(
+            url, str(abs_path), label="test", raise_on_failure=True
+        )
 
     assert not abs_path.exists()
-    assert not (tmp_path / "test" / "file.txt.part").exists()
+    assert not list((tmp_path / "test").glob("file.txt.*.part"))
 
 
 def test_download_file_ignores_empty_keepalive_chunks(tmp_path: Path) -> None:
@@ -161,7 +165,64 @@ def test_download_file_ignores_empty_keepalive_chunks(tmp_path: Path) -> None:
         download_file(str(dest_path), url)
 
     assert dest_path.read_bytes() == b"test content"
-    assert not (tmp_path / "test.txt.part").exists()
+    assert not list(tmp_path.glob("test.txt.*.part"))
+
+
+def test_download_file_uses_distinct_temp_files_for_concurrent_downloads(
+    tmp_path: Path,
+) -> None:
+    """Concurrent downloads should not share a sidecar .part file."""
+    url = "https://example.com/test.txt"
+    dest_path = tmp_path / "test.txt"
+    barrier = Barrier(2)
+    responses: Queue[requests.Response] = Queue()
+    replace_sources: list[str] = []
+    errors: list[BaseException] = []
+    real_replace = os.replace
+
+    for content in (b"first content", b"second content"):
+        response = make_mock_response(b"")
+
+        def iter_content(
+            chunk_size: int = 8192,  # noqa: ARG001
+            decode_unicode: bool = False,  # noqa: ARG001
+            *,
+            chunk: bytes = content,
+        ) -> list[bytes]:
+            barrier.wait(timeout=5)
+            return [chunk]
+
+        response.iter_content = iter_content
+        responses.put(response)
+
+    def mock_get(*_args: object, **_kwargs: object) -> requests.Response:
+        return responses.get_nowait()
+
+    def recording_replace(src: str, dst: str) -> None:
+        replace_sources.append(src)
+        real_replace(src, dst)
+
+    def worker() -> None:
+        try:
+            download_file(str(dest_path), url)
+        except BaseException as exc:  # pragma: no cover - re-raised below
+            errors.append(exc)
+
+    threads = [Thread(target=worker) for _ in range(2)]
+    with patch("requests.get", side_effect=mock_get), patch(
+        "os.replace", side_effect=recording_replace
+    ):
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+    assert errors == []
+    assert len(set(replace_sources)) == 2
+    assert all(source.endswith(".part") for source in replace_sources)
+    assert f"{dest_path}.part" not in replace_sources
+    assert dest_path.read_bytes() in {b"first content", b"second content"}
+    assert not list(tmp_path.glob("test.txt.*.part"))
 
 
 def test_maybe_auto_download_file_replaces_empty_cache(
@@ -196,6 +257,23 @@ def test_maybe_auto_download_file_raises_after_failed_download(
         patch("requests.get", return_value=make_mock_response(b"Not found", 404)),
         pytest.raises(FileNotFoundError, match="Download failed for 'test'"),
     ):
+        maybe_auto_download_file(
+            url, str(abs_path), label="test", raise_on_failure=True
+        )
+
+    assert not abs_path.exists()
+
+
+def test_maybe_auto_download_file_soft_fails_by_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Optional callers should retain the legacy try-download-then-check pattern."""
+    url = "https://example.com/file.txt"
+    abs_path = tmp_path / "test" / "file.txt"
+    abs_path.parent.mkdir()
+
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+    with patch("requests.get", return_value=make_mock_response(b"Not found", 404)):
         maybe_auto_download_file(url, str(abs_path), label="test")
 
     assert not abs_path.exists()

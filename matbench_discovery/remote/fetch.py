@@ -4,13 +4,17 @@ import builtins
 import os
 import sys
 import traceback
+import uuid
 
 import requests
 
 
 def is_non_empty_file(file_path: str) -> bool:
     """Return whether file_path points to an existing non-empty file."""
-    return os.path.isfile(file_path) and os.path.getsize(file_path) > 0
+    try:
+        return os.path.isfile(file_path) and os.path.getsize(file_path) > 0
+    except OSError:
+        return False
 
 
 def download_file(file_path: str, url: str) -> None:
@@ -19,7 +23,7 @@ def download_file(file_path: str, url: str) -> None:
     """
     file_dir = os.path.dirname(file_path)
     os.makedirs(file_dir, exist_ok=True)
-    tmp_path = f"{file_path}.part"
+    tmp_path = f"{file_path}.{os.getpid()}.{uuid.uuid4().hex}.part"
 
     # Convert any Figshare URL variant to the API download endpoint to avoid WAF
     # Handles: figshare.com/files/ID, figshare.com/ndownloader/files/ID,
@@ -48,7 +52,13 @@ def download_file(file_path: str, url: str) -> None:
         print(f"Error downloading {url=}\nto {file_path=}.\n{traceback.format_exc()}")
 
 
-def maybe_auto_download_file(url: str, abs_path: str, label: str | None = None) -> None:
+def maybe_auto_download_file(
+    url: str,
+    abs_path: str,
+    label: str | None = None,
+    *,
+    raise_on_failure: bool = False,
+) -> None:
     """Download file if not exist and user confirms or auto-download is enabled."""
     if is_non_empty_file(abs_path):
         return
@@ -70,7 +80,7 @@ def maybe_auto_download_file(url: str, abs_path: str, label: str | None = None) 
     if answer.lower().strip() == "y":
         print(f"Downloading {label!r} from {url!r} to {abs_path!r}")
         download_file(abs_path, url)
-        if not is_non_empty_file(abs_path):
+        if raise_on_failure and not is_non_empty_file(abs_path):
             raise FileNotFoundError(
                 f"Download failed for {label!r}: expected non-empty file at "
                 f"{abs_path!r}"

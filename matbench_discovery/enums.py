@@ -453,7 +453,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
                 f"metrics.discovery.pred_file not found in {self.rel_path!r}"
             )
         abs_path = f"{ROOT}/{rel_path}"
-        maybe_auto_download_file(file_url, abs_path, label=self.label)
+        maybe_auto_download_file(
+            file_url, abs_path, label=self.label, raise_on_failure=True
+        )
         return abs_path
 
     @property
