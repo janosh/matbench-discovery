@@ -76,6 +76,9 @@ for (const { notes, metadata_file } of MODELS) {
 }
 
 const data_file_links = data_files[`_links`]
+if (typeof data_file_links !== `string`) {
+  throw new TypeError(`data-files.yml: _links must be a string`)
+}
 
 for (const [key, entry] of Object.entries(data_files)) {
   if (key.startsWith(`_`) || typeof entry !== `object`) continue

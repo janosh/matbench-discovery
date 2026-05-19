@@ -5,6 +5,11 @@ import pkg from '$site/package.json'
 import { describe, expect, it } from 'vitest'
 
 describe(`RSS feed endpoint`, () => {
+  const extract_first_cdata = (xml: string): string => {
+    const match = /<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/.exec(xml)
+    return match?.[1] ?? ``
+  }
+
   it(`should return response with correct content type`, () => {
     const response = GET()
     expect(response.headers.get(`Content-Type`)).toBe(`application/xml`)
@@ -53,11 +58,8 @@ describe(`RSS feed endpoint`, () => {
     const xml = await response.text()
 
     // Extract the CDATA content from the first item
-    const cdata_match =
-      /<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/.exec(xml)
-    expect(cdata_match).not.toBeNull()
-
-    const cdata_content = cdata_match?.[1] ?? ``
+    const cdata_content = extract_first_cdata(xml)
+    expect(cdata_content).not.toBe(``)
 
     // Check for expected model details in the correct order
     expect(cdata_content).toMatch(/<h2>[^<]+<\/h2>/) // Model name heading
@@ -106,9 +108,7 @@ describe(`RSS feed endpoint`, () => {
     }
 
     // Check for links to paper and repo in the description if available
-    const cdata_match =
-      /<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/.exec(xml)
-    const cdata_content = cdata_match?.[1] ?? ``
+    const cdata_content = extract_first_cdata(xml)
 
     // Check for link patterns
     if (cdata_content.includes(`paper`)) {

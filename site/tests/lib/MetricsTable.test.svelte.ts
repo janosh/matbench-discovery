@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { doc_query } from '../index'
 
 describe(`MetricsTable`, () => {
-  const parse_data_sort_value = (cell: Element): number | null => {
+  const parse_integer_sort_value = (cell: Element): number | null => {
     const sort_value = cell.getAttribute(`data-sort-value`)
     if (!sort_value) return null
 
@@ -379,7 +379,7 @@ describe(`MetricsTable`, () => {
 
       // Get dates as timestamps from data-sort-value
       const timestamps = date_cells
-        .map(parse_data_sort_value)
+        .map(parse_integer_sort_value)
         .filter((timestamp) => timestamp !== null)
 
       // Instead of checking order, verify we're extracting timestamps correctly
@@ -396,7 +396,7 @@ describe(`MetricsTable`, () => {
       const descending_timestamps = [
         ...document.querySelectorAll(`td[data-col="Date Added"] [data-sort-value]`),
       ]
-        .map(parse_data_sort_value)
+        .map(parse_integer_sort_value)
         .filter((timestamp) => timestamp !== null)
 
       // Verify we have timestamps
@@ -428,7 +428,7 @@ describe(`MetricsTable`, () => {
       const sizes = [
         ...document.querySelectorAll(`td[data-col="Training Set"] [data-sort-value]`),
       ]
-        .map(parse_data_sort_value)
+        .map(parse_integer_sort_value)
         .filter((size) => size !== null)
 
       if (sizes.length < 2) {
@@ -453,7 +453,7 @@ describe(`MetricsTable`, () => {
       const new_sizes = [
         ...document.querySelectorAll(`td[data-col="Training Set"] [data-sort-value]`),
       ]
-        .map(parse_data_sort_value)
+        .map(parse_integer_sort_value)
         .filter((size) => size !== null)
 
       // Verify we have the same number of items
@@ -500,7 +500,7 @@ describe(`MetricsTable`, () => {
           `td[data-col="${HYPERPARAMS.model_params.label}"] [data-sort-value]`,
         ),
       ]
-        .map(parse_data_sort_value)
+        .map(parse_integer_sort_value)
         .filter((count) => count !== null)
 
       if (param_counts.length < 2) {
@@ -527,7 +527,7 @@ describe(`MetricsTable`, () => {
           `td[data-col="${HYPERPARAMS.model_params.label}"] [data-sort-value]`,
         ),
       ]
-        .map(parse_data_sort_value)
+        .map(parse_integer_sort_value)
         .filter((count) => count !== null)
 
       // Verify we have the same number of items

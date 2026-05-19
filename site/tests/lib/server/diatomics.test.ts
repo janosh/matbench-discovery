@@ -44,9 +44,24 @@ describe(`diatomics server data loader`, () => {
     await expect(
       fetch_diatomics_data(
         { pred_file_url: `https://figshare.com/files/123` },
-        { fetch_fn, retries: 3 },
+        { fetch_fn, max_attempts: 3 },
       ),
     ).rejects.toThrow(/Figshare WAF challenge: challenge/)
     expect(fetch_fn).toHaveBeenCalledExactlyOnceWith(`https://figshare.com/files/123`)
   })
+
+  it.each([0, -1, 1.5, Number.NaN])(
+    `rejects invalid max_attempts value %s`,
+    async (max_attempts) => {
+      const fetch_fn = vi.fn<typeof fetch>()
+
+      await expect(
+        fetch_diatomics_data(
+          { pred_file_url: `https://figshare.com/files/123` },
+          { fetch_fn, max_attempts },
+        ),
+      ).rejects.toThrow(`max_attempts must be a positive integer`)
+      expect(fetch_fn).not.toHaveBeenCalled()
+    },
+  )
 })

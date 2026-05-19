@@ -66,6 +66,7 @@ export const MODELS = $state(
 
       const sizes = calculate_training_sizes(metadata.training_set)
 
+      // Use the lead author's affiliation as the model's org badge
       const first_author = metadata.authors?.[0]
       const org_logo = first_author?.affiliation
         ? get_org_logo(first_author.affiliation)

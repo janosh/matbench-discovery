@@ -9,7 +9,7 @@ const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms))
 
 type DiatomicsSource = { pred_file?: string | null; pred_file_url?: string }
-type FetchOptions = { fetch_fn?: typeof fetch; root_dir?: string; retries?: number }
+type FetchOptions = { fetch_fn?: typeof fetch; root_dir?: string; max_attempts?: number }
 
 const parse_gzipped_json = (
   bytes: Uint8Array | ArrayBuffer,
@@ -53,14 +53,16 @@ const fetch_remote_diatomics_once = async (
 
 export async function fetch_diatomics_data(
   { pred_file, pred_file_url }: DiatomicsSource,
-  { fetch_fn = fetch, root_dir = repo_root, retries = 3 }: FetchOptions = {},
+  { fetch_fn = fetch, root_dir = repo_root, max_attempts = 3 }: FetchOptions = {},
 ): Promise<DiatomicsCurves> {
   const local_data = await read_local_diatomics(pred_file, root_dir)
   if (local_data) return local_data
 
   if (!pred_file_url) throw new Error(`No local diatomics file or remote URL`)
 
-  const max_attempts = Number.isFinite(retries) ? Math.max(1, Math.floor(retries)) : 1
+  if (!Number.isInteger(max_attempts) || max_attempts < 1) {
+    throw new Error(`max_attempts must be a positive integer, got ${max_attempts}`)
+  }
   const fetch_with_retry = async (attempt = 0): Promise<DiatomicsCurves> => {
     try {
       return await fetch_remote_diatomics_once(pred_file_url, fetch_fn)
