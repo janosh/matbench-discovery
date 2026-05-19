@@ -1,6 +1,7 @@
 import PhononsPage from '$routes/tasks/phonons/+page.svelte'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
+import { doc_query } from '../index'
 
 describe(`Phonons Task Page`, () => {
   it(`renders page structure with title, table, and scatter`, () => {
@@ -17,11 +18,12 @@ describe(`Phonons Task Page`, () => {
     expect(document.querySelectorAll(`tbody tr`).length).toBeGreaterThan(0)
 
     // MetricScatter with h2 heading
-    const scatter_heading = [...document.querySelectorAll(`h2`)].find((heading) =>
-      heading.textContent?.includes(`vs Model Parameters`),
-    )
-    expect(scatter_heading).toBeTruthy()
-    expect(document.querySelector(`[style*="height: 400px"]`)).not.toBeNull()
+    const scatter_heading = doc_query<HTMLHeadingElement>(`h2`)
+    expect(scatter_heading.textContent?.trim()).toBe(`κSRME vs Model Parameters`)
+    expect(scatter_heading.innerHTML).toBe(`κ<sub>SRME</sub> vs Model Parameters`)
+
+    const scatter = doc_query<HTMLDivElement>(`div.scatter`)
+    expect(scatter.getAttribute(`style`)).toContain(`height: 400px`)
   })
 
   it(`shows κ_SRME and metadata columns, hides discovery metrics`, () => {

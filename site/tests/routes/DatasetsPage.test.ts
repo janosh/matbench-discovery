@@ -61,7 +61,8 @@ describe(`Datasets Page`, () => {
   it(`properly renders resource links for datasets`, () => {
     // Links column is the last column (10th, index 9)
     const tbody = document.querySelector(`.${heatmap_class} tbody`)
-    const rows = tbody?.querySelectorAll(`tr`) ?? []
+    if (!tbody) throw new Error(`Datasets table body not found`)
+    const rows = tbody.querySelectorAll(`tr`)
 
     // Count resource links (Website, Download, DOI)
     let resource_link_count = 0
@@ -71,20 +72,21 @@ describe(`Datasets Page`, () => {
       // Ensure the cell was found before querying links
       if (!links_cell) return
 
-      const links = links_cell.querySelectorAll(`a`)
-      resource_link_count += links.length
+      const resource_links = [...links_cell.querySelectorAll(`a`)].filter((link) =>
+        link.hasAttribute(`title`) || link.hasAttribute(`data-original-title`),
+      )
+      resource_link_count += resource_links.length
 
       // Each link should have target="_blank"
-      links.forEach((link) => {
-        // Skip if link or title is missing (shouldn't happen but guards against errors)
-        if (!link || !link.getAttribute(`title`)) return
-
+      resource_links.forEach((link) => {
         expect(link.getAttribute(`target`)).toBe(`_blank`)
         expect(link.getAttribute(`rel`)).toContain(`noopener`)
         // Ensure title is one of the expected ones and not null/empty
-        const title = link.getAttribute(`title`)
-        expect(title).toBeTruthy()
+        const title = link.getAttribute(`title`) ?? link.getAttribute(`data-original-title`)
+        expect(title).not.toBeNull()
+        expect(title).not.toBe(``)
         expect([`Website`, `Download`, `DOI`]).toContain(title)
+        expect(link.getAttribute(`aria-label`)).toBe(title)
       })
     })
 

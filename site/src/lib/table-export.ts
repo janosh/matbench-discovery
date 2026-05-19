@@ -214,23 +214,21 @@ function create_export_container(table_clone: HTMLElement): HTMLElement {
 }
 
 // Common filter function for html-to-image
-function create_export_filter() {
-  return (node: Node) => {
-    const node_name = node.nodeName
+const create_export_filter = (node: Node): boolean => {
+  const node_name = node.nodeName
 
-    // Skip external stylesheets
-    if (
-      node_name === `LINK` &&
-      node instanceof Element &&
-      node.getAttribute(`rel`) === `stylesheet` &&
-      node.getAttribute(`href`)?.startsWith(`http`)
-    )
-      return false
+  // Skip external stylesheets
+  if (
+    node_name === `LINK` &&
+    node instanceof Element &&
+    node.getAttribute(`rel`) === `stylesheet` &&
+    node.getAttribute(`href`)?.startsWith(`http`)
+  )
+    return false
 
-    // Skip problematic elements
-    if ([`SVG`, `IMG`].includes(node_name)) return false
-    return true
-  }
+  // Skip problematic elements
+  if ([`SVG`, `IMG`].includes(node_name)) return false
+  return true
 }
 
 // Log detailed error information
@@ -276,7 +274,7 @@ export async function generate_svg({
       const svg_data_url = await toSvg(container, {
         backgroundColor: container.style.backgroundColor,
         skipFonts: true,
-        filter: create_export_filter(),
+        filter: create_export_filter,
       })
 
       // Create download
@@ -338,7 +336,7 @@ export async function generate_png({
         height: Math.ceil(container_rect.height),
         skipFonts: true,
         quality: 0.95,
-        filter: create_export_filter(),
+        filter: create_export_filter,
         style: {
           overflow: `visible`,
           margin: `0`,
