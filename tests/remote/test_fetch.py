@@ -17,6 +17,7 @@ def make_mock_response(content: bytes, status_code: int = 200) -> requests.Respo
     response = requests.Response()
     response.status_code = status_code
     response._content = content  # noqa: SLF001
+    response._content_consumed = True  # noqa: SLF001
     response.iter_content = (
         lambda chunk_size=1, decode_unicode=False: [content]  # noqa: ARG005
     )
@@ -95,7 +96,8 @@ def test_download_file_keeps_existing_file_on_stream_error(
     response = make_mock_response(b"")
 
     def broken_iter_content(
-        chunk_size: int = 8192, decode_unicode: bool = False  # noqa: ARG001
+        chunk_size: int = 8192,  # noqa: ARG001
+        decode_unicode: bool = False,  # noqa: ARG001
     ) -> list[bytes]:
         raise requests.ConnectionError("stream failed")
 
@@ -122,7 +124,8 @@ def test_download_file_cleans_partial_file_after_truncated_stream(
     response = make_mock_response(b"")
 
     def truncated_iter_content(
-        chunk_size: int = 8192, decode_unicode: bool = False  # noqa: ARG001
+        chunk_size: int = 8192,  # noqa: ARG001
+        decode_unicode: bool = False,  # noqa: ARG001
     ) -> Iterator[bytes]:
         yield b"partial content"
         raise requests.exceptions.ChunkedEncodingError("stream ended early")
@@ -163,12 +166,10 @@ def test_download_file_cleans_partial_file_after_write_error(
             self.file.write(data[:1])
             raise OSError("No space left on device")
 
-    def failing_open(
-        file: str, mode: str = "r", *args: object, **kwargs: object
-    ) -> object:
+    def failing_open(file: str, mode: str = "r") -> object:
         if mode == "wb" and str(file).startswith(str(dest_path)):
             return FailingWriteFile(str(file))
-        return real_open(file, mode, *args, **kwargs)
+        return real_open(file, mode=mode)
 
     with (
         patch("requests.get", return_value=make_mock_response(b"test content")),
@@ -230,7 +231,8 @@ def test_download_file_ignores_empty_keepalive_chunks(tmp_path: Path) -> None:
     response = make_mock_response(b"")
 
     def iter_content_with_keepalive(
-        chunk_size: int = 8192, decode_unicode: bool = False  # noqa: ARG001
+        chunk_size: int = 8192,  # noqa: ARG001
+        decode_unicode: bool = False,  # noqa: ARG001
     ) -> list[bytes]:
         return [b"", b"test content"]
 
@@ -252,7 +254,7 @@ def test_download_file_uses_distinct_temp_files_for_concurrent_downloads(
     barrier = Barrier(2)
     responses: Queue[requests.Response] = Queue()
     replace_sources: list[str] = []
-    errors: list[BaseException] = []
+    errors: list[Exception] = []
     real_replace = os.replace
 
     for content in (b"first content", b"second content"):
@@ -280,12 +282,13 @@ def test_download_file_uses_distinct_temp_files_for_concurrent_downloads(
     def worker() -> None:
         try:
             download_file(str(dest_path), url)
-        except BaseException as exc:  # pragma: no cover - re-raised below
+        except Exception as exc:  # pragma: no cover - re-raised below
             errors.append(exc)
 
     threads = [Thread(target=worker) for _ in range(2)]
-    with patch("requests.get", side_effect=mock_get), patch(
-        "os.replace", side_effect=recording_replace
+    with (
+        patch("requests.get", side_effect=mock_get),
+        patch("os.replace", side_effect=recording_replace),
     ):
         for thread in threads:
             thread.start()

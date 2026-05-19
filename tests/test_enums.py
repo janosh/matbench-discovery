@@ -6,7 +6,7 @@ import time
 import warnings
 from enum import auto
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 from unittest.mock import patch
 
 import pytest
@@ -253,6 +253,13 @@ def test_files_enum_auto_download(
             if self.status_code >= 400:
                 raise requests.HTTPError(f"HTTP Error: {self.status_code}")
 
+        def __enter__(self) -> Self:
+            """Mock response context manager entry."""
+            return self
+
+        def __exit__(self, *_exc_info: object) -> None:
+            """Mock response context manager exit."""
+
         def iter_content(self, chunk_size: int = 8192) -> list[bytes]:  # noqa: ARG002
             """Mock iter_content for streaming."""
             return [self.content]
@@ -306,6 +313,13 @@ def test_data_files_path_replaces_empty_cache(
         def raise_for_status(self) -> None:
             """Mock the raise_for_status method."""
 
+        def __enter__(self) -> Self:
+            """Mock response context manager entry."""
+            return self
+
+        def __exit__(self, *_exc_info: object) -> None:
+            """Mock response context manager exit."""
+
         def iter_content(self, chunk_size: int = 8192) -> list[bytes]:  # noqa: ARG002
             """Mock iter_content for streaming."""
             return [self.content]
@@ -314,7 +328,7 @@ def test_data_files_path_replaces_empty_cache(
     monkeypatch.setattr(requests, "get", lambda *_args, **_kwargs: MockResponse())
     monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
 
-    assert data_file.path == str(abs_path)
+    assert Path(data_file.path) == abs_path
     stdout, stderr = capsys.readouterr()
     assert f"Downloading {data_file.name!r} from {data_file.url}" in stdout
     assert stderr == ""
@@ -334,6 +348,13 @@ def test_data_files_path_raises_after_failed_download(
         def raise_for_status(self) -> None:
             """Mock the raise_for_status method."""
             raise requests.HTTPError("HTTP Error: 404")
+
+        def __enter__(self) -> Self:
+            """Mock response context manager entry."""
+            return self
+
+        def __exit__(self, *_exc_info: object) -> None:
+            """Mock response context manager exit."""
 
     monkeypatch.setattr(DataFiles, "_base_dir", str(tmp_path))
     monkeypatch.setattr(requests, "get", lambda *_args, **_kwargs: MockResponse())

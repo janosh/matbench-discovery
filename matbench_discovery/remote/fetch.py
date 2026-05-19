@@ -34,13 +34,13 @@ def download_file(file_path: str, url: str) -> None:
 
     try:
         # Stream large files to avoid loading entire file into memory
-        response = requests.get(url, timeout=600, stream=True)
-        response.raise_for_status()
+        with requests.get(url, timeout=600, stream=True) as response:
+            response.raise_for_status()
 
-        with open(tmp_path, mode="wb") as file:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    file.write(chunk)
+            with open(tmp_path, mode="wb") as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        file.write(chunk)
 
         if not is_non_empty_file(tmp_path):
             raise RuntimeError(f"Downloaded empty file from {url!r}")
