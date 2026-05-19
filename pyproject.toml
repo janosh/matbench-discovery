@@ -67,7 +67,8 @@ running-models = [
   "moyopy>=0.9",
 ]
 fetch-wbm-data = ["gdown>=5.2"]
-phonons = ["phono3py>=3.30", "phonopy>=2.35"]
+# phono3py >=3.31 removed the MS-SMM19 RTA method used for Wigner transport.
+phonons = ["phono3py==3.30.0", "phonopy>=2.35"]
 
 [build-system]
 requires = ["uv_build>=0.9.5"]
