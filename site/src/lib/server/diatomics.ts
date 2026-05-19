@@ -42,13 +42,19 @@ const fetch_remote_diatomics_once = async (
   pred_file_url: string,
   fetch_fn: typeof fetch,
 ): Promise<DiatomicsCurves> => {
-  const response = await fetch_fn(pred_file_url)
-  const waf_action = response.headers.get(`x-amzn-waf-action`)
-  if (waf_action) throw new Error(`Figshare WAF challenge: ${waf_action}`)
-  if (response.status !== 200) {
-    throw new Error(`${response.status} ${response.statusText}`)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30_000)
+  try {
+    const response = await fetch_fn(pred_file_url, { signal: controller.signal })
+    const waf_action = response.headers.get(`x-amzn-waf-action`)
+    if (waf_action) throw new Error(`Figshare WAF challenge: ${waf_action}`)
+    if (response.status !== 200) {
+      throw new Error(`${response.status} ${response.statusText}`)
+    }
+    return parse_gzipped_json(await response.arrayBuffer(), pred_file_url)
+  } finally {
+    clearTimeout(timeout)
   }
-  return parse_gzipped_json(await response.arrayBuffer(), pred_file_url)
 }
 
 export async function fetch_diatomics_data(
