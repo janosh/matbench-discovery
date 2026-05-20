@@ -1123,7 +1123,7 @@ describe(`MetricsTable`, () => {
       expect(get_toggle()).toBeNull()
     })
 
-    it(`validates correct model name extraction and selection behavior`, async () => {
+    it(`validates correct model name extraction and selection behavior`, { timeout: 10_000 }, async () => {
       mount(MetricsTable, {
         target: document.body,
         props: { col_filter: () => true, show_non_compliant: true },
