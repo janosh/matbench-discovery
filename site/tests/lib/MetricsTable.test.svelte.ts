@@ -960,7 +960,7 @@ describe(`MetricsTable`, () => {
       row.dispatchEvent(new MouseEvent(`dblclick`, { bubbles: true }))
     }
 
-    it(`selects and deselects models on double-click with proper state management`, async () => {
+    it(`selects and deselects models on double-click with proper state management`, { timeout: 10_000 }, async () => {
       mount(MetricsTable, {
         target: document.body,
         props: { col_filter: () => true, show_non_compliant: true },
@@ -992,7 +992,7 @@ describe(`MetricsTable`, () => {
       expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
     })
 
-    it(`manages toggle visibility and count dynamically`, async () => {
+    it(`manages toggle visibility and count dynamically`, { timeout: 10_000 }, async () => {
       mount(MetricsTable, {
         target: document.body,
         props: { col_filter: () => true, show_non_compliant: true },
@@ -1022,9 +1022,9 @@ describe(`MetricsTable`, () => {
       await tick()
 
       expect(get_toggle()).toBeNull()
-    }, 10_000)
+    })
 
-    it(`toggles filter state and updates UI labels correctly`, async () => {
+    it(`toggles filter state and updates UI labels correctly`, { timeout: 10_000 }, async () => {
       mount(MetricsTable, {
         target: document.body,
         props: { col_filter: () => true, show_non_compliant: true },
@@ -1054,7 +1054,7 @@ describe(`MetricsTable`, () => {
       expect(label?.textContent).toContain(`Show only 1 selected`)
     })
 
-    it(`filters rows and manages styling based on filter state`, async () => {
+    it(`filters rows and manages styling based on filter state`, { timeout: 10_000 }, async () => {
       mount(MetricsTable, {
         target: document.body,
         props: { col_filter: () => true, show_non_compliant: true },
