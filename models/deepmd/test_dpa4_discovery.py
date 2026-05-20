@@ -57,7 +57,10 @@ def collect_input_shards(data_dir: Path) -> list[Path]:
     FileNotFoundError
         If no shard files are found.
     """
-    shard_paths = sorted(data_dir.glob("wbm_data_*.json"), key=lambda path: int(path.stem.rsplit("_", 1)[-1]))
+    shard_paths = sorted(
+        data_dir.glob("wbm_data_*.json"),
+        key=lambda path: int(path.stem.rsplit("_", 1)[-1]),
+    )
     if not shard_paths:
         raise FileNotFoundError(f"No WBM shard files found under {data_dir}")
     return shard_paths
@@ -155,7 +158,9 @@ def relax_shard(
         Maximum number of optimizer steps.
     """
     # === Step 1. Load Structures ===
-    input_col = str({Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[Task.IS2RE])
+    input_col = str(
+        {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[Task.IS2RE]
+    )
     df_in = pd.read_json(input_path)
     if input_col not in df_in:
         input_col = "initial_structure"
@@ -182,6 +187,7 @@ def relax_shard(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df_out.reset_index().to_json(
         output_path,
+        compression="gzip",
         default_handler=as_dict_handler,
         orient="records",
         lines=True,
@@ -198,17 +204,57 @@ def build_parser() -> argparse.ArgumentParser:
         Configured parser.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, required=True, help="Directory containing WBM shard JSON files.")
-    parser.add_argument("--checkpoint-path", type=Path, required=True, help="Path to the DPA4 DeePMD checkpoint.")
-    parser.add_argument("--output-dir", type=Path, required=True, help="Directory for relaxed shard outputs.")
-    parser.add_argument("--model-name", default="dpa4", help="Column prefix used in saved outputs.")
-    parser.add_argument("--optimizer", choices=["FIRE", "LBFGS", "BFGS"], default="FIRE", help="ASE optimizer.")
-    parser.add_argument("--cell-filter", choices=["frechet", "unit"], default="frechet", help="ASE cell filter.")
-    parser.add_argument("--force-max", type=float, default=0.02, help="Force convergence threshold in eV/A.")
-    parser.add_argument("--max-steps", type=int, default=500, help="Maximum optimization steps.")
-    parser.add_argument("--num-jobs", type=int, default=1, help="Number of interleaved shard jobs.")
-    parser.add_argument("--job-index", type=int, default=0, help="Index of this interleaved shard job.")
-    parser.add_argument("--debug", action="store_true", help="Only run the first selected shard.")
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        required=True,
+        help="Directory containing WBM shard JSON files.",
+    )
+    parser.add_argument(
+        "--checkpoint-path",
+        type=Path,
+        required=True,
+        help="Path to the DPA4 DeePMD checkpoint.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        help="Directory for relaxed shard outputs.",
+    )
+    parser.add_argument(
+        "--model-name", default="dpa4", help="Column prefix used in saved outputs."
+    )
+    parser.add_argument(
+        "--optimizer",
+        choices=["FIRE", "LBFGS", "BFGS"],
+        default="FIRE",
+        help="ASE optimizer.",
+    )
+    parser.add_argument(
+        "--cell-filter",
+        choices=["frechet", "unit"],
+        default="frechet",
+        help="ASE cell filter.",
+    )
+    parser.add_argument(
+        "--force-max",
+        type=float,
+        default=0.02,
+        help="Force convergence threshold in eV/A.",
+    )
+    parser.add_argument(
+        "--max-steps", type=int, default=500, help="Maximum optimization steps."
+    )
+    parser.add_argument(
+        "--num-jobs", type=int, default=1, help="Number of interleaved shard jobs."
+    )
+    parser.add_argument(
+        "--job-index", type=int, default=0, help="Index of this interleaved shard job."
+    )
+    parser.add_argument(
+        "--debug", action="store_true", help="Only run the first selected shard."
+    )
     return parser
 
 

@@ -115,7 +115,9 @@ class KappaRunner:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         calculator = DP(str(self.checkpoint_path))
         optim_cls = OPTIM_CLS[self.optimizer]
-        structures_path = self.structures_path or Path(DataFiles.phonondb_pbe_103_structures.path)
+        structures_path = self.structures_path or Path(
+            DataFiles.phonondb_pbe_103_structures.path
+        )
         atoms_list = cast(
             "list[Atoms]",
             read(structures_path, format="extxyz", index=":"),
@@ -170,14 +172,14 @@ class KappaRunner:
         out_path = self.output_dir / "conductivity.json.gz"
         df_kappa = pd.DataFrame(kappa_results).T
         df_kappa.index.name = str(Key.mat_id)
-        df_kappa.reset_index().to_json(out_path)
+        df_kappa.reset_index().to_json(out_path, compression="gzip")
         print(f"Saved kappa results to {out_path}")
 
         if self.save_forces:
             force_out_path = self.output_dir / "force_sets.json.gz"
             df_force = pd.DataFrame(force_results).T
             df_force.index.name = str(Key.mat_id)
-            df_force.reset_index().to_json(force_out_path)
+            df_force.reset_index().to_json(force_out_path, compression="gzip")
             print(f"Saved force results to {force_out_path}")
 
         return out_path
@@ -211,7 +213,9 @@ class KappaRunner:
         """
         mat_id = atoms.info.get(str(Key.mat_id), atoms.info.get("mp_id"))
         if mat_id is None:
-            raise KeyError(f"No material ID found in atoms.info keys: {sorted(atoms.info)}")
+            raise KeyError(
+                f"No material ID found in atoms.info keys: {sorted(atoms.info)}"
+            )
         init_info = deepcopy(atoms.info)
         formula = atoms.get_chemical_formula()
         spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
@@ -238,7 +242,9 @@ class KappaRunner:
                 mat_id=mat_id,
             )
         except Exception as exc:
-            warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
+            warnings.warn(
+                f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2
+            )
             traceback.print_exc()
             err_dict["errors"].append(f"RelaxError: {exc!r}")
             err_dict["error_traceback"].append(traceback.format_exc())
@@ -284,7 +290,9 @@ class KappaRunner:
                 kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
                 return
         except Exception as exc:
-            warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
+            warnings.warn(
+                f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2
+            )
             traceback.print_exc()
             err_dict["errors"].append(f"ForceConstantError: {exc!r}")
             err_dict["error_traceback"].append(traceback.format_exc())
@@ -294,14 +302,18 @@ class KappaRunner:
         try:
             ph3, kappa_dict, _cond = ltc.calculate_conductivity(ph3, temperatures=[300])
         except Exception as exc:
-            warnings.warn(f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2)
+            warnings.warn(
+                f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
+            )
             traceback.print_exc()
             err_dict["errors"].append(f"ConductivityError: {exc!r}")
             err_dict["error_traceback"].append(traceback.format_exc())
             kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
             return
 
-        kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | kappa_dict | err_dict
+        kappa_results[mat_id] = (
+            info_dict | relax_dict | freqs_dict | kappa_dict | err_dict
+        )
 
     def _relax_atoms(
         self,
@@ -346,7 +358,9 @@ class KappaRunner:
         if self.enforce_relax_symm:
             atoms.set_constraint(FixSymmetry(atoms))
         filtered_atoms = FrechetCellFilter(atoms, mask=[True] * 3 + [False] * 3)
-        optimizer = optim_cls(filtered_atoms, logfile=self.output_dir / f"relax_{mat_id}.log")
+        optimizer = optim_cls(
+            filtered_atoms, logfile=self.output_dir / f"relax_{mat_id}.log"
+        )
         optimizer.run(fmax=self.force_max, steps=self.max_steps)
 
         reached_max_steps = optimizer.nsteps >= self.max_steps
@@ -377,21 +391,54 @@ def build_parser() -> argparse.ArgumentParser:
         Configured parser.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--checkpoint-path", type=Path, required=True, help="Path to the DPA4 DeePMD checkpoint.")
-    parser.add_argument("--output-dir", type=Path, required=True, help="Output directory for kappa files.")
-    parser.add_argument("--structures-path", type=Path, default=None, help="Optional phononDB extxyz path.")
-    parser.add_argument("--optimizer", choices=["FIRE", "LBFGS"], default="FIRE", help="ASE optimizer.")
-    parser.add_argument("--max-steps", type=int, default=300, help="Maximum relaxation steps.")
-    parser.add_argument("--force-max", type=float, default=1e-4, help="Force convergence threshold in eV/A.")
-    parser.add_argument("--symprec", type=float, default=1e-5, help="Symmetry precision.")
+    parser.add_argument(
+        "--checkpoint-path",
+        type=Path,
+        required=True,
+        help="Path to the DPA4 DeePMD checkpoint.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        help="Output directory for kappa files.",
+    )
+    parser.add_argument(
+        "--structures-path",
+        type=Path,
+        default=None,
+        help="Optional phononDB extxyz path.",
+    )
+    parser.add_argument(
+        "--optimizer", choices=["FIRE", "LBFGS"], default="FIRE", help="ASE optimizer."
+    )
+    parser.add_argument(
+        "--max-steps", type=int, default=300, help="Maximum relaxation steps."
+    )
+    parser.add_argument(
+        "--force-max",
+        type=float,
+        default=1e-4,
+        help="Force convergence threshold in eV/A.",
+    )
+    parser.add_argument(
+        "--symprec", type=float, default=1e-5, help="Symmetry precision."
+    )
     parser.add_argument(
         "--displacement-distance",
         type=float,
         default=0.03,
         help="Phono3py displacement distance in Angstrom.",
     )
-    parser.add_argument("--limit", type=int, default=0, help="Number of structures to run. Use 0 for all.")
-    parser.add_argument("--no-save-forces", action="store_true", help="Skip writing force_sets.json.gz.")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=0,
+        help="Number of structures to run. Use 0 for all.",
+    )
+    parser.add_argument(
+        "--no-save-forces", action="store_true", help="Skip writing force_sets.json.gz."
+    )
     return parser
 
 

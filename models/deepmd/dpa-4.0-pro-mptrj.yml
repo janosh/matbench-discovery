@@ -1,17 +1,18 @@
 model_name: DPA-4.0-Pro-MPtrj
 model_key: dpa-4.0-pro-mptrj
-model_version: v2026.05.12
-date_added: '2026-05-18'
-date_published: '2026-05-18'
+model_version: v2026.05.20
+date_added: '2026-05-20'
+date_published: '2026-05-20'
 
 authors:
   - name: Tiancheng Li
-    affiliation: Peking University; AI for Science Institute, Beijing
+    affiliation: AI for Science Institute, Beijing; Peking University
     email: LTC201806070316@outlook.com
     github: https://github.com/OutisLi
   - name: Duo Zhang
     affiliation: AI for Science Institute, Beijing
     orcid: https://orcid.org/0000-0001-9591-2659
+    corresponding: true
   - name: Linfeng Zhang
     affiliation: AI for Science Institute, Beijing; DP Technology
     email: linfeng.zhang.zlf@gmail.com
@@ -22,28 +23,23 @@ authors:
     corresponding: true
 
 trained_by:
-  - name: Li Tiancheng
-    affiliation: Peking University; AI for Science Institute, Beijing
+  - name: Tiancheng Li
+    affiliation: AI for Science Institute, Beijing; Peking University
     email: LTC201806070316@outlook.com
     github: https://github.com/OutisLi
 
 repo: https://github.com/deepmodeling/deepmd-kit
 url: https://github.com/deepmodeling/deepmd-kit
-# TODO: replace with the DPA-4.0 DOI when public. Keep as URL for schema validation.
 doi: https://github.com/deepmodeling/deepmd-kit
-# TODO: replace with the DPA-4.0 paper/preprint URL when public.
 paper: https://github.com/deepmodeling/deepmd-kit
-# TODO: replace after opening the Matbench Discovery PR.
-pr_url: https://github.com/janosh/matbench-discovery/pulls
-# TODO: upload the DPA-4.0-Pro-MPtrj checkpoint and replace this URL.
-checkpoint_url: missing
+pr_url: https://github.com/janosh/matbench-discovery/pull/324
+checkpoint_url: https://figshare.com/files/64733586
 
 license:
   code: LGPL-3.0
   code_url: https://github.com/deepmodeling/deepmd-kit/blob/master/LICENSE
-  # TODO: confirm checkpoint license before submission.
-  checkpoint: unreleased
-  checkpoint_url: missing
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 openness: OSOD
 trained_for_benchmark: true
@@ -56,11 +52,8 @@ n_estimators: 1
 
 training_set: [MPtrj]
 
-# TODO: replace with actual training hardware and wall time if available.
-training_cost: missing
-# Example:
-# training_cost:
-#   Nvidia H20 GPUs: {amount: 8, hours: 120}
+training_cost:
+  Nvidia H20 GPUs: {amount: 8, hours: 288, cost: 2304}
 
 hyperparams:
   # Matbench Discovery relaxation settings used for the submitted WBM IS2RE results.
@@ -72,46 +65,38 @@ hyperparams:
   max_neighbors: 384
 
   architecture:
-    type: DPA4
+    type: DPA4/SeZM
     n_blocks: 8
     lmax: 5
     mmax: 1
     channels: 96
     n_radial: 16
     so2_layers: 4
+    radial_so2_mode: none
+    radial_so2_rank: 0
     n_focus: 1
     n_atten_head: 1
     ffn_blocks: 1
     sandwich_norm: [true, false, true, false]
     s2_activation: [false, true]
+    lebedev_quadrature: false
     activation_function: silu
     glu_activation: true
-    use_amp: true
-    use_compile: true
-    enable_tf32: true
     precision: float32
 
-  learning_rate:
-    type: wsd
-    start_lr: 0.00043
-    stop_lr: 0.000001
-    warmup_steps: 5000
-    warmup_start_factor: 0.2
-    decay_phase_ratio: 0.65
-    decay_type: cosine
+  learning_rate_schedule:
+    type: WSD
 
   loss:
-    type: ener
     loss_func: mae
     f_use_norm: true
-    loss_weights:
+    loss_prefactor:
       energy: 20
       force: 20
       virial: 5
 
-  optimizer:
-    type: Muon
-    weight_decay: 0.001
+  optimizer: Muon
+  weight_decay: 0.001
 
   training:
     numb_steps: 3_000_000
@@ -119,25 +104,20 @@ hyperparams:
     gradient_max_norm: 5
 
 requirements:
-  deepmd-kit: 3.1.4.dev113+g0efbbb53c
+  deepmd-kit: 3.1.4
   torch: 2.11.0+cu128
-  numpy: 2.4.4
-  pandas: 2.3.3
   ase: 3.28.0
-  pymatgen: 2026.3.23
-  moyopy: 0.7.9
-  phono3py: 3.30.1
-  phonopy: 3.5.0
-  k_srme: 1.0.0
 
 notes:
   Description: |
-    DPA-4.0-Pro-MPtrj is a DeePMD-kit universal interatomic potential trained
-    on the MPtrj dataset.
+    DPA-4.0-Pro-MPtrj is a DeePMD-kit universal interatomic potential in the
+    DPA4/SeZM architecture family, trained only on the MPtrj dataset for this
+    Matbench Discovery submission.
   Architecture: |
-    The model uses the DPA4 architecture with 8 blocks, lmax=5, mmax=1,
-    96 channels, 16 radial basis functions, and a 6.0 Å cutoff with up to
-    384 selected neighbors.
+    DPA4 uses local-frame SO(2)-equivariant message passing with envelope-gated
+    attention over invariant channels. The submitted model has 8 interaction
+    blocks, lmax=5, mmax=1, 96 channels, 16 radial basis functions, and a
+    6.0 Å cutoff with up to 384 selected neighbors.
   Training: |
     The model was trained for 3,000,000 steps using the Muon optimizer, WSD
     learning-rate schedule, MAE energy/force/virial loss weights 20/20/5,
@@ -149,19 +129,32 @@ metrics:
       κ_SRME: 0.2414
       κ_SRE: 0.1323
       pred_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-14-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
-      # TODO: upload `2026-05-14-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz`.
-      pred_file_url: https://figshare.com/files/TODO_DPA4_KAPPA
+      pred_file_url: https://figshare.com/files/64733580
   geo_opt:
-    pred_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-wbm-IS2RE-FIRE.json.gz
-    # TODO: upload `2026-05-12-wbm-IS2RE-FIRE.json.gz`.
-    pred_file_url: https://figshare.com/files/TODO_DPA4_GEO_OPT
+    pred_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file_url: https://figshare.com/files/64733670
     struct_col: dpa4_structure
-    # TODO: run `just prepare-model-submission dpa_4_0_pro_mptrj` after upload
-    # to generate geo-opt symmetry analysis files and populate symprec=1e-5/1e-2.
+    symprec=1e-2:
+      rmsd: 0.0694 # unitless
+      n_sym_ops_mae: 2.3791 # unitless
+      symmetry_decrease: 0.2207 # fraction
+      symmetry_match: 0.6502 # fraction
+      symmetry_increase: 0.1039 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.7.9.csv.gz
+      analysis_file_url: https://figshare.com/files/64735083
+    symprec=1e-5:
+      rmsd: 0.0694 # unitless
+      n_sym_ops_mae: 6.818 # unitless
+      symmetry_decrease: 0.6561 # fraction
+      symmetry_match: 0.2497 # fraction
+      symmetry_increase: 0.0674 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.7.9.csv.gz
+      analysis_file_url: https://figshare.com/files/64735089
   discovery:
     pred_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-dpa-4.0-pro-mptrj-preds.csv.gz
-    # TODO: upload `2026-05-12-dpa-4.0-pro-mptrj-preds.csv.gz`.
-    pred_file_url: https://figshare.com/files/TODO_DPA4_DISCOVERY
+    pred_file_url: https://figshare.com/files/64733577
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.832 # fraction
@@ -174,13 +167,13 @@ metrics:
       TNR: 0.97 # fraction
       FNR: 0.184 # fraction
       TP: 35987.0 # count
-      FP: 6440.0 # count
-      TN: 206431.0 # count
+      FP: 6439.0 # count
+      TN: 206432.0 # count
       FN: 8105.0 # count
       MAE: 0.029 # eV/atom
-      RMSE: 0.078 # eV/atom
-      R2: 0.814 # dimensionless
-      missing_preds: 0 # count
+      RMSE: 0.076 # eV/atom
+      R2: 0.82 # dimensionless
+      missing_preds: 2 # count
     unique_prototypes:
       F1: 0.85 # fraction
       DAF: 5.628 # dimensionless

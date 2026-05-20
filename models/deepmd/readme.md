@@ -139,7 +139,18 @@ wget https://figshare.com/files/55141127
 
 ### DPA-4.0-Pro-MPtrj
 
-`2026-05-12-dpa-4.0-pro-mptrj-preds.csv.gz`
+DPA-4.0-Pro-MPtrj is a DeePMD-kit universal interatomic potential based on the
+DPA4/SeZM architecture and trained only on MPtrj for this submission. DPA4 uses
+local-frame SO(2)-equivariant message passing: each edge is rotated into a
+bond-aligned frame, where the remaining rotational symmetry is SO(2). This
+keeps the angular update lightweight while retaining directional information
+that is absent in purely invariant message passing.
+
+The submitted model uses 8 interaction blocks, lmax=5, mmax=1, 96 channels,
+16 radial basis functions, a 6.0 Å cutoff, and up to 384 selected neighbors.
+It also uses envelope-gated attention over invariant channels and was trained
+with the Muon optimizer, a WSD learning-rate schedule, AMP, TF32, and compiled
+training enabled.
 
 ```txt
     Full-set    Unique  10K
@@ -153,10 +164,10 @@ FPR             0.030253       0.025006     1.000000
 TNR             0.969747       0.974994     0.000000
 FNR             0.183820       0.159465     0.000000
 TP          35987.000000   28052.000000  9641.000000
-FP           6440.000000    4554.000000   359.000000
-TN         206431.000000  177560.000000     0.000000
+FP           6439.000000    4554.000000   359.000000
+TN         206432.000000  177560.000000     0.000000
 FN           8105.000000    5322.000000     0.000000
-MAE             0.029051       0.029983     0.032663
-RMSE            0.077772       0.077515     0.122390
-R2              0.814457       0.822809     0.697539
+MAE             0.029000       0.030000     0.033000
+RMSE            0.076000       0.078000     0.122000
+R2              0.820000       0.823000     0.698000
 ```
