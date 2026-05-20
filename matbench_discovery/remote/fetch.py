@@ -33,9 +33,17 @@ def download_file(file_path: str, url: str) -> None:
 
         os.replace(tmp_file_path, file_path)
     except (OSError, requests.RequestException):
-        if os.path.isfile(tmp_file_path):
+        error_msg = traceback.format_exc()
+        try:
             os.remove(tmp_file_path)
-        print(f"Error downloading {url=}\nto {file_path=}.\n{traceback.format_exc()}")
+        except FileNotFoundError:
+            pass
+        except OSError:
+            error_msg += (
+                f"\nFailed to remove partial download at {tmp_file_path=}.\n"
+                f"{traceback.format_exc()}"
+            )
+        print(f"Error downloading {url=}\nto {file_path=}.\n{error_msg}")
 
 
 def maybe_auto_download_file(url: str, abs_path: str, label: str | None = None) -> None:

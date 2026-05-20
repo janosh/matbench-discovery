@@ -1,4 +1,6 @@
 import os
+from collections.abc import Iterator
+from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import patch
 
@@ -80,32 +82,47 @@ def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     assert stderr == ""
 
 
+@pytest.mark.parametrize(
+    "stream_chunks, remove_error",
+    [
+        ((), None),
+        ((b"partial content",), None),
+        ((b"partial content",), PermissionError("cannot remove part file")),
+    ],
+)
 def test_download_file_keeps_existing_file_on_stream_error(
-    tmp_path: Path, capsys: pytest.CaptureFixture
+    stream_chunks: tuple[bytes, ...],
+    remove_error: OSError | None,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture,
 ) -> None:
     """Failed streamed downloads should not corrupt existing cached files."""
     url = "https://example.com/test.txt"
     dest_path = tmp_path / "test.txt"
     dest_path.write_bytes(b"old content")
-
     response = make_mock_response(b"")
 
-    def broken_iter_content(
-        chunk_size: int = 8192,  # noqa: ARG001
-        decode_unicode: bool = False,  # noqa: ARG001
-    ) -> list[bytes]:
+    def broken_iter_content(**_kwargs: object) -> Iterator[bytes]:
+        yield from stream_chunks
         raise requests.ConnectionError("stream failed")
 
     response.iter_content = broken_iter_content
-
-    with patch("requests.get", return_value=response):
+    remove_ctx = (
+        patch("os.remove", side_effect=remove_error) if remove_error else nullcontext()
+    )
+    with patch("requests.get", return_value=response), remove_ctx:
         download_file(str(dest_path), url)
 
     stdout, stderr = capsys.readouterr()
     assert f"Error downloading {url=}" in stdout
+    assert "stream failed" in stdout
     assert stderr == ""
     assert dest_path.read_bytes() == b"old content"
-    assert not os.path.isfile(f"{dest_path}.part")
+    if remove_error:
+        assert "Failed to remove partial download" in stdout
+        assert "cannot remove part file" in stdout
+    else:
+        assert not os.path.isfile(f"{dest_path}.part")
 
 
 def test_maybe_auto_download_file(
