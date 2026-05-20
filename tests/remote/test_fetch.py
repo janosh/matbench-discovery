@@ -82,6 +82,29 @@ def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     assert stderr == ""
 
 
+def test_download_file_keeps_completed_part_file_on_replace_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """Completed downloads should survive final replace failures."""
+    url = "https://example.com/test.txt"
+    dest_path = tmp_path / "test.txt"
+    part_path = Path(f"{dest_path}.part")
+    dest_path.write_bytes(b"old content")
+
+    with (
+        patch("requests.get", return_value=make_mock_response(b"new content")),
+        patch("os.replace", side_effect=PermissionError("replace denied")),
+    ):
+        download_file(str(dest_path), url)
+
+    stdout, stderr = capsys.readouterr()
+    assert f"Error downloading {url=}" in stdout
+    assert "replace denied" in stdout
+    assert stderr == ""
+    assert dest_path.read_bytes() == b"old content"
+    assert part_path.read_bytes() == b"new content"
+
+
 @pytest.mark.parametrize(
     "stream_chunks, remove_error",
     [
@@ -121,6 +144,7 @@ def test_download_file_keeps_existing_file_on_stream_error(
     if remove_error:
         assert "Failed to remove partial download" in stdout
         assert "cannot remove part file" in stdout
+        assert os.path.isfile(f"{dest_path}.part")
     else:
         assert not os.path.isfile(f"{dest_path}.part")
 
