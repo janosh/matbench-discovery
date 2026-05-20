@@ -12,7 +12,7 @@ from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
-models_to_evaluate = cli_args.models or list(Model)
+models_to_evaluate = cli_args.models or Model.active()
 print(f"Evaluating diatomic metrics for {len(models_to_evaluate)} model(s)...")
 
 n_success = 0

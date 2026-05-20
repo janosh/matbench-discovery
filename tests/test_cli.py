@@ -13,7 +13,7 @@ from matbench_discovery.enums import Model, TestSubset
 @pytest.mark.parametrize(
     "args, expected",
     [
-        ([], {"models": list(Model), "test_subset": TestSubset.uniq_protos}),
+        ([], {"models": list(Model.active()), "test_subset": TestSubset.uniq_protos}),
         (["--models", str(Model.chgnet_030)], {"models": [Model.chgnet_030]}),
         (
             [

@@ -205,7 +205,7 @@ def test_stable_metrics() -> None:
 
 def test_df_discovery_metrics() -> None:
     """Test df_metrics dataframe is valid."""
-    missing_cols = {*discovery.df_metrics} - {model.label for model in Model}
+    missing_cols = {*discovery.df_metrics} - {model.label for model in Model.active()}
     assert missing_cols == set(), f"{missing_cols=}"
     assert discovery.df_metrics.T.MAE.between(0, 0.2).all(), (
         f"unexpected {discovery.df_metrics.T.MAE=}"

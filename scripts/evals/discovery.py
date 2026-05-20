@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     uniq_protos_idx = df_wbm.query(MbdKey.uniq_proto).index
 
-    models_to_write = cli_args.models or list(Model)
+    models_to_write = cli_args.models or Model.active()
 
     for model in models_to_write:
         try:

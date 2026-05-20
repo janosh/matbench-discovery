@@ -48,10 +48,7 @@ model_lvl, metric_lvl = "model", "metric"
 # %% Load all model data
 model_data: dict[str, pd.DataFrame] = {}
 model_metrics: dict[str, dict[str, float]] = {}
-for model in Model:
-    if not model.is_complete:  # Skip incomplete models
-        continue
-
+for model in Model.active():
     metrics = model.metadata.get("metrics", {}).get("geo_opt", {})
     if not isinstance(metrics, dict) or not (pred_file := metrics.get("pred_file")):
         continue

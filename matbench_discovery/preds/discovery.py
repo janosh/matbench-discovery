@@ -14,7 +14,7 @@ __date__ = "2023-02-04"
 
 
 # load WBM summary dataframe with all models' formation energy predictions (eV/atom)
-models_to_load = cli_args.models or list(Model)
+models_to_load = cli_args.models or Model.active()
 df_preds = load_df_wbm_with_preds(models=models_to_load).round(3)
 
 

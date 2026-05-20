@@ -109,6 +109,7 @@ def test_model_enum() -> None:
     # Skip file existence checks in CI environment
     for model in Model:
         assert os.path.isfile(model.yaml_path)
+    for model in Model.active():
         assert "/models/" in model.discovery_path
 
     # Test model properties that don't depend on file existence

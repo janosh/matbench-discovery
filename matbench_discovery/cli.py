@@ -34,8 +34,8 @@ cli_parser.add_argument(
     nargs="*",
     type=parse_model,
     choices=Model,
-    default=list(Model),
-    help="Models to analyze. If none specified, analyzes all models.",
+    default=list(Model.active()),
+    help="Models to analyze. If none specified, analyzes active models.",
 )
 cli_parser.add_argument(
     "--debug",
@@ -117,4 +117,4 @@ if cli_args.auto_download:
 if cli_args.no_show:
     import plotly.graph_objects as go
 
-    go.Figure.show = lambda *_args, **_kwargs: None  # ty: ignore[invalid-assignment]
+    go.Figure.show = lambda *_args, **_kwargs: None

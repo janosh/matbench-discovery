@@ -96,7 +96,7 @@ def glob_to_df(
             df_mock = pd.read_csv(f"{TEST_FILES}/mock-wbm-energy-preds.csv.gz")
             # .set_index( "material_id" )
             # make sure pred_cols for all models are present in df_mock
-            for model in Model:
+            for model in Model.active():
                 with open(model.yaml_path, encoding="utf-8") as file:
                     model_data = yaml.safe_load(file)
 
@@ -225,7 +225,7 @@ def load_df_wbm_with_preds(
 
     Args:
         models (Sequence[str], optional): Model names must be keys of
-            matbench_discovery.data.Model. Defaults to all models.
+            matbench_discovery.data.Model. Defaults to active models.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
         subset (pd.Index | Sequence[str] | 'uniq_protos' | None, optional):
@@ -249,7 +249,7 @@ def load_df_wbm_with_preds(
     """
     valid_models = {model.name for model in Model}
     if models == ():
-        models = tuple(valid_models)
+        models = Model.active()
     inv_label_map = {key.label: key.name for key in Model}
     # map pretty model names back to Model enum keys
     models = [inv_label_map.get(model, model) for model in models]
