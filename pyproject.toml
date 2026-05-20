@@ -38,7 +38,6 @@ dependencies = [
   "pymatgen>=2026.5.4",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209
   "pymatviz[df-pdf-export,df-svg-export]==0.17.6",
-  "requests>=2.32",
   "ruamel.yaml>=0.19.1",
   "scikit-learn>=1.8",
   "scipy>=1.17.1",

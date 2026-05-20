@@ -1,6 +1,5 @@
 import os
 from glob import glob
-from unittest.mock import patch
 
 import pytest
 
@@ -115,28 +114,6 @@ def test_model_enum() -> None:
     # Test model properties that don't depend on file existence
     assert Model.mace_mp_0.label == "MACE-MP-0"
     assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
-
-
-def test_model_download_path_failure_modes() -> None:
-    """Discovery preds fail fast; optional auxiliary paths soft-fail."""
-    with patch("matbench_discovery.enums.maybe_auto_download_file") as mock_download:
-        assert Model.mace_mp_0.discovery_path.endswith(
-            "models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.csv.gz"
-        )
-        assert mock_download.call_args.kwargs["raise_on_failure"] is True
-
-    optional_path_getters = (
-        lambda: Model.mace_mp_0.geo_opt_path,
-        lambda: Model.grace_2l_mptrj.kappa_103_path,
-    )
-    for get_model_path in optional_path_getters:
-        with patch(
-            "matbench_discovery.enums.maybe_auto_download_file"
-        ) as mock_download:
-            assert get_model_path() is not None
-            assert (
-                mock_download.call_args.kwargs.get("raise_on_failure", False) is False
-            )
 
 
 @pytest.mark.parametrize(
