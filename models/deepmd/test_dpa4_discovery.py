@@ -17,7 +17,7 @@ import argparse
 import json
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 import pandas as pd
 from ase.filters import Filter, FrechetCellFilter, UnitCellFilter
@@ -110,7 +110,7 @@ class Relaxer:
             Final structure dictionary and potential energy in eV.
         """
         if isinstance(atoms, (Structure, Molecule)):
-            atoms = cast("Any", self.ase_adaptor.get_atoms(atoms))
+            atoms = self.ase_adaptor.get_atoms(atoms)
 
         atoms.calc = self.calculator
         filter_cls = FILTER_CLS.get(cell_filter or "")

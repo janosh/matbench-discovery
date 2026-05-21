@@ -23,16 +23,11 @@ results = "./results"
 model_name = Model.dpa_3_1_3m_ft
 module_dir = os.path.dirname(__file__)
 out_path = f"{module_dir}/{model_name}"
-files = sorted(glob(f"{results}/{model_name}-*.json.gz"))
-
-dfs = {}
-for file_path in tqdm(files):
-    if file_path in dfs:
-        continue
-    df_i = pd.read_json(file_path).set_index(Key.mat_id)
-    dfs[file_path] = df_i
-
-df_dpa3 = pd.concat(dfs.values()).round(4)
+file_paths = sorted(glob(f"{results}/{model_name}-*.json.gz"))
+dataframes = [
+    pd.read_json(file_path).set_index(Key.mat_id) for file_path in tqdm(file_paths)
+]
+df_dpa3 = pd.concat(dataframes).round(4)
 
 if len(df_dpa3) != len(df_wbm):  # make sure there is no missing structure
     raise ValueError("Missing structures in DPA3 results")
