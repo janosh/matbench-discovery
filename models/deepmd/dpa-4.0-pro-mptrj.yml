@@ -30,8 +30,8 @@ trained_by:
 
 repo: https://github.com/deepmodeling/deepmd-kit
 url: https://github.com/deepmodeling/deepmd-kit
-doi: missing # DPA-4.0 preprint not yet available
-paper: missing # DPA-4.0 preprint not yet available
+doi: https://github.com/deepmodeling/deepmd-kit # DPA-4.0 preprint not yet available, will be released soon
+paper: https://github.com/deepmodeling/deepmd-kit # DPA-4.0 preprint not yet available, will be released soon
 pr_url: https://github.com/janosh/matbench-discovery/pull/324
 checkpoint_url: https://figshare.com/files/64733586
 
@@ -53,7 +53,7 @@ n_estimators: 1
 training_set: [MPtrj]
 
 training_cost:
-  Nvidia H20 GPUs: {amount: 8, hours: 288, cost: 2304}  # cost in USD
+  Nvidia H20 GPUs: {amount: 8, hours: 288}
 
 hyperparams:
   # Matbench Discovery relaxation settings used for the submitted WBM IS2RE results.
