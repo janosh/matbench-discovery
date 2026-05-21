@@ -370,7 +370,7 @@ def test_model_prediction_urls() -> None:
     import multiprocessing as mp
 
     tasks: dict[str, str] = {}
-    for model in Model:
+    for model in Model.active():
         if model.name == Model.mace_mpa_0.name:
             continue
         tasks[model.pr_url] = model.name

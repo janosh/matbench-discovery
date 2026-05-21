@@ -109,11 +109,14 @@ def test_model_enum() -> None:
     # Skip file existence checks in CI environment
     for model in Model:
         assert os.path.isfile(model.yaml_path)
+    for model in Model.active():
         assert "/models/" in model.discovery_path
 
     # Test model properties that don't depend on file existence
     assert Model.mace_mp_0.label == "MACE-MP-0"
     assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
+    assert Model.active() == tuple(model for model in Model if model.is_complete)
+    assert not Model.alphanet_mptrj.is_complete
 
 
 @pytest.mark.parametrize(

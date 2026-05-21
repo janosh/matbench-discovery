@@ -31,13 +31,18 @@ __date__ = "2022-11-28"
 
 # %%
 if __name__ == "__main__":
+    for model in cli_args.models:
+        if not model.is_complete:
+            print(f"\nSkipping {model.label}: incomplete discovery metrics")
+    cli_args.models = [model for model in cli_args.models if model.is_complete]
+    if not cli_args.models:
+        raise SystemExit(0)
+
     import matbench_discovery.preds.discovery as preds
 
     uniq_protos_idx = df_wbm.query(MbdKey.uniq_proto).index
 
-    models_to_write = cli_args.models or list(Model)
-
-    for model in models_to_write:
+    for model in cli_args.models:
         try:
             print(f"\nProcessing {model.label}...")
             model_preds = preds.df_preds[model.label]
@@ -216,7 +221,7 @@ for model_label in models:
         )
 
         for key in (MbdKey.openness, Key.train_task, Key.test_task):
-            default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
+            default = Open.OSOD if key == MbdKey.openness else pd.NA
             discovery.df_metrics_uniq_protos.loc[key.label, model] = model.metadata.get(
                 key, default
             )
@@ -343,7 +348,7 @@ for (label, df_met), show_non_compliant in itertools.product(
         dict.fromkeys(df_table.select_dtypes(float), "{:,.3f}"),  # use for manuscript
         na_rep="",  # render NaNs as empty string
     )
-    styler = styler.background_gradient(
+    styler = styler.background_gradient(  # ty: ignore[unresolved-attribute]
         cmap="viridis", subset=list(higher_is_better & {*df_table}), axis="index"
     ).background_gradient(  # reverse color map if lower=better
         cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis="index"

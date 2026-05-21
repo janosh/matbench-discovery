@@ -1,8 +1,5 @@
 """Test CLI argument parsing module."""
 
-import sys
-from unittest.mock import patch
-
 import pytest
 from pymatviz.enums import Key
 
@@ -13,8 +10,12 @@ from matbench_discovery.enums import Model, TestSubset
 @pytest.mark.parametrize(
     "args, expected",
     [
-        ([], {"models": list(Model), "test_subset": TestSubset.uniq_protos}),
+        ([], {"models": list(Model.active()), "test_subset": TestSubset.uniq_protos}),
         (["--models", str(Model.chgnet_030)], {"models": [Model.chgnet_030]}),
+        (
+            ["--models", "alphanet-mptrj"],
+            {"models": [Model.alphanet_mptrj]},
+        ),
         (
             [
                 "--models",
@@ -38,15 +39,15 @@ def test_cli_parser(
     args: list[str], expected: dict[str, str | bool | TestSubset | list[Model]]
 ) -> None:
     """Test CLI argument parsing with various inputs."""
-    with patch.object(sys, "argv", ["script.py", *args]):
-        parsed_args, _ = cli_parser.parse_known_args()
-        for key, val in expected.items():
-            assert getattr(parsed_args, key) == val
+    parsed_args, _ = cli_parser.parse_known_args(args)
+    for key, val in expected.items():
+        assert getattr(parsed_args, key) == val
 
 
 @pytest.mark.parametrize(
     "bad_args",
     [
+        ["--models"],
         ["--models", "invalid_model"],
         ["--test-subset", "invalid_subset"],
         ["--energy-type", "invalid_type"],
@@ -56,10 +57,10 @@ def test_cli_parser_invalid_args(
     bad_args: list[str], capsys: pytest.CaptureFixture[str]
 ) -> None:
     """Test CLI parser raises SystemExit on invalid arguments."""
-    with pytest.raises(SystemExit), patch.object(sys, "argv", ["script.py", *bad_args]):
-        cli_parser.parse_known_args()
+    with pytest.raises(SystemExit):
+        cli_parser.parse_known_args(bad_args)
 
-    if bad_args[0] == "--models":
+    if bad_args == ["--models", "invalid_model"]:
         error = capsys.readouterr().err
         assert "invalid model: invalid_model" in error
         assert "None" not in error
@@ -73,12 +74,11 @@ def test_cli_parser_jupyter_compat() -> None:
         "--models",
         str(Model.chgnet_030),
     ]
-    with patch.object(sys, "argv", ["script.py", *jupyter_args]):
-        args, unknown = cli_parser.parse_known_args()
-        # Our args should be parsed correctly
-        assert args.models == [Model.chgnet_030]
-        # Jupyter args should be preserved but ignored
-        assert set(unknown) == {"--f=/path/to/kernel.json", "--ip=127.0.0.1"}
+    args, unknown = cli_parser.parse_known_args(jupyter_args)
+    # Our args should be parsed correctly
+    assert args.models == [Model.chgnet_030]
+    # Jupyter args should be preserved but ignored
+    assert set(unknown) == {"--f=/path/to/kernel.json", "--ip=127.0.0.1"}
 
 
 def test_cli_args_global() -> None:
