@@ -251,19 +251,25 @@ def load_df_wbm_with_preds(
     if models is None:
         models_to_load = Model.active()
     else:
-        model_lookup = {model.name: model for model in Model} | {
-            model.label: model for model in Model
-        }
-        try:
-            models_to_load = tuple(
-                model if isinstance(model, Model) else model_lookup[model]
-                for model in models
-            )
-        except KeyError as exc:
-            valid_models = {model.name for model in Model}
-            raise ValueError(
-                f"unknown model {exc.args[0]!r}, expected subset of {valid_models}"
-            ) from exc
+        resolved_models: list[Model] = []
+        for model_ref in models:
+            if isinstance(model_ref, Model):
+                resolved_models.append(model_ref)
+                continue
+            model = Model.__members__.get(model_ref)
+            if model is None:
+                model = Model._missing_(model_ref)
+            if model is None:
+                model = next(
+                    (model for model in Model if model.label == model_ref), None
+                )
+            if model is None:
+                valid_models = {model.name for model in Model}
+                raise ValueError(
+                    f"unknown model {model_ref!r}, expected subset of {valid_models}"
+                )
+            resolved_models.append(model)
+        models_to_load = tuple(resolved_models)
 
     model_name = ""
     df_out = df_wbm.copy()

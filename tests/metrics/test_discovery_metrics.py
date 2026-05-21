@@ -1,4 +1,7 @@
 import math
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -217,6 +220,31 @@ def test_df_discovery_metrics() -> None:
         f"unexpected {discovery.df_metrics.T.RMSE=}"
     )
     assert discovery.df_metrics.T.isna().sum().sum() == 0, "NaNs in metrics"
+
+
+def test_discovery_eval_skips_incomplete_cli_model() -> None:
+    """Test discovery eval skips incomplete CLI models before writing metrics."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/evals/discovery.py",
+            "--models",
+            "alphanet-mptrj",
+            "--no-show",
+        ],
+        cwd=f"{Path(__file__).parents[2]}",
+        env=os.environ | {"CI": "1"},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+
+    assert result.returncode == 0, output
+    assert "Skipping AlphaNet-v1-MPtrj: incomplete discovery metrics" in output
+    assert "Loading preds" not in output
+    assert "Error processing" not in output
+    assert "KeyError" not in output
 
 
 def test_write_metrics_to_yaml(tmp_path: Path) -> None:

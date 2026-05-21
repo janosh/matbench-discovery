@@ -31,13 +31,18 @@ __date__ = "2022-11-28"
 
 # %%
 if __name__ == "__main__":
+    for model in cli_args.models:
+        if not model.is_complete:
+            print(f"\nSkipping {model.label}: incomplete discovery metrics")
+    cli_args.models = [model for model in cli_args.models if model.is_complete]
+    if not cli_args.models:
+        raise SystemExit(0)
+
     import matbench_discovery.preds.discovery as preds
 
     uniq_protos_idx = df_wbm.query(MbdKey.uniq_proto).index
 
-    models_to_write = cli_args.models
-
-    for model in models_to_write:
+    for model in cli_args.models:
         try:
             print(f"\nProcessing {model.label}...")
             model_preds = preds.df_preds[model.label]
