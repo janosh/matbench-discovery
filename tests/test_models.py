@@ -117,6 +117,11 @@ def test_model_enum() -> None:
     assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
     assert Model.active() == tuple(model for model in Model if model.is_complete)
     assert not Model.alphanet_mptrj.is_complete
+    assert not Model.dpa_3_1_mptrj.is_complete
+    model_keys = {model.key for model in Model}
+    for model in Model:
+        if model.metadata.get("status") == "superseded":
+            assert model.metadata["superseded_by"] in model_keys
 
 
 @pytest.mark.parametrize(

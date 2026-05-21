@@ -57,6 +57,7 @@ model_type: UIP
 model_params: 25_734_966
 n_estimators: 1
 status: superseded
+superseded_by: sevennet-omni-i12
 
 hyperparams:
   max_force: 0.02

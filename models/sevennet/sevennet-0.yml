@@ -47,6 +47,7 @@ model_type: UIP
 model_params: 842_440
 n_estimators: 1
 status: superseded
+superseded_by: sevennet-l3i5
 
 hyperparams:
   max_force: 0.05

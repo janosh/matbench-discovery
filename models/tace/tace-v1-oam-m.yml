@@ -41,6 +41,7 @@ model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
 model_params: 18_779_248
 trained_for_benchmark: false
 status: superseded
+superseded_by: tace-oam-l
 n_estimators: 1
 
 license:
