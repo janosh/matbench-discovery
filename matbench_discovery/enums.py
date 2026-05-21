@@ -66,12 +66,12 @@ class MbdKey(LabelEnum):
         f"Error in E<sub>hull dist</sub> {eV_per_atom}",
     )
 
-    init_wyckoff_spglib = (
-        "wyckoff_spglib_initial_structure",
+    init_protostructure_spglib = (
+        "protostructure_spglib_initial_structure",
         "Protostructure Label for Initial Structure using spglib",
     )
-    wyckoff_spglib = (
-        "wyckoff_spglib",
+    protostructure_spglib = (
+        "protostructure_spglib",
         "Protostructure Label for Relaxed Structure using spglib",
     )
     international_spg_name = "international_spg_name", "International space group name"
@@ -273,6 +273,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # AlphaNet: https://arxiv.org/abs/2501.07155
     alphanet_v1_oam = auto(), "alphanet/alphanet-v1-oam.yml"
+    alphanet_mptrj = auto(), "alphanet/alphanet-mptrj.yml"
     # alignn with global pooling: https://arxiv.org/abs/2106.01829
     alignn = auto(), "alignn/alignn.yml"
 
@@ -301,10 +302,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
     dpa_3_1_3m_ft = auto(), "deepmd/dpa-3.1-3m-ft.yml"
     dpa_4_0_pro_mptrj = auto(), "deepmd/dpa-4.0-pro-mptrj.yml"
-    # dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
-    # dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
-    # dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
-    # dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
+    dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
+    dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
+    dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
+    dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
     # FAIR-Chem
     eqv2_s_dens_mp = auto(), "eqV2/eqV2-s-dens-mp.yml"
@@ -341,7 +342,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
     # MatRIS
-    # matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
+    matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
     matris_10m_oam = auto(), "matris/matris-10m-oam.yml"
     matris_10m_mp = auto(), "matris/matris-10m-mp.yml"
 
@@ -366,13 +367,13 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     pet_oam_xl_1_0_0 = auto(), "pet/pet-oam-xl-1.0.0.yml"
 
     # SevenNet trained on MPtrj
-    # sevennet_0 = auto(), "sevennet/sevennet-0.yml"
+    sevennet_0 = auto(), "sevennet/sevennet-0.yml"
     sevennet_l3i5 = auto(), "sevennet/sevennet-l3i5.yml"
-    # sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
+    sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
     sevennet_omni_i12 = auto(), "sevennet/sevennet-omni-i12.yml"
 
     # Tensor Atomic Cluster Expansion
-    # tace_v1_oam_m = auto(), "tace/tace-v1-oam-m.yml"
+    tace_v1_oam_m = auto(), "tace/tace-v1-oam-m.yml"
     tace_oam_l = auto(), "tace/tace-oam-l.yml"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest

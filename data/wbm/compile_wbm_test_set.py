@@ -633,11 +633,11 @@ df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 # %%
 # from initial structures
 for idx in tqdm(df_wbm.index):
-    if not pd.isna(df_summary.loc[idx].get(MbdKey.init_wyckoff_spglib)):
+    if not pd.isna(df_summary.loc[idx].get(MbdKey.init_protostructure_spglib)):
         continue  # Aflow label already computed
     try:
         struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
-        df_summary.loc[idx, f"{Key.protostructure}_moyo_init"] = (
+        df_summary.loc[idx, MbdKey.init_protostructure_spglib] = (
             prototype.get_protostructure_label(struct)
         )
     except Exception as exc:
@@ -645,20 +645,20 @@ for idx in tqdm(df_wbm.index):
 
 # from relaxed structures
 for idx in tqdm(df_wbm.index):
-    if not pd.isna(df_summary.loc[idx].get(Key.wyckoff)):
+    if not pd.isna(df_summary.loc[idx].get(MbdKey.protostructure_spglib)):
         continue
 
     try:
         cse = df_wbm.loc[idx, Key.computed_structure_entry]
         struct = Structure.from_dict(cse["structure"])
-        df_summary.loc[idx, f"{Key.protostructure}_moyo_relaxed"] = (
+        df_summary.loc[idx, MbdKey.protostructure_spglib] = (
             prototype.get_protostructure_label(struct)
         )
     except Exception as exc:
         print(f"{idx=} {exc=}")
 
-assert df_summary[MbdKey.init_wyckoff_spglib].isna().sum() == 0
-assert df_summary[Key.wyckoff].isna().sum() == 0
+assert df_summary[MbdKey.init_protostructure_spglib].isna().sum() == 0
+assert df_summary[MbdKey.protostructure_spglib].isna().sum() == 0
 
 
 # %%
@@ -679,13 +679,13 @@ except KeyError:
 df_mp = pd.read_csv(DataFiles.mp_energies.path, index_col=0)
 
 # mask WBM materials with matching prototype in MP
-mask_proto_in_mp = df_summary[MbdKey.init_wyckoff_spglib].isin(
-    df_mp[MbdKey.wyckoff_spglib]
+mask_proto_in_mp = df_summary[MbdKey.init_protostructure_spglib].isin(
+    df_mp[MbdKey.protostructure_spglib]
 )
 # mask duplicate prototypes in WBM (keeping the lowest energy one)
 mask_dupe_protos = df_summary.sort_values(
-    by=[MbdKey.init_wyckoff_spglib, MbdKey.each_wbm]
-).duplicated(subset=MbdKey.init_wyckoff_spglib, keep="first")
+    by=[MbdKey.init_protostructure_spglib, MbdKey.each_wbm]
+).duplicated(subset=MbdKey.init_protostructure_spglib, keep="first")
 assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
 assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 

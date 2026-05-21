@@ -37,19 +37,18 @@ df_dft_analysis = pd.read_csv(DataFiles.wbm_dft_geo_opt_symprec_1e_5.path, index
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
 df_wbm[init_spg_col] = (
-    df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
+    df_wbm[MbdKey.init_protostructure_spglib].str.split("_").str[2].astype(int)
 )
-df_wbm[dft_spg_col] = df_wbm[MbdKey.wyckoff_spglib].str.split("_").str[2].astype(int)
+df_wbm[dft_spg_col] = (
+    df_wbm[MbdKey.protostructure_spglib].str.split("_").str[2].astype(int)
+)
 model_lvl, metric_lvl = "model", "metric"
 
 
 # %% Load all model data
 model_data: dict[str, pd.DataFrame] = {}
 model_metrics: dict[str, dict[str, float]] = {}
-for model in Model:
-    if not model.is_complete:  # Skip incomplete models
-        continue
-
+for model in Model.active():
     metrics = model.metadata.get("metrics", {}).get("geo_opt", {})
     if not isinstance(metrics, dict) or not (pred_file := metrics.get("pred_file")):
         continue

@@ -64,7 +64,12 @@ def test_df_wbm() -> None:
     assert df_wbm.index.name == Key.mat_id
     assert set(df_wbm) > {Key.formula, Key.mat_id, Key.bandgap_pbe}
 
-    for col in (MbdKey.e_form_dft, MbdKey.each_true):
+    for col in (
+        MbdKey.e_form_dft,
+        MbdKey.each_true,
+        MbdKey.init_protostructure_spglib,
+        MbdKey.protostructure_spglib,
+    ):
         assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
 
 
@@ -275,6 +280,30 @@ def test_load_df_wbm_with_preds(
         else:
             # If no threshold is set, all predictions should be present
             assert df_wbm_with_preds[model.label].isna().sum() == 0
+
+
+def test_load_df_wbm_with_preds_mock_data_models() -> None:
+    """Test default and explicit model loading with pytest mock data."""
+    inactive_model_refs = (
+        Model.alphanet_mptrj,
+        Model.alphanet_mptrj.name,
+        Model.alphanet_mptrj.label,
+    )
+    with patch("matbench_discovery.data.glob", return_value=[]):
+        df_default = load_df_wbm_with_preds(pbar=False)
+        inactive_cols = [
+            list(load_df_wbm_with_preds(models=[model_ref], pbar=False))
+            for model_ref in inactive_model_refs
+        ]
+
+    default_cols = list(df_default)
+    assert default_cols == [*df_wbm, *(model.label for model in Model.active())]
+    assert set(default_cols).isdisjoint(
+        model.label for model in Model if not model.is_complete
+    )
+    assert inactive_cols == [[*df_wbm, Model.alphanet_mptrj.label]] * len(
+        inactive_model_refs
+    )
 
 
 @pytest.mark.skipif(

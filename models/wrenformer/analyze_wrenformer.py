@@ -27,7 +27,7 @@ bad_ids = df_each_pred.query(
 ).index
 
 df_wbm[Key.spg_num] = (
-    df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
+    df_wbm[MbdKey.init_protostructure_spglib].str.split("_").str[2].astype(int)
 )
 df_bad = df_wbm.loc[bad_ids]
 title = f"{len(df_bad)} {model} preds<br>with {max_each_true=}, {min_each_pred=}"
@@ -50,7 +50,7 @@ fig.show()
 
 # %%
 proto_col = "Isopointal Prototypes"
-df_proto_counts = df_bad[MbdKey.init_wyckoff_spglib].value_counts().to_frame()
+df_proto_counts = df_bad[MbdKey.init_protostructure_spglib].value_counts().to_frame()
 
 
 df_proto_counts["MP occurrences"] = 0
