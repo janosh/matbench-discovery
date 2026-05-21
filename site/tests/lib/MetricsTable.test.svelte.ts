@@ -149,7 +149,7 @@ describe(`MetricsTable`, () => {
     expect(header_texts).toContain(`Acc`)
   })
 
-  it(`filters energy-only models`, async () => {
+  it(`filters energy-only models`, { timeout: 10_000 }, async () => {
     // First test with energy-only models hidden
     mount(MetricsTable, {
       target: document.body,
@@ -169,7 +169,7 @@ describe(`MetricsTable`, () => {
 
     // Should have at least the same number of rows
     expect(rows_with_energy).toBeGreaterThanOrEqual(rows_without_energy)
-  }, 10_000)
+  })
 
   it(`filters models based on model_filter prop`, () => {
     // First test: show no models

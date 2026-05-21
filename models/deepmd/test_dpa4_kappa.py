@@ -254,11 +254,16 @@ class KappaRunner:
             return
 
         try:
+            q_point_mesh = atoms.info.get("q_point_mesh", atoms.info.get("q_mesh"))
+            if q_point_mesh is None:
+                raise ValueError(
+                    f"missing q_point_mesh/q_mesh keys in atoms.info for {mat_id}"
+                )
             ph3 = ltc.init_phono3py(
                 atoms,
                 fc2_supercell=atoms.info["fc2_supercell"],
                 fc3_supercell=atoms.info["fc3_supercell"],
-                q_point_mesh=atoms.info.get("q_point_mesh", atoms.info["q_mesh"]),
+                q_point_mesh=q_point_mesh,
                 displacement_distance=self.displacement_distance,
                 symprec=self.symprec,
             )

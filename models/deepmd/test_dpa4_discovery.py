@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import warnings
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Literal
@@ -166,13 +167,21 @@ def relax_shard(
     # === Step 2. Relax Structures ===
     relax_results: dict[str, dict[str, Any]] = {}
     for material_id in tqdm(structures, desc=input_path.stem):
-        structure, energy = relaxer.relax(
-            structures[material_id],
-            optimizer=optimizer,
-            cell_filter=cell_filter,
-            force_max=force_max,
-            max_steps=max_steps,
-        )
+        try:
+            structure, energy = relaxer.relax(
+                structures[material_id],
+                optimizer=optimizer,
+                cell_filter=cell_filter,
+                force_max=force_max,
+                max_steps=max_steps,
+            )
+        except Exception as exc:
+            warnings.warn(f"Failed to relax {material_id}: {exc!r}", stacklevel=2)
+            relax_results[material_id] = {
+                f"{model_name}_failed": True,
+                f"{model_name}_error": repr(exc),
+            }
+            continue
         relax_results[material_id] = {
             f"{model_name}_structure": structure,
             f"{model_name}_energy": energy,
