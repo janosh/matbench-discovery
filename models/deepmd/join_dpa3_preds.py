@@ -20,12 +20,12 @@ from matbench_discovery.enums import DataFiles, Model
 
 e_form_dp_col = "e_form_per_atom_dp"
 results = "./results"
-model_name = Model.dpa_3_1_3m_ft
+model_key = Model.dpa_3_1_3m_ft.key
 module_dir = os.path.dirname(__file__)
-out_path = f"{module_dir}/{model_name}"
-file_paths = sorted(glob(f"{results}/{model_name}-*.json.gz"))
+out_path = f"{module_dir}/{model_key}"
+file_paths = sorted(glob(f"{results}/{model_key}-*.json.gz"))
 if not file_paths:
-    raise FileNotFoundError(f"No DPA3 result files in {results!r} for {model_name}")
+    raise FileNotFoundError(f"No DPA3 result files in {results!r} for {model_key}")
 df_dpa3 = pd.concat(
     pd.read_json(file_path).set_index(Key.mat_id) for file_path in tqdm(file_paths)
 ).round(4)
