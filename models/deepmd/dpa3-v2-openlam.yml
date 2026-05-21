@@ -49,6 +49,7 @@ model_params: 7_021_990
 trained_for_benchmark: true
 n_estimators: 1
 status: superseded
+superseded_by: dpa-3.1-3m-ft
 
 hyperparams:
   max_force: 0.05
