@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     uniq_protos_idx = df_wbm.query(MbdKey.uniq_proto).index
 
-    models_to_write = cli_args.models or Model.active()
+    models_to_write = cli_args.models
 
     for model in models_to_write:
         try:
@@ -216,7 +216,7 @@ for model_label in models:
         )
 
         for key in (MbdKey.openness, Key.train_task, Key.test_task):
-            default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
+            default = Open.OSOD if key == MbdKey.openness else pd.NA
             discovery.df_metrics_uniq_protos.loc[key.label, model] = model.metadata.get(
                 key, default
             )
@@ -343,7 +343,7 @@ for (label, df_met), show_non_compliant in itertools.product(
         dict.fromkeys(df_table.select_dtypes(float), "{:,.3f}"),  # use for manuscript
         na_rep="",  # render NaNs as empty string
     )
-    styler = styler.background_gradient(
+    styler = styler.background_gradient(  # ty: ignore[unresolved-attribute]
         cmap="viridis", subset=list(higher_is_better & {*df_table}), axis="index"
     ).background_gradient(  # reverse color map if lower=better
         cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis="index"

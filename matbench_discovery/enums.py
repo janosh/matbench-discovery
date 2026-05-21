@@ -508,15 +508,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """Check if model has all required metrics."""
         return self.metadata.get("status", "complete") == "complete"
 
-    @property
-    def is_active(self) -> bool:
-        """Check if model should be included in default benchmark runs."""
-        return self.is_complete
-
     @classmethod
     def active(cls) -> tuple[Self, ...]:
-        """Models included by default in plots, metrics, and eval scripts."""
-        return tuple(model for model in cls if model.is_active)
+        """Complete models included by default in plots, metrics, and eval scripts."""
+        return tuple(model for model in cls if model.is_complete)
 
     @classmethod
     def _missing_(cls, value: object) -> Self | None:

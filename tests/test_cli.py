@@ -16,6 +16,10 @@ from matbench_discovery.enums import Model, TestSubset
         ([], {"models": list(Model.active()), "test_subset": TestSubset.uniq_protos}),
         (["--models", str(Model.chgnet_030)], {"models": [Model.chgnet_030]}),
         (
+            ["--models", "alphanet-mptrj"],
+            {"models": [Model.alphanet_mptrj]},
+        ),
+        (
             [
                 "--models",
                 str(Model.chgnet_030),
@@ -47,6 +51,7 @@ def test_cli_parser(
 @pytest.mark.parametrize(
     "bad_args",
     [
+        ["--models"],
         ["--models", "invalid_model"],
         ["--test-subset", "invalid_subset"],
         ["--energy-type", "invalid_type"],
@@ -59,7 +64,7 @@ def test_cli_parser_invalid_args(
     with pytest.raises(SystemExit), patch.object(sys, "argv", ["script.py", *bad_args]):
         cli_parser.parse_known_args()
 
-    if bad_args[0] == "--models":
+    if bad_args == ["--models", "invalid_model"]:
         error = capsys.readouterr().err
         assert "invalid model: invalid_model" in error
         assert "None" not in error

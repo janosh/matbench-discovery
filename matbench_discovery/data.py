@@ -96,7 +96,7 @@ def glob_to_df(
             df_mock = pd.read_csv(f"{TEST_FILES}/mock-wbm-energy-preds.csv.gz")
             # .set_index( "material_id" )
             # make sure pred_cols for all models are present in df_mock
-            for model in Model.active():
+            for model in Model:
                 with open(model.yaml_path, encoding="utf-8") as file:
                     model_data = yaml.safe_load(file)
 
@@ -214,7 +214,7 @@ df_wbm.index = df_wbm[str(Key.mat_id)]
 
 def load_df_wbm_with_preds(
     *,
-    models: Sequence[str | Model] = (),
+    models: Sequence[str | Model] | None = None,
     pbar: bool = True,
     id_col: str = Key.mat_id,
     subset: pd.Index | Sequence[str] | TestSubset | None = None,
@@ -224,8 +224,9 @@ def load_df_wbm_with_preds(
     """Load WBM summary dataframe with model predictions from disk.
 
     Args:
-        models (Sequence[str], optional): Model names must be keys of
-            matbench_discovery.data.Model. Defaults to active models.
+        models (Sequence[str | Model] | None, optional): Models to load, given as
+            Model members, enum names, or display labels. Defaults to active models
+            when None. Pass an empty sequence to load no model predictions.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
         subset (pd.Index | Sequence[str] | 'uniq_protos' | None, optional):
@@ -247,25 +248,31 @@ def load_df_wbm_with_preds(
     Returns:
         pd.DataFrame: WBM summary dataframe with model predictions.
     """
-    valid_models = {model.name for model in Model}
-    if models == ():
-        models = Model.active()
-    inv_label_map = {key.label: key.name for key in Model}
-    # map pretty model names back to Model enum keys
-    models = [inv_label_map.get(model, model) for model in models]
-    if unknown_models := ", ".join(set(models) - valid_models):
-        raise ValueError(f"{unknown_models=}, expected subset of {valid_models}")
+    if models is None:
+        models_to_load = Model.active()
+    else:
+        model_lookup = {model.name: model for model in Model} | {
+            model.label: model for model in Model
+        }
+        try:
+            models_to_load = tuple(
+                model if isinstance(model, Model) else model_lookup[model]
+                for model in models
+            )
+        except KeyError as exc:
+            valid_models = {model.name for model in Model}
+            raise ValueError(
+                f"unknown model {exc.args[0]!r}, expected subset of {valid_models}"
+            ) from exc
 
-    model_name: str = ""
+    model_name = ""
     df_out = df_wbm.copy()
 
     try:
-        prog_bar = tqdm(models, disable=not pbar, desc="Loading preds")
-        for model_name in prog_bar:
+        prog_bar = tqdm(models_to_load, disable=not pbar, desc="Loading preds")
+        for model in prog_bar:
+            model_name = model.name
             prog_bar.set_postfix_str(model_name)
-
-            # use getattr(name) in case model_name is already a Model enum
-            model = Model[getattr(model_name, "name", model_name)]
 
             df_preds = glob_to_df(model.discovery_path, pbar=False, **kwargs)
 

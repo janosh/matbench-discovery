@@ -5,7 +5,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import STABILITY_THRESHOLD
 from matbench_discovery.cli import cli_args
-from matbench_discovery.data import Model, df_wbm, load_df_wbm_with_preds
+from matbench_discovery.data import df_wbm, load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics.discovery import stable_metrics
 
@@ -14,7 +14,7 @@ __date__ = "2023-02-04"
 
 
 # load WBM summary dataframe with all models' formation energy predictions (eV/atom)
-models_to_load = cli_args.models or Model.active()
+models_to_load = cli_args.models
 df_preds = load_df_wbm_with_preds(models=models_to_load).round(3)
 
 

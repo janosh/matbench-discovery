@@ -7,12 +7,11 @@ import sys
 
 from matbench_discovery import ROOT
 from matbench_discovery.cli import cli_args
-from matbench_discovery.enums import Model
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
-models_to_evaluate = cli_args.models or Model.active()
+models_to_evaluate = cli_args.models
 print(f"Evaluating diatomic metrics for {len(models_to_evaluate)} model(s)...")
 
 n_success = 0

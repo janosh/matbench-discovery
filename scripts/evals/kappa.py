@@ -10,7 +10,7 @@ import pandas as pd
 from pymatviz.enums import Key
 
 from matbench_discovery.cli import cli_args
-from matbench_discovery.enums import DataFiles, Model
+from matbench_discovery.enums import DataFiles
 from matbench_discovery.metrics import phonons
 
 
@@ -20,7 +20,7 @@ def main() -> int:
     Returns:
         Exit code: 0 if at least one model was evaluated, 1 otherwise.
     """
-    models_to_evaluate = cli_args.models or Model.active()
+    models_to_evaluate = cli_args.models
     print(f"Evaluating kappa metrics for {len(models_to_evaluate)} model(s)...")
 
     n_success = 0
