@@ -60,6 +60,7 @@ model_params: 16234332
 trained_for_benchmark: true
 n_estimators: 1
 status: superseded
+superseded_by: alphanet-v1-oam
 
 hyperparams:
   max_force: 0.05

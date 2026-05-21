@@ -53,6 +53,7 @@ model_params: 5825620
 trained_for_benchmark: true
 n_estimators: 1
 status: superseded
+superseded_by: matris-10m-mp
 
 hyperparams:
   max_force: 0.05

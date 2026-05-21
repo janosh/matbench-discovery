@@ -489,6 +489,9 @@ properties:
     # deprecated: model is deprecated and should not be used e.g. because serious bugs were found
     # aborted: model was aborted before testing could be completed due e.g. to OOM/stability issues
     # complete: model has been tested and all metrics are available (the default if no status is specified)
+  superseded_by:
+    type: string
+    description: model_key of the newer model replacing this one
   metrics:
     type: object
     additionalProperties: false
@@ -516,6 +519,13 @@ properties:
 
 # Require graph_construction_radius, max_neighbors for GNN and UIP models
 allOf:
+  - if:
+      properties:
+        status:
+          enum: [superseded]
+      required: [status]
+    then:
+      required: [superseded_by]
   - if:
       properties:
         model_type:

@@ -139,6 +139,10 @@ export type ModelMetadata = {
   targets: TargetType
   openness: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
   status?: 'aborted' | 'complete' | 'deprecated' | 'pending' | 'superseded'
+  /**
+   * model_key of the newer model replacing this one
+   */
+  superseded_by?: string
   metrics?: {
     phonons?: PhononMetrics | ('not applicable' | 'not available')
     geo_opt?: GeoOptMetrics | ('not applicable' | 'not available')

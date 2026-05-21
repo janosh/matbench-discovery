@@ -48,6 +48,7 @@ model_type: UIP
 model_params: 8_184_608
 n_estimators: 1
 status: superseded
+superseded_by: dpa3-v2-openlam
 trained_for_benchmark: true
 
 hyperparams:

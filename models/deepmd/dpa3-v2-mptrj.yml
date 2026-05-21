@@ -49,6 +49,7 @@ model_params: 4_923_959
 trained_for_benchmark: true
 n_estimators: 1
 status: superseded
+superseded_by: dpa-3.1-mptrj
 
 hyperparams:
   max_force: 0.05
