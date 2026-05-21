@@ -29,7 +29,6 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.data import as_dict_handler
-from matbench_discovery.enums import Task
 
 FILTER_CLS: dict[str, type[Filter]] = {
     "frechet": FrechetCellFilter,
@@ -158,9 +157,7 @@ def relax_shard(
         Maximum number of optimizer steps.
     """
     # === Step 1. Load Structures ===
-    input_col = str(
-        {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[Task.IS2RE]
-    )
+    input_col = str(Key.initial_struct)
     df_in = pd.read_json(input_path)
     if input_col not in df_in:
         input_col = "initial_structure"

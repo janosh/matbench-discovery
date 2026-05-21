@@ -298,7 +298,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     cgcnn_p = auto(), "cgcnn/cgcnn+p.yml"
 
     # DeePMD-DPA3 models: https://arxiv.org/abs/2506.01686
-    # dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
+    dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
     dpa_3_1_3m_ft = auto(), "deepmd/dpa-3.1-3m-ft.yml"
     dpa_4_0_pro_mptrj = auto(), "deepmd/dpa-4.0-pro-mptrj.yml"
     # dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
@@ -507,6 +507,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def is_complete(self) -> bool:
         """Check if model has all required metrics."""
         return self.metadata.get("status", "complete") == "complete"
+
+    @classmethod
+    def active(cls) -> tuple[Self, ...]:
+        """Complete models included by default in plots, metrics, and eval scripts."""
+        return tuple(model for model in cls if model.is_complete)
 
     @classmethod
     def _missing_(cls, value: object) -> Self | None:

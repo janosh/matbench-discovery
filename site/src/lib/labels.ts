@@ -480,7 +480,7 @@ export const org_logos = {
   'Ningbo Institute of Artificial Intelligence Industry': `/logos/ningbo-institute-of-artificial-intelligence-industry.svg`,
   'Northwestern University': `/logos/northwestern-university.svg`,
   'Orbital Materials': `/logos/orbital-materials.svg`,
-  'Peking University': `/logos/pku.svg`,
+  'Peking University': `/logos/peking-university.svg`,
   'Seoul National University': `/logos/seoul-national-university.svg`,
   'Materials AI Lab at Samsung Electronics': `/logos/samsung-electronics.svg`,
   'Texas A&M University': `/logos/texas-a&m.svg`,

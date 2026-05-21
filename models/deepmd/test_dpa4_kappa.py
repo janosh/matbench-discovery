@@ -218,7 +218,9 @@ class KappaRunner:
             )
         init_info = deepcopy(atoms.info)
         formula = atoms.get_chemical_formula()
-        spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
+        spg_num = MoyoDataset(
+            MoyoAdapter.from_atoms(atoms), symprec=self.symprec
+        ).number
         info_dict: dict[str, Any] = {
             str(Key.formula): formula,
             str(Key.spg_num): spg_num,
@@ -372,7 +374,9 @@ class KappaRunner:
         atoms.constraints = None
         atoms.info = init_info | atoms.info
 
-        relaxed_spg = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
+        relaxed_spg = MoyoDataset(
+            MoyoAdapter.from_atoms(atoms), symprec=self.symprec
+        ).number
         return {
             "max_stress": max_stress,
             "reached_max_steps": reached_max_steps,
