@@ -31,11 +31,11 @@ cli_parser.add_argument(
 
 cli_parser.add_argument(
     "--models",
-    nargs="*",
+    nargs="+",
     type=parse_model,
     choices=Model,
-    default=list(Model),
-    help="Models to analyze. If none specified, analyzes all models.",
+    default=list(Model.active()),
+    help="Models to analyze. If none specified, analyzes active models.",
 )
 cli_parser.add_argument(
     "--debug",

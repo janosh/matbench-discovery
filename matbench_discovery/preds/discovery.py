@@ -5,7 +5,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import STABILITY_THRESHOLD
 from matbench_discovery.cli import cli_args
-from matbench_discovery.data import Model, df_wbm, load_df_wbm_with_preds
+from matbench_discovery.data import df_wbm, load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics.discovery import stable_metrics
 
@@ -14,7 +14,7 @@ __date__ = "2023-02-04"
 
 
 # load WBM summary dataframe with all models' formation energy predictions (eV/atom)
-models_to_load = cli_args.models or list(Model)
+models_to_load = tuple(model for model in cli_args.models if model.is_complete)
 df_preds = load_df_wbm_with_preds(models=models_to_load).round(3)
 
 
@@ -73,11 +73,11 @@ for model in models_to_load:
 
 
 # pick F1 as primary metric to sort by
-df_metrics = df_metrics.round(3).sort_values("F1", axis=1, ascending=False)
-df_metrics_10k = df_metrics_10k.round(3).sort_values("F1", axis=1, ascending=False)
-df_metrics_uniq_protos = df_metrics_uniq_protos.round(3).sort_values(
-    "F1", axis=1, ascending=False
-)
+df_metrics = df_metrics.round(3)
+df_metrics_10k = df_metrics_10k.round(3)
+df_metrics_uniq_protos = df_metrics_uniq_protos.round(3)
+for metrics in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
+    metrics.sort_values("F1", axis=1, ascending=False, inplace=True)  # noqa: PD002
 
 # dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()

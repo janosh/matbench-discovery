@@ -214,7 +214,7 @@ df_wbm.index = df_wbm[str(Key.mat_id)]
 
 def load_df_wbm_with_preds(
     *,
-    models: Sequence[str | Model] = (),
+    models: Sequence[str | Model] | None = None,
     pbar: bool = True,
     id_col: str = Key.mat_id,
     subset: pd.Index | Sequence[str] | TestSubset | None = None,
@@ -224,8 +224,9 @@ def load_df_wbm_with_preds(
     """Load WBM summary dataframe with model predictions from disk.
 
     Args:
-        models (Sequence[str], optional): Model names must be keys of
-            matbench_discovery.data.Model. Defaults to all models.
+        models (Sequence[str | Model] | None, optional): Models to load, given as
+            Model members, enum names, or display labels. Defaults to active models
+            when None. Pass an empty sequence to load no model predictions.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
         subset (pd.Index | Sequence[str] | 'uniq_protos' | None, optional):
@@ -247,25 +248,37 @@ def load_df_wbm_with_preds(
     Returns:
         pd.DataFrame: WBM summary dataframe with model predictions.
     """
-    valid_models = {model.name for model in Model}
-    if models == ():
-        models = tuple(valid_models)
-    inv_label_map = {key.label: key.name for key in Model}
-    # map pretty model names back to Model enum keys
-    models = [inv_label_map.get(model, model) for model in models]
-    if unknown_models := ", ".join(set(models) - valid_models):
-        raise ValueError(f"{unknown_models=}, expected subset of {valid_models}")
+    if models is None:
+        models_to_load = Model.active()
+    else:
+        resolved_models: list[Model] = []
+        for model_ref in models:
+            if isinstance(model_ref, Model):
+                resolved_models.append(model_ref)
+                continue
+            model = Model.__members__.get(model_ref)
+            if model is None:
+                model = Model._missing_(model_ref)
+            if model is None:
+                model = next(
+                    (model for model in Model if model.label == model_ref), None
+                )
+            if model is None:
+                valid_models = {model.name for model in Model}
+                raise ValueError(
+                    f"unknown model {model_ref!r}, expected subset of {valid_models}"
+                )
+            resolved_models.append(model)
+        models_to_load = tuple(resolved_models)
 
-    model_name: str = ""
+    model_name = ""
     df_out = df_wbm.copy()
 
     try:
-        prog_bar = tqdm(models, disable=not pbar, desc="Loading preds")
-        for model_name in prog_bar:
+        prog_bar = tqdm(models_to_load, disable=not pbar, desc="Loading preds")
+        for model in prog_bar:
+            model_name = model.name
             prog_bar.set_postfix_str(model_name)
-
-            # use getattr(name) in case model_name is already a Model enum
-            model = Model[getattr(model_name, "name", model_name)]
 
             df_preds = glob_to_df(model.discovery_path, pbar=False, **kwargs)
 
