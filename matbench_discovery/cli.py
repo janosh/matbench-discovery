@@ -34,7 +34,7 @@ cli_parser.add_argument(
     nargs="+",
     type=parse_model,
     choices=Model,
-    default=list(Model.active()),
+    default=None,
     help="Models to analyze. If none specified, analyzes active models.",
 )
 cli_parser.add_argument(
@@ -108,6 +108,8 @@ plot_group.add_argument(
     help="Suppress Plotly figures from opening in browser.",
 )
 cli_args, _ignore_unknown = cli_parser.parse_known_args()
+if cli_args.models is None:
+    cli_args.models = list(Model.active())
 
 # Set env var to auto-confirm file downloads when --auto-download is passed
 if cli_args.auto_download:

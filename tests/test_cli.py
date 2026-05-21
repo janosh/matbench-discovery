@@ -13,7 +13,7 @@ from matbench_discovery.enums import Model, TestSubset
 @pytest.mark.parametrize(
     "args, expected",
     [
-        ([], {"models": list(Model.active()), "test_subset": TestSubset.uniq_protos}),
+        ([], {"models": None, "test_subset": TestSubset.uniq_protos}),
         (["--models", str(Model.chgnet_030)], {"models": [Model.chgnet_030]}),
         (
             ["--models", "alphanet-mptrj"],
@@ -39,7 +39,7 @@ from matbench_discovery.enums import Model, TestSubset
     ],
 )
 def test_cli_parser(
-    args: list[str], expected: dict[str, str | bool | TestSubset | list[Model]]
+    args: list[str], expected: dict[str, str | bool | None | TestSubset | list[Model]]
 ) -> None:
     """Test CLI argument parsing with various inputs."""
     with patch.object(sys, "argv", ["script.py", *args]):
