@@ -47,7 +47,8 @@ describe(`diatomics server data loader`, () => {
         { fetch_fn, max_attempts: 3 },
       ),
     ).rejects.toThrow(/Figshare WAF challenge: challenge/)
-    expect(fetch_fn).toHaveBeenCalledExactlyOnceWith(
+    expect(fetch_fn).toHaveBeenCalledTimes(1)
+    expect(fetch_fn).toHaveBeenCalledWith(
       `https://figshare.com/files/123`,
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     )

@@ -5,7 +5,7 @@ import { redirect } from '@sveltejs/kit'
 export const handle: Handle = async ({ event, resolve }) => {
   // Redirect /preprint to the arXiv paper
   if (event.url.pathname === `/preprint`) {
-    throw redirect(307, pkg.preprint)
+    redirect(307, pkg.preprint)
   }
 
   const response = await resolve(event)

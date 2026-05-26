@@ -36,6 +36,7 @@ describe(`targets_tooltips`, () => {
 
 describe(`metric_better_as`, () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     // Setup spies instead of mocking the entire arrays
     vi.spyOn(all_higher_better_metrics, `includes`)
     vi.spyOn(all_lower_better_metrics, `includes`)
@@ -68,9 +69,9 @@ describe(`metric_better_as`, () => {
 
       // Verify the includes methods were called with the right arguments
       expect(all_higher_better_metrics.includes).toHaveBeenCalledWith(metric)
-      if (!higher_includes) {
-        expect(all_lower_better_metrics.includes).toHaveBeenCalledWith(metric)
-      }
+      expect(vi.mocked(all_lower_better_metrics.includes).mock.calls).toStrictEqual(
+        higher_includes ? [] : [[metric]],
+      )
     },
   )
 })

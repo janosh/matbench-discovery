@@ -22,26 +22,31 @@ declare module '*package.json' {
 }
 
 declare module 'models/*.yml' {
-  const data: import('$lib/model-schema').ModelMetadata
+  import type { ModelMetadata } from '$lib/model-schema'
+  const data: ModelMetadata
   export default data
 } // Model metadata files
 
 declare module '*/datasets.yml' {
-  const data: Record<string, import('$lib/types').Dataset>
+  import type { Dataset } from '$lib/types'
+  const data: Record<string, Dataset>
   export default data
 }
 
 declare module '*citation.cff' {
-  const data: import('$lib').Citation
+  import type { Citation } from '$lib'
+  const data: Citation
   export default data
 } // Paper metadata
 
 declare module '*references.yaml' {
-  export const references: import('$lib').Reference[]
+  import type { Reference } from '$lib'
+  export const references: Reference[]
 } // Paper references (auto-exported by Zotero)
 
 declare module '*model-schema.yml' {
-  export const ModelMetadata: import('$lib/model-schema').ModelMetadata
+  import type { ModelMetadata } from '$lib/model-schema'
+  export const ModelMetadata: ModelMetadata
 } // Model metadata schema
 
 declare module '*data-files.yml' {
@@ -96,6 +101,7 @@ declare module '*modeling-tasks.yml' {
 }
 
 declare module '*mlip-github-activity.json' {
-  const data: import('$lib/types').GitHubActivityData[]
+  import type { GitHubActivityData } from '$lib/types'
+  const data: GitHubActivityData[]
   export default data
 }

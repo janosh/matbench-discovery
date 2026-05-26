@@ -37,13 +37,13 @@ describe(`ModelCard`, () => {
       expect(date_added_span).toBeDefined()
       expect(date_added_span?.textContent).toContain(model.date_added)
 
-      if (model.date_published) {
-        const date_published_span = [...info_spans].find((span) =>
-          span.textContent?.includes(`Published ${model.date_published}`),
-        )
-        expect(date_published_span).toBeDefined()
-        expect(date_published_span?.textContent).toContain(model.date_published)
-      }
+      const date_published_span = [...info_spans].find((span) =>
+        span.textContent?.includes(`Published ${model.date_published}`),
+      )
+      expect(
+        !model.date_published ||
+          date_published_span?.textContent?.includes(model.date_published),
+      ).toBe(true)
 
       const params_span = [...info_spans].find((span) =>
         span.textContent?.includes(`${format_num(model.model_params, `.3~s`)} params`),
@@ -76,17 +76,15 @@ describe(`ModelCard`, () => {
 
     // Test actual training set data
     const training_set_links = training_set?.querySelectorAll(`a`)
-    if (training_set_links) {
-      const dataset_key = model.training_set[0]
-      const dataset = DATASETS[dataset_key]
+    const dataset_key = model.training_set[0]
+    const dataset = DATASETS[dataset_key]
 
-      // Check that we're linking to our internal data page
-      expect(training_set_links[0].href).toContain(`/data/${dataset.slug}`)
+    // Check that we're linking to our internal data page
+    expect(training_set_links?.[0]?.href).toContain(`/data/${dataset.slug}`)
 
-      // Check that structure count is shown in tooltip
-      const formatted_structures = format_num(dataset.n_structures)
-      expect(training_set_links[0].title).toContain(`${formatted_structures} structures`)
-    }
+    // Check that structure count is shown in tooltip
+    const formatted_structures = format_num(dataset.n_structures)
+    expect(training_set_links?.[0]?.title).toContain(`${formatted_structures} structures`)
   })
 
   describe(`Metrics Display`, () => {
@@ -168,10 +166,10 @@ describe(`ModelCard`, () => {
       const packages = [...document.querySelectorAll(`section:nth-child(2) li`)]
       expect(packages.length).toBeGreaterThan(0)
       const first_package = Object.entries(model.requirements ?? {})[0]
-      if (first_package) {
-        const [pkg_name, pkg_version] = first_package
-        expect(packages[0].textContent?.trim()).toBe(`${pkg_name}: ${pkg_version}`)
-      }
+      const [pkg_name, pkg_version] = first_package ?? []
+      expect(packages[0]?.textContent?.trim() ?? null).toBe(
+        first_package ? `${pkg_name}: ${pkg_version}` : null,
+      )
     })
   })
 

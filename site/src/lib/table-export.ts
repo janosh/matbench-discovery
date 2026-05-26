@@ -581,7 +581,7 @@ export async function generate_excel({
           const cell_address = XLSX.utils.encode_cell({ r: row, c: col })
           const cell = worksheet[cell_address]
 
-          if (cell && cell.v) {
+          if (cell?.v != null) {
             const cell_length = String(cell.v).length
             max_width = Math.max(max_width, Math.min(cell_length, 50)) // Cap at 50 chars
           }

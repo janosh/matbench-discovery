@@ -27,7 +27,7 @@
     on_filter_change?: (
       show_energy: boolean,
       show_non_compliant: boolean,
-    ) => void | undefined
+    ) => void
     show_energy_only_toggle?: boolean
   } = $props()
 </script>

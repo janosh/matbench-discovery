@@ -17,7 +17,7 @@
   )
   let total = $derived(
     (Array.isArray(elem_counts) ? elem_counts : Object.values(elem_counts)).reduce(
-      (total, count) => total + count,
+      (sum, count) => sum + count,
       0,
     ),
   )

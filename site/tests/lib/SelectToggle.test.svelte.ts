@@ -45,20 +45,14 @@ describe(`SelectToggle.svelte`, () => {
       expect(buttons).toHaveLength(options.length)
 
       // Verify active state
-      options.forEach((_, idx) => {
-        if (idx === expectedActiveIndex) {
-          expect(buttons[idx].classList.contains(`active`)).toBe(true)
-        } else {
-          expect(buttons[idx].classList.contains(`active`)).toBe(false)
-        }
-      })
+      expect([...buttons].map((button) => button.classList.contains(`active`))).toStrictEqual(
+        options.map((_, idx) => idx === expectedActiveIndex),
+      )
 
       // Check HTML rendering if expected
-      if (expectHtml) {
-        const boldElement = document.querySelector(`b`)
-        expect(boldElement).not.toBeNull()
-        expect(boldElement?.textContent).toBe(`Bold`)
-      }
+      expect(document.querySelector(`b`)?.textContent ?? null).toBe(
+        expectHtml ? `Bold` : null,
+      )
     },
   )
 
@@ -123,17 +117,16 @@ describe(`SelectToggle.svelte`, () => {
 
       const links = document.querySelectorAll(`a`)
 
-      if (expectNoLink) {
-        expect(links).toHaveLength(0)
-      } else {
-        expect(links.length).toBeGreaterThan(0)
-        const link = links[0]
-
-        // Check link attributes
-        Object.entries(expectedLinkAttributes ?? {}).forEach(([attr, value]) => {
-          expect(link.getAttribute(attr)).toBe(value)
-        })
-      }
+      expect(links).toHaveLength(expectNoLink ? 0 : 1)
+      expect(links[0]?.getAttribute(`href`) ?? null).toBe(
+        expectedLinkAttributes?.href ?? null,
+      )
+      expect(links[0]?.getAttribute(`target`) ?? null).toBe(
+        expectedLinkAttributes?.target ?? null,
+      )
+      expect(links[0]?.getAttribute(`rel`) ?? null).toBe(
+        expectedLinkAttributes?.rel ?? null,
+      )
     },
   )
 })

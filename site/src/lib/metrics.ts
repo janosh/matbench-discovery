@@ -286,7 +286,7 @@ export function assemble_row_data(
         ? cell_filter.replace(/CellFilter$/, ``)
         : null
 
-    return {
+    const row = {
       Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
       CPS: model[CPS.key],
       F1: discovery_metrics?.F1,
@@ -343,13 +343,17 @@ export function assemble_row_data(
       [HYPERPARAMS.graph_construction_radius.key]: r_cut_str,
       style: `border-left: 3px solid var(--${is_compliant ? `` : `non-`}compliant-color);`,
       org_logos: model.org_logos,
-      ...Object.fromEntries(
+    }
+
+    return Object.assign(
+      row,
+      Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
           col.key,
           get_nested_number(model, `${col.path}.${col.property}`),
         ]),
       ),
-    }
+    )
   })
 
   // Sort by combined performance score (descending)

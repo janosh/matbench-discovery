@@ -50,42 +50,40 @@ describe(`MetricsTable`, () => {
     const pred_files_button = doc_query<HTMLButtonElement>(`tbody .pred-files-btn`)
     expect(pred_files_button).toBeDefined() // Ensure at least one button exists
 
-    if (pred_files_button) {
-      // Dropdown should not exist initially
-      expect(document.querySelector(`.pred-files-dropdown`)).toBeNull()
+    // Dropdown should not exist initially
+    expect(document.querySelector(`.pred-files-dropdown`)).toBeNull()
 
-      // Click the button
-      pred_files_button.click()
-      await tick() // Wait for state update and render
+    // Click the button
+    pred_files_button.click()
+    await tick() // Wait for state update and render
 
-      // Dropdown should now exist
-      let dropdown = document.querySelector(`.pred-files-dropdown`)
-      expect(dropdown).toBeDefined()
-      expect(dropdown?.textContent).toContain(`Files for`)
+    // Dropdown should now exist
+    let dropdown = document.querySelector(`.pred-files-dropdown`)
+    expect(dropdown).toBeDefined()
+    expect(dropdown?.textContent).toContain(`Files for`)
 
-      // Simulate clicking outside (assuming click_outside works correctly)
-      // We can simulate this by clicking the body or another element
-      document.body.click()
-      await tick()
+    // Simulate clicking outside (assuming click_outside works correctly)
+    // We can simulate this by clicking the body or another element
+    document.body.click()
+    await tick()
 
-      // Dropdown should be gone after clicking outside
-      dropdown = document.querySelector(`.pred-files-dropdown`)
-      expect(dropdown).toBeNull()
+    // Dropdown should be gone after clicking outside
+    dropdown = document.querySelector(`.pred-files-dropdown`)
+    expect(dropdown).toBeNull()
 
-      // Test closing with Escape key
-      pred_files_button.click() // Reopen dropdown
-      await tick()
-      dropdown = document.querySelector(`.pred-files-dropdown`)
-      expect(dropdown).toBeDefined()
+    // Test closing with Escape key
+    pred_files_button.click() // Reopen dropdown
+    await tick()
+    dropdown = document.querySelector(`.pred-files-dropdown`)
+    expect(dropdown).toBeDefined()
 
-      // Dispatch Escape keydown event
-      globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
-      await tick()
+    // Dispatch Escape keydown event
+    globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
+    await tick()
 
-      // Dropdown should be gone
-      dropdown = document.querySelector(`.pred-files-dropdown`)
-      expect(dropdown).toBeNull()
-    }
+    // Dropdown should be gone
+    dropdown = document.querySelector(`.pred-files-dropdown`)
+    expect(dropdown).toBeNull()
   })
 
   it(`toggles metadata columns`, () => {
@@ -573,19 +571,17 @@ describe(`MetricsTable`, () => {
         const data_sort_value = cell.getAttribute(`data-sort-value`)
 
         // The data-sort-value should not contain HTML tags if present
-        if (data_sort_value) {
-          expect(data_sort_value).not.toContain(`<`)
-          expect(data_sort_value).not.toContain(`>`)
-          expect(data_sort_value).not.toContain(`span`)
-        }
+        expect(
+          data_sort_value == null || !/[<>]/.test(data_sort_value) && !data_sort_value.includes(`span`),
+        ).toBe(true)
 
         // The inner span should have its own data-sort-value
         const inner_span = cell.querySelector(`span[data-sort-value]`)
-        if (inner_span) {
-          const span_sort_value = inner_span.getAttribute(`data-sort-value`)
-          expect(span_sort_value).toBeDefined()
-          expect(isNaN(Number(span_sort_value))).toBe(false)
-        }
+        const span_sort_value = inner_span?.getAttribute(`data-sort-value`)
+        expect(
+          inner_span === null ||
+            (span_sort_value !== null && !Number.isNaN(Number(span_sort_value))),
+        ).toBe(true)
       })
 
       // Verify tooltips are preserved on spans within cells
@@ -661,11 +657,9 @@ describe(`MetricsTable`, () => {
 
         const reverse_sorted_model_names = get_model_names()
         // Second click should reverse the sort direction
-        if (is_ascending) {
-          expect(reverse_sorted_model_names).toStrictEqual(ascending.toReversed())
-        } else {
-          expect(reverse_sorted_model_names).toStrictEqual(ascending)
-        }
+        expect(reverse_sorted_model_names).toStrictEqual(
+          is_ascending ? ascending.toReversed() : ascending,
+        )
       },
     )
 
@@ -764,27 +758,17 @@ describe(`MetricsTable`, () => {
       // Find all links cells
       const links_cells = [...document.querySelectorAll(`td[data-col="Links"]`)]
 
-      // Check for unavailable icon for missing links
-      let found_missing_icon = false
-
-      for (const cell of links_cells) {
-        const missing_icons = [...cell.querySelectorAll(`span[data-original-title$="not available"] svg`)]
-
-        if (missing_icons.length > 0) {
-          found_missing_icon = true
-
-          // Check each missing link icon's parent span has a title
-          for (const icon of missing_icons) {
-            const span = icon.closest(`span`)
-            const title = span?.getAttribute(`data-original-title`)
-            expect(title).not.toBeNull()
-            expect(title).toMatch(/not available/)
-          }
-        }
-      }
+      const missing_icon_titles = links_cells.flatMap((cell) =>
+        [...cell.querySelectorAll(`span[data-original-title$="not available"] svg`)].map(
+          (icon) => icon.closest(`span`)?.getAttribute(`data-original-title`),
+        ),
+      )
 
       // Note: this might fail if all models have all links, which is unlikely
-      expect(found_missing_icon).toBe(true)
+      expect(missing_icon_titles.length).toBeGreaterThan(0)
+      expect(missing_icon_titles.every((title) => title?.match(/not available/))).toBe(
+        true,
+      )
     })
 
     it(`renders prediction files button`, async () => {
@@ -847,21 +831,17 @@ describe(`MetricsTable`, () => {
 
       // Check that the order of links is consistent across cells
       // (not checking all cells as some might have missing links)
-      if (links_cells.length > 1) {
-        const second_cell = links_cells[1]
-        const second_links = [...second_cell.querySelectorAll(`a`)]
-
-        // If the second cell has the same number of links, check they all have icons
-        if (second_links.length === reference_links.length) {
-          const second_icons = second_links.map((link) => {
-            const svg = link.querySelector(`svg`)
-            return svg !== null
-          })
-
-          // All links should have icons
-          expect(second_icons.every(Boolean)).toBe(true)
-        }
-      }
+      const second_cell = links_cells[1]
+      const second_links = second_cell ? [...second_cell.querySelectorAll(`a`)] : []
+      const second_icons = second_links.map((link) => {
+        const svg = link.querySelector(`svg`)
+        return svg !== null
+      })
+      expect(
+        links_cells.length <= 1 ||
+          second_links.length !== reference_links.length ||
+          second_icons.every(Boolean),
+      ).toBe(true)
     })
   })
 
@@ -1174,13 +1154,12 @@ describe(`MetricsTable`, () => {
 
       // Verify heatmap is enabled by default
       const table_controls = document.querySelector(`table-controls`)
-      if (table_controls) {
-        const heatmap_checkbox =
-          table_controls.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
-        expect(heatmap_checkbox?.checked, `show_heatmap should default to true`).toBe(
-          true,
-        )
-      }
+      const heatmap_checkbox =
+        table_controls?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
+      expect(
+        table_controls === null || heatmap_checkbox?.checked === true,
+        `show_heatmap should default to true`,
+      ).toBe(true)
     })
   })
 
@@ -1265,11 +1244,11 @@ describe(`MetricsTable`, () => {
       // F1 and DAF should appear in the order specified by column_order
       const visible_f1_pos = headers.indexOf(`F1`)
       const visible_daf_pos = headers.indexOf(`DAF`)
-      if (f1_idx < daf_idx) {
-        expect(visible_f1_pos).toBeLessThan(visible_daf_pos)
-      } else {
-        expect(visible_f1_pos).toBeGreaterThan(visible_daf_pos)
-      }
+      expect(
+        f1_idx < daf_idx
+          ? visible_f1_pos < visible_daf_pos
+          : visible_f1_pos > visible_daf_pos,
+      ).toBe(true)
     })
 
     it(`preserves column_order when toggling column visibility`, async () => {

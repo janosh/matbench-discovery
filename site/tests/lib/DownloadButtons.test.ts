@@ -9,8 +9,6 @@ type ExportState = {
 }
 
 describe(`Download Buttons UI`, () => {
-  const mock_click = vi.fn()
-
   const default_state: ExportState = {
     export_error: null,
     show_non_compliant: false,
@@ -28,12 +26,6 @@ describe(`Download Buttons UI`, () => {
         <div class="export-error" style="display: none;"></div>
       </div>
     `
-    const original_create_element = document.createElement.bind(document)
-    vi.spyOn(document, `createElement`).mockImplementation((tag: string) =>
-      tag === `a`
-        ? ({ href: ``, download: ``, click: mock_click } as unknown as HTMLAnchorElement)
-        : original_create_element(tag),
-    )
   })
 
   it(`has all download buttons with correct structure and formatting`, () => {
@@ -45,9 +37,9 @@ describe(`Download Buttons UI`, () => {
       const format = expected_formats[idx]
       expect(button.textContent?.trim()).toBe(format)
       // Only check uppercase for SVG, PNG, CSV (not Excel)
-      if (format !== `Excel`) {
-        expect(button.textContent).toBe(button.textContent?.toUpperCase())
-      }
+      expect(button.textContent).toBe(
+        format === `Excel` ? button.textContent : button.textContent?.toUpperCase(),
+      )
     })
   })
 
@@ -65,7 +57,7 @@ describe(`Download Buttons UI`, () => {
         .mockResolvedValue({ filename: `test.${id}`, url: `mock-url` })
       const handle_export_fn = handle_export(generate_spy, format, { ...default_state })
 
-      const button = doc_query<HTMLButtonElement>(`#${id}-btn`)
+      const button = doc_query(`#${id}-btn`)
       button.addEventListener(`click`, () => void handle_export_fn())
       button.click()
 
