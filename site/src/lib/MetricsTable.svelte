@@ -104,33 +104,33 @@
       .filter((row) => {
         // If show_selected_only is true, only show selected models
         if (show_selected_only) {
-          const model_name = String((row as ModelData).Model)
-          return selected_models.has(model_name)
+          const row_model_name = String((row as ModelData).Model)
+          return selected_models.has(row_model_name)
         }
         return true
       })
       .map((row) => {
         const model_data = row as ModelData
-        const model_name = String(model_data.Model)
-        const is_selected = selected_models.has(model_name)
+        const row_model_name = String(model_data.Model)
+        const is_selected = selected_models.has(row_model_name)
         // Only apply selected styles when not filtering to show only selected models
         row.class = is_selected && !show_selected_only ? `highlight` : null
         return row
       }),
   )
 
-  function show_dropdown(event: MouseEvent, links: LinkData) {
+  function show_dropdown(event: MouseEvent, link_data: LinkData) {
     event.stopPropagation()
 
     // Get button position for dropdown placement
     const button = event.currentTarget as HTMLElement
     const rect = button.getBoundingClientRect()
 
-    active_model_name = links.pred_files.name
-    active_files = links.pred_files.files
+    active_model_name = link_data.pred_files.name
+    active_files = link_data.pred_files.files
 
     // Position dropdown relative to the button's position in the document
-    const { name } = links.pred_files
+    const { name } = link_data.pred_files
     pred_files_dropdown_pos = {
       x: rect.left + window.scrollX,
       y: rect.bottom + window.scrollY,
@@ -139,16 +139,16 @@
   }
   const close_dropdown = () => (pred_files_dropdown_pos = null)
 
-  function toggle_model_selection(model_name: string) {
+  function toggle_model_selection(row_model_name: string) {
     const new_selected = new SvelteSet(selected_models)
-    if (new_selected.has(model_name)) new_selected.delete(model_name)
-    else new_selected.add(model_name)
+    if (new_selected.has(row_model_name)) new_selected.delete(row_model_name)
+    else new_selected.add(row_model_name)
     selected_models = new_selected
   }
 
-  function handle_row_double_click(event: MouseEvent, model_name: string) {
+  function handle_row_double_click(event: MouseEvent, row_model_name: string) {
     event.preventDefault()
-    toggle_model_selection(model_name)
+    toggle_model_selection(row_model_name)
   }
 </script>
 
@@ -209,8 +209,8 @@
   bind:column_order
   {heatmap_class}
   onrowdblclick={(event, row) => {
-    const model_name = String((row as ModelData).Model)
-    handle_row_double_click(event, model_name)
+    const row_model_name = String((row as ModelData).Model)
+    handle_row_double_click(event, row_model_name)
   }}
   {...rest}
 >

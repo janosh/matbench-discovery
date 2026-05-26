@@ -46,7 +46,8 @@ describe(`TableControls`, () => {
     const initial_checked = energy_checkbox.checked
     energy_checkbox.click()
 
-    expect(on_filter_change).toHaveBeenCalledExactlyOnceWith(!initial_checked, false)
+    expect(on_filter_change).toHaveBeenCalledTimes(1)
+    expect(on_filter_change).toHaveBeenCalledWith(!initial_checked, false)
     expect(energy_checkbox.checked).toBe(!initial_checked)
   })
 

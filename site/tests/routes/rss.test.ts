@@ -101,19 +101,19 @@ describe(`RSS feed endpoint`, () => {
     )
 
     // Check for at least one model from the real data
-    if (MODELS.length > 0) {
-      const model = MODELS[0]
-      expect(xml).toContain(model.model_name)
-      expect(xml).toContain(`models/${model.model_key}`)
-    }
+    const model = MODELS[0]
+    expect(model).toBeDefined()
+    expect(xml).toContain(model.model_name)
+    expect(xml).toContain(`models/${model.model_key}`)
 
     // Check for links to paper and repo in the description if available
     const cdata_content = extract_first_cdata(xml)
 
     // Check for link patterns
-    if (cdata_content.includes(`paper`)) {
-      expect(cdata_content).toMatch(/href="https?:\/\/[^"]+">[^<]+<\/a>/)
-    }
+    expect(
+      !cdata_content.includes(`paper`) ||
+        /href="https?:\/\/[^"]+">[^<]+<\/a>/.test(cdata_content),
+    ).toBe(true)
   })
 
   it(`should sort models by date in descending order`, async () => {

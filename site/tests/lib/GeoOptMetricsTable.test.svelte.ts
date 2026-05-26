@@ -181,12 +181,11 @@ describe(`GeoOptMetricsTable`, () => {
     await tick()
     const after_second = get_order()
 
-    if (initial.length > 1) {
-      const changed =
-        JSON.stringify(initial) !== JSON.stringify(after_click) ||
-        JSON.stringify(after_click) !== JSON.stringify(after_second)
-      expect(changed).toBe(true)
-    }
+    const changed =
+      JSON.stringify(initial) !== JSON.stringify(after_click) ||
+      JSON.stringify(after_click) !== JSON.stringify(after_second)
+    expect(initial.length).toBeGreaterThan(1)
+    expect(changed).toBe(true)
   })
 
   it.each([
@@ -205,10 +204,8 @@ describe(`GeoOptMetricsTable`, () => {
     expect(table.querySelector(`thead`)).not.toBeNull()
 
     const rows = document.querySelectorAll(`tbody tr`)
-    if (!show_compliant && !show_non_compliant) {
-      // HeatmapTable may render a "no data" placeholder row when empty
-      expect(rows.length).toBeLessThanOrEqual(1)
-    }
+    // HeatmapTable may render a "no data" placeholder row when empty
+    expect(show_compliant || show_non_compliant || rows.length <= 1).toBe(true)
   })
 
   it.each([
@@ -234,10 +231,9 @@ describe(`GeoOptMetricsTable`, () => {
     const checkbox = label?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
 
     expect(state[prop]).toBe(true)
-    if (checkbox) {
-      checkbox.click()
-      await tick()
-      expect(state[prop]).toBe(false)
-    }
+    expect(checkbox).toBeInstanceOf(HTMLInputElement)
+    checkbox?.click()
+    await tick()
+    expect(state[prop]).toBe(false)
   })
 })

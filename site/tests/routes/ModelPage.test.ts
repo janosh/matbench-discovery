@@ -22,11 +22,9 @@ describe(`Model Detail Page`, () => {
     // Check meta info section
     const meta_info = document.querySelector(`.meta-info`)
     expect(meta_info?.textContent).toContain(`parameters`)
-    if (test_model.n_estimators > 1) {
-      expect(meta_info?.textContent).toContain(
-        `Ensemble ${test_model.n_estimators} models`,
-      )
-    }
+    expect(meta_info?.textContent?.includes(`Ensemble ${test_model.n_estimators} models`)).toBe(
+      test_model.n_estimators > 1,
+    )
 
     // Check links section
     const links = document.querySelectorAll(`.links a`)
@@ -45,31 +43,31 @@ describe(`Model Detail Page`, () => {
     for (const [idx, yaml_author] of test_model.authors.entries()) {
       const author_elem = authors[idx]
       expect(author_elem.textContent).toContain(yaml_author.name)
-      if (yaml_author.affiliation) {
-        expect(author_elem.textContent).toContain(yaml_author.affiliation)
-      }
-      if (yaml_author.email) {
-        expect(author_elem.querySelector(`[href^="mailto:"]`)).not.toBeNull()
-      }
-      if (yaml_author.github) {
-        expect(author_elem.querySelector(`[href="${yaml_author.github}"]`)).not.toBeNull()
-      }
-      if (yaml_author.orcid) {
-        expect(author_elem.querySelector(`[href="${yaml_author.orcid}"]`)).not.toBeNull()
-      }
+      expect(
+        !yaml_author.affiliation ||
+          author_elem.textContent?.includes(yaml_author.affiliation),
+      ).toBe(true)
+      expect(Boolean(author_elem.querySelector(`[href^="mailto:"]`))).toBe(
+        Boolean(yaml_author.email),
+      )
+      expect(Boolean(author_elem.querySelector(`[href="${yaml_author.github}"]`))).toBe(
+        Boolean(yaml_author.github),
+      )
+      expect(Boolean(author_elem.querySelector(`[href="${yaml_author.orcid}"]`))).toBe(
+        Boolean(yaml_author.orcid),
+      )
     }
 
     // Check trained by section if present
-    if (test_model.trained_by) {
-      const trainers = document.querySelectorAll(`.trained-by li`)
-      expect(trainers).toHaveLength(test_model.trained_by.length)
-      for (const [idx, trainer] of test_model.trained_by.entries()) {
-        const trainer_el = trainers[idx]
-        expect(trainer_el.textContent).toContain(trainer.name)
-        if (trainer.affiliation) {
-          expect(trainer_el.textContent).toContain(trainer.affiliation)
-        }
-      }
+    const expected_trainers = test_model.trained_by ?? []
+    const trainers = document.querySelectorAll(`.trained-by li`)
+    expect(trainers).toHaveLength(expected_trainers.length)
+    for (const [idx, trainer] of expected_trainers.entries()) {
+      const trainer_el = trainers[idx]
+      expect(trainer_el.textContent).toContain(trainer.name)
+      expect(
+        !trainer.affiliation || trainer_el.textContent?.includes(trainer.affiliation),
+      ).toBe(true)
     }
 
     // Check model info section
@@ -79,23 +77,23 @@ describe(`Model Detail Page`, () => {
     expect(model_info?.textContent).toContain(test_model.openness)
 
     // Check training set section if present
-    if (test_model.training_set) {
-      const training_set = document.querySelector(`.training-set`)
-      expect(training_set).not.toBeNull()
-      const train_set_links = training_set?.querySelectorAll(`a`)
-      expect(train_set_links?.length).toBe(
-        Array.isArray(test_model.training_set) ? test_model.training_set.length : 1,
-      )
-    }
+    const training_set = document.querySelector(`.training-set`)
+    const train_set_links = training_set?.querySelectorAll(`a`)
+    const expected_train_set_links = test_model.training_set
+      ? Array.isArray(test_model.training_set)
+        ? test_model.training_set.length
+        : 1
+      : 0
+    expect(training_set !== null || !test_model.training_set).toBe(true)
+    expect(train_set_links?.length ?? 0).toBe(expected_train_set_links)
 
     // Check hyperparameters section if present
-    if (test_model.hyperparams) {
-      const hyperparams = document.querySelector(`.hyperparams`)
-      expect(hyperparams).not.toBeNull()
-      for (const [key, value] of Object.entries(test_model.hyperparams)) {
-        expect(hyperparams?.textContent).toContain(key)
-        expect(hyperparams?.textContent).toContain(JSON.stringify(value))
-      }
+    const hyperparams = document.querySelector(`.hyperparams`)
+    const hyperparam_entries = Object.entries(test_model.hyperparams ?? {})
+    expect(hyperparams !== null || hyperparam_entries.length === 0).toBe(true)
+    for (const [key, value] of hyperparam_entries) {
+      expect(hyperparams?.textContent).toContain(key)
+      expect(hyperparams?.textContent).toContain(JSON.stringify(value))
     }
   }, 10_000)
 })

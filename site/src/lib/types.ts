@@ -1,4 +1,4 @@
-import * as d3sc from 'd3-scale-chromatic'
+import type * as d3sc from 'd3-scale-chromatic'
 import type { IconName } from 'matterviz'
 import type { Label1 as LabelType } from './label-schema.d.ts'
 import type { ModelMetadata } from './model-schema.d.ts'

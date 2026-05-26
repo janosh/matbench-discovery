@@ -6,7 +6,7 @@ import { gunzipSync } from 'node:zlib'
 
 const repo_root = resolve(dirname(fileURLToPath(import.meta.url)), `../../../..`)
 const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms))
+  new Promise((resolve_sleep) => setTimeout(resolve_sleep, ms))
 
 type DiatomicsSource = { pred_file?: string | null; pred_file_url?: string }
 type FetchOptions = { fetch_fn?: typeof fetch; root_dir?: string; max_attempts?: number }

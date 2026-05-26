@@ -73,9 +73,9 @@ describe(`Contribute Page`, () => {
         [`slack`, `forum`, `gitter`].some((term) => link.href?.includes(term)),
     )
 
-    if (!has_community_links) {
-      expect(trouble_section?.textContent).toMatch(/file|open|create|new issue/i)
-    }
+    expect(has_community_links || /file|open|create|new issue/i.test(
+      trouble_section?.textContent ?? ``,
+    )).toBe(true)
   })
 })
 

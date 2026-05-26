@@ -76,6 +76,16 @@ export function doc_query<T extends HTMLElement>(
   return node as T
 }
 
+export function get_scatter_plot_props(scatter_plot_mock: {
+  mock: { lastCall?: unknown[] }
+}): unknown {
+  const props = scatter_plot_mock.mock.lastCall?.find(
+    (call_arg) => typeof call_arg === `object` && call_arg !== null && `series` in call_arg,
+  )
+  if (!props) throw new Error(`ScatterPlot props not found`)
+  return props
+}
+
 // Helper function to check if an element is hidden
 export function is_hidden(el: Element | null): boolean {
   if (!el) return true

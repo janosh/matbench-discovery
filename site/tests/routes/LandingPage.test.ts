@@ -130,16 +130,15 @@ describe(`Landing Page`, () => {
     const f1_match = /F1 score of ([\d.]+)/.exec(text)
     const daf_match = /DAF\) of ([\d.]+)/.exec(text)
 
-    if (f1_match && daf_match) {
-      const f1_value = parseFloat(f1_match[1])
-      const daf_value = parseFloat(daf_match[1])
-
-      expect(f1_value > 0 && f1_value < 1, `F1=${f1_value} is out of range`).toBe(true)
-      expect(daf_value > 0 && daf_value < 10, `DAF=${daf_value} is out of range`).toBe(
-        true,
-      )
-    } else {
+    if (!f1_match || !daf_match) {
       throw new Error(`Could not find F1 or DAF values in text: ${text}`)
     }
+    const f1_value = parseFloat(f1_match[1])
+    const daf_value = parseFloat(daf_match[1])
+
+    expect(f1_value > 0 && f1_value < 1, `F1=${f1_value} is out of range`).toBe(true)
+    expect(daf_value > 0 && daf_value < 10, `DAF=${daf_value} is out of range`).toBe(
+      true,
+    )
   })
 })

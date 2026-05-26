@@ -11,7 +11,7 @@
   // State for the draggable point
   let is_dragging = $state(false)
   let point = $state<Point>({ x: 0, y: 0 })
-  let svg_element: SVGSVGElement
+  let svg_element = $state<SVGSVGElement | null>(null)
   let radius = $derived(size / 2)
   let center = $derived({ x: radius, y: radius })
 
@@ -176,6 +176,7 @@
   function handle_drag(event: MouseEvent | TouchEvent) {
     if (!is_dragging) return
     event.preventDefault()
+    if (!svg_element) return
 
     // Get SVG coordinates
     const rect = svg_element.getBoundingClientRect()
