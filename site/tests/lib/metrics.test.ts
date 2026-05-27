@@ -141,28 +141,15 @@ describe(`format_train_set`, () => {
     expect(result).toContain(`structures`)
   })
 
-  it(`handles missing training sets gracefully with warnings`, () => {
-    // Mock console.warn
-    const console_spy = vi.spyOn(console, `warn`).mockImplementation(() => {})
-
+  it(`throws for unknown training sets`, () => {
     const mock_model = {
       n_training_structures: mp2022.n_structures,
       n_training_materials: mp2022.n_materials,
     }
-    const result = format_train_set([mp2022_key, `NonExistent`], mock_model as ModelData)
 
-    // Should warn about missing training set with exact message
-    expect(console_spy).toHaveBeenCalledWith(
+    expect(() => format_train_set([mp2022_key, `NonExistent`], mock_model as ModelData)).toThrow(
       `Training set NonExistent not found in DATASETS`,
     )
-
-    // Should still format the existing training set correctly
-    expect(result).toContain(mp2022_key)
-
-    // Should not include the missing dataset name anywhere
-    expect(result).not.toContain(`NonExistent`)
-
-    console_spy.mockRestore()
   })
 
   it(`formats training sets without n_materials correctly using n_structures`, () => {

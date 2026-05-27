@@ -4,6 +4,7 @@
 import os
 from importlib.metadata import version
 
+import numpy as np
 import pandas as pd
 from aviary.cgcnn.data import CrystalGraphData, collate_batch
 from aviary.cgcnn.model import CrystalGraphConvNet
@@ -17,10 +18,25 @@ from tqdm import tqdm, trange
 from matbench_discovery import WANDB_PATH, timestamp, today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.hpc import slurm_submit
-from matbench_discovery.structure import perturb_structure
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-13"
+
+np_rng = np.random.default_rng(seed=0)  # ensure reproducible structure perturbations
+
+
+def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
+    """Perturb atomic coordinates for CGCNN+P training set augmentation."""
+    perturbed = struct.copy()
+    for site in perturbed:
+        magnitude = np_rng.weibull(gamma)
+        vec = np_rng.normal(size=3)
+        norm = np.linalg.norm(vec)
+        vec = vec / norm if norm > np.finfo(float).eps else np.array([1.0, 0, 0])
+        site.coords += vec * magnitude
+        site.to_unit_cell(in_place=True)
+
+    return perturbed
 
 
 # %%
@@ -73,7 +89,7 @@ if target_col not in df_in:
 df_aug = df_in.copy()
 structs = df_aug.pop(input_col)
 for idx in trange(n_perturb, desc="Generating perturbed structures"):
-    df_aug[input_col] = [perturb_structure(x) for x in structs]
+    df_aug[input_col] = [perturb_structure(struct) for struct in structs]
     df_in = pd.concat(
         [df_in, df_aug.set_index(f"{x}-aug={idx + 1}" for x in df_aug.index)]
     )

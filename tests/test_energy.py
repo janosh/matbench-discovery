@@ -51,6 +51,13 @@ def test_get_elemental_ref_entries(
     assert elemental_ref_entries == expected
 
 
+def test_get_elemental_ref_entries_missing_terminal_entries() -> None:
+    """Missing elemental entries should report the missing element."""
+    entries = [PDEntry("Fe1 O1", -2.5), PDEntry("Fe1", -1.0)]
+    with pytest.raises(ValueError, match=r"Missing terminal entries: \{'O'\}"):
+        get_elemental_ref_entries(entries, verbose=False)
+
+
 def test_mp_ref_energies() -> None:
     """Test MP elemental reference energies are in sync with PDEntries saved to disk."""
     for key, val in mp_elemental_ref_energies.items():

@@ -87,6 +87,10 @@ def test_classify_stable_input_types() -> None:
     )
     assert [sum(x) for x in result] == [2, 0, 0, 1]  # With fillna=False, NaN preserved
 
+    # Test nullable prediction inputs promised by the type hint
+    result = classify_stable([0.0, -0.1], [None, 0.1], stability_threshold=0.0)
+    assert [sum(x) for x in result] == [0, 2, 0, 0]
+
 
 def test_stable_metrics_edge_cases() -> None:
     """Test edge cases for stable_metrics function."""
@@ -138,6 +142,12 @@ def test_stable_metrics_nan_handling() -> None:
     # Regression metrics same (NaN values dropped in both cases)
     assert metrics_fillna["MAE"] == metrics_no_fillna["MAE"]
     assert metrics_fillna["RMSE"] == metrics_no_fillna["RMSE"]
+
+    nullable_metrics = stable_metrics(
+        [0.0, None, -0.1], [0.0, 0.1, None], stability_threshold=0.0
+    )
+    assert nullable_metrics["FN"] == 1
+    assert nullable_metrics["MAE"] == 0
 
 
 def test_stable_metrics() -> None:

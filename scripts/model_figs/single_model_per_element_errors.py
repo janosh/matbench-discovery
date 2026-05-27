@@ -62,11 +62,11 @@ normalized = True
 cs_range = (0, 0.5)  # same range for all plots
 # cs_range = (None, None)  # different range for each plot
 for model in tqdm(models_to_plot, desc="Processing models"):
-    df_elem_err[model.label] = (
+    df_elem_err[model.key] = (
         df_comp * df_each_err[model.label].abs().to_numpy()[:, None]
     ).mean()
     # don't change series values in place, would change the df
-    per_elem_err = df_elem_err[model.label].copy(deep=True)
+    per_elem_err = df_elem_err[model.key].copy(deep=True)
     per_elem_err.name = f"{model.label} (eV/atom)"
     if normalized:
         per_elem_err /= df_elem_err[test_set_std_col]
@@ -100,7 +100,7 @@ for model in tqdm(models_to_plot, desc="Processing models"):
 
 # %%
 expected_cols = {
-    *[model.label for model in models_to_plot],
+    *[model.key for model in models_to_plot],
     train_count_col,
     test_set_std_col,
 }

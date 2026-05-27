@@ -5,7 +5,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.structure import perturb_structure, symmetry
+from matbench_discovery.structure import symmetry
 
 
 @pytest.mark.parametrize(
@@ -63,21 +63,6 @@ def test_pred_vs_ref_struct_symmetry(
     assert df_compared[MbdKey.spg_num_diff].iloc[0] == 229 - 47
     n_sym_ops_ml, n_sym_ops_dft = 96, 8
     assert df_compared[MbdKey.n_sym_ops_diff].iloc[0] == n_sym_ops_ml - n_sym_ops_dft
-
-
-def test_analyze_symmetry_perturbed_structure(cubic_struct: Structure) -> None:
-    perturbed_structure = perturb_structure(cubic_struct, gamma=1.5)
-
-    df_sym_original = symmetry.get_sym_info_from_structs({"original": cubic_struct})
-    df_sym_perturbed = symmetry.get_sym_info_from_structs(
-        {"perturbed": perturbed_structure}
-    )
-
-    assert not df_sym_original.equals(df_sym_perturbed)
-    assert df_sym_perturbed[Key.spg_num].iloc[0] < df_sym_original[Key.spg_num].iloc[0]
-    assert (
-        df_sym_perturbed[Key.n_sym_ops].iloc[0] < df_sym_original[Key.n_sym_ops].iloc[0]
-    )
 
 
 def test_analyze_symmetry_supercell(cubic_struct: Structure) -> None:

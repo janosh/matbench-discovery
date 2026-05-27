@@ -110,8 +110,7 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 
   for (const data_name of model_train_sets) {
     if (!(data_name in DATASETS)) {
-      console.warn(`Training set ${data_name} not found in DATASETS`)
-      continue
+      throw new Error(`Training set ${data_name} not found in DATASETS`)
     }
     const { name, slug, n_structures, n_materials = n_structures } = DATASETS[data_name]
     data_urls[data_name] = `/data/${slug}`

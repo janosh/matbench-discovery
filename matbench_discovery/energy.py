@@ -29,8 +29,6 @@ def get_elemental_ref_entries(
 
     Raises:
         ValueError: If some elements are missing terminal reference entries.
-        ValueError: If there are more terminal entries than dimensions. Should never
-            happen.
 
     Returns:
         dict[str, Entry]: Map from element symbol to its lowest energy entry.
@@ -55,14 +53,10 @@ def get_elemental_ref_entries(
             elem_symb = str(composition.elements[0])
             elemental_ref_entries[elem_symb] = min_entry
 
-    if len(elemental_ref_entries) > dim:
-        missing = elements - set(elemental_ref_entries)
-        raise ValueError(f"Some terminal entries are {missing = }")
+    element_symbols = set(map(str, elements))
     if len(elemental_ref_entries) < dim:
-        extra = set(elemental_ref_entries) - set(elements)
-        raise ValueError(
-            f"There are more terminal element entries than dimensions: {extra}"
-        )
+        missing = element_symbols - set(elemental_ref_entries)
+        raise ValueError(f"Missing terminal entries: {missing}")
 
     return elemental_ref_entries
 

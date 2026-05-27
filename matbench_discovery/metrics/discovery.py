@@ -52,18 +52,19 @@ def classify_stable(
     if len(each_true) != len(each_pred):
         raise ValueError(f"{len(each_true)=} != {len(each_pred)=}")
 
-    each_true_arr, each_pred_arr = pd.Series(each_true), pd.Series(each_pred)
+    each_true_arr = pd.to_numeric(pd.Series(each_true), errors="coerce")
+    each_pred_arr = pd.to_numeric(pd.Series(each_pred), errors="coerce")
 
     if stability_threshold is None or np.isnan(stability_threshold):
         raise ValueError("stability_threshold must be a real number")
-    actual_pos = each_true_arr <= (stability_threshold or 0)
-    actual_neg = each_true_arr > (stability_threshold or 0)
+    actual_pos = each_true_arr <= stability_threshold
+    actual_neg = each_true_arr > stability_threshold
 
-    model_pos = each_pred_arr <= (stability_threshold or 0)
-    model_neg = each_pred_arr > (stability_threshold or 0)
+    model_pos = each_pred_arr <= stability_threshold
+    model_neg = each_pred_arr > stability_threshold
 
     if fillna:
-        nan_mask = np.isnan(each_pred)
+        nan_mask = each_pred_arr.isna()
         # for in both the model's stable and unstable preds, fill NaNs as unstable
         model_pos[nan_mask] = False
         model_neg[nan_mask] = True
@@ -84,8 +85,8 @@ def classify_stable(
 
 
 def stable_metrics(
-    each_true: Sequence[float] | pd.Series | np.ndarray,
-    each_pred: Sequence[float] | pd.Series | np.ndarray,
+    each_true: Sequence[float | None] | pd.Series | np.ndarray,
+    each_pred: Sequence[float | None] | pd.Series | np.ndarray,
     *,
     stability_threshold: float = STABILITY_THRESHOLD,
     fillna: bool = True,
@@ -94,8 +95,9 @@ def stable_metrics(
     metrics, but also MAE, RMSE and R2.
 
     Args:
-        each_true (Sequence[float] | pd.Series): true energy above convex hull
-        each_pred (Sequence[float] | pd.Series): predicted energy above convex hull
+        each_true (Sequence[float | None] | pd.Series): true energy above convex hull
+        each_pred (Sequence[float | None] | pd.Series): predicted energy above convex
+            hull
         stability_threshold (float): Where to place stability threshold relative to
             convex hull in eV/atom, usually 0 or 0.1 eV. Default = STABILITY_THRESHOLD.
         fillna (bool): Whether to fill NaNs as the model predicting unstable. Defaults
@@ -155,8 +157,11 @@ def stable_metrics(
         raise ValueError(f"{TPR=} {FNR=} don't add up to 1")
 
     # Drop NaNs to calculate regression metrics
-    is_nan = np.isnan(each_true) | np.isnan(each_pred)
-    each_true, each_pred = np.array(each_true)[~is_nan], np.array(each_pred)[~is_nan]
+    each_true_arr = pd.to_numeric(pd.Series(each_true), errors="coerce")
+    each_pred_arr = pd.to_numeric(pd.Series(each_pred), errors="coerce")
+    is_nan = each_true_arr.isna() | each_pred_arr.isna()
+    each_true = each_true_arr[~is_nan].to_numpy()
+    each_pred = each_pred_arr[~is_nan].to_numpy()
 
     if precision + recall == 0:  # Calculate F1 score, handling division by zero
         f1_score = float("nan")

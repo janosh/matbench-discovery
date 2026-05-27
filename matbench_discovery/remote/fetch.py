@@ -13,7 +13,8 @@ def download_file(file_path: str, url: str) -> None:
     Prints rather than raises if the file cannot be downloaded.
     """
     file_dir = os.path.dirname(file_path)
-    os.makedirs(file_dir, exist_ok=True)
+    if file_dir:
+        os.makedirs(file_dir, exist_ok=True)
     tmp_file_path = f"{file_path}.part"
     download_finished = False
 

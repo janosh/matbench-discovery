@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ params }) => {
     error(404, { message: `Model "${params.slug}" not found` })
   }
 
-  if (!(model.model_name in per_elem_each_errors)) {
+  if (!(params.slug in per_elem_each_errors)) {
     const message = `No per-element energy errors found for ${model.model_name}`
     error(404, { message })
   }

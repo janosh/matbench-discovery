@@ -7,11 +7,17 @@
   import Select from 'svelte-multiselect'
   import per_elem_each_errors from '../per-element-each-errors.json'
 
+  const each_errors = per_elem_each_errors as Record<string, Record<string, number | null>>
+  const models_with_errors = MODELS.filter(
+    (model) => model.model_key && model.model_key in each_errors,
+  )
+  const model_names_with_errors = models_with_errors.map((model) => model.model_name)
+
   let {
     color_scale = $bindable(`interpolateViridis`),
     active_element = $bindable(null),
-    models = $bindable(MODELS.map((m) => m.model_name)),
-    current_model = $bindable([models[2]]),
+    models = $bindable(model_names_with_errors),
+    current_model = $bindable([models[0] ?? ``]),
     manual_cbar_max = $bindable(false),
     normalized = $bindable(true),
     cbar_max = $bindable(0.3),
@@ -28,15 +34,19 @@
   } = $props()
 
   const test_set_std_key = `Test set standard deviation`
-  const test_set_std = per_elem_each_errors[test_set_std_key]
+  const test_set_std = each_errors[test_set_std_key]
 
-  let model_errors = $derived(
-    per_elem_each_errors[current_model[0] as keyof typeof per_elem_each_errors],
+  let model = $derived(MODELS.find((candidate) => candidate.model_name === current_model[0]))
+  let model_key = $derived(
+    model?.model_key && model.model_key in each_errors
+      ? model.model_key
+      : models_with_errors[0]?.model_key,
   )
+  let model_errors = $derived(model_key ? each_errors[model_key] : {})
   let heatmap_values = $derived(
-    Object.keys(model_errors).map((key) => {
-      const val = model_errors[key as keyof typeof model_errors]
-      const denom = normalized ? test_set_std[key as keyof typeof test_set_std] : 1
+    Object.keys(model_errors).map((element) => {
+      const val = model_errors[element]
+      const denom = normalized ? test_set_std[element] : 1
       return denom ? (val ?? 0) / denom : 0
     }),
   )
