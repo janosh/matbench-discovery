@@ -80,7 +80,7 @@ def calc_kappa_metrics_from_dfs(
     return df_pred
 
 
-def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray:
+def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
     """Calculate directionally averaged trace of the conductivity tensor obtained from
     the Wigner transport equation (WTE) solution in the relaxation-time approximation.
 
@@ -89,19 +89,24 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray:
     directions, which is a useful scalar metric for comparing materials.
 
     Args:
-        kappa: Thermal conductivity tensor, typically of shape (..., 3, 3) where
-            the last two dimensions represent the 3x3 conductivity tensor.
-            Earlier dimensions may include temperatures or other parameters.
+        kappa: Thermal conductivity tensor of shape (..., 3, 3), or pre-averaged
+            directional conductivities of shape (..., 3). Earlier dimensions may
+            include temperatures or other parameters.
 
     Returns:
-        np.ndarray: Average conductivity value(s). Returns np.nan if the input contains
-        any NaN values or if the calculation fails. For multiple temperatures,
-        returns an array of averages.
+        Average conductivity value(s). Returns a scalar for a single 3x3 tensor,
+        an array of averages for multiple temperatures, or np.array([np.nan]) if the
+        calculation fails.
     """
-    if np.any(pd.isna(kappa)):
-        return np.array([np.nan])
     try:
-        return np.asarray(kappa)[..., :3].mean(axis=-1)
+        kappa_arr = np.asarray(kappa, dtype=float)
+        if kappa_arr.shape[-2:] == (3, 3):
+            return np.trace(kappa_arr, axis1=-2, axis2=-1) / 3
+        if kappa_arr.shape[-1:] == (3,):
+            return kappa_arr.mean(axis=-1)
+        raise ValueError(
+            f"expected shape (..., 3, 3) or (..., 3), got {kappa_arr.shape}"
+        )
     except Exception:
         warnings.warn(
             f"Failed to calculate kappa_avg: {traceback.format_exc()}", stacklevel=2
@@ -144,15 +149,18 @@ def calc_kappa_srme_dataframes(
             srme_list.append(2)
             continue
         if relaxed_space_group_number := row_pred.get(Key.final_spg_num):
-            if initial_space_group_number := row_pred.get(Key.init_spg_num):
-                if relaxed_space_group_number != initial_space_group_number:
-                    srme_list.append(2)
-                    continue
-            elif relaxed_space_group_number != row_true.get(Key.spg_num):
+            initial_space_group_number = row_pred.get(Key.init_spg_num)
+            if (
+                initial_space_group_number
+                and relaxed_space_group_number != initial_space_group_number
+            ) or (
+                not initial_space_group_number
+                and relaxed_space_group_number != row_true.get(Key.spg_num)
+            ):
                 srme_list.append(2)
                 continue
         result = calc_kappa_srme(row_pred, row_true)
-        srme_list.append(float(result[0]))  # append the first temperature's SRME
+        srme_list.append(float(np.ravel(result)[0]))
 
     return srme_list
 

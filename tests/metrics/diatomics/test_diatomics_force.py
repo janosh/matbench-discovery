@@ -167,6 +167,29 @@ def test_force_mae_interpolation(pred_ref_forces: PredRefForces) -> None:
     assert abs(mae_interp - mae_custom_interp) < 0.5  # Should be reasonably close
 
 
+def test_force_mae_interpolation_uses_shared_distance_range() -> None:
+    """Interpolation should compare force curves on their overlapping input domain."""
+    x_ref = np.array([2.0, 3.0, 4.0])
+    x_pred = np.array([2.1, 3.1, 4.1])
+    f_ref = np.zeros((3, 2, 3))
+    f_pred = np.zeros((3, 2, 3))
+    f_ref[:, 0, 0] = x_ref
+    f_pred[:, 0, 0] = x_pred
+
+    mae = diatomics.calc_force_mae(x_ref, f_ref, x_pred, f_pred, interpolate=20)
+    assert mae == pytest.approx(0)
+
+
+def test_force_mae_interpolation_rejects_disjoint_distance_ranges() -> None:
+    """Interpolation should fail when curves have no shared sampled domain."""
+    x_ref = np.array([1.0, 2.0, 3.0])
+    x_pred = np.array([4.0, 5.0, 6.0])
+    forces = np.zeros((3, 2, 3))
+
+    with pytest.raises(ValueError, match="no overlap"):
+        diatomics.calc_force_mae(x_ref, forces, x_pred, forces, interpolate=True)
+
+
 def test_invalid_inputs() -> None:
     """Test that invalid inputs raise appropriate errors."""
     seps = np.array([1, 2])

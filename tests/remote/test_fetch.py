@@ -82,6 +82,24 @@ def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     assert stderr == ""
 
 
+def test_download_file_current_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Relative filenames in the current directory should not call makedirs('')."""
+    url = "https://example.com/test.txt"
+    dest_path = tmp_path / "test.txt"
+
+    with (
+        patch("requests.get", return_value=make_mock_response(b"test content")),
+        patch("os.makedirs") as mock_makedirs,
+    ):
+        monkeypatch.chdir(tmp_path)
+        download_file(dest_path.name, url)
+
+    mock_makedirs.assert_not_called()
+    assert dest_path.read_bytes() == b"test content"
+
+
 def test_download_file_keeps_completed_part_file_on_replace_error(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:

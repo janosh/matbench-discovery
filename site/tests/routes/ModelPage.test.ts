@@ -1,12 +1,14 @@
 import { MODELS } from '$lib'
+import { get_org_logo } from '$lib/labels'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 
-const model_keys = MODELS.map((m) => m.model_key)
-const model_key = model_keys[0]
-const test_model = MODELS.find((m) => m.model_key === model_key)
-if (!test_model) throw new Error(`missing test model`)
+const mirror_physics_model = MODELS.find((model) =>
+  model.authors.some((author) => author.affiliation === `Mirror Physics`),
+)
+if (!mirror_physics_model) throw new Error(`missing Mirror Physics model`)
+const test_model = mirror_physics_model
 
 describe(`Model Detail Page`, () => {
   it(`renders model details correctly`, () => {
@@ -56,6 +58,9 @@ describe(`Model Detail Page`, () => {
       expect(Boolean(author_elem.querySelector(`[href="${yaml_author.orcid}"]`))).toBe(
         Boolean(yaml_author.orcid),
       )
+      expect(author_elem.querySelector(`img.org-logo`)?.getAttribute(`src`)).toBe(
+        yaml_author.affiliation ? get_org_logo(yaml_author.affiliation)?.src : undefined,
+      )
     }
 
     // Check trained by section if present
@@ -73,7 +78,7 @@ describe(`Model Detail Page`, () => {
     // Check model info section
     const model_info = document.querySelector(`.model-info`)
     expect(model_info?.textContent).toContain(test_model.model_type)
-    expect(model_info?.textContent).toContain(test_model.targets)
+    expect(model_info?.textContent).toContain(test_model.targets.replaceAll(`_`, ``))
     expect(model_info?.textContent).toContain(test_model.openness)
 
     // Check training set section if present

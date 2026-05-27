@@ -162,8 +162,9 @@
 />
 
 {#snippet affiliation_cell({ row }: CellSnippetArgs)}
-  {@const logo = (row as ModelData).org_logos?.[0]}
-  {#if logo}<Logo {logo} />{/if}
+  {#each (row as ModelData).org_logos ?? [] as logo (logo.name)}
+    <Logo {logo} />
+  {/each}
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}

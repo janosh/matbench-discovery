@@ -2,7 +2,7 @@ import { default as DATASETS } from '$data/datasets.yml'
 import type { ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
-import { get_org_logo } from './labels'
+import { get_org_logo, type OrgLogo } from './labels'
 
 export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(
   `$root/models/[^_]**/[^_]*.yml`,
@@ -43,8 +43,7 @@ export function calculate_training_sizes(model_train_sets: string[] = []): {
 
   for (const data_name of model_train_sets) {
     if (!(data_name in DATASETS)) {
-      console.warn(`Training set ${data_name} not found in DATASETS`)
-      continue
+      throw new Error(`Training set ${data_name} not found in DATASETS`)
     }
     const { n_structures, n_materials = n_structures } = DATASETS[data_name]
     total_materials += n_materials
@@ -66,15 +65,18 @@ export const MODELS = $state(
 
       const sizes = calculate_training_sizes(metadata.training_set)
 
-      // Use the lead author's affiliation as the model's org badge
-      const first_author = metadata.authors?.[0]
-      const org_logo = first_author?.affiliation
-        ? get_org_logo(first_author.affiliation)
-        : undefined
+      const org_logos: OrgLogo[] = []
+      for (const author of metadata.authors ?? []) {
+        const org_logo = author.affiliation ? get_org_logo(author.affiliation) : undefined
 
-      if (first_author?.affiliation && !org_logo && !import.meta.env.PROD) {
-        // Only warn about missing logos in dev mode
-        console.warn(`No logo found for affiliation: ${first_author.affiliation}`)
+        if (author.affiliation && !org_logo && !import.meta.env.PROD) {
+          // Only warn about missing logos in dev mode
+          console.warn(`No logo found for affiliation: ${author.affiliation}`)
+        }
+
+        if (org_logo && !org_logos.some((logo) => logo.name === org_logo.name)) {
+          org_logos.push(org_logo)
+        }
       }
 
       return Object.assign({}, metadata, {
@@ -84,7 +86,7 @@ export const MODELS = $state(
         CPS: Number.NaN, // Initial CPS placeholder
         n_training_materials: sizes.total_materials,
         n_training_structures: sizes.total_structures,
-        org_logos: org_logo ? [org_logo] : [],
+        org_logos,
       }) as ModelData
     }),
 )

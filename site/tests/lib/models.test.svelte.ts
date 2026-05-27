@@ -7,8 +7,8 @@ import {
   MODELS,
   update_models_cps,
 } from '$lib/models.svelte'
-import { get_org_logo } from '$lib/labels'
-import { describe, expect, it, vi } from 'vitest'
+import per_elem_each_errors from '$routes/models/per-element-each-errors.json'
+import { describe, expect, it } from 'vitest'
 
 describe(`calculate_training_sizes`, () => {
   it(`should return zeros for empty training sets`, () => {
@@ -35,18 +35,10 @@ describe(`calculate_training_sizes`, () => {
     expect(result.total_structures).toBe(188_349)
   })
 
-  it(`should skip datasets that don't exist and log a warning`, () => {
-    const console_warn_spy = vi.spyOn(console, `warn`).mockImplementation(() => {})
-
-    const result = calculate_training_sizes([`NonExistentDataset`, `MP 2022`])
-
-    expect(console_warn_spy).toHaveBeenCalledWith(
+  it(`throws for unknown training sets`, () => {
+    expect(() => calculate_training_sizes([`NonExistentDataset`, `MP 2022`])).toThrow(
       `Training set NonExistentDataset not found in DATASETS`,
     )
-    expect(result.total_materials).toBe(154_719) // Only from MP 2022
-    expect(result.total_structures).toBe(154_719) // Only from MP 2022
-
-    console_warn_spy.mockRestore()
   })
 })
 
@@ -69,15 +61,16 @@ describe(`MODELS array`, () => {
     expect(model).toHaveProperty(`n_training_structures`)
   })
 
-  it(`uses only the first author's affiliation logo`, () => {
-    for (const model of MODELS) {
-      const first_author_affiliation = model.authors?.[0]?.affiliation
-      const expected_logo = first_author_affiliation
-        ? get_org_logo(first_author_affiliation)
-        : undefined
+  it(`includes logos from non-lead author affiliations`, () => {
+    const mirror_physics_model = MODELS.find((model) =>
+      model.authors?.some((author) => author.affiliation === `Mirror Physics`),
+    )
+    if (!mirror_physics_model) throw new Error(`missing Mirror Physics model`)
 
-      expect(model.org_logos).toStrictEqual(expected_logo ? [expected_logo] : [])
-    }
+    expect(mirror_physics_model.authors[0]?.affiliation).not.toBe(`Mirror Physics`)
+    expect(mirror_physics_model.org_logos?.map((logo) => logo.name)).toContain(
+      `Mirror Physics`,
+    )
   })
 })
 
@@ -85,6 +78,15 @@ describe(`MODEL_METADATA_PATHS`, () => {
   it(`should be defined and be an object`, () => {
     expect(MODEL_METADATA_PATHS).toBeDefined()
     expect(typeof MODEL_METADATA_PATHS).toBe(`object`)
+    const model_keys = new Set(
+      Object.values(MODEL_METADATA_PATHS).map((model) => model.model_key),
+    )
+    const data_keys = Object.keys(per_elem_each_errors).filter(
+      (key) => ![`MP Occurrences`, `Test set standard deviation`].includes(key),
+    )
+    expect(data_keys.every((key) => model_keys.has(key))).toBe(true)
+    expect(per_elem_each_errors).toHaveProperty(`mace-mp-0`)
+    expect(per_elem_each_errors).not.toHaveProperty(`MACE-MP-0`)
   })
 })
 

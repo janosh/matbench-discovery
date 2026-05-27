@@ -69,15 +69,14 @@ def series_single_temp() -> pd.Series:
 @pytest.fixture
 def series_multi_temp() -> pd.Series:
     """Mock Series with multi-temperature data."""
-    temps = [100, 300, 500]
     return pd.Series(
         {
             MbdKey.kappa_tot_avg: np.array([2.0, 1.5, 1.0]),
             MbdKey.kappa_tot_rta: np.array([2 * np.eye(3), 1.5 * np.eye(3), np.eye(3)]),
             MbdKey.mode_kappa_tot_rta: np.array(
-                [np.eye(3), 0.75 * np.eye(3), 0.5 * np.eye(3)]
+                [[2 * np.eye(3)], [1.5 * np.eye(3)], [np.eye(3)]]
             ),
-            Key.mode_weights: np.ones(len(temps)),
+            Key.mode_weights: np.ones(1),
         }
     )
 
@@ -85,14 +84,14 @@ def series_multi_temp() -> pd.Series:
 @pytest.mark.parametrize(
     "tensor,expected,description",
     [
-        (np.diag([1, 2, 3]), [1 / 3, 2 / 3, 1], "diagonal tensor"),
+        (np.diag([1, 2, 3]), 2, "diagonal tensor"),
         (
             [[1, 0.1, 0], [0.1, 2, 0], [0, 0, 3]],
-            [0.366667, 0.7, 1],
+            2,
             "non-diagonal tensor",
         ),
-        (np.zeros((3, 3)), np.zeros(3), "zero tensor"),
-        (-np.diag([1, 2, 3]), [-1 / 3, -2 / 3, -1], "negative tensor"),
+        (np.zeros((3, 3)), 0, "zero tensor"),
+        (-np.diag([1, 2, 3]), -2, "negative tensor"),
     ],
 )
 def test_calculate_kappa_avg_parametrized(
@@ -108,24 +107,25 @@ def test_calculate_kappa_avg_edge_cases() -> None:
     # Test with zero tensor
     zero_tensor = np.zeros((3, 3))
     result = phonon_metrics.calculate_kappa_avg(zero_tensor)
-    assert np.all(result == 0)
+    assert result == 0
 
     # Test with negative values
     neg_tensor = -np.eye(3)
     result = phonon_metrics.calculate_kappa_avg(neg_tensor)
-    assert np.all(result < 0)
+    assert result < 0
 
     # Test with multiple temperatures
     multi_temp = np.array([np.eye(3), 2 * np.eye(3)])
-    result = phonon_metrics.calculate_kappa_avg(multi_temp)
-    assert len(result) == 2
-    assert np.allclose(result[1], 2 * result[0])
+    result_arr = np.asarray(phonon_metrics.calculate_kappa_avg(multi_temp), dtype=float)
+    assert result_arr.shape == (2,)
+    assert np.allclose(result_arr[1], 2 * result_arr[0])
 
     # Test with NaN values
     tensor_with_nan = np.diag([1.0, 2, 3])  # need dtype=float
     tensor_with_nan[0, 0] = np.nan
     result = phonon_metrics.calculate_kappa_avg(tensor_with_nan)
-    assert np.all(np.isnan(result))
+    assert np.isscalar(result)
+    assert np.isnan(result)
 
 
 @pytest.mark.parametrize(
@@ -198,7 +198,7 @@ def test_calc_kappa_metrics_from_dfs_parametrized(
                 MbdKey.kappa_tot_avg: np.array([0]),
                 MbdKey.mode_kappa_tot_rta: np.zeros((1, 3, 3)),
             },
-            6,  # SRME for zero conductivity case
+            [2],
         ),
     ],
 )
@@ -364,8 +364,8 @@ def test_calc_kappa_metrics_with_different_values(
         Key.srd,
         MbdKey.true_kappa_tot_avg,
     }
-    assert df_out[Key.sre].mean() == pytest.approx(0.7)
-    assert df_out[Key.srme].mean() == pytest.approx(0.4875)
+    assert df_out[Key.sre].mean() == pytest.approx(2 / 3)
+    assert df_out[Key.srme].mean() == pytest.approx(1)
 
 
 def test_calc_kappa_metrics_from_dfs_missing_columns(
@@ -387,14 +387,25 @@ def test_calc_kappa_srme_temperature_dependence(series_multi_temp: pd.Series) ->
     """Test SRME calculation with temperature-dependent conductivities."""
     ml_data = series_multi_temp.copy()
     dft_data = series_multi_temp.copy()
-    dft_data[MbdKey.kappa_tot_avg] /= 2  # Make DFT values half of ML predictions
-    dft_data[MbdKey.kappa_tot_rta] /= 2
-    dft_data[MbdKey.mode_kappa_tot_rta] /= 2
+    # Make DFT values half of ML predictions without mutating shared arrays.
+    dft_data[MbdKey.kappa_tot_avg] = ml_data[MbdKey.kappa_tot_avg] / 2
+    dft_data[MbdKey.kappa_tot_rta] = ml_data[MbdKey.kappa_tot_rta] / 2
+    dft_data[MbdKey.mode_kappa_tot_rta] = ml_data[MbdKey.mode_kappa_tot_rta] / 2
 
     kappa_srmes = phonon_metrics.calc_kappa_srme(ml_data, dft_data)
-    assert len(kappa_srmes) == len(ml_data[Key.mode_weights])
-    # TODO Should be non-zero since ML predictions are double DFT
-    assert list(kappa_srmes) == [0, 0, 0]
+    assert len(kappa_srmes) == len(ml_data[MbdKey.kappa_tot_avg])
+    assert list(kappa_srmes) == pytest.approx([2 / 3, 2 / 3, 2 / 3])
+
+    # The dataframe wrapper keeps one scalar SRME per material, using the first
+    # temperature for consistency with SRD/SRE and YAML metrics.
+    ml_data[Key.has_imag_ph_modes] = False
+    ml_data[Key.final_spg_num] = 1
+    ml_data[Key.init_spg_num] = 1
+
+    kappa_srmes = phonon_metrics.calc_kappa_srme_dataframes(
+        pd.DataFrame([ml_data]), pd.DataFrame([dft_data])
+    )
+    assert kappa_srmes == pytest.approx([2 / 3])
 
 
 def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:

@@ -50,9 +50,16 @@ def calc_force_mae(
             f"{seps_ref=}, {seps_pred=}"
         )
 
-    # Create grid for interpolation
+    data_min = max(seps_ref.min(), seps_pred.min())
+    data_max = min(seps_ref.max(), seps_pred.max())
+    if data_min > data_max:
+        raise ValueError(
+            f"Cannot interpolate force curves with no overlap: {data_min=}, {data_max=}"
+        )
+
+    # Create grid for interpolation over the shared sampled distance range.
     n_points = 100 if interpolate is True else interpolate
-    seps_interp = np.logspace(1, -1, n_points)
+    seps_interp = np.linspace(data_min, data_max, n_points)
 
     # Interpolate each component separately
     f_ref_interp = np.zeros((len(seps_interp), *f_ref.shape[1:]))

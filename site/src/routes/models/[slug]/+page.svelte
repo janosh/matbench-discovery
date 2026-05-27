@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { calculate_days_ago, DATASETS, Logo, PtableInset } from '$lib'
+  import { AuthorBrief, calculate_days_ago, DATASETS, PtableInset } from '$lib'
   import {
     discovery_task_tooltips,
     model_type_tooltips,
@@ -218,9 +218,9 @@
       {/each}
     {/if}
 
-    {#if model.model_name in per_elem_each_errors}
+    {#if model.model_key && model.model_key in per_elem_each_errors}
       {@const raw_heatmap =
-      per_elem_each_errors[model.model_name as keyof typeof per_elem_each_errors]}
+      (per_elem_each_errors as Record<string, Record<string, number | null>>)[model.model_key]}
       {@const heatmap_values = Object.fromEntries(
       Object.entries(raw_heatmap).filter(([, val]) => val !== null),
     ) as Record<string, number>}
@@ -263,35 +263,8 @@
       <h2>Model Authors</h2>
       <ol>
         {#each model.authors as author (author.name)}
-          {@const org_logo = model.org_logos?.find(
-          (logo) => logo.name === author.affiliation,
-        )}
           <li>
-            <span>{author.name}</span>
-            {#if author.affiliation}<span class="affiliation">
-                &ensp;{author.affiliation}
-                {#if org_logo}&nbsp;<Logo logo={org_logo} />{/if}
-              </span>{/if}
-            {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
-                &nbsp;<Icon icon="Contact" />
-              </a>{/if}
-            {#if author.github}<a
-                href={author.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub"
-              >
-                &nbsp;<Icon icon="GitHub" />
-              </a>{/if}
-            {#if author.orcid}
-              <a
-                href={author.orcid}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="ORCID"
-              >
-                &nbsp;<Icon icon="Orcid" />
-              </a>{/if}
+            <AuthorBrief {author} show_affiliation />
           </li>
         {/each}
       </ol>
@@ -301,27 +274,9 @@
       <section class="trained-by">
         <h2>Trained By</h2>
         <ol>
-          {#each model.trained_by as trainer (trainer.name)}
+          {#each model.trained_by as author (author.name)}
             <li>
-              <span>{trainer.name}</span>
-              {#if trainer.affiliation}<span class="affiliation"
-                >({trainer.affiliation})</span>{/if}
-              {#if trainer.orcid}<a
-                  href={trainer.orcid}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="ORCID"
-                >
-                  <Icon icon="Orcid" />
-                </a>{/if}
-              {#if trainer.github}<a
-                  href={trainer.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="GitHub"
-                >
-                  <Icon icon="GitHub" />
-                </a>{/if}
+              <AuthorBrief {author} show_affiliation />
             </li>
           {/each}
         </ol>
@@ -507,10 +462,6 @@
   }
   li {
     margin: 1ex 0;
-  }
-  .affiliation {
-    font-style: italic;
-    color: gray;
   }
   ul li {
     overflow: hidden;
