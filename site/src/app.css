@@ -109,6 +109,11 @@
 
 html {
   scroll-behavior: smooth;
+  /* Disable scroll anchoring: re-rendering dynamic content (e.g. the metrics
+     table when adjusting CPS weights via the radar chart) reflows content above
+     the viewport, which would otherwise make the browser jump the scroll
+     position to keep an anchor element in place. */
+  overflow-anchor: none;
 }
 body {
   background: var(--page-bg);
@@ -296,7 +301,9 @@ caption {
   animation: highlight-scroll-target 3s;
 }
 
+sub,
 sup {
+  font-size: 0.7em;
   /* https://stackoverflow.com/a/6594576 */
   line-height: 0;
 }

@@ -1,8 +1,10 @@
-import { MODELS, RadarChart } from '$lib'
+import { MODELS } from '$lib'
+import RadarChart from '$lib/plot/RadarChart.svelte'
+import app_css from '../../src/app.css?raw'
 import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import { ALL_METRICS } from '$lib/labels'
 import { update_models_cps } from '$lib/models.svelte'
-import { mount } from 'svelte'
+import { flushSync, mount } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
 import { doc_query } from '../index'
 
@@ -145,6 +147,54 @@ describe(`RadarChart`, () => {
     const metric_name = document.querySelector(`.metric-name`)
     expect(metric_name).toBeDefined()
     expect(metric_name?.textContent?.trim()).toContain(ALL_METRICS.CPS.key)
+  })
+
+  it(`keeps the knob at the drop point and ignores the trailing click after a drag`, () => {
+    mount(RadarChart, { target: document.body })
+    flushSync() // let the bind:this effect set svg_element before dragging
+    const svg = doc_query<SVGSVGElement>(`svg[aria-label^="Radar chart"]`)
+    const knob = doc_query<SVGCircleElement>(`circle[role="button"]`, svg)
+    const read = () => ({
+      cx: Number(knob.getAttribute(`cx`)),
+      cy: Number(knob.getAttribute(`cy`)),
+    })
+
+    // press the knob, drag to an interior point, release (size=200 -> center (100,100))
+    knob.dispatchEvent(new MouseEvent(`mousedown`, { bubbles: true, cancelable: true }))
+    globalThis.dispatchEvent(
+      new MouseEvent(`mousemove`, { bubbles: true, cancelable: true, clientX: 90, clientY: 110 }),
+    )
+    flushSync()
+    const dropped = read()
+    expect(dropped.cx).toBeCloseTo(90, 0)
+    expect(dropped.cy).toBeCloseTo(110, 0)
+
+    globalThis.dispatchEvent(new MouseEvent(`mouseup`, { bubbles: true, cancelable: true }))
+    flushSync()
+    expect(read()).toEqual(dropped) // drag-end round-trip must not move the knob
+
+    // the browser fires a trailing click after a drag; with wildly different coords
+    // (mimicking a layout shift from the weight update) it must NOT move the knob
+    svg.dispatchEvent(
+      new MouseEvent(`click`, { bubbles: true, cancelable: true, clientX: 160, clientY: 100 }),
+    )
+    flushSync()
+    expect(read()).toEqual(dropped)
+
+    // a genuine standalone click afterwards should still move the knob
+    svg.dispatchEvent(
+      new MouseEvent(`click`, { bubbles: true, cancelable: true, clientX: 100, clientY: 100 }),
+    )
+    flushSync()
+    expect(read()).not.toEqual(dropped)
+  })
+
+  it(`disables scroll anchoring so adjusting CPS weights can't jump the page`, () => {
+    // Dragging the knob re-renders the metrics table, reflowing content above the
+    // viewport. Without overflow-anchor:none the browser scrolls to keep an anchor
+    // element in place (page jumps to the scatter plot). happy-dom can't exercise
+    // scroll anchoring, so guard the CSS rule that fixes it directly.
+    expect(app_css).toMatch(/html\s*\{[^}]*overflow-anchor:\s*none/)
   })
 
   it(`renders reset button with correct attributes`, () => {

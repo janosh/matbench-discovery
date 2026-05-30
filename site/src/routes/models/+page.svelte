@@ -230,7 +230,6 @@
   }
   input[type='number'] {
     text-align: center;
-    transform: scale(1.2);
     padding: 2pt;
   }
   input[type='number']::-webkit-inner-spin-button {

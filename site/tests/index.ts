@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib'
 import { beforeAll, beforeEach, vi } from 'vitest'
 
 // MatchMedia mock for Svelte MediaQuery - needed for svelte-multiselect
@@ -62,7 +63,15 @@ beforeEach(() => {
   document.body.innerHTML = ``
 })
 
-export function doc_query<T extends HTMLElement>(
+// gzipped 200 Response for stubbing fetch() of .json.gz assets
+export const gzipped_json_response = (data: unknown) =>
+  Promise.resolve(new Response(gzipSync(JSON.stringify(data)), { status: 200 }))
+
+// normalize the fetch() url argument (string | URL | Request) to a string
+export const request_url = (url: RequestInfo | URL) =>
+  typeof url === `string` || url instanceof URL ? String(url) : url.url
+
+export function doc_query<T extends Element = HTMLElement>(
   selector: string,
   parent: ParentNode | null = document,
   element_type?: abstract new (...args: never[]) => T,

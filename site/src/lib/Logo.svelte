@@ -2,18 +2,21 @@
   import type { OrgLogo } from '$lib/labels'
   import { Icon } from 'matterviz'
 
-  let { logo }: { logo: OrgLogo } = $props()
+  // show_title controls the native title attribute. Disable it when the logo is
+  // rendered inside another element that already provides a richer tooltip to
+  // avoid duplicate/competing tooltips.
+  let { logo, show_title = true }: { logo: OrgLogo; show_title?: boolean } = $props()
 </script>
 
 {#if logo.validated_icon}
-  <span title={logo.name} class="org-logo">
+  <span title={show_title ? logo.name : undefined} class="org-logo">
     <Icon icon={logo.validated_icon} />
   </span>
 {:else if logo.src}
   <img
     src={logo.src}
     alt="{logo.name} logo"
-    title={logo.name}
+    title={show_title ? logo.name : undefined}
     class="org-logo"
   />
 {/if}
