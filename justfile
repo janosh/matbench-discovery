@@ -205,7 +205,7 @@ prepare-model-submission model_name overwrite="false":
     elif uv run python site/scripts/generate-kappa-parity-assets.py --models "$MODEL"; then
         check_pass "Kappa parity assets generated"
     else
-        check_skip "Kappa parity assets skipped (no kappa predictions)"
+        check_fail "Kappa parity asset generation failed"
     fi
 
     echo ""

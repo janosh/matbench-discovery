@@ -58,7 +58,11 @@
     )
 </script>
 
-<CmdPalette {actions} placeholder="Go to..." />
+<CmdPalette
+  {actions}
+  placeholder="Go to..."
+  dialog_style="top: 15vh; bottom: auto; overflow: visible"
+/>
 <CopyButton global />
 
 <svelte:head>
@@ -90,6 +94,7 @@
 <GitHubCorner href={pkg.repository} />
 
 <Nav
+  {page}
   routes={[`/`, ...routes.filter((route) => route != `/changelog`), [pkg.paper, `Paper`]]}
   style="margin-block: 1em 0"
   menu_props={{ style: `gap: 1.5em` }}
@@ -97,6 +102,7 @@
   link_props={{
     style: `padding: 0 3pt`,
   }}
+  --nav-link-active-color="var(--link-color)"
 >
   <ThemeToggle />
 </Nav>

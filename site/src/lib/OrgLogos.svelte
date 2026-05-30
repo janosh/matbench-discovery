@@ -89,7 +89,6 @@
     max-width: 3em;
     overflow: hidden;
     vertical-align: middle;
-    cursor: help;
     font-size: 1.2em;
   }
   /* hint that more logos exist beyond the clipped edge */
