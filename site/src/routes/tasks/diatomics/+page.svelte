@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { DiatomicCurve, type ModelData } from '$lib'
+  import type { ModelData } from '$lib'
+  import { DiatomicCurve } from '$lib/plot'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
   import { SvelteSet } from 'svelte/reactivity'
 

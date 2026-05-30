@@ -1,6 +1,6 @@
 import { goto } from '$app/navigation'
 import type { GitHubActivityData } from '$lib/types'
-import GitHubActivityScatter from '$lib/GitHubActivityScatter.svelte'
+import GitHubActivityScatter from '$lib/plot/GitHubActivityScatter.svelte'
 import { mount } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { get_scatter_plot_props } from '../index'

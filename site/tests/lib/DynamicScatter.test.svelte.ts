@@ -1,4 +1,4 @@
-import DynamicScatter from '$lib/DynamicScatter.svelte'
+import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'

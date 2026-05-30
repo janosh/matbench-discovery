@@ -902,6 +902,7 @@ describe(`MetricsTable`, () => {
       `R2`, // ALL_METRICS (Discovery)
       `RMSE`, // ALL_METRICS (Discovery)
       `κSRME`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
+      `κSRE`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
       `RMSD`, // ALL_METRICS (Geo Opt)
       `CPS`, // Added in assemble_row_data
     ])

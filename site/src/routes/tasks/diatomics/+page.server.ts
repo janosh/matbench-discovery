@@ -1,14 +1,12 @@
-import { type DiatomicsCurves, MODELS } from '$lib'
+import { by_date_added_desc, type DiatomicsCurves, MODELS } from '$lib'
 import { fetch_diatomics_data } from '$lib/server/diatomics'
 import type { PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async () => {
-  // Filter models that have diatomics metrics
+  // Filter models that have diatomics metrics, newest first
   const diatomic_models = MODELS.filter(
     (model) => model.metrics?.diatomics && typeof model.metrics.diatomics === `object`,
-  ).toSorted(
-    (m1, m2) => new Date(m2.date_added).getTime() - new Date(m1.date_added).getTime(), // Sort by date added, newest first
-  )
+  ).toSorted(by_date_added_desc)
 
   // Fetch data for all models at build time
   const diatomic_curves: Record<string, DiatomicsCurves> = {}

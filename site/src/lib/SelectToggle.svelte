@@ -20,7 +20,7 @@
     <button
       class:active={selected === value}
       onclick={() => (selected = value)}
-      {@attach tip({ content: tooltip })}
+      {@attach tip({ allow_html: true, content: tooltip })}
     >
       {@html label}
       {#if link}

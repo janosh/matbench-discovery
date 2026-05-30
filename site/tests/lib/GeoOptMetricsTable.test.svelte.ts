@@ -140,7 +140,7 @@ describe(`GeoOptMetricsTable`, () => {
     mount(GeoOptMetricsTable, { target: document.body })
     await tick()
 
-    const toggle_btn = doc_query<HTMLElement>(`.column-toggles summary`)
+    const toggle_btn = doc_query(`.column-toggles summary`)
     toggle_btn.click()
     await tick()
 

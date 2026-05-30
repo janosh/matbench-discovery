@@ -2,15 +2,8 @@
   import { browser } from '$app/environment'
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import {
-    DATASETS,
-    DISCOVERY_SETS,
-    DynamicScatter,
-    GitHubActivityScatter,
-    MetricsTable,
-    RadarChart,
-    SelectToggle,
-  } from '$lib'
+  import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
+  import { DynamicScatter, GitHubActivityScatter, RadarChart } from '$lib/plot'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import {
@@ -49,6 +42,8 @@
     TPR: false,
     TNR: false,
     RMSE: false,
+    // κ_SRE is a supplementary phonon metric; opt-in via column toggles
+    [ALL_METRICS.κ_SRE.label]: false,
   })
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
   let sort = $state({ column: `CPS`, dir: `desc` as SortDir })

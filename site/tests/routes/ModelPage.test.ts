@@ -2,7 +2,9 @@ import { MODELS } from '$lib'
 import { get_org_logo } from '$lib/labels'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { mount } from 'svelte'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+afterEach(() => vi.unstubAllGlobals())
 
 const mirror_physics_model = MODELS.find((model) =>
   model.authors.some((author) => author.affiliation === `Mirror Physics`),
@@ -12,6 +14,11 @@ const test_model = mirror_physics_model
 
 describe(`Model Detail Page`, () => {
   it(`renders model details correctly`, () => {
+    vi.stubGlobal(
+      `fetch`,
+      vi.fn(() => Promise.resolve(new Response(`missing`, { status: 404 }))),
+    )
+
     // First verify test model exists
     mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
 

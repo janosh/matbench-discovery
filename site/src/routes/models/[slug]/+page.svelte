@@ -6,6 +6,8 @@
     openness_tooltips,
     targets_tooltips,
   } from '$lib/metrics'
+  import { has_kappa_parity_model } from '$lib/kappa-parity'
+  import { EnergyParityPlot, KappaParityPlot } from '$lib/plot'
   import { get_pred_file_urls } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
@@ -200,22 +202,11 @@
       {/if}
     </section>
 
-    <!-- check if Plotly undefined needed for model-page.test.ts since vitest with JSDOM doesn't mock some Browser APIs that Plotly needs -->
-    {#if typeof (globalThis as { Plotly?: unknown }).Plotly !== `undefined`}
-      {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as
-        [which_energy, title]
-        (which_energy)
-      }
-        {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`)
-          then ParityPlot
-        }
-          <!-- negative margin-bottom corrects for display: none plot title -->
-          <h2 style="margin: 1em auto -2em; text-align: center" class="toc-exclude">
-            ML vs DFT {title}
-          </h2>
-          <ParityPlot.default height="500" />
-        {/await}
-      {/each}
+    <EnergyParityPlot model={model} energy_kind="e-form" />
+    <EnergyParityPlot model={model} energy_kind="each" />
+
+    {#if has_kappa_parity_model(model.model_key)}
+      <KappaParityPlot {model} />
     {/if}
 
     {#if model.model_key && model.model_key in per_elem_each_errors}
@@ -224,9 +215,9 @@
       {@const heatmap_values = Object.fromEntries(
       Object.entries(raw_heatmap).filter(([, val]) => val !== null),
     ) as Record<string, number>}
-      <h3 style="margin: 1em auto -1em; text-align: center" class="toc-exclude">
+      <h2 style="margin: 1em auto; text-align: center" class="toc-exclude">
         Convex hull distance prediction errors projected onto elements
-      </h3>
+      </h2>
       <PeriodicTable
         {heatmap_values}
         {color_scale}
@@ -236,17 +227,17 @@
         missing_color="rgba(255,255,255,0.3)"
       >
         {#snippet inset()}
-          {@const style = `height: 2em; visibility: ${active_element ? `visible` : `hidden`};`}
           <TableInset style="align-content: center">
-            {#if active_element}
-              <PtableInset
-                element={active_element}
-                elem_counts={heatmap_values}
-                show_percent={false}
-                unit="<small style='font-weight: lighter;'>eV / atom</small>"
-                {style}
-              />
-            {/if}
+            <div style="height: 2em">
+              {#if active_element}
+                <PtableInset
+                  element={active_element}
+                  elem_counts={heatmap_values}
+                  show_percent={false}
+                  unit="<small style='font-weight: lighter;'>eV / atom</small>"
+                />
+              {/if}
+            </div>
             <ColorBar
               title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
               title_side="top"

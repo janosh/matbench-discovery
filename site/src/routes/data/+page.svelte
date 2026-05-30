@@ -74,7 +74,7 @@
           title="The difference between count modes is best explained by example.
           <code>occurrence</code> mode maps Fe<sub>2</sub>O<sub>3</sub> to <code>{`{Fe: 1, O: 1}`}</code>,
           <code>composition</code> mode maps it to <code>{`{Fe: 2, O: 3}`}</code>."
-          {@attach tooltip()}
+          {@attach tooltip({ allow_html: true })}
         >
           <Icon icon="Info" style="color: var(--link-color)" />
         </span>

@@ -7,7 +7,7 @@ import {
 } from '$lib/labels'
 import type { ModelMetadata, ModelType, TargetType } from '$lib/model-schema'
 import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
-import type { CellVal, DiscoverySet, LinkData, ModelData } from '$lib/types'
+import type { CellVal, DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
@@ -86,6 +86,10 @@ export function get_nested_number(
   const value = get_nested_value(model, dotted_path)
   return typeof value === `number` ? value : undefined
 }
+
+// Type guard for finite numbers (excludes NaN, Infinity, and non-number values)
+export const is_finite_num = (value: unknown): value is number =>
+  typeof value === `number` && Number.isFinite(value)
 
 export const all_higher_better_metrics = Object.values(MODELINGS_TASKS).flatMap(
   (model_task) => model_task.metrics.higher_is_better,
@@ -254,14 +258,8 @@ export function assemble_row_data(
         : undefined
     const is_compliant = model_is_compliant(model)
     const { RMSD, CPS } = ALL_METRICS
-
-    // Get kappa from phonon metrics
-    const phonons = metrics?.phonons
-    const kappa_raw =
-      phonons && typeof phonons === `object` && `kappa_103` in phonons
-        ? phonons.kappa_103?.κ_SRME
-        : undefined
-    const kappa = typeof kappa_raw === `number` ? kappa_raw : undefined
+    const metric_num = (label: Label) =>
+      get_nested_number(model, `${label.path}.${label.key}`)
 
     const targets = model.targets.replaceAll(/_(.)/g, `<sub>$1</sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
@@ -298,8 +296,9 @@ export function assemble_row_data(
       MAE: discovery_metrics?.MAE,
       RMSE: discovery_metrics?.RMSE,
       R2: discovery_metrics?.R2,
-      [ALL_METRICS.κ_SRME.key]: kappa,
-      [RMSD.key]: get_nested_number(model, `${RMSD.path}.${RMSD.key}`),
+      [ALL_METRICS.κ_SRME.key]: metric_num(ALL_METRICS.κ_SRME),
+      [ALL_METRICS.κ_SRE.key]: metric_num(ALL_METRICS.κ_SRE),
+      [RMSD.key]: metric_num(RMSD),
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.key]:
         `<span title="${format_num(model.model_params, `,`)} trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,
@@ -342,6 +341,7 @@ export function assemble_row_data(
       [HYPERPARAMS.graph_construction_radius.key]: r_cut_str,
       style: `border-left: 3px solid var(--${is_compliant ? `` : `non-`}compliant-color);`,
       org_logos: model.org_logos,
+      authors: model.authors,
     }
 
     return Object.assign(

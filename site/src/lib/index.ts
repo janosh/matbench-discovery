@@ -6,20 +6,16 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { MODELS } from './models.svelte'
 
-export { default as DiatomicCurve } from './DiatomicCurve.svelte'
-export { default as DynamicScatter } from './DynamicScatter.svelte'
 export { default as Footer } from './Footer.svelte'
 export { default as GeoOptMetricsTable } from './GeoOptMetricsTable.svelte'
-export { default as GitHubActivityScatter } from './GitHubActivityScatter.svelte'
 export { default as Logo } from './Logo.svelte'
-export { default as MetricScatter } from './MetricScatter.svelte'
 export { default as MetricsTable } from './MetricsTable.svelte'
 export { default as AuthorBrief } from './ModelAuthor.svelte'
 export { default as ModelCard } from './ModelCard.svelte'
 export { MODELS } from './models.svelte'
+export { default as OrgLogos } from './OrgLogos.svelte'
 export { default as PtableHeatmap } from './PtableHeatmap.svelte'
 export { default as PtableInset } from './PtableInset.svelte'
-export { default as RadarChart } from './RadarChart.svelte'
 export { default as References } from './References.svelte'
 export { default as SelectToggle } from './SelectToggle.svelte'
 export { default as TableControls } from './TableControls.svelte'
@@ -96,3 +92,10 @@ export const format_date = (
     day: `numeric`,
     ...options,
   })
+
+// Compare two models by submission date, newest first (for Array.toSorted)
+export const by_date_added_desc = (
+  model_1: { date_added: string },
+  model_2: { date_added: string },
+): number =>
+  new Date(model_2.date_added).getTime() - new Date(model_1.date_added).getTime()

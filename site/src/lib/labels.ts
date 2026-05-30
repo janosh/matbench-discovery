@@ -178,7 +178,7 @@ export const METADATA_COLS: MetadataLabels = {
     label: `Org`,
     sortable: false,
     description: `Most common author affiliations`,
-    cell_style: `text-align: center; max-width: 2em; transform: scale(1.3);`,
+    cell_style: `text-align: center; width: 3.2em; max-width: 3.2em;`,
     visible: true,
     better: undefined,
   },
@@ -348,7 +348,7 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
 ) as unknown as GeoOptSymmetryMetricsLabels
 
 export type AllMetrics = DiscoveryMetricsLabels &
-  GeoOptSymmetryMetricsLabels & { CPS: Label; κ_SRME: Label; RMSD: Label }
+  GeoOptSymmetryMetricsLabels & { CPS: Label; κ_SRME: Label; κ_SRE: Label; RMSD: Label }
 
 export const ALL_METRICS: AllMetrics = {
   // Dynamic metrics
@@ -366,6 +366,13 @@ export const ALL_METRICS: AllMetrics = {
     key: `κ_SRME`,
     label: `κ<sub>SRME</sub>`,
     description: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
+    path: `metrics.phonons.kappa_103`,
+    better: `lower`,
+  },
+  κ_SRE: {
+    key: `κ_SRE`,
+    label: `κ<sub>SRE</sub>`,
+    description: `Symmetric relative error of total lattice thermal conductivity κ, averaged over the 103 phononDB-PBE materials (range [0, 2])`,
     path: `metrics.phonons.kappa_103`,
     better: `lower`,
   },

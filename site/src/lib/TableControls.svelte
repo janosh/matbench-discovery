@@ -75,6 +75,7 @@
     Non-compliant models
     <span
       {@attach tooltip({
+        allow_html: true,
         content: `
       Models can be non-compliant for multiple reasons:<br />
       - closed source (model implementation and/or train/test code)<br />

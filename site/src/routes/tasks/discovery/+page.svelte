@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { MetricScatter, MetricsTable, SelectToggle } from '$lib'
+  import { MetricsTable, SelectToggle } from '$lib'
+  import { MetricScatter } from '$lib/plot'
   import * as labels from '$lib/labels'
   import type { DiscoverySet } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
