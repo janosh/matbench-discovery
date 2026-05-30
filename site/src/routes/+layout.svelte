@@ -19,7 +19,7 @@
 
   let url = $derived(page.url.pathname)
   let headingSelector = $derived(
-    `main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4):not(.toc-exclude)`,
+    `main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4)`,
   )
 
   const base_description =
@@ -72,8 +72,13 @@
     breakpoint={1350}
     minItems={3}
     bind:desktop={toc_desktop}
-    asideStyle={toc_desktop ? `max-width: 22em; position: fixed; left: calc(50vw + var(--main-max-width) / 2); top: 2em;` : `z-index: 10;`}
-    navStyle={toc_desktop ? `font-size: 7pt;` : `font-size: 7pt; z-index: 10; background: var(--page-bg);`}
+    asideProps={{
+      style: toc_desktop ? `max-width: 22em; position: fixed; left: calc(50vw + var(--main-max-width) / 2); top: 8em;` : `z-index: 1;`,
+    }}
+    navProps={{
+      style: toc_desktop ? `font-size: 7pt;` : `font-size: 7pt; z-index: 10; padding: 1em;`,
+    }}
+    titleProps={{ style: `margin: 3pt` }}
     --toc-active-color="var(--link-color)"
     --toc-padding="1em 1em 0 1.5em"
     --toc-mobile-width="min(80vw, 30em)"

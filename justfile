@@ -191,11 +191,21 @@ prepare-model-submission model_name overwrite="false":
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
     echo ""
-    echo ">> Running single model energy parity plot..."
-    if uv run python scripts/model_figs/single_model_energy_parity.py --auto-download --models "$MODEL" --update-existing --no-show; then
-        check_pass "Energy parity plot generated"
+    echo ">> Running single model energy parity assets..."
+    if uv run python site/scripts/generate-energy-parity-assets.py --models "$MODEL" --skip-structures; then
+        check_pass "Energy parity assets generated"
     else
-        check_fail "Energy parity plot generation failed"
+        check_fail "Energy parity asset generation failed"
+    fi
+
+    echo ""
+    echo ">> Running single model kappa parity assets..."
+    if [ "$MODEL_TARGETS" = "E" ]; then
+        check_skip "Kappa parity assets skipped (model targets=$MODEL_TARGETS, no forces)"
+    elif uv run python site/scripts/generate-kappa-parity-assets.py --models "$MODEL"; then
+        check_pass "Kappa parity assets generated"
+    else
+        check_skip "Kappa parity assets skipped (no kappa predictions)"
     fi
 
     echo ""

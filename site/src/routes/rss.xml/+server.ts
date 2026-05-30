@@ -1,4 +1,4 @@
-import { MODELS } from '$lib'
+import { by_date_added_desc, MODELS } from '$lib'
 import { format_train_set } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
 import pkg from '$site/package.json'
@@ -80,9 +80,7 @@ function format_model_for_rss(model: ModelData): string {
 // Generates an RSS feed of all models
 export function GET() {
   // Sort models by date added (newest first)
-  const sorted_models = MODELS.toSorted(
-    (m1, m2) => new Date(m2.date_added).getTime() - new Date(m1.date_added).getTime(),
-  )
+  const sorted_models = MODELS.toSorted(by_date_added_desc)
   const headers = { 'Content-Type': `application/xml` }
   const rss_feed_url = `${base_url}rss.xml`
 
