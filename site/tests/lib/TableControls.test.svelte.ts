@@ -26,7 +26,7 @@ describe(`TableControls`, () => {
 
     // Verify filter checkboxes are present
     const labels = [...document.querySelectorAll(`label`)].map((label) =>
-      label.textContent?.replace(/\s+/g, ` `).trim(),
+      label.textContent?.replaceAll(/\s+/g, ` `).trim(),
     )
     expect(labels).toContain(`Compliant models`)
     expect(labels).toContain(`Non-compliant models`)

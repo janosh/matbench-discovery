@@ -59,7 +59,7 @@ export const MODELS = $state(
       // Ignore models with status != completed (the default status)
       ([_key, metadata]) => (metadata?.status ?? `complete`) === `complete`,
     )
-    .map(([key, metadata], index) => {
+    .map(([key, metadata], index): ModelData => {
       // Assign color to each model for consistent coloring across plots
       const model_color = MODEL_COLORS[index % MODEL_COLORS.length]
 
@@ -79,7 +79,8 @@ export const MODELS = $state(
         }
       }
 
-      return Object.assign({}, metadata, {
+      return {
+        ...metadata,
         dirname: key.split(`/`)[2],
         metadata_file: key.replace(/^..\//, ``),
         color: model_color,
@@ -87,7 +88,7 @@ export const MODELS = $state(
         n_training_materials: sizes.total_materials,
         n_training_structures: sizes.total_structures,
         org_logos,
-      }) as ModelData
+      }
     }),
 )
 
@@ -97,7 +98,7 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
     // Extract required metrics for CPS calculation
     const discovery = model.metrics?.discovery
     const f1 =
-      typeof discovery === `object` ? discovery?.[`unique_prototypes`]?.F1 : undefined
+      typeof discovery === `object` ? discovery?.unique_prototypes?.F1 : undefined
     const rmsd =
       model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
         ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd

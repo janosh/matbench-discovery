@@ -688,11 +688,11 @@ describe(`assemble_row_data`, () => {
     const chgnet_row = rows.find((row) => (row.Model ?? ``).includes(`chgnet-0.3.0`))
 
     expect(mace_row?.Model).toContain(`mace-mp-0`)
-    expect(mace_row?.[`graph_construction_radius`]).toBe(
+    expect(mace_row?.graph_construction_radius).toBe(
       `<span data-sort-value="6">6 Å</span>`,
     )
     // n_layers should be present as either a sortable span or 'n/a'
-    const n_layers_val = mace_row?.[`n_layers`] as string
+    const n_layers_val = mace_row?.n_layers as string
     expect(n_layers_val).toMatch(/^(<span data-sort-value="\d+">\d+<\/span>|n\/a)$/)
     expect(chgnet_row?.Model).toContain(`chgnet-0.3.0`)
   })

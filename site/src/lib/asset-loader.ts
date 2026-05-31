@@ -34,7 +34,11 @@ export const clear_asset_cache = () => asset_cache.clear()
 export const resolve_asset_base_url = (
   configured: string | undefined,
   fallback: string,
-): string => (configured?.trim() || fallback).replace(/\/+$/, ``)
+): string => {
+  const trimmed = configured?.trim() ?? ``
+  // fall back when configured is missing or only whitespace
+  return (trimmed.length > 0 ? trimmed : fallback).replace(/\/+$/, ``)
+}
 
 export const join_asset_url = (base_url: string, asset: string): string =>
   `${base_url}/${asset.replace(/^\/+/, ``)}`

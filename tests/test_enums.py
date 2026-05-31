@@ -2,8 +2,6 @@
 
 import os
 import sys
-import time
-import warnings
 from enum import auto
 from pathlib import Path
 from typing import Any
@@ -196,28 +194,14 @@ def test_data_files_enum() -> None:
 
 @pytest.mark.parametrize("data_file", DataFiles)
 def test_data_files_enum_urls(
-    data_file: DataFiles, monkeypatch: pytest.MonkeyPatch
+    data_file: DataFiles, url_session: requests.Session
 ) -> None:
-    """Test that each URL in data-files.yml is a valid Figshare download URL."""
-
+    """Test that each URL in data-files.yml is a reachable Figshare download URL."""
     name, url = data_file.name, data_file.url
-    # check that URL is a figshare download
     assert "figshare.com/files/" in url, (
         f"URL for {name} is not a Figshare download URL: {url}"
     )
-
-    # Mock requests.head to avoid actual network calls
-    class MockResponse:
-        status_code = 200
-
-    def mock_head(*_args: str, **_kwargs: dict[str, str]) -> MockResponse:
-        return MockResponse()
-
-    monkeypatch.setattr(requests, "head", mock_head)
-
-    # check that the URL is valid by sending a head request
-    response = requests.head(url, allow_redirects=True, timeout=5)
-    assert response.status_code in {200, 403}, f"Invalid URL for {name}: {url}"
+    check_url(url_session, url)
 
 
 def test_files_enum_auto_download(
@@ -337,34 +321,42 @@ def get_urls_from_dict(
     return urls
 
 
-MAX_RETRIES = 3
 TIMEOUT = 30
 
 
-def check_url(session: requests.Session, url: str, desc: str) -> None:
-    """Check if a URL is reachable, retrying on transient failures."""
-    http_status = None
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            response = session.head(url, allow_redirects=True, timeout=TIMEOUT)
-            http_status = response.status_code
-            # 200: OK, 202: Accepted (figshare async), 403: access restricted,
-            # 429: rate limited
-            assert http_status in {200, 202, 403, 429}
-        except (requests.ConnectionError, requests.Timeout):
-            if attempt == MAX_RETRIES:
-                raise
-            time.sleep(2**attempt)
-        except (requests.RequestException, AssertionError) as exc:
-            exc.add_note(f"Failed to validate\n{url}\n{desc}\n{http_status=}")
-            raise
-        else:
-            if http_status == 429:
-                warnings.warn(f"{url}: {response.reason}", stacklevel=2)
-            return
+@pytest.fixture(scope="session")
+def url_session() -> requests.Session:
+    """HTTP session that retries transient errors (429, 5xx) with backoff, so a
+    momentary server hiccup doesn't fail URL-validation tests."""
+    session = requests.Session()
+    session.headers["User-Agent"] = "unit test"
+    n_pool = 2 * (os.cpu_count() or 4)
+    session.mount(
+        "https://",
+        requests.adapters.HTTPAdapter(
+            pool_connections=n_pool,
+            pool_maxsize=n_pool,
+            max_retries=requests.adapters.Retry(
+                total=3,
+                backoff_factor=1,
+                status_forcelist=(429, 500, 502, 503, 504),
+                raise_on_status=False,
+            ),
+        ),
+    )
+    return session
 
 
-def test_model_prediction_urls() -> None:
+def check_url(session: requests.Session, url: str) -> None:
+    """Assert a model URL resolves. The session adapter retries transient errors
+    (connection failures, 429, 5xx), so only persistently bad links (e.g. 404) fail.
+    """
+    # 200: OK, 202: figshare async, 403: access restricted, 429: rate limited
+    status = session.head(url, allow_redirects=True, timeout=TIMEOUT).status_code
+    assert status in {200, 202, 403, 429}, f"unexpected {status=} for {url}"
+
+
+def test_model_prediction_urls(url_session: requests.Session) -> None:
     """Test that all model prediction file URLs are valid."""
     import concurrent.futures
     import multiprocessing as mp
@@ -380,19 +372,11 @@ def test_model_prediction_urls() -> None:
         for key_path, url in get_urls_from_dict(metrics):
             tasks[url] = f"{model.name}.{key_path}"
 
-    session = requests.Session()
-    session.headers["User-Agent"] = "unit test"
     n_workers = min(len(tasks), mp.cpu_count())
-    adapter = requests.adapters.HTTPAdapter(
-        pool_connections=n_workers, pool_maxsize=n_workers * 2
-    )
-    session.mount("https://", adapter)
-    session.mount("http://", adapter)
-
     errors: list[Exception] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
         futures = {
-            executor.submit(check_url, session, url, desc): (url, desc)
+            executor.submit(check_url, url_session, url): (url, desc)
             for url, desc in tasks.items()
         }
         for future in concurrent.futures.as_completed(futures):

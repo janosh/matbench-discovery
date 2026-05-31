@@ -3,6 +3,7 @@ import { mdsvex } from 'mdsvex'
 import katex from 'rehype-katex-svelte'
 import math from 'remark-math' // Remark-math@3.0.0 pinned due to mdsvex, see https://github.com/kwshi/rehype-katex-svelte#usage
 import { heading_ids } from 'svelte-multiselect/heading-anchors' // Adds IDs to headings at build time
+
 const { default: pkg } = await import(`./package.json`, {
   with: { type: `json` },
 })
