@@ -305,14 +305,16 @@
             <br>Points sized by N<sub>atoms</sub>: {format_num(label.n_sites, `.0f`)}
           {/if}
         {/snippet}
-      </BinnedScatterPlot>
 
-      {#if stats && Number.isFinite(stats.mae)}
-        <div class="plot-annotation">
-          MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br>
-          R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
-        </div>
-      {/if}
+        {#snippet children()}
+          {#if stats && Number.isFinite(stats.mae)}
+            <div class="plot-annotation">
+              MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br>
+              R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
+            </div>
+          {/if}
+        {/snippet}
+      </BinnedScatterPlot>
 
       {#if selected_point}
         {@const point = selected_point}
@@ -389,18 +391,6 @@
   .energy-parity-plot :global(.plot-tooltip) {
     background: var(--tooltip-bg, light-dark(#f5f5f7, #2a2a2e));
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-  .plot-annotation {
-    position: absolute;
-    right: 2.5em;
-    bottom: 4.5em;
-    text-align: right;
-    font-size: 0.8em;
-    line-height: 1.4;
-    pointer-events: none;
-    background: color-mix(in srgb, var(--surface-bg, rgba(255, 255, 255, 0.6)) 60%, transparent);
-    border-radius: 4px;
-    padding: 0.1em 0.4em;
   }
   .popup-anchor {
     height: 0;

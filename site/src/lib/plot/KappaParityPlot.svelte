@@ -143,7 +143,6 @@
       <Spinner text="Loading κ parity data..." />
     </div>
   {:else}
-    <div class="plot-wrap">
     <ScatterPlot
       series={series as unknown as DataSeries[]}
       ref_lines={parity_ref_lines}
@@ -184,16 +183,20 @@
           {#if pt.n_sites != null}<br>{pt.n_sites} atoms{/if}
         {/if}
       {/snippet}
+
+      {#snippet user_content({ width, height })}
+        {#if kappa_srme != null || kappa_sre != null}
+          <foreignObject x="0" y="0" {width} {height} style="pointer-events: none; overflow: visible">
+            <div class="plot-annotation">
+              {#if kappa_srme != null}
+                κ<sub>SRME</sub> = {format_num(kappa_srme, `.3~`)}<br>
+              {/if}
+              {#if kappa_sre != null}κ<sub>SRE</sub> = {format_num(kappa_sre, `.3~`)}{/if}
+            </div>
+          </foreignObject>
+        {/if}
+      {/snippet}
     </ScatterPlot>
-      {#if kappa_srme != null || kappa_sre != null}
-        <div class="plot-annotation">
-          {#if kappa_srme != null}
-            κ<sub>SRME</sub> = {format_num(kappa_srme, `.3~`)}<br>
-          {/if}
-          {#if kappa_sre != null}κ<sub>SRE</sub> = {format_num(kappa_sre, `.3~`)}{/if}
-        </div>
-      {/if}
-    </div>
 
     <p class="plot-note"><small>marker size &propto; atom count</small></p>
 
@@ -238,21 +241,6 @@
   h2 {
     margin: 1em auto 0.5em;
     text-align: center;
-  }
-  .plot-wrap {
-    position: relative;
-  }
-  .plot-annotation {
-    position: absolute;
-    right: 2.5em;
-    bottom: 4.5em;
-    text-align: right;
-    font-size: 0.8em;
-    line-height: 1.4;
-    pointer-events: none;
-    background: color-mix(in srgb, var(--surface-bg, rgba(255, 255, 255, 0.6)) 60%, transparent);
-    border-radius: 4px;
-    padding: 0.1em 0.4em;
   }
   .plot-state {
     min-height: 180px;
