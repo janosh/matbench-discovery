@@ -16,6 +16,10 @@ on:
         description: Only run tests or release a new version of pymatgen to PyPI after tests pass.
   workflow_call:
 
+# least-privilege default for GITHUB_TOKEN; all jobs here only read the repo
+permissions:
+  contents: read
+
 concurrency:
   # Cancel only on same PR number
   group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
