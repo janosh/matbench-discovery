@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     build_energy_parity_series,
+    energy_parity_stats,
     get_energy_parity_point,
     has_energy_parity_model,
     load_energy_parity_base,
@@ -68,6 +69,7 @@
   let parity = $derived(
     base && parity_model ? build_energy_parity_series(base, parity_model, energy_kind) : null,
   )
+  let stats = $derived(parity ? energy_parity_stats(parity) : null)
   let series = $derived<DensePointSeries[]>(parity
     ? [{
         x: parity.x,
@@ -305,6 +307,13 @@
         {/snippet}
       </BinnedScatterPlot>
 
+      {#if stats && Number.isFinite(stats.mae)}
+        <div class="plot-annotation">
+          MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br>
+          R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
+        </div>
+      {/if}
+
       {#if selected_point}
         {@const point = selected_point}
         <div
@@ -374,6 +383,24 @@
   }
   .plot-wrap {
     position: relative;
+  }
+  /* matterviz only sets the tooltip background inline via bg_color, which the binned
+     plot omits for per-point tooltips -> give them a readable theme-aware fallback */
+  .energy-parity-plot :global(.plot-tooltip) {
+    background: var(--tooltip-bg, light-dark(#f5f5f7, #2a2a2e));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  .plot-annotation {
+    position: absolute;
+    right: 2.5em;
+    bottom: 4.5em;
+    text-align: right;
+    font-size: 0.8em;
+    line-height: 1.4;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--surface-bg, rgba(255, 255, 255, 0.6)) 60%, transparent);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
   }
   .popup-anchor {
     height: 0;

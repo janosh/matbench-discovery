@@ -2,6 +2,7 @@ import {
   build_energy_parity_series,
   clear_energy_parity_asset_cache,
   energy_parity_asset_url,
+  energy_parity_stats,
   get_energy_parity_point,
   has_energy_parity_model,
   load_energy_parity_base,
@@ -253,5 +254,35 @@ describe(`energy parity data helpers`, () => {
         plot_left: 100,
       }),
     ).toEqual({ side: `left`, left: 432, top: 260 })
+  })
+
+  it.each([
+    {
+      name: `perfect parity`,
+      x: [1, 2, 3],
+      y: [1, 2, 3],
+      expected: { mae: 0, r2: 1, n_points: 3 },
+    },
+    {
+      name: `small residuals`,
+      x: [1, 2, 3],
+      y: [1.1, 2.1, 2.9],
+      // mae = mean(0.1,0.1,0.1); ss_tot = 2, ss_res = 0.03 -> r2 = 1 - 0.015
+      expected: { mae: 0.1, r2: 0.985, n_points: 3 },
+    },
+    { name: `empty`, x: [], y: [], expected: { mae: NaN, r2: NaN, n_points: 0 } },
+  ])(`energy_parity_stats: $name`, ({ x, y, expected }) => {
+    const series = {
+      x: Float32Array.from(x),
+      y: Float32Array.from(y),
+      point_ids: new Uint32Array(x.length),
+      size_values: new Float32Array(x.length),
+    }
+    const stats = energy_parity_stats(series)
+    expect(stats.n_points).toBe(expected.n_points)
+    for (const key of [`mae`, `r2`] as const) {
+      if (Number.isNaN(expected[key])) expect(stats[key]).toBeNaN()
+      else expect(stats[key]).toBeCloseTo(expected[key], 5)
+    }
   })
 })

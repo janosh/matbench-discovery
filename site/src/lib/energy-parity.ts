@@ -1,3 +1,4 @@
+import { fsum, variance } from 'd3-array'
 import type { AnyStructure } from 'matterviz/structure'
 import { parse_any_structure } from 'matterviz/structure/parse'
 import {
@@ -244,6 +245,27 @@ export function build_energy_parity_series(
     point_ids: Uint32Array.from(points, (point) => point.row_idx),
     size_values: Float32Array.from(points, (point) => point.n_sites),
   }
+}
+
+export interface EnergyParityStats {
+  mae: number // mean absolute error of ML vs DFT energy
+  r2: number // coefficient of determination, R^2 = 1 - SS_res / SS_tot
+  n_points: number
+}
+
+// MAE and R^2 of the plotted DFT (x) vs ML (y) energies, for the in-plot annotation.
+// Computed from the displayed points so it matches whatever energy_kind is shown.
+export function energy_parity_stats(series: EnergyParitySeries): EnergyParityStats {
+  const { x, y } = series
+  const n_points = x.length
+  if (n_points === 0) return { mae: NaN, r2: NaN, n_points: 0 }
+
+  // fsum = compensated (full-precision) summation, so the aggregate is exact over the
+  // ~256k terms; variance (Welford) gives a stable SS_tot without a separate mean pass
+  const mae = fsum(x, (x_val, idx) => Math.abs(y[idx] - x_val)) / n_points
+  const ss_res = fsum(x, (x_val, idx) => (y[idx] - x_val) ** 2)
+  const ss_tot = (variance(x) ?? 0) * (n_points - 1) // d3 variance is sample (n-1)
+  return { mae, r2: ss_tot > 0 ? 1 - ss_res / ss_tot : NaN, n_points }
 }
 
 export function structure_shard_idx(
