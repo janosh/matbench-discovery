@@ -73,7 +73,7 @@
       code_license,
       org,
     ]
-      .map((col) => {
+      .map((col): Label => {
         const better = col.better ?? metric_better_as(col.label)
 
         // Append better=higher/lower to tooltip if applicable
@@ -85,7 +85,7 @@
         }
         const visible = col.visible !== false && col_filter(col)
 
-        return Object.assign({}, col, { better, description, visible }) as Label
+        return { ...col, better, description, visible }
       })
       // Ensure Model column comes first
       .toSorted((col1, _col2) => (col1.label === `Model` ? -1 : 1)),

@@ -291,8 +291,8 @@ export async function generate_svg({
       return { filename, url }
     } catch (error) {
       log_export_error(error, `SVG`, {
-        containerHTML: container.outerHTML.slice(0, 1000) + `...`,
-        tableCloneHTML: table_clone.outerHTML.slice(0, 1000) + `...`,
+        containerHTML: `${container.outerHTML.slice(0, 1000)}...`,
+        tableCloneHTML: `${table_clone.outerHTML.slice(0, 1000)}...`,
       })
       return null
     } finally {
@@ -355,8 +355,8 @@ export async function generate_png({
       return { filename, url: png_data_url }
     } catch (error) {
       log_export_error(error, `PNG`, {
-        containerHTML: container.outerHTML.slice(0, 1000) + `...`,
-        tableCloneHTML: table_clone.outerHTML.slice(0, 1000) + `...`,
+        containerHTML: `${container.outerHTML.slice(0, 1000)}...`,
+        tableCloneHTML: `${table_clone.outerHTML.slice(0, 1000)}...`,
       })
       return null
     } finally {

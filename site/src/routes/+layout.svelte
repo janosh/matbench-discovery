@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { page } from '$app/state';
-  import { Footer } from '$lib';
-  import { MODELS } from '$lib/models.svelte';
-  import pkg from '$site/package.json';
-  import type { Snippet } from 'svelte';
-  import { CmdPalette, CopyButton, GitHubCorner, Nav, ThemeToggle } from 'svelte-multiselect';
-  import { heading_anchors } from 'svelte-multiselect/heading-anchors';
-  import Toc from 'svelte-toc';
-  import '../app.css';
+  import { goto } from '$app/navigation'
+  import { page } from '$app/state'
+  import { Footer } from '$lib'
+  import { MODELS } from '$lib/models.svelte'
+  import pkg from '$site/package.json'
+  import type { Snippet } from 'svelte'
+  import { CmdPalette, CopyButton, GitHubCorner, Nav, ThemeToggle } from 'svelte-multiselect'
+  import { heading_anchors } from 'svelte-multiselect/heading-anchors'
+  import Toc from 'svelte-toc'
+  import '../app.css'
 
   let { children }: { children?: Snippet } = $props()
   let toc_desktop = $state(true)
 
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`)).map(
-    (filename) => `/` + filename.split(`/`)[1],
+    (filename) => `/${filename.split(`/`)[1]}`,
   )
 
   let url = $derived(page.url.pathname)

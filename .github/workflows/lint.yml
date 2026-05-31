@@ -22,7 +22,8 @@ jobs:
           node-version: 22
 
       - name: Install site dependencies
-        run: npm install
+        # use the project's pinned pnpm (packageManager field) via corepack
+        run: corepack enable && pnpm install
         working-directory: site
 
       - name: Run prek

@@ -136,7 +136,7 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
     .join(`+`)
   const new_line = `&#013;` // Line break that works in title attribute
   const dataset_tooltip =
-    tooltip.length > 1 ? `${new_line}• ${tooltip.join(new_line + `• `)}` : ``
+    tooltip.length > 1 ? `${new_line}• ${tooltip.join(`${new_line}• `)}` : ``
 
   let title = `${format_num(
     n_training_materials,
@@ -357,7 +357,7 @@ export function assemble_row_data(
 
   // Sort by combined performance score (descending)
   return all_metrics.toSorted((row1, row2) => {
-    const [score1, score2] = [row1[`CPS`], row2[`CPS`]]
+    const [score1, score2] = [row1.CPS, row2.CPS]
 
     // Handle undefined or null values (they should be sorted to the bottom)
     const is_nan1 = score1 === null || isNaN(score1)

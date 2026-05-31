@@ -1,10 +1,9 @@
 import type { DiatomicsCurves } from '$lib/types'
 import { readFile } from 'node:fs/promises'
-import { dirname, isAbsolute, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { isAbsolute, resolve } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 
-const repo_root = resolve(dirname(fileURLToPath(import.meta.url)), `../../../..`)
+const repo_root = resolve(import.meta.dirname, `../../../..`)
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve_sleep) => setTimeout(resolve_sleep, ms))
 

@@ -50,10 +50,11 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install
+        # use the project's pinned pnpm (packageManager field) via corepack
+        run: corepack enable && pnpm install
 
       - name: Run unit tests
-        run: npm test
+        run: pnpm test
 
   scripts:
     runs-on: ubuntu-latest
