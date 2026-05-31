@@ -15,6 +15,7 @@
     PhononDos,
   } from '$lib/kappa-parity'
   import type { LoadStatus } from '$lib/asset-loader'
+  import { get_nested_number } from '$lib/metrics'
   import type { ModelData } from '$lib/types'
   import { Dos, format_num, Icon, sanitize_compact_formula } from 'matterviz'
   import { Spinner } from 'matterviz/feedback'
@@ -35,6 +36,10 @@
   let load_id = 0
 
   let model_label = $derived(parity_model?.model_label ?? model.model_name)
+  // precomputed phonon metrics: κ_SRME (mode-resolved symmetric relative mean error)
+  // and κ_SRE (symmetric relative error of the scalar lattice thermal conductivity)
+  let kappa_srme = $derived(get_nested_number(model, `metrics.phonons.kappa_103.κ_SRME`))
+  let kappa_sre = $derived(get_nested_number(model, `metrics.phonons.kappa_103.κ_SRE`))
   let parity = $derived(
     base && parity_model ? build_kappa_parity_series(base, parity_model) : null,
   )
@@ -155,7 +160,9 @@
         range: extent,
       }}
       size_scale={{ type: `linear`, radius_range: [4, 7] }}
-      color_bar={{ title: `SRE` }}
+      color_bar={{
+        title: `κ<sub>SRE</sub> (${format_num(parity?.points.length ?? 0, `,`)} points)`,
+      }}
       selected_point={selected_point_ref}
       on_point_click={({ point }) => {
         if (point.series_idx === 0) selected_idx = point.point_idx
@@ -169,11 +176,24 @@
           {@html sanitize_compact_formula(pt.formula)}<br>
           PBE κ: {format_num(pt.kappa_dft, `.3~`)} <small>W/mK</small><br>
           {model_label} κ: {format_num(pt.kappa_ml, `.3~`)} <small>W/mK</small><br>
-          SRE: {format_num(pt.sre, `.3~`)}
+          κ<sub>SRE</sub>: {format_num(pt.sre, `.3~`)}
           {#if sys}<br>{sys}{pt.spacegroup != null
             ? ` (SG ${pt.spacegroup})`
             : ``}{/if}
           {#if pt.n_sites != null}<br>{pt.n_sites} atoms{/if}
+        {/if}
+      {/snippet}
+
+      {#snippet user_content({ width, height })}
+        {#if kappa_srme != null || kappa_sre != null}
+          <foreignObject x="0" y="0" {width} {height} style="pointer-events: none; overflow: visible">
+            <div class="plot-annotation">
+              {#if kappa_srme != null}
+                κ<sub>SRME</sub> = {format_num(kappa_srme, `.3~`)}<br>
+              {/if}
+              {#if kappa_sre != null}κ<sub>SRE</sub> = {format_num(kappa_sre, `.3~`)}{/if}
+            </div>
+          </foreignObject>
         {/if}
       {/snippet}
     </ScatterPlot>
@@ -188,7 +208,7 @@
             {#if selected.formula}({@html sanitize_compact_formula(selected.formula)}){/if}
             &mdash; PBE κ {format_num(selected.kappa_dft, `.3~`)},
             {model_label} κ {format_num(selected.kappa_ml, `.3~`)} <small>W/mK</small>,
-            SRE {format_num(selected.sre, `.3~`)}
+            κ<sub>SRE</sub> {format_num(selected.sre, `.3~`)}
           </span>
           <button
             type="button"

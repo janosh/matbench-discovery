@@ -16,6 +16,10 @@ on:
         description: Only run tests or release a new version of pymatgen to PyPI after tests pass.
   workflow_call:
 
+# least-privilege default for GITHUB_TOKEN; all jobs here only read the repo
+permissions:
+  contents: read
+
 concurrency:
   # Cancel only on same PR number
   group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
@@ -50,10 +54,11 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install
+        # use the project's pinned pnpm (packageManager field) via corepack
+        run: corepack enable && pnpm install
 
       - name: Run unit tests
-        run: npm test
+        run: pnpm test
 
   scripts:
     runs-on: ubuntu-latest

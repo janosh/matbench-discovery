@@ -1,3 +1,4 @@
+import { lint_config } from '@janosh/vite-config'
 import yaml_plugin from '@rollup/plugin-yaml'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { load as yaml_load } from 'js-yaml'
@@ -89,94 +90,31 @@ export default defineConfig({
       `tests/**`, // oxfmt lowercases first char of describe/it/test strings
     ],
   },
+  // Shared rules/plugins/categories live in @janosh/vite-config (dotfiles).
+  // Append only matbench-discovery-specific ignore dirs and rule overrides here.
   lint: {
-    plugins: [`oxc`, `typescript`, `unicorn`, `import`, `vitest`],
-    options: { typeAware: true, typeCheck: true },
-    categories: { correctness: `error`, suspicious: `error`, perf: `error` },
+    ...lint_config,
     ignorePatterns: [
-      `build/**`,
-      `.svelte-kit/**`,
-      `dist/**`,
+      ...lint_config.ignorePatterns,
       `src/figs/**`,
       `src/lib/*.d.ts`,
       `scripts/**`,
     ],
     rules: {
-      // Extra rules not in the enabled categories
-      'no-console': [`error`, { allow: [`info`, `warn`, `error`] }],
-      'no-template-curly-in-string': `error`,
-      'no-constructor-return': `error`,
-      'default-param-last': `error`,
-      'guard-for-in': `error`,
+      ...lint_config.rules,
       'typescript/no-unused-vars': [
         `error`,
         { argsIgnorePattern: `^_`, varsIgnorePattern: `^_` },
       ],
-      'unicorn/prefer-array-find': `error`,
-      'unicorn/no-typeof-undefined': `error`,
-      'unicorn/prefer-optional-catch-binding': `error`,
-      'unicorn/no-length-as-slice-end': `error`,
-      'unicorn/prefer-node-protocol': `error`,
-      'unicorn/throw-new-error': `error`,
-      'unicorn/prefer-type-error': `error`,
-      'unicorn/prefer-date-now': `error`,
-      'unicorn/require-number-to-fixed-digits-argument': `error`,
-      'unicorn/no-useless-promise-resolve-reject': `error`,
-      'unicorn/custom-error-definition': `error`,
-      'import/no-duplicates': `error`,
-      'typescript/no-non-null-assertion': `error`,
-      'typescript/prefer-string-starts-ends-with': `error`,
-      'typescript/prefer-readonly': `error`,
-      'typescript/prefer-regexp-exec': `error`,
-      'typescript/prefer-find': `error`,
-      'typescript/no-deprecated': `error`,
-      'typescript/no-misused-promises': `error`,
-      'typescript/restrict-plus-operands': `error`,
-      'typescript/no-dynamic-delete': `error`,
-      'typescript/no-empty-object-type': `error`,
-      'typescript/no-explicit-any': `error`,
-      'typescript/no-import-type-side-effects': `error`,
-      'typescript/no-invalid-void-type': `error`,
-      'typescript/no-mixed-enums': `error`,
-      'typescript/no-require-imports': `error`,
-      'typescript/only-throw-error': `error`,
-      'typescript/ban-ts-comment': `error`,
-      'typescript/consistent-type-imports': `error`,
-      'typescript/prefer-function-type': `error`,
-      'typescript/prefer-includes': `error`,
-      'typescript/prefer-optional-chain': `error`,
-      'typescript/prefer-reduce-type-parameter': `error`,
-      'typescript/prefer-ts-expect-error': `error`,
-      'typescript/return-await': `error`,
-      'typescript/switch-exhaustiveness-check': `error`,
-      'typescript/unified-signatures': `error`,
-      'array-callback-return': `error`,
-      'prefer-object-has-own': `error`,
-      'promise/no-multiple-resolved': `error`,
-      'promise/no-return-in-finally': `error`,
-      'promise/param-names': `error`,
-      'promise/valid-params': `error`,
-      'typescript/consistent-type-exports': `error`,
-      'unicorn/require-array-join-separator': `error`,
-      'no-useless-computed-key': `error`,
-      'vitest/prefer-strict-boolean-matchers': `error`,
-      'vitest/prefer-each': `error`,
-      'vitest/prefer-called-exactly-once-with': `error`,
-      'vitest/require-awaited-expect-poll': `error`,
       'typescript/no-redundant-type-constituents': `warn`,
-
-      'vitest/require-mock-type-parameters': `off`,
-      'unicorn/consistent-function-scoping': `off`, // Svelte reactive closures
-      'typescript/no-unsafe-type-assertion': `off`,
       'import/no-unassigned-import': `off`, // CSS side-effect imports
-      'vitest/valid-expect': [`error`, { maxArgs: 2 }],
     },
   },
   staged: {
     '*': `codespell --ignore-words-list falsy --check-filenames`,
     '*.test.ts': `sh -c '! grep -E "(test|describe)\\.only\\(" "$@"' --`,
     '*.{js,ts,svelte,html,css,md,json,yaml}': `vp check --fix`,
-    '*.{ts,svelte}': `sh -c 'npx svelte-kit sync && npx svelte-check-rs --threshold error'`,
+    '*.{ts,svelte}': `sh -c 'pnpm exec svelte-kit sync && pnpm exec svelte-check-rs --threshold error'`,
   },
   build: {
     // Default cssTarget is chrome111 which doesn't support light-dark(),
@@ -223,7 +161,7 @@ export default defineConfig({
           // Mock wasm-dependent modules to avoid loading issues in jsdom
           {
             find: /^@spglib\/moyo-wasm.*/,
-            replacement: new URL(`./tests/mocks/moyo-wasm.ts`, import.meta.url).pathname,
+            replacement: new URL(`tests/mocks/moyo-wasm.ts`, import.meta.url).pathname,
           },
         ]
       : [],

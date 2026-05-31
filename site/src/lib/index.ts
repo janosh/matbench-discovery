@@ -71,6 +71,7 @@ for (const { notes, metadata_file } of MODELS) {
   }
 }
 
+// oxlint-disable-next-line typescript/dot-notation -- `_links` is an external data-files.yml field; dot access trips no-underscore-dangle
 const data_file_links = data_files[`_links`]
 if (typeof data_file_links !== `string`) {
   throw new TypeError(`data-files.yml: _links must be a string`)

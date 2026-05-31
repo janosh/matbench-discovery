@@ -14,7 +14,7 @@
   } = $props()
 
   const esc = (str: string): string =>
-    str.replace(
+    str.replaceAll(
       /[&<>"]/g,
       (char) => ({ '&': `&amp;`, '<': `&lt;`, '>': `&gt;`, '"': `&quot;` })[char] ?? char,
     )

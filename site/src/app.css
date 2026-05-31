@@ -382,3 +382,14 @@ div.plotly-graph-div g[class*='gridlayer'] path {
 div.plotly-graph-div .hoverlayer rect {
   fill: var(--page-bg) !important;
 }
+/* In-plot metric annotation, bottom-right corner (energy/kappa parity plots) */
+.plot-annotation {
+  position: absolute;
+  inset: auto 2em 5em auto;
+  padding: 1pt 4pt;
+  font-size: 0.8em;
+  pointer-events: none;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--surface-bg, white) 60%, transparent);
+  backdrop-filter: blur(4px);
+}

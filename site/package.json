@@ -21,6 +21,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@janosh/vite-config": "github:janosh/dotfiles",
     "@rollup/plugin-yaml": "^5.0.0",
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.61.1",
@@ -54,6 +55,7 @@
     "vite-plus": "latest",
     "vitest": "^4.1.7"
   },
+  "packageManager": "pnpm@11.5.0",
   "author-url": "https://janosh.dev",
   "doi": "https://doi.org/10.1038/s42256-025-01055-1",
   "github-pages": "https://janosh.github.io/matbench-discovery",
