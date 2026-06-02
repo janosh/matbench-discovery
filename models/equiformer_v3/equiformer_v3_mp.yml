@@ -1,5 +1,5 @@
 model_name: EquiformerV3+DeNS-MP
-model_key: equiformer_v3_mp
+model_key: equiformer-v3-mp
 model_version: v2026.04.07
 date_added: '2026-04-07'
 date_published: '2026-04-07'

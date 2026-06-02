@@ -1,5 +1,5 @@
 model_name: GRACE-2L-OAM-L # GRACE-2L-OMAT-large-ft-AM
-model_key: grace_2l_oam_l
+model_key: grace-2l-oam-l
 model_version: 0.5.2
 date_added: '2025-09-09'
 date_published: '2025-09-09'

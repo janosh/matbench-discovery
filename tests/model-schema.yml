@@ -298,6 +298,9 @@ properties:
     type: string
   model_key:
     type: string
+    # used as the /models/<model_key> URL slug; use hyphens (not underscores) as
+    # word separators so model page URLs stay param-cased
+    pattern: '^[a-zA-Z0-9.+-]+$'
   model_version:
     type: string
   date_added: &date
