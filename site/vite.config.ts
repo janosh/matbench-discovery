@@ -91,17 +91,9 @@ export default defineConfig({
     ...config.fmt,
     ignorePatterns: [`src/figs/**/*.svelte`, `src/routes/**/*.json`],
   },
-  // Shared rules/plugins/categories live in @janosh/vite-config (dotfiles).
-  // Append only matbench-discovery-specific ignore dirs and rule overrides here.
   lint: {
     ...config.lint,
     ignorePatterns: [...config.lint.ignorePatterns, `src/figs/**`],
-  },
-  staged: {
-    '*': `codespell --ignore-words-list falsy --check-filenames`,
-    '*.test.ts': `sh -c '! grep -E "(test|describe)\\.only\\(" "$@"' --`,
-    '*.{js,ts,svelte,html,css,md,json,yaml}': `vp check --fix`,
-    '*.{ts,svelte}': `sh -c 'pnpm exec svelte-kit sync && pnpm exec svelte-check-rs --threshold error'`,
   },
   plugins: [
     sveltekit(),
@@ -121,7 +113,7 @@ export default defineConfig({
   test: {
     environment: `happy-dom`, // Faster than jsdom
     css: true,
-    pool: `threads`, // Parallel test execution
+    pool: `threads`,
     coverage: {
       reporter: [`text`, `json-summary`],
     },

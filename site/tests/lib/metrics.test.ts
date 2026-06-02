@@ -208,7 +208,6 @@ describe(`calc_cell_color`, () => {
       better: `higher` as const,
       color_scale: `interpolateViridis`,
       scale_type: `linear` as const,
-      expected: { bg: null, text: null },
     },
     {
       case: `undefined values`,

@@ -641,9 +641,6 @@ describe(`MetricsTable`, () => {
             })
             .filter(Boolean) as string[]
 
-        // model names before sorting
-        // const initial_model_names = get_model_names()
-
         model_header.click() // Click to sort (ascending A-Z)
         await tick()
 

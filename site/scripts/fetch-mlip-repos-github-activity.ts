@@ -110,6 +110,10 @@ const get_count_from_pagination = (link: string | null) => {
   return match ? parseInt(match[1], 10) : null
 }
 
+// total count from the Link header's last page, falling back to the response body length
+const count_from_response = async (res: Response): Promise<number> =>
+  get_count_from_pagination(res.headers.get(`Link`)) ?? (await res.json()).length ?? 0
+
 const get_github_stats = async (
   model_info: ModelInfo,
   token: string | null,
@@ -140,20 +144,14 @@ const get_github_stats = async (
       `https://api.github.com/repos/${repo}/commits?since=${year_ago.toISOString()}&per_page=1`,
       headers,
     )
-    const commits_last_year =
-      get_count_from_pagination(commits_res.headers.get(`Link`)) ??
-      (await commits_res.json()).length ??
-      0
+    const commits_last_year = await count_from_response(commits_res)
 
     // Fetch contributor count
     const contrib_res = await fetch_github(
       `https://api.github.com/repos/${repo}/contributors?per_page=1&anon=true`,
       headers,
     )
-    const contributors =
-      get_count_from_pagination(contrib_res.headers.get(`Link`)) ??
-      (await contrib_res.json()).length ??
-      0
+    const contributors = await count_from_response(contrib_res)
     const stars = repo_data.stargazers_count ?? 0
     const forks = repo_data.forks_count ?? 0
     const data: RepoData = {

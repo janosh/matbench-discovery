@@ -190,9 +190,7 @@ describe(`Table Export Functionality`, () => {
           show_non_compliant: false,
         }
 
-        if (generator_result instanceof Error) {
-          generator_spy.mockRejectedValue(generator_result)
-        } else if (typeof generator_result === `string`) {
+        if (generator_result instanceof Error || typeof generator_result === `string`) {
           generator_spy.mockRejectedValue(generator_result)
         } else {
           generator_spy.mockResolvedValue(generator_result)
