@@ -95,15 +95,15 @@
       "bytes": 2040205,
       "sha256": "b603a7fa26e73ceb9e2375bba9df06d5e972ab81ba396d33c6d6de0e833829ea"
     },
-    "equiformer_v3_mp": {
-      "asset": "energy-parity-wbm-v1-model-equiformer_v3_mp.json.gz",
+    "equiformer-v3-mp": {
+      "asset": "energy-parity-wbm-v1-model-equiformer-v3-mp.json.gz",
       "bytes": 643418,
-      "sha256": "a23034e0d8a283c5eeae23c6a2c8e9f9ee290129024a805aae812ffbf326530f"
+      "sha256": "bc13206df7cf112ca939914fbf023ddf53d449f197ede1b7f13161ba96fd2f34"
     },
-    "equiformer_v3_oam": {
-      "asset": "energy-parity-wbm-v1-model-equiformer_v3_oam.json.gz",
-      "bytes": 643095,
-      "sha256": "5a699b6a6c598e91801013db14dc97fe813fff6a3f6369cc6699b9e1bee0d08c"
+    "equiformer-v3-oam": {
+      "asset": "energy-parity-wbm-v1-model-equiformer-v3-oam.json.gz",
+      "bytes": 643094,
+      "sha256": "a9fcfff67782c5963efcacd46b9370ed3b048d514eba7d8bb9b1d4a726c79590"
     },
     "esnet": {
       "asset": "energy-parity-wbm-v1-model-esnet.json.gz",
@@ -130,10 +130,10 @@
       "bytes": 2040947,
       "sha256": "1b7c75bc791f7cea77ea7bba9356a1ba63c122a39133fcb9f61d5f919522db31"
     },
-    "grace_2l_oam_l": {
-      "asset": "energy-parity-wbm-v1-model-grace_2l_oam_l.json.gz",
+    "grace-2l-oam-l": {
+      "asset": "energy-parity-wbm-v1-model-grace-2l-oam-l.json.gz",
       "bytes": 645176,
-      "sha256": "d8f4358f018e8c2f50e05459cf22447d3c2bf178777d49ef746c131940eb164b"
+      "sha256": "dbc268294677bd557f09b86130e22edc7cebeee792c3428a388c2e8b054ece16"
     },
     "hienet": {
       "asset": "energy-parity-wbm-v1-model-hienet.json.gz",

@@ -1,7 +1,7 @@
 [
   {
     "name": "GRACE",
-    "model_key": "grace_2l_oam_l",
+    "model_key": "grace-2l-oam-l",
     "repo": "ICAMS/grace-tensorpotential",
     "stars": 82,
     "forks": 8,

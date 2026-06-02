@@ -1,5 +1,5 @@
 model_name: EquiformerV3+DeNS-OAM
-model_key: equiformer_v3_oam
+model_key: equiformer-v3-oam
 model_version: v2026.04.07
 date_added: '2026-04-07'
 date_published: '2026-04-07'
