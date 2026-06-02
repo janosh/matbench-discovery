@@ -32,7 +32,7 @@ trained_by:
 
 repo: https://github.com/deepmodeling/deepmd-kit
 url: https://github.com/deepmodeling/deepmd-kit
-doi: https://arxiv.org/abs/2606.02419
+doi: https://doi.org/10.48550/arXiv.2606.02419
 paper: https://arxiv.org/abs/2606.02419
 pr_url: https://github.com/janosh/matbench-discovery/pull/324
 checkpoint_url: https://figshare.com/files/64733586
