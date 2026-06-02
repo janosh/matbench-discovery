@@ -72,8 +72,8 @@ describe(`Datasets Page`, () => {
       // Ensure the cell was found before querying links
       if (!links_cell) return
 
-      const resource_links = [...links_cell.querySelectorAll(`a`)].filter((link) =>
-        link.hasAttribute(`title`) || link.hasAttribute(`data-original-title`),
+      const resource_links = [...links_cell.querySelectorAll(`a`)].filter(
+        (link) => link.hasAttribute(`title`) || link.hasAttribute(`data-original-title`),
       )
       resource_link_count += resource_links.length
 
@@ -82,7 +82,8 @@ describe(`Datasets Page`, () => {
         expect(link.getAttribute(`target`)).toBe(`_blank`)
         expect(link.getAttribute(`rel`)).toContain(`noopener`)
         // Ensure title is one of the expected ones and not null/empty
-        const title = link.getAttribute(`title`) ?? link.getAttribute(`data-original-title`)
+        const title =
+          link.getAttribute(`title`) ?? link.getAttribute(`data-original-title`)
         expect(title).not.toBeNull()
         expect(title).not.toBe(``)
         expect([`Website`, `Download`, `DOI`]).toContain(title)
@@ -121,7 +122,9 @@ describe(`Datasets Page`, () => {
 
   it(`can sort table by clicking column headers`, async () => {
     // Get initial order of datasets
-    const initial_datasets = [...document.querySelectorAll(`.${heatmap_class} tbody tr`)].map((row) => {
+    const initial_datasets = [
+      ...document.querySelectorAll(`.${heatmap_class} tbody tr`),
+    ].map((row) => {
       // First cell is Title column
       const cells = row.querySelectorAll(`td`)
       return cells[0]?.textContent?.trim() ?? ``
@@ -138,7 +141,9 @@ describe(`Datasets Page`, () => {
     await tick()
 
     // Get new order after sorting
-    const sorted_datasets = [...document.querySelectorAll(`.${heatmap_class} tbody tr`)].map((row) => {
+    const sorted_datasets = [
+      ...document.querySelectorAll(`.${heatmap_class} tbody tr`),
+    ].map((row) => {
       const cells = row.querySelectorAll(`td`)
       return cells[0]?.textContent?.trim() ?? ``
     })
@@ -149,20 +154,26 @@ describe(`Datasets Page`, () => {
 
   it(`skips sorting when clicking non-sortable columns`, async () => {
     // Get initial order of datasets
-    const initial_datasets = [...document.querySelectorAll(`.${heatmap_class} tbody tr`)].map((row) => {
+    const initial_datasets = [
+      ...document.querySelectorAll(`.${heatmap_class} tbody tr`),
+    ].map((row) => {
       const cells = row.querySelectorAll(`td`)
       return cells[0]?.textContent?.trim() ?? ``
     })
 
     // Find and click the Links column header (which should be non-sortable)
-    const links_header = [...document.querySelectorAll(`.${heatmap_class} th`)].find((th) => th.textContent?.includes(`Links`))
+    const links_header = [...document.querySelectorAll(`.${heatmap_class} th`)].find(
+      (th) => th.textContent?.includes(`Links`),
+    )
     if (links_header) {
       ;(links_header as HTMLElement).click()
     }
     await tick()
 
     // Get order after clicking Links column
-    const datasets_after_clicking_links = [...document.querySelectorAll(`.${heatmap_class} tbody tr`)].map((row) => {
+    const datasets_after_clicking_links = [
+      ...document.querySelectorAll(`.${heatmap_class} tbody tr`),
+    ].map((row) => {
       const cells = row.querySelectorAll(`td`)
       return cells[0]?.textContent?.trim() ?? ``
     })
@@ -185,15 +196,11 @@ describe(`Datasets Page`, () => {
     expect(non_sortable_headers).toHaveLength(2)
 
     // The Links header should have the not-sortable class
-    const links_header = [...all_headers].find((th) =>
-      th.textContent?.includes(`Links`),
-    )
+    const links_header = [...all_headers].find((th) => th.textContent?.includes(`Links`))
     expect(links_header?.classList.contains(`not-sortable`)).toBe(true)
 
     // The API header should have the not-sortable class
-    const api_header = [...all_headers].find((th) =>
-      th.textContent?.includes(`API`),
-    )
+    const api_header = [...all_headers].find((th) => th.textContent?.includes(`API`))
     expect(api_header?.classList.contains(`sortable`)).toBe(false)
   })
 

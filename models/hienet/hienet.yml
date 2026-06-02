@@ -29,7 +29,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
 model_type: UIP
-model_params: 7_510_280
+model_params: 7510280
 n_estimators: 1
 
 hyperparams:

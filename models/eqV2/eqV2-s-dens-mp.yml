@@ -54,7 +54,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_D
 model_type: UIP
-model_params: 31_207_434 # 31M
+model_params: 31207434 # 31M
 n_estimators: 1
 
 training_set: [MPtrj]

@@ -54,7 +54,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
 model_type: UIP
-model_params: 25_734_966
+model_params: 25734966
 n_estimators: 1
 status: superseded
 superseded_by: sevennet-omni-i12

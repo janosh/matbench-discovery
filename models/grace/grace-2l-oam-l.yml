@@ -48,7 +48,7 @@ train_task: S2EF
 test_task: IS2RE-SR
 targets: EFS_G
 model_type: UIP
-model_params: 26_394_284
+model_params: 26394284
 n_estimators: 1
 
 training_set: [OMat24, sAlex, MPtrj]
