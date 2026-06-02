@@ -8,6 +8,8 @@ import {
   update_models_cps,
 } from '$lib/models.svelte'
 import per_elem_each_errors from '$routes/models/per-element-each-errors.json'
+import { readdirSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 describe(`calculate_training_sizes`, () => {
@@ -234,5 +236,36 @@ describe(`update_models_cps`, () => {
     const f1_rmsd_cps_values = MODELS.map((model) => Number(model.CPS))
     expect(f1_rmsd_cps_values).not.toStrictEqual(f1_cps_values)
     expect(f1_rmsd_cps_values).not.toStrictEqual(rmsd_cps_values)
+  })
+})
+
+// js-yaml >= 4.2 (YAML 1.2 core schema) parses underscore-grouped integers like
+// `154_719` as strings instead of numbers, silently breaking numeric consumers
+// (dataset sizes, model_params, ...). This guard forbids underscore thousands
+// separators in YAML numeric values so the regression that hit CI on PR #331
+// cannot creep back in. Use plain integers (`154719`) instead.
+const repo_root = path.resolve(import.meta.dirname, `..`, `..`, `..`)
+
+const yaml_files = [`models`, `data`].flatMap((dir) =>
+  readdirSync(path.join(repo_root, dir), { recursive: true })
+    .map(String)
+    .filter((name) => name.endsWith(`.yml`))
+    .map((name) => path.join(dir, name)),
+)
+
+// matches a `key: <underscore-grouped int>` value once trailing comments are dropped
+const underscore_value = /:\s+[-+]?\d{1,3}(?:_\d{3})+\s*$/
+
+describe(`YAML data files use plain integers (no underscore separators)`, () => {
+  it.each(yaml_files)(`%s`, (rel_path) => {
+    const offenders = readFileSync(path.join(repo_root, rel_path), `utf-8`)
+      .split(`\n`)
+      .flatMap((line, idx) => {
+        const code = line.replace(/\s+#.*$/, ``)
+        if (code.trimStart().startsWith(`#`) || !underscore_value.test(code)) return []
+        return [`L${idx + 1}: ${code.trim()}`]
+      })
+
+    expect(offenders, `${rel_path} has underscore-separated numbers`).toEqual([])
   })
 })

@@ -45,7 +45,7 @@ train_task: S2EFSM
 test_task: IS2RE-SR
 targets: EFS_GM
 model_type: UIP
-model_params: 10_443_505
+model_params: 10443505
 trained_for_benchmark: true
 n_estimators: 1
 

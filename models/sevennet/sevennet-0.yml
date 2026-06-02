@@ -44,7 +44,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
 model_type: UIP
-model_params: 842_440
+model_params: 842440
 n_estimators: 1
 status: superseded
 superseded_by: sevennet-l3i5
