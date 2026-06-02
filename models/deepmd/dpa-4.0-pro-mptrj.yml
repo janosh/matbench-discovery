@@ -8,6 +8,7 @@ authors:
   - name: Tiancheng Li
     affiliation: AI for Science Institute, Beijing; Peking University
     email: LTC201806070316@outlook.com
+    orcid: https://orcid.org/0009-0009-2459-0635
     github: https://github.com/OutisLi
   - name: Duo Zhang
     affiliation: AI for Science Institute, Beijing
@@ -26,12 +27,13 @@ trained_by:
   - name: Tiancheng Li
     affiliation: AI for Science Institute, Beijing; Peking University
     email: LTC201806070316@outlook.com
+    orcid: https://orcid.org/0009-0009-2459-0635
     github: https://github.com/OutisLi
 
 repo: https://github.com/deepmodeling/deepmd-kit
 url: https://github.com/deepmodeling/deepmd-kit
-doi: https://github.com/deepmodeling/deepmd-kit # DPA-4.0 preprint not yet available, will be released soon
-paper: https://github.com/deepmodeling/deepmd-kit # DPA-4.0 preprint not yet available, will be released soon
+doi: https://arxiv.org/abs/2606.02419
+paper: https://arxiv.org/abs/2606.02419
 pr_url: https://github.com/janosh/matbench-discovery/pull/324
 checkpoint_url: https://figshare.com/files/64733586
 
