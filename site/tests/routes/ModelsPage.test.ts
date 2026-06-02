@@ -195,10 +195,9 @@ describe(`Models Page`, () => {
 
         const model_cards = document.querySelectorAll(`ol > li`)
         const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
-        const effective = Math.min(Math.max(min_models, input), MODELS.length)
 
         expect(model_cards).toHaveLength(expected)
-        expect(Number(n_best_input.value)).toBe(effective)
+        expect(Number(n_best_input.value)).toBe(expected)
         expect(n_best_input.min).toBe(String(min_models))
         expect(n_best_input.max).toBe(String(MODELS.length))
       },
