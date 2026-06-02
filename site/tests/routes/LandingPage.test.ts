@@ -21,7 +21,9 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles discovery set when clicking buttons`, async () => {
-    const buttons = [...document.querySelectorAll<HTMLButtonElement>(`.selection-toggle button`)]
+    const buttons = [
+      ...document.querySelectorAll<HTMLButtonElement>(`.selection-toggle button`),
+    ]
     const [full_test_btn, unique_protos_btn] = buttons
 
     // Initially Unique Prototypes should be active
@@ -78,9 +80,7 @@ describe(`Landing Page`, () => {
     columns_btn.click()
     // Table should reflect column visibility changes
     let f1_cells = document.querySelectorAll(`th, td`)
-    let has_f1_column = [...f1_cells].some((cell) =>
-      cell.textContent?.includes(`F1`),
-    )
+    let has_f1_column = [...f1_cells].some((cell) => cell.textContent?.includes(`F1`))
     expect(has_f1_column).toBe(true)
 
     const checkboxes = document.querySelectorAll<HTMLInputElement>(
@@ -117,9 +117,7 @@ describe(`Landing Page`, () => {
     const download_buttons = download_section.querySelectorAll(`.download-btn`)
     expect(download_buttons).toHaveLength(5)
 
-    const buttons = [...download_buttons].map((btn) =>
-      btn.textContent?.trim(),
-    )
+    const buttons = [...download_buttons].map((btn) => btn.textContent?.trim())
     expect(buttons).toStrictEqual([`SVG`, `PNG`, `CSV`, `Excel`, `RSS`])
   })
 
@@ -137,8 +135,6 @@ describe(`Landing Page`, () => {
     const daf_value = parseFloat(daf_match[1])
 
     expect(f1_value > 0 && f1_value < 1, `F1=${f1_value} is out of range`).toBe(true)
-    expect(daf_value > 0 && daf_value < 10, `DAF=${daf_value} is out of range`).toBe(
-      true,
-    )
+    expect(daf_value > 0 && daf_value < 10, `DAF=${daf_value} is out of range`).toBe(true)
   })
 })

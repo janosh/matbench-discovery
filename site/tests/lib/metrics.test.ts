@@ -147,9 +147,9 @@ describe(`format_train_set`, () => {
       n_training_materials: mp2022.n_materials,
     }
 
-    expect(() => format_train_set([mp2022_key, `NonExistent`], mock_model as ModelData)).toThrow(
-      `Training set NonExistent not found in DATASETS`,
-    )
+    expect(() =>
+      format_train_set([mp2022_key, `NonExistent`], mock_model as ModelData),
+    ).toThrow(`Training set NonExistent not found in DATASETS`)
   })
 
   it(`formats training sets without n_materials correctly using n_structures`, () => {
@@ -250,7 +250,10 @@ describe(`calc_cell_color`, () => {
     ].flatMap(({ scale_type, all_values }) =>
       ([`higher`, `lower`] as const).flatMap((better) =>
         ([`best`, `worst`] as const).map((rank) => {
-          const [min_value, max_value] = [all_values[0], all_values.at(-1) ?? all_values[0]]
+          const [min_value, max_value] = [
+            all_values[0],
+            all_values.at(-1) ?? all_values[0],
+          ]
           const use_max_value = better === `higher` ? rank === `best` : rank === `worst`
           const val = use_max_value ? max_value : min_value
           return {
@@ -732,7 +735,9 @@ describe(`METADATA_COLS`, () => {
       `Org`,
     ]
 
-    expect(Object.values(METADATA_COLS).map((col) => col.label)).toStrictEqual(expected_labels)
+    expect(Object.values(METADATA_COLS).map((col) => col.label)).toStrictEqual(
+      expected_labels,
+    )
   })
 
   it(`has the correct properties for each column`, () => {
@@ -755,7 +760,8 @@ describe(`METADATA_COLS`, () => {
 
 describe(`Model Sorting Logic`, () => {
   // Create a set of test models that can be reused across multiple test cases
-  const create_test_models = () => [
+  const create_test_models = () =>
+    [
       {
         model_name: `AAA Model`,
         model_key: `aaa_model`,
@@ -800,7 +806,8 @@ describe(`Model Sorting Logic`, () => {
     ] as unknown as ModelData[]
 
   // Create test models with edge cases
-  const create_edge_case_models = () => [
+  const create_edge_case_models = () =>
+    [
       // Model with completely missing metrics
       {
         model_name: `No Metrics Model`,
@@ -960,7 +967,10 @@ describe(`Model Sorting Logic`, () => {
     // Test ascending sort (runtime 0 should be last)
     const sorted_asc = models.toSorted(sort_models(`Run Time`, `asc`))
     // Check the non-zero values are sorted correctly first
-    expect(sorted_asc.slice(0, 2).map((m) => m.model_key)).toStrictEqual([`model_c`, `model_a`])
+    expect(sorted_asc.slice(0, 2).map((m) => m.model_key)).toStrictEqual([
+      `model_c`,
+      `model_a`,
+    ])
     // Check the zero values are at the end (order between them is not guaranteed)
     expect(
       sorted_asc
@@ -979,7 +989,10 @@ describe(`Model Sorting Logic`, () => {
         .toSorted((a, b) => (a ?? ``).localeCompare(b ?? ``)),
     ).toStrictEqual([`model_b`, `model_d`])
     // Check the non-zero values are sorted correctly after
-    expect(sorted_desc.slice(2).map((m) => m.model_key)).toStrictEqual([`model_a`, `model_c`])
+    expect(sorted_desc.slice(2).map((m) => m.model_key)).toStrictEqual([
+      `model_a`,
+      `model_c`,
+    ])
   })
 
   it(`handles sorting with all models having missing metric`, () => {
@@ -1045,10 +1058,18 @@ describe(`Model Sorting Logic`, () => {
 
     // Ascending sort
     const sorted_asc = models_with_null.toSorted(sort_models(`metric`, `asc`))
-    expect(sorted_asc.map((m) => m.model_key)).toStrictEqual([`val_1`, `null_1`, `null_2`])
+    expect(sorted_asc.map((m) => m.model_key)).toStrictEqual([
+      `val_1`,
+      `null_1`,
+      `null_2`,
+    ])
 
     // Descending sort
     const sorted_desc = models_with_null.toSorted(sort_models(`metric`, `desc`))
-    expect(sorted_desc.map((m) => m.model_key)).toStrictEqual([`val_1`, `null_1`, `null_2`])
+    expect(sorted_desc.map((m) => m.model_key)).toStrictEqual([
+      `val_1`,
+      `null_1`,
+      `null_2`,
+    ])
   })
 })

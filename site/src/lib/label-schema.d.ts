@@ -1,4 +1,5 @@
 // This file is auto-generated from label-schema.yml. Do not edit directly.
+// oxlint-disable typescript/no-redundant-type-constituents
 
 /**
  * This interface was referenced by `Label`'s JSON-Schema
@@ -52,9 +53,7 @@ export type TargetType =
   | 'EFS_GM'
   | 'EFS_DM'
 
-export interface Label {
-  [k: string]: unknown
-}
+export type Label = Record<string, unknown>
 /**
  * This interface was referenced by `Label`'s JSON-Schema
  * via the `definition` "Label".

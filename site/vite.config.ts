@@ -1,4 +1,4 @@
-import { lint_config } from '@janosh/vite-config'
+import { config } from '@janosh/vite-config'
 import yaml_plugin from '@rollup/plugin-yaml'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { load as yaml_load } from 'js-yaml'
@@ -36,7 +36,11 @@ function yaml_schema_to_typescript_plugin(): Plugin {
         {
           // Should match fmt config in vite.config.ts
           style: { semi: false, singleQuote: true, printWidth: 90 },
-          bannerComment: `// This file is auto-generated from ${base_name}.yml. Do not edit directly.`,
+          // no-redundant-type-constituents fires on `string | 'missing'` unions from
+          // literal-or-string schema fields and has no oxlint autofix, so suppress it
+          // file-wide (index signatures are instead rewritten to Record<> via lint --fix below)
+          bannerComment: `// This file is auto-generated from ${base_name}.yml. Do not edit directly.
+// oxlint-disable typescript/no-redundant-type-constituents`,
           cwd: file_dir, // Important for $ref resolution between *-schema.yml files
           unreachableDefinitions: true,
         },
@@ -46,8 +50,11 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const dts_file = path.resolve(`./src/lib/${base_name}.d.ts`)
       fs.writeFileSync(dts_file, model_metadata_ts)
 
-      // Format generated schema file
+      // Rewrite json-schema-to-typescript index signatures (`{ [k: string]: T }`)
+      // into `Record<string, T>` via the consistent-indexed-object-style autofix,
+      // then format the generated schema file
       const vp_cmd = path.resolve(`./node_modules/.bin/vp`)
+      execFileSync(vp_cmd, [`lint`, `--fix`, dts_file])
       execFileSync(vp_cmd, [`fmt`, `--write`, dts_file])
       return true
     } catch (error) {
@@ -79,36 +86,16 @@ function yaml_schema_to_typescript_plugin(): Plugin {
 }
 
 export default defineConfig({
+  ...config, // shared lint/fmt/build from @janosh/vite-config (dotfiles)
   fmt: {
-    printWidth: 90,
-    semi: false,
-    singleQuote: true,
-    ignorePatterns: [
-      `src/figs/**/*.svelte`,
-      `src/figs/**/*.json`,
-      `src/routes/**/*.json`,
-      `tests/**`, // oxfmt lowercases first char of describe/it/test strings
-    ],
+    ...config.fmt,
+    ignorePatterns: [`src/figs/**/*.svelte`, `src/routes/**/*.json`],
   },
   // Shared rules/plugins/categories live in @janosh/vite-config (dotfiles).
   // Append only matbench-discovery-specific ignore dirs and rule overrides here.
   lint: {
-    ...lint_config,
-    ignorePatterns: [
-      ...lint_config.ignorePatterns,
-      `src/figs/**`,
-      `src/lib/*.d.ts`,
-      `scripts/**`,
-    ],
-    rules: {
-      ...lint_config.rules,
-      'typescript/no-unused-vars': [
-        `error`,
-        { argsIgnorePattern: `^_`, varsIgnorePattern: `^_` },
-      ],
-      'typescript/no-redundant-type-constituents': `warn`,
-      'import/no-unassigned-import': `off`, // CSS side-effect imports
-    },
+    ...config.lint,
+    ignorePatterns: [...config.lint.ignorePatterns, `src/figs/**`],
   },
   staged: {
     '*': `codespell --ignore-words-list falsy --check-filenames`,
@@ -116,11 +103,6 @@ export default defineConfig({
     '*.{js,ts,svelte,html,css,md,json,yaml}': `vp check --fix`,
     '*.{ts,svelte}': `sh -c 'pnpm exec svelte-kit sync && pnpm exec svelte-check-rs --threshold error'`,
   },
-  build: {
-    // Default cssTarget is chrome111 which doesn't support light-dark(),
-    cssTarget: `esnext`, // causing LightningCSS to polyfill it with broken space toggles
-  },
-
   plugins: [
     sveltekit(),
     yaml_plugin({ extensions: [`.yml`, `.yaml`, `.cff`] }),

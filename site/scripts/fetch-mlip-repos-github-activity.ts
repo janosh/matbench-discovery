@@ -3,12 +3,10 @@
 // Set GITHUB_TOKEN env var to avoid rate limits
 import { load as parseYAML } from 'js-yaml'
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const site_root = join(__dirname, `..`)
+const site_root = join(import.meta.dirname, `..`)
 const project_root = join(site_root, `..`)
 const cache_dir = join(site_root, `.cache`)
 const output_file = join(site_root, `src/routes/models/mlip-github-activity.json`)
@@ -108,8 +106,8 @@ const fetch_github = async (url: string, headers: Record<string, string>) => {
 }
 
 const get_count_from_pagination = (link: string | null) => {
-  const match = /page=(\d+)>; rel="last"/.exec(link || ``)
-  return match ? parseInt(match[1]) : null
+  const match = /page=(\d+)>; rel="last"/.exec(link ?? ``)
+  return match ? parseInt(match[1], 10) : null
 }
 
 const get_github_stats = async (
@@ -123,7 +121,7 @@ const get_github_stats = async (
     // Update model_key in case it changed (cache only stores GitHub stats)
     cached.model_key = model_key
     cached.name = name
-    console.log(`✓ ${repo} (cached)`)
+    console.info(`✓ ${repo} (cached)`)
     return cached
   }
 
@@ -144,7 +142,8 @@ const get_github_stats = async (
     )
     const commits_last_year =
       get_count_from_pagination(commits_res.headers.get(`Link`)) ??
-      ((await commits_res.json()).length || 0)
+      (await commits_res.json()).length ??
+      0
 
     // Fetch contributor count
     const contrib_res = await fetch_github(
@@ -153,9 +152,10 @@ const get_github_stats = async (
     )
     const contributors =
       get_count_from_pagination(contrib_res.headers.get(`Link`)) ??
-      ((await contrib_res.json()).length || 0)
-    const stars = repo_data.stargazers_count || 0
-    const forks = repo_data.forks_count || 0
+      (await contrib_res.json()).length ??
+      0
+    const stars = repo_data.stargazers_count ?? 0
+    const forks = repo_data.forks_count ?? 0
     const data: RepoData = {
       name,
       model_key,
@@ -169,7 +169,7 @@ const get_github_stats = async (
     // Cache the result
     await mkdir(cache_dir, { recursive: true })
     await writeFile(cache_file, JSON.stringify(data))
-    console.log(
+    console.info(
       `✓ ${repo}: ${data.stars}★ ${data.forks}f ${data.commits_last_year}c ${data.contributors}contrib`,
     )
     return data
@@ -208,8 +208,8 @@ const main = async () => {
     await new Promise((resolve) => setTimeout(resolve, 300))
   }
 
-  await writeFile(output_file, JSON.stringify(results, null, 2) + `\n`)
-  console.log(`Saved ${results.length}/${repos.length} repos`)
+  await writeFile(output_file, `${JSON.stringify(results, null, 2)}\n`)
+  console.info(`Saved ${results.length}/${repos.length} repos`)
 }
 
 main().catch((error) => {

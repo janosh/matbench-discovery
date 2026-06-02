@@ -54,7 +54,16 @@ describe(`ModelCard`, () => {
     it(`handles missing optional fields gracefully`, () => {
       mount(ModelCard, {
         target: document.body,
-        props: { model: { ...model, date_published: undefined, paper: undefined, url: undefined } as unknown as ModelData, metrics, sort_by: `F1` },
+        props: {
+          model: {
+            ...model,
+            date_published: undefined,
+            paper: undefined,
+            url: undefined,
+          } as unknown as ModelData,
+          metrics,
+          sort_by: `F1`,
+        },
       })
 
       const links = document.querySelectorAll(`nav a`)
@@ -70,7 +79,9 @@ describe(`ModelCard`, () => {
     })
 
     // Look for span containing "Training set" text
-    const training_set = [...document.querySelectorAll(`section.metadata span`)].find((span) => span.textContent?.includes(`Training data`))
+    const training_set = [...document.querySelectorAll(`section.metadata span`)].find(
+      (span) => span.textContent?.includes(`Training data`),
+    )
     expect(training_set).toBeDefined()
     expect(training_set?.textContent).toContain(`Training data:`)
 
@@ -108,9 +119,7 @@ describe(`ModelCard`, () => {
       )
       expect(f1_metric?.classList.contains(`active`)).toBe(true)
 
-      const kappa_metric = [...metrics_lis].find((m) =>
-        m.textContent?.includes(`κ`),
-      )
+      const kappa_metric = [...metrics_lis].find((m) => m.textContent?.includes(`κ`))
       const phonon_metrics = model.metrics?.phonons
       const kappa_value =
         phonon_metrics && typeof phonon_metrics === `object`
@@ -122,7 +131,7 @@ describe(`ModelCard`, () => {
     })
 
     it(`handles missing metrics`, () => {
-      const model_without_metrics = { ...model, metrics: undefined}
+      const model_without_metrics = { ...model, metrics: undefined }
 
       mount(ModelCard, {
         target: document.body,

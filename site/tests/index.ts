@@ -8,10 +8,10 @@ Object.defineProperty(globalThis, `matchMedia`, {
     matches: false,
     media: query,
     onchange: null,
-    addListener: () => { },
-    removeListener: () => { },
-    addEventListener: () => { },
-    removeEventListener: () => { },
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
     dispatchEvent: () => true,
   }),
 })
@@ -45,13 +45,13 @@ vi.mock(`$app/navigation`, () => app_mocks.navigation)
 
 beforeAll(() => {
   const animation = {
-    pause: () => { },
-    play: () => { },
+    pause: () => {},
+    play: () => {},
     effect: {
       getComputedTiming: () => ({}),
       getKeyframes: () => [],
     },
-    cancel: () => { },
+    cancel: () => {},
     currentTime: 0,
   } as unknown as Animation
 
@@ -89,7 +89,8 @@ export function get_scatter_plot_props(scatter_plot_mock: {
   mock: { lastCall?: unknown[] }
 }): unknown {
   const props = scatter_plot_mock.mock.lastCall?.find(
-    (call_arg) => typeof call_arg === `object` && call_arg !== null && `series` in call_arg,
+    (call_arg) =>
+      typeof call_arg === `object` && call_arg !== null && `series` in call_arg,
   )
   if (!props) throw new Error(`ScatterPlot props not found`)
   return props
@@ -109,7 +110,7 @@ export function is_hidden(el: Element | null): boolean {
 
 // ResizeObserver mock
 globalThis.ResizeObserver = class ResizeObserver {
-  observe() { }
-  unobserve() { }
-  disconnect() { }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 }

@@ -266,7 +266,9 @@ describe(`MetricsTable`, () => {
 
     const headers = [...document.querySelectorAll(`th`)]
     expect(headers).toHaveLength(expected_headers.length)
-    expect(headers.map((h) => h.textContent?.split(` `)[0])).toStrictEqual(expected_headers)
+    expect(headers.map((h) => h.textContent?.split(` `)[0])).toStrictEqual(
+      expected_headers,
+    )
   })
 
   it.each([
@@ -291,7 +293,9 @@ describe(`MetricsTable`, () => {
       })
 
       const headers = [...document.querySelectorAll(`th`)]
-      expect(headers.map((h) => h.textContent?.split(` `)[0])).toStrictEqual(expected_headers)
+      expect(headers.map((h) => h.textContent?.split(` `)[0])).toStrictEqual(
+        expected_headers,
+      )
 
       const rows = document.querySelectorAll(`tbody tr`)
       rows.forEach((row) => {
@@ -313,7 +317,10 @@ describe(`MetricsTable`, () => {
 
     let headers = [...document.querySelectorAll(`th`)]
     expect(headers).toHaveLength(2)
-    expect(headers.map((h) => h.textContent?.split(` `)[0])).toStrictEqual([`Model`, `F1`])
+    expect(headers.map((h) => h.textContent?.split(` `)[0])).toStrictEqual([
+      `Model`,
+      `F1`,
+    ])
 
     // Create a new instance with Model, F1, and DAF columns
     document.body.innerHTML = ``
@@ -556,7 +563,9 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Find all Training Set cells
-      const training_set_cells = [...document.querySelectorAll(`td[data-col="Training Set"]`)]
+      const training_set_cells = [
+        ...document.querySelectorAll(`td[data-col="Training Set"]`),
+      ]
 
       // Find cells with HTML content (looking for cells containing spans with tooltips)
       const html_cells = training_set_cells.filter(
@@ -572,7 +581,8 @@ describe(`MetricsTable`, () => {
 
         // The data-sort-value should not contain HTML tags if present
         expect(
-          data_sort_value == null || !/[<>]/.test(data_sort_value) && !data_sort_value.includes(`span`),
+          data_sort_value == null ||
+            (!/[<>]/.test(data_sort_value) && !data_sort_value.includes(`span`)),
         ).toBe(true)
 
         // The inner span should have its own data-sort-value
@@ -688,14 +698,18 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Get model names in current order
-      const initial_models = [...document.querySelectorAll(`td[data-col="Model"]`)].map((cell) => cell.textContent)
+      const initial_models = [...document.querySelectorAll(`td[data-col="Model"]`)].map(
+        (cell) => cell.textContent,
+      )
 
       // Try to sort by Links
       links_header.click()
       await tick()
 
       // Get model names after clicking Links
-      const after_links_click_models = [...document.querySelectorAll(`td[data-col="Model"]`)].map((cell) => cell.textContent)
+      const after_links_click_models = [
+        ...document.querySelectorAll(`td[data-col="Model"]`),
+      ].map((cell) => cell.textContent)
 
       // Order should not change
       expect(after_links_click_models).toStrictEqual(initial_models)
@@ -810,7 +824,9 @@ describe(`MetricsTable`, () => {
       await tick() // Wait for component to process data
 
       // Find all links cells with at least one link
-      const links_cells = [...document.querySelectorAll(`td[data-col="Links"]`)].filter((cell) => cell.querySelectorAll(`a`).length > 0)
+      const links_cells = [...document.querySelectorAll(`td[data-col="Links"]`)].filter(
+        (cell) => cell.querySelectorAll(`a`).length > 0,
+      )
 
       // There should be at least one cell with links
       expect(links_cells.length).toBeGreaterThan(0)
@@ -941,202 +957,226 @@ describe(`MetricsTable`, () => {
       row.dispatchEvent(new MouseEvent(`dblclick`, { bubbles: true }))
     }
 
-    it(`selects and deselects models on double-click with proper state management`, { timeout: 10_000 }, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { col_filter: () => true, show_non_compliant: true },
-      })
-      await tick() // Wait for initial render
+    it(
+      `selects and deselects models on double-click with proper state management`,
+      { timeout: 10_000 },
+      async () => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: { col_filter: () => true, show_non_compliant: true },
+        })
+        await tick() // Wait for initial render
 
-      // Use fresh row references each time to avoid stale DOM after re-renders
-      expect(get_rows().length).toBeGreaterThanOrEqual(2)
+        // Use fresh row references each time to avoid stale DOM after re-renders
+        expect(get_rows().length).toBeGreaterThanOrEqual(2)
 
-      // Initially no selection
-      expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
-      expect(get_rows()[1].classList.contains(`highlight`)).toBe(false)
+        // Initially no selection
+        expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
+        expect(get_rows()[1].classList.contains(`highlight`)).toBe(false)
 
-      // Select first row
-      double_click_row(get_rows()[0])
-      await tick()
-      expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
+        // Select first row
+        double_click_row(get_rows()[0])
+        await tick()
+        expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
 
-      // Select second row
-      double_click_row(get_rows()[1])
-      await tick()
-      expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
-      expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
+        // Select second row
+        double_click_row(get_rows()[1])
+        await tick()
+        expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
+        expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
 
-      // Deselect first row
-      double_click_row(get_rows()[0])
-      await tick()
-      expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
-      expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
-    })
+        // Deselect first row
+        double_click_row(get_rows()[0])
+        await tick()
+        expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
+        expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
+      },
+    )
 
-    it(`manages toggle visibility and count dynamically`, { timeout: 10_000 }, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { col_filter: () => true, show_non_compliant: true },
-      })
+    it(
+      `manages toggle visibility and count dynamically`,
+      { timeout: 10_000 },
+      async () => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: { col_filter: () => true, show_non_compliant: true },
+        })
 
-      // Initially no toggle
-      expect(get_toggle()).toBeNull()
+        // Initially no toggle
+        expect(get_toggle()).toBeNull()
 
-      // Select one model
-      double_click_row(get_rows()[0])
-      await tick()
-      expect(get_toggle()).not.toBeNull()
-      expect(get_toggle_label()?.textContent).toContain(`1 selected`)
+        // Select one model
+        double_click_row(get_rows()[0])
+        await tick()
+        expect(get_toggle()).not.toBeNull()
+        expect(get_toggle_label()?.textContent).toContain(`1 selected`)
 
-      // Select second model
-      double_click_row(get_rows()[1])
-      await tick()
-      expect(get_toggle_label()?.textContent).toContain(`2 selected`)
+        // Select second model
+        double_click_row(get_rows()[1])
+        await tick()
+        expect(get_toggle_label()?.textContent).toContain(`2 selected`)
 
-      // Deselect one model
-      double_click_row(get_rows()[0])
-      await tick()
-      expect(get_toggle_label()?.textContent).toContain(`1 selected`)
+        // Deselect one model
+        double_click_row(get_rows()[0])
+        await tick()
+        expect(get_toggle_label()?.textContent).toContain(`1 selected`)
 
-      // Deselect the remaining selected row (row 1 is still highlighted)
-      double_click_row(get_rows()[1])
-      await tick()
+        // Deselect the remaining selected row (row 1 is still highlighted)
+        double_click_row(get_rows()[1])
+        await tick()
 
-      expect(get_toggle()).toBeNull()
-    })
+        expect(get_toggle()).toBeNull()
+      },
+    )
 
-    it(`toggles filter state and updates UI labels correctly`, { timeout: 10_000 }, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { col_filter: () => true, show_non_compliant: true },
-      })
+    it(
+      `toggles filter state and updates UI labels correctly`,
+      { timeout: 10_000 },
+      async () => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: { col_filter: () => true, show_non_compliant: true },
+        })
 
-      // Select a model to make toggle visible
-      double_click_row(get_rows()[0])
-      await tick()
+        // Select a model to make toggle visible
+        double_click_row(get_rows()[0])
+        await tick()
 
-      const toggle = get_toggle()
-      const label = get_toggle_label()
-      expect(toggle).not.toBeNull()
-      if (!toggle) return // Type guard
+        const toggle = get_toggle()
+        const label = get_toggle_label()
+        expect(toggle).not.toBeNull()
+        if (!toggle) return // Type guard
 
-      // Test toggle states
-      expect(toggle.checked).toBe(false)
-      expect(label?.textContent).toContain(`Show only 1 selected`)
+        // Test toggle states
+        expect(toggle.checked).toBe(false)
+        expect(label?.textContent).toContain(`Show only 1 selected`)
 
-      toggle.click()
-      await tick()
-      expect(toggle.checked).toBe(true)
-      expect(label?.textContent).toContain(`Show all`)
+        toggle.click()
+        await tick()
+        expect(toggle.checked).toBe(true)
+        expect(label?.textContent).toContain(`Show all`)
 
-      toggle.click()
-      await tick()
-      expect(toggle.checked).toBe(false)
-      expect(label?.textContent).toContain(`Show only 1 selected`)
-    })
+        toggle.click()
+        await tick()
+        expect(toggle.checked).toBe(false)
+        expect(label?.textContent).toContain(`Show only 1 selected`)
+      },
+    )
 
-    it(`filters rows and manages styling based on filter state`, { timeout: 10_000 }, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { col_filter: () => true, show_non_compliant: true },
-      })
+    it(
+      `filters rows and manages styling based on filter state`,
+      { timeout: 10_000 },
+      async () => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: { col_filter: () => true, show_non_compliant: true },
+        })
 
-      const initial_count = get_rows().length
-      expect(initial_count).toBeGreaterThan(1)
+        const initial_count = get_rows().length
+        expect(initial_count).toBeGreaterThan(1)
 
-      // Select first row
-      double_click_row(get_rows()[0])
-      await tick()
+        // Select first row
+        double_click_row(get_rows()[0])
+        await tick()
 
-      // Enable filter
-      const toggle_enable = get_toggle()
-      if (!toggle_enable) throw new Error(`Toggle not found`)
-      toggle_enable.click()
-      await tick()
+        // Enable filter
+        const toggle_enable = get_toggle()
+        if (!toggle_enable) throw new Error(`Toggle not found`)
+        toggle_enable.click()
+        await tick()
 
-      // Should show only selected row
-      expect(get_rows()).toHaveLength(1)
-      expect(get_rows()[0].classList.contains(`highlight`)).toBe(false) // No highlight when filtering
+        // Should show only selected row
+        expect(get_rows()).toHaveLength(1)
+        expect(get_rows()[0].classList.contains(`highlight`)).toBe(false) // No highlight when filtering
 
-      // Disable filter
-      const toggle_disable = get_toggle()
-      if (!toggle_disable) throw new Error(`Toggle not found`)
-      toggle_disable.click()
-      await tick()
+        // Disable filter
+        const toggle_disable = get_toggle()
+        if (!toggle_disable) throw new Error(`Toggle not found`)
+        toggle_disable.click()
+        await tick()
 
-      // Should show all rows with highlight
-      expect(get_rows()).toHaveLength(initial_count)
-      expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
-    })
+        // Should show all rows with highlight
+        expect(get_rows()).toHaveLength(initial_count)
+        expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
+      },
+    )
 
-    it(`validates toggle behavior with multiple selections and deselections`, { timeout: 10_000 }, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { col_filter: () => true, show_non_compliant: true },
-      })
+    it(
+      `validates toggle behavior with multiple selections and deselections`,
+      { timeout: 10_000 },
+      async () => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: { col_filter: () => true, show_non_compliant: true },
+        })
 
-      expect(get_rows().length).toBeGreaterThanOrEqual(2)
+        expect(get_rows().length).toBeGreaterThanOrEqual(2)
 
-      // Test that toggle appears/disappears correctly
-      expect(get_toggle()).toBeNull()
+        // Test that toggle appears/disappears correctly
+        expect(get_toggle()).toBeNull()
 
-      // Select first row - use fresh references each time to avoid stale DOM
-      double_click_row(get_rows()[0])
-      await tick()
-      expect(get_toggle()).not.toBeNull()
-      expect(get_toggle_label()?.textContent).toContain(`1 selected`)
+        // Select first row - use fresh references each time to avoid stale DOM
+        double_click_row(get_rows()[0])
+        await tick()
+        expect(get_toggle()).not.toBeNull()
+        expect(get_toggle_label()?.textContent).toContain(`1 selected`)
 
-      // Select second row - get fresh reference
-      double_click_row(get_rows()[1])
-      await tick()
-      expect(get_toggle_label()?.textContent).toContain(`2 selected`)
+        // Select second row - get fresh reference
+        double_click_row(get_rows()[1])
+        await tick()
+        expect(get_toggle_label()?.textContent).toContain(`2 selected`)
 
-      // Test that deselecting works
-      double_click_row(get_rows()[0])
-      await tick()
-      expect(get_toggle_label()?.textContent).toContain(`1 selected`)
+        // Test that deselecting works
+        double_click_row(get_rows()[0])
+        await tick()
+        expect(get_toggle_label()?.textContent).toContain(`1 selected`)
 
-      // Deselect the remaining selected row (should be row 1 which is still highlighted)
-      const highlighted_row = document.querySelector(`tbody tr.highlight`)
-      if (!highlighted_row) throw new Error(`Expected highlighted row`)
-      double_click_row(highlighted_row)
-      await tick()
-      expect(get_toggle()).toBeNull()
-    })
+        // Deselect the remaining selected row (should be row 1 which is still highlighted)
+        const highlighted_row = document.querySelector(`tbody tr.highlight`)
+        if (!highlighted_row) throw new Error(`Expected highlighted row`)
+        double_click_row(highlighted_row)
+        await tick()
+        expect(get_toggle()).toBeNull()
+      },
+    )
 
-    it(`validates correct model name extraction and selection behavior`, { timeout: 10_000 }, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { col_filter: () => true, show_non_compliant: true },
-      })
+    it(
+      `validates correct model name extraction and selection behavior`,
+      { timeout: 10_000 },
+      async () => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: { col_filter: () => true, show_non_compliant: true },
+        })
 
-      const rows = [...get_rows()]
-      expect(rows.length).toBeGreaterThanOrEqual(1)
+        const rows = [...get_rows()]
+        expect(rows.length).toBeGreaterThanOrEqual(1)
 
-      // Select first row
-      double_click_row(rows[0])
-      await tick()
+        // Select first row
+        double_click_row(rows[0])
+        await tick()
 
-      // Verify that the correct model was selected (not a generic "test-model")
-      // This test will fail if model name extraction is broken
-      expect(get_toggle()).not.toBeNull()
-      expect(get_toggle_label()?.textContent).toContain(`1 selected`)
+        // Verify that the correct model was selected (not a generic "test-model")
+        // This test will fail if model name extraction is broken
+        expect(get_toggle()).not.toBeNull()
+        expect(get_toggle_label()?.textContent).toContain(`1 selected`)
 
-      // Get fresh row reference after selection
-      const updated_rows = get_rows()
-      expect(updated_rows.length).toBeGreaterThanOrEqual(1)
-      // Verify that the row is highlighted
-      expect(updated_rows[0].classList.contains(`highlight`)).toBe(true)
+        // Get fresh row reference after selection
+        const updated_rows = get_rows()
+        expect(updated_rows.length).toBeGreaterThanOrEqual(1)
+        // Verify that the row is highlighted
+        expect(updated_rows[0].classList.contains(`highlight`)).toBe(true)
 
-      // Deselect the row
-      double_click_row(updated_rows[0])
-      await tick()
+        // Deselect the row
+        double_click_row(updated_rows[0])
+        await tick()
 
-      // Verify deselection worked
-      expect(get_toggle()).toBeNull()
-      const final_rows = get_rows()
-      expect(final_rows[0].classList.contains(`highlight`)).toBe(false)
-    })
+        // Verify deselection worked
+        expect(get_toggle()).toBeNull()
+        const final_rows = get_rows()
+        expect(final_rows[0].classList.contains(`highlight`)).toBe(false)
+      },
+    )
   })
 
   describe(`regression tests for default values`, () => {

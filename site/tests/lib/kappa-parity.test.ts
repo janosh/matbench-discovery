@@ -181,11 +181,15 @@ describe(`kappa parity data helpers`, () => {
       response: () =>
         gzipped_json_response({ model: manifest_sized_model({ kappa_ml: [1] }) }),
       load: () => load_kappa_parity_model(first_model_key),
-      error: `Invalid kappa parity ${first_model_key}.kappa_ml: ` +
+      error:
+        `Invalid kappa parity ${first_model_key}.kappa_ml: ` +
         `expected ${kappa_parity_manifest.row_count} rows`,
     },
-  ])(`rejects $kind assets with the wrong row count`, async ({ response, load, error }) => {
-    vi.stubGlobal(`fetch`, vi.fn(response))
-    await expect(load()).rejects.toThrow(error)
-  })
+  ])(
+    `rejects $kind assets with the wrong row count`,
+    async ({ response, load, error }) => {
+      vi.stubGlobal(`fetch`, vi.fn(response))
+      await expect(load()).rejects.toThrow(error)
+    },
+  )
 })

@@ -100,7 +100,9 @@ describe(`Table Export Functionality`, () => {
       expect(result.filename).toBe(
         `matbench-unique-prototypes-compliant-2models-${today()}${extension}`,
       )
-      expect(result.url).toBe(extension === `.svg` ? `mock-url` : `data:image/png;base64,test`)
+      expect(result.url).toBe(
+        extension === `.svg` ? `mock-url` : `data:image/png;base64,test`,
+      )
       expect(click_spy).toHaveBeenCalled()
       expect(captured_container.querySelectorAll(`svg, a[href]`)).toHaveLength(0)
       expect(captured_container.querySelectorAll(`sub, sup`)).toHaveLength(1)
@@ -112,13 +114,18 @@ describe(`Table Export Functionality`, () => {
     [`PNG`, generate_png],
     [`CSV`, generate_csv],
     [`Excel`, generate_excel],
-  ] as const)(`returns null when table is missing for %s export`, async (_format, generator) => {
-    document.body.innerHTML = ``
-    const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
+  ] as const)(
+    `returns null when table is missing for %s export`,
+    async (_format, generator) => {
+      document.body.innerHTML = ``
+      const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
 
-    await expect(Promise.resolve(generator({ discovery_set: `test` }))).resolves.toBeNull()
-    expect(console_spy).toHaveBeenCalled()
-  })
+      await expect(
+        Promise.resolve(generator({ discovery_set: `test` })),
+      ).resolves.toBeNull()
+      expect(console_spy).toHaveBeenCalled()
+    },
+  )
 
   it(`generates CSV with formatted data and excludes icon columns`, async () => {
     const result = generate_csv({
@@ -128,7 +135,9 @@ describe(`Table Export Functionality`, () => {
 
     if (!result) throw new Error(`CSV export returned null`)
 
-    expect(result.filename).toBe(`matbench-unique-prototypes-compliant-2models-${today()}.csv`)
+    expect(result.filename).toBe(
+      `matbench-unique-prototypes-compliant-2models-${today()}.csv`,
+    )
     expect(result.url).toBe(`mock-url`)
     expect(click_spy).toHaveBeenCalled()
 

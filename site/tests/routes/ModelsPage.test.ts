@@ -16,9 +16,12 @@ describe(`Models Page`, () => {
 
     const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
     expect(n_best_input.value).toBe(String(MODELS.length))
-    expect([...document.querySelectorAll<HTMLInputElement>(`input[type="radio"]`)].map(
-      (radio) => [radio.value, radio.checked],
-    )).toStrictEqual([ // default sort direction is descending
+    expect(
+      [...document.querySelectorAll<HTMLInputElement>(`input[type="radio"]`)].map(
+        (radio) => [radio.value, radio.checked],
+      ),
+    ).toStrictEqual([
+      // default sort direction is descending
       [`asc`, false],
       [`desc`, true],
     ])
@@ -88,12 +91,14 @@ describe(`Models Page`, () => {
 
     const first_card = doc_query<HTMLLIElement>(`ol > li`)
     const details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
-    expect(details_btn.getAttribute(`aria-label`)).toBe(`Show authors and package versions`)
+    expect(details_btn.getAttribute(`aria-label`)).toBe(
+      `Show authors and package versions`,
+    )
     expect(details_btn.getAttribute(`aria-expanded`)).toBe(`false`)
 
     // Initially no authors section visible
     const initial_sections = first_card?.querySelectorAll(`section`)
-    const has_authors = [...initial_sections ?? []].some(
+    const has_authors = [...(initial_sections ?? [])].some(
       (section) => section.querySelector(`h3`)?.textContent === `Authors`,
     )
     expect(has_authors).toBe(false)
@@ -106,11 +111,11 @@ describe(`Models Page`, () => {
     // Should now show authors and package versions
     const sections = first_card?.querySelectorAll(`section`)
     expect(sections?.length).toBeGreaterThan(0)
+    expect([...(sections ?? [])].some((s) => s.textContent?.includes(`Authors`))).toBe(
+      true,
+    )
     expect(
-      [...sections ?? []].some((s) => s.textContent?.includes(`Authors`)),
-    ).toBe(true)
-    expect(
-      [...sections ?? []].some((s) => s.textContent?.includes(`Package versions`)),
+      [...(sections ?? [])].some((s) => s.textContent?.includes(`Package versions`)),
     ).toBe(true)
   })
 
@@ -206,10 +211,14 @@ describe(`Models Page`, () => {
       })
 
       const cards = document.querySelectorAll(`ol > li`)
-      const expected_models = MODELS.toSorted(sort_models(ALL_METRICS.CPS.key, `desc`)).slice(0, 10)
+      const expected_models = MODELS.toSorted(
+        sort_models(ALL_METRICS.CPS.key, `desc`),
+      ).slice(0, 10)
       const names = [...cards].map((card, idx) => {
         const link = doc_query<HTMLAnchorElement>(`h2 a`, card)
-        expect(link.getAttribute(`href`)).toBe(`/models/${expected_models[idx].model_key}`)
+        expect(link.getAttribute(`href`)).toBe(
+          `/models/${expected_models[idx].model_key}`,
+        )
         expect(doc_query(`.metrics`, card).textContent).toContain(`CPS`)
         return link.textContent?.trim()
       })
@@ -279,7 +288,9 @@ describe(`Models Page`, () => {
     expect(legend.textContent).toContain(`best`)
     expect(legend.textContent).toContain(`worst`)
 
-    expect(doc_query(`.colorbar`, legend).textContent).toContain(`Card titles colored by CPS`)
+    expect(doc_query(`.colorbar`, legend).textContent).toContain(
+      `Card titles colored by CPS`,
+    )
 
     const model_cards_h2 = [...document.querySelectorAll<HTMLElement>(`ol > li h2`)]
     expect(model_cards_h2.length).toBeGreaterThan(0)
