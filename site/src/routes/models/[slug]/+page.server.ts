@@ -2,9 +2,8 @@ import { MODELS } from '$lib'
 import { error, redirect } from '@sveltejs/kit'
 import type { EntryGenerator, PageServerLoad } from './$types'
 
-// model_keys were switched from underscores to hyphens (enforced by the schema
-// pattern in tests/model-schema.yml). These legacy underscore slugs were live URLs
-// and are prerendered as permanent redirects to their kebab-cased pages.
+// model_keys were switched from underscores to hyphens. These legacy underscore slugs
+// are prerendered as permanent redirects to their kebab-cased pages. 2026-06-02
 const LEGACY_SLUGS = [`equiformer_v3_mp`, `equiformer_v3_oam`, `grace_2l_oam_l`]
 
 export const load: PageServerLoad = async ({ params }) => {

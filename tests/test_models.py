@@ -1,7 +1,9 @@
 import os
+import re
 from glob import glob
 
 import pytest
+import yaml
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import DATASETS
@@ -212,3 +214,23 @@ def test_model_validation_errors(
     """Test model validation functions raise appropriate errors."""
     with pytest.raises(error_type, match=error_match):
         func(metadata)  # ty: ignore[call-non-callable]
+
+
+@pytest.mark.parametrize(
+    "model_key, is_valid",
+    [
+        ("equiformer-v3-mp", True),  # kebab-cased
+        ("mace-mp-0", True),
+        ("eSEN-30m-mp", True),  # uppercase and digits allowed
+        ("cgcnn+p", True),  # + allowed
+        ("dpa-4.0-pro-mptrj", True),  # dots allowed
+        ("equiformer_v3_mp", False),  # underscores rejected
+        ("foo_bar", False),
+    ],
+)
+def test_model_key_schema_forbids_underscores(model_key: str, is_valid: bool) -> None:
+    """model_key schema pattern rejects underscores to keep model URLs param-cased."""
+    with open(f"{ROOT}/tests/model-schema.yml") as file:
+        pattern = yaml.safe_load(file)["properties"]["model_key"]["pattern"]
+    # JSON Schema applies `pattern` as an (anchored here) regex, same as re.search
+    assert bool(re.search(pattern, model_key)) is is_valid
