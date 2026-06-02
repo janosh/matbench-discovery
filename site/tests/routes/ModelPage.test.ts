@@ -31,9 +31,9 @@ describe(`Model Detail Page`, () => {
     // Check meta info section
     const meta_info = document.querySelector(`.meta-info`)
     expect(meta_info?.textContent).toContain(`parameters`)
-    expect(meta_info?.textContent?.includes(`Ensemble ${test_model.n_estimators} models`)).toBe(
-      test_model.n_estimators > 1,
-    )
+    expect(
+      meta_info?.textContent?.includes(`Ensemble ${test_model.n_estimators} models`),
+    ).toBe(test_model.n_estimators > 1)
 
     // Check links section
     const links = document.querySelectorAll(`.links a`)

@@ -1,8 +1,7 @@
 // This file is auto-generated from model-schema.yml. Do not edit directly.
+// oxlint-disable typescript/no-redundant-type-constituents
 
-export type ModelMetadata = {
-  [k: string]: unknown
-} & {
+export type ModelMetadata = Record<string, unknown> & {
   model_name: string
   model_key?: string
   model_version: string
@@ -11,9 +10,7 @@ export type ModelMetadata = {
   /**
    * @minItems 1
    */
-  authors: {
-    [k: string]: unknown
-  } & [Person, ...Person[]]
+  authors: Record<string, unknown> & [Person, ...Person[]]
   trained_by?: Person[]
   repo: string
   doi: string
@@ -56,13 +53,7 @@ export type ModelMetadata = {
       | 'unreleased'
     checkpoint_url?: string | 'missing'
   }
-  requirements: {
-    /**
-     * This interface was referenced by `undefined`'s JSON-Schema definition
-     * via the `patternProperty` "^[a-zA-Z]{1}[a-zA-Z0-9_\-]{0,}$".
-     */
-    [k: string]: string
-  }
+  requirements: Record<string, string>
   trained_for_benchmark: boolean
   training_set: (
     | 'MP 2022'
@@ -113,25 +104,20 @@ export type ModelMetadata = {
   notes?: {
     Description?: string
     Training?: string
-    html?: {
-      [k: string]: string
-    }
+    html?: Record<string, string>
     [k: string]: unknown
   }
   model_params: number
   n_estimators: number
   training_cost:
-    | {
-        /**
-         * This interface was referenced by `undefined`'s JSON-Schema definition
-         * via the `patternProperty` "^[a-zA-Z0-9\s]+ (GPUs|CPUs|TPUs)$".
-         */
-        [k: string]: {
+    | Record<
+        string,
+        {
           amount: number
           hours: number
           cost?: number
         }
-      }
+      >
     | 'missing'
   train_task: 'RP2RE' | 'RS2RE' | 'S2E' | 'S2RE' | 'S2EF' | 'S2EFS' | 'S2EFSM'
   test_task: 'IP2E' | 'IS2E' | 'IS2RE' | 'IS2RE-SR'
@@ -172,9 +158,7 @@ export type TargetType =
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "GeoOptMetrics".
  */
-export type GeoOptMetrics = {
-  [k: string]: unknown
-} & {
+export type GeoOptMetrics = Record<string, unknown> & {
   struct_col?: string
   pred_file?: string | null
   pred_file_url?: string
@@ -203,9 +187,7 @@ export type GeoOptMetrics = {
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "DiscoveryMetrics".
  */
-export type DiscoveryMetrics = {
-  [k: string]: unknown
-} & {
+export type DiscoveryMetrics = Record<string, unknown> & {
   pred_col: string
   pred_file?: string | null
   pred_file_url?: string
@@ -217,9 +199,7 @@ export type DiscoveryMetrics = {
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "DiatomicsMetrics".
  */
-export type DiatomicsMetrics = {
-  [k: string]: unknown
-} & {
+export type DiatomicsMetrics = Record<string, unknown> & {
   pred_file?: string | null
   pred_file_url?: string
   smoothness?: number
@@ -243,9 +223,7 @@ export type HttpUrl = string
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "pred_files".
  */
-export type PredFiles = {
-  [k: string]: unknown
-}
+export type PredFiles = Record<string, unknown>
 /**
  * License type:
  * - MIT: Massachusetts Institute of Technology
@@ -293,9 +271,7 @@ export interface Person {
  * via the `definition` "PhononMetrics".
  */
 export interface PhononMetrics {
-  kappa_103?: {
-    [k: string]: unknown
-  }
+  kappa_103?: Record<string, unknown>
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema

@@ -50,7 +50,9 @@ if (!first_structure_bundle) {
   throw new Error(`energy parity manifest has no structure bundles`)
 }
 
-function manifest_sized_base(overrides: Partial<EnergyParityBase> = {}): EnergyParityBase {
+function manifest_sized_base(
+  overrides: Partial<EnergyParityBase> = {},
+): EnergyParityBase {
   const row_count = energy_parity_manifest.row_count
   return {
     material_ids: Array<string>(row_count).fill(`wbm-1-test`),
@@ -105,9 +107,7 @@ describe(`energy parity data helpers`, () => {
 
   it(`loads gzipped JSON assets and caches duplicate requests`, async () => {
     const body = gzipSync(JSON.stringify({ ok: true }))
-    const fetch_mock = vi.fn(() =>
-      Promise.resolve(new Response(body, { status: 200 })),
-    )
+    const fetch_mock = vi.fn(() => Promise.resolve(new Response(body, { status: 200 })))
     vi.stubGlobal(`fetch`, fetch_mock)
 
     const url = `/fixture-${crypto.randomUUID()}.json.gz`
@@ -118,7 +118,8 @@ describe(`energy parity data helpers`, () => {
 
   it(`retries asset loads after a failed request`, async () => {
     const body = gzipSync(JSON.stringify({ ok: true }))
-    const fetch_mock = vi.fn()
+    const fetch_mock = vi
+      .fn()
       .mockResolvedValueOnce(new Response(`missing`, { status: 503 }))
       .mockResolvedValueOnce(new Response(body, { status: 200 }))
     vi.stubGlobal(`fetch`, fetch_mock)
@@ -176,18 +177,25 @@ describe(`energy parity data helpers`, () => {
           model: manifest_sized_model(first_model_key, { e_form_pred: [0] }),
         }),
       load: () => load_energy_parity_model(first_model_key),
-      error: `Invalid energy parity ${first_model_key}.e_form_pred: ` +
+      error:
+        `Invalid energy parity ${first_model_key}.e_form_pred: ` +
         `expected ${energy_parity_manifest.row_count} rows`,
     },
-  ])(`rejects $kind assets with the wrong row count`, async ({ response, load, error }) => {
-    vi.stubGlobal(`fetch`, vi.fn(response))
-    await expect(load()).rejects.toThrow(error)
-  })
+  ])(
+    `rejects $kind assets with the wrong row count`,
+    async ({ response, load, error }) => {
+      vi.stubGlobal(`fetch`, vi.fn(response))
+      await expect(load()).rejects.toThrow(error)
+    },
+  )
 
   it(`reports a clear error for a stale base asset missing a field`, async () => {
     // simulate an old-schema release asset that predates the n_sites column
     const { n_sites: _omit, ...stale_base } = manifest_sized_base()
-    vi.stubGlobal(`fetch`, vi.fn(() => gzipped_json_response(stale_base)))
+    vi.stubGlobal(
+      `fetch`,
+      vi.fn(() => gzipped_json_response(stale_base)),
+    )
     await expect(load_energy_parity_base()).rejects.toThrow(
       `Invalid energy parity n_sites: expected ${energy_parity_manifest.row_count} rows, got missing field`,
     )

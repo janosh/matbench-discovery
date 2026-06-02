@@ -39,7 +39,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EF_G
 model_type: UIP
-model_params: 16_240_000
+model_params: 16240000
 n_estimators: 1
 
 requirements:

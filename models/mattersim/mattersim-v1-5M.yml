@@ -97,7 +97,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
 model_type: UIP
-model_params: 4_549_142
+model_params: 4549142
 n_estimators: 1
 
 training_set: [MatterSim]

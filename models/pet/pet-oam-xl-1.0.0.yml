@@ -28,7 +28,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
 model_type: Transformer
-model_params: 730_000_000
+model_params: 730000000
 trained_for_benchmark: true
 n_estimators: 1
 

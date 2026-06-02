@@ -36,7 +36,7 @@ requirements:
   pymatgen: 2024.11.13
 
 model_type: Transformer
-model_params: 110_000_000
+model_params: 110000000
 n_estimators: 1
 
 training_set: [MP 2022]

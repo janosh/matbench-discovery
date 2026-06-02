@@ -78,7 +78,7 @@ describe(`Phonons Task Page`, () => {
     const srme_path = `metrics.phonons.kappa_103.κ_SRME`
     const srmes = [...model_select.options].map((opt) => {
       const model = MODELS.find((mdl) => mdl.model_key === opt.value)
-      return model ? get_nested_number(model, srme_path) ?? Infinity : Infinity
+      return model ? (get_nested_number(model, srme_path) ?? Infinity) : Infinity
     })
     expect(srmes.length).toBeGreaterThan(1)
     expect(srmes).toEqual([...srmes].toSorted((s1, s2) => s1 - s2))

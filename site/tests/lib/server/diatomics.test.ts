@@ -8,7 +8,9 @@ describe(`diatomics server data loader`, () => {
 
   afterEach(async () => {
     vi.restoreAllMocks()
-    await Promise.all(tmp_dirs.map((tmp_dir) => rm(tmp_dir, { recursive: true, force: true })))
+    await Promise.all(
+      tmp_dirs.map((tmp_dir) => rm(tmp_dir, { recursive: true, force: true })),
+    )
     tmp_dirs.length = 0
   })
 

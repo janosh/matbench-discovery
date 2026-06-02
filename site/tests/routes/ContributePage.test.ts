@@ -67,15 +67,16 @@ describe(`Contribute Page`, () => {
     expect(trouble_section?.textContent).toMatch(/problem|issue|error|help|support/i)
 
     // If no community links, should have instructions for filing issues
-    const has_community_links = [...trouble_section?.querySelectorAll(`a`) ?? []].some(
+    const has_community_links = [...(trouble_section?.querySelectorAll(`a`) ?? [])].some(
       (link) =>
         link.textContent?.includes(`@`) ||
         [`slack`, `forum`, `gitter`].some((term) => link.href?.includes(term)),
     )
 
-    expect(has_community_links || /file|open|create|new issue/i.test(
-      trouble_section?.textContent ?? ``,
-    )).toBe(true)
+    expect(
+      has_community_links ||
+        /file|open|create|new issue/i.test(trouble_section?.textContent ?? ``),
+    ).toBe(true)
   })
 })
 

@@ -42,7 +42,7 @@ train_task: RS2RE
 test_task: IS2E
 targets: E
 model_type: GNN
-model_params: 128_450
+model_params: 128450
 trained_for_benchmark: true
 n_estimators: 10
 

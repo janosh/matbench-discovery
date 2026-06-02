@@ -49,7 +49,7 @@ train_task: RS2RE
 test_task: IS2E
 targets: E
 model_type: GNN
-model_params: 167_761
+model_params: 167761
 n_estimators: 1
 
 # we tested the Eform_MP_2019 checkpoint of MEGNet, the original 2018 version was trained on 'Graphs of MP 2018'

@@ -45,9 +45,9 @@ describe(`SelectToggle.svelte`, () => {
       expect(buttons).toHaveLength(options.length)
 
       // Verify active state
-      expect([...buttons].map((button) => button.classList.contains(`active`))).toStrictEqual(
-        options.map((_, idx) => idx === expectedActiveIndex),
-      )
+      expect(
+        [...buttons].map((button) => button.classList.contains(`active`)),
+      ).toStrictEqual(options.map((_, idx) => idx === expectedActiveIndex))
 
       // Check HTML rendering if expected
       expect(document.querySelector(`b`)?.textContent ?? null).toBe(

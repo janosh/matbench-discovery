@@ -8,6 +8,9 @@ import {
   update_models_cps,
 } from '$lib/models.svelte'
 import per_elem_each_errors from '$routes/models/per-element-each-errors.json'
+import { load as yaml_load } from 'js-yaml'
+import { readdirSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 describe(`calculate_training_sizes`, () => {
@@ -234,5 +237,48 @@ describe(`update_models_cps`, () => {
     const f1_rmsd_cps_values = MODELS.map((model) => Number(model.CPS))
     expect(f1_rmsd_cps_values).not.toStrictEqual(f1_cps_values)
     expect(f1_rmsd_cps_values).not.toStrictEqual(rmsd_cps_values)
+  })
+})
+
+// js-yaml >= 4.2 (YAML 1.2 core schema) parses underscore-grouped integers like
+// `154_719` as strings instead of numbers, silently breaking numeric consumers
+// (dataset sizes, model_params, ...). Parse each model/data YAML and flag any
+// scalar that stayed a string only because it looks like an underscore-grouped
+// integer, catching the regression that hit CI on PR #331 in any context (mapping
+// value, sequence item or flow collection). Use plain integers (`154719`) instead.
+const repo_root = path.resolve(import.meta.dirname, `..`, `..`, `..`)
+
+const yaml_files = [`models`, `data`].flatMap((dir) =>
+  readdirSync(path.join(repo_root, dir), { recursive: true })
+    .map(String)
+    .filter((name) => name.endsWith(`.yml`))
+    .map((name) => path.join(dir, name)),
+)
+
+// a value js-yaml keeps as a string solely because YAML 1.2 forbids `_` in ints
+const underscore_int = /^[-+]?\d{1,3}(?:_\d{3})+$/
+
+function find_underscore_numbers(node: unknown, node_path: string): string[] {
+  if (typeof node === `string`) {
+    return underscore_int.test(node) ? [`${node_path} = ${node}`] : []
+  }
+  if (Array.isArray(node)) {
+    return node.flatMap((item, idx) =>
+      find_underscore_numbers(item, `${node_path}[${idx}]`),
+    )
+  }
+  if (node && typeof node === `object`) {
+    return Object.entries(node).flatMap(([key, value]) =>
+      find_underscore_numbers(value, node_path ? `${node_path}.${key}` : key),
+    )
+  }
+  return []
+}
+
+describe(`YAML data files use plain integers (no underscore separators)`, () => {
+  it.each(yaml_files)(`%s`, (rel_path) => {
+    const data = yaml_load(readFileSync(path.join(repo_root, rel_path), `utf-8`))
+    const offenders = find_underscore_numbers(data, ``)
+    expect(offenders, `${rel_path} has underscore-separated numbers`).toEqual([])
   })
 })

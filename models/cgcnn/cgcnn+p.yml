@@ -46,7 +46,7 @@ train_task: S2RE
 test_task: IS2RE
 targets: E
 model_type: GNN
-model_params: 128_450
+model_params: 128450
 n_estimators: 10
 
 training_set: [MP 2022]

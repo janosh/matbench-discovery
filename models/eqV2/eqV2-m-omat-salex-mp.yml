@@ -54,7 +54,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_D
 model_type: UIP
-model_params: 86_589_068
+model_params: 86589068
 n_estimators: 1
 
 # removed sAlex from this list since it would be double counting materials in the "Training Size"

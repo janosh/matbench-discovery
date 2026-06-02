@@ -47,7 +47,7 @@ train_task: RP2RE
 test_task: IP2E
 targets: E
 model_type: Transformer
-model_params: 5_166_658
+model_params: 5166658
 n_estimators: 10
 
 training_set: [MP 2022]

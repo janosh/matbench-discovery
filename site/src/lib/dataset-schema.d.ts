@@ -1,4 +1,5 @@
 // This file is auto-generated from dataset-schema.yml. Do not edit directly.
+// oxlint-disable typescript/no-redundant-type-constituents
 
 /**
  * This interface was referenced by `DatasetRecord`'s JSON-Schema
@@ -80,9 +81,7 @@ export type LicenseEnum =
   | 'ASL'
   | 'unreleased'
 
-export interface DatasetRecord {
-  [k: string]: Dataset
-}
+export type DatasetRecord = Record<string, Dataset>
 /**
  * This interface was referenced by `DatasetRecord`'s JSON-Schema definition
  * via the `patternProperty` "^[a-zA-Z0-9 ]+$".
@@ -111,9 +110,7 @@ export interface Dataset {
    * HTML version of the dataset description
    */
   description_html?: string
-  notes?: {
-    [k: string]: unknown
-  }
+  notes?: Record<string, unknown>
   /**
    * Number of structures in the dataset
    */

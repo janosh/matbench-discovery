@@ -16,7 +16,7 @@ describe(`Data Page`, () => {
     expect(list_items?.length).toBeGreaterThanOrEqual(16)
 
     // Check for expected data files in the list
-    const list_text = [...list_items ?? []]
+    const list_text = [...(list_items ?? [])]
       .map((item) => item.textContent ?? ``)
       .join(``)
 

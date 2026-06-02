@@ -8,6 +8,7 @@
   import { CmdPalette, CopyButton, GitHubCorner, Nav, ThemeToggle } from 'svelte-multiselect'
   import { heading_anchors } from 'svelte-multiselect/heading-anchors'
   import Toc from 'svelte-toc'
+  // oxlint-disable-next-line no-unassigned-import
   import '../app.css'
 
   let { children }: { children?: Snippet } = $props()

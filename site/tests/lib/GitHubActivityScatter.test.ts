@@ -36,14 +36,14 @@ type ScatterPlotProps = {
 const create_mock_github_data = (
   overrides: Partial<GitHubActivityData> = {},
 ): GitHubActivityData => ({
-    name: `Test Model`,
-    repo: `test-org/test-model`,
-    stars: 1500,
-    forks: 250,
-    commits_last_year: 120,
-    contributors: 15,
-    ...overrides,
-  })
+  name: `Test Model`,
+  repo: `test-org/test-model`,
+  stars: 1500,
+  forks: 250,
+  commits_last_year: 120,
+  contributors: 15,
+  ...overrides,
+})
 
 describe(`GitHubActivityScatter`, () => {
   beforeEach(() => vi.clearAllMocks())

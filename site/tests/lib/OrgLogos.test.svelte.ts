@@ -7,9 +7,10 @@ import { doc_query } from '../index'
 
 describe(`OrgLogos.svelte`, () => {
   // mount, hover the preview, and return the resulting tooltip content element
-  const open_tooltip = async (
-    props: { org_logos?: OrgLogo[]; authors?: Author[] },
-  ): Promise<HTMLElement> => {
+  const open_tooltip = async (props: {
+    org_logos?: OrgLogo[]
+    authors?: Author[]
+  }): Promise<HTMLElement> => {
     mount(OrgLogos, { target: document.body, props })
     flushSync() // ensure the tooltip attachment effect has run before hovering
     doc_query(`.org-preview`).dispatchEvent(new MouseEvent(`mouseenter`))

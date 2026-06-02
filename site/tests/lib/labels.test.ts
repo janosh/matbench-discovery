@@ -43,9 +43,12 @@ describe(`format_power_ten`, () => {
       expected: `multiple 1.2×10<sup>3</sup> and 4.5×10<sup>-6</sup> values`,
       description: `multiple scientific notations`,
     },
-  ])(`formats '$input' to '$expected' ($description)`, ({ input, expected }: { input: string; expected: string }) => {
-    expect(format_power_ten(input)).toBe(expected)
-  })
+  ])(
+    `formats '$input' to '$expected' ($description)`,
+    ({ input, expected }: { input: string; expected: string }) => {
+      expect(format_power_ten(input)).toBe(expected)
+    },
+  )
 
   it(`returns input string when no scientific notation is present`, () => {
     const input = `just a regular string with numbers 123.456`

@@ -89,9 +89,9 @@ describe(`TableControls`, () => {
     expect(details.open).toBe(true)
 
     // Verify column menu is visible
-    expect(doc_query(`.column-menu`).querySelectorAll(`input[type="checkbox"]`)).toHaveLength(
-      sample_columns.length,
-    )
+    expect(
+      doc_query(`.column-menu`).querySelectorAll(`input[type="checkbox"]`),
+    ).toHaveLength(sample_columns.length)
 
     // Close panel
     toggle_btn.click()
@@ -111,7 +111,8 @@ describe(`TableControls`, () => {
     const column_menu = doc_query(`.column-menu`)
     expect(column_menu.getAttribute(`role`)).toBe(`group`)
 
-    const column_checkboxes = column_menu.querySelectorAll<HTMLInputElement>(`input[type="checkbox"]`)
+    const column_checkboxes =
+      column_menu.querySelectorAll<HTMLInputElement>(`input[type="checkbox"]`)
     expect(column_checkboxes).toHaveLength(sample_columns.length)
     const checkbox_labels = [...column_menu.querySelectorAll(`label`)].map((label) =>
       label.textContent?.trim(),

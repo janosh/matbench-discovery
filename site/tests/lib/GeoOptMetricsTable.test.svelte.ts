@@ -145,12 +145,14 @@ describe(`GeoOptMetricsTable`, () => {
     await tick()
 
     const column_menu = doc_query(`.sections-container`)
-    expect([...column_menu.querySelectorAll(`.section-header`)].map((button) =>
-      button.textContent?.trim().replace(/^[▶▼]\s*/, ``),
-    )).toStrictEqual([`Symmetry`, `Hyperparams`])
     expect(
-      column_menu.querySelectorAll(`input[type="checkbox"]`).length,
-    ).toBeGreaterThan(Object.keys(GEO_OPT_SYMMETRY_METRICS).length)
+      [...column_menu.querySelectorAll(`.section-header`)].map((button) =>
+        button.textContent?.trim().replace(/^[▶▼]\s*/, ``),
+      ),
+    ).toStrictEqual([`Symmetry`, `Hyperparams`])
+    expect(column_menu.querySelectorAll(`input[type="checkbox"]`).length).toBeGreaterThan(
+      Object.keys(GEO_OPT_SYMMETRY_METRICS).length,
+    )
   })
 
   it.each([`RMSD`, `Model`])(`sorts by %s when header is clicked`, async (col_name) => {

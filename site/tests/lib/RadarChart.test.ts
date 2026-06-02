@@ -35,7 +35,8 @@ describe(`RadarChart`, () => {
 
     // Check that the triangle area is rendered
     const triangle_area = svg.querySelector(`path[fill="var(--nav-bg)"]`)
-    if (!(triangle_area instanceof SVGPathElement)) throw new Error(`Triangle path not found`)
+    if (!(triangle_area instanceof SVGPathElement))
+      throw new Error(`Triangle path not found`)
     expect(triangle_area.getAttribute(`stroke`)).toBe(`var(--border)`)
 
     // Check that the draggable point is rendered
@@ -162,28 +163,45 @@ describe(`RadarChart`, () => {
     // press the knob, drag to an interior point, release (size=200 -> center (100,100))
     knob.dispatchEvent(new MouseEvent(`mousedown`, { bubbles: true, cancelable: true }))
     globalThis.dispatchEvent(
-      new MouseEvent(`mousemove`, { bubbles: true, cancelable: true, clientX: 90, clientY: 110 }),
+      new MouseEvent(`mousemove`, {
+        bubbles: true,
+        cancelable: true,
+        clientX: 90,
+        clientY: 110,
+      }),
     )
     flushSync()
     const dropped = read()
     expect(dropped.cx).toBeCloseTo(90, 0)
     expect(dropped.cy).toBeCloseTo(110, 0)
 
-    globalThis.dispatchEvent(new MouseEvent(`mouseup`, { bubbles: true, cancelable: true }))
+    globalThis.dispatchEvent(
+      new MouseEvent(`mouseup`, { bubbles: true, cancelable: true }),
+    )
     flushSync()
     expect(read()).toEqual(dropped) // drag-end round-trip must not move the knob
 
     // the browser fires a trailing click after a drag; with wildly different coords
     // (mimicking a layout shift from the weight update) it must NOT move the knob
     svg.dispatchEvent(
-      new MouseEvent(`click`, { bubbles: true, cancelable: true, clientX: 160, clientY: 100 }),
+      new MouseEvent(`click`, {
+        bubbles: true,
+        cancelable: true,
+        clientX: 160,
+        clientY: 100,
+      }),
     )
     flushSync()
     expect(read()).toEqual(dropped)
 
     // a genuine standalone click afterwards should still move the knob
     svg.dispatchEvent(
-      new MouseEvent(`click`, { bubbles: true, cancelable: true, clientX: 100, clientY: 100 }),
+      new MouseEvent(`click`, {
+        bubbles: true,
+        cancelable: true,
+        clientX: 100,
+        clientY: 100,
+      }),
     )
     flushSync()
     expect(read()).not.toEqual(dropped)
