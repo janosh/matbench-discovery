@@ -23,14 +23,12 @@ We rank <slot name="model_count">20+</slot> models covering multiple methodologi
 
 Our results show that ML models have become robust enough to deploy them as triaging steps to more effectively allocate compute in high-throughput DFT relaxations. This work provides valuable insights for anyone looking to build large-scale materials databases.
 
-> 📖 **Important:** In Matbench Discovery, the convex hull used to evaluate stability is constructed from DFT reference energies, not from model predictions. This differs from some other benchmarking approaches and has important implications for metric interpretation. See [`/tasks/discovery`](/tasks/discovery#convex-hull-construction-in-matbench-discovery) for more information.
+> 📖 **Important:** In Matbench Discovery, the convex hull used to evaluate stability is constructed from DFT reference energies, not from model predictions. This differs from some other benchmarking approaches and has important implications for metric interpretation. See [`/tasks/discovery`](https://janosh.github.io/matbench-discovery/tasks/discovery#convex-hull-construction-in-matbench-discovery) for more information.
 
 To cite Matbench Discovery, use:
 
 > Riebesell, J., Goodall, R.E.A., Benner, P. et al. A framework to evaluate machine learning crystal stability predictions. Nat Mach Intell 7, 836–847 (2025). https://doi.org/10.1038/s42256-025-01055-1
 
 We welcome new models additions to the leaderboard through GitHub PRs. See the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details and ask support questions via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions).
-
-For detailed results and analysis, check out https://nature.com/articles/s42256-025-01055-1.
 
 > Disclaimer: We evaluate how accurately ML models predict several material properties like thermodynamic stability, thermal conductivity, and atomic positions, in all cases using PBE DFT as reference data. Although these properties are important for high-throughput materials discovery, the ranking cannot give a complete picture of a model's overall ability to drive materials research. A high ranking does not constitute endorsement by the Materials Project.

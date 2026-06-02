@@ -70,15 +70,15 @@
       "bytes": 59416,
       "sha256": "023527ffb4d3ecc2cfc29aac66d43fc0735780aea8708b4f428a57cf9fedf12e"
     },
-    "equiformer_v3_mp": {
-      "asset": "kappa-parity-phonondb-v1-model-equiformer_v3_mp.json.gz",
+    "equiformer-v3-mp": {
+      "asset": "kappa-parity-phonondb-v1-model-equiformer-v3-mp.json.gz",
       "bytes": 59006,
-      "sha256": "893c332c0afe849bb5cd3c4550297242c597d9583df9ffca063a806e58b5d2ab"
+      "sha256": "3444efedaa215686338105b0ba21d7b2eedb35db6a5556b751b93d7176f2de97"
     },
-    "equiformer_v3_oam": {
-      "asset": "kappa-parity-phonondb-v1-model-equiformer_v3_oam.json.gz",
+    "equiformer-v3-oam": {
+      "asset": "kappa-parity-phonondb-v1-model-equiformer-v3-oam.json.gz",
       "bytes": 59452,
-      "sha256": "f761a91638b0afbaaf41d7135bde522f4f2075e1662a47c1278723483bd0c6bd"
+      "sha256": "57789022dd8ff9f508243b427bc472505e1eda89fe8664edc7630eb1a6f8ee52"
     },
     "grace-1l-oam": {
       "asset": "kappa-parity-phonondb-v1-model-grace-1l-oam.json.gz",
@@ -95,10 +95,10 @@
       "bytes": 59580,
       "sha256": "42a4b474e19b7fa6ceaf25ad5b648a11e1610abd5b84932509eb3ba50b213ba5"
     },
-    "grace_2l_oam_l": {
-      "asset": "kappa-parity-phonondb-v1-model-grace_2l_oam_l.json.gz",
-      "bytes": 59633,
-      "sha256": "4b78974e90b99a1a6654a40f0e786b55b06faecf7c85ec0811bd285bee923634"
+    "grace-2l-oam-l": {
+      "asset": "kappa-parity-phonondb-v1-model-grace-2l-oam-l.json.gz",
+      "bytes": 59632,
+      "sha256": "336d6523bf2239a7b495eef1a7ee5f3b8302342a3fc0e830a5465844982ccd11"
     },
     "hienet": {
       "asset": "kappa-parity-phonondb-v1-model-hienet.json.gz",
