@@ -11,7 +11,6 @@ import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
 
-from matbench_discovery import SITE_FIGS
 from matbench_discovery import plots as plots
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey
@@ -77,7 +76,6 @@ fig = pmv.density_scatter(
 )
 fig.layout.yaxis.title = MbdKey.e_form_dft.replace("DFT", "Allegro")
 fig.show()
-pmv.save_fig(fig, f"{SITE_FIGS}/allegro-wbm-IS2RE-e-form-parity.png")
 
 
 print(df_allegro.columns)
@@ -90,4 +88,3 @@ fig = pmv.density_scatter(
 fig.layout.yaxis.title = "Allegro energy"
 
 fig.show()
-pmv.save_fig(fig, f"{SITE_FIGS}/allegro-wbm-IS2RE-raw-energy-parity.png")

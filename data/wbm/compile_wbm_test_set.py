@@ -26,7 +26,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, today
+from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, WBM_DIR, figs, today
 from matbench_discovery.data import DATASETS, DataFiles
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
@@ -491,7 +491,14 @@ fig.show(
 
 # %%
 img_name = "hist-wbm-e-form-per-atom"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/{img_name}.json.gz",
+    {
+        "x": figs.round_list(e_form_bins[:-1]),
+        "y": e_form_hist.tolist(),
+        "bar_width": round(float(e_form_bins[1] - e_form_bins[0]), 6),
+    },
+)
 # recommended to upload SVG to vecta.io/nano for compression
 # pmv.save_fig(fig, f"{img_name}.svg", width=800, height=300)
 

@@ -7,7 +7,7 @@ import pymatviz as pmv
 from IPython.display import display
 from pymatviz.enums import Key
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
@@ -67,7 +67,6 @@ styler = df_proto_counts.head(10).style.background_gradient(cmap="viridis")
 styler.set_caption(f"Top 10 {proto_col} in {len(df_bad)} {model} failures")
 display(styler)
 img_name = f"proto-counts-{model_low}-failures"
-pmv.df_to_html(styler, file_path=f"{SITE_FIGS}/{img_name}.svelte")
 pmv.df_to_pdf(styler, f"{PDF_FIGS}/{img_name}.pdf")
 
 
@@ -82,7 +81,6 @@ fig.show()
 
 # %%
 pmv.save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-{model_low}-failures.pdf")
-pmv.save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-{model_low}-failures.svelte")
 
 
 # %%
@@ -132,5 +130,4 @@ fig.show()
 
 # %%
 img_name = "hull-dist-parity-wrenformer-failures"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)

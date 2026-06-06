@@ -463,8 +463,4 @@
     text-align: center;
     margin: 2em auto 0;
   }
-  /* hide plotly titles */
-  div.model-detail :global(svg g.infolayer g.g-gtitle) {
-    display: none;
-  }
 </style>

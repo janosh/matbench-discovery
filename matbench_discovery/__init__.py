@@ -15,7 +15,9 @@ PKG_DIR = os.path.dirname(__file__)  # Python package directory
 ROOT = os.path.dirname(PKG_DIR)  # repo root directory
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data
 TEST_FILES = f"{ROOT}/tests/files"  # directory to store test data
-SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
+# directory for data-only figure payloads (gzipped JSON written by
+# matbench_discovery.figs, imported by Svelte pages and rendered with matterviz)
+SITE_FIG_DATA = f"{ROOT}/site/src/figs"
 # directory to write model analysis for website
 SITE_DIR = f"{ROOT}/site/src"
 SCRIPTS = f"{ROOT}/scripts"  # model and date analysis scripts
@@ -30,7 +32,7 @@ DEFAULT_CACHE_DIR = os.getenv(
     else os.path.expanduser("~/.cache/matbench-discovery"),
 )
 
-for directory in (SITE_FIGS, SITE_DIR, PDF_FIGS):
+for directory in (SITE_FIG_DATA, SITE_DIR, PDF_FIGS):
     os.makedirs(directory, exist_ok=True)
 
 os.makedirs(MP_DIR := f"{DATA_DIR}/mp", exist_ok=True)

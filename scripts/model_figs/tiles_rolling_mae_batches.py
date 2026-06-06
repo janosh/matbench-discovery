@@ -8,7 +8,7 @@ import math
 import pymatviz as pmv
 from plotly.subplots import make_subplots
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
@@ -85,7 +85,6 @@ for idx, model in enumerate(models_to_plot):
             selector=lambda trace: trace.name.startswith("Batch"),
         )
         subfig.show()
-        pmv.save_fig(subfig, f"{SITE_FIGS}/{img_path}.svelte")
         pmv.save_fig(subfig, f"{PDF_FIGS}/{img_path}.pdf", width=500, height=330)
 
     row, col = divmod(idx, n_cols)
@@ -160,5 +159,4 @@ fig.show()
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
 img_name = f"tile-rolling-mae-batches-{n_rows}x{n_cols}{img_suffix}"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

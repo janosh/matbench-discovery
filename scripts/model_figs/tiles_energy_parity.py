@@ -11,7 +11,7 @@ import plotly.express as px
 import pymatviz as pmv
 from pymatviz.enums import Key
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
@@ -226,5 +226,4 @@ fig.show()
 # %%
 img_suffix = "" if cli_args.show_non_compliant else "-only-compliant"
 img_name = f"{cli_args.energy_type}-parity-models-{n_rows}x{n_cols}{img_suffix}"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

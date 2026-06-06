@@ -12,7 +12,7 @@ from pymatviz.enums import Key
 from pymatviz.powerups import add_identity_line
 from sklearn.metrics import r2_score
 
-from matbench_discovery import ROOT, SITE_FIGS
+from matbench_discovery import ROOT
 from matbench_discovery.enums import DataFiles
 
 __author__ = "Janosh Riebesell"
@@ -91,7 +91,7 @@ fig_scatter = pmv.density_scatter(
 fig_scatter.layout.title = "M3GNet-relaxed vs DFT-relaxed WBM volumes"
 fig_scatter.layout.xaxis.title = "DFT-relaxed volume [Å³]"
 fig_scatter.layout.yaxis.title = "M3GNet-relaxed / unrelaxed volume [Å³]"
-pmv.save_fig(fig_scatter, f"{SITE_FIGS}/m3gnet-wbm-volume-scatter.webp", dpi=200)
+fig_scatter.show()
 
 
 # %% histogram of M3GNet-relaxed vs initial WBM volume residuals wrt DFT-relaxed volume
@@ -108,7 +108,6 @@ fig = px.histogram(
     barmode="overlay",
 )
 fig.show()
-fig.write_image(f"{SITE_FIGS}/m3gnet-wbm-volume-diff-residual-hist.webp", scale=2)
 
 
 # %% compute mean absolute PBC difference between initial and final fractional
@@ -198,9 +197,6 @@ fig.update_layout(title=dict(text=title, x=0.5))
 # 250k scatter points require exporting to PNG, interactive version freezes the
 # notebook server
 fig.show(renderer="png", scale=2)
-fig.write_image(
-    f"{SITE_FIGS}/m3gnet-energy-per-atom-parity-is2re-vs-rs2re.webp", scale=2
-)
 
 
 # %% write df back to compressed JSON
