@@ -442,11 +442,6 @@ fig.update_layout(yaxis3=dict(showgrid=False, rangemode="tozero"))
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.layout.legend.update(x=0.96, y=0.18, xanchor="right", bgcolor="rgba(0,0,0,0)")
 fig.layout.xaxis.rangemode = "tozero"  # start x-axis at 0 (no negative padding)
-# matterviz positions legends via CSS (can't read plotly's paper-coord legend), so
-# pass an explicit style to pin it inside the plot's bottom-right corner
-fig.layout.meta = {
-    "matterviz_legend_style": "left: auto; top: auto; right: 58px; bottom: 92px"
-}
 fig.show()
 
 

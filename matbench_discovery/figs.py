@@ -10,11 +10,11 @@ route's chunk only contains the data of the figures it renders.
 Helpers:
 - ``write_json_gz(path, payload)``: deterministic gzipped JSON writer
 - ``histogram(values)``: bin raw values into ``{x, y, bar_width}`` (HistBins shape)
-- ``lttb`` / ``downsample_points``: down-sample over-resolved line/point series
-- ``trace_xy`` / ``trace_color`` / ``trace_visible``: pull arrays/styles out of
-  plotly traces (for figs built by pymatviz/matbench_discovery.plots helpers)
-- ``sunburst_tree`` / ``sankey_data``: convert plotly sunburst/sankey figures into
-  the nested/flat structures matterviz Sunburst/Sankey render directly
+- ``lttb``: down-sample over-resolved line series
+- ``trace_xy`` / ``trace_color`` / ``trace_visible`` / ``trace_payload``: pull
+  arrays/styles out of plotly traces (for figs built by pymatviz/plots helpers)
+- ``sunburst_data`` / ``sankey_data``: pull the flat arrays out of plotly sunburst/
+  sankey figures (matterviz builds the nested structures from these client-side)
 """
 
 from __future__ import annotations
@@ -99,18 +99,6 @@ def lttb(x: np.ndarray, y: np.ndarray, n_out: int) -> tuple[np.ndarray, np.ndarr
     return x[idx], y[idx]
 
 
-def downsample_points(
-    x: np.ndarray, y: np.ndarray, n_out: int, seed: int = 0
-) -> tuple[np.ndarray, np.ndarray]:
-    """Randomly (seeded) down-sample an unordered point cloud to at most ``n_out``."""
-    n = len(x)
-    if n <= n_out:
-        return x, y
-    rng = np.random.default_rng(seed)
-    idx = np.sort(rng.choice(n, size=n_out, replace=False))
-    return x[idx], y[idx]
-
-
 # === data builders ===
 def histogram(
     values: Any,
@@ -155,6 +143,20 @@ def trace_visible(trace: Any) -> bool:
     return vis is True or vis is None
 
 
+def trace_payload(trace: Any, *, x: bool = True) -> dict[str, Any]:
+    """Standard payload entry for a plotly trace: label, color (if any), x/y arrays.
+
+    Pass ``x=False`` for payloads whose models share a single top-level x array.
+    """
+    x_arr, y_arr = trace_xy(trace)
+    entry: dict[str, Any] = {"label": str(trace.name)}
+    if color := trace_color(trace):
+        entry["color"] = color
+    if x:
+        entry["x"] = round_list(x_arr)
+    return entry | {"y": round_list(y_arr)}
+
+
 def _get_trace(fig: go.Figure | dict[str, Any], trace_type: str) -> dict[str, Any]:
     """Find the first trace of ``trace_type`` in a plotly figure (or fig dict)."""
     fig_dict = fig if isinstance(fig, dict) else fig.to_plotly_json()
@@ -166,64 +168,51 @@ def _get_trace(fig: go.Figure | dict[str, Any], trace_type: str) -> dict[str, An
     return trace
 
 
-def sunburst_tree(fig: go.Figure | dict[str, Any]) -> list[dict[str, Any]]:
-    """Convert a plotly sunburst figure (flat labels/parents/values) into the nested
-    node list matterviz Sunburst renders (SunburstNode[]).
+def sunburst_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
+    """Extract a plotly sunburst's flat labels/parents/values(/ids) arrays.
+
+    matterviz's ``sunburst_from_labels_parents`` builds the nested SunburstNode tree
+    from these client-side (and handles duplicate ids), so shipping the flat arrays
+    keeps payloads ~20% smaller than a pre-nested tree and avoids duplicating its logic.
     """
     trace = _get_trace(fig, "sunburst")
-    labels = [str(val) for val in round_list(decode_array(trace.get("labels")))]
-    parents = [str(val) for val in round_list(decode_array(trace.get("parents")))]
-    values = round_list(decode_array(trace.get("values")))
-    raw_ids = trace.get("ids")
-    ids = (
-        [str(val) for val in round_list(decode_array(raw_ids))]
-        if raw_ids is not None
-        else labels
-    )
-    nodes: dict[str, dict[str, Any]] = {
-        node_id: {
-            "id": node_id,
-            "label": labels[idx],
-            "value": values[idx],
-            "children": [],
-        }
-        for idx, node_id in enumerate(ids)
+    out: dict[str, Any] = {
+        "labels": [str(val) for val in round_list(decode_array(trace.get("labels")))],
+        "parents": [str(val) for val in round_list(decode_array(trace.get("parents")))],
+        "values": round_list(decode_array(trace.get("values"))),
     }
-    roots: list[dict[str, Any]] = []
-    for idx, node_id in enumerate(ids):
-        parent = parents[idx] if idx < len(parents) else ""
-        siblings = nodes[parent]["children"] if parent in nodes else roots
-        siblings.append(nodes[node_id])
-    return roots
+    if (raw_ids := trace.get("ids")) is not None:
+        out["ids"] = [str(val) for val in round_list(decode_array(raw_ids))]
+    return out
 
 
-def sankey_data(fig: go.Figure | dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
-    """Convert a plotly sankey figure into matterviz Sankey {nodes, links}."""
+def sankey_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
+    """Extract a plotly sankey's node labels + link source/target/value arrays.
+
+    matterviz's sankey_from_links builds the {nodes, links} SankeyData from these flat
+    arrays, so shipping them keeps payloads smaller and avoids duplicating its logic.
+    """
     trace = _get_trace(fig, "sankey")
     node, link = trace.get("node") or {}, trace.get("link") or {}
-    labels = round_list(decode_array(node.get("label")))
-    nodes: list[dict[str, Any]] = [{"label": str(label)} for label in labels]
-    colors = node.get("color")
-    if isinstance(colors, (list, dict)):
-        for box, color in zip(nodes, round_list(decode_array(colors)), strict=False):
-            if isinstance(color, str):
-                box["color"] = color
+    labels = [str(label) for label in round_list(decode_array(node.get("label")))]
     sources = round_list(decode_array(link.get("source")))
     targets = round_list(decode_array(link.get("target")))
     values = round_list(decode_array(link.get("value")))
-    links = [
-        {"source": int(src), "target": int(tgt), "value": float(val)}
-        for src, tgt, val in zip(sources, targets, values, strict=True)
-    ]
-    if not nodes or not links:
+    if not labels or not sources:
         raise ValueError("sankey trace has no nodes or links")
-    return {"nodes": nodes, "links": links}
+    return {
+        "labels": labels,
+        "source": [int(src) for src in sources],
+        "target": [int(tgt) for tgt in targets],
+        "value": [float(val) for val in values],
+    }
 
 
 # === IO ===
 def write_json_gz(path: str, data: dict[str, Any]) -> int:
     """Write deterministic gzipped JSON; return compressed byte size."""
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if dir_name := os.path.dirname(path):  # empty for a bare filename -> skip makedirs
+        os.makedirs(dir_name, exist_ok=True)
     payload = json.dumps(data, allow_nan=False, separators=(",", ":")).encode()
     compressed = gzip.compress(payload, compresslevel=9, mtime=0)
     with open(path, "wb") as file:

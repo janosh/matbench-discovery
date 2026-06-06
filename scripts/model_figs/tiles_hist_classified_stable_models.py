@@ -146,10 +146,7 @@ for model in models_to_plot:
     each_pred = df_model[Key.each_pred]
     f1_score = dfs_metrics[test_subset][model.label]["F1"]
     clf_models.append(
-        {
-            "label": model.label,
-            "f1": round(float(f1_score), 4),
-        }
+        {"label": model.label, "f1": round(float(f1_score), 4)}
         | {
             key: figs.histogram(each_pred[mask], **hist_clf_kwargs)["y"]
             for key, mask in (
@@ -160,7 +157,8 @@ for model in models_to_plot:
             )
         }
     )
-bin_centers = figs.histogram(each_pred, **hist_clf_kwargs)["x"]
+# bin centers depend only on hist_clf_kwargs (bins/range), not the per-model data
+bin_centers = figs.histogram([], **hist_clf_kwargs)["x"]
 figs.write_json_gz(
     f"{SITE_FIG_DATA}/hist-clf-{which_energy}-hull-dist{img_suffix}.json.gz",
     {"bin_centers": bin_centers, "models": clf_models},

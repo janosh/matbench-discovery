@@ -1,10 +1,8 @@
 <script lang="ts">
-  import {
-    element_prevalence_vs_error as elem_prev,
-    hist_largest_each_errors_fp_diff as hist_largest,
-    scatter_largest_each_errors_fp_diff as each_errors,
-    scatter_largest_fp_diff_each_error as fp_diff,
-  } from '$figs'
+  import elem_prev from '$figs/element-prevalence-vs-error.json.gz'
+  import hist_largest from '$figs/hist-largest-each-errors-fp-diff.json.gz'
+  import each_errors from '$figs/scatter-largest-each-errors-fp-diff.json.gz'
+  import fp_diff from '$figs/scatter-largest-fp-diff-each-error.json.gz'
   import { dashed, wide_legend } from '$lib/fig-helpers'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
@@ -14,8 +12,12 @@
   const fp_diff_label = `|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|`
 
   // per-figure model selection via dropdowns (faster than the old all-series-behind-a-
-  // huge-legend figs). bind the model labels (svelte-multiselect string options) and
-  // derive the matching model object(s) for plotting.
+  // huge-legend figs). bind the model labels (svelte-multiselect string options; binding
+  // the model objects directly would JSON-serialize their arrays into the DOM via the
+  // hidden form-validation input) and look up the matching model object(s) for plotting.
+  const find_model = <T extends { label: string }>(models: T[], label: string): T =>
+    models.find((mdl) => mdl.label === label) ?? models[0]
+
   let elem_prev_selected = $state(elem_prev.models.slice(0, 3).map((mdl) => mdl.label))
   let fp_diff_model = $state(fp_diff.models[0].label)
   let each_errors_model = $state(each_errors.models[0].label)
@@ -24,16 +26,10 @@
   const elem_prev_models = $derived(
     elem_prev.models.filter((mdl) => elem_prev_selected.includes(mdl.label)),
   )
-  const fp_diff_active = $derived(
-    fp_diff.models.find((mdl) => mdl.label === fp_diff_model) ?? fp_diff.models[0],
-  )
-  const each_errors_active = $derived(
-    each_errors.models.find((mdl) => mdl.label === each_errors_model) ??
-      each_errors.models[0],
-  )
+  const fp_diff_active = $derived(find_model(fp_diff.models, fp_diff_model))
+  const each_errors_active = $derived(find_model(each_errors.models, each_errors_model))
   const hist_largest_active = $derived(
-    hist_largest.models.find((mdl) => mdl.label === hist_largest_model) ??
-      hist_largest.models[0],
+    find_model(hist_largest.models, hist_largest_model),
   )
 
   // x extent of the shared fingerprint-diff values for the MAE ref line

@@ -5,7 +5,7 @@ declare module '*.md'
 
 declare module '*.json.gz' {
   // data-only figure payloads (site/src/figs/<name>.json.gz), decompressed at build
-  // time by the json_gz_plugin in vite.config.ts and cast to shape in src/figs/index.ts
+  // time by the json_gz_plugin in vite.config.ts and typed in src/figs/payloads.d.ts
   const data: unknown
   export default data
 }

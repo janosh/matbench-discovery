@@ -71,7 +71,7 @@ x_labels_with_offset = [
     for idx, model in enumerate(models_to_plot)
 ]
 
-# rotate x-labels 90deg to avoid overlap (read by converter -> matterviz tick rotation)
+# rotate x-labels 90deg to avoid overlap (PDF only; the site sets tick rotation inline)
 fig.layout.xaxis.range = [-0.7, len(models_to_plot) - 0.3]
 fig.layout.xaxis.update(
     tickangle=90,

@@ -1,23 +1,26 @@
 <script lang="ts">
   import DataReadme from '$data/wbm/readme.md'
-  import {
-    arity_hist,
-    hist_wbm_e_form_per_atom as hist_e_form,
-    hist_wbm_hull_dist as hist_hull_dist,
-    spacegroup_sunbursts as sunbursts,
-  } from '$figs'
+  import hist_e_form from '$figs/hist-wbm-e-form-per-atom.json.gz'
+  import hist_hull_dist from '$figs/hist-wbm-hull-dist.json.gz'
+  import arity_hist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz'
+  import sunbursts from '$figs/spacegroup-sunbursts.json.gz'
   import { PtableHeatmap } from '$lib'
   import { dashed, floating_label, labeled_vline } from '$lib/fig-helpers'
   import type { ElementSymbol } from 'matterviz'
   import { ColorScaleSelect, Icon } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { BarPlot, Sunburst } from 'matterviz/plot'
+  import { BarPlot, sunburst_from_labels_parents, Sunburst } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
   import { tooltip } from 'svelte-multiselect/attachments'
   import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './[slug]/MpTrjNSitesHist.svelte'
   import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
+
+  // build the SunburstNode tree from the flat plotly arrays at render time (smaller
+  // payload than shipping a pre-nested tree; matterviz handles duplicate ids)
+  const build_sunburst = (sb: typeof sunbursts.mp) =>
+    sunburst_from_labels_parents(sb.labels, sb.parents, sb.values, { ids: sb.ids })
 
   const { mean, std } = hist_hull_dist
   const hull_dist_refs = [
@@ -145,8 +148,8 @@
 
   {#snippet spacegroup_sunbursts()}
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2em">
-      <Sunburst data={sunbursts.mp} value_mode="total" show_controls={false} style="height: 420px" />
-      <Sunburst data={sunbursts.wbm} value_mode="total" show_controls={false} style="height: 420px" />
+      <Sunburst data={build_sunburst(sunbursts.mp)} value_mode="total" show_controls={false} style="height: 420px" />
+      <Sunburst data={build_sunburst(sunbursts.wbm)} value_mode="total" show_controls={false} style="height: 420px" />
     </div>
   {/snippet}
 </DataReadme>

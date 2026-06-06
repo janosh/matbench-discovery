@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { mp_trj_hists } from '$figs'
+  import mp_trj_hists from '$figs/mp-trj-hists.json.gz'
   import { BarPlot } from 'matterviz/plot'
   import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './MpTrjNSitesHist.svelte'

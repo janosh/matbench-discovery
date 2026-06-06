@@ -1,11 +1,9 @@
 <script lang="ts">
-  import {
-    box_hull_dist_errors as box_data,
-    cumulative_precision_recall as cum_pr,
-    hist_clf_pred_hull_dist as hist_clf,
-    roc_models as roc,
-    rolling_mae_vs_hull_dist as rolling_mae,
-  } from '$figs'
+  import box_data from '$figs/box-hull-dist-errors.json.gz'
+  import cum_pr from '$figs/cumulative-precision-recall.json.gz'
+  import hist_clf from '$figs/hist-clf-pred-hull-dist.json.gz'
+  import roc from '$figs/roc-models.json.gz'
+  import rolling_mae from '$figs/rolling-mae-vs-hull-dist.json.gz'
   import { dashed, labeled_vline, wide_legend } from '$lib/fig-helpers'
   import { BarPlot, BoxPlot, PlotLegend, ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, FillRegion, LegendItem } from 'matterviz/plot'

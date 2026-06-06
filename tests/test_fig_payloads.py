@@ -1,8 +1,8 @@
 """Shape guard for the committed data-only figure payloads in site/src/figs.
 
-The Svelte pages cast these payloads to the interfaces in site/src/lib/fig-types.ts
-at build time, so shape drift between the Python exporters and the site only
-surfaces as broken figures. These tests mirror fig-types.ts and fail fast instead.
+The Svelte pages type these payloads via the ambient module declarations in
+site/src/figs/payloads.d.ts, so shape drift between the Python exporters and the site
+only surfaces as broken figures. These tests mirror payloads.d.ts and fail fast.
 """
 
 from __future__ import annotations
@@ -148,12 +148,15 @@ def check_hist_wbm_hull_dist() -> None:
 def check_spacegroup_sunbursts() -> None:
     payload = load_payload("spacegroup-sunbursts")
     for key in ("mp", "wbm"):
-        roots = payload[key]
-        assert len(roots) >= 6  # crystal systems
-        for node in roots:
-            assert node["label"]
-            assert node["value"] > 0
-            assert isinstance(node["children"], list)
+        sunburst = payload[key]
+        labels, parents = sunburst["labels"], sunburst["parents"]
+        values, ids = sunburst["values"], sunburst["ids"]
+        n_nodes = len(labels)
+        assert len(parents) == len(values) == len(ids) == n_nodes > 0
+        assert parents.count("") >= 6  # the 7 crystal systems are the root nodes
+        assert all(labels)
+        assert all(val > 0 for val in values)
+        assert len(set(ids)) == n_nodes  # ids unique
 
 
 def check_arity_hist() -> None:
@@ -187,12 +190,15 @@ def check_element_counts() -> None:
 
 def check_spg_sankeys() -> None:
     for model in assert_models(load_payload("spg-sankeys"), "key"):
-        nodes, links = model["nodes"], model["links"]
-        assert all(node["label"] for node in nodes)
-        for link in links:
-            assert 0 <= link["source"] < len(nodes)
-            assert 0 <= link["target"] < len(nodes)
-            assert link["value"] > 0
+        labels = model["labels"]
+        source, target, value = model["source"], model["target"], model["value"]
+        n_links = len(source)
+        assert len(target) == len(value) == n_links > 0
+        assert all(labels)
+        for idx in range(n_links):
+            assert 0 <= source[idx] < len(labels)
+            assert 0 <= target[idx] < len(labels)
+            assert value[idx] > 0
 
 
 def check_xy_models(name: str, *stat_keys: str) -> None:

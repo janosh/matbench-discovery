@@ -1,12 +1,10 @@
 <script lang="ts">
-  import {
-    spg_sankeys,
-    struct_rmsd_cdf,
-    sym_ops_diff_bar as sym_ops_diff,
-  } from '$figs'
+  import spg_sankeys from '$figs/spg-sankeys.json.gz'
+  import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.json.gz'
+  import sym_ops_diff from '$figs/sym-ops-diff-bar.json.gz'
   import { GeoOptMetricsTable, MODELS } from '$lib'
   import { format_num } from 'matterviz'
-  import { BarPlot, Sankey, ScatterPlot } from 'matterviz/plot'
+  import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
 
   const n_min_relaxed_structures: number = MODELS.reduce((acc, model) => {
@@ -56,11 +54,11 @@
 </GeoOptReadme>
 
 <ul>
-  {#each spg_sankeys.models as { key, label, nodes, links } (key)}
+  {#each spg_sankeys.models as { key, label, labels, source, target, value } (key)}
     <li>
       <h3>{label}</h3>
       <Sankey
-        data={{ nodes, links }}
+        data={sankey_from_links(source, target, value, labels)}
         show_controls={false}
         style="height: 300px; width: 100%"
       />

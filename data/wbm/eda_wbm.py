@@ -343,7 +343,7 @@ fig = pmv.spacegroup_sunburst(
 fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
-wbm_sunburst_roots = figs.sunburst_tree(fig)
+wbm_sunburst = figs.sunburst_data(fig)
 pmv.save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
 
 
@@ -356,7 +356,7 @@ fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
 figs.write_json_gz(
     f"{SITE_FIG_DATA}/spacegroup-sunbursts.json.gz",
-    {"mp": figs.sunburst_tree(fig), "wbm": wbm_sunburst_roots},
+    {"mp": figs.sunburst_data(fig), "wbm": wbm_sunburst},
 )
 pmv.save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-mp.pdf")
 # would be good to have consistent order of crystal systems between sunbursts but not

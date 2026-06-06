@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { element_counts_mp_vs_wbm as elem_counts_bar } from '$figs'
+  import elem_counts_bar from '$figs/element-counts-mp-vs-wbm.json.gz'
   import { PtableInset } from '$lib'
   import type { ChemicalElement } from 'matterviz'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'

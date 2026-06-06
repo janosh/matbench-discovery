@@ -12,21 +12,18 @@ import type { Plugin } from 'vite'
 import { defineConfig } from 'vite-plus'
 
 // Import the committed .json.gz figure payloads (site/src/figs, written by
-// matbench_discovery analysis scripts) as parsed ES modules; typed once in
-// src/figs/index.ts. Embedding as JSON.parse('...') keeps V8 parse cost low.
+// matbench_discovery analysis scripts) as parsed ES modules; typed per payload in
+// src/figs/payloads.d.ts. Embedding as JSON.parse('...') keeps V8 parse cost low.
 const json_gz_plugin = (): Plugin => ({
   name: `json-gz`,
   load(id) {
     const file = id.split(`?`)[0]
     if (!file.endsWith(`.json.gz`)) return null
     const json = zlib.gunzipSync(fs.readFileSync(file)).toString(`utf8`)
-    // the pure annotation in the emitted code below lets tree-shaking drop payloads a
-    // route doesn't use, so the typed re-exports in src/figs/index.ts don't bloat
-    // unrelated route chunks
-    return {
-      code: `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(json)})`,
-      map: null,
-    }
+    // the pure annotation lets tree-shaking drop a payload from any chunk that ends up
+    // importing but not using it
+    const code = `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(json)})`
+    return { code, map: null }
   },
 })
 

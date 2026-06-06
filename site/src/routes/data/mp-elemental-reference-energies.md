@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { mp_elemental_ref_energies as ref_energies } from '$figs'
+  import ref_energies from '$figs/mp-elemental-ref-energies.json.gz'
   import { ScatterPlot } from 'matterviz/plot'
 </script>
 

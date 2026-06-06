@@ -86,14 +86,9 @@ shared_x: list[float] | None = None
 for trace in fig.data:
     if trace.name not in model_names:
         continue
-    x_arr, y_arr = figs.trace_xy(trace)
     if shared_x is None:
-        shared_x = figs.round_list(x_arr)
-    entry: dict[str, object] = {
-        "label": trace.name,
-        "color": figs.trace_color(trace),
-        "y": figs.round_list(y_arr),
-    }
+        shared_x = figs.round_list(figs.trace_xy(trace)[0])
+    entry = figs.trace_payload(trace, x=False)
     if not figs.trace_visible(trace):
         entry["visible"] = False
     rolling_models.append(entry)

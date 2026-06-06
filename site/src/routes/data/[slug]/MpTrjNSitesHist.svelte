@@ -1,7 +1,7 @@
 <script lang="ts">
   // MPtrj sites-per-structure histogram with cumulative-share line on a secondary
   // axis; shared by the /data overview page and the MPtrj dataset page
-  import { mp_trj_hists } from '$figs'
+  import mp_trj_hists from '$figs/mp-trj-hists.json.gz'
   import { dashed } from '$lib/fig-helpers'
   import { BarPlot } from 'matterviz/plot'
 

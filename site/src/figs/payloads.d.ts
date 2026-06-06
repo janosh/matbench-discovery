@@ -1,9 +1,9 @@
 // Types for the data-only figure payloads in this directory (written by
 // matbench_discovery analysis scripts as gzipped JSON, decompressed at build time by
 // the json_gz plugin in vite.config.ts). One exact ambient declaration per payload —
-// these take precedence over the generic '*.json.gz' fallback in app.d.ts, so both
-// the re-export barrel (index.ts) and any direct import get full types with zero
-// runtime indirection. This file must stay import/export-free at the top level so the
+// these take precedence over the generic '*.json.gz' fallback in app.d.ts, so each
+// `import data from '$figs/<name>.json.gz'` is fully typed with zero runtime
+// indirection. This file must stay import/export-free at the top level so the
 // helper interfaces below are global and the module declarations stay ambient.
 
 interface XY<TX = number> {
@@ -122,9 +122,14 @@ declare module '$figs/hist-wbm-hull-dist.json.gz' {
 }
 
 declare module '$figs/spacegroup-sunbursts.json.gz' {
-  import type { SunburstNode } from 'matterviz/plot'
-
-  const data: { mp: SunburstNode[]; wbm: SunburstNode[] }
+  // flat plotly sunburst arrays; matterviz sunburst_from_labels_parents nests them
+  interface SunburstArrays {
+    labels: string[]
+    parents: string[]
+    values: number[]
+    ids: string[]
+  }
+  const data: { mp: SunburstArrays; wbm: SunburstArrays }
   export default data
 }
 
@@ -173,15 +178,16 @@ declare module '$figs/sym-ops-diff-bar.json.gz' {
 }
 
 declare module '$figs/spg-sankeys.json.gz' {
-  import type { SankeyData } from 'matterviz/plot'
-
-  // DFT vs model spacegroup flows (symprec=1e-5); key matches MODELS model_key
+  // DFT vs model spacegroup flows (symprec=1e-5); key matches MODELS model_key. flat
+  // arrays; matterviz sankey_from_links(source, target, value, labels) builds the graph
   const data: {
     models: {
       key: string
       label: string
-      nodes: SankeyData[`nodes`]
-      links: SankeyData[`links`]
+      labels: string[]
+      source: number[]
+      target: number[]
+      value: number[]
     }[]
   }
   export default data

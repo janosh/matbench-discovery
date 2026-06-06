@@ -66,21 +66,6 @@ def test_lttb_keeps_endpoints_and_count() -> None:
     assert ds_y[-1] == y[-1]
 
 
-def test_downsample_points_is_seeded_and_capped() -> None:
-    """downsample_points caps the point count deterministically."""
-    rng = np.random.default_rng(seed=42)
-    x, y = rng.random(500), rng.random(500)
-    ds_x1, ds_y1 = figs.downsample_points(x, y, 100)
-    ds_x2, ds_y2 = figs.downsample_points(x, y, 100)
-    assert len(ds_x1) == len(ds_y1) == 100
-    np.testing.assert_array_equal(ds_x1, ds_x2)
-    np.testing.assert_array_equal(ds_y1, ds_y2)
-    # no-op when already under the cap
-    same_x, same_y = figs.downsample_points(x, y, 1000)
-    assert same_x is x
-    assert same_y is y
-
-
 def test_histogram_bins_raw_values() -> None:
     """histogram returns bin centers, integer counts and bar width, dropping NaNs."""
     values = [0.0, 0.1, 0.1, 0.9, float("nan")]
@@ -93,8 +78,9 @@ def test_histogram_bins_raw_values() -> None:
 
 
 def test_trace_helpers_extract_xy_color_visibility() -> None:
-    """trace_xy/trace_color/trace_visible read plotly trace objects."""
+    """trace_xy/trace_color/trace_visible/trace_payload read plotly trace objects."""
     trace = go.Scatter(
+        name="demo",
         x=[1, 2, 3],
         y=[4.0, 5.0, 6.0],
         line=dict(color="#123456"),
@@ -105,14 +91,20 @@ def test_trace_helpers_extract_xy_color_visibility() -> None:
     np.testing.assert_array_equal(y, [4.0, 5.0, 6.0])
     assert figs.trace_color(trace) == "#123456"
     assert figs.trace_visible(trace) is False
+    assert figs.trace_payload(trace, x=False) == {
+        "label": "demo",
+        "color": "#123456",
+        "y": [4.0, 5.0, 6.0],
+    }
+    assert figs.trace_payload(trace)["x"] == [1, 2, 3]
 
     bar = go.Bar(x=[1], y=[2], marker=dict(color="#abcdef"))
     assert figs.trace_color(bar) == "#abcdef"
     assert figs.trace_visible(bar) is True
 
 
-def test_sunburst_tree_builds_hierarchy() -> None:
-    """sunburst_tree nests flat labels/parents/values into matterviz SunburstNodes."""
+def test_sunburst_data_extracts_flat_arrays() -> None:
+    """sunburst_data returns the flat labels/parents/values/ids arrays unchanged."""
     fig = go.Figure(
         go.Sunburst(
             ids=["cubic", "cubic/225", "cubic/221", "hexagonal"],
@@ -122,44 +114,39 @@ def test_sunburst_tree_builds_hierarchy() -> None:
             branchvalues="total",
         )
     )
-    roots = figs.sunburst_tree(fig)
-    assert [node["label"] for node in roots] == ["cubic", "hexagonal"]
-    cubic = roots[0]
-    assert cubic["value"] == 10
-    assert [child["label"] for child in cubic["children"]] == ["225", "221"]
-    assert all(child["children"] == [] for child in cubic["children"])
-
-
-def test_sunburst_tree_requires_sunburst_trace() -> None:
-    """sunburst_tree raises on figures without a sunburst trace."""
-    with pytest.raises(ValueError, match="no sunburst trace"):
-        figs.sunburst_tree(go.Figure(go.Scatter(x=[1], y=[2])))
+    result = figs.sunburst_data(fig)
+    assert result == {
+        "labels": ["cubic", "225", "221", "hexagonal"],
+        "parents": ["", "cubic", "cubic", ""],
+        "values": [10, 6, 4, 5],
+        "ids": ["cubic", "cubic/225", "cubic/221", "hexagonal"],
+    }
 
 
 def test_sankey_data_from_sankey_trace() -> None:
-    """sankey_data extracts node labels/colors and integer-indexed links."""
+    """sankey_data extracts node labels and flat link source/target/value arrays."""
     fig = go.Figure(
         go.Sankey(
-            node=dict(label=["A", "B", "C"], color=["red", "green", "blue"]),
+            node=dict(label=["A", "B", "C"]),
             link=dict(source=[0, 1], target=[2, 2], value=[3.0, 4.0]),
         )
     )
-    result = figs.sankey_data(fig)
-    assert result["nodes"] == [
-        {"label": "A", "color": "red"},
-        {"label": "B", "color": "green"},
-        {"label": "C", "color": "blue"},
-    ]
-    assert result["links"] == [
-        {"source": 0, "target": 2, "value": 3.0},
-        {"source": 1, "target": 2, "value": 4.0},
-    ]
+    assert figs.sankey_data(fig) == {
+        "labels": ["A", "B", "C"],
+        "source": [0, 1],
+        "target": [2, 2],
+        "value": [3.0, 4.0],
+    }
 
 
-def test_sankey_data_requires_sankey_trace() -> None:
-    """sankey_data raises on figures without a sankey trace."""
-    with pytest.raises(ValueError, match="no sankey trace"):
-        figs.sankey_data(go.Figure(go.Scatter(x=[1], y=[2])))
+@pytest.mark.parametrize(
+    ("converter", "trace_type"),
+    [(figs.sunburst_data, "sunburst"), (figs.sankey_data, "sankey")],
+)
+def test_converters_require_matching_trace(converter: Any, trace_type: str) -> None:
+    """sunburst_data/sankey_data raise on figures without their trace type."""
+    with pytest.raises(ValueError, match=f"no {trace_type} trace"):
+        converter(go.Figure(go.Scatter(x=[1], y=[2])))
 
 
 def test_write_json_gz_roundtrip(tmp_path: Any) -> None:

@@ -112,13 +112,7 @@ for normalized in (False, True):
     fig.update_traces(width=0.9)  # wider bars, smaller inter-bar gaps
     fig.show()
     elem_counts_payload["normalized" if normalized else "raw"] = [
-        {
-            "label": trace.name,
-            "color": figs.trace_color(trace),
-            "x": figs.round_list(trace.x),
-            "y": figs.round_list(trace.y),
-        }
-        for trace in fig.data
+        figs.trace_payload(trace) for trace in fig.data
     ]
 
 figs.write_json_gz(
@@ -174,23 +168,13 @@ fig.layout.title.update(xanchor="center", x=0.5)
 fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title="")
 fig.show()
 
-elem_prev_models = []
-for trace in fig.data:
-    x_arr, y_arr = figs.trace_xy(trace)
-    elem_prev_models.append(
-        {
-            "label": trace.name,
-            "color": figs.trace_color(trace),
-            "y": figs.round_list(y_arr),
-        }
-    )
 figs.write_json_gz(
     f"{SITE_FIG_DATA}/element-prevalence-vs-error.json.gz",
     {
         # element symbols + x (occurrence count per element) shared across models
         "elements": [str(symbol) for symbol in df_elem_err.index],
         "occurrences": figs.round_list(fig.data[0].x),
-        "models": elem_prev_models,
+        "models": [figs.trace_payload(trace, x=False) for trace in fig.data],
     },
 )
 
