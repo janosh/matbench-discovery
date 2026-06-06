@@ -117,7 +117,7 @@ def histogram(
     counts, edges = np.histogram(arr, bins=bins, range=value_range)
     return {
         "x": round_list((edges[:-1] + edges[1:]) / 2),
-        "y": [int(count) for count in counts],
+        "y": counts.tolist(),  # np.histogram counts are already int64
         "bar_width": round(float(edges[1] - edges[0]), 6),
     }
 
@@ -203,8 +203,8 @@ def sankey_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
     if not labels or sources is None or targets is None or len(sources) == 0:
         raise ValueError("sankey trace has no nodes or links")
     # link indices are ints; round_list would map a non-finite to None -> int(None)
-    src_idx = [int(src) for src in sources]
-    tgt_idx = [int(tgt) for tgt in targets]
+    src_idx = np.asarray(sources, dtype=int).tolist()
+    tgt_idx = np.asarray(targets, dtype=int).tolist()
     # drop nodes no link references (plotly keeps many unused spacegroup nodes whose
     # crammed labels overlap) and reindex the links onto the kept nodes
     used = sorted({*src_idx, *tgt_idx})

@@ -46,11 +46,12 @@ def test_decode_array(value: Any, expected: list[float] | None) -> None:
         ([1.23456789, 2.0], [1.23457, 2.0]),
         ([1.0, float("nan"), float("inf")], [1.0, None, None]),
         (["Fe", "Co"], ["Fe", "Co"]),
+        (None, []),  # None -> [] so a missing trace field stays JSON-serializable
     ],
 )
-def test_round_list(values: list[Any], expected: list[Any]) -> None:
+def test_round_list(values: list[Any] | None, expected: list[Any]) -> None:
     """round_list rounds floats, nulls non-finite values, keeps ints/strings."""
-    assert figs.round_list(np.asarray(values)) == expected
+    assert figs.round_list(values) == expected
 
 
 def test_lttb_keeps_endpoints_and_count() -> None:

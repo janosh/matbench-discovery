@@ -2,7 +2,7 @@
   // MPtrj sites-per-structure histogram with cumulative-share line on a secondary
   // axis; shared by the /data overview page and the MPtrj dataset page
   import mp_trj_hists from '$figs/mp-trj-hists.json.gz'
-  import { dashed } from '$lib/fig-helpers'
+  import { dashed, plotly_blue } from '$lib/fig-helpers'
   import { BarPlot } from 'matterviz/plot'
 
   let { style = `height: 320px` }: { style?: string } = $props()
@@ -14,7 +14,7 @@
 
 <BarPlot
   series={[
-    { ...n_sites, label: `Number of Structures`, color: `#636efa` },
+    { ...n_sites, label: `Number of Structures`, color: plotly_blue },
     {
       x: n_sites.x,
       y: n_sites.cumulative,

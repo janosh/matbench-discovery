@@ -3,6 +3,11 @@ import type { LegendConfig, RefLine } from 'matterviz/plot'
 
 export const dashed = { dash: `4`, width: 1 }
 
+// plotly's first two qualitative colors, reused as the default series colors across the
+// data/model histograms (blue = primary/stable series, red = secondary/unstable series)
+export const plotly_blue = `#636efa`
+export const plotly_red = `#ef553b`
+
 // Long legends (many series) overlap the data when floated inside the plot, so render them
 // as a full-width row of content-sized items below it. flex-wrap sizes each item to its
 // label and wraps, avoiding the cross-column overlap a fixed-width grid causes. matterviz

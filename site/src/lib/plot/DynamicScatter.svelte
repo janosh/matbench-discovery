@@ -3,9 +3,9 @@
   import type { ModelData } from '$lib'
   import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
-  import { format_num } from 'matterviz'
+  import { format_num, ScatterPlot } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { ColorScaleSelect, create_color_scale, ScatterPlot } from 'matterviz/plot'
+  import { ColorScaleSelect, create_color_scale, DEFAULT_SERIES_SYMBOLS } from 'matterviz/plot'
   import type { DataSeries } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
@@ -172,16 +172,20 @@
   }
 
   // One series per model so matterviz's built-in legend can toggle models individually and
-  // auto-assign a distinct marker shape per series. point_style.fill makes the legend swatch
-  // match the color-bar color; the point itself is colored via color_values.
+  // give each a distinct marker shape. point_style.fill makes the legend swatch match the
+  // color-bar color; the point itself is colored via color_values. Cycle only the shapes
+  // matterviz's PlotLegend can draw so every legend swatch is visible.
   let series: DataSeries<PointMetadata>[] = $derived(
-    plot_data.map((item) => ({
+    plot_data.map((item, idx) => ({
       x: [item.x as number],
       y: [item.y as number],
       label: item.metadata.model_name,
       markers: `points` as const,
       metadata: [item.metadata],
-      point_style: { fill: point_fill(item.color_value) },
+      point_style: {
+        fill: point_fill(item.color_value),
+        symbol_type: DEFAULT_SERIES_SYMBOLS[idx % DEFAULT_SERIES_SYMBOLS.length],
+      },
       color_values: point_color === null ? [item.color_value as number] : undefined,
       size_values: axes.size_value ? [item.size_value as number] : undefined,
       point_label: show_model_labels
@@ -224,7 +228,7 @@
 
   <ScatterPlot
     style="height: 600px"
-    series={series}
+    bind:series
     legend={wide_legend}
     x_axis={{
       label: axes.x?.label,

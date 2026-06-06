@@ -260,7 +260,7 @@ for idx, (model, std) in enumerate(models_by_std, start=1):
             "label": str(model),
             "sigma": float(f"{std:.3g}"),
             "x": figs.round_list(value_counts.index),
-            "y": [int(val) for val in value_counts.to_numpy()],
+            "y": value_counts.tolist(),
         }
     )
 

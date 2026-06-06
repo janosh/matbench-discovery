@@ -3,7 +3,7 @@
   import hist_largest from '$figs/hist-largest-each-errors-fp-diff.json.gz'
   import each_errors from '$figs/scatter-largest-each-errors-fp-diff.json.gz'
   import fp_diff from '$figs/scatter-largest-fp-diff-each-error.json.gz'
-  import { dashed, wide_legend } from '$lib/fig-helpers'
+  import { dashed, plotly_blue, plotly_red, wide_legend } from '$lib/fig-helpers'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
   import DiscoveryMetricFigs from './discovery-metric-figs.md'
@@ -177,8 +177,8 @@ for each model and the mean of all models.
 </label>
 <BarPlot
   series={[
-    { ...hist_largest_active.err_min, label: `err<sub>min</sub>`, color: `#636efa` },
-    { ...hist_largest_active.err_max, label: `err<sub>max</sub>`, color: `#ef553b` },
+    { ...hist_largest_active.err_min, label: `err<sub>min</sub>`, color: plotly_blue },
+    { ...hist_largest_active.err_max, label: `err<sub>max</sub>`, color: plotly_red },
   ]}
   mode="overlay"
   x_axis={{ label: fp_diff_label, range: [0, null] }}

@@ -453,7 +453,7 @@ mp_trj_hists = {
     "magmoms": figs.histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300),
     "n-sites": {
         "x": figs.round_list(df_n_sites[Key.n_sites]),
-        "y": [int(val) for val in df_n_sites[n_struct_col]],
+        "y": df_n_sites[n_struct_col].tolist(),
         "bar_width": int(bin_width),
         "cumulative": figs.round_list(
             df_n_sites[n_struct_col].cumsum() / df_n_sites[n_struct_col].sum()

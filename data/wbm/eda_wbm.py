@@ -228,11 +228,11 @@ if e_col == MbdKey.each_true:  # only the hull-dist variant is shown on the site
             "bar_width": round(float(bins[1] - bins[0]), 6),
             "stable": {
                 "x": figs.round_list(bins[bins < 0]),
-                "y": [int(val) for val in left_counts],
+                "y": left_counts.tolist(),
             },
             "unstable": {
                 "x": figs.round_list(bins[bins >= 0]),
-                "y": [int(val) for val in right_counts],
+                "y": right_counts.tolist(),
             },
             "mean": round(float(mean), 5),
             "std": round(float(std), 5),

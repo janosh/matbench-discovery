@@ -495,7 +495,7 @@ figs.write_json_gz(
     f"{SITE_FIG_DATA}/{img_name}.json.gz",
     {
         "x": figs.round_list(e_form_bins[:-1]),
-        "y": [int(val) for val in e_form_hist],
+        "y": e_form_hist.tolist(),
         "bar_width": round(float(e_form_bins[1] - e_form_bins[0]), 6),
     },
 )

@@ -5,7 +5,7 @@
   import arity_hist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz'
   import sunbursts from '$figs/spacegroup-sunbursts.json.gz'
   import { PtableHeatmap } from '$lib'
-  import { dashed, floating_label, labeled_vline } from '$lib/fig-helpers'
+  import { dashed, floating_label, labeled_vline, plotly_blue, plotly_red } from '$lib/fig-helpers'
   import type { ElementSymbol } from 'matterviz'
   import { ColorScaleSelect, Icon } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -27,8 +27,8 @@
     labeled_vline(mean - std, `mean - std = ${(mean - std).toFixed(2)}`),
     labeled_vline(mean, `mean = ${mean.toFixed(2)}`),
     labeled_vline(mean + std, `mean + std = ${(mean + std).toFixed(2)}`),
-    floating_label(mean - std, `stable`, `#636efa`),
-    floating_label(mean + std, `unstable`, `#ef553b`),
+    floating_label(mean - std, `stable`, plotly_blue),
+    floating_label(mean + std, `unstable`, plotly_red),
   ]
   const elem_counts = import.meta.glob<Record<ElementSymbol, number>>(
     `./*-element-counts-by-{occurrence,composition}*.json`,
@@ -69,7 +69,7 @@
 <DataReadme>
   {#snippet hist_e_form_per_atom()}
     <BarPlot
-      series={[{ ...hist_e_form, color: `#636efa` }]}
+      series={[{ ...hist_e_form, color: plotly_blue }]}
       x_axis={{ label: `WBM uncorrected formation energy (eV/atom)` }}
       y_axis={{ label: `Number of Structures`, scale_type: `arcsinh` }}
       ref_lines={[
@@ -135,8 +135,8 @@
   {#snippet hist_wbm_hull_dist()}
     <BarPlot
       series={[
-        { ...hist_hull_dist.stable, bar_width: hist_hull_dist.bar_width, color: `#636efa` },
-        { ...hist_hull_dist.unstable, bar_width: hist_hull_dist.bar_width, color: `#ef553b` },
+        { ...hist_hull_dist.stable, bar_width: hist_hull_dist.bar_width, color: plotly_blue },
+        { ...hist_hull_dist.unstable, bar_width: hist_hull_dist.bar_width, color: plotly_red },
       ]}
       x_axis={{ label: `WBM energy above MP convex hull (eV/atom)` }}
       y_axis={{ label: `Number of Structures`, format: `~s` }}

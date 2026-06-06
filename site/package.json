@@ -35,6 +35,7 @@
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
     "d3-scale-chromatic": "^3.1.0",
+    "dompurify": "3.4.7",
     "happy-dom": "^20.10.1",
     "js-yaml": "^4.2.0",
     "json-schema-to-typescript": "^15.0.4",
@@ -56,11 +57,6 @@
     "vitest": "^4.1.8"
   },
   "packageManager": "pnpm@11.5.0",
-  "pnpm": {
-    "overrides": {
-      "dompurify": "3.4.7"
-    }
-  },
   "author-url": "https://janosh.dev",
   "doi": "https://doi.org/10.1038/s42256-025-01055-1",
   "github-pages": "https://janosh.github.io/matbench-discovery",

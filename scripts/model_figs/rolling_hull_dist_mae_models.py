@@ -100,7 +100,7 @@ figs.write_json_gz(
         # rolling count of test-set structures per hull-dist bin (drawn on y2)
         "density": {
             "x": figs.round_list((bins[:-1] + bins[1:]) / 2),
-            "y": [int(count) for count in counts],
+            "y": counts.tolist(),
         },
     },
 )
