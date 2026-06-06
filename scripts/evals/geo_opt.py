@@ -24,7 +24,7 @@ from plotly.subplots import make_subplots
 from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, today
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIG_DATA, figs, today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.metrics import geo_opt
@@ -85,6 +85,7 @@ models = df_geo_metrics.index
 # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
 n_pairs_to_plot = 10
 df_spg = df_all.xs(Key.spg_num, level=metric_lvl, axis="columns").convert_dtypes()
+spg_sankey_models: list[dict[str, object]] = []
 for model_label in {*df_spg} - {Key.dft.label}:
     # get most common pairs of DFT/Model spacegroups
     model = Model.from_label(model_label)
@@ -104,8 +105,16 @@ for model_label in {*df_spg} - {Key.dft.label}:
         [Key.dft.label, model_label],
     )
     fig.show()
-    pmv.save_fig(fig, f"{SITE_FIGS}/spg-sankey-{model.key}-{symprec=}.svelte")
+    spg_sankey_models.append(
+        {"key": model.key, "label": model.label, **figs.sankey_data(fig)}
+    )
     pmv.save_fig(fig, f"{PDF_FIGS}/spg-sankey-{model.key}-{symprec=}.pdf")
+
+# one combined payload for all models (loop order is a set -> sort for determinism)
+spg_sankey_models.sort(key=lambda entry: str(entry["key"]).lower())
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/spg-sankeys.json.gz", {"models": spg_sankey_models}
+)
 
 
 # %%
@@ -158,7 +167,7 @@ for model, srs_rmsd in df_all.xs(
 fig_rmsd.layout.height = len(fig_rmsd.data) * 100
 fig_rmsd.layout.showlegend = False
 
-# pmv.save_fig(fig_rmsd, f"{SITE_FIGS}/{today}-rmsd-violin.pdf")
+# pmv.save_fig(fig_rmsd, f"{PDF_FIGS}/{today}-rmsd-violin.pdf")
 
 title = "RMSD of ML-relaxed structures vs DFT-relaxed structures"
 fig_rmsd.layout.title = dict(text=title, x=0.5)
@@ -189,7 +198,7 @@ fig_sym.layout.height = 600
 fig_sym.update_traces(orientation="h", side="positive", width=1.8)
 
 fig_sym.show()
-pmv.save_fig(fig_sym, f"{SITE_FIGS}/{today}-sym-violin-{symprec=}.pdf")
+pmv.save_fig(fig_sym, f"{PDF_FIGS}/{today}-sym-violin-{symprec=}.pdf")
 
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures
@@ -205,7 +214,7 @@ fig_sym_ops.layout.margin.t = 50
 fig_sym_ops.layout.height = 600
 fig_sym_ops.update_traces(orientation="h", side="positive", width=1.8)
 fig_sym_ops.show()
-pmv.save_fig(fig_sym_ops, f"{SITE_FIGS}/{today}-sym-ops-violin-{symprec=}.pdf")
+pmv.save_fig(fig_sym_ops, f"{PDF_FIGS}/{today}-sym-ops-violin-{symprec=}.pdf")
 
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures vs DFT
@@ -225,9 +234,6 @@ fig_sym_ops_diff.layout.margin.t = 50
 fig_sym_ops_diff.update_traces(orientation="h", side="positive", width=1.8)
 
 fig_sym_ops_diff.show()
-pmv.save_fig(
-    fig_sym_ops_diff, f"{SITE_FIGS}/{today}-sym-ops-diff-violin-{symprec=}.svelte"
-)
 
 
 # %% bar plot of number of symmetry operations in ML-relaxed structures vs DFT
@@ -248,8 +254,17 @@ fig_sym_ops_diff = make_subplots(
 )
 
 
-for idx, (model, _std) in enumerate(models_by_std, start=1):
+sym_ops_models: list[dict[str, object]] = []
+for idx, (model, std) in enumerate(models_by_std, start=1):
     value_counts = df_sym_ops_diff[model].value_counts()
+    sym_ops_models.append(
+        {
+            "label": str(model),
+            "sigma": float(f"{std:.3g}"),
+            "x": figs.round_list(value_counts.index),
+            "y": [int(val) for val in value_counts.to_numpy()],
+        }
+    )
 
     # Create color scale based on count values
     max_height_diff = value_counts.to_numpy().max() - value_counts.to_numpy().min()
@@ -278,7 +293,9 @@ fig_sym_ops_diff.update_xaxes(nticks=10, showticklabels=True)
 # log transform y-axis
 fig_sym_ops_diff.update_yaxes(type="log")
 fig_sym_ops_diff.layout.margin.t = 25
-pmv.save_fig(fig_sym_ops_diff, f"{SITE_FIGS}/sym-ops-diff-bar-{symprec=}.svelte")
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/sym-ops-diff-bar.json.gz", {"models": sym_ops_models}
+)
 
 title = "Difference in number of symmetry operations of ML vs DFT-relaxed structures"
 fig_sym_ops_diff.layout.title = dict(text=title, x=0.5)
@@ -302,6 +319,7 @@ display(
 fig_rmsd_cdf = go.Figure()
 x_max = 0.05
 
+rmsd_cdf_models: list[dict[str, object]] = []
 # Calculate and plot CDF for each model
 for model in models:
     rmsd_vals = df_all.xs(
@@ -325,6 +343,14 @@ for model in models:
             sampled_rmsds[sampled_rmsds <= x_max],
         )
     ) / x_max
+    rmsd_cdf_models.append(
+        {
+            "label": str(model),
+            "auc": float(f"{AUC:.3g}"),
+            "x": figs.round_list(sampled_rmsds),
+            "y": figs.round_list(sampled_cumulative),
+        }
+    )
     # Add CDF line for this model
     fig_rmsd_cdf.add_scatter(
         x=sampled_rmsds,
@@ -346,7 +372,10 @@ fig_rmsd_cdf.layout.xaxis.update(title="RMSD (unitless)", range=[0, x_max])
 fig_rmsd_cdf.layout.yaxis.update(title="Cumulative", tickformat=".0%", range=[0, 1])
 fig_rmsd_cdf.layout.legend = dict(y=0, xanchor="right", x=1)
 
-pmv.save_fig(fig_rmsd_cdf, f"{SITE_FIGS}/struct-rmsd-cdf-models.svelte")
+rmsd_cdf_models.sort(key=lambda entry: -entry["auc"])  # type: ignore[arg-type, return-value]
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/struct-rmsd-cdf.json.gz", {"models": rmsd_cdf_models}
+)
 
 title = "Cumulative Distribution of RMSD vs DFT-relaxed structures"
 fig_rmsd_cdf.layout.title = dict(text=title, x=0.5)

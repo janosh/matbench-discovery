@@ -13,7 +13,7 @@ from pymatgen.core import Composition, Structure
 from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATASETS, df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
@@ -164,7 +164,10 @@ fig = px.bar(
     y=left_counts,
     labels={"x": f"WBM {x_label} (eV/atom)", "y": y_label},
 )
-fig.add_bar(x=bins[bins >= 0], y=right_counts)
+# right-of-0 (unstable) bars in red, matching the "unstable" label color
+fig.add_bar(
+    x=bins[bins >= 0], y=right_counts, marker_color=px.colors.qualitative.Plotly[1]
+)
 fig.update_traces(width=(bins[1] - bins[0]))  # make bars touch
 
 if e_col.startswith("e_above_hull"):
@@ -200,6 +203,7 @@ if e_col.startswith("e_above_hull"):
 
 fig.layout.margin = dict(l=0, r=0, b=0, t=40)
 fig.update_layout(showlegend=False)
+fig.layout.yaxis.tickformat = "s"  # SI y ticks (10k not 10000)
 
 for x_pos, label in (
     (mean, f"{mean = :.2f}"),
@@ -217,7 +221,23 @@ suffix = {
     MbdKey.e_form_raw: "e-form-uncorrected",
 }[e_col]
 img_name = f"hist-wbm-{suffix}"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+if e_col == MbdKey.each_true:  # only the hull-dist variant is shown on the site
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/hist-wbm-hull-dist.json.gz",
+        {
+            "bar_width": round(float(bins[1] - bins[0]), 6),
+            "stable": {
+                "x": figs.round_list(bins[bins < 0]),
+                "y": [int(val) for val in left_counts],
+            },
+            "unstable": {
+                "x": figs.round_list(bins[bins >= 0]),
+                "y": [int(val) for val in right_counts],
+            },
+            "mean": round(float(mean), 5),
+            "std": round(float(std), 5),
+        },
+    )
 # pmv.save_fig(fig, f"./figs/{img_name}.svg", width=800, height=500)
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
 
@@ -246,6 +266,7 @@ fig = df_ref.round(2).plot.scatter(
 )
 fig.update_traces(mode="markers+lines")
 fig.layout.margin = dict(l=0, r=0, t=0, b=0)
+fig.layout.xaxis.rangemode = "tozero"  # start atomic-number axis at 0
 
 # add text annotations showing element symbols
 for symbol, e_per_atom, num, *_ in df_ref.itertuples(index=False):
@@ -253,7 +274,10 @@ for symbol, e_per_atom, num, *_ in df_ref.itertuples(index=False):
 
 fig.show()
 
-pmv.save_fig(fig, f"{SITE_FIGS}/mp-elemental-ref-energies.svelte")
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/mp-elemental-ref-energies.json.gz",
+    {"x": figs.round_list(df_ref[atom_num_col]), "y": figs.round_list(df_ref[e_col])},
+)
 pmv.save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
 
 
@@ -319,7 +343,7 @@ fig = pmv.spacegroup_sunburst(
 fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
-pmv.save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-wbm.svelte")
+wbm_sunburst_roots = figs.sunburst_tree(fig)
 pmv.save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
 
 
@@ -330,7 +354,10 @@ fig = pmv.spacegroup_sunburst(
 fig.layout.title.update(text="MP Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
-pmv.save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-mp.svelte")
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/spacegroup-sunbursts.json.gz",
+    {"mp": figs.sunburst_tree(fig), "wbm": wbm_sunburst_roots},
+)
 pmv.save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-mp.pdf")
 # would be good to have consistent order of crystal systems between sunbursts but not
 # controllable yet
@@ -359,7 +386,6 @@ fig.layout.xaxis.title = "Number of Elements in Formula"
 
 fig.show()
 img_name = "mp-vs-wbm-arity-hist"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 

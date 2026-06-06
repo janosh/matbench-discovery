@@ -8,7 +8,7 @@ import plotly.express as px
 import pymatviz as pmv
 from pymatviz.enums import Key
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -105,5 +105,4 @@ for material_cls, pattern in material_classes.items():
     fig.show()
     img_suffix = "" if show_non_compliant else "-only-compliant"
     img_name = f"scatter-largest-errors-models-mean-vs-true-hull-dist-{material_cls}{img_suffix}"  # noqa: E501
-    pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
     pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)

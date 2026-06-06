@@ -15,7 +15,7 @@ from pymatgen.core.tensors import Tensor
 from pymatviz.enums import ElemCountMode, Key
 from tqdm import tqdm
 
-from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS
+from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIG_DATA, figs
 from matbench_discovery.data import ase_atoms_from_zip, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import DataFiles, MbdKey
@@ -291,7 +291,6 @@ pdf_kwargs = dict(width=500, height=300)
 # pmv.save_fig(
 #     fig, f"{PDF_FIGS}/mp-trj-e-form-hist{'-log' if log else ''}.pdf", **pdf_kwargs
 # )
-# pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
 
 
 # %% plot forces distribution
@@ -302,7 +301,6 @@ fig.update_yaxes(type="log")
 fig.show()
 
 # pmv.save_fig(fig, f"{PDF_FIGS}/mp-trj-forces-hist.pdf", **pdf_kwds)
-# pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-forces-hist.svelte")
 
 
 # %% plot hydrostatic stress distribution
@@ -313,7 +311,6 @@ fig.update_yaxes(type="log")
 fig.show()
 
 # pmv.save_fig(fig, f"{PDF_FIGS}/mp-trj-stresses-hist.pdf", **pdf_kwds)
-# pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-stresses-hist.svelte")
 
 
 # %% plot magmoms distribution
@@ -324,7 +321,6 @@ fig.update_yaxes(type="log")
 fig.show()
 
 # pmv.save_fig(fig, f"{PDF_FIGS}/mp-trj-magmoms-hist.pdf", **pdf_kwds)
-# pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-magmoms-hist.svelte")
 
 
 # %%
@@ -351,7 +347,22 @@ fig.layout.xaxis.title = "Number of Elements in Formula"
 
 fig.show()
 img_name = "mp-vs-mp-trj-vs-wbm-arity-hist"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/{img_name}.json.gz",
+    {
+        "datasets": [
+            {
+                "label": str(key),
+                "color": color,
+                "x": figs.round_list(df_arity.index),
+                "y": figs.round_list(df_arity[key]),
+            }
+            for key, color in zip(
+                df_arity.columns, px.colors.qualitative.Plotly, strict=False
+            )
+        ]
+    },
+)
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 
@@ -368,6 +379,10 @@ log_y = False
 
 # %% plot n_sites distribution
 fig = px.bar(df_n_sites, x=Key.n_sites, y=n_struct_col, log_y=log_y, range_x=(1, 200))
+# SI-format y ticks (80k instead of 80000) so they don't crowd the y-axis title
+fig.layout.yaxis.tickformat = "s"
+# name the bar trace so it gets a legend entry alongside the cumulative line
+fig.data[0].name = n_struct_col
 # add inset plot with log scale
 fig.add_bar(
     x=df_n_sites[Key.n_sites],
@@ -385,7 +400,8 @@ fig.add_scatter(
     x=df_n_sites[Key.n_sites],
     y=df_n_sites[n_struct_col].cumsum() / df_n_sites[n_struct_col].sum(),
     mode="lines",
-    name="Cumulative",
+    # (%) clarifies the line is read on the right percentage axis
+    name="Cumulative (%)",
     xaxis="x3",
     yaxis="y3",
     hovertemplate="x: %{x}<br>y: %{y:.1%}",
@@ -425,10 +441,29 @@ fig.update_layout(yaxis3=dict(showgrid=False, rangemode="tozero"))
 
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.layout.legend.update(x=0.96, y=0.18, xanchor="right", bgcolor="rgba(0,0,0,0)")
+fig.layout.xaxis.rangemode = "tozero"  # start x-axis at 0 (no negative padding)
+# matterviz positions legends via CSS (can't read plotly's paper-coord legend), so
+# pass an explicit style to pin it inside the plot's bottom-right corner
+fig.layout.meta = {
+    "matterviz_legend_style": "left: auto; top: auto; right: 58px; bottom: 92px"
+}
 fig.show()
 
-img_name = "mp-trj-n-sites-hist"
-if log_y:
-    img_name += "-log"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+
+# %% combined MPtrj histogram payload for the site (one file, five targets)
+mp_trj_hists = {
+    "e-form": figs.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300),
+    "forces": figs.histogram(df_mp_trj[Key.forces].explode().explode().abs(), bins=300),
+    "stresses": figs.histogram(df_mp_trj[Key.stress_trace], bins=300),
+    "magmoms": figs.histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300),
+    "n-sites": {
+        "x": figs.round_list(df_n_sites[Key.n_sites]),
+        "y": [int(val) for val in df_n_sites[n_struct_col]],
+        "bar_width": int(bin_width),
+        "cumulative": figs.round_list(
+            df_n_sites[n_struct_col].cumsum() / df_n_sites[n_struct_col].sum()
+        ),
+    },
+}
+figs.write_json_gz(f"{SITE_FIG_DATA}/mp-trj-hists.json.gz", mp_trj_hists)
 # pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=300)

@@ -18,5 +18,5 @@
     // (e.g. svelte-toc has broken Svelte 5 types)
     "skipLibCheck": true
   },
-  "exclude": ["node_modules/*", ".svelte-kit/*", "build/*", "dist/*", "**/figs/*"]
+  "exclude": ["node_modules/*", ".svelte-kit/*", "build/*", "dist/*"]
 }

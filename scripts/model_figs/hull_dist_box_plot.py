@@ -3,7 +3,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pymatviz as pmv
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, figs
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
@@ -38,6 +38,7 @@ fig.layout.margin = dict(l=0, r=0, b=0, t=0)
 # Get the default Plotly colors that will be used for the boxes
 color_seq = px.colors.qualitative.Plotly
 
+box_models: list[dict[str, object]] = []
 for idx, model in enumerate(models_to_plot):
     ys = [
         df_each_err[model.label].quantile(quant)
@@ -46,6 +47,9 @@ for idx, model in enumerate(models_to_plot):
 
     # Use the same color for both box and label
     color = color_seq[idx % len(color_seq)]
+    box_models.append(
+        {"label": model.label, "color": color, "quantiles": figs.round_list(ys)}
+    )
     fig.add_box(
         y=ys,
         name=model.label,
@@ -67,10 +71,10 @@ x_labels_with_offset = [
     for idx, model in enumerate(models_to_plot)
 ]
 
-# prevent x-labels from rotating
+# rotate x-labels 90deg to avoid overlap (read by converter -> matterviz tick rotation)
 fig.layout.xaxis.range = [-0.7, len(models_to_plot) - 0.3]
 fig.layout.xaxis.update(
-    # tickangle=0,
+    tickangle=90,
     tickvals=[*range(len(models_to_plot))],
     ticktext=x_labels_with_offset,
 )
@@ -81,6 +85,6 @@ fig.show()
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
 img_name = f"box-hull-dist-errors{img_suffix}"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+figs.write_json_gz(f"{SITE_FIG_DATA}/{img_name}.json.gz", {"models": box_models})
 fig.layout.showlegend = False
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

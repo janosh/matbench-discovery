@@ -10,7 +10,7 @@ from pymatviz.enums import Key
 from sklearn.metrics import precision_recall_curve
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD
+from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -129,6 +129,5 @@ fig.show()
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
 img_name = f"prc-models-{n_rows}x{n_cols}{img_suffix}"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 fig.show()

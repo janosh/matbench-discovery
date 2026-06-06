@@ -7,8 +7,28 @@ import { compile as json_to_ts } from 'json-schema-to-typescript'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import zlib from 'node:zlib'
 import type { Plugin } from 'vite'
 import { defineConfig } from 'vite-plus'
+
+// Import the committed .json.gz figure payloads (site/src/figs, written by
+// matbench_discovery analysis scripts) as parsed ES modules; typed once in
+// src/figs/index.ts. Embedding as JSON.parse('...') keeps V8 parse cost low.
+const json_gz_plugin = (): Plugin => ({
+  name: `json-gz`,
+  load(id) {
+    const file = id.split(`?`)[0]
+    if (!file.endsWith(`.json.gz`)) return null
+    const json = zlib.gunzipSync(fs.readFileSync(file)).toString(`utf8`)
+    // the pure annotation in the emitted code below lets tree-shaking drop payloads a
+    // route doesn't use, so the typed re-exports in src/figs/index.ts don't bloat
+    // unrelated route chunks
+    return {
+      code: `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(json)})`,
+      map: null,
+    }
+  },
+})
 
 // Custom Vite plugin that watches for changes to *-schema.yml files and
 // Automatically converts them to *-schema.d.ts files
@@ -89,16 +109,13 @@ export default defineConfig({
   ...config, // shared lint/fmt/build from @janosh/vite-config (dotfiles)
   fmt: {
     ...config.fmt,
-    ignorePatterns: [`src/figs/**/*.svelte`, `src/routes/**/*.json`],
-  },
-  lint: {
-    ...config.lint,
-    ignorePatterns: [...config.lint.ignorePatterns, `src/figs/**`],
+    ignorePatterns: [`src/routes/**/*.json`],
   },
   plugins: [
     sveltekit(),
     yaml_plugin({ extensions: [`.yml`, `.yaml`, `.cff`] }),
     yaml_schema_to_typescript_plugin(),
+    json_gz_plugin(),
   ],
 
   server: {

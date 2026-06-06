@@ -6,19 +6,15 @@ Might point to deficiencies in the data or models architecture.
 """
 
 # %%
-import math
-
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 import pymatviz as pmv
 from pymatgen.core import Composition, Element
 from pymatviz.enums import Key
-from pymatviz.process_data import bin_df_cols
 from pymatviz.utils import df_ptable
-from tqdm.auto import tqdm
 
-from matbench_discovery import ROOT, SITE_FIGS
+from matbench_discovery import ROOT, SITE_FIG_DATA, figs
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import df_wbm, load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -88,6 +84,7 @@ df_struct_counts_base = df_struct_counts_base[
     df_struct_counts_base.sum(axis=1) > min_count
 ]
 
+elem_counts_payload: dict[str, list[dict[str, object]]] = {}
 for normalized in (False, True):
     df_struct_counts = df_struct_counts_base.copy()
     if normalized:
@@ -111,8 +108,22 @@ for normalized in (False, True):
 
     fig.layout.update(bargap=0.1)
     fig.layout.legend.update(x=0.02, y=0.98, font_size=16)
+    fig.layout.yaxis.tickformat = "s"  # SI y ticks (10k not 10000)
+    fig.update_traces(width=0.9)  # wider bars, smaller inter-bar gaps
     fig.show()
-    pmv.save_fig(fig, f"{SITE_FIGS}/tmi/bar-element-counts-mp+wbm-{normalized=}.svelte")
+    elem_counts_payload["normalized" if normalized else "raw"] = [
+        {
+            "label": trace.name,
+            "color": figs.trace_color(trace),
+            "x": figs.round_list(trace.x),
+            "y": figs.round_list(trace.y),
+        }
+        for trace in fig.data
+    ]
+
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/element-counts-mp-vs-wbm.json.gz", elem_counts_payload
+)
 
 
 # %%
@@ -163,90 +174,24 @@ fig.layout.title.update(xanchor="center", x=0.5)
 fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title="")
 fig.show()
 
-pmv.save_fig(fig, f"{SITE_FIGS}/tmi/element-prevalence-vs-error.svelte")
-
-
-# %%
-# plot EACH errors against least prevalent element in structure (by occurrence in
-# MP training set). this seems to correlate more with model error
-n_of_rarest_elem_col = "Examples for rarest element in structure"
-df_preds[n_of_rarest_elem_col] = [
-    df_elem_err[train_count_col].loc[list(map(str, Composition(formula)))].min()
-    for formula in tqdm(df_preds[Key.formula])
-]
-
-df_melt = (
-    df_each_err.abs()
-    .reset_index()
-    .melt(var_name="Model", value_name=Key.each_pred, id_vars=Key.mat_id)
-    .set_index(Key.mat_id)
-)
-df_melt[n_of_rarest_elem_col] = df_preds[n_of_rarest_elem_col]
-
-df_bin = bin_df_cols(
-    df_melt, [n_of_rarest_elem_col, Key.each_pred], group_by_cols=["Model"]
-)
-df_bin = df_bin.reset_index().set_index(Key.mat_id)
-df_bin[Key.formula] = df_preds[Key.formula]
-
-
-# %%
-n_cols = 3
-n_rows = math.ceil(len(models_to_plot) / n_cols)
-facet_col = "Model"
-
-fig = px.scatter(
-    df_bin.reset_index(),
-    x=n_of_rarest_elem_col,
-    y=Key.each_pred,
-    color=facet_col,
-    facet_col=facet_col,
-    facet_col_wrap=n_cols,
-    facet_col_spacing=0.02,
-    facet_row_spacing=0.02,
-    category_orders={facet_col: [m.label for m in models_to_plot]},
-    hover_data={Key.mat_id: True, Key.formula: True, facet_col: False},
-    width=300 * n_cols,
-    height=180 * n_rows,
-)
-
-fig.update_traces(marker=dict(size=3))
-fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
-fig.layout.showlegend = False
-
-# remove "Model=" prefix from subplot titles
-for anno in fig.layout.annotations:
-    anno.text = anno.text.split("=")[1]
-
-# shared axis titles
-axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=14)
-fig.add_annotation(  # x-axis title
-    text="MP occurrence count of least prevalent element in structure",
-    x=0.5,
-    y=0,
-    yshift=-50,
-    **axis_titles,
-)
-fig.add_annotation(  # y-axis title
-    text="Absolute error in E<sub>above hull</sub>",
-    x=0,
-    xshift=-60,
-    y=0.5,
-    textangle=-90,
-    **axis_titles,
-)
-
-# standardize margins
-portrait = n_rows > n_cols
-fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
-
-axes_kwargs = dict(matches=None, title_text="", showgrid=True)
-fig.update_xaxes(**axes_kwargs)
-fig.update_yaxes(**axes_kwargs)
-
-fig.show()
-pmv.save_fig(
-    fig, f"{SITE_FIGS}/tmi/each-error-vs-least-prevalent-element-in-struct.svelte"
+elem_prev_models = []
+for trace in fig.data:
+    x_arr, y_arr = figs.trace_xy(trace)
+    elem_prev_models.append(
+        {
+            "label": trace.name,
+            "color": figs.trace_color(trace),
+            "y": figs.round_list(y_arr),
+        }
+    )
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/element-prevalence-vs-error.json.gz",
+    {
+        # element symbols + x (occurrence count per element) shared across models
+        "elements": [str(symbol) for symbol in df_elem_err.index],
+        "occurrences": figs.round_list(fig.data[0].x),
+        "models": elem_prev_models,
+    },
 )
 
 
@@ -260,17 +205,22 @@ model_labels = [m.label for m in models_to_plot]
 # %% histogram of FP diff for structures with largest/smallest errors
 n_structs = 1000
 fig = go.Figure()
+hist_largest_models: list[dict[str, object]] = []
 for idx, model in enumerate(model_labels):
     large_errors = df_each_err[model].abs().nlargest(n_structs)
     small_errors = df_each_err[model].abs().nsmallest(n_structs)
+    hist_entry: dict[str, object] = {"label": model}
     for label, errors in (("min", small_errors), ("max", large_errors)):
+        fp_diff_values = df_wbm.loc[errors.index][fp_diff_col].to_numpy()
+        hist_entry[f"err_{label}"] = figs.histogram(fp_diff_values, bins=100)
         fig.add_histogram(
-            x=df_wbm.loc[errors.index][fp_diff_col].values,
+            x=fp_diff_values,
             name=f"{model} err<sub>{label}</sub>",
             visible="legendonly" if idx else True,
             legendgroup=model,
             hovertemplate="SSFP diff: %{x:.2f}<br>Count: %{y}",
         )
+    hist_largest_models.append(hist_entry)
 
 title = (
     f"Norm-diff between initial/final SiteStatsFingerprint<br>"
@@ -291,16 +241,28 @@ fig.layout.yaxis.title = "Count"
 
 fig.show()
 
-pmv.save_fig(fig, f"{SITE_FIGS}/tmi/hist-largest-each-errors-fp-diff-models.svelte")
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/hist-largest-each-errors-fp-diff.json.gz",
+    {"models": hist_largest_models},
+)
 
 
 # %% scatter plot:
 # FP diff vs error for highest-error structures
 n_structs = 100
 fig = go.Figure()
+each_errors_models: list[dict[str, object]] = []
 for idx, model in enumerate(model_labels):
     errors = df_each_err[model].abs().nlargest(n_structs)
     model_mae = errors.mean()
+    each_errors_models.append(
+        {
+            "label": model,
+            "mae": round(float(model_mae), 4),
+            "x": figs.round_list(df_wbm.loc[errors.index][fp_diff_col].values),
+            "y": figs.round_list(errors.values),
+        }
+    )
     fig.add_scatter(
         x=df_wbm.loc[errors.index][fp_diff_col].values,
         y=errors.values,
@@ -330,7 +292,10 @@ fig.layout.yaxis.title = "Absolute error (eV/atom)"
 
 fig.show()
 
-pmv.save_fig(fig, f"{SITE_FIGS}/tmi/scatter-largest-each-errors-fp-diff-models.svelte")
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/scatter-largest-each-errors-fp-diff.json.gz",
+    {"models": each_errors_models},
+)
 
 
 # %% scatter plot: errors for structures with largest FP diff (most relaxation change)
@@ -342,9 +307,19 @@ df_largest_fp_diff = df_wbm_subset[fp_diff_col].nlargest(n_points)
 fig = go.Figure()
 colors = px.colors.qualitative.Plotly
 
+fp_diff_models: list[dict[str, object]] = []
 for idx, model in enumerate(model_labels):
     color = colors[idx % len(colors)]
-    model_mae = df_each_err[model].loc[df_largest_fp_diff.index].abs().mean()
+    abs_errors = df_each_err[model].loc[df_largest_fp_diff.index].abs()
+    model_mae = abs_errors.mean()
+    fp_diff_models.append(
+        {
+            "label": model,
+            "mae": round(float(model_mae), 4),
+            "color": color,
+            "y": figs.round_list(abs_errors.values),
+        }
+    )
 
     visible = "legendonly" if idx else True
     fig.add_scatter(
@@ -395,4 +370,7 @@ fig.layout.xaxis.title = "|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|"
 fig.layout.yaxis.title = "|E<sub>above hull</sub> error| (eV/atom)"
 fig.layout.margin = dict(t=40, b=0, l=0, r=0)
 fig.show()
-pmv.save_fig(fig, f"{SITE_FIGS}/tmi/scatter-largest-fp-diff-each-error-models.svelte")
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/scatter-largest-fp-diff-each-error.json.gz",
+    {"fp_diff": figs.round_list(df_largest_fp_diff.values), "models": fp_diff_models},
+)

@@ -1,31 +1,42 @@
 <script lang="ts">
-  import type { Component } from 'svelte'
+  import { mp_trj_hists } from '$figs'
+  import { BarPlot } from 'matterviz/plot'
   import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
+  import MpTrjNSitesHist from './MpTrjNSitesHist.svelte'
   import MPtrjTargetCounts from './mptrj-target-counts.md'
 
-  const plots = import.meta.glob<Component>(
-    `$figs/mp-trj-*.svelte`,
-    { eager: true, import: 'default' },
-  )
-
-  const title_map: Record<string, string> = {
-    'e-form': `Formation Energy`,
-    forces: `Forces`,
-    stresses: `Stresses`,
-    magmoms: `Magnetic Moments`,
-  }
+  // per-target presentation: title, x label, and whether the count axis needs
+  // arcsinh compression (log-like but keeps a valid 0 baseline for bars)
+  const targets = [
+    { key: `e-form`, title: `Formation Energy`, x_label: `E<sub>form</sub> (eV/atom)`, arcsinh: false },
+    { key: `forces`, title: `Forces`, x_label: `|Forces| (eV/Å)`, arcsinh: true },
+    { key: `stresses`, title: `Stresses`, x_label: `1/3 Tr(σ) (eV/Å³)`, arcsinh: true },
+    { key: `magmoms`, title: `Magnetic Moments`, x_label: `Magmoms (μ<sub>B</sub>)`, arcsinh: true },
+  ] as const
 </script>
 
 <MPtrjTargetCounts />
 
 <ul>
-  {#each Object.entries(plots) as [name, Plot] (name)}
-    {@const title = name.split(`mp-trj-`)[1].split(`-hist.svelte`)[0]}
+  {#each targets as { key, title, x_label, arcsinh } (key)}
     <div>
-      <h3>{title_map[title] ?? title}</h3>
-      <Plot {title} style="width: 100%; max-width: 700px; height: 300px" />
+      <h3>{title}</h3>
+      <BarPlot
+        series={[{ ...mp_trj_hists[key], color: `#636efa` }]}
+        x_axis={{ label: x_label }}
+        y_axis={{
+          label: `Number of Structures`,
+          ...(arcsinh ? { scale_type: `arcsinh` as const } : {}),
+        }}
+        show_controls={false}
+        style="height: 300px; width: 100%; max-width: 700px"
+      />
     </div>
   {/each}
+  <div>
+    <h3>Number of Sites</h3>
+    <MpTrjNSitesHist style="height: 300px; width: 100%; max-width: 700px" />
+  </div>
 </ul>
 
 <h2>Elemental Prevalence</h2>

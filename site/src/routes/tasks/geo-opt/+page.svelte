@@ -1,15 +1,13 @@
 <script lang="ts">
-  import StructRmsdCdfModels from '$figs/struct-rmsd-cdf-models.svelte'
-  import SymOpsDiffBar from '$figs/sym-ops-diff-bar-symprec=1e-05.svelte'
+  import {
+    spg_sankeys,
+    struct_rmsd_cdf,
+    sym_ops_diff_bar as sym_ops_diff,
+  } from '$figs'
   import { GeoOptMetricsTable, MODELS } from '$lib'
   import { format_num } from 'matterviz'
-  import type { Component } from 'svelte'
+  import { BarPlot, Sankey, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
-
-  const plots = import.meta.glob<Component>(
-    `$figs/spg-sankey-*symprec=1e-05.svelte`,
-    { eager: true, import: 'default' },
-  )
 
   const n_min_relaxed_structures: number = MODELS.reduce((acc, model) => {
     const geo_opt = model.metrics?.geo_opt
@@ -28,16 +26,45 @@
     <span>{format_num(n_min_relaxed_structures)}</span>
   {/snippet}
   {#snippet struct_rmsd_cdf_models()}
-    <StructRmsdCdfModels />
+    <ScatterPlot
+      series={struct_rmsd_cdf.models.map(({ label, auc, x, y }) => ({
+        x,
+        y,
+        label: `${label} · AUC=${auc}`,
+        markers: `line` as const,
+      }))}
+      x_axis={{ label: `RMSD (unitless)`, range: [0, 0.05] }}
+      y_axis={{ label: `Cumulative`, format: `.0%`, range: [0, 1] }}
+      style="height: 420px"
+    />
   {/snippet}
   {#snippet sym_ops_diff_bar()}
-    <SymOpsDiffBar />
+    <div class="sym-ops-list">
+      {#each sym_ops_diff.models as { label, sigma, x, y } (label)}
+        <figure>
+          <figcaption>{label} (σ={sigma})</figcaption>
+          <BarPlot
+            series={[{ x, y, label }]}
+            y_axis={{ scale_type: `arcsinh` }}
+            show_controls={false}
+            style="height: 120px"
+          />
+        </figure>
+      {/each}
+    </div>
   {/snippet}
 </GeoOptReadme>
 
 <ul>
-  {#each Object.entries(plots) as [name, Plot] (name)}
-    <Plot {name} style="width: 100%; place-self: center" />
+  {#each spg_sankeys.models as { key, label, nodes, links } (key)}
+    <li>
+      <h3>{label}</h3>
+      <Sankey
+        data={{ nodes, links }}
+        show_controls={false}
+        style="height: 300px; width: 100%"
+      />
+    </li>
   {/each}
 </ul>
 
@@ -47,5 +74,24 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 3em 2em;
+  }
+  ul li {
+    list-style: none;
+    /* skip layout/paint of off-screen sankeys; auto remembers the rendered size */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 340px;
+  }
+  ul h3 {
+    text-align: center;
+    margin: 0 0 0.5em;
+  }
+  .sym-ops-list figure {
+    margin: 0;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 140px;
+  }
+  .sym-ops-list figcaption {
+    text-align: center;
+    font-size: 0.9em;
   }
 </style>
