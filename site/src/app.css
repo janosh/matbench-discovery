@@ -85,7 +85,7 @@
   --sms-max-width: 23em;
   --sms-focus-border: 1px solid var(--link-color);
   --sms-active-color: cornflowerblue;
-  --sms-selected-bg: color-mix(in srgb, currentColor 12%, transparent);
+  --sms-selected-bg: color-mix(in srgb, currentcolor 12%, transparent);
 
   --radio-btn-bg: var(--btn-bg);
   --radio-btn-checked-shadow: none;

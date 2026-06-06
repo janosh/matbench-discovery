@@ -95,6 +95,8 @@ if metrics == ("Precision", "Recall"):
     # endpoint marker per line (mode="markers", legendgroup=model) marking where each
     # model's stable-prediction ranking ends
     def facet_of(trace: object) -> str:
+        # plotly facets name axes "x" for the first subplot (Precision), "x2" for the
+        # second (Recall); traces on the first facet may omit the xaxis attr entirely
         return (
             "Precision" if (getattr(trace, "xaxis", None) or "x") == "x" else "Recall"
         )

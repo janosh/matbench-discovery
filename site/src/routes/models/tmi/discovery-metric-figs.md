@@ -34,7 +34,7 @@
   const cum_pr_legend: LegendItem[] = cum_pr.models.map(({ label, color }, idx) => ({
     label,
     visible: true,
-    series_idx: idx,
+    series_idx: idx * 2,
     display_style: { line_color: color },
   }))
 
@@ -265,9 +265,6 @@ style="height: 480px; place-self: center; max-width: 640px; width: 100%"
   }
   .fig-grid figure {
     margin: 0;
-    /* skip layout/paint of off-screen panels; auto remembers the rendered size */
-    content-visibility: auto;
-    contain-intrinsic-size: auto 265px;
   }
   .fig-grid figcaption {
     text-align: center;

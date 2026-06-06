@@ -75,9 +75,6 @@
   }
   ul li {
     list-style: none;
-    /* skip layout/paint of off-screen sankeys; auto remembers the rendered size */
-    content-visibility: auto;
-    contain-intrinsic-size: auto 340px;
   }
   ul h3 {
     text-align: center;
@@ -85,8 +82,6 @@
   }
   .sym-ops-list figure {
     margin: 0;
-    content-visibility: auto;
-    contain-intrinsic-size: auto 140px;
   }
   .sym-ops-list figcaption {
     text-align: center;

@@ -127,7 +127,7 @@ declare module '$figs/spacegroup-sunbursts.json.gz' {
     labels: string[]
     parents: string[]
     values: number[]
-    ids: string[]
+    ids?: string[] // sunburst_data only emits ids when the plotly trace has them
   }
   const data: { mp: SunburstArrays; wbm: SunburstArrays }
   export default data

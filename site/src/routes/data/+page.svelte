@@ -17,8 +17,8 @@
   import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
 
-  // build the SunburstNode tree from the flat plotly arrays at render time (smaller
-  // payload than shipping a pre-nested tree; matterviz handles duplicate ids)
+  // build the SunburstNode tree from the flat labels/parents/values arrays at render time
+  // (smaller payload than shipping a pre-nested tree; matterviz handles duplicate ids)
   const build_sunburst = (sb: typeof sunbursts.mp) =>
     sunburst_from_labels_parents(sb.labels, sb.parents, sb.values, { ids: sb.ids })
 

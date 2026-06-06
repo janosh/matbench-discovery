@@ -7,7 +7,6 @@ import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
 
-from matbench_discovery import SITE_FIGS
 from matbench_discovery import plots as plots
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, Model
@@ -77,7 +76,6 @@ fig = pmv.density_scatter(
 )
 fig.layout.yaxis.title = MbdKey.e_form_dft.replace("DFT", "MACE")
 fig.show()
-pmv.save_fig(fig, f"{SITE_FIGS}/mace-wbm-IS2RE-e-form-parity.svelte")
 
 
 # %%
@@ -87,4 +85,3 @@ fig = pmv.density_scatter(
 fig.layout.yaxis.title = "MACE energy"
 
 fig.show()
-pmv.save_fig(fig, f"{SITE_FIGS}/mace-wbm-IS2RE-raw-energy-parity.svelte")

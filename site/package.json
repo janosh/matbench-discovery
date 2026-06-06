@@ -38,15 +38,15 @@
     "happy-dom": "^20.10.1",
     "js-yaml": "^4.2.0",
     "json-schema-to-typescript": "^15.0.4",
-    "matterviz": "^0.3.7",
+    "matterviz": "^0.4.0",
     "mdsvex": "^0.12.7",
     "rehype-katex-svelte": "^1.2.0",
     "rehype-stringify": "^10.0.1",
     "remark-math": "3.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
-    "svelte": "^5.56.1",
-    "svelte-check-rs": "^0.9.20",
+    "svelte": "^5.56.2",
+    "svelte-check-rs": "0.10.0",
     "svelte-multiselect": "^11.7.1",
     "svelte-toc": "^0.7.0",
     "typescript": "6.0.3",
@@ -56,6 +56,11 @@
     "vitest": "^4.1.8"
   },
   "packageManager": "pnpm@11.5.0",
+  "pnpm": {
+    "overrides": {
+      "dompurify": "3.4.7"
+    }
+  },
   "author-url": "https://janosh.dev",
   "doi": "https://doi.org/10.1038/s42256-025-01055-1",
   "github-pages": "https://janosh.github.io/matbench-discovery",

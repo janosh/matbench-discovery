@@ -153,7 +153,7 @@ def check_spacegroup_sunbursts() -> None:
         values, ids = sunburst["values"], sunburst["ids"]
         n_nodes = len(labels)
         assert len(parents) == len(values) == len(ids) == n_nodes > 0
-        assert parents.count("") >= 6  # the 7 crystal systems are the root nodes
+        assert parents.count("") == 7  # the 7 crystal systems are the root nodes
         assert all(labels)
         assert all(val > 0 for val in values)
         assert len(set(ids)) == n_nodes  # ids unique

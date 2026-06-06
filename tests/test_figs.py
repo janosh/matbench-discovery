@@ -105,30 +105,31 @@ def test_trace_helpers_extract_xy_color_visibility() -> None:
 
 def test_sunburst_data_extracts_flat_arrays() -> None:
     """sunburst_data returns the flat labels/parents/values/ids arrays unchanged."""
+    ids = ["cubic", "cubic/225", "cubic/221", "hexagonal"]
+    labels = ["cubic", "225", "221", "hexagonal"]
+    parents = ["", "cubic", "cubic", ""]
+    values = [10, 6, 4, 5]
     fig = go.Figure(
         go.Sunburst(
-            ids=["cubic", "cubic/225", "cubic/221", "hexagonal"],
-            labels=["cubic", "225", "221", "hexagonal"],
-            parents=["", "cubic", "cubic", ""],
-            values=[10, 6, 4, 5],
-            branchvalues="total",
+            branchvalues="total", ids=ids, labels=labels, parents=parents, values=values
         )
     )
     result = figs.sunburst_data(fig)
     assert result == {
-        "labels": ["cubic", "225", "221", "hexagonal"],
-        "parents": ["", "cubic", "cubic", ""],
-        "values": [10, 6, 4, 5],
-        "ids": ["cubic", "cubic/225", "cubic/221", "hexagonal"],
+        "labels": labels,
+        "parents": parents,
+        "values": values,
+        "ids": ids,
     }
 
 
 def test_sankey_data_from_sankey_trace() -> None:
-    """sankey_data extracts node labels and flat link source/target/value arrays."""
+    """sankey_data drops unreferenced nodes and reindexes links onto the kept ones."""
     fig = go.Figure(
         go.Sankey(
-            node=dict(label=["A", "B", "C"]),
-            link=dict(source=[0, 1], target=[2, 2], value=[3.0, 4.0]),
+            # "X" (index 2) is unreferenced -> dropped; "C" reindexed 3 -> 2
+            node=dict(label=["A", "B", "X", "C"]),
+            link=dict(source=[0, 1], target=[3, 3], value=[3.0, 4.0]),
         )
     )
     assert figs.sankey_data(fig) == {

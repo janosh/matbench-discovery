@@ -37,8 +37,11 @@ DEFAULT_HIST_BINS: Final = 100
 
 def round_list(values: Any) -> list[Any]:
     """Convert an array-like to a JSON-safe list: round floats to COORD_DECIMALS,
-    keep ints/strings, replace non-finite numbers with None.
+    keep ints/strings, replace non-finite numbers with None. ``None`` -> ``[]`` (so a
+    missing trace field surfaces as an empty list, not a TypeError on iteration).
     """
+    if values is None:
+        return []
     return [
         (round(val, COORD_DECIMALS) if math.isfinite(val) else None)
         if isinstance(val, float)
@@ -189,22 +192,28 @@ def sunburst_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
 def sankey_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
     """Extract a plotly sankey's node labels + link source/target/value arrays.
 
-    matterviz's sankey_from_links builds the {nodes, links} SankeyData from these flat
-    arrays, so shipping them keeps payloads smaller and avoids duplicating its logic.
+    matterviz's sankey_from_links builds the ``{nodes, links}`` SankeyData from these
+    flat arrays, so shipping them keeps payloads smaller + avoids duplicating its logic.
     """
     trace = _get_trace(fig, "sankey")
     node, link = trace.get("node") or {}, trace.get("link") or {}
-    labels = [str(label) for label in round_list(decode_array(node.get("label")))]
-    sources = round_list(decode_array(link.get("source")))
-    targets = round_list(decode_array(link.get("target")))
-    values = round_list(decode_array(link.get("value")))
-    if not labels or not sources:
+    labels = [str(val) for val in round_list(decode_array(node.get("label")))]
+    sources = decode_array(link.get("source"))
+    targets = decode_array(link.get("target"))
+    if not labels or sources is None or targets is None or len(sources) == 0:
         raise ValueError("sankey trace has no nodes or links")
+    # link indices are ints; round_list would map a non-finite to None -> int(None)
+    src_idx = [int(src) for src in sources]
+    tgt_idx = [int(tgt) for tgt in targets]
+    # drop nodes no link references (plotly keeps many unused spacegroup nodes whose
+    # crammed labels overlap) and reindex the links onto the kept nodes
+    used = sorted({*src_idx, *tgt_idx})
+    remap = {old: new for new, old in enumerate(used)}
     return {
-        "labels": labels,
-        "source": [int(src) for src in sources],
-        "target": [int(tgt) for tgt in targets],
-        "value": [float(val) for val in values],
+        "labels": [labels[idx] for idx in used],
+        "source": [remap[src] for src in src_idx],
+        "target": [remap[tgt] for tgt in tgt_idx],
+        "value": round_list(decode_array(link.get("value"))),
     }
 
 

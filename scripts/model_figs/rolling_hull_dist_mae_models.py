@@ -95,7 +95,7 @@ for trace in fig.data:
 figs.write_json_gz(
     f"{SITE_FIG_DATA}/{img_name}.json.gz",
     {
-        "x": shared_x,
+        "x": shared_x or [],  # never null: payload contract requires x to be a list
         "models": rolling_models,
         # rolling count of test-set structures per hull-dist bin (drawn on y2)
         "density": {

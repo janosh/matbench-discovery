@@ -5,13 +5,14 @@
   import { extent } from 'd3-array'
   import { format_num } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
-  import type { DataSeries, LabelPlacementConfig } from 'matterviz/plot'
+  import { ColorScaleSelect, create_color_scale, ScatterPlot } from 'matterviz/plot'
+  import type { DataSeries } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
   import Select from 'svelte-multiselect'
   import { ALL_METRICS, format_property_path, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, is_finite_num } from '$lib/metrics'
+  import { wide_legend } from '$lib/fig-helpers'
   import type { Label } from '$lib/types'
 
   // Build data access path from label, handling property vs key distinction
@@ -41,7 +42,7 @@
     show_model_labels?: boolean
   } = $props()
 
-  const { model_params, graph_construction_radius, max_force, } = HYPERPARAMS
+  const { model_params, graph_construction_radius, max_force } = HYPERPARAMS
   const { max_steps, batch_size, epochs, n_layers } = HYPERPARAMS
   const { date_added, n_training_materials, n_training_structures } = METADATA_COLS
 
@@ -75,16 +76,13 @@
     size_value: size_prop,
   })
 
-
   let color_scheme: D3InterpolateName = $state(`interpolateViridis`)
   const ticks = 5
   let display = $state({ x_grid: true, y_grid: true })
 
   let size_multiplier = $state(1)
   let label_font_size = $state(12)
-  let label_placement_config: LabelPlacementConfig = $state({
-    leader_line_threshold: 15,
-  })
+  let leader_line_threshold = $state(15)
 
   // Check if data range spans enough for log scale to be useful (min > 0 and max/min >= 100)
   const can_log = (ext: [number | undefined, number | undefined]): boolean =>
@@ -115,7 +113,7 @@
     else if (axis === `y`) selected.y = key
 
     await tick()
-    return { series: [series], axis_label: options_by_key[key]?.label }
+    return { series, axis_label: options_by_key[key]?.label }
   }
 
   const format_label_title = (prop: Label | undefined): string =>
@@ -130,10 +128,10 @@
         const color_value = get_label_value(model, axes.color_value)
         const size_value = get_label_value(model, axes.size_value)
 
-        const { model_name, date_added: model_date, color, model_key } = model
+        const { model_name, date_added: model_date, model_key } = model
         const days_ago = calculate_days_ago(model.date_added)
         const metadata = { model_name, date_added: model_date, days_ago, model_key }
-        return { x: x_val, y: y_val, color_value, size_value, metadata, color }
+        return { x: x_val, y: y_val, color_value, size_value, metadata }
       })
       .filter((item) => {
         const required = [item.x, item.y, item.size_value]
@@ -143,6 +141,19 @@
         return required.every(is_finite_num)
       }),
   )
+
+  // Mirror the plot's color scale (same scheme + full-data domain matterviz auto-computes)
+  // so each series' point_style.fill — i.e. its built-in legend swatch — matches the
+  // color-bar color of its point; the fixed point_color override wins when set
+  let legend_color_scale = $derived.by(() => {
+    const [min, max] = extent(plot_data, (item) => item.color_value as number)
+    return create_color_scale(
+      { scheme: color_scheme, type: log.color ? `log` : `linear` },
+      [min ?? 0, max ?? 1],
+    )
+  })
+  const point_fill = (color_value: unknown): string =>
+    point_color ?? (legend_color_scale(color_value as number) as string) ?? `gray`
 
   let can_log_x = $derived(can_log(extent(plot_data, (d) => d.x as number)))
   let can_log_y = $derived(can_log(extent(plot_data, (d) => d.y as number)))
@@ -160,24 +171,28 @@
     model_key?: string
   }
 
-  let series: DataSeries<PointMetadata> = $derived({
-    x: plot_data.map((item) => item.x as number),
-    y: plot_data.map((item) => item.y as number),
-    markers: `points` as const,
-    point_style: plot_data.map((item) => ({ fill: point_color ?? item.color })),
-    metadata: plot_data.map((item) => item.metadata),
-    color_values: point_color === null
-      ? plot_data.map((item) => item.color_value as number)
-      : undefined,
-    size_values: axes.size_value
-      ? plot_data.map((item) => item.size_value as number)
-      : undefined,
-    point_label: (show_model_labels ? plot_data : []).map((item) => ({
-      text: item.metadata.model_name,
-      font_size: `${label_font_size}px`,
-      auto_placement: true,
+  // One series per model so matterviz's built-in legend can toggle models individually and
+  // auto-assign a distinct marker shape per series. point_style.fill makes the legend swatch
+  // match the color-bar color; the point itself is colored via color_values.
+  let series: DataSeries<PointMetadata>[] = $derived(
+    plot_data.map((item) => ({
+      x: [item.x as number],
+      y: [item.y as number],
+      label: item.metadata.model_name,
+      markers: `points` as const,
+      metadata: [item.metadata],
+      point_style: { fill: point_fill(item.color_value) },
+      color_values: point_color === null ? [item.color_value as number] : undefined,
+      size_values: axes.size_value ? [item.size_value as number] : undefined,
+      point_label: show_model_labels
+        ? [{
+          text: item.metadata.model_name,
+          font_size: `${label_font_size}px`,
+          auto_placement: true,
+        }]
+        : [],
     })),
-  })
+  )
 </script>
 
 <div class="bleed-1400" style="margin-block: 2em">
@@ -209,7 +224,8 @@
 
   <ScatterPlot
     style="height: 600px"
-    series={[series]}
+    series={series}
+    legend={wide_legend}
     x_axis={{
       label: axes.x?.label,
       format: axes.x?.format,
@@ -252,14 +268,11 @@
           .filter(model_filter)
           .map((model) => get_label_value(model, prop))
           .filter((val): val is number => typeof val === `number` && isFinite(val))
-        const [min, max] = extent(values) as [number, number]
+        const [min, max] = extent(values)
         return { range: [min ?? 0, max ?? 1], title: format_label_title(prop) }
       },
     }}
-    label_placement_config={{
-      leader_line_threshold: label_placement_config.leader_line_threshold,
-      max_neighbors: { count: 3, radius: 40 },
-    }}
+    label_placement_config={{ leader_line_threshold, max_neighbors: { count: 3, radius: 40 } }}
     point_events={{
       onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
     }}
@@ -325,7 +338,7 @@
           type="number"
           min="0"
           max="100"
-          bind:value={label_placement_config.leader_line_threshold}
+          bind:value={leader_line_threshold}
           title="Leader line threshold"
         />
       </div>

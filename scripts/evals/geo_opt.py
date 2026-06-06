@@ -167,8 +167,6 @@ for model, srs_rmsd in df_all.xs(
 fig_rmsd.layout.height = len(fig_rmsd.data) * 100
 fig_rmsd.layout.showlegend = False
 
-# pmv.save_fig(fig_rmsd, f"{PDF_FIGS}/{today}-rmsd-violin.pdf")
-
 title = "RMSD of ML-relaxed structures vs DFT-relaxed structures"
 fig_rmsd.layout.title = dict(text=title, x=0.5)
 fig_rmsd.layout.margin.t = 50

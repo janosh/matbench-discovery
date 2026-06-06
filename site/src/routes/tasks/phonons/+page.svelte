@@ -86,7 +86,7 @@
 
 {#if selected_model}
   <label class="kappa-model-select">
-    Compare model:
+    View model:
     <!-- {#key} rebuilds the native <select> on sort change; moving <option> nodes via a
     keyed {#each} alone doesn't repaint the native dropdown on some platforms -->
     {#key sort_mode}
