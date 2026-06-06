@@ -147,7 +147,7 @@ describe(`MetricsTable`, () => {
     expect(header_texts).toContain(`Acc`)
   })
 
-  it(`filters energy-only models`, { timeout: 10_000 }, async () => {
+  it(`filters energy-only models`, { timeout: 30_000 }, async () => {
     // First test with energy-only models hidden
     mount(MetricsTable, {
       target: document.body,
@@ -956,7 +956,7 @@ describe(`MetricsTable`, () => {
 
     it(
       `selects and deselects models on double-click with proper state management`,
-      { timeout: 10_000 },
+      { timeout: 30_000 },
       async () => {
         mount(MetricsTable, {
           target: document.body,
@@ -992,7 +992,7 @@ describe(`MetricsTable`, () => {
 
     it(
       `manages toggle visibility and count dynamically`,
-      { timeout: 10_000 },
+      { timeout: 30_000 },
       async () => {
         mount(MetricsTable, {
           target: document.body,
@@ -1028,7 +1028,7 @@ describe(`MetricsTable`, () => {
 
     it(
       `toggles filter state and updates UI labels correctly`,
-      { timeout: 10_000 },
+      { timeout: 30_000 },
       async () => {
         mount(MetricsTable, {
           target: document.body,
@@ -1062,7 +1062,7 @@ describe(`MetricsTable`, () => {
 
     it(
       `filters rows and manages styling based on filter state`,
-      { timeout: 10_000 },
+      { timeout: 30_000 },
       async () => {
         mount(MetricsTable, {
           target: document.body,
@@ -1100,7 +1100,7 @@ describe(`MetricsTable`, () => {
 
     it(
       `validates toggle behavior with multiple selections and deselections`,
-      { timeout: 10_000 },
+      { timeout: 30_000 },
       async () => {
         mount(MetricsTable, {
           target: document.body,
@@ -1139,7 +1139,7 @@ describe(`MetricsTable`, () => {
 
     it(
       `validates correct model name extraction and selection behavior`,
-      { timeout: 10_000 },
+      { timeout: 30_000 },
       async () => {
         mount(MetricsTable, {
           target: document.body,

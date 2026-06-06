@@ -85,7 +85,7 @@
   --sms-max-width: 23em;
   --sms-focus-border: 1px solid var(--link-color);
   --sms-active-color: cornflowerblue;
-  --sms-selected-bg: transparent;
+  --sms-selected-bg: color-mix(in srgb, currentcolor 12%, transparent);
 
   --radio-btn-bg: var(--btn-bg);
   --radio-btn-checked-shadow: none;
@@ -320,6 +320,17 @@ input {
 ul.selected input {
   background: inherit;
 }
+/* svelte-multiselect renders a hidden form-validation input holding the
+   JSON-serialized selection (e.g. ["interpolateViridis"]). Its own scoped CSS
+   that hides this input isn't emitted for the matterviz-nested copy under pnpm
+   link, so re-assert the hide here to stop it leaking into the layout. */
+div.multiselect > input.form-control {
+  position: absolute;
+  width: 2em;
+  opacity: 0;
+  z-index: -1;
+  pointer-events: none;
+}
 input:focus {
   outline: none;
   background: var(--nav-bg);
@@ -353,35 +364,6 @@ kbd {
   padding-inline: max(var(--margin), calc(50vw - 1400px / 2));
 }
 
-/* Plotly theming: make embedded figures follow site theme */
-/* Figure and plot backgrounds */
-div.plotly-graph-div .main-svg .bg {
-  fill: var(--card-bg) !important;
-}
-/* Axes text, titles, legend text, colorbar ticks */
-div.plotly-graph-div g[class*='axislayer'] text,
-div.plotly-graph-div g[class*='xaxislayer'] text,
-div.plotly-graph-div g[class*='yaxislayer'] text,
-div.plotly-graph-div .gtitle,
-div.plotly-graph-div .legend text,
-div.plotly-graph-div .colorbar text,
-div.plotly-graph-div .cbaxis .tick text,
-div.plotly-graph-div .infolayer text {
-  fill: var(--text-color) !important;
-}
-/* Axis lines and ticks */
-div.plotly-graph-div g[class*='axislayer'] path,
-div.plotly-graph-div g[class*='axislayer'] line {
-  stroke: var(--border) !important;
-}
-/* Grid lines */
-div.plotly-graph-div g[class*='gridlayer'] path {
-  stroke: color-mix(in oklab, var(--border) 60%, transparent) !important;
-}
-/* Give hover labels same background as page */
-div.plotly-graph-div .hoverlayer rect {
-  fill: var(--page-bg) !important;
-}
 /* In-plot metric annotation, bottom-right corner (energy/kappa parity plots) */
 .plot-annotation {
   position: absolute;

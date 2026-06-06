@@ -3,7 +3,7 @@
 # %%
 import pymatviz as pmv
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD
+from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
 from matbench_discovery import plots as plots
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -57,5 +57,21 @@ fig.show()
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
 img_name = f"roc-models{img_suffix}"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+roc_models = []
+for trace in fig.data:
+    # skip the "No skill" random-classifier diagonal (drawn inline on the site)
+    if " · AUC=" not in (trace.name or ""):
+        continue
+    label, auc_str = trace.name.split(" · AUC=")
+    # ROC staircases at full resolution are ~4x over-resolved for a 480px panel
+    fpr, tpr = figs.lttb(*figs.trace_xy(trace), 200)
+    roc_models.append(
+        {
+            "label": label,
+            "auc": float(auc_str),
+            "fpr": figs.round_list(fpr),
+            "tpr": figs.round_list(tpr),
+        }
+    )
+figs.write_json_gz(f"{SITE_FIG_DATA}/{img_name}.json.gz", {"models": roc_models})
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

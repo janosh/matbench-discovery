@@ -3,17 +3,11 @@
 
 declare module '*.md'
 
-// Auto-generated Svelte figure components (excluded from TS checking in tsconfig.json)
-declare module '$figs/*.svelte' {
-  import type { Component } from 'svelte'
-  const component: Component<{ style?: string; name?: string }>
-  export default component
-}
-
-declare module '$figs/tmi/*.svelte' {
-  import type { Component } from 'svelte'
-  const component: Component<{ style?: string; name?: string }>
-  export default component
+declare module '*.json.gz' {
+  // data-only figure payloads (site/src/figs/<name>.json.gz), decompressed at build
+  // time by the json_gz_plugin in vite.config.ts and typed in src/figs/payloads.d.ts
+  const data: unknown
+  export default data
 }
 
 declare module '*package.json' {

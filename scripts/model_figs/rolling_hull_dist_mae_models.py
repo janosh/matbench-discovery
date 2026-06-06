@@ -4,7 +4,7 @@
 import numpy as np
 import pymatviz as pmv
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, figs
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
@@ -79,6 +79,29 @@ fig.show()
 
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
-img_name = f"rolling-mae-vs-hull-dist-models{img_suffix}"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+img_name = f"rolling-mae-vs-hull-dist{img_suffix}"
+model_names = set(df_err.columns)
+rolling_models = []
+shared_x: list[float] | None = None
+for trace in fig.data:
+    if trace.name not in model_names:
+        continue
+    if shared_x is None:
+        shared_x = figs.round_list(figs.trace_xy(trace)[0])
+    entry = figs.trace_payload(trace, x=False)
+    if not figs.trace_visible(trace):
+        entry["visible"] = False
+    rolling_models.append(entry)
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/{img_name}.json.gz",
+    {
+        "x": shared_x or [],  # never null: payload contract requires x to be a list
+        "models": rolling_models,
+        # rolling count of test-set structures per hull-dist bin (drawn on y2)
+        "density": {
+            "x": figs.round_list((bins[:-1] + bins[1:]) / 2),
+            "y": counts.tolist(),
+        },
+    },
+)
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

@@ -5,16 +5,16 @@ histogram stacks true/false positives/negatives with different colors.
 
 # %%
 import math
-from typing import Final
+from typing import Any, Final
 
 import pymatviz as pmv
 from pymatviz.enums import Key
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, figs
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.metrics.discovery import dfs_metrics
+from matbench_discovery.metrics.discovery import classify_stable, dfs_metrics
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 
 __author__ = "Janosh Riebesell"
@@ -132,5 +132,35 @@ fig.show()
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
 img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}{img_suffix}"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+
+# site payload: per-model stability-classification counts on shared hull-dist bins
+# (binned over the displayed x-range only; the old fig binned (-0.7, 0.7) but clipped
+# the view to +/-0.4 eV/atom)
+hist_clf_kwargs: dict[str, Any] = dict(bins=128, value_range=(-0.45, 0.45))
+clf_models: list[dict[str, object]] = []
+for model in models_to_plot:
+    df_model = df_melt.query(f"{facet_col} == {model.label!r}")
+    true_pos, false_neg, false_pos, true_neg = classify_stable(
+        df_model[MbdKey.each_true], df_model[Key.each_pred]
+    )
+    each_pred = df_model[Key.each_pred]
+    f1_score = dfs_metrics[test_subset][model.label]["F1"]
+    clf_models.append(
+        {"label": model.label, "f1": round(float(f1_score), 4)}
+        | {
+            key: figs.histogram(each_pred[mask], **hist_clf_kwargs)["y"]
+            for key, mask in (
+                ("tp", true_pos),
+                ("fn", false_neg),
+                ("fp", false_pos),
+                ("tn", true_neg),
+            )
+        }
+    )
+# bin centers depend only on hist_clf_kwargs (bins/range), not the per-model data
+bin_centers = figs.histogram([], **hist_clf_kwargs)["x"]
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/hist-clf-{which_energy}-hull-dist{img_suffix}.json.gz",
+    {"bin_centers": bin_centers, "models": clf_models},
+)
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

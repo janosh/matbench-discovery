@@ -1,21 +1,35 @@
 <script lang="ts">
   import DataReadme from '$data/wbm/readme.md'
-  import WbmFormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
-  import HistWbmHullDist from '$figs/hist-wbm-hull-dist.svelte'
-  import MPtrjNSitesHist from '$figs/mp-trj-n-sites-hist.svelte'
-  import MPvsMPtrjVsWBMArityHist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.svelte'
-  import SpacegroupSunburstMp from '$figs/spacegroup-sunburst-mp.svelte'
-  import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
+  import hist_e_form from '$figs/hist-wbm-e-form-per-atom.json.gz'
+  import hist_hull_dist from '$figs/hist-wbm-hull-dist.json.gz'
+  import arity_hist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz'
+  import sunbursts from '$figs/spacegroup-sunbursts.json.gz'
   import { PtableHeatmap } from '$lib'
+  import { dashed, floating_label, labeled_vline, plotly_blue, plotly_red } from '$lib/fig-helpers'
   import type { ElementSymbol } from 'matterviz'
   import { ColorScaleSelect, Icon } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
+  import { BarPlot, sunburst_from_labels_parents, Sunburst } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
   import { tooltip } from 'svelte-multiselect/attachments'
   import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
+  import MpTrjNSitesHist from './[slug]/MpTrjNSitesHist.svelte'
   import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
 
+  // build the SunburstNode tree from the flat labels/parents/values arrays at render time
+  // (smaller payload than shipping a pre-nested tree; matterviz handles duplicate ids)
+  const build_sunburst = (sb: typeof sunbursts.mp) =>
+    sunburst_from_labels_parents(sb.labels, sb.parents, sb.values, { ids: sb.ids })
+
+  const { mean, std } = hist_hull_dist
+  const hull_dist_refs = [
+    labeled_vline(mean - std, `mean - std = ${(mean - std).toFixed(2)}`),
+    labeled_vline(mean, `mean = ${mean.toFixed(2)}`),
+    labeled_vline(mean + std, `mean + std = ${(mean + std).toFixed(2)}`),
+    floating_label(mean - std, `stable`, plotly_blue),
+    floating_label(mean + std, `unstable`, plotly_red),
+  ]
   const elem_counts = import.meta.glob<Record<ElementSymbol, number>>(
     `./*-element-counts-by-{occurrence,composition}*.json`,
     { eager: true, import: 'default' },
@@ -54,7 +68,17 @@
 
 <DataReadme>
   {#snippet hist_e_form_per_atom()}
-    <WbmFormEnergyHist />
+    <BarPlot
+      series={[{ ...hist_e_form, color: plotly_blue }]}
+      x_axis={{ label: `WBM uncorrected formation energy (eV/atom)` }}
+      y_axis={{ label: `Number of Structures`, scale_type: `arcsinh` }}
+      ref_lines={[
+        { type: `vertical`, x: -5, style: dashed },
+        { type: `vertical`, x: 5, style: dashed },
+      ]}
+      show_controls={false}
+      style="height: 320px"
+    />
   {/snippet}
 
   {#snippet wbm_elements_heatmap()}
@@ -109,20 +133,38 @@
   {/snippet}
 
   {#snippet hist_wbm_hull_dist()}
-    <HistWbmHullDist />
+    <BarPlot
+      series={[
+        { ...hist_hull_dist.stable, bar_width: hist_hull_dist.bar_width, color: plotly_blue },
+        { ...hist_hull_dist.unstable, bar_width: hist_hull_dist.bar_width, color: plotly_red },
+      ]}
+      x_axis={{ label: `WBM energy above MP convex hull (eV/atom)` }}
+      y_axis={{ label: `Number of Structures`, format: `~s` }}
+      ref_lines={hull_dist_refs}
+      show_controls={false}
+      style="height: 320px"
+    />
   {/snippet}
 
   {#snippet spacegroup_sunbursts()}
-    <div style="display: flex; gap: 2em; place-content: center">
-      <SpacegroupSunburstMp />
-      <SpacegroupSunburstWbm />
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2em">
+      <Sunburst data={build_sunburst(sunbursts.mp)} value_mode="total" show_controls={false} style="height: 420px" />
+      <Sunburst data={build_sunburst(sunbursts.wbm)} value_mode="total" show_controls={false} style="height: 420px" />
     </div>
   {/snippet}
 </DataReadme>
 
 <MpElementalReferenceEnergies />
 
-<MPvsMPtrjVsWBMArityHist style="margin: auto; max-width: 60cqw; padding-right: 2em" />
+<BarPlot
+  series={arity_hist.datasets}
+  mode="grouped"
+  x_axis={{ label: `Number of Elements in Formula` }}
+  y_axis={{ label: `Fraction of Structures in Dataset` }}
+  show_legend
+  show_controls={false}
+  style="height: 320px; margin: auto; max-width: 60cqw; padding-right: 2em"
+/>
 <p>
   Distribution of unique elements per structure in MP, MPtrj and WBM. The bar heights are
   normalized by the total number of structures in each data set. WBM is dominated by
@@ -135,7 +177,7 @@
   ground states.
 </p>
 
-<MPtrjNSitesHist style="margin: auto; max-width: 80cqw; padding-right: 2em" />
+<MpTrjNSitesHist style="height: 320px; margin: auto; max-width: 80cqw; padding-right: 2em" />
 <p>
   Histogram of number of atoms per structure. The inset shows the same distribution
   log-scaled to visualize the tail of large structures. The green cumulative line in the

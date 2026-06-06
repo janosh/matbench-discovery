@@ -1,10 +1,10 @@
 <script lang="ts">
-  import BarElementCounts from '$figs/tmi/bar-element-counts-mp+wbm-normalized=False.svelte'
-  import BarElementCountsNormalized from '$figs/tmi/bar-element-counts-mp+wbm-normalized=True.svelte'
+  import elem_counts_bar from '$figs/element-counts-mp-vs-wbm.json.gz'
   import { PtableInset } from '$lib'
   import type { ChemicalElement } from 'matterviz'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
+  import { BarPlot } from 'matterviz/plot'
   import { Toggle } from 'svelte-multiselect'
 
   const raw_counts = import.meta.glob<unknown>(`../wbm-element-counts-*=*.json`, {
@@ -91,11 +91,18 @@
   <input type="checkbox" bind:checked={normalized_bar_counts} />
 </label>
 
-{#if normalized_bar_counts}
-  <BarElementCountsNormalized />
-{:else}
-  <BarElementCounts />
-{/if}
+<BarPlot
+  series={elem_counts_bar[normalized_bar_counts ? `normalized` : `raw`]}
+  mode="grouped"
+  x_axis={{ label: `Element`, range: [0, null] }}
+  y_axis={{
+    label: normalized_bar_counts ? `Share of Structures (%)` : `Number of Structures`,
+    format: `~s`,
+  }}
+  show_legend
+  show_controls={false}
+  style="height: 360px"
+/>
 
 <style>
   span {
