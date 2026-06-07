@@ -16,7 +16,7 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import { CopyButton } from 'svelte-multiselect'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
-  import per_elem_each_errors from '../per-element-each-errors.json'
+  import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
 
   let { data }: { data: { model: ModelData } } = $props()
 
@@ -210,8 +210,7 @@
     {/if}
 
     {#if model.model_key && model.model_key in per_elem_each_errors}
-      {@const raw_heatmap =
-      (per_elem_each_errors as Record<string, Record<string, number | null>>)[model.model_key]}
+      {@const raw_heatmap = per_elem_each_errors[model.model_key]}
       {@const heatmap_values = Object.fromEntries(
       Object.entries(raw_heatmap).filter(([, val]) => val !== null),
     ) as Record<string, number>}

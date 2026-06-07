@@ -5,9 +5,8 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
   import Select from 'svelte-multiselect'
-  import per_elem_each_errors from '../per-element-each-errors.json'
+  import { per_element_each_errors as each_errors } from '$lib/per-element-errors'
 
-  const each_errors = per_elem_each_errors as Record<string, Record<string, number | null>>
   const models_with_errors = MODELS.filter(
     (model) => model.model_key && model.model_key in each_errors,
   )
