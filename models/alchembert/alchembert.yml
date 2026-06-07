@@ -15,7 +15,7 @@ repo: https://gitee.com/liuxiaotong15/alchemBERT
 doi: https://doi.org/10.26434/chemrxiv-2024-r4dnl
 paper: https://chemrxiv.org/engage/chemrxiv/article-details/67540a28085116a133a62b85
 pr_url: https://github.com/janosh/matbench-discovery/pull/187
-checkpoint_url: https://figshare.com/ndownloader/files/53298683
+checkpoint_url: https://figshare.com/files/53298683
 
 license:
   code: GPL-3.0

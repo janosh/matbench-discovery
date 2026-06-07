@@ -2,6 +2,7 @@
   import type { ModelData } from '$lib'
   import { DiatomicCurve } from '$lib/plot'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
+  import { untrack } from 'svelte'
   import { SvelteSet } from 'svelte/reactivity'
 
   let { data } = $props()
@@ -56,7 +57,9 @@
   // plots render on first paint and in prerendered HTML instead of popping in
   // post-mount. data comes from +page.server.ts and is static for the page lifetime
   // (navigation remounts and re-inits), so no effect is needed to resync.
-  const selected_models = new SvelteSet<string>(Object.keys(diatomic_curves))
+  const selected_models = new SvelteSet<string>(
+    untrack(() => Object.keys(diatomic_curves)),
+  )
   let diatomics_to_render = $derived(
     // Only render diatomics where at least one model has data
     homo_diatomic_formulas.filter((formula) =>
