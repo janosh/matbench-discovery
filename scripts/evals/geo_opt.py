@@ -29,6 +29,7 @@ from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.metrics import geo_opt
+from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 symprec = 1e-5
 model_lvl, metric_lvl = "model", "metric"
@@ -59,6 +60,10 @@ for model in cli_args.models:
         continue
 
     analysis_path = f"{ROOT}/{analysis_file}"
+    # fetch the (small) symmetry-analysis CSV from figshare if missing so payloads can
+    # be regenerated on machines/CI that never ran the model locally
+    if analysis_file_url := symprec_metrics.get("analysis_file_url"):
+        maybe_auto_download_file(analysis_file_url, analysis_path, label=model.label)
     if not os.path.isfile(analysis_path):
         print(f"Warning: {model.label} analysis file not found at {analysis_path}")
         continue

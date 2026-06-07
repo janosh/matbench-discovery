@@ -32,7 +32,7 @@ update-site-figs:
     done
 
     # guard against payload shape drift (site pages import these files typed)
-    uv run pytest tests/test_fig_payloads.py -q
+    uv run --with pytest pytest tests/test_fig_payloads.py -q
 
     echo "✅ Site figure payloads updated. Review and commit changes in site/src/figs/"
 
