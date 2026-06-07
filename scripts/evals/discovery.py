@@ -72,7 +72,7 @@ if __name__ == "__main__":
                 discovery.write_metrics_to_yaml(
                     model, metrics, model_preds.loc[subset_idx], test_subset
                 )
-            print(f"\tUpdated discovery metrics for {test_subset}")
+                print(f"\tUpdated discovery metrics for {test_subset}")
         except Exception:
             print(f"\tError processing {model.label}: {traceback.format_exc()}")
             continue
