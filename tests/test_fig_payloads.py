@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 
 from matbench_discovery import SITE_FIG_DATA
+from matbench_discovery.enums import Model
 
 
 def load_payload(name: str) -> Any:
@@ -55,6 +56,11 @@ def assert_models(payload: dict[str, Any], *keys: str, n_min: int = 2) -> list:
         for key in keys:
             assert key in entry, f"model {entry['label']!r} missing {key!r}"
     return models
+
+
+def payload_model_ids(name: str, field: str) -> set[str]:
+    """Set of per-model identifiers (``field`` = 'key' or 'label') in a payload."""
+    return {model[field] for model in load_payload(name)["models"]}
 
 
 def test_no_orphan_payloads() -> None:
@@ -242,3 +248,58 @@ EXPECTED_PAYLOADS = {
 def test_payload_shape(name: str) -> None:
     """Each committed payload matches the shape its consumer page expects."""
     EXPECTED_PAYLOADS[name]()
+
+
+# === staleness guards ===
+# catch partial/stale payloads: a non-full regen silently drops models (as happened
+# before the geo-opt CDF was refreshed from 7 to its full roster)
+
+# all discovery figures share one roster: every active model with discovery metrics
+DISCOVERY_PAYLOADS = (
+    "box-hull-dist-errors",
+    "cumulative-precision-recall",
+    "roc-models",
+    "rolling-mae-vs-hull-dist",
+    "hist-clf-pred-hull-dist",
+)
+
+
+@pytest.mark.parametrize("name", DISCOVERY_PAYLOADS)
+def test_discovery_payload_covers_active_models(name: str) -> None:
+    """Each discovery figure must include every active model with discovery metrics
+    (by model_key), so a partial regen that drops models fails fast instead of silently
+    shipping an incomplete leaderboard figure.
+    """
+    expected = {
+        model.key
+        for model in Model.active()
+        if (disc := (model.metrics or {}).get("discovery")) and disc != "not applicable"
+    }
+    assert len(expected) > 30, f"sanity: too few discovery models ({len(expected)})"
+    keys = payload_model_ids(name, "key")
+    assert keys == expected, (
+        f"{name} roster drift: missing={expected - keys}, extra={keys - expected}"
+    )
+
+
+# sibling figures from a shared data source must agree on their model roster (these
+# carry only `label`, not `key`), so a partial regen of one fails against the rest
+LABEL_PAYLOAD_FAMILIES = {
+    "geo-opt": ("struct-rmsd-cdf", "sym-ops-diff-bar"),
+    "tmi-extras": (
+        "element-prevalence-vs-error",
+        "scatter-largest-fp-diff-each-error",
+        "scatter-largest-each-errors-fp-diff",
+        "hist-largest-each-errors-fp-diff",
+    ),
+}
+
+
+@pytest.mark.parametrize("family", LABEL_PAYLOAD_FAMILIES)
+def test_label_payload_family_roster_consistent(family: str) -> None:
+    """Payloads in a family share a model roster; a partial regen of one fails here."""
+    names = LABEL_PAYLOAD_FAMILIES[family]
+    base = payload_model_ids(names[0], "label")
+    for name in names[1:]:
+        roster = payload_model_ids(name, "label")
+        assert roster == base, f"{name} roster drifts from {names[0]}: {roster ^ base}"

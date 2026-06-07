@@ -84,8 +84,9 @@ if missing_cols := expected_cols - {*df_elem_err}:
 if any(df_elem_err.isna().sum() > 35):
     raise ValueError("Too many NaNs in df_elem_err")
 
-# Merge with existing data to preserve other models when running with --models subset
-json_path = f"{SITE_DIR}/routes/models/per-element-each-errors.json"
+# Merge with existing data to preserve other models when running with --models subset.
+# .json.gz: pandas infers gzip from the extension (read + write, compression=infer)
+json_path = f"{SITE_DIR}/routes/models/per-element-each-errors.json.gz"
 if os.path.isfile(json_path):
     df_existing = pd.read_json(json_path)
     # Update existing with new model columns (and refresh metadata cols)

@@ -1,6 +1,6 @@
 import { MODELS } from '$lib'
 import ElementErrorsPtableHeatmap from '$routes/models/tmi/ElementErrorsPtableHeatmap.svelte'
-import per_elem_each_errors from '$routes/models/per-element-each-errors.json'
+import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 

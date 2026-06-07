@@ -14,7 +14,7 @@ import {
   update_models_cps,
 } from '$lib/models.svelte'
 import type { ModelData } from '$lib/types'
-import per_elem_each_errors from '$routes/models/per-element-each-errors.json'
+import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
 import { load as yaml_load } from 'js-yaml'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'

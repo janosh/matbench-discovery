@@ -20,6 +20,8 @@ data/**/tsne
 !data/mp/2023-02-07-mp-elemental-reference-entries.json.gz
 # committed data-only figure payloads (small, written by matbench_discovery.figs)
 !site/src/figs/*.json.gz
+# committed per-element error payload (gzipped JSON imported by model pages)
+!site/src/routes/models/per-element-each-errors.json.gz
 data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*
