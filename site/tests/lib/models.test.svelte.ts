@@ -177,8 +177,8 @@ describe(`find_best_model`, () => {
   })
 
   it(`returns null instead of a truthy empty object when no model qualifies`, () => {
-    // regression test: best_model on the landing page used to be seeded with {}
-    // which is truthy, rendering 'undefined' model names when no model qualified
+    // regression: best_model used to seed with a truthy {}, so when no model qualified
+    // the empty object rendered 'undefined' model names instead of being falsy
     expect(find_best_model([])).toBeNull()
     const non_compliant = [make_model(`closed`, 0.95, { openness: `CSOD` })]
     expect(find_best_model(non_compliant)).toBeNull()
@@ -307,9 +307,9 @@ describe(`update_models_cps`, () => {
   })
 
   it(`computes CPS from the same RMSD symprec the table displays`, () => {
-    // regression: update_models_cps used to read symprec=1e-5 RMSD while the table
-    // RMSD column (ALL_METRICS.RMSD.path) displays symprec=1e-2, so CPS could
-    // silently diverge from the displayed value if the two levels ever differ
+    // regression: update_models_cps read symprec=1e-5 RMSD while the table shows
+    // symprec=1e-2 (ALL_METRICS.RMSD.path), so CPS could silently diverge from the
+    // displayed value whenever the two symprec levels' RMSDs differ
     expect(ALL_METRICS.RMSD.path).toBe(`metrics.geo_opt.symprec=1e-2`)
 
     const model = {
