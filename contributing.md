@@ -242,9 +242,9 @@ Add the model to the `Model` enum in [`matbench_discovery/enums.py`](https://git
 > [!WARNING]
 > Do not include a `filter_bad_preds.py` script or equivalent. This was a historical flaw in the evaluation and now all OOM outlier prediction handling is handled internally and consistently removing the need for this filtering stage.
 
-### Step 3: Upload results files to Zenodo
+### Step 3: Upload results files to Figshare (or similar)
 
-Upload the files for the predictions, optimized geometries and phonons to Zenodo and share the links in your PR description.
+Upload the files for the predictions, optimized geometries and phonons to [Figshare](https://figshare.com) (or any cloud storage with stable direct-download links) and record the download URLs in the `pred_file_url` keys of your model's YAML file. These URLs are what our automated ingestion (see below) downloads your predictions from, so they must resolve without authentication. No need to worry about link rot long-term: during ingestion we archive copies of your files to the project's own Figshare articles and update the URLs to point at them.
 
 ### Step 4: Open a PR to the [Matbench Discovery repo][repo]
 
@@ -255,7 +255,10 @@ git add -a models/<model_name>
 git commit -m 'add <model_name> to Matbench Discovery leaderboard'
 ```
 
-And you're done! Once tests pass and the PR is merged, your model will be added to the leaderboard! 🎉
+And you're done! Once tests pass, a maintainer triggers automated ingestion on your PR (see below) and after merge your model appears on the leaderboard and in all site figures! 🎉
+
+> [!IMPORTANT]
+> Keep the **"Allow edits by maintainers"** checkbox on your PR enabled (it's on by default). The ingestion bot pushes evaluation results and updated site assets as a commit onto your PR branch — without that permission, ingestion has to be run manually by a maintainer.
 
 ### Step 5: Validate your submission with the justfile
 
@@ -298,16 +301,6 @@ This command will:
 2. **Run evaluation scripts**: Execute discovery, kappa (phonon), and diatomic metrics evaluation for your model
 3. **Generate figures**: Create the required energy parity and per-element error plots
 
-You can also run individual steps:
-
-```sh
-# Run only evaluation scripts
-just eval-model <model_name>
-
-# Run only plot generation
-just plot-model <model_name>
-```
-
 ### Step 6 (optional): Copy WandB runs into our project
 
 [Weights and Biases](https://wandb.ai) ([GitHub](https://github.com/wandb/wandb)) is a tool for logging training and test runs of ML models. It auto-collects metadata like:
@@ -319,6 +312,21 @@ just plot-model <model_name>
 - which versions of dependencies were installed in the environment your model ran in.
 
 This information can be useful for others looking to reproduce your results or compare their model to yours i.t.o. computational cost. We therefore strongly recommend tracking all runs that went into a model submission with WandB so that the runs can be copied over to our WandB project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect.
+
+## 🤖 &thinsp; Automated ingestion (what happens after your PR is opened)
+
+Once your submission PR looks ready, a maintainer applies the `ingest-model` label. CI ([`update-site-figs.yml`](https://github.com/janosh/matbench-discovery/blob/-/.github/workflows/update-site-figs.yml)) then runs the full pipeline — no manual work needed from you:
+
+1. **Safe checkout** — CI checks out trusted `main` code and overlays *only your PR's data*: `models/**` plus your `Model` enum addition, which is accepted only if the diff is provably additive member lines (anything else fails closed and a maintainer ingests locally after review). Submission code is never executed in CI, which is what makes it safe to run this on unreviewed PRs with credentials present.
+2. **Evals + checklist** — your prediction files are downloaded from the `pred_file_url` links in your YAML, all evals run (discovery, kappa, geo-opt, diatomics), metrics are written into your model YAML, and the PR checklist is enforced.
+3. **Figshare archival** — your prediction + analysis files are re-uploaded to the project's own Figshare articles (one per prediction task) for longevity, and your YAML's `*_url` keys are rewritten to the archived copies.
+4. **Per-model site assets** — energy/kappa parity assets (published to the GitHub release the site build downloads from), parity manifests and per-element error data are generated.
+5. **Multi-model figures** — all site figure payloads (`site/src/figs/*.json.gz`) are regenerated so every page (`/models/tmi`, `/tasks/geo-opt`, data pages) includes your model, validated by payload shape tests before committing.
+6. **One commit onto your PR** — the updated YAML, payloads and manifests are pushed to your PR branch (this is why "Allow edits by maintainers" must stay enabled), retriggering CI on the result. Merging the PR lands your model fully integrated.
+
+A post-merge + weekly fallback job regenerates the figure payloads and opens a follow-up PR only if they're stale, so the site can't silently fall out of date even if a PR merges without the label.
+
+Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `just ingest-model <model_name>` locally for submissions whose enum diff fails validation. `just update-site-figs` refreshes the multi-model figure payloads on their own.
 
 ## 😵‍💫 &thinsp; Troubleshooting
 

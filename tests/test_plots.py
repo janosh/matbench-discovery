@@ -1,6 +1,7 @@
 from typing import Literal
 from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import pytest
@@ -20,8 +21,7 @@ from matbench_discovery.plots import (
 AxLine = Literal["x", "y", "xy", ""]
 models = ["MEGNet", "CGCNN", "Voronoi RF"]
 df_wbm = load_df_wbm_with_preds(models=models, nrows=100)
-# TODO remove pd.DataFrame type cast pending https://github.com/astral-sh/ty/issues/1075
-df_preds = pd.DataFrame(df_wbm[models])
+df_preds = df_wbm[models]
 
 
 @pytest.mark.parametrize(
@@ -126,6 +126,68 @@ def test_hist_classified_stable_vs_hull_dist(
 
     assert isinstance(fig, go.Figure)
     assert fig.layout.yaxis.title.text == "Count"
+
+
+def test_hist_classified_rolling_acc_uses_consistent_axis() -> None:
+    """Rolling accuracy must bin numerator and denominator along the same axis.
+
+    Regression test: with which_energy='pred', total bin counts used to be binned
+    by the true hull distance while true pos/neg counts were binned by the
+    predicted hull distance, giving wrong per-bin accuracies. The accuracy trace
+    also plotted len(bins) edges against len(bins)-1 values.
+    """
+    each_true = [-0.18, -0.14, -0.08, 0.13, 0.17, 0.26]
+    # model predicts the 3 truly stable materials stable (true pos) and wrongly
+    # predicts 2 of the 3 unstable ones stable (false pos)
+    each_pred = [-0.45, -0.41, -0.33, -0.13, -0.12, -0.03]
+    df_clf = pd.DataFrame({MbdKey.each_true: each_true, Key.each_pred: each_pred})
+
+    rolling_acc = 0.1
+    fig = hist_classified_stable_vs_hull_dist(
+        df_clf,
+        each_true_col=MbdKey.each_true,
+        each_pred_col=Key.each_pred,
+        which_energy="pred",
+        stability_threshold=0,
+        rolling_acc=rolling_acc,
+    )
+
+    acc_trace = next(trace for trace in fig.data if trace.yaxis == "y2")
+    bins = np.arange(min(each_pred), max(each_pred), rolling_acc)
+
+    # x values are bin centers, one fewer than bin edges
+    assert len(acc_trace.x) == len(bins) - 1
+    np.testing.assert_allclose(acc_trace.x, (bins[:-1] + bins[1:]) / 2)
+
+    # bins 1+2 hold only correctly classified materials (accuracy 1), bin 3 is
+    # empty (0 by convention), bin 4 holds only false positives (accuracy 0)
+    np.testing.assert_allclose(acc_trace.y, [1, 1, 0, 0])
+
+
+def test_calc_tile_grid() -> None:
+    """calc_tile_grid truncates to full rows or keeps all models with ceil rows."""
+    from matbench_discovery.plots import calc_tile_grid
+
+    models = list(range(10))
+    assert calc_tile_grid(models, 3, use_full_rows=True) == (list(range(9)), 3)
+    assert calc_tile_grid(models, 3, use_full_rows=False) == (models, 4)
+    assert calc_tile_grid(models, 5, use_full_rows=True) == (models, 2)
+    assert calc_tile_grid([], 3, use_full_rows=True) == ([], 0)
+    assert calc_tile_grid([], 3, use_full_rows=False) == ([], 0)
+
+
+def test_style_tiled_fig() -> None:
+    """style_tiled_fig adds shared axis titles and portrait-aware margins."""
+    from matbench_discovery.plots import style_tiled_fig
+
+    fig = go.Figure()
+    style_tiled_fig(fig, "X title", "Y title", n_rows=4, n_cols=3)
+    assert [anno.text for anno in fig.layout.annotations] == ["X title", "Y title"]
+    assert fig.layout.margin.t == 0  # portrait: more rows than cols
+
+    fig_landscape = go.Figure()
+    style_tiled_fig(fig_landscape, "X", "Y", n_rows=2, n_cols=3)
+    assert fig_landscape.layout.margin.t == 10
 
 
 def test_plotly_markers_line_styles() -> None:

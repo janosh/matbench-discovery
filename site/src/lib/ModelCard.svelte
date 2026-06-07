@@ -140,7 +140,7 @@
   </span>
 </section>
 {#if show_details}
-  <div transition:fade|fly={{ duration: 200 }}>
+  <div transition:fade={{ duration: 200 }}>
     <section transition:slide={{ duration: 200 }}>
       <h3>Authors</h3>
       <ul>

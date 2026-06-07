@@ -2,16 +2,17 @@ import type { AnyStructure } from 'matterviz/structure'
 import { parse_any_structure } from 'matterviz/structure/parse'
 import {
   assert_array_length,
+  load_parity_model,
   clear_asset_cache,
   join_asset_url,
   load_json_asset,
   resolve_asset_base_url,
 } from './asset-loader'
-import type { ModelAsset, ParityBase, ParityModel, ParityPoint } from './asset-loader'
+import type { ParityBase, ParityModel, ParityPoint } from './asset-loader'
 import { kappa_parity_manifest } from './kappa-parity-manifest'
 import { is_finite_num } from './metrics'
 
-export { clear_asset_cache as clear_kappa_parity_asset_cache, load_json_asset }
+export { clear_asset_cache as clear_kappa_parity_asset_cache }
 
 // raw phonon DOS as stored in assets (histogram of mesh frequencies in THz)
 export interface RawDos {
@@ -58,7 +59,7 @@ const model_assets = kappa_parity_manifest.model_assets as Record<
   { asset: string } | undefined
 >
 
-export const kappa_parity_asset_base_url = resolve_asset_base_url(
+const kappa_parity_asset_base_url = resolve_asset_base_url(
   import.meta.env.VITE_KAPPA_PARITY_ASSET_BASE_URL as string | undefined,
   kappa_parity_manifest.local_asset_base_url,
 )
@@ -86,25 +87,14 @@ export async function load_kappa_parity_base(): Promise<KappaParityBase> {
   return base
 }
 
-export async function load_kappa_parity_model(
-  model_key: string,
-): Promise<KappaParityModel> {
-  const { model } = await load_json_asset<ModelAsset<KappaParityModel>>(
+export const load_kappa_parity_model = (model_key: string): Promise<KappaParityModel> =>
+  load_parity_model<KappaParityModel>(
+    `kappa`,
     kappa_parity_asset_url(kappa_model_asset(model_key)),
-  )
-  if (!model) throw new Error(`No kappa parity model ${model_key} in its asset`)
-  if (model.model_key !== model_key) {
-    throw new Error(
-      `Invalid kappa parity model: expected ${model_key}, got ${model.model_key}`,
-    )
-  }
-  assert_array_length(
-    `kappa parity ${model_key}.kappa_ml`,
-    model.kappa_ml,
+    model_key,
+    `kappa_ml`,
     kappa_parity_manifest.row_count,
   )
-  return model
-}
 
 export function get_kappa_parity_point(
   base: KappaParityBase,

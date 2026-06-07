@@ -227,15 +227,28 @@ def test_conservation_deviation(
     # Simple parabolic potential
     seps = np.logspace(1, -1, 40)
     energies = 0.5 * (seps - 2) ** 2
-    # Forces should be F = -dE/dr = -(r-2)
+    # Diatomics place atom 0 at the origin and atom 1 at [r, 0, 0], so conservative
+    # forces are F_atom0 = +dE/dr = (r - 2) and F_atom1 = -dE/dr = -(r - 2).
     # Shape: (n_seps, n_atoms=2, xyz=3)
     forces = np.zeros((len(seps), 2, 3))
-    # Set x-component of forces for both atoms (equal and opposite)
-    forces[:, 0, 0] = -(seps - 2)  # force on first atom
-    forces[:, 1, 0] = seps - 2  # force on second atom
+    forces[:, 0, 0] = seps - 2  # force on atom at origin
+    forces[:, 1, 0] = -(seps - 2)  # force on displaced atom
 
+    # perfectly conservative forces give ~zero deviation (small residual from
+    # np.gradient's first-order edge estimates on the non-uniform grid)
     deviation = diatomics.calc_conservation_deviation(seps, energies, forces)
-    assert deviation == pytest.approx(2.0, abs=0.5)
+    assert deviation == pytest.approx(0, abs=0.05)
+
+    # regression check: the metric used to return ~mean(|dE/dr|) for ANY forces,
+    # making perfect forces indistinguishable from all-zero forces
+    zero_dev = diatomics.calc_conservation_deviation(
+        seps, energies, np.zeros_like(forces)
+    )
+    assert zero_dev > 0.5  # = mean(|dE/dr|) / 3 ~= 2.2 / 3 for this parabola
+
+    # sign-swapped forces (atoms attract when they should repel) are penalized
+    swapped_dev = diatomics.calc_conservation_deviation(seps, energies, -forces)
+    assert swapped_dev > 1
 
     _, pred_curves = pred_ref_diatomic_curves
     h_data = pred_curves.homo_nuclear["H"]
@@ -245,8 +258,8 @@ def test_conservation_deviation(
     # Create forces array with correct shape
     forces_pred = np.zeros((len(dists), 2, 3))
     grad = np.gradient(e_pred, dists)
-    forces_pred[:, 0, 0] = -grad  # force on first atom
-    forces_pred[:, 1, 0] = grad  # force on second atom
+    forces_pred[:, 0, 0] = grad  # force on atom at origin
+    forces_pred[:, 1, 0] = -grad  # force on displaced atom
 
     dev = diatomics.calc_conservation_deviation(dists, e_pred, forces_pred)
     assert isinstance(dev, float)
@@ -268,17 +281,17 @@ def test_conservation_deviation(
     # Constant curve
     e_const = np.ones(len(dists))
 
-    # Create forces arrays with correct shape
+    # Create forces arrays with correct shape: dE/dr = 1 everywhere
     forces_linear = np.zeros((len(dists), 2, 3))
-    forces_linear[:, 0, 0] = -1  # constant force on first atom
-    forces_linear[:, 1, 0] = 1  # constant force on second atom
+    forces_linear[:, 0, 0] = 1  # force on atom at origin (+dE/dr)
+    forces_linear[:, 1, 0] = -1  # force on displaced atom (-dE/dr)
 
     forces_const = np.zeros((len(dists), 2, 3))  # zero forces everywhere
 
     linear_cons = diatomics.calc_conservation_deviation(dists, e_linear, forces_linear)
     const_cons = diatomics.calc_conservation_deviation(dists, e_const, forces_const)
-    # Linear curve should have constant force equal to slope=1
-    assert linear_cons == pytest.approx(1, abs=1e-3)
+    # Linear curve with matching constant forces is perfectly conservative
+    assert linear_cons == pytest.approx(0, abs=1e-3)
     # Constant curve should have zero force
     assert const_cons == pytest.approx(0, abs=1e-3)
 

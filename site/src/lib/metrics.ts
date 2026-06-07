@@ -7,12 +7,9 @@ import {
 } from '$lib/labels'
 import type { ModelMetadata, ModelType, TargetType } from '$lib/model-schema'
 import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
-import type { CellVal, DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
+import type { DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { max, min } from 'd3-array'
-import { scaleLog, scaleSequential } from 'd3-scale'
-import * as d3sc from 'd3-scale-chromatic'
-import { format_num, pick_contrast_color } from 'matterviz'
+import { format_num } from 'matterviz'
 
 // Model target type descriptions
 export const targets_tooltips: Record<TargetType, string> = {
@@ -184,44 +181,8 @@ export const make_combined_filter =
     return true
   }
 
-// Calculate table cell background color based on its value and column config
-export function calc_cell_color(
-  val: number | null | undefined, // Cell value
-  all_values: CellVal[], // All values in the column
-  better: `higher` | `lower` | undefined, // Sort direction
-  color_scale: string | null = `interpolateViridis`, // Color scale name
-  scale_type: `linear` | `log` = `linear`, // Scale type
-): { bg: string | null; text: string | null } {
-  // Skip color calculation for null values or if color_scale is null
-  if (val === null || val === undefined || color_scale === null) {
-    return { bg: null, text: null }
-  }
-
-  const numeric_vals = all_values.filter(
-    (v): v is number => typeof v === `number` && v > 0, // Filter out non-positives for log scale
-  )
-
-  if (numeric_vals.length === 0) return { bg: null, text: null }
-
-  const range = [min(numeric_vals) ?? 0, max(numeric_vals) ?? 1]
-
-  // Reverse the range if lower values are better
-  if (better === `lower`) range.reverse()
-
-  const d3_key = color_scale as keyof typeof d3sc // cast unavoidable: color_scale is user-provided string
-  const d3_value = d3_key in d3sc ? d3sc[d3_key] : undefined
-  const interpolator: (t: number) => string =
-    typeof d3_value === `function` ? d3_value : d3sc.interpolateViridis
-
-  let bg: string
-  if (scale_type === `log` && range[0] > 0 && range[1] > 0) {
-    bg = interpolator(scaleLog().domain(range).range([0, 1]).clamp(true)(val))
-  } else {
-    bg = scaleSequential().domain(range).interpolator(interpolator)(val)
-  }
-  const text = pick_contrast_color({ bg_color: bg })
-  return { bg, text }
-}
+// NB: cell background/text colors are computed by matterviz's HeatmapTable internally
+// (calc_cell_color in matterviz/table) — no local color logic needed
 
 // Calculate table data for the metrics table with combined scores
 export function assemble_row_data(
@@ -387,11 +348,11 @@ export const sort_models =
     const val_2 = get_nested_value(model_2, sort_by)
 
     // Handle null, undefined, or NaN values by sorting last
-    const nil_1 = val_1 === null || val_1 === undefined
-    const nil_2 = val_2 === null || val_2 === undefined
-    if (nil_1 && nil_2) return 0
-    if (nil_1 || (typeof val_1 === `number` && isNaN(val_1))) return 1
-    if (nil_2 || (typeof val_2 === `number` && isNaN(val_2))) return -1
+    const sorts_last = (val: unknown) =>
+      val == null || (typeof val === `number` && Number.isNaN(val))
+    if (sorts_last(val_1) && sorts_last(val_2)) return 0
+    if (sorts_last(val_1)) return 1
+    if (sorts_last(val_2)) return -1
 
     if (typeof val_1 === `string` && typeof val_2 === `string`) {
       return sort_factor * val_1.localeCompare(val_2)

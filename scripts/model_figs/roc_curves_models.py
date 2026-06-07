@@ -4,8 +4,7 @@
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
-from matbench_discovery import plots as plots
-from matbench_discovery.cli import cli_args
+from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.preds.discovery import df_each_pred, df_metrics, df_preds
 
@@ -19,7 +18,7 @@ if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
-show_non_compliant = globals().get("show_non_compliant", False)
+show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
 models_to_plot = [
     model.label
     for model in cli_args.models
@@ -73,5 +72,7 @@ for trace in fig.data:
             "tpr": figs.round_list(tpr),
         }
     )
-figs.write_json_gz(f"{SITE_FIG_DATA}/{img_name}.json.gz", {"models": roc_models})
+if show_non_compliant and is_full_model_run():  # site payload = full model set;
+    # the compliant-only variant exists as PDF only (paper SI)
+    figs.write_json_gz(f"{SITE_FIG_DATA}/roc-models.json.gz", {"models": roc_models})
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

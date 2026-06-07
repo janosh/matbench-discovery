@@ -9,6 +9,7 @@ import runpy
 import sys
 from glob import glob
 
+from pymatviz.enums import Key
 from tqdm import tqdm
 
 __author__ = "Janosh Riebesell"
@@ -37,7 +38,9 @@ for show_non_compliant in (False, True):
         init_globals = {"show_non_compliant": show_non_compliant}
         try:
             if script_path.endswith("tiles_energy_parity.py"):
-                for which_energy in ("e-form", "each"):
+                # must match Key.e_form/Key.each which tiles_energy_parity.py
+                # compares against (read there via globals().get("which_energy"))
+                for which_energy in (Key.e_form, Key.each):
                     runpy.run_path(
                         script_path,
                         init_globals=init_globals | {"which_energy": which_energy},

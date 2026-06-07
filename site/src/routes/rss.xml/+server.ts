@@ -2,7 +2,7 @@ import { by_date_added_desc, MODELS } from '$lib'
 import { format_train_set } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
 import pkg from '$site/package.json'
-import { format_num } from 'matterviz'
+import { format_num, strip_html } from 'matterviz'
 
 export const prerender = true
 
@@ -20,7 +20,7 @@ function format_model_for_rss(model: ModelData): string {
 
   const training_set = format_train_set(model.training_set, model)
   // Remove HTML tags for plain text display
-  const clean_training_set = training_set.replaceAll(/<[^>]*>/g, ``)
+  const clean_training_set = strip_html(training_set)
 
   const metrics_text = discovery_metrics
     ? Object.entries(discovery_metrics)
@@ -46,7 +46,7 @@ function format_model_for_rss(model: ModelData): string {
     ? `<p><strong>Key Hyperparameters:</strong><br>&nbsp;&nbsp;${Object.entries(
         model.hyperparams,
       )
-        .filter(([key]) => !key.includes(`_`))
+        .filter(([key]) => !key.startsWith(`_`))
         .map(([key, value]) => `${key}: ${String(value)}`)
         .join(`,<br>&nbsp;&nbsp;`)}</p>`
     : ``

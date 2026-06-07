@@ -6,7 +6,6 @@ import {
   all_higher_better_metrics,
   all_lower_better_metrics,
   assemble_row_data,
-  calc_cell_color,
   format_train_set,
   make_combined_filter,
   metric_better_as,
@@ -196,189 +195,6 @@ describe(`make_combined_filter function - skipped since using real implementatio
 
     expect(filter(model)).toBe(false)
     expect(model_filter).toHaveBeenCalledWith(model)
-  })
-})
-
-describe(`calc_cell_color`, () => {
-  it.each([
-    {
-      case: `null or undefined values`,
-      val: null,
-      all_values: [1, 2, 3],
-      better: `higher` as const,
-      color_scale: `interpolateViridis`,
-      scale_type: `linear` as const,
-    },
-    {
-      case: `undefined values`,
-      val: undefined,
-      all_values: [1, 2, 3],
-      better: `higher` as const,
-      color_scale: `interpolateViridis`,
-      scale_type: `linear` as const,
-    },
-    {
-      case: `null color_scale`,
-      val: 5,
-      all_values: [1, 5, 10],
-      better: `higher` as const,
-      color_scale: null,
-      scale_type: `linear` as const,
-    },
-    {
-      case: `empty numeric_vals`,
-      val: 5,
-      all_values: [],
-      better: `higher` as const,
-      color_scale: `interpolateViridis`,
-      scale_type: `linear` as const,
-    },
-  ])(
-    `returns null colors for $case`,
-    ({ val, all_values, better, color_scale, scale_type }) => {
-      const result = calc_cell_color(val, all_values, better, color_scale, scale_type)
-      expect(result.bg).toBeNull()
-      expect(result.text).toBeNull()
-    },
-  )
-
-  it.each(
-    [
-      { scale_type: `linear` as const, all_values: [1, 5, 10] },
-      { scale_type: `log` as const, all_values: [1, 10, 100, 1000] },
-    ].flatMap(({ scale_type, all_values }) =>
-      ([`higher`, `lower`] as const).flatMap((better) =>
-        ([`best`, `worst`] as const).map((rank) => {
-          const [min_value, max_value] = [
-            all_values[0],
-            all_values.at(-1) ?? all_values[0],
-          ]
-          const use_max_value = better === `higher` ? rank === `best` : rank === `worst`
-          const val = use_max_value ? max_value : min_value
-          return {
-            case: `${scale_type} scale with '${better}' better ${rank} value`,
-            val,
-            all_values,
-            better,
-            scale_type,
-            expected_text_color: rank === `best` ? `black` : `white`,
-          }
-        }),
-      ),
-    ),
-  )(
-    `correctly calculates colors with $case`,
-    ({ val, all_values, better, scale_type, expected_text_color }) => {
-      const result = calc_cell_color(
-        val,
-        all_values,
-        better,
-        `interpolateViridis`,
-        scale_type,
-      )
-
-      // Should have valid color values
-      expect(result.bg).toMatch(/^rgb\(|rgba\(|#/)
-      expect(result.text).toBe(expected_text_color)
-
-      // Compare with a different value
-      const diff_val =
-        val === Math.max(...all_values.filter((v) => typeof v === `number`))
-          ? Math.min(...all_values.filter((v) => typeof v === `number`))
-          : Math.max(...all_values.filter((v) => typeof v === `number`))
-
-      const result2 = calc_cell_color(
-        diff_val,
-        all_values,
-        better,
-        `interpolateViridis`,
-        scale_type,
-      )
-
-      // Colors should be different for different values
-      expect(result.bg).not.toStrictEqual(result2.bg)
-    },
-  )
-
-  it(`reverses colors based on 'better' parameter`, () => {
-    const values = [1, 5, 10]
-
-    // For higher=better, higher values get "better" colors
-    const higher_better1 = calc_cell_color(
-      1,
-      values,
-      `higher` as const,
-      `interpolateViridis`,
-      `linear` as const,
-    )
-    const higher_better10 = calc_cell_color(
-      10,
-      values,
-      `higher` as const,
-      `interpolateViridis`,
-      `linear` as const,
-    )
-
-    // For lower=better, lower values get "better" colors
-    const lower_better1 = calc_cell_color(
-      1,
-      values,
-      `lower` as const,
-      `interpolateViridis`,
-      `linear` as const,
-    )
-    const lower_better10 = calc_cell_color(
-      10,
-      values,
-      `lower` as const,
-      `interpolateViridis`,
-      `linear` as const,
-    )
-
-    // When "better" is reversed, the colors should also be reversed
-    expect(higher_better1.bg).toStrictEqual(lower_better10.bg)
-    expect(higher_better10.bg).toStrictEqual(lower_better1.bg)
-  })
-
-  it(`falls back to viridis when color_scale is invalid`, () => {
-    // Using a non-existent color scale, should fall back to viridis
-    const valid_scale = calc_cell_color(
-      5,
-      [1, 5, 10],
-      `higher` as const,
-      `interpolateViridis`,
-      `linear` as const,
-    )
-    const invalid_scale = calc_cell_color(
-      5,
-      [1, 5, 10],
-      `higher` as const,
-      `nonExistentScale`,
-      `linear` as const,
-    )
-
-    // Should still return a valid color
-    expect(invalid_scale.bg).toMatch(/^rgb\(|rgba\(|#/)
-
-    // Color should be the same as with viridis
-    expect(invalid_scale.bg).toStrictEqual(valid_scale.bg)
-  })
-
-  it(`handles log scale with non-positive values`, () => {
-    // Log scales need positive values
-    const mixed_vals = [-10, -1, 0, 1, 10]
-
-    // Values that will be filtered out for the domain should still get colors
-    const result = calc_cell_color(
-      10,
-      mixed_vals,
-      `higher` as const,
-      `interpolateViridis`,
-      `log` as const,
-    )
-
-    // Should still return a valid color since 10 is positive
-    expect(result.bg).toMatch(/^rgb\(|rgba\(|#/)
   })
 })
 
@@ -896,6 +712,40 @@ describe(`Model Sorting Logic`, () => {
       `mmm_model`,
       `missing_model`,
     ])
+  })
+
+  it(`returns 0 for two models that both have NaN values (consistent comparator)`, () => {
+    // regression: comparing NaN vs NaN used to return 1 for both argument orders,
+    // violating comparator antisymmetry, so sort results depended on input order
+    const { Accuracy } = ALL_METRICS
+    const sort_by = `${Accuracy.path}.${Accuracy.key}`
+    const make_nan_model = (model_key: string) =>
+      ({
+        model_key,
+        metrics: { discovery: { unique_prototypes: { Accuracy: NaN } } },
+      }) as unknown as ModelData
+    const [nan_1, nan_2] = [make_nan_model(`nan_1`), make_nan_model(`nan_2`)]
+    const valid = {
+      model_key: `valid`,
+      metrics: { discovery: { unique_prototypes: { Accuracy: 0.5 } } },
+    } as unknown as ModelData
+
+    const compare = sort_models(sort_by, `desc`)
+    expect(compare(nan_1, nan_2)).toBe(0)
+    expect(compare(nan_2, nan_1)).toBe(0)
+    // NaN still sorts after real values in both argument orders
+    expect(compare(valid, nan_1)).toBeLessThan(0)
+    expect(compare(nan_1, valid)).toBeGreaterThan(0)
+
+    // sorting NaN-heavy arrays is now stable regardless of initial order
+    const models = [nan_1, valid, nan_2]
+    const fwd = models.toSorted(compare).map((model) => model.model_key)
+    const rev = models
+      .toReversed()
+      .toSorted(compare)
+      .map((model) => model.model_key)
+    expect(fwd[0]).toBe(`valid`)
+    expect(rev[0]).toBe(`valid`)
   })
 
   it(`sorts models by model_name correctly`, () => {

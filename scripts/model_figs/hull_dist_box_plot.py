@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, figs
-from matbench_discovery.cli import cli_args
+from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.preds.discovery import df_each_err, df_preds
@@ -21,7 +21,7 @@ if test_subset == TestSubset.uniq_protos:
 
 
 # %%
-show_non_compliant = globals().get("show_non_compliant", False)
+show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
 models_to_plot = [
     model
     for model in cli_args.models
@@ -85,6 +85,9 @@ fig.show()
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
 img_name = f"box-hull-dist-errors{img_suffix}"
-figs.write_json_gz(f"{SITE_FIG_DATA}/{img_name}.json.gz", {"models": box_models})
+if show_non_compliant and is_full_model_run():  # site payload = full model set
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/box-hull-dist-errors.json.gz", {"models": box_models}
+    )
 fig.layout.showlegend = False
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

@@ -10,19 +10,23 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 import pymatviz as pmv
-from pymatgen.core import Composition, Element
+from pymatgen.core import Element
 from pymatviz.enums import Key
 from pymatviz.utils import df_ptable
 
-from matbench_discovery import ROOT, SITE_FIG_DATA, figs
-from matbench_discovery.cli import cli_args
-from matbench_discovery.data import df_wbm, load_df_wbm_with_preds
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery import SITE_FIG_DATA, figs
+from matbench_discovery.cli import cli_args, is_full_model_run
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import TestSubset
+from matbench_discovery.preds import (
+    load_per_element_errors,
+    test_set_std_col,
+    train_count_col,
+)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
-test_set_std_col = "Test set standard deviation"
 elem_col, size_col = "Element", "group"
 fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
@@ -31,35 +35,9 @@ fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 models_to_plot = cli_args.models
 
-# Load predictions for specified models
-df_preds = load_df_wbm_with_preds(
-    models=models_to_plot, subset=cli_args.test_subset
-).round(3)
-
-# Calculate errors for each model
-df_each_err = pd.DataFrame(index=df_preds.index)
-for model in models_to_plot:
-    df_each_err[model.label] = df_preds[model.label] - df_preds[MbdKey.e_form_dft]
-
-# project average model error onto periodic table
-df_comp = pd.DataFrame(
-    Composition(comp).as_dict() for comp in df_preds[Key.formula]
-).set_index(df_preds.index)
-
-
-# %% compute number of samples per element in training set
-# we count raw element occurrence, i.e. not weighted by composition, based on the
-# hypothesis that models don't learn more about iron and oxygen from Fe2O3 than from FeO
-counts_path = f"{ROOT}/site/src/routes/data/mp-element-counts-by-occurrence.json"
-df_elem_err = pd.read_json(counts_path, typ="series")
-train_count_col = "MP Occurrences"
-df_elem_err = df_elem_err.reset_index(name=train_count_col).set_index("index")
-df_elem_err.index.name = "symbol"
-
-# compute std dev of DFT hull dist for each element in test set
-df_elem_err[test_set_std_col] = (
-    df_comp.where(pd.isna, 1) * df_preds[MbdKey.each_true].to_numpy()[:, None]
-).std()
+df_preds, df_each_err, df_comp, df_elem_err = load_per_element_errors(
+    models_to_plot, subset=cli_args.test_subset
+)
 
 
 # %% plot number of structures containing each element in MP and WBM
@@ -115,9 +93,10 @@ for normalized in (False, True):
         figs.trace_payload(trace) for trace in fig.data
     ]
 
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/element-counts-mp-vs-wbm.json.gz", elem_counts_payload
-)
+if is_full_model_run():  # don't clobber site payload on filtered runs
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/element-counts-mp-vs-wbm.json.gz", elem_counts_payload
+    )
 
 
 # %%
@@ -168,15 +147,16 @@ fig.layout.title.update(xanchor="center", x=0.5)
 fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title="")
 fig.show()
 
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/element-prevalence-vs-error.json.gz",
-    {
-        # element symbols + x (occurrence count per element) shared across models
-        "elements": [str(symbol) for symbol in df_elem_err.index],
-        "occurrences": figs.round_list(fig.data[0].x),
-        "models": [figs.trace_payload(trace, x=False) for trace in fig.data],
-    },
-)
+if is_full_model_run():  # don't clobber site payload on filtered runs
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/element-prevalence-vs-error.json.gz",
+        {
+            # element symbols + x (occurrence count per element) shared across models
+            "elements": [str(symbol) for symbol in df_elem_err.index],
+            "occurrences": figs.round_list(fig.data[0].x),
+            "models": [figs.trace_payload(trace, x=False) for trace in fig.data],
+        },
+    )
 
 
 # %% --- Fingerprint-based analysis ---
@@ -225,10 +205,11 @@ fig.layout.yaxis.title = "Count"
 
 fig.show()
 
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/hist-largest-each-errors-fp-diff.json.gz",
-    {"models": hist_largest_models},
-)
+if is_full_model_run():  # don't clobber site payload on filtered runs
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/hist-largest-each-errors-fp-diff.json.gz",
+        {"models": hist_largest_models},
+    )
 
 
 # %% scatter plot:
@@ -276,10 +257,11 @@ fig.layout.yaxis.title = "Absolute error (eV/atom)"
 
 fig.show()
 
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/scatter-largest-each-errors-fp-diff.json.gz",
-    {"models": each_errors_models},
-)
+if is_full_model_run():  # don't clobber site payload on filtered runs
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/scatter-largest-each-errors-fp-diff.json.gz",
+        {"models": each_errors_models},
+    )
 
 
 # %% scatter plot: errors for structures with largest FP diff (most relaxation change)
@@ -354,7 +336,11 @@ fig.layout.xaxis.title = "|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|"
 fig.layout.yaxis.title = "|E<sub>above hull</sub> error| (eV/atom)"
 fig.layout.margin = dict(t=40, b=0, l=0, r=0)
 fig.show()
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/scatter-largest-fp-diff-each-error.json.gz",
-    {"fp_diff": figs.round_list(df_largest_fp_diff.values), "models": fp_diff_models},
-)
+if is_full_model_run():  # don't clobber site payload on filtered runs
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/scatter-largest-fp-diff-each-error.json.gz",
+        {
+            "fp_diff": figs.round_list(df_largest_fp_diff.values),
+            "models": fp_diff_models,
+        },
+    )

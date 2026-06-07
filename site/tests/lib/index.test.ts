@@ -1,22 +1,5 @@
-import { arr_to_str, calculate_days_ago, format_date, slugify } from '$lib'
+import { arr_to_str, format_date, slugify } from '$lib'
 import { describe, expect, it } from 'vitest'
-
-describe(`calculate_days_ago`, () => {
-  it(`returns empty string for empty input`, () => {
-    expect(calculate_days_ago(``)).toBe(``)
-  })
-
-  it.each([
-    { offset_years: -1, min: 300, max: 400, desc: `past date` },
-    { offset_years: 1, min: -400, max: -300, desc: `future date` },
-  ])(`handles $desc correctly`, ({ offset_years, min, max }) => {
-    const date = new Date()
-    date.setFullYear(date.getFullYear() + offset_years)
-    const days_ago = parseInt(calculate_days_ago(date.toISOString()), 10)
-    expect(days_ago).toBeGreaterThan(min)
-    expect(days_ago).toBeLessThan(max)
-  })
-})
 
 describe(`slugify`, () => {
   it.each([

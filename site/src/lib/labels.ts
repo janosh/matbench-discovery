@@ -414,7 +414,7 @@ export const DISCOVERY_SET_LABELS: Record<
   },
 } as const
 
-export const PROPERTY_LABELS = Object.fromEntries(
+const PROPERTY_LABELS = Object.fromEntries(
   Object.values({ ...ALL_METRICS, ...METADATA_COLS, ...HYPERPARAMS }).map((prop) => [
     prop.key ?? prop.label,
     prop.label,
@@ -443,7 +443,7 @@ export function format_property_path(path: string): string {
     .join(` > `)
 }
 
-export const CATEGORY_LABELS = Object.fromEntries(
+const CATEGORY_LABELS = Object.fromEntries(
   Object.entries({ ...MODELINGS_TASKS, ...DISCOVERY_SET_LABELS, ...HYPERPARAMS }).map(
     ([key, task]) => [key, task.label],
   ),
@@ -451,7 +451,7 @@ export const CATEGORY_LABELS = Object.fromEntries(
 // Add explicit mapping for hyperparams to show as "Hyperparams"
 CATEGORY_LABELS.hyperparams = `Hyperparams`
 
-export const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
+const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
 export const title_case = (str: string) =>
   str.replaceAll(`_`, ` `).split(` `).map(to_title).join(` `)
 

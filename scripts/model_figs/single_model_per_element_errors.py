@@ -8,17 +8,18 @@ import os
 
 import pandas as pd
 import pymatviz as pmv
-from pymatgen.core import Composition
-from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 from tqdm.auto import tqdm
 
-from matbench_discovery import ROOT, SITE_DIR
+from matbench_discovery import SITE_DIR
 from matbench_discovery.cli import cli_args
-from matbench_discovery.data import load_df_wbm_with_preds
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import TestSubset
+from matbench_discovery.preds import (
+    load_per_element_errors,
+    test_set_std_col,
+    train_count_col,
+)
 
-test_set_std_col = "Test set standard deviation"
 elem_col, size_col = "Element", "group"
 
 
@@ -26,35 +27,9 @@ elem_col, size_col = "Element", "group"
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 models_to_plot = cli_args.models
 
-# Load predictions for specified models
-df_preds = load_df_wbm_with_preds(
-    models=models_to_plot, subset=cli_args.test_subset
-).round(3)
-
-# Calculate errors for each model
-df_each_err = pd.DataFrame(index=df_preds.index)
-for model in models_to_plot:
-    df_each_err[model.label] = df_preds[model.label] - df_preds[MbdKey.e_form_dft]
-
-# project average model error onto periodic table
-df_comp = pd.DataFrame(
-    Composition(comp).as_dict() for comp in df_preds[Key.formula]
-).set_index(df_preds.index)
-
-
-# %% compute number of samples per element in training set
-# we count raw element occurrence, i.e. not weighted by composition, based on the
-# hypothesis that models don't learn more about iron and oxygen from Fe2O3 than from FeO
-counts_path = f"{ROOT}/site/src/routes/data/mp-element-counts-by-occurrence.json"
-df_elem_err = pd.read_json(counts_path, typ="series")
-train_count_col = "MP Occurrences"
-df_elem_err = df_elem_err.reset_index(name=train_count_col).set_index("index")
-df_elem_err.index.name = "symbol"
-
-# compute std dev of DFT hull dist for each element in test set
-df_elem_err[test_set_std_col] = (
-    df_comp.where(pd.isna, 1) * df_preds[MbdKey.each_true].to_numpy()[:, None]
-).std()
+df_preds, df_each_err, df_comp, df_elem_err = load_per_element_errors(
+    models_to_plot, subset=cli_args.test_subset
+)
 
 
 # %%

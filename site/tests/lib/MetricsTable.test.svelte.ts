@@ -46,6 +46,11 @@ describe(`MetricsTable`, () => {
       expect(header_texts).toContain(col)
     }
 
+    // Model column must come first, other columns keep their definition order
+    expect(header_texts[0]).toBe(`Model`)
+    const metric_order = [`CPS ↑`, `F1`, `DAF`].map((col) => header_texts.indexOf(col))
+    expect(metric_order).toStrictEqual([...metric_order].sort((n1, n2) => n1 - n2))
+
     // Test prediction files dropdown interaction
     const pred_files_button = doc_query<HTMLButtonElement>(`tbody .pred-files-btn`)
     expect(pred_files_button).toBeDefined() // Ensure at least one button exists

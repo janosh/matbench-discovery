@@ -173,12 +173,17 @@ def calc_conservation_deviation(
 
         # Calculate energy gradient using central differences on interpolated data
         energy_grad = np.gradient(energies_interp, seps_interp)
-        # Compare forces with energy gradient
-        return float(np.mean(np.abs(forces_interp + energy_grad.reshape(-1, 1, 1))))
-    # Calculate energy gradient using central differences
-    energy_grad = np.gradient(energies, seps)
+        forces = forces_interp
+    else:
+        # Calculate energy gradient using central differences
+        energy_grad = np.gradient(energies, seps)
 
-    # Compare only x-component of forces with energy gradient
-    # For diatomic molecules, forces should be equal and opposite
-    # on the two atoms along the x-axis
-    return float(np.mean(np.abs(forces + energy_grad.reshape(-1, 1, 1))))
+    # Diatomics are generated with atom 0 at the origin and atom 1 at [r, 0, 0]
+    # (see generate_diatomics), so conservative forces satisfy
+    # F_atom0 = +dE/dr x_hat and F_atom1 = -dE/dr x_hat with zero transverse
+    # components. Deviation is the mean absolute difference from these expected
+    # forces over all atoms and Cartesian components.
+    expected_forces = np.zeros_like(forces)
+    expected_forces[:, 0, 0] = energy_grad
+    expected_forces[:, 1, 0] = -energy_grad
+    return float(np.mean(np.abs(forces - expected_forces)))

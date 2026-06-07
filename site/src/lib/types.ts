@@ -4,7 +4,6 @@ import type { Label1 as LabelType } from './label-schema.d.ts'
 import type { ModelMetadata } from './model-schema.d.ts'
 
 export type { Dataset } from './dataset-schema.d.ts'
-export type { ModelMetadata } from './model-schema.d.ts'
 
 export type ModelData = ModelMetadata & {
   // These fields are populated in MODELS variable in models.svelte.ts
@@ -28,7 +27,7 @@ export interface Author {
 }
 
 // Used in citation.cff
-export type CffAuthor = Omit<Author, `name`> & {
+type CffAuthor = Omit<Author, `name`> & {
   'family-names': string
   'given-names': string
   affil_key: string
@@ -59,17 +58,6 @@ export interface Citation {
   url: string
   version: string
 }
-
-export type TrainingSet =
-  | (`MP 2022` | `MPtrj` | `MPF` | `MP Graphs` | `GNoME` | `MatterSim` | `Alex`)
-  | {
-      title: string
-      url: string
-      download_url: string
-      n_structures: number
-      n_materials?: number
-      [k: string]: unknown
-    }
 
 export type Label = LabelType & {
   color_scale?: keyof typeof d3sc // D3-scale-chromatic color scale name
@@ -109,7 +97,7 @@ export type CellVal =
   | Record<string, unknown>
   | LinkData
   | Record<string, string | number | LinkData | null | undefined | boolean>[]
-export interface RowData {
+interface RowData {
   style?: string
   [key: string]: CellVal
 }

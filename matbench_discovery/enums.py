@@ -217,7 +217,11 @@ class Files(StrEnum, metaclass=MetaFiles):
         """Create a new member of the FileUrls enum with a given URL where to load the
         file from and directory where to save it to.
         """
-        obj = str.__new__(cls)
+        # pass val to str.__new__ so the member's underlying string content is its
+        # value. Without it, every member is the empty string "", so str.__eq__ and
+        # str.__hash__ (inherited, not overridden) make all members compare equal and
+        # hash to 0, silently collapsing any set/dict/`in` use of members.
+        obj = str.__new__(cls, val)
         obj._value_ = val
         obj.__dict__ |= dict(file_path=file_path)
         return obj

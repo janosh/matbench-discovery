@@ -5,7 +5,7 @@
   import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
   import { DynamicScatter, GitHubActivityScatter, RadarChart } from '$lib/plot'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
-  import { model_is_compliant, MODELS } from '$lib/models.svelte'
+  import { find_best_model, model_is_compliant, MODELS } from '$lib/models.svelte'
   import {
     generate_csv,
     generate_excel,
@@ -24,27 +24,22 @@
   const n_wbm_stable_uniq_protos = 32_942
   const n_wbm_uniq_protos = DATASETS.WBM.n_materials
 
-  let table = $state({
-    show_non_compliant: true,
-    show_energy_only: false,
-    show_combined_controls: true,
-    show_compliant: true,
-    show_heatmap: true,
-  })
+  let show_non_compliant = $state(true)
+  let show_energy_only = $state(false)
+  let show_compliant = $state(true)
+  let show_heatmap = $state(true)
   let export_error: string | null = $state(null)
-  let visible_cols: Record<string, boolean> = $state({
-    ...Object.fromEntries(
+  // columns hidden by default on the landing page (κ_SRE is a supplementary phonon
+  // metric); users can opt back in via the column toggles
+  const hidden_cols = new Set([`TPR`, `TNR`, `RMSE`, ALL_METRICS.κ_SRE.label])
+  let visible_cols: Record<string, boolean> = $state(
+    Object.fromEntries(
       [...Object.values(ALL_METRICS), ...Object.values(METADATA_COLS)].map((col) => [
         col.label,
-        col.visible !== false,
+        col.visible !== false && !hidden_cols.has(col.label),
       ]),
     ),
-    TPR: false,
-    TNR: false,
-    RMSE: false,
-    // κ_SRE is a supplementary phonon metric; opt-in via column toggles
-    [ALL_METRICS.κ_SRE.label]: false,
-  })
+  )
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
   let sort = $state({ column: `CPS`, dir: `desc` as SortDir })
   let url_initialized = false
@@ -62,9 +57,9 @@
       if (param_sort) sort.column = param_sort
       const param_dir = params.get(`dir`)
       if (param_dir === `asc` || param_dir === `desc`) sort.dir = param_dir
-      if (params.get(`energy_only`) === `1`) table.show_energy_only = true
-      if (params.get(`non_compliant`) === `0`) table.show_non_compliant = false
-      if (params.get(`compliant`) === `0`) table.show_compliant = false
+      if (params.get(`energy_only`) === `1`) show_energy_only = true
+      if (params.get(`non_compliant`) === `0`) show_non_compliant = false
+      if (params.get(`compliant`) === `0`) show_compliant = false
       return
     }
 
@@ -72,9 +67,9 @@
     if (discovery_set !== `unique_prototypes`) new_params.set(`set`, discovery_set)
     if (sort.column !== `CPS`) new_params.set(`sort`, sort.column)
     if (sort.dir !== `desc`) new_params.set(`dir`, sort.dir)
-    if (table.show_energy_only) new_params.set(`energy_only`, `1`)
-    if (!table.show_non_compliant) new_params.set(`non_compliant`, `0`)
-    if (!table.show_compliant) new_params.set(`compliant`, `0`)
+    if (show_energy_only) new_params.set(`energy_only`, `1`)
+    if (!show_non_compliant) new_params.set(`non_compliant`, `0`)
+    if (!show_compliant) new_params.set(`compliant`, `0`)
 
     const new_url = new_params.size > 0 ? `?${new_params}` : page.url.pathname
     if (new_url !== `${page.url.pathname}${page.url.search}`) {
@@ -83,40 +78,32 @@
   })
 
   // Export state object for handle_export
-  let export_state = $derived({
-    export_error,
-    show_non_compliant: table.show_non_compliant,
-    discovery_set,
-  })
+  let export_state = $derived({ export_error, show_non_compliant, discovery_set })
 
   let best_model = $derived(
-    MODELS.reduce((best: ModelData, md: ModelData) => {
-      const best_discovery = best.metrics?.discovery
-      const md_discovery = md.metrics?.discovery
-
-      const best_F1_raw =
-        (typeof best_discovery === `object` && best_discovery?.full_test_set?.F1) ?? 0
-      const md_F1_raw =
-        (typeof md_discovery === `object` && md_discovery?.full_test_set?.F1) ?? 0
-
-      // Ensure F1 values are numbers
-      const best_F1 = typeof best_F1_raw === `number` ? best_F1_raw : 0
-      const md_F1 = typeof md_F1_raw === `number` ? md_F1_raw : 0
-
-      if (
-        (!best_F1 || md_F1 > best_F1) &&
-        (table.show_non_compliant || model_is_compliant(md))
-      ) return md
-      return best
-    }, {} as ModelData),
+    find_best_model(MODELS, { show_non_compliant, show_compliant, discovery_set }),
+  )
+  // landing-page cohort, kept in sync with the metrics table's compliance toggles
+  let in_cohort = $derived((model: ModelData) =>
+    model_is_compliant(model) ? show_compliant : show_non_compliant
   )
 
   export const snapshot: Snapshot = {
-    capture: () => ({ discovery_set, table, sort }),
+    capture: () => ({
+      discovery_set,
+      sort,
+      show_non_compliant,
+      show_energy_only,
+      show_compliant,
+      show_heatmap,
+    }),
     restore: (values) => {
       discovery_set = values.discovery_set ?? discovery_set
-      table = values.table ?? table
       sort = values.sort ?? sort
+      show_non_compliant = values.show_non_compliant ?? show_non_compliant
+      show_energy_only = values.show_energy_only ?? show_energy_only
+      show_compliant = values.show_compliant ?? show_compliant
+      show_heatmap = values.show_heatmap ?? show_heatmap
     },
   }
 </script>
@@ -145,10 +132,10 @@
       model_filter={() => true}
       {discovery_set}
       bind:sort
-      bind:show_energy_only={table.show_energy_only}
-      bind:show_non_compliant={table.show_non_compliant}
-      bind:show_compliant={table.show_compliant}
-      bind:show_heatmap={table.show_heatmap}
+      bind:show_energy_only
+      bind:show_non_compliant
+      bind:show_compliant
+      bind:show_heatmap
     />
   </section>
 
@@ -223,15 +210,12 @@
 
 <!-- Dynamic axis scatter plot -->
 <p>Compare models across different metrics and parameters:</p>
-<DynamicScatter
-  models={MODELS}
-  model_filter={(model) => table.show_non_compliant || model_is_compliant(model)}
-/>
+<DynamicScatter models={MODELS} model_filter={in_cohort} />
 
 <Readme>
   {#snippet title()}{/snippet}
   {#snippet model_count()}
-    {MODELS.filter((md) => table.show_non_compliant || model_is_compliant(md)).length}
+    {MODELS.filter(in_cohort).length}
   {/snippet}
 
   {#snippet best_report()}

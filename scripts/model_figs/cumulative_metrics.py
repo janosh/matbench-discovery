@@ -8,11 +8,10 @@ will provide the best hit rate for the given budget.
 """
 
 # %%
-import pandas as pd
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
-from matbench_discovery.cli import cli_args
+from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import cumulative_metrics
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
@@ -38,7 +37,7 @@ range_y = {
     ("Precision", "Recall"): (0, 1),
 }[metrics]
 
-show_non_compliant = globals().get("show_non_compliant", False)
+show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
 models_to_plot = [
     model.label
     for model in cli_args.models
@@ -47,13 +46,9 @@ models_to_plot = [
 
 fig, df_metric = cumulative_metrics(
     e_above_hull_true=df_preds[MbdKey.each_true],
-    # TODO remove pd.DataFrame type cast pending https://github.com/astral-sh/ty/issues/1075
-    df_preds=pd.DataFrame(df_each_pred[models_to_plot]),
+    df_preds=df_each_pred[models_to_plot],
     metrics=metrics,
-    # facet_col_wrap=2,
-    # increase facet col gap
-    facet_col_spacing=0.05,
-    # markers=True,
+    facet_col_spacing=0.05,  # increase facet col gap
     endpoint_markers=(endpoint_markers := True),
     show_n_stable=metrics != ("MAE",),
 )
@@ -128,8 +123,9 @@ if metrics == ("Precision", "Recall"):
             }
         )
     n_stable = int((df_preds[MbdKey.each_true] <= STABILITY_THRESHOLD).sum())
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/{img_name}.json.gz",
-        {"n_stable": n_stable, "models": cum_pr_models},
-    )
+    if show_non_compliant and is_full_model_run():  # site payload = full model set
+        figs.write_json_gz(
+            f"{SITE_FIG_DATA}/cumulative-precision-recall.json.gz",
+            {"n_stable": n_stable, "models": cum_pr_models},
+        )
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

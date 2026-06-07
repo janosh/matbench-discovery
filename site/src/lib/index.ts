@@ -8,7 +8,6 @@ import { MODELS } from './models.svelte'
 
 export { default as Footer } from './Footer.svelte'
 export { default as GeoOptMetricsTable } from './GeoOptMetricsTable.svelte'
-export { default as Logo } from './Logo.svelte'
 export { default as MetricsTable } from './MetricsTable.svelte'
 export { default as AuthorBrief } from './ModelAuthor.svelte'
 export { default as ModelCard } from './ModelCard.svelte'
@@ -16,27 +15,13 @@ export { MODELS } from './models.svelte'
 export { default as OrgLogos } from './OrgLogos.svelte'
 export { default as PtableHeatmap } from './PtableHeatmap.svelte'
 export { default as PtableInset } from './PtableInset.svelte'
-export { default as References } from './References.svelte'
 export { default as SelectToggle } from './SelectToggle.svelte'
 export { default as TableControls } from './TableControls.svelte'
 export * from './types'
 export { data_files, DATASETS }
 
-// Calculate number of days between provided date string and today
-export function calculate_days_ago(date_str: string): string {
-  if (!date_str) return ``
-  const ms_per_day = 1000 * 60 * 60 * 24
-  const now = new Date()
-  const then = new Date(date_str)
-
-  return ((now.getTime() - then.getTime()) / ms_per_day).toLocaleString(`en-US`, {
-    maximumFractionDigits: 0,
-  })
-}
-
 const md_parser = unified().use(remarkParse).use(remarkRehype).use(rehypeStringify)
-export const md_to_html = (md: string): string =>
-  String(md_parser.processSync(md)?.value ?? ``)
+const md_to_html = (md: string): string => String(md_parser.processSync(md)?.value ?? ``)
 
 // Function to slugify text for URLs
 export const slugify = (text: string): string =>
