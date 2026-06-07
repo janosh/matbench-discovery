@@ -41,7 +41,7 @@ trained_by:
 repo: https://github.com/zmyybc/AlphaNet
 url: https://github.com/zmyybc/AlphaNet
 pr_url: https://github.com/janosh/matbench-discovery/pull/255
-checkpoint_url: https://figshare.com/ndownloader/files/53851139
+checkpoint_url: https://figshare.com/files/53851139
 paper: https://arxiv.org/abs/2501.07155
 doi: https://doi.org/10.48550/arXiv.2501.07155
 openness: OSOD
@@ -184,4 +184,4 @@ metrics:
       R2: 0.882 # dimensionless
       missing_preds: 0 # count
   diatomics:
-    pred_file_url: https://figshare.com/ndownloader/files/54490370
+    pred_file_url: https://figshare.com/files/54490370

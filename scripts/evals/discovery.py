@@ -73,7 +73,7 @@ if __name__ == "__main__":
                     model, metrics, model_preds.loc[subset_idx], test_subset
                 )
                 print(f"\tUpdated discovery metrics for {test_subset}")
-        except Exception:
+        except (ValueError, OSError, KeyError):
             print(f"\tError processing {model.label}: {traceback.format_exc()}")
             continue
 

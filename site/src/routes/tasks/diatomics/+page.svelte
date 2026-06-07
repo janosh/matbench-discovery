@@ -2,6 +2,7 @@
   import type { ModelData } from '$lib'
   import { DiatomicCurve } from '$lib/plot'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
+  import { untrack } from 'svelte'
   import { SvelteSet } from 'svelte/reactivity'
 
   let { data } = $props()
@@ -35,7 +36,7 @@
 
   type ColorType = (typeof colors)[number]
 
-  const [humu_nuc_key, _hetero_nuc_key] = [`homo-nuclear`, `hetero-nuclear`] as const
+  const homo_nuc_key = `homo-nuclear`
 
   // Generate list of homo-nuclear diatomic formulas for elements 1-119
   const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
@@ -56,13 +57,15 @@
   // plots render on first paint and in prerendered HTML instead of popping in
   // post-mount. data comes from +page.server.ts and is static for the page lifetime
   // (navigation remounts and re-inits), so no effect is needed to resync.
-  const selected_models = new SvelteSet<string>(Object.keys(diatomic_curves))
+  const selected_models = new SvelteSet<string>(
+    untrack(() => Object.keys(diatomic_curves)),
+  )
   let diatomics_to_render = $derived(
     // Only render diatomics where at least one model has data
     homo_diatomic_formulas.filter((formula) =>
       [...selected_models].some(
         (model) =>
-          diatomic_curves[model]?.[humu_nuc_key]?.[formula]?.energies?.length > 0,
+          diatomic_curves[model]?.[homo_nuc_key]?.[formula]?.energies?.length > 0,
       )
     ),
   )
@@ -128,14 +131,14 @@
       {formula}
       curves={[...selected_models]
       .filter((model) => {
-        const { energies = [] } = diatomic_curves[model]?.[humu_nuc_key]?.[formula] ??
+        const { energies = [] } = diatomic_curves[model]?.[homo_nuc_key]?.[formula] ??
           {}
         return energies.length > 0
       })
       .map((model) => ({
         model_key: model,
         distances: diatomic_curves[model].distances,
-        energies: diatomic_curves[model][humu_nuc_key][formula].energies,
+        energies: diatomic_curves[model][homo_nuc_key][formula].energies,
         color: model_colors.get(model) ?? `gray`,
       }))}
       style={`height: ${plot_size.height}px`}

@@ -180,7 +180,7 @@ for idx, atoms in tqdm_bar:
                 f"Symmetry group changed from {pre_sym_group} to {post_sym_group}"
             )
 
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
         err_dict["errors"].append(f"RelaxError: {exc!r}")
@@ -246,7 +246,7 @@ for idx, atoms in tqdm_bar:
                 force_results[mat_id] = force_results_item
             continue
 
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
         traceback.print_exc()
         err_dict["errors"].append(f"ForceConstantError: {exc!r}")
@@ -264,7 +264,7 @@ for idx, atoms in tqdm_bar:
         )
         if force_results_item is not None:
             force_results[mat_id] = force_results_item
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         warnings.warn(
             f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
         )
@@ -302,6 +302,6 @@ try:
 
     df_ml_metrics.to_json(f"{out_dir}/metrics.json.gz")
     print(f"Saved metrics to {out_dir}/metrics.json.gz")
-except Exception as exc:
+except (ValueError, RuntimeError, OSError, KeyError) as exc:
     warnings.warn(f"Failed to calculate metrics: {exc!r}", stacklevel=2)
     traceback.print_exc()

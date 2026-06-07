@@ -52,7 +52,7 @@ def process_results(path: str) -> None:
         print(fn)
         try:
             dfs.append(pd.read_json(fn, lines=True, compression="gzip"))
-        except Exception as e:
+        except (ValueError, OSError) as e:
             print(f"Error reading {fn}: {e}")  # Print any errors during file reading.
             continue  # Continue to the next file
 

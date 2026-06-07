@@ -21,11 +21,19 @@ interface HistBins extends XY {
   bar_width: number
 }
 
+// every per-model entry in the discovery-metric payloads carries `key`
+// (= MODELS model_key, e.g. for the compliance-filter join in discovery-metric-figs.md)
+// plus a display `label`
+interface KeyedModel {
+  key: string
+  label: string
+}
+
 // === models/tmi discovery metrics ===
 declare module '$figs/box-hull-dist-errors.json.gz' {
   const data: {
     // quantiles = [q05, q25, median, q75, q95] of each model's hull distance error
-    models: { label: string; color: string; quantiles: number[] }[]
+    models: (KeyedModel & { color: string; quantiles: number[] })[]
   }
   export default data
 }
@@ -33,28 +41,37 @@ declare module '$figs/box-hull-dist-errors.json.gz' {
 declare module '$figs/cumulative-precision-recall.json.gz' {
   const data: {
     n_stable: number // number of stable materials in the WBM test set
-    models: {
-      label: string
+    models: (KeyedModel & {
       color: string
       x: number[] // number of materials validated, ranked most to least stable
       precision: number[]
       recall: number[]
       // each model's end of ranking: [n predicted stable, precision, recall] there
       end: [number, number, number]
-    }[]
+    })[]
   }
   export default data
 }
 
 declare module '$figs/roc-models.json.gz' {
-  const data: { models: { label: string; auc: number; fpr: number[]; tpr: number[] }[] }
+  const data: {
+    models: (KeyedModel & {
+      auc: number
+      fpr: number[]
+      tpr: number[]
+    })[]
+  }
   export default data
 }
 
 declare module '$figs/rolling-mae-vs-hull-dist.json.gz' {
   const data: {
     x: number[] // shared E above hull values (eV/atom)
-    models: { label: string; color: string; y: number[]; visible?: boolean }[]
+    models: (KeyedModel & {
+      color: string
+      y: number[]
+      visible?: boolean
+    })[]
     density: XY // rolling count of test-set structures per hull-dist bin (on y2)
   }
   export default data
@@ -64,10 +81,7 @@ declare module '$figs/hist-clf-pred-hull-dist.json.gz' {
   const data: {
     bin_centers: number[] // shared hull-dist bins (eV/atom)
     // per-model stability-classification counts per bin
-    models: ({ label: string; f1: number } & Record<
-      `tp` | `fn` | `fp` | `tn`,
-      number[]
-    >)[]
+    models: (KeyedModel & { f1: number } & Record<`tp` | `fn` | `fp` | `tn`, number[]>)[]
   }
   export default data
 }
@@ -181,14 +195,12 @@ declare module '$figs/spg-sankeys.json.gz' {
   // DFT vs model spacegroup flows (symprec=1e-5); key matches MODELS model_key. flat
   // arrays; matterviz sankey_from_links(source, target, value, labels) builds the graph
   const data: {
-    models: {
-      key: string
-      label: string
+    models: (KeyedModel & {
       labels: string[]
       source: number[]
       target: number[]
       value: number[]
-    }[]
+    })[]
   }
   export default data
 }

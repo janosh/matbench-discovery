@@ -48,7 +48,12 @@ for idx, model in enumerate(models_to_plot):
     # Use the same color for both box and label
     color = color_seq[idx % len(color_seq)]
     box_models.append(
-        {"label": model.label, "color": color, "quantiles": figs.round_list(ys)}
+        {
+            "key": model.key,
+            "label": model.label,
+            "color": color,
+            "quantiles": figs.round_list(ys),
+        }
     )
     fig.add_box(
         y=ys,

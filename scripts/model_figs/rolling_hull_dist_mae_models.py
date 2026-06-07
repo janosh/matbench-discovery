@@ -6,7 +6,7 @@ import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, figs
 from matbench_discovery.cli import cli_args, is_full_model_run
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
@@ -94,7 +94,9 @@ for trace in fig.data:
         continue
     if shared_x is None:
         shared_x = figs.round_list(figs.trace_xy(trace)[0])
-    entry = figs.trace_payload(trace, x=False)
+    entry = {"key": Model.from_label(trace.name).key} | figs.trace_payload(
+        trace, x=False
+    )
     if not figs.trace_visible(trace):
         entry["visible"] = False
     rolling_models.append(entry)

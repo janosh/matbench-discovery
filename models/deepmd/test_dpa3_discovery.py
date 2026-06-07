@@ -37,7 +37,7 @@ class Relaxer:
     def __init__(self, model: str | Path) -> None:
         try:
             self.calculator = DP(Path(model))
-        except Exception as exc:
+        except (OSError, RuntimeError, ValueError) as exc:
             print(f"DP calculator load failed: {exc}")
 
         self.optimizer = FIRE
@@ -160,7 +160,7 @@ def relax_run(
                 f"{model}_energy": result["trajectory"].energies[-1],
             }
 
-        except Exception as exc:
+        except (ValueError, RuntimeError, OSError, KeyError) as exc:
             print(f"Failed to relax {material_id}: {exc!r}")
 
     df_out = pd.DataFrame(relax_results).T

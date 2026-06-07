@@ -115,7 +115,7 @@ img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}{img_suff
 # site payload: per-model stability-classification counts on shared hull-dist bins
 # (binned over the displayed x-range only; the old fig binned (-0.7, 0.7) but clipped
 # the view to +/-0.4 eV/atom)
-hist_clf_kwargs: dict[str, Any] = dict(bins=128, value_range=(-0.45, 0.45))
+hist_clf_kwargs: dict[str, Any] = dict(bins=64, value_range=(-0.45, 0.45))
 clf_models: list[dict[str, object]] = []
 for model in models_to_plot:
     df_model = df_melt.query(f"{facet_col} == {model.label!r}")
@@ -125,7 +125,7 @@ for model in models_to_plot:
     each_pred = df_model[Key.each_pred]
     f1_score = dfs_metrics[test_subset][model.label]["F1"]
     clf_models.append(
-        {"label": model.label, "f1": round(float(f1_score), 4)}
+        {"key": model.key, "label": model.label, "f1": round(float(f1_score), 4)}
         | {
             key: figs.histogram(each_pred[mask], **hist_clf_kwargs)["y"]
             for key, mask in (

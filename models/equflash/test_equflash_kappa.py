@@ -362,7 +362,7 @@ def main() -> None:
                 kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
                 continue
 
-        except Exception as exc:
+        except (ValueError, RuntimeError, OSError, KeyError) as exc:
             warnings.warn(
                 f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2
             )

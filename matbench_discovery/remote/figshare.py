@@ -347,7 +347,7 @@ def delete_file(article_id: int, file_id: int) -> bool:
         make_request("DELETE", url)  # should return None
         print(f"Successfully deleted file with ID {file_id} from article {article_id}")
         return True  # noqa: TRY300
-    except Exception as exc:
+    except requests.RequestException as exc:
         print(f"Failed to delete file with ID {file_id}: {exc}")
         return False
 
@@ -417,7 +417,7 @@ def publish_article(article_id: int, *, verbose: bool = True) -> bool:
         if verbose:
             article_url = f"{ARTICLE_URL_PREFIX}/{article_id}"
             print(f"Successfully published article {article_id} at {article_url}")
-    except Exception as exc:
+    except requests.RequestException as exc:
         if verbose:
             print(f"Failed to publish article {article_id}: {exc}")
         return False

@@ -37,7 +37,7 @@ for file_path in tqdm(file_paths):
         continue
     try:
         df_i = pd.read_json(file_path).set_index(Key.mat_id)
-    except Exception as exc:
+    except (ValueError, OSError, KeyError) as exc:
         failed[file_path] = str(exc)
         continue
     # drop trajectory to save memory

@@ -117,7 +117,7 @@ for material_id in tqdm(structures, desc="Relaxing"):
             relax_results[material_id]["chgnet_structure"] = relax_struct
             # traj = relax_result["trajectory"]
             # relax_results[material_id]["chgnet_trajectory"] = traj.__dict__
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         print(f"Failed to relax {material_id}: {exc!r}")
 
 

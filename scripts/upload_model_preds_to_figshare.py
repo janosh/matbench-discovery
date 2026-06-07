@@ -14,11 +14,11 @@ from typing import Any, Literal
 import yaml
 from tqdm import tqdm
 
-import matbench_discovery.remote.figshare as figshare
 from matbench_discovery import PKG_DIR, ROOT
 from matbench_discovery.cli import cli_parser
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
+from matbench_discovery.remote import figshare
 
 with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
     pyproject = tomllib.load(toml_file)["project"]

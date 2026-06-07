@@ -12,7 +12,7 @@ import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
 from matbench_discovery.cli import cli_args, is_full_model_run
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.plots import cumulative_metrics
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
@@ -109,6 +109,7 @@ if metrics == ("Precision", "Recall"):
         prec_end, rec_end = prec_ends[label], rec_ends[label]
         cum_pr_models.append(
             {
+                "key": Model.from_label(label).key,
                 "label": label,
                 "color": figs.trace_color(prec_tr),
                 "x": figs.round_list(prec_tr.x),

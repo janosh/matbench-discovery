@@ -10,6 +10,9 @@
   import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
 
   const fp_diff_label = `|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|`
+  // mirrors the metrics-table toggle: filters all discovery figures below to the
+  // compliant-only cohort (models trained on MP-anchored data)
+  let show_non_compliant = $state(true)
 
   // per-figure model selection via dropdowns (faster than the old all-series-behind-a-
   // huge-legend figs). bind the model labels (svelte-multiselect string options; binding
@@ -46,7 +49,12 @@ Stuff that didn't make the cut into the&nbsp;<a href="/models">model page</a>.
 
 <br />
 
-<DiscoveryMetricFigs />
+<label class="compliance-toggle">
+  <input type="checkbox" bind:checked={show_non_compliant} />
+  Show non-compliant models in figures below
+</label>
+
+<DiscoveryMetricFigs {show_non_compliant} />
 
 <h2>Does error correlate with element prevalence in training set?</h2>
 
@@ -189,6 +197,12 @@ for each model and the mean of all models.
 />
 
 <style>
+  .compliance-toggle {
+    display: flex;
+    gap: 1ex;
+    align-items: center;
+    margin: 1em 0;
+  }
   .model-select {
     display: flex;
     gap: 1ex;

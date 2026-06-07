@@ -149,7 +149,7 @@ for atoms in tqdm_bar:
                 "broken_symmetry": broken_symmetry,
             }
 
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
         err_dict["errors"].append(f"RelaxError: {exc!r}")
@@ -207,7 +207,7 @@ for atoms in tqdm_bar:
             )
             continue
 
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
         traceback.print_exc()
         err_dict["errors"].append(f"ForceConstantError: {exc!r}")
@@ -218,7 +218,7 @@ for atoms in tqdm_bar:
     try:  # Calculate thermal conductivity
         ph3, kappa_dict, _ = ltc.calculate_conductivity(ph3, temperatures=temperatures)
         print(f"Calculated kappa for {mat_id}: {kappa_dict}")
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         warnings.warn(
             f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
         )

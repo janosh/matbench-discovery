@@ -107,7 +107,7 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
         raise ValueError(
             f"expected shape (..., 3, 3) or (..., 3), got {kappa_arr.shape}"
         )
-    except Exception:
+    except (ValueError, TypeError):
         warnings.warn(
             f"Failed to calculate kappa_avg: {traceback.format_exc()}", stacklevel=2
         )

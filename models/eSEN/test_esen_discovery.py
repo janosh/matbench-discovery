@@ -195,7 +195,7 @@ class MBDRunner:
                     "pred_structure": structure,
                     "pred_energy": energy,
                 }
-            except Exception:
+            except (ValueError, RuntimeError, OSError, KeyError):
                 continue
 
     def join_prediction(self, file_paths: list[Path] | None = None) -> None:

@@ -691,22 +691,26 @@ class OptimizableFrechetBatch(OptimizableUnitCellBatch):
             augmented_forces = augmented_forces.cpu().numpy()
         return augmented_forces
 
-    def logm(self, a: torch.Tensor) -> torch.Tensor:
+    def logm(self, matrix: torch.Tensor) -> torch.Tensor:
         # ensure A is symmetric
 
-        #
-        s, V = torch.linalg.eigh(a)
+        eigvals, eigvecs = torch.linalg.eigh(matrix)
         return torch.bmm(
-            torch.bmm(V, torch.diag_embed(torch.log(torch.abs(s)))), V.transpose(-1, -2)
+            torch.bmm(eigvecs, torch.diag_embed(torch.log(torch.abs(eigvals)))),
+            eigvecs.transpose(-1, -2),
         )
 
-    def expm(self, a: torch.Tensor) -> torch.Tensor:
-        return torch.linalg.matrix_exp(a)
+    def expm(self, matrix: torch.Tensor) -> torch.Tensor:
+        return torch.linalg.matrix_exp(matrix)
 
-    def expm_frechet(self, a: torch.Tensor, h: torch.Tensor) -> torch.Tensor:
-        Z = torch.zeros(a.shape[0], 6, 6, dtype=torch.float64, device=self.device)
-        Z[:, 0:3, 0:3] = a.detach()
-        Z[:, 3:6, 3:6] = a.detach()
-        Z[:, 0:3, 3:6] = h.detach()
+    def expm_frechet(
+        self, matrix: torch.Tensor, direction: torch.Tensor
+    ) -> torch.Tensor:
+        block_matrix = torch.zeros(
+            matrix.shape[0], 6, 6, dtype=torch.float64, device=self.device
+        )
+        block_matrix[:, 0:3, 0:3] = matrix.detach()
+        block_matrix[:, 3:6, 3:6] = matrix.detach()
+        block_matrix[:, 0:3, 3:6] = direction.detach()
 
-        return torch.linalg.matrix_exp(Z)[:, 0:3, 3:6]
+        return torch.linalg.matrix_exp(block_matrix)[:, 0:3, 3:6]
