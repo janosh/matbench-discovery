@@ -1,4 +1,5 @@
 import { toPng, toSvg } from 'html-to-image'
+import { is_dark_mode, strip_html } from 'matterviz'
 import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
 
 export const heatmap_class = `heatmap`
@@ -151,17 +152,7 @@ function clean_table_for_export(table_clone: HTMLElement): void {
 function get_theme_colors(): { background: string; text: string } {
   const root_styles = getComputedStyle(document.documentElement)
 
-  // Check if dark mode is active by looking for the correct indicators
-  const theme_data = document.documentElement.dataset.theme
-  const color_scheme = document.documentElement.style.colorScheme
-  const prefers_dark = globalThis.matchMedia?.(`(prefers-color-scheme: dark)`).matches
-
-  const is_dark_mode =
-    theme_data === `dark` ||
-    color_scheme === `dark` ||
-    (theme_data === undefined && color_scheme === undefined && prefers_dark)
-
-  if (is_dark_mode) {
+  if (is_dark_mode()) {
     const background = root_styles.getPropertyValue(`--dark-page-bg`) || `#061e25`
     const text = root_styles.getPropertyValue(`--dark-text`) || `rgb(208, 208, 208)`
     return { background, text }
@@ -484,14 +475,14 @@ function format_value_for_export(value: number, header: string): number | string
   const all_labels = { ...ALL_METRICS, ...METADATA_COLS, ...HYPERPARAMS }
 
   // Look for label by header text (may need to handle HTML in headers)
-  const clean_header = header.replaceAll(/<[^>]*>/g, ``).trim()
+  const clean_header = strip_html(header).trim()
 
   let format_spec: string | undefined
 
   // Find matching label by key or label name
   for (const label of Object.values(all_labels)) {
-    const label_text = label.label?.replaceAll(/<[^>]*>/g, ``).trim()
-    const key_text = label.key?.replaceAll(/<[^>]*>/g, ``).trim()
+    const label_text = label.label && strip_html(label.label).trim()
+    const key_text = label.key && strip_html(label.key).trim()
 
     if (label_text === clean_header || key_text === clean_header) {
       format_spec = label.format

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { arr_to_str, calculate_days_ago, DATASETS, format_date } from '$lib'
-  import { Icon, format_num } from 'matterviz'
+  import { arr_to_str, DATASETS, format_date } from '$lib'
+  import { format_num, format_relative_time, Icon } from 'matterviz'
   import type { Dataset } from '$lib/types'
   import pkg from '$site/package.json'
   import { tooltip } from 'svelte-multiselect/attachments'
@@ -10,8 +10,8 @@
   let dataset = $derived(data.dataset)
   const link_props = { target: `_blank`, rel: `noopener noreferrer` }
 
-  let days_created = $derived(calculate_days_ago(dataset.date_created))
-  let days_added = $derived(calculate_days_ago(dataset.date_added ?? ``))
+  let created_ago = $derived(format_relative_time(dataset.date_created))
+  let added_ago = $derived(format_relative_time(dataset.date_added))
 
   // Format the params object into a readable list
   function format_params(params: Record<string, unknown> | undefined): string[] {
@@ -34,12 +34,12 @@
     <span>Version: {dataset.version}</span>
   {/if}
 
-  <span title="{days_created} days ago" {@attach tooltip()}>
+  <span title={created_ago} {@attach tooltip()}>
     <Icon icon="Calendar" /> Created: {format_date(dataset.date_created)}
   </span>
 
   {#if dataset.date_added}
-    <span title="{days_added} days ago" {@attach tooltip()}>
+    <span title={added_ago} {@attach tooltip()}>
       <Icon icon="CalendarPlus" /> Added: {format_date(dataset.date_added)}
     </span>
   {/if}

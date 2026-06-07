@@ -1,9 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import type { ModelData } from '$lib'
-  import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
-  import { format_num, ScatterPlot } from 'matterviz'
+  import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { ColorScaleSelect, create_color_scale, DEFAULT_SERIES_SYMBOLS } from 'matterviz/plot'
   import type { DataSeries } from 'matterviz/plot'
@@ -129,7 +128,7 @@
         const size_value = get_label_value(model, axes.size_value)
 
         const { model_name, date_added: model_date, model_key } = model
-        const days_ago = calculate_days_ago(model.date_added)
+        const days_ago = format_relative_time(model.date_added)
         const metadata = { model_name, date_added: model_date, days_ago, model_key }
         return { x: x_val, y: y_val, color_value, size_value, metadata }
       })
@@ -354,7 +353,7 @@
         <strong>{metadata.model_name}</strong><br />
         {@html axes.x?.label}: {x_formatted}
         {#if axes.x?.key === `date_added` && metadata.days_ago}
-          <small>({metadata.days_ago} days ago)</small>{/if}<br />
+          <small>({metadata.days_ago})</small>{/if}<br />
         {@html axes.y?.label}: {y_formatted}<br />
         {#if ![`model_params`, `date_added`].includes(axes.color_value?.key ?? ``) &&
         point?.color_value !== undefined}

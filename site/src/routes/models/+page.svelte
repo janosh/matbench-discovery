@@ -4,7 +4,7 @@
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
-  import { ColorBar, Icon, luminance } from 'matterviz'
+  import { ColorBar, Icon, pick_contrast_color } from 'matterviz'
   import { untrack } from 'svelte'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
@@ -148,7 +148,7 @@
     {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
       {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
       {@const bg_clr = bg_color(metric_val as number, best_val, worst_val)}
-      {@const text_color = luminance(bg_clr) > 0.7 ? `black` : `white`}
+      {@const text_color = pick_contrast_color({ bg_color: bg_clr })}
       <li
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}
