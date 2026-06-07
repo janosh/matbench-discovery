@@ -174,6 +174,26 @@ def test_files_enum() -> None:
         Files.from_label(label)
 
 
+@pytest.mark.parametrize("enum_cls", [Model, DataFiles])
+def test_files_members_are_distinct(enum_cls: type[Files]) -> None:
+    """Files members must compare by value instead of collapsing into one element.
+
+    Regression test: Files.__new__ used to call str.__new__(cls) without passing the
+    value, leaving every member's underlying string content "". Since the inherited
+    str.__eq__/str.__hash__ act on that content, all members compared equal and hashed
+    to 0, silently collapsing any set/dict/`in` use of members into a single element.
+    """
+    members = list(enum_cls)
+    # a set of members must keep every distinct member, not collapse to one
+    assert len({*members}) == len(members)
+
+    first, second = members[0], members[1]
+    assert first != second
+    # each member equals (and hashes like) its own value string
+    assert first == first.value
+    assert hash(first) == hash(first.value)
+
+
 def test_data_files_enum() -> None:
     """Test DataFiles enum functionality."""
     # Test __repr__ and __str__ for DataFiles

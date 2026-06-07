@@ -94,11 +94,7 @@ def test_cli_args_global() -> None:
 
 
 def test_is_full_model_run(monkeypatch: pytest.MonkeyPatch) -> None:
-    """is_full_model_run guards multi-model site payloads against filtered runs.
-
-    Compares by enum member name since Model's custom __eq__ makes all members
-    compare equal (member sets collapse to a single element).
-    """
+    """is_full_model_run guards multi-model site payloads against filtered runs."""
     from matbench_discovery import cli
 
     monkeypatch.setattr(cli.cli_args, "models", list(Model.active()))

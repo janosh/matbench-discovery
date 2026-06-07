@@ -114,12 +114,8 @@ def is_full_model_run() -> bool:
     """True when --models wasn't narrowed, i.e. the run covers all active models.
     Multi-model site figure payloads (site/src/figs) must only be (over)written on
     full runs, else a filtered run would clobber them with partial data.
-
-    Compares by enum member name: Model's custom __eq__ (inherited from Files) makes
-    all members compare equal, so member sets collapse and can't be used directly.
     """
-    selected = {model.name for model in cli_args.models}
-    return selected >= {model.name for model in Model.active()}
+    return set(cli_args.models) >= set(Model.active())
 
 
 # Set env var to auto-confirm file downloads when --auto-download is passed
