@@ -112,8 +112,8 @@ describe(`Model Detail Page`, () => {
   }, 10_000)
 
   it(`renders without crashing when training_set has an unknown dataset key`, () => {
-    // regression test: an unknown training_set key (e.g. typo in a model YAML) used
-    // to throw while destructuring DATASETS[dataset_key] and crash the whole page
+    // regression: an unknown training_set key (e.g. a model-YAML typo) used to throw
+    // on DATASETS[key] and crash the whole page
     const bogus_sets = [`BogusDataset`, `MPtrj`] as ModelData[`training_set`]
     const model = { ...test_model, training_set: bogus_sets }
     mount(ModelPage, { target: document.body, props: { data: { model } } })

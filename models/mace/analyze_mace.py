@@ -42,7 +42,7 @@ pmv.save_fig(fig, "mace-too-low-hull-dist-scatter.pdf")
 
 
 # %%
-fig = pmv.ptable_heatmap_plotly(df_low[Key.formula])
+fig = pmv.ptable_heatmap(df_low[Key.formula])
 title = f"Elements in {len(df_low):,} MACE severe energy underpredictions"
 fig.layout.title.update(text=title, x=0.4, y=0.95)
 fig.show()

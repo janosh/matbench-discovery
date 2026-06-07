@@ -85,7 +85,7 @@ for dataset, count_mode, elem_counts in all_counts:
     elem_counts.to_json(f"{data_page}/{img_name}.json")
 
     colorbar_title = f"Number of {dataset.upper()} structures containing each element"
-    fig_elem_counts = pmv.ptable_heatmap_plotly(
+    fig_elem_counts = pmv.ptable_heatmap(
         elem_counts, log=(log := True), colorbar=dict(title=colorbar_title)
     )
     fig_elem_counts.show()
@@ -97,7 +97,7 @@ for dataset, count_mode, elem_counts in all_counts:
 
 # %% ratio of WBM to MP counts
 normalized = True
-ax_ptable = pmv.ptable_heatmap_plotly(
+ax_ptable = pmv.ptable_heatmap(
     values=(wbm_occu_counts / (len(df_wbm) if normalized else 1))
     / (mp_occu_counts / (len(df_mp) if normalized else 1)),
     exclude_elements=("Xe", "Th", "Pa", "U", "Np", "Pu"),
@@ -127,10 +127,10 @@ for arity, df_mp in df_wbm.groupby(df_wbm[Key.composition].map(len)):
 
 # %%
 for dataset, count_mode, elem_counts in all_counts:
-    fig = pmv.ptable_heatmap_plotly(
+    fig = pmv.ptable_heatmap(
         elem_counts.drop("Xe")[elem_counts > 1],
         font_size=11,
-        color_bar=dict(title=dict(text=f"WBM {count_mode} counts", font_size=24)),
+        colorbar=dict(title=dict(text=f"WBM {count_mode} counts", font_size=24)),
         log=True,
         hover_props=dict(atomic_number="atomic number"),
         hover_data=wbm_occu_counts,

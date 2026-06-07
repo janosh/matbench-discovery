@@ -67,7 +67,7 @@ styler = df_proto_counts.head(10).style.background_gradient(cmap="viridis")
 styler.set_caption(f"Top 10 {proto_col} in {len(df_bad)} {model} failures")
 display(styler)
 img_name = f"proto-counts-{model_low}-failures"
-pmv.df_to_pdf(styler, f"{PDF_FIGS}/{img_name}.pdf")
+pmv.df_to_html(styler, file_path=f"{PDF_FIGS}/{img_name}.svelte")
 
 
 # %%
@@ -84,7 +84,7 @@ pmv.save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-{model_low}-failures.pdf")
 
 
 # %%
-fig = pmv.ptable_heatmap_plotly(df_bad[Key.formula])
+fig = pmv.ptable_heatmap(df_bad[Key.formula])
 fig.layout.title = f"Elements in {title}"
 fig.layout.margin = dict(l=0, r=0, t=50, b=0)
 fig.show()

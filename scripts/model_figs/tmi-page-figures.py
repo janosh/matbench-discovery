@@ -101,9 +101,7 @@ if is_full_model_run():  # don't clobber site payload on filtered runs
 
 # %%
 # plot per-element std dev of DFT hull dist
-fig = pmv.ptable_heatmap_plotly(
-    df_elem_err[test_set_std_col], fmt=".2f", colorscale="Inferno"
-)
+fig = pmv.ptable_heatmap(df_elem_err[test_set_std_col], fmt=".2f", colorscale="Inferno")
 fig.show()
 
 

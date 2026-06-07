@@ -239,8 +239,8 @@ def test_conservation_deviation(
     deviation = diatomics.calc_conservation_deviation(seps, energies, forces)
     assert deviation == pytest.approx(0, abs=0.05)
 
-    # regression check: the metric used to return ~mean(|dE/dr|) for ANY forces,
-    # making perfect forces indistinguishable from all-zero forces
+    # regression: metric used to return ~mean(|dE/dr|) for ANY forces, scoring perfect
+    # forces the same as all-zero forces
     zero_dev = diatomics.calc_conservation_deviation(
         seps, energies, np.zeros_like(forces)
     )
