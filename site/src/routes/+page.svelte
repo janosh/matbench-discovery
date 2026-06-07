@@ -13,7 +13,7 @@
     generate_svg,
     handle_export,
   } from '$lib/table-export'
-  import type { DiscoverySet, SortDir } from '$lib/types'
+  import type { DiscoverySet, ModelData, SortDir } from '$lib/types'
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/tasks/phonons/kappa-note.md'
   import { format_num, Icon } from 'matterviz'
@@ -80,7 +80,13 @@
   // Export state object for handle_export
   let export_state = $derived({ export_error, show_non_compliant, discovery_set })
 
-  let best_model = $derived(find_best_model(MODELS, { show_non_compliant }))
+  let best_model = $derived(
+    find_best_model(MODELS, { show_non_compliant, show_compliant, discovery_set }),
+  )
+  // landing-page cohort, kept in sync with the metrics table's compliance toggles
+  let in_cohort = $derived((model: ModelData) =>
+    model_is_compliant(model) ? show_compliant : show_non_compliant
+  )
 
   export const snapshot: Snapshot = {
     capture: () => ({
@@ -204,15 +210,12 @@
 
 <!-- Dynamic axis scatter plot -->
 <p>Compare models across different metrics and parameters:</p>
-<DynamicScatter
-  models={MODELS}
-  model_filter={(model) => show_non_compliant || model_is_compliant(model)}
-/>
+<DynamicScatter models={MODELS} model_filter={in_cohort} />
 
 <Readme>
   {#snippet title()}{/snippet}
   {#snippet model_count()}
-    {MODELS.filter((md) => show_non_compliant || model_is_compliant(md)).length}
+    {MODELS.filter(in_cohort).length}
   {/snippet}
 
   {#snippet best_report()}

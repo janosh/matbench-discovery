@@ -184,15 +184,40 @@ describe(`find_best_model`, () => {
     expect(find_best_model(non_compliant)).toBeNull()
   })
 
-  it(`only considers non-compliant models when show_non_compliant=true`, () => {
-    const models = [
-      make_model(`compliant`, 0.7),
-      make_model(`non-compliant`, 0.95, { training_set: [`OMat24`] }),
+  // compliance toggles mirror the metrics table cohort. The excluded class gets the
+  // higher F1 so each assertion proves the filter (not ranking) chose the winner.
+  it(`respects show_compliant and show_non_compliant toggles`, () => {
+    const pair = (compliant_f1: number, non_compliant_f1: number) => [
+      make_model(`compliant`, compliant_f1),
+      make_model(`non-compliant`, non_compliant_f1, { training_set: [`OMat24`] }),
     ]
-    expect(find_best_model(models)?.model_name).toBe(`compliant`)
-    expect(find_best_model(models, { show_non_compliant: true })?.model_name).toBe(
-      `non-compliant`,
-    )
+    const best = (models: ModelData[], opts = {}) =>
+      find_best_model(models, opts)?.model_name ?? null
+
+    expect(best(pair(0.7, 0.95))).toBe(`compliant`) // non-compliant hidden by default
+    expect(best(pair(0.7, 0.95), { show_non_compliant: true })).toBe(`non-compliant`)
+    const both = { show_compliant: false, show_non_compliant: true }
+    expect(best(pair(0.9, 0.6), both)).toBe(`non-compliant`) // better compliant dropped
+    expect(
+      best(pair(0.9, 0.6), { show_compliant: false, show_non_compliant: false }),
+    ).toBeNull()
+  })
+
+  it(`ranks by the requested discovery_set`, () => {
+    const make_discovery_model = (model_name: string, full: number, uniq: number) =>
+      make_model(model_name, full, {
+        metrics: {
+          discovery: { full_test_set: { F1: full }, unique_prototypes: { F1: uniq } },
+        },
+      })
+    const models = [
+      make_discovery_model(`best-full`, 0.9, 0.4),
+      make_discovery_model(`best-uniq`, 0.5, 0.8),
+    ]
+    expect(find_best_model(models)?.model_name).toBe(`best-full`)
+    expect(
+      find_best_model(models, { discovery_set: `unique_prototypes` })?.model_name,
+    ).toBe(`best-uniq`)
   })
 
   it(`skips models with missing or non-numeric F1`, () => {

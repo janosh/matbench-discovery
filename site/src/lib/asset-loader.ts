@@ -84,13 +84,20 @@ export function load_json_asset<T>(url: string): Promise<T> {
   return asset as Promise<T>
 }
 
+// Keys of TModel whose values are arrays, e.g. the per-row prediction columns. Excludes
+// scalar fields like model_key/model_label so only row-aligned fields can be validated.
+type ArrayKeys<TModel> = {
+  [K in keyof TModel]: TModel[K] extends readonly unknown[] ? K : never
+}[keyof TModel] &
+  string
+
 // Load a per-model parity asset and validate its model key and the row count of its
 // primary prediction column. `kind` (e.g. `energy`/`kappa`) only affects error messages.
 export async function load_parity_model<TModel extends ParityModel>(
   kind: string,
   url: string,
   model_key: string,
-  pred_field: keyof TModel & string,
+  pred_field: ArrayKeys<TModel>,
   row_count: number,
 ): Promise<TModel> {
   const { model } = await load_json_asset<ModelAsset<TModel>>(url)

@@ -1,5 +1,5 @@
 import { default as DATASETS } from '$data/datasets.yml'
-import type { ModelData } from '$lib/types'
+import type { DiscoverySet, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
 import { get_org_logo, type OrgLogo } from './labels'
@@ -131,19 +131,29 @@ export function model_is_compliant(model: ModelData): boolean {
   return model.training_set.every((set) => COMPLIANT_TRAINING_SETS.includes(set))
 }
 
-// Find the model with the highest F1 score on the full WBM test set.
-// Returns null if no model qualifies (e.g. all filtered out or missing F1).
+// Find the model with the highest F1 score on the given discovery set.
+// Mirrors the metrics table cohort (compliant/non-compliant toggles) so the landing
+// summary describes the same models the table shows. Returns null if none qualifies.
 export function find_best_model(
   models: ModelData[],
-  { show_non_compliant = false }: { show_non_compliant?: boolean } = {},
+  {
+    show_non_compliant = false,
+    show_compliant = true,
+    discovery_set = `full_test_set`,
+  }: {
+    show_non_compliant?: boolean
+    show_compliant?: boolean
+    discovery_set?: DiscoverySet
+  } = {},
 ): ModelData | null {
   let best: ModelData | null = null
   let best_f1 = -Infinity
 
   for (const model of models) {
-    if (!show_non_compliant && !model_is_compliant(model)) continue
+    // keep a model only if its compliance class is toggled on (same rule as the table)
+    if (!(model_is_compliant(model) ? show_compliant : show_non_compliant)) continue
     const discovery = model.metrics?.discovery
-    const f1 = typeof discovery === `object` ? discovery?.full_test_set?.F1 : undefined
+    const f1 = typeof discovery === `object` ? discovery?.[discovery_set]?.F1 : undefined
     if (typeof f1 !== `number` || Number.isNaN(f1)) continue
     if (f1 > best_f1) [best, best_f1] = [model, f1]
   }
