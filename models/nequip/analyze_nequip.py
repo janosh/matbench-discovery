@@ -46,7 +46,7 @@ fig.layout.title = f"{len(df_low):,} Nequip severe energy underpredictions"
 pmv.save_fig(fig, "nequip-too-low-hull-dist-scatter.png")
 
 
-fig = pmv.ptable_heatmap_plotly(df_low[Key.formula])
+fig = pmv.ptable_heatmap(df_low[Key.formula])
 title = f"Elements in {len(df_low):,} Nequip severe energy underpredictions"
 fig.layout.title.update(text=title, x=0.4, y=0.95)
 fig.show()

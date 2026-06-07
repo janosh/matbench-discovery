@@ -715,8 +715,7 @@ describe(`Model Sorting Logic`, () => {
   })
 
   it(`returns 0 for two models that both have NaN values (consistent comparator)`, () => {
-    // regression: comparing NaN vs NaN used to return 1 for both argument orders,
-    // violating comparator antisymmetry, so sort results depended on input order
+    // regression: NaN-vs-NaN returned 1 both ways, breaking antisymmetry -> order-dependent sort
     const { Accuracy } = ALL_METRICS
     const sort_by = `${Accuracy.path}.${Accuracy.key}`
     const make_nan_model = (model_key: string) =>

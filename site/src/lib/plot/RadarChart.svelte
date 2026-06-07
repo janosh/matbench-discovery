@@ -16,19 +16,9 @@
   // cursor against a moved rect and jump the knob (often into a triangle
   // corner). Skip that one click.
   let suppress_next_click = false
-  let point = $state<Point>({ x: 0, y: 0 })
   let svg_element = $state<SVGSVGElement | null>(null)
   let radius = $derived(size / 2)
   let center = $derived({ x: radius, y: radius })
-
-  // Reset to initial weights
-  function reset_weights() {
-    for (const key of Object.keys(CPS_CONFIG) as (keyof typeof CPS_CONFIG)[]) {
-      CPS_CONFIG[key].weight = DEFAULT_CPS_CONFIG[key].weight
-    }
-    update_point_from_weights(CPS_CONFIG)
-    update_models_cps(MODELS, CPS_CONFIG)
-  }
 
   const colors = [
     `rgb(255, 99, 132)`, // Red for F1
@@ -46,26 +36,32 @@
     }),
   )
 
-  // Initialize point position from weights
+  // Knob position from weights via barycentric coordinates (pure math, no DOM)
+  function point_from_weights(weights: CpsConfig): Point {
+    let { x, y } = center
+    Object.values(weights).forEach(({ weight }, idx) => {
+      x += (axis_points[idx].x - center.x) * (weight as number)
+      y += (axis_points[idx].y - center.y) * (weight as number)
+    })
+    return { x, y }
+  }
+
+  // Initialized eagerly (not in an effect) so the knob renders at the correct
+  // position on first paint and in prerendered HTML instead of jumping from (0, 0)
+  let point = $state<Point>(point_from_weights(CPS_CONFIG))
+
+  // Keep knob + model CPS scores in sync when weights change (drag end, reset,
+  // or edits from elsewhere)
   $effect(() => {
-    update_point_from_weights(CPS_CONFIG)
+    point = point_from_weights(CPS_CONFIG)
     update_models_cps(MODELS, CPS_CONFIG)
   })
 
-  function update_point_from_weights(current_weights: CpsConfig) {
-    if (!current_weights || Object.values(current_weights).length < 3) return
-
-    // For 3 axes, we can use barycentric coordinates
-
-    // Calculate weighted position
-    let { x, y } = center
-    for (let idx = 0; idx < Object.values(current_weights).length; idx++) {
-      const weight_value = Object.values(current_weights)[idx].weight as number
-      x += (axis_points[idx].x - center.x) * weight_value
-      y += (axis_points[idx].y - center.y) * weight_value
+  // Reset to initial weights (the effect above re-derives knob position + scores)
+  function reset_weights() {
+    for (const key of Object.keys(CPS_CONFIG) as (keyof typeof CPS_CONFIG)[]) {
+      CPS_CONFIG[key].weight = DEFAULT_CPS_CONFIG[key].weight
     }
-    // Update the point with new coordinates
-    point = { x, y }
   }
 
   function update_weights_from_point() {

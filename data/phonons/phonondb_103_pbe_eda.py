@@ -36,7 +36,7 @@ for atoms in atoms_list:
 
 
 # %%
-fig = pmv.ptable_heatmap_plotly(elem_counts, fmt=".0f")
+fig = pmv.ptable_heatmap(elem_counts, fmt=".0f")
 fig.show()
 
 

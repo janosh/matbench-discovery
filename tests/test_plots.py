@@ -131,10 +131,9 @@ def test_hist_classified_stable_vs_hull_dist(
 def test_hist_classified_rolling_acc_uses_consistent_axis() -> None:
     """Rolling accuracy must bin numerator and denominator along the same axis.
 
-    Regression test: with which_energy='pred', total bin counts used to be binned
-    by the true hull distance while true pos/neg counts were binned by the
-    predicted hull distance, giving wrong per-bin accuracies. The accuracy trace
-    also plotted len(bins) edges against len(bins)-1 values.
+    Regression: with which_energy='pred', total counts were binned by true hull dist
+    while pos/neg counts used predicted hull dist (wrong accuracies), and the accuracy
+    trace plotted len(bins) edges against len(bins)-1 values.
     """
     each_true = [-0.18, -0.14, -0.08, 0.13, 0.17, 0.26]
     # model predicts the 3 truly stable materials stable (true pos) and wrongly

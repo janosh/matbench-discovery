@@ -129,7 +129,7 @@ if srs_mp_trj_elem_magmoms is None:
     pd.Series(srs_mp_trj_elem_magmoms).to_json(ptable_magmom_hist_path)
 
 
-fig_ptable_magmoms = pmv.ptable_hists_plotly(
+fig_ptable_magmoms = pmv.ptable_hists(
     srs_mp_trj_elem_magmoms,
     log=True,
     bins=100,
@@ -167,7 +167,7 @@ if srs_mp_trj_elem_forces is None:
 
 
 max_force = 10  # eV/Å
-fig_ptable_forces = pmv.ptable_hists_plotly(
+fig_ptable_forces = pmv.ptable_hists(
     srs_mp_trj_elem_forces.copy().map(lambda x: [val for val in x if val < max_force]),
     log=True,
     colorbar=dict(title="1/3 Σ|Forces| (eV/Å)"),
@@ -206,7 +206,7 @@ elif srs_mp_trj_elem_n_sites is None:
     srs_mp_trj_elem_n_sites.to_json(ptable_n_sites_hist_path)
 
 
-fig_ptable_sites = pmv.ptable_hists_plotly(
+fig_ptable_sites = pmv.ptable_hists(
     srs_mp_trj_elem_n_sites,
     log=True,
     symbol_kwargs=dict(x=0.5, y=1.1, xanchor="center"),
@@ -242,7 +242,7 @@ trj_elem_counts = pd.read_json(
 
 excl_elems = ("He", "Ne", "Ar", "Kr", "Xe") if (excl_noble := False) else ()
 
-fig = pmv.ptable_heatmap_plotly(
+fig = pmv.ptable_heatmap(
     trj_elem_counts,
     exclude_elements=excl_elems,  # drop noble gases
     log=(log := True),
@@ -260,7 +260,7 @@ fig.show()
 
 # %%
 normalized = True
-fig = pmv.ptable_heatmap_plotly(
+fig = pmv.ptable_heatmap(
     {
         elem: (trj_count / 1_580_395) / (mp_count / len(df_mp))
         for elem, trj_count in trj_elem_counts.items()

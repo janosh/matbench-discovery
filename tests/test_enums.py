@@ -178,10 +178,9 @@ def test_files_enum() -> None:
 def test_files_members_are_distinct(enum_cls: type[Files]) -> None:
     """Files members must compare by value instead of collapsing into one element.
 
-    Regression test: Files.__new__ used to call str.__new__(cls) without passing the
-    value, leaving every member's underlying string content "". Since the inherited
-    str.__eq__/str.__hash__ act on that content, all members compared equal and hashed
-    to 0, silently collapsing any set/dict/`in` use of members into a single element.
+    Regression: Files.__new__ called str.__new__(cls) without the value, leaving every
+    member's string content "" so the inherited str.__eq__/__hash__ made all members
+    compare equal and hash to 0 (sets/dicts/`in` collapsed to one element).
     """
     members = list(enum_cls)
     # a set of members must keep every distinct member, not collapse to one

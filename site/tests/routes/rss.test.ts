@@ -117,9 +117,8 @@ describe(`RSS feed endpoint`, () => {
   })
 
   it(`should include underscore-containing hyperparams in descriptions`, async () => {
-    // regression: the filter used to be !key.includes('_') (instead of startsWith),
-    // which dropped nearly every hyperparam (max_steps, ase_optimizer, ...) so the
-    // Key Hyperparameters section was almost always empty
+    // regression: the filter used !key.includes('_') instead of startsWith, dropping
+    // nearly every hyperparam (max_steps, ase_optimizer, ...) so the section was empty
     const inner_underscore = (key: string) => key.includes(`_`) && !key.startsWith(`_`)
     const hyperparam_key = MODELS.flatMap((md) => Object.keys(md.hyperparams ?? {})).find(
       inner_underscore,

@@ -52,15 +52,11 @@
 
   let plot_size = $state({ width: 400, height: 300 })
 
-  // Start with pre-loaded models selected, reset when data changes
-  const selected_models = new SvelteSet<string>()
-  $effect(() => {
-    // Clear and repopulate when diatomic_curves changes (e.g., on page load)
-    selected_models.clear()
-    for (const key of Object.keys(diatomic_curves)) {
-      selected_models.add(key)
-    }
-  })
+  // Preselect all models with data; initialized eagerly (not in an effect) so the
+  // plots render on first paint and in prerendered HTML instead of popping in
+  // post-mount. data comes from +page.server.ts and is static for the page lifetime
+  // (navigation remounts and re-inits), so no effect is needed to resync.
+  const selected_models = new SvelteSet<string>(Object.keys(diatomic_curves))
   let diatomics_to_render = $derived(
     // Only render diatomics where at least one model has data
     homo_diatomic_formulas.filter((formula) =>
