@@ -250,33 +250,26 @@ def write_metrics_to_yaml(
         metrics: Kappa metrics for this model.
         pred_file_path: Path to prediction file.
     """
-    import os
+    from matbench_discovery import ROOT
+    from matbench_discovery import data as mbd_data
 
-    from ruamel.yaml import YAML
+    # Convert absolute path to repo-relative path
+    pred_file_path = pred_file_path.removeprefix(f"{ROOT}/")
 
-    # Convert absolute path to relative path
-    pred_file_path = pred_file_path.removeprefix(f"{os.getcwd()}/")
-
-    # Update YAML file
-    yaml = YAML()
-    yaml.preserve_quotes = True
-    yaml.width = 1000
-    yaml.indent(mapping=2, sequence=4, offset=2)
-
-    with open(model.yaml_path) as file:
-        data = yaml.load(file)
+    with open(model.yaml_path, encoding="utf-8") as file:
+        data = mbd_data.round_trip_yaml.load(file)
 
     # Ensure nested structure exists and update non-destructively
-    data.setdefault("metrics", {}).setdefault("phonons", {}).setdefault("kappa_103", {})
-    data["metrics"]["phonons"]["kappa_103"].update(
+    kappa_103 = (
+        data.setdefault("metrics", {})
+        .setdefault("phonons", {})
+        .setdefault("kappa_103", {})
+    )
+    kappa_103.update(
         κ_SRME=float(round(metrics["srme"], 4)),
         κ_SRE=float(round(metrics["sre"], 4)),
     )
+    kappa_103.setdefault("pred_file", pred_file_path)
 
-    # Set pred_file if missing
-    if "pred_file" not in data["metrics"]["phonons"]["kappa_103"]:
-        data["metrics"]["phonons"]["kappa_103"]["pred_file"] = pred_file_path
-
-    # Write back to file
-    with open(model.yaml_path, "w") as file:
-        yaml.dump(data, file)
+    with open(model.yaml_path, mode="w", encoding="utf-8") as file:
+        mbd_data.round_trip_yaml.dump(data, file)
