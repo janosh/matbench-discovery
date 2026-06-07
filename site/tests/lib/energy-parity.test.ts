@@ -7,7 +7,6 @@ import {
   has_energy_parity_model,
   load_energy_parity_base,
   load_energy_parity_model,
-  load_json_asset,
   load_wbm_structure,
   model_asset,
   structure_bundle_for_shard,
@@ -15,6 +14,7 @@ import {
   structure_popup_placement,
 } from '$lib/energy-parity'
 import type { EnergyParityBase, EnergyParityModel } from '$lib/energy-parity'
+import { load_json_asset } from '$lib/asset-loader'
 import { energy_parity_manifest } from '$lib/energy-parity-manifest'
 import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

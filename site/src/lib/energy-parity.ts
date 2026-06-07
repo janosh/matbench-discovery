@@ -6,13 +6,12 @@ import {
   clear_asset_cache,
   join_asset_url,
   load_json_asset,
+  load_parity_model,
   resolve_asset_base_url,
 } from './asset-loader'
-import type { ModelAsset, ParityBase, ParityModel, ParityPoint } from './asset-loader'
+import type { ParityBase, ParityModel, ParityPoint } from './asset-loader'
 import { energy_parity_manifest } from './energy-parity-manifest'
 import { is_finite_num } from './metrics'
-
-export { load_json_asset }
 
 export type EnergyKind = `e-form` | `each`
 
@@ -46,10 +45,8 @@ export interface EnergyParitySeries {
   size_values: Float32Array
 }
 
-export type StructurePopupSide = `left` | `right`
-
 export interface StructurePopupPlacement {
-  side: StructurePopupSide
+  side: `left` | `right`
   left: number
   top: number
 }
@@ -75,7 +72,7 @@ const model_assets = energy_parity_manifest.model_assets as Record<
   { asset: string } | undefined
 >
 
-export const energy_parity_asset_base_url = resolve_asset_base_url(
+const energy_parity_asset_base_url = resolve_asset_base_url(
   import.meta.env.VITE_ENERGY_PARITY_ASSET_BASE_URL as string | undefined,
   energy_parity_manifest.local_asset_base_url,
 )
@@ -143,23 +140,6 @@ function assert_energy_parity_base(base: EnergyParityBase): EnergyParityBase {
   return base
 }
 
-function assert_energy_parity_model(
-  model: EnergyParityModel,
-  model_key: string,
-): EnergyParityModel {
-  if (model.model_key !== model_key) {
-    throw new Error(
-      `Invalid energy parity model: expected ${model_key}, got ${model.model_key}`,
-    )
-  }
-  assert_array_length(
-    `energy parity ${model_key}.e_form_pred`,
-    model.e_form_pred,
-    energy_parity_manifest.row_count,
-  )
-  return model
-}
-
 export function model_asset(model_key: string): string {
   const asset = model_assets[model_key]?.asset
   if (!asset) throw new Error(`No energy parity model asset for ${model_key}`)
@@ -176,15 +156,14 @@ export const load_energy_parity_base = (): Promise<EnergyParityBase> =>
     energy_parity_asset_url(energy_parity_manifest.base.asset),
   ).then(assert_energy_parity_base)
 
-export async function load_energy_parity_model(
-  model_key: string,
-): Promise<EnergyParityModel> {
-  const { model } = await load_json_asset<ModelAsset<EnergyParityModel>>(
+export const load_energy_parity_model = (model_key: string): Promise<EnergyParityModel> =>
+  load_parity_model<EnergyParityModel>(
+    `energy`,
     energy_parity_asset_url(model_asset(model_key)),
+    model_key,
+    `e_form_pred`,
+    energy_parity_manifest.row_count,
   )
-  if (!model) throw new Error(`No energy parity model ${model_key} in its asset`)
-  return assert_energy_parity_model(model, model_key)
-}
 
 export function get_energy_parity_point(
   base: EnergyParityBase,

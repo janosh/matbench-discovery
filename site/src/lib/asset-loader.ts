@@ -83,3 +83,27 @@ export function load_json_asset<T>(url: string): Promise<T> {
   }
   return asset as Promise<T>
 }
+
+// Load a per-model parity asset and validate its model key and the row count of its
+// primary prediction column. `kind` (e.g. `energy`/`kappa`) only affects error messages.
+export async function load_parity_model<TModel extends ParityModel>(
+  kind: string,
+  url: string,
+  model_key: string,
+  pred_field: keyof TModel & string,
+  row_count: number,
+): Promise<TModel> {
+  const { model } = await load_json_asset<ModelAsset<TModel>>(url)
+  if (!model) throw new Error(`No ${kind} parity model ${model_key} in its asset`)
+  if (model.model_key !== model_key) {
+    throw new Error(
+      `Invalid ${kind} parity model: expected ${model_key}, got ${model.model_key}`,
+    )
+  }
+  assert_array_length(
+    `${kind} parity ${model_key}.${pred_field}`,
+    model[pred_field],
+    row_count,
+  )
+  return model
+}
