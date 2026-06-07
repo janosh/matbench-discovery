@@ -224,7 +224,7 @@ prepare-model-submission model_name overwrite="false":
     echo ">> Running kappa (phonon) metrics evaluation..."
     if [ "$MODEL_TARGETS" = "E" ]; then
         check_skip "Kappa metrics skipped (model targets=$MODEL_TARGETS, no forces)"
-    elif uv run python scripts/evals/kappa.py --auto-download --models "$MODEL" $OVERWRITE_FLAG; then
+    elif uv run --extra phonons python scripts/evals/kappa.py --auto-download --models "$MODEL" $OVERWRITE_FLAG; then
         check_pass "Kappa metrics evaluation completed"
     else
         check_fail "Kappa metrics evaluation failed"
@@ -234,7 +234,7 @@ prepare-model-submission model_name overwrite="false":
     echo ">> Running geo_opt analysis..."
     if [ "$MODEL_TARGETS" = "E" ]; then
         check_skip "Geo-opt analysis skipped (model targets=$MODEL_TARGETS, no forces)"
-    elif uv run python scripts/analyze_geo_opt.py --auto-download --models "$MODEL" $OVERWRITE_FLAG; then
+    elif uv run --with 'moyopy>=0.10.0' python scripts/analyze_geo_opt.py --auto-download --models "$MODEL" $OVERWRITE_FLAG; then
         check_pass "Geo-opt analysis completed"
     else
         check_fail "Geo-opt analysis failed"
