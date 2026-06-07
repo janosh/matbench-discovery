@@ -14,7 +14,6 @@ from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
-from matbench_discovery import plots as plots
 from matbench_discovery.data import DATASETS, df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import DataFiles, MbdKey

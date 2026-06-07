@@ -5,7 +5,7 @@ import numpy as np
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, figs
-from matbench_discovery.cli import cli_args
+from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
@@ -24,7 +24,7 @@ if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
-show_non_compliant = globals().get("show_non_compliant", False)
+show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
 models_to_plot = [
     model.label
     for model in cli_args.models
@@ -60,7 +60,13 @@ counts, bins = np.histogram(
     range=(-0.7, 0.7),
 )
 fig.add_scatter(
-    x=bins, y=counts, name="Density", fill="tozeroy", showlegend=False, yaxis="y2"
+    # plot counts at bin centers: np.histogram returns N counts but N+1 bin edges
+    x=(bins[:-1] + bins[1:]) / 2,
+    y=counts,
+    name="Density",
+    fill="tozeroy",
+    showlegend=False,
+    yaxis="y2",
 )
 fig.data[-1].marker.color = "rgba(0, 150, 200, 1)"
 
@@ -92,16 +98,17 @@ for trace in fig.data:
     if not figs.trace_visible(trace):
         entry["visible"] = False
     rolling_models.append(entry)
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/{img_name}.json.gz",
-    {
-        "x": shared_x or [],  # never null: payload contract requires x to be a list
-        "models": rolling_models,
-        # rolling count of test-set structures per hull-dist bin (drawn on y2)
-        "density": {
-            "x": figs.round_list((bins[:-1] + bins[1:]) / 2),
-            "y": counts.tolist(),
+if show_non_compliant and is_full_model_run():  # site payload = full model set
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/rolling-mae-vs-hull-dist.json.gz",
+        {
+            "x": shared_x or [],  # never null: payload contract requires x to be a list
+            "models": rolling_models,
+            # rolling count of test-set structures per hull-dist bin (drawn on y2)
+            "density": {
+                "x": figs.round_list((bins[:-1] + bins[1:]) / 2),
+                "y": counts.tolist(),
+            },
         },
-    },
-)
+    )
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
