@@ -117,7 +117,7 @@ for material_id in tqdm(structures, desc="Relaxing"):
         if max_steps > 0:
             relax_struct = relax_result["final_structure"]
             relax_results[material_id]["matris_structure"] = relax_struct
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         error_dir = f"error_crystals/{model_name}"
         os.makedirs(error_dir, exist_ok=True)
         structures[material_id].to(filename=f"{error_dir}/{material_id}.cif")

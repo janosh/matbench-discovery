@@ -50,8 +50,9 @@ describe(`diatomics server data loader`, () => {
       ),
     ).rejects.toThrow(/Figshare WAF challenge: challenge/)
     expect(fetch_fn).toHaveBeenCalledTimes(1)
+    // the WAF-gated figshare.com/files/<id> URL is rewritten to the ndownloader host
     expect(fetch_fn).toHaveBeenCalledWith(
-      `https://figshare.com/files/123`,
+      `https://ndownloader.figshare.com/files/123`,
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     )
   })

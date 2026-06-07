@@ -9,7 +9,6 @@ from pymatgen.core import Structure
 from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS
-from matbench_discovery import plots as plots
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, Model
 

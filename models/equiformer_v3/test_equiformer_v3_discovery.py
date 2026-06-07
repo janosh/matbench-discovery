@@ -175,7 +175,6 @@ class RelaxJob(Checkpointable):
         )
         e_pred_col = "energy"
         df_wbm[e_pred_col] = df_out[e_pred_col]
-        return
 
     def _ase_relax(
         self,
@@ -221,7 +220,7 @@ class RelaxJob(Checkpointable):
                     "structure": structure,
                     "energy": energy,
                 }
-            except Exception:
+            except (ValueError, RuntimeError, OSError, KeyError):
                 print(f"Failed to relax {material_id}")
                 output_err_filename = (
                     f"error_index@{self.job_index}_total@{self.num_jobs}.txt"
@@ -292,7 +291,6 @@ def run_relax(
         job_index=job_index,
         debug=debug,
     )
-    return
 
 
 if __name__ == "__main__":

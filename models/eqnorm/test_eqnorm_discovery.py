@@ -43,7 +43,7 @@ def process_and_save(atoms_list: list[Atoms], out_dir: str, job_id: int) -> None
             unwrapped = atoms.atoms if hasattr(atoms, "atoms") else atoms
             relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
             relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
-        except Exception as exc:
+        except (ValueError, RuntimeError, OSError, KeyError) as exc:
             print(f"Failed to relax {mat_id}: {exc!r}")
             continue
 

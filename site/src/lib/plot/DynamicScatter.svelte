@@ -5,9 +5,10 @@
   import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { ColorScaleSelect, create_color_scale, DEFAULT_SERIES_SYMBOLS } from 'matterviz/plot'
-  import type { DataSeries } from 'matterviz/plot'
+  import type { DataSeries, LegendConfig } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
+  import { SvelteSet } from 'svelte/reactivity'
   import Select from 'svelte-multiselect'
   import { ALL_METRICS, format_property_path, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, is_finite_num } from '$lib/metrics'
@@ -27,6 +28,38 @@
     if (path.includes(`date`)) val = new Date(val as string).getTime()
     return val
   }
+
+  // one collapsible "Models" group, collapsed by default. override on_group_toggle so a header
+  // click collapses/expands (like the chevron) instead of hiding all models; individual items
+  // still toggle per-model visibility
+  const legend_group = `Toggle Models`
+  const collapsed_groups = new SvelteSet([legend_group])
+  const models_legend: LegendConfig = {
+    ...wide_legend,
+    collapsed_groups,
+    // fully opaque bg (matterviz default is 75% alpha) so plot points don't bleed through
+    style:
+      `${wide_legend.style} --plot-legend-bg-color: light-dark(rgb(255, 255, 255), rgb(40, 40, 40))`,
+    on_group_toggle: (group) => {
+      if (!collapsed_groups.delete(group)) collapsed_groups.add(group)
+    },
+  }
+
+  let plot_wrapper = $state<HTMLDivElement>()
+  // collapse the expanded legend on any click outside it. capture phase fires regardless of
+  // inner stopPropagation; gating on the expanded state means the opening click and in-legend
+  // visibility toggles don't immediately re-collapse it
+  $effect(() => {
+    if (collapsed_groups.has(legend_group)) return
+    const close_on_outside_click = (event: MouseEvent) => {
+      const legend = plot_wrapper?.querySelector(`.legend`)
+      if (legend && !legend.contains(event.target as Node)) {
+        collapsed_groups.add(legend_group)
+      }
+    }
+    document.addEventListener(`click`, close_on_outside_click, true)
+    return () => document.removeEventListener(`click`, close_on_outside_click, true)
+  })
 
   let {
     models,
@@ -179,6 +212,7 @@
       x: [item.x as number],
       y: [item.y as number],
       label: item.metadata.model_name,
+      legend_group,
       markers: `points` as const,
       metadata: [item.metadata],
       point_style: {
@@ -198,7 +232,7 @@
   )
 </script>
 
-<div class="bleed-1400" style="margin-block: 2em">
+<div class="bleed-1400" style="margin-block: 2em" bind:this={plot_wrapper}>
   <div class="controls-row">
     <label for="size-select">Marker Size</label>
     <Select
@@ -228,7 +262,8 @@
   <ScatterPlot
     style="height: 600px"
     bind:series
-    legend={wide_legend}
+    legend={models_legend}
+    padding={{ b: 70 }}
     x_axis={{
       label: axes.x?.label,
       format: axes.x?.format,

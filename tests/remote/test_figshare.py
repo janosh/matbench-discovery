@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-import matbench_discovery.remote.figshare as figshare
+from matbench_discovery.remote import figshare
 
 
 @pytest.mark.parametrize(
@@ -314,7 +314,7 @@ def test_delete_file_error() -> None:
     """Test delete_file function with error during deletion."""
     with patch(
         "matbench_discovery.remote.figshare.make_request",
-        side_effect=Exception("API Error"),
+        side_effect=requests.RequestException("API Error"),
     ) as mock_request:
         assert figshare.delete_file(12345, 67890) is False
         mock_request.assert_called_once()
@@ -413,7 +413,7 @@ def test_publish_article(
         """Either return successful result or raise exception based on success param."""
         if success:
             return  # Successful response for POST
-        raise Exception(err_msg)  # noqa: TRY002
+        raise requests.RequestException(err_msg)
 
     with patch(
         "matbench_discovery.remote.figshare.make_request",

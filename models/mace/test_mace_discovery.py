@@ -162,7 +162,7 @@ for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
                 frame_properties=[{"energy": energy} for energy in energies],
             )
             relax_results[mat_id]["trajectory"] = mace_traj
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         print(f"Failed to relax {mat_id}: {exc!r}")
         continue
 

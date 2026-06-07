@@ -69,6 +69,8 @@ running-models = [
 fetch-wbm-data = ["gdown>=5.2"]
 # phono3py >=3.31 removed the MS-SMM19 RTA method used for Wigner transport.
 phonons = ["phono3py==3.30.0", "phonopy>=2.35"]
+# symmetry-analysis scripts + tests depend on moyopy
+symmetry = ["moyopy>=0.10"]
 
 [build-system]
 requires = ["uv_build>=0.11.18"]
@@ -87,23 +89,21 @@ output-format = "concise"
 select = ["ALL"]
 ignore = [
   "ANN401",
-  "BLE001",
   "C408",    # unnecessary-collection-call
   "C901",
   "COM812",
   "D205",    # blank-line-after-summary
-  "E731",    # lambda-assignment
   "EM101",
   "EM102",
   "FIX002",
   "G004",    # logging uses f-string
   "INP001",
-  "ISC001",
-  "N806",    # non-lowercase-variable-in-function
   "PERF203", # try-except-in-loop
-  "PLC0414", # useless-import-alias
   "PLC0415",
-  "PLR",     # pylint refactor
+  "PLR2004",
+  "PLR0913",
+  "PLR0915",
+  "PLR0912",
   "PLW2901", # redefined-loop-name
   "PT006",   # pytest-parametrize-names-wrong-type
   "PTH",

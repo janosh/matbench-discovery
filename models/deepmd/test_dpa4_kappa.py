@@ -243,7 +243,7 @@ class KappaRunner:
                 spg_num=spg_num,
                 mat_id=mat_id,
             )
-        except Exception as exc:
+        except (ValueError, RuntimeError, OSError, KeyError) as exc:
             warnings.warn(
                 f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2
             )
@@ -296,7 +296,7 @@ class KappaRunner:
             if not run_ltc:
                 kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
                 return
-        except Exception as exc:
+        except (ValueError, RuntimeError, OSError, KeyError) as exc:
             warnings.warn(
                 f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2
             )
@@ -308,7 +308,7 @@ class KappaRunner:
 
         try:
             ph3, kappa_dict, _cond = ltc.calculate_conductivity(ph3, temperatures=[300])
-        except Exception as exc:
+        except (ValueError, RuntimeError, OSError, KeyError) as exc:
             warnings.warn(
                 f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
             )

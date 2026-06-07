@@ -56,7 +56,7 @@ def main() -> int:
             print(f"\tUpdated {model.yaml_path}")
             n_success += 1
 
-        except Exception as exc:
+        except (ValueError, OSError, KeyError) as exc:
             print(f"\tError processing {model.label}: {exc}")
             n_skipped += 1
             continue

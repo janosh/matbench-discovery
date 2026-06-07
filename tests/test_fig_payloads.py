@@ -73,14 +73,14 @@ def test_no_orphan_payloads() -> None:
 
 
 def check_box_hull_dist_errors() -> None:
-    for model in assert_models(load_payload("box-hull-dist-errors"), "color"):
+    for model in assert_models(load_payload("box-hull-dist-errors"), "key", "color"):
         assert_num_list(model["quantiles"], length=5)  # q05, q25, median, q75, q95
 
 
 def check_cumulative_precision_recall() -> None:
     payload = load_payload("cumulative-precision-recall")
     assert payload["n_stable"] > 10_000
-    for model in assert_models(payload, "color"):
+    for model in assert_models(payload, "key", "color"):
         assert_num_list(model["x"])
         assert_num_list(model["precision"], length=len(model["x"]))
         assert_num_list(model["recall"], length=len(model["x"]))
@@ -88,7 +88,7 @@ def check_cumulative_precision_recall() -> None:
 
 
 def check_roc_models() -> None:
-    for model in assert_models(load_payload("roc-models"), "auc"):
+    for model in assert_models(load_payload("roc-models"), "key", "auc"):
         assert 0.5 < model["auc"] <= 1
         assert_num_list(model["fpr"])
         assert_num_list(model["tpr"], length=len(model["fpr"]))
@@ -97,7 +97,7 @@ def check_roc_models() -> None:
 def check_rolling_mae() -> None:
     payload = load_payload("rolling-mae-vs-hull-dist")
     assert_num_list(payload["x"])
-    for model in assert_models(payload, "color"):
+    for model in assert_models(payload, "key", "color"):
         assert_num_list(model["y"], length=len(payload["x"]))
     assert_xy(payload["density"])
 
@@ -106,7 +106,7 @@ def check_hist_clf() -> None:
     payload = load_payload("hist-clf-pred-hull-dist")
     assert_num_list(payload["bin_centers"])
     n_bins = len(payload["bin_centers"])
-    for model in assert_models(payload, "f1"):
+    for model in assert_models(payload, "key", "f1"):
         for clf in ("tp", "fn", "fp", "tn"):
             assert_num_list(model[clf], length=n_bins)
 

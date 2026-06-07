@@ -37,6 +37,15 @@ const read_local_diatomics = async (
   }
 }
 
+// the canonical figshare.com/files/<id> pred_file_url sits behind an AWS WAF "challenge"
+// that 202s any non-browser (server-side) request; rewrite it to the ndownloader host,
+// which serves the identical file via a plain signed-S3 redirect with no challenge
+const to_download_url = (url: string): string =>
+  url.replace(
+    /^https:\/\/figshare\.com\/files\//,
+    `https://ndownloader.figshare.com/files/`,
+  )
+
 const fetch_remote_diatomics_once = async (
   pred_file_url: string,
   fetch_fn: typeof fetch,
@@ -44,7 +53,9 @@ const fetch_remote_diatomics_once = async (
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 30_000)
   try {
-    const response = await fetch_fn(pred_file_url, { signal: controller.signal })
+    const response = await fetch_fn(to_download_url(pred_file_url), {
+      signal: controller.signal,
+    })
     const waf_action = response.headers.get(`x-amzn-waf-action`)
     if (waf_action) throw new Error(`Figshare WAF challenge: ${waf_action}`)
     if (response.status !== 200) {

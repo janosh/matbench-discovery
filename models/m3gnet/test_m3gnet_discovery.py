@@ -132,7 +132,7 @@ for material_id in tqdm(structures, desc="Relaxing"):
             relax_results[f"{model_name}_{model_type}_trajectory"] = result[
                 "trajectory"
             ].__dict__
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         print(f"Failed to relax {material_id}: {exc!r}")
 
 

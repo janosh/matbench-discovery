@@ -5,9 +5,9 @@ import warnings
 import lightning
 import pandas as pd
 import torch
-import torch.nn as nn
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from pymatviz.enums import Key
+from torch import nn
 from torch.nn import functional
 from torch.utils.data import DataLoader, Dataset, random_split
 from transformers import BertConfig, BertModel

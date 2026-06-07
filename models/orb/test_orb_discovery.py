@@ -87,12 +87,10 @@ def main(
     # if the script is actually going to be run.
     from matbench_discovery.data import as_dict_handler, df_wbm
 
-    DATA_PATHS = {
+    data_path = {
         Task.RS2RE: DataFiles.wbm_relaxed_atoms.path,
         Task.IS2RE: DataFiles.wbm_initial_atoms.path,
-    }
-
-    data_path = DATA_PATHS[task_type]
+    }[task_type]
 
     print(f"Loading model {model_name} on {device}")
     model = ORB_PRETRAINED_MODELS[model_name]()
@@ -156,7 +154,7 @@ def main(
                 "energy": energy,
             }
 
-        except Exception as exc:
+        except (ValueError, RuntimeError, OSError, KeyError) as exc:
             print(f"Failed to relax {material_id}: {exc!r}")
             continue
 

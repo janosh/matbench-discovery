@@ -103,7 +103,7 @@ for material_id in tqdm(structures):
         structure = structures[material_id]
         e_form_per_atom = megnet_mp_e_form.predict_structure(structure)[0]
         megnet_e_form_preds[material_id] = e_form_per_atom
-    except Exception as exc:
+    except (ValueError, RuntimeError, KeyError) as exc:
         print(f"Failed to predict {material_id=}: {exc}")
 
 

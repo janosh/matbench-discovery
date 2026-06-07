@@ -5,13 +5,23 @@
   import roc from '$figs/roc-models.json.gz'
   import rolling_mae from '$figs/rolling-mae-vs-hull-dist.json.gz'
   import { dashed, labeled_vline, wide_legend } from '$lib/fig-helpers'
+  import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { BarPlot, BoxPlot, PlotLegend, ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, FillRegion, LegendItem } from 'matterviz/plot'
+
+  let { show_non_compliant = true }: { show_non_compliant?: boolean } = $props()
+
+  // payload model entries carry `key` (= MODELS model_key) for this compliance join
+  const compliant_keys = new Set(
+    MODELS.filter(model_is_compliant).map((model) => model.model_key),
+  )
+  const shown = <T extends { key: string }>(models: T[]): T[] =>
+    show_non_compliant ? models : models.filter((mdl) => compliant_keys.has(mdl.key))
 
   // each model's cumulative precision/recall line plus a dot marking the end of its
   // stable-prediction ranking (= its total count of predicted-stable materials)
   const cumulative_series = (key: `precision` | `recall`): DataSeries[] =>
-    cum_pr.models.flatMap(({ label, color, x, precision, recall, end }) => [
+    shown(cum_pr.models).flatMap(({ label, color, x, precision, recall, end }) => [
       {
         x,
         y: key === `precision` ? precision : recall,
@@ -31,26 +41,30 @@
   // one shared legend rendered once below both precision+recall plots (a per-plot legend
   // would sit under a single column and squish it). one entry per model line; the
   // unlabeled end-point dot series are intentionally excluded.
-  const cum_pr_legend: LegendItem[] = cum_pr.models.map(({ label, color }, idx) => ({
-    label,
-    visible: true,
-    series_idx: idx * 2,
-    display_style: { line_color: color },
-  }))
+  const cum_pr_legend: LegendItem[] = $derived(
+    shown(cum_pr.models).map(({ label, color }, idx) => ({
+      label,
+      visible: true,
+      series_idx: idx * 2,
+      display_style: { line_color: color },
+    })),
+  )
 
-  const roc_series: DataSeries[] = roc.models.map(({ label, auc, fpr, tpr }) => ({
-    x: fpr,
-    y: tpr,
-    label: `${label} · AUC=${auc.toFixed(2)}`,
-    markers: `line` as const,
-  }))
+  const roc_series: DataSeries[] = $derived(
+    shown(roc.models).map(({ label, auc, fpr, tpr }) => ({
+      x: fpr,
+      y: tpr,
+      label: `${label} · AUC=${auc.toFixed(2)}`,
+      markers: `line` as const,
+    })),
+  )
 
   // densify the 3-vertex triangle outline (y = |x|) so spline interpolation of the
   // line and fill region renders straight edges instead of a parabola
   const triangle_x = Array.from({ length: 201 }, (_, idx) => (idx - 100) / 100)
   const triangle = { x: triangle_x, y: triangle_x.map(Math.abs) }
 
-  const rolling_mae_series: DataSeries[] = [
+  const rolling_mae_series: DataSeries[] = $derived([
     // 'triangle of peril' outline; the fill region below shades its inside
     {
       ...triangle,
@@ -59,7 +73,7 @@
       markers: `line` as const,
       line_style: { stroke: `red`, stroke_width: 1.5 },
     },
-    ...rolling_mae.models.map(({ label, color, y, visible }) => ({
+    ...shown(rolling_mae.models).map(({ label, color, y, visible }) => ({
       x: rolling_mae.x,
       y,
       label,
@@ -67,7 +81,7 @@
       line_style: { stroke: color },
       visible: visible ?? true,
     })),
-  ]
+  ])
 
   // rolling count of test-set structures per hull-dist bin, drawn as a filled area in a
   // marginal panel above the main plot (sharing its x-axis) rather than overlaid on it
@@ -123,7 +137,7 @@
 ## Box Plot of Hull Distance Errors
 
 <BoxPlot
-series={box_data.models.map(({ label, color, quantiles }) => ({ label, color, y: quantiles }))}
+series={shown(box_data.models).map(({ label, color, quantiles }) => ({ label, color, y: quantiles }))}
 whisker_mode="minmax"
 y_axis={{ label: `Error in E<sub>hull dist</sub> (eV/atom)`, format: `.3` }}
 x_axis={{ tick: { label: { rotation: 90 } } }}
@@ -227,7 +241,7 @@ style="height: 480px; place-self: center; max-width: 640px; width: 100%"
 />
 
 <div class="fig-grid three-col">
-  {#each hist_clf.models as model (model.label)}
+  {#each shown(hist_clf.models) as model (model.label)}
   <figure>
     <figcaption>{model.label} · F1={model.f1}</figcaption>
     <BarPlot
@@ -240,7 +254,7 @@ style="height: 480px; place-self: center; max-width: 640px; width: 100%"
       }))}
       mode="stacked"
       x_axis={{ range: [-0.4, 0.4] }}
-      y_axis={{ range: [0, 9000], format: `~s` }}
+      y_axis={{ range: [0, 18_000], format: `~s` }}
       show_legend={false}
       show_controls={false}
       style="height: 240px"

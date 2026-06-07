@@ -143,10 +143,10 @@ def stable_metrics(
     )
     recall = n_true_pos / n_total_pos if n_total_pos > 0 else float("nan")
 
-    TPR = recall
-    FPR = n_false_pos / n_total_neg if n_total_neg > 0 else float("nan")
-    TNR = n_true_neg / n_total_neg if n_total_neg > 0 else float("nan")
-    FNR = n_false_neg / n_total_pos if n_total_pos > 0 else float("nan")
+    TPR = recall  # noqa: N806
+    FPR = n_false_pos / n_total_neg if n_total_neg > 0 else float("nan")  # noqa: N806
+    TNR = n_true_neg / n_total_neg if n_total_neg > 0 else float("nan")  # noqa: N806
+    FNR = n_false_neg / n_total_pos if n_total_pos > 0 else float("nan")  # noqa: N806
 
     # sanity check: false positives + true negatives = all negatives
     if FPR > 0 and TNR > 0 and FPR + TNR != 1:

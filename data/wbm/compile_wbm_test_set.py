@@ -647,7 +647,7 @@ for idx in tqdm(df_wbm.index):
         df_summary.loc[idx, MbdKey.init_protostructure_spglib] = (
             prototype.get_protostructure_label(struct)
         )
-    except Exception as exc:
+    except (ValueError, KeyError, RuntimeError) as exc:
         print(f"{idx=} {exc=}")
 
 # from relaxed structures
@@ -661,7 +661,7 @@ for idx in tqdm(df_wbm.index):
         df_summary.loc[idx, MbdKey.protostructure_spglib] = (
             prototype.get_protostructure_label(struct)
         )
-    except Exception as exc:
+    except (ValueError, KeyError, RuntimeError) as exc:
         print(f"{idx=} {exc=}")
 
 assert df_summary[MbdKey.init_protostructure_spglib].isna().sum() == 0

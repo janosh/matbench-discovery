@@ -72,7 +72,6 @@
   )
 </script>
 
-<!-- TODO increase font size of axes titles and tick labels -->
 <div {...rest} class="plot {rest.class ?? ``}">
   <h3>{formula}</h3>
   <ScatterPlot
@@ -97,6 +96,8 @@
 
 <style>
   .plot {
+    /* bump axis titles + tick labels (matterviz default inherits smaller SVG size) */
+    --scatter-font-size: 14px;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;

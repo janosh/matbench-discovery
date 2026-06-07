@@ -39,8 +39,7 @@ PARITY_ASSET_DIRS = (
     "site/static/kappa-parity/assets",
 )
 # (label, skipped for energy-only models, fatal on failure, `uv run` args).
-# kappa needs the phonons extra (phono3py/phonopy); geo-opt needs moyopy, otherwise
-# only available via the heavyweight running-models extra
+# kappa needs the phonons extra (phono3py/phonopy); geo-opt the symmetry extra (moyopy)
 EVAL_STEPS = (
     ("Discovery metrics", False, True, "python scripts/evals/discovery.py"),
     ("Kappa metrics", True, True, "--extra phonons python scripts/evals/kappa.py"),
@@ -48,7 +47,7 @@ EVAL_STEPS = (
         "Geo-opt analysis",
         True,
         True,
-        "--with moyopy>=0.10.0 python scripts/analyze_geo_opt.py",
+        "--extra symmetry python scripts/analyze_geo_opt.py",
     ),
     ("Diatomic metrics", True, False, "python scripts/evals/diatomic_metrics.py"),
 )

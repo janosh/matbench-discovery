@@ -7,7 +7,6 @@ import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
 
-from matbench_discovery import plots as plots
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, Model
 

@@ -56,7 +56,7 @@ def process_results(path: str) -> None:
         print(filename)
         try:
             dfs.append(pd.read_json(filename))
-        except Exception as exc:
+        except (ValueError, OSError) as exc:
             print(f"Error reading {filename}: {exc}")
             continue  # Continue to next file
 

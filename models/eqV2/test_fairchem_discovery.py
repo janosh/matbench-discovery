@@ -179,7 +179,7 @@ class RelaxJob(Checkpointable):
                     "structure": structure,
                     "energy": energy,
                 }
-            except Exception:
+            except (ValueError, RuntimeError, OSError, KeyError):
                 print(f"Failed to relax {material_id}")
                 continue
 

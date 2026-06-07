@@ -21,7 +21,6 @@
   import { Spinner } from 'matterviz/feedback'
   import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, RefLine, ScatterHandlerProps } from 'matterviz/plot'
-  import { Structure } from 'matterviz/structure'
   import { type CrystalSystem, spacegroup_num_to_crystal_sys } from 'matterviz/symmetry'
   import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -88,6 +87,14 @@
   let selected_structure = $derived(
     base && selected ? kappa_structure(base, selected.material_id) : null,
   )
+  // three.js stack (~MBs) loads only when a structure is first selected, keeping it
+  // out of every page's initial chunk graph
+  let Structure = $state<typeof import('matterviz/structure')['Structure']>()
+  $effect(() => {
+    if (selected_structure && !Structure) {
+      void import('matterviz/structure').then((mod) => (Structure = mod.Structure))
+    }
+  })
   let selected_point_ref = $derived(
     selected_idx === null ? null : { series_idx: 0, point_idx: selected_idx },
   )
@@ -220,7 +227,7 @@
           </button>
         </header>
         <div class="detail-body">
-          {#if selected_structure}
+          {#if selected_structure && Structure}
             <Structure structure={selected_structure} style="height: 100%; min-height: 360px" />
           {/if}
           {#if Object.keys(doses).length}

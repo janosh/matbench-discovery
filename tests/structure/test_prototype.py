@@ -101,7 +101,7 @@ def test_get_protostructure_label_with_ase_atoms() -> None:
     from pymatgen.io.ase import AseAtomsAdaptor
 
     # Convert NaCl structure to ASE Atoms
-    NaCl_atoms = AseAtomsAdaptor.get_atoms(NaCl)
+    NaCl_atoms = AseAtomsAdaptor.get_atoms(NaCl)  # noqa: N806
     assert isinstance(NaCl_atoms, Atoms)
     # Get prototype label for both Structure and Atoms versions
     struct_label = prototype.get_protostructure_label(NaCl)
@@ -111,7 +111,7 @@ def test_get_protostructure_label_with_ase_atoms() -> None:
     assert atoms_label == struct_label == "AB_cF8_225_a_b:Cl-Na"
 
     # Test with a more complex structure
-    SrTiO3_atoms = AseAtomsAdaptor.get_atoms(SrTiO3_perovskite)
+    SrTiO3_atoms = AseAtomsAdaptor.get_atoms(SrTiO3_perovskite)  # noqa: N806
     assert isinstance(SrTiO3_atoms, Atoms)
     atoms_label = prototype.get_protostructure_label(SrTiO3_atoms)
     assert atoms_label == "A3BC_cP5_221_c_a_b:O-Sr-Ti"

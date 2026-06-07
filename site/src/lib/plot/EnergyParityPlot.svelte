@@ -13,7 +13,6 @@
   import type { LoadStatus } from '$lib/asset-loader'
   import type { ModelData } from '$lib/types'
   import { compact_formula, format_num, sanitize_compact_formula } from 'matterviz'
-  import { StructurePopup } from 'matterviz/convex-hull'
   import { Spinner } from 'matterviz/feedback'
   import type { AnyStructure } from 'matterviz/structure'
   import { BinnedScatterPlot } from 'matterviz/plot'
@@ -60,6 +59,11 @@
   let structure_loading = $state(false)
   let plot_wrap = $state<HTMLDivElement>()
   let load_id = 0
+  // three.js stack (~MBs) loads only when a structure is first clicked, keeping it
+  // out of every page's initial chunk graph
+  let StructurePopup = $state<
+    typeof import('matterviz/convex-hull')['StructurePopup']
+  >()
   let popup_placement = $state<StructurePopupPlacement>({
     side: `left`,
     left: 0,
@@ -225,7 +229,13 @@
     structure_loading = true
     void tick().then(update_popup_placement)
     try {
-      const structure = await load_wbm_structure(base, point.row_idx, point.material_id)
+      const [structure] = await Promise.all([
+        load_wbm_structure(base, point.row_idx, point.material_id),
+        StructurePopup ??
+          import('matterviz/convex-hull').then((mod) => {
+            StructurePopup = mod.StructurePopup
+          }),
+      ])
       if (selected_point?.row_idx === selected_row_idx) selected_structure = structure
     } catch (error) {
       if (selected_point?.row_idx === selected_row_idx) {
@@ -324,7 +334,7 @@
           style:top={`${popup_placement.top}px`}
           style:--structure-popup-gap={`${structure_popup_gap}px`}
         >
-          {#if selected_structure}
+          {#if selected_structure && StructurePopup}
             <StructurePopup
               structure={selected_structure}
               place_right={popup_placement.side === `right`}

@@ -134,7 +134,7 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
 
         relax_results[material_id] = results
 
-    except Exception as exc:
+    except (ValueError, RuntimeError, OSError, KeyError) as exc:
         print(f"{material_id=} raised {exc=}")
 
 
