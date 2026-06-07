@@ -39,6 +39,10 @@ def round_list(values: Any) -> list[Any]:
     """Convert an array-like to a JSON-safe list: round floats to COORD_DECIMALS,
     keep ints/strings, replace non-finite numbers with None. ``None`` -> ``[]`` (so a
     missing trace field surfaces as an empty list, not a TypeError on iteration).
+
+    Don't replace calls with plain ``.tolist()``: rounding cuts gzipped payload sizes
+    to ~1/3 (full float64 repr keeps 17 significant digits) and NaN -> None is required
+    since write_json_gz uses ``json.dumps(allow_nan=False)`` which raises on NaN.
     """
     if values is None:
         return []
@@ -48,6 +52,14 @@ def round_list(values: Any) -> list[Any]:
         else val
         for val in np.asarray(values).tolist()
     ]
+
+
+def str_list(values: Any) -> list[str]:
+    """Convert a (possibly base64-encoded plotly) array of labels to a list of str.
+    ``None`` -> ``[]``.
+    """
+    arr = decode_array(values)
+    return [] if arr is None else [str(val) for val in arr.tolist()]
 
 
 def decode_array(value: Any) -> np.ndarray | None:
@@ -180,12 +192,12 @@ def sunburst_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
     """
     trace = _get_trace(fig, "sunburst")
     out: dict[str, Any] = {
-        "labels": [str(val) for val in round_list(decode_array(trace.get("labels")))],
-        "parents": [str(val) for val in round_list(decode_array(trace.get("parents")))],
+        "labels": str_list(trace.get("labels")),
+        "parents": str_list(trace.get("parents")),
         "values": round_list(decode_array(trace.get("values"))),
     }
     if (raw_ids := trace.get("ids")) is not None:
-        out["ids"] = [str(val) for val in round_list(decode_array(raw_ids))]
+        out["ids"] = str_list(raw_ids)
     return out
 
 
@@ -197,7 +209,7 @@ def sankey_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
     """
     trace = _get_trace(fig, "sankey")
     node, link = trace.get("node") or {}, trace.get("link") or {}
-    labels = [str(val) for val in round_list(decode_array(node.get("label")))]
+    labels = str_list(node.get("label"))
     sources = decode_array(link.get("source"))
     targets = decode_array(link.get("target"))
     if not labels or sources is None or targets is None or len(sources) == 0:

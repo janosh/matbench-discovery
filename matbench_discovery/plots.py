@@ -48,6 +48,35 @@ clf_colors = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
 clf_color_map = dict(zip(clf_labels, clf_colors, strict=True))
 
 
+def calc_tile_grid(
+    models: list[Any], n_cols: int, *, use_full_rows: bool
+) -> tuple[list[Any], int]:
+    """Compute the subplot row count for tiled per-model figures."""
+    if use_full_rows:
+        n_rows = len(models) // n_cols
+        return models[: n_rows * n_cols], n_rows
+    return models, math.ceil(len(models) / n_cols)
+
+
+def style_tiled_fig(
+    fig: go.Figure, x_title: str, y_title: str, *, n_rows: int, n_cols: int
+) -> None:
+    """Add shared paper-coordinate x/y axis titles to a tiled (faceted) figure and
+    standardize its margins (more bottom/left space in portrait orientation).
+    """
+    axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
+    fig.add_annotation(  # x-axis title
+        x=0.5, y=0, yshift=-50, text=x_title, borderpad=5, **axis_titles
+    )
+    fig.add_annotation(  # y-axis title
+        x=0, xshift=-70, y=0.5, text=y_title, textangle=-90, borderpad=5, **axis_titles
+    )
+    portrait = n_rows > n_cols
+    fig.layout.margin.update(
+        l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10
+    )
+
+
 def hist_classified_stable_vs_hull_dist(
     df: pd.DataFrame,
     each_true_col: str,
@@ -117,9 +146,6 @@ def hist_classified_stable_vs_hull_dist(
         each_true_neg = srs_each[true_neg]
         each_false_neg = srs_each[false_neg]
         each_false_pos = srs_each[false_pos]
-        # n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
-        #     sum, (true_pos, false_pos, true_neg, false_neg)
-        # )
 
         df_group[clf_col] = np.array(clf_labels)[
             true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
@@ -182,7 +208,9 @@ def hist_classified_stable_vs_hull_dist(
         if each_true_neg is None:
             raise ValueError(f"{each_true_neg=}")
         bins = np.arange(df[x_col].min(), df[x_col].max(), rolling_acc)
-        bin_counts = np.histogram(df[each_true_col], bins)[0]
+        # bin total counts along the same axis (x_col) as the true pos/neg counts,
+        # else accuracy numerator and denominator disagree when which_energy='pred'
+        bin_counts = np.histogram(df[x_col], bins)[0]
         bin_true_pos = np.histogram(each_true_pos, bins)[0]
         bin_true_neg = np.histogram(each_true_neg, bins)[0]
 
@@ -201,7 +229,11 @@ def hist_classified_stable_vs_hull_dist(
             yaxis2=dict(overlaying="y", side="right", range=[0, 1], tickfont=style),
             # title = dict(text=title, font=style)
         )
-        fig.add_scatter(x=bins, y=bin_accuracies, name=title, line=style, yaxis="y2")
+        # plot accuracies at bin centers (len(bins) edges yield len(bins)-1 counts)
+        bin_centers = (bins[:-1] + bins[1:]) / 2
+        fig.add_scatter(
+            x=bin_centers, y=bin_accuracies, name=title, line=style, yaxis="y2"
+        )
 
     return fig
 
@@ -580,7 +612,9 @@ def cumulative_metrics(
         model_range = np.arange(n_pred_pos) + 1  # xs for interpolation
         xs_model = allowed_xs[allowed_xs <= n_pred_pos]  # xs for plotting
 
-        cubic_interpolate = functools.partial(scipy.interpolate.interp1d, kind="cubic")
+        # interp1d is a legacy scipy API; make_interp_spline(k=3) is the recommended
+        # replacement and produces identical cubic-spline output
+        cubic_interpolate = functools.partial(scipy.interpolate.make_interp_spline, k=3)
 
         if "Precision" in metrics:
             prec_interp = cubic_interpolate(model_range, precision_cum[:n_pred_pos])

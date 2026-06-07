@@ -19,7 +19,7 @@ __date__ = "2023-02-15"
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 
-show_non_compliant = globals().get("show_non_compliant", False)
+show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
 models_to_plot = [
     model
     for model in cli_args.models
@@ -90,18 +90,9 @@ for material_cls, pattern in material_classes.items():
     fig.layout.margin.update(l=60, r=10, t=30, b=60)
     pmv.powerups.add_identity_line(fig)
     label = {"all": "structures"}.get(material_cls, material_cls)
-    # title = (
-    #     f"{n_structs} {material_cls} with largest hull distance errors<br>"
-    #     "colored by model disagreement, sized by number of sites"
-    # )
-    # fig.layout.title.update(text=title, x=0.5)
 
     # size markers by square root of structure site count
     fig.data[0].marker.size = df_plot["n_sites"] ** 0.5 * 3
-    # tried setting error_y=model_std_col but looks bad
-    # fig.update_traces(
-    #     error_y=dict(color="rgba(255,255,255,0.2)", width=3, thickness=2)
-    # )
     fig.show()
     img_suffix = "" if show_non_compliant else "-only-compliant"
     img_name = f"scatter-largest-errors-models-mean-vs-true-hull-dist-{material_cls}{img_suffix}"  # noqa: E501

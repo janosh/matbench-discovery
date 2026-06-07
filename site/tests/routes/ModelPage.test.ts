@@ -1,9 +1,16 @@
 import { MODELS } from '$lib'
 import { get_org_logo } from '$lib/labels'
+import type { ModelData } from '$lib/types'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { mount } from 'svelte'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+beforeEach(() =>
+  vi.stubGlobal(
+    `fetch`,
+    vi.fn(() => Promise.resolve(new Response(`missing`, { status: 404 }))),
+  ),
+)
 afterEach(() => vi.unstubAllGlobals())
 
 const mirror_physics_model = MODELS.find((model) =>
@@ -14,11 +21,6 @@ const test_model = mirror_physics_model
 
 describe(`Model Detail Page`, () => {
   it(`renders model details correctly`, () => {
-    vi.stubGlobal(
-      `fetch`,
-      vi.fn(() => Promise.resolve(new Response(`missing`, { status: 404 }))),
-    )
-
     // First verify test model exists
     mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
 
@@ -108,4 +110,18 @@ describe(`Model Detail Page`, () => {
       expect(hyperparams?.textContent).toContain(JSON.stringify(value))
     }
   }, 10_000)
+
+  it(`renders without crashing when training_set has an unknown dataset key`, () => {
+    // regression test: an unknown training_set key (e.g. typo in a model YAML) used
+    // to throw while destructuring DATASETS[dataset_key] and crash the whole page
+    const bogus_sets = [`BogusDataset`, `MPtrj`] as ModelData[`training_set`]
+    const model = { ...test_model, training_set: bogus_sets }
+    mount(ModelPage, { target: document.body, props: { data: { model } } })
+
+    expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)
+    const training_set = document.querySelector(`.training-set`)
+    // known dataset still renders as link, unknown one falls back to plain text
+    expect(training_set?.querySelectorAll(`a`)).toHaveLength(1)
+    expect(training_set?.textContent).toContain(`BogusDataset (unknown dataset)`)
+  })
 })

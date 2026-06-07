@@ -7,6 +7,72 @@ set dotenv-load := false
 default:
     @just --list
 
+# Fully ingest a model submission end to end:
+# 1. run evals + PR checklist + per-model figures (prepare-model-submission), which
+#    downloads the author-hosted prediction files referenced in the model YAML
+# 2. archive those files to the project's own figshare articles (one per prediction
+#    task) for longevity and rewrite the YAML's *_url keys to the archived copies
+# 3. publish the new parity assets to the GitHub release the site build downloads from
+# 4. refresh all multi-model site figure payloads so every page includes the new model
+# Commit the resulting changes (model YAML, site/src/figs, parity manifests, ...).
+# Requires FIGSHARE_TOKEN (step 2) and gh auth (step 3).
+ingest-model model_name overwrite="false":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [ -z "${FIGSHARE_TOKEN:-}" ]; then
+        echo "Error: FIGSHARE_TOKEN must be set to archive prediction files to figshare"
+        exit 1
+    fi
+
+    just prepare-model-submission "{{model_name}}" "{{overwrite}}"
+
+    MODEL="$(echo "{{model_name}}" | tr '-' '_')"
+
+    echo ">> Archiving prediction files to project figshare articles..."
+    uv run python scripts/upload_model_preds_to_figshare.py --models "$MODEL" --no-interactive
+
+    echo ">> Publishing parity assets to GitHub release v1.0.0..."
+    for assets_dir in site/static/energy-parity/assets site/static/kappa-parity/assets; do
+        if compgen -G "$assets_dir/*.json.gz" > /dev/null; then
+            gh release upload v1.0.0 "$assets_dir"/*.json.gz --clobber
+        fi
+    done
+
+    just update-site-figs
+
+    echo "✅ Model ingested. Review and commit the changed files (model YAML with"
+    echo "   archived URLs + metrics, site/src/figs payloads, parity manifests)."
+
+# Regenerate all multi-model site figure payloads (site/src/figs/*.json.gz) so pages
+# like /models/tmi and /tasks/geo-opt include every model submission. Needs all model
+# preds locally (auto-downloads). Run after adding/updating a model, then commit the
+# changed payloads.
+update-site-figs:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # --show-non-compliant: site payloads always contain the full model set (pages can
+    # filter client-side); --no-show: don't open plotly figs in the browser
+    FLAGS="--auto-download --show-non-compliant --no-show"
+
+    for script in \
+        scripts/model_figs/roc_curves_models.py \
+        scripts/model_figs/hull_dist_box_plot.py \
+        scripts/model_figs/cumulative_metrics.py \
+        scripts/model_figs/rolling_hull_dist_mae_models.py \
+        scripts/model_figs/tiles_hist_classified_stable_models.py \
+        scripts/model_figs/tmi-page-figures.py \
+        scripts/evals/geo_opt.py; do
+        echo ">> $script"
+        uv run python "$script" $FLAGS
+    done
+
+    # guard against payload shape drift (site pages import these files typed)
+    uv run --with pytest pytest tests/test_fig_payloads.py -q
+
+    echo "✅ Site figure payloads updated. Review and commit changes in site/src/figs/"
+
 # Prepare a model submission by running all eval and plot scripts and checking the checklist
 prepare-model-submission model_name overwrite="false":
     #!/usr/bin/env bash
@@ -158,7 +224,7 @@ prepare-model-submission model_name overwrite="false":
     echo ">> Running kappa (phonon) metrics evaluation..."
     if [ "$MODEL_TARGETS" = "E" ]; then
         check_skip "Kappa metrics skipped (model targets=$MODEL_TARGETS, no forces)"
-    elif uv run python scripts/evals/kappa.py --auto-download --models "$MODEL" $OVERWRITE_FLAG; then
+    elif uv run --extra phonons python scripts/evals/kappa.py --auto-download --models "$MODEL" $OVERWRITE_FLAG; then
         check_pass "Kappa metrics evaluation completed"
     else
         check_fail "Kappa metrics evaluation failed"
@@ -168,7 +234,7 @@ prepare-model-submission model_name overwrite="false":
     echo ">> Running geo_opt analysis..."
     if [ "$MODEL_TARGETS" = "E" ]; then
         check_skip "Geo-opt analysis skipped (model targets=$MODEL_TARGETS, no forces)"
-    elif uv run python scripts/analyze_geo_opt.py --auto-download --models "$MODEL" $OVERWRITE_FLAG; then
+    elif uv run --with 'moyopy>=0.10.0' python scripts/analyze_geo_opt.py --auto-download --models "$MODEL" $OVERWRITE_FLAG; then
         check_pass "Geo-opt analysis completed"
     else
         check_fail "Geo-opt analysis failed"
@@ -214,6 +280,18 @@ prepare-model-submission model_name overwrite="false":
         check_pass "Per-element errors plot generated"
     else
         check_fail "Per-element errors plot generation failed"
+    fi
+
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "STEP 4: Refreshing multi-model site figures (adds $MODEL to /models/tmi etc.)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    echo ""
+    if just update-site-figs; then
+        check_pass "Multi-model site figure payloads regenerated (commit site/src/figs/)"
+    else
+        check_fail "Multi-model site figure regeneration failed"
     fi
 
     echo ""

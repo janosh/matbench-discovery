@@ -87,8 +87,10 @@
 
         return { ...col, better, description, visible }
       })
-      // Ensure Model column comes first
-      .toSorted((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
+      // Ensure Model column comes first (0 keeps relative order of all other columns)
+      .toSorted((col1, col2) =>
+        col1.label === `Model` ? -1 : col2.label === `Model` ? 1 : 0
+      ),
   )
 
   let selected_count = $derived(selected_models.size)

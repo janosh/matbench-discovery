@@ -7,7 +7,6 @@ import {
   has_energy_parity_model,
   load_energy_parity_base,
   load_energy_parity_model,
-  load_json_asset,
   load_wbm_structure,
   model_asset,
   structure_bundle_for_shard,
@@ -15,6 +14,7 @@ import {
   structure_popup_placement,
 } from '$lib/energy-parity'
 import type { EnergyParityBase, EnergyParityModel } from '$lib/energy-parity'
+import { load_json_asset } from '$lib/asset-loader'
 import { energy_parity_manifest } from '$lib/energy-parity-manifest'
 import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -165,12 +165,14 @@ describe(`energy parity data helpers`, () => {
 
   it.each([
     {
+      case: `wrong row count`,
       kind: `base`,
       response: () => gzipped_json_response(manifest_sized_base({ formulas: [] })),
       load: () => load_energy_parity_base(),
       error: `Invalid energy parity formulas: expected ${energy_parity_manifest.row_count} rows`,
     },
     {
+      case: `wrong row count`,
       kind: `model`,
       response: () =>
         gzipped_json_response({
@@ -181,13 +183,26 @@ describe(`energy parity data helpers`, () => {
         `Invalid energy parity ${first_model_key}.e_form_pred: ` +
         `expected ${energy_parity_manifest.row_count} rows`,
     },
-  ])(
-    `rejects $kind assets with the wrong row count`,
-    async ({ response, load, error }) => {
-      vi.stubGlobal(`fetch`, vi.fn(response))
-      await expect(load()).rejects.toThrow(error)
+    {
+      case: `missing { model } wrapper`,
+      kind: `model`,
+      // asset stores the model object directly instead of under the { model } key
+      response: () => gzipped_json_response(manifest_sized_model(first_model_key)),
+      load: () => load_energy_parity_model(first_model_key),
+      error: `No energy parity model ${first_model_key} in its asset`,
     },
-  )
+    {
+      case: `model_key mismatch`,
+      kind: `model`,
+      response: () =>
+        gzipped_json_response({ model: manifest_sized_model(`other-model`) }),
+      load: () => load_energy_parity_model(first_model_key),
+      error: `Invalid energy parity model: expected ${first_model_key}, got other-model`,
+    },
+  ])(`rejects $kind assets ($case)`, async ({ response, load, error }) => {
+    vi.stubGlobal(`fetch`, vi.fn(response))
+    await expect(load()).rejects.toThrow(error)
+  })
 
   it(`reports a clear error for a stale base asset missing a field`, async () => {
     // simulate an old-schema release asset that predates the n_sites column

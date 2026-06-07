@@ -25,9 +25,11 @@ from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIG_DATA, figs, today
+from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.metrics import geo_opt
+from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 symprec = 1e-5
 model_lvl, metric_lvl = "model", "metric"
@@ -42,13 +44,12 @@ df_wbm[init_spg_col] = (
 df_wbm[dft_spg_col] = (
     df_wbm[MbdKey.protostructure_spglib].str.split("_").str[2].astype(int)
 )
-model_lvl, metric_lvl = "model", "metric"
 
 
 # %% Load all model data
 model_data: dict[str, pd.DataFrame] = {}
 model_metrics: dict[str, dict[str, float]] = {}
-for model in Model.active():
+for model in cli_args.models:
     metrics = model.metadata.get("metrics", {}).get("geo_opt", {})
     if not isinstance(metrics, dict) or not (pred_file := metrics.get("pred_file")):
         continue
@@ -59,6 +60,10 @@ for model in Model.active():
         continue
 
     analysis_path = f"{ROOT}/{analysis_file}"
+    # fetch the (small) symmetry-analysis CSV from figshare if missing so payloads can
+    # be regenerated on machines/CI that never ran the model locally
+    if analysis_file_url := symprec_metrics.get("analysis_file_url"):
+        maybe_auto_download_file(analysis_file_url, analysis_path, label=model.label)
     if not os.path.isfile(analysis_path):
         print(f"Warning: {model.label} analysis file not found at {analysis_path}")
         continue
@@ -112,9 +117,10 @@ for model_label in {*df_spg} - {Key.dft.label}:
 
 # one combined payload for all models (loop order is a set -> sort for determinism)
 spg_sankey_models.sort(key=lambda entry: str(entry["key"]).lower())
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/spg-sankeys.json.gz", {"models": spg_sankey_models}
-)
+if is_full_model_run():  # don't clobber site payload on filtered runs
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/spg-sankeys.json.gz", {"models": spg_sankey_models}
+    )
 
 
 # %%
@@ -291,9 +297,10 @@ fig_sym_ops_diff.update_xaxes(nticks=10, showticklabels=True)
 # log transform y-axis
 fig_sym_ops_diff.update_yaxes(type="log")
 fig_sym_ops_diff.layout.margin.t = 25
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/sym-ops-diff-bar.json.gz", {"models": sym_ops_models}
-)
+if is_full_model_run():  # don't clobber site payload on filtered runs
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/sym-ops-diff-bar.json.gz", {"models": sym_ops_models}
+    )
 
 title = "Difference in number of symmetry operations of ML vs DFT-relaxed structures"
 fig_sym_ops_diff.layout.title = dict(text=title, x=0.5)
@@ -371,9 +378,10 @@ fig_rmsd_cdf.layout.yaxis.update(title="Cumulative", tickformat=".0%", range=[0,
 fig_rmsd_cdf.layout.legend = dict(y=0, xanchor="right", x=1)
 
 rmsd_cdf_models.sort(key=lambda entry: -entry["auc"])  # type: ignore[arg-type, return-value]
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/struct-rmsd-cdf.json.gz", {"models": rmsd_cdf_models}
-)
+if is_full_model_run():  # don't clobber site payload on filtered runs
+    figs.write_json_gz(
+        f"{SITE_FIG_DATA}/struct-rmsd-cdf.json.gz", {"models": rmsd_cdf_models}
+    )
 
 title = "Cumulative Distribution of RMSD vs DFT-relaxed structures"
 fig_rmsd_cdf.layout.title = dict(text=title, x=0.5)

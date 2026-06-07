@@ -109,6 +109,15 @@ plot_group.add_argument(
 )
 cli_args, _ignore_unknown = cli_parser.parse_known_args()
 
+
+def is_full_model_run() -> bool:
+    """True when --models wasn't narrowed, i.e. the run covers all active models.
+    Multi-model site figure payloads (site/src/figs) must only be (over)written on
+    full runs, else a filtered run would clobber them with partial data.
+    """
+    return set(cli_args.models) >= set(Model.active())
+
+
 # Set env var to auto-confirm file downloads when --auto-download is passed
 if cli_args.auto_download:
     os.environ["MBD_AUTO_DOWNLOAD_FILES"] = "true"

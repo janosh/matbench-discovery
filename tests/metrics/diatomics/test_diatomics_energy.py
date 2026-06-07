@@ -36,10 +36,9 @@ def pred_ref_e_curves(
     e_h_ref, e_h_pred = ref_homo_nuc["H"].energies, pred_homo_nuc["H"].energies
     e_he_ref, e_he_pred = ref_homo_nuc["He"].energies, pred_homo_nuc["He"].energies
     ref_dists, pred_dists = ref_curves.distances, pred_curves.distances
-    return (
-        {"H": (ref_dists, e_h_ref), "He": (ref_dists, e_he_ref)},
-        {"H": (pred_dists, e_h_pred), "He": (pred_dists, e_he_pred)},
-    )
+    ref_energies = {"H": (ref_dists, e_h_ref), "He": (ref_dists, e_he_ref)}
+    pred_energies = {"H": (pred_dists, e_h_pred), "He": (pred_dists, e_he_pred)}
+    return ref_energies, pred_energies
 
 
 def test_curve_diff_auc(pred_ref_e_curves: PredRefEnergies) -> None:

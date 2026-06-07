@@ -41,11 +41,20 @@ if __name__ == "__main__":
     import matbench_discovery.preds.discovery as preds
 
     uniq_protos_idx = df_wbm.query(MbdKey.uniq_proto).index
+    df_preds_uniq_protos = preds.df_preds.loc[uniq_protos_idx]
 
     for model in cli_args.models:
         try:
             print(f"\nProcessing {model.label}...")
             model_preds = preds.df_preds[model.label]
+            # 10k most stable = lowest *predicted hull distance* (each_pred), not
+            # lowest raw formation energy (must match preds/discovery.py which
+            # computes df_metrics_10k on this same subset)
+            each_pred_uniq_protos = (
+                df_preds_uniq_protos[MbdKey.each_true]
+                + df_preds_uniq_protos[model.label]
+                - df_preds_uniq_protos[MbdKey.e_form_dft]
+            )
             for test_subset, (metrics, subset_idx) in {
                 TestSubset.full_test_set: (
                     preds.df_metrics[model.label].to_dict(),
@@ -57,13 +66,13 @@ if __name__ == "__main__":
                 ),
                 TestSubset.most_stable_10k: (
                     preds.df_metrics_10k[model.label].to_dict(),
-                    model_preds.loc[uniq_protos_idx].nsmallest(10_000).index,
+                    each_pred_uniq_protos.nsmallest(10_000).index,
                 ),
             }.items():
                 discovery.write_metrics_to_yaml(
                     model, metrics, model_preds.loc[subset_idx], test_subset
                 )
-            print(f"\tUpdated discovery metrics for {test_subset}")
+                print(f"\tUpdated discovery metrics for {test_subset}")
         except Exception:
             print(f"\tError processing {model.label}: {traceback.format_exc()}")
             continue
@@ -118,7 +127,9 @@ for model_label in models:
 
         # Add model version as hover tooltip to model name
         model_version = model.metadata.get("model_version", "")
-        compliant_css_cls = "non-compliant" if model in non_compliant_models else ""
+        # NB: model is a Model enum (str value = snake-case key), so membership in
+        # the list of non-compliant labels would always be False
+        compliant_css_cls = "" if model.is_compliant else "non-compliant"
         attrs = {
             "title": f"Version: {model_version}",
             "class": compliant_css_cls,

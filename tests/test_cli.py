@@ -91,3 +91,14 @@ def test_cli_args_global() -> None:
     assert isinstance(cli_args.show_non_compliant, bool)
     assert isinstance(cli_args.use_full_rows, bool)
     assert isinstance(cli_args.update_existing, bool)
+
+
+def test_is_full_model_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    """is_full_model_run guards multi-model site payloads against filtered runs."""
+    from matbench_discovery import cli
+
+    monkeypatch.setattr(cli.cli_args, "models", list(Model.active()))
+    assert cli.is_full_model_run() is True
+
+    monkeypatch.setattr(cli.cli_args, "models", [Model.chgnet_030])
+    assert cli.is_full_model_run() is False

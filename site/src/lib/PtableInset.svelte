@@ -2,6 +2,7 @@
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
   import { format_num } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
+  import { sum } from 'd3-array'
 
   let { element, elem_counts, show_percent = true, unit = ``, ...rest }: {
     element: ChemicalElement
@@ -16,10 +17,7 @@
       : (elem_counts[element?.symbol] ?? null),
   )
   let total = $derived(
-    (Array.isArray(elem_counts) ? elem_counts : Object.values(elem_counts)).reduce(
-      (sum, count) => sum + count,
-      0,
-    ),
+    sum(Array.isArray(elem_counts) ? elem_counts : Object.values(elem_counts)),
   )
 </script>
 

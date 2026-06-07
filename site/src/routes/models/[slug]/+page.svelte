@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AuthorBrief, calculate_days_ago, DATASETS, PtableInset } from '$lib'
+  import { AuthorBrief, DATASETS, PtableInset } from '$lib'
   import {
     discovery_task_tooltips,
     model_type_tooltips,
@@ -12,7 +12,7 @@
   import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'matterviz'
-  import { ColorBar, format_num, Icon, PeriodicTable, TableInset } from 'matterviz'
+  import { ColorBar, format_num, format_relative_time, Icon, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { CopyButton } from 'svelte-multiselect'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
@@ -22,8 +22,8 @@
 
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
-  let days_added = $derived(calculate_days_ago(data.model.date_added ?? ``))
-  let days_published = $derived(calculate_days_ago(data.model.date_published ?? ``))
+  let added_ago = $derived(format_relative_time(data.model.date_added))
+  let published_ago = $derived(format_relative_time(data.model.date_published))
 
   export const snapshot = {
     capture: () => ({ color_scale }),
@@ -57,11 +57,11 @@
         {/if}
       </span>
 
-      <span title="{days_added} days ago" {@attach tooltip()}><Icon icon="Calendar" />
+      <span title={added_ago} {@attach tooltip()}><Icon icon="Calendar" />
         Added: {model.date_added}
       </span>
 
-      <span title="{days_published} days ago" {@attach tooltip()}>
+      <span title={published_ago} {@attach tooltip()}>
         <Icon icon="CalendarCheck" /> Published: {model.date_published}
       </span>
 
@@ -314,19 +314,23 @@
       <section class="training-set">
         {#each model.training_set as dataset_key (dataset_key)}
           {@const dataset = DATASETS[dataset_key]}
-          {@const { n_structures, name, slug, n_materials } = dataset}
-          <p>
-            <a href="/data/{slug}">{name}</a>:
-            <span title={n_structures.toLocaleString()} {@attach tooltip()}>
-              <strong>{format_num(n_structures)}</strong>
-            </span>
-            structures
-            {#if typeof n_materials == `number`}
-              from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
-                <strong>{format_num(n_materials)}</strong>
-              </span> materials
-            {/if}
-          </p>
+          {#if dataset}
+            {@const { n_structures, name, slug, n_materials } = dataset}
+            <p>
+              <a href="/data/{slug}">{name}</a>:
+              <span title={n_structures.toLocaleString()} {@attach tooltip()}>
+                <strong>{format_num(n_structures)}</strong>
+              </span>
+              structures
+              {#if typeof n_materials == `number`}
+                from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
+                  <strong>{format_num(n_materials)}</strong>
+                </span> materials
+              {/if}
+            </p>
+          {:else}
+            <p>{dataset_key} (unknown dataset)</p>
+          {/if}
         {/each}
       </section>
     {/if}

@@ -3,15 +3,15 @@
   import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.json.gz'
   import sym_ops_diff from '$figs/sym-ops-diff-bar.json.gz'
   import { GeoOptMetricsTable, MODELS } from '$lib'
+  import { min } from 'd3-array'
   import { format_num } from 'matterviz'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
 
-  const n_min_relaxed_structures: number = MODELS.reduce((acc, model) => {
+  const n_min_relaxed_structures: number = min(MODELS, (model) => {
     const geo_opt = model.metrics?.geo_opt
-    if (typeof geo_opt === `string` || !geo_opt) return acc
-    return Math.min(acc, geo_opt?.[`symprec=1e-2`]?.n_structures ?? Infinity)
-  }, Infinity)
+    return typeof geo_opt === `string` ? undefined : geo_opt?.[`symprec=1e-2`]?.n_structures
+  }) ?? Infinity
 </script>
 
 <GeoOptReadme>

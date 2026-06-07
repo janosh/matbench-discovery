@@ -3,12 +3,10 @@ batch in a single plot.
 """
 
 # %%
-import math
-
 import pymatviz as pmv
 from plotly.subplots import make_subplots
 
-from matbench_discovery import PDF_FIGS
+from matbench_discovery import PDF_FIGS, plots
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
@@ -29,7 +27,7 @@ if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
-show_non_compliant = globals().get("show_non_compliant", False)
+show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
 models_to_plot = [
     model.label
     for model in cli_args.models
@@ -37,13 +35,9 @@ models_to_plot = [
 ]
 
 n_cols = 3
-use_full_rows = globals().get("use_full_rows", True)
-if use_full_rows:
-    # drop last models that don't fit in last row
-    n_rows = len(models_to_plot) // n_cols
-    models_to_plot = models_to_plot[: n_rows * n_cols]
-else:
-    n_rows = math.ceil(len(models_to_plot) / n_cols)
+models_to_plot, n_rows = plots.calc_tile_grid(
+    models_to_plot, n_cols, use_full_rows=globals().get("use_full_rows", True)
+)
 
 
 # %% Create subplots with one row per column in the DataFrame
@@ -107,10 +101,6 @@ fig.layout.legend.update(
     y=1.08, xanchor="center", x=0.5, bgcolor="rgba(0,0,0,0)", orientation="h"
 )
 
-# set the figure size based on the number of rows and columns
-fig.layout.update(height=230 * n_rows)
-fig.layout.update(width=280 * n_cols)
-
 # set the shared y and x axis ranges to (-0.2, 0.2), and (0, 0.2)
 fig.update_xaxes(range=[-0.2, 0.2])
 fig.update_yaxes(range=[0, 0.2])
@@ -127,28 +117,8 @@ for idx in range(1, n_rows + 1):
         fig.update_xaxes(title_text="", row=idx, col=j)
         fig.update_yaxes(title_text="", row=idx, col=j)
 
-axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
-fig.add_annotation(  # x-axis title
-    x=0.5,
-    y=0,
-    yshift=-50,
-    text=x_title,
-    borderpad=5,
-    **axis_titles,
-)
-fig.add_annotation(  # y-axis title
-    x=0,
-    xshift=-70,
-    y=0.5,
-    text=y_title,
-    textangle=-90,
-    borderpad=5,
-    **axis_titles,
-)
-
-# standardize the margins and template
-portrait = n_rows > n_cols
-fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
+# shared x/y axis titles and standardized margins
+plots.style_tiled_fig(fig, x_title, y_title, n_rows=n_rows, n_cols=n_cols)
 fig.update_xaxes(matches=None)
 fig.update_yaxes(matches=None)
 fig.layout.template = "pymatviz_white"

@@ -513,8 +513,7 @@ def test_write_metrics_to_yaml(
     mock_model = MagicMock(spec=Model)
     mock_model.yaml_path = "mock_path/test_model.yml"
 
-    with patch("ruamel.yaml.YAML") as mock_yaml_class:
-        mock_yaml = mock_yaml_class.return_value
+    with patch("matbench_discovery.data.round_trip_yaml") as mock_yaml:
         mock_yaml.load.return_value = existing_data
 
         with patch("builtins.open", mock_open()):

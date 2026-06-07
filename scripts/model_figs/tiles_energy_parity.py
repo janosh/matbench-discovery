@@ -4,14 +4,12 @@ separate subplot.
 """
 
 # %%
-import math
-
 import numpy as np
 import plotly.express as px
 import pymatviz as pmv
 from pymatviz.enums import Key
 
-from matbench_discovery import PDF_FIGS
+from matbench_discovery import PDF_FIGS, plots
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
@@ -21,14 +19,18 @@ from matbench_discovery.plots import clf_colors
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
 
-if cli_args.energy_type == Key.each:
+# allow run_all.py to override these settings via runpy init_globals
+energy_type = globals().get("which_energy", cli_args.energy_type)
+show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
+
+if energy_type == Key.each:
     e_pred_col = Key.each_pred
     e_true_col = MbdKey.each_true
-elif cli_args.energy_type == Key.e_form:
+elif energy_type == Key.e_form:
     e_true_col = MbdKey.e_form_dft
     e_pred_col = Key.e_form_pred
 else:
-    raise ValueError(f"Unexpected {cli_args.energy_type=}")
+    raise ValueError(f"Unexpected {energy_type=}")
 
 # Get list of models from command line args, fall back to all models
 models_to_plot = cli_args.models
@@ -68,34 +70,20 @@ df_bin = df_bin.reset_index()
 legend_order = list(dfs_metrics[test_subset].T.MAE.sort_values().index)
 
 
-# determine each point's classification to color them by
-# now unused, can be used to color points by TP/FP/TN/FN
-# true_pos, false_neg, false_pos, true_neg = classify_stable(
-#     df_bin[e_true_col], df_bin[e_pred_col]
-# )
-# clf_col = "classified"
-# df_bin[clf_col] = np.array(clf_labels)[
-#     true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
-# ]
-
-
 # %% parity plot of DFT vs predicted hull distance with each model in separate subplot
 models_to_plot = [
     model
     for model in models_to_plot
-    if model.is_complete and (cli_args.show_non_compliant or model.is_compliant)
+    if model.is_complete and (show_non_compliant or model.is_compliant)
 ]
 
 log_bin_cnt_col = f"log {bin_cnt_col}"
 df_bin[log_bin_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)
 
 n_cols = 3
-if cli_args.use_full_rows:
-    # drop last models that don't fit in last row
-    n_rows = len(models_to_plot) // n_cols
-    models_to_plot = models_to_plot[: n_rows * n_cols]
-else:
-    n_rows = math.ceil(len(models_to_plot) / n_cols)
+models_to_plot, n_rows = plots.calc_tile_grid(
+    models_to_plot, n_cols, use_full_rows=cli_args.use_full_rows
+)
 
 fig = px.scatter(
     df_bin.query(f"{facet_col} in {[m.label for m in models_to_plot]}"),
@@ -108,7 +96,7 @@ fig = px.scatter(
     facet_row_spacing=0.04,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
-    range_x=(domain := (-4, 4) if cli_args.energy_type == Key.each else (-5, 3)),
+    range_x=(domain := (-4, 4) if energy_type == Key.each else (-5, 3)),
     range_y=domain,
     category_orders={
         facet_col: sorted([m.label for m in models_to_plot], key=legend_order.index)
@@ -188,34 +176,15 @@ fig.layout.legend.update(
     title="", orientation="h", x=0.5, xanchor="center", y=1.15, itemsizing="constant"
 )
 
-# Create shared x and y axis titles
-axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
-fig.add_annotation(  # x-axis title
-    x=0.5,
-    y=0,
-    yshift=-50,
-    text=e_true_col.label,
-    borderpad=5,
-    **axis_titles,
-)
-fig.add_annotation(  # y-axis title
-    x=0,
-    xshift=-70,
-    y=0.5,
-    text=e_pred_col.label,
-    textangle=-90,
-    borderpad=5,
-    **axis_titles,
+# shared x/y axis titles and standardized margins
+plots.style_tiled_fig(
+    fig, e_true_col.label, e_pred_col.label, n_rows=n_rows, n_cols=n_cols
 )
 
 # place the colorbar above the subplots
 fig.layout.coloraxis.colorbar.update(
     x=0.5, y=1.03, thickness=11, len=0.8, orientation="h"
 )
-
-# standardize the margins and template
-portrait = n_rows > n_cols
-fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
 
 axes_kwargs = dict(matches=None, title_text="", showgrid=True, nticks=8)
 fig.update_xaxes(**axes_kwargs, range=domain)
@@ -224,6 +193,6 @@ fig.show()
 
 
 # %%
-img_suffix = "" if cli_args.show_non_compliant else "-only-compliant"
-img_name = f"{cli_args.energy_type}-parity-models-{n_rows}x{n_cols}{img_suffix}"
+img_suffix = "" if show_non_compliant else "-only-compliant"
+img_name = f"{energy_type}-parity-models-{n_rows}x{n_cols}{img_suffix}"
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
