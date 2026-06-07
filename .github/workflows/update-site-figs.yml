@@ -1,35 +1,22 @@
 name: Update site figures
 
-# Keep the benchmark fully self-updating when model submissions arrive. Two modes:
+# Keep site figure payloads (site/src/figs) in sync with model submissions. Two modes:
 #
-# 1. Ingest mode (primary): a maintainer applies the 'ingest-model' label to a model
-#    submission PR (authors submit a YAML linking their figshare-hosted prediction
-#    files) -> `just ingest-model` then, per submitted model:
-#      - runs evals + PR checklist + per-model figures (downloads the author's files)
-#      - archives those files to the project's own figshare articles (one per
-#        prediction task) for longevity and rewrites the YAML's *_url keys
-#      - publishes new parity assets to the GH release the site build downloads from
-#      - refreshes all multi-model site figure payloads (site/src/figs)
-#    and commits the results DIRECTLY onto the PR branch, so one merge lands the
-#    model with all site pages up to date.
+# 1. Ingest (maintainer labels a submission PR 'ingest-model'): run `just ingest-model`
+#    per new model (evals + checklist, archive the author's pred files to the project's
+#    figshare, publish parity assets to the GH release, refresh payloads) and commit the
+#    results onto the PR branch, so one merge lands the model fully integrated.
+#    SECURITY: PR code is never executed. The job runs trusted main and overlays only PR
+#    *data* via scripts/apply_pr_models_overlay.py - models/** plus enums.py iff its diff
+#    is provably additive Model members (else fails closed -> a maintainer runs
+#    `just ingest-model` locally after review). That's why FIGSHARE_TOKEN (account-wide!)
+#    + WANDB_API_KEY are safe here; the label is a cost gate, not a security boundary.
+#    Requires the label, secrets.SITE_FIGS_PAT (classic PAT with public_repo scope;
+#    fine-grained PATs can't push to fork branches; the PR's "allow edits by maintainers"
+#    must stay on) and secrets.FIGSHARE_TOKEN. Re-trigger by re-applying the label.
 #
-#    SECURITY MODEL: PR code is NEVER executed. The job checks out main (trusted
-#    code) and overlays only the PR's *data* via scripts/apply_pr_models_overlay.py:
-#    models/** (YAML parsed with safe loaders; author test scripts are checked for
-#    existence, never run) plus matbench_discovery/enums.py ONLY if its diff is
-#    provably additive Model-member lines (fails closed otherwise -> run
-#    `just ingest-model` locally after real review). This is what makes it safe to
-#    have FIGSHARE_TOKEN (account-wide!) and WANDB_API_KEY in env. The label is
-#    therefore a cost/archival gate, not a security boundary.
-#
-#    Requires: 'ingest-model' label, secrets.SITE_FIGS_PAT (classic PAT with
-#    public_repo scope - fine-grained PATs can't push to contributor forks; the PR's
-#    "allow edits by maintainers" must be on, which is the default for forks) and
-#    secrets.FIGSHARE_TOKEN (archive uploads). Re-trigger by re-applying the label.
-#
-# 2. Fallback (post-merge): on pushes to main that touch model YAMLs (or weekly), the
-#    multi-model payloads are regenerated and, ONLY if they differ (i.e. mode 1 was
-#    skipped), a follow-up PR is opened against main. No-op when payloads are current.
+# 2. Fallback (push to main touching model YAMLs, or weekly): regenerate payloads and
+#    open a follow-up PR only if they differ. No-op when already current.
 on:
   pull_request_target:
     types: [labeled]
@@ -55,15 +42,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 150 # downloads every model's preds on a cold cache
     steps:
-      # always the TRUSTED ref: main for push/schedule/dispatch AND for ingest mode
-      # (PR content is overlaid as data below, never executed)
+      # always the trusted ref (main); ingest-mode PR content is overlaid as data, never run
       - name: Check out trusted repo
         uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      # ingest mode: PR head checked out to a side directory as a DATA source (and
-      # later the push target). actions/checkout never executes repo code.
+      # ingest mode: PR head as a data source + later push target (checkout never runs PR code)
       - name: Check out submission PR head (data only)
         if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v6
@@ -106,29 +91,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only |
-            grep -E '^models/.*\.yml$' | grep -v model-schema > changed_yamls.txt || true
-          if [ ! -s changed_yamls.txt ]; then
+          CHANGED=$(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only |
+            grep -E '^models/.*\.yml$' | grep -v model-schema || true)
+          if [ -z "$CHANGED" ]; then
             echo "::error::No model YAML changes found in PR #$PR"
             exit 1
           fi
-          MODELS=$(uv run python - "$(cat changed_yamls.txt)" <<'EOF'
-          import sys
-
-          from matbench_discovery.enums import Model
-
-          names: list[str] = []
-          for path in sys.argv[1].split():
-              for model in Model:
-                  if model.yaml_path.endswith(path):
-                      names.append(model.name)
-                      break
-              else:
-                  sys.exit(f"No Model enum entry maps to {path} - add it to enums.py")
-          print(" ".join(dict.fromkeys(names)))
-          EOF
-          )
-          rm changed_yamls.txt
+          # word splitting of the newline-separated paths is intended
+          # shellcheck disable=SC2086
+          MODELS=$(uv run python scripts/ingest_model.py --map-yaml-paths $CHANGED)
           echo "models=$MODELS" >> "$GITHUB_OUTPUT"
           echo "Detected submitted models: $MODELS"
 
@@ -149,11 +120,10 @@ jobs:
             just ingest-model "$model"
           done
 
-      # Copy the generated artifacts into the PR checkout and push from there, so the
-      # commit applies on top of the contributor's branch (their non-models changes
-      # stay intact). Pushed with the maintainer PAT so the push triggers normal
-      # pull_request CI on the new head SHA (GITHUB_TOKEN pushes wouldn't, and can't
-      # push to forks). gitignore keeps downloaded pred files out of the commit.
+      # Copy generated artifacts into the PR checkout and push from there, preserving the
+      # contributor's other changes. The maintainer PAT (not GITHUB_TOKEN) is needed to
+      # push to forks and to trigger pull_request CI on the new SHA; gitignore keeps
+      # downloaded pred files out of the commit.
       - name: Commit ingested changes to the submission PR
         if: github.event_name == 'pull_request_target'
         env:
@@ -208,10 +178,9 @@ jobs:
           delete-branch: true
 
       # GITHUB_TOKEN-opened PRs don't trigger push/pull_request workflows, but
-      # workflow_dispatch is exempt from that recursion guard. Fire the required
-      # status checks (all four live in test.yml) and the site build (gh-pages.yml,
-      # whose deploy job is gated on refs/heads/main so this builds without
-      # deploying) against the PR head so branch protection is satisfied.
+      # workflow_dispatch is exempt. Dispatch the required checks (all four in test.yml) and
+      # the site build (gh-pages.yml builds without deploying off-main) onto the PR head
+      # so branch protection is satisfied.
       - name: Trigger CI on the fallback auto-PR
         if: github.event_name != 'pull_request_target' && steps.cpr.outputs.pull-request-number
         env:
