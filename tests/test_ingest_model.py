@@ -30,11 +30,8 @@ def import_script(name: str):  # noqa: ANN201
 ingest = import_script("ingest_model")
 
 
-def results_by_status(checks: "ingest.Checklist") -> dict[str, list[str]]:
-    out: dict[str, list[str]] = {ingest.PASS: [], ingest.FAIL: [], ingest.SKIP: []}
-    for status, msg in checks.results:
-        out[status].append(msg)
-    return out
+def msgs(checks: "ingest.Checklist", status: str) -> list[str]:
+    return [msg for stat, msg in checks.results if stat == status]
 
 
 def test_complete_force_model_passes_checklist() -> None:
@@ -42,11 +39,11 @@ def test_complete_force_model_passes_checklist() -> None:
     checks = ingest.Checklist()
     energy_only = ingest.check_submission(Model.mace_mpa_0, checks)
     assert energy_only is False
-    by_status = results_by_status(checks)
-    assert by_status[ingest.FAIL] == []
+    assert msgs(checks, ingest.FAIL) == []
     # force-based checks must actually run, not skip
-    assert any("geo_opt" in msg for msg in by_status[ingest.PASS])
-    assert any("Phonon" in msg for msg in by_status[ingest.PASS])
+    passed = msgs(checks, ingest.PASS)
+    assert any("geo_opt" in msg for msg in passed)
+    assert any("Phonon" in msg for msg in passed)
 
 
 def test_energy_only_model_skips_force_tasks() -> None:
@@ -56,9 +53,9 @@ def test_energy_only_model_skips_force_tasks() -> None:
         pytest.skip("no energy-only model in registry")
     checks = ingest.Checklist()
     assert ingest.check_submission(e_only, checks) is True
-    by_status = results_by_status(checks)
-    assert by_status[ingest.FAIL] == [], by_status[ingest.FAIL]
-    assert sum("skipped (targets=E" in msg for msg in by_status[ingest.SKIP]) >= 4
+    assert msgs(checks, ingest.FAIL) == []
+    skips = msgs(checks, ingest.SKIP)
+    assert sum("skipped (targets=E" in msg for msg in skips) >= 4
 
 
 def test_all_active_models_have_required_metadata() -> None:
@@ -72,9 +69,7 @@ def test_all_active_models_have_required_metadata() -> None:
         checks = ingest.Checklist()
         ingest.check_submission(model, checks)
         hard_fails = [
-            msg
-            for status, msg in checks.results
-            if status == ingest.FAIL and "test script" not in msg
+            msg for msg in msgs(checks, ingest.FAIL) if "test script" not in msg
         ]
         if hard_fails:
             failures[model.name] = hard_fails

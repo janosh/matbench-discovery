@@ -16,6 +16,7 @@ import os
 import subprocess
 from collections import Counter
 from collections.abc import Sequence
+from functools import partialmethod
 from pathlib import Path
 
 from matbench_discovery.enums import Model
@@ -85,14 +86,9 @@ class Checklist:
         suffix = " (skipped/optional)" if status == SKIP else ""
         print(f"  {status} {msg}{suffix}")
 
-    def ok(self, msg: str) -> None:
-        self.record(PASS, msg)
-
-    def fail(self, msg: str) -> None:
-        self.record(FAIL, msg)
-
-    def skip(self, msg: str) -> None:
-        self.record(SKIP, msg)
+    ok = partialmethod(record, PASS)
+    fail = partialmethod(record, FAIL)
+    skip = partialmethod(record, SKIP)
 
     @property
     def n_failed(self) -> int:
@@ -266,20 +262,14 @@ def map_yaml_paths(paths: Sequence[str]) -> list[str]:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("model", nargs="?", help="Model enum name (dashes ok)")
-    parser.add_argument(
-        "--overwrite", action="store_true", help="Overwrite existing eval outputs"
-    )
-    parser.add_argument(
-        "--archive",
-        action="store_true",
-        help="Also archive pred files to figshare + publish parity assets "
+    bool_flags = {
+        "--overwrite": "Overwrite existing eval outputs",
+        "--archive": "Also archive pred files to figshare + publish parity assets "
         "(needs FIGSHARE_TOKEN and gh auth)",
-    )
-    parser.add_argument(
-        "--payloads-only",
-        action="store_true",
-        help="Only refresh the multi-model site figure payloads",
-    )
+        "--payloads-only": "Only refresh the multi-model site figure payloads",
+    }
+    for flag, help_msg in bool_flags.items():
+        parser.add_argument(flag, action="store_true", help=help_msg)
     parser.add_argument(
         "--map-yaml-paths",
         nargs="+",
