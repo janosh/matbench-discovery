@@ -139,8 +139,13 @@ jobs:
           FIGSHARE_TOKEN: ${{ secrets.FIGSHARE_TOKEN }}
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
           GH_TOKEN: ${{ github.token }} # gh release upload of parity assets
+          MODELS: ${{ steps.detect.outputs.models }} # env (not inline) per injection-hardening guidance
         run: |
-          for model in ${{ steps.detect.outputs.models }}; do
+          if [ -z "$MODELS" ]; then
+            echo "::error::Detect step produced no models - refusing to no-op silently"
+            exit 1
+          fi
+          for model in $MODELS; do
             just ingest-model "$model"
           done
 
