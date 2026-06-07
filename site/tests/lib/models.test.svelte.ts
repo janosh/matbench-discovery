@@ -1,12 +1,19 @@
-import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
+import {
+  calculate_cps,
+  CPS_CONFIG,
+  DEFAULT_CPS_CONFIG,
+} from '$lib/combined_perf_score.svelte'
+import { ALL_METRICS } from '$lib/labels'
 import {
   calculate_training_sizes,
   COMPLIANT_TRAINING_SETS,
+  find_best_model,
   model_is_compliant,
   MODEL_METADATA_PATHS,
   MODELS,
   update_models_cps,
 } from '$lib/models.svelte'
+import type { ModelData } from '$lib/types'
 import per_elem_each_errors from '$routes/models/per-element-each-errors.json'
 import { load as yaml_load } from 'js-yaml'
 import { readdirSync, readFileSync } from 'node:fs'
@@ -146,6 +153,70 @@ describe(`model_is_compliant`, () => {
   })
 })
 
+describe(`find_best_model`, () => {
+  const make_model = (
+    model_name: string,
+    f1: unknown,
+    overrides: Record<string, unknown> = {},
+  ) =>
+    ({
+      model_name,
+      training_set: [`MPtrj`],
+      openness: `OSOD`,
+      metrics: { discovery: { full_test_set: { F1: f1 } } },
+      ...overrides,
+    }) as unknown as ModelData
+
+  it(`picks the compliant model with the highest full-test-set F1`, () => {
+    const models = [
+      make_model(`low`, 0.5),
+      make_model(`high`, 0.9),
+      make_model(`mid`, 0.7),
+    ]
+    expect(find_best_model(models)?.model_name).toBe(`high`)
+  })
+
+  it(`returns null instead of a truthy empty object when no model qualifies`, () => {
+    // regression test: best_model on the landing page used to be seeded with {}
+    // which is truthy, rendering 'undefined' model names when no model qualified
+    expect(find_best_model([])).toBeNull()
+    const non_compliant = [make_model(`closed`, 0.95, { openness: `CSOD` })]
+    expect(find_best_model(non_compliant)).toBeNull()
+  })
+
+  it(`only considers non-compliant models when show_non_compliant=true`, () => {
+    const models = [
+      make_model(`compliant`, 0.7),
+      make_model(`non-compliant`, 0.95, { training_set: [`OMat24`] }),
+    ]
+    expect(find_best_model(models)?.model_name).toBe(`compliant`)
+    expect(find_best_model(models, { show_non_compliant: true })?.model_name).toBe(
+      `non-compliant`,
+    )
+  })
+
+  it(`skips models with missing or non-numeric F1`, () => {
+    const models = [
+      make_model(`no-f1`, undefined),
+      make_model(`nan-f1`, Number.NaN),
+      make_model(`string-f1`, `0.99`),
+      make_model(`no-discovery`, 0, { metrics: {} }),
+      make_model(`valid`, 0.6),
+    ]
+    expect(find_best_model(models)?.model_name).toBe(`valid`)
+    expect(find_best_model(models.slice(0, 4))).toBeNull()
+  })
+
+  it(`finds a best model in the real MODELS data`, () => {
+    const best = find_best_model(MODELS)
+    if (!best) throw new Error(`expected a best model in real data`)
+    expect(model_is_compliant(best)).toBe(true)
+    const discovery = best.metrics?.discovery
+    const f1 = typeof discovery === `object` ? discovery.full_test_set?.F1 : undefined
+    expect(f1).toBeGreaterThan(0.5)
+  })
+})
+
 describe(`COMPLIANT_TRAINING_SETS`, () => {
   it(`matches expected compliant datasets from datasets.yml`, () => {
     // This test ensures Python and TypeScript compute the same compliant sets
@@ -208,6 +279,30 @@ describe(`update_models_cps`, () => {
     // Assert: Check if some models have NaN CPS (due to missing metrics)
     const models_with_nan_cps = MODELS.filter((model) => isNaN(Number(model.CPS)))
     expect(models_with_nan_cps.length).toBeGreaterThan(0)
+  })
+
+  it(`computes CPS from the same RMSD symprec the table displays`, () => {
+    // regression: update_models_cps used to read symprec=1e-5 RMSD while the table
+    // RMSD column (ALL_METRICS.RMSD.path) displays symprec=1e-2, so CPS could
+    // silently diverge from the displayed value if the two levels ever differ
+    expect(ALL_METRICS.RMSD.path).toBe(`metrics.geo_opt.symprec=1e-2`)
+
+    const model = {
+      metrics: {
+        discovery: { unique_prototypes: { F1: 0.8 } },
+        geo_opt: { 'symprec=1e-2': { rmsd: 0.01 }, 'symprec=1e-5': { rmsd: 0.2 } },
+        phonons: { kappa_103: { κ_SRME: 0.5 } },
+      },
+    } as unknown as ModelData
+    const rmsd_only_config = {
+      ...DEFAULT_CPS_CONFIG,
+      F1: { ...DEFAULT_CPS_CONFIG.F1, weight: 0 },
+      RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: 1 },
+      κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: 0 },
+    }
+    update_models_cps([model], rmsd_only_config)
+    expect(model.CPS).toBe(calculate_cps(undefined, 0.01, undefined, rmsd_only_config))
+    expect(model.CPS).not.toBe(calculate_cps(undefined, 0.2, undefined, rmsd_only_config))
   })
 
   it(`should handle different weight configurations correctly`, () => {

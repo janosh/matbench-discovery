@@ -10,7 +10,7 @@ export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(
 )
 
 // Visually distinct color palette
-export const MODEL_COLORS = [
+const MODEL_COLORS = [
   `#4285F4`, // Blue
   `#EA4335`, // Red
   `#FBBC05`, // Yellow
@@ -99,9 +99,11 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
     const discovery = model.metrics?.discovery
     const f1 =
       typeof discovery === `object` ? discovery?.unique_prototypes?.F1 : undefined
+    // use symprec=1e-2 to match the RMSD column path declared in ALL_METRICS.RMSD,
+    // so the displayed RMSD is the same value that feeds into CPS
     const rmsd =
       model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
-        ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
+        ? model.metrics.geo_opt[`symprec=1e-2`]?.rmsd
         : undefined
     const kappa =
       model.metrics?.phonons && typeof model.metrics.phonons !== `string`
@@ -127,6 +129,25 @@ export function model_is_compliant(model: ModelData): boolean {
   if ((model.openness ?? `OSOD`) !== `OSOD`) return false
 
   return model.training_set.every((set) => COMPLIANT_TRAINING_SETS.includes(set))
+}
+
+// Find the model with the highest F1 score on the full WBM test set.
+// Returns null if no model qualifies (e.g. all filtered out or missing F1).
+export function find_best_model(
+  models: ModelData[],
+  { show_non_compliant = false }: { show_non_compliant?: boolean } = {},
+): ModelData | null {
+  let best: ModelData | null = null
+  let best_f1 = -Infinity
+
+  for (const model of models) {
+    if (!show_non_compliant && !model_is_compliant(model)) continue
+    const discovery = model.metrics?.discovery
+    const f1 = typeof discovery === `object` ? discovery?.full_test_set?.F1 : undefined
+    if (typeof f1 !== `number` || Number.isNaN(f1)) continue
+    if (f1 > best_f1) [best, best_f1] = [model, f1]
+  }
+  return best
 }
 
 export function get_pred_file_urls(model: ModelData) {
