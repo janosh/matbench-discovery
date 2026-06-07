@@ -7,6 +7,43 @@ set dotenv-load := false
 default:
     @just --list
 
+# Fully ingest a model submission end to end:
+# 1. run evals + PR checklist + per-model figures (prepare-model-submission), which
+#    downloads the author-hosted prediction files referenced in the model YAML
+# 2. archive those files to the project's own figshare articles (one per prediction
+#    task) for longevity and rewrite the YAML's *_url keys to the archived copies
+# 3. publish the new parity assets to the GitHub release the site build downloads from
+# 4. refresh all multi-model site figure payloads so every page includes the new model
+# Commit the resulting changes (model YAML, site/src/figs, parity manifests, ...).
+# Requires FIGSHARE_TOKEN (step 2) and gh auth (step 3).
+ingest-model model_name overwrite="false":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [ -z "${FIGSHARE_TOKEN:-}" ]; then
+        echo "Error: FIGSHARE_TOKEN must be set to archive prediction files to figshare"
+        exit 1
+    fi
+
+    just prepare-model-submission "{{model_name}}" "{{overwrite}}"
+
+    MODEL="$(echo "{{model_name}}" | tr '-' '_')"
+
+    echo ">> Archiving prediction files to project figshare articles..."
+    uv run python scripts/upload_model_preds_to_figshare.py --models "$MODEL" --no-interactive
+
+    echo ">> Publishing parity assets to GitHub release v1.0.0..."
+    for assets_dir in site/static/energy-parity/assets site/static/kappa-parity/assets; do
+        if compgen -G "$assets_dir/*.json.gz" > /dev/null; then
+            gh release upload v1.0.0 "$assets_dir"/*.json.gz --clobber
+        fi
+    done
+
+    just update-site-figs
+
+    echo "✅ Model ingested. Review and commit the changed files (model YAML with"
+    echo "   archived URLs + metrics, site/src/figs payloads, parity manifests)."
+
 # Regenerate all multi-model site figure payloads (site/src/figs/*.json.gz) so pages
 # like /models/tmi and /tasks/geo-opt include every model submission. Needs all model
 # preds locally (auto-downloads). Run after adding/updating a model, then commit the
