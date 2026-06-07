@@ -4,6 +4,7 @@ Might point to deficiencies in the data or models architecture.
 """
 
 # %%
+import json
 import os
 
 import pandas as pd
@@ -11,7 +12,7 @@ import pymatviz as pmv
 from pymatviz.utils import si_fmt
 from tqdm.auto import tqdm
 
-from matbench_discovery import SITE_DIR
+from matbench_discovery import SITE_DIR, figs
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import TestSubset
 from matbench_discovery.preds import (
@@ -85,7 +86,7 @@ if any(df_elem_err.isna().sum() > 35):
     raise ValueError("Too many NaNs in df_elem_err")
 
 # Merge with existing data to preserve other models when running with --models subset.
-# .json.gz: pandas infers gzip from the extension (read + write, compression=infer)
+# pandas infers gzip from the .json.gz extension on read
 json_path = f"{SITE_DIR}/routes/models/per-element-each-errors.json.gz"
 if os.path.isfile(json_path):
     df_existing = pd.read_json(json_path)
@@ -94,4 +95,7 @@ if os.path.isfile(json_path):
         df_existing[col] = df_elem_err[col]
     df_elem_err = df_existing
 
-df_elem_err.round(4).to_json(json_path)
+# write via figs.write_json_gz for a deterministic (mtime=0) payload, unlike pandas'
+# to_json gzip which embeds a timestamp. round(4) shrinks it; to_json maps NaN -> null
+# and json.loads gives the dict write_json_gz expects
+figs.write_json_gz(json_path, json.loads(df_elem_err.round(4).to_json()))
