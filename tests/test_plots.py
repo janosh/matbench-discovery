@@ -207,14 +207,17 @@ def test_rolling_mae_vs_hull_dist_legend_loc(
     legend_loc: str, should_raise: bool
 ) -> None:
     """Test rolling_mae_vs_hull_dist with valid/invalid legend locations."""
-    call_fn = lambda: rolling_mae_vs_hull_dist(
-        e_above_hull_true=df_wbm[models[0]],
-        e_above_hull_preds=df_preds,
-        x_lim=(0, 0.6),
-        window=0.02,
-        bin_width=0.1,
-        legend_loc=legend_loc,  # ty: ignore[invalid-argument-type]
-    )
+
+    def call_fn() -> tuple[go.Figure, pd.DataFrame, pd.DataFrame]:
+        return rolling_mae_vs_hull_dist(
+            e_above_hull_true=df_wbm[models[0]],
+            e_above_hull_preds=df_preds,
+            x_lim=(0, 0.6),
+            window=0.02,
+            bin_width=0.1,
+            legend_loc=legend_loc,  # ty: ignore[invalid-argument-type]
+        )
+
     if should_raise:
         with pytest.raises(ValueError, match=f"Unexpected legend_loc='{legend_loc}'"):
             call_fn()

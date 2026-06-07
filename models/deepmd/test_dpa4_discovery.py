@@ -175,7 +175,7 @@ def relax_shard(
                 force_max=force_max,
                 max_steps=max_steps,
             )
-        except Exception as exc:
+        except (ValueError, RuntimeError, OSError, KeyError) as exc:
             warnings.warn(f"Failed to relax {material_id}: {exc!r}", stacklevel=2)
             relax_results[material_id] = {
                 f"{model_name}_failed": True,

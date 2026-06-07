@@ -35,7 +35,7 @@
 
   type ColorType = (typeof colors)[number]
 
-  const [humu_nuc_key, _hetero_nuc_key] = [`homo-nuclear`, `hetero-nuclear`] as const
+  const homo_nuc_key = `homo-nuclear`
 
   // Generate list of homo-nuclear diatomic formulas for elements 1-119
   const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
@@ -62,7 +62,7 @@
     homo_diatomic_formulas.filter((formula) =>
       [...selected_models].some(
         (model) =>
-          diatomic_curves[model]?.[humu_nuc_key]?.[formula]?.energies?.length > 0,
+          diatomic_curves[model]?.[homo_nuc_key]?.[formula]?.energies?.length > 0,
       )
     ),
   )
@@ -128,14 +128,14 @@
       {formula}
       curves={[...selected_models]
       .filter((model) => {
-        const { energies = [] } = diatomic_curves[model]?.[humu_nuc_key]?.[formula] ??
+        const { energies = [] } = diatomic_curves[model]?.[homo_nuc_key]?.[formula] ??
           {}
         return energies.length > 0
       })
       .map((model) => ({
         model_key: model,
         distances: diatomic_curves[model].distances,
-        energies: diatomic_curves[model][humu_nuc_key][formula].energies,
+        energies: diatomic_curves[model][homo_nuc_key][formula].energies,
         color: model_colors.get(model) ?? `gray`,
       }))}
       style={`height: ${plot_size.height}px`}

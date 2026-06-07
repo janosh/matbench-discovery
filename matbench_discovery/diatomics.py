@@ -93,7 +93,7 @@ def calc_diatomic_curve(
             for atoms in generate_diatomics(elem1, elem2, distances):
                 results[formula]["energies"] += [calculator.get_potential_energy(atoms)]
                 results[formula]["forces"] += [calculator.get_forces(atoms).tolist()]
-        except Exception as exc:
+        except (ValueError, RuntimeError) as exc:
             print(f"{idx}/{len(pairs)} {formula} failed: {exc}")
             continue
 

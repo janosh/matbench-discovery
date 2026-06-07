@@ -5,7 +5,7 @@ import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
 from matbench_discovery.cli import cli_args, is_full_model_run
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.preds.discovery import df_each_pred, df_metrics, df_preds
 
 __author__ = "Janosh Riebesell"
@@ -66,6 +66,7 @@ for trace in fig.data:
     fpr, tpr = figs.lttb(*figs.trace_xy(trace), 200)
     roc_models.append(
         {
+            "key": Model.from_label(label).key,
             "label": label,
             "auc": float(auc_str),
             "fpr": figs.round_list(fpr),

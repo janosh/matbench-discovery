@@ -167,6 +167,6 @@ try:
 
     df_ml_metrics.to_json(f"{out_dir}/metrics.json.gz")
     print(f"Saved metrics to {out_dir}/metrics.json.gz")
-except Exception as exc:
+except (ValueError, RuntimeError, OSError, KeyError) as exc:
     warnings.warn(f"Failed to calculate metrics: {exc!r}", stacklevel=2)
     traceback.print_exc()

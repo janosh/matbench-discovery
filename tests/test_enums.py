@@ -402,7 +402,7 @@ def test_model_prediction_urls(url_session: requests.Session) -> None:
             url, desc = futures[future]
             try:
                 future.result()
-            except Exception as exc:
+            except (AssertionError, requests.RequestException) as exc:
                 exc.add_note(f"Failed to validate\n{url}\n{desc}")
                 errors.append(exc)
 

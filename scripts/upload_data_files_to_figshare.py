@@ -8,10 +8,10 @@ from typing import Any
 
 from tqdm import tqdm
 
-import matbench_discovery.remote.figshare as figshare
 from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import DataFiles
+from matbench_discovery.remote import figshare
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-04-27"
@@ -46,7 +46,7 @@ def main(
             print(f"\n{article_id=} not found")
             article_id = None
 
-    DESCRIPTION = """
+    description = """
     These are the Matbench Discovery data files, a benchmark for machine learning
     interatomic potentials (MLIP) on inorganic crystals. We evaluate models on
     multiple tasks including crystal stability prediction from unrelaxed structures,
@@ -64,7 +64,7 @@ def main(
     """.replace("\n", " ").strip()
     metadata = {
         "title": "Matbench Discovery - Data Files",
-        "description": DESCRIPTION,
+        "description": description,
         "defined_type": "dataset",  # seems to be default anyway
         "tags": pyproject["keywords"],
         "categories": list(figshare.CATEGORIES),

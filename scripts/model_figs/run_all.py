@@ -52,7 +52,9 @@ for show_non_compliant in (False, True):
                     )
             else:
                 runpy.run_path(script_path, init_globals=init_globals)
-        except Exception as exc:
+        # broad on purpose: aggregate any failure from arbitrary sub-scripts run via
+        # runpy and re-raise them together below (nothing is swallowed)
+        except Exception as exc:  # noqa: BLE001
             exceptions[script_path] = exc
 
 # Raise a combined exception if any errors were collected
