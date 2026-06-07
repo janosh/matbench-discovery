@@ -46,7 +46,7 @@ for model in tqdm(models_to_plot, desc="Processing models"):
     if normalized:
         per_elem_err /= df_elem_err[test_set_std_col]
         per_elem_err.name = f"{model.label} (normalized by test set std)"
-    fig = pmv.ptable_heatmap_plotly(
+    fig = pmv.ptable_heatmap(
         per_elem_err, fmt=".2f", colorscale="Inferno", cscale_range=cs_range
     )
     fig.show()
@@ -59,7 +59,7 @@ for model in tqdm(models_to_plot, desc="Processing models"):
         lambda x: si_fmt(x, fmt=".0f")
     )
 
-    fig_ptable_each_errors = pmv.ptable_hists_plotly(
+    fig_ptable_each_errors = pmv.ptable_hists(
         df_each_err_elems,
         annotations=n_samples_per_elem,
         bins=100,

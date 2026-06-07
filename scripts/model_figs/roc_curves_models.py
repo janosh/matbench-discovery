@@ -29,7 +29,7 @@ models_to_plot = [
 # %% Convert E_(hull dist) continuous targets to binary classification labels
 binary_targets = (df_preds[MbdKey.each_true] > STABILITY_THRESHOLD).astype(int)
 
-fig = pmv.roc_curve_plotly(
+fig = pmv.roc_curve(
     targets=binary_targets,
     probs_positive={
         col: (df_each_pred[col].to_numpy()) for col in df_each_pred[models_to_plot]

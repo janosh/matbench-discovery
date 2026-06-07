@@ -58,7 +58,7 @@ df_diff.reset_index().plot.scatter(
 
 
 # %%
-fig = pmv.ptable_heatmap_plotly(df_bad[Key.formula])
+fig = pmv.ptable_heatmap(df_bad[Key.formula])
 title = "structures with larger error<br>after longer relaxation"
 fig.layout.title.update(text=f"{len(df_diff)} {title}", x=0.4, y=0.9)
 fig.show()
