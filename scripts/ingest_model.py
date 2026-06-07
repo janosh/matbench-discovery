@@ -290,8 +290,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error("model is required unless --payloads-only")
         if args.archive and not os.getenv("FIGSHARE_TOKEN"):
             parser.error("FIGSHARE_TOKEN must be set for --archive")
-        model = Model._missing_(args.model)  # handles dashes/casing
-        if model is None:
+        try:  # Model(...) invokes _missing_ to normalize dashes/casing
+            model = Model(args.model)
+        except ValueError:
             parser.error(
                 f"{args.model!r} not in Model enum - add it to "
                 "matbench_discovery/enums.py"
