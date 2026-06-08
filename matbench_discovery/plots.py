@@ -126,6 +126,12 @@ def hist_classified_stable_vs_hull_dist(
     NOTE this figure plots hist bars separately which causes aliasing in pdf. Can be
     fixed in Inkscape or similar by merging regions by color.
     """
+    if facet_col and rolling_acc:
+        raise ValueError(
+            f"{rolling_acc=} not supported with {facet_col=}: rolling accuracy would "
+            "mix per-facet counts with the global denominator. Set rolling_acc=None."
+        )
+
     x_col = dict(true=each_true_col, pred=each_pred_col)[which_energy]
     clf_col, value_name = "classified", "count"
 

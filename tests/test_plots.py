@@ -164,6 +164,17 @@ def test_hist_classified_rolling_acc_uses_consistent_axis() -> None:
     np.testing.assert_allclose(acc_trace.y, [1, 1, 0, 0])
 
 
+def test_hist_classified_rolling_acc_with_facet_raises() -> None:
+    """Faceting plus rolling accuracy must raise (would mix per-facet numerators)."""
+    df_clf = pd.DataFrame(
+        {MbdKey.each_true: [-0.1, 0.1], Key.each_pred: [-0.1, 0.1], "Model": ["a", "b"]}
+    )
+    with pytest.raises(ValueError, match=r"rolling_acc.* not supported with facet_col"):
+        hist_classified_stable_vs_hull_dist(
+            df_clf, MbdKey.each_true, Key.each_pred, rolling_acc=0.02, facet_col="Model"
+        )
+
+
 def test_calc_tile_grid() -> None:
     """calc_tile_grid truncates to full rows or keeps all models with ceil rows."""
     from matbench_discovery.plots import calc_tile_grid
