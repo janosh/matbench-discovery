@@ -130,6 +130,11 @@ def get_file_hash_and_size(
     return md5.hexdigest(), size
 
 
+def _repo_relative_name(file_path: str) -> str:
+    """Repo-relative POSIX file name (os.path.relpath raises across Windows drives)."""
+    return file_path.replace(os.sep, "/").removeprefix(f"{ROOT.replace(os.sep, '/')}/")
+
+
 def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
     """Upload a file to Figshare and return the file ID.
 
@@ -137,14 +142,14 @@ def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
         article_id (int): ID of the article to upload to.
         file_path (str): Path to the file to upload.
         file_name (str, optional): Name as it will appear in Figshare. Defaults to the
-            file path relative to repo's root dir via os.path.relpath(file_path, ROOT).
+            file path relative to repo's root dir (as a POSIX path).
 
     Returns:
         int: The ID of the uploaded file.
     """
     # Initiate new upload
     md5, size = get_file_hash_and_size(file_path)
-    file_name = file_name or os.path.relpath(file_path, ROOT).replace(os.sep, "/")
+    file_name = file_name or _repo_relative_name(file_path)
     data = dict(name=file_name, md5=md5, size=size)
     endpoint = f"{BASE_URL}/account/articles/{article_id}/files"
     result = cast("dict[str, Any]", make_request("POST", endpoint, data=data))
@@ -357,7 +362,7 @@ def upload_file_if_needed(
         article_id (int): ID of the article to upload to.
         file_path (str): Path to the file to upload.
         file_name (str, optional): Name as it will appear in Figshare. Defaults to the
-            file path relative to repo's root dir via os.path.relpath(file_path, ROOT).
+            file path relative to repo's root dir (as a POSIX path).
         force_reupload (bool, optional): If True, delete and reupload the file even if
             it already exists with the same hash. Defaults to False.
 
@@ -366,7 +371,7 @@ def upload_file_if_needed(
             - int: The file ID.
             - bool: True if the file was uploaded, False if it already existed.
     """
-    file_name = file_name or os.path.relpath(file_path, ROOT).replace(os.sep, "/")
+    file_name = file_name or _repo_relative_name(file_path)
     file_hash, _ = get_file_hash_and_size(file_path)
 
     # Check if file already exists with same hash
