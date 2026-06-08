@@ -17,7 +17,6 @@ def init_phono3py(
     displacement_distance: float = 0.01,
     symprec: float = 1e-5,
     is_plusminus: bool = False,
-    **kwargs: Any,
 ) -> Phono3py:
     """Initialize Phono3py object from ASE Atoms.
 
@@ -30,7 +29,6 @@ def init_phono3py(
         displacement_distance (float): Displacement distance for force calculations.
             Defaults to 0.01.
         symprec (float): Symmetry precision for finding space group. Defaults to 1e-5.
-        **kwargs (Any): Passed to Phono3py constructor.
 
     Returns:
         Phono3py: Initialized Phono3py object
@@ -45,7 +43,6 @@ def init_phono3py(
         phonon_supercell_matrix=fc2_supercell,
         primitive_matrix="auto",
         symprec=symprec,
-        **kwargs,
     )
     ph3.mesh_numbers = q_point_mesh
 

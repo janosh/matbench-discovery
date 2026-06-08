@@ -8,7 +8,7 @@ const asset_cache = new Map<string, Promise<unknown>>()
 export type LoadStatus = `idle` | `loading` | `ready` | `error`
 
 // per-model asset files wrap their payload as { model: ... }
-export interface ModelAsset<TModel> {
+interface ModelAsset<TModel> {
   model?: TModel
 }
 // fields shared by every parity base asset (per-material id + formula columns)

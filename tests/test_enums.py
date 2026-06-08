@@ -144,7 +144,6 @@ def test_test_subset() -> None:
 
 def test_files_enum() -> None:
     """Test error handling in Files enum."""
-
     assert Files.base_dir == DATA_DIR
 
     # Test custom base_dir
@@ -346,7 +345,8 @@ TIMEOUT = 30
 @pytest.fixture(scope="session")
 def url_session() -> requests.Session:
     """HTTP session that retries transient errors (429, 5xx) with backoff, so a
-    momentary server hiccup doesn't fail URL-validation tests."""
+    momentary server hiccup doesn't fail URL-validation tests.
+    """
     session = requests.Session()
     session.headers["User-Agent"] = "unit test"
     n_pool = 2 * (os.cpu_count() or 4)

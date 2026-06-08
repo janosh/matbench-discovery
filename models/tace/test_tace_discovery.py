@@ -1,6 +1,4 @@
-"""
-Templated from test_nequip_discovery.py
-"""
+"""Templated from test_nequip_discovery.py"""
 
 # %% this config is editable
 # uses commits matbench-discovery f0e54b7
@@ -32,14 +30,14 @@ try:
     from tace.foundations import tace_foundations
 
     model_path = tace_foundations[model_name]
-except (ImportError, KeyError, FileNotFoundError) as e:
+except (ImportError, KeyError, FileNotFoundError) as exc:
     raise RuntimeError(
         f"Failed to load {model_name}.\n"
         f"Please manually download the model from:\n"
         f"https://huggingface.co/xvzemin/tace-foundations/"
         f"resolve/main/{model_name}.pt\n"
         f"and put the model into ~/.cache/tace/{model_name}.pt"
-    ) from e
+    ) from exc
 
 
 # %% this config is editable
@@ -132,17 +130,18 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         continue
     try:
         atoms.calc = tace_calc
+        relax_atoms = atoms
         if max_steps > 0:
-            atoms = filter_cls(atoms)
-            with optim_cls(atoms, logfile=None) as optimizer:
+            relax_atoms = filter_cls(atoms)
+            with optim_cls(relax_atoms, logfile=None) as optimizer:
                 for _ in optimizer.irun(fmax=force_max, steps=max_steps):
-                    f_norm = np.linalg.norm(atoms.get_forces(), axis=1).max()
+                    f_norm = np.linalg.norm(relax_atoms.get_forces(), axis=1).max()
                     if f_norm > 1e6:
                         raise RuntimeError("Force divergence detected")
 
-        energy = atoms.get_potential_energy()  # relaxed energy
-        # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
-        unwrapped = atoms.atoms if hasattr(atoms, "atoms") else atoms
+        energy = relax_atoms.get_potential_energy()  # relaxed energy
+        # getattr unwraps relax_atoms (filter_cls wrapper when max_steps > 0)
+        unwrapped = getattr(relax_atoms, "atoms", relax_atoms)
         relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except (ValueError, RuntimeError, OSError, KeyError) as exc:

@@ -50,8 +50,7 @@ class KappaSRMERunner:
         # torch.set_default_dtype(torch.float64)
 
     def run(self) -> None:
-        """
-        Relaxation parameters
+        """Relaxation parameters
         1.  eSEN uses `max_steps` == 300 and `force_max` == 1e-4
         2.  Nequix uses `max_steps` == 500 and `force_max` == 0.02
         """

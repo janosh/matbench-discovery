@@ -147,13 +147,21 @@ button {
   border: none;
   border-radius: 3pt;
   background: var(--btn-bg);
-  padding: 2pt 4pt;
+  /* intentionally no padding: an element-specificity rule here clobbers matterviz's
+     zero-specificity :where() resets (e.g. it squished the DraggablePane control-tab icons).
+     Buttons that need padding set their own; the rest fall back to the UA default. */
   transition:
     color 0.2s,
     background-color 0.2s;
 }
 button:hover {
   background: var(--btn-bg-hover);
+}
+/* matterviz sizes the DraggablePane control-tab buttons in em but they inherit the UA button
+   font-size (~13px), so the close/reset icons render smaller than the 16px drag handle. Inherit
+   the surrounding font size so the icons match the handle. */
+.control-tab button {
+  font-size: inherit;
 }
 :is(div.multiselect) button {
   background: transparent;
@@ -176,15 +184,6 @@ a {
 }
 a:hover {
   color: var(--link-hover);
-}
-a.link {
-  padding: 2pt 4pt;
-  background-color: var(--nav-bg);
-  border-radius: 3pt;
-  transition: 0.2s;
-}
-a.link[aria-current='page'] {
-  color: mediumseagreen;
 }
 code {
   overflow-wrap: break-word;

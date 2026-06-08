@@ -8,7 +8,6 @@ import plotly.express as px
 import plotly.io as pio
 import pymatviz as pmv  # needed for pymatviz_dark template
 
-PKG_NAME = "matbench-discovery"
 __version__ = "1.3.1"
 
 PKG_DIR = os.path.dirname(__file__)  # Python package directory
@@ -20,7 +19,6 @@ TEST_FILES = f"{ROOT}/tests/files"  # directory to store test data
 SITE_FIG_DATA = f"{ROOT}/site/src/figs"
 # directory to write model analysis for website
 SITE_DIR = f"{ROOT}/site/src"
-SCRIPTS = f"{ROOT}/scripts"  # model and date analysis scripts
 PDF_FIGS = f"{ROOT}/paper/figs"  # directory for light-themed PDF figures
 
 # directory to cache downloaded data files

@@ -1,3 +1,5 @@
+"""Tests for plotting helper functions."""
+
 from typing import Literal
 from unittest.mock import MagicMock, patch
 
@@ -18,7 +20,6 @@ from matbench_discovery.plots import (
     wandb_scatter,
 )
 
-AxLine = Literal["x", "y", "xy", ""]
 models = ["MEGNet", "CGCNN", "Voronoi RF"]
 df_wbm = load_df_wbm_with_preds(models=models, nrows=100)
 df_preds = df_wbm[models]

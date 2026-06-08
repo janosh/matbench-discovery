@@ -1,5 +1,4 @@
-"""
-Copyright (c) Meta Platforms, Inc. and its affiliates.
+"""Copyright (c) Meta Platforms, Inc. and its affiliates.
 
 This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
@@ -45,9 +44,7 @@ OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
 
 class MBDRunner:
-    """
-    we will create a separate script for running MACE.
-    """
+    """we will create a separate script for running MACE."""
 
     def __init__(
         self,

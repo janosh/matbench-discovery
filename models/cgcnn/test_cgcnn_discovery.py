@@ -1,5 +1,4 @@
-"""
-Download WandB checkpoints for an ensemble of CGCNN models trained on all MP
+"""Download WandB checkpoints for an ensemble of CGCNN models trained on all MP
 formation energies, then make predictions on some dataset, prints ensemble metrics and
 saves predictions to CSV.
 """

@@ -24,7 +24,7 @@ import pandas as pd
 from ase.filters import Filter, FrechetCellFilter, UnitCellFilter
 from ase.optimize import BFGS, FIRE, LBFGS
 from deepmd.calculator import DP
-from pymatgen.core.structure import Molecule, Structure
+from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
@@ -39,20 +39,19 @@ OPTIM_CLS: dict[str, Any] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
 
 def collect_input_shards(data_dir: Path) -> list[Path]:
-    """
-    Collect WBM shard JSON files.
+    """Collect WBM shard JSON files.
 
     Parameters
     ----------
     data_dir : Path
         Directory containing `wbm_data_*.json` files.
 
-    Returns
+    Returns:
     -------
     list[Path]
         Sorted shard paths.
 
-    Raises
+    Raises:
     ------
     FileNotFoundError
         If no shard files are found.
@@ -70,8 +69,7 @@ class Relaxer:
     """ASE relaxation wrapper around the DeePMD calculator."""
 
     def __init__(self, checkpoint_path: Path) -> None:
-        """
-        Initialize the DeePMD calculator.
+        """Initialize the DeePMD calculator.
 
         Parameters
         ----------
@@ -83,19 +81,18 @@ class Relaxer:
 
     def relax(
         self,
-        atoms: Any,
+        structure: Structure,
         optimizer: Literal["FIRE", "LBFGS", "BFGS"],
         cell_filter: Literal["frechet", "unit"] | None,
         force_max: float,
         max_steps: int,
     ) -> tuple[dict[str, Any], float]:
-        """
-        Relax one structure.
+        """Relax one structure.
 
         Parameters
         ----------
-        atoms : Any
-            ASE atoms or pymatgen structure-like object.
+        structure : Structure
+            Pymatgen structure to relax.
         optimizer : {"FIRE", "LBFGS", "BFGS"}
             ASE optimizer name.
         cell_filter : {"frechet", "unit"} | None
@@ -105,14 +102,12 @@ class Relaxer:
         max_steps : int
             Maximum number of optimizer steps.
 
-        Returns
+        Returns:
         -------
         tuple[dict[str, Any], float]
             Final structure dictionary and potential energy in eV.
         """
-        if isinstance(atoms, (Structure, Molecule)):
-            atoms = self.ase_adaptor.get_atoms(atoms)
-
+        atoms = self.ase_adaptor.get_atoms(structure)
         atoms.calc = self.calculator
         filter_cls = FILTER_CLS.get(cell_filter or "")
         filtered_atoms = atoms if filter_cls is None else filter_cls(atoms)
@@ -120,9 +115,7 @@ class Relaxer:
         optimizer_inst.run(fmax=force_max, steps=max_steps)
 
         energy = atoms.get_potential_energy()
-        unwrapped_atoms = getattr(filtered_atoms, "atoms", atoms)
-        structure = self.ase_adaptor.get_structure(unwrapped_atoms)
-        return structure.as_dict(), energy
+        return self.ase_adaptor.get_structure(atoms).as_dict(), energy
 
 
 def relax_shard(
@@ -135,8 +128,7 @@ def relax_shard(
     force_max: float,
     max_steps: int,
 ) -> None:
-    """
-    Relax all structures in one WBM shard.
+    """Relax all structures in one WBM shard.
 
     Parameters
     ----------
@@ -201,10 +193,9 @@ def relax_shard(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """
-    Build the command line parser.
+    """Build the command line parser.
 
-    Returns
+    Returns:
     -------
     argparse.ArgumentParser
         Configured parser.
@@ -265,8 +256,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def run_relax(args: argparse.Namespace) -> None:
-    """
-    Run DPA4 WBM relaxations.
+    """Run DPA4 WBM relaxations.
 
     Parameters
     ----------

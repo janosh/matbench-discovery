@@ -234,6 +234,7 @@ class MockCalculator(Calculator):
     """Mock calculator that returns predefined forces."""
 
     def __init__(self, forces: np.ndarray) -> None:
+        """Store the forces returned by get_forces()."""
         super().__init__()
         self.forces = forces
 

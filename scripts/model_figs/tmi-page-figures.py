@@ -41,14 +41,16 @@ df_preds, df_each_err, df_comp, df_elem_err = load_per_element_errors(
 
 
 # %% plot number of structures containing each element in MP and WBM
-for label, srs in (
+for label, series in (
     ("MP", df_elem_err[train_count_col]),
     ("WBM", df_comp.where(pd.isna, 1).sum()),
 ):
     title = f"Number of {label} structures containing each element"
-    srs = srs.sort_values().copy()
-    srs.index = [f"{len(srs) - idx} {el}" for idx, el in enumerate(srs.index)]
-    fig = srs.plot.bar(backend="plotly", title=title)
+    sorted_vals = series.sort_values().copy()
+    sorted_vals.index = [
+        f"{len(sorted_vals) - idx} {el}" for idx, el in enumerate(sorted_vals.index)
+    ]
+    fig = sorted_vals.plot.bar(backend="plotly", title=title)
     fig.layout.update(showlegend=False)
     fig.show()
 

@@ -21,11 +21,7 @@ def test_diatomic_classes() -> None:
     forces = np_rng.random((len(dists), 2, 3)).tolist()
 
     # Test DiatomicCurve initialization and array conversion
-    curve = DiatomicCurve(
-        distances=dists,  # ty: ignore[invalid-argument-type]
-        energies=energies,
-        forces=forces,
-    )
+    curve = DiatomicCurve(distances=dists, energies=energies, forces=forces)
     assert {*map(type, (curve.distances, curve.energies, curve.forces))} == {np.ndarray}
     for orig, processed in [
         (curve.distances, dists),

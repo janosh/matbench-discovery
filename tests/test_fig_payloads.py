@@ -19,7 +19,7 @@ from matbench_discovery import SITE_FIG_DATA
 from matbench_discovery.enums import Model
 
 
-def load_payload(name: str) -> Any:
+def load_payload(name: str) -> dict[str, Any]:
     """Load a committed figure payload by file stem."""
     with gzip.open(f"{SITE_FIG_DATA}/{name}.json.gz") as file:
         # our exporter writes allow_nan=False; reject NaN/Infinity literals that
@@ -29,7 +29,7 @@ def load_payload(name: str) -> Any:
         )
 
 
-def assert_num_list(values: Any, *, length: int | None = None) -> None:
+def assert_num_list(values: object, *, length: int | None = None) -> None:
     """Assert a list of finite numbers (None allowed for gaps), optionally sized."""
     assert isinstance(values, list), f"expected list, got {type(values)=}"
     assert values, "expected non-empty list"

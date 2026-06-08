@@ -88,7 +88,6 @@ output-format = "concise"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  "ANN401",
   "C408",    # unnecessary-collection-call
   "C901",
   "COM812",
@@ -104,7 +103,6 @@ ignore = [
   "PLR0913",
   "PLR0915",
   "PLR0912",
-  "PLW2901", # redefined-loop-name
   "PT006",   # pytest-parametrize-names-wrong-type
   "PTH",
   "S108",
@@ -122,7 +120,7 @@ pydocstyle.convention = "google"
 isort.split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D", "FBT001", "FBT002", "S101"]
+"tests/*" = ["D103", "FBT001", "FBT002", "S101"]
 "__init__.py" = ["F401"]
 "matbench_discovery/plots.py" = ["ERA001"]    # allow commented out code
 "scripts/*" = ["D", "ERA001"]

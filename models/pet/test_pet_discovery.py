@@ -1,5 +1,4 @@
-"""
-Script for geometry optimization and convex hull calculations, using a PET model.
+"""Script for geometry optimization and convex hull calculations, using a PET model.
 
 Adapted from the corresponding GRACE script.
 """

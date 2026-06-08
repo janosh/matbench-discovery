@@ -1,6 +1,4 @@
-"""
-Templated from nequip/join_matbench_preds.py
-"""
+"""Templated from nequip/join_matbench_preds.py"""
 
 # uses commits matbench-discovery f0e54b7
 

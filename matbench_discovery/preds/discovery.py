@@ -30,7 +30,6 @@ for df, title in (
     df.attrs["title"] = title
     df.index.name = "model"
 
-full_prevalence = (df_wbm[MbdKey.each_true] <= STABILITY_THRESHOLD).mean()
 uniq_proto_prevalence = (
     df_wbm.query(MbdKey.uniq_proto)[MbdKey.each_true] <= STABILITY_THRESHOLD
 ).mean()

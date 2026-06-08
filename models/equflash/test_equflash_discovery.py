@@ -28,7 +28,6 @@ import json
 import multiprocessing as mp
 import os
 import pickle
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -44,6 +43,8 @@ from pymatviz.enums import Key
 from relaxation.ml_relaxation import ml_relax
 from relaxation.optimizable import batch_to_atoms
 from torch_geometric.data import Batch
+
+from matbench_discovery.data import as_dict_handler
 
 
 def split_df(df: pd.DataFrame, batch_size: int) -> list[pd.DataFrame]:
@@ -97,22 +98,14 @@ def load_trainer_from_ckpt(checkpoint_path: str) -> OCPTrainer:
     return trainer
 
 
-def as_dict_handler(obj: Any) -> dict[str, Any] | None:
-    """Serialize MSONable objects to dict. Non-serializable objects become None."""
-    try:
-        return obj.as_dict()
-    except AttributeError:
-        return None
-
-
-def load_pickle(file_path: str) -> Any:
-    """Load a single pickle file."""
+def load_pickle(file_path: str) -> pd.DataFrame:
+    """Load a single pickled dataframe."""
     with open(file_path, "rb") as file:
         return pickle.load(file)  # noqa: S301 safe internal data
 
 
-def load_multiple_pickles(file_paths: list[str]) -> list[Any]:
-    """Load multiple pickle files in parallel."""
+def load_multiple_pickles(file_paths: list[str]) -> list[pd.DataFrame]:
+    """Load multiple pickled dataframes in parallel."""
     n_proc = min(32, mp.cpu_count())
     with mp.Pool(processes=n_proc) as pool:
         return pool.map(load_pickle, file_paths)

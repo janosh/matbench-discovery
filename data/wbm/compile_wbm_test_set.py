@@ -416,8 +416,8 @@ for fname, cols in (
         [Key.init_struct, Key.computed_structure_entry],
     ),
 ):
-    cols = ["formula_from_cse", *cols]
-    df_wbm[cols].reset_index().to_json(f"{WBM_DIR}/{today}-wbm-{fname}.json.bz2")
+    all_cols = ["formula_from_cse", *cols]
+    df_wbm[all_cols].reset_index().to_json(f"{WBM_DIR}/{today}-wbm-{fname}.json.bz2")
 
 
 # %% df_summary and df_wbm formulas differ because summary formulas are reduced while

@@ -197,10 +197,9 @@ class MetaFiles(EnumType):
         bases: tuple[type, ...],
         namespace: _EnumDict,
         base_dir: str = DEFAULT_CACHE_DIR,
-        **kwargs: Any,
     ) -> "MetaFiles":
         """Create new Files enum with given base directory."""
-        obj = super().__new__(cls, name, bases, namespace, **kwargs)
+        obj = super().__new__(cls, name, bases, namespace)
         obj._base_dir = base_dir
         return obj
 
@@ -517,6 +516,21 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def active(cls) -> tuple[Self, ...]:
         """Complete models included by default in plots, metrics, and eval scripts."""
         return tuple(model for model in cls if model.is_complete)
+
+    @classmethod
+    def from_ref(cls, ref: str | Self) -> Self:
+        """Resolve an enum name, value (case/dash-insensitive), key, or label to a
+        member.
+
+        Raises:
+            ValueError: For unresolvable refs (with close-match suggestions).
+        """
+        if isinstance(ref, cls):
+            return ref
+        member = cls.__members__.get(ref) or cls._missing_(ref)
+        if member is None:
+            member = next((m for m in cls if ref in (m.key, m.label)), None)
+        return member or cls.from_label(ref)  # from_label raises on unknown refs
 
     @classmethod
     def _missing_(cls, value: object) -> Self | None:

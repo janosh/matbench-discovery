@@ -45,7 +45,7 @@ def calc_kappa_for_structure(
     conductivity_broken_symm: bool = False,
     ignore_imaginary_freqs: bool = False,
     formula_getter: Callable[[Atoms], str] | None = None,
-    **_kwargs: Any,
+    **_kwargs: object,
 ) -> tuple[str, dict[str, Any], dict[str, Any] | None]:
     """Calculate thermal conductivity (kappa) for a single structure.
 
@@ -75,7 +75,7 @@ def calc_kappa_for_structure(
         formula_getter (Callable[[Atoms], str] | None): Custom function to extract
             formula from atoms. If None, uses atoms.get_chemical_formula().
             Default None.
-        **_kwargs: Additional keywords (unused).
+        **_kwargs: Additional keywords (unused), absorbs extra KappaCalcParams fields.
 
     Returns:
         tuple[str, dict[str, Any], dict[str, Any] | None]:

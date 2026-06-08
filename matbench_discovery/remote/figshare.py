@@ -48,33 +48,33 @@ def make_request(
     method: str,
     url: str,
     *,
-    data: Any = None,
+    data: Mapping[str, object] | bytes | None = None,
     binary: bool = False,
     timeout: float = CLI_TIMEOUT,
-) -> Any:
+) -> dict[str, Any] | list[dict[str, Any]] | bytes:
     """Make a token-authorized HTTP request to the Figshare API.
 
     Args:
         method (str): HTTP method (GET, POST, PUT, DELETE).
         url (str): URL to send the request to.
-        data (Any, optional): Data to send in the request body. Defaults to None.
+        data (Mapping | bytes, optional): JSON payload or binary body to send with
+            the request. Defaults to None.
         binary (bool, optional): Whether the data is binary. Defaults to False.
         timeout (float, optional): Timeout in seconds. Defaults to CLI_TIMEOUT = 30.
 
     Returns:
-        Any: JSON response data or binary data.
+        dict | list | bytes: Parsed JSON response, or raw bytes if not valid JSON.
 
     Raises:
         HTTPError: If the request fails. Error will contain the response body.
     """
     headers = {"Authorization": f"token {FIGSHARE_TOKEN}"}
-    if data is not None and not binary:
-        data = json.dumps(data)
+    payload = data if binary or data is None else json.dumps(data)
     response = requests.request(
         method,
         url,
         headers=headers,
-        data=data,
+        data=payload,
         timeout=timeout,
     )
     try:
@@ -89,7 +89,7 @@ def make_request(
 
 
 def create_article(
-    metadata: Mapping[str, Sequence[object]], *, verbose: bool = True, **kwargs: Any
+    metadata: Mapping[str, Sequence[object]], *, verbose: bool = True
 ) -> int:
     """Create a new Figshare article with given metadata and return the article ID.
 
@@ -97,17 +97,15 @@ def create_article(
         metadata (dict): Article metadata including title, description, etc.
         verbose (bool, optional): Whether to print the article URL and title.
             Defaults to True.
-        kwargs: Passed to make_request.
 
     Returns:
         int: The ID of the created article.
     """
-    result = make_request(
-        "POST", f"{BASE_URL}/account/articles", data=metadata, **kwargs
-    )
+    url = f"{BASE_URL}/account/articles"
+    result = cast("dict[str, Any]", make_request("POST", url, data=metadata))
     if verbose:
         print(f"Created article: {result['location']} with title {metadata['title']}\n")
-    result = make_request("GET", result["location"], **kwargs)
+    result = cast("dict[str, Any]", make_request("GET", result["location"]))
     return result["id"]
 
 
@@ -132,9 +130,7 @@ def get_file_hash_and_size(
     return md5.hexdigest(), size
 
 
-def upload_file(
-    article_id: int, file_path: str, file_name: str = "", **kwargs: Any
-) -> int:
+def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
     """Upload a file to Figshare and return the file ID.
 
     Args:
@@ -142,7 +138,6 @@ def upload_file(
         file_path (str): Path to the file to upload.
         file_name (str, optional): Name as it will appear in Figshare. Defaults to the
             file path relative to repo's root dir: file_path.removeprefix(ROOT).
-        kwargs: Passed to make_request.
 
     Returns:
         int: The ID of the uploaded file.
@@ -152,12 +147,12 @@ def upload_file(
     file_name = file_name or file_path.removeprefix(f"{ROOT}/")
     data = dict(name=file_name, md5=md5, size=size)
     endpoint = f"{BASE_URL}/account/articles/{article_id}/files"
-    result = make_request("POST", endpoint, data=data, **kwargs)
-    file_info = make_request("GET", result["location"])
+    result = cast("dict[str, Any]", make_request("POST", endpoint, data=data))
+    file_info = cast("dict[str, Any]", make_request("GET", result["location"]))
 
     # Upload parts with nested progress bar showing bytes and percent
     url = file_info["upload_url"]
-    parts_info = make_request("GET", url, **kwargs)
+    parts_info = cast("dict[str, Any]", make_request("GET", url))
     with (
         open(file_path, mode="rb") as file,
         tqdm(
@@ -176,12 +171,12 @@ def upload_file(
             file.seek(part["startOffset"])
             chunk_len = part["endOffset"] - part["startOffset"] + 1
             chunk = file.read(chunk_len)
-            make_request("PUT", part_url, data=chunk, binary=True, **kwargs)
+            make_request("PUT", part_url, data=chunk, binary=True)
             pbar.update(len(chunk))
             pbar.set_postfix_str(f"{pbar.n / 1024**2:.2f}/{size / 1024**2:.2f} MB")
 
     # Complete upload
-    make_request("POST", f"{endpoint}/{file_info['id']}", **kwargs)
+    make_request("POST", f"{endpoint}/{file_info['id']}")
     return file_info["id"]
 
 
@@ -225,24 +220,21 @@ def list_article_files(article_id: int) -> list[dict[str, Any]]:
         requests.HTTPError: If the request fails for any reason other than 404.
     """
     try:
-        return make_request("GET", f"{BASE_URL}/account/articles/{article_id}/files")
+        files = make_request("GET", f"{BASE_URL}/account/articles/{article_id}/files")
     except requests.HTTPError as exc:
         if exc.response.status_code == 404:
             return []
         raise
+    if not isinstance(files, list):
+        raise TypeError(f"expected list of file dicts, got {type(files).__name__}")
+    return files
 
 
 def get_existing_files(article_id: int) -> dict[str, dict[str, Any]]:
     """Get a mapping of filenames to dict with file details (usually id and md5 hash)
     for files already in the article.
     """
-    try:
-        files = make_request("GET", f"{BASE_URL}/account/articles/{article_id}/files")
-        return {file.pop("name"): file for file in files}
-    except requests.HTTPError as exc:
-        if exc.response.status_code == 404:
-            return {}
-        raise
+    return {file.pop("name"): file for file in list_article_files(article_id)}
 
 
 def file_exists_with_same_hash(
@@ -358,7 +350,6 @@ def upload_file_if_needed(
     file_name: str = "",
     *,
     force_reupload: bool = False,
-    **kwargs: Any,
 ) -> tuple[int, bool]:
     """Upload a file to Figshare if it doesn't already exist with the same hash.
 
@@ -369,7 +360,6 @@ def upload_file_if_needed(
             file path relative to repo's root dir: file_path.removeprefix(ROOT).
         force_reupload (bool, optional): If True, delete and reupload the file even if
             it already exists with the same hash. Defaults to False.
-        kwargs: Passed to make_request.
 
     Returns:
         tuple[int, bool]: A tuple containing:
@@ -389,7 +379,7 @@ def upload_file_if_needed(
             )
             if delete_file(article_id, file_id):
                 # Upload the file after successful deletion
-                file_id = upload_file(article_id, file_path, file_name, **kwargs)
+                file_id = upload_file(article_id, file_path, file_name)
                 return file_id, True
             print(f"Failed to delete existing file {file_name}, skipping upload")
             return file_id, False
@@ -397,7 +387,7 @@ def upload_file_if_needed(
         return file_id, False
 
     # Upload the file
-    file_id = upload_file(article_id, file_path, file_name, **kwargs)
+    file_id = upload_file(article_id, file_path, file_name)
     return file_id, True
 
 

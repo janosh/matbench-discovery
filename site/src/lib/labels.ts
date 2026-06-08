@@ -465,7 +465,7 @@ export interface OrgLogo {
 
 // Map of author affiliations in model YAMLs to SVG icons (either inline symbol ID
 // Or external file path under /static/logos/) and full affiliation names for tooltips.
-export const org_logos = {
+const org_logos = {
   'AI for Science Institute, Beijing': `/logos/beijing-ai-for-science-institute.svg`,
   'Argonne National Laboratory': `/logos/argonne-national-lab.svg`,
   'Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)': `/logos/beijing-iapcm.svg`,

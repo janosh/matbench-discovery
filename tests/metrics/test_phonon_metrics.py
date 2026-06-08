@@ -54,19 +54,6 @@ def df_minimal() -> pd.DataFrame:
 
 
 @pytest.fixture
-def series_single_temp() -> pd.Series:
-    """Mock Series with single temperature data."""
-    return pd.Series(
-        {
-            MbdKey.kappa_tot_avg: np.array([2.0]),
-            MbdKey.kappa_tot_rta: 2 * np.eye(3),
-            MbdKey.mode_kappa_tot_rta: np.eye(3),
-            Key.mode_weights: np.array([1.0]),
-        }
-    )
-
-
-@pytest.fixture
 def series_multi_temp() -> pd.Series:
     """Mock Series with multi-temperature data."""
     return pd.Series(

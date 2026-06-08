@@ -1,3 +1,5 @@
+"""Tests for model metadata YAML files and registry."""
+
 import os
 import re
 from glob import glob
@@ -18,11 +20,6 @@ OPEN_DATASETS = {
 
 # Get model directories for testing
 MODEL_DIRS = sorted(glob(f"{ROOT}/models/[!_]*/"))
-
-
-def parse_version(version: str) -> tuple[int, ...]:
-    """Parse version string into tuple of integers."""
-    return tuple(map(int, version.split(".")))
 
 
 def test_model_dirs_have_metadata() -> None:

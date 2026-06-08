@@ -1,5 +1,4 @@
-"""
-Copyright (c) Meta, Inc. and its affiliates.
+"""Copyright (c) Meta, Inc. and its affiliates.
 Modifications Copyright (c) 2025 Samsung Electronics Co., Ltd.
 
 This source code is licensed under the MIT license.
@@ -171,7 +170,6 @@ class OptimizableBatch:
                 from zero differences in masked positions at future steps,
                 we add a small number to prevent this.
         """
-
         self.device = device
         torch.set_default_dtype(torch.float32)
         self.trainer = trainer
@@ -196,7 +194,8 @@ class OptimizableBatch:
     @property
     def batch_indices(self) -> torch.Tensor:
         """Get the batch indices specifying
-        which position/force corresponds to which batch."""
+        which position/force corresponds to which batch.
+        """
         return self.batch.batch
 
     @property
@@ -532,9 +531,7 @@ class OptimizableUnitCellBatch(OptimizableBatch):
     def get_potential_energy(
         self,
     ) -> torch.Tensor:
-        """
-        returns potential energy including enthalpy PV term.
-        """
+        """Returns potential energy including enthalpy PV term."""
         atoms_energy = super().get_potential_energy()
         return atoms_energy + self.pressure[0, 0] * self.get_volumes().sum()
 
