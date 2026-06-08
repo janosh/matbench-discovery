@@ -42,7 +42,7 @@ def batch_to_atoms(
     wrap_pos: bool = True,
     eps: float = 1e-7,
 ) -> list[Atoms]:
-    """Convert a data batch to ase Atoms
+    """Convert a data batch to ase Atoms.
 
     Args:
         batch: data batch
@@ -102,7 +102,7 @@ def compare_batches(
     tol: float = 1e-6,
     excluded_properties: set[str] | None = None,
 ) -> bool:
-    """Compare properties between two batches
+    """Compare properties between two batches.
 
     Args:
         batch1: atoms batch
@@ -136,7 +136,7 @@ def compare_batches(
 
 
 class OptimizableBatch:
-    """A Batch version of ase Optimizable Atoms
+    """A Batch version of ase Optimizable Atoms.
 
     This class can be used with ML relaxations
     in fairchem.core.relaxations.ml_relaxation
@@ -156,11 +156,11 @@ class OptimizableBatch:
         masked_eps: float = 1e-8,
         device: torch.device | str = "cuda",
     ) -> None:
-        """Initialize Optimizable Batch
+        """Initialize Optimizable Batch.
 
         Args:
             batch: A batch of atoms graph data
-            model: An instance of a BaseTrainer derived class
+            trainer: An instance of a BaseTrainer derived class
             transform: graph transform
             mask_converged: if true will mask systems in batch
                 that are already converged
@@ -169,6 +169,7 @@ class OptimizableBatch:
                 when using ASE optimizers results in divisions by zero
                 from zero differences in masked positions at future steps,
                 we add a small number to prevent this.
+            device: torch device to run the model on. Defaults to "cuda".
         """
         self.device = device
         torch.set_default_dtype(torch.float32)
@@ -266,7 +267,7 @@ class OptimizableBatch:
         )
 
     def get_positions(self) -> torch.Tensor:
-        """Get the batch positions"""
+        """Get the batch positions."""
         pos = self.batch.pos.clone()
         if self.numpy:
             if self.mask_converged:
@@ -320,7 +321,7 @@ class OptimizableBatch:
         self.batch.cell[self.update_mask] = cells[self.update_mask]
 
     def get_volumes(self) -> torch.Tensor:
-        """Get a tensor of volumes for each cell in batch"""
+        """Get a tensor of volumes for each cell in batch."""
         cells = self.get_cells()
         return torch.linalg.det(cells)
 
@@ -328,7 +329,7 @@ class OptimizableBatch:
         yield self.batch
 
     def get_max_forces(self, forces: torch.Tensor | None = None) -> torch.Tensor:
-        """Get the maximum forces per structure in batch"""
+        """Get the maximum forces per structure in batch."""
         if forces is None:
             forces = self.get_forces(no_numpy=True)
         return scatter((forces**2).sum(dim=1).sqrt(), self.batch_indices, reduce="max")
@@ -339,7 +340,7 @@ class OptimizableBatch:
         fmax: float,
         max_forces: torch.Tensor | None = None,
     ) -> bool:
-        """Check if norm of all predicted forces are below fmax"""
+        """Check if norm of all predicted forces are below fmax."""
         if forces is not None:
             if isinstance(forces, np.ndarray):
                 forces = torch.tensor(forces, device=self.device, dtype=torch.float64)
@@ -363,7 +364,7 @@ class OptimizableBatch:
         return not torch.any(update_mask).item()
 
     def get_atoms_list(self) -> list[Atoms]:
-        """Get ase Atoms objects corresponding to the batch"""
+        """Get ase Atoms objects corresponding to the batch."""
         # self.update_graph()
         # self._predict()  # in case no predictions have been run
         return batch_to_atoms(self.batch, results=self.torch_results)
@@ -461,7 +462,7 @@ class OptimizableUnitCellBatch(OptimizableBatch):
 
     @property
     def deform_grad(self) -> torch.Tensor:
-        """Get the cell deformation matrix"""
+        """Get the cell deformation matrix."""
         return self.deform_grad_
         # return torch.transpose(
         #     torch.linalg.solve(self.orig_cells, self.get_cells()), 1, 2

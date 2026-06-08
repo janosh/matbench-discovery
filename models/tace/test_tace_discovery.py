@@ -1,4 +1,4 @@
-"""Templated from test_nequip_discovery.py"""
+"""Templated from test_nequip_discovery.py."""
 
 # %% this config is editable
 # uses commits matbench-discovery f0e54b7

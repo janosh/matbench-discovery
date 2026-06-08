@@ -38,6 +38,8 @@ def seed_everywhere(seed: int) -> None:
 
 
 class KappaSRMERunner:
+    """Run kappa-SRME phonon conductivity evaluation for an EquiformerV3 checkpoint."""
+
     def __init__(
         self,
         checkpoint_path: str | Path,
@@ -52,7 +54,7 @@ class KappaSRMERunner:
     def run(self) -> None:
         """Relaxation parameters
         1.  eSEN uses `max_steps` == 300 and `force_max` == 1e-4
-        2.  Nequix uses `max_steps` == 500 and `force_max` == 0.02
+        2.  Nequix uses `max_steps` == 500 and `force_max` == 0.02.
         """
         max_steps = 300
         force_max = 1e-4  # Run until the forces are smaller than this in eV/A

@@ -123,8 +123,8 @@ isort.split-on-trailing-comma = false
 "tests/*" = ["D103", "FBT001", "FBT002", "S101"]
 "__init__.py" = ["F401"]
 "matbench_discovery/plots.py" = ["ERA001"]    # allow commented out code
-"scripts/*" = ["D", "ERA001"]
-"models/*" = ["D", "ERA001"]
+"scripts/*" = ["D102", "D103", "D100", "D107", "D105", "ERA001"]
+"models/*" = ["D102", "D103", "D100", "D107", "D105", "ERA001"]
 "data/*" = ["ERA001", "S101"]
 
 [tool.pytest.ini_options]

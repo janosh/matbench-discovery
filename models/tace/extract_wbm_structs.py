@@ -1,4 +1,4 @@
-"""Templated from nequip/join_matbench_preds.py nequip/extract_wbm_structs.py"""
+"""Templated from nequip/join_matbench_preds.py nequip/extract_wbm_structs.py."""
 
 # uses commits matbench-discovery f0e54b7
 

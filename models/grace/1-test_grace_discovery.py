@@ -2,7 +2,7 @@
 (used as the matbench-discovery test set for models trained on MPTrj).
 Copied from the 7net script here:
 https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/test_sevennet.py
-Then refactored for GRACE
+Then refactored for GRACE.
 """
 
 import os

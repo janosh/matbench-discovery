@@ -57,6 +57,8 @@ def calc_kappa_for_structure(
             q_point_mesh keys in its info dict.
         calculator (Calculator): ASE calculator to use for force calculations
         displacement_distance (float): Displacement distance for phono3py (Å)
+        batch_size (int): Number of supercells per force-evaluation batch.
+        is_plusminus (bool): Whether phono3py uses plus/minus displacements.
         temperatures (list[float]): Temperatures in Kelvin for conductivity calculation
         ase_optimizer (str): ASE optimizer name (e.g., 'FIRE', 'BFGS', 'LBFGS')
         max_steps (int): Maximum relaxation steps

@@ -29,6 +29,7 @@ def init_phono3py(
         displacement_distance (float): Displacement distance for force calculations.
             Defaults to 0.01.
         symprec (float): Symmetry precision for finding space group. Defaults to 1e-5.
+        is_plusminus (bool): Whether to use plus/minus displacements. Defaults to False.
 
     Returns:
         Phono3py: Initialized Phono3py object
@@ -67,6 +68,7 @@ def calculate_fc2_set(
         calculator (Calculator): ASE calculator to compute forces.
         pbar_kwargs (dict[str, Any] | None): Arguments passed to tqdm progress bar.
             Defaults to None.
+        batch_size (int): Number of supercells per force-evaluation batch.
 
     Returns:
         np.ndarray: Array of forces for each displacement
@@ -113,6 +115,7 @@ def calculate_fc3_set(
         calculator (Calculator): ASE calculator to compute forces.
         pbar_kwargs (dict[str, Any] | None): Passed to tqdm progress bar.
             Defaults to None.
+        batch_size (int): Number of supercells per force-evaluation batch.
 
     Returns:
         np.ndarray: Array of forces for each displacement
@@ -161,6 +164,7 @@ def get_fc2_and_freqs(
         calculator (Calculator): ASE calculator to compute forces.
         pbar_kwargs (dict[str, Any] | None): Arguments passed to tqdm progress bar.
             Defaults to None.
+        batch_size (int): Number of supercells per force-evaluation batch.
 
     Returns:
         tuple[Phono3py, np.ndarray, np.ndarray]: Tuple of (Phono3py object, force

@@ -46,6 +46,7 @@ def ml_relax(
         fmax: Structure relaxation terminates when the max
             force of the system is no bigger than fmax.
         relax_opt: Optimizer parameters to be used for structure relaxations.
+        opt_algorithm: ASE optimizer to use, "fire" or "lbfgs". Defaults to "fire".
         relax_cell: if true will use stress predictions
             to relax crystallographic cell.
             The model given must predict stress

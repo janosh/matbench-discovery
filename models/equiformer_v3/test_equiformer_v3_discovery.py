@@ -68,12 +68,14 @@ def seed_everywhere(seed: int) -> None:
 
 
 class AseDBSubset(Subset):
+    """Subset of an ASE-DB dataset that forwards get_atoms to the parent dataset."""
+
     def get_atoms(self, idx: int) -> Atoms:
         return self.dataset.get_atoms(self.indices[idx])
 
 
 class RelaxJob(Checkpointable):
-    """Submitit checkpointable MLFF relax job to handle preemptions gracefully"""
+    """Submitit checkpointable MLFF relax job to handle preemptions gracefully."""
 
     def __init__(self) -> None:
         self.relax_results: dict[str, dict[str, Any]] = {}

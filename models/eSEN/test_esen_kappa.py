@@ -45,6 +45,8 @@ def seed_everywhere(seed: int) -> None:
 
 
 class KappaSRMERunner:
+    """Run kappa-SRME phonon conductivity evaluation for an eSEN checkpoint."""
+
     def __init__(
         self,
         seed: int,
