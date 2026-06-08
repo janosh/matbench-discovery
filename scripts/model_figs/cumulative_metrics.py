@@ -44,7 +44,7 @@ models_to_plot = [
     if model.is_complete and (show_non_compliant or model.is_compliant)
 ]
 
-fig, df_metric = cumulative_metrics(
+fig, _df_metric = cumulative_metrics(
     e_above_hull_true=df_preds[MbdKey.each_true],
     df_preds=df_each_pred[models_to_plot],
     metrics=metrics,

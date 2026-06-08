@@ -122,13 +122,14 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         continue
     try:
         atoms.calc = seven_net_calc
+        relax_atoms = atoms
         if max_steps > 0:
-            atoms = FrechetCellFilter(atoms)
-            optimizer = optim_cls(atoms, logfile=None)
+            relax_atoms = FrechetCellFilter(atoms)
+            optimizer = optim_cls(relax_atoms, logfile=None)
             optimizer.run(fmax=force_max, steps=max_steps)
-        energy = atoms.get_potential_energy()  # relaxed energy
-        # if max_steps > 0, atoms is wrapped by FrechetCellFilter, so need to getattr
-        unwrapped = atoms.atoms if hasattr(atoms, "atoms") else atoms
+        energy = relax_atoms.get_potential_energy()  # relaxed energy
+        # getattr unwraps relax_atoms (FrechetCellFilter wrapper when max_steps > 0)
+        unwrapped = getattr(relax_atoms, "atoms", relax_atoms)
         relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except (ValueError, RuntimeError, OSError, KeyError) as exc:

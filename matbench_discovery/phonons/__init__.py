@@ -7,13 +7,6 @@ import pandas as pd
 
 from matbench_discovery.phonons.calc_kappa import calc_kappa_for_structure
 
-# q-point mesh (which phonon modes to sample) based on international space group number
-spg_num_q_mesh_map: Final[dict[int, tuple[int, int, int]]] = {
-    225: (19, 19, 19),  # rocksalt
-    186: (19, 19, 15),  # wurtzite
-    216: (19, 19, 19),  # zincblende
-}
-
 
 class KappaCalcParams(TypedDict):
     """Parameters for thermal conductivity calculation across all models.

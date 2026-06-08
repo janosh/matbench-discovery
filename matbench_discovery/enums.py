@@ -78,13 +78,10 @@ class MbdKey(LabelEnum):
     spg_num_diff = "spg_num_diff", "Difference in space group number"
     n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"
     structure_rmsd_vs_dft = "structure_rmsd_vs_dft", "RMSD of structure to DFT"
-    sym_prop = "symmetry_property", "Symmetry property"
 
     # keep in sync with model-schema.yml
     missing_preds = "missing_preds", "Missing predictions"
 
-    aflow_prototype = "aflow_prototype", "Aflow prototype"
-    canonical_proto = "canonical_proto", "Canonical prototype"
     uniq_proto = "unique_prototype", "Unique prototype"
 
     # Thermal conductivity related keys
@@ -118,7 +115,6 @@ class MbdKey(LabelEnum):
     force_jump = "force_jump", "Force Jump (eV/Å)"
     energy_mae = "energy_mae", "Energy MAE vs Reference (eV)"
     force_mae = "force_mae", "Force MAE (eV/Å)"
-    force_conservation = "force_conservation", "Force Conservation (eV/Å)"
 
 
 @unique
@@ -197,10 +193,9 @@ class MetaFiles(EnumType):
         bases: tuple[type, ...],
         namespace: _EnumDict,
         base_dir: str = DEFAULT_CACHE_DIR,
-        **kwargs: Any,
     ) -> "MetaFiles":
         """Create new Files enum with given base directory."""
-        obj = super().__new__(cls, name, bases, namespace, **kwargs)
+        obj = super().__new__(cls, name, bases, namespace)
         obj._base_dir = base_dir
         return obj
 
@@ -517,6 +512,21 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def active(cls) -> tuple[Self, ...]:
         """Complete models included by default in plots, metrics, and eval scripts."""
         return tuple(model for model in cls if model.is_complete)
+
+    @classmethod
+    def from_ref(cls, ref: str | Self) -> Self:
+        """Resolve an enum name, value (case/dash-insensitive), key, or label to a
+        member.
+
+        Raises:
+            ValueError: For unresolvable refs (with close-match suggestions).
+        """
+        if isinstance(ref, cls):
+            return ref
+        member = cls.__members__.get(ref) or cls._missing_(ref)
+        if member is None:
+            member = next((m for m in cls if ref in (m.key, m.label)), None)
+        return member or cls.from_label(ref)  # from_label raises on unknown refs
 
     @classmethod
     def _missing_(cls, value: object) -> Self | None:

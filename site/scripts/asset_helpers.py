@@ -12,7 +12,7 @@ import json
 import math
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -20,33 +20,19 @@ import pandas as pd
 from matbench_discovery.enums import Model
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
 
 def resolve_models(model_refs: Iterable[str]) -> tuple[Model, ...]:
     """Resolve model names, keys, or labels to model enum members."""
     if not model_refs:
         return Model.active()
-
-    models: list[Model] = []
-    for model_ref in model_refs:
-        model = Model.__members__.get(model_ref) or Model._missing_(model_ref)
-        if model is None:
-            model = next(
-                (cand for cand in Model if model_ref in (cand.key, cand.label)), None
-            )
-        if model is None:
-            raise ValueError(f"Unknown model {model_ref!r}")
-        models.append(model)
-    return tuple(models)
+    return tuple(map(Model.from_ref, model_refs))
 
 
-def clean_float(value: Any, decimals: int = 6) -> float | None:
-    """Convert finite values to floats rounded to ``decimals``, dropping missing."""
-    try:
-        number = round(float(value), decimals)
-    except (TypeError, ValueError):
-        return None
+def clean_float(value: float | np.floating, decimals: int = 6) -> float | None:
+    """Round to ``decimals``, mapping NaN/inf to None (json-safe)."""
+    number = round(float(value), decimals)
     return number if math.isfinite(number) else None
 
 
@@ -69,19 +55,18 @@ def asset_safe_key(model_key: str) -> str:
     ).strip("._-")
 
 
-def write_json_gz(path: Path, data: Any) -> dict[str, Any]:
+def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str | int]:
     """Write deterministic gzipped JSON and return release manifest metadata."""
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(data, allow_nan=False, separators=(",", ":")).encode()
     compressed_payload = gzip.compress(payload, compresslevel=9, mtime=0)
     path.write_bytes(compressed_payload)
-    info = {
+    print(f"Wrote {path} ({len(compressed_payload) / 1024:.1f} KiB)")
+    return {
         "asset": path.name,
         "bytes": len(compressed_payload),
         "sha256": hashlib.sha256(compressed_payload).hexdigest(),
     }
-    print(f"Wrote {path} ({info['bytes'] / 1024:.1f} KiB)")
-    return info
 
 
 def write_ts_manifest(
@@ -101,7 +86,7 @@ def write_ts_manifest(
 def write_manifest(
     out_dir: Path,
     manifest_ts: Path,
-    manifest: dict[str, Any],
+    manifest: Mapping[str, object],
     *,
     export_name: str,
     generated_by: str,

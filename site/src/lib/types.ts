@@ -26,39 +26,6 @@ export interface Author {
   github?: string
 }
 
-// Used in citation.cff
-type CffAuthor = Omit<Author, `name`> & {
-  'family-names': string
-  'given-names': string
-  affil_key: string
-}
-
-export interface Reference {
-  title: string
-  id: string
-  author: { family: string; given: string }[]
-  DOI: string
-  URL?: string
-  issued: { year: number; month: number; day: number }[]
-  accessed: { year: number; month: number; day: number }[]
-  page: string
-  type: string
-  ISSN?: string
-}
-
-export interface Citation {
-  title: string
-  subtitle?: string
-  authors: CffAuthor[]
-  affiliations: string[]
-  'date-released': string
-  license: string
-  'license-url': string
-  'repository-code': string
-  url: string
-  version: string
-}
-
 export type Label = LabelType & {
   color_scale?: keyof typeof d3sc // D3-scale-chromatic color scale name
   property?: string // Actual property name for data access (when different from key)
@@ -88,7 +55,7 @@ export interface LinkData {
   pred_files: { files: { name: string; url: string }[]; name: string }
 }
 
-export type CellVal =
+type CellVal =
   | string
   | number
   | boolean

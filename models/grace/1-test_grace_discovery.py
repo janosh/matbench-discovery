@@ -1,9 +1,8 @@
-"""
-Script for testing predictions of a trained GRACE model on the WBM test dataset
+"""Script for testing predictions of a trained GRACE model on the WBM test dataset
 (used as the matbench-discovery test set for models trained on MPTrj).
 Copied from the 7net script here:
 https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/test_sevennet.py
-Then refactored for GRACE
+Then refactored for GRACE.
 """
 
 import os
@@ -129,17 +128,18 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         continue
     try:
         atoms.calc = calculator
+        relax_atoms = atoms
         if max_steps > 0:
-            atoms = filter_cls(atoms)
-            with optim_cls(atoms, logfile=None) as optimizer:
+            relax_atoms = filter_cls(atoms)
+            with optim_cls(relax_atoms, logfile=None) as optimizer:
                 for _ in optimizer.irun(fmax=force_max, steps=max_steps):
-                    f_norm = np.linalg.norm(atoms.get_forces(), axis=1).max()
+                    f_norm = np.linalg.norm(relax_atoms.get_forces(), axis=1).max()
                     if f_norm > 1e6:
                         raise RuntimeError("Force divergence detected")
 
-        energy = atoms.get_potential_energy()  # relaxed energy
-        # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
-        atoms_obj = cast("Atoms", getattr(atoms, "atoms", atoms))
+        energy = relax_atoms.get_potential_energy()  # relaxed energy
+        # getattr unwraps relax_atoms (filter_cls wrapper when max_steps > 0)
+        atoms_obj = cast("Atoms", getattr(relax_atoms, "atoms", relax_atoms))
         relaxed_struct = AseAtomsAdaptor.get_structure(atoms_obj)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except (ValueError, RuntimeError, OSError, KeyError) as exc:

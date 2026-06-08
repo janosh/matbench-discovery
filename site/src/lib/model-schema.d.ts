@@ -212,7 +212,6 @@ export type DiatomicsMetrics = Record<string, unknown> & {
   force_flips?: number
   force_total_variation?: number
   force_jump?: number
-  force_conservation?: number
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema

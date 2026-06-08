@@ -95,13 +95,14 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
     try:
         atoms.calc = hienet_calc
 
+        relax_atoms = atoms
         if max_steps > 0:
-            atoms = filter_cls(atoms)
-            optimizer = optim_cls(atoms, logfile=None)
+            relax_atoms = filter_cls(atoms)
+            optimizer = optim_cls(relax_atoms, logfile=None)
             optimizer.run(fmax=force_max, steps=max_steps)
-        energy = atoms.get_potential_energy()  # relaxed energy
-        # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
-        unwrapped = atoms.atoms if hasattr(atoms, "atoms") else atoms
+        energy = relax_atoms.get_potential_energy()  # relaxed energy
+        # getattr unwraps relax_atoms (filter_cls wrapper when max_steps > 0)
+        unwrapped = getattr(relax_atoms, "atoms", relax_atoms)
         relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except (ValueError, RuntimeError, OSError, KeyError) as exc:

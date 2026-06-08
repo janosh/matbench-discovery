@@ -5,7 +5,6 @@ pymatgen EntryLikes.
 import itertools
 import warnings
 from collections.abc import Sequence
-from typing import Any
 
 import pandas as pd
 from pymatgen.analysis.phase_diagram import Entry, PDEntry
@@ -140,14 +139,16 @@ def calc_energy_from_e_refs(
     return (energy - e_ref) / comp.num_atoms
 
 
-def get_e_form_per_atom(*args: Any, **kwargs: Any) -> float:  # noqa: D417
-    """Get formation energy for a phase diagram entry (1st arg, composition + absolute
-    energy) and a dict mapping elements to per-atom reference energies (2nd arg).
+def get_e_form_per_atom(
+    entry: EntryLike, elemental_ref_energies: dict[str, float] | None = None
+) -> float:
+    """Get formation energy for a phase diagram entry (composition + absolute energy)
+    and a dict mapping elements to per-atom reference energies.
 
     Args:
-        entry: Entry | dict[str, float | str | Composition]: pymatgen Entry (PDEntry,
-            ComputedEntry or ComputedStructureEntry) or dict with energy (absolute, not
-            per atom) and composition keys to compute formation energy of.
+        entry (EntryLike): pymatgen Entry (PDEntry, ComputedEntry or
+            ComputedStructureEntry) or dict with energy (absolute, not per atom) and
+            composition keys to compute formation energy of.
         elemental_ref_energies (dict[str, float], optional): Must be a covering set (for
             entry) of terminal reference energies, i.e. eV/atom of the lowest energy
             elemental phase for each element. Defaults to MP elemental reference
@@ -165,12 +166,6 @@ def get_e_form_per_atom(*args: Any, **kwargs: Any) -> float:  # noqa: D417
         DeprecationWarning,
         stacklevel=2,
     )
-    if len(args) >= 2:
-        ref_energies = args[1]
-        args = (args[0], *args[2:])
-    else:
-        if entry := kwargs.pop("entry", None):
-            args = (entry, *args)
-        ref_energies = kwargs.pop("elemental_ref_energies", mp_elemental_ref_energies)
-    kwargs.setdefault("ref_energies", ref_energies)
-    return calc_energy_from_e_refs(*args, **kwargs)
+    if elemental_ref_energies is None:
+        elemental_ref_energies = mp_elemental_ref_energies
+    return calc_energy_from_e_refs(entry, ref_energies=elemental_ref_energies)

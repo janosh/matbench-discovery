@@ -1,5 +1,4 @@
-"""
-Investigate NequIP energy underpredictions, templated from the
+"""Investigate NequIP energy underpredictions, templated from the
 MACE analysis script from Janosh.
 """
 

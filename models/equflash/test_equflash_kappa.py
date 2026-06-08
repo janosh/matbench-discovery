@@ -59,15 +59,19 @@ from matbench_discovery.phonons.thermal_conductivity import (
 
 if TYPE_CHECKING:
     from ase.optimize.optimize import Optimizer
+    from spglib import SpglibDataset
 
 ID = "mp_id"
 NO_TILT_MASK = [True, True, True, False, False, False]
 SYMM_NAME_MAP = {225: "rs", 186: "wz", 216: "zb"}
 
 
-def log_symmetry(atoms: Atoms, symprec: float) -> Any:
+def log_symmetry(atoms: Atoms, symprec: float) -> "SpglibDataset":
     """Get symmetry dataset from atoms using spglib."""
-    return get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
+    dataset = get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
+    if dataset is None:
+        raise RuntimeError(f"spglib failed to detect symmetry at {symprec=}")
+    return dataset
 
 
 def two_stage_relax(
@@ -117,7 +121,7 @@ def two_stage_relax(
     dyn_stage1.run(fmax=fmax_stage1, steps=steps_stage1)
     sym_stage1 = log_symmetry(atoms, symprec)
 
-    if sym_stage1["number"] != sym_init["number"]:
+    if sym_stage1.number != sym_init.number:
         warnings.warn(
             f"Symmetry is not kept during FixSymmetry "
             f"relaxation of material {mat_name} in folder {os.getcwd()}",
@@ -246,7 +250,8 @@ def main() -> None:
     kappa_results: dict[str, dict[str, Any]] = {}
 
     print(f"{len(atoms_list)} on {args.rank}")
-    for atoms in tqdm(atoms_list):
+    for init_atoms in tqdm(atoms_list):
+        atoms = init_atoms
         mat_id = atoms.info[ID]
         init_info = deepcopy(atoms.info)
         mat_name = atoms.info["name"]

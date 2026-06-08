@@ -1,5 +1,4 @@
-"""
-Script for generating the predicted kappa-SRME values for the 103 structures
+"""Script for generating the predicted kappa-SRME values for the 103 structures
 in the PhononDB-PBE dataset, using a NequIP/Allegro model.
 
 Templated from

@@ -1,9 +1,8 @@
-"""
-This processing script has been copied from the 7net script here:
+"""This processing script has been copied from the 7net script here:
 https://github.com/janosh/matbench-discovery/blob/main/models/sevennet/join_7net_preds.py
 And then slightly refactored for nequip, and changing the WBM
 missing structures error to a warning.
-Note that it requires pymatviz >=0.15.0
+Note that it requires pymatviz >=0.15.0.
 
 Takes about 4.5 mins to run.
 """

@@ -52,8 +52,8 @@ def process_results(path: str) -> None:
         print(fn)
         try:
             dfs.append(pd.read_json(fn, lines=True, compression="gzip"))
-        except (ValueError, OSError) as e:
-            print(f"Error reading {fn}: {e}")  # Print any errors during file reading.
+        except (ValueError, OSError) as exc:
+            print(f"Error reading {fn}: {exc}")  # Print any errors during file reading.
             continue  # Continue to the next file
 
     tot_df = pd.concat(dfs)

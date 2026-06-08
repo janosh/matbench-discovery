@@ -5,13 +5,17 @@ from __future__ import annotations
 import base64
 import gzip
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import plotly.graph_objects as go
 import pytest
 
 from matbench_discovery import figs
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 
 def make_bdata(values: list[float], dtype: str = "f8") -> dict[str, str]:
@@ -29,7 +33,9 @@ def make_bdata(values: list[float], dtype: str = "f8") -> dict[str, str]:
         (None, None),
     ],
 )
-def test_decode_array(value: Any, expected: list[float] | None) -> None:
+def test_decode_array(
+    value: dict[str, str] | list[float] | None, expected: list[float] | None
+) -> None:
     """decode_array handles base64 typed arrays, plain lists, and None."""
     result = figs.decode_array(value)
     if expected is None:
@@ -68,7 +74,7 @@ def test_lttb_keeps_endpoints_and_count() -> None:
 
 
 def test_histogram_bins_raw_values() -> None:
-    """histogram returns bin centers, integer counts and bar width, dropping NaNs."""
+    """Histogram returns bin centers, integer counts and bar width, dropping NaNs."""
     values = [0.0, 0.1, 0.1, 0.9, float("nan")]
     result = figs.histogram(values, bins=10, value_range=(0, 1))
     assert set(result) == {"x", "y", "bar_width"}
@@ -145,13 +151,15 @@ def test_sankey_data_from_sankey_trace() -> None:
     ("converter", "trace_type"),
     [(figs.sunburst_data, "sunburst"), (figs.sankey_data, "sankey")],
 )
-def test_converters_require_matching_trace(converter: Any, trace_type: str) -> None:
+def test_converters_require_matching_trace(
+    converter: Callable[[go.Figure | dict[str, Any]], dict[str, Any]], trace_type: str
+) -> None:
     """sunburst_data/sankey_data raise on figures without their trace type."""
     with pytest.raises(ValueError, match=f"no {trace_type} trace"):
         converter(go.Figure(go.Scatter(x=[1], y=[2])))
 
 
-def test_write_json_gz_roundtrip(tmp_path: Any) -> None:
+def test_write_json_gz_roundtrip(tmp_path: Path) -> None:
     """write_json_gz writes deterministic gzipped JSON parseable back unchanged."""
     payload = {"models": [{"label": "demo", "x": [1, 2], "y": [3.5, 4.5]}]}
     out_path = f"{tmp_path}/sub/dir/demo.json.gz"  # also creates parent dirs
@@ -167,7 +175,7 @@ def test_write_json_gz_roundtrip(tmp_path: Any) -> None:
         assert file.read() == first_bytes
 
 
-def test_write_json_gz_rejects_nan(tmp_path: Any) -> None:
+def test_write_json_gz_rejects_nan(tmp_path: Path) -> None:
     """write_json_gz refuses NaN values (invalid JSON) instead of writing them."""
     with pytest.raises(ValueError, match="Out of range float values"):
         figs.write_json_gz(f"{tmp_path}/bad.json.gz", {"y": [float("nan")]})

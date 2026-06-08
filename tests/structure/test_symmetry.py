@@ -1,3 +1,5 @@
+"""Tests for crystal symmetry analysis helpers."""
+
 import pandas as pd
 import pytest
 from pymatgen.core import Structure

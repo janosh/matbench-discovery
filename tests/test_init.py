@@ -1,3 +1,5 @@
+"""Tests for package-level globals and constants."""
+
 import os
 
 from matbench_discovery import ROOT, WANDB_PATH, timestamp, today

@@ -82,11 +82,6 @@ if __name__ == "__main__":
 
 
 # %%
-name_map = {
-    "MEGNet RS2RE": "MEGNet",
-    "M3GNet→MEGNet": "M3GNet",
-    "CHGNet→MEGNet": "CHGNet",
-}
 date_added_col = "Date Added"
 model_name_col = "Model"
 
@@ -99,7 +94,6 @@ models = discovery.df_metrics_uniq_protos.columns
 for model_label in models:
     if model_label == "Dummy":
         continue
-    model_name = name_map.get(model_label, model_label)
     # Find the model enum entry by label
     model = Model.from_label(model_label)
     if not model.is_complete:
@@ -316,14 +310,15 @@ for (label, df_met), show_non_compliant in itertools.product(
     ),
     (True, False),
 ):
-    df_met = df_met.copy().T.rename_axis(index=model_name_col)
-    if "kappa_103" in df_met:
-        df_kappa = pd.json_normalize(df_met["kappa_103"])
-        df_kappa.index = df_met.index
-        df_met["κ_SRME"] = df_kappa["κ_SRME"]
+    out_label = label
+    df_show = df_met.copy().T.rename_axis(index=model_name_col)
+    if "kappa_103" in df_show:
+        df_kappa = pd.json_normalize(df_show["kappa_103"])
+        df_kappa.index = df_show.index
+        df_show["κ_SRME"] = df_kappa["κ_SRME"]
 
     # abbreviate long column names
-    df_met = df_met.rename(
+    df_show = df_show.rename(
         columns={
             "R2": R2_col,
             "Precision": "Prec",
@@ -332,7 +327,7 @@ for (label, df_met), show_non_compliant in itertools.product(
         }
     )
     # only keep columns we want to show
-    df_table = df_met.filter([model_name_col, *show_cols])
+    df_table = df_show.filter([model_name_col, *show_cols])
     df_table = df_table.convert_dtypes()
     # hide models that are not compliant if show_non_compliant is False
     if not show_non_compliant:
@@ -342,24 +337,24 @@ for (label, df_met), show_non_compliant in itertools.product(
         df_table = df_table[
             df_table.index.str.contains("MEGNet|CHGNet|M3GNet")
         ]  # |Dummy
-        label += "-uip-megnet-combos"
+        out_label += "-uip-megnet-combos"
         if "M3GNet→MEGNet" not in df_table:
             print(
                 "hint: for make_uip_megnet_comparison, uncomment the lines "
                 "chgnet_megnet and m3gnet_megnet in the Model enum"
             )
 
-    if "-first-10k" in label:
+    if "-first-10k" in out_label:
         # hide redundant metrics for first 10k preds (all TPR = 1, TNR = 0)
         df_table = df_table.drop(["TPR", "TNR"], axis="columns")
-    if label != "-uniq-protos":  # only show training size and model type once
+    if out_label != "-uniq-protos":  # only show training size and model type once
         df_table = df_table.drop(meta_cols, axis="columns", errors="ignore")
 
     styler = df_table.style.format(
         dict.fromkeys(df_table.select_dtypes(float), "{:,.3f}"),  # use for manuscript
         na_rep="",  # render NaNs as empty string
     )
-    styler = styler.background_gradient(  # ty: ignore[unresolved-attribute]
+    styler = styler.background_gradient(
         cmap="viridis", subset=list(higher_is_better & {*df_table}), axis="index"
     ).background_gradient(  # reverse color map if lower=better
         cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis="index"
@@ -399,27 +394,11 @@ for (label, df_met), show_non_compliant in itertools.product(
         [tooltip_label(col) for col in df_table], axis="columns"
     ).set_uuid("")
 
-    # export model metrics as styled HTML table and Svelte component
-    mae_col_idx = styler.columns.get_loc("MAE") + 1
-    if kappa_srme_col in df_table:
-        kappa_srme_col_idx = styler.columns.get_loc(kappa_srme_col) + 1
-    else:
-        kappa_srme_col_idx = 0
-
-    # https://stackoverflow.com/a/38994837
-    hide_scroll_bar = """
-    table {
-        scrollbar-width: none;  /* Firefox */
-    }
-    table::-webkit-scrollbar {
-        display: none;  /* Safari and Chrome */
-    }"""
     styler.set_sticky(axis="index")
     # Hide the original index since it's the same content same as model_name_col except
     # model_name_col also has HTML title attributes for hover tooltips
     styler.hide(axis="index")
-    non_compliant_idx = [*set(styler.index) & set(non_compliant_models)]
     if pmv.IS_IPYTHON:
         from IPython.display import display
 
-        display(styler.set_caption(df_met.attrs["title"]))
+        display(styler.set_caption(df_show.attrs["title"]))
