@@ -1,3 +1,5 @@
+"""Tests for data loading and IO helpers."""
+
 import os
 import sys
 import zipfile
@@ -325,14 +327,13 @@ def test_load_df_wbm_max_error_threshold() -> None:
 
 def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
     """Test error handling in load_df_wbm_with_preds function."""
-
     # Test invalid model name
-    with pytest.raises(ValueError, match="expected subset of"):
+    with pytest.raises(ValueError, match="not found in Model"):
         load_df_wbm_with_preds(models=["InvalidModel"])
 
     # Test negative error threshold
     with pytest.raises(
-        ValueError, match="max_error_threshold must be a positive number"
+        ValueError, match="max_error_threshold=-1 must be a positive number"
     ):
         load_df_wbm_with_preds(max_error_threshold=-1)
 
@@ -352,7 +353,9 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
     "subset",
     ["unique_prototypes", TestSubset.uniq_protos, ["wbm-1-1", "wbm-1-2"], None],
 )
-def test_load_df_wbm_with_preds_subset(subset: Any) -> None:
+def test_load_df_wbm_with_preds_subset(
+    subset: str | TestSubset | list[str] | None,
+) -> None:
     """Test subset handling in load_df_wbm_with_preds."""
     df_wbm = load_df_wbm_with_preds(subset=subset)
     assert isinstance(df_wbm, pd.DataFrame)

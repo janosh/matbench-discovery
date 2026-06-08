@@ -1,3 +1,5 @@
+"""Tests for remote file download helpers."""
+
 import os
 from collections.abc import Iterator
 from contextlib import nullcontext

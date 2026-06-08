@@ -1,5 +1,4 @@
-"""
-Investigate Allegro energy underpredictions, templated from the
+"""Investigate Allegro energy underpredictions, templated from the
 MACE analysis script from Janosh.
 """
 

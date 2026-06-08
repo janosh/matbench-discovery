@@ -67,28 +67,15 @@ def seed_everywhere(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
-def setup_distributed() -> tuple[int, int, int] | None:
-    if "RANK" in os.environ:
-        rank = int(os.environ["RANK"])
-        world_size = int(os.environ["WORLD_SIZE"])
-        local_rank = int(os.environ.get("LOCAL_RANK", rank))
-        if not torch.distributed.is_initialized():
-            torch.distributed.init_process_group(
-                backend="nccl",
-                rank=rank,
-                world_size=world_size,
-            )
-        return rank, world_size, local_rank
-    return None
-
-
 class AseDBSubset(Subset):
+    """Subset of an ASE-DB dataset that forwards get_atoms to the parent dataset."""
+
     def get_atoms(self, idx: int) -> Atoms:
         return self.dataset.get_atoms(self.indices[idx])
 
 
 class RelaxJob(Checkpointable):
-    """Submitit checkpointable MLFF relax job to handle preemptions gracefully"""
+    """Submitit checkpointable MLFF relax job to handle preemptions gracefully."""
 
     def __init__(self) -> None:
         self.relax_results: dict[str, dict[str, Any]] = {}
@@ -270,8 +257,6 @@ def run_relax(
     ] = False,
 ) -> None:
     setup_logging()
-    # rank, world_size, local_rank = setup_distributed()
-    # torch.cuda.set_device(local_rank)
 
     if is_master():
         os.makedirs(output_path, exist_ok=True)

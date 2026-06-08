@@ -109,9 +109,9 @@ for x_col, y_col, title in (
         hover_data=[Key.formula],
         backend="plotly",
     )
-    title = f"CSE vs CE {title}<br>({len(df_ce_ne_cse):,} / {len(df_wbm):,} "
-    title += f"= {len(df_ce_ne_cse) / len(df_wbm):.1%})"
-    fig.layout.title.update(text=title, x=0.5, font=dict(size=16))
+    title_text = f"CSE vs CE {title}<br>({len(df_ce_ne_cse):,} / {len(df_wbm):,} "
+    title_text += f"= {len(df_ce_ne_cse) / len(df_wbm):.1%})"
+    fig.layout.title.update(text=title_text, x=0.5, font=dict(size=16))
     fig.layout.margin.t = 40
     fig.layout.legend.update(x=0, title=None)
 

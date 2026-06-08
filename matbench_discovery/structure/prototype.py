@@ -8,7 +8,6 @@ import math
 import os
 import re
 import string
-from typing import Final
 
 import ase
 import yaml
@@ -22,16 +21,6 @@ with gzip.open(f"{module_dir}/wyckoff-position-multiplicities.yaml.gz") as gz_fi
 
 with gzip.open(f"{module_dir}/wyckoff-position-relabelings.yaml.gz") as gz_file:
     wyckoff_relabelings = yaml.safe_load(gz_file)
-
-crys_sys_letters: Final[dict[str, str]] = {
-    "Triclinic": "a",
-    "Monoclinic": "m",
-    "Orthorhombic": "o",
-    "Tetragonal": "t",
-    "Trigonal": "h",
-    "Hexagonal": "h",
-    "Cubic": "c",
-}
 
 
 def get_prototype_formula(composition: Composition, amt_tol: float = 1e-8) -> str:

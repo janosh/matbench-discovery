@@ -1,3 +1,5 @@
+"""Tests for phonon helper functions."""
+
 import numpy as np
 import pytest
 

@@ -116,8 +116,6 @@ fig.layout.coloraxis.colorbar.update(
 
 # iterate over subplots and set new title
 for idx, anno in enumerate(fig.layout.annotations, start=1):
-    traces = [t for t in fig.data if t.xaxis == f"x{idx if idx > 1 else ''}"]
-
     model = anno.text.split("=", 1)[1]
     if model not in df_preds:
         print(f"Unexpected {model=}, not in {[m.label for m in models_to_plot]}")

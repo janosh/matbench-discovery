@@ -1,6 +1,6 @@
 """To slurm submit this file: python path/to/file.py slurm-submit
 Requires MEGNet and MAML installation: pip install megnet maml
-https://github.com/materialsvirtuallab/maml
+https://github.com/materialsvirtuallab/maml.
 """
 
 # %%

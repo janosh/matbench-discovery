@@ -1,4 +1,4 @@
-"""Get MatterSim predictions on WBM dataset
+"""Get MatterSim predictions on WBM dataset.
 
 Please note this script does not run because we removed
 the codes that may disclose any usage information of MatterSim.

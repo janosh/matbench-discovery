@@ -29,11 +29,14 @@ from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ase import Atoms
+    from ase.optimize.optimize import Optimizer
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
-OPTIM_CLS: dict[str, Any] = {"FIRE": FIRE, "LBFGS": LBFGS}
+OPTIM_CLS: dict[str, Callable[..., Optimizer]] = {"FIRE": FIRE, "LBFGS": LBFGS}
 
 
 class KappaRunner:
@@ -56,8 +59,7 @@ class KappaRunner:
         conductivity_broken_symm: bool = False,
         prog_bar: bool = True,
     ) -> None:
-        """
-        Initialize benchmark settings.
+        """Initialize benchmark settings.
 
         Parameters
         ----------
@@ -103,10 +105,9 @@ class KappaRunner:
         self.prog_bar = prog_bar
 
     def run(self) -> Path:
-        """
-        Run the kappa benchmark and save outputs.
+        """Run the kappa benchmark and save outputs.
 
-        Returns
+        Returns:
         -------
         Path
             Path to the saved conductivity JSON file.
@@ -188,13 +189,12 @@ class KappaRunner:
         self,
         atoms: Atoms,
         calculator: DP,
-        optim_cls: Any,
+        optim_cls: Callable[..., Optimizer],
         force_results: dict[str, dict[str, Any]],
         kappa_results: dict[str, dict[str, Any]],
         progress: tqdm,
     ) -> None:
-        """
-        Run relaxation and conductivity for one structure.
+        """Run relaxation and conductivity for one structure.
 
         Parameters
         ----------
@@ -202,7 +202,7 @@ class KappaRunner:
             Input phononDB structure.
         calculator : DP
             DeePMD calculator.
-        optim_cls : Any
+        optim_cls : Callable[..., Optimizer]
             ASE optimizer class.
         force_results : dict[str, dict[str, Any]]
             Accumulator for force sets.
@@ -326,13 +326,12 @@ class KappaRunner:
         self,
         atoms: Atoms,
         calculator: DP,
-        optim_cls: Any,
+        optim_cls: Callable[..., Optimizer],
         init_info: dict[str, Any],
         spg_num: int,
         mat_id: str,
     ) -> dict[str, Any]:
-        """
-        Relax one structure before force-constant calculation.
+        """Relax one structure before force-constant calculation.
 
         Parameters
         ----------
@@ -340,7 +339,7 @@ class KappaRunner:
             Input phononDB structure.
         calculator : DP
             DeePMD calculator.
-        optim_cls : Any
+        optim_cls : Callable[..., Optimizer]
             ASE optimizer class.
         init_info : dict[str, Any]
             Original atoms info dictionary.
@@ -349,7 +348,7 @@ class KappaRunner:
         mat_id : str
             Material identifier used for log files.
 
-        Returns
+        Returns:
         -------
         dict[str, Any]
             Relaxation metadata.
@@ -391,10 +390,9 @@ class KappaRunner:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """
-    Build the command line parser.
+    """Build the command line parser.
 
-    Returns
+    Returns:
     -------
     argparse.ArgumentParser
         Configured parser.
@@ -452,8 +450,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def kappa_run(args: argparse.Namespace) -> None:
-    """
-    Run the DPA4 kappa benchmark.
+    """Run the DPA4 kappa benchmark.
 
     Parameters
     ----------

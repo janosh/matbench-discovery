@@ -96,18 +96,6 @@ export function get_scatter_plot_props(scatter_plot_mock: {
   return props
 }
 
-// Helper function to check if an element is hidden
-export function is_hidden(el: Element | null): boolean {
-  if (!el) return true
-  const style = getComputedStyle(el as HTMLElement)
-  return (
-    style.display === `none` ||
-    style.visibility === `hidden` ||
-    el.getAttribute(`aria-hidden`) === `true` ||
-    el.hasAttribute(`hidden`)
-  )
-}
-
 // ResizeObserver mock
 globalThis.ResizeObserver = class ResizeObserver {
   observe() {}

@@ -1,3 +1,5 @@
+"""Tests for discovery classification and regression metrics."""
+
 import math
 import os
 import subprocess
@@ -9,13 +11,16 @@ import pandas as pd
 import pytest
 from pymatviz.enums import Key
 
+from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics import discovery
 from matbench_discovery.metrics.discovery import (
     classify_stable,
+    df_metrics,
     stable_metrics,
     write_metrics_to_yaml,
 )
+from matbench_discovery.preds.discovery import df_each_err, df_each_pred, df_preds
 
 
 @pytest.mark.parametrize(
@@ -297,3 +302,22 @@ def test_write_metrics_to_yaml(tmp_path: Path) -> None:
     content = Path(test_yaml).read_text()
     assert "MAE" in content
     assert "full_test_set" in content
+
+
+def test_df_each_pred() -> None:
+    """Assembled per-model predictions span all WBM rows and the metric columns."""
+    n_rows, _n_cols = df_each_pred.shape
+    assert n_rows == len(df_wbm)
+    assert n_rows == len(df_preds)
+    assert {*df_each_pred} == {*df_metrics}, (
+        f"{df_each_pred.columns=}, expected {df_metrics.columns=}"
+    )
+
+
+def test_df_each_err() -> None:
+    """Per-model hull-distance errors span all WBM rows plus each_err_models."""
+    assert len(df_each_err) == len(df_wbm)
+    assert len(df_each_err) == len(df_preds)
+    assert {*df_each_err} == {*df_metrics, MbdKey.each_err_models}, (
+        f"{df_each_err.columns=}, expected {df_metrics.columns=}"
+    )

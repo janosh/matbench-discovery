@@ -210,11 +210,11 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
     for label, kappas in {"preds": kappas_pred, "true": kappas_true}.items():
         keys = set(kappas.keys())
         if MbdKey.mode_kappa_tot_avg in kappas:
-            kappas = kappas[MbdKey.mode_kappa_tot_avg]
+            mode_kappa = kappas[MbdKey.mode_kappa_tot_avg]
         elif MbdKey.mode_kappa_tot_rta in kappas:
-            kappas = calculate_kappa_avg(kappas[MbdKey.mode_kappa_tot_rta])
+            mode_kappa = calculate_kappa_avg(kappas[MbdKey.mode_kappa_tot_rta])
         elif {MbdKey.kappa_p_rta, MbdKey.kappa_c, Key.heat_capacity} <= keys:
-            kappas = calculate_kappa_avg(
+            mode_kappa = calculate_kappa_avg(
                 ltc.calc_mode_kappa_tot(
                     kappas[MbdKey.kappa_p_rta],
                     kappas[MbdKey.kappa_c],
@@ -226,7 +226,7 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
                 f"Neither mode_kappa_tot_avg, mode_kappa_tot nor individual kappa\n"
                 f"components found in {label}, got\n{keys}"
             )
-        mode_kappa_tot_avgs[label] = np.asarray(kappas)
+        mode_kappa_tot_avgs[label] = np.asarray(mode_kappa)
 
     # calculating microscopic error for all temperatures
     microscopic_error = (

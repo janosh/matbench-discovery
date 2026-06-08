@@ -20,7 +20,9 @@ from matbench_discovery.remote import figshare
         (b"{invalid-json}", b"{invalid-json}", False),  # Invalid JSON
     ],
 )
-def test_make_request(content: bytes, expected: Any, binary: bool) -> None:
+def test_make_request(
+    content: bytes, expected: dict[str, str] | bytes, binary: bool
+) -> None:
     """Test make_request with various response types."""
     mock_response = MagicMock(content=content)
 
@@ -183,14 +185,15 @@ def test_upload_file_to_figshare_variants(
         "PUT": None,  # PUT requests return None on success
     }
 
-    def mock_make_request(method: str, url: str, **kwargs: Any) -> Any:
+    def mock_make_request(
+        method: str, url: str, **kwargs: dict[str, str | int] | bytes | bool
+    ) -> dict[str, Any] | None:
         """Mock request handler that returns appropriate response for each method."""
         if method == "GET" and url == "upload_url":
             return {"parts": file_parts}
-        if method == "POST" and "data" in kwargs:
+        if method == "POST" and isinstance(data := kwargs.get("data"), dict):
             # Verify the file name in the POST request
-            data = kwargs["data"]
-            assert data["name"] == file_name or test_file.name
+            assert data["name"] == (file_name or test_file.name)
         return mock_responses[method]
 
     with (
@@ -326,12 +329,8 @@ def test_delete_file_error() -> None:
         (False, False, True, False),  # File doesn't exist, should upload
         (False, True, False, False),  # File exists, shouldn't upload or delete
         (True, False, True, False),  # File doesn't exist, should upload, no delete
-        (
-            True,
-            True,
-            True,
-            True,
-        ),  # File exists, force reupload, should delete and upload
+        # File exists, force reupload, should delete and upload
+        (True, True, True, True),
     ],
 )
 def test_upload_file_if_needed(
@@ -409,7 +408,7 @@ def test_publish_article(
     article_id = 12345
     err_msg = "Test error"
 
-    def mock_make_request_side_effect(*_args: Any, **_kwargs: Any) -> Any:
+    def mock_make_request_side_effect(*_args: str) -> None:
         """Either return successful result or raise exception based on success param."""
         if success:
             return  # Successful response for POST

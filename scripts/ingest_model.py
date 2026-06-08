@@ -81,6 +81,7 @@ class Checklist:
         self.results: list[tuple[str, str]] = []
 
     def record(self, status: str, msg: str) -> None:
+        """Append a (status, message) result and print it to the console."""
         self.results.append((status, msg))
         suffix = " (skipped/optional)" if status == SKIP else ""
         print(f"  {status} {msg}{suffix}")
@@ -91,9 +92,11 @@ class Checklist:
 
     @property
     def n_failed(self) -> int:
+        """Number of recorded results with FAIL status."""
         return sum(status == FAIL for status, _ in self.results)
 
     def summary(self) -> str:
+        """Render the passed/failed/skipped counts as a multi-line summary string."""
         counts = Counter(status for status, _ in self.results)
         return (
             f"  {PASS} Passed:  {counts[PASS]}\n"

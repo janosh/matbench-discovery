@@ -252,8 +252,6 @@ definitions:
         type: number
       force_jump:
         type: number
-      force_conservation:
-        type: number
     allOf:
       - if:
           properties:

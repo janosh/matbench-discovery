@@ -2,7 +2,6 @@
 import json
 import os
 from importlib.metadata import version
-from typing import Any
 
 import pandas as pd
 import torch
@@ -101,7 +100,6 @@ def df_to_loader(
     line_graph: bool = True,
     pin_memory: bool = False,
     shuffle: bool = True,
-    **kwargs: Any,
 ) -> DataLoader:
     """Converts a dataframe to a regular PyTorch dataloader for train/val/test.
 
@@ -113,7 +111,6 @@ def df_to_loader(
         pin_memory (bool, optional): Whether torch DataLoader should pin memory.
             Defaults to False.
         shuffle (bool, optional): Whether to shuffle the dataset. Defaults to True.
-        **kwargs: Additional arguments to pass to the StructureDataset
 
     Returns:
         DataLoader: PyTorch data loader
@@ -128,7 +125,6 @@ def df_to_loader(
         line_graph=line_graph,
         atom_features=config.atom_features,
         id_tag=Key.mat_id,
-        **kwargs,
     )
     collate_fn = getattr(dataset, f"collate{'_line' if line_graph else ''}_graph")
 

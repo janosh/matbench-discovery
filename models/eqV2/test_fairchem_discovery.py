@@ -1,4 +1,4 @@
-"""Test FAIRChem models for matbench-discovery"""
+"""Test FAIRChem models for matbench-discovery."""
 
 import json
 import os
@@ -42,7 +42,7 @@ OPTIM_CLS: dict[str, type[Optimizer]] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": B
 
 
 class RelaxJob(Checkpointable):
-    """Submitit checkpointable MLFF relax job to handle preemptions gracefully"""
+    """Submitit checkpointable MLFF relax job to handle preemptions gracefully."""
 
     def __init__(self) -> None:
         self.relax_results: dict[str, dict[str, Any]] = {}

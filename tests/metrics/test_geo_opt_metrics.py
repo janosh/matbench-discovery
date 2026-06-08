@@ -1,3 +1,5 @@
+"""Tests for geometry optimization metrics (RMSD and symmetry changes vs DFT)."""
+
 from unittest.mock import mock_open, patch
 
 import numpy as np
@@ -53,7 +55,13 @@ def test_calc_geo_opt_metrics(df_geo_opt: pd.DataFrame) -> None:
 
 
 @pytest.mark.parametrize(
-    "spg_diffs, n_sym_ops_diffs, expected_decrease, expected_match, expected_increase",
+    (
+        "spg_diffs",
+        "n_sym_ops_diffs",
+        "expected_decrease",
+        "expected_match",
+        "expected_increase",
+    ),
     [
         # All matches
         ([0, 0, 0], [0, 0, 0], 0.0, 1.0, 0.0),

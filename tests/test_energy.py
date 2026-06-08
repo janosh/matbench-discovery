@@ -1,3 +1,5 @@
+"""Tests for formation and reference energy calculations."""
+
 from collections.abc import Callable
 from typing import Any
 

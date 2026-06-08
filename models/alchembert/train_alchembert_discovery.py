@@ -40,6 +40,8 @@ df_mp = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
 
 # %%
 class MyDataset(Dataset):
+    """PyTorch dataset of tokenized inputs (ids, attention mask) and target labels."""
+
     def __init__(
         self,
         input_ids: torch.Tensor,
@@ -61,6 +63,8 @@ class MyDataset(Dataset):
 
 # %%
 class MatBert(lightning.LightningModule):
+    """Lightning module regressing a scalar target from frozen BERT embeddings."""
+
     def __init__(self, b_path: str) -> None:
         super().__init__()
         self.bert = BertModel.from_pretrained(b_path, output_hidden_states=True)

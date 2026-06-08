@@ -41,8 +41,6 @@ model_styles = dict(
 )
 
 
-# color list https://plotly.com/python-api-reference/generated/plotly.graph_objects.layout
-colorway = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
 clf_labels = ("True Positive", "False Negative", "False Positive", "True Negative")
 clf_colors = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
 clf_color_map = dict(zip(clf_labels, clf_colors, strict=True))
@@ -87,7 +85,8 @@ def hist_classified_stable_vs_hull_dist(
     n_bins: int = 200,
     rolling_acc: float | None = 0.02,
     clf_labels: Sequence[str] = clf_labels,
-    **kwargs: Any,
+    facet_col: str | None = None,
+    **kwargs: object,
 ) -> go.Figure:
     """Histogram of the energy difference (either according to DFT ground truth - the
     default - or the model predicted energy) to the convex hull for materials in the
@@ -117,6 +116,8 @@ def hist_classified_stable_vs_hull_dist(
         clf_labels (list[str], optional): Labels for the four classification categories.
             Defaults to ["True Positive", "False Negative", "False Positive", "True
             Negative"].
+        facet_col (str | None, optional): Column to facet histograms by (one subplot
+            per unique value). Defaults to None.
         kwargs: Additional keyword arguments passed to the px.histogram() function.
 
     Returns:
@@ -125,15 +126,19 @@ def hist_classified_stable_vs_hull_dist(
     NOTE this figure plots hist bars separately which causes aliasing in pdf. Can be
     fixed in Inkscape or similar by merging regions by color.
     """
+    if facet_col and rolling_acc:
+        raise ValueError(
+            f"{rolling_acc=} not supported with {facet_col=}: rolling accuracy would "
+            "mix per-facet counts with the global denominator. Set rolling_acc=None."
+        )
+
     x_col = dict(true=each_true_col, pred=each_pred_col)[which_energy]
     clf_col, value_name = "classified", "count"
 
     df_plot = pd.DataFrame()
     each_true_pos = each_true_neg = each_false_neg = each_false_pos = None
 
-    for facet, df_group in (
-        df.groupby(kwargs["facet_col"]) if "facet_col" in kwargs else [(None, df)]
-    ):
+    for facet, df_group in df.groupby(facet_col) if facet_col else [(None, df)]:
         true_pos, false_neg, false_pos, true_neg = classify_stable(
             df_group[each_true_col],
             df_group[each_pred_col],
@@ -174,7 +179,7 @@ def hist_classified_stable_vs_hull_dist(
             value_vars=clf_labels,
             var_name=clf_col,
             value_name=value_name,
-        ).assign(**{kwargs.get("facet_col", ""): facet})
+        ).assign(**{facet_col or "": facet})
         df_plot = pd.concat([df_plot, df_melt])
 
     kwargs.update(
@@ -184,6 +189,7 @@ def hist_classified_stable_vs_hull_dist(
         x=x_col,
         color=clf_col,
         y=value_name,
+        facet_col=facet_col,
     )
 
     fig = df_plot.round(4).plot.bar(backend="plotly", **kwargs)
@@ -260,7 +266,7 @@ def rolling_mae_vs_hull_dist(
     annotate_triangle: bool = False,
     pbar: bool = True,
     legend_loc: LegendLoc = "figure",
-    **kwargs: Any,
+    **kwargs: object,
 ) -> tuple[go.Figure, pd.DataFrame, pd.DataFrame]:
     r"""Rolling mean absolute error as the energy to the convex hull is varied. A scale
     bar is shown for the windowing period of 40 meV per atom used when calculating the
@@ -526,7 +532,9 @@ def cumulative_metrics(
     n_points: int = 100,
     col_width: float = 500,
     height: float = 400,
-    **kwargs: Any,
+    facet_col_wrap: int = 2,
+    facet_col_spacing: float = 0.03,
+    **kwargs: object,
 ) -> tuple[go.Figure, pd.DataFrame]:
     """Create 2 subplots side-by-side with cumulative precision and recall curves for
     all models starting with materials predicted most stable, adding the next material,
@@ -559,6 +567,9 @@ def cumulative_metrics(
             metric curves. Defaults to 100.
         col_width (float, optional): Width of each subplot in pixels. Defaults to 500.
         height (float, optional): Height of each subplot in pixels. Defaults to 500.
+        facet_col_wrap (int, optional): Max number of subplot columns. Defaults to 2.
+        facet_col_spacing (float, optional): Horizontal spacing between subplots.
+            Defaults to 0.03.
         **kwargs: Keyword arguments passed to df.plot().
 
     Returns:
@@ -665,15 +676,14 @@ def cumulative_metrics(
         value_name="value",
     )
 
-    n_cols = kwargs.pop("facet_col_wrap", 2)
-    kwargs.setdefault("facet_col_spacing", 0.03)
     fig = px.line(
         df_cumu_metrics_long,
         x=index_col_name,
         y="value",
         color="model",
         facet_col="metric",
-        facet_col_wrap=n_cols,
+        facet_col_wrap=facet_col_wrap,
+        facet_col_spacing=facet_col_spacing,
         category_orders={"metric": list(metrics)},
         **kwargs,
     )
@@ -687,7 +697,7 @@ def cumulative_metrics(
     for idx, anno in enumerate(fig.layout.annotations):
         anno.text = anno.text.split("=")[1]
         anno.font.size = 16
-        grid_pos = dict(row=idx // n_cols + 1, col=idx % n_cols + 1)
+        grid_pos = dict(row=idx // facet_col_wrap + 1, col=idx % facet_col_wrap + 1)
         fig.update_traces(
             hovertemplate=f"Index = %{{x:d}}<br>{anno.text} = %{{y:.2f}}",
             **grid_pos,
@@ -756,7 +766,7 @@ def cumulative_metrics(
     return fig, df_cumu_metrics
 
 
-def wandb_scatter(table: wandb.Table, fields: dict[str, str], **kwargs: Any) -> None:
+def wandb_scatter(table: wandb.Table, fields: dict[str, str], **kwargs: str) -> None:
     """Log a parity scatter plot using custom Vega spec to WandB.
 
     Args:

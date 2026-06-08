@@ -20,7 +20,7 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from glob import glob
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import ase.io
 import pandas as pd
@@ -44,30 +44,29 @@ with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
     DATASETS = yaml.safe_load(stream=file)
 
 
-def as_dict_handler(obj: Any) -> dict[str, Any] | None:
+def as_dict_handler(obj: object) -> dict[str, Any] | None:
     """Pass this to json.dump(default=) or as pandas.to_json(default_handler=) to
     serialize Python classes with as_dict(). Warning: Objects without a as_dict() method
     are replaced with None in the serialized data.
     """
-    try:
-        return obj.as_dict()  # all MSONable objects implement as_dict()
-    except AttributeError:
-        return None  # replace unhandled objects with None in serialized data
-        # removes e.g. non-serializable AseAtoms from M3GNet relaxation trajectories
+    as_dict = getattr(obj, "as_dict", None)  # all MSONable objects implement as_dict()
+    # objects without as_dict() serialize to None, which drops e.g. non-serializable
+    # AseAtoms from M3GNet relaxation trajectories
+    return as_dict() if callable(as_dict) else None
 
 
 def glob_to_df(
     pattern: str,
     *,
-    reader: Callable[[Any], pd.DataFrame] | None = None,
+    reader: Callable[..., pd.DataFrame] | None = None,
     pbar: bool = True,
-    **kwargs: Any,
+    **kwargs: object,
 ) -> pd.DataFrame:
     """Combine data files matching a glob pattern into a single dataframe.
 
     Args:
         pattern (str): Glob file pattern.
-        reader (Callable[[Any], pd.DataFrame], optional): Function that loads data from
+        reader (Callable[..., pd.DataFrame], optional): Function that loads data from
             disk. Defaults to pd.read_csv if ".csv" in pattern else pd.read_json.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         **kwargs: Keyword arguments passed to reader (i.e. pd.read_csv or pd.read_json).
@@ -80,11 +79,16 @@ def glob_to_df(
         ValueError: If reader is None and the file extension is unrecognized.
     """
     if reader is None:
-        if ".csv" in pattern.lower():
-            reader = pd.read_csv
-        elif ".json" in pattern.lower():
-            reader = pd.read_json
-        else:
+        # dict value type erases pandas' concrete read_csv/read_json overloads, keeping
+        # reader as the broad Callable[..., DataFrame] so it can forward **kwargs
+        ext_to_reader: dict[str, Callable[..., pd.DataFrame]] = {
+            ".csv": pd.read_csv,
+            ".json": pd.read_json,
+        }
+        reader = next(
+            (fn for ext, fn in ext_to_reader.items() if ext in pattern.lower()), None
+        )
+        if reader is None:
             raise ValueError(f"Unsupported file extension in {pattern=}")
 
     files = glob(pattern)
@@ -219,7 +223,7 @@ def load_df_wbm_with_preds(
     id_col: str = Key.mat_id,
     subset: pd.Index | Sequence[str] | TestSubset | None = None,
     max_error_threshold: float | None = 5.0,
-    **kwargs: Any,
+    **kwargs: object,
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.
 
@@ -251,25 +255,7 @@ def load_df_wbm_with_preds(
     if models is None:
         models_to_load = Model.active()
     else:
-        resolved_models: list[Model] = []
-        for model_ref in models:
-            if isinstance(model_ref, Model):
-                resolved_models.append(model_ref)
-                continue
-            model = Model.__members__.get(model_ref)
-            if model is None:
-                model = Model._missing_(model_ref)
-            if model is None:
-                model = next(
-                    (model for model in Model if model.label == model_ref), None
-                )
-            if model is None:
-                valid_models = {model.name for model in Model}
-                raise ValueError(
-                    f"unknown model {model_ref!r}, expected subset of {valid_models}"
-                )
-            resolved_models.append(model)
-        models_to_load = tuple(resolved_models)
+        models_to_load = tuple(map(Model.from_ref, models))
 
     model_name = ""
     df_out = df_wbm.copy()
@@ -280,7 +266,9 @@ def load_df_wbm_with_preds(
             model_name = model.name
             prog_bar.set_postfix_str(model_name)
 
-            df_preds = glob_to_df(model.discovery_path, pbar=False, **kwargs)
+            df_preds = glob_to_df(
+                model.discovery_path, pbar=False, **cast("dict[str, Any]", kwargs)
+            )
 
             with open(model.yaml_path, encoding="utf-8") as file:
                 model_data = yaml.safe_load(file)
@@ -302,7 +290,9 @@ def load_df_wbm_with_preds(
             df_out[model.label] = df_preds.set_index(id_col)[pred_col]
             if max_error_threshold is not None:
                 if max_error_threshold < 0:
-                    raise ValueError("max_error_threshold must be a positive number")
+                    raise ValueError(
+                        f"{max_error_threshold=} must be a positive number"
+                    )
                 # Apply centralized model prediction cleaning criterion (see doc string)
                 bad_mask = (
                     abs(df_out[model.label] - df_out[MbdKey.e_form_dft])

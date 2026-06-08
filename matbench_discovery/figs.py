@@ -29,13 +29,15 @@ from typing import TYPE_CHECKING, Any, Final
 import numpy as np
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
     import plotly.graph_objects as go
+    from plotly.basedatatypes import BaseTraceType
 
 COORD_DECIMALS: Final = 5
 DEFAULT_HIST_BINS: Final = 100
 
 
-def round_list(values: Any) -> list[Any]:
+def round_list(values: npt.ArrayLike | None) -> list[Any]:
     """Convert an array-like to a JSON-safe list: round floats to COORD_DECIMALS,
     keep ints/strings, replace non-finite numbers with None. ``None`` -> ``[]`` (so a
     missing trace field surfaces as an empty list, not a TypeError on iteration).
@@ -54,7 +56,7 @@ def round_list(values: Any) -> list[Any]:
     ]
 
 
-def str_list(values: Any) -> list[str]:
+def str_list(values: npt.ArrayLike | dict[str, str] | None) -> list[str]:
     """Convert a (possibly base64-encoded plotly) array of labels to a list of str.
     ``None`` -> ``[]``.
     """
@@ -62,15 +64,18 @@ def str_list(values: Any) -> list[str]:
     return [] if arr is None else [str(val) for val in arr.tolist()]
 
 
-def decode_array(value: Any) -> np.ndarray | None:
+def decode_array(value: npt.ArrayLike | dict[str, str] | None) -> np.ndarray | None:
     """Decode a plotly value (plain list/array or base64 typed array) to numpy."""
     if value is None:
         return None
     if isinstance(value, dict) and "bdata" in value and "dtype" in value:
-        raw = base64.b64decode(value["bdata"])
-        dtype = np.dtype(value["dtype"]).newbyteorder("<")
+        # plotly base64 typed-array payload; coerce to a plain str dict so indexing is
+        # typed (isinstance narrowing alone yields dict[Unknown] via npt.ArrayLike)
+        meta = {str(key): str(val) for key, val in value.items()}
+        raw = base64.b64decode(meta["bdata"])
+        dtype = np.dtype(meta["dtype"]).newbyteorder("<")
         arr = np.frombuffer(raw, dtype=dtype)
-        shape = value.get("shape")
+        shape = meta.get("shape")
         if shape is not None:
             dims = tuple(int(dim) for dim in str(shape).replace(" ", "").split(","))
             arr = arr.reshape(dims)
@@ -116,7 +121,7 @@ def lttb(x: np.ndarray, y: np.ndarray, n_out: int) -> tuple[np.ndarray, np.ndarr
 
 # === data builders ===
 def histogram(
-    values: Any,
+    values: npt.ArrayLike,
     *,
     bins: int = DEFAULT_HIST_BINS,
     value_range: tuple[float, float] | None = None,
@@ -135,15 +140,16 @@ def histogram(
 
 
 # === plotly trace extraction (for pymatviz-built figures) ===
-def trace_xy(trace: Any) -> tuple[np.ndarray, np.ndarray]:
+def trace_xy(trace: BaseTraceType) -> tuple[np.ndarray, np.ndarray]:
     """Return a plotly trace's x/y as numpy arrays (decoding typed arrays)."""
-    x, y = decode_array(trace.x), decode_array(trace.y)
+    x = decode_array(getattr(trace, "x", None))
+    y = decode_array(getattr(trace, "y", None))
     if x is None or y is None:
         raise ValueError(f"trace {getattr(trace, 'name', '')!r} has no x/y data")
     return x, y
 
 
-def trace_color(trace: Any) -> str | None:
+def trace_color(trace: BaseTraceType) -> str | None:
     """Best-effort single color for a trace (line color, else marker color)."""
     line_color = getattr(getattr(trace, "line", None), "color", None)
     if isinstance(line_color, str):
@@ -152,19 +158,19 @@ def trace_color(trace: Any) -> str | None:
     return marker_color if isinstance(marker_color, str) else None
 
 
-def trace_visible(trace: Any) -> bool:
+def trace_visible(trace: BaseTraceType) -> bool:
     """Map plotly ``visible`` (True/False/'legendonly') to a boolean."""
     vis = getattr(trace, "visible", True)
     return vis is True or vis is None
 
 
-def trace_payload(trace: Any, *, x: bool = True) -> dict[str, Any]:
+def trace_payload(trace: BaseTraceType, *, x: bool = True) -> dict[str, Any]:
     """Standard payload entry for a plotly trace: label, color (if any), x/y arrays.
 
     Pass ``x=False`` for payloads whose models share a single top-level x array.
     """
     x_arr, y_arr = trace_xy(trace)
-    entry: dict[str, Any] = {"label": str(trace.name)}
+    entry: dict[str, Any] = {"label": str(getattr(trace, "name", ""))}
     if color := trace_color(trace):
         entry["color"] = color
     if x:

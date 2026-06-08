@@ -121,7 +121,6 @@ def init_phono3py(
     q_point_mesh: tuple[int, int, int] = (20, 20, 20),
     displacement_distance: float = 0.01,
     symprec: float = 1e-5,
-    **kwargs: Any,
 ) -> Phono3py:
     """Initialize Phono3py object from ASE Atoms.
 
@@ -134,7 +133,6 @@ def init_phono3py(
         displacement_distance (float): Displacement distance for force calculations.
             Defaults to 0.01.
         symprec (float): Symmetry precision for finding space group. Defaults to 1e-5.
-        **kwargs (Any): Passed to Phono3py constructor.
 
     Returns:
         Phono3py: Initialized Phono3py object
@@ -149,7 +147,6 @@ def init_phono3py(
         phonon_supercell_matrix=fc2_supercell,
         primitive_matrix="auto",
         symprec=symprec,
-        **kwargs,
     )
     ph3.mesh_numbers = q_point_mesh
 
@@ -220,7 +217,6 @@ def calculate_conductivity(
     temperatures: Sequence[float],
     boundary_mfp: float = 1e6,
     mode_kappa_thresh: float = 1e-6,
-    **kwargs: Any,
 ) -> tuple[Phono3py, dict[str, np.ndarray], "RTACalculator"]:
     """Calculate thermal conductivity.
 
@@ -231,7 +227,6 @@ def calculate_conductivity(
             scattering contribution to thermal conductivity. Defaults to 1e6.
         mode_kappa_thresh (float): Threshold for mode kappa consistency check. Defaults
             to 1e-6.
-        **kwargs (Any): Passed to Phono3py.run_thermal_conductivity().
 
     Returns:
         tuple[Phono3py, dict[str, np.ndarray], RTACalculator]: (Phono3py object,
@@ -240,7 +235,6 @@ def calculate_conductivity(
     ph3.init_phph_interaction(symmetrize_fc3q=False)
 
     ph3.run_thermal_conductivity(
-        **kwargs,
         temperatures=temperatures,
         is_isotope=True,
         # use MS-SMM19 (Wigner transport equation) to include both wave-like

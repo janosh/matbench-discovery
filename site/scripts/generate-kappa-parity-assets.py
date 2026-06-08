@@ -17,7 +17,7 @@ import io
 import json
 import math
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Final
 
 import ase.io
 import numpy as np
@@ -38,6 +38,8 @@ from pymatviz.enums import Key
 from matbench_discovery.enums import DataFiles, MbdKey
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
+
     from matbench_discovery.enums import Model
 
 OUT_DIR: Final = "site/static/kappa-parity"
@@ -78,13 +80,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def scalar_from_avg(value: Any) -> float | None:
+def scalar_from_avg(value: npt.ArrayLike) -> float | None:
     """Return a precomputed directionally averaged conductivity at the first temp."""
     array = np.ravel(np.asarray(value, dtype=float))
     return clean_float(array[0], KAPPA_DECIMALS) if array.size else None
 
 
-def scalar_from_rta(value: Any) -> float | None:
+def scalar_from_rta(value: npt.ArrayLike) -> float | None:
     """Directionally average an RTA conductivity tensor at the first temperature.
 
     Handles Voigt 6-vectors ([xx, yy, zz, yz, xz, xy]), full 3x3 tensors, and plain
@@ -115,7 +117,9 @@ def row_scalar_kappa(row: pd.Series) -> float | None:
     return scalar_from_rta(rta) if rta is not None else None
 
 
-def phonon_dos(freqs: Any, weights: Any) -> dict[str, list[float]] | None:
+def phonon_dos(
+    freqs: npt.ArrayLike, weights: npt.ArrayLike | None
+) -> dict[str, list[float]] | None:
     """Histogram mesh phonon frequencies (THz) into a small normalized DOS.
 
     Frequencies are weighted by ``weights`` only when their lengths match the
@@ -156,7 +160,9 @@ def dos_from_row(row: pd.Series) -> dict[str, list[float]] | None:
     return phonon_dos(row[PH_FREQS], weights)
 
 
-def load_reference() -> tuple[pd.DataFrame, dict[str, str], dict[str, dict[str, Any]]]:
+def load_reference() -> tuple[
+    pd.DataFrame, dict[str, str], dict[str, dict[str, str | int]]
+]:
     """Load DFT kappa rows plus per-material compact structures and metadata.
 
     ``meta[mat_id]`` carries the chemical formula, atom count, and space group
@@ -168,7 +174,7 @@ def load_reference() -> tuple[pd.DataFrame, dict[str, str], dict[str, dict[str, 
     df_dft = df_dft.set_index(str(Key.mat_id))
 
     structures: dict[str, str] = {}
-    meta: dict[str, dict[str, Any]] = {}
+    meta: dict[str, dict[str, str | int]] = {}
     for atoms in ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":"):
         mat_id = atoms.info["material_id"]
         # keep only geometry + id; drop bulky phonon-calc metadata (fc2/q-mesh/...)
@@ -223,7 +229,7 @@ def main() -> None:
     # model assets so submitting a single model doesn't wipe the others
     regenerate_all = not args.models
     manifest_path = out_dir / "manifest.json"
-    model_assets: dict[str, dict[str, Any]] = {}
+    model_assets: dict[str, dict[str, str | int]] = {}
     if regenerate_all:
         for path in asset_dir.glob(f"{args.asset_prefix}-*.json.gz"):
             path.unlink()
@@ -263,8 +269,9 @@ def main() -> None:
             },
         }
         asset_name = f"{args.asset_prefix}-model-{asset_safe_key(model.key)}.json.gz"
-        meta = write_json_gz(asset_dir / asset_name, {"model": model_payload})
-        model_assets[model.key] = meta
+        model_assets[model.key] = write_json_gz(
+            asset_dir / asset_name, {"model": model_payload}
+        )
 
     manifest = {
         "schema_version": 1,

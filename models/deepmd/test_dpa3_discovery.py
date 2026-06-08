@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 
 class Relaxer:
-    """Wrapper for ase.Atoms
+    """Wrapper for ase.Atoms.
 
     Args:
         model (Path): DP model, a path to the freezed model is needed.
@@ -90,7 +90,7 @@ class Relaxer:
 
 class TrajectoryObserver:
     """Trajectory observer is a hook in the relaxation process that saves the
-    intermediate structures
+    intermediate structures.
     """
 
     def __init__(self, atoms: Atoms) -> None:

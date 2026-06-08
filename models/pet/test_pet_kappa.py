@@ -1,5 +1,4 @@
-"""
-Script for generating the predicted kappa-SRME values for the 103 structures in the
+"""Script for generating the predicted kappa-SRME values for the 103 structures in the
 PhononDB-PBE dataset, using a PET model.
 
 Templated from https://github.com/janosh/matbench-discovery/blob/main/models/nequip/test_nequip_kappa.py

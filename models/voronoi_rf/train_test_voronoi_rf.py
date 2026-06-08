@@ -67,7 +67,6 @@ for df, df_targets, e_form_col in (
     (df_test, df_wbm, MbdKey.e_form_dft),
 ):
     df[Key.form_energy] = df_targets[e_form_col]
-    e_form_col = str(e_form_col)
     n_nans = df_targets[e_form_col].isna().sum()
     if n_nans != 0:
         raise ValueError(f"{e_form_col=} has {n_nans} NaNs")

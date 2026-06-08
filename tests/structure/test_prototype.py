@@ -1,3 +1,5 @@
+"""Tests for Aflow-style structure prototype labeling."""
+
 from typing import Final
 
 import pytest

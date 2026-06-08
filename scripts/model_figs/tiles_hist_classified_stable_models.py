@@ -80,10 +80,7 @@ for anno in fig.layout.annotations:
         or not metrics_in_plot_titles
     ):
         continue
-    F1, FPR, FNR, DAF = (
-        dfs_metrics[test_subset][model_name][x] for x in ("F1", "FPR", "FNR", "DAF")
-    )
-    # anno.text = f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}"
+    F1 = dfs_metrics[test_subset][model_name]["F1"]
     anno.text = f"{model_name} · {F1=:.2f}"
 
 # set the figure size based on the number of rows and columns

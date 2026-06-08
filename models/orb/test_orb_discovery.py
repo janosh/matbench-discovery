@@ -1,4 +1,4 @@
-"""pip install git+https://github.com/janosh/matbench-discovery@5c8601a
+"""pip install git+https://github.com/janosh/matbench-discovery@5c8601a.
 
 # Required for valid data paths.
 git clone https://github.com/janosh/matbench-discovery

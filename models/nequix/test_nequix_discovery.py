@@ -48,13 +48,14 @@ def process_and_save(atoms_list: list[Atoms], out_dir: str, job_id: int) -> None
             continue
         try:
             atoms.calc = calc
+            relax_atoms = atoms
             if max_steps > 0:
-                atoms = FrechetCellFilter(atoms)
-                optimizer = optim_cls(atoms, logfile=None)
+                relax_atoms = FrechetCellFilter(atoms)
+                optimizer = optim_cls(relax_atoms, logfile=None)
                 optimizer.run(fmax=force_max, steps=max_steps)
-            energy = atoms.get_potential_energy()  # relaxed energy
-            # if max_steps > 0, atoms is wrapped by FrechetCellFilter
-            unwrapped = atoms.atoms if hasattr(atoms, "atoms") else atoms
+            energy = relax_atoms.get_potential_energy()  # relaxed energy
+            # if max_steps > 0, relax_atoms is wrapped by FrechetCellFilter
+            unwrapped = getattr(relax_atoms, "atoms", relax_atoms)
             relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
             relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
         except (ValueError, RuntimeError, OSError, KeyError) as exc:

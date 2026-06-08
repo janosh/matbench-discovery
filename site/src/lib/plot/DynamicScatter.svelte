@@ -10,7 +10,13 @@
   import { tick } from 'svelte'
   import { SvelteSet } from 'svelte/reactivity'
   import Select from 'svelte-multiselect'
-  import { ALL_METRICS, format_property_path, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
+  import {
+    ALL_METRICS,
+    DISCOVERY_SET_LABELS,
+    format_property_path,
+    HYPERPARAMS,
+    METADATA_COLS,
+  } from '$lib/labels'
   import { get_nested_value, is_finite_num } from '$lib/metrics'
   import { wide_legend } from '$lib/fig-helpers'
   import type { Label } from '$lib/types'
@@ -19,6 +25,15 @@
   function get_label_path(label: Label | undefined): string {
     const prop_name = label?.property ?? label?.key ?? ``
     return `${label?.path ?? ``}.${prop_name}`.replace(/^\./, ``)
+  }
+
+  // Format an option label for the size select, keeping it short: drop the redundant
+  // discovery-set segment (e.g. "Discovery > Unique Prototypes > DAF" -> "Discovery > DAF")
+  // and abbreviate the verbose "Geometry Optimization" category to "Geo Opt"
+  const discovery_set_keys = Object.keys(DISCOVERY_SET_LABELS)
+  function format_size_option_path(path: string): string {
+    const parts = path.split(`.`).filter((part) => !discovery_set_keys.includes(part))
+    return format_property_path(parts.join(`.`)).replace(`Geometry Optimization`, `Geo Opt`)
   }
 
   // Get value from model using label's path, converting dates to timestamps
@@ -250,7 +265,7 @@
         { option: prop, type }: { option: typeof options[number]; type: string },
       )}
         <span class:selected-label={type === `selected`}>
-          {@html format_property_path(get_label_path(prop))}
+          {@html format_size_option_path(get_label_path(prop))}
           <span style="font-size: smaller; color: gray">
             {model_counts_by_prop[prop.key]} models
           </span>
@@ -290,7 +305,7 @@
     bind:display
     color_scale={{ scheme: color_scheme, type: log.color ? `log` : `linear` }}
     size_scale={{
-      radius_range: [5 * size_multiplier, 20 * size_multiplier],
+      radius_range: [5 * size_multiplier, 10 * size_multiplier],
       type: log.size ? `log` : `linear`,
     }}
     color_bar={{
@@ -412,6 +427,17 @@
     gap: 1ex 2em;
     margin: 0 3em 1em;
     justify-content: center;
+  }
+  /* the legend bg is opaque (so expanded items read over plot points) and full-width (to center
+     the wide row). collapsed, only the "Toggle Models" header shows, leaving an ugly full-width
+     bar (esp. in dark mode). drop the bg while collapsed (no .legend-item children rendered) */
+  div.bleed-1400 :global(.legend:not(:has(.legend-item))) {
+    background-color: transparent;
+  }
+  /* matterviz gives the legend panel no padding, so expanded items sit flush against its edges.
+     add breathing room when expanded (has items) */
+  div.bleed-1400 :global(.legend:has(.legend-item)) {
+    padding: 7px;
   }
   div.controls-row label {
     font-weight: 500;

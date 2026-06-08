@@ -126,4 +126,4 @@ if cli_args.auto_download:
 if cli_args.no_show:
     import plotly.graph_objects as go
 
-    go.Figure.show = lambda *_args, **_kwargs: None  # ty: ignore[invalid-assignment]
+    go.Figure.show = lambda *_args, **_kwargs: None

@@ -1,6 +1,5 @@
-"""
-The original relaxation trajectories shared by Microsoft Research contained xyz=(0,0,0)
-for all atom positions.
+"""The original relaxation trajectories shared by Microsoft Research contained
+xyz=(0,0,0) for all atom positions.
 
 This script written on 2025-03-23 converts the pickled relaxation directories that MSR
 shared upon second request into standard Matbench Discovery JSON Lines format for

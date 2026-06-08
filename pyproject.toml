@@ -88,7 +88,6 @@ output-format = "concise"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  "ANN401",
   "C408",    # unnecessary-collection-call
   "C901",
   "COM812",
@@ -96,21 +95,16 @@ ignore = [
   "EM101",
   "EM102",
   "FIX002",
-  "G004",    # logging uses f-string
   "INP001",
-  "PERF203", # try-except-in-loop
   "PLC0415",
   "PLR2004",
   "PLR0913",
   "PLR0915",
   "PLR0912",
-  "PLW2901", # redefined-loop-name
   "PT006",   # pytest-parametrize-names-wrong-type
   "PTH",
   "S108",
-  "S112",    # try/except continue: consider logging the exception
   "S310",
-  "S311",
   "S603",    # subprocess-without-shell-equals-true
   "S607",    # start-process-with-partial-path
   "T201",
@@ -122,11 +116,11 @@ pydocstyle.convention = "google"
 isort.split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D", "FBT001", "FBT002", "S101"]
+"tests/*" = ["D103", "FBT001", "FBT002", "S101"]
 "__init__.py" = ["F401"]
 "matbench_discovery/plots.py" = ["ERA001"]    # allow commented out code
-"scripts/*" = ["D", "ERA001"]
-"models/*" = ["D", "ERA001"]
+"scripts/*" = ["D103", "D100", "D107", "D105", "ERA001"]
+"models/*" = ["D102", "D103", "D100", "D107", "D105", "ERA001"]
 "data/*" = ["ERA001", "S101"]
 
 [tool.pytest.ini_options]
