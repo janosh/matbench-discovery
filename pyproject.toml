@@ -95,9 +95,7 @@ ignore = [
   "EM101",
   "EM102",
   "FIX002",
-  "G004",    # logging uses f-string
   "INP001",
-  "PERF203", # try-except-in-loop
   "PLC0415",
   "PLR2004",
   "PLR0913",
@@ -106,9 +104,7 @@ ignore = [
   "PT006",   # pytest-parametrize-names-wrong-type
   "PTH",
   "S108",
-  "S112",    # try/except continue: consider logging the exception
   "S310",
-  "S311",
   "S603",    # subprocess-without-shell-equals-true
   "S607",    # start-process-with-partial-path
   "T201",
@@ -123,7 +119,7 @@ isort.split-on-trailing-comma = false
 "tests/*" = ["D103", "FBT001", "FBT002", "S101"]
 "__init__.py" = ["F401"]
 "matbench_discovery/plots.py" = ["ERA001"]    # allow commented out code
-"scripts/*" = ["D102", "D103", "D100", "D107", "D105", "ERA001"]
+"scripts/*" = ["D103", "D100", "D107", "D105", "ERA001"]
 "models/*" = ["D102", "D103", "D100", "D107", "D105", "ERA001"]
 "data/*" = ["ERA001", "S101"]
 

@@ -78,13 +78,10 @@ class MbdKey(LabelEnum):
     spg_num_diff = "spg_num_diff", "Difference in space group number"
     n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"
     structure_rmsd_vs_dft = "structure_rmsd_vs_dft", "RMSD of structure to DFT"
-    sym_prop = "symmetry_property", "Symmetry property"
 
     # keep in sync with model-schema.yml
     missing_preds = "missing_preds", "Missing predictions"
 
-    aflow_prototype = "aflow_prototype", "Aflow prototype"
-    canonical_proto = "canonical_proto", "Canonical prototype"
     uniq_proto = "unique_prototype", "Unique prototype"
 
     # Thermal conductivity related keys
@@ -118,7 +115,6 @@ class MbdKey(LabelEnum):
     force_jump = "force_jump", "Force Jump (eV/Å)"
     energy_mae = "energy_mae", "Energy MAE vs Reference (eV)"
     force_mae = "force_mae", "Force MAE (eV/Å)"
-    force_conservation = "force_conservation", "Force Conservation (eV/Å)"
 
 
 @unique

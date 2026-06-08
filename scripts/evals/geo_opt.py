@@ -32,7 +32,7 @@ from matbench_discovery.metrics import geo_opt
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 symprec = 1e-5
-model_lvl, metric_lvl = "model", "metric"
+metric_lvl = "metric"
 symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
 df_dft_analysis = pd.read_csv(DataFiles.wbm_dft_geo_opt_symprec_1e_5.path, index_col=0)
 
@@ -270,16 +270,9 @@ for idx, (model, std) in enumerate(models_by_std, start=1):
         }
     )
 
-    # Create color scale based on count values
-    max_height_diff = value_counts.to_numpy().max() - value_counts.to_numpy().min()
-    rel_bar_heights = (value_counts.to_numpy() - value_counts.to_numpy().min()) / (
-        max_height_diff
-    )
-    # bar_colors = px.colors.sample_colorscale("cividis_r", rel_bar_heights)
     fig_sym_ops_diff.add_bar(
         x=value_counts.index,
         y=value_counts.values,
-        # marker_color=bar_colors,
         name=model,
         showlegend=False,
         width=1,

@@ -182,7 +182,6 @@ pmv.save_fig(fig_ptable_forces, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
 
 
 # %% plot histogram of number of sites per element
-# TODO fix weirdness with 6x10^e0 y axis label on Cl tile
 ptable_n_sites_hist_path = f"{MP_DIR}/2022-09-16-mp-trj-elem-n-sites.json.bz2"
 srs_mp_trj_elem_n_sites = locals().get("srs_mp_trj_elem_n_sites")
 

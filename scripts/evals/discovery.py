@@ -82,11 +82,6 @@ if __name__ == "__main__":
 
 
 # %%
-name_map = {
-    "MEGNet RS2RE": "MEGNet",
-    "M3GNet→MEGNet": "M3GNet",
-    "CHGNet→MEGNet": "CHGNet",
-}
 date_added_col = "Date Added"
 model_name_col = "Model"
 
@@ -99,7 +94,6 @@ models = discovery.df_metrics_uniq_protos.columns
 for model_label in models:
     if model_label == "Dummy":
         continue
-    model_name = name_map.get(model_label, model_label)
     # Find the model enum entry by label
     model = Model.from_label(model_label)
     if not model.is_complete:
