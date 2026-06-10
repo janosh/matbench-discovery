@@ -1,0 +1,35 @@
+--index-url https://pypi.org/simple
+--extra-index-url https://download.pytorch.org/whl/cu126
+--find-links https://data.pyg.org/whl/torch-2.9.1+cu126.html
+
+git+https://github.com/SamsungDS/GGNN.git
+torch==2.9.1+cu126
+torch_scatter==2.1.2
+torch_sparse
+torch-geometric==2.6.1
+scikit-learn
+spglib==2.6.0
+e3nn==0.5.6
+ase>=3.26.0
+pymatgen
+pymatviz>=0.16.0
+phono3py==3.30.0
+lmdb==1.6.2
+submitit==1.5.3
+cuequivariance==0.6.0
+cuequivariance-torch==0.6.0
+cuequivariance-ops-torch-cu12==0.6.0
+huggingface-hub 
+hydra-core 
+numba  
+orjson 
+pydantic 
+pyyaml 
+requests 
+tensorboard 
+torchtnt  
+wandb 
+nvalchemi-toolkit-ops==0.3.1
+
+
+-e ../../

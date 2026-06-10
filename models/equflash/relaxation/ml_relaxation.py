@@ -1,4 +1,5 @@
-"""Copyright (c) Meta, Inc. and its affiliates.
+"""
+Copyright (c) Meta, Inc. and its affiliates.
 Modifications Copyright (c) 2025 Samsung Electronics Co., Ltd.
 
 This source code is licensed under the MIT license.
@@ -14,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import torch
 from fairchem.core.common.typing import assert_is_instance
-from GGNN.datasets.lmdb_dataset import data_list_collator
+from GGNN.datasets.lmdb_dataset import data_list_collater
 from torch_geometric.data import Batch
 
 from .optimizable import OptimizableBatch, OptimizableFrechetBatch
@@ -46,7 +47,6 @@ def ml_relax(
         fmax: Structure relaxation terminates when the max
             force of the system is no bigger than fmax.
         relax_opt: Optimizer parameters to be used for structure relaxations.
-        opt_algorithm: ASE optimizer to use, "fire" or "lbfgs". Defaults to "fire".
         relax_cell: if true will use stress predictions
             to relax crystallographic cell.
             The model given must predict stress
@@ -115,10 +115,10 @@ def ml_relax(
             )
             mid = len(data_list) // 2
             batches.appendleft(
-                data_list_collator(data_list[:mid], otf_graph=optimizable.otf_graph)
+                Batch.from_data_list(data_list[:mid])
             )
             batches.appendleft(
-                data_list_collator(data_list[mid:], otf_graph=optimizable.otf_graph)
+                Batch.from_data_list(data_list[mid:])
             )
 
     # reset for good measure
