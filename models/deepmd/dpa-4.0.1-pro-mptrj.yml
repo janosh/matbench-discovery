@@ -1,0 +1,204 @@
+model_name: DPA-4.0.1-Pro-MPtrj
+model_key: dpa-4.0.1-pro-mptrj
+model_version: v2026.06.05
+date_added: '2026-06-11'
+date_published: '2026-06-11'
+
+authors:
+  - name: Tiancheng Li
+    affiliation: AI for Science Institute, Beijing; Peking University
+    email: LTC201806070316@outlook.com
+    orcid: https://orcid.org/0009-0009-2459-0635
+    github: https://github.com/OutisLi
+  - name: Duo Zhang
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0001-9591-2659
+    corresponding: true
+  - name: Linfeng Zhang
+    affiliation: AI for Science Institute, Beijing; DP Technology
+    email: linfeng.zhang.zlf@gmail.com
+    corresponding: true
+  - name: Han Wang
+    affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
+    email: wang_han@iapcm.ac.cn
+    corresponding: true
+
+trained_by:
+  - name: Tiancheng Li
+    affiliation: AI for Science Institute, Beijing; Peking University
+    email: LTC201806070316@outlook.com
+    orcid: https://orcid.org/0009-0009-2459-0635
+    github: https://github.com/OutisLi
+
+repo: https://github.com/deepmodeling/deepmd-kit
+url: https://github.com/deepmodeling/deepmd-kit
+doi: https://doi.org/10.48550/arXiv.2606.02419
+paper: https://arxiv.org/abs/2606.02419
+pr_url: https://github.com/janosh/matbench-discovery/pull/PLACEHOLDER_PR
+checkpoint_url: https://figshare.com/files/65469204
+
+license:
+  code: LGPL-3.0
+  code_url: https://github.com/deepmodeling/deepmd-kit/blob/master/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+openness: OSOD
+trained_for_benchmark: true
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 22808191
+n_estimators: 1
+
+training_set: [MPtrj]
+
+training_cost:
+  Nvidia H20 GPUs: {amount: 16, hours: 135}
+
+hyperparams:
+  # Matbench Discovery relaxation settings used for the submitted WBM IS2RE results.
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  graph_construction_radius: 6.0 # cutoff radius in Å
+  max_neighbors: 384
+
+  # Model parameters
+  architecture:
+    type: DPA4/SeZM
+    feature_dim: 64
+    n_focuses: 2
+    n_layers: 6
+    so2_layers: 4
+    ffn_layers: 2
+    radial_basis: Bessel
+    n_radial_basis: 16
+    lmax: 5
+    mmax: 1
+    edge_node_product: "degree mixing"
+    per_channel_modulation: true
+    rank: 2
+    attention_heads: 1
+    s2_activation: "FFN only"
+    quadrature: Lebedev
+    norm_placement: "Post & Pre"
+    activation_function: SiLU
+    ffn_hidden_dim: auto
+    output_fitting_dim: auto
+    output_fitting_layers: 1
+    precision: float32
+
+  # Training parameters
+  training:
+    optimizer: HybridMuon
+    muon_mode: slice
+    magma_lite: true
+    weight_decay: 1.0e-3
+    lr_scheduler: WSD
+    max_lr: 5.0e-4
+    min_lr: 1.0e-6
+    warmup_steps: 5000
+    decay_ratio: 0.65
+    decay_type: cosine
+    loss: MAE
+    loss_weights: {energy: 20, force: 20, virial: 5}
+    batch_size_per_gpu: "filter:300"
+    training_steps: 2000000
+    gradient_max_norm: 5
+    n_gpus: 16
+    compile: true
+    bf16_amp: true
+    tf32_matmul: true
+
+requirements:
+  deepmd-kit: 3.2.0
+  torch: 2.11.0+cu128
+  ase: 3.28.0
+
+notes:
+  Description: |
+    DPA-4.0.1-Pro-MPtrj is the DPA4-Pro universal interatomic potential trained
+    only on the MPtrj dataset for this Matbench Discovery submission.
+  Architecture: |
+    DPA4 is an SE(3)-equivariant potential built on an EMFA (Edge-conditioned,
+    Multi-Focus, Attention) SO(2)-equivariant convolution: a low-rank edge-node
+    SO(2)-equivariant product, a multi-focus design for message nonlinearity,
+    and envelope-gated attention for message aggregation, with a Lebedev-grid
+    projection that preserves SO(3)-equivariance in the nonlinearity.
+  Training: |
+    The model was trained for 2,000,000 steps on 16 GPUs using the HybridMuon
+    optimizer, WSD learning-rate schedule, MAE energy/force/virial loss weights
+    20/20/5, with bf16 AMP, TF32 matmul, and torch compile enabled.
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.2114
+      κ_SRE: 0.1062
+      pred_file: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-04-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/65469372
+  geo_opt:
+    pred_file: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file_url: https://figshare.com/files/65469201
+    struct_col: dpa4_structure
+  discovery:
+    pred_file: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-dpa-4.0.1-pro-mptrj-preds.csv.gz
+    pred_file_url: https://figshare.com/files/65469198
+    pred_col: e_form_per_atom_dp
+    full_test_set:
+      F1: 0.837 # fraction
+      DAF: 4.874 # dimensionless
+      Precision: 0.836 # fraction
+      Recall: 0.838 # fraction
+      Accuracy: 0.944 # fraction
+      TPR: 0.838 # fraction
+      FPR: 0.034 # fraction
+      TNR: 0.966 # fraction
+      FNR: 0.162 # fraction
+      TP: 36943.0 # count
+      FP: 7228.0 # count
+      TN: 205643.0 # count
+      FN: 7149.0 # count
+      MAE: 0.028 # eV/atom
+      RMSE: 0.075 # eV/atom
+      R2: 0.827 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.857 # fraction
+      DAF: 5.609 # dimensionless
+      Precision: 0.857 # fraction
+      Recall: 0.856 # fraction
+      Accuracy: 0.956 # fraction
+      TPR: 0.856 # fraction
+      FPR: 0.026 # fraction
+      TNR: 0.974 # fraction
+      FNR: 0.144 # fraction
+      TP: 28569.0 # count
+      FP: 4751.0 # count
+      TN: 177363.0 # count
+      FN: 4805.0 # count
+      MAE: 0.029 # eV/atom
+      RMSE: 0.074 # eV/atom
+      R2: 0.836 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.986 # fraction
+      DAF: 6.361 # dimensionless
+      Precision: 0.972 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.972 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9724.0 # count
+      FP: 276.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.027 # eV/atom
+      RMSE: 0.102 # eV/atom
+      R2: 0.774 # dimensionless
+      missing_preds: 0 # count
