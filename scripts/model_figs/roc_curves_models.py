@@ -4,9 +4,10 @@
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
-from matbench_discovery.cli import cli_args, is_full_model_run
+from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.enums import MbdKey, Model, TestSubset
-from matbench_discovery.preds.discovery import df_each_pred, df_metrics, df_preds
+from matbench_discovery.metrics.discovery import df_metrics
+from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-30"
@@ -20,9 +21,7 @@ if test_subset == TestSubset.uniq_protos:
 
 show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
 models_to_plot = [
-    model.label
-    for model in cli_args.models
-    if model.is_complete and (show_non_compliant or model.is_compliant)
+    model.label for model in complete_models(show_non_compliant=show_non_compliant)
 ]
 
 

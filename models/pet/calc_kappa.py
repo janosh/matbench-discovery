@@ -145,7 +145,7 @@ def calc_kappa_for_structure(
                 filtered_atoms = filter_cls(atoms)
 
             os.makedirs(relax_dir := f"{out_dir}/relaxations", exist_ok=True)
-            optimizer = optim_cls(filtered_atoms, logfile=f"{relax_dir}/{task_id}.log")
+            optimizer = optim_cls(filtered_atoms, logfile=f"{relax_dir}/{task_id}.log")  # ty: ignore[invalid-argument-type]
             optimizer.run(fmax=force_max, steps=max_steps)
 
             step_count = getattr(optimizer, "nsteps", None)  # Get optimizer step count

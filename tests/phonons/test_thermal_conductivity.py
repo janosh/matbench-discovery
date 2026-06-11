@@ -95,7 +95,8 @@ def test_init_phono3py_custom_mesh_and_displacement(test_atoms: Atoms) -> None:
     assert ph3.mesh_numbers is not None
     assert tuple(ph3.mesh_numbers.tolist()) == custom_mesh
     # Phono3py automatically initializes mesh when setting mesh_numbers
-    assert len(ph3.grid.addresses) == 89
+    assert (bz_grid := ph3.grid) is not None
+    assert len(bz_grid.addresses) == 89
 
     custom_displacement = 0.05
     ph3 = ltc.init_phono3py(
@@ -209,9 +210,11 @@ def test_calculate_conductivity(
     assert set(kappa_dict) >= required_keys
     assert all(isinstance(val, np.ndarray) for val in kappa_dict.values())
     assert isinstance(kappa, RTACalculator)
-    assert kappa.frequencies.shape == (3, 3)
+    assert (freqs := kappa.frequencies) is not None
+    assert freqs.shape == (3, 3)
     assert kappa.grid_points.shape == (3,)
-    assert kappa.gamma.shape == (1, 1, 3, 3)
+    assert (gamma := kappa.gamma) is not None
+    assert gamma.shape == (1, 1, 3, 3)
 
 
 def test_calculate_mode_kappa_tot() -> None:

@@ -9,7 +9,7 @@ import pymatviz as pmv
 from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS
-from matbench_discovery.cli import cli_args
+from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
 
@@ -20,11 +20,7 @@ test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 
 show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
-models_to_plot = [
-    model
-    for model in cli_args.models
-    if model.is_complete and (show_non_compliant or model.is_compliant)
-]
+models_to_plot = complete_models(show_non_compliant=show_non_compliant)
 df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=test_subset)
 model_labels = [model.label for model in models_to_plot]
 
@@ -51,21 +47,6 @@ del df_each_err
 # on MP which is highly low-energy enriched.
 # also possible models failed to learn whatever physics makes these materials unstable
 material_classes = {"all": r".*"}
-if split_out_classes := False:
-    material_classes |= {
-        "lanthanides": r".*(La|Ce|Pr|Nd|Pm|Sm|Eu|Gd|Tb|Dy|Ho|Er|Tm|Yb|Lu)\d.*",
-        "actinides": r".*(Ac|Th|Pa|U|Np|Pu|Am|Cm|Bk|Cf|Es|Fm|Md|No|Lr)\d.*",
-        "oxides": r".*O\d.*",
-        "nitrides": r".*N\d.*",
-        "sulfides": r".*S\d.*",
-        "halides": r".*[FClBrI]\d.*",
-        "pnictides": r".*[AsSbBi]\d.*",
-        "chalcogenides": r".*[SeTe]\d.*",
-        "borides": r".*B\d.*",
-        "carbides": r".*C\d.*",
-        "hydrides": r".*H\d.*",
-        "oxynitrides": r".*[ON]\d.*",
-    }
 n_structs, fig = 200, None
 
 for material_cls, pattern in material_classes.items():

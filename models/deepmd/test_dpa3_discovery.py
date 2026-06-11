@@ -8,7 +8,7 @@ from __future__ import annotations
 import pickle
 from glob import glob
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 from ase.filters import FrechetCellFilter
@@ -62,7 +62,7 @@ class Relaxer:
             dict[str, Any]: Dictionary containing final structure and trajectory.
         """
         if isinstance(atoms, (Structure, Molecule)):
-            atoms = cast("Atoms", self.ase_adaptor.get_atoms(atoms))
+            atoms = self.ase_adaptor.get_atoms(atoms)
 
         atoms.calc = self.calculator
         obs = TrajectoryObserver(atoms)

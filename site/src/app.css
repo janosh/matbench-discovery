@@ -374,3 +374,17 @@ kbd {
   background: color-mix(in srgb, var(--surface-bg, white) 60%, transparent);
   backdrop-filter: blur(4px);
 }
+/* Collapsible model legends: hide the collapsed panel bg and pad expanded items. */
+.collapsible-legend .legend:not(:has(.legend-item)) {
+  background-color: transparent;
+}
+.collapsible-legend .legend:has(.legend-item) {
+  padding: 7px;
+}
+/* Centered loading/error state shown while parity plot data loads */
+.plot-state {
+  min-height: 180px;
+  align-content: center;
+  color: var(--muted-text-color, color-mix(in srgb, currentColor 70%, transparent));
+  text-align: center;
+}

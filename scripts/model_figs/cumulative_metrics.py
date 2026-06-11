@@ -11,7 +11,7 @@ will provide the best hit rate for the given budget.
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
-from matbench_discovery.cli import cli_args, is_full_model_run
+from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.plots import cumulative_metrics
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
@@ -39,9 +39,7 @@ range_y = {
 
 show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
 models_to_plot = [
-    model.label
-    for model in cli_args.models
-    if model.is_complete and (show_non_compliant or model.is_compliant)
+    model.label for model in complete_models(show_non_compliant=show_non_compliant)
 ]
 
 fig, _df_metric = cumulative_metrics(

@@ -24,6 +24,31 @@ function generate_filename(
   return `matbench-${discovery}-${compliance}-${model_count}models-${date}.${format.toLowerCase()}`
 }
 
+// Create a download link and click it
+function trigger_download(url: string, filename: string): void {
+  const anchor = document.createElement(`a`)
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+}
+
+// Headers and column indices to export, excluding SVG icon columns (Org and Links)
+function get_export_columns(table_el: Element): { headers: string[]; indices: number[] } {
+  const header_rows = table_el.querySelectorAll(`thead tr`)
+  const main_header_row = header_rows.item(header_rows.length - 1)
+  const headers: string[] = []
+  const indices: number[] = []
+  const all_headers = [...(main_header_row?.querySelectorAll(`th`) ?? [])]
+  all_headers.forEach((th, col_idx) => {
+    const header_text = th.textContent?.replaceAll(/[↑↓]/g, ``).trim() || ``
+    if (header_text !== `Org` && header_text !== `Links`) {
+      headers.push(header_text)
+      indices.push(col_idx)
+    }
+  })
+  return { headers, indices }
+}
+
 // Helper function to create a filtered table clone excluding SVG icon columns
 function create_filtered_table_clone(): HTMLElement {
   const table_el = document.querySelector(`.${heatmap_class}`)
@@ -37,24 +62,15 @@ function create_filtered_table_clone(): HTMLElement {
   }
   const table_clone = cloned_node
 
-  // Get header row to identify columns to remove
+  // Remove icon columns from all rows (working backwards to maintain indices)
+  const { indices: kept_indices } = get_export_columns(table_clone)
   const header_rows = table_clone.querySelectorAll(`thead tr`)
   const main_header_row = header_rows.item(header_rows.length - 1)
-  const all_headers = [...(main_header_row?.querySelectorAll(`th`) ?? [])]
-
-  // Find column indices to remove (SVG icon columns)
-  const columns_to_remove: number[] = []
-  all_headers.forEach((th, index) => {
-    const header_text = th.textContent?.replaceAll(/[↑↓]/g, ``).trim() || ``
-    if (header_text === `Org` || header_text === `Links`) {
-      columns_to_remove.push(index)
-    }
-  })
-
-  // Remove columns from all rows (working backwards to maintain indices)
-  for (const col_index of columns_to_remove.toReversed()) {
+  const n_cols = main_header_row?.querySelectorAll(`th`).length ?? 0
+  for (let col_idx = n_cols - 1; col_idx >= 0; col_idx--) {
+    if (kept_indices.includes(col_idx)) continue
     for (const row of table_clone.querySelectorAll(`tr`)) {
-      row.children[col_index]?.remove()
+      row.children[col_idx]?.remove()
     }
   }
 
@@ -72,10 +88,12 @@ function remove_comments(node: Node): void {
 
 // Clean up Svelte-specific artifacts and problematic elements
 function clean_table_for_export(table_clone: HTMLElement): void {
-  // Remove problematic elements
-  const problematic_elements = table_clone.querySelectorAll(`svg, img, button, a[href]`)
-  problematic_elements.forEach((el) => {
-    // Replace with text content if available, otherwise remove entirely
+  // Replace problematic and inline elements with their text content (preserve
+  // sub/sup for visual formatting), or remove them entirely if empty
+  const replaceable = table_clone.querySelectorAll(
+    `svg, img, button, a[href], span, small`,
+  )
+  replaceable.forEach((el) => {
     if (el.textContent?.trim()) {
       const text_node = document.createTextNode(el.textContent.trim())
       el.parentNode?.replaceChild(text_node, el)
@@ -86,17 +104,6 @@ function clean_table_for_export(table_clone: HTMLElement): void {
 
   // Remove HTML comments
   remove_comments(table_clone)
-
-  // Remove inline elements that might cause issues, but preserve sub/sup for visual formatting
-  const inline_elements = table_clone.querySelectorAll(`span, small`)
-  inline_elements.forEach((el) => {
-    if (el.textContent?.trim()) {
-      const text_node = document.createTextNode(el.textContent.trim())
-      el.parentNode?.replaceChild(text_node, el)
-    } else {
-      el.remove()
-    }
-  })
 
   // Simplify class names and remove data attributes
   const all_elements = [table_clone, ...table_clone.querySelectorAll(`*`)]
@@ -120,18 +127,9 @@ function clean_table_for_export(table_clone: HTMLElement): void {
     // Clean up problematic styling that could cause scrollbars and extra width
     if (!(el instanceof HTMLElement)) continue
     if (el.style) {
-      el.style.removeProperty(`grid-column`)
-      el.style.removeProperty(`grid-row`)
-      el.style.removeProperty(`grid-area`)
-      el.style.removeProperty(`overflow`)
-      el.style.removeProperty(`overflow-x`)
-      el.style.removeProperty(`overflow-y`)
-      el.style.removeProperty(`max-width`)
-      el.style.removeProperty(`max-height`)
-      el.style.removeProperty(`min-width`)
-      el.style.removeProperty(`flex`)
-      el.style.removeProperty(`flex-grow`)
-      el.style.removeProperty(`flex-basis`)
+      for (const prop of `grid-column grid-row grid-area overflow overflow-x overflow-y
+          max-width max-height min-width flex flex-grow flex-basis`.split(/\s+/))
+        el.style.removeProperty(prop)
 
       // Ensure elements don't restrict their size
       el.style.overflow = `visible`
@@ -167,39 +165,44 @@ function create_export_container(table_clone: HTMLElement): HTMLElement {
   const theme_colors = get_theme_colors()
 
   const container = document.createElement(`div`)
-  container.style.backgroundColor = theme_colors.background
-  container.style.color = theme_colors.text
-  container.style.display = `inline-block`
-  container.style.whiteSpace = `nowrap`
-  container.style.overflow = `visible`
-  container.style.position = `relative`
-  container.style.width = `fit-content`
-  container.style.height = `fit-content`
-  container.style.margin = `0`
-  container.style.padding = `0`
-
-  // Ensure no scrollbars appear
-  container.style.overflowX = `visible`
-  container.style.overflowY = `visible`
+  Object.assign(container.style, {
+    backgroundColor: theme_colors.background,
+    color: theme_colors.text,
+    display: `inline-block`,
+    whiteSpace: `nowrap`,
+    position: `relative`,
+    width: `fit-content`,
+    height: `fit-content`,
+    margin: `0`,
+    padding: `0`,
+    // Ensure no scrollbars appear
+    overflow: `visible`,
+    overflowX: `visible`,
+    overflowY: `visible`,
+  })
 
   const inner = document.createElement(`div`)
-  inner.style.padding = `0`
-  inner.style.margin = `0`
-  inner.style.boxSizing = `border-box`
-  inner.style.overflow = `visible`
-  inner.style.width = `fit-content`
-  inner.style.height = `fit-content`
+  Object.assign(inner.style, {
+    padding: `0`,
+    margin: `0`,
+    boxSizing: `border-box`,
+    overflow: `visible`,
+    width: `fit-content`,
+    height: `fit-content`,
+  })
   inner.append(table_clone)
   container.append(inner)
 
   // Ensure the table itself doesn't create scrollbars or extra spacing
-  table_clone.style.overflow = `visible`
-  table_clone.style.width = `fit-content`
-  table_clone.style.height = `auto`
-  table_clone.style.margin = `0`
-  table_clone.style.border = `none`
-  table_clone.style.tableLayout = `auto`
-  table_clone.style.borderCollapse = `collapse`
+  Object.assign(table_clone.style, {
+    overflow: `visible`,
+    width: `fit-content`,
+    height: `auto`,
+    margin: `0`,
+    border: `none`,
+    tableLayout: `auto`,
+    borderCollapse: `collapse`,
+  })
 
   return container
 }
@@ -239,127 +242,76 @@ function log_export_error(
   })
 }
 
-// Function to generate SVG from the metrics table
-export async function generate_svg({
-  show_non_compliant = false,
-  discovery_set = `unique_prototypes`,
-}: ExportOptions): Promise<ExportResult | null> {
+// Shared SVG/PNG export: clone + clean table, render off-screen, encode, download
+async function generate_image(
+  format: `svg` | `png`,
+  { show_non_compliant = false, discovery_set = `unique_prototypes` }: ExportOptions,
+): Promise<ExportResult | null> {
+  let container: HTMLElement | undefined
+  let table_clone: HTMLElement | undefined
   try {
-    // Find the metrics table
-    const table_el = document.querySelector(`.${heatmap_class}`)
-    if (!table_el) {
-      console.error(`Table element not found for SVG export`)
-      return null
-    }
-
-    // Create and clean table clone
-    const table_clone = create_filtered_table_clone()
+    table_clone = create_filtered_table_clone()
     clean_table_for_export(table_clone)
 
-    // Create export container
-    const container = create_export_container(table_clone)
+    container = create_export_container(table_clone)
+    if (format === `png`) {
+      container.style.fontFamily = `Arial, sans-serif`
+      container.style.fontSize = `14px`
+    }
     document.body.append(container)
 
-    try {
-      // Generate SVG
+    const filename = generate_filename(format, show_non_compliant, discovery_set)
+
+    if (format === `svg`) {
       const svg_data_url = await toSvg(container, {
         backgroundColor: container.style.backgroundColor,
         skipFonts: true,
         filter: create_export_filter,
       })
-
-      // Create download
       const blob = await fetch(svg_data_url).then((res) => res.blob())
       const url = URL.createObjectURL(blob)
-      const filename = generate_filename(`svg`, show_non_compliant, discovery_set)
-
-      const a = document.createElement(`a`)
-      a.href = url
-      a.download = filename
-      a.click()
-
+      trigger_download(url, filename)
       setTimeout(() => URL.revokeObjectURL(url), 100)
       return { filename, url }
-    } catch (error) {
-      log_export_error(error, `SVG`, {
-        containerHTML: `${container.outerHTML.slice(0, 1000)}...`,
-        tableCloneHTML: `${table_clone.outerHTML.slice(0, 1000)}...`,
-      })
-      return null
-    } finally {
-      if (document.body.contains(container)) {
-        container.remove()
-      }
     }
+
+    // Generate PNG with precise dimensions
+    const container_rect = container.getBoundingClientRect()
+    const png_data_url = await toPng(container, {
+      backgroundColor: container.style.backgroundColor,
+      pixelRatio: 2, // High resolution
+      width: Math.ceil(container_rect.width),
+      height: Math.ceil(container_rect.height),
+      skipFonts: true,
+      quality: 0.95,
+      filter: create_export_filter,
+      style: { overflow: `visible`, margin: `0`, padding: `0` },
+      imagePlaceholder: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==`,
+    })
+    trigger_download(png_data_url, filename)
+    return { filename, url: png_data_url }
   } catch (error) {
-    log_export_error(error, `SVG setup`)
+    const context =
+      container && table_clone
+        ? {
+            containerHTML: `${container.outerHTML.slice(0, 1000)}...`,
+            tableCloneHTML: `${table_clone.outerHTML.slice(0, 1000)}...`,
+          }
+        : undefined
+    log_export_error(error, format.toUpperCase(), context)
     return null
+  } finally {
+    container?.remove()
   }
 }
+
+// Function to generate SVG from the metrics table
+export const generate_svg = (options: ExportOptions): Promise<ExportResult | null> =>
+  generate_image(`svg`, options)
 
 // Function to generate PNG from the metrics table
-export async function generate_png({
-  show_non_compliant = false,
-  discovery_set = `unique_prototypes`,
-}: ExportOptions): Promise<ExportResult | null> {
-  try {
-    // Create and clean table clone
-    const table_clone = create_filtered_table_clone()
-    clean_table_for_export(table_clone)
-
-    // Create export container with PNG-specific styling
-    const container = create_export_container(table_clone)
-    container.style.fontFamily = `Arial, sans-serif`
-    container.style.fontSize = `14px`
-    // Color is already set by create_export_container based on theme
-
-    document.body.append(container)
-
-    try {
-      // Get container dimensions for PNG generation
-      const container_rect = container.getBoundingClientRect()
-
-      // Generate PNG with precise dimensions
-      const png_data_url = await toPng(container, {
-        backgroundColor: container.style.backgroundColor,
-        pixelRatio: 2, // High resolution
-        width: Math.ceil(container_rect.width),
-        height: Math.ceil(container_rect.height),
-        skipFonts: true,
-        quality: 0.95,
-        filter: create_export_filter,
-        style: {
-          overflow: `visible`,
-          margin: `0`,
-          padding: `0`,
-        },
-        imagePlaceholder: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==`,
-      })
-
-      // Create download
-      const filename = generate_filename(`png`, show_non_compliant, discovery_set)
-      const a = document.createElement(`a`)
-      a.href = png_data_url
-      a.download = filename
-      a.click()
-
-      return { filename, url: png_data_url }
-    } catch (error) {
-      log_export_error(error, `PNG`, {
-        containerHTML: `${container.outerHTML.slice(0, 1000)}...`,
-        tableCloneHTML: `${table_clone.outerHTML.slice(0, 1000)}...`,
-      })
-      return null
-    } finally {
-      if (document.body.contains(container)) {
-        container.remove()
-      }
-    }
-  } catch (error) {
-    log_export_error(error, `PNG setup`)
-    return null
-  }
-}
+export const generate_png = (options: ExportOptions): Promise<ExportResult | null> =>
+  generate_image(`png`, options)
 
 // Helper function to extract table data excluding SVG icon columns
 function extract_table_data(): { headers: string[]; rows: (string | number)[][] } {
@@ -369,24 +321,7 @@ function extract_table_data(): { headers: string[]; rows: (string | number)[][] 
     throw new Error(`Table element not found for export`)
   }
 
-  // Extract headers from table
-  const header_rows = table_el.querySelectorAll(`thead tr`)
-  const main_header_row = header_rows.item(header_rows.length - 1)
-  const all_headers = [...(main_header_row?.querySelectorAll(`th`) ?? [])]
-
-  // Filter out columns with SVG icons (Org and Links columns)
-  const text_headers: string[] = []
-  const included_column_indices: number[] = []
-
-  all_headers.forEach((th, index) => {
-    const header_text = th.textContent?.replaceAll(/[↑↓]/g, ``).trim() || ``
-
-    // Exclude columns that typically contain only SVG icons
-    if (header_text !== `Org` && header_text !== `Links`) {
-      text_headers.push(header_text)
-      included_column_indices.push(index)
-    }
-  })
+  const { headers, indices } = get_export_columns(table_el)
 
   // Extract data rows
   const data_rows = table_el.querySelectorAll(`tbody tr`)
@@ -397,9 +332,9 @@ function extract_table_data(): { headers: string[]; rows: (string | number)[][] 
     const row_data: (string | number)[] = []
 
     // Only include cells from columns we want to export
-    included_column_indices.forEach((col_index) => {
+    indices.forEach((col_index) => {
       const cell = all_cells[col_index]
-      const header = text_headers[row_data.length] // Get corresponding header
+      const header = headers[row_data.length] // Get corresponding header
 
       if (cell) {
         let cell_value: string | number = ``
@@ -409,12 +344,9 @@ function extract_table_data(): { headers: string[]; rows: (string | number)[][] 
         if (sort_value && sort_value !== `null`) {
           // Try to parse as number
           const num_value = Number(sort_value)
-          if (!isNaN(num_value)) {
-            // Apply formatting based on column type
-            cell_value = format_value_for_export(num_value, header)
-          } else {
-            cell_value = sort_value
-          }
+          cell_value = isNaN(num_value)
+            ? sort_value
+            : format_value_for_export(num_value, header)
         } else {
           // Extract text content, handling HTML content
           const text_content = cell.textContent?.trim() || ``
@@ -440,58 +372,34 @@ function extract_table_data(): { headers: string[]; rows: (string | number)[][] 
     formatted_rows.push(row_data)
   })
 
-  return { headers: text_headers, rows: formatted_rows }
+  return { headers, rows: formatted_rows }
 }
 
 // Simple formatting function for export values
 function format_number(value: number, format?: string): number | string {
-  if (!format) {
-    // Default: round to 3 decimal places
-    return Math.round(value * 1000) / 1000
-  }
+  // SI/scientific formats use exponential notation for large numbers
+  if ((format?.includes(`~s`) || format?.includes(`.3s`)) && Math.abs(value) >= 1000)
+    return value.toExponential(2)
 
-  // Parse basic format strings
-  if (format.includes(`.3f`)) {
-    return Math.round(value * 1000) / 1000
-  } else if (format.includes(`.2f`)) {
-    return Math.round(value * 100) / 100
-  } else if (format.includes(`.1f`)) {
-    return Math.round(value * 10) / 10
-  } else if (format.includes(`~s`) || format.includes(`.3s`)) {
-    // Scientific notation for large numbers
-    if (Math.abs(value) >= 1000) {
-      return value.toExponential(2)
-    }
-    return Math.round(value * 1000) / 1000
-  }
-
-  // Default fallback
-  return Math.round(value * 1000) / 1000
+  // Parse decimal places from format strings like '.2f' (default 3)
+  const n_decimals = Number(format?.match(/\.(\d)f/)?.[1] ?? 3)
+  const factor = 10 ** n_decimals
+  return Math.round(value * factor) / factor
 }
 
 // Helper function to format values according to label specifications
 function format_value_for_export(value: number, header: string): number | string {
-  // Find the corresponding label configuration
+  // Find the corresponding label configuration by header text
   const all_labels = { ...ALL_METRICS, ...METADATA_COLS, ...HYPERPARAMS }
-
-  // Look for label by header text (may need to handle HTML in headers)
   const clean_header = strip_html(header).trim()
 
-  let format_spec: string | undefined
+  const label = Object.values(all_labels).find(
+    (lbl) =>
+      (lbl.label && strip_html(lbl.label).trim() === clean_header) ||
+      (lbl.key && strip_html(lbl.key).trim() === clean_header),
+  )
 
-  // Find matching label by key or label name
-  for (const label of Object.values(all_labels)) {
-    const label_text = label.label && strip_html(label.label).trim()
-    const key_text = label.key && strip_html(label.key).trim()
-
-    if (label_text === clean_header || key_text === clean_header) {
-      format_spec = label.format
-      break
-    }
-  }
-
-  // Apply formatting
-  return format_number(value, format_spec)
+  return format_number(value, label?.format)
 }
 
 // Function to export table data as CSV
@@ -527,14 +435,7 @@ export function generate_csv({
     const blob = new Blob([csv_content], { type: `text/csv;charset=utf-8;` })
     const url = URL.createObjectURL(blob)
     const filename = generate_filename(`csv`, show_non_compliant, discovery_set)
-
-    // Download the CSV
-    const a = document.createElement(`a`)
-    a.href = url
-    a.download = filename
-    a.click()
-
-    // Clean up
+    trigger_download(url, filename)
     setTimeout(() => URL.revokeObjectURL(url), 100)
 
     return { filename, url }
@@ -585,8 +486,7 @@ export async function generate_excel({
     }
 
     // Add worksheet to workbook
-    const sheet_name = `Metrics Table`
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheet_name)
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Metrics Table`)
 
     // Generate Excel file
     const excel_buffer = XLSX.write(workbook, { bookType: `xlsx`, type: `array` })
@@ -595,14 +495,7 @@ export async function generate_excel({
     })
     const url = URL.createObjectURL(blob)
     const filename = generate_filename(`xlsx`, show_non_compliant, discovery_set)
-
-    // Download the Excel file
-    const a = document.createElement(`a`)
-    a.href = url
-    a.download = filename
-    a.click()
-
-    // Clean up
+    trigger_download(url, filename)
     setTimeout(() => URL.revokeObjectURL(url), 100)
 
     return { filename, url }

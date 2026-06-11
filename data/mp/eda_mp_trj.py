@@ -130,7 +130,8 @@ if srs_mp_trj_elem_magmoms is None:
 
 
 fig_ptable_magmoms = pmv.ptable_hists(
-    srs_mp_trj_elem_magmoms,
+    # TODO: remove ignore once pymatviz>0.18.0 widens ptable_hists data param to Mapping
+    srs_mp_trj_elem_magmoms,  # ty: ignore[invalid-argument-type]
     log=True,
     bins=100,
     x_range=(-2, 2),
@@ -261,7 +262,7 @@ fig.show()
 normalized = True
 fig = pmv.ptable_heatmap(
     {
-        elem: (trj_count / 1_580_395) / (mp_count / len(df_mp))
+        str(elem): (trj_count / 1_580_395) / (mp_count / len(df_mp))
         for elem, trj_count in trj_elem_counts.items()
         if elem in mp_occu_counts
         for mp_count in [mp_occu_counts[elem]]  # clever way to get mp_count in scope

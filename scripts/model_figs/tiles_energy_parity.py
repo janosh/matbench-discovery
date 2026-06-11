@@ -10,7 +10,7 @@ import pymatviz as pmv
 from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS, plots
-from matbench_discovery.cli import cli_args
+from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics.discovery import dfs_metrics
@@ -71,11 +71,7 @@ legend_order = list(dfs_metrics[test_subset].T.MAE.sort_values().index)
 
 
 # %% parity plot of DFT vs predicted hull distance with each model in separate subplot
-models_to_plot = [
-    model
-    for model in models_to_plot
-    if model.is_complete and (show_non_compliant or model.is_compliant)
-]
+models_to_plot = complete_models(show_non_compliant=show_non_compliant)
 
 log_bin_cnt_col = f"log {bin_cnt_col}"
 df_bin[log_bin_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)

@@ -1,6 +1,5 @@
 import {
   build_energy_parity_series,
-  clear_energy_parity_asset_cache,
   energy_parity_asset_url,
   energy_parity_stats,
   get_energy_parity_point,
@@ -14,17 +13,17 @@ import {
   structure_popup_placement,
 } from '$lib/energy-parity'
 import type { EnergyParityBase, EnergyParityModel } from '$lib/energy-parity'
-import { load_json_asset } from '$lib/asset-loader'
+import { clear_asset_cache, load_json_asset } from '$lib/asset-loader'
 import { energy_parity_manifest } from '$lib/energy-parity-manifest'
 import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gzipped_json_response, request_url } from '../index'
 
-beforeEach(clear_energy_parity_asset_cache)
+beforeEach(clear_asset_cache)
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  clear_energy_parity_asset_cache()
+  clear_asset_cache()
 })
 
 const base: EnergyParityBase = {

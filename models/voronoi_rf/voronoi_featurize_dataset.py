@@ -7,7 +7,6 @@ import os
 import sys
 from importlib.metadata import version
 
-import numpy as np
 import pandas as pd
 import wandb
 from pymatgen.core import Structure
@@ -16,7 +15,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.enums import DataFiles
-from matbench_discovery.hpc import slurm_submit
+from matbench_discovery.hpc import df_slurm_chunk, slurm_submit
 
 sys.path.append(f"{ROOT}/models")
 
@@ -62,7 +61,7 @@ if os.path.isfile(out_path):
 print(f"{data_path=}")
 df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
-    df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
+    df_in = df_slurm_chunk(df_in, slurm_array_task_count, slurm_array_task_id)
 
 if data_name == "mp":  # extract structure dicts from ComputedStructureEntry
     struct_dicts = [cse["structure"] for cse in df_in.entry]

@@ -387,12 +387,6 @@
     margin: 1em auto 0.5em;
     text-align: center;
   }
-  .plot-state {
-    min-height: 180px;
-    align-content: center;
-    color: var(--muted-text-color, color-mix(in srgb, currentColor 70%, transparent));
-    text-align: center;
-  }
   .plot-wrap {
     position: relative;
   }

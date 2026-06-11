@@ -207,6 +207,34 @@ def check_spg_sankeys() -> None:
             assert value[idx] > 0
 
 
+def check_kappa_103_analysis() -> None:
+    payload = load_payload("kappa-103-analysis")
+    material_ids = payload["material_ids"]
+    n_materials = len(material_ids)
+    assert n_materials == 103
+    assert all(isinstance(mid, str) and mid for mid in material_ids)
+    assert all(isinstance(formula, str) for formula in payload["formulas"])
+    assert len(payload["formulas"]) == n_materials
+    assert_num_list(payload["spg_nums"], length=n_materials)
+    assert all(1 <= spg <= 230 for spg in payload["spg_nums"])
+    assert_num_list(payload["kappa_dft"], length=n_materials)
+    for model in assert_models(payload, "key", "freq_w1_mean", "freq_pairs"):
+        for field in ("kappa_ml", "srme", "freq_w1"):
+            assert_num_list(model[field], length=n_materials)
+        assert all(val is None or 0 <= val <= 2 for val in model["srme"])
+        for field in ("imag_modes", "broken_sym", "max_steps"):
+            flags = model[field]
+            assert len(flags) == n_materials
+            assert all(flag is None or isinstance(flag, bool) for flag in flags)
+        # freq_pairs may be empty for models whose phonon runs all failed
+        pairs = model["freq_pairs"]
+        if pairs["dft"] or pairs["ml"]:
+            assert_num_list(pairs["dft"])
+            assert_num_list(pairs["ml"], length=len(pairs["dft"]))
+        else:
+            assert model["freq_w1_mean"] is None
+
+
 def check_xy_models(name: str, *stat_keys: str) -> None:
     """Generic check: per-model x/y series plus data-derived stat fields."""
     for model in assert_models(load_payload(name), *stat_keys):
@@ -241,6 +269,7 @@ EXPECTED_PAYLOADS = {
     "mp-elemental-ref-energies": check_mp_elemental_ref_energies,
     "element-counts-mp-vs-wbm": check_element_counts,
     "spg-sankeys": check_spg_sankeys,
+    "kappa-103-analysis": check_kappa_103_analysis,
 }
 
 
@@ -279,6 +308,24 @@ def test_discovery_payload_covers_active_models(name: str) -> None:
     keys = payload_model_ids(name, "key")
     assert keys == expected, (
         f"{name} roster drift: missing={expected - keys}, extra={keys - expected}"
+    )
+
+
+def test_kappa_payload_covers_active_models() -> None:
+    """The kappa-103-analysis payload must include every active model with kappa_103
+    predictions, so a partial regen fails fast instead of silently dropping models.
+    """
+    expected = {
+        model.key
+        for model in Model.active()
+        if isinstance(phonons := (model.metrics or {}).get("phonons"), dict)
+        and (phonons.get("kappa_103") or {}).get("pred_file")
+    }
+    assert len(expected) > 30, f"sanity: too few kappa models ({len(expected)})"
+    keys = payload_model_ids("kappa-103-analysis", "key")
+    assert keys == expected, (
+        f"kappa-103-analysis roster drift: missing={expected - keys}, "
+        f"extra={keys - expected}"
     )
 
 

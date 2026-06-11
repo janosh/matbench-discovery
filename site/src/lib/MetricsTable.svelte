@@ -1,6 +1,6 @@
 <script lang="ts">
   import { OrgLogos, TableControls } from '$lib'
-  import { metric_better_as } from '$lib/metrics'
+  import { append_better_hint, metric_better_as } from '$lib/metrics'
   import type {
     CellSnippetArgs,
     DiscoverySet,
@@ -75,17 +75,8 @@
     ]
       .map((col): Label => {
         const better = col.better ?? metric_better_as(col.label)
-
-        // Append better=higher/lower to tooltip if applicable
-        let description = col.description ?? ``
-        if (better === `higher` || better === `lower`) {
-          description = description
-            ? `${description} (${better}=better)`
-            : `${better}=better`
-        }
         const visible = col.visible !== false && col_filter(col)
-
-        return { ...col, better, description, visible }
+        return { ...col, better, description: append_better_hint(col, better), visible }
       })
       // Ensure Model column comes first (0 keeps relative order of all other columns)
       .toSorted((col1, col2) =>

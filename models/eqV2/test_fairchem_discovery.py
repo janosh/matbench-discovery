@@ -164,7 +164,7 @@ class RelaxJob(Checkpointable):
 
                 filtered_atoms = atoms if filter_cls is None else filter_cls(atoms)
                 optim_inst = optim_cls(
-                    filtered_atoms,
+                    filtered_atoms,  # ty: ignore[invalid-argument-type]
                     logfile=None,
                     **optimizer_params,
                 )

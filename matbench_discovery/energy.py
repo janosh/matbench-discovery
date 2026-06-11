@@ -5,6 +5,7 @@ pymatgen EntryLikes.
 import itertools
 import warnings
 from collections.abc import Sequence
+from typing import Any, cast
 
 import pandas as pd
 from pymatgen.analysis.phase_diagram import Entry, PDEntry
@@ -32,7 +33,7 @@ def get_elemental_ref_entries(
     Returns:
         dict[str, Entry]: Map from element symbol to its lowest energy entry.
     """
-    entries = [PDEntry.from_dict(e) if isinstance(e, dict) else e for e in entries]
+    entries = [PDEntry.from_dict(e) if isinstance(e, dict) else e for e in entries]  # ty: ignore[invalid-argument-type]
     elements = {elems for entry in entries for elems in entry.composition.elements}
     dim = len(elements)
 
@@ -105,8 +106,9 @@ def calc_energy_from_e_refs(
         ValueError: If missing reference energies for some elements
     """
     if isinstance(struct_or_entry, dict):  # entry dict case
-        energy: float = struct_or_entry["energy"]
-        comp = Composition(struct_or_entry["composition"])
+        entry_dict = cast("dict[str, Any]", struct_or_entry)
+        energy: float = entry_dict["energy"]
+        comp = Composition(entry_dict["composition"])
     # Entry/ComputedEntry/ComputedStructureEntry instance case
     elif isinstance(struct_or_entry, Entry):
         energy = struct_or_entry.energy

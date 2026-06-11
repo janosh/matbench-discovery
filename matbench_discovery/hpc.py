@@ -6,9 +6,12 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Sequence, Sized
-from typing import Final, TypeVar
+from typing import TYPE_CHECKING, Final, TypeVar
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 # taken from https://slurm.schedmd.com/job_array.html#env_vars, lower-cased and
 # and removed the SLURM_ prefix
@@ -147,6 +150,20 @@ def slurm_submit(
     raise SystemExit(result.returncode)
 
 
+def df_slurm_chunk(
+    df_in: "pd.DataFrame", n_chunks: int, task_id: int
+) -> "pd.DataFrame":
+    """Get the chunk a 1-based slurm array task should process, i.e. the
+    (task_id - 1)-th of n_chunks roughly equal row-wise splits of df_in.
+
+    np.array_split(df_in, ...) no longer works since pandas 3 removed
+    DataFrame.swapaxes which numpy relied on to preserve the DataFrame type, so
+    split row indices instead and select with iloc.
+    """
+    row_indices = np.array_split(np.arange(len(df_in)), n_chunks)[task_id - 1]
+    return df_in.iloc[row_indices]
+
+
 def chunk_by_lens(
     inputs: Sequence[HasLen],
     *,  # force keyword-only arguments
@@ -227,7 +244,7 @@ def chunk_by_lens(
         print(
             f"Split {len(inputs):,} structures into {n_chunks:,} chunks:\n"
             f"Mean sum(len({cls_name})) per chunk: {mean:,.1f} ± {std:,.1f}, "
-            f"min: {chunk_sizes.min():,.0f}, max: {chunk_sizes.max():,.0f}"  # ty: ignore[invalid-argument-type]
+            f"min: {chunk_sizes.min():,.0f}, max: {chunk_sizes.max():,.0f}"
         )
 
     return chunks

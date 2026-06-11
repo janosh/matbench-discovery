@@ -1,7 +1,5 @@
 """Tests for thermal conductivity metrics."""
 
-from typing import cast
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -79,6 +77,15 @@ def series_multi_temp() -> pd.Series:
         ),
         (np.zeros((3, 3)), 0, "zero tensor"),
         (-np.diag([1, 2, 3]), -2, "negative tensor"),
+        # Voigt 6-vectors [xx, yy, zz, yz, xz, xy]: the format kappa_tot_rta is
+        # stored in by calc_kappa.py (regression test: a rewrite once dropped Voigt
+        # support, silently corrupting CHGNet/M3GNet kappa_SRME to 2.0 on re-eval)
+        (np.array([1.0, 2, 3, 0.5, 0.5, 0.5]), 2, "Voigt 6-vector"),
+        (
+            np.array([[1.0, 2, 3, 0, 0, 0], [2, 4, 6, 0, 0, 0]]),
+            [2, 4],
+            "multi-temperature Voigt",
+        ),
     ],
 )
 def test_calculate_kappa_avg_parametrized(
@@ -87,6 +94,67 @@ def test_calculate_kappa_avg_parametrized(
     """Test calculation of average thermal conductivity with various inputs."""
     avg = phonon_metrics.calculate_kappa_avg(tensor)
     assert_allclose(avg, expected, rtol=1e-6, err_msg=description)
+
+
+def test_calculate_kappa_avg_scalar_input() -> None:
+    """Scalar input (NaN from a failed calculation) returns NaN, not IndexError."""
+    result = phonon_metrics.calculate_kappa_avg(np.asarray(None, dtype=float))
+    assert np.all(np.isnan(result))
+
+
+@pytest.mark.parametrize("n_levels", [5, 11, 101])
+def test_weighted_quantiles_uniform_matches_numpy_inverted_cdf(n_levels: int) -> None:
+    """Uniform-weight quantiles equal numpy's inverted_cdf method exactly."""
+    np_rng = np.random.default_rng(seed=0)
+    values = np_rng.normal(size=500)
+    levels = np.linspace(0, 1, n_levels)
+    result = phonon_metrics.weighted_quantiles(values, None, levels)
+    expected = np.quantile(values, levels, method="inverted_cdf")
+    assert_allclose(result, expected, rtol=0, atol=0)  # bit-identical
+
+
+def test_weighted_quantiles_integer_weights_equal_repetition() -> None:
+    """Integer weights are equivalent to repeating samples that many times."""
+    values = np.array([1.0, 2.0, 4.0, 8.0])
+    weights = np.array([1.0, 3.0, 2.0, 1.0])
+    repeated = np.repeat(values, weights.astype(int))
+    levels = np.linspace(0, 1, 29)
+    result = phonon_metrics.weighted_quantiles(values, weights, levels)
+    expected = phonon_metrics.weighted_quantiles(repeated, None, levels)
+    assert_allclose(result, expected, rtol=0, atol=0)  # bit-identical
+
+
+def test_weighted_quantiles_drops_nans_and_rejects_empty() -> None:
+    """NaN values are dropped with their weights; all-NaN input raises."""
+    values = np.array([1.0, np.nan, 3.0])
+    weights = np.array([1.0, 100.0, 1.0])
+    levels = np.array([0.0, 0.75, 1.0])
+    result = phonon_metrics.weighted_quantiles(values, weights, levels)
+    # NaN (and its weight 100) dropped -> remaining CDF is [0.5, 1.0]
+    assert_allclose(result, [1.0, 3.0, 3.0], rtol=0, atol=0)
+    with pytest.raises(ValueError, match="no finite values"):
+        phonon_metrics.weighted_quantiles(np.array([np.nan]), None, levels)
+    with pytest.raises(ValueError, match="!="):
+        phonon_metrics.weighted_quantiles(values, np.ones(2), levels)
+
+
+@pytest.mark.parametrize(
+    "n_qpoints,n_modes,weights,expected_len",
+    [(4, 3, [1.0, 2.0, 1.0, 1.0], 12), (4, 3, None, None), (4, 3, [1.0, 2.0], None)],
+)
+def test_mode_weights_for_freqs(
+    n_qpoints: int, n_modes: int, weights: list[float] | None, expected_len: int | None
+) -> None:
+    """q-point weights repeat per mode iff their length matches the q-point axis."""
+    ph_freqs = np.ones((n_qpoints, n_modes))
+    q_weights = None if weights is None else np.array(weights)
+    result = phonon_metrics.mode_weights_for_freqs(ph_freqs, q_weights)
+    if expected_len is None or weights is None:
+        assert result is None
+    else:
+        assert result is not None
+        assert len(result) == expected_len
+        assert_allclose(result[:n_modes], weights[0], rtol=0, atol=0)
 
 
 def test_calculate_kappa_avg_edge_cases() -> None:
@@ -505,7 +573,7 @@ def test_write_metrics_to_yaml(
 
         with patch("builtins.open", mock_open()):
             phonon_metrics.write_metrics_to_yaml(
-                cast("Model", mock_model),
+                mock_model,  # ty: ignore[invalid-argument-type]
                 metrics_data,
                 "models/test/kappa-103.json.gz",
             )

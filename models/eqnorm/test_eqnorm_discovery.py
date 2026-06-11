@@ -37,12 +37,10 @@ def process_and_save(atoms_list: list[Atoms], out_dir: str, job_id: int) -> None
             relax_atoms = atoms
             if max_steps > 0:
                 relax_atoms = FrechetCellFilter(atoms)
-                optimizer = optim_cls(relax_atoms, logfile=None)
+                optimizer = optim_cls(relax_atoms, logfile=None)  # ty: ignore[invalid-argument-type]
                 optimizer.run(fmax=force_max, steps=max_steps)
             energy = relax_atoms.get_potential_energy()  # relaxed energy
-            # if max_steps > 0, relax_atoms is wrapped by FrechetCellFilter
-            unwrapped = getattr(relax_atoms, "atoms", relax_atoms)
-            relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
+            relaxed_struct = AseAtomsAdaptor.get_structure(atoms)  # relaxed in-place
             relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
         except (ValueError, RuntimeError, OSError, KeyError) as exc:
             print(f"Failed to relax {mat_id}: {exc!r}")

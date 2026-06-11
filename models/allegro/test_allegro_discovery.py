@@ -151,9 +151,7 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
                         raise RuntimeError("Force divergence detected")
 
         energy = relax_atoms.get_potential_energy()  # relaxed energy
-        # getattr unwraps relax_atoms (filter_cls wrapper when max_steps > 0)
-        unwrapped = getattr(relax_atoms, "atoms", relax_atoms)
-        relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
+        relaxed_struct = AseAtomsAdaptor.get_structure(atoms)  # relaxed in-place
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except (ValueError, RuntimeError, OSError, KeyError) as exc:
         print(f"Failed to relax {mat_id}: {exc!r}")

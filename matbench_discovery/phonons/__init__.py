@@ -4,8 +4,20 @@ from typing import Final, Literal, NotRequired, TypedDict
 
 import numpy as np
 import pandas as pd
+from pymatviz.enums import Key
 
 from matbench_discovery.phonons.calc_kappa import calc_kappa_for_structure
+
+
+def read_kappa_json(path: str) -> pd.DataFrame:
+    """Read a kappa prediction/reference JSON file indexed by material_id.
+
+    Renames the ID column for submissions that use mp_id instead of material_id.
+    """
+    df_kappa = pd.read_json(path)
+    if "mp_id" in df_kappa.columns:
+        df_kappa = df_kappa.rename(columns={"mp_id": Key.mat_id})
+    return df_kappa.set_index(Key.mat_id)
 
 
 class KappaCalcParams(TypedDict):

@@ -2,7 +2,6 @@
 import os
 from typing import Any
 
-import numpy as np
 import pandas as pd
 from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
@@ -12,6 +11,7 @@ from tqdm import tqdm
 from matbench_discovery import today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Task
+from matbench_discovery.hpc import df_slurm_chunk
 
 __author__ = "Janosh Riebesell, Philipp Benner"
 __date__ = "2023-07-11"
@@ -59,7 +59,7 @@ if input_col not in df_in:
 
 # Split data into parts and process only one batch
 if task_id != 0:
-    df_in = np.array_split(df_in, 100)[task_id - 1]
+    df_in = df_slurm_chunk(df_in, 100, task_id)
     print(f"Relaxing materials in range {df_in.index[0]} - {df_in.index[-1]}")
 else:
     print("Relaxing full range of materials")

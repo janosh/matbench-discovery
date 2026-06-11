@@ -80,6 +80,64 @@ def calc_kappa_metrics_from_dfs(
     return df_pred
 
 
+def weighted_quantiles(
+    values: np.ndarray, weights: np.ndarray | None, quantile_levels: np.ndarray
+) -> np.ndarray:
+    """Weighted quantiles of a 1D sample via the empirical inverse CDF.
+
+    Uses the inverted-CDF definition (numpy's ``method="inverted_cdf"``):
+    Q(u) = smallest x with F(x) >= u. This makes integer weights *exactly*
+    equivalent to repeating samples, so spectra stored on a weighted irreducible
+    q-mesh (DFT reference) and on the expanded full mesh (ML predictions) compare
+    identically.
+
+    Args:
+        values: 1D array of sample values (NaNs are dropped along with their weights).
+        weights: 1D array of non-negative weights, same length as values. None means
+            uniform weights.
+        quantile_levels: Quantile levels in [0, 1] at which to evaluate the inverse CDF.
+
+    Returns:
+        np.ndarray: Quantile values, same length as quantile_levels.
+
+    Raises:
+        ValueError: If values is empty (or all-NaN) or lengths mismatch.
+    """
+    values = np.ravel(np.asarray(values, dtype=float))
+    weights = (
+        np.ones_like(values)
+        if weights is None
+        else np.ravel(np.asarray(weights, dtype=float))
+    )
+    if len(values) != len(weights):
+        raise ValueError(f"{len(values)=} != {len(weights)=}")
+    finite_mask = np.isfinite(values)
+    values, weights = values[finite_mask], weights[finite_mask]
+    if len(values) == 0:
+        raise ValueError("no finite values to compute quantiles from")
+    order = np.argsort(values)
+    values, weights = values[order], weights[order]
+    cdf = np.cumsum(weights) / weights.sum()
+    idx = np.searchsorted(cdf, np.clip(quantile_levels, 0, 1), side="left")
+    return values[np.minimum(idx, len(values) - 1)]
+
+
+def mode_weights_for_freqs(
+    ph_freqs: np.ndarray, q_weights: np.ndarray | None
+) -> np.ndarray | None:
+    """Per-frequency weights for a (n_qpoints, n_modes) phonon frequency array.
+
+    q-point weights apply only when their length matches the q-point axis
+    (irreducible mesh); otherwise a uniform full mesh is assumed (returns None).
+    """
+    if q_weights is None:
+        return None
+    q_weights = np.ravel(np.asarray(q_weights, dtype=float))
+    if q_weights.shape != (ph_freqs.shape[0],):
+        return None
+    return np.repeat(q_weights, ph_freqs.shape[1])
+
+
 def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
     """Calculate directionally averaged trace of the conductivity tensor obtained from
     the Wigner transport equation (WTE) solution in the relaxation-time approximation.
@@ -89,9 +147,11 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
     directions, which is a useful scalar metric for comparing materials.
 
     Args:
-        kappa: Thermal conductivity tensor of shape (..., 3, 3), or pre-averaged
-            directional conductivities of shape (..., 3). Earlier dimensions may
-            include temperatures or other parameters.
+        kappa: Thermal conductivity tensor of shape (..., 3, 3), a Voigt 6-vector
+            [xx, yy, zz, yz, xz, xy] of shape (..., 6) (the format phono3py RTA
+            results are stored in by calc_kappa.py), or pre-averaged directional
+            conductivities of shape (..., 3). Earlier dimensions may include
+            temperatures or other parameters.
 
     Returns:
         Average conductivity value(s). Returns a scalar for a single 3x3 tensor,
@@ -100,12 +160,16 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
     """
     try:
         kappa_arr = np.asarray(kappa, dtype=float)
+        if kappa_arr.ndim == 0:  # scalar NaN from a failed calculation
+            raise ValueError(f"expected array-like kappa, got {kappa_arr=}")
         if kappa_arr.shape[-2:] == (3, 3):
             return np.trace(kappa_arr, axis1=-2, axis2=-1) / 3
+        if kappa_arr.shape[-1] == 6:  # Voigt: diagonal components come first
+            return kappa_arr[..., :3].mean(axis=-1)
         if kappa_arr.shape[-1:] == (3,):
             return kappa_arr.mean(axis=-1)
         raise ValueError(
-            f"expected shape (..., 3, 3) or (..., 3), got {kappa_arr.shape}"
+            f"expected shape (..., 3, 3), (..., 6) or (..., 3), got {kappa_arr.shape}"
         )
     except (ValueError, TypeError):
         warnings.warn(
