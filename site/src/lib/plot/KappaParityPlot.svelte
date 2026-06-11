@@ -15,12 +15,13 @@
     PhononDos,
   } from '$lib/kappa-parity'
   import type { LoadStatus } from '$lib/asset-loader'
+  import { parity_diagonal } from '$lib/fig-helpers'
   import { get_nested_number } from '$lib/metrics'
   import type { ModelData } from '$lib/types'
   import { Dos, format_num, Icon, sanitize_compact_formula } from 'matterviz'
   import { Spinner } from 'matterviz/feedback'
   import { ScatterPlot } from 'matterviz/plot'
-  import type { DataSeries, RefLine, ScatterHandlerProps } from 'matterviz/plot'
+  import type { DataSeries, RefLine } from 'matterviz/plot'
   import { type CrystalSystem, spacegroup_num_to_crystal_sys } from 'matterviz/symmetry'
   import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -68,18 +69,7 @@
       ]
       : [],
   )
-  // full-span y=x parity line; a diagonal ref line is clipped to the axis range
-  // (unlike a 2-point data series, it always reaches both plot corners)
-  const parity_ref_lines: RefLine[] = [
-    {
-      type: `diagonal`,
-      slope: 1,
-      intercept: 0,
-      label: `DFT = ML`,
-      show_in_legend: true,
-      style: { dash: `4 4`, color: `gray` },
-    },
-  ]
+  const parity_ref_lines: RefLine[] = [parity_diagonal]
 
   let selected = $derived(
     parity && selected_idx !== null ? (parity.points[selected_idx] ?? null) : null,
@@ -175,7 +165,7 @@
         if (point.series_idx === 0) selected_idx = point.point_idx
       }}
     >
-      {#snippet tooltip({ metadata }: ScatterHandlerProps)}
+      {#snippet tooltip({ metadata })}
         {#if metadata}
           {@const pt = metadata as unknown as KappaParityPoint}
           {@const sys = crystal_sys(pt)}
@@ -247,12 +237,6 @@
   }
   h2 {
     margin: 1em auto 0.5em;
-    text-align: center;
-  }
-  .plot-state {
-    min-height: 180px;
-    align-content: center;
-    color: var(--muted-text-color, color-mix(in srgb, currentColor 70%, transparent));
     text-align: center;
   }
   .plot-note {

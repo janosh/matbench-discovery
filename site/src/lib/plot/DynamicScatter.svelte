@@ -1,3 +1,29 @@
+<script module lang="ts">
+  // Axis metadata is exported so pages can bind selections and render matching headings.
+  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
+
+  export const scatter_options = [
+    ...Object.values(ALL_METRICS),
+    HYPERPARAMS.model_params,
+    METADATA_COLS.date_added,
+    METADATA_COLS.n_training_materials,
+    METADATA_COLS.n_training_structures,
+    HYPERPARAMS.graph_construction_radius,
+    HYPERPARAMS.max_force,
+    HYPERPARAMS.max_steps,
+    HYPERPARAMS.batch_size,
+    HYPERPARAMS.epochs,
+    HYPERPARAMS.n_layers,
+  ]
+  // Keyed lookup for bound axis/color selections.
+  export const scatter_options_by_key = Object.fromEntries(
+    scatter_options.map((opt) => [opt.key, opt]),
+  )
+  // Labels may contain HTML such as <sub>.
+  export const scatter_axis_label = (key: string): string =>
+    scatter_options_by_key[key]?.label ?? key
+</script>
+
 <script lang="ts">
   import { goto } from '$app/navigation'
   import type { ModelData } from '$lib'
@@ -5,31 +31,17 @@
   import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { ColorScaleSelect, create_color_scale, DEFAULT_SERIES_SYMBOLS } from 'matterviz/plot'
-  import type { DataSeries, LegendConfig } from 'matterviz/plot'
+  import type { DataSeries } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
-  import { SvelteSet } from 'svelte/reactivity'
   import Select from 'svelte-multiselect'
-  import {
-    ALL_METRICS,
-    DISCOVERY_SET_LABELS,
-    format_property_path,
-    HYPERPARAMS,
-    METADATA_COLS,
-  } from '$lib/labels'
-  import { get_nested_value, is_finite_num } from '$lib/metrics'
-  import { wide_legend } from '$lib/fig-helpers'
+  import { DISCOVERY_SET_LABELS, format_property_path } from '$lib/labels'
+  import { get_nested_value, is_finite_num, label_data_path } from '$lib/metrics'
+  import { make_models_legend } from '$lib/fig-helpers'
   import type { Label } from '$lib/types'
 
-  // Build data access path from label, handling property vs key distinction
-  function get_label_path(label: Label | undefined): string {
-    const prop_name = label?.property ?? label?.key ?? ``
-    return `${label?.path ?? ``}.${prop_name}`.replace(/^\./, ``)
-  }
-
-  // Format an option label for the size select, keeping it short: drop the redundant
-  // discovery-set segment (e.g. "Discovery > Unique Prototypes > DAF" -> "Discovery > DAF")
-  // and abbreviate the verbose "Geometry Optimization" category to "Geo Opt"
+  // Keep size-select labels short by dropping discovery-set segments and abbreviating
+  // "Geometry Optimization" to "Geo Opt".
   const discovery_set_keys = Object.keys(DISCOVERY_SET_LABELS)
   function format_size_option_path(path: string): string {
     const parts = path.split(`.`).filter((part) => !discovery_set_keys.includes(part))
@@ -38,88 +50,42 @@
 
   // Get value from model using label's path, converting dates to timestamps
   function get_label_value(model: ModelData, label: Label | undefined): unknown {
-    const path = get_label_path(label)
+    const path = label_data_path(label)
     let val = get_nested_value(model, path)
     if (path.includes(`date`)) val = new Date(val as string).getTime()
     return val
   }
 
-  // one collapsible "Models" group, collapsed by default. override on_group_toggle so a header
-  // click collapses/expands (like the chevron) instead of hiding all models; individual items
-  // still toggle per-model visibility
-  const legend_group = `Toggle Models`
-  const collapsed_groups = new SvelteSet([legend_group])
-  const models_legend: LegendConfig = {
-    ...wide_legend,
-    collapsed_groups,
-    // fully opaque bg (matterviz default is 75% alpha) so plot points don't bleed through
-    style:
-      `${wide_legend.style} --plot-legend-bg-color: light-dark(rgb(255, 255, 255), rgb(40, 40, 40))`,
-    on_group_toggle: (group) => {
-      if (!collapsed_groups.delete(group)) collapsed_groups.add(group)
-    },
-  }
-
-  let plot_wrapper = $state<HTMLDivElement>()
-  // collapse the expanded legend on any click outside it. capture phase fires regardless of
-  // inner stopPropagation; gating on the expanded state means the opening click and in-legend
-  // visibility toggles don't immediately re-collapse it
-  $effect(() => {
-    if (collapsed_groups.has(legend_group)) return
-    const close_on_outside_click = (event: MouseEvent) => {
-      const legend = plot_wrapper?.querySelector(`.legend`)
-      if (legend && !legend.contains(event.target as Node)) {
-        collapsed_groups.add(legend_group)
-      }
-    }
-    document.addEventListener(`click`, close_on_outside_click, true)
-    return () => document.removeEventListener(`click`, close_on_outside_click, true)
-  })
+  const { legend_group, legend: models_legend, collapse_on_outside_click } =
+    make_models_legend()
 
   let {
     models,
     model_filter = () => true,
     point_color = null,
     show_model_labels = true,
+    // Bindable so page headings can track user-selected axes.
+    x_key = $bindable(ALL_METRICS.κ_SRME.key),
+    y_key = $bindable(ALL_METRICS.CPS.key),
+    color_key = $bindable(ALL_METRICS.F1.key),
     ...rest
   }: ComponentProps<typeof ScatterPlot> & {
     models: ModelData[]
     model_filter?: (model: ModelData) => boolean
     point_color?: string | null
     show_model_labels?: boolean
+    x_key?: string
+    y_key?: string
+    color_key?: string
   } = $props()
 
-  const { model_params, graph_construction_radius, max_force } = HYPERPARAMS
-  const { max_steps, batch_size, epochs, n_layers } = HYPERPARAMS
-  const { date_added, n_training_materials, n_training_structures } = METADATA_COLS
-
-  const options = [
-    ...Object.values(ALL_METRICS),
-    model_params,
-    date_added,
-    n_training_materials,
-    n_training_structures,
-    graph_construction_radius,
-    max_force,
-    max_steps,
-    batch_size,
-    epochs,
-    n_layers,
-  ]
-
-  // Create lookup map from key to full property object
-  const options_by_key = Object.fromEntries(options.map((opt) => [opt.key, opt]))
-
-  // Track selected axis keys for x/y (used by ScatterPlot's built-in axis selection)
-  let selected = $state({ x: ALL_METRICS.κ_SRME.key, y: ALL_METRICS.CPS.key })
   let log = $state({ x: false, y: false, color: false, size: false })
-  let color_key = $state(ALL_METRICS.F1.key)
-  let size_prop = $state(HYPERPARAMS.model_params as typeof options[number])
+  let size_prop = $state(HYPERPARAMS.model_params as typeof scatter_options[number])
 
   let axes = $derived({
-    x: options_by_key[selected.x],
-    y: options_by_key[selected.y],
-    color_value: options_by_key[color_key],
+    x: scatter_options_by_key[x_key],
+    y: scatter_options_by_key[y_key],
+    color_value: scatter_options_by_key[color_key],
     size_value: size_prop,
   })
 
@@ -131,44 +97,45 @@
   let label_font_size = $state(12)
   let leader_line_threshold = $state(15)
 
-  // Check if data range spans enough for log scale to be useful (min > 0 and max/min >= 100)
+  // Enable log scale only for positive ranges spanning at least two decades.
   const can_log = (ext: [number | undefined, number | undefined]): boolean =>
     ext[0] !== undefined && ext[0] > 0 && 100 * ext[0] <= (ext[1] ?? 0)
 
+  let filtered_models = $derived(models.filter(model_filter))
   let model_counts_by_prop = $derived(
     Object.fromEntries(
-      options.map((prop) => [
+      scatter_options.map((prop) => [
         prop.key,
-        models.filter((m) => get_nested_value(m, get_label_path(prop)) !== undefined)
-          .length,
+        filtered_models.filter((model) =>
+          get_nested_value(model, label_data_path(prop)) !== undefined
+        ).length,
       ]),
     ),
   )
 
-  // Options for axis selects and color bar property select
+  // Axis/color-select options with model counts.
   let prop_options = $derived(
-    options.map((prop) => ({
+    scatter_options.map((prop) => ({
       key: prop.key,
       label: `${prop.label} (${model_counts_by_prop[prop.key]} models)`,
       unit: prop.unit,
     })),
   )
 
-  // Data loader for interactive axis selection (only x/y handled in this scatter plot)
+  // ScatterPlot requests only x/y data here; the color bar handles color changes below.
   const data_loader = async (axis: string, key: string) => {
-    if (axis === `x`) selected.x = key
-    else if (axis === `y`) selected.y = key
+    if (axis === `x`) x_key = key
+    else if (axis === `y`) y_key = key
 
     await tick()
-    return { series, axis_label: options_by_key[key]?.label }
+    return { series, axis_label: scatter_axis_label(key) }
   }
 
   const format_label_title = (prop: Label | undefined): string =>
     `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
 
   let plot_data = $derived(
-    models
-      .filter(model_filter)
+    filtered_models
       .map((model) => {
         const x_val = get_label_value(model, axes.x)
         const y_val = get_label_value(model, axes.y)
@@ -189,9 +156,7 @@
       }),
   )
 
-  // Mirror the plot's color scale (same scheme + full-data domain matterviz auto-computes)
-  // so each series' point_style.fill — i.e. its built-in legend swatch — matches the
-  // color-bar color of its point; the fixed point_color override wins when set
+  // Mirror the plot color scale so built-in legend swatches match their points.
   let legend_color_scale = $derived.by(() => {
     const [min, max] = extent(plot_data, (item) => item.color_value as number)
     return create_color_scale(
@@ -218,10 +183,7 @@
     model_key?: string
   }
 
-  // One series per model so matterviz's built-in legend can toggle models individually and
-  // give each a distinct marker shape. point_style.fill makes the legend swatch match the
-  // color-bar color; the point itself is colored via color_values. Cycle only the shapes
-  // matterviz's PlotLegend can draw so every legend swatch is visible.
+  // One series per model enables per-model legend toggles and distinct marker shapes.
   let series: DataSeries<PointMetadata>[] = $derived(
     plot_data.map((item, idx) => ({
       x: [item.x as number],
@@ -247,11 +209,15 @@
   )
 </script>
 
-<div class="bleed-1400" style="margin-block: 2em" bind:this={plot_wrapper}>
+<div
+  class="bleed-1400 collapsible-legend"
+  style="margin-block: 2em"
+  {@attach collapse_on_outside_click}
+>
   <div class="controls-row">
     <label for="size-select">Marker Size</label>
     <Select
-      {options}
+      options={scatter_options}
       id="size-select"
       bind:value={size_prop}
       maxSelect={1}
@@ -262,10 +228,10 @@
       liOptionStyle="font-size: 13px;"
     >
       {#snippet children(
-        { option: prop, type }: { option: typeof options[number]; type: string },
+        { option: prop, type }: { option: typeof scatter_options[number]; type: string },
       )}
         <span class:selected-label={type === `selected`}>
-          {@html format_size_option_path(get_label_path(prop))}
+          {@html format_size_option_path(label_data_path(prop))}
           <span style="font-size: smaller; color: gray">
             {model_counts_by_prop[prop.key]} models
           </span>
@@ -287,7 +253,7 @@
       label_shift: { y: -50 },
       ticks,
       options: prop_options,
-      selected_key: selected.x,
+      selected_key: x_key,
     }}
     y_axis={{
       label: axes.y?.label,
@@ -300,7 +266,7 @@
       },
       ticks,
       options: prop_options,
-      selected_key: selected.y,
+      selected_key: y_key,
     }}
     bind:display
     color_scale={{ scheme: color_scheme, type: log.color ? `log` : `linear` }}
@@ -316,9 +282,8 @@
       selected_property_key: color_key,
       data_loader: async (key) => {
         color_key = key
-        const prop = options_by_key[key]
-        const values = models
-          .filter(model_filter)
+        const prop = scatter_options_by_key[key]
+        const values = filtered_models
           .map((model) => get_label_value(model, prop))
           .filter((val): val is number => typeof val === `number` && isFinite(val))
         const [min, max] = extent(values)
@@ -424,23 +389,36 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 1ex 2em;
-    margin: 0 3em 1em;
+    gap: 1ex 0.6em;
+    /* asymmetric margin counterbalances the collapsed legend parked right of center
+       (a `translate` would be simpler but turns the row into a containing block for
+       the marker-size dropdown's position: fixed options list, breaking it) */
+    margin: 0 12em 1em 3em;
     justify-content: center;
-  }
-  /* the legend bg is opaque (so expanded items read over plot points) and full-width (to center
-     the wide row). collapsed, only the "Toggle Models" header shows, leaving an ugly full-width
-     bar (esp. in dark mode). drop the bg while collapsed (no .legend-item children rendered) */
-  div.bleed-1400 :global(.legend:not(:has(.legend-item))) {
-    background-color: transparent;
-  }
-  /* matterviz gives the legend panel no padding, so expanded items sit flush against its edges.
-     add breathing room when expanded (has items) */
-  div.bleed-1400 :global(.legend:has(.legend-item)) {
-    padding: 7px;
+    /* paint above the (later-DOM) plot so the open dropdown stays interactive */
+    position: relative;
+    z-index: 1;
   }
   div.controls-row label {
     font-weight: 500;
+    font-size: 14px;
+  }
+  /* move ScatterPlot's legend into the controls row */
+  div.bleed-1400 :global(.scatter > .legend) {
+    top: -42px !important;
+    bottom: auto !important;
+    font-size: 14px;
+  }
+  /* collapsed: show only the group header beside the size select */
+  div.bleed-1400 :global(.scatter > .legend:not(:has(.legend-item))) {
+    left: calc(50% + 10em) !important;
+    width: max-content !important;
+    justify-content: flex-start !important;
+  }
+  /* expanded: wrap model items across the plot width */
+  div.bleed-1400 :global(.scatter > .legend:has(.legend-item)) {
+    left: 10px !important;
+    width: calc(100% - 20px) !important;
   }
   div.combined-link-controls {
     display: flex;

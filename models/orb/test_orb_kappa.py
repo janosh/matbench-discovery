@@ -150,7 +150,7 @@ for idx, atoms in tqdm_bar:
             filtered_atoms = FrechetCellFilter(atoms)
 
         optimizer = optim_cls(
-            filtered_atoms,
+            filtered_atoms,  # ty: ignore[invalid-argument-type]
             logfile=f"{out_dir}/relax_{idx}.log",
         )
 

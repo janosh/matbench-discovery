@@ -21,7 +21,7 @@ from tqdm import tqdm
 from matbench_discovery import ROOT, timestamp, today
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.enums import DataFiles, Model, Task
-from matbench_discovery.hpc import slurm_submit
+from matbench_discovery.hpc import df_slurm_chunk, slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
@@ -74,7 +74,7 @@ e_pred_col = f"{model_name}_{model_type}_energy"
 
 df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
-    df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
+    df_in = df_slurm_chunk(df_in, slurm_array_task_count, slurm_array_task_id)
 
 if model_type == "tf-direct-sampling":
     checkpoint = f"{ROOT}/models/{model_name}/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"

@@ -7,7 +7,7 @@ import warnings
 from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any, Literal
 
 import pandas as pd
 import torch
@@ -26,9 +26,6 @@ from matbench_discovery import today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
-
-if TYPE_CHECKING:
-    from ase import Atoms
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
@@ -69,9 +66,7 @@ out_path = (
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
 print(f"\nJob {job_name} started {timestamp}")
-atoms_list = cast(
-    "list[Atoms]", read(DataFiles.phonondb_pbe_103_structures.path, index=":")
-)
+atoms_list = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
 
 run_params = {
     "timestamp": timestamp,
@@ -134,9 +129,8 @@ for atoms in tqdm_bar:
             else:
                 filtered_atoms = FrechetCellFilter(atoms)
 
-            optimizer = optim_cls(
-                filtered_atoms, logfile=f"{out_dir}/relax_{mat_id}.log"
-            )
+            log_path = f"{out_dir}/relax_{mat_id}.log"
+            optimizer = optim_cls(filtered_atoms, logfile=log_path)  # ty: ignore[invalid-argument-type]
             optimizer.run(fmax=force_max, steps=max_steps)
 
             reached_max_steps = optimizer.nsteps >= max_steps

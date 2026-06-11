@@ -21,7 +21,6 @@ import os
 from importlib.metadata import version
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import torch
 from matris.applications.relax import StructOptimizer
@@ -32,7 +31,7 @@ from tqdm import tqdm
 from matbench_discovery import timestamp, today
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.enums import DataFiles, Task
-from matbench_discovery.hpc import slurm_submit
+from matbench_discovery.hpc import df_slurm_chunk, slurm_submit
 
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
@@ -78,7 +77,7 @@ fmax = 0.02
 
 df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
-    df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
+    df_in = df_slurm_chunk(df_in, slurm_array_task_count, slurm_array_task_id)
 
 run_params = {
     "data_path": data_path,

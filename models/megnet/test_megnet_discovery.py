@@ -21,7 +21,7 @@ from tqdm import tqdm
 from matbench_discovery import timestamp, today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
-from matbench_discovery.hpc import slurm_submit
+from matbench_discovery.hpc import df_slurm_chunk, slurm_submit
 from matbench_discovery.plots import wandb_scatter
 
 __author__ = "Janosh Riebesell"
@@ -59,12 +59,14 @@ data_path = {
 }[task_type]
 print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path=}")
+if data_path is None:
+    raise ValueError(f"no data_path for {task_type=}")
 if MbdKey.e_form_dft not in df_wbm:
     raise KeyError(f"{MbdKey.e_form_dft!s} not in {df_wbm.columns=}")
 
 df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
-    df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
+    df_in = df_slurm_chunk(df_in, slurm_array_task_count, slurm_array_task_id)
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 
 

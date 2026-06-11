@@ -105,12 +105,13 @@ def write_manifest(
 def format_manifest_files(paths: Iterable[Path]) -> None:
     """Format generated manifests with the site's configured formatter."""
     site_dir = Path("site")
+    vp_bin = (site_dir / "node_modules/.bin/vp").resolve()
     fmt_paths = [
         str(path.relative_to(site_dir) if path.is_relative_to(site_dir) else path)
         for path in paths
     ]
     subprocess.run(
-        ["node_modules/.bin/vp", "fmt", "--write", *fmt_paths],
+        [str(vp_bin), "fmt", "--write", *fmt_paths],
         cwd=site_dir,
         check=True,
     )

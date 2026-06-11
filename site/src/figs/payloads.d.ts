@@ -179,6 +179,32 @@ declare module '$figs/element-counts-mp-vs-wbm.json.gz' {
   export default data
 }
 
+// === phonons ===
+declare module '$figs/kappa-103-analysis.json.gz' {
+  // per-material kappa-103 diagnostics vs the phononDB-PBE reference. All
+  // per-material arrays are aligned to material_ids; null = material missing from
+  // the model's predictions (or the value couldn't be computed)
+  const data: {
+    material_ids: string[]
+    formulas: string[]
+    spg_nums: number[] // spacegroup numbers (client derives crystal system)
+    kappa_dft: (number | null)[] // DFT kappa_L at 300K (W/mK)
+    models: (KeyedModel & {
+      kappa_ml: (number | null)[] // ML kappa_L at 300K (W/mK)
+      srme: (number | null)[] // per-material SRME in [0, 2]
+      imag_modes: (boolean | null)[] // imaginary phonon modes after relaxation
+      broken_sym: (boolean | null)[] // symmetry broken during relaxation
+      max_steps: (boolean | null)[] // relaxation hit max steps (non-converged)
+      freq_w1: (number | null)[] // phonon spectrum Wasserstein-1 dist vs DFT (THz)
+      freq_w1_mean: number | null
+      // ML vs DFT phonon frequency quantile-quantile parity pairs (THz), 17
+      // quantile levels per material concatenated over all comparable materials
+      freq_pairs: { dft: number[]; ml: number[] }
+    })[]
+  }
+  export default data
+}
+
 // === geo-opt ===
 declare module '$figs/struct-rmsd-cdf.json.gz' {
   const data: { models: (LabeledXY & { auc: number })[] }

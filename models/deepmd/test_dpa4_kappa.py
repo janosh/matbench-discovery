@@ -10,7 +10,7 @@ from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 import pandas as pd
 import torch
@@ -119,10 +119,7 @@ class KappaRunner:
         structures_path = self.structures_path or Path(
             DataFiles.phonondb_pbe_103_structures.path
         )
-        atoms_list = cast(
-            "list[Atoms]",
-            read(structures_path, format="extxyz", index=":"),
-        )
+        atoms_list = read(structures_path, format="extxyz", index=":")
         if self.limit > 0:
             atoms_list = atoms_list[: self.limit]
 

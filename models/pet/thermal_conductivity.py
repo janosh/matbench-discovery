@@ -1,11 +1,21 @@
-from typing import Any
+from typing import Any, Protocol
 
 import numpy as np
 from ase.atoms import Atoms
-from ase.calculators.calculator import Calculator
 from phono3py.api_phono3py import Phono3py
 from phonopy.structure.atoms import PhonopyAtoms
 from tqdm.auto import tqdm
+
+
+class EnergyCalculator(Protocol):
+    """Calculator with PET's batched energy API."""
+
+    def compute_energy(
+        self,
+        atoms: list[Atoms],
+        *,
+        compute_forces_and_stresses: bool,
+    ) -> dict[str, Any]: ...
 
 
 def init_phono3py(
@@ -56,7 +66,7 @@ def init_phono3py(
 
 def calculate_fc2_set(
     ph3: Phono3py,
-    calculator: Calculator,
+    calculator: EnergyCalculator,
     pbar_kwargs: dict[str, Any] | None = None,
     batch_size: int = 1,
 ) -> np.ndarray:
@@ -65,7 +75,7 @@ def calculate_fc2_set(
 
     Args:
         ph3 (Phono3py): Phono3py object for which to calculate force constants.
-        calculator (Calculator): ASE calculator to compute forces.
+        calculator (EnergyCalculator): Calculator with batched force evaluation.
         pbar_kwargs (dict[str, Any] | None): Arguments passed to tqdm progress bar.
             Defaults to None.
         batch_size (int): Number of supercells per force-evaluation batch.
@@ -104,7 +114,7 @@ def calculate_fc2_set(
 
 def calculate_fc3_set(
     ph3: Phono3py,
-    calculator: Calculator,
+    calculator: EnergyCalculator,
     pbar_kwargs: dict[str, Any] | None = None,
     batch_size: int = 1,
 ) -> np.ndarray:
@@ -112,7 +122,7 @@ def calculate_fc3_set(
 
     Args:
         ph3 (Phono3py): Phono3py object for which to calculate force constants.
-        calculator (Calculator): ASE calculator to compute forces.
+        calculator (EnergyCalculator): Calculator with batched force evaluation.
         pbar_kwargs (dict[str, Any] | None): Passed to tqdm progress bar.
             Defaults to None.
         batch_size (int): Number of supercells per force-evaluation batch.
@@ -135,9 +145,9 @@ def calculate_fc3_set(
         batch_displacements = displacements[batch : batch + batch_size]
         batch_atoms = [
             Atoms(
-                supercell.symbols,
-                cell=supercell.cell,
-                positions=supercell.positions,
+                supercell.symbols,  # ty: ignore[unresolved-attribute]
+                cell=supercell.cell,  # ty: ignore[unresolved-attribute]
+                positions=supercell.positions,  # ty: ignore[unresolved-attribute]
                 pbc=True,
             )
             for supercell in batch_displacements
@@ -153,7 +163,7 @@ def calculate_fc3_set(
 
 def get_fc2_and_freqs(
     ph3: Phono3py,
-    calculator: Calculator,
+    calculator: EnergyCalculator,
     pbar_kwargs: dict[str, Any] | None = None,
     batch_size: int = 1,
 ) -> tuple[Phono3py, np.ndarray, np.ndarray]:
@@ -161,7 +171,7 @@ def get_fc2_and_freqs(
 
     Args:
         ph3 (Phono3py): Phono3py object for which to calculate force constants.
-        calculator (Calculator): ASE calculator to compute forces.
+        calculator (EnergyCalculator): Calculator with batched force evaluation.
         pbar_kwargs (dict[str, Any] | None): Arguments passed to tqdm progress bar.
             Defaults to None.
         batch_size (int): Number of supercells per force-evaluation batch.

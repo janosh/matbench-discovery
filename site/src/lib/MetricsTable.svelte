@@ -1,6 +1,6 @@
 <script lang="ts">
   import { OrgLogos, TableControls } from '$lib'
-  import { metric_better_as } from '$lib/metrics'
+  import { append_better_hint, metric_better_as } from '$lib/metrics'
   import type {
     CellSnippetArgs,
     DiscoverySet,
@@ -9,12 +9,8 @@
     ModelData,
     SortDir,
   } from '$lib/types'
-  import type {
-    CellSnippetArgs as MattervizCellSnippetArgs,
-    Label as MattervizLabel,
-  } from 'matterviz'
+  import type { Label as MattervizLabel } from 'matterviz'
   import { HeatmapTable, Icon } from 'matterviz'
-  import type { Snippet } from 'svelte'
   import { click_outside } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
   import { SvelteSet } from 'svelte/reactivity'
@@ -75,17 +71,8 @@
     ]
       .map((col): Label => {
         const better = col.better ?? metric_better_as(col.label)
-
-        // Append better=higher/lower to tooltip if applicable
-        let description = col.description ?? ``
-        if (better === `higher` || better === `lower`) {
-          description = description
-            ? `${description} (${better}=better)`
-            : `${better}=better`
-        }
         const visible = col.visible !== false && col_filter(col)
-
-        return { ...col, better, description, visible }
+        return { ...col, better, description: append_better_hint(col, better), visible }
       })
       // Ensure Model column comes first (0 keeps relative order of all other columns)
       .toSorted((col1, col2) =>
@@ -203,8 +190,8 @@
   columns={columns as MattervizLabel[]}
   bind:sort
   special_cells={{
-    Links: links_cell as unknown as Snippet<[MattervizCellSnippetArgs]>,
-    Org: affiliation_cell as unknown as Snippet<[MattervizCellSnippetArgs]>,
+    Links: links_cell,
+    Org: affiliation_cell,
   }}
   default_num_format=".3f"
   bind:show_heatmap

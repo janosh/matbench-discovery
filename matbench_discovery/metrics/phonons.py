@@ -1,19 +1,16 @@
-"""Metrics for evaluating ML thermal conductivities against DFT reference values.
+"""Metrics for evaluating ML thermal conductivity against DFT references.
 
-The metrics include:
-- SRD (Symmetric Relative Difference): Measures the relative difference between ML and
-    DFT predictions
+Included metrics:
+- SRD (Symmetric Relative Difference): Relative difference between ML and DFT
+  conductivities
 - SRE (Symmetric Relative Error): Absolute value of SRD
-- SRME (Symmetric Relative Mean Error): A microscopic (i.e. mode-resolved)
-  metric that is particularly useful since it's not subject to error cancellation.
-  Overpredictions of kappa-contributions from one mode will not cancel against
-  underpredictions from another mode.
+- SRME (Symmetric Relative Mean Error): Microscopic, mode-resolved error that avoids
+  cancellation between over- and underpredicted mode contributions.
 
-Code in this module is adapted from https://github.com/MPA2suite/k_SRME/blob/6ff4c867/k_srme/benchmark.py,
-published in https://arxiv.org/abs/2408.00755.
-It was ported to this repo in https://github.com/janosh/matbench-discovery/pull/196 to
-implement parallelization across input structures which allows scaling thermal
-conductivity metrics to larger test sets.
+Adapted from https://github.com/MPA2suite/k_SRME/blob/6ff4c867/k_srme/benchmark.py,
+published in https://arxiv.org/abs/2408.00755. Ported in
+https://github.com/janosh/matbench-discovery/pull/196 to parallelize over input
+structures and scale thermal-conductivity metrics to larger test sets.
 """
 
 import traceback
@@ -30,22 +27,18 @@ from matbench_discovery.phonons import thermal_conductivity as ltc
 def calc_kappa_metrics_from_dfs(
     df_pred: pd.DataFrame, df_true: pd.DataFrame
 ) -> pd.DataFrame:
-    """Compute per-material thermal conductivity predictions metrics from 2 dataframes.
+    """Compute per-material thermal-conductivity metrics from two dataframes.
 
-    This function takes the raw ML predictions and DFT reference results and computes
-    various benchmark metrics. It handles array-type columns (like stress tensors and
-    mode-resolved properties), calculates averaged quantities, and computes the
-    SRD, SRE, and SRME metrics.
+    Adds averaged conductivities and SRD/SRE/SRME metrics to raw ML predictions,
+    handling array-valued columns such as tensors and mode-resolved properties.
 
     Args:
-        df_pred: DataFrame containing ML model predictions with columns for
-            thermal conductivity tensors, mode-resolved properties, and other
-            structural information.
-        df_true: DataFrame containing DFT reference calculations with the
-            same structure as df_pred.
+        df_pred: ML predictions with conductivity tensors, mode-resolved properties,
+            and structural information.
+        df_true: DFT references with the same structure as df_pred.
 
     Returns:
-        pd.DataFrame: df_pred with additional columns for benchmark metrics:
+        df_pred with added benchmark columns:
         - SRD: Symmetric Relative Difference between ML and DFT conductivities
         - SRE: Absolute value of SRD
         - SRME: Mode-resolved error
@@ -80,32 +73,101 @@ def calc_kappa_metrics_from_dfs(
     return df_pred
 
 
-def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
-    """Calculate directionally averaged trace of the conductivity tensor obtained from
-    the Wigner transport equation (WTE) solution in the relaxation-time approximation.
+def weighted_quantiles(
+    values: np.ndarray, weights: np.ndarray | None, quantile_levels: np.ndarray
+) -> np.ndarray:
+    """Weighted quantiles of a 1D sample via the empirical inverse CDF.
 
-    Takes a thermal conductivity tensor and returns its trace (average of diagonal
-    components). This represents the average thermal conductivity in the 3 spatial
-    directions, which is a useful scalar metric for comparing materials.
+    Uses numpy's ``method="inverted_cdf"`` definition: Q(u) is the smallest x with
+    F(x) >= u. Integer weights are exactly equivalent to repeated samples, so spectra
+    on weighted irreducible q-meshes (DFT) and expanded full meshes (ML) compare
+    identically.
 
     Args:
-        kappa: Thermal conductivity tensor of shape (..., 3, 3), or pre-averaged
-            directional conductivities of shape (..., 3). Earlier dimensions may
-            include temperatures or other parameters.
+        values: 1D sample values; NaNs are dropped with their weights.
+        weights: Non-negative 1D weights matching values, or None for uniform weights.
+        quantile_levels: Levels in [0, 1] at which to evaluate the inverse CDF.
 
     Returns:
-        Average conductivity value(s). Returns a scalar for a single 3x3 tensor,
-        an array of averages for multiple temperatures, or np.array([np.nan]) if the
-        calculation fails.
+        Quantile values, same length as quantile_levels.
+
+    Raises:
+        ValueError: If values is empty (or all-NaN), lengths mismatch, weights are
+            non-finite/negative/zero-sum, or quantile levels are outside [0, 1].
+    """
+    values = np.ravel(np.asarray(values, dtype=float))
+    weights = (
+        np.ones_like(values)
+        if weights is None
+        else np.ravel(np.asarray(weights, dtype=float))
+    )
+    quantile_levels = np.ravel(np.asarray(quantile_levels, dtype=float))
+    if len(values) != len(weights):
+        raise ValueError(f"{len(values)=} != {len(weights)=}")
+    if np.any(~np.isfinite(quantile_levels)) or np.any(
+        (quantile_levels < 0) | (quantile_levels > 1)
+    ):
+        raise ValueError("quantile_levels must be finite values in [0, 1]")
+    finite_mask = np.isfinite(values)
+    values, weights = values[finite_mask], weights[finite_mask]
+    if len(values) == 0:
+        raise ValueError("no finite values to compute quantiles from")
+    if np.any(~np.isfinite(weights)) or np.any(weights < 0):
+        raise ValueError("weights must be finite non-negative values")
+    weight_sum = weights.sum()
+    if weight_sum <= 0:
+        raise ValueError("weights must sum to a positive value")
+    order = np.argsort(values)
+    values, weights = values[order], weights[order]
+    cdf = np.cumsum(weights) / weight_sum
+    idx = np.searchsorted(cdf, quantile_levels, side="left")
+    return values[np.minimum(idx, len(values) - 1)]
+
+
+def mode_weights_for_freqs(
+    ph_freqs: np.ndarray, q_weights: np.ndarray | None
+) -> np.ndarray | None:
+    """Per-frequency weights for a (n_qpoints, n_modes) phonon frequency array.
+
+    q-point weights apply only when their length matches the q-point axis (irreducible
+    mesh). Otherwise, a uniform full mesh is assumed and None is returned.
+    """
+    if q_weights is None:
+        return None
+    q_weights = np.ravel(np.asarray(q_weights, dtype=float))
+    if q_weights.shape != (ph_freqs.shape[0],):
+        return None
+    return np.repeat(q_weights, ph_freqs.shape[1])
+
+
+def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
+    """Directionally average thermal conductivity from WTE-RTA outputs.
+
+    Returns the trace average for tensors, i.e. the mean of diagonal components across
+    the 3 spatial directions, as a scalar metric for comparing materials.
+
+    Args:
+        kappa: Thermal conductivity tensor of shape (..., 3, 3), a Voigt 6-vector
+            [xx, yy, zz, yz, xz, xy] of shape (..., 6) as stored by phono3py RTA in
+            calc_kappa.py, or pre-averaged directional conductivities of shape (..., 3).
+            Earlier dimensions may encode temperatures or other parameters.
+
+    Returns:
+        Average conductivity: scalar for a single 3x3 tensor, array for multiple
+        temperatures, or np.array([np.nan]) if calculation fails.
     """
     try:
         kappa_arr = np.asarray(kappa, dtype=float)
+        if kappa_arr.ndim == 0:  # scalar NaN from a failed calculation
+            raise ValueError(f"expected array-like kappa, got {kappa_arr=}")
         if kappa_arr.shape[-2:] == (3, 3):
             return np.trace(kappa_arr, axis1=-2, axis2=-1) / 3
+        if kappa_arr.shape[-1] == 6:  # Voigt: diagonal components come first
+            return kappa_arr[..., :3].mean(axis=-1)
         if kappa_arr.shape[-1:] == (3,):
             return kappa_arr.mean(axis=-1)
         raise ValueError(
-            f"expected shape (..., 3, 3) or (..., 3), got {kappa_arr.shape}"
+            f"expected shape (..., 3, 3), (..., 6) or (..., 3), got {kappa_arr.shape}"
         )
     except (ValueError, TypeError):
         warnings.warn(
@@ -117,27 +179,26 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
 def calc_kappa_srme_dataframes(
     df_pred: pd.DataFrame, df_true: pd.DataFrame
 ) -> list[float]:
-    """Calculate the Symmetric Relative Mean Error (SRME) for each material.
+    """Calculate Symmetric Relative Mean Error (SRME) for each material.
 
-    SRME is a comprehensive metric that evaluates both the overall accuracy of thermal
-    conductivity predictions and the accuracy of individual phonon mode contributions.
-    It is symmetric (like SRD) to treat over- and under-predictions equally, and
-    accounts for the mean error across all phonon modes weighted by their contributions.
+    SRME measures total thermal-conductivity accuracy and individual phonon-mode
+    contributions. Like SRD, it is symmetric between over- and underprediction, and it
+    averages errors over all modes weighted by their contributions.
 
-    The function handles various edge cases:
+    Edge cases:
     - Returns 2.0 for materials with imaginary frequencies (unphysical predictions)
     - Returns 2.0 for materials where symmetry is broken during relaxation
     - Returns 2.0 for failed calculations or missing data
 
     Args:
-        df_pred (pd.DataFrame): ML predictions including mode-resolved properties
-        df_true (pd.DataFrame): DFT reference data including mode-resolved properties
+        df_pred: ML predictions with mode-resolved properties.
+        df_true: DFT references with mode-resolved properties.
 
     Returns:
-        list[float]: SRME values for each material. Values are between 0 and 2, where:
+        SRME values for each material, between 0 and 2:
         - 0 indicates perfect agreement in both total κ and mode-resolved properties
         - 2 indicates complete failure (imaginary frequencies, broken symmetry, etc.)
-        - Values in between indicate partial agreement, with lower being better
+        - Intermediate values indicate partial agreement, lower being better
     """
     srme_list: list[float] = []
     for idx, row_pred in df_pred.iterrows():
@@ -166,7 +227,7 @@ def calc_kappa_srme_dataframes(
 
 
 def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarray:
-    """Calculate the Symmetric Relative Mean Error (SRME) for a single material.
+    """Calculate Symmetric Relative Mean Error (SRME) for one material.
 
         SRME = 2 * (sum|κ_pred,i - κ_true,i| * w_i) / (κ_pred,tot + κ_true,tot)
 
@@ -175,23 +236,23 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
     - w_i are the mode weights
     - κ_pred,tot and κ_true,tot are total conductivities
 
-    The calculation involves:
-    1. Computing mode-resolved average conductivities if not pre-computed
-    2. Calculating the weighted mean absolute error across all modes
-    3. Normalizing by the sum of total conductivities to make it symmetric and relative
+    Steps:
+    1. Compute mode-resolved average conductivities if not precomputed
+    2. Compute weighted mean absolute error over all modes
+    3. Normalize by total-conductivity sum, making the metric symmetric and relative
 
     Args:
-        kappas_pred: Series containing ML predictions including:
+        kappas_pred: ML predictions including:
             - kappa_tot_avg: Average total conductivity
             - mode_kappa_tot: Mode-resolved conductivities
             - mode_weights: Mode weights for averaging
-        kappas_true: Series containing DFT reference data with same structure
+        kappas_true: DFT references with the same structure
 
     Returns:
-        np.ndarray: SRME values per temperature, each between 0 and 2, where:
+        SRME values per temperature, each between 0 and 2:
         - 0 indicates perfect agreement in both total κ and mode-resolved properties
         - 2 indicates complete disagreement or invalid results
-        On error conditions (missing data, NaN values), returns np.array([2.0]).
+        Missing data or NaNs return np.array([2.0]).
     """
     if np.any(np.isnan(kappas_true[MbdKey.kappa_tot_avg])):
         raise ValueError("found NaNs in kappa_tot_avg reference values")
@@ -243,7 +304,7 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
 def write_metrics_to_yaml(
     model: Model, metrics: dict[str, float], pred_file_path: str
 ) -> None:
-    """Write kappa metrics to model's YAML file under the phonons section.
+    """Write kappa metrics to a model YAML file's phonons section.
 
     Args:
         model: Model to write metrics for.

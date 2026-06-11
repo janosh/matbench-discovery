@@ -5,7 +5,7 @@ import numpy as np
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, figs
-from matbench_discovery.cli import cli_args, is_full_model_run
+from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
@@ -26,9 +26,7 @@ if test_subset == TestSubset.uniq_protos:
 
 show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
 models_to_plot = [
-    model.label
-    for model in cli_args.models
-    if model.is_complete and (show_non_compliant or model.is_compliant)
+    model.label for model in complete_models(show_non_compliant=show_non_compliant)
 ]
 mae_vals = dfs_metrics[test_subset].loc["MAE", models_to_plot]
 model_ranking = mae_vals.sort_values().index[::-1]

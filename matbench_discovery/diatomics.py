@@ -8,7 +8,6 @@ https://arxiv.org/abs/2401.00096 (see fig. 56).
 # %%
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING, Literal, get_args
 
 from ase import Atoms
@@ -22,7 +21,6 @@ if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
 __date__ = "2024-03-31"
-module_dir = os.path.dirname(__file__)
 DiatomicsType = Literal["homo-nuclear", "hetero-nuclear"]
 homo_nuc = get_args(DiatomicsType)[0]
 atom_num_symbol_map = dict(enumerate(chemical_symbols, start=0))

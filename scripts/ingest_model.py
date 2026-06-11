@@ -32,6 +32,7 @@ PAYLOAD_SCRIPTS = (
     "scripts/model_figs/rolling_hull_dist_mae_models.py",
     "scripts/model_figs/tiles_hist_classified_stable_models.py",
     "scripts/model_figs/tmi-page-figures.py",
+    "scripts/model_figs/kappa_103_analysis.py",
     "scripts/evals/geo_opt.py",
 )
 PARITY_ASSET_DIRS = (

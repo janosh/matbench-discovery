@@ -104,9 +104,7 @@ ignore = [
   "PT006",   # pytest-parametrize-names-wrong-type
   "PTH",
   "S108",
-  "S310",
   "S603",    # subprocess-without-shell-equals-true
-  "S607",    # start-process-with-partial-path
   "T201",
   "TD",
   "TRY003",
@@ -133,10 +131,12 @@ markers = [
 [tool.codespell]
 ignore-words-list = "nd,te,fpr,matris,titel"
 
-[[tool.ty.overrides]]
-include = ["models/**/*test_*.py", "models/**/*train_*.py"]
+[tool.ty.terminal]
+output-format = "concise"
 
-[tool.ty.overrides.rules]
+[tool.ty.rules]
+# heavy optional model deps (chgnet, mace, alignn, ...) aren't installable in the
+# pre-commit hook environment
 unresolved-import = "ignore"
 
 [dependency-groups]

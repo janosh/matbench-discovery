@@ -3,9 +3,15 @@
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
   import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
-  import { DynamicScatter, GitHubActivityScatter, RadarChart } from '$lib/plot'
-  import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
-  import { find_best_model, model_is_compliant, MODELS } from '$lib/models.svelte'
+  import {
+    DynamicScatter,
+    GitHubActivityScatter,
+    RadarChart,
+    SotaTimeline,
+  } from '$lib/plot'
+  import { ALL_METRICS, discovery_set_toggle_options, METADATA_COLS } from '$lib/labels'
+  import { make_combined_filter } from '$lib/metrics'
+  import { find_best_model, MODELS } from '$lib/models.svelte'
   import {
     generate_csv,
     generate_excel,
@@ -83,10 +89,24 @@
   let best_model = $derived(
     find_best_model(MODELS, { show_non_compliant, show_compliant, discovery_set }),
   )
-  // landing-page cohort, kept in sync with the metrics table's compliance toggles
-  let in_cohort = $derived((model: ModelData) =>
-    model_is_compliant(model) ? show_compliant : show_non_compliant
-  )
+  // Landing-page cohort, kept in sync with the metrics table filters.
+  let in_cohort = $derived.by(() => {
+    const combined_filter = make_combined_filter(
+      () => true,
+      show_energy_only,
+      show_compliant,
+      show_non_compliant,
+    )
+    return (model: ModelData): boolean => {
+      const discovery_metrics = model.metrics?.discovery
+      return (
+        combined_filter(model) &&
+        discovery_metrics !== null &&
+        typeof discovery_metrics === `object` &&
+        Boolean(discovery_metrics[discovery_set])
+      )
+    }
+  })
 
   export const snapshot: Snapshot = {
     capture: () => ({
@@ -114,17 +134,7 @@
 </h1>
 
 <figure style="margin-top: 3em" id="metrics-table">
-  <SelectToggle
-    bind:selected={discovery_set}
-    options={Object.entries(DISCOVERY_SET_LABELS).map(
-      ([value, { label, description: tooltip, link }]) => ({
-        value,
-        label,
-        tooltip,
-        link,
-      }),
-    )}
-  />
+  <SelectToggle bind:selected={discovery_set} options={discovery_set_toggle_options} />
 
   <section class="full-bleed">
     <MetricsTable
@@ -237,6 +247,15 @@
   {/snippet}
 </Readme>
 <KappaNote warning={false} />
+
+<h2>Progress Over Time</h2>
+<p>
+  Benchmark progress since launch: each point is a model placed at its submission date.
+  The dashed step line traces the running best ("SOTA frontier") of the selected
+  metric; labeled models are those that set a new record when they were added. The
+  plot respects the compliance toggles of the metrics table above.
+</p>
+<SotaTimeline model_filter={in_cohort} style="height: 500px" />
 
 <h2>GitHub Activity</h2>
 <p>

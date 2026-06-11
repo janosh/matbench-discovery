@@ -43,6 +43,35 @@ export const resolve_asset_base_url = (
 export const join_asset_url = (base_url: string, asset: string): string =>
   `${base_url}/${asset.replace(/^\/+/, ``)}`
 
+// Shared manifest-based URL helpers for parity asset modules (energy, kappa, ...).
+// `kind` only affects error messages. `env_base_url` (e.g. a Vite env var) overrides
+// the manifest's local default base URL.
+export function parity_asset_resolver(
+  kind: string,
+  manifest: { local_asset_base_url: string; model_assets: object },
+  env_base_url: string | undefined,
+): {
+  asset_url: (asset: string) => string
+  model_asset: (model_key: string) => string
+  has_model: (model_key: string | undefined) => boolean
+} {
+  const model_assets = manifest.model_assets as Record<
+    string,
+    { asset: string } | undefined
+  >
+  const base_url = resolve_asset_base_url(env_base_url, manifest.local_asset_base_url)
+  return {
+    asset_url: (asset: string): string => join_asset_url(base_url, asset),
+    model_asset: (model_key: string): string => {
+      const asset = model_assets[model_key]?.asset
+      if (!asset) throw new Error(`No ${kind} parity model asset for ${model_key}`)
+      return asset
+    },
+    has_model: (model_key: string | undefined): boolean =>
+      Boolean(model_key && model_assets[model_key]?.asset),
+  }
+}
+
 async function read_asset_text(url: string): Promise<string> {
   const response = await fetch(url)
   if (!response.ok) throw new Error(`Failed to load ${url}: HTTP ${response.status}`)

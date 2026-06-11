@@ -7,8 +7,6 @@ https://nature.com/articles/s41524-020-00481-6
 import gzip
 import os
 import pickle
-import urllib.error
-import urllib.request
 from glob import glob
 
 import numpy as np
@@ -30,6 +28,7 @@ from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, WBM_DIR, figs, today
 from matbench_discovery.data import DATASETS, DataFiles
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
+from matbench_discovery.remote.fetch import download_file
 from matbench_discovery.structure import prototype
 
 try:
@@ -188,11 +187,7 @@ for filename in (
         continue
 
     url = f"{mat_cloud_url}&filename={filename}"
-    try:
-        urllib.request.urlretrieve(url, file_path)
-    except urllib.error.HTTPError as exc:
-        print(f"failed to download {url=}: {exc}")
-        continue
+    download_file(file_path, url)
 
 
 # %%

@@ -57,6 +57,8 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles non-compliant models`, async () => {
+    const selected_scatter_label = () =>
+      doc_query(`span.selected-label`).textContent?.replaceAll(/\s+/g, ` `)
     const toggle = doc_query<HTMLInputElement>(
       `.table-controls label input[type="checkbox"]`,
     )
@@ -66,6 +68,8 @@ describe(`Landing Page`, () => {
     expect(toggle.checked).toBe(true)
     // get number of table rows
     const n_models_on_load = document.querySelectorAll(`tbody tr`).length
+    expect(selected_scatter_label()).toContain(`Params`)
+    expect(selected_scatter_label()).toContain(`${n_models_on_load} models`)
 
     // Click to show non-compliant models
     toggle.click()
@@ -73,6 +77,7 @@ describe(`Landing Page`, () => {
     await tick()
     const n_all_models = document.querySelectorAll(`tbody tr`).length
     expect(n_all_models).toBeLessThan(n_models_on_load)
+    expect(selected_scatter_label()).toContain(`${n_all_models} models`)
   })
 
   it(`updates column visibility when toggling checkboxes`, async () => {

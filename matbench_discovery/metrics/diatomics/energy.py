@@ -53,6 +53,49 @@ def _validate_diatomic_curve(
     return xs_arr, ys_arr
 
 
+def _validate_curve_pair(
+    seps_ref: ArrayLike,
+    e_ref: ArrayLike,
+    seps_pred: ArrayLike,
+    e_pred: ArrayLike,
+    *,
+    interpolate: bool | int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Validate/sort a ref/pred curve pair, requiring same x-grid if not
+    interpolating. Returns sorted (seps_ref, e_ref, seps_pred, e_pred) arrays.
+    """
+    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref, normalize_energy=False)
+    seps_pred, e_pred = _validate_diatomic_curve(
+        seps_pred, e_pred, normalize_energy=False
+    )
+    if not interpolate and not np.array_equal(seps_ref, seps_pred):
+        raise ValueError(
+            f"Reference and predicted distances must be same when {interpolate=}\n"
+            f"{seps_ref=}, {seps_pred=}"
+        )
+    return seps_ref, e_ref, seps_pred, e_pred
+
+
+def _interp_common_grid(
+    seps_ref: np.ndarray,
+    e_ref: np.ndarray,
+    seps_pred: np.ndarray,
+    e_pred: np.ndarray,
+    seps_min: float,
+    seps_max: float,
+    *,
+    interpolate: bool | int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Interpolate both curves onto a shared linspace grid, returning the grid
+    points and both curves' energies on it.
+    """
+    n_points = 100 if interpolate is True else int(interpolate)
+    seps_interp = np.linspace(seps_min, seps_max, n_points)
+    e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
+    e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
+    return seps_interp, e_ref_interp, e_pred_interp
+
+
 def calc_curve_diff_auc(
     seps_ref: ArrayLike,
     e_ref: ArrayLike,
@@ -83,43 +126,29 @@ def calc_curve_diff_auc(
         float: Absolute area under the curve of the difference between the curves.
             If normalize=True, returns unitless value, otherwise in eV·Å.
     """
-    # Validate and sort both curves
-    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref, normalize_energy=False)
-    seps_pred, e_pred = _validate_diatomic_curve(
-        seps_pred, e_pred, normalize_energy=False
+    seps_ref, e_ref, seps_pred, e_pred = _validate_curve_pair(
+        seps_ref, e_ref, seps_pred, e_pred, interpolate=interpolate
     )
 
-    # Check if interpolation is needed
-    if not interpolate and not np.array_equal(seps_ref, seps_pred):
-        raise ValueError(
-            f"Reference and predicted distances must be same when {interpolate=}\n"
-            f"{seps_ref=}, {seps_pred=}"
-        )
-
-    # Get data range bounds
-    data_min = max(seps_ref.min(), seps_pred.min())
-    data_max = min(seps_ref.max(), seps_pred.max())
-
+    # Replace None range values with the intersection of both curves' data bounds
     seps_min, seps_max = seps_range
-    # Replace None values with data bounds
-    seps_min = data_min if seps_min is None else seps_min
-    seps_max = data_max if seps_max is None else seps_max
+    seps_min = max(seps_ref.min(), seps_pred.min()) if seps_min is None else seps_min
+    seps_max = min(seps_ref.max(), seps_pred.max()) if seps_max is None else seps_max
 
     if seps_min >= seps_max:
         raise ValueError(f"Invalid range: {seps_min=} >= {seps_max=}")
 
     if interpolate:
-        # Create grid for interpolation
-        n_points = 100 if interpolate is True else interpolate
-        seps_interp = np.linspace(seps_min, seps_max, n_points)
-
-        # Interpolate both curves to the common grid
-        e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
-        e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
-
-        # Calculate absolute difference and integrate
-        diff = np.abs(e_ref_interp - e_pred_interp)
-        auc = np.trapezoid(diff, seps_interp)
+        seps_interp, e_ref_interp, e_pred_interp = _interp_common_grid(
+            seps_ref,
+            e_ref,
+            seps_pred,
+            e_pred,
+            seps_min,
+            seps_max,
+            interpolate=interpolate,
+        )
+        auc = np.trapezoid(np.abs(e_ref_interp - e_pred_interp), seps_interp)
     else:
         # If no interpolation, restrict to the requested range
         mask = (seps_ref >= seps_min) & (seps_ref <= seps_max)
@@ -128,14 +157,12 @@ def calc_curve_diff_auc(
         seps_ref = seps_ref[mask]
         e_ref = e_ref[mask]
         e_pred = e_pred[mask]
-        diff = np.abs(e_ref - e_pred)
-        auc = np.trapezoid(diff, seps_ref)
+        auc = np.trapezoid(np.abs(e_ref - e_pred), seps_ref)
 
     if normalize:
         # Normalize by bounding box of reference curve on the (possibly masked) domain.
         # When interpolate=True, uses full ref range; when False, uses masked subset.
-        seps_span, e_span = np.ptp(seps_ref), np.ptp(e_ref)
-        box_area = seps_span * e_span
+        box_area = np.ptp(seps_ref) * np.ptp(e_ref)
         if box_area > 0:
             auc = auc / box_area
 
@@ -166,33 +193,22 @@ def calc_energy_mae(
     Returns:
         float: Mean absolute error between the curves (eV).
     """
-    # Validate and sort both curves
-    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref, normalize_energy=False)
-    seps_pred, e_pred = _validate_diatomic_curve(
-        seps_pred, e_pred, normalize_energy=False
+    seps_ref, e_ref, seps_pred, e_pred = _validate_curve_pair(
+        seps_ref, e_ref, seps_pred, e_pred, interpolate=interpolate
     )
 
-    # Check if interpolation is needed
-    if not interpolate and not np.array_equal(seps_ref, seps_pred):
-        raise ValueError(
-            f"Reference and predicted distances must be same when {interpolate=}\n"
-            f"{seps_ref=}, {seps_pred=}"
-        )
-
-    # Get data range bounds
-    data_min = max(seps_ref.min(), seps_pred.min())
-    data_max = min(seps_ref.max(), seps_pred.max())
-
     if interpolate:
-        # Create grid for interpolation
-        n_points = 100 if interpolate is True else interpolate
-        seps_interp = np.linspace(data_min, data_max, n_points)
-
-        # Interpolate both curves to the common grid
-        e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
-        e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
-
-        # Calculate MAE on interpolated data
+        data_min = max(seps_ref.min(), seps_pred.min())
+        data_max = min(seps_ref.max(), seps_pred.max())
+        _, e_ref_interp, e_pred_interp = _interp_common_grid(
+            seps_ref,
+            e_ref,
+            seps_pred,
+            e_pred,
+            data_min,
+            data_max,
+            interpolate=interpolate,
+        )
         return float(np.mean(np.abs(e_ref_interp - e_pred_interp)))
     # If no interpolation, calculate MAE directly
     return float(np.mean(np.abs(e_ref - e_pred)))
@@ -205,22 +221,6 @@ def calc_second_deriv_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     )
     d2y = np.gradient(np.gradient(energies_arr, seps_arr), seps_arr)
     return float(np.sqrt(np.mean(d2y**2)))
-
-
-def calc_total_variation_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
-    """Calculate smoothness using mean absolute gradient (lower is smoother)."""
-    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
-    dy = np.gradient(energies, seps)
-    return float(np.log10(np.mean(np.abs(dy))))
-
-
-def calc_curvature_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
-    """Calculate smoothness using mean absolute curvature (lower is smoother)."""
-    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
-    dy = np.gradient(energies, seps)
-    d2y = np.gradient(dy, seps)
-    curvature = np.abs(d2y) / (1 + dy**2) ** 1.5
-    return float(np.log10(np.mean(curvature)))
 
 
 def calc_tortuosity(seps: ArrayLike, energies: ArrayLike) -> float:

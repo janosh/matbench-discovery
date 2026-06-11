@@ -1,25 +1,24 @@
 <script lang="ts">
-  import { MetricsTable, SelectToggle } from '$lib'
-  import { MetricScatter } from '$lib/plot'
+  import { MetricsTable, MODELS, SelectToggle } from '$lib'
+  import { DynamicScatter } from '$lib/plot'
+  import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
   import * as labels from '$lib/labels'
   import type { DiscoverySet } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
 
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
+
+  // axis selections for the model-comparison scatter, bound so the section title
+  // tracks whatever properties the user picks
+  let scatter_x = $state(labels.HYPERPARAMS.model_params.key)
+  let scatter_y = $state(labels.ALL_METRICS.F1.key)
 </script>
 
 <h1>Crystal Stability Prediction Metrics</h1>
 
 <SelectToggle
   bind:selected={discovery_set}
-  options={Object.entries(labels.DISCOVERY_SET_LABELS).map(
-    ([value, { label, description: tooltip, link }]) => ({
-      value,
-      label,
-      tooltip,
-      link,
-    }),
-  )}
+  options={labels.discovery_set_toggle_options}
 />
 <section class="full-bleed">
   <MetricsTable
@@ -36,14 +35,16 @@
 
 <HullConstructionNote />
 
-<h2>F1 classification score vs model parameters</h2>
+<h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
 
 The F1 score is the harmonic mean of precision and recall. It is a measure of the model's
 ability to correctly identify hypothetical crystals in the WBM test set as lying on or
-below the Materials Project convex hull.
+below the Materials Project convex hull. Use the axis/color/size selectors to compare
+models across any pair of metrics and metadata.
 
-<MetricScatter
-  x_prop={labels.HYPERPARAMS.model_params}
-  y_prop={labels.ALL_METRICS.F1}
-  style="height: 400px"
+<DynamicScatter
+  models={MODELS}
+  bind:x_key={scatter_x}
+  bind:y_key={scatter_y}
+  style="height: 800px"
 />

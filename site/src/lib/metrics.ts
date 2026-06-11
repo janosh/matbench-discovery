@@ -88,6 +88,18 @@ export function get_nested_number(
 export const is_finite_num = (value: unknown): value is number =>
   typeof value === `number` && Number.isFinite(value)
 
+// Build dot-separated data access path from a label, preferring `property` (actual
+// data field name) over `key` when the two differ
+export const label_data_path = (label: Label | undefined): string =>
+  `${label?.path ?? ``}.${label?.property ?? label?.key ?? ``}`.replace(/^\./, ``)
+
+// Append "(higher|lower)=better" hint to a column tooltip where applicable
+export function append_better_hint(col: Label, better = col.better): string {
+  const description = col.description ?? ``
+  if (better !== `higher` && better !== `lower`) return description
+  return description ? `${description} (${better}=better)` : `${better}=better`
+}
+
 export const all_higher_better_metrics = Object.values(MODELINGS_TASKS).flatMap(
   (model_task) => model_task.metrics.higher_is_better,
 )

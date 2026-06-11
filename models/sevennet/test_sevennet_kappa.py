@@ -150,9 +150,8 @@ for atoms in tqdm_bar:
             else:
                 filtered_atoms = FrechetCellFilter(atoms)
 
-            optimizer = optim_cls(
-                filtered_atoms, logfile=f"{out_dir}/relax_{mat_id}.log"
-            )
+            log_path = f"{out_dir}/relax_{mat_id}.log"
+            optimizer = optim_cls(filtered_atoms, logfile=log_path)  # ty: ignore[invalid-argument-type]
             optimizer.run(fmax=force_max, steps=max_steps)
             reached_max_steps = optimizer.nsteps >= max_steps
             if reached_max_steps:

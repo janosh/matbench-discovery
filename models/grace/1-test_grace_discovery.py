@@ -7,13 +7,12 @@ Then refactored for GRACE.
 
 import os
 import warnings
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 import ase.optimize
 import ase.optimize.sciopt
 import numpy as np
 import pandas as pd
-from ase import Atoms
 from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from ase.optimize.optimize import Optimizer
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -131,16 +130,15 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         relax_atoms = atoms
         if max_steps > 0:
             relax_atoms = filter_cls(atoms)
-            with optim_cls(relax_atoms, logfile=None) as optimizer:
+            with optim_cls(relax_atoms, logfile=None) as optimizer:  # ty: ignore[invalid-argument-type]
                 for _ in optimizer.irun(fmax=force_max, steps=max_steps):
                     f_norm = np.linalg.norm(relax_atoms.get_forces(), axis=1).max()
                     if f_norm > 1e6:
                         raise RuntimeError("Force divergence detected")
 
         energy = relax_atoms.get_potential_energy()  # relaxed energy
-        # getattr unwraps relax_atoms (filter_cls wrapper when max_steps > 0)
-        atoms_obj = cast("Atoms", getattr(relax_atoms, "atoms", relax_atoms))
-        relaxed_struct = AseAtomsAdaptor.get_structure(atoms_obj)
+        unwrapped = getattr(relax_atoms, "atoms", relax_atoms)
+        relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)  # ty: ignore[invalid-argument-type]
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except (ValueError, RuntimeError, OSError, KeyError) as exc:
         print(f"Failed to relax {mat_id}: {exc!r}")

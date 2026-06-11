@@ -5,6 +5,7 @@ from collections.abc import Callable, Sequence
 from unittest.mock import mock_open, patch
 
 import numpy as np
+import pandas as pd
 import pytest
 from ase import Atoms
 from ase.build import bulk
@@ -47,6 +48,28 @@ def test_varying_size_objects(make_obj: Callable[[int], Atoms | Structure]) -> N
     assert abs(atoms_per_chunk[0] - atoms_per_chunk[1]) <= max(
         len(obj) for obj in objects
     )
+
+
+@pytest.mark.parametrize(
+    "n_chunks,task_id,expected_index",
+    [(3, 1, [0, 1, 2, 3]), (3, 2, [4, 5, 6]), (3, 3, [7, 8, 9]), (1, 1, range(10))],
+)
+def test_df_slurm_chunk(
+    n_chunks: int, task_id: int, expected_index: Sequence[int]
+) -> None:
+    """df_slurm_chunk returns the right rows for a 1-based slurm array task."""
+    df_in = pd.DataFrame({"col": range(10)})
+    df_chunk = hpc.df_slurm_chunk(df_in, n_chunks, task_id)
+    assert isinstance(df_chunk, pd.DataFrame)
+    assert list(df_chunk.index) == list(expected_index)
+
+
+@pytest.mark.parametrize("n_chunks,task_id", [(0, 1), (3, 0), (3, -1), (3, 4)])
+def test_df_slurm_chunk_rejects_invalid_task_ids(n_chunks: int, task_id: int) -> None:
+    """df_slurm_chunk rejects invalid chunk counts and task IDs."""
+    df_in = pd.DataFrame({"col": range(10)})
+    with pytest.raises(ValueError, match=rf"{n_chunks=}.*{task_id=}"):
+        hpc.df_slurm_chunk(df_in, n_chunks, task_id)
 
 
 def test_empty_input() -> None:

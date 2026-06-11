@@ -15,8 +15,12 @@ describe(`Discovery Task Page`, () => {
     const table = document.querySelector(`section.full-bleed table`)
     expect(table).not.toBeNull()
 
-    // MetricScatter
-    expect(document.querySelector(`[style*="height: 400px"]`)).not.toBeNull()
+    // DynamicScatter with h2 heading that tracks the selected axes
+    const h2s = [...document.querySelectorAll(`h2`)].map((h2) =>
+      h2.textContent?.replaceAll(/\s+/g, ` `).trim(),
+    )
+    expect(h2s).toContain(`F1 vs Params`)
+    expect(document.querySelector(`[style*="height: 800px"]`)).not.toBeNull()
 
     // Hull construction note from markdown
     expect(document.body.textContent).toContain(`Convex Hull Construction`)
