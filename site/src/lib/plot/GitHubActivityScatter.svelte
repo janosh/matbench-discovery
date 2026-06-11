@@ -3,17 +3,7 @@
   import { format_num } from 'matterviz'
   import { ScatterPlot } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
-  import type { Label } from '$lib/types'
-
-  interface GitHubData {
-    name: string
-    repo: string
-    stars: number
-    forks: number
-    commits_last_year: number
-    contributors: number
-    model_key?: string // URL slug for model detail page
-  }
+  import type { GitHubActivityData, Label } from '$lib/types'
 
   let {
     github_data = [],
@@ -21,7 +11,7 @@
     color_scale = { type: `log` },
     ...rest
   }: {
-    github_data?: GitHubData[]
+    github_data?: GitHubActivityData[]
     show_model_labels?: boolean
   } & ComponentProps<typeof ScatterPlot> = $props()
 
@@ -42,29 +32,22 @@
     },
   } as const satisfies Record<string, Partial<Label>>
 
-  type GitHubMetricKey = keyof Omit<GitHubData, `name` | `repo` | `model_key`>
+  type GitHubMetric = (typeof github_metrics)[keyof typeof github_metrics]
 
-  let axes = $state({
-    x: github_metrics.forks as Label,
-    y: github_metrics.stars as Label,
-    color_value: github_metrics.commits_last_year as Label,
-    size_value: github_metrics.contributors as Label,
+  let axes = $state<Record<`x` | `y` | `color_value` | `size_value`, GitHubMetric>>({
+    x: github_metrics.forks,
+    y: github_metrics.stars,
+    color_value: github_metrics.commits_last_year,
+    size_value: github_metrics.contributors,
   })
 
-  interface PlotPoint {
-    x: number
-    y: number
-    color_value: number
-    size_value: number
-    metadata: { name: string; repo: string; model_key?: string }
-  }
   let plot_data = $derived(
     github_data
       .map((item) => ({
-        x: item[axes.x.key as GitHubMetricKey],
-        y: item[axes.y.key as GitHubMetricKey],
-        color_value: item[axes.color_value.key as GitHubMetricKey],
-        size_value: item[axes.size_value.key as GitHubMetricKey],
+        x: item[axes.x.key],
+        y: item[axes.y.key],
+        color_value: item[axes.color_value.key],
+        size_value: item[axes.size_value.key],
         metadata: { name: item.name, repo: item.repo, model_key: item.model_key },
       }))
       .filter(
@@ -76,20 +59,20 @@
   )
   // O(1) lookup for tooltip by model name
   let plot_data_by_name = $derived(
-    new Map(plot_data.map((d) => [d.metadata.name, d])),
+    new Map(plot_data.map((point) => [point.metadata.name, point])),
   )
 
   const point_style = { fill: `#4dabf7` }
   let series = $derived({
-    x: plot_data.map((d) => d.x) as number[],
-    y: plot_data.map((d) => d.y) as number[],
+    x: plot_data.map((point) => point.x),
+    y: plot_data.map((point) => point.y),
     markers: `points` as const,
     point_style,
-    metadata: plot_data.map((d) => d.metadata),
-    color_values: plot_data.map((d) => Math.max(1, d.color_value)) as number[],
-    size_values: plot_data.map((d) => d.size_value) as number[],
-    point_label: (show_model_labels ? plot_data : []).map((d) => ({
-      text: d.metadata.name,
+    metadata: plot_data.map((point) => point.metadata),
+    color_values: plot_data.map((point) => Math.max(1, point.color_value)),
+    size_values: plot_data.map((point) => point.size_value),
+    point_label: (show_model_labels ? plot_data : []).map((point) => ({
+      text: point.metadata.name,
       font_size: `11px`,
       auto_placement: true,
     })),

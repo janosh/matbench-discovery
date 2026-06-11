@@ -5,7 +5,7 @@ import hashlib
 import json
 import os
 from collections.abc import Mapping, Sequence
-from typing import Any, Final, cast
+from typing import Any, Final
 
 import requests
 from tqdm import tqdm
@@ -51,7 +51,7 @@ def make_request(
     data: Mapping[str, object] | bytes | None = None,
     binary: bool = False,
     timeout: float = CLI_TIMEOUT,
-) -> dict[str, Any] | list[dict[str, Any]] | bytes:
+) -> Any:  # noqa: ANN401
     """Make a token-authorized HTTP request to the Figshare API.
 
     Args:
@@ -63,7 +63,7 @@ def make_request(
         timeout (float, optional): Timeout in seconds. Defaults to CLI_TIMEOUT = 30.
 
     Returns:
-        dict | list | bytes: Parsed JSON response, or raw bytes if not valid JSON.
+        Any: Parsed JSON response (dict or list), or raw bytes if not valid JSON.
 
     Raises:
         HTTPError: If the request fails. Error will contain the response body.
@@ -102,11 +102,10 @@ def create_article(
         int: The ID of the created article.
     """
     url = f"{BASE_URL}/account/articles"
-    result = cast("dict[str, Any]", make_request("POST", url, data=metadata))
+    result = make_request("POST", url, data=metadata)
     if verbose:
         print(f"Created article: {result['location']} with title {metadata['title']}\n")
-    result = cast("dict[str, Any]", make_request("GET", result["location"]))
-    return result["id"]
+    return make_request("GET", result["location"])["id"]
 
 
 def get_file_hash_and_size(
@@ -152,12 +151,11 @@ def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
     file_name = file_name or _repo_relative_name(file_path)
     data = dict(name=file_name, md5=md5, size=size)
     endpoint = f"{BASE_URL}/account/articles/{article_id}/files"
-    result = cast("dict[str, Any]", make_request("POST", endpoint, data=data))
-    file_info = cast("dict[str, Any]", make_request("GET", result["location"]))
+    result = make_request("POST", endpoint, data=data)
+    file_info = make_request("GET", result["location"])
 
     # Upload parts with nested progress bar showing bytes and percent
-    url = file_info["upload_url"]
-    parts_info = cast("dict[str, Any]", make_request("GET", url))
+    parts_info = make_request("GET", file_info["upload_url"])
     with (
         open(file_path, mode="rb") as file,
         tqdm(
@@ -202,7 +200,7 @@ def article_exists(article_id: int | str) -> bool:
     try:
         make_request("GET", article_url)
     except requests.HTTPError as exc:
-        if exc.response.status_code == 404:
+        if exc.response is not None and exc.response.status_code == 404:
             return False
         exc.add_note(f"{article_url=}")
         raise
@@ -227,7 +225,7 @@ def list_article_files(article_id: int) -> list[dict[str, Any]]:
     try:
         files = make_request("GET", f"{BASE_URL}/account/articles/{article_id}/files")
     except requests.HTTPError as exc:
-        if exc.response.status_code == 404:
+        if exc.response is not None and exc.response.status_code == 404:
             return []
         raise
     if not isinstance(files, list):
@@ -314,8 +312,7 @@ def find_similar_files(
             None, base_filename, existing_basename
         ).ratio()
         if similarity >= similarity_threshold:
-            file_id = cast("int", file_data.get("id"))
-            similar_files.append((existing_name, file_id))
+            similar_files.append((existing_name, file_data["id"]))
 
     return similar_files
 

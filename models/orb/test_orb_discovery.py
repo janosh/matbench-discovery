@@ -11,7 +11,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import torch
 import typer
@@ -27,6 +26,7 @@ from tqdm import tqdm
 
 from matbench_discovery import today
 from matbench_discovery.enums import DataFiles, MbdKey, Task
+from matbench_discovery.hpc import df_slurm_chunk
 from matbench_discovery.plots import wandb_scatter
 
 torch.set_float32_matmul_precision("high")
@@ -99,7 +99,7 @@ def main(
 
     df_in = pd.read_json(data_path).set_index(str(Key.mat_id))
     if total_shards is not None and shard is not None:
-        df_in = np.array_split(df_in, total_shards)[shard - 1]
+        df_in = df_slurm_chunk(df_in, total_shards, shard)
 
     run_params = {
         "data_path": data_path,
@@ -141,7 +141,7 @@ def main(
             if cell_opt:
                 atoms = FrechetCellFilter(atoms)
             optim_cls = OPTIMIZERS[ase_optimizer]
-            optimizer = optim_cls(atoms, logfile=None)
+            optimizer = optim_cls(atoms, logfile=None)  # ty: ignore[invalid-argument-type]
 
             optimizer.run(fmax=force_max, steps=max_steps)
             energy = atoms.get_potential_energy()  # relaxed energy

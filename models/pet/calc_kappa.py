@@ -5,13 +5,12 @@ import traceback
 import warnings
 from collections.abc import Callable
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import ase.optimize
 import ase.optimize.sciopt
 import thermal_conductivity as ltc
 from ase import Atoms
-from ase.calculators.calculator import Calculator
 from ase.constraints import FixSymmetry
 from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from moyopy import MoyoDataset
@@ -22,13 +21,14 @@ from pymatviz.enums import Key
 from matbench_discovery.phonons.thermal_conductivity import calculate_conductivity
 
 if TYPE_CHECKING:
+    from ase.calculators.calculator import Calculator
     from ase.optimize.optimize import Optimizer
 
 
 def calc_kappa_for_structure(
     *,
     atoms: Atoms,
-    calculator: Calculator,
+    calculator: ltc.EnergyCalculator,
     displacement_distance: float,
     batch_size: int,
     is_plusminus: bool,
@@ -55,7 +55,7 @@ def calc_kappa_for_structure(
     Args:
         atoms (Atoms): ASE Atoms object with fc2_supercell, fc3_supercell,
             q_point_mesh keys in its info dict.
-        calculator (Calculator): ASE calculator to use for force calculations
+        calculator (EnergyCalculator): Calculator to use for force calculations
         displacement_distance (float): Displacement distance for phono3py (Å)
         batch_size (int): Number of supercells per force-evaluation batch.
         is_plusminus (bool): Whether phono3py uses plus/minus displacements.
@@ -136,7 +136,7 @@ def calc_kappa_for_structure(
 
     # Relaxation
     try:
-        atoms.calc = calculator
+        atoms.calc = cast("Calculator", calculator)
         if max_steps > 0:
             if enforce_relax_symm:
                 atoms.set_constraint(FixSymmetry(atoms))
@@ -145,7 +145,7 @@ def calc_kappa_for_structure(
                 filtered_atoms = filter_cls(atoms)
 
             os.makedirs(relax_dir := f"{out_dir}/relaxations", exist_ok=True)
-            optimizer = optim_cls(filtered_atoms, logfile=f"{relax_dir}/{task_id}.log")
+            optimizer = optim_cls(filtered_atoms, logfile=f"{relax_dir}/{task_id}.log")  # ty: ignore[invalid-argument-type]
             optimizer.run(fmax=force_max, steps=max_steps)
 
             step_count = getattr(optimizer, "nsteps", None)  # Get optimizer step count

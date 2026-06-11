@@ -29,7 +29,6 @@ import multiprocessing as mp
 import os
 import pickle
 
-import numpy as np
 import pandas as pd
 import torch
 import tqdm
@@ -45,6 +44,7 @@ from relaxation.optimizable import batch_to_atoms
 from torch_geometric.data import Batch
 
 from matbench_discovery.data import as_dict_handler
+from matbench_discovery.hpc import df_slurm_chunk
 
 
 def split_df(df: pd.DataFrame, batch_size: int) -> list[pd.DataFrame]:
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     ]
     dfs = load_multiple_pickles(file_lists)
     df = pd.concat(dfs, axis=0)
-    df = np.array_split(df, args.worldsize)[args.rank]
+    df = df_slurm_chunk(df, args.worldsize, args.rank + 1)  # rank is 0-based
 
     input_col = "initial_structure"
     batch_lists = split_df(df, args.batchsize)

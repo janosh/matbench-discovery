@@ -2,17 +2,13 @@ import type { AnyStructure } from 'matterviz/structure'
 import { parse_any_structure } from 'matterviz/structure/parse'
 import {
   assert_array_length,
-  load_parity_model,
-  clear_asset_cache,
-  join_asset_url,
   load_json_asset,
-  resolve_asset_base_url,
+  load_parity_model,
+  parity_asset_resolver,
 } from './asset-loader'
 import type { ParityBase, ParityModel, ParityPoint } from './asset-loader'
 import { kappa_parity_manifest } from './kappa-parity-manifest'
 import { is_finite_num } from './metrics'
-
-export { clear_asset_cache as clear_kappa_parity_asset_cache }
 
 // raw phonon DOS as stored in assets (histogram of mesh frequencies in THz)
 export interface RawDos {
@@ -54,27 +50,15 @@ export interface KappaParitySeries {
   points: KappaParityPoint[]
 }
 
-const model_assets = kappa_parity_manifest.model_assets as Record<
-  string,
-  { asset: string } | undefined
->
-
-const kappa_parity_asset_base_url = resolve_asset_base_url(
+export const {
+  asset_url: kappa_parity_asset_url,
+  model_asset: kappa_model_asset,
+  has_model: has_kappa_parity_model,
+} = parity_asset_resolver(
+  `kappa`,
+  kappa_parity_manifest,
   import.meta.env.VITE_KAPPA_PARITY_ASSET_BASE_URL as string | undefined,
-  kappa_parity_manifest.local_asset_base_url,
 )
-
-export const kappa_parity_asset_url = (asset: string): string =>
-  join_asset_url(kappa_parity_asset_base_url, asset)
-
-export const kappa_model_asset = (model_key: string): string => {
-  const asset = model_assets[model_key]?.asset
-  if (!asset) throw new Error(`No kappa parity model asset for ${model_key}`)
-  return asset
-}
-
-export const has_kappa_parity_model = (model_key: string | undefined): boolean =>
-  Boolean(model_key && model_assets[model_key])
 
 export async function load_kappa_parity_base(): Promise<KappaParityBase> {
   const base = await load_json_asset<KappaParityBase>(

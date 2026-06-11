@@ -1,6 +1,5 @@
 import {
   build_kappa_parity_series,
-  clear_kappa_parity_asset_cache,
   dft_phonon_dos,
   get_kappa_parity_point,
   has_kappa_parity_model,
@@ -12,16 +11,17 @@ import {
   ml_phonon_dos,
 } from '$lib/kappa-parity'
 import type { KappaParityBase, KappaParityModel } from '$lib/kappa-parity'
+import { clear_asset_cache } from '$lib/asset-loader'
 import { kappa_parity_manifest } from '$lib/kappa-parity-manifest'
 import type { AnyStructure } from 'matterviz/structure'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gzipped_json_response, request_url } from '../index'
 
-beforeEach(clear_kappa_parity_asset_cache)
+beforeEach(clear_asset_cache)
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  clear_kappa_parity_asset_cache()
+  clear_asset_cache()
 })
 
 const dummy_structure = { sites: [], lattice: {} } as unknown as AnyStructure

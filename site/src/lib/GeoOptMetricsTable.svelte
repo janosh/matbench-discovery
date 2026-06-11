@@ -9,7 +9,7 @@
     HYPERPARAMS,
     METADATA_COLS,
   } from './labels'
-  import { assemble_row_data } from './metrics'
+  import { append_better_hint, assemble_row_data } from './metrics'
 
   let {
     column_order = $bindable([]),
@@ -26,16 +26,11 @@
 
   // Append unit in thin font and (higher/lower=better) hint to column tooltip
   function enrich_col(col: Label, overrides: Partial<Label> = {}): Label {
-    let { label, description = `` } = col
+    let { label } = col
     if (col.unit) {
       label = `${label} <span style="font-weight: 200">(${col.unit})</span>`
     }
-    if (col.better) {
-      description = description
-        ? `${description} (${col.better}=better)`
-        : `${col.better}=better`
-    }
-    return { ...col, ...overrides, label, description }
+    return { ...col, ...overrides, label, description: append_better_hint(col) }
   }
 
   // Define grouped columns: [source_cols, group_name, extra_overrides]

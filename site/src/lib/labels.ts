@@ -414,6 +414,11 @@ export const DISCOVERY_SET_LABELS: Record<
   },
 } as const
 
+// SelectToggle options for switching between WBM test subsets
+export const discovery_set_toggle_options = Object.entries(DISCOVERY_SET_LABELS).map(
+  ([value, { label, description: tooltip, link }]) => ({ value, label, tooltip, link }),
+)
+
 const PROPERTY_LABELS = Object.fromEntries(
   Object.values({ ...ALL_METRICS, ...METADATA_COLS, ...HYPERPARAMS }).map((prop) => [
     prop.key ?? prop.label,

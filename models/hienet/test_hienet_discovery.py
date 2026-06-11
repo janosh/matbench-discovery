@@ -16,6 +16,7 @@
 # ]
 # ///
 
+import argparse
 import os
 from typing import Any, Literal
 
@@ -35,8 +36,6 @@ from matbench_discovery.enums import Task
 __author__ = "Yutack Park"
 __date__ = "2024-06-25"
 
-
-import argparse
 
 parser = argparse.ArgumentParser(
     description="Run calculations with GPU and data bounds selection"
@@ -98,12 +97,10 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         relax_atoms = atoms
         if max_steps > 0:
             relax_atoms = filter_cls(atoms)
-            optimizer = optim_cls(relax_atoms, logfile=None)
+            optimizer = optim_cls(relax_atoms, logfile=None)  # ty: ignore[invalid-argument-type]
             optimizer.run(fmax=force_max, steps=max_steps)
         energy = relax_atoms.get_potential_energy()  # relaxed energy
-        # getattr unwraps relax_atoms (filter_cls wrapper when max_steps > 0)
-        unwrapped = getattr(relax_atoms, "atoms", relax_atoms)
-        relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
+        relaxed_struct = AseAtomsAdaptor.get_structure(atoms)  # relaxed in-place
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except (ValueError, RuntimeError, OSError, KeyError) as exc:
         print(f"Failed to relax {mat_id}: {exc!r}")

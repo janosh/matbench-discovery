@@ -6,6 +6,12 @@ import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query } from '../index'
 
+// column headers within root, stripped of sort-direction arrows
+const get_headers = (root: ParentNode) =>
+  [...root.querySelectorAll(`th`)].map((th) =>
+    th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
+  )
+
 describe(`Phonons Task Page`, () => {
   it(`renders page structure with title, table, and scatter`, () => {
     mount(PhononsPage, { target: document.body })
@@ -20,21 +26,46 @@ describe(`Phonons Task Page`, () => {
     expect(table).not.toBeNull()
     expect(document.querySelectorAll(`tbody tr`).length).toBeGreaterThan(0)
 
-    // MetricScatter with h2 heading
-    const scatter_heading = doc_query<HTMLHeadingElement>(`h2`)
-    expect(scatter_heading.textContent?.trim()).toBe(`κSRME vs Model Parameters`)
-    expect(scatter_heading.innerHTML).toBe(`κ<sub>SRME</sub> vs Model Parameters`)
+    // DynamicScatter with h2 heading that tracks the selected axes (preceded by
+    // the Failure Modes section)
+    const h2s = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)]
+    expect(h2s.map((h2) => h2.textContent?.trim())).toContain(`Failure Modes`)
+    const scatter_heading = h2s.find(
+      (h2) => h2.textContent?.replaceAll(/\s+/g, ` `).trim() === `κSRME vs Params`,
+    )
+    expect(scatter_heading, `dynamic scatter heading`).toBeDefined()
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
-    expect(scatter.getAttribute(`style`)).toContain(`height: 400px`)
+    expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
+  })
+
+  it(`renders the failure-mode robustness table with one row per kappa model`, () => {
+    mount(PhononsPage, { target: document.body })
+
+    // scope to the robustness section: the MetricsTable also renders >30 model
+    // links, so page-wide queries would pass even with an empty robustness table
+    const section = doc_query(`section.robustness-table`)
+    const headers = get_headers(section)
+    for (const col of [`κ failed`, `Imag. modes`, `Spectrum W1`]) {
+      expect(headers, `missing column ${col}`).toContain(col)
+    }
+    // robustness table links every model to its detail page
+    const model_links = section.querySelectorAll(`td a[href^="/models/"]`)
+    expect(model_links.length).toBeGreaterThan(30)
+  })
+
+  it(`renders per-model diagnostics plots for the selected model`, () => {
+    mount(PhononsPage, { target: document.body })
+
+    const diagnostics = doc_query<HTMLDivElement>(`.diagnostics-grid`)
+    // SRME-vs-kappa scatter and frequency parity plot side by side
+    expect(diagnostics.querySelectorAll(`div.scatter`)).toHaveLength(2)
   })
 
   it(`shows κ_SRME and metadata columns, hides discovery metrics`, () => {
     mount(PhononsPage, { target: document.body })
 
-    const headers = [...document.querySelectorAll(`th`)].map((th) =>
-      th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
-    )
+    const headers = get_headers(document)
 
     // Should show both phonon metrics (κ_SRME and κ_SRE) and metadata
     expect(headers).toContain(`Model`)

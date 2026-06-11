@@ -17,7 +17,7 @@ def make_mock_response(content: bytes, status_code: int = 200) -> requests.Respo
     response = requests.Response()
     response.status_code = status_code
     response._content = content  # noqa: SLF001
-    response.iter_content = (
+    response.iter_content = (  # ty: ignore[invalid-assignment]
         lambda chunk_size=1, decode_unicode=False: [content]  # noqa: ARG005
     )
     return response
@@ -149,7 +149,7 @@ def test_download_file_keeps_existing_file_on_stream_error(
         yield from stream_chunks
         raise requests.ConnectionError("stream failed")
 
-    response.iter_content = broken_iter_content
+    response.iter_content = broken_iter_content  # ty: ignore[invalid-assignment]
     remove_ctx = (
         patch("os.remove", side_effect=remove_error) if remove_error else nullcontext()
     )

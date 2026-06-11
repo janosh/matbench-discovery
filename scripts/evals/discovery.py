@@ -19,7 +19,7 @@ from pymatviz.enums import Key, eV_per_atom
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import PKG_DIR
+from matbench_discovery import PKG_DIR, STABILITY_THRESHOLD
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import DATASETS, df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets, TestSubset
@@ -38,39 +38,54 @@ if __name__ == "__main__":
     if not cli_args.models:
         raise SystemExit(0)
 
-    import matbench_discovery.preds.discovery as preds
+    from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
     uniq_protos_idx = df_wbm.query(MbdKey.uniq_proto).index
-    df_preds_uniq_protos = preds.df_preds.loc[uniq_protos_idx]
+    # dummy discovery rate of stable crystals when selecting randomly from the unique
+    # prototype subset, used to compute the discovery acceleration factor (DAF)
+    uniq_proto_prevalence = (
+        df_wbm.query(MbdKey.uniq_proto)[MbdKey.each_true] <= STABILITY_THRESHOLD
+    ).mean()
 
     for model in cli_args.models:
         try:
             print(f"\nProcessing {model.label}...")
-            model_preds = preds.df_preds[model.label]
-            # 10k most stable = lowest *predicted hull distance* (each_pred), not
-            # lowest raw formation energy (must match preds/discovery.py which
-            # computes df_metrics_10k on this same subset)
-            each_pred_uniq_protos = (
-                df_preds_uniq_protos[MbdKey.each_true]
-                + df_preds_uniq_protos[model.label]
-                - df_preds_uniq_protos[MbdKey.e_form_dft]
+            model_preds = df_preds[model.label]
+            each_true = df_preds[MbdKey.each_true]
+            each_pred = df_each_pred[model.label]
+            each_pred_uniq_protos = each_pred.loc[uniq_protos_idx]
+            # 10k most stable = lowest *predicted hull distance* (each_pred) within
+            # the unique prototype subset, not lowest raw formation energy
+            most_stable_10k = each_pred_uniq_protos.nsmallest(10_000)
+
+            full_metrics = discovery.stable_metrics(each_true, each_pred, fillna=True)
+            uniq_proto_metrics = discovery.stable_metrics(
+                each_true.loc[uniq_protos_idx], each_pred_uniq_protos, fillna=True
             )
+            stable_10k_metrics = discovery.stable_metrics(
+                each_true.loc[most_stable_10k.index], most_stable_10k, fillna=True
+            )
+            # DAF on these subsets is relative to the uniq-proto prevalence
+            for metrics in (uniq_proto_metrics, stable_10k_metrics):
+                metrics[str(Key.daf.symbol)] = (
+                    metrics["Precision"] / uniq_proto_prevalence
+                )
+
             for test_subset, (metrics, subset_idx) in {
-                TestSubset.full_test_set: (
-                    preds.df_metrics[model.label].to_dict(),
-                    slice(None),
-                ),
-                TestSubset.uniq_protos: (
-                    preds.df_metrics_uniq_protos[model.label].to_dict(),
-                    uniq_protos_idx,
-                ),
+                TestSubset.full_test_set: (full_metrics, slice(None)),
+                TestSubset.uniq_protos: (uniq_proto_metrics, uniq_protos_idx),
                 TestSubset.most_stable_10k: (
-                    preds.df_metrics_10k[model.label].to_dict(),
-                    each_pred_uniq_protos.nsmallest(10_000).index,
+                    stable_10k_metrics,
+                    most_stable_10k.index,
                 ),
             }.items():
+                # cast all values to float (incl. TP/FP/TN/FN counts) to match the
+                # number format of previous YAML writes
+                rounded_metrics: dict[str, str | float] = {
+                    key: round(float(val), 3) for key, val in metrics.items()
+                }
                 discovery.write_metrics_to_yaml(
-                    model, metrics, model_preds.loc[subset_idx], test_subset
+                    model, rounded_metrics, model_preds.loc[subset_idx], test_subset
                 )
                 print(f"\tUpdated discovery metrics for {test_subset}")
         except (ValueError, OSError, KeyError):
@@ -354,7 +369,7 @@ for (label, df_met), show_non_compliant in itertools.product(
         dict.fromkeys(df_table.select_dtypes(float), "{:,.3f}"),  # use for manuscript
         na_rep="",  # render NaNs as empty string
     )
-    styler = styler.background_gradient(
+    styler = styler.background_gradient(  # ty: ignore[unresolved-attribute]  # pandas types .format() as StylerRenderer
         cmap="viridis", subset=list(higher_is_better & {*df_table}), axis="index"
     ).background_gradient(  # reverse color map if lower=better
         cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis="index"

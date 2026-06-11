@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, figs
-from matbench_discovery.cli import cli_args, is_full_model_run
+from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.preds.discovery import df_each_err, df_preds
@@ -22,11 +22,7 @@ if test_subset == TestSubset.uniq_protos:
 
 # %%
 show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
-models_to_plot = [
-    model
-    for model in cli_args.models
-    if model.is_complete and (show_non_compliant or model.is_compliant)
-]
+models_to_plot = complete_models(show_non_compliant=show_non_compliant)
 models_to_plot = sorted(
     models_to_plot,
     key=lambda model: dfs_metrics[test_subset][model.label][pmv.enums.Key.mae.symbol],

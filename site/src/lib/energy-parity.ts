@@ -3,11 +3,9 @@ import type { AnyStructure } from 'matterviz/structure'
 import { parse_any_structure } from 'matterviz/structure/parse'
 import {
   assert_array_length,
-  clear_asset_cache,
-  join_asset_url,
   load_json_asset,
   load_parity_model,
-  resolve_asset_base_url,
+  parity_asset_resolver,
 } from './asset-loader'
 import type { ParityBase, ParityModel, ParityPoint } from './asset-loader'
 import { energy_parity_manifest } from './energy-parity-manifest'
@@ -67,22 +65,11 @@ interface EnergyParityStructureBundle {
   shards: Record<string, Record<string, AnyStructure | string> | undefined>
 }
 
-const model_assets = energy_parity_manifest.model_assets as Record<
-  string,
-  { asset: string } | undefined
->
-
-const energy_parity_asset_base_url = resolve_asset_base_url(
+export const { asset_url: energy_parity_asset_url, model_asset } = parity_asset_resolver(
+  `energy`,
+  energy_parity_manifest,
   import.meta.env.VITE_ENERGY_PARITY_ASSET_BASE_URL as string | undefined,
-  energy_parity_manifest.local_asset_base_url,
 )
-
-// clears the shared asset cache for all asset types (energy-parity, kappa-parity, ...),
-// not just energy-parity; see clear_asset_cache in asset-loader.ts
-export const clear_energy_parity_asset_cache = clear_asset_cache
-
-export const energy_parity_asset_url = (asset: string): string =>
-  join_asset_url(energy_parity_asset_base_url, asset)
 
 export function structure_popup_placement({
   viewport_width,
@@ -138,12 +125,6 @@ function assert_energy_parity_base(base: EnergyParityBase): EnergyParityBase {
     )
   }
   return base
-}
-
-export function model_asset(model_key: string): string {
-  const asset = model_assets[model_key]?.asset
-  if (!asset) throw new Error(`No energy parity model asset for ${model_key}`)
-  return asset
 }
 
 export const has_energy_parity_model = (

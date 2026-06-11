@@ -31,7 +31,7 @@ import traceback
 import warnings
 from copy import deepcopy
 from importlib.metadata import version
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -117,7 +117,7 @@ def two_stage_relax(
     atoms.set_constraint(FixSymmetry(atoms))
 
     total_filter = filter_ase(atoms, mask=tilt_mask, **_filter_kwargs)
-    dyn_stage1 = optimizer(total_filter, **_optim_kwargs)
+    dyn_stage1 = optimizer(total_filter, **_optim_kwargs)  # ty: ignore[invalid-argument-type]
     dyn_stage1.run(fmax=fmax_stage1, steps=steps_stage1)
     sym_stage1 = log_symmetry(atoms, symprec)
 
@@ -133,7 +133,7 @@ def two_stage_relax(
     atoms_stage1 = atoms.copy()
     atoms.constraints = None
 
-    dyn_stage2 = optimizer(total_filter, **_optim_kwargs)
+    dyn_stage2 = optimizer(total_filter, **_optim_kwargs)  # ty: ignore[invalid-argument-type]
     dyn_stage2.run(fmax=fmax_stage2, steps=steps_stage2)
     sym_stage2 = log_symmetry(atoms, symprec)
 
@@ -211,7 +211,7 @@ def main() -> None:
 
     timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")
     struct_data_path = args.structures
-    atoms_list = cast("list[Atoms]", read(struct_data_path, format="extxyz", index=":"))
+    atoms_list = read(struct_data_path, format="extxyz", index=":")
 
     run_params = {
         "timestamp": timestamp,

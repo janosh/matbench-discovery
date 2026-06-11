@@ -21,7 +21,6 @@ from typing import TYPE_CHECKING, Final
 
 import ase.io
 import numpy as np
-import pandas as pd
 from ase import Atoms
 from asset_helpers import (
     asset_safe_key,
@@ -36,9 +35,11 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.phonons import read_kappa_json
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+    import pandas as pd
 
     from matbench_discovery.enums import Model
 
@@ -168,10 +169,7 @@ def load_reference() -> tuple[
     ``meta[mat_id]`` carries the chemical formula, atom count, and space group
     number (the client derives crystal system + color from the space group).
     """
-    df_dft = pd.read_json(DataFiles.phonondb_pbe_103_kappa_no_nac.path)
-    if "mp_id" in df_dft.columns:
-        df_dft = df_dft.rename(columns={"mp_id": str(Key.mat_id)})
-    df_dft = df_dft.set_index(str(Key.mat_id))
+    df_dft = read_kappa_json(DataFiles.phonondb_pbe_103_kappa_no_nac.path)
 
     structures: dict[str, str] = {}
     meta: dict[str, dict[str, str | int]] = {}
@@ -245,7 +243,7 @@ def main() -> None:
             print(f"Skipping {model.label}: no kappa_103 predictions")
             continue
         try:
-            df_ml = pd.read_json(kappa_path).set_index(str(Key.mat_id))
+            df_ml = read_kappa_json(kappa_path)
         except (ValueError, KeyError, OSError) as exc:
             print(f"Skipping {model.label}: failed reading {kappa_path}: {exc!r}")
             continue

@@ -24,7 +24,7 @@ from tqdm import tqdm
 from matbench_discovery.enums import MbdKey
 
 if TYPE_CHECKING:
-    from phono3py.conductivity.calculators import RTACalculator
+    from phono3py.conductivity.calculators import LBTECalculator, RTACalculator
 
 
 def calculate_fc2_set(
@@ -217,7 +217,7 @@ def calculate_conductivity(
     temperatures: Sequence[float],
     boundary_mfp: float = 1e6,
     mode_kappa_thresh: float = 1e-6,
-) -> tuple[Phono3py, dict[str, np.ndarray], "RTACalculator"]:
+) -> tuple[Phono3py, dict[str, np.ndarray], "RTACalculator | LBTECalculator"]:
     """Calculate thermal conductivity.
 
     Args:
@@ -243,10 +243,13 @@ def calculate_conductivity(
         boundary_mfp=boundary_mfp,
     )
 
-    kappa = ph3.thermal_conductivity
-    extra = kappa.get_extra_kappa_output()
+    if (kappa := ph3.thermal_conductivity) is None:
+        raise RuntimeError(f"thermal conductivity calculation failed for {ph3=}")
+    extra, mode_cv = kappa.get_extra_kappa_output(), kappa.mode_heat_capacities
+    if extra is None or mode_cv is None:
+        raise RuntimeError(f"missing kappa output for {ph3=}")
 
-    kappa_dict = {
+    kappa_dict: dict[str, np.ndarray] = {
         MbdKey.kappa_tot_rta: deepcopy(extra["kappa_TOT_RTA"][0]),
         MbdKey.kappa_p_rta: deepcopy(extra["kappa_P_RTA"][0]),
         MbdKey.kappa_c: deepcopy(extra["kappa_C"][0]),
@@ -257,7 +260,7 @@ def calculate_conductivity(
     mode_kappa_total = kappa_dict[MbdKey.mode_kappa_tot_rta] = calc_mode_kappa_tot(
         deepcopy(extra["mode_kappa_P_RTA"][0]),
         deepcopy(extra["mode_kappa_C"][0]),
-        deepcopy(kappa.mode_heat_capacities),
+        deepcopy(mode_cv),
     )
 
     sum_mode_kappa_tot = mode_kappa_total.sum(

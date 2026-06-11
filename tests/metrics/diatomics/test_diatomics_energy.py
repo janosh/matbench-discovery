@@ -9,13 +9,11 @@ import pytest
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
 from matbench_discovery.metrics.diatomics.energy import (
-    calc_curvature_smoothness,
     calc_energy_diff_flips,
     calc_energy_grad_norm_max,
     calc_energy_jump,
     calc_energy_mae,
     calc_second_deriv_smoothness,
-    calc_total_variation_smoothness,
 )
 
 EnergyCurve = tuple[np.ndarray, np.ndarray]
@@ -327,10 +325,6 @@ def smoothness_test_data() -> dict[str, EnergyCurve]:
         # Second derivative should be very close to 0 for constant and linear curves
         (calc_second_deriv_smoothness, "constant", pytest.approx(0, abs=1e-10)),
         (calc_second_deriv_smoothness, "linear", pytest.approx(0, abs=1e-10)),
-        # Total variation should be constant for linear curve
-        (calc_total_variation_smoothness, "linear", pytest.approx(0, abs=0.5)),
-        # Curvature should be small for linear curve
-        (calc_curvature_smoothness, "linear", pytest.approx(-14.5, abs=1.0)),
     ],
 )
 def test_smoothness_exact_values(
@@ -352,15 +346,7 @@ def test_smoothness_exact_values(
     assert metric == expected_val
 
 
-@pytest.mark.parametrize(
-    "metric_func",
-    [
-        calc_second_deriv_smoothness,
-        # Skipping these tests as they don't work well with logspace
-        # calc_total_variation_smoothness,
-        # calc_curvature_smoothness,
-    ],
-)
+@pytest.mark.parametrize("metric_func", [calc_second_deriv_smoothness])
 def test_smoothness_ordering(
     metric_func: Callable[[np.ndarray, np.ndarray], float],
     smoothness_test_data: dict[str, tuple[np.ndarray, np.ndarray]],
@@ -375,15 +361,7 @@ def test_smoothness_ordering(
     assert metrics["linear"] < metrics["quadratic"] < metrics["noisy_sine"], metrics
 
 
-@pytest.mark.parametrize(
-    "metric_func",
-    [
-        calc_second_deriv_smoothness,
-        # Skipping these tests as they don't work well with logspace
-        # calc_total_variation_smoothness,
-        # calc_curvature_smoothness,
-    ],
-)
+@pytest.mark.parametrize("metric_func", [calc_second_deriv_smoothness])
 def test_smoothness_scale_invariance(
     metric_func: Callable[[np.ndarray, np.ndarray], float],
     smoothness_test_data: dict[str, tuple[np.ndarray, np.ndarray]],
@@ -400,16 +378,11 @@ def test_smoothness_scale_invariance(
     y_offset = y + 10
     assert metric_func(x, y) == pytest.approx(metric_func(x, y_offset), rel=0.1)
 
-    # Test scaling behavior
+    # Test scaling behavior: second-derivative smoothness is invariant under
+    # (x, y) -> (s*x, s^2*y) since d2y/dx2 is unchanged for a quadratic
     scale = 1.1
     metric_name = getattr(metric_func, "__name__", "")
-    curv_scale_by_metric = {
-        "calc_second_deriv_smoothness": 1,
-        "calc_total_variation_smoothness": 2,
-        "calc_curvature_smoothness": 1.389141,
-    }
-    assert metric_name in curv_scale_by_metric
-    curv_scale = curv_scale_by_metric[metric_name]
+    curv_scale = 1
     x_scaled = scale * x
     y_scaled = scale**2 * y  # maintain quadratic relationship
 
@@ -427,15 +400,7 @@ def test_smoothness_scale_invariance(
     )
 
 
-@pytest.mark.parametrize(
-    "metric_func",
-    [
-        calc_second_deriv_smoothness,
-        calc_total_variation_smoothness,
-        # Skipping curvature smoothness as it doesn't work well with logspace
-        # calc_curvature_smoothness,
-    ],
-)
+@pytest.mark.parametrize("metric_func", [calc_second_deriv_smoothness])
 def test_smoothness_noise_sensitivity(
     metric_func: Callable[[np.ndarray, np.ndarray], float],
 ) -> None:

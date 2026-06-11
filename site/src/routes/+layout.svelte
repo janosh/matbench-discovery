@@ -76,6 +76,7 @@
     {headingSelector}
     breakpoint={1350}
     minItems={3}
+    hideOnIntersect="section.full-bleed .table-container, .bleed-1400"
     bind:desktop={toc_desktop}
     asideProps={{
       style: toc_desktop ? `max-width: 22em; position: fixed; left: calc(50vw + var(--main-max-width) / 2); top: 8em;` : `z-index: 1;`,

@@ -6,6 +6,7 @@ Might point to deficiencies in the data or models architecture.
 # %%
 import json
 import os
+from typing import cast
 
 import pandas as pd
 import pymatviz as pmv
@@ -98,4 +99,4 @@ if os.path.isfile(json_path):
 # write via figs.write_json_gz for a deterministic (mtime=0) payload, unlike pandas'
 # to_json gzip which embeds a timestamp. round(4) shrinks it; to_json maps NaN -> null
 # and json.loads gives the dict write_json_gz expects
-figs.write_json_gz(json_path, json.loads(df_elem_err.round(4).to_json()))
+figs.write_json_gz(json_path, json.loads(cast("str", df_elem_err.round(4).to_json())))

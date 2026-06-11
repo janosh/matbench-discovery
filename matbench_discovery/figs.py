@@ -180,7 +180,7 @@ def trace_payload(trace: BaseTraceType, *, x: bool = True) -> dict[str, Any]:
 
 def _get_trace(fig: go.Figure | dict[str, Any], trace_type: str) -> dict[str, Any]:
     """Find the first trace of ``trace_type`` in a plotly figure (or fig dict)."""
-    fig_dict = fig if isinstance(fig, dict) else fig.to_plotly_json()
+    fig_dict: dict[str, Any] = fig if isinstance(fig, dict) else fig.to_plotly_json()  # ty: ignore[invalid-assignment]
     trace = next(
         (tr for tr in fig_dict.get("data", []) if tr.get("type") == trace_type), None
     )

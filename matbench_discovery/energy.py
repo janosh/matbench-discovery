@@ -5,6 +5,7 @@ pymatgen EntryLikes.
 import itertools
 import warnings
 from collections.abc import Sequence
+from typing import Any, cast
 
 import pandas as pd
 from pymatgen.analysis.phase_diagram import Entry, PDEntry
@@ -17,7 +18,7 @@ from matbench_discovery.enums import DataFiles
 
 
 def get_elemental_ref_entries(
-    entries: Sequence[EntryLike], *, verbose: bool = True
+    entries: Sequence[EntryLike | dict[str, Any]], *, verbose: bool = True
 ) -> dict[str, Entry]:
     """Get the lowest energy pymatgen Entry for each element in a list of entries.
 
@@ -32,7 +33,12 @@ def get_elemental_ref_entries(
     Returns:
         dict[str, Entry]: Map from element symbol to its lowest energy entry.
     """
-    entries = [PDEntry.from_dict(e) if isinstance(e, dict) else e for e in entries]
+    entries = [
+        PDEntry.from_dict(cast("dict[str, Any]", entry))
+        if isinstance(entry, dict)
+        else entry
+        for entry in entries
+    ]
     elements = {elems for entry in entries for elems in entry.composition.elements}
     dim = len(elements)
 
@@ -76,7 +82,7 @@ mp_elemental_ref_energies = {
 
 
 def calc_energy_from_e_refs(
-    struct_or_entry: EntryLike | Structure | Composition | str,
+    struct_or_entry: EntryLike | dict[str, Any] | Structure | Composition | str,
     ref_energies: dict[str, float],
     total_energy: float | None = None,
 ) -> float:
@@ -105,8 +111,13 @@ def calc_energy_from_e_refs(
         ValueError: If missing reference energies for some elements
     """
     if isinstance(struct_or_entry, dict):  # entry dict case
-        energy: float = struct_or_entry["energy"]
-        comp = Composition(struct_or_entry["composition"])
+        entry_dict = cast("dict[str, Any]", struct_or_entry)
+        if missing_keys := {"composition", "energy"} - set(entry_dict):
+            raise ValueError(
+                f"Entry dict missing required keys: {sorted(missing_keys)}"
+            )
+        energy: float = entry_dict["energy"]
+        comp = Composition(entry_dict["composition"])
     # Entry/ComputedEntry/ComputedStructureEntry instance case
     elif isinstance(struct_or_entry, Entry):
         energy = struct_or_entry.energy

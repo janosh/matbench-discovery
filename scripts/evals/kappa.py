@@ -6,12 +6,12 @@ non-analytical correction term (NAC).
 import os
 import sys
 
-import pandas as pd
 from pymatviz.enums import Key
 
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.metrics import phonons
+from matbench_discovery.phonons import read_kappa_json
 
 
 def main() -> int:
@@ -37,11 +37,8 @@ def main() -> int:
             print(f"\nProcessing {model.label}...")
 
             # Load and process data
-            df_ml = pd.read_json(kappa_103_path).set_index(Key.mat_id)
-            df_dft = pd.read_json(DataFiles.phonondb_pbe_103_kappa_no_nac.path)
-            if "mp_id" in df_dft.columns:
-                df_dft = df_dft.rename(columns={"mp_id": Key.mat_id})
-            df_dft = df_dft.set_index(Key.mat_id)
+            df_ml = read_kappa_json(kappa_103_path)
+            df_dft = read_kappa_json(DataFiles.phonondb_pbe_103_kappa_no_nac.path)
             df_ml_metrics = phonons.calc_kappa_metrics_from_dfs(df_ml, df_dft)
 
             # Calculate metrics

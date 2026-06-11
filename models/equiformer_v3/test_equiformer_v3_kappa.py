@@ -77,7 +77,7 @@ class KappaSRMERunner:
         calculator.trainer.scaler = None
 
         force_results: dict[str, dict[str, Any]] = {}
-        kappa_results: dict[str, dict[str, Any]] = {}
+        kappa_results: dict[Any, dict[Any, Any]] = {}
         atoms_list = read(
             DataFiles.phonondb_pbe_103_structures.path, format="extxyz", index=":"
         )

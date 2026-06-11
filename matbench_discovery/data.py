@@ -20,7 +20,7 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from glob import glob
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import ase.io
 import pandas as pd
@@ -223,7 +223,7 @@ def load_df_wbm_with_preds(
     id_col: str = Key.mat_id,
     subset: pd.Index | Sequence[str] | TestSubset | None = None,
     max_error_threshold: float | None = 5.0,
-    **kwargs: object,
+    nrows: int | None = None,
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.
 
@@ -244,7 +244,9 @@ def load_df_wbm_with_preds(
             a practitioner doing a prospective discovery effort. Predictions exceeding
             this threshold will be ignored in all downstream calculations of metrics.
             Defaults to 5 eV/atom.
-        **kwargs: Keyword arguments passed to glob_to_df().
+        nrows (int | None, optional): Only read the first nrows of each model's
+            prediction file (passed to the pandas reader). Useful to speed up tests.
+            Defaults to None, i.e. read all rows.
 
     Raises:
         ValueError: On unknown model names.
@@ -266,9 +268,7 @@ def load_df_wbm_with_preds(
             model_name = model.name
             prog_bar.set_postfix_str(model_name)
 
-            df_preds = glob_to_df(
-                model.discovery_path, pbar=False, **cast("dict[str, Any]", kwargs)
-            )
+            df_preds = glob_to_df(model.discovery_path, pbar=False, nrows=nrows)
 
             with open(model.yaml_path, encoding="utf-8") as file:
                 model_data = yaml.safe_load(file)

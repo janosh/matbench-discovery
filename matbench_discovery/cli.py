@@ -118,6 +118,17 @@ def is_full_model_run() -> bool:
     return set(cli_args.models) >= set(Model.active())
 
 
+def complete_models(*, show_non_compliant: bool) -> list[Model]:
+    """CLI-selected models with complete discovery metrics, optionally filtered to
+    compliant ones. Used by plotting scripts to decide which models to include.
+    """
+    return [
+        model
+        for model in cli_args.models
+        if model.is_complete and (show_non_compliant or model.is_compliant)
+    ]
+
+
 # Set env var to auto-confirm file downloads when --auto-download is passed
 if cli_args.auto_download:
     os.environ["MBD_AUTO_DOWNLOAD_FILES"] = "true"
@@ -126,4 +137,4 @@ if cli_args.auto_download:
 if cli_args.no_show:
     import plotly.graph_objects as go
 
-    go.Figure.show = lambda *_args, **_kwargs: None
+    go.Figure.show = lambda *_args, **_kwargs: None  # ty: ignore[invalid-assignment]

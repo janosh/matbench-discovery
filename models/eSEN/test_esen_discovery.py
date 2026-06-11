@@ -176,12 +176,8 @@ class MBDRunner:
             try:
                 atoms.calc = calculator
 
-                if filter_cls is not None:
-                    optimizer = optim_cls(
-                        filter_cls(atoms), logfile=None, **optimizer_params
-                    )
-                else:
-                    optimizer = optim_cls(atoms, logfile=None, **optimizer_params)
+                relax_atoms = atoms if filter_cls is None else filter_cls(atoms)
+                optimizer = optim_cls(relax_atoms, logfile=None, **optimizer_params)  # ty: ignore[invalid-argument-type]
 
                 optimizer.run(fmax=force_max, steps=max_steps)
 
