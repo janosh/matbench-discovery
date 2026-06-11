@@ -8,13 +8,10 @@ import pickle
 from typing import Any
 
 import pandas as pd
-import torch
 import tqdm
-from fairchem.core.common.utils import update_config
 from GGNN.common.calculator import UCalculator
 from GGNN.preprocessing.atoms_to_graphs import AtomsToGraphs
-from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.core import SiteCollection, Structure
+from pymatgen.core import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from relaxation.ml_relaxation import ml_relax
@@ -24,10 +21,19 @@ from torch_geometric.data import Batch
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.hpc import df_slurm_chunk
 
+<<<<<<< HEAD
+
+=======
+def as_dict_handler(obj: Any) -> dict[str, Any] | None:  # noqa: ANN401
+    """Serialize MSONable objects to dict. Non-serializable objects become None."""
+    try:
+        return obj.as_dict()
+    except AttributeError:
+        return None
+>>>>>>> 7e5e2371 (apply pre-commit)
 
 
-
-def load_pickle(file_path: str) -> Any:
+def load_pickle(file_path: str) -> Any:  # noqa: ANN401
     """Load a single pickle file."""
     with open(file_path, "rb") as file:
         return pickle.load(file)  # noqa: S301 safe internal data
@@ -98,7 +104,6 @@ if __name__ == "__main__":
     args = parse_args()
     os.makedirs(args.out, exist_ok=True)
 
-
     metadata = {
         "checkpoint": os.path.abspath(args.checkpoint),
         "worldsize": args.worldsize,
@@ -155,7 +160,7 @@ if __name__ == "__main__":
             {"forces": batch.forces, "energy": batch.energy, "stress": batch.stress},
         )
 
-        for mat_id, atoms, ntraj in zip(
+        for mat_id, atoms, _ntraj in zip(
             mat_idx, atoms_list, n_traj.numpy(), strict=True
         ):
             unwrapped = getattr(atoms, "atoms", atoms)
@@ -175,12 +180,11 @@ if __name__ == "__main__":
         + df_merge["correction"]
         - df_merge["formation_ref_energy"]
     ) / df_merge["num_atoms"]
-    structure_outfile = f"{args.out}/{args.rank:03d}_{args.worldsize}_structures.jsonl.gz"
-
-    df_struct = (
-        df_merge["mlff_structure"]
-        .reset_index()
+    structure_outfile = (
+        f"{args.out}/{args.rank:03d}_{args.worldsize}_structures.jsonl.gz"
     )
+
+    df_struct = df_merge["mlff_structure"].reset_index()
 
     df_struct.to_json(
         structure_outfile,
@@ -190,8 +194,6 @@ if __name__ == "__main__":
         default_handler=as_dict_handler,
     )
 
-
     df_merge.drop(columns=["mlff_structure"]).reset_index().to_json(
-        output_jsonfile_name,
-        default_handler=as_dict_handler
+        output_jsonfile_name, default_handler=as_dict_handler
     )

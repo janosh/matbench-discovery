@@ -33,7 +33,8 @@ checkpoint_url: https://figshare.com/ndownloader/files/65435004
 license:
   code: MIT
   code_url: https://github.com/SamsungDS/GGNN.git
-  checkpoint: https://figshare.com/ndownloader/files/65435004
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://figshare.com/ndownloader/files/65435004
 
 requirements:
   torch: 2.8.0+cu126

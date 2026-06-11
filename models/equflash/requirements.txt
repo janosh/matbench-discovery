@@ -19,16 +19,16 @@ submitit==1.5.3
 cuequivariance==0.6.0
 cuequivariance-torch==0.6.0
 cuequivariance-ops-torch-cu12==0.6.0
-huggingface-hub 
-hydra-core 
-numba  
-orjson 
-pydantic 
-pyyaml 
-requests 
-tensorboard 
-torchtnt  
-wandb 
+huggingface-hub
+hydra-core
+numba
+orjson
+pydantic
+pyyaml
+requests
+tensorboard
+torchtnt
+wandb
 nvalchemi-toolkit-ops==0.3.1
 
 

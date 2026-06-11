@@ -1,4 +1,5 @@
 """Test EquFlash model on matbench-discovery Thermal Conductivity task."""
+
 import argparse
 import datetime
 import json
@@ -21,9 +22,9 @@ from ase.optimize import FIRE, LBFGS
 from ase.spacegroup import get_spacegroup
 from ase.utils import atoms_to_spglib_cell
 from GGNN.common.calculator import UCalculator
-from matbench_discovery.phonons.thermal_conductivity import calculate_conductivity
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
+from pymatviz.enums import Key
 from spglib import get_symmetry_dataset
 from thermal_conductivity import get_fc3_batch
 from tqdm import tqdm
@@ -31,10 +32,10 @@ from tqdm import tqdm
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons.thermal_conductivity import (
+    calculate_conductivity,
     get_fc2_and_freqs,
     init_phono3py,
 )
-
 
 if TYPE_CHECKING:
     from ase.optimize.optimize import Optimizer
@@ -44,7 +45,7 @@ NO_TILT_MASK = [True, True, True, False, False, False]
 SYMM_NAME_MAP = {225: "rs", 186: "wz", 216: "zb"}
 
 
-def log_symmetry(atoms: Atoms, symprec: float) -> Any:
+def log_symmetry(atoms: Atoms, symprec: float) -> Any:  # noqa: ANN401
     """Get symmetry dataset from atoms using spglib."""
     return get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
 
@@ -160,7 +161,7 @@ def main() -> None:
     parser.add_argument("--displacement", type=float, default=0.03)
     parser.add_argument("--rank", type=int, default=0)
     parser.add_argument("--worldsize", type=int, default=1)
-    
+
     args = parser.parse_args()
 
     checkpoint = args.checkpoint
@@ -185,9 +186,8 @@ def main() -> None:
 
     timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")
     atoms_list = read(
-            DataFiles.phonondb_pbe_103_structures.path, format="extxyz", index=":"
-        )
-
+        DataFiles.phonondb_pbe_103_structures.path, format="extxyz", index=":"
+    )
 
     run_params = {
         "timestamp": timestamp,
@@ -278,7 +278,7 @@ def main() -> None:
                 }
 
             else:
-                atoms, relax_dict = two_stage_relax(
+                atoms, relax_dict = two_stage_relax(  # noqa: PLW2901
                     atoms,
                     fmax_stage1=force_max,
                     fmax_stage2=force_max,
@@ -330,7 +330,9 @@ def main() -> None:
                 ph3.forces = fc3_set
                 ph3.produce_fc3(symmetrize_fc3r=True)
 
-                ph3, kappa_dict, kappa = calculate_conductivity(ph3, temperatures=[300])
+                ph3, kappa_dict, _kappa = calculate_conductivity(
+                    ph3, temperatures=[300]
+                )
             else:
                 fc3_set = []
 
@@ -341,7 +343,7 @@ def main() -> None:
                 kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
                 continue
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             warnings.warn(
                 f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2
             )
@@ -358,7 +360,6 @@ def main() -> None:
     df_kappa = pd.DataFrame(kappa_results).T
     df_kappa.index.name = ID
     df_kappa.reset_index().to_json(out_path)
-    
 
 
 if __name__ == "__main__":

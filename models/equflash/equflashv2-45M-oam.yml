@@ -28,7 +28,9 @@ authors:
 repo: https://github.com/SamsungDS/GGNN.git
 url: TBD
 doi: TBD
-preprint: TBD
+paper: TBD
+n_estimators: 1
+pr_url: TBD
 checkpoint_url: https://figshare.com/ndownloader/files/65435007 # should be the direct download URL of the model checkpoint file. If there's a page documenting the checkpoint, append that as a YAML comment.
 
 openness: OSOD # see `Open` enum in matbench_discovery/enums.py
@@ -52,7 +54,7 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   ase_optimizer: FIRE
   cell_filter: FrechetCellFilter
   graph_construction_radius: 6.0 # Å
-  max_neighbors: .inf ... # additional hyperparameters describing training and inference
+  max_neighbors: .inf # additional hyperparameters describing training and inference
 
 training_cost: # list any hardware used to train the model and for how long
   # hardware: { amount: float, hours: float, cost: float [USD] }

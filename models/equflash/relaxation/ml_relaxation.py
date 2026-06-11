@@ -1,5 +1,4 @@
-"""
-Copyright (c) Meta, Inc. and its affiliates.
+"""Copyright (c) Meta, Inc. and its affiliates.
 Modifications Copyright (c) 2025 Samsung Electronics Co., Ltd.
 
 This source code is licensed under the MIT license.
@@ -46,6 +45,7 @@ def ml_relax(
         fmax: Structure relaxation terminates when the max
             force of the system is no bigger than fmax.
         relax_opt: Optimizer parameters to be used for structure relaxations.
+        opt_algorithm: Optimization algorithm to use.
         relax_cell: if true will use stress predictions
             to relax crystallographic cell.
             The model given must predict stress
@@ -113,12 +113,8 @@ def ml_relax(
                 "splitting into two..."
             )
             mid = len(data_list) // 2
-            batches.appendleft(
-                Batch.from_data_list(data_list[:mid])
-            )
-            batches.appendleft(
-                Batch.from_data_list(data_list[mid:])
-            )
+            batches.appendleft(Batch.from_data_list(data_list[:mid]))
+            batches.appendleft(Batch.from_data_list(data_list[mid:]))
 
     # reset for good measure
     OptimizableBatch.ignored_changes = set()
