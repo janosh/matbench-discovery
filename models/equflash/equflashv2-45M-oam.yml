@@ -67,7 +67,7 @@ requirements: # strongly recommended
 training_set: [OMat24, MPtrj, sAlex]
 
 notes: # notes can have any key, be multiline and support markdown.
-  description: EquFlashV2 is an E(3)-equivariant machine learning force field based on a Transformer-style block architecture. Unlike recent Transformer-based models, EquFlash replaces attention with Clebsch–Gordan tensor product message passing while preserving equivariance. The model further incorporates a bilinear gate activation to enhance interactions between equivariant features.
+  description: EquFlashV2 is an E(3)-equivariant machine learning force field that adopts a Transformer-style block architecture without attention mechanisms. Instead, it uses Clebsch–Gordan tensor product message passing, efficiently enabled by cuEquivariance, together with a bilinear gate activation for equivariant feature interactions.
 
 
 metrics:
