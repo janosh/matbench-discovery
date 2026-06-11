@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import torch
 from fairchem.core.common.typing import assert_is_instance
-from GGNN.datasets.lmdb_dataset import data_list_collater
 from torch_geometric.data import Batch
 
 from .optimizable import OptimizableBatch, OptimizableFrechetBatch
