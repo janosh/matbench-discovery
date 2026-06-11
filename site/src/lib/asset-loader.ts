@@ -68,7 +68,7 @@ export function parity_asset_resolver(
       return asset
     },
     has_model: (model_key: string | undefined): boolean =>
-      Boolean(model_key && model_assets[model_key]),
+      Boolean(model_key && model_assets[model_key]?.asset),
   }
 }
 

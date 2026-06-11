@@ -59,7 +59,7 @@ if input_col not in df_in:
 
 # Split data into parts and process only one batch
 if task_id != 0:
-    df_in = df_slurm_chunk(df_in, 100, task_id)
+    df_in = df_slurm_chunk(df_in, n_splits, task_id)
     print(f"Relaxing materials in range {df_in.index[0]} - {df_in.index[-1]}")
 else:
     print("Relaxing full range of materials")

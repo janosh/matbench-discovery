@@ -97,10 +97,15 @@
       show_compliant,
       show_non_compliant,
     )
-    return (model: ModelData): boolean =>
-      combined_filter(model) &&
-      typeof model.metrics?.discovery === `object` &&
-      Boolean(model.metrics.discovery[discovery_set])
+    return (model: ModelData): boolean => {
+      const discovery_metrics = model.metrics?.discovery
+      return (
+        combined_filter(model) &&
+        discovery_metrics !== null &&
+        typeof discovery_metrics === `object` &&
+        Boolean(discovery_metrics[discovery_set])
+      )
+    }
   })
 
   export const snapshot: Snapshot = {
