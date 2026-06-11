@@ -1,6 +1,8 @@
-# DeePMD-DPA3
+# DeePMD
 
-## Model
+## DeePMD-DPA3
+
+### Model
 
 - DPA-3.1-3M-FT：model pretrained on the `OpenLAM` datasest (using DPA-3.1-3M from [DPA3-paper](https://arxiv.org/abs/2506.01686)), and finetuned with `MPtraj` & `Sub-Alex` datasets.
 
@@ -14,13 +16,13 @@
   wget https://figshare.com/files/55141124
   ```
 
-### How to install
+#### How to install
 
 ```bash
 pip install git+https://github.com/deepmodeling/deepmd-kit@devel
 ```
 
-### How to use
+#### How to use
 
 ```py
 from ase import Atoms
@@ -37,7 +39,7 @@ print(water.get_potential_energy())
 print(water.get_forces())
 ```
 
-## OPENLAM Data
+### OPENLAM Data
 
 - To be released soon.
 
@@ -77,9 +79,9 @@ print(water.get_forces())
 
 &#x20;
 
-## Results
+### Results
 
-### DPA-3.1-3M-FT
+#### DPA-3.1-3M-FT
 
 `2025-06-05-dpa-3.1-3M-ft-preds.csv.gz`
 
@@ -103,7 +105,7 @@ RMSE            0.068373       0.066638     0.067072
 R2              0.856592       0.869046     0.900992
 ```
 
-### DPA-3.1-MPtrj
+#### DPA-3.1-MPtrj
 
 `2025-06-05-dpa-3.1-mptrj-preds.csv.gz`
 
@@ -127,7 +129,7 @@ RMSE            0.079964       0.079838     0.087248
 R2              0.803849       0.812029     0.837659
 ```
 
-### Relaxed Structure
+#### Relaxed Structure
 
 ```sh
 # DPA-3.1-3M-FT
@@ -137,7 +139,7 @@ wget https://figshare.com/files/55141109
 wget https://figshare.com/files/55141127
 ```
 
-# DeePMD-DPA4
+## DeePMD-DPA4
 
 DPA4 is an SE(3)-equivariant interatomic-potential architecture built on an EMFA
 (Edge-conditioned, Multi-Focus, Attention) SO(2)-equivariant convolution. It
@@ -148,7 +150,7 @@ machine precision, and a compiler-friendly conservative energy-gradient training
 path gives up to ~3× wall-clock speedup under `torch.compile`. See the
 [DPA4 paper](https://arxiv.org/abs/2606.02419).
 
-## DPA-4.0.1-Pro-MPtrj
+### DPA-4.0.1-Pro-MPtrj
 
 DPA-4.0.1-Pro-MPtrj is the DPA4-Pro model trained only on MPtrj for this
 submission; it supersedes DPA-4.0-Pro-MPtrj. Following the DPA4-Pro column of

@@ -34,7 +34,7 @@ repo: https://github.com/deepmodeling/deepmd-kit
 url: https://github.com/deepmodeling/deepmd-kit
 doi: https://doi.org/10.48550/arXiv.2606.02419
 paper: https://arxiv.org/abs/2606.02419
-pr_url: https://github.com/janosh/matbench-discovery/pull/PLACEHOLDER_PR
+pr_url: https://github.com/janosh/matbench-discovery/pull/341
 checkpoint_url: https://figshare.com/files/65469204
 
 license:
@@ -144,6 +144,24 @@ metrics:
     pred_file: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-wbm-IS2RE-FIRE.jsonl.gz
     pred_file_url: https://figshare.com/files/65469201
     struct_col: dpa4_structure
+    symprec=1e-2:
+      rmsd: 0.0687 # unitless
+      n_sym_ops_mae: 2.2966 # unitless
+      symmetry_decrease: 0.208 # fraction
+      symmetry_match: 0.6631 # fraction
+      symmetry_increase: 0.1037 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.7.9.csv.gz
+      analysis_file_url: https://figshare.com/files/65469888
+    symprec=1e-5:
+      rmsd: 0.0687 # unitless
+      n_sym_ops_mae: 3.522 # unitless
+      symmetry_decrease: 0.41 # fraction
+      symmetry_match: 0.3899 # fraction
+      symmetry_increase: 0.1422 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.7.9.csv.gz
+      analysis_file_url: https://figshare.com/files/65469885
   discovery:
     pred_file: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-dpa-4.0.1-pro-mptrj-preds.csv.gz
     pred_file_url: https://figshare.com/files/65469198
@@ -159,13 +177,13 @@ metrics:
       TNR: 0.966 # fraction
       FNR: 0.162 # fraction
       TP: 36943.0 # count
-      FP: 7228.0 # count
-      TN: 205643.0 # count
+      FP: 7227.0 # count
+      TN: 205644.0 # count
       FN: 7149.0 # count
       MAE: 0.028 # eV/atom
-      RMSE: 0.075 # eV/atom
-      R2: 0.827 # dimensionless
-      missing_preds: 0 # count
+      RMSE: 0.074 # eV/atom
+      R2: 0.833 # dimensionless
+      missing_preds: 2 # count
     unique_prototypes:
       F1: 0.857 # fraction
       DAF: 5.609 # dimensionless
