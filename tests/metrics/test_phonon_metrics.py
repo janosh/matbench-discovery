@@ -139,6 +139,25 @@ def test_weighted_quantiles_drops_nans_and_rejects_empty() -> None:
 
 
 @pytest.mark.parametrize(
+    "weights,levels,match",
+    [
+        (np.array([0.0, 0.0, 0.0]), np.array([0.5]), "positive"),
+        (np.array([1.0, -1.0, 1.0]), np.array([0.5]), "non-negative"),
+        (np.array([1.0, np.nan, 1.0]), np.array([0.5]), "finite"),
+        (np.array([1.0, 1.0, 1.0]), np.array([-0.1]), r"\[0, 1\]"),
+        (np.array([1.0, 1.0, 1.0]), np.array([1.1]), r"\[0, 1\]"),
+        (np.array([1.0, 1.0, 1.0]), np.array([np.nan]), r"\[0, 1\]"),
+    ],
+)
+def test_weighted_quantiles_rejects_invalid_weights_and_levels(
+    weights: NDArray[np.float64], levels: NDArray[np.float64], match: str
+) -> None:
+    """Invalid weights and quantile levels raise instead of producing endpoints."""
+    with pytest.raises(ValueError, match=match):
+        phonon_metrics.weighted_quantiles(np.array([1.0, 2.0, 3.0]), weights, levels)
+
+
+@pytest.mark.parametrize(
     "n_qpoints,n_modes,weights,expected_len",
     [(4, 3, [1.0, 2.0, 1.0, 1.0], 12), (4, 3, None, None), (4, 3, [1.0, 2.0], None)],
 )

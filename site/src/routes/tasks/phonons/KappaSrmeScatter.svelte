@@ -3,7 +3,7 @@
   import type kappa_data from '$figs/kappa-103-analysis.json.gz'
   import { format_num, sanitize_compact_formula } from 'matterviz'
   import { ScatterPlot } from 'matterviz/plot'
-  import type { DataSeries, ScatterHandlerProps } from 'matterviz/plot'
+  import type { DataSeries } from 'matterviz/plot'
   import { CRYSTAL_SYSTEM_COLORS, spacegroup_num_to_crystal_sys } from 'matterviz/symmetry'
   import type { CrystalSystem } from 'matterviz/symmetry'
   import { SvelteMap } from 'svelte/reactivity'
@@ -80,12 +80,12 @@
 </script>
 
 <ScatterPlot
-  series={series as unknown as DataSeries[]}
+  {series}
   x_axis={{ label: `PBE κ<sub>L</sub> (W/mK)`, scale_type: `log`, format: `~s` }}
   y_axis={{ label: `κ<sub>SRME</sub>`, range: [0, 2.05], format: `.1f` }}
   {...rest}
 >
-  {#snippet tooltip({ metadata }: ScatterHandlerProps)}
+  {#snippet tooltip({ metadata })}
     {#if metadata}
       {@const point = metadata as unknown as SrmePoint}
       <strong>{point.material_id}</strong>

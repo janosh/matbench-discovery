@@ -122,6 +122,9 @@ def test_calc_energy_from_e_refs_error_cases(
     with pytest.raises(TypeError, match="Expected Entry, Structure"):
         calc_energy_from_e_refs([1, 2, 3], ref_energies, total_energy=-5.0)
 
+    with pytest.raises(ValueError, match="Entry dict missing required keys"):
+        calc_energy_from_e_refs({"energy": -5.0}, ref_energies)
+
 
 def test_calc_energy_from_e_refs_equivalence_with_get_e_form(
     ref_energies: dict[str, float],

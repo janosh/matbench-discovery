@@ -163,11 +163,7 @@ class RelaxJob(Checkpointable):
                 atoms.calc = calculator
 
                 filtered_atoms = atoms if filter_cls is None else filter_cls(atoms)
-                optim_inst = optim_cls(
-                    filtered_atoms,  # ty: ignore[invalid-argument-type]
-                    logfile=None,
-                    **optimizer_params,
-                )
+                optim_inst = optim_cls(filtered_atoms, logfile=None, **optimizer_params)  # ty: ignore[invalid-argument-type]
 
                 optim_inst.run(fmax=force_max, steps=max_steps)
 

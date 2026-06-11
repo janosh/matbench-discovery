@@ -9,12 +9,8 @@
     ModelData,
     SortDir,
   } from '$lib/types'
-  import type {
-    CellSnippetArgs as MattervizCellSnippetArgs,
-    Label as MattervizLabel,
-  } from 'matterviz'
+  import type { Label as MattervizLabel } from 'matterviz'
   import { HeatmapTable, Icon } from 'matterviz'
-  import type { Snippet } from 'svelte'
   import { click_outside } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
   import { SvelteSet } from 'svelte/reactivity'
@@ -194,8 +190,8 @@
   columns={columns as MattervizLabel[]}
   bind:sort
   special_cells={{
-    Links: links_cell as unknown as Snippet<[MattervizCellSnippetArgs]>,
-    Org: affiliation_cell as unknown as Snippet<[MattervizCellSnippetArgs]>,
+    Links: links_cell,
+    Org: affiliation_cell,
   }}
   default_num_format=".3f"
   bind:show_heatmap

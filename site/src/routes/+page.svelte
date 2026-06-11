@@ -10,7 +10,8 @@
     SotaTimeline,
   } from '$lib/plot'
   import { ALL_METRICS, discovery_set_toggle_options, METADATA_COLS } from '$lib/labels'
-  import { find_best_model, model_is_compliant, MODELS } from '$lib/models.svelte'
+  import { make_combined_filter } from '$lib/metrics'
+  import { find_best_model, MODELS } from '$lib/models.svelte'
   import {
     generate_csv,
     generate_excel,
@@ -88,10 +89,19 @@
   let best_model = $derived(
     find_best_model(MODELS, { show_non_compliant, show_compliant, discovery_set }),
   )
-  // landing-page cohort, kept in sync with the metrics table's compliance toggles
-  let in_cohort = $derived((model: ModelData) =>
-    model_is_compliant(model) ? show_compliant : show_non_compliant
-  )
+  // Landing-page cohort, kept in sync with the metrics table filters.
+  let in_cohort = $derived.by(() => {
+    const combined_filter = make_combined_filter(
+      () => true,
+      show_energy_only,
+      show_compliant,
+      show_non_compliant,
+    )
+    return (model: ModelData): boolean =>
+      combined_filter(model) &&
+      typeof model.metrics?.discovery === `object` &&
+      Boolean(model.metrics.discovery[discovery_set])
+  })
 
   export const snapshot: Snapshot = {
     capture: () => ({

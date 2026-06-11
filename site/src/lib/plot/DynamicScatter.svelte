@@ -101,12 +101,14 @@
   const can_log = (ext: [number | undefined, number | undefined]): boolean =>
     ext[0] !== undefined && ext[0] > 0 && 100 * ext[0] <= (ext[1] ?? 0)
 
+  let filtered_models = $derived(models.filter(model_filter))
   let model_counts_by_prop = $derived(
     Object.fromEntries(
       scatter_options.map((prop) => [
         prop.key,
-        models.filter((m) => get_nested_value(m, label_data_path(prop)) !== undefined)
-          .length,
+        filtered_models.filter((model) =>
+          get_nested_value(model, label_data_path(prop)) !== undefined
+        ).length,
       ]),
     ),
   )
@@ -133,8 +135,7 @@
     `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
 
   let plot_data = $derived(
-    models
-      .filter(model_filter)
+    filtered_models
       .map((model) => {
         const x_val = get_label_value(model, axes.x)
         const y_val = get_label_value(model, axes.y)
@@ -282,8 +283,7 @@
       data_loader: async (key) => {
         color_key = key
         const prop = scatter_options_by_key[key]
-        const values = models
-          .filter(model_filter)
+        const values = filtered_models
           .map((model) => get_label_value(model, prop))
           .filter((val): val is number => typeof val === `number` && isFinite(val))
         const [min, max] = extent(values)
@@ -390,10 +390,14 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 1ex 0.6em;
-    margin: 0 3em 1em;
+    /* asymmetric margin counterbalances the collapsed legend parked right of center
+       (a `translate` would be simpler but turns the row into a containing block for
+       the marker-size dropdown's position: fixed options list, breaking it) */
+    margin: 0 12em 1em 3em;
     justify-content: center;
-    /* counterbalance the right-side collapsed legend */
-    translate: -4.5em 0;
+    /* paint above the (later-DOM) plot so the open dropdown stays interactive */
+    position: relative;
+    z-index: 1;
   }
   div.controls-row label {
     font-weight: 500;

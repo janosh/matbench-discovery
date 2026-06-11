@@ -157,9 +157,9 @@
       crystal system &mdash; failures concentrated at low/high κ or in specific
       symmetries point to systematic weaknesses. Hollow markers at κ<sub>SRME</sub> =
       2 are censored values (the κ calculation failed), not measurements. Right:
-      quantile-quantile parity of the ML vs DFT phonon frequency spectra &mdash;
-      points below the diagonal mean the model predicts too-soft phonons (under-stiff
-      force constants), above means too-stiff.
+      quantile-quantile parity of the ML vs DFT phonon frequency spectra, colored by
+      each material's spectrum W1 error. Tooltips include crystal system and quantile;
+      points below the diagonal mean too-soft phonons, above means too-stiff.
     </p>
     <div class="diagnostics-grid bleed-1400">
       <KappaSrmeScatter
@@ -167,7 +167,11 @@
         base={kappa_103_analysis}
         style="height: 420px"
       />
-      <PhononFreqParity entry={selected_diagnostics} style="height: 420px" />
+      <PhononFreqParity
+        entry={selected_diagnostics}
+        base={kappa_103_analysis}
+        style="height: 420px"
+      />
     </div>
   {/if}
 {/if}

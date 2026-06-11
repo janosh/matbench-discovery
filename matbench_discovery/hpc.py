@@ -160,6 +160,8 @@ def df_slurm_chunk(
     DataFrame.swapaxes which numpy relied on to preserve the DataFrame type, so
     split row indices instead and select with iloc.
     """
+    if n_chunks < 1 or not 1 <= task_id <= n_chunks:
+        raise ValueError(f"expected {n_chunks=} >= 1 and 1 <= {task_id=} <= n_chunks")
     row_indices = np.array_split(np.arange(len(df_in)), n_chunks)[task_id - 1]
     return df_in.iloc[row_indices]
 

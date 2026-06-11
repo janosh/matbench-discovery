@@ -21,7 +21,7 @@
   import { Dos, format_num, Icon, sanitize_compact_formula } from 'matterviz'
   import { Spinner } from 'matterviz/feedback'
   import { ScatterPlot } from 'matterviz/plot'
-  import type { DataSeries, RefLine, ScatterHandlerProps } from 'matterviz/plot'
+  import type { DataSeries, RefLine } from 'matterviz/plot'
   import { type CrystalSystem, spacegroup_num_to_crystal_sys } from 'matterviz/symmetry'
   import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -165,7 +165,7 @@
         if (point.series_idx === 0) selected_idx = point.point_idx
       }}
     >
-      {#snippet tooltip({ metadata }: ScatterHandlerProps)}
+      {#snippet tooltip({ metadata })}
         {#if metadata}
           {@const pt = metadata as unknown as KappaParityPoint}
           {@const sys = crystal_sys(pt)}

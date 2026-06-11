@@ -53,7 +53,7 @@ def first_scalar(value: object) -> float | None:
 def row_flag(row: pd.Series, col: str) -> bool | None:
     """A boolean failure flag from a kappa prediction row, None if absent."""
     value = row.get(col)
-    if value is None or (isinstance(value, float) and np.isnan(value)):
+    if value is None or pd.isna(value):
         return None
     return bool(value)
 
@@ -103,27 +103,22 @@ def model_payload(
         if ml_freqs is None or dft_freqs is None:
             cols["freq_w1"].append(None)
             continue
+        ml_weights = phonons.mode_weights_for_freqs(*ml_freqs)
+        dft_weights = phonons.mode_weights_for_freqs(*dft_freqs)
         # exact Wasserstein-1 distance (THz) between the ML and DFT frequency
         # spectra as weighted distributions (meshes differ: full vs irreducible, so
         # frequencies can't be paired pointwise). ML files store phono3py's BZ grid
         # whose duplicate zone-boundary points are slightly over-weighted under the
         # uniform-weight fallback -> ~0.02 THz noise floor that isn't model error
         w1_dist = wasserstein_distance(
-            ml_freqs[0].ravel(),
-            dft_freqs[0].ravel(),
-            phonons.mode_weights_for_freqs(*ml_freqs),
-            phonons.mode_weights_for_freqs(*dft_freqs),
+            ml_freqs[0].ravel(), dft_freqs[0].ravel(), ml_weights, dft_weights
         )
         cols["freq_w1"].append(round(float(w1_dist), KAPPA_DECIMALS))
         for freqs, weights, qq_target in (
-            (*dft_freqs, qq_dft),
-            (*ml_freqs, qq_ml),
+            (dft_freqs[0], dft_weights, qq_dft),
+            (ml_freqs[0], ml_weights, qq_ml),
         ):
-            quants = phonons.weighted_quantiles(
-                freqs.ravel(),
-                phonons.mode_weights_for_freqs(freqs, weights),
-                QQ_LEVELS,
-            )
+            quants = phonons.weighted_quantiles(freqs.ravel(), weights, QQ_LEVELS)
             qq_target.extend(round(float(val), FREQ_DECIMALS) for val in quants)
 
     finite_w1 = [val for val in cols["freq_w1"] if val is not None]
@@ -167,7 +162,12 @@ def main() -> int:
     payload = {
         "material_ids": material_ids,
         "formulas": [str(df_dft.loc[mid].get("name", "")) for mid in material_ids],
-        "spg_nums": [int(df_dft.loc[mid][Key.spg_num]) for mid in material_ids],
+        "spg_nums": [
+            None
+            if pd.isna(spg_num := df_dft.loc[mid].get(Key.spg_num))
+            else int(spg_num)
+            for mid in material_ids
+        ],
         "kappa_dft": [
             first_scalar(df_dft.loc[mid].get(MbdKey.kappa_tot_avg))
             for mid in material_ids

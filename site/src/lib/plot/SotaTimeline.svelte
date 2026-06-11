@@ -6,7 +6,6 @@
   import { MODELS } from '$lib'
   import { get_nested_number, is_finite_num } from '$lib/metrics'
   import { sota_frontier_indices, sota_step_line } from '$lib/sota'
-  import { format_num } from 'matterviz'
   import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries } from 'matterviz/plot'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -70,7 +69,7 @@
     sota_step_line(record_order.map((idx) => points[idx]), Date.now()),
   )
 
-  let series = $derived.by((): DataSeries[] => {
+  let series = $derived.by((): DataSeries<TimelineMeta>[] => {
     const model_points: DataSeries<TimelineMeta> = {
       x: points.map((pt) => pt.date),
       y: points.map((pt) => pt.value),
@@ -95,14 +94,14 @@
           : {}
       ),
     }
-    const frontier_line: DataSeries = {
+    const frontier_line: DataSeries<TimelineMeta> = {
       x: frontier.x,
       y: frontier.y,
       label: `SOTA frontier`,
       markers: `line`,
       line_style: { stroke: `#4dabf7`, stroke_width: 2, line_dash: `6 3` },
     }
-    return [frontier_line, model_points as unknown as DataSeries]
+    return [frontier_line, model_points]
   })
 </script>
 
@@ -140,14 +139,14 @@
   {...rest}
 >
   {#snippet tooltip({ y_formatted, metadata })}
-    {@const meta = metadata as unknown as TimelineMeta | undefined}
+    {@const meta = metadata}
     {#if meta}
       <strong>{meta.model_name}</strong><br />
       Added: {meta.date_added}<br />
       {metric}: {y_formatted}
       {#if meta.is_record}<br /><em>set a new record</em>{/if}
     {:else}
-      SOTA frontier: {format_num(Number(y_formatted), `.3~`)}
+      SOTA frontier: {y_formatted}
     {/if}
   {/snippet}
 </ScatterPlot>

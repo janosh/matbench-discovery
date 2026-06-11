@@ -64,6 +64,14 @@ def test_df_slurm_chunk(
     assert list(df_chunk.index) == list(expected_index)
 
 
+@pytest.mark.parametrize("n_chunks,task_id", [(0, 1), (3, 0), (3, -1), (3, 4)])
+def test_df_slurm_chunk_rejects_invalid_task_ids(n_chunks: int, task_id: int) -> None:
+    """df_slurm_chunk rejects invalid chunk counts and task IDs."""
+    df_in = pd.DataFrame({"col": range(10)})
+    with pytest.raises(ValueError, match=rf"{n_chunks=}.*{task_id=}"):
+        hpc.df_slurm_chunk(df_in, n_chunks, task_id)
+
+
 def test_empty_input() -> None:
     """Test chunking with empty input list."""
     assert hpc.chunk_by_lens([], n_chunks=1) == []

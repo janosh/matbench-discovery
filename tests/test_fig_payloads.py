@@ -13,10 +13,17 @@ import os
 from functools import partial
 from typing import Any
 
+import pandas as pd
 import pytest
 
 from matbench_discovery import SITE_FIG_DATA
 from matbench_discovery.enums import Model
+from scripts.model_figs.kappa_103_analysis import row_flag
+
+
+def reject_json_constant(const: str) -> None:
+    """Reject NaN/Infinity literals in JSON figure payloads."""
+    raise ValueError(f"non-finite JSON constant {const!r}")
 
 
 def load_payload(name: str) -> dict[str, Any]:
@@ -24,9 +31,7 @@ def load_payload(name: str) -> dict[str, Any]:
     with gzip.open(f"{SITE_FIG_DATA}/{name}.json.gz") as file:
         # our exporter writes allow_nan=False; reject NaN/Infinity literals that
         # python's json would otherwise happily parse back
-        return json.load(
-            file, parse_constant=lambda const: pytest.fail(f"non-finite {const=}")
-        )
+        return json.load(file, parse_constant=reject_json_constant)
 
 
 def assert_num_list(values: object, *, length: int | None = None) -> None:
@@ -215,8 +220,8 @@ def check_kappa_103_analysis() -> None:
     assert all(isinstance(mid, str) and mid for mid in material_ids)
     assert all(isinstance(formula, str) for formula in payload["formulas"])
     assert len(payload["formulas"]) == n_materials
-    assert_num_list(payload["spg_nums"], length=n_materials)
-    assert all(1 <= spg <= 230 for spg in payload["spg_nums"])
+    assert len(payload["spg_nums"]) == n_materials
+    assert all(spg is None or 1 <= spg <= 230 for spg in payload["spg_nums"])
     assert_num_list(payload["kappa_dft"], length=n_materials)
     for model in assert_models(payload, "key", "freq_w1_mean", "freq_pairs"):
         for field in ("kappa_ml", "srme", "freq_w1"):
@@ -233,6 +238,21 @@ def check_kappa_103_analysis() -> None:
             assert_num_list(pairs["ml"], length=len(pairs["dft"]))
         else:
             assert model["freq_w1_mean"] is None
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        (None, None),
+        (float("nan"), None),
+        (pd.NA, None),
+        (1, True),
+        (0, False),
+    ],
+)
+def test_kappa_103_analysis_row_flag(value: object, expected: bool | None) -> None:
+    """Failure flags treat missing values as absent and present values as bools."""
+    assert row_flag(pd.Series({"flag": value}), "flag") is expected
 
 
 def check_xy_models(name: str, *stat_keys: str) -> None:

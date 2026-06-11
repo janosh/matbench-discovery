@@ -267,13 +267,13 @@ blockquote > :is(:first-child, :last-child) {
   color: var(--link-hover);
 }
 /* style heading anchors added by heading_anchors attachment from svelte-multiselect */
-:where(h2, h3, h4, h5, h6, strong) a[aria-hidden='true'] {
+:where(h1, h2, h3, h4, h5, h6, strong) a[aria-hidden='true'] {
   transition: 0.3s;
-  margin-left: 4pt;
+  margin-left: 6pt;
   opacity: 0;
 }
-:where(h2, h3, h4, h5, h6, strong):is(:hover, :focus-within) a[aria-hidden='true'],
-:where(h2, h3, h4, h5, h6, strong) a[aria-hidden='true']:focus-visible {
+:where(h1, h2, h3, h4, h5, h6, strong):is(:hover, :focus-within) a[aria-hidden='true'],
+:where(h1, h2, h3, h4, h5, h6, strong) a[aria-hidden='true']:focus-visible {
   opacity: 1;
 }
 strong a[aria-hidden='true'] {

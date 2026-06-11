@@ -15,8 +15,14 @@ def read_kappa_json(path: str) -> pd.DataFrame:
     Renames the ID column for submissions that use mp_id instead of material_id.
     """
     df_kappa = pd.read_json(path)
-    if "mp_id" in df_kappa.columns:
+    columns = list(df_kappa)
+    if "mp_id" in columns:
         df_kappa = df_kappa.rename(columns={"mp_id": Key.mat_id})
+    elif Key.mat_id not in columns:
+        raise ValueError(
+            f"read_kappa_json requires an 'mp_id' or {Key.mat_id!r} column, "
+            f"got {columns=}"
+        )
     return df_kappa.set_index(Key.mat_id)
 
 
