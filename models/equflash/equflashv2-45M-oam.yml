@@ -56,7 +56,7 @@ hyperparams: # strongly recommended to list relaxation hyperparams
 
 training_cost: # list any hardware used to train the model and for how long
   # hardware: { amount: float, hours: float, cost: float [USD] }
-  Nvidia H100 GPUs: {amount: 16, hours: 92}
+  Nvidia H100 GPUs: {amount: 16, hours: 100}
 
 requirements: # strongly recommended
   torch: 2.9.1
