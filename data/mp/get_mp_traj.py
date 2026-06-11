@@ -6,8 +6,8 @@ all 1.6M task docs.
 """
 
 # %%
+import gzip
 import os
-import subprocess
 from glob import glob
 
 import pandas as pd
@@ -119,12 +119,14 @@ print(f"{len(df_batch)=}")
 df_batch.head()
 
 
-# %% use gzip CLI to check all files for archive corruption
+# %% check all files for gzip archive corruption
 for path in tqdm(glob(f"{module_dir}/mp-tasks/*.json.gz")):
     try:
-        subprocess.run(["gzip", "--test", path], check=True)
-    except subprocess.CalledProcessError as exc:
-        print(f"{path} raised {exc.stderr}")
+        with gzip.open(path, mode="rb") as file:
+            while file.read(1 << 20):
+                pass
+    except (gzip.BadGzipFile, EOFError, OSError) as exc:
+        print(f"{path} raised {exc}")
         # ask user to delete corrupted file
         if input("Delete corrupted file? [y/N] ").lower() == "y":
             os.remove(path)

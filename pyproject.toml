@@ -104,9 +104,7 @@ ignore = [
   "PT006",   # pytest-parametrize-names-wrong-type
   "PTH",
   "S108",
-  "S310",
   "S603",    # subprocess-without-shell-equals-true
-  "S607",    # start-process-with-partial-path
   "T201",
   "TD",
   "TRY003",

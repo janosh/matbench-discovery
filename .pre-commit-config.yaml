@@ -79,9 +79,11 @@ repos:
     rev: 0.37.2
     hooks:
       - id: check-jsonschema
+        name: check-jsonschema-models
         files: ^models/.+/.+\.yml$
         args: [--schemafile, tests/model-schema.yml]
       - id: check-jsonschema
+        name: check-jsonschema-datasets
         files: ^data/datasets\.yml$
         args: [--schemafile, tests/dataset-schema.yml]
       - id: check-github-actions
