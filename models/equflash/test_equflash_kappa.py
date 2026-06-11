@@ -28,6 +28,7 @@ from spglib import get_symmetry_dataset
 from thermal_conductivity import get_fc3_batch
 from tqdm import tqdm
 
+from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons.thermal_conductivity import (
     get_fc2_and_freqs,
@@ -159,8 +160,7 @@ def main() -> None:
     parser.add_argument("--displacement", type=float, default=0.03)
     parser.add_argument("--rank", type=int, default=0)
     parser.add_argument("--worldsize", type=int, default=1)
-    parser.add_argument("--structures", type=str, required=True)
-
+    
     args = parser.parse_args()
 
     checkpoint = args.checkpoint
@@ -184,8 +184,10 @@ def main() -> None:
     out_path = f"{out_dir}/conductivity-{args.rank:>03}.json.gz"
 
     timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")
-    struct_data_path = args.structures
-    atoms_list = read(struct_data_path, format="extxyz", index=":")
+    atoms_list = read(
+            DataFiles.phonondb_pbe_103_structures.path, format="extxyz", index=":"
+        )
+
 
     run_params = {
         "timestamp": timestamp,
@@ -202,7 +204,6 @@ def main() -> None:
         "conductivity_broken_symm": conductivity_broken_symm,
         "slurm_array_task_count": args.worldsize,
         "task_type": task_type,
-        "struct_data_path": os.path.basename(struct_data_path),
         "n_structures": len(atoms_list),
     }
 
@@ -356,11 +357,8 @@ def main() -> None:
 
     df_kappa = pd.DataFrame(kappa_results).T
     df_kappa.index.name = ID
-
-    df_force = pd.DataFrame(force_results).T
-    df_force = pd.concat([df_kappa, df_force], axis=1)
-    df_force.index.name = ID
-    df_force.reset_index().to_json(out_path)
+    df_kappa.reset_index().to_json(out_path)
+    
 
 
 if __name__ == "__main__":
