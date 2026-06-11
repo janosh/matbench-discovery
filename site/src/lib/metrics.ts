@@ -230,7 +230,16 @@ export function assemble_row_data(
         ? metrics.discovery[discovery_set]
         : undefined
     const is_compliant = model_is_compliant(model)
-    const { RMSD, CPS } = ALL_METRICS
+    const {
+      CPS,
+      MD_RDF_error,
+      MD_VDOS_error,
+      MD_combined_error,
+      MD_energy_RMSE,
+      MD_force_RMSE,
+      MD_pressure_error,
+      RMSD,
+    } = ALL_METRICS
     const metric_num = (label: Label) =>
       get_nested_number(model, `${label.path}.${label.key}`)
 
@@ -272,6 +281,12 @@ export function assemble_row_data(
       [ALL_METRICS.κ_SRME.key]: metric_num(ALL_METRICS.κ_SRME),
       [ALL_METRICS.κ_SRE.key]: metric_num(ALL_METRICS.κ_SRE),
       [RMSD.key]: metric_num(RMSD),
+      [MD_energy_RMSE.key]: metric_num(MD_energy_RMSE),
+      [MD_force_RMSE.key]: metric_num(MD_force_RMSE),
+      [MD_RDF_error.key]: metric_num(MD_RDF_error),
+      [MD_VDOS_error.key]: metric_num(MD_VDOS_error),
+      [MD_pressure_error.key]: metric_num(MD_pressure_error),
+      [MD_combined_error.key]: metric_num(MD_combined_error),
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.key]:
         `<span title="${format_num(model.model_params, `,`)} trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,

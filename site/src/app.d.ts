@@ -89,6 +89,7 @@ declare module '*modeling-tasks.yml' {
     discovery: ModelingTask
     phonons: ModelingTask
     diatomics: ModelingTask
+    md: ModelingTask
   }
   const tasks: ModelingTasks
   export default tasks

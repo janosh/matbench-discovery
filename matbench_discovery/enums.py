@@ -497,6 +497,20 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return abs_path
 
     @property
+    def md_path(self) -> str | None:
+        """Path to an MD prediction artifact, if available."""
+        md_metrics = self.metrics.get("md")
+        if md_metrics is None or md_metrics in ("not available", "not applicable"):
+            return None
+        rel_path = md_metrics.get("pred_file")
+        file_url = md_metrics.get("pred_file_url", "")
+        if not rel_path:
+            return None
+        abs_path = f"{ROOT}/{rel_path}"
+        maybe_auto_download_file(file_url, abs_path, label=self.label)
+        return abs_path
+
+    @property
     def is_compliant(self) -> bool:
         """Check if model complies with benchmark restrictions."""
         from matbench_discovery.models import model_is_compliant

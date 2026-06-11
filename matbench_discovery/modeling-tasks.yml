@@ -49,6 +49,25 @@ diatomics:
     higher_is_better: []
     lower_is_better: []
 
+md:
+  label: Molecular Dynamics
+  description: Evaluate energies, forces, and trajectory structure on molecular dynamics trajectories.
+  metrics:
+    higher_is_better: []
+    lower_is_better:
+      - E RMSE
+      - F RMSE
+      - RDF error
+      - VDOS error
+      - Pressure error
+      - Combined error
+      - energy_rmse
+      - force_rmse
+      - rdf_error
+      - vdos_error
+      - pressure_error_percent
+      - combined_error
+
 cps:
   label: CPS
   description: Combined Performance Score

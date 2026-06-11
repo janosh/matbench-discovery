@@ -263,6 +263,66 @@ definitions:
             pred_file_url:
               $ref: '#/definitions/http_url'
 
+  MdMetrics:
+    type: object
+    additionalProperties: false
+    properties:
+      pred_file:
+        type: [string, 'null']
+      pred_file_url:
+        type: [string, 'null']
+        $ref: '#/definitions/http_url'
+      energy_rmse:
+        type: number
+      force_rmse:
+        type: number
+      rdf_error:
+        type: number
+      vdos_error:
+        type: number
+      pressure_error_percent:
+        type: number
+      combined_error:
+        type: number
+      n_frames:
+        type: number
+      n_energy_frames:
+        type: number
+      n_force_frames:
+        type: number
+      n_rdf_systems:
+        type: number
+      n_rdf_failed:
+        type: number
+      n_rdf_skipped:
+        type: number
+      n_vdos_systems:
+        type: number
+      n_vdos_failed:
+        type: number
+      n_vdos_skipped:
+        type: number
+      n_pressure_systems:
+        type: number
+      n_pressure_failed:
+        type: number
+      n_pressure_skipped:
+        type: number
+      n_failed:
+        type: number
+      n_skipped:
+        type: number
+    allOf:
+      - if:
+          properties:
+            pred_file: { type: string }
+          required: [pred_file]
+        then:
+          required: [pred_file_url]
+          properties:
+            pred_file_url:
+              $ref: '#/definitions/http_url'
+
   # Define license types from dataset schema
   license_enum:
     type: string
@@ -515,6 +575,11 @@ properties:
       diatomics:
         oneOf:
           - $ref: '#/definitions/DiatomicsMetrics'
+          - type: string
+            enum: [not applicable, not available]
+      md:
+        oneOf:
+          - $ref: '#/definitions/MdMetrics'
           - type: string
             enum: [not applicable, not available]
 

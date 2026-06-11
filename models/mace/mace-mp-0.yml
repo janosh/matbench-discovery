@@ -168,3 +168,17 @@ metrics:
   diatomics:
     pred_file: models/mace/mace-mp-0/2025-02-13-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52449434
+  md:
+    rdf_error: 6.171 # %
+    n_rdf_systems: 17 # count
+    n_rdf_failed: 0 # count
+    n_rdf_skipped: 2 # count
+    vdos_error: 0.3926 # fraction
+    n_vdos_systems: 17 # count
+    n_vdos_failed: 0 # count
+    n_vdos_skipped: 2 # count
+    pressure_error_percent: 93.5649 # %
+    n_pressure_systems: 1 # count
+    n_pressure_failed: 16 # count
+    n_pressure_skipped: 2 # count
+    combined_error: 0.4633 # fraction

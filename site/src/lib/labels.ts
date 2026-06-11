@@ -6,6 +6,7 @@ import type {
   DiscoveryMetricsLabels,
   GeoOptSymmetryMetricsLabels,
   HyperparamLabels,
+  MdMetricsLabels,
   MetadataLabels,
 } from './label-schema.d.ts'
 
@@ -347,8 +348,67 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
     ]),
 ) as unknown as GeoOptSymmetryMetricsLabels
 
+export const MD_METRICS: MdMetricsLabels = {
+  MD_energy_RMSE: {
+    key: `energy_rmse`,
+    label: `E RMSE`,
+    description: `Root mean squared error in model-predicted potential energy on reference MD frames`,
+    unit: `eV/atom`,
+    path: `metrics.md`,
+    better: `lower`,
+    format: `.3f`,
+    style: `border-left: 1px solid black;`,
+  },
+  MD_force_RMSE: {
+    key: `force_rmse`,
+    label: `F RMSE`,
+    description: `Root mean squared error in model-predicted forces on reference MD frames`,
+    unit: `eV/Å`,
+    path: `metrics.md`,
+    better: `lower`,
+    format: `.3f`,
+  },
+  MD_RDF_error: {
+    key: `rdf_error`,
+    label: `RDF error`,
+    description: `Mean radial distribution function error between reference and MLIP-predicted MD trajectories`,
+    unit: `%`,
+    path: `metrics.md`,
+    better: `lower`,
+    format: `.3f`,
+  },
+  MD_VDOS_error: {
+    key: `vdos_error`,
+    label: `VDOS error`,
+    description: `Mean area-normalized vibrational density of states error between reference and MLIP-predicted MD trajectories on a 0 to 1 scale`,
+    path: `metrics.md`,
+    range: [0, 1],
+    better: `lower`,
+    format: `.3f`,
+  },
+  MD_pressure_error: {
+    key: `pressure_error_percent`,
+    label: `Pressure error`,
+    description: `Mean normalized pressure-distribution histogram error between reference and MLIP-predicted MD trajectories in percent`,
+    path: `metrics.md`,
+    range: [0, 100],
+    better: `lower`,
+    format: `.2f`,
+  },
+  MD_combined_error: {
+    key: `combined_error`,
+    label: `Combined error`,
+    description: `Mean of RDF, VDOS, and pressure-distribution errors on a shared 0 to 1 scale`,
+    path: `metrics.md`,
+    range: [0, 1],
+    better: `lower`,
+    format: `.3f`,
+  },
+} as const
+
 export type AllMetrics = DiscoveryMetricsLabels &
-  GeoOptSymmetryMetricsLabels & { CPS: Label; κ_SRME: Label; κ_SRE: Label; RMSD: Label }
+  GeoOptSymmetryMetricsLabels &
+  MdMetricsLabels & { CPS: Label; κ_SRME: Label; κ_SRE: Label; RMSD: Label }
 
 export const ALL_METRICS: AllMetrics = {
   // Dynamic metrics
@@ -388,6 +448,7 @@ export const ALL_METRICS: AllMetrics = {
     style: `border-left: 1px solid black;`,
   },
   ...GEO_OPT_SYMMETRY_METRICS,
+  ...MD_METRICS,
 } as const
 
 export const DISCOVERY_SET_LABELS: Record<

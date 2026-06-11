@@ -43,6 +43,12 @@
     `TNR`,
     `TPR`,
     `κ_SRME`,
+    `MD_energy_RMSE`,
+    `MD_force_RMSE`,
+    `MD_RDF_error`,
+    `MD_VDOS_error`,
+    `MD_pressure_error`,
+    `MD_combined_error`,
   ] as const
   const metrics = metric_keys.map((key) => ALL_METRICS[key])
 

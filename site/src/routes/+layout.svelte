@@ -37,6 +37,7 @@
     '/tasks/phonons':
       `Metrics and analysis of predicting phonon modes and frequencies.`,
     '/tasks/geo-opt': `Metrics and analysis of predicting ground state geometries.`,
+    '/tasks/md': `Metrics and analysis of molecular dynamics reference and MLIP trajectories.`,
   }
   let description = $derived(
     descriptions[url ?? ``] ?? base_description,
