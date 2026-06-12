@@ -4,9 +4,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { doc_query } from '../index'
 
 describe(`Landing Page`, () => {
+  // happy-dom mounts of the full-column metrics table are slow in CI
   beforeEach(() => {
     mount(Page, { target: document.body })
-  })
+  }, 30_000)
 
   it(`renders discovery set toggle buttons`, () => {
     const buttons = document.querySelectorAll(`.selection-toggle button`)

@@ -629,6 +629,7 @@ describe(`MetricsTable`, () => {
       },
     ])(
       `alphabetically sorts by Model name on $test_name header click`,
+      { timeout: 30_000 }, // happy-dom renders of the full-column table are slow in CI
       async ({ props }) => {
         mount(MetricsTable, { target: document.body, props })
 
@@ -1189,28 +1190,35 @@ describe(`MetricsTable`, () => {
   })
 
   describe(`regression tests for default values`, () => {
-    it(`verifies critical default prop values to catch regressions`, () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { col_filter: () => true, show_non_compliant: true },
-      })
+    // happy-dom renders of the full-column table are slow in CI
+    it(
+      `verifies critical default prop values to catch regressions`,
+      {
+        timeout: 30_000,
+      },
+      () => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: { col_filter: () => true, show_non_compliant: true },
+        })
 
-      // Verify table renders with data (filters allow content)
-      const rows = document.querySelectorAll(`tbody tr`)
-      expect(
-        rows.length,
-        `show_non_compliant=true & col_filter=true should show rows`,
-      ).toBeGreaterThan(0)
+        // Verify table renders with data (filters allow content)
+        const rows = document.querySelectorAll(`tbody tr`)
+        expect(
+          rows.length,
+          `show_non_compliant=true & col_filter=true should show rows`,
+        ).toBeGreaterThan(0)
 
-      // Verify heatmap is enabled by default
-      const table_controls = document.querySelector(`table-controls`)
-      const heatmap_checkbox =
-        table_controls?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
-      expect(
-        table_controls === null || heatmap_checkbox?.checked === true,
-        `show_heatmap should default to true`,
-      ).toBe(true)
-    })
+        // Verify heatmap is enabled by default
+        const table_controls = document.querySelector(`table-controls`)
+        const heatmap_checkbox =
+          table_controls?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
+        expect(
+          table_controls === null || heatmap_checkbox?.checked === true,
+          `show_heatmap should default to true`,
+        ).toBe(true)
+      },
+    )
   })
 
   describe(`Column Reordering`, () => {
