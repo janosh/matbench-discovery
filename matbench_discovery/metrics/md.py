@@ -388,10 +388,9 @@ def evaluate_md_system(
         # NaN pressure metrics only for frames without (a calculator providing)
         # stress. NB: PropertyNotImplementedError subclasses RuntimeError via
         # NotImplementedError, so check it first; other RuntimeErrors re-raise.
-        is_missing_stress = isinstance(exc, PropertyNotImplementedError) or (
-            "no calculator" in str(exc)
-        )
-        if not is_missing_stress:
+        if not isinstance(exc, PropertyNotImplementedError) and (
+            "no calculator" not in str(exc)
+        ):
             raise
         metrics["pressure_mae"] = metrics["pressure_wasserstein"] = float("nan")
 
