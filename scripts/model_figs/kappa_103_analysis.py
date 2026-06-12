@@ -20,7 +20,7 @@ import pandas as pd
 from pymatviz.enums import Key
 from scipy.stats import wasserstein_distance
 
-from matbench_discovery import SITE_FIG_DATA, figs
+from matbench_discovery import figs
 from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.metrics import phonons
@@ -156,9 +156,10 @@ def main() -> int:
 
     if not models:
         print("No models with kappa_103 predictions found")
-        return 1
+        # on subset runs (e.g. ingesting an energy-only model) there's nothing to
+        # merge, which is fine; a full run yielding no models is a config error
+        return 1 if is_full_model_run() else 0
 
-    models.sort(key=lambda entry: str(entry["key"]).lower())
     payload = {
         "material_ids": material_ids,
         "formulas": [str(df_dft.loc[mid].get("name", "")) for mid in material_ids],
@@ -174,13 +175,9 @@ def main() -> int:
         ],
         "models": models,
     }
-    if is_full_model_run():  # don't clobber site payload on filtered runs
-        n_bytes = figs.write_json_gz(
-            f"{SITE_FIG_DATA}/kappa-103-analysis.json.gz", payload
-        )
-        print(f"Wrote kappa-103-analysis.json.gz ({n_bytes:,} bytes, {len(models)=})")
-    else:
-        print(f"Filtered run ({len(models)=}), not writing site payload")
+    figs.write_site_payload(
+        "kappa-103-analysis", payload, sort_key=lambda entry: str(entry["key"]).lower()
+    )
     return 0
 
 

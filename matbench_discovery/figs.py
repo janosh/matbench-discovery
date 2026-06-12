@@ -9,10 +9,12 @@ route's chunk only contains the data of the figures it renders.
 
 Helpers:
 - ``write_json_gz(path, payload)``: deterministic gzipped JSON writer
+- ``write_site_payload(name, payload)``: write a multi-model payload; subset runs
+  (--models) merge into the committed payload instead of clobbering it
 - ``histogram(values)``: bin raw values into ``{x, y, bar_width}`` (HistBins shape)
 - ``lttb``: down-sample over-resolved line series
-- ``trace_xy`` / ``trace_color`` / ``trace_visible`` / ``trace_payload``: pull
-  arrays/styles out of plotly traces (for figs built by pymatviz/plots helpers)
+- ``trace_xy`` / ``trace_color`` / ``trace_payload``: pull arrays/styles out of
+  plotly traces (for figs built by pymatviz/plots helpers)
 - ``sunburst_data`` / ``sankey_data``: pull the flat arrays out of plotly sunburst/
   sankey figures (matterviz builds the nested structures from these client-side)
 """
@@ -29,6 +31,8 @@ from typing import TYPE_CHECKING, Any, Final
 import numpy as np
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import numpy.typing as npt
     import plotly.graph_objects as go
     from plotly.basedatatypes import BaseTraceType
@@ -158,12 +162,6 @@ def trace_color(trace: BaseTraceType) -> str | None:
     return marker_color if isinstance(marker_color, str) else None
 
 
-def trace_visible(trace: BaseTraceType) -> bool:
-    """Map plotly ``visible`` (True/False/'legendonly') to a boolean."""
-    vis = getattr(trace, "visible", True)
-    return vis is True or vis is None
-
-
 def trace_payload(trace: BaseTraceType, *, x: bool = True) -> dict[str, Any]:
     """Standard payload entry for a plotly trace: label, color (if any), x/y arrays.
 
@@ -227,11 +225,22 @@ def sankey_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
     # crammed labels overlap) and reindex the links onto the kept nodes
     used = sorted({*src_idx, *tgt_idx})
     remap = {old: new for new, old in enumerate(used)}
+    # canonicalize link order: upstream pandas value_counts can permute equal-count
+    # links between runs, which would make payload bytes depend on run composition
+    links = sorted(
+        zip(
+            (remap[src] for src in src_idx),
+            (remap[tgt] for tgt in tgt_idx),
+            round_list(decode_array(link.get("value"))),
+            strict=True,
+        )
+    )
+    sources, targets, values = map(list, zip(*links, strict=True))
     return {
         "labels": [labels[idx] for idx in used],
-        "source": [remap[src] for src in src_idx],
-        "target": [remap[tgt] for tgt in tgt_idx],
-        "value": round_list(decode_array(link.get("value"))),
+        "source": sources,
+        "target": targets,
+        "value": values,
     }
 
 
@@ -245,3 +254,69 @@ def write_json_gz(path: str, data: dict[str, Any]) -> int:
     with open(path, "wb") as file:
         file.write(compressed)
     return len(compressed)
+
+
+def write_site_payload(
+    name: str,
+    payload: dict[str, Any],
+    *,
+    id_field: str = "key",
+    sort_key: Callable[[dict[str, Any]], Any] | None = None,
+    assign_colors: bool = False,
+    visible_top_n: int | None = None,
+) -> int:
+    """Write a multi-model figure payload to site/src/figs/<name>.json.gz.
+
+    Full runs (--models covers every active model) overwrite the payload wholesale.
+    Subset runs (e.g. single-model ingestion) instead splice the freshly computed
+    model entries into the committed payload by ``id_field``, so a contributor can
+    refresh their own model without every other model's prediction files
+    (https://github.com/janosh/matbench-discovery/issues/342). Entries of models that
+    left the active roster (superseded) are pruned to keep the roster guards in
+    tests/test_fig_payloads.py satisfiable; non-'models' top-level fields are
+    model-independent reference data and taken fresh.
+
+    Presentation fields are (re)assigned deterministically so subset merges stay
+    byte-identical to full regens: ``sort_key`` orders entries (default:
+    active-roster order, the order full runs iterate models in), ``assign_colors``
+    cycles the plotly palette in that order, ``visible_top_n`` hides all but the
+    first n entries by default.
+    """
+    from matbench_discovery import SITE_FIG_DATA
+    from matbench_discovery.cli import is_full_model_run
+    from matbench_discovery.enums import Model
+
+    path = f"{SITE_FIG_DATA}/{name}.json.gz"
+    models: list[dict[str, Any]] = list(payload["models"])
+    if not is_full_model_run():
+        if not os.path.isfile(path):
+            raise FileNotFoundError(
+                f"{path} not found: subset runs (--models) can only merge into an "
+                "existing payload. Run without --models to regenerate from scratch."
+            )
+        with gzip.open(path) as file:
+            committed = json.load(file)
+        # fresh entries replace committed ones, new models append at the end
+        fresh_by_id = {entry[id_field]: entry for entry in models}
+        old = committed["models"]
+        models = [fresh_by_id.pop(entry[id_field], entry) for entry in old]
+        models += list(fresh_by_id.values())
+
+    roster = {getattr(model, id_field): idx for idx, model in enumerate(Model.active())}
+    models = [entry for entry in models if entry[id_field] in roster]
+    models.sort(key=sort_key or (lambda entry: roster[entry[id_field]]))
+    if assign_colors:
+        from plotly.express.colors import qualitative
+
+        for idx, entry in enumerate(models):
+            entry["color"] = qualitative.Plotly[idx % len(qualitative.Plotly)]
+    if visible_top_n is not None:
+        for idx, entry in enumerate(models):
+            if idx < visible_top_n:  # visible defaults to true when absent
+                entry.pop("visible", None)
+            else:
+                entry["visible"] = False
+
+    n_bytes = write_json_gz(path, payload | {"models": models})
+    print(f"Wrote {name}.json.gz ({n_bytes:,} bytes, {len(models)} models)")
+    return n_bytes

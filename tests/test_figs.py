@@ -10,8 +10,11 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import plotly.graph_objects as go
 import pytest
+from plotly.express.colors import qualitative
 
 from matbench_discovery import figs
+from matbench_discovery.cli import cli_args
+from matbench_discovery.enums import Model
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -84,20 +87,15 @@ def test_histogram_bins_raw_values() -> None:
     assert result["x"][0] == pytest.approx(0.05)  # first bin center
 
 
-def test_trace_helpers_extract_xy_color_visibility() -> None:
-    """trace_xy/trace_color/trace_visible/trace_payload read plotly trace objects."""
+def test_trace_helpers_extract_xy_and_color() -> None:
+    """trace_xy/trace_color/trace_payload read plotly trace objects."""
     trace = go.Scatter(
-        name="demo",
-        x=[1, 2, 3],
-        y=[4.0, 5.0, 6.0],
-        line=dict(color="#123456"),
-        visible="legendonly",
+        name="demo", x=[1, 2, 3], y=[4.0, 5.0, 6.0], line=dict(color="#123456")
     )
     x, y = figs.trace_xy(trace)
     np.testing.assert_array_equal(x, [1, 2, 3])
     np.testing.assert_array_equal(y, [4.0, 5.0, 6.0])
     assert figs.trace_color(trace) == "#123456"
-    assert figs.trace_visible(trace) is False
     assert figs.trace_payload(trace, x=False) == {
         "label": "demo",
         "color": "#123456",
@@ -107,7 +105,6 @@ def test_trace_helpers_extract_xy_color_visibility() -> None:
 
     bar = go.Bar(x=[1], y=[2], marker=dict(color="#abcdef"))
     assert figs.trace_color(bar) == "#abcdef"
-    assert figs.trace_visible(bar) is True
 
 
 def test_sunburst_data_extracts_flat_arrays() -> None:
@@ -179,3 +176,90 @@ def test_write_json_gz_rejects_nan(tmp_path: Path) -> None:
     """write_json_gz refuses NaN values (invalid JSON) instead of writing them."""
     with pytest.raises(ValueError, match="Out of range float values"):
         figs.write_json_gz(f"{tmp_path}/bad.json.gz", {"y": [float("nan")]})
+
+
+# === multi-model site payload writing (full-run overwrite vs subset-run merge) ===
+def load_payload(path: str) -> dict[str, Any]:
+    """Read back a gzipped JSON payload."""
+    with gzip.open(path) as file:
+        return json.load(file)
+
+
+@pytest.fixture
+def site_fig_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Redirect write_site_payload's IO to a temp dir."""
+    import matbench_discovery
+
+    monkeypatch.setattr(matbench_discovery, "SITE_FIG_DATA", str(tmp_path))
+    return tmp_path
+
+
+def test_write_site_payload_full_run_overwrites_and_styles(
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Full runs overwrite wholesale, prune retired models and assign deterministic
+    order/colors/visibility.
+    """
+    model_a, model_b = list(Model.active())[:2]
+    # pre-existing payload whose contents must be fully replaced
+    figs.write_json_gz(
+        f"{site_fig_dir}/demo.json.gz", {"models": [{"key": "stale", "y": [0]}]}
+    )
+    monkeypatch.setattr(cli_args, "models", list(Model.active()))
+    fresh = {
+        "shared": "ref-data",
+        "models": [
+            {"key": model_b.key, "mae": 2.0, "color": "#000", "visible": False},
+            {"key": model_a.key, "mae": 1.0, "color": "#fff"},
+            {"key": "retired-model", "mae": 0.0},
+        ],
+    }
+    figs.write_site_payload(
+        "demo", fresh, sort_key=lambda entry: entry["mae"], assign_colors=True,
+        visible_top_n=1,
+    )  # fmt: skip
+    written = load_payload(f"{site_fig_dir}/demo.json.gz")
+    assert written["shared"] == "ref-data"
+    # retired model pruned, remaining entries sorted by mae
+    assert [entry["key"] for entry in written["models"]] == [model_a.key, model_b.key]
+    assert [entry["color"] for entry in written["models"]] == qualitative.Plotly[:2]
+    assert "visible" not in written["models"][0]  # top-1 visible by default
+    assert written["models"][1]["visible"] is False
+
+
+def test_write_site_payload_subset_run_merges(
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Subset runs splice fresh entries into the committed payload by id (replacing
+    stale ones, appending new models, pruning retired ones), take shared fields fresh
+    and sort entries into active-roster order by default.
+    """
+    model_a, model_b = list(Model.active())[:2]
+    committed = {
+        "shared": "old",
+        "models": [
+            {"key": model_b.key, "y": [2]},  # to be replaced by the fresh entry
+            {"key": "retired-model", "y": [0]},  # to be pruned
+            {"key": model_a.key, "y": [1]},  # to be kept as committed
+        ],
+    }
+    figs.write_json_gz(f"{site_fig_dir}/demo.json.gz", committed)
+    monkeypatch.setattr(cli_args, "models", [model_b])  # single-model run
+    fresh = {"shared": "new", "models": [{"key": model_b.key, "y": [3]}]}
+    figs.write_site_payload("demo", fresh)
+    merged = load_payload(f"{site_fig_dir}/demo.json.gz")
+    assert merged["shared"] == "new"  # shared fields are model-independent -> fresh
+    assert merged["models"] == [  # sorted into active-roster order
+        {"key": model_a.key, "y": [1]},
+        {"key": model_b.key, "y": [3]},
+    ]
+
+
+def test_write_site_payload_subset_run_requires_committed_payload(
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Subset runs can't create a payload from scratch (would ship a partial roster)."""
+    assert site_fig_dir.is_dir()
+    monkeypatch.setattr(cli_args, "models", [next(iter(Model.active()))])
+    with pytest.raises(FileNotFoundError, match="merge into an existing payload"):
+        figs.write_site_payload("missing", {"models": []})
