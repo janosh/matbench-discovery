@@ -7,7 +7,8 @@ testable (tests/test_ingest_model.py) and robust to YAML formatting.
 Usage (via the justfile, or directly):
     uv run python scripts/ingest_model.py <model>            # check+evals+figs+payloads
     uv run python scripts/ingest_model.py <model> --archive  # + figshare/release upload
-    uv run python scripts/ingest_model.py --payloads-only    # multi-model payloads only
+    uv run python scripts/ingest_model.py --payloads-only    # full payload regen
+    uv run python scripts/ingest_model.py <model> --payloads-only  # merge single model
 """
 
 import argparse
@@ -229,14 +230,20 @@ def run_archive(model: Model, checks: Checklist) -> None:
             checks.fail(f"Publishing parity assets from {assets_dir} failed")
 
 
-def run_payload_refresh(checks: Checklist) -> None:
-    """Regenerate all multi-model site figure payloads (site/src/figs/*.json.gz) so
-    pages like /models/tmi and /tasks/geo-opt include every model, then run the
-    payload shape tests (site pages import these files typed).
+def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
+    """Refresh the multi-model site figure payloads (site/src/figs/*.json.gz), then
+    run the payload shape tests (site pages import these files typed).
+
+    With a model given, payload scripts run with --models <model> and splice only that
+    model's freshly computed entries into the committed payloads (no other model's
+    prediction files needed, see figs.write_site_payload); without one, payloads are
+    regenerated from the full active roster.
     """
-    banner("Refreshing multi-model site figure payloads")
+    suffix = f" for {model.name}" if model else ""
+    banner(f"Refreshing multi-model site figure payloads{suffix}")
+    model_args = ("--models", model.name) if model else ()
     for script in PAYLOAD_SCRIPTS:
-        if not run_cmd("uv", "run", "python", script, *PAYLOAD_FLAGS):
+        if not run_cmd("uv", "run", "python", script, *PAYLOAD_FLAGS, *model_args):
             checks.fail(f"{script} failed")
             return
     if run_cmd(
@@ -269,7 +276,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--overwrite": "Overwrite existing eval outputs",
         "--archive": "Also archive pred files to figshare + publish parity assets "
         "(needs FIGSHARE_TOKEN and gh auth)",
-        "--payloads-only": "Only refresh the multi-model site figure payloads",
+        "--payloads-only": "Only refresh the multi-model site figure payloads "
+        "(merging just <model>'s entries if a model is given)",
     }
     for flag, help_msg in bool_flags.items():
         parser.add_argument(flag, action="store_true", help=help_msg)
@@ -286,13 +294,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     checks = Checklist()
-    if args.payloads_only:
-        run_payload_refresh(checks)
-    else:
-        if not args.model:
-            parser.error("model is required unless --payloads-only")
-        if args.archive and not os.getenv("FIGSHARE_TOKEN"):
-            parser.error("FIGSHARE_TOKEN must be set for --archive")
+    model: Model | None = None
+    if args.model:
         try:  # Model(...) invokes _missing_ to normalize dashes/casing
             model = Model(args.model)
         except ValueError:
@@ -300,6 +303,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 f"{args.model!r} not in Model enum - add it to "
                 "matbench_discovery/enums.py"
             )
+    if args.payloads_only:
+        run_payload_refresh(checks, model=model)
+    else:
+        if model is None:
+            parser.error("model is required unless --payloads-only")
+        if args.archive and not os.getenv("FIGSHARE_TOKEN"):
+            parser.error("FIGSHARE_TOKEN must be set for --archive")
 
         banner(f"Ingesting model submission: {model.name}")
         energy_only = check_submission(model, checks)
@@ -314,7 +324,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )  # fmt: skip
         if args.archive:
             run_archive(model, checks)
-        run_payload_refresh(checks)
+        run_payload_refresh(checks, model=model)
 
     banner("SUMMARY")
     print(checks.summary())

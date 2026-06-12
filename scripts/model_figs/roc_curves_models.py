@@ -3,8 +3,8 @@
 # %%
 import pymatviz as pmv
 
-from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
-from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
+from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD, figs
+from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import df_metrics
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
@@ -72,7 +72,7 @@ for trace in fig.data:
             "tpr": figs.round_list(tpr),
         }
     )
-if show_non_compliant and is_full_model_run():  # site payload = full model set;
+if show_non_compliant:  # site payload = full model set;
     # the compliant-only variant exists as PDF only (paper SI)
-    figs.write_json_gz(f"{SITE_FIG_DATA}/roc-models.json.gz", {"models": roc_models})
+    figs.write_site_payload("roc-models", {"models": roc_models})
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

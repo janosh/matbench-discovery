@@ -103,6 +103,31 @@ def test_cli_archive_requires_figshare_token(
         ingest.main(["mace-mpa-0", "--archive"])
 
 
+def test_run_payload_refresh_models_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Payload refresh passes --models for single-model runs (merge mode) and omits
+    it for full regens; the final command runs the payload shape tests either way.
+    """
+    calls: list[tuple[str, ...]] = []
+
+    def fake_run_cmd(*cmd: str) -> bool:
+        calls.append(cmd)
+        return True
+
+    monkeypatch.setattr(ingest, "run_cmd", fake_run_cmd)
+    checks = ingest.Checklist()
+    ingest.run_payload_refresh(checks, model=Model.mace_mpa_0)
+    *script_calls, test_call = calls
+    assert len(script_calls) == len(ingest.PAYLOAD_SCRIPTS)
+    for cmd in script_calls:
+        assert cmd[-2:] == ("--models", "mace_mpa_0")
+    assert "pytest" in test_call
+    assert checks.n_failed == 0
+
+    calls.clear()
+    ingest.run_payload_refresh(ingest.Checklist())
+    assert all("--models" not in cmd for cmd in calls)
+
+
 def test_map_yaml_paths() -> None:
     """--map-yaml-paths maps PR-diff YAML paths to enum names, fails on unknowns."""
     path = Model.mace_mpa_0.yaml_path.split("/models/")[-1]

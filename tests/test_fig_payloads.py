@@ -327,7 +327,9 @@ def test_discovery_payload_covers_active_models(name: str) -> None:
     assert len(expected) > 30, f"sanity: too few discovery models ({len(expected)})"
     keys = payload_model_ids(name, "key")
     assert keys == expected, (
-        f"{name} roster drift: missing={expected - keys}, extra={keys - expected}"
+        f"{name} roster drift: missing={expected - keys}, extra={keys - expected}. "
+        "Run `just update-site-figs <your-model>` to splice your model's entries "
+        "into the committed payloads (needs only your own prediction files)."
     )
 
 
@@ -345,7 +347,8 @@ def test_kappa_payload_covers_active_models() -> None:
     keys = payload_model_ids("kappa-103-analysis", "key")
     assert keys == expected, (
         f"kappa-103-analysis roster drift: missing={expected - keys}, "
-        f"extra={keys - expected}"
+        f"extra={keys - expected}. Run `just update-site-figs <your-model>` to "
+        "splice your model's entries into the committed payloads."
     )
 
 

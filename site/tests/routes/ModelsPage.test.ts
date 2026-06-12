@@ -281,7 +281,10 @@ describe(`Models Page`, () => {
   })
 
   it(`renders color legend`, () => {
-    mount(ModelsPage, { target: document.body })
+    mount(ModelsPage, {
+      target: document.body,
+      props: { data: { initial_show_n_best: 3 } },
+    })
 
     const legend = doc_query(`legend`)
     expect(legend.textContent).toContain(`best`)
@@ -294,11 +297,10 @@ describe(`Models Page`, () => {
     const model_cards_h2 = [...document.querySelectorAll<HTMLElement>(`ol > li h2`)]
     expect(model_cards_h2.length).toBeGreaterThan(0)
 
-    // applies background color to model card titles based on active metric value
-    // currently only testing that the background color is not transparent
+    // model_cards_h2 should receive inline backgroundColor styles from the page's
+    // bg_color() computation; this does not validate transparency or exact colors.
     for (const h2_element of model_cards_h2) {
-      const computed_style = globalThis.getComputedStyle(h2_element)
-      expect(computed_style.backgroundColor).not.toBe(`rgba(0, 0, 0, 0)`)
+      expect(h2_element.style.backgroundColor).not.toBe(``)
     }
   })
 })
