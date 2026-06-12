@@ -102,15 +102,18 @@ if metrics == ("Precision", "Recall") and show_non_compliant:
         recall_cum = n_true_pos_cum / (n_true_pos_cum + np.cumsum(false_neg)).iloc[-1]
         # number of materials the model predicts stable = where its curve ends
         n_pred_stable = int((each_pred <= STABILITY_THRESHOLD).sum())
+        if n_pred_stable < 2:  # can't happen for real models (thousands stable)
+            raise ValueError(f"{label} predicts {n_pred_stable} stable materials")
         # log2-spaced sampling for higher density at the start of the discovery
         # campaign where metrics fluctuate most (mirrors plots.cumulative_metrics).
         # rounded to ints since x counts screened materials (also compresses better)
         log_xs = np.logspace(0, np.log2(n_pred_stable - 1), 100, base=2)
         xs = np.unique([*log_xs.round().astype(int), n_pred_stable])
         model_range = np.arange(n_pred_stable) + 1
+        spline_degree = min(3, n_pred_stable - 1)  # k must be < n curve points
         precision, recall = (
             scipy.interpolate.make_interp_spline(
-                model_range, curve.to_numpy()[:n_pred_stable], k=3
+                model_range, curve.to_numpy()[:n_pred_stable], k=spline_degree
             )(xs)
             for curve in (precision_cum, recall_cum)
         )

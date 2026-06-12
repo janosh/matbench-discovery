@@ -209,7 +209,7 @@ def test_write_site_payload_full_run_overwrites_and_styles(
     fresh = {
         "shared": "ref-data",
         "models": [
-            {"key": model_b.key, "mae": 2.0, "color": "#000", "visible": False},
+            {"key": model_b.key, "mae": 1.0, "color": "#000", "visible": False},
             {"key": model_a.key, "mae": 1.0, "color": "#fff"},
             {"key": "retired-model", "mae": 0.0},
         ],
@@ -220,38 +220,40 @@ def test_write_site_payload_full_run_overwrites_and_styles(
     )  # fmt: skip
     written = load_payload(f"{site_fig_dir}/demo.json.gz")
     assert written["shared"] == "ref-data"
-    # retired model pruned, remaining entries sorted by mae
+    # retired model pruned; sort_key ties fall back to active-roster order
     assert [entry["key"] for entry in written["models"]] == [model_a.key, model_b.key]
     assert [entry["color"] for entry in written["models"]] == qualitative.Plotly[:2]
     assert "visible" not in written["models"][0]  # top-1 visible by default
     assert written["models"][1]["visible"] is False
 
 
+@pytest.mark.parametrize("id_field", ["key", "label"])
 def test_write_site_payload_subset_run_merges(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch, id_field: str
 ) -> None:
     """Subset runs splice fresh entries into the committed payload by id (replacing
     stale ones, appending new models, pruning retired ones), take shared fields fresh
     and sort entries into active-roster order by default.
     """
     model_a, model_b = list(Model.active())[:2]
+    id_a, id_b = getattr(model_a, id_field), getattr(model_b, id_field)
     committed = {
         "shared": "old",
         "models": [
-            {"key": model_b.key, "y": [2]},  # to be replaced by the fresh entry
-            {"key": "retired-model", "y": [0]},  # to be pruned
-            {"key": model_a.key, "y": [1]},  # to be kept as committed
+            {id_field: id_b, "y": [2]},  # to be replaced by the fresh entry
+            {id_field: "retired-model", "y": [0]},  # to be pruned
+            {id_field: id_a, "y": [1]},  # to be kept as committed
         ],
     }
     figs.write_json_gz(f"{site_fig_dir}/demo.json.gz", committed)
     monkeypatch.setattr(cli_args, "models", [model_b])  # single-model run
-    fresh = {"shared": "new", "models": [{"key": model_b.key, "y": [3]}]}
-    figs.write_site_payload("demo", fresh)
+    fresh = {"shared": "new", "models": [{id_field: id_b, "y": [3]}]}
+    figs.write_site_payload("demo", fresh, id_field=id_field)
     merged = load_payload(f"{site_fig_dir}/demo.json.gz")
     assert merged["shared"] == "new"  # shared fields are model-independent -> fresh
     assert merged["models"] == [  # sorted into active-roster order
-        {"key": model_a.key, "y": [1]},
-        {"key": model_b.key, "y": [3]},
+        {id_field: id_a, "y": [1]},
+        {id_field: id_b, "y": [3]},
     ]
 
 

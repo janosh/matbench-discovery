@@ -318,8 +318,7 @@ figs.write_site_payload(
     "sym-ops-diff-bar",
     {"models": sym_ops_models},
     id_field="label",
-    # sigmas are rounded to 3 significant digits, so break ties by label
-    sort_key=lambda entry: (entry["sigma"], entry["label"]),
+    sort_key=lambda entry: entry["sigma"],
 )
 
 title = "Difference in number of symmetry operations of ML vs DFT-relaxed structures"
@@ -401,8 +400,7 @@ figs.write_site_payload(
     "struct-rmsd-cdf",
     {"models": rmsd_cdf_models},
     id_field="label",
-    # AUCs are rounded to 3 significant digits, so break ties by label
-    sort_key=lambda entry: (-entry["auc"], entry["label"]),  # type: ignore[operator]
+    sort_key=lambda entry: -entry["auc"],  # type: ignore[operator]
 )
 
 title = "Cumulative Distribution of RMSD vs DFT-relaxed structures"

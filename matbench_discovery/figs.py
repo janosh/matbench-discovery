@@ -304,7 +304,10 @@ def write_site_payload(
 
     roster = {getattr(model, id_field): idx for idx, model in enumerate(Model.active())}
     models = [entry for entry in models if entry[id_field] in roster]
-    models.sort(key=sort_key or (lambda entry: roster[entry[id_field]]))
+    # roster order first, then a stable sort by sort_key keeps it as the tiebreaker
+    models.sort(key=lambda entry: roster[entry[id_field]])
+    if sort_key is not None:
+        models.sort(key=sort_key)
     if assign_colors:
         from plotly.express.colors import qualitative
 

@@ -136,7 +136,6 @@ if show_non_compliant:  # site payload = full model set, sorted by F1 (site rend
     figs.write_site_payload(
         f"hist-clf-{which_energy}-hull-dist",
         {"bin_centers": bin_centers, "models": clf_models},
-        # F1 values are rounded, so break ties by label for a canonical order
-        sort_key=lambda entry: (-entry["f1"], entry["label"]),
+        sort_key=lambda entry: -entry["f1"],
     )
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

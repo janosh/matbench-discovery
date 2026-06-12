@@ -111,8 +111,7 @@ if show_non_compliant:  # site payload = full model set. order/colors/visibility
                 "y": counts.tolist(),
             },
         },
-        # YAML MAEs are rounded, so break ties by label for a canonical order
-        sort_key=lambda entry: (mae_by_label[str(entry["label"])], entry["label"]),
+        sort_key=lambda entry: mae_by_label[str(entry["label"])],
         assign_colors=True,
         visible_top_n=show_n_best_models,
     )

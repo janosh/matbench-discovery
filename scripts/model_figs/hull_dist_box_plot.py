@@ -93,8 +93,7 @@ if show_non_compliant:  # site payload = full model set. order/colors derive fro
     figs.write_site_payload(
         "box-hull-dist-errors",
         {"models": box_models},
-        # YAML MAEs are rounded, so break ties by label for a canonical order
-        sort_key=lambda entry: (mae_by_label[str(entry["label"])], entry["label"]),
+        sort_key=lambda entry: mae_by_label[str(entry["label"])],
         assign_colors=True,
     )
 fig.layout.showlegend = False
