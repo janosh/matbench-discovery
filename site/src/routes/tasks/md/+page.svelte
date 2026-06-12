@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricsTable, MODELS } from '$lib'
+  import { MetricsTable, type ModelData, MODELS } from '$lib'
   import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
   import { DynamicScatter } from '$lib/plot'
   import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
@@ -17,9 +17,8 @@
     ),
   }
 
-  const n_md_models = MODELS.filter(
-    (model) => typeof model.metrics?.md === `object`,
-  ).length
+  const has_md_metrics = (model: ModelData) => typeof model.metrics?.md === `object`
+  const n_md_models = MODELS.filter(has_md_metrics).length
 
   let scatter_x = $state(MD_METRICS.MD_force_RMSE.key)
   let scatter_y = $state(MD_METRICS.MD_RDF_error.key)
@@ -55,6 +54,7 @@
 
 <DynamicScatter
   models={MODELS}
+  model_filter={has_md_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
   color_key={MD_METRICS.MD_combined_error.key}

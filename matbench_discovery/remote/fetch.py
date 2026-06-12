@@ -2,6 +2,7 @@
 
 import builtins
 import os
+import shutil
 import sys
 import tarfile
 import traceback
@@ -61,7 +62,10 @@ def extract_tar_if_needed(tar_path: str) -> str:
     if os.path.isdir(extract_dir):
         return extract_dir
 
+    # sibling staging dir (not tempfile.mkdtemp: os.replace needs same filesystem);
+    # clear any leftovers from a previously interrupted extraction
     tmp_dir = f"{extract_dir}.extracting"
+    shutil.rmtree(tmp_dir, ignore_errors=True)
     with tarfile.open(tar_path) as archive:
         archive.extractall(tmp_dir, filter="data")
     os.replace(tmp_dir, extract_dir)

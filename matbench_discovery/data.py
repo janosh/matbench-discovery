@@ -355,7 +355,9 @@ def update_yaml_file(
         *parts, last = dotted_path.split(".")
 
         for part in parts:
-            if part not in current:
+            # replace missing or scalar intermediate nodes (e.g. 'not available'
+            # placeholders) with dicts so traversal can continue
+            if not isinstance(current.get(part), dict):
                 current[part] = {}
             current = current[part]
 

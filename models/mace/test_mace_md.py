@@ -152,7 +152,7 @@ for system_dir in (pbar := tqdm(system_dirs, desc="MD systems")):
 df_md = pd.DataFrame(per_system_rows).set_index("system")
 # suffix avoids collisions when parallel single-system jobs share out_dir
 suffix = f"-{'-'.join(args.systems)}" if args.systems else ""
-csv_path = f"{out_dir}/{today}-{args.model_name}-md-metrics{suffix}.csv"
+csv_path = f"{out_dir}/{today}-{args.model_name}-md-metrics{suffix}.csv.gz"
 df_md.to_csv(csv_path)
 print(f"Per-system metrics saved to {csv_path!r}")
 

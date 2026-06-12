@@ -1,6 +1,6 @@
 <script lang="ts">
   import { type Label, ModelCard } from '$lib'
-  import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
+  import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
@@ -43,15 +43,11 @@
     `TNR`,
     `TPR`,
     `κ_SRME`,
-    `MD_energy_RMSE`,
-    `MD_force_RMSE`,
-    `MD_RDF_error`,
-    `MD_VDOS_error`,
-    `MD_pressure_MAE`,
-    `MD_pressure_W1`,
-    `MD_combined_error`,
   ] as const
-  const metrics = metric_keys.map((key) => ALL_METRICS[key])
+  const metrics = [
+    ...metric_keys.map((key) => ALL_METRICS[key]),
+    ...Object.values(MD_METRICS),
+  ]
 
   const capture_state = () => ({ show_details, sort_by, order, show_n_best })
   export const snapshot = {

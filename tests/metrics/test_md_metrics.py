@@ -544,10 +544,14 @@ def test_calc_md_metrics() -> None:
         md_metrics.calc_md_metrics(pd.DataFrame({"unrelated": [1]}))
 
 
-def test_write_metrics_to_yaml(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "init_yaml",  # placeholder strings at leaf and intermediate level get replaced
+    ["metrics:\n  md: not available\n", "metrics: not available\n"],
+)
+def test_write_metrics_to_yaml(tmp_path: Path, init_yaml: str) -> None:
     """Metrics should be written under metrics.md with units and rounding."""
     yaml_path = tmp_path / "model.yml"
-    yaml_path.write_text("model_name: test\nmetrics:\n  md: not available\n")
+    yaml_path.write_text(f"model_name: test\n{init_yaml}")
     model = SimpleNamespace(yaml_path=str(yaml_path))
 
     metrics = {
