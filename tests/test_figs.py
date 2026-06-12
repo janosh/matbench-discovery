@@ -218,9 +218,12 @@ def test_write_site_payload_full_run_overwrites_and_styles(
         ],
     }
     figs.write_site_payload(
-        "demo", fresh, sort_key=lambda entry: entry["mae"], assign_colors=True,
+        "demo",
+        fresh,
+        sort_key=lambda entry: entry["mae"],
+        assign_colors=True,
         visible_top_n=1,
-    )  # fmt: skip
+    )
     written = load_payload(f"{site_fig_dir}/demo.json.gz")
     assert written["shared"] == "ref-data"
     # retired model pruned; sort_key ties fall back to active-roster order
@@ -297,11 +300,11 @@ def test_write_site_payload_merge_equals_full_regen(
         assert file.read() == full_regen_bytes
 
 
+@pytest.mark.usefixtures("site_fig_dir")
 def test_write_site_payload_subset_run_requires_committed_payload(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Subset runs can't create a payload from scratch (would ship a partial roster)."""
-    assert site_fig_dir.is_dir()
     monkeypatch.setattr(cli_args, "models", [next(iter(Model.active()))])
     with pytest.raises(FileNotFoundError, match="merge into an existing payload"):
         figs.write_site_payload("missing", {"models": []})
