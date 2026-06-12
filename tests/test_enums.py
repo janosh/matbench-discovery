@@ -210,6 +210,35 @@ def test_data_files_enum() -> None:
     assert DataFiles.wbm_summary.url.startswith("https://figshare.com/files/")
 
 
+def test_data_files_tar_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tar entries auto-extract to a sibling dir; declined downloads don't extract."""
+    import tarfile
+
+    entry = DataFiles.aimd_reference_md_trajectories
+    monkeypatch.setattr(DataFiles, "_base_dir", str(tmp_path))
+    tar_path = tmp_path / entry.rel_path
+
+    # a missing tar (declined or failed download) must return its (non-existent)
+    # path like non-tar entries do, not raise FileNotFoundError from extraction
+    with patch("matbench_discovery.enums.download_file"):  # no-op download
+        assert entry.path == str(tar_path)
+
+    # with the tar present, .path extracts it and returns the extraction dir
+    tar_path.parent.mkdir(parents=True)
+    payload = tmp_path / "payload.txt"
+    payload.write_text("hello")
+    with tarfile.open(tar_path, mode="w") as archive:
+        archive.add(payload, arcname="payload.txt")
+
+    extract_dir = entry.path
+    assert extract_dir == str(tar_path).removesuffix(".tar")
+    assert (Path(extract_dir) / "payload.txt").read_text() == "hello"
+
+    # later calls short-circuit on the extracted dir, even if the tar was deleted
+    tar_path.unlink()
+    assert entry.path == extract_dir
+
+
 @pytest.mark.parametrize("data_file", DataFiles)
 def test_data_files_enum_urls(
     data_file: DataFiles, url_session: requests.Session

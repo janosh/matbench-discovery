@@ -675,7 +675,10 @@ class DataFiles(Files):
             if answer.lower().strip() == "y":
                 print(f"Downloading {key!r} from {self.url} to {abs_path}")
                 download_file(abs_path, self.url)
-        return extract_tar_if_needed(abs_path) if is_tar else abs_path
+        # missing tar (e.g. declined download) returns its path like non-tar entries
+        if is_tar and os.path.isfile(abs_path):
+            return extract_tar_if_needed(abs_path)
+        return abs_path
 
 
 # register pretty labels to use instead of enum keys in plotly axes and legends
