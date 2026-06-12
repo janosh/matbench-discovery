@@ -128,12 +128,15 @@ def test_sunburst_data_extracts_flat_arrays() -> None:
 
 
 def test_sankey_data_from_sankey_trace() -> None:
-    """sankey_data drops unreferenced nodes and reindexes links onto the kept ones."""
+    """sankey_data drops unreferenced nodes, reindexes links onto the kept ones and
+    canonicalizes link order (payload bytes must not depend on input link order).
+    """
     fig = go.Figure(
         go.Sankey(
-            # "X" (index 2) is unreferenced -> dropped; "C" reindexed 3 -> 2
+            # "X" (index 2) is unreferenced -> dropped; "C" reindexed 3 -> 2.
+            # links given in non-canonical order to exercise the link sorting
             node=dict(label=["A", "B", "X", "C"]),
-            link=dict(source=[0, 1], target=[3, 3], value=[3.0, 4.0]),
+            link=dict(source=[1, 0], target=[3, 3], value=[4.0, 3.0]),
         )
     )
     assert figs.sankey_data(fig) == {
@@ -255,6 +258,43 @@ def test_write_site_payload_subset_run_merges(
         {id_field: id_a, "y": [1]},
         {id_field: id_b, "y": [3]},
     ]
+
+
+def test_write_site_payload_merge_equals_full_regen(
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A single-model merge over an outdated committed payload reproduces a full
+    regen byte-for-byte: the stale entry is replaced and order/colors/visibility are
+    reassigned deterministically over the merged list (the core guarantee of #342).
+    """
+    models = list(Model.active())[:4]
+
+    def fresh_entry(model: Model, mae: float) -> dict[str, Any]:
+        return {"key": model.key, "mae": mae, "y": [mae]}
+
+    write_kwargs: dict[str, Any] = dict(
+        sort_key=lambda entry: entry["mae"], assign_colors=True, visible_top_n=2
+    )
+    monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run
+    full = [fresh_entry(model, idx / 10) for idx, model in enumerate(models)]
+    figs.write_site_payload("demo", {"models": full}, **write_kwargs)
+    with open(f"{site_fig_dir}/demo.json.gz", "rb") as file:
+        full_regen_bytes = file.read()
+
+    # outdate the committed payload: models[0]'s entry carries stale data/styling
+    # and sits at the wrong position, so the merge must re-sort, not just replace
+    committed = load_payload(f"{site_fig_dir}/demo.json.gz")
+    stale_entry = committed["models"].pop(0)
+    assert stale_entry["key"] == models[0].key  # sorted by mae -> models[0] is first
+    stale_entry |= {"mae": 99.0, "y": [99.0], "color": "#stale", "visible": False}
+    committed["models"].append(stale_entry)
+    figs.write_json_gz(f"{site_fig_dir}/demo.json.gz", committed)
+
+    monkeypatch.setattr(cli_args, "models", [models[0]])  # single-model merge run
+    fresh = {"models": [fresh_entry(models[0], 0.0)]}
+    figs.write_site_payload("demo", fresh, **write_kwargs)
+    with open(f"{site_fig_dir}/demo.json.gz", "rb") as file:
+        assert file.read() == full_regen_bytes
 
 
 def test_write_site_payload_subset_run_requires_committed_payload(
