@@ -21,16 +21,6 @@ from torch_geometric.data import Batch
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.hpc import df_slurm_chunk
 
-<<<<<<< HEAD
-
-=======
-def as_dict_handler(obj: Any) -> dict[str, Any] | None:  # noqa: ANN401
-    """Serialize MSONable objects to dict. Non-serializable objects become None."""
-    try:
-        return obj.as_dict()
-    except AttributeError:
-        return None
->>>>>>> 7e5e2371 (apply pre-commit)
 
 
 def load_pickle(file_path: str) -> Any:  # noqa: ANN401
@@ -135,7 +125,16 @@ if __name__ == "__main__":
     ]
     dfs = load_multiple_pickles(file_lists)
     df = pd.concat(dfs, axis=0)
+<<<<<<< HEAD
     df = df_slurm_chunk(df, args.worldsize, args.rank + 1)  # rank is 0-based
+=======
+    chunk_size = len(df) // args.worldsize + 1
+    chunks = [df[i : i + chunk_size] for i in range(0, len(df), chunk_size)]
+    if args.rank >= len(chunks):
+        print(f"Rank {args.rank} has no data to process (only {len(chunks)} chunks)")
+        raise SystemExit(0)
+    df = chunks[args.rank]
+>>>>>>> 7d5ef66f (fix warnings)
 
     input_col = "initial_structure"
     batch_lists = split_df_by_max_atoms(df, args.max_atoms, input_col=input_col)
@@ -173,7 +172,10 @@ if __name__ == "__main__":
     df_out = pd.DataFrame(relax_results).T.add_prefix("mlff_")
     df_out.index.name = Key.mat_id
     df_metadatas = pd.read_csv(args.wbm_metadata_file)
-    df_metadatas = df_metadatas.set_index("material_id").loc[df_out.index]
+    df_metadatas = df_metadatas.set_index("material_id").reindex(df_out.index)
+    if df_metadatas.isna().all(axis=1).any():
+        missing = df_metadatas[df_metadatas.isna().all(axis=1)].index.tolist()
+        raise ValueError(f"Missing metadata for material IDs: {missing[:5]}...")
     df_merge = pd.concat([df_metadatas, df_out], axis=1)
     df_merge["ggnn_e_per_form"] = (
         df_merge["mlff_energy"]
@@ -195,5 +197,7 @@ if __name__ == "__main__":
     )
 
     df_merge.drop(columns=["mlff_structure"]).reset_index().to_json(
-        output_jsonfile_name, default_handler=as_dict_handler
+        output_jsonfile_name,
+        default_handler=as_dict_handler,
+        compression="gzip",
     )
