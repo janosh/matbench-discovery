@@ -1,9 +1,6 @@
---index-url https://pypi.org/simple
---extra-index-url https://download.pytorch.org/whl/cu126
 --find-links https://data.pyg.org/whl/torch-2.9.1+cu126.html
 
 git+https://github.com/SamsungDS/GGNN.git
-torch==2.9.1+cu126
 torch_scatter==2.1.2
 torch_sparse==0.6.18
 torch-geometric==2.6.1
