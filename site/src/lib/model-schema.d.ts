@@ -134,6 +134,7 @@ export type ModelMetadata = Record<string, unknown> & {
     geo_opt?: GeoOptMetrics | ('not applicable' | 'not available')
     discovery?: DiscoveryMetrics | 'not available'
     diatomics?: DiatomicsMetrics | ('not applicable' | 'not available')
+    md?: MdMetrics | ('not applicable' | 'not available')
   }
 }
 /**
@@ -212,6 +213,22 @@ export type DiatomicsMetrics = Record<string, unknown> & {
   force_flips?: number
   force_total_variation?: number
   force_jump?: number
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "MdMetrics".
+ */
+export type MdMetrics = Record<string, unknown> & {
+  pred_file?: string | null
+  pred_file_url?: string
+  energy_rmse?: number
+  force_rmse?: number
+  rdf_error?: number
+  vdos_error?: number
+  pressure_mae?: number
+  pressure_wasserstein?: number
+  combined_error?: number
+  n_systems?: number
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema

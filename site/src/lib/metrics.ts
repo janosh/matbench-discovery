@@ -3,6 +3,7 @@ import {
   ALL_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
   HYPERPARAMS,
+  MD_METRICS,
   METADATA_COLS,
 } from '$lib/labels'
 import type { ModelMetadata, ModelType, TargetType } from '$lib/model-schema'
@@ -272,6 +273,9 @@ export function assemble_row_data(
       [ALL_METRICS.κ_SRME.key]: metric_num(ALL_METRICS.κ_SRME),
       [ALL_METRICS.κ_SRE.key]: metric_num(ALL_METRICS.κ_SRE),
       [RMSD.key]: metric_num(RMSD),
+      ...Object.fromEntries(
+        Object.values(MD_METRICS).map((label) => [label.key, metric_num(label)]),
+      ),
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.key]:
         `<span title="${format_num(model.model_params, `,`)} trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,
