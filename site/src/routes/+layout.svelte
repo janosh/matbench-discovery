@@ -14,9 +14,12 @@
   let { children }: { children?: Snippet } = $props()
   let toc_desktop = $state(true)
 
-  const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`)).map(
-    (filename) => `/${filename.split(`/`)[1]}`,
-  )
+  const task_routes = Object.keys(import.meta.glob(`./tasks/*/+page.{svelte,md}`))
+    .map((filename) => `/tasks/${filename.split(`/`)[2]}`)
+  const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`))
+    .map((filename) => `/${filename.split(`/`)[1]}`)
+    // render task subpages as a dropdown under /tasks
+    .map((route) => route === `/tasks` ? { href: route, children: task_routes } : route)
 
   let url = $derived(page.url.pathname)
   let headingSelector = $derived(
@@ -33,6 +36,7 @@
     '/api': `API docs for the Matbench Discovery PyPI package.`,
     '/contribute': `Steps for contributing a new model to the benchmark.`,
     '/models': `Details on each model sortable by metrics.`,
+    '/tasks': `Overview of all benchmark tasks for machine-learning interatomic potentials.`,
     '/tasks/diatomics': `Metrics and analysis of predicting diatomic energies.`,
     '/tasks/phonons':
       `Metrics and analysis of predicting phonon modes and frequencies.`,
