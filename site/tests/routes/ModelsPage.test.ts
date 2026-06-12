@@ -297,8 +297,8 @@ describe(`Models Page`, () => {
     const model_cards_h2 = [...document.querySelectorAll<HTMLElement>(`ol > li h2`)]
     expect(model_cards_h2.length).toBeGreaterThan(0)
 
-    // applies background color to model card titles based on active metric value
-    // currently only testing that the background color is not transparent
+    // model_cards_h2 should receive inline backgroundColor styles from the page's
+    // bg_color() computation; this does not validate transparency or exact colors.
     for (const h2_element of model_cards_h2) {
       expect(h2_element.style.backgroundColor).not.toBe(``)
     }

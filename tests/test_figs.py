@@ -197,42 +197,6 @@ def site_fig_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return tmp_path
 
 
-def test_write_site_payload_full_run_overwrites_and_styles(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Full runs overwrite wholesale, prune retired models and assign deterministic
-    order/colors/visibility.
-    """
-    model_a, model_b = list(Model.active())[:2]
-    # pre-existing payload whose contents must be fully replaced
-    figs.write_json_gz(
-        f"{site_fig_dir}/demo.json.gz", {"models": [{"key": "stale", "y": [0]}]}
-    )
-    monkeypatch.setattr(cli_args, "models", list(Model.active()))
-    fresh = {
-        "shared": "ref-data",
-        "models": [
-            {"key": model_b.key, "mae": 1.0, "color": "#000", "visible": False},
-            {"key": model_a.key, "mae": 1.0, "color": "#fff"},
-            {"key": "retired-model", "mae": 0.0},
-        ],
-    }
-    figs.write_site_payload(
-        "demo",
-        fresh,
-        sort_key=lambda entry: entry["mae"],
-        assign_colors=True,
-        visible_top_n=1,
-    )
-    written = load_payload(f"{site_fig_dir}/demo.json.gz")
-    assert written["shared"] == "ref-data"
-    # retired model pruned; sort_key ties fall back to active-roster order
-    assert [entry["key"] for entry in written["models"]] == [model_a.key, model_b.key]
-    assert [entry["color"] for entry in written["models"]] == qualitative.Plotly[:2]
-    assert "visible" not in written["models"][0]  # top-1 visible by default
-    assert written["models"][1]["visible"] is False
-
-
 @pytest.mark.parametrize("id_field", ["key", "label"])
 def test_write_site_payload_subset_run_merges(
     site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch, id_field: str
@@ -266,7 +230,11 @@ def test_write_site_payload_subset_run_merges(
 def test_write_site_payload_merge_equals_full_regen(
     site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Single-model merge matches the payload a full regen would display."""
+    """Full runs overwrite stale payloads, prune retired models and assign
+    deterministic order (active-roster order breaks sort_key ties), colors and
+    visibility; a single-model merge over an outdated committed payload then
+    reproduces that exact payload (decoded and byte-for-byte, the #342 guarantee).
+    """
     models = list(Model.active())[:4]
 
     def fresh_entry(model: Model, mae: float) -> dict[str, Any]:
@@ -276,9 +244,25 @@ def test_write_site_payload_merge_equals_full_regen(
         sort_key=lambda entry: entry["mae"], assign_colors=True, visible_top_n=2
     )
     monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run
-    full = [fresh_entry(model, idx / 10) for idx, model in enumerate(models)]
-    figs.write_site_payload("demo", {"models": full}, **write_kwargs)
+    # mae tie between models[1] and models[2] (YAML metrics are rounded, real models
+    # do tie), with the tied pair listed in reversed roster order so only the
+    # roster-order tiebreaker can restore the canonical order
+    maes = [0.0, 0.1, 0.1, 0.2]
+    full = [fresh_entry(models[idx], maes[idx]) for idx in (0, 2, 1, 3)]
+    expected_models = [
+        fresh_entry(model, mae)
+        | {"color": qualitative.Plotly[idx]}
+        | ({"visible": False} if idx >= 2 else {})
+        for idx, (model, mae) in enumerate(zip(models, maes, strict=True))
+    ]
+    figs.write_json_gz(f"{site_fig_dir}/demo.json.gz", {"models": [{"key": "stale"}]})
+    figs.write_site_payload(
+        "demo",
+        {"shared": "ref-data", "models": [{"key": "retired", "mae": 0}, *full]},
+        **write_kwargs,
+    )
     full_regen = load_payload(f"{site_fig_dir}/demo.json.gz")
+    assert full_regen == {"shared": "ref-data", "models": expected_models}
     full_regen_bytes = (site_fig_dir / "demo.json.gz").read_bytes()
 
     # outdate the committed payload: models[0]'s entry carries stale data/styling
@@ -291,7 +275,7 @@ def test_write_site_payload_merge_equals_full_regen(
     figs.write_json_gz(f"{site_fig_dir}/demo.json.gz", committed)
 
     monkeypatch.setattr(cli_args, "models", [models[0]])  # single-model merge run
-    fresh = {"models": [fresh_entry(models[0], 0.0)]}
+    fresh = {"shared": "ref-data", "models": [fresh_entry(models[0], 0.0)]}
     figs.write_site_payload("demo", fresh, **write_kwargs)
     assert load_payload(f"{site_fig_dir}/demo.json.gz") == full_regen
     # byte identity keeps the weekly payload-refresh cron quiet: it opens a PR iff
