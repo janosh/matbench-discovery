@@ -9,8 +9,8 @@ from typing import Any, Final
 import pymatviz as pmv
 from pymatviz.enums import Key
 
-from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, figs, plots
-from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
+from matbench_discovery import PDF_FIGS, figs, plots
+from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import classify_stable, dfs_metrics
@@ -131,9 +131,11 @@ for model in models_to_plot:
     )
 # bin centers depend only on hist_clf_kwargs (bins/range), not the per-model data
 bin_centers = figs.histogram([], **hist_clf_kwargs)["x"]
-if show_non_compliant and is_full_model_run():  # site payload = full model set
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/hist-clf-{which_energy}-hull-dist.json.gz",
+if show_non_compliant:  # site payload = full model set, sorted by F1 (site renders
+    # panels in payload order)
+    figs.write_site_payload(
+        f"hist-clf-{which_energy}-hull-dist",
         {"bin_centers": bin_centers, "models": clf_models},
+        sort_key=lambda entry: -entry["f1"],
     )
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

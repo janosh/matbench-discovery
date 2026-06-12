@@ -93,6 +93,14 @@ def test_cli_args_global() -> None:
     assert isinstance(cli_args.update_existing, bool)
 
 
+def test_browser_renderers_never_steal_focus() -> None:
+    """Figures opened as browser tabs must not autoraise (switch screen focus)."""
+    import plotly.io as pio
+
+    for renderer_name in ("browser", "chrome", "chromium", "firefox"):
+        assert pio.renderers[renderer_name].autoraise is False, renderer_name
+
+
 def test_is_full_model_run(monkeypatch: pytest.MonkeyPatch) -> None:
     """is_full_model_run guards multi-model site payloads against filtered runs."""
     from matbench_discovery import cli
