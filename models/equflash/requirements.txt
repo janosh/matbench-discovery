@@ -5,7 +5,7 @@
 git+https://github.com/SamsungDS/GGNN.git
 torch==2.9.1+cu126
 torch_scatter==2.1.2
-torch_sparse===0.6.18
+torch_sparse==0.6.18
 torch-geometric==2.6.1
 scikit-learn
 spglib==2.6.0
