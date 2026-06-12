@@ -328,6 +328,8 @@ A post-merge + weekly fallback job regenerates the figure payloads and opens a f
 
 Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `just ingest-model <model_name>` locally for submissions whose enum diff fails validation. `just update-site-figs` refreshes the multi-model figure payloads on their own.
 
+If CI flags the figure payloads as stale for your PR (e.g. `test_discovery_payload_covers_active_models` fails after adding or superseding a model), run `just update-site-figs <model_name>` and commit the changed `site/src/figs/*.json.gz` files. This splices only your model's freshly computed entries into the committed payloads, so it needs nothing but your own prediction files (downloaded automatically from your YAML's `pred_file` URLs).
+
 ## 😵‍💫 &thinsp; Troubleshooting
 
 Having problems? Please [open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). We're happy to help! 😊
