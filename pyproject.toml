@@ -149,6 +149,7 @@ extend-ignore-re = [
 ]
 extend-ignore-words-re = [
   "\\b(Skelton|Ono|Noe|Vaid)\\b", # Names
+  "\\b(AIMD|aimd)\\b",            # ab-initio molecular dynamics
   "\\b[Bb]a\\b",                  # Chemical element: Barium
   "\\b[Cc]om(mun|put)\\b",        # Journal: Commun, Comput
   "\\b[Ff]ormates?\\b",           # Chemistry: formate(s)

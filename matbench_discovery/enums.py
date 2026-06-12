@@ -12,7 +12,11 @@ import pymatviz as pmv
 import yaml
 
 from matbench_discovery import DEFAULT_CACHE_DIR, PKG_DIR, ROOT
-from matbench_discovery.remote.fetch import download_file, maybe_auto_download_file
+from matbench_discovery.remote.fetch import (
+    download_file,
+    extract_tar_if_needed,
+    maybe_auto_download_file,
+)
 
 eV_per_atom = pmv.enums.eV_per_atom  # noqa: N816
 T = TypeVar("T", bound="Files")
@@ -497,6 +501,22 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return abs_path
 
     @property
+    def md_path(self) -> str | None:
+        """File path associated with the file URL if it exists, otherwise
+        download the file first, then return the path.
+        """
+        md_metrics = self.metrics.get("md")
+        if md_metrics is None or md_metrics in ("not available", "not applicable"):
+            return None
+        rel_path = md_metrics.get("pred_file")
+        file_url = md_metrics.get("pred_file_url", "")
+        if not rel_path:
+            raise ValueError(f"metrics.md.pred_file not found in {self.rel_path!r}")
+        abs_path = f"{ROOT}/{rel_path}"
+        maybe_auto_download_file(file_url, abs_path, label=self.label)
+        return abs_path
+
+    @property
     def is_compliant(self) -> bool:
         """Check if model complies with benchmark restrictions."""
         from matbench_discovery.models import model_is_compliant
@@ -588,6 +608,10 @@ class DataFiles(Files):
         auto(),
         "data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz",
     )
+    aimd_reference_md_trajectories = (
+        auto(),
+        "md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.tar",
+    )
 
     @functools.cached_property
     def yaml(self) -> dict[str, dict[str, str]]:
@@ -623,7 +647,8 @@ class DataFiles(Files):
     @property
     def path(self) -> str:
         """File path associated with the file URL if it exists, otherwise
-        download the file first, then return the path.
+        download the file first, then return the path. For .tar archives, the
+        archive is auto-extracted and the extraction directory returned instead.
         """
         key, rel_path = self.name, self.rel_path
 
@@ -631,6 +656,9 @@ class DataFiles(Files):
             raise ValueError(f"{rel_path=} does not match {self.yaml[key]['path']}")
 
         abs_path = f"{type(self).base_dir}/{rel_path}"
+        is_tar = abs_path.endswith(".tar")
+        if is_tar and os.path.isdir(abs_path.removesuffix(".tar")):
+            return abs_path.removesuffix(".tar")  # already downloaded and extracted
         if not os.path.isfile(abs_path):
             # whether to auto-download files without prompting
             auto_download = os.getenv("MBD_AUTO_DOWNLOAD_FILES", "").lower() == "true"
@@ -647,7 +675,7 @@ class DataFiles(Files):
             if answer.lower().strip() == "y":
                 print(f"Downloading {key!r} from {self.url} to {abs_path}")
                 download_file(abs_path, self.url)
-        return abs_path
+        return extract_tar_if_needed(abs_path) if is_tar else abs_path
 
 
 # register pretty labels to use instead of enum keys in plotly axes and legends

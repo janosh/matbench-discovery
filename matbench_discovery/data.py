@@ -359,8 +359,9 @@ def update_yaml_file(
                 current[part] = {}
             current = current[part]
 
-        # Update the data at the final level
-        if last not in current or current[last] is None:
+        # Update the data at the final level (replacing placeholder strings like
+        # 'not available' with a dict)
+        if not isinstance(current.get(last), dict):
             current[last] = {}
         for key, val in current[last].items():
             data.setdefault(key, val)

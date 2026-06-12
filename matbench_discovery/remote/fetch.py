@@ -3,6 +3,7 @@
 import builtins
 import os
 import sys
+import tarfile
 import traceback
 
 import requests
@@ -48,6 +49,24 @@ def download_file(file_path: str, url: str) -> None:
                     f"{traceback.format_exc()}"
                 )
         print(f"Error downloading {url=}\nto {file_path=}.\n{error_msg}")
+
+
+def extract_tar_if_needed(tar_path: str) -> str:
+    """Extract a .tar archive into a sibling directory named after the archive
+    (minus the .tar suffix) unless that directory already exists, and return that
+    directory. Extraction goes to a temp directory moved into place only when
+    complete, so interrupted extractions can't be mistaken for finished ones.
+    """
+    extract_dir = tar_path.removesuffix(".tar")
+    if os.path.isdir(extract_dir):
+        return extract_dir
+
+    tmp_dir = f"{extract_dir}.extracting"
+    with tarfile.open(tar_path) as archive:
+        archive.extractall(tmp_dir, filter="data")
+    os.replace(tmp_dir, extract_dir)
+    print(f"Extracted {tar_path!r} to {extract_dir!r}")
+    return extract_dir
 
 
 def maybe_auto_download_file(url: str, abs_path: str, label: str | None = None) -> None:

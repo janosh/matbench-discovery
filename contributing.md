@@ -198,6 +198,9 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
        pred_file: models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz # should contain the models energy predictions for the WBM test set
        pred_file_url: https://figshare.com/files/<figshare_id>
        pred_col: e_form_per_atom_<model_name>
+     md: # optional: finite-temperature molecular dynamics metrics
+       pred_file: models/<model_dir>/<yyyy-mm-dd>-<model_name>-md-metrics.csv # per-system energy/force RMSE, RDF/VDOS errors and pressure metrics vs ab-initio reference trajectories
+       pred_file_url: https://figshare.com/files/<figshare_id>
    ```
 
    Arbitrary other keys can be added as needed. The above keys will be schema-validated with `prek` (if installed) with errors for missing keys.
