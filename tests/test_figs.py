@@ -266,10 +266,7 @@ def test_write_site_payload_subset_run_merges(
 def test_write_site_payload_merge_equals_full_regen(
     site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A single-model merge over an outdated committed payload reproduces a full
-    regen byte-for-byte: the stale entry is replaced and order/colors/visibility are
-    reassigned deterministically over the merged list (the core guarantee of #342).
-    """
+    """Single-model merge matches the payload a full regen would display."""
     models = list(Model.active())[:4]
 
     def fresh_entry(model: Model, mae: float) -> dict[str, Any]:
@@ -281,8 +278,8 @@ def test_write_site_payload_merge_equals_full_regen(
     monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run
     full = [fresh_entry(model, idx / 10) for idx, model in enumerate(models)]
     figs.write_site_payload("demo", {"models": full}, **write_kwargs)
-    with open(f"{site_fig_dir}/demo.json.gz", "rb") as file:
-        full_regen_bytes = file.read()
+    full_regen = load_payload(f"{site_fig_dir}/demo.json.gz")
+    full_regen_bytes = (site_fig_dir / "demo.json.gz").read_bytes()
 
     # outdate the committed payload: models[0]'s entry carries stale data/styling
     # and sits at the wrong position, so the merge must re-sort, not just replace
@@ -296,8 +293,10 @@ def test_write_site_payload_merge_equals_full_regen(
     monkeypatch.setattr(cli_args, "models", [models[0]])  # single-model merge run
     fresh = {"models": [fresh_entry(models[0], 0.0)]}
     figs.write_site_payload("demo", fresh, **write_kwargs)
-    with open(f"{site_fig_dir}/demo.json.gz", "rb") as file:
-        assert file.read() == full_regen_bytes
+    assert load_payload(f"{site_fig_dir}/demo.json.gz") == full_regen
+    # byte identity keeps the weekly payload-refresh cron quiet: it opens a PR iff
+    # regenerated files differ from committed ones (write_json_gz is deterministic)
+    assert (site_fig_dir / "demo.json.gz").read_bytes() == full_regen_bytes
 
 
 @pytest.mark.usefixtures("site_fig_dir")

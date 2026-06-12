@@ -267,20 +267,16 @@ def write_site_payload(
 ) -> int:
     """Write a multi-model figure payload to site/src/figs/<name>.json.gz.
 
-    Full runs (--models covers every active model) overwrite the payload wholesale.
-    Subset runs (e.g. single-model ingestion) instead splice the freshly computed
-    model entries into the committed payload by ``id_field``, so a contributor can
-    refresh their own model without every other model's prediction files
-    (https://github.com/janosh/matbench-discovery/issues/342). Entries of models that
-    left the active roster (superseded) are pruned to keep the roster guards in
-    tests/test_fig_payloads.py satisfiable; non-'models' top-level fields are
-    model-independent reference data and taken fresh.
+    Full runs overwrite. Subset runs (e.g. single-model ingestion) merge fresh model
+    entries by ``id_field`` into the committed payload, prune models no longer active,
+    and take non-``models`` reference fields from ``payload``. This lets contributors
+    refresh their own model's entries without any other model's prediction files
+    (https://github.com/janosh/matbench-discovery/issues/342).
 
-    Presentation fields are (re)assigned deterministically so subset merges stay
-    byte-identical to full regens: ``sort_key`` orders entries (default:
-    active-roster order, the order full runs iterate models in), ``assign_colors``
-    cycles the plotly palette in that order, ``visible_top_n`` hides all but the
-    first n entries by default.
+    Entries are then ordered/styled deterministically so subset merges preserve the
+    rendered figures and metrics: ``sort_key`` (default: active-roster order),
+    ``assign_colors`` and ``visible_top_n`` control order, palette colors and default
+    visibility.
     """
     from matbench_discovery import SITE_FIG_DATA
     from matbench_discovery.cli import is_full_model_run

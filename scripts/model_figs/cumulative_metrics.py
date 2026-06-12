@@ -97,9 +97,9 @@ if metrics == ("Precision", "Recall") and show_non_compliant:
         true_pos, false_neg, false_pos, _true_neg = classify_stable(
             each_true, each_pred, stability_threshold=STABILITY_THRESHOLD
         )
-        n_true_pos_cum = np.cumsum(true_pos)
-        precision_cum = n_true_pos_cum / (n_true_pos_cum + np.cumsum(false_pos))
-        recall_cum = n_true_pos_cum / (n_true_pos_cum + np.cumsum(false_neg)).iloc[-1]
+        n_true_pos_cum = true_pos.cumsum()  # all pd.Series, cumsum stays a Series
+        precision_cum = n_true_pos_cum / (n_true_pos_cum + false_pos.cumsum())
+        recall_cum = n_true_pos_cum / (n_true_pos_cum + false_neg.cumsum()).iloc[-1]
         # number of materials the model predicts stable = where its curve ends
         n_pred_stable = int((each_pred <= STABILITY_THRESHOLD).sum())
         if n_pred_stable < 2:  # can't happen for real models (thousands stable)

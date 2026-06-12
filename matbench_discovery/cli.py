@@ -144,5 +144,7 @@ else:
     # renderers default to autoraise=True which switches the screen to every new tab
     import plotly.io as pio
 
-    for _renderer_name in ("browser", "chrome", "chromium", "firefox"):
-        pio.renderers[_renderer_name].autoraise = False
+    for renderer_name in pio.renderers:
+        renderer = pio.renderers[renderer_name]
+        if hasattr(renderer, "autoraise"):
+            renderer.autoraise = False
