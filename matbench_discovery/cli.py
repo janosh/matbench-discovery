@@ -112,8 +112,9 @@ cli_args, _ignore_unknown = cli_parser.parse_known_args()
 
 def is_full_model_run() -> bool:
     """True when --models wasn't narrowed, i.e. the run covers all active models.
-    Multi-model site figure payloads (site/src/figs) must only be (over)written on
-    full runs, else a filtered run would clobber them with partial data.
+    Multi-model site figure payloads (site/src/figs) are only (over)written wholesale
+    on full runs; filtered runs merge their entries into the committed payloads
+    instead (see figs.write_site_payload), so they never clobber other models' data.
     """
     return set(cli_args.models) >= set(Model.active())
 
@@ -138,3 +139,10 @@ if cli_args.no_show:
     import plotly.graph_objects as go
 
     go.Figure.show = lambda *_args, **_kwargs: None  # ty: ignore[invalid-assignment]
+else:
+    # figures may open as browser tabs, but never steal focus: plotly's browser
+    # renderers default to autoraise=True which switches the screen to every new tab
+    import plotly.io as pio
+
+    for _renderer_name in ("browser", "chrome", "chromium", "firefox"):
+        pio.renderers[_renderer_name].autoraise = False
