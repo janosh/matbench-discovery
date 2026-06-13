@@ -9,7 +9,6 @@ import warnings
 from copy import deepcopy
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Literal
-from pymatviz.enums import Key
 
 import numpy as np
 import pandas as pd
@@ -24,7 +23,6 @@ from ase.utils import atoms_to_spglib_cell
 from GGNN.common.calculator import UCalculator
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
-from pymatviz.enums import Key
 from spglib import get_symmetry_dataset
 from thermal_conductivity import get_fc3_batch
 from tqdm import tqdm
@@ -40,7 +38,7 @@ from matbench_discovery.phonons.thermal_conductivity import (
 if TYPE_CHECKING:
     from ase.optimize.optimize import Optimizer
 
-ID = Key.mat_id
+ID = "material_id"
 NO_TILT_MASK = [True, True, True, False, False, False]
 SYMM_NAME_MAP = {225: "rs", 186: "wz", 216: "zb"}
 

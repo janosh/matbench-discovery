@@ -22,7 +22,6 @@ from matbench_discovery.data import as_dict_handler
 from matbench_discovery.hpc import df_slurm_chunk
 
 
-
 def load_pickle(file_path: str) -> Any:  # noqa: ANN401
     """Load a single pickle file."""
     with open(file_path, "rb") as file:
@@ -125,16 +124,7 @@ if __name__ == "__main__":
     ]
     dfs = load_multiple_pickles(file_lists)
     df = pd.concat(dfs, axis=0)
-<<<<<<< HEAD
     df = df_slurm_chunk(df, args.worldsize, args.rank + 1)  # rank is 0-based
-=======
-    chunk_size = len(df) // args.worldsize + 1
-    chunks = [df[i : i + chunk_size] for i in range(0, len(df), chunk_size)]
-    if args.rank >= len(chunks):
-        print(f"Rank {args.rank} has no data to process (only {len(chunks)} chunks)")
-        raise SystemExit(0)
-    df = chunks[args.rank]
->>>>>>> 7d5ef66f (fix warnings)
 
     input_col = "initial_structure"
     batch_lists = split_df_by_max_atoms(df, args.max_atoms, input_col=input_col)
