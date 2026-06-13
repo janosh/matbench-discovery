@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+cd "$script_dir"
+
 uv venv --python 3.12
 source .venv/bin/activate
 uv pip install torch==2.9.1+cu126 --extra-index-url https://download.pytorch.org/whl/cu126
