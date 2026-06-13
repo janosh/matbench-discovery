@@ -27,7 +27,7 @@ authors:
 
 repo: https://github.com/SamsungDS/GGNN.git
 doi: TBD
-paper: TBD
+paper: https://github.com/SamsungDS/GGNN.git
 n_estimators: 1
 pr_url: https://github.com/janosh/matbench-discovery/pull/343
 checkpoint_url: https://figshare.com/ndownloader/files/65435007 # should be the direct download URL of the model checkpoint file. If there's a page documenting the checkpoint, append that as a YAML comment.
@@ -82,6 +82,24 @@ metrics:
     pred_file: models/equflash/2026-06-11-wbm-geo-opt-FIRE.json.gz # should contain the models relaxed structures as ASE Atoms or pymatgen Structures, and separate columns for material_id and energies/forces/stresses at each relaxation step
     pred_file_url: https://figshare.com/files/65434998
     struct_col: mlff_structure
+    symprec=1e-2:
+      rmsd: 0.0577 # unitless
+      n_sym_ops_mae: 1.6877 # unitless
+      symmetry_decrease: 0.0474 # fraction
+      symmetry_match: 0.8202 # fraction
+      symmetry_increase: 0.1251 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/equflash/2026-06-11-wbm-geo-opt-FIRE-symprec=1e-2-moyo=0.12.0.csv.gz
+      analysis_file_url: https://figshare.com/files/65521161
+    symprec=1e-5:
+      rmsd: 0.0577 # unitless
+      n_sym_ops_mae: 2.0782 # unitless
+      symmetry_decrease: 0.0507 # fraction
+      symmetry_match: 0.7005 # fraction
+      symmetry_increase: 0.2434 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/equflash/2026-06-11-wbm-geo-opt-FIRE-symprec=1e-5-moyo=0.12.0.csv.gz
+      analysis_file_url: https://figshare.com/files/65521164
   discovery:
     pred_file: models/equflash/2026-06-11-equflash-wbm-IS2RE.csv.gz # should contain the models energy predictions for the WBM test set
     pred_file_url: https://figshare.com/files/65434992
