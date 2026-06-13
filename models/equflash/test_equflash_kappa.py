@@ -97,7 +97,7 @@ def two_stage_relax(
     dyn_stage1.run(fmax=fmax_stage1, steps=steps_stage1)
     sym_stage1 = log_symmetry(atoms, symprec)
 
-    if sym_stage1["number"] != sym_init["number"]:
+    if sym_stage1.number != sym_init.number:
         warnings.warn(
             f"Symmetry is not kept during FixSymmetry "
             f"relaxation of material {mat_name} in folder {os.getcwd()}",
@@ -177,7 +177,7 @@ def main() -> None:
     enforce_relax_symm = True
     conductivity_broken_symm = False
     prog_bar = True
-    save_forces = True
+    save_forces = False
     task_type = "LTC"
     out_dir = args.outdir
     os.makedirs(out_dir, exist_ok=True)
@@ -360,6 +360,15 @@ def main() -> None:
     df_kappa = pd.DataFrame(kappa_results).T
     df_kappa.index.name = ID
     df_kappa.reset_index().to_json(out_path)
+
+    if save_forces:
+        force_data = {
+            mat_id: forces.tolist() if hasattr(forces, "tolist") else forces
+            for mat_id, forces in force_results.items()
+        }
+        pd.Series(force_data, name="forces").rename_axis(ID).reset_index().to_json(
+            f"{out_dir}/forces-{args.rank:03d}.json.gz"
+        )
 
 
 if __name__ == "__main__":
