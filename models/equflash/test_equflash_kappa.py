@@ -45,7 +45,12 @@ SYMM_NAME_MAP = {225: "rs", 186: "wz", 216: "zb"}
 
 def log_symmetry(atoms: Atoms, symprec: float) -> Any:  # noqa: ANN401
     """Get symmetry dataset from atoms using spglib."""
-    return get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
+    dataset = get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
+    if dataset is None:
+        raise ValueError(
+            f"Symmetry detection failed for structure with symprec={symprec}"
+        )
+    return dataset
 
 
 def two_stage_relax(

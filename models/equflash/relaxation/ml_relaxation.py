@@ -113,8 +113,10 @@ def ml_relax(
                 "splitting into two..."
             )
             mid = len(data_list) // 2
-            batches.appendleft(Batch.from_data_list(data_list[:mid]))
-            batches.appendleft(Batch.from_data_list(data_list[mid:]))
+            left = Batch.from_data_list(data_list[:mid])
+            right = Batch.from_data_list(data_list[mid:])
+            batches.appendleft(right)
+            batches.appendleft(left)
 
     # reset for good measure
     OptimizableBatch.ignored_changes = set()
