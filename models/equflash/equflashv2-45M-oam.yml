@@ -1,29 +1,29 @@
-model_name: EquFlash
+model_name: EquFlashV2
 model_key: equflashv2-45M-oam
 model_version: v2026.06.11
 date_added: '2026-06-11'
 date_published: '2026-06-11'
 authors:
   - name: Hyuntae Cho
-    affiliation: VAI2 at Samsung Electronics
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
     email: robert.cho@samsung.com
     orcid: https://orcid.org/0000-0001-9379-6877
   - name: Gunhee Kim
-    affiliation: VAI2 at Samsung Electronics
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
   - name: Geonu Kim
-    affiliation: VAI2 at Samsung Electronics
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
   - name: Heejae Kim
-    affiliation: VAI2 at Samsung Electronics
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
   - name: Hyeonwoo Lee
-    affiliation: VAI2 at Samsung Electronics
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
   - name: Suhwan Song
-    affiliation: VAI2 at Samsung Electronics
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
   - name: Jaehee Jang
-    affiliation: VAI2 at Samsung Electronics
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
   - name: Jeongmin Choi
-    affiliation: VAI2 at Samsung Electronics
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
   - name: Yongdeok Kim
-    affiliation: VAI2 at Samsung Electronics
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
 
 repo: https://github.com/SamsungDS/GGNN.git
 url: TBD
