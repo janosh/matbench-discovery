@@ -12,7 +12,6 @@ predictions:
 """
 
 # %%
-import sys
 from typing import Any, Final
 
 import numpy as np
@@ -185,4 +184,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

@@ -5,10 +5,13 @@
   import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
 
   // show only MD metrics and metadata columns
+  const md_metrics = Object.values(MD_METRICS)
   const visible_cols: Record<string, boolean> = Object.fromEntries([
-    ...Object.values(ALL_METRICS).map((col): [string, boolean] => [col.label, false]),
+    ...Object.entries(ALL_METRICS)
+      .filter(([key]) => !(key in MD_METRICS))
+      .map(([, col]): [string, boolean] => [col.label, false]),
     ...Object.values(METADATA_COLS).map((col): [string, boolean] => [col.label, true]),
-    ...Object.values(MD_METRICS).map((col): [string, boolean] => [col.label, true]),
+    ...md_metrics.map((col): [string, boolean] => [col.label, true]),
   ])
 
   const has_md_metrics = (model: ModelData) => typeof model.metrics?.md === `object`

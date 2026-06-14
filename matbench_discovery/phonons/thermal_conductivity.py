@@ -11,6 +11,7 @@ FC2/freqs -> FC3 -> conductivity) is matbench-discovery's own and shared across 
 ML-potential kappa model scripts.
 """
 
+import inspect
 import os
 import traceback
 import warnings
@@ -25,6 +26,7 @@ from ase import Atoms
 from ase.calculators.calculator import Calculator
 from ase.constraints import FixSymmetry
 from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
+from ase.optimize.optimize import Optimizer
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from phono3py.api_phono3py import Phono3py
@@ -36,7 +38,6 @@ from tqdm import tqdm
 from matbench_discovery.enums import MbdKey
 
 if TYPE_CHECKING:
-    from ase.optimize.optimize import Optimizer
     from phono3py.conductivity.calculators import LBTECalculator, RTACalculator
 
 
@@ -402,19 +403,18 @@ def calc_kappa_for_structure(
         filter_cls = FrechetCellFilter
 
     # Select optimizer class
-    optimizer_dict = {
-        "GPMin": ase.optimize.GPMin,
-        "GOQN": ase.optimize.GoodOldQuasiNewton,
-        "BFGSLineSearch": ase.optimize.BFGSLineSearch,
-        "QuasiNewton": ase.optimize.BFGSLineSearch,
-        "SciPyFminBFGS": ase.optimize.sciopt.SciPyFminBFGS,
-        "BFGS": ase.optimize.BFGS,
-        "LBFGSLineSearch": ase.optimize.LBFGSLineSearch,
-        "SciPyFminCG": ase.optimize.sciopt.SciPyFminCG,
-        "FIRE2": ase.optimize.FIRE2,
-        "FIRE": ase.optimize.FIRE,
-        "LBFGS": ase.optimize.LBFGS,
+    optimizer_dict: dict[str, type[Optimizer]] = {
+        name: value
+        for module in (ase.optimize, ase.optimize.sciopt)
+        for name, value in vars(module).items()
+        if inspect.isclass(value)
+        and issubclass(value, Optimizer)
+        and value is not Optimizer
     }
+    optimizer_dict["GOQN"] = optimizer_dict["GoodOldQuasiNewton"]
+    if ase_optimizer not in optimizer_dict:
+        supported = ", ".join(sorted(optimizer_dict))
+        raise ValueError(f"Unknown {ase_optimizer=}. Supported options: {supported}")
     optim_cls: type[Optimizer] = optimizer_dict[ase_optimizer]
 
     # Initialize variables that might be needed in error handling

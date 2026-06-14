@@ -1,5 +1,6 @@
 """Tests for thermal conductivity calculation module."""
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -408,7 +409,7 @@ def mock_calculator() -> MagicMock:
 
 
 @pytest.fixture
-def common_kappa_kwargs(tmp_path_factory: pytest.TempPathFactory) -> dict:
+def common_kappa_kwargs(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
     """Common kwargs for calc_kappa_for_structure calls."""
     return {
         "displacement_distance": 0.01,
@@ -422,6 +423,20 @@ def common_kappa_kwargs(tmp_path_factory: pytest.TempPathFactory) -> dict:
         "out_dir": str(tmp_path_factory.mktemp("test_kappa")),
         "task_id": 0,
     }
+
+
+def test_calc_kappa_for_structure_rejects_unknown_optimizer(
+    mock_atoms: Atoms, mock_calculator: MagicMock, common_kappa_kwargs: dict[str, Any]
+) -> None:
+    """Invalid optimizer names should fail with supported options, not KeyError."""
+    kappa_kwargs = common_kappa_kwargs.copy()
+    kappa_kwargs["ase_optimizer"] = "TypoFIRE"
+    with pytest.raises(
+        ValueError, match=r"Unknown ase_optimizer='TypoFIRE'.*BFGS.*FIRE"
+    ):
+        calc_kappa_for_structure(
+            atoms=mock_atoms, calculator=mock_calculator, **kappa_kwargs
+        )
 
 
 @pytest.mark.parametrize(

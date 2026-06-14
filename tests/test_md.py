@@ -315,36 +315,6 @@ def test_run_md_benchmark_rejects_invalid_inputs(
         )
 
 
-def test_find_per_system_csvs_prefix_safe(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Per-system CSV discovery should avoid model-prefix and combined-file matches."""
-    from scripts.evals import md as eval_md
-
-    monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))
-    md_dir_old = tmp_path / "models" / "orb" / "2026-06-13-md-nvt"
-    md_dir_new = tmp_path / "models" / "orb" / "2026-06-14-md-nvt"
-    for directory in (md_dir_old, md_dir_new):
-        directory.mkdir(parents=True)
-
-    expected_paths = [
-        f"{md_dir_old}/orb_v2-md-metrics-bulkAg_600K.csv.gz",
-        f"{md_dir_new}/orb_v2-md-metrics-bulkCu_600K.csv.gz",
-    ]
-    ignored_paths = [
-        f"{md_dir_new}/orb_v2-md-metrics.csv.gz",  # combined file, no system suffix
-        f"{md_dir_new}/orb_v2_mptrj-md-metrics-bulkAg_600K.csv.gz",  # prefix collision
-    ]
-    for csv_path in (*expected_paths, *ignored_paths):
-        pd.DataFrame({"system": ["x"], "rdf_error": [1]}).to_csv(csv_path, index=False)
-    multi_system_path = f"{md_dir_new}/orb_v2-md-metrics-bulkAg_600K-bulkCu_600K.csv.gz"
-    pd.DataFrame(
-        {"system": ["bulkAg_600K", "bulkCu_600K"], "rdf_error": [1, 2]}
-    ).to_csv(multi_system_path, index=False)
-
-    assert eval_md.find_per_system_csvs(Model.orb_v2) == expected_paths
-
-
 def test_validate_pred_trajectory(tmp_path: Path) -> None:
     """A complete consistent rollout validates; truncated/short/NaN/wrong-step/
     mismatched-atoms files return None so the caller recomputes instead of silently
@@ -584,26 +554,37 @@ def test_run_md_cli_rejects_partial_write_yaml(monkeypatch: pytest.MonkeyPatch) 
         run_md.main()
 
 
-def test_md_evals_skips_incomplete_coverage(monkeypatch: pytest.MonkeyPatch) -> None:
-    """scripts/evals/md.py must not write model YAML from incomplete coverage."""
+def test_md_evals_skips_incomplete_coverage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """scripts/evals/md.py must not write model YAML from incomplete coverage (only one
+    of the three reference systems has a per-system CSV).
+    """
     from scripts.evals import md as eval_md
 
-    monkeypatch.setattr(eval_md.cli_args, "models", [Model.mace_mp_0])
-    monkeypatch.setattr(eval_md, "find_per_system_csvs", lambda _m: ["/tmp/sysA.csv"])
+    model = Model.mace_mp_0
+    monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))
+    monkeypatch.setattr(eval_md.cli_args, "models", [model])
+    ref_dir = tmp_path / "ref"
+    for name in ("sysA", "sysB", "sysC"):
+        (ref_dir / name).mkdir(parents=True)
     monkeypatch.setattr(
-        eval_md.md_metrics,
-        "load_per_system_metrics",
-        lambda _paths: pd.DataFrame(
-            {"rdf_error": [1.0]}, index=pd.Index(["sysA"], name="system")
-        ),
+        eval_md, "default_md_reference_paths", lambda: (str(ref_dir), "settings.csv")
     )
-    monkeypatch.setattr(eval_md, "expected_systems", lambda: {"sysA", "sysB", "sysC"})
 
     def _fail_write(*_a: object, **_k: object) -> None:
         raise AssertionError("must not write YAML on incomplete coverage")
 
     monkeypatch.setattr(eval_md.md_metrics, "write_metrics_to_yaml", _fail_write)
-    assert eval_md.main() == 1  # nothing evaluated -> exit 1, no YAML written
+
+    arch_dir = os.path.dirname(model.rel_path)
+    md_dir = tmp_path / "models" / arch_dir / "2026-06-14-md-nvt"
+    md_dir.mkdir(parents=True)
+    pd.DataFrame({"system": ["sysA"], "rdf_error": [1.0]}).to_csv(
+        md_dir / f"{model.name}-md-metrics-sysA.csv.gz", index=False
+    )
+
+    assert eval_md.main() == 1  # missing sysB/sysC -> skip, exit 1, no YAML written
 
 
 def test_md_model_uv_run_cmd() -> None:

@@ -667,7 +667,7 @@ def test_write_metrics_to_yaml(tmp_path: Path, init_yaml: str) -> None:
     assert "pred_file: models/test/md-metrics.csv" in text
     assert "pred_file_url: https://example.com/md-metrics.csv" in text
     assert "energy_rmse: 0.1235 # eV/atom" in text
-    assert "force_rmse: 0.2346 # eV/Å" in text
+    assert f"force_rmse: 0.2346 # {md_metrics.METRIC_UNITS['force_rmse']}" in text
     assert "rdf_error: 12.3457 # %" in text
     assert "combined_error: 23.4568 # %" in text
     assert "n_systems: 17 # count" in text
