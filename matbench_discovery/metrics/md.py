@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 # units of per-system metric columns shared between eval scripts and aggregation
 METRIC_UNITS = {
     "energy_rmse": "eV/atom",
-    "force_rmse": "eV/A",
+    "force_rmse": "eV/Å",
     "rdf_error": "%",
     "vdos_error": "%",
     "pressure_mae": "GPa",
@@ -58,6 +58,8 @@ def calc_rdf(
     """
     if len(trajectory) == 0:
         raise ValueError("Cannot compute RDF of empty trajectory")
+    if n_bins < 2:
+        raise ValueError(f"Need >= 2 RDF bins, got {n_bins=}")
     n_atoms = len(trajectory[0])
     if n_atoms < 2:
         raise ValueError(f"Cannot compute RDF with {n_atoms=} < 2")
@@ -105,10 +107,11 @@ def calc_rdf_error(
     """
     if not len(radii) == len(g_r_ref) == len(g_r_pred):
         raise ValueError(f"{len(radii)=}, {len(g_r_ref)=}, {len(g_r_pred)=} differ")
-    denominator = np.trapezoid(np.abs(np.asarray(g_r_ref) - 1), x=radii)
+    g_r_ref = np.asarray(g_r_ref)
+    denominator = np.trapezoid(np.abs(g_r_ref - 1), x=radii)
     if denominator == 0:
         return 100.0
-    numerator = np.trapezoid(np.abs(np.asarray(g_r_ref) - g_r_pred), x=radii)
+    numerator = np.trapezoid(np.abs(g_r_ref - g_r_pred), x=radii)
     return float(min(1, numerator / denominator) * 100)
 
 
@@ -210,7 +213,7 @@ def calc_vdos_error(
 def calc_pressure(stress: np.ndarray) -> float:
     """Pressure in GPa from an ASE stress tensor (paper Eq. 5): P = -Tr(sigma)/3.
 
-    Accepts stress in eV/A^3 as Voigt 6-vector [xx, yy, zz, yz, xz, xy] or (3, 3)
+    Accepts stress in eV/Å³ as Voigt 6-vector [xx, yy, zz, yz, xz, xy] or (3, 3)
     matrix, following ASE conventions.
     """
     stress = np.asarray(stress, dtype=float)
@@ -233,24 +236,53 @@ def get_trajectory_pressures(trajectory: "Sequence[Atoms]") -> np.ndarray:
     )
 
 
+def _time_strides(ref_time_step_fs: float, pred_time_step_fs: float) -> tuple[int, int]:
+    """Frame strides (ref, pred) that subsample two trajectories with different
+    saved-frame intervals onto their common (least common multiple) time grid, i.e.
+    frames i * ref_stride and i * pred_stride share identical timestamps.
+    """
+    if min(ref_time_step_fs, pred_time_step_fs) <= 0:
+        raise ValueError(
+            f"Time steps must be positive, got {ref_time_step_fs=}, "
+            f"{pred_time_step_fs=}"
+        )
+    ref_time_step = Fraction(str(ref_time_step_fs))
+    pred_time_step = Fraction(str(pred_time_step_fs))
+    common_time_step = Fraction(
+        math.lcm(ref_time_step.numerator, pred_time_step.numerator),
+        math.gcd(ref_time_step.denominator, pred_time_step.denominator),
+    )
+    return int(common_time_step / ref_time_step), int(common_time_step / pred_time_step)
+
+
 def calc_pressure_metrics(
-    pressures_ref: np.ndarray, pressures_pred: np.ndarray
+    pressures_ref: np.ndarray,
+    pressures_pred: np.ndarray,
+    *,
+    ref_time_step_fs: float = 1,
+    pred_time_step_fs: float = 1,
 ) -> dict[str, float]:
     """Pressure MAE (paper Eq. 6) and Wasserstein-1 distance in GPa.
 
-    The MAE pairs frames at equal simulation time (truncating to the shorter
-    trajectory), which conflates mean pressure offsets with fluctuation
-    decorrelation between independently thermalized runs. The W1 distance compares
-    the full pressure distributions instead, making it insensitive to frame
-    pairing while still capturing mean offsets and fluctuation-width differences.
+    The MAE pairs frames at identical timestamps: both arrays are subsampled onto
+    their common (LCM) time grid before pairing, so different saved-frame cadences
+    compare the same simulation times. It still conflates mean pressure offsets
+    with fluctuation decorrelation between independently thermalized runs. The W1
+    distance compares the full pressure distributions instead, making it
+    insensitive to frame pairing while still capturing mean offsets and
+    fluctuation-width differences.
     """
     from scipy.stats import wasserstein_distance
 
     pressures_ref, pressures_pred = map(np.asarray, (pressures_ref, pressures_pred))
     if len(pressures_ref) == 0 or len(pressures_pred) == 0:
         raise ValueError("Cannot compute pressure metrics of empty pressure arrays")
-    n_frames = min(len(pressures_ref), len(pressures_pred))
-    mae = np.abs(pressures_ref[:n_frames] - pressures_pred[:n_frames]).mean()
+
+    ref_stride, pred_stride = _time_strides(ref_time_step_fs, pred_time_step_fs)
+    ref_aligned = pressures_ref[::ref_stride]
+    pred_aligned = pressures_pred[::pred_stride]
+    n_pairs = min(len(ref_aligned), len(pred_aligned))
+    mae = np.abs(ref_aligned[:n_pairs] - pred_aligned[:n_pairs]).mean()
     return {
         "pressure_mae": float(mae),
         "pressure_wasserstein": float(
@@ -281,26 +313,35 @@ def calc_combined_error(rdf_error: float, vdos_error: float) -> float:
 def calc_energy_force_rmse(
     trajectory: "Sequence[Atoms]", calculator: "Calculator"
 ) -> dict[str, float]:
-    """Energy (eV/atom) and force (eV/A) RMSE of calculator single-point predictions
+    """Energy (eV/atom) and force (eV/Å) RMSE of calculator single-point predictions
     on reference MD frames carrying DFT energies and forces (paper Eq. 1-2).
+
+    The energy RMSE is mean-subtracted per trajectory: the constant per-atom offset
+    between model and reference energy zeros is removed before computing the RMSE, so
+    it measures how well relative energy *fluctuations* are reproduced rather than the
+    (physically meaningless) absolute-reference mismatch. This matters when reference
+    energies come from a different DFT code than the model's training data, e.g.
+    all-electron FHI-AIMS references vs a PAW-pseudopotential-trained MLIP, where the
+    raw offset can reach hundreds of eV/atom. For a fixed-composition NVT trajectory
+    this equals the standard deviation of the per-atom energy errors.
     """
     if len(trajectory) == 0:
         raise ValueError("Cannot compute energy/force RMSE of empty trajectory")
 
-    energy_sq_errs: list[float] = []
+    energy_errs_per_atom: list[float] = []
     force_sq_err_sum, n_force_components = 0.0, 0
     for atoms in trajectory:
         ref_energy, ref_forces = atoms.get_potential_energy(), atoms.get_forces()
         pred_atoms = atoms.copy()
         pred_atoms.calc = calculator
-        energy_sq_errs.append(
-            ((pred_atoms.get_potential_energy() - ref_energy) / len(atoms)) ** 2
+        energy_errs_per_atom.append(
+            (pred_atoms.get_potential_energy() - ref_energy) / len(atoms)
         )
         force_sq_err_sum += ((pred_atoms.get_forces() - ref_forces) ** 2).sum()
         n_force_components += ref_forces.size
 
     return {
-        "energy_rmse": float(np.sqrt(np.mean(energy_sq_errs))),
+        "energy_rmse": float(np.std(energy_errs_per_atom)),  # offset-invariant
         "force_rmse": float(np.sqrt(force_sq_err_sum / n_force_components)),
     }
 
@@ -312,29 +353,18 @@ def matched_frame_counts(
     ref_time_step_fs: float,
     pred_time_step_fs: float,
 ) -> tuple[int, int]:
-    """Frame counts (n_ref_use, n_pred_use) spanning the same total simulation time
-    in both trajectories, i.e. the shorter of the two total durations.
+    """Frame counts (n_ref_use, n_pred_use) covering the identical closed time
+    interval [0, t_match] in both trajectories, where t_match is the largest
+    multiple of the common (LCM) time grid that fits both trajectory durations.
+    A trajectory of n frames saved every dt spans (n - 1) * dt.
     """
-    if min(ref_time_step_fs, pred_time_step_fs) <= 0:
-        raise ValueError(
-            f"Time steps must be positive, got {ref_time_step_fs=}, "
-            f"{pred_time_step_fs=}"
-        )
-    ref_time_step = Fraction(str(ref_time_step_fs))
-    pred_time_step = Fraction(str(pred_time_step_fs))
-    common_time_step = Fraction(  # least common multiple of the two intervals
-        math.lcm(ref_time_step.numerator, pred_time_step.numerator),
-        math.gcd(ref_time_step.denominator, pred_time_step.denominator),
-    )
-    n_common_steps = min(
-        n_ref_frames * ref_time_step // common_time_step,
-        n_pred_frames * pred_time_step // common_time_step,
-    )
-    if n_common_steps <= 0:
+    ref_stride, pred_stride = _time_strides(ref_time_step_fs, pred_time_step_fs)
+    if min(n_ref_frames, n_pred_frames) < 1:
         return 0, 0
-
-    matched_time = n_common_steps * common_time_step
-    return int(matched_time / ref_time_step), int(matched_time / pred_time_step)
+    # number of common-grid steps fitting both trajectory durations
+    n_common = min((n_ref_frames - 1) // ref_stride, (n_pred_frames - 1) // pred_stride)
+    # + 1 to include the frame at t=0
+    return n_common * ref_stride + 1, n_common * pred_stride + 1
 
 
 def evaluate_md_system(
@@ -383,6 +413,8 @@ def evaluate_md_system(
         metrics |= calc_pressure_metrics(
             get_trajectory_pressures(ref_matched),
             get_trajectory_pressures(pred_matched),
+            ref_time_step_fs=ref_time_step_fs,
+            pred_time_step_fs=pred_time_step_fs,
         )
     except (PropertyNotImplementedError, RuntimeError) as exc:
         # NaN pressure metrics only for frames without (a calculator providing)

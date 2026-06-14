@@ -10,9 +10,17 @@ import traceback
 import requests
 
 
-def download_file(file_path: str, url: str) -> None:
+def download_file(
+    file_path: str, url: str, headers: dict[str, str] | None = None
+) -> None:
     """Download the file from the given URL to the given file path.
     Prints rather than raises if the file cannot be downloaded.
+
+    Args:
+        file_path: Local path to write the downloaded file to.
+        url: URL to download from.
+        headers: Optional HTTP headers, e.g. an Authorization bearer token for
+            gated HuggingFace checkpoints.
     """
     file_dir = os.path.dirname(file_path)
     if file_dir:
@@ -29,7 +37,7 @@ def download_file(file_path: str, url: str) -> None:
 
     try:
         # Stream large files to avoid loading entire file into memory
-        response = requests.get(url, timeout=600, stream=True)
+        response = requests.get(url, timeout=600, stream=True, headers=headers)
         response.raise_for_status()
 
         with open(tmp_file_path, mode="wb") as file:

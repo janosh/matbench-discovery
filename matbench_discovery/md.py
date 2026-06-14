@@ -6,8 +6,10 @@ time scale, frames recorded every 10 steps for 20 ps.
 """
 
 import contextlib
+import os
 import re
 import time
+from glob import glob
 
 import ase.io
 import numpy as np
@@ -17,6 +19,9 @@ from ase.calculators.calculator import Calculator, PropertyNotImplementedError
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.md.nose_hoover_chain import NoseHooverChainNVT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
+from tqdm import tqdm
+
+from matbench_discovery.metrics import md as md_metrics
 
 
 def extract_temperature(name: str) -> float | None:
@@ -45,14 +50,17 @@ def resolve_frame_interval(
 ) -> float | None:
     """Return the saved-frame interval for a trajectory directory name.
 
-    CFPMD trajectory directories append suffixes like '_Kapil' to settings keys of
-    the form '<system>_<temp>K'. Pick the longest delimiter-aware match so systems
-    whose names contain another '<...>K' token don't resolve to a shorter prefix.
+    CFPMD trajectory directories append suffixes like '_Kapil' or '-Artrith_VASP' to
+    settings keys of the form '<system>_<temp>K' (the delimiter after the key is '_'
+    for most systems but '-' for a few). Pick the longest delimiter-aware match so
+    systems whose names contain another '<...>K' token don't resolve to a shorter
+    prefix.
     """
     matches = {
         key: frame_interval
         for key, frame_interval in frame_intervals.items()
-        if system_name == key or system_name.startswith(f"{key}_")
+        if system_name == key
+        or (system_name.startswith(key) and system_name[len(key)] in "_-")
     }
     return matches[max(matches, key=len)] if matches else None
 
@@ -70,9 +78,11 @@ def default_md_reference_paths() -> tuple[str, str]:
     )
 
 
-def read_trajectory(file_path: str) -> list[Atoms]:
-    """All frames of an ASE-readable (optionally compressed) trajectory file."""
-    frames = ase.io.read(file_path, index=":")
+def read_trajectory(file_path: str, *, index: str = ":") -> list[Atoms]:
+    """Frames of an ASE-readable (optionally compressed) trajectory file. ``index``
+    is an ASE slice string, e.g. ':' for all frames or ':64' for the first 64.
+    """
+    frames = ase.io.read(file_path, index=index)
     return [frames] if isinstance(frames, Atoms) else list(frames)
 
 
@@ -160,3 +170,136 @@ def run_nvt_md(
 
     dynamics.run(n_steps)
     return frames
+
+
+def find_reference_trajectory(ref_dir: str, system_name: str) -> str:
+    """Path to the single reference trajectory in ref_dir/system_name, matching
+    traj.extxyz and ASE-transparent .gz/.xz/.bz2 compressed variants.
+    """
+    traj_files = sorted(glob(f"{ref_dir}/{system_name}/traj.*xyz*"))
+    if len(traj_files) != 1:
+        raise ValueError(
+            f"Expected 1 reference trajectory in {ref_dir}/{system_name}, "
+            f"got {traj_files}"
+        )
+    return traj_files[0]
+
+
+def run_md_benchmark(
+    *,
+    calculator: Calculator,
+    model_key: str,
+    out_dir: str,
+    ref_dir: str | None = None,
+    settings_csv: str | None = None,
+    ref_frame_interval_fs: float | None = None,
+    systems: "list[str] | None" = None,
+    n_steps: int = 80_000,
+    time_step_fs: float = 0.25,
+    record_interval: int = 10,
+    seed: int = 0,
+    dry_run: bool = False,
+) -> pd.DataFrame:
+    """Run NVT rollouts and compute MD metrics for one model across reference systems.
+
+    For each system directory under ref_dir, this rolls out an NVT trajectory from
+    the reference initial structure (reusing an existing rollout if present), then
+    compares it to the reference via energy/force RMSE, RDF, VDOS and pressure. Writes
+    one gzipped per-system metrics CSV and returns the per-system DataFrame.
+
+    Args:
+        calculator: ASE calculator for the model under test.
+        model_key: Model enum name/key, used in output filenames.
+        out_dir: Directory for rollout trajectories and the metrics CSV.
+        ref_dir: Reference trajectory dir. Defaults to the auto-downloaded CFPMD-26
+            dataset (and settings_csv defaults alongside it).
+        settings_csv: Per-system frame-interval CSV. Mutually informs ref dt.
+        ref_frame_interval_fs: Constant reference frame interval (overrides CSV).
+        systems: Subset of system dir names to run. Defaults to all under ref_dir.
+        n_steps: MD steps per rollout (80,000 = 20 ps at 0.25 fs).
+        time_step_fs: MD integration time step.
+        record_interval: Record a frame every this many MD steps.
+        seed: Maxwell-Boltzmann velocity seed.
+        dry_run: Smoke test: one system, a handful of MD steps, and a capped reference
+            slice, to verify the model + pipeline run error-free in seconds without
+            writing outputs. Returned metrics are not meaningful.
+
+    Returns:
+        pd.DataFrame: One row per system indexed by system name.
+    """
+    if ref_dir is None:
+        ref_dir, default_csv = default_md_reference_paths()
+        settings_csv = settings_csv or default_csv
+    elif settings_csv is None and ref_frame_interval_fs is None:
+        raise ValueError(
+            "Pass settings_csv or ref_frame_interval_fs for custom ref_dir"
+        )
+
+    frame_intervals = load_frame_intervals(settings_csv) if settings_csv else {}
+    system_dirs = sorted(
+        entry.name
+        for entry in os.scandir(ref_dir)
+        if entry.is_dir() and (not systems or entry.name in systems)
+    )
+    if dry_run:  # one system, a few steps, capped reference slice
+        system_dirs = system_dirs[:1]
+        n_steps = record_interval * 8
+    else:
+        os.makedirs(out_dir, exist_ok=True)  # for rollout trajectories and metrics CSV
+
+    pred_time_step_fs = time_step_fs * record_interval
+    rows: list[dict[str, float | str]] = []
+    for system_name in tqdm(system_dirs, desc=f"MD systems ({model_key})"):
+        temperature_kelvin = extract_temperature(system_name)
+        if temperature_kelvin is None:
+            raise ValueError(f"Could not parse temperature from {system_name!r}")
+        ref_dt_fs = ref_frame_interval_fs or resolve_frame_interval(
+            system_name, frame_intervals
+        )
+        if ref_dt_fs is None:
+            raise ValueError(f"No frame interval for {system_name!r} in settings CSV")
+
+        # dry run reads only the first 64 reference frames so the single-point eval
+        # (and the slow xz decompression of multi-GB references) stays fast
+        ref_path = find_reference_trajectory(ref_dir, system_name)
+        ref_trajectory = read_trajectory(ref_path, index=":64" if dry_run else ":")
+
+        pred_traj_path = f"{out_dir}/{system_name}-nvt-{model_key}.extxyz"
+        if not dry_run and os.path.isfile(pred_traj_path):
+            pred_trajectory = read_trajectory(pred_traj_path)
+        else:
+            pred_trajectory = run_nvt_md(
+                ref_trajectory[0],
+                calculator,
+                temperature_kelvin=temperature_kelvin,
+                n_steps=n_steps,
+                time_step_fs=time_step_fs,
+                record_interval=record_interval,
+                seed=seed,
+            )
+            if not dry_run:
+                ase.io.write(pred_traj_path, pred_trajectory)
+
+        system_metrics = md_metrics.evaluate_md_system(
+            ref_trajectory,
+            pred_trajectory,
+            ref_time_step_fs=ref_dt_fs,
+            pred_time_step_fs=pred_time_step_fs,
+            calculator=calculator,
+        )
+        rows.append(
+            {"system": system_name, "temperature_kelvin": temperature_kelvin}
+            | system_metrics
+        )
+
+    df_md = pd.DataFrame(rows).set_index("system")
+    if dry_run:
+        print(f"Dry run OK for {model_key}: pipeline ran on {system_dirs}")
+        return df_md
+
+    # suffix avoids collisions when parallel single-system jobs share out_dir
+    suffix = f"-{'-'.join(systems)}" if systems else ""
+    csv_path = f"{out_dir}/{model_key}-md-metrics{suffix}.csv.gz"
+    df_md.to_csv(csv_path)
+    print(f"Per-system MD metrics for {model_key} saved to {csv_path!r}")
+    return df_md

@@ -59,6 +59,16 @@ class BrokenStressCalculator(Calculator):
         raise RuntimeError("simulated stress backend failure")
 
 
+def attach_ref_labels(atoms: Atoms, energy: float, forces: np.ndarray) -> Atoms:
+    """Store reference energy/forces where OffsetCalculator and ASE getters find
+    them: in info/arrays and as SinglePointCalculator results.
+    """
+    atoms.info["ref_energy"] = energy
+    atoms.arrays["ref_forces"] = forces
+    atoms.calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
+    return atoms
+
+
 def make_jiggled_frames(
     n_frames: int, *, pressure_gpa: float | None = None
 ) -> list[Atoms]:
@@ -80,19 +90,10 @@ def make_jiggled_frames(
 # === RDF ===
 
 
-def test_calc_rdf_ideal_gas_is_flat() -> None:
+# fixed cell, and alternating very different volumes (probes per-frame densities)
+@pytest.mark.parametrize("box_lens", [(10,), (10, 16)])
+def test_calc_rdf_ideal_gas_is_flat(box_lens: tuple[float, ...]) -> None:
     """g(r) of uniformly random positions should fluctuate around 1."""
-    frames = [
-        Atoms("Ar64", positions=np_rng.random((64, 3)) * 10, cell=[10] * 3, pbc=True)
-        for _ in range(20)
-    ]
-    radii, g_r = md_metrics.calc_rdf(frames, n_bins=50)
-    # exclude small-r bins which have few counts and large relative noise
-    np.testing.assert_allclose(g_r[radii > 2].mean(), 1, rtol=0.05)
-
-
-def test_calc_rdf_ideal_gas_with_varying_cell_volumes() -> None:
-    """g(r) must use per-frame densities: ideal gas stays ~1 under volume changes."""
     frames = [
         Atoms(
             "Ar64",
@@ -101,9 +102,10 @@ def test_calc_rdf_ideal_gas_with_varying_cell_volumes() -> None:
             pbc=True,
         )
         for _ in range(15)
-        for box_len in (10, 16)  # alternate between two very different volumes
+        for box_len in box_lens
     ]
     radii, g_r = md_metrics.calc_rdf(frames, n_bins=50)
+    # exclude small-r bins which have few counts and large relative noise
     np.testing.assert_allclose(g_r[radii > 2].mean(), 1, rtol=0.05)
 
 
@@ -134,18 +136,20 @@ def test_calc_rdf_r_max_respects_shrunken_cells() -> None:
 
 
 @pytest.mark.parametrize(
-    ("formulas", "err_msg"),
+    ("formulas", "n_bins", "err_msg"),
     [
-        ([], "empty trajectory"),
-        (["H"], "n_atoms=1 < 2"),
-        (["H2", "H3"], "Inconsistent atom counts"),
+        ([], 50, "empty trajectory"),
+        (["H"], 50, "n_atoms=1 < 2"),
+        (["H2", "H3"], 50, "Inconsistent atom counts"),
+        # < 2 bins must raise instead of breaking downstream grid math
+        (["H2"], 1, "Need >= 2 RDF bins"),
     ],
 )
-def test_calc_rdf_invalid_input(formulas: list[str], err_msg: str) -> None:
-    """RDF should reject empty, single-atom, and varying-atom-count trajectories."""
+def test_calc_rdf_invalid_input(formulas: list[str], n_bins: int, err_msg: str) -> None:
+    """RDF should reject bad bin counts and empty/single-atom/varying trajectories."""
     frames = [Atoms(formula, cell=[5] * 3, pbc=True) for formula in formulas]
     with pytest.raises(ValueError, match=err_msg):
-        md_metrics.calc_rdf(frames)
+        md_metrics.calc_rdf(frames, n_bins=n_bins)
 
 
 @pytest.mark.parametrize(
@@ -167,11 +171,8 @@ def test_calc_rdf_error(
     err = md_metrics.calc_rdf_error(radii, np.array(g_r_ref), np.array(g_r_pred))
     assert err == pytest.approx(expected)
 
-
-def test_calc_rdf_error_length_mismatch() -> None:
-    """RDF error should reject mismatched grids."""
-    with pytest.raises(ValueError, match="differ"):
-        md_metrics.calc_rdf_error(np.ones(3), np.ones(3), np.ones(4))
+    with pytest.raises(ValueError, match="differ"):  # mismatched grid lengths
+        md_metrics.calc_rdf_error(radii, np.ones(3), np.ones(4))
 
 
 # === velocities and VDOS ===
@@ -220,16 +221,40 @@ def test_calc_velocities_invalid_input(
         md_metrics.calc_velocities(frames, time_step_fs=time_step_fs)
 
 
-@pytest.mark.parametrize("freq_thz", [5.0, 12.5])
-def test_calc_vdos_peak_at_oscillation_frequency(freq_thz: float) -> None:
-    """VDOS of a sinusoidal velocity should peak at the oscillation frequency."""
-    time_step_fs, n_frames = 2.0, 2000
+def make_cosine_velocities(
+    *freq_amp_pairs: tuple[float, float],
+    n_frames: int = 2000,
+    time_step_fs: float = 2.0,
+) -> np.ndarray:
+    """Velocities of shape (n_frames, n_atoms, 3) where atom i oscillates along x
+    with (frequency in THz, amplitude) = freq_amp_pairs[i].
+    """
     times_ps = np.arange(n_frames) * time_step_fs * 1e-3
-    velocities = np.zeros((n_frames, 1, 3))
-    velocities[:, 0, 0] = np.cos(2 * np.pi * freq_thz * times_ps)
+    velocities = np.zeros((n_frames, len(freq_amp_pairs), 3))
+    for atom_idx, (freq_thz, amplitude) in enumerate(freq_amp_pairs):
+        velocities[:, atom_idx, 0] = amplitude * np.cos(2 * np.pi * freq_thz * times_ps)
+    return velocities
 
-    freqs, vdos = md_metrics.calc_vdos(velocities, time_step_fs=time_step_fs)
-    assert freqs[np.argmax(vdos)] == pytest.approx(freq_thz, abs=freqs[1] - freqs[0])
+
+def test_calc_vdos_spectrum() -> None:
+    """VDOS must peak at each atom's oscillation frequency, and per-DOF
+    normalization (equipartition) must give a quiet atom's peak the same
+    integrated weight as a 10x louder atom's peak.
+    """
+    velocities = make_cosine_velocities((5.0, 1.0), (12.5, 0.1))  # loud + quiet atom
+    freqs, vdos = md_metrics.calc_vdos(velocities, time_step_fs=2.0)
+
+    low_band = (freqs > 2.5) & (freqs < 7.5)
+    high_band = (freqs > 10) & (freqs < 15)
+    freq_resolution = freqs[1] - freqs[0]
+    assert freqs[low_band][np.argmax(vdos[low_band])] == pytest.approx(
+        5.0, abs=freq_resolution
+    )
+    assert freqs[high_band][np.argmax(vdos[high_band])] == pytest.approx(
+        12.5, abs=freq_resolution
+    )
+    # a raw (unnormalized) power sum would give a weight ratio of ~100
+    assert vdos[low_band].sum() / vdos[high_band].sum() == pytest.approx(1, rel=0.05)
 
 
 @pytest.mark.parametrize(
@@ -338,6 +363,16 @@ def test_calc_pressure_metrics() -> None:
     with pytest.raises(ValueError, match="empty"):
         md_metrics.calc_pressure_metrics(np.array([]), p_ref)
 
+    # MAE must pair identical timestamps when cadences differ: pred samples ref
+    # at every 2nd timestamp plus a pure +10 offset, so aligned MAE is exactly 10
+    # (index pairing would wrongly give 11.5)
+    p_ref_fine = np.arange(7.0)  # t = 0..6 at dt=1
+    p_pred_coarse = p_ref_fine[::2] + 10  # t = 0,2,4,6 at dt=2
+    aligned = md_metrics.calc_pressure_metrics(
+        p_ref_fine, p_pred_coarse, ref_time_step_fs=1, pred_time_step_fs=2
+    )
+    assert aligned["pressure_mae"] == pytest.approx(10)
+
 
 # === combined error ===
 
@@ -367,32 +402,46 @@ def test_calc_combined_error(
 # === energy/force RMSE ===
 
 
-@pytest.mark.parametrize(
-    ("energy_offset", "force_offset"), [(0, 0), (0.4, 0.1), (-0.8, 0.25)]
-)
-def test_calc_energy_force_rmse(energy_offset: float, force_offset: float) -> None:
-    """Constant prediction offsets should map exactly onto the RMSEs."""
-    frames = []
-    for _ in range(3):
-        atoms = Atoms("H2", positions=np_rng.random((2, 3)) * 2, cell=[5] * 3)
-        ref_energy = float(np_rng.normal())
-        ref_forces = np_rng.normal(size=(2, 3))
-        atoms.info["ref_energy"] = ref_energy
-        atoms.arrays["ref_forces"] = ref_forces
-        atoms.calc = SinglePointCalculator(atoms, energy=ref_energy, forces=ref_forces)
-        frames.append(atoms)
-
-    calc = OffsetCalculator(energy_offset=energy_offset, force_offset=force_offset)
+@pytest.mark.parametrize("force_offset", [0, 0.1, 0.25])
+def test_calc_energy_force_rmse(force_offset: float) -> None:
+    """A constant energy offset must wash out (mean-subtracted); forces map directly."""
+    frames = [
+        attach_ref_labels(
+            Atoms("H2", positions=np_rng.random((2, 3)) * 2, cell=[5] * 3),
+            energy=float(np_rng.normal()),
+            forces=np_rng.normal(size=(2, 3)),
+        )
+        for _ in range(3)
+    ]
+    # pure constant offset of 0.8 eV -> mean-subtracted energy RMSE is exactly 0
+    calc = OffsetCalculator(energy_offset=0.8, force_offset=force_offset)
     result = md_metrics.calc_energy_force_rmse(frames, calc)
-
-    assert result["energy_rmse"] == pytest.approx(
-        abs(energy_offset) / 2,
-        abs=1e-12,  # 2 atoms per frame
-    )
+    assert result["energy_rmse"] == pytest.approx(0, abs=1e-12)
     assert result["force_rmse"] == pytest.approx(abs(force_offset), abs=1e-12)
 
     with pytest.raises(ValueError, match="empty trajectory"):
         md_metrics.calc_energy_force_rmse([], calc)
+
+
+def test_calc_energy_force_rmse_captures_fluctuations() -> None:
+    """Mean-subtracted energy RMSE must recover the std of per-atom energy errors
+    on top of an arbitrary constant reference offset (e.g. all-electron vs PAW).
+    """
+    n_atoms = 2
+    fluctuations = np.array([0.0, 0.3, -0.3, 0.6, -0.6])  # eV total, varying
+    forces = np.zeros((n_atoms, 3))
+    frames = []
+    for fluct in fluctuations:
+        atoms = Atoms("H2", positions=np_rng.random((n_atoms, 3)) * 2, cell=[5] * 3)
+        base = float(np_rng.normal())
+        atoms.calc = SinglePointCalculator(atoms, energy=base, forces=forces)  # ref
+        atoms.info["ref_energy"] = base + fluct  # OffsetCalculator adds +1000
+        atoms.arrays["ref_forces"] = forces
+        frames.append(atoms)
+
+    # per-frame error = fluct + 1000; the +1000 offset washes out under mean-subtract
+    result = md_metrics.calc_energy_force_rmse(frames, OffsetCalculator(1000))
+    assert result["energy_rmse"] == pytest.approx(np.std(fluctuations) / n_atoms)
 
 
 # === frame matching and per-system evaluation ===
@@ -401,12 +450,14 @@ def test_calc_energy_force_rmse(energy_offset: float, force_offset: float) -> No
 @pytest.mark.parametrize(
     ("n_ref", "n_pred", "ref_dt", "pred_dt", "expected"),
     [
+        # spans are (n_frames - 1) * dt; both outputs cover identical [0, t_match]
         (10, 10, 1, 1, (10, 10)),  # equal everything
-        (10, 20, 2, 1, (10, 20)),  # same duration, different sampling
+        (10, 20, 2, 1, (10, 19)),  # ref spans 18 fs < pred's 19 fs
         (10, 5, 1, 1, (5, 5)),  # pred shorter
-        (4, 100, 2.5, 1, (4, 10)),  # ref limits matched time to 10 fs
-        (3, 100, 2.5, 1, (2, 5)),  # non-commensurate dts snap to 5 fs
-        (7, 100, 2.5, 1, (6, 15)),  # round() would overrun to 18 fs pred time
+        (4, 100, 2.5, 1, (3, 6)),  # ref spans 7.5 fs, snaps to 5 fs common grid
+        (3, 100, 2.5, 1, (3, 6)),  # ref spans exactly 5 fs = one common step
+        (7, 100, 2.5, 1, (7, 16)),  # ref spans exactly 15 fs = three common steps
+        (1, 10, 1, 1, (1, 1)),  # single frame matches only t=0
     ],
 )
 def test_matched_frame_counts(
@@ -480,14 +531,10 @@ def test_evaluate_md_system_reraises_unexpected_pressure_errors() -> None:
 
 def test_evaluate_md_system_with_calculator_adds_rmse() -> None:
     """Passing a calculator should add energy and force RMSE metrics."""
-    ref_traj = []
-    for atoms in make_jiggled_frames(6):
-        atoms.info["ref_energy"] = -1.0
-        atoms.arrays["ref_forces"] = np.zeros((len(atoms), 3))
-        atoms.calc = SinglePointCalculator(
-            atoms, energy=-1.0, forces=np.zeros((len(atoms), 3))
-        )
-        ref_traj.append(atoms)
+    ref_traj = [
+        attach_ref_labels(atoms, energy=-1.0, forces=np.zeros((len(atoms), 3)))
+        for atoms in make_jiggled_frames(6)
+    ]
 
     metrics = md_metrics.evaluate_md_system(
         ref_traj,
@@ -496,7 +543,7 @@ def test_evaluate_md_system_with_calculator_adds_rmse() -> None:
         pred_time_step_fs=1,
         calculator=OffsetCalculator(energy_offset=0.8),
     )
-    assert metrics["energy_rmse"] == pytest.approx(0.1)  # 0.8 eV / 8 atoms
+    assert metrics["energy_rmse"] == pytest.approx(0)  # constant offset washes out
     assert metrics["force_rmse"] == pytest.approx(0)
 
     # trajectories shorter than two matched frames should raise
@@ -556,6 +603,7 @@ def test_write_metrics_to_yaml(tmp_path: Path, init_yaml: str) -> None:
 
     metrics = {
         "energy_rmse": 0.123456,
+        "force_rmse": 0.234567,
         "rdf_error": 12.34567,
         "combined_error": 23.456789,
         "n_systems": 17,
@@ -571,6 +619,7 @@ def test_write_metrics_to_yaml(tmp_path: Path, init_yaml: str) -> None:
     assert "pred_file: models/test/md-metrics.csv" in text
     assert "pred_file_url: https://example.com/md-metrics.csv" in text
     assert "energy_rmse: 0.1235 # eV/atom" in text
+    assert "force_rmse: 0.2346 # eV/Å" in text
     assert "rdf_error: 12.3457 # %" in text
     assert "combined_error: 23.4568 # %" in text
     assert "n_systems: 17 # count" in text

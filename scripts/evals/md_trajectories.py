@@ -3,7 +3,7 @@
 Computes per-system RDF, VDOS and (when stress is present) pressure metrics for
 every model with trajectories in the MLIP directory and writes one per-system
 metrics CSV per model. Energy/force RMSE requires running the model itself and is
-handled by the per-model runner scripts (e.g. models/mace/test_mace_md.py).
+handled by the unified runner models/run_md.py (which runs the model itself).
 
 Expected data layout (CFPMD-26 convention):
     <ref-dir>/<system>/traj.extxyz      reference AIMD trajectories

@@ -9,13 +9,16 @@ import pytest
 from ase.build import bulk
 from ase.calculators.emt import EMT
 
+from matbench_discovery.enums import Model
 from matbench_discovery.md import (
     extract_temperature,
     load_frame_intervals,
     read_trajectory,
     resolve_frame_interval,
+    run_md_benchmark,
     run_nvt_md,
 )
+from matbench_discovery.md_models import MD_MODELS, load_calculator
 from matbench_discovery.metrics import md as md_metrics
 
 
@@ -44,16 +47,21 @@ def test_load_frame_intervals(tmp_path: Path) -> None:
         "bulkAg,600,5,1,32\n"
         "anthracene,293,1,0.5,320\n"
         "bulkAg_600K_extra,600,1,9,32\n"
+        "bulkCuAu,500,5,2,32\n"
     )
     intervals = load_frame_intervals(str(csv_path))
     assert intervals == {
         "bulkAg_600K": 1.0,
         "anthracene_293K": 0.5,
         "bulkAg_600K_extra_600K": 9.0,
+        "bulkCuAu_500K": 2.0,
     }
     assert resolve_frame_interval("bulkAg_600K_Kapil", intervals) == 1.0
     assert resolve_frame_interval("bulkAg_600K_extra_600K_Kapil", intervals) == 9.0
     assert resolve_frame_interval("bulkAg_600K2_Kapil", intervals) is None
+    # dir names may use '-' (not '_') as the delimiter after the '<system>_<temp>K'
+    # key, e.g. bulkCuAu_500K-Artrith_VASP - must still resolve (caught a prod bug)
+    assert resolve_frame_interval("bulkCuAu_500K-Artrith_VASP", intervals) == 2.0
 
 
 def test_run_nvt_md() -> None:
@@ -141,3 +149,87 @@ def test_md_pipeline_end_to_end(tmp_path: Path) -> None:
     model_metrics = md_metrics.calc_md_metrics(df_md)
     assert model_metrics["n_systems"] == 1
     assert model_metrics["combined_error"] >= 0
+
+
+def make_reference_dir(tmp_path: Path) -> tuple[str, str]:
+    """Write a tiny CFPMD-style reference dir + settings CSV, return (ref_dir, csv)."""
+    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
+    ref = run_nvt_md(
+        atoms, EMT(), temperature_kelvin=300, n_steps=80, record_interval=1
+    )
+    sys_dir = tmp_path / "ref" / "bulkCu_300K_test"
+    sys_dir.mkdir(parents=True)
+    ase.io.write(sys_dir / "traj.extxyz", ref)
+    csv = tmp_path / "settings.csv"
+    csv.write_text("System,temperature,stride,dt,padding\nbulkCu,300,1,1,32\n")
+    return str(tmp_path / "ref"), str(csv)
+
+
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
+    """Both modes return one row per system with all metric columns. A dry run writes
+    nothing; a full run writes a per-system CSV + a rollout it reuses on re-run.
+    """
+    ref_dir, settings_csv = make_reference_dir(tmp_path)
+    out_dir = tmp_path / "out"
+
+    def run(*, dry: bool = False) -> pd.DataFrame:
+        return run_md_benchmark(
+            calculator=EMT(),
+            model_key="emt",
+            out_dir=str(out_dir),
+            ref_dir=ref_dir,
+            settings_csv=settings_csv,
+            n_steps=20,
+            time_step_fs=1,
+            record_interval=1,
+            dry_run=dry,
+        )
+
+    df_md = run(dry=dry_run)
+    assert list(df_md.index) == ["bulkCu_300K_test"]
+    metric_cols = {"rdf_error", "vdos_error", "energy_rmse", "force_rmse"}
+    assert metric_cols <= set(df_md.columns)
+
+    if dry_run:
+        assert not out_dir.exists()  # dry run must not write outputs
+        return
+
+    assert (out_dir / "emt-md-metrics.csv.gz").is_file()
+    rollout = out_dir / "bulkCu_300K_test-nvt-emt.extxyz"
+    assert rollout.is_file()
+    # second run reuses the existing rollout instead of recomputing
+    mtime = rollout.stat().st_mtime
+    run()
+    assert rollout.stat().st_mtime == mtime
+
+
+def test_load_calculator() -> None:
+    """Emt loads with no extra deps; unknown keys raise a helpful error."""
+    assert isinstance(load_calculator("emt"), EMT)
+    with pytest.raises(ValueError, match="Unknown model_key"):
+        load_calculator("does-not-exist")
+
+
+def test_md_model_uv_run_cmd() -> None:
+    """uv_run_cmd interleaves --with/--find-links around the script and its args."""
+    cmd = MD_MODELS["orb_v3"].uv_run_cmd("models/run_md.py", "--model", "orb_v3")
+    assert cmd[:2] == ["uv", "run"]
+    assert cmd[-3:] == ["models/run_md.py", "--model", "orb_v3"]
+    deps = [cmd[idx + 1] for idx, tok in enumerate(cmd) if tok == "--with"]
+    assert deps == list(MD_MODELS["orb_v3"].deps)
+    # a model with find_links must emit a --find-links token per URL
+    fairchem = MD_MODELS["eqv2_s_dens_mp"]
+    links_cmd = fairchem.uv_run_cmd("models/run_md.py", "--model", "eqv2_s_dens_mp")
+    links = [
+        links_cmd[idx + 1] for idx, tok in enumerate(links_cmd) if tok == "--find-links"
+    ]
+    assert links == list(fairchem.find_links)
+
+
+@pytest.mark.parametrize("model_key", [key for key in MD_MODELS if key != "emt"])
+def test_md_model_keys_are_valid_enum_members(model_key: str) -> None:
+    """Every registered model (besides the emt debug entry) must map to a Model so
+    metrics can be written to the right YAML.
+    """
+    assert Model.from_ref(model_key).name == model_key

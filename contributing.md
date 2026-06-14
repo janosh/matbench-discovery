@@ -240,6 +240,16 @@ matbench-discovery-root
 
 You can include arbitrary other supporting files like metadata and model features (below 10MB total to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and share the link in your PR description.
 
+The molecular dynamics task does not need a per-model script. Instead register your model's ASE calculator and its `uv` dependencies in [`matbench_discovery/md_models.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/md_models.py), then run it through the shared runner (which auto-downloads the CFPMD-26 reference set):
+
+```sh
+# smoke-test the pipeline in seconds, then launch the full 20 ps NVT benchmark
+uv run --with <your-deps> models/run_md.py --model <model_key> --dry-run
+uv run --with <your-deps> models/run_md.py --model <model_key> --write-yaml
+# or let the runner print the exact uv command for your model:
+uv run models/run_md.py --print-cmd --model <model_key>
+```
+
 Add the model to the `Model` enum in [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/57d0d0c8a14cd3/matbench_discovery/enums.py#L274) pointing to the correct metadata file.
 
 > [!WARNING]
