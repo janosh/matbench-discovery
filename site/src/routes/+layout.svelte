@@ -3,6 +3,7 @@
   import { page } from '$app/state'
   import { Footer } from '$lib'
   import { MODELS } from '$lib/models.svelte'
+  import MODELING_TASKS from '$pkg/modeling-tasks.yml'
   import pkg from '$site/package.json'
   import type { Snippet } from 'svelte'
   import { CmdPalette, CopyButton, GitHubCorner, Nav, ThemeToggle } from 'svelte-multiselect'
@@ -14,12 +15,22 @@
   let { children }: { children?: Snippet } = $props()
   let toc_desktop = $state(true)
 
-  const task_routes = Object.keys(import.meta.glob(`./tasks/*/+page.{svelte,md}`))
-    .map((filename) => `/tasks/${filename.split(`/`)[2]}`)
+  // show full task titles from modeling-tasks.yml instead of capitalized URL slugs
+  const task_labels = Object.fromEntries(
+    Object.entries(MODELING_TASKS).map((
+      [key, task],
+    ) => [`/tasks/${key.replaceAll(`_`, `-`)}`, task.label]),
+  )
+  // static (non-[slug]) 2nd-level pages render as dropdowns under their parent route
+  const child_routes = Object.keys(import.meta.glob(`./*/*/+page.{svelte,md}`))
+    .filter((filename) => !filename.includes(`[`))
+    .map((filename) => `/${filename.split(`/`).slice(1, 3).join(`/`)}`)
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`))
     .map((filename) => `/${filename.split(`/`)[1]}`)
-    // render task subpages as a dropdown under /tasks
-    .map((route) => route === `/tasks` ? { href: route, children: task_routes } : route)
+    .map((route) => {
+      const sub_routes = child_routes.filter((child) => child.startsWith(`${route}/`))
+      return sub_routes.length ? { href: route, children: sub_routes } : route
+    })
 
   let url = $derived(page.url.pathname)
   let headingSelector = $derived(
@@ -105,10 +116,16 @@
   routes={[`/`, ...routes.filter((route) => route != `/changelog`), [pkg.paper, `Paper`]]}
   style="margin-block: 1em 0"
   menu_props={{ style: `gap: 1.5em` }}
-  labels={{ '/': `Home`, '/api': `API` }}
-  link_props={{
-    style: `padding: 0 3pt`,
+  labels={{
+    '/': `Home`,
+    '/api': `API`,
+    '/data/sets': `Datasets`,
+    '/data/tmi': `TMI`,
+    '/models/tmi': `TMI`,
+    ...task_labels,
   }}
+  --nav-item-padding="0 3pt"
+  --nav-dropdown-link-padding="2pt 4pt"
   --nav-link-active-color="var(--link-color)"
 >
   <ThemeToggle />
