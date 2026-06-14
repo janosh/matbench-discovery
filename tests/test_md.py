@@ -161,7 +161,8 @@ def make_reference_dir(tmp_path: Path) -> tuple[str, str]:
     sys_dir.mkdir(parents=True)
     ase.io.write(sys_dir / "traj.extxyz", ref)
     csv = tmp_path / "settings.csv"
-    csv.write_text("System,temperature,stride,dt,padding\nbulkCu,300,1,1,32\n")
+    # dt = saved-frame cadence = time_step_fs * record_interval = 0.25 * 1
+    csv.write_text("System,temperature,stride,dt,padding\nbulkCu,300,1,0.25,32\n")
     return str(tmp_path / "ref"), str(csv)
 
 
@@ -204,11 +205,82 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
     assert rollout.stat().st_mtime == mtime
 
 
+def test_run_md_benchmark_no_matching_systems(tmp_path: Path) -> None:
+    """A system filter matching no directory raises a clear error rather than a
+    confusing empty-DataFrame KeyError downstream.
+    """
+    ref_dir, settings_csv = make_reference_dir(tmp_path)
+    with pytest.raises(ValueError, match="No system directories found"):
+        run_md_benchmark(
+            calculator=EMT(),
+            model_key="emt",
+            out_dir=str(tmp_path / "out"),
+            ref_dir=ref_dir,
+            settings_csv=settings_csv,
+            systems=["does_not_exist"],
+        )
+
+
+def test_find_per_system_csvs_prefix_safe(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Per-system CSV discovery should avoid model-prefix and combined-file matches."""
+    from scripts.evals import md as eval_md
+
+    monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))
+    md_dir_old = tmp_path / "models" / "orb" / "2026-06-13-md-nvt"
+    md_dir_new = tmp_path / "models" / "orb" / "2026-06-14-md-nvt"
+    for directory in (md_dir_old, md_dir_new):
+        directory.mkdir(parents=True)
+
+    expected_paths = [
+        f"{md_dir_old}/orb_v2-md-metrics-bulkAg_600K.csv.gz",
+        f"{md_dir_new}/orb_v2-md-metrics-bulkCu_600K.csv.gz",
+    ]
+    ignored_paths = [
+        f"{md_dir_new}/orb_v2-md-metrics.csv.gz",  # combined file, no system suffix
+        f"{md_dir_new}/orb_v2_mptrj-md-metrics-bulkAg_600K.csv.gz",  # prefix collision
+    ]
+    for csv_path in (*expected_paths, *ignored_paths):
+        Path(csv_path).write_text("system,rdf_error\nx,1\n")
+
+    assert eval_md.find_per_system_csvs(Model.orb_v2) == expected_paths
+
+
 def test_load_calculator() -> None:
     """Emt loads with no extra deps; unknown keys raise a helpful error."""
     assert isinstance(load_calculator("emt"), EMT)
     with pytest.raises(ValueError, match="Unknown model_key"):
         load_calculator("does-not-exist")
+
+
+def test_run_md_cli_write_yaml_skips_non_submission_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`--write-yaml` for a debug model with no Model enum entry (emt) must skip the
+    YAML write gracefully instead of crashing on Model.from_ref.
+    """
+    import importlib.util
+    import sys
+
+    from matbench_discovery import ROOT
+
+    spec = importlib.util.spec_from_file_location("run_md", f"{ROOT}/models/run_md.py")
+    assert spec is not None
+    assert spec.loader is not None
+    run_md = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(run_md)
+
+    # avoid the real calculator + rollout pipeline; return metrics calc_md_metrics reads
+    monkeypatch.setattr(run_md, "load_calculator", lambda *_a, **_k: EMT())
+    monkeypatch.setattr(
+        run_md,
+        "run_md_benchmark",
+        lambda **_kwargs: pd.DataFrame({"rdf_error": [1.0], "vdos_error": [2.0]}),
+    )
+    monkeypatch.setattr(sys, "argv", ["run_md", "--model", "emt", "--write-yaml"])
+
+    assert run_md.main() == 0  # would raise ValueError without the non-enum guard
 
 
 def test_md_model_uv_run_cmd() -> None:

@@ -75,7 +75,12 @@ def extract_tar_if_needed(tar_path: str) -> str:
     tmp_dir = f"{extract_dir}.extracting"
     shutil.rmtree(tmp_dir, ignore_errors=True)
     with tarfile.open(tar_path) as archive:
-        archive.extractall(tmp_dir, filter="data")
+        # the "data" extraction filter (PEP 706) only exists in Python 3.11.4+;
+        # older 3.11 patches (allowed by requires-python >=3.11) lack the kwarg
+        if hasattr(tarfile, "data_filter"):
+            archive.extractall(tmp_dir, filter="data")
+        else:
+            archive.extractall(tmp_dir)  # noqa: S202
     os.replace(tmp_dir, extract_dir)
     print(f"Extracted {tar_path!r} to {extract_dir!r}")
     return extract_dir

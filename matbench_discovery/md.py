@@ -241,6 +241,11 @@ def run_md_benchmark(
         for entry in os.scandir(ref_dir)
         if entry.is_dir() and (not systems or entry.name in systems)
     )
+    if not system_dirs:  # clearer than the downstream empty-DataFrame KeyError
+        raise ValueError(
+            f"No system directories found under {ref_dir!r}"
+            + (f" matching {systems=}" if systems else "")
+        )
     if dry_run:  # one system, a few steps, capped reference slice
         system_dirs = system_dirs[:1]
         n_steps = record_interval * 8

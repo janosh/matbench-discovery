@@ -89,7 +89,8 @@ def calc_rdf(
 
     radii = (bin_edges[:-1] + bin_edges[1:]) / 2
     shell_volumes = 4 / 3 * np.pi * np.diff(bin_edges**3)
-    # paper Eq. 4 normalization: ideal-gas pair count per shell, summed over frames
+    # Paper Eq. 4 normalization: rho*N shell volume. The upper-triangle histogram
+    # counts unordered pairs, hence the /2 relative to Eq. 4's ordered i != j sum.
     ideal_counts = n_atoms**2 / 2 * inv_volume_sum * shell_volumes
     return radii, counts / ideal_counts
 
@@ -292,13 +293,15 @@ def calc_pressure_metrics(
 
 
 def calc_combined_error(rdf_error: float, vdos_error: float) -> float:
-    """Error-weighted combination of RDF and VDOS errors (paper Eq. 8) in percent.
+    """Error complement of the paper Eq. 8 combined RDF/VDOS score in percent.
 
-        combined = eps * rdf_error + (1 - eps) * vdos_error
+        combined_score = eps * (100 - rdf_error) + (1 - eps) * (100 - vdos_error)
         eps = rdf_error / (rdf_error + vdos_error)
+        combined_error = 100 - combined_score
 
-    The weight eps assigns greater importance to the observable on which the model
-    performs worse, so a model can't hide a catastrophic VDOS behind a good RDF.
+    This preserves the leaderboard's lower-is-better error convention while using
+    Eq. 8's weighting: poor performance receives more weight, so a model can't hide
+    a catastrophic VDOS behind a good RDF.
     """
     if rdf_error < 0 or vdos_error < 0:
         raise ValueError(
@@ -316,14 +319,8 @@ def calc_energy_force_rmse(
     """Energy (eV/atom) and force (eV/Å) RMSE of calculator single-point predictions
     on reference MD frames carrying DFT energies and forces (paper Eq. 1-2).
 
-    The energy RMSE is mean-subtracted per trajectory: the constant per-atom offset
-    between model and reference energy zeros is removed before computing the RMSE, so
-    it measures how well relative energy *fluctuations* are reproduced rather than the
-    (physically meaningless) absolute-reference mismatch. This matters when reference
-    energies come from a different DFT code than the model's training data, e.g.
-    all-electron FHI-AIMS references vs a PAW-pseudopotential-trained MLIP, where the
-    raw offset can reach hundreds of eV/atom. For a fixed-composition NVT trajectory
-    this equals the standard deviation of the per-atom energy errors.
+    Energies are compared per atom, preserving constant offsets as specified by Eq. 1.
+    This means energy RMSE can be dominated by differing absolute energy references.
     """
     if len(trajectory) == 0:
         raise ValueError("Cannot compute energy/force RMSE of empty trajectory")
@@ -341,7 +338,7 @@ def calc_energy_force_rmse(
         n_force_components += ref_forces.size
 
     return {
-        "energy_rmse": float(np.std(energy_errs_per_atom)),  # offset-invariant
+        "energy_rmse": float(np.sqrt(np.mean(np.square(energy_errs_per_atom)))),
         "force_rmse": float(np.sqrt(force_sq_err_sum / n_force_components)),
     }
 
@@ -432,13 +429,29 @@ def evaluate_md_system(
     return metrics
 
 
+def load_per_system_metrics(csv_paths: "Sequence[str]") -> pd.DataFrame:
+    """Concatenate per-system MD metric CSVs (one row each, as written by parallel
+    single-system runs) into a single DataFrame indexed by system.
+
+    Deduplicates on the system column keeping the last occurrence, so re-running a
+    system (e.g. a timed-out rollout finished in a later job) overrides the earlier
+    row instead of double-counting it.
+    """
+    if not csv_paths:
+        raise ValueError("No per-system metric CSVs given")
+    df_all = pd.concat([pd.read_csv(path) for path in csv_paths], ignore_index=True)
+    if "system" not in df_all:
+        raise ValueError(f"per-system CSVs lack a 'system' column, got {[*df_all]}")
+    return df_all.drop_duplicates(subset="system", keep="last").set_index("system")
+
+
 def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
     """Aggregate per-system MD metric rows (one row per system with a subset of
     PER_SYSTEM_METRIC_COLS columns) into model-level metrics.
 
     Means are taken over systems, skipping NaNs (e.g. systems without stress data).
-    The combined RDF+VDOS error is computed from the model-level mean errors, as in
-    the paper's Pareto analysis.
+    The combined RDF+VDOS error is the lower-is-better complement of the paper's
+    Eq. 8 Pareto score, computed from model-level mean errors.
     """
     metric_cols = [col for col in PER_SYSTEM_METRIC_COLS if col in df_md]
     if not metric_cols:

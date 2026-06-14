@@ -87,12 +87,13 @@ def main() -> int:
 
     from matbench_discovery.enums import Model
 
-    # resolve the arch subdir from the model's YAML path (e.g. orb_v3 -> models/orb);
-    # the emt debug model has no enum entry, so fall back to its key
+    # resolve the submission Model once (None for debug models like emt without an
+    # enum entry); its YAML path gives the arch subdir (orb_v3 -> models/orb)
     try:
-        arch_dir = os.path.dirname(Model.from_ref(args.model).rel_path)
+        model = Model.from_ref(args.model)
     except ValueError:
-        arch_dir = args.model
+        model = None
+    arch_dir = os.path.dirname(model.rel_path) if model else args.model
     out_dir = args.out_dir or f"{module_dir}/{arch_dir}/{today}-md-nvt"
 
     calculator = load_calculator(args.model)
@@ -119,8 +120,13 @@ def main() -> int:
         print(f"  {key}: {val:.4f}" if isinstance(val, float) else f"  {key}: {val}")
 
     if args.write_yaml and not args.dry_run:
-        model = Model.from_ref(args.model)  # raises for non-submission keys like emt
-        csv_path = f"{out_dir}/{args.model}-md-metrics.csv.gz"
+        if model is None:  # debug models like emt have no YAML to write to
+            print(f"Skipping metrics.md write: {args.model!r} is not a Model")
+            return 0
+        # match the suffix run_md_benchmark adds for --systems subset runs so the
+        # YAML pred_file points at the file actually written
+        suffix = f"-{'-'.join(args.systems)}" if args.systems else ""
+        csv_path = f"{out_dir}/{args.model}-md-metrics{suffix}.csv.gz"
         md_metrics.write_metrics_to_yaml(model, model_metrics, pred_file_path=csv_path)
         print(f"Wrote metrics.md to {model.yaml_path}")
     return 0

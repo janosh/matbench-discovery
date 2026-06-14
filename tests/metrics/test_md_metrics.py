@@ -93,20 +93,21 @@ def make_jiggled_frames(
 # fixed cell, and alternating very different volumes (probes per-frame densities)
 @pytest.mark.parametrize("box_lens", [(10,), (10, 16)])
 def test_calc_rdf_ideal_gas_is_flat(box_lens: tuple[float, ...]) -> None:
-    """g(r) of uniformly random positions should fluctuate around 1."""
+    """g(r) of uniformly random positions should match paper Eq. 4 normalization."""
+    rng = np.random.default_rng(seed=0)
+    n_atoms = 64
     frames = [
         Atoms(
-            "Ar64",
-            positions=np_rng.random((64, 3)) * box_len,
-            cell=[box_len] * 3,
-            pbc=True,
+            "Ar64", positions=rng.random((n_atoms, 3)) * box, cell=[box] * 3, pbc=True
         )
-        for _ in range(15)
-        for box_len in box_lens
+        for _ in range(40)
+        for box in box_lens
     ]
     radii, g_r = md_metrics.calc_rdf(frames, n_bins=50)
-    # exclude small-r bins which have few counts and large relative noise
-    np.testing.assert_allclose(g_r[radii > 2].mean(), 1, rtol=0.05)
+    # Paper Eq. 4 uses rho*N, so finite-N ideal gas plateaus at (N - 1) / N.
+    np.testing.assert_allclose(
+        g_r[radii > 2].mean(), (n_atoms - 1) / n_atoms, atol=0.01
+    )
 
 
 def test_calc_rdf_peak_position() -> None:
@@ -373,6 +374,18 @@ def test_calc_pressure_metrics() -> None:
     )
     assert aligned["pressure_mae"] == pytest.approx(10)
 
+    # Awkward cadence ratio: ref dt=0.3, pred dt=0.7 -> common grid every 2.1 fs.
+    # The common timestamps are 0 and 2.1 fs (ref indices 0,7; pred indices 0,3).
+    p_ref_awkward = np.arange(8.0)
+    p_pred_awkward = np.array([100.0, -1.0, -2.0, 107.0])
+    awkward = md_metrics.calc_pressure_metrics(
+        p_ref_awkward,
+        p_pred_awkward,
+        ref_time_step_fs=0.3,
+        pred_time_step_fs=0.7,
+    )
+    assert awkward["pressure_mae"] == pytest.approx(100)
+
 
 # === combined error ===
 
@@ -404,7 +417,7 @@ def test_calc_combined_error(
 
 @pytest.mark.parametrize("force_offset", [0, 0.1, 0.25])
 def test_calc_energy_force_rmse(force_offset: float) -> None:
-    """A constant energy offset must wash out (mean-subtracted); forces map directly."""
+    """Raw per-atom energy RMSE preserves constant offsets; forces map directly."""
     frames = [
         attach_ref_labels(
             Atoms("H2", positions=np_rng.random((2, 3)) * 2, cell=[5] * 3),
@@ -413,20 +426,19 @@ def test_calc_energy_force_rmse(force_offset: float) -> None:
         )
         for _ in range(3)
     ]
-    # pure constant offset of 0.8 eV -> mean-subtracted energy RMSE is exactly 0
     calc = OffsetCalculator(energy_offset=0.8, force_offset=force_offset)
     result = md_metrics.calc_energy_force_rmse(frames, calc)
-    assert result["energy_rmse"] == pytest.approx(0, abs=1e-12)
+    assert result["energy_rmse"] == pytest.approx(0.4, abs=1e-12)
     assert result["force_rmse"] == pytest.approx(abs(force_offset), abs=1e-12)
 
     with pytest.raises(ValueError, match="empty trajectory"):
         md_metrics.calc_energy_force_rmse([], calc)
+    single_frame = md_metrics.calc_energy_force_rmse(frames[:1], calc)
+    assert single_frame["energy_rmse"] == pytest.approx(0.4, abs=1e-12)
 
 
-def test_calc_energy_force_rmse_captures_fluctuations() -> None:
-    """Mean-subtracted energy RMSE must recover the std of per-atom energy errors
-    on top of an arbitrary constant reference offset (e.g. all-electron vs PAW).
-    """
+def test_calc_energy_force_rmse_includes_offsets_and_fluctuations() -> None:
+    """Energy RMSE should follow paper Eq. 1 without subtracting mean offsets."""
     n_atoms = 2
     fluctuations = np.array([0.0, 0.3, -0.3, 0.6, -0.6])  # eV total, varying
     forces = np.zeros((n_atoms, 3))
@@ -439,9 +451,9 @@ def test_calc_energy_force_rmse_captures_fluctuations() -> None:
         atoms.arrays["ref_forces"] = forces
         frames.append(atoms)
 
-    # per-frame error = fluct + 1000; the +1000 offset washes out under mean-subtract
     result = md_metrics.calc_energy_force_rmse(frames, OffsetCalculator(1000))
-    assert result["energy_rmse"] == pytest.approx(np.std(fluctuations) / n_atoms)
+    expected = np.sqrt(np.mean(((fluctuations + 1000) / n_atoms) ** 2))
+    assert result["energy_rmse"] == pytest.approx(expected)
 
 
 # === frame matching and per-system evaluation ===
@@ -543,7 +555,7 @@ def test_evaluate_md_system_with_calculator_adds_rmse() -> None:
         pred_time_step_fs=1,
         calculator=OffsetCalculator(energy_offset=0.8),
     )
-    assert metrics["energy_rmse"] == pytest.approx(0)  # constant offset washes out
+    assert metrics["energy_rmse"] == pytest.approx(0.1)  # 0.8 eV / 8 atoms
     assert metrics["force_rmse"] == pytest.approx(0)
 
     # trajectories shorter than two matched frames should raise
@@ -589,6 +601,26 @@ def test_calc_md_metrics() -> None:
     assert partial == {"rdf_error": 15, "n_systems": 2}
     with pytest.raises(ValueError, match="No recognized MD metric columns"):
         md_metrics.calc_md_metrics(pd.DataFrame({"unrelated": [1]}))
+
+
+def test_load_per_system_metrics(tmp_path: Path) -> None:
+    """Per-system CSVs concat into one frame indexed by system; reruns override."""
+    (tmp_path / "sysA.csv").write_text("system,rdf_error\nsysA,10.0\n")
+    (tmp_path / "sysB.csv").write_text("system,rdf_error\nsysB,20.0\n")
+    # a rerun of sysA with a better value, written later -> must override the first
+    (tmp_path / "sysA_rerun.csv").write_text("system,rdf_error\nsysA,5.0\n")
+
+    paths = [f"{tmp_path}/{name}.csv" for name in ("sysA", "sysB", "sysA_rerun")]
+    df_md = md_metrics.load_per_system_metrics(paths)
+    assert list(df_md.index) == ["sysB", "sysA"]  # sysA dedup'd to its last (rerun) row
+    assert df_md.loc["sysA", "rdf_error"] == 5.0
+    assert df_md.loc["sysB", "rdf_error"] == 20.0
+
+    with pytest.raises(ValueError, match="No per-system metric CSVs given"):
+        md_metrics.load_per_system_metrics([])
+    (tmp_path / "no_sys.csv").write_text("rdf_error\n10.0\n")
+    with pytest.raises(ValueError, match="lack a 'system' column"):
+        md_metrics.load_per_system_metrics([f"{tmp_path}/no_sys.csv"])
 
 
 @pytest.mark.parametrize(
