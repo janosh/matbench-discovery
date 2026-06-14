@@ -1,5 +1,7 @@
 """Plotting functions for analyzing model performance on materials discovery."""
 
+# ruff: noqa: ERA001
+
 import functools
 import math
 from collections import defaultdict

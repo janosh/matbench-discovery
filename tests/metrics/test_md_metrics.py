@@ -3,7 +3,6 @@
 import itertools
 import re
 from pathlib import Path
-from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -12,6 +11,7 @@ from ase import Atoms, units
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.singlepoint import SinglePointCalculator
 
+from matbench_discovery.enums import Model
 from matbench_discovery.metrics import md as md_metrics
 
 np_rng = np.random.default_rng(seed=0)
@@ -643,11 +643,14 @@ def test_load_per_system_metrics(tmp_path: Path) -> None:
     "init_yaml",  # placeholder strings at leaf and intermediate level get replaced
     ["metrics:\n  md: not available\n", "metrics: not available\n"],
 )
-def test_write_metrics_to_yaml(tmp_path: Path, init_yaml: str) -> None:
+def test_write_metrics_to_yaml(
+    tmp_path: Path, init_yaml: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Metrics should be written under metrics.md with units and rounding."""
     yaml_path = tmp_path / "model.yml"
-    yaml_path.write_text(f"model_name: test\n{init_yaml}")
-    model = SimpleNamespace(yaml_path=str(yaml_path))
+    yaml_path.write_text(f"model_name: test\n{init_yaml}", encoding="utf-8")
+    model = Model.mace_mp_0
+    monkeypatch.setattr(Model, "yaml_path", yaml_path)
 
     metrics = {
         "energy_rmse": 0.123456,
@@ -656,14 +659,14 @@ def test_write_metrics_to_yaml(tmp_path: Path, init_yaml: str) -> None:
         "combined_error": 23.456789,
         "n_systems": 17,
     }
+    path = "models/test/md-metrics.csv"
+    url = "https://example.com/md-metrics.csv"
     md_metrics.write_metrics_to_yaml(
-        model,  # ty: ignore[invalid-argument-type]
-        metrics,
-        pred_file_path="models/test/md-metrics.csv",
-        pred_file_url="https://example.com/md-metrics.csv",
+        model, metrics, pred_file_path=path, pred_file_url=url
     )
 
-    text = yaml_path.read_text()
+    # read back as UTF-8 so the Å in the force_rmse unit decodes correctly on Windows
+    text = yaml_path.read_text(encoding="utf-8")
     assert "pred_file: models/test/md-metrics.csv" in text
     assert "pred_file_url: https://example.com/md-metrics.csv" in text
     assert "energy_rmse: 0.1235 # eV/atom" in text
