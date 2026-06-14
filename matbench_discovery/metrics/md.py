@@ -216,6 +216,10 @@ def calc_pressure(stress: np.ndarray) -> float:
 
     Accepts stress in eV/Å³ as Voigt 6-vector [xx, yy, zz, yz, xz, xy] or (3, 3)
     matrix, following ASE conventions.
+
+    Assumes 3D-periodic bulk systems and averages all three diagonal stress
+    components. CFPMD-26 satisfies this; add an explicit branch for slab/2D systems
+    if any are added.
     """
     stress = np.asarray(stress, dtype=float)
     if stress.shape == (6,):

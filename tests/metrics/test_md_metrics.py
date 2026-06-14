@@ -15,6 +15,9 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from matbench_discovery.metrics import md as md_metrics
 
 np_rng = np.random.default_rng(seed=0)
+ANISOTROPIC_STRESS_VOIGT = np.array(
+    [-1.0 * units.GPa, -2.0 * units.GPa, -6.0 * units.GPa, 0, 0, 0]
+)
 
 
 class OffsetCalculator(Calculator):
@@ -318,16 +321,29 @@ def test_calc_vdos_error_invalid_spectra(vdos_ref: np.ndarray, err_msg: str) -> 
 # === pressure ===
 
 
-def test_calc_pressure_voigt_vs_matrix() -> None:
-    """Voigt and 3x3 stress representations should give identical pressures."""
-    pressure_gpa = 2.5
-    stress_matrix = -pressure_gpa * units.GPa * np.eye(3)
-    stress_voigt = np.array([*np.diag(stress_matrix), 0, 0, 0])
+@pytest.mark.parametrize(
+    ("stress", "expected_pressure", "err_msg"),
+    [
+        (-2.5 * units.GPa * np.eye(3), 2.5, None),
+        (np.array([-2.5 * units.GPa] * 3 + [0, 0, 0]), 2.5, None),
+        # Anisotropic stress distinguishes the 3D trace from a 2D slab formula,
+        # which would give 1.5 GPa here.
+        (ANISOTROPIC_STRESS_VOIGT, 3, None),
+        (np.zeros(5), None, re.escape("shape (6,) or (3, 3)")),
+    ],
+    ids=["matrix", "voigt", "anisotropic-3d-trace", "invalid-shape"],
+)
+def test_calc_pressure(
+    stress: np.ndarray, expected_pressure: float | None, err_msg: str | None
+) -> None:
+    """Pressure should accept ASE stress formats and average the full 3D trace."""
+    if err_msg:
+        with pytest.raises(ValueError, match=err_msg):
+            md_metrics.calc_pressure(stress)
+        return
 
-    assert md_metrics.calc_pressure(stress_matrix) == pytest.approx(pressure_gpa)
-    assert md_metrics.calc_pressure(stress_voigt) == pytest.approx(pressure_gpa)
-    with pytest.raises(ValueError, match=re.escape("shape (6,) or (3, 3)")):
-        md_metrics.calc_pressure(np.zeros(5))
+    assert expected_pressure is not None
+    assert md_metrics.calc_pressure(stress) == pytest.approx(expected_pressure)
 
 
 def test_get_trajectory_pressures() -> None:

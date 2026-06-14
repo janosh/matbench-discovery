@@ -1,13 +1,16 @@
 """Tests for molecular dynamics rollout helpers."""
 
+import os
 from pathlib import Path
 
 import ase.io
 import numpy as np
 import pandas as pd
 import pytest
+from ase import Atoms
 from ase.build import bulk
 from ase.calculators.emt import EMT
+from ase.md.nose_hoover_chain import NoseHooverChainNVT
 
 from matbench_discovery.enums import Model
 from matbench_discovery.md import (
@@ -17,6 +20,7 @@ from matbench_discovery.md import (
     resolve_frame_interval,
     run_md_benchmark,
     run_nvt_md,
+    validate_pred_trajectory,
 )
 from matbench_discovery.md_models import MD_MODELS, load_calculator
 from matbench_discovery.metrics import md as md_metrics
@@ -46,6 +50,7 @@ def test_load_frame_intervals(tmp_path: Path) -> None:
         "System,temperature,stride,dt,padding\n"
         "bulkAg,600,5,1,32\n"
         "anthracene,293,1,0.5,320\n"
+        "sample,295.5,1,0.75,32\n"
         "bulkAg_600K_extra,600,1,9,32\n"
         "bulkCuAu,500,5,2,32\n"
     )
@@ -53,10 +58,12 @@ def test_load_frame_intervals(tmp_path: Path) -> None:
     assert intervals == {
         "bulkAg_600K": 1.0,
         "anthracene_293K": 0.5,
+        "sample_295.5K": 0.75,
         "bulkAg_600K_extra_600K": 9.0,
         "bulkCuAu_500K": 2.0,
     }
     assert resolve_frame_interval("bulkAg_600K_Kapil", intervals) == 1.0
+    assert resolve_frame_interval("sample_295.5K_Kapil", intervals) == 0.75
     assert resolve_frame_interval("bulkAg_600K_extra_600K_Kapil", intervals) == 9.0
     assert resolve_frame_interval("bulkAg_600K2_Kapil", intervals) is None
     # dir names may use '-' (not '_') as the delimiter after the '<system>_<temp>K'
@@ -205,11 +212,85 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
     assert rollout.stat().st_mtime == mtime
 
 
-def test_run_md_benchmark_no_matching_systems(tmp_path: Path) -> None:
-    """A system filter matching no directory raises a clear error rather than a
-    confusing empty-DataFrame KeyError downstream.
+def test_run_md_benchmark_resume_matches_single_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """End-to-end resume (the cluster timeout/requeue cycle): a rollout interrupted at
+    several checkpoints and resumed across reruns of run_md_benchmark yields the same
+    rollout and the same per-system metrics as a single uninterrupted run.
     """
+    import functools
+
+    import matbench_discovery.md as md_mod
+
     ref_dir, settings_csv = make_reference_dir(tmp_path)
+
+    def run(out_dir: Path) -> pd.DataFrame:
+        """Run the tiny benchmark with explicit args (keeps ty from widening types)."""
+        return run_md_benchmark(
+            calculator=EMT(),
+            model_key="emt",
+            out_dir=str(out_dir),
+            ref_dir=ref_dir,
+            settings_csv=settings_csv,
+            n_steps=20,  # 20 // 1 + 1 = 21 frames (odd -> final skips checkpoint)
+            time_step_fs=1,
+            record_interval=1,
+        )
+
+    single = run(tmp_path / "single")
+
+    # checkpoint every 2 frames so the short run actually checkpoints, and raise after
+    # the first 3 checkpoint writes to mimic repeated job timeouts
+    real_resumable = md_mod.run_nvt_md_resumable
+    monkeypatch.setattr(
+        md_mod,
+        "run_nvt_md_resumable",
+        functools.partial(real_resumable, checkpoint_every_n_frames=2),
+    )
+    saves = _fail_save_checkpoint_after(monkeypatch)
+
+    out_dir = tmp_path / "resumed"
+    resumed = None
+    for _attempt in range(8):
+        try:
+            resumed = run(out_dir)
+            break
+        except RuntimeError:
+            continue
+    assert resumed is not None, "resume loop did not complete"
+    assert saves["n"] >= 3, "test did not exercise interruptions"
+
+    numeric_cols = single.select_dtypes("number").columns
+    for col in numeric_cols:
+        np.testing.assert_allclose(
+            resumed[col].to_numpy(),
+            single[col].to_numpy(),
+            rtol=0,
+            atol=1e-9,
+            equal_nan=True,
+            err_msg=f"metric {col} differs after resume",
+        )
+    # completed rollout promoted, staged artifacts removed
+    rollout = out_dir / "bulkCu_300K_test-nvt-emt.extxyz"
+    assert rollout.is_file()
+    assert not (out_dir / "bulkCu_300K_test-nvt-emt.part.extxyz").is_file()
+    assert not (out_dir / "bulkCu_300K_test-nvt-emt.extxyz.ckpt.npz").is_file()
+    assert len(read_trajectory(str(rollout))) == 21
+
+
+def test_run_md_benchmark_rejects_invalid_inputs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Invalid benchmark inputs should fail clearly before downstream errors.
+
+    Covers an empty system selection (would otherwise become an empty-DataFrame
+    KeyError) and an empty reference trajectory (would otherwise index frame 0).
+    """
+    import matbench_discovery.md as md_mod
+
+    ref_dir, settings_csv = make_reference_dir(tmp_path)
+
     with pytest.raises(ValueError, match="No system directories found"):
         run_md_benchmark(
             calculator=EMT(),
@@ -218,6 +299,19 @@ def test_run_md_benchmark_no_matching_systems(tmp_path: Path) -> None:
             ref_dir=ref_dir,
             settings_csv=settings_csv,
             systems=["does_not_exist"],
+        )
+
+    monkeypatch.setattr(md_mod, "read_trajectory", lambda *_args, **_kwargs: [])
+    with pytest.raises(ValueError, match="empty or corrupted"):
+        run_md_benchmark(
+            calculator=EMT(),
+            model_key="emt",
+            out_dir=str(tmp_path / "out"),
+            ref_dir=ref_dir,
+            settings_csv=settings_csv,
+            n_steps=20,
+            time_step_fs=1,
+            record_interval=1,
         )
 
 
@@ -242,14 +336,216 @@ def test_find_per_system_csvs_prefix_safe(
         f"{md_dir_new}/orb_v2_mptrj-md-metrics-bulkAg_600K.csv.gz",  # prefix collision
     ]
     for csv_path in (*expected_paths, *ignored_paths):
-        Path(csv_path).write_text("system,rdf_error\nx,1\n")
+        pd.DataFrame({"system": ["x"], "rdf_error": [1]}).to_csv(csv_path, index=False)
+    multi_system_path = f"{md_dir_new}/orb_v2-md-metrics-bulkAg_600K-bulkCu_600K.csv.gz"
+    pd.DataFrame(
+        {"system": ["bulkAg_600K", "bulkCu_600K"], "rdf_error": [1, 2]}
+    ).to_csv(multi_system_path, index=False)
 
     assert eval_md.find_per_system_csvs(Model.orb_v2) == expected_paths
 
 
-def test_load_calculator() -> None:
-    """Emt loads with no extra deps; unknown keys raise a helpful error."""
+def test_validate_pred_trajectory(tmp_path: Path) -> None:
+    """A complete consistent rollout validates; truncated/short/NaN/wrong-step/
+    mismatched-atoms files return None so the caller recomputes instead of silently
+    evaluating a corrupt or shorter trajectory.
+    """
+    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
+    frames = run_nvt_md(
+        atoms, EMT(), temperature_kelvin=300, n_steps=40, record_interval=10
+    )
+    assert len(frames) == 5  # 40 // 10 + 1
+    good = tmp_path / "pred.extxyz"
+    ase.io.write(good, frames)
+
+    def validate(
+        path: Path, *, expected: int = 5, ref: Atoms = atoms
+    ) -> list[Atoms] | None:
+        return validate_pred_trajectory(
+            str(path), expected_frames=expected, ref_atoms=ref, record_interval=10
+        )
+
+    valid = validate(good)
+    assert valid is not None
+    assert len(valid) == 5
+
+    assert validate(good, expected=6) is None  # frame-count mismatch
+    assert validate(tmp_path / "missing.extxyz") is None  # unreadable
+
+    truncated = tmp_path / "trunc.extxyz"
+    ase.io.write(truncated, frames[:3])
+    assert validate(truncated) is None  # too few frames
+
+    assert validate(good, ref=bulk("Al", cubic=True) * (2, 2, 2)) is None  # symbols
+
+    for name, mutate in {
+        "nan": lambda fs: fs[2].positions.__setitem__((0, 0), np.nan),
+        "step": lambda fs: fs[2].info.__setitem__("md_step", 999),
+    }.items():
+        bad_frames = [frame.copy() for frame in frames]
+        mutate(bad_frames)
+        bad_path = tmp_path / f"{name}.extxyz"
+        ase.io.write(bad_path, bad_frames)
+        assert validate(bad_path) is None, f"{name} should fail validation"
+
+
+def test_nvt_checkpoint_state_attrs() -> None:
+    """Guard: ASE NoseHooverChainNVT still exposes the private state attributes the
+    checkpoint relies on, so an ASE upgrade that renames them fails loudly here.
+    """
+    from matbench_discovery.md import _init_nvt_dynamics, _nvt_state_attrs
+
+    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
+    atoms.calc = EMT()
+    dynamics = _init_nvt_dynamics(
+        atoms, temperature_kelvin=300, time_step_fs=0.25, thermostat_time_scale_fs=25
+    )
+    state = _nvt_state_attrs(dynamics)  # raises RuntimeError if ASE renamed attrs
+    assert len(state) == 4
+    assert all(isinstance(array, np.ndarray) for array in state)
+
+
+def _fail_save_checkpoint_after(
+    monkeypatch: pytest.MonkeyPatch, *, kills: int = 3
+) -> dict[str, int]:
+    """Make _save_checkpoint raise after its first ``kills`` writes (simulating cluster
+    timeouts that requeue the job), then succeed. Returns a dict tracking write count.
+    """
+    import matbench_discovery.md as md_mod
+
+    orig_save = md_mod._save_checkpoint  # noqa: SLF001
+    saves = {"n": 0}
+
+    def killing_save(
+        ckpt_path: str,
+        dynamics: NoseHooverChainNVT,
+        *,
+        n_steps: int,
+        n_frames: int,
+        record_interval: int,
+        time_step_fs: float,
+        temperature_kelvin: float,
+        thermostat_time_scale_fs: float,
+        seed: int,
+    ) -> None:
+        orig_save(
+            ckpt_path,
+            dynamics,
+            n_steps=n_steps,
+            n_frames=n_frames,
+            record_interval=record_interval,
+            time_step_fs=time_step_fs,
+            temperature_kelvin=temperature_kelvin,
+            thermostat_time_scale_fs=thermostat_time_scale_fs,
+            seed=seed,
+        )
+        saves["n"] += 1
+        if saves["n"] <= kills:
+            raise RuntimeError("simulated timeout")
+
+    monkeypatch.setattr(md_mod, "_save_checkpoint", killing_save)
+    return saves
+
+
+def test_run_nvt_md_resume_reproduces(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A rollout interrupted at several checkpoints and resumed reproduces an
+    uninterrupted run frame-for-frame (atol 1e-14), with no duplicate or missing
+    frames.
+    """
+    from matbench_discovery.md import run_nvt_md_resumable
+
+    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
+    run_kwargs = {
+        "temperature_kelvin": 300,
+        "n_steps": 60,  # 60 // 10 + 1 = 7 frames (odd -> last frame skips checkpoint)
+        "record_interval": 10,
+        "checkpoint_every_n_frames": 2,
+        "progress_interval": 0,
+    }
+    reference = run_nvt_md_resumable(
+        atoms, EMT(), out_path=str(tmp_path / "ref.extxyz"), **run_kwargs
+    )
+    assert len(reference) == 7
+
+    # simulate timeouts: raise after each of the first 3 checkpoint writes, then let
+    # the run finish; the outer loop reruns (resuming) until it completes
+    saves = _fail_save_checkpoint_after(monkeypatch)
+
+    out_path = str(tmp_path / "out.extxyz")
+    resumed = None
+    for _attempt in range(8):  # bounded resume loop
+        try:
+            resumed = run_nvt_md_resumable(
+                atoms, EMT(), out_path=out_path, **run_kwargs
+            )
+            break
+        except RuntimeError:
+            continue
+    assert resumed is not None, "resume loop did not complete"
+    assert saves["n"] >= 3, "test did not exercise interruptions"
+
+    assert len(resumed) == len(reference)
+    for frame, ref_frame in zip(resumed, reference, strict=True):
+        assert frame.info["md_step"] == ref_frame.info["md_step"]
+        np.testing.assert_allclose(
+            frame.positions, ref_frame.positions, rtol=0, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            frame.get_velocities(), ref_frame.get_velocities(), rtol=0, atol=1e-14
+        )
+    # staged artifacts cleaned up on completion
+    assert not os.path.isfile(f"{tmp_path}/out.part.extxyz")
+    assert not os.path.isfile(f"{out_path}.ckpt.npz")
+
+
+def test_run_nvt_md_resumable_ignores_corrupt_checkpoint(tmp_path: Path) -> None:
+    """A corrupt/foreign checkpoint must be ignored (fail closed) and the rollout
+    recomputed from scratch rather than restored into a bad state.
+    """
+    from matbench_discovery.md import run_nvt_md_resumable
+
+    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
+    out_path = str(tmp_path / "out.extxyz")
+    (tmp_path / "out.extxyz.ckpt.npz").write_bytes(b"not a real npz checkpoint")
+    (tmp_path / "out.part.extxyz").write_text("garbage not extxyz\n")
+
+    frames = run_nvt_md_resumable(
+        atoms,
+        EMT(),
+        out_path=out_path,
+        temperature_kelvin=300,
+        n_steps=30,
+        record_interval=10,
+        progress_interval=0,
+    )
+    assert len(frames) == 4  # 30 // 10 + 1, recomputed cleanly
+    assert os.path.isfile(out_path)
+
+
+def test_load_calculator(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Emt loads with no extra deps; dtype is ignored by models that don't declare it;
+    unknown keys raise a helpful error.
+    """
+    from matbench_discovery import md_models
+
     assert isinstance(load_calculator("emt"), EMT)
+    assert isinstance(load_calculator("emt", dtype="float32"), EMT)  # dtype ignored
+
+    seen_dtype = ""
+
+    def dtype_aware(device: str, dtype: str = "float64") -> EMT:  # noqa: ARG001
+        nonlocal seen_dtype
+        seen_dtype = dtype
+        return EMT()
+
+    monkeypatch.setitem(
+        md_models.MD_MODELS, "mace_mp_0", md_models.MdModel(dtype_aware)
+    )
+    load_calculator("mace_mp_0", device="cpu", dtype="float32")
+    assert seen_dtype == "float32"
+
     with pytest.raises(ValueError, match="Unknown model_key"):
         load_calculator("does-not-exist")
 
@@ -260,16 +556,9 @@ def test_run_md_cli_write_yaml_skips_non_submission_model(
     """`--write-yaml` for a debug model with no Model enum entry (emt) must skip the
     YAML write gracefully instead of crashing on Model.from_ref.
     """
-    import importlib.util
     import sys
 
-    from matbench_discovery import ROOT
-
-    spec = importlib.util.spec_from_file_location("run_md", f"{ROOT}/models/run_md.py")
-    assert spec is not None
-    assert spec.loader is not None
-    run_md = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(run_md)
+    from models import run_md
 
     # avoid the real calculator + rollout pipeline; return metrics calc_md_metrics reads
     monkeypatch.setattr(run_md, "load_calculator", lambda *_a, **_k: EMT())
@@ -281,6 +570,40 @@ def test_run_md_cli_write_yaml_skips_non_submission_model(
     monkeypatch.setattr(sys, "argv", ["run_md", "--model", "emt", "--write-yaml"])
 
     assert run_md.main() == 0  # would raise ValueError without the non-enum guard
+
+
+def test_run_md_cli_rejects_partial_write_yaml(monkeypatch: pytest.MonkeyPatch) -> None:
+    """--write-yaml on a --systems subset must error before the rollout pipeline."""
+    import sys
+
+    from models import run_md
+
+    argv = ["run_md", "--model", "mace_mp_0", "--write-yaml", "--systems", "bulkAu"]
+    monkeypatch.setattr(sys, "argv", argv)
+    with pytest.raises(SystemExit):  # parser.error exits before the rollout pipeline
+        run_md.main()
+
+
+def test_md_evals_skips_incomplete_coverage(monkeypatch: pytest.MonkeyPatch) -> None:
+    """scripts/evals/md.py must not write model YAML from incomplete coverage."""
+    from scripts.evals import md as eval_md
+
+    monkeypatch.setattr(eval_md.cli_args, "models", [Model.mace_mp_0])
+    monkeypatch.setattr(eval_md, "find_per_system_csvs", lambda _m: ["/tmp/sysA.csv"])
+    monkeypatch.setattr(
+        eval_md.md_metrics,
+        "load_per_system_metrics",
+        lambda _paths: pd.DataFrame(
+            {"rdf_error": [1.0]}, index=pd.Index(["sysA"], name="system")
+        ),
+    )
+    monkeypatch.setattr(eval_md, "expected_systems", lambda: {"sysA", "sysB", "sysC"})
+
+    def _fail_write(*_a: object, **_k: object) -> None:
+        raise AssertionError("must not write YAML on incomplete coverage")
+
+    monkeypatch.setattr(eval_md.md_metrics, "write_metrics_to_yaml", _fail_write)
+    assert eval_md.main() == 1  # nothing evaluated -> exit 1, no YAML written
 
 
 def test_md_model_uv_run_cmd() -> None:

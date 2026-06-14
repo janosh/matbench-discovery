@@ -17,7 +17,7 @@ from matbench_discovery.remote.fetch import (
 
 
 def test_extract_tar_if_needed(tmp_path: Path) -> None:
-    """Tar archives should extract once into a sibling dir and be reused after."""
+    """Tar archives extract once and non-.tar paths fail before extraction."""
     import tarfile
 
     payload = tmp_path / "payload" / "sub_dir" / "file.txt"
@@ -34,6 +34,11 @@ def test_extract_tar_if_needed(tmp_path: Path) -> None:
     # repeated calls reuse the existing extraction, even if the tar is gone
     os.remove(tar_path)
     assert extract_tar_if_needed(str(tar_path)) == extract_dir
+
+    zip_path = tmp_path / "archive.zip"
+    zip_path.write_text("not a tar")
+    with pytest.raises(ValueError, match=r"Expected a \.tar file"):
+        extract_tar_if_needed(str(zip_path))
 
 
 def make_mock_response(content: bytes, status_code: int = 200) -> requests.Response:

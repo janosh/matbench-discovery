@@ -9,8 +9,10 @@ import contextlib
 import os
 import re
 import time
+import zipfile
 from glob import glob
 
+import ase
 import ase.io
 import numpy as np
 import pandas as pd
@@ -40,7 +42,7 @@ def load_frame_intervals(csv_path: str) -> dict[str, float]:
     'bulkAg_600K_Kapil' by prefix against the returned keys.
     """
     return {
-        f"{row['System']}_{int(row['temperature'])}K": float(row["dt"])
+        f"{row['System']}_{float(row['temperature']):g}K": float(row["dt"])
         for _, row in pd.read_csv(csv_path).iterrows()
     }
 
@@ -126,49 +128,306 @@ def run_nvt_md(
     MaxwellBoltzmannDistribution(
         atoms, temperature_K=temperature_kelvin, rng=np.random.default_rng(seed)
     )
-    dynamics = NoseHooverChainNVT(
+    dynamics = _init_nvt_dynamics(
+        atoms,
+        temperature_kelvin=temperature_kelvin,
+        time_step_fs=time_step_fs,
+        thermostat_time_scale_fs=thermostat_time_scale_fs,
+    )
+
+    frames: list[Atoms] = []
+    # ASE calls observers at step 0 and every record_interval steps thereafter
+    dynamics.attach(
+        lambda: frames.append(_snapshot_frame(atoms, dynamics.nsteps)),
+        interval=record_interval,
+    )
+    _attach_progress_logger(dynamics, n_steps=n_steps, interval=progress_interval)
+
+    dynamics.run(n_steps)
+    return frames
+
+
+def _init_nvt_dynamics(
+    atoms: Atoms,
+    *,
+    temperature_kelvin: float,
+    time_step_fs: float,
+    thermostat_time_scale_fs: float,
+) -> NoseHooverChainNVT:
+    """Construct the Nose-Hoover chain NVT integrator (velocities set by caller)."""
+    return NoseHooverChainNVT(
         atoms,
         timestep=time_step_fs * units.fs,
         temperature_K=temperature_kelvin,
         tdamp=thermostat_time_scale_fs * units.fs,
     )
 
-    frames: list[Atoms] = []
 
-    def record_frame() -> None:
-        """Snapshot the current state with results attached."""
-        results = {
-            "energy": atoms.get_potential_energy(),
-            "forces": atoms.get_forces(),
-        }
-        with contextlib.suppress(PropertyNotImplementedError):
-            results["stress"] = atoms.get_stress(voigt=True)
-        frame = atoms.copy()
-        frame.info["md_step"] = dynamics.nsteps
-        frame.calc = SinglePointCalculator(frame, **results)
-        frames.append(frame)
+def _snapshot_frame(atoms: Atoms, md_step: int) -> Atoms:
+    """Copy of the current state with energy/forces/(stress) + velocities attached."""
+    results = {"energy": atoms.get_potential_energy(), "forces": atoms.get_forces()}
+    with contextlib.suppress(PropertyNotImplementedError):
+        results["stress"] = atoms.get_stress(voigt=True)
+    frame = atoms.copy()
+    frame.info["md_step"] = md_step
+    frame.calc = SinglePointCalculator(frame, **results)
+    return frame
 
-    # ASE calls observers at step 0 and every record_interval steps thereafter
-    dynamics.attach(record_frame, interval=record_interval)
 
-    if progress_interval > 0:
-        start_time = time.perf_counter()
+def _attach_progress_logger(
+    dynamics: NoseHooverChainNVT, *, n_steps: int, interval: int
+) -> None:
+    """Attach a throughput + ETA logger every ``interval`` steps (0 disables)."""
+    if interval <= 0:
+        return
+    start_time = time.perf_counter()
 
-        def log_progress() -> None:
-            """Print MD throughput and remaining-time estimate."""
-            if (steps_done := dynamics.nsteps) == 0:
-                return
-            steps_per_sec = steps_done / (time.perf_counter() - start_time)
-            eta_min = (n_steps - steps_done) / steps_per_sec / 60
-            print(
-                f"MD step {steps_done:,}/{n_steps:,}, {steps_per_sec:.1f} steps/s, "
-                f"ETA {eta_min:.1f} min",
-                flush=True,
+    def log_progress() -> None:
+        if (steps_done := dynamics.nsteps) == 0:
+            return
+        steps_per_sec = steps_done / (time.perf_counter() - start_time)
+        eta_min = (n_steps - steps_done) / steps_per_sec / 60
+        print(
+            f"MD step {steps_done:,}/{n_steps:,}, {steps_per_sec:.1f} steps/s, "
+            f"ETA {eta_min:.1f} min",
+            flush=True,
+        )
+
+    dynamics.attach(log_progress, interval=interval)
+
+
+# === crash-safe checkpointing for resumable rollouts ===
+# NoseHooverChainNVT is deterministic after the seeded velocity init (no per-step RNG),
+# so its full state is these five fields; restoring them reproduces an uninterrupted
+# run to ~1e-14. Schema-tagged + ASE-version-gated so a renamed attr or upgrade fails
+# closed (recompute) rather than silently corrupting trajectories.
+CHECKPOINT_SCHEMA = 1
+
+
+def _nvt_state_attrs(
+    dynamics: NoseHooverChainNVT,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """The integrator's mutable state arrays; raises if ASE renamed the attributes."""
+    try:
+        thermostat = dynamics._thermostat  # noqa: SLF001
+        state = dynamics._q, dynamics._p, thermostat._eta, thermostat._p_eta  # noqa: SLF001
+    except AttributeError as exc:
+        raise RuntimeError(
+            f"ASE {ase.__version__} NoseHooverChainNVT state attributes changed "
+            f"({exc}); MD checkpoint/resume needs updating"
+        ) from exc
+    return state
+
+
+def _save_checkpoint(
+    ckpt_path: str,
+    dynamics: NoseHooverChainNVT,
+    *,
+    n_steps: int,
+    n_frames: int,
+    record_interval: int,
+    time_step_fs: float,
+    temperature_kelvin: float,
+    thermostat_time_scale_fs: float,
+    seed: int,
+) -> None:
+    """Atomically write the integrator state + run metadata to ``ckpt_path``."""
+    pos, mom, eta, p_eta = _nvt_state_attrs(dynamics)
+    tmp_path = f"{ckpt_path}.tmp"
+    with open(tmp_path, mode="wb") as file:
+        np.savez(
+            file,
+            schema=CHECKPOINT_SCHEMA,
+            ase_version=ase.__version__,
+            nsteps=dynamics.nsteps,
+            n_steps=n_steps,
+            n_frames=n_frames,
+            q=pos,
+            p=mom,
+            eta=eta,
+            p_eta=p_eta,
+            record_interval=record_interval,
+            time_step_fs=time_step_fs,
+            temperature_kelvin=temperature_kelvin,
+            thermostat_time_scale_fs=thermostat_time_scale_fs,
+            seed=seed,
+            symbols=np.array(dynamics.atoms.get_chemical_symbols()),
+            cell=dynamics.atoms.cell.array,
+            pbc=dynamics.atoms.pbc,
+        )
+    os.replace(tmp_path, ckpt_path)
+
+
+def _load_checkpoint(
+    ckpt_path: str,
+    *,
+    atoms: Atoms,
+    n_steps: int,
+    record_interval: int,
+    time_step_fs: float,
+    temperature_kelvin: float,
+    thermostat_time_scale_fs: float,
+    seed: int,
+) -> dict[str, np.ndarray] | None:
+    """Load a checkpoint if present, readable, schema/ASE/parameter-matched; else None
+    (so the caller recomputes from scratch rather than resuming a stale/foreign state).
+    """
+    if not os.path.isfile(ckpt_path):
+        return None
+    try:
+        with np.load(ckpt_path, allow_pickle=False) as data:
+            ckpt = {key: data[key] for key in data.files}
+    except (OSError, ValueError, EOFError, zipfile.BadZipFile) as exc:
+        print(f"  ignoring unreadable checkpoint {ckpt_path}: {exc}")
+        return None
+
+    target_frames = n_steps // record_interval + 1
+    try:
+        nsteps = int(ckpt["nsteps"])
+        n_frames = int(ckpt["n_frames"])
+        consistent = (
+            int(ckpt["schema"]) == CHECKPOINT_SCHEMA
+            and str(ckpt["ase_version"]) == ase.__version__
+            and int(ckpt["record_interval"]) == record_interval
+            and float(ckpt["time_step_fs"]) == time_step_fs
+            and float(ckpt["temperature_kelvin"]) == temperature_kelvin
+            and float(ckpt["thermostat_time_scale_fs"]) == thermostat_time_scale_fs
+            and int(ckpt["seed"]) == seed
+            and nsteps <= n_steps
+            and n_frames <= target_frames
+            and nsteps == (n_frames - 1) * record_interval
+            and list(ckpt["symbols"]) == atoms.get_chemical_symbols()
+            and np.allclose(ckpt["cell"], atoms.cell.array)
+            and bool((ckpt["pbc"] == atoms.pbc).all())
+        )
+    except (KeyError, TypeError, ValueError):
+        consistent = False
+    if not consistent:
+        print(f"  ignoring checkpoint {ckpt_path}: schema/version/parameters mismatch")
+        return None
+    return ckpt
+
+
+def _restore_nvt_state(
+    dynamics: NoseHooverChainNVT, ckpt: dict[str, np.ndarray]
+) -> None:
+    """Restore integrator + thermostat + atoms state from a loaded checkpoint."""
+    _nvt_state_attrs(dynamics)  # validate the attributes exist before assigning
+    dynamics._q = ckpt["q"]  # noqa: SLF001
+    dynamics._p = ckpt["p"]  # noqa: SLF001
+    dynamics._thermostat._eta = ckpt["eta"]  # noqa: SLF001
+    dynamics._thermostat._p_eta = ckpt["p_eta"]  # noqa: SLF001
+    dynamics.nsteps = int(ckpt["nsteps"])
+    dynamics.atoms.set_positions(ckpt["q"])
+    dynamics.atoms.set_momenta(ckpt["p"])
+
+
+def run_nvt_md_resumable(
+    atoms: Atoms,
+    calculator: Calculator,
+    *,
+    out_path: str,
+    temperature_kelvin: float,
+    n_steps: int = 80_000,
+    time_step_fs: float = 0.25,
+    record_interval: int = 10,
+    thermostat_time_scale_fs: float = 25,
+    seed: int = 0,
+    progress_interval: int = 1_000,
+    checkpoint_every_n_frames: int = 200,
+) -> list[Atoms]:
+    """Run an NVT rollout that survives interruption (timeouts/preemption).
+
+    Frames stream to ``{out_path}.part`` and the integrator state is checkpointed to
+    ``{out_path}.ckpt.npz`` every ``checkpoint_every_n_frames`` frames. A rerun resumes
+    from the last checkpoint (truncating any un-checkpointed tail), continuing the same
+    deterministic trajectory. Only on completion is ``.part`` atomically promoted to
+    ``out_path`` and the checkpoint removed. Returns the full trajectory.
+    """
+    # .part.extxyz (not .part) so ASE infers the extxyz format on read/write/append
+    part_path = f"{out_path.removesuffix('.extxyz')}.part.extxyz"
+    ckpt_path = f"{out_path}.ckpt.npz"
+    target_frames = n_steps // record_interval + 1
+    if checkpoint_every_n_frames < 1:
+        raise ValueError(
+            f"{checkpoint_every_n_frames=} must be positive for MD checkpointing"
+        )
+
+    atoms = atoms.copy()
+    atoms.calc = calculator
+    MaxwellBoltzmannDistribution(
+        atoms, temperature_K=temperature_kelvin, rng=np.random.default_rng(seed)
+    )
+    dynamics = _init_nvt_dynamics(
+        atoms,
+        temperature_kelvin=temperature_kelvin,
+        time_step_fs=time_step_fs,
+        thermostat_time_scale_fs=thermostat_time_scale_fs,
+    )
+
+    ckpt = _load_checkpoint(
+        ckpt_path,
+        atoms=atoms,
+        n_steps=n_steps,
+        record_interval=record_interval,
+        time_step_fs=time_step_fs,
+        temperature_kelvin=temperature_kelvin,
+        thermostat_time_scale_fs=thermostat_time_scale_fs,
+        seed=seed,
+    )
+    n_done = 0
+    if ckpt is not None and os.path.isfile(part_path):
+        n_ckpt = int(ckpt["n_frames"])
+        # keep only checkpointed frames; a kill may have appended an un-checkpointed
+        # (possibly malformed) tail, so read just the first n_ckpt and rewrite cleanly
+        try:
+            kept = read_trajectory(part_path, index=f":{n_ckpt}")
+        except (OSError, ValueError, IndexError) as exc:
+            print(f"  resume failed reading {part_path} ({exc}); recomputing")
+            kept = []
+        if len(kept) == n_ckpt:
+            _restore_nvt_state(dynamics, ckpt)
+            ase.io.write(part_path, kept)  # truncate to the checkpointed frames
+            n_done = n_ckpt
+            print(f"  resuming {out_path} from frame {n_done}/{target_frames}")
+
+    if n_done == 0:  # fresh start: clear any stale partial files
+        for stale in (part_path, ckpt_path):
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(stale)
+
+    frames_written = n_done
+
+    def record_and_checkpoint() -> None:
+        nonlocal frames_written
+        ase.io.write(part_path, _snapshot_frame(atoms, dynamics.nsteps), append=True)
+        frames_written += 1
+        if frames_written % checkpoint_every_n_frames == 0:
+            _save_checkpoint(
+                ckpt_path,
+                dynamics,
+                n_steps=n_steps,
+                n_frames=frames_written,
+                record_interval=record_interval,
+                time_step_fs=time_step_fs,
+                temperature_kelvin=temperature_kelvin,
+                thermostat_time_scale_fs=thermostat_time_scale_fs,
+                seed=seed,
             )
 
-        dynamics.attach(log_progress, interval=progress_interval)
+    dynamics.attach(record_and_checkpoint, interval=record_interval)
+    _attach_progress_logger(dynamics, n_steps=n_steps, interval=progress_interval)
 
-    dynamics.run(n_steps)
+    dynamics.run(n_steps - dynamics.nsteps)  # remaining steps (0 nsteps if fresh)
+
+    frames = read_trajectory(part_path)
+    if len(frames) != target_frames:
+        raise RuntimeError(
+            f"{out_path} rollout produced {len(frames)} frames != {target_frames}"
+        )
+    os.replace(part_path, out_path)  # atomic promote only once complete
+    with contextlib.suppress(FileNotFoundError):
+        os.remove(ckpt_path)
     return frames
 
 
@@ -183,6 +442,52 @@ def find_reference_trajectory(ref_dir: str, system_name: str) -> str:
             f"got {traj_files}"
         )
     return traj_files[0]
+
+
+def validate_pred_trajectory(
+    path: str, *, expected_frames: int, ref_atoms: Atoms, record_interval: int
+) -> list[Atoms] | None:
+    """Read and validate a cached predicted rollout, returning its frames if sound or
+    None if it should be recomputed.
+
+    A truncated or otherwise inconsistent rollout would silently evaluate as a shorter
+    trajectory (evaluate_md_system time-matches to the shorter span), so reuse only
+    when the file is complete and consistent: readable, exactly ``expected_frames``
+    frames with a strict ``md_step`` sequence 0, record_interval, 2*record_interval,
+    ...; matching atom count and chemical symbols, cell and pbc of ``ref_atoms``; and
+    all-finite positions and velocities.
+    """
+    try:
+        frames = read_trajectory(path)
+    except (OSError, ValueError, IndexError, StopIteration) as exc:
+        print(f"  recomputing {path}: unreadable ({exc})")
+        return None
+
+    if (n_frames := len(frames)) != expected_frames:
+        print(f"  recomputing {path}: {n_frames} frames != expected {expected_frames}")
+        return None
+
+    ref_symbols = ref_atoms.get_chemical_symbols()
+    for idx, frame in enumerate(frames):
+        velocities = frame.get_velocities()
+        reason = None
+        if int(frame.info.get("md_step", -1)) != idx * record_interval:
+            reason = f"md_step {frame.info.get('md_step')} != {idx * record_interval}"
+        elif frame.get_chemical_symbols() != ref_symbols:
+            reason = "chemical symbols differ from reference"
+        elif not np.allclose(frame.cell.array, ref_atoms.cell.array) or bool(
+            (frame.pbc != ref_atoms.pbc).any()
+        ):
+            reason = "cell or pbc differ from reference"
+        elif not np.isfinite(frame.positions).all() or (
+            velocities is not None and not np.isfinite(velocities).all()
+        ):
+            reason = "non-finite positions or velocities"
+        if reason:
+            print(f"  recomputing {path}: frame {idx} {reason}")
+            return None
+
+    return frames
 
 
 def run_md_benchmark(
@@ -268,11 +573,25 @@ def run_md_benchmark(
         # (and the slow xz decompression of multi-GB references) stays fast
         ref_path = find_reference_trajectory(ref_dir, system_name)
         ref_trajectory = read_trajectory(ref_path, index=":64" if dry_run else ":")
+        if not ref_trajectory:
+            raise ValueError(
+                f"Reference trajectory {ref_path!r} for {system_name!r} "
+                "empty or corrupted"
+            )
 
         pred_traj_path = f"{out_dir}/{system_name}-nvt-{model_key}.extxyz"
+        target_frames = n_steps // record_interval + 1
+        pred_trajectory = None
         if not dry_run and os.path.isfile(pred_traj_path):
-            pred_trajectory = read_trajectory(pred_traj_path)
-        else:
+            # only reuse a complete, consistent rollout; else recompute (a truncated
+            # file would silently evaluate as a shorter trajectory)
+            pred_trajectory = validate_pred_trajectory(
+                pred_traj_path,
+                expected_frames=target_frames,
+                ref_atoms=ref_trajectory[0],
+                record_interval=record_interval,
+            )
+        if pred_trajectory is None and dry_run:  # in-memory, no checkpoint files
             pred_trajectory = run_nvt_md(
                 ref_trajectory[0],
                 calculator,
@@ -282,8 +601,17 @@ def run_md_benchmark(
                 record_interval=record_interval,
                 seed=seed,
             )
-            if not dry_run:
-                ase.io.write(pred_traj_path, pred_trajectory)
+        elif pred_trajectory is None:  # crash-safe resumable rollout to pred_traj_path
+            pred_trajectory = run_nvt_md_resumable(
+                ref_trajectory[0],
+                calculator,
+                out_path=pred_traj_path,
+                temperature_kelvin=temperature_kelvin,
+                n_steps=n_steps,
+                time_step_fs=time_step_fs,
+                record_interval=record_interval,
+                seed=seed,
+            )
 
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectory,

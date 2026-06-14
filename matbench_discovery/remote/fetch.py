@@ -66,6 +66,8 @@ def extract_tar_if_needed(tar_path: str) -> str:
     directory. Extraction goes to a temp directory moved into place only when
     complete, so interrupted extractions can't be mistaken for finished ones.
     """
+    if not tar_path.endswith(".tar"):
+        raise ValueError(f"Expected a .tar file, got {tar_path!r}")
     extract_dir = tar_path.removesuffix(".tar")
     if os.path.isdir(extract_dir):
         return extract_dir

@@ -26,9 +26,10 @@ export default {
     heading_ids(), // Runs after mdsvex converts markdown to HTML
     {
       markup: (file) => {
-        const route = file.filename?.split(`site/src/routes/`)?.[1]
+        const filename = file.filename?.replaceAll(`\\`, `/`) ?? ``
 
-        if (!route?.includes(`discovery-metric-figs`)) return { code: file.content }
+        // Only manuscript figure markdown uses @label/@fig citation-style rewrites.
+        if (!filename.includes(`discovery-metric-figs`)) return { code: file.content }
 
         const fig_index: string[] = []
         const ref_index: string[] = []
@@ -36,7 +37,7 @@ export default {
         // Replace figure labels with 'Fig. {n}' and add to fig_index
         let code = file.content.replaceAll(/@label:((fig|tab):[^\s]+)/g, (_match, id) => {
           if (!fig_index.includes(id)) fig_index.push(id)
-          const idx = (route.startsWith(`si`) ? `S` : ``) + fig_index.length
+          const idx = (filename.includes(`/src/routes/si/`) ? `S` : ``) + fig_index.length
           const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
           return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
         })

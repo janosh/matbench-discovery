@@ -9,7 +9,17 @@ import pandas as pd
 from matbench_discovery import ROOT, today
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import Model
+from matbench_discovery.md import default_md_reference_paths
 from matbench_discovery.metrics import md as md_metrics
+
+
+def expected_systems() -> set[str]:
+    """Canonical CFPMD-26 system directory names from the reference dataset, used to
+    require complete coverage before writing model-level metrics to YAML. Triggers
+    the reference download/extract if not cached (the authoritative system list).
+    """
+    ref_dir, _settings_csv = default_md_reference_paths()
+    return {entry.name for entry in os.scandir(ref_dir) if entry.is_dir()}
 
 
 def find_per_system_csvs(model: Model) -> list[str]:
@@ -18,12 +28,17 @@ def find_per_system_csvs(model: Model) -> list[str]:
     Matches ``models/<arch>/<date>-md-nvt/<model>-md-metrics-<system>.csv.gz`` (the
     suffixed files single-system jobs produce), not the combined no-suffix CSV. The
     ``-md-metrics-`` separator keeps prefixes distinct (orb_v2 won't match
-    orb_v2_mptrj). Sorting puts later date dirs last so load_per_system_metrics'
+    orb_v2_mptrj). Multi-system subset outputs share this filename shape, so only
+    keep one-row CSVs. Sorting puts later date dirs last so load_per_system_metrics'
     keep-last dedup lets a newer rerun override an earlier system result.
     """
     arch_dir = os.path.dirname(model.rel_path)
     pattern = f"{ROOT}/models/{arch_dir}/*md-nvt*/{model.name}-md-metrics-*.csv.gz"
-    return sorted(glob(pattern))
+    return [
+        path
+        for path in sorted(glob(pattern))
+        if len(pd.read_csv(path, usecols=["system"])) == 1
+    ]
 
 
 def main() -> int:
@@ -37,6 +52,7 @@ def main() -> int:
 
     n_success = 0
     n_skipped = 0
+    expected: set[str] | None = None  # CFPMD-26 system set, resolved lazily once
 
     for model in models_to_evaluate:
         md_yaml = model.metrics.get("md") or {}
@@ -44,6 +60,17 @@ def main() -> int:
         try:
             if per_system_csvs:  # parallel runs: concat per-system rows into one CSV
                 df_md = md_metrics.load_per_system_metrics(per_system_csvs)
+                # Don't persist model metrics from incomplete coverage: uneven means
+                # across models corrupt the leaderboard.
+                if expected is None:
+                    expected = expected_systems()
+                if missing := expected - set(df_md.index):
+                    print(
+                        f"Skipping {model.label}: {len(missing)}/{len(expected)} "
+                        f"systems missing, e.g. {sorted(missing)[:3]}"
+                    )
+                    n_skipped += 1
+                    continue
                 arch_dir = os.path.dirname(model.rel_path)
                 pred_file = f"models/{arch_dir}/{today}-{model.name}-md-metrics.csv.gz"
                 df_md.to_csv(f"{ROOT}/{pred_file}")

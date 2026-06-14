@@ -12,6 +12,7 @@ printing dependencies work with only the core dependencies installed.
 Registry keys are ``Model`` enum names so metrics can be written to the right YAML.
 """
 
+import inspect
 import os
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -70,7 +71,7 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
 class MdModel:
     """A registered MLIP: how to build its calculator and its uv requirements."""
 
-    make_calc: Callable[[str], "Calculator"]  # (device) -> Calculator, lazy imports
+    make_calc: Callable[..., "Calculator"]
     deps: tuple[str, ...] = ()  # extra uv requirements beyond CORE_DEPS
     find_links: tuple[str, ...] = ()  # uv --find-links (e.g. PyG/dgl wheel pages)
 
@@ -93,13 +94,13 @@ def _detect_device() -> str:
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def _mace_mp(checkpoint: str) -> Callable[[str], "Calculator"]:
-    def make_calc(device: str) -> "Calculator":
+def _mace_mp(checkpoint: str) -> Callable[[str, str], "Calculator"]:
+    def make_calc(device: str, dtype: str = "float64") -> "Calculator":
         from mace.calculators import mace_mp
 
         # enable_cueq left off: the cuequivariance fast path is version-brittle across
         # mace/cueq releases; correctness is identical, only throughput differs
-        return mace_mp(model=checkpoint, device=device, default_dtype="float64")
+        return mace_mp(model=checkpoint, device=device, default_dtype=dtype)
 
     return make_calc
 
@@ -284,13 +285,17 @@ MD_MODELS: dict[str, MdModel] = {
 }
 
 
-def load_calculator(model_key: str, device: str | None = None) -> "Calculator":
+def load_calculator(
+    model_key: str, device: str | None = None, dtype: str = "float64"
+) -> "Calculator":
     """Instantiate the ASE calculator for a registered model.
 
     Args:
         model_key: Key into MD_MODELS (a Model enum name).
         device: 'cuda' or 'cpu'. Defaults to auto-detection (cuda if torch sees a GPU,
             except the CPU-only 'emt' debug model).
+        dtype: Floating-point precision ('float64' or 'float32'). Only MACE models
+            honor it; other calculators keep their package defaults.
 
     Returns:
         Calculator: The model's ASE calculator.
@@ -302,4 +307,9 @@ def load_calculator(model_key: str, device: str | None = None) -> "Calculator":
         )
     if device is None:
         device = "cpu" if model_key == "emt" else _detect_device()
-    return MD_MODELS[model_key].make_calc(device)
+    make_calc = MD_MODELS[model_key].make_calc
+    # pass dtype only to factories that declare it (currently MACE), so a new
+    # dtype-aware model is honored automatically without editing a hardcoded key set
+    if "dtype" in inspect.signature(make_calc).parameters:
+        return make_calc(device, dtype=dtype)
+    return make_calc(device)

@@ -62,6 +62,12 @@ def main() -> int:
     parser.add_argument("--record-interval", type=int, default=10)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
+        "--dtype",
+        default="float64",
+        choices=("float64", "float32"),
+        help="Calculator float precision. default float64",
+    )
+    parser.add_argument(
         "--write-yaml", action="store_true", help="Write metrics to the model YAML"
     )
     args = parser.parse_args()
@@ -75,6 +81,13 @@ def main() -> int:
         parser.error("--model is required (or pass --list-models)")
     if args.model not in MD_MODELS:
         parser.error(f"unknown --model {args.model!r}, see --list-models")
+    # a subset run writes model-level metrics from incomplete coverage; aggregation
+    # over all systems belongs to scripts/evals/md.py, not a per-array-task write
+    if args.write_yaml and args.systems:
+        parser.error(
+            "--write-yaml needs a full run; a --systems subset would write partial "
+            "model metrics. Aggregate with scripts/evals/md.py instead."
+        )
 
     if args.print_cmd:
         run_args = ["--model", args.model]
@@ -96,7 +109,7 @@ def main() -> int:
     arch_dir = os.path.dirname(model.rel_path) if model else args.model
     out_dir = args.out_dir or f"{module_dir}/{arch_dir}/{today}-md-nvt"
 
-    calculator = load_calculator(args.model)
+    calculator = load_calculator(args.model, dtype=args.dtype)
     df_md = run_md_benchmark(
         calculator=calculator,
         model_key=args.model,

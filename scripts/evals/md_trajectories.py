@@ -104,7 +104,7 @@ for pred_file in (pbar := tqdm(pred_files, desc="MD trajectory pairs")):
 
 for model_key, rows in rows_by_model.items():
     df_md = pd.DataFrame(rows).set_index("system")
-    csv_path = f"{args.out_dir}/{today}-{model_key}-md-metrics.csv"
+    csv_path = f"{args.out_dir}/{today}-{model_key}-md-metrics.csv.gz"
     df_md.to_csv(csv_path)
     model_metrics = md_metrics.calc_md_metrics(df_md)
     metrics_str = ", ".join(f"{key}={val:.4g}" for key, val in model_metrics.items())
