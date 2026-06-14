@@ -82,7 +82,6 @@ module-root = ""
 source-include = ["matbench_discovery/**/*.yml", "models/**/*.yml"]
 
 [tool.ruff]
-target-version = "py311"
 output-format = "concise"
 
 [tool.ruff.lint]

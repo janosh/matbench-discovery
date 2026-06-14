@@ -865,36 +865,41 @@ describe(`MetricsTable`, () => {
   })
 
   describe(`Heatmap Toggle Interaction`, () => {
-    it(`toggles heatmap colors via TableControls checkbox`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { show_non_compliant: true },
-      })
-      await tick() // Wait for initial render
+    // happy-dom renders of the full-column table are slow in CI
+    it(
+      `toggles heatmap colors via TableControls checkbox`,
+      { timeout: 30_000 },
+      async () => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: { show_non_compliant: true },
+        })
+        await tick() // Wait for initial render
 
-      // Find the heatmap toggle checkbox within TableControls
-      const heatmap_checkbox = document.querySelector<HTMLInputElement>(
-        `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
-      )
+        // Find the heatmap toggle checkbox within TableControls
+        const heatmap_checkbox = document.querySelector<HTMLInputElement>(
+          `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
+        )
 
-      expect(heatmap_checkbox).not.toBeNull()
-      if (!heatmap_checkbox) return // Type guard
+        expect(heatmap_checkbox).not.toBeNull()
+        if (!heatmap_checkbox) return // Type guard
 
-      // Initially, heatmap should be on (default)
-      expect(heatmap_checkbox.checked).toBe(true)
+        // Initially, heatmap should be on (default)
+        expect(heatmap_checkbox.checked).toBe(true)
 
-      // Click the checkbox to turn heatmap off
-      heatmap_checkbox.click()
-      await tick()
+        // Click the checkbox to turn heatmap off
+        heatmap_checkbox.click()
+        await tick()
 
-      expect(heatmap_checkbox.checked).toBe(false)
+        expect(heatmap_checkbox.checked).toBe(false)
 
-      // Click again to turn heatmap back on
-      heatmap_checkbox.click()
-      await tick()
+        // Click again to turn heatmap back on
+        heatmap_checkbox.click()
+        await tick()
 
-      expect(heatmap_checkbox.checked).toBe(true)
-    })
+        expect(heatmap_checkbox.checked).toBe(true)
+      },
+    )
   })
 
   it(`renders the correct default columns`, () => {
