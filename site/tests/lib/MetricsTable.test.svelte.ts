@@ -1,9 +1,9 @@
 import { HYPERPARAMS } from '$lib/labels'
 import MetricsTable from '$lib/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount } from '../index'
 
 describe(`MetricsTable`, () => {
   const parse_integer_sort_value = (cell: Element): number | null => {

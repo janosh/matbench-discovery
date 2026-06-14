@@ -1,5 +1,6 @@
 import { gzipSync } from 'node:zlib'
-import { beforeAll, beforeEach, vi } from 'vitest'
+import { mount as svelte_mount, unmount } from 'svelte'
+import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
 // MatchMedia mock for Svelte MediaQuery - needed for svelte-multiselect
 Object.defineProperty(globalThis, `matchMedia`, {
@@ -61,6 +62,28 @@ beforeAll(() => {
 
 beforeEach(() => {
   document.body.innerHTML = ``
+})
+
+// Svelte's mount() returns a live instance whose effects/subscriptions/listeners keep
+// running until unmount(); clearing document.body.innerHTML only detaches the DOM. Without
+// this, mounts leak across the file, accumulating effects that slow later renders until
+// synchronous tests hit the 5s default timeout on CI. Track instances and unmount below.
+// Typed concretely via Parameters/ReturnType (svelte-check-rs won't infer rest-arg types
+// from a generic contextual annotation), then re-exported with svelte's generic mount
+// signature so call sites keep full prop type-checking.
+const mounted_components: ReturnType<typeof svelte_mount>[] = []
+const tracked_mount = (
+  ...args: Parameters<typeof svelte_mount>
+): ReturnType<typeof svelte_mount> => {
+  const instance = svelte_mount(...args)
+  mounted_components.push(instance)
+  return instance
+}
+export const mount = tracked_mount as typeof svelte_mount
+
+afterEach(async () => {
+  const instances = mounted_components.splice(0)
+  await Promise.all(instances.map((instance) => unmount(instance)))
 })
 
 // gzipped 200 Response for stubbing fetch() of .json.gz assets
