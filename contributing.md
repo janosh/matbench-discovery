@@ -250,6 +250,8 @@ uv run --with <your-deps> models/run_md.py --model <model_key> --write-yaml
 uv run models/run_md.py --print-cmd --model <model_key>
 ```
 
+`--write-yaml` records the model-level MD metrics under `metrics.md` in your model's YAML and writes the per-system predictions to a gzipped CSV named `<model_key>-md-metrics.csv.gz`. Upload that CSV to Figshare (or similar) and set its download URL as the `pred_file_url` field of `metrics.md` — see [Step 3](#step-3-upload-results-files-to-figshare-or-similar) for the upload conventions and YAML field definitions.
+
 Add the model to the `Model` enum in [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/57d0d0c8a14cd3/matbench_discovery/enums.py#L274) pointing to the correct metadata file.
 
 > [!WARNING]
