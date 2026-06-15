@@ -32,6 +32,7 @@ requires-python = ">=3.11"
 dependencies = [
   "ase>=3.28",
   "filelock>=3.29",
+  "h5py>=3.11",
   "numpy>=2,<3",
   "pandas>=3,<4",
   "plotly>=6.7",

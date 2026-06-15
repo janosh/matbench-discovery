@@ -9,7 +9,6 @@ Also adds a Wasserstein-1 distance between pressure distributions as a
 frame-pairing-independent complement to the pressure MAE.
 """
 
-import itertools
 import math
 from fractions import Fraction
 from typing import TYPE_CHECKING, Any
@@ -17,12 +16,12 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import pandas as pd
 from ase import Atoms, units
-from ase.calculators.calculator import PropertyNotImplementedError
-from ase.geometry import find_mic
+from ase.geometry import find_mic, get_distances, minkowski_reduce
 from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import update_yaml_file
+from matbench_discovery.trajectory import Trajectory
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -30,6 +29,16 @@ if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
     from matbench_discovery.enums import Model
+
+
+def _as_trajectory(trajectory: "Trajectory | Sequence[Atoms]") -> Trajectory:
+    """Coerce a Trajectory or a sequence of ASE Atoms to a Trajectory, so metrics run
+    on dense arrays regardless of input. Passing a Trajectory (the hot path) is a no-op.
+    """
+    if isinstance(trajectory, Trajectory):
+        return trajectory
+    return Trajectory.from_ase(list(trajectory))
+
 
 # units of per-system metric columns shared between eval scripts and aggregation
 METRIC_UNITS = {
@@ -47,8 +56,35 @@ PER_SYSTEM_METRIC_COLS = tuple(
 )
 
 
+def min_image_radius(cells: np.ndarray, pbc: np.ndarray) -> float:
+    """Largest radius at which minimum-image pair distances count each pair at most
+    once = half the shortest lattice vector (Minkowski first successive minimum),
+    minimized over frames.
+
+    Minimum-image distances record only the nearest periodic image of each atom, so a
+    histogram (RDF) is complete only while no two images of an atom lie within the
+    cutoff sphere; two distinct images are at least one shortest lattice vector apart,
+    giving the half-shortest-vector limit. For skewed or non-reduced cells a lattice-
+    vector combination can be shorter than every basis vector, so half the shortest
+    *basis* vector overestimates this and silently corrupts g(r) at large r.
+    """
+
+    def shortest_lattice_vector(cell: np.ndarray) -> float:
+        reduced, _ = minkowski_reduce(cell, pbc)
+        lengths = np.linalg.norm(reduced, axis=1)
+        periodic = lengths[pbc]  # only periodic directions are true lattice vectors
+        return float(periodic.min() if periodic.size else lengths.min())
+
+    # cells are usually constant (NVT) -> reduce once; else minimize over frames
+    unique_cells = cells[:1] if np.allclose(cells, cells[0]) else cells
+    return min(shortest_lattice_vector(cell) for cell in unique_cells) / 2
+
+
 def calc_rdf(
-    trajectory: "Sequence[Atoms]", *, n_bins: int = 500, r_max: float | None = None
+    trajectory: "Trajectory | Sequence[Atoms]",
+    *,
+    n_bins: int = 500,
+    r_max: float | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Time-averaged all-pair radial distribution function g(r) of a trajectory.
 
@@ -56,19 +92,20 @@ def calc_rdf(
     between 0 and r_max. r_max defaults to half the smallest cell length of the
     first frame, the validity limit of minimum-image distances.
     """
-    if len(trajectory) == 0:
+    traj = _as_trajectory(trajectory)
+    if traj.n_frames == 0:
         raise ValueError("Cannot compute RDF of empty trajectory")
     if n_bins < 2:
         raise ValueError(f"Need >= 2 RDF bins, got {n_bins=}")
-    n_atoms = len(trajectory[0])
+    n_atoms = traj.n_atoms
     if n_atoms < 2:
         raise ValueError(f"Cannot compute RDF with {n_atoms=} < 2")
-    min_half_cell = min(float(min(atoms.cell.lengths())) for atoms in trajectory) / 2
+    mic_radius = min_image_radius(traj.cell, traj.pbc)
     if r_max is None:
-        r_max = min_half_cell
-    elif r_max > min_half_cell + 1e-12:
+        r_max = mic_radius
+    elif r_max > mic_radius + 1e-12:
         raise ValueError(
-            f"{r_max=} exceeds minimum-image validity limit {min_half_cell:.6g} A "
+            f"{r_max=} exceeds minimum-image validity limit {mic_radius:.6g} A "
             "for at least one trajectory frame"
         )
     if r_max <= 0:
@@ -78,14 +115,13 @@ def calc_rdf(
     counts = np.zeros(n_bins)
     upper_tri_idx = np.triu_indices(n_atoms, k=1)
     inv_volume_sum = 0.0  # per-frame densities make this exact for varying cells
-    for atoms in trajectory:
-        if len(atoms) != n_atoms:
-            raise ValueError(
-                f"Inconsistent atom counts in trajectory: {len(atoms)=} != {n_atoms=}"
-            )
-        pair_dists = atoms.get_all_distances(mic=True)[upper_tri_idx]
-        counts += np.histogram(pair_dists, bins=bin_edges)[0]
-        inv_volume_sum += 1 / atoms.get_volume()
+    for idx in range(traj.n_frames):
+        cell = traj.cell[idx]
+        # get_distances is the exact kernel Atoms.get_all_distances(mic=True) uses, so
+        # results match the previous Atoms-based path to machine precision
+        _, dist_matrix = get_distances(traj.positions[idx], cell=cell, pbc=traj.pbc)
+        counts += np.histogram(dist_matrix[upper_tri_idx], bins=bin_edges)[0]
+        inv_volume_sum += 1 / abs(float(np.linalg.det(cell)))
 
     radii = (bin_edges[:-1] + bin_edges[1:]) / 2
     shell_volumes = 4 / 3 * np.pi * np.diff(bin_edges**3)
@@ -117,7 +153,7 @@ def calc_rdf_error(
 
 
 def calc_velocities(
-    trajectory: "Sequence[Atoms]", *, time_step_fs: float
+    trajectory: "Trajectory | Sequence[Atoms]", *, time_step_fs: float
 ) -> np.ndarray:
     """Finite-difference velocities of shape (n_frames, n_atoms, 3) in Angstrom/fs.
 
@@ -126,19 +162,21 @@ def calc_velocities(
     velocity spikes. Using the same estimator for reference and MLIP trajectories
     keeps VDOS comparisons unbiased even when one stores explicit velocities.
     """
-    if len(trajectory) < 2:
+    traj = _as_trajectory(trajectory)
+    if traj.n_frames < 2:
         raise ValueError(
-            f"Need >= 2 frames to estimate velocities, got {len(trajectory)}"
+            f"Need >= 2 frames to estimate velocities, got {traj.n_frames}"
         )
     if time_step_fs <= 0:
         raise ValueError(f"{time_step_fs=} must be positive")
 
+    positions = traj.positions
     mic_displacements = [
-        find_mic(frame_next.positions - frame.positions, frame.cell, frame.pbc)[0]
-        for frame, frame_next in itertools.pairwise(trajectory)
+        find_mic(positions[idx + 1] - positions[idx], traj.cell[idx], traj.pbc)[0]
+        for idx in range(traj.n_frames - 1)
     ]
-    unwrapped = trajectory[0].positions + np.cumsum(
-        [np.zeros_like(trajectory[0].positions), *mic_displacements], axis=0
+    unwrapped = positions[0] + np.cumsum(
+        [np.zeros_like(positions[0]), *mic_displacements], axis=0
     )
     return np.gradient(unwrapped, time_step_fs, axis=0)
 
@@ -231,14 +269,16 @@ def calc_pressure(stress: np.ndarray) -> float:
     return float(-trace / 3 / units.GPa)
 
 
-def get_trajectory_pressures(trajectory: "Sequence[Atoms]") -> np.ndarray:
-    """Per-frame pressures in GPa from stresses stored on trajectory frames (e.g.
-    attached via SinglePointCalculator when reading extxyz files). Raises
-    RuntimeError or PropertyNotImplementedError if any frame lacks stress.
+def get_trajectory_pressures(
+    trajectory: "Trajectory | Sequence[Atoms]",
+) -> np.ndarray:
+    """Per-frame pressures in GPa from the per-frame Voigt stresses (paper Eq. 5),
+    vectorized over frames. Raises ValueError if the trajectory has no stress data.
     """
-    return np.array(
-        [calc_pressure(atoms.get_stress(voigt=True)) for atoms in trajectory]
-    )
+    traj = _as_trajectory(trajectory)
+    if traj.stress is None:
+        raise ValueError("trajectory has no stress data to compute pressures")
+    return -traj.stress[:, :3].sum(axis=1) / 3 / units.GPa
 
 
 def _time_strides(ref_time_step_fs: float, pred_time_step_fs: float) -> tuple[int, int]:
@@ -318,7 +358,7 @@ def calc_combined_error(rdf_error: float, vdos_error: float) -> float:
 
 
 def calc_energy_force_rmse(
-    trajectory: "Sequence[Atoms]", calculator: "Calculator"
+    trajectory: "Trajectory | Sequence[Atoms]", calculator: "Calculator"
 ) -> dict[str, float]:
     """Energy (eV/atom) and force (eV/Å) RMSE of calculator single-point predictions
     on reference MD frames carrying DFT energies and forces (paper Eq. 1-2).
@@ -326,17 +366,26 @@ def calc_energy_force_rmse(
     Energies are compared per atom, preserving constant offsets as specified by Eq. 1.
     This means energy RMSE can be dominated by differing absolute energy references.
     """
-    if len(trajectory) == 0:
+    traj = _as_trajectory(trajectory)
+    if traj.n_frames == 0:
         raise ValueError("Cannot compute energy/force RMSE of empty trajectory")
+    if traj.energy is None or traj.forces is None:
+        raise ValueError("trajectory lacks reference energy/forces for RMSE")
 
     energy_errs_per_atom: list[float] = []
     force_sq_err_sum, n_force_components = 0.0, 0
-    for atoms in trajectory:
-        ref_energy, ref_forces = atoms.get_potential_energy(), atoms.get_forces()
-        pred_atoms = atoms.copy()
+    for idx in range(traj.n_frames):
+        ref_forces = traj.forces[idx]
+        # fresh Atoms (no stored results) so the calculator computes the prediction
+        pred_atoms = Atoms(
+            numbers=traj.atomic_numbers,
+            positions=traj.positions[idx],
+            cell=traj.cell[idx],
+            pbc=traj.pbc,
+        )
         pred_atoms.calc = calculator
         energy_errs_per_atom.append(
-            (pred_atoms.get_potential_energy() - ref_energy) / len(atoms)
+            (pred_atoms.get_potential_energy() - traj.energy[idx]) / traj.n_atoms
         )
         force_sq_err_sum += ((pred_atoms.get_forces() - ref_forces) ** 2).sum()
         n_force_components += ref_forces.size
@@ -369,8 +418,8 @@ def matched_frame_counts(
 
 
 def evaluate_md_system(
-    ref_trajectory: "Sequence[Atoms]",
-    pred_trajectory: "Sequence[Atoms]",
+    ref_trajectory: "Trajectory | Sequence[Atoms]",
+    pred_trajectory: "Trajectory | Sequence[Atoms]",
     *,
     ref_time_step_fs: float,
     pred_time_step_fs: float,
@@ -386,9 +435,11 @@ def evaluate_md_system(
     when either trajectory lacks stress data. Energy and force RMSE on the full
     reference trajectory are included when a calculator is passed.
     """
+    ref = _as_trajectory(ref_trajectory)
+    pred = _as_trajectory(pred_trajectory)
     n_ref_use, n_pred_use = matched_frame_counts(
-        n_ref_frames=len(ref_trajectory),
-        n_pred_frames=len(pred_trajectory),
+        n_ref_frames=ref.n_frames,
+        n_pred_frames=pred.n_frames,
         ref_time_step_fs=ref_time_step_fs,
         pred_time_step_fs=pred_time_step_fs,
     )
@@ -396,8 +447,8 @@ def evaluate_md_system(
         raise ValueError(
             f"Trajectories too short after time matching: {n_ref_use=}, {n_pred_use=}"
         )
-    ref_matched = ref_trajectory[:n_ref_use]
-    pred_matched = pred_trajectory[:n_pred_use]
+    ref_matched = ref[:n_ref_use]
+    pred_matched = pred[:n_pred_use]
 
     radii, g_r_ref = calc_rdf(ref_matched, n_bins=n_rdf_bins)
     r_max = float(radii[-1] + (radii[1] - radii[0]) / 2)
@@ -410,25 +461,18 @@ def evaluate_md_system(
     freqs_pred, vdos_pred = calc_vdos(pred_vels, time_step_fs=pred_time_step_fs)
     metrics["vdos_error"] = calc_vdos_error(freqs_ref, vdos_ref, freqs_pred, vdos_pred)
 
-    try:
+    if ref_matched.stress is not None and pred_matched.stress is not None:
         metrics |= calc_pressure_metrics(
             get_trajectory_pressures(ref_matched),
             get_trajectory_pressures(pred_matched),
             ref_time_step_fs=ref_time_step_fs,
             pred_time_step_fs=pred_time_step_fs,
         )
-    except (PropertyNotImplementedError, RuntimeError) as exc:
-        # NaN pressure metrics only for frames without (a calculator providing)
-        # stress. NB: PropertyNotImplementedError subclasses RuntimeError via
-        # NotImplementedError, so check it first; other RuntimeErrors re-raise.
-        if not isinstance(exc, PropertyNotImplementedError) and (
-            "no calculator" not in str(exc)
-        ):
-            raise
+    else:  # one or both trajectories lack stress -> undefined pressure metrics
         metrics["pressure_mae"] = metrics["pressure_wasserstein"] = float("nan")
 
     if calculator is not None:
-        metrics |= calc_energy_force_rmse(ref_trajectory, calculator)
+        metrics |= calc_energy_force_rmse(ref, calculator)
 
     return metrics
 

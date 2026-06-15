@@ -20,18 +20,19 @@ ANISOTROPIC_STRESS_VOIGT = np.array(
 )
 
 
-class OffsetCalculator(Calculator):
-    """Returns the frame's stored results shifted by constant offsets."""
+class ConstantCalculator(Calculator):
+    """Predicts a fixed energy and uniform force regardless of geometry. Geometry-
+    independent so it works with the array-based pipeline (which feeds the calculator
+    fresh Atoms built from positions only, without per-frame info/arrays).
+    """
 
     implemented_properties = ("energy", "forces")
 
-    def __init__(
-        self, energy_offset: float = 0, force_offset: float = 0, **kwargs: object
-    ) -> None:
-        """Store constant energy and force offsets applied to reference labels."""
+    def __init__(self, energy: float = 0, force: float = 0, **kwargs: object) -> None:
+        """Store the constant energy and per-component force to return."""
         super().__init__(**kwargs)
-        self.energy_offset = energy_offset
-        self.force_offset = force_offset
+        self.energy = energy
+        self.force = force
 
     def calculate(
         self,
@@ -39,11 +40,11 @@ class OffsetCalculator(Calculator):
         properties: list[str] | None = None,
         system_changes: list[str] = all_changes,
     ) -> None:
-        """Add offsets to the reference energy/forces stored on the frame."""
+        """Return the stored constant energy and a uniform force on every atom."""
         super().calculate(atoms, properties, system_changes)
         assert atoms is not None
-        self.results["energy"] = atoms.info["ref_energy"] + self.energy_offset
-        self.results["forces"] = atoms.arrays["ref_forces"] + self.force_offset
+        self.results["energy"] = self.energy
+        self.results["forces"] = np.full((len(atoms), 3), self.force)
 
 
 class BrokenStressCalculator(Calculator):
@@ -63,11 +64,9 @@ class BrokenStressCalculator(Calculator):
 
 
 def attach_ref_labels(atoms: Atoms, energy: float, forces: np.ndarray) -> Atoms:
-    """Store reference energy/forces where OffsetCalculator and ASE getters find
-    them: in info/arrays and as SinglePointCalculator results.
+    """Attach reference energy/forces as SinglePointCalculator results so
+    Trajectory.from_ase extracts them as the reference labels.
     """
-    atoms.info["ref_energy"] = energy
-    atoms.arrays["ref_forces"] = forces
     atoms.calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
     return atoms
 
@@ -139,10 +138,33 @@ def test_calc_rdf_r_max_respects_shrunken_cells() -> None:
         md_metrics.calc_rdf(frames, r_max=3)
 
 
+def test_min_image_radius_uses_shortest_lattice_vector() -> None:
+    """MIC radius is half the shortest lattice vector (Minkowski), not half the
+    shortest basis vector, so skewed/non-reduced cells aren't over-cut and g(r) stays
+    valid. A cell whose basis vectors are all ~5 A but whose b-a lattice vector is
+    0.5 A must give radius 0.25 A, not 2.5 A.
+    """
+    pbc = np.array([True, True, True])
+    cubic = (np.eye(3) * 5.0)[None]  # (1, 3, 3)
+    assert md_metrics.min_image_radius(cubic, pbc) == pytest.approx(2.5)
+    skewed = np.array([[[5.0, 0, 0], [5.0, 0.5, 0], [0, 0, 5.0]]])
+    assert md_metrics.min_image_radius(skewed, pbc) == pytest.approx(0.25)
+
+    # calc_rdf's default r_max + validation follow the corrected (smaller) limit
+    frames = [
+        Atoms("H2", positions=[[0, 0, 0], [0.05 * idx, 0, 0]], cell=skewed[0], pbc=True)
+        for idx in range(4)
+    ]
+    radii, _ = md_metrics.calc_rdf(frames, n_bins=10)
+    assert radii[-1] < 0.25  # grid capped at the shortest-lattice-vector limit
+    with pytest.raises(ValueError, match="minimum-image validity limit"):
+        md_metrics.calc_rdf(frames, n_bins=10, r_max=2.0)  # old basis-vector limit
+
+
 @pytest.mark.parametrize(
     ("formulas", "n_bins", "err_msg"),
     [
-        ([], 50, "empty trajectory"),
+        ([], 50, "zero frames"),
         (["H"], 50, "n_atoms=1 < 2"),
         (["H2", "H3"], 50, "Inconsistent atom counts"),
         # < 2 bins must raise instead of breaking downstream grid math
@@ -433,43 +455,111 @@ def test_calc_combined_error(
 
 @pytest.mark.parametrize("force_offset", [0, 0.1, 0.25])
 def test_calc_energy_force_rmse(force_offset: float) -> None:
-    """Raw per-atom energy RMSE preserves constant offsets; forces map directly."""
+    """Raw per-atom energy RMSE preserves constant offsets; forces map directly. With
+    constant reference labels and a constant predictor, the error is exactly the
+    constant gap (0.8 eV / 2 atoms = 0.4) per frame.
+    """
     frames = [
         attach_ref_labels(
             Atoms("H2", positions=np_rng.random((2, 3)) * 2, cell=[5] * 3),
-            energy=float(np_rng.normal()),
-            forces=np_rng.normal(size=(2, 3)),
+            energy=0.0,
+            forces=np.zeros((2, 3)),
         )
         for _ in range(3)
     ]
-    calc = OffsetCalculator(energy_offset=0.8, force_offset=force_offset)
+    calc = ConstantCalculator(energy=0.8, force=force_offset)
     result = md_metrics.calc_energy_force_rmse(frames, calc)
     assert result["energy_rmse"] == pytest.approx(0.4, abs=1e-12)
     assert result["force_rmse"] == pytest.approx(abs(force_offset), abs=1e-12)
 
-    with pytest.raises(ValueError, match="empty trajectory"):
+    with pytest.raises(ValueError, match="zero frames"):
         md_metrics.calc_energy_force_rmse([], calc)
     single_frame = md_metrics.calc_energy_force_rmse(frames[:1], calc)
     assert single_frame["energy_rmse"] == pytest.approx(0.4, abs=1e-12)
 
 
 def test_calc_energy_force_rmse_includes_offsets_and_fluctuations() -> None:
-    """Energy RMSE should follow paper Eq. 1 without subtracting mean offsets."""
+    """Energy RMSE should follow paper Eq. 1 without subtracting mean offsets: a large
+    constant offset plus per-frame fluctuations both contribute (a mean-subtracting
+    RMSE would drop the +1000 offset).
+    """
     n_atoms = 2
     fluctuations = np.array([0.0, 0.3, -0.3, 0.6, -0.6])  # eV total, varying
-    forces = np.zeros((n_atoms, 3))
-    frames = []
-    for fluct in fluctuations:
-        atoms = Atoms("H2", positions=np_rng.random((n_atoms, 3)) * 2, cell=[5] * 3)
-        base = float(np_rng.normal())
-        atoms.calc = SinglePointCalculator(atoms, energy=base, forces=forces)  # ref
-        atoms.info["ref_energy"] = base + fluct  # OffsetCalculator adds +1000
-        atoms.arrays["ref_forces"] = forces
-        frames.append(atoms)
+    # constant predictor returns 0; references set so each frame's error is 1000 + fluct
+    frames = [
+        attach_ref_labels(
+            Atoms("H2", positions=np_rng.random((n_atoms, 3)) * 2, cell=[5] * 3),
+            energy=-(1000 + float(fluct)),
+            forces=np.zeros((n_atoms, 3)),
+        )
+        for fluct in fluctuations
+    ]
 
-    result = md_metrics.calc_energy_force_rmse(frames, OffsetCalculator(1000))
+    result = md_metrics.calc_energy_force_rmse(frames, ConstantCalculator(energy=0))
     expected = np.sqrt(np.mean(((fluctuations + 1000) / n_atoms) ** 2))
     assert result["energy_rmse"] == pytest.approx(expected)
+
+
+def test_calc_energy_force_rmse_uses_frame_geometry() -> None:
+    """The calculator must receive each frame's own geometry (not a shared/blank one),
+    so a geometry-dependent prediction yields per-frame-varying errors.
+    """
+
+    class XCoordCalculator(Calculator):
+        """Energy equals atom 0's x-coordinate, so it depends on the frame geometry."""
+
+        implemented_properties = ("energy", "forces")
+
+        def calculate(
+            self,
+            atoms: Atoms | None = None,
+            properties: list[str] | None = None,
+            system_changes: list[str] = all_changes,
+        ) -> None:
+            super().calculate(atoms, properties, system_changes)
+            assert atoms is not None
+            self.results["energy"] = float(atoms.positions[0, 0])
+            self.results["forces"] = np.zeros((len(atoms), 3))
+
+    x_coords = np.array([0.0, 1.0, 2.0, 3.0])
+    frames = [
+        attach_ref_labels(
+            Atoms("H2", positions=[[x, 0, 0], [0, 0, 0]], cell=[5] * 3),
+            energy=0.0,
+            forces=np.zeros((2, 3)),
+        )
+        for x in x_coords
+    ]
+    result = md_metrics.calc_energy_force_rmse(frames, XCoordCalculator())
+    expected = np.sqrt(np.mean((x_coords / 2) ** 2))  # error = x per frame, /2 atoms
+    assert result["energy_rmse"] == pytest.approx(expected)
+
+
+def test_calc_rdf_matches_direct_ase_histogram() -> None:
+    """The array-based calc_rdf reproduces a direct Atoms.get_all_distances(mic=True)
+    histogram for a triclinic cell (independent cross-check of the new kernel).
+    """
+    cell = np.array([[6.0, 0, 0], [0.8, 6.0, 0], [0.3, -0.4, 6.0]])  # triclinic
+    frames = [
+        Atoms("Cu8", positions=np_rng.random((8, 3)) * 5, cell=cell, pbc=True)
+        for _ in range(3)
+    ]
+    n_bins = 40
+    radii, g_r = md_metrics.calc_rdf(frames, n_bins=n_bins)
+
+    r_max = float(radii[-1] + (radii[1] - radii[0]) / 2)
+    bin_edges = np.linspace(0, r_max, n_bins + 1)
+    counts = np.zeros(n_bins)
+    inv_volume_sum = 0.0
+    upper_tri = np.triu_indices(8, k=1)
+    for atoms in frames:
+        counts += np.histogram(
+            atoms.get_all_distances(mic=True)[upper_tri], bins=bin_edges
+        )[0]
+        inv_volume_sum += 1 / atoms.get_volume()
+    shell_volumes = 4 / 3 * np.pi * np.diff(bin_edges**3)
+    g_r_direct = counts / (8**2 / 2 * inv_volume_sum * shell_volumes)
+    np.testing.assert_allclose(g_r, g_r_direct, rtol=0, atol=1e-12)
 
 
 # === frame matching and per-system evaluation ===
@@ -569,7 +659,7 @@ def test_evaluate_md_system_with_calculator_adds_rmse() -> None:
         make_jiggled_frames(6),
         ref_time_step_fs=1,
         pred_time_step_fs=1,
-        calculator=OffsetCalculator(energy_offset=0.8),
+        calculator=ConstantCalculator(energy=-0.2),  # ref -1.0 -> gap 0.8 eV
     )
     assert metrics["energy_rmse"] == pytest.approx(0.1)  # 0.8 eV / 8 atoms
     assert metrics["force_rmse"] == pytest.approx(0)

@@ -28,10 +28,12 @@ from matbench_discovery import today
 from matbench_discovery.md import (
     default_md_reference_paths,
     load_frame_intervals,
+    read_reference_trajectory,
     read_trajectory,
     resolve_frame_interval,
 )
 from matbench_discovery.metrics import md as md_metrics
+from matbench_discovery.trajectory import Trajectory
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -63,7 +65,7 @@ os.makedirs(args.out_dir, exist_ok=True)
 # discover (system, model) pairs from nvt_<model>.extxyz files in pred-dir
 rows_by_model: dict[str, list[dict[str, float | str]]] = {}
 pred_files = sorted(glob(f"{args.pred_dir}/*/nvt_*.extxyz*"))
-ref_trajectories: dict[str, list] = {}  # cache: each ref is reused by ~15 models
+ref_trajectories: dict[str, Trajectory] = {}  # cache: each ref reused by ~15 models
 
 for pred_file in (pbar := tqdm(pred_files, desc="MD trajectory pairs")):
     system_name = os.path.basename(os.path.dirname(pred_file))
@@ -78,15 +80,11 @@ for pred_file in (pbar := tqdm(pred_files, desc="MD trajectory pairs")):
 
     try:
         if system_name not in ref_trajectories:
-            # match traj.extxyz and ASE-transparent .gz/.xz/.bz2 compressed variants
-            ref_files = glob(f"{args.ref_dir}/{system_name}/traj.*xyz*")
-            if len(ref_files) != 1:
-                raise ValueError(
-                    f"Expected 1 reference trajectory for {system_name}, "
-                    f"got {ref_files}"
-                )
             ref_trajectories.clear()  # keep at most one ref trajectory in memory
-            ref_trajectories[system_name] = read_trajectory(ref_files[0])
+            # reads the fast traj.h5 artifact if present, else parses extxyz
+            ref_trajectories[system_name] = read_reference_trajectory(
+                args.ref_dir, system_name
+            )
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectories[system_name],
             read_trajectory(pred_file),

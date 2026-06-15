@@ -16,6 +16,7 @@ from matbench_discovery.enums import Model
 from matbench_discovery.md import (
     extract_temperature,
     load_frame_intervals,
+    read_reference_trajectory,
     read_trajectory,
     resolve_frame_interval,
     run_md_benchmark,
@@ -24,6 +25,7 @@ from matbench_discovery.md import (
 )
 from matbench_discovery.md_models import MD_MODELS, load_calculator
 from matbench_discovery.metrics import md as md_metrics
+from matbench_discovery.trajectory import Trajectory
 
 
 @pytest.mark.parametrize(
@@ -277,6 +279,77 @@ def test_run_md_benchmark_resume_matches_single_run(
     assert not (out_dir / "bulkCu_300K_test-nvt-emt.part.extxyz").is_file()
     assert not (out_dir / "bulkCu_300K_test-nvt-emt.extxyz.ckpt.npz").is_file()
     assert len(read_trajectory(str(rollout))) == 21
+
+
+def test_read_reference_trajectory_prefers_hdf5(tmp_path: Path) -> None:
+    """read_reference_trajectory reads traj.h5 if present, else falls back to extxyz."""
+    sys_dir = tmp_path / "ref" / "bulkCu_300K_test"
+    sys_dir.mkdir(parents=True)
+    extxyz_frames = run_nvt_md(
+        bulk("Cu", cubic=True),
+        EMT(),
+        temperature_kelvin=300,
+        n_steps=5,
+        record_interval=1,
+    )
+    ase.io.write(sys_dir / "traj.extxyz", extxyz_frames)
+    # an h5 with shifted positions so we can tell which source was read
+    base = Trajectory.from_ase(extxyz_frames)
+    shifted = Trajectory(
+        atomic_numbers=base.atomic_numbers,
+        positions=base.positions + 1.0,
+        cell=base.cell,
+        pbc=base.pbc,
+    )
+    shifted.write_hdf5(str(sys_dir / "traj.h5"))
+
+    ref_root = str(tmp_path / "ref")
+    from_h5 = read_reference_trajectory(ref_root, "bulkCu_300K_test")
+    np.testing.assert_allclose(from_h5.positions, shifted.positions, rtol=0, atol=0)
+
+    os.remove(sys_dir / "traj.h5")
+    from_ext = read_reference_trajectory(ref_root, "bulkCu_300K_test")
+    np.testing.assert_allclose(
+        from_ext.positions[0], extxyz_frames[0].positions, rtol=0, atol=1e-6
+    )
+    capped = read_reference_trajectory(ref_root, "bulkCu_300K_test", max_frames=2)
+    assert capped.n_frames == 2
+
+
+def test_run_md_benchmark_hdf5_reference_matches_extxyz(tmp_path: Path) -> None:
+    """A full run yields identical metrics whether the reference is read from the fast
+    HDF5 artifact or parsed from extxyz (same underlying data, deterministic rollout).
+    """
+    ref_dir, settings_csv = make_reference_dir(tmp_path)
+    sys_dir = f"{ref_dir}/bulkCu_300K_test"
+    extxyz_ref = Trajectory.from_ase(read_trajectory(f"{sys_dir}/traj.extxyz"))
+    extxyz_ref.write_hdf5(f"{sys_dir}/traj.h5")
+
+    def run(out_name: str) -> pd.DataFrame:
+        return run_md_benchmark(
+            calculator=EMT(),
+            model_key="emt",
+            out_dir=str(tmp_path / out_name),
+            ref_dir=ref_dir,
+            settings_csv=settings_csv,
+            n_steps=20,
+            time_step_fs=1,
+            record_interval=1,
+        )
+
+    df_hdf5 = run("out_hdf5")  # traj.h5 present -> read via HDF5
+    os.remove(f"{sys_dir}/traj.h5")
+    df_extxyz = run("out_extxyz")  # only extxyz -> parsed fallback
+
+    for col in df_hdf5.select_dtypes("number").columns:
+        np.testing.assert_allclose(
+            df_hdf5[col].to_numpy(),
+            df_extxyz[col].to_numpy(),
+            rtol=0,
+            atol=1e-12,
+            equal_nan=True,
+            err_msg=f"metric {col} differs between HDF5 and extxyz reference",
+        )
 
 
 def test_run_md_benchmark_rejects_invalid_inputs(

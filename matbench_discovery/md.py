@@ -24,6 +24,7 @@ from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from tqdm import tqdm
 
 from matbench_discovery.metrics import md as md_metrics
+from matbench_discovery.trajectory import Trajectory
 
 
 def extract_temperature(name: str) -> float | None:
@@ -444,6 +445,31 @@ def find_reference_trajectory(ref_dir: str, system_name: str) -> str:
     return traj_files[0]
 
 
+def read_reference_trajectory(
+    ref_dir: str, system_name: str, *, max_frames: int | None = None
+) -> Trajectory:
+    """Reference trajectory as a Trajectory, reading the fast HDF5 artifact
+    (``<system>/traj.h5``) when present and falling back to parsing extxyz otherwise.
+
+    The HDF5 path only reads/decompresses the requested frames, so huge references
+    load in milliseconds; the extxyz fallback (ASE's slow parser) keeps the pipeline
+    working on un-converted datasets. ``max_frames`` caps the leading frames read
+    (used by dry runs to stay fast).
+    """
+    h5_path = f"{ref_dir}/{system_name}/traj.h5"
+    if os.path.isfile(h5_path):
+        frames = slice(0, max_frames) if max_frames is not None else slice(None)
+        return Trajectory.read_hdf5(h5_path, frames=frames)
+    ext_path = find_reference_trajectory(ref_dir, system_name)
+    index = f":{max_frames}" if max_frames is not None else ":"
+    atoms_frames = read_trajectory(ext_path, index=index)
+    if not atoms_frames:
+        raise ValueError(
+            f"Reference trajectory {ext_path!r} for {system_name!r} empty or corrupted"
+        )
+    return Trajectory.from_ase(atoms_frames)
+
+
 def validate_pred_trajectory(
     path: str, *, expected_frames: int, ref_atoms: Atoms, record_interval: int
 ) -> list[Atoms] | None:
@@ -570,30 +596,27 @@ def run_md_benchmark(
             raise ValueError(f"No frame interval for {system_name!r} in settings CSV")
 
         # dry run reads only the first 64 reference frames so the single-point eval
-        # (and the slow xz decompression of multi-GB references) stays fast
-        ref_path = find_reference_trajectory(ref_dir, system_name)
-        ref_trajectory = read_trajectory(ref_path, index=":64" if dry_run else ":")
-        if not ref_trajectory:
-            raise ValueError(
-                f"Reference trajectory {ref_path!r} for {system_name!r} "
-                "empty or corrupted"
-            )
+        # stays fast; the HDF5 reader only decompresses the frames it returns
+        ref_trajectory = read_reference_trajectory(
+            ref_dir, system_name, max_frames=64 if dry_run else None
+        )
+        initial_atoms = ref_trajectory.frame_as_atoms(0)
 
         pred_traj_path = f"{out_dir}/{system_name}-nvt-{model_key}.extxyz"
         target_frames = n_steps // record_interval + 1
-        pred_trajectory = None
+        pred_frames = None  # list[Atoms] from reuse, in-memory run, or resumable run
         if not dry_run and os.path.isfile(pred_traj_path):
             # only reuse a complete, consistent rollout; else recompute (a truncated
             # file would silently evaluate as a shorter trajectory)
-            pred_trajectory = validate_pred_trajectory(
+            pred_frames = validate_pred_trajectory(
                 pred_traj_path,
                 expected_frames=target_frames,
-                ref_atoms=ref_trajectory[0],
+                ref_atoms=initial_atoms,
                 record_interval=record_interval,
             )
-        if pred_trajectory is None and dry_run:  # in-memory, no checkpoint files
-            pred_trajectory = run_nvt_md(
-                ref_trajectory[0],
+        if pred_frames is None and dry_run:  # in-memory, no checkpoint files
+            pred_frames = run_nvt_md(
+                initial_atoms,
                 calculator,
                 temperature_kelvin=temperature_kelvin,
                 n_steps=n_steps,
@@ -601,9 +624,9 @@ def run_md_benchmark(
                 record_interval=record_interval,
                 seed=seed,
             )
-        elif pred_trajectory is None:  # crash-safe resumable rollout to pred_traj_path
-            pred_trajectory = run_nvt_md_resumable(
-                ref_trajectory[0],
+        elif pred_frames is None:  # crash-safe resumable rollout to pred_traj_path
+            pred_frames = run_nvt_md_resumable(
+                initial_atoms,
                 calculator,
                 out_path=pred_traj_path,
                 temperature_kelvin=temperature_kelvin,
@@ -615,7 +638,7 @@ def run_md_benchmark(
 
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectory,
-            pred_trajectory,
+            pred_frames,  # evaluate_md_system coerces the Atoms list to a Trajectory
             ref_time_step_fs=ref_dt_fs,
             pred_time_step_fs=pred_time_step_fs,
             calculator=calculator,
