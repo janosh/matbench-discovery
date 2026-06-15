@@ -2,9 +2,7 @@
 
 import builtins
 import os
-import shutil
 import sys
-import tarfile
 import traceback
 
 import requests
@@ -58,34 +56,6 @@ def download_file(
                     f"{traceback.format_exc()}"
                 )
         print(f"Error downloading {url=}\nto {file_path=}.\n{error_msg}")
-
-
-def extract_tar_if_needed(tar_path: str) -> str:
-    """Extract a .tar archive into a sibling directory named after the archive
-    (minus the .tar suffix) unless that directory already exists, and return that
-    directory. Extraction goes to a temp directory moved into place only when
-    complete, so interrupted extractions can't be mistaken for finished ones.
-    """
-    if not tar_path.endswith(".tar"):
-        raise ValueError(f"Expected a .tar file, got {tar_path!r}")
-    extract_dir = tar_path.removesuffix(".tar")
-    if os.path.isdir(extract_dir):
-        return extract_dir
-
-    # sibling staging dir (not tempfile.mkdtemp: os.replace needs same filesystem);
-    # clear any leftovers from a previously interrupted extraction
-    tmp_dir = f"{extract_dir}.extracting"
-    shutil.rmtree(tmp_dir, ignore_errors=True)
-    with tarfile.open(tar_path) as archive:
-        # the "data" extraction filter (PEP 706) only exists in Python 3.11.4+;
-        # older 3.11 patches (allowed by requires-python >=3.11) lack the kwarg
-        if hasattr(tarfile, "data_filter"):
-            archive.extractall(tmp_dir, filter="data")
-        else:
-            archive.extractall(tmp_dir)  # noqa: S202
-    os.replace(tmp_dir, extract_dir)
-    print(f"Extracted {tar_path!r} to {extract_dir!r}")
-    return extract_dir
 
 
 def maybe_auto_download_file(url: str, abs_path: str, label: str | None = None) -> None:

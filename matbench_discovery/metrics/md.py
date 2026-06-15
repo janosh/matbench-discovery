@@ -477,19 +477,20 @@ def evaluate_md_system(
     return metrics
 
 
-def load_per_system_metrics(csv_paths: "Sequence[str]") -> pd.DataFrame:
-    """Concatenate per-system MD metric CSVs (one row each, as written by parallel
-    single-system runs) into a single DataFrame indexed by system.
+def combine_per_system_metrics(frames: "Sequence[pd.DataFrame]") -> pd.DataFrame:
+    """Concatenate already-read per-system MD metric rows (one row each, as written by
+    parallel single-system runs) into a single DataFrame indexed by system.
 
-    Deduplicates on the system column keeping the last occurrence, so re-running a
-    system (e.g. a timed-out rollout finished in a later job) overrides the earlier
-    row instead of double-counting it.
+    Takes pre-read DataFrames rather than paths so callers that already read each CSV
+    (e.g. to filter out multi-system files) don't read it twice. Deduplicates on the
+    system column keeping the last occurrence, so re-running a system (e.g. a timed-out
+    rollout finished in a later job) overrides the earlier row, not double-counting it.
     """
-    if not csv_paths:
-        raise ValueError("No per-system metric CSVs given")
-    df_all = pd.concat([pd.read_csv(path) for path in csv_paths], ignore_index=True)
+    if not frames:
+        raise ValueError("No per-system metric frames given")
+    df_all = pd.concat(frames, ignore_index=True)
     if "system" not in df_all:
-        raise ValueError(f"per-system CSVs lack a 'system' column, got {[*df_all]}")
+        raise ValueError(f"per-system metrics lack a 'system' column, got {[*df_all]}")
     return df_all.drop_duplicates(subset="system", keep="last").set_index("system")
 
 

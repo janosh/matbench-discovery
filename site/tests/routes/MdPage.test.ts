@@ -1,8 +1,7 @@
 import { MD_METRICS } from '$lib/labels'
 import MdPage from '$routes/tasks/md/+page.svelte'
-import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount } from '../index'
 
 describe(`MD Task Page`, () => {
   it(`renders page structure with title, table, and scatter`, () => {

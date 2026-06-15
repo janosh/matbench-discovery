@@ -29,7 +29,9 @@
     .map((filename) => `/${filename.split(`/`)[1]}`)
     .map((route) => {
       const sub_routes = child_routes.filter((child) => child.startsWith(`${route}/`))
-      return sub_routes.length ? { href: route, children: sub_routes } : route
+      // include the parent route itself so Nav keeps it a clickable link (its own
+      // +page) above the dropdown; Nav filters the duplicate out of the submenu
+      return sub_routes.length ? { href: route, children: [route, ...sub_routes] } : route
     })
 
   let url = $derived(page.url.pathname)

@@ -53,10 +53,10 @@ def main() -> int:
         help="Smoke test: 1 system, a few MD steps, capped reference slice",
     )
     parser.add_argument("--out-dir", help="Defaults to models/<arch>/<today>-md-nvt")
-    parser.add_argument("--ref-dir", help="Defaults to auto-downloaded CFPMD-26 set")
-    parser.add_argument("--settings-csv")
-    parser.add_argument("--ref-frame-interval-fs", type=float)
-    parser.add_argument("--systems", nargs="*", help="Subset of system dir names")
+    parser.add_argument(
+        "--ref-file", help="Reference HDF5. Defaults to auto-downloaded CFPMD-26 set"
+    )
+    parser.add_argument("--systems", nargs="*", help="Subset of system names")
     parser.add_argument("--n-steps", type=int, default=80_000)
     parser.add_argument("--time-step-fs", type=float, default=0.25)
     parser.add_argument("--record-interval", type=int, default=10)
@@ -114,9 +114,7 @@ def main() -> int:
         calculator=calculator,
         model_key=args.model,
         out_dir=out_dir,
-        ref_dir=args.ref_dir,
-        settings_csv=args.settings_csv,
-        ref_frame_interval_fs=args.ref_frame_interval_fs,
+        ref_file=args.ref_file,
         systems=args.systems,
         n_steps=args.n_steps,
         time_step_fs=args.time_step_fs,

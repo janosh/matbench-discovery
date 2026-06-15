@@ -25,7 +25,7 @@ data/**/tsne
 data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*
-# auto-downloaded + extracted MD reference trajectories
+# auto-downloaded MD reference trajectories
 data/md/
 data/wbm/*symprec=*.csv*
 !data/**/*umap-projections.csv.bz2

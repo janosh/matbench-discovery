@@ -709,24 +709,23 @@ def test_calc_md_metrics() -> None:
         md_metrics.calc_md_metrics(pd.DataFrame({"unrelated": [1]}))
 
 
-def test_load_per_system_metrics(tmp_path: Path) -> None:
-    """Per-system CSVs concat into one frame indexed by system; reruns override."""
-    (tmp_path / "sysA.csv").write_text("system,rdf_error\nsysA,10.0\n")
-    (tmp_path / "sysB.csv").write_text("system,rdf_error\nsysB,20.0\n")
-    # a rerun of sysA with a better value, written later -> must override the first
-    (tmp_path / "sysA_rerun.csv").write_text("system,rdf_error\nsysA,5.0\n")
-
-    paths = [f"{tmp_path}/{name}.csv" for name in ("sysA", "sysB", "sysA_rerun")]
-    df_md = md_metrics.load_per_system_metrics(paths)
+def test_combine_per_system_metrics() -> None:
+    """Per-system frames concat into one frame indexed by system; reruns override."""
+    frames = [
+        pd.DataFrame({"system": ["sysA"], "rdf_error": [10.0]}),
+        pd.DataFrame({"system": ["sysB"], "rdf_error": [20.0]}),
+        # a rerun of sysA with a better value, later in the list -> must override
+        pd.DataFrame({"system": ["sysA"], "rdf_error": [5.0]}),
+    ]
+    df_md = md_metrics.combine_per_system_metrics(frames)
     assert list(df_md.index) == ["sysB", "sysA"]  # sysA dedup'd to its last (rerun) row
     assert df_md.loc["sysA", "rdf_error"] == 5.0
     assert df_md.loc["sysB", "rdf_error"] == 20.0
 
-    with pytest.raises(ValueError, match="No per-system metric CSVs given"):
-        md_metrics.load_per_system_metrics([])
-    (tmp_path / "no_sys.csv").write_text("rdf_error\n10.0\n")
+    with pytest.raises(ValueError, match="No per-system metric frames given"):
+        md_metrics.combine_per_system_metrics([])
     with pytest.raises(ValueError, match="lack a 'system' column"):
-        md_metrics.load_per_system_metrics([f"{tmp_path}/no_sys.csv"])
+        md_metrics.combine_per_system_metrics([pd.DataFrame({"rdf_error": [10.0]})])
 
 
 @pytest.mark.parametrize(

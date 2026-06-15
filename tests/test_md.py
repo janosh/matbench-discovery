@@ -14,63 +14,67 @@ from ase.md.nose_hoover_chain import NoseHooverChainNVT
 
 from matbench_discovery.enums import Model
 from matbench_discovery.md import (
-    extract_temperature,
-    load_frame_intervals,
+    NvtParams,
+    list_reference_systems,
     read_reference_trajectory,
     read_trajectory,
-    resolve_frame_interval,
     run_md_benchmark,
     run_nvt_md,
     validate_pred_trajectory,
+    write_reference_h5,
 )
 from matbench_discovery.md_models import MD_MODELS, load_calculator
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
 
-@pytest.mark.parametrize(
-    ("name", "expected"),
-    [
-        ("bulkAu_1500K_Kapil", 1500),
-        ("MAPbBr3_300K", 300),
-        ("sample_295.5K_xyz", 295.5),
-        ("TiSe2_400K", 400),
-        ("B4K2_600K", 600),  # K inside formula must not match
-        ("no-temperature", None),
-        ("400Kelvin", None),  # K followed by letters must not match
-    ],
-)
-def test_extract_temperature(name: str, expected: float | None) -> None:
-    """Temperatures should be parsed from system names with a <number>K token."""
-    assert extract_temperature(name) == expected
-
-
-def test_load_frame_intervals(tmp_path: Path) -> None:
-    """Frame intervals should be keyed by '<system>_<temp>K'."""
-    csv_path = tmp_path / "settings.csv"
-    csv_path.write_text(
-        "System,temperature,stride,dt,padding\n"
-        "bulkAg,600,5,1,32\n"
-        "anthracene,293,1,0.5,320\n"
-        "sample,295.5,1,0.75,32\n"
-        "bulkAg_600K_extra,600,1,9,32\n"
-        "bulkCuAu,500,5,2,32\n"
+def test_reference_h5_roundtrip(tmp_path: Path) -> None:
+    """write_reference_h5 then list_reference_systems / read_reference_trajectory
+    round-trip preserves frames, dt_fs and temperature; missing systems raise;
+    max_frames caps reads; an empty entries dict is rejected.
+    """
+    ref_file = str(tmp_path / "ref.h5")
+    traj_a = Trajectory.from_ase(
+        run_nvt_md(
+            bulk("Cu", cubic=True),
+            EMT(),
+            temperature_kelvin=300,
+            n_steps=6,
+            record_interval=1,
+        )
     )
-    intervals = load_frame_intervals(str(csv_path))
-    assert intervals == {
-        "bulkAg_600K": 1.0,
-        "anthracene_293K": 0.5,
-        "sample_295.5K": 0.75,
-        "bulkAg_600K_extra_600K": 9.0,
-        "bulkCuAu_500K": 2.0,
-    }
-    assert resolve_frame_interval("bulkAg_600K_Kapil", intervals) == 1.0
-    assert resolve_frame_interval("sample_295.5K_Kapil", intervals) == 0.75
-    assert resolve_frame_interval("bulkAg_600K_extra_600K_Kapil", intervals) == 9.0
-    assert resolve_frame_interval("bulkAg_600K2_Kapil", intervals) is None
-    # dir names may use '-' (not '_') as the delimiter after the '<system>_<temp>K'
-    # key, e.g. bulkCuAu_500K-Artrith_VASP - must still resolve (caught a prod bug)
-    assert resolve_frame_interval("bulkCuAu_500K-Artrith_VASP", intervals) == 2.0
+    traj_b = Trajectory.from_ase(
+        run_nvt_md(
+            bulk("Al", cubic=True),
+            EMT(),
+            temperature_kelvin=500,
+            n_steps=4,
+            record_interval=1,
+        )
+    )
+    write_reference_h5(
+        ref_file,
+        {"sysA_300K": (traj_a, 0.25, 300.0), "sysB_500K": (traj_b, 1.5, 500.0)},
+    )
+
+    assert list_reference_systems(ref_file) == ["sysA_300K", "sysB_500K"]
+
+    traj, dt_fs, temperature = read_reference_trajectory(ref_file, "sysB_500K")
+    assert dt_fs == 1.5
+    assert temperature == 500.0
+    np.testing.assert_array_equal(traj.positions, traj_b.positions)
+    np.testing.assert_array_equal(traj.forces, traj_b.forces)
+
+    # max_frames only reads the leading frames (cheap head reads of huge references)
+    capped, _dt, _temp = read_reference_trajectory(ref_file, "sysA_300K", max_frames=3)
+    assert capped.n_frames == 3
+    np.testing.assert_array_equal(capped.positions, traj_a.positions[:3])
+
+    with pytest.raises(KeyError, match="not in reference"):
+        read_reference_trajectory(ref_file, "does_not_exist")
+
+    with pytest.raises(ValueError, match="no systems"):
+        write_reference_h5(ref_file, {})
 
 
 def test_run_nvt_md() -> None:
@@ -160,19 +164,16 @@ def test_md_pipeline_end_to_end(tmp_path: Path) -> None:
     assert model_metrics["combined_error"] >= 0
 
 
-def make_reference_dir(tmp_path: Path) -> tuple[str, str]:
-    """Write a tiny CFPMD-style reference dir + settings CSV, return (ref_dir, csv)."""
+def make_reference_h5(tmp_path: Path, *, system: str = "bulkCu_300K_test") -> str:
+    """Tiny single-system reference HDF5 (dt=0.25 fs, T=300 K); returns the path."""
     atoms = bulk("Cu", cubic=True) * (2, 2, 2)
     ref = run_nvt_md(
         atoms, EMT(), temperature_kelvin=300, n_steps=80, record_interval=1
     )
-    sys_dir = tmp_path / "ref" / "bulkCu_300K_test"
-    sys_dir.mkdir(parents=True)
-    ase.io.write(sys_dir / "traj.extxyz", ref)
-    csv = tmp_path / "settings.csv"
+    ref_file = str(tmp_path / "ref.h5")
     # dt = saved-frame cadence = time_step_fs * record_interval = 0.25 * 1
-    csv.write_text("System,temperature,stride,dt,padding\nbulkCu,300,1,0.25,32\n")
-    return str(tmp_path / "ref"), str(csv)
+    write_reference_h5(ref_file, {system: (Trajectory.from_ase(ref), 0.25, 300.0)})
+    return ref_file
 
 
 @pytest.mark.parametrize("dry_run", [True, False])
@@ -180,7 +181,7 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
     """Both modes return one row per system with all metric columns. A dry run writes
     nothing; a full run writes a per-system CSV + a rollout it reuses on re-run.
     """
-    ref_dir, settings_csv = make_reference_dir(tmp_path)
+    ref_file = make_reference_h5(tmp_path)
     out_dir = tmp_path / "out"
 
     def run(*, dry: bool = False) -> pd.DataFrame:
@@ -188,8 +189,7 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
             calculator=EMT(),
             model_key="emt",
             out_dir=str(out_dir),
-            ref_dir=ref_dir,
-            settings_csv=settings_csv,
+            ref_file=ref_file,
             n_steps=20,
             time_step_fs=1,
             record_interval=1,
@@ -225,7 +225,7 @@ def test_run_md_benchmark_resume_matches_single_run(
 
     import matbench_discovery.md as md_mod
 
-    ref_dir, settings_csv = make_reference_dir(tmp_path)
+    ref_file = make_reference_h5(tmp_path)
 
     def run(out_dir: Path) -> pd.DataFrame:
         """Run the tiny benchmark with explicit args (keeps ty from widening types)."""
@@ -233,8 +233,7 @@ def test_run_md_benchmark_resume_matches_single_run(
             calculator=EMT(),
             model_key="emt",
             out_dir=str(out_dir),
-            ref_dir=ref_dir,
-            settings_csv=settings_csv,
+            ref_file=ref_file,
             n_steps=20,  # 20 // 1 + 1 = 21 frames (odd -> final skips checkpoint)
             time_step_fs=1,
             record_interval=1,
@@ -281,110 +280,84 @@ def test_run_md_benchmark_resume_matches_single_run(
     assert len(read_trajectory(str(rollout))) == 21
 
 
-def test_read_reference_trajectory_prefers_hdf5(tmp_path: Path) -> None:
-    """read_reference_trajectory reads traj.h5 if present, else falls back to extxyz."""
-    sys_dir = tmp_path / "ref" / "bulkCu_300K_test"
-    sys_dir.mkdir(parents=True)
-    extxyz_frames = run_nvt_md(
-        bulk("Cu", cubic=True),
-        EMT(),
-        temperature_kelvin=300,
-        n_steps=5,
-        record_interval=1,
-    )
-    ase.io.write(sys_dir / "traj.extxyz", extxyz_frames)
-    # an h5 with shifted positions so we can tell which source was read
-    base = Trajectory.from_ase(extxyz_frames)
-    shifted = Trajectory(
-        atomic_numbers=base.atomic_numbers,
-        positions=base.positions + 1.0,
-        cell=base.cell,
-        pbc=base.pbc,
-    )
-    shifted.write_hdf5(str(sys_dir / "traj.h5"))
+def test_md_convert_resolve_settings() -> None:
+    """resolve_settings does suffix-aware longest-prefix dir-name to key matching."""
+    from scripts.md_convert_references_to_hdf5 import resolve_settings
 
-    ref_root = str(tmp_path / "ref")
-    from_h5 = read_reference_trajectory(ref_root, "bulkCu_300K_test")
-    np.testing.assert_allclose(from_h5.positions, shifted.positions, rtol=0, atol=0)
-
-    os.remove(sys_dir / "traj.h5")
-    from_ext = read_reference_trajectory(ref_root, "bulkCu_300K_test")
-    np.testing.assert_allclose(
-        from_ext.positions[0], extxyz_frames[0].positions, rtol=0, atol=1e-6
-    )
-    capped = read_reference_trajectory(ref_root, "bulkCu_300K_test", max_frames=2)
-    assert capped.n_frames == 2
+    settings = {
+        "bulkAg_600K": (1.0, 600.0),
+        "bulkAg_600K_extra_600K": (9.0, 600.0),
+        "bulkCuAu_500K": (2.0, 500.0),
+    }
+    assert resolve_settings("bulkAg_600K_Kapil", settings) == (1.0, 600.0)
+    assert resolve_settings("bulkAg_600K_extra_600K_Kapil", settings) == (9.0, 600.0)
+    assert resolve_settings("bulkAg_600K2_Kapil", settings) is None
+    # '-' delimiter after the key must still resolve (caught a prod bug)
+    assert resolve_settings("bulkCuAu_500K-Artrith_VASP", settings) == (2.0, 500.0)
 
 
-def test_run_md_benchmark_hdf5_reference_matches_extxyz(tmp_path: Path) -> None:
-    """A full run yields identical metrics whether the reference is read from the fast
-    HDF5 artifact or parsed from extxyz (same underlying data, deterministic rollout).
-    """
-    ref_dir, settings_csv = make_reference_dir(tmp_path)
-    sys_dir = f"{ref_dir}/bulkCu_300K_test"
-    extxyz_ref = Trajectory.from_ase(read_trajectory(f"{sys_dir}/traj.extxyz"))
-    extxyz_ref.write_hdf5(f"{sys_dir}/traj.h5")
-
-    def run(out_name: str) -> pd.DataFrame:
-        return run_md_benchmark(
-            calculator=EMT(),
-            model_key="emt",
-            out_dir=str(tmp_path / out_name),
-            ref_dir=ref_dir,
-            settings_csv=settings_csv,
-            n_steps=20,
-            time_step_fs=1,
-            record_interval=1,
-        )
-
-    df_hdf5 = run("out_hdf5")  # traj.h5 present -> read via HDF5
-    os.remove(f"{sys_dir}/traj.h5")
-    df_extxyz = run("out_extxyz")  # only extxyz -> parsed fallback
-
-    for col in df_hdf5.select_dtypes("number").columns:
-        np.testing.assert_allclose(
-            df_hdf5[col].to_numpy(),
-            df_extxyz[col].to_numpy(),
-            rtol=0,
-            atol=1e-12,
-            equal_nan=True,
-            err_msg=f"metric {col} differs between HDF5 and extxyz reference",
-        )
-
-
-def test_run_md_benchmark_rejects_invalid_inputs(
+def test_md_convert_packs_reference(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Invalid benchmark inputs should fail clearly before downstream errors.
-
-    Covers an empty system selection (would otherwise become an empty-DataFrame
-    KeyError) and an empty reference trajectory (would otherwise index frame 0).
+    """The one-time packer turns a raw per-system extxyz dir + settings CSV into a
+    single reference HDF5 whose groups carry the trajectory, dt_fs and
+    temperature_kelvin, resolving the '-Artrith_VASP'-style dir suffix to its key.
     """
-    import matbench_discovery.md as md_mod
+    import sys
 
-    ref_dir, settings_csv = make_reference_dir(tmp_path)
+    from scripts import md_convert_references_to_hdf5 as packer
 
-    with pytest.raises(ValueError, match="No system directories found"):
+    frames = run_nvt_md(
+        bulk("Cu", cubic=True) * (2, 2, 2),
+        EMT(),
+        temperature_kelvin=300,
+        n_steps=8,
+        record_interval=1,
+    )
+    system = "bulkCu_300K-Artrith_VASP"
+    sys_dir = tmp_path / "raw" / system
+    sys_dir.mkdir(parents=True)
+    ase.io.write(sys_dir / "traj.extxyz", frames)
+    settings_csv = tmp_path / "settings.csv"
+    settings_csv.write_text("System,temperature,stride,dt\nbulkCu,300,1,0.25\n")
+    out_h5 = str(tmp_path / "ref.h5")
+
+    argv = [
+        "pack",
+        "--ref-dir",
+        str(tmp_path / "raw"),
+        "--settings-csv",
+        str(settings_csv),
+        "--out",
+        out_h5,
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    assert packer.main() == 0
+
+    assert list_reference_systems(out_h5) == [system]
+    traj, dt_fs, temperature = read_reference_trajectory(out_h5, system)
+    assert dt_fs == 0.25
+    assert temperature == 300.0
+    assert traj.n_frames == len(frames)
+    # extxyz round-trips positions to print precision
+    np.testing.assert_allclose(
+        traj.positions[0], frames[0].positions, rtol=0, atol=1e-6
+    )
+
+
+def test_run_md_benchmark_rejects_unknown_systems(tmp_path: Path) -> None:
+    """A --systems selection matching no reference group fails clearly (instead of
+    becoming a downstream empty-DataFrame KeyError).
+    """
+    ref_file = make_reference_h5(tmp_path)
+
+    with pytest.raises(ValueError, match="No systems found"):
         run_md_benchmark(
             calculator=EMT(),
             model_key="emt",
             out_dir=str(tmp_path / "out"),
-            ref_dir=ref_dir,
-            settings_csv=settings_csv,
+            ref_file=ref_file,
             systems=["does_not_exist"],
-        )
-
-    monkeypatch.setattr(md_mod, "read_trajectory", lambda *_args, **_kwargs: [])
-    with pytest.raises(ValueError, match="empty or corrupted"):
-        run_md_benchmark(
-            calculator=EMT(),
-            model_key="emt",
-            out_dir=str(tmp_path / "out"),
-            ref_dir=ref_dir,
-            settings_csv=settings_csv,
-            n_steps=20,
-            time_step_fs=1,
-            record_interval=1,
         )
 
 
@@ -463,24 +436,12 @@ def _fail_save_checkpoint_after(
         ckpt_path: str,
         dynamics: NoseHooverChainNVT,
         *,
+        params: NvtParams,
         n_steps: int,
         n_frames: int,
-        record_interval: int,
-        time_step_fs: float,
-        temperature_kelvin: float,
-        thermostat_time_scale_fs: float,
-        seed: int,
     ) -> None:
         orig_save(
-            ckpt_path,
-            dynamics,
-            n_steps=n_steps,
-            n_frames=n_frames,
-            record_interval=record_interval,
-            time_step_fs=time_step_fs,
-            temperature_kelvin=temperature_kelvin,
-            thermostat_time_scale_fs=thermostat_time_scale_fs,
-            seed=seed,
+            ckpt_path, dynamics, params=params, n_steps=n_steps, n_frames=n_frames
         )
         saves["n"] += 1
         if saves["n"] <= kills:
@@ -638,11 +599,9 @@ def test_md_evals_skips_incomplete_coverage(
     model = Model.mace_mp_0
     monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))
     monkeypatch.setattr(eval_md.cli_args, "models", [model])
-    ref_dir = tmp_path / "ref"
-    for name in ("sysA", "sysB", "sysC"):
-        (ref_dir / name).mkdir(parents=True)
+    monkeypatch.setattr(eval_md, "default_md_reference_path", lambda: "ref.h5")
     monkeypatch.setattr(
-        eval_md, "default_md_reference_paths", lambda: (str(ref_dir), "settings.csv")
+        eval_md, "list_reference_systems", lambda _path: ["sysA", "sysB", "sysC"]
     )
 
     def _fail_write(*_a: object, **_k: object) -> None:
@@ -658,6 +617,75 @@ def test_md_evals_skips_incomplete_coverage(
     )
 
     assert eval_md.main() == 1  # missing sysB/sysC -> skip, exit 1, no YAML written
+
+
+def test_md_evals_skips_incomplete_fallback_csv(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The md_path fallback (a submitted combined CSV, no per-system files) must apply
+    the same coverage guard so an incomplete submission can't corrupt the leaderboard.
+    """
+    from scripts.evals import md as eval_md
+
+    model = Model.mace_mp_0
+    monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))  # no per-system CSVs here
+    monkeypatch.setattr(eval_md.cli_args, "models", [model])
+    monkeypatch.setattr(eval_md, "default_md_reference_path", lambda: "ref.h5")
+    monkeypatch.setattr(
+        eval_md, "list_reference_systems", lambda _path: ["sysA", "sysB", "sysC"]
+    )
+
+    incomplete_csv = tmp_path / "combined.csv.gz"  # only 1 of 3 reference systems
+    pd.DataFrame({"system": ["sysA"], "rdf_error": [1.0]}).to_csv(
+        incomplete_csv, index=False
+    )
+    monkeypatch.setattr(
+        type(model), "md_path", property(lambda _self: str(incomplete_csv))
+    )
+
+    def _fail_write(*_a: object, **_k: object) -> None:
+        raise AssertionError("must not write YAML from an incomplete fallback CSV")
+
+    monkeypatch.setattr(eval_md.md_metrics, "write_metrics_to_yaml", _fail_write)
+
+    assert eval_md.main() == 1  # missing sysB/sysC -> skip, exit 1, no YAML written
+
+
+def test_md_evals_handles_placeholder_md_metrics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A model with complete per-system coverage but a 'not available' placeholder for
+    metrics.md (a string, not a dict) must aggregate without crashing on md_yaml.get().
+    """
+    from scripts.evals import md as eval_md
+
+    model = Model.mace_mp_0
+    monkeypatch.setattr(
+        type(model), "metrics", property(lambda _self: {"md": "not available"})
+    )
+    monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))
+    monkeypatch.setattr(eval_md.cli_args, "models", [model])
+    monkeypatch.setattr(eval_md, "default_md_reference_path", lambda: "ref.h5")
+    # single system -> sysA alone gives full coverage
+    monkeypatch.setattr(eval_md, "list_reference_systems", lambda _path: ["sysA"])
+
+    writes: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        eval_md.md_metrics,
+        "write_metrics_to_yaml",
+        lambda *_a, **kwargs: writes.append(kwargs),
+    )
+
+    arch_dir = os.path.dirname(model.rel_path)
+    md_dir = tmp_path / "models" / arch_dir / "2026-06-14-md-nvt"
+    md_dir.mkdir(parents=True)
+    pd.DataFrame({"system": ["sysA"], "rdf_error": [1.0], "vdos_error": [2.0]}).to_csv(
+        md_dir / f"{model.name}-md-metrics-sysA.csv.gz", index=False
+    )
+
+    assert eval_md.main() == 0  # placeholder md must not raise AttributeError
+    assert len(writes) == 1
+    assert writes[0]["pred_file_url"] is None  # no url from a placeholder md section
 
 
 def test_md_model_uv_run_cmd() -> None:

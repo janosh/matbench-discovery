@@ -9,36 +9,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from matbench_discovery.remote.fetch import (
-    download_file,
-    extract_tar_if_needed,
-    maybe_auto_download_file,
-)
-
-
-def test_extract_tar_if_needed(tmp_path: Path) -> None:
-    """Tar archives extract once and non-.tar paths fail before extraction."""
-    import tarfile
-
-    payload = tmp_path / "payload" / "sub_dir" / "file.txt"
-    payload.parent.mkdir(parents=True)
-    payload.write_text("hello")
-    tar_path = tmp_path / "archive.tar"
-    with tarfile.open(tar_path, mode="w") as archive:
-        archive.add(payload.parent, arcname="sub_dir")
-
-    extract_dir = extract_tar_if_needed(str(tar_path))
-
-    assert extract_dir == str(tmp_path / "archive")
-    assert (Path(extract_dir) / "sub_dir" / "file.txt").read_text() == "hello"
-    # repeated calls reuse the existing extraction, even if the tar is gone
-    os.remove(tar_path)
-    assert extract_tar_if_needed(str(tar_path)) == extract_dir
-
-    zip_path = tmp_path / "archive.zip"
-    zip_path.write_text("not a tar")
-    with pytest.raises(ValueError, match=r"Expected a \.tar file"):
-        extract_tar_if_needed(str(zip_path))
+from matbench_discovery.remote.fetch import download_file, maybe_auto_download_file
 
 
 def make_mock_response(content: bytes, status_code: int = 200) -> requests.Response:

@@ -424,11 +424,15 @@ def calc_kappa_for_structure(
         "broken_symmetry": False,
     }
     force_results = None
-    # initial space group for symmetry breaking detection
-    init_spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms), symprec=symprec).number
 
     # Relaxation
     try:
+        # initial space group for symmetry-breaking detection (on the unrelaxed atoms);
+        # computed inside the try so MoyoDataset/MoyoAdapter failures are captured into
+        # err_dict like the relaxed-symmetry calculation below, not crashing the task
+        init_spg_num = MoyoDataset(
+            MoyoAdapter.from_atoms(atoms), symprec=symprec
+        ).number
         atoms.calc = calculator
         if max_steps > 0:
             if enforce_relax_symm:
@@ -450,8 +454,8 @@ def calc_kappa_for_structure(
             if reached_max_steps:
                 print(f"Material {mat_id=} reached {max_steps=} during relaxation")
 
-            # maximum residual stress component in for xx,yy,zz and xy,yz,xz
-            # components separately result is a array of 2 elements
+            # max residual stress component in for xx,yy,zz and xy,yz,xz
+            # components separately, result is 2-element array
             max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
 
             atoms.calc = None

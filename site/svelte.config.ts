@@ -35,12 +35,22 @@ export default {
         const ref_index: string[] = []
 
         // Replace figure labels with 'Fig. {n}' and add to fig_index
-        let code = file.content.replaceAll(/@label:((fig|tab):[^\s]+)/g, (_match, id) => {
-          if (!fig_index.includes(id)) fig_index.push(id)
-          const idx = (filename.includes(`/src/routes/si/`) ? `S` : ``) + fig_index.length
-          const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
-          return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
-        })
+        let code = file.content.replaceAll(
+          /@label:((fig|tab):[^\s]+)/g,
+          (_match, raw_id) => {
+            // lowercase so storage, the anchor id/href, and the case-insensitive @fig
+            // reference lookup (id_lower below) stay consistent regardless of casing
+            const id = raw_id.toLowerCase()
+            if (!fig_index.includes(id)) fig_index.push(id)
+            const idx =
+              (filename.includes(`/src/routes/si/`) ? `S` : ``) + fig_index.length
+            // inline the octicon "link" glyph: no #octicon-link symbol is defined in
+            // the page, so a <use xlink:href="#octicon-link"> would render nothing
+            const octicon_link = `<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M7.775 3.275a.75.75 0 0 0 1.06 1.06l1.25-1.25a2 2 0 1 1 2.83 2.83l-2.5 2.5a2 2 0 0 1-2.83 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l2.5-2.5a3.5 3.5 0 0 0-4.95-4.95l-1.25 1.25Zm-4.69 9.64a2 2 0 0 1 0-2.83l2.5-2.5a2 2 0 0 1 2.83 0 .75.75 0 0 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-2.5 2.5a3.5 3.5 0 0 0 4.95 4.95l1.25-1.25a.75.75 0 0 0-1.06-1.06l-1.25 1.25a2 2 0 0 1-2.83 0Z"></path></svg>`
+            const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}">${octicon_link}</a>`
+            return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
+          },
+        )
 
         // Replace figure references @fig:label with 'fig. {n}' and add to fig_index
         code = code.replaceAll(

@@ -6,14 +6,13 @@ metrics CSV per model. Energy/force RMSE requires running the model itself and i
 handled by the unified runner models/run_md.py (which runs the model itself).
 
 Expected data layout (CFPMD-26 convention):
-    <ref-dir>/<system>/traj.extxyz      reference AIMD trajectories
+    <ref-file>                               single reference HDF5 (group per system)
     <pred-dir>/<system>/nvt_<model>.extxyz   MLIP rollouts
 
 Example:
     python scripts/evals/md_trajectories.py \
-        --ref-dir ~/data/cfpmd-26/reference_AIMD_trajectories \
-        --pred-dir ~/data/cfpmd-26/mlip_trajectories \
-        --settings-csv ~/data/cfpmd-26/reference_AIMD_timestep_and_stride.csv
+        --ref-file ~/data/cfpmd-26/cfpmd-26-aimd-reference.h5 \
+        --pred-dir ~/data/cfpmd-26/mlip_trajectories
 """
 
 import argparse
@@ -26,23 +25,20 @@ from tqdm import tqdm
 
 from matbench_discovery import today
 from matbench_discovery.md import (
-    default_md_reference_paths,
-    load_frame_intervals,
+    default_md_reference_path,
     read_reference_trajectory,
     read_trajectory,
-    resolve_frame_interval,
 )
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
-    "--ref-dir",
-    help="Directory of per-system reference trajectories. Defaults to the CFPMD-26 "
-    "reference dataset, auto-downloaded from figshare on first use.",
+    "--ref-file",
+    help="Reference HDF5 (one group per system, with dt_fs/temperature_kelvin attrs). "
+    "Defaults to the CFPMD-26 reference dataset, auto-downloaded from figshare.",
 )
 parser.add_argument("--pred-dir", required=True)
-parser.add_argument("--settings-csv", help="CSV with per-system reference frame dt")
 parser.add_argument(
     "--pred-frame-interval-fs",
     type=float,
@@ -53,19 +49,14 @@ parser.add_argument("--models", nargs="*", help="Subset of model keys to evaluat
 parser.add_argument("--out-dir", default=f"md-trajectory-metrics/{today}")
 args = parser.parse_args()
 
-if args.ref_dir is None:  # default to auto-downloaded CFPMD-26 reference dataset
-    args.ref_dir, default_csv = default_md_reference_paths()
-    args.settings_csv = args.settings_csv or default_csv
-elif args.settings_csv is None:
-    raise SystemExit("Pass --settings-csv when using a custom --ref-dir")
-
-frame_intervals = load_frame_intervals(args.settings_csv)
+ref_file = args.ref_file or default_md_reference_path()
 os.makedirs(args.out_dir, exist_ok=True)
 
 # discover (system, model) pairs from nvt_<model>.extxyz files in pred-dir
 rows_by_model: dict[str, list[dict[str, float | str]]] = {}
 pred_files = sorted(glob(f"{args.pred_dir}/*/nvt_*.extxyz*"))
-ref_trajectories: dict[str, Trajectory] = {}  # cache: each ref reused by ~15 models
+# cache: each ref (trajectory, dt_fs) reused by ~15 models; keep at most one in memory
+ref_cache: dict[str, tuple[Trajectory, float]] = {}
 
 for pred_file in (pbar := tqdm(pred_files, desc="MD trajectory pairs")):
     system_name = os.path.basename(os.path.dirname(pred_file))
@@ -74,19 +65,16 @@ for pred_file in (pbar := tqdm(pred_files, desc="MD trajectory pairs")):
         continue
     pbar.set_postfix_str(f"{system_name} {model_key}")
 
-    ref_dt_fs = resolve_frame_interval(system_name, frame_intervals)
-    if ref_dt_fs is None:
-        raise ValueError(f"No frame interval for {system_name!r} in settings CSV")
-
     try:
-        if system_name not in ref_trajectories:
-            ref_trajectories.clear()  # keep at most one ref trajectory in memory
-            # reads the fast traj.h5 artifact if present, else parses extxyz
-            ref_trajectories[system_name] = read_reference_trajectory(
-                args.ref_dir, system_name
+        if system_name not in ref_cache:
+            ref_cache.clear()  # keep at most one ref trajectory in memory
+            ref_traj, ref_dt_fs, _temperature = read_reference_trajectory(
+                ref_file, system_name
             )
+            ref_cache[system_name] = (ref_traj, ref_dt_fs)
+        ref_traj, ref_dt_fs = ref_cache[system_name]
         system_metrics = md_metrics.evaluate_md_system(
-            ref_trajectories[system_name],
+            ref_traj,
             read_trajectory(pred_file),
             ref_time_step_fs=ref_dt_fs,
             pred_time_step_fs=args.pred_frame_interval_fs,

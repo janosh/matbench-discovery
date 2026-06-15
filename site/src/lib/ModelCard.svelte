@@ -32,6 +32,7 @@
     ...(typeof model.metrics?.phonons === `object`
       ? model.metrics?.phonons.kappa_103
       : {}),
+    ...(typeof model.metrics?.md === `object` ? model.metrics.md : {}),
     CPS: model.CPS,
   })
   let { missing_preds } = $derived(all_metrics)

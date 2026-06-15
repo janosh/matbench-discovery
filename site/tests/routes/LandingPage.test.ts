@@ -1,7 +1,7 @@
 import Page from '$routes/+page.svelte'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount } from '../index'
 
 describe(`Landing Page`, () => {
   // happy-dom mounts of the full-column metrics table are slow in CI

@@ -1,68 +1,115 @@
-"""Convert CFPMD-26 reference trajectories from extxyz(.xz) to HDF5 (one ``traj.h5``
-per system) so the MD benchmark loads them in milliseconds instead of the minutes-to-
-hours ASE's pure-Python extxyz parser needs for tens of thousands of frames.
+"""Pack the CFPMD-26 reference trajectories (per-system extxyz.xz + a settings CSV)
+into a single multi-group HDF5: one group per system holding the trajectory arrays plus
+``dt_fs`` (saved-frame interval) and ``temperature_kelvin`` as group attributes. This is
+a one-time maintainer step run before hosting the reference dataset; the benchmark then
+reads the HDF5 directly (no per-job extxyz parsing, no settings CSV).
 
-Run once per dataset (the slow parse happens here, not in every benchmark job):
+    python scripts/md_convert_references_to_hdf5.py \
+        --ref-dir ~/data/cfpmd-26/reference_AIMD_trajectories \
+        --settings-csv ~/data/cfpmd-26/reference_AIMD_timestep_and_stride.csv \
+        --out data/md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.h5
 
-    python scripts/md_convert_references_to_hdf5.py            # all systems
-    python scripts/md_convert_references_to_hdf5.py --systems bulkAu_1500K_Kapil
-    python scripts/md_convert_references_to_hdf5.py --overwrite
+The extxyz parse is single-threaded and slow for the largest references (the
+20k-70k-frame metals/perovskites take minutes to hours each), so run it on a box with
+adequate walltime. Only the resulting HDF5 needs to be hosted/distributed.
 """
 
 import argparse
 import os
-import sys
 import time
+from glob import glob
 
-from matbench_discovery.md import (
-    default_md_reference_paths,
-    find_reference_trajectory,
-    read_trajectory,
-)
+import pandas as pd
+
+from matbench_discovery.md import read_trajectory, write_reference_h5
 from matbench_discovery.trajectory import Trajectory
 
 
+def load_settings(csv_path: str) -> dict[str, tuple[float, float]]:
+    """Map '<System>_<temp>K' keys to (dt_fs, temperature_kelvin) from a CFPMD settings
+    CSV with System, temperature and dt columns (dt = time between saved ref frames).
+    """
+    return {
+        f"{row['System']}_{float(row['temperature']):g}K": (
+            float(row["dt"]),
+            float(row["temperature"]),
+        )
+        for _, row in pd.read_csv(csv_path).iterrows()
+    }
+
+
+def resolve_settings(
+    system_name: str, settings: dict[str, tuple[float, float]]
+) -> tuple[float, float] | None:
+    """(dt_fs, temperature_kelvin) for a trajectory dir name. Dir names append suffixes
+    like '_Kapil' or '-Artrith_VASP' to the '<System>_<temp>K' settings key (delimiter
+    '_' for most systems, '-' for a few); pick the longest delimiter-aware prefix match
+    so a name containing another '<...>K' token doesn't resolve to a shorter key.
+    """
+    matches = {
+        key: value
+        for key, value in settings.items()
+        if system_name == key
+        or (system_name.startswith(key) and system_name[len(key)] in "_-")
+    }
+    return matches[max(matches, key=len)] if matches else None
+
+
+def find_reference_trajectory(ref_dir: str, system_name: str) -> str:
+    """Path to the single traj.extxyz (or ASE-transparent .gz/.xz/.bz2) under
+    ref_dir/system_name.
+    """
+    traj_files = sorted(glob(f"{ref_dir}/{system_name}/traj.*xyz*"))
+    if len(traj_files) != 1:
+        raise ValueError(
+            f"Expected 1 reference trajectory in {ref_dir}/{system_name}, "
+            f"got {traj_files}"
+        )
+    return traj_files[0]
+
+
 def main() -> int:
-    """Convert each reference system's extxyz trajectory to a sibling traj.h5."""
+    """Pack per-system extxyz references + settings CSV into one multi-group HDF5."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--ref-dir", help="Defaults to the CFPMD-26 reference dir")
-    parser.add_argument("--systems", nargs="*", help="Subset of system dir names")
+    parser.add_argument("--ref-dir", required=True, help="Raw per-system extxyz dir")
     parser.add_argument(
-        "--overwrite", action="store_true", help="Re-convert even if traj.h5 exists"
+        "--settings-csv", required=True, help="Per-system dt + temperature CSV"
     )
+    parser.add_argument("--out", required=True, help="Output reference HDF5 path")
+    parser.add_argument("--systems", nargs="*", help="Subset of system dir names")
     args = parser.parse_args()
 
-    ref_dir = args.ref_dir or default_md_reference_paths()[0]
+    settings = load_settings(args.settings_csv)
     system_dirs = sorted(
         entry.name
-        for entry in os.scandir(ref_dir)
+        for entry in os.scandir(args.ref_dir)
         if entry.is_dir() and (not args.systems or entry.name in args.systems)
     )
     if not system_dirs:
-        parser.error(f"No system directories found under {ref_dir!r}")
+        parser.error(f"No system directories found under {args.ref_dir!r}")
 
-    n_converted = 0
+    entries: dict[str, tuple[Trajectory, float, float]] = {}
     for system_name in system_dirs:
-        h5_path = f"{ref_dir}/{system_name}/traj.h5"
-        if os.path.isfile(h5_path) and not args.overwrite:
-            print(f"skip {system_name}: {h5_path} exists (use --overwrite)")
-            continue
-        src = find_reference_trajectory(ref_dir, system_name)
+        resolved = resolve_settings(system_name, settings)
+        if resolved is None:
+            parser.error(f"No settings row for {system_name!r} in {args.settings_csv}")
+        dt_fs, temperature_kelvin = resolved
+        src = find_reference_trajectory(args.ref_dir, system_name)
         start = time.perf_counter()
         trajectory = Trajectory.from_ase(read_trajectory(src))
-        trajectory.write_hdf5(h5_path)
-        src_mb = os.path.getsize(src) / 1e6
-        h5_mb = os.path.getsize(h5_path) / 1e6
+        entries[system_name] = (trajectory, dt_fs, temperature_kelvin)
         print(
-            f"{system_name}: {trajectory.n_frames} frames, {os.path.basename(src)} "
-            f"{src_mb:.1f} MB -> traj.h5 {h5_mb:.1f} MB in "
+            f"{system_name}: {trajectory.n_frames} frames, dt={dt_fs} fs, "
+            f"T={temperature_kelvin} K, parsed {os.path.basename(src)} "
+            f"({os.path.getsize(src) / 1e6:.1f} MB) in "
             f"{time.perf_counter() - start:.1f}s"
         )
-        n_converted += 1
 
-    print(f"\nConverted {n_converted}/{len(system_dirs)} systems under {ref_dir}")
+    write_reference_h5(args.out, entries)
+    out_mb = os.path.getsize(args.out) / 1e6
+    print(f"\nWrote {len(entries)} systems to {args.out} ({out_mb:.1f} MB)")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

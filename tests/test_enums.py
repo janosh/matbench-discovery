@@ -210,35 +210,35 @@ def test_data_files_enum() -> None:
     assert DataFiles.wbm_summary.url.startswith("https://figshare.com/files/")
 
 
-def test_data_files_tar_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Tar entries auto-extract to a sibling dir; declined downloads don't extract."""
-    import tarfile
+@pytest.mark.parametrize("md_value", [None, "not available", 42])
+def test_model_md_path_returns_none_for_non_dict_md(
+    md_value: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """md_path returns None for any non-dict metrics.md (absent, the 'not available'
+    placeholder, or an unexpected scalar) instead of raising AttributeError on .get.
+    """
+    model = Model.mace_mp_0
+    monkeypatch.setattr(
+        type(model), "metrics", property(lambda _self: {"md": md_value})
+    )
+    assert model.md_path is None
 
-    entry = DataFiles.aimd_reference_md_trajectories
-    monkeypatch.setattr(DataFiles, "_base_dir", str(tmp_path))
-    # build the expected path the same way DataFiles.path does (f-string off the base
-    # dir, not pathlib) so the comparison is exact on Windows too ('/' vs '\')
-    tar_path = f"{tmp_path}/{entry.rel_path}"
 
-    # a missing tar (declined or failed download) must return its (non-existent)
-    # path like non-tar entries do, not raise FileNotFoundError from extraction
-    with patch("matbench_discovery.enums.download_file"):  # no-op download
-        assert entry.path == tar_path
+def test_model_md_path_returns_path_for_dict_md(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """md_path resolves pred_file under ROOT when metrics.md is a dict."""
+    from matbench_discovery import ROOT
+    from matbench_discovery import enums as enums_mod
 
-    # with the tar present, .path extracts it and returns the extraction dir
-    os.makedirs(os.path.dirname(tar_path))
-    payload = tmp_path / "payload.txt"
-    payload.write_text("hello")
-    with tarfile.open(tar_path, mode="w") as archive:
-        archive.add(payload, arcname="payload.txt")
-
-    extract_dir = entry.path
-    assert extract_dir == tar_path.removesuffix(".tar")
-    assert (Path(extract_dir) / "payload.txt").read_text() == "hello"
-
-    # later calls short-circuit on the extracted dir, even if the tar was deleted
-    os.remove(tar_path)
-    assert entry.path == extract_dir
+    model = Model.mace_mp_0
+    monkeypatch.setattr(
+        type(model),
+        "metrics",
+        property(lambda _self: {"md": {"pred_file": "models/x/md.csv.gz"}}),
+    )
+    monkeypatch.setattr(enums_mod, "maybe_auto_download_file", lambda *_a, **_k: None)
+    assert model.md_path == f"{ROOT}/models/x/md.csv.gz"
 
 
 @pytest.mark.parametrize("data_file", DataFiles)

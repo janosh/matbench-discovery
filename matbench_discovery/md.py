@@ -7,13 +7,13 @@ time scale, frames recorded every 10 steps for 20 ps.
 
 import contextlib
 import os
-import re
 import time
 import zipfile
-from glob import glob
+from dataclasses import dataclass
 
 import ase
 import ase.io
+import h5py
 import numpy as np
 import pandas as pd
 from ase import Atoms, units
@@ -26,59 +26,65 @@ from tqdm import tqdm
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
-
-def extract_temperature(name: str) -> float | None:
-    """Temperature in Kelvin parsed from a '<number>K' token in a system name like
-    'bulkAu_1500K_Kapil', or None if no such token is found.
-    """
-    if match := re.search(r"(?<![a-zA-Z0-9.])(\d+(?:\.\d+)?)K(?![a-zA-Z0-9])", name):
-        return float(match[1])
-    return None
+# === single-file multi-system reference dataset ===
+# CFPMD-26 references ship as one HDF5 with a group per system, each carrying the
+# trajectory arrays (guarded by Trajectory's per-group TRAJECTORY_SCHEMA) plus its
+# saved-frame interval (dt_fs) and target temperature as group attrs. Self-describing
+# -> no separate settings CSV or system-name matching.
 
 
-def load_frame_intervals(csv_path: str) -> dict[str, float]:
-    """Map '<system>_<temp>K' keys to saved-frame intervals in fs from a CFPMD-style
-    settings CSV with System, temperature and dt columns, where dt is the time
-    between saved reference frames. Match reference trajectory directories like
-    'bulkAg_600K_Kapil' by prefix against the returned keys.
-    """
-    return {
-        f"{row['System']}_{float(row['temperature']):g}K": float(row["dt"])
-        for _, row in pd.read_csv(csv_path).iterrows()
-    }
-
-
-def resolve_frame_interval(
-    system_name: str, frame_intervals: dict[str, float]
-) -> float | None:
-    """Return the saved-frame interval for a trajectory directory name.
-
-    CFPMD trajectory directories append suffixes like '_Kapil' or '-Artrith_VASP' to
-    settings keys of the form '<system>_<temp>K' (the delimiter after the key is '_'
-    for most systems but '-' for a few). Pick the longest delimiter-aware match so
-    systems whose names contain another '<...>K' token don't resolve to a shorter
-    prefix.
-    """
-    matches = {
-        key: frame_interval
-        for key, frame_interval in frame_intervals.items()
-        if system_name == key
-        or (system_name.startswith(key) and system_name[len(key)] in "_-")
-    }
-    return matches[max(matches, key=len)] if matches else None
-
-
-def default_md_reference_paths() -> tuple[str, str]:
-    """Reference trajectory dir and settings CSV of the auto-downloaded (and
-    auto-extracted) CFPMD-26 dataset.
-    """
+def default_md_reference_path() -> str:
+    """Path to the auto-downloaded CFPMD-26 reference HDF5 (one group per system)."""
     from matbench_discovery.enums import DataFiles
 
-    data_root = DataFiles.aimd_reference_md_trajectories.path
-    return (
-        f"{data_root}/reference_AIMD_trajectories",
-        f"{data_root}/reference_AIMD_timestep_and_stride.csv",
-    )
+    return DataFiles.aimd_reference_md_trajectories.path
+
+
+def write_reference_h5(
+    path: str, entries: "dict[str, tuple[Trajectory, float, float]]"
+) -> None:
+    """Atomically write a multi-system reference HDF5: one group per system holding the
+    trajectory arrays plus ``dt_fs`` (saved-frame interval) and ``temperature_kelvin``
+    attrs. ``entries`` maps system name to (trajectory, dt_fs, temperature_kelvin).
+    """
+    if not entries:
+        raise ValueError("Cannot write a reference file with no systems")
+    if dir_name := os.path.dirname(path):
+        os.makedirs(dir_name, exist_ok=True)
+    tmp_path = f"{path}.tmp"
+    with h5py.File(tmp_path, "w") as file:
+        for system_name, (trajectory, dt_fs, temperature_kelvin) in entries.items():
+            group = file.create_group(system_name)
+            trajectory.write_to_h5_group(group)
+            group.attrs["dt_fs"] = float(dt_fs)
+            group.attrs["temperature_kelvin"] = float(temperature_kelvin)
+    os.replace(tmp_path, path)
+
+
+def list_reference_systems(path: str) -> list[str]:
+    """Sorted system names (group keys) in a reference HDF5 file."""
+    with h5py.File(path, "r") as file:
+        return sorted(name for name in file if isinstance(file[name], h5py.Group))
+
+
+def read_reference_trajectory(
+    path: str, system_name: str, *, max_frames: int | None = None
+) -> "tuple[Trajectory, float, float]":
+    """Read one system from a reference HDF5, returning (trajectory, dt_fs,
+    temperature_kelvin). Only the requested frames are read/decompressed, so dry-run
+    head reads (``max_frames``) of huge references stay fast.
+    """
+    frames = slice(0, max_frames) if max_frames is not None else slice(None)
+    with h5py.File(path, "r") as file:
+        if system_name not in file:
+            raise KeyError(
+                f"{system_name!r} not in reference {path!r}; e.g. {sorted(file)[:5]}"
+            )
+        group = file[system_name]
+        trajectory = Trajectory.read_from_h5_group(group, frames=frames)
+        dt_fs = float(group.attrs["dt_fs"])
+        temperature_kelvin = float(group.attrs["temperature_kelvin"])
+    return trajectory, dt_fs, temperature_kelvin
 
 
 def read_trajectory(file_path: str, *, index: str = ":") -> list[Atoms]:
@@ -124,16 +130,13 @@ def run_nvt_md(
         list[Atoms]: Recorded frames including the initial one, i.e.
             n_steps // record_interval + 1 frames.
     """
-    atoms = atoms.copy()
-    atoms.calc = calculator
-    MaxwellBoltzmannDistribution(
-        atoms, temperature_K=temperature_kelvin, rng=np.random.default_rng(seed)
-    )
-    dynamics = _init_nvt_dynamics(
+    atoms, dynamics = _thermalized_nvt_dynamics(
         atoms,
+        calculator,
         temperature_kelvin=temperature_kelvin,
         time_step_fs=time_step_fs,
         thermostat_time_scale_fs=thermostat_time_scale_fs,
+        seed=seed,
     )
 
     frames: list[Atoms] = []
@@ -162,6 +165,33 @@ def _init_nvt_dynamics(
         temperature_K=temperature_kelvin,
         tdamp=thermostat_time_scale_fs * units.fs,
     )
+
+
+def _thermalized_nvt_dynamics(
+    atoms: Atoms,
+    calculator: Calculator,
+    *,
+    temperature_kelvin: float,
+    time_step_fs: float,
+    thermostat_time_scale_fs: float,
+    seed: int,
+) -> tuple[Atoms, NoseHooverChainNVT]:
+    """Copy ``atoms``, attach the calculator, seed Maxwell-Boltzmann velocities and
+    build the NVT integrator. Single deterministic setup shared by the in-memory and
+    resumable rollouts so both thermalize identically for a given seed.
+    """
+    atoms = atoms.copy()
+    atoms.calc = calculator
+    MaxwellBoltzmannDistribution(
+        atoms, temperature_K=temperature_kelvin, rng=np.random.default_rng(seed)
+    )
+    dynamics = _init_nvt_dynamics(
+        atoms,
+        temperature_kelvin=temperature_kelvin,
+        time_step_fs=time_step_fs,
+        thermostat_time_scale_fs=thermostat_time_scale_fs,
+    )
+    return atoms, dynamics
 
 
 def _snapshot_frame(atoms: Atoms, md_step: int) -> Atoms:
@@ -197,6 +227,21 @@ def _attach_progress_logger(
     dynamics.attach(log_progress, interval=interval)
 
 
+@dataclass(frozen=True)
+class NvtParams:
+    """The rollout parameters a checkpoint must match to be safely resumable, i.e.
+    those defining the deterministic trajectory and recording cadence. ``n_steps`` (run
+    length) is deliberately excluded: a checkpoint at step N resumes for any target
+    length >= N, so it's bound-checked rather than matched for equality.
+    """
+
+    temperature_kelvin: float
+    time_step_fs: float
+    record_interval: int
+    thermostat_time_scale_fs: float
+    seed: int
+
+
 # === crash-safe checkpointing for resumable rollouts ===
 # NoseHooverChainNVT is deterministic after the seeded velocity init (no per-step RNG),
 # so its full state is these five fields; restoring them reproduces an uninterrupted
@@ -224,13 +269,9 @@ def _save_checkpoint(
     ckpt_path: str,
     dynamics: NoseHooverChainNVT,
     *,
+    params: NvtParams,
     n_steps: int,
     n_frames: int,
-    record_interval: int,
-    time_step_fs: float,
-    temperature_kelvin: float,
-    thermostat_time_scale_fs: float,
-    seed: int,
 ) -> None:
     """Atomically write the integrator state + run metadata to ``ckpt_path``."""
     pos, mom, eta, p_eta = _nvt_state_attrs(dynamics)
@@ -247,11 +288,11 @@ def _save_checkpoint(
             p=mom,
             eta=eta,
             p_eta=p_eta,
-            record_interval=record_interval,
-            time_step_fs=time_step_fs,
-            temperature_kelvin=temperature_kelvin,
-            thermostat_time_scale_fs=thermostat_time_scale_fs,
-            seed=seed,
+            record_interval=params.record_interval,
+            time_step_fs=params.time_step_fs,
+            temperature_kelvin=params.temperature_kelvin,
+            thermostat_time_scale_fs=params.thermostat_time_scale_fs,
+            seed=params.seed,
             symbols=np.array(dynamics.atoms.get_chemical_symbols()),
             cell=dynamics.atoms.cell.array,
             pbc=dynamics.atoms.pbc,
@@ -260,15 +301,7 @@ def _save_checkpoint(
 
 
 def _load_checkpoint(
-    ckpt_path: str,
-    *,
-    atoms: Atoms,
-    n_steps: int,
-    record_interval: int,
-    time_step_fs: float,
-    temperature_kelvin: float,
-    thermostat_time_scale_fs: float,
-    seed: int,
+    ckpt_path: str, *, atoms: Atoms, params: NvtParams, n_steps: int
 ) -> dict[str, np.ndarray] | None:
     """Load a checkpoint if present, readable, schema/ASE/parameter-matched; else None
     (so the caller recomputes from scratch rather than resuming a stale/foreign state).
@@ -282,21 +315,24 @@ def _load_checkpoint(
         print(f"  ignoring unreadable checkpoint {ckpt_path}: {exc}")
         return None
 
-    target_frames = n_steps // record_interval + 1
+    target_frames = n_steps // params.record_interval + 1
     try:
         nsteps = int(ckpt["nsteps"])
         n_frames = int(ckpt["n_frames"])
+        stored = NvtParams(
+            temperature_kelvin=float(ckpt["temperature_kelvin"]),
+            time_step_fs=float(ckpt["time_step_fs"]),
+            record_interval=int(ckpt["record_interval"]),
+            thermostat_time_scale_fs=float(ckpt["thermostat_time_scale_fs"]),
+            seed=int(ckpt["seed"]),
+        )
         consistent = (
             int(ckpt["schema"]) == CHECKPOINT_SCHEMA
             and str(ckpt["ase_version"]) == ase.__version__
-            and int(ckpt["record_interval"]) == record_interval
-            and float(ckpt["time_step_fs"]) == time_step_fs
-            and float(ckpt["temperature_kelvin"]) == temperature_kelvin
-            and float(ckpt["thermostat_time_scale_fs"]) == thermostat_time_scale_fs
-            and int(ckpt["seed"]) == seed
+            and stored == params
             and nsteps <= n_steps
             and n_frames <= target_frames
-            and nsteps == (n_frames - 1) * record_interval
+            and nsteps == (n_frames - 1) * params.record_interval
             and list(ckpt["symbols"]) == atoms.get_chemical_symbols()
             and np.allclose(ckpt["cell"], atoms.cell.array)
             and bool((ckpt["pbc"] == atoms.pbc).all())
@@ -354,28 +390,23 @@ def run_nvt_md_resumable(
             f"{checkpoint_every_n_frames=} must be positive for MD checkpointing"
         )
 
-    atoms = atoms.copy()
-    atoms.calc = calculator
-    MaxwellBoltzmannDistribution(
-        atoms, temperature_K=temperature_kelvin, rng=np.random.default_rng(seed)
-    )
-    dynamics = _init_nvt_dynamics(
+    atoms, dynamics = _thermalized_nvt_dynamics(
         atoms,
+        calculator,
         temperature_kelvin=temperature_kelvin,
         time_step_fs=time_step_fs,
-        thermostat_time_scale_fs=thermostat_time_scale_fs,
-    )
-
-    ckpt = _load_checkpoint(
-        ckpt_path,
-        atoms=atoms,
-        n_steps=n_steps,
-        record_interval=record_interval,
-        time_step_fs=time_step_fs,
-        temperature_kelvin=temperature_kelvin,
         thermostat_time_scale_fs=thermostat_time_scale_fs,
         seed=seed,
     )
+    params = NvtParams(
+        temperature_kelvin=temperature_kelvin,
+        time_step_fs=time_step_fs,
+        record_interval=record_interval,
+        thermostat_time_scale_fs=thermostat_time_scale_fs,
+        seed=seed,
+    )
+
+    ckpt = _load_checkpoint(ckpt_path, atoms=atoms, params=params, n_steps=n_steps)
     n_done = 0
     if ckpt is not None and os.path.isfile(part_path):
         n_ckpt = int(ckpt["n_frames"])
@@ -407,13 +438,9 @@ def run_nvt_md_resumable(
             _save_checkpoint(
                 ckpt_path,
                 dynamics,
+                params=params,
                 n_steps=n_steps,
                 n_frames=frames_written,
-                record_interval=record_interval,
-                time_step_fs=time_step_fs,
-                temperature_kelvin=temperature_kelvin,
-                thermostat_time_scale_fs=thermostat_time_scale_fs,
-                seed=seed,
             )
 
     dynamics.attach(record_and_checkpoint, interval=record_interval)
@@ -430,44 +457,6 @@ def run_nvt_md_resumable(
     with contextlib.suppress(FileNotFoundError):
         os.remove(ckpt_path)
     return frames
-
-
-def find_reference_trajectory(ref_dir: str, system_name: str) -> str:
-    """Path to the single reference trajectory in ref_dir/system_name, matching
-    traj.extxyz and ASE-transparent .gz/.xz/.bz2 compressed variants.
-    """
-    traj_files = sorted(glob(f"{ref_dir}/{system_name}/traj.*xyz*"))
-    if len(traj_files) != 1:
-        raise ValueError(
-            f"Expected 1 reference trajectory in {ref_dir}/{system_name}, "
-            f"got {traj_files}"
-        )
-    return traj_files[0]
-
-
-def read_reference_trajectory(
-    ref_dir: str, system_name: str, *, max_frames: int | None = None
-) -> Trajectory:
-    """Reference trajectory as a Trajectory, reading the fast HDF5 artifact
-    (``<system>/traj.h5``) when present and falling back to parsing extxyz otherwise.
-
-    The HDF5 path only reads/decompresses the requested frames, so huge references
-    load in milliseconds; the extxyz fallback (ASE's slow parser) keeps the pipeline
-    working on un-converted datasets. ``max_frames`` caps the leading frames read
-    (used by dry runs to stay fast).
-    """
-    h5_path = f"{ref_dir}/{system_name}/traj.h5"
-    if os.path.isfile(h5_path):
-        frames = slice(0, max_frames) if max_frames is not None else slice(None)
-        return Trajectory.read_hdf5(h5_path, frames=frames)
-    ext_path = find_reference_trajectory(ref_dir, system_name)
-    index = f":{max_frames}" if max_frames is not None else ":"
-    atoms_frames = read_trajectory(ext_path, index=index)
-    if not atoms_frames:
-        raise ValueError(
-            f"Reference trajectory {ext_path!r} for {system_name!r} empty or corrupted"
-        )
-    return Trajectory.from_ase(atoms_frames)
 
 
 def validate_pred_trajectory(
@@ -521,9 +510,7 @@ def run_md_benchmark(
     calculator: Calculator,
     model_key: str,
     out_dir: str,
-    ref_dir: str | None = None,
-    settings_csv: str | None = None,
-    ref_frame_interval_fs: float | None = None,
+    ref_file: str | None = None,
     systems: "list[str] | None" = None,
     n_steps: int = 80_000,
     time_step_fs: float = 0.25,
@@ -533,20 +520,18 @@ def run_md_benchmark(
 ) -> pd.DataFrame:
     """Run NVT rollouts and compute MD metrics for one model across reference systems.
 
-    For each system directory under ref_dir, this rolls out an NVT trajectory from
-    the reference initial structure (reusing an existing rollout if present), then
-    compares it to the reference via energy/force RMSE, RDF, VDOS and pressure. Writes
-    one gzipped per-system metrics CSV and returns the per-system DataFrame.
+    For each system in the reference HDF5, this rolls out an NVT trajectory from the
+    reference initial structure (reusing an existing rollout if present), then compares
+    it to the reference via energy/force RMSE, RDF, VDOS and pressure. Writes one
+    gzipped per-system metrics CSV and returns the per-system DataFrame.
 
     Args:
         calculator: ASE calculator for the model under test.
         model_key: Model enum name/key, used in output filenames.
         out_dir: Directory for rollout trajectories and the metrics CSV.
-        ref_dir: Reference trajectory dir. Defaults to the auto-downloaded CFPMD-26
-            dataset (and settings_csv defaults alongside it).
-        settings_csv: Per-system frame-interval CSV. Mutually informs ref dt.
-        ref_frame_interval_fs: Constant reference frame interval (overrides CSV).
-        systems: Subset of system dir names to run. Defaults to all under ref_dir.
+        ref_file: Reference HDF5 (one group per system, each carrying dt_fs and
+            temperature_kelvin attrs). Defaults to the auto-downloaded CFPMD-26 set.
+        systems: Subset of system names to run. Defaults to all in ref_file.
         n_steps: MD steps per rollout (80,000 = 20 ps at 0.25 fs).
         time_step_fs: MD integration time step.
         record_interval: Record a frame every this many MD steps.
@@ -558,63 +543,35 @@ def run_md_benchmark(
     Returns:
         pd.DataFrame: One row per system indexed by system name.
     """
-    if ref_dir is None:
-        ref_dir, default_csv = default_md_reference_paths()
-        settings_csv = settings_csv or default_csv
-    elif settings_csv is None and ref_frame_interval_fs is None:
-        raise ValueError(
-            "Pass settings_csv or ref_frame_interval_fs for custom ref_dir"
-        )
+    if ref_file is None:
+        ref_file = default_md_reference_path()
 
-    frame_intervals = load_frame_intervals(settings_csv) if settings_csv else {}
-    system_dirs = sorted(
-        entry.name
-        for entry in os.scandir(ref_dir)
-        if entry.is_dir() and (not systems or entry.name in systems)
-    )
-    if not system_dirs:  # clearer than the downstream empty-DataFrame KeyError
+    all_systems = list_reference_systems(ref_file)
+    system_names = [name for name in all_systems if not systems or name in systems]
+    if not system_names:  # clearer than the downstream empty-DataFrame KeyError
         raise ValueError(
-            f"No system directories found under {ref_dir!r}"
+            f"No systems found in reference {ref_file!r}"
             + (f" matching {systems=}" if systems else "")
         )
     if dry_run:  # one system, a few steps, capped reference slice
-        system_dirs = system_dirs[:1]
+        system_names = system_names[:1]
         n_steps = record_interval * 8
     else:
         os.makedirs(out_dir, exist_ok=True)  # for rollout trajectories and metrics CSV
 
     pred_time_step_fs = time_step_fs * record_interval
     rows: list[dict[str, float | str]] = []
-    for system_name in tqdm(system_dirs, desc=f"MD systems ({model_key})"):
-        temperature_kelvin = extract_temperature(system_name)
-        if temperature_kelvin is None:
-            raise ValueError(f"Could not parse temperature from {system_name!r}")
-        ref_dt_fs = ref_frame_interval_fs or resolve_frame_interval(
-            system_name, frame_intervals
-        )
-        if ref_dt_fs is None:
-            raise ValueError(f"No frame interval for {system_name!r} in settings CSV")
-
+    for system_name in tqdm(system_names, desc=f"MD systems ({model_key})"):
         # dry run reads only the first 64 reference frames so the single-point eval
         # stays fast; the HDF5 reader only decompresses the frames it returns
-        ref_trajectory = read_reference_trajectory(
-            ref_dir, system_name, max_frames=64 if dry_run else None
+        ref_trajectory, ref_dt_fs, temperature_kelvin = read_reference_trajectory(
+            ref_file, system_name, max_frames=64 if dry_run else None
         )
         initial_atoms = ref_trajectory.frame_as_atoms(0)
 
         pred_traj_path = f"{out_dir}/{system_name}-nvt-{model_key}.extxyz"
         target_frames = n_steps // record_interval + 1
-        pred_frames = None  # list[Atoms] from reuse, in-memory run, or resumable run
-        if not dry_run and os.path.isfile(pred_traj_path):
-            # only reuse a complete, consistent rollout; else recompute (a truncated
-            # file would silently evaluate as a shorter trajectory)
-            pred_frames = validate_pred_trajectory(
-                pred_traj_path,
-                expected_frames=target_frames,
-                ref_atoms=initial_atoms,
-                record_interval=record_interval,
-            )
-        if pred_frames is None and dry_run:  # in-memory, no checkpoint files
+        if dry_run:  # in-memory run, no checkpoint/output files
             pred_frames = run_nvt_md(
                 initial_atoms,
                 calculator,
@@ -624,17 +581,28 @@ def run_md_benchmark(
                 record_interval=record_interval,
                 seed=seed,
             )
-        elif pred_frames is None:  # crash-safe resumable rollout to pred_traj_path
-            pred_frames = run_nvt_md_resumable(
-                initial_atoms,
-                calculator,
-                out_path=pred_traj_path,
-                temperature_kelvin=temperature_kelvin,
-                n_steps=n_steps,
-                time_step_fs=time_step_fs,
-                record_interval=record_interval,
-                seed=seed,
-            )
+        else:
+            # reuse only a complete, consistent rollout; else recompute (a truncated
+            # file would silently evaluate as a shorter trajectory)
+            pred_frames = None
+            if os.path.isfile(pred_traj_path):
+                pred_frames = validate_pred_trajectory(
+                    pred_traj_path,
+                    expected_frames=target_frames,
+                    ref_atoms=initial_atoms,
+                    record_interval=record_interval,
+                )
+            if pred_frames is None:  # crash-safe resumable rollout to pred_traj_path
+                pred_frames = run_nvt_md_resumable(
+                    initial_atoms,
+                    calculator,
+                    out_path=pred_traj_path,
+                    temperature_kelvin=temperature_kelvin,
+                    n_steps=n_steps,
+                    time_step_fs=time_step_fs,
+                    record_interval=record_interval,
+                    seed=seed,
+                )
 
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectory,
@@ -650,7 +618,7 @@ def run_md_benchmark(
 
     df_md = pd.DataFrame(rows).set_index("system")
     if dry_run:
-        print(f"Dry run OK for {model_key}: pipeline ran on {system_dirs}")
+        print(f"Dry run OK for {model_key}: pipeline ran on {system_names}")
         return df_md
 
     # suffix avoids collisions when parallel single-system jobs share out_dir

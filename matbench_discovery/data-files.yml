@@ -96,8 +96,8 @@ phonondb_pbe_103_kappa_no_nac:
   md5: 70c7a8b0df4cbb4d98f12aea5f61aeee
 
 aimd_reference_md_trajectories:
-  path: md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.tar
-  description: 17 ab-initio NVT molecular dynamics reference trajectories (CFPMD-26 dataset, courtesy of working groups 2+4 of the COST Action "Data-driven Applications towards the Engineering of Functional Materials") spanning pure metals, alloys, high-entropy alloys, transition-metal dichalcogenides, perovskites and molecular crystals at 293-1500 K, used as references for the MD benchmark task. Each system directory contains a traj.extxyz.xz trajectory (xz-compressed extended XYZ readable directly by ase.io.read) with energies, forces and (for most systems) stresses; reference_AIMD_timestep_and_stride.csv lists per-system saved-frame intervals. Positions/forces are rounded to 5 decimal places (changes RDF/VDOS/pressure metrics by <0.02%) to reduce file size.
+  path: md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.h5
+  description: 17 ab-initio NVT molecular dynamics reference trajectories (CFPMD-26 dataset, courtesy of working groups 2+4 of the COST Action "Data-driven Applications towards the Engineering of Functional Materials") spanning pure metals, alloys, high-entropy alloys, transition-metal dichalcogenides, perovskites and molecular crystals at 293-1500 K, used as references for the MD benchmark task. Single HDF5 file with one group per system holding the trajectory arrays (positions, cell, energies, forces and for most systems stresses) plus dt_fs (saved-frame interval) and temperature_kelvin as group attributes. Positions/forces are rounded to 5 decimal places (changes RDF/VDOS/pressure metrics by <0.02%) to reduce file size.
   md5: 2dc4ffee7238f114c2d11166ad73c7d9
   url: https://figshare.com/files/65513658
 

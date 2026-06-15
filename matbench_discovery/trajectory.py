@@ -28,6 +28,18 @@ TRAJECTORY_SCHEMA = 1
 _FRAME_FIELDS = ("positions", "cell", "energy", "forces", "stress", "md_step")
 
 
+# expected shape of each per-frame field for a leading-axis length (n_frames when
+# validating, the chunk size when writing HDF5) and atom count
+_frame_field_shapes = lambda n_lead, n_atoms: {  # noqa: E731
+    "positions": (n_lead, n_atoms, 3),
+    "cell": (n_lead, 3, 3),
+    "forces": (n_lead, n_atoms, 3),
+    "energy": (n_lead,),
+    "stress": (n_lead, 6),
+    "md_step": (n_lead,),
+}
+
+
 @dataclass(frozen=True)
 class Trajectory:
     """An MD trajectory as stacked numpy arrays (frame axis first).
@@ -55,14 +67,7 @@ class Trajectory:
     def __post_init__(self) -> None:
         """Validate array shapes are mutually consistent."""
         n_frames, n_atoms = self.positions.shape[0], len(self.atomic_numbers)
-        expected = {
-            "positions": (n_frames, n_atoms, 3),
-            "cell": (n_frames, 3, 3),
-            "forces": (n_frames, n_atoms, 3),
-            "energy": (n_frames,),
-            "stress": (n_frames, 6),
-            "md_step": (n_frames,),
-        }
+        expected = _frame_field_shapes(n_frames, n_atoms)
         for name, shape in expected.items():
             arr = getattr(self, name)
             if arr is not None and arr.shape != shape:
@@ -193,51 +198,58 @@ class Trajectory:
             md_step=np.array(md_steps) if has_steps else None,
         )
 
+    def write_to_h5_group(self, group: "h5py.Group") -> None:
+        """Write this trajectory's arrays + metadata into an open HDF5 group.
+
+        An ``h5py.File`` is also a ``Group``, so this backs both single-trajectory
+        files (``write_hdf5``) and per-system groups in a multi-trajectory reference
+        file. Frame-major chunking keeps strided/partial reads cheap.
+        """
+        chunk_frames = min(self.n_frames, 512) or 1
+        chunks_for = _frame_field_shapes(chunk_frames, self.n_atoms)
+        group.attrs["schema"] = TRAJECTORY_SCHEMA
+        group.create_dataset("atomic_numbers", data=self.atomic_numbers)
+        group.create_dataset("pbc", data=self.pbc)
+        for name in _FRAME_FIELDS:
+            if (arr := getattr(self, name)) is not None:
+                group.create_dataset(
+                    name, data=arr, chunks=chunks_for[name], compression="gzip"
+                )
+
+    @classmethod
+    def read_from_h5_group(
+        cls, group: "h5py.Group", *, frames: slice = slice(None)
+    ) -> "Trajectory":
+        """Read (a slice of) frames from an HDF5 group written by ``write_to_h5_group``.
+
+        Only the requested frames are read/decompressed, so strided or head reads of
+        huge trajectories are cheap. Fails closed on a schema mismatch.
+        """
+        schema = int(group.attrs.get("schema", -1))
+        if schema != TRAJECTORY_SCHEMA:
+            raise ValueError(
+                f"{group.name} has trajectory schema {schema}, expected "
+                f"{TRAJECTORY_SCHEMA}; regenerate it from the source trajectory"
+            )
+        kwargs = {name: group[name][frames] for name in _FRAME_FIELDS if name in group}
+        return cls(
+            atomic_numbers=group["atomic_numbers"][:],
+            pbc=group["pbc"][:].astype(bool),
+            **kwargs,
+        )
+
     def write_hdf5(self, path: str) -> None:
         """Atomically write to a gzip-compressed, frame-chunked HDF5 file (tmp +
         os.replace). Frame-major chunking keeps strided/partial reads cheap; metadata
         (atomic_numbers, pbc, schema) lives alongside the per-frame datasets.
         """
         tmp_path = f"{path}.tmp"
-        chunk_frames = min(self.n_frames, 512) or 1
-        chunks_for = {
-            "positions": (chunk_frames, self.n_atoms, 3),
-            "cell": (chunk_frames, 3, 3),
-            "forces": (chunk_frames, self.n_atoms, 3),
-            "energy": (chunk_frames,),
-            "stress": (chunk_frames, 6),
-            "md_step": (chunk_frames,),
-        }
         with h5py.File(tmp_path, "w") as file:
-            file.attrs["schema"] = TRAJECTORY_SCHEMA
-            file.create_dataset("atomic_numbers", data=self.atomic_numbers)
-            file.create_dataset("pbc", data=self.pbc)
-            for name in _FRAME_FIELDS:
-                if (arr := getattr(self, name)) is not None:
-                    file.create_dataset(
-                        name, data=arr, chunks=chunks_for[name], compression="gzip"
-                    )
+            self.write_to_h5_group(file)
         os.replace(tmp_path, path)
 
     @classmethod
     def read_hdf5(cls, path: str, *, frames: slice = slice(None)) -> "Trajectory":
-        """Read (a slice of) frames from an HDF5 file written by ``write_hdf5``.
-
-        Only the requested frames are read/decompressed, so strided or head reads of
-        huge trajectories are cheap. Fails closed on a schema mismatch.
-        """
+        """Read (a slice of) frames from an HDF5 file written by ``write_hdf5``."""
         with h5py.File(path, "r") as file:
-            schema = int(file.attrs.get("schema", -1))
-            if schema != TRAJECTORY_SCHEMA:
-                raise ValueError(
-                    f"{path} has trajectory schema {schema}, expected "
-                    f"{TRAJECTORY_SCHEMA}; regenerate it from the source trajectory"
-                )
-            kwargs = {
-                name: file[name][frames] for name in _FRAME_FIELDS if name in file
-            }
-            return cls(
-                atomic_numbers=file["atomic_numbers"][:],
-                pbc=file["pbc"][:].astype(bool),
-                **kwargs,
-            )
+            return cls.read_from_h5_group(file, frames=frames)
