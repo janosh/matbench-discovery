@@ -1,4 +1,4 @@
-"""Run DPA-4.0-Pro-MPtrj thermal-conductivity calculations."""
+"""Run DPA4-series thermal-conductivity (kappa) calculations for Matbench Discovery."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+import numpy as np
 import pandas as pd
 import torch
 from ase.constraints import FixSymmetry
@@ -24,7 +25,7 @@ from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.enums import DataFiles
+from matbench_discovery.enums import DataFiles, MbdKey
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
@@ -37,6 +38,38 @@ if TYPE_CHECKING:
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
 OPTIM_CLS: dict[str, Callable[..., Optimizer]] = {"FIRE": FIRE, "LBFGS": LBFGS}
+
+# Conductivity tensor columns that phono3py reports in 6-component Voigt notation
+# and that must be expanded to full 3x3 tensors for the Matbench evaluator.
+KAPPA_TENSOR_KEYS = (
+    MbdKey.kappa_tot_rta,
+    MbdKey.kappa_p_rta,
+    MbdKey.kappa_c,
+    MbdKey.mode_kappa_tot_rta,
+)
+
+
+def voigt_6_to_full_3x3(tensor: np.ndarray) -> np.ndarray:
+    """Expand a trailing Voigt-6 axis (xx, yy, zz, yz, xz, xy) to a full 3x3 matrix.
+
+    Depending on the phono3py version, conductivity tensors are reported either as
+    full (..., 3, 3) matrices or in 6-component Voigt notation (..., 6). The Matbench
+    Discovery kappa evaluator (``calculate_kappa_avg``) requires a trailing (3, 3) or
+    (3,) axis, so Voigt-packed tensors must be expanded before saving. Arrays whose
+    trailing axis is not length 6 are returned unchanged (already full / not a tensor).
+    """
+    arr = np.asarray(tensor, dtype=float)
+    if arr.ndim == 0 or arr.shape[-1] != 6:
+        return tensor
+    xx, yy, zz, yz, xz, xy = (arr[..., idx] for idx in range(6))
+    return np.stack(
+        [
+            np.stack([xx, xy, xz], axis=-1),
+            np.stack([xy, yy, yz], axis=-1),
+            np.stack([xz, yz, zz], axis=-1),
+        ],
+        axis=-2,
+    )
 
 
 class KappaRunner:
@@ -314,6 +347,13 @@ class KappaRunner:
             err_dict["error_traceback"].append(traceback.format_exc())
             kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
             return
+
+        # phono3py may pack conductivity tensors in 6-component Voigt notation;
+        # expand them to full 3x3 so the saved file matches the layout the Matbench
+        # Discovery kappa evaluator expects (trailing (3, 3) axis).
+        for kappa_key in KAPPA_TENSOR_KEYS:
+            if kappa_key in kappa_dict:
+                kappa_dict[kappa_key] = voigt_6_to_full_3x3(kappa_dict[kappa_key])
 
         kappa_results[mat_id] = (
             info_dict | relax_dict | freqs_dict | kappa_dict | err_dict
