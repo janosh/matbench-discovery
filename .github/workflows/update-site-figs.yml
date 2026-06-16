@@ -174,13 +174,17 @@ jobs:
 
           def roster(text: str) -> set[str]:
               # model ids in one .jsonl payload (the lone {"_base": ...} line isn't a model)
+              metadata_keys = {"MP Occurrences", "Test set standard deviation"}
               ids = set()
               for line in text.splitlines():
                   if not (line := line.strip()):
                       continue
                   entry = json.loads(line)
-                  if set(entry) != {"_base"}:
-                      ids.add(str(entry.get("key") or entry.get("label")))
+                  if set(entry) == {"_base"}:
+                      continue
+                  model_id = str(entry.get("key") or entry.get("label"))
+                  if model_id not in metadata_keys:
+                      ids.add(model_id)
               return ids
 
           rows = []
