@@ -25,9 +25,9 @@ authors:
   - name: Yongdeok Kim
     affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
 
-repo: https://github.com/SamsungDS/GGNN.git
+repo: https://github.com/SamsungDS/GGNN
 doi: TBD
-paper: https://github.com/SamsungDS/GGNN.git
+paper: https://github.com/SamsungDS/GGNN
 n_estimators: 1
 pr_url: https://github.com/janosh/matbench-discovery/pull/343
 checkpoint_url: https://figshare.com/ndownloader/files/65435007 # should be the direct download URL of the model checkpoint file. If there's a page documenting the checkpoint, append that as a YAML comment.
@@ -42,7 +42,7 @@ trained_for_benchmark: true
 
 license:
   code: MIT
-  code_url: https://github.com/SamsungDS/GGNN.git
+  code_url: https://github.com/SamsungDS/GGNN
   checkpoint: CC-BY-4.0
   # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
   checkpoint_url: https://figshare.com/ndownloader/files/65435007
