@@ -30,10 +30,10 @@ export const model_f1 = (id: string): number => model_meta[id]?.f1 ?? -Infinity
 // fill each reassembled model with its stable MODELS color and sort for render. `order`
 // defaults to discovery F1 desc (the leaderboard order the aggregate payloads used to bake
 // in); pass a custom comparator value for figure-specific orders (AUC, sigma, ...).
-export function styled_models<T extends { key?: string; label?: string; color?: string }>(
+export function styled_models<T extends { key?: string; label?: string }>(
   models: T[],
   order: (model: T) => number = (model) => -model_f1(model.key ?? model.label ?? ``),
-): T[] {
+): (T & { color: string | undefined })[] {
   return models
     .map((model) => ({ ...model, color: model_color(model.key ?? model.label ?? ``) }))
     .sort((row_a, row_b) => order(row_a) - order(row_b))

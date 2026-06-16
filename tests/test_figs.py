@@ -267,26 +267,53 @@ def test_write_site_payload_full_run_prunes_dropped_models(
     assert {model["key"] for model in reread["models"]} == {model_b.key}
 
 
+@pytest.mark.parametrize("id_field", ["key", "label"])
 def test_write_site_payload_subset_run_splices(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch, id_field: str
 ) -> None:
-    """Subset runs (--models) splice fresh entries into the committed file by id: update
-    their own line, add new ones, leave every other model untouched.
+    """Subset runs (--models) splice fresh entries into the committed file by id_field
+    (key- or label-keyed payloads): update their own line, add new ones, leave every
+    other model untouched.
     """
-    model_a, model_b, model_c = list(Model.active())[:3]
     monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run first
     figs.write_site_payload(
         "demo",
-        {"models": [{"key": model_a.key, "y": [0]}, {"key": model_b.key, "y": [1]}]},
+        {"models": [{id_field: "m-a", "y": [0]}, {id_field: "m-b", "y": [1]}]},
+        id_field=id_field,
     )
-    monkeypatch.setattr(cli_args, "models", [model_a, model_c])  # subset run
+    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
     figs.write_site_payload(
         "demo",
-        {"models": [{"key": model_a.key, "y": [9]}, {"key": model_c.key, "y": [3]}]},
+        {"models": [{id_field: "m-a", "y": [9]}, {id_field: "m-c", "y": [3]}]},
+        id_field=id_field,
     )
     reread = figs.read_jsonl_payload(f"{site_fig_dir}/demo.jsonl")
-    by_key = {model["key"]: model["y"] for model in reread["models"]}
-    assert by_key == {model_a.key: [9], model_b.key: [1], model_c.key: [3]}
+    by_id = {model[id_field]: model["y"] for model in reread["models"]}
+    assert by_id == {"m-a": [9], "m-b": [1], "m-c": [3]}
+
+
+def test_write_site_payload_subset_noop_is_byte_identical(
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Output is deterministic: a subset run that re-supplies a model's existing data
+    leaves the committed file byte-identical (so a no-op refresh opens no churn PR) and
+    preserves both the shared _base line and the untouched model.
+    """
+    path = f"{site_fig_dir}/demo.jsonl"
+    payload = {
+        "shared": [1],
+        "models": [{"key": "m-b", "y": [2]}, {"key": "m-a", "y": [1]}],
+    }
+    monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run first
+    figs.write_site_payload("demo", payload)
+    with open(path, "rb") as file:
+        full = file.read()
+    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
+    figs.write_site_payload(
+        "demo", {"shared": [1], "models": [{"key": "m-a", "y": [1]}]}
+    )
+    with open(path, "rb") as file:
+        assert file.read() == full  # m-a unchanged, m-b + _base preserved
 
 
 @pytest.mark.usefixtures("site_fig_dir")

@@ -38,7 +38,7 @@ interface KeyedModel {
 declare module '$figs/box-hull-dist-errors.jsonl' {
   const data: {
     // quantiles = [q05, q25, median, q75, q95] of each model's hull distance error
-    models: (KeyedModel & { color: string; quantiles: number[] })[]
+    models: (KeyedModel & { quantiles: number[] })[]
   }
   export default data
 }
@@ -47,7 +47,6 @@ declare module '$figs/cumulative-precision-recall.jsonl' {
   const data: {
     n_stable: number // number of stable materials in the WBM test set
     models: (KeyedModel & {
-      color: string
       x: number[] // number of materials validated, ranked most to least stable
       precision: number[]
       recall: number[]
@@ -73,9 +72,7 @@ declare module '$figs/rolling-mae-vs-hull-dist.jsonl' {
   const data: {
     x: number[] // shared E above hull values (eV/atom)
     models: (KeyedModel & {
-      color: string
       y: number[]
-      visible?: boolean
     })[]
     density: XY // rolling count of test-set structures per hull-dist bin (on y2)
   }
@@ -96,7 +93,7 @@ declare module '$figs/element-prevalence-vs-error.jsonl' {
   const data: {
     elements: string[] // element symbols, same order as occurrences
     occurrences: number[] // MP training-set occurrence count per element
-    models: { label: string; color: string; y: number[] }[] // mean error per element
+    models: { label: string; y: number[] }[] // mean error per element
   }
   export default data
 }
@@ -104,7 +101,7 @@ declare module '$figs/element-prevalence-vs-error.jsonl' {
 declare module '$figs/scatter-largest-fp-diff-each-error.jsonl' {
   const data: {
     fp_diff: number[] // shared |SSFP_initial - SSFP_final| values
-    models: { label: string; mae: number; color: string; y: number[] }[]
+    models: { label: string; mae: number; y: number[] }[]
   }
   export default data
 }

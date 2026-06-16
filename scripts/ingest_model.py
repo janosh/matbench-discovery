@@ -233,7 +233,7 @@ def run_archive(model: Model, checks: Checklist) -> None:
 
 
 def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
-    """Refresh the multi-model site figure payloads (site/src/figs/*.json.gz), then
+    """Refresh the multi-model site figure payloads (site/src/figs/*.jsonl), then
     run the payload shape tests (site pages import these files typed).
 
     With a model given, payload scripts run with --models <model> and splice only that

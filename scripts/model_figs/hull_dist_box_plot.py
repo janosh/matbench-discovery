@@ -86,7 +86,7 @@ fig.show()
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
 img_name = f"box-hull-dist-errors{img_suffix}"
-if show_non_compliant:  # site payload = full model set (shards reassembled client-side)
+if show_non_compliant:  # site payload = full model set (styling applied client-side)
     figs.write_site_payload("box-hull-dist-errors", {"models": box_models})
 fig.layout.showlegend = False
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

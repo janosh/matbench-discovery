@@ -1,6 +1,6 @@
 """Export per-material kappa-103 diagnostics for the /tasks/phonons page.
 
-Writes site/src/figs/kappa-103-analysis.json.gz with, for every model with kappa_103
+Writes site/src/figs/kappa-103-analysis.jsonl with, for every model with kappa_103
 predictions:
 - per-material SRME and scalar conductivity (vs the DFT reference values), driving a
   "kappa error vs kappa magnitude" scatter (colored by crystal system client-side)

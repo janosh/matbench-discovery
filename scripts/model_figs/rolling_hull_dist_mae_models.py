@@ -96,7 +96,7 @@ for trace in fig.data:
         trace, x=False
     )
     rolling_models.append(entry)
-if show_non_compliant:  # site payload = full model set (shards reassembled client-side)
+if show_non_compliant:  # site payload = full model set (styling applied client-side)
     figs.write_site_payload(
         "rolling-mae-vs-hull-dist",
         {

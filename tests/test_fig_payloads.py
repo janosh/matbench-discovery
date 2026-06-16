@@ -17,7 +17,7 @@ from typing import Any
 import pandas as pd
 import pytest
 
-from matbench_discovery import SITE_FIG_DATA, figs
+from matbench_discovery import SITE_DIR, SITE_FIG_DATA, figs
 from matbench_discovery.enums import Model
 from scripts.model_figs.kappa_103_analysis import row_flag
 
@@ -99,6 +99,23 @@ def test_no_orphan_payloads() -> None:
         f"unexpected={on_disk - set(EXPECTED_PAYLOADS)}, "
         f"missing={set(EXPECTED_PAYLOADS) - on_disk}"
     )
+
+
+def test_per_element_each_errors_payload() -> None:
+    """The route-local per-element-errors .jsonl (imported by per-element-errors.ts) is
+    readable and well-shaped: each column maps a model_key/metadata label to a dict of
+    finite per-element values (None allowed for gaps).
+    """
+    path = f"{SITE_DIR}/routes/models/per-element-each-errors.jsonl"
+    columns = figs.read_jsonl_payload(path)["models"]
+    assert len(columns) > 10, f"expected >10 columns, got {len(columns)}"
+    for column in columns:
+        assert isinstance(column["key"], str)
+        assert isinstance(values := column["values"], dict)
+        assert all(
+            val is None or (isinstance(val, (int, float)) and math.isfinite(val))
+            for val in values.values()
+        )
 
 
 def check_box_hull_dist_errors() -> None:

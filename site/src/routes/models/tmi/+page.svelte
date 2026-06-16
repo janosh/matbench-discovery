@@ -76,7 +76,7 @@ are more dependent on geometry than chemistry.
 <label class="model-select">
   Models
   <Select
-    options={elem_prev.models.map((mdl) => mdl.label)}
+    options={elem_prev_sorted.map((mdl) => mdl.label)}
     bind:selected={elem_prev_selected}
     minSelect={1}
   />
@@ -118,7 +118,7 @@ and plotting against that the absolute E<sub>above hull</sub> errors for each mo
 <label class="model-select">
   Model
   <Select
-    options={fp_diff.models.map((mdl) => mdl.label)}
+    options={fp_diff_sorted.map((mdl) => mdl.label)}
     bind:value={fp_diff_model}
     minSelect={1}
     maxSelect={1}
@@ -155,7 +155,7 @@ errors.
 <label class="model-select">
   Model
   <Select
-    options={each_errors.models.map((mdl) => mdl.label)}
+    options={each_errors_sorted.map((mdl) => mdl.label)}
     bind:value={each_errors_model}
     minSelect={1}
     maxSelect={1}
@@ -184,7 +184,7 @@ for each model and the mean of all models.
 <label class="model-select">
   Model
   <Select
-    options={hist_largest.models.map((mdl) => mdl.label)}
+    options={hist_largest_sorted.map((mdl) => mdl.label)}
     bind:value={hist_largest_model}
     minSelect={1}
     maxSelect={1}
