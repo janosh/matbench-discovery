@@ -1,27 +1,4 @@
-# /// script
-# requires-python = ">=3.11,<3.13"
-# dependencies = [
-# "torch==2.8.0+cu126",
-# "torch-geometric==2.6.1",
-# "numpy==1.26.0",
-# "scikit-learn==1.7.2",
-# "spglib==2.6.0",
-# "e3nn==0.5.6",
-# "ase==3.26.0",
-# "pymatgen==2025.10.7",
-# "pymatviz>=0.16.0",
-# "phono3py==3.19.3",
-# "flashTP_e3nn==0.1.0",
-# "fairchem-core==1.10.0",
-# "lmdb==1.6.2",
-# "submitit==1.5.3",
-# "matbench-discovery==1.3.1",
-# ]
-#
-# [tool.uv.sources]
-# flashTP_e3nn = { git = "https://github.com/SNU-ARC/flashTP" }
-# matbench-discovery = { path = "../../", editable = true }
-# ///
+"""Test EquFlash model on matbench-discovery Thermal Conductivity task."""
 
 import argparse
 import datetime
@@ -44,33 +21,35 @@ from ase.optimize import FIRE, LBFGS
 from ase.spacegroup import get_spacegroup
 from ase.utils import atoms_to_spglib_cell
 from GGNN.common.calculator import UCalculator
-from k_srme.conductivity import calculate_conductivity
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from spglib import get_symmetry_dataset
 from thermal_conductivity import get_fc3_batch
 from tqdm import tqdm
 
+from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons.thermal_conductivity import (
+    calculate_conductivity,
     get_fc2_and_freqs,
     init_phono3py,
 )
 
 if TYPE_CHECKING:
     from ase.optimize.optimize import Optimizer
-    from spglib import SpglibDataset
 
-ID = "mp_id"
+ID = "material_id"
 NO_TILT_MASK = [True, True, True, False, False, False]
 SYMM_NAME_MAP = {225: "rs", 186: "wz", 216: "zb"}
 
 
-def log_symmetry(atoms: Atoms, symprec: float) -> "SpglibDataset":
+def log_symmetry(atoms: Atoms, symprec: float) -> Any:  # noqa: ANN401
     """Get symmetry dataset from atoms using spglib."""
     dataset = get_symmetry_dataset(atoms_to_spglib_cell(atoms), symprec=symprec)
     if dataset is None:
-        raise RuntimeError(f"spglib failed to detect symmetry at {symprec=}")
+        raise ValueError(
+            f"Symmetry detection failed for structure with symprec={symprec}"
+        )
     return dataset
 
 
@@ -185,7 +164,6 @@ def main() -> None:
     parser.add_argument("--displacement", type=float, default=0.03)
     parser.add_argument("--rank", type=int, default=0)
     parser.add_argument("--worldsize", type=int, default=1)
-    parser.add_argument("--structures", type=str, required=True)
 
     args = parser.parse_args()
 
@@ -202,7 +180,7 @@ def main() -> None:
     enforce_relax_symm = True
     conductivity_broken_symm = False
     prog_bar = True
-    save_forces = True
+    save_forces = False
     task_type = "LTC"
     out_dir = args.outdir
     os.makedirs(out_dir, exist_ok=True)
@@ -210,12 +188,12 @@ def main() -> None:
     out_path = f"{out_dir}/conductivity-{args.rank:>03}.json.gz"
 
     timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")
-    struct_data_path = args.structures
-    atoms_list = read(struct_data_path, format="extxyz", index=":")
+    atoms_list = read(
+        DataFiles.phonondb_pbe_103_structures.path, format="extxyz", index=":"
+    )
 
     run_params = {
         "timestamp": timestamp,
-        "k_srme_version": version("k_srme"),
         "checkpoint": checkpoint,
         "device": device,
         "versions": {dep: version(dep) for dep in ("numpy", "torch")},
@@ -229,7 +207,6 @@ def main() -> None:
         "conductivity_broken_symm": conductivity_broken_symm,
         "slurm_array_task_count": args.worldsize,
         "task_type": task_type,
-        "struct_data_path": os.path.basename(struct_data_path),
         "n_structures": len(atoms_list),
     }
 
@@ -250,9 +227,8 @@ def main() -> None:
     kappa_results: dict[str, dict[str, Any]] = {}
 
     print(f"{len(atoms_list)} on {args.rank}")
-    for init_atoms in tqdm(atoms_list):
-        atoms = init_atoms
-        mat_id = atoms.info[ID]
+    for atoms in tqdm(atoms_list):
+        mat_id = atoms.info["material_id"]
         init_info = deepcopy(atoms.info)
         mat_name = atoms.info["name"]
         mat_desc = f"{mat_name}-{SYMM_NAME_MAP[atoms.info['symm.no']]}"
@@ -305,7 +281,7 @@ def main() -> None:
                 }
 
             else:
-                atoms, relax_dict = two_stage_relax(
+                atoms, relax_dict = two_stage_relax(  # noqa: PLW2901
                     atoms,
                     fmax_stage1=force_max,
                     fmax_stage2=force_max,
@@ -321,7 +297,7 @@ def main() -> None:
                 relax_dict["ase_symbols"] = str(atoms.symbols)
                 relax_dict["ase_cell"] = np.array(atoms.cell)
                 relax_dict["ase_positions"] = atoms.positions
-                relax_dict["ase_q_mesh"] = atoms.info["q_mesh"]
+                relax_dict["ase_q_mesh"] = atoms.info["q_point_mesh"]
 
                 atoms.calc = None
 
@@ -331,7 +307,7 @@ def main() -> None:
                 atoms,
                 fc2_supercell=atoms.info["fc2_supercell"],
                 fc3_supercell=atoms.info["fc3_supercell"],
-                q_point_mesh=atoms.info["q_mesh"],
+                q_point_mesh=atoms.info["q_point_mesh"],
                 symprec=symprec,
                 displacement_distance=args.displacement,
             )
@@ -356,7 +332,10 @@ def main() -> None:
                 )
                 ph3.forces = fc3_set
                 ph3.produce_fc3(symmetrize_fc3r=True)
-                ph3, kappa_dict = calculate_conductivity(ph3, log=False)
+
+                ph3, kappa_dict, _kappa = calculate_conductivity(
+                    ph3, temperatures=[300]
+                )
             else:
                 fc3_set = []
 
@@ -367,7 +346,7 @@ def main() -> None:
                 kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | err_dict
                 continue
 
-        except (ValueError, RuntimeError, OSError, KeyError) as exc:
+        except Exception as exc:  # noqa: BLE001
             warnings.warn(
                 f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2
             )
@@ -383,11 +362,16 @@ def main() -> None:
 
     df_kappa = pd.DataFrame(kappa_results).T
     df_kappa.index.name = ID
+    df_kappa.reset_index().to_json(out_path)
 
-    df_force = pd.DataFrame(force_results).T
-    df_force = pd.concat([df_kappa, df_force], axis=1)
-    df_force.index.name = ID
-    df_force.reset_index().to_json(out_path)
+    if save_forces:
+        force_data = {
+            mat_id: forces.tolist() if hasattr(forces, "tolist") else forces
+            for mat_id, forces in force_results.items()
+        }
+        pd.Series(force_data, name="forces").rename_axis(ID).reset_index().to_json(
+            f"{out_dir}/forces-{args.rank:03d}.json.gz"
+        )
 
 
 if __name__ == "__main__":

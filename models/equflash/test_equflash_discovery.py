@@ -1,42 +1,17 @@
 """Test EquFlash model on matbench-discovery IS2RE task."""
-# /// script
-# requires-python = ">=3.11,<3.13"
-# dependencies = [
-# "torch==2.8.0+cu126",
-# "torch-geometric==2.6.1",
-# "numpy==1.26.0",
-# "scikit-learn==1.7.2",
-# "spglib==2.6.0",
-# "e3nn==0.5.6",
-# "ase==3.26.0",
-# "pymatgen==2025.10.7",
-# "pymatviz>=0.16.0",
-# "flashTP_e3nn==0.1.0",
-# "fairchem-core==1.10.0",
-# "lmdb==1.6.2",
-# "submitit==1.5.3",
-# "matbench-discovery==1.3.1",
-# ]
-#
-# [tool.uv.sources]
-# flashTP_e3nn = { git = "https://github.com/SNU-ARC/flashTP" }
-# matbench-discovery = { path = "../../", editable = true }
-# ///
 
 import argparse
 import json
 import multiprocessing as mp
 import os
 import pickle
+from typing import Any
 
 import pandas as pd
-import torch
 import tqdm
-from fairchem.core.common.utils import update_config
-from GGNN.preprocessing import AtomsToGraphs
-from GGNN.trainer.utrainer import OCPTrainer
-from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.core import SiteCollection, Structure
+from GGNN.common.calculator import UCalculator
+from GGNN.preprocessing.atoms_to_graphs import AtomsToGraphs
+from pymatgen.core import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from relaxation.ml_relaxation import ml_relax
@@ -47,86 +22,68 @@ from matbench_discovery.data import as_dict_handler
 from matbench_discovery.hpc import df_slurm_chunk
 
 
-def split_df(df: pd.DataFrame, batch_size: int) -> list[pd.DataFrame]:
-    """Split dataframe into batches."""
-    return [df[idx : idx + batch_size] for idx in range(0, len(df), batch_size)]
-
-
-def compute_rmsd(
-    struct_pred: SiteCollection, struct_og: SiteCollection
-) -> tuple[float | None, float | None]:
-    """Compute RMSD between predicted and ground truth structures."""
-    structure_matcher = StructureMatcher(stol=1.0, scale=False)
-    result = structure_matcher.get_rms_dist(struct_pred, struct_og)
-    return result or (None, None)
-
-
-def load_trainer_from_ckpt(checkpoint_path: str) -> OCPTrainer:
-    """Load EquFlash trainer from checkpoint."""
-    from fairchem.core.common.utils import setup_imports
-
-    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
-    config = checkpoint["config"]
-
-    if "model_attributes" in config:
-        config["model_attributes"]["name"] = config.pop("model")
-        config["model"] = config["model_attributes"]
-
-    config["model"]["otf_graph"] = True
-    config = update_config(config)
-    config["checkpoint"] = str(checkpoint_path)
-    del config["dataset"]["src"]
-
-    setup_imports()
-    trainer = OCPTrainer(
-        task=config.get("task", {}),
-        model=config["model"],
-        dataset=[config["dataset"]],
-        outputs=config["outputs"],
-        loss_functions=config["loss_functions"],
-        evaluation_metrics=config["evaluation_metrics"],
-        optimizer=config["optim"],
-        identifier="",
-        slurm=config.get("slurm", {}),
-        local_rank=config.get("local_rank", 0),
-        is_debug=config.get("is_debug", True),
-        cpu=False,
-        amp=config.get("amp", False),
-        inference_only=True,
-    )
-    trainer.load_checkpoint(checkpoint_path, checkpoint, inference_only=True)
-    return trainer
-
-
-def load_pickle(file_path: str) -> pd.DataFrame:
-    """Load a single pickled dataframe."""
+def load_pickle(file_path: str) -> Any:  # noqa: ANN401
+    """Load a single pickle file."""
     with open(file_path, "rb") as file:
         return pickle.load(file)  # noqa: S301 safe internal data
 
 
-def load_multiple_pickles(file_paths: list[str]) -> list[pd.DataFrame]:
-    """Load multiple pickled dataframes in parallel."""
+def load_multiple_pickles(file_paths: list[str]) -> list[Any]:
+    """Load multiple pickle files in parallel."""
     n_proc = min(32, mp.cpu_count())
     with mp.Pool(processes=n_proc) as pool:
         return pool.map(load_pickle, file_paths)
 
 
+def split_df_by_max_atoms(
+    df: pd.DataFrame,
+    max_atoms: int,
+    input_col: str = "initial_structure",
+) -> list[pd.DataFrame]:
+    """Split dataframe so each batch has at most max_atoms atoms."""
+    batches = []
+    current_rows = []
+    current_atoms = 0
+
+    for idx, row in df.iterrows():
+        struct = Structure.from_dict(row[input_col])
+        n_atoms = len(struct)
+
+        if n_atoms > max_atoms:
+            raise ValueError(
+                f"{idx} has {n_atoms} atoms, larger than max_atoms={max_atoms}"
+            )
+
+        if current_rows and current_atoms + n_atoms > max_atoms:
+            batches.append(df.loc[current_rows])
+            current_rows = []
+            current_atoms = 0
+
+        current_rows.append(idx)
+        current_atoms += n_atoms
+
+    if current_rows:
+        batches.append(df.loc[current_rows])
+
+    return batches
+
+
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ckpt", required=True, help="Model checkpoint path")
+    parser.add_argument("--checkpoint", required=True, help="Model checkpoint path")
     parser.add_argument("--out", required=True, help="Output directory")
     parser.add_argument("--rank", type=int, default=0)
     parser.add_argument("--fmax", type=float, default=0.02)
     parser.add_argument("--worldsize", type=int, default=1)
-    parser.add_argument("--batchsize", type=int, default=32)
+    parser.add_argument("--max-atoms", type=int, default=1000)
     parser.add_argument(
         "--init-structs-dir", required=True, help="WBM initial structures directory"
     )
     parser.add_argument(
-        "--relaxed-structs-file",
+        "--wbm-metadata-file",
         required=True,
-        help="WBM relaxed structures pickle file",
+        help="WBM structures metadata file",
     )
     return parser.parse_args()
 
@@ -136,11 +93,8 @@ if __name__ == "__main__":
     args = parse_args()
     os.makedirs(args.out, exist_ok=True)
 
-    with open(args.relaxed_structs_file, "rb") as file:
-        structs_wbm = pickle.load(file)  # noqa: S301 safe internal data
-
     metadata = {
-        "ckpt": os.path.abspath(args.ckpt),
+        "checkpoint": os.path.abspath(args.checkpoint),
         "worldsize": args.worldsize,
         "fmax": args.fmax,
     }
@@ -173,9 +127,10 @@ if __name__ == "__main__":
     df = df_slurm_chunk(df, args.worldsize, args.rank + 1)  # rank is 0-based
 
     input_col = "initial_structure"
-    batch_lists = split_df(df, args.batchsize)
+    batch_lists = split_df_by_max_atoms(df, args.max_atoms, input_col=input_col)
 
-    trainer = load_trainer_from_ckpt(checkpoint_path=args.ckpt)
+    calc = UCalculator(checkpoint_path=args.checkpoint, cpu=False)
+    trainer = calc.trainer
 
     a2g = AtomsToGraphs(r_edges=False)
     relax_results = {}
@@ -194,20 +149,45 @@ if __name__ == "__main__":
             {"forces": batch.forces, "energy": batch.energy, "stress": batch.stress},
         )
 
-        for mat_id, atoms, ntraj in zip(
+        for mat_id, atoms, _ntraj in zip(
             mat_idx, atoms_list, n_traj.numpy(), strict=True
         ):
             unwrapped = getattr(atoms, "atoms", atoms)
             relaxed_struct = AseAtomsAdaptor.get_structure(unwrapped)
-            rmsd, max_dist = compute_rmsd(relaxed_struct, structs_wbm[mat_id])
             relax_results[mat_id] = {
                 "energy": atoms.get_total_energy(),
-                "rmsd": rmsd,
-                "max_dist": max_dist,
-                "n_traj": ntraj,
+                "structure": relaxed_struct,
             }
 
     df_out = pd.DataFrame(relax_results).T.add_prefix("mlff_")
     df_out.index.name = Key.mat_id
+    df_metadatas = pd.read_csv(args.wbm_metadata_file)
+    df_metadatas = df_metadatas.set_index("material_id").reindex(df_out.index)
+    if df_metadatas.isna().all(axis=1).any():
+        missing = df_metadatas[df_metadatas.isna().all(axis=1)].index.tolist()
+        raise ValueError(f"Missing metadata for material IDs: {missing[:5]}...")
+    df_merge = pd.concat([df_metadatas, df_out], axis=1)
+    df_merge["ggnn_e_per_form"] = (
+        df_merge["mlff_energy"]
+        + df_merge["correction"]
+        - df_merge["formation_ref_energy"]
+    ) / df_merge["num_atoms"]
+    structure_outfile = (
+        f"{args.out}/{args.rank:03d}_{args.worldsize}_structures.jsonl.gz"
+    )
 
-    df_out.reset_index().to_json(output_jsonfile_name, default_handler=as_dict_handler)
+    df_struct = df_merge["mlff_structure"].reset_index()
+
+    df_struct.to_json(
+        structure_outfile,
+        orient="records",
+        lines=True,
+        compression="gzip",
+        default_handler=as_dict_handler,
+    )
+
+    df_merge.drop(columns=["mlff_structure"]).reset_index().to_json(
+        output_jsonfile_name,
+        default_handler=as_dict_handler,
+        compression="gzip",
+    )

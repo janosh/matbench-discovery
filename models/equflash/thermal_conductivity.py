@@ -16,7 +16,16 @@ def calculate_fc3_set_batch(
     calculator: Calculator,
     pbar_kwargs: dict[str, Any] | None = None,
 ) -> np.ndarray:
-    """Calculate 3rd order force constants in batches for efficiency."""
+    """Calculate third-order force sets for displaced supercells in batches.
+
+    Args:
+        ph3: Phono3py object containing supercells with displacements.
+        calculator: ASE calculator used to predict forces.
+        pbar_kwargs: Progress-bar options. Currently accepted for API compatibility.
+
+    Returns:
+        Force array with shape matching phono3py's FC3 displacement dataset.
+    """
     pbar_kwargs = pbar_kwargs or {}
     n_atoms = len(ph3.supercell)
     graph_list = []

@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import torch
 from fairchem.core.common.typing import assert_is_instance
-from GGNN.datasets.lmdb_dataset import data_list_collator
 from torch_geometric.data import Batch
 
 from .optimizable import OptimizableBatch, OptimizableFrechetBatch
@@ -46,7 +45,7 @@ def ml_relax(
         fmax: Structure relaxation terminates when the max
             force of the system is no bigger than fmax.
         relax_opt: Optimizer parameters to be used for structure relaxations.
-        opt_algorithm: ASE optimizer to use, "fire" or "lbfgs". Defaults to "fire".
+        opt_algorithm: Optimization algorithm to use.
         relax_cell: if true will use stress predictions
             to relax crystallographic cell.
             The model given must predict stress
@@ -114,12 +113,10 @@ def ml_relax(
                 "splitting into two..."
             )
             mid = len(data_list) // 2
-            batches.appendleft(
-                data_list_collator(data_list[:mid], otf_graph=optimizable.otf_graph)
-            )
-            batches.appendleft(
-                data_list_collator(data_list[mid:], otf_graph=optimizable.otf_graph)
-            )
+            left = Batch.from_data_list(data_list[:mid])
+            right = Batch.from_data_list(data_list[mid:])
+            batches.appendleft(right)
+            batches.appendleft(left)
 
     # reset for good measure
     OptimizableBatch.ignored_changes = set()
