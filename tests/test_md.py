@@ -54,7 +54,7 @@ def test_reference_h5_roundtrip(tmp_path: Path) -> None:
     )
     write_reference_h5(
         ref_file,
-        {"sysA_300K": (traj_a, 0.25, 300.0), "sysB_500K": (traj_b, 1.5, 500.0)},
+        [("sysA_300K", traj_a, 0.25, 300.0), ("sysB_500K", traj_b, 1.5, 500.0)],
     )
 
     assert list_reference_systems(ref_file) == ["sysA_300K", "sysB_500K"]
@@ -74,7 +74,7 @@ def test_reference_h5_roundtrip(tmp_path: Path) -> None:
         read_reference_trajectory(ref_file, "does_not_exist")
 
     with pytest.raises(ValueError, match="no systems"):
-        write_reference_h5(ref_file, {})
+        write_reference_h5(ref_file, [])
 
 
 def test_run_nvt_md() -> None:
@@ -172,7 +172,7 @@ def make_reference_h5(tmp_path: Path, *, system: str = "bulkCu_300K_test") -> st
     )
     ref_file = str(tmp_path / "ref.h5")
     # dt = saved-frame cadence = time_step_fs * record_interval = 0.25 * 1
-    write_reference_h5(ref_file, {system: (Trajectory.from_ase(ref), 0.25, 300.0)})
+    write_reference_h5(ref_file, [(system, Trajectory.from_ase(ref), 0.25, 300.0)])
     return ref_file
 
 

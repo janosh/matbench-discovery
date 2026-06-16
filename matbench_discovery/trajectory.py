@@ -198,6 +198,144 @@ class Trajectory:
             md_step=np.array(md_steps) if has_steps else None,
         )
 
+    @classmethod
+    def from_extxyz(cls, path: str) -> "Trajectory":
+        """Bulk-parse a (optionally xz/gz/bz2-compressed) extxyz trajectory into stacked
+        arrays without building one ASE ``Atoms`` per frame.
+
+        ASE's pure-Python extxyz reader rebuilds an ``Atoms`` (and re-parses the header)
+        for every frame, which is minutes-to-hours for the 10k-70k-frame CFPMD-26
+        references (~0.5 frames/s measured). This reads the file once, slices the
+        constant-stride atom blocks with numpy, and parses the numeric columns with
+        pandas' C engine, reproducing ASE's cell/stress/energy conventions exactly
+        (verified against ``from_ase(read_trajectory(...))`` in tests). It assumes a
+        constant atom count and column layout across frames (true for these NVT
+        references); a varying atom count fails loud on the frame-stride check.
+        """
+        import bz2
+        import gzip
+        import lzma
+        import re
+        from io import StringIO
+
+        import pandas as pd
+        from ase.symbols import symbols2numbers
+
+        openers = {".xz": lzma.open, ".gz": gzip.open, ".bz2": bz2.open}
+        opener = openers.get(os.path.splitext(path)[1], open)
+        with opener(path, mode="rt") as file:
+            lines = file.read().split("\n")
+        while lines and not lines[-1].strip():  # tolerate trailing blank lines
+            lines.pop()
+        if not lines:
+            raise ValueError(f"empty extxyz file {path!r}")
+
+        n_atoms = int(lines[0].split()[0])
+        stride = n_atoms + 2  # count line + comment line + n_atoms atom lines
+        n_frames, remainder = divmod(len(lines), stride)
+        if remainder or n_frames == 0:
+            raise ValueError(
+                f"{path!r}: {len(lines)} lines is not a multiple of frame stride "
+                f"{stride} (n_atoms={n_atoms}); from_extxyz needs a constant atom count"
+            )
+        grid = np.asarray(lines, dtype=object).reshape(n_frames, stride)
+        comments = grid[:, 1]
+        atom_lines = grid[:, 2:].reshape(-1)  # frame-major (n_frames * n_atoms,)
+
+        # column layout from the Properties header (name:type:count triples)
+        prop_match = re.search(r"Properties=(\S+)", comments[0])
+        if prop_match is None:
+            raise ValueError(f"{path!r}: first comment line has no Properties=...")
+        tokens = prop_match.group(1).split(":")
+        col_start: dict[str, int] = {}
+        col = 0
+        for name, count in zip(tokens[::3], tokens[2::3], strict=True):
+            col_start[name] = col
+            col += int(count)
+        for required in ("species", "pos"):
+            if required not in col_start:
+                raise ValueError(f"{path!r}: Properties is missing {required!r}")
+
+        # bulk-parse every atom block in one C-engine call (\s+ skips leading space)
+        table = pd.read_csv(
+            StringIO("\n".join(atom_lines.tolist())),
+            sep=r"\s+",
+            header=None,
+            names=range(col),
+        )
+
+        def grab(start: int) -> np.ndarray:
+            """The 3 columns at ``start`` as (n_frames, n_atoms, 3) float."""
+            block = table.iloc[:, start : start + 3].to_numpy(dtype=float)
+            return block.reshape(n_frames, n_atoms, 3)
+
+        positions = grab(col_start["pos"])
+        forces = grab(col_start["forces"]) if "forces" in col_start else None
+        species = table.iloc[:n_atoms, col_start["species"]].to_numpy(dtype=str)
+        atomic_numbers = np.asarray(symbols2numbers(list(species)))
+
+        # per-frame scalars/tensors from the comment lines
+        def column(pattern: str) -> "list[str | None]":
+            """First capture group of ``pattern`` per comment line (None if absent)."""
+            rgx = re.compile(pattern)
+            return [m.group(1) if (m := rgx.search(c)) else None for c in comments]
+
+        def stack_floats(values: "list[str | None]", width: int) -> "np.ndarray | None":
+            """Parse a per-frame float field into (n_frames, width); None if absent on
+            every frame; raises on mixed availability (matches from_ase semantics).
+            """
+            present = [val is not None for val in values]
+            if not any(present):
+                return None
+            if not all(present):
+                raise ValueError(
+                    f"{path!r}: frame {present.index(False)} is missing a comment "
+                    "field that other frames provide"
+                )
+            flat = np.fromstring(" ".join(val for val in values if val), sep=" ")
+            if flat.size != n_frames * width:
+                raise ValueError(
+                    f"{path!r}: expected {width} values/frame, got {flat.size} total"
+                )
+            return flat.reshape(n_frames, width)
+
+        lattices = stack_floats(column(r'Lattice="([^"]*)"'), 9)
+        if lattices is None:
+            raise ValueError(f"{path!r}: every frame must carry a Lattice")
+        cell = lattices.reshape(n_frames, 3, 3)  # 9 row-major floats == ASE cell
+
+        energy = stack_floats(column(r"(?<!free_)energy=(\S+)"), 1)
+        energy = energy.reshape(n_frames) if energy is not None else None
+
+        # ASE reshapes the 9-vector Fortran-order then takes Voigt [00,11,22,12,02,01]
+        stress = stack_floats(column(r'\bstress="([^"]*)"'), 9)
+        if stress is not None:
+            stress = stress[:, [0, 4, 8, 7, 6, 3]]
+
+        pbc_match = re.search(r'pbc="([^"]*)"', comments[0])
+        pbc_tokens = pbc_match.group(1).split() if pbc_match else ["T", "T", "T"]
+        pbc_flags = [tok in ("T", "True", "true", "TRUE") for tok in pbc_tokens]
+        if len(pbc_flags) == 1:
+            pbc_flags *= 3
+
+        md_strs = column(r"\bmd_step=(\S+)")
+        md_step = (
+            np.array([int(val) for val in md_strs if val is not None])
+            if all(val is not None for val in md_strs)
+            else None
+        )
+
+        return cls(
+            atomic_numbers=atomic_numbers,
+            positions=positions,
+            cell=cell,
+            pbc=np.array(pbc_flags),
+            energy=energy,
+            forces=forces,
+            stress=stress,
+            md_step=md_step,
+        )
+
     def write_to_h5_group(self, group: "h5py.Group") -> None:
         """Write this trajectory's arrays + metadata into an open HDF5 group.
 

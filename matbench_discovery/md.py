@@ -10,6 +10,7 @@ import os
 import time
 import zipfile
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import ase
 import ase.io
@@ -26,6 +27,9 @@ from tqdm import tqdm
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 # === single-file multi-system reference dataset ===
 # CFPMD-26 references ship as one HDF5 with a group per system, each carrying the
 # trajectory arrays (guarded by Trajectory's per-group TRAJECTORY_SCHEMA) plus its
@@ -41,23 +45,28 @@ def default_md_reference_path() -> str:
 
 
 def write_reference_h5(
-    path: str, entries: "dict[str, tuple[Trajectory, float, float]]"
+    path: str, entries: "Iterable[tuple[str, Trajectory, float, float]]"
 ) -> None:
     """Atomically write a multi-system reference HDF5: one group per system holding the
     trajectory arrays plus ``dt_fs`` (saved-frame interval) and ``temperature_kelvin``
-    attrs. ``entries`` maps system name to (trajectory, dt_fs, temperature_kelvin).
+    attrs. ``entries`` yields (system_name, trajectory, dt_fs, temperature_kelvin); it
+    may be a lazy generator so the converter parses one trajectory at a time and writes
+    it straight to disk, bounding peak memory to the single largest system.
     """
-    if not entries:
-        raise ValueError("Cannot write a reference file with no systems")
     if dir_name := os.path.dirname(path):
         os.makedirs(dir_name, exist_ok=True)
     tmp_path = f"{path}.tmp"
+    n_written = 0
     with h5py.File(tmp_path, "w") as file:
-        for system_name, (trajectory, dt_fs, temperature_kelvin) in entries.items():
+        for system_name, trajectory, dt_fs, temperature_kelvin in entries:
             group = file.create_group(system_name)
             trajectory.write_to_h5_group(group)
             group.attrs["dt_fs"] = float(dt_fs)
             group.attrs["temperature_kelvin"] = float(temperature_kelvin)
+            n_written += 1
+    if n_written == 0:  # nothing yielded: drop the empty tmp file and fail loud
+        os.remove(tmp_path)
+        raise ValueError("Cannot write a reference file with no systems")
     os.replace(tmp_path, path)
 
 

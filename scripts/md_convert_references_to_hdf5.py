@@ -9,20 +9,25 @@ reads the HDF5 directly (no per-job extxyz parsing, no settings CSV).
         --settings-csv ~/data/cfpmd-26/reference_AIMD_timestep_and_stride.csv \
         --out data/md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.h5
 
-The extxyz parse is single-threaded and slow for the largest references (the
-20k-70k-frame metals/perovskites take minutes to hours each), so run it on a box with
-adequate walltime. Only the resulting HDF5 needs to be hosted/distributed.
+Parsing uses ``Trajectory.from_extxyz`` (bulk numpy/pandas reader), which converts even
+the largest 20k-70k-frame references in seconds-to-minutes rather than the hours ASE's
+per-frame extxyz parser needs, so a single process handles all systems sequentially.
+Only the resulting HDF5 needs to be hosted/distributed.
 """
 
 import argparse
 import os
 import time
 from glob import glob
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from matbench_discovery.md import read_trajectory, write_reference_h5
+from matbench_discovery.md import write_reference_h5
 from matbench_discovery.trajectory import Trajectory
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 def load_settings(csv_path: str) -> dict[str, tuple[float, float]]:
@@ -88,26 +93,34 @@ def main() -> int:
     if not system_dirs:
         parser.error(f"No system directories found under {args.ref_dir!r}")
 
-    entries: dict[str, tuple[Trajectory, float, float]] = {}
-    for system_name in system_dirs:
-        resolved = resolve_settings(system_name, settings)
-        if resolved is None:
-            parser.error(f"No settings row for {system_name!r} in {args.settings_csv}")
-        dt_fs, temperature_kelvin = resolved
-        src = find_reference_trajectory(args.ref_dir, system_name)
-        start = time.perf_counter()
-        trajectory = Trajectory.from_ase(read_trajectory(src))
-        entries[system_name] = (trajectory, dt_fs, temperature_kelvin)
-        print(
-            f"{system_name}: {trajectory.n_frames} frames, dt={dt_fs} fs, "
-            f"T={temperature_kelvin} K, parsed {os.path.basename(src)} "
-            f"({os.path.getsize(src) / 1e6:.1f} MB) in "
-            f"{time.perf_counter() - start:.1f}s"
-        )
+    # resolve settings for every system up front (cheap) so a missing CSV row fails
+    # before the expensive parse and before the output file is opened
+    resolved_raw = {name: resolve_settings(name, settings) for name in system_dirs}
+    if missing := [name for name, value in resolved_raw.items() if value is None]:
+        parser.error(f"No settings row in {args.settings_csv} for {missing}")
+    resolved = {name: value for name, value in resolved_raw.items() if value}
 
-    write_reference_h5(args.out, entries)
+    def entries() -> "Iterator[tuple[str, Trajectory, float, float]]":
+        """Parse one system at a time so write_reference_h5 streams it to disk and
+        only the single largest trajectory is ever held in memory.
+        """
+        for system_name in system_dirs:
+            dt_fs, temperature_kelvin = resolved[system_name]
+            src = find_reference_trajectory(args.ref_dir, system_name)
+            start = time.perf_counter()
+            trajectory = Trajectory.from_extxyz(src)
+            print(
+                f"{system_name}: {trajectory.n_frames} frames, dt={dt_fs} fs, "
+                f"T={temperature_kelvin} K, parsed {os.path.basename(src)} "
+                f"({os.path.getsize(src) / 1e6:.1f} MB) in "
+                f"{time.perf_counter() - start:.1f}s",
+                flush=True,
+            )
+            yield system_name, trajectory, dt_fs, temperature_kelvin
+
+    write_reference_h5(args.out, entries())
     out_mb = os.path.getsize(args.out) / 1e6
-    print(f"\nWrote {len(entries)} systems to {args.out} ({out_mb:.1f} MB)")
+    print(f"\nWrote {len(system_dirs)} systems to {args.out} ({out_mb:.1f} MB)")
     return 0
 
 

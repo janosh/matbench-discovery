@@ -225,3 +225,76 @@ def test_to_ase_dropped_calc_on_missing_results() -> None:
     """to_ase omits a calculator when the trajectory carries no results."""
     atoms = make_traj(results=False).to_ase()[0]
     assert atoms.calc is None
+
+
+@pytest.mark.parametrize("suffix", ["", ".xz", ".gz"])
+def test_from_extxyz_matches_ase_parser(tmp_path: Path, suffix: str) -> None:
+    """The fast bulk reader reproduces the ASE extxyz reader (the converter relied on
+    Trajectory.from_ase(read_trajectory(...))) field-for-field, including compression.
+    """
+    import ase.io
+
+    from matbench_discovery.md import read_trajectory
+
+    traj = make_traj(n_frames=5, n_atoms=4)
+    path = str(tmp_path / f"traj.extxyz{suffix}")
+    ase.io.write(path, traj.to_ase())
+
+    fast = Trajectory.from_extxyz(path)
+    slow = Trajectory.from_ase(read_trajectory(path))
+    np.testing.assert_array_equal(fast.atomic_numbers, slow.atomic_numbers)
+    np.testing.assert_array_equal(fast.pbc, slow.pbc)
+    for field in ("positions", "cell", "energy", "forces", "stress", "md_step"):
+        fast_arr, slow_arr = getattr(fast, field), getattr(slow, field)
+        assert fast_arr is not None, field
+        assert slow_arr is not None, field
+        np.testing.assert_array_equal(fast_arr, slow_arr, err_msg=field)
+
+
+def test_from_extxyz_real_format_stress_energy(tmp_path: Path) -> None:
+    """A hand-written CFPMD-style file (3x3 asymmetric stress, free_energy alongside
+    energy, leading-whitespace atom lines) matches ASE; the asymmetric stress pins the
+    Voigt index order (ASE reshapes the 9-vector Fortran-order, then takes
+    [00, 11, 22, 12, 02, 01]).
+    """
+    from matbench_discovery.md import read_trajectory
+
+    lattice = '"4.0 0.0 0.0 0.0 4.0 0.0 0.0 0.0 4.0"'
+    props = "species:S:1:pos:R:3:forces:R:3"
+    content = (
+        f"2\nLattice={lattice} Properties={props} energy=-1.5 "
+        'stress="1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0" free_energy=-1.6 pbc="T T T"\n'
+        "Cu       0.10000       0.20000       0.30000      0.01      0.02      0.03\n"
+        "Cu       1.10000       1.20000       1.30000      0.11      0.12      0.13\n"
+        f"2\nLattice={lattice} Properties={props} energy=-2.5 "
+        'stress="9.0 8.0 7.0 6.0 5.0 4.0 3.0 2.0 1.0" free_energy=-2.6 pbc="T T T"\n'
+        "Cu       0.40000       0.50000       0.60000      0.04      0.05      0.06\n"
+        "Cu       1.40000       1.50000       1.60000      0.14      0.15      0.16\n"
+    )
+    path = str(tmp_path / "traj.extxyz")
+    with open(path, "w") as file:
+        file.write(content)
+
+    fast = Trajectory.from_extxyz(path)
+    slow = Trajectory.from_ase(read_trajectory(path))
+    assert fast.stress is not None
+    np.testing.assert_array_equal(fast.stress, slow.stress)
+    np.testing.assert_array_equal(fast.stress[0], [1, 5, 9, 8, 7, 4])
+    np.testing.assert_array_equal(fast.energy, [-1.5, -2.5])  # energy, not free_energy
+    np.testing.assert_array_equal(fast.positions, slow.positions)
+    np.testing.assert_array_equal(fast.forces, slow.forces)
+
+
+def test_from_extxyz_rejects_varying_atom_count(tmp_path: Path) -> None:
+    """A trajectory whose atom count changes between frames fails the stride check."""
+    content = (
+        '2\nLattice="4 0 0 0 4 0 0 0 4" Properties=species:S:1:pos:R:3 pbc="T T T"\n'
+        "Cu 0 0 0\nCu 1 1 1\n"
+        '3\nLattice="4 0 0 0 4 0 0 0 4" Properties=species:S:1:pos:R:3 pbc="T T T"\n'
+        "Cu 0 0 0\nCu 1 1 1\nCu 2 2 2\n"
+    )
+    path = str(tmp_path / "traj.extxyz")
+    with open(path, "w") as file:
+        file.write(content)
+    with pytest.raises(ValueError, match="not a multiple of frame stride"):
+        Trajectory.from_extxyz(path)
