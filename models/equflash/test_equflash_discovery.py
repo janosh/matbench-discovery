@@ -44,9 +44,12 @@
 # explicit = true
 #
 # [tool.uv.sources]
-# GGNN = { git = "https://github.com/SamsungDS/GGNN", rev = "16b5cae474370977b59120e8bc57e4bcc19cd093" } # noqa: E501
 # matbench-discovery = { path = "../../", editable = true }
 # torch = { index = "pytorch-cu126" }
+#
+# [tool.uv.sources.GGNN]
+# git = "https://github.com/SamsungDS/GGNN"
+# rev = "16b5cae474370977b59120e8bc57e4bcc19cd093"
 # ///
 
 """Test EquFlash model on matbench-discovery IS2RE task.
