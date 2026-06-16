@@ -11,23 +11,31 @@ import { SvelteSet } from 'svelte/reactivity'
 // colors, render order, visibility) here, so adding a model never rewrites another model's
 // line - keeping concurrent submissions conflict-free.
 
-// stable per-model color + discovery F1 from MODELS, keyed by model_key and display name
-// so both key- and label-keyed payloads resolve. F1 (unique-prototypes test set) is the
-// default leaderboard render order.
-const model_meta: Record<string, { color?: string; f1: number }> = {}
+// stable per-model color + discovery metrics (unique-prototypes test set) from MODELS,
+// keyed by model_key and display name so both key- and label-keyed payloads resolve. F1 is
+// the default render order; MAE is the order for the hull-dist box + rolling-MAE figures.
+const model_meta: Record<string, { color?: string; f1: number; mae: number }> = {}
 for (const model of MODELS) {
-  const discovery = model.metrics?.discovery
-  const f1 =
-    (typeof discovery === `object` ? discovery?.unique_prototypes?.F1 : undefined) ??
-    -Infinity
+  const metrics =
+    typeof model.metrics?.discovery === `object`
+      ? model.metrics.discovery?.unique_prototypes
+      : undefined
   for (const id of [model.model_key, model.model_name]) {
-    if (id) model_meta[id] = { color: model.color, f1 }
+    if (id) {
+      model_meta[id] = {
+        color: model.color,
+        f1: metrics?.F1 ?? -Infinity,
+        mae: metrics?.MAE ?? Infinity,
+      }
+    }
   }
 }
-const model_id = (model: { key?: string; label?: string }): string =>
-  model.key ?? model.label ?? ``
-const model_color = (id: string): string | undefined => model_meta[id]?.color
-const model_f1 = (id: string): number => model_meta[id]?.f1 ?? -Infinity
+// look up a model's MODELS metadata by key or display label (both indexed above)
+const meta = (model: { key?: string; label?: string }) =>
+  model_meta[model.key ?? model.label ?? ``]
+// discovery MAE comparator (ascending = best first) for the hull-dist box + rolling figures
+export const model_mae = (model: { key?: string; label?: string }): number =>
+  meta(model)?.mae ?? Infinity
 
 // fill each reassembled model with its stable MODELS color (looked up by key or display
 // label) and sort for render. `order` defaults to discovery F1 desc (the leaderboard order
@@ -35,10 +43,10 @@ const model_f1 = (id: string): number => model_meta[id]?.f1 ?? -Infinity
 // orders (AUC, sigma, ...).
 export function styled_models<T extends { key?: string; label?: string }>(
   models: T[],
-  order: (model: T) => number = (model) => -model_f1(model_id(model)),
+  order: (model: T) => number = (model) => -(meta(model)?.f1 ?? -Infinity),
 ): (T & { color: string | undefined })[] {
   return models
-    .map((model) => ({ ...model, color: model_color(model_id(model)) }))
+    .map((model) => ({ ...model, color: meta(model)?.color }))
     .sort((row_a, row_b) => order(row_a) - order(row_b))
 }
 

@@ -67,6 +67,10 @@ def assert_models(payload: dict[str, Any], *keys: str, n_min: int = 2) -> list:
     """Assert a {models: [...]} payload where each entry has (at least) ``keys``."""
     models = payload["models"]
     assert len(models) >= n_min, f"expected >= {n_min} models, got {len(models)}"
+    # ids must be unique - a git merge that duplicated a model line (or a generator bug)
+    # would otherwise render two entries for one model
+    ids = [entry.get("key") or entry["label"] for entry in models]
+    assert len(ids) == len(set(ids)), f"duplicate model ids: {sorted(ids)}"
     for entry in models:
         assert isinstance(entry["label"], str)
         assert entry["label"]

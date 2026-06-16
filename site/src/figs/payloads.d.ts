@@ -2,11 +2,10 @@
 // declaration per payload — these take precedence over the generic '*.json.gz' / '*.jsonl'
 // fallbacks in app.d.ts, so each `import data from '$figs/<name>...'` is fully typed.
 //
-// Static payloads are committed as gzipped `<name>.json.gz` (decompressed at build by the
-// json_gz plugin). Multi-model payloads are committed as line-delimited `<name>.jsonl`
-// (one model per line) and reassembled into the aggregate shape by the jsonl plugin
-// (vite.config.ts), so concurrent model submissions git-merge cleanly. Both import as a
-// parsed default export.
+// Static payloads are committed as gzipped `<name>.json.gz`; multi-model payloads as
+// line-delimited `<name>.jsonl` (one model per line, reassembled into the aggregate
+// shape) so concurrent model submissions git-merge cleanly. Both are loaded at build by
+// the figure_payload plugin (vite.config.ts) and import as a parsed default export.
 //
 // This file must stay import/export-free at the top level so the helper interfaces below
 // are global and the module declarations stay ambient.

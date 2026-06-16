@@ -5,14 +5,14 @@ declare module '*.md'
 
 declare module '*.json.gz' {
   // data-only figure payloads (site/src/figs/<name>.json.gz), decompressed at build
-  // time by the json_gz_plugin in vite.config.ts and typed in src/figs/payloads.d.ts
+  // time by the figure_payload plugin in vite.config.ts, typed in src/figs/payloads.d.ts
   const data: unknown
   export default data
 }
 
 declare module '*.jsonl' {
   // line-delimited multi-model figure payloads, reassembled at build time by the
-  // jsonl_plugin in vite.config.ts and typed per payload in src/figs/payloads.d.ts
+  // figure_payload plugin in vite.config.ts, typed per payload in src/figs/payloads.d.ts
   const data: unknown
   export default data
 }

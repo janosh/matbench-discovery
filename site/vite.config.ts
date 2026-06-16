@@ -29,8 +29,11 @@ const figure_payload_plugin = (): Plugin => ({
     } else if (file.endsWith(`.jsonl`)) {
       const base: Record<string, unknown> = {}
       const models: unknown[] = []
-      for (const line of fs.readFileSync(file, `utf8`).split(`\n`)) {
-        if (!line.trim()) continue
+      // trim each line (CRLF checkouts leave a trailing \r) before JSON.parse, matching
+      // read_jsonl_payload's line.strip() in matbench_discovery/figs.py
+      for (const raw of fs.readFileSync(file, `utf8`).split(`\n`)) {
+        const line = raw.trim()
+        if (!line) continue
         const entry = JSON.parse(line) as Record<string, unknown>
         if (`_base` in entry && Object.keys(entry).length === 1) {
           // oxlint-disable-next-line no-underscore-dangle -- _base is the shared-fields sentinel

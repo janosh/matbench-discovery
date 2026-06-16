@@ -9,8 +9,8 @@ Static payloads are committed as a single gzipped site/src/figs/<name>.json.gz.
 Multi-model payloads are committed as line-delimited site/src/figs/<name>.jsonl: one
 JSON object per line (a lone ``{"_base": {...}}`` line for shared fields + one line per
 model). Two submissions that each add a model insert different lines, which git merges
-cleanly rather than colliding on one un-mergeable gzipped blob. The json_gz / jsonl
-Vite plugins (site/vite.config.ts) load both; .jsonl reassembles into the aggregate.
+cleanly rather than colliding on one un-mergeable gzipped blob. The figure_payload
+Vite plugin (site/vite.config.ts) loads both; .jsonl reassembles into the aggregate.
 
 Helpers:
 - ``write_json_gz(path, payload)``: deterministic gzipped JSON writer
@@ -296,7 +296,7 @@ def write_jsonl_payload(
     rewrites another model's line.
 
     ``full_run`` rewrites the whole roster; otherwise subset --models runs splice fresh
-    entries into the committed file by ``id_field``.
+    entries into the committed file by ``id_field``, keeping the committed shared _base.
     """
 
     def model_id(model: dict[str, Any]) -> str:
@@ -307,17 +307,26 @@ def write_jsonl_payload(
         {key: val for key, val in model.items() if key not in ("color", "visible")}
         for model in payload["models"]
     ]
-    shared = {key: val for key, val in payload.items() if key != "models"}
+    # one line per model: fail loud on dupes (read otherwise keeps only the last)
+    ids = [model_id(model) for model in models]
+    if len(ids) != len(set(ids)):
+        dupes = sorted({mid for mid in ids if ids.count(mid) > 1})
+        raise ValueError(f"duplicate model ids in payload for {path}: {dupes}")
+    shared_from = payload  # full runs take shared fields from the fresh payload
     if not full_run:  # splice fresh entries into the committed file by id
         if not os.path.isfile(path):
             raise FileNotFoundError(
                 f"{path} not found: subset runs (--models) splice into an existing "
                 "payload. Run without --models to regenerate from scratch."
             )
+        committed = read_jsonl_payload(path)
         fresh = {model_id(model): model for model in models}
-        committed = read_jsonl_payload(path)["models"]
-        models = [fresh.pop(model_id(old), old) for old in committed]
+        models = [fresh.pop(model_id(old), old) for old in committed["models"]]
         models += list(fresh.values())
+        # shared fields are model-independent; keep the committed _base so a subset run
+        # only rewrites model lines (no churn from fresh dict order / float noise)
+        shared_from = committed
+    shared = {key: val for key, val in shared_from.items() if key != "models"}
 
     models.sort(key=model_id)
     # a lone _base line (when shared fields exist) followed by one line per model

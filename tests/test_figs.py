@@ -316,6 +316,41 @@ def test_write_site_payload_subset_noop_is_byte_identical(
         assert file.read() == full  # m-a unchanged, m-b + _base preserved
 
 
+def test_write_site_payload_subset_preserves_committed_base(
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Subset runs keep the committed shared _base; fresh shared fields are ignored
+    (shared data is model-independent - changing it needs a full run).
+    """
+    monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run first
+    figs.write_site_payload(
+        "demo", {"shared": [1, 2], "models": [{"key": "m-a", "y": [0]}]}
+    )
+    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
+    figs.write_site_payload(
+        "demo", {"shared": [9, 9], "models": [{"key": "m-a", "y": [1]}]}
+    )
+    restored = figs.read_jsonl_payload(f"{site_fig_dir}/demo.jsonl")
+    assert restored["shared"] == [1, 2]  # committed _base preserved, fresh ignored
+    assert restored["models"] == [{"key": "m-a", "y": [1]}]  # model line updated
+
+
+@pytest.mark.usefixtures("site_fig_dir")
+@pytest.mark.parametrize("full_run", [True, False])
+def test_write_site_payload_duplicate_id_raises(
+    monkeypatch: pytest.MonkeyPatch, full_run: bool
+) -> None:
+    """Two models with the same id fail loudly (read otherwise silently keeps the last),
+    on both full and subset runs - the check precedes the file-exists guard.
+    """
+    active = list(Model.active())
+    monkeypatch.setattr(cli_args, "models", active if full_run else active[:1])
+    with pytest.raises(ValueError, match="duplicate model ids"):
+        figs.write_site_payload(
+            "demo", {"models": [{"key": "dup", "y": [1]}, {"key": "dup", "y": [2]}]}
+        )
+
+
 @pytest.mark.usefixtures("site_fig_dir")
 def test_write_site_payload_subset_run_requires_existing_file(
     monkeypatch: pytest.MonkeyPatch,
