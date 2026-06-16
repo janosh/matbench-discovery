@@ -1,10 +1,15 @@
-// Types for the data-only figure payloads in this directory (written by
-// matbench_discovery analysis scripts as gzipped JSON, decompressed at build time by
-// the json_gz plugin in vite.config.ts). One exact ambient declaration per payload —
-// these take precedence over the generic '*.json.gz' fallback in app.d.ts, so each
-// `import data from '$figs/<name>.json.gz'` is fully typed with zero runtime
-// indirection. This file must stay import/export-free at the top level so the
-// helper interfaces below are global and the module declarations stay ambient.
+// Types for the data-only figure payloads in this directory. One exact ambient
+// declaration per payload — these take precedence over the generic '*.json.gz' / '*.jsonl'
+// fallbacks in app.d.ts, so each `import data from '$figs/<name>...'` is fully typed.
+//
+// Static payloads are committed as gzipped `<name>.json.gz` (decompressed at build by the
+// json_gz plugin). Multi-model payloads are committed as line-delimited `<name>.jsonl`
+// (one model per line) and reassembled into the aggregate shape by the jsonl plugin
+// (vite.config.ts), so concurrent model submissions git-merge cleanly. Both import as a
+// parsed default export.
+//
+// This file must stay import/export-free at the top level so the helper interfaces below
+// are global and the module declarations stay ambient.
 
 interface XY<TX = number> {
   x: TX[]
@@ -30,7 +35,7 @@ interface KeyedModel {
 }
 
 // === models/tmi discovery metrics ===
-declare module '$figs/box-hull-dist-errors.json.gz' {
+declare module '$figs/box-hull-dist-errors.jsonl' {
   const data: {
     // quantiles = [q05, q25, median, q75, q95] of each model's hull distance error
     models: (KeyedModel & { color: string; quantiles: number[] })[]
@@ -38,7 +43,7 @@ declare module '$figs/box-hull-dist-errors.json.gz' {
   export default data
 }
 
-declare module '$figs/cumulative-precision-recall.json.gz' {
+declare module '$figs/cumulative-precision-recall.jsonl' {
   const data: {
     n_stable: number // number of stable materials in the WBM test set
     models: (KeyedModel & {
@@ -53,7 +58,7 @@ declare module '$figs/cumulative-precision-recall.json.gz' {
   export default data
 }
 
-declare module '$figs/roc-models.json.gz' {
+declare module '$figs/roc-models.jsonl' {
   const data: {
     models: (KeyedModel & {
       auc: number
@@ -64,7 +69,7 @@ declare module '$figs/roc-models.json.gz' {
   export default data
 }
 
-declare module '$figs/rolling-mae-vs-hull-dist.json.gz' {
+declare module '$figs/rolling-mae-vs-hull-dist.jsonl' {
   const data: {
     x: number[] // shared E above hull values (eV/atom)
     models: (KeyedModel & {
@@ -77,7 +82,7 @@ declare module '$figs/rolling-mae-vs-hull-dist.json.gz' {
   export default data
 }
 
-declare module '$figs/hist-clf-pred-hull-dist.json.gz' {
+declare module '$figs/hist-clf-pred-hull-dist.jsonl' {
   const data: {
     bin_centers: number[] // shared hull-dist bins (eV/atom)
     // per-model stability-classification counts per bin
@@ -87,7 +92,7 @@ declare module '$figs/hist-clf-pred-hull-dist.json.gz' {
 }
 
 // === models/tmi extras ===
-declare module '$figs/element-prevalence-vs-error.json.gz' {
+declare module '$figs/element-prevalence-vs-error.jsonl' {
   const data: {
     elements: string[] // element symbols, same order as occurrences
     occurrences: number[] // MP training-set occurrence count per element
@@ -96,7 +101,7 @@ declare module '$figs/element-prevalence-vs-error.json.gz' {
   export default data
 }
 
-declare module '$figs/scatter-largest-fp-diff-each-error.json.gz' {
+declare module '$figs/scatter-largest-fp-diff-each-error.jsonl' {
   const data: {
     fp_diff: number[] // shared |SSFP_initial - SSFP_final| values
     models: { label: string; mae: number; color: string; y: number[] }[]
@@ -104,12 +109,12 @@ declare module '$figs/scatter-largest-fp-diff-each-error.json.gz' {
   export default data
 }
 
-declare module '$figs/scatter-largest-each-errors-fp-diff.json.gz' {
+declare module '$figs/scatter-largest-each-errors-fp-diff.jsonl' {
   const data: { models: (LabeledXY & { mae: number })[] }
   export default data
 }
 
-declare module '$figs/hist-largest-each-errors-fp-diff.json.gz' {
+declare module '$figs/hist-largest-each-errors-fp-diff.jsonl' {
   const data: {
     // fingerprint-diff histograms for each model's 100 worst (err_max) and best
     // (err_min) hull-dist predictions
@@ -180,7 +185,7 @@ declare module '$figs/element-counts-mp-vs-wbm.json.gz' {
 }
 
 // === phonons ===
-declare module '$figs/kappa-103-analysis.json.gz' {
+declare module '$figs/kappa-103-analysis.jsonl' {
   // per-material kappa-103 diagnostics vs the phononDB-PBE reference. All
   // per-material arrays are aligned to material_ids; null = material missing from
   // the model's predictions (or the value couldn't be computed)
@@ -206,18 +211,18 @@ declare module '$figs/kappa-103-analysis.json.gz' {
 }
 
 // === geo-opt ===
-declare module '$figs/struct-rmsd-cdf.json.gz' {
+declare module '$figs/struct-rmsd-cdf.jsonl' {
   const data: { models: (LabeledXY & { auc: number })[] }
   export default data
 }
 
-declare module '$figs/sym-ops-diff-bar.json.gz' {
+declare module '$figs/sym-ops-diff-bar.jsonl' {
   // histogram of symmetry-operation count changes during relaxation (symprec=1e-5)
   const data: { models: (LabeledXY & { sigma: number })[] }
   export default data
 }
 
-declare module '$figs/spg-sankeys.json.gz' {
+declare module '$figs/spg-sankeys.jsonl' {
   // DFT vs model spacegroup flows (symprec=1e-5); key matches MODELS model_key. flat
   // arrays; matterviz sankey_from_links(source, target, value, labels) builds the graph
   const data: {

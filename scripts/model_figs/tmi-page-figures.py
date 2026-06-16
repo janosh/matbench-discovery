@@ -156,7 +156,6 @@ figs.write_site_payload(
         "models": [figs.trace_payload(trace, x=False) for trace in fig.data],
     },
     id_field="label",
-    assign_colors=True,
 )
 
 
@@ -344,5 +343,4 @@ figs.write_site_payload(
         "models": fp_diff_models,
     },
     id_field="label",
-    assign_colors=True,
 )

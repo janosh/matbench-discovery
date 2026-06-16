@@ -1,7 +1,43 @@
 // Shared ref-line idioms for the inline matterviz figures in site/src/routes.
+import { MODELS } from '$lib/models.svelte'
 import type { LegendConfig, RefLine } from 'matterviz/plot'
 import type { Attachment } from 'svelte/attachments'
 import { SvelteSet } from 'svelte/reactivity'
+
+// === multi-model payload client-side styling ===
+// Multi-model payloads ship as line-delimited .jsonl (one model per line) holding
+// position-independent data only; the jsonl Vite plugin reassembles them into the aggregate
+// { ...shared, models: [...] } shape. Pages then apply presentation (stable per-model
+// colors, render order, visibility) here, so adding a model never rewrites another model's
+// line - keeping concurrent submissions conflict-free.
+
+// stable per-model color + discovery F1 from MODELS, keyed by model_key and display name
+// so both key- and label-keyed payloads resolve. F1 (unique-prototypes test set) is the
+// default leaderboard render order.
+const model_meta: Record<string, { color?: string; f1: number }> = {}
+for (const model of MODELS) {
+  const discovery = model.metrics?.discovery
+  const f1 =
+    (typeof discovery === `object` ? discovery?.unique_prototypes?.F1 : undefined) ??
+    -Infinity
+  for (const id of [model.model_key, model.model_name]) {
+    if (id) model_meta[id] = { color: model.color, f1 }
+  }
+}
+export const model_color = (id: string): string | undefined => model_meta[id]?.color
+export const model_f1 = (id: string): number => model_meta[id]?.f1 ?? -Infinity
+
+// fill each reassembled model with its stable MODELS color and sort for render. `order`
+// defaults to discovery F1 desc (the leaderboard order the aggregate payloads used to bake
+// in); pass a custom comparator value for figure-specific orders (AUC, sigma, ...).
+export function styled_models<T extends { key?: string; label?: string; color?: string }>(
+  models: T[],
+  order: (model: T) => number = (model) => -model_f1(model.key ?? model.label ?? ``),
+): T[] {
+  return models
+    .map((model) => ({ ...model, color: model_color(model.key ?? model.label ?? ``) }))
+    .sort((row_a, row_b) => order(row_a) - order(row_b))
+}
 
 export const dashed = { dash: `4`, width: 1 }
 

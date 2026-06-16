@@ -1,12 +1,19 @@
 <script lang="ts">
-  import spg_sankeys from '$figs/spg-sankeys.json.gz'
-  import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.json.gz'
-  import sym_ops_diff from '$figs/sym-ops-diff-bar.json.gz'
+  import spg_sankeys from '$figs/spg-sankeys.jsonl'
+  import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
+  import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
   import { GeoOptMetricsTable, MODELS } from '$lib'
+  import { styled_models } from '$lib/fig-helpers'
   import { min } from 'd3-array'
   import { format_num } from 'matterviz'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
+
+  // payloads are line-delimited; restore the generators' render order client-side
+  // (struct-rmsd by AUC desc, sym-ops by symmetry-op-diff sigma asc). spg sankeys render
+  // in file (~model-key) order, matching the old key-sorted aggregate.
+  const struct_rmsd_sorted = styled_models(struct_rmsd_cdf.models, (mdl) => -mdl.auc)
+  const sym_ops_sorted = styled_models(sym_ops_diff.models, (mdl) => mdl.sigma)
 
   const n_min_relaxed_structures: number = min(MODELS, (model) => {
     const geo_opt = model.metrics?.geo_opt
@@ -25,7 +32,7 @@
   {/snippet}
   {#snippet struct_rmsd_cdf_models()}
     <ScatterPlot
-      series={struct_rmsd_cdf.models.map(({ label, auc, x, y }) => ({
+      series={struct_rmsd_sorted.map(({ label, auc, x, y }) => ({
         x,
         y,
         label: `${label} · AUC=${auc}`,
@@ -38,7 +45,7 @@
   {/snippet}
   {#snippet sym_ops_diff_bar()}
     <div class="sym-ops-list">
-      {#each sym_ops_diff.models as { label, sigma, x, y } (label)}
+      {#each sym_ops_sorted as { label, sigma, x, y } (label)}
         <figure>
           <figcaption>{label} (σ={sigma})</figcaption>
           <BarPlot

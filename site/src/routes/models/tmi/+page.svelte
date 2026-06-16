@@ -1,13 +1,20 @@
 <script lang="ts">
-  import elem_prev from '$figs/element-prevalence-vs-error.json.gz'
-  import hist_largest from '$figs/hist-largest-each-errors-fp-diff.json.gz'
-  import each_errors from '$figs/scatter-largest-each-errors-fp-diff.json.gz'
-  import fp_diff from '$figs/scatter-largest-fp-diff-each-error.json.gz'
-  import { dashed, plotly_blue, plotly_red, wide_legend } from '$lib/fig-helpers'
+  import elem_prev from '$figs/element-prevalence-vs-error.jsonl'
+  import hist_largest from '$figs/hist-largest-each-errors-fp-diff.jsonl'
+  import each_errors from '$figs/scatter-largest-each-errors-fp-diff.jsonl'
+  import fp_diff from '$figs/scatter-largest-fp-diff-each-error.jsonl'
+  import { dashed, plotly_blue, plotly_red, styled_models, wide_legend } from '$lib/fig-helpers'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
   import DiscoveryMetricFigs from './discovery-metric-figs.md'
   import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
+
+  // payloads are line-delimited data only; style client-side (stable MODELS colors +
+  // leaderboard order, so each dropdown below defaults to a top model as before)
+  const elem_prev_sorted = styled_models(elem_prev.models)
+  const fp_diff_sorted = styled_models(fp_diff.models)
+  const each_errors_sorted = styled_models(each_errors.models)
+  const hist_largest_sorted = styled_models(hist_largest.models)
 
   const fp_diff_label = `|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|`
   // mirrors the metrics-table toggle: filters all discovery figures below to the
@@ -21,18 +28,18 @@
   const find_model = <T extends { label: string }>(models: T[], label: string): T =>
     models.find((mdl) => mdl.label === label) ?? models[0]
 
-  let elem_prev_selected = $state(elem_prev.models.slice(0, 3).map((mdl) => mdl.label))
-  let fp_diff_model = $state(fp_diff.models[0].label)
-  let each_errors_model = $state(each_errors.models[0].label)
-  let hist_largest_model = $state(hist_largest.models[0].label)
+  let elem_prev_selected = $state(elem_prev_sorted.slice(0, 3).map((mdl) => mdl.label))
+  let fp_diff_model = $state(fp_diff_sorted[0].label)
+  let each_errors_model = $state(each_errors_sorted[0].label)
+  let hist_largest_model = $state(hist_largest_sorted[0].label)
 
   const elem_prev_models = $derived(
-    elem_prev.models.filter((mdl) => elem_prev_selected.includes(mdl.label)),
+    elem_prev_sorted.filter((mdl) => elem_prev_selected.includes(mdl.label)),
   )
-  const fp_diff_active = $derived(find_model(fp_diff.models, fp_diff_model))
-  const each_errors_active = $derived(find_model(each_errors.models, each_errors_model))
+  const fp_diff_active = $derived(find_model(fp_diff_sorted, fp_diff_model))
+  const each_errors_active = $derived(find_model(each_errors_sorted, each_errors_model))
   const hist_largest_active = $derived(
-    find_model(hist_largest.models, hist_largest_model),
+    find_model(hist_largest_sorted, hist_largest_model),
   )
 
   // x extent of the shared fingerprint-diff values for the MAE ref line

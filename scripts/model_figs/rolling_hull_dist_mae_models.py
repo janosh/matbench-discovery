@@ -96,10 +96,7 @@ for trace in fig.data:
         trace, x=False
     )
     rolling_models.append(entry)
-if show_non_compliant:  # site payload = full model set. order/colors/visibility
-    # derive from MAE rank over the full roster (YAML metrics, no pred files needed)
-    # so single-model merge runs write the same payload as a full regen
-    mae_by_label = dfs_metrics[test_subset].loc["MAE"]
+if show_non_compliant:  # site payload = full model set (shards reassembled client-side)
     figs.write_site_payload(
         "rolling-mae-vs-hull-dist",
         {
@@ -111,8 +108,5 @@ if show_non_compliant:  # site payload = full model set. order/colors/visibility
                 "y": counts.tolist(),
             },
         },
-        sort_key=lambda entry: mae_by_label[str(entry["label"])],
-        assign_colors=True,
-        visible_top_n=show_n_best_models,
     )
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

@@ -27,6 +27,32 @@ const json_gz_plugin = (): Plugin => ({
   },
 })
 
+// Import committed .jsonl figure payloads (one JSON object per line: a {"_base": {...}}
+// line for shared fields + one line per model; written by matbench_discovery
+// write_site_payload). Reassembled into the aggregate { ...shared, models: [...] } shape
+// and embedded as JSON.parse('...'). Line-delimited storage lets concurrent model
+// submissions git-merge cleanly instead of colliding on one gzipped blob.
+const jsonl_plugin = (): Plugin => ({
+  name: `jsonl`,
+  load(id) {
+    const file = id.split(`?`)[0]
+    if (!file.endsWith(`.jsonl`)) return null
+    const base: Record<string, unknown> = {}
+    const models: unknown[] = []
+    for (const line of fs.readFileSync(file, `utf8`).split(`\n`)) {
+      if (!line.trim()) continue
+      const entry = JSON.parse(line) as Record<string, unknown>
+      if (`_base` in entry && Object.keys(entry).length === 1) {
+        // oxlint-disable-next-line no-underscore-dangle -- _base is the shared-fields sentinel
+        Object.assign(base, entry._base as Record<string, unknown>)
+      } else models.push(entry)
+    }
+    const payload = JSON.stringify({ ...base, models })
+    const code = `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(payload)})`
+    return { code, map: null }
+  },
+})
+
 // Custom Vite plugin that watches for changes to *-schema.yml files and
 // Automatically converts them to *-schema.d.ts files
 function yaml_schema_to_typescript_plugin(): Plugin {
@@ -113,6 +139,7 @@ export default defineConfig({
     yaml_plugin({ extensions: [`.yml`, `.yaml`, `.cff`] }),
     yaml_schema_to_typescript_plugin(),
     json_gz_plugin(),
+    jsonl_plugin(),
   ],
 
   server: {

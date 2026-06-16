@@ -10,6 +10,13 @@ declare module '*.json.gz' {
   export default data
 }
 
+declare module '*.jsonl' {
+  // line-delimited multi-model figure payloads, reassembled at build time by the
+  // jsonl_plugin in vite.config.ts and typed per payload in src/figs/payloads.d.ts
+  const data: unknown
+  export default data
+}
+
 declare module '*package.json' {
   const pkg: Record<string, unknown>
   export default pkg

@@ -175,9 +175,7 @@ def main() -> int:
         ],
         "models": models,
     }
-    figs.write_site_payload(
-        "kappa-103-analysis", payload, sort_key=lambda entry: str(entry["key"]).lower()
-    )
+    figs.write_site_payload("kappa-103-analysis", payload)
     return 0
 
 

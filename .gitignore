@@ -18,10 +18,10 @@ __pycache__
 data/**/raw
 data/**/tsne
 !data/mp/2023-02-07-mp-elemental-reference-entries.json.gz
-# committed data-only figure payloads (small, written by matbench_discovery.figs)
+# committed data-only figure payloads (written by matbench_discovery.figs): static ones
+# as gzipped <name>.json.gz (re-included below); multi-model ones as line-delimited
+# <name>.jsonl, which the *.json.gz ignore above doesn't match (so they stay tracked)
 !site/src/figs/*.json.gz
-# committed per-element error payload (gzipped JSON imported by model pages)
-!site/src/routes/models/per-element-each-errors.json.gz
 data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*
@@ -44,3 +44,9 @@ site/src/routes/api/*.md
 # large files
 data/*-models-geo-opt-analysis-symprec=*.csv.gz
 .cursor
+
+# lock files
+uv.lock
+
+# paper figs
+paper/figs/

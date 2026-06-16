@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import math
 import os
 from functools import partial
 from typing import Any
@@ -16,7 +17,7 @@ from typing import Any
 import pandas as pd
 import pytest
 
-from matbench_discovery import SITE_FIG_DATA
+from matbench_discovery import SITE_FIG_DATA, figs
 from matbench_discovery.enums import Model
 from scripts.model_figs.kappa_103_analysis import row_flag
 
@@ -27,18 +28,29 @@ def reject_json_constant(const: str) -> None:
 
 
 def load_payload(name: str) -> dict[str, Any]:
-    """Load a committed figure payload by file stem."""
-    with gzip.open(f"{SITE_FIG_DATA}/{name}.json.gz") as file:
-        # our exporter writes allow_nan=False; reject NaN/Infinity literals that
-        # python's json would otherwise happily parse back
-        return json.load(file, parse_constant=reject_json_constant)
+    """Load a committed figure payload by stem - either a gzipped aggregate
+    ``<name>.json.gz`` or a line-delimited ``<name>.jsonl`` (reassembled like the site's
+    jsonl Vite plugin). The exporter writes ``allow_nan=False`` so NaN can't reach disk;
+    the aggregate path also rejects NaN/Infinity literals to catch drift.
+    """
+    path = f"{SITE_FIG_DATA}/{name}.json.gz"
+    if os.path.isfile(path):
+        with gzip.open(path) as file:
+            return json.load(file, parse_constant=reject_json_constant)
+    return figs.read_jsonl_payload(f"{SITE_FIG_DATA}/{name}.jsonl")
 
 
 def assert_num_list(values: object, *, length: int | None = None) -> None:
     """Assert a list of finite numbers (None allowed for gaps), optionally sized."""
     assert isinstance(values, list), f"expected list, got {type(values)=}"
     assert values, "expected non-empty list"
-    assert all(val is None or isinstance(val, (int, float)) for val in values)
+    # None marks a gap; every other entry must be a finite number. The exporter writes
+    # allow_nan=False, so NaN/Infinity here means corruption - reject it on the .jsonl
+    # path too (load_payload can't apply json's parse_constant guard line-by-line).
+    assert all(
+        val is None or (isinstance(val, (int, float)) and math.isfinite(val))
+        for val in values
+    )
     if length is not None:
         assert len(values) == length, f"expected {length=}, got {len(values)}"
 
@@ -72,11 +84,17 @@ def test_no_orphan_payloads() -> None:
     """Every committed payload file is covered by a shape test below (and thus has a
     consumer page); orphans should be deleted, not committed.
     """
-    on_disk = {
-        file.removesuffix(".json.gz")
-        for file in os.listdir(SITE_FIG_DATA)
-        if file.endswith(".json.gz")
-    }
+    aggregates: set[str] = set()  # gzipped <name>.json.gz (static payloads)
+    jsonl: set[str] = set()  # line-delimited <name>.jsonl (multi-model payloads)
+    for entry in os.listdir(SITE_FIG_DATA):
+        if entry.endswith(".json.gz"):
+            aggregates.add(entry.removesuffix(".json.gz"))
+        elif entry.endswith(".jsonl"):
+            jsonl.add(entry.removesuffix(".jsonl"))
+    # a payload is EITHER a gzipped aggregate or a .jsonl, never both (a stray leftover
+    # aggregate beside a .jsonl would reintroduce the merge conflict .jsonl avoids)
+    assert not (both := aggregates & jsonl), f"both aggregate and jsonl: {both}"
+    on_disk = aggregates | jsonl
     assert on_disk == set(EXPECTED_PAYLOADS), (
         f"unexpected={on_disk - set(EXPECTED_PAYLOADS)}, "
         f"missing={set(EXPECTED_PAYLOADS) - on_disk}"
@@ -84,14 +102,14 @@ def test_no_orphan_payloads() -> None:
 
 
 def check_box_hull_dist_errors() -> None:
-    for model in assert_models(load_payload("box-hull-dist-errors"), "key", "color"):
+    for model in assert_models(load_payload("box-hull-dist-errors"), "key"):
         assert_num_list(model["quantiles"], length=5)  # q05, q25, median, q75, q95
 
 
 def check_cumulative_precision_recall() -> None:
     payload = load_payload("cumulative-precision-recall")
     assert payload["n_stable"] > 10_000
-    for model in assert_models(payload, "key", "color"):
+    for model in assert_models(payload, "key"):
         assert_num_list(model["x"])
         assert_num_list(model["precision"], length=len(model["x"]))
         assert_num_list(model["recall"], length=len(model["x"]))
@@ -108,7 +126,7 @@ def check_roc_models() -> None:
 def check_rolling_mae() -> None:
     payload = load_payload("rolling-mae-vs-hull-dist")
     assert_num_list(payload["x"])
-    for model in assert_models(payload, "key", "color"):
+    for model in assert_models(payload, "key"):
         assert_num_list(model["y"], length=len(payload["x"]))
     assert_xy(payload["density"])
 
@@ -127,14 +145,14 @@ def check_element_prevalence() -> None:
     elements = payload["elements"]
     assert all(isinstance(el, str) for el in elements)
     assert_num_list(payload["occurrences"], length=len(elements))
-    for model in assert_models(payload, "color"):
+    for model in assert_models(payload):
         assert_num_list(model["y"], length=len(elements))
 
 
 def check_scatter_largest_fp_diff() -> None:
     payload = load_payload("scatter-largest-fp-diff-each-error")
     assert_num_list(payload["fp_diff"])
-    for model in assert_models(payload, "mae", "color"):
+    for model in assert_models(payload, "mae"):
         assert_num_list(model["y"], length=len(payload["fp_diff"]))
 
 

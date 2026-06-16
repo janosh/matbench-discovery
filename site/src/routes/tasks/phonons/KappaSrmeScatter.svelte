@@ -1,6 +1,6 @@
 <script lang="ts">
   // Per-material κ_SRME vs DFT conductivity for one model, grouped by crystal system.
-  import type kappa_data from '$figs/kappa-103-analysis.json.gz'
+  import type kappa_data from '$figs/kappa-103-analysis.jsonl'
   import { format_num, sanitize_compact_formula } from 'matterviz'
   import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries } from 'matterviz/plot'

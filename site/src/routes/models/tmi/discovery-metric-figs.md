@@ -1,10 +1,10 @@
 <script lang="ts">
-  import box_data from '$figs/box-hull-dist-errors.json.gz'
-  import cum_pr from '$figs/cumulative-precision-recall.json.gz'
-  import hist_clf from '$figs/hist-clf-pred-hull-dist.json.gz'
-  import roc from '$figs/roc-models.json.gz'
-  import rolling_mae from '$figs/rolling-mae-vs-hull-dist.json.gz'
-  import { dashed, labeled_vline, wide_legend } from '$lib/fig-helpers'
+  import box_data from '$figs/box-hull-dist-errors.jsonl'
+  import cum_pr from '$figs/cumulative-precision-recall.jsonl'
+  import hist_clf from '$figs/hist-clf-pred-hull-dist.jsonl'
+  import roc from '$figs/roc-models.jsonl'
+  import rolling_mae from '$figs/rolling-mae-vs-hull-dist.jsonl'
+  import { dashed, labeled_vline, styled_models, wide_legend } from '$lib/fig-helpers'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { BarPlot, BoxPlot, PlotLegend, ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, FillRegion, LegendItem } from 'matterviz/plot'
@@ -18,10 +18,23 @@
   const shown = <T extends { key: string }>(models: T[]): T[] =>
     show_non_compliant ? models : models.filter((mdl) => compliant_keys.has(mdl.key))
 
+  // payloads are line-delimited data only (no baked color/order); apply presentation
+  // client-side: stable per-model MODELS colors + leaderboard order (F1 desc, or metric)
+  const box_styled = $derived(styled_models(shown(box_data.models)))
+  const cum_styled = $derived(styled_models(shown(cum_pr.models)))
+  const roc_styled = $derived(styled_models(shown(roc.models), (mdl) => -mdl.auc))
+  const hist_clf_styled = $derived(styled_models(shown(hist_clf.models), (mdl) => -mdl.f1))
+  const rolling_styled = $derived(
+    styled_models(shown(rolling_mae.models)).map((mdl, idx) => ({
+      ...mdl,
+      visible: idx < 6,
+    })),
+  )
+
   // each model's cumulative precision/recall line plus a dot marking the end of its
   // stable-prediction ranking (= its total count of predicted-stable materials)
   const cumulative_series = (key: `precision` | `recall`): DataSeries[] =>
-    shown(cum_pr.models).flatMap(({ label, color, x, precision, recall, end }) => [
+    cum_styled.flatMap(({ label, color, x, precision, recall, end }) => [
       {
         x,
         y: key === `precision` ? precision : recall,
@@ -42,7 +55,7 @@
   // would sit under a single column and squish it). one entry per model line; the
   // unlabeled end-point dot series are intentionally excluded.
   const cum_pr_legend: LegendItem[] = $derived(
-    shown(cum_pr.models).map(({ label, color }, idx) => ({
+    cum_styled.map(({ label, color }, idx) => ({
       label,
       visible: true,
       series_idx: idx * 2,
@@ -51,7 +64,7 @@
   )
 
   const roc_series: DataSeries[] = $derived(
-    shown(roc.models).map(({ label, auc, fpr, tpr }) => ({
+    roc_styled.map(({ label, auc, fpr, tpr }) => ({
       x: fpr,
       y: tpr,
       label: `${label} · AUC=${auc.toFixed(2)}`,
@@ -73,7 +86,7 @@
       markers: `line` as const,
       line_style: { stroke: `red`, stroke_width: 1.5 },
     },
-    ...shown(rolling_mae.models).map(({ label, color, y, visible }) => ({
+    ...rolling_styled.map(({ label, color, y, visible }) => ({
       x: rolling_mae.x,
       y,
       label,
@@ -137,7 +150,7 @@
 ## Box Plot of Hull Distance Errors
 
 <BoxPlot
-series={shown(box_data.models).map(({ label, color, quantiles }) => ({ label, color, y: quantiles }))}
+series={box_styled.map(({ label, color, quantiles }) => ({ label, color, y: quantiles }))}
 whisker_mode="minmax"
 y_axis={{ label: `Error in E<sub>hull dist</sub> (eV/atom)`, format: `.3` }}
 x_axis={{ tick: { label: { rotation: 90 } } }}
@@ -241,7 +254,7 @@ style="height: 480px; place-self: center; max-width: 640px; width: 100%"
 />
 
 <div class="fig-grid three-col">
-  {#each shown(hist_clf.models) as model (model.label)}
+  {#each hist_clf_styled as model (model.label)}
   <figure>
     <figcaption>{model.label} · F1={model.f1}</figcaption>
     <BarPlot
