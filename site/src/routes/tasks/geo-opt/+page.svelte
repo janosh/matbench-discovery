@@ -3,17 +3,17 @@
   import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
   import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
   import { GeoOptMetricsTable, MODELS } from '$lib'
-  import { styled_models } from '$lib/fig-helpers'
+  import { order_models } from '$lib/fig-helpers'
   import { min } from 'd3-array'
   import { format_num } from 'matterviz'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
 
-  // payloads are line-delimited; restore the generators' render order client-side
-  // (struct-rmsd by AUC desc, sym-ops by symmetry-op-diff sigma asc). spg sankeys render
-  // in file (~model-key) order, matching the old key-sorted aggregate.
-  const struct_rmsd_sorted = styled_models(struct_rmsd_cdf.models, (mdl) => -mdl.auc)
-  const sym_ops_sorted = styled_models(sym_ops_diff.models, (mdl) => mdl.sigma)
+  // payload models arrive pre-styled (colors + discovery-F1-desc leaderboard order) from the
+  // figure_payload plugin; re-rank the two that want a different order (struct-rmsd by AUC
+  // desc, sym-ops by symmetry-op-diff sigma asc). spg sankeys keep the leaderboard order.
+  const struct_rmsd_sorted = order_models(struct_rmsd_cdf.models, (mdl) => -mdl.auc)
+  const sym_ops_sorted = order_models(sym_ops_diff.models, (mdl) => mdl.sigma)
 
   const n_min_relaxed_structures: number = min(MODELS, (model) => {
     const geo_opt = model.metrics?.geo_opt
@@ -62,13 +62,10 @@
 
 <ul>
   {#each spg_sankeys.models as { key, label, labels, source, target, value } (key)}
+    {@const data = sankey_from_links(source, target, value, labels)}
     <li>
       <h3>{label}</h3>
-      <Sankey
-        data={sankey_from_links(source, target, value, labels)}
-        show_controls={false}
-        style="height: 300px; width: 100%"
-      />
+      <Sankey {data} show_controls={false} style="height: 300px; width: 100%" />
     </li>
   {/each}
 </ul>

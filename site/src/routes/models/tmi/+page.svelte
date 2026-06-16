@@ -3,19 +3,14 @@
   import hist_largest from '$figs/hist-largest-each-errors-fp-diff.jsonl'
   import each_errors from '$figs/scatter-largest-each-errors-fp-diff.jsonl'
   import fp_diff from '$figs/scatter-largest-fp-diff-each-error.jsonl'
-  import { dashed, plotly_blue, plotly_red, styled_models, wide_legend } from '$lib/fig-helpers'
+  import { dashed, plotly_blue, plotly_red, wide_legend } from '$lib/fig-helpers'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
   import DiscoveryMetricFigs from './discovery-metric-figs.md'
   import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
 
-  // payloads are line-delimited data only; style client-side (stable MODELS colors +
-  // leaderboard order, so each dropdown below defaults to a top model as before)
-  const elem_prev_sorted = styled_models(elem_prev.models)
-  const fp_diff_sorted = styled_models(fp_diff.models)
-  const each_errors_sorted = styled_models(each_errors.models)
-  const hist_largest_sorted = styled_models(hist_largest.models)
-
+  // payload models arrive pre-styled (stable MODELS colors + leaderboard order) from the
+  // figure_payload plugin, so each dropdown below defaults to a top model as before
   const fp_diff_label = `|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|`
   // mirrors the metrics-table toggle: filters all discovery figures below to the
   // compliant-only cohort (models trained on MP-anchored data)
@@ -28,18 +23,18 @@
   const find_model = <T extends { label: string }>(models: T[], label: string): T =>
     models.find((mdl) => mdl.label === label) ?? models[0]
 
-  let elem_prev_selected = $state(elem_prev_sorted.slice(0, 3).map((mdl) => mdl.label))
-  let fp_diff_model = $state(fp_diff_sorted[0].label)
-  let each_errors_model = $state(each_errors_sorted[0].label)
-  let hist_largest_model = $state(hist_largest_sorted[0].label)
+  let elem_prev_selected = $state(elem_prev.models.slice(0, 3).map((mdl) => mdl.label))
+  let fp_diff_model = $state(fp_diff.models[0].label)
+  let each_errors_model = $state(each_errors.models[0].label)
+  let hist_largest_model = $state(hist_largest.models[0].label)
 
   const elem_prev_models = $derived(
-    elem_prev_sorted.filter((mdl) => elem_prev_selected.includes(mdl.label)),
+    elem_prev.models.filter((mdl) => elem_prev_selected.includes(mdl.label)),
   )
-  const fp_diff_active = $derived(find_model(fp_diff_sorted, fp_diff_model))
-  const each_errors_active = $derived(find_model(each_errors_sorted, each_errors_model))
+  const fp_diff_active = $derived(find_model(fp_diff.models, fp_diff_model))
+  const each_errors_active = $derived(find_model(each_errors.models, each_errors_model))
   const hist_largest_active = $derived(
-    find_model(hist_largest_sorted, hist_largest_model),
+    find_model(hist_largest.models, hist_largest_model),
   )
 
   // x extent of the shared fingerprint-diff values for the MAE ref line
@@ -94,7 +89,7 @@ are more dependent on geometry than chemistry.
 <label class="model-select">
   Models
   <Select
-    options={elem_prev_sorted.map((mdl) => mdl.label)}
+    options={elem_prev.models.map((mdl) => mdl.label)}
     bind:selected={elem_prev_selected}
     minSelect={1}
   />
@@ -133,7 +128,7 @@ and plotting against that the absolute E<sub>above hull</sub> errors for each mo
 <label class="model-select">
   Model
   <Select
-    options={fp_diff_sorted.map((mdl) => mdl.label)}
+    options={fp_diff.models.map((mdl) => mdl.label)}
     bind:value={fp_diff_model}
     minSelect={1}
     maxSelect={1}
@@ -169,7 +164,7 @@ errors.
 <label class="model-select">
   Model
   <Select
-    options={each_errors_sorted.map((mdl) => mdl.label)}
+    options={each_errors.models.map((mdl) => mdl.label)}
     bind:value={each_errors_model}
     minSelect={1}
     maxSelect={1}
@@ -198,7 +193,7 @@ for each model and the mean of all models.
 <label class="model-select">
   Model
   <Select
-    options={hist_largest_sorted.map((mdl) => mdl.label)}
+    options={hist_largest.models.map((mdl) => mdl.label)}
     bind:value={hist_largest_model}
     minSelect={1}
     maxSelect={1}

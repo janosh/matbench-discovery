@@ -4,7 +4,7 @@
   import hist_clf from '$figs/hist-clf-pred-hull-dist.jsonl'
   import roc from '$figs/roc-models.jsonl'
   import rolling_mae from '$figs/rolling-mae-vs-hull-dist.jsonl'
-  import { dashed, labeled_vline, model_mae, styled_models, wide_legend } from '$lib/fig-helpers'
+  import { dashed, labeled_vline, model_mae, order_models, wide_legend } from '$lib/fig-helpers'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { BarPlot, BoxPlot, PlotLegend, ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, FillRegion, LegendItem } from 'matterviz/plot'
@@ -18,15 +18,16 @@
   const shown = <T extends { key: string }>(models: T[]): T[] =>
     show_non_compliant ? models : models.filter((mdl) => compliant_keys.has(mdl.key))
 
-  // payloads are line-delimited data only (no baked color/order); apply presentation
-  // client-side: stable per-model MODELS colors + each figure's render order. box + rolling
-  // rank by discovery MAE (best first); rolling shows the 6 best by default, as before.
-  const box_styled = $derived(styled_models(shown(box_data.models), model_mae))
-  const cum_styled = $derived(styled_models(shown(cum_pr.models)))
-  const roc_styled = $derived(styled_models(shown(roc.models), (mdl) => -mdl.auc))
-  const hist_clf_styled = $derived(styled_models(shown(hist_clf.models), (mdl) => -mdl.f1))
+  // payload models arrive pre-styled (stable MODELS colors + discovery-F1-desc leaderboard
+  // order) from the figure_payload plugin. cumulative P/R keeps that default order; the rest
+  // re-rank for their figure: box + rolling by discovery MAE (best first, rolling shows the 6
+  // best by default), roc by AUC, hist-clf by each model's own payload F1.
+  const cum_styled = $derived(shown(cum_pr.models))
+  const box_styled = $derived(order_models(shown(box_data.models), model_mae))
+  const roc_styled = $derived(order_models(shown(roc.models), (mdl) => -mdl.auc))
+  const hist_clf_styled = $derived(order_models(shown(hist_clf.models), (mdl) => -mdl.f1))
   const rolling_styled = $derived(
-    styled_models(shown(rolling_mae.models), model_mae).map((mdl, idx) => ({
+    order_models(shown(rolling_mae.models), model_mae).map((mdl, idx) => ({
       ...mdl,
       visible: idx < 6,
     })),

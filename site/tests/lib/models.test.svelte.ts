@@ -3,6 +3,7 @@ import {
   CPS_CONFIG,
   DEFAULT_CPS_CONFIG,
 } from '$lib/combined_perf_score.svelte'
+import { attach_style, order_models } from '$lib/fig-helpers'
 import { ALL_METRICS } from '$lib/labels'
 import {
   calculate_training_sizes,
@@ -357,6 +358,38 @@ describe(`update_models_cps`, () => {
     const f1_rmsd_cps_values = MODELS.map((model) => Number(model.CPS))
     expect(f1_rmsd_cps_values).not.toStrictEqual(f1_cps_values)
     expect(f1_rmsd_cps_values).not.toStrictEqual(rmsd_cps_values)
+  })
+})
+
+describe(`fig-helpers payload styling`, () => {
+  it.each([
+    [`ascending key`, (mdl: { v: number }) => mdl.v, [1, 2, 3]],
+    [`descending via negation`, (mdl: { v: number }) => -mdl.v, [3, 2, 1]],
+  ])(
+    `order_models sorts by %s without mutating the input`,
+    (_label, key_fn, expected) => {
+      const input = [{ v: 2 }, { v: 3 }, { v: 1 }]
+      expect(order_models(input, key_fn).map((mdl) => mdl.v)).toEqual(expected)
+      expect(input.map((mdl) => mdl.v)).toEqual([2, 3, 1]) // input untouched
+    },
+  )
+
+  it(`attach_style attaches MODELS colors and sorts models by discovery F1 desc`, () => {
+    const keys = [`eSEN-30m-oam`, `equiformer-v3-oam`, `chgnet-0.3.0`]
+    const f1 = (key: string) => {
+      const disc = MODELS.find((mdl) => mdl.model_key === key)?.metrics?.discovery
+      return typeof disc === `object`
+        ? (disc?.unique_prototypes?.F1 ?? -Infinity)
+        : -Infinity
+    }
+    const styled = attach_style({ shared: 1, models: keys.map((key) => ({ key })) })
+
+    expect(styled.shared).toBe(1) // non-model shared fields are preserved
+    const ordered_f1 = styled.models.map((mdl) => f1(mdl.key))
+    expect(ordered_f1).toEqual([...ordered_f1].sort((row_a, row_b) => row_b - row_a))
+    for (const mdl of styled.models) {
+      expect(mdl.color).toBe(MODELS.find((model) => model.model_key === mdl.key)?.color)
+    }
   })
 })
 

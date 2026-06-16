@@ -5,7 +5,10 @@
 // Static payloads are committed as gzipped `<name>.json.gz`; multi-model payloads as
 // line-delimited `<name>.jsonl` (one model per line, reassembled into the aggregate
 // shape) so concurrent model submissions git-merge cleanly. Both are loaded at build by
-// the figure_payload plugin (vite.config.ts) and import as a parsed default export.
+// the figure_payload plugin (vite.config.ts) and import as a parsed default export. The
+// plugin pipes each .jsonl payload through attach_style, so models arrive in leaderboard
+// (discovery-F1-desc) order with the `color` it injects, typed on KeyedModel and on the
+// label-only payloads that read it.
 //
 // This file must stay import/export-free at the top level so the helper interfaces below
 // are global and the module declarations stay ambient.
@@ -25,12 +28,14 @@ interface HistBins extends XY {
   bar_width: number
 }
 
-// every per-model entry in the discovery-metric payloads carries `key`
-// (= MODELS model_key, e.g. for the compliance-filter join in discovery-metric-figs.md)
-// plus a display `label`
+// per-model entry in the discovery/diagnostic payloads: `key` (= MODELS model_key, used
+// e.g. for the compliance join in discovery-metric-figs.md), a display `label`, and the
+// stable `color` attach_style injects on import (undefined if the model isn't in MODELS;
+// presentation, not committed data). Label-only payloads below inline color where read.
 interface KeyedModel {
   key: string
   label: string
+  color: string | undefined
 }
 
 // === models/tmi discovery metrics ===
@@ -92,7 +97,8 @@ declare module '$figs/element-prevalence-vs-error.jsonl' {
   const data: {
     elements: string[] // element symbols, same order as occurrences
     occurrences: (number | null)[] // MP training-set occurrence count per element
-    models: { label: string; y: (number | null)[] }[] // mean error per element
+    // mean error per element (color read by the per-element scatter)
+    models: { label: string; color: string | undefined; y: (number | null)[] }[]
   }
   export default data
 }
@@ -100,7 +106,12 @@ declare module '$figs/element-prevalence-vs-error.jsonl' {
 declare module '$figs/scatter-largest-fp-diff-each-error.jsonl' {
   const data: {
     fp_diff: number[] // shared |SSFP_initial - SSFP_final| values
-    models: { label: string; mae: number; y: (number | null)[] }[]
+    models: {
+      label: string
+      color: string | undefined
+      mae: number
+      y: (number | null)[]
+    }[]
   }
   export default data
 }

@@ -11,22 +11,22 @@ import zlib from 'node:zlib'
 import type { Plugin } from 'vite'
 import { defineConfig } from 'vite-plus'
 
-// Import the committed figure payloads (site/src/figs, written by matbench_discovery
-// analysis scripts) as parsed ES modules, typed per payload in src/figs/payloads.d.ts.
-// Two on-disk formats: gzipped <name>.json.gz (static single-figure payloads) and
-// line-delimited <name>.jsonl (multi-model payloads - one model per line + a lone
-// {"_base": {...}} line for shared fields - reassembled into the aggregate
-// { ...shared, models: [...] } shape, so concurrent model submissions git-merge cleanly
-// instead of colliding on one gzipped blob). Both embed as JSON.parse('...') to keep V8
-// parse cost low; the @__PURE__ annotation lets tree-shaking drop unused payloads.
+// Load committed figure payloads (site/src/figs) as parsed ES modules, typed per payload
+// in src/figs/payloads.d.ts. Two formats: <name>.json.gz (static, gzipped) and
+// <name>.jsonl (multi-model, one model per line + a {"_base": {...}} shared-fields line,
+// reassembled to { ...shared, models: [...] } - the format that git-merges cleanly).
+// Both embed as JSON.parse('...') (cheap V8 parse; @__PURE__ drops unused payloads).
+// .jsonl goes through attach_style ($lib/fig-helpers) so pages import pre-styled models.
 const figure_payload_plugin = (): Plugin => ({
   name: `figure-payload`,
   load(id) {
     const file = id.split(`?`)[0]
-    let json: string
     if (file.endsWith(`.json.gz`)) {
-      json = zlib.gunzipSync(fs.readFileSync(file)).toString(`utf8`)
-    } else if (file.endsWith(`.jsonl`)) {
+      const json = zlib.gunzipSync(fs.readFileSync(file)).toString(`utf8`)
+      const code = `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(json)})`
+      return { code, map: null }
+    }
+    if (file.endsWith(`.jsonl`)) {
       const base: Record<string, unknown> = {}
       const models: unknown[] = []
       // trim each line (CRLF checkouts leave a trailing \r) before JSON.parse, matching
@@ -40,12 +40,12 @@ const figure_payload_plugin = (): Plugin => ({
           Object.assign(base, entry._base as Record<string, unknown>)
         } else models.push(entry)
       }
-      json = JSON.stringify({ ...base, models })
-    } else return null
-    return {
-      code: `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(json)})`,
-      map: null,
+      const json = JSON.stringify({ ...base, models })
+      const code = `import { attach_style } from '$lib/fig-helpers';
+export default /* @__PURE__ */ attach_style(JSON.parse(${JSON.stringify(json)}))`
+      return { code, map: null }
     }
+    return null
   },
 })
 
