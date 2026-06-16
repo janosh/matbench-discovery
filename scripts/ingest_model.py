@@ -26,15 +26,18 @@ PASS, FAIL, SKIP = "✓", "✗", "○"
 # --show-non-compliant: site payloads always contain the full model set (pages can
 # filter client-side); --no-show: don't open plotly figs in the browser
 PAYLOAD_FLAGS = ("--auto-download", "--show-non-compliant", "--no-show")
+# each entry is the `uv run` argument string for one payload script; kappa needs the
+# phonons extra (phono3py/phonopy) since kappa_103_analysis imports them at module load
 PAYLOAD_SCRIPTS = (
-    "scripts/model_figs/roc_curves_models.py",
-    "scripts/model_figs/hull_dist_box_plot.py",
-    "scripts/model_figs/cumulative_metrics.py",
-    "scripts/model_figs/rolling_hull_dist_mae_models.py",
-    "scripts/model_figs/tiles_hist_classified_stable_models.py",
-    "scripts/model_figs/tmi-page-figures.py",
-    "scripts/model_figs/kappa_103_analysis.py",
-    "scripts/evals/geo_opt.py",
+    "python scripts/model_figs/roc_curves_models.py",
+    "python scripts/model_figs/hull_dist_box_plot.py",
+    "python scripts/model_figs/cumulative_metrics.py",
+    "python scripts/model_figs/rolling_hull_dist_mae_models.py",
+    "python scripts/model_figs/tiles_hist_classified_stable_models.py",
+    "python scripts/model_figs/tmi-page-figures.py",
+    "python scripts/model_figs/single_model_per_element_errors.py",
+    "--extra phonons python scripts/model_figs/kappa_103_analysis.py",
+    "python scripts/evals/geo_opt.py",
 )
 PARITY_ASSET_DIRS = (
     "site/static/energy-parity/assets",
@@ -65,13 +68,6 @@ FIG_STEPS = (
         True,
         True,
         "python site/scripts/generate-kappa-parity-assets.py",
-    ),
-    (
-        "Per-element errors",
-        False,
-        True,
-        "python scripts/model_figs/single_model_per_element_errors.py "
-        "--auto-download --no-show",
     ),
 )
 
@@ -231,8 +227,7 @@ def run_archive(model: Model, checks: Checklist) -> None:
 
 
 def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
-    """Refresh the multi-model site figure payloads (site/src/figs/*.json.gz), then
-    run the payload shape tests (site pages import these files typed).
+    """Refresh site/src/figs/*.jsonl plus route-local JSONL payloads, then test.
 
     With a model given, payload scripts run with --models <model> and splice only that
     model's freshly computed entries into the committed payloads (no other model's
@@ -243,7 +238,7 @@ def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
     banner(f"Refreshing multi-model site figure payloads{suffix}")
     model_args = ("--models", model.name) if model else ()
     for script in PAYLOAD_SCRIPTS:
-        if not run_cmd("uv", "run", "python", script, *PAYLOAD_FLAGS, *model_args):
+        if not run_cmd("uv", "run", *script.split(), *PAYLOAD_FLAGS, *model_args):
             checks.fail(f"{script} failed")
             return
     if run_cmd(

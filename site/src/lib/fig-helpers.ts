@@ -1,7 +1,60 @@
 // Shared ref-line idioms for the inline matterviz figures in site/src/routes.
+import { MODELS } from '$lib/models.svelte'
 import type { LegendConfig, RefLine } from 'matterviz/plot'
 import type { Attachment } from 'svelte/attachments'
 import { SvelteSet } from 'svelte/reactivity'
+
+// === multi-model payload styling ===
+// .jsonl payloads hold position-independent data only (no color/order) so models merge
+// cleanly. The figure_payload plugin (vite.config.ts) runs each through attach_style on
+// import, so pages get models pre-colored in discovery-F1-desc leaderboard order;
+// order_models re-sorts the few figures wanting a different order (MAE, AUC, sigma).
+
+// stable color + discovery metrics (unique-prototypes test set) per model, indexed by
+// both model_key and display name so key- and label-keyed payloads both resolve
+const model_meta: Record<string, { color?: string; f1: number; mae: number }> = {}
+for (const model of MODELS) {
+  const metrics =
+    typeof model.metrics?.discovery === `object`
+      ? model.metrics.discovery?.unique_prototypes
+      : undefined
+  for (const id of [model.model_key, model.model_name]) {
+    if (id) {
+      model_meta[id] = {
+        color: model.color,
+        f1: metrics?.F1 ?? -Infinity,
+        mae: metrics?.MAE ?? Infinity,
+      }
+    }
+  }
+}
+// look up a model's MODELS metadata by key or display label
+const meta = (model: { key?: string; label?: string }) =>
+  model_meta[model.key ?? model.label ?? ``]
+// discovery MAE key (ascending = best first) for the hull-dist box + rolling figures
+export const model_mae = (model: { key?: string; label?: string }): number =>
+  meta(model)?.mae ?? Infinity
+
+// non-mutating re-sort by a numeric key (ascending = first), e.g. model_mae or
+// (m) => -m.auc. color is attached by attach_style, so this only reorders.
+export const order_models = <T>(models: T[], order: (model: T) => number): T[] =>
+  models.toSorted((row_a, row_b) => order(row_a) - order(row_b))
+
+// import-time pass (run by the figure_payload plugin): attach each model's stable color
+// and sort into discovery-F1-desc leaderboard order. Deriving it on import keeps the
+// committed .jsonl position-independent and merge-friendly.
+export const attach_style = <
+  T extends { key?: string; label?: string },
+  P extends { models: T[] },
+>(
+  payload: P,
+) => ({
+  ...payload,
+  models: order_models(
+    payload.models.map((model) => ({ ...model, color: meta(model)?.color })),
+    (model) => -(meta(model)?.f1 ?? -Infinity),
+  ),
+})
 
 export const dashed = { dash: `4`, width: 1 }
 

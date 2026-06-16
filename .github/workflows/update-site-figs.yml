@@ -135,12 +135,14 @@ jobs:
             echo "::error::secrets.SITE_FIGS_PAT is not set (classic PAT with public_repo scope needed to push to fork branches)"
             exit 1
           fi
-          # model YAMLs (archived URLs + metrics) and regenerated site assets
+          # model YAMLs (archived URLs + metrics) and regenerated site assets. --delete on
+          # the figs dir so renamed/removed payloads don't linger (the generators fully own
+          # it). Multi-model payloads are single <name>.jsonl files, including per-element.
           rsync -a --include='*/' --include='*.yml' --exclude='*' models/ pr-tree/models/
-          rsync -a site/src/figs/ pr-tree/site/src/figs/
+          rsync -a --delete site/src/figs/ pr-tree/site/src/figs/
           for file in site/src/lib/energy-parity-manifest.ts \
                       site/src/lib/kappa-parity-manifest.ts \
-                      site/src/routes/models/per-element-each-errors.json.gz; do
+                      site/src/routes/models/per-element-each-errors.jsonl; do
             cp "$file" "pr-tree/$file"
           done
           cd pr-tree
@@ -159,41 +161,28 @@ jobs:
         if: github.event_name != 'pull_request_target'
         run: just update-site-figs
 
-      # diff regenerated payloads against committed (HEAD) ones so the PR body lists which
-      # per-model rosters grew and which models were added
+      # diff each regenerated .jsonl payload's model roster against the committed (HEAD)
+      # one so the PR body lists which payloads grew and which models were added. Payloads
+      # are line-delimited (one model per line, a lone _base line for shared fields), so
+      # the roster is the set of model ids inside each file
       - name: Summarize payload model-count changes
         id: payload_diff
         if: github.event_name != 'pull_request_target'
         run: |
-          uv run python - <<'PY'
-          import glob, gzip, json, os, subprocess
-
-          def models(blob: bytes) -> list[str]:
-              data = json.loads(gzip.decompress(blob)) if blob else {}
-              return [str(m.get("label") or m.get("key")) for m in data.get("models", [])]
-
-          rows = []
-          for path in sorted(glob.glob("site/src/figs/*.json.gz")):
-              after = models(open(path, "rb").read())
-              before = models(subprocess.run(["git", "show", f"HEAD:{path}"], capture_output=True).stdout)
-              if not after or set(before) == set(after):  # not per-model, or unchanged roster
-                  continue
-              added = [m for m in after if m not in set(before)]
-              name = os.path.basename(path).removesuffix(".json.gz")
-              tail = f" (+{len(added)}: {', '.join(added)})" if added else ""
-              rows.append(f"- `{name}`: {len(before)} → {len(after)}{tail}")
-
-          body = "### Model-count changes\n\n" + ("\n".join(rows) or "_No roster changes (data-only refresh)._")
-          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-              out.write(f"model_counts<<PR_BODY_EOF\n{body}\nPR_BODY_EOF\n")
-          PY
+          {
+            echo "model_counts<<PR_BODY_EOF"
+            uv run python scripts/summarize_payload_changes.py
+            echo "PR_BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Open PR with updated payloads
         id: cpr
         if: github.event_name != 'pull_request_target'
         uses: peter-evans/create-pull-request@v8
         with:
-          add-paths: site/src/figs
+          add-paths: |
+            site/src/figs
+            site/src/routes/models/per-element-each-errors.jsonl
           commit-message: Update multi-model site figure payloads
           title: Update multi-model site figure payloads
           body: |

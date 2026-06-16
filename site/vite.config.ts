@@ -11,19 +11,41 @@ import zlib from 'node:zlib'
 import type { Plugin } from 'vite'
 import { defineConfig } from 'vite-plus'
 
-// Import the committed .json.gz figure payloads (site/src/figs, written by
-// matbench_discovery analysis scripts) as parsed ES modules; typed per payload in
-// src/figs/payloads.d.ts. Embedding as JSON.parse('...') keeps V8 parse cost low.
-const json_gz_plugin = (): Plugin => ({
-  name: `json-gz`,
+// Load committed figure payloads (site/src/figs) as parsed ES modules, typed per payload
+// in src/figs/payloads.d.ts. Two formats: <name>.json.gz (static, gzipped) and
+// <name>.jsonl (multi-model, one model per line + a {"_base": {...}} shared-fields line,
+// reassembled to { ...shared, models: [...] } - the format that git-merges cleanly).
+// Both embed as JSON.parse('...') (cheap V8 parse; @__PURE__ drops unused payloads).
+// .jsonl goes through attach_style ($lib/fig-helpers) so pages import pre-styled models.
+const figure_payload_plugin = (): Plugin => ({
+  name: `figure-payload`,
   load(id) {
     const file = id.split(`?`)[0]
-    if (!file.endsWith(`.json.gz`)) return null
-    const json = zlib.gunzipSync(fs.readFileSync(file)).toString(`utf8`)
-    // the pure annotation lets tree-shaking drop a payload from any chunk that ends up
-    // importing but not using it
-    const code = `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(json)})`
-    return { code, map: null }
+    if (file.endsWith(`.json.gz`)) {
+      const json = zlib.gunzipSync(fs.readFileSync(file)).toString(`utf8`)
+      const code = `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(json)})`
+      return { code, map: null }
+    }
+    if (file.endsWith(`.jsonl`)) {
+      const base: Record<string, unknown> = {}
+      const models: unknown[] = []
+      // trim each line (CRLF checkouts leave a trailing \r) before JSON.parse, matching
+      // read_jsonl_payload's line.strip() in matbench_discovery/figs.py
+      for (const raw of fs.readFileSync(file, `utf8`).split(`\n`)) {
+        const line = raw.trim()
+        if (!line) continue
+        const entry = JSON.parse(line) as Record<string, unknown>
+        if (`_base` in entry && Object.keys(entry).length === 1) {
+          // oxlint-disable-next-line no-underscore-dangle -- _base is the shared-fields sentinel
+          Object.assign(base, entry._base as Record<string, unknown>)
+        } else models.push(entry)
+      }
+      const json = JSON.stringify({ ...base, models })
+      const code = `import { attach_style } from '$lib/fig-helpers';
+export default /* @__PURE__ */ attach_style(JSON.parse(${JSON.stringify(json)}))`
+      return { code, map: null }
+    }
+    return null
   },
 })
 
@@ -112,7 +134,7 @@ export default defineConfig({
     sveltekit(),
     yaml_plugin({ extensions: [`.yml`, `.yaml`, `.cff`] }),
     yaml_schema_to_typescript_plugin(),
-    json_gz_plugin(),
+    figure_payload_plugin(),
   ],
 
   server: {

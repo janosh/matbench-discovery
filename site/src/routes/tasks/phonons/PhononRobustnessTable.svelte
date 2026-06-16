@@ -1,6 +1,6 @@
 <script lang="ts">
   // Failure-mode summary for the kappa-103 task.
-  import kappa_data from '$figs/kappa-103-analysis.json.gz'
+  import kappa_data from '$figs/kappa-103-analysis.jsonl'
   import { MODELS } from '$lib'
   import { get_nested_number } from '$lib/metrics'
   import { HeatmapTable } from 'matterviz'

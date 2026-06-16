@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import plotly.graph_objects as go
 import pytest
-from plotly.express.colors import qualitative
 
 from matbench_discovery import figs
 from matbench_discovery.cli import cli_args
@@ -181,113 +180,169 @@ def test_write_json_gz_rejects_nan(tmp_path: Path) -> None:
         figs.write_json_gz(f"{tmp_path}/bad.json.gz", {"y": [float("nan")]})
 
 
-# === multi-model site payload writing (full-run overwrite vs subset-run merge) ===
-def load_payload(path: str) -> dict[str, Any]:
-    """Read back a gzipped JSON payload."""
-    with gzip.open(path) as file:
-        return json.load(file)
-
-
+# === multi-model site payload writing (JSONL: full-run vs subset-run splice) ===
 @pytest.fixture
 def site_fig_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Redirect write_site_payload's IO to a temp dir."""
+    """Redirect write_site_payload's IO to a temp dir and default to a full --models run
+    (subset tests narrow cli_args.models themselves).
+    """
     import matbench_discovery
 
     monkeypatch.setattr(matbench_discovery, "SITE_FIG_DATA", str(tmp_path))
+    monkeypatch.setattr(cli_args, "models", list(Model.active()))
     return tmp_path
 
 
-@pytest.mark.parametrize("id_field", ["key", "label"])
-def test_write_site_payload_subset_run_merges(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch, id_field: str
+def test_read_jsonl_payload_roundtrip(tmp_path: Path) -> None:
+    """read_jsonl_payload routes the lone {"_base": ...} line to shared fields and every
+    other line to models, regardless of line order, skipping blank lines.
+    """
+    path = f"{tmp_path}/fig.jsonl"
+    lines = [  # base line need not come first; trailing blank line is ignored
+        '{"key":"m-b","y":[2.0]}',
+        '{"_base":{"x":[0.0,1.0]}}',
+        '{"key":"m-a","y":[1.0]}',
+        "",
+    ]
+    with open(path, "w") as file:
+        file.write("\n".join(lines) + "\n")
+    restored = figs.read_jsonl_payload(path)
+    assert restored["x"] == [0.0, 1.0]
+    by_key = {model["key"]: model["y"] for model in restored["models"]}
+    assert by_key == {"m-a": [1.0], "m-b": [2.0]}
+
+
+def test_write_site_payload_full_run_writes_jsonl_and_strips(
+    site_fig_dir: Path,
 ) -> None:
-    """Subset runs splice fresh entries into the committed payload by id (replacing
-    stale ones, appending new models, pruning retired ones), take shared fields fresh
-    and sort entries into active-roster order by default.
+    """Full runs write a lone _base line for shared fields + one line per model, sorted
+    by id and stripped of color/visible so lines stay position-independent.
     """
     model_a, model_b = list(Model.active())[:2]
-    id_a, id_b = getattr(model_a, id_field), getattr(model_b, id_field)
-    committed = {
-        "shared": "old",
-        "models": [
-            {id_field: id_b, "y": [2]},  # to be replaced by the fresh entry
-            {id_field: "retired-model", "y": [0]},  # to be pruned
-            {id_field: id_a, "y": [1]},  # to be kept as committed
-        ],
-    }
-    figs.write_json_gz(f"{site_fig_dir}/demo.json.gz", committed)
-    monkeypatch.setattr(cli_args, "models", [model_b])  # single-model run
-    fresh = {"shared": "new", "models": [{id_field: id_b, "y": [3]}]}
-    figs.write_site_payload("demo", fresh, id_field=id_field)
-    merged = load_payload(f"{site_fig_dir}/demo.json.gz")
-    assert merged["shared"] == "new"  # shared fields are model-independent -> fresh
-    assert merged["models"] == [  # sorted into active-roster order
-        {id_field: id_a, "y": [1]},
-        {id_field: id_b, "y": [3]},
-    ]
-
-
-def test_write_site_payload_merge_equals_full_regen(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Full runs overwrite stale payloads, prune retired models and assign
-    deterministic order (active-roster order breaks sort_key ties), colors and
-    visibility; a single-model merge over an outdated committed payload then
-    reproduces that exact payload (decoded and byte-for-byte, the #342 guarantee).
-    """
-    models = list(Model.active())[:4]
-
-    def fresh_entry(model: Model, mae: float) -> dict[str, Any]:
-        return {"key": model.key, "mae": mae, "y": [mae]}
-
-    write_kwargs: dict[str, Any] = dict(
-        sort_key=lambda entry: entry["mae"], assign_colors=True, visible_top_n=2
-    )
-    monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run
-    # mae tie between models[1] and models[2] (YAML metrics are rounded, real models
-    # do tie), with the tied pair listed in reversed roster order so only the
-    # roster-order tiebreaker can restore the canonical order
-    maes = [0.0, 0.1, 0.1, 0.2]
-    full = [fresh_entry(models[idx], maes[idx]) for idx in (0, 2, 1, 3)]
-    expected_models = [
-        fresh_entry(model, mae)
-        | {"color": qualitative.Plotly[idx]}
-        | ({"visible": False} if idx >= 2 else {})
-        for idx, (model, mae) in enumerate(zip(models, maes, strict=True))
-    ]
-    figs.write_json_gz(f"{site_fig_dir}/demo.json.gz", {"models": [{"key": "stale"}]})
     figs.write_site_payload(
         "demo",
-        {"shared": "ref-data", "models": [{"key": "retired", "mae": 0}, *full]},
-        **write_kwargs,
+        {
+            "shared": [1],
+            "models": [
+                {"key": model_b.key, "y": [2], "color": "#x", "visible": False},
+                {"key": model_a.key, "y": [1]},
+            ],
+        },
     )
-    full_regen = load_payload(f"{site_fig_dir}/demo.json.gz")
-    assert full_regen == {"shared": "ref-data", "models": expected_models}
-    full_regen_bytes = (site_fig_dir / "demo.json.gz").read_bytes()
+    path = f"{site_fig_dir}/demo.jsonl"
+    with open(path) as file:
+        raw = file.read().splitlines()
+    assert json.loads(raw[0]) == {"_base": {"shared": [1]}}  # _base line written first
+    models = [json.loads(line) for line in raw[1:]]
+    # presentation stripped + models sorted by id
+    assert all("color" not in mdl and "visible" not in mdl for mdl in models)
+    assert [mdl["key"] for mdl in models] == sorted([model_a.key, model_b.key])
+    restored = figs.read_jsonl_payload(path)
+    assert restored["shared"] == [1]
+    by_key = {mdl["key"]: mdl["y"] for mdl in restored["models"]}
+    assert by_key == {model_a.key: [1], model_b.key: [2]}
 
-    # outdate the committed payload: models[0]'s entry carries stale data/styling
-    # and sits at the wrong position, so the merge must re-sort, not just replace
-    committed = load_payload(f"{site_fig_dir}/demo.json.gz")
-    stale_entry = committed["models"].pop(0)
-    assert stale_entry["key"] == models[0].key  # sorted by mae -> models[0] is first
-    stale_entry |= {"mae": 99.0, "y": [99.0], "color": "#stale", "visible": False}
-    committed["models"].append(stale_entry)
-    figs.write_json_gz(f"{site_fig_dir}/demo.json.gz", committed)
 
-    monkeypatch.setattr(cli_args, "models", [models[0]])  # single-model merge run
-    fresh = {"shared": "ref-data", "models": [fresh_entry(models[0], 0.0)]}
-    figs.write_site_payload("demo", fresh, **write_kwargs)
-    assert load_payload(f"{site_fig_dir}/demo.json.gz") == full_regen
-    # byte identity keeps the weekly payload-refresh cron quiet: it opens a PR iff
-    # regenerated files differ from committed ones (write_json_gz is deterministic)
-    assert (site_fig_dir / "demo.json.gz").read_bytes() == full_regen_bytes
+def test_write_site_payload_no_base_line_without_shared(site_fig_dir: Path) -> None:
+    """No _base line is written when the payload carries no fields beyond models."""
+    model_a = next(iter(Model.active()))
+    figs.write_site_payload("demo", {"models": [{"key": model_a.key, "y": [1]}]})
+    with open(f"{site_fig_dir}/demo.jsonl") as file:
+        raw = file.read().splitlines()
+    assert all("_base" not in line for line in raw)
+
+
+def test_write_site_payload_full_run_prunes_dropped_models(site_fig_dir: Path) -> None:
+    """A later full run rewrites the whole roster, dropping models no longer present."""
+    model_a, model_b = list(Model.active())[:2]
+    figs.write_site_payload(
+        "demo", {"models": [{"key": model_a.key}, {"key": model_b.key}]}
+    )
+    figs.write_site_payload("demo", {"models": [{"key": model_b.key}]})  # shrunk roster
+    reread = figs.read_jsonl_payload(f"{site_fig_dir}/demo.jsonl")
+    assert {model["key"] for model in reread["models"]} == {model_b.key}
+
+
+@pytest.mark.parametrize("id_field", ["key", "label"])
+def test_write_site_payload_subset_run_splices(
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch, id_field: str
+) -> None:
+    """Subset runs (--models) splice fresh entries into the committed file by id_field
+    (key- or label-keyed payloads): update their own line, add new ones, leave every
+    other model untouched.
+    """
+    figs.write_site_payload(
+        "demo",
+        {"models": [{id_field: "m-a", "y": [0]}, {id_field: "m-b", "y": [1]}]},
+        id_field=id_field,
+    )
+    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
+    figs.write_site_payload(
+        "demo",
+        {"models": [{id_field: "m-a", "y": [9]}, {id_field: "m-c", "y": [3]}]},
+        id_field=id_field,
+    )
+    reread = figs.read_jsonl_payload(f"{site_fig_dir}/demo.jsonl")
+    by_id = {model[id_field]: model["y"] for model in reread["models"]}
+    assert by_id == {"m-a": [9], "m-b": [1], "m-c": [3]}
+
+
+def test_write_site_payload_subset_noop_is_byte_identical(
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Output is deterministic: a subset run that re-supplies a model's existing data
+    leaves the committed file byte-identical (so a no-op refresh opens no churn PR) and
+    preserves both the shared _base line and the untouched model.
+    """
+    path = f"{site_fig_dir}/demo.jsonl"
+    payload = {
+        "shared": [1],
+        "models": [{"key": "m-b", "y": [2]}, {"key": "m-a", "y": [1]}],
+    }
+    figs.write_site_payload("demo", payload)
+    with open(path, "rb") as file:
+        full = file.read()
+    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
+    figs.write_site_payload(
+        "demo", {"shared": [1], "models": [{"key": "m-a", "y": [1]}]}
+    )
+    with open(path, "rb") as file:
+        assert file.read() == full  # m-a unchanged, m-b + _base preserved
+
+
+def test_write_site_payload_subset_preserves_committed_base(
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Subset runs keep the committed shared _base; fresh shared fields are ignored
+    (shared data is model-independent - changing it needs a full run).
+    """
+    figs.write_site_payload(
+        "demo", {"shared": [1, 2], "models": [{"key": "m-a", "y": [0]}]}
+    )
+    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
+    figs.write_site_payload(
+        "demo", {"shared": [9, 9], "models": [{"key": "m-a", "y": [1]}]}
+    )
+    restored = figs.read_jsonl_payload(f"{site_fig_dir}/demo.jsonl")
+    assert restored["shared"] == [1, 2]  # committed _base preserved, fresh ignored
+    assert restored["models"] == [{"key": "m-a", "y": [1]}]  # model line updated
 
 
 @pytest.mark.usefixtures("site_fig_dir")
-def test_write_site_payload_subset_run_requires_committed_payload(
+def test_write_site_payload_subset_run_requires_existing_file(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Subset runs can't create a payload from scratch (would ship a partial roster)."""
     monkeypatch.setattr(cli_args, "models", [next(iter(Model.active()))])
-    with pytest.raises(FileNotFoundError, match="merge into an existing payload"):
+    with pytest.raises(FileNotFoundError, match="splice into an existing"):
         figs.write_site_payload("missing", {"models": []})
+
+
+@pytest.mark.usefixtures("site_fig_dir")
+def test_write_site_payload_rejects_nan() -> None:
+    """NaN values (invalid JSON) fail loudly instead of writing literal NaN tokens."""
+    model_a = next(iter(Model.active()))
+    with pytest.raises(ValueError, match="Out of range float"):
+        figs.write_site_payload(
+            "bad", {"models": [{"key": model_a.key, "y": [float("nan")]}]}
+        )
