@@ -336,22 +336,6 @@ def test_write_site_payload_subset_preserves_committed_base(
 
 
 @pytest.mark.usefixtures("site_fig_dir")
-@pytest.mark.parametrize("full_run", [True, False])
-def test_write_site_payload_duplicate_id_raises(
-    monkeypatch: pytest.MonkeyPatch, full_run: bool
-) -> None:
-    """Two models with the same id fail loudly (read otherwise silently keeps the last),
-    on both full and subset runs - the check precedes the file-exists guard.
-    """
-    active = list(Model.active())
-    monkeypatch.setattr(cli_args, "models", active if full_run else active[:1])
-    with pytest.raises(ValueError, match="duplicate model ids"):
-        figs.write_site_payload(
-            "demo", {"models": [{"key": "dup", "y": [1]}, {"key": "dup", "y": [2]}]}
-        )
-
-
-@pytest.mark.usefixtures("site_fig_dir")
 def test_write_site_payload_subset_run_requires_existing_file(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -286,17 +286,10 @@ def write_jsonl_payload(
     """Write a multi-model payload as line-delimited JSONL at ``path`` (shared writer
     behind ``write_site_payload``; also used for the per-element-errors payload).
 
-    One JSON object per line - a lone ``{"_base": {...}}`` line for the shared fields
-    (material_ids, x, fp_diff, ...) plus one line per model, sorted by ``id_field``. Two
-    submissions that each add a model insert different lines, which git 3-way-merges
-    cleanly (text, one model per line) - unlike a single gzipped blob git treats as
-    binary and refuses to merge. Lines hold *position-independent* data only:
-    presentation (per-model colors, render order, default visibility) is applied
-    client-side from MODELS (styled_models in fig-helpers.ts), so adding a model never
-    rewrites another model's line.
-
-    ``full_run`` rewrites the whole roster; otherwise subset --models runs splice fresh
-    entries into the committed file by ``id_field``, keeping the committed shared _base.
+    One JSON object per line - a lone ``{"_base": {...}}`` shared-fields line plus one
+    line per model, sorted by ``id_field`` and stripped of presentation (applied
+    client-side). ``full_run`` rewrites the whole roster; subset --models runs splice
+    fresh entries into the committed file by ``id_field``, keeping the committed _base.
     """
 
     def model_id(model: dict[str, Any]) -> str:
@@ -307,11 +300,6 @@ def write_jsonl_payload(
         {key: val for key, val in model.items() if key not in ("color", "visible")}
         for model in payload["models"]
     ]
-    # one line per model: fail loud on dupes (read otherwise keeps only the last)
-    ids = [model_id(model) for model in models]
-    if len(ids) != len(set(ids)):
-        dupes = sorted({mid for mid in ids if ids.count(mid) > 1})
-        raise ValueError(f"duplicate model ids in payload for {path}: {dupes}")
     shared_from = payload  # full runs take shared fields from the fresh payload
     if not full_run:  # splice fresh entries into the committed file by id
         if not os.path.isfile(path):
