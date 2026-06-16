@@ -15,7 +15,7 @@ from pymatviz.enums import Key
 from pymatviz.utils import df_ptable
 
 from matbench_discovery import SITE_FIG_DATA, figs
-from matbench_discovery.cli import cli_args, is_full_model_run
+from matbench_discovery.cli import cli_args
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import TestSubset
 from matbench_discovery.preds import (
@@ -95,10 +95,10 @@ for normalized in (False, True):
         figs.trace_payload(trace) for trace in fig.data
     ]
 
-if is_full_model_run():  # don't clobber site payload on filtered runs
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/element-counts-mp-vs-wbm.json.gz", elem_counts_payload
-    )
+# this payload is model-independent (MP/WBM element counts), safe to write on any run
+figs.write_json_gz(
+    f"{SITE_FIG_DATA}/element-counts-mp-vs-wbm.json.gz", elem_counts_payload
+)
 
 
 # %%
@@ -147,16 +147,16 @@ fig.layout.title.update(xanchor="center", x=0.5)
 fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title="")
 fig.show()
 
-if is_full_model_run():  # don't clobber site payload on filtered runs
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/element-prevalence-vs-error.json.gz",
-        {
-            # element symbols + x (occurrence count per element) shared across models
-            "elements": [str(symbol) for symbol in df_elem_err.index],
-            "occurrences": figs.round_list(fig.data[0].x),
-            "models": [figs.trace_payload(trace, x=False) for trace in fig.data],
-        },
-    )
+figs.write_site_payload(
+    "element-prevalence-vs-error",
+    {
+        # element symbols + x (occurrence count per element) shared across models
+        "elements": [str(symbol) for symbol in df_elem_err.index],
+        "occurrences": figs.round_list(fig.data[0].x),
+        "models": [figs.trace_payload(trace, x=False) for trace in fig.data],
+    },
+    id_field="label",
+)
 
 
 # %% --- Fingerprint-based analysis ---
@@ -205,11 +205,11 @@ fig.layout.yaxis.title = "Count"
 
 fig.show()
 
-if is_full_model_run():  # don't clobber site payload on filtered runs
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/hist-largest-each-errors-fp-diff.json.gz",
-        {"models": hist_largest_models},
-    )
+figs.write_site_payload(
+    "hist-largest-each-errors-fp-diff",
+    {"models": hist_largest_models},
+    id_field="label",
+)
 
 
 # %% scatter plot:
@@ -257,11 +257,11 @@ fig.layout.yaxis.title = "Absolute error (eV/atom)"
 
 fig.show()
 
-if is_full_model_run():  # don't clobber site payload on filtered runs
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/scatter-largest-each-errors-fp-diff.json.gz",
-        {"models": each_errors_models},
-    )
+figs.write_site_payload(
+    "scatter-largest-each-errors-fp-diff",
+    {"models": each_errors_models},
+    id_field="label",
+)
 
 
 # %% scatter plot: errors for structures with largest FP diff (most relaxation change)
@@ -336,11 +336,11 @@ fig.layout.xaxis.title = "|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|"
 fig.layout.yaxis.title = "|E<sub>above hull</sub> error| (eV/atom)"
 fig.layout.margin = dict(t=40, b=0, l=0, r=0)
 fig.show()
-if is_full_model_run():  # don't clobber site payload on filtered runs
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/scatter-largest-fp-diff-each-error.json.gz",
-        {
-            "fp_diff": figs.round_list(df_largest_fp_diff.values),
-            "models": fp_diff_models,
-        },
-    )
+figs.write_site_payload(
+    "scatter-largest-fp-diff-each-error",
+    {
+        "fp_diff": figs.round_list(df_largest_fp_diff.values),
+        "models": fp_diff_models,
+    },
+    id_field="label",
+)

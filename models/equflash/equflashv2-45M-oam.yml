@@ -1,0 +1,160 @@
+model_name: EquFlashV2
+model_key: equflashv2-45M-oam
+model_version: v2026.06.11
+date_added: '2026-06-11'
+date_published: '2026-06-11'
+authors:
+  - name: Hyuntae Cho
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+    email: robert.cho@samsung.com
+    orcid: https://orcid.org/0000-0001-9379-6877
+  - name: Gunhee Kim
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+  - name: Geonu Kim
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+  - name: Heejae Kim
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+  - name: Hyeonwoo Lee
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+  - name: Suhwan Song
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+  - name: Jaehee Jang
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+  - name: Jeongmin Choi
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+  - name: Yongdeok Kim
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+
+repo: https://github.com/SamsungDS/GGNN
+doi: TBD
+paper: https://github.com/SamsungDS/GGNN
+n_estimators: 1
+pr_url: https://github.com/janosh/matbench-discovery/pull/343
+checkpoint_url: https://figshare.com/ndownloader/files/65435007 # should be the direct download URL of the model checkpoint file. If there's a page documenting the checkpoint, append that as a YAML comment.
+
+openness: OSOD # see `Open` enum in matbench_discovery/enums.py
+train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
+test_task: IS2RE-SR # see `Task` enum in matbench_discovery/enums.py
+targets: EFS_G # see `Targets` enum in matbench_discovery/enums.py
+model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
+model_params: 44890492
+trained_for_benchmark: true
+
+license:
+  code: MIT
+  code_url: https://github.com/SamsungDS/GGNN
+  checkpoint: CC-BY-4.0
+  # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
+  checkpoint_url: https://figshare.com/ndownloader/files/65435007
+
+hyperparams: # strongly recommended to list relaxation hyperparams
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  graph_construction_radius: 6.0 # Å
+  max_neighbors: .inf # additional hyperparameters describing training and inference
+
+training_cost: # list any hardware used to train the model and for how long
+  # hardware: { amount: float, hours: float, cost: float [USD] }
+  Nvidia H100 GPUs: {amount: 16, hours: 100}
+
+requirements: # strongly recommended
+  torch: 2.9.1
+  fairchem-core: 1.10.0
+  torch-geometric: 2.6.1
+  cuEquivariance: 0.6.0
+
+training_set: [OMat24, MPtrj, sAlex]
+
+notes: # notes can have any key, be multiline and support markdown.
+  description: EquFlashV2 is an E(3)-equivariant machine learning force field that adopts a Transformer-style block architecture without attention mechanisms. Instead, it uses Clebsch–Gordan tensor product message passing, efficiently enabled by cuEquivariance, together with a bilinear gate activation for equivariant feature interactions.
+
+
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/equflash/2026-06-11-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/65439012
+      κ_SRME: 0.0941
+      κ_SRE: 0.0377
+  geo_opt: # only applicable if the model performed structure relaxation
+    pred_file: models/equflash/2026-06-11-wbm-geo-opt-FIRE.json.gz # should contain the models relaxed structures as ASE Atoms or pymatgen Structures, and separate columns for material_id and energies/forces/stresses at each relaxation step
+    pred_file_url: https://figshare.com/files/65434998
+    struct_col: mlff_structure
+    symprec=1e-2:
+      rmsd: 0.0577 # unitless
+      n_sym_ops_mae: 1.6877 # unitless
+      symmetry_decrease: 0.0474 # fraction
+      symmetry_match: 0.8202 # fraction
+      symmetry_increase: 0.1251 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/equflash/2026-06-11-wbm-geo-opt-FIRE-symprec=1e-2-moyo=0.12.0.csv.gz
+      analysis_file_url: https://figshare.com/files/65521161
+    symprec=1e-5:
+      rmsd: 0.0577 # unitless
+      n_sym_ops_mae: 2.0782 # unitless
+      symmetry_decrease: 0.0507 # fraction
+      symmetry_match: 0.7005 # fraction
+      symmetry_increase: 0.2434 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/equflash/2026-06-11-wbm-geo-opt-FIRE-symprec=1e-5-moyo=0.12.0.csv.gz
+      analysis_file_url: https://figshare.com/files/65521164
+  discovery:
+    pred_file: models/equflash/2026-06-11-equflash-wbm-IS2RE.csv.gz # should contain the models energy predictions for the WBM test set
+    pred_file_url: https://figshare.com/files/65434992
+    pred_col: e_form_per_atom_ggnn
+    full_test_set:
+      F1: 0.91 # fraction
+      DAF: 5.291 # dimensionless
+      Precision: 0.908 # fraction
+      Recall: 0.913 # fraction
+      Accuracy: 0.969 # fraction
+      TPR: 0.913 # fraction
+      FPR: 0.019 # fraction
+      TNR: 0.981 # fraction
+      FNR: 0.087 # fraction
+      TP: 40235.0 # count
+      FP: 4086.0 # count
+      TN: 208785.0 # count
+      FN: 3857.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.866 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.929 # fraction
+      DAF: 6.069 # dimensionless
+      Precision: 0.928 # fraction
+      Recall: 0.93 # fraction
+      Accuracy: 0.978 # fraction
+      TPR: 0.93 # fraction
+      FPR: 0.013 # fraction
+      TNR: 0.987 # fraction
+      FNR: 0.07 # fraction
+      TP: 31031.0 # count
+      FP: 2413.0 # count
+      TN: 179701.0 # count
+      FN: 2343.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.873 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.987 # fraction
+      DAF: 6.373 # dimensionless
+      Precision: 0.974 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.974 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9743.0 # count
+      FP: 257.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.015 # eV/atom
+      RMSE: 0.062 # eV/atom
+      R2: 0.913 # dimensionless
+      missing_preds: 0 # count

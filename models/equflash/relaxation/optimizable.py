@@ -25,7 +25,7 @@ from torch_scatter import scatter
 if TYPE_CHECKING:
     from collections.abc import Generator, Sequence
 
-    from GGNN.trainer.utrainer import OCPTrainer
+    from GGNN.trainer.trainer import Trainer
     from torch_geometric.data import Batch
 
 
@@ -148,7 +148,7 @@ class OptimizableBatch:
     def __init__(
         self,
         batch: Batch,  # list of ase atoms
-        trainer: OCPTrainer,
+        trainer: Trainer,
         transform: torch.nn.Module | None = None,
         *,
         mask_converged: bool = True,
@@ -160,7 +160,7 @@ class OptimizableBatch:
 
         Args:
             batch: A batch of atoms graph data
-            trainer: An instance of a BaseTrainer derived class
+            trainer: Trainer object used for model inference.
             transform: graph transform
             mask_converged: if true will mask systems in batch
                 that are already converged
@@ -169,7 +169,7 @@ class OptimizableBatch:
                 when using ASE optimizers results in divisions by zero
                 from zero differences in masked positions at future steps,
                 we add a small number to prevent this.
-            device: torch device to run the model on. Defaults to "cuda".
+            device: Device used for tensor computations.
         """
         self.device = device
         torch.set_default_dtype(torch.float32)
@@ -387,7 +387,7 @@ class OptimizableUnitCellBatch(OptimizableBatch):
     def __init__(
         self,
         batch: Batch,  # list of ase atoms
-        trainer: OCPTrainer,
+        trainer: Trainer,
         transform: torch.nn.Module | None = None,
         *,
         numpy: bool = False,
@@ -594,7 +594,7 @@ class OptimizableFrechetBatch(OptimizableUnitCellBatch):
     def __init__(
         self,
         batch: Batch,  # list of ase atoms
-        trainer: OCPTrainer,
+        trainer: Trainer,
         transform: torch.nn.Module | None = None,
         *,
         numpy: bool = False,
@@ -689,26 +689,21 @@ class OptimizableFrechetBatch(OptimizableUnitCellBatch):
             augmented_forces = augmented_forces.cpu().numpy()
         return augmented_forces
 
-    def logm(self, matrix: torch.Tensor) -> torch.Tensor:
+    def logm(self, a: torch.Tensor) -> torch.Tensor:
         # ensure A is symmetric
 
-        eigvals, eigvecs = torch.linalg.eigh(matrix)
+        s, v = torch.linalg.eigh(a)
         return torch.bmm(
-            torch.bmm(eigvecs, torch.diag_embed(torch.log(torch.abs(eigvals)))),
-            eigvecs.transpose(-1, -2),
+            torch.bmm(v, torch.diag_embed(torch.log(torch.abs(s)))), v.transpose(-1, -2)
         )
 
-    def expm(self, matrix: torch.Tensor) -> torch.Tensor:
-        return torch.linalg.matrix_exp(matrix)
+    def expm(self, a: torch.Tensor) -> torch.Tensor:
+        return torch.linalg.matrix_exp(a)
 
-    def expm_frechet(
-        self, matrix: torch.Tensor, direction: torch.Tensor
-    ) -> torch.Tensor:
-        block_matrix = torch.zeros(
-            matrix.shape[0], 6, 6, dtype=torch.float64, device=self.device
-        )
-        block_matrix[:, 0:3, 0:3] = matrix.detach()
-        block_matrix[:, 3:6, 3:6] = matrix.detach()
-        block_matrix[:, 0:3, 3:6] = direction.detach()
+    def expm_frechet(self, a: torch.Tensor, h: torch.Tensor) -> torch.Tensor:
+        z = torch.zeros(a.shape[0], 6, 6, dtype=torch.float64, device=self.device)
+        z[:, 0:3, 0:3] = a.detach()
+        z[:, 3:6, 3:6] = a.detach()
+        z[:, 0:3, 3:6] = h.detach()
 
-        return torch.linalg.matrix_exp(block_matrix)[:, 0:3, 3:6]
+        return torch.linalg.matrix_exp(z)[:, 0:3, 3:6]

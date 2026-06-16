@@ -52,6 +52,9 @@ model_type: UIP
 model_params: 32724908
 n_estimators: 1
 
+status: superseded
+superseded_by: dpa-4.0.1-pro-mptrj
+
 training_set: [MPtrj]
 
 training_cost:

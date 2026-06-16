@@ -1,18 +1,26 @@
 """Export analysis data as compact gzipped JSON payloads for the Svelte site.
 
 Payloads are *data-only*: series arrays plus data-derived stats (MAE, AUC, F1, ...).
-All presentation (axes, ref lines, legends, colors of fixed series) lives inline in
-the Svelte pages that import these files. site/src/figs/payloads.d.ts documents the
-expected payload shapes. Payloads are committed at site/src/figs/<name>.json.gz and
-imported by pages through the json_gz Vite plugin (site/vite.config.ts), so each
-route's chunk only contains the data of the figures it renders.
+All presentation (axes, ref lines, legends, per-model colors, render order, default
+visibility) lives inline in the Svelte pages that import these files.
+site/src/figs/payloads.d.ts documents the expected payload shapes.
+
+Static payloads are committed as a single gzipped site/src/figs/<name>.json.gz.
+Multi-model payloads are committed as line-delimited site/src/figs/<name>.jsonl: one
+JSON object per line (a lone ``{"_base": {...}}`` line for shared fields + one line per
+model). Two submissions that each add a model insert different lines, which git merges
+cleanly rather than colliding on one un-mergeable gzipped blob. The figure_payload
+Vite plugin (site/vite.config.ts) loads both; .jsonl reassembles into the aggregate.
 
 Helpers:
 - ``write_json_gz(path, payload)``: deterministic gzipped JSON writer
+- ``write_site_payload(name, payload)``: write a multi-model payload as line-delimited
+  JSONL (position-independent data; presentation applied client-side)
+- ``read_jsonl_payload(path)``: reassemble a .jsonl payload into ``{**shared, models}``
 - ``histogram(values)``: bin raw values into ``{x, y, bar_width}`` (HistBins shape)
 - ``lttb``: down-sample over-resolved line series
-- ``trace_xy`` / ``trace_color`` / ``trace_visible`` / ``trace_payload``: pull
-  arrays/styles out of plotly traces (for figs built by pymatviz/plots helpers)
+- ``trace_xy`` / ``trace_color`` / ``trace_payload``: pull arrays/styles out of
+  plotly traces (for figs built by pymatviz/plots helpers)
 - ``sunburst_data`` / ``sankey_data``: pull the flat arrays out of plotly sunburst/
   sankey figures (matterviz builds the nested structures from these client-side)
 """
@@ -158,12 +166,6 @@ def trace_color(trace: BaseTraceType) -> str | None:
     return marker_color if isinstance(marker_color, str) else None
 
 
-def trace_visible(trace: BaseTraceType) -> bool:
-    """Map plotly ``visible`` (True/False/'legendonly') to a boolean."""
-    vis = getattr(trace, "visible", True)
-    return vis is True or vis is None
-
-
 def trace_payload(trace: BaseTraceType, *, x: bool = True) -> dict[str, Any]:
     """Standard payload entry for a plotly trace: label, color (if any), x/y arrays.
 
@@ -227,11 +229,22 @@ def sankey_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
     # crammed labels overlap) and reindex the links onto the kept nodes
     used = sorted({*src_idx, *tgt_idx})
     remap = {old: new for new, old in enumerate(used)}
+    # canonicalize link order: upstream pandas value_counts can permute equal-count
+    # links between runs, which would make payload bytes depend on run composition
+    links = sorted(
+        zip(
+            (remap[src] for src in src_idx),
+            (remap[tgt] for tgt in tgt_idx),
+            round_list(decode_array(link.get("value"))),
+            strict=True,
+        )
+    )
+    sources, targets, values = map(list, zip(*links, strict=True))
     return {
         "labels": [labels[idx] for idx in used],
-        "source": [remap[src] for src in src_idx],
-        "target": [remap[tgt] for tgt in tgt_idx],
-        "value": round_list(decode_array(link.get("value"))),
+        "source": sources,
+        "target": targets,
+        "value": values,
     }
 
 
@@ -245,3 +258,90 @@ def write_json_gz(path: str, data: dict[str, Any]) -> int:
     with open(path, "wb") as file:
         file.write(compressed)
     return len(compressed)
+
+
+def read_jsonl_payload(path: str) -> dict[str, Any]:
+    """Read a JSONL figure payload (from ``write_site_payload``) into the aggregate
+    ``{**shared, models: [...]}`` dict. One JSON object per line; the lone
+    ``{"_base": {...}}`` line carries shared fields, every other line is a model entry.
+    Mirrors the site's jsonl Vite loader (site/vite.config.ts).
+    """
+    base: dict[str, Any] = {}
+    models: list[dict[str, Any]] = []
+    with open(path, encoding="utf-8") as file:
+        for line in file:
+            if not (line := line.strip()):
+                continue
+            entry = json.loads(line)
+            if set(entry) == {"_base"}:
+                base = entry["_base"]
+            else:
+                models.append(entry)
+    return {**base, "models": models}
+
+
+def write_jsonl_payload(
+    path: str, payload: dict[str, Any], *, id_field: str = "key", full_run: bool
+) -> int:
+    """Write a multi-model payload as line-delimited JSONL at ``path`` (shared writer
+    behind ``write_site_payload``; also used for the per-element-errors payload).
+
+    One JSON object per line - a lone ``{"_base": {...}}`` shared-fields line plus one
+    line per model, sorted by ``id_field`` and stripped of presentation (applied
+    client-side). ``full_run`` rewrites the whole roster; subset --models runs splice
+    fresh entries into the committed file by ``id_field``, keeping the committed _base.
+    """
+
+    def model_id(model: dict[str, Any]) -> str:
+        return str(model.get(id_field) or model["label"])
+
+    # strip presentation fields so lines stay position-independent (set client-side)
+    models = [
+        {key: val for key, val in model.items() if key not in ("color", "visible")}
+        for model in payload["models"]
+    ]
+    shared_from = payload  # full runs take shared fields from the fresh payload
+    if not full_run:  # splice fresh entries into the committed file by id
+        if not os.path.isfile(path):
+            raise FileNotFoundError(
+                f"{path} not found: subset runs (--models) splice into an existing "
+                "payload. Run without --models to regenerate from scratch."
+            )
+        committed = read_jsonl_payload(path)
+        fresh = {model_id(model): model for model in models}
+        models = [fresh.pop(model_id(old), old) for old in committed["models"]]
+        models += list(fresh.values())
+        # shared fields are model-independent; keep the committed _base so a subset run
+        # only rewrites model lines (no churn from fresh dict order / float noise)
+        shared_from = committed
+    shared = {key: val for key, val in shared_from.items() if key != "models"}
+
+    models.sort(key=model_id)
+    # a lone _base line (when shared fields exist) followed by one line per model
+    records = [{"_base": shared}, *models] if shared else models
+    body = "".join(
+        json.dumps(record, allow_nan=False, separators=(",", ":")) + "\n"
+        for record in records
+    )
+    if dir_name := os.path.dirname(path):
+        os.makedirs(dir_name, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as file:
+        file.write(body)
+    n_bytes = len(body.encode())
+    print(f"Wrote {os.path.basename(path)} ({n_bytes:,} bytes, {len(models)} models)")
+    return n_bytes
+
+
+def write_site_payload(
+    name: str, payload: dict[str, Any], *, id_field: str = "key"
+) -> int:
+    """Write a multi-model figure payload as one JSONL file, site/src/figs/<name>.jsonl
+    (thin wrapper over ``write_jsonl_payload``; full vs subset run from CLI --models).
+    """
+    from matbench_discovery import SITE_FIG_DATA
+    from matbench_discovery.cli import is_full_model_run
+
+    path = f"{SITE_FIG_DATA}/{name}.jsonl"
+    return write_jsonl_payload(
+        path, payload, id_field=id_field, full_run=is_full_model_run()
+    )

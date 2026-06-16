@@ -1,0 +1,32 @@
+--find-links https://data.pyg.org/whl/torch-2.9.1+cu126.html
+
+git+https://github.com/SamsungDS/GGNN@16b5cae474370977b59120e8bc57e4bcc19cd093
+torch_scatter==2.1.2
+torch_sparse==0.6.18
+torch-geometric==2.6.1
+scikit-learn
+spglib==2.6.0
+e3nn==0.5.6
+ase>=3.26.0
+pymatgen
+pymatviz>=0.16.0
+phono3py==3.30.0
+lmdb==1.6.2
+submitit==1.5.3
+cuequivariance==0.6.0
+cuequivariance-torch==0.6.0
+cuequivariance-ops-torch-cu12==0.6.0
+huggingface-hub==1.19.0
+hydra-core==1.3.3
+numba==0.65.1
+orjson==3.11.9
+pydantic==2.13.4
+pyyaml==6.0.3
+requests==2.34.2
+tensorboard==2.20.0
+torchtnt==0.2.4
+wandb==0.27.2
+nvalchemi-toolkit-ops==0.3.1
+
+
+-e ../../

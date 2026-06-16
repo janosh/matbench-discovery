@@ -1,1 +1,1 @@
-"""Utility scripts for Matbench Discovery."""
+"""Repository scripts package for test imports."""

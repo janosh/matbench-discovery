@@ -8,11 +8,14 @@ will provide the best hit rate for the given budget.
 """
 
 # %%
+import numpy as np
 import pymatviz as pmv
+import scipy.interpolate
 
-from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
-from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
+from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD, figs
+from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.metrics.discovery import classify_stable
 from matbench_discovery.plots import cumulative_metrics
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
@@ -83,48 +86,55 @@ fig.show()
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
 img_name = f"cumulative-{'-'.join(metrics).lower()}{img_suffix}"
-if metrics == ("Precision", "Recall"):
-    # px.line emits one line trace per (model, facet); cumulative_metrics appends one
-    # endpoint marker per line (mode="markers", legendgroup=model) marking where each
-    # model's stable-prediction ranking ends
-    def facet_of(trace: object) -> str:
-        # plotly facets name axes "x" for the first subplot (Precision), "x2" for the
-        # second (Recall); traces on the first facet may omit the xaxis attr entirely
-        return (
-            "Precision" if (getattr(trace, "xaxis", None) or "x") == "x" else "Recall"
-        )
-
-    lines = [tr for tr in fig.data if tr.mode and "lines" in tr.mode]
-    ends = [tr for tr in fig.data if tr.mode == "markers"]
-    prec_lines = {tr.name: tr for tr in lines if facet_of(tr) == "Precision"}
-    rec_lines = {tr.name: tr for tr in lines if facet_of(tr) == "Recall"}
-    prec_ends = {tr.legendgroup: tr for tr in ends if facet_of(tr) == "Precision"}
-    rec_ends = {tr.legendgroup: tr for tr in ends if facet_of(tr) == "Recall"}
-
+if metrics == ("Precision", "Recall") and show_non_compliant:
+    # site payload = full model set. curves are recomputed on a model-intrinsic grid
+    # (not extracted from the figure, whose shared x grid depends on which models are
+    # in the run) so an entry is identical in full regens and single-model merge runs
     cum_pr_models = []
-    for label, prec_tr in prec_lines.items():
-        rec_tr = rec_lines[label]
-        prec_end, rec_end = prec_ends[label], rec_ends[label]
+    for label in models_to_plot:
+        each_pred = df_each_pred[label].sort_values()
+        each_true = df_preds[MbdKey.each_true].loc[each_pred.index]
+        true_pos, false_neg, false_pos, _true_neg = classify_stable(
+            each_true, each_pred, stability_threshold=STABILITY_THRESHOLD
+        )
+        n_true_pos_cum = true_pos.cumsum()  # all pd.Series, cumsum stays a Series
+        precision_cum = n_true_pos_cum / (n_true_pos_cum + false_pos.cumsum())
+        recall_cum = n_true_pos_cum / (n_true_pos_cum + false_neg.cumsum()).iloc[-1]
+        # number of materials the model predicts stable = where its curve ends
+        n_pred_stable = int((each_pred <= STABILITY_THRESHOLD).sum())
+        if n_pred_stable < 2:  # can't happen for real models (thousands stable)
+            raise ValueError(f"{label} predicts {n_pred_stable} stable materials")
+        # log2-spaced sampling for higher density at the start of the discovery
+        # campaign where metrics fluctuate most (mirrors plots.cumulative_metrics).
+        # rounded to ints since x counts screened materials (also compresses better)
+        log_xs = np.logspace(0, np.log2(n_pred_stable - 1), 100, base=2)
+        xs = np.unique([*log_xs.round().astype(int), n_pred_stable])
+        model_range = np.arange(n_pred_stable) + 1
+        spline_degree = min(3, n_pred_stable - 1)  # k must be < n curve points
+        precision, recall = (
+            scipy.interpolate.make_interp_spline(
+                model_range, curve.to_numpy()[:n_pred_stable], k=spline_degree
+            )(xs)
+            for curve in (precision_cum, recall_cum)
+        )
         cum_pr_models.append(
             {
                 "key": Model.from_label(label).key,
                 "label": label,
-                "color": figs.trace_color(prec_tr),
-                "x": figs.round_list(prec_tr.x),
-                "precision": figs.round_list(prec_tr.y),
-                "recall": figs.round_list(rec_tr.y),
+                "x": figs.round_list(xs),
+                "precision": figs.round_list(precision),
+                "recall": figs.round_list(recall),
                 # [n materials predicted stable, precision there, recall there]
                 "end": [
-                    float(prec_end.x[0]),
-                    round(float(prec_end.y[0]), 5),
-                    round(float(rec_end.y[0]), 5),
+                    n_pred_stable,
+                    round(float(precision_cum.iloc[n_pred_stable - 1]), 5),
+                    round(float(recall_cum.iloc[n_pred_stable - 1]), 5),
                 ],
             }
         )
     n_stable = int((df_preds[MbdKey.each_true] <= STABILITY_THRESHOLD).sum())
-    if show_non_compliant and is_full_model_run():  # site payload = full model set
-        figs.write_json_gz(
-            f"{SITE_FIG_DATA}/cumulative-precision-recall.json.gz",
-            {"n_stable": n_stable, "models": cum_pr_models},
-        )
+    figs.write_site_payload(
+        "cumulative-precision-recall",
+        {"n_stable": n_stable, "models": cum_pr_models},
+    )
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

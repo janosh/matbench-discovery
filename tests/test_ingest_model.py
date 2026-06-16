@@ -5,29 +5,10 @@ old grep/sed bash recipe), so it can be tested against the real repo metadata
 without running any evals.
 """
 
-import importlib.util
-import sys
-from pathlib import Path
-
 import pytest
 
+import scripts.ingest_model as ingest
 from matbench_discovery.enums import Model
-
-
-def import_script(name: str):  # noqa: ANN201
-    """Import a module from scripts/ (not a package; can't live in conftest since
-    `from tests.conftest import ...` resolves to pymatviz's tests package).
-    """
-    path = Path(__file__).parent.parent / "scripts" / f"{name}.py"
-    spec = importlib.util.spec_from_file_location(name, path)
-    assert spec is not None  # narrow ModuleSpec | None for type checker
-    assert spec.loader is not None  # narrow Loader | None for type checker
-    sys.modules[name] = module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-ingest = import_script("ingest_model")
 
 
 def msgs(checks: "ingest.Checklist", status: str) -> list[str]:
@@ -101,6 +82,34 @@ def test_cli_archive_requires_figshare_token(
     monkeypatch.delenv("FIGSHARE_TOKEN", raising=False)
     with pytest.raises(SystemExit, match="2"):
         ingest.main(["mace-mpa-0", "--archive"])
+
+
+def test_run_payload_refresh_models_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Payload refresh passes --models for single-model runs (merge mode) and omits
+    it for full regens; the final command runs the payload shape tests either way.
+    """
+    calls: list[tuple[str, ...]] = []
+
+    def fake_run_cmd(*cmd: str) -> bool:
+        calls.append(cmd)
+        return True
+
+    monkeypatch.setattr(ingest, "run_cmd", fake_run_cmd)
+    checks = ingest.Checklist()
+    ingest.run_payload_refresh(checks, model=Model.mace_mpa_0)
+    *script_calls, test_call = calls
+    assert len(script_calls) == len(ingest.PAYLOAD_SCRIPTS)
+    assert any(
+        "single_model_per_element_errors.py" in " ".join(cmd) for cmd in script_calls
+    )
+    for cmd in script_calls:
+        assert cmd[-2:] == ("--models", "mace_mpa_0")
+    assert "pytest" in test_call
+    assert checks.n_failed == 0
+
+    calls.clear()
+    ingest.run_payload_refresh(ingest.Checklist())
+    assert all("--models" not in cmd for cmd in calls)
 
 
 def test_map_yaml_paths() -> None:

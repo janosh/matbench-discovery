@@ -301,6 +301,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
     dpa_3_1_3m_ft = auto(), "deepmd/dpa-3.1-3m-ft.yml"
     dpa_4_0_pro_mptrj = auto(), "deepmd/dpa-4.0-pro-mptrj.yml"
+    dpa_4_0_1_pro_mptrj = auto(), "deepmd/dpa-4.0.1-pro-mptrj.yml"
     dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
     dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
     dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
@@ -314,6 +315,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # Materials AI Lab at Samsung Electronics
     equflash_29m_oam = auto(), "equflash/equflash-29M-oam.yml"
+    equflashv2_45m_oam = auto(), "equflash/equflashv2-45M-oam.yml"
 
     # Zhejiang Lab
     eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"

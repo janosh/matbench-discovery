@@ -4,8 +4,8 @@
 import numpy as np
 import pymatviz as pmv
 
-from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, figs
-from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
+from matbench_discovery import PDF_FIGS, figs
+from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
@@ -95,12 +95,10 @@ for trace in fig.data:
     entry = {"key": Model.from_label(trace.name).key} | figs.trace_payload(
         trace, x=False
     )
-    if not figs.trace_visible(trace):
-        entry["visible"] = False
     rolling_models.append(entry)
-if show_non_compliant and is_full_model_run():  # site payload = full model set
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/rolling-mae-vs-hull-dist.json.gz",
+if show_non_compliant:  # site payload = full model set (styling applied client-side)
+    figs.write_site_payload(
+        "rolling-mae-vs-hull-dist",
         {
             "x": shared_x or [],  # never null: payload contract requires x to be a list
             "models": rolling_models,

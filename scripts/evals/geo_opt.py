@@ -24,7 +24,7 @@ from plotly.subplots import make_subplots
 from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIG_DATA, figs, today
+from matbench_discovery import PDF_FIGS, ROOT, figs, today
 from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model
@@ -74,6 +74,12 @@ for model in cli_args.models:
     model_data[model.label] = df_model
     model_metrics[model.label] = geo_opt.calc_geo_opt_metrics(df_model)
 
+if not model_data:
+    print("No geo-opt analysis data for requested models, nothing to do")
+    # on subset runs (e.g. ingesting an energy-only model) there's nothing to merge
+    # into the site payloads, which is fine; a full run with no data is a config error
+    raise SystemExit(1 if is_full_model_run() else 0)
+
 print(f"\nLoaded {len(model_data)=} models, joined with DFT data into df_all")
 
 df_all = pd.concat(
@@ -116,11 +122,7 @@ for model_label in {*df_spg} - {Key.dft.label}:
     pmv.save_fig(fig, f"{PDF_FIGS}/spg-sankey-{model.key}-{symprec=}.pdf")
 
 # one combined payload for all models (loop order is a set -> sort for determinism)
-spg_sankey_models.sort(key=lambda entry: str(entry["key"]).lower())
-if is_full_model_run():  # don't clobber site payload on filtered runs
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/spg-sankeys.json.gz", {"models": spg_sankey_models}
-    )
+figs.write_site_payload("spg-sankeys", {"models": spg_sankey_models})
 
 
 # %%
@@ -138,10 +140,23 @@ display(
 
 
 # %% Plot violin plot of RMSD vs DFT
+n_violin_samples = 25_000
+
+
+def violin_sample(df_plot: pd.DataFrame) -> pd.DataFrame:
+    """Downsample violin plot inputs: kaleido errors out ('Invalid string length')
+    serializing all models x 257k WBM rows to PDF, and a violin KDE doesn't get more
+    informative beyond ~25k samples. Stats like means stay computed on full data.
+    """
+    if len(df_plot) <= n_violin_samples:
+        return df_plot
+    return df_plot.sample(n=n_violin_samples, random_state=0)
+
+
 df_rmsd = df_all.xs(MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns")
 
 fig_rmsd = px.violin(
-    df_rmsd.round(3).dropna(),
+    violin_sample(df_rmsd.round(3).dropna()),
     orientation="h",
     color="model",
     box=True,
@@ -190,7 +205,7 @@ print(f"Average spacegroup number difference vs DFT for each model: {avg_spg_dif
 
 # %% violin plot of spacegroup number diff vs DFT
 fig_sym = px.violin(
-    df_all.xs(MbdKey.spg_num_diff, level=metric_lvl, axis="columns"),
+    violin_sample(df_all.xs(MbdKey.spg_num_diff, level=metric_lvl, axis="columns")),
     title="Spacegroup Number Diff vs DFT",
     orientation="h",
     color="model",
@@ -207,7 +222,7 @@ pmv.save_fig(fig_sym, f"{PDF_FIGS}/{today}-sym-violin-{symprec=}.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures
 fig_sym_ops = px.violin(
-    df_all.xs(Key.n_sym_ops, level=metric_lvl, axis="columns"),
+    violin_sample(df_all.xs(Key.n_sym_ops, level=metric_lvl, axis="columns")),
     title="Number of Symmetry Operations in ML-relaxed Structures",
     orientation="h",
     color="model",
@@ -223,9 +238,11 @@ pmv.save_fig(fig_sym_ops, f"{PDF_FIGS}/{today}-sym-ops-violin-{symprec=}.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures vs DFT
 fig_sym_ops_diff = px.violin(
-    df_all.drop(Key.dft.label, level=Key.model, axis="columns")
-    .xs(MbdKey.n_sym_ops_diff, level=metric_lvl, axis="columns")
-    .reset_index(),
+    violin_sample(
+        df_all.drop(Key.dft.label, level=Key.model, axis="columns")
+        .xs(MbdKey.n_sym_ops_diff, level=metric_lvl, axis="columns")
+        .reset_index()
+    ),
     orientation="h",
     color="model",
     hover_name=Key.mat_id,
@@ -260,12 +277,15 @@ fig_sym_ops_diff = make_subplots(
 
 sym_ops_models: list[dict[str, object]] = []
 for idx, (model, std) in enumerate(models_by_std, start=1):
-    value_counts = df_sym_ops_diff[model].value_counts()
+    # sort_index + int cast: multi-model runs concat to a NaN-padded float column but
+    # single-model runs stay int, which flips both value_counts' tie order and the
+    # 0.0-vs-0 JSON repr, breaking merge == full-regen byte identity
+    value_counts = df_sym_ops_diff[model].value_counts().sort_index()
     sym_ops_models.append(
         {
             "label": str(model),
             "sigma": float(f"{std:.3g}"),
-            "x": figs.round_list(value_counts.index),
+            "x": [int(val) for val in value_counts.index],
             "y": value_counts.tolist(),
         }
     )
@@ -290,10 +310,9 @@ fig_sym_ops_diff.update_xaxes(nticks=10, showticklabels=True)
 # log transform y-axis
 fig_sym_ops_diff.update_yaxes(type="log")
 fig_sym_ops_diff.layout.margin.t = 25
-if is_full_model_run():  # don't clobber site payload on filtered runs
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/sym-ops-diff-bar.json.gz", {"models": sym_ops_models}
-    )
+figs.write_site_payload(
+    "sym-ops-diff-bar", {"models": sym_ops_models}, id_field="label"
+)
 
 title = "Difference in number of symmetry operations of ML vs DFT-relaxed structures"
 fig_sym_ops_diff.layout.title = dict(text=title, x=0.5)
@@ -370,11 +389,9 @@ fig_rmsd_cdf.layout.xaxis.update(title="RMSD (unitless)", range=[0, x_max])
 fig_rmsd_cdf.layout.yaxis.update(title="Cumulative", tickformat=".0%", range=[0, 1])
 fig_rmsd_cdf.layout.legend = dict(y=0, xanchor="right", x=1)
 
-rmsd_cdf_models.sort(key=lambda entry: -entry["auc"])  # type: ignore[arg-type, return-value]
-if is_full_model_run():  # don't clobber site payload on filtered runs
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/struct-rmsd-cdf.json.gz", {"models": rmsd_cdf_models}
-    )
+figs.write_site_payload(
+    "struct-rmsd-cdf", {"models": rmsd_cdf_models}, id_field="label"
+)
 
 title = "Cumulative Distribution of RMSD vs DFT-relaxed structures"
 fig_rmsd_cdf.layout.title = dict(text=title, x=0.5)
