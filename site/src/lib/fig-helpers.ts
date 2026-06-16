@@ -24,18 +24,21 @@ for (const model of MODELS) {
     if (id) model_meta[id] = { color: model.color, f1 }
   }
 }
-export const model_color = (id: string): string | undefined => model_meta[id]?.color
-export const model_f1 = (id: string): number => model_meta[id]?.f1 ?? -Infinity
+const model_id = (model: { key?: string; label?: string }): string =>
+  model.key ?? model.label ?? ``
+const model_color = (id: string): string | undefined => model_meta[id]?.color
+const model_f1 = (id: string): number => model_meta[id]?.f1 ?? -Infinity
 
-// fill each reassembled model with its stable MODELS color and sort for render. `order`
-// defaults to discovery F1 desc (the leaderboard order the aggregate payloads used to bake
-// in); pass a custom comparator value for figure-specific orders (AUC, sigma, ...).
+// fill each reassembled model with its stable MODELS color (looked up by key or display
+// label) and sort for render. `order` defaults to discovery F1 desc (the leaderboard order
+// the aggregate payloads used to bake in); pass a custom comparator for figure-specific
+// orders (AUC, sigma, ...).
 export function styled_models<T extends { key?: string; label?: string }>(
   models: T[],
-  order: (model: T) => number = (model) => -model_f1(model.key ?? model.label ?? ``),
+  order: (model: T) => number = (model) => -model_f1(model_id(model)),
 ): (T & { color: string | undefined })[] {
   return models
-    .map((model) => ({ ...model, color: model_color(model.key ?? model.label ?? ``) }))
+    .map((model) => ({ ...model, color: model_color(model_id(model)) }))
     .sort((row_a, row_b) => order(row_a) - order(row_b))
 }
 
