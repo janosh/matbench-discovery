@@ -7,7 +7,7 @@ site/src/figs/payloads.d.ts documents the expected payload shapes.
 
 Static payloads are committed as a single gzipped site/src/figs/<name>.json.gz.
 Multi-model payloads are committed as line-delimited site/src/figs/<name>.jsonl: one
-JSON object per line (a lone {"_base": {...}} line for shared fields + one line per
+JSON object per line (a lone ``{"_base": {...}}`` line for shared fields + one line per
 model). Two submissions that each add a model insert different lines, which git merges
 cleanly rather than colliding on one un-mergeable gzipped blob. The json_gz / jsonl
 Vite plugins (site/vite.config.ts) load both; .jsonl reassembles into the aggregate.
