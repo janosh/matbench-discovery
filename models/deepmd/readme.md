@@ -1,6 +1,8 @@
-# DeePMD-DPA3
+# DeePMD
 
-## Model
+## DeePMD-DPA3
+
+### Model
 
 - DPA-3.1-3M-FT：model pretrained on the `OpenLAM` datasest (using DPA-3.1-3M from [DPA3-paper](https://arxiv.org/abs/2506.01686)), and finetuned with `MPtraj` & `Sub-Alex` datasets.
 
@@ -14,13 +16,13 @@
   wget https://figshare.com/files/55141124
   ```
 
-### How to install
+#### How to install
 
 ```bash
 pip install git+https://github.com/deepmodeling/deepmd-kit@devel
 ```
 
-### How to use
+#### How to use
 
 ```py
 from ase import Atoms
@@ -37,7 +39,7 @@ print(water.get_potential_energy())
 print(water.get_forces())
 ```
 
-## OPENLAM Data
+### OPENLAM Data
 
 - To be released soon.
 
@@ -77,9 +79,9 @@ print(water.get_forces())
 
 &#x20;
 
-## Results
+### Results
 
-### DPA-3.1-3M-FT
+#### DPA-3.1-3M-FT
 
 `2025-06-05-dpa-3.1-3M-ft-preds.csv.gz`
 
@@ -103,7 +105,7 @@ RMSE            0.068373       0.066638     0.067072
 R2              0.856592       0.869046     0.900992
 ```
 
-### DPA-3.1-MPtrj
+#### DPA-3.1-MPtrj
 
 `2025-06-05-dpa-3.1-mptrj-preds.csv.gz`
 
@@ -127,7 +129,7 @@ RMSE            0.079964       0.079838     0.087248
 R2              0.803849       0.812029     0.837659
 ```
 
-### Relaxed Structure
+#### Relaxed Structure
 
 ```sh
 # DPA-3.1-3M-FT
@@ -137,37 +139,25 @@ wget https://figshare.com/files/55141109
 wget https://figshare.com/files/55141127
 ```
 
-### DPA-4.0-Pro-MPtrj
+## DeePMD-DPA4
 
-DPA-4.0-Pro-MPtrj is a DeePMD-kit universal interatomic potential based on the
-DPA4/SeZM architecture and trained only on MPtrj for this submission. DPA4 uses
-local-frame SO(2)-equivariant message passing: each edge is rotated into a
-bond-aligned frame, where the remaining rotational symmetry is SO(2). This
-keeps the angular update lightweight while retaining directional information
-that is absent in purely invariant message passing.
+DPA4 is an SE(3)-equivariant interatomic-potential architecture built on an EMFA
+(Edge-conditioned, Multi-Focus, Attention) SO(2)-equivariant convolution. It
+combines a low-rank edge–node SO(2)-equivariant product, a multi-focus design
+for message nonlinearity, and envelope-gated attention for message aggregation.
+A Lebedev-grid projection preserves SO(3)-equivariance in the nonlinearity to
+machine precision, and a compiler-friendly conservative energy-gradient training
+path gives up to ~3× wall-clock speedup under `torch.compile`. See the
+[DPA4 paper](https://arxiv.org/abs/2606.02419).
 
-The submitted model uses 8 interaction blocks, lmax=5, mmax=1, 96 channels,
-16 radial basis functions, a 6.0 Å cutoff, and up to 384 selected neighbors.
-It also uses envelope-gated attention over invariant channels and was trained
-with the Muon optimizer, a WSD learning-rate schedule, AMP, TF32, and compiled
-training enabled.
+### DPA-4.0.1-Pro-MPtrj
 
-```txt
-    Full-set    Unique  10K
-F1              0.831887       0.850318     0.981722
-DAF             4.943268       5.627810     6.306599
-Precision       0.848210       0.860332     0.964100
-Recall          0.816180       0.840535     1.000000
-Accuracy        0.943397       0.954169     0.964100
-TPR             0.816180       0.840535     1.000000
-FPR             0.030253       0.025006     1.000000
-TNR             0.969747       0.974994     0.000000
-FNR             0.183820       0.159465     0.000000
-TP          35987.000000   28052.000000  9641.000000
-FP           6439.000000    4554.000000   359.000000
-TN         206432.000000  177560.000000     0.000000
-FN           8105.000000    5322.000000     0.000000
-MAE             0.029000       0.030000     0.033000
-RMSE            0.076000       0.078000     0.122000
-R2              0.820000       0.823000     0.698000
-```
+DPA-4.0.1-Pro-MPtrj is the DPA4-Pro model trained only on MPtrj for this
+submission; it supersedes DPA-4.0-Pro-MPtrj. Following the DPA4-Pro column of
+Table S-17 in the paper, the model parameters are: feature dim 64, 6 interaction
+layers, 2 focuses, 4 SO(2) layers, a rank-2 per-channel edge–node product, a
+Bessel radial basis with 16 bases, lmax=5, mmax=1, Lebedev quadrature, SiLU+GLU
+activations, a 6.0 Å cutoff, and up to 384 selected neighbors (~22.8M
+parameters). It was trained for 2×10⁶ steps with the HybridMuon optimizer, a WSD
+learning-rate schedule, MAE energy/force/virial loss weights 20/20/5, bf16 AMP,
+TF32 matmul, and `torch.compile` enabled.
