@@ -47,7 +47,7 @@
 # explicit = true
 #
 # [tool.uv.sources]
-# GGNN = { git = "https://github.com/SamsungDS/GGNN.git" }
+# GGNN = { git = "https://github.com/SamsungDS/GGNN.git", rev = "16b5cae474370977b59120e8bc57e4bcc19cd093" } # noqa: E501
 # matbench-discovery = { path = "../../", editable = true }
 # torch = { index = "pytorch-cu126" }
 # ///

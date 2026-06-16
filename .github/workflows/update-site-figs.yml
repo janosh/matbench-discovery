@@ -163,8 +163,8 @@ jobs:
 
       # diff each regenerated .jsonl payload's model roster against the committed (HEAD)
       # one so the PR body lists which payloads grew and which models were added. Payloads
-      # are line-delimited site/src/figs/<name>.jsonl (one model per line, a lone _base
-      # line for shared fields), so the roster is the set of model ids inside each file
+      # are line-delimited (one model per line, a lone _base line for shared fields), so
+      # the roster is the set of model ids inside each file
       - name: Summarize payload model-count changes
         id: payload_diff
         if: github.event_name != 'pull_request_target'
@@ -184,7 +184,10 @@ jobs:
               return ids
 
           rows = []
-          for path in sorted(glob.glob("site/src/figs/*.jsonl")):
+          for path in sorted([
+              *glob.glob("site/src/figs/*.jsonl"),
+              "site/src/routes/models/per-element-each-errors.jsonl",
+          ]):
               with open(path) as file:
                   now = roster(file.read())
               head = subprocess.run(
@@ -208,7 +211,9 @@ jobs:
         if: github.event_name != 'pull_request_target'
         uses: peter-evans/create-pull-request@v8
         with:
-          add-paths: site/src/figs
+          add-paths: |
+            site/src/figs
+            site/src/routes/models/per-element-each-errors.jsonl
           commit-message: Update multi-model site figure payloads
           title: Update multi-model site figure payloads
           body: |

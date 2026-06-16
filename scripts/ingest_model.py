@@ -35,6 +35,7 @@ PAYLOAD_SCRIPTS = (
     "python scripts/model_figs/rolling_hull_dist_mae_models.py",
     "python scripts/model_figs/tiles_hist_classified_stable_models.py",
     "python scripts/model_figs/tmi-page-figures.py",
+    "python scripts/model_figs/single_model_per_element_errors.py",
     "--extra phonons python scripts/model_figs/kappa_103_analysis.py",
     "python scripts/evals/geo_opt.py",
 )
@@ -67,13 +68,6 @@ FIG_STEPS = (
         True,
         True,
         "python site/scripts/generate-kappa-parity-assets.py",
-    ),
-    (
-        "Per-element errors",
-        False,
-        True,
-        "python scripts/model_figs/single_model_per_element_errors.py "
-        "--auto-download --no-show",
     ),
 )
 
@@ -233,8 +227,7 @@ def run_archive(model: Model, checks: Checklist) -> None:
 
 
 def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
-    """Refresh the multi-model site figure payloads (site/src/figs/*.jsonl), then
-    run the payload shape tests (site pages import these files typed).
+    """Refresh site/src/figs/*.jsonl plus route-local JSONL payloads, then test.
 
     With a model given, payload scripts run with --models <model> and splice only that
     model's freshly computed entries into the committed payloads (no other model's

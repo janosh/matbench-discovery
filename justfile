@@ -22,9 +22,9 @@ prepare-model-submission model_name overwrite="false":
 ingest-model model_name overwrite="false":
     uv run python scripts/ingest_model.py {{ model_name }} --archive {{ if overwrite == "true" { "--overwrite" } else { "" } }}
 
-# Refresh the multi-model site figure payloads (site/src/figs/*.jsonl) so pages
-# like /models/tmi and /tasks/geo-opt include every model, then run the payload shape
-# tests. Run after adding/updating a model, then commit the changed payloads.
+# Refresh the multi-model site figure payloads (.jsonl) so pages like /models/tmi and
+# /tasks/geo-opt include every model, then run the payload shape tests. Run after
+# adding/updating a model, then commit the changed payloads.
 # `just update-site-figs <model>` merges only that model's entries into the committed
 # payloads (no other model's prediction files needed locally); without a model, all
 # payloads are regenerated from the full active roster.
