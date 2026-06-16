@@ -115,11 +115,7 @@ def test_per_element_each_errors_payload() -> None:
     assert len(columns) > 10, f"expected >10 columns, got {len(columns)}"
     for column in columns:
         assert isinstance(column["key"], str)
-        assert isinstance(values := column["values"], dict)
-        assert all(
-            val is None or (isinstance(val, (int, float)) and math.isfinite(val))
-            for val in values.values()
-        )
+        assert_num_list(list(column["values"].values()))
 
 
 def check_box_hull_dist_errors() -> None:

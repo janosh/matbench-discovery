@@ -183,10 +183,13 @@ def test_write_json_gz_rejects_nan(tmp_path: Path) -> None:
 # === multi-model site payload writing (JSONL: full-run vs subset-run splice) ===
 @pytest.fixture
 def site_fig_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Redirect write_site_payload's IO to a temp dir."""
+    """Redirect write_site_payload's IO to a temp dir and default to a full --models run
+    (subset tests narrow cli_args.models themselves).
+    """
     import matbench_discovery
 
     monkeypatch.setattr(matbench_discovery, "SITE_FIG_DATA", str(tmp_path))
+    monkeypatch.setattr(cli_args, "models", list(Model.active()))
     return tmp_path
 
 
@@ -210,13 +213,12 @@ def test_read_jsonl_payload_roundtrip(tmp_path: Path) -> None:
 
 
 def test_write_site_payload_full_run_writes_jsonl_and_strips(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+    site_fig_dir: Path,
 ) -> None:
     """Full runs write a lone _base line for shared fields + one line per model, sorted
     by id and stripped of color/visible so lines stay position-independent.
     """
     model_a, model_b = list(Model.active())[:2]
-    monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run
     figs.write_site_payload(
         "demo",
         {
@@ -241,24 +243,18 @@ def test_write_site_payload_full_run_writes_jsonl_and_strips(
     assert by_key == {model_a.key: [1], model_b.key: [2]}
 
 
-def test_write_site_payload_no_base_line_without_shared(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_write_site_payload_no_base_line_without_shared(site_fig_dir: Path) -> None:
     """No _base line is written when the payload carries no fields beyond models."""
     model_a = next(iter(Model.active()))
-    monkeypatch.setattr(cli_args, "models", list(Model.active()))
     figs.write_site_payload("demo", {"models": [{"key": model_a.key, "y": [1]}]})
     with open(f"{site_fig_dir}/demo.jsonl") as file:
         raw = file.read().splitlines()
     assert all("_base" not in line for line in raw)
 
 
-def test_write_site_payload_full_run_prunes_dropped_models(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_write_site_payload_full_run_prunes_dropped_models(site_fig_dir: Path) -> None:
     """A later full run rewrites the whole roster, dropping models no longer present."""
     model_a, model_b = list(Model.active())[:2]
-    monkeypatch.setattr(cli_args, "models", list(Model.active()))
     figs.write_site_payload(
         "demo", {"models": [{"key": model_a.key}, {"key": model_b.key}]}
     )
@@ -275,7 +271,6 @@ def test_write_site_payload_subset_run_splices(
     (key- or label-keyed payloads): update their own line, add new ones, leave every
     other model untouched.
     """
-    monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run first
     figs.write_site_payload(
         "demo",
         {"models": [{id_field: "m-a", "y": [0]}, {id_field: "m-b", "y": [1]}]},
@@ -304,7 +299,6 @@ def test_write_site_payload_subset_noop_is_byte_identical(
         "shared": [1],
         "models": [{"key": "m-b", "y": [2]}, {"key": "m-a", "y": [1]}],
     }
-    monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run first
     figs.write_site_payload("demo", payload)
     with open(path, "rb") as file:
         full = file.read()
@@ -322,7 +316,6 @@ def test_write_site_payload_subset_preserves_committed_base(
     """Subset runs keep the committed shared _base; fresh shared fields are ignored
     (shared data is model-independent - changing it needs a full run).
     """
-    monkeypatch.setattr(cli_args, "models", list(Model.active()))  # full run first
     figs.write_site_payload(
         "demo", {"shared": [1, 2], "models": [{"key": "m-a", "y": [0]}]}
     )
@@ -346,10 +339,9 @@ def test_write_site_payload_subset_run_requires_existing_file(
 
 
 @pytest.mark.usefixtures("site_fig_dir")
-def test_write_site_payload_rejects_nan(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_write_site_payload_rejects_nan() -> None:
     """NaN values (invalid JSON) fail loudly instead of writing literal NaN tokens."""
     model_a = next(iter(Model.active()))
-    monkeypatch.setattr(cli_args, "models", list(Model.active()))
     with pytest.raises(ValueError, match="Out of range float"):
         figs.write_site_payload(
             "bad", {"models": [{"key": model_a.key, "y": [float("nan")]}]}
