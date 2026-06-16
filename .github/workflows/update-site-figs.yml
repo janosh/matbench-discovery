@@ -169,46 +169,11 @@ jobs:
         id: payload_diff
         if: github.event_name != 'pull_request_target'
         run: |
-          uv run python - <<'PY'
-          import glob, json, os, subprocess
-
-          def roster(text: str) -> set[str]:
-              # model ids in one .jsonl payload (the lone {"_base": ...} line isn't a model)
-              metadata_keys = {"MP Occurrences", "Test set standard deviation"}
-              ids = set()
-              for line in text.splitlines():
-                  if not (line := line.strip()):
-                      continue
-                  entry = json.loads(line)
-                  if set(entry) == {"_base"}:
-                      continue
-                  model_id = str(entry.get("key") or entry.get("label"))
-                  if model_id not in metadata_keys:
-                      ids.add(model_id)
-              return ids
-
-          rows = []
-          for path in sorted([
-              *glob.glob("site/src/figs/*.jsonl"),
-              "site/src/routes/models/per-element-each-errors.jsonl",
-          ]):
-              with open(path) as file:
-                  now = roster(file.read())
-              head = subprocess.run(
-                  ["git", "show", f"HEAD:{path}"], capture_output=True, text=True
-              )
-              was = roster(head.stdout) if head.returncode == 0 else set()
-              if was == now:
-                  continue
-              added = sorted(now - was)
-              name = os.path.basename(path).removesuffix(".jsonl")
-              tail = f" (+{len(added)}: {', '.join(added)})" if added else ""
-              rows.append(f"- `{name}`: {len(was)} → {len(now)}{tail}")
-
-          body = "### Model-count changes\n\n" + ("\n".join(rows) or "_No roster changes (data-only refresh)._")
-          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-              out.write(f"model_counts<<PR_BODY_EOF\n{body}\nPR_BODY_EOF\n")
-          PY
+          {
+            echo "model_counts<<PR_BODY_EOF"
+            uv run python scripts/summarize_payload_changes.py
+            echo "PR_BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Open PR with updated payloads
         id: cpr
