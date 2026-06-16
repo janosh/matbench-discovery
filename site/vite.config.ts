@@ -11,45 +11,38 @@ import zlib from 'node:zlib'
 import type { Plugin } from 'vite'
 import { defineConfig } from 'vite-plus'
 
-// Import the committed .json.gz figure payloads (site/src/figs, written by
-// matbench_discovery analysis scripts) as parsed ES modules; typed per payload in
-// src/figs/payloads.d.ts. Embedding as JSON.parse('...') keeps V8 parse cost low.
-const json_gz_plugin = (): Plugin => ({
-  name: `json-gz`,
+// Import the committed figure payloads (site/src/figs, written by matbench_discovery
+// analysis scripts) as parsed ES modules, typed per payload in src/figs/payloads.d.ts.
+// Two on-disk formats: gzipped <name>.json.gz (static single-figure payloads) and
+// line-delimited <name>.jsonl (multi-model payloads - one model per line + a lone
+// {"_base": {...}} line for shared fields - reassembled into the aggregate
+// { ...shared, models: [...] } shape, so concurrent model submissions git-merge cleanly
+// instead of colliding on one gzipped blob). Both embed as JSON.parse('...') to keep V8
+// parse cost low; the @__PURE__ annotation lets tree-shaking drop unused payloads.
+const figure_payload_plugin = (): Plugin => ({
+  name: `figure-payload`,
   load(id) {
     const file = id.split(`?`)[0]
-    if (!file.endsWith(`.json.gz`)) return null
-    const json = zlib.gunzipSync(fs.readFileSync(file)).toString(`utf8`)
-    // the pure annotation lets tree-shaking drop a payload from any chunk that ends up
-    // importing but not using it
-    const code = `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(json)})`
-    return { code, map: null }
-  },
-})
-
-// Import committed .jsonl figure payloads (one JSON object per line: a {"_base": {...}}
-// line for shared fields + one line per model; written by matbench_discovery
-// write_site_payload). Reassembled into the aggregate { ...shared, models: [...] } shape
-// and embedded as JSON.parse('...'). Line-delimited storage lets concurrent model
-// submissions git-merge cleanly instead of colliding on one gzipped blob.
-const jsonl_plugin = (): Plugin => ({
-  name: `jsonl`,
-  load(id) {
-    const file = id.split(`?`)[0]
-    if (!file.endsWith(`.jsonl`)) return null
-    const base: Record<string, unknown> = {}
-    const models: unknown[] = []
-    for (const line of fs.readFileSync(file, `utf8`).split(`\n`)) {
-      if (!line.trim()) continue
-      const entry = JSON.parse(line) as Record<string, unknown>
-      if (`_base` in entry && Object.keys(entry).length === 1) {
-        // oxlint-disable-next-line no-underscore-dangle -- _base is the shared-fields sentinel
-        Object.assign(base, entry._base as Record<string, unknown>)
-      } else models.push(entry)
+    let json: string
+    if (file.endsWith(`.json.gz`)) {
+      json = zlib.gunzipSync(fs.readFileSync(file)).toString(`utf8`)
+    } else if (file.endsWith(`.jsonl`)) {
+      const base: Record<string, unknown> = {}
+      const models: unknown[] = []
+      for (const line of fs.readFileSync(file, `utf8`).split(`\n`)) {
+        if (!line.trim()) continue
+        const entry = JSON.parse(line) as Record<string, unknown>
+        if (`_base` in entry && Object.keys(entry).length === 1) {
+          // oxlint-disable-next-line no-underscore-dangle -- _base is the shared-fields sentinel
+          Object.assign(base, entry._base as Record<string, unknown>)
+        } else models.push(entry)
+      }
+      json = JSON.stringify({ ...base, models })
+    } else return null
+    return {
+      code: `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(json)})`,
+      map: null,
     }
-    const payload = JSON.stringify({ ...base, models })
-    const code = `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(payload)})`
-    return { code, map: null }
   },
 })
 
@@ -138,8 +131,7 @@ export default defineConfig({
     sveltekit(),
     yaml_plugin({ extensions: [`.yml`, `.yaml`, `.cff`] }),
     yaml_schema_to_typescript_plugin(),
-    json_gz_plugin(),
-    jsonl_plugin(),
+    figure_payload_plugin(),
   ],
 
   server: {

@@ -32,7 +32,6 @@ import gzip
 import json
 import math
 import os
-from functools import partial
 from typing import TYPE_CHECKING, Any, Final
 
 import numpy as np
@@ -321,10 +320,12 @@ def write_jsonl_payload(
         models += list(fresh.values())
 
     models.sort(key=model_id)
-    dump = partial(json.dumps, allow_nan=False, separators=(",", ":"))
-    lines = [dump({"_base": shared})] if shared else []
-    lines += [dump(model) for model in models]
-    body = "".join(f"{line}\n" for line in lines)
+    # a lone _base line (when shared fields exist) followed by one line per model
+    records = [{"_base": shared}, *models] if shared else models
+    body = "".join(
+        json.dumps(record, allow_nan=False, separators=(",", ":")) + "\n"
+        for record in records
+    )
     if dir_name := os.path.dirname(path):
         os.makedirs(dir_name, exist_ok=True)
     with open(path, "w", encoding="utf-8") as file:
