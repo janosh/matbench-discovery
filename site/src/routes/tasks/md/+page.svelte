@@ -14,7 +14,9 @@
     ...md_metrics.map((col): [string, boolean] => [col.label, true]),
   ])
 
-  const has_md_metrics = (model: ModelData) => typeof model.metrics?.md === `object`
+  // guard against null since typeof null === `object` (a null metrics.md is not data)
+  const has_md_metrics = (model: ModelData) =>
+    model.metrics?.md != null && typeof model.metrics.md === `object`
   const n_md_models = MODELS.filter(has_md_metrics).length
 
   let scatter_x = $state(MD_METRICS.MD_force_RMSE.key)
@@ -39,6 +41,8 @@
 </p>
 
 <section class="full-bleed">
+  <!-- ?? true: columns absent from visible_cols (e.g. the sticky model name) default to
+  shown, matching the phonons and landing-page tables; visible_cols only hides non-MD metrics -->
   <MetricsTable col_filter={(col) => visible_cols[col.label] ?? true} />
 </section>
 
