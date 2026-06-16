@@ -1,5 +1,5 @@
 <script lang="ts">
-  import kappa_103_analysis from '$figs/kappa-103-analysis.json.gz'
+  import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
   import { by_date_added_desc, MetricsTable, type ModelData, MODELS } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
   import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'

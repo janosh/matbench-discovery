@@ -1,16 +1,22 @@
 """Export analysis data as compact gzipped JSON payloads for the Svelte site.
 
 Payloads are *data-only*: series arrays plus data-derived stats (MAE, AUC, F1, ...).
-All presentation (axes, ref lines, legends, colors of fixed series) lives inline in
-the Svelte pages that import these files. site/src/figs/payloads.d.ts documents the
-expected payload shapes. Payloads are committed at site/src/figs/<name>.json.gz and
-imported by pages through the json_gz Vite plugin (site/vite.config.ts), so each
-route's chunk only contains the data of the figures it renders.
+All presentation (axes, ref lines, legends, per-model colors, render order, default
+visibility) lives inline in the Svelte pages that import these files.
+site/src/figs/payloads.d.ts documents the expected payload shapes.
+
+Static payloads are committed as a single gzipped site/src/figs/<name>.json.gz.
+Multi-model payloads are committed as line-delimited site/src/figs/<name>.jsonl: one
+JSON object per line (a lone ``{"_base": {...}}`` line for shared fields + one line per
+model). Two submissions that each add a model insert different lines, which git merges
+cleanly rather than colliding on one un-mergeable gzipped blob. The figure_payload
+Vite plugin (site/vite.config.ts) loads both; .jsonl reassembles into the aggregate.
 
 Helpers:
 - ``write_json_gz(path, payload)``: deterministic gzipped JSON writer
-- ``write_site_payload(name, payload)``: write a multi-model payload; subset runs
-  (--models) merge into the committed payload instead of clobbering it
+- ``write_site_payload(name, payload)``: write a multi-model payload as line-delimited
+  JSONL (position-independent data; presentation applied client-side)
+- ``read_jsonl_payload(path)``: reassemble a .jsonl payload into ``{**shared, models}``
 - ``histogram(values)``: bin raw values into ``{x, y, bar_width}`` (HistBins shape)
 - ``lttb``: down-sample over-resolved line series
 - ``trace_xy`` / ``trace_color`` / ``trace_payload``: pull arrays/styles out of
@@ -31,8 +37,6 @@ from typing import TYPE_CHECKING, Any, Final
 import numpy as np
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     import numpy.typing as npt
     import plotly.graph_objects as go
     from plotly.basedatatypes import BaseTraceType
@@ -256,66 +260,88 @@ def write_json_gz(path: str, data: dict[str, Any]) -> int:
     return len(compressed)
 
 
-def write_site_payload(
-    name: str,
-    payload: dict[str, Any],
-    *,
-    id_field: str = "key",
-    sort_key: Callable[[dict[str, Any]], Any] | None = None,
-    assign_colors: bool = False,
-    visible_top_n: int | None = None,
+def read_jsonl_payload(path: str) -> dict[str, Any]:
+    """Read a JSONL figure payload (from ``write_site_payload``) into the aggregate
+    ``{**shared, models: [...]}`` dict. One JSON object per line; the lone
+    ``{"_base": {...}}`` line carries shared fields, every other line is a model entry.
+    Mirrors the site's jsonl Vite loader (site/vite.config.ts).
+    """
+    base: dict[str, Any] = {}
+    models: list[dict[str, Any]] = []
+    with open(path, encoding="utf-8") as file:
+        for line in file:
+            if not (line := line.strip()):
+                continue
+            entry = json.loads(line)
+            if set(entry) == {"_base"}:
+                base = entry["_base"]
+            else:
+                models.append(entry)
+    return {**base, "models": models}
+
+
+def write_jsonl_payload(
+    path: str, payload: dict[str, Any], *, id_field: str = "key", full_run: bool
 ) -> int:
-    """Write a multi-model figure payload to site/src/figs/<name>.json.gz.
+    """Write a multi-model payload as line-delimited JSONL at ``path`` (shared writer
+    behind ``write_site_payload``; also used for the per-element-errors payload).
 
-    Full runs overwrite. Subset runs (e.g. single-model ingestion) merge fresh model
-    entries by ``id_field`` into the committed payload, prune models no longer active,
-    and take non-``models`` reference fields from ``payload``. This lets contributors
-    refresh their own model's entries without any other model's prediction files
-    (https://github.com/janosh/matbench-discovery/issues/342).
+    One JSON object per line - a lone ``{"_base": {...}}`` shared-fields line plus one
+    line per model, sorted by ``id_field`` and stripped of presentation (applied
+    client-side). ``full_run`` rewrites the whole roster; subset --models runs splice
+    fresh entries into the committed file by ``id_field``, keeping the committed _base.
+    """
 
-    Entries are then ordered/styled deterministically so subset merges preserve the
-    rendered figures and metrics: ``sort_key`` (default: active-roster order),
-    ``assign_colors`` and ``visible_top_n`` control order, palette colors and default
-    visibility.
+    def model_id(model: dict[str, Any]) -> str:
+        return str(model.get(id_field) or model["label"])
+
+    # strip presentation fields so lines stay position-independent (set client-side)
+    models = [
+        {key: val for key, val in model.items() if key not in ("color", "visible")}
+        for model in payload["models"]
+    ]
+    shared_from = payload  # full runs take shared fields from the fresh payload
+    if not full_run:  # splice fresh entries into the committed file by id
+        if not os.path.isfile(path):
+            raise FileNotFoundError(
+                f"{path} not found: subset runs (--models) splice into an existing "
+                "payload. Run without --models to regenerate from scratch."
+            )
+        committed = read_jsonl_payload(path)
+        fresh = {model_id(model): model for model in models}
+        models = [fresh.pop(model_id(old), old) for old in committed["models"]]
+        models += list(fresh.values())
+        # shared fields are model-independent; keep the committed _base so a subset run
+        # only rewrites model lines (no churn from fresh dict order / float noise)
+        shared_from = committed
+    shared = {key: val for key, val in shared_from.items() if key != "models"}
+
+    models.sort(key=model_id)
+    # a lone _base line (when shared fields exist) followed by one line per model
+    records = [{"_base": shared}, *models] if shared else models
+    body = "".join(
+        json.dumps(record, allow_nan=False, separators=(",", ":")) + "\n"
+        for record in records
+    )
+    if dir_name := os.path.dirname(path):
+        os.makedirs(dir_name, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as file:
+        file.write(body)
+    n_bytes = len(body.encode())
+    print(f"Wrote {os.path.basename(path)} ({n_bytes:,} bytes, {len(models)} models)")
+    return n_bytes
+
+
+def write_site_payload(
+    name: str, payload: dict[str, Any], *, id_field: str = "key"
+) -> int:
+    """Write a multi-model figure payload as one JSONL file, site/src/figs/<name>.jsonl
+    (thin wrapper over ``write_jsonl_payload``; full vs subset run from CLI --models).
     """
     from matbench_discovery import SITE_FIG_DATA
     from matbench_discovery.cli import is_full_model_run
-    from matbench_discovery.enums import Model
 
-    path = f"{SITE_FIG_DATA}/{name}.json.gz"
-    models: list[dict[str, Any]] = list(payload["models"])
-    if not is_full_model_run():
-        if not os.path.isfile(path):
-            raise FileNotFoundError(
-                f"{path} not found: subset runs (--models) can only merge into an "
-                "existing payload. Run without --models to regenerate from scratch."
-            )
-        with gzip.open(path) as file:
-            committed = json.load(file)
-        # fresh entries replace committed ones, new models append at the end
-        fresh_by_id = {entry[id_field]: entry for entry in models}
-        old = committed["models"]
-        models = [fresh_by_id.pop(entry[id_field], entry) for entry in old]
-        models += list(fresh_by_id.values())
-
-    roster = {getattr(model, id_field): idx for idx, model in enumerate(Model.active())}
-    models = [entry for entry in models if entry[id_field] in roster]
-    # roster order first, then a stable sort by sort_key keeps it as the tiebreaker
-    models.sort(key=lambda entry: roster[entry[id_field]])
-    if sort_key is not None:
-        models.sort(key=sort_key)
-    if assign_colors:
-        from plotly.express.colors import qualitative
-
-        for idx, entry in enumerate(models):
-            entry["color"] = qualitative.Plotly[idx % len(qualitative.Plotly)]
-    if visible_top_n is not None:
-        for idx, entry in enumerate(models):
-            if idx < visible_top_n:  # visible defaults to true when absent
-                entry.pop("visible", None)
-            else:
-                entry["visible"] = False
-
-    n_bytes = write_json_gz(path, payload | {"models": models})
-    print(f"Wrote {name}.json.gz ({n_bytes:,} bytes, {len(models)} models)")
-    return n_bytes
+    path = f"{SITE_FIG_DATA}/{name}.jsonl"
+    return write_jsonl_payload(
+        path, payload, id_field=id_field, full_run=is_full_model_run()
+    )

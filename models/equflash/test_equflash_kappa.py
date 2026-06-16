@@ -1,4 +1,65 @@
-"""Test EquFlash model on matbench-discovery Thermal Conductivity task."""
+# /// script
+# requires-python = ">=3.12,<3.13"
+# dependencies = [
+#   "ase>=3.26.0",
+#   "cuequivariance==0.6.0",
+#   "cuequivariance-ops-torch-cu12==0.6.0",
+#   "cuequivariance-torch==0.6.0",
+#   "e3nn==0.5.6",
+#   "fairchem-core==1.10.0",
+#   "GGNN",
+#   "huggingface-hub==1.19.0",
+#   "hydra-core==1.3.3",
+#   "lmdb==1.6.2",
+#   "matbench-discovery[phonons]",
+#   "moyopy>=0.10.0",
+#   "numba==0.65.1",
+#   "numpy>=2,<3",
+#   "orjson==3.11.9",
+#   "pandas>=3,<4",
+#   "phono3py==3.30.0",
+#   "phonopy>=2.35",
+#   "pydantic==2.13.4",
+#   "pymatgen>=2026.5.4",
+#   "pymatviz[export]==0.18.0",
+#   "pyyaml==6.0.3",
+#   "requests==2.34.2",
+#   "scikit-learn>=1.8",
+#   "scipy==1.16.1",
+#   "spglib==2.6.0",
+#   "submitit==1.5.3",
+#   "tensorboard==2.20.0",
+#   "torch==2.9.1+cu126",
+#   "torch-geometric==2.6.1",
+#   "torch-scatter==2.1.2",
+#   "torch-sparse==0.6.18",
+#   "torchtnt==0.2.4",
+#   "tqdm>=4.67.3",
+#   "wandb==0.27.2",
+# ]
+#
+# [tool.uv]
+# find-links = ["https://data.pyg.org/whl/torch-2.9.1+cu126.html"]
+#
+# [[tool.uv.index]]
+# name = "pytorch-cu126"
+# url = "https://download.pytorch.org/whl/cu126"
+# explicit = true
+#
+# [tool.uv.sources]
+# matbench-discovery = { path = "../../", editable = true }
+# torch = { index = "pytorch-cu126" }
+#
+# [tool.uv.sources.GGNN]
+# git = "https://github.com/SamsungDS/GGNN"
+# rev = "16b5cae474370977b59120e8bc57e4bcc19cd093"
+# ///
+
+"""Test EquFlash model on matbench-discovery Thermal Conductivity task.
+
+Run with:
+uv run models/equflash/test_equflash_kappa.py --checkpoint CHECKPOINT --outdir OUT_DIR
+"""
 
 import argparse
 import datetime

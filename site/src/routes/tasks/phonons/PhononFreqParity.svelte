@@ -1,6 +1,6 @@
 <script lang="ts">
   // Quantile parity between ML and DFT phonon frequency spectra for one model.
-  import type kappa_data from '$figs/kappa-103-analysis.json.gz'
+  import type kappa_data from '$figs/kappa-103-analysis.jsonl'
   import { parity_diagonal } from '$lib/fig-helpers'
   import { format_num, sanitize_compact_formula } from 'matterviz'
   import { DEFAULT_SERIES_SYMBOLS, ScatterPlot } from 'matterviz/plot'

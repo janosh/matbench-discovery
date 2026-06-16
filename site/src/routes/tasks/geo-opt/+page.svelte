@@ -1,12 +1,19 @@
 <script lang="ts">
-  import spg_sankeys from '$figs/spg-sankeys.json.gz'
-  import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.json.gz'
-  import sym_ops_diff from '$figs/sym-ops-diff-bar.json.gz'
+  import spg_sankeys from '$figs/spg-sankeys.jsonl'
+  import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
+  import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
   import { GeoOptMetricsTable, MODELS } from '$lib'
+  import { order_models } from '$lib/fig-helpers'
   import { min } from 'd3-array'
   import { format_num } from 'matterviz'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
+
+  // payload models arrive pre-styled (colors + discovery-F1-desc leaderboard order) from the
+  // figure_payload plugin; re-rank the two that want a different order (struct-rmsd by AUC
+  // desc, sym-ops by symmetry-op-diff sigma asc). spg sankeys keep the leaderboard order.
+  const struct_rmsd_sorted = order_models(struct_rmsd_cdf.models, (mdl) => -mdl.auc)
+  const sym_ops_sorted = order_models(sym_ops_diff.models, (mdl) => mdl.sigma)
 
   const n_min_relaxed_structures: number = min(MODELS, (model) => {
     const geo_opt = model.metrics?.geo_opt
@@ -25,7 +32,7 @@
   {/snippet}
   {#snippet struct_rmsd_cdf_models()}
     <ScatterPlot
-      series={struct_rmsd_cdf.models.map(({ label, auc, x, y }) => ({
+      series={struct_rmsd_sorted.map(({ label, auc, x, y }) => ({
         x,
         y,
         label: `${label} · AUC=${auc}`,
@@ -38,7 +45,7 @@
   {/snippet}
   {#snippet sym_ops_diff_bar()}
     <div class="sym-ops-list">
-      {#each sym_ops_diff.models as { label, sigma, x, y } (label)}
+      {#each sym_ops_sorted as { label, sigma, x, y } (label)}
         <figure>
           <figcaption>{label} (σ={sigma})</figcaption>
           <BarPlot
@@ -55,13 +62,10 @@
 
 <ul>
   {#each spg_sankeys.models as { key, label, labels, source, target, value } (key)}
+    {@const data = sankey_from_links(source, target, value, labels)}
     <li>
       <h3>{label}</h3>
-      <Sankey
-        data={sankey_from_links(source, target, value, labels)}
-        show_controls={false}
-        style="height: 300px; width: 100%"
-      />
+      <Sankey {data} show_controls={false} style="height: 300px; width: 100%" />
     </li>
   {/each}
 </ul>

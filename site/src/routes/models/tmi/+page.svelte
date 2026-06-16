@@ -1,14 +1,16 @@
 <script lang="ts">
-  import elem_prev from '$figs/element-prevalence-vs-error.json.gz'
-  import hist_largest from '$figs/hist-largest-each-errors-fp-diff.json.gz'
-  import each_errors from '$figs/scatter-largest-each-errors-fp-diff.json.gz'
-  import fp_diff from '$figs/scatter-largest-fp-diff-each-error.json.gz'
+  import elem_prev from '$figs/element-prevalence-vs-error.jsonl'
+  import hist_largest from '$figs/hist-largest-each-errors-fp-diff.jsonl'
+  import each_errors from '$figs/scatter-largest-each-errors-fp-diff.jsonl'
+  import fp_diff from '$figs/scatter-largest-fp-diff-each-error.jsonl'
   import { dashed, plotly_blue, plotly_red, wide_legend } from '$lib/fig-helpers'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
   import DiscoveryMetricFigs from './discovery-metric-figs.md'
   import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
 
+  // payload models arrive pre-styled (stable MODELS colors + leaderboard order) from the
+  // figure_payload plugin, so each dropdown below defaults to a top model as before
   const fp_diff_label = `|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|`
   // mirrors the metrics-table toggle: filters all discovery figures below to the
   // compliant-only cohort (models trained on MP-anchored data)
@@ -37,6 +39,24 @@
 
   // x extent of the shared fingerprint-diff values for the MAE ref line
   const fp_diff_extent = [Math.min(...fp_diff.fp_diff), Math.max(...fp_diff.fp_diff)]
+
+  const numeric_pairs = (
+    x_values: (number | null)[],
+    y_values: (number | null)[],
+    elements: string[] = [],
+  ) => {
+    const x: number[] = []
+    const y: number[] = []
+    const metadata: { elem?: string }[] = []
+    for (const [idx, x_val] of x_values.entries()) {
+      const y_val = y_values[idx]
+      if (x_val == null || y_val == null) continue
+      x.push(x_val)
+      y.push(y_val)
+      if (elements.length) metadata.push({ elem: elements[idx] })
+    }
+    return elements.length ? { x, y, metadata } : { x, y }
+  }
 </script>
 
 <h1>Too Much Information</h1>
@@ -76,13 +96,10 @@ are more dependent on geometry than chemistry.
 </label>
 <ScatterPlot
   series={elem_prev_models.map(({ label, color, y }) => ({
-    x: elem_prev.occurrences,
-    y,
+    ...numeric_pairs(elem_prev.occurrences, y, elem_prev.elements),
     label,
     markers: `points` as const,
     point_style: { fill: color },
-    // one point per element -> element symbol in the tooltip
-    metadata: elem_prev.elements.map((elem) => ({ elem })),
   }))}
   x_axis={{ label: `MP Occurrences`, range: [0, null], format: `~s` }}
   y_axis={{ label: `Error (eV/atom)` }}
@@ -120,8 +137,7 @@ and plotting against that the absolute E<sub>above hull</sub> errors for each mo
 </label>
 <BinnedScatterPlot
   series={[{
-    x: fp_diff.fp_diff,
-    y: fp_diff_active.y,
+    ...numeric_pairs(fp_diff.fp_diff, fp_diff_active.y),
     label: fp_diff_active.label,
     color: fp_diff_active.color,
   }]}

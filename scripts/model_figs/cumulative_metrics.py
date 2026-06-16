@@ -136,6 +136,5 @@ if metrics == ("Precision", "Recall") and show_non_compliant:
     figs.write_site_payload(
         "cumulative-precision-recall",
         {"n_stable": n_stable, "models": cum_pr_models},
-        assign_colors=True,
     )
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

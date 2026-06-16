@@ -86,15 +86,7 @@ fig.show()
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
 img_name = f"box-hull-dist-errors{img_suffix}"
-if show_non_compliant:  # site payload = full model set. order/colors derive from the
-    # MAE rank over the full roster (YAML metrics, available without pred files) so
-    # single-model merge runs write the same payload as a full regen
-    mae_by_label = dfs_metrics[test_subset].loc[pmv.enums.Key.mae.symbol]
-    figs.write_site_payload(
-        "box-hull-dist-errors",
-        {"models": box_models},
-        sort_key=lambda entry: mae_by_label[str(entry["label"])],
-        assign_colors=True,
-    )
+if show_non_compliant:  # site payload = full model set (styling applied client-side)
+    figs.write_site_payload("box-hull-dist-errors", {"models": box_models})
 fig.layout.showlegend = False
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

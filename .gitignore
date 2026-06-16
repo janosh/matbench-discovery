@@ -10,13 +10,8 @@ __pycache__
 .svelte-kit
 
 # datasets
-*.pth.tar
 *.json.gz
-*.json.bz2
 *.csv.*
-*.pkl.gz
-data/**/raw
-data/**/tsne
 !data/mp/2023-02-07-mp-elemental-reference-entries.json.gz
 # committed data-only figure payloads (small, written by matbench_discovery.figs)
 !site/src/figs/*.json.gz
@@ -25,8 +20,8 @@ data/**/tsne
 data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*
-data/wbm/*symprec=*.csv*
-!data/**/*umap-projections.csv.bz2
+# auto-downloaded MD reference trajectories
+data/md/
 
 # model checkpoints and prediction files
 models/**/*.model
@@ -40,7 +35,3 @@ models/_*
 
 # auto-generated docs
 site/src/routes/api/*.md
-
-# large files
-data/*-models-geo-opt-analysis-symprec=*.csv.gz
-.cursor

@@ -122,11 +122,7 @@ for model_label in {*df_spg} - {Key.dft.label}:
     pmv.save_fig(fig, f"{PDF_FIGS}/spg-sankey-{model.key}-{symprec=}.pdf")
 
 # one combined payload for all models (loop order is a set -> sort for determinism)
-figs.write_site_payload(
-    "spg-sankeys",
-    {"models": spg_sankey_models},
-    sort_key=lambda entry: str(entry["key"]).lower(),
-)
+figs.write_site_payload("spg-sankeys", {"models": spg_sankey_models})
 
 
 # %%
@@ -315,10 +311,7 @@ fig_sym_ops_diff.update_xaxes(nticks=10, showticklabels=True)
 fig_sym_ops_diff.update_yaxes(type="log")
 fig_sym_ops_diff.layout.margin.t = 25
 figs.write_site_payload(
-    "sym-ops-diff-bar",
-    {"models": sym_ops_models},
-    id_field="label",
-    sort_key=lambda entry: entry["sigma"],
+    "sym-ops-diff-bar", {"models": sym_ops_models}, id_field="label"
 )
 
 title = "Difference in number of symmetry operations of ML vs DFT-relaxed structures"
@@ -397,10 +390,7 @@ fig_rmsd_cdf.layout.yaxis.update(title="Cumulative", tickformat=".0%", range=[0,
 fig_rmsd_cdf.layout.legend = dict(y=0, xanchor="right", x=1)
 
 figs.write_site_payload(
-    "struct-rmsd-cdf",
-    {"models": rmsd_cdf_models},
-    id_field="label",
-    sort_key=lambda entry: -entry["auc"],  # type: ignore[operator]
+    "struct-rmsd-cdf", {"models": rmsd_cdf_models}, id_field="label"
 )
 
 title = "Cumulative Distribution of RMSD vs DFT-relaxed structures"
