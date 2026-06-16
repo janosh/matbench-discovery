@@ -26,15 +26,17 @@ PASS, FAIL, SKIP = "✓", "✗", "○"
 # --show-non-compliant: site payloads always contain the full model set (pages can
 # filter client-side); --no-show: don't open plotly figs in the browser
 PAYLOAD_FLAGS = ("--auto-download", "--show-non-compliant", "--no-show")
+# each entry is the `uv run` argument string for one payload script; kappa needs the
+# phonons extra (phono3py/phonopy) since kappa_103_analysis imports them at module load
 PAYLOAD_SCRIPTS = (
-    "scripts/model_figs/roc_curves_models.py",
-    "scripts/model_figs/hull_dist_box_plot.py",
-    "scripts/model_figs/cumulative_metrics.py",
-    "scripts/model_figs/rolling_hull_dist_mae_models.py",
-    "scripts/model_figs/tiles_hist_classified_stable_models.py",
-    "scripts/model_figs/tmi-page-figures.py",
-    "scripts/model_figs/kappa_103_analysis.py",
-    "scripts/evals/geo_opt.py",
+    "python scripts/model_figs/roc_curves_models.py",
+    "python scripts/model_figs/hull_dist_box_plot.py",
+    "python scripts/model_figs/cumulative_metrics.py",
+    "python scripts/model_figs/rolling_hull_dist_mae_models.py",
+    "python scripts/model_figs/tiles_hist_classified_stable_models.py",
+    "python scripts/model_figs/tmi-page-figures.py",
+    "--extra phonons python scripts/model_figs/kappa_103_analysis.py",
+    "python scripts/evals/geo_opt.py",
 )
 PARITY_ASSET_DIRS = (
     "site/static/energy-parity/assets",
@@ -243,7 +245,7 @@ def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
     banner(f"Refreshing multi-model site figure payloads{suffix}")
     model_args = ("--models", model.name) if model else ()
     for script in PAYLOAD_SCRIPTS:
-        if not run_cmd("uv", "run", "python", script, *PAYLOAD_FLAGS, *model_args):
+        if not run_cmd("uv", "run", *script.split(), *PAYLOAD_FLAGS, *model_args):
             checks.fail(f"{script} failed")
             return
     if run_cmd(
