@@ -315,6 +315,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # Materials AI Lab at Samsung Electronics
     equflash_29m_oam = auto(), "equflash/equflash-29M-oam.yml"
+    equflashv2_45m_oam = auto(), "equflash/equflashv2-45M-oam.yml"
 
     # Zhejiang Lab
     eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"

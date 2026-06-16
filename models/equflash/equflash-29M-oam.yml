@@ -25,19 +25,20 @@ authors:
     affiliation: Materials AI Lab at Samsung Electronics
     email: yd.mlg.kim@samsung.com
 
-repo: https://github.com/SNU-ARC/flashTP
+repo: https://github.com/SamsungDS/GGNN.git
 doi: TBD
 paper: https://openreview.net/pdf?id=wiQe95BPaB
 pr_url: https://github.com/janosh/matbench-discovery/pull/269
-checkpoint_url: missing
+checkpoint_url: https://figshare.com/ndownloader/files/65435004
 license:
   code: MIT
-  code_url: https://github.com/SNU-ARC/flashTP/blob/main/LICENSE
-  checkpoint: unreleased
+  code_url: https://github.com/SamsungDS/GGNN.git
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://figshare.com/ndownloader/files/65435004
 
 requirements:
-  flashTP_e3nn: 0.1.0
   torch: 2.8.0+cu126
+  cuEquivariance : 0.6.0
   fairchem-core: 1.10.0
 
 openness: CSOD
