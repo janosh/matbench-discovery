@@ -25,8 +25,6 @@ interface HistBins extends XY {
   bar_width: number
 }
 
-type NullableNumber = number | null
-
 // every per-model entry in the discovery-metric payloads carries `key`
 // (= MODELS model_key, e.g. for the compliance-filter join in discovery-metric-figs.md)
 // plus a display `label`
@@ -93,8 +91,8 @@ declare module '$figs/hist-clf-pred-hull-dist.jsonl' {
 declare module '$figs/element-prevalence-vs-error.jsonl' {
   const data: {
     elements: string[] // element symbols, same order as occurrences
-    occurrences: NullableNumber[] // MP training-set occurrence count per element
-    models: { label: string; y: NullableNumber[] }[] // mean error per element
+    occurrences: (number | null)[] // MP training-set occurrence count per element
+    models: { label: string; y: (number | null)[] }[] // mean error per element
   }
   export default data
 }
@@ -102,7 +100,7 @@ declare module '$figs/element-prevalence-vs-error.jsonl' {
 declare module '$figs/scatter-largest-fp-diff-each-error.jsonl' {
   const data: {
     fp_diff: number[] // shared |SSFP_initial - SSFP_final| values
-    models: { label: string; mae: number; y: NullableNumber[] }[]
+    models: { label: string; mae: number; y: (number | null)[] }[]
   }
   export default data
 }
