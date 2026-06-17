@@ -494,7 +494,7 @@ const org_logos = {
   'Orbital Materials': `/logos/orbital-materials.svg`,
   'Peking University': `/logos/peking-university.svg`,
   'Seoul National University': `/logos/seoul-national-university.svg`,
-  'Materials AI Lab at Samsung Electronics': `/logos/samsung-electronics.svg`,
+  'Samsung Electronics': `/logos/samsung-electronics.svg`,
   'Texas A&M University': `/logos/texas-a&m.svg`,
   'Tsinghua University': `/logos/tsinghua-university.svg`,
   'UC San Diego': `/logos/uc-san-diego.svg`,
