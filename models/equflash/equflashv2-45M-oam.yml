@@ -8,8 +8,6 @@ authors:
     affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
     email: robert.cho@samsung.com
     orcid: https://orcid.org/0000-0001-9379-6877
-  - name: Gunhee Kim
-    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
   - name: Geonu Kim
     affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
   - name: Heejae Kim
@@ -23,6 +21,9 @@ authors:
   - name: Jeongmin Choi
     affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
   - name: Yongdeok Kim
+    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+  - name: Gunhee Kim
+    email: ghij.kim@samsung.com
     affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
 
 repo: https://github.com/SamsungDS/GGNN

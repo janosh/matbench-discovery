@@ -88,6 +88,10 @@ export function get_nested_number(
 export const is_finite_num = (value: unknown): value is number =>
   typeof value === `number` && Number.isFinite(value)
 
+// Wrap a numeric value in a sortable span, or render `n/a` when undefined
+const sortable_span = (value: number | undefined): string =>
+  value === undefined ? `n/a` : `<span data-sort-value="${value}">${value}</span>`
+
 // Build dot-separated data access path from a label, preferring `property` (actual
 // data field name) over `key` when the two differ
 export const label_data_path = (label: Label | undefined): string =>
@@ -128,16 +132,9 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
     const { name, slug, n_structures, n_materials = n_structures } = DATASETS[data_name]
     data_urls[data_name] = `/data/${slug}`
 
-    if (n_materials !== n_structures) {
-      tooltip.push(
-        `${name}: ${format_num(n_materials, `,`)} materials (${format_num(
-          n_structures,
-          `,`,
-        )} structures)`,
-      )
-    } else {
-      tooltip.push(`${name}: ${format_num(n_materials, `,`)} materials`)
-    }
+    const structures_note =
+      n_materials !== n_structures ? ` (${format_num(n_structures, `,`)} structures)` : ``
+    tooltip.push(`${name}: ${format_num(n_materials, `,`)} materials${structures_note}`)
   }
 
   const dataset_links = Object.entries(data_urls)
@@ -234,7 +231,7 @@ export function assemble_row_data(
     const metric_num = (label: Label) =>
       get_nested_number(model, `${label.path}.${label.key}`)
 
-    const targets = model.targets.replaceAll(/_(.)/g, `<sub>$1</sub>`)
+    const targets = model.targets.replaceAll(/_(?<char>.)/g, `<sub>$<char></sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
 
     // Add model links
@@ -276,21 +273,12 @@ export function assemble_row_data(
       [HYPERPARAMS.model_params.key]:
         `<span title="${format_num(model.model_params, `,`)} trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,
       [HYPERPARAMS.ase_optimizer.key]: ase_optimizer ?? `n/a`,
-      [HYPERPARAMS.max_steps.key]:
-        max_steps !== undefined
-          ? `<span data-sort-value="${max_steps}">${max_steps}</span>`
-          : `n/a`,
-      [HYPERPARAMS.max_force.key]:
-        max_force !== undefined
-          ? `<span data-sort-value="${max_force}">${max_force}</span>`
-          : `n/a`,
+      [HYPERPARAMS.max_steps.key]: sortable_span(max_steps),
+      [HYPERPARAMS.max_force.key]: sortable_span(max_force),
       [HYPERPARAMS.cell_filter.key]: cell_filter_display
         ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
         : `n/a`,
-      [HYPERPARAMS.n_layers.key]:
-        n_layers !== undefined
-          ? `<span data-sort-value="${n_layers}">${n_layers}</span>`
-          : `n/a`,
+      [HYPERPARAMS.n_layers.key]: sortable_span(n_layers),
       Targets: targets_str,
       [METADATA_COLS.date_added.key]:
         `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,

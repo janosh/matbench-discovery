@@ -130,16 +130,16 @@ describe(`Landing Page`, () => {
     const text = doc_query(`#best-report`).textContent ?? ``
 
     // Extract F1 and DAF values using regex
-    const f1_match = /F1 score of ([\d.]+)/.exec(text)
-    const daf_match = /DAF\) of ([\d.]+)/.exec(text)
+    const f1_match = /F1 score of (?<f1>[\d.]+)/.exec(text)
+    const daf_match = /DAF\) of (?<daf>[\d.]+)/.exec(text)
 
-    if (!f1_match || !daf_match) {
+    if (!f1_match?.groups || !daf_match?.groups) {
       throw new Error(`Could not find F1 or DAF values in text: ${text}`)
     }
-    const f1_value = parseFloat(f1_match[1])
-    const daf_value = parseFloat(daf_match[1])
+    const f1_val = parseFloat(f1_match.groups.f1)
+    const daf_val = parseFloat(daf_match.groups.daf)
 
-    expect(f1_value > 0 && f1_value < 1, `F1=${f1_value} is out of range`).toBe(true)
-    expect(daf_value > 0 && daf_value < 10, `DAF=${daf_value} is out of range`).toBe(true)
+    expect(f1_val > 0 && f1_val < 1, `F1=${f1_val} is out of range`).toBe(true)
+    expect(daf_val > 0 && daf_val < 10, `DAF=${daf_val} is out of range`).toBe(true)
   })
 })
