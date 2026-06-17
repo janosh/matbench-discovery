@@ -274,62 +274,56 @@ class Trajectory:
         species = table.iloc[:n_atoms, col_start["species"]].to_numpy(dtype=str)
         atomic_numbers = np.asarray(symbols2numbers(list(species)))
 
-        # per-frame scalars/tensors from the comment lines
-        def column(pattern: str) -> "list[str | None]":
-            """First capture group of ``pattern`` per comment line (None if absent)."""
-            rgx = re.compile(pattern)
-            return [m.group(1) if (m := rgx.search(c)) else None for c in comments]
-
-        def stack_floats(values: "list[str | None]", width: int) -> "np.ndarray | None":
-            """Parse a per-frame float field into (n_frames, width); None if absent on
-            every frame; raises on mixed availability (matches from_ase semantics).
+        # per-frame floats parsed from the comment lines
+        def comment_field(
+            pattern: str, width: int, *, drop_if_partial: bool = False
+        ) -> "np.ndarray | None":
+            """Flat (n_frames * width,) floats from a per-frame comment field, or None
+            if no frame carries it. Mixed availability raises (matching from_ase) unless
+            ``drop_if_partial``, which returns None instead (md_step's looser rule).
             """
-            present = [val is not None for val in values]
-            if not any(present):
-                return None
-            if not all(present):
+            rgx = re.compile(pattern)
+            found = [m.group(1) if (m := rgx.search(c)) else None for c in comments]
+            n_missing = found.count(None)
+            if n_missing == n_frames or (n_missing and drop_if_partial):
+                return None  # absent on every frame, or partial for an optional field
+            if n_missing:
                 raise ValueError(
-                    f"{path!r}: frame {present.index(False)} is missing a comment "
+                    f"{path!r}: frame {found.index(None)} is missing a comment "
                     "field that other frames provide"
                 )
-            flat = np.fromstring(" ".join(val for val in values if val), sep=" ")
+            flat = np.fromstring(" ".join(v for v in found if v is not None), sep=" ")
             if flat.size != n_frames * width:
                 raise ValueError(
-                    f"{path!r}: expected {width} values/frame, got {flat.size} total"
+                    f"{path!r}: expected {n_frames * width} values for {pattern!r}, "
+                    f"got {flat.size}"
                 )
-            return flat.reshape(n_frames, width)
+            return flat
 
-        lattices = stack_floats(column(r'Lattice="([^"]*)"'), 9)
+        lattices = comment_field(r'Lattice="([^"]*)"', 9)
         if lattices is None:
             raise ValueError(f"{path!r}: every frame must carry a Lattice")
         cell = lattices.reshape(n_frames, 3, 3)  # 9 row-major floats == ASE cell
 
-        energy = stack_floats(column(r"(?<!free_)energy=(\S+)"), 1)
-        energy = energy.reshape(n_frames) if energy is not None else None
+        energy = comment_field(r"(?<!free_)energy=(\S+)", 1)  # width 1 -> (n_frames,)
 
-        # ASE reshapes the 9-vector Fortran-order then takes Voigt [00,11,22,12,02,01]
-        stress = stack_floats(column(r'\bstress="([^"]*)"'), 9)
+        stress = comment_field(r'\bstress="([^"]*)"', 9)
         if stress is not None:
-            stress = stress[:, [0, 4, 8, 7, 6, 3]]
+            # ASE Fortran-reshapes the 9-vec, then Voigt-orders [xx,yy,zz,yz,xz,xy]
+            stress = stress.reshape(n_frames, 9)[:, [0, 4, 8, 7, 6, 3]]
+
+        steps = comment_field(r"\bmd_step=(\S+)", 1, drop_if_partial=True)
+        md_step = steps.astype(int) if steps is not None else None
 
         pbc_match = re.search(r'pbc="([^"]*)"', comments[0])
-        pbc_tokens = pbc_match.group(1).split() if pbc_match else ["T", "T", "T"]
-        pbc_flags = [tok in ("T", "True", "true", "TRUE") for tok in pbc_tokens]
-        if len(pbc_flags) == 1:
-            pbc_flags *= 3
-
-        md_strs = column(r"\bmd_step=(\S+)")
-        md_step = (
-            np.array([int(val) for val in md_strs if val is not None])
-            if all(val is not None for val in md_strs)
-            else None
-        )
+        pbc_str = pbc_match.group(1) if pbc_match else "T T T"
+        pbc = np.array([tok.lower().startswith("t") for tok in pbc_str.split()])
 
         return cls(
             atomic_numbers=atomic_numbers,
             positions=positions,
             cell=cell,
-            pbc=np.array(pbc_flags),
+            pbc=pbc,
             energy=energy,
             forces=forces,
             stress=stress,
