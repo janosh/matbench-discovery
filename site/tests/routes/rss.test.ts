@@ -6,8 +6,10 @@ import { describe, expect, it } from 'vitest'
 
 describe(`RSS feed endpoint`, () => {
   const extract_first_cdata = (xml: string): string => {
-    const match = /<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/.exec(xml)
-    return match?.[1] ?? ``
+    const match = /<description><!\[CDATA\[(?<cdata>[\s\S]*?)\]\]><\/description>/.exec(
+      xml,
+    )
+    return match?.groups?.cdata ?? ``
   }
 
   it(`should return response with correct content type`, () => {
@@ -67,7 +69,9 @@ describe(`RSS feed endpoint`, () => {
     expect(cdata_content).toMatch(/<strong>Parameters:<\/strong>[^<]+/)
 
     // These sections should exist but may not be in every model
-    expect(cdata_content).toMatch(/<strong>(Model Type|Targets|Training Set):<\/strong>/)
+    expect(cdata_content).toMatch(
+      /<strong>(?:Model Type|Targets|Training Set):<\/strong>/,
+    )
 
     // Authors section should appear later in the content
     const metrics_pos = cdata_content.indexOf(`<strong>Metrics:</strong>`)
@@ -180,19 +184,6 @@ describe(`RSS feed endpoint`, () => {
     expect(older_index).not.toBe(-1)
     expect(newer_index).toBeLessThan(older_index)
 
-    // If test fails, this would help with debugging
-    if (newer_index === -1) {
-      console.warn(`Newer model '${newer_model.model_name}' not found in RSS feed`)
-    }
-    if (older_index === -1) {
-      console.warn(`Older model '${older_model.model_name}' not found in RSS feed`)
-    }
-    if (newer_index >= older_index) {
-      console.warn(
-        `Newer model (${newer_model.model_name}, ${newer_model.date_added}) should appear before older model (${older_model.model_name}, ${older_model.date_added})`,
-      )
-    }
-
     // Additional check: all items should have a pubDate in correct format
     const pub_dates = [...xml.matchAll(/<pubDate>[^<]+<\/pubDate>/g)]
     expect(pub_dates.length).toBeGreaterThan(0)
@@ -214,18 +205,18 @@ describe(`RSS feed endpoint`, () => {
 
     // Extract descriptions to check for relative URLs
     const descriptions = [
-      ...xml.matchAll(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/g),
+      ...xml.matchAll(/<description><!\[CDATA\[(?<cdata>[\s\S]*?)\]\]><\/description>/g),
     ]
     expect(descriptions.length).toBeGreaterThan(0)
 
     // URLs in descriptions should be absolute
-    const description = descriptions[0]?.[1] ?? ``
-    const url_matches = [...description.matchAll(/href="([^"]+)"/g)]
+    const description = descriptions[0]?.groups?.cdata ?? ``
+    const url_matches = [...description.matchAll(/href="(?<url>[^"]+)"/g)]
     expect(url_matches.length).toBeGreaterThan(0)
 
     // All URLs should be absolute (start with https://)
-    for (const [, url] of url_matches) {
-      expect(url.startsWith(`https://`)).toBe(true)
+    for (const match of url_matches) {
+      expect(match.groups?.url?.startsWith(`https://`)).toBe(true)
     }
   })
 })

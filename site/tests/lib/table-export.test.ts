@@ -77,6 +77,13 @@ describe(`Table Export Functionality`, () => {
       .mockReturnValue(`mock-url`)
   })
 
+  // Blob handed to URL.createObjectURL during an export (i.e. the downloaded file contents)
+  const exported_blob = (): Blob => {
+    const blob = create_object_url_spy.mock.calls[0]?.[0]
+    expect(blob).toBeInstanceOf(Blob)
+    return blob as Blob
+  }
+
   it.each([
     [`SVG`, generate_svg, toSvg, `.svg`],
     [`PNG`, generate_png, toPng, `.png`],
@@ -141,14 +148,35 @@ describe(`Table Export Functionality`, () => {
     expect(result.url).toBe(`mock-url`)
     expect(click_spy).toHaveBeenCalled()
 
-    const blob = create_object_url_spy.mock.calls[0]?.[0]
-    expect(blob).toBeInstanceOf(Blob)
-    const csv_content = await (blob as Blob).text()
+    const csv_content = await exported_blob().text()
     expect(csv_content).toContain(`Model,F1,DAF,CPS,R2`)
     expect(csv_content).not.toContain(`Org`)
     expect(csv_content).not.toContain(`Links`)
     expect(csv_content).toContain(`Model A`)
     expect(csv_content).toContain(`"Model ""Special"""`)
+  })
+
+  it(`cleans text cells: ignores data-sort-value="null", collapses whitespace, decodes entities`, async () => {
+    document.body.innerHTML = `
+      <table class="heatmap">
+        <thead><tr><th>Model</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr>
+            <td data-sort-value="null">spaced    out    text</td>
+            <td>&amp;lt;tag&amp;gt; &amp;amp; more</td>
+          </tr>
+        </tbody>
+      </table>
+    `
+    const result = generate_csv({ discovery_set: `test` })
+    if (!result) throw new Error(`CSV export returned null`)
+
+    const csv_content = await exported_blob().text()
+    expect(csv_content).toContain(`Model,Notes`)
+    // data-sort-value="null" is ignored, falling through to text with collapsed whitespace
+    expect(csv_content).toContain(`spaced out text`)
+    // double-encoded entities (&amp;lt; -> &lt; -> <) are decoded back to literals
+    expect(csv_content).toContain(`<tag> & more`)
   })
 
   it(`generates Excel with the expected MIME type`, async () => {
@@ -163,9 +191,7 @@ describe(`Table Export Functionality`, () => {
     expect(result.url).toBe(`mock-url`)
     expect(click_spy).toHaveBeenCalled()
 
-    const blob = create_object_url_spy.mock.calls[0]?.[0]
-    expect(blob).toBeInstanceOf(Blob)
-    expect((blob as Blob).type).toBe(
+    expect(exported_blob().type).toBe(
       `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
     )
   })

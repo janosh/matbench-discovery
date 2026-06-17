@@ -58,7 +58,7 @@ describe(`Data Page`, () => {
 
       // Check URL has correct pattern
       const is_valid_url =
-        /^https:\/\/(figshare\.com|.*materialsproject\.(org|com)|github\.com)\/.*$/.test(
+        /^https:\/\/(?:figshare\.com|.*materialsproject\.(?:org|com)|github\.com)\/.*$/.test(
           url ?? ``,
         )
       expect(is_valid_url, `Invalid URL format: ${url}`).toBe(true)

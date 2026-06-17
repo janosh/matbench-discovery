@@ -198,33 +198,29 @@ describe(`make_combined_filter function - skipped since using real implementatio
   })
 })
 
-// Helper function to create metric-specific config
-// Makes it easy to add new metrics in the future
-const create_single_metric_config = (metric_name: string, weight = 1): CpsConfig => {
-  const result: CpsConfig = {
-    ...DEFAULT_CPS_CONFIG,
-    F1: { ...DEFAULT_CPS_CONFIG.F1, weight: metric_name === `F1` ? weight : 0 },
-    κ_SRME: {
-      ...DEFAULT_CPS_CONFIG.κ_SRME,
-      weight: metric_name === `κ_SRME` ? weight : 0,
-    },
-    RMSD: {
-      ...DEFAULT_CPS_CONFIG.RMSD,
-      weight: metric_name === `RMSD` ? weight : 0,
-    },
-  }
-  return result
-}
+// Build a CpsConfig from DEFAULT_CPS_CONFIG, overriding the given metric weights
+// (any metric not listed gets weight 0)
+const make_cps_config = (
+  weights: Partial<Record<keyof CpsConfig, number>>,
+): CpsConfig => ({
+  ...DEFAULT_CPS_CONFIG,
+  F1: { ...DEFAULT_CPS_CONFIG.F1, weight: weights.F1 ?? 0 },
+  κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: weights.κ_SRME ?? 0 },
+  RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: weights.RMSD ?? 0 },
+})
 
-// Helper to create equal weight config
+// Config where only `metric_name` carries weight (others zero)
+const create_single_metric_config = (metric_name: string, weight = 1): CpsConfig =>
+  make_cps_config({
+    F1: metric_name === `F1` ? weight : 0,
+    κ_SRME: metric_name === `κ_SRME` ? weight : 0,
+    RMSD: metric_name === `RMSD` ? weight : 0,
+  })
+
+// Config splitting weight equally across all metrics
 const create_equal_weights_config = (weight_count = 3): CpsConfig => {
   const equal_weight = 1 / weight_count
-  return {
-    ...DEFAULT_CPS_CONFIG,
-    F1: { ...DEFAULT_CPS_CONFIG.F1, weight: equal_weight },
-    κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: equal_weight },
-    RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: equal_weight },
-  }
+  return make_cps_config({ F1: equal_weight, κ_SRME: equal_weight, RMSD: equal_weight })
 }
 
 describe(`calculate_cps`, () => {
@@ -322,29 +318,10 @@ describe(`calculate_cps`, () => {
   })
 
   describe(`metric normalization`, () => {
-    it.each([
-      [0.001, 0.9933],
-      [0.15, 0],
-      [0.075, 0.5],
-    ])(`normalizes RMSD value %f correctly to %f`, (rmsd_value, expected_score) => {
-      const rmsd_only_config = create_single_metric_config(`RMSD`)
-      const score = calculate_cps(undefined, rmsd_value, undefined, rmsd_only_config)
-      expect(score).toBeCloseTo(expected_score, 4)
-    })
-
-    it.each([
-      [0.1, 0.95],
-      [2.0, 0],
-      [1.0, 0.5],
-    ])(`normalizes kappa value %f correctly to %f`, (kappa_value, expected_score) => {
-      const kappa_only_config = create_single_metric_config(`κ_SRME`)
-      const score = calculate_cps(undefined, undefined, kappa_value, kappa_only_config)
-      expect(score).toBeCloseTo(expected_score, 2)
-    })
-
-    // This tests the normalization over the full range
+    // RMSD: lower=better, linearly mapped from [0, RMSD_BASELINE=0.15] to [1, 0]
     it.each([
       [0, 1],
+      [0.001, 0.9933],
       [0.015, 0.9],
       [0.03, 0.8],
       [0.05, 0.6667],
@@ -353,14 +330,16 @@ describe(`calculate_cps`, () => {
       [0.125, 0.1667],
       [0.15, 0],
       [0.175, 0],
-    ])(`validates RMSD normalization: %f → %f`, (rmsd, expected_score) => {
-      const rmsd_only_config = create_single_metric_config(`RMSD`)
-      const score = calculate_cps(undefined, rmsd, undefined, rmsd_only_config)
+    ])(`normalizes RMSD %f → %f`, (rmsd, expected_score) => {
+      const config = create_single_metric_config(`RMSD`)
+      const score = calculate_cps(undefined, rmsd, undefined, config)
       expect(score).toBeCloseTo(expected_score, 4)
     })
 
+    // κ_SRME: lower=better, linearly mapped from [0, 2] to [1, 0]
     it.each([
       [0, 1],
+      [0.1, 0.95],
       [0.2, 0.9],
       [0.4, 0.8],
       [0.6, 0.7],
@@ -372,9 +351,9 @@ describe(`calculate_cps`, () => {
       [1.8, 0.1],
       [2.0, 0],
       [2.2, 0],
-    ])(`validates kappa normalization: %f → %f`, (kappa, expected_score) => {
-      const kappa_only_config = create_single_metric_config(`κ_SRME`)
-      const score = calculate_cps(undefined, undefined, kappa, kappa_only_config)
+    ])(`normalizes κ_SRME %f → %f`, (kappa, expected_score) => {
+      const config = create_single_metric_config(`κ_SRME`)
+      const score = calculate_cps(undefined, undefined, kappa, config)
       expect(score).toBeCloseTo(expected_score, 4)
     })
   })
@@ -435,12 +414,7 @@ describe(`calculate_cps`, () => {
 
     it(`handles empty weights configuration`, () => {
       // Create a config with all weights set to 0
-      const empty_weights_config: CpsConfig = {
-        ...DEFAULT_CPS_CONFIG,
-        F1: { ...DEFAULT_CPS_CONFIG.F1, weight: 0 },
-        κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: 0 },
-        RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: 0 },
-      }
+      const empty_weights_config = make_cps_config({})
 
       // With all weights at 0, the score should be 0
       const score = calculate_cps(0.8, 0.01, 0.5, empty_weights_config)
@@ -449,12 +423,11 @@ describe(`calculate_cps`, () => {
 
     it(`normalizes weights that do not sum to 1`, () => {
       // Create a config with weights that sum to 2
-      const unnormalized_weights_config: CpsConfig = {
-        ...DEFAULT_CPS_CONFIG,
-        F1: { ...DEFAULT_CPS_CONFIG.F1, weight: 1.0 },
-        κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: 0.5 },
-        RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: 0.5 },
-      }
+      const unnormalized_weights_config = make_cps_config({
+        F1: 1.0,
+        κ_SRME: 0.5,
+        RMSD: 0.5,
+      })
 
       // Perfect F1, poor RMSD and kappa
       const score = calculate_cps(1.0, 0.15, 2.0, unnormalized_weights_config)
@@ -466,12 +439,7 @@ describe(`calculate_cps`, () => {
 
     it(`handles very small weights correctly`, () => {
       // Create a config with a very small weight for RMSD
-      const small_weights_config: CpsConfig = {
-        ...DEFAULT_CPS_CONFIG,
-        F1: { ...DEFAULT_CPS_CONFIG.F1, weight: 0.999 },
-        κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: 0 },
-        RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: 0.001 },
-      }
+      const small_weights_config = make_cps_config({ F1: 0.999, RMSD: 0.001 })
 
       // With F1=1.0 and RMSD=0.15 (worst value), expect score to be very close to F1 value
       // but slightly less due to tiny RMSD contribution
@@ -491,14 +459,12 @@ describe(`assemble_row_data`, () => {
     // Ensure model_key exists before checking includes
     model.model_key ? test_model_keys.includes(model.model_key) : false
 
+  // assemble rows for the two test models with show_energy_only/non_compliant/compliant all on
+  const get_test_rows = () =>
+    assemble_row_data(`unique_prototypes`, model_filter, true, true, true)
+
   it(`returns formatted rows for selected models with expected properties`, () => {
-    const rows = assemble_row_data(
-      `unique_prototypes`,
-      model_filter, // Pass the filter for specific models
-      true, // show_energy_only
-      true, // show_non_compliant
-      true, // show_compliant
-    )
+    const rows = get_test_rows()
 
     // Expect only the selected models
     expect(rows).toHaveLength(test_model_keys.length)
@@ -511,18 +477,12 @@ describe(`assemble_row_data`, () => {
     )
     // n_layers should be present as either a sortable span or 'n/a'
     const n_layers_val = mace_row?.n_layers as string
-    expect(n_layers_val).toMatch(/^(<span data-sort-value="\d+">\d+<\/span>|n\/a)$/)
+    expect(n_layers_val).toMatch(/^(?:<span data-sort-value="\d+">\d+<\/span>|n\/a)$/)
     expect(chgnet_row?.Model).toContain(`chgnet-0.3.0`)
   })
 
   it(`sorts selected models by CPS in descending order`, () => {
-    const rows = assemble_row_data(
-      `unique_prototypes`,
-      model_filter, // Pass the filter for specific models
-      true, // show_energy_only
-      true, // show_non_compliant
-      true, // show_compliant
-    )
+    const rows = get_test_rows()
 
     expect(rows).toHaveLength(test_model_keys.length)
 
@@ -670,48 +630,38 @@ describe(`Model Sorting Logic`, () => {
       },
     ] as unknown as ModelData[]
 
-  it(`sorts models by numeric metrics correctly with NaN handling`, () => {
-    const test_models = create_test_models()
-    const { F1, Accuracy, κ_SRME } = ALL_METRICS
-
-    // Test cases for different metrics and sort orders
-    const test_cases = [
-      {
-        metric: `${F1.path}.${F1.key}`,
-        order: `desc` as const,
-        expected_order: [`aaa_model`, `mmm_model`, `zzz_model`, `missing_model`],
-      },
-      {
-        metric: `${Accuracy.path}.${Accuracy.key}`,
-        order: `asc` as const,
-        expected_order: [`zzz_model`, `aaa_model`, `mmm_model`, `missing_model`],
-      },
-      {
-        metric: `${κ_SRME.path}.${κ_SRME.key}`,
-        order: `asc` as const,
-        expected_order: [`zzz_model`, `mmm_model`, `aaa_model`, `missing_model`],
-      },
-    ]
-
-    for (const { metric, order, expected_order } of test_cases) {
-      const sorted_models = test_models.toSorted(sort_models(metric, order))
-
-      // Verify the order matches expected
-      expected_order.forEach((model_key, idx) => {
-        expect(sorted_models[idx].model_key, metric).toBe(model_key)
-      })
-    }
-
-    // Add descending-Accuracy test to assert NaN handling is symmetric
-    const sorted_desc = test_models.toSorted(
-      sort_models(`${Accuracy.path}.${Accuracy.key}`, `desc`),
-    )
-    expect(sorted_desc.map((m) => m.model_key)).toStrictEqual([
-      `aaa_model`,
-      `zzz_model`,
-      `mmm_model`,
-      `missing_model`,
-    ])
+  // mmm_model has NaN Accuracy and missing_model lacks metrics, so these cases also
+  // assert NaN/missing values sort last for every metric and direction (incl. symmetric
+  // Accuracy asc/desc)
+  it.each<[string, `asc` | `desc`, string[]]>([
+    [
+      `${ALL_METRICS.F1.path}.${ALL_METRICS.F1.key}`,
+      `desc`,
+      [`aaa_model`, `mmm_model`, `zzz_model`, `missing_model`],
+    ],
+    [
+      `${ALL_METRICS.Accuracy.path}.${ALL_METRICS.Accuracy.key}`,
+      `asc`,
+      [`zzz_model`, `aaa_model`, `mmm_model`, `missing_model`],
+    ],
+    [
+      `${ALL_METRICS.Accuracy.path}.${ALL_METRICS.Accuracy.key}`,
+      `desc`,
+      [`aaa_model`, `zzz_model`, `mmm_model`, `missing_model`],
+    ],
+    [
+      `${ALL_METRICS.κ_SRME.path}.${ALL_METRICS.κ_SRME.key}`,
+      `asc`,
+      [`zzz_model`, `mmm_model`, `aaa_model`, `missing_model`],
+    ],
+    [
+      `metrics.discovery.unique_prototypes.missing_preds`,
+      `asc`,
+      [`aaa_model`, `mmm_model`, `zzz_model`, `missing_model`],
+    ],
+  ])(`sorts test models by %s (%s)`, (metric, order, expected_order) => {
+    const sorted = create_test_models().toSorted(sort_models(metric, order))
+    expect(sorted.map((model) => model.model_key)).toStrictEqual(expected_order)
   })
 
   it(`returns 0 for two models that both have NaN values (consistent comparator)`, () => {
@@ -775,19 +725,6 @@ describe(`Model Sorting Logic`, () => {
     expect(models_for_desc.map((m) => m.model_key).toSorted(str_cmp)).toStrictEqual(
       expected_model_keys.toSorted(str_cmp),
     )
-  })
-
-  it(`sorts models by missing predictions (asc)`, () => {
-    const models = create_test_models()
-    const sorted = models.toSorted(
-      sort_models(`metrics.discovery.unique_prototypes.missing_preds`, `asc`),
-    )
-    expect(sorted.map((m) => m.model_key)).toStrictEqual([
-      `aaa_model`,
-      `mmm_model`,
-      `zzz_model`,
-      `missing_model`,
-    ])
   })
 
   it(`handles edge cases with missing or extreme metric values`, () => {

@@ -1,5 +1,5 @@
-import { default as DATASETS } from '$data/datasets.yml'
-import { default as data_files } from '$pkg/data-files.yml'
+import DATASETS from '$data/datasets.yml'
+import data_files from '$pkg/data-files.yml'
 import rehypeStringify from 'rehype-stringify'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
@@ -18,7 +18,11 @@ export { default as PtableInset } from './PtableInset.svelte'
 export { default as SelectToggle } from './SelectToggle.svelte'
 export { default as TableControls } from './TableControls.svelte'
 export * from './types'
-export { data_files, DATASETS }
+// these resolve to the same singleton module objects enriched in-place below
+// (DATASETS gets slug/description_html, data_files entries get html), so $lib
+// consumers receive the mutated objects — not pristine re-imports
+export { default as DATASETS } from '$data/datasets.yml'
+export { default as data_files } from '$pkg/data-files.yml'
 
 const md_parser = unified().use(remarkParse).use(remarkRehype).use(rehypeStringify)
 const md_to_html = (md: string): string => String(md_parser.processSync(md)?.value ?? ``)

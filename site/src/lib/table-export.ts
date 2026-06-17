@@ -32,6 +32,14 @@ function trigger_download(url: string, filename: string): void {
   anchor.click()
 }
 
+// Create an object URL for a blob, trigger its download, then schedule cleanup
+function download_blob(blob: Blob, filename: string): ExportResult {
+  const url = URL.createObjectURL(blob)
+  trigger_download(url, filename)
+  setTimeout(() => URL.revokeObjectURL(url), 100)
+  return { filename, url }
+}
+
 // Headers and column indices to export, excluding SVG icon columns (Org and Links)
 function get_export_columns(table_el: Element): { headers: string[]; indices: number[] } {
   const header_rows = table_el.querySelectorAll(`thead tr`)
@@ -149,15 +157,16 @@ function clean_table_for_export(table_clone: HTMLElement): void {
 // Detect current theme and get appropriate colors
 function get_theme_colors(): { background: string; text: string } {
   const root_styles = getComputedStyle(document.documentElement)
+  const mode = is_dark_mode() ? `dark` : `light`
+  const fallback =
+    mode === `dark`
+      ? { background: `#061e25`, text: `rgb(208, 208, 208)` }
+      : { background: `#fefefe`, text: `#1f2937` }
 
-  if (is_dark_mode()) {
-    const background = root_styles.getPropertyValue(`--dark-page-bg`) || `#061e25`
-    const text = root_styles.getPropertyValue(`--dark-text`) || `rgb(208, 208, 208)`
-    return { background, text }
+  return {
+    background: root_styles.getPropertyValue(`--${mode}-page-bg`) || fallback.background,
+    text: root_styles.getPropertyValue(`--${mode}-text`) || fallback.text,
   }
-  const background = root_styles.getPropertyValue(`--light-page-bg`) || `#fefefe`
-  const text = root_styles.getPropertyValue(`--light-text`) || `#1f2937`
-  return { background, text }
 }
 
 // Create export container with proper styling
@@ -269,10 +278,7 @@ async function generate_image(
         filter: create_export_filter,
       })
       const blob = await fetch(svg_data_url).then((res) => res.blob())
-      const url = URL.createObjectURL(blob)
-      trigger_download(url, filename)
-      setTimeout(() => URL.revokeObjectURL(url), 100)
-      return { filename, url }
+      return download_blob(blob, filename)
     }
 
     // Generate PNG with precise dimensions
@@ -334,45 +340,37 @@ function extract_table_data(): { headers: string[]; rows: (string | number)[][] 
     // Only include cells from columns we want to export
     indices.forEach((col_index) => {
       const cell = all_cells[col_index]
-      const header = headers[row_data.length] // Get corresponding header
-
-      if (cell) {
-        let cell_value: string | number = ``
-
-        // Check if cell has a data-sort-value attribute (for formatted numbers)
-        const sort_value = cell.getAttribute(`data-sort-value`)
-        if (sort_value && sort_value !== `null`) {
-          // Try to parse as number
-          const num_value = Number(sort_value)
-          cell_value = isNaN(num_value)
-            ? sort_value
-            : format_value_for_export(num_value, header)
-        } else {
-          // Extract text content, handling HTML content
-          const text_content = cell.textContent?.trim() || ``
-
-          // Try to parse as number if it looks like one
-          const num_value = Number(text_content)
-          if (!isNaN(num_value) && text_content !== `` && text_content !== `n/a`) {
-            cell_value = format_value_for_export(num_value, header)
-          } else {
-            cell_value = text_content
-              .replaceAll(`&lt;`, `<`)
-              .replaceAll(`&gt;`, `>`)
-              .replaceAll(`&amp;`, `&`)
-              .replaceAll(/\s+/g, ` `)
-              .trim()
-          }
-        }
-
-        row_data.push(cell_value)
-      }
+      if (cell) row_data.push(format_cell(cell, headers[row_data.length]))
     })
 
     formatted_rows.push(row_data)
   })
 
   return { headers, rows: formatted_rows }
+}
+
+// Convert a table cell to its exported value: numbers (from data-sort-value or
+// text) are formatted per the column's label spec; otherwise return cleaned text
+function format_cell(cell: Element, header: string): string | number {
+  // Prefer data-sort-value attribute (holds the unformatted number)
+  const sort_value = cell.getAttribute(`data-sort-value`)
+  if (sort_value && sort_value !== `null`) {
+    const num_value = Number(sort_value)
+    return isNaN(num_value) ? sort_value : format_value_for_export(num_value, header)
+  }
+
+  // Fall back to text content, parsing as a number when it looks like one
+  const text_content = cell.textContent?.trim() || ``
+  const num_value = Number(text_content)
+  if (!isNaN(num_value) && text_content !== `` && text_content !== `n/a`) {
+    return format_value_for_export(num_value, header)
+  }
+  return text_content
+    .replaceAll(`&lt;`, `<`)
+    .replaceAll(`&gt;`, `>`)
+    .replaceAll(`&amp;`, `&`)
+    .replaceAll(/\s+/g, ` `)
+    .trim()
 }
 
 // Simple formatting function for export values
@@ -382,7 +380,7 @@ function format_number(value: number, format?: string): number | string {
     return value.toExponential(2)
 
   // Parse decimal places from format strings like '.2f' (default 3)
-  const n_decimals = Number(format?.match(/\.(\d)f/)?.[1] ?? 3)
+  const n_decimals = Number(format?.match(/\.(?<decimals>\d)f/)?.groups?.decimals ?? 3)
   const factor = 10 ** n_decimals
   return Math.round(value * factor) / factor
 }
@@ -433,12 +431,8 @@ export function generate_csv({
 
     // Create and download CSV file
     const blob = new Blob([csv_content], { type: `text/csv;charset=utf-8;` })
-    const url = URL.createObjectURL(blob)
     const filename = generate_filename(`csv`, show_non_compliant, discovery_set)
-    trigger_download(url, filename)
-    setTimeout(() => URL.revokeObjectURL(url), 100)
-
-    return { filename, url }
+    return download_blob(blob, filename)
   } catch (error) {
     console.error(`Error generating CSV:`, error)
     return null
@@ -493,12 +487,8 @@ export async function generate_excel({
     const blob = new Blob([excel_buffer], {
       type: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
     })
-    const url = URL.createObjectURL(blob)
     const filename = generate_filename(`xlsx`, show_non_compliant, discovery_set)
-    trigger_download(url, filename)
-    setTimeout(() => URL.revokeObjectURL(url), 100)
-
-    return { filename, url }
+    return download_blob(blob, filename)
   } catch (error) {
     console.error(`Error generating Excel:`, error)
     return null

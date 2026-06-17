@@ -156,28 +156,18 @@ export default defineConfig({
     setupFiles: `tests/index.ts`,
     dir: `tests`,
     include: [`**/*.test.ts`, `**/*.test.svelte.ts`],
+    // matterviz imports @spglib/moyo-wasm whose wasm binary can't load under vitest/node
+    // (the .wasm references a missing _bg.js glue), so stub both the bare package and its
+    // `/moyo_wasm_bg.wasm?url` subpath with a no-op mock
+    alias: [
+      {
+        find: /^@spglib\/moyo-wasm(?:$|\/moyo_wasm_bg\.wasm)/,
+        replacement: path.resolve(`tests/mocks/moyo-wasm.ts`),
+      },
+    ],
   },
 
   resolve: {
     conditions: process.env.VITEST ? [`browser`] : undefined,
-    // TEMP (remove once matterviz >=0.4.1 is released): matterviz@0.4.0 pins dompurify
-    // 3.4.8, which drops the text node before <sub> (mangling labels like κ<sub>SRME</sub>
-    // → SRME in tables/tooltips/legends). pnpm 11 only honors version overrides from
-    // pnpm-workspace.yaml, so redirect every dompurify import to our pinned 3.4.7 devDep.
-    alias: [
-      {
-        find: /^dompurify$/,
-        replacement: new URL(`node_modules/dompurify`, import.meta.url).pathname,
-      },
-      // Mock wasm-dependent modules to avoid loading issues in jsdom
-      ...(process.env.VITEST
-        ? [
-            {
-              find: /^@spglib\/moyo-wasm.*/,
-              replacement: new URL(`tests/mocks/moyo-wasm.ts`, import.meta.url).pathname,
-            },
-          ]
-        : []),
-    ],
   },
 })

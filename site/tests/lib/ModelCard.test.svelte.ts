@@ -1,7 +1,7 @@
-import { DATASETS, ModelCard, MODELS, type ModelData } from '$lib'
+import { DATASETS, ModelCard, MODELS } from '$lib'
 import { ALL_METRICS } from '$lib/labels'
 import { format_num } from 'matterviz'
-import { mount } from 'svelte'
+import { type ComponentProps, mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 
 describe(`ModelCard`, () => {
@@ -10,16 +10,21 @@ describe(`ModelCard`, () => {
   if (!found_model) throw new Error(`Could not find mace-mp-0 model in MODELS`)
   const model = found_model
 
-  const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((metric_key) =>
-    Object.assign({}, ALL_METRICS[metric_key], { key: metric_key }),
-  )
+  const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((metric_key) => ({
+    ...ALL_METRICS[metric_key],
+    key: metric_key,
+  }))
+
+  // Mount ModelCard with the shared model/metrics, overriding props per test
+  const mount_card = (overrides: Partial<ComponentProps<typeof ModelCard>> = {}) =>
+    mount(ModelCard, {
+      target: document.body,
+      props: { model, metrics, sort_by: `F1`, ...overrides },
+    })
 
   describe(`Basic Rendering`, () => {
     it(`renders model header and basic info`, () => {
-      mount(ModelCard, {
-        target: document.body,
-        props: { model, metrics, sort_by: `F1` },
-      })
+      mount_card()
 
       const header = document.querySelector(`h2`)
       expect(header?.textContent).toContain(`MACE`)
@@ -52,19 +57,8 @@ describe(`ModelCard`, () => {
     })
 
     it(`handles missing optional fields gracefully`, () => {
-      mount(ModelCard, {
-        target: document.body,
-        props: {
-          model: {
-            ...model,
-            date_published: undefined,
-            paper: undefined,
-            url: undefined,
-          } as unknown as ModelData,
-          metrics,
-          sort_by: `F1`,
-        },
-      })
+      // empty strings are falsy, so the component treats these as missing
+      mount_card({ model: { ...model, date_published: ``, paper: ``, url: `` } })
 
       const links = document.querySelectorAll(`nav a`)
       expect(links.length).toBeGreaterThan(0)
@@ -73,10 +67,7 @@ describe(`ModelCard`, () => {
   })
 
   it(`handles training set display`, () => {
-    mount(ModelCard, {
-      target: document.body,
-      props: { model, metrics, sort_by: `F1` },
-    })
+    mount_card()
 
     // Look for span containing "Training set" text
     const training_set = [...document.querySelectorAll(`section.metadata span`)].find(
@@ -100,10 +91,7 @@ describe(`ModelCard`, () => {
 
   describe(`Metrics Display`, () => {
     it(`displays metrics with correct formatting`, () => {
-      mount(ModelCard, {
-        target: document.body,
-        props: { model, metrics, sort_by: `F1` },
-      })
+      mount_card()
 
       const metrics_lis = document.querySelectorAll(`.metrics li`)
       expect(metrics_lis.length).toBeGreaterThan(0)
@@ -133,10 +121,7 @@ describe(`ModelCard`, () => {
     it(`handles missing metrics`, () => {
       const model_without_metrics = { ...model, metrics: undefined }
 
-      mount(ModelCard, {
-        target: document.body,
-        props: { model: model_without_metrics, metrics, sort_by: `F1` },
-      })
+      mount_card({ model: model_without_metrics })
 
       const metrics_li_strong = document.querySelectorAll(`.metrics li strong`)[0]
       expect(metrics_li_strong.textContent?.trim()).toBe(`n/a`)
@@ -146,10 +131,7 @@ describe(`ModelCard`, () => {
   describe(`Expandable Details`, () => {
     it(`toggles details section visibility`, () => {
       let show_details = $state(false)
-      mount(ModelCard, {
-        target: document.body,
-        props: { model, metrics, sort_by: `F1`, show_details },
-      })
+      mount_card({ show_details })
 
       // Initially only metrics section should be visible
       const initial_sections = document.querySelectorAll(`section:not(.metrics) h3`)
@@ -162,10 +144,7 @@ describe(`ModelCard`, () => {
     })
 
     it(`displays authors and package versions correctly`, () => {
-      mount(ModelCard, {
-        target: document.body,
-        props: { model, metrics, sort_by: `F1`, show_details: true },
-      })
+      mount_card({ show_details: true })
 
       // Check author info within the list item
       const author_li = document.querySelector(`section:first-child ul li`)
@@ -184,10 +163,7 @@ describe(`ModelCard`, () => {
 
   describe(`regression tests for default values`, () => {
     it(`verifies show_details defaults to false to catch regressions`, () => {
-      mount(ModelCard, {
-        target: document.body,
-        props: { model, metrics, sort_by: `F1` },
-      })
+      mount_card()
 
       // Test show_details default (should be false - no detail sections visible)
       const detail_sections = document.querySelectorAll(
