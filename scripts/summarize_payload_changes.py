@@ -2,8 +2,8 @@
 
 Diffs each regenerated JSONL figure payload (site/src/figs/*.jsonl + the route-local
 per-element-errors.jsonl) against its committed (HEAD) version and prints a markdown
-bullet list of which payloads grew and which models were added. The update-site-figs
-workflow captures stdout into the PR body. Run from the repo root.
+bullet list of which payloads changed and which models were added/removed. The
+update-site-figs workflow captures stdout into the PR body. Run from the repo root.
 """
 
 import json
@@ -19,18 +19,31 @@ def roster(text: str) -> set[str]:
     """Set of model ids in one .jsonl payload (one JSON object per line; the lone
     ``{"_base": ...}`` line and metadata-only columns are not models).
     """
-    ids: set[str] = set()
-    for line in text.splitlines():
-        if not (line := line.strip()):
-            continue
-        entry = json.loads(line)
-        if set(entry) != {"_base"}:  # the lone _base line isn't a model
-            ids.add(str(entry.get("key") or entry.get("label")))
-    return ids - METADATA_KEYS
+    entries = (json.loads(line) for line in text.splitlines() if line.strip())
+    # the lone {"_base": ...} line isn't a model; drop metadata-only columns too
+    return {
+        str(entry.get("key") or entry.get("label"))
+        for entry in entries
+        if set(entry) != {"_base"}
+    } - METADATA_KEYS
+
+
+def format_change(name: str, was: set[str], now: set[str]) -> str | None:
+    """Markdown bullet for one payload's roster change, or None if unchanged. Lists
+    both additions (+N) and removals (-N) so the count delta is always explained.
+    """
+    if was == now:
+        return None
+    # was != now guarantees at least one non-empty delta, so changes is never empty
+    deltas = {"+": sorted(now - was), "-": sorted(was - now)}
+    changes = [
+        f"{sign}{len(ids)}: {', '.join(ids)}" for sign, ids in deltas.items() if ids
+    ]
+    return f"- `{name}`: {len(was)} → {len(now)} ({'; '.join(changes)})"
 
 
 def summarize() -> str:
-    """Markdown summary of roster growth across all committed JSONL payloads."""
+    """Markdown summary of roster changes across all committed JSONL payloads."""
     paths = [
         *glob("site/src/figs/*.jsonl"),
         "site/src/routes/models/per-element-each-errors.jsonl",
@@ -43,12 +56,9 @@ def summarize() -> str:
         git_show = ["git", "show", f"HEAD:{path}"]
         head = subprocess.run(git_show, capture_output=True, text=True, check=False)
         was = roster(head.stdout) if head.returncode == 0 else set()
-        if was == now:
-            continue
-        added = sorted(now - was)
         name = os.path.basename(path).removesuffix(".jsonl")
-        tail = f" (+{len(added)}: {', '.join(added)})" if added else ""
-        rows.append(f"- `{name}`: {len(was)} → {len(now)}{tail}")
+        if (row := format_change(name, was, now)) is not None:
+            rows.append(row)
 
     body = "\n".join(rows) or "_No roster changes (data-only refresh)._"
     return f"### Model-count changes\n\n{body}"
