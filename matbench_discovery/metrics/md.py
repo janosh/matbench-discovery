@@ -42,8 +42,8 @@ def _as_trajectory(trajectory: "Trajectory | Sequence[Atoms]") -> Trajectory:
 
 # units of per-system metric columns shared between eval scripts and aggregation
 METRIC_UNITS = {
-    "energy_rmse": "eV/atom",
-    "force_rmse": "eV/Å",
+    "energy_rmse": "meV/atom",
+    "force_rmse": "meV/Å",
     "rdf_error": "%",
     "vdos_error": "%",
     "pressure_mae": "GPa",
@@ -249,26 +249,6 @@ def calc_vdos_error(
     return float(numerator / 2 * 100)
 
 
-def calc_pressure(stress: np.ndarray) -> float:
-    """Pressure in GPa from an ASE stress tensor (paper Eq. 5): P = -Tr(sigma)/3.
-
-    Accepts stress in eV/Å³ as Voigt 6-vector [xx, yy, zz, yz, xz, xy] or (3, 3)
-    matrix, following ASE conventions.
-
-    Assumes 3D-periodic bulk systems and averages all three diagonal stress
-    components. CFPMD-26 satisfies this; add an explicit branch for slab/2D systems
-    if any are added.
-    """
-    stress = np.asarray(stress, dtype=float)
-    if stress.shape == (6,):
-        trace = stress[:3].sum()
-    elif stress.shape == (3, 3):
-        trace = np.trace(stress)
-    else:
-        raise ValueError(f"Expected stress of shape (6,) or (3, 3), got {stress.shape}")
-    return float(-trace / 3 / units.GPa)
-
-
 def get_trajectory_pressures(
     trajectory: "Trajectory | Sequence[Atoms]",
 ) -> np.ndarray:
@@ -357,43 +337,89 @@ def calc_combined_error(rdf_error: float, vdos_error: float) -> float:
     return float((rdf_error**2 + vdos_error**2) / total)
 
 
-def calc_energy_force_rmse(
+def predict_on_reference(
     trajectory: "Trajectory | Sequence[Atoms]", calculator: "Calculator"
-) -> dict[str, float]:
-    """Energy (eV/atom) and force (eV/Å) RMSE of calculator single-point predictions
-    on reference MD frames carrying DFT energies and forces (paper Eq. 1-2).
+) -> dict[str, np.ndarray]:
+    """Single-point the calculator on every reference frame, returning the per-frame
+    quantities the energy/force metrics are built from: predicted potential energy
+    (``e_pred``) and summed squared force error vs the reference (``force_se``), each a
+    (n_frames,) array.
 
-    Energies are compared per atom, preserving constant offsets as specified by Eq. 1.
-    This means energy RMSE can be dominated by differing absolute energy references.
+    This is the one GPU-expensive step of MD evaluation. Persisting its output (two tiny
+    float arrays) lets the energy/force metric *definitions* be re-derived later on CPU
+    via ``energy_force_rmse_from_preds``, without re-running the model.
     """
     traj = _as_trajectory(trajectory)
     if traj.n_frames == 0:
-        raise ValueError("Cannot compute energy/force RMSE of empty trajectory")
+        raise ValueError("Cannot evaluate a calculator on an empty trajectory")
     if traj.energy is None or traj.forces is None:
         raise ValueError("trajectory lacks reference energy/forces for RMSE")
 
-    energy_errs_per_atom: list[float] = []
-    force_sq_err_sum, n_force_components = 0.0, 0
+    e_pred = np.empty(traj.n_frames)
+    force_se = np.empty(traj.n_frames)
     for idx in range(traj.n_frames):
-        ref_forces = traj.forces[idx]
         # fresh Atoms (no stored results) so the calculator computes the prediction
-        pred_atoms = Atoms(
+        atoms = Atoms(
             numbers=traj.atomic_numbers,
             positions=traj.positions[idx],
             cell=traj.cell[idx],
             pbc=traj.pbc,
         )
-        pred_atoms.calc = calculator
-        energy_errs_per_atom.append(
-            (pred_atoms.get_potential_energy() - traj.energy[idx]) / traj.n_atoms
-        )
-        force_sq_err_sum += ((pred_atoms.get_forces() - ref_forces) ** 2).sum()
-        n_force_components += ref_forces.size
+        atoms.calc = calculator
+        e_pred[idx] = atoms.get_potential_energy()
+        force_se[idx] = ((atoms.get_forces() - traj.forces[idx]) ** 2).sum()
+    return {"e_pred": e_pred, "force_se": force_se}
 
+
+def energy_force_rmse_from_preds(
+    trajectory: "Trajectory | Sequence[Atoms]", predictions: dict[str, np.ndarray]
+) -> dict[str, float]:
+    """Energy-fluctuation (eV/atom) and force (eV/Å) RMSE from per-frame ``predictions``
+    (``predict_on_reference`` output). Pure CPU, so changing how the energy/force RMSE
+    is defined never needs a model re-run.
+
+    The energy RMSE uses per-trajectory mean-subtracted energies, i.e. the energy
+    *fluctuations* sampled along the trajectory, not absolute energies. That is the
+    physically meaningful quantity at finite T (how well the model tracks the sampled
+    PES) and is invariant to the absolute energy zero. The zero matters because CFPMD-26
+    mixes DFT references across systems: the molecular crystals carry all-electron
+    energies near -600 eV/atom while the inorganics use PAW near -5 eV/atom, so a raw
+    absolute-energy RMSE is swamped by that ~600 eV/atom offset and goes model-blind.
+    Forces are reference-zero-invariant, so their RMSE stays absolute (paper Eq. 2).
+    """
+    traj = _as_trajectory(trajectory)
+    if traj.energy is None:
+        raise ValueError("trajectory lacks reference energy for RMSE")
+    e_pred, force_se = predictions["e_pred"], predictions["force_se"]
+    # guard against a stale/mismatched prediction sidecar: a wrong-length force_se
+    # would otherwise silently skew force_rmse (it's just summed), giving a
+    # plausible-but-wrong value rather than an error
+    if e_pred.shape != (traj.n_frames,) or force_se.shape != (traj.n_frames,):
+        raise ValueError(
+            f"prediction arrays {e_pred.shape=}, {force_se.shape=} don't match "
+            f"{traj.n_frames=}; stale or mismatched prediction sidecar?"
+        )
+    # subtract each trajectory's own mean so we compare energy fluctuations, not the
+    # (reference-dependent, physically arbitrary) absolute energy zero
+    pred_dev = (e_pred - e_pred.mean()) / traj.n_atoms
+    ref_dev = (traj.energy - traj.energy.mean()) / traj.n_atoms
+    n_force_components = traj.n_frames * traj.n_atoms * 3
     return {
-        "energy_rmse": float(np.sqrt(np.mean(np.square(energy_errs_per_atom)))),
-        "force_rmse": float(np.sqrt(force_sq_err_sum / n_force_components)),
+        "energy_rmse": float(np.sqrt(np.mean((pred_dev - ref_dev) ** 2))),
+        "force_rmse": float(np.sqrt(force_se.sum() / n_force_components)),
     }
+
+
+def calc_energy_force_rmse(
+    trajectory: "Trajectory | Sequence[Atoms]", calculator: "Calculator"
+) -> dict[str, float]:
+    """Energy-fluctuation (eV/atom) and force (eV/Å) RMSE of calculator single-point
+    predictions on reference MD frames. Thin wrapper over ``predict_on_reference`` +
+    ``energy_force_rmse_from_preds``; persist the former's output to avoid GPU re-runs
+    when the metric definition changes.
+    """
+    traj = _as_trajectory(trajectory)
+    return energy_force_rmse_from_preds(traj, predict_on_reference(traj, calculator))
 
 
 def matched_frame_counts(
@@ -424,6 +450,7 @@ def evaluate_md_system(
     ref_time_step_fs: float,
     pred_time_step_fs: float,
     calculator: "Calculator | None" = None,
+    ref_predictions: "dict[str, np.ndarray] | None" = None,
     n_rdf_bins: int = 500,
 ) -> dict[str, float]:
     """All per-system MD metrics for one reference/predicted trajectory pair, keyed
@@ -433,7 +460,8 @@ def evaluate_md_system(
     respective time steps in fs between saved frames) before computing observables,
     matching the paper's same-simulation-length protocol. Pressure metrics are NaN
     when either trajectory lacks stress data. Energy and force RMSE on the full
-    reference trajectory are included when a calculator is passed.
+    reference trajectory are included when ``ref_predictions`` (from
+    ``predict_on_reference``) or a ``calculator`` to compute them is passed.
     """
     ref = _as_trajectory(ref_trajectory)
     pred = _as_trajectory(pred_trajectory)
@@ -471,8 +499,10 @@ def evaluate_md_system(
     else:  # one or both trajectories lack stress -> undefined pressure metrics
         metrics["pressure_mae"] = metrics["pressure_wasserstein"] = float("nan")
 
-    if calculator is not None:
-        metrics |= calc_energy_force_rmse(ref, calculator)
+    if ref_predictions is None and calculator is not None:
+        ref_predictions = predict_on_reference(ref, calculator)
+    if ref_predictions is not None:
+        metrics |= energy_force_rmse_from_preds(ref, ref_predictions)
 
     return metrics
 
@@ -500,7 +530,9 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
 
     Means are taken over systems, skipping NaNs (e.g. systems without stress data).
     The combined RDF+VDOS error is the lower-is-better complement of the paper's
-    Eq. 8 Pareto score, computed from model-level mean errors.
+    Eq. 8 Pareto score, computed from model-level mean errors. Per-system energy/force
+    RMSE rows are in eV but reported here in meV for readability (fluctuation
+    energy RMSE is ~1e-3 eV/atom), matching METRIC_UNITS.
     """
     metric_cols = [col for col in PER_SYSTEM_METRIC_COLS if col in df_md]
     if not metric_cols:
@@ -508,7 +540,11 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
             f"No recognized MD metric columns in {list(df_md.columns)=}, "
             f"expected a subset of {PER_SYSTEM_METRIC_COLS}"
         )
-    metrics = {col: float(df_md[col].mean()) for col in metric_cols}
+    metrics = {
+        col: float(df_md[col].mean())
+        * (1000 if col in ("energy_rmse", "force_rmse") else 1)
+        for col in metric_cols
+    }
     if "rdf_error" in metrics and "vdos_error" in metrics:
         metrics["combined_error"] = calc_combined_error(
             metrics["rdf_error"], metrics["vdos_error"]

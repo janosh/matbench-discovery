@@ -73,7 +73,7 @@ requirements:
 
 training_set: [MPtrj, Alex, OMat24]
 training_cost:
-  Nvidia H100: { amount: 8, hours: 125, cost: nan }
+  Nvidia H100: {amount: 8, hours: 125, cost: nan}
 
 notes:
   Description: |
@@ -174,3 +174,14 @@ metrics:
       RMSE: 0.078 # eV/atom
       R2: 0.821 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/orb/orb-v3/2026-06-21-orb_v3-md-metrics.csv.gz
+    pred_file_url: https://figshare.com/files/PLACEHOLDER # TODO replace with real figshare URL after uploading the md-metrics CSV
+    energy_rmse: 0.7329 # meV/atom
+    force_rmse: 73.628 # meV/Å
+    rdf_error: 4.0694 # %
+    vdos_error: 74.9759 # %
+    pressure_mae: 0.8179 # GPa
+    pressure_wasserstein: 0.7118 # GPa
+    combined_error: 71.3255 # %
+    n_systems: 17 # count

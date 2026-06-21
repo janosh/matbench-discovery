@@ -9,7 +9,14 @@
     RadarChart,
     SotaTimeline,
   } from '$lib/plot'
-  import { ALL_METRICS, discovery_set_toggle_options, METADATA_COLS } from '$lib/labels'
+  import {
+    ALL_METRICS,
+    DISCOVERY_METRICS,
+    discovery_set_toggle_options,
+    GEO_OPT_SYMMETRY_METRICS,
+    MD_METRICS,
+    METADATA_COLS,
+  } from '$lib/labels'
   import { make_combined_filter } from '$lib/metrics'
   import { find_best_model, MODELS } from '$lib/models.svelte'
   import {
@@ -21,6 +28,7 @@
   } from '$lib/table-export'
   import type { DiscoverySet, ModelData, SortDir } from '$lib/types'
   import Readme from '$root/readme.md'
+  import MdNote from '$routes/tasks/md/md-note.md'
   import KappaNote from '$routes/tasks/phonons/kappa-note.md'
   import { format_num, Icon } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
@@ -35,16 +43,35 @@
   let show_compliant = $state(true)
   let show_heatmap = $state(true)
   let export_error: string | null = $state(null)
-  // columns hidden by default on the landing page (κ_SRE is a supplementary phonon
-  // metric); users can opt back in via the column toggles
-  const hidden_cols = new Set([`TPR`, `TNR`, `RMSE`, ALL_METRICS.κ_SRE.label])
-  let visible_cols: Record<string, boolean> = $state(
-    Object.fromEntries(
-      [...Object.values(ALL_METRICS), ...Object.values(METADATA_COLS)].map((col) => [
-        col.label,
-        col.visible !== false && !hidden_cols.has(col.label),
-      ]),
+  // Column presets focus the table on one task's metrics. Headline cols (CPS, F1, RMSD,
+  // κ_SRME) stay visible across presets; supplementary discovery cols (TPR/TNR/RMSE) stay
+  // hidden but remain toggleable via the per-column controls.
+  const headline_metric_labels = new Set(
+    [ALL_METRICS.CPS, DISCOVERY_METRICS.F1, ALL_METRICS.RMSD, ALL_METRICS.κ_SRME].map(
+      (col) => col.label,
     ),
+  )
+  const supplementary_hidden = new Set([`TPR`, `TNR`, `RMSE`])
+  const metadata_labels = new Set(Object.values(METADATA_COLS).map((col) => col.label))
+  const col_presets = {
+    Discovery: Object.values(DISCOVERY_METRICS),
+    Phonons: [ALL_METRICS.κ_SRE],
+    'Geo Opt': Object.values(GEO_OPT_SYMMETRY_METRICS),
+    MD: Object.values(MD_METRICS),
+  }
+  type ColPreset = keyof typeof col_presets
+  const col_preset_options = (Object.keys(col_presets) as ColPreset[]).map((name) => ({
+    value: name,
+    label: name,
+    tooltip: `Focus the table on ${name} metrics`,
+  }))
+
+  let col_preset = $state<ColPreset>(`Discovery`)
+  let preset_metric_labels = $derived(
+    new Set([
+      ...headline_metric_labels,
+      ...col_presets[col_preset].map((col) => col.label),
+    ]),
   )
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
   let sort = $state({ column: `CPS`, dir: `desc` as SortDir })
@@ -89,28 +116,28 @@
   let best_model = $derived(
     find_best_model(MODELS, { show_non_compliant, show_compliant, discovery_set }),
   )
-  // Landing-page cohort, kept in sync with the metrics table filters.
-  let in_cohort = $derived.by(() => {
-    const combined_filter = make_combined_filter(
-      () => true,
+  // Landing-page cohort: the metrics-table filters (energy/compliance) plus a base
+  // predicate of "has discovery data for the selected set" (applied first internally)
+  let in_cohort = $derived(
+    make_combined_filter(
+      (model: ModelData) => {
+        const discovery = model.metrics?.discovery
+        return (
+          discovery !== null &&
+          typeof discovery === `object` &&
+          Boolean(discovery[discovery_set])
+        )
+      },
       show_energy_only,
       show_compliant,
       show_non_compliant,
-    )
-    return (model: ModelData): boolean => {
-      const discovery_metrics = model.metrics?.discovery
-      return (
-        combined_filter(model) &&
-        discovery_metrics !== null &&
-        typeof discovery_metrics === `object` &&
-        Boolean(discovery_metrics[discovery_set])
-      )
-    }
-  })
+    ),
+  )
 
   export const snapshot: Snapshot = {
     capture: () => ({
       discovery_set,
+      col_preset,
       sort,
       show_non_compliant,
       show_energy_only,
@@ -119,6 +146,7 @@
     }),
     restore: (values) => {
       discovery_set = values.discovery_set ?? discovery_set
+      col_preset = values.col_preset ?? col_preset
       sort = values.sort ?? sort
       show_non_compliant = values.show_non_compliant ?? show_non_compliant
       show_energy_only = values.show_energy_only ?? show_energy_only
@@ -134,12 +162,33 @@
 </h1>
 
 <figure style="margin-top: 3em" id="metrics-table">
-  <SelectToggle bind:selected={discovery_set} options={discovery_set_toggle_options} />
+  <div class="toggle-row">
+    <span>Column presets:</span>
+    <SelectToggle bind:selected={col_preset} options={col_preset_options} />
+  </div>
+  <!-- the test-set selector only affects discovery metrics, so only show it in the
+  Discovery preset where those columns are visible -->
+  {#if col_preset === `Discovery`}
+    <div class="toggle-row compact">
+      <span>Test set:</span>
+      <SelectToggle
+        bind:selected={discovery_set}
+        options={discovery_set_toggle_options}
+      />
+    </div>
+  {/if}
+
+  <!-- surface the MD beta warning right at the table when MD columns are shown -->
+  {#if col_preset === `MD`}
+    <MdNote />
+  {/if}
 
   <section class="full-bleed">
     <MetricsTable
-      col_filter={(col) => visible_cols[col.label] ?? true}
-      model_filter={() => true}
+      col_filter={(col) =>
+        metadata_labels.has(col.label)
+          ? col.visible !== false
+          : preset_metric_labels.has(col.label) && !supplementary_hidden.has(col.label)}
       {discovery_set}
       bind:sort
       bind:show_energy_only
@@ -246,6 +295,16 @@
     {/if}
   {/snippet}
 </Readme>
+<!-- landing-only announcement; the shared MD note (warning + dataset + how to submit)
+lives in MdNote and also renders on the /tasks/md page -->
+<blockquote>
+  🆕 <strong>New task — Molecular Dynamics.</strong> Matbench Discovery now scores how
+  faithfully MLIPs reproduce finite-temperature observables of ab-initio MD (AIMD):
+  radial distribution functions, vibrational density of states, pressure distributions,
+  and single-point energy/force RMSEs. Explore the new metrics on the
+  <a href="/tasks/md">MD leaderboard</a>.
+</blockquote>
+<MdNote />
 <KappaNote warning={false} />
 
 <h2>Progress Over Time</h2>
@@ -282,6 +341,22 @@
     margin: 0;
     display: grid;
     gap: 1ex;
+  }
+  div.toggle-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8pt;
+  }
+  div.toggle-row > span {
+    font-weight: 300;
+    letter-spacing: 0.03em;
+    opacity: 0.7;
+  }
+  /* slimmer secondary test-set selector (overrides SelectToggle's 4px block padding) */
+  div.toggle-row.compact :global(.selection-toggle button) {
+    padding-block: 1px;
   }
   div.downloads {
     display: flex;

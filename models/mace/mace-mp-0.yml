@@ -168,3 +168,14 @@ metrics:
   diatomics:
     pred_file: models/mace/mace-mp-0/2025-02-13-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52449434
+  md:
+    pred_file: models/mace/mace-mp-0/2026-06-21-mace_mp_0-md-metrics.csv.gz
+    pred_file_url: https://figshare.com/files/PLACEHOLDER # TODO replace with real figshare URL after uploading the md-metrics CSV
+    energy_rmse: 1.717 # meV/atom
+    force_rmse: 165.6567 # meV/Å
+    rdf_error: 7.3686 # %
+    vdos_error: 74.2671 # %
+    pressure_mae: 0.9462 # GPa
+    pressure_wasserstein: 0.8488 # GPa
+    combined_error: 68.2287 # %
+    n_systems: 17 # count

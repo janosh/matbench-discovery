@@ -248,7 +248,6 @@
     x_axis={{
       label: axes.x?.label,
       format: axes.x?.format,
-      range: axes.x?.range,
       scale_type: log.x ? `log` : `linear`,
       label_shift: { y: -50 },
       ticks,
@@ -258,7 +257,6 @@
     y_axis={{
       label: axes.y?.label,
       format: axes.y?.format,
-      range: axes.y?.range,
       scale_type: log.y ? `log` : `linear`,
       label_shift: {
         x: -10,

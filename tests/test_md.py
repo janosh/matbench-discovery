@@ -12,6 +12,7 @@ from ase.build import bulk
 from ase.calculators.emt import EMT
 from ase.md.nose_hoover_chain import NoseHooverChainNVT
 
+from matbench_discovery import today
 from matbench_discovery.enums import Model
 from matbench_discovery.md import (
     NvtParams,
@@ -205,7 +206,7 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
         assert not out_dir.exists()  # dry run must not write outputs
         return
 
-    assert (out_dir / "emt-md-metrics.csv.gz").is_file()
+    assert (out_dir / f"{today}-emt-md-metrics.csv.gz").is_file()
     rollout = out_dir / "bulkCu_300K_test-nvt-emt.extxyz"
     assert rollout.is_file()
     # second run reuses the existing rollout instead of recomputing
@@ -296,6 +297,22 @@ def test_md_convert_resolve_settings() -> None:
     assert resolve_settings("bulkCuAu_500K-Artrith_VASP", settings) == (2.0, 500.0)
 
 
+def test_md_convert_load_settings(tmp_path: Path) -> None:
+    """load_settings folds the save stride into dt_fs: dt is the AIMD integration
+    timestep and stride the steps between saved frames, so dt_fs = dt * stride. Dropping
+    stride (wrong by up to 5x) would corrupt every VDOS/pressure metric.
+    """
+    from scripts.md_convert_references_to_hdf5 import load_settings
+
+    csv = tmp_path / "settings.csv"
+    csv.write_text(
+        "System,temperature,stride,dt\nTiSe2,400,5,1\nanthracene,293,1,0.5\n"
+    )
+    settings = load_settings(str(csv))
+    assert settings["TiSe2_400K"] == (5.0, 400.0)  # dt 1 fs * stride 5
+    assert settings["anthracene_293K"] == (0.5, 293.0)  # stride 1 -> unchanged
+
+
 def test_md_convert_packs_reference(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -319,7 +336,7 @@ def test_md_convert_packs_reference(
     sys_dir.mkdir(parents=True)
     ase.io.write(sys_dir / "traj.extxyz", frames)
     settings_csv = tmp_path / "settings.csv"
-    settings_csv.write_text("System,temperature,stride,dt\nbulkCu,300,1,0.25\n")
+    settings_csv.write_text("System,temperature,stride,dt\nbulkCu,300,4,0.25\n")
     out_h5 = str(tmp_path / "ref.h5")
 
     argv = [
@@ -336,7 +353,7 @@ def test_md_convert_packs_reference(
 
     assert list_reference_systems(out_h5) == [system]
     traj, dt_fs, temperature = read_reference_trajectory(out_h5, system)
-    assert dt_fs == 0.25
+    assert dt_fs == 1.0  # dt 0.25 fs * stride 4 = saved-frame interval
     assert temperature == 300.0
     assert traj.n_frames == len(frames)
     # extxyz round-trips positions to print precision

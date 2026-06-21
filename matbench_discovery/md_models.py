@@ -52,12 +52,19 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
             headers = {"Authorization": f"Bearer {token}"}
     if "sciebo" in url and not url.endswith("/download"):
         url = f"{url}/download"
+    if "github.com" in url and "/blob/" in url:  # serve the raw file, not the HTML page
+        url = url.replace("/blob/", "/raw/")
 
     ext = ext or os.path.splitext(url.split("?")[0])[1] or ".ckpt"
     dest = f"{MD_CHECKPOINT_DIR}/{model_key}{ext}"
-    if not os.path.isfile(dest):
-        os.makedirs(MD_CHECKPOINT_DIR, exist_ok=True)
-        download_file(dest, url, headers=headers)
+    os.makedirs(MD_CHECKPOINT_DIR, exist_ok=True)
+    # serialize concurrent same-model downloads: parallel array tasks otherwise race on
+    # download_file's temp-file rename, leaving losers with a vanished .part file
+    from filelock import FileLock
+
+    with FileLock(f"{dest}.lock"):
+        if not os.path.isfile(dest):
+            download_file(dest, url, headers=headers)
     if not os.path.isfile(dest):  # download_file prints instead of raising
         raise RuntimeError(
             f"Failed to download {model_key} checkpoint from {url}. If the repo is "
@@ -74,12 +81,16 @@ class MdModel:
     make_calc: Callable[..., "Calculator"]
     deps: tuple[str, ...] = ()  # extra uv requirements beyond CORE_DEPS
     find_links: tuple[str, ...] = ()  # uv --find-links (e.g. PyG/dgl wheel pages)
+    # pin uv's Python (e.g. HIENet's torch 2.1.2 has no cp312 wheels, so needs 3.11);
+    # None lets uv pick the default
+    python_version: str | None = None
 
     def uv_run_cmd(self, script: str, *args: str) -> list[str]:
         """``uv run`` command that resolves this model's env and runs the script."""
+        py_args = ["--python", self.python_version] if self.python_version else []
         with_args = [tok for dep in self.deps for tok in ("--with", dep)]
         link_args = [tok for url in self.find_links for tok in ("--find-links", url)]
-        return ["uv", "run", *with_args, *link_args, script, *args]
+        return ["uv", "run", *py_args, *with_args, *link_args, script, *args]
 
 
 def _detect_device() -> str:
@@ -177,6 +188,86 @@ def _tace(model_key: str) -> Callable[[str], "Calculator"]:
     return make_calc
 
 
+def _hienet(model_key: str) -> Callable[[str], "Calculator"]:
+    def make_calc(device: str) -> "Calculator":
+        from hienet.hienet_calculator import HIENetCalculator
+
+        return HIENetCalculator(model=download_checkpoint(model_key), device=device)
+
+    return make_calc
+
+
+def _matris(model: str, cache_name: str) -> Callable[[str], "Calculator"]:
+    def make_calc(device: str) -> "Calculator":
+        import shutil
+
+        from filelock import FileLock
+        from matris.applications import MatRISCalculator
+
+        # MatRIS.load() only takes a registered model name and resolves it to
+        # ~/.cache/matris/<cache_name> (its built-in figshare downloader serves 0 bytes
+        # behind a WAF), so stage our YAML checkpoint there before constructing the calc
+        cache_dir = os.path.expanduser("~/.cache/matris")
+        os.makedirs(cache_dir, exist_ok=True)
+        dest = f"{cache_dir}/{cache_name}"
+        # lock + atomic replace so parallel tasks don't race and an interrupted copy
+        # can't leave a truncated checkpoint that later runs treat as valid cache
+        with FileLock(f"{dest}.lock"):
+            if not os.path.isfile(dest):
+                tmp_dest = f"{dest}.tmp"
+                shutil.copy(download_checkpoint(model), tmp_dest)
+                os.replace(tmp_dest, dest)
+        return MatRISCalculator(model=model, device=device)
+
+    return make_calc
+
+
+def _alphanet(model_key: str, config_url: str) -> Callable[[str], "Calculator"]:
+    def make_calc(device: str) -> "Calculator":
+        from alphanet.config import All_Config
+        from alphanet.infer.calc import AlphaNetCalculator
+
+        from matbench_discovery.remote.fetch import download_file
+
+        # AlphaNet needs an architecture config json (not bundled in the weights) that
+        # matches the checkpoint; fetch the OMA config that ships in the AlphaNet repo
+        cfg_path = f"{MD_CHECKPOINT_DIR}/{model_key}-config.json"
+        if not os.path.isfile(cfg_path):
+            download_file(cfg_path, config_url)
+        return AlphaNetCalculator(
+            ckpt_path=download_checkpoint(model_key),
+            device=device,
+            precision="32",
+            config=All_Config().from_json(cfg_path),
+        )
+
+    return make_calc
+
+
+def _pet(model_key: str) -> Callable[[str], "Calculator"]:
+    def make_calc(device: str) -> "Calculator":
+        import subprocess
+
+        from filelock import FileLock
+        from metatomic.torch.ase_calculator import MetatomicCalculator
+
+        # PET ships a metatrain .ckpt that must be exported to a TorchScript .pt before
+        # metatomic can load it; cache the export and lock it against parallel tasks
+        ckpt = download_checkpoint(model_key)
+        pt_file = f"{os.path.splitext(ckpt)[0]}.pt"
+        with FileLock(f"{pt_file}.lock"):
+            if not os.path.isfile(pt_file):
+                # export to a temp file and atomically rename so a failed `mtt export`
+                # (raises via check=True) can't leave a partial .pt that the next run
+                # would treat as a valid cached export
+                tmp_pt = f"{pt_file}.tmp"
+                subprocess.run(["mtt", "export", ckpt, "-o", tmp_pt], check=True)  # noqa: S607
+                os.replace(tmp_pt, pt_file)
+        return MetatomicCalculator(pt_file, device=device)
+
+    return make_calc
+
+
 def _chgnet(device: str) -> "Calculator":
     from chgnet.model.dynamics import CHGNetCalculator
 
@@ -188,8 +279,9 @@ def _m3gnet(device: str) -> "Calculator":  # noqa: ARG001 - matgl manages device
     from matgl.ext.ase import PESCalculator
 
     # M3GNet-MP-2021.2.8-PES ships in DGL format; matgl>=2 defaults to a non-DGL
-    # backend and removed this checkpoint entirely in v4, so pin matgl<4 + DGL
-    matgl.set_backend("dgl")
+    # backend and removed this checkpoint entirely in v4, so pin matgl<4 + DGL.
+    # matgl 3.x set_backend expects the uppercase "DGL"/"PYG" literal.
+    matgl.set_backend("DGL")
     return PESCalculator(matgl.load_model("M3GNet-MP-2021.2.8-PES"))
 
 
@@ -214,6 +306,21 @@ FAIRCHEM_DEPS = (
     "scipy<1.15",
 )
 PYG_LINKS = ("https://data.pyg.org/whl/torch-2.4.0+cu121.html",)
+
+# HIENet pins torch 2.1.2 (no cp312 wheels -> python_version="3.11") and pulls compiled
+# torch-scatter/torch-geometric from the torch-2.1.2 PyG wheel page.
+HIENET_DEPS = (
+    "hienet @ git+https://github.com/divelab/AIRS.git#subdirectory=OpenMat/HIENet",
+    "torch==2.1.2",
+    "torch-geometric==2.6.1",
+    "torch-scatter==2.1.2",
+    "e3nn==0.5.6",
+    "braceexpand",
+    "numpy<2",
+    # this py311 resolution pulls a pymatviz (imported by matbench_discovery/__init__)
+    # that still imports plotly.validators.scatter, removed in plotly 6
+    "plotly<6",
+)
 
 MD_MODELS: dict[str, MdModel] = {
     "mace_mp_0": MdModel(_mace_mp("medium"), deps=("mace-torch>=0.3.6",)),
@@ -245,10 +352,45 @@ MD_MODELS: dict[str, MdModel] = {
         ),
     ),
     "chgnet_030": MdModel(_chgnet, deps=("chgnet",)),
-    # matgl<4 + DGL backend; DGL wheels come from its torch-matched find-links page
+    # HIENet (e3nn-based, github checkpoint). torch 2.1.2 needs python 3.11.
+    "hienet": MdModel(
+        _hienet("hienet"),
+        deps=HIENET_DEPS,
+        find_links=("https://data.pyg.org/whl/torch-2.1.2+cu121.html",),
+        python_version="3.11",
+    ),
+    # MatRIS (figshare checkpoint staged into MatRIS's own ~/.cache/matris dir)
+    "matris_10m_oam": MdModel(
+        _matris("matris_10m_oam", "MatRIS_10M_OAM.pth.tar"),
+        deps=(
+            "matris @ git+https://github.com/HPC-AI-Team/MatRIS",
+            "torch==2.6.0",
+            "numpy<3",
+        ),
+    ),
+    # PET (metatrain/metatomic): download .ckpt, `mtt export` to .pt, then load
+    "pet_oam_xl_1_0_0": MdModel(_pet("pet_oam_xl_1_0_0"), deps=("upet==0.1.0",)),
+    # AlphaNet (config json from repo + figshare weights, torch-scatter from PyG links)
+    "alphanet_v1_oam": MdModel(
+        _alphanet(
+            "alphanet_v1_oam",
+            "https://raw.githubusercontent.com/zmyybc/AlphaNet/main/pretrained/OMA/oma.json",
+        ),
+        deps=(
+            "alphanet @ git+https://github.com/zmyybc/AlphaNet",
+            "torch==2.5.1",
+            "torch-geometric==2.6.1",
+            "torch-scatter",
+            "numpy<2",
+        ),
+        find_links=("https://data.pyg.org/whl/torch-2.5.1+cu121.html",),
+    ),
+    # matgl<4 + DGL backend; DGL wheels come from its torch-matched find-links page.
+    # Pin dgl==2.4.0: data.dgl.ai serves the index but 403s the dgl-2.5.0 cu121 wheel,
+    # so an unpinned dgl resolves to 2.5.0 and fails to download.
     "m3gnet_ms": MdModel(
         _m3gnet,
-        deps=("matgl==3.0.5", "dgl", "torch==2.4.0"),
+        deps=("matgl==3.0.5", "dgl==2.4.0", "torch==2.4.0"),
         find_links=("https://data.dgl.ai/wheels/torch-2.4/cu121/repo.html",),
     ),
     # fairchem family (OCPCalculator + HF .pt checkpoints, fairchem-core v1 API).

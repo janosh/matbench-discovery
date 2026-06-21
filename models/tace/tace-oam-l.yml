@@ -176,3 +176,14 @@ metrics:
       RMSE: 0.067 # eV/atom
       R2: 0.868 # dimensionless
       missing_preds: 1 # count
+  md:
+    pred_file: models/tace/tace-oam-l/2026-06-21-tace_oam_l-md-metrics.csv.gz
+    pred_file_url: https://figshare.com/files/PLACEHOLDER # TODO replace with real figshare URL after uploading the md-metrics CSV
+    energy_rmse: 0.5479 # meV/atom
+    force_rmse: 60.1476 # meV/Å
+    rdf_error: 3.8085 # %
+    vdos_error: 75.3706 # %
+    pressure_mae: 0.897 # GPa
+    pressure_wasserstein: 0.7856 # GPa
+    combined_error: 71.9285 # %
+    n_systems: 17 # count

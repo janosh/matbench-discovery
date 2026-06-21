@@ -183,3 +183,14 @@ metrics:
       RMSE: 0.085 # eV/atom
       R2: 0.788 # dimensionless
       missing_preds: 309 # count
+  md:
+    pred_file: models/eqV2/eqV2-s-dens-mp/2026-06-21-eqv2_s_dens_mp-md-metrics.csv.gz
+    pred_file_url: https://figshare.com/files/PLACEHOLDER # TODO replace with real figshare URL after uploading the md-metrics CSV
+    energy_rmse: 6.0618 # meV/atom
+    force_rmse: 110.1912 # meV/Å
+    rdf_error: 6.1501 # %
+    vdos_error: 76.326 # %
+    pressure_mae: 1.112 # GPa
+    pressure_wasserstein: 1.0131 # GPa
+    combined_error: 71.0931 # %
+    n_systems: 17 # count

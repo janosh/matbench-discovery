@@ -9,21 +9,91 @@ describe(`Landing Page`, () => {
     mount(Page, { target: document.body })
   }, 30_000)
 
-  it(`renders discovery set toggle buttons`, () => {
-    const buttons = document.querySelectorAll(`.selection-toggle button`)
-    expect(buttons).toHaveLength(3) // 3 from test set select
+  // find a SelectToggle bar by one of its button labels (order-independent)
+  const toggle_with = (label: string): Element => {
+    const toggle = [...document.querySelectorAll(`.selection-toggle`)].find((el) =>
+      el.textContent?.includes(label),
+    )
+    if (!toggle) throw new Error(`no .selection-toggle contains ${label}`)
+    return toggle
+  }
+  const button_texts = (toggle: Element) =>
+    [...toggle.querySelectorAll(`button`)].map((btn) => btn.textContent?.trim())
+  const preset_buttons = () =>
+    toggle_with(`Phonons`).querySelectorAll<HTMLButtonElement>(`button`)
+  const preset_btn = (label: string): HTMLButtonElement => {
+    const btn = [...preset_buttons()].find((el) => el.textContent?.trim() === label)
+    if (!btn) throw new Error(`no preset button labeled ${label}`)
+    return btn
+  }
+  const select_preset = async (label: string) => {
+    preset_btn(label).click()
+    await tick()
+  }
+  const header_text = () =>
+    [...document.querySelectorAll(`thead th`)].map((th) => th.textContent).join(` `)
 
-    const button_texts = [...buttons].map((btn) => btn.textContent?.trim())
-    expect(button_texts).toStrictEqual([
+  it(`renders column preset + discovery set toggle buttons`, () => {
+    // column-preset bar always shows; the test-set bar only shows in Discovery preset
+    expect(button_texts(toggle_with(`Phonons`))).toStrictEqual([
+      `Discovery`,
+      `Phonons`,
+      `Geo Opt`,
+      `MD`,
+    ])
+    expect(button_texts(toggle_with(`Full Test Set`))).toStrictEqual([
       `Full Test Set`,
       `Unique Prototypes`,
       `10k Most Stable`,
     ])
   })
 
+  // each non-Discovery preset reveals one of its signature columns (the marker) that
+  // the default Discovery view hides, while hiding the discovery-only DAF column
+  it.each([
+    [`Phonons`, `SRE`], // κ_SRE (matches the phonons task page)
+    [`Geo Opt`, `Σ`], // symmetry metrics (Σ= / Σ↓ / Σ↑)
+    [`MD`, `RDF`], // RDF err
+  ])(`%s preset shows its metrics + headline cols, hides DAF`, async (preset, marker) => {
+    expect(header_text()).toContain(`DAF`) // Discovery is the default preset
+    expect(header_text()).not.toContain(marker) // preset-specific col hidden by default
+
+    await select_preset(preset)
+    expect(header_text()).toContain(marker) // preset-specific column now visible
+    expect(header_text()).not.toContain(`DAF`) // discovery-only column hidden
+    for (const headline of [`CPS`, `F1`, `RMSD`]) {
+      expect(header_text()).toContain(headline) // headline cols persist across presets
+    }
+  })
+
+  it(`surfaces a beta warning for the MD metrics`, async () => {
+    const n_beta_warnings = () =>
+      [...document.querySelectorAll(`blockquote`)].filter((bq) =>
+        bq.textContent?.includes(`interpret with caution`),
+      ).length
+    expect(n_beta_warnings()).toBe(1) // always shown in the page's MD note
+
+    await select_preset(`MD`)
+    expect(n_beta_warnings()).toBe(2) // + contextual warning above the MD table
+  })
+
+  it(`shows the test-set toggle only in the Discovery preset`, async () => {
+    const test_set_shown = () =>
+      [...document.querySelectorAll(`.selection-toggle`)].some((toggle) =>
+        toggle.textContent?.includes(`Full Test Set`),
+      )
+    expect(test_set_shown()).toBe(true) // Discovery is the default preset
+
+    await select_preset(`MD`)
+    expect(test_set_shown()).toBe(false) // hidden outside Discovery
+
+    await select_preset(`Discovery`)
+    expect(test_set_shown()).toBe(true)
+  })
+
   it(`toggles discovery set when clicking buttons`, async () => {
     const buttons = [
-      ...document.querySelectorAll<HTMLButtonElement>(`.selection-toggle button`),
+      ...toggle_with(`Full Test Set`).querySelectorAll<HTMLButtonElement>(`button`),
     ]
     const [full_test_btn, unique_protos_btn] = buttons
 
@@ -65,20 +135,21 @@ describe(`Landing Page`, () => {
     )
     expect(toggle.parentElement?.textContent).toContain(`Compliant models`)
 
-    // Should be unchecked by default
+    // Checked by default: both compliant and non-compliant models are shown
     expect(toggle.checked).toBe(true)
     // get number of table rows
     const n_models_on_load = document.querySelectorAll(`tbody tr`).length
     expect(selected_scatter_label()).toContain(`Params`)
     expect(selected_scatter_label()).toContain(`${n_models_on_load} models`)
 
-    // Click to show non-compliant models
+    // on load both compliant + non-compliant are shown; un-checking "Compliant models"
+    // hides the compliant ones, leaving only the (fewer) non-compliant models
     toggle.click()
     expect(toggle.checked).toBe(false)
     await tick()
-    const n_all_models = document.querySelectorAll(`tbody tr`).length
-    expect(n_all_models).toBeLessThan(n_models_on_load)
-    expect(selected_scatter_label()).toContain(`${n_all_models} models`)
+    const n_non_compliant_only = document.querySelectorAll(`tbody tr`).length
+    expect(n_non_compliant_only).toBeLessThan(n_models_on_load)
+    expect(selected_scatter_label()).toContain(`${n_non_compliant_only} models`)
   })
 
   it(`updates column visibility when toggling checkboxes`, async () => {

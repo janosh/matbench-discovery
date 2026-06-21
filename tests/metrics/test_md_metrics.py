@@ -1,7 +1,6 @@
 """Tests for molecular dynamics trajectory metrics."""
 
 import itertools
-import re
 from pathlib import Path
 
 import numpy as np
@@ -87,6 +86,21 @@ def make_jiggled_frames(
             atoms.calc = SinglePointCalculator(atoms, stress=stress)
         frames.append(atoms)
     return frames
+
+
+def h2_frame(
+    energy: float,
+    *,
+    positions: np.ndarray | None = None,
+    forces: np.ndarray | None = None,
+) -> Atoms:
+    """An H2 reference frame (random positions unless given) carrying energy/forces."""
+    if positions is None:
+        positions = np_rng.random((2, 3)) * 2
+    if forces is None:
+        forces = np.zeros((2, 3))
+    atoms = Atoms("H2", positions=positions, cell=[5] * 3)
+    return attach_ref_labels(atoms, energy=energy, forces=forces)
 
 
 # === RDF ===
@@ -343,57 +357,69 @@ def test_calc_vdos_error_invalid_spectra(vdos_ref: np.ndarray, err_msg: str) -> 
 # === pressure ===
 
 
-@pytest.mark.parametrize(
-    ("stress", "expected_pressure", "err_msg"),
-    [
-        (-2.5 * units.GPa * np.eye(3), 2.5, None),
-        (np.array([-2.5 * units.GPa] * 3 + [0, 0, 0]), 2.5, None),
-        # Anisotropic stress distinguishes the 3D trace from a 2D slab formula,
-        # which would give 1.5 GPa here.
-        (ANISOTROPIC_STRESS_VOIGT, 3, None),
-        (np.zeros(5), None, re.escape("shape (6,) or (3, 3)")),
-    ],
-    ids=["matrix", "voigt", "anisotropic-3d-trace", "invalid-shape"],
-)
-def test_calc_pressure(
-    stress: np.ndarray, expected_pressure: float | None, err_msg: str | None
-) -> None:
-    """Pressure should accept ASE stress formats and average the full 3D trace."""
-    if err_msg:
-        with pytest.raises(ValueError, match=err_msg):
-            md_metrics.calc_pressure(stress)
-        return
-
-    assert expected_pressure is not None
-    assert md_metrics.calc_pressure(stress) == pytest.approx(expected_pressure)
-
-
 def test_get_trajectory_pressures() -> None:
-    """Per-frame pressures should be read from attached stress results."""
+    """Per-frame pressures read from attached stress, averaging the full 3D trace (not a
+    2D slab formula): the anisotropic frame gives 3 GPa, not 1.5.
+    """
     pressures = [0.5, -1.0, 2.0]
     frames = [
         make_jiggled_frames(1, pressure_gpa=pressure)[0] for pressure in pressures
     ]
+    aniso = Atoms("Si8", positions=np_rng.normal(scale=0.05, size=(8, 3)), cell=[6] * 3)
+    aniso.pbc = True
+    aniso.calc = SinglePointCalculator(aniso, stress=ANISOTROPIC_STRESS_VOIGT)
     np.testing.assert_allclose(
-        md_metrics.get_trajectory_pressures(frames), pressures, rtol=1e-10, atol=1e-12
+        md_metrics.get_trajectory_pressures([*frames, aniso]),
+        [*pressures, 3.0],
+        rtol=1e-10,
+        atol=1e-12,
     )
 
 
-def test_calc_pressure_metrics() -> None:
-    """Offset distributions should give the offset; W1 must be order-independent."""
+@pytest.mark.parametrize(
+    ("p_ref", "p_pred", "ref_dt", "pred_dt", "expected_mae"),
+    [
+        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.0, 1.0, 2.0, 3.0]), 1, 1, 0),
+        # constant +0.5 offset between equal-cadence trajectories
+        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.5, 1.5, 2.5, 3.5]), 1, 1, 0.5),
+        # unequal lengths truncate the MAE to the shorter trajectory
+        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.5, 1.5]), 1, 1, 0.5),
+        # differing cadences pair identical timestamps, not raw indices: pred samples
+        # ref at every 2nd timestamp plus a pure +10 offset, so aligned MAE is exactly
+        # 10 (index pairing would wrongly give 11.5)
+        (np.arange(7.0), np.arange(7.0)[::2] + 10, 1, 2, 10),
+        # awkward cadence ratio ref dt=0.3, pred dt=0.7 -> common grid every 2.1 fs;
+        # common timestamps are 0 and 2.1 fs (ref indices 0,7; pred indices 0,3)
+        (np.arange(8.0), np.array([100.0, -1.0, -2.0, 107.0]), 0.3, 0.7, 100),
+    ],
+    ids=["identical", "constant_offset", "truncated", "cadence_2x", "awkward_cadence"],
+)
+def test_calc_pressure_metrics_mae(
+    p_ref: np.ndarray,
+    p_pred: np.ndarray,
+    ref_dt: float,
+    pred_dt: float,
+    expected_mae: float,
+) -> None:
+    """Pressure MAE pairs frames at identical timestamps, even across differing
+    cadences and trajectory lengths.
+    """
+    metrics = md_metrics.calc_pressure_metrics(
+        p_ref, p_pred, ref_time_step_fs=ref_dt, pred_time_step_fs=pred_dt
+    )
+    assert metrics["pressure_mae"] == pytest.approx(expected_mae)
+
+
+def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
+    """W1 distance equals the mean offset and is frame-order-independent (unlike MAE);
+    empty pressure arrays raise.
+    """
     p_ref = np.array([0.0, 1.0, 2.0, 3.0])
     p_shifted = p_ref + 0.5
 
-    assert md_metrics.calc_pressure_metrics(p_ref, p_ref) == {
-        "pressure_mae": 0,
-        "pressure_wasserstein": 0,
-    }
+    assert md_metrics.calc_pressure_metrics(p_ref, p_ref)["pressure_wasserstein"] == 0
     shifted = md_metrics.calc_pressure_metrics(p_ref, p_shifted)
-    assert shifted["pressure_mae"] == pytest.approx(0.5)
     assert shifted["pressure_wasserstein"] == pytest.approx(0.5)
-    # unequal lengths truncate the MAE to the shorter trajectory
-    truncated = md_metrics.calc_pressure_metrics(p_ref, p_shifted[:2])
-    assert truncated["pressure_mae"] == pytest.approx(0.5)
     # W1 is invariant to frame order, MAE is not
     reversed_order = md_metrics.calc_pressure_metrics(p_ref, p_shifted[::-1])
     assert reversed_order["pressure_wasserstein"] == pytest.approx(0.5)
@@ -401,28 +427,6 @@ def test_calc_pressure_metrics() -> None:
 
     with pytest.raises(ValueError, match="empty"):
         md_metrics.calc_pressure_metrics(np.array([]), p_ref)
-
-    # MAE must pair identical timestamps when cadences differ: pred samples ref
-    # at every 2nd timestamp plus a pure +10 offset, so aligned MAE is exactly 10
-    # (index pairing would wrongly give 11.5)
-    p_ref_fine = np.arange(7.0)  # t = 0..6 at dt=1
-    p_pred_coarse = p_ref_fine[::2] + 10  # t = 0,2,4,6 at dt=2
-    aligned = md_metrics.calc_pressure_metrics(
-        p_ref_fine, p_pred_coarse, ref_time_step_fs=1, pred_time_step_fs=2
-    )
-    assert aligned["pressure_mae"] == pytest.approx(10)
-
-    # Awkward cadence ratio: ref dt=0.3, pred dt=0.7 -> common grid every 2.1 fs.
-    # The common timestamps are 0 and 2.1 fs (ref indices 0,7; pred indices 0,3).
-    p_ref_awkward = np.arange(8.0)
-    p_pred_awkward = np.array([100.0, -1.0, -2.0, 107.0])
-    awkward = md_metrics.calc_pressure_metrics(
-        p_ref_awkward,
-        p_pred_awkward,
-        ref_time_step_fs=0.3,
-        pred_time_step_fs=0.7,
-    )
-    assert awkward["pressure_mae"] == pytest.approx(100)
 
 
 # === combined error ===
@@ -455,48 +459,36 @@ def test_calc_combined_error(
 
 @pytest.mark.parametrize("force_offset", [0, 0.1, 0.25])
 def test_calc_energy_force_rmse(force_offset: float) -> None:
-    """Raw per-atom energy RMSE preserves constant offsets; forces map directly. With
-    constant reference labels and a constant predictor, the error is exactly the
-    constant gap (0.8 eV / 2 atoms = 0.4) per frame.
+    """Energy RMSE uses mean-subtracted (fluctuation) energies, so a constant predictor
+    vs constant references cancels to 0 regardless of the gap; forces map directly to
+    the absolute error (they're invariant to the energy zero).
     """
-    frames = [
-        attach_ref_labels(
-            Atoms("H2", positions=np_rng.random((2, 3)) * 2, cell=[5] * 3),
-            energy=0.0,
-            forces=np.zeros((2, 3)),
-        )
-        for _ in range(3)
-    ]
+    frames = [h2_frame(0.0) for _ in range(3)]
     calc = ConstantCalculator(energy=0.8, force=force_offset)
     result = md_metrics.calc_energy_force_rmse(frames, calc)
-    assert result["energy_rmse"] == pytest.approx(0.4, abs=1e-12)
+    assert result["energy_rmse"] == pytest.approx(0, abs=1e-12)  # constant gap removed
     assert result["force_rmse"] == pytest.approx(abs(force_offset), abs=1e-12)
 
     with pytest.raises(ValueError, match="zero frames"):
         md_metrics.calc_energy_force_rmse([], calc)
     single_frame = md_metrics.calc_energy_force_rmse(frames[:1], calc)
-    assert single_frame["energy_rmse"] == pytest.approx(0.4, abs=1e-12)
+    assert single_frame["energy_rmse"] == pytest.approx(0, abs=1e-12)  # no fluctuation
 
 
-def test_calc_energy_force_rmse_includes_offsets_and_fluctuations() -> None:
-    """Energy RMSE should follow paper Eq. 1 without subtracting mean offsets: a large
-    constant offset plus per-frame fluctuations both contribute (a mean-subtracting
-    RMSE would drop the +1000 offset).
+def test_calc_energy_force_rmse_removes_offset_keeps_fluctuations() -> None:
+    """Energy RMSE subtracts each trajectory's mean, so a large constant reference
+    offset drops out and only the per-frame fluctuation mismatch remains. This is what
+    makes it invariant to CFPMD-26's mixed all-electron/PAW absolute energy zeros.
     """
     n_atoms = 2
-    fluctuations = np.array([0.0, 0.3, -0.3, 0.6, -0.6])  # eV total, varying
-    # constant predictor returns 0; references set so each frame's error is 1000 + fluct
-    frames = [
-        attach_ref_labels(
-            Atoms("H2", positions=np_rng.random((n_atoms, 3)) * 2, cell=[5] * 3),
-            energy=-(1000 + float(fluct)),
-            forces=np.zeros((n_atoms, 3)),
-        )
-        for fluct in fluctuations
-    ]
+    fluctuations = np.array([0.0, 0.3, -0.3, 0.6, -0.6])  # eV total, varying, zero mean
+    # constant predictor returns 0; references carry a +1000 eV offset plus fluctuations
+    frames = [h2_frame(-(1000 + float(fluct))) for fluct in fluctuations]
 
     result = md_metrics.calc_energy_force_rmse(frames, ConstantCalculator(energy=0))
-    expected = np.sqrt(np.mean(((fluctuations + 1000) / n_atoms) ** 2))
+    # the 1000 eV offset cancels; the flat predictor's deviation is 0 and the reference
+    # deviation is -fluct (mean(fluctuations)=0), so only the fluctuations survive
+    expected = np.sqrt(np.mean((fluctuations / n_atoms) ** 2))
     assert result["energy_rmse"] == pytest.approx(expected)
 
 
@@ -523,16 +515,41 @@ def test_calc_energy_force_rmse_uses_frame_geometry() -> None:
 
     x_coords = np.array([0.0, 1.0, 2.0, 3.0])
     frames = [
-        attach_ref_labels(
-            Atoms("H2", positions=[[x, 0, 0], [0, 0, 0]], cell=[5] * 3),
-            energy=0.0,
-            forces=np.zeros((2, 3)),
-        )
-        for x in x_coords
+        h2_frame(0.0, positions=np.array([[x, 0, 0], [0, 0, 0]])) for x in x_coords
     ]
     result = md_metrics.calc_energy_force_rmse(frames, XCoordCalculator())
-    expected = np.sqrt(np.mean((x_coords / 2) ** 2))  # error = x per frame, /2 atoms
+    # pred energy = x (ref is flat 0), so after mean-subtraction the per-frame deviation
+    # is (x - mean(x)) / 2 atoms
+    expected = np.sqrt(np.mean(((x_coords - x_coords.mean()) / 2) ** 2))
     assert result["energy_rmse"] == pytest.approx(expected)
+
+
+def test_predict_on_reference_persists_for_cpu_recompute(tmp_path: Path) -> None:
+    """Persisted per-frame predictions recompute the same energy/force RMSE on CPU as
+    the calc_energy_force_rmse wrapper, with no model re-run.
+    """
+    frames = [
+        h2_frame(float(np_rng.random()), forces=np_rng.random((2, 3))) for _ in range(6)
+    ]
+    calc = ConstantCalculator(energy=0.5, force=0.1)
+    preds = md_metrics.predict_on_reference(frames, calc)
+    assert set(preds) == {"e_pred", "force_se"}
+    assert preds["e_pred"].shape == preds["force_se"].shape == (6,)
+
+    direct = md_metrics.calc_energy_force_rmse(frames, calc)
+    assert md_metrics.energy_force_rmse_from_preds(frames, preds) == direct
+
+    # persisted sidecar recomputes identical metrics without the calculator
+    path = tmp_path / "refeval.npz"
+    np.savez(path, e_pred=preds["e_pred"], force_se=preds["force_se"])
+    with np.load(path) as data:
+        reloaded = {key: data[key] for key in data.files}
+    assert md_metrics.energy_force_rmse_from_preds(frames, reloaded) == direct
+
+    # a stale sidecar with the wrong frame count must error, not silently miscompute
+    stale = {key: arr[:-1] for key, arr in preds.items()}
+    with pytest.raises(ValueError, match="stale or mismatched"):
+        md_metrics.energy_force_rmse_from_preds(frames, stale)
 
 
 def test_calc_rdf_matches_direct_ase_histogram() -> None:
@@ -659,9 +676,9 @@ def test_evaluate_md_system_with_calculator_adds_rmse() -> None:
         make_jiggled_frames(6),
         ref_time_step_fs=1,
         pred_time_step_fs=1,
-        calculator=ConstantCalculator(energy=-0.2),  # ref -1.0 -> gap 0.8 eV
+        calculator=ConstantCalculator(energy=-0.2),  # constant gap vs flat ref -1.0
     )
-    assert metrics["energy_rmse"] == pytest.approx(0.1)  # 0.8 eV / 8 atoms
+    assert metrics["energy_rmse"] == pytest.approx(0)  # constant offset cancels
     assert metrics["force_rmse"] == pytest.approx(0)
 
     # trajectories shorter than two matched frames should raise
@@ -691,8 +708,9 @@ def test_calc_md_metrics() -> None:
     )
     metrics = md_metrics.calc_md_metrics(df_md)
 
-    assert metrics["energy_rmse"] == pytest.approx(0.2)
-    assert metrics["force_rmse"] == pytest.approx(0.3)
+    # energy/force RMSE means (0.2, 0.3 eV) are reported in meV (x1000)
+    assert metrics["energy_rmse"] == pytest.approx(200)
+    assert metrics["force_rmse"] == pytest.approx(300)
     assert metrics["rdf_error"] == pytest.approx(15)
     assert metrics["vdos_error"] == pytest.approx(20)
     assert metrics["pressure_mae"] == pytest.approx(1)
@@ -758,7 +776,7 @@ def test_write_metrics_to_yaml(
     text = yaml_path.read_text(encoding="utf-8")
     assert "pred_file: models/test/md-metrics.csv" in text
     assert "pred_file_url: https://example.com/md-metrics.csv" in text
-    assert "energy_rmse: 0.1235 # eV/atom" in text
+    assert f"energy_rmse: 0.1235 # {md_metrics.METRIC_UNITS['energy_rmse']}" in text
     assert f"force_rmse: 0.2346 # {md_metrics.METRIC_UNITS['force_rmse']}" in text
     assert "rdf_error: 12.3457 # %" in text
     assert "combined_error: 23.4568 # %" in text

@@ -88,6 +88,13 @@ for pred_file in (pbar := tqdm(pred_files, desc="MD trajectory pairs")):
         {"system": system_name, **system_metrics}
     )
 
+if not rows_by_model:  # fail loudly instead of exiting 0 with no metrics written
+    raise SystemExit(
+        f"No trajectory pairs evaluated from {len(pred_files)} file(s) under "
+        f"{args.pred_dir!r}: check the --pred-dir layout, the --models filter "
+        f"({args.models}), and the per-pair errors printed above"
+    )
+
 for model_key, rows in rows_by_model.items():
     df_md = pd.DataFrame(rows).set_index("system")
     csv_path = f"{args.out_dir}/{today}-{model_key}-md-metrics.csv.gz"

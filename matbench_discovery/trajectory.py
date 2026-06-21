@@ -242,11 +242,35 @@ class Trajectory:
         comments = grid[:, 1]
         atom_lines = grid[:, 2:].reshape(-1)  # frame-major (n_frames * n_atoms,)
 
+        # frame-invariant metadata is parsed from frame 0 only (count line, Properties
+        # header, species, pbc); validate every frame matches so differing later frames
+        # can't silently mix systems into the stacked arrays
+        counts = grid[:, 0].astype(int)
+        if (count_differs := counts != n_atoms).any():
+            bad = int(np.argmax(count_differs))
+            raise ValueError(
+                f"{path!r}: frame {bad} count line says {counts[bad]} atoms != "
+                f"{n_atoms} (frame 0)"
+            )
+
+        def uniform_comment(pattern: str, label: str, default: str) -> str:
+            """Frame 0's `pattern` capture, raising if any frame differs."""
+            values = [
+                m.group(1) if (m := re.search(pattern, c)) else default
+                for c in comments
+            ]
+            for idx, value in enumerate(values):
+                if value != values[0]:
+                    raise ValueError(
+                        f"{path!r}: frame {idx} {label} differs from frame 0"
+                    )
+            return values[0]
+
         # column layout from the Properties header (name:type:count triples)
-        prop_match = re.search(r"Properties=(\S+)", comments[0])
-        if prop_match is None:
+        properties = uniform_comment(r"Properties=(\S+)", "Properties header", "")
+        if not properties:
             raise ValueError(f"{path!r}: first comment line has no Properties=...")
-        tokens = prop_match.group(1).split(":")
+        tokens = properties.split(":")
         col_start: dict[str, int] = {}
         col = 0
         for name, count in zip(tokens[::3], tokens[2::3], strict=True):
@@ -271,7 +295,12 @@ class Trajectory:
 
         positions = grab(col_start["pos"])
         forces = grab(col_start["forces"]) if "forces" in col_start else None
-        species = table.iloc[:n_atoms, col_start["species"]].to_numpy(dtype=str)
+        species_col = table.iloc[:, col_start["species"]].to_numpy(dtype=str)
+        species_all = species_col.reshape(n_frames, -1)
+        if (species_differs := (species_all != species_all[0]).any(axis=1)).any():
+            bad = int(np.argmax(species_differs))
+            raise ValueError(f"{path!r}: frame {bad} species differ from frame 0")
+        species = species_all[0]
         atomic_numbers = np.asarray(symbols2numbers(list(species)))
 
         # per-frame floats parsed from the comment lines
@@ -305,7 +334,8 @@ class Trajectory:
             raise ValueError(f"{path!r}: every frame must carry a Lattice")
         cell = lattices.reshape(n_frames, 3, 3)  # 9 row-major floats == ASE cell
 
-        energy = comment_field(r"(?<!free_)energy=(\S+)", 1)  # width 1 -> (n_frames,)
+        # (?<!\w): only a bare energy= key, never *_energy= (free_/kinetic_/total_...)
+        energy = comment_field(r"(?<!\w)energy=(\S+)", 1)  # width 1 -> (n_frames,)
 
         stress = comment_field(r'\bstress="([^"]*)"', 9)
         if stress is not None:
@@ -315,8 +345,7 @@ class Trajectory:
         steps = comment_field(r"\bmd_step=(\S+)", 1, drop_if_partial=True)
         md_step = steps.astype(int) if steps is not None else None
 
-        pbc_match = re.search(r'pbc="([^"]*)"', comments[0])
-        pbc_str = pbc_match.group(1) if pbc_match else "T T T"
+        pbc_str = uniform_comment(r'pbc="([^"]*)"', "pbc", "T T T")
         pbc = np.array([tok.lower().startswith("t") for tok in pbc_str.split()])
 
         return cls(

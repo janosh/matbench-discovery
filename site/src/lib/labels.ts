@@ -178,7 +178,7 @@ export const METADATA_COLS: MetadataLabels = {
     key: `Org`,
     label: `Org`,
     sortable: false,
-    description: `Most common author affiliations`,
+    description: `Model author affiliations`,
     cell_style: `text-align: center; width: 3.2em; max-width: 3.2em;`,
     visible: true,
     better: undefined,
@@ -338,12 +338,11 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
         symprec,
         path: `metrics.geo_opt.symprec=${symprec}`,
         label: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
-        description: `Fraction of structures where ML ground state has ${desc} DFT ground state at ${format_power_ten(
-          symprec,
-        )} symprec`,
+        description: `Fraction of structures where ML ground state has ${desc} DFT ground state at ${format_power_ten(symprec)} symprec`,
         better,
         format: `~%`,
-        visible: false,
+        // visible by default so the landing-page "Geo Opt" column preset can surface
+        // them; the discovery/phonons/MD tables hide them via their own col_filter
       },
     ]),
 ) as unknown as GeoOptSymmetryMetricsLabels
@@ -351,22 +350,22 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
 export const MD_METRICS: MdMetricsLabels = {
   MD_energy_RMSE: {
     key: `energy_rmse`,
-    label: `E<sub>RMSE</sub>`,
-    description: `Root mean squared error of model-predicted potential energies on reference ab-initio MD frames`,
-    unit: `eV/atom`,
+    label: `ΔE<sub>RMSE</sub>`,
+    description: `Root mean squared error of model vs ab-initio energy fluctuations (each trajectory's mean energy is subtracted from both) on reference MD frames. Mean-subtraction makes this invariant to the absolute energy reference, which differs across CFPMD-26 systems (all-electron vs PAW)`,
+    unit: `meV/atom`,
     path: `metrics.md`,
     better: `lower`,
-    format: `.3f`,
+    format: `.1f`,
     style: `border-left: 1px solid black;`,
   },
   MD_force_RMSE: {
     key: `force_rmse`,
     label: `F<sub>RMSE</sub>`,
     description: `Root mean squared error of model-predicted forces on reference ab-initio MD frames`,
-    unit: `eV/Å`,
+    unit: `meV/Å`,
     path: `metrics.md`,
     better: `lower`,
-    format: `.3f`,
+    format: `.1f`,
   },
   MD_RDF_error: {
     key: `rdf_error`,

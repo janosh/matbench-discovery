@@ -24,6 +24,7 @@ from ase.md.nose_hoover_chain import NoseHooverChainNVT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from tqdm import tqdm
 
+from matbench_discovery import today
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
@@ -564,7 +565,9 @@ def run_md_benchmark(
         )
     if dry_run:  # one system, a few steps, capped reference slice
         system_names = system_names[:1]
-        n_steps = record_interval * 8
+        # enough recorded frames that time-matching keeps >=4 even for the coarsest
+        # reference cadence (dt_fs up to 10 fs vs the 2.5 fs prediction cadence)
+        n_steps = record_interval * 20
     else:
         os.makedirs(out_dir, exist_ok=True)  # for rollout trajectories and metrics CSV
 
@@ -613,12 +616,25 @@ def run_md_benchmark(
                     seed=seed,
                 )
 
+        # single GPU-expensive step: model single-points on every reference frame.
+        # Persist the per-frame predictions (tiny) so energy/force metric-definition
+        # changes can be recomputed on CPU later without re-running the model.
+        ref_predictions = md_metrics.predict_on_reference(ref_trajectory, calculator)
+        if not dry_run:
+            # e_ref lives in the reference HDF5, so the sidecar only needs the model's
+            # per-frame predictions to recompute energy/force metrics on CPU later
+            np.savez(
+                f"{out_dir}/{system_name}-nvt-{model_key}-refeval.npz",
+                e_pred=ref_predictions["e_pred"],
+                force_se=ref_predictions["force_se"],
+                n_atoms=ref_trajectory.n_atoms,
+            )
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectory,
             pred_frames,  # evaluate_md_system coerces the Atoms list to a Trajectory
             ref_time_step_fs=ref_dt_fs,
             pred_time_step_fs=pred_time_step_fs,
-            calculator=calculator,
+            ref_predictions=ref_predictions,
         )
         rows.append(
             {"system": system_name, "temperature_kelvin": temperature_kelvin}
@@ -632,7 +648,7 @@ def run_md_benchmark(
 
     # suffix avoids collisions when parallel single-system jobs share out_dir
     suffix = f"-{'-'.join(systems)}" if systems else ""
-    csv_path = f"{out_dir}/{model_key}-md-metrics{suffix}.csv.gz"
+    csv_path = f"{out_dir}/{today}-{model_key}-md-metrics{suffix}.csv.gz"
     df_md.to_csv(csv_path)
     print(f"Per-system MD metrics for {model_key} saved to {csv_path!r}")
     return df_md

@@ -189,3 +189,14 @@ metrics:
       RMSE: 0.067 # eV/atom
       R2: 0.869 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/deepmd/dpa-3.1-3m-ft/2026-06-21-dpa_3_1_3m_ft-md-metrics.csv.gz
+    pred_file_url: https://figshare.com/files/PLACEHOLDER # TODO replace with real figshare URL after uploading the md-metrics CSV
+    energy_rmse: 0.7376 # meV/atom
+    force_rmse: 68.9079 # meV/Å
+    rdf_error: 3.9219 # %
+    vdos_error: 75.1632 # %
+    pressure_mae: 0.8902 # GPa
+    pressure_wasserstein: 0.7818 # GPa
+    combined_error: 71.6303 # %
+    n_systems: 17 # count

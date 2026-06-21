@@ -31,6 +31,11 @@ def make_traj(
     return Trajectory(**fields)
 
 
+def make_atoms(symbols: str = "Cu2", *, pbc: bool = True) -> Atoms:
+    """Minimal ASE Atoms (positions at the origin) in a 4 A cubic cell."""
+    return Atoms(symbols, cell=np.eye(3) * 4, pbc=pbc)
+
+
 @pytest.mark.parametrize(
     ("field", "bad_shape"),
     [
@@ -128,23 +133,29 @@ def test_trajectory_ase_roundtrip() -> None:
     np.testing.assert_allclose(back.stress, traj.stress, rtol=0, atol=1e-12)
 
 
-def test_from_ase_missing_results_and_bad_input() -> None:
-    """from_ase yields None for absent results and rejects empty/ragged input."""
-    bare = [Atoms("Cu2", positions=np.zeros((2, 3)), cell=np.eye(3) * 4, pbc=True)]
-    traj = Trajectory.from_ase(bare)
+def test_from_ase_missing_results() -> None:
+    """from_ase yields None for every result absent from the frames."""
+    traj = Trajectory.from_ase([make_atoms()])
     assert traj.energy is None
     assert traj.forces is None
     assert traj.stress is None
     assert traj.md_step is None
 
-    with pytest.raises(ValueError, match="zero frames"):
-        Trajectory.from_ase([])
-    ragged = [
-        Atoms("Cu2", positions=np.zeros((2, 3)), cell=np.eye(3) * 4, pbc=True),
-        Atoms("Cu3", positions=np.zeros((3, 3)), cell=np.eye(3) * 4, pbc=True),
-    ]
-    with pytest.raises(ValueError, match="Inconsistent atom counts"):
-        Trajectory.from_ase(ragged)
+
+@pytest.mark.parametrize(
+    ("frames", "match"),
+    [
+        ([], "zero frames"),
+        ([make_atoms("Cu2"), make_atoms("Cu3")], "Inconsistent atom counts"),
+        ([make_atoms("Cu2"), make_atoms("He2")], "species differ"),
+        ([make_atoms("Cu2"), make_atoms("Cu2", pbc=False)], "pbc differs"),
+    ],
+    ids=["empty", "ragged_count", "species", "pbc"],
+)
+def test_from_ase_rejects_bad_input(frames: list[Atoms], match: str) -> None:
+    """from_ase rejects empty input and frames inconsistent with frame 0."""
+    with pytest.raises(ValueError, match=match):
+        Trajectory.from_ase(frames)
 
 
 def test_from_ase_reraises_genuine_backend_error() -> None:
@@ -163,7 +174,7 @@ def test_from_ase_reraises_genuine_backend_error() -> None:
             super().calculate(atoms, properties, system_changes)
             raise RuntimeError("simulated stress backend failure")
 
-    atoms = Atoms("Cu2", positions=np.zeros((2, 3)), cell=np.eye(3) * 4, pbc=True)
+    atoms = make_atoms()
     atoms.calc = BrokenStress()
     with pytest.raises(RuntimeError, match="stress backend failure"):
         Trajectory.from_ase([atoms])
@@ -188,26 +199,14 @@ def test_from_ase_parses_extxyz(tmp_path: Path) -> None:
     np.testing.assert_allclose(parsed.energy, traj.energy, rtol=0, atol=1e-6)
 
 
-def test_from_ase_rejects_inconsistent_species_or_pbc() -> None:
-    """from_ase requires each frame to match frame 0 species and pbc, not just count."""
-    cu = Atoms("Cu2", positions=np.zeros((2, 3)), cell=np.eye(3) * 4, pbc=True)
-    he = Atoms("He2", positions=np.zeros((2, 3)), cell=np.eye(3) * 4, pbc=True)
-    with pytest.raises(ValueError, match="species differ"):
-        Trajectory.from_ase([cu, he])
-    mixed_pbc = Atoms("Cu2", positions=np.zeros((2, 3)), cell=np.eye(3) * 4, pbc=False)
-    with pytest.raises(ValueError, match="pbc differs"):
-        Trajectory.from_ase([cu, mixed_pbc])
-
-
 def test_from_ase_rejects_mixed_property_availability() -> None:
     """A property present on some frames but not others fails loud (not silent None)."""
     from ase.calculators.singlepoint import SinglePointCalculator
 
-    with_energy = Atoms("Cu2", positions=np.zeros((2, 3)), cell=np.eye(3) * 4, pbc=True)
+    with_energy = make_atoms()
     with_energy.calc = SinglePointCalculator(with_energy, energy=-1.0)
-    without = Atoms("Cu2", positions=np.zeros((2, 3)), cell=np.eye(3) * 4, pbc=True)
     with pytest.raises(ValueError, match="missing a property"):
-        Trajectory.from_ase([with_energy, without])
+        Trajectory.from_ase([with_energy, make_atoms()])
 
 
 def test_negative_and_out_of_range_indexing() -> None:
@@ -237,6 +236,9 @@ def test_from_extxyz_matches_ase_parser(tmp_path: Path, suffix: str) -> None:
     from matbench_discovery.md import read_trajectory
 
     traj = make_traj(n_frames=5, n_atoms=4)
+    # non-orthogonal cell so the parity check catches Lattice row/column-order or
+    # transpose bugs that a diagonal cell would hide
+    traj.cell[:] = [[5.0, 0.5, 0.3], [0.0, 5.2, 0.4], [0.0, 0.0, 4.7]]
     path = str(tmp_path / f"traj.extxyz{suffix}")
     ase.io.write(path, traj.to_ase())
 
@@ -285,16 +287,60 @@ def test_from_extxyz_real_format_stress_energy(tmp_path: Path) -> None:
     np.testing.assert_array_equal(fast.forces, slow.forces)
 
 
-def test_from_extxyz_rejects_varying_atom_count(tmp_path: Path) -> None:
-    """A trajectory whose atom count changes between frames fails the stride check."""
-    content = (
-        '2\nLattice="4 0 0 0 4 0 0 0 4" Properties=species:S:1:pos:R:3 pbc="T T T"\n'
+@pytest.mark.parametrize(
+    ("frame1", "match"),
+    [
+        # frame 1 has a different number of atom lines -> fails the frame-stride check
+        (
+            '3\nLattice="4 0 0 0 4 0 0 0 4" '
+            'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
+            "Cu 0 0 0\nCu 1 1 1\nCu 2 2 2\n",
+            "not a multiple of frame stride",
+        ),
+        # same atom count but different species composition
+        (
+            '2\nLattice="4 0 0 0 4 0 0 0 4" '
+            'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
+            "Ag 0 0 0\nAg 1 1 1\n",
+            "species differ",
+        ),
+        # different periodic boundary conditions
+        (
+            '2\nLattice="4 0 0 0 4 0 0 0 4" '
+            'Properties=species:S:1:pos:R:3 pbc="T T F"\n'
+            "Cu 0 0 0\nCu 1 1 1\n",
+            "pbc differs",
+        ),
+        # different Properties header (column layout)
+        (
+            '2\nLattice="4 0 0 0 4 0 0 0 4" '
+            'Properties=species:S:1:pos:R:3:forces:R:3 pbc="T T T"\n'
+            "Cu 0 0 0\nCu 1 1 1\n",
+            "Properties header differs",
+        ),
+        # count line value disagrees with frame 0 while the frame stride still aligns
+        (
+            '5\nLattice="4 0 0 0 4 0 0 0 4" '
+            'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
+            "Cu 0 0 0\nCu 1 1 1\n",
+            "count line says 5 atoms",
+        ),
+    ],
+    ids=["varying_count", "species", "pbc", "properties", "count_line"],
+)
+def test_from_extxyz_rejects_inconsistent_metadata(
+    tmp_path: Path, frame1: str, match: str
+) -> None:
+    """Frames differing from frame 0 in atom count, species, Properties header or pbc
+    must fail loudly rather than silently mixing systems into the stacked arrays.
+    """
+    frame0 = (
+        '2\nLattice="4 0 0 0 4 0 0 0 4" '
+        'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
         "Cu 0 0 0\nCu 1 1 1\n"
-        '3\nLattice="4 0 0 0 4 0 0 0 4" Properties=species:S:1:pos:R:3 pbc="T T T"\n'
-        "Cu 0 0 0\nCu 1 1 1\nCu 2 2 2\n"
     )
     path = str(tmp_path / "traj.extxyz")
     with open(path, "w") as file:
-        file.write(content)
-    with pytest.raises(ValueError, match="not a multiple of frame stride"):
+        file.write(frame0 + frame1)
+    with pytest.raises(ValueError, match=match):
         Trajectory.from_extxyz(path)

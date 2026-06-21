@@ -32,11 +32,17 @@ if TYPE_CHECKING:
 
 def load_settings(csv_path: str) -> dict[str, tuple[float, float]]:
     """Map '<System>_<temp>K' keys to (dt_fs, temperature_kelvin) from a CFPMD settings
-    CSV with System, temperature and dt columns (dt = time between saved ref frames).
+    CSV with System, temperature, stride and dt columns.
+
+    dt is the AIMD *integration* timestep (fs) and stride the number of MD steps
+    between saved frames, so the interval between reference frames is ``dt * stride``
+    (e.g. dt=1, stride=5 -> 5 fs). dt_fs must be this saved-frame interval: it sets the
+    VDOS frequency axis and the reference/prediction time-matching, so dropping the
+    stride factor (wrong by up to 5x here) corrupts the VDOS and pressure metrics.
     """
     return {
         f"{row['System']}_{float(row['temperature']):g}K": (
-            float(row["dt"]),
+            float(row["dt"]) * float(row["stride"]),
             float(row["temperature"]),
         )
         for _, row in pd.read_csv(csv_path).iterrows()

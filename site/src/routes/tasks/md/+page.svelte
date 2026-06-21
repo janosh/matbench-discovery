@@ -3,15 +3,15 @@
   import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
   import { DynamicScatter } from '$lib/plot'
   import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
+  import MdNote from './md-note.md'
 
   // show only MD metrics and metadata columns
-  const md_metrics = Object.values(MD_METRICS)
   const visible_cols: Record<string, boolean> = Object.fromEntries([
-    ...Object.entries(ALL_METRICS)
-      .filter(([key]) => !(key in MD_METRICS))
-      .map(([, col]): [string, boolean] => [col.label, false]),
+    ...Object.entries(ALL_METRICS).map(([key, col]): [string, boolean] => [
+      col.label,
+      key in MD_METRICS,
+    ]),
     ...Object.values(METADATA_COLS).map((col): [string, boolean] => [col.label, true]),
-    ...md_metrics.map((col): [string, boolean] => [col.label, true]),
   ])
 
   // guard against null since typeof null === `object` (a null metrics.md is not data)
@@ -23,7 +23,9 @@
   let scatter_y = $state(MD_METRICS.MD_RDF_error.key)
 </script>
 
-<h1>Molecular Dynamics Metrics</h1>
+<h1>Molecular Dynamics Metrics <span class="beta-badge">beta</span></h1>
+
+<MdNote />
 
 <p>
   This task evaluates how well machine-learning interatomic potentials reproduce
@@ -33,8 +35,8 @@
   first-principles trajectories. The resulting trajectories are compared via radial
   distribution functions (RDF), pressure distributions from the stress tensor trace,
   and the vibrational density of states (VDOS) obtained from the velocity
-  autocorrelation function. Single-point energy and force RMSEs on the reference
-  frames complement these trajectory-level observables.
+  autocorrelation function. Single-point energy-fluctuation and force RMSEs on the
+  reference frames complement these trajectory-level observables.
   {#if n_md_models === 0}
     No models have reported MD metrics yet.
   {/if}
@@ -61,3 +63,18 @@
   color_key={MD_METRICS.MD_combined_error.key}
   style="height: 800px"
 />
+
+<style>
+  .beta-badge {
+    font-size: 0.45em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    vertical-align: middle;
+    padding: 2px 7px;
+    border-radius: 5px;
+    color: orange;
+    background: color-mix(in oklab, orange 18%, transparent);
+    border: 1px solid color-mix(in oklab, orange 45%, transparent);
+  }
+</style>

@@ -164,3 +164,14 @@ metrics:
       RMSE: 0.103 # eV/atom
       R2: 0.689 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/chgnet/chgnet-0.3.0/2026-06-21-chgnet_030-md-metrics.csv.gz
+    pred_file_url: https://figshare.com/files/PLACEHOLDER # TODO replace with real figshare URL after uploading the md-metrics CSV
+    energy_rmse: 2.3775 # meV/atom
+    force_rmse: 202.2351 # meV/Å
+    rdf_error: 9.7039 # %
+    vdos_error: 72.1799 # %
+    pressure_mae: 1.1763 # GPa
+    pressure_wasserstein: 1.1274 # GPa
+    combined_error: 64.776 # %
+    n_systems: 17 # count

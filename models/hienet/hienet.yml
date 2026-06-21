@@ -89,7 +89,7 @@ requirements:
 training_set: [MPtrj]
 
 training_cost:
-  Nvidia A100 GPUs: { amount: 8, hours: 361 }
+  Nvidia A100 GPUs: {amount: 8, hours: 361}
 
 notes:
   Description: |
@@ -183,3 +183,14 @@ metrics:
       RMSE: 0.084 # eV/atom
       R2: 0.793 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/hienet/hienet/2026-06-21-hienet-md-metrics.csv.gz
+    pred_file_url: https://figshare.com/files/PLACEHOLDER # TODO replace with real figshare URL after uploading the md-metrics CSV
+    energy_rmse: 1.1753 # meV/atom
+    force_rmse: 118.8973 # meV/Å
+    rdf_error: 5.1997 # %
+    vdos_error: 74.3987 # %
+    pressure_mae: 0.8775 # GPa
+    pressure_wasserstein: 0.7375 # GPa
+    combined_error: 69.8783 # %
+    n_systems: 17 # count

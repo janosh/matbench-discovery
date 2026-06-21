@@ -137,7 +137,7 @@ def main() -> int:
         # match the suffix run_md_benchmark adds for --systems subset runs so the
         # YAML pred_file points at the file actually written
         suffix = f"-{'-'.join(args.systems)}" if args.systems else ""
-        csv_path = f"{out_dir}/{args.model}-md-metrics{suffix}.csv.gz"
+        csv_path = f"{out_dir}/{today}-{args.model}-md-metrics{suffix}.csv.gz"
         md_metrics.write_metrics_to_yaml(model, model_metrics, pred_file_path=csv_path)
         print(f"Wrote metrics.md to {model.yaml_path}")
     return 0
