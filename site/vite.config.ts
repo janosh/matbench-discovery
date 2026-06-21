@@ -156,17 +156,18 @@ export default defineConfig({
     setupFiles: `tests/index.ts`,
     dir: `tests`,
     include: [`**/*.test.ts`, `**/*.test.svelte.ts`],
+    // matterviz imports @spglib/moyo-wasm whose wasm binary can't load under vitest/node
+    // (the .wasm references a missing _bg.js glue), so stub both the bare package and its
+    // `/moyo_wasm_bg.wasm?url` subpath with a no-op mock
+    alias: [
+      {
+        find: /^@spglib\/moyo-wasm(?:$|\/moyo_wasm_bg\.wasm)/,
+        replacement: path.resolve(`tests/mocks/moyo-wasm.ts`),
+      },
+    ],
   },
 
   resolve: {
     conditions: process.env.VITEST ? [`browser`] : undefined,
-    alias: process.env.VITEST
-      ? [
-          {
-            find: /^@spglib\/moyo-wasm.*/,
-            replacement: new URL(`tests/mocks/moyo-wasm.ts`, import.meta.url).pathname,
-          },
-        ]
-      : [],
   },
 })

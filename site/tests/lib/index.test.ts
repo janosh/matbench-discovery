@@ -1,5 +1,32 @@
-import { arr_to_str, format_date, slugify } from '$lib'
+import { arr_to_str, data_files, DATASETS, format_date, slugify } from '$lib'
 import { describe, expect, it } from 'vitest'
+
+describe(`$lib data re-exports reflect index.ts mutations`, () => {
+  it(`DATASETS entries expose computed slug and description_html`, () => {
+    const entries = Object.entries(DATASETS)
+    expect(entries.length).toBeGreaterThan(0)
+    for (const [key, dataset] of entries) {
+      expect(dataset.slug, `${key} missing slug`).toBe(slugify(key))
+      expect(
+        dataset.description_html?.length,
+        `${key} missing description_html`,
+      ).toBeGreaterThan(0)
+    }
+  })
+
+  it(`data_files entries expose computed html`, () => {
+    const entries = Object.entries(data_files).filter(
+      ([key, entry]) => !key.startsWith(`_`) && typeof entry === `object`,
+    )
+    expect(entries.length).toBeGreaterThan(0)
+    for (const [key, entry] of entries) {
+      expect(
+        (entry as { html?: string }).html?.length,
+        `${key} missing html`,
+      ).toBeGreaterThan(0)
+    }
+  })
+})
 
 describe(`slugify`, () => {
   it.each([
@@ -27,38 +54,16 @@ describe(`arr_to_str`, () => {
 })
 
 describe(`format_date`, () => {
-  it(`formats date with proper locale and options`, () => {
-    // Use a date with explicit time to avoid timezone issues
-    const date = `2023-05-15T12:00:00`
-    const result = format_date(date)
-
-    expect(result).toContain(`2023`)
-    expect(result).toMatch(/May/)
-    expect(result).toMatch(/15/)
-  })
-
-  it(`handles different date formats`, () => {
-    // Use explicit times to avoid timezone boundary issues
-    const iso_date = `2023-12-25T12:00:00`
-    const timestamp = new Date(`2023-12-25T12:00:00`).getTime()
-
-    const result1 = format_date(iso_date)
-    const result2 = format_date(timestamp)
-
-    // Both should produce valid date strings (not "Invalid Date")
-    expect(result1).not.toBe(`Invalid Date`)
-    expect(result2).not.toBe(`Invalid Date`)
-
-    // Both should contain the year
-    expect(result1).toContain(`2023`)
-    expect(result2).toContain(`2023`)
-
-    // Both should contain December
-    expect(result1).toMatch(/Dec/)
-    expect(result2).toMatch(/Dec/)
-
-    // Both should contain the day
-    expect(result1).toMatch(/25/)
-    expect(result2).toMatch(/25/)
+  // covers string and numeric (timestamp) inputs; explicit times avoid timezone boundary issues
+  it.each<[string | number, string, RegExp, RegExp]>([
+    [`2023-05-15T12:00:00`, `2023`, /May/, /15/],
+    [`2023-12-25T12:00:00`, `2023`, /Dec/, /25/],
+    [new Date(`2023-12-25T12:00:00`).getTime(), `2023`, /Dec/, /25/],
+  ])(`formats %s into a valid localized date`, (input, year, month, day) => {
+    const result = format_date(input)
+    expect(result).not.toBe(`Invalid Date`)
+    expect(result).toContain(year)
+    expect(result).toMatch(month)
+    expect(result).toMatch(day)
   })
 })

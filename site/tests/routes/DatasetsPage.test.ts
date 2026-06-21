@@ -215,14 +215,10 @@ describe(`Datasets Page`, () => {
       return cells[1] // Second column (index 1)
     })
 
-    // Check that at least some cells have formatted numbers
-    let has_formatted_number = false
-    structures_cells.forEach((cell) => {
+    // Check that at least some cells have formatted numbers (K/M for thousands/millions)
+    const has_formatted_number = structures_cells.some((cell) => {
       const cell_text = cell?.textContent?.trim() ?? ``
-      if (cell_text !== `n/a`) {
-        // Should use K or M for thousands/millions
-        has_formatted_number = has_formatted_number || /\d+(\.\d+)?[KM]/.test(cell_text)
-      }
+      return cell_text !== `n/a` && /\d+(?:\.\d+)?[KM]/.test(cell_text)
     })
 
     expect(has_formatted_number).toBe(true)

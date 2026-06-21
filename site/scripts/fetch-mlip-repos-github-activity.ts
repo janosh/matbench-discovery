@@ -27,8 +27,8 @@ type RepoData = {
 
 const extract_github_repo = (url: string | null): string | null => {
   if (!url) return null
-  const match = /github\.com\/([^/]+\/[^/]+)/.exec(url)
-  return match ? match[1].replace(/\.git$/, ``) : null
+  const match = /github\.com\/(?<repo>[^/]+\/[^/]+)/.exec(url)
+  return match?.groups?.repo.replace(/\.git$/, ``) ?? null
 }
 
 type ModelInfo = { name: string; model_key: string; repo: string }
@@ -106,8 +106,8 @@ const fetch_github = async (url: string, headers: Record<string, string>) => {
 }
 
 const get_count_from_pagination = (link: string | null) => {
-  const match = /page=(\d+)>; rel="last"/.exec(link ?? ``)
-  return match ? parseInt(match[1], 10) : null
+  const match = /page=(?<page>\d+)>; rel="last"/.exec(link ?? ``)
+  return match?.groups ? parseInt(match.groups.page, 10) : null
 }
 
 // total count from the Link header's last page, falling back to the response body length
@@ -194,14 +194,15 @@ const main = async () => {
     const { repo } = info
     const existing = existing_map.get(repo)
     const cache_file = join(cache_dir, `${repo.replace(`/`, `_`)}.json`)
+    const merged_existing = existing ? { ...existing, ...info } : null
 
-    if (existing && (await is_cache_fresh(cache_file))) {
-      results.push({ ...existing, ...info })
+    if (merged_existing && (await is_cache_fresh(cache_file))) {
+      results.push(merged_existing)
       continue
     }
 
     const stats = await get_github_stats(info, token, cache_file)
-    const result = stats ?? (existing ? { ...existing, ...info } : null)
+    const result = stats ?? merged_existing
     if (result) results.push(result)
     await new Promise((resolve) => setTimeout(resolve, 300))
   }
