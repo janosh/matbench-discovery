@@ -201,13 +201,14 @@ export interface GeoOptSymmetryMetricsLabels {
  * via the `definition` "MdMetricsLabels".
  */
 export interface MdMetricsLabels {
-  MD_energy_RMSE: Label1
-  MD_force_RMSE: Label1
-  MD_RDF_error: Label1
-  MD_VDOS_error: Label1
-  MD_pressure_MAE: Label1
-  MD_pressure_W1: Label1
-  MD_combined_error: Label1
+  md_energy_rmse: Label1
+  md_force_rmse: Label1
+  md_rdf_error: Label1
+  md_vdos_error: Label1
+  md_pressure_mae: Label1
+  md_pressure_wasserstein: Label1
+  md_pressure_error: Label1
+  md_combined_error: Label1
 }
 /**
  * This interface was referenced by `Label`'s JSON-Schema

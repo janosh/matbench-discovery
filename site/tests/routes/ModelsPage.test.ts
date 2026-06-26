@@ -46,13 +46,14 @@ describe(`Models Page`, () => {
       `TNR`,
       `TPR`,
       `κSRME`,
-      `ERMSE`,
+      `ΔERMSE`,
       `FRMSE`,
-      `RDF err`,
-      `VDOS err`,
+      `ΔRDF`,
+      `ΔVDOS`,
       `PMAE`,
       `PW1`,
-      `Combined err`,
+      `ΔP`,
+      `CMDS`,
     ])
   })
 

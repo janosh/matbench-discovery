@@ -57,17 +57,19 @@ md:
     lower_is_better:
       - E<sub>RMSE</sub>
       - F<sub>RMSE</sub>
-      - RDF err
-      - VDOS err
+      - ΔRDF
+      - ΔVDOS
       - P<sub>MAE</sub>
       - P<sub>W1</sub>
-      - Combined err
+      - ΔP
+      - CMDS
       - energy_rmse
       - force_rmse
       - rdf_error
       - vdos_error
       - pressure_mae
       - pressure_wasserstein
+      - pressure_error
       - combined_error
 
 cps:

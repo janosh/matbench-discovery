@@ -17,14 +17,14 @@ describe(`MD Task Page`, () => {
     const headers = [...document.querySelectorAll(`th`)].map((th) =>
       th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
-    for (const header of [`RDF err`, `VDOS err`, `PMAE`, `PW1`, `Combined err`]) {
+    for (const header of [`ΔRDF`, `ΔVDOS`, `PMAE`, `PW1`, `CMDS`]) {
       expect(headers, `missing column ${header}`).toContain(header)
     }
 
     // DynamicScatter with h2 heading that tracks the selected axes
     const h2s = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)]
     const scatter_heading = h2s.find(
-      (h2) => h2.textContent?.replaceAll(/\s+/g, ` `).trim() === `RDF err vs FRMSE`,
+      (h2) => h2.textContent?.replaceAll(/\s+/g, ` `).trim() === `ΔRDF vs FRMSE`,
     )
     expect(scatter_heading, `dynamic scatter heading`).toBeDefined()
 

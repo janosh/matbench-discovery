@@ -94,7 +94,7 @@ requirements:
 training_set: [MPtrj]
 
 training_cost:
-  Nvidia A100 GPUs: { amount: 4, hours: 500 }
+  Nvidia A100 GPUs: {amount: 4, hours: 500}
 
 notes:
   Description: |
@@ -188,3 +188,14 @@ metrics:
       RMSE: 0.105 # eV/atom
       R2: 0.775 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/eqnorm/eqnorm-mptrj/2026-06-26-eqnorm_mptrj-md-metrics.csv.gz
+    energy_rmse: 1.2943 # meV/atom
+    force_rmse: 124.9878 # meV/Å
+    rdf_error: 6.1311 # %
+    vdos_error: 73.9161 # %
+    pressure_mae: 0.9507 # GPa
+    pressure_wasserstein: 0.8599 # GPa
+    pressure_error: 59.754 # %
+    combined_error: 46.6004 # %
+    n_systems: 17 # count

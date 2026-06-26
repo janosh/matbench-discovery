@@ -1,7 +1,6 @@
 """Test enums module."""
 
 import os
-import sys
 from enum import auto
 from pathlib import Path
 from typing import Any
@@ -23,6 +22,15 @@ from matbench_discovery.enums import (
     TestSubset,
 )
 from matbench_discovery.remote.fetch import maybe_auto_download_file
+
+
+def make_mock_response(content: bytes) -> requests.Response:
+    """Create a successful streaming response with fixed byte content."""
+    response = requests.Response()
+    response.status_code = 200
+    response._content = content  # noqa: SLF001
+    response.iter_content = lambda chunk_size=8192: [content]  # ty: ignore[invalid-assignment] # noqa: ARG005
+    return response
 
 
 def test_mbd_key() -> None:
@@ -276,36 +284,12 @@ def test_files_enum_auto_download(
     abs_path = f"{tmp_path}/test/file.txt"
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
 
-    # Mock successful request
-    class MockResponse:
-        status_code = 200
-        content = b"test content"
-
-        def raise_for_status(self) -> None:
-            """Mock the raise_for_status method."""
-            if self.status_code >= 400:
-                raise requests.HTTPError(f"HTTP Error: {self.status_code}")
-
-        def iter_content(self, chunk_size: int = 8192) -> list[bytes]:  # noqa: ARG002
-            """Mock iter_content for streaming."""
-            return [self.content]
-
-    # Mock stdin to simulate non-interactive mode
-    class MockStdin:
-        def isatty(self) -> bool:
-            """Mock isatty to simulate non-interactive mode."""
-            return False
-
-        def readline(self) -> str:
-            """Mock readline method."""
-            return "y\n"  # Default to yes for testing
-
-    monkeypatch.setattr(requests, "get", lambda *_args, **_kwargs: MockResponse())
-    monkeypatch.setattr(sys, "stdin", MockStdin())
+    mock_response = make_mock_response(b"test content")
 
     # Test 1: Auto-download enabled (default)
     monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
-    maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
+    with patch("requests.get", return_value=mock_response):
+        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
     stdout, _ = capsys.readouterr()
     assert f"Downloading 'test' from {test_file.url!r}" in stdout
     assert os.path.isfile(abs_path)
@@ -319,7 +303,11 @@ def test_files_enum_auto_download(
     os.remove(abs_path)
     monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "false")
     assert not os.path.isfile(abs_path)
-    maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
+    with (
+        patch("requests.get", return_value=mock_response),
+        patch("sys.stdin.isatty", return_value=False),
+    ):
+        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
     assert os.path.isfile(abs_path)  # file should now be downloaded
 
 
@@ -350,6 +338,33 @@ def test_model_enum() -> None:
     metrics = Model.alignn.metrics
     assert isinstance(metrics, dict)
     assert {*metrics} >= {"discovery", "geo_opt", "phonons"}
+
+
+def test_model_md_path_passes_huggingface_token(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """MD prediction downloads from gated HuggingFace repos use bearer auth."""
+    url = "https://huggingface.co/org/repo/resolve/main/md.csv.gz"
+    rel_path = "models/test/md.csv.gz"
+    abs_path = f"{tmp_path}/{rel_path}"
+    monkeypatch.setenv("HF_TOKEN", "hf_secret")
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+    monkeypatch.setattr("matbench_discovery.enums.ROOT", str(tmp_path))
+    monkeypatch.setitem(
+        Model.alignn.__dict__,
+        "metadata",
+        {
+            "model_name": "Gated MD",
+            "metrics": {"md": {"pred_file": rel_path, "pred_file_url": url}},
+        },
+    )
+
+    with patch("requests.get", return_value=make_mock_response(b"md")) as mock_get:
+        assert Model.alignn.md_path == abs_path
+
+    assert os.path.isfile(abs_path)
+    assert mock_get.call_args.args == (url,)
+    assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer hf_secret"}
 
 
 def get_urls_from_dict(

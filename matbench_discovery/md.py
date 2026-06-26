@@ -576,8 +576,10 @@ def run_md_benchmark(
     for system_name in tqdm(system_names, desc=f"MD systems ({model_key})"):
         # dry run reads only the first 64 reference frames so the single-point eval
         # stays fast; the HDF5 reader only decompresses the frames it returns
-        ref_trajectory, ref_dt_fs, temperature_kelvin = read_reference_trajectory(
-            ref_file, system_name, max_frames=64 if dry_run else None
+        ref_trajectory, ref_time_step_fs, temperature_kelvin = (
+            read_reference_trajectory(
+                ref_file, system_name, max_frames=64 if dry_run else None
+            )
         )
         initial_atoms = ref_trajectory.frame_as_atoms(0)
 
@@ -632,7 +634,7 @@ def run_md_benchmark(
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectory,
             pred_frames,  # evaluate_md_system coerces the Atoms list to a Trajectory
-            ref_time_step_fs=ref_dt_fs,
+            ref_time_step_fs=ref_time_step_fs,
             pred_time_step_fs=pred_time_step_fs,
             ref_predictions=ref_predictions,
         )

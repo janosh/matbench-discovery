@@ -186,7 +186,12 @@ class Trajectory:
             return np.array(values)
 
         md_steps = [atoms.info.get("md_step") for atoms in frames]
-        has_steps = all(step is not None for step in md_steps)
+        present = [step is not None for step in md_steps]
+        # match stack(): all present -> keep, none present -> drop, partial -> fail loud
+        # rather than silently dropping the field
+        if any(present) and not all(present):
+            frame_idx = present.index(False)
+            raise ValueError(f"{frame_idx=} missing md_step that other frames have")
         return cls(
             atomic_numbers=first.numbers.copy(),
             positions=positions,
@@ -195,7 +200,7 @@ class Trajectory:
             energy=stack(lambda atoms: atoms.get_potential_energy()),
             forces=stack(lambda atoms: atoms.get_forces()),
             stress=stack(lambda atoms: atoms.get_stress(voigt=True)),
-            md_step=np.array(md_steps) if has_steps else None,
+            md_step=np.array(md_steps) if all(present) else None,
         )
 
     @classmethod

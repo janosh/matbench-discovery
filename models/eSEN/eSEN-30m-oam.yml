@@ -155,3 +155,14 @@ metrics:
       RMSE: 0.068 # eV/atom
       R2: 0.898 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/eSEN/eSEN-30m-oam/2026-06-26-esen_30m_oam-md-metrics.csv.gz
+    energy_rmse: 0.5077 # meV/atom
+    force_rmse: 50.7907 # meV/Å
+    rdf_error: 3.585 # %
+    vdos_error: 75.0096 # %
+    pressure_mae: 0.9704 # GPa
+    pressure_wasserstein: 0.8531 # GPa
+    pressure_error: 49.7573 # %
+    combined_error: 42.7839 # %
+    n_systems: 17 # count

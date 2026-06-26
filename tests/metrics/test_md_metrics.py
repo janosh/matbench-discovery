@@ -433,25 +433,63 @@ def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
 
 
 @pytest.mark.parametrize(
-    ("rdf_error", "vdos_error", "expected"),
+    ("rdf_error", "vdos_error", "pressure_error", "expected"),
     [
-        (0, 0, 0),
-        (10, 0, 10),  # all weight on the worse metric
-        (0, 10, 10),
-        (10, 10, 10),
-        (20, 10, 20 / 30 * 20 + 10 / 30 * 10),  # error-weighted, > plain mean of 15
+        (0, 0, 0, 0),
+        (10, 20, 30, 20),  # simple mean of the three
+        (15, 15, 15, 15),
+        (30, 0, 0, 10),
     ],
 )
 def test_calc_combined_error(
-    rdf_error: float, vdos_error: float, expected: float
+    rdf_error: float, vdos_error: float, pressure_error: float, expected: float
 ) -> None:
-    """Combined error should weight the worse of RDF and VDOS errors more."""
-    assert md_metrics.calc_combined_error(rdf_error, vdos_error) == pytest.approx(
-        expected
-    )
+    """Combined error: simple mean of RDF/VDOS/pressure errors."""
+    assert md_metrics.calc_combined_error(
+        rdf_error, vdos_error, pressure_error
+    ) == pytest.approx(expected)
 
     with pytest.raises(ValueError, match="must be non-negative"):
-        md_metrics.calc_combined_error(-1, 5)
+        md_metrics.calc_combined_error(-1, 5, 5)
+    # a missing/NaN pressure must fail loud, not silently become a two-metric mean
+    with pytest.raises(ValueError, match="finite"):
+        md_metrics.calc_combined_error(10, 20, float("nan"))
+
+
+@pytest.mark.parametrize(
+    ("shift", "expected"),
+    [(0, 0), (1000, 100)],  # identical -> 0% non-overlap; far apart -> ~100%
+    ids=["identical", "disjoint"],
+)
+def test_calc_pressure_histogram_error(shift: float, expected: float) -> None:
+    """E_P (Eq. 9): 0% for identical pressure samples, ~100% for disjoint supports."""
+    pressures = np_rng.normal(0, 1, 5000)
+    err = md_metrics.calc_pressure_histogram_error(pressures, pressures + shift)
+    assert err == pytest.approx(expected, abs=1)
+
+
+def test_calc_pressure_histogram_error_partial_and_symmetry() -> None:
+    """Half-overlapping samples give 50% non-overlap; E_P is symmetric in its args and
+    treats two identical single-valued distributions (hi == lo) as full overlap.
+    """
+    p_ref = np.array([0.25, 0.75, 1.25, 1.75])
+    p_pred = np.array([1.25, 1.75, 2.25, 2.75])
+    err = md_metrics.calc_pressure_histogram_error(p_ref, p_pred, n_bins=6)
+    assert err == pytest.approx(50)
+    assert md_metrics.calc_pressure_histogram_error(p_pred, p_ref, n_bins=6) == err
+    const = np.full(8, 3.0)
+    assert md_metrics.calc_pressure_histogram_error(const, const) == 0
+
+
+def test_calc_pressure_histogram_error_rejects_bad_input() -> None:
+    """Empty arrays, <2 bins and non-finite pressures raise, not return garbage."""
+    pressures = np_rng.normal(0, 1, 100)
+    with pytest.raises(ValueError, match="empty"):
+        md_metrics.calc_pressure_histogram_error(np.array([]), pressures)
+    with pytest.raises(ValueError, match="bins"):
+        md_metrics.calc_pressure_histogram_error(pressures, pressures, n_bins=1)
+    with pytest.raises(ValueError, match="finite"):
+        md_metrics.calc_pressure_histogram_error(np.array([0.0, np.nan]), pressures)
 
 
 # === energy/force RMSE ===
@@ -631,11 +669,13 @@ def test_evaluate_md_system() -> None:
         "vdos_error",
         "pressure_mae",
         "pressure_wasserstein",
+        "pressure_error",
     }
     assert 0 <= metrics["rdf_error"] <= 100
     assert 0 <= metrics["vdos_error"] <= 100
     assert metrics["pressure_mae"] == pytest.approx(0.2, abs=1e-10)
     assert metrics["pressure_wasserstein"] == pytest.approx(0.2, abs=1e-10)
+    assert 0 <= metrics["pressure_error"] <= 100
 
     # frames without stress data should yield NaN pressure metrics, not errors
     no_stress = md_metrics.evaluate_md_system(
@@ -646,6 +686,7 @@ def test_evaluate_md_system() -> None:
     )
     assert np.isnan(no_stress["pressure_mae"])
     assert np.isnan(no_stress["pressure_wasserstein"])
+    assert np.isnan(no_stress["pressure_error"])
 
 
 def test_evaluate_md_system_reraises_unexpected_pressure_errors() -> None:
@@ -704,6 +745,7 @@ def test_calc_md_metrics() -> None:
             "vdos_error": [30.0, 10.0],
             "pressure_mae": [1.0, np.nan],  # one system without stress data
             "pressure_wasserstein": [0.5, np.nan],
+            "pressure_error": [40.0, np.nan],
         }
     )
     metrics = md_metrics.calc_md_metrics(df_md)
@@ -715,8 +757,10 @@ def test_calc_md_metrics() -> None:
     assert metrics["vdos_error"] == pytest.approx(20)
     assert metrics["pressure_mae"] == pytest.approx(1)
     assert metrics["pressure_wasserstein"] == pytest.approx(0.5)
+    assert metrics["pressure_error"] == pytest.approx(40)
+    # combined = simple mean of mean rdf/vdos/pressure errors
     assert metrics["combined_error"] == pytest.approx(
-        md_metrics.calc_combined_error(15, 20)
+        md_metrics.calc_combined_error(15, 20, 40)
     )
     assert metrics["n_systems"] == 2
 

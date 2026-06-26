@@ -48,7 +48,8 @@ METRIC_UNITS = {
     "vdos_error": "%",
     "pressure_mae": "GPa",
     "pressure_wasserstein": "GPa",
-    "combined_error": "%",  # error-weighted RDF+VDOS combination
+    "pressure_error": "%",  # pressure-histogram overlap error (paper Eq. 9)
+    "combined_error": "%",  # simple mean of rdf/vdos/pressure errors
     "n_systems": "count",
 }
 PER_SYSTEM_METRIC_COLS = tuple(
@@ -287,13 +288,14 @@ def calc_pressure_metrics(
     ref_time_step_fs: float = 1,
     pred_time_step_fs: float = 1,
 ) -> dict[str, float]:
-    """Pressure MAE (paper Eq. 6) and Wasserstein-1 distance in GPa.
+    """All pressure metrics in one place: MAE (paper Eq. 6) and Wasserstein-1 distance
+    in GPa, plus the histogram-overlap error E_P (paper Eq. 9) in percent.
 
     The MAE pairs frames at identical timestamps: both arrays are subsampled onto
     their common (LCM) time grid before pairing, so different saved-frame cadences
     compare the same simulation times. It still conflates mean pressure offsets
     with fluctuation decorrelation between independently thermalized runs. The W1
-    distance compares the full pressure distributions instead, making it
+    distance and E_P compare the full pressure distributions instead, making them
     insensitive to frame pairing while still capturing mean offsets and
     fluctuation-width differences.
     """
@@ -313,28 +315,57 @@ def calc_pressure_metrics(
         "pressure_wasserstein": float(
             wasserstein_distance(pressures_ref, pressures_pred)
         ),
+        "pressure_error": calc_pressure_histogram_error(pressures_ref, pressures_pred),
     }
 
 
-def calc_combined_error(rdf_error: float, vdos_error: float) -> float:
-    """Error complement of the paper Eq. 8 combined RDF/VDOS score in percent.
+def calc_pressure_histogram_error(
+    pressures_ref: np.ndarray, pressures_pred: np.ndarray, *, n_bins: int = 80
+) -> float:
+    """Pressure-distribution error E_P (paper Eq. 9): the non-overlap of the
+    area-normalized reference and MLIP pressure histograms over shared bin edges, in
+    percent. 0% = identical distributions, 100% = disjoint.
 
-        combined_score = eps * (100 - rdf_error) + (1 - eps) * (100 - vdos_error)
-        eps = rdf_error / (rdf_error + vdos_error)
-        combined_error = 100 - combined_score
-
-    This preserves the leaderboard's lower-is-better error convention while using
-    Eq. 8's weighting: poor performance receives more weight, so a model can't hide
-    a catastrophic VDOS behind a good RDF.
+    Eq. 9's denominator is identically 2 (each density integrates to 1), so this is
+    ``50 * sum |density_ref - density_pred| * bin_width``.
     """
-    if rdf_error < 0 or vdos_error < 0:
-        raise ValueError(
-            f"Errors must be non-negative, got {rdf_error=}, {vdos_error=}"
-        )
-    if (total := rdf_error + vdos_error) == 0:
+    pressures_ref, pressures_pred = map(np.asarray, (pressures_ref, pressures_pred))
+    if n_bins < 2:
+        raise ValueError(f"Need >= 2 pressure histogram bins, got {n_bins=}")
+    if len(pressures_ref) == 0 or len(pressures_pred) == 0:
+        raise ValueError("Cannot compute pressure histogram error of empty arrays")
+    all_pressures = np.concatenate([pressures_ref, pressures_pred])
+    if not np.all(np.isfinite(all_pressures)):
+        raise ValueError("Pressure histogram error requires finite pressure arrays")
+    lo, hi = float(all_pressures.min()), float(all_pressures.max())
+    if hi == lo:  # both distributions collapse to one identical value -> full overlap
         return 0.0
-    # eps * rdf + (1 - eps) * vdos simplifies to (rdf^2 + vdos^2) / (rdf + vdos)
-    return float((rdf_error**2 + vdos_error**2) / total)
+    edges = np.linspace(lo, hi, n_bins + 1)
+    density_ref, _ = np.histogram(pressures_ref, bins=edges, density=True)
+    density_pred, _ = np.histogram(pressures_pred, bins=edges, density=True)
+    return float(50 * np.sum(np.abs(density_ref - density_pred) * np.diff(edges)))
+
+
+def calc_combined_error(
+    rdf_error: float, vdos_error: float, pressure_error: float
+) -> float:
+    """Combined MD error: the simple average of the RDF, VDOS and pressure-distribution
+    errors (all in %, lower is better), per the CFPMD-26 protocol. All three must be
+    finite and non-negative; a missing/NaN pressure error raises rather than silently
+    collapsing to a misleading two-metric mean.
+    """
+    errors = np.array([rdf_error, vdos_error, pressure_error], dtype=float)
+    if not np.all(np.isfinite(errors)):
+        raise ValueError(
+            "Combined error needs finite rdf/vdos/pressure errors, got "
+            f"{rdf_error=}, {vdos_error=}, {pressure_error=}"
+        )
+    if np.any(errors < 0):
+        raise ValueError(
+            f"Errors must be non-negative, got {rdf_error=}, {vdos_error=}, "
+            f"{pressure_error=}"
+        )
+    return float(errors.mean())
 
 
 def predict_on_reference(
@@ -483,10 +514,10 @@ def evaluate_md_system(
     _, g_r_pred = calc_rdf(pred_matched, n_bins=n_rdf_bins, r_max=r_max)
     metrics = {"rdf_error": calc_rdf_error(radii, g_r_ref, g_r_pred)}
 
-    ref_vels = calc_velocities(ref_matched, time_step_fs=ref_time_step_fs)
-    pred_vels = calc_velocities(pred_matched, time_step_fs=pred_time_step_fs)
-    freqs_ref, vdos_ref = calc_vdos(ref_vels, time_step_fs=ref_time_step_fs)
-    freqs_pred, vdos_pred = calc_vdos(pred_vels, time_step_fs=pred_time_step_fs)
+    ref_velocities = calc_velocities(ref_matched, time_step_fs=ref_time_step_fs)
+    pred_velocities = calc_velocities(pred_matched, time_step_fs=pred_time_step_fs)
+    freqs_ref, vdos_ref = calc_vdos(ref_velocities, time_step_fs=ref_time_step_fs)
+    freqs_pred, vdos_pred = calc_vdos(pred_velocities, time_step_fs=pred_time_step_fs)
     metrics["vdos_error"] = calc_vdos_error(freqs_ref, vdos_ref, freqs_pred, vdos_pred)
 
     if ref_matched.stress is not None and pred_matched.stress is not None:
@@ -497,7 +528,8 @@ def evaluate_md_system(
             pred_time_step_fs=pred_time_step_fs,
         )
     else:  # one or both trajectories lack stress -> undefined pressure metrics
-        metrics["pressure_mae"] = metrics["pressure_wasserstein"] = float("nan")
+        nan_keys = ("pressure_mae", "pressure_wasserstein", "pressure_error")
+        metrics |= dict.fromkeys(nan_keys, float("nan"))
 
     if ref_predictions is None and calculator is not None:
         ref_predictions = predict_on_reference(ref, calculator)
@@ -529,10 +561,10 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
     PER_SYSTEM_METRIC_COLS columns) into model-level metrics.
 
     Means are taken over systems, skipping NaNs (e.g. systems without stress data).
-    The combined RDF+VDOS error is the lower-is-better complement of the paper's
-    Eq. 8 Pareto score, computed from model-level mean errors. Per-system energy/force
-    RMSE rows are in eV but reported here in meV for readability (fluctuation
-    energy RMSE is ~1e-3 eV/atom), matching METRIC_UNITS.
+    When RDF, VDOS and pressure errors are all available, ``combined_error`` is their
+    simple mean, computed from model-level mean errors. Per-system energy/force RMSE
+    rows are in eV but reported here in meV for readability (fluctuation energy RMSE is
+    ~1e-3 eV/atom), matching METRIC_UNITS.
     """
     metric_cols = [col for col in PER_SYSTEM_METRIC_COLS if col in df_md]
     if not metric_cols:
@@ -545,9 +577,9 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
         * (1000 if col in ("energy_rmse", "force_rmse") else 1)
         for col in metric_cols
     }
-    if "rdf_error" in metrics and "vdos_error" in metrics:
+    if {"rdf_error", "vdos_error", "pressure_error"} <= metrics.keys():
         metrics["combined_error"] = calc_combined_error(
-            metrics["rdf_error"], metrics["vdos_error"]
+            metrics["rdf_error"], metrics["vdos_error"], metrics["pressure_error"]
         )
     metrics["n_systems"] = len(df_md)
     return metrics

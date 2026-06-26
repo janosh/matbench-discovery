@@ -150,13 +150,13 @@ metrics:
       R2: 0.842 # dimensionless
       missing_preds: 0 # count
   md:
-    pred_file: models/grace/grace-1l-oam/2026-06-21-grace_1l_oam-md-metrics.csv.gz
-    pred_file_url: https://figshare.com/files/PLACEHOLDER # TODO replace with real figshare URL after uploading the md-metrics CSV
+    pred_file: models/grace/grace-1L-oam/2026-06-26-grace_1l_oam-md-metrics.csv.gz
     energy_rmse: 1.0557 # meV/atom
     force_rmse: 121.5272 # meV/Å
     rdf_error: 4.7138 # %
     vdos_error: 75.1264 # %
     pressure_mae: 0.8958 # GPa
     pressure_wasserstein: 0.7881 # GPa
-    combined_error: 70.9692 # %
+    pressure_error: 50.6382 # %
+    combined_error: 43.4928 # %
     n_systems: 17 # count

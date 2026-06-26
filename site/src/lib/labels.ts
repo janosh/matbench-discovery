@@ -348,7 +348,7 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
 ) as unknown as GeoOptSymmetryMetricsLabels
 
 export const MD_METRICS: MdMetricsLabels = {
-  MD_energy_RMSE: {
+  md_energy_rmse: {
     key: `energy_rmse`,
     label: `ΔE<sub>RMSE</sub>`,
     description: `Root mean squared error of model vs ab-initio energy fluctuations (each trajectory's mean energy is subtracted from both) on reference MD frames. Mean-subtraction makes this invariant to the absolute energy reference, which differs across CFPMD-26 systems (all-electron vs PAW)`,
@@ -358,7 +358,7 @@ export const MD_METRICS: MdMetricsLabels = {
     format: `.1f`,
     style: `border-left: 1px solid black;`,
   },
-  MD_force_RMSE: {
+  md_force_rmse: {
     key: `force_rmse`,
     label: `F<sub>RMSE</sub>`,
     description: `Root mean squared error of model-predicted forces on reference ab-initio MD frames`,
@@ -367,9 +367,9 @@ export const MD_METRICS: MdMetricsLabels = {
     better: `lower`,
     format: `.1f`,
   },
-  MD_RDF_error: {
+  md_rdf_error: {
     key: `rdf_error`,
-    label: `RDF err`,
+    label: `ΔRDF`,
     description: `Mean radial distribution function error between MLIP and ab-initio MD trajectories. 0% = perfect match, 100% = as different from the reference as an ideal gas`,
     unit: `%`,
     path: `metrics.md`,
@@ -377,9 +377,9 @@ export const MD_METRICS: MdMetricsLabels = {
     better: `lower`,
     format: `.1f`,
   },
-  MD_VDOS_error: {
+  md_vdos_error: {
     key: `vdos_error`,
-    label: `VDOS err`,
+    label: `ΔVDOS`,
     description: `Mean vibrational density of states error between MLIP and ab-initio MD trajectories, computed from the velocity autocorrelation function. 0% = perfect match, 100% = non-overlapping spectra`,
     unit: `%`,
     path: `metrics.md`,
@@ -387,7 +387,7 @@ export const MD_METRICS: MdMetricsLabels = {
     better: `lower`,
     format: `.1f`,
   },
-  MD_pressure_MAE: {
+  md_pressure_mae: {
     key: `pressure_mae`,
     label: `P<sub>MAE</sub>`,
     description: `Mean absolute error between per-frame pressures of MLIP and ab-initio MD trajectories`,
@@ -396,7 +396,7 @@ export const MD_METRICS: MdMetricsLabels = {
     better: `lower`,
     format: `.2f`,
   },
-  MD_pressure_W1: {
+  md_pressure_wasserstein: {
     key: `pressure_wasserstein`,
     label: `P<sub>W1</sub>`,
     description: `Wasserstein-1 distance between pressure distributions of MLIP and ab-initio MD trajectories (insensitive to frame pairing)`,
@@ -405,10 +405,20 @@ export const MD_METRICS: MdMetricsLabels = {
     better: `lower`,
     format: `.2f`,
   },
-  MD_combined_error: {
+  md_pressure_error: {
+    key: `pressure_error`,
+    label: `ΔP`,
+    description: `Pressure-distribution error: the non-overlap of the area-normalized MLIP and ab-initio pressure histograms over shared bin edges. 0% = identical distributions, 100% = disjoint`,
+    unit: `%`,
+    path: `metrics.md`,
+    range: [0, 100],
+    better: `lower`,
+    format: `.1f`,
+  },
+  md_combined_error: {
     key: `combined_error`,
-    label: `Combined err`,
-    description: `Error-weighted combination of RDF and VDOS errors which assigns more weight to the worse of the two observables`,
+    label: `CMDS`,
+    description: `Combined MD score: simple average of the RDF, VDOS and pressure-distribution errors (all in %, lower is better)`,
     unit: `%`,
     path: `metrics.md`,
     range: [0, 100],

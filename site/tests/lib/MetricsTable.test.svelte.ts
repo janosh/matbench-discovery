@@ -915,6 +915,12 @@ describe(`MetricsTable`, () => {
       `Org`, // METADATA_COLS
       `Params`, // HYPERPARAMS (short label)
       `rcut`, // HYPERPARAMS (short label) - textContent doesn't keep subscript
+      `Σ= 10-2`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
+      `Σ= 10-5`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
+      `Σ↑ 10-2`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
+      `Σ↑ 10-5`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
+      `Σ↓ 10-2`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
+      `Σ↓ 10-5`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
       `Acc`, // ALL_METRICS (Discovery - short)
       `F1`, // ALL_METRICS (Discovery - short)
       `DAF`, // ALL_METRICS (Discovery)
@@ -928,13 +934,14 @@ describe(`MetricsTable`, () => {
       `κSRME`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
       `κSRE`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
       `RMSD`, // ALL_METRICS (Geo Opt)
-      `ERMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
+      `ΔERMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `FRMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
-      `RDF err`, // ALL_METRICS (MD)
-      `VDOS err`, // ALL_METRICS (MD)
+      `ΔRDF`, // ALL_METRICS (MD)
+      `ΔVDOS`, // ALL_METRICS (MD)
       `PMAE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `PW1`, // ALL_METRICS (MD) - textContent doesn't keep subscript
-      `Combined err`, // ALL_METRICS (MD)
+      `ΔP`, // ALL_METRICS (MD)
+      `CMDS`, // ALL_METRICS (MD)
       `CPS`, // Added in assemble_row_data
     ])
 

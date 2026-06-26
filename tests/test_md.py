@@ -341,12 +341,9 @@ def test_md_convert_packs_reference(
 
     argv = [
         "pack",
-        "--ref-dir",
-        str(tmp_path / "raw"),
-        "--settings-csv",
-        str(settings_csv),
-        "--out",
-        out_h5,
+        *("--ref-dir", str(tmp_path / "raw")),
+        *("--settings-csv", str(settings_csv)),
+        *("--out", out_h5),
     ]
     monkeypatch.setattr(sys, "argv", argv)
     assert packer.main() == 0

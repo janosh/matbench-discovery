@@ -102,6 +102,24 @@ def test_download_file_current_directory(
     assert dest_path.read_bytes() == b"test content"
 
 
+@pytest.mark.parametrize("token_env", ["HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"])
+def test_download_file_adds_huggingface_token(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, token_env: str
+) -> None:
+    """HuggingFace downloads use bearer auth when a token env var is present."""
+    url = "https://huggingface.co/org/repo/resolve/main/file.csv.gz"
+    dest_path = tmp_path / "file.csv.gz"
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    monkeypatch.delenv("HUGGING_FACE_HUB_TOKEN", raising=False)
+    monkeypatch.setenv(token_env, "hf_test")
+
+    with patch("requests.get", return_value=make_mock_response(b"test")) as mock_get:
+        download_file(str(dest_path), url)
+
+    assert dest_path.read_bytes() == b"test"
+    assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer hf_test"}
+
+
 def test_download_file_keeps_completed_part_file_on_replace_error(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
@@ -169,72 +187,75 @@ def test_download_file_keeps_existing_file_on_stream_error(
         assert not os.path.isfile(f"{dest_path}.part")
 
 
-def test_maybe_auto_download_file(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+@pytest.mark.parametrize(
+    ("auto_download", "stdin_isatty", "answer", "should_download"),
+    [
+        ("true", True, "n", True),
+        ("false", True, "n", False),
+        ("false", True, "y", True),
+        ("false", False, "n", True),
+    ],
+    ids=["auto_enabled", "declined", "confirmed", "non_interactive"],
+)
+def test_maybe_auto_download_file_prompt_modes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+    auto_download: str,
+    stdin_isatty: bool,
+    answer: str,
+    *,
+    should_download: bool,
 ) -> None:
-    """Test auto-download behavior of maybe_auto_download_file function."""
+    """maybe_auto_download_file honors env, prompt and non-interactive defaults."""
     url = "https://example.com/file.txt"
     abs_path = f"{tmp_path}/test/file.txt"
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-
     mock_response = make_mock_response(b"test content")
 
-    # Test 1: Auto-download enabled (default)
-    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
-    with patch("requests.get", return_value=mock_response):
-        maybe_auto_download_file(url, abs_path, label="test")
-        stdout, _ = capsys.readouterr()
-        assert f"Downloading 'test' from {url!r}" in stdout
-        assert os.path.isfile(abs_path)
-
-    # Test 2: Auto-download disabled
-    os.remove(abs_path)
-    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "false")
-    assert not os.path.isfile(abs_path)
-
-    # Mock user input 'n' to skip download
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", auto_download)
     with (
         patch("requests.get", return_value=mock_response),
-        patch("builtins.input", return_value="n"),
-        patch("sys.stdin.isatty", return_value=True),  # force interactive mode
+        patch("builtins.input", return_value=answer),
+        patch("sys.stdin.isatty", return_value=stdin_isatty),
     ):
         maybe_auto_download_file(url, abs_path, label="test")
+
+    stdout, stderr = capsys.readouterr()
+    assert stderr == ""
+    if should_download:
+        assert f"Downloading 'test' from {url!r}" in stdout
+        assert os.path.isfile(abs_path)
+        assert Path(abs_path).read_bytes() == b"test content"
+    else:
+        assert stdout == ""
         assert not os.path.isfile(abs_path)
 
-    # Test 3: Auto-download disabled but user confirms
-    with (
-        patch("requests.get", return_value=mock_response),
-        patch("builtins.input", return_value="y"),
-        patch("sys.stdin.isatty", return_value=True),  # force interactive mode
-    ):
-        maybe_auto_download_file(url, abs_path, label="test")
-        stdout, _ = capsys.readouterr()
-        assert f"Downloading 'test' from {url!r}" in stdout
-        assert os.path.isfile(abs_path)
 
-    # Test 4: File already exists (no download attempt)
+def test_maybe_auto_download_file_skips_existing_file(tmp_path: Path) -> None:
+    """maybe_auto_download_file does not request an already cached file."""
+    url = "https://example.com/file.txt"
+    abs_path = f"{tmp_path}/test/file.txt"
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    Path(abs_path).write_bytes(b"cached")
+
     with patch("requests.get") as mock_get:
         maybe_auto_download_file(url, abs_path, label="test")
-        mock_get.assert_not_called()
+    mock_get.assert_not_called()
 
-    # Test 5: Non-interactive session (auto-download)
-    os.remove(abs_path)
-    with (
-        patch("requests.get", return_value=mock_response),
-        patch("sys.stdin.isatty", return_value=False),
-        patch("builtins.input", return_value="y"),  # Fallback input mock
-    ):
-        maybe_auto_download_file(url, abs_path, label="test")
-        stdout, _ = capsys.readouterr()
-        assert f"Downloading 'test' from {url!r}" in stdout
-        assert os.path.isfile(abs_path)
 
-    # Test 6: IPython session with auto-download disabled
-    os.remove(abs_path)
-    with (
-        patch("requests.get", return_value=mock_response),
-        patch("builtins.input", return_value="n"),
-        patch("sys.stdin.isatty", return_value=True),  # force interactive mode
-    ):
+def test_maybe_auto_download_file_forwards_huggingface_token(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Auto-download forwards HuggingFace bearer auth to the underlying request."""
+    url = "https://huggingface.co/org/repo/resolve/main/file.csv.gz"
+    abs_path = f"{tmp_path}/test/file.csv.gz"
+
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+    monkeypatch.delenv("HUGGING_FACE_HUB_TOKEN", raising=False)
+    monkeypatch.setenv("HF_TOKEN", "hf_test")
+    with patch("requests.get", return_value=make_mock_response(b"test")) as mock_get:
         maybe_auto_download_file(url, abs_path, label="test")
-        assert not os.path.isfile(abs_path)
+
+    assert os.path.isfile(abs_path)
+    assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer hf_test"}

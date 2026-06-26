@@ -144,21 +144,23 @@ definitions:
   MdMetricsLabels:
     type: object
     properties:
-      MD_energy_RMSE: { $ref: '#/definitions/Label' }
-      MD_force_RMSE: { $ref: '#/definitions/Label' }
-      MD_RDF_error: { $ref: '#/definitions/Label' }
-      MD_VDOS_error: { $ref: '#/definitions/Label' }
-      MD_pressure_MAE: { $ref: '#/definitions/Label' }
-      MD_pressure_W1: { $ref: '#/definitions/Label' }
-      MD_combined_error: { $ref: '#/definitions/Label' }
+      md_energy_rmse: { $ref: '#/definitions/Label' }
+      md_force_rmse: { $ref: '#/definitions/Label' }
+      md_rdf_error: { $ref: '#/definitions/Label' }
+      md_vdos_error: { $ref: '#/definitions/Label' }
+      md_pressure_mae: { $ref: '#/definitions/Label' }
+      md_pressure_wasserstein: { $ref: '#/definitions/Label' }
+      md_pressure_error: { $ref: '#/definitions/Label' }
+      md_combined_error: { $ref: '#/definitions/Label' }
     required:
-      - MD_energy_RMSE
-      - MD_force_RMSE
-      - MD_RDF_error
-      - MD_VDOS_error
-      - MD_pressure_MAE
-      - MD_pressure_W1
-      - MD_combined_error
+      - md_energy_rmse
+      - md_force_rmse
+      - md_rdf_error
+      - md_vdos_error
+      - md_pressure_mae
+      - md_pressure_wasserstein
+      - md_pressure_error
+      - md_combined_error
     additionalProperties: false
 
   DatasetMetadataLabels:

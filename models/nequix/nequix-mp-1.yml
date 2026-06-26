@@ -77,7 +77,7 @@ hyperparams:
   ema_decay: 0.999
 
 training_cost:
-  Nvidia A100 GPUs: { amount: 4, hours: 125 }
+  Nvidia A100 GPUs: {amount: 4, hours: 125}
 
 training_set: [MPtrj]
 
@@ -186,3 +186,14 @@ metrics:
       RMSE: 0.117 # eV/atom
       R2: 0.734 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/nequix/nequix-mp-1/2026-06-26-nequix_mp_1-md-metrics.csv.gz
+    energy_rmse: 1.3652 # meV/atom
+    force_rmse: 136.1155 # meV/Å
+    rdf_error: 6.1688 # %
+    vdos_error: 74.3595 # %
+    pressure_mae: 1.0334 # GPa
+    pressure_wasserstein: 0.9881 # GPa
+    pressure_error: 73.4302 # %
+    combined_error: 51.3195 # %
+    n_systems: 17 # count

@@ -85,7 +85,7 @@ hyperparams:
   max_neighbors: .inf
 
 training_cost:
-  Nvidia H100 GPUs: { amount: 8, hours: 50, cost: 400 }
+  Nvidia H100 GPUs: {amount: 8, hours: 50, cost: 400}
 
 requirements:
   torch: '2'
@@ -185,3 +185,14 @@ metrics:
       RMSE: 0.124 # eV/atom
       R2: 0.706 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/allegro/allegro-MP-L-0.1/2026-06-26-allegro_mp_l_0_1-md-metrics.csv.gz
+    energy_rmse: 1.0896 # meV/atom
+    force_rmse: 114.7238 # meV/Å
+    rdf_error: 4.5808 # %
+    vdos_error: 76.7044 # %
+    pressure_mae: 0.9226 # GPa
+    pressure_wasserstein: 0.8512 # GPa
+    pressure_error: 61.2843 # %
+    combined_error: 47.5232 # %
+    n_systems: 17 # count

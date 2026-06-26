@@ -136,27 +136,41 @@ output-format = "concise"
 unresolved-import = "ignore"
 
 [dependency-groups]
-dev = ["prek>=0.4.4", "ty>=0.0.49"]
+dev = ["prek>=0.4.5", "ty>=0.0.54"]
 
 [tool.typos.default]
 locale = "en-us"
 extend-ignore-re = [
   "`[0-9a-f]{7,40}`", # Git commit SHAs in backticks
 ]
-extend-ignore-words-re = [
-  "\\b(Skelton|Ono|Noe|Vaid)\\b", # Names
-  "\\b(AIMD|aimd)\\b", # ab-initio molecular dynamics
-  "\\b[Bb]a\\b", # Chemical element: Barium
-  "\\b[Cc]om(mun|put)\\b", # Journal: Commun, Comput
-  "\\b[Ff]ormates?\\b", # Chemistry: formate(s)
-  "\\b[Nn]d\\b", # Chemical element: Neodymium
-  "\\bmatris\\b", # Model name
-]
 extend-ignore-identifiers-re = [
-  "\\b[Ff][Pp][Rr]\\b", # False Positive Rate
   "\\balph_\\w+\\b", # alph_* identifiers
   "\\bi?[Cc]om[Ff]ormer\\w*\\b", # (i)Comformer, comformer + Config suffix
-  "\\btitel\\b", # titel
   "\\w*[Cc]ontracter\\w*\\b", # *Contracter* variations
   "\\w*strat\\w*\\b", # *strat* variations
 ]
+
+[tool.typos.default.extend-words]
+Skelton = "Skelton" # Names
+Ono = "Ono"
+Noe = "Noe"
+Vaid = "Vaid"
+AIMD = "AIMD" # ab-initio molecular dynamics
+aimd = "aimd"
+Ba = "Ba" # Chemical element: Barium
+ba = "ba"
+Commun = "Commun" # Journal: Commun, Comput
+Comput = "Comput"
+Formate = "Formate" # Chemistry: formate(s)
+Formates = "Formates"
+Nd = "Nd" # Chemical element: Neodymium
+nd = "nd"
+MatRIS = "MatRIS" # Model name
+matris = "matris"
+titel = "titel"
+
+[tool.typos.default.extend-identifiers]
+FPR = "FPR" # False Positive Rate
+fpr = "fpr"
+MATRIS_PKG = "MATRIS_PKG" # MatRIS dependency
+MATRIS_DEPS = "MATRIS_DEPS"

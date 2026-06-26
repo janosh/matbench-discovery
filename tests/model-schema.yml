@@ -284,6 +284,8 @@ definitions:
         type: number
       pressure_wasserstein:
         type: number
+      pressure_error:
+        type: number
       combined_error:
         type: number
       n_systems:

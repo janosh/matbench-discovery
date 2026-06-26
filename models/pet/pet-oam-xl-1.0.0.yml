@@ -54,7 +54,7 @@ hyperparams:
   cutoff_function: Bump
 
 training_cost:
-  Nvidia H100 GPUs: { amount: 512, hours: 40 }
+  Nvidia H100 GPUs: {amount: 512, hours: 40}
 
 requirements:
   upet: '0.1.0'
@@ -148,3 +148,14 @@ metrics:
       RMSE: 0.065 # eV/atom
       R2: 0.906 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/pet/pet-oam-xl-1.0.0/2026-06-26-pet_oam_xl_1_0_0-md-metrics.csv.gz
+    energy_rmse: 0.488 # meV/atom
+    force_rmse: 43.2602 # meV/Å
+    rdf_error: 3.3977 # %
+    vdos_error: 75.1733 # %
+    pressure_mae: 0.8744 # GPa
+    pressure_wasserstein: 0.7678 # GPa
+    pressure_error: 49.8758 # %
+    combined_error: 42.8156 # %
+    n_systems: 17 # count

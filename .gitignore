@@ -20,6 +20,7 @@ data/**/*.json*
 data/**/*.zip*
 # auto-downloaded MD reference trajectories
 data/md/
+data/md-checkpoints/
 data/wbm/*symprec=*.csv*
 !data/**/*umap-projections.csv.bz2
 

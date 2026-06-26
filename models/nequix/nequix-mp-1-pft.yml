@@ -94,7 +94,7 @@ hyperparams:
   ema_decay: 0.999
 
 training_cost:
-  Nvidia A100 GPUs: { amount: 1, hours: 140 }
+  Nvidia A100 GPUs: {amount: 1, hours: 140}
 
 training_set: [MPtrj, MDR PBE Phonons in MPtrj]
 
@@ -208,3 +208,14 @@ metrics:
       RMSE: 0.114 # eV/atom
       R2: 0.744 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/nequix/nequix-mp-1-pft/2026-06-26-nequix_mp_1_pft-md-metrics.csv.gz
+    energy_rmse: 1.4143 # meV/atom
+    force_rmse: 131.0959 # meV/Å
+    rdf_error: 6.0816 # %
+    vdos_error: 73.9873 # %
+    pressure_mae: 0.895 # GPa
+    pressure_wasserstein: 0.8267 # GPa
+    pressure_error: 68.9543 # %
+    combined_error: 49.6744 # %
+    n_systems: 17 # count

@@ -19,8 +19,8 @@
     model.metrics?.md != null && typeof model.metrics.md === `object`
   const n_md_models = MODELS.filter(has_md_metrics).length
 
-  let scatter_x = $state(MD_METRICS.MD_force_RMSE.key)
-  let scatter_y = $state(MD_METRICS.MD_RDF_error.key)
+  let scatter_x = $state(MD_METRICS.md_force_rmse.key)
+  let scatter_y = $state(MD_METRICS.md_rdf_error.key)
 </script>
 
 <h1>Molecular Dynamics Metrics <span class="beta-badge">beta</span></h1>
@@ -60,7 +60,7 @@
   model_filter={has_md_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
-  color_key={MD_METRICS.MD_combined_error.key}
+  color_key={MD_METRICS.md_combined_error.key}
   style="height: 800px"
 />
 

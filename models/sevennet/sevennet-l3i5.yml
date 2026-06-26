@@ -172,13 +172,13 @@ metrics:
       R2: 0.776 # dimensionless
       missing_preds: 1 # count
   md:
-    pred_file: models/sevennet/sevennet-l3i5/2026-06-21-sevennet_l3i5-md-metrics.csv.gz
-    pred_file_url: https://figshare.com/files/PLACEHOLDER # TODO replace with real figshare URL after uploading the md-metrics CSV
+    pred_file: models/sevennet/sevennet-l3i5/2026-06-26-sevennet_l3i5-md-metrics.csv.gz
     energy_rmse: 1.2403 # meV/atom
     force_rmse: 123.3479 # meV/Å
     rdf_error: 5.2136 # %
     vdos_error: 73.995 # %
     pressure_mae: 0.9168 # GPa
     pressure_wasserstein: 0.8233 # GPa
-    combined_error: 69.4677 # %
+    pressure_error: 57.2531 # %
+    combined_error: 45.4872 # %
     n_systems: 17 # count

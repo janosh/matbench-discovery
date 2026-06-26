@@ -227,6 +227,7 @@ export type MdMetrics = Record<string, unknown> & {
   vdos_error?: number
   pressure_mae?: number
   pressure_wasserstein?: number
+  pressure_error?: number
   combined_error?: number
   n_systems?: number
 }

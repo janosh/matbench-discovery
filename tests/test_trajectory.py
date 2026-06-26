@@ -61,7 +61,7 @@ def test_trajectory_validates_shapes(field: str, bad_shape: tuple[int, ...]) -> 
 
 
 def test_trajectory_len_props_and_slicing() -> None:
-    """len/n_frames/n_atoms and frame slicing return consistent sub-trajectories."""
+    """len/n_frames/n_atoms and indexing/slicing return consistent sub-trajectories."""
     traj = make_traj(n_frames=6, n_atoms=4)
     assert len(traj) == traj.n_frames == 6
     assert traj.n_atoms == 4
@@ -76,6 +76,12 @@ def test_trajectory_len_props_and_slicing() -> None:
     single = traj[2]  # int selects a 1-frame trajectory
     assert single.n_frames == 1
     np.testing.assert_array_equal(single.positions[0], traj.positions[2])
+    np.testing.assert_array_equal(traj[-1].positions[0], traj.positions[5])
+    np.testing.assert_array_equal(traj.frame_as_atoms(-1).positions, traj.positions[5])
+    with pytest.raises(IndexError):
+        _ = traj[6]
+    with pytest.raises(IndexError):
+        _ = traj[-7]
 
 
 @pytest.mark.parametrize("results", [True, False])
@@ -134,12 +140,15 @@ def test_trajectory_ase_roundtrip() -> None:
 
 
 def test_from_ase_missing_results() -> None:
-    """from_ase yields None for every result absent from the frames."""
+    """ASE conversions omit calculators/results when frames carry no results."""
     traj = Trajectory.from_ase([make_atoms()])
     assert traj.energy is None
     assert traj.forces is None
     assert traj.stress is None
     assert traj.md_step is None
+
+    atoms = make_traj(results=False).to_ase()[0]
+    assert atoms.calc is None
 
 
 @pytest.mark.parametrize(
@@ -180,25 +189,6 @@ def test_from_ase_reraises_genuine_backend_error() -> None:
         Trajectory.from_ase([atoms])
 
 
-def test_from_ase_parses_extxyz(tmp_path: Path) -> None:
-    """from_ase rebuilds a Trajectory from ASE-parsed extxyz (the converter path)."""
-    import ase.io
-
-    from matbench_discovery.md import read_trajectory
-
-    traj = make_traj(n_frames=4, n_atoms=3)
-    assert traj.energy is not None
-    path = str(tmp_path / "traj.extxyz")
-    ase.io.write(path, traj.to_ase())
-
-    parsed = Trajectory.from_ase(read_trajectory(path))
-    assert parsed.energy is not None
-    assert parsed.n_frames == 4
-    # extxyz is a text format, so positions/energy round-trip to its print precision
-    np.testing.assert_allclose(parsed.positions, traj.positions, rtol=0, atol=1e-6)
-    np.testing.assert_allclose(parsed.energy, traj.energy, rtol=0, atol=1e-6)
-
-
 def test_from_ase_rejects_mixed_property_availability() -> None:
     """A property present on some frames but not others fails loud (not silent None)."""
     from ase.calculators.singlepoint import SinglePointCalculator
@@ -208,34 +198,24 @@ def test_from_ase_rejects_mixed_property_availability() -> None:
     with pytest.raises(ValueError, match="missing a property"):
         Trajectory.from_ase([with_energy, make_atoms()])
 
-
-def test_negative_and_out_of_range_indexing() -> None:
-    """Integer indexing supports negative indices and bounds-checks."""
-    traj = make_traj(n_frames=5, n_atoms=2)
-    np.testing.assert_array_equal(traj[-1].positions[0], traj.positions[4])
-    np.testing.assert_array_equal(traj.frame_as_atoms(-1).positions, traj.positions[4])
-    with pytest.raises(IndexError):
-        _ = traj[5]
-    with pytest.raises(IndexError):
-        _ = traj[-6]
-
-
-def test_to_ase_dropped_calc_on_missing_results() -> None:
-    """to_ase omits a calculator when the trajectory carries no results."""
-    atoms = make_traj(results=False).to_ase()[0]
-    assert atoms.calc is None
+    # md_step on some frames but not others must also fail loud (not silently drop it)
+    with_step = make_atoms()
+    with_step.info["md_step"] = 0
+    with pytest.raises(ValueError, match="missing md_step"):
+        Trajectory.from_ase([with_step, make_atoms()])
 
 
 @pytest.mark.parametrize("suffix", ["", ".xz", ".gz"])
 def test_from_extxyz_matches_ase_parser(tmp_path: Path, suffix: str) -> None:
-    """The fast bulk reader reproduces the ASE extxyz reader (the converter relied on
-    Trajectory.from_ase(read_trajectory(...))) field-for-field, including compression.
+    """The fast bulk reader reproduces the ASE extxyz reader, which also round-trips
+    the original trajectory within extxyz text precision, including compression.
     """
     import ase.io
 
     from matbench_discovery.md import read_trajectory
 
     traj = make_traj(n_frames=5, n_atoms=4)
+    assert traj.energy is not None
     # non-orthogonal cell so the parity check catches Lattice row/column-order or
     # transpose bugs that a diagonal cell would hide
     traj.cell[:] = [[5.0, 0.5, 0.3], [0.0, 5.2, 0.4], [0.0, 0.0, 4.7]]
@@ -244,6 +224,11 @@ def test_from_extxyz_matches_ase_parser(tmp_path: Path, suffix: str) -> None:
 
     fast = Trajectory.from_extxyz(path)
     slow = Trajectory.from_ase(read_trajectory(path))
+    assert slow.energy is not None
+    assert slow.n_frames == 5
+    # extxyz is a text format, so positions/energy round-trip to its print precision
+    np.testing.assert_allclose(slow.positions, traj.positions, rtol=0, atol=1e-6)
+    np.testing.assert_allclose(slow.energy, traj.energy, rtol=0, atol=1e-6)
     np.testing.assert_array_equal(fast.atomic_numbers, slow.atomic_numbers)
     np.testing.assert_array_equal(fast.pbc, slow.pbc)
     for field in ("positions", "cell", "energy", "forces", "stress", "md_step"):

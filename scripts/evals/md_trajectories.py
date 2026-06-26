@@ -68,15 +68,15 @@ for pred_file in (pbar := tqdm(pred_files, desc="MD trajectory pairs")):
     try:
         if system_name not in ref_cache:
             ref_cache.clear()  # keep at most one ref trajectory in memory
-            ref_traj, ref_dt_fs, _temperature = read_reference_trajectory(
+            ref_traj, ref_time_step_fs, _temperature = read_reference_trajectory(
                 ref_file, system_name
             )
-            ref_cache[system_name] = (ref_traj, ref_dt_fs)
-        ref_traj, ref_dt_fs = ref_cache[system_name]
+            ref_cache[system_name] = (ref_traj, ref_time_step_fs)
+        ref_traj, ref_time_step_fs = ref_cache[system_name]
         system_metrics = md_metrics.evaluate_md_system(
             ref_traj,
             read_trajectory(pred_file),
-            ref_time_step_fs=ref_dt_fs,
+            ref_time_step_fs=ref_time_step_fs,
             pred_time_step_fs=args.pred_frame_interval_fs,
         )
     except Exception as exc:  # noqa: BLE001 - record failure, keep evaluating

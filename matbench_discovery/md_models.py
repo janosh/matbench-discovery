@@ -14,9 +14,13 @@ Registry keys are ``Model`` enum names so metrics can be written to the right YA
 
 import inspect
 import os
+import shutil
+import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
+from filelock import FileLock
 
 from matbench_discovery import DEFAULT_CACHE_DIR
 
@@ -60,8 +64,6 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
     os.makedirs(MD_CHECKPOINT_DIR, exist_ok=True)
     # serialize concurrent same-model downloads: parallel array tasks otherwise race on
     # download_file's temp-file rename, leaving losers with a vanished .part file
-    from filelock import FileLock
-
     with FileLock(f"{dest}.lock"):
         if not os.path.isfile(dest):
             download_file(dest, url, headers=headers)
@@ -72,6 +74,19 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
             "HF_TOKEN in the environment."
         )
     return dest
+
+
+def _stage_checkpoint(model_key: str, dest: str, *, ext: str | None = None) -> None:
+    """Download ``model_key``'s checkpoint and atomically stage it at ``dest`` (inside a
+    framework's own cache dir) under a file lock, bypassing the framework's own figshare
+    downloader which a WAF often serves as 0 bytes. Lock + atomic replace are race-safe.
+    """
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    with FileLock(f"{dest}.lock"):
+        if not os.path.isfile(dest):
+            tmp_dest = f"{dest}.tmp"
+            shutil.copy(download_checkpoint(model_key, ext=ext), tmp_dest)
+            os.replace(tmp_dest, dest)
 
 
 @dataclass(frozen=True)
@@ -179,6 +194,24 @@ def _deepmd(model_key: str) -> Callable[[str], "Calculator"]:
     return make_calc
 
 
+def _deepmd_freeze(model_key: str) -> Callable[[str], "Calculator"]:
+    def make_calc(device: str) -> "Calculator":  # noqa: ARG001 - DP picks the device
+        from deepmd.calculator import DP
+
+        # figshare ships a training checkpoint (state dict), so freeze it to the
+        # torch-export .pt2 artifact that DP(frozen) loads.
+        ckpt = download_checkpoint(model_key, ext=".pt")
+        # deepmd 3.2's pt backend freezes to a torch-export .pt2 (not TorchScript .pth)
+        frozen = f"{os.path.splitext(ckpt)[0]}-frozen.pt2"
+        freeze_cmd = ["dp", "--pt", "freeze", "-c", ckpt, "-o", frozen]
+        with FileLock(f"{frozen}.lock"):
+            if not os.path.isfile(frozen):
+                subprocess.run(freeze_cmd, check=True)
+        return DP(frozen)
+
+    return make_calc
+
+
 def _tace(model_key: str) -> Callable[[str], "Calculator"]:
     def make_calc(device: str) -> "Calculator":
         from tace.interface.ase import TACEAseCalc
@@ -197,26 +230,79 @@ def _hienet(model_key: str) -> Callable[[str], "Calculator"]:
     return make_calc
 
 
+def _nequip(model_key: str) -> Callable[[str], "Calculator"]:
+    def make_calc(device: str) -> "Calculator":
+        from nequip.ase import NequIPCalculator
+
+        from matbench_discovery.enums import Model
+
+        # checkpoint_url is a nequip.net registry model; nequip-compile fetches it and
+        # compiles it (needs a GPU) to a .nequip.pth that from_compiled_model loads.
+        # torchscript not aotinductor: aotinductor's missing c-shim for
+        # aten._linalg_det incorrectly compiles atomic_energy on the OAM models.
+        # Cache + lock so it builds once.
+        url = Model.from_ref(model_key).metadata["checkpoint_url"]
+        registry = f"nequip.net:{url.split('nequip.net/models/')[-1]}"
+        compiled = f"{MD_CHECKPOINT_DIR}/{model_key}.nequip.pth"
+        os.makedirs(MD_CHECKPOINT_DIR, exist_ok=True)
+        compile_cmd = [
+            "nequip-compile",
+            registry,
+            compiled,
+            "--mode",
+            "torchscript",
+            "--device",
+            device,
+            "--target",
+            "ase",
+        ]
+        with FileLock(f"{compiled}.lock"):
+            if not os.path.isfile(compiled):
+                subprocess.run(compile_cmd, check=True)
+        return NequIPCalculator.from_compiled_model(
+            compile_path=compiled, device=device
+        )
+
+    return make_calc
+
+
+def _eqnorm(model_key: str, model_variant: str) -> Callable[[str], "Calculator"]:
+    def make_calc(device: str) -> "Calculator":
+        from eqnorm.calculator import EqnormCalculator
+
+        # EqnormCalculator downloads via the `wget` package, which figshare's WAF serves
+        # as 0 bytes (-> torch.load EOFError), so stage our checkpoint where it looks
+        dest = os.path.expanduser(f"~/.cache/eqnorm/{model_variant}.pt")
+        _stage_checkpoint(model_key, dest, ext=".pt")
+        return EqnormCalculator(
+            model_name="eqnorm", model_variant=model_variant, device=device
+        )
+
+    return make_calc
+
+
+def _nequix(model_key: str) -> Callable[[str], "Calculator"]:
+    def make_calc(device: str) -> "Calculator":  # noqa: ARG001 - jax picks the device
+        from nequix.calculator import NequixCalculator
+
+        # NequixCalculator auto-downloads by name via figshare (WAF can serve 0 bytes);
+        # stage our checkpoint and pass model_path so it loads ours directly.
+        # use_kernel=False avoids the openequivariance extension (needs a separate pip)
+        dest = os.path.expanduser(f"~/.cache/nequix/{model_key}.nqx")
+        _stage_checkpoint(model_key, dest, ext=".nqx")
+        return NequixCalculator(model_path=dest, backend="jax", use_kernel=False)
+
+    return make_calc
+
+
 def _matris(model: str, cache_name: str) -> Callable[[str], "Calculator"]:
     def make_calc(device: str) -> "Calculator":
-        import shutil
-
-        from filelock import FileLock
         from matris.applications import MatRISCalculator
 
         # MatRIS.load() only takes a registered model name and resolves it to
         # ~/.cache/matris/<cache_name> (its built-in figshare downloader serves 0 bytes
         # behind a WAF), so stage our YAML checkpoint there before constructing the calc
-        cache_dir = os.path.expanduser("~/.cache/matris")
-        os.makedirs(cache_dir, exist_ok=True)
-        dest = f"{cache_dir}/{cache_name}"
-        # lock + atomic replace so parallel tasks don't race and an interrupted copy
-        # can't leave a truncated checkpoint that later runs treat as valid cache
-        with FileLock(f"{dest}.lock"):
-            if not os.path.isfile(dest):
-                tmp_dest = f"{dest}.tmp"
-                shutil.copy(download_checkpoint(model), tmp_dest)
-                os.replace(tmp_dest, dest)
+        _stage_checkpoint(model, os.path.expanduser(f"~/.cache/matris/{cache_name}"))
         return MatRISCalculator(model=model, device=device)
 
     return make_calc
@@ -231,14 +317,15 @@ def _alphanet(model_key: str, config_url: str) -> Callable[[str], "Calculator"]:
 
         # AlphaNet needs an architecture config json (not bundled in the weights) that
         # matches the checkpoint; fetch the OMA config that ships in the AlphaNet repo
-        cfg_path = f"{MD_CHECKPOINT_DIR}/{model_key}-config.json"
-        if not os.path.isfile(cfg_path):
-            download_file(cfg_path, config_url)
+        config_path = f"{MD_CHECKPOINT_DIR}/{model_key}-config.json"
+        os.makedirs(MD_CHECKPOINT_DIR, exist_ok=True)
+        with FileLock(f"{config_path}.lock"):
+            if not os.path.isfile(config_path):
+                download_file(config_path, config_url)
+        config = All_Config().from_json(config_path)
+        ckpt_path = download_checkpoint(model_key)
         return AlphaNetCalculator(
-            ckpt_path=download_checkpoint(model_key),
-            device=device,
-            precision="32",
-            config=All_Config().from_json(cfg_path),
+            ckpt_path=ckpt_path, device=device, precision="32", config=config
         )
 
     return make_calc
@@ -246,9 +333,6 @@ def _alphanet(model_key: str, config_url: str) -> Callable[[str], "Calculator"]:
 
 def _pet(model_key: str) -> Callable[[str], "Calculator"]:
     def make_calc(device: str) -> "Calculator":
-        import subprocess
-
-        from filelock import FileLock
         from metatomic.torch.ase_calculator import MetatomicCalculator
 
         # PET ships a metatrain .ckpt that must be exported to a TorchScript .pt before
@@ -257,10 +341,11 @@ def _pet(model_key: str) -> Callable[[str], "Calculator"]:
         pt_file = f"{os.path.splitext(ckpt)[0]}.pt"
         with FileLock(f"{pt_file}.lock"):
             if not os.path.isfile(pt_file):
-                # export to a temp file and atomically rename so a failed `mtt export`
-                # (raises via check=True) can't leave a partial .pt that the next run
-                # would treat as a valid cached export
-                tmp_pt = f"{pt_file}.tmp"
+                # export to a temp file then atomically replace, so a failed `mtt
+                # export` (raises via check=True) can't leave a partial cached .pt. The
+                # temp name must end in .pt: mtt appends .pt otherwise, writing to a
+                # different path and making the rename below miss.
+                tmp_pt = f"{os.path.splitext(pt_file)[0]}.tmp.pt"
                 subprocess.run(["mtt", "export", ckpt, "-o", tmp_pt], check=True)  # noqa: S607
                 os.replace(tmp_pt, pt_file)
         return MetatomicCalculator(pt_file, device=device)
@@ -322,6 +407,18 @@ HIENET_DEPS = (
     "plotly<6",
 )
 
+# NequIP / Allegro (mir-group): _nequip torchscript-compiles the nequip.net registry
+# model on the GPU. torch<2.10 because PyTorch >=2.10 dropped torchscript and its
+# aotinductor alternative incorrectly compiles aten._linalg_det on the OAM models.
+NEQUIP_DEPS = ("nequip>=0.14", "torch<2.10")
+ALLEGRO_DEPS = ("nequip>=0.14", "allegro>=0.7.1", "torch<2.10")
+# MatRIS git install + figshare checkpoint staged into its own ~/.cache/matris dir
+MATRIS_PKG = "matris @ git+https://github.com/HPC-AI-Team/MatRIS"
+MATRIS_DEPS = (MATRIS_PKG, "torch==2.6.0", "numpy<3")
+# Nequix (JAX MLIP): jax[cuda12] for GPU; the .nqx checkpoint is staged + loaded via
+# model_path. use_kernel=False in the factory avoids the openequivariance build step.
+NEQUIX_DEPS = ("nequix", "jax[cuda12]")
+
 MD_MODELS: dict[str, MdModel] = {
     "mace_mp_0": MdModel(_mace_mp("medium"), deps=("mace-torch>=0.3.6",)),
     "mace_mpa_0": MdModel(_mace_mp("medium-mpa-0"), deps=("mace-torch>=0.3.6",)),
@@ -359,15 +456,35 @@ MD_MODELS: dict[str, MdModel] = {
         find_links=("https://data.pyg.org/whl/torch-2.1.2+cu121.html",),
         python_version="3.11",
     ),
-    # MatRIS (figshare checkpoint staged into MatRIS's own ~/.cache/matris dir)
+    "nequip_mp_l_0_1": MdModel(_nequip("nequip_mp_l_0_1"), deps=NEQUIP_DEPS),
+    "nequip_oam_l_0_1": MdModel(_nequip("nequip_oam_l_0_1"), deps=NEQUIP_DEPS),
+    "nequip_oam_xl_0_1": MdModel(_nequip("nequip_oam_xl_0_1"), deps=NEQUIP_DEPS),
+    "allegro_mp_l_0_1": MdModel(_nequip("allegro_mp_l_0_1"), deps=ALLEGRO_DEPS),
+    "allegro_oam_l_0_1": MdModel(_nequip("allegro_oam_l_0_1"), deps=ALLEGRO_DEPS),
     "matris_10m_oam": MdModel(
-        _matris("matris_10m_oam", "MatRIS_10M_OAM.pth.tar"),
-        deps=(
-            "matris @ git+https://github.com/HPC-AI-Team/MatRIS",
-            "torch==2.6.0",
-            "numpy<3",
-        ),
+        _matris("matris_10m_oam", "MatRIS_10M_OAM.pth.tar"), deps=MATRIS_DEPS
     ),
+    "matris_10m_mp": MdModel(
+        _matris("matris_10m_mp", "MatRIS_10M_MP.pth.tar"), deps=MATRIS_DEPS
+    ),
+    # eqnorm (git install; torch-scatter from a PyG wheel page like hienet/alphanet).
+    # vesin==0.3.2 + torch-geometric==2.6.1 per the model YAML: newer vesin needs
+    # torch.uint64 (torch>=2.3), conflicting with eqnorm's torch 2.2.2 pin.
+    "eqnorm_mptrj": MdModel(
+        _eqnorm("eqnorm_mptrj", "eqnorm-mptrj"),
+        deps=(
+            "eqnorm @ git+https://github.com/yzchen08/eqnorm",
+            "torch==2.2.2",
+            "torch-geometric==2.6.1",
+            "torch-scatter",
+            "vesin==0.3.2",
+            "numpy<2",
+        ),
+        find_links=("https://data.pyg.org/whl/torch-2.2.2+cu121.html",),
+    ),
+    # Nequix (JAX MLIP): stage figshare .nqx + load via model_path (see NEQUIX_DEPS)
+    "nequix_mp_1": MdModel(_nequix("nequix_mp_1"), deps=NEQUIX_DEPS),
+    "nequix_mp_1_pft": MdModel(_nequix("nequix_mp_1_pft"), deps=NEQUIX_DEPS),
     # PET (metatrain/metatomic): download .ckpt, `mtt export` to .pt, then load
     "pet_oam_xl_1_0_0": MdModel(_pet("pet_oam_xl_1_0_0"), deps=("upet==0.1.0",)),
     # AlphaNet (config json from repo + figshare weights, torch-scatter from PyG links)
@@ -402,10 +519,11 @@ MD_MODELS: dict[str, MdModel] = {
     "eqv2_m_omat_salex_mp": MdModel(
         _fairchem("eqv2_m_omat_salex_mp"), deps=FAIRCHEM_DEPS, find_links=PYG_LINKS
     ),
-    # NOTE: esen_30m_mp omitted - its YAML checkpoint_url wrongly points to
-    # esen_30m_oam.pt (the MP-trained file is esen_30m_mptrj.pt); fix the YAML to add it
     "esen_30m_oam": MdModel(
         _fairchem("esen_30m_oam"), deps=FAIRCHEM_DEPS, find_links=PYG_LINKS
+    ),
+    "esen_30m_mp": MdModel(
+        _fairchem("esen_30m_mp"), deps=FAIRCHEM_DEPS, find_links=PYG_LINKS
     ),
     # TACE: install from the model's github repo (PyPI 'tace' is a different/stale
     # package that can't instantiate the checkpoint config); pins per its YAML
@@ -422,6 +540,12 @@ MD_MODELS: dict[str, MdModel] = {
     # NOTE: dpa_4_0_pro_mptrj omitted - its figshare file is a training checkpoint
     # (state dict), not a frozen TorchScript model; needs `dp --pt freeze` first
     "dpa_3_1_3m_ft": MdModel(_deepmd("dpa_3_1_3m_ft"), deps=("deepmd-kit[torch]",)),
+    "dpa_4_0_1_pro_mptrj": MdModel(
+        # only 3.2.0b0 is on PyPI (no stable 3.2.0); DPA-4.0.1 needs the 3.2 line.
+        # figshare file is an unfrozen training checkpoint -> _deepmd_freeze
+        _deepmd_freeze("dpa_4_0_1_pro_mptrj"),
+        deps=("deepmd-kit[torch]==3.2.0b0",),
+    ),
     # CPU-only debug model for smoke-testing the pipeline without heavy installs
     "emt": MdModel(_emt),
 }
