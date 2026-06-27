@@ -177,13 +177,14 @@ metrics:
       R2: 0.868 # dimensionless
       missing_preds: 1 # count
   md:
-    pred_file: models/tace/tace-oam-l/2026-06-26-tace_oam_l-md-metrics.csv.gz
+    pred_file: models/tace/tace-oam-l/2026-06-27-tace_oam_l-md-metrics.csv.gz
     energy_rmse: 0.5479 # meV/atom
     force_rmse: 60.1476 # meV/Å
-    rdf_error: 3.8085 # %
-    vdos_error: 75.3706 # %
-    pressure_mae: 0.897 # GPa
-    pressure_wasserstein: 0.7856 # GPa
-    pressure_error: 48.3768 # %
-    combined_error: 42.5186 # %
+    rdf_error: 3.4228 # %
+    adf_error: 1.3286 # %
+    vdos_error: 26.6961 # %
+    pressure_mae: 0.8817 # GPa
+    pressure_wasserstein: 0.7541 # GPa
+    pressure_error: 42.6072 # %
+    combined_error: 18.5137 # %
     n_systems: 17 # count

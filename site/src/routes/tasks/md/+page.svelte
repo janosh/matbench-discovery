@@ -1,6 +1,7 @@
 <script lang="ts">
   import { MetricsTable, type ModelData, MODELS } from '$lib'
   import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
+  import type { SortDir } from '$lib/types'
   import { DynamicScatter } from '$lib/plot'
   import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
   import MdNote from './md-note.md'
@@ -21,6 +22,9 @@
 
   let scatter_x = $state(MD_METRICS.md_force_rmse.key)
   let scatter_y = $state(MD_METRICS.md_rdf_error.key)
+  // default-sort by the combined MD score (CMDS), best (lowest) first. matterviz sorts
+  // by the column's key (falling back to label), so use the key, not the 'CMDS' label
+  let sort = $state({ column: MD_METRICS.md_combined_error.key, dir: `asc` as SortDir })
 </script>
 
 <h1>Molecular Dynamics Metrics <span class="beta-badge">beta</span></h1>
@@ -33,10 +37,11 @@
   dynamics (AIMD) trajectories at finite temperature. Each model runs NVT simulations
   from the same initial structures and thermodynamic conditions as the reference
   first-principles trajectories. The resulting trajectories are compared via radial
-  distribution functions (RDF), pressure distributions from the stress tensor trace,
-  and the vibrational density of states (VDOS) obtained from the velocity
-  autocorrelation function. Single-point energy-fluctuation and force RMSEs on the
-  reference frames complement these trajectory-level observables.
+  distribution functions (RDF), angular distribution functions (ADF), pressure
+  distributions from the stress tensor trace, and the vibrational density of states
+  (vDOS) obtained from the velocity autocorrelation function. Single-point
+  energy-fluctuation and force RMSEs on the reference frames complement these
+  trajectory-level observables.
   {#if n_md_models === 0}
     No models have reported MD metrics yet.
   {/if}
@@ -45,14 +50,15 @@
 <section class="full-bleed">
   <!-- ?? true: columns absent from visible_cols (e.g. the sticky model name) default to
   shown, matching the phonons and landing-page tables; visible_cols only hides non-MD metrics -->
-  <MetricsTable col_filter={(col) => visible_cols[col.label] ?? true} />
+  <MetricsTable col_filter={(col) => visible_cols[col.label] ?? true} bind:sort />
 </section>
 
 <h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
 <p>
-  RDF and VDOS errors range from 0% (perfect match with the AIMD reference) to 100%
-  (as different from the reference as an ideal gas / non-overlapping spectra). Use the
-  axis/color/size selectors to compare models across any pair of metrics and metadata.
+  RDF, ADF and vDOS errors range from 0% (perfect match with the AIMD reference) to
+  100% (as different from the reference as an ideal gas / non-overlapping
+  distributions). Use the axis/color/size selectors to compare models across any pair
+  of metrics and metadata.
 </p>
 
 <DynamicScatter

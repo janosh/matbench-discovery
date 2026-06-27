@@ -172,13 +172,14 @@ metrics:
       R2: 0.776 # dimensionless
       missing_preds: 1 # count
   md:
-    pred_file: models/sevennet/sevennet-l3i5/2026-06-26-sevennet_l3i5-md-metrics.csv.gz
+    pred_file: models/sevennet/sevennet-l3i5/2026-06-27-sevennet_l3i5-md-metrics.csv.gz
     energy_rmse: 1.2403 # meV/atom
     force_rmse: 123.3479 # meV/Å
-    rdf_error: 5.2136 # %
-    vdos_error: 73.995 # %
-    pressure_mae: 0.9168 # GPa
-    pressure_wasserstein: 0.8233 # GPa
-    pressure_error: 57.2531 # %
-    combined_error: 45.4872 # %
+    rdf_error: 5.0235 # %
+    adf_error: 2.0644 # %
+    vdos_error: 27.8525 # %
+    pressure_mae: 0.9086 # GPa
+    pressure_wasserstein: 0.8154 # GPa
+    pressure_error: 56.086 # %
+    combined_error: 22.7566 # %
     n_systems: 17 # count

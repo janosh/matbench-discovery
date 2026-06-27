@@ -147,6 +147,7 @@ definitions:
       md_energy_rmse: { $ref: '#/definitions/Label' }
       md_force_rmse: { $ref: '#/definitions/Label' }
       md_rdf_error: { $ref: '#/definitions/Label' }
+      md_adf_error: { $ref: '#/definitions/Label' }
       md_vdos_error: { $ref: '#/definitions/Label' }
       md_pressure_mae: { $ref: '#/definitions/Label' }
       md_pressure_wasserstein: { $ref: '#/definitions/Label' }
@@ -156,6 +157,7 @@ definitions:
       - md_energy_rmse
       - md_force_rmse
       - md_rdf_error
+      - md_adf_error
       - md_vdos_error
       - md_pressure_mae
       - md_pressure_wasserstein

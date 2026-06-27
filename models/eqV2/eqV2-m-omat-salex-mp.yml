@@ -182,13 +182,14 @@ metrics:
       R2: 0.848 # dimensionless
       missing_preds: 0 # count
   md:
-    pred_file: models/eqV2/eqV2-m-omat-salex-mp/2026-06-26-eqv2_m_omat_salex_mp-md-metrics.csv.gz
+    pred_file: models/eqV2/eqV2-m-omat-salex-mp/2026-06-27-eqv2_m_omat_salex_mp-md-metrics.csv.gz
     energy_rmse: 0.6491 # meV/atom
     force_rmse: 44.5524 # meV/Å
-    rdf_error: 3.786 # %
-    vdos_error: 75.0983 # %
-    pressure_mae: 1.0048 # GPa
-    pressure_wasserstein: 0.941 # GPa
-    pressure_error: 61.9766 # %
-    combined_error: 46.9536 # %
+    rdf_error: 3.474 # %
+    adf_error: 1.3998 # %
+    vdos_error: 25.7566 # %
+    pressure_mae: 0.9796 # GPa
+    pressure_wasserstein: 0.913 # GPa
+    pressure_error: 58.1849 # %
+    combined_error: 22.2038 # %
     n_systems: 17 # count

@@ -1,6 +1,6 @@
 """Evaluate pre-computed MLIP MD trajectories against ab-initio references.
 
-Computes per-system RDF, VDOS and (when stress is present) pressure metrics for
+Computes per-system RDF, vDOS and (when stress is present) pressure metrics for
 every model with trajectories in the MLIP directory and writes one per-system
 metrics CSV per model. Energy/force RMSE requires running the model itself and is
 handled by the unified runner models/run_md.py (which runs the model itself).

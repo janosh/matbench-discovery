@@ -190,18 +190,19 @@ def test_download_file_keeps_existing_file_on_stream_error(
 @pytest.mark.parametrize(
     ("auto_download", "stdin_isatty", "answer", "should_download"),
     [
+        (None, True, "n", True),
         ("true", True, "n", True),
         ("false", True, "n", False),
         ("false", True, "y", True),
         ("false", False, "n", True),
     ],
-    ids=["auto_enabled", "declined", "confirmed", "non_interactive"],
+    ids=["auto_unset", "auto_enabled", "declined", "confirmed", "non_interactive"],
 )
 def test_maybe_auto_download_file_prompt_modes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture,
-    auto_download: str,
+    auto_download: str | None,
     stdin_isatty: bool,
     answer: str,
     *,
@@ -213,7 +214,10 @@ def test_maybe_auto_download_file_prompt_modes(
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
     mock_response = make_mock_response(b"test content")
 
-    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", auto_download)
+    if auto_download is None:
+        monkeypatch.delenv("MBD_AUTO_DOWNLOAD_FILES", raising=False)
+    else:
+        monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", auto_download)
     with (
         patch("requests.get", return_value=mock_response),
         patch("builtins.input", return_value=answer),

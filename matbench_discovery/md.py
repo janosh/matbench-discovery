@@ -7,10 +7,9 @@ time scale, frames recorded every 10 steps for 20 ps.
 
 import contextlib
 import os
-import time
 import zipfile
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import ase
 import ase.io
@@ -28,9 +27,6 @@ from matbench_discovery import today
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
-if TYPE_CHECKING:
-    from collections.abc import Iterable
-
 # === single-file multi-system reference dataset ===
 # CFPMD-26 references ship as one HDF5 with a group per system, each carrying the
 # trajectory arrays (guarded by Trajectory's per-group TRAJECTORY_SCHEMA) plus its
@@ -46,7 +42,7 @@ def default_md_reference_path() -> str:
 
 
 def write_reference_h5(
-    path: str, entries: "Iterable[tuple[str, Trajectory, float, float]]"
+    path: str, entries: Iterable[tuple[str, Trajectory, float, float]]
 ) -> None:
     """Atomically write a multi-system reference HDF5: one group per system holding the
     trajectory arrays plus ``dt_fs`` (saved-frame interval) and ``temperature_kelvin``
@@ -79,7 +75,7 @@ def list_reference_systems(path: str) -> list[str]:
 
 def read_reference_trajectory(
     path: str, system_name: str, *, max_frames: int | None = None
-) -> "tuple[Trajectory, float, float]":
+) -> tuple[Trajectory, float, float]:
     """Read one system from a reference HDF5, returning (trajectory, dt_fs,
     temperature_kelvin). Only the requested frames are read/decompressed, so dry-run
     head reads (``max_frames``) of huge references stay fast.
@@ -116,13 +112,14 @@ def run_nvt_md(
     thermostat_time_scale_fs: float = 25,
     seed: int = 0,
     progress_interval: int = 1_000,
+    progress_label: str = "MD rollout",
 ) -> list[Atoms]:
     """Run one NVT MD simulation and return recorded frames.
 
     Velocities are initialized from a Maxwell-Boltzmann distribution. Each recorded
     frame carries energy, forces and (when the calculator supports it) stress via an
     attached SinglePointCalculator, plus velocities, so trajectories written to
-    extxyz retain everything needed for RDF/VDOS/pressure evaluation.
+    extxyz retain everything needed for RDF/vDOS/pressure evaluation.
 
     Args:
         atoms: Initial structure (not modified).
@@ -133,8 +130,9 @@ def run_nvt_md(
         record_interval: Record a frame every this many steps.
         thermostat_time_scale_fs: Nose-Hoover damping time scale in femtoseconds.
         seed: Seed for the Maxwell-Boltzmann velocity initialization.
-        progress_interval: Print steps/s and ETA every this many steps (useful for
-            monitoring long rollouts in batch job logs). 0 disables progress logs.
+        progress_interval: Update the progress bar every this many steps (useful for
+            monitoring long rollouts in batch job logs). 0 disables the progress bar.
+        progress_label: Description shown beside the progress bar.
 
     Returns:
         list[Atoms]: Recorded frames including the initial one, i.e.
@@ -155,9 +153,13 @@ def run_nvt_md(
         lambda: frames.append(_snapshot_frame(atoms, dynamics.nsteps)),
         interval=record_interval,
     )
-    _attach_progress_logger(dynamics, n_steps=n_steps, interval=progress_interval)
+    _run_dynamics_with_progress(
+        dynamics,
+        n_steps=n_steps,
+        interval=progress_interval,
+        label=progress_label,
+    )
 
-    dynamics.run(n_steps)
     return frames
 
 
@@ -215,26 +217,31 @@ def _snapshot_frame(atoms: Atoms, md_step: int) -> Atoms:
     return frame
 
 
-def _attach_progress_logger(
-    dynamics: NoseHooverChainNVT, *, n_steps: int, interval: int
+def _run_dynamics_with_progress(
+    dynamics: NoseHooverChainNVT, *, n_steps: int, interval: int, label: str
 ) -> None:
-    """Attach a throughput + ETA logger every ``interval`` steps (0 disables)."""
+    """Run remaining MD steps with a tqdm progress bar (0 interval disables it)."""
+    remaining_steps = n_steps - dynamics.nsteps
     if interval <= 0:
+        dynamics.run(remaining_steps)
         return
-    start_time = time.perf_counter()
 
-    def log_progress() -> None:
-        if (steps_done := dynamics.nsteps) == 0:
-            return
-        steps_per_sec = steps_done / (time.perf_counter() - start_time)
-        eta_min = (n_steps - steps_done) / steps_per_sec / 60
-        print(
-            f"MD step {steps_done:,}/{n_steps:,}, {steps_per_sec:.1f} steps/s, "
-            f"ETA {eta_min:.1f} min",
-            flush=True,
-        )
+    with tqdm(
+        total=n_steps,
+        initial=dynamics.nsteps,
+        desc=label,
+        unit="step",
+        mininterval=5,
+        leave=True,
+    ) as pbar:
 
-    dynamics.attach(log_progress, interval=interval)
+        def update_progress() -> None:
+            if (step_delta := dynamics.nsteps - pbar.n) > 0:
+                pbar.update(step_delta)
+
+        dynamics.attach(update_progress, interval=interval)
+        dynamics.run(remaining_steps)
+        update_progress()
 
 
 @dataclass(frozen=True)
@@ -345,7 +352,7 @@ def _load_checkpoint(
             and nsteps == (n_frames - 1) * params.record_interval
             and list(ckpt["symbols"]) == atoms.get_chemical_symbols()
             and np.allclose(ckpt["cell"], atoms.cell.array)
-            and bool((ckpt["pbc"] == atoms.pbc).all())
+            and np.array_equal(ckpt["pbc"], atoms.pbc)
         )
     except (KeyError, TypeError, ValueError):
         consistent = False
@@ -381,6 +388,7 @@ def run_nvt_md_resumable(
     thermostat_time_scale_fs: float = 25,
     seed: int = 0,
     progress_interval: int = 1_000,
+    progress_label: str = "MD rollout",
     checkpoint_every_n_frames: int = 200,
 ) -> list[Atoms]:
     """Run an NVT rollout that survives interruption (timeouts/preemption).
@@ -417,7 +425,7 @@ def run_nvt_md_resumable(
     )
 
     ckpt = _load_checkpoint(ckpt_path, atoms=atoms, params=params, n_steps=n_steps)
-    n_done = 0
+    frames_written = 0
     if ckpt is not None and os.path.isfile(part_path):
         n_ckpt = int(ckpt["n_frames"])
         # keep only checkpointed frames; a kill may have appended an un-checkpointed
@@ -430,15 +438,13 @@ def run_nvt_md_resumable(
         if len(kept) == n_ckpt:
             _restore_nvt_state(dynamics, ckpt)
             ase.io.write(part_path, kept)  # truncate to the checkpointed frames
-            n_done = n_ckpt
-            print(f"  resuming {out_path} from frame {n_done}/{target_frames}")
+            frames_written = n_ckpt
+            print(f"  resuming {out_path} from frame {frames_written}/{target_frames}")
 
-    if n_done == 0:  # fresh start: clear any stale partial files
+    if frames_written == 0:  # fresh start: clear any stale partial files
         for stale in (part_path, ckpt_path):
             with contextlib.suppress(FileNotFoundError):
                 os.remove(stale)
-
-    frames_written = n_done
 
     def record_and_checkpoint() -> None:
         nonlocal frames_written
@@ -454,9 +460,12 @@ def run_nvt_md_resumable(
             )
 
     dynamics.attach(record_and_checkpoint, interval=record_interval)
-    _attach_progress_logger(dynamics, n_steps=n_steps, interval=progress_interval)
-
-    dynamics.run(n_steps - dynamics.nsteps)  # remaining steps (0 nsteps if fresh)
+    _run_dynamics_with_progress(
+        dynamics,
+        n_steps=n_steps,
+        interval=progress_interval,
+        label=progress_label,
+    )
 
     frames = read_trajectory(part_path)
     if len(frames) != target_frames:
@@ -500,8 +509,8 @@ def validate_pred_trajectory(
             reason = f"md_step {frame.info.get('md_step')} != {idx * record_interval}"
         elif frame.get_chemical_symbols() != ref_symbols:
             reason = "chemical symbols differ from reference"
-        elif not np.allclose(frame.cell.array, ref_atoms.cell.array) or bool(
-            (frame.pbc != ref_atoms.pbc).any()
+        elif not np.allclose(frame.cell.array, ref_atoms.cell.array) or np.any(
+            frame.pbc != ref_atoms.pbc
         ):
             reason = "cell or pbc differ from reference"
         elif not np.isfinite(frame.positions).all() or (
@@ -521,7 +530,7 @@ def run_md_benchmark(
     model_key: str,
     out_dir: str,
     ref_file: str | None = None,
-    systems: "list[str] | None" = None,
+    systems: list[str] | None = None,
     n_steps: int = 80_000,
     time_step_fs: float = 0.25,
     record_interval: int = 10,
@@ -532,7 +541,7 @@ def run_md_benchmark(
 
     For each system in the reference HDF5, this rolls out an NVT trajectory from the
     reference initial structure (reusing an existing rollout if present), then compares
-    it to the reference via energy/force RMSE, RDF, VDOS and pressure. Writes one
+    it to the reference via energy/force RMSE, RDF, ADF, vDOS and pressure. Writes one
     gzipped per-system metrics CSV and returns the per-system DataFrame.
 
     Args:
@@ -557,7 +566,11 @@ def run_md_benchmark(
         ref_file = default_md_reference_path()
 
     all_systems = list_reference_systems(ref_file)
-    system_names = [name for name in all_systems if not systems or name in systems]
+    system_names = (
+        all_systems
+        if systems is None
+        else [name for name in all_systems if name in systems]
+    )
     if not system_names:  # clearer than the downstream empty-DataFrame KeyError
         raise ValueError(
             f"No systems found in reference {ref_file!r}"
@@ -566,7 +579,7 @@ def run_md_benchmark(
     if dry_run:  # one system, a few steps, capped reference slice
         system_names = system_names[:1]
         # enough recorded frames that time-matching keeps >=4 even for the coarsest
-        # reference cadence (dt_fs up to 10 fs vs the 2.5 fs prediction cadence)
+        # reference cadence (dt_fs up to 2 fs vs the 2.5 fs prediction cadence)
         n_steps = record_interval * 20
     else:
         os.makedirs(out_dir, exist_ok=True)  # for rollout trajectories and metrics CSV
@@ -574,6 +587,7 @@ def run_md_benchmark(
     pred_time_step_fs = time_step_fs * record_interval
     rows: list[dict[str, float | str]] = []
     for system_name in tqdm(system_names, desc=f"MD systems ({model_key})"):
+        progress_label = f"{model_key} {system_name}"
         # dry run reads only the first 64 reference frames so the single-point eval
         # stays fast; the HDF5 reader only decompresses the frames it returns
         ref_trajectory, ref_time_step_fs, temperature_kelvin = (
@@ -594,6 +608,7 @@ def run_md_benchmark(
                 time_step_fs=time_step_fs,
                 record_interval=record_interval,
                 seed=seed,
+                progress_label=progress_label,
             )
         else:
             # reuse only a complete, consistent rollout; else recompute (a truncated
@@ -616,27 +631,41 @@ def run_md_benchmark(
                     time_step_fs=time_step_fs,
                     record_interval=record_interval,
                     seed=seed,
+                    progress_label=progress_label,
                 )
 
-        # single GPU-expensive step: model single-points on every reference frame.
-        # Persist the per-frame predictions (tiny) so energy/force metric-definition
-        # changes can be recomputed on CPU later without re-running the model.
-        ref_predictions = md_metrics.predict_on_reference(ref_trajectory, calculator)
-        if not dry_run:
-            # e_ref lives in the reference HDF5, so the sidecar only needs the model's
-            # per-frame predictions to recompute energy/force metrics on CPU later
-            np.savez(
-                f"{out_dir}/{system_name}-nvt-{model_key}-refeval.npz",
-                e_pred=ref_predictions["e_pred"],
-                force_se=ref_predictions["force_se"],
-                n_atoms=ref_trajectory.n_atoms,
+        refeval_path = f"{out_dir}/{system_name}-nvt-{model_key}-refeval.npz"
+        ref_predictions: dict[str, np.ndarray] | None = None
+        if os.path.isfile(refeval_path):
+            with np.load(refeval_path, allow_pickle=False) as cached:
+                ref_predictions = {key: cached[key] for key in ("e_pred", "force_se")}
+            try:
+                md_metrics.energy_force_rmse_from_preds(ref_trajectory, ref_predictions)
+            except ValueError as exc:
+                print(f"  recomputing {refeval_path}: {exc}", flush=True)
+                ref_predictions = None
+            else:
+                print(f"  reusing {refeval_path}", flush=True)
+
+        if ref_predictions is None:
+            ref_predictions = md_metrics.predict_on_reference(
+                ref_trajectory, calculator
             )
+            if not dry_run:
+                # e_ref lives in HDF5; the sidecar stores only model predictions.
+                np.savez(
+                    refeval_path,
+                    e_pred=ref_predictions["e_pred"],
+                    force_se=ref_predictions["force_se"],
+                    n_atoms=ref_trajectory.n_atoms,
+                )
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectory,
             pred_frames,  # evaluate_md_system coerces the Atoms list to a Trajectory
             ref_time_step_fs=ref_time_step_fs,
             pred_time_step_fs=pred_time_step_fs,
             ref_predictions=ref_predictions,
+            progress_label=progress_label,
         )
         rows.append(
             {"system": system_name, "temperature_kelvin": temperature_kelvin}

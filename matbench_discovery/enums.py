@@ -513,7 +513,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         if not rel_path:
             raise ValueError(f"metrics.md.pred_file not found in {self.rel_path!r}")
         abs_path = f"{ROOT}/{rel_path}"
-        maybe_auto_download_file(file_url, abs_path, label=self.label)
+        if file_url:
+            maybe_auto_download_file(file_url, abs_path, label=self.label)
         return abs_path
 
     @property
@@ -657,7 +658,9 @@ class DataFiles(Files):
         abs_path = f"{type(self).base_dir}/{rel_path}"
         if not os.path.isfile(abs_path):
             # whether to auto-download files without prompting
-            auto_download = os.getenv("MBD_AUTO_DOWNLOAD_FILES", "").lower() == "true"
+            auto_download = (
+                os.getenv("MBD_AUTO_DOWNLOAD_FILES", "true").lower() == "true"
+            )
             is_ipython = hasattr(builtins, "__IPYTHON__")
             # default to 'y' if auto-download enabled or not in interactive session
             answer = (

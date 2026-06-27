@@ -278,6 +278,8 @@ definitions:
         type: number
       rdf_error:
         type: number
+      adf_error:
+        type: number
       vdos_error:
         type: number
       pressure_mae:
@@ -418,6 +420,8 @@ properties:
         - MatterSim
         - Alex
         - OMat24
+        - MatPES PBE
+        - MatPES r2SCAN
         - sAlex
         - OpenLAM
         - MDR PBE Phonons in MPtrj
@@ -522,8 +526,7 @@ properties:
     enum: [OSOD, OSCD, CSOD, CSCD]
   status:
     type: string
-    enum: [aborted, complete, deprecated, pending, superseded]
-    # pending: model is in review or awaiting further data/details from authors
+    enum: [aborted, complete, deprecated, superseded]
     # superseded: model is superseded by a newer model
     # deprecated: model is deprecated and should not be used e.g. because serious bugs were found
     # aborted: model was aborted before testing could be completed due e.g. to OOM/stability issues

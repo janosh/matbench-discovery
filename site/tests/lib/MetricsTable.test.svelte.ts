@@ -46,8 +46,9 @@ describe(`MetricsTable`, () => {
       expect(header_texts).toContain(col)
     }
 
-    // Model column must come first, other columns keep their definition order
+    // Model stays first and Org is a regular metadata column at the far right.
     expect(header_texts[0]).toBe(`Model`)
+    expect(header_texts.at(-1)).toBe(`Org`)
     const metric_order = [`CPS ↑`, `F1`, `DAF`].map((col) => header_texts.indexOf(col))
     expect(metric_order).toStrictEqual([...metric_order].sort((n1, n2) => n1 - n2))
 
@@ -89,6 +90,44 @@ describe(`MetricsTable`, () => {
     // Dropdown should be gone
     dropdown = document.querySelector(`.pred-files-dropdown`)
     expect(dropdown).toBeNull()
+  })
+
+  it(`renders Org as a regular rightmost metadata column`, async () => {
+    mount(MetricsTable, {
+      target: document.body,
+      props: { col_filter: () => true, show_non_compliant: true },
+    })
+    await tick()
+
+    const org_cell = doc_query(`td[data-col="Org"]`)
+    const org_preview = doc_query(`td[data-col="Org"] .org-preview`)
+    const headers = [...document.querySelectorAll(`th`)]
+    const org_header = headers.at(-1)
+    if (!org_header) throw new Error(`Org column header not found`)
+
+    expect(org_header?.textContent?.trim()).toBe(`Org`)
+    expect(org_header.getAttribute(`title`)).toBeNull()
+    expect(org_header.querySelector(`.header-label`)).not.toBeNull()
+    expect(org_preview.classList.contains(`org-preview`)).toBe(true)
+    expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
+  })
+
+  it(`renders header tooltips on inner labels`, async () => {
+    mount(MetricsTable, {
+      target: document.body,
+      props: { col_filter: () => true, show_non_compliant: true },
+    })
+    await tick()
+
+    const cps_header = [...document.querySelectorAll(`th`)].find((header) =>
+      header.textContent?.trim().startsWith(`CPS`),
+    )
+    if (!cps_header) throw new Error(`CPS column header not found`)
+
+    cps_header.dispatchEvent(new MouseEvent(`mouseover`, { bubbles: true }))
+    await tick()
+    expect(cps_header.getAttribute(`title`)).toBeNull()
+    expect(cps_header.querySelector(`.header-label`)).not.toBeNull()
   })
 
   it(`toggles metadata columns`, () => {
@@ -937,7 +976,8 @@ describe(`MetricsTable`, () => {
       `ΔERMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `FRMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `ΔRDF`, // ALL_METRICS (MD)
-      `ΔVDOS`, // ALL_METRICS (MD)
+      `ΔADF`, // ALL_METRICS (MD)
+      `ΔvDOS`, // ALL_METRICS (MD)
       `PMAE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `PW1`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `ΔP`, // ALL_METRICS (MD)
@@ -959,11 +999,14 @@ describe(`MetricsTable`, () => {
     // Optionally, check the number of columns to be sure
     expect(header_elements).toHaveLength(expected_core_columns.size)
 
-    // Check that each header has a non-empty title attribute (tooltip)
+    // Header tooltip content is attached to inner labels so HeatmapTable's
+    // generic title-based tooltip doesn't flash below before our desired top placement.
     header_elements.forEach((th) => {
+      const title = th.getAttribute(`title`)
+      expect(title, `Header ${th.textContent} has stale title`).toBeNull()
       expect(
-        th.getAttribute(`title`),
-        `Header ${th.textContent} has no title attribute`,
+        th.querySelector(`.header-label`),
+        `Header ${th.textContent} has no tooltip label`,
       ).not.toBeNull()
     })
   })

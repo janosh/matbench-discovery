@@ -2,7 +2,12 @@
   import { browser } from '$app/environment'
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
+  import {
+    DATASETS,
+    DISCOVERY_SETS,
+    MetricsTable,
+    SelectToggle,
+  } from '$lib'
   import {
     DynamicScatter,
     GitHubActivityScatter,
@@ -195,6 +200,7 @@
       bind:show_non_compliant
       bind:show_compliant
       bind:show_heatmap
+      show_energy_only_toggle
     />
   </section>
 

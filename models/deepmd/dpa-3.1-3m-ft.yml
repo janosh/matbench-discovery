@@ -190,13 +190,14 @@ metrics:
       R2: 0.869 # dimensionless
       missing_preds: 0 # count
   md:
-    pred_file: models/deepmd/dpa-3.1-3m-ft/2026-06-26-dpa_3_1_3m_ft-md-metrics.csv.gz
+    pred_file: models/deepmd/dpa-3.1-3m-ft/2026-06-27-dpa_3_1_3m_ft-md-metrics.csv.gz
     energy_rmse: 0.7376 # meV/atom
     force_rmse: 68.9079 # meV/Å
-    rdf_error: 3.9219 # %
-    vdos_error: 75.1632 # %
-    pressure_mae: 0.8902 # GPa
-    pressure_wasserstein: 0.7818 # GPa
-    pressure_error: 51.8441 # %
-    combined_error: 43.6431 # %
+    rdf_error: 3.5632 # %
+    adf_error: 1.2992 # %
+    vdos_error: 27.3205 # %
+    pressure_mae: 0.8693 # GPa
+    pressure_wasserstein: 0.759 # GPa
+    pressure_error: 50.0798 # %
+    combined_error: 20.5657 # %
     n_systems: 17 # count

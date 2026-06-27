@@ -186,13 +186,14 @@ metrics:
   diatomics:
     pred_file_url: https://figshare.com/files/54490370
   md:
-    pred_file: models/alphanet/alphanet-v1-oam/2026-06-26-alphanet_v1_oam-md-metrics.csv.gz
+    pred_file: models/alphanet/alphanet-v1-oam/2026-06-27-alphanet_v1_oam-md-metrics.csv.gz
     energy_rmse: 1.3423 # meV/atom
     force_rmse: 142.3046 # meV/Å
-    rdf_error: 5.3819 # %
-    vdos_error: 74.5086 # %
-    pressure_mae: 1.0536 # GPa
-    pressure_wasserstein: 0.9971 # GPa
-    pressure_error: 62.9676 # %
-    combined_error: 47.6194 # %
+    rdf_error: 5.2445 # %
+    adf_error: 2.2196 # %
+    vdos_error: 29.0018 # %
+    pressure_mae: 1.0293 # GPa
+    pressure_wasserstein: 0.9742 # GPa
+    pressure_error: 61.106 # %
+    combined_error: 24.393 # %
     n_systems: 17 # count

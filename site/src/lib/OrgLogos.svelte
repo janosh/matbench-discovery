@@ -13,10 +13,16 @@
     authors?: Author[]
   } = $props()
 
-  const esc = (str: string): string =>
+  const html_escape: Record<string, string> = {
+    '&': `&amp;`,
+    '<': `&lt;`,
+    '>': `&gt;`,
+    '"': `&quot;`,
+  }
+  const escape_html = (str: string): string =>
     str.replaceAll(
       /[&<>"]/g,
-      (char) => ({ '&': `&amp;`, '<': `&lt;`, '>': `&gt;`, '"': `&quot;` })[char] ?? char,
+      (char) => html_escape[char] ?? char,
     )
 
   // Render a logo as a standalone HTML string (the tooltip content is injected via
@@ -29,7 +35,7 @@
       return `<svg viewBox="${viewBox}" fill="currentColor" style="${style}">${inner}</svg>`
     }
     if (logo.src) {
-      return `<img src="${esc(logo.src)}" alt="" style="${style}; filter: grayscale(100%)" />`
+      return `<img src="${escape_html(logo.src)}" alt="" style="${style}; filter: grayscale(100%)" />`
     }
     return ``
   }
@@ -39,7 +45,7 @@
   // the matched org logos when no author metadata is available.
   let entries = $derived.by(() => {
     const groups: { logo?: OrgLogo; label: string; names: string[] }[] = []
-    for (const { name, affiliation } of authors ?? []) {
+    for (const { name, affiliation } of authors) {
       const label = affiliation || `Affiliation n/a`
       let group = groups.find((grp) => grp.label === label)
       if (!group) {
@@ -57,9 +63,9 @@
       const head =
         `<div style="display: flex; align-items: center; gap: 6px; font-weight: 600">${
           logo ? logo_html(logo) : ``
-        }<span>${esc(label)}</span></div>`
+        }<span>${escape_html(label)}</span></div>`
       const author_names = names.length > 0
-        ? `<div style="opacity: 0.7; font-size: 0.9em">${esc(names.join(`, `))}</div>`
+        ? `<div style="opacity: 0.7; font-size: 0.9em">${escape_html(names.join(`, `))}</div>`
         : ``
       return head + author_names
     })
@@ -72,7 +78,6 @@
 {#if org_logos.length > 0}
   <span
     class="org-preview"
-    class:fade={org_logos.length > 1}
     {@attach tooltip({ allow_html: true, content: tooltip_content, placement: `left` })}
   >
     {#each org_logos as logo (logo.name)}
@@ -85,15 +90,8 @@
   .org-preview {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    max-width: 3em;
-    overflow: hidden;
-    vertical-align: middle;
+    gap: var(--org-logo-gap, 0.3em);
+    justify-content: center;
     font-size: 1.2em;
-  }
-  /* hint that more logos exist beyond the clipped edge */
-  .org-preview.fade {
-    -webkit-mask-image: linear-gradient(to right, black 60%, transparent);
-    mask-image: linear-gradient(to right, black 60%, transparent);
   }
 </style>

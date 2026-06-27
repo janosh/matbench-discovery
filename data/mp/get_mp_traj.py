@@ -78,7 +78,6 @@ batch_size = 10_000
 task_ids = df_tasks.index.tolist()
 
 os.makedirs(f"{module_dir}/mp-tasks", exist_ok=True)
-# Iterate over task_ids in batches
 desc = "Fetching MP task docs..."
 pbar = trange(0, len(task_ids), batch_size, desc=desc, unit_scale=batch_size)
 for start_idx in pbar:

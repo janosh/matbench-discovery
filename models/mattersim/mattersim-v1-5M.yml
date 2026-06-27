@@ -224,13 +224,14 @@ metrics:
     pred_file: models/mattersim/mattersim-v1-5M/2025-02-19-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52468178
   md:
-    pred_file: models/mattersim/mattersim-v1-5M/2026-06-26-mattersim_v1_5m-md-metrics.csv.gz
+    pred_file: models/mattersim/mattersim-v1-5M/2026-06-27-mattersim_v1_5m-md-metrics.csv.gz
     energy_rmse: 1.1775 # meV/atom
     force_rmse: 112.7295 # meV/Å
-    rdf_error: 4.9591 # %
-    vdos_error: 75.4785 # %
-    pressure_mae: 1.0226 # GPa
-    pressure_wasserstein: 0.9644 # GPa
-    pressure_error: 65.8735 # %
-    combined_error: 48.7703 # %
+    rdf_error: 4.5991 # %
+    adf_error: 2.0239 # %
+    vdos_error: 28.5738 # %
+    pressure_mae: 1.0107 # GPa
+    pressure_wasserstein: 0.9458 # GPa
+    pressure_error: 64.3483 # %
+    combined_error: 24.8863 # %
     n_systems: 17 # count

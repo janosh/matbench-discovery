@@ -17,7 +17,7 @@ describe(`MD Task Page`, () => {
     const headers = [...document.querySelectorAll(`th`)].map((th) =>
       th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
-    for (const header of [`ΔRDF`, `ΔVDOS`, `PMAE`, `PW1`, `CMDS`]) {
+    for (const header of [`ΔRDF`, `ΔADF`, `ΔvDOS`, `PMAE`, `PW1`, `CMDS`]) {
       expect(headers, `missing column ${header}`).toContain(header)
     }
 

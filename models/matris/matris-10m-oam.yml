@@ -177,13 +177,14 @@ metrics:
       R2: 0.904 # dimensionless
       missing_preds: 0 # count
   md:
-    pred_file: models/matris/matris-10m-oam/2026-06-26-matris_10m_oam-md-metrics.csv.gz
+    pred_file: models/matris/matris-10m-oam/2026-06-27-matris_10m_oam-md-metrics.csv.gz
     energy_rmse: 0.6826 # meV/atom
     force_rmse: 71.8543 # meV/Å
-    rdf_error: 3.9264 # %
-    vdos_error: 75.4467 # %
-    pressure_mae: 0.9727 # GPa
-    pressure_wasserstein: 0.8605 # GPa
-    pressure_error: 52.6931 # %
-    combined_error: 44.0221 # %
+    rdf_error: 3.5865 # %
+    adf_error: 1.4905 # %
+    vdos_error: 26.3546 # %
+    pressure_mae: 0.9467 # GPa
+    pressure_wasserstein: 0.8346 # GPa
+    pressure_error: 49.9882 # %
+    combined_error: 20.355 # %
     n_systems: 17 # count

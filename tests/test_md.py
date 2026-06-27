@@ -152,6 +152,7 @@ def test_md_pipeline_end_to_end(tmp_path: Path) -> None:
     # same model run at the same temperature: structure and dynamics should be
     # similar but not identical (different seeds), pressures close
     assert 0 < system_metrics["rdf_error"] < 50
+    assert 0 < system_metrics["adf_error"] < 100
     assert 0 < system_metrics["vdos_error"] < 100
     assert 0 <= system_metrics["pressure_mae"] < 5
     assert 0 <= system_metrics["pressure_wasserstein"] < 5
@@ -199,7 +200,13 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
 
     df_md = run(dry=dry_run)
     assert list(df_md.index) == ["bulkCu_300K_test"]
-    metric_cols = {"rdf_error", "vdos_error", "energy_rmse", "force_rmse"}
+    metric_cols = {
+        "rdf_error",
+        "adf_error",
+        "vdos_error",
+        "energy_rmse",
+        "force_rmse",
+    }
     assert metric_cols <= set(df_md.columns)
 
     if dry_run:
@@ -208,11 +215,13 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
 
     assert (out_dir / f"{today}-emt-md-metrics.csv.gz").is_file()
     rollout = out_dir / "bulkCu_300K_test-nvt-emt.extxyz"
+    refeval = out_dir / "bulkCu_300K_test-nvt-emt-refeval.npz"
     assert rollout.is_file()
-    # second run reuses the existing rollout instead of recomputing
-    mtime = rollout.stat().st_mtime
+    assert refeval.is_file()
+    # second run reuses the existing rollout and reference single-points
+    mtimes = {path: path.stat().st_mtime for path in (rollout, refeval)}
     run()
-    assert rollout.stat().st_mtime == mtime
+    assert {path: path.stat().st_mtime for path in mtimes} == mtimes
 
 
 def test_run_md_benchmark_resume_matches_single_run(
@@ -298,9 +307,10 @@ def test_md_convert_resolve_settings() -> None:
 
 
 def test_md_convert_load_settings(tmp_path: Path) -> None:
-    """load_settings folds the save stride into dt_fs: dt is the AIMD integration
-    timestep and stride the steps between saved frames, so dt_fs = dt * stride. Dropping
-    stride (wrong by up to 5x) would corrupt every VDOS/pressure metric.
+    """load_settings reads dt_fs = the saved-frame interval = the CSV's dt column. The
+    reference extxyz stores every integration step, so the stride column is NOT folded in
+    (verified by equipartition; dt * stride underestimates temperature by stride**2 and
+    collapses the vDOS frequency axis).
     """
     from scripts.md_convert_references_to_hdf5 import load_settings
 
@@ -309,8 +319,8 @@ def test_md_convert_load_settings(tmp_path: Path) -> None:
         "System,temperature,stride,dt\nTiSe2,400,5,1\nanthracene,293,1,0.5\n"
     )
     settings = load_settings(str(csv))
-    assert settings["TiSe2_400K"] == (5.0, 400.0)  # dt 1 fs * stride 5
-    assert settings["anthracene_293K"] == (0.5, 293.0)  # stride 1 -> unchanged
+    assert settings["TiSe2_400K"] == (1.0, 400.0)  # dt = 1 fs (stride 5 not folded in)
+    assert settings["anthracene_293K"] == (0.5, 293.0)  # dt = 0.5 fs
 
 
 def test_md_convert_packs_reference(
@@ -350,7 +360,7 @@ def test_md_convert_packs_reference(
 
     assert list_reference_systems(out_h5) == [system]
     traj, dt_fs, temperature = read_reference_trajectory(out_h5, system)
-    assert dt_fs == 1.0  # dt 0.25 fs * stride 4 = saved-frame interval
+    assert dt_fs == 0.25  # dt = 0.25 fs (stride 4 not folded into saved-frame interval)
     assert temperature == 300.0
     assert traj.n_frames == len(frames)
     # extxyz round-trips positions to print precision
@@ -359,10 +369,11 @@ def test_md_convert_packs_reference(
     )
 
 
-def test_run_md_benchmark_rejects_unknown_systems(tmp_path: Path) -> None:
-    """A --systems selection matching no reference group fails clearly (instead of
-    becoming a downstream empty-DataFrame KeyError).
-    """
+@pytest.mark.parametrize("systems", [[], ["does_not_exist"]])
+def test_run_md_benchmark_rejects_empty_or_unknown_systems(
+    tmp_path: Path, systems: list[str]
+) -> None:
+    """An empty or unmatched --systems selection fails clearly."""
     ref_file = make_reference_h5(tmp_path)
 
     with pytest.raises(ValueError, match="No systems found"):
@@ -371,7 +382,7 @@ def test_run_md_benchmark_rejects_unknown_systems(tmp_path: Path) -> None:
             model_key="emt",
             out_dir=str(tmp_path / "out"),
             ref_file=ref_file,
-            systems=["does_not_exist"],
+            systems=systems,
         )
 
 

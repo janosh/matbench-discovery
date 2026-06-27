@@ -235,7 +235,7 @@ def test_model_md_path_returns_none_for_non_dict_md(
 def test_model_md_path_returns_path_for_dict_md(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """md_path resolves pred_file under ROOT when metrics.md is a dict."""
+    """md_path resolves local pred_file without downloading when no URL is available."""
     from matbench_discovery import ROOT
     from matbench_discovery import enums as enums_mod
 
@@ -245,8 +245,14 @@ def test_model_md_path_returns_path_for_dict_md(
         "metrics",
         property(lambda _self: {"md": {"pred_file": "models/x/md.csv.gz"}}),
     )
-    monkeypatch.setattr(enums_mod, "maybe_auto_download_file", lambda *_a, **_k: None)
+    download_calls: list[tuple[object, ...]] = []
+    monkeypatch.setattr(
+        enums_mod,
+        "maybe_auto_download_file",
+        lambda *args, **_kwargs: download_calls.append(args),
+    )
     assert model.md_path == f"{ROOT}/models/x/md.csv.gz"
+    assert download_calls == []
 
 
 @pytest.mark.parametrize("data_file", DataFiles)

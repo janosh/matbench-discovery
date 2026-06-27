@@ -9,6 +9,7 @@ import pytest
 from ase import Atoms, units
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.singlepoint import SinglePointCalculator
+from ase.data import atomic_masses
 
 from matbench_discovery.enums import Model
 from matbench_discovery.metrics import md as md_metrics
@@ -73,8 +74,11 @@ def attach_ref_labels(atoms: Atoms, energy: float, forces: np.ndarray) -> Atoms:
 def make_jiggled_frames(
     n_frames: int, *, pressure_gpa: float | None = None
 ) -> list[Atoms]:
-    """Periodic 8-atom cubic-lattice frames with small random displacements."""
-    base_positions = 3.0 * np.array(
+    """Periodic 8-atom cubic-lattice frames with small random displacements. The 2.4 A
+    spacing keeps Si-Si pairs within the covalent-radius bond cutoff so calc_adf finds
+    bonded triplets (real Si-Si bond ~2.35 A; covalent cutoff ~2.78 A).
+    """
+    base_positions = 2.4 * np.array(
         list(itertools.product(range(2), repeat=3)), dtype=float
     )
     frames = []
@@ -215,7 +219,151 @@ def test_calc_rdf_error(
         md_metrics.calc_rdf_error(radii, np.ones(3), np.ones(4))
 
 
-# === velocities and VDOS ===
+# === ADF ===
+
+
+def right_angle_h3_frame(*, cell_len: float = 6) -> Atoms:
+    """Three-atom frame with a 90-degree angle at atom 0."""
+    positions = [(0, 0, 0), (1, 0, 0), (0, 1, 0)]
+    return Atoms("H3", positions=positions, cell=[cell_len] * 3, pbc=True)
+
+
+def tetrahedral_ch4_frame() -> Atoms:
+    """Five-atom frame with a tetrahedral angle around atom 0."""
+    neighbor_dirs = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]]
+    positions = np.vstack([[0, 0, 0], neighbor_dirs]) / np.sqrt(3)
+    return Atoms("CH4", positions=positions, cell=[8] * 3, pbc=True)
+
+
+def wrapped_right_angle_h3_frame() -> Atoms:
+    """Three-atom frame whose 90-degree angle crosses periodic boundaries."""
+    positions = [(0.1, 0.1, 0.1), (3.1, 0.1, 0.1), (0.1, 3.1, 0.1)]
+    return Atoms("H3", positions=positions, cell=[4] * 3, pbc=True)
+
+
+@pytest.mark.parametrize(
+    ("frame", "expected_angle", "abs_tol"),
+    [
+        (right_angle_h3_frame(), 90.5, 1e-12),
+        (tetrahedral_ch4_frame(), np.degrees(np.arccos(-1 / 3)), 0.5),
+        (wrapped_right_angle_h3_frame(), 90.5, 1e-12),
+    ],
+    ids=["right_angle", "tetrahedral", "wrapped_right_angle"],
+)
+def test_calc_adf_peak_position(
+    frame: Atoms, expected_angle: float, abs_tol: float
+) -> None:
+    """ADF should recover known angles, including minimum-image neighbor vectors."""
+    # bond_tolerance=2 so the artificial ~1 A H-H/C-H separations count as bonded
+    angles, adf = md_metrics.calc_adf([frame], n_bins=180, bond_tolerance=2.0)
+    assert angles[np.argmax(adf)] == pytest.approx(expected_angle, abs=abs_tol)
+    np.testing.assert_allclose(
+        np.sum(adf * (angles[1] - angles[0])), 1, rtol=1e-12, atol=1e-12
+    )
+
+
+def test_calc_adf_rigid_transform_invariant() -> None:
+    """ADF should be invariant to rigid rotations and translations."""
+    positions = [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.2, -0.1],
+        [-0.3, 1.1, 0.4],
+        [0.5, -0.7, 1.2],
+        [-1.0, -0.4, 0.6],
+    ]
+    rotation = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    frame = Atoms("H5", positions=positions, cell=[50] * 3, pbc=False)
+    transformed = Atoms(
+        "H5", positions=positions @ rotation.T + [7, -3, 2], cell=[50] * 3, pbc=False
+    )
+
+    angles, adf = md_metrics.calc_adf([frame], n_bins=90, bond_tolerance=5.0)
+    transformed_angles, transformed_adf = md_metrics.calc_adf(
+        [transformed], n_bins=90, bond_tolerance=5.0
+    )
+    np.testing.assert_allclose(transformed_angles, angles, rtol=0, atol=0)
+    np.testing.assert_allclose(transformed_adf, adf, rtol=1e-12, atol=1e-12)
+
+
+@pytest.mark.parametrize(
+    ("frames", "n_bins", "bond_tolerance", "err_msg"),
+    [
+        ([], 180, 1.25, "zero frames"),
+        (
+            [Atoms("H2", positions=[(0, 0, 0), (1, 0, 0)], cell=[6] * 3)],
+            180,
+            1.25,
+            "n_atoms=2 < 3",
+        ),
+        ([right_angle_h3_frame()], 1, 1.25, "Need >= 2 ADF bins"),
+        ([right_angle_h3_frame()], 180, 0.0, "must be positive"),
+        # tiny tolerance leaves no covalent bonds -> no angle triplets
+        ([right_angle_h3_frame()], 180, 0.1, "no bonded neighbor angle pairs"),
+    ],
+)
+def test_calc_adf_invalid_input(
+    frames: list[Atoms], n_bins: int, bond_tolerance: float, err_msg: str
+) -> None:
+    """ADF should reject invalid inputs and empty neighborhoods."""
+    with pytest.raises(ValueError, match=err_msg):
+        md_metrics.calc_adf(frames, n_bins=n_bins, bond_tolerance=bond_tolerance)
+
+
+@pytest.mark.parametrize(
+    ("angles", "adf_ref", "adf_pred", "expected"),
+    [
+        # identical -> W1 = 0
+        ([0.0, 90.0, 180.0], [1.0, 0.0, 0.0], [1.0, 0.0, 0.0], 0),
+        # half the mass shifted 0->90 deg: W1 = 45 deg, background W1 = 90 deg -> 50%
+        ([0.0, 90.0, 180.0], [1.0, 0.0, 0.0], [0.5, 0.5, 0.0], 50),
+        # prediction equals the sin background ([0,1,0]): W1 == background W1 -> 100%
+        ([0.0, 90.0, 180.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 100),
+        # mass shifted further than the background (0->180 deg): capped at 100%
+        ([0.0, 90.0, 180.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0], 100),
+    ],
+    ids=["identical", "half_shift", "equals_background", "disjoint"],
+)
+def test_calc_adf_error(
+    angles: list[float], adf_ref: list[float], adf_pred: list[float], expected: float
+) -> None:
+    """ADF error = W1(ref,pred) / W1(ref, sin-background), capped at 100%."""
+    angles_arr, adf_ref_arr, adf_pred_arr = map(np.array, (angles, adf_ref, adf_pred))
+    assert md_metrics.calc_adf_error(angles_arr, adf_ref_arr, adf_pred_arr) == (
+        pytest.approx(expected)
+    )
+
+
+@pytest.mark.parametrize(
+    ("angles", "adf_ref", "adf_pred", "err_msg"),
+    [
+        (np.array([0.0, 90.0, 180.0]), np.ones(3), np.ones(4), "differ"),
+        (np.array([0.0, 90.0, 180.0]), np.zeros(3), np.ones(3), "non-positive area"),
+        (
+            np.array([0.0, 90.0, 180.0]),
+            np.array([1.0, np.nan, 0.0]),
+            np.ones(3),
+            "non-finite intensities",
+        ),
+        (
+            np.array([0.0, 90.0, 180.0]),
+            np.array([1.0, -0.1, 0.0]),
+            np.ones(3),
+            "negative intensities",
+        ),
+        (np.array([0.0]), np.ones(1), np.ones(1), "angle grid"),
+        (np.array([0.0, 2.0, 3.0]), np.ones(3), np.ones(3), "angle grid"),
+    ],
+    ids=["length_mismatch", "zero_area", "nan", "negative", "one_point", "irregular"],
+)
+def test_calc_adf_error_invalid_input(
+    angles: np.ndarray, adf_ref: np.ndarray, adf_pred: np.ndarray, err_msg: str
+) -> None:
+    """ADF error should reject invalid grids and distributions."""
+    with pytest.raises(ValueError, match=err_msg):
+        md_metrics.calc_adf_error(angles, adf_ref, adf_pred)
+
+
+# === velocities and vDOS ===
 
 
 def test_calc_velocities_linear_motion() -> None:
@@ -230,6 +378,29 @@ def test_calc_velocities_linear_motion() -> None:
     np.testing.assert_allclose(
         velocities, np.tile(velocity, (10, 1, 1)), rtol=1e-12, atol=1e-14
     )
+
+
+def test_equipartition_temperature() -> None:
+    """Equipartition T recovers the velocities' temperature and scales as 1/dt**2 (the
+    property that catches a mislabeled dt_fs: e.g. dt 5x too large -> T 25x too low).
+    """
+    rng = np.random.default_rng(0)
+    n_atoms, n_frames, dt = 32, 6, 1.5  # fs
+    velocity = rng.normal(scale=0.01, size=(n_atoms, 3))  # A/fs, constant per atom
+    base = rng.uniform(0, 10, size=(n_atoms, 3))
+    frames = [
+        Atoms("Cu32", positions=base + velocity * (step * dt), cell=[80] * 3, pbc=False)
+        for step in range(n_frames)
+    ]
+    temp = md_metrics.equipartition_temperature(frames, time_step_fs=dt)
+    # independent expectation from the same constant velocities (linear motion -> exact)
+    factor = 1e10 * units.J / units.kg  # 1 amu*(A/fs)^2 in eV
+    ke_ev = 0.5 * atomic_masses[29] * (velocity**2).sum() * factor
+    expected = 2 * ke_ev / (3 * n_atoms * units.kB)
+    assert temp == pytest.approx(expected, rel=1e-9)
+    # halving the assumed dt quadruples the inferred temperature
+    half_dt = md_metrics.equipartition_temperature(frames, time_step_fs=dt / 2)
+    assert half_dt == pytest.approx(4 * temp, rel=1e-9)
 
 
 def test_calc_velocities_unwraps_pbc_crossings() -> None:
@@ -433,27 +604,34 @@ def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
 
 
 @pytest.mark.parametrize(
-    ("rdf_error", "vdos_error", "pressure_error", "expected"),
+    ("rdf_error", "adf_error", "vdos_error", "pressure_error", "expected"),
     [
-        (0, 0, 0, 0),
-        (10, 20, 30, 20),  # simple mean of the three
-        (15, 15, 15, 15),
-        (30, 0, 0, 10),
+        (0, 0, 0, 0, 0),
+        (10, 20, 30, 40, 25),  # simple mean of the four
+        (15, 15, 15, 15, 15),
+        (30, 0, 0, 0, 7.5),
     ],
 )
 def test_calc_combined_error(
-    rdf_error: float, vdos_error: float, pressure_error: float, expected: float
+    rdf_error: float,
+    adf_error: float,
+    vdos_error: float,
+    pressure_error: float,
+    expected: float,
 ) -> None:
-    """Combined error: simple mean of RDF/VDOS/pressure errors."""
+    """Combined error: simple mean of RDF/ADF/vDOS/pressure errors."""
     assert md_metrics.calc_combined_error(
-        rdf_error, vdos_error, pressure_error
+        rdf_error, adf_error, vdos_error, pressure_error
     ) == pytest.approx(expected)
 
+
+def test_calc_combined_error_rejects_invalid_inputs() -> None:
+    """Combined error should reject negative or non-finite components."""
     with pytest.raises(ValueError, match="must be non-negative"):
-        md_metrics.calc_combined_error(-1, 5, 5)
+        md_metrics.calc_combined_error(-1, 5, 5, 5)
     # a missing/NaN pressure must fail loud, not silently become a two-metric mean
     with pytest.raises(ValueError, match="finite"):
-        md_metrics.calc_combined_error(10, 20, float("nan"))
+        md_metrics.calc_combined_error(10, 20, 30, float("nan"))
 
 
 @pytest.mark.parametrize(
@@ -666,12 +844,14 @@ def test_evaluate_md_system() -> None:
 
     assert set(metrics) == {
         "rdf_error",
+        "adf_error",
         "vdos_error",
         "pressure_mae",
         "pressure_wasserstein",
         "pressure_error",
     }
     assert 0 <= metrics["rdf_error"] <= 100
+    assert 0 <= metrics["adf_error"] <= 100
     assert 0 <= metrics["vdos_error"] <= 100
     assert metrics["pressure_mae"] == pytest.approx(0.2, abs=1e-10)
     assert metrics["pressure_wasserstein"] == pytest.approx(0.2, abs=1e-10)
@@ -742,6 +922,7 @@ def test_calc_md_metrics() -> None:
             "energy_rmse": [0.1, 0.3],
             "force_rmse": [0.2, 0.4],
             "rdf_error": [10.0, 20.0],
+            "adf_error": [50.0, 10.0],
             "vdos_error": [30.0, 10.0],
             "pressure_mae": [1.0, np.nan],  # one system without stress data
             "pressure_wasserstein": [0.5, np.nan],
@@ -754,13 +935,14 @@ def test_calc_md_metrics() -> None:
     assert metrics["energy_rmse"] == pytest.approx(200)
     assert metrics["force_rmse"] == pytest.approx(300)
     assert metrics["rdf_error"] == pytest.approx(15)
+    assert metrics["adf_error"] == pytest.approx(30)
     assert metrics["vdos_error"] == pytest.approx(20)
     assert metrics["pressure_mae"] == pytest.approx(1)
     assert metrics["pressure_wasserstein"] == pytest.approx(0.5)
     assert metrics["pressure_error"] == pytest.approx(40)
-    # combined = simple mean of mean rdf/vdos/pressure errors
+    # combined = simple mean of mean rdf/adf/vdos/pressure errors
     assert metrics["combined_error"] == pytest.approx(
-        md_metrics.calc_combined_error(15, 20, 40)
+        md_metrics.calc_combined_error(15, 30, 20, 40)
     )
     assert metrics["n_systems"] == 2
 
@@ -769,6 +951,26 @@ def test_calc_md_metrics() -> None:
     assert partial == {"rdf_error": 15, "n_systems": 2}
     with pytest.raises(ValueError, match="No recognized MD metric columns"):
         md_metrics.calc_md_metrics(pd.DataFrame({"unrelated": [1]}))
+
+
+def test_calc_md_metrics_skips_combined_error_without_finite_pressure() -> None:
+    """All-NaN pressure errors should not make aggregation fail or emit CMDS."""
+    df_md = pd.DataFrame(
+        {
+            "rdf_error": [10.0, 20.0],
+            "adf_error": [30.0, 40.0],
+            "vdos_error": [50.0, 60.0],
+            "pressure_error": [np.nan, np.nan],
+        }
+    )
+
+    metrics = md_metrics.calc_md_metrics(df_md)
+
+    assert metrics["rdf_error"] == pytest.approx(15)
+    assert metrics["adf_error"] == pytest.approx(35)
+    assert metrics["vdos_error"] == pytest.approx(55)
+    assert np.isnan(metrics["pressure_error"])
+    assert "combined_error" not in metrics
 
 
 def test_combine_per_system_metrics() -> None:

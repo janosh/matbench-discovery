@@ -184,13 +184,14 @@ metrics:
       R2: 0.788 # dimensionless
       missing_preds: 309 # count
   md:
-    pred_file: models/eqV2/eqV2-s-dens-mp/2026-06-26-eqv2_s_dens_mp-md-metrics.csv.gz
+    pred_file: models/eqV2/eqV2-s-dens-mp/2026-06-27-eqv2_s_dens_mp-md-metrics.csv.gz
     energy_rmse: 6.0618 # meV/atom
     force_rmse: 110.1912 # meV/Å
-    rdf_error: 6.1501 # %
-    vdos_error: 76.326 # %
-    pressure_mae: 1.112 # GPa
-    pressure_wasserstein: 1.0131 # GPa
-    pressure_error: 57.6043 # %
-    combined_error: 46.6935 # %
+    rdf_error: 5.8936 # %
+    adf_error: 2.2193 # %
+    vdos_error: 31.0794 # %
+    pressure_mae: 1.0944 # GPa
+    pressure_wasserstein: 0.988 # GPa
+    pressure_error: 56.0059 # %
+    combined_error: 23.7996 # %
     n_systems: 17 # count

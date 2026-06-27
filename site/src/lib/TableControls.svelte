@@ -13,21 +13,16 @@
     show_non_compliant = $bindable(true),
     show_selected_only = $bindable(false),
     selected_count = 0,
-    on_filter_change,
     show_energy_only_toggle = false,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
-    show_energy_only?: boolean
     columns?: Label[]
+    show_energy_only?: boolean
     show_heatmap?: boolean
     show_compliant?: boolean
     show_non_compliant?: boolean
     show_selected_only?: boolean
     selected_count?: number
-    on_filter_change?: (
-      show_energy: boolean,
-      show_non_compliant: boolean,
-    ) => void
     show_energy_only_toggle?: boolean
   } = $props()
 </script>
@@ -92,21 +87,9 @@
   </label>
   {#if show_energy_only_toggle}
     <label>
-      <input
-        type="checkbox"
-        checked={show_energy_only}
-        onchange={(event: Event) => {
-          const target = event.target as HTMLInputElement
-          // Update both local state and trigger callback (if passed)
-          show_energy_only = target.checked
-          on_filter_change?.(target.checked, false)
-        }}
-      />
+      <input type="checkbox" bind:checked={show_energy_only} />
       Energy-only models
-      <span
-        title="Include models that only predict energy (no forces or stress)"
-        {@attach tooltip()}
-      >
+      <span title="Include models that only predict energy (no forces or stress)" {@attach tooltip()}>
         <Icon icon="Info" />
       </span>
     </label>

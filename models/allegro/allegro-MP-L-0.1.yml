@@ -186,13 +186,14 @@ metrics:
       R2: 0.706 # dimensionless
       missing_preds: 0 # count
   md:
-    pred_file: models/allegro/allegro-MP-L-0.1/2026-06-26-allegro_mp_l_0_1-md-metrics.csv.gz
+    pred_file: models/allegro/allegro-MP-L-0.1/2026-06-27-allegro_mp_l_0_1-md-metrics.csv.gz
     energy_rmse: 1.0896 # meV/atom
     force_rmse: 114.7238 # meV/Å
-    rdf_error: 4.5808 # %
-    vdos_error: 76.7044 # %
-    pressure_mae: 0.9226 # GPa
-    pressure_wasserstein: 0.8512 # GPa
-    pressure_error: 61.2843 # %
-    combined_error: 47.5232 # %
+    rdf_error: 4.2778 # %
+    adf_error: 1.7265 # %
+    vdos_error: 29.1714 # %
+    pressure_mae: 0.8931 # GPa
+    pressure_wasserstein: 0.8159 # GPa
+    pressure_error: 56.5183 # %
+    combined_error: 22.9235 # %
     n_systems: 17 # count

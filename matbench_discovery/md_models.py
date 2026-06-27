@@ -4,10 +4,10 @@ Every model the leaderboard runs is launched through the single ``models/run_md.
 script. Because MLIP dependency trees conflict (torch vs jax vs tensorflow, mutually
 exclusive CUDA builds), they cannot share one environment. Instead each model declares
 its own ``uv`` requirements here; the launcher resolves a per-model environment
-on the fly with ``uv run --with`` (see ``MdModel.uv_run_cmd``), on top of the core
-dependencies declared in ``models/run_md.py``'s inline script metadata. Calculator
-construction is lazy (imports happen inside the factory) so listing models and
-printing dependencies work with only the core dependencies installed.
+on the fly with ``uv run --no-project --with`` (see ``MdModel.uv_run_cmd``), on top of
+the core dependencies declared in ``models/run_md.py``'s inline script metadata.
+Calculator construction is lazy (imports happen inside the factory) so listing models
+and printing dependencies work with only the core dependencies installed.
 
 Registry keys are ``Model`` enum names so metrics can be written to the right YAML.
 """
@@ -105,7 +105,8 @@ class MdModel:
         py_args = ["--python", self.python_version] if self.python_version else []
         with_args = [tok for dep in self.deps for tok in ("--with", dep)]
         link_args = [tok for url in self.find_links for tok in ("--find-links", url)]
-        return ["uv", "run", *py_args, *with_args, *link_args, script, *args]
+        base_cmd = ["uv", "run", "--no-project"]
+        return [*base_cmd, *py_args, *with_args, *link_args, script, *args]
 
 
 def _detect_device() -> str:
@@ -120,13 +121,20 @@ def _detect_device() -> str:
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def _mace_mp(checkpoint: str) -> Callable[[str, str], "Calculator"]:
+def _mace(
+    checkpoint: str, head: str | None = None
+) -> Callable[[str, str], "Calculator"]:
     def make_calc(device: str, dtype: str = "float64") -> "Calculator":
         from mace.calculators import mace_mp
 
-        # enable_cueq left off: the cuequivariance fast path is version-brittle across
-        # mace/cueq releases; correctness is identical, only throughput differs
-        return mace_mp(model=checkpoint, device=device, default_dtype=dtype)
+        kwargs = {"head": head} if head else {}
+        return mace_mp(
+            model=checkpoint,
+            device=device,
+            default_dtype=dtype,
+            enable_cueq=device == "cuda",
+            **kwargs,
+        )
 
     return make_calc
 
@@ -418,10 +426,9 @@ MATRIS_DEPS = (MATRIS_PKG, "torch==2.6.0", "numpy<3")
 # Nequix (JAX MLIP): jax[cuda12] for GPU; the .nqx checkpoint is staged + loaded via
 # model_path. use_kernel=False in the factory avoids the openequivariance build step.
 NEQUIX_DEPS = ("nequix", "jax[cuda12]")
-
 MD_MODELS: dict[str, MdModel] = {
-    "mace_mp_0": MdModel(_mace_mp("medium"), deps=("mace-torch>=0.3.6",)),
-    "mace_mpa_0": MdModel(_mace_mp("medium-mpa-0"), deps=("mace-torch>=0.3.6",)),
+    "mace_mp_0": MdModel(_mace("medium"), deps=("mace-torch>=0.3.6",)),
+    "mace_mpa_0": MdModel(_mace("medium-mpa-0"), deps=("mace-torch>=0.3.6",)),
     "orb_v2": MdModel(_orb("orb-v2"), deps=("orb-models==0.4.3",)),
     "orb_v3": MdModel(
         _orb("orb-v3-conservative-inf-omat"), deps=("orb-models==0.5.4",)

@@ -2,20 +2,22 @@
 
 Implements the finite-temperature observables proposed for the MD benchmark task
 (https://github.com/janosh/matbench-discovery/pull/344): energy/force RMSE on
-reference MD frames, radial distribution function (RDF) error, pressure MAE from
-the stress tensor trace, vibrational density of states (VDOS) error from the
-velocity autocorrelation function, and an error-weighted combined RDF+VDOS score.
-Also adds a Wasserstein-1 distance between pressure distributions as a
+reference MD frames, radial distribution function (RDF) error, angular distribution
+function (ADF) error, pressure MAE from the stress tensor trace, vibrational density
+of states (vDOS) error from the velocity autocorrelation function, and a combined
+MD score. Also adds a Wasserstein-1 distance between pressure distributions as a
 frame-pairing-independent complement to the pressure MAE.
 """
 
 import math
+from collections.abc import Sequence
 from fractions import Fraction
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 from ase import Atoms, units
+from ase.data import atomic_masses, covalent_radii
 from ase.geometry import find_mic, get_distances, minkowski_reduce
 from ruamel.yaml.comments import CommentedMap
 
@@ -24,14 +26,14 @@ from matbench_discovery.data import update_yaml_file
 from matbench_discovery.trajectory import Trajectory
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from ase.calculators.calculator import Calculator
 
     from matbench_discovery.enums import Model
 
+TrajectoryLike = Trajectory | Sequence[Atoms]
 
-def _as_trajectory(trajectory: "Trajectory | Sequence[Atoms]") -> Trajectory:
+
+def _as_trajectory(trajectory: TrajectoryLike) -> Trajectory:
     """Coerce a Trajectory or a sequence of ASE Atoms to a Trajectory, so metrics run
     on dense arrays regardless of input. Passing a Trajectory (the hot path) is a no-op.
     """
@@ -45,11 +47,12 @@ METRIC_UNITS = {
     "energy_rmse": "meV/atom",
     "force_rmse": "meV/Å",
     "rdf_error": "%",
+    "adf_error": "%",
     "vdos_error": "%",
     "pressure_mae": "GPa",
     "pressure_wasserstein": "GPa",
     "pressure_error": "%",  # pressure-histogram overlap error (paper Eq. 9)
-    "combined_error": "%",  # simple mean of rdf/vdos/pressure errors
+    "combined_error": "%",  # simple mean of rdf/adf/vdos/pressure errors
     "n_systems": "count",
 }
 PER_SYSTEM_METRIC_COLS = tuple(
@@ -82,7 +85,7 @@ def min_image_radius(cells: np.ndarray, pbc: np.ndarray) -> float:
 
 
 def calc_rdf(
-    trajectory: "Trajectory | Sequence[Atoms]",
+    trajectory: TrajectoryLike,
     *,
     n_bins: int = 500,
     r_max: float | None = None,
@@ -153,15 +156,142 @@ def calc_rdf_error(
     return float(min(1, numerator / denominator) * 100)
 
 
-def calc_velocities(
-    trajectory: "Trajectory | Sequence[Atoms]", *, time_step_fs: float
-) -> np.ndarray:
+def calc_adf(
+    trajectory: TrajectoryLike,
+    *,
+    n_bins: int = 180,
+    bond_tolerance: float = 1.25,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Time-averaged bond-angle distribution function of a trajectory.
+
+    Returns bin-center angles in degrees and a unit-area angular density over
+    0-180 degrees. For each frame and central atom, every unordered pair of *bonded*
+    neighbors contributes one angle. A pair (i, j) counts as bonded when its minimum-
+    image distance is within ``bond_tolerance * (r_cov[Z_i] + r_cov[Z_j])`` (ASE
+    covalent radii). Species-aware cutoffs capture first-coordination-shell bonding
+    angles (tetrahedral, octahedral, aromatic, ...) across mixed bond length scales
+    (e.g. Pb-Br vs C-H in a hybrid perovskite). A single global cutoff instead lets the
+    many long-range neighbor pairs dominate, collapsing every structure's ADF onto the
+    universal sin(theta) background and washing out the bonding-angle signal.
+    """
+    traj = _as_trajectory(trajectory)
+    if traj.n_frames == 0:
+        raise ValueError("Cannot compute ADF of empty trajectory")
+    if n_bins < 2:
+        raise ValueError(f"Need >= 2 ADF bins, got {n_bins=}")
+    if bond_tolerance <= 0:
+        raise ValueError(f"{bond_tolerance=} must be positive")
+    n_atoms = traj.n_atoms
+    if n_atoms < 3:
+        raise ValueError(f"Cannot compute ADF with {n_atoms=} < 3")
+    # species-aware bond cutoffs, clamped to the minimum-image validity limit so no pair
+    # is counted against two periodic images
+    mic_radius = min_image_radius(traj.cell, traj.pbc)
+    r_cov = covalent_radii[traj.atomic_numbers]
+    bond_cutoffs = np.minimum(
+        bond_tolerance * (r_cov[:, None] + r_cov[None, :]), mic_radius
+    )
+
+    bin_edges = np.linspace(0, 180, n_bins + 1)
+    counts = np.zeros(n_bins)
+    for frame_idx in range(traj.n_frames):
+        mic_vectors, distances = get_distances(
+            traj.positions[frame_idx], cell=traj.cell[frame_idx], pbc=traj.pbc
+        )
+        bonded = (distances > 1e-12) & (distances <= bond_cutoffs)
+        # directed bonds (center -> neighbor); np.nonzero is row-major so ``centers``
+        # is non-decreasing and each center's neighbors form one contiguous run
+        centers, neighbors = np.nonzero(bonded)
+        bond_unit_vecs = (
+            mic_vectors[centers, neighbors] / distances[centers, neighbors][:, None]
+        )
+        # all unordered neighbor pairs per center, computed only over bonded pairs (so
+        # this is O(n * coord^2), not the O(n^3) of a full all-triplet cosine tensor)
+        seg_starts = np.unique(centers, return_index=True)[1]
+        seg_counts = np.diff(np.append(seg_starts, len(centers)))
+        left_idx, right_idx = [], []
+        for start, count in zip(seg_starts, seg_counts, strict=True):
+            if count >= 2:  # need >= 2 neighbors to form an angle
+                tri_a, tri_b = np.triu_indices(count, k=1)
+                left_idx.append(start + tri_a)
+                right_idx.append(start + tri_b)
+        if not left_idx:
+            continue
+        left = np.concatenate(left_idx)
+        right = np.concatenate(right_idx)
+        cosines = np.einsum("pd,pd->p", bond_unit_vecs[left], bond_unit_vecs[right])
+        pair_angles = np.degrees(np.arccos(np.clip(cosines, -1, 1)))
+        counts += np.histogram(pair_angles, bins=bin_edges)[0]
+
+    if not counts.any():
+        raise ValueError("Cannot compute ADF: no bonded neighbor angle pairs found")
+
+    angles = (bin_edges[:-1] + bin_edges[1:]) / 2
+    bin_widths = np.diff(bin_edges)
+    return angles, counts / np.sum(counts * bin_widths)
+
+
+def calc_adf_error(
+    angles: np.ndarray, adf_ref: np.ndarray, adf_pred: np.ndarray
+) -> float:
+    """Bond-angle distribution error in percent, the ADF analog of the RDF metric.
+
+        error = 100 * min(1, W1(adf_ref, adf_pred) / W1(adf_ref, sin-background))
+
+    W1 is the Wasserstein-1 (earth-mover) distance in degrees between the two area-
+    normalized angular densities. Normalizing by the reference's own distance to the
+    structureless ``sin(theta)`` random-neighbor background (the angular 'ideal gas',
+    the angular analog of g(r) = 1) makes this a fractional structural error:
+    0 = perfect match, 100 = as different from the reference as a featureless
+    distribution (also returned when the reference is itself indistinguishable from
+    the background).
+
+    Wasserstein distance, not the L1 overlap used for RDF/pressure, is deliberate: it
+    grows with *how far* bonding-angle peaks are shifted (e.g. tetrahedral 109.5 deg ->
+    square-planar 90 deg) instead of saturating once peaks stop overlapping. Its lack
+    of a histogram-binning noise floor keeps resolving the small angular errors that
+    separate otherwise-good MLIPs.
+    """
+    from scipy.stats import wasserstein_distance
+
+    if not len(angles) == len(adf_ref) == len(adf_pred):
+        raise ValueError(f"{len(angles)=}, {len(adf_ref)=}, {len(adf_pred)=} differ")
+
+    angles, adf_ref, adf_pred = map(np.asarray, (angles, adf_ref, adf_pred))
+    angle_steps = np.diff(angles)
+    if len(angle_steps) == 0:
+        raise ValueError("Need >= 2 ADF angle grid points")
+    if not np.all(angle_steps > 0) or not np.allclose(angle_steps, angle_steps[0]):
+        raise ValueError("ADF angle grid must be strictly increasing and evenly spaced")
+    for label, adf in (("reference", adf_ref), ("predicted", adf_pred)):
+        if not np.all(np.isfinite(adf)):
+            raise ValueError(f"{label} ADF has non-finite intensities")
+        if (adf < 0).any():
+            raise ValueError(f"{label} ADF has negative intensities")
+        if adf.sum() <= 0:
+            raise ValueError(f"{label} ADF has non-positive area")
+
+    # sin(theta) random-neighbor background = the angular ideal gas.
+    # wasserstein_distance normalizes weights, so unnormalized densities are fine.
+    background = np.sin(np.radians(angles))
+    w1_pred = wasserstein_distance(
+        angles, angles, u_weights=adf_ref, v_weights=adf_pred
+    )
+    w1_background = wasserstein_distance(
+        angles, angles, u_weights=adf_ref, v_weights=background
+    )
+    if w1_background <= 0:  # featureless reference -> structural error undefined
+        return 100.0
+    return float(min(1, w1_pred / w1_background) * 100)
+
+
+def calc_velocities(trajectory: TrajectoryLike, *, time_step_fs: float) -> np.ndarray:
     """Finite-difference velocities of shape (n_frames, n_atoms, 3) in Angstrom/fs.
 
     Positions are unwrapped via minimum-image displacements between consecutive
     frames before differentiating, so periodic boundary crossings don't produce
     velocity spikes. Using the same estimator for reference and MLIP trajectories
-    keeps VDOS comparisons unbiased even when one stores explicit velocities.
+    keeps vDOS comparisons unbiased even when one stores explicit velocities.
     """
     traj = _as_trajectory(trajectory)
     if traj.n_frames < 2:
@@ -182,12 +312,35 @@ def calc_velocities(
     return np.gradient(unwrapped, time_step_fs, axis=0)
 
 
+def equipartition_temperature(
+    trajectory: TrajectoryLike, *, time_step_fs: float
+) -> float:
+    """Mean kinetic temperature (K) implied by finite-difference velocities.
+
+    From equipartition <KE> = (3/2) N k_B T, so T = <sum_i m_i |v_i|^2> / (3 N k_B).
+    This is a cheap physical sanity check on the saved-frame interval: velocities scale
+    as 1/dt, so kinetic energy and hence T scale as 1/dt^2. A reference trajectory whose
+    ``dt_fs`` is wrong by a factor f therefore reports a temperature off by f^2 from its
+    thermostat target (e.g. dt 5x too large -> T 25x too low), which is how a mislabeled
+    ``dt_fs`` silently corrupts the dt-dependent vDOS metric. Pure finite differencing
+    slightly underestimates T for trajectories with modes near the Nyquist limit, so
+    compare against the target with a generous tolerance, not for exact equality.
+    """
+    traj = _as_trajectory(trajectory)
+    velocities = calc_velocities(traj, time_step_fs=time_step_fs)  # Angstrom/fs
+    masses = atomic_masses[traj.atomic_numbers]  # amu
+    # 1 amu * (Angstrom/fs)^2 in eV.
+    amu_ang2_fs2_in_ev = 1e10 * units.J / units.kg
+    kinetic_ev = 0.5 * amu_ang2_fs2_in_ev * np.einsum("a,tad->t", masses, velocities**2)
+    return float((2 * kinetic_ev / (3 * traj.n_atoms * units.kB)).mean())
+
+
 def calc_vdos(
     velocities: np.ndarray, *, time_step_fs: float
 ) -> tuple[np.ndarray, np.ndarray]:
     """Vibrational density of states from velocities of shape (n_frames, n_atoms, 3).
 
-    Returns frequencies in THz and VDOS intensities: the one-sided power spectrum of
+    Returns frequencies in THz and vDOS intensities: the one-sided power spectrum of
     each Hann-windowed velocity component (the Fourier transform of its
     autocorrelation function by the Wiener-Khinchin theorem), normalized to unit
     total power per component before summing. Per-component normalization weights
@@ -203,7 +356,7 @@ def calc_vdos(
     # hanning(n < 4) has at most one non-zero sample, making the windowed
     # spectrum identically zero or a featureless constant
     if (n_frames := len(velocities)) < 4:
-        raise ValueError(f"Need >= 4 frames to compute VDOS, got {n_frames}")
+        raise ValueError(f"Need >= 4 frames to compute vDOS, got {n_frames}")
     if time_step_fs <= 0:
         raise ValueError(f"{time_step_fs=} must be positive")
 
@@ -239,9 +392,9 @@ def calc_vdos_error(
     pred_interp = np.interp(grid, freqs_pred, vdos_pred)
     for label, spectrum in (("reference", ref_interp), ("predicted", pred_interp)):
         if (spectrum < 0).any():
-            raise ValueError(f"{label} VDOS has negative intensities")
+            raise ValueError(f"{label} vDOS has negative intensities")
         if np.trapezoid(spectrum, x=grid) <= 0:
-            raise ValueError(f"{label} VDOS has non-positive area")
+            raise ValueError(f"{label} vDOS has non-positive area")
 
     ref_interp = ref_interp / np.trapezoid(ref_interp, x=grid)
     pred_interp = pred_interp / np.trapezoid(pred_interp, x=grid)
@@ -251,7 +404,7 @@ def calc_vdos_error(
 
 
 def get_trajectory_pressures(
-    trajectory: "Trajectory | Sequence[Atoms]",
+    trajectory: TrajectoryLike,
 ) -> np.ndarray:
     """Per-frame pressures in GPa from the per-frame Voigt stresses (paper Eq. 5),
     vectorized over frames. Raises ValueError if the trajectory has no stress data.
@@ -347,29 +500,23 @@ def calc_pressure_histogram_error(
 
 
 def calc_combined_error(
-    rdf_error: float, vdos_error: float, pressure_error: float
+    rdf_error: float, adf_error: float, vdos_error: float, pressure_error: float
 ) -> float:
-    """Combined MD error: the simple average of the RDF, VDOS and pressure-distribution
-    errors (all in %, lower is better), per the CFPMD-26 protocol. All three must be
-    finite and non-negative; a missing/NaN pressure error raises rather than silently
-    collapsing to a misleading two-metric mean.
+    """Combined MD error: the simple average of RDF, ADF, vDOS and pressure-distribution
+    errors (all in %, lower is better). All four must be finite and non-negative; a
+    missing/NaN component raises rather than silently collapsing to a misleading
+    lower-dimensional mean.
     """
-    errors = np.array([rdf_error, vdos_error, pressure_error], dtype=float)
+    errors = np.array([rdf_error, adf_error, vdos_error, pressure_error], dtype=float)
     if not np.all(np.isfinite(errors)):
-        raise ValueError(
-            "Combined error needs finite rdf/vdos/pressure errors, got "
-            f"{rdf_error=}, {vdos_error=}, {pressure_error=}"
-        )
+        raise ValueError(f"Combined error needs finite components, got {errors=}")
     if np.any(errors < 0):
-        raise ValueError(
-            f"Errors must be non-negative, got {rdf_error=}, {vdos_error=}, "
-            f"{pressure_error=}"
-        )
+        raise ValueError(f"Errors must be non-negative, got {errors=}")
     return float(errors.mean())
 
 
 def predict_on_reference(
-    trajectory: "Trajectory | Sequence[Atoms]", calculator: "Calculator"
+    trajectory: TrajectoryLike, calculator: "Calculator"
 ) -> dict[str, np.ndarray]:
     """Single-point the calculator on every reference frame, returning the per-frame
     quantities the energy/force metrics are built from: predicted potential energy
@@ -403,7 +550,7 @@ def predict_on_reference(
 
 
 def energy_force_rmse_from_preds(
-    trajectory: "Trajectory | Sequence[Atoms]", predictions: dict[str, np.ndarray]
+    trajectory: TrajectoryLike, predictions: dict[str, np.ndarray]
 ) -> dict[str, float]:
     """Energy-fluctuation (eV/atom) and force (eV/Å) RMSE from per-frame ``predictions``
     (``predict_on_reference`` output). Pure CPU, so changing how the energy/force RMSE
@@ -442,7 +589,7 @@ def energy_force_rmse_from_preds(
 
 
 def calc_energy_force_rmse(
-    trajectory: "Trajectory | Sequence[Atoms]", calculator: "Calculator"
+    trajectory: TrajectoryLike, calculator: "Calculator"
 ) -> dict[str, float]:
     """Energy-fluctuation (eV/atom) and force (eV/Å) RMSE of calculator single-point
     predictions on reference MD frames. Thin wrapper over ``predict_on_reference`` +
@@ -475,14 +622,15 @@ def matched_frame_counts(
 
 
 def evaluate_md_system(
-    ref_trajectory: "Trajectory | Sequence[Atoms]",
-    pred_trajectory: "Trajectory | Sequence[Atoms]",
+    ref_trajectory: TrajectoryLike,
+    pred_trajectory: TrajectoryLike,
     *,
     ref_time_step_fs: float,
     pred_time_step_fs: float,
     calculator: "Calculator | None" = None,
     ref_predictions: "dict[str, np.ndarray] | None" = None,
     n_rdf_bins: int = 500,
+    progress_label: str | None = None,
 ) -> dict[str, float]:
     """All per-system MD metrics for one reference/predicted trajectory pair, keyed
     by METRIC_UNITS column names.
@@ -493,7 +641,23 @@ def evaluate_md_system(
     when either trajectory lacks stress data. Energy and force RMSE on the full
     reference trajectory are included when ``ref_predictions`` (from
     ``predict_on_reference``) or a ``calculator`` to compute them is passed.
+
+    Args:
+        ref_trajectory: Ab-initio reference trajectory.
+        pred_trajectory: Model-predicted trajectory.
+        ref_time_step_fs: Time between saved reference frames in fs.
+        pred_time_step_fs: Time between saved predicted frames in fs.
+        calculator: Optional model calculator for energy/force RMSE.
+        ref_predictions: Optional cached predictions from ``predict_on_reference``.
+        n_rdf_bins: Number of RDF histogram bins.
+        progress_label: Optional label for coarse per-metric progress logging.
     """
+
+    def log_progress(stage: str) -> None:
+        """Print a coarse metric-stage marker for long Slurm jobs."""
+        if progress_label:
+            print(f"{progress_label}: {stage}", flush=True)
+
     ref = _as_trajectory(ref_trajectory)
     pred = _as_trajectory(pred_trajectory)
     n_ref_use, n_pred_use = matched_frame_counts(
@@ -502,24 +666,31 @@ def evaluate_md_system(
         ref_time_step_fs=ref_time_step_fs,
         pred_time_step_fs=pred_time_step_fs,
     )
-    if n_ref_use < 4 or n_pred_use < 4:  # VDOS needs >= 4 frames
+    if n_ref_use < 4 or n_pred_use < 4:  # vDOS needs >= 4 frames
         raise ValueError(
             f"Trajectories too short after time matching: {n_ref_use=}, {n_pred_use=}"
         )
     ref_matched = ref[:n_ref_use]
     pred_matched = pred[:n_pred_use]
 
+    log_progress("RDF")
     radii, g_r_ref = calc_rdf(ref_matched, n_bins=n_rdf_bins)
     r_max = float(radii[-1] + (radii[1] - radii[0]) / 2)
     _, g_r_pred = calc_rdf(pred_matched, n_bins=n_rdf_bins, r_max=r_max)
     metrics = {"rdf_error": calc_rdf_error(radii, g_r_ref, g_r_pred)}
+    log_progress("ADF")
+    angles, adf_ref = calc_adf(ref_matched)
+    _, adf_pred = calc_adf(pred_matched)
+    metrics["adf_error"] = calc_adf_error(angles, adf_ref, adf_pred)
 
+    log_progress("vDOS")
     ref_velocities = calc_velocities(ref_matched, time_step_fs=ref_time_step_fs)
     pred_velocities = calc_velocities(pred_matched, time_step_fs=pred_time_step_fs)
     freqs_ref, vdos_ref = calc_vdos(ref_velocities, time_step_fs=ref_time_step_fs)
     freqs_pred, vdos_pred = calc_vdos(pred_velocities, time_step_fs=pred_time_step_fs)
     metrics["vdos_error"] = calc_vdos_error(freqs_ref, vdos_ref, freqs_pred, vdos_pred)
 
+    log_progress("pressure")
     if ref_matched.stress is not None and pred_matched.stress is not None:
         metrics |= calc_pressure_metrics(
             get_trajectory_pressures(ref_matched),
@@ -528,18 +699,21 @@ def evaluate_md_system(
             pred_time_step_fs=pred_time_step_fs,
         )
     else:  # one or both trajectories lack stress -> undefined pressure metrics
-        nan_keys = ("pressure_mae", "pressure_wasserstein", "pressure_error")
-        metrics |= dict.fromkeys(nan_keys, float("nan"))
+        metrics |= dict.fromkeys(
+            ("pressure_mae", "pressure_wasserstein", "pressure_error"), float("nan")
+        )
 
+    log_progress("energy/force RMSE")
     if ref_predictions is None and calculator is not None:
         ref_predictions = predict_on_reference(ref, calculator)
     if ref_predictions is not None:
         metrics |= energy_force_rmse_from_preds(ref, ref_predictions)
 
+    log_progress("metrics done")
     return metrics
 
 
-def combine_per_system_metrics(frames: "Sequence[pd.DataFrame]") -> pd.DataFrame:
+def combine_per_system_metrics(frames: Sequence[pd.DataFrame]) -> pd.DataFrame:
     """Concatenate already-read per-system MD metric rows (one row each, as written by
     parallel single-system runs) into a single DataFrame indexed by system.
 
@@ -561,10 +735,10 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
     PER_SYSTEM_METRIC_COLS columns) into model-level metrics.
 
     Means are taken over systems, skipping NaNs (e.g. systems without stress data).
-    When RDF, VDOS and pressure errors are all available, ``combined_error`` is their
-    simple mean, computed from model-level mean errors. Per-system energy/force RMSE
-    rows are in eV but reported here in meV for readability (fluctuation energy RMSE is
-    ~1e-3 eV/atom), matching METRIC_UNITS.
+    When RDF, ADF, vDOS and pressure errors are all available and finite,
+    ``combined_error`` is their simple mean, computed from model-level mean errors.
+    Per-system energy/force RMSE rows are in eV but reported here in meV for readability
+    (fluctuation energy RMSE is ~1e-3 eV/atom), matching METRIC_UNITS.
     """
     metric_cols = [col for col in PER_SYSTEM_METRIC_COLS if col in df_md]
     if not metric_cols:
@@ -577,10 +751,12 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
         * (1000 if col in ("energy_rmse", "force_rmse") else 1)
         for col in metric_cols
     }
-    if {"rdf_error", "vdos_error", "pressure_error"} <= metrics.keys():
-        metrics["combined_error"] = calc_combined_error(
-            metrics["rdf_error"], metrics["vdos_error"], metrics["pressure_error"]
-        )
+    combined_error_vals = [
+        metrics.get(key, float("nan"))
+        for key in ("rdf_error", "adf_error", "vdos_error", "pressure_error")
+    ]
+    if np.all(np.isfinite(combined_error_vals)):
+        metrics["combined_error"] = calc_combined_error(*combined_error_vals)
     metrics["n_systems"] = len(df_md)
     return metrics
 

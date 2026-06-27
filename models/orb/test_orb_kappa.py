@@ -110,7 +110,6 @@ if deterministic:
     torch.use_deterministic_algorithms(mode=True)
 
 
-# Set up the optimizer class from string
 optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 force_results: dict[str, dict[str, Any]] = {}

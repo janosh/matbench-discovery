@@ -168,13 +168,14 @@ metrics:
     pred_file: models/mace/mace-mpa-0/2025-02-13-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52449437
   md:
-    pred_file: models/mace/mace-mpa-0/2026-06-26-mace_mpa_0-md-metrics.csv.gz
+    pred_file: models/mace/mace-mpa-0/2026-06-27-mace_mpa_0-md-metrics.csv.gz
     energy_rmse: 1.0977 # meV/atom
     force_rmse: 109.7301 # meV/Å
-    rdf_error: 4.5771 # %
-    vdos_error: 75.5139 # %
-    pressure_mae: 1.2694 # GPa
-    pressure_wasserstein: 1.239 # GPa
-    pressure_error: 71.6746 # %
-    combined_error: 50.5885 # %
+    rdf_error: 4.0917 # %
+    adf_error: 1.5363 # %
+    vdos_error: 27.7403 # %
+    pressure_mae: 1.2579 # GPa
+    pressure_wasserstein: 1.209 # GPa
+    pressure_error: 65.8362 # %
+    combined_error: 24.8011 # %
     n_systems: 17 # count

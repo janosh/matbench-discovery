@@ -204,6 +204,7 @@ export interface MdMetricsLabels {
   md_energy_rmse: Label1
   md_force_rmse: Label1
   md_rdf_error: Label1
+  md_adf_error: Label1
   md_vdos_error: Label1
   md_pressure_mae: Label1
   md_pressure_wasserstein: Label1

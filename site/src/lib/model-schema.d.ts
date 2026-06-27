@@ -64,6 +64,8 @@ export type ModelMetadata = Record<string, unknown> & {
     | 'MatterSim'
     | 'Alex'
     | 'OMat24'
+    | 'MatPES PBE'
+    | 'MatPES r2SCAN'
     | 'sAlex'
     | 'OpenLAM'
     | 'MDR PBE Phonons in MPtrj'
@@ -124,7 +126,7 @@ export type ModelMetadata = Record<string, unknown> & {
   model_type: ModelType
   targets: TargetType
   openness: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
-  status?: 'aborted' | 'complete' | 'deprecated' | 'pending' | 'superseded'
+  status?: 'aborted' | 'complete' | 'deprecated' | 'superseded'
   /**
    * model_key of the newer model replacing this one
    */
@@ -224,6 +226,7 @@ export type MdMetrics = Record<string, unknown> & {
   energy_rmse?: number
   force_rmse?: number
   rdf_error?: number
+  adf_error?: number
   vdos_error?: number
   pressure_mae?: number
   pressure_wasserstein?: number

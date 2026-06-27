@@ -7,6 +7,7 @@
   import HullConstructionNote from './hull-construction-note.md'
 
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
+  let show_energy_only = $state(false)
 
   // axis selections for the model-comparison scatter, bound so the section title
   // tracks whatever properties the user picks
@@ -30,6 +31,8 @@
       labels.METADATA_COLS.date_added,
     ].includes(col)}
     {discovery_set}
+    bind:show_energy_only
+    show_energy_only_toggle
   />
 </section>
 

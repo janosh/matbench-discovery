@@ -18,34 +18,29 @@ Only the resulting HDF5 needs to be hosted/distributed.
 import argparse
 import os
 import time
+from collections.abc import Iterator
 from glob import glob
-from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from matbench_discovery.md import write_reference_h5
+from matbench_discovery.metrics.md import equipartition_temperature
 from matbench_discovery.trajectory import Trajectory
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 
 def load_settings(csv_path: str) -> dict[str, tuple[float, float]]:
     """Map '<System>_<temp>K' keys to (dt_fs, temperature_kelvin) from a CFPMD settings
     CSV with System, temperature, stride and dt columns.
 
-    dt is the AIMD *integration* timestep (fs) and stride the number of MD steps
-    between saved frames, so the interval between reference frames is ``dt * stride``
-    (e.g. dt=1, stride=5 -> 5 fs). dt_fs must be this saved-frame interval: it sets the
-    VDOS frequency axis and the reference/prediction time-matching, so dropping the
-    stride factor (wrong by up to 5x here) corrupts the VDOS and pressure metrics.
+    ``dt_fs`` sets the vDOS frequency axis and time matching. It equals the ``dt``
+    column alone: these extxyz files store every integration step, so the ``stride``
+    sampling factor is not multiplied in. Equipartition verifies this: ``dt * stride``
+    underestimates temperature by stride**2.
     """
+    settings = pd.read_csv(csv_path)[["System", "temperature", "dt"]]
     return {
-        f"{row['System']}_{float(row['temperature']):g}K": (
-            float(row["dt"]) * float(row["stride"]),
-            float(row["temperature"]),
-        )
-        for _, row in pd.read_csv(csv_path).iterrows()
+        f"{system}_{temperature:g}K": (float(dt_fs), float(temperature))
+        for system, temperature, dt_fs in settings.itertuples(index=False, name=None)
     }
 
 
@@ -106,7 +101,7 @@ def main() -> int:
         parser.error(f"No settings row in {args.settings_csv} for {missing}")
     resolved = {name: value for name, value in resolved_raw.items() if value}
 
-    def entries() -> "Iterator[tuple[str, Trajectory, float, float]]":
+    def entries() -> Iterator[tuple[str, Trajectory, float, float]]:
         """Parse one system at a time so write_reference_h5 streams it to disk and
         only the single largest trajectory is ever held in memory.
         """
@@ -115,10 +110,25 @@ def main() -> int:
             src = find_reference_trajectory(args.ref_dir, system_name)
             start = time.perf_counter()
             trajectory = Trajectory.from_extxyz(src)
+            # Wrong dt_fs shifts the equipartition temperature by (dt_error)^2 and
+            # corrupts vDOS. Sample mid-trajectory to avoid cold-start equilibration.
+            mid = trajectory.n_frames // 2
+            t_equi = equipartition_temperature(
+                trajectory[mid : mid + 2000], time_step_fs=dt_fs
+            )
+            temperature_ratio = t_equi / temperature_kelvin
+            if not 1 / 3 < temperature_ratio < 3:
+                print(
+                    f"  WARNING {system_name}: equipartition T={t_equi:.0f} K vs "
+                    f"target {temperature_kelvin:.0f} K (ratio {temperature_ratio:.2f})"
+                    f" -- dt_fs={dt_fs} fs is likely wrong (off by ~"
+                    f"{temperature_ratio**-0.5:.1f}x)",
+                    flush=True,
+                )
             print(
                 f"{system_name}: {trajectory.n_frames} frames, dt={dt_fs} fs, "
-                f"T={temperature_kelvin} K, parsed {os.path.basename(src)} "
-                f"({os.path.getsize(src) / 1e6:.1f} MB) in "
+                f"T={temperature_kelvin} K (equipartition {t_equi:.0f} K), parsed "
+                f"{os.path.basename(src)} ({os.path.getsize(src) / 1e6:.1f} MB) in "
                 f"{time.perf_counter() - start:.1f}s",
                 flush=True,
             )

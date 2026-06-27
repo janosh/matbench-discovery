@@ -58,7 +58,8 @@ md:
       - E<sub>RMSE</sub>
       - F<sub>RMSE</sub>
       - ΔRDF
-      - ΔVDOS
+      - ΔADF
+      - ΔvDOS
       - P<sub>MAE</sub>
       - P<sub>W1</sub>
       - ΔP
@@ -66,6 +67,7 @@ md:
       - energy_rmse
       - force_rmse
       - rdf_error
+      - adf_error
       - vdos_error
       - pressure_mae
       - pressure_wasserstein

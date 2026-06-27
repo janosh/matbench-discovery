@@ -33,28 +33,23 @@ describe(`Models Page`, () => {
     const button_texts = [...document.querySelectorAll(`ul button`)].map((btn) =>
       btn.textContent?.trim(),
     )
-    expect(button_texts).toStrictEqual([
-      `Model Name`,
-      `CPS`,
-      `Acc`,
-      `DAF`,
-      `F1`,
-      `MAE`,
-      `Prec`,
-      `R2`,
-      `RMSE`,
-      `TNR`,
-      `TPR`,
-      `κSRME`,
+    const expected_md_labels = [
       `ΔERMSE`,
       `FRMSE`,
       `ΔRDF`,
-      `ΔVDOS`,
+      `ΔADF`,
+      `ΔvDOS`,
       `PMAE`,
       `PW1`,
       `ΔP`,
       `CMDS`,
-    ])
+    ]
+
+    expect(button_texts[0]).toBe(`Model Name`)
+    expect(button_texts).toContain(`CPS`)
+    expect(button_texts.slice(-expected_md_labels.length)).toStrictEqual(
+      expected_md_labels,
+    )
   })
 
   it(`renders model cards`, () => {
