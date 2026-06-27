@@ -425,15 +425,14 @@ export const MD_METRICS: MdMetricsLabels = {
     better: `lower`,
     format: `.1f`,
   },
-  md_combined_error: {
-    key: `combined_error`,
+  md_combined_score: {
+    key: `combined_score`,
     label: `CMDS`,
-    description: `Combined MD score: simple average of ΔRDF, ΔADF, ΔvDOS and ΔP (all in %, lower is better)`,
-    unit: `%`,
+    description: `Combined MD score in [0,1] (higher is better): 1 − mean of ΔRDF, ΔADF, ΔvDOS and ΔP (each a %, lower is better). Higher = closer to ab-initio dynamics; intended to feed into CPS as a normalized component.`,
     path: `metrics.md`,
-    range: [0, 100],
-    better: `lower`,
-    format: `.1f`,
+    range: [0, 1],
+    better: `higher`,
+    format: `.3f`,
   },
 } as const
 

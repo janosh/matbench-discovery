@@ -133,6 +133,8 @@
 
   const format_label_title = (prop: Label | undefined): string =>
     `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
+  const colorbar_tick_format = (prop: Label | undefined): string =>
+    (prop?.format ?? `~s`).replace(/(\.\d+)f$/, `$1~f`)
 
   let plot_data = $derived(
     filtered_models
@@ -275,7 +277,7 @@
     color_bar={{
       title: format_label_title(axes.color_value),
       margin: { t: 30, l: 80, b: 80, r: 50 },
-      tick_format: axes.color_value?.format,
+      tick_format: colorbar_tick_format(axes.color_value),
       property_options: prop_options,
       selected_property_key: color_key,
       data_loader: async (key) => {
@@ -285,7 +287,10 @@
           .map((model) => get_label_value(model, prop))
           .filter((val): val is number => typeof val === `number` && isFinite(val))
         const [min, max] = extent(values)
-        return { range: [min ?? 0, max ?? 1], title: format_label_title(prop) }
+        return {
+          range: [min ?? 0, max ?? 1],
+          title: format_label_title(prop),
+        }
       },
     }}
     label_placement_config={{ leader_line_threshold, max_neighbors: { count: 3, radius: 40 } }}

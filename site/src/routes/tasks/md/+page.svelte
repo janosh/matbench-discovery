@@ -22,9 +22,9 @@
 
   let scatter_x = $state(MD_METRICS.md_force_rmse.key)
   let scatter_y = $state(MD_METRICS.md_rdf_error.key)
-  // default-sort by the combined MD score (CMDS), best (lowest) first. matterviz sorts
+  // default-sort by the combined MD score (CMDS), best (highest) first. matterviz sorts
   // by the column's key (falling back to label), so use the key, not the 'CMDS' label
-  let sort = $state({ column: MD_METRICS.md_combined_error.key, dir: `asc` as SortDir })
+  let sort = $state({ column: MD_METRICS.md_combined_score.key, dir: `desc` as SortDir })
 </script>
 
 <h1>Molecular Dynamics Metrics <span class="beta-badge">beta</span></h1>
@@ -66,7 +66,7 @@
   model_filter={has_md_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
-  color_key={MD_METRICS.md_combined_error.key}
+  color_key={MD_METRICS.md_combined_score.key}
   style="height: 800px"
 />
 

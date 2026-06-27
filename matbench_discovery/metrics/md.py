@@ -52,11 +52,12 @@ METRIC_UNITS = {
     "pressure_mae": "GPa",
     "pressure_wasserstein": "GPa",
     "pressure_error": "%",  # pressure-histogram overlap error (paper Eq. 9)
-    "combined_error": "%",  # simple mean of rdf/adf/vdos/pressure errors
+    # 1 - mean(rdf/adf/vdos/pressure errors)/100, in [0,1], higher=better (no unit comment)
+    "combined_score": "",
     "n_systems": "count",
 }
 PER_SYSTEM_METRIC_COLS = tuple(
-    key for key in METRIC_UNITS if key not in ("combined_error", "n_systems")
+    key for key in METRIC_UNITS if key not in ("combined_score", "n_systems")
 )
 
 
@@ -499,20 +500,23 @@ def calc_pressure_histogram_error(
     return float(50 * np.sum(np.abs(density_ref - density_pred) * np.diff(edges)))
 
 
-def calc_combined_error(
+def calc_combined_score(
     rdf_error: float, adf_error: float, vdos_error: float, pressure_error: float
 ) -> float:
-    """Combined MD error: the simple average of RDF, ADF, vDOS and pressure-distribution
-    errors (all in %, lower is better). All four must be finite and non-negative; a
-    missing/NaN component raises rather than silently collapsing to a misleading
-    lower-dimensional mean.
+    """Combined MD score (CMDS) in [0, 1], higher is better: 1 minus the simple average
+    of the RDF, ADF, vDOS and pressure-distribution errors (each a %, lower is better),
+    rescaled to [0, 1]. 1.0 = perfect (zero error), 0.0 = mean error >= 100%. Defined as
+    a score (not an error) to match the higher-is-better convention of CPS, which it is
+    intended to feed into as a fourth normalized component. All four errors must be finite
+    and non-negative; a missing/NaN component raises rather than silently collapsing to a
+    misleading lower-dimensional mean.
     """
     errors = np.array([rdf_error, adf_error, vdos_error, pressure_error], dtype=float)
     if not np.all(np.isfinite(errors)):
-        raise ValueError(f"Combined error needs finite components, got {errors=}")
+        raise ValueError(f"Combined score needs finite components, got {errors=}")
     if np.any(errors < 0):
         raise ValueError(f"Errors must be non-negative, got {errors=}")
-    return float(errors.mean())
+    return float(max(0.0, 1 - errors.mean() / 100))
 
 
 def predict_on_reference(
@@ -736,7 +740,8 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
 
     Means are taken over systems, skipping NaNs (e.g. systems without stress data).
     When RDF, ADF, vDOS and pressure errors are all available and finite,
-    ``combined_error`` is their simple mean, computed from model-level mean errors.
+    ``combined_score`` (CMDS) is 1 - their simple mean / 100, computed from model-level
+    mean errors (a [0,1] score, higher=better).
     Per-system energy/force RMSE rows are in eV but reported here in meV for readability
     (fluctuation energy RMSE is ~1e-3 eV/atom), matching METRIC_UNITS.
     """
@@ -751,12 +756,12 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
         * (1000 if col in ("energy_rmse", "force_rmse") else 1)
         for col in metric_cols
     }
-    combined_error_vals = [
+    component_errors = [
         metrics.get(key, float("nan"))
         for key in ("rdf_error", "adf_error", "vdos_error", "pressure_error")
     ]
-    if np.all(np.isfinite(combined_error_vals)):
-        metrics["combined_error"] = calc_combined_error(*combined_error_vals)
+    if np.all(np.isfinite(component_errors)):
+        metrics["combined_score"] = calc_combined_score(*component_errors)
     metrics["n_systems"] = len(df_md)
     return metrics
 
@@ -776,7 +781,11 @@ def write_metrics_to_yaml(
     if pred_file_url is not None:
         yaml_metrics["pred_file_url"] = pred_file_url
     for key, value in metrics.items():
-        yaml_metrics[key] = int(value) if key == "n_systems" else float(round(value, 4))
+        if key == "n_systems":
+            yaml_metrics[key] = int(value)
+        else:
+            # finer rounding for the [0,1] combined_score keeps close models distinct
+            yaml_metrics[key] = float(round(value, 6 if key == "combined_score" else 4))
         if unit := METRIC_UNITS.get(key):
             yaml_metrics.yaml_add_eol_comment(unit, key, column=1)
 

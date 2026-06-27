@@ -94,7 +94,7 @@
       format: axes.y.format,
       range: [0, null],
     }}
-    color_bar={{ title: axes.color_value.label, tick_format: axes.color_value.format }}
+    color_bar={{ title: axes.color_value.label, tick_format: `~s` }}
     {color_scale}
     label_placement_config={{ max_neighbors: { count: 3, radius: 40 } }}
     point_events={{

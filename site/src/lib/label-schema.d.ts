@@ -209,7 +209,7 @@ export interface MdMetricsLabels {
   md_pressure_mae: Label1
   md_pressure_wasserstein: Label1
   md_pressure_error: Label1
-  md_combined_error: Label1
+  md_combined_score: Label1
 }
 /**
  * This interface was referenced by `Label`'s JSON-Schema

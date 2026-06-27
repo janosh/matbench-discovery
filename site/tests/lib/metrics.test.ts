@@ -75,6 +75,20 @@ describe(`metric_better_as`, () => {
   )
 })
 
+describe(`metric_better_as (real modeling-tasks.yml lists)`, () => {
+  beforeEach(() => vi.restoreAllMocks()) // exercise the real metric lists, not spies
+
+  // guards orientation in modeling-tasks.yml, e.g. CMDS/combined_score being a score
+  it.each([
+    [`combined_score`, `higher`],
+    [`CMDS`, `higher`],
+    [`vdos_error`, `lower`],
+    [`F1`, `higher`],
+  ])(`maps %s -> %s`, (metric, expected) => {
+    expect(metric_better_as(metric)).toBe(expected)
+  })
+})
+
 describe(`format_train_set`, () => {
   // Get actual keys from DATASETS to use in tests
   const dataset_keys = Object.keys(DATASETS)

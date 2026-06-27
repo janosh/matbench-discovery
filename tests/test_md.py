@@ -163,7 +163,7 @@ def test_md_pipeline_end_to_end(tmp_path: Path) -> None:
     df_md = pd.DataFrame([system_metrics])
     model_metrics = md_metrics.calc_md_metrics(df_md)
     assert model_metrics["n_systems"] == 1
-    assert model_metrics["combined_error"] >= 0
+    assert 0 <= model_metrics["combined_score"] <= 1
 
 
 def make_reference_h5(tmp_path: Path, *, system: str = "bulkCu_300K_test") -> str:

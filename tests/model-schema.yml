@@ -288,7 +288,7 @@ definitions:
         type: number
       pressure_error:
         type: number
-      combined_error:
+      combined_score:
         type: number
       n_systems:
         type: number

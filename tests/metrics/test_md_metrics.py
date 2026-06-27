@@ -606,32 +606,33 @@ def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
 @pytest.mark.parametrize(
     ("rdf_error", "adf_error", "vdos_error", "pressure_error", "expected"),
     [
-        (0, 0, 0, 0, 0),
-        (10, 20, 30, 40, 25),  # simple mean of the four
-        (15, 15, 15, 15, 15),
-        (30, 0, 0, 0, 7.5),
+        (0, 0, 0, 0, 1.0),  # zero error -> perfect score
+        (10, 20, 30, 40, 0.75),  # 1 - mean(25)/100
+        (15, 15, 15, 15, 0.85),
+        (30, 0, 0, 0, 0.925),
+        (150, 150, 150, 150, 0.0),  # mean error >100% -> clamped to 0
     ],
 )
-def test_calc_combined_error(
+def test_calc_combined_score(
     rdf_error: float,
     adf_error: float,
     vdos_error: float,
     pressure_error: float,
     expected: float,
 ) -> None:
-    """Combined error: simple mean of RDF/ADF/vDOS/pressure errors."""
-    assert md_metrics.calc_combined_error(
+    """CMDS: 1 - simple mean of RDF/ADF/vDOS/pressure errors / 100, in [0, 1]."""
+    assert md_metrics.calc_combined_score(
         rdf_error, adf_error, vdos_error, pressure_error
     ) == pytest.approx(expected)
 
 
-def test_calc_combined_error_rejects_invalid_inputs() -> None:
-    """Combined error should reject negative or non-finite components."""
+def test_calc_combined_score_rejects_invalid_inputs() -> None:
+    """Combined score should reject negative or non-finite components."""
     with pytest.raises(ValueError, match="must be non-negative"):
-        md_metrics.calc_combined_error(-1, 5, 5, 5)
+        md_metrics.calc_combined_score(-1, 5, 5, 5)
     # a missing/NaN pressure must fail loud, not silently become a two-metric mean
     with pytest.raises(ValueError, match="finite"):
-        md_metrics.calc_combined_error(10, 20, 30, float("nan"))
+        md_metrics.calc_combined_score(10, 20, 30, float("nan"))
 
 
 @pytest.mark.parametrize(
@@ -940,9 +941,9 @@ def test_calc_md_metrics() -> None:
     assert metrics["pressure_mae"] == pytest.approx(1)
     assert metrics["pressure_wasserstein"] == pytest.approx(0.5)
     assert metrics["pressure_error"] == pytest.approx(40)
-    # combined = simple mean of mean rdf/adf/vdos/pressure errors
-    assert metrics["combined_error"] == pytest.approx(
-        md_metrics.calc_combined_error(15, 30, 20, 40)
+    # CMDS = 1 - simple mean of mean rdf/adf/vdos/pressure errors / 100
+    assert metrics["combined_score"] == pytest.approx(
+        md_metrics.calc_combined_score(15, 30, 20, 40)
     )
     assert metrics["n_systems"] == 2
 
@@ -953,7 +954,7 @@ def test_calc_md_metrics() -> None:
         md_metrics.calc_md_metrics(pd.DataFrame({"unrelated": [1]}))
 
 
-def test_calc_md_metrics_skips_combined_error_without_finite_pressure() -> None:
+def test_calc_md_metrics_skips_combined_score_without_finite_pressure() -> None:
     """All-NaN pressure errors should not make aggregation fail or emit CMDS."""
     df_md = pd.DataFrame(
         {
@@ -970,7 +971,7 @@ def test_calc_md_metrics_skips_combined_error_without_finite_pressure() -> None:
     assert metrics["adf_error"] == pytest.approx(35)
     assert metrics["vdos_error"] == pytest.approx(55)
     assert np.isnan(metrics["pressure_error"])
-    assert "combined_error" not in metrics
+    assert "combined_score" not in metrics
 
 
 def test_combine_per_system_metrics() -> None:
@@ -1009,7 +1010,7 @@ def test_write_metrics_to_yaml(
         "energy_rmse": 0.123456,
         "force_rmse": 0.234567,
         "rdf_error": 12.34567,
-        "combined_error": 23.456789,
+        "combined_score": 0.747987,  # 6 dp: would round to 0.748 at the 4 dp used elsewhere
         "n_systems": 17,
     }
     path = "models/test/md-metrics.csv"
@@ -1025,7 +1026,8 @@ def test_write_metrics_to_yaml(
     assert f"energy_rmse: 0.1235 # {md_metrics.METRIC_UNITS['energy_rmse']}" in text
     assert f"force_rmse: 0.2346 # {md_metrics.METRIC_UNITS['force_rmse']}" in text
     assert "rdf_error: 12.3457 # %" in text
-    assert "combined_error: 23.4568 # %" in text
+    # combined_score: unitless [0,1] score kept at 6 dp (not 0.748), no '# unit' comment
+    assert "combined_score: 0.747987\n" in text
     assert "n_systems: 17 # count" in text
     # the 'not available' placeholder must be replaced, not kept
     assert "not available" not in text

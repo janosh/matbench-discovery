@@ -32,10 +32,12 @@ describe(`MD Task Page`, () => {
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
   })
 
-  it(`MD metric labels all point at metrics.md and are lower=better`, () => {
+  it(`MD metric labels point at metrics.md; errors lower=better, CMDS higher=better`, () => {
     for (const label of Object.values(MD_METRICS)) {
       expect(label.path).toBe(`metrics.md`)
-      expect(label.better).toBe(`lower`)
+      // combined_score (CMDS) is a score (higher=better); the rest are errors (lower)
+      const expected = label.key === `combined_score` ? `higher` : `lower`
+      expect(label.better, label.key).toBe(expected)
     }
   })
 })
