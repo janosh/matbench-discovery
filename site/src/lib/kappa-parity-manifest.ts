@@ -5,7 +5,7 @@ export const kappa_parity_manifest = {
   base: {
     asset: 'kappa-parity-phonondb-v1-base.json.gz',
     bytes: 67632,
-    sha256: '6c1527d45b8177ded3ec7381d7e86ed25e28f21665674aa41ad3638f8ac29d07',
+    sha256: '280a766bc4bcb55db17368ffccf0d7ef00d725328bbc4eb17bdb5eb2c795b666',
   },
   benchmark: 'phonons',
   dataset: 'phonondb',
@@ -191,6 +191,11 @@ export const kappa_parity_manifest = {
       asset: 'kappa-parity-phonondb-v1-model-tace-oam-l.json.gz',
       bytes: 59697,
       sha256: 'a9c1bb88d3a30da6dc63d4cc0c48c9a769dc167e77455820e14f66f795bcce98',
+    },
+    'tace-oam-rra-preview': {
+      asset: 'kappa-parity-phonondb-v1-model-tace-oam-rra-preview.json.gz',
+      bytes: 59757,
+      sha256: 'af7c8c89b7e540c41b6931d6deeb18bf8266033141d21b3fe9c24d80ee4a7c56',
     },
   },
   row_count: 103,
