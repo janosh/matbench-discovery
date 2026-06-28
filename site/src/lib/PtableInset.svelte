@@ -4,17 +4,23 @@
   import type { HTMLAttributes } from 'svelte/elements'
   import { sum } from 'd3-array'
 
-  let { element, elem_counts, show_percent = true, unit = ``, ...rest }: {
+  let {
+    element,
+    elem_counts,
+    show_percent = true,
+    unit = ``,
+    ...rest
+  }: {
     element: ChemicalElement
-    elem_counts: number[] | Record<ElementSymbol, number>
+    elem_counts: number[] | Partial<Record<ElementSymbol, number>>
     show_percent?: boolean
     unit?: string
   } & HTMLAttributes<HTMLElementTagNameMap[`strong`]> = $props()
 
   let value = $derived(
     Array.isArray(elem_counts)
-      ? (elem_counts[element?.number - 1] ?? null)
-      : (elem_counts[element?.symbol] ?? null),
+      ? (elem_counts[element?.number - 1] ?? 0)
+      : (elem_counts[element?.symbol] ?? 0),
   )
   let total = $derived(
     sum(Array.isArray(elem_counts) ? elem_counts : Object.values(elem_counts)),

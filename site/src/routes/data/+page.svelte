@@ -5,7 +5,13 @@
   import arity_hist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz'
   import sunbursts from '$figs/spacegroup-sunbursts.json.gz'
   import { PtableHeatmap } from '$lib'
-  import { dashed, floating_label, labeled_vline, plotly_blue, plotly_red } from '$lib/fig-helpers'
+  import {
+    dashed,
+    floating_label,
+    labeled_vline,
+    plotly_blue,
+    plotly_red,
+  } from '$lib/fig-helpers'
   import type { ElementSymbol } from 'matterviz'
   import { ColorScaleSelect, Icon } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -40,9 +46,7 @@
   const count_modes = [`occurrence`, `composition`]
   let count_mode = $state(count_modes[0])
 
-  let mp_elem_counts = $derived(
-    elem_counts[`./mp-element-counts-by-${count_mode}.json`],
-  )
+  let mp_elem_counts = $derived(elem_counts[`./mp-element-counts-by-${count_mode}.json`])
   let mp_trj_elem_counts = $derived(
     elem_counts[`./mp-trj-element-counts-by-${count_mode}.json`],
   )
@@ -51,16 +55,16 @@
   )
   $effect.pre(() => {
     if (!mp_elem_counts) throw new Error(`No MP data for count mode ${count_mode}!`)
-    if (!mp_trj_elem_counts) throw new Error(`No MPtrj data for count mode ${count_mode}!`)
+    if (!mp_trj_elem_counts)
+      throw new Error(`No MPtrj data for count mode ${count_mode}!`)
     if (!wbm_elem_counts) throw new Error(`No WBM data for count mode ${count_mode}!`)
   })
 
   const capture_state = () => ({ color_scale, log_scale, count_mode })
   export const snapshot = {
     capture: capture_state,
-    restore: (
-      values: ReturnType<typeof capture_state>,
-    ) => ({ color_scale, log_scale, count_mode } = values),
+    restore: (values: ReturnType<typeof capture_state>) =>
+      ({ color_scale, log_scale, count_mode } = values),
   }
 </script>
 
@@ -85,7 +89,9 @@
     <label
       for="count-mode"
       style="display: inline-block; transform: translate(10cqw, 5ex)"
-    >Count Mode</label>
+    >
+      Count Mode
+    </label>
     <Select
       id="count-mode"
       bind:value={count_mode}
@@ -135,8 +141,16 @@
   {#snippet hist_wbm_hull_dist()}
     <BarPlot
       series={[
-        { ...hist_hull_dist.stable, bar_width: hist_hull_dist.bar_width, color: plotly_blue },
-        { ...hist_hull_dist.unstable, bar_width: hist_hull_dist.bar_width, color: plotly_red },
+        {
+          ...hist_hull_dist.stable,
+          bar_width: hist_hull_dist.bar_width,
+          color: plotly_blue,
+        },
+        {
+          ...hist_hull_dist.unstable,
+          bar_width: hist_hull_dist.bar_width,
+          color: plotly_red,
+        },
       ]}
       x_axis={{ label: `WBM energy above MP convex hull (eV/atom)` }}
       y_axis={{ label: `Number of Structures`, format: `~s` }}
@@ -148,8 +162,18 @@
 
   {#snippet spacegroup_sunbursts()}
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2em">
-      <Sunburst data={build_sunburst(sunbursts.mp)} value_mode="total" show_controls={false} style="height: 420px" />
-      <Sunburst data={build_sunburst(sunbursts.wbm)} value_mode="total" show_controls={false} style="height: 420px" />
+      <Sunburst
+        data={build_sunburst(sunbursts.mp)}
+        value_mode="total"
+        show_controls={false}
+        style="height: 420px"
+      />
+      <Sunburst
+        data={build_sunburst(sunbursts.wbm)}
+        value_mode="total"
+        show_controls={false}
+        style="height: 420px"
+      />
     </div>
   {/snippet}
 </DataReadme>
@@ -177,7 +201,9 @@
   ground states.
 </p>
 
-<MpTrjNSitesHist style="height: 320px; margin: auto; max-width: 80cqw; padding-right: 2em" />
+<MpTrjNSitesHist
+  style="height: 320px; margin: auto; max-width: 80cqw; padding-right: 2em"
+/>
 <p>
   Histogram of number of atoms per structure. The inset shows the same distribution
   log-scaled to visualize the tail of large structures. The green cumulative line in the

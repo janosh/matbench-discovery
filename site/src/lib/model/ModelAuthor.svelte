@@ -5,7 +5,11 @@
   import type { HTMLAttributes } from 'svelte/elements'
   import Logo from '../Logo.svelte'
 
-  let { author, show_affiliation = false, ...rest }: HTMLAttributes<HTMLSpanElement> & {
+  let {
+    author,
+    show_affiliation = false,
+    ...rest
+  }: HTMLAttributes<HTMLSpanElement> & {
     author: Author
     show_affiliation?: boolean
   } = $props()
@@ -13,7 +17,8 @@
 
 {#if author}
   {@const { name, email, orcid, affiliation, url, github } = author}
-  {@const org_logo = show_affiliation && affiliation ? get_org_logo(affiliation) : undefined}
+  {@const org_logo =
+    show_affiliation && affiliation ? get_org_logo(affiliation) : undefined}
   <span {...rest}>
     <small title={affiliation}>{name}</small>
     {#if show_affiliation && affiliation}&ensp;{affiliation}{/if}

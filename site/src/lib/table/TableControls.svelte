@@ -63,9 +63,7 @@
         }
       }}
     />
-    <span
-      class="color-swatch"
-      style="background-color: var(--non-compliant-color)"
+    <span class="color-swatch" style="background-color: var(--non-compliant-color)"
     ></span>
     Non-compliant models
     <span
@@ -89,7 +87,10 @@
     <label>
       <input type="checkbox" bind:checked={show_energy_only} />
       Energy-only models
-      <span title="Include models that only predict energy (no forces or stress)" {@attach tooltip()}>
+      <span
+        title="Include models that only predict energy (no forces or stress)"
+        {@attach tooltip()}
+      >
         <Icon icon="Info" />
       </span>
     </label>

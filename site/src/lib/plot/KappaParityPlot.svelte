@@ -55,17 +55,17 @@
   let series = $derived<DataSeries<KappaParityPoint>[]>(
     parity
       ? [
-        {
-          x: parity.x,
-          y: parity.y,
-          metadata: parity.points,
-          markers: `points`,
-          label: model_label,
-          size_values: parity.points.map((pt) => pt.n_sites),
-          color_values: parity.points.map((pt) => pt.sre),
-          point_style: { radius: 6, stroke: `white`, stroke_width: 0.5 },
-        },
-      ]
+          {
+            x: parity.x,
+            y: parity.y,
+            metadata: parity.points,
+            markers: `points`,
+            label: model_label,
+            size_values: parity.points.map((pt) => pt.n_sites),
+            color_values: parity.points.map((pt) => pt.sre),
+            point_style: { radius: 6, stroke: `white`, stroke_width: 0.5 },
+          },
+        ]
       : [],
   )
   const parity_ref_lines: RefLine[] = [parity_diagonal]
@@ -78,7 +78,7 @@
   )
   // three.js stack (~MBs) loads only when a structure is first selected, keeping it
   // out of every page's initial chunk graph
-  let Structure = $state<typeof import('matterviz/structure')['Structure']>()
+  let Structure = $state<(typeof import('matterviz/structure'))['Structure']>()
   $effect(() => {
     if (selected_structure && !Structure) {
       void import('matterviz/structure').then((mod) => (Structure = mod.Structure))
@@ -133,7 +133,9 @@
   <h2 class="toc-exclude">ML vs DFT Lattice Thermal Conductivity</h2>
 
   {#if status === `error`}
-    <p class="plot-state" role="alert" style="min-height: 0; margin: 0">{error_message}</p>
+    <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
+      {error_message}
+    </p>
   {:else if status !== `ready` || !parity}
     <div class="plot-state">
       <Spinner text="Loading κ parity data..." />
@@ -169,23 +171,22 @@
           {@const pt = metadata as unknown as KappaParityPoint}
           {@const sys = crystal_sys(pt)}
           <strong>{pt.material_id}</strong>
-          {@html sanitize_compact_formula(pt.formula)}<br>
-          PBE κ: {format_num(pt.kappa_dft, `.3~`)} <small>W/mK</small><br>
-          {model_label} κ: {format_num(pt.kappa_ml, `.3~`)} <small>W/mK</small><br>
+          {@html sanitize_compact_formula(pt.formula)}<br />
+          PBE κ: {format_num(pt.kappa_dft, `.3~`)} <small>W/mK</small><br />
+          {model_label} κ: {format_num(pt.kappa_ml, `.3~`)} <small>W/mK</small><br />
           κ<sub>SRE</sub>: {format_num(pt.sre, `.3~`)}
-          {#if sys}<br>{sys}{pt.spacegroup != null
-            ? ` (SG ${pt.spacegroup})`
-            : ``}{/if}
-          {#if pt.n_sites != null}<br>{pt.n_sites} atoms{/if}
+          {#if sys}<br />{sys}{pt.spacegroup != null ? ` (SG ${pt.spacegroup})` : ``}{/if}
+          {#if pt.n_sites != null}<br />{pt.n_sites} atoms{/if}
         {/if}
       {/snippet}
 
       {#snippet user_content({ width, height })}
         {#if kappa_srme != null || kappa_sre != null}
-          <foreignObject x="0" y="0" {width} {height} style="pointer-events: none; overflow: visible">
+          {@const style = 'pointer-events: none; overflow: visible'}
+          <foreignObject x="0" y="0" {width} {height} {style}>
             <div class="plot-annotation">
               {#if kappa_srme != null}
-                κ<sub>SRME</sub> = {format_num(kappa_srme, `.3~`)}<br>
+                κ<sub>SRME</sub> = {format_num(kappa_srme, `.3~`)}<br />
               {/if}
               {#if kappa_sre != null}κ<sub>SRE</sub> = {format_num(kappa_sre, `.3~`)}{/if}
             </div>
@@ -201,10 +202,14 @@
         <header>
           <span>
             <strong>{selected.material_id}</strong>
-            {#if selected.formula}({@html sanitize_compact_formula(selected.formula)}){/if}
+            {#if selected.formula}({@html sanitize_compact_formula(
+                selected.formula,
+              )}){/if}
             &mdash; PBE κ {format_num(selected.kappa_dft, `.3~`)},
-            {model_label} κ {format_num(selected.kappa_ml, `.3~`)} <small>W/mK</small>,
-            κ<sub>SRE</sub> {format_num(selected.sre, `.3~`)}
+            {model_label} κ {format_num(selected.kappa_ml, `.3~`)} <small>W/mK</small>, κ<sub
+              >SRE</sub
+            >
+            {format_num(selected.sre, `.3~`)}
           </span>
           <button
             type="button"
@@ -217,7 +222,8 @@
         </header>
         <div class="detail-body">
           {#if selected_structure && Structure}
-            <Structure structure={selected_structure} style="height: 100%; min-height: 360px" />
+            {@const style = 'height: 100%; min-height: 360px'}
+            <Structure structure={selected_structure} {style} />
           {/if}
           {#if Object.keys(doses).length}
             <Dos {doses} style="height: 360px" padding={{ t: 20, b: 65, r: 10 }} />
@@ -245,7 +251,8 @@
   }
   .detail-panel {
     margin-top: 1em;
-    border: 1px solid var(--border-color, color-mix(in srgb, currentColor 20%, transparent));
+    border: 1px solid
+      var(--border-color, color-mix(in srgb, currentColor 20%, transparent));
     border-radius: 4px;
     overflow: hidden;
   }

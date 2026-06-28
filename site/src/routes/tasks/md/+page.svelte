@@ -33,15 +33,14 @@
 
 <p>
   This task evaluates how well machine-learning interatomic potentials reproduce
-  structural, thermodynamic and vibrational observables of ab-initio molecular
-  dynamics (AIMD) trajectories at finite temperature. Each model runs NVT simulations
-  from the same initial structures and thermodynamic conditions as the reference
-  first-principles trajectories. The resulting trajectories are compared via radial
-  distribution functions (RDF), angular distribution functions (ADF), pressure
-  distributions from the stress tensor trace, and the vibrational density of states
-  (vDOS) obtained from the velocity autocorrelation function. Single-point
-  energy-fluctuation and force RMSEs on the reference frames complement these
-  trajectory-level observables.
+  structural, thermodynamic and vibrational observables of ab-initio molecular dynamics
+  (AIMD) trajectories at finite temperature. Each model runs NVT simulations from the same
+  initial structures and thermodynamic conditions as the reference first-principles
+  trajectories. The resulting trajectories are compared via radial distribution functions
+  (RDF), angular distribution functions (ADF), pressure distributions from the stress
+  tensor trace, and the vibrational density of states (vDOS) obtained from the velocity
+  autocorrelation function. Single-point energy-fluctuation and force RMSEs on the
+  reference frames complement these trajectory-level observables.
   {#if n_md_models === 0}
     No models have reported MD metrics yet.
   {/if}
@@ -59,10 +58,9 @@
 
 <h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
 <p>
-  RDF, ADF and vDOS errors range from 0% (perfect match with the AIMD reference) to
-  100% (as different from the reference as an ideal gas / non-overlapping
-  distributions). Use the axis/color/size selectors to compare models across any pair
-  of metrics and metadata.
+  RDF, ADF and vDOS errors range from 0% (perfect match with the AIMD reference) to 100%
+  (as different from the reference as an ideal gas / non-overlapping distributions). Use
+  the axis/color/size selectors to compare models across any pair of metrics and metadata.
 </p>
 
 <DynamicScatter

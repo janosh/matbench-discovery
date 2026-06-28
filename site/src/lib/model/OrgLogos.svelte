@@ -8,7 +8,10 @@
   // org_logos = deduped, logo-matched affiliations shown as a compact preview strip.
   // authors = full author list used to build the richer hover tooltip (full org
   // names + which authors are affiliated where) without widening the table column.
-  let { org_logos = [], authors = [] }: {
+  let {
+    org_logos = [],
+    authors = [],
+  }: {
     org_logos?: OrgLogo[]
     authors?: Author[]
   } = $props()
@@ -20,12 +23,9 @@
     '"': `&quot;`,
   }
   const escape_html = (str: string): string =>
-    str.replaceAll(
-      /[&<>"]/g,
-      (char) => html_escape[char] ?? char,
-    )
+    str.replaceAll(/[&<>"]/g, (char) => html_escape[char] ?? char)
 
-  // Render a logo as a standalone HTML string (the tooltip content is injected via
+  // Render a logo as a standalone HTML str ing (the tooltip content is injected via
   // innerHTML into document.body, so component-scoped styles don't apply — inline only).
   const logo_html = (logo: OrgLogo): string => {
     const style = `height: 1.1em; width: auto; flex: 0 0 auto; vertical-align: middle`
@@ -49,7 +49,8 @@
       const label = affiliation || `Affiliation n/a`
       let group = groups.find((grp) => grp.label === label)
       if (!group) {
-        group = { logo: affiliation ? get_org_logo(affiliation) : undefined, label, names: [] }
+        const logo = affiliation ? get_org_logo(affiliation) : undefined
+        group = { logo, label, names: [] }
         groups.push(group)
       }
       if (name) group.names.push(name)
@@ -59,19 +60,19 @@
   })
 
   let tooltip_content = $derived.by(() => {
-    const rows = entries.map(({ logo, label, names }) => {
-      const head =
-        `<div style="display: flex; align-items: center; gap: 6px; font-weight: 600">${
+    const rows_html = entries
+      .map(({ logo, label, names }) => {
+        const head = `<div style="display: flex; align-items: center; gap: 6px; font-weight: 600">${
           logo ? logo_html(logo) : ``
         }<span>${escape_html(label)}</span></div>`
-      const author_names = names.length > 0
-        ? `<div style="opacity: 0.7; font-size: 0.9em">${escape_html(names.join(`, `))}</div>`
-        : ``
-      return head + author_names
-    })
-    return `<div style="display: flex; flex-direction: column; gap: 5px; text-align: left">${
-      rows.join(``)
-    }</div>`
+        const author_names =
+          names.length > 0
+            ? `<div style="opacity: 0.7; font-size: 0.9em">${escape_html(names.join(`, `))}</div>`
+            : ``
+        return head + author_names
+      })
+      .join(`\n`)
+    return `<div style="display: flex; flex-direction: column; gap: 5px; text-align: left">${rows_html}</div>`
   })
 </script>
 

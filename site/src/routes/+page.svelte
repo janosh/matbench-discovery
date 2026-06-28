@@ -2,12 +2,7 @@
   import { browser } from '$app/environment'
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import {
-    DATASETS,
-    DISCOVERY_SETS,
-    MetricsTable,
-    SelectToggle,
-  } from '$lib'
+  import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
   import {
     DynamicScatter,
     GitHubActivityScatter,
@@ -212,15 +207,7 @@
 
   <div class="downloads">
     Download table as
-    {#each [
-        [`SVG`, generate_svg],
-        [`PNG`, generate_png],
-        [`CSV`, generate_csv],
-        [`Excel`, generate_excel],
-      ] as const as
-      [label, generate_fn]
-      (label)
-    }
+    {#each [[`SVG`, generate_svg], [`PNG`, generate_png], [`CSV`, generate_csv], [`Excel`, generate_excel]] as const as [label, generate_fn] (label)}
       <button
         class="download-btn"
         onclick={handle_export(generate_fn, label, export_state)}
@@ -249,13 +236,13 @@
       conductivity prediction accuracy (κ<sub>SRME</sub>). Use the radar chart to adjust
       the importance of each component.
       <br /><br />
-      The training set column shows the number of materials used to train the model. For
-      models trained on DFT relaxations, we show the number of distinct frames in
-      parentheses. In cases where only the number of frames is known, we report the number
-      of frames as the training set size. <code>(N=x)</code> in the Model Params column
-      shows the number of estimators if an ensemble was used. DAF = Discovery Acceleration
-      Factor measures how many more stable materials a model finds compared to random
-      selection from the test set. The unique structure prototypes in the WBM test set
+      The training set column shows the number of materials used to train the model. For models
+      trained on DFT relaxations, we show the number of distinct frames in parentheses. In cases
+      where only the number of frames is known, we report the number of frames as the training
+      set size. <code>(N=x)</code> in the Model Params column shows the number of
+      estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures how
+      many more stable materials a model finds compared to random selection from the test
+      set. The unique structure prototypes in the WBM test set
       {#if n_wbm_uniq_protos}
         have a
         <code>{format_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
@@ -286,15 +273,13 @@
   {#snippet best_report()}
     {#if best_model}
       {@const { model_name, model_key, repo, paper, metrics = {} } = best_model}
-      {@const discovery_metrics = typeof metrics?.discovery === `object`
-      ? metrics.discovery
-      : null}
+      {@const discovery_metrics =
+        typeof metrics?.discovery === `object` ? metrics.discovery : null}
       {@const { F1, R2, DAF } = discovery_metrics?.[discovery_set] ?? {}}
       <span id="best-report">
         <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
-        <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {
-          R2
-        } and a discovery acceleration factor (DAF) of {DAF}
+        <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
+        and a discovery acceleration factor (DAF) of {DAF}
         (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to
         dummy discovery in the already enriched test set containing 16% stable materials).
       </span>
@@ -305,9 +290,9 @@
 lives in MdNote and also renders on the /tasks/md page -->
 <blockquote>
   🆕 <strong>New task — Molecular Dynamics.</strong> Matbench Discovery now scores how
-  faithfully MLIPs reproduce finite-temperature observables of ab-initio MD (AIMD):
-  radial distribution functions, vibrational density of states, pressure distributions,
-  and single-point energy/force RMSEs. Explore the new metrics on the
+  faithfully MLIPs reproduce finite-temperature observables of ab-initio MD (AIMD): radial
+  distribution functions, vibrational density of states, pressure distributions, and
+  single-point energy/force RMSEs. Explore the new metrics on the
   <a href="/tasks/md">MD leaderboard</a>.
 </blockquote>
 <MdNote />
@@ -316,9 +301,9 @@ lives in MdNote and also renders on the /tasks/md page -->
 <h2>Progress Over Time</h2>
 <p>
   Benchmark progress since launch: each point is a model placed at its submission date.
-  The dashed step line traces the running best ("SOTA frontier") of the selected
-  metric; labeled models are those that set a new record when they were added. The
-  plot respects the compliance toggles of the metrics table above.
+  The dashed step line traces the running best ("SOTA frontier") of the selected metric;
+  labeled models are those that set a new record when they were added. The plot respects
+  the compliance toggles of the metrics table above.
 </p>
 <SotaTimeline model_filter={in_cohort} style="height: 500px" />
 

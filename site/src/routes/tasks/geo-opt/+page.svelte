@@ -15,10 +15,12 @@
   const struct_rmsd_sorted = order_models(struct_rmsd_cdf.models, (mdl) => -mdl.auc)
   const sym_ops_sorted = order_models(sym_ops_diff.models, (mdl) => mdl.sigma)
 
-  const n_min_relaxed_structures: number = min(MODELS, (model) => {
-    const geo_opt = model.metrics?.geo_opt
-    return typeof geo_opt === `string` ? undefined : geo_opt?.[`symprec=1e-2`]?.n_structures
-  }) ?? Infinity
+  const n_min_relaxed_structures =
+    min(MODELS, ({ metrics }) =>
+      typeof metrics?.geo_opt === `string`
+        ? undefined
+        : metrics?.geo_opt?.[`symprec=1e-2`]?.n_structures,
+    ) ?? Infinity
 </script>
 
 <GeoOptReadme>

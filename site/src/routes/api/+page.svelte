@@ -1,7 +1,10 @@
 <script lang="ts">
   import type { Component } from 'svelte'
 
-  const modules = import.meta.glob<Component>(`./*.md`, { eager: true, import: 'default' })
+  const modules = import.meta.glob<Component>(`./*.md`, {
+    eager: true,
+    import: 'default',
+  })
 </script>
 
 <h1 class="toc-exclude">API</h1>

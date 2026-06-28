@@ -1,13 +1,7 @@
 <script lang="ts">
   import { OrgLogos, TableControls } from '$lib'
   import { append_better_hint, metric_better_as } from '$lib/metrics'
-  import type {
-    DiscoverySet,
-    Label,
-    LinkData,
-    ModelData,
-    SortDir,
-  } from '$lib/types'
+  import type { DiscoverySet, Label, LinkData, ModelData, SortDir } from '$lib/types'
   import type { CellSnippetArgs, Label as MattervizLabel } from 'matterviz'
   import { HeatmapTable, Icon } from 'matterviz'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
@@ -57,8 +51,7 @@
   const { model_name, training_set, targets, date_added, links } = METADATA_COLS
   const { checkpoint_license, code_license, org } = METADATA_COLS
   const { graph_construction_radius, model_params } = HYPERPARAMS
-  const pinned_col_rank = (col: Label): number =>
-    col.label === model_name.label ? 0 : 1
+  const pinned_col_rank = (col: Label): number => (col.label === model_name.label ? 0 : 1)
 
   let selected_count = $derived(selected_models.size)
 
@@ -175,12 +168,8 @@
 {#snippet links_cell({ val }: CellSnippetArgs)}
   {@const links = val as unknown as LinkData}
   {#if links}
-    {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as
-      [key, link]
-      (JSON.stringify(link))
-    }
-      {#if `url` in link &&
-    ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
+    {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
+      {#if `url` in link && ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
         <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
           <Icon icon={link.icon} />
         </a>

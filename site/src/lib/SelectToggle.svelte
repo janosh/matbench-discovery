@@ -8,7 +8,10 @@
     tooltip?: string
     link?: string
   }
-  let { selected = $bindable(``), options = [] }: {
+  let {
+    selected = $bindable(``),
+    options = [],
+  }: {
     selected: string // Currently selected value
     options: OptionInfo[] // Options to display, either a record or an array of tuples
   } = $props()

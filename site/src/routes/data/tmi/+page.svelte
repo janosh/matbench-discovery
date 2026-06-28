@@ -39,8 +39,8 @@
 
 <p>
   Filter WBM element counts by composition<strong>arity</strong> (how many elements in the
-  formula) or <strong>batch index</strong> (which iteration of elemental substitution the
-  structure was generated in).
+  formula) or <strong>batch index</strong> (which iteration of elemental substitution the structure
+  was generated in).
 </p>
 
 <ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />

@@ -24,12 +24,12 @@
 <section class="full-bleed">
   <MetricsTable
     col_filter={(col) =>
-    [
-      labels.METADATA_COLS.model_name,
-      ...Object.values(labels.DISCOVERY_METRICS),
-      labels.METADATA_COLS.links,
-      labels.METADATA_COLS.date_added,
-    ].includes(col)}
+      [
+        labels.METADATA_COLS.model_name,
+        ...Object.values(labels.DISCOVERY_METRICS),
+        labels.METADATA_COLS.links,
+        labels.METADATA_COLS.date_added,
+      ].includes(col)}
     {discovery_set}
     bind:show_energy_only
     show_energy_only_toggle

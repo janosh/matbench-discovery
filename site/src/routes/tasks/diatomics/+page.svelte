@@ -66,7 +66,7 @@
       [...selected_models].some(
         (model) =>
           diatomic_curves[model]?.[homo_nuc_key]?.[formula]?.energies?.length > 0,
-      )
+      ),
     ),
   )
 
@@ -129,19 +129,15 @@
   {#each diatomics_to_render as formula (formula)}
     <DiatomicCurve
       {formula}
-      curves={[...selected_models]
-      .filter((model) => {
-        const { energies = [] } = diatomic_curves[model]?.[homo_nuc_key]?.[formula] ??
-          {}
-        return energies.length > 0
-      })
-      .map((model) => ({
-        model_key: model,
-        distances: diatomic_curves[model].distances,
-        energies: diatomic_curves[model][homo_nuc_key][formula].energies,
-        color: model_colors.get(model) ?? `gray`,
-      }))}
-      style={`height: ${plot_size.height}px`}
+      curves={[...selected_models].flatMap((model) => {
+        const model_curves = diatomic_curves[model]
+        const curve = model_curves?.[homo_nuc_key]?.[formula]
+        if (!curve?.energies.length) return []
+        const { distances } = model_curves
+        const color = model_colors.get(model) ?? `gray`
+        return [{ model_key: model, distances, energies: curve.energies, color }]
+      })}
+      style="height: {plot_size.height}px"
     />
   {/each}
 </div>

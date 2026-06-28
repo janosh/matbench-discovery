@@ -37,15 +37,13 @@
   })
   let { missing_preds } = $derived(all_metrics)
 
-  let links = $derived(
-    [
-      [model.repo, `Repo`, `GitHub`],
-      [model.paper, `Paper`, `Paper`],
-      [model.url, `Docs`, `Docs`],
-      [model.checkpoint_url, `Checkpoint`, `Download`],
-      [`${pkg.repository}/tree/HEAD/models/${model.dirname}`, `Files`, `Directory`],
-    ] as const,
-  )
+  let links = $derived([
+    [model.repo, `Repo`, `GitHub`],
+    [model.paper, `Paper`, `Paper`],
+    [model.url, `Docs`, `Docs`],
+    [model.checkpoint_url, `Checkpoint`, `Download`],
+    [`${pkg.repository}/tree/HEAD/models/${model.dirname}`, `Files`, `Directory`],
+  ] as const)
   const target = { target: `_blank`, rel: `noopener` }
   let n_model_params = $derived(format_num(model_params, `.3~s`))
   let expand_title = $derived(
@@ -66,10 +64,7 @@
   </button>
 </h2>
 <nav>
-  {#each links.filter(([href]) => href?.startsWith(`http`)) as
-    [href, title, icon]
-    (title)
-  }
+  {#each links.filter( ([href]) => href?.startsWith(`http`), ) as [href, title, icon] (title)}
     <span>
       <Icon {icon} />
       <a {href} {...target}>{title}</a>
@@ -89,15 +84,16 @@
         {@const dataset = DATASETS[train_set_key]}
         {#if dataset}
           {@const { n_structures, name, slug, n_materials } = dataset}
-          {@const pretty_n_mat = typeof n_materials === `number`
-        ? format_num(n_materials)
-        : n_materials}
+          {@const pretty_n_mat =
+            typeof n_materials === `number` ? format_num(n_materials) : n_materials}
           {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
           <a
             href="/data/{slug}"
             title="{name}: {format_num(n_structures)} structures{n_mat_str}"
             {@attach tooltip()}
-          >{train_set_key}</a>
+          >
+            {train_set_key}
+          </a>
         {:else}
           <span title="Unknown dataset key: {train_set_key}">{train_set_key}</span>
         {/if}
@@ -115,7 +111,8 @@
     </span>
   {/if}
   <span>
-    <Icon icon="NeuralNetwork" /> {n_model_params} params
+    <Icon icon="NeuralNetwork" />
+    {n_model_params} params
   </span>
   {#if model.n_estimators > 1}
     <span>
@@ -130,8 +127,9 @@
     </span>
   {/if}
   <span
-    {@attach tooltip()}
-    title="Out of {format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, {format_num(missing_preds ?? 0, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances."
+    {@attach tooltip({
+      content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds ?? 0, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances.`,
+    })}
   >
     <Icon icon="MissingMetadata" /> Missing preds:
     {format_num(missing_preds ?? 0, `,.0f`)}
@@ -163,9 +161,9 @@
       <ul>
         {#each Object.entries(model.requirements ?? {}) as [name, version] (name)}
           {@const [href, link_text] = version?.startsWith(`http`)
-          // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
-          ? [version, version.split(`/`).at(-1)]
-          : [`https://pypi.org/project/${name}/${version}`, version]}
+            ? // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
+              [version, version.split(`/`).at(-1)]
+            : [`https://pypi.org/project/${name}/${version}`, version]}
           <li style="font-size: smaller">
             {name}: <a {href} {...target}>{link_text}</a>
           </li>
@@ -184,8 +182,10 @@
       {@const value = all_metrics[key as keyof typeof all_metrics] as number}
       <li class:active={sort_by == key}>
         <label for={key}>{@html label ?? key}</label>
-        <strong>{isNaN(Number(value)) ? `n/a` : format_num(value)}
-          <small>{unit ?? ``}</small></strong>
+        <strong>
+          {isNaN(Number(value)) ? `n/a` : format_num(value)}
+          <small>{unit ?? ``}</small>
+        </strong>
       </li>
     {/each}
   </ul>

@@ -80,11 +80,12 @@ Stuff that didn't make the cut into the&nbsp;<a href="/models">model page</a>.
 
 Answer: not much. You might expect the more examples of structures containing a certain
 element models have seen in the training set, the smaller their average error on test set
-structures containing that element. That's not what we see in this plot. E<sub>above
-  hull</sub>
-is all over the place as a function of elemental training set prevalence. Could be because
-the error is dominated by the least abundant element in composition or the model errors
-are more dependent on geometry than chemistry.
+structures containing that element. That's not what we see in this plot. E<sub
+  >above hull</sub
+>
+is all over the place as a function of elemental training set prevalence. Could be because the
+error is dominated by the least abundant element in composition or the model errors are more
+dependent on geometry than chemistry.
 
 <label class="model-select">
   Models
@@ -122,8 +123,8 @@ relaxation as measured by<code>matminer</code>'s
 >
   <code>SiteStatsFingerprint</code>
 </a>
-(which is volume independent so changes in fingerprint require ion migration or similar)
-and plotting against that the absolute E<sub>above hull</sub> errors for each model.
+(which is volume independent so changes in fingerprint require ion migration or similar) and
+plotting against that the absolute E<sub>above hull</sub> errors for each model.
 
 <label class="model-select">
   Model
@@ -136,22 +137,26 @@ and plotting against that the absolute E<sub>above hull</sub> errors for each mo
   <small>MAE = {fp_diff_active.mae} eV/atom (dashed line)</small>
 </label>
 <BinnedScatterPlot
-  series={[{
-    ...numeric_pairs(fp_diff.fp_diff, fp_diff_active.y),
-    label: fp_diff_active.label,
-    color: fp_diff_active.color,
-  }]}
+  series={[
+    {
+      ...numeric_pairs(fp_diff.fp_diff, fp_diff_active.y),
+      label: fp_diff_active.label,
+      color: fp_diff_active.color,
+    },
+  ]}
   x_axis={{ label: fp_diff_label }}
   y_axis={{ label: `|E<sub>above hull</sub> error| (eV/atom)` }}
   density={{ color_scale: { type: `log`, scheme: `interpolateMagma` }, color_bar: null }}
   overlays={{
-    ref_lines: [{
-      x1: fp_diff_extent[0],
-      y1: fp_diff_active.mae,
-      x2: fp_diff_extent[1],
-      y2: fp_diff_active.mae,
-      ...dashed,
-    }],
+    ref_lines: [
+      {
+        x1: fp_diff_extent[0],
+        y1: fp_diff_active.mae,
+        x2: fp_diff_extent[1],
+        y2: fp_diff_active.mae,
+        ...dashed,
+      },
+    ],
   }}
   style="height: 440px; margin: 2em 0"
 />
@@ -172,12 +177,14 @@ errors.
   <small>MAE = {each_errors_active.mae} eV/atom</small>
 </label>
 <ScatterPlot
-  series={[{
-    x: each_errors_active.x,
-    y: each_errors_active.y,
-    label: each_errors_active.label,
-    markers: `points` as const,
-  }]}
+  series={[
+    {
+      x: each_errors_active.x,
+      y: each_errors_active.y,
+      label: each_errors_active.label,
+      markers: `points` as const,
+    },
+  ]}
   x_axis={{ label: fp_diff_label, range: [0, null] }}
   y_axis={{ label: `Absolute error (eV/atom)` }}
   legend={null}
@@ -186,9 +193,9 @@ errors.
 
 Another way to plot this is as a histogram. This shows the difference in
 SiteStatsFingerprint before vs after relaxation for structures with the largest (err<sub
->max</sub>) and smallest (err<sub>min</sub>) absolute error in predicted E<sub>above
-  hull</sub>
-for each model and the mean of all models.
+  >max</sub
+>) and smallest (err<sub>min</sub>) absolute error in predicted E<sub>above hull</sub> for
+each model and the mean of all models.
 
 <label class="model-select">
   Model

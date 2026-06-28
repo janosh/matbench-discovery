@@ -4,7 +4,10 @@
   import { format_num, sanitize_compact_formula } from 'matterviz'
   import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries } from 'matterviz/plot'
-  import { CRYSTAL_SYSTEM_COLORS, spacegroup_num_to_crystal_sys } from 'matterviz/symmetry'
+  import {
+    CRYSTAL_SYSTEM_COLORS,
+    spacegroup_num_to_crystal_sys,
+  } from 'matterviz/symmetry'
   import type { CrystalSystem } from 'matterviz/symmetry'
   import { SvelteMap } from 'svelte/reactivity'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -21,12 +24,13 @@
     failures: string
   }
 
-  let { entry, base, ...rest }: HTMLAttributes<HTMLDivElement> & {
+  let {
+    entry,
+    base,
+    ...rest
+  }: HTMLAttributes<HTMLDivElement> & {
     entry: KappaModelEntry
-    base: Pick<
-      typeof kappa_data,
-      `material_ids` | `formulas` | `spg_nums` | `kappa_dft`
-    >
+    base: Pick<typeof kappa_data, `material_ids` | `formulas` | `spg_nums` | `kappa_dft`>
   } = $props()
 
   const failure_labels = [
@@ -43,12 +47,10 @@
       const system = spacegroup_num_to_crystal_sys(base.spg_nums[idx])
       if (kappa_dft === null || srme === null || !system) continue
       const flagged_failures = failure_labels
-        .filter(([key]) => entry[key][idx] === true)
-        .map(([, label]) => label)
+        .flatMap(([key, label]) => (entry[key][idx] === true ? [label] : []))
         .join(`, `)
       // Unflagged SRME=2 means the κ calculation crashed.
-      const failures =
-        flagged_failures || (srme === 2 ? `κ calculation failed` : ``)
+      const failures = flagged_failures || (srme === 2 ? `κ calculation failed` : ``)
       const point: SrmePoint = {
         material_id: mat_id,
         formula: base.formulas[idx],
@@ -89,13 +91,13 @@
     {#if metadata}
       {@const point = metadata as unknown as SrmePoint}
       <strong>{point.material_id}</strong>
-      {@html sanitize_compact_formula(point.formula)} (SG {point.spg_num})<br>
-      PBE κ: {format_num(point.kappa_dft, `.3~`)} <small>W/mK</small><br>
+      {@html sanitize_compact_formula(point.formula)} (SG {point.spg_num})<br />
+      PBE κ: {format_num(point.kappa_dft, `.3~`)} <small>W/mK</small><br />
       {#if point.kappa_ml !== null}
-        {entry.label} κ: {format_num(point.kappa_ml, `.3~`)} <small>W/mK</small><br>
+        {entry.label} κ: {format_num(point.kappa_ml, `.3~`)} <small>W/mK</small><br />
       {/if}
       κ<sub>SRME</sub>: {format_num(point.srme, `.3~`)}
-      {#if point.failures}<br><em>{point.failures}</em>{/if}
+      {#if point.failures}<br /><em>{point.failures}</em>{/if}
     {/if}
   {/snippet}
 </ScatterPlot>

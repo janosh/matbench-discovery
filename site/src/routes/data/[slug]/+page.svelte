@@ -45,12 +45,14 @@
   {/if}
 
   <span title={dataset.n_structures.toLocaleString()} {@attach tooltip()}>
-    <Icon icon="Database" /> {format_num(dataset.n_structures, `.3~s`)} structures
+    <Icon icon="Database" />
+    {format_num(dataset.n_structures, `.3~s`)} structures
   </span>
 
   {#if dataset.n_materials}
     <span title={dataset.n_materials.toLocaleString()} {@attach tooltip()}>
-      <Icon icon="Lattice" /> {format_num(dataset.n_materials, `.3~s`)} materials
+      <Icon icon="Lattice" />
+      {format_num(dataset.n_materials, `.3~s`)} materials
     </span>
   {/if}
 
@@ -198,9 +200,7 @@
 
 <p>
   See incorrect or missing data? Suggest an edit to
-  <a href="{pkg.repository}/blob/-/data/datasets.yml" {...link_props}>
-    datasets.yml
-  </a>
+  <a href="{pkg.repository}/blob/-/data/datasets.yml" {...link_props}> datasets.yml </a>
 </p>
 
 <style>

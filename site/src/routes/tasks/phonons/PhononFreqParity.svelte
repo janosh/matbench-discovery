@@ -20,7 +20,11 @@
     crystal_system: string
   }
 
-  let { entry, base, ...rest }: HTMLAttributes<HTMLDivElement> & {
+  let {
+    entry,
+    base,
+    ...rest
+  }: HTMLAttributes<HTMLDivElement> & {
     entry: KappaModelEntry
     base: Pick<typeof kappa_data, `material_ids` | `formulas` | `spg_nums`>
   } = $props()
@@ -73,7 +77,9 @@
         stroke: `white`,
         stroke_width: 0.4,
         symbol_type:
-          DEFAULT_SERIES_SYMBOLS[Math.floor(point.quantile * 3) % DEFAULT_SERIES_SYMBOLS.length],
+          DEFAULT_SERIES_SYMBOLS[
+            Math.floor(point.quantile * 3) % DEFAULT_SERIES_SYMBOLS.length
+          ],
       })),
     },
   ])
@@ -93,11 +99,11 @@
         {@const point = metadata as unknown as FreqParityPoint}
         <strong>{point.material_id}</strong>
         {@html sanitize_compact_formula(point.formula)} ({point.crystal_system}, SG
-        {point.spg_num})<br>
-        quantile: {format_num(point.quantile, `.0%`)}<br>
-        spectrum W1: {format_num(point.freq_w1, `.3~`)} <small>THz</small><br>
+        {point.spg_num})<br />
+        quantile: {format_num(point.quantile, `.0%`)}<br />
+        spectrum W1: {format_num(point.freq_w1, `.3~`)} <small>THz</small><br />
       {/if}
-      PBE: {x_formatted} THz<br>
+      PBE: {x_formatted} THz<br />
       {entry.label}: {y_formatted} THz
     {/snippet}
 
