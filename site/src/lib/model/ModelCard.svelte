@@ -43,7 +43,7 @@
       [model.paper, `Paper`, `Paper`],
       [model.url, `Docs`, `Docs`],
       [model.checkpoint_url, `Checkpoint`, `Download`],
-      [`${pkg.repository}/blob/-/models/${model.dirname}`, `Files`, `Directory`],
+      [`${pkg.repository}/tree/HEAD/models/${model.dirname}`, `Files`, `Directory`],
     ] as const,
   )
   const target = { target: `_blank`, rel: `noopener` }

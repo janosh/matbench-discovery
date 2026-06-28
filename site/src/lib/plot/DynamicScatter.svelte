@@ -134,7 +134,7 @@
   const format_label_title = (prop: Label | undefined): string =>
     `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
   const colorbar_tick_format = (prop: Label | undefined): string =>
-    (prop?.format ?? `~s`).replace(/(\.\d+)f$/, `$1~f`)
+    (prop?.format ?? `~s`).replace(/(?<precision>\.\d+)f$/, `$<precision>~f`)
 
   let plot_data = $derived(
     filtered_models

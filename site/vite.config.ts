@@ -49,10 +49,8 @@ export default /* @__PURE__ */ attach_style(JSON.parse(${JSON.stringify(json)}))
   },
 })
 
-// Custom Vite plugin that watches for changes to *-schema.yml files and
-// Automatically converts them to *-schema.d.ts files
+// Custom Vite plugin that watches *-schema.yml files and writes src/lib/schema/*.d.ts
 function yaml_schema_to_typescript_plugin(): Plugin {
-  // Convert *-schema.yml to *-schema.d.ts
   async function yaml_schema_to_ts(file: string): Promise<boolean> {
     try {
       const yaml_content = fs.readFileSync(file, `utf-8`)
@@ -62,31 +60,26 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const parsed_yaml = yaml_load(yaml_content) as JSONSchema4
       const base_name = path.basename(file, `.yml`)
 
-      // Convert model schema to TypeScript
-      const ts_name = {
-        'model-schema': `ModelMetadata`,
-        'dataset-schema': `DatasetRecord`,
-        'label-schema': `Label`,
+      const output = {
+        'dataset-schema': { type_name: `DatasetRecord`, file_name: `dataset` },
+        'label-schema': { type_name: `Label`, file_name: `label` },
+        'model-schema': { type_name: `ModelMetadata`, file_name: `model` },
       }[base_name]
+      if (!output) throw new Error(`No schema output configured for ${base_name}.yml`)
 
-      const model_metadata_ts = await json_to_ts(
-        parsed_yaml,
-        ts_name ?? `missing ${base_name} schema`,
-        {
-          // Should match fmt config in vite.config.ts
-          style: { semi: false, singleQuote: true, printWidth: 90 },
-          // no-redundant-type-constituents fires on `string | 'missing'` unions from
-          // literal-or-string schema fields and has no oxlint autofix, so suppress it
-          // file-wide (index signatures are instead rewritten to Record<> via lint --fix below)
-          bannerComment: `// This file is auto-generated from ${base_name}.yml. Do not edit directly.
+      const model_metadata_ts = await json_to_ts(parsed_yaml, output.type_name, {
+        // Should match fmt config in vite.config.ts
+        style: { semi: false, singleQuote: true, printWidth: 90 },
+        // no-redundant-type-constituents fires on `string | 'missing'` unions from
+        // literal-or-string schema fields and has no oxlint autofix, so suppress it
+        // file-wide (index signatures are instead rewritten to Record<> via lint --fix below)
+        bannerComment: `// This file is auto-generated from ${base_name}.yml. Do not edit directly.
 // oxlint-disable typescript/no-redundant-type-constituents`,
-          cwd: file_dir, // Important for $ref resolution between *-schema.yml files
-          unreachableDefinitions: true,
-        },
-      )
+        cwd: file_dir, // Important for $ref resolution between *-schema.yml files
+        unreachableDefinitions: true,
+      })
 
-      // Write the TypeScript interface file for model schema
-      const dts_file = path.resolve(`./src/lib/${base_name}.d.ts`)
+      const dts_file = path.resolve(`./src/lib/schema/${output.file_name}.d.ts`)
       fs.writeFileSync(dts_file, model_metadata_ts)
 
       // Rewrite json-schema-to-typescript index signatures (`{ [k: string]: T }`)

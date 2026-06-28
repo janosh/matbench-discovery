@@ -3,13 +3,12 @@
     build_energy_parity_series,
     energy_parity_stats,
     get_energy_parity_point,
-    has_energy_parity_model,
     load_energy_parity_base,
     load_energy_parity_model,
     load_wbm_structure,
     structure_popup_placement,
-  } from '$lib/energy-parity'
-  import type { EnergyKind, EnergyParityBase, EnergyParityModel, EnergyParityPoint, StructurePopupPlacement } from '$lib/energy-parity'
+  } from '$lib/parity/energy-parity'
+  import type { EnergyKind, EnergyParityBase, EnergyParityModel, EnergyParityPoint, StructurePopupPlacement } from '$lib/parity/energy-parity'
   import type { LoadStatus } from '$lib/asset-loader'
   import type { ModelData } from '$lib/types'
   import { compact_formula, format_num, sanitize_compact_formula } from 'matterviz'
@@ -122,14 +121,14 @@
       return
     }
 
-    const matching_model = has_energy_parity_model(injected_model, model_key)
+    const matching_model = injected_model?.model_key === model_key
       ? injected_model
       : undefined
-    if (!has_energy_parity_model(parity_model, model_key)) clear_selection()
+    if (parity_model?.model_key !== model_key) clear_selection()
     if (injected_base) base = injected_base
     if (matching_model) parity_model = matching_model
 
-    if (base && has_energy_parity_model(parity_model, model_key)) {
+    if (base && parity_model?.model_key === model_key) {
       status = `ready`
       return
     }

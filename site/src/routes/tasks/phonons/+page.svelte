@@ -3,7 +3,7 @@
   import { by_date_added_desc, MetricsTable, type ModelData, MODELS } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
   import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
-  import { has_kappa_parity_model } from '$lib/kappa-parity'
+  import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
   import { get_nested_number } from '$lib/metrics'
   import { format_num } from 'matterviz'

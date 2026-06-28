@@ -6,7 +6,7 @@ import {
   MD_METRICS,
   METADATA_COLS,
 } from '$lib/labels'
-import type { ModelMetadata, ModelType, TargetType } from '$lib/model-schema'
+import type { ModelMetadata, ModelType, TargetType } from '$lib/schema/model'
 import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
 import type { DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'

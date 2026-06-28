@@ -23,7 +23,7 @@ declare module '*package.json' {
 }
 
 declare module 'models/*.yml' {
-  import type { ModelMetadata } from '$lib/model-schema'
+  import type { ModelMetadata } from '$lib/schema/model'
   const data: ModelMetadata
   export default data
 } // Model metadata files
@@ -46,7 +46,7 @@ declare module '*references.yaml' {
 } // Paper references (auto-exported by Zotero)
 
 declare module '*model-schema.yml' {
-  import type { ModelMetadata } from '$lib/model-schema'
+  import type { ModelMetadata } from '$lib/schema/model'
   export const ModelMetadata: ModelMetadata
 } // Model metadata schema
 

@@ -1,5 +1,5 @@
 import { HYPERPARAMS } from '$lib/labels'
-import MetricsTable from '$lib/MetricsTable.svelte'
+import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'

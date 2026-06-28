@@ -1,19 +1,18 @@
 <script lang="ts">
   import {
+    as_phonon_dos,
     build_kappa_parity_series,
-    dft_phonon_dos,
     has_kappa_parity_model,
     kappa_structure,
     load_kappa_parity_base,
     load_kappa_parity_model,
-    ml_phonon_dos,
-  } from '$lib/kappa-parity'
+  } from '$lib/parity/kappa-parity'
   import type {
     KappaParityBase,
     KappaParityModel,
     KappaParityPoint,
     PhononDos,
-  } from '$lib/kappa-parity'
+  } from '$lib/parity/kappa-parity'
   import type { LoadStatus } from '$lib/asset-loader'
   import { parity_diagonal } from '$lib/fig-helpers'
   import { get_nested_number } from '$lib/metrics'
@@ -91,8 +90,8 @@
   let doses = $derived.by((): Record<string, PhononDos> => {
     if (!base || !parity_model || !selected) return {}
     const out: Record<string, PhononDos> = {}
-    const dft = dft_phonon_dos(base, selected.material_id)
-    const ml = ml_phonon_dos(parity_model, selected.material_id)
+    const dft = as_phonon_dos(base.dft_dos[selected.material_id])
+    const ml = as_phonon_dos(parity_model.ml_dos[selected.material_id])
     if (dft) out[`DFT (PBE)`] = dft
     if (ml) out[model_label] = ml
     return out

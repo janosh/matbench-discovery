@@ -1,6 +1,6 @@
 import type { Author } from '$lib'
 import type { OrgLogo } from '$lib/labels'
-import OrgLogos from '$lib/OrgLogos.svelte'
+import OrgLogos from '$lib/model/OrgLogos.svelte'
 import { flushSync, mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query } from '../index'

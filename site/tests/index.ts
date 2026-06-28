@@ -1,4 +1,5 @@
 import { gzipSync } from 'node:zlib'
+import type { ModelData } from '$lib/types'
 import { mount as svelte_mount, unmount } from 'svelte'
 import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
@@ -93,6 +94,9 @@ export const gzipped_json_response = (data: unknown) =>
 // normalize the fetch() url argument (string | URL | Request) to a string
 export const request_url = (url: RequestInfo | URL) =>
   typeof url === `string` || url instanceof URL ? String(url) : url.url
+
+export const has_md_metrics = (model: ModelData): boolean =>
+  model.metrics?.md != null && typeof model.metrics.md === `object`
 
 export function doc_query<T extends Element = HTMLElement>(
   selector: string,

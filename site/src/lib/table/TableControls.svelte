@@ -28,7 +28,7 @@
 </script>
 
 <div class="table-controls" {...rest}>
-  {#if selected_count > 0}
+  {#if selected_count > 0 || show_selected_only}
     <label>
       <input
         type="checkbox"

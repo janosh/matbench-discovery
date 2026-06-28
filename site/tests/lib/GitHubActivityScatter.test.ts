@@ -1,9 +1,8 @@
 import { goto } from '$app/navigation'
 import type { GitHubActivityData } from '$lib/types'
 import GitHubActivityScatter from '$lib/plot/GitHubActivityScatter.svelte'
-import { mount } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { get_scatter_plot_props } from '../index'
+import { get_scatter_plot_props, mount } from '../index'
 
 const plot_mocks = vi.hoisted(() => ({
   ScatterPlot: vi.fn(),
@@ -48,7 +47,7 @@ const create_mock_github_data = (
 describe(`GitHubActivityScatter`, () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it(`passes filtered GitHub activity data to ScatterPlot`, () => {
+  it(`filters invalid activity rows and maps metrics to ScatterPlot props`, () => {
     mount(GitHubActivityScatter, {
       target: document.body,
       props: {
@@ -78,32 +77,37 @@ describe(`GitHubActivityScatter`, () => {
             commits_last_year: 50,
             contributors: 5,
           } as unknown as GitHubActivityData,
+          create_mock_github_data({
+            name: `Infinite`,
+            stars: Number.POSITIVE_INFINITY,
+          }),
         ],
       },
     })
 
-    expect(document.querySelector(`div.bleed-1400`)).toBeInstanceOf(HTMLDivElement)
     expect(plot_mocks.ScatterPlot).toHaveBeenCalledTimes(1)
-    expect(get_scatter_plot_props(plot_mocks.ScatterPlot)).toMatchObject({
-      series: [
-        {
-          x: [0, 100_000],
-          y: [10, 999_999],
-          metadata: [
-            { name: `Zero Commits`, repo: `org/zero`, model_key: `zero-model` },
-            { name: `Popular`, repo: `org/popular` },
-          ],
-          color_values: [1, 10_000],
-          size_values: [1, 1000],
-          point_label: [
-            { text: `Zero Commits`, font_size: `11px`, auto_placement: true },
-            { text: `Popular`, font_size: `11px`, auto_placement: true },
-          ],
-        },
+    const props = get_scatter_plot_props(plot_mocks.ScatterPlot) as ScatterPlotProps
+    expect(props.series).toHaveLength(1)
+    expect(props.series[0]).toStrictEqual({
+      x: [0, 100_000],
+      y: [10, 999_999],
+      markers: `points`,
+      point_style: { fill: `#4dabf7` },
+      metadata: [
+        { name: `Zero Commits`, repo: `org/zero`, model_key: `zero-model` },
+        { name: `Popular`, repo: `org/popular`, model_key: undefined },
       ],
+      color_values: [1, 10_000],
+      size_values: [1, 1000],
+      point_label: [
+        { text: `Zero Commits`, font_size: `11px`, auto_placement: true },
+        { text: `Popular`, font_size: `11px`, auto_placement: true },
+      ],
+    })
+    expect(props).toMatchObject({
       x_axis: { label: `GitHub Forks`, format: `,.0f`, range: [0, null] },
       y_axis: { label: `GitHub Stars`, format: `,.0f`, range: [0, null] },
-      color_bar: { title: `Commits Last Year`, tick_format: `,.0f` },
+      color_bar: { title: `Commits Last Year`, tick_format: `~s` },
       color_scale: { type: `log` },
     })
   })

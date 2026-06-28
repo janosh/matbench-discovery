@@ -8,8 +8,8 @@
     GEO_OPT_SYMMETRY_METRICS,
     HYPERPARAMS,
     METADATA_COLS,
-  } from './labels'
-  import { append_better_hint, assemble_row_data } from './metrics'
+  } from '../labels'
+  import { append_better_hint, assemble_row_data } from '../metrics'
 
   let {
     column_order = $bindable([]),

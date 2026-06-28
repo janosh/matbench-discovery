@@ -12,7 +12,7 @@ import {
   sort_models,
   targets_tooltips,
 } from '$lib/metrics'
-import type { TargetType } from '$lib/model-schema'
+import type { TargetType } from '$lib/schema/model'
 import type { ModelData } from '$lib/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -50,7 +50,11 @@
 <section class="full-bleed">
   <!-- ?? true: columns absent from visible_cols (e.g. the sticky model name) default to
   shown, matching the phonons and landing-page tables; visible_cols only hides non-MD metrics -->
-  <MetricsTable col_filter={(col) => visible_cols[col.label] ?? true} bind:sort />
+  <MetricsTable
+    model_filter={has_md_metrics}
+    col_filter={(col) => visible_cols[col.label] ?? true}
+    bind:sort
+  />
 </section>
 
 <h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>

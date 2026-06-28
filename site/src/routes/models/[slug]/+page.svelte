@@ -6,7 +6,7 @@
     openness_tooltips,
     targets_tooltips,
   } from '$lib/metrics'
-  import { has_kappa_parity_model } from '$lib/kappa-parity'
+  import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
   import { EnergyParityPlot, KappaParityPlot } from '$lib/plot'
   import { get_pred_file_urls } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'

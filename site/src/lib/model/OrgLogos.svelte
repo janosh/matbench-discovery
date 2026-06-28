@@ -3,7 +3,7 @@
   import { get_org_logo, type OrgLogo } from '$lib/labels'
   import { ICON_DATA } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
-  import Logo from './Logo.svelte'
+  import Logo from '../Logo.svelte'
 
   // org_logos = deduped, logo-matched affiliations shown as a compact preview strip.
   // authors = full author list used to build the richer hover tooltip (full org

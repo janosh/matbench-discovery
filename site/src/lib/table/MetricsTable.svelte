@@ -13,9 +13,9 @@
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
   import { SvelteSet } from 'svelte/reactivity'
-  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
-  import { assemble_row_data } from './metrics'
-  import { heatmap_class } from './table-export'
+  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '../labels'
+  import { assemble_row_data } from '../metrics'
+  import { heatmap_class } from '../table-export'
 
   type HeaderLabel = MattervizLabel & { tooltip_description?: string }
 

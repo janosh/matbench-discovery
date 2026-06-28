@@ -8,7 +8,7 @@ import type {
   HyperparamLabels,
   MdMetricsLabels,
   MetadataLabels,
-} from './label-schema.d.ts'
+} from './schema/label.d.ts'
 
 export const RMSD_BASELINE = 0.15 // Baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
 
@@ -428,7 +428,7 @@ export const MD_METRICS: MdMetricsLabels = {
   md_combined_score: {
     key: `combined_score`,
     label: `CMDS`,
-    description: `Combined MD score in [0,1] (higher is better): 1 − mean of ΔRDF, ΔADF, ΔvDOS and ΔP (each a %, lower is better). Higher = closer to ab-initio dynamics; intended to feed into CPS as a normalized component.`,
+    description: `Combined MD score in [0,1] (higher is better): 1 − mean(ΔRDF, ΔADF, ΔvDOS, ΔP) / 100, where each error is a percentage and lower is better. Higher = closer to ab-initio dynamics; intended to feed into CPS as a normalized component.`,
     path: `metrics.md`,
     range: [0, 1],
     better: `higher`,

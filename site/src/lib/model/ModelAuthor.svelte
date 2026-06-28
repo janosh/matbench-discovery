@@ -3,7 +3,7 @@
   import { get_org_logo } from '$lib/labels'
   import { Icon } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
-  import Logo from './Logo.svelte'
+  import Logo from '../Logo.svelte'
 
   let { author, show_affiliation = false, ...rest }: HTMLAttributes<HTMLSpanElement> & {
     author: Author
