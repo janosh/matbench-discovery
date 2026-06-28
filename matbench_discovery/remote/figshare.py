@@ -26,6 +26,7 @@ ARTICLE_IDS: Final[dict[str, int | None]] = {
     "model_preds_geo_opt": 28642406,
     "model_preds_phonons": 28347251,
     "model_preds_diatomics": 28437344,
+    "model_preds_md": 32815880,
     "data_files": 22715158,
 }
 

@@ -217,6 +217,10 @@ def test_calc_rdf_error(
 
     with pytest.raises(ValueError, match="differ"):  # mismatched grid lengths
         md_metrics.calc_rdf_error(radii, np.ones(3), np.ones(4))
+    with pytest.raises(ValueError, match="negative"):
+        md_metrics.calc_rdf_error(radii, np.array([0.0, -1.0, 1.0]), np.ones(3))
+    with pytest.raises(ValueError, match="non-finite"):
+        md_metrics.calc_rdf_error(radii, np.array([0.0, np.inf, 1.0]), np.ones(3))
 
 
 # === ADF ===
@@ -328,12 +332,8 @@ def test_calc_adf_error(
     angles: list[float], adf_ref: list[float], adf_pred: list[float], expected: float
 ) -> None:
     """ADF error = W1(ref,pred) / W1(ref, sin-background), capped at 100%."""
-    angles_arr = np.array(angles)
-    adf_ref_arr = np.array(adf_ref)
-    adf_pred_arr = np.array(adf_pred)
-
     assert md_metrics.calc_adf_error(
-        angles_arr, adf_ref_arr, adf_pred_arr
+        np.array(angles), np.array(adf_ref), np.array(adf_pred)
     ) == pytest.approx(expected)
 
 
@@ -490,43 +490,105 @@ def test_calc_vdos_invalid_input(
         md_metrics.calc_vdos(np.zeros(shape), time_step_fs=time_step_fs)
 
 
-def test_calc_vdos_error_identical_and_disjoint() -> None:
-    """Identical spectra give 0% error, non-overlapping spectra 100%."""
-    freqs = np.linspace(0, 10, 101)
-    peak_low = np.exp(-((freqs - 2) ** 2))
-    peak_high = np.exp(-((freqs - 8) ** 2))
+def test_calc_vdos_error_w1_shift_monotonic() -> None:
+    """W1-based vDOS error: 0 for identical spectra, monotonic in peak shift (for equal
+    Gaussians error% == 100*min(1, shift/sigma_ref)), capped at 100% beyond sigma_ref.
+    """
+    freqs = np.linspace(0, 40, 801)
+    ref = np.exp(-((freqs - 10) ** 2) / 2)  # sigma_ref = 1 THz, centered at 10 THz
+    shifted = lambda delta: np.exp(-((freqs - (10 + delta)) ** 2) / 2)  # noqa: E731
 
-    assert md_metrics.calc_vdos_error(freqs, peak_low, freqs, peak_low) == 0
-    err_disjoint = md_metrics.calc_vdos_error(freqs, peak_low, freqs, peak_high)
-    assert err_disjoint == pytest.approx(100, abs=0.1)
-    # partial overlap should land strictly in between
-    err_partial = md_metrics.calc_vdos_error(
-        freqs, peak_low, freqs, (peak_low + peak_high) / 2
-    )
-    assert 0 < err_partial < err_disjoint
-
-
-def test_calc_vdos_error_interpolates_between_grids() -> None:
-    """Same spectrum sampled on different grids should give near-zero error."""
-    freqs_coarse = np.linspace(0, 10, 51)
-    freqs_fine = np.linspace(0, 10, 201)
-    spectrum = lambda freqs: np.exp(-((freqs - 5) ** 2))  # noqa: E731
-
-    err = md_metrics.calc_vdos_error(
-        freqs_coarse, spectrum(freqs_coarse), freqs_fine, spectrum(freqs_fine)
-    )
-    assert err == pytest.approx(0, abs=0.5)
+    assert md_metrics.calc_vdos_error(
+        freqs, ref, freqs, ref, band_frac=1.0
+    ) == pytest.approx(0, abs=1e-9)
+    errs = [
+        md_metrics.calc_vdos_error(freqs, ref, freqs, shifted(delta), band_frac=1.0)
+        for delta in (0.25, 0.5, 0.75)
+    ]
+    assert errs == pytest.approx([25, 50, 75], abs=1)  # error% == 100*shift/sigma_ref
+    # a shift beyond the reference's own spectral width saturates at the 100% cap
+    assert md_metrics.calc_vdos_error(
+        freqs, ref, freqs, shifted(1.5), band_frac=1.0
+    ) == pytest.approx(100)
 
 
 @pytest.mark.parametrize(
     ("vdos_ref", "err_msg"),
-    [(np.full(11, -1.0), "negative intensities"), (np.zeros(11), "non-positive area")],
+    [
+        (np.full(11, -1.0), "negative intensities"),
+        (np.zeros(11), "non-positive area"),
+        (np.full(11, np.inf), "non-finite intensities"),
+    ],
 )
 def test_calc_vdos_error_invalid_spectra(vdos_ref: np.ndarray, err_msg: str) -> None:
-    """VDOS error should reject negative or zero-area spectra."""
+    """Reject negative, zero-area or non-finite vDOS spectra."""
     freqs = np.linspace(0, 10, 11)
     with pytest.raises(ValueError, match=err_msg):
         md_metrics.calc_vdos_error(freqs, vdos_ref, freqs, np.ones(11))
+
+
+@pytest.mark.parametrize("band_frac", [0.0, -0.1, 1.5])
+def test_calc_vdos_error_invalid_band_frac(band_frac: float) -> None:
+    """Reject band_frac outside (0, 1]."""
+    freqs, ones = np.linspace(0, 10, 11), np.ones(11)
+    with pytest.raises(ValueError, match="band_frac"):
+        md_metrics.calc_vdos_error(freqs, ones, freqs, ones, band_frac=band_frac)
+
+
+def test_calc_vdos_error_edge_cases() -> None:
+    """A prediction with no power in the reference band caps at 100%; a degenerate
+    single-frequency reference returns 0 only when the prediction is the same line.
+    """
+    freqs = np.linspace(0, 40, 401)
+    ref = np.exp(-((freqs - 5) ** 2) / 2)  # low-frequency reference band
+    pred_far = np.exp(-((freqs - 35) ** 2) / 2)  # all power above the clipped band
+    assert md_metrics.calc_vdos_error(freqs, ref, freqs, pred_far) == pytest.approx(100)
+
+    delta = np.zeros(401)
+    delta[100] = 1.0  # single non-zero frequency bin -> sigma_ref == 0
+    assert md_metrics.calc_vdos_error(freqs, delta, freqs, delta, band_frac=1.0) == 0
+    other = np.zeros(401)
+    other[200] = 1.0
+    assert md_metrics.calc_vdos_error(
+        freqs, delta, freqs, other, band_frac=1.0
+    ) == pytest.approx(100)
+
+
+def test_calc_vdos_error_band_clip_suppresses_tail() -> None:
+    """Clipping (band_frac < 1) drops the reference's noisy tail, so a spurious far
+    prediction peak there is penalized less than at band_frac=1.0 (full grid).
+    """
+    freqs = np.linspace(0, 40, 401)
+    ref = np.exp(-((freqs - 8) ** 2) / 2)
+    pred = ref + 0.3 * np.exp(-((freqs - 32) ** 2) / 2)  # spurious high-frequency peak
+    clipped = md_metrics.calc_vdos_error(freqs, ref, freqs, pred, band_frac=0.999)
+    unclipped = md_metrics.calc_vdos_error(freqs, ref, freqs, pred, band_frac=1.0)
+    assert clipped < unclipped
+
+
+def test_calc_vdos_error_grid_sampling_invariant() -> None:
+    """The error reflects spectral mass, not merged-grid sampling: the same physical
+    spectrum on different (incommensurate) rfftfreq grids scores ~0, and a shifted
+    spectrum gives the same error whichever grid each side uses (raw-density weighting
+    would drift with sampling density).
+    """
+    shape = lambda freq, mu: np.exp(-((freq - mu) ** 2) / 8)  # noqa: E731
+    coarse = np.fft.rfftfreq(2001, 0.0025)  # ~5 ps trajectory, 2.5 fs step
+    fine = np.fft.rfftfreq(5001, 0.001)  # ~5 ps trajectory, 1 fs step
+    # identical physical spectrum sampled on the two grids -> near-zero error
+    assert md_metrics.calc_vdos_error(
+        coarse, shape(coarse, 10), fine, shape(fine, 10)
+    ) == pytest.approx(0, abs=0.1)
+    # a 1 THz peak shift gives the same error regardless of each side's grid
+    converged = md_metrics.calc_vdos_error(fine, shape(fine, 10), fine, shape(fine, 11))
+    mixed_a = md_metrics.calc_vdos_error(
+        coarse, shape(coarse, 10), fine, shape(fine, 11)
+    )
+    mixed_b = md_metrics.calc_vdos_error(
+        fine, shape(fine, 10), coarse, shape(coarse, 11)
+    )
+    assert mixed_a == pytest.approx(converged, abs=0.1)
+    assert mixed_b == pytest.approx(converged, abs=0.1)
 
 
 # === pressure ===
@@ -552,42 +614,31 @@ def test_get_trajectory_pressures() -> None:
 
 
 @pytest.mark.parametrize(
-    ("p_ref", "p_pred", "ref_dt", "pred_dt", "expected_mae"),
+    ("p_ref", "p_pred", "expected_mae"),
     [
-        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.0, 1.0, 2.0, 3.0]), 1, 1, 0),
-        # constant +0.5 offset between equal-cadence trajectories
-        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.5, 1.5, 2.5, 3.5]), 1, 1, 0.5),
-        # unequal lengths truncate the MAE to the shorter trajectory
-        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.5, 1.5]), 1, 1, 0.5),
-        # differing cadences pair identical timestamps, not raw indices: pred samples
-        # ref at every 2nd timestamp plus a pure +10 offset, so aligned MAE is exactly
-        # 10 (index pairing would wrongly give 11.5)
-        (np.arange(7.0), np.arange(7.0)[::2] + 10, 1, 2, 10),
-        # awkward cadence ratio ref dt=0.3, pred dt=0.7 -> common grid every 2.1 fs;
-        # common timestamps are 0 and 2.1 fs (ref indices 0,7; pred indices 0,3)
-        (np.arange(8.0), np.array([100.0, -1.0, -2.0, 107.0]), 0.3, 0.7, 100),
+        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.0, 1.0, 2.0, 3.0]), 0.0),
+        # constant +0.5 offset -> mean bias 0.5
+        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.5, 1.5, 2.5, 3.5]), 0.5),
+        # unequal lengths: means are 1.5 vs 1.0 -> bias 0.5
+        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.5, 1.5]), 0.5),
+        # frame order is irrelevant: reversal preserves the mean -> zero bias
+        (np.arange(7.0), np.arange(7.0)[::-1], 0.0),
     ],
-    ids=["identical", "constant_offset", "truncated", "cadence_2x", "awkward_cadence"],
+    ids=["identical", "offset", "unequal_len", "reversed"],
 )
 def test_calc_pressure_metrics_mae(
-    p_ref: np.ndarray,
-    p_pred: np.ndarray,
-    ref_dt: float,
-    pred_dt: float,
-    expected_mae: float,
+    p_ref: np.ndarray, p_pred: np.ndarray, expected_mae: float
 ) -> None:
-    """Pressure MAE pairs frames at identical timestamps, even across differing
-    cadences and trajectory lengths.
+    """Pressure MAE is the mean-pressure bias |mean(ref) - mean(pred)|: it compares the
+    separately-averaged trajectory pressures, independent of frame order and length.
     """
-    metrics = md_metrics.calc_pressure_metrics(
-        p_ref, p_pred, ref_time_step_fs=ref_dt, pred_time_step_fs=pred_dt
-    )
+    metrics = md_metrics.calc_pressure_metrics(p_ref, p_pred)
     assert metrics["pressure_mae"] == pytest.approx(expected_mae)
 
 
 def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
-    """W1 distance equals the mean offset and is frame-order-independent (unlike MAE);
-    empty pressure arrays raise.
+    """W1 distance equals the mean offset; both W1 and the mean-bias MAE are frame-order
+    independent (they compare averaged/full distributions); empty pressure arrays raise.
     """
     p_ref = np.array([0.0, 1.0, 2.0, 3.0])
     p_shifted = p_ref + 0.5
@@ -595,10 +646,11 @@ def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
     assert md_metrics.calc_pressure_metrics(p_ref, p_ref)["pressure_wasserstein"] == 0
     shifted = md_metrics.calc_pressure_metrics(p_ref, p_shifted)
     assert shifted["pressure_wasserstein"] == pytest.approx(0.5)
-    # W1 is invariant to frame order, MAE is not
+    assert shifted["pressure_mae"] == pytest.approx(0.5)
+    # both metrics are invariant to frame order (mean/distribution based)
     reversed_order = md_metrics.calc_pressure_metrics(p_ref, p_shifted[::-1])
     assert reversed_order["pressure_wasserstein"] == pytest.approx(0.5)
-    assert reversed_order["pressure_mae"] > 0.5
+    assert reversed_order["pressure_mae"] == pytest.approx(0.5)
 
     with pytest.raises(ValueError, match="empty"):
         md_metrics.calc_pressure_metrics(np.array([]), p_ref)

@@ -390,7 +390,7 @@ export const MD_METRICS: MdMetricsLabels = {
   md_vdos_error: {
     key: `vdos_error`,
     label: `ΔvDOS`,
-    description: `Mean vibrational density of states error between MLIP and ab-initio MD trajectories, computed from the velocity autocorrelation function. 0% = perfect match, 100% = non-overlapping spectra`,
+    description: `Vibrational density of states error between MLIP and ab-initio MD trajectories (from the velocity autocorrelation spectrum): Wasserstein-1 distance between the spectra normalized by the reference's spectral spread, so it grows with systematic frequency softening/hardening rather than saturating. 0% = perfect match, 100% = displaced by at least the reference's own spectral width`,
     unit: `%`,
     path: `metrics.md`,
     range: [0, 100],
@@ -400,7 +400,7 @@ export const MD_METRICS: MdMetricsLabels = {
   md_pressure_mae: {
     key: `pressure_mae`,
     label: `P<sub>MAE</sub>`,
-    description: `Mean absolute error between per-frame pressures of MLIP and ab-initio MD trajectories`,
+    description: `Absolute difference between the mean pressures of the MLIP and ab-initio MD trajectories (mean-stress bias); independent of frame pairing`,
     unit: `GPa`,
     path: `metrics.md`,
     better: `lower`,

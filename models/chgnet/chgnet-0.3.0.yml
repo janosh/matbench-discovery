@@ -165,14 +165,15 @@ metrics:
       R2: 0.689 # dimensionless
       missing_preds: 0 # count
   md:
-    pred_file: models/chgnet/chgnet-0.3.0/2026-06-27-chgnet_030-md-metrics.csv.gz
+    pred_file: models/chgnet/chgnet-0.3.0/2026-06-28-chgnet_030-md-metrics.csv.gz
     energy_rmse: 2.3775 # meV/atom
     force_rmse: 202.2351 # meV/Å
     rdf_error: 9.6568 # %
     adf_error: 6.2711 # %
-    vdos_error: 32.5569 # %
-    pressure_mae: 1.1685 # GPa
+    vdos_error: 35.6003 # %
+    pressure_mae: 1.1106 # GPa
     pressure_wasserstein: 1.1162 # GPa
     pressure_error: 65.8987 # %
-    combined_score: 0.714041
+    combined_score: 0.706433
     n_systems: 17 # count
+    pred_file_url: https://figshare.com/files/66048854

@@ -149,7 +149,13 @@ def calc_rdf_error(
     """
     if not len(radii) == len(g_r_ref) == len(g_r_pred):
         raise ValueError(f"{len(radii)=}, {len(g_r_ref)=}, {len(g_r_pred)=} differ")
-    g_r_ref = np.asarray(g_r_ref)
+    g_r_ref = np.asarray(g_r_ref, dtype=float)
+    g_r_pred = np.asarray(g_r_pred, dtype=float)
+    for label, g_r in (("reference", g_r_ref), ("predicted", g_r_pred)):
+        if not np.all(np.isfinite(g_r)):
+            raise ValueError(f"{label} RDF has non-finite values")
+        if np.any(g_r < 0):
+            raise ValueError(f"{label} RDF has negative values")
     denominator = np.trapezoid(np.abs(g_r_ref - 1), x=radii)
     if denominator == 0:
         return 100.0
@@ -234,7 +240,9 @@ def calc_adf(
 def calc_adf_error(
     angles: np.ndarray, adf_ref: np.ndarray, adf_pred: np.ndarray
 ) -> float:
-    """Bond-angle distribution error in percent, the ADF analog of the RDF metric.
+    """Bond-angle distribution error in percent, the ADF analog of the RDF metric. A
+    Matbench addition (the paper's structural/dynamical observables are RDF, pressure
+    and vDOS only).
 
         error = 100 * min(1, W1(adf_ref, adf_pred) / W1(adf_ref, sin-background))
 
@@ -375,32 +383,71 @@ def calc_vdos_error(
     vdos_ref: np.ndarray,
     freqs_pred: np.ndarray,
     vdos_pred: np.ndarray,
+    *,
+    band_frac: float = 0.999,
 ) -> float:
-    """VDOS error in percent (paper Eq. 7): 0 for a perfect match, 100 for
-    non-overlapping spectra. Both spectra are area-normalized and interpolated onto
-    the union frequency grid up to the smaller of the two Nyquist frequencies.
+    """Wasserstein vDOS error in percent: ``100 * min(1, W1(ref, pred) / sigma_ref)``.
+    Matbench W1 variant of the paper's vDOS error (its Eq. 10 uses L1 spectral overlap).
 
-        error = 100 * integral |f_ref - f_pred| / (integral f_ref + integral f_pred)
+    Wasserstein-1 (earth-mover) distance between the area-normalized reference and MLIP
+    vibrational power spectra, normalized by the reference's own spectral std
+    ``sigma_ref`` (its frequency spread). Unlike an L1 overlap, W1 grows with how far
+    vibrational weight is displaced (systematic phonon softening/hardening) instead of
+    saturating (or even inverting) once peaks stop overlapping; on this benchmark it
+    roughly doubles the model-discriminating spread and is much less redundant with the
+    RDF/force errors (see metrics/md_metrics_design.md). The reference high-frequency
+    tail beyond ``band_frac`` of its cumulative power is clipped first so W1 is not
+    dominated by spectral noise far from the physical bands. 0% = perfect match, 100% =
+    displaced by at least the reference's own spectral width (capped). A degenerate
+    single-frequency reference (zero spread) returns 0 if the prediction matches it else
+    100; a prediction with no power in the reference band also returns 100.
     """
+    from scipy.stats import wasserstein_distance
+
+    if not 0 < band_frac <= 1:
+        raise ValueError(f"band_frac must be in (0, 1], got {band_frac}")
     f_max = min(np.max(freqs_ref), np.max(freqs_pred))
     grid = np.union1d(freqs_ref, freqs_pred)
     grid = grid[grid <= f_max]
     if len(grid) < 2:
         raise ValueError("Frequency grids have insufficient overlap")
 
-    ref_interp = np.interp(grid, freqs_ref, vdos_ref)
-    pred_interp = np.interp(grid, freqs_pred, vdos_pred)
-    for label, spectrum in (("reference", ref_interp), ("predicted", pred_interp)):
-        if (spectrum < 0).any():
+    ref = np.interp(grid, freqs_ref, vdos_ref)
+    pred = np.interp(grid, freqs_pred, vdos_pred)
+    for label, spectrum in (("reference", ref), ("predicted", pred)):
+        if not np.all(np.isfinite(spectrum)):
+            raise ValueError(f"{label} vDOS has non-finite intensities")
+        if np.any(spectrum < 0):
             raise ValueError(f"{label} vDOS has negative intensities")
-        if np.trapezoid(spectrum, x=grid) <= 0:
+        if spectrum.sum() <= 0:
             raise ValueError(f"{label} vDOS has non-positive area")
 
-    ref_interp = ref_interp / np.trapezoid(ref_interp, x=grid)
-    pred_interp = pred_interp / np.trapezoid(pred_interp, x=grid)
-    numerator = np.trapezoid(np.abs(ref_interp - pred_interp), x=grid)
-    # both spectra are area-normalized, so Eq. 7's denominator (sum of areas) == 2
-    return float(numerator / 2 * 100)
+    # convert densities to bin-width-weighted masses so the score tracks spectral mass,
+    # not the (generally non-uniform) merged-grid sampling density
+    bin_widths = np.gradient(grid)
+    ref_mass, pred_mass = ref * bin_widths, pred * bin_widths
+
+    # clip the noisy high-frequency tail beyond band_frac of the reference's power
+    # (band_frac == 1 keeps the full grid, even with exact zero-power tail bins)
+    if band_frac < 1:
+        cut_idx = min(
+            int(np.searchsorted(np.cumsum(ref_mass), band_frac * ref_mass.sum())),
+            len(grid) - 1,
+        )
+        mask = grid <= grid[cut_idx]
+        grid, ref_mass, pred_mass = grid[mask], ref_mass[mask], pred_mass[mask]
+    if ref_mass.sum() <= 0:  # defensive: clipping keeps >= band_frac of reference power
+        raise ValueError("reference vDOS has non-positive area after band-clipping")
+    if pred_mass.sum() <= 0:  # no MLIP power in the reference band -> max disagreement
+        return 100.0
+
+    # wasserstein_distance normalizes weights, so unnormalized masses are fine
+    w1 = wasserstein_distance(grid, grid, u_weights=ref_mass, v_weights=pred_mass)
+    mean_freq = np.average(grid, weights=ref_mass)
+    sigma_ref = float(np.sqrt(np.average((grid - mean_freq) ** 2, weights=ref_mass)))
+    if sigma_ref <= 0:  # degenerate single-frequency reference (no spread)
+        return 0.0 if w1 <= 0 else 100.0
+    return float(min(1, w1 / sigma_ref) * 100)
 
 
 def get_trajectory_pressures(
@@ -437,20 +484,16 @@ def _time_strides(ref_time_step_fs: float, pred_time_step_fs: float) -> tuple[in
 def calc_pressure_metrics(
     pressures_ref: np.ndarray,
     pressures_pred: np.ndarray,
-    *,
-    ref_time_step_fs: float = 1,
-    pred_time_step_fs: float = 1,
 ) -> dict[str, float]:
-    """All pressure metrics in one place: MAE (paper Eq. 6) and Wasserstein-1 distance
-    in GPa, plus the histogram-overlap error E_P (paper Eq. 9) in percent.
+    """All pressure metrics: the mean-pressure bias (MAE) and Wasserstein-1 distance in
+    GPa, plus the histogram-overlap error E_P (paper Eq. 9) in percent.
 
-    The MAE pairs frames at identical timestamps: both arrays are subsampled onto
-    their common (LCM) time grid before pairing, so different saved-frame cadences
-    compare the same simulation times. It still conflates mean pressure offsets
-    with fluctuation decorrelation between independently thermalized runs. The W1
-    distance and E_P compare the full pressure distributions instead, making them
-    insensitive to frame pairing while still capturing mean offsets and
-    fluctuation-width differences.
+    The MAE is the absolute difference of the separately-averaged trajectory pressures,
+    ``|mean(P_ref) - mean(P_pred)|`` (paper Eq. 6-7). It deliberately does not pair
+    frames: reference and MLIP trajectories are independently thermalized, so paired
+    instantaneous pressures decorrelate and a frame-paired MAE would measure fluctuation
+    noise rather than model bias. W1 and E_P compare the full pressure distributions,
+    capturing both the mean offset and fluctuation-width differences.
     """
     from scipy.stats import wasserstein_distance
 
@@ -458,13 +501,9 @@ def calc_pressure_metrics(
     if len(pressures_ref) == 0 or len(pressures_pred) == 0:
         raise ValueError("Cannot compute pressure metrics of empty pressure arrays")
 
-    ref_stride, pred_stride = _time_strides(ref_time_step_fs, pred_time_step_fs)
-    ref_aligned = pressures_ref[::ref_stride]
-    pred_aligned = pressures_pred[::pred_stride]
-    n_pairs = min(len(ref_aligned), len(pred_aligned))
-    mae = np.abs(ref_aligned[:n_pairs] - pred_aligned[:n_pairs]).mean()
+    mae = abs(float(pressures_ref.mean()) - float(pressures_pred.mean()))
     return {
-        "pressure_mae": float(mae),
+        "pressure_mae": mae,
         "pressure_wasserstein": float(
             wasserstein_distance(pressures_ref, pressures_pred)
         ),
@@ -504,8 +543,9 @@ def calc_combined_score(
 ) -> float:
     """Combined MD score (CMDS) in [0, 1], higher is better.
 
-    Defined as ``1 - mean(errors) / 100`` over RDF, ADF, vDOS and pressure errors.
-    All four errors must be finite and non-negative.
+    A Matbench addition aggregating the four MD errors (RDF, ADF, vDOS, pressure) into a
+    single normalized score, ``1 - mean(errors) / 100``; the paper aggregates its own
+    observables differently. All four errors must be finite and non-negative.
     """
     errors = np.array([rdf_error, adf_error, vdos_error, pressure_error], dtype=float)
     if not np.all(np.isfinite(errors)):
@@ -559,7 +599,9 @@ def energy_force_rmse_from_preds(
     The energy RMSE uses per-trajectory mean-subtracted energies, i.e. the energy
     *fluctuations* sampled along the trajectory, not absolute energies. That is the
     physically meaningful quantity at finite T (how well the model tracks the sampled
-    PES) and is invariant to the absolute energy zero. The zero matters because CFPMD-26
+    PES) and is invariant to the absolute energy zero. This mean-subtracted fluctuation
+    RMSE is the Matbench variant; the paper's energy error (Eq. 1) is absolute and
+    isolated-atom-referenced. The zero matters because CFPMD-26
     mixes DFT references across systems: the molecular crystals carry all-electron
     energies near -600 eV/atom while the inorganics use PAW near -5 eV/atom, so a raw
     absolute-energy RMSE is swamped by that ~600 eV/atom offset and goes model-blind.
@@ -695,8 +737,6 @@ def evaluate_md_system(
         metrics |= calc_pressure_metrics(
             get_trajectory_pressures(ref_matched),
             get_trajectory_pressures(pred_matched),
-            ref_time_step_fs=ref_time_step_fs,
-            pred_time_step_fs=pred_time_step_fs,
         )
     else:  # one or both trajectories lack stress -> undefined pressure metrics
         metrics |= dict.fromkeys(

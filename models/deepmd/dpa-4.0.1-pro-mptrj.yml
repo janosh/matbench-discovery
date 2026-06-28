@@ -222,14 +222,15 @@ metrics:
       R2: 0.774 # dimensionless
       missing_preds: 0 # count
   md:
-    pred_file: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-27-dpa_4_0_1_pro_mptrj-md-metrics.csv.gz
+    pred_file: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-28-dpa_4_0_1_pro_mptrj-md-metrics.csv.gz
     energy_rmse: 0.5973 # meV/atom
     force_rmse: 59.3963 # meV/Å
     rdf_error: 3.6197 # %
     adf_error: 1.3743 # %
-    vdos_error: 26.6665 # %
-    pressure_mae: 0.8904 # GPa
+    vdos_error: 21.6378 # %
+    pressure_mae: 0.7732 # GPa
     pressure_wasserstein: 0.7866 # GPa
     pressure_error: 47.3933 # %
-    combined_score: 0.802366
+    combined_score: 0.814937
     n_systems: 17 # count
+    pred_file_url: https://figshare.com/files/66048860
