@@ -42,6 +42,18 @@ def _as_trajectory(trajectory: TrajectoryLike) -> Trajectory:
     return Trajectory.from_ase(list(trajectory))
 
 
+def _check_density(values: np.ndarray, label: str, *, check_area: bool = True) -> None:
+    """Reject non-finite, negative or (when check_area) zero-area distribution densities
+    shared by the RDF/ADF/vDOS error metrics.
+    """
+    if not np.all(np.isfinite(values)):
+        raise ValueError(f"{label} has non-finite intensities")
+    if np.any(values < 0):
+        raise ValueError(f"{label} has negative intensities")
+    if check_area and values.sum() <= 0:
+        raise ValueError(f"{label} has non-positive area")
+
+
 # units of per-system metric columns shared between eval scripts and aggregation
 METRIC_UNITS = {
     "energy_rmse": "meV/atom",
@@ -151,11 +163,8 @@ def calc_rdf_error(
         raise ValueError(f"{len(radii)=}, {len(g_r_ref)=}, {len(g_r_pred)=} differ")
     g_r_ref = np.asarray(g_r_ref, dtype=float)
     g_r_pred = np.asarray(g_r_pred, dtype=float)
-    for label, g_r in (("reference", g_r_ref), ("predicted", g_r_pred)):
-        if not np.all(np.isfinite(g_r)):
-            raise ValueError(f"{label} RDF has non-finite values")
-        if np.any(g_r < 0):
-            raise ValueError(f"{label} RDF has negative values")
+    _check_density(g_r_ref, "reference RDF", check_area=False)
+    _check_density(g_r_pred, "predicted RDF", check_area=False)
     denominator = np.trapezoid(np.abs(g_r_ref - 1), x=radii)
     if denominator == 0:
         return 100.0
@@ -271,13 +280,8 @@ def calc_adf_error(
         raise ValueError("Need >= 2 ADF angle grid points")
     if not np.all(angle_steps > 0) or not np.allclose(angle_steps, angle_steps[0]):
         raise ValueError("ADF angle grid must be strictly increasing and evenly spaced")
-    for label, adf in (("reference", adf_ref), ("predicted", adf_pred)):
-        if not np.all(np.isfinite(adf)):
-            raise ValueError(f"{label} ADF has non-finite intensities")
-        if np.any(adf < 0):
-            raise ValueError(f"{label} ADF has negative intensities")
-        if adf.sum() <= 0:
-            raise ValueError(f"{label} ADF has non-positive area")
+    for label, adf in (("reference ADF", adf_ref), ("predicted ADF", adf_pred)):
+        _check_density(adf, label)
 
     # sin(theta) random-neighbor background = the angular ideal gas.
     # wasserstein_distance normalizes weights, so unnormalized densities are fine.
@@ -414,17 +418,16 @@ def calc_vdos_error(
 
     ref = np.interp(grid, freqs_ref, vdos_ref)
     pred = np.interp(grid, freqs_pred, vdos_pred)
-    for label, spectrum in (("reference", ref), ("predicted", pred)):
-        if not np.all(np.isfinite(spectrum)):
-            raise ValueError(f"{label} vDOS has non-finite intensities")
-        if np.any(spectrum < 0):
-            raise ValueError(f"{label} vDOS has negative intensities")
-        if spectrum.sum() <= 0:
-            raise ValueError(f"{label} vDOS has non-positive area")
+    for label, spectrum in (("reference vDOS", ref), ("predicted vDOS", pred)):
+        _check_density(spectrum, label)
 
-    # convert densities to bin-width-weighted masses so the score tracks spectral mass,
-    # not the (generally non-uniform) merged-grid sampling density
-    bin_widths = np.gradient(grid)
+    # convert densities to trapezoidal bin masses (density x local cell width) so the
+    # score tracks spectral mass, not the (generally non-uniform) merged-grid sampling.
+    # Trapezoidal half-cells at the endpoints avoid over-weighting the omega=0 (DC) bin,
+    # which carries real weight for diffusive/high-temperature systems.
+    bin_widths = np.empty_like(grid)
+    bin_widths[1:-1] = (grid[2:] - grid[:-2]) / 2
+    bin_widths[[0, -1]] = (grid[1] - grid[0]) / 2, (grid[-1] - grid[-2]) / 2
     ref_mass, pred_mass = ref * bin_widths, pred * bin_widths
 
     # clip the noisy high-frequency tail beyond band_frac of the reference's power
