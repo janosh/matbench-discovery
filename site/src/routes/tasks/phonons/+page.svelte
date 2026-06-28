@@ -3,7 +3,7 @@
   import { by_date_added_desc, MetricsTable, type ModelData, MODELS } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
   import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
-  import { has_kappa_parity_model } from '$lib/kappa-parity'
+  import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
   import { get_nested_number } from '$lib/metrics'
   import { format_num } from 'matterviz'
@@ -16,13 +16,9 @@
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
     // Hide other metrics
-    ...Object.fromEntries(
-      Object.values(ALL_METRICS).map((col) => [col.label, false]),
-    ),
+    ...Object.fromEntries(Object.values(ALL_METRICS).map((col) => [col.label, false])),
     // Show all metadata
-    ...Object.fromEntries(
-      Object.values(METADATA_COLS).map((col) => [col.label, true]),
-    ),
+    ...Object.fromEntries(Object.values(METADATA_COLS).map((col) => [col.label, true])),
     // Show phonon metrics
     [ALL_METRICS.κ_SRME.label]: true,
     [ALL_METRICS.κ_SRE.label]: true,
@@ -33,9 +29,15 @@
   const diagnostics_keys = new SvelteSet(
     kappa_103_analysis.models.map((entry) => entry.key),
   )
-  const kappa_models = MODELS.filter((model) =>
-    has_kappa_parity_model(model.model_key) ||
-    diagnostics_keys.has(model.model_key ?? ``)
+  const kappa_srme_path = `${ALL_METRICS.κ_SRME.path}.${ALL_METRICS.κ_SRME.key}`
+  const kappa_sre_path = `${ALL_METRICS.κ_SRE.path}.${ALL_METRICS.κ_SRE.key}`
+  const has_phonon_metrics = (model: ModelData): boolean =>
+    get_nested_number(model, kappa_srme_path) != null &&
+    get_nested_number(model, kappa_sre_path) != null
+  const kappa_models = MODELS.filter(
+    (model) =>
+      has_kappa_parity_model(model.model_key) ||
+      diagnostics_keys.has(model.model_key ?? ``),
   )
   let selected_key = $state(kappa_models[0]?.model_key)
   let selected_model = $derived(
@@ -50,8 +52,8 @@
     { mode: `date`, label: `date added` },
   ]
   let sort_mode = $state<SortMode>(`kappa`)
-  const srme_path = `${ALL_METRICS.κ_SRME.path}.${ALL_METRICS.κ_SRME.key}`
-  const kappa_srme = (model: ModelData) => get_nested_number(model, srme_path) ?? Infinity
+  const kappa_srme = (model: ModelData) =>
+    get_nested_number(model, kappa_srme_path) ?? Infinity
   const sort_compare: Record<SortMode, (m1: ModelData, m2: ModelData) => number> = {
     kappa: (m1, m2) => kappa_srme(m1) - kappa_srme(m2),
     name: (m1, m2) => m1.model_name.localeCompare(m2.model_name),
@@ -66,7 +68,7 @@
   const sort_label = (model: ModelData): string => {
     if (sort_mode === `date`) return ` (${model.date_added})`
     if (sort_mode === `name`) return ``
-    const srme = get_nested_number(model, srme_path)
+    const srme = get_nested_number(model, kappa_srme_path)
     return srme == null ? `` : ` (${format_num(srme, `.3~f`)})`
   }
 
@@ -79,7 +81,10 @@
 <h1>MLFF Phonon Modeling Metrics</h1>
 
 <section class="full-bleed">
-  <MetricsTable col_filter={(col) => visible_cols[col.label] ?? true} />
+  <MetricsTable
+    model_filter={has_phonon_metrics}
+    col_filter={(col) => visible_cols[col.label] ?? true}
+  />
 </section>
 
 <KappaNote />
@@ -89,11 +94,10 @@
   κ<sub>SRME</sub> assigns its maximum error of 2 to materials where the prediction
   pipeline breaks down entirely: imaginary phonon modes after ML relaxation (the model
   predicts an unstable structure), symmetry broken during relaxation, or a crashed κ
-  calculation. This table shows how much of each model's κ<sub>SRME</sub> comes from
-  such outright failures (and how many of those have imaginary modes as the known
-  cause), alongside the Wasserstein-1 distance between ML and DFT phonon frequency
-  spectra (a κ-independent measure of phonon accuracy that doesn't suffer from error
-  compounding in the thermal conductivity calculation).
+  calculation. This table shows how much of each model's κ<sub>SRME</sub> comes from such outright
+  failures (and how many of those have imaginary modes as the known cause), alongside the Wasserstein-1
+  distance between ML and DFT phonon frequency spectra (a κ-independent measure of phonon accuracy
+  that doesn't suffer from error compounding in the thermal conductivity calculation).
 </p>
 <section class="full-bleed robustness-table">
   <PhononRobustnessTable />
@@ -108,13 +112,15 @@
   and the help of Atsushi Togo who kindly shared the
   <a
     href="https://github.com/atztogo/phonondb/blob/main/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe"
-  >PBE reference data for the 103 MP structures</a> that form the test set for this task.
-  Use the axis/color/size selectors to compare models across any pair of metrics and
-  metadata. Clicking a point selects that model in the inspector below.
+    >PBE reference data for the 103 MP structures</a
+  > that form the test set for this task. Use the axis/color/size selectors to compare models
+  across any pair of metrics and metadata. Clicking a point selects that model in the inspector
+  below.
 </p>
 
 <DynamicScatter
   models={MODELS}
+  model_filter={has_phonon_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
   style="height: 800px"
@@ -154,12 +160,12 @@
     </h3>
     <p>
       Left: each material's κ<sub>SRME</sub> against its DFT conductivity, colored by
-      crystal system &mdash; failures concentrated at low/high κ or in specific
-      symmetries point to systematic weaknesses. Hollow markers at κ<sub>SRME</sub> =
-      2 are censored values (the κ calculation failed), not measurements. Right:
-      quantile-quantile parity of the ML vs DFT phonon frequency spectra, colored by
-      each material's spectrum W1 error. Tooltips include crystal system and quantile;
-      points below the diagonal mean too-soft phonons, above means too-stiff.
+      crystal system &mdash; failures concentrated at low/high κ or in specific symmetries
+      point to systematic weaknesses. Hollow markers at κ<sub>SRME</sub> = 2 are censored values
+      (the κ calculation failed), not measurements. Right: quantile-quantile parity of the ML
+      vs DFT phonon frequency spectra, colored by each material's spectrum W1 error. Tooltips
+      include crystal system and quantile; points below the diagonal mean too-soft phonons,
+      above means too-stiff.
     </p>
     <div class="diagnostics-grid bleed-1400">
       <KappaSrmeScatter

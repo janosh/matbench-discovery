@@ -4,7 +4,6 @@ non-analytical correction term (NAC).
 
 # %%
 import os
-import sys
 
 from pymatviz.enums import Key
 
@@ -67,4 +66,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

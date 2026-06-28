@@ -1,6 +1,6 @@
 import {
+  as_phonon_dos,
   build_kappa_parity_series,
-  dft_phonon_dos,
   get_kappa_parity_point,
   has_kappa_parity_model,
   kappa_model_asset,
@@ -8,11 +8,10 @@ import {
   kappa_structure,
   load_kappa_parity_base,
   load_kappa_parity_model,
-  ml_phonon_dos,
-} from '$lib/kappa-parity'
-import type { KappaParityBase, KappaParityModel } from '$lib/kappa-parity'
+} from '$lib/parity/kappa-parity'
+import type { KappaParityBase, KappaParityModel } from '$lib/parity/kappa-parity'
 import { clear_asset_cache } from '$lib/asset-loader'
-import { kappa_parity_manifest } from '$lib/kappa-parity-manifest'
+import { kappa_parity_manifest } from '$lib/parity/kappa-parity-manifest'
 import type { AnyStructure } from 'matterviz/structure'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gzipped_json_response, request_url } from '../index'
@@ -122,14 +121,14 @@ describe(`kappa parity data helpers`, () => {
   })
 
   it(`maps phonon DOS to matterviz shape, or null when absent`, () => {
-    expect(dft_phonon_dos(base, `mp-1`)).toEqual({
+    expect(as_phonon_dos(base.dft_dos[`mp-1`])).toEqual({
       type: `phonon`,
       frequencies: [0, 1, 2],
       densities: [0, 1, 0],
     })
-    expect(dft_phonon_dos(base, `mp-2`)).toBeNull()
-    expect(ml_phonon_dos(model, `mp-1`)?.type).toBe(`phonon`)
-    expect(ml_phonon_dos(model, `mp-3`)).toBeNull()
+    expect(as_phonon_dos(base.dft_dos[`mp-2`])).toBeNull()
+    expect(as_phonon_dos(model.ml_dos[`mp-1`])?.type).toBe(`phonon`)
+    expect(as_phonon_dos(model.ml_dos[`mp-3`])).toBeNull()
   })
 
   it(`returns prebuilt structures and null for missing materials`, () => {

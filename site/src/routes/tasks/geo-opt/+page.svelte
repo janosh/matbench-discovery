@@ -15,10 +15,12 @@
   const struct_rmsd_sorted = order_models(struct_rmsd_cdf.models, (mdl) => -mdl.auc)
   const sym_ops_sorted = order_models(sym_ops_diff.models, (mdl) => mdl.sigma)
 
-  const n_min_relaxed_structures: number = min(MODELS, (model) => {
-    const geo_opt = model.metrics?.geo_opt
-    return typeof geo_opt === `string` ? undefined : geo_opt?.[`symprec=1e-2`]?.n_structures
-  }) ?? Infinity
+  const n_min_relaxed_structures =
+    min(MODELS, ({ metrics }) =>
+      typeof metrics?.geo_opt === `string`
+        ? undefined
+        : metrics?.geo_opt?.[`symprec=1e-2`]?.n_structures,
+    ) ?? Infinity
 </script>
 
 <GeoOptReadme>
@@ -62,7 +64,16 @@
 
 <ul>
   {#each spg_sankeys.models as { key, label, labels, source, target, value } (key)}
-    {@const data = sankey_from_links(source, target, value, labels)}
+    {@const n_labels = labels.length}
+    {@const data = sankey_from_links(
+      source,
+      target.map((target_idx) => target_idx + n_labels),
+      value,
+      [
+        ...labels.map((spg_label) => `DFT ${spg_label}`),
+        ...labels.map((spg_label) => `Relaxed ${spg_label}`),
+      ],
+    )}
     <li>
       <h3>{label}</h3>
       <Sankey {data} show_controls={false} style="height: 300px; width: 100%" />

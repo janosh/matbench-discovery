@@ -6,8 +6,9 @@ import type {
   DiscoveryMetricsLabels,
   GeoOptSymmetryMetricsLabels,
   HyperparamLabels,
+  MdMetricsLabels,
   MetadataLabels,
-} from './label-schema.d.ts'
+} from './schema/label.d.ts'
 
 export const RMSD_BASELINE = 0.15 // Baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
 
@@ -177,7 +178,7 @@ export const METADATA_COLS: MetadataLabels = {
     key: `Org`,
     label: `Org`,
     sortable: false,
-    description: `Most common author affiliations`,
+    description: `Model author affiliations`,
     cell_style: `text-align: center; width: 3.2em; max-width: 3.2em;`,
     visible: true,
     better: undefined,
@@ -337,18 +338,107 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
         symprec,
         path: `metrics.geo_opt.symprec=${symprec}`,
         label: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
-        description: `Fraction of structures where ML ground state has ${desc} DFT ground state at ${format_power_ten(
-          symprec,
-        )} symprec`,
+        description: `Fraction of structures where ML ground state has ${desc} DFT ground state at ${format_power_ten(symprec)} symprec`,
         better,
         format: `~%`,
-        visible: false,
+        // visible by default so the landing-page "Geo Opt" column preset can surface
+        // them; the discovery/phonons/MD tables hide them via their own col_filter
       },
     ]),
 ) as unknown as GeoOptSymmetryMetricsLabels
 
+export const MD_METRICS: MdMetricsLabels = {
+  md_energy_rmse: {
+    key: `energy_rmse`,
+    label: `ΔE<sub>RMSE</sub>`,
+    description: `Root mean squared error of model vs ab-initio energy fluctuations (each trajectory's mean energy is subtracted from both) on reference MD frames. Mean-subtraction makes this invariant to the absolute energy reference, which differs across CFPMD-26 systems (all-electron vs PAW)`,
+    unit: `meV/atom`,
+    path: `metrics.md`,
+    better: `lower`,
+    format: `.1f`,
+    style: `border-left: 1px solid black;`,
+  },
+  md_force_rmse: {
+    key: `force_rmse`,
+    label: `F<sub>RMSE</sub>`,
+    description: `Root mean squared error of model-predicted forces on reference ab-initio MD frames`,
+    unit: `meV/Å`,
+    path: `metrics.md`,
+    better: `lower`,
+    format: `.1f`,
+  },
+  md_rdf_error: {
+    key: `rdf_error`,
+    label: `ΔRDF`,
+    description: `Mean radial distribution function error between MLIP and ab-initio MD trajectories. 0% = perfect match, 100% = as different from the reference as an ideal gas`,
+    unit: `%`,
+    path: `metrics.md`,
+    range: [0, 100],
+    better: `lower`,
+    format: `.1f`,
+  },
+  md_adf_error: {
+    key: `adf_error`,
+    label: `ΔADF`,
+    description: `Bond-angle distribution error between MLIP and ab-initio MD trajectories. Wasserstein-1 distance over first-coordination-shell bond angles (neighbor pairs within species-aware covalent-radius cutoffs), normalized by the reference's distance to a structureless background. 0% = perfect match, 100% = as different from the reference as a featureless angular distribution`,
+    unit: `%`,
+    path: `metrics.md`,
+    range: [0, 100],
+    better: `lower`,
+    format: `.1f`,
+  },
+  md_vdos_error: {
+    key: `vdos_error`,
+    label: `ΔvDOS`,
+    description: `Vibrational density of states error between MLIP and ab-initio MD trajectories (from the velocity autocorrelation spectrum): Wasserstein-1 distance between the spectra normalized by the reference's spectral spread, so it grows with systematic frequency softening/hardening rather than saturating. 0% = perfect match, 100% = displaced by at least the reference's own spectral width`,
+    unit: `%`,
+    path: `metrics.md`,
+    range: [0, 100],
+    better: `lower`,
+    format: `.1f`,
+  },
+  md_pressure_mae: {
+    key: `pressure_mae`,
+    label: `P<sub>MAE</sub>`,
+    description: `Absolute difference between the mean pressures of the MLIP and ab-initio MD trajectories (mean-stress bias); independent of frame pairing`,
+    unit: `GPa`,
+    path: `metrics.md`,
+    better: `lower`,
+    format: `.2f`,
+  },
+  md_pressure_wasserstein: {
+    key: `pressure_wasserstein`,
+    label: `P<sub>W1</sub>`,
+    description: `Wasserstein-1 distance between pressure distributions of MLIP and ab-initio MD trajectories (insensitive to frame pairing)`,
+    unit: `GPa`,
+    path: `metrics.md`,
+    better: `lower`,
+    format: `.2f`,
+  },
+  md_pressure_error: {
+    key: `pressure_error`,
+    label: `ΔP`,
+    description: `Pressure-distribution error: the non-overlap of the area-normalized MLIP and ab-initio pressure histograms over shared bin edges. 0% = identical distributions, 100% = disjoint`,
+    unit: `%`,
+    path: `metrics.md`,
+    range: [0, 100],
+    better: `lower`,
+    format: `.1f`,
+  },
+  md_combined_score: {
+    key: `combined_score`,
+    label: `CMDS`,
+    description: `Combined MD score in [0,1] (higher is better): 1 − mean(ΔRDF, ΔADF, ΔvDOS, ΔP) / 100, where each error is a percentage and lower is better. Higher = closer to ab-initio dynamics; intended to feed into CPS as a normalized component.`,
+    path: `metrics.md`,
+    range: [0, 1],
+    better: `higher`,
+    format: `.3f`,
+  },
+} as const
+
 export type AllMetrics = DiscoveryMetricsLabels &
-  GeoOptSymmetryMetricsLabels & { CPS: Label; κ_SRME: Label; κ_SRE: Label; RMSD: Label }
+  GeoOptSymmetryMetricsLabels &
+  MdMetricsLabels & { CPS: Label; κ_SRME: Label; κ_SRE: Label; RMSD: Label }
 
 export const ALL_METRICS: AllMetrics = {
   // Dynamic metrics
@@ -388,6 +478,7 @@ export const ALL_METRICS: AllMetrics = {
     style: `border-left: 1px solid black;`,
   },
   ...GEO_OPT_SYMMETRY_METRICS,
+  ...MD_METRICS,
 } as const
 
 export const DISCOVERY_SET_LABELS: Record<

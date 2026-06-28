@@ -30,7 +30,11 @@
   import { extent } from 'd3-array'
   import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { ColorScaleSelect, create_color_scale, DEFAULT_SERIES_SYMBOLS } from 'matterviz/plot'
+  import {
+    ColorScaleSelect,
+    create_color_scale,
+    DEFAULT_SERIES_SYMBOLS,
+  } from 'matterviz/plot'
   import type { DataSeries } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
@@ -45,7 +49,10 @@
   const discovery_set_keys = Object.keys(DISCOVERY_SET_LABELS)
   function format_size_option_path(path: string): string {
     const parts = path.split(`.`).filter((part) => !discovery_set_keys.includes(part))
-    return format_property_path(parts.join(`.`)).replace(`Geometry Optimization`, `Geo Opt`)
+    return format_property_path(parts.join(`.`)).replace(
+      `Geometry Optimization`,
+      `Geo Opt`,
+    )
   }
 
   // Get value from model using label's path, converting dates to timestamps
@@ -56,8 +63,11 @@
     return val
   }
 
-  const { legend_group, legend: models_legend, collapse_on_outside_click } =
-    make_models_legend()
+  const {
+    legend_group,
+    legend: models_legend,
+    collapse_on_outside_click,
+  } = make_models_legend()
 
   let {
     models,
@@ -80,7 +90,7 @@
   } = $props()
 
   let log = $state({ x: false, y: false, color: false, size: false })
-  let size_prop = $state(HYPERPARAMS.model_params as typeof scatter_options[number])
+  let size_prop = $state(HYPERPARAMS.model_params as (typeof scatter_options)[number])
 
   let axes = $derived({
     x: scatter_options_by_key[x_key],
@@ -106,8 +116,8 @@
     Object.fromEntries(
       scatter_options.map((prop) => [
         prop.key,
-        filtered_models.filter((model) =>
-          get_nested_value(model, label_data_path(prop)) !== undefined
+        filtered_models.filter(
+          (model) => get_nested_value(model, label_data_path(prop)) !== undefined,
         ).length,
       ]),
     ),
@@ -133,27 +143,41 @@
 
   const format_label_title = (prop: Label | undefined): string =>
     `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
+  const colorbar_tick_format = (prop: Label | undefined): string =>
+    (prop?.format ?? `~s`).replace(/(?<precision>\.\d+)f$/, `$<precision>~f`)
+
+  interface PointMetadata extends Record<string, unknown> {
+    model_name: string
+    date_added: string
+    days_ago: string
+    model_key?: string
+  }
 
   let plot_data = $derived(
-    filtered_models
-      .map((model) => {
-        const x_val = get_label_value(model, axes.x)
-        const y_val = get_label_value(model, axes.y)
-        const color_value = get_label_value(model, axes.color_value)
-        const size_value = get_label_value(model, axes.size_value)
+    filtered_models.flatMap((model) => {
+      const x = get_label_value(model, axes.x)
+      const y = get_label_value(model, axes.y)
+      const color_value = get_label_value(model, axes.color_value)
+      const size_value = get_label_value(model, axes.size_value)
+      if (
+        !is_finite_num(x) ||
+        !is_finite_num(y) ||
+        !is_finite_num(size_value) ||
+        (point_color === null && !is_finite_num(color_value))
+      ) {
+        return []
+      }
 
-        const { model_name, date_added: model_date, model_key } = model
-        const days_ago = format_relative_time(model.date_added)
-        const metadata = { model_name, date_added: model_date, days_ago, model_key }
-        return { x: x_val, y: y_val, color_value, size_value, metadata }
-      })
-      .filter((item) => {
-        const required = [item.x, item.y, item.size_value]
-        // Only require finite color_value when no fixed point_color is set
-        if (point_color === null) required.push(item.color_value)
-        // get_label_value already converts dates to timestamps, so only numbers reach here
-        return required.every(is_finite_num)
-      }),
+      const { model_name, date_added: model_date, model_key } = model
+      const days_ago = format_relative_time(model.date_added)
+      const metadata: PointMetadata = {
+        model_name,
+        date_added: model_date,
+        days_ago,
+        model_key,
+      }
+      return [{ x, y, color_value, size_value, metadata }]
+    }),
   )
 
   // Mirror the plot color scale so built-in legend swatches match their points.
@@ -167,27 +191,16 @@
   const point_fill = (color_value: unknown): string =>
     point_color ?? (legend_color_scale(color_value as number) as string) ?? `gray`
 
-  let can_log_x = $derived(can_log(extent(plot_data, (d) => d.x as number)))
-  let can_log_y = $derived(can_log(extent(plot_data, (d) => d.y as number)))
-  let can_log_color = $derived(
-    can_log(extent(plot_data, (d) => d.color_value as number)),
-  )
-  let can_log_size = $derived(
-    can_log(extent(plot_data, (d) => d.size_value as number)),
-  )
-
-  interface PointMetadata extends Record<string, unknown> {
-    model_name: string
-    date_added: string
-    days_ago: string
-    model_key?: string
-  }
+  let can_log_x = $derived(can_log(extent(plot_data, (d) => d.x)))
+  let can_log_y = $derived(can_log(extent(plot_data, (d) => d.y)))
+  let can_log_color = $derived(can_log(extent(plot_data, (d) => d.color_value as number)))
+  let can_log_size = $derived(can_log(extent(plot_data, (d) => d.size_value)))
 
   // One series per model enables per-model legend toggles and distinct marker shapes.
   let series: DataSeries<PointMetadata>[] = $derived(
     plot_data.map((item, idx) => ({
-      x: [item.x as number],
-      y: [item.y as number],
+      x: [item.x],
+      y: [item.y],
       label: item.metadata.model_name,
       legend_group,
       markers: `points` as const,
@@ -197,13 +210,15 @@
         symbol_type: DEFAULT_SERIES_SYMBOLS[idx % DEFAULT_SERIES_SYMBOLS.length],
       },
       color_values: point_color === null ? [item.color_value as number] : undefined,
-      size_values: axes.size_value ? [item.size_value as number] : undefined,
+      size_values: axes.size_value ? [item.size_value] : undefined,
       point_label: show_model_labels
-        ? [{
-          text: item.metadata.model_name,
-          font_size: `${label_font_size}px`,
-          auto_placement: true,
-        }]
+        ? [
+            {
+              text: item.metadata.model_name,
+              font_size: `${label_font_size}px`,
+              auto_placement: true,
+            },
+          ]
         : [],
     })),
   )
@@ -227,9 +242,13 @@
       liSelectedStyle="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"
       liOptionStyle="font-size: 13px;"
     >
-      {#snippet children(
-        { option: prop, type }: { option: typeof scatter_options[number]; type: string },
-      )}
+      {#snippet children({
+        option: prop,
+        type,
+      }: {
+        option: (typeof scatter_options)[number]
+        type: string
+      })}
         <span class:selected-label={type === `selected`}>
           {@html format_size_option_path(label_data_path(prop))}
           <span style="font-size: smaller; color: gray">
@@ -248,7 +267,6 @@
     x_axis={{
       label: axes.x?.label,
       format: axes.x?.format,
-      range: axes.x?.range,
       scale_type: log.x ? `log` : `linear`,
       label_shift: { y: -50 },
       ticks,
@@ -258,7 +276,6 @@
     y_axis={{
       label: axes.y?.label,
       format: axes.y?.format,
-      range: axes.y?.range,
       scale_type: log.y ? `log` : `linear`,
       label_shift: {
         x: -10,
@@ -277,7 +294,7 @@
     color_bar={{
       title: format_label_title(axes.color_value),
       margin: { t: 30, l: 80, b: 80, r: 50 },
-      tick_format: axes.color_value?.format,
+      tick_format: colorbar_tick_format(axes.color_value),
       property_options: prop_options,
       selected_property_key: color_key,
       data_loader: async (key) => {
@@ -287,10 +304,16 @@
           .map((model) => get_label_value(model, prop))
           .filter((val): val is number => typeof val === `number` && isFinite(val))
         const [min, max] = extent(values)
-        return { range: [min ?? 0, max ?? 1], title: format_label_title(prop) }
+        return {
+          range: [min ?? 0, max ?? 1],
+          title: format_label_title(prop),
+        }
       },
     }}
-    label_placement_config={{ leader_line_threshold, max_neighbors: { count: 3, radius: 40 } }}
+    label_placement_config={{
+      leader_line_threshold,
+      max_neighbors: { count: 3, radius: 40 },
+    }}
     point_events={{
       onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
     }}
@@ -318,14 +341,12 @@
       <label title="Toggle visibility of model name labels on the scatter plot points">
         <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
       </label>
-      <ColorScaleSelect
-        bind:value={color_scheme}
-        style="margin: 0"
-      />
+      <ColorScaleSelect bind:value={color_scheme} style="margin: 0" />
       <label
         for="size-multiplier"
         title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
-      >Point Size</label>
+        >Point Size
+      </label>
       <input
         id="size-multiplier"
         type="range"
@@ -337,7 +358,8 @@
       <label
         for="label-font-size"
         title="Adjust the font size of the model name labels (in pixels)"
-      >Label Size</label>
+        >Label Size
+      </label>
       <input
         id="label-font-size"
         type="range"
@@ -348,8 +370,8 @@
       />
       <label
         title="Minimum label displacement in pixels before drawing a leader line"
-        for="leader-line-threshold"
-      >Leader Line</label>
+        for="leader-line-threshold">Leader Line</label
+      >
       <div class="combined-link-controls">
         <input
           id="leader-line-threshold"
@@ -364,14 +386,15 @@
 
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
       {#if metadata}
-        {@const point = plot_data.find((m) => m.metadata.model_name === metadata.model_name)}
+        {@const point = plot_data.find(
+          (m) => m.metadata.model_name === metadata.model_name,
+        )}
         <strong>{metadata.model_name}</strong><br />
         {@html axes.x?.label}: {x_formatted}
         {#if axes.x?.key === `date_added` && metadata.days_ago}
           <small>({metadata.days_ago})</small>{/if}<br />
         {@html axes.y?.label}: {y_formatted}<br />
-        {#if ![`model_params`, `date_added`].includes(axes.color_value?.key ?? ``) &&
-        point?.color_value !== undefined}
+        {#if ![`model_params`, `date_added`].includes(axes.color_value?.key ?? ``) && point?.color_value !== undefined}
           {@html axes.color_value?.label}:
           {format_num(point.color_value as number)}<br />
         {/if}

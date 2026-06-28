@@ -32,7 +32,7 @@ def test_diatomic_classes() -> None:
         (curve.energies, energies),
         (curve.forces, forces),
     ]:
-        np.testing.assert_array_equal(orig, processed)
+        np.testing.assert_array_equal(orig, np.asarray(processed))
 
     # Test DiatomicCurves initialization and from_dict
     data = {

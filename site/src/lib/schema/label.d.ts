@@ -198,6 +198,21 @@ export interface GeoOptSymmetryMetricsLabels {
 }
 /**
  * This interface was referenced by `Label`'s JSON-Schema
+ * via the `definition` "MdMetricsLabels".
+ */
+export interface MdMetricsLabels {
+  md_energy_rmse: Label1
+  md_force_rmse: Label1
+  md_rdf_error: Label1
+  md_adf_error: Label1
+  md_vdos_error: Label1
+  md_pressure_mae: Label1
+  md_pressure_wasserstein: Label1
+  md_pressure_error: Label1
+  md_combined_score: Label1
+}
+/**
+ * This interface was referenced by `Label`'s JSON-Schema
  * via the `definition` "DatasetMetadataLabels".
  */
 export interface DatasetMetadataLabels {

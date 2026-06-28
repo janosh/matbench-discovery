@@ -8,8 +8,8 @@
     GEO_OPT_SYMMETRY_METRICS,
     HYPERPARAMS,
     METADATA_COLS,
-  } from './labels'
-  import { append_better_hint, assemble_row_data } from './metrics'
+  } from '../labels'
+  import { append_better_hint, assemble_row_data } from '../metrics'
 
   let {
     column_order = $bindable([]),
@@ -65,8 +65,8 @@
           ...extras,
           visible: extras.visible ?? !hidden_hyperparam_keys.has(col.key),
           group,
-        })
-      )
+        }),
+      ),
     ),
   ])
 
@@ -74,7 +74,7 @@
   // So remap data keys to match
   const key_remap: Record<string, string> = Object.fromEntries(
     grouped_defs.flatMap(([cols, group]) =>
-      cols.map((col) => [col.key, `${col.key} (${group})`])
+      cols.map((col) => [col.key, `${col.key} (${group})`]),
     ),
   )
 
@@ -86,13 +86,12 @@
       false,
       show_non_compliant,
       show_compliant,
-    )
-      .map((row) => {
-        for (const [from, to] of Object.entries(key_remap)) {
-          if (from in row) row[to] = row[from]
-        }
-        return row
-      }),
+    ).map((row) => {
+      for (const [from, to] of Object.entries(key_remap)) {
+        if (from in row) row[to] = row[from]
+      }
+      return row
+    }),
   )
 </script>
 

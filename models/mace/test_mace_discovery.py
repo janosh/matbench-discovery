@@ -1,3 +1,25 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "ase",
+#   "cuequivariance",
+#   "cuequivariance-ops-torch-cu12",
+#   "cuequivariance-torch",
+#   "mace-torch>=0.3.15",
+#   "matbench-discovery",
+#   "pandas",
+#   "plotly",
+#   "pymatgen",
+#   "pymatviz",
+#   "tqdm",
+#   "wandb",
+# ]
+#
+# [tool.uv.sources]
+# matbench-discovery = { path = "../../", editable = true }
+# ///
+
+
 # %%
 import os
 from copy import deepcopy
@@ -11,7 +33,6 @@ from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
 from mace.calculators import mace_mp
-from mace.tools import count_parameters
 from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
@@ -35,31 +56,54 @@ module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 200
 ase_optimizer = "FIRE"
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-device = "cpu"
+device = os.getenv("DEVICE", "cpu")
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = True  # has no effect if relax_cell is False
-model_name = os.getenv("MODEL_NAME", Model.mace_mp_0)
+model_name = os.getenv("MODEL_NAME", Model.mace_mp_0.name)
 job_name = f"{model_name}/{today}-wbm-{task_type}-{ase_optimizer}"
 out_dir = f"{module_dir}/{job_name}"
 os.makedirs(out_dir, exist_ok=True)
-checkpoint_urls: Final[set[str]] = {
-    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_omat_0/mace-omat-0-medium.model",
-    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mp_0b3/mace-mp-0b3-medium.model",
-    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mpa_0/mace-mpa-0-medium.model",
-    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mp_0/2023-12-03-mace-128-L1_epoch-199.model",
+release_base = "https://github.com/ACEsuit/mace-foundations/releases/download"
+model_configs: Final[dict[str, dict[str, Any]]] = {
+    "mace_omat_0": {
+        "checkpoint": f"{release_base}/mace_omat_0/mace-omat-0-medium.model",
+        Key.model_params: 9_063_204,
+    },
+    "mace_matpes_0": {
+        "checkpoint": f"{release_base}/mace_matpes_0/MACE-matpes-pbe-omat-ft.model",
+        Key.model_params: 9_063_204,
+    },
+    "mace_mh_1": {
+        "checkpoint": f"{release_base}/mace_mh_1/mace-mh-1.model",
+        "head": "omat_pbe",
+        Key.model_params: 6_439_878,
+    },
+    "mace_mp_0": {
+        "checkpoint": (
+            f"{release_base}/mace_mp_0/2023-12-03-mace-128-L1_epoch-199.model"
+        ),
+        Key.model_params: 4_688_656,
+    },
+    "mace_mpa_0": {
+        "checkpoint": f"{release_base}/mace_mpa_0/mace-mpa-0-medium.model",
+        Key.model_params: 9_063_204,
+    },
+    "mace-mp-0b3-medium": {
+        "checkpoint": f"{release_base}/mace_mp_0b3/mace-mp-0b3-medium.model",
+    },
 }
-checkpoint = {url.split("/")[-1].rsplit(".model")[0]: url for url in checkpoint_urls}[
-    model_name
-]
+model_config = model_configs[model_name]
+checkpoint = model_config["checkpoint"]
 print(f"{model_name=}")
 
 slurm_vars = hpc.slurm_submit(
-    job_name=job_name,
+    job_name=os.getenv("SLURM_JOB_NAME", "eval"),
     out_dir=out_dir,
     array=f"1-{slurm_array_task_count}",
     # slurm_flags="--qos shared --constraint gpu --gpus 1",
-    slurm_flags="--ntasks=1 --cpus-per-task=1 --partition high-priority",
+    slurm_flags=os.getenv(
+        "SLURM_FLAGS", "--ntasks=1 --cpus-per-task=1 --partition high-priority"
+    ),
     submit_as_temp_file=False,
 )
 
@@ -83,16 +127,22 @@ e_pred_col = "mace_energy"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 dtype = "float64"
-mace_calc = mace_mp(model=checkpoint, device=device, default_dtype=dtype)
+mace_kwargs: dict[str, Any] = (
+    {"head": model_config["head"]} if "head" in model_config else {}
+)
+mace_calc = mace_mp(
+    model=checkpoint,
+    device=device,
+    default_dtype=dtype,
+    enable_cueq=device == "cuda",
+    **mace_kwargs,
+)
 
 print(f"Read data from {data_path}")
 atoms_list = ase_atoms_from_zip(data_path)
 
-if slurm_array_job_id == "debug":
-    if smoke_test:
-        atoms_list = atoms_list[:128]
-    else:
-        pass
+if slurm_array_job_id == "debug" and smoke_test:
+    atoms_list = atoms_list[:128]
 elif slurm_array_task_count > 1:
     atoms_list = hpc.chunk_by_lens(atoms_list, n_chunks=slurm_array_task_count)[
         slurm_array_task_id - 1
@@ -112,9 +162,10 @@ run_params = {
     "force_max": force_max,
     "ase_optimizer": ase_optimizer,
     "device": device,
-    Key.model_params: count_parameters(mace_calc.models[0]),
+    Key.model_params: model_config.get(Key.model_params),
     "model_name": model_name,
     "dtype": dtype,
+    "mace_kwargs": mace_kwargs,
     "cell_filter": "FrechetCellFilter",
 }
 
@@ -127,32 +178,34 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 relax_results: dict[str, dict[str, Any]] = {}
 optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
-for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
+for atoms in tqdm(
+    deepcopy(atoms_list),
+    desc=f"{model_name} relax",
+    total=len(atoms_list),
+    mininterval=5,
+    unit="struct",
+):
     mat_id = atoms.info[Key.mat_id]
     if mat_id in relax_results:
         continue
     try:
         atoms.calc = mace_calc
+        coords, lattices, energies = [], [], []
         if max_steps > 0:
             filtered_atoms = FrechetCellFilter(atoms)
             optimizer = optim_cls(filtered_atoms, logfile=None)  # ty: ignore[invalid-argument-type]
 
             if record_traj:
-                coords, lattices, energies = [], [], []
-                # attach observer functions to the optimizer
                 optimizer.attach(lambda: coords.append(atoms.get_positions()))  # noqa: B023
                 optimizer.attach(lambda: lattices.append(atoms.get_cell()))  # noqa: B023
                 optimizer.attach(lambda: energies.append(atoms.get_potential_energy()))  # noqa: B023
 
             optimizer.run(fmax=force_max, steps=max_steps)
-        energy = atoms.get_potential_energy()  # relaxed energy
+        energy = atoms.get_potential_energy()
         # if max_steps > 0, atoms is wrapped by FrechetCellFilter, so need to getattr
         relaxed_struct = AseAtomsAdaptor.get_structure(atoms)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
 
-        coords = locals().get("coords", [])
-        lattices = locals().get("lattices", [])
-        energies = locals().get("energies", [])
         if record_traj and coords and lattices and energies:
             mace_traj = Trajectory(
                 species=atoms.get_chemical_symbols(),
@@ -179,22 +232,20 @@ if not smoke_test:
 # %%
 if Key.trajectory in df_out:
     energy_series = df_out[Key.trajectory].map(
-        lambda x: [d["energy"] / len(x.species) for d in x.frame_properties]
+        lambda trajectory: [
+            frame["energy"] / len(trajectory.species)
+            for frame in trajectory.frame_properties
+        ]
     )
 
-    # Create a DataFrame from the Series
-    df_energies = pd.DataFrame(energy_series.tolist()).T
-    df_energies.columns = df_out.index
-    df_energies["Step"] = df_energies.index
+    df_energies = pd.DataFrame(energy_series.to_dict()).rename_axis("Step")
 
-    # Melt the DataFrame to long format
-    df_melted = df_energies.melt(
+    df_traj_energies = df_energies.reset_index().melt(
         id_vars=["Step"], var_name="Trajectory", value_name="Energy"
     )
 
-    # Create the line plot
     fig = px.line(
-        df_melted,
+        df_traj_energies,
         x="Step",
         y="Energy",
         color="Trajectory",
@@ -203,12 +254,10 @@ if Key.trajectory in df_out:
         line_group="Trajectory",
     )
 
-    # Customize the layout if needed
     fig.update_layout(
         xaxis_title="Optimization Step", yaxis_title="Energy", legend_title="Trajectory"
     )
 
-    # Show the plot
     fig.show()
 
 

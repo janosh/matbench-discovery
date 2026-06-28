@@ -263,6 +263,48 @@ definitions:
             pred_file_url:
               $ref: '#/definitions/http_url'
 
+  MdMetrics:
+    type: object
+    additionalProperties: false
+    properties:
+      pred_file:
+        type: [string, 'null']
+      pred_file_url:
+        type: [string, 'null']
+        $ref: '#/definitions/http_url'
+      energy_rmse:
+        type: number
+      force_rmse:
+        type: number
+      rdf_error:
+        type: number
+      adf_error:
+        type: number
+      vdos_error:
+        type: number
+      pressure_mae:
+        type: number
+      pressure_wasserstein:
+        type: number
+      pressure_error:
+        type: number
+      combined_score:
+        type: number
+        minimum: 0
+        maximum: 1
+      n_systems:
+        type: number
+    allOf:
+      - if:
+          properties:
+            pred_file: { type: string }
+          required: [pred_file]
+        then:
+          required: [pred_file_url]
+          properties:
+            pred_file_url:
+              $ref: '#/definitions/http_url'
+
   # Define license types from dataset schema
   license_enum:
     type: string
@@ -380,6 +422,8 @@ properties:
         - MatterSim
         - Alex
         - OMat24
+        - MatPES PBE
+        - MatPES r2SCAN
         - sAlex
         - OpenLAM
         - MDR PBE Phonons in MPtrj
@@ -484,8 +528,7 @@ properties:
     enum: [OSOD, OSCD, CSOD, CSCD]
   status:
     type: string
-    enum: [aborted, complete, deprecated, pending, superseded]
-    # pending: model is in review or awaiting further data/details from authors
+    enum: [aborted, complete, deprecated, superseded]
     # superseded: model is superseded by a newer model
     # deprecated: model is deprecated and should not be used e.g. because serious bugs were found
     # aborted: model was aborted before testing could be completed due e.g. to OOM/stability issues
@@ -515,6 +558,11 @@ properties:
       diatomics:
         oneOf:
           - $ref: '#/definitions/DiatomicsMetrics'
+          - type: string
+            enum: [not applicable, not available]
+      md:
+        oneOf:
+          - $ref: '#/definitions/MdMetrics'
           - type: string
             enum: [not applicable, not available]
 

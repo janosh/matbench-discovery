@@ -176,3 +176,16 @@ metrics:
       RMSE: 0.067 # eV/atom
       R2: 0.868 # dimensionless
       missing_preds: 1 # count
+  md:
+    pred_file: models/tace/tace-oam-l/2026-06-28-tace_oam_l-md-metrics.csv.gz
+    energy_rmse: 0.5479 # meV/atom
+    force_rmse: 60.1476 # meV/Å
+    rdf_error: 3.4228 # %
+    adf_error: 1.3286 # %
+    vdos_error: 22.4849 # %
+    pressure_mae: 0.7461 # GPa
+    pressure_wasserstein: 0.7541 # GPa
+    pressure_error: 42.6072 # %
+    combined_score: 0.825391
+    n_systems: 17 # count
+    pred_file_url: https://figshare.com/files/66048938

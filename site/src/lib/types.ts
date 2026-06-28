@@ -1,9 +1,9 @@
 import type * as d3sc from 'd3-scale-chromatic'
 import type { IconName } from 'matterviz'
-import type { Label1 as LabelType } from './label-schema.d.ts'
-import type { ModelMetadata } from './model-schema.d.ts'
+import type { Label1 as LabelType } from './schema/label'
+import type { ModelMetadata } from './schema/model'
 
-export type { Dataset } from './dataset-schema.d.ts'
+export type { Dataset } from './schema/dataset'
 
 export type ModelData = ModelMetadata & {
   // These fields are populated in MODELS variable in models.svelte.ts

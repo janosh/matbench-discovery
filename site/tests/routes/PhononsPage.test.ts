@@ -6,28 +6,22 @@ import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query } from '../index'
 
-// column headers within root, stripped of sort-direction arrows
 const get_headers = (root: ParentNode) =>
-  [...root.querySelectorAll(`th`)].map((th) =>
-    th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
+  Array.from(root.querySelectorAll(`th`), (header) =>
+    header.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
   )
 
 describe(`Phonons Task Page`, () => {
-  it(`renders page structure with title, table, and scatter`, () => {
+  it(`renders page structure, scatter, and diagnostics`, () => {
     mount(PhononsPage, { target: document.body })
 
-    // Title
     expect(document.querySelector(`h1`)?.textContent).toContain(
       `MLFF Phonon Modeling Metrics`,
     )
 
-    // MetricsTable in full-bleed section
-    const table = document.querySelector(`section.full-bleed table`)
-    expect(table).not.toBeNull()
+    expect(document.querySelector(`section.full-bleed table`)).not.toBeNull()
     expect(document.querySelectorAll(`tbody tr`).length).toBeGreaterThan(0)
 
-    // DynamicScatter with h2 heading that tracks the selected axes (preceded by
-    // the Failure Modes section)
     const h2s = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)]
     expect(h2s.map((h2) => h2.textContent?.trim())).toContain(`Failure Modes`)
     const scatter_heading = h2s.find(
@@ -37,45 +31,44 @@ describe(`Phonons Task Page`, () => {
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
+
+    // SRME-vs-kappa scatter and frequency parity plot side by side.
+    expect(doc_query(`.diagnostics-grid`).querySelectorAll(`div.scatter`)).toHaveLength(2)
   })
 
   it(`renders the failure-mode robustness table with one row per kappa model`, () => {
     mount(PhononsPage, { target: document.body })
 
-    // scope to the robustness section: the MetricsTable also renders >30 model
-    // links, so page-wide queries would pass even with an empty robustness table
     const section = doc_query(`section.robustness-table`)
     const headers = get_headers(section)
-    for (const col of [`κ failed`, `Imag. modes`, `Spectrum W1`]) {
-      expect(headers, `missing column ${col}`).toContain(col)
+    for (const column of [`κ failed`, `Imag. modes`, `Spectrum W1`]) {
+      expect(headers, `missing column ${column}`).toContain(column)
     }
-    // robustness table links every model to its detail page
-    const model_links = section.querySelectorAll(`td a[href^="/models/"]`)
-    expect(model_links.length).toBeGreaterThan(30)
+    expect(section.querySelectorAll(`td a[href^="/models/"]`).length).toBeGreaterThan(30)
   })
 
-  it(`renders per-model diagnostics plots for the selected model`, () => {
+  it(`shows only phonon leaderboard columns and rows with phonon metrics`, () => {
     mount(PhononsPage, { target: document.body })
 
-    const diagnostics = doc_query<HTMLDivElement>(`.diagnostics-grid`)
-    // SRME-vs-kappa scatter and frequency parity plot side by side
-    expect(diagnostics.querySelectorAll(`div.scatter`)).toHaveLength(2)
-  })
+    const leaderboard = doc_query(`section.full-bleed`)
+    const headers = get_headers(leaderboard)
+    for (const column of [`Model`, `Links`, `κSRME`, `κSRE`]) {
+      expect(headers).toContain(column)
+    }
+    for (const column of [`F1`, `DAF`, `Acc`, `Prec`]) {
+      expect(headers).not.toContain(column)
+    }
 
-  it(`shows κ_SRME and metadata columns, hides discovery metrics`, () => {
-    mount(PhononsPage, { target: document.body })
-
-    const headers = get_headers(document)
-
-    // Should show both phonon metrics (κ_SRME and κ_SRE) and metadata
-    expect(headers).toContain(`Model`)
-    expect(headers).toContain(`Links`)
-    expect(headers).toContain(`κSRME`)
-    expect(headers).toContain(`κSRE`)
-
-    // Should hide discovery metrics
-    for (const col of [`F1`, `DAF`, `Acc`, `Prec`]) {
-      expect(headers).not.toContain(col)
+    const kappa_col_indices = [`κSRME`, `κSRE`].map((header) => headers.indexOf(header))
+    const rows = [...leaderboard.querySelectorAll<HTMLTableRowElement>(`tbody tr`)]
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      const cells = [...row.querySelectorAll(`td`)]
+      for (const col_idx of kappa_col_indices) {
+        expect(col_idx).toBeGreaterThanOrEqual(0)
+        expect(cells[col_idx]).toBeDefined()
+        expect(cells[col_idx].textContent?.trim()).not.toBe(`n/a`)
+      }
     }
   })
 

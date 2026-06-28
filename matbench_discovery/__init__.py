@@ -4,9 +4,8 @@ import os
 import warnings
 from datetime import UTC, datetime
 
-import plotly.express as px
 import plotly.io as pio
-import pymatviz as pmv  # needed for pymatviz_dark template
+import pymatviz as pmv
 
 __version__ = "1.3.1"
 
@@ -73,8 +72,7 @@ global_layout = dict(
     legend=dict(itemsizing="constant", bgcolor="rgba(0, 0, 0, 0)"),
 )
 pio.templates["mbd_global"] = dict(layout=global_layout)
-pio.templates.default = "pymatviz_dark+mbd_global"
-px.defaults.template = "pymatviz_dark+mbd_global"
+pmv.set_plotly_template("pymatviz_white+mbd_global")
 
 # https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
 # when seeing MathJax "loading" message in exported PDFs,

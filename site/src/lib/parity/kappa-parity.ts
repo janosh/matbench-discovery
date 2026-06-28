@@ -5,10 +5,10 @@ import {
   load_json_asset,
   load_parity_model,
   parity_asset_resolver,
-} from './asset-loader'
-import type { ParityBase, ParityModel, ParityPoint } from './asset-loader'
+} from '../asset-loader'
+import type { ParityBase, ParityModel, ParityPoint } from '../asset-loader'
 import { kappa_parity_manifest } from './kappa-parity-manifest'
-import { is_finite_num } from './metrics'
+import { is_finite_num } from '../metrics'
 
 // raw phonon DOS as stored in assets (histogram of mesh frequencies in THz)
 export interface RawDos {
@@ -108,27 +108,16 @@ export function build_kappa_parity_series(
   const points = base.material_ids
     .map((_material_id, row_idx) => get_kappa_parity_point(base, model, row_idx))
     .filter((pt): pt is KappaParityPoint => pt !== null)
-  return {
-    x: points.map((pt) => pt.kappa_dft),
-    y: points.map((pt) => pt.kappa_ml),
-    points,
-  }
+  const x = points.map((pt) => pt.kappa_dft)
+  const y = points.map((pt) => pt.kappa_ml)
+  return { x, y, points }
 }
 
-function as_phonon_dos(dos: RawDos | undefined): PhononDos | null {
+export function as_phonon_dos(dos: RawDos | undefined): PhononDos | null {
   if (!dos?.frequencies?.length || !dos.densities?.length) return null
+  if (dos.frequencies.length !== dos.densities.length) return null
   return { type: `phonon`, frequencies: dos.frequencies, densities: dos.densities }
 }
-
-export const dft_phonon_dos = (
-  base: KappaParityBase,
-  material_id: string,
-): PhononDos | null => as_phonon_dos(base.dft_dos[material_id])
-
-export const ml_phonon_dos = (
-  model: KappaParityModel,
-  material_id: string,
-): PhononDos | null => as_phonon_dos(model.ml_dos[material_id])
 
 export function kappa_structure(
   base: KappaParityBase,

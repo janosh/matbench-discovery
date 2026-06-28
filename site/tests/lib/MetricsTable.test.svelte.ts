@@ -1,9 +1,9 @@
 import { HYPERPARAMS } from '$lib/labels'
-import MetricsTable from '$lib/MetricsTable.svelte'
+import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount } from '../index'
 
 describe(`MetricsTable`, () => {
   const parse_integer_sort_value = (cell: Element): number | null => {
@@ -46,8 +46,9 @@ describe(`MetricsTable`, () => {
       expect(header_texts).toContain(col)
     }
 
-    // Model column must come first, other columns keep their definition order
+    // Model stays first and Org is a regular metadata column at the far right.
     expect(header_texts[0]).toBe(`Model`)
+    expect(header_texts.at(-1)).toBe(`Org`)
     const metric_order = [`CPS ↑`, `F1`, `DAF`].map((col) => header_texts.indexOf(col))
     expect(metric_order).toStrictEqual([...metric_order].sort((n1, n2) => n1 - n2))
 
@@ -89,6 +90,44 @@ describe(`MetricsTable`, () => {
     // Dropdown should be gone
     dropdown = document.querySelector(`.pred-files-dropdown`)
     expect(dropdown).toBeNull()
+  })
+
+  it(`renders Org as a regular rightmost metadata column`, async () => {
+    mount(MetricsTable, {
+      target: document.body,
+      props: { col_filter: () => true, show_non_compliant: true },
+    })
+    await tick()
+
+    const org_cell = doc_query(`td[data-col="Org"]`)
+    const org_preview = doc_query(`td[data-col="Org"] .org-preview`)
+    const headers = [...document.querySelectorAll(`th`)]
+    const org_header = headers.at(-1)
+    if (!org_header) throw new Error(`Org column header not found`)
+
+    expect(org_header?.textContent?.trim()).toBe(`Org`)
+    expect(org_header.getAttribute(`title`)).toBeNull()
+    expect(org_header.querySelector(`.header-label`)).not.toBeNull()
+    expect(org_preview.classList.contains(`org-preview`)).toBe(true)
+    expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
+  })
+
+  it(`renders header tooltips on inner labels`, async () => {
+    mount(MetricsTable, {
+      target: document.body,
+      props: { col_filter: () => true, show_non_compliant: true },
+    })
+    await tick()
+
+    const cps_header = [...document.querySelectorAll(`th`)].find((header) =>
+      header.textContent?.trim().startsWith(`CPS`),
+    )
+    if (!cps_header) throw new Error(`CPS column header not found`)
+
+    cps_header.dispatchEvent(new MouseEvent(`mouseover`, { bubbles: true }))
+    await tick()
+    expect(cps_header.getAttribute(`title`)).toBeNull()
+    expect(cps_header.querySelector(`.header-label`)).not.toBeNull()
   })
 
   it(`toggles metadata columns`, () => {
@@ -629,6 +668,7 @@ describe(`MetricsTable`, () => {
       },
     ])(
       `alphabetically sorts by Model name on $test_name header click`,
+      { timeout: 30_000 }, // happy-dom renders of the full-column table are slow in CI
       async ({ props }) => {
         mount(MetricsTable, { target: document.body, props })
 
@@ -864,36 +904,41 @@ describe(`MetricsTable`, () => {
   })
 
   describe(`Heatmap Toggle Interaction`, () => {
-    it(`toggles heatmap colors via TableControls checkbox`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { show_non_compliant: true },
-      })
-      await tick() // Wait for initial render
+    // happy-dom renders of the full-column table are slow in CI
+    it(
+      `toggles heatmap colors via TableControls checkbox`,
+      { timeout: 30_000 },
+      async () => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: { show_non_compliant: true },
+        })
+        await tick() // Wait for initial render
 
-      // Find the heatmap toggle checkbox within TableControls
-      const heatmap_checkbox = document.querySelector<HTMLInputElement>(
-        `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
-      )
+        // Find the heatmap toggle checkbox within TableControls
+        const heatmap_checkbox = document.querySelector<HTMLInputElement>(
+          `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
+        )
 
-      expect(heatmap_checkbox).not.toBeNull()
-      if (!heatmap_checkbox) return // Type guard
+        expect(heatmap_checkbox).not.toBeNull()
+        if (!heatmap_checkbox) return // Type guard
 
-      // Initially, heatmap should be on (default)
-      expect(heatmap_checkbox.checked).toBe(true)
+        // Initially, heatmap should be on (default)
+        expect(heatmap_checkbox.checked).toBe(true)
 
-      // Click the checkbox to turn heatmap off
-      heatmap_checkbox.click()
-      await tick()
+        // Click the checkbox to turn heatmap off
+        heatmap_checkbox.click()
+        await tick()
 
-      expect(heatmap_checkbox.checked).toBe(false)
+        expect(heatmap_checkbox.checked).toBe(false)
 
-      // Click again to turn heatmap back on
-      heatmap_checkbox.click()
-      await tick()
+        // Click again to turn heatmap back on
+        heatmap_checkbox.click()
+        await tick()
 
-      expect(heatmap_checkbox.checked).toBe(true)
-    })
+        expect(heatmap_checkbox.checked).toBe(true)
+      },
+    )
   })
 
   it(`renders the correct default columns`, () => {
@@ -909,6 +954,12 @@ describe(`MetricsTable`, () => {
       `Org`, // METADATA_COLS
       `Params`, // HYPERPARAMS (short label)
       `rcut`, // HYPERPARAMS (short label) - textContent doesn't keep subscript
+      `Σ= 10-2`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
+      `Σ= 10-5`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
+      `Σ↑ 10-2`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
+      `Σ↑ 10-5`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
+      `Σ↓ 10-2`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
+      `Σ↓ 10-5`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
       `Acc`, // ALL_METRICS (Discovery - short)
       `F1`, // ALL_METRICS (Discovery - short)
       `DAF`, // ALL_METRICS (Discovery)
@@ -922,6 +973,15 @@ describe(`MetricsTable`, () => {
       `κSRME`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
       `κSRE`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
       `RMSD`, // ALL_METRICS (Geo Opt)
+      `ΔERMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
+      `FRMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
+      `ΔRDF`, // ALL_METRICS (MD)
+      `ΔADF`, // ALL_METRICS (MD)
+      `ΔvDOS`, // ALL_METRICS (MD)
+      `PMAE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
+      `PW1`, // ALL_METRICS (MD) - textContent doesn't keep subscript
+      `ΔP`, // ALL_METRICS (MD)
+      `CMDS`, // ALL_METRICS (MD)
       `CPS`, // Added in assemble_row_data
     ])
 
@@ -939,11 +999,14 @@ describe(`MetricsTable`, () => {
     // Optionally, check the number of columns to be sure
     expect(header_elements).toHaveLength(expected_core_columns.size)
 
-    // Check that each header has a non-empty title attribute (tooltip)
+    // Header tooltip content is attached to inner labels so HeatmapTable's
+    // generic title-based tooltip doesn't flash below before our desired top placement.
     header_elements.forEach((th) => {
+      const title = th.getAttribute(`title`)
+      expect(title, `Header ${th.textContent} has stale title`).toBeNull()
       expect(
-        th.getAttribute(`title`),
-        `Header ${th.textContent} has no title attribute`,
+        th.querySelector(`.header-label`),
+        `Header ${th.textContent} has no tooltip label`,
       ).not.toBeNull()
     })
   })
@@ -1182,28 +1245,35 @@ describe(`MetricsTable`, () => {
   })
 
   describe(`regression tests for default values`, () => {
-    it(`verifies critical default prop values to catch regressions`, () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { col_filter: () => true, show_non_compliant: true },
-      })
+    // happy-dom renders of the full-column table are slow in CI
+    it(
+      `verifies critical default prop values to catch regressions`,
+      {
+        timeout: 30_000,
+      },
+      () => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: { col_filter: () => true, show_non_compliant: true },
+        })
 
-      // Verify table renders with data (filters allow content)
-      const rows = document.querySelectorAll(`tbody tr`)
-      expect(
-        rows.length,
-        `show_non_compliant=true & col_filter=true should show rows`,
-      ).toBeGreaterThan(0)
+        // Verify table renders with data (filters allow content)
+        const rows = document.querySelectorAll(`tbody tr`)
+        expect(
+          rows.length,
+          `show_non_compliant=true & col_filter=true should show rows`,
+        ).toBeGreaterThan(0)
 
-      // Verify heatmap is enabled by default
-      const table_controls = document.querySelector(`table-controls`)
-      const heatmap_checkbox =
-        table_controls?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
-      expect(
-        table_controls === null || heatmap_checkbox?.checked === true,
-        `show_heatmap should default to true`,
-      ).toBe(true)
-    })
+        // Verify heatmap is enabled by default
+        const table_controls = document.querySelector(`table-controls`)
+        const heatmap_checkbox =
+          table_controls?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
+        expect(
+          table_controls === null || heatmap_checkbox?.checked === true,
+          `show_heatmap should default to true`,
+        ).toBe(true)
+      },
+    )
   })
 
   describe(`Column Reordering`, () => {

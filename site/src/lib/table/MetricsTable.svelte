@@ -1,22 +1,17 @@
 <script lang="ts">
   import { OrgLogos, TableControls } from '$lib'
   import { append_better_hint, metric_better_as } from '$lib/metrics'
-  import type {
-    CellSnippetArgs,
-    DiscoverySet,
-    Label,
-    LinkData,
-    ModelData,
-    SortDir,
-  } from '$lib/types'
-  import type { Label as MattervizLabel } from 'matterviz'
+  import type { DiscoverySet, Label, LinkData, ModelData, SortDir } from '$lib/types'
+  import type { CellSnippetArgs, Label as MattervizLabel } from 'matterviz'
   import { HeatmapTable, Icon } from 'matterviz'
-  import { click_outside } from 'svelte-multiselect/attachments'
+  import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
   import { SvelteSet } from 'svelte/reactivity'
-  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
-  import { assemble_row_data } from './metrics'
-  import { heatmap_class } from './table-export'
+  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '../labels'
+  import { assemble_row_data } from '../metrics'
+  import { heatmap_class } from '../table-export'
+
+  type HeaderLabel = MattervizLabel & { tooltip_description?: string }
 
   let {
     discovery_set = $bindable(`unique_prototypes`),
@@ -33,12 +28,14 @@
     selected_models = $bindable(new SvelteSet<string>()),
     column_order = $bindable([]),
     sort = $bindable({ column: `CPS`, dir: `desc` }),
+    show_energy_only_toggle = false,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     discovery_set?: DiscoverySet
     model_filter?: (model: ModelData) => boolean
     col_filter?: (col: Label) => boolean
     show_energy_only?: boolean
+    show_energy_only_toggle?: boolean
     show_non_compliant?: boolean
     show_heatmap?: boolean
     show_compliant?: boolean
@@ -54,31 +51,7 @@
   const { model_name, training_set, targets, date_added, links } = METADATA_COLS
   const { checkpoint_license, code_license, org } = METADATA_COLS
   const { graph_construction_radius, model_params } = HYPERPARAMS
-
-  let columns = $derived(
-    [
-      ...Object.values(ALL_METRICS),
-      model_name,
-      training_set,
-      model_params,
-      targets,
-      date_added,
-      links,
-      graph_construction_radius,
-      checkpoint_license,
-      code_license,
-      org,
-    ]
-      .map((col): Label => {
-        const better = col.better ?? metric_better_as(col.label)
-        const visible = col.visible !== false && col_filter(col)
-        return { ...col, better, description: append_better_hint(col, better), visible }
-      })
-      // Ensure Model column comes first (0 keeps relative order of all other columns)
-      .toSorted((col1, col2) =>
-        col1.label === `Model` ? -1 : col2.label === `Model` ? 1 : 0
-      ),
-  )
+  const pinned_col_rank = (col: Label): number => (col.label === model_name.label ? 0 : 1)
 
   let selected_count = $derived(selected_models.size)
 
@@ -106,6 +79,43 @@
         row.class = is_selected && !show_selected_only ? `highlight` : null
         return row
       }),
+  )
+  let columns = $derived(
+    [
+      ...Object.values(ALL_METRICS),
+      model_name,
+      model_params,
+      targets,
+      date_added,
+      links,
+      graph_construction_radius,
+      checkpoint_license,
+      code_license,
+      training_set,
+      org,
+    ]
+      .map((col): Label => {
+        const better = col.better ?? metric_better_as(col.label) ?? undefined
+        const visible = col.visible !== false && col_filter(col)
+        return {
+          ...col,
+          better,
+          description: append_better_hint(col, better),
+          visible,
+        }
+      })
+      // Keep the sticky model column first, preserving definition order for the rest.
+      .toSorted((col1, col2) => pinned_col_rank(col1) - pinned_col_rank(col2)),
+  )
+  let table_columns = $derived(
+    columns.map(
+      (col): HeaderLabel => ({
+        ...col,
+        better: col.better ?? undefined,
+        description: undefined,
+        tooltip_description: col.description,
+      }),
+    ),
   )
 
   function show_dropdown(event: MouseEvent, link_data: LinkData) {
@@ -156,14 +166,10 @@
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}
-  {@const links = val as LinkData}
+  {@const links = val as unknown as LinkData}
   {#if links}
-    {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as
-      [key, link]
-      (JSON.stringify(link))
-    }
-      {#if `url` in link &&
-    ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
+    {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
+      {#if `url` in link && ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
         <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
           <Icon icon={link.icon} />
         </a>
@@ -185,9 +191,19 @@
   {/if}
 {/snippet}
 
+{#snippet header_cell({ col }: { col: HeaderLabel })}
+  {@const content = col.tooltip_description}
+  <span
+    class="header-label"
+    {@attach tooltip({ allow_html: true, content, placement: `top` })}
+  >
+    {@html col.label}
+  </span>
+{/snippet}
+
 <HeatmapTable
   data={metrics_data}
-  columns={columns as MattervizLabel[]}
+  columns={table_columns as MattervizLabel[]}
   bind:sort
   special_cells={{
     Links: links_cell,
@@ -197,6 +213,7 @@
   bind:show_heatmap
   bind:column_order
   {heatmap_class}
+  {header_cell}
   onrowdblclick={(event, row) => {
     const row_model_name = String((row as ModelData).Model)
     handle_row_double_click(event, row_model_name)
@@ -205,13 +222,13 @@
 >
   {#snippet controls()}
     <TableControls
-      bind:show_energy_only
       bind:columns
+      bind:show_energy_only
       bind:show_heatmap
       bind:show_compliant
       bind:show_non_compliant
       bind:show_selected_only
-      show_energy_only_toggle
+      {show_energy_only_toggle}
       {selected_count}
     />
   {/snippet}
@@ -239,6 +256,9 @@
 {/if}
 
 <style>
+  .header-label {
+    display: inline-block;
+  }
   .pred-files-btn {
     background: none;
     padding: 0;

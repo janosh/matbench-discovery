@@ -1,5 +1,7 @@
 """Plotting functions for analyzing model performance on materials discovery."""
 
+# ruff: noqa: ERA001
+
 import functools
 import math
 from collections import defaultdict
@@ -604,12 +606,12 @@ def cumulative_metrics(
         # sort targets by model ranking
         each_true = e_above_hull_true.loc[each_pred.index]
 
-        n_true_pos_cum, n_false_neg_cum, n_false_pos_cum, _n_true_neg_cum = map(
-            np.cumsum,
-            classify_stable(
-                each_true, each_pred, stability_threshold=stability_threshold
-            ),
+        true_pos, false_neg, false_pos, _true_neg = classify_stable(
+            each_true, each_pred, stability_threshold=stability_threshold
         )
+        n_true_pos_cum = true_pos.cumsum()
+        n_false_neg_cum = false_neg.cumsum()
+        n_false_pos_cum = false_pos.cumsum()
 
         n_total_pos_cum = n_true_pos_cum + n_false_neg_cum
         # n_total_neg_cum = n_true_neg_cum + n_false_pos_cum

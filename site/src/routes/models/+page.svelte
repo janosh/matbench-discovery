@@ -1,6 +1,6 @@
 <script lang="ts">
   import { type Label, ModelCard } from '$lib'
-  import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
+  import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
@@ -24,7 +24,7 @@
       Math.min(
         MODELS.length,
         Math.max(min_models, data?.initial_show_n_best ?? MODELS.length),
-      )
+      ),
     ),
   )
   let sort_by_path: string = $derived(
@@ -44,14 +44,16 @@
     `TPR`,
     `κ_SRME`,
   ] as const
-  const metrics = metric_keys.map((key) => ALL_METRICS[key])
+  const metrics = [
+    ...metric_keys.map((key) => ALL_METRICS[key]),
+    ...Object.values(MD_METRICS),
+  ]
 
   const capture_state = () => ({ show_details, sort_by, order, show_n_best })
   export const snapshot = {
     capture: capture_state,
-    restore: (
-      values: ReturnType<typeof capture_state>,
-    ) => ({ show_details, sort_by, order, show_n_best } = values),
+    restore: (values: ReturnType<typeof capture_state>) =>
+      ({ show_details, sort_by, order, show_n_best } = values),
   }
 
   function bg_color(val: number, min: number, max: number) {
@@ -91,24 +93,23 @@
     <span class="radio-group">
       {#each [`asc`, `desc`] as value (value)}
         <label>
-          <input type="radio" name="order" {value} bind:group={order} /> {value}
+          <input type="radio" name="order" {value} bind:group={order} />
+          {value}
         </label>
       {/each}
     </span> by:
   </span>
 
   <ul>
-    {#each [{ ...METADATA_COLS.model_name, label: `Model Name` }, ...metrics] as
-      prop
-      (prop.key)
-    }
+    {#each [{ ...METADATA_COLS.model_name, label: `Model Name` }, ...metrics] as prop (prop.key)}
       {@const { key, label, description } = prop}
       <li class:active={prop.key == sort_by.key}>
         <button
           id={prop.key}
           onclick={() => {
             sort_by = prop
-            if (key === `Model`) order = `asc` // default to ascending for model name
+            if (key === `Model`)
+              order = `asc` // default to ascending for model name
             else order = metric_better_as(key) === `lower` ? `asc` : `desc`
           }}
           style="position: relative"

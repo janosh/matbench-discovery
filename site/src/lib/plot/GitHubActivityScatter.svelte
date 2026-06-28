@@ -42,20 +42,18 @@
   })
 
   let plot_data = $derived(
-    github_data
-      .map((item) => ({
+    github_data.flatMap((item) => {
+      const point = {
         x: item[axes.x.key],
         y: item[axes.y.key],
         color_value: item[axes.color_value.key],
         size_value: item[axes.size_value.key],
         metadata: { name: item.name, repo: item.repo, model_key: item.model_key },
-      }))
-      .filter(
-        ({ x, y, color_value, size_value }) =>
-          [x, y, color_value, size_value].every(
-            (val): val is number => typeof val === `number` && isFinite(val),
-          ),
-      ),
+      }
+      const values = [point.x, point.y, point.color_value, point.size_value]
+      if (!values.every((val) => typeof val === `number` && isFinite(val))) return []
+      return [point]
+    }),
   )
   // O(1) lookup for tooltip by model name
   let plot_data_by_name = $derived(
@@ -94,7 +92,7 @@
       format: axes.y.format,
       range: [0, null],
     }}
-    color_bar={{ title: axes.color_value.label, tick_format: axes.color_value.format }}
+    color_bar={{ title: axes.color_value.label, tick_format: `~s` }}
     {color_scale}
     label_placement_config={{ max_neighbors: { count: 3, radius: 40 } }}
     point_events={{

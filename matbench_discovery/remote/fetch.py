@@ -8,9 +8,29 @@ import traceback
 import requests
 
 
-def download_file(file_path: str, url: str) -> None:
+def _headers_for_url(
+    url: str, headers: dict[str, str] | None = None
+) -> dict[str, str] | None:
+    """Return request headers, adding HuggingFace bearer auth when available."""
+    request_headers = dict(headers or {})
+    if "huggingface.co" in url and "Authorization" not in request_headers:
+        token = os.getenv("HF_TOKEN") or os.getenv("HUGGING_FACE_HUB_TOKEN")
+        if token:
+            request_headers["Authorization"] = f"Bearer {token}"
+    return request_headers or None
+
+
+def download_file(
+    file_path: str, url: str, headers: dict[str, str] | None = None
+) -> None:
     """Download the file from the given URL to the given file path.
     Prints rather than raises if the file cannot be downloaded.
+
+    Args:
+        file_path: Local path to write the downloaded file to.
+        url: URL to download from.
+        headers: Optional HTTP headers, e.g. an Authorization bearer token for
+            gated HuggingFace checkpoints.
     """
     file_dir = os.path.dirname(file_path)
     if file_dir:
@@ -25,9 +45,10 @@ def download_file(file_path: str, url: str) -> None:
         file_id = url.rsplit("/files/", maxsplit=1)[-1].split("?", maxsplit=1)[0]
         url = f"https://api.figshare.com/v2/file/download/{file_id}"
 
+    headers = _headers_for_url(url, headers)
     try:
         # Stream large files to avoid loading entire file into memory
-        response = requests.get(url, timeout=600, stream=True)
+        response = requests.get(url, timeout=600, stream=True, headers=headers)
         response.raise_for_status()
 
         with open(tmp_file_path, mode="wb") as file:
@@ -50,8 +71,13 @@ def download_file(file_path: str, url: str) -> None:
         print(f"Error downloading {url=}\nto {file_path=}.\n{error_msg}")
 
 
-def maybe_auto_download_file(url: str, abs_path: str, label: str | None = None) -> None:
-    """Download file if not exist and user confirms or auto-download is enabled."""
+def maybe_auto_download_file(
+    url: str,
+    abs_path: str,
+    label: str | None = None,
+    headers: dict[str, str] | None = None,
+) -> None:
+    """Download file if missing and confirmed, forwarding optional HTTP headers."""
     if os.path.isfile(abs_path):
         return
 
@@ -71,4 +97,4 @@ def maybe_auto_download_file(url: str, abs_path: str, label: str | None = None) 
     )
     if answer.lower().strip() == "y":
         print(f"Downloading {label!r} from {url!r} to {abs_path!r}")
-        download_file(abs_path, url)
+        download_file(abs_path, url, headers=headers)

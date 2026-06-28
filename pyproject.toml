@@ -32,6 +32,7 @@ requires-python = ">=3.11"
 dependencies = [
   "ase>=3.28",
   "filelock>=3.29",
+  "h5py>=3.11",
   "numpy>=2,<3",
   "pandas>=3,<4",
   "plotly>=6.7",
@@ -70,11 +71,14 @@ fetch-wbm-data = ["gdown>=5.2"]
 # phono3py >=3.31 removed the MS-SMM19 RTA method used for Wigner transport.
 phonons = ["phono3py==3.30.0", "phonopy>=2.35"]
 # symmetry-analysis scripts + tests depend on moyopy
-symmetry = ["moyopy>=0.10"]
+symmetry = ["moyopy>=0.12"]
 
 [build-system]
 requires = ["uv_build>=0.11.18"]
 build-backend = "uv_build"
+
+[tool.uv]
+managed = false # stop uv run from creating a uv.lock
 
 [tool.uv.build-backend]
 module-name = "matbench_discovery"
@@ -82,16 +86,15 @@ module-root = ""
 source-include = ["matbench_discovery/**/*.yml", "models/**/*.yml"]
 
 [tool.ruff]
-target-version = "py311"
 output-format = "concise"
 
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  "C408",    # unnecessary-collection-call
+  "C408", # unnecessary-collection-call
   "C901",
   "COM812",
-  "D205",    # blank-line-after-summary
+  "D205", # blank-line-after-summary
   "EM101",
   "EM102",
   "FIX002",
@@ -101,10 +104,10 @@ ignore = [
   "PLR0913",
   "PLR0915",
   "PLR0912",
-  "PT006",   # pytest-parametrize-names-wrong-type
+  "PT006", # pytest-parametrize-names-wrong-type
   "PTH",
   "S108",
-  "S603",    # subprocess-without-shell-equals-true
+  "S603", # subprocess-without-shell-equals-true
   "T201",
   "TD",
   "TRY003",
@@ -114,9 +117,7 @@ pydocstyle.convention = "google"
 isort.split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D103", "FBT001", "FBT002", "S101"]
-"__init__.py" = ["F401"]
-"matbench_discovery/plots.py" = ["ERA001"]    # allow commented out code
+"tests/*" = ["D103", "FBT001", "S101"]
 "scripts/*" = ["D103", "D100", "D107", "D105", "ERA001"]
 "models/*" = ["D102", "D103", "D100", "D107", "D105", "ERA001"]
 "data/*" = ["ERA001", "S101"]
@@ -124,9 +125,7 @@ isort.split-on-trailing-comma = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-p no:warnings -m 'not slow'"
-markers = [
-  "slow: tests marked slow are skipped by default (unskip with pytest -m slow)",
-]
+markers = ["slow: tests marked slow are skipped by default (unskip with pytest -m slow)"]
 
 [tool.codespell]
 ignore-words-list = "nd,te,fpr,matris,titel"
@@ -138,28 +137,44 @@ output-format = "concise"
 # heavy optional model deps (chgnet, mace, alignn, ...) aren't installable in the
 # pre-commit hook environment
 unresolved-import = "ignore"
+unused-ignore-comment = "ignore"
 
 [dependency-groups]
-dev = ["prek>=0.4.3", "ty>=0.0.42"]
+dev = ["prek>=0.4.5", "ty>=0.0.54"]
 
 [tool.typos.default]
 locale = "en-us"
 extend-ignore-re = [
   "`[0-9a-f]{7,40}`", # Git commit SHAs in backticks
 ]
-extend-ignore-words-re = [
-  "\\b(Skelton|Ono|Noe|Vaid)\\b", # Names
-  "\\b[Bb]a\\b",                  # Chemical element: Barium
-  "\\b[Cc]om(mun|put)\\b",        # Journal: Commun, Comput
-  "\\b[Ff]ormates?\\b",           # Chemistry: formate(s)
-  "\\b[Nn]d\\b",                  # Chemical element: Neodymium
-  "\\bmatris\\b",                 # Model name
-]
 extend-ignore-identifiers-re = [
-  "\\b[Ff][Pp][Rr]\\b",          # False Positive Rate
-  "\\balph_\\w+\\b",             # alph_* identifiers
+  "\\balph_\\w+\\b", # alph_* identifiers
   "\\bi?[Cc]om[Ff]ormer\\w*\\b", # (i)Comformer, comformer + Config suffix
-  "\\btitel\\b",                 # titel
-  "\\w*[Cc]ontracter\\w*\\b",    # *Contracter* variations
-  "\\w*strat\\w*\\b",            # *strat* variations
+  "\\w*[Cc]ontracter\\w*\\b", # *Contracter* variations
+  "\\w*strat\\w*\\b", # *strat* variations
 ]
+
+[tool.typos.default.extend-words]
+Skelton = "Skelton" # Names
+Ono = "Ono"
+Noe = "Noe"
+Vaid = "Vaid"
+AIMD = "AIMD" # ab-initio molecular dynamics
+aimd = "aimd"
+Ba = "Ba" # Chemical element: Barium
+ba = "ba"
+Commun = "Commun" # Journal: Commun, Comput
+Comput = "Comput"
+Formate = "Formate" # Chemistry: formate(s)
+Formates = "Formates"
+Nd = "Nd" # Chemical element: Neodymium
+nd = "nd"
+MatRIS = "MatRIS" # Model name
+matris = "matris"
+titel = "titel"
+
+[tool.typos.default.extend-identifiers]
+FPR = "FPR" # False Positive Rate
+fpr = "fpr"
+MATRIS_PKG = "MATRIS_PKG" # MatRIS dependency
+MATRIS_DEPS = "MATRIS_DEPS"

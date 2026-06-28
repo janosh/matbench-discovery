@@ -1,6 +1,6 @@
 import type { Author } from '$lib'
 import type { OrgLogo } from '$lib/labels'
-import OrgLogos from '$lib/OrgLogos.svelte'
+import OrgLogos from '$lib/model/OrgLogos.svelte'
 import { flushSync, mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query } from '../index'
@@ -38,22 +38,16 @@ describe(`OrgLogos.svelte`, () => {
     expect(doc_query(`.org-logo`).hasAttribute(`title`)).toBe(false)
   })
 
-  it.each([
-    { n_logos: 1, fade: false },
-    { n_logos: 2, fade: true },
-    { n_logos: 4, fade: true },
-  ])(
-    `applies fade mask only when multiple logos ($n_logos logos)`,
-    ({ n_logos, fade }) => {
-      const org_logos: OrgLogo[] = Array.from({ length: n_logos }, (_, idx) => ({
-        name: `Org ${idx}`,
-        src: `/logos/mit.svg`,
-      }))
-      mount(OrgLogos, { target: document.body, props: { org_logos } })
+  it.each([1, 2, 4])(`renders $n_logos inline logos`, (n_logos) => {
+    const org_logos: OrgLogo[] = Array.from({ length: n_logos }, (_, idx) => ({
+      name: `Org ${idx}`,
+      src: `/logos/mit.svg`,
+    }))
+    mount(OrgLogos, { target: document.body, props: { org_logos } })
 
-      expect(doc_query(`.org-preview`).classList.contains(`fade`)).toBe(fade)
-    },
-  )
+    const org_preview = doc_query(`.org-preview`)
+    expect(org_preview.querySelectorAll(`.org-logo`)).toHaveLength(n_logos)
+  })
 
   it(`renders nothing when there are no org logos`, () => {
     mount(OrgLogos, { target: document.body, props: { org_logos: [] } })

@@ -3,20 +3,29 @@
     build_energy_parity_series,
     energy_parity_stats,
     get_energy_parity_point,
-    has_energy_parity_model,
     load_energy_parity_base,
     load_energy_parity_model,
     load_wbm_structure,
     structure_popup_placement,
-  } from '$lib/energy-parity'
-  import type { EnergyKind, EnergyParityBase, EnergyParityModel, EnergyParityPoint, StructurePopupPlacement } from '$lib/energy-parity'
+  } from '$lib/parity/energy-parity'
+  import type {
+    EnergyKind,
+    EnergyParityBase,
+    EnergyParityModel,
+    EnergyParityPoint,
+    StructurePopupPlacement,
+  } from '$lib/parity/energy-parity'
   import type { LoadStatus } from '$lib/asset-loader'
   import type { ModelData } from '$lib/types'
   import { compact_formula, format_num, sanitize_compact_formula } from 'matterviz'
   import { Spinner } from 'matterviz/feedback'
   import type { AnyStructure } from 'matterviz/structure'
   import { BinnedScatterPlot } from 'matterviz/plot'
-  import type { BinnedPointDataFn, BinnedPointPayload, DensePointSeries } from 'matterviz/plot'
+  import type {
+    BinnedPointDataFn,
+    BinnedPointPayload,
+    DensePointSeries,
+  } from 'matterviz/plot'
   import { onMount, tick, untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
 
@@ -41,13 +50,13 @@
     n_sites: number
     measure_text: string
   }
+  type EnergyParityPayload = BinnedPointPayload<Record<string, unknown>>
   const structure_popup_size = { outer_width: 500, view_width: 460, view_height: 340 }
   // small gap lets the popup sit over the (data-free) axis-label padding, so it moves
   // into the side gutter as soon as it clears the data area instead of needing a full
   // popup-width of empty space beside the plot
   const structure_popup_gap = 16
-  const loading_spinner_style =
-    `--spinner-size: 0.9em; --spinner-border-width: 2px; --spinner-margin: 0`
+  const loading_spinner_style = `--spinner-size: 0.9em; --spinner-border-width: 2px; --spinner-margin: 0`
 
   let status = $state<LoadStatus>(`idle`)
   let error_message = $state(``)
@@ -61,35 +70,36 @@
   let load_id = 0
   // three.js stack (~MBs) loads only when a structure is first clicked, keeping it
   // out of every page's initial chunk graph
-  let StructurePopup = $state<
-    typeof import('matterviz/convex-hull')['StructurePopup']
-  >()
-  let popup_placement = $state<StructurePopupPlacement>({
-    side: `left`,
-    left: 0,
-    top: 0,
-  })
+  let StructurePopup =
+    $state<(typeof import('matterviz/convex-hull'))['StructurePopup']>()
+  let popup_placement = $state<StructurePopupPlacement>({ side: `left`, left: 0, top: 0 })
 
   let parity = $derived(
-    base && parity_model ? build_energy_parity_series(base, parity_model, energy_kind) : null,
+    base && parity_model
+      ? build_energy_parity_series(base, parity_model, energy_kind)
+      : null,
   )
   let stats = $derived(parity ? energy_parity_stats(parity) : null)
-  let series = $derived<DensePointSeries[]>(parity
-    ? [{
-        x: parity.x,
-        y: parity.y,
-        point_ids: parity.point_ids,
-        size_values: parity.size_values,
-        label: parity_model?.model_label ?? model.model_name,
-        color: model.color ?? `#4dabf7`,
-      }]
-    : [])
+  let series = $derived<DensePointSeries[]>(
+    parity
+      ? [
+          {
+            x: parity.x,
+            y: parity.y,
+            point_ids: parity.point_ids,
+            size_values: parity.size_values,
+            label: parity_model?.model_label ?? model.model_name,
+            color: model.color ?? `#4dabf7`,
+          },
+        ]
+      : [],
+  )
   let axis_label = $derived(
     energy_kind === `e-form` ? `E<sub>form</sub>` : `E<sub>hull dist</sub>`,
   )
-  let energy_label = $derived(energy_kind === `e-form` ? `formation energy` : `convex hull distance`)
-  let parity_loading_text = $derived(`Loading ${energy_label} parity data...`)
-  let structure_loading_text = $derived(`Loading structure for ${energy_label} point...`)
+  let energy_label = $derived(
+    energy_kind === `e-form` ? `formation energy` : `convex hull distance`,
+  )
   let x_label = $derived(`PBE ${axis_label}`)
   let y_label = $derived(`${parity_model?.model_label ?? model.model_name} ${axis_label}`)
   // manual min/max loop (not Math.min(...arr)) because WBM x/y arrays are too large
@@ -122,14 +132,11 @@
       return
     }
 
-    const matching_model = has_energy_parity_model(injected_model, model_key)
-      ? injected_model
-      : undefined
-    if (!has_energy_parity_model(parity_model, model_key)) clear_selection()
+    if (parity_model?.model_key !== model_key) clear_selection()
     if (injected_base) base = injected_base
-    if (matching_model) parity_model = matching_model
+    if (injected_model?.model_key === model_key) parity_model = injected_model
 
-    if (base && has_energy_parity_model(parity_model, model_key)) {
+    if (base && parity_model?.model_key === model_key) {
       status = `ready`
       return
     }
@@ -140,7 +147,9 @@
     try {
       const [base_asset, model_asset] = await Promise.all([
         injected_base ?? base ?? load_energy_parity_base(),
-        matching_model ?? load_energy_parity_model(model_key),
+        parity_model?.model_key === model_key
+          ? parity_model
+          : load_energy_parity_model(model_key),
       ])
       if (current_load_id !== load_id) return
       base = base_asset
@@ -190,33 +199,31 @@
     const formula = base.formulas[row_idx] ?? ``
     const n_sites = base.n_sites[row_idx]
     if (typeof n_sites !== `number` || !Number.isFinite(n_sites)) return null
-    const measure_text = formula ? `${material_id}\n${compact_formula(formula)}` : material_id
+    const measure_text = formula
+      ? `${material_id}\n${compact_formula(formula)}`
+      : material_id
     return { material_id, formula, n_sites, measure_text }
   }
 
-  const point_data: BinnedPointDataFn<Record<string, unknown>, EnergyParityPointData> =
-    ({ point }) => energy_parity_point_data(point.point_id)
+  const point_data = ({ point }: EnergyParityPayload): EnergyParityPointData | null =>
+    energy_parity_point_data(point.point_id)
 
   function is_energy_parity_point_data(
     point_data_value: unknown,
   ): point_data_value is EnergyParityPointData {
     if (!point_data_value || typeof point_data_value !== `object`) return false
-    const { material_id, formula, n_sites, measure_text } =
-      point_data_value as Record<keyof EnergyParityPointData, unknown>
-    return typeof material_id === `string` &&
-      typeof formula === `string` &&
-      typeof n_sites === `number` &&
-      Number.isFinite(n_sites) &&
-      typeof measure_text === `string`
+    return (
+      `material_id` in point_data_value &&
+      typeof point_data_value.material_id === `string` &&
+      `formula` in point_data_value &&
+      typeof point_data_value.formula === `string` &&
+      `measure_text` in point_data_value &&
+      typeof point_data_value.measure_text === `string` &&
+      `n_sites` in point_data_value &&
+      typeof point_data_value.n_sites === `number` &&
+      Number.isFinite(point_data_value.n_sites)
+    )
   }
-
-  const point_label_measure_text = ({
-    point,
-    point_data: point_data_value,
-  }: BinnedPointPayload<Record<string, unknown>>): string =>
-    is_energy_parity_point_data(point_data_value)
-      ? point_data_value.measure_text
-      : String(point.point_id ?? ``)
 
   async function show_structure(point_idx: number) {
     if (!base || !parity_model || !Number.isInteger(point_idx)) return
@@ -248,9 +255,7 @@
 
   onMount(() => {
     globalThis.addEventListener(`resize`, update_popup_placement)
-    return () => {
-      globalThis.removeEventListener(`resize`, update_popup_placement)
-    }
+    return () => globalThis.removeEventListener(`resize`, update_popup_placement)
   })
 </script>
 
@@ -258,22 +263,26 @@
   <h2 class="toc-exclude">ML vs DFT {title}</h2>
 
   {#if status === `error`}
-    <p class="plot-state" role="alert" style="min-height: 0; margin: 0">{error_message}</p>
+    <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
+      {error_message}
+    </p>
   {:else if status !== `ready` || !parity}
     <div class="plot-state">
       <Spinner
-        text={parity_loading_text}
+        text="Loading {energy_label} parity data..."
         style={loading_spinner_style}
       />
     </div>
   {:else}
     <div class="plot-wrap" bind:this={plot_wrap}>
-      {#snippet energy_point_label({ point_data }: BinnedPointPayload<Record<string, unknown>>)}
+      {#snippet energy_point_label({ point_data }: EnergyParityPayload)}
         {@const label = is_energy_parity_point_data(point_data) ? point_data : null}
         {#if label}
           <span class="point-label-id">{label.material_id}</span>
           {#if label.formula}
-            <br><span class="point-label-formula">{@html sanitize_compact_formula(label.formula)}</span>
+            <br /><span class="point-label-formula"
+              >{@html sanitize_compact_formula(label.formula)}</span
+            >
           {/if}
         {/if}
       {/snippet}
@@ -289,13 +298,15 @@
         }}
         size_scale={{ radius_range: [2, 18], pick_radius: `auto` }}
         overlays={{
-          ref_lines: [{
-            x1: extent[0],
-            y1: extent[0],
-            x2: extent[1],
-            y2: extent[1],
-            color: `var(--text-color, currentColor)`,
-          }],
+          ref_lines: [
+            {
+              x1: extent[0],
+              y1: extent[0],
+              x2: extent[1],
+              y2: extent[1],
+              color: `var(--text-color, currentColor)`,
+            },
+          ],
         }}
         on_point_click={({ point }) => void show_structure(Number(point.point_id))}
         on_density_zoom={clear_selection}
@@ -303,23 +314,26 @@
         {point_data}
         point_labels={{
           render: energy_point_label,
-          measure_text: point_label_measure_text,
+          measure_text: ({ point, point_data }: EnergyParityPayload) =>
+            is_energy_parity_point_data(point_data)
+              ? point_data.measure_text
+              : String(point.point_id ?? ``),
         }}
       >
-        {#snippet tooltip({ x, y, x_formatted, y_formatted, point_data: point_data_value })}
-          {@const label = is_energy_parity_point_data(point_data_value) ? point_data_value : null}
-          {@html x_label}: {x_formatted} <small>eV/atom</small><br>
-          {@html y_label}: {y_formatted} <small>eV/atom</small><br>
+        {#snippet tooltip({ x, y, x_formatted, y_formatted, point_data })}
+          {@const label = is_energy_parity_point_data(point_data) ? point_data : null}
+          {@html x_label}: {x_formatted} <small>eV/atom</small><br />
+          {@html y_label}: {y_formatted} <small>eV/atom</small><br />
           MLFF - DFT error: {format_num(y - x, `+.3~`)} <small>eV/atom</small>
           {#if label}
-            <br>Points sized by N<sub>atoms</sub>: {format_num(label.n_sites, `.0f`)}
+            <br />Points sized by N<sub>atoms</sub>: {format_num(label.n_sites, `.0f`)}
           {/if}
         {/snippet}
 
         {#snippet children()}
           {#if stats && Number.isFinite(stats.mae)}
             <div class="plot-annotation">
-              MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br>
+              MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br />
               R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
             </div>
           {/if}
@@ -330,9 +344,9 @@
         {@const point = selected_point}
         <div
           class="popup-anchor {popup_placement.side}"
-          style:left={`${popup_placement.left}px`}
-          style:top={`${popup_placement.top}px`}
-          style:--structure-popup-gap={`${structure_popup_gap}px`}
+          style:left="{popup_placement.left}px"
+          style:top="{popup_placement.top}px"
+          style:--structure-popup-gap="{structure_popup_gap}px"
         >
           {#if selected_structure && StructurePopup}
             <StructurePopup
@@ -340,22 +354,23 @@
               place_right={popup_placement.side === `right`}
               width={structure_popup_size.view_width}
               height={structure_popup_size.view_height}
-              stats={{
-                formula: point.formula,
-              }}
+              stats={{ formula: point.formula }}
               onclose={clear_selection}
             >
               {#snippet top_left({ formula_html })}
                 <strong>{point.material_id}</strong>
                 {#if formula_html}
-                  ({@html formula_html})<br>
+                  ({@html formula_html})<br />
                 {:else}
-                  <br>
+                  <br />
                 {/if}
-                PBE {@html axis_label}: {format_num(point.x, `.3~`)} <small>eV/atom</small><br>
-                {parity_model?.model_label ?? model.model_name} {@html axis_label}:
-                {format_num(point.y, `.3~`)} <small>eV/atom</small><br>
-                MLFF - DFT error: {format_num(point.y - point.x, `+.3~`)} <small>eV/atom</small>
+                PBE {@html axis_label}: {format_num(point.x, `.3~`)}
+                <small>eV/atom</small><br />
+                {parity_model?.model_label ?? model.model_name}
+                {@html axis_label}:
+                {format_num(point.y, `.3~`)} <small>eV/atom</small><br />
+                MLFF - DFT error: {format_num(point.y - point.x, `+.3~`)}
+                <small>eV/atom</small>
               {/snippet}
             </StructurePopup>
           {:else}
@@ -365,7 +380,7 @@
             >
               {#if structure_loading}
                 <Spinner
-                  text={structure_loading_text}
+                  text="Loading structure for {energy_label} point..."
                   style={loading_spinner_style}
                 />
               {:else}
@@ -404,7 +419,8 @@
   }
   .structure-status {
     background: var(--surface-bg, rgba(255, 255, 255, 0.95));
-    border: 1px solid var(--border-color, color-mix(in srgb, currentColor 20%, transparent));
+    border: 1px solid
+      var(--border-color, color-mix(in srgb, currentColor 20%, transparent));
     border-radius: 4px;
     box-shadow: 0 16px 24px rgba(0, 0, 0, 0.15);
     min-width: 220px;

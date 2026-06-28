@@ -8,7 +8,10 @@
     tooltip?: string
     link?: string
   }
-  let { selected = $bindable(``), options = [] }: {
+  let {
+    selected = $bindable(``),
+    options = [],
+  }: {
     selected: string // Currently selected value
     options: OptionInfo[] // Options to display, either a record or an array of tuples
   } = $props()
@@ -49,6 +52,9 @@
     background: var(--nav-bg);
   }
   .selection-toggle button.active {
-    background: var(--nav-bg);
+    border-color: var(--link-color);
+    background: color-mix(in oklab, var(--link-color) 8%, var(--nav-bg));
+    color: var(--link-color);
+    font-weight: 600;
   }
 </style>
