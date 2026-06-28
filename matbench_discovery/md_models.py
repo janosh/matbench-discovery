@@ -420,6 +420,14 @@ HIENET_DEPS = (
 # aotinductor alternative incorrectly compiles aten._linalg_det on the OAM models.
 NEQUIP_DEPS = ("nequip>=0.14", "torch<2.10")
 ALLEGRO_DEPS = ("nequip>=0.14", "allegro>=0.7.1", "torch<2.10")
+# _mace enables cuEquivariance on CUDA, so include MACE's CUDA-12 CUEQ extras in the
+# per-model uv env rather than building an environment that only works on CPU.
+MACE_DEPS = (
+    "mace-torch>=0.3.16",
+    "cuequivariance",
+    "cuequivariance-torch",
+    "cuequivariance-ops-torch-cu12",
+)
 # MatRIS git install + figshare checkpoint staged into its own ~/.cache/matris dir
 MATRIS_PKG = "matris @ git+https://github.com/HPC-AI-Team/MatRIS"
 MATRIS_DEPS = (MATRIS_PKG, "torch==2.6.0", "numpy<3")
@@ -427,8 +435,8 @@ MATRIS_DEPS = (MATRIS_PKG, "torch==2.6.0", "numpy<3")
 # model_path. use_kernel=False in the factory avoids the openequivariance build step.
 NEQUIX_DEPS = ("nequix", "jax[cuda12]")
 MD_MODELS: dict[str, MdModel] = {
-    "mace_mp_0": MdModel(_mace("medium"), deps=("mace-torch>=0.3.6",)),
-    "mace_mpa_0": MdModel(_mace("medium-mpa-0"), deps=("mace-torch>=0.3.6",)),
+    "mace_mp_0": MdModel(_mace("medium"), deps=MACE_DEPS),
+    "mace_mpa_0": MdModel(_mace("medium-mpa-0"), deps=MACE_DEPS),
     "orb_v2": MdModel(_orb("orb-v2"), deps=("orb-models==0.4.3",)),
     "orb_v3": MdModel(
         _orb("orb-v3-conservative-inf-omat"), deps=("orb-models==0.5.4",)

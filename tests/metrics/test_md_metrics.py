@@ -222,10 +222,10 @@ def test_calc_rdf_error(
 # === ADF ===
 
 
-def right_angle_h3_frame(*, cell_len: float = 6) -> Atoms:
+def right_angle_h3_frame(*, cell_len: float = 6, pbc: bool = True) -> Atoms:
     """Three-atom frame with a 90-degree angle at atom 0."""
     positions = [(0, 0, 0), (1, 0, 0), (0, 1, 0)]
-    return Atoms("H3", positions=positions, cell=[cell_len] * 3, pbc=True)
+    return Atoms("H3", positions=positions, cell=[cell_len] * 3, pbc=pbc)
 
 
 def tetrahedral_ch4_frame() -> Atoms:
@@ -247,8 +247,9 @@ def wrapped_right_angle_h3_frame() -> Atoms:
         (right_angle_h3_frame(), 90.5, 1e-12),
         (tetrahedral_ch4_frame(), np.degrees(np.arccos(-1 / 3)), 0.5),
         (wrapped_right_angle_h3_frame(), 90.5, 1e-12),
+        (right_angle_h3_frame(cell_len=1, pbc=False), 90.5, 1e-12),
     ],
-    ids=["right_angle", "tetrahedral", "wrapped_right_angle"],
+    ids=["right", "tetrahedral", "wrapped", "non_pbc_small_cell"],
 )
 def test_calc_adf_peak_position(
     frame: Atoms, expected_angle: float, abs_tol: float
@@ -327,10 +328,13 @@ def test_calc_adf_error(
     angles: list[float], adf_ref: list[float], adf_pred: list[float], expected: float
 ) -> None:
     """ADF error = W1(ref,pred) / W1(ref, sin-background), capped at 100%."""
-    angles_arr, adf_ref_arr, adf_pred_arr = map(np.array, (angles, adf_ref, adf_pred))
-    assert md_metrics.calc_adf_error(angles_arr, adf_ref_arr, adf_pred_arr) == (
-        pytest.approx(expected)
-    )
+    angles_arr = np.array(angles)
+    adf_ref_arr = np.array(adf_ref)
+    adf_pred_arr = np.array(adf_pred)
+
+    assert md_metrics.calc_adf_error(
+        angles_arr, adf_ref_arr, adf_pred_arr
+    ) == pytest.approx(expected)
 
 
 @pytest.mark.parametrize(
@@ -686,6 +690,12 @@ def test_calc_energy_force_rmse(force_offset: float) -> None:
     assert result["energy_rmse"] == pytest.approx(0, abs=1e-12)  # constant gap removed
     assert result["force_rmse"] == pytest.approx(abs(force_offset), abs=1e-12)
 
+
+def test_calc_energy_force_rmse_handles_degenerate_inputs() -> None:
+    """Energy/force RMSE rejects empty refs; single-frame energy fluctuation is zero."""
+    calc = ConstantCalculator(energy=0.8, force=0)
+    frames = [h2_frame(0.0) for _ in range(3)]
+
     with pytest.raises(ValueError, match="zero frames"):
         md_metrics.calc_energy_force_rmse([], calc)
     single_frame = md_metrics.calc_energy_force_rmse(frames[:1], calc)
@@ -1010,7 +1020,8 @@ def test_write_metrics_to_yaml(
         "energy_rmse": 0.123456,
         "force_rmse": 0.234567,
         "rdf_error": 12.34567,
-        "combined_score": 0.747987,  # 6 dp: would round to 0.748 at the 4 dp used elsewhere
+        # 6 dp: would round to 0.748 at the 4 dp used elsewhere
+        "combined_score": 0.747987,
         "n_systems": 17,
     }
     path = "models/test/md-metrics.csv"

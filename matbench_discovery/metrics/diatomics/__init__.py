@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Self
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import MbdKey, Model
@@ -31,7 +32,6 @@ from matbench_discovery.metrics.diatomics.force import (
 )
 
 
-@dataclass
 class DiatomicCurve:
     """Energies and forces for a single diatomic molecule at multiple distances."""
 
@@ -39,19 +39,20 @@ class DiatomicCurve:
     energies: np.ndarray  # shape (n_distances,)
     forces: np.ndarray  # shape (n_distances, n_atoms, 3)
 
-    def __post_init__(self) -> None:
+    def __init__(
+        self, distances: ArrayLike, energies: ArrayLike, forces: ArrayLike
+    ) -> None:
         """Convert inputs to numpy arrays and reshape forces if needed."""
-        self.energies = np.asarray(self.energies)
-        self.forces = np.asarray(self.forces)
-        self.distances = np.asarray(self.distances)
+        self.distances = np.asarray(distances)
+        self.energies = np.asarray(energies)
+        self.forces = np.asarray(forces)
 
-        n_dists = len(self.distances)
-        n_atoms = 2  # diatomic molecule
+        n_distances = len(self.distances)
 
         # Handle forces stored as (1, n_distances*n_atoms, 3)
         # instead of (n_distances, n_atoms, 3)
-        if self.forces.shape == (1, n_dists * n_atoms, 3):
-            self.forces = self.forces.reshape(n_dists, n_atoms, 3)
+        if self.forces.shape == (1, 2 * n_distances, 3):
+            self.forces = self.forces.reshape(n_distances, 2, 3)
 
 
 @dataclass

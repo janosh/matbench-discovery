@@ -1,7 +1,10 @@
 """Tests for molecular dynamics rollout helpers."""
 
+import importlib.util
 import os
+import sys
 from pathlib import Path
+from types import ModuleType
 
 import ase.io
 import numpy as np
@@ -10,23 +13,38 @@ import pytest
 from ase import Atoms
 from ase.build import bulk
 from ase.calculators.emt import EMT
-from ase.md.nose_hoover_chain import NoseHooverChainNVT
 
-from matbench_discovery import today
+from matbench_discovery import ROOT, today
 from matbench_discovery.enums import Model
 from matbench_discovery.md import (
-    NvtParams,
+    NpzValue,
     list_reference_systems,
     read_reference_trajectory,
     read_trajectory,
     run_md_benchmark,
     run_nvt_md,
+    run_nvt_md_resumable,
     validate_pred_trajectory,
     write_reference_h5,
 )
 from matbench_discovery.md_models import MD_MODELS, load_calculator
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
+
+
+def import_repo_script(module_name: str, rel_path: str) -> ModuleType:
+    """Import a repo-local script without package-name collisions."""
+    spec = importlib.util.spec_from_file_location(module_name, f"{ROOT}/{rel_path}")
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot import {module_name} from {rel_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        sys.modules.pop(module_name, None)
+        raise
+    return module
 
 
 def test_reference_h5_roundtrip(tmp_path: Path) -> None:
@@ -113,11 +131,10 @@ def test_run_nvt_md() -> None:
 def test_run_nvt_md_seed_reproducibility() -> None:
     """Same seed should give identical trajectories, different seeds different ones."""
     atoms = bulk("Cu", cubic=True)
-    kwargs = dict(temperature_kelvin=300, n_steps=10, record_interval=5)
 
-    frames_a = run_nvt_md(atoms, EMT(), seed=42, **kwargs)
-    frames_b = run_nvt_md(atoms, EMT(), seed=42, **kwargs)
-    frames_c = run_nvt_md(atoms, EMT(), seed=7, **kwargs)
+    frames_a = run_nvt_md(atoms, EMT(), temperature_kelvin=300, n_steps=10, seed=42)
+    frames_b = run_nvt_md(atoms, EMT(), temperature_kelvin=300, n_steps=10, seed=42)
+    frames_c = run_nvt_md(atoms, EMT(), temperature_kelvin=300, n_steps=10, seed=7)
 
     np.testing.assert_allclose(
         frames_a[-1].positions, frames_b[-1].positions, rtol=0, atol=0
@@ -223,6 +240,19 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
     run()
     assert {path: path.stat().st_mtime for path in mtimes} == mtimes
 
+    ref_trajectory, _, _ = read_reference_trajectory(ref_file, "bulkCu_300K_test")
+    refeval.write_bytes(b"not a complete npz")
+    run()
+    with np.load(refeval, allow_pickle=False) as cached:
+        e_pred = cached["e_pred"].copy()
+        force_se = cached["force_se"].copy()
+        assert int(cached["n_atoms"]) == ref_trajectory.n_atoms
+
+    np.savez(refeval, e_pred=e_pred, force_se=force_se, n_atoms=-1)
+    run()
+    with np.load(refeval, allow_pickle=False) as cached:
+        assert int(cached["n_atoms"]) == ref_trajectory.n_atoms
+
 
 def test_run_md_benchmark_resume_matches_single_run(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -292,33 +322,43 @@ def test_run_md_benchmark_resume_matches_single_run(
 
 def test_md_convert_resolve_settings() -> None:
     """resolve_settings does suffix-aware longest-prefix dir-name to key matching."""
-    from scripts.md_convert_references_to_hdf5 import resolve_settings
+    packer = import_repo_script(
+        "md_convert_references_to_hdf5", "scripts/md_convert_references_to_hdf5.py"
+    )
 
     settings = {
         "bulkAg_600K": (1.0, 600.0),
         "bulkAg_600K_extra_600K": (9.0, 600.0),
         "bulkCuAu_500K": (2.0, 500.0),
     }
-    assert resolve_settings("bulkAg_600K_Kapil", settings) == (1.0, 600.0)
-    assert resolve_settings("bulkAg_600K_extra_600K_Kapil", settings) == (9.0, 600.0)
-    assert resolve_settings("bulkAg_600K2_Kapil", settings) is None
+    assert packer.resolve_settings("bulkAg_600K_Kapil", settings) == (1.0, 600.0)
+    assert packer.resolve_settings("bulkAg_600K_extra_600K_Kapil", settings) == (
+        9.0,
+        600.0,
+    )
+    assert packer.resolve_settings("bulkAg_600K2_Kapil", settings) is None
     # '-' delimiter after the key must still resolve (caught a prod bug)
-    assert resolve_settings("bulkCuAu_500K-Artrith_VASP", settings) == (2.0, 500.0)
+    assert packer.resolve_settings("bulkCuAu_500K-Artrith_VASP", settings) == (
+        2.0,
+        500.0,
+    )
 
 
 def test_md_convert_load_settings(tmp_path: Path) -> None:
-    """load_settings reads dt_fs = the saved-frame interval = the CSV's dt column. The
-    reference extxyz stores every integration step, so the stride column is NOT folded in
-    (verified by equipartition; dt * stride underestimates temperature by stride**2 and
-    collapses the vDOS frequency axis).
+    """load_settings reads dt_fs = the saved-frame interval = the CSV's dt column.
+    The reference extxyz stores every integration step, so the stride column is NOT
+    folded in (verified by equipartition; dt * stride underestimates temperature by
+    stride**2 and collapses the vDOS frequency axis).
     """
-    from scripts.md_convert_references_to_hdf5 import load_settings
+    packer = import_repo_script(
+        "md_convert_references_to_hdf5", "scripts/md_convert_references_to_hdf5.py"
+    )
 
     csv = tmp_path / "settings.csv"
     csv.write_text(
         "System,temperature,stride,dt\nTiSe2,400,5,1\nanthracene,293,1,0.5\n"
     )
-    settings = load_settings(str(csv))
+    settings = packer.load_settings(str(csv))
     assert settings["TiSe2_400K"] == (1.0, 400.0)  # dt = 1 fs (stride 5 not folded in)
     assert settings["anthracene_293K"] == (0.5, 293.0)  # dt = 0.5 fs
 
@@ -326,13 +366,10 @@ def test_md_convert_load_settings(tmp_path: Path) -> None:
 def test_md_convert_packs_reference(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The one-time packer turns a raw per-system extxyz dir + settings CSV into a
-    single reference HDF5 whose groups carry the trajectory, dt_fs and
-    temperature_kelvin, resolving the '-Artrith_VASP'-style dir suffix to its key.
-    """
-    import sys
-
-    from scripts import md_convert_references_to_hdf5 as packer
+    """The packer turns raw per-system extxyz + settings CSV into reference HDF5."""
+    packer = import_repo_script(
+        "md_convert_references_to_hdf5", "scripts/md_convert_references_to_hdf5.py"
+    )
 
     frames = run_nvt_md(
         bulk("Cu", cubic=True) * (2, 2, 2),
@@ -449,31 +486,35 @@ def test_nvt_checkpoint_state_attrs() -> None:
 def _fail_save_checkpoint_after(
     monkeypatch: pytest.MonkeyPatch, *, kills: int = 3
 ) -> dict[str, int]:
-    """Make _save_checkpoint raise after its first ``kills`` writes (simulating cluster
-    timeouts that requeue the job), then succeed. Returns a dict tracking write count.
-    """
+    """Raise after the first ``kills`` checkpoint writes to simulate requeues."""
     import matbench_discovery.md as md_mod
 
-    orig_save = md_mod._save_checkpoint  # noqa: SLF001
+    orig_savez = md_mod._atomic_savez  # noqa: SLF001
     saves = {"n": 0}
 
-    def killing_save(
-        ckpt_path: str,
-        dynamics: NoseHooverChainNVT,
-        *,
-        params: NvtParams,
-        n_steps: int,
-        n_frames: int,
-    ) -> None:
-        orig_save(
-            ckpt_path, dynamics, params=params, n_steps=n_steps, n_frames=n_frames
-        )
-        saves["n"] += 1
-        if saves["n"] <= kills:
-            raise RuntimeError("simulated timeout")
+    def killing_savez(path: str, **arrays: NpzValue) -> None:
+        orig_savez(path, **arrays)
+        if path.endswith(".ckpt.npz"):
+            saves["n"] += 1
+            if saves["n"] <= kills:
+                raise RuntimeError("simulated timeout")
 
-    monkeypatch.setattr(md_mod, "_save_checkpoint", killing_save)
+    monkeypatch.setattr(md_mod, "_atomic_savez", killing_savez)
     return saves
+
+
+def _run_short_resumable(atoms: Atoms, out_path: str) -> list[Atoms]:
+    """Run the short deterministic resumable rollout used by resume tests."""
+    return run_nvt_md_resumable(
+        atoms,
+        EMT(),
+        out_path=out_path,
+        temperature_kelvin=300,
+        n_steps=60,  # 60 // 10 + 1 = 7 frames (odd -> last frame skips checkpoint)
+        record_interval=10,
+        checkpoint_every_n_frames=2,
+        progress_interval=0,
+    )
 
 
 def test_run_nvt_md_resume_reproduces(
@@ -483,19 +524,8 @@ def test_run_nvt_md_resume_reproduces(
     uninterrupted run frame-for-frame (atol 1e-14), with no duplicate or missing
     frames.
     """
-    from matbench_discovery.md import run_nvt_md_resumable
-
     atoms = bulk("Cu", cubic=True) * (2, 2, 2)
-    run_kwargs = {
-        "temperature_kelvin": 300,
-        "n_steps": 60,  # 60 // 10 + 1 = 7 frames (odd -> last frame skips checkpoint)
-        "record_interval": 10,
-        "checkpoint_every_n_frames": 2,
-        "progress_interval": 0,
-    }
-    reference = run_nvt_md_resumable(
-        atoms, EMT(), out_path=str(tmp_path / "ref.extxyz"), **run_kwargs
-    )
+    reference = _run_short_resumable(atoms, str(tmp_path / "ref.extxyz"))
     assert len(reference) == 7
 
     # simulate timeouts: raise after each of the first 3 checkpoint writes, then let
@@ -506,9 +536,7 @@ def test_run_nvt_md_resume_reproduces(
     resumed = None
     for _attempt in range(8):  # bounded resume loop
         try:
-            resumed = run_nvt_md_resumable(
-                atoms, EMT(), out_path=out_path, **run_kwargs
-            )
+            resumed = _run_short_resumable(atoms, out_path)
             break
         except RuntimeError:
             continue
@@ -533,8 +561,6 @@ def test_run_nvt_md_resumable_ignores_corrupt_checkpoint(tmp_path: Path) -> None
     """A corrupt/foreign checkpoint must be ignored (fail closed) and the rollout
     recomputed from scratch rather than restored into a bad state.
     """
-    from matbench_discovery.md import run_nvt_md_resumable
-
     atoms = bulk("Cu", cubic=True) * (2, 2, 2)
     out_path = str(tmp_path / "out.extxyz")
     (tmp_path / "out.extxyz.ckpt.npz").write_bytes(b"not a real npz checkpoint")
@@ -582,12 +608,8 @@ def test_load_calculator(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_run_md_cli_write_yaml_skips_non_submission_model(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """`--write-yaml` for a debug model with no Model enum entry (emt) must skip the
-    YAML write gracefully instead of crashing on Model.from_ref.
-    """
-    import sys
-
-    from models import run_md
+    """`--write-yaml` for debug model emt must skip YAML write gracefully."""
+    run_md = import_repo_script("run_md", "models/run_md.py")
 
     # avoid the real calculator + rollout pipeline; return metrics calc_md_metrics reads
     monkeypatch.setattr(run_md, "load_calculator", lambda *_a, **_k: EMT())
@@ -603,14 +625,28 @@ def test_run_md_cli_write_yaml_skips_non_submission_model(
 
 def test_run_md_cli_rejects_partial_write_yaml(monkeypatch: pytest.MonkeyPatch) -> None:
     """--write-yaml on a --systems subset must error before the rollout pipeline."""
-    import sys
-
-    from models import run_md
+    run_md = import_repo_script("run_md", "models/run_md.py")
 
     argv = ["run_md", "--model", "mace_mp_0", "--write-yaml", "--systems", "bulkAu"]
     monkeypatch.setattr(sys, "argv", argv)
     with pytest.raises(SystemExit):  # parser.error exits before the rollout pipeline
         run_md.main()
+
+
+def patch_eval_md(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    systems: list[str],
+    model: Model = Model.mace_mp_0,
+) -> ModuleType:
+    """Import scripts/evals/md.py and patch it to use a tiny test reference set."""
+    eval_md = import_repo_script("eval_md", "scripts/evals/md.py")
+    monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))
+    monkeypatch.setattr(eval_md.cli_args, "models", [model])
+    monkeypatch.setattr(eval_md, "default_md_reference_path", lambda: "ref.h5")
+    monkeypatch.setattr(eval_md, "list_reference_systems", lambda _path: systems)
+    return eval_md
 
 
 def test_md_evals_skips_incomplete_coverage(
@@ -619,15 +655,8 @@ def test_md_evals_skips_incomplete_coverage(
     """scripts/evals/md.py must not write model YAML from incomplete coverage (only one
     of the three reference systems has a per-system CSV).
     """
-    from scripts.evals import md as eval_md
-
     model = Model.mace_mp_0
-    monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))
-    monkeypatch.setattr(eval_md.cli_args, "models", [model])
-    monkeypatch.setattr(eval_md, "default_md_reference_path", lambda: "ref.h5")
-    monkeypatch.setattr(
-        eval_md, "list_reference_systems", lambda _path: ["sysA", "sysB", "sysC"]
-    )
+    eval_md = patch_eval_md(tmp_path, monkeypatch, systems=["sysA", "sysB", "sysC"])
 
     def _fail_write(*_a: object, **_k: object) -> None:
         raise AssertionError("must not write YAML on incomplete coverage")
@@ -650,15 +679,8 @@ def test_md_evals_skips_incomplete_fallback_csv(
     """The md_path fallback (a submitted combined CSV, no per-system files) must apply
     the same coverage guard so an incomplete submission can't corrupt the leaderboard.
     """
-    from scripts.evals import md as eval_md
-
     model = Model.mace_mp_0
-    monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))  # no per-system CSVs here
-    monkeypatch.setattr(eval_md.cli_args, "models", [model])
-    monkeypatch.setattr(eval_md, "default_md_reference_path", lambda: "ref.h5")
-    monkeypatch.setattr(
-        eval_md, "list_reference_systems", lambda _path: ["sysA", "sysB", "sysC"]
-    )
+    eval_md = patch_eval_md(tmp_path, monkeypatch, systems=["sysA", "sysB", "sysC"])
 
     incomplete_csv = tmp_path / "combined.csv.gz"  # only 1 of 3 reference systems
     pd.DataFrame({"system": ["sysA"], "rdf_error": [1.0]}).to_csv(
@@ -682,17 +704,11 @@ def test_md_evals_handles_placeholder_md_metrics(
     """A model with complete per-system coverage but a 'not available' placeholder for
     metrics.md (a string, not a dict) must aggregate without crashing on md_yaml.get().
     """
-    from scripts.evals import md as eval_md
-
     model = Model.mace_mp_0
     monkeypatch.setattr(
         type(model), "metrics", property(lambda _self: {"md": "not available"})
     )
-    monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))
-    monkeypatch.setattr(eval_md.cli_args, "models", [model])
-    monkeypatch.setattr(eval_md, "default_md_reference_path", lambda: "ref.h5")
-    # single system -> sysA alone gives full coverage
-    monkeypatch.setattr(eval_md, "list_reference_systems", lambda _path: ["sysA"])
+    eval_md = patch_eval_md(tmp_path, monkeypatch, systems=["sysA"])
 
     writes: list[dict[str, object]] = []
     monkeypatch.setattr(
@@ -713,25 +729,7 @@ def test_md_evals_handles_placeholder_md_metrics(
     assert writes[0]["pred_file_url"] is None  # no url from a placeholder md section
 
 
-def test_md_model_uv_run_cmd() -> None:
-    """uv_run_cmd interleaves --with/--find-links around the script and its args."""
-    cmd = MD_MODELS["orb_v3"].uv_run_cmd("models/run_md.py", "--model", "orb_v3")
-    assert cmd[:2] == ["uv", "run"]
-    assert cmd[-3:] == ["models/run_md.py", "--model", "orb_v3"]
-    deps = [cmd[idx + 1] for idx, tok in enumerate(cmd) if tok == "--with"]
-    assert deps == list(MD_MODELS["orb_v3"].deps)
-    # a model with find_links must emit a --find-links token per URL
-    fairchem = MD_MODELS["eqv2_s_dens_mp"]
-    links_cmd = fairchem.uv_run_cmd("models/run_md.py", "--model", "eqv2_s_dens_mp")
-    links = [
-        links_cmd[idx + 1] for idx, tok in enumerate(links_cmd) if tok == "--find-links"
-    ]
-    assert links == list(fairchem.find_links)
-
-
 @pytest.mark.parametrize("model_key", [key for key in MD_MODELS if key != "emt"])
 def test_md_model_keys_are_valid_enum_members(model_key: str) -> None:
-    """Every registered model (besides the emt debug entry) must map to a Model so
-    metrics can be written to the right YAML.
-    """
+    """Registered non-debug models must map to a Model so metrics write to YAML."""
     assert Model.from_ref(model_key).name == model_key

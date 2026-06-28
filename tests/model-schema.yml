@@ -290,6 +290,8 @@ definitions:
         type: number
       combined_score:
         type: number
+        minimum: 0
+        maximum: 1
       n_systems:
         type: number
     allOf:

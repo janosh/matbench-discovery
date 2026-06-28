@@ -52,7 +52,7 @@ METRIC_UNITS = {
     "pressure_mae": "GPa",
     "pressure_wasserstein": "GPa",
     "pressure_error": "%",  # pressure-histogram overlap error (paper Eq. 9)
-    # 1 - mean(rdf/adf/vdos/pressure errors)/100, in [0,1], higher=better (no unit comment)
+    # 1 - mean(errors)/100, in [0,1], higher=better (no unit comment)
     "combined_score": "",
     "n_systems": "count",
 }
@@ -185,13 +185,12 @@ def calc_adf(
     n_atoms = traj.n_atoms
     if n_atoms < 3:
         raise ValueError(f"Cannot compute ADF with {n_atoms=} < 3")
-    # species-aware bond cutoffs, clamped to the minimum-image validity limit so no pair
-    # is counted against two periodic images
-    mic_radius = min_image_radius(traj.cell, traj.pbc)
+    # Clamp only periodic systems to the minimum-image limit; isolated molecules have
+    # no image ambiguity, so keep their full covalent-radius cutoff.
     r_cov = covalent_radii[traj.atomic_numbers]
-    bond_cutoffs = np.minimum(
-        bond_tolerance * (r_cov[:, None] + r_cov[None, :]), mic_radius
-    )
+    bond_cutoffs = bond_tolerance * (r_cov[:, None] + r_cov[None, :])
+    if traj.pbc.any():
+        bond_cutoffs = np.minimum(bond_cutoffs, min_image_radius(traj.cell, traj.pbc))
 
     bin_edges = np.linspace(0, 180, n_bins + 1)
     counts = np.zeros(n_bins)
@@ -267,7 +266,7 @@ def calc_adf_error(
     for label, adf in (("reference", adf_ref), ("predicted", adf_pred)):
         if not np.all(np.isfinite(adf)):
             raise ValueError(f"{label} ADF has non-finite intensities")
-        if (adf < 0).any():
+        if np.any(adf < 0):
             raise ValueError(f"{label} ADF has negative intensities")
         if adf.sum() <= 0:
             raise ValueError(f"{label} ADF has non-positive area")
@@ -503,13 +502,10 @@ def calc_pressure_histogram_error(
 def calc_combined_score(
     rdf_error: float, adf_error: float, vdos_error: float, pressure_error: float
 ) -> float:
-    """Combined MD score (CMDS) in [0, 1], higher is better: 1 minus the simple average
-    of the RDF, ADF, vDOS and pressure-distribution errors (each a %, lower is better),
-    rescaled to [0, 1]. 1.0 = perfect (zero error), 0.0 = mean error >= 100%. Defined as
-    a score (not an error) to match the higher-is-better convention of CPS, which it is
-    intended to feed into as a fourth normalized component. All four errors must be finite
-    and non-negative; a missing/NaN component raises rather than silently collapsing to a
-    misleading lower-dimensional mean.
+    """Combined MD score (CMDS) in [0, 1], higher is better.
+
+    Defined as ``1 - mean(errors) / 100`` over RDF, ADF, vDOS and pressure errors.
+    All four errors must be finite and non-negative.
     """
     errors = np.array([rdf_error, adf_error, vdos_error, pressure_error], dtype=float)
     if not np.all(np.isfinite(errors)):

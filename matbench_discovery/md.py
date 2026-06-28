@@ -265,6 +265,20 @@ class NvtParams:
 # run to ~1e-14. Schema-tagged + ASE-version-gated so a renamed attr or upgrade fails
 # closed (recompute) rather than silently corrupting trajectories.
 CHECKPOINT_SCHEMA = 1
+NpzValue = np.ndarray | np.generic | str | int | float | bool
+
+
+def _atomic_savez(path: str, **arrays: NpzValue) -> None:
+    """Write an NPZ file through a temp path, then atomically promote it."""
+    tmp_path = f"{path}.{os.getpid()}.tmp"
+    try:
+        with open(tmp_path, "wb") as file:
+            np.savez(file, **arrays)
+        os.replace(tmp_path, path)
+    except Exception:
+        with contextlib.suppress(OSError):
+            os.remove(tmp_path)
+        raise
 
 
 def _nvt_state_attrs(
@@ -280,41 +294,6 @@ def _nvt_state_attrs(
             f"({exc}); MD checkpoint/resume needs updating"
         ) from exc
     return state
-
-
-def _save_checkpoint(
-    ckpt_path: str,
-    dynamics: NoseHooverChainNVT,
-    *,
-    params: NvtParams,
-    n_steps: int,
-    n_frames: int,
-) -> None:
-    """Atomically write the integrator state + run metadata to ``ckpt_path``."""
-    pos, mom, eta, p_eta = _nvt_state_attrs(dynamics)
-    tmp_path = f"{ckpt_path}.tmp"
-    with open(tmp_path, mode="wb") as file:
-        np.savez(
-            file,
-            schema=CHECKPOINT_SCHEMA,
-            ase_version=ase.__version__,
-            nsteps=dynamics.nsteps,
-            n_steps=n_steps,
-            n_frames=n_frames,
-            q=pos,
-            p=mom,
-            eta=eta,
-            p_eta=p_eta,
-            record_interval=params.record_interval,
-            time_step_fs=params.time_step_fs,
-            temperature_kelvin=params.temperature_kelvin,
-            thermostat_time_scale_fs=params.thermostat_time_scale_fs,
-            seed=params.seed,
-            symbols=np.array(dynamics.atoms.get_chemical_symbols()),
-            cell=dynamics.atoms.cell.array,
-            pbc=dynamics.atoms.pbc,
-        )
-    os.replace(tmp_path, ckpt_path)
 
 
 def _load_checkpoint(
@@ -451,12 +430,26 @@ def run_nvt_md_resumable(
         ase.io.write(part_path, _snapshot_frame(atoms, dynamics.nsteps), append=True)
         frames_written += 1
         if frames_written % checkpoint_every_n_frames == 0:
-            _save_checkpoint(
+            pos, mom, eta, p_eta = _nvt_state_attrs(dynamics)
+            _atomic_savez(
                 ckpt_path,
-                dynamics,
-                params=params,
+                schema=CHECKPOINT_SCHEMA,
+                ase_version=ase.__version__,
+                nsteps=dynamics.nsteps,
                 n_steps=n_steps,
                 n_frames=frames_written,
+                q=pos,
+                p=mom,
+                eta=eta,
+                p_eta=p_eta,
+                record_interval=params.record_interval,
+                time_step_fs=params.time_step_fs,
+                temperature_kelvin=params.temperature_kelvin,
+                thermostat_time_scale_fs=params.thermostat_time_scale_fs,
+                seed=params.seed,
+                symbols=np.array(dynamics.atoms.get_chemical_symbols()),
+                cell=dynamics.atoms.cell.array,
+                pbc=dynamics.atoms.pbc,
             )
 
     dynamics.attach(record_and_checkpoint, interval=record_interval)
@@ -637,11 +630,25 @@ def run_md_benchmark(
         refeval_path = f"{out_dir}/{system_name}-nvt-{model_key}-refeval.npz"
         ref_predictions: dict[str, np.ndarray] | None = None
         if os.path.isfile(refeval_path):
-            with np.load(refeval_path, allow_pickle=False) as cached:
-                ref_predictions = {key: cached[key] for key in ("e_pred", "force_se")}
             try:
+                with np.load(refeval_path, allow_pickle=False) as cached:
+                    if int(cached["n_atoms"]) != ref_trajectory.n_atoms:
+                        raise ValueError(
+                            f"cached n_atoms={int(cached['n_atoms'])} != "
+                            f"{ref_trajectory.n_atoms}"
+                        )
+                    ref_predictions = {
+                        key: cached[key] for key in ("e_pred", "force_se")
+                    }
                 md_metrics.energy_force_rmse_from_preds(ref_trajectory, ref_predictions)
-            except ValueError as exc:
+            except (
+                EOFError,
+                KeyError,
+                OSError,
+                TypeError,
+                ValueError,
+                zipfile.BadZipFile,
+            ) as exc:
                 print(f"  recomputing {refeval_path}: {exc}", flush=True)
                 ref_predictions = None
             else:
@@ -653,7 +660,7 @@ def run_md_benchmark(
             )
             if not dry_run:
                 # e_ref lives in HDF5; the sidecar stores only model predictions.
-                np.savez(
+                _atomic_savez(
                     refeval_path,
                     e_pred=ref_predictions["e_pred"],
                     force_se=ref_predictions["force_se"],

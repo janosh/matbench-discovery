@@ -231,22 +231,24 @@ def chunk_by_lens(
     sorted_inputs = [inputs[i] for i in sort_idx]
 
     chunks: list[list[HasLen]] = [[] for _ in range(n_chunks)]
-    chunk_sizes = np.zeros(n_chunks)
+    chunk_sizes = np.zeros(n_chunks, dtype=float)
 
     # Assign each structure to the chunk with the smallest current total
     for sized_obj in sorted_inputs:
-        smallest_chunk = np.argmin(chunk_sizes)
-        chunks[smallest_chunk].append(sized_obj)
-        chunk_sizes[smallest_chunk] += len(sized_obj)
+        smallest_chunk_idx = int(np.argmin(chunk_sizes))
+        chunks[smallest_chunk_idx].append(sized_obj)
+        chunk_sizes[smallest_chunk_idx] += len(sized_obj)
 
     if report:
         # Print statistics about the chunk sizes
         mean, std = chunk_sizes.mean(), chunk_sizes.std()
+        min_chunk_size = float(np.min(chunk_sizes))
+        max_chunk_size = float(np.max(chunk_sizes))
         cls_name = type(inputs[0]).__name__
         print(
             f"Split {len(inputs):,} structures into {n_chunks:,} chunks:\n"
             f"Mean sum(len({cls_name})) per chunk: {mean:,.1f} ± {std:,.1f}, "
-            f"min: {chunk_sizes.min():,.0f}, max: {chunk_sizes.max():,.0f}"
+            f"min: {min_chunk_size:,.0f}, max: {max_chunk_size:,.0f}"
         )
 
     return chunks
