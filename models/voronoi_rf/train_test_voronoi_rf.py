@@ -116,7 +116,6 @@ n_trainable_params = sum(tree.tree_.node_count for tree in random_forest.estimat
 print(f"{n_trainable_params=:,}")
 run_params["n_trainable_params"] = n_trainable_params
 
-# Save the trained model to disk
 print(f"Saving model to {model_path}")
 joblib.dump(model, model_path)
 model_desc = f"Voronoi RandomForestRegressor model trained for {task_type} task"

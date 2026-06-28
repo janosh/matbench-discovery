@@ -22,9 +22,8 @@
 
   export const snapshot = {
     capture: () => ({ color_scale, log }),
-    restore: (
-      values: { color_scale: D3InterpolateName; log: boolean },
-    ) => ({ color_scale, log } = values),
+    restore: (values: { color_scale: D3InterpolateName; log: boolean }) =>
+      ({ color_scale, log } = values),
   }
 </script>
 

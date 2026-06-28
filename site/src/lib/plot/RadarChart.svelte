@@ -83,11 +83,7 @@
     const area3 = calc_triangle_area(point, a, b)
 
     // Calculate normalized barycentric weights
-    let new_values = [
-      area1 / triangle_area,
-      area2 / triangle_area,
-      area3 / triangle_area,
-    ]
+    let new_values = [area1 / triangle_area, area2 / triangle_area, area3 / triangle_area]
 
     // Handle center point specially - equal weights
     const dist_from_center = Math.hypot(point.x - center.x, point.y - center.y)
@@ -224,15 +220,14 @@
   function is_point_in_triangle(pt: Point, c1: Point, c2: Point, c3: Point) {
     // Compute barycentric coordinates
     const denominator = (c2.y - c3.y) * (c1.x - c3.x) + (c3.x - c2.x) * (c1.y - c3.y)
-    const alpha = ((c2.y - c3.y) * (pt.x - c3.x) + (c3.x - c2.x) * (pt.y - c3.y)) /
-      denominator
-    const beta = ((c3.y - c1.y) * (pt.x - c3.x) + (c1.x - c3.x) * (pt.y - c3.y)) /
-      denominator
+    const alpha =
+      ((c2.y - c3.y) * (pt.x - c3.x) + (c3.x - c2.x) * (pt.y - c3.y)) / denominator
+    const beta =
+      ((c3.y - c1.y) * (pt.x - c3.x) + (c1.x - c3.x) * (pt.y - c3.y)) / denominator
     const gamma = 1 - alpha - beta
 
     // If all coordinates are between 0 and 1, point is inside
-    return alpha >= 0 && beta >= 0 && gamma >= 0 && alpha <= 1 && beta <= 1 &&
-      gamma <= 1
+    return alpha >= 0 && beta >= 0 && gamma >= 0 && alpha <= 1 && beta <= 1 && gamma <= 1
   }
 
   // Helper to find closest point pt on triangle with corners c1, c2, c3
@@ -347,13 +342,7 @@
     {/if}
 
     <!-- Draggable knob: first element is larger invisible hit area for the smaller visible knob above it -->
-    {#each [
-        { fill: `transparent`, r: 20 },
-        { fill: `var(--card-bg)`, stroke: `var(--text-color)`, r: 8 },
-      ] as
-      knob_style
-      (knob_style.r)
-    }
+    {#each [{ fill: `transparent`, r: 20 }, { fill: `var(--card-bg)`, stroke: `var(--text-color)`, r: 8 }] as knob_style (knob_style.r)}
       <circle
         cx={point.x}
         cy={point.y}

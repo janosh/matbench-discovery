@@ -1,3 +1,22 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "ase",
+#   "cuequivariance",
+#   "cuequivariance-ops-torch-cu12",
+#   "cuequivariance-torch",
+#   "mace-torch>=0.3.15",
+#   "matbench-discovery[phonons]",
+#   "pandas",
+#   "pymatviz",
+#   "torch",
+#   "tqdm",
+# ]
+#
+# [tool.uv.sources]
+# matbench-discovery = { path = "../../", editable = true }
+# ///
+
 """This script runs MACE kappa predictions without Ray for consistency."""
 
 import json
@@ -5,7 +24,7 @@ import os
 import warnings
 from datetime import datetime
 from importlib.metadata import version
-from typing import Any, Literal
+from typing import Any, Final, Literal
 
 import ase.io
 import pandas as pd
@@ -33,15 +52,33 @@ conductivity_broken_symm = False
 save_forces = True  # Save force sets to file
 temperatures: list[float] = [300]
 
-model_name = "mace-omat-0-medium"
-checkpoint = f"https://github.com/ACEsuit/mace-foundations/releases/download/mace_omat_0/{model_name}.model"
+model_name = os.getenv("MODEL_NAME", "mace_omat_0")
+release_base = "https://github.com/ACEsuit/mace-foundations/releases/download"
+model_configs: Final[dict[str, dict[str, str]]] = {
+    "mace_omat_0": {
+        "checkpoint": f"{release_base}/mace_omat_0/mace-omat-0-medium.model",
+    },
+    "mace_matpes_0": {
+        "checkpoint": f"{release_base}/mace_matpes_0/MACE-matpes-pbe-omat-ft.model",
+    },
+    "mace_mh_1": {
+        "checkpoint": f"{release_base}/mace_mh_1/mace-mh-1.model",
+        "head": "omat_pbe",
+    },
+}
+model_config = model_configs[model_name]
+checkpoint = model_config["checkpoint"]
 
-# Initialize MACE calculator
 print(f"Loading {model_name}...")
 warnings.filterwarnings("ignore", category=FutureWarning, module="torch")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using {device=}")
-mace_calc = mace_mp(model=checkpoint, device=device, enable_cueq=device == "cuda")
+mace_kwargs: dict[str, Any] = {}
+if "head" in model_config:
+    mace_kwargs["head"] = model_config["head"]
+mace_calc = mace_mp(
+    model=checkpoint, device=device, enable_cueq=device == "cuda", **mace_kwargs
+)
 
 displacement_distance = 0.01
 job_name = (
@@ -73,9 +110,10 @@ run_params = dict(
     **kappa_params,
     model_name=model_name,
     checkpoint=checkpoint,
+    mace_kwargs=mace_kwargs,
     n_structures=len(atoms_list),
     struct_data_path=DataFiles.phonondb_pbe_103_structures.path,
-    versions={dep: version(dep) for dep in ("numpy", "torch", "mace")},
+    versions={dep: version(dep) for dep in ("numpy", "torch", "mace-torch")},
 )
 
 with open(f"{out_dir}/run_params.json", mode="w") as file:
@@ -86,7 +124,13 @@ kappa_results: dict[str, dict[str, Any]] = {}
 force_results: dict[str, dict[str, Any]] = {}
 
 for idx, atoms in enumerate(
-    tqdm(atoms_list, desc=f"Predicting kappa with {model_name}")
+    tqdm(
+        atoms_list,
+        desc=f"{model_name} kappa",
+        total=len(atoms_list),
+        mininterval=5,
+        unit="struct",
+    )
 ):
     mat_id, result_dict, force_dict = calc_kappa_for_structure(
         atoms=atoms,
@@ -101,11 +145,14 @@ for idx, atoms in enumerate(
     # Save intermediate results
     df_kappa = pd.DataFrame(kappa_results).T
     df_kappa.index.name = Key.mat_id
-    df_kappa.reset_index().to_json(f"{out_dir}/kappa.json.gz")
+    if Key.mat_id not in df_kappa:
+        df_kappa = df_kappa.reset_index()
+    df_kappa.to_json(f"{out_dir}/kappa.json.gz")
 
     if save_forces:
         df_force = pd.DataFrame(force_results).T
-        df_force = pd.concat([df_kappa, df_force], axis=1)
+        df_force = df_force.drop(columns=Key.mat_id, errors="ignore")
+        df_force = pd.concat([df_kappa.set_index(Key.mat_id), df_force], axis=1)
         df_force.index.name = Key.mat_id
         df_force.reset_index().to_json(f"{out_dir}/force-sets.json.gz")
 

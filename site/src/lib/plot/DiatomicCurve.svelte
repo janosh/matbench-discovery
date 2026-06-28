@@ -30,8 +30,9 @@
   // Function to get model label, handling version suffixes
   function get_model_label(model_key: string): string {
     // Try to match the model key to known base names
-    const base_name = MODELS.find((model) => model_key?.startsWith(model.dirname))
-      ?.dirname
+    const base_name = MODELS.find((model) =>
+      model_key?.startsWith(model.dirname),
+    )?.dirname
 
     return base_name ? (model_labels.get(base_name) ?? model_key) : model_key
   }

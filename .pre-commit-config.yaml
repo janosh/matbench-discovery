@@ -4,14 +4,14 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.18
+    rev: v0.15.20
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: v0.0.51
+    rev: v0.0.54
     hooks:
       - id: ty
         # --isolated: don't create/update uv.lock or the local .venv
@@ -32,6 +32,10 @@ repos:
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: trailing-whitespace
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: destroyed-symlinks
+      - id: check-vcs-permalinks
 
   - repo: local
     hooks:
@@ -60,9 +64,8 @@ repos:
       - id: codespell
         stages: [pre-commit, commit-msg]
         exclude_types: [csv, json, svg, bib]
-        exclude: ^(site/src/figs/.+|pyproject\.toml)$
-        args: [--toml=pyproject.toml, --check-filenames]
-        additional_dependencies: [tomli]
+        exclude: ^pyproject\.toml$
+        args: [--check-filenames]
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.49.0
@@ -92,7 +95,5 @@ repos:
     rev: v1.47.2
     hooks:
       - id: typos
-        types: [text]
-        exclude_types: [csv]
-        exclude: ^(site/src/figs/.+|.+element-counts.*\.json)$
-        args: []
+        stages: [pre-commit, commit-msg]
+        args: [--force-exclude]

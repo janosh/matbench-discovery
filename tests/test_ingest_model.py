@@ -32,6 +32,7 @@ def test_energy_only_model_skips_force_tasks() -> None:
     e_only = next((mdl for mdl in Model if mdl.metadata.get("targets") == "E"), None)
     if e_only is None:
         pytest.skip("no energy-only model in registry")
+    assert e_only is not None
     checks = ingest.Checklist()
     assert ingest.check_submission(e_only, checks) is True
     assert msgs(checks, ingest.FAIL) == []

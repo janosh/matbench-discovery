@@ -85,7 +85,7 @@ hyperparams:
   max_neighbors: .inf
 
 training_cost:
-  Nvidia H100 GPUs: { amount: 12, hours: 100, cost: 1200 }
+  Nvidia H100 GPUs: {amount: 12, hours: 100, cost: 1200}
 
 requirements:
   torch: '2'
@@ -102,12 +102,12 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      pred_file: models/allegro/Allegro-OAM-L-0.1/Allegro-OAM-L-0.1-2025-08-26-kappa-103-FIRE-dist_0_05-fmax_0_0001-symprec_1e-05.json.gz
+      pred_file: models/allegro/allegro-OAM-L-0.1/Allegro-OAM-L-0.1-2025-08-26-kappa-103-FIRE-dist_0_05-fmax_0_0001-symprec_1e-05.json.gz
       pred_file_url: https://figshare.com/files/57576247
       κ_SRME: 0.3186
       κ_SRE: 0.1433
   geo_opt:
-    pred_file: models/allegro/Allegro-OAM-L-0.1/Allegro-OAM-L-0.1-2025-08-26-wbm-IS2RE-GOQN.jsonl.gz
+    pred_file: models/allegro/allegro-OAM-L-0.1/Allegro-OAM-L-0.1-2025-08-26-wbm-IS2RE-GOQN.jsonl.gz
     pred_file_url: https://figshare.com/files/57731011
     struct_col: nequip_structure # same for NequIP/Allegro
     symprec=1e-2:
@@ -117,7 +117,7 @@ metrics:
       symmetry_match: 0.816 # fraction
       symmetry_increase: 0.1226 # fraction
       n_structures: 256963 # count
-      analysis_file: models/allegro/Allegro-OAM-L-0.1/Allegro-OAM-L-0.1-2025-08-26-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
+      analysis_file: models/allegro/allegro-OAM-L-0.1/Allegro-OAM-L-0.1-2025-08-26-wbm-IS2RE-GOQN-symprec=1e-2-moyo=0.4.4.csv.gz
       analysis_file_url: https://figshare.com/files/57731044
     symprec=1e-5:
       rmsd: 0.0651 # unitless
@@ -126,10 +126,10 @@ metrics:
       symmetry_match: 0.7163 # fraction
       symmetry_increase: 0.2023 # fraction
       n_structures: 256963 # count
-      analysis_file: models/allegro/Allegro-OAM-L-0.1/Allegro-OAM-L-0.1-2025-08-26-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
+      analysis_file: models/allegro/allegro-OAM-L-0.1/Allegro-OAM-L-0.1-2025-08-26-wbm-IS2RE-GOQN-symprec=1e-5-moyo=0.4.4.csv.gz
       analysis_file_url: https://figshare.com/files/57731047
   discovery:
-    pred_file: models/allegro/Allegro-OAM-L-0.1/Allegro-OAM-L-0.1-2025-08-26-wbm-IS2RE.csv.gz
+    pred_file: models/allegro/allegro-OAM-L-0.1/Allegro-OAM-L-0.1-2025-08-26-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/57574801
     pred_col: e_form_per_atom_nequip # same for NequIP/Allegro
     full_test_set:
@@ -186,3 +186,16 @@ metrics:
       RMSE: 0.065 # eV/atom
       R2: 0.908 # dimensionless
       missing_preds: 0 # count
+  md:
+    pred_file: models/allegro/allegro-OAM-L-0.1/2026-06-28-allegro_oam_l_0_1-md-metrics.csv.gz
+    energy_rmse: 0.7413 # meV/atom
+    force_rmse: 84.8288 # meV/Å
+    rdf_error: 3.7793 # %
+    adf_error: 1.4411 # %
+    vdos_error: 23.2217 # %
+    pressure_mae: 0.7833 # GPa
+    pressure_wasserstein: 0.8026 # GPa
+    pressure_error: 47.0803 # %
+    combined_score: 0.811194
+    n_systems: 17 # count
+    pred_file_url: https://figshare.com/files/66048848

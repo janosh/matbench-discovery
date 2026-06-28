@@ -30,8 +30,8 @@
 
 <p>
   Element counts for
-  <a href={mp_trj_data.figshare}>MPtrj training set</a> consisting of 1,580,395 structures
-  which are frames of the DFT relaxations performed on all 154,719 MP materials.
+  <a href={mp_trj_data.figshare}>MPtrj training set</a> consisting of 1,580,395 structures which
+  are frames of the DFT relaxations performed on all 154,719 MP materials.
 </p>
 
 <PtableHeatmap

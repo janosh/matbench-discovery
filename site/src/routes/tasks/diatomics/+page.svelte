@@ -33,7 +33,6 @@
     `#f58231`, // Orange 2
     `#911eb4`, // Purple 2
   ] as const
-
   type ColorType = (typeof colors)[number]
 
   const homo_nuc_key = `homo-nuclear`
@@ -53,20 +52,18 @@
 
   let plot_size = $state({ width: 400, height: 300 })
 
-  // Preselect all models with data; initialized eagerly (not in an effect) so the
-  // plots render on first paint and in prerendered HTML instead of popping in
-  // post-mount. data comes from +page.server.ts and is static for the page lifetime
-  // (navigation remounts and re-inits), so no effect is needed to resync.
   const selected_models = new SvelteSet<string>(
     untrack(() => Object.keys(diatomic_curves)),
   )
+  let selected_model_names = $derived([...selected_models])
+  const visible_diatomics = new SvelteSet<string>()
   let diatomics_to_render = $derived(
     // Only render diatomics where at least one model has data
     homo_diatomic_formulas.filter((formula) =>
-      [...selected_models].some(
+      selected_model_names.some(
         (model) =>
           diatomic_curves[model]?.[homo_nuc_key]?.[formula]?.energies?.length > 0,
-      )
+      ),
     ),
   )
 
@@ -75,6 +72,37 @@
     if (errors[model_name]) return
     if (selected_models.has(model_name)) selected_models.delete(model_name)
     else selected_models.add(model_name)
+  }
+
+  function curves_for_formula(formula: string) {
+    return selected_model_names.flatMap((model) => {
+      const model_curves = diatomic_curves[model]
+      const curve = model_curves?.[homo_nuc_key]?.[formula]
+      if (!curve?.energies.length) return []
+      const { distances } = model_curves
+      const color = model_colors.get(model) ?? `gray`
+      return [{ model_key: model, distances, energies: curve.energies, color }]
+    })
+  }
+
+  function observe_plot(node: HTMLElement, formula: string) {
+    const Observer = globalThis.IntersectionObserver
+    if (!Observer) {
+      visible_diatomics.add(formula)
+      return
+    }
+    const observer = new Observer(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        visible_diatomics.add(formula)
+        observer.disconnect()
+      },
+      { rootMargin: `800px` },
+    )
+    observer.observe(node)
+    return {
+      destroy: () => observer.disconnect(),
+    }
   }
 </script>
 
@@ -125,24 +153,24 @@
   </div>
 </div>
 
-<div class="grid" style="--plot-width: {plot_size.width}px">
+<div
+  class="grid"
+  style="--plot-width: {plot_size.width}px; --plot-height: {plot_size.height}px"
+>
   {#each diatomics_to_render as formula (formula)}
-    <DiatomicCurve
-      {formula}
-      curves={[...selected_models]
-      .filter((model) => {
-        const { energies = [] } = diatomic_curves[model]?.[homo_nuc_key]?.[formula] ??
-          {}
-        return energies.length > 0
-      })
-      .map((model) => ({
-        model_key: model,
-        distances: diatomic_curves[model].distances,
-        energies: diatomic_curves[model][homo_nuc_key][formula].energies,
-        color: model_colors.get(model) ?? `gray`,
-      }))}
-      style={`height: ${plot_size.height}px`}
-    />
+    <div class="plot-shell" use:observe_plot={formula}>
+      {#if visible_diatomics.has(formula)}
+        <DiatomicCurve
+          {formula}
+          curves={curves_for_formula(formula)}
+          style="height: var(--plot-height)"
+        />
+      {:else}
+        <div class="plot-placeholder">
+          <h3>{formula}</h3>
+        </div>
+      {/if}
+    </div>
   {/each}
 </div>
 
@@ -154,6 +182,15 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(var(--plot-width, 400px), 1fr));
     gap: 15pt 0;
+  }
+  .plot-shell,
+  .plot-placeholder {
+    min-height: var(--plot-height, 300px);
+  }
+  .plot-placeholder {
+    display: grid;
+    place-items: start center;
+    color: var(--text-muted, #777);
   }
   .controls {
     display: flex;

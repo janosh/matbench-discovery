@@ -592,7 +592,7 @@ def test_write_metrics_to_yaml(
 
         with patch("builtins.open", mock_open()):
             phonon_metrics.write_metrics_to_yaml(
-                mock_model,  # ty: ignore[invalid-argument-type]
+                mock_model,
                 metrics_data,
                 "models/test/kappa-103.json.gz",
             )

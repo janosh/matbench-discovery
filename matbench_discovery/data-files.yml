@@ -95,6 +95,12 @@ phonondb_pbe_103_kappa_no_nac:
   description: 103 phononDB structures run by Togo with PBE settings received in private communication. See https://github.com/atztogo/phonondb/blob/bba206/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe for details.
   md5: 70c7a8b0df4cbb4d98f12aea5f61aeee
 
+aimd_reference_md_trajectories:
+  path: md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.h5
+  description: 17 ab-initio NVT molecular dynamics reference trajectories (CFPMD-26 dataset, courtesy of working groups 2+4 of the COST Action "Data-driven Applications towards the Engineering of Functional Materials") spanning pure metals, alloys, high-entropy alloys, transition-metal dichalcogenides, perovskites and molecular crystals at 293-1500 K, used as references for the MD benchmark task. Single HDF5 file with one group per system holding the trajectory arrays (positions, cell, energies, forces and for most systems stresses) plus dt_fs (saved-frame interval) and temperature_kelvin as group attributes. Positions/forces are rounded to 5 decimal places (changes RDF/vDOS/pressure metrics by <0.02%) to reduce file size.
+  md5: 9da61aeb3f99c5bbfb1f9499dcf2ef88
+  url: https://figshare.com/files/66041234
+
 _links: |
   [`PatchedPhaseDiagram`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814
   [`ComputedStructureEntries`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/entries/computed_entries.py#L579-L722

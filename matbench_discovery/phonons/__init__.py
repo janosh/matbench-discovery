@@ -1,12 +1,14 @@
 """This package contains phonon-related functionality."""
 
-from typing import Final, Literal, NotRequired, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
 
-from matbench_discovery.phonons.calc_kappa import calc_kappa_for_structure
+from matbench_discovery.phonons.thermal_conductivity import (
+    calc_kappa_for_structure as calc_kappa_for_structure,
+)
 
 
 def read_kappa_json(path: str) -> pd.DataFrame:

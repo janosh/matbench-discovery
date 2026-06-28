@@ -1,6 +1,6 @@
 import { type Label, TableControls } from '$lib'
 import { mount, tick } from 'svelte'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { doc_query } from '../index'
 
 describe(`TableControls`, () => {
@@ -19,10 +19,7 @@ describe(`TableControls`, () => {
   }
 
   it(`renders filter controls with correct initial state`, () => {
-    mount(TableControls, {
-      target: document.body,
-      props: { on_filter_change: vi.fn() },
-    })
+    mount(TableControls, { target: document.body })
 
     // Verify filter checkboxes are present
     const labels = [...document.querySelectorAll(`label`)].map((label) =>
@@ -31,24 +28,6 @@ describe(`TableControls`, () => {
     expect(labels).toContain(`Compliant models`)
     expect(labels).toContain(`Non-compliant models`)
     expect(labels).toContain(`Heatmap`)
-  })
-
-  it(`calls on_filter_change when energy-only filter is toggled`, () => {
-    const on_filter_change = vi.fn()
-
-    mount(TableControls, {
-      target: document.body,
-      props: { on_filter_change, show_energy_only_toggle: true },
-    })
-
-    const energy_checkbox = find_checkbox_by_label(`Energy-only`)
-
-    const initial_checked = energy_checkbox.checked
-    energy_checkbox.click()
-
-    expect(on_filter_change).toHaveBeenCalledTimes(1)
-    expect(on_filter_change).toHaveBeenCalledWith(!initial_checked, false)
-    expect(energy_checkbox.checked).toBe(!initial_checked)
   })
 
   it(`toggles compliance filter checkboxes`, () => {

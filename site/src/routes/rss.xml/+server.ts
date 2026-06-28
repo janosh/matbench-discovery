@@ -24,8 +24,9 @@ function format_model_for_rss(model: ModelData): string {
 
   const metrics_text = discovery_metrics
     ? Object.entries(discovery_metrics)
-        .filter((entry): entry is [string, number] => typeof entry[1] === `number`)
-        .map(([key, value]) => `${key}: ${format_num(value)}`)
+        .flatMap(([key, value]) =>
+          typeof value === `number` ? [`${key}: ${format_num(value)}`] : [],
+        )
         .join(`,<br>&nbsp;&nbsp;`)
     : `No metrics available`
 
@@ -46,8 +47,9 @@ function format_model_for_rss(model: ModelData): string {
     ? `<p><strong>Key Hyperparameters:</strong><br>&nbsp;&nbsp;${Object.entries(
         model.hyperparams,
       )
-        .filter(([key]) => !key.startsWith(`_`))
-        .map(([key, value]) => `${key}: ${String(value)}`)
+        .flatMap(([key, value]) =>
+          key.startsWith(`_`) ? [] : [`${key}: ${String(value)}`],
+        )
         .join(`,<br>&nbsp;&nbsp;`)}</p>`
     : ``
   const license_info = model.license

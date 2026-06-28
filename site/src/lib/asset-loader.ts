@@ -29,20 +29,6 @@ export interface ParityPoint {
 
 export const clear_asset_cache = () => asset_cache.clear()
 
-// Pick a configured base URL (e.g. from a Vite env var) over the manifest default,
-// trimming trailing slashes.
-export const resolve_asset_base_url = (
-  configured: string | undefined,
-  fallback: string,
-): string => {
-  const trimmed = configured?.trim() ?? ``
-  // fall back when configured is missing or only whitespace
-  return (trimmed.length > 0 ? trimmed : fallback).replace(/\/+$/, ``)
-}
-
-export const join_asset_url = (base_url: string, asset: string): string =>
-  `${base_url}/${asset.replace(/^\/+/, ``)}`
-
 // Shared manifest-based URL helpers for parity asset modules (energy, kappa, ...).
 // `kind` only affects error messages. `env_base_url` (e.g. a Vite env var) overrides
 // the manifest's local default base URL.
@@ -59,9 +45,12 @@ export function parity_asset_resolver(
     string,
     { asset: string } | undefined
   >
-  const base_url = resolve_asset_base_url(env_base_url, manifest.local_asset_base_url)
+  const configured_base_url = env_base_url?.trim() ?? ``
+  const base_url = (
+    configured_base_url.length > 0 ? configured_base_url : manifest.local_asset_base_url
+  ).replace(/\/+$/, ``)
   return {
-    asset_url: (asset: string): string => join_asset_url(base_url, asset),
+    asset_url: (asset: string): string => `${base_url}/${asset.replace(/^\/+/, ``)}`,
     model_asset: (model_key: string): string => {
       const asset = model_assets[model_key]?.asset
       if (!asset) throw new Error(`No ${kind} parity model asset for ${model_key}`)

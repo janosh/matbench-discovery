@@ -64,6 +64,8 @@ export type ModelMetadata = Record<string, unknown> & {
     | 'MatterSim'
     | 'Alex'
     | 'OMat24'
+    | 'MatPES PBE'
+    | 'MatPES r2SCAN'
     | 'sAlex'
     | 'OpenLAM'
     | 'MDR PBE Phonons in MPtrj'
@@ -124,7 +126,7 @@ export type ModelMetadata = Record<string, unknown> & {
   model_type: ModelType
   targets: TargetType
   openness: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
-  status?: 'aborted' | 'complete' | 'deprecated' | 'pending' | 'superseded'
+  status?: 'aborted' | 'complete' | 'deprecated' | 'superseded'
   /**
    * model_key of the newer model replacing this one
    */
@@ -134,6 +136,7 @@ export type ModelMetadata = Record<string, unknown> & {
     geo_opt?: GeoOptMetrics | ('not applicable' | 'not available')
     discovery?: DiscoveryMetrics | 'not available'
     diatomics?: DiatomicsMetrics | ('not applicable' | 'not available')
+    md?: MdMetrics | ('not applicable' | 'not available')
   }
 }
 /**
@@ -212,6 +215,24 @@ export type DiatomicsMetrics = Record<string, unknown> & {
   force_flips?: number
   force_total_variation?: number
   force_jump?: number
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "MdMetrics".
+ */
+export type MdMetrics = Record<string, unknown> & {
+  pred_file?: string | null
+  pred_file_url?: string
+  energy_rmse?: number
+  force_rmse?: number
+  rdf_error?: number
+  adf_error?: number
+  vdos_error?: number
+  pressure_mae?: number
+  pressure_wasserstein?: number
+  pressure_error?: number
+  combined_score?: number
+  n_systems?: number
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema

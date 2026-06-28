@@ -284,7 +284,7 @@ def test_write_metrics_to_yaml(tmp_path: Path) -> None:
 
     with patch.object(Model, "__instancecheck__", return_value=True):
         result = write_metrics_to_yaml(
-            mock_model,  # ty: ignore[invalid-argument-type]
+            mock_model,
             test_metrics,
             test_preds,
             TestSubset.full_test_set,

@@ -53,8 +53,9 @@
         date: Date.parse(model.date_added ?? ``),
         value: metric_configs[metric].get(model),
       }))
-      .filter((pt): pt is typeof pt & { value: number } =>
-        is_finite_num(pt.value) && is_finite_num(pt.date)
+      .filter(
+        (pt): pt is typeof pt & { value: number } =>
+          is_finite_num(pt.value) && is_finite_num(pt.date),
       ),
   )
   // sota_frontier_indices returns records in date order, so the step line can use
@@ -66,7 +67,10 @@
     return flags
   })
   let frontier = $derived(
-    sota_step_line(record_order.map((idx) => points[idx]), Date.now()),
+    sota_step_line(
+      record_order.map((idx) => points[idx]),
+      Date.now(),
+    ),
   )
 
   let series = $derived.by((): DataSeries<TimelineMeta>[] => {
@@ -91,7 +95,7 @@
       point_label: points.map((pt, idx) =>
         is_record[idx]
           ? { text: pt.model.model_name, font_size: `11px`, auto_placement: true }
-          : {}
+          : {},
       ),
     }
     const frontier_line: DataSeries<TimelineMeta> = {

@@ -92,7 +92,6 @@ data_path = {Task.IS2RE: DataFiles.wbm_initial_atoms.path}[task_type]
 print(f"\nJob {job_name!r} running {timestamp}", flush=True)
 print(f"{data_path=}", flush=True)
 
-# Initialize ASE SevenNet Calculator from checkpoint
 seven_net_calc = SevenNetCalculator(**calc_kwargs)
 
 
@@ -107,9 +106,9 @@ if slurm_array_job_id == "debug":
     else:
         pass
 elif slurm_array_task_count > 1:
-    atoms_list = np.array_split(  # ty: ignore[no-matching-overload]
-        atoms_list, slurm_array_task_count
-    )[slurm_array_task_id - 1]
+    atoms_list = np.array_split(atoms_list, slurm_array_task_count)[
+        slurm_array_task_id - 1
+    ]
 
 relax_results: dict[str, dict[str, Any]] = {}
 optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]

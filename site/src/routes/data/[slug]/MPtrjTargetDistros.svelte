@@ -9,10 +9,20 @@
   // per-target presentation: title, x label, and whether the count axis needs
   // arcsinh compression (log-like but keeps a valid 0 baseline for bars)
   const targets = [
-    { key: `e-form`, title: `Formation Energy`, x_label: `E<sub>form</sub> (eV/atom)`, arcsinh: false },
+    {
+      key: `e-form`,
+      title: `Formation Energy`,
+      x_label: `E<sub>form</sub> (eV/atom)`,
+      arcsinh: false,
+    },
     { key: `forces`, title: `Forces`, x_label: `|Forces| (eV/Å)`, arcsinh: true },
     { key: `stresses`, title: `Stresses`, x_label: `1/3 Tr(σ) (eV/Å³)`, arcsinh: true },
-    { key: `magmoms`, title: `Magnetic Moments`, x_label: `Magmoms (μ<sub>B</sub>)`, arcsinh: true },
+    {
+      key: `magmoms`,
+      title: `Magnetic Moments`,
+      x_label: `Magmoms (μ<sub>B</sub>)`,
+      arcsinh: true,
+    },
   ] as const
 </script>
 

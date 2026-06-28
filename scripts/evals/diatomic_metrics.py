@@ -17,7 +17,6 @@ print(f"Evaluating diatomic metrics for {len(models_to_evaluate)} model(s)...")
 n_success = 0
 n_skipped = 0
 
-# Loop over all models
 for model in models_to_evaluate:
     if not os.path.isfile(model.yaml_path):
         print(f"Skipping {model.label}: YAML file not found")

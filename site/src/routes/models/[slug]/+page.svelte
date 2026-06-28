@@ -6,35 +6,45 @@
     openness_tooltips,
     targets_tooltips,
   } from '$lib/metrics'
-  import { has_kappa_parity_model } from '$lib/kappa-parity'
+  import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
   import { EnergyParityPlot, KappaParityPlot } from '$lib/plot'
   import { get_pred_file_urls } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'matterviz'
-  import { ColorBar, format_num, format_relative_time, Icon, PeriodicTable, TableInset } from 'matterviz'
+  import { format_num, format_relative_time, Icon, ColorBar } from 'matterviz'
+  import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { CopyButton } from 'svelte-multiselect'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
 
+  type ModelInfoItem = readonly [key: string, value: string, title?: string | null]
+
   let { data }: { data: { model: ModelData } } = $props()
 
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
-  let added_ago = $derived(format_relative_time(data.model.date_added))
-  let published_ago = $derived(format_relative_time(data.model.date_published))
+  let { model } = $derived(data)
+  let added_ago = $derived(format_relative_time(model.date_added))
+  let published_ago = $derived(format_relative_time(model.date_published))
+  let model_info_items: ModelInfoItem[] = $derived([
+    [`Model Version`, model.model_version],
+    [`Model Type`, model.model_type, model_type_tooltips[model.model_type]],
+    [`Targets`, model.targets, targets_tooltips[model.targets]],
+    [`Openness`, model.openness, openness_tooltips[model.openness]],
+    [`Train Task`, model.train_task, discovery_task_tooltips[model.train_task]],
+    [`Test Task`, model.test_task, discovery_task_tooltips[model.test_task]],
+    [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`],
+  ])
 
   export const snapshot = {
     capture: () => ({ color_scale }),
-    restore: (
-      values: { color_scale: D3InterpolateName },
-    ) => ({ color_scale } = values),
+    restore: (values: { color_scale: D3InterpolateName }) => ({ color_scale } = values),
   }
 </script>
 
 {#if data.model}
-  {@const model = data.model}
   {@const discovery = model.metrics?.discovery}
   {@const { missing_preds } =
     (typeof discovery === `object` ? discovery?.unique_prototypes : undefined) ?? {}}
@@ -57,7 +67,8 @@
         {/if}
       </span>
 
-      <span title={added_ago} {@attach tooltip()}><Icon icon="Calendar" />
+      <span title={added_ago} {@attach tooltip()}
+        ><Icon icon="Calendar" />
         Added: {model.date_added}
       </span>
 
@@ -66,7 +77,8 @@
       </span>
 
       <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
-        <Icon icon="NeuralNetwork" /> {format_num(model.model_params, `.3~s`)}
+        <Icon icon="NeuralNetwork" />
+        {format_num(model.model_params, `.3~s`)}
         parameters
       </span>
 
@@ -76,14 +88,16 @@
 
       {#if missing_preds != undefined}
         <span
-          {@attach tooltip()}
-          title="Out of {format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, {format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances."
+          {@attach tooltip({
+            content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances.`,
+          })}
         >
           <Icon icon="MissingMetadata" />
           Missing preds: {format_num(missing_preds, `,.0f`)}
           {#if missing_preds != 0}
             <small>
-              ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})</small>
+              ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})
+            </small>
           {/if}
         </span>
       {/if}
@@ -92,7 +106,7 @@
         <code style="padding: 0 4pt; place-content: center">
           pip install {model.pypi.split(`/`).pop()}
           <CopyButton
-            content={`pip install ${model.pypi.split(`/`).pop()}`}
+            content="pip install {model.pypi.split(`/`).pop()}"
             labels={{
               ready: { icon: `Copy`, text: `` },
               success: { icon: `Check`, text: `` },
@@ -185,7 +199,7 @@
         {#if pred_files.length > 0}
           <details
             class="pred-files"
-            {@attach click_outside({ callback: (node) => node.open = false })}
+            {@attach click_outside({ callback: (node) => (node.open = false) })}
           >
             <summary>
               <Icon icon="Graph" /> Predictions
@@ -202,8 +216,8 @@
       {/if}
     </section>
 
-    <EnergyParityPlot model={model} energy_kind="e-form" />
-    <EnergyParityPlot model={model} energy_kind="each" />
+    <EnergyParityPlot {model} energy_kind="e-form" />
+    <EnergyParityPlot {model} energy_kind="each" />
 
     {#if has_kappa_parity_model(model.model_key)}
       <KappaParityPlot {model} />
@@ -212,8 +226,10 @@
     {#if model.model_key && model.model_key in per_elem_each_errors}
       {@const raw_heatmap = per_elem_each_errors[model.model_key]}
       {@const heatmap_values = Object.fromEntries(
-      Object.entries(raw_heatmap).filter(([, val]) => val !== null),
-    ) as Record<string, number>}
+        Object.entries(raw_heatmap).filter(
+          (entry): entry is [string, number] => entry[1] !== null,
+        ),
+      )}
       <h2 style="margin: 1em auto; text-align: center" class="toc-exclude">
         Convex hull distance prediction errors projected onto elements
       </h2>
@@ -276,26 +292,7 @@
     <section class="model-info">
       <h2>Model Info</h2>
       <ul>
-        {#each [
-          [`Model Version`, model.model_version],
-          [`Model Type`, model.model_type, model_type_tooltips[model.model_type]],
-          [`Targets`, model.targets, targets_tooltips[model.targets]],
-          [`Openness`, model.openness, openness_tooltips[model.openness]],
-          [
-            `Train Task`,
-            model.train_task,
-            discovery_task_tooltips[model.train_task],
-          ],
-          [
-            `Test Task`,
-            model.test_task,
-            discovery_task_tooltips[model.test_task],
-          ],
-          [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`],
-        ] as
-          [key, value, title = null]
-          (key)
-        }
+        {#each model_info_items as [key, value, title = null] (key)}
           <li {title} {@attach tooltip()}>
             {key}
             {#if key === `Targets`}
@@ -336,15 +333,7 @@
 
     {#if model.notes?.html && typeof model.notes.html === `object`}
       <section class="notes">
-        {#each Object.entries(
-        model.notes.html as Record<
-          string,
-          string | string[] | Record<string, unknown>
-        >,
-      ) as
-          [key, note]
-          (key)
-        }
+        {#each Object.entries(model.notes.html as Record<string, string | string[] | Record<string, unknown>>) as [key, note] (key)}
           <h2>{key}</h2>
           {#if typeof note === `string`}
             <p>{@html note}</p>
@@ -382,8 +371,8 @@
         <ul>
           {#each Object.entries(model.requirements) as [pkg, version] (pkg)}
             {@const href = version?.startsWith(`http`)
-          ? version
-          : `https://pypi.org/project/${pkg}/${version}`}
+              ? version
+              : `https://pypi.org/project/${pkg}/${version}`}
             <li>
               {pkg}
               <a {href} target="_blank" rel="noopener noreferrer">{version}</a>
@@ -423,7 +412,7 @@
     display: block;
     font-weight: bold;
   }
-  .meta-info, .links {
+  :is(.meta-info, .links) {
     display: flex;
     flex-wrap: wrap;
     gap: 2ex;

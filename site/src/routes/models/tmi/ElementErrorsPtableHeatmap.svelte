@@ -35,7 +35,9 @@
   const test_set_std_key = `Test set standard deviation`
   const test_set_std = each_errors[test_set_std_key]
 
-  let model = $derived(MODELS.find((candidate) => candidate.model_name === current_model[0]))
+  let model = $derived(
+    MODELS.find((candidate) => candidate.model_name === current_model[0]),
+  )
   let model_key = $derived(
     model?.model_key && model.model_key in each_errors
       ? model.model_key
@@ -55,15 +57,17 @@
     manual_cbar_max ? (cbar_max ?? 0) : current_data_max,
   ])
 
-  const snapshot_data = () => (
-    { color_scale, current_model, cbar_max, manual_cbar_max, normalized }
-  )
+  const snapshot_data = () => ({
+    color_scale,
+    current_model,
+    cbar_max,
+    manual_cbar_max,
+    normalized,
+  })
   export const snapshot = {
     capture: snapshot_data,
-    restore: (
-      values: ReturnType<typeof snapshot_data>,
-    ) => ({ color_scale, current_model, cbar_max, manual_cbar_max, normalized } =
-      values),
+    restore: (values: ReturnType<typeof snapshot_data>) =>
+      ({ color_scale, current_model, cbar_max, manual_cbar_max, normalized } = values),
   }
 </script>
 
@@ -93,8 +97,8 @@
   </label>
   <label>
     <input type="checkbox" bind:checked={normalized} />
-    Divide each element value by its std. dev. of target energies over all test structures
-    containing a given element
+    Divide each element value by its std. dev. of target energies over all test structures containing
+    a given element
   </label>
   <small>
     This is meant to correct for the fact that some elements are inherently more difficult

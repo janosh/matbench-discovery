@@ -1,5 +1,5 @@
 import { MODELS } from '$lib/models.svelte'
-import { ALL_METRICS } from '$lib/labels'
+import { ALL_METRICS, MD_METRICS } from '$lib/labels'
 import { sort_models } from '$lib/metrics'
 import { default as ModelsPage } from '$routes/models/+page.svelte'
 import { mount, tick } from 'svelte'
@@ -33,20 +33,36 @@ describe(`Models Page`, () => {
     const button_texts = [...document.querySelectorAll(`ul button`)].map((btn) =>
       btn.textContent?.trim(),
     )
-    expect(button_texts).toStrictEqual([
-      `Model Name`,
+    // derive the full expected button order from the same label sources the page uses
+    // (Model Name + discovery metrics in metric_keys order + every MD metric), converting
+    // each label's HTML to text the way the page's {@html label} render does, so removal or
+    // reorder of any sort button (MD or not) is caught
+    const html_to_text = (html: string): string => {
+      const el = document.createElement(`div`)
+      el.innerHTML = html
+      return el.textContent?.trim() ?? ``
+    }
+    // mirrors metric_keys in site/src/routes/models/+page.svelte
+    const discovery_keys = [
       `CPS`,
-      `Acc`,
+      `Accuracy`,
       `DAF`,
       `F1`,
       `MAE`,
-      `Prec`,
+      `Precision`,
       `R2`,
       `RMSE`,
       `TNR`,
       `TPR`,
-      `κSRME`,
-    ])
+      `κ_SRME`,
+    ] as const
+    const expected_button_texts = [
+      `Model Name`,
+      ...discovery_keys.map((key) => html_to_text(ALL_METRICS[key].label)),
+      ...Object.values(MD_METRICS).map((metric) => html_to_text(metric.label)),
+    ]
+
+    expect(button_texts).toStrictEqual(expected_button_texts)
   })
 
   it(`renders model cards`, () => {

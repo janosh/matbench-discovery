@@ -152,3 +152,16 @@ metrics:
   diatomics:
     pred_file: models/grace/grace-2l-oam/2025-02-19-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52467527
+  md:
+    pred_file: models/grace/grace-2l-oam/2026-06-28-grace_2l_oam-md-metrics.csv.gz
+    energy_rmse: 0.8143 # meV/atom
+    force_rmse: 89.3174 # meV/Å
+    rdf_error: 3.6307 # %
+    adf_error: 1.4295 # %
+    vdos_error: 23.2809 # %
+    pressure_mae: 0.7951 # GPa
+    pressure_wasserstein: 0.8018 # GPa
+    pressure_error: 50.2618 # %
+    combined_score: 0.803493
+    n_systems: 17 # count
+    pred_file_url: https://figshare.com/files/66048884

@@ -3,7 +3,6 @@ import {
   energy_parity_asset_url,
   energy_parity_stats,
   get_energy_parity_point,
-  has_energy_parity_model,
   load_energy_parity_base,
   load_energy_parity_model,
   load_wbm_structure,
@@ -11,10 +10,10 @@ import {
   structure_bundle_for_shard,
   structure_shard_idx,
   structure_popup_placement,
-} from '$lib/energy-parity'
-import type { EnergyParityBase, EnergyParityModel } from '$lib/energy-parity'
+} from '$lib/parity/energy-parity'
+import type { EnergyParityBase, EnergyParityModel } from '$lib/parity/energy-parity'
 import { clear_asset_cache, load_json_asset } from '$lib/asset-loader'
-import { energy_parity_manifest } from '$lib/energy-parity-manifest'
+import { energy_parity_manifest } from '$lib/parity/energy-parity-manifest'
 import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gzipped_json_response, request_url } from '../index'
@@ -96,12 +95,6 @@ describe(`energy parity data helpers`, () => {
     })
     expect(point?.y).toBeCloseTo(1.0)
     expect(point?.error).toBeCloseTo(0.2)
-  })
-
-  it(`does not treat a stale injected model as loaded`, () => {
-    expect(has_energy_parity_model(model, `test-model`)).toBe(true)
-    expect(has_energy_parity_model(model, `other-model`)).toBe(false)
-    expect(has_energy_parity_model(undefined, `test-model`)).toBe(false)
   })
 
   it(`loads gzipped JSON assets and caches duplicate requests`, async () => {

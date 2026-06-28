@@ -355,15 +355,18 @@ def update_yaml_file(
         *parts, last = dotted_path.split(".")
 
         for part in parts:
-            if part not in current:
+            # replace missing or scalar intermediate nodes (e.g. 'not available'
+            # placeholders) with dicts so traversal can continue
+            if not isinstance(current.get(part), dict):
                 current[part] = {}
             current = current[part]
 
-        # Update the data at the final level
-        if last not in current or current[last] is None:
-            current[last] = {}
-        for key, val in current[last].items():
-            data.setdefault(key, val)
+        # Update the data at the final level, preserving existing keys when replacing
+        # a dict section and replacing placeholder strings like 'not available'.
+        previous = current.get(last)
+        if isinstance(previous, dict):
+            for key, val in previous.items():
+                data.setdefault(key, val)
         # Replace the entire current[last] section to preserve comments
         current[last] = data
 

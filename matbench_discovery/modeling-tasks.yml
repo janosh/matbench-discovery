@@ -49,6 +49,31 @@ diatomics:
     higher_is_better: []
     lower_is_better: []
 
+md:
+  label: Molecular Dynamics
+  description: Reproducing structural, thermodynamic and vibrational observables of ab-initio molecular dynamics trajectories
+  metrics:
+    higher_is_better:
+      - CMDS
+      - combined_score
+    lower_is_better:
+      - E<sub>RMSE</sub>
+      - F<sub>RMSE</sub>
+      - ΔRDF
+      - ΔADF
+      - ΔvDOS
+      - P<sub>MAE</sub>
+      - P<sub>W1</sub>
+      - ΔP
+      - energy_rmse
+      - force_rmse
+      - rdf_error
+      - adf_error
+      - vdos_error
+      - pressure_mae
+      - pressure_wasserstein
+      - pressure_error
+
 cps:
   label: CPS
   description: Combined Performance Score

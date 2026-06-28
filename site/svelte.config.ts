@@ -1,14 +1,11 @@
+import type { Config } from '@sveltejs/kit'
 import adapter from '@sveltejs/adapter-static'
 import { mdsvex } from 'mdsvex'
+import pkg from './package.json' with { type: 'json' }
 import katex from 'rehype-katex-svelte'
 import math from 'remark-math' // Remark-math@3.0.0 pinned due to mdsvex, see https://github.com/kwshi/rehype-katex-svelte#usage
 import { heading_ids } from 'svelte-multiselect/heading-anchors' // Adds IDs to headings at build time
 
-const { default: pkg } = await import(`./package.json`, {
-  with: { type: `json` },
-})
-
-/** @type {import('@sveltejs/kit').Config} */
 export default {
   extensions: [`.svelte`, `.svx`, `.md`, `.html`],
 
@@ -19,18 +16,23 @@ export default {
       markup: ({ content }) => ({ code: content.replaceAll(pkg.homepage, ``) }),
     },
     mdsvex({
-      rehypePlugins: [katex],
+      // cast bridges katex's unified version to the one mdsvex bundles
+      rehypePlugins: [katex] as NonNullable<
+        Parameters<typeof mdsvex>[0]
+      >[`rehypePlugins`],
       remarkPlugins: [math],
       extensions: [`.svx`, `.md`],
     }),
     heading_ids(), // Runs after mdsvex converts markdown to HTML
     {
       markup: (file) => {
-        const route = file.filename.split(`site/src/routes/`)[1]
+        const filename = file.filename?.replaceAll(`\\`, `/`) ?? ``
+        const route = filename.split(`site/src/routes/`)[1] ?? ``
 
-        if (!route?.includes(`discovery-metric-figs`)) return { code: file.content }
+        // Only manuscript figure markdown uses @label/@fig citation-style rewrites.
+        if (!route.includes(`discovery-metric-figs`)) return { code: file.content }
 
-        const fig_index = []
+        const fig_index: string[] = []
 
         // Replace figure labels with 'Fig. {n}' and add to fig_index
         let code = file.content.replaceAll(
@@ -49,7 +51,7 @@ export default {
           // @(f|F)ig becomes '(f|F)ig. {n}'
           (_full_str, id, fig_or_Fig) => {
             const id_lower = id.toLowerCase()
-            let idx = fig_index.indexOf(id_lower) + 1
+            let idx: number | string = fig_index.indexOf(id_lower) + 1
             if (idx === 0) {
               console.warn(
                 `Figure id='${id}' not found, expected one of ${fig_index.join(`, `)}`,
@@ -85,4 +87,4 @@ export default {
       $routes: `src/routes`,
     },
   },
-}
+} satisfies Config

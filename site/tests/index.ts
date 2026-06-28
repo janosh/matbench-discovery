@@ -1,5 +1,7 @@
 import { gzipSync } from 'node:zlib'
-import { beforeAll, beforeEach, vi } from 'vitest'
+import type { ModelData } from '$lib/types'
+import { mount as svelte_mount, unmount } from 'svelte'
+import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
 // MatchMedia mock for Svelte MediaQuery - needed for svelte-multiselect
 Object.defineProperty(globalThis, `matchMedia`, {
@@ -20,9 +22,10 @@ Object.defineProperty(globalThis, `matchMedia`, {
 const app_mocks = vi.hoisted(() => ({
   state: {
     page: {
-      url: { pathname: `/`, searchParams: new URLSearchParams() },
+      url: new URL(`http://localhost/`),
       params: {},
       route: { id: null },
+      state: {},
     },
   },
   environment: { browser: false, building: false, version: `test` },
@@ -35,7 +38,9 @@ const app_mocks = vi.hoisted(() => ({
     beforeNavigate: vi.fn(),
     afterNavigate: vi.fn(),
     pushState: vi.fn(),
-    replaceState: vi.fn(),
+    replaceState: vi.fn((url: string | URL, state: unknown) => {
+      history.replaceState(state, ``, url)
+    }),
   },
 }))
 
@@ -61,6 +66,30 @@ beforeAll(() => {
 
 beforeEach(() => {
   document.body.innerHTML = ``
+  app_mocks.state.page.url = new URL(`http://localhost/`)
+  history.replaceState(null, ``, `/`)
+})
+
+// Svelte's mount() returns a live instance whose effects/subscriptions/listeners keep
+// running until unmount(); clearing document.body.innerHTML only detaches the DOM. Without
+// this, mounts leak across the file, accumulating effects that slow later renders until
+// synchronous tests hit the 5s default timeout on CI. Track instances and unmount below.
+// Typed concretely via Parameters/ReturnType (svelte-check-rs won't infer rest-arg types
+// from a generic contextual annotation), then re-exported with svelte's generic mount
+// signature so call sites keep full prop type-checking.
+const mounted_components: ReturnType<typeof svelte_mount>[] = []
+const tracked_mount = (
+  ...args: Parameters<typeof svelte_mount>
+): ReturnType<typeof svelte_mount> => {
+  const instance = svelte_mount(...args)
+  mounted_components.push(instance)
+  return instance
+}
+export const mount = tracked_mount as typeof svelte_mount
+
+afterEach(async () => {
+  const instances = mounted_components.splice(0)
+  await Promise.all(instances.map((instance) => unmount(instance)))
 })
 
 // gzipped 200 Response for stubbing fetch() of .json.gz assets
@@ -70,6 +99,9 @@ export const gzipped_json_response = (data: unknown) =>
 // normalize the fetch() url argument (string | URL | Request) to a string
 export const request_url = (url: RequestInfo | URL) =>
   typeof url === `string` || url instanceof URL ? String(url) : url.url
+
+export const has_md_metrics = (model: ModelData): boolean =>
+  model.metrics?.md != null && typeof model.metrics.md === `object`
 
 export function doc_query<T extends Element = HTMLElement>(
   selector: string,

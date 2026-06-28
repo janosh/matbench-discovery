@@ -171,3 +171,16 @@ metrics:
       RMSE: 0.087 # eV/atom
       R2: 0.776 # dimensionless
       missing_preds: 1 # count
+  md:
+    pred_file: models/sevennet/sevennet-l3i5/2026-06-28-sevennet_l3i5-md-metrics.csv.gz
+    energy_rmse: 1.2403 # meV/atom
+    force_rmse: 123.3479 # meV/Å
+    rdf_error: 5.0235 # %
+    adf_error: 2.0644 # %
+    vdos_error: 24.8337 # %
+    pressure_mae: 0.8113 # GPa
+    pressure_wasserstein: 0.8154 # GPa
+    pressure_error: 56.086 # %
+    combined_score: 0.779981
+    n_systems: 17 # count
+    pred_file_url: https://figshare.com/files/66048932

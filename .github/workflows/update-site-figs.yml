@@ -82,7 +82,7 @@ jobs:
       # === ingest mode: full pipeline on trusted code + overlaid PR data ===
       - name: Overlay submission data onto trusted checkout
         if: github.event_name == 'pull_request_target'
-        run: uv run python scripts/apply_pr_models_overlay.py pr-tree
+        run: uv run --with-editable . python scripts/apply_pr_models_overlay.py pr-tree
 
       - name: Detect submitted models
         id: detect
@@ -99,7 +99,7 @@ jobs:
           fi
           # word splitting of the newline-separated paths is intended
           # shellcheck disable=SC2086
-          MODELS=$(uv run python scripts/ingest_model.py --map-yaml-paths $CHANGED)
+          MODELS=$(uv run --with-editable . python scripts/ingest_model.py --map-yaml-paths $CHANGED)
           echo "models=$MODELS" >> "$GITHUB_OUTPUT"
           echo "Detected submitted models: $MODELS"
 
@@ -171,7 +171,7 @@ jobs:
         run: |
           {
             echo "model_counts<<PR_BODY_EOF"
-            uv run python scripts/summarize_payload_changes.py
+            uv run --with-editable . python scripts/summarize_payload_changes.py
             echo "PR_BODY_EOF"
           } >> "$GITHUB_OUTPUT"
 

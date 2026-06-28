@@ -6,10 +6,10 @@ import {
   load_json_asset,
   load_parity_model,
   parity_asset_resolver,
-} from './asset-loader'
-import type { ParityBase, ParityModel, ParityPoint } from './asset-loader'
+} from '../asset-loader'
+import type { ParityBase, ParityModel, ParityPoint } from '../asset-loader'
 import { energy_parity_manifest } from './energy-parity-manifest'
-import { is_finite_num } from './metrics'
+import { is_finite_num } from '../metrics'
 
 export type EnergyKind = `e-form` | `each`
 
@@ -127,11 +127,6 @@ function assert_energy_parity_base(base: EnergyParityBase): EnergyParityBase {
   return base
 }
 
-export const has_energy_parity_model = (
-  model: EnergyParityModel | undefined,
-  model_key: string | undefined,
-): model is EnergyParityModel => Boolean(model_key && model?.model_key === model_key)
-
 export const load_energy_parity_base = (): Promise<EnergyParityBase> =>
   load_json_asset<EnergyParityBase>(
     energy_parity_asset_url(energy_parity_manifest.base.asset),
@@ -191,19 +186,27 @@ export function build_energy_parity_series(
   model: EnergyParityModel,
   energy_kind: EnergyKind,
 ): EnergyParitySeries {
-  // get_energy_parity_point returns null for any out-of-range/non-finite row,
-  // so iterating material_ids covers all valid rows regardless of array lengths
-  const points = base.material_ids
-    .map((_material_id, row_idx) =>
-      get_energy_parity_point(base, model, row_idx, energy_kind),
-    )
-    .filter((point): point is EnergyParityPoint => point !== null)
+  const row_count = base.material_ids.length
+  const x = new Float32Array(row_count)
+  const y = new Float32Array(row_count)
+  const point_ids = new Uint32Array(row_count)
+  const size_values = new Float32Array(row_count)
+  let valid_count = 0
 
+  for (let row_idx = 0; row_idx < row_count; row_idx++) {
+    const point = get_energy_parity_point(base, model, row_idx, energy_kind)
+    if (!point) continue
+    x[valid_count] = point.x
+    y[valid_count] = point.y
+    point_ids[valid_count] = row_idx
+    size_values[valid_count] = point.n_sites
+    valid_count++
+  }
   return {
-    x: Float32Array.from(points, (point) => point.x),
-    y: Float32Array.from(points, (point) => point.y),
-    point_ids: Uint32Array.from(points, (point) => point.row_idx),
-    size_values: Float32Array.from(points, (point) => point.n_sites),
+    x: x.subarray(0, valid_count),
+    y: y.subarray(0, valid_count),
+    point_ids: point_ids.subarray(0, valid_count),
+    size_values: size_values.subarray(0, valid_count),
   }
 }
 

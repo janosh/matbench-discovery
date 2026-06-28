@@ -103,7 +103,6 @@ fig.layout.legend.update(
 fig.update_xaxes(range=[-0.2, 0.2])
 fig.update_yaxes(range=[0, 0.2])
 
-# Create shared x and y axis titles
 if subfig is not None:
     x_title = subfig.layout.xaxis.title.text  # used in annotations below
     y_title = subfig.layout.yaxis.title.text

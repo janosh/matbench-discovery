@@ -11,7 +11,7 @@
     MIT: `MIT License`,
   }
 
-  const icon = (name: IconName, color?: string) => {
+  const icon = (name: IconName, color?: string): string => {
     const data = ICON_DATA[name]
     const fill = `stroke` in data ? `none` : `currentColor`
     const stroke = `stroke` in data ? `stroke="currentColor"` : ``
@@ -22,40 +22,40 @@
     </svg>`
   }
 
+  const icon_link = (
+    href: string | null | undefined,
+    title: string,
+    icon_name: IconName,
+    require_http = false,
+  ): string | false => {
+    if (!href || (require_http && !href.startsWith(`http`))) return false
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${title}" aria-label="${title}">${icon(icon_name)}</a>`
+  }
+
+  const join_links = (links: (string | false)[]): string =>
+    links.filter(Boolean).join(` `)
+
   const table_data: RowData[] = Object.entries(DATASETS).map(([key, set]) => {
     const { date_created, license, method, slug } = set
     const license_full = license_map[license] ?? license
-    const params_tooltip = Object.entries(set.params ?? {}).map(([k, v]) =>
-      `${title_case(k)}: ${arr_to_str(v)}`
-    ).join(`&#013;`)
+    const params_tooltip = Object.entries(set.params ?? {})
+      .map(
+        ([param_key, param_value]) =>
+          `${title_case(param_key)}: ${arr_to_str(param_value)}`,
+      )
+      .join(`&#013;`)
     const method_str = arr_to_str(method)
     const created_timestamp = date_created ? new Date(date_created).getTime() : null
 
-    const api_links = [
-      set.native_api?.startsWith(`http`) &&
-      `<a href="${set.native_api}" target="_blank" rel="noopener noreferrer" title="Native API">${
-        icon(`API`)
-      }</a>`,
-      set.optimade_api?.startsWith(`http`) &&
-      `<a href="${set.optimade_api}" target="_blank" rel="noopener noreferrer" title="OPTIMADE API">${
-        icon(`Optimade`)
-      }</a>`,
-    ].filter(Boolean).join(` `)
-
-    const resource_links = [
-      set.url &&
-      `<a href="${set.url}" target="_blank" rel="noopener noreferrer" title="Website" aria-label="Website">${
-        icon(`Globe`)
-      }</a>`,
-      set.download_url &&
-      `<a href="${set.download_url}" target="_blank" rel="noopener noreferrer" title="Download" aria-label="Download">${
-        icon(`Download`)
-      }</a>`,
-      set.doi &&
-      `<a href="${set.doi}" target="_blank" rel="noopener noreferrer" title="DOI" aria-label="DOI">${
-        icon(`DOI`)
-      }</a>`,
-    ].filter(Boolean).join(` `)
+    const api_links = join_links([
+      icon_link(set.native_api, `Native API`, `API`, true),
+      icon_link(set.optimade_api, `OPTIMADE API`, `Optimade`, true),
+    ])
+    const resource_links = join_links([
+      icon_link(set.url, `Website`, `Globe`),
+      icon_link(set.download_url, `Download`, `Download`),
+      icon_link(set.doi, `DOI`, `DOI`),
+    ])
 
     return {
       key,
@@ -72,15 +72,13 @@
         set.static ? `lightgreen` : `lightcoral`,
       ),
       Created: date_created
-        ? `<span data-sort-value="${created_timestamp}" title="${
-          format_date(date_created, { weekday: `long` })
-        }">${format_date(date_created)}</span>`
+        ? `<span data-sort-value="${created_timestamp}" title="${format_date(
+            date_created,
+            { weekday: `long` },
+          )}">${format_date(date_created)}</span>`
         : `n/a`,
-      License: license_full
-        ? `<span title="${license_full}">${license}</span>`
-        : license,
-      Method:
-        `<span title="${method_str}&#013;${params_tooltip}">${method_str}</span>`,
+      License: license_full ? `<span title="${license_full}">${license}</span>` : license,
+      Method: `<span title="${method_str}&#013;${params_tooltip}">${method_str}</span>`,
       API: api_links,
       Links: resource_links,
     }

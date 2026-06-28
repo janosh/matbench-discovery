@@ -15,13 +15,14 @@ __pycache__
 !data/mp/2023-02-07-mp-elemental-reference-entries.json.gz
 # committed data-only figure payloads (small, written by matbench_discovery.figs)
 !site/src/figs/*.json.gz
-# committed per-element error payload (gzipped JSON imported by model pages)
-!site/src/routes/models/per-element-each-errors.json.gz
 data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*
 # auto-downloaded MD reference trajectories
 data/md/
+data/md-checkpoints/
+data/wbm/*symprec=*.csv*
+!data/**/*umap-projections.csv.bz2
 
 # model checkpoints and prediction files
 models/**/*.model

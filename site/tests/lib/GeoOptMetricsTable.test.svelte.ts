@@ -1,4 +1,4 @@
-import GeoOptMetricsTable from '$lib/GeoOptMetricsTable.svelte'
+import GeoOptMetricsTable from '$lib/table/GeoOptMetricsTable.svelte'
 import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'

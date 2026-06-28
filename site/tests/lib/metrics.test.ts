@@ -12,7 +12,7 @@ import {
   sort_models,
   targets_tooltips,
 } from '$lib/metrics'
-import type { TargetType } from '$lib/model-schema'
+import type { TargetType } from '$lib/schema/model'
 import type { ModelData } from '$lib/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -73,6 +73,20 @@ describe(`metric_better_as`, () => {
       )
     },
   )
+})
+
+describe(`metric_better_as (real modeling-tasks.yml lists)`, () => {
+  beforeEach(() => vi.restoreAllMocks()) // exercise the real metric lists, not spies
+
+  // guards orientation in modeling-tasks.yml, e.g. CMDS/combined_score being a score
+  it.each([
+    [`combined_score`, `higher`],
+    [`CMDS`, `higher`],
+    [`vdos_error`, `lower`],
+    [`F1`, `higher`],
+  ])(`maps %s -> %s`, (metric, expected) => {
+    expect(metric_better_as(metric)).toBe(expected)
+  })
 })
 
 describe(`format_train_set`, () => {
