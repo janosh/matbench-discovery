@@ -982,6 +982,14 @@ describe(`MetricsTable`, () => {
       `PW1`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `ΔP`, // ALL_METRICS (MD)
       `CMDS`, // ALL_METRICS (MD)
+      `Conserv.`, // DIATOMICS_METRICS
+      `E flips`, // DIATOMICS_METRICS
+      `E jump`, // DIATOMICS_METRICS
+      `F TV`, // DIATOMICS_METRICS
+      `F flips`, // DIATOMICS_METRICS
+      `F jump`, // DIATOMICS_METRICS
+      `max |∇E|`, // DIATOMICS_METRICS
+      `τ`, // DIATOMICS_METRICS
       `CPS`, // Added in assemble_row_data
     ])
 
