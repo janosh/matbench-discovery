@@ -1008,7 +1008,7 @@ describe(`MetricsTable`, () => {
     }
 
     // Make sure the table is still rendering a sensible number of columns.
-    expect(header_elements).toHaveLengthGreaterThanOrEqual(expected_core_columns.size)
+    expect(header_elements.length).toBeGreaterThanOrEqual(expected_core_columns.size)
 
     // Header tooltip content is attached to inner labels so HeatmapTable's
     // generic title-based tooltip doesn't flash below before our desired top placement.
