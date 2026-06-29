@@ -149,6 +149,13 @@
     event.preventDefault()
     toggle_model_selection(row_model_name)
   }
+
+  const header_tooltip = (content: string | undefined) => (node: Element) => {
+    const header_cell = node.closest(`th`)
+    return header_cell instanceof HTMLElement
+      ? tooltip({ allow_html: true, content, placement: `top` })(header_cell)
+      : undefined
+  }
 </script>
 
 <svelte:window
@@ -192,11 +199,7 @@
 {/snippet}
 
 {#snippet header_cell({ col }: { col: HeaderLabel })}
-  {@const content = col.tooltip_description}
-  <span
-    class="header-label"
-    {@attach tooltip({ allow_html: true, content, placement: `top` })}
-  >
+  <span class="header-label" {@attach header_tooltip(col.tooltip_description)}>
     {@html col.label}
   </span>
 {/snippet}

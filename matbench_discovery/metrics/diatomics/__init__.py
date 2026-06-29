@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Self
 
 import numpy as np
+from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
 from numpy.typing import ArrayLike
 
 from matbench_discovery.data import update_yaml_file
@@ -20,7 +21,6 @@ from matbench_discovery.metrics.diatomics.energy import (
     calc_energy_grad_norm_max,
     calc_energy_jump,
     calc_energy_mae,
-    calc_second_deriv_smoothness,
     calc_tortuosity,
 )
 from matbench_discovery.metrics.diatomics.force import (
@@ -87,6 +87,34 @@ class DiatomicCurves:
         return cls(**data)
 
 
+def _eval_window(elem_symbol: str, seps_max: float) -> tuple[float, float]:
+    """Element-specific [r_min, r_max] metric-evaluation window, matching MLIP Arena.
+
+    MLIP Arena samples (and thus evaluates) homonuclear curves only over
+    ``[0.9 * covalent_radius, 3.1 * vdW_radius]`` (capped at ``seps_max``), deliberately
+    excluding the deep-overlap region (below ~the covalent radius) that no model saw in
+    training and where energies/forces extrapolate to unphysical magnitudes. Without it
+    every magnitude metric (energy/force jumps, grad-norm, total variation) is dominated
+    by the steep repulsive wall at sub-Angstrom separations.
+
+    Args:
+        elem_symbol (str): Homonuclear pair label, e.g. "H-H".
+        seps_max (float): Largest available separation, used to cap r_max.
+
+    Returns:
+        tuple[float, float]: (r_min, r_max) in Å.
+    """
+    atomic_num = atomic_numbers[elem_symbol.split("-", maxsplit=1)[0]]
+    r_min = 0.9 * covalent_radii[atomic_num]
+    r_vdw = (
+        vdw_alvarez.vdw_radii[atomic_num]
+        if atomic_num < len(vdw_alvarez.vdw_radii)
+        else np.nan
+    )
+    r_max = 3.1 * r_vdw if np.isfinite(r_vdw) else seps_max
+    return r_min, min(r_max, seps_max)
+
+
 def calc_diatomic_metrics(
     ref_curves: DiatomicCurves | None,
     pred_curves: DiatomicCurves,
@@ -114,15 +142,16 @@ def calc_diatomic_metrics(
         dict[str, dict[str, float]]: Map of element symbols to metric dicts with keys
             being the metric names and values being the metric values.
     """
-    if unknown_metrics := set(metrics or {}) - set(MbdKey):
+    requested_metrics = set(metrics) if metrics is not None else set(MbdKey)
+    if unknown_metrics := requested_metrics - set(MbdKey):
         raise ValueError(f"{unknown_metrics=}. Valid metrics=")
 
     results: dict[str, dict[str, float]] = {}
-    metrics = (metrics or {}).copy()
+    metric_kwargs = (metrics or {}).copy()
 
     # Initialize empty kwargs for each metric if not provided
     for key in MbdKey:
-        metrics.setdefault(key, {})
+        metric_kwargs.setdefault(key, {})
 
         # set user-specified interpolate on metrics that support it
         if key in (
@@ -131,108 +160,100 @@ def calc_diatomic_metrics(
             MbdKey.force_mae,
             MbdKey.conservation,
         ):
-            metrics[key].setdefault("interpolate", interpolate)
+            metric_kwargs[key].setdefault("interpolate", interpolate)
 
     for elem_symbol, pred_data in pred_curves.homo_nuclear.items():
-        elem_metrics: dict[str, float] = {}
-        seps_pred = pred_curves.distances
+        # restrict to MLIP Arena's element-specific evaluation window first, excluding
+        # the unphysical deep-overlap region that otherwise dominates every magnitude
+        # metric (and where unstable models tend to produce non-finite values; checking
+        # finiteness below the window means a curve only bad in deep overlap is kept)
+        r_min, r_max = _eval_window(elem_symbol, float(np.max(pred_curves.distances)))
+        pred_mask = (pred_curves.distances >= r_min) & (pred_curves.distances <= r_max)
+        if int(pred_mask.sum()) < 5:  # too few points in window for stable metrics
+            print(f"Skipping {elem_symbol} diatomic metrics: <5 points in eval window")
+            continue
+        seps_pred = pred_curves.distances[pred_mask]
+        pred_energies = np.asarray(pred_data.energies)[pred_mask]
+        pred_forces = np.asarray(pred_data.forces)[pred_mask]
 
-        # Skip reference-requiring metrics if no reference curves provided
+        # skip curves still non-finite within the window (model instability at scored
+        # geometries); they'd fail metric validation and abort the whole model otherwise
+        if not (np.isfinite(pred_energies).all() and np.isfinite(pred_forces).all()):
+            print(f"Skipping {elem_symbol} diatomic metrics: non-finite curve values")
+            continue
+
+        # (metric_key, function, positional args) for metrics needing only the
+        # predicted curve
+        metric_calls: list[tuple[MbdKey, Any, tuple[Any, ...]]] = [
+            (MbdKey.tortuosity, calc_tortuosity, (seps_pred, pred_energies)),
+            (
+                MbdKey.energy_diff_flips,
+                calc_energy_diff_flips,
+                (seps_pred, pred_energies),
+            ),
+            (
+                MbdKey.energy_grad_norm_max,
+                calc_energy_grad_norm_max,
+                (seps_pred, pred_energies),
+            ),
+            (MbdKey.energy_jump, calc_energy_jump, (seps_pred, pred_energies)),
+            (
+                MbdKey.conservation,
+                calc_conservation_deviation,
+                (seps_pred, pred_energies, pred_forces),
+            ),
+            (MbdKey.force_flips, calc_force_flips, (seps_pred, pred_forces)),
+            (
+                MbdKey.force_total_variation,
+                calc_force_total_variation,
+                (seps_pred, pred_forces),
+            ),
+            (MbdKey.force_jump, calc_force_jump, (seps_pred, pred_forces)),
+        ]
+
+        # prepend reference-requiring metrics when a matching reference curve exists
         if ref_curves and (ref_data := ref_curves.homo_nuclear.get(elem_symbol)):
-            seps_ref = ref_curves.distances
-
-            # Check if distances match and interpolation is disabled
+            ref_mask = (ref_curves.distances >= r_min) & (ref_curves.distances <= r_max)
+            seps_ref = ref_curves.distances[ref_mask]
+            ref_energies = np.asarray(ref_data.energies)[ref_mask]
+            ref_forces = np.asarray(ref_data.forces)[ref_mask]
             if not np.array_equal(seps_pred, seps_ref) and not interpolate:
                 raise ValueError(
                     f"Reference and predicted distances must be same when "
                     f"{interpolate=}\n{seps_pred=}, {seps_ref=}"
                 )
+            metric_calls[:0] = [
+                (
+                    MbdKey.norm_auc,
+                    calc_curve_diff_auc,
+                    (seps_ref, ref_energies, seps_pred, pred_energies),
+                ),
+                (
+                    MbdKey.energy_mae,
+                    calc_energy_mae,
+                    (seps_ref, ref_energies, seps_pred, pred_energies),
+                ),
+                (
+                    MbdKey.force_mae,
+                    calc_force_mae,
+                    (seps_ref, ref_forces, seps_pred, pred_forces),
+                ),
+            ]
 
-            # Energy metrics that need both curves
-            if MbdKey.norm_auc in metrics:
-                elem_metrics[MbdKey.norm_auc] = calc_curve_diff_auc(
-                    seps_ref,
-                    ref_data.energies,
-                    seps_pred,
-                    pred_data.energies,
-                    **metrics[MbdKey.norm_auc],
-                )
-
-            if MbdKey.energy_mae in metrics:
-                elem_metrics[MbdKey.energy_mae] = calc_energy_mae(
-                    seps_ref,
-                    ref_data.energies,
-                    seps_pred,
-                    pred_data.energies,
-                    **metrics[MbdKey.energy_mae],
-                )
-
-            if MbdKey.force_mae in metrics:
-                elem_metrics[MbdKey.force_mae] = calc_force_mae(
-                    seps_ref,
-                    ref_data.forces,
-                    seps_pred,
-                    pred_data.forces,
-                    **metrics[MbdKey.force_mae],
-                )
-
-        # Energy metrics that need only predicted curve
-        if MbdKey.smoothness in metrics:
-            elem_metrics[MbdKey.smoothness] = calc_second_deriv_smoothness(
-                seps_pred, pred_data.energies, **metrics[MbdKey.smoothness]
-            )
-
-        if MbdKey.tortuosity in metrics:
-            elem_metrics[MbdKey.tortuosity] = calc_tortuosity(
-                seps_pred, pred_data.energies, **metrics[MbdKey.tortuosity]
-            )
-
-        if MbdKey.energy_diff_flips in metrics:
-            elem_metrics[MbdKey.energy_diff_flips] = calc_energy_diff_flips(
-                seps_pred, pred_data.energies, **metrics[MbdKey.energy_diff_flips]
-            )
-
-        if MbdKey.energy_grad_norm_max in metrics:
-            elem_metrics[MbdKey.energy_grad_norm_max] = calc_energy_grad_norm_max(
-                seps_pred, pred_data.energies, **metrics[MbdKey.energy_grad_norm_max]
-            )
-
-        if MbdKey.energy_jump in metrics:
-            elem_metrics[MbdKey.energy_jump] = calc_energy_jump(
-                seps_pred, pred_data.energies, **metrics[MbdKey.energy_jump]
-            )
-
-        # Force metrics that need only predicted curve
-        if MbdKey.conservation in metrics:
-            elem_metrics[MbdKey.conservation] = calc_conservation_deviation(
-                seps_pred,
-                pred_data.energies,
-                pred_data.forces,
-                **metrics[MbdKey.conservation],
-            )
-
-        if MbdKey.force_flips in metrics:
-            elem_metrics[MbdKey.force_flips] = calc_force_flips(
-                seps_pred, pred_data.forces, **metrics[MbdKey.force_flips]
-            )
-
-        if MbdKey.force_total_variation in metrics:
-            elem_metrics[MbdKey.force_total_variation] = calc_force_total_variation(
-                seps_pred, pred_data.forces, **metrics[MbdKey.force_total_variation]
-            )
-
-        if MbdKey.force_jump in metrics:
-            elem_metrics[MbdKey.force_jump] = calc_force_jump(
-                seps_pred, pred_data.forces, **metrics[MbdKey.force_jump]
-            )
-
-        results[elem_symbol] = elem_metrics
+        results[elem_symbol] = {
+            key: calc_fn(*args, **metric_kwargs[key])
+            for key, calc_fn, args in metric_calls
+            if key in requested_metrics
+        }
 
     return results
 
 
 def write_metrics_to_yaml(
-    model: Model, metrics: dict[str, dict[str, float]]
+    model: Model,
+    metrics: dict[str, dict[str, float]],
+    pred_file_path: str | None = None,
+    run_metadata: dict[str, str | float] | None = None,
 ) -> dict[str, str | float | None]:
     """Write diatomic metrics to model YAML file.
 
@@ -240,33 +261,59 @@ def write_metrics_to_yaml(
         model (Model): Model to write metrics for.
         metrics (dict[str, dict[str, float]]): Map of element symbols to dicts of
             metric values.
+        pred_file_path (str | None): If given, record this (repo-relative) path as the
+            metrics.diatomics.pred_file. Otherwise an existing pred_file is preserved.
+        run_metadata (dict[str, str | float] | None): Extra non-metric fields describing
+            the prediction run (e.g. hardware, run_time_sec). Recorded ahead of the
+            metric values; a recompute without run_metadata preserves existing values.
 
     Returns:
-        dict[str, str | float | None]: Mean metrics across all elements.
+        dict[str, str | float | None]: The metrics.diatomics block written (file refs
+            and run metadata first, then the mean of each metric across all elements).
     """
-    # Calculate mean metrics across all elements
-    mean_metrics: dict[str, str | float | None] = {
-        str(metric): float(
-            f"{np.mean([elem_metrics[metric] for elem_metrics in metrics.values()]):.4}"
-        )
-        for metric in next(iter(metrics.values()), {})
-    }
+    from matbench_discovery import ROOT
 
-    if mean_metrics:
-        # Preserve pred_file and pred_file_url - these reference the source data
-        # file, not the computed metrics, so they remain valid on recalculation
-        existing = model.metrics.get("diatomics", {})
-        if isinstance(existing, dict):
-            ordered_metrics: dict[str, str | float | None] = {}
-            # Put file paths first
-            if "pred_file" in existing:
-                ordered_metrics["pred_file"] = existing["pred_file"]
-            if "pred_file_url" in existing:
-                ordered_metrics["pred_file_url"] = existing["pred_file_url"]
-            # Then add computed metrics
-            ordered_metrics.update(mean_metrics)
-            mean_metrics = ordered_metrics
+    # mean of each metric over the elements that have a finite value: skips elements
+    # whose windowed curve is degenerate (e.g. tortuosity is NaN for a flat curve), and
+    # drops a metric entirely if no element has a finite value rather than writing an
+    # invalid `.nan`. Union the keys since elements can differ (only some have a ref).
+    metric_keys = list(dict.fromkeys(key for em in metrics.values() for key in em))
+    mean_metrics: dict[str, str | float | None] = {}
+    for metric in metric_keys:
+        finite = [
+            val
+            for em in metrics.values()
+            if (val := em.get(metric)) is not None and np.isfinite(val)
+        ]
+        if finite:
+            mean_metrics[str(metric)] = float(f"{np.mean(finite):.4}")
 
-        update_yaml_file(model.yaml_path, "metrics.diatomics", mean_metrics)
-        print(f"Wrote {model.label} diatomic metrics to {model.yaml_path}")
-    return mean_metrics
+    # carry over only recognized run metadata (it describes the source run, not the
+    # computed metrics, so it stays valid on recalculation)
+    existing = model.metrics.get("diatomics", {})
+    existing = existing if isinstance(existing, dict) else {}
+    run_metadata = run_metadata or {}
+    pred_file_url = run_metadata.get("pred_file_url", existing.get("pred_file_url"))
+    block: dict[str, str | float | None] = {}
+    if pred_file_url is not None:
+        if pred_file_path is not None:  # a passed path overrides any existing one
+            block["pred_file"] = pred_file_path.removeprefix(f"{ROOT}/")
+        elif "pred_file" in existing:
+            block["pred_file"] = existing["pred_file"]
+        block["pred_file_url"] = pred_file_url
+    for key in ("hardware", "run_time_sec"):
+        if key in existing:
+            block[key] = existing[key]
+    block |= run_metadata
+    if "pred_file" in block and "pred_file_url" not in block:
+        block.pop("pred_file")
+    block |= mean_metrics
+
+    # preserve_existing=False so a recompute fully replaces the block, dropping
+    # deprecated metrics left in the YAML. This still runs when no finite metrics were
+    # produced, preventing stale metric values from surviving.
+    update_yaml_file(
+        model.yaml_path, "metrics.diatomics", block, preserve_existing=False
+    )
+    print(f"Wrote {model.label} diatomic metrics to {model.yaml_path}")
+    return block

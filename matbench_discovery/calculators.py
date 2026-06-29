@@ -1,11 +1,12 @@
-"""Registry of MLIP ASE calculators for the molecular dynamics benchmark.
+"""Registry of MLIP ASE calculators shared across benchmark tasks.
 
-Every model the leaderboard runs is launched through the single ``models/run_md.py``
-script. Because MLIP dependency trees conflict (torch vs jax vs tensorflow, mutually
-exclusive CUDA builds), they cannot share one environment. Instead each model declares
-its own ``uv`` requirements here; the launcher resolves a per-model environment
-on the fly with ``uv run --no-project --with`` (see ``MdModel.uv_run_cmd``), on top of
-the core dependencies declared in ``models/run_md.py``'s inline script metadata.
+Benchmark runners build their calculators through this single registry: e.g.
+``models/run_md.py`` (molecular dynamics) and ``models/run_diatomics.py`` (diatomic
+pair-repulsion curves). Because MLIP dependency trees conflict (torch vs jax vs
+tensorflow, mutually exclusive CUDA builds), they cannot share one environment. Instead
+each model declares its own ``uv`` requirements here; a runner resolves a per-model
+environment on the fly with ``uv run --no-project --with`` (see ``CalcSpec``), on top of
+the core dependencies declared in each runner's inline script metadata.
 Calculator construction is lazy (imports happen inside the factory) so listing models
 and printing dependencies work with only the core dependencies installed.
 
@@ -16,7 +17,7 @@ import inspect
 import os
 import shutil
 import subprocess
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -27,7 +28,7 @@ from matbench_discovery import DEFAULT_CACHE_DIR
 if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
-MD_CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
+CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
 
 
 def download_checkpoint(model_key: str, ext: str | None = None) -> str:
@@ -60,8 +61,8 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
         url = url.replace("/blob/", "/raw/")
 
     ext = ext or os.path.splitext(url.split("?")[0])[1] or ".ckpt"
-    dest = f"{MD_CHECKPOINT_DIR}/{model_key}{ext}"
-    os.makedirs(MD_CHECKPOINT_DIR, exist_ok=True)
+    dest = f"{CHECKPOINT_DIR}/{model_key}{ext}"
+    os.makedirs(CHECKPOINT_DIR, exist_ok=True)
     # serialize concurrent same-model downloads: parallel array tasks otherwise race on
     # download_file's temp-file rename, leaving losers with a vanished .part file
     with FileLock(f"{dest}.lock"):
@@ -89,13 +90,31 @@ def _stage_checkpoint(model_key: str, dest: str, *, ext: str | None = None) -> N
             os.replace(tmp_dest, dest)
 
 
+def _run_to_atomic_output(cmd_prefix: Sequence[str], dest: str) -> None:
+    """Run ``cmd_prefix + [tmp_dest]`` and atomically promote output to ``dest``."""
+    dest_base, dest_ext = os.path.splitext(dest)
+    tmp_dest = f"{dest_base}.tmp{dest_ext}"
+    with FileLock(f"{dest}.lock"):
+        if os.path.isfile(dest):
+            return
+        if os.path.isfile(tmp_dest):
+            os.remove(tmp_dest)
+        try:
+            subprocess.run([*cmd_prefix, tmp_dest], check=True)
+            os.replace(tmp_dest, dest)
+        finally:
+            if os.path.isfile(tmp_dest):
+                os.remove(tmp_dest)
+
+
 @dataclass(frozen=True)
-class MdModel:
+class CalcSpec:
     """A registered MLIP: how to build its calculator and its uv requirements."""
 
     make_calc: Callable[..., "Calculator"]
     deps: tuple[str, ...] = ()  # extra uv requirements beyond CORE_DEPS
     find_links: tuple[str, ...] = ()  # uv --find-links (e.g. PyG/dgl wheel pages)
+    extra_index_url: tuple[str, ...] = ()  # uv --extra-index-url entries
     # pin uv's Python (e.g. HIENet's torch 2.1.2 has no cp312 wheels, so needs 3.11);
     # None lets uv pick the default
     python_version: str | None = None
@@ -105,8 +124,11 @@ class MdModel:
         py_args = ["--python", self.python_version] if self.python_version else []
         with_args = [tok for dep in self.deps for tok in ("--with", dep)]
         link_args = [tok for url in self.find_links for tok in ("--find-links", url)]
+        index_args = [
+            tok for url in self.extra_index_url for tok in ("--extra-index-url", url)
+        ]
         base_cmd = ["uv", "run", "--no-project"]
-        return [*base_cmd, *py_args, *with_args, *link_args, script, *args]
+        return [*base_cmd, *py_args, *with_args, *link_args, *index_args, script, *args]
 
 
 def _detect_device() -> str:
@@ -211,10 +233,7 @@ def _deepmd_freeze(model_key: str) -> Callable[[str], "Calculator"]:
         ckpt = download_checkpoint(model_key, ext=".pt")
         # deepmd 3.2's pt backend freezes to a torch-export .pt2 (not TorchScript .pth)
         frozen = f"{os.path.splitext(ckpt)[0]}-frozen.pt2"
-        freeze_cmd = ["dp", "--pt", "freeze", "-c", ckpt, "-o", frozen]
-        with FileLock(f"{frozen}.lock"):
-            if not os.path.isfile(frozen):
-                subprocess.run(freeze_cmd, check=True)
+        _run_to_atomic_output(["dp", "--pt", "freeze", "-c", ckpt, "-o"], frozen)
         return DP(frozen)
 
     return make_calc
@@ -251,8 +270,8 @@ def _nequip(model_key: str) -> Callable[[str], "Calculator"]:
         # Cache + lock so it builds once.
         url = Model.from_ref(model_key).metadata["checkpoint_url"]
         registry = f"nequip.net:{url.split('nequip.net/models/')[-1]}"
-        compiled = f"{MD_CHECKPOINT_DIR}/{model_key}.nequip.pth"
-        os.makedirs(MD_CHECKPOINT_DIR, exist_ok=True)
+        compiled = f"{CHECKPOINT_DIR}/{model_key}.nequip.pth"
+        os.makedirs(CHECKPOINT_DIR, exist_ok=True)
         compile_cmd = [
             "nequip-compile",
             registry,
@@ -325,8 +344,8 @@ def _alphanet(model_key: str, config_url: str) -> Callable[[str], "Calculator"]:
 
         # AlphaNet needs an architecture config json (not bundled in the weights) that
         # matches the checkpoint; fetch the OMA config that ships in the AlphaNet repo
-        config_path = f"{MD_CHECKPOINT_DIR}/{model_key}-config.json"
-        os.makedirs(MD_CHECKPOINT_DIR, exist_ok=True)
+        config_path = f"{CHECKPOINT_DIR}/{model_key}-config.json"
+        os.makedirs(CHECKPOINT_DIR, exist_ok=True)
         with FileLock(f"{config_path}.lock"):
             if not os.path.isfile(config_path):
                 download_file(config_path, config_url)
@@ -347,15 +366,8 @@ def _pet(model_key: str) -> Callable[[str], "Calculator"]:
         # metatomic can load it; cache the export and lock it against parallel tasks
         ckpt = download_checkpoint(model_key)
         pt_file = f"{os.path.splitext(ckpt)[0]}.pt"
-        with FileLock(f"{pt_file}.lock"):
-            if not os.path.isfile(pt_file):
-                # export to a temp file then atomically replace, so a failed `mtt
-                # export` (raises via check=True) can't leave a partial cached .pt. The
-                # temp name must end in .pt: mtt appends .pt otherwise, writing to a
-                # different path and making the rename below miss.
-                tmp_pt = f"{os.path.splitext(pt_file)[0]}.tmp.pt"
-                subprocess.run(["mtt", "export", ckpt, "-o", tmp_pt], check=True)  # noqa: S607
-                os.replace(tmp_pt, pt_file)
+        # The temp name must end in .pt: mtt appends .pt otherwise, writing elsewhere.
+        _run_to_atomic_output(["mtt", "export", ckpt, "-o"], pt_file)
         return MetatomicCalculator(pt_file, device=device)
 
     return make_calc
@@ -376,6 +388,18 @@ def _m3gnet(device: str) -> "Calculator":  # noqa: ARG001 - matgl manages device
     # matgl 3.x set_backend expects the uppercase "DGL"/"PYG" literal.
     matgl.set_backend("DGL")
     return PESCalculator(matgl.load_model("M3GNet-MP-2021.2.8-PES"))
+
+
+def _equflash(model_key: str) -> Callable[[str], "Calculator"]:
+    def make_calc(device: str) -> "Calculator":
+        from GGNN.common.calculator import UCalculator
+
+        # UCalculator is an ASE Calculator (the kappa task drives phonopy with it);
+        # figshare ships a torch .pt checkpoint that it loads by path
+        ckpt = download_checkpoint(model_key, ext=".pt")
+        return UCalculator(checkpoint_path=ckpt, cpu=device == "cpu")
+
+    return make_calc
 
 
 def _emt(device: str) -> "Calculator":  # noqa: ARG001 - CPU only, debug model
@@ -434,58 +458,106 @@ MATRIS_DEPS = (MATRIS_PKG, "torch==2.6.0", "numpy<3")
 # Nequix (JAX MLIP): jax[cuda12] for GPU; the .nqx checkpoint is staged + loaded via
 # model_path. use_kernel=False in the factory avoids the openequivariance build step.
 NEQUIX_DEPS = ("nequix", "jax[cuda12]")
-MD_MODELS: dict[str, MdModel] = {
-    "mace_mp_0": MdModel(_mace("medium"), deps=MACE_DEPS),
-    "mace_mpa_0": MdModel(_mace("medium-mpa-0"), deps=MACE_DEPS),
-    "orb_v2": MdModel(_orb("orb-v2"), deps=("orb-models==0.4.3",)),
-    "orb_v3": MdModel(
+# EquFlash (Samsung GGNN): UCalculator is ASE-compatible. Heavy env pinned to the
+# discovery/kappa scripts: torch 2.9.1+cu126 from pytorch's index (EQUFLASH_INDEX), PyG
+# extensions from the matching cu126 wheel page (EQUFLASH_LINKS), cuequivariance, and
+# GGNN itself (git). py3.12 per its requires-python.
+EQUFLASH_DEPS = (
+    "GGNN @ git+https://github.com/SamsungDS/GGNN@16b5cae47437",
+    "fairchem-core==1.10.0",
+    "cuequivariance==0.6.0",
+    "cuequivariance-ops-torch-cu12==0.6.0",
+    "cuequivariance-torch==0.6.0",
+    "e3nn==0.5.6",
+    "torch==2.9.1+cu126",
+    "torch-geometric==2.6.1",
+    "torch-scatter==2.1.2",
+    "torch-sparse==0.6.18",
+    "numba==0.65.1",
+    "hydra-core==1.3.3",
+    "lmdb==1.6.2",
+    "pydantic==2.13.4",
+    "spglib==2.6.0",
+    "torchtnt==0.2.4",
+    "submitit==1.5.3",
+    "huggingface-hub==1.19.0",
+    "numpy<3",
+    "pandas<4",
+    "scipy==1.16.1",
+    "pymatgen>=2026.5.4",
+)
+EQUFLASH_LINKS = ("https://data.pyg.org/whl/torch-2.9.1+cu126.html",)
+EQUFLASH_INDEX = ("https://download.pytorch.org/whl/cu126",)
+
+
+def _equflash_spec(model_key: str) -> CalcSpec:
+    """Return shared calculator metadata for EquFlash variants."""
+    return CalcSpec(
+        _equflash(model_key),
+        deps=EQUFLASH_DEPS,
+        find_links=EQUFLASH_LINKS,
+        extra_index_url=EQUFLASH_INDEX,
+        python_version="3.12",
+    )
+
+
+CALCULATORS: dict[str, CalcSpec] = {
+    "mace_mp_0": CalcSpec(_mace("medium"), deps=MACE_DEPS),
+    "mace_mpa_0": CalcSpec(_mace("medium-mpa-0"), deps=MACE_DEPS),
+    "orb_v2": CalcSpec(_orb("orb-v2"), deps=("orb-models==0.4.3",)),
+    "orb_v3": CalcSpec(
         _orb("orb-v3-conservative-inf-omat"), deps=("orb-models==0.5.4",)
     ),
-    "orb_v2_mptrj": MdModel(_orb("orb-mptraj-only-v2"), deps=("orb-models==0.4.3",)),
-    "mattersim_v1_5m": MdModel(
+    "orb_v2_mptrj": CalcSpec(_orb("orb-mptraj-only-v2"), deps=("orb-models==0.4.3",)),
+    "mattersim_v1_5m": CalcSpec(
         _mattersim("mattersim-v1.0.0-5m.pth"), deps=("mattersim",)
     ),
-    "sevennet_l3i5": MdModel(_sevennet("7net-l3i5"), deps=("sevenn",)),
-    "sevennet_omni_i12": MdModel(
+    "sevennet_l3i5": CalcSpec(_sevennet("7net-l3i5"), deps=("sevenn",)),
+    "sevennet_omni_i12": CalcSpec(
         _sevennet("7net-omni-i12", modal="mpa"), deps=("sevenn",)
     ),
-    "grace_2l_oam": MdModel(_grace("GRACE-2L-OAM"), deps=("tensorpotential",)),
-    "grace_1l_oam": MdModel(_grace("GRACE-1L-OAM"), deps=("tensorpotential",)),
-    "grace_2l_oam_l": MdModel(
+    "grace_2l_oam": CalcSpec(_grace("GRACE-2L-OAM"), deps=("tensorpotential",)),
+    "grace_1l_oam": CalcSpec(_grace("GRACE-1L-OAM"), deps=("tensorpotential",)),
+    "grace_2l_oam_l": CalcSpec(
         _grace("GRACE-2L-OMAT-large-ft-AM"), deps=("tensorpotential",)
     ),
     # grace_2l_mptrj == registry name "GRACE-2L-MP-r6" (sciebo 42Ivgi3eaLCynwC), but
     # tensorpotential>=0.5 (all that's on PyPI) dropped the MP-r6 models, so pin the
     # 0.4.4-era commit from git that still registers it
-    "grace_2l_mptrj": MdModel(
+    "grace_2l_mptrj": CalcSpec(
         _grace("GRACE-2L-MP-r6"),
+        # plotly: this old tensorpotential pin's resolution otherwise omits it, breaking
+        # the pymatviz import chain that matbench_discovery pulls in
         deps=(
             "tensorpotential @ git+https://github.com/ICAMS/grace-tensorpotential@3115a9314",
+            "plotly",
         ),
     ),
-    "chgnet_030": MdModel(_chgnet, deps=("chgnet",)),
+    # anywidget: chgnet's resolution otherwise omits it, breaking the pymatviz import
+    # chain that matbench_discovery pulls in
+    "chgnet_030": CalcSpec(_chgnet, deps=("chgnet", "anywidget")),
     # HIENet (e3nn-based, github checkpoint). torch 2.1.2 needs python 3.11.
-    "hienet": MdModel(
+    "hienet": CalcSpec(
         _hienet("hienet"),
         deps=HIENET_DEPS,
         find_links=("https://data.pyg.org/whl/torch-2.1.2+cu121.html",),
         python_version="3.11",
     ),
-    "nequip_mp_l_0_1": MdModel(_nequip("nequip_mp_l_0_1"), deps=NEQUIP_DEPS),
-    "nequip_oam_l_0_1": MdModel(_nequip("nequip_oam_l_0_1"), deps=NEQUIP_DEPS),
-    "nequip_oam_xl_0_1": MdModel(_nequip("nequip_oam_xl_0_1"), deps=NEQUIP_DEPS),
-    "allegro_mp_l_0_1": MdModel(_nequip("allegro_mp_l_0_1"), deps=ALLEGRO_DEPS),
-    "allegro_oam_l_0_1": MdModel(_nequip("allegro_oam_l_0_1"), deps=ALLEGRO_DEPS),
-    "matris_10m_oam": MdModel(
+    "nequip_mp_l_0_1": CalcSpec(_nequip("nequip_mp_l_0_1"), deps=NEQUIP_DEPS),
+    "nequip_oam_l_0_1": CalcSpec(_nequip("nequip_oam_l_0_1"), deps=NEQUIP_DEPS),
+    "nequip_oam_xl_0_1": CalcSpec(_nequip("nequip_oam_xl_0_1"), deps=NEQUIP_DEPS),
+    "allegro_mp_l_0_1": CalcSpec(_nequip("allegro_mp_l_0_1"), deps=ALLEGRO_DEPS),
+    "allegro_oam_l_0_1": CalcSpec(_nequip("allegro_oam_l_0_1"), deps=ALLEGRO_DEPS),
+    "matris_10m_oam": CalcSpec(
         _matris("matris_10m_oam", "MatRIS_10M_OAM.pth.tar"), deps=MATRIS_DEPS
     ),
-    "matris_10m_mp": MdModel(
+    "matris_10m_mp": CalcSpec(
         _matris("matris_10m_mp", "MatRIS_10M_MP.pth.tar"), deps=MATRIS_DEPS
     ),
     # eqnorm (git install; torch-scatter from a PyG wheel page like hienet/alphanet).
     # vesin==0.3.2 + torch-geometric==2.6.1 per the model YAML: newer vesin needs
     # torch.uint64 (torch>=2.3), conflicting with eqnorm's torch 2.2.2 pin.
-    "eqnorm_mptrj": MdModel(
+    "eqnorm_mptrj": CalcSpec(
         _eqnorm("eqnorm_mptrj", "eqnorm-mptrj"),
         deps=(
             "eqnorm @ git+https://github.com/yzchen08/eqnorm",
@@ -498,15 +570,15 @@ MD_MODELS: dict[str, MdModel] = {
         find_links=("https://data.pyg.org/whl/torch-2.2.2+cu121.html",),
     ),
     # Nequix (JAX MLIP): stage figshare .nqx + load via model_path (see NEQUIX_DEPS)
-    "nequix_mp_1": MdModel(_nequix("nequix_mp_1"), deps=NEQUIX_DEPS),
-    "nequix_mp_1_pft": MdModel(_nequix("nequix_mp_1_pft"), deps=NEQUIX_DEPS),
+    "nequix_mp_1": CalcSpec(_nequix("nequix_mp_1"), deps=NEQUIX_DEPS),
+    "nequix_mp_1_pft": CalcSpec(_nequix("nequix_mp_1_pft"), deps=NEQUIX_DEPS),
     # PET (metatrain/metatomic): download .ckpt, `mtt export` to .pt, then load
-    "pet_oam_xl_1_0_0": MdModel(_pet("pet_oam_xl_1_0_0"), deps=("upet==0.1.0",)),
+    "pet_oam_xl_1_0_0": CalcSpec(_pet("pet_oam_xl_1_0_0"), deps=("upet==0.1.0",)),
     # AlphaNet (config json from repo + figshare weights, torch-scatter from PyG links)
-    "alphanet_v1_oam": MdModel(
+    "alphanet_v1_oam": CalcSpec(
         _alphanet(
             "alphanet_v1_oam",
-            "https://raw.githubusercontent.com/zmyybc/AlphaNet/main/pretrained/OMA/oma.json",
+            "https://raw.githubusercontent.com/zmyybc/AlphaNet/65f8ea9330459e0106867d1c694aec4139c6cb19/pretrained/OMA/oma.json",
         ),
         deps=(
             "alphanet @ git+https://github.com/zmyybc/AlphaNet",
@@ -520,7 +592,7 @@ MD_MODELS: dict[str, MdModel] = {
     # matgl<4 + DGL backend; DGL wheels come from its torch-matched find-links page.
     # Pin dgl==2.4.0: data.dgl.ai serves the index but 403s the dgl-2.5.0 cu121 wheel,
     # so an unpinned dgl resolves to 2.5.0 and fails to download.
-    "m3gnet_ms": MdModel(
+    "m3gnet_ms": CalcSpec(
         _m3gnet,
         deps=("matgl==3.0.5", "dgl==2.4.0", "torch==2.4.0"),
         find_links=("https://data.dgl.ai/wheels/torch-2.4/cu121/repo.html",),
@@ -528,21 +600,21 @@ MD_MODELS: dict[str, MdModel] = {
     # fairchem family (OCPCalculator + HF .pt checkpoints, fairchem-core v1 API).
     # torch~=2.4 + torch-geometric pulls compiled PyG extensions (torch-scatter etc.);
     # their prebuilt wheels resolve from PYG_LINKS matching torch 2.4.0+cu121.
-    "eqv2_s_dens_mp": MdModel(
+    "eqv2_s_dens_mp": CalcSpec(
         _fairchem("eqv2_s_dens_mp"), deps=FAIRCHEM_DEPS, find_links=PYG_LINKS
     ),
-    "eqv2_m_omat_salex_mp": MdModel(
+    "eqv2_m_omat_salex_mp": CalcSpec(
         _fairchem("eqv2_m_omat_salex_mp"), deps=FAIRCHEM_DEPS, find_links=PYG_LINKS
     ),
-    "esen_30m_oam": MdModel(
+    "esen_30m_oam": CalcSpec(
         _fairchem("esen_30m_oam"), deps=FAIRCHEM_DEPS, find_links=PYG_LINKS
     ),
-    "esen_30m_mp": MdModel(
+    "esen_30m_mp": CalcSpec(
         _fairchem("esen_30m_mp"), deps=FAIRCHEM_DEPS, find_links=PYG_LINKS
     ),
     # TACE: install from the model's github repo (PyPI 'tace' is a different/stale
     # package that can't instantiate the checkpoint config); pins per its YAML
-    "tace_oam_l": MdModel(
+    "tace_oam_l": CalcSpec(
         _tace("tace_oam_l"),
         deps=(
             "tace @ git+https://github.com/xvzemin/tace",
@@ -554,15 +626,17 @@ MD_MODELS: dict[str, MdModel] = {
     # deepmd DPA (figshare frozen .pth checkpoints, DP() loads by suffix).
     # NOTE: dpa_4_0_pro_mptrj omitted - its figshare file is a training checkpoint
     # (state dict), not a frozen TorchScript model; needs `dp --pt freeze` first
-    "dpa_3_1_3m_ft": MdModel(_deepmd("dpa_3_1_3m_ft"), deps=("deepmd-kit[torch]",)),
-    "dpa_4_0_1_pro_mptrj": MdModel(
+    "dpa_3_1_3m_ft": CalcSpec(_deepmd("dpa_3_1_3m_ft"), deps=("deepmd-kit[torch]",)),
+    "dpa_4_0_1_pro_mptrj": CalcSpec(
         # only 3.2.0b0 is on PyPI (no stable 3.2.0); DPA-4.0.1 needs the 3.2 line.
         # figshare file is an unfrozen training checkpoint -> _deepmd_freeze
         _deepmd_freeze("dpa_4_0_1_pro_mptrj"),
         deps=("deepmd-kit[torch]==3.2.0b0",),
     ),
+    "equflash_29m_oam": _equflash_spec("equflash_29m_oam"),
+    "equflashv2_45m_oam": _equflash_spec("equflashv2_45m_oam"),
     # CPU-only debug model for smoke-testing the pipeline without heavy installs
-    "emt": MdModel(_emt),
+    "emt": CalcSpec(_emt),
 }
 
 
@@ -572,7 +646,7 @@ def load_calculator(
     """Instantiate the ASE calculator for a registered model.
 
     Args:
-        model_key: Key into MD_MODELS (a Model enum name).
+        model_key: Key into CALCULATORS (a Model enum name).
         device: 'cuda' or 'cpu'. Defaults to auto-detection (cuda if torch sees a GPU,
             except the CPU-only 'emt' debug model).
         dtype: Floating-point precision ('float64' or 'float32'). Only MACE models
@@ -581,14 +655,14 @@ def load_calculator(
     Returns:
         Calculator: The model's ASE calculator.
     """
-    if model_key not in MD_MODELS:
+    if model_key not in CALCULATORS:
         raise ValueError(
-            f"Unknown {model_key=}, pick from {sorted(MD_MODELS)} or register it "
-            "in matbench_discovery/md_models.py"
+            f"Unknown {model_key=}, pick from {sorted(CALCULATORS)} or register it "
+            "in matbench_discovery/calculators.py"
         )
     if device is None:
         device = "cpu" if model_key == "emt" else _detect_device()
-    make_calc = MD_MODELS[model_key].make_calc
+    make_calc = CALCULATORS[model_key].make_calc
     # pass dtype only to factories that declare it (currently MACE), so a new
     # dtype-aware model is honored automatically without editing a hardcoded key set
     if "dtype" in inspect.signature(make_calc).parameters:

@@ -115,7 +115,7 @@
     justify-content: end;
     gap: 4pt 12pt;
     align-items: center;
-    font-size: 2cqw;
+    font-size: clamp(9pt, 1.4cqw, 11pt);
   }
   label.legend-item {
     display: flex;

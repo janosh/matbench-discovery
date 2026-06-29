@@ -1,6 +1,7 @@
 import { DATASETS, format_date, MODELS } from '$lib'
 import {
   ALL_METRICS,
+  DIATOMICS_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
   HYPERPARAMS,
   MD_METRICS,
@@ -272,6 +273,9 @@ export function assemble_row_data(
       [RMSD.key]: metric_num(RMSD),
       ...Object.fromEntries(
         Object.values(MD_METRICS).map((label) => [label.key, metric_num(label)]),
+      ),
+      ...Object.fromEntries(
+        Object.values(DIATOMICS_METRICS).map((label) => [label.key, metric_num(label)]),
       ),
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.key]:

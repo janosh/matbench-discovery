@@ -214,15 +214,6 @@ def calc_energy_mae(
     return float(np.mean(np.abs(e_ref - e_pred)))
 
 
-def calc_second_deriv_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
-    """Calculate smoothness using RMS of second derivative (lower is smoother)."""
-    seps_arr, energies_arr = _validate_diatomic_curve(
-        seps, energies, normalize_energy=False
-    )
-    d2y = np.gradient(np.gradient(energies_arr, seps_arr), seps_arr)
-    return float(np.sqrt(np.mean(d2y**2)))
-
-
 def calc_tortuosity(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate tortuosity of a potential energy curve as the ratio between total
     variation in energy and the sum of absolute energy differences between shortest

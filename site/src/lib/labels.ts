@@ -436,9 +436,98 @@ export const MD_METRICS: MdMetricsLabels = {
   },
 } as const
 
+type DiatomicsMetricKey =
+  | `tortuosity`
+  | `energy_diff_flips`
+  | `energy_grad_norm_max`
+  | `energy_jump`
+  | `conservation`
+  | `force_flips`
+  | `force_total_variation`
+  | `force_jump`
+
+export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
+  tortuosity: {
+    key: `tortuosity`,
+    label: `τ`,
+    description: `Mean tortuosity of homonuclear diatomic energy curves, measuring extra energy variation beyond a single-well or monotonic curve`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+    style: `border-left: 1px solid black;`,
+  },
+  energy_diff_flips: {
+    key: `energy_diff_flips`,
+    label: `E flips`,
+    description: `Mean number of sign flips in adjacent diatomic energy differences`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  energy_grad_norm_max: {
+    key: `energy_grad_norm_max`,
+    label: `max |∇E|`,
+    description: `Mean maximum absolute energy gradient along homonuclear diatomic curves`,
+    unit: `eV/Å`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  energy_jump: {
+    key: `energy_jump`,
+    label: `E jump`,
+    description: `Mean energy jump at sign-flip points in homonuclear diatomic curves`,
+    unit: `eV`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  conservation: {
+    key: `conservation`,
+    label: `Conserv.`,
+    description: `Mean deviation between predicted forces and the negative gradient of predicted diatomic energies`,
+    unit: `eV/Å`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  force_flips: {
+    key: `force_flips`,
+    label: `F flips`,
+    description: `Mean number of force-direction flips along homonuclear diatomic curves`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  force_total_variation: {
+    key: `force_total_variation`,
+    label: `F TV`,
+    description: `Mean total variation of forces along homonuclear diatomic curves`,
+    unit: `eV/Å`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  force_jump: {
+    key: `force_jump`,
+    label: `F jump`,
+    description: `Mean force jump at force-direction flip points in homonuclear diatomic curves`,
+    unit: `eV/Å`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+}
+
 export type AllMetrics = DiscoveryMetricsLabels &
   GeoOptSymmetryMetricsLabels &
-  MdMetricsLabels & { CPS: Label; κ_SRME: Label; κ_SRE: Label; RMSD: Label }
+  MdMetricsLabels &
+  Record<DiatomicsMetricKey, Label> & {
+    CPS: Label
+    κ_SRME: Label
+    κ_SRE: Label
+    RMSD: Label
+  }
 
 export const ALL_METRICS: AllMetrics = {
   // Dynamic metrics
@@ -479,6 +568,7 @@ export const ALL_METRICS: AllMetrics = {
   },
   ...GEO_OPT_SYMMETRY_METRICS,
   ...MD_METRICS,
+  ...DIATOMICS_METRICS,
 } as const
 
 export const DISCOVERY_SET_LABELS: Record<

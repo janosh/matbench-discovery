@@ -13,93 +13,106 @@ from matbench_discovery.metrics.diatomics.energy import (
     calc_energy_grad_norm_max,
     calc_energy_jump,
     calc_energy_mae,
-    calc_second_deriv_smoothness,
 )
 
 EnergyCurve = tuple[np.ndarray, np.ndarray]
-PredRefEnergies = tuple[dict[str, EnergyCurve], dict[str, EnergyCurve]]
+PredRefEnergies = tuple[EnergyCurve, EnergyCurve]
 
 
 @pytest.fixture
 def pred_ref_e_curves(
     pred_ref_diatomic_curves: tuple[DiatomicCurves, DiatomicCurves],
 ) -> PredRefEnergies:
-    """Create test data for diatomic curves.
-
-    Returns:
-        PredRefEnergies: Reference and predicted curves for each element.
-    """
+    """Return reference and predicted H energy curves from the shared fixture."""
     ref_curves, pred_curves = pred_ref_diatomic_curves
-    ref_homo_nuc, pred_homo_nuc = ref_curves.homo_nuclear, pred_curves.homo_nuclear
-    e_h_ref, e_h_pred = ref_homo_nuc["H"].energies, pred_homo_nuc["H"].energies
-    e_he_ref, e_he_pred = ref_homo_nuc["He"].energies, pred_homo_nuc["He"].energies
-    ref_dists, pred_dists = ref_curves.distances, pred_curves.distances
-    ref_energies = {"H": (ref_dists, e_h_ref), "He": (ref_dists, e_he_ref)}
-    pred_energies = {"H": (pred_dists, e_h_pred), "He": (pred_dists, e_he_pred)}
-    return ref_energies, pred_energies
+    ref_curve = ref_curves.distances, ref_curves.homo_nuclear["H"].energies
+    pred_curve = pred_curves.distances, pred_curves.homo_nuclear["H"].energies
+    return ref_curve, pred_curve
 
 
-def test_curve_diff_auc(pred_ref_e_curves: PredRefEnergies) -> None:
-    """Test ML vs DFT area under curve (AUC) calculation."""
-    ref_curves, pred_curves = pred_ref_e_curves
-    x_ref, y_ref = ref_curves["H"]
-    x_pred, y_pred = pred_curves["H"]
+@pytest.mark.parametrize(
+    "metric_func, kwargs, max_result",
+    [
+        (diatomics.calc_curve_diff_auc, {}, 10.0),
+        (diatomics.calc_curve_diff_auc, {"seps_range": (1.0, 3.0)}, 10.0),
+        (calc_energy_mae, {}, None),
+    ],
+    ids=["auc-default", "auc-range", "energy-mae"],
+)
+def test_curve_pair_metrics_on_fixture(
+    metric_func: Callable[..., float],
+    kwargs: dict[str, object],
+    max_result: float | None,
+    pred_ref_e_curves: PredRefEnergies,
+) -> None:
+    """Curve-pair energy metrics return finite non-negative floats on fixture data."""
+    (seps_ref, energies_ref), (seps_pred, energies_pred) = pred_ref_e_curves
 
-    # Test with default parameters
-    auc = diatomics.calc_curve_diff_auc(x_ref, y_ref, x_pred, y_pred)
-    assert isinstance(auc, float)
-    # With logspace, AUC can be negative due to the non-uniform spacing
-    # Just check that it's a reasonable value
-    assert abs(auc) < 10
-
-    # Test with custom range
-    auc = diatomics.calc_curve_diff_auc(
-        x_ref, y_ref, x_pred, y_pred, seps_range=(1.0, 3.0)
-    )
-    assert isinstance(auc, float)
-    assert abs(auc) < 10
-
-    # Test with normalization
-    auc = diatomics.calc_curve_diff_auc(x_ref, y_ref, x_pred, y_pred, normalize=True)
-    assert isinstance(auc, float)
-    assert abs(auc) < 10
+    result = metric_func(seps_ref, energies_ref, seps_pred, energies_pred, **kwargs)
+    assert isinstance(result, float)
+    assert result >= 0
+    if max_result is not None:
+        assert result < max_result
 
 
-def test_curve_diff_auc_interpolation(pred_ref_e_curves: PredRefEnergies) -> None:
-    """Test interpolation behavior in curve_diff_auc calculation."""
-    ref_curves, pred_curves = pred_ref_e_curves
-    x_ref, y_ref = ref_curves["H"]
-    x_pred, y_pred = pred_curves["H"]
+@pytest.mark.parametrize(
+    "metric_func, custom_interpolate, max_delta, max_result",
+    [
+        (diatomics.calc_curve_diff_auc, 500, 0.5, 10.0),
+        (calc_energy_mae, 110, 1.0, None),
+    ],
+)
+def test_curve_pair_metric_interpolation(
+    metric_func: Callable[..., float],
+    custom_interpolate: int,
+    max_delta: float,
+    max_result: float | None,
+    pred_ref_e_curves: PredRefEnergies,
+) -> None:
+    """Curve-pair metrics handle interpolation consistently."""
+    (seps_ref, energies_ref), (seps_pred, energies_pred) = pred_ref_e_curves
 
     # Create modified x_pred with different spacing
-    x_pred_modified = x_pred * 1.05  # 5% difference
+    seps_pred_modified = seps_pred * 1.05  # 5% difference
 
     # Test with interpolation=False (should raise error when x values don't match)
     with pytest.raises(
         ValueError,
-        match="Reference and predicted distances must be same when interpolate=False",
+        match="Reference and predicted distances must be same",
     ):
-        diatomics.calc_curve_diff_auc(
-            x_ref, y_ref, x_pred_modified, y_pred, interpolate=False
+        metric_func(
+            seps_ref,
+            energies_ref,
+            seps_pred_modified,
+            energies_pred,
+            interpolate=False,
         )
 
     # Test with interpolation=True (default)
-    auc_interp = diatomics.calc_curve_diff_auc(
-        x_ref, y_ref, x_pred_modified, y_pred, interpolate=True
+    metric_interp = metric_func(
+        seps_ref, energies_ref, seps_pred_modified, energies_pred, interpolate=True
     )
-    assert isinstance(auc_interp, float)
-    assert abs(auc_interp) < 10
+    assert isinstance(metric_interp, float)
+    assert metric_interp >= 0
+    if max_result is not None:
+        assert metric_interp < max_result
 
     # Test with custom number of interpolation points
-    auc_custom_interp = diatomics.calc_curve_diff_auc(
-        x_ref, y_ref, x_pred_modified, y_pred, interpolate=500
+    metric_custom_interp = metric_func(
+        seps_ref,
+        energies_ref,
+        seps_pred_modified,
+        energies_pred,
+        interpolate=custom_interpolate,
     )
-    assert isinstance(auc_custom_interp, float)
-    assert abs(auc_custom_interp) < 10
+    assert isinstance(metric_custom_interp, float)
+    assert metric_custom_interp >= 0
+    if max_result is not None:
+        assert metric_custom_interp < max_result
 
     # results should be similar but not identical due to different interpolation grids
-    assert auc_interp != auc_custom_interp
-    assert abs(auc_interp - auc_custom_interp) < 0.5  # Should be reasonably close
+    assert metric_interp != metric_custom_interp
+    assert abs(metric_interp - metric_custom_interp) < max_delta
 
 
 @pytest.mark.parametrize(
@@ -116,9 +129,9 @@ def test_energy_metrics_on_fixture(
     pred_ref_e_curves: PredRefEnergies,
 ) -> None:
     """All single-curve energy metrics return non-negative floats on fixture data."""
-    _, pred_curves = pred_ref_e_curves
-    x_pred, y_pred = pred_curves["H"]
-    result = metric_func(x_pred, y_pred)
+    _, pred_curve = pred_ref_e_curves
+    seps_pred, energies_pred = pred_curve
+    result = metric_func(seps_pred, energies_pred)
     assert isinstance(result, float)
     assert result >= 0
 
@@ -193,31 +206,45 @@ def test_energy_grad_norm_max_concrete(
     assert calc_energy_grad_norm_max(seps, energies) == pytest.approx(expected_grad_max)
 
 
-def test_curve_diff_auc_identical_curves() -> None:
-    """AUC between identical curves should be exactly 0."""
-    seps = np.linspace(1, 5, 20)
-    energies = np.sin(seps)
-    assert diatomics.calc_curve_diff_auc(seps, energies, seps, energies) == 0.0
-
-
-def test_curve_diff_auc_normalize_false() -> None:
-    """Test AUC without normalization returns raw eV*Å."""
-    seps = np.array([1.0, 2.0, 3.0, 4.0])
-    e_ref = np.array([0.0, 0.0, 0.0, 0.0])
-    e_pred = np.array([1.0, 1.0, 1.0, 1.0])
-    auc = diatomics.calc_curve_diff_auc(seps, e_ref, seps, e_pred, normalize=False)
-    assert auc == pytest.approx(3.0)
-
-
-def test_curve_diff_auc_normalization_value() -> None:
-    """Test that normalization divides by box_area = ptp(seps) * ptp(e_ref)."""
-    seps = np.array([1.0, 2.0, 3.0, 4.0])
-    e_ref = np.array([0.0, 2.0, 0.0, 2.0])  # ptp=2, not 1
-    e_pred = np.zeros(4)
-    auc_raw = diatomics.calc_curve_diff_auc(seps, e_ref, seps, e_pred, normalize=False)
-    auc_norm = diatomics.calc_curve_diff_auc(seps, e_ref, seps, e_pred, normalize=True)
-    # box_area = ptp([1,2,3,4]) * ptp([0,2,0,2]) = 3 * 2 = 6
-    assert auc_norm == pytest.approx(auc_raw / 6.0)
+@pytest.mark.parametrize(
+    "seps, energies_ref, energies_pred, normalize, expected",
+    [
+        (
+            np.array([1.0, 2.0, 3.0]),
+            np.array([0.0, 1.0, 0.0]),
+            np.array([0.0, 1.0, 0.0]),
+            True,
+            0.0,
+        ),
+        (
+            np.array([1.0, 2.0, 3.0, 4.0]),
+            np.zeros(4),
+            np.ones(4),
+            False,
+            3.0,
+        ),
+        (
+            np.array([1.0, 2.0, 3.0, 4.0]),
+            np.array([0.0, 2.0, 0.0, 2.0]),  # ptp=2, so box_area = 3 * 2 = 6
+            np.zeros(4),
+            True,
+            0.5,
+        ),
+    ],
+    ids=["identical", "raw", "normalized"],
+)
+def test_curve_diff_auc_concrete_cases(
+    seps: np.ndarray,
+    energies_ref: np.ndarray,
+    energies_pred: np.ndarray,
+    normalize: bool,
+    expected: float,
+) -> None:
+    """Test AUC exact values for identical, raw, and normalized cases."""
+    auc = diatomics.calc_curve_diff_auc(
+        seps, energies_ref, seps, energies_pred, normalize=normalize
+    )
+    assert auc == pytest.approx(expected)
 
 
 def test_validate_normalize_energy() -> None:
@@ -237,29 +264,24 @@ def test_validate_normalize_energy() -> None:
     np.testing.assert_array_equal(forces_out, forces)
 
 
-def test_simple_cases() -> None:
-    """Test metrics with simple, easy-to-reason-about cases."""
+@pytest.mark.parametrize(
+    "energies, expected",
+    [
+        (np.arange(1, 6), 1.0),
+        (np.arange(1, 6) ** 2, 1.0),
+        (np.ones(5), np.nan),
+        (np.array([1, 1, 1.5, 2, 2]), 1.0),
+    ],
+    ids=["linear", "quadratic", "constant", "step"],
+)
+def test_tortuosity_simple_cases(energies: np.ndarray, expected: float) -> None:
+    """Test tortuosity with simple, easy-to-reason-about cases."""
     dists = np.arange(1, 6)
-    e_linear = np.arange(1, 6)
-
-    e_const = np.ones_like(dists)
-    e_step = np.array([1, 1, 1.5, 2, 2])
-
-    # Smoothness: constant and linear should be zero, step should be higher
-    linear_smoothness = diatomics.calc_second_deriv_smoothness(dists, e_linear)
-    const_smoothness = diatomics.calc_second_deriv_smoothness(dists, e_const)
-    step_smoothness = diatomics.calc_second_deriv_smoothness(dists, e_step)
-    assert linear_smoothness == const_smoothness == 0
-    assert linear_smoothness < step_smoothness
-    assert diatomics.calc_second_deriv_smoothness(dists, dists**2) == pytest.approx(
-        1.4491376
-    )
-
-    # Tortuosity: linear and quadratic = 1, constant = NaN (zero denominator)
-    assert diatomics.calc_tortuosity(dists, e_linear) == pytest.approx(1)
-    assert diatomics.calc_tortuosity(dists, dists**2) == 1
-    assert np.isnan(diatomics.calc_tortuosity(dists, e_const))
-    assert diatomics.calc_tortuosity(dists, e_step) == 1
+    result = diatomics.calc_tortuosity(dists, energies)
+    if np.isnan(expected):
+        assert np.isnan(result)
+    else:
+        assert result == pytest.approx(expected)
 
 
 @pytest.mark.parametrize(
@@ -282,7 +304,7 @@ def test_simple_cases() -> None:
 def test_validation_errors(xs: np.ndarray, ys: np.ndarray, match: str) -> None:
     """Test that _validate_diatomic_curve rejects invalid inputs."""
     with pytest.raises(ValueError, match=match):
-        calc_second_deriv_smoothness(xs, ys)
+        calc_energy_grad_norm_max(xs, ys)
 
 
 def test_unsorted_input_accepted() -> None:
@@ -292,180 +314,3 @@ def test_unsorted_input_accepted() -> None:
     assert np.isfinite(
         diatomics.calc_curve_diff_auc(np.arange(1, 6), np.arange(1, 6), xs, ys)
     )
-
-
-# Test data for smoothness metrics
-@pytest.fixture
-def smoothness_test_data() -> dict[str, EnergyCurve]:
-    """Create test data for smoothness metrics.
-
-    Returns:
-        dict[str, EnergyCurve]: Map of curve names to EnergyCurve tuples.
-    """
-    x = np.logspace(1, -1, 40)
-
-    return {
-        "constant": (x, np.ones_like(x)),
-        "linear": (x, x),
-        "quadratic": (x, x**2),
-        "lennard_jones": (
-            x,
-            4 * ((1 / x) ** 12 - (1 / x) ** 6),
-        ),
-        "noisy_sine": (
-            x,
-            np.sin(2 * np.pi * x) + 0.1 * np.sin(20 * np.pi * x),
-        ),
-    }
-
-
-@pytest.mark.parametrize(
-    "metric_func,curve_name,expected_val",
-    [
-        # Second derivative should be very close to 0 for constant and linear curves
-        (calc_second_deriv_smoothness, "constant", pytest.approx(0, abs=1e-10)),
-        (calc_second_deriv_smoothness, "linear", pytest.approx(0, abs=1e-10)),
-    ],
-)
-def test_smoothness_exact_values(
-    metric_func: Callable[[np.ndarray, np.ndarray], float],
-    curve_name: str,
-    expected_val: object,
-    smoothness_test_data: dict[str, tuple[np.ndarray, np.ndarray]],
-) -> None:
-    """Test exact values of smoothness metrics for well-understood curves.
-
-    Args:
-        metric_func (Callable): Smoothness metric function to test
-        curve_name (str): Name of curve to test
-        expected_val (float): Expected metric value
-        smoothness_test_data (dict): Test curves
-    """
-    x, y = smoothness_test_data[curve_name]
-    metric = metric_func(x, y)
-    assert metric == expected_val
-
-
-@pytest.mark.parametrize("metric_func", [calc_second_deriv_smoothness])
-def test_smoothness_ordering(
-    metric_func: Callable[[np.ndarray, np.ndarray], float],
-    smoothness_test_data: dict[str, tuple[np.ndarray, np.ndarray]],
-) -> None:
-    """Test that smoothness metrics correctly order curves from smooth to rough.
-
-    Args:
-        metric_func (Callable): Smoothness metric function to test
-        smoothness_test_data (dict): Test curves
-    """
-    metrics = {name: metric_func(x, y) for name, (x, y) in smoothness_test_data.items()}
-    assert metrics["linear"] < metrics["quadratic"] < metrics["noisy_sine"], metrics
-
-
-@pytest.mark.parametrize("metric_func", [calc_second_deriv_smoothness])
-def test_smoothness_scale_invariance(
-    metric_func: Callable[[np.ndarray, np.ndarray], float],
-    smoothness_test_data: dict[str, tuple[np.ndarray, np.ndarray]],
-) -> None:
-    """Test that smoothness metrics scale predictably under transformations.
-
-    Args:
-        metric_func (Callable): Smoothness metric function to test
-        smoothness_test_data (dict): Test curves
-    """
-    x, y = smoothness_test_data["quadratic"]
-
-    # Test y-offset invariance (adding constant shouldn't change smoothness)
-    y_offset = y + 10
-    assert metric_func(x, y) == pytest.approx(metric_func(x, y_offset), rel=0.1)
-
-    # Test scaling behavior: second-derivative smoothness is invariant under
-    # (x, y) -> (s*x, s^2*y) since d2y/dx2 is unchanged for a quadratic
-    scale = 1.1
-    metric_name = getattr(metric_func, "__name__", "")
-    curv_scale = 1
-    x_scaled = scale * x
-    y_scaled = scale**2 * y  # maintain quadratic relationship
-
-    # Get metric values
-    base_metric = metric_func(x, y)
-    scaled_metric = metric_func(x_scaled, y_scaled)
-
-    # For logspaced distances, scaling behaves differently, so we only check
-    # the metric changes in a reasonable way
-    assert abs(scaled_metric) > 0
-
-    ratio = scaled_metric / base_metric
-    assert ratio == pytest.approx(curv_scale), (
-        f"{metric_name}: {ratio=:.6f} != expected {curv_scale:.6f}"
-    )
-
-
-@pytest.mark.parametrize("metric_func", [calc_second_deriv_smoothness])
-def test_smoothness_noise_sensitivity(
-    metric_func: Callable[[np.ndarray, np.ndarray], float],
-) -> None:
-    """Test that smoothness metrics increase with noise amplitude.
-
-    Args:
-        metric_func (Callable): Smoothness metric function to test
-    """
-    xs = np.logspace(1, -1, 40)
-    base = np.sin(2 * np.pi * xs)
-    noise_amplitudes = [0, 0.1, 0.2]  # Removed 0.3 as it might cause instability
-
-    metrics = [
-        metric_func(xs, base + amp * np.sin(20 * np.pi * xs))
-        for amp in noise_amplitudes
-    ]
-
-    for idx in range(len(metrics) - 1):
-        assert metrics[idx] < metrics[idx + 1], (
-            f"amp={noise_amplitudes[idx]:.1f} ({metrics[idx]:.6f}) "
-            f">= amp={noise_amplitudes[idx + 1]:.1f} ({metrics[idx + 1]:.6f})"
-        )
-
-
-def test_energy_mae(pred_ref_e_curves: PredRefEnergies) -> None:
-    """Test energy MAE calculation."""
-    ref_curves, pred_curves = pred_ref_e_curves
-    x_ref, y_ref = ref_curves["H"]
-    x_pred, y_pred = pred_curves["H"]
-
-    # Test with default parameters
-    mae = calc_energy_mae(x_ref, y_ref, x_pred, y_pred)
-    assert isinstance(mae, float)
-    assert mae >= 0  # MAE should be non-negative
-
-
-def test_energy_mae_interpolation(pred_ref_e_curves: PredRefEnergies) -> None:
-    """Test interpolation behavior in energy MAE calculation."""
-    ref_curves, pred_curves = pred_ref_e_curves
-    x_ref, y_ref = ref_curves["H"]
-    x_pred, y_pred = pred_curves["H"]
-
-    # Create modified x_pred with different spacing
-    x_pred_modified = x_pred * 1.05  # 5% difference
-
-    # Test with interpolation=False (should raise error when x values don't match)
-    with pytest.raises(
-        ValueError, match="Reference and predicted distances must be same"
-    ):
-        calc_energy_mae(x_ref, y_ref, x_pred_modified, y_pred, interpolate=False)
-
-    # Test with interpolation=True
-    mae_interp = calc_energy_mae(
-        x_ref, y_ref, x_pred_modified, y_pred, interpolate=True
-    )
-    assert isinstance(mae_interp, float)
-    assert mae_interp >= 0  # MAE should be non-negative
-
-    # Test with custom number of interpolation points
-    mae_custom_interp = calc_energy_mae(
-        x_ref, y_ref, x_pred_modified, y_pred, interpolate=110
-    )
-    assert isinstance(mae_custom_interp, float)
-    assert mae_custom_interp >= 0  # MAE should be non-negative
-
-    # results should be similar but not identical due to different interpolation grids
-    assert mae_interp != mae_custom_interp
-    assert abs(mae_interp - mae_custom_interp) < 1.0  # Should be reasonably close

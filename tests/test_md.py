@@ -15,6 +15,7 @@ from ase.build import bulk
 from ase.calculators.emt import EMT
 
 from matbench_discovery import ROOT, today
+from matbench_discovery.calculators import CALCULATORS, load_calculator
 from matbench_discovery.enums import Model
 from matbench_discovery.md import (
     NpzValue,
@@ -27,7 +28,6 @@ from matbench_discovery.md import (
     validate_pred_trajectory,
     write_reference_h5,
 )
-from matbench_discovery.md_models import MD_MODELS, load_calculator
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
@@ -583,7 +583,7 @@ def test_load_calculator(monkeypatch: pytest.MonkeyPatch) -> None:
     """Emt loads with no extra deps; dtype is ignored by models that don't declare it;
     unknown keys raise a helpful error.
     """
-    from matbench_discovery import md_models
+    from matbench_discovery import calculators
 
     assert isinstance(load_calculator("emt"), EMT)
     assert isinstance(load_calculator("emt", dtype="float32"), EMT)  # dtype ignored
@@ -596,7 +596,7 @@ def test_load_calculator(monkeypatch: pytest.MonkeyPatch) -> None:
         return EMT()
 
     monkeypatch.setitem(
-        md_models.MD_MODELS, "mace_mp_0", md_models.MdModel(dtype_aware)
+        calculators.CALCULATORS, "mace_mp_0", calculators.CalcSpec(dtype_aware)
     )
     load_calculator("mace_mp_0", device="cpu", dtype="float32")
     assert seen_dtype == "float32"
@@ -729,7 +729,7 @@ def test_md_evals_handles_placeholder_md_metrics(
     assert writes[0]["pred_file_url"] is None  # no url from a placeholder md section
 
 
-@pytest.mark.parametrize("model_key", [key for key in MD_MODELS if key != "emt"])
+@pytest.mark.parametrize("model_key", [key for key in CALCULATORS if key != "emt"])
 def test_md_model_keys_are_valid_enum_members(model_key: str) -> None:
     """Registered non-debug models must map to a Model so metrics write to YAML."""
     assert Model.from_ref(model_key).name == model_key

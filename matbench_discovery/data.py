@@ -319,6 +319,8 @@ def update_yaml_file(
     file_path: str | Path,
     dotted_path: str,
     data: dict[str, Any],
+    *,
+    preserve_existing: bool = True,
 ) -> dict[str, Any]:
     """Update a YAML file at a specific dotted path with new data.
 
@@ -329,6 +331,8 @@ def update_yaml_file(
         file_path (str | Path): Path to YAML file to update
         dotted_path (str): Dotted path to update (e.g. 'metrics.discovery')
         data (dict[str, Any]): Data to write at the specified path
+        preserve_existing (bool): If True (default), keep existing keys in the target
+            dict section that aren't in `data`. If False, replace the section entirely.
 
     Returns:
         dict[str, Any]: The complete updated YAML data written to file.
@@ -361,13 +365,14 @@ def update_yaml_file(
                 current[part] = {}
             current = current[part]
 
-        # Update the data at the final level, preserving existing keys when replacing
-        # a dict section and replacing placeholder strings like 'not available'.
+        # Update the data at the final level. By default, preserve existing keys when
+        # replacing a dict section (and replace placeholder strings like 'not
+        # available'). Pass preserve_existing=False to fully replace the section, so a
+        # recompute drops keys that are no longer emitted (deprecated metrics).
         previous = current.get(last)
-        if isinstance(previous, dict):
+        if preserve_existing and isinstance(previous, dict):
             for key, val in previous.items():
                 data.setdefault(key, val)
-        # Replace the entire current[last] section to preserve comments
         current[last] = data
 
         # Write back to file

@@ -184,7 +184,20 @@ metrics:
       R2: 0.882 # dimensionless
       missing_preds: 0 # count
   diatomics:
+    pred_file: models/alphanet/alphanet-v1-oam/2026-06-28-diatomics.json.gz
     pred_file_url: https://figshare.com/files/54490370
+    hardware: NVIDIA H200
+    run_time_sec: 196.1
+    # He-He reliably blows up (multi-MeV energies/forces) and is manually excluded
+    # from these aggregate metrics; raw curves remain in the pred_file for inspection.
+    tortuosity: 1.08
+    energy_diff_flips: 2.674
+    energy_grad_norm_max: 169.8
+    energy_jump: 0.4733
+    conservation: 0.2073
+    force_flips: 2.533
+    force_total_variation: 199.6
+    force_jump: 4.804
   md:
     pred_file: models/alphanet/alphanet-v1-oam/2026-06-28-alphanet_v1_oam-md-metrics.csv.gz
     energy_rmse: 1.3423 # meV/atom

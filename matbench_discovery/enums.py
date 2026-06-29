@@ -104,7 +104,6 @@ class MbdKey(LabelEnum):
 
     # Diatomic curve metrics
     norm_auc = "norm_auc", "Norm. AUC (unitless)"
-    smoothness = "smoothness", "Smoothness (eV/Å²)"
     tortuosity = "tortuosity", "Tortuosity (unitless)"
     force_flips = "force_flips", "Force Flips (count)"
     conservation = "conservation", "Conservation (eV/Å)"

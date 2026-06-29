@@ -196,3 +196,15 @@ metrics:
     combined_score: 0.808642
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048911
+  diatomics:
+    pred_file: models/nequip/nequip-OAM-L-0.1/2026-06-28-diatomics.json.gz
+    hardware: NVIDIA H200
+    run_time_sec: 456.98
+    tortuosity: 1.004
+    energy_diff_flips: 1.575
+    energy_grad_norm_max: 177.9
+    energy_jump: 0.1032
+    conservation: 0.1578
+    force_flips: 1.575
+    force_total_variation: 201.7
+    force_jump: 5.586

@@ -168,3 +168,15 @@ metrics:
     combined_score: 0.828462
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048875
+  diatomics:
+    pred_file: models/eSEN/eSEN-30m-oam/2026-06-29-diatomics.json.gz
+    hardware: NVIDIA H200
+    run_time_sec: 869.53
+    tortuosity: 1.406
+    energy_diff_flips: 2.348
+    energy_grad_norm_max: 71.92
+    energy_jump: 0.5389
+    conservation: 0.1519
+    force_flips: 2.522
+    force_total_variation: 139.9
+    force_jump: 37.87

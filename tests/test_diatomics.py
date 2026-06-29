@@ -34,7 +34,9 @@ def test_generate_diatomics(
         assert isinstance(atoms, Atoms)
         assert set(atoms.get_chemical_formula()) == set(formula)
         assert atoms.get_distance(0, 1) == pytest.approx(dist)
-        assert not any(atoms.pbc)  # periodic boundary conditions should be False
+        # large periodic box so cell-requiring calculators work; images don't interact
+        assert all(atoms.pbc)
+        assert atoms.cell.lengths() == pytest.approx([50, 50, 50])
 
 
 @pytest.mark.parametrize(

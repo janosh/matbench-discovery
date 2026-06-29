@@ -1,6 +1,6 @@
 """Unified molecular dynamics benchmark runner for all MLIP models.
 
-Every model registered in matbench_discovery.md_models runs through this one script.
+Every model registered in matbench_discovery.calculators runs through this one script.
 Model dependency trees conflict, so each model resolves its own environment via
 ``uv run --with`` rather than sharing one. Typical cluster usage:
 
@@ -29,8 +29,8 @@ import os
 import shlex
 
 from matbench_discovery import today
+from matbench_discovery.calculators import CALCULATORS, load_calculator
 from matbench_discovery.md import run_md_benchmark
-from matbench_discovery.md_models import MD_MODELS, load_calculator
 
 module_dir = os.path.dirname(__file__)
 
@@ -73,13 +73,13 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.list_models:
-        for key, spec in MD_MODELS.items():
+        for key, spec in CALCULATORS.items():
             print(f"{key}: {', '.join(spec.deps) or '(core deps only)'}")
         return 0
 
     if not args.model:
         parser.error("--model is required (or pass --list-models)")
-    if args.model not in MD_MODELS:
+    if args.model not in CALCULATORS:
         parser.error(f"unknown --model {args.model!r}, see --list-models")
     # a subset run writes model-level metrics from incomplete coverage; aggregation
     # over all systems belongs to scripts/evals/md.py, not a per-array-task write
@@ -94,7 +94,9 @@ def main() -> int:
         if args.dry_run:
             run_args.append("--dry-run")
         print(
-            shlex.join(MD_MODELS[args.model].uv_run_cmd("models/run_md.py", *run_args))
+            shlex.join(
+                CALCULATORS[args.model].uv_run_cmd("models/run_md.py", *run_args)
+            )
         )
         return 0
 

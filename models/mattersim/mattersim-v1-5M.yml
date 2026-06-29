@@ -221,8 +221,18 @@ metrics:
       R2: 0.863 # dimensionless
       missing_preds: 0 # count
   diatomics:
-    pred_file: models/mattersim/mattersim-v1-5M/2025-02-19-diatomics.json.gz
+    pred_file: models/mattersim/mattersim-v1-5M/2026-06-28-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52468178
+    hardware: NVIDIA H100 80GB HBM3
+    run_time_sec: 170.22
+    tortuosity: 1.021
+    energy_diff_flips: 2.391
+    energy_grad_norm_max: 195.0
+    energy_jump: 0.1607
+    conservation: 0.1498
+    force_flips: 2.391
+    force_total_variation: 215.8
+    force_jump: 2.287
   md:
     pred_file: models/mattersim/mattersim-v1-5M/2026-06-28-mattersim_v1_5m-md-metrics.csv.gz
     energy_rmse: 1.1775 # meV/atom

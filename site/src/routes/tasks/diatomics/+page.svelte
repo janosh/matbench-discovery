@@ -1,6 +1,8 @@
 <script lang="ts">
-  import type { ModelData } from '$lib'
+  import { MetricsTable, type ModelData } from '$lib'
+  import { ALL_METRICS, DIATOMICS_METRICS, METADATA_COLS } from '$lib/labels'
   import { DiatomicCurve } from '$lib/plot'
+  import type { SortDir } from '$lib/types'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
   import { untrack } from 'svelte'
   import { SvelteSet } from 'svelte/reactivity'
@@ -36,6 +38,20 @@
   type ColorType = (typeof colors)[number]
 
   const homo_nuc_key = `homo-nuclear`
+  const visible_cols: Record<string, boolean> = Object.fromEntries([
+    ...Object.values(ALL_METRICS).map((col): [string, boolean] => [col.label, false]),
+    ...Object.values(METADATA_COLS).map((col): [string, boolean] => [col.label, true]),
+    ...Object.values(DIATOMICS_METRICS).map((col): [string, boolean] => [
+      col.label,
+      true,
+    ]),
+  ])
+  const has_diatomics_metrics = (model: ModelData): boolean =>
+    model.metrics?.diatomics != null && typeof model.metrics.diatomics === `object`
+  let sort = $state<{ column: string; dir: SortDir }>({
+    column: DIATOMICS_METRICS.energy_jump.key,
+    dir: `asc`,
+  })
 
   // Generate list of homo-nuclear diatomic formulas for elements 1-119
   const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
@@ -50,10 +66,18 @@
     ),
   )
 
-  let plot_size = $state({ width: 400, height: 300 })
+  let plot_height = $state(300)
 
+  // default to the 5 most recently added models with curve data (diatomic_models is
+  // sorted newest-first); every other model stays toggleable in the buttons below
+  const default_n_models = 5
   const selected_models = new SvelteSet<string>(
-    untrack(() => Object.keys(diatomic_curves)),
+    untrack(() =>
+      diatomic_models
+        .map((model: ModelData) => model.model_name)
+        .filter((model_name: string) => model_name in diatomic_curves)
+        .slice(0, default_n_models),
+    ),
   )
   let selected_model_names = $derived([...selected_models])
   const visible_diatomics = new SvelteSet<string>()
@@ -113,6 +137,12 @@
   checked for correctness.
 </blockquote>
 
+<MetricsTable
+  model_filter={has_diatomics_metrics}
+  col_filter={(col) => visible_cols[col.label] ?? true}
+  bind:sort
+/>
+
 <h2>Diatomic Energy Curves</h2>
 
 {#if error_entries.length > 0}
@@ -123,18 +153,11 @@
 {/if}
 
 <div class="controls">
-  <div class="plot-controls">
-    <label>
-      Plot width:
-      <input type="range" min="200" max="600" bind:value={plot_size.width} />
-      {plot_size.width}px
-    </label>
-    <label>
-      Plot height:
-      <input type="range" min="100" max="500" bind:value={plot_size.height} />
-      {plot_size.height}px
-    </label>
-  </div>
+  <label class="plot-height-control">
+    Plot height:
+    <input type="range" min="100" max="500" bind:value={plot_height} />
+    {plot_height}px
+  </label>
 
   <div class="model-toggles">
     {#each diatomic_models as model (model.model_name)}
@@ -153,10 +176,7 @@
   </div>
 </div>
 
-<div
-  class="grid"
-  style="--plot-width: {plot_size.width}px; --plot-height: {plot_size.height}px"
->
+<div class="grid" style="--plot-height: {plot_height}px">
   {#each diatomics_to_render as formula (formula)}
     <div class="plot-shell" use:observe_plot={formula}>
       {#if visible_diatomics.has(formula)}
@@ -180,8 +200,8 @@
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--plot-width, 400px), 1fr));
-    gap: 15pt 0;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+    gap: 45pt 15pt;
   }
   .plot-shell,
   .plot-placeholder {
@@ -199,11 +219,7 @@
     gap: 1em;
     padding: 1em;
   }
-  .plot-controls {
-    display: flex;
-    gap: 2em;
-  }
-  .plot-controls label {
+  .plot-height-control {
     display: flex;
     gap: 1ex;
   }
@@ -220,7 +236,6 @@
     background: transparent;
     color: var(--model-color, currentColor);
     cursor: pointer;
-    transition: all 0.2s;
     font-weight: 500;
   }
   button.selected {

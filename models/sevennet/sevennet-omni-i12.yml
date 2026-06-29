@@ -211,3 +211,15 @@ metrics:
     combined_score: 0.821235
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048935
+  diatomics:
+    pred_file: models/sevennet/sevennet-omni-i12/2026-06-29-diatomics.json.gz
+    hardware: NVIDIA H200
+    run_time_sec: 1365.76
+    tortuosity: 1.004
+    energy_diff_flips: 1.59
+    energy_grad_norm_max: 499.3
+    energy_jump: 0.4608
+    conservation: 5.547
+    force_flips: 1.59
+    force_total_variation: 1147.0
+    force_jump: 18.08

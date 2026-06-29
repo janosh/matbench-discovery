@@ -147,8 +147,18 @@ metrics:
       R2: 0.741 # dimensionless
       missing_preds: 110 # count
   diatomics:
-    pred_file: models/grace/grace-2l-mptrj/2025-02-19-diatomics.json.gz
+    pred_file: models/grace/grace-2l-mptrj/2026-06-28-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52467524
+    hardware: NVIDIA H200
+    run_time_sec: 92.04
+    tortuosity: 1.292
+    energy_diff_flips: 1.908
+    energy_grad_norm_max: 191.9
+    energy_jump: 0.2102
+    conservation: 0.5588
+    force_flips: 1.943
+    force_total_variation: 295.8
+    force_jump: 3.909
   md:
     pred_file: models/grace/grace-2l-mptrj/2026-06-28-grace_2l_mptrj-md-metrics.csv.gz
     energy_rmse: 1.3718 # meV/atom

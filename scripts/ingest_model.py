@@ -14,6 +14,7 @@ Usage (via the justfile, or directly):
 import argparse
 import glob
 import os
+import shlex
 import subprocess
 from collections import Counter
 from collections.abc import Sequence
@@ -26,6 +27,7 @@ PASS, FAIL, SKIP = "✓", "✗", "○"
 # --show-non-compliant: site payloads always contain the full model set (pages can
 # filter client-side); --no-show: don't open plotly figs in the browser
 PAYLOAD_FLAGS = ("--auto-download", "--show-non-compliant", "--no-show")
+UV_PROJECT_ARGS = ("--with-editable", ".")
 # each entry is the `uv run` argument string for one payload script; kappa needs the
 # phonons extra (phono3py/phonopy) since kappa_103_analysis imports them at module load
 PAYLOAD_SCRIPTS = (
@@ -113,6 +115,30 @@ def run_cmd(*cmd: str) -> bool:
     return subprocess.run(cmd, check=False).returncode == 0
 
 
+def uv_run_args(args: str) -> tuple[str, ...]:
+    """Build ``uv run`` args, resolving project extras as editable requirements."""
+    tokens = shlex.split(args)
+    extras: list[str] = []
+    token_idx = 0
+    while token_idx < len(tokens) and tokens[token_idx].startswith("--extra"):
+        arg = tokens[token_idx]
+        if arg.startswith("--extra="):
+            extras.append(arg.removeprefix("--extra="))
+            token_idx += 1
+        elif arg == "--extra":
+            if token_idx + 1 >= len(tokens):
+                raise ValueError("uv run --extra requires a value")
+            extras.append(tokens[token_idx + 1])
+            token_idx += 2
+        else:
+            break
+    if token_idx < len(tokens) and tokens[token_idx] == "--":
+        token_idx += 1
+    cmd_args = tokens[token_idx:]
+    project_req = f".[{','.join(extras)}]" if extras else "."
+    return ("uv", "run", "--with-editable", project_req, *cmd_args)
+
+
 def task_metrics(model: Model, task: str) -> dict | str | None:
     """A task's raw metrics from the model YAML: dict if present, str for declared
     opt-outs like 'not available', None if missing.
@@ -195,7 +221,7 @@ def run_model_steps(
     for label, needs_forces, fatal, args in steps:
         if needs_forces and energy_only:
             checks.skip(f"{label} skipped (targets=E, no forces)")
-        elif run_cmd("uv", "run", *args.split(), "--models", model.name, *extra_args):
+        elif run_cmd(*uv_run_args(args), "--models", model.name, *extra_args):
             checks.ok(f"{label} completed")
         elif fatal:
             checks.fail(f"{label} failed")
@@ -238,11 +264,18 @@ def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
     banner(f"Refreshing multi-model site figure payloads{suffix}")
     model_args = ("--models", model.name) if model else ()
     for script in PAYLOAD_SCRIPTS:
-        if not run_cmd("uv", "run", *script.split(), *PAYLOAD_FLAGS, *model_args):
+        if not run_cmd(*uv_run_args(script), *PAYLOAD_FLAGS, *model_args):
             checks.fail(f"{script} failed")
             return
     if run_cmd(
-        "uv", "run", "--with", "pytest", "pytest", "tests/test_fig_payloads.py", "-q"
+        "uv",
+        "run",
+        *UV_PROJECT_ARGS,
+        "--with",
+        "pytest",
+        "pytest",
+        "tests/test_fig_payloads.py",
+        "-q",
     ):
         checks.ok("Multi-model payloads regenerated + shape tests passed")
     else:
