@@ -29,7 +29,7 @@ trained_by:
 repo: https://github.com/xvzemin/tace
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-OAM-RRA-Preview.pt
 url: https://github.com/xvzemin/tace
-# pr_url: https://github.com/janosh/matbench-discovery/pull/321
+pr_url: https://github.com/janosh/matbench-discovery/pull/353
 doi: https://doi.org/10.57967/hf/7458
 paper: https://arxiv.org/abs/2509.14961 # will be updated when other model are introduced
 
@@ -107,7 +107,7 @@ metrics:
       symmetry_match: 0.8185 # fraction
       symmetry_increase: 0.1241 # fraction
       n_structures: 256963 # count
-      analysis_file: models/tace/tace-oam-rra-preview/2026-06-27-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.12.0.csv.gz
+      analysis_file: models/tace/tace-oam-rra-preview/2026-06-27-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.13.0.csv.gz
       analysis_file_url: https://figshare.com/files/66036503
     symprec=1e-5:
       rmsd: 0.0576 # unitless
@@ -116,7 +116,7 @@ metrics:
       symmetry_match: 0.6343 # fraction
       symmetry_increase: 0.2213 # fraction
       n_structures: 256963 # count
-      analysis_file: models/tace/tace-oam-rra-preview/2026-06-27-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.12.0.csv.gz
+      analysis_file: models/tace/tace-oam-rra-preview/2026-06-27-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.13.0.csv.gz
       analysis_file_url: https://figshare.com/files/66036629
   discovery:
     pred_file: models/tace/tace-oam-rra-preview/2026-06-27-wbm-IS2RE.csv.gz # tace-filtered_preds.csv.gz tace-preds.csv.gz
