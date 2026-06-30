@@ -3,6 +3,10 @@ import type { ModelData } from '$lib/types'
 import { mount as svelte_mount, unmount } from 'svelte'
 import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
+type AfterNavigateCallback = (navigation: unknown) => void
+
+let after_navigate_callbacks: AfterNavigateCallback[] = []
+
 // MatchMedia mock for Svelte MediaQuery - needed for svelte-multiselect
 Object.defineProperty(globalThis, `matchMedia`, {
   writable: true,
@@ -36,7 +40,9 @@ const app_mocks = vi.hoisted(() => ({
     preloadData: vi.fn(),
     preloadCode: vi.fn(),
     beforeNavigate: vi.fn(),
-    afterNavigate: vi.fn(),
+    afterNavigate: vi.fn((callback: AfterNavigateCallback) => {
+      after_navigate_callbacks.push(callback)
+    }),
     pushState: vi.fn(),
     replaceState: vi.fn((url: string | URL, state: unknown) => {
       history.replaceState(state, ``, url)
@@ -67,6 +73,7 @@ beforeAll(() => {
 beforeEach(() => {
   document.body.innerHTML = ``
   app_mocks.state.page.url = new URL(`http://localhost/`)
+  after_navigate_callbacks = []
   history.replaceState(null, ``, `/`)
 })
 
@@ -81,8 +88,14 @@ const mounted_components: ReturnType<typeof svelte_mount>[] = []
 const tracked_mount = (
   ...args: Parameters<typeof svelte_mount>
 ): ReturnType<typeof svelte_mount> => {
+  const callback_start_idx = after_navigate_callbacks.length
   const instance = svelte_mount(...args)
   mounted_components.push(instance)
+  queueMicrotask(() => {
+    for (const callback of after_navigate_callbacks.slice(callback_start_idx)) {
+      callback({ type: `enter`, from: null, to: app_mocks.state.page.url })
+    }
+  })
   return instance
 }
 export const mount = tracked_mount as typeof svelte_mount

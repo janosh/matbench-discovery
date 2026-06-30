@@ -29,7 +29,7 @@ PASS, FAIL, SKIP = "✓", "✗", "○"
 PAYLOAD_FLAGS = ("--auto-download", "--show-non-compliant", "--no-show")
 UV_PROJECT_ARGS = ("--with-editable", ".")
 # each entry is the `uv run` argument string for one payload script; kappa needs the
-# phonons extra (phono3py/phonopy) since kappa_103_analysis imports them at module load
+# phonons extra (phono3py/phonopy) when computing conductivity diagnostics
 PAYLOAD_SCRIPTS = (
     "python scripts/model_figs/roc_curves_models.py",
     "python scripts/model_figs/hull_dist_box_plot.py",

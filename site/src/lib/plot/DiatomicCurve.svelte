@@ -59,7 +59,6 @@
       const points = curve.distances
         .map((distance, idx) => ({ distance, energy: curve.energies[idx] }))
         .filter(({ distance }) => distance >= x_range[0] && distance <= x_range[1])
-      // Shift energies so the energy at infinite separation (last point) is 0
       const ref_energy = points.at(-1)?.energy ?? 0
 
       return {

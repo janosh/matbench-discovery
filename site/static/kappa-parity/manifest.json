@@ -35,10 +35,10 @@
       "bytes": 523,
       "sha256": "19d878108602ccc79418a2874fad0745c115e159d376da409cc21267c73df425"
     },
-    "dpa-4.0-pro-mptrj": {
-      "asset": "kappa-parity-phonondb-v1-model-dpa-4.0-pro-mptrj.json.gz",
-      "bytes": 59409,
-      "sha256": "96f947507645e8177d5f2c2fccb9c8a0f52d2e8736d61b11c0b60a2e77a3658f"
+    "dpa-4.0.1-pro-mptrj": {
+      "asset": "kappa-parity-phonondb-v1-model-dpa-4.0.1-pro-mptrj.json.gz",
+      "bytes": 59233,
+      "sha256": "6582ac2990e237438e54740a3f55e3635b01c322f233f6498d49e3205ed6df25"
     },
     "eSEN-30m-mp": {
       "asset": "kappa-parity-phonondb-v1-model-eSEN-30m-mp.json.gz",
@@ -189,6 +189,11 @@
       "asset": "kappa-parity-phonondb-v1-model-tace-oam-l.json.gz",
       "bytes": 59697,
       "sha256": "a9c1bb88d3a30da6dc63d4cc0c48c9a769dc167e77455820e14f66f795bcce98"
+    },
+    "tace-oam-rra-preview": {
+      "asset": "kappa-parity-phonondb-v1-model-tace-oam-rra-preview.json.gz",
+      "bytes": 59757,
+      "sha256": "af7c8c89b7e540c41b6931d6deeb18bf8266033141d21b3fe9c24d80ee4a7c56"
     }
   },
   "row_count": 103,

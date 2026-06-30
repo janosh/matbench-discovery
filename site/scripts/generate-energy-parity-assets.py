@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Final
 from zipfile import ZipFile
 
 from asset_helpers import (
+    active_model_assets,
     asset_safe_key,
     clean_floats,
     clean_ints,
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 OUT_DIR: Final = "site/static/energy-parity"
-MANIFEST_TS: Final = "site/src/lib/energy-parity-manifest.ts"
+MANIFEST_TS: Final = "site/src/lib/parity/energy-parity-manifest.ts"
 ASSET_PREFIX: Final = "energy-parity-wbm-v1"
 LOCAL_ASSET_BASE_URL: Final = "/energy-parity/assets"
 STRUCTURE_SHARD_SIZE: Final = 512
@@ -84,14 +85,14 @@ def chunked(items: list[int], chunk_size: int) -> Iterable[tuple[int, list[int]]
 
 
 def remove_stale_assets(
-    asset_dir: Path, asset_prefix: str, *, keep_structures: bool
+    asset_dir: Path, asset_prefix: str, *, keep_models: bool, keep_structures: bool
 ) -> None:
     """Delete old generated assets before writing a fresh manifest."""
-    patterns = [
-        f"{asset_prefix}-base.json.gz",
-        f"{asset_prefix}-model-*.json.gz",
-        f"{asset_prefix}-models-*.json.gz",
-    ]
+    patterns = [f"{asset_prefix}-base.json.gz"]
+    if not keep_models:
+        patterns.extend(
+            (f"{asset_prefix}-model-*.json.gz", f"{asset_prefix}-models-*.json.gz")
+        )
     if not keep_structures:
         patterns.append(f"{asset_prefix}-structures-*.json.gz")
     for pattern in patterns:
@@ -105,25 +106,6 @@ def read_previous_manifest(out_dir: Path) -> dict[str, Any] | None:
     if not manifest_path.is_file():
         return None
     return json.loads(manifest_path.read_text(encoding="utf-8"))
-
-
-def reusable_structure_bundles(
-    previous: dict[str, Any] | None,
-    *,
-    material_ids_sha256: str,
-    row_count: int,
-    structure_shard_size: int,
-) -> list[dict[str, Any]] | None:
-    """Return reusable structure bundles, or None if missing/stale (must regenerate)."""
-    if not previous:
-        return None
-    if (
-        previous.get("row_count") != row_count
-        or previous.get("material_ids_sha256") != material_ids_sha256
-        or previous.get("structure_shard_size") != structure_shard_size
-    ):
-        return None
-    return previous.get("structure_bundles") or None
 
 
 def write_structure_shards(
@@ -177,18 +159,32 @@ def main() -> None:
     asset_dir = out_dir / "assets"
     previous_manifest = read_previous_manifest(out_dir)
 
-    reused_bundles = (
-        reusable_structure_bundles(
-            previous_manifest,
-            material_ids_sha256=material_ids_sha256,
-            row_count=len(material_ids),
-            structure_shard_size=args.structure_shard_size,
-        )
-        if args.skip_structures
-        else None
+    rows_match = (
+        previous_manifest is not None
+        and previous_manifest.get("row_count") == len(material_ids)
+        and previous_manifest.get("material_ids_sha256") == material_ids_sha256
     )
+    reused_bundles = None
+    if (
+        args.skip_structures
+        and rows_match
+        and previous_manifest is not None
+        and previous_manifest.get("structure_shard_size") == args.structure_shard_size
+    ):
+        reused_bundles = previous_manifest.get("structure_bundles") or None
+    model_assets: dict[str, dict[str, str | int]] = {}
+    if (
+        args.models
+        and rows_match
+        and previous_manifest is not None
+        and isinstance(previous_assets := previous_manifest.get("model_assets"), dict)
+    ):
+        model_assets = active_model_assets(previous_assets)
     remove_stale_assets(
-        asset_dir, args.asset_prefix, keep_structures=reused_bundles is not None
+        asset_dir,
+        args.asset_prefix,
+        keep_models=bool(args.models),
+        keep_structures=reused_bundles is not None,
     )
     base = {
         "material_ids": material_ids,
@@ -200,7 +196,6 @@ def main() -> None:
     }
     base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
 
-    model_assets: dict[str, dict[str, Any]] = {}
     asset_names: set[str] = set()
     for model in models:
         asset_name = f"{args.asset_prefix}-model-{asset_safe_key(model.key)}.json.gz"

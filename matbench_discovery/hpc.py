@@ -150,6 +150,28 @@ def slurm_submit(
     raise SystemExit(result.returncode)
 
 
+def merge_run_metadata(
+    shard_metadatas: list[dict[str, object]],
+) -> dict[str, str | float]:
+    """Shared hardware + summed run_time_sec across Slurm shard run_metadata dicts.
+
+    Shards run in parallel, so the summed run_time_sec ~ a serial sweep and hardware is
+    shared. Keys no shard recorded are omitted, so a merge keeps existing YAML values.
+    """
+    hardware = next(
+        (meta["hardware"] for meta in shard_metadatas if meta.get("hardware")), None
+    )
+    run_time = sum(
+        secs
+        for meta in shard_metadatas
+        if isinstance(secs := meta.get("run_time_sec"), int | float)
+    )
+    return {
+        **({"hardware": hardware} if isinstance(hardware, str) else {}),
+        **({"run_time_sec": round(run_time, 2)} if run_time else {}),
+    }
+
+
 def df_slurm_chunk(
     df_in: "pd.DataFrame", n_chunks: int, task_id: int
 ) -> "pd.DataFrame":

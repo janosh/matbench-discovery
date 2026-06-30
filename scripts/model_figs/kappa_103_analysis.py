@@ -22,8 +22,6 @@ from scipy.stats import wasserstein_distance
 from matbench_discovery import figs
 from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.enums import DataFiles, MbdKey, Model
-from matbench_discovery.metrics import phonons
-from matbench_discovery.phonons import read_kappa_json
 
 KAPPA_DECIMALS: Final = 4
 FREQ_DECIMALS: Final = 2  # THz
@@ -75,7 +73,9 @@ def model_payload(
     model: Model, df_ml: pd.DataFrame, df_dft: pd.DataFrame, material_ids: list[str]
 ) -> dict[str, Any]:
     """Per-material diagnostics for one model, aligned to the DFT material order."""
-    df_metrics = phonons.calc_kappa_metrics_from_dfs(df_ml.copy(), df_dft)
+    from matbench_discovery.metrics import phonons as phonon_metrics
+
+    df_metrics = phonon_metrics.calc_kappa_metrics_from_dfs(df_ml.copy(), df_dft)
 
     # per-material columns, all aligned to material_ids (None = missing/unusable).
     # dict order defines the payload key order
@@ -102,8 +102,8 @@ def model_payload(
         if ml_freqs is None or dft_freqs is None:
             cols["freq_w1"].append(None)
             continue
-        ml_weights = phonons.mode_weights_for_freqs(*ml_freqs)
-        dft_weights = phonons.mode_weights_for_freqs(*dft_freqs)
+        ml_weights = phonon_metrics.mode_weights_for_freqs(*ml_freqs)
+        dft_weights = phonon_metrics.mode_weights_for_freqs(*dft_freqs)
         # exact Wasserstein-1 distance (THz) between the ML and DFT frequency
         # spectra as weighted distributions (meshes differ: full vs irreducible, so
         # frequencies can't be paired pointwise). ML files store phono3py's BZ grid
@@ -117,7 +117,9 @@ def model_payload(
             (dft_freqs[0], dft_weights, qq_dft),
             (ml_freqs[0], ml_weights, qq_ml),
         ):
-            quants = phonons.weighted_quantiles(freqs.ravel(), weights, QQ_LEVELS)
+            quants = phonon_metrics.weighted_quantiles(
+                freqs.ravel(), weights, QQ_LEVELS
+            )
             qq_target.extend(round(float(val), FREQ_DECIMALS) for val in quants)
 
     finite_w1 = [val for val in cols["freq_w1"] if val is not None]
@@ -134,6 +136,8 @@ def model_payload(
 
 def main() -> int:
     """Build the kappa-103-analysis payload across all requested models."""
+    from matbench_discovery.phonons import read_kappa_json
+
     df_dft = read_kappa_json(DataFiles.phonondb_pbe_103_kappa_no_nac.path)
     material_ids = [str(mat_id) for mat_id in df_dft.index]
 

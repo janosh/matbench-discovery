@@ -96,7 +96,7 @@ hyperparams:
 training_cost:
   Nvidia A100 GPUs: {amount: 1, hours: 140}
 
-training_set: [MPtrj, MDR PBE Phonons in MPtrj]
+training_set: [MPtrj, MDR-MP PBE ω_q]
 
 notes:
   Description: Nequix MP PFT is a fine-tuned version of Nequix MP 1, which was fine-tuned using phonon fine-tuning (PFT) on a subset of the MDR Phonon PBE dataset that is contained within MPtrj.
