@@ -617,24 +617,22 @@ def test_download_checkpoint_replaces_zero_byte_cache(
 
     url = "https://example.com/model.ckpt"
     monkeypatch.setattr(calculators, "CHECKPOINT_DIR", f"{tmp_path}")
-    monkeypatch.setattr(
-        Model,
-        "from_ref",
-        classmethod(
-            lambda _cls, _model_key: SimpleNamespace(metadata={"checkpoint_url": url})
-        ),
+    from_ref_mock = classmethod(
+        lambda _cls, _model_key: SimpleNamespace(metadata={"checkpoint_url": url})
     )
+    monkeypatch.setattr(Model, "from_ref", from_ref_mock)
 
-    monkeypatch.setattr(
-        fetch,
-        "download_file",
-        lambda dest, _url, **_kwargs: Path(dest).write_bytes(b"checkpoint"),
+    download_file_mock = lambda dest, _url, **_kwargs: Path(dest).write_bytes(  # noqa: E731
+        b"checkpoint"
     )
+    monkeypatch.setattr(fetch, "download_file", download_file_mock)
     url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
     dest = tmp_path / f"fake-{url_hash}.ckpt"
     dest.write_bytes(b"")
 
-    assert calculators.download_checkpoint("fake") == f"{dest}"
+    actual_path = os.path.normpath(calculators.download_checkpoint("fake"))
+    expected_path = os.path.normpath(f"{dest}")
+    assert actual_path == expected_path
     assert dest.read_bytes() == b"checkpoint"
 
 

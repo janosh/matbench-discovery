@@ -268,29 +268,41 @@ def calc_diatomic_metrics(
             ref_mask = (ref_dists >= r_min) & (ref_dists <= r_max)
             seps_ref = ref_dists[ref_mask]
             ref_energies = np.asarray(ref_data.energies)[ref_mask]
+            if len(seps_ref) >= 2:
+                energy_pair_args = (seps_ref, ref_energies, seps_pred, pred_energies)
+                metric_calls[:0] = [
+                    (metric_key, calc_fn, energy_pair_args)
+                    for metric_key, calc_fn in (
+                        (MbdKey.pbe_wall_dist_mae, calc_pbe_wall_dist_mae),
+                        (MbdKey.pbe_energy_mae, calc_pbe_energy_mae),
+                        (MbdKey.pbe_bond_length_error, calc_pbe_bond_length_error),
+                        (MbdKey.pbe_well_depth_error, calc_pbe_well_depth_error),
+                    )
+                ] + [
+                    (
+                        MbdKey.pbe_vib_freq_error,
+                        calc_pbe_vib_freq_error,
+                        (elem_symbol, seps_ref, ref_energies, seps_pred, pred_energies),
+                    ),
+                ]
             ref_forces = np.asarray(ref_data.forces)
-            energy_pair_args = (seps_ref, ref_energies, seps_pred, pred_energies)
-            metric_calls[:0] = [
-                (metric_key, calc_fn, energy_pair_args)
-                for metric_key, calc_fn in (
-                    (MbdKey.pbe_wall_dist_mae, calc_pbe_wall_dist_mae),
-                    (MbdKey.pbe_energy_mae, calc_pbe_energy_mae),
-                    (MbdKey.pbe_bond_length_error, calc_pbe_bond_length_error),
-                    (MbdKey.pbe_well_depth_error, calc_pbe_well_depth_error),
-                )
-            ] + [
-                (
-                    MbdKey.pbe_vib_freq_error,
-                    calc_pbe_vib_freq_error,
-                    (elem_symbol, seps_ref, ref_energies, seps_pred, pred_energies),
-                ),
-            ]
-            if ref_forces.size:
+            if (
+                ref_forces.size
+                and len(ref_forces) == len(ref_dists)
+                and len(seps_ref) >= 2
+            ):
                 ref_forces = ref_forces[ref_mask]
-                force_pair_args = (seps_ref, ref_forces, seps_pred, pred_forces)
-                metric_calls.append(
-                    (MbdKey.pbe_force_mae, calc_force_mae, force_pair_args)
+                force_interpolate = metric_kwargs.get(MbdKey.pbe_force_mae, {}).get(
+                    "interpolate", False
                 )
+                has_overlap = max(seps_ref.min(), seps_pred.min()) <= min(
+                    seps_ref.max(), seps_pred.max()
+                )
+                if not force_interpolate or has_overlap:
+                    force_pair_args = (seps_ref, ref_forces, seps_pred, pred_forces)
+                    metric_calls.append(
+                        (MbdKey.pbe_force_mae, calc_force_mae, force_pair_args)
+                    )
 
         results[elem_symbol] = {
             key: calc_fn(*args, **metric_kwargs.get(key, {}))

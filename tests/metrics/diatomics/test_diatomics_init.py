@@ -111,9 +111,14 @@ def base_curve(
 
 
 def h_curves(
-    distances: np.ndarray, energies: np.ndarray, forces: np.ndarray
+    distances: np.ndarray,
+    energies: np.ndarray | None = None,
+    forces: np.ndarray | None = None,
 ) -> DiatomicCurves:
-    """Wrap one H-H curve in DiatomicCurves."""
+    """Wrap one H-H curve in DiatomicCurves (energies/forces default to zeros)."""
+    n_dists = len(distances)
+    energies = np.zeros(n_dists) if energies is None else energies
+    forces = np.zeros((n_dists, 2, 3)) if forces is None else forces
     curve = DiatomicCurve(distances=distances, energies=energies, forces=forces)
     return DiatomicCurves(distances=distances, homo_nuclear={"H": curve})
 
@@ -160,6 +165,24 @@ def test_curve_shifts(
     for metric_key, expect in expected_metrics.items():
         actual = metrics_out["H"][metric_key]
         assert actual == pytest.approx(expect, abs=0.5), f"{metric_key=}"
+
+
+@pytest.mark.parametrize(
+    "ref_distances",
+    [np.array([0.1, 0.2]), np.array([0.3, 0.4])],
+    ids=["masked_empty", "no_overlap"],
+)
+def test_pbe_force_mae_skips_unusable_ref_window(ref_distances: np.ndarray) -> None:
+    """PBE force MAE skips empty or non-overlapping masked reference windows."""
+    pred_distances = np.array([2.0, 2.5, 3.0, 3.5, 3.7])
+    metrics_out = diatomics.calc_diatomic_metrics(
+        h_curves(ref_distances),
+        h_curves(pred_distances),
+        metrics={MbdKey.pbe_force_mae: {}},
+        interpolate=50,
+    )
+
+    assert metrics_out["H"] == {}
 
 
 def test_diatomic_curve_metrics(
@@ -358,8 +381,7 @@ def test_window_excludes_deep_overlap() -> None:
     dists = np.linspace(0.1, 6.0, 60)  # spans below H's window (~0.28 Å) and above
     energies = np.exp(-dists)  # smooth, small gradient in-window
     energies[dists < 0.2] = 1e6  # huge spike in the excluded deep-overlap region
-    forces = np.zeros((len(dists), 2, 3))
-    pred = h_curves(dists, energies, forces)
+    pred = h_curves(dists, energies)
     metrics = diatomics.calc_diatomic_metrics(ref_curves=None, pred_curves=pred)
     # the 1e6 spike is below H's r_min so the in-window smooth curve has no jump
     assert metrics["H"][MbdKey.energy_jump] == pytest.approx(0)

@@ -20,7 +20,11 @@ def repo_relative_path(file_path: str, root: str = ROOT) -> str:
 
     root = os.path.abspath(root)
     abs_path = os.path.abspath(file_path)
-    if os.path.commonpath([root, abs_path]) != root:
+    try:
+        common_path = os.path.commonpath([root, abs_path])
+    except ValueError as exc:
+        raise ValueError(f"{file_path=} must be inside repo root {root!r}") from exc
+    if common_path != root:
         raise ValueError(f"{file_path=} must be inside repo root {root!r}")
     return os.path.relpath(abs_path, root).replace(os.sep, "/")
 
