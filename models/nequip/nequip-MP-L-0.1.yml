@@ -211,6 +211,5 @@ metrics:
     force_flips: 1.839
     force_total_variation: 372.5
     force_jump: 2.188
-    force_mae: 3.196
     pbe_force_mae: 3.196
     pred_file_url: https://figshare.com/files/66104645

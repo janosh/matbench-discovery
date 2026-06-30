@@ -29,7 +29,6 @@ metrics_to_write: dict[str, dict[str, object]] = {
         MbdKey.force_flips,
         MbdKey.force_total_variation,
         MbdKey.force_jump,
-        MbdKey.force_mae,
         MbdKey.pbe_wall_dist_mae,
         MbdKey.pbe_energy_mae,
         MbdKey.pbe_bond_length_error,
@@ -92,9 +91,7 @@ for model in models_to_evaluate:
     mean_metrics = diatomics.write_metrics_to_yaml(
         model,
         metrics,
-        run_metadata={"excluded_formulas": excluded_formulas}
-        if excluded_formulas
-        else None,
+        run_metadata={"excluded_formulas": excluded_formulas},
     )
     print(f"{model.label}:")
     for metric, val in mean_metrics.items():

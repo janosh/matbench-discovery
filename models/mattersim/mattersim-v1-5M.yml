@@ -236,7 +236,6 @@ metrics:
     force_flips: 2.391
     force_total_variation: 215.8
     force_jump: 2.287
-    force_mae: 1.283
     pbe_force_mae: 1.283
   md:
     pred_file: models/mattersim/mattersim-v1-5M/2026-06-28-mattersim_v1_5m-md-metrics.csv.gz

@@ -349,6 +349,26 @@ describe(`MetricsTable`, () => {
     },
   )
 
+  it(`marks models with excluded metric samples`, async () => {
+    document.body.innerHTML = ``
+    mount(MetricsTable, {
+      target: document.body,
+      props: {
+        model_filter: (model: ModelData) => model.model_name === `AlphaNet-v1-OAM`,
+        col_filter: (col: Label) => col.label === `Model`,
+        show_non_compliant: true,
+      },
+    })
+    await tick()
+
+    const model_cell = doc_query(`td[data-col="Model"]`)
+    const marker = model_cell.querySelector(
+      `span[data-original-title="Diatomics metrics exclude He-He due to exploding errors"]`,
+    )
+    expect(model_cell.textContent).toContain(`AlphaNet-v1-OAM`)
+    expect(marker?.textContent).toBe(`*`)
+  })
+
   it(`updates table when col_filter changes`, () => {
     // Test with only Model and F1 columns
     mount(MetricsTable, {
@@ -987,7 +1007,6 @@ describe(`MetricsTable`, () => {
       `F TV`, // DIATOMICS_METRICS
       `F flips`, // DIATOMICS_METRICS
       `F jump`, // DIATOMICS_METRICS
-      `F MAE`, // DIATOMICS_METRICS
       `PBE ΔDe`, // DIATOMICS_METRICS
       `PBE Δr wall`, // DIATOMICS_METRICS
       `PBE Δre`, // DIATOMICS_METRICS

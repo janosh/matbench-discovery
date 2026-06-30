@@ -13,6 +13,7 @@ and printing dependencies work with only the core dependencies installed.
 Registry keys are ``Model`` enum names so metrics can be written to the right YAML.
 """
 
+import hashlib
 import inspect
 import os
 import shutil
@@ -29,6 +30,11 @@ if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
+
+
+def _is_non_empty_file(path: str) -> bool:
+    """Return whether path exists and has non-zero size."""
+    return os.path.isfile(path) and os.path.getsize(path) > 0
 
 
 def download_checkpoint(model_key: str, ext: str | None = None) -> str:
@@ -61,16 +67,17 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
         url = url.replace("/blob/", "/raw/")
 
     ext = ext or os.path.splitext(url.split("?")[0])[1] or ".ckpt"
-    dest = f"{CHECKPOINT_DIR}/{model_key}{ext}"
+    url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
+    dest = f"{CHECKPOINT_DIR}/{model_key}-{url_hash}{ext}"
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)
     # serialize concurrent same-model downloads: parallel array tasks otherwise race on
     # download_file's temp-file rename, leaving losers with a vanished .part file
     with FileLock(f"{dest}.lock"):
-        if os.path.isfile(dest) and os.path.getsize(dest) == 0:
+        if os.path.isfile(dest) and not _is_non_empty_file(dest):
             os.remove(dest)
-        if not os.path.isfile(dest):
+        if not _is_non_empty_file(dest):
             download_file(dest, url, headers=headers)
-    if not os.path.isfile(dest) or os.path.getsize(dest) == 0:
+    if not _is_non_empty_file(dest):
         raise RuntimeError(
             f"Failed to download {model_key} checkpoint from {url}. If the repo is "
             "gated (e.g. fairchem OMAT24), accept its license on HuggingFace and set "
@@ -86,10 +93,11 @@ def _stage_checkpoint(model_key: str, dest: str, *, ext: str | None = None) -> N
     """
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     with FileLock(f"{dest}.lock"):
-        if not os.path.isfile(dest):
-            tmp_dest = f"{dest}.tmp"
-            shutil.copy(download_checkpoint(model_key, ext=ext), tmp_dest)
-            os.replace(tmp_dest, dest)
+        if _is_non_empty_file(dest):
+            return
+        tmp_dest = f"{dest}.tmp"
+        shutil.copy(download_checkpoint(model_key, ext=ext), tmp_dest)
+        os.replace(tmp_dest, dest)
 
 
 def _run_to_atomic_output(cmd_prefix: Sequence[str], dest: str) -> None:
@@ -97,7 +105,7 @@ def _run_to_atomic_output(cmd_prefix: Sequence[str], dest: str) -> None:
     dest_base, dest_ext = os.path.splitext(dest)
     tmp_dest = f"{dest_base}.tmp{dest_ext}"
     with FileLock(f"{dest}.lock"):
-        if os.path.isfile(dest):
+        if _is_non_empty_file(dest):
             return
         if os.path.isfile(tmp_dest):
             os.remove(tmp_dest)
@@ -286,7 +294,7 @@ def _nequip(model_key: str) -> Callable[[str], "Calculator"]:
             "ase",
         ]
         with FileLock(f"{compiled}.lock"):
-            if not os.path.isfile(compiled):
+            if not _is_non_empty_file(compiled):
                 subprocess.run(compile_cmd, check=True)
         return NequIPCalculator.from_compiled_model(
             compile_path=compiled, device=device
@@ -349,7 +357,7 @@ def _alphanet(model_key: str, config_url: str) -> Callable[[str], "Calculator"]:
         config_path = f"{CHECKPOINT_DIR}/{model_key}-config.json"
         os.makedirs(CHECKPOINT_DIR, exist_ok=True)
         with FileLock(f"{config_path}.lock"):
-            if not os.path.isfile(config_path):
+            if not _is_non_empty_file(config_path):
                 download_file(config_path, config_url)
         config = All_Config().from_json(config_path)
         ckpt_path = download_checkpoint(model_key)

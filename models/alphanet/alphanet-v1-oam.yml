@@ -201,7 +201,6 @@ metrics:
     force_flips: 2.066
     force_total_variation: 207.2
     force_jump: 5.116
-    force_mae: 2.274
     pbe_force_mae: 2.274
   md:
     pred_file: models/alphanet/alphanet-v1-oam/2026-06-28-alphanet_v1_oam-md-metrics.csv.gz

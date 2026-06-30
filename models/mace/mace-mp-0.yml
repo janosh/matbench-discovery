@@ -181,7 +181,6 @@ metrics:
     force_flips: 1.368
     force_total_variation: 158.4
     force_jump: 18.93
-    force_mae: 2.002
     pbe_force_mae: 2.002
   md:
     pred_file: models/mace/mace-mp-0/2026-06-28-mace_mp_0-md-metrics.csv.gz

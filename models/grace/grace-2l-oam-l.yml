@@ -165,7 +165,6 @@ metrics:
     force_flips: 1.897
     force_total_variation: 118.8
     force_jump: 5.339
-    force_mae: 1.282
     pbe_force_mae: 1.282
   md:
     pred_file: models/grace/grace-2l-oam-l/2026-06-28-grace_2l_oam_l-md-metrics.csv.gz

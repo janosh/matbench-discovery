@@ -259,9 +259,13 @@ export function assemble_row_data(
       typeof diatomics_metrics === `object` && diatomics_metrics !== null
         ? (diatomics_metrics.excluded_formulas ?? [])
         : []
+    const model_exclusion_note = `Diatomics metrics exclude ${excluded_formulas.join(
+      `, `,
+    )} due to exploding errors`
     const model_exclusion_marker =
       excluded_formulas.length > 0
-        ? `<span title="Diatomics metrics exclude ${excluded_formulas.join(`, `)} due to exploding errors">*</span>`
+        ? `<span title="${model_exclusion_note}" aria-label="${model_exclusion_note}">` +
+          `<span aria-hidden="true">*</span></span>`
         : ``
 
     const row = {

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, get_args
 
+import numpy as np
 from ase import Atoms
 from ase.data import chemical_symbols
 from tqdm import tqdm
@@ -17,7 +18,6 @@ from tqdm import tqdm
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    import numpy as np
     from ase.calculators.calculator import Calculator
 
 __date__ = "2024-03-31"
@@ -84,6 +84,7 @@ def calc_diatomic_curve(
         DiatomicResults: Potential energy and forces data for diatomic molecules.
     """
     # saving results in dict: {"symbol-symbol": {"energies": [...], "forces": [...]}}
+    expected_distances = np.asarray(distances)
     for idx, (z1, z2) in (pbar := tqdm(enumerate(pairs, start=1))):
         # Convert atomic numbers to symbols if needed
         elem1 = atom_num_symbol_map.get(z1, z1)
@@ -92,9 +93,12 @@ def calc_diatomic_curve(
         curve_data = results.get(formula, {})
         len_energies = len(curve_data.get("energies", []))
         len_forces = len(curve_data.get("forces", []))
+        cached_distances = np.asarray(curve_data.get("distances", []))
 
-        # skip if we have results for this formula and they match expected length
-        if len_energies == len_forces == len(distances):
+        # skip only when cached samples match the current distance grid exactly
+        if len_energies == len_forces == len(expected_distances) and np.array_equal(
+            cached_distances, expected_distances
+        ):
             continue
 
         pbar.set_description(
@@ -102,7 +106,11 @@ def calc_diatomic_curve(
         )
 
         # reset curve_data in case we had prior results
-        curve_data = results[formula] = {"energies": [], "forces": []}
+        curve_data = results[formula] = {
+            "distances": expected_distances.tolist(),
+            "energies": [],
+            "forces": [],
+        }
         try:
             for atoms in generate_diatomics(elem1, elem2, distances):
                 curve_data["energies"].append(calculator.get_potential_energy(atoms))
@@ -118,6 +126,10 @@ def calc_diatomic_curve(
             # asserted element list, ...) raise here; skip that pair's curve rather than
             # aborting the whole sweep
             print(f"{idx}/{len(pairs)} {formula} failed: {exc!r}")
-            results[formula] = {"energies": [], "forces": []}
+            results[formula] = {
+                "distances": expected_distances.tolist(),
+                "energies": [],
+                "forces": [],
+            }
 
     return results

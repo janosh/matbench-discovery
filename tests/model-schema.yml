@@ -246,8 +246,6 @@ definitions:
         type: number
       energy_jump:
         type: number
-      force_mae:
-        type: number
       pbe_wall_dist_mae:
         type: number
       pbe_energy_mae:

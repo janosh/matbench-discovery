@@ -124,7 +124,12 @@
   const color_for = (key: string): string =>
     ref_colors[key] ?? model_colors.get(key) ?? `gray`
 
-  let plot_height = $state(300)
+  const plot_height_min = 100
+  const plot_height_max = 500
+  let plot_height = $state<number | null>(300)
+  let clamped_plot_height = $derived(
+    Math.min(plot_height_max, Math.max(plot_height_min, plot_height ?? 300)),
+  )
   let selected_element_group = $state(`all`)
   let selected_group = $derived(
     element_groups.find((group) => group.key === selected_element_group) ??
@@ -239,12 +244,17 @@
 <div class="controls">
   <label class="plot-height-control">
     Plot height:
-    <input type="range" min="100" max="500" bind:value={plot_height} />
+    <input
+      type="range"
+      min={plot_height_min}
+      max={plot_height_max}
+      bind:value={plot_height}
+    />
     <input
       class="plot-height-number"
       type="number"
-      min="100"
-      max="500"
+      min={plot_height_min}
+      max={plot_height_max}
       step="10"
       bind:value={plot_height}
       aria-label="Plot height in pixels"
@@ -287,7 +297,7 @@
   </div>
 </div>
 
-<div class="grid" style="--plot-height: {plot_height}px">
+<div class="grid" style="--plot-height: {clamped_plot_height}px">
   {#each diatomics_to_render as formula (formula)}
     <div class="plot-shell" use:observe_plot={formula}>
       {#if visible_diatomics.has(formula)}

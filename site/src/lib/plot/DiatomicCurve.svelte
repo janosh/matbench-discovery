@@ -85,7 +85,7 @@
 <div {...rest} class="plot {rest.class ?? ``}">
   <h3 aria-label={header_title}>
     {header_text}
-    <span class="element-tooltip" role="tooltip">{header_title}</span>
+    <span class="element-tooltip">{header_title}</span>
   </h3>
   <ScatterPlot
     {series}

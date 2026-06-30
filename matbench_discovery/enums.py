@@ -109,7 +109,6 @@ class MbdKey(LabelEnum):
     energy_diff_flips = "energy_diff_flips", "Energy Diff Flips (count)"
     force_total_variation = "force_total_variation", "Force Total Variation (eV/Å)"
     force_jump = "force_jump", "Force Jump (eV/Å)"
-    force_mae = "force_mae", "Force MAE (eV/Å)"
     pbe_wall_dist_mae = "pbe_wall_dist_mae", "PBE Wall Distance MAE (Å)"
     pbe_energy_mae = "pbe_energy_mae", "PBE Energy MAE (eV)"
     pbe_bond_length_error = "pbe_bond_length_error", "PBE Bond Length Error (Å)"

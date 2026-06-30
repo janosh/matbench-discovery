@@ -157,7 +157,11 @@ def test_calc_diatomic_curve_prior_results() -> None:
     pairs = [("Cu", "Cu")]  # Only test Cu-Cu
     # Pre-populate results with Cu2
     initial_results: dict[str, dict[str, list[float | list[list[float]]]]] = {
-        "Cu-Cu": {"energies": [-1.0], "forces": [[[0.1, 0, 0], [-0.1, 0, 0]]]}
+        "Cu-Cu": {
+            "distances": [2.0],
+            "energies": [-1.0],
+            "forces": [[[0.1, 0, 0], [-0.1, 0, 0]]],
+        }
     }
 
     # Calculate new results but with same pair
@@ -166,6 +170,7 @@ def test_calc_diatomic_curve_prior_results() -> None:
     # Cu2 results should be recalculated since it's in pairs
     assert len(results["Cu-Cu"]["energies"]) == 1
     assert len(results["Cu-Cu"]["forces"]) == 1
+    assert results["Cu-Cu"]["distances"] == distances
     # Values should be calculated by EMT, not taken from initial_results
     assert isinstance(results["Cu-Cu"]["energies"][0], int | float)
     assert isinstance(results["Cu-Cu"]["forces"][0], list)

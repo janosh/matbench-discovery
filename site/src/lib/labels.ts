@@ -440,7 +440,6 @@ type DiatomicsMetricKey =
   | `tortuosity`
   | `energy_diff_flips`
   | `energy_jump`
-  | `force_mae`
   | `pbe_wall_dist_mae`
   | `pbe_energy_mae`
   | `pbe_bond_length_error`
@@ -476,15 +475,6 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
     label: `E jump`,
     description: `Mean energy jump at sign-flip points over ${scored_diatomic_range}`,
     unit: `eV`,
-    path: `metrics.diatomics`,
-    better: `lower`,
-    format: `.3~g`,
-  },
-  force_mae: {
-    key: `force_mae`,
-    label: `F MAE`,
-    description: `Mean absolute error of predicted forces over ${scored_diatomic_range}`,
-    unit: `eV/Å`,
     path: `metrics.diatomics`,
     better: `lower`,
     format: `.3~g`,

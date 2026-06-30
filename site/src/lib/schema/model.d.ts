@@ -304,14 +304,13 @@ export interface DiscoveryMetricsSet {
  */
 export interface DiatomicsMetrics {
   pred_file?: string | null
-  pred_file_url?: string
+  pred_file_url?: string | null
   hardware?: string
   run_time_sec?: number
   excluded_formulas?: string[]
   tortuosity?: number
   energy_diff_flips?: number
   energy_jump?: number
-  force_mae?: number
   pbe_wall_dist_mae?: number
   pbe_energy_mae?: number
   pbe_bond_length_error?: number

@@ -53,8 +53,12 @@ def drop_metric_exclusions(
     model_key: str, metrics: dict[str, dict[str, float]]
 ) -> dict[str, dict[str, float]]:
     """Remove model-specific pathological curves before metric aggregation."""
-    excluded = DIATOMIC_METRIC_EXCLUSIONS.get(model_key, ())
-    return {key: val for key, val in metrics.items() if key not in excluded}
+    excluded = set(DIATOMIC_METRIC_EXCLUSIONS.get(model_key, ()))
+    return {
+        key: val
+        for key, val in metrics.items()
+        if key not in excluded and f"{key}-{key}" not in excluded
+    }
 
 
 def detect_hardware() -> str:
@@ -219,12 +223,20 @@ def main() -> int:
     # drop curves with empty or non-finite energies/forces: NaN/Infinity are not valid
     # JSON (downstream JS parsers reject them), and these curves are skipped by the
     # metrics anyway, so the saved file matches what's actually scored
+    def is_valid_curve(curve: dict[str, list[float | list[list[float]]]]) -> bool:
+        """Return whether a curve has finite energy and force samples."""
+        return bool(
+            bool(curve.get("energies"))
+            and bool(curve.get("forces"))
+            and np.isfinite(curve["energies"]).all()
+            and np.isfinite(curve["forces"]).all()
+        )
+
+    invalid_formulas = sorted(
+        formula for formula, curve in curves.items() if not is_valid_curve(curve)
+    )
     curves = {
-        formula: curve
-        for formula, curve in curves.items()
-        if curve["energies"]
-        and np.isfinite(curve["energies"]).all()
-        and np.isfinite(curve["forces"]).all()
+        formula: curve for formula, curve in curves.items() if is_valid_curve(curve)
     }
 
     # flat on-disk schema read by DiatomicCurves.from_dict / the site's diatomics parser
@@ -254,13 +266,14 @@ def main() -> int:
             interpolate=200,
         )
         metrics = drop_metric_exclusions(args.model, metrics)
-        excluded_formulas = list(DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()))
+        excluded_formulas = sorted(
+            {*DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()), *invalid_formulas}
+        )
         run_metadata: dict[str, str | float | list[str]] = {
             "hardware": hardware,
             "run_time_sec": run_time_sec,
+            "excluded_formulas": excluded_formulas,
         }
-        if excluded_formulas:
-            run_metadata["excluded_formulas"] = excluded_formulas
         mean_metrics = diatomics.write_metrics_to_yaml(
             model,
             metrics,

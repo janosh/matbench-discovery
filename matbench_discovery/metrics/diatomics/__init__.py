@@ -36,6 +36,29 @@ from matbench_discovery.metrics.diatomics.force import (
 )
 
 DiatomicsYamlValue = str | float | list[str] | None
+DIATOMIC_METRIC_KEYS = frozenset(
+    str(key)
+    for key in (
+        MbdKey.tortuosity,
+        MbdKey.force_flips,
+        MbdKey.energy_jump,
+        MbdKey.energy_diff_flips,
+        MbdKey.force_total_variation,
+        MbdKey.force_jump,
+        MbdKey.pbe_wall_dist_mae,
+        MbdKey.pbe_energy_mae,
+        MbdKey.pbe_bond_length_error,
+        MbdKey.pbe_well_depth_error,
+        MbdKey.pbe_force_mae,
+        MbdKey.pbe_vib_freq_error,
+    )
+)
+
+
+def _homo_key(formula: str) -> str:
+    """Return element key for homonuclear pair labels, else formula unchanged."""
+    elem1, sep, elem2 = formula.partition("-")
+    return elem1 if sep and elem1 == elem2 else formula
 
 
 class DiatomicCurve:
@@ -86,8 +109,9 @@ class DiatomicCurves:
         def make_curves(section: str) -> dict[str, DiatomicCurve]:
             """Convert one JSON curve section to DiatomicCurve objects."""
             curves = data.get(section, data.get(section.replace("-", "_"), {}))
+            key_fn = _homo_key if section.startswith("homo") else str
             return {
-                formula: DiatomicCurve(
+                key_fn(formula): DiatomicCurve(
                     distances=distances,
                     energies=curve["energies"],
                     forces=curve.get("forces", []),
@@ -116,7 +140,7 @@ def load_dft_reference_curves(
     return DiatomicCurves(
         distances=np.array([]),
         homo_nuclear={
-            formula: DiatomicCurve(
+            _homo_key(formula): DiatomicCurve(
                 distances=curve["distances"],
                 energies=curve["energies"],
                 forces=curve.get("forces", []),
@@ -179,8 +203,10 @@ def calc_diatomic_metrics(
         dict[str, dict[str, float]]: Map of element symbols to metric dicts with keys
             being the metric names and values being the metric values.
     """
-    requested_metric_keys = set(metrics) if metrics is not None else set(MbdKey)
-    if unknown_metrics := requested_metric_keys - set(MbdKey):
+    requested_metric_keys = (
+        {str(key) for key in metrics} if metrics is not None else DIATOMIC_METRIC_KEYS
+    )
+    if unknown_metrics := requested_metric_keys - DIATOMIC_METRIC_KEYS:
         raise ValueError(f"{unknown_metrics=}. Valid metrics=")
     requested_metrics = {MbdKey(key) for key in requested_metric_keys}
 
@@ -321,13 +347,20 @@ def write_metrics_to_yaml(
     existing = existing if isinstance(existing, dict) else {}
     run_metadata = run_metadata or {}
     block: dict[str, DiatomicsYamlValue] = {}
-    pred_file = existing.get("pred_file")
+    existing_pred_file = existing.get("pred_file")
+    pred_file = existing_pred_file
     if pred_file_path is not None:
         pred_file = repo_relative_path(pred_file_path)
     if pred_file is not None:
         block["pred_file"] = pred_file
 
-    for key in ("pred_file_url", "hardware", "run_time_sec", "excluded_formulas"):
+    pred_file_url = run_metadata.get("pred_file_url")
+    if pred_file_url is None and pred_file == existing_pred_file:
+        pred_file_url = existing.get("pred_file_url")
+    if pred_file_url is not None:
+        block["pred_file_url"] = pred_file_url
+
+    for key in ("hardware", "run_time_sec", "excluded_formulas"):
         val = run_metadata.get(key)
         if val is None:
             val = existing.get(key)
