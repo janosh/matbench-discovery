@@ -304,7 +304,7 @@ export interface DiscoveryMetricsSet {
  */
 export interface DiatomicsMetrics {
   pred_file?: string | null
-  pred_file_url?: string | null
+  pred_file_url?: string
   hardware?: string
   run_time_sec?: number
   excluded_formulas?: string[]

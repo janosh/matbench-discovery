@@ -124,11 +124,13 @@
   const color_for = (key: string): string =>
     ref_colors[key] ?? model_colors.get(key) ?? `gray`
 
-  const plot_height_min = 100
-  const plot_height_max = 500
-  let plot_height = $state<number | null>(300)
+  const plot_height = { min: 100, max: 500, default: 300, step: 10 } as const
+  let plot_height_val = $state<number | null>(plot_height.default)
   let clamped_plot_height = $derived(
-    Math.min(plot_height_max, Math.max(plot_height_min, plot_height ?? 300)),
+    Math.min(
+      plot_height.max,
+      Math.max(plot_height.min, plot_height_val ?? plot_height.default),
+    ),
   )
   let selected_element_group = $state(`all`)
   let selected_group = $derived(
@@ -246,17 +248,17 @@
     Plot height:
     <input
       type="range"
-      min={plot_height_min}
-      max={plot_height_max}
-      bind:value={plot_height}
+      min={plot_height.min}
+      max={plot_height.max}
+      bind:value={plot_height_val}
     />
     <input
       class="plot-height-number"
       type="number"
-      min={plot_height_min}
-      max={plot_height_max}
-      step="10"
-      bind:value={plot_height}
+      min={plot_height.min}
+      max={plot_height.max}
+      step={plot_height.step}
+      bind:value={plot_height_val}
       aria-label="Plot height in pixels"
     />px
   </label>

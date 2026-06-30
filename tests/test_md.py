@@ -1,7 +1,9 @@
 """Tests for molecular dynamics rollout helpers."""
 
+import hashlib
 import importlib.util
 import os
+import shlex
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -613,14 +615,13 @@ def test_download_checkpoint_replaces_zero_byte_cache(
     from matbench_discovery.enums import Model
     from matbench_discovery.remote import fetch
 
+    url = "https://example.com/model.ckpt"
     monkeypatch.setattr(calculators, "CHECKPOINT_DIR", f"{tmp_path}")
     monkeypatch.setattr(
         Model,
         "from_ref",
         classmethod(
-            lambda _cls, _model_key: SimpleNamespace(
-                metadata={"checkpoint_url": "https://example.com/model.ckpt"}
-            )
+            lambda _cls, _model_key: SimpleNamespace(metadata={"checkpoint_url": url})
         ),
     )
 
@@ -629,7 +630,8 @@ def test_download_checkpoint_replaces_zero_byte_cache(
         "download_file",
         lambda dest, _url, **_kwargs: Path(dest).write_bytes(b"checkpoint"),
     )
-    dest = tmp_path / "fake.ckpt"
+    url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
+    dest = tmp_path / f"fake-{url_hash}.ckpt"
     dest.write_bytes(b"")
 
     assert calculators.download_checkpoint("fake") == f"{dest}"
@@ -655,31 +657,36 @@ def test_run_md_cli_write_yaml_skips_non_submission_model(
 
 
 @pytest.mark.parametrize(
-    ("argv", "expected_stdout"),
+    ("argv", "expected_cmd"),
     [
         (
             ["run_md", "--model", "mace_mp_0", "--write-yaml", "--systems", "bulkAu"],
             None,
         ),
-        (["run_md", "--print-cmd", "--model", "mace-mp-0"], "--model mace_mp_0"),
+        (
+            ["run_md", "--print-cmd", "--model", "mace-mp-0"],
+            CALCULATORS["mace_mp_0"].uv_run_cmd(
+                "models/run_md.py", "--model", "mace_mp_0"
+            ),
+        ),
     ],
 )
 def test_run_md_cli_validation(
     argv: list[str],
-    expected_stdout: str | None,
+    expected_cmd: list[str] | None,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """CLI rejects partial YAML writes and canonicalizes model refs."""
+    """CLI rejects partial YAML writes and prints full canonical uv commands."""
     run_md = import_repo_script("run_md", "models/run_md.py")
     monkeypatch.setattr(sys, "argv", argv)
 
-    if expected_stdout is None:
+    if expected_cmd is None:
         with pytest.raises(SystemExit):  # parser.error exits before rollout pipeline
             run_md.main()
     else:
         assert run_md.main() == 0
-        assert expected_stdout in capsys.readouterr().out
+        assert shlex.split(capsys.readouterr().out) == expected_cmd
 
 
 def patch_eval_md(
