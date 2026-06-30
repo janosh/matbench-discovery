@@ -23,6 +23,7 @@ import ase.io
 import numpy as np
 from ase import Atoms
 from asset_helpers import (
+    active_model_assets,
     asset_safe_key,
     clean_float,
     compact_extxyz,
@@ -44,7 +45,7 @@ if TYPE_CHECKING:
     from matbench_discovery.enums import Model
 
 OUT_DIR: Final = "site/static/kappa-parity"
-MANIFEST_TS: Final = "site/src/lib/kappa-parity-manifest.ts"
+MANIFEST_TS: Final = "site/src/lib/parity/kappa-parity-manifest.ts"
 ASSET_PREFIX: Final = "kappa-parity-phonondb-v1"
 LOCAL_ASSET_BASE_URL: Final = "/kappa-parity/assets"
 # round conductivities to 0.0001 W/mK and structure positions to 0.001 A
@@ -233,7 +234,7 @@ def main() -> None:
             path.unlink()
     elif manifest_path.is_file():
         previous = json.loads(manifest_path.read_text(encoding="utf-8"))
-        model_assets = dict(previous.get("model_assets", {}))
+        model_assets = active_model_assets(previous.get("model_assets", {}))
 
     base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
 

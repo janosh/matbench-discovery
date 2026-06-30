@@ -373,3 +373,25 @@ def test_get_calling_file_path() -> None:
         return hpc._get_calling_file_path(frame)  # noqa: SLF001
 
     assert wrapper(frame=2) == __file__
+
+
+@pytest.mark.parametrize(
+    ("shard_metadatas", "expected"),
+    [
+        (
+            [
+                {"hardware": "H200", "run_time_sec": 100.0, "excluded_formulas": []},
+                {"hardware": "H200", "run_time_sec": 50.5},
+            ],
+            {"hardware": "H200", "run_time_sec": 150.5},
+        ),
+        ([{}, {}], {}),  # no provenance -> empty (leaves existing YAML untouched)
+        ([{"run_time_sec": 12.0}, {}], {"run_time_sec": 12.0}),  # partial
+    ],
+    ids=["full", "missing", "partial"],
+)
+def test_merge_run_metadata(
+    shard_metadatas: list[dict[str, object]], expected: dict[str, str | float]
+) -> None:
+    """merge_run_metadata sums run_time_sec + takes shared hardware across shards."""
+    assert hpc.merge_run_metadata(shard_metadatas) == expected

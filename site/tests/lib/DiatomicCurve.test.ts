@@ -35,7 +35,7 @@ describe(`DiatomicCurve`, () => {
       series: [
         {
           x: [0.2, 1.0, 6.0],
-          y: [2, 5, 0],
+          y: [-95, -92, -97],
           markers: `line+points`,
           metadata: { model_key: `unknown-model`, model_label: `unknown-model` },
           point_style: { fill: `#123456`, radius: 1.5, stroke_width: 0 },

@@ -141,7 +141,7 @@ jobs:
           rsync -a --include='*/' --include='*.yml' --exclude='*' models/ pr-tree/models/
           rsync -a --delete site/src/figs/ pr-tree/site/src/figs/
           for file in site/src/lib/energy-parity-manifest.ts \
-                      site/src/lib/kappa-parity-manifest.ts \
+                      site/src/lib/parity/kappa-parity-manifest.ts \
                       site/src/routes/models/per-element-each-errors.jsonl; do
             cp "$file" "pr-tree/$file"
           done

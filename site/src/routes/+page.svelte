@@ -240,7 +240,7 @@
   <!-- the test-set selector only affects discovery metrics, so only show it in the
   Discovery preset where those columns are visible -->
   {#if col_preset === `Discovery`}
-    <div class="toggle-row compact" transition:slide={{ duration: 250 }}>
+    <div class="toggle-row compact" in:slide={{ duration: 250 }}>
       <span>Test set:</span>
       <SelectToggle
         bind:selected={discovery_set}

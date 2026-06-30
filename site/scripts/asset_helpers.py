@@ -30,6 +30,18 @@ def resolve_models(model_refs: Iterable[str]) -> tuple[Model, ...]:
     return tuple(map(Model.from_ref, model_refs))
 
 
+def active_model_assets(
+    model_assets: Mapping[str, Mapping[str, str | int]],
+) -> dict[str, dict[str, str | int]]:
+    """Keep only manifest assets belonging to currently active model keys."""
+    active_keys = {model.key for model in Model.active()}
+    return {
+        model_key: dict(asset)
+        for model_key, asset in model_assets.items()
+        if model_key in active_keys
+    }
+
+
 def clean_float(value: float | np.floating, decimals: int = 6) -> float | None:
     """Round to ``decimals``, mapping NaN/inf to None (json-safe)."""
     number = round(float(value), decimals)

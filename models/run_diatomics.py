@@ -42,6 +42,7 @@ from matbench_discovery.calculators import (
     resolve_calculator_key,
 )
 from matbench_discovery.diatomics import DiatomicResults, calc_diatomic_curve, homo_nuc
+from matbench_discovery.hpc import merge_run_metadata
 
 module_dir = os.path.dirname(__file__)
 DIATOMIC_METRIC_EXCLUSIONS: dict[str, tuple[str, ...]] = {
@@ -174,13 +175,13 @@ def main() -> int:
         parser.error("--write-yaml is only supported by the --merge-shards task")
 
     if args.print_cmd:
-        run_args = ["--model", args.model]
-        if args.dry_run:
-            run_args.append("--dry-run")
-        if args.merge_shards:
-            run_args.append("--merge-shards")
-        if args.write_yaml:
-            run_args.append("--write-yaml")
+        run_args = ["--model", args.model, "--dtype", args.dtype]
+        for name in ("min-dist", "max-dist", "n-points", "max-z", "out-dir"):
+            if (val := getattr(args, name.replace("-", "_"))) is not None:
+                run_args += [f"--{name}", str(val)]
+        for flag in ("dry-run", "merge-shards", "write-yaml"):
+            if getattr(args, flag.replace("-", "_")):
+                run_args.append(f"--{flag}")
         cmd = CALCULATORS[args.model].uv_run_cmd("models/run_diatomics.py", *run_args)
         print(shlex.join(cmd))
         return 0
@@ -211,9 +212,12 @@ def main() -> int:
 
     if args.merge_shards:
         curves: DiatomicResults = {}
+        shard_metadatas: list[dict[str, object]] = []
         for json_path in sorted(glob(f"{shard_dir}/*-diatomics.json.gz")):
             with gzip.open(json_path, mode="rt") as file:
-                curves.update(json.load(file).get(homo_nuc, {}))
+                shard = json.load(file)
+            curves.update(shard.get(homo_nuc, {}))
+            shard_metadatas.append(shard.get("run_metadata", {}))
 
         missing_formulas = {
             f"{chemical_symbols[z]}-{chemical_symbols[z]}" for z in z_values
@@ -221,9 +225,11 @@ def main() -> int:
         missing_formulas -= set(curves)
         missing_formulas.update(DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()))
         run_metadata: dict[str, str | float | list[str]] = {
-            "excluded_formulas": sorted(missing_formulas)
+            **merge_run_metadata(shard_metadatas),
+            "excluded_formulas": sorted(missing_formulas),
         }
         json_path = f"{out_dir}/{today}-diatomics.json.gz"
+        n_pairs = len(shard_metadatas)  # Z actually computed across shards
     else:
         start_time = time.perf_counter()
         calculator = load_calculator(args.model, dtype=args.dtype)
@@ -272,15 +278,23 @@ def main() -> int:
             json_path = f"{shard_dir}/Z{z_values[0]:03d}-diatomics.json.gz"
         else:
             json_path = f"{out_dir}/{today}-diatomics.json.gz"
+        n_pairs = len(homo_pairs)
 
     # flat on-disk schema read by DiatomicCurves.from_dict / the site's diatomics parser
-    results = {homo_nuc: curves, "hetero-nuclear": {}, "distances": distances.tolist()}
+    results: dict[str, object] = {
+        homo_nuc: curves,
+        "hetero-nuclear": {},
+        "distances": distances.tolist(),
+    }
+    if slurm_task_id and not args.merge_shards:
+        # persist provenance so --merge-shards can aggregate hardware + run time
+        results["run_metadata"] = run_metadata
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
     with gzip.open(json_path, mode="wt") as file:
         # allow_nan=False guards against writing invalid JSON (NaN) if a non-finite
         # value slips through the filter above
         json.dump(results, file, allow_nan=False, default=lambda arr: arr.tolist())
-    print(f"Wrote {len(curves)}/{len(homo_pairs)} diatomic curves to {json_path}")
+    print(f"Wrote {len(curves)}/{n_pairs} diatomic curves to {json_path}")
     if not args.merge_shards:
         print(f"Ran on {hardware} in {run_time_sec:.1f} s")
 
