@@ -11,14 +11,14 @@ import zlib from 'node:zlib'
 import type { Plugin } from 'vite'
 import { defineConfig } from 'vite-plus'
 
-// Load committed figure payloads (site/src/figs) as parsed ES modules, typed per payload
-// in src/figs/payloads.d.ts. Two formats: <name>.json.gz (static, gzipped) and
-// <name>.jsonl (multi-model, one model per line + a {"_base": {...}} shared-fields line,
+// Load committed data payloads as parsed ES modules. Figure payloads in site/src/figs
+// are typed per payload in src/figs/payloads.d.ts. Two formats: <name>.json.gz
+// (static, gzipped) and <name>.jsonl (multi-model, one model per line + a {"_base": {...}} shared-fields line,
 // reassembled to { ...shared, models: [...] } - the format that git-merges cleanly).
 // Both embed as JSON.parse('...') (cheap V8 parse; @__PURE__ drops unused payloads).
 // .jsonl goes through attach_style ($lib/fig-helpers) so pages import pre-styled models.
-const figure_payload_plugin = (): Plugin => ({
-  name: `figure-payload`,
+const json_payload_plugin = (): Plugin => ({
+  name: `json-payload`,
   load(id) {
     const file = id.split(`?`)[0]
     if (file.endsWith(`.json.gz`)) {
@@ -127,7 +127,7 @@ export default defineConfig({
     sveltekit(),
     yaml_plugin({ extensions: [`.yml`, `.yaml`, `.cff`] }),
     yaml_schema_to_typescript_plugin(),
-    figure_payload_plugin(),
+    json_payload_plugin(),
   ],
 
   server: {

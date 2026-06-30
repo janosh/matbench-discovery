@@ -32,7 +32,6 @@
   const child_routes = Object.keys(import.meta.glob(`./*/*/+page.{svelte,md}`))
     .filter((filename) => !filename.includes(`[`))
     .map((filename) => `/${filename.split(`/`).slice(1, 3).join(`/`)}`)
-    .filter((route) => route !== `/tasks/diatomics`)
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`))
     .map((filename) => `/${filename.split(`/`)[1]}`)
     .map((route) => {
@@ -90,7 +89,7 @@
   <meta name="description" content={description} />
 </svelte:head>
 
-{#if ![`/`, `/models`, `/tasks/geo-opt`].includes(url)}
+{#if ![`/`, `/models`, `/tasks/diatomics`, `/tasks/geo-opt`].includes(url)}
   <Toc
     {headingSelector}
     breakpoint={1350}
@@ -138,7 +137,7 @@
   <ThemeToggle />
 </Nav>
 
-<main {@attach heading_anchors()}>
+<main class:bleed-1400={url === `/tasks/diatomics`} {@attach heading_anchors()}>
   {@render children?.()}
 </main>
 

@@ -311,11 +311,11 @@ def write_metrics_to_yaml(
         metrics: Kappa metrics for this model.
         pred_file_path: Path to prediction file.
     """
-    from matbench_discovery import ROOT
     from matbench_discovery import data as mbd_data
+    from matbench_discovery import repo_relative_path
 
     # Convert absolute path to repo-relative path
-    pred_file_path = pred_file_path.removeprefix(f"{ROOT}/")
+    pred_file_path = repo_relative_path(pred_file_path)
 
     with open(model.yaml_path, encoding="utf-8") as file:
         data = mbd_data.round_trip_yaml.load(file)

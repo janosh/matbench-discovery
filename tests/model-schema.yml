@@ -232,19 +232,31 @@ definitions:
       pred_file_url:
         type: [string, 'null']
         $ref: '#/definitions/http_url'
-      smoothness:
+      hardware:
+        type: string
+      run_time_sec:
         type: number
+      excluded_formulas:
+        type: array
+        items:
+          type: string
       tortuosity:
-        type: number
-      conservation:
         type: number
       energy_diff_flips:
         type: number
-      energy_grad_norm_max:
-        type: number
       energy_jump:
         type: number
-      force_mae:
+      pbe_wall_dist_mae:
+        type: number
+      pbe_energy_mae:
+        type: number
+      pbe_bond_length_error:
+        type: number
+      pbe_well_depth_error:
+        type: number
+      pbe_force_mae:
+        type: number
+      pbe_vib_freq_error:
         type: number
       force_flips:
         type: number
@@ -252,16 +264,6 @@ definitions:
         type: number
       force_jump:
         type: number
-    allOf:
-      - if:
-          properties:
-            pred_file: { type: string }
-          required: [pred_file]
-        then:
-          required: [pred_file_url]
-          properties:
-            pred_file_url:
-              $ref: '#/definitions/http_url'
 
   MdMetrics:
     type: object

@@ -166,8 +166,22 @@ metrics:
       R2: 0.697 # dimensionless
       missing_preds: 34 # count
   diatomics:
-    pred_file: models/mace/mace-mp-0/2025-02-13-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/52449434
+    pred_file: models/mace/mace-mp-0/2026-06-28-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66104621
+    hardware: NVIDIA H100 80GB HBM3
+    run_time_sec: 269.09
+    pbe_wall_dist_mae: 0.1784
+    pbe_energy_mae: 1.641
+    pbe_bond_length_error: 0.2962
+    pbe_well_depth_error: 1.981
+    pbe_vib_freq_error: 156.4
+    tortuosity: 1.279
+    energy_diff_flips: 1.368
+    energy_jump: 0.2886
+    force_flips: 1.368
+    force_total_variation: 158.4
+    force_jump: 18.93
+    pbe_force_mae: 2.002
   md:
     pred_file: models/mace/mace-mp-0/2026-06-28-mace_mp_0-md-metrics.csv.gz
     energy_rmse: 1.717 # meV/atom

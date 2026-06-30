@@ -15,6 +15,19 @@ def msgs(checks: "ingest.Checklist", status: str) -> list[str]:
     return [msg for stat, msg in checks.results if stat == status]
 
 
+@pytest.fixture
+def run_cmd_calls(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, ...]]:
+    """Patch ingest.run_cmd and return captured commands."""
+    calls: list[tuple[str, ...]] = []
+
+    def fake_run_cmd(*cmd: str) -> bool:
+        calls.append(cmd)
+        return True
+
+    monkeypatch.setattr(ingest, "run_cmd", fake_run_cmd)
+    return calls
+
+
 def test_complete_force_model_passes_checklist() -> None:
     """A complete UIP submission (mace-mpa-0) passes every applicable check."""
     checks = ingest.Checklist()
@@ -70,54 +83,105 @@ def test_checklist_summary_counts() -> None:
     assert "Skipped: 2" in checks.summary()
 
 
-def test_cli_rejects_unknown_model_and_missing_args() -> None:
+@pytest.mark.parametrize("argv", [["definitely-not-a-model"], []])
+def test_cli_rejects_unknown_model_and_missing_args(argv: list[str]) -> None:
+    """Unknown or missing model args fail argparse validation."""
     with pytest.raises(SystemExit, match="2"):
-        ingest.main(["definitely-not-a-model"])
-    with pytest.raises(SystemExit, match="2"):
-        ingest.main([])  # model required unless --payloads-only
+        ingest.main(argv)
 
 
-def test_cli_archive_requires_figshare_token(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_cli_archive_requires_figshare_token(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("FIGSHARE_TOKEN", raising=False)
     with pytest.raises(SystemExit, match="2"):
         ingest.main(["mace-mpa-0", "--archive"])
 
 
-def test_run_payload_refresh_models_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_payload_refresh_models_flag(run_cmd_calls: list[tuple[str, ...]]) -> None:
     """Payload refresh passes --models for single-model runs (merge mode) and omits
     it for full regens; the final command runs the payload shape tests either way.
     """
-    calls: list[tuple[str, ...]] = []
-
-    def fake_run_cmd(*cmd: str) -> bool:
-        calls.append(cmd)
-        return True
-
-    monkeypatch.setattr(ingest, "run_cmd", fake_run_cmd)
     checks = ingest.Checklist()
     ingest.run_payload_refresh(checks, model=Model.mace_mpa_0)
-    *script_calls, test_call = calls
+    *script_calls, test_call = run_cmd_calls
     assert len(script_calls) == len(ingest.PAYLOAD_SCRIPTS)
     assert any(
         "single_model_per_element_errors.py" in " ".join(cmd) for cmd in script_calls
     )
     for cmd in script_calls:
+        assert cmd[2] == "--with-editable"
+        assert cmd[3].startswith(".")
         assert cmd[-2:] == ("--models", "mace_mpa_0")
+    kappa_call = next(
+        cmd
+        for cmd in script_calls
+        if any("kappa_103_analysis.py" in arg for arg in cmd)
+    )
+    assert kappa_call[2:4] == ("--with-editable", ".[phonons]")
+    assert "--extra" not in kappa_call
     assert "pytest" in test_call
+    assert test_call[2:4] == ("--with-editable", ".")
     assert checks.n_failed == 0
 
-    calls.clear()
+    run_cmd_calls.clear()
     ingest.run_payload_refresh(ingest.Checklist())
-    assert all("--models" not in cmd for cmd in calls)
+    assert all("--models" not in cmd for cmd in run_cmd_calls)
+
+
+def test_run_model_steps_installs_project_extras(
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """Per-model eval subprocesses resolve project extras such as phonons."""
+    checks = ingest.Checklist()
+    step_cmd = "--extra phonons python scripts/evals/kappa.py"
+    steps = [("Kappa metrics", True, True, step_cmd)]
+    ingest.run_model_steps("evals", steps, Model.mace_mpa_0, checks, energy_only=False)
+
+    expected = uv_cmd(
+        ".[phonons]", "python", "scripts/evals/kappa.py", "--models", "mace_mpa_0"
+    )
+    assert run_cmd_calls == [expected]
+    assert checks.n_failed == 0
+
+
+def uv_cmd(project_req: str, *args: str) -> tuple[str, ...]:
+    """Expected uv run command with editable project requirement."""
+    return ("uv", "run", "--with-editable", project_req, *args)
+
+
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        (
+            '--extra phonons python -c "print(1, 2)"',
+            uv_cmd(".[phonons]", "python", "-c", "print(1, 2)"),
+        ),
+        (
+            "python child.py --extra keep --flag value",
+            uv_cmd(".", "python", "child.py", "--extra", "keep", "--flag", "value"),
+        ),
+        (
+            "--extra=phonons --extra symmetry -- python child.py --extra keep",
+            uv_cmd(".[phonons,symmetry]", "python", "child.py", "--extra", "keep"),
+        ),
+    ],
+)
+def test_uv_run_args_parses_only_top_level_extras(
+    args: str, expected: tuple[str, ...]
+) -> None:
+    """uv_run_args preserves child command args while resolving top-level extras."""
+    assert ingest.uv_run_args(args) == expected
+
+
+@pytest.mark.parametrize("args", ["--extra", "--extra=", '--extra ""'])
+def test_uv_run_args_rejects_empty_extra(args: str) -> None:
+    """Top-level --extra must have a non-empty value."""
+    with pytest.raises(ValueError, match="--extra requires"):
+        ingest.uv_run_args(args)
 
 
 def test_map_yaml_paths() -> None:
     """--map-yaml-paths maps PR-diff YAML paths to enum names, fails on unknowns."""
     path = Model.mace_mpa_0.yaml_path.split("/models/")[-1]
-    assert ingest.map_yaml_paths([f"models/{path}", f"models/{path}"]) == [
-        "mace_mpa_0"  # deduped
-    ]
+    assert ingest.map_yaml_paths([f"models/{path}", f"models/{path}"]) == ["mace_mpa_0"]
     with pytest.raises(SystemExit, match="No Model enum entry"):
         ingest.map_yaml_paths(["models/new-arch/unregistered.yml"])
