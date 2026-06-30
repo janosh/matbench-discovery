@@ -3,6 +3,7 @@
   import { ALL_METRICS, DIATOMICS_METRICS, METADATA_COLS } from '$lib/labels'
   import { DiatomicCurve } from '$lib/plot'
   import type { SortDir } from '$lib/types'
+  import DiatomicsNote from './diatomics-note.md'
   import {
     element_data,
     type ChemicalElement,
@@ -218,10 +219,7 @@
 
 <h1>Diatomics</h1>
 
-<blockquote>
-  Disclaimer: Take the results on this page with a grain of salt. They are still being
-  checked for correctness.
-</blockquote>
+<DiatomicsNote />
 
 <MetricsTable
   model_filter={has_diatomics_metrics}
@@ -242,17 +240,22 @@
   <label class="plot-height-control">
     Plot height:
     <input type="range" min="100" max="500" bind:value={plot_height} />
-    {plot_height}px
+    <input
+      class="plot-height-number"
+      type="number"
+      min="100"
+      max="500"
+      step="10"
+      bind:value={plot_height}
+      aria-label="Plot height in pixels"
+    />px
   </label>
 
   <div class="element-groups" aria-label="Element group filter">
-    {#each element_groups as group (group.key)}
-      <button
-        class:selected={selected_element_group === group.key}
-        onclick={() => (selected_element_group = group.key)}
-        title={group.title}
-      >
-        {group.label}
+    {#each element_groups as { label, title, key } (key)}
+      {@const selected = selected_element_group === key}
+      <button class:selected onclick={() => (selected_element_group = key)} {title}>
+        {label}
       </button>
     {/each}
   </div>
@@ -329,7 +332,11 @@
   }
   .plot-height-control {
     display: flex;
+    align-items: center;
     gap: 1ex;
+  }
+  .plot-height-number {
+    width: 5em;
   }
   .element-groups,
   .model-toggles {

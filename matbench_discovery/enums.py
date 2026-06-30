@@ -103,17 +103,19 @@ class MbdKey(LabelEnum):
     true_kappa_tot_avg = "true_kappa_tot_avg", "True average total thermal conductivity"
 
     # Diatomic curve metrics
-    norm_auc = "norm_auc", "Norm. AUC (unitless)"
     tortuosity = "tortuosity", "Tortuosity (unitless)"
     force_flips = "force_flips", "Force Flips (count)"
-    conservation = "conservation", "Conservation (eV/Å)"
     energy_jump = "energy_jump", "Energy Jump (eV)"
     energy_diff_flips = "energy_diff_flips", "Energy Diff Flips (count)"
-    energy_grad_norm_max = "energy_grad_norm_max", "Energy Grad Norm Max (eV/Å)"
     force_total_variation = "force_total_variation", "Force Total Variation (eV/Å)"
     force_jump = "force_jump", "Force Jump (eV/Å)"
-    energy_mae = "energy_mae", "Energy MAE vs Reference (eV)"
     force_mae = "force_mae", "Force MAE (eV/Å)"
+    pbe_wall_dist_mae = "pbe_wall_dist_mae", "PBE Wall Distance MAE (Å)"
+    pbe_energy_mae = "pbe_energy_mae", "PBE Energy MAE (eV)"
+    pbe_bond_length_error = "pbe_bond_length_error", "PBE Bond Length Error (Å)"
+    pbe_well_depth_error = "pbe_well_depth_error", "PBE Well Depth Error (eV)"
+    pbe_force_mae = "pbe_force_mae", "PBE Force MAE (eV/Å)"
+    pbe_vib_freq_error = "pbe_vib_freq_error", "PBE Vib. Freq. Error (cm⁻¹)"
 
 
 @unique

@@ -4,7 +4,7 @@ import importlib.util
 import os
 import sys
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import ase.io
 import numpy as np
@@ -598,11 +598,42 @@ def test_load_calculator(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(
         calculators.CALCULATORS, "mace_mp_0", calculators.CalcSpec(dtype_aware)
     )
-    load_calculator("mace_mp_0", device="cpu", dtype="float32")
+    load_calculator("mace-mp-0", device="cpu", dtype="float32")
     assert seen_dtype == "float32"
 
-    with pytest.raises(ValueError, match="Unknown model_key"):
+    with pytest.raises(ValueError, match="Unknown model"):
         load_calculator("does-not-exist")
+
+
+def test_download_checkpoint_replaces_zero_byte_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """download_checkpoint redownloads zero-byte cached checkpoint files."""
+    from matbench_discovery import calculators
+    from matbench_discovery.enums import Model
+    from matbench_discovery.remote import fetch
+
+    monkeypatch.setattr(calculators, "CHECKPOINT_DIR", f"{tmp_path}")
+    monkeypatch.setattr(
+        Model,
+        "from_ref",
+        classmethod(
+            lambda _cls, _model_key: SimpleNamespace(
+                metadata={"checkpoint_url": "https://example.com/model.ckpt"}
+            )
+        ),
+    )
+
+    monkeypatch.setattr(
+        fetch,
+        "download_file",
+        lambda dest, _url, **_kwargs: Path(dest).write_bytes(b"checkpoint"),
+    )
+    dest = tmp_path / "fake.ckpt"
+    dest.write_bytes(b"")
+
+    assert calculators.download_checkpoint("fake") == f"{dest}"
+    assert dest.read_bytes() == b"checkpoint"
 
 
 def test_run_md_cli_write_yaml_skips_non_submission_model(
@@ -623,14 +654,32 @@ def test_run_md_cli_write_yaml_skips_non_submission_model(
     assert run_md.main() == 0  # would raise ValueError without the non-enum guard
 
 
-def test_run_md_cli_rejects_partial_write_yaml(monkeypatch: pytest.MonkeyPatch) -> None:
-    """--write-yaml on a --systems subset must error before the rollout pipeline."""
+@pytest.mark.parametrize(
+    ("argv", "expected_stdout"),
+    [
+        (
+            ["run_md", "--model", "mace_mp_0", "--write-yaml", "--systems", "bulkAu"],
+            None,
+        ),
+        (["run_md", "--print-cmd", "--model", "mace-mp-0"], "--model mace_mp_0"),
+    ],
+)
+def test_run_md_cli_validation(
+    argv: list[str],
+    expected_stdout: str | None,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """CLI rejects partial YAML writes and canonicalizes model refs."""
     run_md = import_repo_script("run_md", "models/run_md.py")
-
-    argv = ["run_md", "--model", "mace_mp_0", "--write-yaml", "--systems", "bulkAu"]
     monkeypatch.setattr(sys, "argv", argv)
-    with pytest.raises(SystemExit):  # parser.error exits before the rollout pipeline
-        run_md.main()
+
+    if expected_stdout is None:
+        with pytest.raises(SystemExit):  # parser.error exits before rollout pipeline
+            run_md.main()
+    else:
+        assert run_md.main() == 0
+        assert expected_stdout in capsys.readouterr().out
 
 
 def patch_eval_md(

@@ -439,18 +439,25 @@ export const MD_METRICS: MdMetricsLabels = {
 type DiatomicsMetricKey =
   | `tortuosity`
   | `energy_diff_flips`
-  | `energy_grad_norm_max`
   | `energy_jump`
-  | `conservation`
+  | `force_mae`
+  | `pbe_wall_dist_mae`
+  | `pbe_energy_mae`
+  | `pbe_bond_length_error`
+  | `pbe_well_depth_error`
+  | `pbe_force_mae`
+  | `pbe_vib_freq_error`
   | `force_flips`
   | `force_total_variation`
   | `force_jump`
+
+const scored_diatomic_range = `scored range from 0.9× covalent radius to min(3.1× Alvarez vdW radius, max sampled distance)`
 
 export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   tortuosity: {
     key: `tortuosity`,
     label: `τ`,
-    description: `Mean tortuosity of homonuclear diatomic energy curves, measuring extra energy variation beyond a single-well or monotonic curve`,
+    description: `Mean tortuosity over ${scored_diatomic_range}, measuring extra energy variation beyond a single-well or monotonic curve`,
     path: `metrics.diatomics`,
     better: `lower`,
     format: `.3~g`,
@@ -459,16 +466,7 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   energy_diff_flips: {
     key: `energy_diff_flips`,
     label: `E flips`,
-    description: `Mean number of sign flips in adjacent diatomic energy differences`,
-    path: `metrics.diatomics`,
-    better: `lower`,
-    format: `.3~g`,
-  },
-  energy_grad_norm_max: {
-    key: `energy_grad_norm_max`,
-    label: `max |∇E|`,
-    description: `Mean maximum absolute energy gradient along homonuclear diatomic curves`,
-    unit: `eV/Å`,
+    description: `Mean number of sign flips in adjacent diatomic energy differences over ${scored_diatomic_range}`,
     path: `metrics.diatomics`,
     better: `lower`,
     format: `.3~g`,
@@ -476,17 +474,71 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   energy_jump: {
     key: `energy_jump`,
     label: `E jump`,
-    description: `Mean energy jump at sign-flip points in homonuclear diatomic curves`,
+    description: `Mean energy jump at sign-flip points over ${scored_diatomic_range}`,
     unit: `eV`,
     path: `metrics.diatomics`,
     better: `lower`,
     format: `.3~g`,
   },
-  conservation: {
-    key: `conservation`,
-    label: `Conserv.`,
-    description: `Mean deviation between predicted forces and the negative gradient of predicted diatomic energies`,
+  force_mae: {
+    key: `force_mae`,
+    label: `F MAE`,
+    description: `Mean absolute error of predicted forces over ${scored_diatomic_range}`,
     unit: `eV/Å`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  pbe_wall_dist_mae: {
+    key: `pbe_wall_dist_mae`,
+    label: `PBE Δr wall`,
+    description: `Mean repulsive-wall distance error relative to PBE over ${scored_diatomic_range}, at 1, 5 and 10 eV above the well minimum`,
+    unit: `Å`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  pbe_energy_mae: {
+    key: `pbe_energy_mae`,
+    label: `PBE E MAE`,
+    description: `Mean absolute energy error relative to PBE over ${scored_diatomic_range}, after aligning curves at the largest shared separation`,
+    unit: `eV`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  pbe_bond_length_error: {
+    key: `pbe_bond_length_error`,
+    label: `PBE Δr<sub>e</sub>`,
+    description: `Equilibrium bond-length error relative to PBE from a local quadratic fit near the minimum over ${scored_diatomic_range}`,
+    unit: `Å`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  pbe_well_depth_error: {
+    key: `pbe_well_depth_error`,
+    label: `PBE ΔD<sub>e</sub>`,
+    description: `Well-depth error relative to PBE over ${scored_diatomic_range}, D_e = E(r_max) - E_min`,
+    unit: `eV`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  pbe_force_mae: {
+    key: `pbe_force_mae`,
+    label: `PBE F MAE`,
+    description: `Mean absolute force error relative to PBE forces over ${scored_diatomic_range}`,
+    unit: `eV/Å`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~g`,
+  },
+  pbe_vib_freq_error: {
+    key: `pbe_vib_freq_error`,
+    label: `PBE Δω`,
+    description: `Harmonic vibrational-frequency error relative to PBE from a local quadratic fit near the minimum over ${scored_diatomic_range}`,
+    unit: `cm⁻¹`,
     path: `metrics.diatomics`,
     better: `lower`,
     format: `.3~g`,
@@ -494,7 +546,7 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   force_flips: {
     key: `force_flips`,
     label: `F flips`,
-    description: `Mean number of force-direction flips along homonuclear diatomic curves`,
+    description: `Mean number of force-direction flips over ${scored_diatomic_range}`,
     path: `metrics.diatomics`,
     better: `lower`,
     format: `.3~g`,
@@ -502,7 +554,7 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   force_total_variation: {
     key: `force_total_variation`,
     label: `F TV`,
-    description: `Mean total variation of forces along homonuclear diatomic curves`,
+    description: `Mean total variation of forces over ${scored_diatomic_range}`,
     unit: `eV/Å`,
     path: `metrics.diatomics`,
     better: `lower`,
@@ -511,7 +563,7 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   force_jump: {
     key: `force_jump`,
     label: `F jump`,
-    description: `Mean force jump at force-direction flip points in homonuclear diatomic curves`,
+    description: `Mean force jump at force-direction flip points over ${scored_diatomic_range}`,
     unit: `eV/Å`,
     path: `metrics.diatomics`,
     better: `lower`,

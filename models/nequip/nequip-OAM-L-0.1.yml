@@ -200,11 +200,17 @@ metrics:
     pred_file: models/nequip/nequip-OAM-L-0.1/2026-06-28-diatomics.json.gz
     hardware: NVIDIA H200
     run_time_sec: 456.98
+    pbe_wall_dist_mae: 0.1313
+    pbe_energy_mae: 0.888
+    pbe_bond_length_error: 0.2786
+    pbe_well_depth_error: 1.58
+    pbe_vib_freq_error: 140.0
     tortuosity: 1.004
     energy_diff_flips: 1.575
-    energy_grad_norm_max: 177.9
     energy_jump: 0.1032
-    conservation: 0.1578
     force_flips: 1.575
     force_total_variation: 201.7
     force_jump: 5.586
+    force_mae: 0.6379
+    pbe_force_mae: 0.6379
+    pred_file_url: https://figshare.com/files/66104642

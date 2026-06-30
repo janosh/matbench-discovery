@@ -254,9 +254,19 @@ export function assemble_row_data(
       cell_filter && typeof cell_filter === `string`
         ? cell_filter.replace(/CellFilter$/, ``)
         : null
+    const diatomics_metrics = metrics?.diatomics
+    const excluded_formulas =
+      typeof diatomics_metrics === `object` && diatomics_metrics !== null
+        ? (diatomics_metrics.excluded_formulas ?? [])
+        : []
+    const model_exclusion_marker =
+      excluded_formulas.length > 0
+        ? `<span title="Diatomics metrics exclude ${excluded_formulas.join(`, `)} due to exploding errors">*</span>`
+        : ``
 
     const row = {
-      Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
+      model_name: model.model_name,
+      Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
       CPS: model[CPS.key],
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,

@@ -191,11 +191,17 @@ metrics:
     pred_file: models/orb/orb-v3/2026-06-28-diatomics.json.gz
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 139.85
+    pbe_wall_dist_mae: 0.2115
+    pbe_energy_mae: 1.403
+    pbe_bond_length_error: 0.4749
+    pbe_well_depth_error: 2.142
+    pbe_vib_freq_error: 136.1
     tortuosity: 1.02
     energy_diff_flips: 2.283
-    energy_grad_norm_max: 139.0
     energy_jump: 0.1359
-    conservation: 0.2321
     force_flips: 2.261
     force_total_variation: 215.9
     force_jump: 35.47
+    force_mae: 1.423
+    pbe_force_mae: 1.423
+    pred_file_url: https://figshare.com/files/66104654

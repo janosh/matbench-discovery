@@ -181,11 +181,17 @@ metrics:
     pred_file: models/chgnet/chgnet-0.3.0/2026-06-29-diatomics.json.gz
     hardware: NVIDIA H200
     run_time_sec: 99.4
+    pbe_wall_dist_mae: 0.2343
+    pbe_energy_mae: 3.445
+    pbe_bond_length_error: 0.3609
+    pbe_well_depth_error: 15.94
+    pbe_vib_freq_error: 230.5
     tortuosity: 2.146
     energy_diff_flips: 1.87
-    energy_grad_norm_max: 126.6
     energy_jump: 2.016
-    conservation: 1.001
     force_flips: 2.011
     force_total_variation: 398.8
     force_jump: 199.0
+    force_mae: 4.699
+    pbe_force_mae: 4.699
+    pred_file_url: https://figshare.com/files/66104585

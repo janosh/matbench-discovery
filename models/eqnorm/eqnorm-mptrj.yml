@@ -205,11 +205,17 @@ metrics:
     pred_file: models/eqnorm/eqnorm-mptrj/2026-06-29-diatomics.json.gz
     hardware: NVIDIA H200
     run_time_sec: 442.84
+    pbe_wall_dist_mae: 0.1683
+    pbe_energy_mae: 1.324
+    pbe_bond_length_error: 0.3418
+    pbe_well_depth_error: 1.661
+    pbe_vib_freq_error: 139.0
     tortuosity: 1.015
     energy_diff_flips: 1.402
-    energy_grad_norm_max: 83.05
     energy_jump: 0.257
-    conservation: 0.1523
     force_flips: 1.391
     force_total_variation: 135.0
     force_jump: 11.94
+    force_mae: 1.952
+    pbe_force_mae: 1.952
+    pred_file_url: https://figshare.com/files/66104603

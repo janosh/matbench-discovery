@@ -66,9 +66,11 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
     # serialize concurrent same-model downloads: parallel array tasks otherwise race on
     # download_file's temp-file rename, leaving losers with a vanished .part file
     with FileLock(f"{dest}.lock"):
+        if os.path.isfile(dest) and os.path.getsize(dest) == 0:
+            os.remove(dest)
         if not os.path.isfile(dest):
             download_file(dest, url, headers=headers)
-    if not os.path.isfile(dest):  # download_file prints instead of raising
+    if not os.path.isfile(dest) or os.path.getsize(dest) == 0:
         raise RuntimeError(
             f"Failed to download {model_key} checkpoint from {url}. If the repo is "
             "gated (e.g. fairchem OMAT24), accept its license on HuggingFace and set "
@@ -640,6 +642,22 @@ CALCULATORS: dict[str, CalcSpec] = {
 }
 
 
+def resolve_calculator_key(model_ref: str) -> str:
+    """Resolve a Model ref or debug key to a registered calculator key."""
+    from matbench_discovery.enums import Model
+
+    try:
+        model_key = Model.from_ref(model_ref).name
+    except ValueError:
+        model_key = model_ref
+    if model_key not in CALCULATORS:
+        raise ValueError(
+            f"Unknown model {model_ref!r}, pick from {sorted(CALCULATORS)} or "
+            "register it in matbench_discovery/calculators.py"
+        )
+    return model_key
+
+
 def load_calculator(
     model_key: str, device: str | None = None, dtype: str = "float64"
 ) -> "Calculator":
@@ -655,11 +673,7 @@ def load_calculator(
     Returns:
         Calculator: The model's ASE calculator.
     """
-    if model_key not in CALCULATORS:
-        raise ValueError(
-            f"Unknown {model_key=}, pick from {sorted(CALCULATORS)} or register it "
-            "in matbench_discovery/calculators.py"
-        )
+    model_key = resolve_calculator_key(model_key)
     if device is None:
         device = "cpu" if model_key == "emt" else _detect_device()
     make_calc = CALCULATORS[model_key].make_calc

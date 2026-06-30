@@ -34,7 +34,11 @@ import time
 import numpy as np
 
 from matbench_discovery import today
-from matbench_discovery.calculators import CALCULATORS, load_calculator
+from matbench_discovery.calculators import (
+    CALCULATORS,
+    load_calculator,
+    resolve_calculator_key,
+)
 from matbench_discovery.diatomics import calc_diatomic_curve, homo_nuc
 
 module_dir = os.path.dirname(__file__)
@@ -82,6 +86,14 @@ def detect_hardware() -> str:
     except ImportError:
         pass
     return f"CPU ({platform.processor() or platform.machine()})"
+
+
+def validate_distance_bounds(
+    parser: argparse.ArgumentParser, min_dist: float, max_dist: float
+) -> None:
+    """Raise a clear CLI error for invalid geometric distance bounds."""
+    if min_dist <= 0 or max_dist <= 0 or max_dist <= min_dist:
+        parser.error("--min-dist and --max-dist must be positive with max > min")
 
 
 def main() -> int:
@@ -137,8 +149,13 @@ def main() -> int:
 
     if not args.model:
         parser.error("--model is required (or pass --list-models)")
-    if args.model not in CALCULATORS:
-        parser.error(f"unknown --model {args.model!r}, see --list-models")
+    try:
+        args.model = resolve_calculator_key(args.model)
+    except ValueError as exc:
+        parser.error(f"{exc}, see --list-models")
+    validate_distance_bounds(parser, args.min_dist, args.max_dist)
+    if args.write_yaml and args.dry_run:
+        parser.error("--write-yaml is incompatible with --dry-run")
 
     if args.print_cmd:
         run_args = [
@@ -219,11 +236,11 @@ def main() -> int:
         # allow_nan=False guards against writing invalid JSON (NaN) if a non-finite
         # value slips through the filter above
         json.dump(results, file, allow_nan=False, default=lambda arr: arr.tolist())
-    n_curves = sum(bool(curve["energies"]) for curve in curves.values())
+    n_curves = len(curves)
     print(f"Wrote {n_curves}/{len(homo_pairs)} diatomic curves to {json_path}")
     print(f"Ran on {hardware} in {run_time_sec:.1f} s")
 
-    if args.write_yaml and not args.dry_run:
+    if args.write_yaml:
         if model is None:  # debug models like emt have no YAML to write to
             print(f"Skipping metrics.diatomics write: {args.model!r} is not a Model")
             return 0
@@ -232,14 +249,23 @@ def main() -> int:
 
         pred_curves = DiatomicCurves.from_dict(results)
         metrics = diatomics.calc_diatomic_metrics(
-            ref_curves=None, pred_curves=pred_curves
+            ref_curves=diatomics.load_dft_reference_curves("PBE"),
+            pred_curves=pred_curves,
+            interpolate=200,
         )
         metrics = drop_metric_exclusions(args.model, metrics)
+        excluded_formulas = list(DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()))
+        run_metadata: dict[str, str | float | list[str]] = {
+            "hardware": hardware,
+            "run_time_sec": run_time_sec,
+        }
+        if excluded_formulas:
+            run_metadata["excluded_formulas"] = excluded_formulas
         mean_metrics = diatomics.write_metrics_to_yaml(
             model,
             metrics,
             pred_file_path=json_path,
-            run_metadata={"hardware": hardware, "run_time_sec": run_time_sec},
+            run_metadata=run_metadata,
         )
         print(f"\n{args.model} mean diatomic metrics:")
         for key, val in mean_metrics.items():

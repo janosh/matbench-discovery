@@ -1,6 +1,7 @@
 """Energy-based metrics for diatomic curves."""
 
 import numpy as np
+from ase.data import atomic_masses, atomic_numbers
 from numpy.typing import ArrayLike
 
 
@@ -96,122 +97,205 @@ def _interp_common_grid(
     return seps_interp, e_ref_interp, e_pred_interp
 
 
-def calc_curve_diff_auc(
+def _common_grid_energy_pair(
     seps_ref: ArrayLike,
-    e_ref: ArrayLike,
+    energy_ref: ArrayLike,
     seps_pred: ArrayLike,
-    e_pred: ArrayLike,
+    energy_pred: ArrayLike,
     *,
-    seps_range: tuple[float | None, float | None] = (None, None),
-    normalize: bool = True,
-    interpolate: bool | int = False,
-) -> float:
-    """Calculate the absolute area under the curve of the difference between two curves.
-    Handles different x-samplings by interpolating to a common grid.
+    interpolate: bool | int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return ref/pred energies on their shared distance range."""
+    seps_ref, energy_ref, seps_pred, energy_pred = _validate_curve_pair(
+        seps_ref, energy_ref, seps_pred, energy_pred, interpolate=interpolate
+    )
+    if not interpolate:
+        return seps_ref, energy_ref, energy_pred
 
-    Args:
-        seps_ref (ArrayLike[float]): Reference interatomic distances (Å)
-        e_ref (ArrayLike[float]): Reference potential energies (eV)
-        seps_pred (ArrayLike[float]): Predicted interatomic distances (Å)
-        e_pred (ArrayLike[float]): Predicted potential energies (eV)
-        seps_range (tuple[float | None, float | None] | None): Optional range of
-            interatomic distances to consider. Can be None to auto-set based on data
-            range. If tuple is None, uses intersection of both curves' x-ranges.
-        normalize (bool): Whether to normalize by reference curve's bounding box area.
-        interpolate (bool | int): If False (default), uses the provided points directly.
-            If True, uses 100 points for interpolation.
-            If an integer, uses that many points for interpolation.
-
-    Returns:
-        float: Absolute area under the curve of the difference between the curves.
-            If normalize=True, returns unitless value, otherwise in eV·Å.
-    """
-    seps_ref, e_ref, seps_pred, e_pred = _validate_curve_pair(
-        seps_ref, e_ref, seps_pred, e_pred, interpolate=interpolate
+    data_min = max(seps_ref.min(), seps_pred.min())
+    data_max = min(seps_ref.max(), seps_pred.max())
+    if data_min >= data_max:
+        raise ValueError(
+            f"Cannot interpolate curves with no overlap: {data_min=}, {data_max=}"
+        )
+    return _interp_common_grid(
+        seps_ref,
+        energy_ref,
+        seps_pred,
+        energy_pred,
+        data_min,
+        data_max,
+        interpolate=interpolate,
     )
 
-    # Replace None range values with the intersection of both curves' data bounds
-    seps_min, seps_max = seps_range
-    seps_min = max(seps_ref.min(), seps_pred.min()) if seps_min is None else seps_min
-    seps_max = min(seps_ref.max(), seps_pred.max()) if seps_max is None else seps_max
 
-    if seps_min >= seps_max:
-        raise ValueError(f"Invalid range: {seps_min=} >= {seps_max=}")
-
-    if interpolate:
-        seps_interp, e_ref_interp, e_pred_interp = _interp_common_grid(
-            seps_ref,
-            e_ref,
-            seps_pred,
-            e_pred,
-            seps_min,
-            seps_max,
-            interpolate=interpolate,
-        )
-        auc = np.trapezoid(np.abs(e_ref_interp - e_pred_interp), seps_interp)
-    else:
-        # If no interpolation, restrict to the requested range
-        mask = (seps_ref >= seps_min) & (seps_ref <= seps_max)
-        if not np.any(mask):
-            raise ValueError(f"No points within range {seps_min=}..{seps_max=}")
-        seps_ref = seps_ref[mask]
-        e_ref = e_ref[mask]
-        e_pred = e_pred[mask]
-        auc = np.trapezoid(np.abs(e_ref - e_pred), seps_ref)
-
-    if normalize:
-        # Normalize by bounding box of reference curve on the (possibly masked) domain.
-        # When interpolate=True, uses full ref range; when False, uses masked subset.
-        box_area = np.ptp(seps_ref) * np.ptp(e_ref)
-        if box_area > 0:
-            auc = auc / box_area
-
-    # Ensure AUC is always positive
-    return float(np.abs(auc))
+def _binding_energy(energies: np.ndarray) -> float:
+    """Return well depth relative to the largest sampled separation."""
+    return float(energies[-1] - np.min(energies))
 
 
-def calc_energy_mae(
-    seps_ref: ArrayLike,
-    e_ref: ArrayLike,
-    seps_pred: ArrayLike,
-    e_pred: ArrayLike,
-    *,
-    interpolate: bool | int = False,
-) -> float:
-    """Calculate mean absolute error between two energy curves.
-    Handles different x-samplings by interpolating to a common grid.
+def _quadratic_well_fit(
+    seps: ArrayLike, energies: ArrayLike, n_fit_points: int = 5
+) -> tuple[float, float]:
+    """Estimate equilibrium separation and curvature from a local quadratic fit."""
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
+    min_idx = int(np.argmin(energies))
+    if len(seps) < 3:
+        return float(seps[min_idx]), np.nan
 
-    Args:
-        seps_ref (ArrayLike[float]): Reference interatomic distances (Å)
-        e_ref (ArrayLike[float]): Reference potential energies (eV)
-        seps_pred (ArrayLike[float]): Predicted interatomic distances (Å)
-        e_pred (ArrayLike[float]): Predicted potential energies (eV)
-        interpolate (bool | int): If False (default), uses the provided points directly.
-            If True, uses 100 points for interpolation.
-            If an integer, uses that many points for interpolation.
-
-    Returns:
-        float: Mean absolute error between the curves (eV).
-    """
-    seps_ref, e_ref, seps_pred, e_pred = _validate_curve_pair(
-        seps_ref, e_ref, seps_pred, e_pred, interpolate=interpolate
+    start_idx = min(
+        max(0, min_idx - n_fit_points // 2), max(0, len(seps) - n_fit_points)
     )
+    fit_seps = seps[start_idx : start_idx + n_fit_points]
+    fit_energies = energies[start_idx : start_idx + n_fit_points]
+    if len(fit_seps) < 3:
+        return float(seps[min_idx]), np.nan
 
-    if interpolate:
-        data_min = max(seps_ref.min(), seps_pred.min())
-        data_max = min(seps_ref.max(), seps_pred.max())
-        _, e_ref_interp, e_pred_interp = _interp_common_grid(
-            seps_ref,
-            e_ref,
-            seps_pred,
-            e_pred,
-            data_min,
-            data_max,
-            interpolate=interpolate,
+    quadratic_coef, linear_coef, _constant_coef = np.polyfit(fit_seps, fit_energies, 2)
+    curvature = 2 * quadratic_coef
+    if quadratic_coef <= 0:
+        return float(seps[min_idx]), np.nan
+
+    equilibrium_dist = -linear_coef / (2 * quadratic_coef)
+    if fit_seps.min() <= equilibrium_dist <= fit_seps.max():
+        return float(equilibrium_dist), float(curvature)
+    return float(seps[min_idx]), float(curvature)
+
+
+def _repulsive_radius_at_threshold(
+    seps: ArrayLike, energies: ArrayLike, threshold_ev: float
+) -> float:
+    """Invert the repulsive branch to r at E_min + threshold_ev."""
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
+    min_idx = int(np.argmin(energies))
+    if min_idx == 0:
+        return np.nan
+
+    radii_inward = seps[min_idx::-1]
+    energy_above_min = energies[min_idx::-1] - energies[min_idx]
+    monotonic_energy = np.maximum.accumulate(energy_above_min)
+    unique_energy, unique_idx = np.unique(monotonic_energy, return_index=True)
+    if len(unique_energy) < 2 or threshold_ev > unique_energy[-1]:
+        return np.nan
+    return float(np.interp(threshold_ev, unique_energy, radii_inward[unique_idx]))
+
+
+def calc_pbe_wall_dist_mae(
+    seps_ref: ArrayLike,
+    energy_ref: ArrayLike,
+    seps_pred: ArrayLike,
+    energy_pred: ArrayLike,
+    *,
+    thresholds_ev: tuple[float, ...] = (1.0, 5.0, 10.0),
+) -> float:
+    """Mean absolute repulsive-wall radius error at fixed energies above the well."""
+    errors = []
+    for threshold_ev in thresholds_ev:
+        radius_ref = _repulsive_radius_at_threshold(seps_ref, energy_ref, threshold_ev)
+        radius_pred = _repulsive_radius_at_threshold(
+            seps_pred, energy_pred, threshold_ev
         )
-        return float(np.mean(np.abs(e_ref_interp - e_pred_interp)))
-    # If no interpolation, calculate MAE directly
-    return float(np.mean(np.abs(e_ref - e_pred)))
+        if np.isfinite(radius_ref) and np.isfinite(radius_pred):
+            errors.append(abs(radius_pred - radius_ref))
+    return float(np.mean(errors)) if errors else np.nan
+
+
+def calc_pbe_energy_mae(
+    seps_ref: ArrayLike,
+    energy_ref: ArrayLike,
+    seps_pred: ArrayLike,
+    energy_pred: ArrayLike,
+    *,
+    interpolate: bool | int = 200,
+) -> float:
+    """Mean absolute PBE energy error after aligning both curves at dissociation."""
+    _, energy_ref, energy_pred = _common_grid_energy_pair(
+        seps_ref, energy_ref, seps_pred, energy_pred, interpolate=interpolate
+    )
+    energy_ref = energy_ref - energy_ref[-1]
+    energy_pred = energy_pred - energy_pred[-1]
+    return float(np.mean(np.abs(energy_pred - energy_ref)))
+
+
+def calc_pbe_bond_length_error(
+    seps_ref: ArrayLike,
+    energy_ref: ArrayLike,
+    seps_pred: ArrayLike,
+    energy_pred: ArrayLike,
+    *,
+    min_ref_binding_ev: float = 0.05,
+) -> float:
+    """Absolute equilibrium bond-length error relative to PBE."""
+    seps_ref, energy_ref = _validate_diatomic_curve(
+        seps_ref, energy_ref, normalize_energy=False
+    )
+    seps_pred, energy_pred = _validate_diatomic_curve(
+        seps_pred, energy_pred, normalize_energy=False
+    )
+    if _binding_energy(energy_ref) < min_ref_binding_ev:
+        return np.nan
+    ref_dist = _quadratic_well_fit(seps_ref, energy_ref)[0]
+    pred_dist = _quadratic_well_fit(seps_pred, energy_pred)[0]
+    return float(abs(pred_dist - ref_dist))
+
+
+def calc_pbe_well_depth_error(
+    seps_ref: ArrayLike,
+    energy_ref: ArrayLike,
+    seps_pred: ArrayLike,
+    energy_pred: ArrayLike,
+    *,
+    min_ref_binding_ev: float = 0.05,
+) -> float:
+    """Absolute well-depth error, D_e = E(r_max) - E_min, relative to PBE."""
+    _, energy_ref = _validate_diatomic_curve(
+        seps_ref, energy_ref, normalize_energy=False
+    )
+    _, energy_pred = _validate_diatomic_curve(
+        seps_pred, energy_pred, normalize_energy=False
+    )
+    ref_depth = _binding_energy(energy_ref)
+    if ref_depth < min_ref_binding_ev:
+        return np.nan
+    return float(abs(_binding_energy(energy_pred) - ref_depth))
+
+
+def _vibrational_wavenumber_cm(elem_symbol: str, curvature_ev_per_a2: float) -> float:
+    """Convert homonuclear force constant to harmonic wavenumber in cm^-1."""
+    if not np.isfinite(curvature_ev_per_a2) or curvature_ev_per_a2 <= 0:
+        return np.nan
+    atomic_symbol = elem_symbol.split("-", maxsplit=1)[0]
+    reduced_mass_kg = (
+        atomic_masses[atomic_numbers[atomic_symbol]] * 1.66053906660e-27 / 2
+    )
+    force_constant_n_per_m = curvature_ev_per_a2 * 16.02176634
+    angular_freq_per_s = np.sqrt(force_constant_n_per_m / reduced_mass_kg)
+    return float(angular_freq_per_s / (2 * np.pi * 2.99792458e10))
+
+
+def calc_pbe_vib_freq_error(
+    elem_symbol: str,
+    seps_ref: ArrayLike,
+    energy_ref: ArrayLike,
+    seps_pred: ArrayLike,
+    energy_pred: ArrayLike,
+    *,
+    min_ref_binding_ev: float = 0.05,
+) -> float:
+    """Absolute harmonic vibrational-frequency error near the PBE well."""
+    seps_ref, energy_ref = _validate_diatomic_curve(
+        seps_ref, energy_ref, normalize_energy=False
+    )
+    seps_pred, energy_pred = _validate_diatomic_curve(
+        seps_pred, energy_pred, normalize_energy=False
+    )
+    if _binding_energy(energy_ref) < min_ref_binding_ev:
+        return np.nan
+    ref_curvature = _quadratic_well_fit(seps_ref, energy_ref)[1]
+    pred_curvature = _quadratic_well_fit(seps_pred, energy_pred)[1]
+    ref_wavenumber = _vibrational_wavenumber_cm(elem_symbol, ref_curvature)
+    pred_wavenumber = _vibrational_wavenumber_cm(elem_symbol, pred_curvature)
+    return float(abs(pred_wavenumber - ref_wavenumber))
 
 
 def calc_tortuosity(seps: ArrayLike, energies: ArrayLike) -> float:
@@ -239,6 +323,8 @@ def calc_tortuosity(seps: ArrayLike, energies: ArrayLike) -> float:
     e_min = np.min(energies)
     direct_energy_diff = abs(energies[0] - e_min) + abs(energies[-1] - e_min)
 
+    if direct_energy_diff == 0:
+        return np.nan
     return float(tv_energy / direct_energy_diff)
 
 
@@ -276,20 +362,6 @@ def calc_energy_diff_flips(seps: ArrayLike, energies: ArrayLike) -> float:
     _, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
     _, _, flips = _threshold_diff_signs(energies)
     return float(np.sum(flips))
-
-
-def calc_energy_grad_norm_max(seps: ArrayLike, energies: ArrayLike) -> float:
-    """Calculate maximum absolute value of energy gradient.
-
-    Args:
-        seps (ArrayLike[float]): Interatomic distances in Å.
-        energies (ArrayLike[float]): Energies in eV.
-
-    Returns:
-        float: Maximum absolute value of energy gradient.
-    """
-    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
-    return float(np.max(np.abs(np.gradient(energies, seps))))
 
 
 def calc_energy_jump(seps: ArrayLike, energies: ArrayLike) -> float:

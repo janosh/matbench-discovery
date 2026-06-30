@@ -10,109 +10,13 @@ from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
 from matbench_discovery.metrics.diatomics.energy import (
     calc_energy_diff_flips,
-    calc_energy_grad_norm_max,
     calc_energy_jump,
-    calc_energy_mae,
+    calc_pbe_bond_length_error,
+    calc_pbe_energy_mae,
+    calc_pbe_vib_freq_error,
+    calc_pbe_wall_dist_mae,
+    calc_pbe_well_depth_error,
 )
-
-EnergyCurve = tuple[np.ndarray, np.ndarray]
-PredRefEnergies = tuple[EnergyCurve, EnergyCurve]
-
-
-@pytest.fixture
-def pred_ref_e_curves(
-    pred_ref_diatomic_curves: tuple[DiatomicCurves, DiatomicCurves],
-) -> PredRefEnergies:
-    """Return reference and predicted H energy curves from the shared fixture."""
-    ref_curves, pred_curves = pred_ref_diatomic_curves
-    ref_curve = ref_curves.distances, ref_curves.homo_nuclear["H"].energies
-    pred_curve = pred_curves.distances, pred_curves.homo_nuclear["H"].energies
-    return ref_curve, pred_curve
-
-
-@pytest.mark.parametrize(
-    "metric_func, kwargs, max_result",
-    [
-        (diatomics.calc_curve_diff_auc, {}, 10.0),
-        (diatomics.calc_curve_diff_auc, {"seps_range": (1.0, 3.0)}, 10.0),
-        (calc_energy_mae, {}, None),
-    ],
-    ids=["auc-default", "auc-range", "energy-mae"],
-)
-def test_curve_pair_metrics_on_fixture(
-    metric_func: Callable[..., float],
-    kwargs: dict[str, object],
-    max_result: float | None,
-    pred_ref_e_curves: PredRefEnergies,
-) -> None:
-    """Curve-pair energy metrics return finite non-negative floats on fixture data."""
-    (seps_ref, energies_ref), (seps_pred, energies_pred) = pred_ref_e_curves
-
-    result = metric_func(seps_ref, energies_ref, seps_pred, energies_pred, **kwargs)
-    assert isinstance(result, float)
-    assert result >= 0
-    if max_result is not None:
-        assert result < max_result
-
-
-@pytest.mark.parametrize(
-    "metric_func, custom_interpolate, max_delta, max_result",
-    [
-        (diatomics.calc_curve_diff_auc, 500, 0.5, 10.0),
-        (calc_energy_mae, 110, 1.0, None),
-    ],
-)
-def test_curve_pair_metric_interpolation(
-    metric_func: Callable[..., float],
-    custom_interpolate: int,
-    max_delta: float,
-    max_result: float | None,
-    pred_ref_e_curves: PredRefEnergies,
-) -> None:
-    """Curve-pair metrics handle interpolation consistently."""
-    (seps_ref, energies_ref), (seps_pred, energies_pred) = pred_ref_e_curves
-
-    # Create modified x_pred with different spacing
-    seps_pred_modified = seps_pred * 1.05  # 5% difference
-
-    # Test with interpolation=False (should raise error when x values don't match)
-    with pytest.raises(
-        ValueError,
-        match="Reference and predicted distances must be same",
-    ):
-        metric_func(
-            seps_ref,
-            energies_ref,
-            seps_pred_modified,
-            energies_pred,
-            interpolate=False,
-        )
-
-    # Test with interpolation=True (default)
-    metric_interp = metric_func(
-        seps_ref, energies_ref, seps_pred_modified, energies_pred, interpolate=True
-    )
-    assert isinstance(metric_interp, float)
-    assert metric_interp >= 0
-    if max_result is not None:
-        assert metric_interp < max_result
-
-    # Test with custom number of interpolation points
-    metric_custom_interp = metric_func(
-        seps_ref,
-        energies_ref,
-        seps_pred_modified,
-        energies_pred,
-        interpolate=custom_interpolate,
-    )
-    assert isinstance(metric_custom_interp, float)
-    assert metric_custom_interp >= 0
-    if max_result is not None:
-        assert metric_custom_interp < max_result
-
-    # results should be similar but not identical due to different interpolation grids
-    assert metric_interp != metric_custom_interp
-    assert abs(metric_interp - metric_custom_interp) < max_delta
 
 
 @pytest.mark.parametrize(
@@ -121,16 +25,16 @@ def test_curve_pair_metric_interpolation(
         diatomics.calc_tortuosity,
         diatomics.calc_energy_jump,
         diatomics.calc_energy_diff_flips,
-        diatomics.calc_energy_grad_norm_max,
     ],
 )
 def test_energy_metrics_on_fixture(
     metric_func: Callable[..., float],
-    pred_ref_e_curves: PredRefEnergies,
+    pred_ref_diatomic_curves: tuple[DiatomicCurves, DiatomicCurves],
 ) -> None:
     """All single-curve energy metrics return non-negative floats on fixture data."""
-    _, pred_curve = pred_ref_e_curves
-    seps_pred, energies_pred = pred_curve
+    _ref_curves, pred_curves = pred_ref_diatomic_curves
+    pred_curve = pred_curves.homo_nuclear["H"]
+    seps_pred, energies_pred = pred_curves.distances, pred_curve.energies
     result = metric_func(seps_pred, energies_pred)
     assert isinstance(result, float)
     assert result >= 0
@@ -188,65 +92,6 @@ def test_energy_flips_and_jumps_concrete(
     assert calc_energy_jump(seps, energies) == pytest.approx(expected_jump)
 
 
-@pytest.mark.parametrize(
-    "energies, expected_grad_max",
-    [
-        (np.array([5.0, 5.0, 5.0, 5.0]), 0.0),  # constant: gradient = 0
-        # Linear slope=2: gradient = 2 everywhere
-        (np.array([2.0, 4.0, 6.0, 8.0]), 2.0),
-        # Quadratic x^2 at x=1..4: max gradient at endpoint = 7
-        (np.array([1.0, 4.0, 9.0, 16.0]), 7.0),
-    ],
-)
-def test_energy_grad_norm_max_concrete(
-    energies: np.ndarray, expected_grad_max: float
-) -> None:
-    """Test calc_energy_grad_norm_max with analytically known gradients."""
-    seps = np.arange(1, len(energies) + 1, dtype=float)
-    assert calc_energy_grad_norm_max(seps, energies) == pytest.approx(expected_grad_max)
-
-
-@pytest.mark.parametrize(
-    "seps, energies_ref, energies_pred, normalize, expected",
-    [
-        (
-            np.array([1.0, 2.0, 3.0]),
-            np.array([0.0, 1.0, 0.0]),
-            np.array([0.0, 1.0, 0.0]),
-            True,
-            0.0,
-        ),
-        (
-            np.array([1.0, 2.0, 3.0, 4.0]),
-            np.zeros(4),
-            np.ones(4),
-            False,
-            3.0,
-        ),
-        (
-            np.array([1.0, 2.0, 3.0, 4.0]),
-            np.array([0.0, 2.0, 0.0, 2.0]),  # ptp=2, so box_area = 3 * 2 = 6
-            np.zeros(4),
-            True,
-            0.5,
-        ),
-    ],
-    ids=["identical", "raw", "normalized"],
-)
-def test_curve_diff_auc_concrete_cases(
-    seps: np.ndarray,
-    energies_ref: np.ndarray,
-    energies_pred: np.ndarray,
-    normalize: bool,
-    expected: float,
-) -> None:
-    """Test AUC exact values for identical, raw, and normalized cases."""
-    auc = diatomics.calc_curve_diff_auc(
-        seps, energies_ref, seps, energies_pred, normalize=normalize
-    )
-    assert auc == pytest.approx(expected)
-
-
 def test_validate_normalize_energy() -> None:
     """Test that normalize_energy shifts energies to zero at far field."""
     from matbench_discovery.metrics.diatomics.energy import _validate_diatomic_curve
@@ -262,6 +107,42 @@ def test_validate_normalize_energy() -> None:
     forces = np.ones((4, 2, 3))
     _, forces_out = _validate_diatomic_curve(seps, forces, normalize_energy=True)
     np.testing.assert_array_equal(forces_out, forces)
+
+
+def test_pbe_reference_energy_metrics() -> None:
+    """PBE-reference metrics return interpretable exact values on parabolic wells."""
+    seps_ref = np.linspace(0.5, 3.0, 51)
+    energies_ref = (seps_ref - 1.5) ** 2 - 2
+    seps_pred = np.linspace(0.55, 3.05, 51)
+    energies_pred = 1.2 * (seps_pred - 1.6) ** 2 - 1.7
+
+    assert calc_pbe_wall_dist_mae(
+        seps_ref, energies_ref, seps_pred, energies_pred, thresholds_ev=(1,)
+    ) == pytest.approx(0.187, abs=0.01)
+    assert calc_pbe_energy_mae(
+        seps_ref, energies_ref, seps_pred, energies_pred, interpolate=200
+    ) == pytest.approx(0.118, abs=0.01)
+    assert calc_pbe_bond_length_error(
+        seps_ref, energies_ref, seps_pred, energies_pred
+    ) == pytest.approx(0.1)
+    assert calc_pbe_well_depth_error(
+        seps_ref, energies_ref, seps_pred, energies_pred
+    ) == pytest.approx(0.273, abs=0.01)
+    assert calc_pbe_vib_freq_error(
+        "H", seps_ref, energies_ref, seps_pred, energies_pred
+    ) == pytest.approx(99.1, abs=1)
+
+
+def test_pbe_reference_metrics_skip_unbound_refs() -> None:
+    """Well-based PBE metrics skip unbound reference curves."""
+    seps = np.linspace(1, 5, 20)
+    flat_energies = np.zeros_like(seps)
+    pred_energies = (seps - 2) ** 2
+    for metric_func in (calc_pbe_bond_length_error, calc_pbe_well_depth_error):
+        assert np.isnan(metric_func(seps, flat_energies, seps, pred_energies))
+    assert np.isnan(
+        calc_pbe_vib_freq_error("He", seps, flat_energies, seps, pred_energies)
+    )
 
 
 @pytest.mark.parametrize(
@@ -304,13 +185,11 @@ def test_tortuosity_simple_cases(energies: np.ndarray, expected: float) -> None:
 def test_validation_errors(xs: np.ndarray, ys: np.ndarray, match: str) -> None:
     """Test that _validate_diatomic_curve rejects invalid inputs."""
     with pytest.raises(ValueError, match=match):
-        calc_energy_grad_norm_max(xs, ys)
+        calc_energy_jump(xs, ys)
 
 
 def test_unsorted_input_accepted() -> None:
     """Unsorted x values should work since sorting is handled internally."""
     xs = np.array([1, 3, 2, 5, 4])
     ys = np.array([1, 3, 2, 5, 4])
-    assert np.isfinite(
-        diatomics.calc_curve_diff_auc(np.arange(1, 6), np.arange(1, 6), xs, ys)
-    )
+    assert np.isfinite(calc_pbe_energy_mae(np.arange(1, 6), np.arange(1, 6), xs, ys))

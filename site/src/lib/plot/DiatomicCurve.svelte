@@ -24,7 +24,14 @@
   } = $props()
 
   function get_model_label(model_key: string): string {
-    const model = MODELS.find((mdl) => model_key.startsWith(mdl.dirname))
+    const model =
+      MODELS.find(
+        (model_entry) =>
+          model_entry.model_name === model_key || model_entry.dirname === model_key,
+      ) ??
+      MODELS.toSorted(
+        (model_a, model_b) => model_b.dirname.length - model_a.dirname.length,
+      ).find((model_entry) => model_key.startsWith(model_entry.dirname))
     return model ? (model.model_name ?? model.dirname) : model_key
   }
 

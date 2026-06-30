@@ -1,5 +1,5 @@
 import { by_date_added_desc, type DiatomicsCurves, MODELS } from '$lib'
-import dft_references from '$lib/diatomics-dft.json'
+import dft_references from '$lib/diatomics-dft.json.gz'
 import { fetch_diatomics_data } from '$lib/server/diatomics'
 import type { PageServerLoad } from './$types'
 
@@ -7,7 +7,7 @@ import type { PageServerLoad } from './$types'
 // element has its own distance grid, so curves carry per-formula distances.
 const DFT_REFERENCES = dft_references as Record<
   string,
-  Record<string, { distances: number[]; energies: number[] }>
+  Record<string, { distances: number[]; energies: number[]; forces?: number[][][] }>
 >
 
 type PageDiatomicsCurves = {
@@ -64,9 +64,17 @@ export const load: PageServerLoad = async () => {
   )
 
   // Add DFT reference curves (PBE, r2SCAN) as selectable pseudo-models on the plots.
-  // Each formula already carries its own distances, so no shared top-level grid.
+  // Keep only distances/energies; forces are used for metrics but not plotted.
   for (const [ref_name, formulas] of Object.entries(DFT_REFERENCES)) {
-    diatomic_curves[ref_name] = { distances: [], 'homo-nuclear': formulas }
+    diatomic_curves[ref_name] = {
+      distances: [],
+      'homo-nuclear': Object.fromEntries(
+        Object.entries(formulas).map(([formula, { distances, energies }]) => [
+          formula,
+          { distances, energies },
+        ]),
+      ),
+    }
   }
   const reference_names = Object.keys(DFT_REFERENCES)
 

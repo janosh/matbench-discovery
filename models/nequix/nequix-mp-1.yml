@@ -203,11 +203,17 @@ metrics:
     pred_file: models/nequix/nequix-mp-1/2026-06-28-diatomics.json.gz
     hardware: NVIDIA H200
     run_time_sec: 56.83
+    pbe_wall_dist_mae: 0.206
+    pbe_energy_mae: 1.888
+    pbe_bond_length_error: 0.3431
+    pbe_well_depth_error: 1.678
+    pbe_vib_freq_error: 158.3
     tortuosity: 1.306
     energy_diff_flips: 2.172
-    energy_grad_norm_max: 29.3
     energy_jump: 0.5506
-    conservation: 0.07775
     force_flips: 2.172
     force_total_variation: 79.92
     force_jump: 16.73
+    force_mae: 2.76
+    pbe_force_mae: 2.76
+    pred_file_url: https://figshare.com/files/66104669

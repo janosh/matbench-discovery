@@ -188,13 +188,19 @@ metrics:
     pred_file: models/sevennet/sevennet-l3i5/2026-06-28-diatomics.json.gz
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 386.28
-    # He-He reliably blows up (~1e11 eV energies) and is manually excluded from
-    # these aggregate metrics; raw curves remain in the pred_file for inspection.
-    tortuosity: 1.073
-    energy_diff_flips: 1.953
-    energy_grad_norm_max: 283.5
-    energy_jump: 1.428
-    conservation: 1.667
-    force_flips: 2.058
-    force_total_variation: 563.6
-    force_jump: 192.5
+    excluded_formulas:
+      - He-He
+    pbe_wall_dist_mae: 0.1891
+    pbe_energy_mae: 1.413
+    pbe_bond_length_error: 0.2537
+    pbe_well_depth_error: 8.086
+    pbe_vib_freq_error: 191.3
+    tortuosity: 1.076
+    energy_diff_flips: 1.963
+    energy_jump: 1.437
+    force_flips: 2.073
+    force_total_variation: 585.8
+    force_jump: 200.0
+    force_mae: 2.601
+    pbe_force_mae: 2.601
+    pred_file_url: https://figshare.com/files/66104660

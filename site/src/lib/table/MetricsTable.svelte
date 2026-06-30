@@ -66,15 +66,12 @@
       .filter((row) => {
         // If show_selected_only is true, only show selected models
         if (show_selected_only) {
-          const row_model_name = String((row as ModelData).Model)
-          return selected_models.has(row_model_name)
+          return selected_models.has(row.model_name)
         }
         return true
       })
       .map((row) => {
-        const model_data = row as ModelData
-        const row_model_name = String(model_data.Model)
-        const is_selected = selected_models.has(row_model_name)
+        const is_selected = selected_models.has(row.model_name)
         // Only apply selected styles when not filtering to show only selected models
         row.class = is_selected && !show_selected_only ? `highlight` : null
         return row
@@ -218,8 +215,9 @@
   {heatmap_class}
   {header_cell}
   onrowdblclick={(event, row) => {
-    const row_model_name = String((row as ModelData).Model)
-    handle_row_double_click(event, row_model_name)
+    if (typeof row.model_name === `string`) {
+      handle_row_double_click(event, row.model_name)
+    }
   }}
   {...rest}
 >

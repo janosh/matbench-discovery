@@ -172,10 +172,11 @@ def test_uv_run_args_parses_only_top_level_extras(
     assert ingest.uv_run_args(args) == expected
 
 
-def test_uv_run_args_rejects_dangling_extra() -> None:
-    """Top-level --extra must have a value."""
-    with pytest.raises(ValueError, match="--extra requires a value"):
-        ingest.uv_run_args("--extra")
+@pytest.mark.parametrize("args", ["--extra", "--extra=", '--extra ""'])
+def test_uv_run_args_rejects_empty_extra(args: str) -> None:
+    """Top-level --extra must have a non-empty value."""
+    with pytest.raises(ValueError, match="--extra requires"):
+        ingest.uv_run_args(args)
 
 
 def test_map_yaml_paths() -> None:

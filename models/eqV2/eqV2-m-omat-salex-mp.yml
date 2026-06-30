@@ -198,11 +198,17 @@ metrics:
     pred_file: models/eqV2/eqV2-m-omat-salex-mp/2026-06-29-diatomics.json.gz
     hardware: NVIDIA H200
     run_time_sec: 617.58
+    pbe_wall_dist_mae: 0.3234
+    pbe_energy_mae: 2.494
+    pbe_bond_length_error: 0.456
+    pbe_well_depth_error: 1.987
+    pbe_vib_freq_error: 289.1
     tortuosity: 1.927
     energy_diff_flips: 8.63
-    energy_grad_norm_max: 27.41
     energy_jump: 4.123
-    conservation: 15.58
     force_flips: 2.087
     force_total_variation: 336.6
     force_jump: 7.668
+    force_mae: 4.726
+    pbe_force_mae: 4.726
+    pred_file_url: https://figshare.com/files/66104594

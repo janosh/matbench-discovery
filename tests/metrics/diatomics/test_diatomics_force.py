@@ -1,42 +1,29 @@
 """Test force-based metrics for diatomic curves."""
 
-import re
-
 import numpy as np
 import pytest
 
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
 
-PredRefForces = tuple[
-    dict[str, tuple[np.ndarray, np.ndarray]], dict[str, tuple[np.ndarray, np.ndarray]]
-]
+PredRefForces = tuple[tuple[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]
 
 
 @pytest.fixture
 def pred_ref_forces(
     pred_ref_diatomic_curves: tuple[DiatomicCurves, DiatomicCurves],
 ) -> PredRefForces:
-    """Create test data for diatomic curves.
-
-    Returns:
-        PredRefForces: Reference and predicted curves for each element.
-    """
+    """Create test force curves for H-H."""
     ref_curves, pred_curves = pred_ref_diatomic_curves
-    ref_homo_nuc, pred_homo_nuc = ref_curves.homo_nuclear, pred_curves.homo_nuclear
-    f_h_ref, f_h_pred = ref_homo_nuc["H"].forces, pred_homo_nuc["H"].forces
-    f_he_ref, f_he_pred = ref_homo_nuc["He"].forces, pred_homo_nuc["He"].forces
-    ref_dists, pred_dists = ref_curves.distances, pred_curves.distances
-
-    ref_forces = {"H": (ref_dists, f_h_ref), "He": (ref_dists, f_he_ref)}
-    pred_forces = {"H": (pred_dists, f_h_pred), "He": (pred_dists, f_he_pred)}
-    return ref_forces, pred_forces
+    return (
+        (ref_curves.distances, ref_curves.homo_nuclear["H"].forces),
+        (pred_curves.distances, pred_curves.homo_nuclear["H"].forces),
+    )
 
 
 def test_force_flips(pred_ref_forces: PredRefForces) -> None:
     """Test force flips calculation."""
-    _, pred_curves = pred_ref_forces
-    dists, forces = pred_curves["H"]
+    _, (dists, forces) = pred_ref_forces
 
     # Test with default parameters
     flips = diatomics.calc_force_flips(dists, forces)
@@ -62,8 +49,7 @@ def test_force_flips(pred_ref_forces: PredRefForces) -> None:
 
 def test_force_total_variation(pred_ref_forces: PredRefForces) -> None:
     """Test force total variation calculation."""
-    _, pred_curves = pred_ref_forces
-    dists, forces = pred_curves["H"]
+    _, (dists, forces) = pred_ref_forces
 
     # Test with default parameters
     total_var = diatomics.calc_force_total_variation(dists, forces)
@@ -96,8 +82,7 @@ def test_force_total_variation(pred_ref_forces: PredRefForces) -> None:
 
 def test_force_jump(pred_ref_forces: PredRefForces) -> None:
     """Test force jump calculation."""
-    _, pred_curves = pred_ref_forces
-    dists, forces = pred_curves["H"]
+    _, (dists, forces) = pred_ref_forces
 
     jump = diatomics.calc_force_jump(dists, forces)
     assert isinstance(jump, float)
@@ -121,9 +106,7 @@ def test_force_jump(pred_ref_forces: PredRefForces) -> None:
 
 def test_force_mae(pred_ref_forces: PredRefForces) -> None:
     """Test force MAE calculation."""
-    ref_forces, pred_forces = pred_ref_forces
-    x_ref, f_ref = ref_forces["H"]
-    x_pred, f_pred = pred_forces["H"]
+    (x_ref, f_ref), (x_pred, f_pred) = pred_ref_forces
 
     # Test with default parameters
     mae = diatomics.calc_force_mae(x_ref, f_ref, x_pred, f_pred)
@@ -133,9 +116,7 @@ def test_force_mae(pred_ref_forces: PredRefForces) -> None:
 
 def test_force_mae_interpolation(pred_ref_forces: PredRefForces) -> None:
     """Test interpolation behavior in force MAE calculation."""
-    ref_forces, pred_forces = pred_ref_forces
-    x_ref, f_ref = ref_forces["H"]
-    x_pred, f_pred = pred_forces["H"]
+    (x_ref, f_ref), (x_pred, f_pred) = pred_ref_forces
 
     # Create modified x_pred with different spacing
     x_pred_modified = x_pred * 1.05  # 5% difference
@@ -188,159 +169,3 @@ def test_force_mae_interpolation_rejects_disjoint_distance_ranges() -> None:
 
     with pytest.raises(ValueError, match="no overlap"):
         diatomics.calc_force_mae(x_ref, forces, x_pred, forces, interpolate=True)
-
-
-def test_invalid_inputs() -> None:
-    """Test that invalid inputs raise appropriate errors."""
-    seps = np.array([1, 2])
-    energies = np.array([0, 1])
-    # Forces shape: (n_seps, n_atoms=2, xyz=3)
-    forces = np.zeros((2, 2, 3))
-
-    # Test with NaN values
-    with pytest.raises(ValueError, match="Input contains NaN values"):
-        diatomics.calc_conservation_deviation(np.array([np.nan, 2]), energies, forces)
-
-    # Test with infinite values
-    with pytest.raises(ValueError, match="Input contains infinite values"):
-        diatomics.calc_conservation_deviation(np.array([np.inf, 2]), energies, forces)
-
-    # Test with duplicate x values
-    with pytest.raises(ValueError, match="xs contains 1 duplicates"):
-        diatomics.calc_conservation_deviation(np.array([1, 1]), energies, forces)
-
-    # Test with mismatched array sizes
-    with pytest.raises(ValueError, match=re.escape("len(xs_arr)=2 != len(ys_arr)=1")):
-        diatomics.calc_conservation_deviation(seps, np.array([0]), forces)
-
-    # Test with single point
-    with pytest.raises(ValueError, match="Input must have at least 2 points"):
-        diatomics.calc_conservation_deviation(
-            np.array([1]), np.array([0]), np.zeros((1, 2, 3))
-        )
-
-
-def test_conservation_deviation(
-    pred_ref_diatomic_curves: tuple[DiatomicCurves, DiatomicCurves],
-) -> None:
-    """Test conservation deviation calculation."""
-    # Simple parabolic potential
-    seps = np.logspace(1, -1, 40)
-    energies = 0.5 * (seps - 2) ** 2
-    # Diatomics place atom 0 at the origin and atom 1 at [r, 0, 0], so conservative
-    # forces are F_atom0 = +dE/dr = (r - 2) and F_atom1 = -dE/dr = -(r - 2).
-    # Shape: (n_seps, n_atoms=2, xyz=3)
-    forces = np.zeros((len(seps), 2, 3))
-    forces[:, 0, 0] = seps - 2  # force on atom at origin
-    forces[:, 1, 0] = -(seps - 2)  # force on displaced atom
-
-    # perfectly conservative forces give ~zero deviation (small residual from
-    # np.gradient's first-order edge estimates on the non-uniform grid)
-    deviation = diatomics.calc_conservation_deviation(seps, energies, forces)
-    assert deviation == pytest.approx(0, abs=0.05)
-
-    # regression: metric used to return ~mean(|dE/dr|) for ANY forces, scoring perfect
-    # forces the same as all-zero forces
-    zero_dev = diatomics.calc_conservation_deviation(
-        seps, energies, np.zeros_like(forces)
-    )
-    assert zero_dev > 0.5  # = mean(|dE/dr|) / 3 ~= 2.2 / 3 for this parabola
-
-    # sign-swapped forces (atoms attract when they should repel) are penalized
-    swapped_dev = diatomics.calc_conservation_deviation(seps, energies, -forces)
-    assert swapped_dev > 1
-
-    _, pred_curves = pred_ref_diatomic_curves
-    h_data = pred_curves.homo_nuclear["H"]
-    dists, e_pred, _f_pred = h_data.distances, h_data.energies, h_data.forces
-
-    # Test with default parameters
-    # Create forces array with correct shape
-    forces_pred = np.zeros((len(dists), 2, 3))
-    grad = np.gradient(e_pred, dists)
-    forces_pred[:, 0, 0] = grad  # force on atom at origin
-    forces_pred[:, 1, 0] = -grad  # force on displaced atom
-
-    dev = diatomics.calc_conservation_deviation(dists, e_pred, forces_pred)
-    assert isinstance(dev, float)
-    assert dev >= 0  # Deviation should be non-negative
-
-    # Test with sorted vs unsorted input (should give same result)
-    np_rng = np.random.default_rng(seed=0)
-    perm = np_rng.permutation(len(dists))
-    dists_unsorted = dists[perm]
-    e_unsorted = e_pred[perm]
-    forces_unsorted = forces_pred[perm]
-    dev_unsorted = diatomics.calc_conservation_deviation(
-        dists_unsorted, e_unsorted, forces_unsorted
-    )
-    assert dev == pytest.approx(dev_unsorted)
-
-    dists = np.arange(1, 6)
-    e_linear = np.arange(1, 6)
-    # Constant curve
-    e_const = np.ones(len(dists))
-
-    # Create forces arrays with correct shape: dE/dr = 1 everywhere
-    forces_linear = np.zeros((len(dists), 2, 3))
-    forces_linear[:, 0, 0] = 1  # force on atom at origin (+dE/dr)
-    forces_linear[:, 1, 0] = -1  # force on displaced atom (-dE/dr)
-
-    forces_const = np.zeros((len(dists), 2, 3))  # zero forces everywhere
-
-    linear_cons = diatomics.calc_conservation_deviation(dists, e_linear, forces_linear)
-    const_cons = diatomics.calc_conservation_deviation(dists, e_const, forces_const)
-    # Linear curve with matching constant forces is perfectly conservative
-    assert linear_cons == pytest.approx(0, abs=1e-3)
-    # Constant curve should have zero force
-    assert const_cons == pytest.approx(0, abs=1e-3)
-
-    seps = np.logspace(1, -1, 40)
-    energies = np.zeros_like(seps)  # flat potential
-    forces = np.zeros((len(seps), 2, 3))  # zero forces
-
-    # Test conservation deviation
-    assert diatomics.calc_conservation_deviation(
-        seps, energies, forces
-    ) == pytest.approx(0, abs=1e-3)
-
-
-def test_conservation_deviation_interpolation(pred_ref_forces: PredRefForces) -> None:
-    """Test interpolation behavior in conservation deviation calculation."""
-    _, pred_curves = pred_ref_forces
-    dists, forces = pred_curves["H"]
-
-    # Create energies from forces by integration
-    energies = np.zeros_like(dists)
-    for i in range(1, len(dists)):
-        # Simple trapezoidal integration
-        dx = dists[i - 1] - dists[i]
-        f_avg = (forces[i - 1, 0, 0] + forces[i, 0, 0]) / 2
-        energies[i] = energies[i - 1] - f_avg * dx
-
-    # Test with interpolation=False (default)
-    deviation = diatomics.calc_conservation_deviation(
-        dists, energies, forces, interpolate=False
-    )
-    assert isinstance(deviation, float)
-    assert deviation >= 0  # Deviation should be non-negative
-
-    # Test with interpolation=True
-    deviation_interp = diatomics.calc_conservation_deviation(
-        dists, energies, forces, interpolate=True
-    )
-    assert isinstance(deviation_interp, float)
-    assert deviation_interp >= 0  # Deviation should be non-negative
-
-    # Test with custom number of interpolation points
-    deviation_custom_interp = diatomics.calc_conservation_deviation(
-        dists, energies, forces, interpolate=50
-    )
-    assert isinstance(deviation_custom_interp, float)
-    assert deviation_custom_interp >= 0  # Deviation should be non-negative
-
-    # results should be similar but not identical due to different interpolation grids
-    assert deviation_interp != deviation_custom_interp
-    assert (
-        abs(deviation_interp - deviation_custom_interp) < 0.5
-    )  # Should be reasonably close

@@ -29,7 +29,11 @@ import os
 import shlex
 
 from matbench_discovery import today
-from matbench_discovery.calculators import CALCULATORS, load_calculator
+from matbench_discovery.calculators import (
+    CALCULATORS,
+    load_calculator,
+    resolve_calculator_key,
+)
 from matbench_discovery.md import run_md_benchmark
 
 module_dir = os.path.dirname(__file__)
@@ -79,8 +83,10 @@ def main() -> int:
 
     if not args.model:
         parser.error("--model is required (or pass --list-models)")
-    if args.model not in CALCULATORS:
-        parser.error(f"unknown --model {args.model!r}, see --list-models")
+    try:
+        args.model = resolve_calculator_key(args.model)
+    except ValueError as exc:
+        parser.error(f"{exc}, see --list-models")
     # a subset run writes model-level metrics from incomplete coverage; aggregation
     # over all systems belongs to scripts/evals/md.py, not a per-array-task write
     if args.write_yaml and args.systems:

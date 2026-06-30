@@ -123,15 +123,18 @@ def uv_run_args(args: str) -> tuple[str, ...]:
     while token_idx < len(tokens) and tokens[token_idx].startswith("--extra"):
         arg = tokens[token_idx]
         if arg.startswith("--extra="):
-            extras.append(arg.removeprefix("--extra="))
+            extra = arg.removeprefix("--extra=")
             token_idx += 1
         elif arg == "--extra":
             if token_idx + 1 >= len(tokens):
                 raise ValueError("uv run --extra requires a value")
-            extras.append(tokens[token_idx + 1])
+            extra = tokens[token_idx + 1]
             token_idx += 2
         else:
             break
+        if not extra:
+            raise ValueError("uv run --extra requires a non-empty value")
+        extras.append(extra)
     if token_idx < len(tokens) and tokens[token_idx] == "--":
         token_idx += 1
     cmd_args = tokens[token_idx:]

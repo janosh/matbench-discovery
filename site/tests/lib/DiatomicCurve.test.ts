@@ -28,7 +28,7 @@ describe(`DiatomicCurve`, () => {
       },
     })
 
-    expect(doc_query(`h3`).textContent).toBe(`H2`)
+    expect(doc_query(`h3`).childNodes[0]?.textContent?.trim()).toBe(`H2`)
     expect(doc_query(`.plot`).classList.contains(`custom-class`)).toBe(true)
     expect(plot_mocks.ScatterPlot).toHaveBeenCalledTimes(1)
     expect(get_scatter_plot_props(plot_mocks.ScatterPlot)).toMatchObject({
@@ -38,7 +38,8 @@ describe(`DiatomicCurve`, () => {
           y: [2, 5, 0],
           markers: `line+points`,
           metadata: { model_key: `unknown-model`, model_label: `unknown-model` },
-          point_style: { radius: 1.5, stroke_width: 0 },
+          point_style: { fill: `#123456`, radius: 1.5, stroke_width: 0 },
+          line_style: { stroke: `#123456` },
         },
       ],
       x_axis: { label: `Distance (Å)`, format: `.1f`, range: [0.2, 6] },

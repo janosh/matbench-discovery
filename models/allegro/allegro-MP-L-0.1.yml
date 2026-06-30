@@ -202,11 +202,17 @@ metrics:
     pred_file: models/allegro/allegro-MP-L-0.1/2026-06-28-diatomics.json.gz
     hardware: NVIDIA H200
     run_time_sec: 84.64
+    pbe_wall_dist_mae: 0.1521
+    pbe_energy_mae: 1.451
+    pbe_bond_length_error: 0.1623
+    pbe_well_depth_error: 1.588
+    pbe_vib_freq_error: 138.7
     tortuosity: 1.036
     energy_diff_flips: 1.46
-    energy_grad_norm_max: 87.33
     energy_jump: 0.06922
-    conservation: 0.09874
     force_flips: 1.483
     force_total_variation: 100.8
     force_jump: 3.301
+    force_mae: 1.8
+    pbe_force_mae: 1.8
+    pred_file_url: https://figshare.com/files/66104582

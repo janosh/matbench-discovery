@@ -215,11 +215,17 @@ metrics:
     pred_file: models/sevennet/sevennet-omni-i12/2026-06-29-diatomics.json.gz
     hardware: NVIDIA H200
     run_time_sec: 1365.76
+    pbe_wall_dist_mae: 0.03594
+    pbe_energy_mae: 0.8326
+    pbe_bond_length_error: 0.273
+    pbe_well_depth_error: 0.3932
+    pbe_vib_freq_error: 44.2
     tortuosity: 1.004
     energy_diff_flips: 1.59
-    energy_grad_norm_max: 499.3
     energy_jump: 0.4608
-    conservation: 5.547
     force_flips: 1.59
     force_total_variation: 1147.0
     force_jump: 18.08
+    force_mae: 3.152
+    pbe_force_mae: 3.152
+    pred_file_url: https://figshare.com/files/66104663
