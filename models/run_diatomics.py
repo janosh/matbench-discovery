@@ -217,23 +217,34 @@ def main() -> int:
     if args.merge_shards:
         curves: DiatomicResults = {}
         shard_metadatas: list[dict[str, object]] = []
-        shard_paths = sorted(glob(f"{shard_dir}/*-diatomics.json.gz"))
-        if not shard_paths:
-            parser.error(f"--merge-shards found no shard files in {shard_dir}")
+        expected_formulas = {
+            f"{chemical_symbols[z_value]}-{chemical_symbols[z_value]}"
+            for z_value in z_values
+        }
+        expected_paths = [
+            f"{shard_dir}/Z{z_value:03d}-diatomics.json.gz" for z_value in z_values
+        ]
+        shard_paths = sorted(glob(f"{shard_dir}/Z*-diatomics.json.gz"))
+        if shard_paths != expected_paths:
+            parser.error(f"Expected shard files {expected_paths}, got {shard_paths}")
         for json_path in shard_paths:
             with gzip.open(json_path, mode="rt") as file:
                 shard = json.load(file)
+            shard_distances = shard["distances"]
+            if json_path == shard_paths[0]:
+                distances = np.asarray(shard_distances)
+            elif shard_distances != distances.tolist():
+                parser.error(f"Inconsistent distances in {json_path}")
             curves.update(shard.get(homo_nuc, {}))
             shard_metadatas.append(shard.get("run_metadata", {}))
 
-        expected_formulas = {
-            f"{chemical_symbols[z]}-{chemical_symbols[z]}" for z in z_values
-        }
         missing_formulas = expected_formulas - set(curves)
-        missing_formulas.update(DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()))
+        model_exclusions = set(DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()))
+        if unexpected_missing := missing_formulas - model_exclusions:
+            parser.error(f"Missing curves in shards: {sorted(unexpected_missing)}")
         run_metadata: dict[str, str | float | list[str]] = {
             **merge_run_metadata(shard_metadatas),
-            "excluded_formulas": sorted(missing_formulas),
+            "excluded_formulas": sorted(model_exclusions),
         }
         json_path = f"{out_dir}/{today}-diatomics.json.gz"
         n_pairs = len(expected_formulas)

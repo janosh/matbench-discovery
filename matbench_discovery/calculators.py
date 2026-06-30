@@ -472,7 +472,7 @@ MATRIS_DEPS = (MATRIS_PKG, "torch==2.6.0", "numpy<3")
 # model_path. use_kernel=False in the factory avoids the openequivariance build step.
 NEQUIX_DEPS = ("nequix", "jax[cuda12]")
 TACE_DEPS = (
-    "tace @ git+https://github.com/xvzemin/tace",
+    "tace @ git+https://github.com/xvzemin/tace@c669bee71c2f157dce80d80e8a8f0a08ddfc124c",
     "torch==2.9.1",
     "torch-geometric==2.7.0",
     "pytorch-lightning==2.5.5",
