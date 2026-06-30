@@ -52,7 +52,9 @@ def calc_force_mae(
 
     data_min = max(seps_ref.min(), seps_pred.min())
     data_max = min(seps_ref.max(), seps_pred.max())
-    if data_min > data_max:
+    # >= (not >) to also reject a single shared point: interpolating one point across
+    # grid is meaningless. Matches the energy metrics' overlap check.
+    if data_min >= data_max:
         raise ValueError(
             f"Cannot interpolate force curves with no overlap: {data_min=}, {data_max=}"
         )
@@ -129,61 +131,3 @@ def calc_force_jump(seps: ArrayLike, forces: np.ndarray) -> float:
     _, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
     diffs, _, flips = _threshold_diff_signs(forces[:, 0, 0], threshold=0)
     return float(np.abs(diffs[:-1][flips]).sum() + np.abs(diffs[1:][flips]).sum())
-
-
-def calc_conservation_deviation(
-    seps: ArrayLike,
-    energies: ArrayLike,
-    forces: np.ndarray,  # shape (n_distances, n_atoms, 3)
-    *,
-    interpolate: bool | int = False,
-) -> float:
-    """Calculate mean absolute deviation between forces and -dE/dr.
-
-    Args:
-        seps (ArrayLike): Interatomic distances in Å.
-        energies (ArrayLike): Energies in eV.
-        forces (np.ndarray): Forces acting on atoms at each separation of shape
-            (n_distances, n_atoms, 3).
-        interpolate (bool | int): If False (default), uses the provided points directly.
-            If True, uses 100 points for interpolation.
-            If an integer, uses that many points for interpolation.
-
-    Returns:
-        float: Mean absolute deviation between forces and -dE/dr.
-    """
-    _, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
-    seps, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
-
-    if interpolate:
-        # Create grid for interpolation
-        n_points = 100 if interpolate is True else int(interpolate)
-        seps_interp = np.linspace(seps.min(), seps.max(), n_points)
-
-        # Interpolate energies
-        energies_interp = np.interp(seps_interp, seps, energies)
-
-        # Interpolate forces (only x-component for simplicity)
-        forces_interp = np.zeros((len(seps_interp), forces.shape[1], forces.shape[2]))
-        for atom_idx in range(forces.shape[1]):
-            for dim in range(forces.shape[2]):
-                forces_interp[:, atom_idx, dim] = np.interp(
-                    seps_interp, seps, forces[:, atom_idx, dim]
-                )
-
-        # Calculate energy gradient using central differences on interpolated data
-        energy_grad = np.gradient(energies_interp, seps_interp)
-        forces = forces_interp
-    else:
-        # Calculate energy gradient using central differences
-        energy_grad = np.gradient(energies, seps)
-
-    # Diatomics are generated with atom 0 at the origin and atom 1 at [r, 0, 0]
-    # (see generate_diatomics), so conservative forces satisfy
-    # F_atom0 = +dE/dr x_hat and F_atom1 = -dE/dr x_hat with zero transverse
-    # components. Deviation is the mean absolute difference from these expected
-    # forces over all atoms and Cartesian components.
-    expected_forces = np.zeros_like(forces)
-    expected_forces[:, 0, 0] = energy_grad
-    expected_forces[:, 1, 0] = -energy_grad
-    return float(np.mean(np.abs(forces - expected_forces)))

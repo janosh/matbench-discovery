@@ -14,7 +14,7 @@ from typing import Any, Literal
 import yaml
 from tqdm import tqdm
 
-from matbench_discovery import PKG_DIR, ROOT
+from matbench_discovery import PKG_DIR, ROOT, repo_relative_path
 from matbench_discovery.cli import cli_parser
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
@@ -174,7 +174,7 @@ def update_one_modeling_task_article(
                 )
                 continue
 
-            filename = str(os.path.relpath(file_path, ROOT))
+            filename = repo_relative_path(file_path)
 
             # First check if the exact same file already exists
             if not force_reupload and not dry_run:

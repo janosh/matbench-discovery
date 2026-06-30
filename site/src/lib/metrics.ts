@@ -1,6 +1,7 @@
 import { DATASETS, format_date, MODELS } from '$lib'
 import {
   ALL_METRICS,
+  DIATOMICS_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
   HYPERPARAMS,
   MD_METRICS,
@@ -253,9 +254,23 @@ export function assemble_row_data(
       cell_filter && typeof cell_filter === `string`
         ? cell_filter.replace(/CellFilter$/, ``)
         : null
+    const diatomics_metrics = metrics?.diatomics
+    const excluded_formulas =
+      typeof diatomics_metrics === `object` && diatomics_metrics !== null
+        ? (diatomics_metrics.excluded_formulas ?? [])
+        : []
+    const model_exclusion_note = `Diatomics metrics exclude ${excluded_formulas.join(
+      `, `,
+    )} due to exploding errors`
+    const model_exclusion_marker =
+      excluded_formulas.length > 0
+        ? `<span title="${model_exclusion_note}" aria-label="${model_exclusion_note}">` +
+          `<span aria-hidden="true">*</span></span>`
+        : ``
 
     const row = {
-      Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
+      model_name: model.model_name,
+      Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
       CPS: model[CPS.key],
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,
@@ -272,6 +287,9 @@ export function assemble_row_data(
       [RMSD.key]: metric_num(RMSD),
       ...Object.fromEntries(
         Object.values(MD_METRICS).map((label) => [label.key, metric_num(label)]),
+      ),
+      ...Object.fromEntries(
+        Object.values(DIATOMICS_METRICS).map((label) => [label.key, metric_num(label)]),
       ),
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.key]:

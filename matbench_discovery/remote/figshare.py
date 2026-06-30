@@ -10,7 +10,7 @@ from typing import Any, Final
 import requests
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, repo_relative_path
 from matbench_discovery.cli import CLI_TIMEOUT
 
 ENV_PATH: Final[str] = f"{ROOT}/site/.env"
@@ -131,8 +131,11 @@ def get_file_hash_and_size(
 
 
 def _repo_relative_name(file_path: str) -> str:
-    """Repo-relative POSIX file name (os.path.relpath raises across Windows drives)."""
-    return file_path.replace(os.sep, "/").removeprefix(f"{ROOT.replace(os.sep, '/')}/")
+    """Repo-relative POSIX file name, or normalized original path outside ROOT."""
+    try:
+        return repo_relative_path(file_path, root=ROOT)
+    except ValueError:
+        return file_path.replace(os.sep, "/")
 
 
 def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:

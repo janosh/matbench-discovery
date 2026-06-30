@@ -184,7 +184,24 @@ metrics:
       R2: 0.882 # dimensionless
       missing_preds: 0 # count
   diatomics:
-    pred_file_url: https://figshare.com/files/54490370
+    pred_file: models/alphanet/alphanet-v1-oam/2026-06-28-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66104576
+    hardware: NVIDIA H200
+    run_time_sec: 196.1
+    excluded_formulas:
+      - He-He
+    pbe_wall_dist_mae: 0.1909
+    pbe_energy_mae: 2.449
+    pbe_bond_length_error: 0.3508
+    pbe_well_depth_error: 1.864
+    pbe_vib_freq_error: 148.3
+    tortuosity: 1.102
+    energy_diff_flips: 2.56
+    energy_jump: 0.9086
+    force_flips: 2.066
+    force_total_variation: 207.2
+    force_jump: 5.116
+    pbe_force_mae: 2.274
   md:
     pred_file: models/alphanet/alphanet-v1-oam/2026-06-28-alphanet_v1_oam-md-metrics.csv.gz
     energy_rmse: 1.3423 # meV/atom

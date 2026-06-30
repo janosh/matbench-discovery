@@ -189,3 +189,20 @@ metrics:
     combined_score: 0.825391
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048938
+  diatomics:
+    pred_file: models/tace/tace-oam-l/2026-06-29-diatomics.json.gz
+    hardware: NVIDIA H200
+    run_time_sec: 1300.3
+    pbe_wall_dist_mae: 0.1574
+    pbe_energy_mae: 1.163
+    pbe_bond_length_error: 0.2354
+    pbe_well_depth_error: 1.673
+    pbe_vib_freq_error: 120.7
+    tortuosity: 1.007
+    energy_diff_flips: 1.632
+    energy_jump: 0.1254
+    force_flips: 1.598
+    force_total_variation: 179.1
+    force_jump: 4.72
+    pbe_force_mae: 0.9684
+    pred_file_url: https://figshare.com/files/66104666

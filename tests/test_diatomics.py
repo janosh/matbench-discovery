@@ -1,15 +1,31 @@
 """Tests for diatomic molecule generation and energy/force calculations."""
 
+import importlib.util
+import sys
+from types import ModuleType
+
 import numpy as np
 import pytest
 from ase import Atoms
 from ase.calculators.emt import EMT
 
+from matbench_discovery import ROOT
 from matbench_discovery.diatomics import (
     atom_num_symbol_map,
     calc_diatomic_curve,
     generate_diatomics,
 )
+
+
+def import_repo_script(module_name: str, rel_path: str) -> ModuleType:
+    """Import a repo-local script without package-name collisions."""
+    spec = importlib.util.spec_from_file_location(module_name, f"{ROOT}/{rel_path}")
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot import {module_name} from {rel_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 @pytest.mark.parametrize(
@@ -34,7 +50,15 @@ def test_generate_diatomics(
         assert isinstance(atoms, Atoms)
         assert set(atoms.get_chemical_formula()) == set(formula)
         assert atoms.get_distance(0, 1) == pytest.approx(dist)
-        assert not any(atoms.pbc)  # periodic boundary conditions should be False
+        # large periodic box so cell-requiring calculators work; images don't interact
+        assert all(atoms.pbc)
+        assert atoms.cell.lengths() == pytest.approx([50, 50, 50])
+
+
+def test_generate_diatomics_rejects_distance_beyond_half_box() -> None:
+    """Separations >= box_size/2 are rejected (wrong min-image distance under PBC)."""
+    with pytest.raises(ValueError, match="must be < box_size/2"):
+        generate_diatomics("H", "H", [3.0], box_size=5.0)
 
 
 @pytest.mark.parametrize(
@@ -139,7 +163,11 @@ def test_calc_diatomic_curve_prior_results() -> None:
     pairs = [("Cu", "Cu")]  # Only test Cu-Cu
     # Pre-populate results with Cu2
     initial_results: dict[str, dict[str, list[float | list[list[float]]]]] = {
-        "Cu-Cu": {"energies": [-1.0], "forces": [[[0.1, 0, 0], [-0.1, 0, 0]]]}
+        "Cu-Cu": {
+            "distances": [2.0],
+            "energies": [-1.0],
+            "forces": [[[0.1, 0, 0], [-0.1, 0, 0]]],
+        }
     }
 
     # Calculate new results but with same pair
@@ -148,8 +176,40 @@ def test_calc_diatomic_curve_prior_results() -> None:
     # Cu2 results should be recalculated since it's in pairs
     assert len(results["Cu-Cu"]["energies"]) == 1
     assert len(results["Cu-Cu"]["forces"]) == 1
+    assert results["Cu-Cu"]["distances"] == distances
     # Values should be calculated by EMT, not taken from initial_results
     assert isinstance(results["Cu-Cu"]["energies"][0], int | float)
     assert isinstance(results["Cu-Cu"]["forces"][0], list)
     assert len(results["Cu-Cu"]["forces"][0]) == 2  # two atoms
     assert len(results["Cu-Cu"]["forces"][0][0]) == 3  # three components
+
+
+@pytest.mark.parametrize(
+    ("argv_tail", "expected_stdout"),
+    [
+        ("--model emt --min-dist 0", None),
+        ("--model emt --min-dist -0.1", None),
+        ("--model emt --max-dist 0.1", None),
+        ("--model emt --min-dist 2 --max-dist 1", None),
+        ("--model emt --max-z 0", None),
+        ("--model emt --n-points 1", None),
+        ("--model mace-mp-0", "--model mace_mp_0"),
+    ],
+)
+def test_run_diatomics_cli_validation(
+    argv_tail: str,
+    expected_stdout: str | None,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """run_diatomics validates distances and canonicalizes model refs."""
+    run_diatomics = import_repo_script("run_diatomics", "models/run_diatomics.py")
+    argv = ["run_diatomics", "--print-cmd", *argv_tail.split()]
+    monkeypatch.setattr(sys, "argv", argv)
+
+    if expected_stdout is None:
+        with pytest.raises(SystemExit):
+            run_diatomics.main()
+    else:
+        assert run_diatomics.main() == 0
+        assert expected_stdout in capsys.readouterr().out

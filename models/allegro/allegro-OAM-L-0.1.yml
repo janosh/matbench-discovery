@@ -199,3 +199,20 @@ metrics:
     combined_score: 0.811194
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048848
+  diatomics:
+    pred_file: models/allegro/allegro-OAM-L-0.1/2026-06-28-diatomics.json.gz
+    hardware: NVIDIA H200
+    run_time_sec: 67.67
+    pbe_wall_dist_mae: 0.133
+    pbe_energy_mae: 1.153
+    pbe_bond_length_error: 0.1597
+    pbe_well_depth_error: 1.486
+    pbe_vib_freq_error: 135.3
+    tortuosity: 1.046
+    energy_diff_flips: 1.448
+    energy_jump: 0.08217
+    force_flips: 1.368
+    force_total_variation: 180.7
+    force_jump: 17.83
+    pbe_force_mae: 1.083
+    pred_file_url: https://figshare.com/files/66104579

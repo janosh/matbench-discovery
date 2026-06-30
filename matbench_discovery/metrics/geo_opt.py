@@ -4,7 +4,7 @@ import pandas as pd
 from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
-from matbench_discovery import ROOT
+from matbench_discovery import repo_relative_path
 from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import MbdKey, Model
 
@@ -28,7 +28,7 @@ def write_metrics_to_yaml(
             symmetry precision.
     """
     # Convert absolute path to relative path if needed
-    analysis_file_path = analysis_file_path.removeprefix(f"{ROOT}/")
+    analysis_file_path = repo_relative_path(analysis_file_path)
 
     # Get metrics for this model
     metrics_for_symprec = {

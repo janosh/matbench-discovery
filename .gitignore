@@ -15,6 +15,7 @@ __pycache__
 !data/mp/2023-02-07-mp-elemental-reference-entries.json.gz
 # committed data-only figure payloads (small, written by matbench_discovery.figs)
 !site/src/figs/*.json.gz
+!site/src/lib/diatomics-dft.json.gz
 data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*

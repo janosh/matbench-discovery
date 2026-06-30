@@ -162,3 +162,20 @@ metrics:
     combined_score: 0.79117
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048878
+  diatomics:
+    pred_file: models/grace/grace-1l-oam/2026-06-28-diatomics.json.gz
+    hardware: NVIDIA H200
+    run_time_sec: 79.27
+    pbe_wall_dist_mae: 0.1431
+    pbe_energy_mae: 2.537
+    pbe_bond_length_error: 0.2296
+    pbe_well_depth_error: 4.045
+    pbe_vib_freq_error: 150.9
+    tortuosity: 1.086
+    energy_diff_flips: 2.379
+    energy_jump: 0.8991
+    force_flips: 2.149
+    force_total_variation: 129.6
+    force_jump: 3.569
+    pbe_force_mae: 1.625
+    pred_file_url: https://figshare.com/files/66104615

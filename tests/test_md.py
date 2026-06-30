@@ -1,10 +1,12 @@
 """Tests for molecular dynamics rollout helpers."""
 
+import hashlib
 import importlib.util
 import os
+import shlex
 import sys
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import ase.io
 import numpy as np
@@ -15,6 +17,7 @@ from ase.build import bulk
 from ase.calculators.emt import EMT
 
 from matbench_discovery import ROOT, today
+from matbench_discovery.calculators import CALCULATORS, load_calculator
 from matbench_discovery.enums import Model
 from matbench_discovery.md import (
     NpzValue,
@@ -27,7 +30,6 @@ from matbench_discovery.md import (
     validate_pred_trajectory,
     write_reference_h5,
 )
-from matbench_discovery.md_models import MD_MODELS, load_calculator
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
@@ -583,7 +585,7 @@ def test_load_calculator(monkeypatch: pytest.MonkeyPatch) -> None:
     """Emt loads with no extra deps; dtype is ignored by models that don't declare it;
     unknown keys raise a helpful error.
     """
-    from matbench_discovery import md_models
+    from matbench_discovery import calculators
 
     assert isinstance(load_calculator("emt"), EMT)
     assert isinstance(load_calculator("emt", dtype="float32"), EMT)  # dtype ignored
@@ -596,13 +598,42 @@ def test_load_calculator(monkeypatch: pytest.MonkeyPatch) -> None:
         return EMT()
 
     monkeypatch.setitem(
-        md_models.MD_MODELS, "mace_mp_0", md_models.MdModel(dtype_aware)
+        calculators.CALCULATORS, "mace_mp_0", calculators.CalcSpec(dtype_aware)
     )
-    load_calculator("mace_mp_0", device="cpu", dtype="float32")
+    load_calculator("mace-mp-0", device="cpu", dtype="float32")
     assert seen_dtype == "float32"
 
-    with pytest.raises(ValueError, match="Unknown model_key"):
+    with pytest.raises(ValueError, match="Unknown model"):
         load_calculator("does-not-exist")
+
+
+def test_download_checkpoint_replaces_zero_byte_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """download_checkpoint redownloads zero-byte cached checkpoint files."""
+    from matbench_discovery import calculators
+    from matbench_discovery.enums import Model
+    from matbench_discovery.remote import fetch
+
+    url = "https://example.com/model.ckpt"
+    monkeypatch.setattr(calculators, "CHECKPOINT_DIR", f"{tmp_path}")
+    from_ref_mock = classmethod(
+        lambda _cls, _model_key: SimpleNamespace(metadata={"checkpoint_url": url})
+    )
+    monkeypatch.setattr(Model, "from_ref", from_ref_mock)
+
+    download_file_mock = lambda dest, _url, **_kwargs: Path(dest).write_bytes(  # noqa: E731
+        b"checkpoint"
+    )
+    monkeypatch.setattr(fetch, "download_file", download_file_mock)
+    url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
+    dest = tmp_path / f"fake-{url_hash}.ckpt"
+    dest.write_bytes(b"")
+
+    actual_path = os.path.normpath(calculators.download_checkpoint("fake"))
+    expected_path = os.path.normpath(f"{dest}")
+    assert actual_path == expected_path
+    assert dest.read_bytes() == b"checkpoint"
 
 
 def test_run_md_cli_write_yaml_skips_non_submission_model(
@@ -623,14 +654,37 @@ def test_run_md_cli_write_yaml_skips_non_submission_model(
     assert run_md.main() == 0  # would raise ValueError without the non-enum guard
 
 
-def test_run_md_cli_rejects_partial_write_yaml(monkeypatch: pytest.MonkeyPatch) -> None:
-    """--write-yaml on a --systems subset must error before the rollout pipeline."""
+@pytest.mark.parametrize(
+    ("argv", "expected_cmd"),
+    [
+        (
+            ["run_md", "--model", "mace_mp_0", "--write-yaml", "--systems", "bulkAu"],
+            None,
+        ),
+        (
+            ["run_md", "--print-cmd", "--model", "mace-mp-0"],
+            CALCULATORS["mace_mp_0"].uv_run_cmd(
+                "models/run_md.py", "--model", "mace_mp_0"
+            ),
+        ),
+    ],
+)
+def test_run_md_cli_validation(
+    argv: list[str],
+    expected_cmd: list[str] | None,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """CLI rejects partial YAML writes and prints full canonical uv commands."""
     run_md = import_repo_script("run_md", "models/run_md.py")
-
-    argv = ["run_md", "--model", "mace_mp_0", "--write-yaml", "--systems", "bulkAu"]
     monkeypatch.setattr(sys, "argv", argv)
-    with pytest.raises(SystemExit):  # parser.error exits before the rollout pipeline
-        run_md.main()
+
+    if expected_cmd is None:
+        with pytest.raises(SystemExit):  # parser.error exits before rollout pipeline
+            run_md.main()
+    else:
+        assert run_md.main() == 0
+        assert shlex.split(capsys.readouterr().out) == expected_cmd
 
 
 def patch_eval_md(
@@ -729,7 +783,7 @@ def test_md_evals_handles_placeholder_md_metrics(
     assert writes[0]["pred_file_url"] is None  # no url from a placeholder md section
 
 
-@pytest.mark.parametrize("model_key", [key for key in MD_MODELS if key != "emt"])
+@pytest.mark.parametrize("model_key", [key for key in CALCULATORS if key != "emt"])
 def test_md_model_keys_are_valid_enum_members(model_key: str) -> None:
     """Registered non-debug models must map to a Model so metrics write to YAML."""
     assert Model.from_ref(model_key).name == model_key

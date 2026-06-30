@@ -150,8 +150,22 @@ metrics:
       R2: 0.862 # dimensionless
       missing_preds: 5 # count
   diatomics:
-    pred_file: models/grace/grace-2l-oam/2025-02-19-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/59047001
+    pred_file: models/grace/grace-2l-oam-l/2026-06-28-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66104618
+    hardware: NVIDIA H200
+    run_time_sec: 101.66
+    pbe_wall_dist_mae: 0.1518
+    pbe_energy_mae: 1.678
+    pbe_bond_length_error: 0.2296
+    pbe_well_depth_error: 2.498
+    pbe_vib_freq_error: 148.4
+    tortuosity: 1.053
+    energy_diff_flips: 2.184
+    energy_jump: 0.6155
+    force_flips: 1.897
+    force_total_variation: 118.8
+    force_jump: 5.339
+    pbe_force_mae: 1.282
   md:
     pred_file: models/grace/grace-2l-oam-l/2026-06-28-grace_2l_oam_l-md-metrics.csv.gz
     energy_rmse: 0.6928 # meV/atom

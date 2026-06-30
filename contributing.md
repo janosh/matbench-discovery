@@ -240,7 +240,7 @@ matbench-discovery-root
 
 You can include arbitrary other supporting files like metadata and model features (below 10MB total to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and share the link in your PR description.
 
-The molecular dynamics task does not need a per-model script. Instead register your model's ASE calculator and its `uv` dependencies in [`matbench_discovery/md_models.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/md_models.py), then run it through the shared runner (which auto-downloads the CFPMD-26 reference set):
+The molecular dynamics task does not need a per-model script. Instead register your model's ASE calculator and its `uv` dependencies once in the shared calculator registry [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py) (the same registry also powers the diatomics task via `models/run_diatomics.py`), then run it through the shared runner (which auto-downloads the CFPMD-26 reference set):
 
 ```sh
 # smoke-test the pipeline in seconds, then launch the full 20 ps NVT benchmark

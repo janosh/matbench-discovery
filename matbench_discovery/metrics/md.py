@@ -21,7 +21,7 @@ from ase.data import atomic_masses, covalent_radii
 from ase.geometry import find_mic, get_distances, minkowski_reduce
 from ruamel.yaml.comments import CommentedMap
 
-from matbench_discovery import ROOT
+from matbench_discovery import repo_relative_path
 from matbench_discovery.data import update_yaml_file
 from matbench_discovery.trajectory import Trajectory
 
@@ -817,7 +817,7 @@ def write_metrics_to_yaml(
     """
     yaml_metrics = CommentedMap()
     if pred_file_path is not None:
-        yaml_metrics["pred_file"] = pred_file_path.removeprefix(f"{ROOT}/")
+        yaml_metrics["pred_file"] = repo_relative_path(pred_file_path)
     if pred_file_url is not None:
         yaml_metrics["pred_file_url"] = pred_file_url
     for key, value in metrics.items():

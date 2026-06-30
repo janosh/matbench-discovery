@@ -161,3 +161,20 @@ metrics:
     combined_score: 0.819339
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048947
+  diatomics:
+    pred_file: models/pet/pet-oam-xl-1.0.0/2026-06-28-diatomics.json.gz
+    hardware: NVIDIA H200
+    run_time_sec: 328.51
+    pbe_wall_dist_mae: 0.5519
+    pbe_energy_mae: 3.797
+    pbe_bond_length_error: 1.266
+    pbe_well_depth_error: 3.646
+    pbe_vib_freq_error: 130.6
+    tortuosity: 1.06
+    energy_diff_flips: 1.717
+    energy_jump: 0.1678
+    force_flips: 1.761
+    force_total_variation: 290.5
+    force_jump: 3.247
+    pbe_force_mae: 2.945
+    pred_file_url: https://figshare.com/files/66104657
