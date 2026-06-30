@@ -142,6 +142,9 @@ unused-ignore-comment = "ignore"
 [dependency-groups]
 dev = ["prek>=0.4.5", "ty>=0.0.54"]
 
+[tool.typos.files]
+extend-exclude = ["*.patch"]
+
 [tool.typos.default]
 locale = "en-us"
 extend-ignore-re = [

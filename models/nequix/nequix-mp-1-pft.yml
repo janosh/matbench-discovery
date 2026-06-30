@@ -221,3 +221,20 @@ metrics:
     combined_score: 0.735621
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048920
+  diatomics:
+    pred_file: models/nequix/nequix-mp-1-pft/2026-06-28-diatomics.json.gz
+    hardware: NVIDIA H200
+    run_time_sec: 57.29
+    pbe_wall_dist_mae: 0.1974
+    pbe_energy_mae: 1.867
+    pbe_bond_length_error: 0.3145
+    pbe_well_depth_error: 1.67
+    pbe_vib_freq_error: 171.9
+    tortuosity: 1.292
+    energy_diff_flips: 2.241
+    energy_jump: 0.5761
+    force_flips: 2.207
+    force_total_variation: 81.45
+    force_jump: 18.66
+    pbe_force_mae: 2.737
+    pred_file_url: https://figshare.com/files/66104672

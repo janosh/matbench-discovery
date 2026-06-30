@@ -187,3 +187,20 @@ metrics:
     combined_score: 0.779716
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048923
+  diatomics:
+    pred_file: models/orb/orb-v2/2026-06-28-diatomics.json.gz
+    hardware: NVIDIA H100 80GB HBM3
+    run_time_sec: 119.93
+    pbe_wall_dist_mae: 0.1554
+    pbe_energy_mae: 2.019
+    pbe_bond_length_error: 0.2363
+    pbe_well_depth_error: 1.476
+    pbe_vib_freq_error: 144.3
+    tortuosity: 1.131
+    energy_diff_flips: 2.891
+    energy_jump: 0.7624
+    force_flips: 0.9674
+    force_total_variation: 101.0
+    force_jump: 0.1877
+    pbe_force_mae: 1.437
+    pred_file_url: https://figshare.com/files/66104648

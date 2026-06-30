@@ -189,3 +189,20 @@ metrics:
     combined_score: 0.807255
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048902
+  diatomics:
+    pred_file: models/matris/matris-10m-oam/2026-06-28-diatomics.json.gz
+    hardware: NVIDIA H200
+    run_time_sec: 783.24
+    pbe_wall_dist_mae: 0.1688
+    pbe_energy_mae: 1.594
+    pbe_bond_length_error: 0.3096
+    pbe_well_depth_error: 1.724
+    pbe_vib_freq_error: 155.0
+    tortuosity: 1.044
+    energy_diff_flips: 2.88
+    energy_jump: 0.3129
+    force_flips: 2.859
+    force_total_variation: 278.6
+    force_jump: 34.42
+    pbe_force_mae: 1.609
+    pred_file_url: https://figshare.com/files/66104630

@@ -349,6 +349,26 @@ describe(`MetricsTable`, () => {
     },
   )
 
+  it(`marks models with excluded metric samples`, async () => {
+    document.body.innerHTML = ``
+    mount(MetricsTable, {
+      target: document.body,
+      props: {
+        model_filter: (model: ModelData) => model.model_name === `AlphaNet-v1-OAM`,
+        col_filter: (col: Label) => col.label === `Model`,
+        show_non_compliant: true,
+      },
+    })
+    await tick()
+
+    const model_cell = doc_query(`td[data-col="Model"]`)
+    const marker = model_cell.querySelector(
+      `span[data-original-title="Diatomics metrics exclude He-He due to exploding errors"]`,
+    )
+    expect(model_cell.textContent).toContain(`AlphaNet-v1-OAM`)
+    expect(marker?.textContent).toBe(`*`)
+  })
+
   it(`updates table when col_filter changes`, () => {
     // Test with only Model and F1 columns
     mount(MetricsTable, {
@@ -982,6 +1002,18 @@ describe(`MetricsTable`, () => {
       `PW1`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `ΔP`, // ALL_METRICS (MD)
       `CMDS`, // ALL_METRICS (MD)
+      `E flips`, // DIATOMICS_METRICS
+      `E jump`, // DIATOMICS_METRICS
+      `F TV`, // DIATOMICS_METRICS
+      `F flips`, // DIATOMICS_METRICS
+      `F jump`, // DIATOMICS_METRICS
+      `PBE ΔDe`, // DIATOMICS_METRICS
+      `PBE Δr wall`, // DIATOMICS_METRICS
+      `PBE Δre`, // DIATOMICS_METRICS
+      `PBE Δω`, // DIATOMICS_METRICS
+      `PBE E MAE`, // DIATOMICS_METRICS
+      `PBE F MAE`, // DIATOMICS_METRICS
+      `τ`, // DIATOMICS_METRICS
       `CPS`, // Added in assemble_row_data
     ])
 
@@ -993,10 +1025,9 @@ describe(`MetricsTable`, () => {
       ),
     )
 
-    // Check if the sets of core texts are equal (ignores order)
-    expect(actual_core_columns).toStrictEqual(expected_core_columns)
-
-    // Optionally, check the number of columns to be sure
+    // The default visible columns should stay intentionally curated: new default
+    // columns must be added to expected_core_columns explicitly.
+    expect(actual_core_columns).toEqual(expected_core_columns)
     expect(header_elements).toHaveLength(expected_core_columns.size)
 
     // Header tooltip content is attached to inner labels so HeatmapTable's
