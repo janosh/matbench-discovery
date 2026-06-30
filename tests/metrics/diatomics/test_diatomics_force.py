@@ -15,9 +15,11 @@ def pred_ref_forces(
 ) -> PredRefForces:
     """Create test force curves for H-H."""
     ref_curves, pred_curves = pred_ref_diatomic_curves
+    ref_curve = ref_curves.homo_nuclear["H"]
+    pred_curve = pred_curves.homo_nuclear["H"]
     return (
-        (ref_curves.distances, ref_curves.homo_nuclear["H"].forces),
-        (pred_curves.distances, pred_curves.homo_nuclear["H"].forces),
+        (ref_curve.distances, ref_curve.forces),
+        (pred_curve.distances, pred_curve.forces),
     )
 
 

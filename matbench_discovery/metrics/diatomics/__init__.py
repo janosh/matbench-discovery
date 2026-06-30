@@ -76,12 +76,16 @@ class DiatomicCurve:
         self.energies = np.asarray(energies)
         self.forces = np.asarray(forces)
 
-        n_distances = len(self.distances)
+        n_dist, n_e = len(self.distances), len(self.energies)
+        if n_e != n_dist:
+            raise ValueError(f"distance and energy counts differ: {n_dist} != {n_e}")
 
         # Handle forces stored as (1, n_distances*n_atoms, 3)
         # instead of (n_distances, n_atoms, 3)
-        if self.forces.shape == (1, 2 * n_distances, 3):
-            self.forces = self.forces.reshape(n_distances, 2, 3)
+        if self.forces.shape == (1, 2 * n_dist, 3):
+            self.forces = self.forces.reshape(n_dist, 2, 3)
+        if (n_f := len(self.forces)) != n_dist:
+            raise ValueError(f"distance and force counts differ: {n_dist} != {n_f}")
 
 
 @dataclass
@@ -112,7 +116,7 @@ class DiatomicCurves:
             key_fn = _homo_key if section.startswith("homo") else str
             return {
                 key_fn(formula): DiatomicCurve(
-                    distances=distances,
+                    distances=curve.get("distances", distances),
                     energies=curve["energies"],
                     forces=curve.get("forces", []),
                 )
@@ -233,7 +237,15 @@ def calc_diatomic_metrics(
             continue
         seps_pred = pred_dists[pred_mask]
         pred_energies = np.asarray(pred_data.energies)[pred_mask]
-        pred_forces = np.asarray(pred_data.forces)[pred_mask]
+        pred_forces_raw = np.asarray(pred_data.forces)
+        if not pred_forces_raw.size:
+            raise ValueError(f"{elem_symbol} diatomic curve is missing forces")
+        if len(pred_forces_raw) != len(pred_dists):
+            raise ValueError(
+                f"{elem_symbol} diatomic force and distance counts differ: "
+                f"{len(pred_forces_raw)} != {len(pred_dists)}"
+            )
+        pred_forces = pred_forces_raw[pred_mask]
 
         # skip curves still non-finite within the window (model instability at scored
         # geometries); they'd fail metric validation and abort the whole model otherwise

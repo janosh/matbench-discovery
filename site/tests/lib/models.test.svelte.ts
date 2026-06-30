@@ -108,10 +108,10 @@ describe(`model_is_compliant`, () => {
     { training_set: [`MPF`], openness: `OSOD`, expected: true },
     { training_set: [`MP Graphs`], openness: `OSOD`, expected: true },
     { training_set: [`MPtrj`, `MP 2022`], openness: `OSOD`, expected: true },
-    // MDR PBE Phonons in MPtrj is compliant (phonon fine-tuning on MPtrj subset)
-    { training_set: [`MDR PBE Phonons in MPtrj`], openness: `OSOD`, expected: true },
+    // MDR-MP PBE ω_q is compliant (phonon fine-tuning on MPtrj subset)
+    { training_set: [`MDR-MP PBE ω_q`], openness: `OSOD`, expected: true },
     {
-      training_set: [`MPtrj`, `MDR PBE Phonons in MPtrj`],
+      training_set: [`MPtrj`, `MDR-MP PBE ω_q`],
       openness: `OSOD`,
       expected: true,
     },
@@ -247,7 +247,7 @@ describe(`COMPLIANT_TRAINING_SETS`, () => {
   it(`matches expected compliant datasets from datasets.yml`, () => {
     // This test ensures Python and TypeScript compute the same compliant sets
     // Both should derive from datasets.yml where compliant: true
-    const expected = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`, `MDR PBE Phonons in MPtrj`]
+    const expected = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`, `MDR-MP PBE ω_q`]
     expect(COMPLIANT_TRAINING_SETS.toSorted()).toStrictEqual(expected.toSorted())
   })
 

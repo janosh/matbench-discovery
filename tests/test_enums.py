@@ -392,6 +392,8 @@ def get_urls_from_dict(
 
 
 TIMEOUT = 30
+TRANSIENT_URL_STATUSES = (429, 500, 502, 503, 504)
+VALID_URL_STATUSES = {200, 202, 403, 429}
 
 
 @pytest.fixture(scope="session")
@@ -410,7 +412,7 @@ def url_session() -> requests.Session:
             max_retries=requests.adapters.Retry(
                 total=3,
                 backoff_factor=1,
-                status_forcelist=(429, 500, 502, 503, 504),
+                status_forcelist=TRANSIENT_URL_STATUSES,
                 raise_on_status=False,
             ),
         ),
@@ -422,9 +424,9 @@ def check_url(session: requests.Session, url: str) -> None:
     """Assert a model URL resolves. The session adapter retries transient errors
     (connection failures, 429, 5xx), so only persistently bad links (e.g. 404) fail.
     """
-    # 200: OK, 202: figshare async, 403: access restricted, 429: rate limited
+    # 200: OK, 202: figshare async, 403: restricted, 429: rate limited after retries
     status = session.head(url, allow_redirects=True, timeout=TIMEOUT).status_code
-    assert status in {200, 202, 403, 429}, f"unexpected {status=} for {url}"
+    assert status in VALID_URL_STATUSES, f"unexpected {status=} for {url}"
 
 
 def test_model_prediction_urls(url_session: requests.Session) -> None:

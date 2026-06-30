@@ -194,6 +194,9 @@ def test_calc_diatomic_curve_prior_results() -> None:
         ("--model emt --max-z 0", None),
         ("--model emt --n-points 1", None),
         ("--model mace-mp-0", "--model mace_mp_0"),
+        # --print-cmd must forward computation params, not just --model (else a copied
+        # command silently runs with defaults)
+        ("--model mace-mp-0 --min-dist 0.2", "--min-dist 0.2"),
     ],
 )
 def test_run_diatomics_cli_validation(

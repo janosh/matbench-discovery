@@ -114,6 +114,12 @@ describe(`format_train_set`, () => {
     expect(result).toContain(`materials in training set`)
   })
 
+  it(`renders _x dataset-key suffixes as subscripts`, () => {
+    const result = format_train_set([`MDR-MP PBE ω_q`], {} as ModelData)
+    expect(result).toContain(`ω<sub>q</sub>`)
+    expect(result).not.toContain(`ω_q`)
+  })
+
   it(`formats multiple training sets correctly`, () => {
     const mptrj = DATASETS[mptrj_key]
     const mock_model = {
@@ -264,41 +270,19 @@ describe(`calculate_cps`, () => {
     expect(score).toBeNull()
   })
 
-  it(`calculates scores correctly when missing metrics have zero weights`, () => {
-    // Test with only F1 available in F1-only config
-    const f1_only_config = create_single_metric_config(`F1`)
-    const f1_only_score = calculate_cps(
-      0.8, // good F1
-      undefined, // missing RMSD (zero weight)
-      undefined, // missing kappa (zero weight)
-      f1_only_config,
-    )
-    // Should be equal to the F1 value
-    expect(f1_only_score).toBeCloseTo(0.8, 4)
-
-    // Test with only RMSD available in RMSD-only config
-    const rmsd_only_config = create_single_metric_config(`RMSD`)
-    const rmsd_only_score = calculate_cps(
-      undefined, // missing F1 (zero weight)
-      0.005, // good RMSD
-      undefined, // missing kappa (zero weight)
-      rmsd_only_config,
-    )
-    // RMSD is inverted and normalized to [0,1]
-    // With baseline of 0.15, a value of 0.005 should be ~0.97 (0.005 is excellent)
-    expect(rmsd_only_score).toBeCloseTo(0.97, 2)
-
-    // Test with only kappa available in kappa-only config
-    const kappa_only_config = create_single_metric_config(`κ_SRME`)
-    const kappa_only_score = calculate_cps(
-      undefined, // missing F1 (zero weight)
-      undefined, // missing RMSD (zero weight)
-      0.3, // good kappa
-      kappa_only_config,
-    )
-    // Kappa normalized from 0.3 to 0.85
-    expect(kappa_only_score).toBeCloseTo(0.85, 2)
-  })
+  // a single-metric config scores purely from its one available metric (the others are
+  // zero-weight); RMSD/κ_SRME are inverted+normalized so their scores are approximate
+  it.each([
+    { metric: `F1`, vals: [0.8, undefined, undefined], expected: 0.8, prec: 4 },
+    { metric: `RMSD`, vals: [undefined, 0.005, undefined], expected: 0.97, prec: 2 },
+    { metric: `κ_SRME`, vals: [undefined, undefined, 0.3], expected: 0.85, prec: 2 },
+  ])(
+    `scores a $metric-only config from its single available metric`,
+    ({ metric, vals: [f1, rmsd, kappa], expected, prec }) => {
+      const config = create_single_metric_config(metric)
+      expect(calculate_cps(f1, rmsd, kappa, config)).toBeCloseTo(expected, prec)
+    },
+  )
 
   it(`returns null when weighted metrics are missing`, () => {
     // Create a config with non-zero weights for F1 only

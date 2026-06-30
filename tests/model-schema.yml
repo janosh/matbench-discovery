@@ -7,6 +7,17 @@ definitions:
     format: uri
     pattern: '^https?://'
 
+  pred_file_requires_url:
+    if:
+      properties:
+        pred_file: { type: string }
+      required: [pred_file]
+    then:
+      required: [pred_file_url]
+      properties:
+        pred_file_url:
+          $ref: '#/definitions/http_url'
+
   # Shared schema for prediction files
   pred_files:
     type: object
@@ -18,15 +29,7 @@ definitions:
         type: [string, 'null']
         $ref: '#/definitions/http_url'
     allOf:
-      - if:
-          properties:
-            pred_file: { type: string }
-          required: [pred_file]
-        then:
-          required: [pred_file_url]
-          properties:
-            pred_file_url:
-              $ref: '#/definitions/http_url'
+      - $ref: '#/definitions/pred_file_requires_url'
 
   # Define a shared schema for authors and trained_by
   person:
@@ -75,15 +78,7 @@ definitions:
           κ_SRE:
             type: number
         allOf:
-          - if:
-              properties:
-                pred_file: { type: string }
-              required: [pred_file]
-            then:
-              required: [pred_file_url]
-              properties:
-                pred_file_url:
-                  $ref: '#/definitions/http_url'
+          - $ref: '#/definitions/pred_file_requires_url'
         required: ['κ_SRME']
 
   GeoOptMetrics:
@@ -127,15 +122,7 @@ definitions:
           - n_structures
       symprec=1e-2: *symprec_metrics
     allOf:
-      - if:
-          properties:
-            pred_file: { type: string }
-          required: [pred_file]
-        then:
-          required: [pred_file_url]
-          properties:
-            pred_file_url:
-              $ref: '#/definitions/http_url'
+      - $ref: '#/definitions/pred_file_requires_url'
 
   DiscoveryMetricsSet:
     type: object
@@ -213,15 +200,7 @@ definitions:
       unique_prototypes:
         $ref: '#/definitions/DiscoveryMetricsSet'
     allOf:
-      - if:
-          properties:
-            pred_file: { type: string }
-          required: [pred_file]
-        then:
-          required: [pred_file_url]
-          properties:
-            pred_file_url:
-              $ref: '#/definitions/http_url'
+      - $ref: '#/definitions/pred_file_requires_url'
 
   DiatomicsMetrics:
     type: object
@@ -264,6 +243,8 @@ definitions:
         type: number
       force_jump:
         type: number
+    allOf:
+      - $ref: '#/definitions/pred_file_requires_url'
 
   MdMetrics:
     type: object
@@ -297,15 +278,7 @@ definitions:
       n_systems:
         type: number
     allOf:
-      - if:
-          properties:
-            pred_file: { type: string }
-          required: [pred_file]
-        then:
-          required: [pred_file_url]
-          properties:
-            pred_file_url:
-              $ref: '#/definitions/http_url'
+      - $ref: '#/definitions/pred_file_requires_url'
 
   # Define license types from dataset schema
   license_enum:
@@ -428,7 +401,7 @@ properties:
         - MatPES r2SCAN
         - sAlex
         - OpenLAM
-        - MDR PBE Phonons in MPtrj
+        - MDR-MP PBE ω_q
         - COSMOSDataset
   hyperparams:
     type: object

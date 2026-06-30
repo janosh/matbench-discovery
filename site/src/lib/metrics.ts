@@ -139,8 +139,11 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
     tooltip.push(`${name}: ${format_num(n_materials, `,`)} materials${structures_note}`)
   }
 
+  // render `_x` dataset-key suffixes as subscripts, e.g. ω_q -> ω<sub>q</sub>
+  const sub = (key: string) =>
+    key.replaceAll(/_(?<subscript>\w+)/g, `<sub>$<subscript></sub>`)
   const dataset_links = Object.entries(data_urls)
-    .map(([key, href]) => `<a href="${href}">${key}</a>`)
+    .map(([key, href]) => `<a href="${href}">${sub(key)}</a>`)
     .join(`+`)
   const new_line = `&#013;` // Line break that works in title attribute
   const dataset_tooltip =

@@ -54,6 +54,7 @@ describe(`Landing Page`, () => {
       `Phonons`,
       `Geo Opt`,
       `MD`,
+      `Diatomics`,
     ])
     expect(button_texts(`Full Test Set`)).toStrictEqual([
       `Full Test Set`,
@@ -68,6 +69,7 @@ describe(`Landing Page`, () => {
     [`Phonons`, `SRE`], // κ_SRE (matches the phonons task page)
     [`Geo Opt`, `Σ`], // symmetry metrics (Σ= / Σ↓ / Σ↑)
     [`MD`, `RDF`], // RDF err
+    [`Diatomics`, `E jump`],
   ])(`%s preset shows its metrics + headline cols, hides DAF`, async (preset, marker) => {
     expect(header_text()).toContain(`DAF`) // Discovery is the default preset
     expect(header_text()).not.toContain(marker) // preset-specific col hidden by default
