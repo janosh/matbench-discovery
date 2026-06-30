@@ -111,6 +111,9 @@ def _run_to_atomic_output(cmd_prefix: Sequence[str], dest: str) -> None:
             os.remove(tmp_dest)
         try:
             subprocess.run([*cmd_prefix, tmp_dest], check=True)
+            if not _is_non_empty_file(tmp_dest):
+                command = " ".join(cmd_prefix)
+                raise RuntimeError(f"{command=} wrote no output to {tmp_dest}")
             os.replace(tmp_dest, dest)
         finally:
             if os.path.isfile(tmp_dest):
@@ -468,6 +471,12 @@ MATRIS_DEPS = (MATRIS_PKG, "torch==2.6.0", "numpy<3")
 # Nequix (JAX MLIP): jax[cuda12] for GPU; the .nqx checkpoint is staged + loaded via
 # model_path. use_kernel=False in the factory avoids the openequivariance build step.
 NEQUIX_DEPS = ("nequix", "jax[cuda12]")
+TACE_DEPS = (
+    "tace @ git+https://github.com/xvzemin/tace",
+    "torch==2.9.1",
+    "torch-geometric==2.7.0",
+    "pytorch-lightning==2.5.5",
+)
 # EquFlash (Samsung GGNN): UCalculator is ASE-compatible. Heavy env pinned to the
 # discovery/kappa scripts: torch 2.9.1+cu126 from pytorch's index (EQUFLASH_INDEX), PyG
 # extensions from the matching cu126 wheel page (EQUFLASH_LINKS), cuequivariance, and
@@ -624,15 +633,8 @@ CALCULATORS: dict[str, CalcSpec] = {
     ),
     # TACE: install from the model's github repo (PyPI 'tace' is a different/stale
     # package that can't instantiate the checkpoint config); pins per its YAML
-    "tace_oam_l": CalcSpec(
-        _tace("tace_oam_l"),
-        deps=(
-            "tace @ git+https://github.com/xvzemin/tace",
-            "torch==2.9.1",
-            "torch-geometric==2.7.0",
-            "pytorch-lightning==2.5.5",
-        ),
-    ),
+    "tace_oam_l": CalcSpec(_tace("tace_oam_l"), deps=TACE_DEPS),
+    "tace_oam_rra_preview": CalcSpec(_tace("tace_oam_rra_preview"), deps=TACE_DEPS),
     # deepmd DPA (figshare frozen .pth checkpoints, DP() loads by suffix).
     # NOTE: dpa_4_0_pro_mptrj omitted - its figshare file is a training checkpoint
     # (state dict), not a frozen TorchScript model; needs `dp --pt freeze` first

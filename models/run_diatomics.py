@@ -30,8 +30,10 @@ import os
 import platform
 import shlex
 import time
+from glob import glob
 
 import numpy as np
+from ase.data import chemical_symbols
 
 from matbench_discovery import today
 from matbench_discovery.calculators import (
@@ -144,6 +146,9 @@ def main() -> int:
         action="store_true",
         help="Compute + write metrics to model YAML",
     )
+    parser.add_argument(
+        "--merge-shards", action="store_true", help="Merge Slurm shards"
+    )
     args = parser.parse_args()
 
     if args.list_models:
@@ -164,26 +169,16 @@ def main() -> int:
         parser.error("--n-points must be >= 2 (a curve needs at least 2 points)")
     if args.write_yaml and args.dry_run:
         parser.error("--write-yaml is incompatible with --dry-run")
+    slurm_task_id = os.getenv("SLURM_ARRAY_TASK_ID")
+    if args.write_yaml and slurm_task_id and not args.merge_shards:
+        parser.error("--write-yaml is only supported by the --merge-shards task")
 
     if args.print_cmd:
-        run_args = [
-            "--model",
-            args.model,
-            "--dtype",
-            args.dtype,
-            "--min-dist",
-            str(args.min_dist),
-            "--max-dist",
-            str(args.max_dist),
-            "--n-points",
-            str(args.n_points),
-            "--max-z",
-            str(args.max_z),
-        ]
-        if args.out_dir:
-            run_args += ["--out-dir", args.out_dir]
+        run_args = ["--model", args.model]
         if args.dry_run:
             run_args.append("--dry-run")
+        if args.merge_shards:
+            run_args.append("--merge-shards")
         if args.write_yaml:
             run_args.append("--write-yaml")
         cmd = CALCULATORS[args.model].uv_run_cmd("models/run_diatomics.py", *run_args)
@@ -202,59 +197,92 @@ def main() -> int:
     out_dir = args.out_dir or f"{module_dir}/{model_dir}"
 
     max_z = 3 if args.dry_run else args.max_z
+    z_values = (
+        [int(slurm_task_id)]
+        if slurm_task_id and not args.merge_shards
+        else range(1, max_z + 1)
+    )
     n_points = 10 if args.dry_run else args.n_points
     # geometric spacing densifies the short-range repulsive wall, where unphysical
     # wiggles and discontinuities are most diagnostic (matches the MACE-MP convention)
     distances = np.geomspace(args.min_dist, args.max_dist, n_points)
-    homo_pairs = [(z, z) for z in range(1, max_z + 1)]
+    homo_pairs = [(z_value, z_value) for z_value in z_values]
+    shard_dir = f"{out_dir}/{today}-diatomics-shards"
 
-    start_time = time.perf_counter()
-    calculator = load_calculator(args.model, dtype=args.dtype)
-    hardware = detect_hardware()  # after load: the backend's GPU is now initialized
-    curves: DiatomicResults = {}
-    print(
-        f"\nPredicting {len(homo_pairs)} diatomic curves for {args.model} on {hardware}"
-    )
-    calc_diatomic_curve(
-        pairs=homo_pairs,
-        calculator=calculator,
-        model_name=args.model,
-        distances=distances,
-        results=curves,
-    )
-    run_time_sec = round(time.perf_counter() - start_time, 2)
+    if args.merge_shards:
+        curves: DiatomicResults = {}
+        for json_path in sorted(glob(f"{shard_dir}/*-diatomics.json.gz")):
+            with gzip.open(json_path, mode="rt") as file:
+                curves.update(json.load(file).get(homo_nuc, {}))
 
-    # drop curves with empty or non-finite energies/forces: NaN/Infinity are not valid
-    # JSON (downstream JS parsers reject them), and these curves are skipped by the
-    # metrics anyway, so the saved file matches what's actually scored
-    def is_valid_curve(curve: dict[str, list[float | list[list[float]]]]) -> bool:
-        """Return whether a curve has finite energy and force samples."""
-        return bool(
-            curve.get("energies")
-            and curve.get("forces")
-            and np.isfinite(curve["energies"]).all()
-            and np.isfinite(curve["forces"]).all()
+        missing_formulas = {
+            f"{chemical_symbols[z]}-{chemical_symbols[z]}" for z in z_values
+        }
+        missing_formulas -= set(curves)
+        missing_formulas.update(DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()))
+        run_metadata: dict[str, str | float | list[str]] = {
+            "excluded_formulas": sorted(missing_formulas)
+        }
+        json_path = f"{out_dir}/{today}-diatomics.json.gz"
+    else:
+        start_time = time.perf_counter()
+        calculator = load_calculator(args.model, dtype=args.dtype)
+        hardware = detect_hardware()  # after load: the backend's GPU is now initialized
+        curves = {}
+        print(
+            f"\nPredicting {len(homo_pairs)} diatomic curves for {args.model} on "
+            f"{hardware}"
         )
+        calc_diatomic_curve(
+            pairs=homo_pairs,
+            calculator=calculator,
+            model_name=args.model,
+            distances=distances,
+            results=curves,
+        )
+        run_time_sec = round(time.perf_counter() - start_time, 2)
 
-    invalid_formulas = sorted(
-        formula for formula, curve in curves.items() if not is_valid_curve(curve)
-    )
-    curves = {
-        formula: curve for formula, curve in curves.items() if is_valid_curve(curve)
-    }
+        # drop curves with empty or non-finite energies/forces: NaN/Infinity are not
+        # valid JSON (downstream JS parsers reject them), and these curves are skipped
+        # by the metrics anyway, so the saved file matches what's actually scored
+        def is_valid_curve(curve: dict[str, list[float | list[list[float]]]]) -> bool:
+            """Return whether a curve has finite energy and force samples."""
+            return bool(
+                curve.get("energies")
+                and curve.get("forces")
+                and np.isfinite(curve["energies"]).all()
+                and np.isfinite(curve["forces"]).all()
+            )
+
+        invalid_formulas = sorted(
+            formula for formula, curve in curves.items() if not is_valid_curve(curve)
+        )
+        curves = {
+            formula: curve for formula, curve in curves.items() if is_valid_curve(curve)
+        }
+
+        run_metadata = {
+            "hardware": hardware,
+            "run_time_sec": run_time_sec,
+            "excluded_formulas": sorted(
+                {*DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()), *invalid_formulas}
+            ),
+        }
+        if slurm_task_id:
+            json_path = f"{shard_dir}/Z{z_values[0]:03d}-diatomics.json.gz"
+        else:
+            json_path = f"{out_dir}/{today}-diatomics.json.gz"
 
     # flat on-disk schema read by DiatomicCurves.from_dict / the site's diatomics parser
     results = {homo_nuc: curves, "hetero-nuclear": {}, "distances": distances.tolist()}
-
-    os.makedirs(out_dir, exist_ok=True)
-    json_path = f"{out_dir}/{today}-diatomics.json.gz"
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
     with gzip.open(json_path, mode="wt") as file:
         # allow_nan=False guards against writing invalid JSON (NaN) if a non-finite
         # value slips through the filter above
         json.dump(results, file, allow_nan=False, default=lambda arr: arr.tolist())
-    n_curves = len(curves)
-    print(f"Wrote {n_curves}/{len(homo_pairs)} diatomic curves to {json_path}")
-    print(f"Ran on {hardware} in {run_time_sec:.1f} s")
+    print(f"Wrote {len(curves)}/{len(homo_pairs)} diatomic curves to {json_path}")
+    if not args.merge_shards:
+        print(f"Ran on {hardware} in {run_time_sec:.1f} s")
 
     if args.write_yaml:
         if model is None:  # debug models like emt have no YAML to write to
@@ -270,14 +298,6 @@ def main() -> int:
             interpolate=200,
         )
         metrics = drop_metric_exclusions(args.model, metrics)
-        excluded_formulas = sorted(
-            {*DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()), *invalid_formulas}
-        )
-        run_metadata: dict[str, str | float | list[str]] = {
-            "hardware": hardware,
-            "run_time_sec": run_time_sec,
-            "excluded_formulas": excluded_formulas,
-        }
         mean_metrics = diatomics.write_metrics_to_yaml(
             model,
             metrics,

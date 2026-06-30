@@ -112,7 +112,7 @@ class DiatomicCurves:
             key_fn = _homo_key if section.startswith("homo") else str
             return {
                 key_fn(formula): DiatomicCurve(
-                    distances=distances,
+                    distances=curve.get("distances", distances),
                     energies=curve["energies"],
                     forces=curve.get("forces", []),
                 )

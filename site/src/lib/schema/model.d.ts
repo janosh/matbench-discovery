@@ -68,7 +68,7 @@ export type ModelMetadata = Record<string, unknown> & {
     | 'MatPES r2SCAN'
     | 'sAlex'
     | 'OpenLAM'
-    | 'MDR PBE Phonons in MPtrj'
+    | 'MDR-MP PBE ω_q'
     | 'COSMOSDataset'
   )[]
   hyperparams?: {
@@ -161,7 +161,7 @@ export type TargetType =
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "GeoOptMetrics".
  */
-export type GeoOptMetrics = Record<string, unknown> & {
+export type GeoOptMetrics = PredFileRequiresUrl & {
   struct_col?: string
   pred_file?: string | null
   pred_file_url?: string
@@ -190,7 +190,7 @@ export type GeoOptMetrics = Record<string, unknown> & {
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "DiscoveryMetrics".
  */
-export type DiscoveryMetrics = Record<string, unknown> & {
+export type DiscoveryMetrics = PredFileRequiresUrl & {
   pred_col: string
   pred_file?: string | null
   pred_file_url?: string
@@ -200,9 +200,32 @@ export type DiscoveryMetrics = Record<string, unknown> & {
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "DiatomicsMetrics".
+ */
+export type DiatomicsMetrics = PredFileRequiresUrl & {
+  pred_file?: string | null
+  pred_file_url?: string
+  hardware?: string
+  run_time_sec?: number
+  excluded_formulas?: string[]
+  tortuosity?: number
+  energy_diff_flips?: number
+  energy_jump?: number
+  pbe_wall_dist_mae?: number
+  pbe_energy_mae?: number
+  pbe_bond_length_error?: number
+  pbe_well_depth_error?: number
+  pbe_force_mae?: number
+  pbe_vib_freq_error?: number
+  force_flips?: number
+  force_total_variation?: number
+  force_jump?: number
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "MdMetrics".
  */
-export type MdMetrics = Record<string, unknown> & {
+export type MdMetrics = PredFileRequiresUrl & {
   pred_file?: string | null
   pred_file_url?: string
   energy_rmse?: number
@@ -225,7 +248,7 @@ export type HttpUrl = string
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "pred_files".
  */
-export type PredFiles = Record<string, unknown>
+export type PredFiles = PredFileRequiresUrl
 /**
  * License type:
  * - MIT: Massachusetts Institute of Technology
@@ -273,8 +296,13 @@ export interface Person {
  * via the `definition` "PhononMetrics".
  */
 export interface PhononMetrics {
-  kappa_103?: Record<string, unknown>
+  kappa_103?: PredFileRequiresUrl
 }
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "pred_file_requires_url".
+ */
+export type PredFileRequiresUrl = Record<string, unknown>
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "DiscoveryMetricsSet".
@@ -297,27 +325,4 @@ export interface DiscoveryMetricsSet {
   RMSE: number
   R2: number
   missing_preds: number
-}
-/**
- * This interface was referenced by `undefined`'s JSON-Schema
- * via the `definition` "DiatomicsMetrics".
- */
-export interface DiatomicsMetrics {
-  pred_file?: string | null
-  pred_file_url?: string
-  hardware?: string
-  run_time_sec?: number
-  excluded_formulas?: string[]
-  tortuosity?: number
-  energy_diff_flips?: number
-  energy_jump?: number
-  pbe_wall_dist_mae?: number
-  pbe_energy_mae?: number
-  pbe_bond_length_error?: number
-  pbe_well_depth_error?: number
-  pbe_force_mae?: number
-  pbe_vib_freq_error?: number
-  force_flips?: number
-  force_total_variation?: number
-  force_jump?: number
 }

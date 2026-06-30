@@ -59,8 +59,12 @@ def test_diatomic_classes() -> None:
 
     data = {
         "distances": distances,
-        "homo-nuclear": {"H": {"energies": energies, "forces": forces}},
-        "hetero-nuclear": {"H-He": {"energies": energies, "forces": forces}},
+        "homo-nuclear": {
+            "H": {"distances": [0.8, 1.6], "energies": energies, "forces": forces}
+        },
+        "hetero-nuclear": {
+            "H-He": {"distances": [0.9, 1.8], "energies": energies, "forces": forces}
+        },
     }
     curves = DiatomicCurves.from_dict(data)
     assert "homo-nuclear" in data
@@ -68,6 +72,8 @@ def test_diatomic_classes() -> None:
     h_he_curve = curves.hetero_nuclear.get("H-He")
     assert isinstance(h_he_curve, DiatomicCurve)
     np.testing.assert_array_equal(curves.distances, distances)
+    np.testing.assert_array_equal(curves.homo_nuclear["H"].distances, [0.8, 1.6])
+    np.testing.assert_array_equal(h_he_curve.distances, [0.9, 1.8])
     np.testing.assert_array_equal(curves.homo_nuclear["H"].energies, energies)
     np.testing.assert_array_equal(h_he_curve.energies, energies)
 

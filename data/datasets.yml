@@ -680,7 +680,7 @@ MDR Phonon PBE:
     introduced in the paper "Universal Machine Learning Interatomic Potentials
     are Ready for Phonons".
 
-MDR PBE Phonons in MPtrj:
+MDR-MP PBE ω_q:
   name: MDR PBE Phonons in MPtrj
   contains: [MDR Phonon PBE]
   url: https://figshare.com/articles/dataset/Preprocessed_data_for_Phonon_Fine-tuning_PFT_/31049869
