@@ -34,7 +34,7 @@ def test_energy_metrics_on_fixture(
     """All single-curve energy metrics return non-negative floats on fixture data."""
     _ref_curves, pred_curves = pred_ref_diatomic_curves
     pred_curve = pred_curves.homo_nuclear["H"]
-    seps_pred, energies_pred = pred_curves.distances, pred_curve.energies
+    seps_pred, energies_pred = pred_curve.distances, pred_curve.energies
     result = metric_func(seps_pred, energies_pred)
     assert isinstance(result, float)
     assert result >= 0

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { replaceState } from '$app/navigation'
+  import { afterNavigate, replaceState } from '$app/navigation'
   import { page } from '$app/state'
   import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
   import {
@@ -10,6 +10,7 @@
   } from '$lib/plot'
   import {
     ALL_METRICS,
+    DIATOMICS_METRICS,
     DISCOVERY_METRICS,
     discovery_set_toggle_options,
     GEO_OPT_SYMMETRY_METRICS,
@@ -31,6 +32,7 @@
   import KappaNote from '$routes/tasks/phonons/kappa-note.md'
   import { format_num, Icon } from 'matterviz'
   import { onMount } from 'svelte'
+  import { slide } from 'svelte/transition'
   import { tooltip } from 'svelte-multiselect/attachments'
   import type { Snapshot } from './$types'
   import github_activity_data from './models/mlip-github-activity.json'
@@ -53,6 +55,7 @@
     Phonons: [ALL_METRICS.κ_SRE],
     'Geo Opt': Object.values(GEO_OPT_SYMMETRY_METRICS),
     MD: Object.values(MD_METRICS),
+    Diatomics: Object.values(DIATOMICS_METRICS),
   }
   type ColPreset = keyof typeof col_presets
   const col_preset_names = Object.keys(col_presets) as ColPreset[]
@@ -63,6 +66,7 @@
     Phonons: { column: ALL_METRICS.κ_SRME.key, dir: `asc` },
     'Geo Opt': { column: ALL_METRICS.RMSD.key, dir: `asc` },
     MD: { column: MD_METRICS.md_combined_score.key, dir: `desc` },
+    Diatomics: { column: DIATOMICS_METRICS.energy_jump.key, dir: `asc` },
   }
   let show_non_compliant = $state(true)
   let show_energy_only = $state(false)
@@ -142,6 +146,12 @@
     show_compliant = params.get(`compliant`) !== `0`
     col_preset = next_preset
     previous_col_preset = next_preset
+  })
+
+  // gate URL writes on afterNavigate (fires after the router is initialized, both on
+  // hydration and later navigations) so the sync $effect's replaceState never runs
+  // during the initial mount flush, which throws "before router is initialized"
+  afterNavigate(() => {
     url_ready = true
   })
 
@@ -230,7 +240,7 @@
   <!-- the test-set selector only affects discovery metrics, so only show it in the
   Discovery preset where those columns are visible -->
   {#if col_preset === `Discovery`}
-    <div class="toggle-row compact">
+    <div class="toggle-row compact" in:slide={{ duration: 250 }}>
       <span>Test set:</span>
       <SelectToggle
         bind:selected={discovery_set}
@@ -405,15 +415,7 @@ lives in MdNote and also renders on the /tasks/md page -->
     align-items: center;
     justify-content: center;
     gap: 8pt;
-  }
-  div.toggle-row > span {
-    font-weight: 300;
-    letter-spacing: 0.03em;
-    opacity: 0.7;
-  }
-  /* slimmer secondary test-set selector (overrides SelectToggle's 4px block padding) */
-  div.toggle-row.compact :global(.selection-toggle button) {
-    padding-block: 1px;
+    font-size: smaller;
   }
   div.downloads {
     display: flex;
