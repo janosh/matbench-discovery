@@ -217,6 +217,8 @@ def test_write_metrics_to_yaml(
     diatomics_model: tuple[Model, Path], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test writing diatomic metrics to YAML file."""
+    from matbench_discovery import ROOT
+
     model, yaml_path = diatomics_model
     pred_file = "models/mace/mace-mp-0/2025-02-13-test-diatomics.json.gz"
     pred_file_url = "https://figshare.com/files/fake-url-00000"
@@ -241,6 +243,13 @@ def test_write_metrics_to_yaml(
     assert diatomics.write_metrics_to_yaml(model, {}, pred_file_path=new_pred_file) == {
         "pred_file": new_pred_file
     }
+    assert diatomics.write_metrics_to_yaml(
+        model, {}, pred_file_path=f"{ROOT}/{new_pred_file}"
+    ) == {"pred_file": new_pred_file}
+    with pytest.raises(ValueError, match="must be inside repo root"):
+        diatomics.write_metrics_to_yaml(
+            model, {}, pred_file_path=f"{yaml_path.parent}/outside.json.gz"
+        )
 
     set_diatomics_metrics({"pred_file": pred_file, "pred_file_url": pred_file_url})
     metrics_by_element: dict[str, dict[str, float]] = {

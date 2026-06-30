@@ -15,6 +15,7 @@ import numpy as np
 from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
 from numpy.typing import ArrayLike
 
+from matbench_discovery import repo_relative_path
 from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics.diatomics.energy import (
@@ -188,7 +189,6 @@ def calc_diatomic_metrics(
         MbdKey(key): kwargs.copy() for key, kwargs in (metrics or {}).items()
     }
     for key in requested_metrics & {
-        MbdKey.force_mae,
         MbdKey.pbe_energy_mae,
         MbdKey.pbe_force_mae,
     }:
@@ -243,11 +243,6 @@ def calc_diatomic_metrics(
             seps_ref = ref_dists[ref_mask]
             ref_energies = np.asarray(ref_data.energies)[ref_mask]
             ref_forces = np.asarray(ref_data.forces)
-            if not np.array_equal(seps_pred, seps_ref) and not interpolate:
-                raise ValueError(
-                    f"Reference and predicted distances must be same when "
-                    f"{interpolate=}\n{seps_pred=}, {seps_ref=}"
-                )
             energy_pair_args = (seps_ref, ref_energies, seps_pred, pred_energies)
             metric_calls[:0] = [
                 (metric_key, calc_fn, energy_pair_args)
@@ -267,9 +262,8 @@ def calc_diatomic_metrics(
             if ref_forces.size:
                 ref_forces = ref_forces[ref_mask]
                 force_pair_args = (seps_ref, ref_forces, seps_pred, pred_forces)
-                metric_calls.extend(
-                    (metric_key, calc_force_mae, force_pair_args)
-                    for metric_key in (MbdKey.force_mae, MbdKey.pbe_force_mae)
+                metric_calls.append(
+                    (MbdKey.pbe_force_mae, calc_force_mae, force_pair_args)
                 )
 
         results[elem_symbol] = {
@@ -293,8 +287,10 @@ def write_metrics_to_yaml(
         model (Model): Model to write metrics for.
         metrics (dict[str, dict[str, float]]): Map of element symbols to dicts of
             metric values.
-        pred_file_path (str | None): If given, record this (repo-relative) path as the
-            metrics.diatomics.pred_file. Otherwise an existing pred_file is preserved.
+        pred_file_path (str | None): If given, record this path as
+            metrics.diatomics.pred_file. Absolute paths must be inside the repo and are
+            converted to repo-relative paths. Otherwise an existing pred_file is
+            preserved.
         run_metadata (dict[str, str | float] | None): Extra non-metric fields describing
             the prediction run (e.g. hardware, run_time_sec). Recorded ahead of the
             metric values; a recompute without run_metadata preserves existing values.
@@ -303,8 +299,6 @@ def write_metrics_to_yaml(
         dict[str, DiatomicsYamlValue]: The metrics.diatomics block written (file refs
             and run metadata first, then metric means across all elements).
     """
-    from matbench_discovery import ROOT
-
     # mean of each metric over the elements that have a finite value: skips elements
     # whose windowed curve is degenerate (e.g. tortuosity is NaN for a flat curve), and
     # drops a metric entirely if no element has a finite value rather than writing an
@@ -327,11 +321,9 @@ def write_metrics_to_yaml(
     existing = existing if isinstance(existing, dict) else {}
     run_metadata = run_metadata or {}
     block: dict[str, DiatomicsYamlValue] = {}
-    pred_file = (
-        pred_file_path.removeprefix(f"{ROOT}/")
-        if pred_file_path is not None
-        else existing.get("pred_file")
-    )
+    pred_file = existing.get("pred_file")
+    if pred_file_path is not None:
+        pred_file = repo_relative_path(pred_file_path)
     if pred_file is not None:
         block["pred_file"] = pred_file
 
