@@ -80,6 +80,9 @@ def test_diatomic_classes() -> None:
     ]:
         with pytest.raises(ValueError, match=message):
             DiatomicCurve(**(bad_curve_args | override))
+    data["homo-nuclear"]["H"]["distances"] = [0.5, 1.5]
+    with pytest.raises(ValueError, match="curve distances differ"):
+        DiatomicCurves.from_dict(data)
 
 
 def test_load_dft_reference_curves(tmp_path: Path) -> None:
