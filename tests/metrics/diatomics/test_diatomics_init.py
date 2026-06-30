@@ -44,9 +44,9 @@ def diatomics_model(
 
 def test_diatomic_classes() -> None:
     """Test DiatomicCurve and DiatomicCurves initialization and validation."""
-    distances = np.logspace(1, -1, 40).tolist()
-    energies = np_rng.random(len(distances)).tolist()
-    forces = np_rng.random((len(distances), 2, 3)).tolist()
+    distances = [1.0, 2.0]
+    energies = [0.1, 0.2]
+    forces = [[[0.1, 0, 0], [-0.1, 0, 0]], [[0.0, 0, 0], [0.0, 0, 0]]]
 
     curve = DiatomicCurve(distances=distances, energies=energies, forces=forces)
     assert {*map(type, (curve.distances, curve.energies, curve.forces))} == {np.ndarray}
@@ -59,12 +59,8 @@ def test_diatomic_classes() -> None:
 
     data = {
         "distances": distances,
-        "homo-nuclear": {
-            "H": {"distances": [0.8, 1.6], "energies": energies, "forces": forces}
-        },
-        "hetero-nuclear": {
-            "H-He": {"distances": [0.9, 1.8], "energies": energies, "forces": forces}
-        },
+        "homo-nuclear": {"H": {"energies": energies, "forces": forces}},
+        "hetero-nuclear": {"H-He": {"energies": energies, "forces": forces}},
     }
     curves = DiatomicCurves.from_dict(data)
     assert "homo-nuclear" in data
@@ -72,10 +68,18 @@ def test_diatomic_classes() -> None:
     h_he_curve = curves.hetero_nuclear.get("H-He")
     assert isinstance(h_he_curve, DiatomicCurve)
     np.testing.assert_array_equal(curves.distances, distances)
-    np.testing.assert_array_equal(curves.homo_nuclear["H"].distances, [0.8, 1.6])
-    np.testing.assert_array_equal(h_he_curve.distances, [0.9, 1.8])
+    np.testing.assert_array_equal(curves.homo_nuclear["H"].distances, distances)
+    np.testing.assert_array_equal(h_he_curve.distances, distances)
     np.testing.assert_array_equal(curves.homo_nuclear["H"].energies, energies)
     np.testing.assert_array_equal(h_he_curve.energies, energies)
+
+    bad_curve_args = {"distances": distances, "energies": energies, "forces": forces}
+    for override, message in [
+        ({"energies": [0]}, "distance and energy counts differ"),
+        ({"forces": forces[:1]}, "distance and force counts differ"),
+    ]:
+        with pytest.raises(ValueError, match=message):
+            DiatomicCurve(**(bad_curve_args | override))
 
 
 def test_load_dft_reference_curves(tmp_path: Path) -> None:
@@ -218,6 +222,16 @@ def test_diatomic_curve_metrics(
         MbdKey.energy_diff_flips,
         MbdKey.pbe_energy_mae,
     }
+
+    # energy-only prediction files are invalid benchmark data
+    distances = np.linspace(0.3, 3.5, 8)
+    energies = (distances - 1.2) ** 2
+    raw_dict = {
+        "distances": distances.tolist(),
+        "homo-nuclear": {"H-H": {"energies": energies.tolist()}},
+    }
+    with pytest.raises(ValueError, match="distance and force counts differ"):
+        DiatomicCurves.from_dict(raw_dict)
 
     # Test with custom parameters
     custom_metrics: dict[str, dict[str, object]] = {

@@ -198,11 +198,15 @@ def main() -> int:
     out_dir = args.out_dir or f"{module_dir}/{model_dir}"
 
     max_z = 3 if args.dry_run else args.max_z
-    z_values = (
-        [int(slurm_task_id)]
-        if slurm_task_id and not args.merge_shards
-        else range(1, max_z + 1)
-    )
+    if slurm_task_id and not args.merge_shards:
+        slurm_task_idx = int(slurm_task_id)
+        if not 0 <= slurm_task_idx < max_z:
+            parser.error(
+                f"SLURM_ARRAY_TASK_ID must be in [0, {max_z - 1}] for {max_z=}"
+            )
+        z_values = [slurm_task_idx + 1]  # Slurm array indices are zero-based.
+    else:
+        z_values = range(1, max_z + 1)
     n_points = 10 if args.dry_run else args.n_points
     # geometric spacing densifies the short-range repulsive wall, where unphysical
     # wiggles and discontinuities are most diagnostic (matches the MACE-MP convention)
@@ -213,23 +217,26 @@ def main() -> int:
     if args.merge_shards:
         curves: DiatomicResults = {}
         shard_metadatas: list[dict[str, object]] = []
-        for json_path in sorted(glob(f"{shard_dir}/*-diatomics.json.gz")):
+        shard_paths = sorted(glob(f"{shard_dir}/*-diatomics.json.gz"))
+        if not shard_paths:
+            parser.error(f"--merge-shards found no shard files in {shard_dir}")
+        for json_path in shard_paths:
             with gzip.open(json_path, mode="rt") as file:
                 shard = json.load(file)
             curves.update(shard.get(homo_nuc, {}))
             shard_metadatas.append(shard.get("run_metadata", {}))
 
-        missing_formulas = {
+        expected_formulas = {
             f"{chemical_symbols[z]}-{chemical_symbols[z]}" for z in z_values
         }
-        missing_formulas -= set(curves)
+        missing_formulas = expected_formulas - set(curves)
         missing_formulas.update(DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()))
         run_metadata: dict[str, str | float | list[str]] = {
             **merge_run_metadata(shard_metadatas),
             "excluded_formulas": sorted(missing_formulas),
         }
         json_path = f"{out_dir}/{today}-diatomics.json.gz"
-        n_pairs = len(shard_metadatas)  # Z actually computed across shards
+        n_pairs = len(expected_formulas)
     else:
         start_time = time.perf_counter()
         calculator = load_calculator(args.model, dtype=args.dtype)
@@ -260,12 +267,15 @@ def main() -> int:
                 and np.isfinite(curve["forces"]).all()
             )
 
-        invalid_formulas = sorted(
-            formula for formula, curve in curves.items() if not is_valid_curve(curve)
-        )
-        curves = {
-            formula: curve for formula, curve in curves.items() if is_valid_curve(curve)
-        }
+        valid_curves: DiatomicResults = {}
+        invalid_formulas = []
+        for formula, curve in curves.items():
+            if is_valid_curve(curve):
+                valid_curves[formula] = curve
+            else:
+                invalid_formulas.append(formula)
+        curves = valid_curves
+        invalid_formulas = sorted(invalid_formulas)
 
         run_metadata = {
             "hardware": hardware,

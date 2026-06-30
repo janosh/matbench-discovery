@@ -55,11 +55,11 @@
   let series = $derived(
     curves.map((curve) => {
       const model_label = get_model_label(curve.model_key)
-      const ref_energy = curve.energies.at(-1) ?? 0
       // Keep only points within the x range, pairing each distance with its energy
       const points = curve.distances
         .map((distance, idx) => ({ distance, energy: curve.energies[idx] }))
         .filter(({ distance }) => distance >= x_range[0] && distance <= x_range[1])
+      const ref_energy = points.at(-1)?.energy ?? 0
 
       return {
         id: curve.model_key,
