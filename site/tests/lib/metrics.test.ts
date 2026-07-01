@@ -1,4 +1,4 @@
-import { DATASETS } from '$lib'
+import { DATASETS, MODELS } from '$lib'
 import type { CpsConfig } from '$lib/combined_perf_score.svelte'
 import { calculate_cps, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
@@ -487,6 +487,30 @@ describe(`assemble_row_data`, () => {
     const cps_vals = rows.map((row) => row.CPS) as number[]
     const sorted_cps_vals = cps_vals.toSorted((cps1, cps2) => cps2 - cps1)
     expect(cps_vals).toStrictEqual(sorted_cps_vals)
+  })
+
+  it(`excludes task-only models without discovery metrics for the active set`, () => {
+    const model_key = `task-only-regression`
+    MODELS.push({
+      model_key,
+      targets: `EFS_G`,
+      training_set: [],
+      metrics: { diatomics: { energy_mae: 1 } },
+    } as unknown as ModelData)
+
+    try {
+      expect(
+        assemble_row_data(
+          `unique_prototypes`,
+          (model) => model.model_key === model_key,
+          true,
+          true,
+          true,
+        ),
+      ).toStrictEqual([])
+    } finally {
+      MODELS.pop()
+    }
   })
 })
 

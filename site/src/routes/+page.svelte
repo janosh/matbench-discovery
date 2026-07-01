@@ -19,6 +19,7 @@
   } from '$lib/labels'
   import { make_combined_filter } from '$lib/metrics'
   import { find_best_model, MODELS } from '$lib/models.svelte'
+  import { sort_from_query } from '$lib/url-state'
   import {
     generate_csv,
     generate_excel,
@@ -128,12 +129,7 @@
     const params = page.url.searchParams
     const param_preset = params.get(`preset`)
     const next_preset = is_col_preset(param_preset) ? param_preset : `Discovery`
-    const next_sort = { ...preset_default_sorts[next_preset] }
-    const param_sort_col = params.get(`sort`)
-    if (param_sort_col) next_sort.column = param_sort_col
-    const param_sort_dir = params.get(`dir`)
-    if (param_sort_dir === `asc` || param_sort_dir === `desc`)
-      next_sort.dir = param_sort_dir
+    const next_sort = sort_from_query(params, preset_default_sorts[next_preset])
     const default_sort = preset_default_sorts[next_preset]
     auto_sort_enabled =
       next_sort.column === default_sort.column && next_sort.dir === default_sort.dir

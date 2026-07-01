@@ -114,9 +114,19 @@ class DiatomicCurves:
             """Convert one JSON curve section to DiatomicCurve objects."""
             curves = data.get(section, data.get(section.replace("-", "_"), {}))
             key_fn = _homo_key if section.startswith("homo") else str
+
+            def curve_distances(formula: str, curve: dict[str, Any]) -> np.ndarray:
+                """Return curve distances, requiring consistency with top-level grid."""
+                curve_dists = np.asarray(curve.get("distances", distances))
+                if not np.array_equal(curve_dists, distances):
+                    raise ValueError(
+                        f"{formula} curve distances differ from top-level distances"
+                    )
+                return curve_dists
+
             return {
                 key_fn(formula): DiatomicCurve(
-                    distances=curve.get("distances", distances),
+                    distances=curve_distances(formula, curve),
                     energies=curve["energies"],
                     forces=curve.get("forces", []),
                 )

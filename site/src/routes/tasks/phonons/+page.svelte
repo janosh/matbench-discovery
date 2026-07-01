@@ -1,10 +1,18 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation'
+  import { page } from '$app/state'
   import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
   import { by_date_added_desc, MetricsTable, type ModelData, MODELS } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
-  import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
+  import { sync_url_params, valid_query_param } from '$lib/url-state'
   import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
-  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
+  import {
+    ALL_METRICS,
+    HYPERPARAMS,
+    METADATA_COLS,
+    scatter_axis_label,
+    scatter_options_by_key,
+  } from '$lib/labels'
   import { get_nested_number } from '$lib/metrics'
   import { format_num } from 'matterviz'
   import KappaNote from './kappa-note.md'
@@ -39,7 +47,8 @@
       has_kappa_parity_model(model.model_key) ||
       diagnostics_keys.has(model.model_key ?? ``),
   )
-  let selected_key = $state(kappa_models[0]?.model_key)
+  const default_selected_key = kappa_models[0]?.model_key ?? ``
+  let selected_key = $state(default_selected_key)
   let selected_model = $derived(
     kappa_models.find((model) => model.model_key === selected_key),
   )
@@ -51,7 +60,13 @@
     { mode: `name`, label: `A–Z` },
     { mode: `date`, label: `date added` },
   ]
-  let sort_mode = $state<SortMode>(`kappa`)
+  const default_sort_mode: SortMode = `kappa`
+  const default_scatter_x = HYPERPARAMS.model_params.key
+  const default_scatter_y = ALL_METRICS.κ_SRME.key
+  const sort_modes = new Set(sort_options.map(({ mode }) => mode))
+  const model_keys = new Set(kappa_models.flatMap((model) => model.model_key ?? []))
+
+  let sort_mode = $state<SortMode>(default_sort_mode)
   const kappa_srme = (model: ModelData) =>
     get_nested_number(model, kappa_srme_path) ?? Infinity
   const sort_compare: Record<SortMode, (m1: ModelData, m2: ModelData) => number> = {
@@ -74,8 +89,31 @@
 
   // axis selections for the model-comparison scatter, bound so the section title
   // tracks whatever properties the user picks
-  let scatter_x = $state(HYPERPARAMS.model_params.key)
-  let scatter_y = $state(ALL_METRICS.κ_SRME.key)
+  let scatter_x = $state(default_scatter_x)
+  let scatter_y = $state(default_scatter_y)
+  let url_ready = $state(false)
+
+  afterNavigate(() => {
+    const params = page.url.searchParams
+    selected_key = valid_query_param(params, `model`, default_selected_key, model_keys)
+    sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_modes)
+    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
+    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
+    url_ready = true
+  })
+
+  $effect(() => {
+    if (!url_ready) return
+    sync_url_params(
+      [
+        [`model`, selected_key ?? ``, default_selected_key],
+        [`model_sort`, sort_mode, default_sort_mode],
+        [`x`, scatter_x, default_scatter_x],
+        [`y`, scatter_y, default_scatter_y],
+      ],
+      page.state,
+    )
+  })
 </script>
 
 <h1>MLFF Phonon Modeling Metrics</h1>

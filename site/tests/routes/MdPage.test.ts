@@ -2,7 +2,7 @@ import { MODELS } from '$lib'
 import { MD_METRICS } from '$lib/labels'
 import MdPage from '$routes/tasks/md/+page.svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query, has_md_metrics, mount } from '../index'
+import { doc_query, has_md_metrics, mount, mount_with_url, sorted_header } from '../index'
 
 describe(`MD Task Page`, () => {
   it(`renders page structure with filtered leaderboard and scatter`, () => {
@@ -41,4 +41,17 @@ describe(`MD Task Page`, () => {
       expect(label.better).toBe(expected)
     },
   )
+
+  it(`restores URL state for scatter axes and table sort`, async () => {
+    await mount_with_url(
+      MdPage,
+      `http://localhost/tasks/md?x=combined_score&y=force_rmse&sort=rdf_error&dir=asc`,
+    )
+
+    const heading = document.querySelector(`h2`)?.textContent?.replaceAll(/\s+/g, ` `)
+    expect(heading).toContain(`FRMSE vs CMDS`)
+    const header = sorted_header()
+    expect(header?.textContent).toContain(`RDF`)
+    expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
+  })
 })

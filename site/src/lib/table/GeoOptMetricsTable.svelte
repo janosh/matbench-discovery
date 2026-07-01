@@ -1,6 +1,6 @@
 <script lang="ts">
   import { TableControls } from '$lib'
-  import type { Label } from '$lib/types'
+  import type { Label, ModelData } from '$lib/types'
   import { HeatmapTable, type Label as MattervizLabel } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
   import {
@@ -78,11 +78,14 @@
     ),
   )
 
+  const has_geo_opt_metrics = (model: ModelData): boolean =>
+    model.metrics?.geo_opt != null && typeof model.metrics.geo_opt === `object`
+
   // Recalculate metrics_data whenever filter settings change
   let metrics_data = $derived(
     assemble_row_data(
       `full_test_set`,
-      () => true,
+      has_geo_opt_metrics,
       false,
       show_non_compliant,
       show_compliant,

@@ -1,29 +1,3 @@
-<script module lang="ts">
-  // Axis metadata is exported so pages can bind selections and render matching headings.
-  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
-
-  export const scatter_options = [
-    ...Object.values(ALL_METRICS),
-    HYPERPARAMS.model_params,
-    METADATA_COLS.date_added,
-    METADATA_COLS.n_training_materials,
-    METADATA_COLS.n_training_structures,
-    HYPERPARAMS.graph_construction_radius,
-    HYPERPARAMS.max_force,
-    HYPERPARAMS.max_steps,
-    HYPERPARAMS.batch_size,
-    HYPERPARAMS.epochs,
-    HYPERPARAMS.n_layers,
-  ]
-  // Keyed lookup for bound axis/color selections.
-  export const scatter_options_by_key = Object.fromEntries(
-    scatter_options.map((opt) => [opt.key, opt]),
-  )
-  // Labels may contain HTML such as <sub>.
-  export const scatter_axis_label = (key: string): string =>
-    scatter_options_by_key[key]?.label ?? key
-</script>
-
 <script lang="ts">
   import { goto } from '$app/navigation'
   import type { ModelData } from '$lib'
@@ -39,7 +13,15 @@
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
   import Select from 'svelte-multiselect'
-  import { DISCOVERY_SET_LABELS, format_property_path } from '$lib/labels'
+  import {
+    ALL_METRICS,
+    DISCOVERY_SET_LABELS,
+    format_property_path,
+    HYPERPARAMS,
+    scatter_axis_label,
+    scatter_options,
+    scatter_options_by_key,
+  } from '$lib/labels'
   import { get_nested_value, is_finite_num, label_data_path } from '$lib/metrics'
   import { make_models_legend } from '$lib/fig-helpers'
   import type { Label } from '$lib/types'

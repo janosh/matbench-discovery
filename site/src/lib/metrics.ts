@@ -114,10 +114,9 @@ export const all_lower_better_metrics = Object.values(MODELINGS_TASKS).flatMap(
   (model_task) => model_task.metrics.lower_is_better,
 )
 
-export function metric_better_as(metric: string) {
+export function metric_better_as(metric: string): `higher` | `lower` | null {
   if (all_higher_better_metrics.includes(metric)) return `higher`
-  if (all_lower_better_metrics.includes(metric)) return `lower`
-  return null
+  return all_lower_better_metrics.includes(metric) ? `lower` : null
 }
 
 // Format training set information for display in the metrics table
@@ -149,27 +148,24 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
   const dataset_tooltip =
     tooltip.length > 1 ? `${new_line}• ${tooltip.join(`${new_line}• `)}` : ``
 
-  let title = `${format_num(
-    n_training_materials,
-    `,`,
-  )} materials in training set${new_line}${dataset_tooltip}`
-  let train_size_str = `<span title="${title}" data-sort-value="${n_training_materials}">${format_num(
-    n_training_materials,
-  )} <small>${dataset_links}</small></span>`
-
-  if (n_training_materials !== n_training_structures) {
-    title =
-      `${format_num(n_training_materials, `,`)} materials in training set ` +
+  const same_count = n_training_materials === n_training_structures
+  const title = same_count
+    ? `${format_num(n_training_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
+    : `${format_num(n_training_materials, `,`)} materials in training set ` +
       `(${format_num(n_training_structures, `,`)} structures counting all DFT relaxation ` +
       `frames per material)${dataset_tooltip}`
+  const sort_value = same_count
+    ? n_training_materials
+    : n_training_materials || n_training_structures
+  const structure_count = same_count
+    ? ``
+    : ` <small>(${format_num(n_training_structures)})</small>`
 
-    train_size_str =
-      `<span title="${title}" data-sort-value="${n_training_materials || n_training_structures}">` +
-      `${format_num(n_training_materials)} <small>(${format_num(n_training_structures)})</small> ` +
-      `<small>${dataset_links}</small></span>`
-  }
-
-  return train_size_str
+  return (
+    `<span title="${title}" data-sort-value="${sort_value}">` +
+    `${format_num(n_training_materials)}${structure_count} ` +
+    `<small>${dataset_links}</small></span>`
+  )
 }
 
 // Combined filter function that respects both prediction type and compliance filters
@@ -225,6 +221,7 @@ export function assemble_row_data(
       model.metrics.discovery[discovery_set],
   )
 
+  const { RMSD, CPS } = ALL_METRICS
   const all_metrics = filtered_models.map((model) => {
     const { license, metrics } = model
     const discovery_metrics =
@@ -232,7 +229,6 @@ export function assemble_row_data(
         ? metrics.discovery[discovery_set]
         : undefined
     const is_compliant = model_is_compliant(model)
-    const { RMSD, CPS } = ALL_METRICS
     const metric_num = (label: Label) =>
       get_nested_number(model, `${label.path}.${label.key}`)
 
@@ -271,7 +267,7 @@ export function assemble_row_data(
           `<span aria-hidden="true">*</span></span>`
         : ``
 
-    const row = {
+    return {
       model_name: model.model_name,
       Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
       CPS: model[CPS.key],
@@ -304,6 +300,12 @@ export function assemble_row_data(
         ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
         : `n/a`,
       [HYPERPARAMS.n_layers.key]: sortable_span(n_layers),
+      ...Object.fromEntries(
+        Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
+          col.key,
+          get_nested_number(model, `${col.path}.${col.property}`),
+        ]),
+      ),
       Targets: targets_str,
       [METADATA_COLS.date_added.key]:
         `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
@@ -329,16 +331,6 @@ export function assemble_row_data(
       org_logos: model.org_logos,
       authors: model.authors,
     }
-
-    return Object.assign(
-      row,
-      Object.fromEntries(
-        Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
-          col.key,
-          get_nested_number(model, `${col.path}.${col.property}`),
-        ]),
-      ),
-    )
   })
 
   // Sort by combined performance score (descending)
@@ -381,7 +373,8 @@ export const sort_models =
 
     if (typeof val_1 === `string` && typeof val_2 === `string`) {
       return sort_factor * val_1.localeCompare(val_2)
-    } else if (typeof val_1 === `number` && typeof val_2 === `number`) {
+    }
+    if (typeof val_1 === `number` && typeof val_2 === `number`) {
       // Interpret run_time === 0 as infinity
       if (sort_by === `Run Time`) {
         if (val_1 === 0) return -sort_factor
