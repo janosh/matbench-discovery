@@ -642,6 +642,29 @@ export const discovery_set_toggle_options = Object.entries(DISCOVERY_SET_LABELS)
   ([value, { label, description: tooltip, link }]) => ({ value, label, tooltip, link }),
 )
 
+export const scatter_options = [
+  ...Object.values(ALL_METRICS),
+  HYPERPARAMS.model_params,
+  METADATA_COLS.date_added,
+  METADATA_COLS.n_training_materials,
+  METADATA_COLS.n_training_structures,
+  HYPERPARAMS.graph_construction_radius,
+  HYPERPARAMS.max_force,
+  HYPERPARAMS.max_steps,
+  HYPERPARAMS.batch_size,
+  HYPERPARAMS.epochs,
+  HYPERPARAMS.n_layers,
+]
+
+// Keyed lookup for bound axis/color selections.
+export const scatter_options_by_key = Object.fromEntries(
+  scatter_options.map((option) => [option.key, option]),
+)
+
+// Labels may contain HTML such as <sub>.
+export const scatter_axis_label = (key: string): string =>
+  scatter_options_by_key[key]?.label ?? key
+
 const PROPERTY_LABELS = Object.fromEntries(
   Object.values({ ...ALL_METRICS, ...METADATA_COLS, ...HYPERPARAMS }).map((prop) => [
     prop.key ?? prop.label,
