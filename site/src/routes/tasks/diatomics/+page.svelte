@@ -324,7 +324,7 @@
     options={selectable_options}
     bind:selected={selected_model_options}
     placeholder="Select models to plot"
-    style="width: 100%; max-width: 100%; min-width: 19rem"
+    style="width: fit-content; max-width: 100%; min-width: min(19rem, 100%); border: 1px solid var(--border)"
   />
 </div>
 
