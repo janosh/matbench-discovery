@@ -134,7 +134,7 @@
   --nav-dropdown-link-padding="2pt 4pt"
   --nav-link-active-color="var(--link-color)"
 >
-  <ThemeToggle />
+  <ThemeToggle style="transform: scale(1.25)" />
 </Nav>
 
 <main class:bleed-1400={url === `/tasks/diatomics`} {@attach heading_anchors()}>

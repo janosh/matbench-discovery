@@ -2,13 +2,21 @@ import { MODELS } from '$lib'
 import { ALL_METRICS } from '$lib/labels'
 import { assemble_row_data, get_nested_number } from '$lib/metrics'
 import PhononsPage from '$routes/tasks/phonons/+page.svelte'
-import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount, mount_with_url } from '../index'
 
 const get_headers = (root: ParentNode) =>
   Array.from(root.querySelectorAll(`th`), (header) =>
     header.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
+  )
+
+const kappa_selects = (): HTMLSelectElement[] => [
+  ...document.querySelectorAll<HTMLSelectElement>(`.kappa-model-select select`),
+]
+
+const heading_texts = (): (string | undefined)[] =>
+  [...document.querySelectorAll(`h2`)].map((heading) =>
+    heading.textContent?.replaceAll(/\s+/g, ` `).trim(),
   )
 
 describe(`Phonons Task Page`, () => {
@@ -22,12 +30,9 @@ describe(`Phonons Task Page`, () => {
     expect(document.querySelector(`section.full-bleed table`)).not.toBeNull()
     expect(document.querySelectorAll(`tbody tr`).length).toBeGreaterThan(0)
 
-    const h2s = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)]
-    expect(h2s.map((h2) => h2.textContent?.trim())).toContain(`Failure Modes`)
-    const scatter_heading = h2s.find(
-      (h2) => h2.textContent?.replaceAll(/\s+/g, ` `).trim() === `κSRME vs Params`,
-    )
-    expect(scatter_heading, `dynamic scatter heading`).toBeDefined()
+    const headings = heading_texts()
+    expect(headings).toContain(`Failure Modes`)
+    expect(headings).toContain(`κSRME vs Params`)
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
@@ -88,9 +93,7 @@ describe(`Phonons Task Page`, () => {
   it(`offers sort controls and defaults the Compare dropdown to κSRME order`, () => {
     mount(PhononsPage, { target: document.body })
 
-    const [model_select, sort_select] = document.querySelectorAll<HTMLSelectElement>(
-      `.kappa-model-select select`,
-    )
+    const [model_select, sort_select] = kappa_selects()
     // sort control offers alphabetical, κSRME, and date-added modes
     expect([...sort_select.options].map((opt) => opt.value)).toEqual([
       `kappa`,
@@ -106,5 +109,15 @@ describe(`Phonons Task Page`, () => {
     })
     expect(srmes.length).toBeGreaterThan(1)
     expect(srmes).toEqual([...srmes].toSorted((s1, s2) => s1 - s2))
+  })
+
+  it(`restores URL state for diagnostics controls`, async () => {
+    await mount_with_url(
+      PhononsPage,
+      `http://localhost/tasks/phonons?model=mace-mp-0&model_sort=name&x=F1&y=κ_SRE`,
+    )
+
+    expect(kappa_selects().map((select) => select.value)).toEqual([`mace-mp-0`, `name`])
+    expect(heading_texts()).toContain(`κSRE vs F1`)
   })
 })

@@ -1,18 +1,65 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation'
+  import { page } from '$app/state'
   import { MetricsTable, MODELS, SelectToggle } from '$lib'
   import { DynamicScatter } from '$lib/plot'
-  import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
+  import { sync_url_params, valid_query_param } from '$lib/url-state'
   import * as labels from '$lib/labels'
   import type { DiscoverySet } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
 
-  let discovery_set: DiscoverySet = $state(`unique_prototypes`)
+  const default_discovery_set: DiscoverySet = `unique_prototypes`
+  const default_scatter_x = labels.HYPERPARAMS.model_params.key
+  const default_scatter_y = labels.ALL_METRICS.F1.key
+  const discovery_sets = new Set<DiscoverySet>(
+    labels.discovery_set_toggle_options.map(({ value }) => value as DiscoverySet),
+  )
+
+  let discovery_set: DiscoverySet = $state(default_discovery_set)
   let show_energy_only = $state(false)
+  let url_ready = $state(false)
 
   // axis selections for the model-comparison scatter, bound so the section title
   // tracks whatever properties the user picks
-  let scatter_x = $state(labels.HYPERPARAMS.model_params.key)
-  let scatter_y = $state(labels.ALL_METRICS.F1.key)
+  let scatter_x = $state(default_scatter_x)
+  let scatter_y = $state(default_scatter_y)
+
+  afterNavigate(() => {
+    const params = page.url.searchParams
+    discovery_set = valid_query_param(
+      params,
+      `set`,
+      default_discovery_set,
+      discovery_sets,
+    )
+    show_energy_only = params.get(`energy_only`) === `1`
+    scatter_x = valid_query_param(
+      params,
+      `x`,
+      default_scatter_x,
+      labels.scatter_options_by_key,
+    )
+    scatter_y = valid_query_param(
+      params,
+      `y`,
+      default_scatter_y,
+      labels.scatter_options_by_key,
+    )
+    url_ready = true
+  })
+
+  $effect(() => {
+    if (!url_ready) return
+    sync_url_params(
+      [
+        [`set`, discovery_set, default_discovery_set],
+        [`energy_only`, show_energy_only ? `1` : ``],
+        [`x`, scatter_x, default_scatter_x],
+        [`y`, scatter_y, default_scatter_y],
+      ],
+      page.state,
+    )
+  })
 </script>
 
 <h1>Crystal Stability Prediction Metrics</h1>
@@ -38,7 +85,11 @@
 
 <HullConstructionNote />
 
-<h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
+<h2>
+  {@html labels.scatter_axis_label(scatter_y)} vs {@html labels.scatter_axis_label(
+    scatter_x,
+  )}
+</h2>
 
 The F1 score is the harmonic mean of precision and recall. It is a measure of the model's
 ability to correctly identify hypothetical crystals in the WBM test set as lying on or

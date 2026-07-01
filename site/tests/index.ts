@@ -1,6 +1,6 @@
 import { gzipSync } from 'node:zlib'
 import type { ModelData } from '$lib/types'
-import { mount as svelte_mount, unmount } from 'svelte'
+import { mount as svelte_mount, tick, unmount } from 'svelte'
 import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
 type AfterNavigateCallback = (navigation: unknown) => void
@@ -99,6 +99,25 @@ const tracked_mount = (
   return instance
 }
 export const mount = tracked_mount as typeof svelte_mount
+
+export async function mount_with_url(
+  component: unknown,
+  url: string,
+  options: Record<string, unknown> = {},
+): Promise<ReturnType<typeof svelte_mount>> {
+  const next_url = new URL(url)
+  app_mocks.state.page.url = next_url
+  history.replaceState(null, ``, `${next_url.pathname}${next_url.search}`)
+  const instance = tracked_mount(
+    component as Parameters<typeof svelte_mount>[0],
+    { ...options, target: document.body } as Parameters<typeof svelte_mount>[1],
+  )
+  await tick()
+  return instance
+}
+
+export const sorted_header = (): HTMLTableCellElement | null =>
+  document.querySelector(`thead th[aria-sort]:not([aria-sort="none"])`)
 
 afterEach(async () => {
   const instances = mounted_components.splice(0)
