@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { afterNavigate, replaceState } from '$app/navigation'
+  import { afterNavigate } from '$app/navigation'
   import { page } from '$app/state'
   import { MetricsTable, type ModelData } from '$lib'
   import { ALL_METRICS, DIATOMICS_METRICS, METADATA_COLS } from '$lib/labels'
   import { DiatomicCurve } from '$lib/plot'
+  import { sort_from_query, sync_url_params, valid_query_param } from '$lib/url-state'
   import type { SortDir } from '$lib/types'
   import DiatomicsNote from './diatomics-note.md'
   import Select from 'svelte-multiselect'
@@ -199,45 +200,30 @@
       .join(`,`)
 
   function element_group_from_url(params: URLSearchParams): string {
-    const element_group = params.get(`elements`)
-    return element_group && element_group_keys.has(element_group) ? element_group : `all`
-  }
-
-  function sort_from_url(params: URLSearchParams): { column: string; dir: SortDir } {
-    const column = params.get(`sort`) ?? default_sort.column
-    const param_dir = params.get(`dir`)
-    const dir = param_dir === `desc` || param_dir === `asc` ? param_dir : default_sort.dir
-    return { column, dir }
+    return valid_query_param(params, `elements`, `all`, element_group_keys)
   }
 
   afterNavigate(() => {
     selected_model_options = options_from_names(names_from_url(page.url.searchParams))
     selected_element_group = element_group_from_url(page.url.searchParams)
-    sort = sort_from_url(page.url.searchParams)
+    sort = sort_from_query(page.url.searchParams, default_sort)
     url_ready = true
   })
 
   $effect(() => {
     if (!url_ready) return
 
-    const new_params = new URLSearchParams(location.search)
     const selected = selected_param_value(selected_model_names)
     const defaults = selected_param_value(default_selected_names())
-    for (const [key, value, default_value] of [
-      [`models`, selected, defaults],
-      [`elements`, selected_element_group, `all`],
-      [`sort`, sort.column, default_sort.column],
-      [`dir`, sort.dir, default_sort.dir],
-    ]) {
-      if (value === default_value) new_params.delete(key)
-      else new_params.set(key, value)
-    }
-
-    const new_url =
-      new_params.size > 0 ? `${location.pathname}?${new_params}` : location.pathname
-    if (new_url !== `${location.pathname}${location.search}`) {
-      replaceState(new_url, page.state)
-    }
+    sync_url_params(
+      [
+        [`models`, selected, defaults],
+        [`elements`, selected_element_group, `all`],
+        [`sort`, sort.column, default_sort.column],
+        [`dir`, sort.dir, default_sort.dir],
+      ],
+      page.state,
+    )
   })
 
   function curves_for_formula(formula: string) {

@@ -1,9 +1,17 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation'
+  import { page } from '$app/state'
   import { MetricsTable, type ModelData, MODELS } from '$lib'
-  import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
+  import {
+    ALL_METRICS,
+    MD_METRICS,
+    METADATA_COLS,
+    scatter_axis_label,
+    scatter_options_by_key,
+  } from '$lib/labels'
   import type { SortDir } from '$lib/types'
   import { DynamicScatter } from '$lib/plot'
-  import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
+  import { sort_from_query, sync_url_params, valid_query_param } from '$lib/url-state'
   import MdNote from './md-note.md'
 
   // show only MD metrics and metadata columns
@@ -20,13 +28,39 @@
     model.metrics?.md != null && typeof model.metrics.md === `object`
   const n_md_models = MODELS.filter(has_md_metrics).length
 
-  let scatter_x = $state(MD_METRICS.md_force_rmse.key)
-  let scatter_y = $state(MD_METRICS.md_rdf_error.key)
-  // default-sort by the combined MD score (CMDS), best (highest) first. matterviz sorts
-  // by the column's key (falling back to label), so use the key, not the 'CMDS' label
-  let sort = $state<{ column: string; dir: SortDir }>({
+  const default_scatter_x = MD_METRICS.md_force_rmse.key
+  const default_scatter_y = MD_METRICS.md_rdf_error.key
+  const default_sort: { column: string; dir: SortDir } = {
     column: MD_METRICS.md_combined_score.key,
     dir: `desc`,
+  }
+
+  let scatter_x = $state(default_scatter_x)
+  let scatter_y = $state(default_scatter_y)
+  // default-sort by the combined MD score (CMDS), best (highest) first. matterviz sorts
+  // by the column's key (falling back to label), so use the key, not the 'CMDS' label
+  let sort = $state({ ...default_sort })
+  let url_ready = $state(false)
+
+  afterNavigate(() => {
+    const params = page.url.searchParams
+    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
+    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
+    sort = sort_from_query(params, default_sort)
+    url_ready = true
+  })
+
+  $effect(() => {
+    if (!url_ready) return
+    sync_url_params(
+      [
+        [`x`, scatter_x, default_scatter_x],
+        [`y`, scatter_y, default_scatter_y],
+        [`sort`, sort.column, default_sort.column],
+        [`dir`, sort.dir, default_sort.dir],
+      ],
+      page.state,
+    )
   })
 </script>
 
