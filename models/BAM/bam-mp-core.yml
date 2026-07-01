@@ -5,12 +5,39 @@ date_added: '2026-06-20'
 date_published: '2026-06-20'
 authors:
   - name: Hyun Gyu Park
-    affiliation: Myung Group
+    affiliation: Department of Energy Science, Sungkyunkwan
     email: hgpark95@skku.edu
     corresponding: true
+  - name: Won Woong Choi
+    affiliation: Department of Energy Science, Sungkyunkwan
+    email: wonoong5385@skku.edu
+  - name: Seungwon Kim
+    affiliation: Department of Energy Science, Sungkyunkwan
+    email: swkim1011@skku.edu
+  - name: Kwanghyeon Jo
+    affiliation: Department of Energy Science, Sungkyunkwan
+    email: khjo24@skku.edu
+  - name: Jooyeon Song
+    affiliation: Department of Energy Science, Sungkyunkwan
+    email: wndus0920@skku.edu
+  - name: Wonho Lee
+    affiliation: Department of Energy Science, Sungkyunkwan
+    email: lwh8260@g.skku.edu
+  - name: Gi Beom Sim
+    affiliation: Department of Energy Science, Sungkyunkwan
+    email: gbsim@skku.edu
+  - name: Tae Hyeon Park
+    affiliation: Department of Energy Science, Sungkyunkwan
+    email: pth323@skku.edu
+  - name: Soohaeng Yoo Willow
+    affiliation: Department of Energy Science, Sungkyunkwan
+    email: sy7willow@gmail.com
+  - name: Chang Woo Myung
+    affiliation: Department of Energy Science, Sungkyunkwan
+    email: cwmyung@skku.edu
 trained_by:
   - name: Hyun Gyu Park
-    affiliation: Myung Group
+    affiliation: Department of Energy Science, Sungkyunkwan
 
 repo: https://github.com/myung-group/BAM-torch
 doi: https://doi.org/10.48550/arXiv.2510.03046
