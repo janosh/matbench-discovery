@@ -674,7 +674,13 @@ class DataFiles(Files):
             )
             if answer.lower().strip() == "y":
                 print(f"Downloading {key!r} from {self.url} to {abs_path}")
-                download_file(abs_path, self.url, md5=self.yaml[key].get("md5") or None)
+                expected_md5 = self.yaml[key].get("md5") or None
+                download_file(abs_path, self.url, md5=expected_md5)
+                if not os.path.isfile(abs_path):
+                    raise FileNotFoundError(
+                        f"Failed to download and verify {key!r} from {self.url} "
+                        f"to {abs_path} with {expected_md5=}."
+                    )
         return abs_path
 
 

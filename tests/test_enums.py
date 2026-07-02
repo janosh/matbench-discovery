@@ -218,6 +218,39 @@ def test_data_files_enum() -> None:
     assert DataFiles.wbm_summary.url.startswith("https://figshare.com/files/")
 
 
+def test_data_files_path_raises_when_md5_download_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """DataFiles.path surfaces failed checksum verification to callers."""
+    data_file = DataFiles.mp_energies
+    expected_md5 = "0" * 32
+    monkeypatch.setattr(DataFiles, "_base_dir", str(tmp_path))
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+    monkeypatch.setitem(
+        data_file.__dict__,
+        "yaml",
+        {
+            data_file.name: {
+                "description": "test data file",
+                "md5": expected_md5,
+                "path": data_file.rel_path,
+                "url": "https://example.com/file.csv.gz",
+            }
+        },
+    )
+
+    with (
+        patch("requests.get", return_value=make_mock_response(b"bad data")),
+        pytest.raises(FileNotFoundError, match="Failed to download and verify"),
+    ):
+        _ = data_file.path
+
+    stdout, stderr = capsys.readouterr()
+    assert f"expected {expected_md5}" in stdout
+    assert stderr == ""
+    assert not os.path.isfile(f"{tmp_path}/{data_file.rel_path}")
+
+
 @pytest.mark.parametrize("md_value", [None, "not available", 42])
 def test_model_md_path_returns_none_for_non_dict_md(
     md_value: object, monkeypatch: pytest.MonkeyPatch
