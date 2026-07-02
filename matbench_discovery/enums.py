@@ -674,7 +674,7 @@ class DataFiles(Files):
             )
             if answer.lower().strip() == "y":
                 print(f"Downloading {key!r} from {self.url} to {abs_path}")
-                download_file(abs_path, self.url)
+                download_file(abs_path, self.url, md5=self.yaml[key].get("md5") or None)
         return abs_path
 
 

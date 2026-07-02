@@ -1,6 +1,7 @@
 """Files download functions."""
 
 import builtins
+import hashlib
 import os
 import sys
 import traceback
@@ -21,7 +22,10 @@ def _headers_for_url(
 
 
 def download_file(
-    file_path: str, url: str, headers: dict[str, str] | None = None
+    file_path: str,
+    url: str,
+    headers: dict[str, str] | None = None,
+    md5: str | None = None,
 ) -> None:
     """Download the file from the given URL to the given file path.
     Prints rather than raises if the file cannot be downloaded.
@@ -31,6 +35,10 @@ def download_file(
         url: URL to download from.
         headers: Optional HTTP headers, e.g. an Authorization bearer token for
             gated HuggingFace checkpoints.
+        md5: Optional expected MD5 checksum. If given, the download is verified
+            before it replaces file_path; on mismatch the download is discarded
+            (any previously cached file_path is left unchanged) and an error is
+            printed.
     """
     file_dir = os.path.dirname(file_path)
     if file_dir:
@@ -54,6 +62,19 @@ def download_file(
         with open(tmp_file_path, mode="wb") as file:
             file.writelines(response.iter_content(chunk_size=8192))
 
+        if md5:
+            file_hash = hashlib.md5()  # noqa: S324
+            with open(tmp_file_path, mode="rb") as file:
+                for chunk in iter(lambda: file.read(1 << 20), b""):
+                    file_hash.update(chunk)
+            if (actual_md5 := file_hash.hexdigest()) != md5:
+                os.remove(tmp_file_path)
+                print(
+                    f"MD5 mismatch for {url=}: expected {md5}, got {actual_md5}. "
+                    f"Discarded the download, {file_path=} left unchanged."
+                )
+                return
+
         download_finished = True
         os.replace(tmp_file_path, file_path)
     except (OSError, requests.RequestException):
@@ -76,8 +97,10 @@ def maybe_auto_download_file(
     abs_path: str,
     label: str | None = None,
     headers: dict[str, str] | None = None,
+    md5: str | None = None,
 ) -> None:
-    """Download file if missing and confirmed, forwarding optional HTTP headers."""
+    """Download file if missing and confirmed, forwarding optional HTTP headers
+    and an optional expected MD5 checksum (see download_file)."""
     if os.path.isfile(abs_path):
         return
 
@@ -97,4 +120,4 @@ def maybe_auto_download_file(
     )
     if answer.lower().strip() == "y":
         print(f"Downloading {label!r} from {url!r} to {abs_path!r}")
-        download_file(abs_path, url, headers=headers)
+        download_file(abs_path, url, headers=headers, md5=md5)
