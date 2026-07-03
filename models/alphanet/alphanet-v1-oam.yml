@@ -188,8 +188,6 @@ metrics:
     pred_file_url: https://figshare.com/files/66104576
     hardware: NVIDIA H200
     run_time_sec: 196.1
-    excluded_formulas:
-      - He-He
     excluded_formula_reasons:
       He-He: exploding errors
     pbe_wall_dist_mae: 0.07788

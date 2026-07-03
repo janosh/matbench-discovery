@@ -41,14 +41,16 @@ from matbench_discovery.calculators import (
     load_calculator,
     resolve_calculator_key,
 )
-from matbench_discovery.diatomics import DiatomicResults, calc_diatomic_curve, homo_nuc
+from matbench_discovery.diatomics import (
+    CurveDict,
+    DiatomicResults,
+    calc_diatomic_curve,
+    homo_nuc,
+)
 from matbench_discovery.hpc import merge_run_metadata
-from matbench_discovery.metrics.diatomics import NON_MP_ELEMENTS, _eval_window
+from matbench_discovery.metrics.diatomics import NON_MP_ELEMENTS, eval_window
 
 module_dir = os.path.dirname(__file__)
-
-# the value type of DiatomicResults: one curve's distances/energies/forces lists
-CurveDict = dict[str, list[float | list[list[float]]]]
 
 
 def trim_curve_to_finite(formula: str, curve: CurveDict) -> CurveDict | None:
@@ -67,7 +69,7 @@ def trim_curve_to_finite(formula: str, curve: CurveDict) -> CurveDict | None:
         return None
     distances = np.asarray(curve["distances"], dtype=float)
     finite = np.isfinite(energies) & np.isfinite(forces).all(axis=(1, 2))
-    r_min, r_max = _eval_window(formula, float(distances.max()))
+    r_min, r_max = eval_window(formula, float(distances.max()))
     if not finite[(distances >= r_min) & (distances <= r_max)].all():
         return None
     if finite.all():
@@ -89,8 +91,7 @@ def get_excluded_formula_reasons(
 ) -> dict[str, str]:
     """Map excluded diatomic formulas to reasons: YAML-curated + run-discovered.
 
-    Curated reasons (the model YAML's excluded_formula_reasons, whose keys the model
-    schema requires to exactly match excluded_formulas) take precedence over
+    Curated reasons (the model YAML's excluded_formula_reasons) take precedence over
     invalid_formulas found in this run. Non-MP formulas are never recorded: the metrics
     skip those elements benchmark-wide, so per-model exclusions would be redundant.
     """
@@ -268,7 +269,7 @@ def main() -> int:
     distances = np.geomspace(args.min_dist, args.max_dist, n_points)
     shard_dir = f"{out_dir}/{today}-diatomics-shards"
     n_pairs = len(z_values)
-    run_metadata: dict[str, str | float | list[str] | dict[str, str]]
+    run_metadata: dict[str, str | float | dict[str, str]]
     curves: DiatomicResults = {}
 
     if args.merge_shards:
@@ -300,6 +301,9 @@ def main() -> int:
             # metrics skip non-MP elements, so models may omit their curves
             if not is_non_mp_formula(formula)
         }
+        # deliberately no run-discovered invalid_formulas here (unlike the single-run
+        # branch below): a shard's self-reported exclusions must not leak into the
+        # merged output, so missing curves are only accepted once curated in the YAML
         exclusion_reasons = get_excluded_formula_reasons(args.model)
         if unexpected_missing := missing_formulas - set(exclusion_reasons):
             parser.error(f"Missing curves in shards: {sorted(unexpected_missing)}")
@@ -337,10 +341,7 @@ def main() -> int:
         else:
             json_path = f"{out_dir}/{today}-diatomics.json.gz"
 
-    run_metadata |= {
-        "excluded_formulas": sorted(exclusion_reasons),
-        "excluded_formula_reasons": exclusion_reasons,
-    }
+    run_metadata["excluded_formula_reasons"] = exclusion_reasons
     # flat on-disk schema read by DiatomicCurves.from_dict / the site's diatomics parser
     results: dict[str, object] = {
         homo_nuc: curves,

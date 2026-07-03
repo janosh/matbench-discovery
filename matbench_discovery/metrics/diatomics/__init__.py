@@ -35,11 +35,11 @@ from matbench_discovery.metrics.diatomics.force import (
     calc_force_total_variation,
 )
 
-DiatomicsYamlValue = str | float | list[str] | dict[str, str] | None
+DiatomicsYamlValue = str | float | dict[str, str] | None
 # Elements absent from the Materials Project (MP covers 89 elements: H-Pu minus these
 # five), and hence from MPtrj/OMat24-derived training data. Models trained on MP data
 # cannot predict them, so diatomic metrics skip them for every model (and the runner
-# tolerates their missing curves without per-model excluded_formulas bookkeeping).
+# tolerates their missing curves without per-model exclusion bookkeeping).
 NON_MP_ELEMENTS = frozenset({"Po", "At", "Rn", "Fr", "Ra"})
 DIATOMIC_METRIC_KEYS = frozenset(
     str(key)
@@ -211,7 +211,7 @@ def find_low_quality_dft_refs(
         seps, energies = curve.distances, curve.energies  # np arrays per DiatomicCurve
         if seps.size == 0:
             continue
-        r_min, r_max = _eval_window(elem_symbol, float(np.max(seps)))
+        r_min, r_max = eval_window(elem_symbol, float(np.max(seps)))
         mask = (seps >= r_min) & (seps <= r_max)
         if mask.sum() < 5:
             continue  # too few in-window points to assess smoothness
@@ -228,7 +228,7 @@ def find_low_quality_dft_refs(
     return low_quality
 
 
-def _eval_window(elem_symbol: str, seps_max: float) -> tuple[float, float]:
+def eval_window(elem_symbol: str, seps_max: float) -> tuple[float, float]:
     """Element-specific [r_min, r_max] metric-evaluation window, matching MLIP Arena.
 
     MLIP Arena samples (and thus evaluates) homonuclear curves only over
@@ -311,7 +311,7 @@ def calc_diatomic_metrics(
         # metric (and where unstable models tend to produce non-finite values; checking
         # finiteness below the window means a curve only bad in deep overlap is kept)
         pred_dists = pred_data.distances
-        r_min, r_max = _eval_window(elem_symbol, float(np.max(pred_dists)))
+        r_min, r_max = eval_window(elem_symbol, float(np.max(pred_dists)))
         pred_mask = (pred_dists >= r_min) & (pred_dists <= r_max)
         if pred_mask.sum() < 5:  # too few points in window for stable metrics
             print(f"Skipping {elem_symbol} diatomic metrics: <5 points in eval window")
@@ -409,7 +409,7 @@ def write_metrics_to_yaml(
     model: Model,
     metrics: dict[str, dict[str, float]],
     pred_file_path: str | None = None,
-    run_metadata: dict[str, str | float | list[str] | dict[str, str]] | None = None,
+    run_metadata: dict[str, str | float | dict[str, str]] | None = None,
 ) -> dict[str, DiatomicsYamlValue]:
     """Write diatomic metrics to model YAML file.
 
@@ -421,8 +421,8 @@ def write_metrics_to_yaml(
             metrics.diatomics.pred_file. Absolute paths must be inside the repo and are
             converted to repo-relative paths. Otherwise an existing pred_file is
             preserved.
-        run_metadata (dict[str, str | float | list[str] | dict[str, str]] | None):
-            Extra non-metric fields describing the prediction run (e.g. hardware,
+        run_metadata (dict[str, str | float | dict[str, str]] | None): Extra
+            non-metric fields describing the prediction run (e.g. hardware,
             run_time_sec). Recorded ahead of the metric values; a recompute without
             run_metadata preserves existing values.
 
@@ -465,12 +465,7 @@ def write_metrics_to_yaml(
     if pred_file_url is not None:
         block["pred_file_url"] = pred_file_url
 
-    for key in (
-        "hardware",
-        "run_time_sec",
-        "excluded_formulas",
-        "excluded_formula_reasons",
-    ):
+    for key in ("hardware", "run_time_sec", "excluded_formula_reasons"):
         if (val := run_metadata.get(key)) is None:
             val = existing.get(key)
         if val is not None:

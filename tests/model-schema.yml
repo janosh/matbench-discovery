@@ -215,10 +215,6 @@ definitions:
         type: string
       run_time_sec:
         type: number
-      excluded_formulas:
-        type: array
-        items:
-          type: string
       excluded_formula_reasons:
         type: object
         additionalProperties:

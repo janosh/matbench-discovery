@@ -256,19 +256,21 @@ export function assemble_row_data(
         : null
     const diatomics_metrics =
       typeof metrics?.diatomics === `object` ? metrics.diatomics : null
-    const excluded_formulas = diatomics_metrics?.excluded_formulas ?? []
     const excluded_formula_reasons = diatomics_metrics?.excluded_formula_reasons ?? {}
     // group excluded formulas by reason for a compact tooltip like
     // "Diatomics metrics exclude A-A, B-B due to <reason>; C-C due to <other>"
     let model_exclusion_marker = ``
-    if (excluded_formulas.length > 0) {
+    if (Object.keys(excluded_formula_reasons).length > 0) {
+      // manual grouping instead of Map.groupBy, which is newer than Vite's default
+      // browser baseline and would throw at runtime in e.g. Safari < 17.4
+      const formulas_by_reason = new Map<string, string[]>()
+      for (const [formula, reason] of Object.entries(excluded_formula_reasons)) {
+        const group = formulas_by_reason.get(reason) ?? []
+        group.push(formula)
+        formulas_by_reason.set(reason, group)
+      }
       const exclusion_note = escape_html(
-        `Diatomics metrics exclude ${[
-          ...Map.groupBy(
-            excluded_formulas,
-            (formula) => excluded_formula_reasons[formula] ?? ``,
-          ),
-        ]
+        `Diatomics metrics exclude ${[...formulas_by_reason]
           .map(
             ([reason, formulas]) =>
               `${formulas.join(`, `)}${reason ? ` due to ${reason}` : ``}`,

@@ -16,7 +16,7 @@ from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import (
     DiatomicCurve,
     DiatomicCurves,
-    _eval_window,
+    eval_window,
 )
 
 
@@ -413,7 +413,6 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
         run_metadata={
             "hardware": "NVIDIA H100 80GB HBM3",
             "run_time_sec": 120.0,
-            "excluded_formulas": ["He-He"],
             "excluded_formula_reasons": {"He-He": "exploding errors"},
             "invalid_key": "ignored",
         },
@@ -422,7 +421,6 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
         "pred_file": new_pred_file,
         "hardware": "NVIDIA H100 80GB HBM3",
         "run_time_sec": 120.0,
-        "excluded_formulas": ["He-He"],
         "excluded_formula_reasons": {"He-He": "exploding errors"},
         **expected_metrics,
     }
@@ -433,34 +431,31 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     # the other existing run metadata
     model.__dict__.pop("metadata", None)
     recomputed = diatomics.write_metrics_to_yaml(
-        model,
-        metrics_by_element,
-        run_metadata={"excluded_formulas": [], "excluded_formula_reasons": {}},
+        model, metrics_by_element, run_metadata={"excluded_formula_reasons": {}}
     )
     assert recomputed["hardware"] == "NVIDIA H100 80GB HBM3"
     assert recomputed["run_time_sec"] == 120.0
-    assert recomputed["excluded_formulas"] == []
     assert recomputed["excluded_formula_reasons"] == {}
 
 
 def test_eval_window(monkeypatch: pytest.MonkeyPatch) -> None:
-    """_eval_window returns element-specific bounds and handles missing radius data."""
+    """eval_window returns element-specific bounds and handles missing radius data."""
     atomic_num_h = atomic_numbers["H"]
-    r_min, r_max = _eval_window("H-H", 6.0)
+    r_min, r_max = eval_window("H-H", 6.0)
     assert r_min == pytest.approx(0.9 * covalent_radii[atomic_num_h])
     assert r_max == pytest.approx(min(3.1 * vdw_alvarez.vdw_radii[atomic_num_h], 6.0))
     # seps_max caps r_max (3.1 * vdW(Cu) > 6)
-    assert _eval_window("Cu-Cu", 6.0)[1] == pytest.approx(6.0)
-    assert _eval_window("H-H", 2.5)[1] == pytest.approx(2.5)  # capped by seps_max
+    assert eval_window("Cu-Cu", 6.0)[1] == pytest.approx(6.0)
+    assert eval_window("H-H", 2.5)[1] == pytest.approx(2.5)  # capped by seps_max
 
     atomic_num_og = atomic_numbers["Og"]
-    r_min, r_max = _eval_window("Og-Og", 6.0)
+    r_min, r_max = eval_window("Og-Og", 6.0)
     assert r_min == pytest.approx(0.9 * covalent_radii[atomic_num_og])
     assert r_max == pytest.approx(6.0)
 
     monkeypatch.setattr(diatomics, "covalent_radii", np.ones(10))
     monkeypatch.setattr(diatomics.vdw_alvarez, "vdw_radii", np.ones(10))
-    assert _eval_window("Og-Og", 6.0) == (0.0, 6.0)
+    assert eval_window("Og-Og", 6.0) == (0.0, 6.0)
 
 
 def test_window_excludes_deep_overlap() -> None:

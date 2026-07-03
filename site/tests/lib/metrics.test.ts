@@ -481,15 +481,15 @@ describe(`assemble_row_data`, () => {
     {
       model_key: `mixed-diatomics-exclusions`,
       diatomics: {
-        excluded_formulas: [`H-H`, `He-He`, `Li-Li`],
         excluded_formula_reasons: {
           'H-H': `unsupported "quoted" reason`,
           'He-He': `exploding errors`,
+          'Li-Li': `exploding errors`,
         },
       },
       expected_title:
         `Diatomics metrics exclude H-H due to unsupported &quot;quoted&quot; reason; ` +
-        `He-He due to exploding errors; Li-Li`,
+        `He-He, Li-Li due to exploding errors`,
     },
   ])(
     `renders reason-aware diatomics exclusion tooltip for $model_key`,
