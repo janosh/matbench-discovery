@@ -278,10 +278,15 @@ def main() -> int:
             f"{chemical_symbols[z_value]}-{chemical_symbols[z_value]}"
             for z_value in z_values
         }
+        # normpath both sides: glob returns OS-native separators on Windows, which
+        # would never compare equal to the /-joined expected paths
         expected_paths = [
-            f"{shard_dir}/Z{z_value:03d}-diatomics.json.gz" for z_value in z_values
+            os.path.normpath(f"{shard_dir}/Z{z_value:03d}-diatomics.json.gz")
+            for z_value in z_values
         ]
-        shard_paths = sorted(glob(f"{shard_dir}/Z*-diatomics.json.gz"))
+        shard_paths = sorted(
+            map(os.path.normpath, glob(f"{shard_dir}/Z*-diatomics.json.gz"))
+        )
         if shard_paths != expected_paths:
             parser.error(f"Expected shard files {expected_paths}, got {shard_paths}")
         for shard_path in shard_paths:
