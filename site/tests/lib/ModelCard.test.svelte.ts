@@ -114,8 +114,10 @@ describe(`ModelCard`, () => {
           ? Number(phonon_metrics.kappa_103?.κ_SRME) || 0
           : 0
       const displayed_kappa = kappa_metric?.querySelector(`strong`)?.textContent?.trim()
+      // must not render blank (Number(``) would coerce to 0 and mask that case)
+      expect(displayed_kappa).toMatch(/\d/)
       // The displayed value may be rounded differently
-      expect(Number(displayed_kappa ?? ``)).toBeCloseTo(kappa_value ?? 0, 2)
+      expect(Number(displayed_kappa)).toBeCloseTo(kappa_value, 2)
     })
 
     it(`handles missing metrics`, () => {

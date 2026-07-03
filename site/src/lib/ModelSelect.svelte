@@ -6,17 +6,13 @@
     options,
     selected = $bindable([]),
     placeholder = `Select models to plot`,
+    style = `width: fit-content; max-width: 100%; min-width: min(19rem, 100%); border: 1px solid var(--border)`,
   }: {
     options: ObjectOption[]
     selected?: ObjectOption[]
     placeholder?: string
+    style?: string
   } = $props()
 </script>
 
-<Select
-  class="model-select"
-  {options}
-  bind:selected
-  {placeholder}
-  style="width: fit-content; max-width: 100%; min-width: min(19rem, 100%); border: 1px solid var(--border)"
-/>
+<Select class="model-select" {options} bind:selected {placeholder} {style} />

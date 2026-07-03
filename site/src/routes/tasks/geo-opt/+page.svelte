@@ -11,7 +11,6 @@
   import { format_num, pick_contrast_color } from 'matterviz'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
-  import { untrack } from 'svelte'
 
   // payload models arrive pre-styled (colors + discovery-F1-desc leaderboard order) from the
   // figure_payload plugin; re-rank the two that want a different order (struct-rmsd by AUC
@@ -62,9 +61,8 @@
   const options_from_keys = (model_keys: string[]) =>
     selectable_options.filter((option) => model_keys.includes(String(option.value)))
 
-  let selected_model_options = $state(
-    untrack(() => options_from_keys(default_selected_keys)),
-  )
+  // options and defaults are module constants, so no untrack needed here
+  let selected_model_options = $state(options_from_keys(default_selected_keys))
   let selected_model_keys = $derived(
     selected_model_options.map((option) => String(option.value)),
   )
@@ -160,6 +158,8 @@
             style="height: 120px"
           />
         </figure>
+      {:else}
+        <p class="empty-note">No models selected. Pick models above to compare.</p>
       {/each}
     </div>
   {/snippet}
@@ -181,6 +181,8 @@
       <h3>{label}</h3>
       <Sankey {data} show_controls={false} style="height: 300px; width: 100%" />
     </li>
+  {:else}
+    <li class="empty-note">No models selected. Pick models above to compare.</li>
   {/each}
 </ul>
 
@@ -190,13 +192,18 @@
     justify-content: center;
     margin-block: 1.5em;
   }
+  .empty-note {
+    grid-column: 1 / -1;
+    text-align: center;
+    opacity: 0.7;
+  }
   .sym-ops-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 32rem), 1fr));
     gap: 2em;
   }
   .spg-sankeys {
-    padding-block: 0;
+    padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
     gap: 3em 2em;

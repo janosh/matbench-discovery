@@ -391,6 +391,7 @@ export const sort_models =
     if (typeof val_1 === `number` && typeof val_2 === `number`) {
       // Interpret run_time === 0 as infinity
       if (sort_by === `Run Time`) {
+        if (val_1 === 0 && val_2 === 0) return 0
         if (val_1 === 0) return sort_factor
         if (val_2 === 0) return -sort_factor
       }

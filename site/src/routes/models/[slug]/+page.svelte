@@ -42,7 +42,7 @@
     { href: model.doi, icon: `DOI`, label: `DOI`, title: `Digital Object Identifier` },
     {
       href: model.dirname
-        ? `${pkg.repository}/blob/-/models/${model.dirname.split(`/`).pop()}`
+        ? `${pkg.repository}/tree/HEAD/models/${model.dirname}`
         : undefined,
       icon: `Directory`,
       label: `Files`,
