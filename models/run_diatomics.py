@@ -43,20 +43,82 @@ from matbench_discovery.calculators import (
 )
 from matbench_discovery.diatomics import DiatomicResults, calc_diatomic_curve, homo_nuc
 from matbench_discovery.hpc import merge_run_metadata
+from matbench_discovery.metrics.diatomics import NON_MP_ELEMENTS, _eval_window
 
 module_dir = os.path.dirname(__file__)
-DIATOMIC_METRIC_EXCLUSIONS: dict[str, tuple[str, ...]] = {
-    # These models deterministically blow up on He-He at short scored distances.
-    "alphanet_v1_oam": ("He-He",),
-    "sevennet_l3i5": ("He-He",),
-}
+
+# the value type of DiatomicResults: one curve's distances/energies/forces lists
+CurveDict = dict[str, list[float | list[list[float]]]]
+
+
+def trim_curve_to_finite(formula: str, curve: CurveDict) -> CurveDict | None:
+    """Drop non-finite curve points outside the scored window, or the whole curve.
+
+    NaN/Infinity are not valid JSON, so non-finite samples cannot be saved. Models
+    often blow up only outside the scored window [0.9x covalent radius, 3.1x vdW
+    radius], typically in the deep-overlap region; trimming those points keeps the
+    curve scoreable. Non-finite values at scored separations mean the model is
+    unstable there, so the whole curve is dropped (returns None) and recorded as
+    excluded.
+    """
+    energies = np.asarray(curve["energies"], dtype=float)
+    forces = np.asarray(curve["forces"], dtype=float)
+    if energies.size == 0 or forces.size == 0:
+        return None
+    distances = np.asarray(curve["distances"], dtype=float)
+    finite = np.isfinite(energies) & np.isfinite(forces).all(axis=(1, 2))
+    r_min, r_max = _eval_window(formula, float(distances.max()))
+    if not finite[(distances >= r_min) & (distances <= r_max)].all():
+        return None
+    if finite.all():
+        return curve
+    return {
+        "distances": distances[finite].tolist(),
+        "energies": energies[finite].tolist(),
+        "forces": forces[finite].tolist(),
+    }
+
+
+def is_non_mp_formula(formula: str) -> bool:
+    """Whether a diatomic formula involves an element outside the MP element set."""
+    return any(elem in NON_MP_ELEMENTS for elem in formula.split("-"))
+
+
+def get_excluded_formula_reasons(
+    model_key: str, invalid_formulas: tuple[str, ...] | list[str] = ()
+) -> dict[str, str]:
+    """Map excluded diatomic formulas to reasons: YAML-curated + run-discovered.
+
+    Curated reasons (the model YAML's excluded_formula_reasons, whose keys the model
+    schema requires to exactly match excluded_formulas) take precedence over
+    invalid_formulas found in this run. Non-MP formulas are never recorded: the metrics
+    skip those elements benchmark-wide, so per-model exclusions would be redundant.
+    """
+    from matbench_discovery.enums import Model
+
+    try:
+        diatomics_metrics = Model.from_ref(model_key).metrics.get("diatomics")
+    except ValueError:  # debug models like emt have no Model enum entry
+        diatomics_metrics = None
+    curated_reasons = (
+        diatomics_metrics.get("excluded_formula_reasons", {})
+        if isinstance(diatomics_metrics, dict)
+        else {}
+    )
+    reasons = dict.fromkeys(invalid_formulas, "invalid or unsupported curve")
+    reasons |= curated_reasons
+    return {
+        formula: reasons[formula]
+        for formula in sorted(reasons)
+        if not is_non_mp_formula(formula)
+    }
 
 
 def drop_metric_exclusions(
     model_key: str, metrics: dict[str, dict[str, float]]
 ) -> dict[str, dict[str, float]]:
     """Remove model-specific pathological curves before metric aggregation."""
-    excluded = set(DIATOMIC_METRIC_EXCLUSIONS.get(model_key, ()))
+    excluded = set(get_excluded_formula_reasons(model_key))
     return {
         key: val
         for key, val in metrics.items()
@@ -93,14 +155,6 @@ def detect_hardware() -> str:
     except ImportError:
         pass
     return f"CPU ({platform.processor() or platform.machine()})"
-
-
-def validate_distance_bounds(
-    parser: argparse.ArgumentParser, min_dist: float, max_dist: float
-) -> None:
-    """Raise a clear CLI error for invalid geometric distance bounds."""
-    if min_dist <= 0 or max_dist <= 0 or max_dist <= min_dist:
-        parser.error("--min-dist and --max-dist must be positive with max > min")
 
 
 def main() -> int:
@@ -163,7 +217,8 @@ def main() -> int:
         args.model = resolve_calculator_key(args.model)
     except ValueError as exc:
         parser.error(f"{exc}, see --list-models")
-    validate_distance_bounds(parser, args.min_dist, args.max_dist)
+    if args.min_dist <= 0 or args.max_dist <= 0 or args.max_dist <= args.min_dist:
+        parser.error("--min-dist and --max-dist must be positive with max > min")
     if args.max_z < 1:
         parser.error("--max-z must be a positive integer")
     if args.n_points < 2:
@@ -211,11 +266,12 @@ def main() -> int:
     # geometric spacing densifies the short-range repulsive wall, where unphysical
     # wiggles and discontinuities are most diagnostic (matches the MACE-MP convention)
     distances = np.geomspace(args.min_dist, args.max_dist, n_points)
-    homo_pairs = [(z_value, z_value) for z_value in z_values]
     shard_dir = f"{out_dir}/{today}-diatomics-shards"
+    n_pairs = len(z_values)
+    run_metadata: dict[str, str | float | list[str] | dict[str, str]]
+    curves: DiatomicResults = {}
 
     if args.merge_shards:
-        curves: DiatomicResults = {}
         shard_metadatas: list[dict[str, object]] = []
         expected_formulas = {
             f"{chemical_symbols[z_value]}-{chemical_symbols[z_value]}"
@@ -227,38 +283,35 @@ def main() -> int:
         shard_paths = sorted(glob(f"{shard_dir}/Z*-diatomics.json.gz"))
         if shard_paths != expected_paths:
             parser.error(f"Expected shard files {expected_paths}, got {shard_paths}")
-        for json_path in shard_paths:
-            with gzip.open(json_path, mode="rt") as file:
+        for shard_path in shard_paths:
+            with gzip.open(shard_path, mode="rt") as file:
                 shard = json.load(file)
             shard_distances = shard["distances"]
-            if json_path == shard_paths[0]:
+            if shard_path == shard_paths[0]:
                 distances = np.asarray(shard_distances)
             elif shard_distances != distances.tolist():
-                parser.error(f"Inconsistent distances in {json_path}")
+                parser.error(f"Inconsistent distances in {shard_path}")
             curves.update(shard.get(homo_nuc, {}))
             shard_metadatas.append(shard.get("run_metadata", {}))
 
-        missing_formulas = expected_formulas - set(curves)
-        model_exclusions = set(DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()))
-        if unexpected_missing := missing_formulas - model_exclusions:
-            parser.error(f"Missing curves in shards: {sorted(unexpected_missing)}")
-        run_metadata: dict[str, str | float | list[str]] = {
-            **merge_run_metadata(shard_metadatas),
-            "excluded_formulas": sorted(model_exclusions),
+        missing_formulas = {
+            formula
+            for formula in expected_formulas - set(curves)
+            # metrics skip non-MP elements, so models may omit their curves
+            if not is_non_mp_formula(formula)
         }
+        exclusion_reasons = get_excluded_formula_reasons(args.model)
+        if unexpected_missing := missing_formulas - set(exclusion_reasons):
+            parser.error(f"Missing curves in shards: {sorted(unexpected_missing)}")
+        run_metadata = {**merge_run_metadata(shard_metadatas)}
         json_path = f"{out_dir}/{today}-diatomics.json.gz"
-        n_pairs = len(expected_formulas)
     else:
         start_time = time.perf_counter()
         calculator = load_calculator(args.model, dtype=args.dtype)
         hardware = detect_hardware()  # after load: the backend's GPU is now initialized
-        curves = {}
-        print(
-            f"\nPredicting {len(homo_pairs)} diatomic curves for {args.model} on "
-            f"{hardware}"
-        )
+        print(f"\nPredicting {n_pairs} diatomic curves for {args.model} on {hardware}")
         calc_diatomic_curve(
-            pairs=homo_pairs,
+            pairs=[(z_value, z_value) for z_value in z_values],
             calculator=calculator,
             model_name=args.model,
             distances=distances,
@@ -266,50 +319,37 @@ def main() -> int:
         )
         run_time_sec = round(time.perf_counter() - start_time, 2)
 
-        # drop curves with empty or non-finite energies/forces: NaN/Infinity are not
-        # valid JSON (downstream JS parsers reject them), and these curves are skipped
-        # by the metrics anyway, so the saved file matches what's actually scored
-        def is_valid_curve(curve: dict[str, list[float | list[list[float]]]]) -> bool:
-            """Return whether a curve has finite energy and force samples."""
-            return bool(
-                curve.get("energies")
-                and curve.get("forces")
-                and np.isfinite(curve["energies"]).all()
-                and np.isfinite(curve["forces"]).all()
-            )
-
-        valid_curves: DiatomicResults = {}
+        # trim out-of-window non-finite samples (unscored anyway, and NaN/Infinity are
+        # not valid JSON); drop curves that are non-finite at scored separations
         invalid_formulas = []
-        for formula, curve in curves.items():
-            if is_valid_curve(curve):
-                valid_curves[formula] = curve
-            else:
+        for formula in list(curves):
+            trimmed = trim_curve_to_finite(formula, curves[formula])
+            if trimmed is None:
                 invalid_formulas.append(formula)
-        curves = valid_curves
-        invalid_formulas = sorted(invalid_formulas)
+                del curves[formula]
+            else:
+                curves[formula] = trimmed
 
-        run_metadata = {
-            "hardware": hardware,
-            "run_time_sec": run_time_sec,
-            "excluded_formulas": sorted(
-                {*DIATOMIC_METRIC_EXCLUSIONS.get(args.model, ()), *invalid_formulas}
-            ),
-        }
+        exclusion_reasons = get_excluded_formula_reasons(args.model, invalid_formulas)
+        run_metadata = {"hardware": hardware, "run_time_sec": run_time_sec}
         if slurm_task_id:
             json_path = f"{shard_dir}/Z{z_values[0]:03d}-diatomics.json.gz"
         else:
             json_path = f"{out_dir}/{today}-diatomics.json.gz"
-        n_pairs = len(homo_pairs)
 
+    run_metadata |= {
+        "excluded_formulas": sorted(exclusion_reasons),
+        "excluded_formula_reasons": exclusion_reasons,
+    }
     # flat on-disk schema read by DiatomicCurves.from_dict / the site's diatomics parser
     results: dict[str, object] = {
         homo_nuc: curves,
         "hetero-nuclear": {},
         "distances": distances.tolist(),
     }
-    if slurm_task_id and not args.merge_shards:
-        # persist provenance so --merge-shards can aggregate hardware + run time
-        results["run_metadata"] = run_metadata
+    # persist provenance (hardware, run time, exclusions) so shards can be aggregated
+    # and merged/local files keep it
+    results["run_metadata"] = run_metadata
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
     with gzip.open(json_path, mode="wt") as file:
         # allow_nan=False guards against writing invalid JSON (NaN) if a non-finite
@@ -324,9 +364,8 @@ def main() -> int:
             print(f"Skipping metrics.diatomics write: {args.model!r} is not a Model")
             return 0
         from matbench_discovery.metrics import diatomics
-        from matbench_discovery.metrics.diatomics import DiatomicCurves
 
-        pred_curves = DiatomicCurves.from_dict(results)
+        pred_curves = diatomics.DiatomicCurves.from_dict(results)
         metrics = diatomics.calc_diatomic_metrics(
             ref_curves=diatomics.load_dft_reference_curves("PBE"),
             pred_curves=pred_curves,

@@ -85,8 +85,8 @@ for model in models_to_evaluate:
         interpolate=200,
     )
     metrics = drop_metric_exclusions(model.name, metrics)
-    # write_metrics_to_yaml preserves the source run's excluded_formulas / hardware /
-    # run_time_sec (written by run_diatomics) when we don't pass run_metadata
+    # write_metrics_to_yaml preserves source run metadata (hardware, run time,
+    # excluded formulas + reasons) when we don't pass run_metadata
     mean_metrics = diatomics.write_metrics_to_yaml(model, metrics)
     print(f"{model.label}:")
     for metric, val in mean_metrics.items():

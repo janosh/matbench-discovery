@@ -219,6 +219,10 @@ definitions:
         type: array
         items:
           type: string
+      excluded_formula_reasons:
+        type: object
+        additionalProperties:
+          type: string
       tortuosity:
         type: number
       energy_diff_flips:

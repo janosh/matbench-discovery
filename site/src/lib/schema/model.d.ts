@@ -208,6 +208,7 @@ export type DiatomicsMetrics = PredFileRequiresUrl & {
   hardware?: string
   run_time_sec?: number
   excluded_formulas?: string[]
+  excluded_formula_reasons?: Record<string, string>
   tortuosity?: number
   energy_diff_flips?: number
   energy_jump?: number

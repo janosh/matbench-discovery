@@ -190,18 +190,20 @@ metrics:
     run_time_sec: 196.1
     excluded_formulas:
       - He-He
-    pbe_wall_dist_mae: 0.1909
-    pbe_energy_mae: 2.449
-    pbe_bond_length_error: 0.3508
-    pbe_well_depth_error: 1.864
-    pbe_vib_freq_error: 148.3
-    tortuosity: 1.102
-    energy_diff_flips: 2.56
-    energy_jump: 0.9086
-    force_flips: 2.066
-    force_total_variation: 207.2
-    force_jump: 5.116
-    pbe_force_mae: 2.274
+    excluded_formula_reasons:
+      He-He: exploding errors
+    pbe_wall_dist_mae: 0.07788
+    pbe_energy_mae: 0.961
+    pbe_bond_length_error: 0.3055
+    pbe_well_depth_error: 0.6153
+    pbe_vib_freq_error: 87.38
+    tortuosity: 1.03
+    energy_diff_flips: 2.488
+    energy_jump: 0.8299
+    force_flips: 2.0
+    force_total_variation: 188.6
+    force_jump: 4.378
+    pbe_force_mae: 1.06
   md:
     pred_file: models/alphanet/alphanet-v1-oam/2026-06-28-alphanet_v1_oam-md-metrics.csv.gz
     energy_rmse: 1.3423 # meV/atom

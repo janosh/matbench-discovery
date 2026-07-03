@@ -179,18 +179,18 @@ metrics:
     pred_file_url: https://figshare.com/files/66048854
   diatomics:
     pred_file: models/chgnet/chgnet-0.3.0/2026-06-29-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66104585
     hardware: NVIDIA H200
     run_time_sec: 99.4
-    pbe_wall_dist_mae: 0.2343
-    pbe_energy_mae: 3.445
-    pbe_bond_length_error: 0.3609
-    pbe_well_depth_error: 15.94
-    pbe_vib_freq_error: 230.5
-    tortuosity: 2.146
-    energy_diff_flips: 1.87
-    energy_jump: 2.016
+    pbe_wall_dist_mae: 0.1405
+    pbe_energy_mae: 3.29
+    pbe_bond_length_error: 0.3019
+    pbe_well_depth_error: 16.91
+    pbe_vib_freq_error: 195.5
+    tortuosity: 2.21
+    energy_diff_flips: 1.839
+    energy_jump: 2.105
     force_flips: 2.011
-    force_total_variation: 398.8
-    force_jump: 199.0
-    pbe_force_mae: 4.699
-    pred_file_url: https://figshare.com/files/66104585
+    force_total_variation: 415.0
+    force_jump: 205.5
+    pbe_force_mae: 4.975

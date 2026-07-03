@@ -1,13 +1,12 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation'
   import { page } from '$app/state'
-  import { MetricsTable, type ModelData } from '$lib'
-  import { ALL_METRICS, DIATOMICS_METRICS, METADATA_COLS } from '$lib/labels'
+  import { MetricsTable, ModelSelect, type ModelData } from '$lib'
+  import { DIATOMICS_METRICS, task_page_visible_cols } from '$lib/labels'
   import { DiatomicCurve } from '$lib/plot'
   import { sort_from_query, sync_url_params, valid_query_param } from '$lib/url-state'
   import type { SortDir } from '$lib/types'
   import DiatomicsNote from './diatomics-note.md'
-  import Select from 'svelte-multiselect'
   import { element_data } from 'matterviz/element'
   import type { ChemicalElement, ElementCategory } from 'matterviz/element'
   import { pick_contrast_color, PLOT_COLORS } from 'matterviz'
@@ -72,14 +71,7 @@
     category_group(`actinide`, `Actinides`, `actinide`),
   ]
   const element_group_keys = new Set(element_groups.map(({ key }) => key))
-  const visible_cols: Record<string, boolean> = Object.fromEntries([
-    ...Object.values(ALL_METRICS).map((col): [string, boolean] => [col.label, false]),
-    ...Object.values(METADATA_COLS).map((col): [string, boolean] => [col.label, true]),
-    ...Object.values(DIATOMICS_METRICS).map((col): [string, boolean] => [
-      col.label,
-      true,
-    ]),
-  ])
+  const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
   const has_diatomics_metrics = (model: ModelData): boolean =>
     model.metrics?.diatomics != null && typeof model.metrics.diatomics === `object`
   const default_sort: { column: string; dir: SortDir } = {
@@ -146,21 +138,19 @@
     }),
   )
 
-  function default_selected_names(): string[] {
-    return [
-      // DFT references on by default, plus the newest models with curve data
-      ...reference_names,
-      ...selectable_names
-        .filter((model_name) => !reference_names.includes(model_name))
-        .slice(0, default_n_models),
-    ]
-  }
+  // DFT references on by default, plus the newest models with curve data
+  let default_selected_names = $derived([
+    ...reference_names,
+    ...selectable_names
+      .filter((model_name) => !reference_names.includes(model_name))
+      .slice(0, default_n_models),
+  ])
 
   const options_from_names = (model_names: string[]) =>
     selectable_options.filter((option) => model_names.includes(String(option.value)))
 
   let selected_model_options = $state(
-    untrack(() => options_from_names(default_selected_names())),
+    untrack(() => options_from_names(default_selected_names)),
   )
   let selected_model_names = $derived(
     selected_model_options.map((option) => String(option.value)),
@@ -184,7 +174,7 @@
 
   function names_from_url(params: URLSearchParams): string[] {
     const model_param = params.get(`models`)
-    if (model_param === null) return default_selected_names()
+    if (model_param === null) return default_selected_names
     if (!model_param) return []
 
     return model_param
@@ -199,13 +189,14 @@
       .map((model_name) => model_key_by_name.get(model_name) ?? model_name)
       .join(`,`)
 
-  function element_group_from_url(params: URLSearchParams): string {
-    return valid_query_param(params, `elements`, `all`, element_group_keys)
-  }
-
   afterNavigate(() => {
     selected_model_options = options_from_names(names_from_url(page.url.searchParams))
-    selected_element_group = element_group_from_url(page.url.searchParams)
+    selected_element_group = valid_query_param(
+      page.url.searchParams,
+      `elements`,
+      `all`,
+      element_group_keys,
+    )
     sort = sort_from_query(page.url.searchParams, default_sort)
     url_ready = true
   })
@@ -214,7 +205,7 @@
     if (!url_ready) return
 
     const selected = selected_param_value(selected_model_names)
-    const defaults = selected_param_value(default_selected_names())
+    const defaults = selected_param_value(default_selected_names)
     sync_url_params(
       [
         [`models`, selected, defaults],
@@ -226,8 +217,8 @@
     )
   })
 
-  function curves_for_formula(formula: string) {
-    return selected_model_names.flatMap((model) => {
+  const curves_for_formula = (formula: string) =>
+    selected_model_names.flatMap((model) => {
       const model_curves = diatomic_curves[model]
       const curve = model_curves?.[homo_nuc_key]?.[formula]
       if (!curve?.energies.length) return []
@@ -244,7 +235,6 @@
         },
       ]
     })
-  }
 
   function observe_plot(node: HTMLElement, formula: string) {
     const hide_plot = () => visible_diatomics.delete(formula)
@@ -319,13 +309,7 @@
     {/each}
   </div>
 
-  <Select
-    class="model-select"
-    options={selectable_options}
-    bind:selected={selected_model_options}
-    placeholder="Select models to plot"
-    style="width: fit-content; max-width: 100%; min-width: min(19rem, 100%); border: 1px solid var(--border)"
-  />
+  <ModelSelect options={selectable_options} bind:selected={selected_model_options} />
 </div>
 
 <div class="grid" style="--plot-height: {clamped_plot_height}px">

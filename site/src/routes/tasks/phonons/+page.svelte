@@ -9,9 +9,9 @@
   import {
     ALL_METRICS,
     HYPERPARAMS,
-    METADATA_COLS,
     scatter_axis_label,
     scatter_options_by_key,
+    task_page_visible_cols,
   } from '$lib/labels'
   import { get_nested_number } from '$lib/metrics'
   import { format_num } from 'matterviz'
@@ -21,16 +21,8 @@
   import PhononFreqParity from './PhononFreqParity.svelte'
   import PhononRobustnessTable from './PhononRobustnessTable.svelte'
 
-  // Default column visibility
-  let visible_cols: Record<string, boolean> = $state({
-    // Hide other metrics
-    ...Object.fromEntries(Object.values(ALL_METRICS).map((col) => [col.label, false])),
-    // Show all metadata
-    ...Object.fromEntries(Object.values(METADATA_COLS).map((col) => [col.label, true])),
-    // Show phonon metrics
-    [ALL_METRICS.κ_SRME.label]: true,
-    [ALL_METRICS.κ_SRE.label]: true,
-  })
+  // Default column visibility: metadata + phonon metrics only
+  const visible_cols = task_page_visible_cols(ALL_METRICS.κ_SRME, ALL_METRICS.κ_SRE)
 
   // Models with generated kappa parity assets or per-material diagnostics, for the
   // DFT-vs-ML inspector below

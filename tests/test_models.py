@@ -96,7 +96,26 @@ def test_model_dirs_have_metadata() -> None:
         )
 
 
+def test_diatomics_exclusion_reasons_match_excluded_formulas() -> None:
+    """Diatomics exclusion reason keys must exactly match excluded formulas."""
+    for model in Model:
+        diatomics_metrics = model.metrics.get("diatomics")
+        if not isinstance(diatomics_metrics, dict):
+            continue
+        excluded_formulas = set(diatomics_metrics.get("excluded_formulas", []))
+        excluded_formula_reasons = set(
+            diatomics_metrics.get("excluded_formula_reasons", {})
+        )
+        assert excluded_formula_reasons == excluded_formulas, (
+            f"{model.label} excluded_formula_reasons keys must exactly match "
+            f"excluded_formulas. Missing reasons for "
+            f"{sorted(excluded_formulas - excluded_formula_reasons)}; unexpected "
+            f"reason keys {sorted(excluded_formula_reasons - excluded_formulas)}"
+        )
+
+
 def test_model_dirs_have_test_scripts() -> None:
+    """Test that all model directories have at least one model test script/notebook."""
     for model_dir in MODEL_DIRS:
         test_scripts = glob(f"{model_dir}*test_*.py")
         test_nbs = glob(f"{model_dir}*test_*.ipynb")

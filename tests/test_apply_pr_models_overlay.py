@@ -5,21 +5,12 @@ lines* through from an untrusted PR's enums.py, since the ingest workflow runs w
 FIGSHARE_TOKEN etc. in env on the resulting tree.
 """
 
-import importlib.util
-import sys
-from pathlib import Path
-
 import pytest
+from conftest import import_repo_script
 
-spec = importlib.util.spec_from_file_location(
-    "apply_pr_models_overlay",
-    Path(__file__).parent.parent / "scripts" / "apply_pr_models_overlay.py",
+overlay = import_repo_script(
+    "apply_pr_models_overlay", "scripts/apply_pr_models_overlay.py"
 )
-assert spec is not None  # narrow ModuleSpec | None for type checker
-assert spec.loader is not None  # narrow Loader | None for type checker
-overlay = importlib.util.module_from_spec(spec)
-sys.modules["apply_pr_models_overlay"] = overlay
-spec.loader.exec_module(overlay)
 
 TRUSTED = '''class Model(Files, base_dir=f"{ROOT}/models"):
     """docstring"""
