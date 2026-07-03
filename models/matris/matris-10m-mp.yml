@@ -118,10 +118,6 @@ metrics:
     pred_file: models/matris/matris-10m-mp/2025-10-29-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/59233859
     pred_col: e_form_per_atom_matris
-
-    #diatomics:
-    #  pred_file: models/matris/matris-10m-mp/2025-10-29-diatomics.json.gz
-    #  pred_file_url: https://figshare.com/files/59154065
     full_test_set:
       F1: 0.832 # fraction
       DAF: 4.744 # dimensionless
