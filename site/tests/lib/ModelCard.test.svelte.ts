@@ -115,7 +115,7 @@ describe(`ModelCard`, () => {
           : 0
       const displayed_kappa = kappa_metric?.querySelector(`strong`)?.textContent?.trim()
       // The displayed value may be rounded differently
-      expect(parseFloat(displayed_kappa ?? ``)).toBeCloseTo(kappa_value ?? 0, 2)
+      expect(Number(displayed_kappa ?? ``)).toBeCloseTo(kappa_value ?? 0, 2)
     })
 
     it(`handles missing metrics`, () => {

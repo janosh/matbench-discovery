@@ -207,8 +207,8 @@ describe(`Landing Page`, () => {
     if (!f1_match?.groups || !daf_match?.groups) {
       throw new Error(`Could not find F1 or DAF values in text: ${text}`)
     }
-    const f1_val = parseFloat(f1_match.groups.f1)
-    const daf_val = parseFloat(daf_match.groups.daf)
+    const f1_val = Number(f1_match.groups.f1)
+    const daf_val = Number(daf_match.groups.daf)
     expect(f1_val > 0 && f1_val < 1, `F1=${f1_val} is out of range`).toBe(true)
     expect(daf_val > 0 && daf_val < 10, `DAF=${daf_val} is out of range`).toBe(true)
   })

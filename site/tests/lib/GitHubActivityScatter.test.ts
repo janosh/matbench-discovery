@@ -69,14 +69,14 @@ describe(`GitHubActivityScatter`, () => {
             commits_last_year: 10_000,
             contributors: 1000,
           }),
-          {
+          create_mock_github_data({
             name: `Incomplete`,
             repo: `x`,
-            stars: null,
+            stars: Number.NaN,
             forks: 100,
             commits_last_year: 50,
             contributors: 5,
-          } as unknown as GitHubActivityData,
+          }),
           create_mock_github_data({
             name: `Infinite`,
             stars: Number.POSITIVE_INFINITY,
