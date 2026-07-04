@@ -236,7 +236,6 @@ export type MdMetrics = PredFileRequiresUrl & {
   pressure_mae?: number
   pressure_wasserstein?: number
   pressure_error?: number
-  combined_score?: number
   n_systems?: number
 }
 /**

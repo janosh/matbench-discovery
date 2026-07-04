@@ -19,14 +19,16 @@ describe(`MD Task Page`, () => {
     const headers = [...table.querySelectorAll(`th`)].map((th) =>
       th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
-    for (const header of [`ΔRDF`, `ΔADF`, `ΔvDOS`, `PMAE`, `PW1`, `CMDS`]) {
+    for (const header of [`ΔERMSE`, `FRMSE`, `ΔADF`, `ΔvDOS`, `PMAE`, `PW1`, `CMDS`]) {
       expect(headers, `missing column ${header}`).toContain(header)
     }
+    // ΔRDF is hidden from the leaderboard (redundant with ΔvDOS/ΔADF, out of CMDS)
+    expect(headers).not.toContain(`ΔRDF`)
 
     const headings = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)].map((h2) =>
       h2.textContent?.replaceAll(/\s+/g, ` `).trim(),
     )
-    expect(headings).toContain(`ΔRDF vs FRMSE`)
+    expect(headings).toContain(`ΔvDOS vs FRMSE`)
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
@@ -45,13 +47,13 @@ describe(`MD Task Page`, () => {
   it(`restores URL state for scatter axes and table sort`, async () => {
     await mount_with_url(
       MdPage,
-      `http://localhost/tasks/md?x=combined_score&y=force_rmse&sort=rdf_error&dir=asc`,
+      `http://localhost/tasks/md?x=combined_score&y=force_rmse&sort=vdos_error&dir=asc`,
     )
 
     const heading = document.querySelector(`h2`)?.textContent?.replaceAll(/\s+/g, ` `)
     expect(heading).toContain(`FRMSE vs CMDS`)
     const header = sorted_header()
-    expect(header?.textContent).toContain(`RDF`)
+    expect(header?.textContent).toContain(`vDOS`)
     expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
   })
 })

@@ -21,10 +21,7 @@ ANISOTROPIC_STRESS_VOIGT = np.array(
 
 
 class ConstantCalculator(Calculator):
-    """Predicts a fixed energy and uniform force regardless of geometry. Geometry-
-    independent so it works with the array-based pipeline (which feeds the calculator
-    fresh Atoms built from positions only, without per-frame info/arrays).
-    """
+    """Predicts a fixed energy and uniform force regardless of geometry."""
 
     implemented_properties = ("energy", "forces")
 
@@ -63,14 +60,6 @@ class BrokenStressCalculator(Calculator):
         raise RuntimeError("simulated stress backend failure")
 
 
-def attach_ref_labels(atoms: Atoms, energy: float, forces: np.ndarray) -> Atoms:
-    """Attach reference energy/forces as SinglePointCalculator results so
-    Trajectory.from_ase extracts them as the reference labels.
-    """
-    atoms.calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
-    return atoms
-
-
 def make_jiggled_frames(
     n_frames: int, *, pressure_gpa: float | None = None
 ) -> list[Atoms]:
@@ -98,13 +87,14 @@ def h2_frame(
     positions: np.ndarray | None = None,
     forces: np.ndarray | None = None,
 ) -> Atoms:
-    """An H2 reference frame (random positions unless given) carrying energy/forces."""
+    """An H2 reference frame carrying private energy/force labels."""
     if positions is None:
         positions = np_rng.random((2, 3)) * 2
     if forces is None:
         forces = np.zeros((2, 3))
     atoms = Atoms("H2", positions=positions, cell=[5] * 3)
-    return attach_ref_labels(atoms, energy=energy, forces=forces)
+    atoms.calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
+    return atoms
 
 
 # === RDF ===
@@ -656,39 +646,45 @@ def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
         md_metrics.calc_pressure_metrics(np.array([]), p_ref)
 
 
-# === combined error ===
+# === private energy/force diagnostics ===
 
 
-@pytest.mark.parametrize(
-    ("rdf_error", "adf_error", "vdos_error", "pressure_error", "expected"),
-    [
-        (0, 0, 0, 0, 1.0),  # zero error -> perfect score
-        (10, 20, 30, 40, 0.75),  # 1 - mean(25)/100
-        (15, 15, 15, 15, 0.85),
-        (30, 0, 0, 0, 0.925),
-        (150, 150, 150, 150, 0.0),  # mean error >100% -> clamped to 0
-    ],
-)
-def test_calc_combined_score(
-    rdf_error: float,
-    adf_error: float,
-    vdos_error: float,
-    pressure_error: float,
-    expected: float,
-) -> None:
-    """CMDS: 1 - simple mean of RDF/ADF/vDOS/pressure errors / 100, in [0, 1]."""
-    assert md_metrics.calc_combined_score(
-        rdf_error, adf_error, vdos_error, pressure_error
-    ) == pytest.approx(expected)
+def test_calc_energy_force_rmse_uses_private_labels() -> None:
+    """Energy fluctuations and force RMSE come from private reference labels."""
+    frames = [
+        h2_frame(energy=1.0, forces=np.zeros((2, 3))),
+        h2_frame(energy=3.0, forces=np.ones((2, 3))),
+    ]
+
+    metrics = md_metrics.calc_energy_force_rmse(
+        frames, ConstantCalculator(energy=2.0, force=0.0)
+    )
+
+    # predicted energy fluctuations are zero; reference fluctuations are ±0.5 eV/atom
+    assert metrics["energy_rmse"] == pytest.approx(0.5)
+    assert metrics["force_rmse"] == pytest.approx(np.sqrt(0.5))
 
 
-def test_calc_combined_score_rejects_invalid_inputs() -> None:
-    """Combined score should reject negative or non-finite components."""
-    with pytest.raises(ValueError, match="must be non-negative"):
-        md_metrics.calc_combined_score(-1, 5, 5, 5)
-    # a missing/NaN pressure must fail loud, not silently become a two-metric mean
-    with pytest.raises(ValueError, match="finite"):
-        md_metrics.calc_combined_score(10, 20, 30, float("nan"))
+def test_energy_force_rmse_rejects_missing_private_labels() -> None:
+    """Private diagnostics must fail loudly when the reference lacks labels."""
+    atoms = Atoms("H2", positions=np_rng.random((2, 3)) * 2, cell=[5] * 3)
+
+    with pytest.raises(ValueError, match="energy/forces"):
+        md_metrics.calc_energy_force_rmse([atoms], ConstantCalculator())
+
+
+def test_energy_force_rmse_rejects_stale_predictions() -> None:
+    """Prediction sidecars must match the private trajectory frame count."""
+    frames = [h2_frame(energy=1.0), h2_frame(energy=2.0)]
+
+    with pytest.raises(ValueError, match="don't match"):
+        md_metrics.energy_force_rmse_from_preds(
+            frames,
+            {
+                "energy_pred": np.array([1.0]),
+                "force_se": np.array([0.0]),
+            },
+        )
 
 
 @pytest.mark.parametrize(
@@ -725,110 +721,6 @@ def test_calc_pressure_histogram_error_rejects_bad_input() -> None:
         md_metrics.calc_pressure_histogram_error(pressures, pressures, n_bins=1)
     with pytest.raises(ValueError, match="finite"):
         md_metrics.calc_pressure_histogram_error(np.array([0.0, np.nan]), pressures)
-
-
-# === energy/force RMSE ===
-
-
-@pytest.mark.parametrize("force_offset", [0, 0.1, 0.25])
-def test_calc_energy_force_rmse(force_offset: float) -> None:
-    """Energy RMSE uses mean-subtracted (fluctuation) energies, so a constant predictor
-    vs constant references cancels to 0 regardless of the gap; forces map directly to
-    the absolute error (they're invariant to the energy zero).
-    """
-    frames = [h2_frame(0.0) for _ in range(3)]
-    calc = ConstantCalculator(energy=0.8, force=force_offset)
-    result = md_metrics.calc_energy_force_rmse(frames, calc)
-    assert result["energy_rmse"] == pytest.approx(0, abs=1e-12)  # constant gap removed
-    assert result["force_rmse"] == pytest.approx(abs(force_offset), abs=1e-12)
-
-
-def test_calc_energy_force_rmse_handles_degenerate_inputs() -> None:
-    """Energy/force RMSE rejects empty refs; single-frame energy fluctuation is zero."""
-    calc = ConstantCalculator(energy=0.8, force=0)
-    frames = [h2_frame(0.0) for _ in range(3)]
-
-    with pytest.raises(ValueError, match="zero frames"):
-        md_metrics.calc_energy_force_rmse([], calc)
-    single_frame = md_metrics.calc_energy_force_rmse(frames[:1], calc)
-    assert single_frame["energy_rmse"] == pytest.approx(0, abs=1e-12)  # no fluctuation
-
-
-def test_calc_energy_force_rmse_removes_offset_keeps_fluctuations() -> None:
-    """Energy RMSE subtracts each trajectory's mean, so a large constant reference
-    offset drops out and only the per-frame fluctuation mismatch remains. This is what
-    makes it invariant to CFPMD-26's mixed all-electron/PAW absolute energy zeros.
-    """
-    n_atoms = 2
-    fluctuations = np.array([0.0, 0.3, -0.3, 0.6, -0.6])  # eV total, varying, zero mean
-    # constant predictor returns 0; references carry a +1000 eV offset plus fluctuations
-    frames = [h2_frame(-(1000 + float(fluct))) for fluct in fluctuations]
-
-    result = md_metrics.calc_energy_force_rmse(frames, ConstantCalculator(energy=0))
-    # the 1000 eV offset cancels; the flat predictor's deviation is 0 and the reference
-    # deviation is -fluct (mean(fluctuations)=0), so only the fluctuations survive
-    expected = np.sqrt(np.mean((fluctuations / n_atoms) ** 2))
-    assert result["energy_rmse"] == pytest.approx(expected)
-
-
-def test_calc_energy_force_rmse_uses_frame_geometry() -> None:
-    """The calculator must receive each frame's own geometry (not a shared/blank one),
-    so a geometry-dependent prediction yields per-frame-varying errors.
-    """
-
-    class XCoordCalculator(Calculator):
-        """Energy equals atom 0's x-coordinate, so it depends on the frame geometry."""
-
-        implemented_properties = ("energy", "forces")
-
-        def calculate(
-            self,
-            atoms: Atoms | None = None,
-            properties: list[str] | None = None,
-            system_changes: list[str] = all_changes,
-        ) -> None:
-            super().calculate(atoms, properties, system_changes)
-            assert atoms is not None
-            self.results["energy"] = float(atoms.positions[0, 0])
-            self.results["forces"] = np.zeros((len(atoms), 3))
-
-    x_coords = np.array([0.0, 1.0, 2.0, 3.0])
-    frames = [
-        h2_frame(0.0, positions=np.array([[x, 0, 0], [0, 0, 0]])) for x in x_coords
-    ]
-    result = md_metrics.calc_energy_force_rmse(frames, XCoordCalculator())
-    # pred energy = x (ref is flat 0), so after mean-subtraction the per-frame deviation
-    # is (x - mean(x)) / 2 atoms
-    expected = np.sqrt(np.mean(((x_coords - x_coords.mean()) / 2) ** 2))
-    assert result["energy_rmse"] == pytest.approx(expected)
-
-
-def test_predict_on_reference_persists_for_cpu_recompute(tmp_path: Path) -> None:
-    """Persisted per-frame predictions recompute the same energy/force RMSE on CPU as
-    the calc_energy_force_rmse wrapper, with no model re-run.
-    """
-    frames = [
-        h2_frame(float(np_rng.random()), forces=np_rng.random((2, 3))) for _ in range(6)
-    ]
-    calc = ConstantCalculator(energy=0.5, force=0.1)
-    preds = md_metrics.predict_on_reference(frames, calc)
-    assert set(preds) == {"e_pred", "force_se"}
-    assert preds["e_pred"].shape == preds["force_se"].shape == (6,)
-
-    direct = md_metrics.calc_energy_force_rmse(frames, calc)
-    assert md_metrics.energy_force_rmse_from_preds(frames, preds) == direct
-
-    # persisted sidecar recomputes identical metrics without the calculator
-    path = tmp_path / "refeval.npz"
-    np.savez(path, e_pred=preds["e_pred"], force_se=preds["force_se"])
-    with np.load(path) as data:
-        reloaded = {key: data[key] for key in data.files}
-    assert md_metrics.energy_force_rmse_from_preds(frames, reloaded) == direct
-
-    # a stale sidecar with the wrong frame count must error, not silently miscompute
-    stale = {key: arr[:-1] for key, arr in preds.items()}
-    with pytest.raises(ValueError, match="stale or mismatched"):
-        md_metrics.energy_force_rmse_from_preds(frames, stale)
 
 
 def test_calc_rdf_matches_direct_ase_histogram() -> None:
@@ -948,24 +840,8 @@ def test_evaluate_md_system_reraises_unexpected_pressure_errors() -> None:
         )
 
 
-def test_evaluate_md_system_with_calculator_adds_rmse() -> None:
-    """Passing a calculator should add energy and force RMSE metrics."""
-    ref_traj = [
-        attach_ref_labels(atoms, energy=-1.0, forces=np.zeros((len(atoms), 3)))
-        for atoms in make_jiggled_frames(6)
-    ]
-
-    metrics = md_metrics.evaluate_md_system(
-        ref_traj,
-        make_jiggled_frames(6),
-        ref_time_step_fs=1,
-        pred_time_step_fs=1,
-        calculator=ConstantCalculator(energy=-0.2),  # constant gap vs flat ref -1.0
-    )
-    assert metrics["energy_rmse"] == pytest.approx(0)  # constant offset cancels
-    assert metrics["force_rmse"] == pytest.approx(0)
-
-    # trajectories shorter than two matched frames should raise
+def test_evaluate_md_system_rejects_short_trajectories() -> None:
+    """Trajectories shorter than two matched frames should raise."""
     with pytest.raises(ValueError, match="too short after time matching"):
         md_metrics.evaluate_md_system(
             make_jiggled_frames(1),
@@ -982,8 +858,8 @@ def test_calc_md_metrics() -> None:
     """Aggregation should average per-system rows, skipping NaNs."""
     df_md = pd.DataFrame(
         {
-            "energy_rmse": [0.1, 0.3],
-            "force_rmse": [0.2, 0.4],
+            "energy_rmse": [0.001, 0.003],
+            "force_rmse": [0.1, 0.3],
             "rdf_error": [10.0, 20.0],
             "adf_error": [50.0, 10.0],
             "vdos_error": [30.0, 10.0],
@@ -994,19 +870,16 @@ def test_calc_md_metrics() -> None:
     )
     metrics = md_metrics.calc_md_metrics(df_md)
 
-    # energy/force RMSE means (0.2, 0.3 eV) are reported in meV (x1000)
-    assert metrics["energy_rmse"] == pytest.approx(200)
-    assert metrics["force_rmse"] == pytest.approx(300)
+    assert metrics["energy_rmse"] == pytest.approx(2)
+    assert metrics["force_rmse"] == pytest.approx(200)
     assert metrics["rdf_error"] == pytest.approx(15)
     assert metrics["adf_error"] == pytest.approx(30)
     assert metrics["vdos_error"] == pytest.approx(20)
     assert metrics["pressure_mae"] == pytest.approx(1)
     assert metrics["pressure_wasserstein"] == pytest.approx(0.5)
     assert metrics["pressure_error"] == pytest.approx(40)
-    # CMDS = 1 - simple mean of mean rdf/adf/vdos/pressure errors / 100
-    assert metrics["combined_score"] == pytest.approx(
-        md_metrics.calc_combined_score(15, 30, 20, 40)
-    )
+    # CMDS is deliberately absent: the site computes it on the fly from the components
+    assert "combined_score" not in metrics
     assert metrics["n_systems"] == 2
 
     # partial columns work, unrecognized columns raise
@@ -1016,8 +889,28 @@ def test_calc_md_metrics() -> None:
         md_metrics.calc_md_metrics(pd.DataFrame({"unrelated": [1]}))
 
 
-def test_calc_md_metrics_skips_combined_score_without_finite_pressure() -> None:
-    """All-NaN pressure errors should not make aggregation fail or emit CMDS."""
+def test_calc_md_metrics_drops_partial_energy_force_coverage() -> None:
+    """E/F diagnostics with NaN rows (mixed private-ref coverage) must be dropped, not
+    averaged over the covered subset while n_systems suggests full coverage.
+    """
+    df_md = pd.DataFrame(
+        {
+            "rdf_error": [10.0, 20.0],
+            "energy_rmse": [0.001, np.nan],
+            "force_rmse": [0.1, np.nan],
+        }
+    )
+
+    metrics = md_metrics.calc_md_metrics(df_md)
+
+    assert "energy_rmse" not in metrics
+    assert "force_rmse" not in metrics
+    assert metrics["rdf_error"] == pytest.approx(15)
+    assert metrics["n_systems"] == 2
+
+
+def test_calc_md_metrics_handles_all_nan_pressure() -> None:
+    """All-NaN pressure errors should not make aggregation fail."""
     df_md = pd.DataFrame(
         {
             "rdf_error": [10.0, 20.0],
@@ -1033,7 +926,6 @@ def test_calc_md_metrics_skips_combined_score_without_finite_pressure() -> None:
     assert metrics["adf_error"] == pytest.approx(35)
     assert metrics["vdos_error"] == pytest.approx(55)
     assert np.isnan(metrics["pressure_error"])
-    assert "combined_score" not in metrics
 
 
 def test_combine_per_system_metrics() -> None:
@@ -1069,11 +961,9 @@ def test_write_metrics_to_yaml(
     monkeypatch.setattr(Model, "yaml_path", yaml_path)
 
     metrics = {
-        "energy_rmse": 0.123456,
-        "force_rmse": 0.234567,
+        "energy_rmse": 1.23456,
+        "force_rmse": 98.7654,
         "rdf_error": 12.34567,
-        # 6 dp: would round to 0.748 at the 4 dp used elsewhere
-        "combined_score": 0.747987,
         "n_systems": 17,
     }
     path = "models/test/md-metrics.csv"
@@ -1082,15 +972,14 @@ def test_write_metrics_to_yaml(
         model, metrics, pred_file_path=path, pred_file_url=url
     )
 
-    # read back as UTF-8 so the Å in the force_rmse unit decodes correctly on Windows
     text = yaml_path.read_text(encoding="utf-8")
     assert "pred_file: models/test/md-metrics.csv" in text
     assert "pred_file_url: https://example.com/md-metrics.csv" in text
-    assert f"energy_rmse: 0.1235 # {md_metrics.METRIC_UNITS['energy_rmse']}" in text
-    assert f"force_rmse: 0.2346 # {md_metrics.METRIC_UNITS['force_rmse']}" in text
+    assert "energy_rmse: 1.2346 # meV/atom" in text
+    assert "force_rmse: 98.7654 # meV/Å" in text
     assert "rdf_error: 12.3457 # %" in text
-    # combined_score: unitless [0,1] score kept at 6 dp (not 0.748), no '# unit' comment
-    assert "combined_score: 0.747987\n" in text
     assert "n_systems: 17 # count" in text
+    # CMDS is site-computed, never persisted
+    assert "combined_score" not in text
     # the 'not available' placeholder must be replaced, not kept
     assert "not available" not in text

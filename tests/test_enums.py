@@ -289,11 +289,18 @@ def test_model_md_path_returns_path_for_dict_md(
     assert download_calls == []
 
 
+# files knowingly awaiting Figshare upload; anything else without a url must FAIL the
+# url/md5 tests below (a broad missing-url skip would mask accidental registry damage)
+UNPUBLISHED_DATA_FILES = {DataFiles.dynamat_v1_0_md_trajectories}
+
+
 @pytest.mark.parametrize("data_file", DataFiles)
 def test_data_files_enum_urls(
     data_file: DataFiles, url_session: requests.Session
 ) -> None:
     """Test that each URL in data-files.yml is a reachable Figshare download URL."""
+    if data_file in UNPUBLISHED_DATA_FILES:
+        pytest.skip(f"{data_file.name} has no published download URL yet")
     name, url = data_file.name, data_file.url
     assert "figshare.com/files/" in url, (
         f"URL for {name} is not a Figshare download URL: {url}"
@@ -321,6 +328,8 @@ def test_data_files_md5_matches_figshare(
     current artifact, so registry drift (like the stale checksums behind #357) fails
     CI instead of making the file un-downloadable (download_file discards mismatches).
     """
+    if data_file in UNPUBLISHED_DATA_FILES:
+        pytest.skip(f"{data_file.name} has no published download URL yet")
     file_id = data_file.url.rsplit("/", maxsplit=1)[-1]
     if (computed_md5 := figshare_data_file_md5s.get(file_id)) is None:
         # file lives in an external Figshare article this repo doesn't control

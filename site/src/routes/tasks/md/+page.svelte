@@ -7,7 +7,12 @@
     task_page_visible_cols,
   } from '$lib/labels'
   import type { SortDir } from '$lib/types'
-  import { DynamicScatter } from '$lib/plot'
+  import {
+    CMDS_CONFIG,
+    DEFAULT_CMDS_CONFIG,
+    update_models_cmds,
+  } from '$lib/md_combined_score.svelte'
+  import { DynamicScatter, RadarChart } from '$lib/plot'
   import {
     bind_url_params,
     sort_from_query,
@@ -24,7 +29,7 @@
   const n_md_models = MODELS.filter(has_md_metrics).length
 
   const default_scatter_x = MD_METRICS.md_force_rmse.key
-  const default_scatter_y = MD_METRICS.md_rdf_error.key
+  const default_scatter_y = MD_METRICS.md_vdos_error.key
   const default_sort: { column: string; dir: SortDir } = {
     column: MD_METRICS.md_combined_score.key,
     dir: `desc`,
@@ -61,8 +66,9 @@
   trajectories. The resulting trajectories are compared via radial distribution functions
   (RDF), angular distribution functions (ADF), pressure distributions from the stress
   tensor trace, and the vibrational density of states (vDOS) obtained from the velocity
-  autocorrelation function. Single-point energy-fluctuation and force RMSEs on the
-  reference frames complement these trajectory-level observables.
+  autocorrelation function. Energy-fluctuation and force RMSEs are shown as
+  maintainer-computed private-label diagnostics when available, but they are excluded from
+  CMDS.
   {#if n_md_models === 0}
     No models have reported MD metrics yet.
   {/if}
@@ -77,6 +83,21 @@
     bind:sort
   />
 </section>
+
+<figure class="cmds-weights">
+  <figcaption>
+    CMDS is computed on the fly as a weighted mean of the component subscores (1 −
+    error/100), not stored with model submissions. Drag the knob to reweight which
+    observables matter to you; the table and plots update live.
+  </figcaption>
+  <RadarChart
+    size={260}
+    config={CMDS_CONFIG}
+    default_config={DEFAULT_CMDS_CONFIG}
+    title_label={MD_METRICS.md_combined_score}
+    on_change={(cfg) => update_models_cmds(MODELS, cfg as typeof CMDS_CONFIG)}
+  />
+</figure>
 
 <h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
 <p>
@@ -95,6 +116,17 @@
 />
 
 <style>
+  .cmds-weights {
+    display: flex;
+    gap: 1.5em;
+    align-items: center;
+    margin: 1em auto;
+    max-width: 45em;
+  }
+  .cmds-weights figcaption {
+    font-size: 0.92em;
+    color: var(--text-color-muted, inherit);
+  }
   .beta-badge {
     font-size: 0.45em;
     font-weight: 600;
