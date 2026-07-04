@@ -195,7 +195,7 @@ export const kappa_parity_manifest = {
     'tace-oam-rra-preview': {
       asset: 'kappa-parity-phonondb-v1-model-tace-oam-rra-preview.json.gz',
       bytes: 59757,
-      sha256: 'af7c8c89b7e540c41b6931d6deeb18bf8266033141d21b3fe9c24d80ee4a7c56',
+      sha256: 'b610a1160f722759b7e07582c29ad99d25a921a61c0234722ebcdaa460641d55',
     },
   },
   row_count: 103,
