@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { afterNavigate } from '$app/navigation'
   import { page } from '$app/state'
   import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
   import {
@@ -19,7 +18,7 @@
   } from '$lib/labels'
   import { make_combined_filter } from '$lib/metrics'
   import { find_best_model, MODELS } from '$lib/models.svelte'
-  import { sort_from_query, sync_url_params } from '$lib/url-state'
+  import { bind_url_params, sort_from_query } from '$lib/url-state.svelte'
   import {
     generate_csv,
     generate_excel,
@@ -95,7 +94,6 @@
   let auto_sort_enabled = $state(true)
   let custom_col_config = $state(false)
   let previous_col_preset: ColPreset = `Discovery`
-  let url_ready = $state(false)
   const sortable_header_selector = `thead th[role="button"]`
 
   $effect(() => {
@@ -144,32 +142,21 @@
     previous_col_preset = next_preset
   })
 
-  // gate URL writes on afterNavigate (fires after the router is initialized, both on
-  // hydration and later navigations) so the sync $effect's replaceState never runs
-  // during the initial mount flush, which throws "before router is initialized"
-  afterNavigate(() => {
-    url_ready = true
-  })
-
-  // Sync table state back to URL query params after the initial URL read.
-  $effect(() => {
-    if (!url_ready) return
-
+  // Sync table state back to URL query params after the initial URL read (which
+  // happens in onMount above, so no read_params callback here).
+  bind_url_params(null, () => {
     const default_sort = preset_default_sorts[col_preset]
-    sync_url_params(
-      [
-        // omit `preset` for the default (Discovery) and when the user customized
-        // columns (a preset no longer describes the visible column set)
-        [`preset`, custom_col_config || col_preset === `Discovery` ? `` : col_preset],
-        [`set`, discovery_set, `unique_prototypes`],
-        [`sort`, sort.column, default_sort.column],
-        [`dir`, sort.dir, default_sort.dir],
-        [`energy_only`, show_energy_only ? `1` : ``],
-        [`non_compliant`, show_non_compliant ? `` : `0`],
-        [`compliant`, show_compliant ? `` : `0`],
-      ],
-      page.state,
-    )
+    return [
+      // omit `preset` for the default (Discovery) and when the user customized
+      // columns (a preset no longer describes the visible column set)
+      [`preset`, custom_col_config || col_preset === `Discovery` ? `` : col_preset],
+      [`set`, discovery_set, `unique_prototypes`],
+      [`sort`, sort.column, default_sort.column],
+      [`dir`, sort.dir, default_sort.dir],
+      [`energy_only`, show_energy_only ? `1` : ``],
+      [`non_compliant`, show_non_compliant ? `` : `0`],
+      [`compliant`, show_compliant ? `` : `0`],
+    ]
   })
 
   // Export state object for handle_export
@@ -236,7 +223,7 @@
   <!-- the test-set selector only affects discovery metrics, so only show it in the
   Discovery preset where those columns are visible -->
   {#if col_preset === `Discovery`}
-    <div class="toggle-row compact" in:slide={{ duration: 250 }}>
+    <div class="toggle-row" in:slide={{ duration: 250 }}>
       <span>Test set:</span>
       <SelectToggle
         bind:selected={discovery_set}
