@@ -1,11 +1,9 @@
 <script lang="ts">
-  import { afterNavigate } from '$app/navigation'
-  import { page } from '$app/state'
   import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
   import { by_date_added_desc, MetricsTable, ModelSelect, MODELS } from '$lib'
   import type { ModelData } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
-  import { sync_url_params, valid_query_param } from '$lib/url-state'
+  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
   import {
     ALL_METRICS,
@@ -91,29 +89,19 @@
   // tracks whatever properties the user picks
   let scatter_x = $state(default_scatter_x)
   let scatter_y = $state(default_scatter_y)
-  let url_ready = $state(false)
 
-  afterNavigate(() => {
-    const params = page.url.searchParams
+  const read_url_params = (params: URLSearchParams) => {
     selected_key = valid_query_param(params, `model`, default_selected_key, model_keys)
     sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_modes)
     scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
     scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
-    url_ready = true
-  })
-
-  $effect(() => {
-    if (!url_ready) return
-    sync_url_params(
-      [
-        [`model`, selected_key ?? ``, default_selected_key],
-        [`model_sort`, sort_mode, default_sort_mode],
-        [`x`, scatter_x, default_scatter_x],
-        [`y`, scatter_y, default_scatter_y],
-      ],
-      page.state,
-    )
-  })
+  }
+  bind_url_params(read_url_params, () => [
+    [`model`, selected_key ?? ``, default_selected_key],
+    [`model_sort`, sort_mode, default_sort_mode],
+    [`x`, scatter_x, default_scatter_x],
+    [`y`, scatter_y, default_scatter_y],
+  ])
 </script>
 
 <h1>MLFF Phonon Modeling Metrics</h1>

@@ -1,8 +1,10 @@
-import { replaceState } from '$app/navigation'
+import { afterNavigate, replaceState } from '$app/navigation'
+import { page } from '$app/state'
 import type { SortDir } from './types'
 
 type PageState = Parameters<typeof replaceState>[1]
 type SortState = { column: string; dir: SortDir }
+type UrlParamEntry = [key: string, value: string, default_value?: string]
 type ValidValues<T extends string> = ReadonlySet<T> | Record<string, unknown>
 const sort_dirs = new Set<SortDir>([`asc`, `desc`])
 
@@ -30,10 +32,7 @@ export const sort_from_query = (
   dir: valid_query_param(params, `dir`, default_sort.dir, sort_dirs),
 })
 
-export function sync_url_params(
-  entries: [key: string, value: string, default_value?: string][],
-  state: PageState,
-): void {
+export function sync_url_params(entries: UrlParamEntry[], state: PageState): void {
   const params = new URLSearchParams(location.search)
   for (const [key, value, default_value = ``] of entries) {
     if (value === default_value) params.delete(key)
@@ -42,4 +41,27 @@ export function sync_url_params(
 
   const next_url = params.size ? `${location.pathname}?${params}` : location.pathname
   if (next_url !== `${location.pathname}${location.search}`) replaceState(next_url, state)
+}
+
+// Two-way URL query-param binding shared by all task pages. Reads state from the URL in
+// afterNavigate (fires after the router is initialized, both on hydration and later
+// navigations), then keeps the URL in sync with page state via replaceState. Gating
+// writes on the first afterNavigate ensures the sync $effect never runs during the
+// initial mount flush, which would throw "before router is initialized". Must be
+// called during component init.
+export function bind_url_params(
+  read_params: ((params: URLSearchParams) => void) | null,
+  entries: () => UrlParamEntry[],
+): void {
+  let url_ready = $state(false)
+
+  afterNavigate(() => {
+    read_params?.(page.url.searchParams)
+    url_ready = true
+  })
+
+  $effect(() => {
+    if (!url_ready) return
+    sync_url_params(entries(), page.state)
+  })
 }

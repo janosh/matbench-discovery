@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { afterNavigate } from '$app/navigation'
-  import { page } from '$app/state'
   import spg_sankeys from '$figs/spg-sankeys.jsonl'
   import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
   import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
   import { GeoOptMetricsTable, ModelSelect, MODELS } from '$lib'
   import { order_models } from '$lib/fig-helpers'
-  import { sync_url_params } from '$lib/url-state'
+  import { bind_url_params } from '$lib/url-state.svelte'
   import { min } from 'd3-array'
   import { format_num, pick_contrast_color } from 'matterviz'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
@@ -66,7 +64,6 @@
   let selected_model_keys = $derived(
     selected_model_options.map((option) => String(option.value)),
   )
-  let url_ready = $state(false)
   let selected_model_key_set = $derived(new Set(selected_model_keys))
   let filtered_sym_ops_sorted = $derived(
     sym_ops_sorted.filter(({ label }) => {
@@ -92,25 +89,18 @@
   const selected_param_value = (model_keys: string[]): string =>
     [...selectable_model_keys].filter((key) => model_keys.includes(key)).join(`,`)
 
-  afterNavigate(() => {
-    selected_model_options = options_from_keys(keys_from_url(page.url.searchParams))
-    url_ready = true
-  })
-
-  $effect(() => {
-    if (!url_ready) return
-
-    sync_url_params(
+  bind_url_params(
+    (params) => {
+      selected_model_options = options_from_keys(keys_from_url(params))
+    },
+    () => [
       [
-        [
-          `models`,
-          selected_param_value(selected_model_keys),
-          selected_param_value(default_selected_keys),
-        ],
+        `models`,
+        selected_param_value(selected_model_keys),
+        selected_param_value(default_selected_keys),
       ],
-      page.state,
-    )
-  })
+    ],
+  )
 
   const n_min_relaxed_structures =
     min(MODELS, ({ metrics }) =>

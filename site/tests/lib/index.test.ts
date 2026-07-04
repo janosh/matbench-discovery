@@ -1,5 +1,9 @@
 import { arr_to_str, data_files, DATASETS, format_date, slugify } from '$lib'
-import { sort_from_query, sync_url_params, valid_query_param } from '$lib/url-state'
+import {
+  sort_from_query,
+  sync_url_params,
+  valid_query_param,
+} from '$lib/url-state.svelte'
 import { describe, expect, it, vi } from 'vitest'
 
 describe(`$lib data re-exports reflect index.ts mutations`, () => {
