@@ -21,7 +21,7 @@ export const CMDS_CONFIG: CmdsConfig = $state(structuredClone(DEFAULT_CMDS_CONFI
 // Each component is a [0,100] % error (lower=better); its subscore is 1 - error/100,
 // clamped to [0,1]. CMDS is the weighted mean of the subscores.
 export function calculate_cmds(
-  errors: Partial<Record<keyof CmdsConfig, number | undefined>>,
+  errors: Partial<Record<keyof CmdsConfig, number>>,
   cmds_config: CmdsConfig,
 ): number | null {
   const keys = Object.keys(cmds_config) as (keyof CmdsConfig)[]

@@ -257,8 +257,9 @@
 
   function place_annotation_opposite_colorbar() {
     const bar = plot_wrap?.querySelector(`.color-bar`)?.getBoundingClientRect()
-    if (!plot_wrap || !bar) return
-    const wrap = plot_wrap.getBoundingClientRect()
+    const wrap = plot_wrap?.getBoundingClientRect()
+    // zero-width wrap = plot in a hidden tab; its rects would misplace the annotation
+    if (!bar || !wrap?.width) return
     const vert = bar.top + bar.height / 2 < wrap.top + wrap.height / 2 ? `bottom` : `top`
     const horiz = bar.left + bar.width / 2 < wrap.left + wrap.width / 2 ? `right` : `left`
     annotation_inset = annotation_insets[`${vert}_${horiz}`]
