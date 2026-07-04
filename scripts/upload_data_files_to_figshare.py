@@ -114,12 +114,14 @@ def main(
             file_data.setdefault("path", data_file.rel_path)
             file_data.setdefault("description", "Description needed")
 
-            # Check if file needs to be uploaded. Always record the freshly computed
-            # hash: reusing a stored md5 here previously let re-uploads leave stale
-            # checksums in the registry (see #357).
+            # Record the freshly computed hash and persist file_data before any
+            # continue: a stored md5 reused here once let re-uploads leave stale
+            # registry checksums (#357), and skipped oversized files must still get
+            # their md5 refreshed. Later url updates mutate this same dict in place.
             file_name = os.path.basename(file_path)
             file_hash, file_size = figshare.get_file_hash_and_size(file_path)
             file_data["md5"] = file_hash
+            files_in_article[data_file.name] = file_data
 
             if file_size > max_file_size:
                 print(
@@ -133,25 +135,14 @@ def main(
             if (
                 existing_file := files_by_name.get(file_name)
             ) and file_hash == existing_file["computed_md5"]:
-                file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{existing_file['id']}"
-                file_data["url"] = file_url
-                files_in_article[data_file.name] = file_data
-                continue
-
-            # Upload new or modified file
-            file_id = figshare.upload_file(
-                article_id, file_path, file_name=data_file.rel_path
-            )
-            file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
-
-            file_data["url"] = file_url
-            files_in_article[data_file.name] = file_data
-
-            # Track whether file is new or updated
-            if data_file.name in existing_yaml:
-                updated_files[data_file.name] = file_url
-            else:
-                new_files[data_file.name] = file_url
+                file_id = existing_file["id"]  # local file matches remote, skip upload
+            else:  # upload new or modified file, tracked for the summary print below
+                file_id = figshare.upload_file(
+                    article_id, file_path, file_name=data_file.rel_path
+                )
+                dest = updated_files if data_file.name in existing_yaml else new_files
+                dest[data_file.name] = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
+            file_data["url"] = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
 
         if new_files or updated_files:
             if new_files:

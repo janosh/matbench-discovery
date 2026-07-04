@@ -35,10 +35,8 @@ def download_file(
         url: URL to download from.
         headers: Optional HTTP headers, e.g. an Authorization bearer token for
             gated HuggingFace checkpoints.
-        md5: Optional expected MD5 checksum. If given, the download is verified
-            before it replaces file_path; on mismatch the download is discarded
-            (any previously cached file_path is left unchanged) and an error is
-            printed.
+        md5: Optional expected MD5 checksum. On mismatch, the download is discarded
+            (any previously cached file_path is left unchanged) and an error printed.
     """
     file_dir = os.path.dirname(file_path)
     if file_dir:
@@ -73,6 +71,8 @@ def download_file(
             )
             return
 
+        # set flag before replace: if only the rename fails, the fully-downloaded
+        # .part file is deliberately kept so it doesn't have to be re-fetched
         download_finished = True
         os.replace(tmp_file_path, file_path)
     except (OSError, requests.RequestException):

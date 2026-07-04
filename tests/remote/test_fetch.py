@@ -67,38 +67,24 @@ def test_figshare_url_conversion(
 
 
 def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-    """Test download_file function."""
-    url = "https://example.com/test.txt"
-    test_content = b"test content"
-    dest_path = tmp_path / "test.txt"
-
-    with patch("requests.get", return_value=make_mock_response(test_content)):
-        download_file(str(dest_path), url)
-        assert dest_path.read_bytes() == test_content
-
-    # Mock failed request
-    with patch("requests.get", return_value=make_mock_response(b"Not found", 404)):
-        download_file(str(dest_path), url)  # Should print error but not raise
-
-    stdout, stderr = capsys.readouterr()
-    assert f"Error downloading {url=}" in stdout
-    assert stderr == ""
-
-
-def test_download_file_md5_match(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-    """A download with a matching expected md5 is kept."""
+    """download_file keeps a download with matching expected md5, prints on failure."""
     url = "https://example.com/test.txt"
     test_content = b"test content"
     dest_path = tmp_path / "test.txt"
 
     with patch("requests.get", return_value=make_mock_response(test_content)):
         download_file(str(dest_path), url, md5=hashlib.md5(test_content).hexdigest())  # noqa: S324
+        assert dest_path.read_bytes() == test_content
+        assert not os.path.isfile(f"{dest_path}.part")
+
+    # Mock failed request
+    with patch("requests.get", return_value=make_mock_response(b"Not found", 404)):
+        download_file(str(dest_path), url)  # Should print error but not raise
 
     stdout, stderr = capsys.readouterr()
-    assert stdout == ""
+    assert "MD5 mismatch" not in stdout
+    assert f"Error downloading {url=}" in stdout
     assert stderr == ""
-    assert dest_path.read_bytes() == test_content
-    assert not os.path.isfile(f"{dest_path}.part")
 
 
 def test_download_file_md5_mismatch_discards_download(

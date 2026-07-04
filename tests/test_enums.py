@@ -318,10 +318,8 @@ def test_data_files_md5_matches_figshare(
     data_file: DataFiles, figshare_data_file_md5s: dict[str, str]
 ) -> None:
     """Each declared md5 in data-files.yml must match Figshare's computed_md5 for the
-    current artifact, so registry drift (e.g. a stale checksum left behind by a
-    re-upload) fails CI instead of surfacing in downstream reproducibility audits
-    (see #357). Since download_file discards checksum mismatches, a drifted md5
-    would otherwise make the file un-downloadable.
+    current artifact, so registry drift (like the stale checksums behind #357) fails
+    CI instead of making the file un-downloadable (download_file discards mismatches).
     """
     file_id = data_file.url.rsplit("/", maxsplit=1)[-1]
     if (computed_md5 := figshare_data_file_md5s.get(file_id)) is None:
