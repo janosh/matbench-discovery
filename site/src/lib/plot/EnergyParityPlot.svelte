@@ -243,10 +243,60 @@
     globalThis.addEventListener(`resize`, update_popup_placement)
     return () => globalThis.removeEventListener(`resize`, update_popup_placement)
   })
+
+  // matterviz auto-places the density colorbar in whichever corner least occludes
+  // data, so the MAE/R² annotation claims the diagonally opposite corner to
+  // guarantee the two never overlap. Insets clear the axes + their tick labels.
+  const annotation_insets = {
+    top_left: `2.5em auto auto 7em`,
+    top_right: `2.5em 2em auto auto`,
+    bottom_left: `auto auto 5em 7em`,
+    bottom_right: `auto 2em 5em auto`,
+  }
+  let annotation_inset = $state(annotation_insets.bottom_right)
+
+  function place_annotation_opposite_colorbar() {
+    const bar = plot_wrap?.querySelector(`.color-bar`)?.getBoundingClientRect()
+    if (!plot_wrap || !bar) return
+    const wrap = plot_wrap.getBoundingClientRect()
+    const vert = bar.top + bar.height / 2 < wrap.top + wrap.height / 2 ? `bottom` : `top`
+    const horiz = bar.left + bar.width / 2 < wrap.left + wrap.width / 2 ? `right` : `left`
+    annotation_inset = annotation_insets[`${vert}_${horiz}`]
+  }
+
+  $effect(() => {
+    if (status !== `ready` || !plot_wrap) return
+    // the colorbar mounts late and moves on zoom/resize (all via inline-style
+    // updates), so watch mutations involving it instead of enumerating triggers.
+    // Cheap filter keeps tooltip style churn from forcing layout on every mousemove.
+    const involves_colorbar = (node: Node) =>
+      node instanceof HTMLElement &&
+      (node.closest(`.color-bar`) ?? node.querySelector(`.color-bar`)) !== null
+    const observer = new MutationObserver((mutations) => {
+      if (
+        mutations.some((mut) => [mut.target, ...mut.addedNodes].some(involves_colorbar))
+      ) {
+        place_annotation_opposite_colorbar()
+      }
+    })
+    observer.observe(plot_wrap, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: [`style`],
+    })
+    place_annotation_opposite_colorbar()
+    return () => observer.disconnect()
+  })
 </script>
 
-<!-- the plot has no heading of its own: the model page's tab bar acts as its title -->
-<section class="energy-parity-plot" {...rest}>
+<!-- the plot has no visible heading of its own: the model page's tab bar acts as its
+title, so label the section for screen readers instead -->
+<section
+  class="energy-parity-plot"
+  aria-label="ML vs DFT {energy_label} parity plot"
+  {...rest}
+>
   {#if status === `error`}
     <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
       {error_message}
@@ -317,7 +367,7 @@
 
         {#snippet children()}
           {#if stats && Number.isFinite(stats.mae)}
-            <div class="plot-annotation">
+            <div class="plot-annotation" style:inset={annotation_inset}>
               MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br />
               R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
             </div>

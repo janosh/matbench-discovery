@@ -401,7 +401,7 @@
     padding: 0;
   }
   section:is(.deps, .model-info) ul li {
-    background-color: var(--card-bg);
+    background-color: var(--chip-bg);
     padding: 2pt 6pt;
     border-radius: 3pt;
     text-align: center;
@@ -426,11 +426,12 @@
   .energy-parity-tabs :global(.selection-toggle button) {
     padding: 2px 12px;
     border-radius: 0;
+    border-width: 0.5px; /* hairline on HiDPI, incl. the active colored border */
   }
   /* fuse adjacent borders; the active button sits on top so its colored border
   wins the shared edge regardless of which side is selected */
   .energy-parity-tabs :global(.selection-toggle button + button) {
-    margin-left: -1px;
+    margin-left: -0.5px;
   }
   .energy-parity-tabs :global(.selection-toggle button.active) {
     position: relative;
@@ -461,7 +462,7 @@
     place-items: center;
     gap: 5px;
     padding: 0 5pt;
-    background-color: var(--card-bg);
+    background-color: var(--chip-bg);
     border-radius: 5px;
   }
   .links details {

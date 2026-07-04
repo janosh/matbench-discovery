@@ -24,6 +24,7 @@
   {#each options as { value, label, tooltip, link, loading } (value)}
     <button
       class:active={selected === value}
+      aria-pressed={selected === value}
       onclick={() => (selected = value)}
       {@attach tip({ allow_html: true, content: tooltip })}
     >
