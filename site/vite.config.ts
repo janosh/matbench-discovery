@@ -1,7 +1,6 @@
 import { config } from '@janosh/vite-config'
-import yaml_plugin from '@rollup/plugin-yaml'
 import { sveltekit } from '@sveltejs/kit/vite'
-import { load as yaml_load } from 'js-yaml'
+import { load as load_yaml } from 'js-yaml'
 import type { JSONSchema4 } from 'json-schema'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
 import { execFileSync } from 'node:child_process'
@@ -9,7 +8,22 @@ import fs from 'node:fs'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import type { Plugin } from 'vite'
-import { defineConfig } from 'vite-plus'
+
+// Parse .yml/.yaml/.cff imports into plain ES modules at build time (replaces @rollup/plugin-yaml).
+// All call sites import the default export only, so no per-key named exports are generated.
+const yaml_plugin = (): Plugin => ({
+  name: `yaml`,
+  transform: {
+    filter: { id: /\.(?:ya?ml|cff)$/ },
+    handler(content) {
+      const data = load_yaml(content)
+      const code = `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(
+        JSON.stringify(data),
+      )})`
+      return { code, map: null }
+    },
+  },
+})
 
 // Load committed data payloads as parsed ES modules. Figure payloads in site/src/figs
 // are typed per payload in src/figs/payloads.d.ts. Two formats: <name>.json.gz
@@ -57,7 +71,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const file_dir = path.dirname(file)
 
       // Replace relative file paths in $refs with absolute file URIs
-      const parsed_yaml = yaml_load(yaml_content) as JSONSchema4
+      const parsed_yaml = load_yaml(yaml_content) as JSONSchema4
       const base_name = path.basename(file, `.yml`)
 
       const output = {
@@ -117,7 +131,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
   }
 }
 
-export default defineConfig({
+export default {
   ...config, // shared lint/fmt/build from @janosh/vite-config (dotfiles)
   fmt: {
     ...config.fmt,
@@ -125,7 +139,7 @@ export default defineConfig({
   },
   plugins: [
     sveltekit(),
-    yaml_plugin({ extensions: [`.yml`, `.yaml`, `.cff`] }),
+    yaml_plugin(),
     yaml_schema_to_typescript_plugin(),
     json_payload_plugin(),
   ],
@@ -163,4 +177,4 @@ export default defineConfig({
   resolve: {
     conditions: process.env.VITEST ? [`browser`] : undefined,
   },
-})
+}

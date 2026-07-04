@@ -1,10 +1,17 @@
 <script lang="ts">
   import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
-  import { by_date_added_desc, MetricsTable, type ModelData, MODELS } from '$lib'
+  import { by_date_added_desc, MetricsTable, ModelSelect, MODELS } from '$lib'
+  import type { ModelData } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
-  import { scatter_axis_label } from '$lib/plot/DynamicScatter.svelte'
+  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
-  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
+  import {
+    ALL_METRICS,
+    HYPERPARAMS,
+    scatter_axis_label,
+    scatter_options_by_key,
+    task_page_visible_cols,
+  } from '$lib/labels'
   import { get_nested_number } from '$lib/metrics'
   import { format_num } from 'matterviz'
   import KappaNote from './kappa-note.md'
@@ -13,16 +20,8 @@
   import PhononFreqParity from './PhononFreqParity.svelte'
   import PhononRobustnessTable from './PhononRobustnessTable.svelte'
 
-  // Default column visibility
-  let visible_cols: Record<string, boolean> = $state({
-    // Hide other metrics
-    ...Object.fromEntries(Object.values(ALL_METRICS).map((col) => [col.label, false])),
-    // Show all metadata
-    ...Object.fromEntries(Object.values(METADATA_COLS).map((col) => [col.label, true])),
-    // Show phonon metrics
-    [ALL_METRICS.κ_SRME.label]: true,
-    [ALL_METRICS.κ_SRE.label]: true,
-  })
+  // Default column visibility: metadata + phonon metrics only
+  const visible_cols = task_page_visible_cols(ALL_METRICS.κ_SRME, ALL_METRICS.κ_SRE)
 
   // Models with generated kappa parity assets or per-material diagnostics, for the
   // DFT-vs-ML inspector below
@@ -39,7 +38,8 @@
       has_kappa_parity_model(model.model_key) ||
       diagnostics_keys.has(model.model_key ?? ``),
   )
-  let selected_key = $state(kappa_models[0]?.model_key)
+  const default_selected_key = kappa_models[0]?.model_key ?? ``
+  let selected_key = $state(default_selected_key)
   let selected_model = $derived(
     kappa_models.find((model) => model.model_key === selected_key),
   )
@@ -51,7 +51,13 @@
     { mode: `name`, label: `A–Z` },
     { mode: `date`, label: `date added` },
   ]
-  let sort_mode = $state<SortMode>(`kappa`)
+  const default_sort_mode: SortMode = `kappa`
+  const default_scatter_x = HYPERPARAMS.model_params.key
+  const default_scatter_y = ALL_METRICS.κ_SRME.key
+  const sort_modes = new Set(sort_options.map(({ mode }) => mode))
+  const model_keys = new Set(kappa_models.flatMap((model) => model.model_key ?? []))
+
+  let sort_mode = $state<SortMode>(default_sort_mode)
   const kappa_srme = (model: ModelData) =>
     get_nested_number(model, kappa_srme_path) ?? Infinity
   const sort_compare: Record<SortMode, (m1: ModelData, m2: ModelData) => number> = {
@@ -64,18 +70,38 @@
   let selected_diagnostics = $derived(
     kappa_103_analysis.models.find((entry) => entry.key === selected_key),
   )
-  // suffix each option with the value it's sorted by (κSRME or date; nothing for A–Z)
-  const sort_label = (model: ModelData): string => {
-    if (sort_mode === `date`) return ` (${model.date_added})`
-    if (sort_mode === `name`) return ``
-    const srme = get_nested_number(model, kappa_srme_path)
-    return srme == null ? `` : ` (${format_num(srme, `.3~f`)})`
-  }
+  // model dropdown options, each suffixed with the value it's sorted by (κSRME or date;
+  // nothing for A–Z); value carries the model_key so the bound option maps cleanly onto
+  // selected_key (which URL state and scatter clicks also set)
+  let model_options = $derived(
+    sorted_models.map((model) => {
+      const srme = get_nested_number(model, kappa_srme_path)
+      const suffix = {
+        name: ``,
+        date: ` (${model.date_added})`,
+        kappa: srme == null ? `` : ` (${format_num(srme, `.3~f`)})`,
+      }[sort_mode]
+      return { label: `${model.model_name}${suffix}`, value: model.model_key ?? `` }
+    }),
+  )
 
   // axis selections for the model-comparison scatter, bound so the section title
   // tracks whatever properties the user picks
-  let scatter_x = $state(HYPERPARAMS.model_params.key)
-  let scatter_y = $state(ALL_METRICS.κ_SRME.key)
+  let scatter_x = $state(default_scatter_x)
+  let scatter_y = $state(default_scatter_y)
+
+  const read_url_params = (params: URLSearchParams) => {
+    selected_key = valid_query_param(params, `model`, default_selected_key, model_keys)
+    sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_modes)
+    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
+    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
+  }
+  bind_url_params(read_url_params, () => [
+    [`model`, selected_key ?? ``, default_selected_key],
+    [`model_sort`, sort_mode, default_sort_mode],
+    [`x`, scatter_x, default_scatter_x],
+    [`y`, scatter_y, default_scatter_y],
+  ])
 </script>
 
 <h1>MLFF Phonon Modeling Metrics</h1>
@@ -137,15 +163,19 @@
 {#if selected_model}
   <label class="kappa-model-select">
     View model:
-    <!-- {#key} rebuilds the native <select> on sort change; moving <option> nodes via a
-    keyed {#each} alone doesn't repaint the native dropdown on some platforms -->
-    {#key sort_mode}
-      <select bind:value={selected_key}>
-        {#each sorted_models as model (model.model_key)}
-          <option value={model.model_key}>{model.model_name}{sort_label(model)}</option>
-        {/each}
-      </select>
-    {/key}
+    <ModelSelect
+      options={model_options}
+      minSelect={1}
+      maxSelect={1}
+      style="width: 22em; border: 1px solid var(--border)"
+      bind:value={
+        () => model_options.find((opt) => opt.value === selected_key) ?? null,
+        // Array.isArray only narrows the type; with maxSelect=1 value is never an array
+        (option) => {
+          if (option && !Array.isArray(option)) selected_key = option.value
+        }
+      }
+    />
     <select bind:value={sort_mode} aria-label="Sort models by">
       {#each sort_options as opt (opt.mode)}
         <option value={opt.mode}>sort: {opt.label}</option>
@@ -189,13 +219,6 @@
     align-items: center;
     justify-content: center;
     margin-top: 1em;
-  }
-  /* fixed width so the appended (value) in options doesn't resize the select */
-  .kappa-model-select select:first-of-type {
-    width: 18em;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
   }
   .diagnostics-heading {
     text-align: center;

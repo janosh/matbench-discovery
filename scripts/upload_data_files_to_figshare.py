@@ -114,43 +114,40 @@ def main(
             file_data.setdefault("path", data_file.rel_path)
             file_data.setdefault("description", "Description needed")
 
-            # Check if file needs to be uploaded
+            # Always record the freshly computed hash: reusing a stored md5 here once
+            # let re-uploads leave stale registry checksums (#357).
             file_name = os.path.basename(file_path)
-            # Use stored MD5 if available, else use newly computed
             file_hash, file_size = figshare.get_file_hash_and_size(file_path)
-            file_hash = file_data.setdefault("md5", file_hash)
+            file_data["md5"] = file_hash
+            files_in_article[data_file.name] = file_data
 
-            if file_size > max_file_size:
+            if (
+                existing_file := files_by_name.get(file_name)
+            ) and file_hash == existing_file["computed_md5"]:
+                file_id = existing_file["id"]  # local file matches remote, skip upload
+            elif file_size > max_file_size:
+                # can't upload -> remote artifact unchanged -> keep the previous
+                # consistent (md5, url) pair (fresh md5 + old/no url would fail every
+                # checksummed download). The run after the manual upload hits the
+                # hash-match branch above and refreshes md5+url together.
                 print(
                     f"\n⚠️  Skipping {file_name} ({file_size / 1024**2:.1f} MB)"
                     f"\nFile exceeds {max_file_size / 1024**2:.0f} MB limit. "
                     "Please upload manually at "
                     f"https://figshare.com/account/articles/{article_id}"
                 )
+                if data_file.name in existing_yaml:
+                    files_in_article[data_file.name] = existing_yaml[data_file.name]
+                else:
+                    del files_in_article[data_file.name]
                 continue
-
-            if (
-                existing_file := files_by_name.get(file_name)
-            ) and file_hash == existing_file["computed_md5"]:
-                file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{existing_file['id']}"
-                file_data["url"] = file_url
-                files_in_article[data_file.name] = file_data
-                continue
-
-            # Upload new or modified file
-            file_id = figshare.upload_file(
-                article_id, file_path, file_name=data_file.rel_path
-            )
-            file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
-
-            file_data["url"] = file_url
-            files_in_article[data_file.name] = file_data
-
-            # Track whether file is new or updated
-            if data_file.name in existing_yaml:
-                updated_files[data_file.name] = file_url
-            else:
-                new_files[data_file.name] = file_url
+            else:  # upload new or modified file, tracked for the summary print below
+                file_id = figshare.upload_file(
+                    article_id, file_path, file_name=data_file.rel_path
+                )
+                dest = updated_files if data_file.name in existing_yaml else new_files
+                dest[data_file.name] = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
+            file_data["url"] = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
 
         if new_files or updated_files:
             if new_files:

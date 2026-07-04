@@ -130,12 +130,6 @@ export const METADATA_COLS: MetadataLabels = {
     description: `Model resources: paper, code repository and submission pull request`,
     sortable: false,
   },
-  r_cut: {
-    key: `r<sub>cut</sub>`,
-    label: `r<sub>cut</sub>`,
-    description: `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
-    unit: `Å`,
-  },
   n_training_materials: {
     key: `n_training_materials`,
     label: `Training Materials`,
@@ -613,6 +607,18 @@ export const ALL_METRICS: AllMetrics = {
   ...DIATOMICS_METRICS,
 } as const
 
+// Column-visibility map for task pages: hide every metric except those passed in,
+// keep all metadata columns visible. Columns absent from the map (e.g. the sticky
+// model name) default to shown via `?? true` in the pages' col_filter.
+export const task_page_visible_cols = (
+  ...shown_metrics: Label[]
+): Record<string, boolean> =>
+  Object.fromEntries([
+    ...Object.values(ALL_METRICS).map((col) => [col.label, false]),
+    ...Object.values(METADATA_COLS).map((col) => [col.label, true]),
+    ...shown_metrics.map((col) => [col.label, true]),
+  ])
+
 export const DISCOVERY_SET_LABELS: Record<
   DiscoverySet,
   { label: string; description: string; link?: string }
@@ -641,6 +647,29 @@ export const DISCOVERY_SET_LABELS: Record<
 export const discovery_set_toggle_options = Object.entries(DISCOVERY_SET_LABELS).map(
   ([value, { label, description: tooltip, link }]) => ({ value, label, tooltip, link }),
 )
+
+export const scatter_options = [
+  ...Object.values(ALL_METRICS),
+  HYPERPARAMS.model_params,
+  METADATA_COLS.date_added,
+  METADATA_COLS.n_training_materials,
+  METADATA_COLS.n_training_structures,
+  HYPERPARAMS.graph_construction_radius,
+  HYPERPARAMS.max_force,
+  HYPERPARAMS.max_steps,
+  HYPERPARAMS.batch_size,
+  HYPERPARAMS.epochs,
+  HYPERPARAMS.n_layers,
+]
+
+// Keyed lookup for bound axis/color selections.
+export const scatter_options_by_key = Object.fromEntries(
+  scatter_options.map((option) => [option.key, option]),
+)
+
+// Labels may contain HTML such as <sub>.
+export const scatter_axis_label = (key: string): string =>
+  scatter_options_by_key[key]?.label ?? key
 
 const PROPERTY_LABELS = Object.fromEntries(
   Object.values({ ...ALL_METRICS, ...METADATA_COLS, ...HYPERPARAMS }).map((prop) => [

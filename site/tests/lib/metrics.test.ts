@@ -1,10 +1,8 @@
-import { DATASETS } from '$lib'
+import { DATASETS, MODELS } from '$lib'
 import type { CpsConfig } from '$lib/combined_perf_score.svelte'
 import { calculate_cps, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
 import {
-  all_higher_better_metrics,
-  all_lower_better_metrics,
   assemble_row_data,
   format_train_set,
   make_combined_filter,
@@ -14,7 +12,7 @@ import {
 } from '$lib/metrics'
 import type { TargetType } from '$lib/schema/model'
 import type { ModelData } from '$lib/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 describe(`targets_tooltips`, () => {
   it.each([
@@ -34,56 +32,17 @@ describe(`targets_tooltips`, () => {
 })
 
 describe(`metric_better_as`, () => {
-  beforeEach(() => {
-    vi.restoreAllMocks()
-    // Setup spies instead of mocking the entire arrays
-    vi.spyOn(all_higher_better_metrics, `includes`)
-    vi.spyOn(all_lower_better_metrics, `includes`)
-  })
-
-  it.each([
-    { metric: `F1`, expected: `higher`, higher_includes: true, lower_includes: false },
-    {
-      metric: `Precision`,
-      expected: `higher`,
-      higher_includes: true,
-      lower_includes: false,
-    },
-    { metric: `MAE`, expected: `lower`, higher_includes: false, lower_includes: true },
-    { metric: `RMSE`, expected: `lower`, higher_includes: false, lower_includes: true },
-    {
-      metric: `nonexistent_metric`,
-      expected: null,
-      higher_includes: false,
-      lower_includes: false,
-    },
-  ])(
-    `returns $expected for $metric`,
-    ({ metric, expected, higher_includes, lower_includes }) => {
-      // Setup mock return values
-      vi.mocked(all_higher_better_metrics.includes).mockReturnValue(higher_includes)
-      vi.mocked(all_lower_better_metrics.includes).mockReturnValue(lower_includes)
-
-      expect(metric_better_as(metric)).toBe(expected)
-
-      // Verify the includes methods were called with the right arguments
-      expect(all_higher_better_metrics.includes).toHaveBeenCalledWith(metric)
-      expect(vi.mocked(all_lower_better_metrics.includes).mock.calls).toStrictEqual(
-        higher_includes ? [] : [[metric]],
-      )
-    },
-  )
-})
-
-describe(`metric_better_as (real modeling-tasks.yml lists)`, () => {
-  beforeEach(() => vi.restoreAllMocks()) // exercise the real metric lists, not spies
-
-  // guards orientation in modeling-tasks.yml, e.g. CMDS/combined_score being a score
+  // guards metric orientation in modeling-tasks.yml, e.g. CMDS/combined_score
+  // being a score (higher=better) and errors like MAE/RMSE being lower=better
   it.each([
     [`combined_score`, `higher`],
     [`CMDS`, `higher`],
     [`vdos_error`, `lower`],
     [`F1`, `higher`],
+    [`Precision`, `higher`],
+    [`MAE`, `lower`],
+    [`RMSE`, `lower`],
+    [`nonexistent_metric`, null],
   ])(`maps %s -> %s`, (metric, expected) => {
     expect(metric_better_as(metric)).toBe(expected)
   })
@@ -207,7 +166,7 @@ describe(`format_train_set`, () => {
   })
 })
 
-describe(`make_combined_filter function - skipped since using real implementation`, () => {
+describe(`make_combined_filter`, () => {
   it(`returns false when the user filter returns false`, () => {
     const model_filter = vi.fn().mockReturnValue(false)
     const filter = make_combined_filter(model_filter, true, true, true)
@@ -488,6 +447,83 @@ describe(`assemble_row_data`, () => {
     const sorted_cps_vals = cps_vals.toSorted((cps1, cps2) => cps2 - cps1)
     expect(cps_vals).toStrictEqual(sorted_cps_vals)
   })
+
+  it(`excludes task-only models without discovery metrics for the active set`, () => {
+    const model_key = `task-only-regression`
+    MODELS.push({
+      model_key,
+      targets: `EFS_G`,
+      training_set: [],
+      metrics: { diatomics: { energy_mae: 1 } },
+    } as unknown as ModelData)
+
+    try {
+      expect(
+        assemble_row_data(
+          `unique_prototypes`,
+          (model) => model.model_key === model_key,
+          true,
+          true,
+          true,
+        ),
+      ).toStrictEqual([])
+    } finally {
+      MODELS.pop()
+    }
+  })
+
+  it.each([
+    {
+      model_key: `sevennet-l3i5`,
+      diatomics: undefined,
+      expected_title: `Diatomics metrics exclude He-He due to exploding errors`,
+    },
+    {
+      model_key: `mixed-diatomics-exclusions`,
+      diatomics: {
+        excluded_formula_reasons: {
+          'H-H': `unsupported "quoted" reason`,
+          'He-He': `exploding errors`,
+          'Li-Li': `exploding errors`,
+        },
+      },
+      expected_title:
+        `Diatomics metrics exclude H-H due to unsupported &quot;quoted&quot; reason; ` +
+        `He-He, Li-Li due to exploding errors`,
+    },
+  ])(
+    `renders reason-aware diatomics exclusion tooltip for $model_key`,
+    ({ model_key, diatomics, expected_title }) => {
+      const base_model = MODELS.find(
+        (model) => model.model_key === `tace-oam-rra-preview`,
+      )
+      if (!base_model) throw new Error(`missing TACE-OAM-RRA-Preview test fixture`)
+      const test_models = [
+        ...MODELS,
+        ...(diatomics
+          ? [
+              {
+                ...base_model,
+                model_key,
+                model_name: `Mixed Diatomics Exclusions`,
+                metrics: { ...base_model.metrics, diatomics },
+              } as ModelData,
+            ]
+          : []),
+      ]
+      const [row] = assemble_row_data(
+        `unique_prototypes`,
+        (model) => model.model_key === model_key,
+        true,
+        true,
+        true,
+        test_models,
+      )
+
+      expect(row?.Model).toContain(`title="${expected_title}"`)
+      expect(row?.Model).toContain(`aria-label="${expected_title}"`)
+    },
+  )
 })
 
 describe(`METADATA_COLS`, () => {
@@ -498,7 +534,6 @@ describe(`METADATA_COLS`, () => {
       `Targets`,
       `Date Added`,
       `Links`,
-      `r<sub>cut</sub>`,
       `Training Materials`,
       `Training Structures`,
       `Ckpt License`,
@@ -521,13 +556,6 @@ describe(`METADATA_COLS`, () => {
 
     const links_col = METADATA_COLS.links
     expect(links_col?.sortable).toBe(false)
-
-    // Test r_cut column specifically
-    const r_cut_col = METADATA_COLS.r_cut
-    expect(r_cut_col).toBeDefined()
-    expect(r_cut_col?.description).toContain(`Graph construction radius`)
-    // visible is undefined for r_cut, meaning it's visible by default
-    expect(r_cut_col?.visible).toBeUndefined()
   })
 })
 
@@ -696,33 +724,21 @@ describe(`Model Sorting Logic`, () => {
   })
 
   it(`sorts models by model_name correctly`, () => {
-    const test_models = create_test_models()
+    const asc_keys = create_test_models()
+      .toSorted(sort_models(`model_name`, `asc`))
+      .map((model) => model.model_key)
+    expect(asc_keys).toStrictEqual([
+      `aaa_model`,
+      `missing_model`,
+      `mmm_model`,
+      `zzz_model`,
+    ])
 
-    // Create a copy to avoid affecting original array
-    const models_for_asc = [...test_models]
-    const models_for_desc = [...test_models]
-
-    // Sort a copy for ascending and descending orders
-    models_for_asc.sort(sort_models(`model_name`, `asc`))
-    models_for_desc.sort(sort_models(`model_name`, `desc`))
-
-    // Check that ascending and descending are opposites of each other
-    expect(models_for_asc.map((m) => m.model_key).toReversed()).toStrictEqual(
-      models_for_desc.map((m) => m.model_key),
-    )
-
-    // Check that each sort includes all expected model keys
-    const expected_model_keys = [`aaa_model`, `missing_model`, `mmm_model`, `zzz_model`]
-
-    // Just check that all expected models are in the result, without caring about exact order
-    const str_cmp = (a?: string, b?: string) => (a ?? ``).localeCompare(b ?? ``)
-    expect(models_for_asc.map((m) => m.model_key).toSorted(str_cmp)).toStrictEqual(
-      expected_model_keys.toSorted(str_cmp),
-    )
-
-    expect(models_for_desc.map((m) => m.model_key).toSorted(str_cmp)).toStrictEqual(
-      expected_model_keys.toSorted(str_cmp),
-    )
+    // descending is the exact reverse of ascending
+    const desc_keys = create_test_models()
+      .toSorted(sort_models(`model_name`, `desc`))
+      .map((model) => model.model_key)
+    expect(desc_keys).toStrictEqual(asc_keys.toReversed())
   })
 
   it(`handles edge cases with missing or extreme metric values`, () => {
@@ -793,31 +809,16 @@ describe(`Model Sorting Logic`, () => {
   })
 
   it(`maintains original order for equivalent values`, () => {
-    const models_with_same_values = [
-      {
-        model_name: `Model 1`,
-        model_key: `model_1`,
-        metrics: { discovery: { unique_prototypes: { F1: 0.8 } } },
-      },
-      {
-        model_name: `Model 2`,
-        model_key: `model_2`,
-        metrics: { discovery: { unique_prototypes: { F1: 0.8 } } },
-      },
-      {
-        model_name: `Model 3`,
-        model_key: `model_3`,
-        metrics: { discovery: { unique_prototypes: { F1: 0.8 } } },
-      },
-    ] as unknown as ModelData[]
+    const models_with_same_values = [1, 2, 3].map((idx) => ({
+      model_name: `Model ${idx}`,
+      model_key: `model_${idx}`,
+      metrics: { discovery: { unique_prototypes: { F1: 0.8 } } },
+    })) as unknown as ModelData[]
 
-    // Sort models with identical F1 values
+    // Original order should be preserved when sorting identical F1 values
     const sorted_models = models_with_same_values.toSorted(sort_models(`F1`, `desc`))
-
-    // Original order should be preserved
-    expect(sorted_models[0].model_key).toBe(`model_1`)
-    expect(sorted_models[1].model_key).toBe(`model_2`)
-    expect(sorted_models[2].model_key).toBe(`model_3`)
+    const sorted_keys = sorted_models.map((model) => model.model_key)
+    expect(sorted_keys).toStrictEqual([`model_1`, `model_2`, `model_3`])
   })
 
   it(`throws an error when sorting by unexpected type`, () => {

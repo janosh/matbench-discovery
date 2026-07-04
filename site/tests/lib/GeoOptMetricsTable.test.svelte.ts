@@ -1,5 +1,7 @@
+import { MODELS } from '$lib'
 import GeoOptMetricsTable from '$lib/table/GeoOptMetricsTable.svelte'
 import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
+import type { ModelData } from '$lib/types'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query } from '../index'
@@ -70,33 +72,54 @@ describe(`GeoOptMetricsTable`, () => {
     expect(rmsd_header.getAttribute(`aria-sort`)).toBe(`ascending`)
   })
 
-  it(`renders rows with model data and links`, async () => {
-    mount(GeoOptMetricsTable, {
-      target: document.body,
-      props: { show_compliant: true, show_non_compliant: true },
-    })
-    await tick()
+  it(`renders geo-opt rows and excludes models without geo-opt metrics`, async () => {
+    const model_key = `no-geo-opt-regression`
+    MODELS.push({
+      model_key,
+      model_name: model_key,
+      model_version: `test`,
+      targets: `EFS_G`,
+      training_set: [],
+      n_training_materials: 1,
+      n_training_structures: 1,
+      model_params: 1,
+      date_added: `2026-06-30`,
+      metrics: {
+        discovery: { full_test_set: { F1: 0.1 } },
+        diatomics: { energy_mae: 1 },
+      },
+    } as unknown as ModelData)
 
-    const rows = document.querySelectorAll(`tbody tr`)
-    expect(rows.length).toBeGreaterThan(0)
+    try {
+      mount(GeoOptMetricsTable, {
+        target: document.body,
+        props: { show_compliant: true, show_non_compliant: true },
+      })
+      await tick()
 
-    // Model cells should have links to model pages
-    const model_cells = [...document.querySelectorAll(`td[data-col="Model"]`)]
-    expect(model_cells).toHaveLength(rows.length)
-    expect(model_cells[0]?.querySelector(`a`)?.getAttribute(`href`)).toMatch(
-      /^\/models\//,
-    )
+      expect(document.body.textContent).not.toContain(model_key)
 
-    // RMSD cells should have numeric values (data-col includes enriched label with unit)
-    const rmsd_cells = [...document.querySelectorAll(`td`)].filter((td) =>
-      td.getAttribute(`data-col`)?.includes(`RMSD`),
-    )
-    expect(
-      rmsd_cells.some((cell) => {
-        const text = cell.textContent?.trim()
-        return text && !isNaN(parseFloat(text))
-      }),
-    ).toBe(true)
+      const rows = document.querySelectorAll(`tbody tr`)
+      expect(rows.length).toBeGreaterThan(0)
+
+      const model_cells = [...document.querySelectorAll(`td[data-col="Model"]`)]
+      expect(model_cells).toHaveLength(rows.length)
+      expect(model_cells[0]?.querySelector(`a`)?.getAttribute(`href`)).toMatch(
+        /^\/models\//,
+      )
+
+      const rmsd_cells = [...document.querySelectorAll(`td`)].filter((td) =>
+        td.getAttribute(`data-col`)?.includes(`RMSD`),
+      )
+      expect(
+        rmsd_cells.some((cell) => {
+          const text = cell.textContent?.trim()
+          return text ? !Number.isNaN(Number(text)) : false
+        }),
+      ).toBe(true)
+    } finally {
+      MODELS.pop()
+    }
   })
 
   it(`toggles heatmap colors`, async () => {

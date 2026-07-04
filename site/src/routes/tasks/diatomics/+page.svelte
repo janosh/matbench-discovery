@@ -1,16 +1,19 @@
 <script lang="ts">
-  import { MetricsTable, type ModelData } from '$lib'
-  import { ALL_METRICS, DIATOMICS_METRICS, METADATA_COLS } from '$lib/labels'
+  import { MetricsTable, ModelSelect, type ModelData } from '$lib'
+  import { DIATOMICS_METRICS, task_page_visible_cols } from '$lib/labels'
   import { DiatomicCurve } from '$lib/plot'
+  import { UrlModelSelection } from '$lib/model-selection.svelte'
+  import {
+    bind_url_params,
+    sort_from_query,
+    valid_query_param,
+  } from '$lib/url-state.svelte'
   import type { SortDir } from '$lib/types'
   import DiatomicsNote from './diatomics-note.md'
-  import {
-    element_data,
-    type ChemicalElement,
-    type ElementCategory,
-  } from 'matterviz/element'
+  import { element_data } from 'matterviz/element'
+  import type { ChemicalElement, ElementCategory } from 'matterviz/element'
+  import { pick_contrast_color, PLOT_COLORS } from 'matterviz'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
-  import { untrack } from 'svelte'
   import { SvelteSet } from 'svelte/reactivity'
 
   let { data } = $props()
@@ -22,27 +25,6 @@
   let error_title = $derived(
     error_entries.map(([model_name, error]) => `${model_name}: ${error}`).join(`\n`),
   )
-
-  // Define a sequence of colors to use for models
-  const colors = [
-    `#2ca02c`, // Green
-    `#ff7f0e`, // Orange
-    `#d62728`, // Red
-    `#1f77b4`, // Blue
-    `#9467bd`, // Purple
-    `#8c564b`, // Brown
-    `#e377c2`, // Pink
-    `#7f7f7f`, // Gray
-    `#bcbd22`, // Yellow
-    `#17becf`, // Cyan
-    `#e6194B`, // Red
-    `#3cb44b`, // Green
-    `#ffe119`, // Yellow
-    `#4363d8`, // Blue
-    `#f58231`, // Orange 2
-    `#911eb4`, // Purple 2
-  ] as const
-  type ColorType = (typeof colors)[number]
 
   const homo_nuc_key = `homo-nuclear`
   const elements = element_data as ChemicalElement[]
@@ -90,30 +72,25 @@
     category_group(`lanthanide`, `Lanthanides`, `lanthanide`),
     category_group(`actinide`, `Actinides`, `actinide`),
   ]
-  const visible_cols: Record<string, boolean> = Object.fromEntries([
-    ...Object.values(ALL_METRICS).map((col): [string, boolean] => [col.label, false]),
-    ...Object.values(METADATA_COLS).map((col): [string, boolean] => [col.label, true]),
-    ...Object.values(DIATOMICS_METRICS).map((col): [string, boolean] => [
-      col.label,
-      true,
-    ]),
-  ])
+  const element_group_keys = new Set(element_groups.map(({ key }) => key))
+  const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
   const has_diatomics_metrics = (model: ModelData): boolean =>
     model.metrics?.diatomics != null && typeof model.metrics.diatomics === `object`
-  let sort = $state<{ column: string; dir: SortDir }>({
+  const default_sort: { column: string; dir: SortDir } = {
     column: DIATOMICS_METRICS.energy_jump.key,
     dir: `asc`,
-  })
+  }
+  let sort = $state({ ...default_sort })
 
   // Generate list of homo-nuclear diatomic formulas for elements 1-119
   const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
 
   // Create a Map to store model colors consistently
   let model_colors = $derived(
-    new Map<string, ColorType>(
-      diatomic_models.map((model: ModelData, idx: number) => [
+    new Map<string, string>(
+      diatomic_models.map((model, idx) => [
         model.model_name,
-        colors[idx % colors.length],
+        PLOT_COLORS[idx % PLOT_COLORS.length],
       ]),
     ),
   )
@@ -135,17 +112,53 @@
   // default to the 5 most recently added models with curve data (diatomic_models is
   // sorted newest-first); every other model stays toggleable in the buttons below
   const default_n_models = 5
-  const selected_models = new SvelteSet<string>(
-    untrack(() => [
-      // DFT references on by default, plus the newest models with curve data
-      ...(data?.reference_names ?? []),
-      ...diatomic_models
-        .map((model: ModelData) => model.model_name)
-        .filter((model_name: string) => model_name in diatomic_curves)
-        .slice(0, default_n_models),
-    ]),
+  const model_name_by_key = $derived(
+    new Map(diatomic_models.map((model) => [model.model_key, model.model_name])),
   )
-  let selected_model_names = $derived([...selected_models])
+  const model_key_by_name = $derived(
+    new Map(diatomic_models.map((model) => [model.model_name, model.model_key])),
+  )
+  let selectable_names = $derived([
+    ...reference_names,
+    ...diatomic_models
+      .map((model: ModelData) => model.model_name)
+      .filter((model_name) => model_name in diatomic_curves && !errors[model_name]),
+  ])
+  let selectable_options = $derived(
+    selectable_names.map((model_name) => {
+      const model_color = color_for(model_name)
+      const text_color = pick_contrast_color({ bg_color: model_color })
+      return {
+        label: `${model_name}${reference_names.includes(model_name) ? ` (DFT)` : ``}`,
+        value: model_name,
+        style: {
+          selected: `background: ${model_color}; color: ${text_color};`,
+          option: ``,
+        },
+      }
+    }),
+  )
+
+  // DFT references on by default, plus the newest models with curve data
+  let default_selected_names = $derived([
+    ...reference_names,
+    ...selectable_names
+      .filter((model_name) => !reference_names.includes(model_name))
+      .slice(0, default_n_models),
+  ])
+
+  const model_selection = new UrlModelSelection(() => ({
+    options: selectable_options,
+    defaults: default_selected_names,
+    // accept model keys (canonical) or display names in the URL, drop unknowns
+    from_url: (token) => {
+      const model_name = model_name_by_key.get(token) ?? token
+      return selectable_names.includes(model_name) ? model_name : undefined
+    },
+    // serialize display names back to model keys (DFT references have no key)
+    to_url: (model_name) => model_key_by_name.get(model_name) ?? model_name,
+  }))
+  let selected_model_names = $derived(model_selection.values)
   const visible_diatomics = new SvelteSet<string>()
   let diatomics_to_render = $derived(
     // Only render diatomics where at least one model has data
@@ -163,18 +176,25 @@
     }),
   )
 
-  function toggle_name(name: string) {
-    if (selected_models.has(name)) selected_models.delete(name)
-    else selected_models.add(name)
+  const read_url_params = (params: URLSearchParams) => {
+    model_selection.read(params)
+    selected_element_group = valid_query_param(
+      params,
+      `elements`,
+      `all`,
+      element_group_keys,
+    )
+    sort = sort_from_query(params, default_sort)
   }
+  bind_url_params(read_url_params, () => [
+    model_selection.url_entry,
+    [`elements`, selected_element_group, `all`],
+    [`sort`, sort.column, default_sort.column],
+    [`dir`, sort.dir, default_sort.dir],
+  ])
 
-  function toggle_model(model: ModelData) {
-    if (errors[model.model_name]) return
-    toggle_name(model.model_name)
-  }
-
-  function curves_for_formula(formula: string) {
-    return selected_model_names.flatMap((model) => {
+  const curves_for_formula = (formula: string) =>
+    selected_model_names.flatMap((model) => {
       const model_curves = diatomic_curves[model]
       const curve = model_curves?.[homo_nuc_key]?.[formula]
       if (!curve?.energies.length) return []
@@ -191,7 +211,6 @@
         },
       ]
     })
-  }
 
   function observe_plot(node: HTMLElement, formula: string) {
     const hide_plot = () => visible_diatomics.delete(formula)
@@ -266,33 +285,7 @@
     {/each}
   </div>
 
-  <div class="model-toggles">
-    {#each reference_names as ref_name (ref_name)}
-      <button
-        class:selected={selected_models.has(ref_name)}
-        aria-pressed={selected_models.has(ref_name)}
-        onclick={() => toggle_name(ref_name)}
-        style:--model-color={color_for(ref_name)}
-        title="VASP {ref_name} reference"
-      >
-        {ref_name} (DFT)
-      </button>
-    {/each}
-    {#each diatomic_models as model (model.model_name)}
-      {@const error = errors[model.model_name]}
-      <button
-        class:selected={selected_models.has(model.model_name)}
-        class:error
-        aria-pressed={selected_models.has(model.model_name)}
-        onclick={() => toggle_model(model)}
-        disabled={Boolean(error)}
-        style:--model-color={model_colors.get(model.model_name) ?? `gray`}
-        title={error}
-      >
-        {model.model_name}
-      </button>
-    {/each}
-  </div>
+  <ModelSelect options={selectable_options} bind:selected={model_selection.selected} />
 </div>
 
 <div class="grid" style="--plot-height: {clamped_plot_height}px">
@@ -346,8 +339,7 @@
   .plot-height-number {
     width: 5em;
   }
-  .element-groups,
-  .model-toggles {
+  .element-groups {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5em;
@@ -369,10 +361,6 @@
     background: color-mix(in srgb, var(--model-color, currentColor) 35%, transparent);
     font-weight: 650;
   }
-  button.error {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
   .error-summary {
     margin: 1em auto;
     max-width: 80ch;
@@ -380,7 +368,7 @@
     border: 1px solid var(--danger, #b91c1c);
     border-radius: 4px;
   }
-  button:hover:not(.error, :disabled) {
+  button:hover:not(:disabled) {
     background: color-mix(in srgb, var(--model-color, currentColor) 22%, transparent);
   }
 </style>

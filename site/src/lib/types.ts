@@ -55,25 +55,6 @@ export interface LinkData {
   pred_files: { files: { name: string; url: string }[]; name: string }
 }
 
-type CellVal =
-  | string
-  | number
-  | boolean
-  | undefined
-  | null
-  | Record<string, unknown>
-  | LinkData
-  | Record<string, string | number | LinkData | null | undefined | boolean>[]
-interface RowData {
-  style?: string
-  [key: string]: CellVal
-}
-export interface CellSnippetArgs {
-  row: RowData
-  col: Label
-  val: CellVal
-}
-
 export interface GitHubActivityData {
   name: string
   repo: string

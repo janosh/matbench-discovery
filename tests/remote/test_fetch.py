@@ -1,5 +1,6 @@
 """Tests for remote file download helpers."""
 
+import hashlib
 import os
 from collections.abc import Iterator
 from contextlib import nullcontext
@@ -66,22 +67,44 @@ def test_figshare_url_conversion(
 
 
 def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-    """Test download_file function."""
+    """download_file keeps a download with matching expected md5, prints on failure."""
     url = "https://example.com/test.txt"
     test_content = b"test content"
     dest_path = tmp_path / "test.txt"
 
     with patch("requests.get", return_value=make_mock_response(test_content)):
-        download_file(str(dest_path), url)
+        download_file(str(dest_path), url, md5=hashlib.md5(test_content).hexdigest())  # noqa: S324
         assert dest_path.read_bytes() == test_content
+        assert not os.path.isfile(f"{dest_path}.part")
 
     # Mock failed request
     with patch("requests.get", return_value=make_mock_response(b"Not found", 404)):
         download_file(str(dest_path), url)  # Should print error but not raise
 
     stdout, stderr = capsys.readouterr()
+    assert "MD5 mismatch" not in stdout
     assert f"Error downloading {url=}" in stdout
     assert stderr == ""
+
+
+def test_download_file_md5_mismatch_discards_download(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """A download failing md5 verification is discarded; cached file survives."""
+    url = "https://example.com/test.txt"
+    dest_path = tmp_path / "test.txt"
+    dest_path.write_bytes(b"old content")
+    expected_md5 = "0" * 32
+
+    with patch("requests.get", return_value=make_mock_response(b"new content")):
+        download_file(str(dest_path), url, md5=expected_md5)
+
+    stdout, stderr = capsys.readouterr()
+    assert f"MD5 mismatch for {url=}" in stdout
+    assert f"expected {expected_md5}" in stdout
+    assert stderr == ""
+    assert dest_path.read_bytes() == b"old content"
+    assert not os.path.isfile(f"{dest_path}.part")
 
 
 def test_download_file_current_directory(

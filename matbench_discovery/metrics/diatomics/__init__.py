@@ -35,7 +35,12 @@ from matbench_discovery.metrics.diatomics.force import (
     calc_force_total_variation,
 )
 
-DiatomicsYamlValue = str | float | list[str] | None
+DiatomicsYamlValue = str | float | dict[str, str] | None
+# Elements absent from the Materials Project (MP covers 89 elements: H-Pu minus these
+# five), and hence from MPtrj/OMat24-derived training data. Models trained on MP data
+# cannot predict them, so diatomic metrics skip them for every model (and the runner
+# tolerates their missing curves without per-model exclusion bookkeeping).
+NON_MP_ELEMENTS = frozenset({"Po", "At", "Rn", "Fr", "Ra"})
 DIATOMIC_METRIC_KEYS = frozenset(
     str(key)
     for key in (
@@ -109,14 +114,36 @@ class DiatomicCurves:
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create DiatomicCurves from a dictionary loaded from JSON."""
         distances = np.asarray(data["distances"])
+        grid_pos_by_dist = {float(dist): idx for idx, dist in enumerate(distances)}
 
         def make_curves(section: str) -> dict[str, DiatomicCurve]:
             """Convert one JSON curve section to DiatomicCurve objects."""
             curves = data.get(section, data.get(section.replace("-", "_"), {}))
             key_fn = _homo_key if section.startswith("homo") else str
+
+            def curve_distances(formula: str, curve: dict[str, Any]) -> np.ndarray:
+                """Return curve distances, requiring consistency with top-level grid.
+
+                Curves may omit grid points (run_diatomics trims non-finite samples
+                outside the scored window) but must not introduce off-grid,
+                duplicated, or reordered distances.
+                """
+                curve_dists = np.asarray(curve.get("distances", distances))
+                # off-grid points map to -1; valid subsets have strictly
+                # increasing grid positions
+                grid_positions = np.array(
+                    [grid_pos_by_dist.get(float(dist), -1) for dist in curve_dists]
+                )
+                if (grid_positions < 0).any() or (np.diff(grid_positions) <= 0).any():
+                    raise ValueError(
+                        f"{formula} curve distances must be an ordered subset of "
+                        "top-level distances"
+                    )
+                return curve_dists
+
             return {
                 key_fn(formula): DiatomicCurve(
-                    distances=curve.get("distances", distances),
+                    distances=curve_distances(formula, curve),
                     energies=curve["energies"],
                     forces=curve.get("forces", []),
                 )
@@ -154,7 +181,54 @@ def load_dft_reference_curves(
     )
 
 
-def _eval_window(elem_symbol: str, seps_max: float) -> tuple[float, float]:
+def find_low_quality_dft_refs(
+    ref_curves: DiatomicCurves,
+    *,
+    min_energy_jump: float = 2.0,
+    min_energy_flips: int = 10,
+) -> set[str]:
+    """Elements whose DFT reference curve is too jumpy to score models against.
+
+    A reference curve is flagged when its own smoothness metrics (evaluated over the
+    same element-specific window used to score models) mark it as oscillatory: total
+    energy jump at sign-flip points >= min_energy_jump AND number of energy-difference
+    sign flips >= min_energy_flips. Requiring both avoids flagging curves with a few
+    large but possibly physical features (e.g. Cr2's shelf) or many tiny numerical
+    wiggles. On the current PBE reference, this flags 8 lanthanides (Pr, Nd, Pm, Tb,
+    Dy, Ho, Er, Tm) whose f-electron SCF convergence issues produce eV-scale
+    discontinuities, next to which any model error signal drowns.
+
+    Args:
+        ref_curves (DiatomicCurves): DFT reference curves keyed by element symbol.
+        min_energy_jump (float): Flag threshold for calc_energy_jump in eV.
+        min_energy_flips (int): Flag threshold for calc_energy_diff_flips.
+
+    Returns:
+        set[str]: Element symbols with low-quality reference curves.
+    """
+    low_quality: set[str] = set()
+    for elem_symbol, curve in ref_curves.homo_nuclear.items():
+        seps, energies = curve.distances, curve.energies  # np arrays per DiatomicCurve
+        if seps.size == 0:
+            continue
+        r_min, r_max = eval_window(elem_symbol, float(np.max(seps)))
+        mask = (seps >= r_min) & (seps <= r_max)
+        if mask.sum() < 5:
+            continue  # too few in-window points to assess smoothness
+        if not np.isfinite(energies[mask]).all():
+            # non-finite reference energies can't be scored against (and would crash
+            # the smoothness metrics below)
+            low_quality.add(elem_symbol)
+            continue
+        if (
+            calc_energy_jump(seps[mask], energies[mask]) >= min_energy_jump
+            and calc_energy_diff_flips(seps[mask], energies[mask]) >= min_energy_flips
+        ):
+            low_quality.add(elem_symbol)
+    return low_quality
+
+
+def eval_window(elem_symbol: str, seps_max: float) -> tuple[float, float]:
     """Element-specific [r_min, r_max] metric-evaluation window, matching MLIP Arena.
 
     MLIP Arena samples (and thus evaluates) homonuclear curves only over
@@ -205,7 +279,11 @@ def calc_diatomic_metrics(
 
     Returns:
         dict[str, dict[str, float]]: Map of element symbols to metric dicts with keys
-            being the metric names and values being the metric values.
+            being the metric names and values being the metric values. Elements outside
+            the Materials Project set (NON_MP_ELEMENTS) are skipped entirely since
+            MP-trained models cannot support them. Elements whose DFT reference curve
+            is too jumpy to score against (see find_low_quality_dft_refs) still get
+            self-consistency metrics but no reference-relative pbe_* metrics.
     """
     requested_metric_keys = (
         {str(key) for key in metrics} if metrics is not None else DIATOMIC_METRIC_KEYS
@@ -224,15 +302,18 @@ def calc_diatomic_metrics(
     }:
         metric_kwargs.setdefault(key, {}).setdefault("interpolate", interpolate)
 
+    low_quality_refs = find_low_quality_dft_refs(ref_curves) if ref_curves else set()
     for elem_symbol, pred_data in pred_curves.homo_nuclear.items():
+        if _homo_key(elem_symbol) in NON_MP_ELEMENTS:
+            continue  # score all models on the same MP-supported element set
         # restrict to MLIP Arena's element-specific evaluation window first, excluding
         # the unphysical deep-overlap region that otherwise dominates every magnitude
         # metric (and where unstable models tend to produce non-finite values; checking
         # finiteness below the window means a curve only bad in deep overlap is kept)
         pred_dists = pred_data.distances
-        r_min, r_max = _eval_window(elem_symbol, float(np.max(pred_dists)))
+        r_min, r_max = eval_window(elem_symbol, float(np.max(pred_dists)))
         pred_mask = (pred_dists >= r_min) & (pred_dists <= r_max)
-        if int(pred_mask.sum()) < 5:  # too few points in window for stable metrics
+        if pred_mask.sum() < 5:  # too few points in window for stable metrics
             print(f"Skipping {elem_symbol} diatomic metrics: <5 points in eval window")
             continue
         seps_pred = pred_dists[pred_mask]
@@ -259,42 +340,40 @@ def calc_diatomic_metrics(
         # predicted curve
         metric_calls: list[tuple[MbdKey, Any, tuple[Any, ...]]] = [
             (MbdKey.tortuosity, calc_tortuosity, energy_args),
-            (
-                MbdKey.energy_diff_flips,
-                calc_energy_diff_flips,
-                energy_args,
-            ),
+            (MbdKey.energy_diff_flips, calc_energy_diff_flips, energy_args),
             (MbdKey.energy_jump, calc_energy_jump, energy_args),
             (MbdKey.force_flips, calc_force_flips, force_args),
-            (
-                MbdKey.force_total_variation,
-                calc_force_total_variation,
-                force_args,
-            ),
+            (MbdKey.force_total_variation, calc_force_total_variation, force_args),
             (MbdKey.force_jump, calc_force_jump, force_args),
         ]
 
         # prepend reference-requiring metrics when a matching reference curve exists
-        if ref_curves and (ref_data := ref_curves.homo_nuclear.get(elem_symbol)):
+        # and passes the smoothness quality gate (jumpy references would drown any
+        # model error signal, but self-consistency metrics above stay meaningful)
+        if (
+            ref_curves
+            and _homo_key(elem_symbol) not in low_quality_refs
+            and (ref_data := ref_curves.homo_nuclear.get(elem_symbol))
+        ):
             ref_dists = ref_data.distances
             ref_mask = (ref_dists >= r_min) & (ref_dists <= r_max)
             seps_ref = ref_dists[ref_mask]
             ref_energies = np.asarray(ref_data.energies)[ref_mask]
             if len(seps_ref) >= 2:
-                energy_pair_args = (seps_ref, ref_energies, seps_pred, pred_energies)
+                pair_args = (seps_ref, ref_energies, seps_pred, pred_energies)
                 metric_calls[:0] = [
-                    (metric_key, calc_fn, energy_pair_args)
-                    for metric_key, calc_fn in (
-                        (MbdKey.pbe_wall_dist_mae, calc_pbe_wall_dist_mae),
-                        (MbdKey.pbe_energy_mae, calc_pbe_energy_mae),
-                        (MbdKey.pbe_bond_length_error, calc_pbe_bond_length_error),
-                        (MbdKey.pbe_well_depth_error, calc_pbe_well_depth_error),
-                    )
-                ] + [
+                    (MbdKey.pbe_wall_dist_mae, calc_pbe_wall_dist_mae, pair_args),
+                    (MbdKey.pbe_energy_mae, calc_pbe_energy_mae, pair_args),
+                    (
+                        MbdKey.pbe_bond_length_error,
+                        calc_pbe_bond_length_error,
+                        pair_args,
+                    ),
+                    (MbdKey.pbe_well_depth_error, calc_pbe_well_depth_error, pair_args),
                     (
                         MbdKey.pbe_vib_freq_error,
                         calc_pbe_vib_freq_error,
-                        (elem_symbol, seps_ref, ref_energies, seps_pred, pred_energies),
+                        (elem_symbol, *pair_args),
                     ),
                 ]
             ref_forces = np.asarray(ref_data.forces)
@@ -330,7 +409,7 @@ def write_metrics_to_yaml(
     model: Model,
     metrics: dict[str, dict[str, float]],
     pred_file_path: str | None = None,
-    run_metadata: dict[str, str | float | list[str]] | None = None,
+    run_metadata: dict[str, str | float | dict[str, str]] | None = None,
 ) -> dict[str, DiatomicsYamlValue]:
     """Write diatomic metrics to model YAML file.
 
@@ -342,9 +421,10 @@ def write_metrics_to_yaml(
             metrics.diatomics.pred_file. Absolute paths must be inside the repo and are
             converted to repo-relative paths. Otherwise an existing pred_file is
             preserved.
-        run_metadata (dict[str, str | float] | None): Extra non-metric fields describing
-            the prediction run (e.g. hardware, run_time_sec). Recorded ahead of the
-            metric values; a recompute without run_metadata preserves existing values.
+        run_metadata (dict[str, str | float | dict[str, str]] | None): Extra
+            non-metric fields describing the prediction run (e.g. hardware,
+            run_time_sec). Recorded ahead of the metric values; a recompute without
+            run_metadata preserves existing values.
 
     Returns:
         dict[str, DiatomicsYamlValue]: The metrics.diatomics block written (file refs
@@ -385,9 +465,8 @@ def write_metrics_to_yaml(
     if pred_file_url is not None:
         block["pred_file_url"] = pred_file_url
 
-    for key in ("hardware", "run_time_sec", "excluded_formulas"):
-        val = run_metadata.get(key)
-        if val is None:
+    for key in ("hardware", "run_time_sec", "excluded_formula_reasons"):
+        if (val := run_metadata.get(key)) is None:
             val = existing.get(key)
         if val is not None:
             block[key] = val

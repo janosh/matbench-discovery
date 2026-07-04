@@ -45,7 +45,7 @@ wbm_computed_structure_entries:
   url: https://figshare.com/files/53161832
   path: wbm/2022-10-19-wbm-computed-structure-entries.jsonl.gz
   description: JSON-Serialized `pymatgen` [`ComputedStructureEntries`] containing all WBM DFT-relaxed structures and corresponding final energies
-  md5: 481959b65f28150ae6ee7297ddeba538
+  md5: 655b7a9c368e136dd8747f1ef8002e7a
 
 wbm_relaxed_atoms:
   url: https://figshare.com/files/48169600
@@ -57,7 +57,7 @@ wbm_initial_structures:
   url: https://figshare.com/files/53161835
   path: wbm/2022-10-19-wbm-init-structs.jsonl.gz
   description: Unrelaxed WBM structures in `pymatgen` `Structure` format
-  md5: ff2c40a3a7bf65468852b67f0dbc67df
+  md5: b809f101dd42a745ec2baabe7eb16f11
 
 wbm_initial_atoms:
   url: https://figshare.com/files/48169597
@@ -68,26 +68,26 @@ wbm_initial_atoms:
 wbm_summary:
   url: https://figshare.com/files/64706751
   path: wbm/2023-12-13-wbm-summary.csv.gz
-  description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.
+  description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. Exact regeneration of the MP2020-corrected formation energy and hull-distance columns depends on the `pymatgen` `MaterialsProject2020Compatibility` behavior used for anion-correction assignment; the released values are reproducible with v2023.5.10-era behavior (see https://github.com/janosh/matbench-discovery/issues/358).
   md5: 1555268d3aa59d20262cb9d01ce0994b
 
 wbm_dft_geo_opt_symprec_1e_2:
   url: https://figshare.com/files/52066799
   path: data/wbm/dft-geo-opt-symprec=1e-2-moyo=0.3.1.csv.gz
   description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.3.1 with symprec=1e-2.
-  md5:
+  md5: df60953f55755cea62e6df880ece07d9
 
 wbm_dft_geo_opt_symprec_1e_5:
   url: https://figshare.com/files/52066796
   path: data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz
   description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.3.1 with symprec=1e-5.
-  md5:
+  md5: f20d2ca1cabbc4bfb2bdf0f7698a2e75
 
 phonondb_pbe_103_structures:
   url: https://figshare.com/files/52179965
   path: phonons/2024-11-09-phononDB-PBE-103-structures.extxyz
   description: 103 phononDB structures run by Togo with PBE settings received in private communication. See https://github.com/atztogo/phonondb/blob/bba206/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe for details.
-  md5: a396d4c517fa6d57defeffc6c83f0118
+  md5: 0b149802835e260aa3ab0c7e3c88625b
 
 phonondb_pbe_103_kappa_no_nac:
   url: https://figshare.com/files/59988539

@@ -1,5 +1,10 @@
 import { arr_to_str, data_files, DATASETS, format_date, slugify } from '$lib'
-import { describe, expect, it } from 'vitest'
+import {
+  sort_from_query,
+  sync_url_params,
+  valid_query_param,
+} from '$lib/url-state.svelte'
+import { describe, expect, it, vi } from 'vitest'
 
 describe(`$lib data re-exports reflect index.ts mutations`, () => {
   it(`DATASETS entries expose computed slug and description_html`, () => {
@@ -65,5 +70,59 @@ describe(`format_date`, () => {
     expect(result).toContain(year)
     expect(result).toMatch(month)
     expect(result).toMatch(day)
+  })
+})
+
+describe(`valid_query_param`, () => {
+  it.each([
+    [`direct key`, new URLSearchParams({ key: `valid` }), `valid`],
+    [`prototype key`, new URLSearchParams({ key: `constructor` }), `fallback`],
+    [`absent key`, new URLSearchParams(), `fallback`],
+  ])(`returns expected value for %s`, (_case_name, params, expected) => {
+    expect(valid_query_param(params, `key`, `fallback`, { valid: true })).toBe(expected)
+  })
+})
+
+describe(`sort_from_query`, () => {
+  const valid_cols = new Set([`F1`, `combined_score`])
+  it.each([
+    [`valid sort`, `?sort=rdf_error&dir=asc`, undefined, `rdf_error`, `asc`],
+    [`invalid dir`, `?sort=F1&dir=sideways`, undefined, `F1`, `desc`],
+    [`absent sort`, ``, undefined, `combined_score`, `desc`],
+    [`column in valid_columns kept`, `?sort=F1`, valid_cols, `F1`, `desc`],
+    [`unknown column falls back`, `?sort=nope`, valid_cols, `combined_score`, `desc`],
+  ] as const)(`returns expected state for %s`, (_name, query, cols, column, dir) => {
+    expect(
+      sort_from_query(
+        new URLSearchParams(query),
+        { column: `combined_score`, dir: `desc` },
+        cols,
+      ),
+    ).toStrictEqual({ column, dir })
+  })
+})
+
+describe(`sync_url_params`, () => {
+  it(`preserves unrelated params and omits defaults`, () => {
+    history.replaceState(null, ``, `/tasks/md?keep=1&x=old&y=default`)
+
+    sync_url_params(
+      [
+        [`x`, `new`, `default`],
+        [`y`, `default`, `default`],
+      ],
+      {},
+    )
+
+    expect(location.search).toBe(`?keep=1&x=new`)
+  })
+
+  it(`does not replace URL when params are unchanged`, () => {
+    history.replaceState(null, ``, `/tasks/md?x=force_rmse`)
+    const replace_spy = vi.spyOn(history, `replaceState`)
+
+    sync_url_params([[`x`, `force_rmse`]], {})
+
+    expect(replace_spy).not.toHaveBeenCalled()
   })
 })

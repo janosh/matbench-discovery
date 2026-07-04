@@ -11,7 +11,7 @@ import type { ModelMetadata, ModelType, TargetType } from '$lib/schema/model'
 import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
 import type { DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { format_num } from 'matterviz'
+import { escape_html, format_num } from 'matterviz'
 
 // Model target type descriptions
 export const targets_tooltips: Record<TargetType, string> = {
@@ -114,10 +114,9 @@ export const all_lower_better_metrics = Object.values(MODELINGS_TASKS).flatMap(
   (model_task) => model_task.metrics.lower_is_better,
 )
 
-export function metric_better_as(metric: string) {
+export function metric_better_as(metric: string): `higher` | `lower` | null {
   if (all_higher_better_metrics.includes(metric)) return `higher`
-  if (all_lower_better_metrics.includes(metric)) return `lower`
-  return null
+  return all_lower_better_metrics.includes(metric) ? `lower` : null
 }
 
 // Format training set information for display in the metrics table
@@ -149,27 +148,24 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
   const dataset_tooltip =
     tooltip.length > 1 ? `${new_line}• ${tooltip.join(`${new_line}• `)}` : ``
 
-  let title = `${format_num(
-    n_training_materials,
-    `,`,
-  )} materials in training set${new_line}${dataset_tooltip}`
-  let train_size_str = `<span title="${title}" data-sort-value="${n_training_materials}">${format_num(
-    n_training_materials,
-  )} <small>${dataset_links}</small></span>`
-
-  if (n_training_materials !== n_training_structures) {
-    title =
-      `${format_num(n_training_materials, `,`)} materials in training set ` +
+  const same_count = n_training_materials === n_training_structures
+  const title = same_count
+    ? `${format_num(n_training_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
+    : `${format_num(n_training_materials, `,`)} materials in training set ` +
       `(${format_num(n_training_structures, `,`)} structures counting all DFT relaxation ` +
       `frames per material)${dataset_tooltip}`
+  const sort_value = same_count
+    ? n_training_materials
+    : n_training_materials || n_training_structures
+  const structure_count = same_count
+    ? ``
+    : ` <small>(${format_num(n_training_structures)})</small>`
 
-    train_size_str =
-      `<span title="${title}" data-sort-value="${n_training_materials || n_training_structures}">` +
-      `${format_num(n_training_materials)} <small>(${format_num(n_training_structures)})</small> ` +
-      `<small>${dataset_links}</small></span>`
-  }
-
-  return train_size_str
+  return (
+    `<span title="${title}" data-sort-value="${sort_value}">` +
+    `${format_num(n_training_materials)}${structure_count} ` +
+    `<small>${dataset_links}</small></span>`
+  )
 }
 
 // Combined filter function that respects both prediction type and compliance filters
@@ -205,6 +201,7 @@ export function assemble_row_data(
   show_energy_only: boolean, // Show energy-only models
   show_non_compliant: boolean, // Show non-compliant models
   show_compliant: boolean, // Show compliant models
+  models: ModelData[] = MODELS, // Model collection, injectable for tests
 ) {
   const current_filter = make_combined_filter(
     model_filter,
@@ -218,13 +215,14 @@ export function assemble_row_data(
       ? `<a href="${url}" target="_blank" rel="noopener noreferrer" title="View license">${license}</a>`
       : `<span title="License file not available">${license}</span>`
 
-  const filtered_models = MODELS.filter(
+  const filtered_models = models.filter(
     (model) =>
       current_filter(model) &&
       typeof model.metrics?.discovery === `object` &&
       model.metrics.discovery[discovery_set],
   )
 
+  const { RMSD, CPS } = ALL_METRICS
   const all_metrics = filtered_models.map((model) => {
     const { license, metrics } = model
     const discovery_metrics =
@@ -232,7 +230,6 @@ export function assemble_row_data(
         ? metrics.discovery[discovery_set]
         : undefined
     const is_compliant = model_is_compliant(model)
-    const { RMSD, CPS } = ALL_METRICS
     const metric_num = (label: Label) =>
       get_nested_number(model, `${label.path}.${label.key}`)
 
@@ -257,21 +254,35 @@ export function assemble_row_data(
       cell_filter && typeof cell_filter === `string`
         ? cell_filter.replace(/CellFilter$/, ``)
         : null
-    const diatomics_metrics = metrics?.diatomics
-    const excluded_formulas =
-      typeof diatomics_metrics === `object` && diatomics_metrics !== null
-        ? (diatomics_metrics.excluded_formulas ?? [])
-        : []
-    const model_exclusion_note = `Diatomics metrics exclude ${excluded_formulas.join(
-      `, `,
-    )} due to exploding errors`
-    const model_exclusion_marker =
-      excluded_formulas.length > 0
-        ? `<span title="${model_exclusion_note}" aria-label="${model_exclusion_note}">` +
-          `<span aria-hidden="true">*</span></span>`
-        : ``
+    const diatomics_metrics =
+      typeof metrics?.diatomics === `object` ? metrics.diatomics : null
+    const excluded_formula_reasons = diatomics_metrics?.excluded_formula_reasons ?? {}
+    // group excluded formulas by reason for a compact tooltip like
+    // "Diatomics metrics exclude A-A, B-B due to <reason>; C-C due to <other>"
+    let model_exclusion_marker = ``
+    if (Object.keys(excluded_formula_reasons).length > 0) {
+      // manual grouping instead of Map.groupBy, which is newer than Vite's default
+      // browser baseline and would throw at runtime in e.g. Safari < 17.4
+      const formulas_by_reason = new Map<string, string[]>()
+      for (const [formula, reason] of Object.entries(excluded_formula_reasons)) {
+        const group = formulas_by_reason.get(reason) ?? []
+        group.push(formula)
+        formulas_by_reason.set(reason, group)
+      }
+      const exclusion_note = escape_html(
+        `Diatomics metrics exclude ${[...formulas_by_reason]
+          .map(
+            ([reason, formulas]) =>
+              `${formulas.join(`, `)}${reason ? ` due to ${reason}` : ``}`,
+          )
+          .join(`; `)}`,
+      )
+      model_exclusion_marker =
+        `<span title="${exclusion_note}" aria-label="${exclusion_note}">` +
+        `<span aria-hidden="true">*</span></span>`
+    }
 
-    const row = {
+    return {
       model_name: model.model_name,
       Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
       CPS: model[CPS.key],
@@ -304,6 +315,12 @@ export function assemble_row_data(
         ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
         : `n/a`,
       [HYPERPARAMS.n_layers.key]: sortable_span(n_layers),
+      ...Object.fromEntries(
+        Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
+          col.key,
+          get_nested_number(model, `${col.path}.${col.property}`),
+        ]),
+      ),
       Targets: targets_str,
       [METADATA_COLS.date_added.key]:
         `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
@@ -329,16 +346,6 @@ export function assemble_row_data(
       org_logos: model.org_logos,
       authors: model.authors,
     }
-
-    return Object.assign(
-      row,
-      Object.fromEntries(
-        Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
-          col.key,
-          get_nested_number(model, `${col.path}.${col.property}`),
-        ]),
-      ),
-    )
   })
 
   // Sort by combined performance score (descending)
@@ -360,11 +367,10 @@ export function assemble_row_data(
 export const sort_models =
   (sort_by: string, order: `asc` | `desc`) =>
   (model_1: ModelData, model_2: ModelData): number => {
-    const sort_factor = order === `asc` ? -1 : 1
+    const sort_factor = order === `asc` ? 1 : -1
 
-    // Special case for Model sorting (by model_name)
+    // Special case for Model sorting (by model_name): asc = alphabetical A->Z
     if (sort_by === `Model`) {
-      // For Model, directly use localeCompare with sort_factor
       return sort_factor * model_1.model_name.localeCompare(model_2.model_name)
     }
 
@@ -381,13 +387,15 @@ export const sort_models =
 
     if (typeof val_1 === `string` && typeof val_2 === `string`) {
       return sort_factor * val_1.localeCompare(val_2)
-    } else if (typeof val_1 === `number` && typeof val_2 === `number`) {
+    }
+    if (typeof val_1 === `number` && typeof val_2 === `number`) {
       // Interpret run_time === 0 as infinity
       if (sort_by === `Run Time`) {
-        if (val_1 === 0) return -sort_factor
-        if (val_2 === 0) return sort_factor
+        if (val_1 === 0 && val_2 === 0) return 0
+        if (val_1 === 0) return sort_factor
+        if (val_2 === 0) return -sort_factor
       }
-      return sort_factor * (val_2 - val_1)
+      return sort_factor * (val_1 - val_2)
     }
     throw new TypeError(
       `Unexpected type '${typeof val_1}' encountered sorting by key '${sort_by}'`,

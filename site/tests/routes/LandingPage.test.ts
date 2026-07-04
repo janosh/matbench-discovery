@@ -1,13 +1,10 @@
-import { page } from '$app/state'
 import Page from '$routes/+page.svelte'
 import { tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { doc_query, mount } from '../index'
+import { doc_query, mount, mount_with_url, sorted_header } from '../index'
 
 const header_text = () =>
   [...document.querySelectorAll(`thead th`)].map((th) => th.textContent).join(` `)
-const sorted_header = (): HTMLTableCellElement | null =>
-  document.querySelector(`thead th[aria-sort]:not([aria-sort="none"])`)
 const preset_button = (label: string): HTMLButtonElement => {
   const button = [
     ...document.querySelectorAll<HTMLButtonElement>(`.selection-toggle button`),
@@ -210,8 +207,8 @@ describe(`Landing Page`, () => {
     if (!f1_match?.groups || !daf_match?.groups) {
       throw new Error(`Could not find F1 or DAF values in text: ${text}`)
     }
-    const f1_val = parseFloat(f1_match.groups.f1)
-    const daf_val = parseFloat(daf_match.groups.daf)
+    const f1_val = Number(f1_match.groups.f1)
+    const daf_val = Number(daf_match.groups.daf)
     expect(f1_val > 0 && f1_val < 1, `F1=${f1_val} is out of range`).toBe(true)
     expect(daf_val > 0 && daf_val < 10, `DAF=${daf_val} is out of range`).toBe(true)
   })
@@ -230,15 +227,6 @@ describe(`Landing Page`, () => {
 })
 
 describe(`Landing Page URL state`, () => {
-  const mount_with_url = async (url: string) => {
-    const next_url = new URL(url)
-    const test_page = page as { url: URL }
-    test_page.url = next_url
-    history.replaceState(null, ``, `${next_url.pathname}${next_url.search}`)
-    mount(Page, { target: document.body })
-    await tick()
-  }
-
   const column_toggle = (): HTMLInputElement => {
     const checkbox = document.querySelector<HTMLInputElement>(
       `details.column-toggles input:not(:disabled)`,
@@ -260,7 +248,7 @@ describe(`Landing Page URL state`, () => {
   ])(
     `preserves URL sort when restoring a column preset`,
     async (url, sorted_col, aria_sort) => {
-      await mount_with_url(url)
+      await mount_with_url(Page, url)
 
       expect(header_text()).toContain(`RDF`)
       expect(sorted_header()?.textContent).toContain(sorted_col)
@@ -269,7 +257,7 @@ describe(`Landing Page URL state`, () => {
   )
 
   it(`omits preset default sort params from the URL`, async () => {
-    await mount_with_url(`http://localhost/?preset=MD&sort=combined_score&dir=desc`)
+    await mount_with_url(Page, `http://localhost/?preset=MD&sort=combined_score&dir=desc`)
 
     expect(location.search).toBe(`?preset=MD`)
     expect(sorted_header()?.textContent).toContain(`CMDS`)
@@ -282,7 +270,7 @@ describe(`Landing Page URL state`, () => {
   })
 
   it(`drops preset from the URL only while columns are customized`, async () => {
-    await mount_with_url(`http://localhost/?preset=MD`)
+    await mount_with_url(Page, `http://localhost/?preset=MD`)
     expect(location.search).toContain(`preset=MD`)
 
     column_toggle().click()

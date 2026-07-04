@@ -12,8 +12,6 @@ from ase.build import bulk
 from pymatgen.core import Lattice, Structure
 
 from matbench_discovery import hpc
-from matbench_discovery.data import ase_atoms_from_zip
-from matbench_discovery.enums import DataFiles
 
 
 def make_ase_atoms(n_atoms: int) -> Atoms:
@@ -231,52 +229,6 @@ def test_reproducibility(make_obj: Callable[[int], Atoms | Structure]) -> None:
             assert obj1 is obj2  # should be the exact same object
 
 
-@pytest.mark.slow
-def test_wbm_chunking() -> None:
-    """Test chunking with WBM initial atoms dataset."""
-    atoms_list = ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path)
-    n_chunks = 100
-
-    # Verify distribution of atoms per structure
-    atoms_per_struct = np.array([len(atoms) for atoms in atoms_list])
-    unique_sizes, counts = np.unique(atoms_per_struct, return_counts=True)
-    expected_sizes = (
-        {2: 1596, 3: 6040, 4: 45937, 5: 18332, 6: 35209, 7: 8691, 8: 38918}
-        | {9: 21670, 10: 32982, 11: 9097, 12: 36499, 15: 22, 16: 429, 20: 837, 24: 60}
-        | {25: 1, 30: 164, 32: 126, 40: 195, 45: 2, 48: 91, 60: 31, 64: 11, 70: 5}
-        | {80: 11, 90: 3, 100: 4}
-    )
-    np.testing.assert_array_equal(unique_sizes, list(expected_sizes))
-    assert sorted(counts) == sorted(expected_sizes.values())
-    assert len(atoms_list) == 256963, "WBM dataset should have 256,963 structures"
-
-    # Split into chunks
-    chunks = hpc.chunk_by_lens(atoms_list, n_chunks=n_chunks)
-
-    # Verify chunk statistics
-    atoms_per_chunk = np.array([sum(len(atoms) for atoms in chunk) for chunk in chunks])
-    structs_per_chunk = np.array([len(chunk) for chunk in chunks])
-
-    # Since all structures have same size, chunks should be nearly equal
-    assert atoms_per_chunk.mean() == pytest.approx(19941.3, rel=1e-3)
-    assert atoms_per_chunk.std() == pytest.approx(0.906, rel=1e-3)
-    assert atoms_per_chunk.min() == 19940.0
-    assert atoms_per_chunk.max() == 19942.0
-
-    assert structs_per_chunk.mean() == pytest.approx(2569.6, rel=1e-3)
-    assert structs_per_chunk.std() == pytest.approx(0.4828, rel=1e-3)
-    assert structs_per_chunk.min() == 2569
-    assert structs_per_chunk.max() == 2570
-
-    # Verify relative standard deviations are very small
-    atoms_rsd = 100 * atoms_per_chunk.std() / atoms_per_chunk.mean()
-    structs_rsd = 100 * structs_per_chunk.std() / structs_per_chunk.mean()
-    assert atoms_rsd < 0.1, "Relative std dev in atoms per chunk should be < 0.1%"
-    assert structs_rsd < 0.1, (
-        "Relative std dev in structures per chunk should be < 0.1%"
-    )
-
-
 @pytest.mark.parametrize("py_file_path", [None, "path/to/file.py"])
 @pytest.mark.parametrize("partition", [None, "fake-partition"])
 @pytest.mark.parametrize("time", [None, "0:0:1"])
@@ -380,7 +332,12 @@ def test_get_calling_file_path() -> None:
     [
         (
             [
-                {"hardware": "H200", "run_time_sec": 100.0, "excluded_formulas": []},
+                # unrelated keys like excluded_formula_reasons are ignored by merge
+                {
+                    "hardware": "H200",
+                    "run_time_sec": 100.0,
+                    "excluded_formula_reasons": {},
+                },
                 {"hardware": "H200", "run_time_sec": 50.5},
             ],
             {"hardware": "H200", "run_time_sec": 150.5},

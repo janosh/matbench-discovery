@@ -11,7 +11,7 @@
   import { get_pred_file_urls } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
-  import type { ChemicalElement } from 'matterviz'
+  import type { ChemicalElement, IconName } from 'matterviz'
   import { format_num, format_relative_time, Icon, ColorBar } from 'matterviz'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -20,6 +20,7 @@
   import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
 
   type ModelInfoItem = readonly [key: string, value: string, title?: string | null]
+  type ExternalLink = { href?: string; icon: IconName; label: string; title: string }
 
   let { data }: { data: { model: ModelData } } = $props()
 
@@ -28,6 +29,34 @@
   let { model } = $derived(data)
   let added_ago = $derived(format_relative_time(model.date_added))
   let published_ago = $derived(format_relative_time(model.date_published))
+  // rendered in order; links whose href isn't an http(s) URL are skipped
+  let external_links: ExternalLink[] = $derived([
+    {
+      href: model.repo,
+      icon: `GitHub`,
+      label: `Repo`,
+      title: `View source code repository`,
+    },
+    { href: model.paper, icon: `Paper`, label: `Paper`, title: `Read model paper` },
+    { href: model.url, icon: `Docs`, label: `Docs`, title: `View model documentation` },
+    { href: model.doi, icon: `DOI`, label: `DOI`, title: `Digital Object Identifier` },
+    {
+      href: model.dirname
+        ? `${pkg.repository}/tree/HEAD/models/${model.dirname}`
+        : undefined,
+      icon: `Directory`,
+      label: `Files`,
+      title: `Browse model submission files`,
+    },
+    { href: model.pypi, icon: `PyPI`, label: `PyPI`, title: `Python package on PyPI` },
+    { href: model.pr_url, icon: `PullRequest`, label: `PR`, title: `View pull request` },
+    {
+      href: model.checkpoint_url,
+      icon: `Download`,
+      label: `Checkpoint`,
+      title: `Download model checkpoint`,
+    },
+  ])
   let model_info_items: ModelInfoItem[] = $derived([
     [`Model Version`, model.model_version],
     [`Model Type`, model.model_type, model_type_tooltips[model.model_type]],
@@ -118,82 +147,14 @@
     </section>
 
     <section class="links" {@attach tooltip()}>
-      {#if model.repo?.startsWith(`http`)}
-        <a
-          href={model.repo}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="View source code repository"
-        >
-          <Icon icon="GitHub" /> Repo
-        </a>
-      {/if}
-      {#if model.paper?.startsWith(`http`)}
-        <a
-          href={model.paper}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Read model paper"
-        >
-          <Icon icon="Paper" /> Paper
-        </a>
-      {/if}
-      {#if model.url?.startsWith(`http`)}
-        <a
-          href={model.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="View model documentation"
-        >
-          <Icon icon="Docs" /> Docs
-        </a>
-      {/if}
-      {#if model.doi?.startsWith(`http`)}
-        <a
-          href={model.doi}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Digital Object Identifier"
-        >
-          <Icon icon="DOI" /> DOI
-        </a>
-      {/if}
-      <a
-        href="{pkg.repository}/blob/-/models/{model.dirname?.split(`/`).pop()}"
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Browse model submission files"
-      >
-        <Icon icon="Directory" /> Files
-      </a>
-      {#if model.pypi?.startsWith(`http`)}
-        <a
-          href={model.pypi}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Python package on PyPI"
-        >
-          <Icon icon="PyPI" /> PyPI
-        </a>
-      {/if}
-      <a
-        href={model.pr_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        title="View pull request"
-      >
-        <Icon icon="PullRequest" /> PR
-      </a>
-      {#if model.checkpoint_url?.startsWith(`http`)}
-        <a
-          href={model.checkpoint_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Download model checkpoint"
-        >
-          <Icon icon="Download" /> Checkpoint
-        </a>
-      {/if}
+      {#each external_links as { href, icon, label, title } (label)}
+        {#if href?.startsWith(`http`)}
+          <a {href} target="_blank" rel="noopener noreferrer" {title}>
+            <Icon {icon} />
+            {label}
+          </a>
+        {/if}
+      {/each}
       {#if model.metrics}
         {@const pred_files = get_pred_file_urls(model)}
         {#if pred_files.length > 0}

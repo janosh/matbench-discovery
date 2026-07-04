@@ -1,7 +1,6 @@
 """Tests for molecular dynamics rollout helpers."""
 
 import hashlib
-import importlib.util
 import os
 import shlex
 import sys
@@ -15,8 +14,9 @@ import pytest
 from ase import Atoms
 from ase.build import bulk
 from ase.calculators.emt import EMT
+from conftest import import_repo_script
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import today
 from matbench_discovery.calculators import CALCULATORS, load_calculator
 from matbench_discovery.enums import Model
 from matbench_discovery.md import (
@@ -32,21 +32,6 @@ from matbench_discovery.md import (
 )
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
-
-
-def import_repo_script(module_name: str, rel_path: str) -> ModuleType:
-    """Import a repo-local script without package-name collisions."""
-    spec = importlib.util.spec_from_file_location(module_name, f"{ROOT}/{rel_path}")
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot import {module_name} from {rel_path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    try:
-        spec.loader.exec_module(module)
-    except BaseException:
-        sys.modules.pop(module_name, None)
-        raise
-    return module
 
 
 def test_reference_h5_roundtrip(tmp_path: Path) -> None:
