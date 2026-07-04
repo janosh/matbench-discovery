@@ -56,8 +56,8 @@
   function point_from_weights(weights: WeightsConfig): Point {
     let { x, y } = center
     Object.values(weights).forEach(({ weight }, idx) => {
-      x += (axis_points[idx].x - center.x) * (weight as number)
-      y += (axis_points[idx].y - center.y) * (weight as number)
+      x += (axis_points[idx].x - center.x) * weight
+      y += (axis_points[idx].y - center.y) * weight
     })
     return { x, y }
   }
@@ -357,7 +357,8 @@
     {/if}
 
     <!-- Draggable knob: first element is larger invisible hit area for the smaller visible knob above it -->
-    {#each [{ fill: `transparent`, r: 20 }, { fill: `var(--card-bg)`, stroke: `var(--text-color)`, r: 8 }] as knob_style (knob_style.r)}
+    <!-- page-bg (not card-bg): the knob needs an opaque fill, card-bg is 0.3-0.4 alpha -->
+    {#each [{ fill: `transparent`, r: 20 }, { fill: `var(--page-bg)`, stroke: `var(--text-color)`, r: 7 }] as knob_style (knob_style.r)}
       <circle
         cx={point.x}
         cy={point.y}
