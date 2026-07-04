@@ -123,7 +123,14 @@ def main(
             file_data["md5"] = file_hash
             files_in_article[data_file.name] = file_data
 
-            if file_size > max_file_size:
+            if (
+                existing_file := files_by_name.get(file_name)
+            ) and file_hash == existing_file["computed_md5"]:
+                file_id = existing_file["id"]  # local file matches remote, skip upload
+            elif file_size > max_file_size:
+                # size guard only blocks the upload path: an oversized file already on
+                # Figshare with matching hash (manually uploaded) still gets its url
+                # recorded via the branch above
                 print(
                     f"\n⚠️  Skipping {file_name} ({file_size / 1024**2:.1f} MB)"
                     f"\nFile exceeds {max_file_size / 1024**2:.0f} MB limit. "
@@ -131,11 +138,6 @@ def main(
                     f"https://figshare.com/account/articles/{article_id}"
                 )
                 continue
-
-            if (
-                existing_file := files_by_name.get(file_name)
-            ) and file_hash == existing_file["computed_md5"]:
-                file_id = existing_file["id"]  # local file matches remote, skip upload
             else:  # upload new or modified file, tracked for the summary print below
                 file_id = figshare.upload_file(
                     article_id, file_path, file_name=data_file.rel_path

@@ -34,17 +34,6 @@ declare module '*/datasets.yml' {
   export default data
 }
 
-declare module '*citation.cff' {
-  import type { Citation } from '$lib'
-  const data: Citation
-  export default data
-} // Paper metadata
-
-declare module '*references.yaml' {
-  import type { Reference } from '$lib'
-  export const references: Reference[]
-} // Paper references (auto-exported by Zotero)
-
 declare module '*model-schema.yml' {
   import type { ModelMetadata } from '$lib/schema/model'
   export const ModelMetadata: ModelMetadata

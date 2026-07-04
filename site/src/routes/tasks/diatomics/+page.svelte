@@ -392,7 +392,7 @@
     border: 1px solid var(--danger, #b91c1c);
     border-radius: 4px;
   }
-  button:hover:not(.error, :disabled) {
+  button:hover:not(:disabled) {
     background: color-mix(in srgb, var(--model-color, currentColor) 22%, transparent);
   }
 </style>
