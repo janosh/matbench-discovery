@@ -33,7 +33,7 @@ const sort_labels = (labels: string[]): string[] =>
   labels.toSorted((label_1, label_2) => label_1.localeCompare(label_2))
 
 const selected_text = (): string | undefined =>
-  document.querySelector(`.model-select ul[aria-label="selected options"]`)?.textContent
+  document.querySelector(`.multiselect ul[aria-label="selected options"]`)?.textContent
 
 const histogram_labels = (): string[] =>
   [...document.querySelectorAll(`.sym-ops-list figcaption`)].map(
