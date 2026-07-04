@@ -59,14 +59,13 @@ def download_file(
         response = requests.get(url, timeout=600, stream=True, headers=headers)
         response.raise_for_status()
 
-        file_hash = hashlib.md5() if md5 else None  # noqa: S324
+        file_hash = hashlib.md5()  # noqa: S324
         with open(tmp_file_path, mode="wb") as file:
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
-                if file_hash is not None:
-                    file_hash.update(chunk)
+                file_hash.update(chunk)
 
-        if file_hash is not None and (actual_md5 := file_hash.hexdigest()) != md5:
+        if md5 and (actual_md5 := file_hash.hexdigest()) != md5:
             os.remove(tmp_file_path)
             print(
                 f"MD5 mismatch for {url=}: expected {md5}, got {actual_md5}. "

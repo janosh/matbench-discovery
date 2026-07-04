@@ -21,6 +21,7 @@ from matbench_discovery.enums import (
     Task,
     TestSubset,
 )
+from matbench_discovery.remote import figshare
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 
@@ -298,6 +299,41 @@ def test_data_files_enum_urls(
         f"URL for {name} is not a Figshare download URL: {url}"
     )
     check_url(url_session, url)
+
+
+@pytest.fixture(scope="session")
+def figshare_data_file_md5s(url_session: requests.Session) -> dict[str, str]:
+    """Map Figshare file id -> computed_md5 for the repo's data-files article."""
+    article_id = figshare.ARTICLE_IDS["data_files"]
+    response = url_session.get(
+        f"https://api.figshare.com/v2/articles/{article_id}/files?page_size=500",
+        timeout=TIMEOUT,
+    )
+    response.raise_for_status()
+    return {str(file["id"]): file["computed_md5"] for file in response.json()}
+
+
+@pytest.mark.parametrize("data_file", DataFiles)
+def test_data_files_md5_matches_figshare(
+    data_file: DataFiles, figshare_data_file_md5s: dict[str, str]
+) -> None:
+    """Each declared md5 in data-files.yml must match Figshare's computed_md5 for the
+    current artifact, so registry drift (e.g. a stale checksum left behind by a
+    re-upload) fails CI instead of surfacing in downstream reproducibility audits
+    (see #357). Since download_file discards checksum mismatches, a drifted md5
+    would otherwise make the file un-downloadable.
+    """
+    file_id = data_file.url.rstrip("/").rsplit("/", maxsplit=1)[-1]
+    if (computed_md5 := figshare_data_file_md5s.get(file_id)) is None:
+        # file lives in an external Figshare article this repo doesn't control
+        # (e.g. mp_trj_json_gz in the original MPtrj article), can't enforce md5
+        pytest.skip(f"{data_file.name} file id {file_id} not in data-files article")
+    declared_md5 = data_file.yaml[data_file.name].get("md5")
+    assert declared_md5 == computed_md5, (
+        f"data-files.yml md5 for {data_file.name} ({declared_md5}) does not match "
+        f"Figshare computed_md5 ({computed_md5}) for file id {file_id}. Update the "
+        "registry entry (or re-run scripts/upload_data_files_to_figshare.py)."
+    )
 
 
 def test_files_enum_auto_download(

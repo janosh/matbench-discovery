@@ -114,11 +114,12 @@ def main(
             file_data.setdefault("path", data_file.rel_path)
             file_data.setdefault("description", "Description needed")
 
-            # Check if file needs to be uploaded
+            # Check if file needs to be uploaded. Always record the freshly computed
+            # hash: reusing a stored md5 here previously let re-uploads leave stale
+            # checksums in the registry (see #357).
             file_name = os.path.basename(file_path)
-            # Use stored MD5 if available, else use newly computed
             file_hash, file_size = figshare.get_file_hash_and_size(file_path)
-            file_hash = file_data.setdefault("md5", file_hash)
+            file_data["md5"] = file_hash
 
             if file_size > max_file_size:
                 print(
