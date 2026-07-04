@@ -613,6 +613,18 @@ export const ALL_METRICS: AllMetrics = {
   ...DIATOMICS_METRICS,
 } as const
 
+// Column-visibility map for task pages: hide every metric except those passed in,
+// keep all metadata columns visible. Columns absent from the map (e.g. the sticky
+// model name) default to shown via `?? true` in the pages' col_filter.
+export const task_page_visible_cols = (
+  ...shown_metrics: Label[]
+): Record<string, boolean> =>
+  Object.fromEntries([
+    ...Object.values(ALL_METRICS).map((col) => [col.label, false]),
+    ...Object.values(METADATA_COLS).map((col) => [col.label, true]),
+    ...shown_metrics.map((col) => [col.label, true]),
+  ])
+
 export const DISCOVERY_SET_LABELS: Record<
   DiscoverySet,
   { label: string; description: string; link?: string }

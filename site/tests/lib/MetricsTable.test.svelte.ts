@@ -10,7 +10,7 @@ describe(`MetricsTable`, () => {
     const sort_value = cell.getAttribute(`data-sort-value`)
     if (!sort_value) return null
 
-    const parsed_value = Number.parseInt(sort_value, 10)
+    const parsed_value = Math.trunc(Number(sort_value))
     return Number.isNaN(parsed_value) ? null : parsed_value
   }
 

@@ -17,7 +17,7 @@ export function valid_query_param<T extends string>(
 
   const is_valid =
     valid_values instanceof Set
-      ? valid_values.has(value as T)
+      ? valid_values.has(value)
       : Object.hasOwn(valid_values, value)
   return is_valid ? (value as T) : fallback
 }

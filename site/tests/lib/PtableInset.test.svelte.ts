@@ -87,8 +87,8 @@ describe(`PtableInset.svelte`, () => {
     mount(PtableInset, {
       target: document.body,
       props: {
-        element: { symbol: `X`, number: 999 } as unknown as ChemicalElement,
-        elem_counts: { X: 10 } as unknown as ElemCounts,
+        element: { ...mock_Fe, name: `` },
+        elem_counts: { Fe: 10 } as ElemCounts,
       },
     })
 

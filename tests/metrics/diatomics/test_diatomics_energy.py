@@ -9,6 +9,8 @@ import pytest
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
 from matbench_discovery.metrics.diatomics.energy import (
+    _threshold_diff_signs,
+    _validate_diatomic_curve,
     calc_energy_diff_flips,
     calc_energy_jump,
     calc_pbe_bond_length_error,
@@ -59,8 +61,6 @@ def test_threshold_diff_signs(
     vals: np.ndarray, threshold: float, expected_n_flips: int, expected_diffs_len: int
 ) -> None:
     """Test _threshold_diff_signs with known inputs."""
-    from matbench_discovery.metrics.diatomics.energy import _threshold_diff_signs
-
     diffs, signs, flips = _threshold_diff_signs(vals, threshold)
     assert len(diffs) == expected_diffs_len
     assert len(signs) == expected_diffs_len
@@ -94,8 +94,6 @@ def test_energy_flips_and_jumps_concrete(
 
 def test_validate_normalize_energy() -> None:
     """Test that normalize_energy shifts energies to zero at far field."""
-    from matbench_discovery.metrics.diatomics.energy import _validate_diatomic_curve
-
     seps = np.array([1.0, 2.0, 3.0, 4.0])
     energies = np.array([10.0, 5.0, 2.0, 1.0])
     _, normed = _validate_diatomic_curve(seps, energies, normalize_energy=True)
@@ -110,11 +108,19 @@ def test_validate_normalize_energy() -> None:
 
 
 def test_pbe_reference_energy_metrics() -> None:
-    """PBE-reference metrics return interpretable exact values on parabolic wells."""
-    seps_ref = np.linspace(0.5, 3.0, 51)
-    energies_ref = (seps_ref - 1.5) ** 2 - 2
-    seps_pred = np.linspace(0.55, 3.05, 51)
-    energies_pred = 1.2 * (seps_pred - 1.6) ** 2 - 1.7
+    """PBE-reference metrics on parabolic wells with analytically-known parameters.
+
+    ref = (r - r_ref_eq)^2 + E_ref_min, pred = k_pred * (r - r_pred_eq)^2 + E_pred_min
+    on 0.05 A grids that hit both minima exactly, so bond-length and well-depth errors
+    have closed forms. Wall-dist/energy-MAE/vib-freq expectations are regression pins
+    (they depend on interpolation grids and physical constants).
+    """
+    r_ref_eq, e_ref_min, r_ref_max = 1.5, -2, 3.0
+    k_pred, r_pred_eq, e_pred_min, r_pred_max = 1.2, 1.6, -1.7, 3.05
+    seps_ref = np.linspace(0.5, r_ref_max, 51)
+    energies_ref = (seps_ref - r_ref_eq) ** 2 + e_ref_min
+    seps_pred = np.linspace(0.55, r_pred_max, 51)
+    energies_pred = k_pred * (seps_pred - r_pred_eq) ** 2 + e_pred_min
 
     assert calc_pbe_wall_dist_mae(
         seps_ref, energies_ref, seps_pred, energies_pred, thresholds_ev=(1,)
@@ -124,10 +130,15 @@ def test_pbe_reference_energy_metrics() -> None:
     ) == pytest.approx(0.118, abs=0.01)
     assert calc_pbe_bond_length_error(
         seps_ref, energies_ref, seps_pred, energies_pred
-    ) == pytest.approx(0.1)
+    ) == pytest.approx(r_pred_eq - r_ref_eq)
+    # well depth D_e = E(r_max) - E_min, so the error is the curvature-scaled
+    # difference of squared distances from equilibrium to the last grid point
+    expected_well_depth_err = abs(
+        k_pred * (r_pred_max - r_pred_eq) ** 2 - (r_ref_max - r_ref_eq) ** 2
+    )
     assert calc_pbe_well_depth_error(
         seps_ref, energies_ref, seps_pred, energies_pred
-    ) == pytest.approx(0.273, abs=0.01)
+    ) == pytest.approx(expected_well_depth_err, abs=0.01)
     assert calc_pbe_vib_freq_error(
         "H", seps_ref, energies_ref, seps_pred, energies_pred
     ) == pytest.approx(99.1, abs=1)
@@ -159,10 +170,7 @@ def test_tortuosity_simple_cases(energies: np.ndarray, expected: float) -> None:
     """Test tortuosity with simple, easy-to-reason-about cases."""
     dists = np.arange(1, 6)
     result = diatomics.calc_tortuosity(dists, energies)
-    if np.isnan(expected):
-        assert np.isnan(result)
-    else:
-        assert result == pytest.approx(expected)
+    assert result == pytest.approx(expected, nan_ok=True)
 
 
 @pytest.mark.parametrize(

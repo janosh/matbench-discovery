@@ -245,7 +245,7 @@ describe(`energy parity data helpers`, () => {
     expect(
       structure_popup_placement({
         ...placement,
-        viewport_width: 1_600,
+        viewport_width: 1600,
         plot_left: 700,
       }),
     ).toEqual({ side: `left`, left: 64, top: 260 })
@@ -254,7 +254,7 @@ describe(`energy parity data helpers`, () => {
     expect(
       structure_popup_placement({
         ...placement,
-        viewport_width: 1_600,
+        viewport_width: 1600,
         plot_left: 16,
       }),
     ).toEqual({ side: `right`, left: 776, top: 260 })
