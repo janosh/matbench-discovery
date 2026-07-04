@@ -1,18 +1,17 @@
 """Evaluate pre-computed MLIP MD trajectories against ab-initio references.
 
-Computes per-system RDF, vDOS and (when stress is present) pressure metrics for
+Computes per-system RDF, ADF, vDOS and (when stress is present) pressure metrics for
 every model with trajectories in the MLIP directory and writes one per-system
-metrics CSV per model. Energy/force RMSE requires running the model itself and is
-handled by the unified runner models/run_md.py (which runs the model itself).
+metrics CSV per model.
 
-Expected data layout (CFPMD-26 convention):
+Expected data layout (DynaMat v1.0 convention):
     <ref-file>                               single reference HDF5 (group per system)
     <pred-dir>/<system>/nvt_<model>.extxyz   MLIP rollouts
 
 Example:
     python scripts/evals/md_trajectories.py \
-        --ref-file ~/data/cfpmd-26/cfpmd-26-aimd-reference.h5 \
-        --pred-dir ~/data/cfpmd-26/mlip_trajectories
+        --ref-file ~/data/dynamat-v1.0/dynamat-v1.0-reference-trajectories.h5 \
+        --pred-dir ~/data/dynamat-v1.0/mlip_trajectories
 """
 
 import argparse
@@ -36,7 +35,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "--ref-file",
     help="Reference HDF5 (one group per system, with dt_fs/temperature_kelvin attrs). "
-    "Defaults to the CFPMD-26 reference dataset, auto-downloaded from figshare.",
+    "Defaults to the DynaMat v1.0 reference dataset, auto-downloaded from figshare.",
 )
 parser.add_argument("--pred-dir", required=True)
 parser.add_argument(

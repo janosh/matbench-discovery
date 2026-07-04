@@ -995,7 +995,7 @@ describe(`MetricsTable`, () => {
       `RMSD`, // ALL_METRICS (Geo Opt)
       `ΔERMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `FRMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
-      `ΔRDF`, // ALL_METRICS (MD)
+      // ΔRDF is visible:false (hidden from leaderboards, redundant with ΔvDOS/ΔADF)
       `ΔADF`, // ALL_METRICS (MD)
       `ΔvDOS`, // ALL_METRICS (MD)
       `PMAE`, // ALL_METRICS (MD) - textContent doesn't keep subscript

@@ -20,8 +20,8 @@
   {@const org_logo =
     show_affiliation && affiliation ? get_org_logo(affiliation) : undefined}
   <span {...rest}>
-    <small title={affiliation}>{name}</small>
-    {#if show_affiliation && affiliation}&ensp;{affiliation}{/if}
+    <span title={affiliation}>{name}</span>
+    {#if show_affiliation && affiliation}&ensp;<small>{affiliation}</small>{/if}
     {#if show_affiliation && org_logo}&nbsp;<Logo logo={org_logo} />{/if}
     {#if email}
       <a aria-label="Email" href="mailto:{email}">

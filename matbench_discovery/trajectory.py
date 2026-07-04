@@ -209,7 +209,7 @@ class Trajectory:
         arrays without building one ASE ``Atoms`` per frame.
 
         ASE's pure-Python extxyz reader rebuilds an ``Atoms`` (and re-parses the header)
-        for every frame, which is minutes-to-hours for the 10k-70k-frame CFPMD-26
+        for every frame, which is minutes-to-hours for the 10k-70k-frame DynaMat
         references (~0.5 frames/s measured). This reads the file once, slices the
         constant-stride atom blocks with numpy, and parses the numeric columns with
         pandas' C engine, reproducing ASE's cell/stress/energy conventions exactly

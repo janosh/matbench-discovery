@@ -345,7 +345,7 @@ export const MD_METRICS: MdMetricsLabels = {
   md_energy_rmse: {
     key: `energy_rmse`,
     label: `ΔE<sub>RMSE</sub>`,
-    description: `Root mean squared error of model vs ab-initio energy fluctuations (each trajectory's mean energy is subtracted from both) on reference MD frames. Mean-subtraction makes this invariant to the absolute energy reference, which differs across CFPMD-26 systems (all-electron vs PAW)`,
+    description: `Private-label diagnostic: root mean squared error of model vs ab-initio energy fluctuations on reference MD frames (each trajectory's mean energy is subtracted from both). Excluded from CMDS because public DynaMat reference files do not include energies`,
     unit: `meV/atom`,
     path: `metrics.md`,
     better: `lower`,
@@ -355,7 +355,7 @@ export const MD_METRICS: MdMetricsLabels = {
   md_force_rmse: {
     key: `force_rmse`,
     label: `F<sub>RMSE</sub>`,
-    description: `Root mean squared error of model-predicted forces on reference ab-initio MD frames`,
+    description: `Private-label diagnostic: root mean squared error of model-predicted forces on reference ab-initio MD frames. Excluded from CMDS because public DynaMat reference files do not include forces`,
     unit: `meV/Å`,
     path: `metrics.md`,
     better: `lower`,
@@ -364,12 +364,13 @@ export const MD_METRICS: MdMetricsLabels = {
   md_rdf_error: {
     key: `rdf_error`,
     label: `ΔRDF`,
-    description: `Mean radial distribution function error between MLIP and ab-initio MD trajectories. 0% = perfect match, 100% = as different from the reference as an ideal gas`,
+    description: `Mean radial distribution function error between MLIP and ab-initio MD trajectories. 0% = perfect match, 100% = as different from the reference as an ideal gas. Hidden from the leaderboard and excluded from CMDS: it correlates 0.9+ with ΔvDOS and ΔADF across models, so it adds columns but little signal`,
     unit: `%`,
     path: `metrics.md`,
     range: [0, 100],
     better: `lower`,
     format: `.1f`,
+    visible: false,
   },
   md_adf_error: {
     key: `adf_error`,
@@ -422,7 +423,7 @@ export const MD_METRICS: MdMetricsLabels = {
   md_combined_score: {
     key: `combined_score`,
     label: `CMDS`,
-    description: `Combined MD score in [0,1] (higher is better): 1 − mean(ΔRDF, ΔADF, ΔvDOS, ΔP) / 100, where each error is a percentage and lower is better. Higher = closer to ab-initio dynamics; intended to feed into CPS as a normalized component.`,
+    description: `Combined MD score in [0,1] (higher is better): weighted mean of the ΔADF, ΔvDOS and ΔP subscores (1 − error/100), equal weights by default and reweightable on the MD task page. Computed on the fly like CPS, never stored with submissions. ΔRDF is excluded as redundant (0.9+ correlation with ΔvDOS/ΔADF). Higher = closer to ab-initio dynamics.`,
     path: `metrics.md`,
     range: [0, 1],
     better: `higher`,

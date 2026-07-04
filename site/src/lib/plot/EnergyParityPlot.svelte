@@ -28,12 +28,13 @@
   let {
     model,
     energy_kind,
-    title = energy_kind === `e-form` ? `Formation Energies` : `Convex Hull Distance`,
+    onstatus,
     ...rest
   }: HTMLAttributes<HTMLElement> & {
     model: ModelData
     energy_kind: EnergyKind
-    title?: string
+    // notified on load-status changes, e.g. to show a spinner in a tab bar
+    onstatus?: (status: LoadStatus) => void
   } = $props()
 
   type EnergyParityPointData = {
@@ -51,6 +52,7 @@
   const loading_spinner_style = `--spinner-size: 0.9em; --spinner-border-width: 2px; --spinner-margin: 0`
 
   let status = $state<LoadStatus>(`idle`)
+  $effect(() => onstatus?.(status))
   let error_message = $state(``)
   let base = $state<EnergyParityBase | undefined>()
   let parity_model = $state<EnergyParityModel | undefined>()
@@ -241,11 +243,65 @@
     globalThis.addEventListener(`resize`, update_popup_placement)
     return () => globalThis.removeEventListener(`resize`, update_popup_placement)
   })
+
+  // matterviz auto-places the density colorbar in whichever corner least occludes
+  // data, so the MAE/R² annotation claims the diagonally opposite corner to
+  // guarantee the two never overlap. Insets clear the axes + their tick labels.
+  // colorbar_class is owned by this file and injected through matterviz's public
+  // color_bar props, so placement never depends on matterviz-internal class names.
+  const colorbar_class = `density-color-bar`
+  const colorbar_selector = `.${colorbar_class}`
+  const annotation_insets = {
+    top_left: `2.5em auto auto 7em`,
+    top_right: `2.5em 2em auto auto`,
+    bottom_left: `auto auto 5em 7em`,
+    bottom_right: `auto 2em 5em auto`,
+  }
+  let annotation_inset = $state(annotation_insets.bottom_right)
+
+  function place_annotation_opposite_colorbar() {
+    const bar = plot_wrap?.querySelector(colorbar_selector)?.getBoundingClientRect()
+    const wrap = plot_wrap?.getBoundingClientRect()
+    // zero-width wrap = plot in a hidden tab; its rects would misplace the annotation
+    if (!bar || !wrap?.width) return
+    const vert = bar.top + bar.height / 2 < wrap.top + wrap.height / 2 ? `bottom` : `top`
+    const horiz = bar.left + bar.width / 2 < wrap.left + wrap.width / 2 ? `right` : `left`
+    annotation_inset = annotation_insets[`${vert}_${horiz}`]
+  }
+
+  $effect(() => {
+    if (status !== `ready` || !plot_wrap) return
+    // the colorbar mounts late and moves on zoom/resize (all via inline-style
+    // updates), so watch mutations involving it instead of enumerating triggers.
+    // Cheap filter keeps tooltip style churn from forcing layout on every mousemove.
+    const involves_colorbar = (node: Node) =>
+      node instanceof HTMLElement &&
+      (node.closest(colorbar_selector) ?? node.querySelector(colorbar_selector)) != null
+    const observer = new MutationObserver((mutations) => {
+      if (
+        mutations.some((mut) => [mut.target, ...mut.addedNodes].some(involves_colorbar))
+      ) {
+        place_annotation_opposite_colorbar()
+      }
+    })
+    observer.observe(plot_wrap, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: [`style`],
+    })
+    place_annotation_opposite_colorbar()
+    return () => observer.disconnect()
+  })
 </script>
 
-<section class="energy-parity-plot" {...rest}>
-  <h2 class="toc-exclude">ML vs DFT {title}</h2>
-
+<!-- the plot has no visible heading of its own: the model page's tab bar acts as its
+title, so label the section for screen readers instead -->
+<section
+  class="energy-parity-plot"
+  aria-label="ML vs DFT {energy_label} parity plot"
+  {...rest}
+>
   {#if status === `error`}
     <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
       {error_message}
@@ -278,10 +334,15 @@
         y_axis={{ label: y_label, format: `.2f`, range: extent }}
         density={{
           color_scale: { type: `log`, scheme: `interpolateMagma` },
-          color_bar: { title: `Density` },
+          color_bar: { title: `Density`, class: colorbar_class },
         }}
         size_scale={{ radius_range: [2, 18], pick_radius: `auto` }}
         overlays={{
+          // TODO adopt the declarative RefLine form once the next matterviz release
+          // ships BinnedScatterPlot support for it (added 2026-07-04): replace these
+          // hardcoded endpoints with a y=x `{ type: 'diagonal', slope: 1, intercept:
+          // 0 }` (cf. parity_diagonal in fig-helpers.ts) so the diagonal auto-fills
+          // the plot area and stays correct under zoom instead of tracking `extent`
           ref_lines: [
             {
               x1: extent[0],
@@ -316,7 +377,7 @@
 
         {#snippet children()}
           {#if stats && Number.isFinite(stats.mae)}
-            <div class="plot-annotation">
+            <div class="plot-annotation" style:inset={annotation_inset}>
               MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br />
               R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
             </div>
@@ -379,13 +440,6 @@
 </section>
 
 <style>
-  .energy-parity-plot {
-    margin-block: 2em;
-  }
-  h2 {
-    margin: 1em auto 0.5em;
-    text-align: center;
-  }
   .plot-wrap {
     position: relative;
   }

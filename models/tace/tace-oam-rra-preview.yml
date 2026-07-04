@@ -186,7 +186,6 @@ metrics:
     pressure_mae: 0.7995 # GPa
     pressure_wasserstein: 0.805 # GPa
     pressure_error: 45.5266 # %
-    combined_score: 0.819756
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66085361
 

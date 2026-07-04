@@ -608,9 +608,9 @@ class DataFiles(Files):
         auto(),
         "data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz",
     )
-    aimd_reference_md_trajectories = (
+    dynamat_v1_0_md_trajectories = (
         auto(),
-        "md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.h5",
+        "md/2026-06-29-dynamat-v1.0-reference-trajectories.h5",
     )
 
     @functools.cached_property

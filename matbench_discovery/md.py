@@ -1,11 +1,12 @@
 """Molecular dynamics rollout helpers for the MD benchmark task.
 
-Runs NVT simulations with MLIP calculators using the protocol from the CFPMD-26
-benchmark paper: Nose-Hoover chain thermostat, 0.25 fs timestep, 25 fs thermostat
-time scale, frames recorded every 10 steps for 20 ps.
+Runs NVT simulations with MLIP calculators using the DynaMat v1.0 protocol:
+Nose-Hoover chain thermostat, 0.25 fs timestep, 25 fs thermostat time scale, and
+frames recorded every 10 steps for 20 ps.
 """
 
 import contextlib
+import dataclasses
 import os
 import zipfile
 from collections.abc import Iterable
@@ -28,27 +29,28 @@ from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
 # === single-file multi-system reference dataset ===
-# CFPMD-26 references ship as one HDF5 with a group per system, each carrying the
+# DynaMat v1.0 references ship as one HDF5 with a group per system, each carrying the
 # trajectory arrays (guarded by Trajectory's per-group TRAJECTORY_SCHEMA) plus its
 # saved-frame interval (dt_fs) and target temperature as group attrs. Self-describing
 # -> no separate settings CSV or system-name matching.
 
 
 def default_md_reference_path() -> str:
-    """Path to the auto-downloaded CFPMD-26 reference HDF5 (one group per system)."""
+    """Path to the auto-downloaded DynaMat v1.0 reference HDF5."""
     from matbench_discovery.enums import DataFiles
 
-    return DataFiles.aimd_reference_md_trajectories.path
+    return DataFiles.dynamat_v1_0_md_trajectories.path
 
 
 def write_reference_h5(
     path: str, entries: Iterable[tuple[str, Trajectory, float, float]]
 ) -> None:
     """Atomically write a multi-system reference HDF5: one group per system holding the
-    trajectory arrays plus ``dt_fs`` (saved-frame interval) and ``temperature_kelvin``
-    attrs. ``entries`` yields (system_name, trajectory, dt_fs, temperature_kelvin); it
-    may be a lazy generator so the converter parses one trajectory at a time and writes
-    it straight to disk, bounding peak memory to the single largest system.
+    label-free trajectory arrays plus ``dt_fs`` (saved-frame interval) and
+    ``temperature_kelvin`` attrs. ``entries`` yields (system_name, trajectory, dt_fs,
+    temperature_kelvin); it may be a lazy generator so the converter parses one
+    trajectory at a time and writes it straight to disk, bounding peak memory to the
+    single largest system.
     """
     if dir_name := os.path.dirname(path):
         os.makedirs(dir_name, exist_ok=True)
@@ -57,7 +59,12 @@ def write_reference_h5(
     with h5py.File(tmp_path, "w") as file:
         for system_name, trajectory, dt_fs, temperature_kelvin in entries:
             group = file.create_group(system_name)
-            trajectory.write_to_h5_group(group)
+            # strip supervised labels so the public artifact can't double as a
+            # validation set; dataclasses.replace keeps any future fields intact
+            public_trajectory = dataclasses.replace(
+                trajectory, energy=None, forces=None
+            )
+            public_trajectory.write_to_h5_group(group)
             group.attrs["dt_fs"] = float(dt_fs)
             group.attrs["temperature_kelvin"] = float(temperature_kelvin)
             n_written += 1
@@ -523,6 +530,7 @@ def run_md_benchmark(
     model_key: str,
     out_dir: str,
     ref_file: str | None = None,
+    private_ref_file: str | None = None,
     systems: list[str] | None = None,
     n_steps: int = 80_000,
     time_step_fs: float = 0.25,
@@ -534,15 +542,19 @@ def run_md_benchmark(
 
     For each system in the reference HDF5, this rolls out an NVT trajectory from the
     reference initial structure (reusing an existing rollout if present), then compares
-    it to the reference via energy/force RMSE, RDF, ADF, vDOS and pressure. Writes one
-    gzipped per-system metrics CSV and returns the per-system DataFrame.
+    it to the reference via RDF, ADF, vDOS and pressure observables. If a private
+    labeled reference file is provided, diagnostic energy/force RMSEs are computed from
+    that file's hidden labels. Writes one gzipped per-system metrics CSV and returns
+    the per-system DataFrame.
 
     Args:
         calculator: ASE calculator for the model under test.
         model_key: Model enum name/key, used in output filenames.
         out_dir: Directory for rollout trajectories and the metrics CSV.
         ref_file: Reference HDF5 (one group per system, each carrying dt_fs and
-            temperature_kelvin attrs). Defaults to the auto-downloaded CFPMD-26 set.
+            temperature_kelvin attrs). Defaults to the auto-downloaded DynaMat v1.0 set.
+        private_ref_file: Optional private HDF5 with matching system groups and
+            energy/force labels for maintainer-only diagnostic RMSEs.
         systems: Subset of system names to run. Defaults to all in ref_file.
         n_steps: MD steps per rollout (80,000 = 20 ps at 0.25 fs).
         time_step_fs: MD integration time step.
@@ -581,8 +593,8 @@ def run_md_benchmark(
     rows: list[dict[str, float | str]] = []
     for system_name in tqdm(system_names, desc=f"MD systems ({model_key})"):
         progress_label = f"{model_key} {system_name}"
-        # dry run reads only the first 64 reference frames so the single-point eval
-        # stays fast; the HDF5 reader only decompresses the frames it returns
+        # dry run reads only the first 64 reference frames; the HDF5 reader only
+        # decompresses the frames it returns
         ref_trajectory, ref_time_step_fs, temperature_kelvin = (
             read_reference_trajectory(
                 ref_file, system_name, max_frames=64 if dry_run else None
@@ -627,53 +639,34 @@ def run_md_benchmark(
                     progress_label=progress_label,
                 )
 
-        refeval_path = f"{out_dir}/{system_name}-nvt-{model_key}-refeval.npz"
-        ref_predictions: dict[str, np.ndarray] | None = None
-        if os.path.isfile(refeval_path):
-            try:
-                with np.load(refeval_path, allow_pickle=False) as cached:
-                    if int(cached["n_atoms"]) != ref_trajectory.n_atoms:
-                        raise ValueError(
-                            f"cached n_atoms={int(cached['n_atoms'])} != "
-                            f"{ref_trajectory.n_atoms}"
-                        )
-                    ref_predictions = {
-                        key: cached[key] for key in ("e_pred", "force_se")
-                    }
-                md_metrics.energy_force_rmse_from_preds(ref_trajectory, ref_predictions)
-            except (
-                EOFError,
-                KeyError,
-                OSError,
-                TypeError,
-                ValueError,
-                zipfile.BadZipFile,
-            ) as exc:
-                print(f"  recomputing {refeval_path}: {exc}", flush=True)
-                ref_predictions = None
-            else:
-                print(f"  reusing {refeval_path}", flush=True)
-
-        if ref_predictions is None:
-            ref_predictions = md_metrics.predict_on_reference(
-                ref_trajectory, calculator
-            )
-            if not dry_run:
-                # e_ref lives in HDF5; the sidecar stores only model predictions.
-                _atomic_savez(
-                    refeval_path,
-                    e_pred=ref_predictions["e_pred"],
-                    force_se=ref_predictions["force_se"],
-                    n_atoms=ref_trajectory.n_atoms,
-                )
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectory,
             pred_frames,  # evaluate_md_system coerces the Atoms list to a Trajectory
             ref_time_step_fs=ref_time_step_fs,
             pred_time_step_fs=pred_time_step_fs,
-            ref_predictions=ref_predictions,
             progress_label=progress_label,
         )
+        if private_ref_file is not None:
+            private_ref_trajectory, _private_dt_fs, _private_temperature = (
+                read_reference_trajectory(
+                    private_ref_file,
+                    system_name,
+                    max_frames=64 if dry_run else None,
+                )
+            )
+            # guard against a stale/mismatched private file: matching group names
+            # with different structures would yield plausible-but-wrong diagnostics
+            if not np.array_equal(
+                private_ref_trajectory.atomic_numbers, ref_trajectory.atomic_numbers
+            ):
+                raise ValueError(
+                    f"private reference {system_name!r} has different atoms than the "
+                    f"public reference ({private_ref_trajectory.n_atoms} vs "
+                    f"{ref_trajectory.n_atoms}); stale {private_ref_file=}?"
+                )
+            system_metrics |= md_metrics.calc_energy_force_rmse(
+                private_ref_trajectory, calculator
+            )
         rows.append(
             {"system": system_name, "temperature_kelvin": temperature_kelvin}
             | system_metrics

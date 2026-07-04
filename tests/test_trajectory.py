@@ -239,7 +239,7 @@ def test_from_extxyz_matches_ase_parser(tmp_path: Path, suffix: str) -> None:
 
 
 def test_from_extxyz_real_format_stress_energy(tmp_path: Path) -> None:
-    """A hand-written CFPMD-style file (3x3 asymmetric stress, free_energy alongside
+    """A hand-written DynaMat-style file (3x3 asymmetric stress, free_energy alongside
     energy, leading-whitespace atom lines) matches ASE; the asymmetric stress pins the
     Voigt index order (ASE reshapes the 9-vector Fortran-order, then takes
     [00, 11, 22, 12, 02, 01]).

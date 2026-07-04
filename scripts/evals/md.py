@@ -48,7 +48,7 @@ def resolve_metrics(
 
 
 def coverage_problems(index: pd.Index, expected: set[str]) -> list[str]:
-    """Reasons a per-system metric index isn't exactly the expected CFPMD-26 set
+    """Reasons a per-system metric index isn't exactly the expected DynaMat v1.0 set
     (duplicate, missing or unexpected systems); an empty list means exact coverage.
     """
     present = set(index)
@@ -74,7 +74,7 @@ def main() -> int:
 
     n_success = 0
     n_skipped = 0
-    expected: set[str] | None = None  # CFPMD-26 system set, resolved lazily once
+    expected: set[str] | None = None  # DynaMat v1.0 system set, resolved lazily once
 
     for model in models_to_evaluate:
         # only a dict carries pred_file/pred_file_url; a missing key (None) or a
@@ -90,11 +90,11 @@ def main() -> int:
                 continue
             df_md, pred_file, pred_file_url, is_fresh_combine = resolved
 
-            # only persist metrics from exact CFPMD-26 coverage: missing systems give
-            # uneven means across models, while duplicate or unexpected (e.g. debug)
-            # rows silently skew them. Guards freshly combined and submitted CSVs alike.
+            # only persist metrics from exact DynaMat v1.0 coverage: missing systems
+            # give uneven means across models, while duplicate or unexpected (e.g.
+            # debug) rows silently skew them. Guards fresh and submitted CSVs alike.
             if expected is None:
-                # canonical CFPMD-26 names (triggers reference download if not cached)
+                # canonical DynaMat v1.0 names (downloads reference if not cached)
                 expected = set(list_reference_systems(default_md_reference_path()))
             if problems := coverage_problems(df_md.index, expected):
                 print(f"Skipping {model.label}: " + "; ".join(problems))

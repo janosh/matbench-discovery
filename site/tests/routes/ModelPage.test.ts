@@ -2,7 +2,7 @@ import { MODELS } from '$lib'
 import { get_org_logo } from '$lib/labels'
 import type { ModelData } from '$lib/types'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
-import { mount } from 'svelte'
+import { mount, tick } from 'svelte'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 beforeEach(() =>
@@ -123,5 +123,21 @@ describe(`Model Detail Page`, () => {
     // known dataset still renders as link, unknown one falls back to plain text
     expect(training_set?.querySelectorAll(`a`)).toHaveLength(1)
     expect(training_set?.textContent).toContain(`BogusDataset (unknown dataset)`)
+  })
+
+  it(`lazy-mounts energy parity tab plots`, async () => {
+    mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
+    await tick()
+
+    // only the default tab's plot mounts on load; toggling mounts the other for good
+    expect(document.querySelectorAll(`section.energy-parity-plot`)).toHaveLength(1)
+    const tab_buttons = document.querySelectorAll<HTMLButtonElement>(
+      `.energy-parity-tabs button`,
+    )
+    tab_buttons[1].click()
+    await tick()
+    tab_buttons[0].click()
+    await tick()
+    expect(document.querySelectorAll(`section.energy-parity-plot`)).toHaveLength(2)
   })
 })

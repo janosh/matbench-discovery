@@ -65,7 +65,7 @@ describe(`Landing Page`, () => {
   it.each([
     [`Phonons`, `SRE`], // κ_SRE (matches the phonons task page)
     [`Geo Opt`, `Σ`], // symmetry metrics (Σ= / Σ↓ / Σ↑)
-    [`MD`, `RDF`], // RDF err
+    [`MD`, `vDOS`], // vDOS err (RDF is hidden from leaderboards as redundant)
     [`Diatomics`, `E jump`],
   ])(`%s preset shows its metrics + headline cols, hides DAF`, async (preset, marker) => {
     expect(header_text()).toContain(`DAF`) // Discovery is the default preset
@@ -250,7 +250,7 @@ describe(`Landing Page URL state`, () => {
     async (url, sorted_col, aria_sort) => {
       await mount_with_url(Page, url)
 
-      expect(header_text()).toContain(`RDF`)
+      expect(header_text()).toContain(`vDOS`)
       expect(sorted_header()?.textContent).toContain(sorted_col)
       expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(aria_sort)
     },

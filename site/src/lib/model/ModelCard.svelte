@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Label, ModelData } from '$lib'
   import { AuthorBrief, DATASETS } from '$lib'
+  import { get_nested_value, label_data_path } from '$lib/metrics'
   import pkg from '$site/package.json'
   import { format_num, Icon } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
@@ -25,17 +26,11 @@
   } = $props()
 
   let { model_name, model_key, model_params, training_set } = $derived(model)
-  let all_metrics = $derived({
-    ...(typeof model.metrics?.discovery === `object`
-      ? model.metrics.discovery.unique_prototypes
-      : {}),
-    ...(typeof model.metrics?.phonons === `object`
-      ? model.metrics?.phonons.kappa_103
-      : {}),
-    ...(typeof model.metrics?.md === `object` ? model.metrics.md : {}),
-    CPS: model.CPS,
-  })
-  let { missing_preds } = $derived(all_metrics)
+  let missing_preds = $derived(
+    typeof model.metrics?.discovery === `object`
+      ? model.metrics.discovery.unique_prototypes?.missing_preds
+      : undefined,
+  )
 
   let links = $derived([
     [model.repo, `Repo`, `GitHub`],
@@ -176,15 +171,24 @@
 <section class="metrics" style={metrics_style || null}>
   <h3 style="margin: 0; font-weight: normal">Metrics</h3>
   <ul>
-    <!-- hide run time if value is 0 (i.e. not available) -->
-    {#each metrics as metric (JSON.stringify(metric))}
-      {@const { key, label, unit } = metric}
-      {@const value = all_metrics[key as keyof typeof all_metrics] as number}
-      <li class:active={sort_by == key}>
+    {#each metrics as metric (metric.key)}
+      {@const { key, label, unit, description } = metric}
+      <!-- resolve by the label's own data path so any metric works (RMSD lives under
+      metrics.geo_opt.symprec=1e-2, which a hardcoded section merge would miss) -->
+      {@const value = get_nested_value(model, label_data_path(metric)) as number}
+      <li
+        class:active={sort_by == key}
+        title={description}
+        {@attach tooltip({ allow_html: true })}
+      >
         <label for={key}>{@html label ?? key}</label>
         <strong>
-          {isNaN(Number(value)) ? `n/a` : format_num(value)}
-          <small>{unit ?? ``}</small>
+          {#if isNaN(Number(value))}
+            n/a
+          {:else}
+            {format_num(value)}
+            <small>{unit ?? ``}</small>
+          {/if}
         </strong>
       </li>
     {/each}
@@ -239,10 +243,13 @@
   }
   section.metrics > ul {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9em, 1fr));
+    /* cap track width so label and value stay close (widest current pair is ~9.2em:
+    'MAE 0.044 eV / atom'); leftover space goes between columns (justify-content),
+    not inside cells where it'd stretch the label-value gap */
+    grid-template-columns: repeat(auto-fill, minmax(9em, 9.5em));
+    justify-content: space-between;
     gap: 3pt 1em;
     list-style: none;
-    max-height: 10em;
     padding: 0;
   }
   section.metrics > ul > li {

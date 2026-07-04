@@ -11,7 +11,7 @@ repos:
       - id: ruff-format
 
   - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: v0.0.55
+    rev: v0.0.56
     hooks:
       - id: ty
         # --isolated: don't create/update uv.lock or the local .venv
@@ -79,7 +79,7 @@ repos:
         exclude: changelog\.md$
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.3
+    rev: 0.37.4
     hooks:
       - id: check-jsonschema
         name: check-jsonschema-models
@@ -92,7 +92,7 @@ repos:
       - id: check-github-actions
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.47.2
+    rev: v1.48.0
     hooks:
       - id: typos
         stages: [pre-commit, commit-msg]

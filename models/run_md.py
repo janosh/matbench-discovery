@@ -10,8 +10,12 @@ Model dependency trees conflict, so each model resolves its own environment via
     # smoke-test a model end-to-end in seconds before committing to the long run
     uv run --with orb-models models/run_md.py --model orb_v3 --dry-run
 
-    # full 20 ps NVT rollout + metrics over all CFPMD-26 systems (auto-downloaded)
+    # full 20 ps NVT rollout + metrics over all DynaMat v1.0 systems (auto-downloaded)
     uv run --with orb-models models/run_md.py --model orb_v3 --write-yaml
+
+    # maintainer-only: add private-label energy/force diagnostics
+    MBD_MD_PRIVATE_REF_FILE=/path/to/private-ref.h5 uv run --with orb-models \
+        models/run_md.py --model orb_v3
 
     # one slurm array task per system: --systems "${SYSTEMS[$SLURM_ARRAY_TASK_ID]}"
 """
@@ -58,7 +62,16 @@ def main() -> int:
     )
     parser.add_argument("--out-dir", help="Defaults to models/<arch>/<today>-md-nvt")
     parser.add_argument(
-        "--ref-file", help="Reference HDF5. Defaults to auto-downloaded CFPMD-26 set"
+        "--ref-file",
+        help="Reference HDF5. Defaults to auto-downloaded DynaMat v1.0 set",
+    )
+    parser.add_argument(
+        "--private-ref-file",
+        default=os.getenv("MBD_MD_PRIVATE_REF_FILE"),
+        help=(
+            "Private labeled reference HDF5 for maintainer-only energy/force RMSE "
+            "diagnostics. Defaults to $MBD_MD_PRIVATE_REF_FILE when set."
+        ),
     )
     parser.add_argument("--systems", nargs="*", help="Subset of system names")
     parser.add_argument("--n-steps", type=int, default=80_000)
@@ -99,6 +112,8 @@ def main() -> int:
         run_args = ["--model", args.model]
         if args.dry_run:
             run_args.append("--dry-run")
+        if args.private_ref_file:
+            run_args.extend(["--private-ref-file", args.private_ref_file])
         print(
             shlex.join(
                 CALCULATORS[args.model].uv_run_cmd("models/run_md.py", *run_args)
@@ -123,6 +138,7 @@ def main() -> int:
         model_key=args.model,
         out_dir=out_dir,
         ref_file=args.ref_file,
+        private_ref_file=args.private_ref_file,
         systems=args.systems,
         n_steps=args.n_steps,
         time_step_fs=args.time_step_fs,
