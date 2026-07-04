@@ -656,7 +656,7 @@ class DataFiles(Files):
 
         abs_path = f"{type(self).base_dir}/{rel_path}"
         if not os.path.isfile(abs_path):
-            expected_md5 = self.yaml[key].get("md5") or None
+            expected_md5 = self.yaml[key].get("md5")
             maybe_auto_download_file(self.url, abs_path, label=key, md5=expected_md5)
             if not os.path.isfile(abs_path):
                 raise FileNotFoundError(

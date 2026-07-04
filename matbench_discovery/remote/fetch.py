@@ -97,9 +97,7 @@ def maybe_auto_download_file(
     headers: dict[str, str] | None = None,
     md5: str | None = None,
 ) -> None:
-    """Download file if missing and confirmed, forwarding optional HTTP headers
-    and an optional expected MD5 checksum (see download_file).
-    """
+    """Download file if missing and confirmed, forwarding headers and expected md5."""
     if os.path.isfile(abs_path):
         return
 

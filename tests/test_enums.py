@@ -323,7 +323,7 @@ def test_data_files_md5_matches_figshare(
     (see #357). Since download_file discards checksum mismatches, a drifted md5
     would otherwise make the file un-downloadable.
     """
-    file_id = data_file.url.rstrip("/").rsplit("/", maxsplit=1)[-1]
+    file_id = data_file.url.rsplit("/", maxsplit=1)[-1]
     if (computed_md5 := figshare_data_file_md5s.get(file_id)) is None:
         # file lives in an external Figshare article this repo doesn't control
         # (e.g. mp_trj_json_gz in the original MPtrj article), can't enforce md5
