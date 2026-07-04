@@ -1,0 +1,42 @@
+name: Model PR guard
+
+# Block merging model submissions that weren't fully ingested: the tests in
+# tests/test_parity_assets.py require every active model with predictions to be in
+# the committed parity manifests and every manifest asset to exist in the GitHub
+# release the site downloads from. Model PRs fail until a maintainer applies the
+# 'ingest-model' label (full ingest in CI, see update-site-figs.yml, whose result
+# commit re-triggers this check via synchronize) or runs `just ingest-model <model>`
+# locally. Runs on ALL PRs (a path-filtered required check would block non-model PRs
+# forever); non-model PRs pass in ~1 min. Also runs on main pushes + weekly to catch
+# drift (e.g. release assets deleted post-merge).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: 41 4 * * 1 # weekly drift check (Mon 04:41 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  model-pr-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v8.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Check parity manifests + release assets
+        env:
+          GH_TOKEN: ${{ github.token }} # avoids GitHub API rate limits
+        run: uv run --with-editable . --with pytest pytest tests/test_parity_assets.py -q
