@@ -1,9 +1,7 @@
 """Enums used as keys/accessors for dicts and dataframes across Matbench Discovery."""
 
-import builtins
 import functools
 import os
-import sys
 from enum import EnumType, StrEnum, _EnumDict, auto, unique
 from typing import Any, Self, TypeVar
 
@@ -12,7 +10,7 @@ import pymatviz as pmv
 import yaml
 
 from matbench_discovery import DEFAULT_CACHE_DIR, PKG_DIR, ROOT
-from matbench_discovery.remote.fetch import download_file, maybe_auto_download_file
+from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 eV_per_atom = pmv.enums.eV_per_atom  # noqa: N816
 T = TypeVar("T", bound="Files")
@@ -658,23 +656,13 @@ class DataFiles(Files):
 
         abs_path = f"{type(self).base_dir}/{rel_path}"
         if not os.path.isfile(abs_path):
-            # whether to auto-download files without prompting
-            auto_download = (
-                os.getenv("MBD_AUTO_DOWNLOAD_FILES", "true").lower() == "true"
-            )
-            is_ipython = hasattr(builtins, "__IPYTHON__")
-            # default to 'y' if auto-download enabled or not in interactive session
-            answer = (
-                "y"
-                if auto_download or not (is_ipython or sys.stdin.isatty())
-                else input(
-                    f"{abs_path!r} associated with {key=} does not exist. Download it "
-                    "now? This will cache the file for future use. [y/n] "
+            expected_md5 = self.yaml[key].get("md5")
+            maybe_auto_download_file(self.url, abs_path, label=key, md5=expected_md5)
+            if not os.path.isfile(abs_path):
+                raise FileNotFoundError(
+                    f"Failed to download and verify {key!r} from {self.url} "
+                    f"to {abs_path} with {expected_md5=}."
                 )
-            )
-            if answer.lower().strip() == "y":
-                print(f"Downloading {key!r} from {self.url} to {abs_path}")
-                download_file(abs_path, self.url)
         return abs_path
 
 

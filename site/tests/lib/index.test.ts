@@ -1,5 +1,9 @@
 import { arr_to_str, data_files, DATASETS, format_date, slugify } from '$lib'
-import { sort_from_query, sync_url_params, valid_query_param } from '$lib/url-state'
+import {
+  sort_from_query,
+  sync_url_params,
+  valid_query_param,
+} from '$lib/url-state.svelte'
 import { describe, expect, it, vi } from 'vitest'
 
 describe(`$lib data re-exports reflect index.ts mutations`, () => {
@@ -80,17 +84,21 @@ describe(`valid_query_param`, () => {
 })
 
 describe(`sort_from_query`, () => {
+  const valid_cols = new Set([`F1`, `combined_score`])
   it.each([
-    [`valid sort`, `?sort=rdf_error&dir=asc`, { column: `rdf_error`, dir: `asc` }],
-    [`invalid dir`, `?sort=F1&dir=sideways`, { column: `F1`, dir: `desc` }],
-    [`absent sort`, ``, { column: `combined_score`, dir: `desc` }],
-  ] as const)(`returns expected state for %s`, (_case_name, query, expected) => {
+    [`valid sort`, `?sort=rdf_error&dir=asc`, undefined, `rdf_error`, `asc`],
+    [`invalid dir`, `?sort=F1&dir=sideways`, undefined, `F1`, `desc`],
+    [`absent sort`, ``, undefined, `combined_score`, `desc`],
+    [`column in valid_columns kept`, `?sort=F1`, valid_cols, `F1`, `desc`],
+    [`unknown column falls back`, `?sort=nope`, valid_cols, `combined_score`, `desc`],
+  ] as const)(`returns expected state for %s`, (_name, query, cols, column, dir) => {
     expect(
-      sort_from_query(new URLSearchParams(query), {
-        column: `combined_score`,
-        dir: `desc`,
-      }),
-    ).toStrictEqual(expected)
+      sort_from_query(
+        new URLSearchParams(query),
+        { column: `combined_score`, dir: `desc` },
+        cols,
+      ),
+    ).toStrictEqual({ column, dir })
   })
 })
 

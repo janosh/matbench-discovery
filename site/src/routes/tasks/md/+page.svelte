@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { afterNavigate } from '$app/navigation'
-  import { page } from '$app/state'
   import { MetricsTable, type ModelData, MODELS } from '$lib'
   import {
     MD_METRICS,
@@ -10,7 +8,11 @@
   } from '$lib/labels'
   import type { SortDir } from '$lib/types'
   import { DynamicScatter } from '$lib/plot'
-  import { sort_from_query, sync_url_params, valid_query_param } from '$lib/url-state'
+  import {
+    bind_url_params,
+    sort_from_query,
+    valid_query_param,
+  } from '$lib/url-state.svelte'
   import MdNote from './md-note.md'
 
   // show only MD metrics and metadata columns
@@ -33,28 +35,18 @@
   // default-sort by the combined MD score (CMDS), best (highest) first. matterviz sorts
   // by the column's key (falling back to label), so use the key, not the 'CMDS' label
   let sort = $state({ ...default_sort })
-  let url_ready = $state(false)
 
-  afterNavigate(() => {
-    const params = page.url.searchParams
+  const read_url_params = (params: URLSearchParams) => {
     scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
     scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
     sort = sort_from_query(params, default_sort)
-    url_ready = true
-  })
-
-  $effect(() => {
-    if (!url_ready) return
-    sync_url_params(
-      [
-        [`x`, scatter_x, default_scatter_x],
-        [`y`, scatter_y, default_scatter_y],
-        [`sort`, sort.column, default_sort.column],
-        [`dir`, sort.dir, default_sort.dir],
-      ],
-      page.state,
-    )
-  })
+  }
+  bind_url_params(read_url_params, () => [
+    [`x`, scatter_x, default_scatter_x],
+    [`y`, scatter_y, default_scatter_y],
+    [`sort`, sort.column, default_sort.column],
+    [`dir`, sort.dir, default_sort.dir],
+  ])
 </script>
 
 <h1>Molecular Dynamics Metrics <span class="beta-badge">beta</span></h1>

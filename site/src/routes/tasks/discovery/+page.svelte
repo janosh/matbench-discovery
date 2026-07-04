@@ -1,9 +1,7 @@
 <script lang="ts">
-  import { afterNavigate } from '$app/navigation'
-  import { page } from '$app/state'
   import { MetricsTable, MODELS, SelectToggle } from '$lib'
   import { DynamicScatter } from '$lib/plot'
-  import { sync_url_params, valid_query_param } from '$lib/url-state'
+  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import * as labels from '$lib/labels'
   import type { DiscoverySet } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
@@ -17,15 +15,14 @@
 
   let discovery_set: DiscoverySet = $state(default_discovery_set)
   let show_energy_only = $state(false)
-  let url_ready = $state(false)
 
   // axis selections for the model-comparison scatter, bound so the section title
   // tracks whatever properties the user picks
   let scatter_x = $state(default_scatter_x)
   let scatter_y = $state(default_scatter_y)
 
-  afterNavigate(() => {
-    const params = page.url.searchParams
+  const scatter_keys = labels.scatter_options_by_key
+  const read_url_params = (params: URLSearchParams) => {
     discovery_set = valid_query_param(
       params,
       `set`,
@@ -33,33 +30,15 @@
       discovery_sets,
     )
     show_energy_only = params.get(`energy_only`) === `1`
-    scatter_x = valid_query_param(
-      params,
-      `x`,
-      default_scatter_x,
-      labels.scatter_options_by_key,
-    )
-    scatter_y = valid_query_param(
-      params,
-      `y`,
-      default_scatter_y,
-      labels.scatter_options_by_key,
-    )
-    url_ready = true
-  })
-
-  $effect(() => {
-    if (!url_ready) return
-    sync_url_params(
-      [
-        [`set`, discovery_set, default_discovery_set],
-        [`energy_only`, show_energy_only ? `1` : ``],
-        [`x`, scatter_x, default_scatter_x],
-        [`y`, scatter_y, default_scatter_y],
-      ],
-      page.state,
-    )
-  })
+    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_keys)
+    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_keys)
+  }
+  bind_url_params(read_url_params, () => [
+    [`set`, discovery_set, default_discovery_set],
+    [`energy_only`, show_energy_only ? `1` : ``],
+    [`x`, scatter_x, default_scatter_x],
+    [`y`, scatter_y, default_scatter_y],
+  ])
 </script>
 
 <h1>Crystal Stability Prediction Metrics</h1>

@@ -534,7 +534,6 @@ describe(`METADATA_COLS`, () => {
       `Targets`,
       `Date Added`,
       `Links`,
-      `r<sub>cut</sub>`,
       `Training Materials`,
       `Training Structures`,
       `Ckpt License`,
@@ -557,13 +556,6 @@ describe(`METADATA_COLS`, () => {
 
     const links_col = METADATA_COLS.links
     expect(links_col?.sortable).toBe(false)
-
-    // Test r_cut column specifically
-    const r_cut_col = METADATA_COLS.r_cut
-    expect(r_cut_col).toBeDefined()
-    expect(r_cut_col?.description).toContain(`Graph construction radius`)
-    // visible is undefined for r_cut, meaning it's visible by default
-    expect(r_cut_col?.visible).toBeUndefined()
   })
 })
 

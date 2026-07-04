@@ -69,7 +69,6 @@ definitions:
       targets: { $ref: '#/definitions/Label' }
       date_added: { $ref: '#/definitions/Label' }
       links: { $ref: '#/definitions/Label' }
-      r_cut: { $ref: '#/definitions/Label' }
       n_training_materials: { $ref: '#/definitions/Label' }
       n_training_structures: { $ref: '#/definitions/Label' }
       checkpoint_license: { $ref: '#/definitions/Label' }
@@ -83,7 +82,6 @@ definitions:
       - targets
       - date_added
       - links
-      - r_cut
       - n_training_materials
       - n_training_structures
       - checkpoint_license

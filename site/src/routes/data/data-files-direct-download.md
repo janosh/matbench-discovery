@@ -62,6 +62,13 @@ assert len(wbm_init_atoms) == 256_963
 1. **`e_above_hull_mp2020_corrected_ppd_mp`**: Energy above hull distances in eV/atom after applying the MP2020 correction scheme. The convex hull in question is the one spanned by all ~145k Materials Project `ComputedStructureEntries`. Matbench Discovery takes these as ground truth for material stability. Any value above 0 is assumed to be an unstable/metastable material.
 1. **`site_stats_fingerprint_init_final_norm_diff`**: The norm of the difference between the initial and final site fingerprints. This is a volume-independent measure of how much the structure changed during DFT relaxation. Uses the `matminer` [`SiteStatsFingerprint`](https://github.com/hackingmaterials/matminer/blob/33bf1120/matminer/featurizers/structure/sites.py#L21-L33) (v0.8.0).
 
+> Exact regeneration of the MP2020-corrected formation-energy and hull-distance
+> columns depends on the `pymatgen` `MaterialsProject2020Compatibility` behavior
+> used for anion-correction assignment. The released WBM summary is reproducible
+> with 2023-era behavior (for example v2023.5.10, matching the data-file
+> registry source links); newer `pymatgen` versions may assign different
+> corrections for a small number of structures with ambiguous oxidation states.
+
 [`MaterialsProject2020Compatibility`]: https://github.com/materialsproject/pymatgen/blob/02a4ca8aa/pymatgen/entries/compatibility.py#L823
 [`MaterialsProjectCompatibility`]: https://github.com/materialsproject/pymatgen/blob/02a4ca8aa/pymatgen/entries/compatibility.py#L766
 

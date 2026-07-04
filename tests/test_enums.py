@@ -21,6 +21,7 @@ from matbench_discovery.enums import (
     Task,
     TestSubset,
 )
+from matbench_discovery.remote import figshare
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 
@@ -218,6 +219,39 @@ def test_data_files_enum() -> None:
     assert DataFiles.wbm_summary.url.startswith("https://figshare.com/files/")
 
 
+def test_data_files_path_raises_when_md5_download_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """DataFiles.path surfaces failed checksum verification to callers."""
+    data_file = DataFiles.mp_energies
+    expected_md5 = "0" * 32
+    monkeypatch.setattr(DataFiles, "_base_dir", str(tmp_path))
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+    monkeypatch.setitem(
+        data_file.__dict__,
+        "yaml",
+        {
+            data_file.name: {
+                "description": "test data file",
+                "md5": expected_md5,
+                "path": data_file.rel_path,
+                "url": "https://example.com/file.csv.gz",
+            }
+        },
+    )
+
+    with (
+        patch("requests.get", return_value=make_mock_response(b"bad data")),
+        pytest.raises(FileNotFoundError, match="Failed to download and verify"),
+    ):
+        _ = data_file.path
+
+    stdout, stderr = capsys.readouterr()
+    assert f"expected {expected_md5}" in stdout
+    assert stderr == ""
+    assert not os.path.isfile(f"{tmp_path}/{data_file.rel_path}")
+
+
 @pytest.mark.parametrize("md_value", [None, "not available", 42])
 def test_model_md_path_returns_none_for_non_dict_md(
     md_value: object, monkeypatch: pytest.MonkeyPatch
@@ -265,6 +299,39 @@ def test_data_files_enum_urls(
         f"URL for {name} is not a Figshare download URL: {url}"
     )
     check_url(url_session, url)
+
+
+@pytest.fixture(scope="session")
+def figshare_data_file_md5s(url_session: requests.Session) -> dict[str, str]:
+    """Map Figshare file id -> computed_md5 for the repo's data-files article."""
+    article_id = figshare.ARTICLE_IDS["data_files"]
+    response = url_session.get(
+        f"https://api.figshare.com/v2/articles/{article_id}/files?page_size=500",
+        timeout=TIMEOUT,
+    )
+    response.raise_for_status()
+    return {str(file["id"]): file["computed_md5"] for file in response.json()}
+
+
+@pytest.mark.parametrize("data_file", DataFiles)
+def test_data_files_md5_matches_figshare(
+    data_file: DataFiles, figshare_data_file_md5s: dict[str, str]
+) -> None:
+    """Each declared md5 in data-files.yml must match Figshare's computed_md5 for the
+    current artifact, so registry drift (like the stale checksums behind #357) fails
+    CI instead of making the file un-downloadable (download_file discards mismatches).
+    """
+    file_id = data_file.url.rsplit("/", maxsplit=1)[-1]
+    if (computed_md5 := figshare_data_file_md5s.get(file_id)) is None:
+        # file lives in an external Figshare article this repo doesn't control
+        # (e.g. mp_trj_json_gz in the original MPtrj article), can't enforce md5
+        pytest.skip(f"{data_file.name} file id {file_id} not in data-files article")
+    declared_md5 = data_file.yaml[data_file.name].get("md5")
+    assert declared_md5 == computed_md5, (
+        f"data-files.yml md5 for {data_file.name} ({declared_md5}) does not match "
+        f"Figshare computed_md5 ({computed_md5}) for file id {file_id}. Update the "
+        "registry entry (or re-run scripts/upload_data_files_to_figshare.py)."
+    )
 
 
 def test_files_enum_auto_download(
