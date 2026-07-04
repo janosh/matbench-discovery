@@ -52,16 +52,14 @@ def published_release_assets() -> set[str]:
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     try:
         response = requests.get(url, headers=headers, timeout=30)
-        # rate-limited (unauthenticated runs share a per-IP quota) -> no evidence
-        # either way, skip. Any other HTTP error fails: a 404 here means the release
-        # itself is gone, exactly the drift this test exists to catch.
-        if response.status_code in (403, 429):
-            pytest.skip(f"GitHub API rate-limited: {response.status_code} for {url}")
-        response.raise_for_status()
-    except requests.HTTPError as exc:  # e.g. release tag gone -> real failure
-        pytest.fail(f"GitHub API error for {url}: {exc}")
     except requests.RequestException as exc:  # offline local dev -> skip
         pytest.skip(f"GitHub API unreachable: {exc}")
+    # rate-limited (unauthenticated runs share a per-IP quota) -> no evidence either
+    # way, skip. Any other HTTP error fails: a 404 means the release itself is gone,
+    # exactly the drift this test exists to catch.
+    if response.status_code in (403, 429):
+        pytest.skip(f"GitHub API rate-limited: {response.status_code} for {url}")
+    assert response.ok, f"GitHub API error {response.status_code} for {url}"
     return {asset["name"] for asset in response.json()["assets"]}
 
 
@@ -93,24 +91,20 @@ def test_release_has_all_parity_manifest_assets(
 ) -> None:
     """Every asset the parity manifest references exists in the GitHub release the
     site build downloads from. Catches ingests whose `gh release upload` step never
-    completed. Skips offline; model-pr-guard.yml runs it authed as a required check.
+    completed.
     """
     manifest = parity_manifest(kind)
+    # gh-pages.yml only downloads assets matching its hardcoded --pattern globs, and
+    # the generators derive every asset name from asset_prefix - so the prefix must
+    # appear verbatim in the workflow or production 404s despite published assets
+    with open(f"{ROOT}/.github/workflows/gh-pages.yml") as file:
+        gh_pages = file.read()
+    assert f"--pattern '{manifest['asset_prefix']}-*.json.gz'" in gh_pages, (
+        f"gh-pages.yml downloads no assets matching {manifest['asset_prefix']}-*"
+    )
     entries = manifest["model_assets"].values()
     bundles = manifest.get("structure_bundles", ())
     expected = {entry["asset"] for entry in (manifest["base"], *entries, *bundles)}
-    # gh-pages.yml only downloads assets matching <asset_prefix>-*.json.gz, so a
-    # published asset with a non-matching name would still 404 in production
-    prefix = manifest["asset_prefix"]
-    bad_names = [
-        name
-        for name in sorted(expected)
-        if not (name.startswith(f"{prefix}-") and name.endswith(".json.gz"))
-    ]
-    assert not bad_names, (
-        f"{kind} assets won't match the gh-pages.yml download pattern "
-        f"{prefix}-*.json.gz: {bad_names}"
-    )
     # a truncated assets listing fails here (never false-passes)
     missing = expected - published_release_assets
     assert not missing, (
