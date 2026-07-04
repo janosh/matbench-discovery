@@ -31,22 +31,14 @@
     `${sort_by.path ?? ``}.${sort_by.key}`.replace(/^\./, ``),
   )
 
-  const metric_keys = [
-    `CPS`,
-    `Accuracy`,
-    `DAF`,
-    `F1`,
-    `MAE`,
-    `Precision`,
-    `R2`,
-    `RMSE`,
-    `TNR`,
-    `TPR`,
-    `κ_SRME`,
-  ] as const
+  // only the 1-2 headline metrics per task (CPS overall; F1+MAE discovery; RMSD
+  // geo-opt; κ_SRME phonons; CMDS+ΔvDOS molecular dynamics) -- the full metric set
+  // lives in the landing-page table, this sort list stays skimmable
+  const metric_keys = [`CPS`, `F1`, `MAE`, `RMSD`, `κ_SRME`] as const
   const metrics = [
     ...metric_keys.map((key) => ALL_METRICS[key]),
-    ...Object.values(MD_METRICS),
+    MD_METRICS.md_combined_score,
+    MD_METRICS.md_vdos_error,
   ]
 
   const capture_state = () => ({ show_details, sort_by, order, show_n_best })
@@ -212,7 +204,8 @@
     grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   }
   ol > li {
-    background-color: var(--blockquote-bg);
+    background-color: light-dark(var(--light-surface-bg), var(--dark-blockquote-bg));
+    border: 1px solid var(--card-border);
     padding: 6pt 10pt 14pt;
     border-radius: 3pt;
     display: grid;

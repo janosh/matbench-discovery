@@ -34,32 +34,21 @@ describe(`Models Page`, () => {
       btn.textContent?.trim(),
     )
     // derive the full expected button order from the same label sources the page uses
-    // (Model Name + discovery metrics in metric_keys order + every MD metric), converting
-    // each label's HTML to text the way the page's {@html label} render does, so removal or
-    // reorder of any sort button (MD or not) is caught
+    // (Model Name + 1-2 headline metrics per task), converting each label's HTML to
+    // text the way the page's {@html label} render does, so removal or reorder of any
+    // sort button is caught
     const html_to_text = (html: string): string => {
       const el = document.createElement(`div`)
       el.innerHTML = html
       return el.textContent?.trim() ?? ``
     }
     // mirrors metric_keys in site/src/routes/models/+page.svelte
-    const discovery_keys = [
-      `CPS`,
-      `Accuracy`,
-      `DAF`,
-      `F1`,
-      `MAE`,
-      `Precision`,
-      `R2`,
-      `RMSE`,
-      `TNR`,
-      `TPR`,
-      `κ_SRME`,
-    ] as const
+    const headline_keys = [`CPS`, `F1`, `MAE`, `RMSD`, `κ_SRME`] as const
     const expected_button_texts = [
       `Model Name`,
-      ...discovery_keys.map((key) => html_to_text(ALL_METRICS[key].label)),
-      ...Object.values(MD_METRICS).map((metric) => html_to_text(metric.label)),
+      ...headline_keys.map((key) => html_to_text(ALL_METRICS[key].label)),
+      html_to_text(MD_METRICS.md_combined_score.label),
+      html_to_text(MD_METRICS.md_vdos_error.label),
     ]
 
     expect(button_texts).toStrictEqual(expected_button_texts)
@@ -87,9 +76,9 @@ describe(`Models Page`, () => {
       (a) => a.textContent,
     )
 
-    const daf_btn = doc_query<HTMLButtonElement>(`button#DAF`)
-    expect(daf_btn.textContent?.trim()).toBe(`DAF`)
-    daf_btn.click()
+    const f1_btn = doc_query<HTMLButtonElement>(`button#F1`)
+    expect(f1_btn.textContent?.trim()).toBe(`F1`)
+    f1_btn.click()
     await tick()
 
     const sorted_models = [...document.querySelectorAll(`ol > li h2 a`)].map(
@@ -252,8 +241,8 @@ describe(`Models Page`, () => {
     const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
     expect(Number(n_best_input.value)).toBe(limit)
 
-    const daf_btn = doc_query<HTMLButtonElement>(`button#DAF`)
-    daf_btn.click()
+    const f1_btn = doc_query<HTMLButtonElement>(`button#F1`)
+    f1_btn.click()
     await tick()
 
     const cards = document.querySelectorAll(`ol > li`)
@@ -264,7 +253,7 @@ describe(`Models Page`, () => {
       expect(doc_query<HTMLAnchorElement>(`h2 a`, card).getAttribute(`href`)).toMatch(
         /^\/models\/[^/]+$/,
       )
-      expect(doc_query(`.metrics`, card).textContent).toContain(`DAF`)
+      expect(doc_query(`.metrics`, card).textContent).toContain(`F1`)
     })
     expect(Number(n_best_input.value)).toBe(limit)
   })
