@@ -35,12 +35,12 @@ describe(`calculate_cmds`, () => {
     expect(calculate_cmds({ adf_error: 10, vdos_error: 20 }, config)).toBeCloseTo(0.85)
   })
 
-  it(`returns 0 when all weights are zero`, () => {
+  it(`returns null when all weights are zero (score undefined, not worst)`, () => {
     const config = clone_config()
     for (const key of Object.keys(config) as (keyof CmdsConfig)[]) {
       config[key].weight = 0
     }
-    expect(calculate_cmds({}, config)).toBe(0)
+    expect(calculate_cmds({}, config)).toBeNull()
   })
 })
 

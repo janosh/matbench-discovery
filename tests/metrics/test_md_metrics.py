@@ -673,20 +673,6 @@ def test_energy_force_rmse_rejects_missing_private_labels() -> None:
         md_metrics.calc_energy_force_rmse([atoms], ConstantCalculator())
 
 
-def test_energy_force_rmse_rejects_stale_predictions() -> None:
-    """Prediction sidecars must match the private trajectory frame count."""
-    frames = [h2_frame(energy=1.0), h2_frame(energy=2.0)]
-
-    with pytest.raises(ValueError, match="don't match"):
-        md_metrics.energy_force_rmse_from_preds(
-            frames,
-            {
-                "energy_pred": np.array([1.0]),
-                "force_se": np.array([0.0]),
-            },
-        )
-
-
 @pytest.mark.parametrize(
     ("shift", "expected"),
     [(0, 0), (1000, 100)],  # identical -> 0% non-overlap; far apart -> ~100%

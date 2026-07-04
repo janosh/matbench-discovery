@@ -28,7 +28,7 @@ describe(`MD Task Page`, () => {
     const headings = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)].map((h2) =>
       h2.textContent?.replaceAll(/\s+/g, ` `).trim(),
     )
-    expect(headings).toContain(`ΔvDOS vs FRMSE`)
+    expect(headings).toContain(`ΔvDOS vs ΔP`)
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)

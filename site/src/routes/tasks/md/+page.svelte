@@ -28,7 +28,9 @@
     model.metrics?.md != null && typeof model.metrics.md === `object`
   const n_md_models = MODELS.filter(has_md_metrics).length
 
-  const default_scatter_x = MD_METRICS.md_force_rmse.key
+  // default to public observables: force_rmse is a maintainer-only diagnostic that
+  // future public submissions won't have, which would leave the scatter mostly empty
+  const default_scatter_x = MD_METRICS.md_pressure_error.key
   const default_scatter_y = MD_METRICS.md_vdos_error.key
   const default_sort: { column: string; dir: SortDir } = {
     column: MD_METRICS.md_combined_score.key,
@@ -118,6 +120,7 @@
 <style>
   .cmds-weights {
     display: flex;
+    flex-wrap: wrap;
     gap: 1.5em;
     align-items: center;
     margin: 1em auto;

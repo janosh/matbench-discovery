@@ -56,6 +56,9 @@ def _check_density(values: np.ndarray, label: str, *, check_area: bool = True) -
 
 # units of per-system metric columns shared between eval scripts and aggregation
 # (no combined_score here: CMDS is site-computed, see module docstring)
+# NOTE: these are the *model-level* units after calc_md_metrics aggregation. In the
+# per-system CSVs written by run_md_benchmark, energy_rmse/force_rmse are still in
+# eV/atom and eV/Å (calc_energy_force_rmse output); calc_md_metrics scales them x1000.
 METRIC_UNITS = {
     "energy_rmse": "meV/atom",
     "force_rmse": "meV/Å",
@@ -539,14 +542,16 @@ def calc_pressure_histogram_error(
     return float(50 * np.sum(np.abs(density_ref - density_pred) * np.diff(edges)))
 
 
-def predict_on_reference(
+def calc_energy_force_rmse(
     trajectory: TrajectoryLike, calculator: "Calculator"
-) -> dict[str, np.ndarray]:
-    """Single-point a calculator on private labeled reference frames.
+) -> dict[str, float]:
+    """Private-label energy-fluctuation (eV/atom) and force (eV/Å) RMSE of calculator
+    single-points on labeled reference frames.
 
-    Returns the per-frame quantities the diagnostic energy/force metrics are built
-    from: predicted potential energy (``energy_pred``) and summed squared force error vs
-    the private reference labels (``force_se``), each a ``(n_frames,)`` array.
+    The energy RMSE uses per-trajectory mean-subtracted energies, i.e. the energy
+    *fluctuations* sampled along the trajectory, not absolute energies (invariant to
+    the reference's arbitrary energy zero). Forces are reference-zero-invariant, so
+    their RMSE stays absolute.
     """
     traj = _as_trajectory(trajectory)
     if traj.n_frames == 0:
@@ -567,30 +572,7 @@ def predict_on_reference(
         atoms.calc = calculator
         energy_pred[frame_idx] = atoms.get_potential_energy()
         force_se[frame_idx] = ((atoms.get_forces() - traj.forces[frame_idx]) ** 2).sum()
-    return {"energy_pred": energy_pred, "force_se": force_se}
 
-
-def energy_force_rmse_from_preds(
-    trajectory: TrajectoryLike, predictions: dict[str, np.ndarray]
-) -> dict[str, float]:
-    """Energy-fluctuation (eV/atom) and force (eV/Å) RMSE from private predictions.
-
-    The energy RMSE uses per-trajectory mean-subtracted energies, i.e. the energy
-    *fluctuations* sampled along the trajectory, not absolute energies. Forces are
-    reference-zero-invariant, so their RMSE stays absolute.
-    """
-    traj = _as_trajectory(trajectory)
-    if traj.energy is None:
-        raise ValueError("trajectory lacks private reference energy for RMSE")
-    energy_pred, force_se = predictions["energy_pred"], predictions["force_se"]
-    # guard against a stale/mismatched prediction sidecar: a wrong-length force_se
-    # would otherwise silently skew force_rmse (it's just summed), giving a
-    # plausible-but-wrong value rather than an error
-    if energy_pred.shape != (traj.n_frames,) or force_se.shape != (traj.n_frames,):
-        raise ValueError(
-            f"prediction arrays {energy_pred.shape=}, {force_se.shape=} don't match "
-            f"{traj.n_frames=}; stale or mismatched prediction sidecar?"
-        )
     pred_dev = (energy_pred - energy_pred.mean()) / traj.n_atoms
     ref_dev = (traj.energy - traj.energy.mean()) / traj.n_atoms
     n_force_components = traj.n_frames * traj.n_atoms * 3
@@ -598,14 +580,6 @@ def energy_force_rmse_from_preds(
         "energy_rmse": float(np.sqrt(np.mean((pred_dev - ref_dev) ** 2))),
         "force_rmse": float(np.sqrt(force_se.sum() / n_force_components)),
     }
-
-
-def calc_energy_force_rmse(
-    trajectory: TrajectoryLike, calculator: "Calculator"
-) -> dict[str, float]:
-    """Private-label energy-fluctuation and force RMSE for diagnostic display."""
-    traj = _as_trajectory(trajectory)
-    return energy_force_rmse_from_preds(traj, predict_on_reference(traj, calculator))
 
 
 def matched_frame_counts(

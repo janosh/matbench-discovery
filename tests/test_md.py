@@ -6,6 +6,7 @@ import shlex
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+from typing import Any
 
 import ase.io
 import h5py
@@ -238,11 +239,10 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
     assert (out_dir / f"{today}-emt-md-metrics.csv.gz").is_file()
     rollout = out_dir / "bulkCu_300K_test-nvt-emt.extxyz"
     assert rollout.is_file()
-    assert not (out_dir / "bulkCu_300K_test-nvt-emt-refeval.npz").exists()
     # second run reuses the existing rollout
-    mtimes = {path: path.stat().st_mtime for path in (rollout,)}
+    rollout_mtime = rollout.stat().st_mtime
     run()
-    assert {path: path.stat().st_mtime for path in mtimes} == mtimes
+    assert rollout.stat().st_mtime == rollout_mtime
 
 
 def test_run_md_benchmark_private_ref_adds_energy_force_rmse(tmp_path: Path) -> None:
@@ -267,16 +267,28 @@ def test_run_md_benchmark_private_ref_adds_energy_force_rmse(tmp_path: Path) -> 
     assert np.isfinite(df_private_md.loc["bulkCu_300K_test", "force_rmse"])
 
 
-def test_run_md_benchmark_rejects_mismatched_private_ref(tmp_path: Path) -> None:
-    """A private reference whose atoms differ from the public reference for the same
-    system name must fail loud (stale file), not yield plausible-but-wrong RMSEs.
+@pytest.mark.parametrize(
+    ("private_kwargs", "err_cls", "match"),
+    [
+        # stale file: right group name but different (4 vs 32 atom) structure
+        ({"atoms": bulk("Cu", cubic=True)}, ValueError, "different atoms than the"),
+        # incomplete file: system missing entirely
+        ({"system": "other_system"}, KeyError, "bulkCu_300K_test"),
+    ],
+)
+def test_run_md_benchmark_rejects_bad_private_ref(
+    tmp_path: Path,
+    private_kwargs: dict[str, Any],
+    err_cls: type[Exception],
+    match: str,
+) -> None:
+    """A stale or incomplete private reference must fail loud, not yield
+    plausible-but-wrong RMSEs or partial E/F coverage.
     """
     ref_file = make_reference_h5(tmp_path)
-    # private file has the right group name but a different (smaller) structure:
-    # 4 atoms vs the public reference's 32
-    private_ref_file = make_private_reference_h5(tmp_path, atoms=bulk("Cu", cubic=True))
+    private_ref_file = make_private_reference_h5(tmp_path, **private_kwargs)
 
-    with pytest.raises(ValueError, match="different atoms than the public reference"):
+    with pytest.raises(err_cls, match=match):
         run_md_benchmark(
             calculator=EMT(),
             model_key="emt",

@@ -73,10 +73,12 @@
     on_change(config)
   })
 
-  // Reset to initial weights (the effect above re-derives knob position + scores)
+  // Reset to initial weights (the effect above re-derives knob position + scores).
+  // Skip keys absent from default_config so a divergent config pair can't crash.
   function reset_weights() {
     for (const key of Object.keys(config) as (keyof typeof config)[]) {
-      config[key].weight = default_config[key].weight
+      const default_weight = default_config[key]?.weight
+      if (default_weight !== undefined) config[key].weight = default_weight
     }
   }
 

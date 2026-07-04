@@ -26,7 +26,8 @@ export function calculate_cmds(
 ): number | null {
   const keys = Object.keys(cmds_config) as (keyof CmdsConfig)[]
   const total_weight = keys.reduce((sum, key) => sum + cmds_config[key].weight, 0)
-  if (total_weight === 0) return 0
+  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
+  if (total_weight === 0) return null
 
   let weighted_sum = 0
   for (const key of keys) {
