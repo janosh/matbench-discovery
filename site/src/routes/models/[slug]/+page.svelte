@@ -373,6 +373,13 @@
     display: block;
     font-weight: bold;
   }
+  /* version numbers as light code, less prominent than the package name */
+  section.deps ul li a {
+    font-weight: normal;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8em;
+    opacity: 0.85;
+  }
   :is(.meta-info, .links) {
     display: flex;
     flex-wrap: wrap;

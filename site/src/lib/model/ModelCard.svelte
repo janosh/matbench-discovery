@@ -242,7 +242,6 @@
     grid-template-columns: repeat(auto-fill, minmax(9em, 1fr));
     gap: 3pt 1em;
     list-style: none;
-    max-height: 10em;
     padding: 0;
   }
   section.metrics > ul > li {
