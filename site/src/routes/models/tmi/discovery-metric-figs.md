@@ -208,7 +208,9 @@ legend={wide_legend}
 x_axis={{ label: `False Positive Rate`, range: [0, 1.05] }}
 y_axis={{ label: `True Positive Rate`, range: [0, 1.05] }}
 ref_lines={[{ type: `diagonal`, slope: 1, intercept: 0, style: { ...dashed, color: `gray` } }]}
-style="height: 480px; place-self: center; max-width: 640px; width: 100%"
+point_tween={{ duration: 0 }}
+line_tween={{ duration: 0 }}
+style="height: 700px"
 />
 
 > @label:fig:roc-models Receiver operating characteristic (ROC) curve for each model. TPR/FPR = true/false positive rate. FPR on the $x$ axis is the fraction of unstable structures classified as stable. TPR on the $y$ axis is the fraction of stable structures classified as stable. Dashed diagonal shows a random classifier.
@@ -223,6 +225,8 @@ style="height: 480px; place-self: center; max-width: 640px; width: 100%"
     x_axis={{ range: [-0.2, 0.2], ticks: [] }}
     y_axis={{ range: [0, 8000], format: `~s` }}
     padding={{ ...mae_pad, t: 5, b: 0 }}
+    point_tween={{ duration: 0 }}
+    line_tween={{ duration: 0 }}
     style="height: 90px; min-height: 90px"
   />
   <ScatterPlot
@@ -232,6 +236,8 @@ style="height: 480px; place-self: center; max-width: 640px; width: 100%"
     x_axis={{ label: `E<sub>above MP hull</sub> (eV/atom)`, range: [-0.2, 0.2] }}
     y_axis={{ label: `Rolling MAE (eV/atom)`, range: [0, 0.1] }}
     padding={mae_pad}
+    point_tween={{ duration: 0 }}
+    line_tween={{ duration: 0 }}
     style="height: 700px"
   />
 </div>

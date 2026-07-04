@@ -3,9 +3,9 @@
   import hist_largest from '$figs/hist-largest-each-errors-fp-diff.jsonl'
   import each_errors from '$figs/scatter-largest-each-errors-fp-diff.jsonl'
   import fp_diff from '$figs/scatter-largest-fp-diff-each-error.jsonl'
+  import { ModelSelect } from '$lib'
   import { dashed, plotly_blue, plotly_red, wide_legend } from '$lib/fig-helpers'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
-  import Select from 'svelte-multiselect'
   import DiscoveryMetricFigs from './discovery-metric-figs.md'
   import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
 
@@ -87,9 +87,9 @@ is all over the place as a function of elemental training set prevalence. Could 
 error is dominated by the least abundant element in composition or the model errors are more
 dependent on geometry than chemistry.
 
-<label class="model-select">
+<label>
   Models
-  <Select
+  <ModelSelect
     options={elem_prev.models.map((mdl) => mdl.label)}
     bind:selected={elem_prev_selected}
     minSelect={1}
@@ -105,7 +105,6 @@ dependent on geometry than chemistry.
   x_axis={{ label: `MP Occurrences`, range: [0, null], format: `~s` }}
   y_axis={{ label: `Error (eV/atom)` }}
   legend={wide_legend}
-  style="height: 440px; margin: 2em 0"
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata, label })}
     <strong>{metadata?.elem}</strong> ({label})<br />
@@ -126,9 +125,9 @@ relaxation as measured by<code>matminer</code>'s
 (which is volume independent so changes in fingerprint require ion migration or similar) and
 plotting against that the absolute E<sub>above hull</sub> errors for each model.
 
-<label class="model-select">
+<label>
   Model
-  <Select
+  <ModelSelect
     options={fp_diff.models.map((mdl) => mdl.label)}
     bind:value={fp_diff_model}
     minSelect={1}
@@ -158,7 +157,6 @@ plotting against that the absolute E<sub>above hull</sub> errors for each model.
       },
     ],
   }}
-  style="height: 440px; margin: 2em 0"
 />
 
 Same plot except taking the structures with largest difference in atomic environments
@@ -166,9 +164,9 @@ Same plot except taking the structures with largest difference in atomic environ
 <code>SiteStatsFingerprint</code> before vs after relaxation) and plotting all model
 errors.
 
-<label class="model-select">
+<label>
   Model
-  <Select
+  <ModelSelect
     options={each_errors.models.map((mdl) => mdl.label)}
     bind:value={each_errors_model}
     minSelect={1}
@@ -188,7 +186,6 @@ errors.
   x_axis={{ label: fp_diff_label, range: [0, null] }}
   y_axis={{ label: `Absolute error (eV/atom)` }}
   legend={null}
-  style="height: 440px; margin: 2em 0"
 />
 
 Another way to plot this is as a histogram. This shows the difference in
@@ -197,9 +194,9 @@ SiteStatsFingerprint before vs after relaxation for structures with the largest 
 >) and smallest (err<sub>min</sub>) absolute error in predicted E<sub>above hull</sub> for
 each model and the mean of all models.
 
-<label class="model-select">
+<label>
   Model
-  <Select
+  <ModelSelect
     options={hist_largest.models.map((mdl) => mdl.label)}
     bind:value={hist_largest_model}
     minSelect={1}
@@ -216,7 +213,6 @@ each model and the mean of all models.
   y_axis={{ label: `Count` }}
   show_legend
   show_controls={false}
-  style="height: 440px; margin: 2em 0"
 />
 
 <style>
@@ -225,14 +221,5 @@ each model and the mean of all models.
     gap: 1ex;
     align-items: center;
     margin: 1em 0;
-  }
-  .model-select {
-    display: flex;
-    gap: 1ex;
-    align-items: center;
-    margin-top: 1em;
-  }
-  .model-select :global(.multiselect) {
-    min-width: 16em;
   }
 </style>

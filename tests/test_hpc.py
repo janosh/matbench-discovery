@@ -380,7 +380,12 @@ def test_get_calling_file_path() -> None:
     [
         (
             [
-                {"hardware": "H200", "run_time_sec": 100.0, "excluded_formulas": []},
+                # unrelated keys like excluded_formula_reasons are ignored by merge
+                {
+                    "hardware": "H200",
+                    "run_time_sec": 100.0,
+                    "excluded_formula_reasons": {},
+                },
                 {"hardware": "H200", "run_time_sec": 50.5},
             ],
             {"hardware": "H200", "run_time_sec": 150.5},
