@@ -2,6 +2,7 @@ import { default as DATASETS } from '$data/datasets.yml'
 import type { DiscoverySet, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
+import { CMDS_CONFIG, update_models_cmds } from './md_combined_score.svelte'
 import { get_org_logo, type OrgLogo } from './labels'
 
 export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(
@@ -119,6 +120,10 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
 
 // Calculate initial CPS for all models
 update_models_cps(MODELS, CPS_CONFIG)
+
+// Calculate initial CMDS (combined MD score) for all models. Computed on the fly
+// (never stored in model YAMLs) so it tracks the current formula and live reweighting.
+update_models_cmds(MODELS, CMDS_CONFIG)
 
 // Compute compliant training sets from datasets.yml (datasets with compliant: true)
 export const COMPLIANT_TRAINING_SETS: string[] = Object.entries(DATASETS)

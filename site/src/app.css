@@ -39,6 +39,7 @@
   --dark-table-odd: rgba(0, 0, 0, 0.5);
   --dark-nav-bg: rgba(255, 255, 255, 0.08);
   --dark-card-bg: rgba(0, 0, 0, 0.3);
+  --dark-chip-bg: rgba(255, 255, 255, 0.08); /* card-bg reads near-black on small chips */
   --dark-card-border: rgba(255, 255, 255, 0.1);
   --dark-shadow: rgba(0, 0, 0, 0.5);
   --dark-selection: rgba(0, 255, 255, 0.2);
@@ -61,6 +62,8 @@
   --table-odd: light-dark(var(--light-table-odd), var(--dark-table-odd));
   --nav-bg: light-dark(var(--light-nav-bg), var(--dark-nav-bg));
   --card-bg: light-dark(var(--light-card-bg), var(--dark-card-bg));
+  /* small chips/pills (deps, model info, external links): lightly shaded in dark mode */
+  --chip-bg: light-dark(var(--light-card-bg), var(--dark-chip-bg));
   --card-border: light-dark(var(--light-card-border), var(--dark-card-border));
   --shadow: light-dark(var(--light-shadow), var(--dark-shadow));
   --selection: light-dark(var(--light-selection), var(--dark-selection));

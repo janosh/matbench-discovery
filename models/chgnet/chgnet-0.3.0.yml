@@ -174,7 +174,6 @@ metrics:
     pressure_mae: 1.1106 # GPa
     pressure_wasserstein: 1.1162 # GPa
     pressure_error: 65.8987 # %
-    combined_score: 0.706433
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048854
   diatomics:

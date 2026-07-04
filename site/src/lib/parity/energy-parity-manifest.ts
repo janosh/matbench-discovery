@@ -5,7 +5,7 @@ export const energy_parity_manifest = {
   base: {
     asset: 'energy-parity-wbm-v1-base.json.gz',
     bytes: 3344033,
-    sha256: '1f78fccf9036c8c3ad51f12fcdc3d40c5027b3a0c2a9aeebdabc3ad24cdd80dc',
+    sha256: '03bf73de5e7fe45ac07e8532c17033902d7ca2623e0e02b8adc840de228a7800',
   },
   benchmark: 'wbm',
   dataset: 'wbm',
@@ -62,10 +62,10 @@ export const energy_parity_manifest = {
       bytes: 644567,
       sha256: '3a1dae4a29549b4531b5826f27de50e357710b9650b71e017aff7f39fbc802d1',
     },
-    'dpa-4.0-pro-mptrj': {
-      asset: 'energy-parity-wbm-v1-model-dpa-4.0-pro-mptrj.json.gz',
-      bytes: 643271,
-      sha256: '5c0a59d09b42695fd5233f310667adfcf950dc14ceaad99040892c20a84e3fa5',
+    'dpa-4.0.1-pro-mptrj': {
+      asset: 'energy-parity-wbm-v1-model-dpa-4.0.1-pro-mptrj.json.gz',
+      bytes: 643656,
+      sha256: '0ca9091f15bb86b48a1bc30f3055d6ae22da053b9736498f5afa4e6a1c3b7fe6',
     },
     'eSEN-30m-mp': {
       asset: 'energy-parity-wbm-v1-model-eSEN-30m-mp.json.gz',
@@ -96,6 +96,11 @@ export const energy_parity_manifest = {
       asset: 'energy-parity-wbm-v1-model-equflash-29M-oam.json.gz',
       bytes: 2040205,
       sha256: 'b603a7fa26e73ceb9e2375bba9df06d5e972ab81ba396d33c6d6de0e833829ea',
+    },
+    'equflashv2-45M-oam': {
+      asset: 'energy-parity-wbm-v1-model-equflashv2-45M-oam.json.gz',
+      bytes: 957367,
+      sha256: 'f05bf4368ace546ba2db0d62008cdaced49ce83cce731df0fb47f095c64f83d8',
     },
     'equiformer-v3-mp': {
       asset: 'energy-parity-wbm-v1-model-equiformer-v3-mp.json.gz',
@@ -240,7 +245,7 @@ export const energy_parity_manifest = {
     'tace-oam-rra-preview': {
       asset: 'energy-parity-wbm-v1-model-tace-oam-rra-preview.json.gz',
       bytes: 643526,
-      sha256: 'eadec6c1e14dee6e97f5ab94f25b7e772b0f11f23441c2e89f97ac6b929c8666',
+      sha256: '253b399ed058e93a9b4ec523051a5c032ac59abe231f9b12b1b0a9a23e88b2a8',
     },
     'voronoi-rf': {
       asset: 'energy-parity-wbm-v1-model-voronoi-rf.json.gz',

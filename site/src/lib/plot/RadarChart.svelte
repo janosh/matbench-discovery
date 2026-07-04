@@ -1,12 +1,28 @@
 <script lang="ts">
   import type { CpsConfig } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS } from '$lib/labels'
+  import type { Label } from '$lib/types'
   import { format_num, Icon, type Point } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
   import { MODELS, update_models_cps } from '$lib/models.svelte'
 
-  let { size = 200 }: { size?: number } = $props()
+  // any 3-component weighted score works (CPS is the default, CMDS uses the same UI)
+  type WeightsConfig = Record<string, Label & { weight: number }>
+
+  let {
+    size = 200,
+    config = CPS_CONFIG as WeightsConfig,
+    default_config = DEFAULT_CPS_CONFIG as WeightsConfig,
+    title_label = ALL_METRICS.CPS,
+    on_change = (cfg: WeightsConfig) => update_models_cps(MODELS, cfg as CpsConfig),
+  }: {
+    size?: number
+    config?: WeightsConfig
+    default_config?: WeightsConfig
+    title_label?: Label
+    on_change?: (config: WeightsConfig) => void
+  } = $props()
 
   // State for the draggable point
   let is_dragging = $state(false)
@@ -28,8 +44,8 @@
 
   // Compute axes points coordinates
   let axis_points = $derived(
-    Object.values(CPS_CONFIG).map((_, idx) => {
-      const angle = (2 * Math.PI * idx) / Object.values(CPS_CONFIG).length
+    Object.values(config).map((_, idx) => {
+      const angle = (2 * Math.PI * idx) / Object.values(config).length
       const x = center.x + Math.cos(angle) * radius * 0.8
       const y = center.y + Math.sin(angle) * radius * 0.8
       return { x, y }
@@ -37,36 +53,38 @@
   )
 
   // Knob position from weights via barycentric coordinates (pure math, no DOM)
-  function point_from_weights(weights: CpsConfig): Point {
+  function point_from_weights(weights: WeightsConfig): Point {
     let { x, y } = center
     Object.values(weights).forEach(({ weight }, idx) => {
-      x += (axis_points[idx].x - center.x) * (weight as number)
-      y += (axis_points[idx].y - center.y) * (weight as number)
+      x += (axis_points[idx].x - center.x) * weight
+      y += (axis_points[idx].y - center.y) * weight
     })
     return { x, y }
   }
 
   // Initialized eagerly (not in an effect) so the knob renders at the correct
   // position on first paint and in prerendered HTML instead of jumping from (0, 0)
-  let point = $state<Point>(point_from_weights(CPS_CONFIG))
+  let point = $state<Point>(point_from_weights(config))
 
-  // Keep knob + model CPS scores in sync when weights change (drag end, reset,
+  // Keep knob + model scores in sync when weights change (drag end, reset,
   // or edits from elsewhere)
   $effect(() => {
-    point = point_from_weights(CPS_CONFIG)
-    update_models_cps(MODELS, CPS_CONFIG)
+    point = point_from_weights(config)
+    on_change(config)
   })
 
-  // Reset to initial weights (the effect above re-derives knob position + scores)
+  // Reset to initial weights (the effect above re-derives knob position + scores).
+  // Skip keys absent from default_config so a divergent config pair can't crash.
   function reset_weights() {
-    for (const key of Object.keys(CPS_CONFIG) as (keyof typeof CPS_CONFIG)[]) {
-      CPS_CONFIG[key].weight = DEFAULT_CPS_CONFIG[key].weight
+    for (const key of Object.keys(config) as (keyof typeof config)[]) {
+      const default_weight = default_config[key]?.weight
+      if (default_weight !== undefined) config[key].weight = default_weight
     }
   }
 
   function update_weights_from_point() {
     // Calculate weights using barycentric coordinates for triangular space
-    if (Object.values(CPS_CONFIG).length !== 3) {
+    if (Object.values(config).length !== 3) {
       console.error(`This implementation only supports exactly 3 metrics/dimensions`)
       return
     }
@@ -93,10 +111,10 @@
       new_values = [1 / 3, 1 / 3, 1 / 3]
     }
 
-    // Update weights in the CPS_CONFIG directly
-    CPS_CONFIG.F1.weight = new_values[0]
-    CPS_CONFIG.κ_SRME.weight = new_values[1]
-    CPS_CONFIG.RMSD.weight = new_values[2]
+    // Update weights in the config directly (axis order == config key order)
+    for (const [idx, key] of Object.keys(config).entries()) {
+      config[key].weight = new_values[idx]
+    }
   }
 
   // Helper to calculate triangle area using cross product
@@ -153,10 +171,7 @@
   // This prevents table rerendering during drag which causes viewport to scroll (terrible UX)
   function move_point_to_position(x: number, y: number) {
     const [a, b, c] = axis_points
-    if (
-      Object.values(CPS_CONFIG).length === 3 &&
-      is_point_in_triangle({ x, y }, a, b, c)
-    ) {
+    if (Object.values(config).length === 3 && is_point_in_triangle({ x, y }, a, b, c)) {
       point = { x, y }
     } else {
       // If outside the triangle, constrain to the closest point on the triangle
@@ -260,8 +275,8 @@
 </script>
 
 <div class="radar-chart">
-  <span class="metric-name" title={ALL_METRICS.CPS.description} {@attach tooltip()}>
-    {ALL_METRICS.CPS.key}
+  <span class="metric-name" title={title_label.description} {@attach tooltip()}>
+    {@html title_label.label ?? title_label.key}
     <Icon icon="Info" />
   </span>
 
@@ -281,8 +296,8 @@
     aria-label="Radar chart for adjusting metric weights. Click to set custom weights. Press Enter or Space to reset to equal weights."
   >
     <!-- Axes -->
-    {#each Object.values(CPS_CONFIG) as weight, idx (weight.label)}
-      {@const angle = (2 * Math.PI * idx) / Object.values(CPS_CONFIG).length}
+    {#each Object.values(config) as weight, idx (weight.label)}
+      {@const angle = (2 * Math.PI * idx) / Object.values(config).length}
       {@const x = center.x + Math.cos(angle) * radius * 0.8}
       {@const y = center.y + Math.sin(angle) * radius * 0.8}
       {@const label_radius = idx === 2 ? radius * 1.0 : radius * 0.9}
@@ -310,7 +325,7 @@
     {/each}
 
     <!-- Triangle area -->
-    {#if Object.values(CPS_CONFIG).length === 3}
+    {#if Object.values(config).length === 3}
       <path
         d="M {axis_points[0].x} {axis_points[0].y} L {axis_points[1].x} {axis_points[1]
           .y} L {axis_points[2].x} {axis_points[2].y} Z"
@@ -333,7 +348,7 @@
     {/each}
 
     <!-- Colored areas for each metric -->
-    {#if Object.values(CPS_CONFIG).length === 3}
+    {#if Object.values(config).length === 3}
       {@const [{ x, y }, { x: px, y: py }] = [center, point]}
       {#each axis_points as { x: x0, y: y0 }, idx (idx)}
         {@const path = `M ${x} ${y} L ${x0} ${y0} L ${px} ${py} Z`}
@@ -342,7 +357,8 @@
     {/if}
 
     <!-- Draggable knob: first element is larger invisible hit area for the smaller visible knob above it -->
-    {#each [{ fill: `transparent`, r: 20 }, { fill: `var(--card-bg)`, stroke: `var(--text-color)`, r: 8 }] as knob_style (knob_style.r)}
+    <!-- page-bg (not card-bg): the knob needs an opaque fill, card-bg is 0.3-0.4 alpha -->
+    {#each [{ fill: `transparent`, r: 20 }, { fill: `var(--page-bg)`, stroke: `var(--text-color)`, r: 7 }] as knob_style (knob_style.r)}
       <circle
         cx={point.x}
         cy={point.y}

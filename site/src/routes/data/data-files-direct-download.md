@@ -80,7 +80,11 @@ You can also directly download Matbench Discovery data files from [this Figshare
 {#each Object.entries(data_files).filter(([key]) => !key.startsWith(`_`)) as [key, { url, path, html }]}
     <li style="margin-top: 1ex;">
     <strong><code>{key}</code></strong>
-    (<a href={url}>{path}</a>)<br />
+    {#if url}
+      (<a href={url}>{path}</a>)
+    {:else}
+      (<code>{path}</code>, not yet published)
+    {/if}<br />
     {@html html}
     </li>
 {/each}

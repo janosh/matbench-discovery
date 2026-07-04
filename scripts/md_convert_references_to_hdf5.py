@@ -1,13 +1,14 @@
-"""Pack the CFPMD-26 reference trajectories (per-system extxyz.xz + a settings CSV)
-into a single multi-group HDF5: one group per system holding the trajectory arrays plus
-``dt_fs`` (saved-frame interval) and ``temperature_kelvin`` as group attributes. This is
-a one-time maintainer step run before hosting the reference dataset; the benchmark then
-reads the HDF5 directly (no per-job extxyz parsing, no settings CSV).
+"""Pack the DynaMat v1.0 reference trajectories into a public label-free HDF5.
+
+Each output group holds positions, cells, optional stresses, ``dt_fs`` (saved-frame
+interval) and ``temperature_kelvin`` as group attributes. Energies and forces are
+intentionally stripped before publishing so the benchmark reference set cannot be used
+as a supervised validation set.
 
     python scripts/md_convert_references_to_hdf5.py \
-        --ref-dir ~/data/cfpmd-26/reference_AIMD_trajectories \
-        --settings-csv ~/data/cfpmd-26/reference_AIMD_timestep_and_stride.csv \
-        --out data/md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.h5
+        --ref-dir ~/data/dynamat-v1.0/reference_AIMD_trajectories \
+        --settings-csv ~/data/dynamat-v1.0/reference_AIMD_timestep_and_stride.csv \
+        --out data/md/2026-06-29-dynamat-v1.0-reference-trajectories.h5
 
 Parsing uses ``Trajectory.from_extxyz`` (bulk numpy/pandas reader), which converts even
 the largest 20k-70k-frame references in seconds-to-minutes rather than the hours ASE's
@@ -29,8 +30,8 @@ from matbench_discovery.trajectory import Trajectory
 
 
 def load_settings(csv_path: str) -> dict[str, tuple[float, float]]:
-    """Map '<System>_<temp>K' keys to (dt_fs, temperature_kelvin) from a CFPMD settings
-    CSV with System, temperature, stride and dt columns.
+    """Map '<System>_<temp>K' keys to (dt_fs, temperature_kelvin) from a settings CSV
+    with System, temperature, stride and dt columns.
 
     ``dt_fs`` sets the vDOS frequency axis and time matching. It equals the ``dt``
     column alone: these extxyz files store every integration step, so the ``stride``
@@ -132,6 +133,7 @@ def main() -> int:
                 f"{time.perf_counter() - start:.1f}s",
                 flush=True,
             )
+            # write_reference_h5 strips energy/force labels before writing
             yield system_name, trajectory, dt_fs, temperature_kelvin
 
     write_reference_h5(args.out, entries())

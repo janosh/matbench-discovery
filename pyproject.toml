@@ -115,9 +115,6 @@ addopts = "-p no:warnings"
 [tool.codespell]
 ignore-words-list = "nd,te,fpr,matris,titel"
 
-[tool.ty.terminal]
-output-format = "concise"
-
 [tool.ty.rules]
 # heavy optional model deps (chgnet, mace, alignn, ...) aren't installable in the
 # pre-commit hook environment
@@ -126,9 +123,6 @@ unused-ignore-comment = "ignore"
 
 [dependency-groups]
 dev = ["prek>=0.4.5", "ty>=0.0.56"]
-
-[tool.typos.files]
-extend-exclude = ["*.patch"]
 
 [tool.typos.default]
 locale = "en-us"

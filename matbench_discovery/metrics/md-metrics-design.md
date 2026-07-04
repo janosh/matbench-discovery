@@ -2,37 +2,50 @@
 
 Rationale for the molecular-dynamics (finite-temperature) task metrics: each metric
 scores how well an MLIP's NVT trajectory reproduces the ab-initio MD references
-(CFPMD-26, 17 systems, 293–1500 K) on structural, dynamical, and thermodynamic
-observables. This records what each metric measures, its virtues and flaws, its current
-discriminating power across models, and the open questions.
+(DynaMat v1.0, 17 systems, 293–1500 K) on structural, dynamical, and thermodynamic
+observables. The public reference artifact intentionally omits energies and forces so it
+cannot be used as a supervised validation set. Energy/force RMSEs remain displayable
+private-label diagnostics computed only by maintainer infrastructure. This records what
+each metric measures, its virtues and flaws, its current discriminating power across
+models, and the open questions.
 
 ## Metrics at a glance
 
 | metric                  | measures                      | form                                                            | better |
 | ----------------------- | ----------------------------- | --------------------------------------------------------------- | ------ |
-| `energy_rmse`           | single-point energy accuracy  | RMSE of mean-subtracted per-atom energy fluctuations (meV/atom) | lower  |
-| `force_rmse`            | single-point force accuracy   | RMSE of forces on reference frames (meV/Å)                      | lower  |
+| `energy_rmse`           | private energy diagnostic     | RMSE of mean-subtracted per-atom energy fluctuations (meV/atom) | lower  |
+| `force_rmse`            | private force diagnostic      | RMSE of forces on reference frames (meV/Å)                      | lower  |
 | `rdf_error`             | radial structure              | L1 of `g(r)` deviations ÷ distance to ideal gas, %              | lower  |
 | `adf_error`             | bond-angle structure          | W1 of bond-angle dist. ÷ distance to `sin θ` background, %      | lower  |
 | `vdos_error`            | vibrational dynamics          | W1 of normalized VACF power spectra ÷ σ_ref (band-clipped), %   | lower  |
 | `pressure_mae`          | mean stress bias              | `abs(mean(P_ref) − mean(P_pred))` (GPa)                         | lower  |
 | `pressure_wasserstein`  | pressure distribution         | W1 between pressure distributions (GPa)                         | lower  |
 | `pressure_error` (E_P)  | pressure distribution overlap | L1 histogram non-overlap, %                                     | lower  |
-| `combined_score` (CMDS) | aggregate                     | `1 − mean(rdf, adf, vdos, pressure_error)/100`, [0,1]           | higher |
+| `combined_score` (CMDS) | aggregate                     | `1 − mean(adf, vdos, pressure_error)/100`, [0,1]                | higher |
+
+`rdf_error` is still computed and shown on model detail pages but hidden from the
+leaderboard and excluded from CMDS: across models it has Spearman r = 0.91 with
+`vdos_error`, 0.92 with `adf_error` and 0.94 with `force_rmse` (the highest force
+correlation of any observable), so it double-counts structural accuracy. Dropping it
+from CMDS changes model rankings by at most 1 place (Spearman 0.9994 between the
+3- and 4-component scores over N=34 models).
 
 **Paper lineage.** `rdf_error`, the pressure metrics (`pressure_mae`, `pressure_error`) and
-`vdos_error` track the reference paper's MD observables. `energy_rmse` is a Matbench
-*variant* of the paper's energy error (theirs is absolute and isolated-atom-referenced;
-ours is the mean-subtracted fluctuation RMSE). `adf_error` and `combined_score` (CMDS) are
-Matbench *additions* not in the paper. `vdos_error` keeps the paper's observable but swaps
-its L1 spectral overlap for a W1/σ_ref distance (see below).
+`vdos_error` track the reference paper's MD observables. `adf_error` and `combined_score`
+(CMDS) are Matbench *additions* not in the paper. `vdos_error` keeps the paper's observable
+but swaps its L1 spectral overlap for a W1/σ_ref distance (see below). Single-point
+energy/force RMSEs require private supervised AIMD labels and are intentionally excluded
+from CMDS.
 
-## Discriminating power (N = 33 models)
+## Discriminating power
+
+(N = 33 models at the time of this snapshot; correlation numbers elsewhere use the
+current N = 34 cohort.)
 
 | metric                 | min  | max   | mean | CV (std/mean) | note                                             |
 | ---------------------- | ---- | ----- | ---- | ------------- | ------------------------------------------------ |
-| `energy_rmse`          | 0.49 | 6.06  | 1.18 | **0.83**      | highest signal                                   |
-| `force_rmse`           | 43.3 | 202.2 | 99.6 | 0.37          | strong, systematic across model generations      |
+| `energy_rmse`          | 0.49 | 6.06  | 1.18 | **0.83**      | private-label diagnostic                         |
+| `force_rmse`           | 43.3 | 202.2 | 99.6 | 0.37          | private-label diagnostic                         |
 | `rdf_error`            | 3.09 | 9.66  | 4.58 | 0.30          | moderate                                         |
 | `adf_error`            | 1.28 | 6.27  | 1.97 | 0.47\*        | \*outlier-driven (one model 6.3%, rest 1.3–2.8%) |
 | `vdos_error`           | 21.6 | 35.6  | 24.2 | 0.13          | low; ~2x its 0.06 under L1 overlap               |
@@ -100,15 +113,16 @@ L1 virtues/flaws:
 
 ## Per-metric notes
 
-- **`energy_rmse`** — mean-subtracted fluctuation RMSE; the mean subtraction removes the
-  absolute-energy offset, which is not comparable across systems with different DFT energy
-  zeros (all-electron vs PAW). It also makes the metric **functional-agnostic**: by scoring
-  energy *fluctuations* rather than absolute energies, it stays comparable across a change of
-  reference DFT functional (e.g. the planned PBE → r2SCAN migration), where absolute energies
-  shift but the ensemble-relevant fluctuations are preserved. Highest discriminating power of
-  all metrics.
-- **`force_rmse`** — drives MD sampling accuracy; improves systematically across model
-  generations and correlates strongly with the structural/dynamical observables.
+- **`energy_rmse`** — private-label mean-subtracted fluctuation RMSE; the mean subtraction
+  removes the absolute-energy offset, which is not comparable across systems with different
+  DFT energy zeros (all-electron vs PAW). It also makes the metric **functional-agnostic**:
+  by scoring energy *fluctuations* rather than absolute energies, it stays comparable across
+  a change of reference DFT functional (e.g. the planned PBE → r2SCAN migration), where
+  absolute energies shift but the ensemble-relevant fluctuations are preserved. Excluded
+  from CMDS because the public reference artifact omits energies.
+- **`force_rmse`** — private-label force diagnostic; improves systematically across model
+  generations and correlates strongly with the structural/dynamical observables. Excluded
+  from CMDS because the public reference artifact omits forces.
 - **`rdf_error`** — L1 of `g(r)` deviations normalized by distance to the ideal gas; uses a
   minimum-image radial cutoff. Flaws: global all-pair pooling can hide minority-environment
   failures, and L1 saturates on bond-length shifts. A W1 form (on the pair-distance density
@@ -142,21 +156,24 @@ L1 virtues/flaws:
 
 ## Combined score (CMDS)
 
-`CMDS = 1 − mean(rdf_error, adf_error, vdos_error, pressure_error)/100`, in [0,1], higher
-is better.
+`CMDS = 1 − mean(adf_error, vdos_error, pressure_error)/100`, in [0,1], higher is better.
+`rdf_error` was dropped from the aggregate (and hidden from the leaderboard, kept on model
+detail pages): across N=34 models it is Spearman-correlated 0.91 with `vdos_error`, 0.92
+with `adf_error` and 0.94 with `force_rmse`, so it double-counted structural accuracy while
+adding a column. The 3-component CMDS agrees with the old 4-component one at Spearman
+0.9994 (max rank shift: 1 place).
 
 **Pressure dominates the aggregate.** Because the components live on very different raw
-scales (adf ≈ 2%, rdf ≈ 5%, vdos ≈ 24%, pressure ≈ 55%), an equal-weight mean is not an
+scales (adf ≈ 2%, vdos ≈ 24%, pressure ≈ 55%), an equal-weight mean is not an
 equal-influence mean:
 
 | component        | mean error | fraction of mean CMDS loss |
 | ---------------- | ---------- | -------------------------- |
-| `rdf_error`      | 4.6        | 5%                         |
 | `adf_error`      | 2.0        | 2%                         |
-| `vdos_error`     | 24.2       | 28%                        |
-| `pressure_error` | 54.8       | **64%**                    |
+| `vdos_error`     | 24.2       | 30%                        |
+| `pressure_error` | 54.8       | **68%**                    |
 
-Empirically `pressure_error` alone explains **R² = 0.91** of the CMDS ranking — CMDS is
+Empirically `pressure_error` alone explains **R² ≈ 0.9** of the CMDS ranking — CMDS is
 largely a pressure ranking. Aggregation options considered:
 
 - **equal-weighted mean** (current): simple; lets the largest-magnitude (hardest) error
@@ -165,10 +182,30 @@ largely a pressure ranking. Aggregation options considered:
 - **per-component calibration**: map each error to a comparable subscore (noise floor +
   bad-baseline) before averaging, so components contribute equally.
 
-Decision: keep the **simple equal-weighted mean** as a `[0,1]` score (avoid over-engineered
-calibration). Naming/semantics: it is a *score* (higher = better), distinct from the
-component *errors* (lower = better). Open: whether `adf_error` belongs in CMDS given its
-~0.94 redundancy with `rdf_error` (risks double-counting structure).
+**Per-component calibration: measured, and rejected for live use.** Leave-one-out
+experiment on the N=34 model-level metrics — recompute each calibrated combined score with
+one model removed from the cohort and record the worst rank shift among the remaining
+models:
+
+| aggregate           | spread (std) | max rank shift on removing 1 model |
+| ------------------- | ------------ | ---------------------------------- |
+| raw mean (current)  | 0.038        | **0**                              |
+| min-max calibrated  | 0.201        | 4                                  |
+| z-score calibrated  | 0.150        | 3                                  |
+
+Calibration buys 4–5× more spread but makes every published score a function of the model
+roster: adding or removing a single model reshuffles existing models by up to 4 ranks
+without any of them changing. The raw mean is perfectly stable under roster changes. If
+more spread is ever wanted, the stable option is **normalization scales frozen at the
+v1.0 cohort** (fixed min/max per component, documented and never recomputed), which keeps
+scores roster-independent by construction.
+
+Decision: keep the **simple equal-weighted mean** as a `[0,1]` score. Naming/semantics: it
+is a *score* (higher = better), distinct from the component *errors* (lower = better).
+
+CMDS is **not stored** in model YAMLs (only its components are): the site computes it on
+the fly like CPS, so a formula change can never leave stale scores behind, and users can
+reweight the components live via the radar-chart UI on the MD task page.
 
 ## Decisions (implemented)
 
@@ -192,7 +229,7 @@ Empirical test recomputing both metrics on identical spectra for every cached ro
 
 | variant                    | CV (spread) | Spearman ρ vs L1 | Pearson r vs RDF | vs force |
 | -------------------------- | ----------- | ---------------- | ---------------- | -------- |
-| L1 overlap (current)       | 0.059       | —                | 0.90             | 0.89     |
+| L1 overlap (former)        | 0.059       | —                | 0.90             | 0.89     |
 | W1 raw (THz)               | 0.048       | 0.73             | —                | —        |
 | **W1/σ_ref, band-clipped** | **0.121**   | 0.91             | 0.71\*           | 0.71\*   |
 
@@ -212,10 +249,30 @@ i.e. as redundant as L1; the redundancy reduction below did not carry to product
   spread," so promoting W1 to the headline vDOS metric should include a physical spot-check
   of the spectra of the promoted/demoted models.
 
+**Force-RMSE cross-check (20 models with both vdos-variant and YAML force metrics).** How
+well each vDOS variant's model-level mean tracks force quality:
+
+| variant                    | CV (spread) | Pearson r vs force | Spearman ρ vs force |
+| -------------------------- | ----------- | ------------------ | ------------------- |
+| L1 overlap                 | 0.059       | 0.88               | 0.88                |
+| W1 raw (THz)               | 0.048       | 0.57               | 0.63                |
+| **W1/σ_ref, band-clipped** | **0.121**   | 0.83               | **0.93**            |
+
+W1/σ_ref band-clipped has both the highest spread *and* the highest rank agreement with
+force RMSE; L1 edges it only on Pearson (linear) correlation. Raw unnormalized W1 is worse
+on every axis — the σ_ref normalization does the work. This confirms the choice of
+W1/σ_ref (band-clipped) as the shipped vDOS metric. The two rank models nearly identically
+overall (L1 vs W1/σ Spearman 0.91); the differences concentrate at the top of the table.
+
 ## Open questions / in-progress
 
 - **vDOS top-of-ranking spot-check**: W1/σ_ref is now the headline metric; a physical
   spot-check of the spectra of the models it promotes/demotes vs L1 is still advisable.
-- **ADF**: keep-vs-drop given RDF redundancy; per-species-triplet redesign.
-- **CMDS composition**: which components, and whether to calibrate.
-- **RDF**: optional W1 (pair-distance density) and species-resolved components.
+- **ADF**: per-species-triplet redesign to surface minority-environment errors (with RDF
+  out of CMDS, ADF is the sole structural component, strengthening the case).
+- **RDF**: optional W1 (pair-distance density) and species-resolved components, if it is
+  ever to earn its way back into CMDS as an independent signal.
+- **Energy-distribution W1**: a bounded 0–1 alternative to the energy-fluctuation RMSE
+  (W1 between the sampled energy distributions, normalized like the other observables).
+  Moot for the public leaderboard while energies are private-label diagnostics, but the
+  natural form if energy metrics ever become public (e.g. via a released labeled subset).
