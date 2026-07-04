@@ -53,20 +53,6 @@ Package = "https://pypi.org/project/matbench-discovery"
 
 [project.optional-dependencies]
 test = ["matbench-discovery[phonons]", "pytest-cov>=5", "pytest>=8.1"]
-# how to specify git deps: https://stackoverflow.com/a/73572379
-running-models = [
-  # aviary commented-out since dep on git repo raises "Invalid value for requires_dist"
-  # when attempting PyPI publish
-  # "aviary@git+https://github.com/CompRhys/aviary",
-  "alignn>=2024.1.14",
-  "chgnet>=0.3.0",
-  "jarvis-tools",
-  "m3gnet>=0.2.4",
-  "mace-torch>=0.3.6",
-  "maml>=2023.9.9",
-  "megnet>=1.3.2",
-  "moyopy>=0.10.0",
-]
 fetch-wbm-data = ["gdown>=5.2"]
 # phono3py >=3.31 removed the MS-SMM19 RTA method used for Wigner transport.
 phonons = ["phono3py==3.30.0", "phonopy>=2.35"]
@@ -74,7 +60,7 @@ phonons = ["phono3py==3.30.0", "phonopy>=2.35"]
 symmetry = ["moyopy>=0.12"]
 
 [build-system]
-requires = ["uv_build>=0.11.18"]
+requires = ["uv_build>=0.11.21"]
 build-backend = "uv_build"
 
 [tool.uv]
@@ -124,8 +110,7 @@ isort.split-on-trailing-comma = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-p no:warnings -m 'not slow'"
-markers = ["slow: tests marked slow are skipped by default (unskip with pytest -m slow)"]
+addopts = "-p no:warnings"
 
 [tool.codespell]
 ignore-words-list = "nd,te,fpr,matris,titel"
@@ -140,7 +125,7 @@ unresolved-import = "ignore"
 unused-ignore-comment = "ignore"
 
 [dependency-groups]
-dev = ["prek>=0.4.5", "ty>=0.0.54"]
+dev = ["prek>=0.4.5", "ty>=0.0.56"]
 
 [tool.typos.files]
 extend-exclude = ["*.patch"]

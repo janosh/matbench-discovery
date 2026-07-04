@@ -130,12 +130,6 @@ export const METADATA_COLS: MetadataLabels = {
     description: `Model resources: paper, code repository and submission pull request`,
     sortable: false,
   },
-  r_cut: {
-    key: `r<sub>cut</sub>`,
-    label: `r<sub>cut</sub>`,
-    description: `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
-    unit: `Å`,
-  },
   n_training_materials: {
     key: `n_training_materials`,
     label: `Training Materials`,

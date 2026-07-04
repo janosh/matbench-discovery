@@ -21,11 +21,7 @@
   import { Spinner } from 'matterviz/feedback'
   import type { AnyStructure } from 'matterviz/structure'
   import { BinnedScatterPlot } from 'matterviz/plot'
-  import type {
-    BinnedPointDataFn,
-    BinnedPointPayload,
-    DensePointSeries,
-  } from 'matterviz/plot'
+  import type { BinnedPointPayload, DensePointSeries } from 'matterviz/plot'
   import { onMount, tick, untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
 
@@ -33,15 +29,11 @@
     model,
     energy_kind,
     title = energy_kind === `e-form` ? `Formation Energies` : `Convex Hull Distance`,
-    base_data,
-    model_data,
     ...rest
   }: HTMLAttributes<HTMLElement> & {
     model: ModelData
     energy_kind: EnergyKind
     title?: string
-    base_data?: EnergyParityBase
-    model_data?: EnergyParityModel
   } = $props()
 
   type EnergyParityPointData = {
@@ -120,11 +112,7 @@
     return [min - padding, max + padding]
   })
 
-  async function load_plot_data(
-    model_key = model.model_key,
-    injected_base = base_data,
-    injected_model = model_data,
-  ) {
+  async function load_plot_data(model_key = model.model_key) {
     const current_load_id = ++load_id
     if (!model_key) {
       status = `error`
@@ -133,8 +121,6 @@
     }
 
     if (parity_model?.model_key !== model_key) clear_selection()
-    if (injected_base) base = injected_base
-    if (injected_model?.model_key === model_key) parity_model = injected_model
 
     if (base && parity_model?.model_key === model_key) {
       status = `ready`
@@ -146,7 +132,7 @@
     clear_selection()
     try {
       const [base_asset, model_asset] = await Promise.all([
-        injected_base ?? base ?? load_energy_parity_base(),
+        base ?? load_energy_parity_base(),
         parity_model?.model_key === model_key
           ? parity_model
           : load_energy_parity_model(model_key),
@@ -164,9 +150,7 @@
 
   $effect(() => {
     const model_key = model.model_key
-    const injected_base = base_data
-    const injected_model = model_data
-    untrack(() => void load_plot_data(model_key, injected_base, injected_model))
+    untrack(() => void load_plot_data(model_key))
   })
 
   function update_popup_placement() {

@@ -508,16 +508,6 @@ def rolling_mae_vs_hull_dist(
                 color=plotly_colors[idx], dash=plotly_line_styles[idx], width=2
             )
 
-        # marker_spacing = 2
-        # fig.add_scatter(
-        #     x=trace.x[::marker_spacing],
-        #     y=trace.y[::marker_spacing],
-        #     mode="markers",
-        #     marker=dict(symbol=marker, color=trace.line.color, size=8),
-        #     showlegend=False,
-        #     legendgroup=getattr(trace, "legendgroup", None),
-        # )
-
     return fig, df_rolling_err, df_err_std
 
 

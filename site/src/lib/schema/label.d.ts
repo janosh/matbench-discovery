@@ -157,7 +157,6 @@ export interface MetadataLabels {
   targets: Label1
   date_added: Label1
   links: Label1
-  r_cut: Label1
   n_training_materials: Label1
   n_training_structures: Label1
   checkpoint_license: Label1
