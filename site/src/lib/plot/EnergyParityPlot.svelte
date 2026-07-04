@@ -28,12 +28,13 @@
   let {
     model,
     energy_kind,
-    title = energy_kind === `e-form` ? `Formation Energies` : `Convex Hull Distance`,
+    onstatus,
     ...rest
   }: HTMLAttributes<HTMLElement> & {
     model: ModelData
     energy_kind: EnergyKind
-    title?: string
+    // notified on load-status changes, e.g. to show a spinner in a tab bar
+    onstatus?: (status: LoadStatus) => void
   } = $props()
 
   type EnergyParityPointData = {
@@ -51,6 +52,7 @@
   const loading_spinner_style = `--spinner-size: 0.9em; --spinner-border-width: 2px; --spinner-margin: 0`
 
   let status = $state<LoadStatus>(`idle`)
+  $effect(() => onstatus?.(status))
   let error_message = $state(``)
   let base = $state<EnergyParityBase | undefined>()
   let parity_model = $state<EnergyParityModel | undefined>()
@@ -243,9 +245,8 @@
   })
 </script>
 
+<!-- the plot has no heading of its own: the model page's tab bar acts as its title -->
 <section class="energy-parity-plot" {...rest}>
-  <h2 class="toc-exclude">ML vs DFT {title}</h2>
-
   {#if status === `error`}
     <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
       {error_message}
@@ -379,13 +380,6 @@
 </section>
 
 <style>
-  .energy-parity-plot {
-    margin-block: 2em;
-  }
-  h2 {
-    margin: 1em auto 0.5em;
-    text-align: center;
-  }
   .plot-wrap {
     position: relative;
   }
