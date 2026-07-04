@@ -291,7 +291,7 @@ def test_model_md_path_returns_path_for_dict_md(
 
 # files knowingly awaiting Figshare upload; anything else without a url must FAIL the
 # url/md5 tests below (a broad missing-url skip would mask accidental registry damage)
-UNPUBLISHED_DATA_FILES = {DataFiles.dynamat_v1_0_md_trajectories}
+UNPUBLISHED_DATA_FILES: set[DataFiles] = set()
 
 
 @pytest.mark.parametrize("data_file", DataFiles)
