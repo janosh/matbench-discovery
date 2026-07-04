@@ -4,6 +4,7 @@
   import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
   import { GeoOptMetricsTable, ModelSelect, MODELS } from '$lib'
   import { order_models } from '$lib/fig-helpers'
+  import { UrlModelSelection } from '$lib/model-selection.svelte'
   import { bind_url_params } from '$lib/url-state.svelte'
   import { min } from 'd3-array'
   import { format_num, pick_contrast_color } from 'matterviz'
@@ -56,15 +57,12 @@
     .slice(0, default_n_models)
     .map((option) => String(option.value))
 
-  const options_from_keys = (model_keys: string[]) =>
-    selectable_options.filter((option) => model_keys.includes(String(option.value)))
-
-  // options and defaults are module constants, so no untrack needed here
-  let selected_model_options = $state(options_from_keys(default_selected_keys))
-  let selected_model_keys = $derived(
-    selected_model_options.map((option) => String(option.value)),
-  )
-  let selected_model_key_set = $derived(new Set(selected_model_keys))
+  const model_selection = new UrlModelSelection(() => ({
+    options: selectable_options,
+    defaults: default_selected_keys,
+    from_url: resolve_model_key,
+  }))
+  let selected_model_key_set = $derived(new Set(model_selection.values))
   let filtered_sym_ops_sorted = $derived(
     sym_ops_sorted.filter(({ label }) => {
       const model_key = resolve_model_key(label)
@@ -75,32 +73,7 @@
     spg_sankeys.models.filter(({ key }) => selected_model_key_set.has(key)),
   )
 
-  const keys_from_url = (params: URLSearchParams): string[] => {
-    const model_param = params.get(`models`)
-    if (model_param === null) return default_selected_keys
-    if (!model_param) return []
-
-    return model_param
-      .split(`,`)
-      .map((key_or_label) => resolve_model_key(key_or_label))
-      .filter((model_key): model_key is string => model_key !== undefined)
-  }
-
-  const selected_param_value = (model_keys: string[]): string =>
-    [...selectable_model_keys].filter((key) => model_keys.includes(key)).join(`,`)
-
-  bind_url_params(
-    (params) => {
-      selected_model_options = options_from_keys(keys_from_url(params))
-    },
-    () => [
-      [
-        `models`,
-        selected_param_value(selected_model_keys),
-        selected_param_value(default_selected_keys),
-      ],
-    ],
-  )
+  bind_url_params(model_selection.read, () => [model_selection.url_entry])
 
   const n_min_relaxed_structures =
     min(MODELS, ({ metrics }) =>
@@ -134,7 +107,10 @@
   {/snippet}
   {#snippet sym_ops_diff_bar()}
     <div class="plot-controls bleed-1400">
-      <ModelSelect options={selectable_options} bind:selected={selected_model_options} />
+      <ModelSelect
+        options={selectable_options}
+        bind:selected={model_selection.selected}
+      />
     </div>
 
     <div class="sym-ops-list bleed-1400">

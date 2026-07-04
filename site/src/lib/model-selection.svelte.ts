@@ -1,8 +1,8 @@
 import type { ObjectOption } from 'svelte-multiselect'
 import { untrack } from 'svelte'
 
-type ModelSelectionConfig = {
-  options: ObjectOption[] // canonical order, option.value = page's model identifier
+type ModelSelectionConfig<T extends ObjectOption> = {
+  options: T[] // canonical order, option.value = page's model identifier
   defaults: string[] // values selected when the URL has no `models` param
   // URL token -> value; return undefined to drop unknown tokens (default: identity)
   from_url?: (token: string) => string | undefined
@@ -15,10 +15,10 @@ type ModelSelectionConfig = {
 // option order, and reports the default serialization so bind_url_params omits the
 // param when the selection matches the defaults. Config is a thunk so pages can pass
 // $derived options/defaults; read() re-syncs on every navigation.
-export class UrlModelSelection {
-  selected: ObjectOption[] = $state([])
+export class UrlModelSelection<T extends ObjectOption = ObjectOption> {
+  selected: T[] = $state([])
 
-  constructor(private config: () => ModelSelectionConfig) {
+  constructor(private readonly config: () => ModelSelectionConfig<T>) {
     this.selected = untrack(() => this.options_for(config().defaults))
   }
 
@@ -29,10 +29,13 @@ export class UrlModelSelection {
   read = (params: URLSearchParams): void => {
     const { defaults, from_url = (token: string) => token } = this.config()
     const model_param = params.get(`models`)
-    const values = model_param === null ? defaults : model_param
-      .split(`,`)
-      .map(from_url)
-      .filter((value): value is string => value !== undefined)
+    const values =
+      model_param === null
+        ? defaults
+        : model_param
+            .split(`,`)
+            .map(from_url)
+            .filter((value): value is string => value !== undefined)
     this.selected = this.options_for(values)
   }
 
@@ -41,7 +44,7 @@ export class UrlModelSelection {
     return [`models`, this.param_value(this.values), this.param_value(defaults)]
   }
 
-  private options_for(values: string[]): ObjectOption[] {
+  private options_for(values: string[]): T[] {
     return this.config().options.filter((opt) => values.includes(String(opt.value)))
   }
 

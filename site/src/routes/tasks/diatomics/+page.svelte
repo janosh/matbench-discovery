@@ -2,6 +2,7 @@
   import { MetricsTable, ModelSelect, type ModelData } from '$lib'
   import { DIATOMICS_METRICS, task_page_visible_cols } from '$lib/labels'
   import { DiatomicCurve } from '$lib/plot'
+  import { UrlModelSelection } from '$lib/model-selection.svelte'
   import {
     bind_url_params,
     sort_from_query,
@@ -13,7 +14,6 @@
   import type { ChemicalElement, ElementCategory } from 'matterviz/element'
   import { pick_contrast_color, PLOT_COLORS } from 'matterviz'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
-  import { untrack } from 'svelte'
   import { SvelteSet } from 'svelte/reactivity'
 
   let { data } = $props()
@@ -147,15 +147,18 @@
       .slice(0, default_n_models),
   ])
 
-  const options_from_names = (model_names: string[]) =>
-    selectable_options.filter((option) => model_names.includes(String(option.value)))
-
-  let selected_model_options = $state(
-    untrack(() => options_from_names(default_selected_names)),
-  )
-  let selected_model_names = $derived(
-    selected_model_options.map((option) => String(option.value)),
-  )
+  const model_selection = new UrlModelSelection(() => ({
+    options: selectable_options,
+    defaults: default_selected_names,
+    // accept model keys (canonical) or display names in the URL, drop unknowns
+    from_url: (token) => {
+      const model_name = model_name_by_key.get(token) ?? token
+      return selectable_names.includes(model_name) ? model_name : undefined
+    },
+    // serialize display names back to model keys (DFT references have no key)
+    to_url: (model_name) => model_key_by_name.get(model_name) ?? model_name,
+  }))
+  let selected_model_names = $derived(model_selection.values)
   const visible_diatomics = new SvelteSet<string>()
   let diatomics_to_render = $derived(
     // Only render diatomics where at least one model has data
@@ -173,25 +176,8 @@
     }),
   )
 
-  function names_from_url(params: URLSearchParams): string[] {
-    const model_param = params.get(`models`)
-    if (model_param === null) return default_selected_names
-    if (!model_param) return []
-
-    return model_param
-      .split(`,`)
-      .map((key_or_ref) => model_name_by_key.get(key_or_ref) ?? key_or_ref)
-      .filter((model_name) => selectable_names.includes(model_name))
-  }
-
-  const selected_param_value = (model_names: string[]): string =>
-    selectable_names
-      .filter((model_name) => model_names.includes(model_name))
-      .map((model_name) => model_key_by_name.get(model_name) ?? model_name)
-      .join(`,`)
-
   const read_url_params = (params: URLSearchParams) => {
-    selected_model_options = options_from_names(names_from_url(params))
+    model_selection.read(params)
     selected_element_group = valid_query_param(
       params,
       `elements`,
@@ -201,11 +187,7 @@
     sort = sort_from_query(params, default_sort)
   }
   bind_url_params(read_url_params, () => [
-    [
-      `models`,
-      selected_param_value(selected_model_names),
-      selected_param_value(default_selected_names),
-    ],
+    model_selection.url_entry,
     [`elements`, selected_element_group, `all`],
     [`sort`, sort.column, default_sort.column],
     [`dir`, sort.dir, default_sort.dir],
@@ -303,7 +285,7 @@
     {/each}
   </div>
 
-  <ModelSelect options={selectable_options} bind:selected={selected_model_options} />
+  <ModelSelect options={selectable_options} bind:selected={model_selection.selected} />
 </div>
 
 <div class="grid" style="--plot-height: {clamped_plot_height}px">
