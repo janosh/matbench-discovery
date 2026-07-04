@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { afterNavigate, replaceState } from '$app/navigation'
+  import { afterNavigate } from '$app/navigation'
   import { page } from '$app/state'
   import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
   import {
@@ -19,7 +19,7 @@
   } from '$lib/labels'
   import { make_combined_filter } from '$lib/metrics'
   import { find_best_model, MODELS } from '$lib/models.svelte'
-  import { sort_from_query } from '$lib/url-state'
+  import { sort_from_query, sync_url_params } from '$lib/url-state'
   import {
     generate_csv,
     generate_excel,
@@ -155,21 +155,21 @@
   $effect(() => {
     if (!url_ready) return
 
-    const new_params = new URLSearchParams()
-    if (!custom_col_config) new_params.set(`preset`, col_preset)
-    if (discovery_set !== `unique_prototypes`) new_params.set(`set`, discovery_set)
     const default_sort = preset_default_sorts[col_preset]
-    if (sort.column !== default_sort.column) new_params.set(`sort`, sort.column)
-    if (sort.dir !== default_sort.dir) new_params.set(`dir`, sort.dir)
-    if (show_energy_only) new_params.set(`energy_only`, `1`)
-    if (!show_non_compliant) new_params.set(`non_compliant`, `0`)
-    if (!show_compliant) new_params.set(`compliant`, `0`)
-
-    const new_url =
-      new_params.size > 0 ? `${location.pathname}?${new_params}` : location.pathname
-    if (new_url !== `${location.pathname}${location.search}`) {
-      replaceState(new_url, page.state)
-    }
+    sync_url_params(
+      [
+        // omit `preset` for the default (Discovery) and when the user customized
+        // columns (a preset no longer describes the visible column set)
+        [`preset`, custom_col_config || col_preset === `Discovery` ? `` : col_preset],
+        [`set`, discovery_set, `unique_prototypes`],
+        [`sort`, sort.column, default_sort.column],
+        [`dir`, sort.dir, default_sort.dir],
+        [`energy_only`, show_energy_only ? `1` : ``],
+        [`non_compliant`, show_non_compliant ? `` : `0`],
+        [`compliant`, show_compliant ? `` : `0`],
+      ],
+      page.state,
+    )
   })
 
   // Export state object for handle_export

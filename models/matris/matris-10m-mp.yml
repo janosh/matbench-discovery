@@ -118,10 +118,6 @@ metrics:
     pred_file: models/matris/matris-10m-mp/2025-10-29-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/59233859
     pred_col: e_form_per_atom_matris
-
-    #diatomics:
-    #  pred_file: models/matris/matris-10m-mp/2025-10-29-diatomics.json.gz
-    #  pred_file_url: https://figshare.com/files/59154065
     full_test_set:
       F1: 0.832 # fraction
       DAF: 4.744 # dimensionless
@@ -191,18 +187,18 @@ metrics:
     pred_file_url: https://figshare.com/files/66048899
   diatomics:
     pred_file: models/matris/matris-10m-mp/2026-06-28-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66104633
     hardware: NVIDIA H200
     run_time_sec: 788.18
-    pbe_wall_dist_mae: 0.5667
-    pbe_energy_mae: 3.367
-    pbe_bond_length_error: 0.729
-    pbe_well_depth_error: 2.627
-    pbe_vib_freq_error: 306.2
-    tortuosity: 1.091
-    energy_diff_flips: 3.413
-    energy_jump: 0.8963
-    force_flips: 3.435
-    force_total_variation: 63.41
-    force_jump: 23.38
-    pbe_force_mae: 3.744
-    pred_file_url: https://figshare.com/files/66104633
+    pbe_wall_dist_mae: 0.5422
+    pbe_energy_mae: 3.265
+    pbe_bond_length_error: 0.7772
+    pbe_well_depth_error: 1.697
+    pbe_vib_freq_error: 267.8
+    tortuosity: 1.082
+    energy_diff_flips: 3.414
+    energy_jump: 0.8474
+    force_flips: 3.402
+    force_total_variation: 60.85
+    force_jump: 19.74
+    pbe_force_mae: 3.88

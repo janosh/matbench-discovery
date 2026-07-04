@@ -215,9 +215,9 @@ definitions:
         type: string
       run_time_sec:
         type: number
-      excluded_formulas:
-        type: array
-        items:
+      excluded_formula_reasons:
+        type: object
+        additionalProperties:
           type: string
       tortuosity:
         type: number
