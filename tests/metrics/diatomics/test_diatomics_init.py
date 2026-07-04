@@ -8,12 +8,16 @@ from pathlib import Path
 import numpy as np
 import pytest
 import yaml
+from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
 
+from matbench_discovery import ROOT
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import diatomics
-from matbench_discovery.metrics.diatomics import DiatomicCurve, DiatomicCurves
-
-np_rng = np.random.default_rng(seed=0)
+from matbench_discovery.metrics.diatomics import (
+    DiatomicCurve,
+    DiatomicCurves,
+    eval_window,
+)
 
 
 def write_diatomics_yaml(
@@ -80,9 +84,11 @@ def test_diatomic_classes() -> None:
     ]:
         with pytest.raises(ValueError, match=message):
             DiatomicCurve(**(bad_curve_args | override))
-    data["homo-nuclear"]["H"]["distances"] = [0.5, 1.5]
-    with pytest.raises(ValueError, match="curve distances differ"):
-        DiatomicCurves.from_dict(data)
+    # off-grid, duplicated, and reordered per-curve distances are all rejected
+    for bad_dists in ([0.5, 1.5], [1.0, 1.0], [2.0, 1.0]):
+        data["homo-nuclear"]["H"]["distances"] = bad_dists
+        with pytest.raises(ValueError, match="must be an ordered subset"):
+            DiatomicCurves.from_dict(data)
 
 
 def test_load_dft_reference_curves(tmp_path: Path) -> None:
@@ -123,17 +129,32 @@ def base_curve(
     return 5 * (1 - np.exp(-2 * (distances - equilibrium_distance))) ** 2 - 5
 
 
+def make_element_curves(
+    curves_by_elem: dict[str, np.ndarray],
+    distances: np.ndarray | None = None,
+    forces: np.ndarray | None = None,
+) -> DiatomicCurves:
+    """Wrap per-element energy arrays in DiatomicCurves (log grid + zero forces)."""
+    distances = np.logspace(1, -1, 40) if distances is None else distances
+    homo_nuclear = {
+        elem: DiatomicCurve(
+            distances=distances,
+            energies=energies,
+            forces=np.zeros((len(distances), 2, 3)) if forces is None else forces,
+        )
+        for elem, energies in curves_by_elem.items()
+    }
+    return DiatomicCurves(distances=distances, homo_nuclear=homo_nuclear)
+
+
 def h_curves(
     distances: np.ndarray,
     energies: np.ndarray | None = None,
     forces: np.ndarray | None = None,
 ) -> DiatomicCurves:
     """Wrap one H-H curve in DiatomicCurves (energies/forces default to zeros)."""
-    n_dists = len(distances)
-    energies = np.zeros(n_dists) if energies is None else energies
-    forces = np.zeros((n_dists, 2, 3)) if forces is None else forces
-    curve = DiatomicCurve(distances=distances, energies=energies, forces=forces)
-    return DiatomicCurves(distances=distances, homo_nuclear={"H": curve})
+    energies = np.zeros(len(distances)) if energies is None else energies
+    return make_element_curves({"H": energies}, distances=distances, forces=forces)
 
 
 @pytest.mark.parametrize(
@@ -205,6 +226,42 @@ def test_pbe_force_mae_skips_unusable_ref_window(
     )
 
     assert metrics_out["H"] == {}
+
+
+def test_calc_diatomic_metrics_gates_low_quality_refs_and_non_mp_elements() -> None:
+    """Non-MP elements are skipped entirely, jumpy refs only lose pbe_* metrics."""
+    distances = np.logspace(1, -1, 40)
+    smooth = base_curve(distances)
+    # oscillating reference: large alternating jumps at every point in the window
+    jumpy = smooth + 5 * (-1) ** np.arange(len(distances))
+    # non-finite reference: cannot be scored against and must not crash the gate
+    non_finite = np.full(len(distances), np.nan)
+    ref_curves = make_element_curves(
+        {"H": smooth, "Ho": jumpy, "Po": smooth, "Er": non_finite}
+    )
+    pred_curves = make_element_curves(
+        {"H": smooth, "Ho": smooth, "Po": smooth, "Er": smooth}
+    )
+
+    assert diatomics.find_low_quality_dft_refs(ref_curves) == {"Ho", "Er"}
+    metrics_out = diatomics.calc_diatomic_metrics(ref_curves, pred_curves)
+    assert set(metrics_out) == {"H", "Ho", "Er"}
+    assert MbdKey.pbe_energy_mae in metrics_out["H"]
+    # jumpy/non-finite reference: self-consistency metrics only, no ref-relative ones
+    for gated_elem in ("Ho", "Er"):
+        assert MbdKey.pbe_energy_mae not in metrics_out[gated_elem]
+        assert MbdKey.tortuosity in metrics_out[gated_elem]
+    # without reference curves there is no quality gate but non-MP skip still applies
+    no_ref_out = diatomics.calc_diatomic_metrics(None, pred_curves)
+    assert set(no_ref_out) == {"H", "Ho", "Er"}
+
+
+def test_find_low_quality_dft_refs_on_bundled_pbe_reference() -> None:
+    """The bundled PBE reference flags exactly the 8 jumpy lanthanides."""
+    ref_curves = diatomics.load_dft_reference_curves("PBE")
+
+    jumpy_lanthanides = {"Pr", "Nd", "Pm", "Tb", "Dy", "Ho", "Er", "Tm"}
+    assert diatomics.find_low_quality_dft_refs(ref_curves) == jumpy_lanthanides
 
 
 def test_diatomic_curve_metrics(
@@ -290,8 +347,6 @@ def test_diatomic_curve_metrics(
 
 def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     """Test writing diatomic metrics to YAML file."""
-    from matbench_discovery import ROOT
-
     model, yaml_path = diatomics_model
     pred_file = "models/mace/mace-mp-0/2025-02-13-test-diatomics.json.gz"
     pred_file_url = "https://figshare.com/files/fake-url-00000"
@@ -308,14 +363,13 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     write_diatomics_yaml(model, yaml_path, {"pred_file": pred_file})
     assert diatomics.write_metrics_to_yaml(model, {}) == {"pred_file": pred_file}
 
+    # relative and absolute pred_file_path both record the repo-relative path
     new_pred_file = "models/mace/mace-mp-0/2026-06-28-diatomics.json.gz"
     write_diatomics_yaml(model, yaml_path, {})
-    assert diatomics.write_metrics_to_yaml(model, {}, pred_file_path=new_pred_file) == {
-        "pred_file": new_pred_file
-    }
-    assert diatomics.write_metrics_to_yaml(
-        model, {}, pred_file_path=f"{ROOT}/{new_pred_file}"
-    ) == {"pred_file": new_pred_file}
+    for path_arg in (new_pred_file, f"{ROOT}/{new_pred_file}"):
+        assert diatomics.write_metrics_to_yaml(model, {}, pred_file_path=path_arg) == {
+            "pred_file": new_pred_file
+        }
     with pytest.raises(ValueError, match="must be inside repo root"):
         diatomics.write_metrics_to_yaml(
             model, {}, pred_file_path=f"{yaml_path.parent}/outside.json.gz"
@@ -359,7 +413,7 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
         run_metadata={
             "hardware": "NVIDIA H100 80GB HBM3",
             "run_time_sec": 120.0,
-            "excluded_formulas": ["He-He"],
+            "excluded_formula_reasons": {"He-He": "exploding errors"},
             "invalid_key": "ignored",
         },
     )
@@ -367,7 +421,7 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
         "pred_file": new_pred_file,
         "hardware": "NVIDIA H100 80GB HBM3",
         "run_time_sec": 120.0,
-        "excluded_formulas": ["He-He"],
+        "excluded_formula_reasons": {"He-He": "exploding errors"},
         **expected_metrics,
     }
     yaml_content = yaml_path.read_text()
@@ -377,35 +431,31 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     # the other existing run metadata
     model.__dict__.pop("metadata", None)
     recomputed = diatomics.write_metrics_to_yaml(
-        model, metrics_by_element, run_metadata={"excluded_formulas": []}
+        model, metrics_by_element, run_metadata={"excluded_formula_reasons": {}}
     )
     assert recomputed["hardware"] == "NVIDIA H100 80GB HBM3"
     assert recomputed["run_time_sec"] == 120.0
-    assert recomputed["excluded_formulas"] == []
+    assert recomputed["excluded_formula_reasons"] == {}
 
 
 def test_eval_window(monkeypatch: pytest.MonkeyPatch) -> None:
-    """_eval_window returns element-specific bounds and handles missing radius data."""
-    from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
-
-    from matbench_discovery.metrics.diatomics import _eval_window
-
+    """eval_window returns element-specific bounds and handles missing radius data."""
     atomic_num_h = atomic_numbers["H"]
-    r_min, r_max = _eval_window("H-H", 6.0)
+    r_min, r_max = eval_window("H-H", 6.0)
     assert r_min == pytest.approx(0.9 * covalent_radii[atomic_num_h])
     assert r_max == pytest.approx(min(3.1 * vdw_alvarez.vdw_radii[atomic_num_h], 6.0))
     # seps_max caps r_max (3.1 * vdW(Cu) > 6)
-    assert _eval_window("Cu-Cu", 6.0)[1] == pytest.approx(6.0)
-    assert _eval_window("H-H", 2.5)[1] == pytest.approx(2.5)  # capped by seps_max
+    assert eval_window("Cu-Cu", 6.0)[1] == pytest.approx(6.0)
+    assert eval_window("H-H", 2.5)[1] == pytest.approx(2.5)  # capped by seps_max
 
     atomic_num_og = atomic_numbers["Og"]
-    r_min, r_max = _eval_window("Og-Og", 6.0)
+    r_min, r_max = eval_window("Og-Og", 6.0)
     assert r_min == pytest.approx(0.9 * covalent_radii[atomic_num_og])
     assert r_max == pytest.approx(6.0)
 
     monkeypatch.setattr(diatomics, "covalent_radii", np.ones(10))
     monkeypatch.setattr(diatomics.vdw_alvarez, "vdw_radii", np.ones(10))
-    assert _eval_window("Og-Og", 6.0) == (0.0, 6.0)
+    assert eval_window("Og-Og", 6.0) == (0.0, 6.0)
 
 
 def test_window_excludes_deep_overlap() -> None:

@@ -1,31 +1,29 @@
 """Tests for diatomic molecule generation and energy/force calculations."""
 
-import importlib.util
+import gzip
+import json
 import sys
+from pathlib import Path
 from types import ModuleType
 
 import numpy as np
 import pytest
 from ase import Atoms
 from ase.calculators.emt import EMT
+from conftest import import_repo_script
 
-from matbench_discovery import ROOT
 from matbench_discovery.diatomics import (
+    DiatomicResults,
     atom_num_symbol_map,
     calc_diatomic_curve,
     generate_diatomics,
 )
 
 
-def import_repo_script(module_name: str, rel_path: str) -> ModuleType:
-    """Import a repo-local script without package-name collisions."""
-    spec = importlib.util.spec_from_file_location(module_name, f"{ROOT}/{rel_path}")
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot import {module_name} from {rel_path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
+@pytest.fixture(scope="module", name="run_diatomics")
+def run_diatomics_fixture() -> ModuleType:
+    """models/run_diatomics.py imported once for all tests in this module."""
+    return import_repo_script("run_diatomics", "models/run_diatomics.py")
 
 
 @pytest.mark.parametrize(
@@ -61,34 +59,6 @@ def test_generate_diatomics_rejects_distance_beyond_half_box() -> None:
         generate_diatomics("H", "H", [3.0], box_size=5.0)
 
 
-@pytest.mark.parametrize(
-    "z1,z2,expected_formula",
-    [
-        (1, 1, "H-H"),  # hydrogen by atomic number
-        ("H", 1, "H-H"),  # mixed string and number
-        (8, "O", "O-O"),  # oxygen
-        ("Cu", 29, "Cu-Cu"),  # copper (supported by EMT)
-    ],
-)
-def test_atomic_number_to_symbol_conversion(
-    z1: str | int, z2: str | int, expected_formula: str
-) -> None:
-    """Test conversion between atomic numbers and chemical symbols."""
-    distances = [1.0]
-    pairs = [(z1, z2)]
-    # Use EMT calculator as a simple test calculator
-    calculator = EMT()
-    results: dict[str, dict[str, list[float | list[list[float]]]]] = {}
-
-    results = calc_diatomic_curve(pairs, calculator, "test", distances, results)
-
-    assert expected_formula in results
-    assert "energies" in results[expected_formula]
-    assert "forces" in results[expected_formula]
-    assert len(results[expected_formula]["energies"]) == len(distances)
-    assert len(results[expected_formula]["forces"]) == len(distances)
-
-
 def test_atom_num_symbol_map() -> None:
     """Test the atomic number to symbol mapping."""
     assert atom_num_symbol_map[1] == "H"
@@ -98,34 +68,27 @@ def test_atom_num_symbol_map() -> None:
 
 
 def test_calc_diatomic_curve_results() -> None:
-    """Test that calc_diatomic_curve returns correct energy and force arrays."""
-    calculator = EMT()
+    """Pairs given as symbols and/or atomic numbers yield correctly shaped curves."""
     distances = [1.0, 2.0]
-    pairs = [("Cu", "Cu")]  # Use Cu instead of H (better EMT support)
-    results: dict[str, dict[str, list[float | list[list[float]]]]] = {}
+    # mixed symbol/number pair specs, incl. H-H requested in both forms
+    pairs = [(1, 1), ("H", 1), (8, "O"), ("Cu", 29)]
+    results = calc_diatomic_curve(pairs, EMT(), "test", distances, {})
 
-    results = calc_diatomic_curve(pairs, calculator, "test", distances, results)
-
-    assert "Cu-Cu" in results
-
-    cu2_results = results["Cu-Cu"]
-    assert len(cu2_results["energies"]) == len(distances)
-    assert len(cu2_results["forces"]) == len(distances)
-    assert all(isinstance(energy, int | float) for energy in cu2_results["energies"])
-    assert np.array(cu2_results["energies"]).shape == (len(distances),)
-    n_atoms, n_dims = len(pairs[0]), 3
-    assert np.array(cu2_results["forces"]).shape == (len(distances), n_atoms, n_dims)
+    assert set(results) == {"H-H", "O-O", "Cu-Cu"}
+    n_atoms, n_dims = 2, 3
+    for formula, curve in results.items():
+        assert curve["distances"] == distances, formula
+        assert all(isinstance(energy, int | float) for energy in curve["energies"])
+        assert np.array(curve["energies"]).shape == (len(distances),), formula
+        expected_shape = (len(distances), n_atoms, n_dims)
+        assert np.array(curve["forces"]).shape == expected_shape, formula
 
 
 def test_calc_diatomic_curve_energy_trend() -> None:
     """Test that energy follows expected trend with distance."""
-    calculator = EMT()
     # Test with a range of distances around the equilibrium bond length for Cu2
     distances = np.logspace(1, -1, 40)  # Cu-Cu has larger equilibrium distance
-    pairs = [("Cu", "Cu")]
-    results: dict[str, dict[str, list[float | list[list[float]]]]] = {}
-
-    results = calc_diatomic_curve(pairs, calculator, "test", distances, results)
+    results = calc_diatomic_curve([("Cu", "Cu")], EMT(), "test", distances, {})
 
     energies = results["Cu-Cu"]["energies"]
     # Energy should have a minimum at the equilibrium distance
@@ -136,13 +99,9 @@ def test_calc_diatomic_curve_energy_trend() -> None:
 
 def test_calc_diatomic_curve_force_directions() -> None:
     """Test that forces point in the expected directions."""
-    calculator = EMT()
     # Test at very short and very long distances
     distances = [2.0, 5.0]  # Å (adjusted for Cu-Cu)
-    pairs = [("Cu", "Cu")]
-    results: dict[str, dict[str, list[float | list[list[float]]]]] = {}
-
-    results = calc_diatomic_curve(pairs, calculator, "test", distances, results)
+    results = calc_diatomic_curve([("Cu", "Cu")], EMT(), "test", distances, {})
 
     forces: list[list[list[float]]] = results["Cu-Cu"]["forces"]  # ty: ignore[invalid-assignment]
     # At short distance, forces should point away from each other
@@ -157,12 +116,9 @@ def test_calc_diatomic_curve_force_directions() -> None:
 
 
 def test_calc_diatomic_curve_prior_results() -> None:
-    """Test that calc_diatomic_curve recalculates requested pairs."""
-    calculator = EMT()
+    """calc_diatomic_curve recalculates requested pairs, overwriting stale results."""
     distances = [1.0]
-    pairs = [("Cu", "Cu")]  # Only test Cu-Cu
-    # Pre-populate results with Cu2
-    initial_results: dict[str, dict[str, list[float | list[list[float]]]]] = {
+    initial_results: DiatomicResults = {
         "Cu-Cu": {
             "distances": [2.0],
             "energies": [-1.0],
@@ -170,18 +126,15 @@ def test_calc_diatomic_curve_prior_results() -> None:
         }
     }
 
-    # Calculate new results but with same pair
-    results = calc_diatomic_curve(pairs, calculator, "test", distances, initial_results)
+    results = calc_diatomic_curve(
+        [("Cu", "Cu")], EMT(), "test", distances, initial_results
+    )
 
-    # Cu2 results should be recalculated since it's in pairs
-    assert len(results["Cu-Cu"]["energies"]) == 1
-    assert len(results["Cu-Cu"]["forces"]) == 1
-    assert results["Cu-Cu"]["distances"] == distances
-    # Values should be calculated by EMT, not taken from initial_results
-    assert isinstance(results["Cu-Cu"]["energies"][0], int | float)
-    assert isinstance(results["Cu-Cu"]["forces"][0], list)
-    assert len(results["Cu-Cu"]["forces"][0]) == 2  # two atoms
-    assert len(results["Cu-Cu"]["forces"][0][0]) == 3  # three components
+    # Cu-Cu was recalculated on the new distance grid, not taken from initial_results
+    cu_curve = results["Cu-Cu"]
+    assert cu_curve["distances"] == distances
+    assert cu_curve["energies"] != [-1.0]
+    assert np.array(cu_curve["forces"]).shape == (len(distances), 2, 3)
 
 
 @pytest.mark.parametrize(
@@ -202,11 +155,11 @@ def test_calc_diatomic_curve_prior_results() -> None:
 def test_run_diatomics_cli_validation(
     argv_tail: str,
     expected_stdout: str | None,
+    run_diatomics: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """run_diatomics validates distances and canonicalizes model refs."""
-    run_diatomics = import_repo_script("run_diatomics", "models/run_diatomics.py")
     argv = ["run_diatomics", "--print-cmd", *argv_tail.split()]
     monkeypatch.setattr(sys, "argv", argv)
 
@@ -216,3 +169,128 @@ def test_run_diatomics_cli_validation(
     else:
         assert run_diatomics.main() == 0
         assert expected_stdout in capsys.readouterr().out
+
+
+def test_trim_curve_to_finite(run_diatomics: ModuleType) -> None:
+    """Non-finite samples outside the scored window are trimmed, inside it fatal."""
+    distances = np.geomspace(0.1, 6.0, 30).tolist()
+    finite_curve = {
+        "distances": distances,
+        "energies": [1.0] * 30,
+        "forces": [[[0.0] * 3] * 2] * 30,
+    }
+    assert run_diatomics.trim_curve_to_finite("Cu-Cu", finite_curve) == finite_curve
+
+    # Cu window starts at 0.9 * r_cov ~ 1.19 A; NaN below that gets trimmed
+    deep_overlap_nan = {**finite_curve, "energies": [np.nan, *[1.0] * 29]}
+    trimmed = run_diatomics.trim_curve_to_finite("Cu-Cu", deep_overlap_nan)
+    assert trimmed is not None
+    assert len(trimmed["energies"]) == len(trimmed["distances"]) == 29
+    assert trimmed["distances"] == distances[1:]
+
+    # non-finite at scored separations (last point = 6 A is inside Cu's window since
+    # 3.1 * r_vdw(Cu) > 6 A) drops the whole curve
+    in_window_nan = {**finite_curve, "energies": [*[1.0] * 29, np.inf]}
+    assert run_diatomics.trim_curve_to_finite("Cu-Cu", in_window_nan) is None
+
+    # H's window ends at 3.1 * r_vdw(H) ~ 3.7 A; a NaN at 6 A is above it (never
+    # scored) so only that point is trimmed, not the whole curve
+    above_window_nan = {**finite_curve, "energies": [*[1.0] * 29, np.nan]}
+    trimmed = run_diatomics.trim_curve_to_finite("H-H", above_window_nan)
+    assert trimmed is not None
+    assert len(trimmed["energies"]) == len(trimmed["distances"]) == 29
+    assert trimmed["distances"] == distances[:-1]
+
+    empty_curve = {"distances": [], "energies": [], "forces": []}
+    assert run_diatomics.trim_curve_to_finite("Cu-Cu", empty_curve) is None
+
+
+def test_run_diatomics_exclusion_reasons(run_diatomics: ModuleType) -> None:
+    """Curated + run-discovered exclusion reasons and their use in metric drops."""
+    curated_reasons = {"He-He": "exploding errors"}
+
+    assert (
+        run_diatomics.get_excluded_formula_reasons("alphanet_v1_oam") == curated_reasons
+    )
+    # curated reasons win over run-discovered invalid curves (He-He), unknown
+    # formulas fall back to the generic invalid-curve reason (X-X), and non-MP
+    # formulas (At-At) are never recorded since metrics skip them benchmark-wide
+    assert run_diatomics.get_excluded_formula_reasons(
+        "alphanet_v1_oam", ["He-He", "At-At", "X-X"]
+    ) == curated_reasons | {"X-X": "invalid or unsupported curve"}
+
+    # drop_metric_exclusions removes excluded formula and element-keyed metrics
+    metrics = {"He": {"energy_jump": 1.0}, "Cu": {"energy_jump": 2.0}}
+    assert run_diatomics.drop_metric_exclusions("alphanet_v1_oam", metrics) == {
+        "Cu": {"energy_jump": 2.0}
+    }
+
+
+def write_diatomics_shard(
+    shard_dir: Path,
+    z_value: int,
+    curves: dict[str, dict[str, list[float] | list[list[list[float]]]]],
+    run_metadata: dict[str, object] | None = None,
+) -> None:
+    """Write a minimal run_diatomics shard file for merge-shards tests."""
+    shard_dir.mkdir(parents=True, exist_ok=True)
+    shard_path = shard_dir / f"Z{z_value:03d}-diatomics.json.gz"
+    shard_data = {
+        "homo-nuclear": curves,
+        "hetero-nuclear": {},
+        "distances": [1.0, 2.0],
+    }
+    if run_metadata is not None:
+        shard_data["run_metadata"] = run_metadata
+    with gzip.open(shard_path, mode="wt") as file:
+        json.dump(shard_data, file)
+
+
+@pytest.mark.parametrize(
+    ("model_key", "second_shard_metadata", "should_raise"),
+    [
+        (
+            "alphanet_v1_oam",
+            {"excluded_formula_reasons": {"H-H": "must not leak"}},
+            False,
+        ),
+        ("emt", {"excluded_formula_reasons": {"He-He": "invalid curve"}}, True),
+    ],
+)
+def test_run_diatomics_merge_shards_exclusion_gate(
+    model_key: str,
+    second_shard_metadata: dict[str, object],
+    should_raise: bool,
+    run_diatomics: ModuleType,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """merge-shards accepts missing formulas only when YAML-curated."""
+    shard_dir = tmp_path / f"{run_diatomics.today}-diatomics-shards"
+    curves = {
+        "H-H": {
+            "energies": [0.0, 1.0],
+            "forces": [[[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]] * 2,
+        }
+    }
+    write_diatomics_shard(shard_dir, 1, curves)
+    write_diatomics_shard(shard_dir, 2, {}, run_metadata=second_shard_metadata)
+    cli = f"run_diatomics --model {model_key} --merge-shards --max-z 2 --out-dir"
+    monkeypatch.setattr(sys, "argv", [*cli.split(), str(tmp_path)])
+
+    if should_raise:
+        with pytest.raises(SystemExit) as exc_info:
+            run_diatomics.main()
+        assert exc_info.value.code == 2
+        stderr = capsys.readouterr().err
+        assert "Missing curves in shards" in stderr
+        assert "He-He" in stderr
+    else:
+        assert run_diatomics.main() == 0
+        merged_path = tmp_path / f"{run_diatomics.today}-diatomics.json.gz"
+        with gzip.open(merged_path, mode="rt") as file:
+            merged_data = json.load(file)
+        assert merged_data["run_metadata"]["excluded_formula_reasons"] == {
+            "He-He": "exploding errors"
+        }

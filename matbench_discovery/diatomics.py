@@ -24,7 +24,9 @@ __date__ = "2024-03-31"
 DiatomicsType = Literal["homo-nuclear", "hetero-nuclear"]
 homo_nuc = get_args(DiatomicsType)[0]
 atom_num_symbol_map = dict(enumerate(chemical_symbols, start=0))
-DiatomicResults = dict[str, dict[str, list[float | list[list[float]]]]]
+# one curve's distances/energies/forces lists, keyed by formula in DiatomicResults
+CurveDict = dict[str, list[float | list[list[float]]]]
+DiatomicResults = dict[str, CurveDict]
 
 
 def generate_diatomics(

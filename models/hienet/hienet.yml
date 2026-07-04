@@ -198,18 +198,18 @@ metrics:
     pred_file_url: https://figshare.com/files/66048890
   diatomics:
     pred_file: models/hienet/hienet/2026-06-28-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66104606
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 265.43
-    pbe_wall_dist_mae: 0.2914
-    pbe_energy_mae: 1.477
-    pbe_bond_length_error: 0.5878
-    pbe_well_depth_error: 1.722
-    pbe_vib_freq_error: 146.5
+    pbe_wall_dist_mae: 0.2001
+    pbe_energy_mae: 1.305
+    pbe_bond_length_error: 0.504
+    pbe_well_depth_error: 0.7139
+    pbe_vib_freq_error: 100.5
     tortuosity: 1.016
     energy_diff_flips: 2.46
     energy_jump: 0.6371
     force_flips: 2.287
     force_total_variation: 118.2
     force_jump: 3.029
-    pbe_force_mae: 1.391
-    pred_file_url: https://figshare.com/files/66104606
+    pbe_force_mae: 1.46

@@ -1,11 +1,14 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation'
+  import { page } from '$app/state'
   import spg_sankeys from '$figs/spg-sankeys.jsonl'
   import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
   import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
-  import { GeoOptMetricsTable, MODELS } from '$lib'
+  import { GeoOptMetricsTable, ModelSelect, MODELS } from '$lib'
   import { order_models } from '$lib/fig-helpers'
+  import { sync_url_params } from '$lib/url-state'
   import { min } from 'd3-array'
-  import { format_num } from 'matterviz'
+  import { format_num, pick_contrast_color } from 'matterviz'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
 
@@ -14,6 +17,100 @@
   // desc, sym-ops by symmetry-op-diff sigma asc). spg sankeys keep the leaderboard order.
   const struct_rmsd_sorted = order_models(struct_rmsd_cdf.models, (mdl) => -mdl.auc)
   const sym_ops_sorted = order_models(sym_ops_diff.models, (mdl) => mdl.sigma)
+  const default_n_models = 5
+  const model_by_key = new Map(MODELS.map((model) => [model.model_key, model]))
+  const model_key_by_label = new Map(
+    MODELS.map((model) => [model.model_name, model.model_key]),
+  )
+  const plot_label_by_key = new Map([
+    ...sym_ops_diff.models.map(
+      ({ label }) => [model_key_by_label.get(label) ?? label, label] as const,
+    ),
+    ...spg_sankeys.models.map(({ key, label }) => [key, label] as const),
+  ])
+  const selectable_model_keys = new Set(plot_label_by_key.keys())
+
+  const resolve_model_key = (key_or_label: string): string | undefined => {
+    const model_key = model_key_by_label.get(key_or_label) ?? key_or_label
+    return selectable_model_keys.has(model_key) ? model_key : undefined
+  }
+
+  const date_added_ms = (key: string): number =>
+    Date.parse(model_by_key.get(key)?.date_added ?? ``) || 0
+
+  // newest models first; plot-only models without a date_added sort last
+  const selectable_options = [...plot_label_by_key]
+    .toSorted(([key_1], [key_2]) => date_added_ms(key_2) - date_added_ms(key_1))
+    .map(([key, label]) => {
+      const model_color = model_by_key.get(key)?.color ?? `gray`
+      const text_color = pick_contrast_color({ bg_color: model_color })
+      return {
+        label,
+        value: key,
+        style: {
+          selected: `background: ${model_color}; color: ${text_color};`,
+          option: ``,
+        },
+      }
+    })
+
+  const default_selected_keys = selectable_options
+    .slice(0, default_n_models)
+    .map((option) => String(option.value))
+
+  const options_from_keys = (model_keys: string[]) =>
+    selectable_options.filter((option) => model_keys.includes(String(option.value)))
+
+  // options and defaults are module constants, so no untrack needed here
+  let selected_model_options = $state(options_from_keys(default_selected_keys))
+  let selected_model_keys = $derived(
+    selected_model_options.map((option) => String(option.value)),
+  )
+  let url_ready = $state(false)
+  let selected_model_key_set = $derived(new Set(selected_model_keys))
+  let filtered_sym_ops_sorted = $derived(
+    sym_ops_sorted.filter(({ label }) => {
+      const model_key = resolve_model_key(label)
+      return model_key ? selected_model_key_set.has(model_key) : false
+    }),
+  )
+  let filtered_spg_sankeys = $derived(
+    spg_sankeys.models.filter(({ key }) => selected_model_key_set.has(key)),
+  )
+
+  const keys_from_url = (params: URLSearchParams): string[] => {
+    const model_param = params.get(`models`)
+    if (model_param === null) return default_selected_keys
+    if (!model_param) return []
+
+    return model_param
+      .split(`,`)
+      .map((key_or_label) => resolve_model_key(key_or_label))
+      .filter((model_key): model_key is string => model_key !== undefined)
+  }
+
+  const selected_param_value = (model_keys: string[]): string =>
+    [...selectable_model_keys].filter((key) => model_keys.includes(key)).join(`,`)
+
+  afterNavigate(() => {
+    selected_model_options = options_from_keys(keys_from_url(page.url.searchParams))
+    url_ready = true
+  })
+
+  $effect(() => {
+    if (!url_ready) return
+
+    sync_url_params(
+      [
+        [
+          `models`,
+          selected_param_value(selected_model_keys),
+          selected_param_value(default_selected_keys),
+        ],
+      ],
+      page.state,
+    )
+  })
 
   const n_min_relaxed_structures =
     min(MODELS, ({ metrics }) =>
@@ -46,8 +143,12 @@
     />
   {/snippet}
   {#snippet sym_ops_diff_bar()}
-    <div class="sym-ops-list">
-      {#each sym_ops_sorted as { label, sigma, x, y } (label)}
+    <div class="plot-controls bleed-1400">
+      <ModelSelect options={selectable_options} bind:selected={selected_model_options} />
+    </div>
+
+    <div class="sym-ops-list bleed-1400">
+      {#each filtered_sym_ops_sorted as { label, sigma, x, y } (label)}
         <figure>
           <figcaption>{label} (σ={sigma})</figcaption>
           <BarPlot
@@ -57,13 +158,15 @@
             style="height: 120px"
           />
         </figure>
+      {:else}
+        <p class="empty-note">No models selected. Pick models above to compare.</p>
       {/each}
     </div>
   {/snippet}
 </GeoOptReadme>
 
-<ul>
-  {#each spg_sankeys.models as { key, label, labels, source, target, value } (key)}
+<ul class="spg-sankeys bleed-1400">
+  {#each filtered_spg_sankeys as { key, label, labels, source, target, value } (key)}
     {@const n_labels = labels.length}
     {@const data = sankey_from_links(
       source,
@@ -78,20 +181,37 @@
       <h3>{label}</h3>
       <Sankey {data} show_controls={false} style="height: 300px; width: 100%" />
     </li>
+  {:else}
+    <li class="empty-note">No models selected. Pick models above to compare.</li>
   {/each}
 </ul>
 
 <style>
-  ul {
+  .plot-controls {
+    display: flex;
+    justify-content: center;
+    margin-block: 1.5em;
+  }
+  .empty-note {
+    grid-column: 1 / -1;
+    text-align: center;
+    opacity: 0.7;
+  }
+  .sym-ops-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 32rem), 1fr));
+    gap: 2em;
+  }
+  .spg-sankeys {
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
     gap: 3em 2em;
   }
-  ul li {
+  .spg-sankeys li {
     list-style: none;
   }
-  ul h3 {
+  .spg-sankeys h3 {
     text-align: center;
     margin: 0 0 0.5em;
   }
@@ -101,5 +221,15 @@
   .sym-ops-list figcaption {
     text-align: center;
     font-size: 0.9em;
+  }
+  @media (width >= 900px) {
+    .sym-ops-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (width >= 1200px) {
+    .spg-sankeys {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 </style>

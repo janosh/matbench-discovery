@@ -154,18 +154,18 @@ metrics:
     pred_file_url: https://figshare.com/files/66104612
     hardware: NVIDIA H200
     run_time_sec: 90.89
-    pbe_wall_dist_mae: 0.1513
-    pbe_energy_mae: 2.514
-    pbe_bond_length_error: 0.2847
-    pbe_well_depth_error: 4.066
-    pbe_vib_freq_error: 130.3
+    pbe_wall_dist_mae: 0.07298
+    pbe_energy_mae: 3.465
+    pbe_bond_length_error: 0.2774
+    pbe_well_depth_error: 3.254
+    pbe_vib_freq_error: 67.11
     tortuosity: 1.075
     energy_diff_flips: 2.483
     energy_jump: 1.717
     force_flips: 2.195
     force_total_variation: 136.8
     force_jump: 3.105
-    pbe_force_mae: 1.48
+    pbe_force_mae: 1.533
   md:
     pred_file: models/grace/grace-2l-oam/2026-06-28-grace_2l_oam-md-metrics.csv.gz
     energy_rmse: 0.8143 # meV/atom

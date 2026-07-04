@@ -114,7 +114,7 @@ describe(`GeoOptMetricsTable`, () => {
       expect(
         rmsd_cells.some((cell) => {
           const text = cell.textContent?.trim()
-          return text && !isNaN(parseFloat(text))
+          return text ? !Number.isNaN(Number(text)) : false
         }),
       ).toBe(true)
     } finally {

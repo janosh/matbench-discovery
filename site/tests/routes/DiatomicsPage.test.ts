@@ -26,7 +26,7 @@ const button_for = (text: string): HTMLButtonElement => {
 }
 
 const model_select = (): HTMLElement => {
-  const select = document.querySelector<HTMLElement>(`.model-select`)
+  const select = document.querySelector<HTMLElement>(`.multiselect`)
   if (!select) throw new Error(`No model multiselect found`)
   return select
 }

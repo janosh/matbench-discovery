@@ -97,6 +97,7 @@ def test_model_dirs_have_metadata() -> None:
 
 
 def test_model_dirs_have_test_scripts() -> None:
+    """Test that all model directories have at least one model test script/notebook."""
     for model_dir in MODEL_DIRS:
         test_scripts = glob(f"{model_dir}*test_*.py")
         test_nbs = glob(f"{model_dir}*test_*.ipynb")

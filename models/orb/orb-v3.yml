@@ -189,18 +189,18 @@ metrics:
     pred_file_url: https://figshare.com/files/66048929
   diatomics:
     pred_file: models/orb/orb-v3/2026-06-28-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66104654
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 139.85
-    pbe_wall_dist_mae: 0.2115
-    pbe_energy_mae: 1.403
-    pbe_bond_length_error: 0.4749
-    pbe_well_depth_error: 2.142
-    pbe_vib_freq_error: 136.1
-    tortuosity: 1.02
-    energy_diff_flips: 2.283
-    energy_jump: 0.1359
-    force_flips: 2.261
-    force_total_variation: 215.9
-    force_jump: 35.47
-    pbe_force_mae: 1.423
-    pred_file_url: https://figshare.com/files/66104654
+    pbe_wall_dist_mae: 0.1164
+    pbe_energy_mae: 1.106
+    pbe_bond_length_error: 0.4821
+    pbe_well_depth_error: 1.167
+    pbe_vib_freq_error: 75.76
+    tortuosity: 1.015
+    energy_diff_flips: 2.299
+    energy_jump: 0.1381
+    force_flips: 2.276
+    force_total_variation: 221.0
+    force_jump: 37.21
+    pbe_force_mae: 1.371

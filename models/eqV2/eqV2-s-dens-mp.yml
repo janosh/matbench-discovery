@@ -198,18 +198,18 @@ metrics:
     pred_file_url: https://figshare.com/files/66048869
   diatomics:
     pred_file: models/eqV2/eqV2-s-dens-mp/2026-06-29-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66104591
     hardware: NVIDIA H200
     run_time_sec: 435.9
-    pbe_wall_dist_mae: 0.9045
-    pbe_energy_mae: 3.22
-    pbe_bond_length_error: 1.03
-    pbe_well_depth_error: 2.33
-    pbe_vib_freq_error: 332.1
-    tortuosity: 2.965
-    energy_diff_flips: 12.08
-    energy_jump: 8.527
-    force_flips: 4.826
-    force_total_variation: 170.2
-    force_jump: 14.45
-    pbe_force_mae: 2.293
-    pred_file_url: https://figshare.com/files/66104591
+    pbe_wall_dist_mae: 0.9433
+    pbe_energy_mae: 2.998
+    pbe_bond_length_error: 1.048
+    pbe_well_depth_error: 1.219
+    pbe_vib_freq_error: 292.0
+    tortuosity: 2.99
+    energy_diff_flips: 11.95
+    energy_jump: 8.205
+    force_flips: 4.54
+    force_total_variation: 176.1
+    force_jump: 14.08
+    pbe_force_mae: 2.203

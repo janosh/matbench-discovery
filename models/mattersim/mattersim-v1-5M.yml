@@ -225,18 +225,18 @@ metrics:
     pred_file_url: https://figshare.com/files/66104636
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 170.22
-    pbe_wall_dist_mae: 0.1837
-    pbe_energy_mae: 1.638
-    pbe_bond_length_error: 0.3979
-    pbe_well_depth_error: 2.385
-    pbe_vib_freq_error: 138.3
+    pbe_wall_dist_mae: 0.09483
+    pbe_energy_mae: 1.261
+    pbe_bond_length_error: 0.3762
+    pbe_well_depth_error: 1.396
+    pbe_vib_freq_error: 76.21
     tortuosity: 1.021
-    energy_diff_flips: 2.391
-    energy_jump: 0.1607
-    force_flips: 2.391
-    force_total_variation: 215.8
-    force_jump: 2.287
-    pbe_force_mae: 1.283
+    energy_diff_flips: 2.471
+    energy_jump: 0.1688
+    force_flips: 2.471
+    force_total_variation: 225.4
+    force_jump: 2.414
+    pbe_force_mae: 1.085
   md:
     pred_file: models/mattersim/mattersim-v1-5M/2026-06-28-mattersim_v1_5m-md-metrics.csv.gz
     energy_rmse: 1.1775 # meV/atom

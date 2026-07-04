@@ -3,11 +3,10 @@
   import { page } from '$app/state'
   import { MetricsTable, type ModelData, MODELS } from '$lib'
   import {
-    ALL_METRICS,
     MD_METRICS,
-    METADATA_COLS,
     scatter_axis_label,
     scatter_options_by_key,
+    task_page_visible_cols,
   } from '$lib/labels'
   import type { SortDir } from '$lib/types'
   import { DynamicScatter } from '$lib/plot'
@@ -15,13 +14,7 @@
   import MdNote from './md-note.md'
 
   // show only MD metrics and metadata columns
-  const visible_cols: Record<string, boolean> = Object.fromEntries([
-    ...Object.entries(ALL_METRICS).map(([key, col]): [string, boolean] => [
-      col.label,
-      key in MD_METRICS,
-    ]),
-    ...Object.values(METADATA_COLS).map((col): [string, boolean] => [col.label, true]),
-  ])
+  const visible_cols = task_page_visible_cols(...Object.values(MD_METRICS))
 
   // guard against null since typeof null === `object` (a null metrics.md is not data)
   const has_md_metrics = (model: ModelData) =>

@@ -70,8 +70,8 @@ describe(`Table Export Functionality`, () => {
     click_spy = vi
       .spyOn(HTMLAnchorElement.prototype, `click`)
       .mockImplementation(() => {})
-    globalThis.URL.createObjectURL = (() => `mock-url`) as typeof URL.createObjectURL
-    globalThis.URL.revokeObjectURL = (() => {}) as typeof URL.revokeObjectURL
+    globalThis.URL.createObjectURL = () => `mock-url`
+    globalThis.URL.revokeObjectURL = () => {}
     create_object_url_spy = vi
       .spyOn(globalThis.URL, `createObjectURL`)
       .mockReturnValue(`mock-url`)

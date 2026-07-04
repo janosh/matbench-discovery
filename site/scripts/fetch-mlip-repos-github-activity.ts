@@ -107,7 +107,7 @@ const fetch_github = async (url: string, headers: Record<string, string>) => {
 
 const get_count_from_pagination = (link: string | null) => {
   const match = /page=(?<page>\d+)>; rel="last"/.exec(link ?? ``)
-  return match?.groups ? parseInt(match.groups.page, 10) : null
+  return match?.groups ? Math.trunc(Number(match.groups.page)) : null
 }
 
 // total count from the Link header's last page, falling back to the response body length

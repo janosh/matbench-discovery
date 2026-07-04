@@ -203,18 +203,18 @@ metrics:
     pred_file_url: https://figshare.com/files/66048863
   diatomics:
     pred_file: models/eqnorm/eqnorm-mptrj/2026-06-29-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66104603
     hardware: NVIDIA H200
     run_time_sec: 442.84
-    pbe_wall_dist_mae: 0.1683
-    pbe_energy_mae: 1.324
-    pbe_bond_length_error: 0.3418
-    pbe_well_depth_error: 1.661
-    pbe_vib_freq_error: 139.0
-    tortuosity: 1.015
-    energy_diff_flips: 1.402
-    energy_jump: 0.257
-    force_flips: 1.391
-    force_total_variation: 135.0
-    force_jump: 11.94
-    pbe_force_mae: 1.952
-    pred_file_url: https://figshare.com/files/66104603
+    pbe_wall_dist_mae: 0.08165
+    pbe_energy_mae: 1.036
+    pbe_bond_length_error: 0.2358
+    pbe_well_depth_error: 0.5931
+    pbe_vib_freq_error: 75.06
+    tortuosity: 1.016
+    energy_diff_flips: 1.471
+    energy_jump: 0.2663
+    force_flips: 1.46
+    force_total_variation: 138.1
+    force_jump: 12.43
+    pbe_force_mae: 1.921

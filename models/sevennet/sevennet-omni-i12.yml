@@ -212,19 +212,21 @@ metrics:
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048935
   diatomics:
-    pred_file: models/sevennet/sevennet-omni-i12/2026-06-29-diatomics.json.gz
-    hardware: NVIDIA H200
-    run_time_sec: 1365.76
-    pbe_wall_dist_mae: 0.03594
-    pbe_energy_mae: 0.8326
-    pbe_bond_length_error: 0.273
-    pbe_well_depth_error: 0.3932
-    pbe_vib_freq_error: 44.2
-    tortuosity: 1.004
-    energy_diff_flips: 1.59
-    energy_jump: 0.4608
-    force_flips: 1.59
-    force_total_variation: 1147.0
-    force_jump: 18.08
-    pbe_force_mae: 3.152
-    pred_file_url: https://figshare.com/files/66104663
+    pred_file: models/sevennet/sevennet-omni-i12/2026-07-03-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66289010
+    hardware: NVIDIA A100-SXM4-80GB
+    run_time_sec: 4521.48
+    excluded_formula_reasons:
+      Bi-Bi: exploding errors
+    pbe_wall_dist_mae: 0.03938
+    pbe_energy_mae: 0.6233
+    pbe_bond_length_error: 0.1799
+    pbe_well_depth_error: 0.4343
+    pbe_vib_freq_error: 62.12
+    tortuosity: 1.034
+    energy_diff_flips: 1.535
+    energy_jump: 0.5265
+    force_flips: 1.512
+    force_total_variation: 630.6
+    force_jump: 15.8
+    pbe_force_mae: 1.782

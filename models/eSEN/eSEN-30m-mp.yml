@@ -170,18 +170,18 @@ metrics:
     pred_file_url: https://figshare.com/files/66048872
   diatomics:
     pred_file: models/eSEN/eSEN-30m-mp/2026-06-29-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66104597
     hardware: NVIDIA H200
     run_time_sec: 877.63
-    pbe_wall_dist_mae: 0.2993
-    pbe_energy_mae: 2.448
-    pbe_bond_length_error: 0.619
-    pbe_well_depth_error: 2.006
-    pbe_vib_freq_error: 147.4
-    tortuosity: 1.204
-    energy_diff_flips: 3.359
-    energy_jump: 0.4297
-    force_flips: 3.304
-    force_total_variation: 61.27
-    force_jump: 20.58
-    pbe_force_mae: 2.929
-    pred_file_url: https://figshare.com/files/66104597
+    pbe_wall_dist_mae: 0.2093
+    pbe_energy_mae: 2.135
+    pbe_bond_length_error: 0.6047
+    pbe_well_depth_error: 0.9846
+    pbe_vib_freq_error: 85.26
+    tortuosity: 1.113
+    energy_diff_flips: 3.23
+    energy_jump: 0.3988
+    force_flips: 3.218
+    force_total_variation: 61.98
+    force_jump: 20.12
+    pbe_force_mae: 2.933

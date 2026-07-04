@@ -125,8 +125,8 @@ afterEach(async () => {
 })
 
 // gzipped 200 Response for stubbing fetch() of .json.gz assets
-export const gzipped_json_response = (data: unknown) =>
-  Promise.resolve(new Response(gzipSync(JSON.stringify(data)), { status: 200 }))
+export const gzipped_json_response = async (data: unknown) =>
+  new Response(gzipSync(JSON.stringify(data)), { status: 200 })
 
 // normalize the fetch() url argument (string | URL | Request) to a string
 export const request_url = (url: RequestInfo | URL) =>

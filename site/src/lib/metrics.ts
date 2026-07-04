@@ -11,7 +11,7 @@ import type { ModelMetadata, ModelType, TargetType } from '$lib/schema/model'
 import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
 import type { DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { format_num } from 'matterviz'
+import { escape_html, format_num } from 'matterviz'
 
 // Model target type descriptions
 export const targets_tooltips: Record<TargetType, string> = {
@@ -201,6 +201,7 @@ export function assemble_row_data(
   show_energy_only: boolean, // Show energy-only models
   show_non_compliant: boolean, // Show non-compliant models
   show_compliant: boolean, // Show compliant models
+  models: ModelData[] = MODELS, // Model collection, injectable for tests
 ) {
   const current_filter = make_combined_filter(
     model_filter,
@@ -214,7 +215,7 @@ export function assemble_row_data(
       ? `<a href="${url}" target="_blank" rel="noopener noreferrer" title="View license">${license}</a>`
       : `<span title="License file not available">${license}</span>`
 
-  const filtered_models = MODELS.filter(
+  const filtered_models = models.filter(
     (model) =>
       current_filter(model) &&
       typeof model.metrics?.discovery === `object` &&
@@ -253,19 +254,33 @@ export function assemble_row_data(
       cell_filter && typeof cell_filter === `string`
         ? cell_filter.replace(/CellFilter$/, ``)
         : null
-    const diatomics_metrics = metrics?.diatomics
-    const excluded_formulas =
-      typeof diatomics_metrics === `object` && diatomics_metrics !== null
-        ? (diatomics_metrics.excluded_formulas ?? [])
-        : []
-    const model_exclusion_note = `Diatomics metrics exclude ${excluded_formulas.join(
-      `, `,
-    )} due to exploding errors`
-    const model_exclusion_marker =
-      excluded_formulas.length > 0
-        ? `<span title="${model_exclusion_note}" aria-label="${model_exclusion_note}">` +
-          `<span aria-hidden="true">*</span></span>`
-        : ``
+    const diatomics_metrics =
+      typeof metrics?.diatomics === `object` ? metrics.diatomics : null
+    const excluded_formula_reasons = diatomics_metrics?.excluded_formula_reasons ?? {}
+    // group excluded formulas by reason for a compact tooltip like
+    // "Diatomics metrics exclude A-A, B-B due to <reason>; C-C due to <other>"
+    let model_exclusion_marker = ``
+    if (Object.keys(excluded_formula_reasons).length > 0) {
+      // manual grouping instead of Map.groupBy, which is newer than Vite's default
+      // browser baseline and would throw at runtime in e.g. Safari < 17.4
+      const formulas_by_reason = new Map<string, string[]>()
+      for (const [formula, reason] of Object.entries(excluded_formula_reasons)) {
+        const group = formulas_by_reason.get(reason) ?? []
+        group.push(formula)
+        formulas_by_reason.set(reason, group)
+      }
+      const exclusion_note = escape_html(
+        `Diatomics metrics exclude ${[...formulas_by_reason]
+          .map(
+            ([reason, formulas]) =>
+              `${formulas.join(`, `)}${reason ? ` due to ${reason}` : ``}`,
+          )
+          .join(`; `)}`,
+      )
+      model_exclusion_marker =
+        `<span title="${exclusion_note}" aria-label="${exclusion_note}">` +
+        `<span aria-hidden="true">*</span></span>`
+    }
 
     return {
       model_name: model.model_name,
@@ -352,11 +367,10 @@ export function assemble_row_data(
 export const sort_models =
   (sort_by: string, order: `asc` | `desc`) =>
   (model_1: ModelData, model_2: ModelData): number => {
-    const sort_factor = order === `asc` ? -1 : 1
+    const sort_factor = order === `asc` ? 1 : -1
 
-    // Special case for Model sorting (by model_name)
+    // Special case for Model sorting (by model_name): asc = alphabetical A->Z
     if (sort_by === `Model`) {
-      // For Model, directly use localeCompare with sort_factor
       return sort_factor * model_1.model_name.localeCompare(model_2.model_name)
     }
 
@@ -377,10 +391,11 @@ export const sort_models =
     if (typeof val_1 === `number` && typeof val_2 === `number`) {
       // Interpret run_time === 0 as infinity
       if (sort_by === `Run Time`) {
-        if (val_1 === 0) return -sort_factor
-        if (val_2 === 0) return sort_factor
+        if (val_1 === 0 && val_2 === 0) return 0
+        if (val_1 === 0) return sort_factor
+        if (val_2 === 0) return -sort_factor
       }
-      return sort_factor * (val_2 - val_1)
+      return sort_factor * (val_1 - val_2)
     }
     throw new TypeError(
       `Unexpected type '${typeof val_1}' encountered sorting by key '${sort_by}'`,

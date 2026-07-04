@@ -107,18 +107,13 @@ def test_force_jump(pred_ref_forces: PredRefForces) -> None:
 
 
 def test_force_mae(pred_ref_forces: PredRefForces) -> None:
-    """Test force MAE calculation."""
+    """Force MAE with default parameters and interpolation across mismatched grids."""
     (x_ref, f_ref), (x_pred, f_pred) = pred_ref_forces
 
     # Test with default parameters
     mae = diatomics.calc_force_mae(x_ref, f_ref, x_pred, f_pred)
     assert isinstance(mae, float)
     assert mae >= 0  # MAE should be non-negative
-
-
-def test_force_mae_interpolation(pred_ref_forces: PredRefForces) -> None:
-    """Test interpolation behavior in force MAE calculation."""
-    (x_ref, f_ref), (x_pred, f_pred) = pred_ref_forces
 
     # Create modified x_pred with different spacing
     x_pred_modified = x_pred * 1.05  # 5% difference
