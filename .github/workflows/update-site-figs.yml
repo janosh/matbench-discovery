@@ -140,16 +140,18 @@ jobs:
           # it). Multi-model payloads are single <name>.jsonl files, including per-element.
           rsync -a --include='*/' --include='*.yml' --exclude='*' models/ pr-tree/models/
           rsync -a --delete site/src/figs/ pr-tree/site/src/figs/
-          for file in site/src/lib/parity/energy-parity-manifest.ts \
-                      site/src/lib/parity/kappa-parity-manifest.ts \
-                      site/src/routes/models/per-element-each-errors.jsonl; do
-            mkdir -p "$(dirname "pr-tree/$file")"
-            cp "$file" "pr-tree/$file"
-          done
+          # both parity manifest forms must land on the PR: the site bundles the .ts,
+          # while tests/test_parity_assets.py (the model-pr-guard required check)
+          # validates the committed static manifest.json. -R preserves each source's
+          # full relative path under pr-tree/, creating parent dirs as needed
+          rsync -aR site/src/lib/parity/*-parity-manifest.ts \
+            site/static/*-parity/manifest.json \
+            site/src/routes/models/per-element-each-errors.jsonl pr-tree/
           cd pr-tree
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add models site/src/figs site/src/lib site/src/routes/models
+          git add models site/src/figs site/src/lib site/src/routes/models \
+            site/static/energy-parity/manifest.json site/static/kappa-parity/manifest.json
           if git diff --cached --quiet; then
             echo "Everything already up to date - nothing to commit"
             exit 0

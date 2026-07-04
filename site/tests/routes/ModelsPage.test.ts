@@ -4,7 +4,7 @@ import { sort_models } from '$lib/metrics'
 import { default as ModelsPage } from '$routes/models/+page.svelte'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount_with_url } from '../index'
 
 describe(`Models Page`, () => {
   it(`renders model sorting controls`, () => {
@@ -16,6 +16,11 @@ describe(`Models Page`, () => {
 
     const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
     expect(n_best_input.value).toBe(String(MODELS.length))
+    expect(n_best_input.min).toBe(`2`) // min_models = 2
+    expect(n_best_input.max).toBe(String(MODELS.length))
+    const label_text = n_best_input.parentElement?.textContent
+    expect(label_text).toMatch(/sort/i)
+    expect(label_text).toMatch(/best models/i)
     expect(
       [...document.querySelectorAll<HTMLInputElement>(`input[type="radio"]`)].map(
         (radio) => [radio.value, radio.checked],
@@ -34,32 +39,21 @@ describe(`Models Page`, () => {
       btn.textContent?.trim(),
     )
     // derive the full expected button order from the same label sources the page uses
-    // (Model Name + discovery metrics in metric_keys order + every MD metric), converting
-    // each label's HTML to text the way the page's {@html label} render does, so removal or
-    // reorder of any sort button (MD or not) is caught
+    // (Model Name + 1-2 headline metrics per task), converting each label's HTML to
+    // text the way the page's {@html label} render does, so removal or reorder of any
+    // sort button is caught
     const html_to_text = (html: string): string => {
       const el = document.createElement(`div`)
       el.innerHTML = html
       return el.textContent?.trim() ?? ``
     }
     // mirrors metric_keys in site/src/routes/models/+page.svelte
-    const discovery_keys = [
-      `CPS`,
-      `Accuracy`,
-      `DAF`,
-      `F1`,
-      `MAE`,
-      `Precision`,
-      `R2`,
-      `RMSE`,
-      `TNR`,
-      `TPR`,
-      `κ_SRME`,
-    ] as const
+    const headline_keys = [`CPS`, `F1`, `MAE`, `RMSD`, `κ_SRME`] as const
     const expected_button_texts = [
       `Model Name`,
-      ...discovery_keys.map((key) => html_to_text(ALL_METRICS[key].label)),
-      ...Object.values(MD_METRICS).map((metric) => html_to_text(metric.label)),
+      ...headline_keys.map((key) => html_to_text(ALL_METRICS[key].label)),
+      html_to_text(MD_METRICS.md_combined_score.label),
+      html_to_text(MD_METRICS.md_vdos_error.label),
     ]
 
     expect(button_texts).toStrictEqual(expected_button_texts)
@@ -87,9 +81,9 @@ describe(`Models Page`, () => {
       (a) => a.textContent,
     )
 
-    const daf_btn = doc_query<HTMLButtonElement>(`button#DAF`)
-    expect(daf_btn.textContent?.trim()).toBe(`DAF`)
-    daf_btn.click()
+    const f1_btn = doc_query<HTMLButtonElement>(`button#F1`)
+    expect(f1_btn.textContent?.trim()).toBe(`F1`)
+    f1_btn.click()
     await tick()
 
     const sorted_models = [...document.querySelectorAll(`ol > li h2 a`)].map(
@@ -99,90 +93,36 @@ describe(`Models Page`, () => {
     expect(sorted_models).not.toStrictEqual(initial_models)
   })
 
-  it(`toggles model details`, async () => {
-    mount(ModelsPage, {
-      target: document.body,
-      props: { data: { initial_show_n_best: 3 } },
-    })
-
-    const first_card = doc_query<HTMLLIElement>(`ol > li`)
-    const details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
-    expect(details_btn.getAttribute(`aria-label`)).toBe(
-      `Show authors and package versions`,
-    )
-    expect(details_btn.getAttribute(`aria-expanded`)).toBe(`false`)
-
-    // Initially no authors section visible
-    const initial_sections = first_card?.querySelectorAll(`section`)
-    const has_authors = [...(initial_sections ?? [])].some(
-      (section) => section.querySelector(`h3`)?.textContent === `Authors`,
-    )
-    expect(has_authors).toBe(false)
-
-    // Click to show details
-    details_btn.click()
-    await tick()
-    expect(details_btn.getAttribute(`aria-expanded`)).toBe(`true`)
-
-    // Should now show authors and package versions
-    const sections = first_card?.querySelectorAll(`section`)
-    expect(sections?.length).toBeGreaterThan(0)
-    expect([...(sections ?? [])].some((s) => s.textContent?.includes(`Authors`))).toBe(
-      true,
-    )
-    expect(
-      [...(sections ?? [])].some((s) => s.textContent?.includes(`Package versions`)),
-    ).toBe(true)
-  })
-
-  it(`binds show_details state between page and model cards`, async () => {
+  it(`toggles model details, shared across all cards via bound state`, async () => {
     mount(ModelsPage, {
       target: document.body,
       props: { data: { initial_show_n_best: 3 } },
     })
 
     const [first_card, second_card] = [...document.querySelectorAll(`ol > li`)]
-    expect(first_card).toBeInstanceOf(HTMLLIElement)
-    expect(second_card).toBeInstanceOf(HTMLLIElement)
+    const details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
+    expect(details_btn.getAttribute(`aria-label`)).toBe(
+      `Show authors and package versions`,
+    )
+    expect(details_btn.getAttribute(`aria-expanded`)).toBe(`false`)
 
-    const first_details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
-
-    // Initially no details visible on either card
-    // Check if the details sections are present by looking for non-metrics h3
+    // Initially no details sections (non-metrics h3s) visible on either card
     expect(first_card.querySelectorAll(`section:not(.metrics) h3`)).toHaveLength(0)
     expect(second_card.querySelectorAll(`section:not(.metrics) h3`)).toHaveLength(0)
 
-    first_details_btn.click()
+    details_btn.click()
     await tick()
+    expect(details_btn.getAttribute(`aria-expanded`)).toBe(`true`)
 
-    // Now both cards should show details (shared state)
-    // After clicking, details sections with h3 elements should be visible
-    expect(
-      first_card.querySelectorAll(`section:not(.metrics) h3`).length,
-    ).toBeGreaterThan(1)
+    const sections = [...first_card.querySelectorAll(`section`)]
+    expect(sections.some((sec) => sec.textContent?.includes(`Authors`))).toBe(true)
+    expect(sections.some((sec) => sec.textContent?.includes(`Package versions`))).toBe(
+      true,
+    )
+    // show_details is bound page-wide, so the second card expands too
     expect(
       second_card.querySelectorAll(`section:not(.metrics) h3`).length,
     ).toBeGreaterThan(1)
-  })
-
-  it(`renders model limiting controls correctly`, () => {
-    mount(ModelsPage, { target: document.body })
-
-    const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
-
-    expect(n_best_input.type).toBe(`number`)
-
-    const initial_count = document.querySelectorAll(`ol > li`).length
-    expect(initial_count).toBeGreaterThan(7)
-
-    expect(n_best_input.min).toBe(`2`) // min_models = 2
-    expect(n_best_input.max).toBe(String(initial_count))
-    expect(Number(n_best_input.value)).toBe(initial_count)
-    expect(document.querySelectorAll(`ol > li`)).toHaveLength(initial_count)
-
-    const label_text = n_best_input.parentElement?.textContent
-    expect(label_text).toMatch(/sort/i)
-    expect(label_text).toMatch(/best models/i)
   })
 
   describe(`model limiting behavior`, () => {
@@ -252,8 +192,8 @@ describe(`Models Page`, () => {
     const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
     expect(Number(n_best_input.value)).toBe(limit)
 
-    const daf_btn = doc_query<HTMLButtonElement>(`button#DAF`)
-    daf_btn.click()
+    const f1_btn = doc_query<HTMLButtonElement>(`button#F1`)
+    f1_btn.click()
     await tick()
 
     const cards = document.querySelectorAll(`ol > li`)
@@ -264,7 +204,7 @@ describe(`Models Page`, () => {
       expect(doc_query<HTMLAnchorElement>(`h2 a`, card).getAttribute(`href`)).toMatch(
         /^\/models\/[^/]+$/,
       )
-      expect(doc_query(`.metrics`, card).textContent).toContain(`DAF`)
+      expect(doc_query(`.metrics`, card).textContent).toContain(`F1`)
     })
     expect(Number(n_best_input.value)).toBe(limit)
   })
@@ -286,14 +226,6 @@ describe(`Models Page`, () => {
       (a) => a.textContent,
     )
     expect(all_names.slice(0, 3)).toStrictEqual(limited_names)
-  })
-
-  it(`defaults to showing all models with compliance filter checked`, () => {
-    mount(ModelsPage, { target: document.body })
-
-    expect(document.querySelectorAll(`ol > li`)).toHaveLength(MODELS.length)
-    const checkbox = doc_query<HTMLInputElement>(`input[type="checkbox"]`)
-    expect(checkbox.checked).toBe(true)
   })
 
   it(`renders color legend`, () => {
@@ -318,5 +250,31 @@ describe(`Models Page`, () => {
     for (const h2_element of model_cards_h2) {
       expect(h2_element.style.backgroundColor).not.toBe(``)
     }
+  })
+
+  it(`restores sort key/dir, n_best and compliance filter from URL params`, async () => {
+    await mount_with_url(
+      ModelsPage,
+      `http://localhost/models?sort=F1&dir=asc&n_best=5&non_compliant=0`,
+    )
+
+    expect(doc_query(`ul li.active button`).id).toBe(`F1`)
+    expect(doc_query<HTMLInputElement>(`input[type="radio"]:checked`).value).toBe(`asc`)
+    // card slicing from n_best is covered by the initial_show_n_best test; asserting
+    // DOM counts here would race the out:fade transition on the re-render
+    expect(doc_query<HTMLInputElement>(`input[type="number"]`).value).toBe(`5`)
+    expect(doc_query<HTMLInputElement>(`input[type="checkbox"]`).checked).toBe(false)
+  })
+
+  it.each([
+    `?sort=bogus&dir=sideways&n_best=1e99&non_compliant=maybe`,
+    `?n_best=-3`,
+    `?n_best=abc`,
+  ])(`falls back to defaults for invalid URL params: %s`, async (query) => {
+    await mount_with_url(ModelsPage, `http://localhost/models${query}`)
+
+    expect(doc_query(`ul li.active button`).id).toBe(`CPS`)
+    expect(doc_query<HTMLInputElement>(`input[type="radio"]:checked`).value).toBe(`desc`)
+    expect(doc_query<HTMLInputElement>(`input[type="checkbox"]`).checked).toBe(true)
   })
 })

@@ -125,8 +125,10 @@
 
   const format_label_title = (prop: Label | undefined): string =>
     `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
+  // fallback is a trimmed float, not `~s`: SI prefixes render 0.5 as "500m", and all
+  // labels with big-count values (model params, training size) set format `~s` anyway
   const colorbar_tick_format = (prop: Label | undefined): string =>
-    (prop?.format ?? `~s`).replace(/(?<precision>\.\d+)f$/, `$<precision>~f`)
+    (prop?.format ?? `.2~f`).replace(/(?<precision>\.\d+)f$/, `$<precision>~f`)
 
   interface PointMetadata extends Record<string, unknown> {
     model_name: string
