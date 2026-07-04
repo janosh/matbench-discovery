@@ -68,7 +68,7 @@ wbm_initial_atoms:
 wbm_summary:
   url: https://figshare.com/files/64706751
   path: wbm/2023-12-13-wbm-summary.csv.gz
-  description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. Exact regeneration of the MP2020-corrected formation energy and hull-distance columns depends on the `pymatgen` `MaterialsProject2020Compatibility` behavior used for anion-correction assignment; the released values are reproducible with v2023.5.10-era behavior.
+  description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. Exact regeneration of the MP2020-corrected formation energy and hull-distance columns depends on the `pymatgen` `MaterialsProject2020Compatibility` behavior used for anion-correction assignment; the released values are reproducible with v2023.5.10-era behavior (see https://github.com/janosh/matbench-discovery/issues/358).
   md5: 1555268d3aa59d20262cb9d01ce0994b
 
 wbm_dft_geo_opt_symprec_1e_2:

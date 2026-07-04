@@ -40,7 +40,9 @@ The full set of processing steps used to curate the WBM test set from the raw da
 > behavior (for example v2023.5.10, matching the data-file registry source
 > links). Newer `pymatgen` versions may assign different corrections for a small
 > number of structures with ambiguous oxidation states, which can change their
-> corrected formation energies and hull distances.
+> corrected formation energies and hull distances. See
+> [#358](https://github.com/janosh/matbench-discovery/issues/358) for details and
+> a spot-check quantifying the effect.
 
 Invoking the script `python compile_wbm_test_set.py` will auto-download and regenerate the WBM test set files from scratch. If you find
 
