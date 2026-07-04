@@ -95,6 +95,11 @@
       "bytes": 2040205,
       "sha256": "b603a7fa26e73ceb9e2375bba9df06d5e972ab81ba396d33c6d6de0e833829ea"
     },
+    "equflashv2-45M-oam": {
+      "asset": "energy-parity-wbm-v1-model-equflashv2-45M-oam.json.gz",
+      "bytes": 957367,
+      "sha256": "f05bf4368ace546ba2db0d62008cdaced49ce83cce731df0fb47f095c64f83d8"
+    },
     "equiformer-v3-mp": {
       "asset": "energy-parity-wbm-v1-model-equiformer-v3-mp.json.gz",
       "bytes": 643418,

@@ -72,6 +72,11 @@ export const kappa_parity_manifest = {
       bytes: 59416,
       sha256: '023527ffb4d3ecc2cfc29aac66d43fc0735780aea8708b4f428a57cf9fedf12e',
     },
+    'equflashv2-45M-oam': {
+      asset: 'kappa-parity-phonondb-v1-model-equflashv2-45M-oam.json.gz',
+      bytes: 59669,
+      sha256: '8ef9d44f420149eaf836d34f95dd7dc51cae89e90614a8f26b6bcc2c56e06d86',
+    },
     'equiformer-v3-mp': {
       asset: 'kappa-parity-phonondb-v1-model-equiformer-v3-mp.json.gz',
       bytes: 59006,
@@ -146,6 +151,11 @@ export const kappa_parity_manifest = {
       asset: 'kappa-parity-phonondb-v1-model-nequip-OAM-L-0.1.json.gz',
       bytes: 59970,
       sha256: 'aca6227c433c7a1eb0605d0518b8ddfd0f5e384fc079da56dad3d39c54ff1cda',
+    },
+    'nequip-OAM-XL-0.1': {
+      asset: 'kappa-parity-phonondb-v1-model-nequip-OAM-XL-0.1.json.gz',
+      bytes: 59575,
+      sha256: '49bd261f6503466a845cf829ef4cb9ab2528add41d582a9841e985be262f94c5',
     },
     'nequix-mp-1': {
       asset: 'kappa-parity-phonondb-v1-model-nequix-mp-1.json.gz',
