@@ -101,16 +101,28 @@ def ensure_checkpoint(path: Path) -> Path:
         )
     path.parent.mkdir(parents=True, exist_ok=True)
     print(f"Downloading BAM-MP-core checkpoint to {path}...")
-    with (
-        urlopen(BAM_MODEL_PKL_URL, timeout=60) as response,  # noqa: S310
-        path.open("wb") as file,
-    ):
-        shutil.copyfileobj(response, file)
+    tmp_path = path.with_suffix(path.suffix + ".part")
+    try:
+        with (
+            urlopen(BAM_MODEL_PKL_URL, timeout=60) as response,  # noqa: S310
+            tmp_path.open("wb") as file,
+        ):
+            shutil.copyfileobj(response, file)
+            expected_size = response.headers.get("Content-Length")
+        size = tmp_path.stat().st_size
+        if size == 0:
+            raise OSError(f"Downloaded checkpoint is empty: {tmp_path}")
+        if expected_size is not None and size != int(expected_size):
+            raise OSError(
+                f"Incomplete checkpoint download: expected {expected_size} bytes, "
+                f"got {size}"
+            )
+        tmp_path.replace(path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
     print("Download complete.")
     return path
 
-
-CKPT_PATH = ensure_checkpoint(CKPT_PATH)
 
 # Inference-time ASE/FIRE hyperparameters (mirrored in bam-mp-core.yml `hyperparams`)
 CUTOFF = 6.0
@@ -176,64 +188,16 @@ class BAMCalculator(BaseRACECalculator):
 
 
 # -----------------------------------------------------------------------------
-# Output paths and resume
+# Output helpers
 # -----------------------------------------------------------------------------
-out_dir = SCRIPT_DIR / "results" / f"{today}-wbm-IS2RE-FIRE"
-out_dir.mkdir(parents=True, exist_ok=True)
-out_path = out_dir / (
-    f"results-{SPLIT_ID:>03}.json.gz" if N_SPLITS > 1 else "results.json.gz"
-)
-ckpt_save_path = out_dir / (
-    f"checkpoint-{SPLIT_ID:>03}.json.gz" if N_SPLITS > 1 else "checkpoint.json.gz"
-)
+ARTIFACT_DIR = SCRIPT_DIR / f"{MODEL_TAG}-1.0v"
+DISCOVERY_ARTIFACT = ARTIFACT_DIR / "2026-05-09-wbm-IS2RE.csv.gz"
+GEO_OPT_ARTIFACT = ARTIFACT_DIR / "2026-05-09-wbm-geo-opt-FIRE.jsonl.gz"
+PRED_COL = f"e_form_per_atom_{MODEL_TAG}"
+STRUCT_COL = f"{MODEL_TAG}_structure"
+ENERGY_COL = f"{MODEL_TAG}_energy"
 
 
-# -----------------------------------------------------------------------------
-# Load WBM initial structures (auto-downloaded via DataFiles)
-# -----------------------------------------------------------------------------
-wbm_zip_path = Path(DataFiles.wbm_initial_atoms.path)
-print(f"Loading WBM structures from {wbm_zip_path} ...")
-atoms_list = ase_atoms_from_zip(wbm_zip_path)
-print(f"Loaded {len(atoms_list):,} structures total")
-
-if N_SPLITS > 1:
-    total = len(atoms_list)
-    chunk = total // N_SPLITS
-    start = SPLIT_ID * chunk
-    end = total if SPLIT_ID == N_SPLITS - 1 else start + chunk
-    atoms_list = atoms_list[start:end]
-    print(f"Split {SPLIT_ID}/{N_SPLITS}: {len(atoms_list):,} of {total:,}")
-
-
-# -----------------------------------------------------------------------------
-# Resume from checkpoint if present
-# -----------------------------------------------------------------------------
-relax_results: dict[str, dict] = {}
-if ckpt_save_path.exists():
-    try:
-        df_ckpt = pd.read_json(ckpt_save_path, orient="records", lines=True)
-        for _, row in df_ckpt.iterrows():
-            mat_id = row[str(Key.mat_id)]
-            relax_results[mat_id] = {
-                "structure": row[f"{MODEL_TAG}_structure"],
-                "energy": row[f"{MODEL_TAG}_energy"],
-            }
-        print(f"Resumed from checkpoint: {len(relax_results):,} structures done")
-    except Exception as exc:  # noqa: BLE001
-        print(f"Could not load checkpoint ({exc!r}); starting fresh.")
-        relax_results = {}
-
-
-# -----------------------------------------------------------------------------
-# Load checkpoint-backed calculator
-# -----------------------------------------------------------------------------
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-race_calc = BAMCalculator(model=str(CKPT_PATH), device=device)
-
-
-# -----------------------------------------------------------------------------
-# Relaxation loop
-# -----------------------------------------------------------------------------
 def save_checkpoint(results: dict, path: Path) -> None:
     if not results:
         return
@@ -244,98 +208,227 @@ def save_checkpoint(results: dict, path: Path) -> None:
     )
 
 
-traj_dir = out_dir / (f"traj-{SPLIT_ID:>03}" if N_SPLITS > 1 else "traj")
-traj_dir.mkdir(parents=True, exist_ok=True)
-relax_log_path = out_dir / (
-    f"relax_log-{SPLIT_ID:>03}.tsv" if N_SPLITS > 1 else "relax_log.tsv"
-)
-log_header_needed = not relax_log_path.exists()
-relax_log_f = relax_log_path.open("a", buffering=1)
-if log_header_needed:
-    relax_log_f.write("mat_id\tn_atoms\tn_steps\tfinal_fmax\tconverged\telapsed_s\n")
+def _result_paths(out_dir: Path, out_path: Path) -> list[Path] | None:
+    if N_SPLITS <= 1:
+        return [out_path] if out_path.exists() else None
 
-n_success = len(relax_results)
-n_failed = 0
-relax_times: list[float] = []
-total_start = time.time()
+    paths = [out_dir / f"results-{idx:>03}.json.gz" for idx in range(N_SPLITS)]
+    missing = [path.name for path in paths if not path.exists()]
+    if missing:
+        print(
+            "Skipping registered artifact export until all split outputs exist: "
+            + ", ".join(missing)
+        )
+        return None
+    return paths
 
-for atoms_orig in tqdm(atoms_list, desc="Relaxing"):
-    mat_id = atoms_orig.info[Key.mat_id]
-    if mat_id in relax_results:
-        continue
-    atoms = deepcopy(atoms_orig)
+
+def _load_relaxation_results(result_paths: list[Path]) -> pd.DataFrame:
+    df_results = pd.concat(
+        [pd.read_json(path, orient="records", lines=True) for path in result_paths],
+        ignore_index=True,
+    )
+    mat_id_col = str(Key.mat_id)
+    return df_results.drop_duplicates(subset=mat_id_col, keep="last").set_index(
+        mat_id_col
+    )
+
+
+def _formation_energy(row: pd.Series) -> float:
+    from pymatgen.core import Structure
+
+    from matbench_discovery.energy import (
+        calc_energy_from_e_refs,
+        mp_elemental_ref_energies,
+    )
+
+    structure = row[STRUCT_COL]
+    if isinstance(structure, dict):
+        structure = Structure.from_dict(structure)
+    return calc_energy_from_e_refs(
+        structure,
+        ref_energies=mp_elemental_ref_energies,
+        total_energy=float(row[ENERGY_COL]),
+    )
+
+
+def write_registered_artifacts(out_dir: Path, out_path: Path) -> None:
+    result_paths = _result_paths(out_dir, out_path)
+    if result_paths is None:
+        return
+
+    ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+    df_results = _load_relaxation_results(result_paths)
+    df_results.reset_index().to_json(
+        GEO_OPT_ARTIFACT,
+        default_handler=as_dict_handler,
+        orient="records",
+        lines=True,
+    )
+
+    df_preds = pd.DataFrame({PRED_COL: df_results.apply(_formation_energy, axis=1)})
+    df_preds.index.name = Key.mat_id
+    df_preds[PRED_COL].round(4).to_csv(DISCOVERY_ARTIFACT)
+    print(
+        f"Registered artifacts written:\n  {DISCOVERY_ARTIFACT}\n  {GEO_OPT_ARTIFACT}"
+    )
+
+
+# -----------------------------------------------------------------------------
+# Benchmark entry point
+# -----------------------------------------------------------------------------
+def main() -> None:
+    ckpt_path = ensure_checkpoint(CKPT_PATH)
+
+    out_dir = SCRIPT_DIR / "results" / f"{today}-wbm-IS2RE-FIRE"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / (
+        f"results-{SPLIT_ID:>03}.json.gz" if N_SPLITS > 1 else "results.json.gz"
+    )
+    ckpt_save_path = out_dir / (
+        f"checkpoint-{SPLIT_ID:>03}.json.gz" if N_SPLITS > 1 else "checkpoint.json.gz"
+    )
+
+    # -------------------------------------------------------------------------
+    # Load WBM initial structures (auto-downloaded via DataFiles)
+    # -------------------------------------------------------------------------
+    wbm_zip_path = Path(DataFiles.wbm_initial_atoms.path)
+    print(f"Loading WBM structures from {wbm_zip_path} ...")
+    atoms_list = ase_atoms_from_zip(wbm_zip_path)
+    print(f"Loaded {len(atoms_list):,} structures total")
+
+    if N_SPLITS > 1:
+        total = len(atoms_list)
+        chunk = total // N_SPLITS
+        start = SPLIT_ID * chunk
+        end = total if SPLIT_ID == N_SPLITS - 1 else start + chunk
+        atoms_list = atoms_list[start:end]
+        print(f"Split {SPLIT_ID}/{N_SPLITS}: {len(atoms_list):,} of {total:,}")
+
+    # -------------------------------------------------------------------------
+    # Resume from checkpoint if present
+    # -------------------------------------------------------------------------
+    relax_results: dict[str, dict] = {}
+    if ckpt_save_path.exists():
+        try:
+            df_ckpt = pd.read_json(ckpt_save_path, orient="records", lines=True)
+            for _, row in df_ckpt.iterrows():
+                mat_id = row[str(Key.mat_id)]
+                relax_results[mat_id] = {
+                    "structure": row[f"{MODEL_TAG}_structure"],
+                    "energy": row[f"{MODEL_TAG}_energy"],
+                }
+            print(f"Resumed from checkpoint: {len(relax_results):,} structures done")
+        except Exception as exc:  # noqa: BLE001
+            print(f"Could not load checkpoint ({exc!r}); starting fresh.")
+            relax_results = {}
+
+    # -------------------------------------------------------------------------
+    # Load checkpoint-backed calculator
+    # -------------------------------------------------------------------------
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    race_calc = BAMCalculator(model=str(ckpt_path), device=device)
+
+    # -------------------------------------------------------------------------
+    # Relaxation loop
+    # -------------------------------------------------------------------------
+    traj_dir = out_dir / (f"traj-{SPLIT_ID:>03}" if N_SPLITS > 1 else "traj")
+    traj_dir.mkdir(parents=True, exist_ok=True)
+    relax_log_path = out_dir / (
+        f"relax_log-{SPLIT_ID:>03}.tsv" if N_SPLITS > 1 else "relax_log.tsv"
+    )
+    log_header_needed = not relax_log_path.exists()
+    n_success = len(relax_results)
+    n_failed = 0
+    relax_times: list[float] = []
+    total_start = time.time()
+
+    relax_log_f = relax_log_path.open("a", buffering=1)
     try:
-        t0 = time.time()
-        atoms.calc = race_calc
-        traj_path = traj_dir / f"{mat_id}.traj"
-        traj_writer = Trajectory(str(traj_path), "w", atoms)
-        dyn = FIRE(FrechetCellFilter(atoms), logfile=None)
-        dyn.attach(traj_writer)
-        traj_writer.write()
-        dyn.run(fmax=FMAX, steps=MAX_STEPS)
-        traj_writer.close()
-
-        n_steps = dyn.get_number_of_steps()
-        final_fmax = float(
-            dyn.optimizable.gradient_norm(dyn.optimizable.get_gradient())
-        )
-        dt = time.time() - t0
-        relax_log_f.write(
-            f"{mat_id}\t{len(atoms)}\t{n_steps}\t{final_fmax:.4f}\t"
-            f"{n_steps < MAX_STEPS}\t{dt:.2f}\n"
-        )
-
-        relax_results[mat_id] = {
-            "structure": AseAtomsAdaptor.get_structure(atoms),
-            "energy": atoms.get_potential_energy(),
-        }
-        relax_times.append(dt)
-        n_success += 1
-
-        if n_success % 100 == 0:
-            avg_t = sum(relax_times[-500:]) / min(len(relax_times), 500)
-            elapsed = time.time() - total_start
-            remaining = avg_t * (len(atoms_list) - n_success - n_failed)
-            print(
-                f"  [{n_success}/{len(atoms_list)}] avg={avg_t:.2f}s/struct, "
-                f"elapsed={elapsed:.0f}s, remaining~{remaining:.0f}s"
+        if log_header_needed:
+            relax_log_f.write(
+                "mat_id\tn_atoms\tn_steps\tfinal_fmax\tconverged\telapsed_s\n"
             )
-        if n_success % SAVE_EVERY == 0:
-            save_checkpoint(relax_results, ckpt_save_path)
-            print(f"  Checkpoint saved: {n_success} structures")
-    except Exception as exc:  # noqa: BLE001
-        n_failed += 1
-        if n_failed <= 3:
-            import traceback
 
-            traceback.print_exc()
-        else:
-            print(f"Failed {mat_id}: {exc!r}")
+        for atoms_orig in tqdm(atoms_list, desc="Relaxing"):
+            mat_id = atoms_orig.info[Key.mat_id]
+            if mat_id in relax_results:
+                continue
+            atoms = deepcopy(atoms_orig)
+            try:
+                t0 = time.time()
+                atoms.calc = race_calc
+                traj_path = traj_dir / f"{mat_id}.traj"
+                traj_writer = Trajectory(str(traj_path), "w", atoms)
+                try:
+                    dyn = FIRE(FrechetCellFilter(atoms), logfile=None)
+                    dyn.attach(traj_writer)
+                    traj_writer.write()
+                    dyn.run(fmax=FMAX, steps=MAX_STEPS)
+                finally:
+                    traj_writer.close()
+
+                n_steps = dyn.get_number_of_steps()
+                final_fmax = float(
+                    dyn.optimizable.gradient_norm(dyn.optimizable.get_gradient())
+                )
+                dt = time.time() - t0
+                relax_log_f.write(
+                    f"{mat_id}\t{len(atoms)}\t{n_steps}\t{final_fmax:.4f}\t"
+                    f"{n_steps < MAX_STEPS}\t{dt:.2f}\n"
+                )
+
+                relax_results[mat_id] = {
+                    "structure": AseAtomsAdaptor.get_structure(atoms),
+                    "energy": atoms.get_potential_energy(),
+                }
+                relax_times.append(dt)
+                n_success += 1
+
+                if n_success % 100 == 0:
+                    avg_t = sum(relax_times[-500:]) / min(len(relax_times), 500)
+                    elapsed = time.time() - total_start
+                    remaining = avg_t * (len(atoms_list) - n_success - n_failed)
+                    print(
+                        f"  [{n_success}/{len(atoms_list)}] avg={avg_t:.2f}s/struct, "
+                        f"elapsed={elapsed:.0f}s, remaining~{remaining:.0f}s"
+                    )
+                if n_success % SAVE_EVERY == 0:
+                    save_checkpoint(relax_results, ckpt_save_path)
+                    print(f"  Checkpoint saved: {n_success} structures")
+            except Exception as exc:  # noqa: BLE001
+                n_failed += 1
+                if n_failed <= 3:
+                    import traceback
+
+                    traceback.print_exc()
+                else:
+                    print(f"Failed {mat_id}: {exc!r}")
+    finally:
+        relax_log_f.close()
+
+    # -------------------------------------------------------------------------
+    # Finalize split and registered artifacts
+    # -------------------------------------------------------------------------
+    total_time = time.time() - total_start
+    save_checkpoint(relax_results, out_path)
+    if ckpt_save_path.exists():
+        ckpt_save_path.unlink()
+        print("Checkpoint removed (run complete)")
+    write_registered_artifacts(out_dir, out_path)
+
+    relax_times_arr = np.array(relax_times) if relax_times else np.array([0.0])
+    bar = "=" * 60
+    print(
+        f"\n{bar}\nSplit {SPLIT_ID} Complete\n{bar}\n"
+        f"  Structures: {n_success} success, {n_failed} failed\n"
+        f"  Total time: {total_time:.1f}s ({total_time / 3600:.2f}h)\n"
+        f"  Per structure: {relax_times_arr.mean():.3f}s avg, "
+        f"{relax_times_arr.std():.3f}s std\n"
+        f"  Device: {device}\n"
+        f"  Saved to: {out_path}\n{bar}"
+    )
 
 
-relax_log_f.close()
-
-# -----------------------------------------------------------------------------
-# Finalize split
-# -----------------------------------------------------------------------------
-total_time = time.time() - total_start
-df_out = pd.DataFrame(relax_results).T.add_prefix(f"{MODEL_TAG}_")
-df_out.index.name = Key.mat_id
-df_out.reset_index().to_json(
-    out_path, default_handler=as_dict_handler, orient="records", lines=True
-)
-if ckpt_save_path.exists():
-    ckpt_save_path.unlink()
-    print("Checkpoint removed (run complete)")
-
-relax_times_arr = np.array(relax_times) if relax_times else np.array([0.0])
-bar = "=" * 60
-print(
-    f"\n{bar}\nSplit {SPLIT_ID} Complete\n{bar}\n"
-    f"  Structures: {n_success} success, {n_failed} failed\n"
-    f"  Total time: {total_time:.1f}s ({total_time / 3600:.2f}h)\n"
-    f"  Per structure: {relax_times_arr.mean():.3f}s avg, "
-    f"{relax_times_arr.std():.3f}s std\n"
-    f"  Device: {device}\n"
-    f"  Saved to: {out_path}\n{bar}"
-)
+if __name__ == "__main__":
+    main()
