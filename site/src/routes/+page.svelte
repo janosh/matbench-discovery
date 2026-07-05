@@ -145,29 +145,34 @@
     show_energy_only = params.get(`energy_only`) === `1`
     show_non_compliant = params.get(`non_compliant`) !== `0`
     show_compliant = params.get(`compliant`) !== `0`
-    apply_weights_param(params.get(`weights`), CPS_CONFIG, DEFAULT_CPS_CONFIG)
     col_preset = next_preset
     previous_col_preset = next_preset
   })
 
-  // Sync table state back to URL query params after the initial URL read (which
-  // happens in onMount above, so no read_params callback here).
-  bind_url_params(null, () => {
-    const default_sort = preset_default_sorts[col_preset]
-    return [
-      // omit `preset` for the default (Discovery) and when the user customized
-      // columns (a preset no longer describes the visible column set)
-      [`preset`, custom_col_config || col_preset === `Discovery` ? `` : col_preset],
-      [`set`, discovery_set, `unique_prototypes`],
-      [`sort`, sort.column, default_sort.column],
-      [`dir`, sort.dir, default_sort.dir],
-      [`energy_only`, show_energy_only ? `1` : ``],
-      [`non_compliant`, show_non_compliant ? `` : `0`],
-      [`compliant`, show_compliant ? `` : `0`],
-      // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
-      [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
-    ]
-  })
+  // Sync table state back to URL query params after the initial URL read (table state
+  // is read once in onMount above; weights re-read on every navigation so same-route
+  // navs to a weights-less `/` reset them like the MD page does).
+  bind_url_params(
+    (params) => {
+      apply_weights_param(params.get(`weights`), CPS_CONFIG, DEFAULT_CPS_CONFIG)
+    },
+    () => {
+      const default_sort = preset_default_sorts[col_preset]
+      return [
+        // omit `preset` for the default (Discovery) and when the user customized
+        // columns (a preset no longer describes the visible column set)
+        [`preset`, custom_col_config || col_preset === `Discovery` ? `` : col_preset],
+        [`set`, discovery_set, `unique_prototypes`],
+        [`sort`, sort.column, default_sort.column],
+        [`dir`, sort.dir, default_sort.dir],
+        [`energy_only`, show_energy_only ? `1` : ``],
+        [`non_compliant`, show_non_compliant ? `` : `0`],
+        [`compliant`, show_compliant ? `` : `0`],
+        // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
+        [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
+      ]
+    },
+  )
 
   let export_state = $derived({ export_error, show_non_compliant, discovery_set })
 

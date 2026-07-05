@@ -42,8 +42,7 @@
     cbar_max?: number | null
   } = $props()
 
-  const test_set_std_key = `Test set standard deviation`
-  const test_set_std = each_errors[test_set_std_key]
+  const test_set_std = each_errors[`Test set standard deviation`]
 
   // selected models resolved in selection order (drives segment order in split tiles)
   let selected_models = $derived.by(() => {
@@ -52,23 +51,25 @@
       .filter((model) => model !== undefined)
     return resolved.length > 0 ? resolved : models_with_errors.slice(0, 1)
   })
-  let selected_keys = $derived(selected_models.map((model) => model.model_key))
 
-  const norm_error = (model_key: string, element: string): number => {
+  // null = no data (null error, or null std in normalized mode). Tiles coerce null to
+  // 0 (rendered as missing_color); the hover inset shows n/a instead so missing data
+  // can't read as a perfect score
+  const norm_error = (model_key: string, element: string): number | null => {
     const val = each_errors[model_key]?.[element]
     const denom = normalized ? test_set_std[element] : 1
-    return denom ? (val ?? 0) / denom : 0
+    return val == null || !denom ? null : val / denom
   }
 
   // single model: scalar per element; multiple: array per element -> split tiles
   let heatmap_values = $derived(
     Object.fromEntries(
-      Object.keys(test_set_std).map((element) => [
-        element,
-        selected_keys.length === 1
-          ? norm_error(selected_keys[0], element)
-          : selected_keys.map((key) => norm_error(key, element)),
-      ]),
+      Object.keys(test_set_std).map((element) => {
+        const errors = selected_models.map(
+          (model) => norm_error(model.model_key, element) ?? 0,
+        )
+        return [element, errors.length === 1 ? errors[0] : errors]
+      }),
     ) as Record<ElementSymbol, number | number[]>,
   )
   let current_data_max = $derived(Math.max(...Object.values(heatmap_values).flat()))
@@ -76,9 +77,11 @@
     0,
     manual_cbar_max ? (cbar_max ?? 0) : current_data_max,
   ])
+  // selected_models (not current_model) so the title tracks the fallback model when
+  // the bound selection doesn't resolve, e.g. a stale snapshot-restored model name
   let cbar_title = $derived(
-    selected_keys.length === 1
-      ? `${current_model[0]} (${normalized ? `normalized` : `eV/atom`})`
+    selected_models.length === 1
+      ? `${selected_models[0].model_name} (${normalized ? `normalized` : `eV/atom`})`
       : `Element-projected error (${normalized ? `normalized` : `eV/atom`})`,
   )
 
@@ -107,12 +110,12 @@
 
 <Select bind:selected={current_model} options={models} maxSelect={4} minSelect={1} />
 
-{#if selected_keys.length > 1}
+{#if selected_models.length > 1}
   <div class="split-legend">
     {#each selected_models as model, idx (model.model_key)}
       <span>
         <strong>{model.model_name}</strong>
-        <small>({split_positions[selected_keys.length]?.[idx]})</small>
+        <small>({split_positions[selected_models.length]?.[idx]})</small>
       </span>
     {/each}
   </div>
@@ -156,7 +159,7 @@
   {#snippet inset()}
     {#if active_element}
       <TableInset style="align-content: center">
-        {#if selected_keys.length === 1}
+        {#if selected_models.length === 1}
           <PtableInset
             element={active_element}
             elem_counts={heatmap_values as Record<ElementSymbol, number>}
@@ -167,9 +170,10 @@
           <strong class="multi-model-inset">
             {active_element.name}: {#each selected_models as model, idx (model.model_key)}
               {#if idx > 0}&ensp;{/if}
+              {@const elem_error = norm_error(model.model_key, active_element.symbol)}
               <span>
                 {model.model_name}
-                <b>{format_num(norm_error(model.model_key, active_element.symbol))}</b>
+                <b>{elem_error == null ? `n/a` : format_num(elem_error)}</b>
               </span>
             {/each}
           </strong>

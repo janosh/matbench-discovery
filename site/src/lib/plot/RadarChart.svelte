@@ -136,26 +136,24 @@
     }
   }
 
+  // Shared by the click and drag paths so their clamping behavior can't drift
+  function clamp_to_triangle(x: number, y: number): Point {
+    const [a, b, c] = axis_points
+    const pt = { x, y }
+    return Object.values(config).length === 3 && is_point_in_triangle(pt, a, b, c)
+      ? pt
+      : get_closest_point_on_triangle(pt, a, b, c)
+  }
+
   // Move the point to a position, constraining to triangle if needed
   function move_to_position(click_x: number, click_y: number) {
-    const [a, b, c] = axis_points
-    const click_point = { x: click_x, y: click_y }
-
-    point =
-      Object.values(config).length === 3 && is_point_in_triangle(click_point, a, b, c)
-        ? click_point
-        : get_closest_point_on_triangle(click_point, a, b, c)
-
+    point = clamp_to_triangle(click_x, click_y)
     update_weights_from_point()
   }
 
   // Visually move the knob during a drag without touching weights (see end_drag)
   function move_point_to_position(x: number, y: number) {
-    const [a, b, c] = axis_points
-    point =
-      Object.values(config).length === 3 && is_point_in_triangle({ x, y }, a, b, c)
-        ? { x, y }
-        : get_closest_point_on_triangle({ x, y }, a, b, c)
+    point = clamp_to_triangle(x, y)
   }
 
   function start_drag(event: MouseEvent | TouchEvent) {

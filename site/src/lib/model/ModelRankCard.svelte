@@ -8,8 +8,9 @@
   let { model_key, models = MODELS }: { model_key: string; models?: ModelData[] } =
     $props()
 
-  // ranks are computed against the full active roster (compliant + non-compliant),
-  // matching the leaderboard's default view; CPS/CMDS use their default weights
+  // ranks span the full active roster (compliant + non-compliant + energy-only, so
+  // the cohort can exceed the default leaderboard view, which hides energy-only
+  // models); CPS/CMDS ranks track the session's current weight configs
   let ranks = $derived(model_metric_ranks(model_key, models, RANKED_METRICS))
 
   // green (best) -> red (worst) by rank position within the field
@@ -21,7 +22,8 @@
   const chip_title = ({ metric, rank, n_models, value }: (typeof ranks)[number]) => {
     const unit = metric.unit ? ` ${metric.unit}` : ``
     const value_str = `${format_num(value, metric.format ?? `.3`)}${unit}`
-    return `Ranked ${rank} of ${n_models} models with a ${metric.label} of ${value_str}.\r${
+    // tooltip renders with allow_html, so use <br/> (not \r) for the line break
+    return `Ranked ${rank} of ${n_models} models with a ${metric.label} of ${value_str}.<br/>${
       metric.description ?? ``
     }`
   }

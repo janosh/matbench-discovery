@@ -127,6 +127,16 @@ describe(`sync_url_params`, () => {
 
     expect(replace_spy).not.toHaveBeenCalled()
   })
+
+  it(`keeps commas unencoded for human-readable weights params`, () => {
+    history.replaceState(null, ``, `/`)
+
+    sync_url_params([[`weights`, `0.579,0.35,0.071`]], {})
+
+    expect(location.search).toBe(`?weights=0.579,0.35,0.071`)
+    // round-trip: literal commas parse back to the same value
+    expect(new URLSearchParams(location.search).get(`weights`)).toBe(`0.579,0.35,0.071`)
+  })
 })
 
 describe(`weights_to_param / apply_weights_param`, () => {

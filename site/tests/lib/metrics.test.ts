@@ -260,10 +260,8 @@ describe(`assemble_row_data`, () => {
   ])(
     `renders reason-aware diatomics exclusion tooltip for $model_key`,
     ({ model_key, diatomics, expected_title }) => {
-      const base_model = MODELS.find(
-        (model) => model.model_key === `tace-oam-rra-preview`,
-      )
-      if (!base_model) throw new Error(`missing TACE-OAM-RRA-Preview test fixture`)
+      const base_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
+      if (!base_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
       const test_models = [
         ...MODELS,
         ...(diatomics

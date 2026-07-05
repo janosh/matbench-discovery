@@ -6,6 +6,7 @@ import {
   DEFAULT_CPS_CONFIG,
 } from '$lib/combined_perf_score.svelte'
 import { RMSD_BASELINE } from '$lib/labels'
+import { apply_weights_param, weights_to_param } from '$lib/url-state.svelte'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 // Helper to create a test config with custom weights
@@ -77,8 +78,8 @@ describe(`calculate_cps`, () => {
     expect(calculate_cps(vals[0], vals[1], vals[2], config)).toBeCloseTo(expected, 5)
   })
 
-  it(`returns 0 when all weights are 0`, () => {
-    expect(calculate_cps(0.8, 0.05, 0.5, make_config(0, 0, 0))).toBe(0)
+  it(`returns null when all weights are 0 (score undefined, matches CMDS)`, () => {
+    expect(calculate_cps(0.8, 0.05, 0.5, make_config(0, 0, 0))).toBeNull()
   })
 
   it(`normalizes weights that do not sum to 1`, () => {
@@ -169,5 +170,20 @@ describe(`CPS_CONFIG reactivity`, () => {
     // guards Reset + ?weights= URL persistence, both of which diff against defaults
     CPS_CONFIG.F1.weight = 0.9
     expect(DEFAULT_CPS_CONFIG.F1.weight).toBe(0.5)
+  })
+
+  it(`round-trips custom weights through the ?weights= URL param`, () => {
+    // the real reactive config (not a stub): weight edits must serialize and a
+    // weights-less URL must reset back to defaults
+    expect(weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)).toBe(``)
+
+    CPS_CONFIG.F1.weight = 0.7
+    CPS_CONFIG.κ_SRME.weight = 0.2
+    CPS_CONFIG.RMSD.weight = 0.1
+    expect(weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)).toBe(`0.7,0.2,0.1`)
+
+    apply_weights_param(null, CPS_CONFIG, DEFAULT_CPS_CONFIG)
+    expect(CPS_CONFIG.F1.weight).toBe(0.5)
+    expect(weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)).toBe(``)
   })
 })

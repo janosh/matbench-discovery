@@ -54,8 +54,7 @@ export function weights_to_param(
       round_weight(config[key].weight) ===
       round_weight(default_config[key]?.weight ?? NaN),
   )
-  if (is_default) return ``
-  return keys.map((key) => round_weight(config[key].weight)).join(`,`)
+  return is_default ? `` : keys.map((key) => round_weight(config[key].weight)).join(`,`)
 }
 
 // Parse a weights param and write it into config (normalized to sum 1). A missing
@@ -75,7 +74,9 @@ export function apply_weights_param(
     }
     return
   }
-  const values = param.split(`,`).map(Number)
+  // empty segments parse to NaN (not Number(``) which is 0) so a mangled URL like
+  // weights=0.5,,0.5 is rejected by the finiteness check instead of zeroing a metric
+  const values = param.split(`,`).map((part) => (part.trim() ? Number(part) : NaN))
   if (values.length !== keys.length) return
   if (values.some((val) => !Number.isFinite(val) || val < 0)) return
   const total = values.reduce((sum, val) => sum + val, 0)
@@ -90,7 +91,12 @@ export function sync_url_params(entries: UrlParamEntry[], state: PageState): voi
     else params.set(key, value)
   }
 
-  const next_url = params.size ? `${location.pathname}?${params}` : location.pathname
+  // keep commas human-readable: they're legal in query strings (RFC 3986 sub-delims)
+  // but URLSearchParams percent-encodes them, turning ?weights=0.5,0.4,0.1 into
+  // ?weights=0.5%2C0.4%2C0.1. Decoding is value-preserving since URLSearchParams
+  // parses literal and encoded commas identically
+  const query = params.toString().replaceAll(`%2C`, `,`)
+  const next_url = query ? `${location.pathname}?${query}` : location.pathname
   if (next_url !== `${location.pathname}${location.search}`) replaceState(next_url, state)
 }
 

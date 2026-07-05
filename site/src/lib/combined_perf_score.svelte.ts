@@ -65,8 +65,10 @@ export function calculate_cps(
   )
     return null
 
+  // all-zero weights leave the score undefined rather than tying every model at 0
+  // (matches calculate_cmds; unreachable via UI, which rejects all-zero weights)
   const total_weight = F1.weight + RMSD.weight + κ_SRME.weight
-  if (total_weight === 0) return 0
+  if (total_weight === 0) return null
 
   // zero-weight metrics contribute 0 regardless of value (normalizers map undefined to 0)
   const weighted_sum =

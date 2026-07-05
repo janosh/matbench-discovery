@@ -255,28 +255,7 @@ describe(`COMPLIANT_TRAINING_SETS`, () => {
   })
 })
 
-describe(`CPS_CONFIG`, () => {
-  it(`should be defined and match DEFAULT_CPS_CONFIG initially`, () => {
-    expect(CPS_CONFIG.F1.weight).toBe(0.5)
-    expect(CPS_CONFIG.RMSD.weight).toBe(0.1)
-    expect(CPS_CONFIG.κ_SRME.weight).toBe(0.4)
-  })
-
-  it(`should be reactive (modifiable)`, () => {
-    // Store original weights
-    const original_f1_weight = CPS_CONFIG.F1.weight
-
-    // Modify weight
-    CPS_CONFIG.F1.weight = 0.8
-
-    // Check that it was updated
-    expect(CPS_CONFIG.F1.weight).toBe(0.8)
-
-    // Restore original weight
-    CPS_CONFIG.F1.weight = original_f1_weight
-  })
-})
-
+// NB: CPS_CONFIG defaults + reactivity are covered in combined_perf_score.test.ts
 describe(`update_models_cps`, () => {
   it(`should update CPS for models based on metrics and current weights`, () => {
     // Skip test if no models available

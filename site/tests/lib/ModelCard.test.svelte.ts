@@ -23,8 +23,8 @@ describe(`ModelCard`, () => {
       props: { model, metrics, sort_by: `F1`, ...overrides },
     })
 
-  // nav renders one link per http(s) URL among repo/paper/docs/checkpoint, plus the
-  // always-present Files link built from pkg.repository
+  // nav renders one link per http(s) URL among repo/paper/url (the docs link)/
+  // checkpoint_url, plus the always-present Files link built from pkg.repository
   const nav_link_count = (mdl: typeof model) =>
     [mdl.repo, mdl.paper, mdl.url, mdl.checkpoint_url].filter((href) =>
       href?.startsWith(`http`),
