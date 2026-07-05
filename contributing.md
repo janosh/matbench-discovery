@@ -275,39 +275,22 @@ And you're done! Once tests pass, a maintainer triggers automated ingestion on y
 > [!IMPORTANT]
 > Keep the **"Allow edits by maintainers"** checkbox on your PR enabled (it's on by default). The ingestion bot pushes evaluation results and updated site assets as a commit onto your PR branch — without that permission, ingestion has to be run manually by a maintainer.
 
-### Step 5: Validate your submission with the justfile
+### Step 5: Validate your submission
 
-We provide a [`justfile`](https://github.com/casey/just) at the repository root to help validate your submission before opening a PR. The `prepare-model-submission` command runs all evaluation scripts, generates required figures, and checks the PR checklist requirements.
-
-#### Installing just
-
-If you don't have `just` installed, you can install it with:
-
-```sh
-# macOS
-brew install just
-
-# Linux (via cargo)
-cargo install just
-
-# Or with pipx
-pipx install rust-just
-
-# Or see https://github.com/casey/just#installation for more options
-```
+Run the ingestion script (via [`uv`](https://docs.astral.sh/uv), no extra install needed) to validate your submission before opening a PR. It runs all evaluation scripts, generates required figures, and checks the PR checklist requirements (see `scripts/ingest_model.py --help` for all flags).
 
 #### Running the validation
 
 ```sh
-just prepare-model-submission <model_name>
+uv run --with-editable . scripts/ingest_model.py <model_name>
 ```
 
 For example:
 
 ```sh
-just prepare-model-submission mace-mpa-0
+uv run --with-editable . scripts/ingest_model.py mace-mpa-0
 # or with underscores (both work)
-just prepare-model-submission mace_mpa_0
+uv run --with-editable . scripts/ingest_model.py mace_mpa_0
 ```
 
 This command will:
@@ -341,12 +324,12 @@ Once your submission PR looks ready, a maintainer applies the `ingest-model` lab
 
 A post-merge + weekly fallback job regenerates the figure payloads and opens a follow-up PR only if they're stale, so the site can't silently fall out of date even if a PR merges without the label.
 
-Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `just ingest-model <model_name>` locally for submissions whose enum diff fails validation. `just update-site-figs` refreshes the multi-model figure payloads on their own.
+Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `uv run --with-editable . scripts/ingest_model.py <model_name> --archive` locally for submissions whose enum diff fails validation. `uv run --with-editable . scripts/ingest_model.py --payloads-only` refreshes the multi-model figure payloads on their own.
 
-If CI flags the figure payloads as stale for your PR (e.g. `test_discovery_payload_covers_active_models` fails after adding or superseding a model), run `just update-site-figs <model_name>` and commit the changed `site/src/figs/*.json.gz` files. This splices only your model's freshly computed entries into the committed payloads, pulling your prediction files from the `pred_file_url` entries in the model YAML, the same links used by automated ingestion.
+If CI flags the figure payloads as stale for your PR (e.g. `test_discovery_payload_covers_active_models` fails after adding or superseding a model), run `uv run --with-editable . scripts/ingest_model.py <model_name> --payloads-only` and commit the changed `site/src/figs/*.json.gz` files. This splices only your model's freshly computed entries into the committed payloads, pulling your prediction files from the `pred_file_url` entries in the model YAML, the same links used by automated ingestion.
 
 ## 😵‍💫 &thinsp; Troubleshooting
 
-Having problems? Please [open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). We're happy to help! 😊
+Having problems? [Open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). We're happy to help! 😊
 
 [repo]: https://github.com/janosh/matbench-discovery

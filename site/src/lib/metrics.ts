@@ -106,17 +106,21 @@ export function append_better_hint(col: Label, better = col.better): string {
   return description ? `${description} (${better}=better)` : `${better}=better`
 }
 
-export const all_higher_better_metrics = Object.values(MODELINGS_TASKS).flatMap(
-  (model_task) => model_task.metrics.higher_is_better,
+const all_higher_better_metrics = new Set(
+  Object.values(MODELINGS_TASKS).flatMap(
+    (model_task) => model_task.metrics.higher_is_better,
+  ),
 )
 
-export const all_lower_better_metrics = Object.values(MODELINGS_TASKS).flatMap(
-  (model_task) => model_task.metrics.lower_is_better,
+const all_lower_better_metrics = new Set(
+  Object.values(MODELINGS_TASKS).flatMap(
+    (model_task) => model_task.metrics.lower_is_better,
+  ),
 )
 
 export function metric_better_as(metric: string): `higher` | `lower` | null {
-  if (all_higher_better_metrics.includes(metric)) return `higher`
-  return all_lower_better_metrics.includes(metric) ? `lower` : null
+  if (all_higher_better_metrics.has(metric)) return `higher`
+  return all_lower_better_metrics.has(metric) ? `lower` : null
 }
 
 // Format training set information for display in the metrics table
