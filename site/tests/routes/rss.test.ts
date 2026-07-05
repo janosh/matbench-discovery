@@ -37,9 +37,9 @@ describe(`RSS feed endpoint`, () => {
     expect(xml).toMatch(/<atom:link href=.*rel="self" type="application\/rss\+xml"\/>/)
     expect(xml).toMatch(/<link>.*<\/link>/)
 
-    // Validate item structure
+    // Validate item structure: the feed contains one item per model
     const items = [...xml.matchAll(/<item>[\s\S]*?<\/item>/g)]
-    expect(items.length).toBeGreaterThan(0)
+    expect(items).toHaveLength(MODELS.length)
 
     const first_item = items[0]?.[0] ?? ``
     expect(first_item).toMatch(/<title>.*<\/title>/)
@@ -106,7 +106,6 @@ describe(`RSS feed endpoint`, () => {
 
     // Check for at least one model from the real data
     const model = MODELS[0]
-    expect(model).toBeDefined()
     expect(xml).toContain(model.model_name)
     expect(xml).toContain(`models/${model.model_key}`)
 
@@ -184,9 +183,9 @@ describe(`RSS feed endpoint`, () => {
     expect(older_index).not.toBe(-1)
     expect(newer_index).toBeLessThan(older_index)
 
-    // Additional check: all items should have a pubDate in correct format
+    // Additional check: every item has a pubDate in correct format
     const pub_dates = [...xml.matchAll(/<pubDate>[^<]+<\/pubDate>/g)]
-    expect(pub_dates.length).toBeGreaterThan(0)
+    expect(pub_dates).toHaveLength(MODELS.length)
     for (const [date_str] of pub_dates) {
       const date_content = date_str.replaceAll(/<\/?pubDate>/g, ``)
       // Check that this parses as a valid date
@@ -207,7 +206,7 @@ describe(`RSS feed endpoint`, () => {
     const descriptions = [
       ...xml.matchAll(/<description><!\[CDATA\[(?<cdata>[\s\S]*?)\]\]><\/description>/g),
     ]
-    expect(descriptions.length).toBeGreaterThan(0)
+    expect(descriptions).toHaveLength(MODELS.length)
 
     // URLs in descriptions should be absolute
     const description = descriptions[0]?.groups?.cdata ?? ``

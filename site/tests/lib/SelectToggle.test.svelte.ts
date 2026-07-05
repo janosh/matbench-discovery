@@ -1,6 +1,6 @@
 import SelectToggle from '$lib/SelectToggle.svelte'
-import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
+import { mount } from '../index'
 
 describe(`SelectToggle.svelte`, () => {
   it.each([

@@ -363,8 +363,9 @@ def test_discovery_payload_covers_active_models(name: str) -> None:
     keys = payload_model_ids(name, "key")
     assert keys == expected, (
         f"{name} roster drift: missing={expected - keys}, extra={keys - expected}. "
-        "Run `just update-site-figs <your-model>` to splice your model's entries "
-        "into the committed payloads (needs only your own prediction files)."
+        "Run `uv run --with-editable . scripts/ingest_model.py <your-model> "
+        "--payloads-only` to splice your model's entries into the committed "
+        "payloads (needs only your own prediction files)."
     )
 
 
@@ -382,8 +383,9 @@ def test_kappa_payload_covers_active_models() -> None:
     keys = payload_model_ids("kappa-103-analysis", "key")
     assert keys == expected, (
         f"kappa-103-analysis roster drift: missing={expected - keys}, "
-        f"extra={keys - expected}. Run `just update-site-figs <your-model>` to "
-        "splice your model's entries into the committed payloads."
+        f"extra={keys - expected}. Run `uv run --with-editable . "
+        "scripts/ingest_model.py <your-model> --payloads-only` to splice your "
+        "model's entries into the committed payloads."
     )
 
 

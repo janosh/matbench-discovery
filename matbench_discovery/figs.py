@@ -9,7 +9,7 @@ Static payloads are committed as a single gzipped site/src/figs/<name>.json.gz.
 Multi-model payloads are committed as line-delimited site/src/figs/<name>.jsonl: one
 JSON object per line (a lone ``{"_base": {...}}`` line for shared fields + one line per
 model). Two submissions that each add a model insert different lines, which git merges
-cleanly rather than colliding on one un-mergeable gzipped blob. The figure_payload
+cleanly rather than colliding on one un-mergeable gzipped blob. The json_payload
 Vite plugin (site/vite.config.ts) loads both; .jsonl reassembles into the aggregate.
 
 Helpers:
@@ -83,10 +83,8 @@ def decode_array(value: npt.ArrayLike | dict[str, str] | None) -> np.ndarray | N
         raw = base64.b64decode(meta["bdata"])
         dtype = np.dtype(meta["dtype"]).newbyteorder("<")
         arr = np.frombuffer(raw, dtype=dtype)
-        shape = meta.get("shape")
-        if shape is not None:
-            dims = tuple(int(dim) for dim in str(shape).replace(" ", "").split(","))
-            arr = arr.reshape(dims)
+        if shape := meta.get("shape"):  # meta values are already str
+            arr = arr.reshape([int(dim) for dim in shape.replace(" ", "").split(",")])
         return arr
     return np.asarray(value)
 
@@ -251,8 +249,7 @@ def sankey_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
 # === IO ===
 def write_json_gz(path: str, data: dict[str, Any]) -> int:
     """Write deterministic gzipped JSON; return compressed byte size."""
-    if dir_name := os.path.dirname(path):  # empty for a bare filename -> skip makedirs
-        os.makedirs(dir_name, exist_ok=True)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)  # "." for bare filenames
     payload = json.dumps(data, allow_nan=False, separators=(",", ":")).encode()
     compressed = gzip.compress(payload, compresslevel=9, mtime=0)
     with open(path, "wb") as file:
@@ -289,7 +286,9 @@ def write_jsonl_payload(
     One JSON object per line - a lone ``{"_base": {...}}`` shared-fields line plus one
     line per model, sorted by ``id_field`` and stripped of presentation (applied
     client-side). ``full_run`` rewrites the whole roster; subset --models runs splice
-    fresh entries into the committed file by ``id_field``, keeping the committed _base.
+    fresh entries into the committed file by ``id_field``, keeping the committed _base
+    and dropping entries of models that are no longer active (e.g. superseded by the
+    spliced-in model - a splice alone could never prune them).
     """
 
     def model_id(model: dict[str, Any]) -> str:
@@ -309,7 +308,22 @@ def write_jsonl_payload(
             )
         committed = read_jsonl_payload(path)
         fresh = {model_id(model): model for model in models}
-        models = [fresh.pop(model_id(old), old) for old in committed["models"]]
+        # prune committed entries of known-but-inactive models (matched by key or
+        # label so both id spaces are covered); unknown ids such as reference lines
+        # ('Test set standard deviation') are preserved as-is
+        from matbench_discovery.enums import Model
+
+        inactive_ids = {
+            id_attr
+            for model in Model
+            if not model.is_complete
+            for id_attr in (model.key, model.label)
+        }
+        models = [
+            fresh.pop(model_id(old), old)
+            for old in committed["models"]
+            if model_id(old) not in inactive_ids
+        ]
         models += list(fresh.values())
         # shared fields are model-independent; keep the committed _base so a subset run
         # only rewrites model lines (no churn from fresh dict order / float noise)
@@ -323,8 +337,7 @@ def write_jsonl_payload(
         json.dumps(record, allow_nan=False, separators=(",", ":")) + "\n"
         for record in records
     )
-    if dir_name := os.path.dirname(path):
-        os.makedirs(dir_name, exist_ok=True)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as file:
         file.write(body)
     n_bytes = len(body.encode())

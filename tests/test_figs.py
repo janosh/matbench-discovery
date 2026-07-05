@@ -174,12 +174,6 @@ def test_write_json_gz_roundtrip(tmp_path: Path) -> None:
         assert file.read() == first_bytes
 
 
-def test_write_json_gz_rejects_nan(tmp_path: Path) -> None:
-    """write_json_gz refuses NaN values (invalid JSON) instead of writing them."""
-    with pytest.raises(ValueError, match="Out of range float values"):
-        figs.write_json_gz(f"{tmp_path}/bad.json.gz", {"y": [float("nan")]})
-
-
 # === multi-model site payload writing (JSONL: full-run vs subset-run splice) ===
 @pytest.fixture
 def site_fig_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
@@ -287,6 +281,35 @@ def test_write_site_payload_subset_run_splices(
     assert by_id == {"m-a": [9], "m-b": [1], "m-c": [3]}
 
 
+@pytest.mark.parametrize("id_field", ["key", "label"])
+def test_write_site_payload_subset_run_prunes_inactive_models(
+    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch, id_field: str
+) -> None:
+    """Subset runs drop committed entries of superseded/inactive models (by key or
+    label) while preserving unknown reference lines like 'Test set standard deviation'.
+    """
+    inactive = next(model for model in Model if not model.is_complete)
+    stale_id = getattr(inactive, id_field)
+    figs.write_site_payload(
+        "demo",
+        {
+            "models": [
+                {id_field: "m-a", "y": [0]},
+                {id_field: stale_id, "y": [1]},
+                {id_field: "Test set standard deviation", "y": [2]},
+            ]
+        },
+        id_field=id_field,
+    )
+    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
+    figs.write_site_payload(
+        "demo", {"models": [{id_field: "m-a", "y": [9]}]}, id_field=id_field
+    )
+    reread = figs.read_jsonl_payload(f"{site_fig_dir}/demo.jsonl")
+    by_id = {model[id_field]: model["y"] for model in reread["models"]}
+    assert by_id == {"m-a": [9], "Test set standard deviation": [2]}
+
+
 def test_write_site_payload_subset_noop_is_byte_identical(
     site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -338,11 +361,10 @@ def test_write_site_payload_subset_run_requires_existing_file(
         figs.write_site_payload("missing", {"models": []})
 
 
-@pytest.mark.usefixtures("site_fig_dir")
-def test_write_site_payload_rejects_nan() -> None:
-    """NaN values (invalid JSON) fail loudly instead of writing literal NaN tokens."""
-    model_a = next(iter(Model.active()))
+def test_payload_writers_reject_nan(site_fig_dir: Path) -> None:
+    """Both writers fail loudly on NaN (invalid JSON) instead of writing NaN tokens."""
+    nan_payload = {"models": [{"key": "m-a", "y": [float("nan")]}]}
     with pytest.raises(ValueError, match="Out of range float"):
-        figs.write_site_payload(
-            "bad", {"models": [{"key": model_a.key, "y": [float("nan")]}]}
-        )
+        figs.write_json_gz(f"{site_fig_dir}/bad.json.gz", {"y": [float("nan")]})
+    with pytest.raises(ValueError, match="Out of range float"):
+        figs.write_site_payload("bad", nan_payload)

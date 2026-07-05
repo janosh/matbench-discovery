@@ -89,7 +89,7 @@
 >
   {#snippet tooltip({ metadata })}
     {#if metadata}
-      {@const point = metadata as unknown as SrmePoint}
+      {@const point = metadata as SrmePoint}
       <strong>{point.material_id}</strong>
       {@html sanitize_compact_formula(point.formula)} (SG {point.spg_num})<br />
       PBE κ: {format_num(point.kappa_dft, `.3~`)} <small>W/mK</small><br />
