@@ -5,7 +5,7 @@ export const energy_parity_manifest = {
   base: {
     asset: 'energy-parity-wbm-v1-base.json.gz',
     bytes: 3344033,
-    sha256: '1f78fccf9036c8c3ad51f12fcdc3d40c5027b3a0c2a9aeebdabc3ad24cdd80dc',
+    sha256: '03bf73de5e7fe45ac07e8532c17033902d7ca2623e0e02b8adc840de228a7800',
   },
   benchmark: 'wbm',
   dataset: 'wbm',
@@ -245,7 +245,7 @@ export const energy_parity_manifest = {
     'tece-oam-rra-1.0': {
       asset: 'energy-parity-wbm-v1-model-tece-oam-rra-1.0.json.gz',
       bytes: 643329,
-      sha256: '6c76f710168dbdb1c6e06608315d3b6b36744ceb87b8202807fb5b4d0f88805d',
+      sha256: '288640a26e95f3ce3c723d7cbd31906ea9bc8688819cc1d7f2ede58ff55a1712',
     },
     'voronoi-rf': {
       asset: 'energy-parity-wbm-v1-model-voronoi-rf.json.gz',
