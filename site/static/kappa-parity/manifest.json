@@ -200,10 +200,10 @@
       "bytes": 59697,
       "sha256": "a9c1bb88d3a30da6dc63d4cc0c48c9a769dc167e77455820e14f66f795bcce98"
     },
-    "tace-oam-rra-preview": {
-      "asset": "kappa-parity-phonondb-v1-model-tace-oam-rra-preview.json.gz",
-      "bytes": 59757,
-      "sha256": "b610a1160f722759b7e07582c29ad99d25a921a61c0234722ebcdaa460641d55"
+    "tece-oam-rra-1.0": {
+      "asset": "kappa-parity-phonondb-v1-model-tece-oam-rra-1.0.json.gz",
+      "bytes": 59616,
+      "sha256": "182aaa102e8e2791174e9917d96328d76979a7dcaa0dee98fcbc4405403b1562"
     }
   },
   "row_count": 103,

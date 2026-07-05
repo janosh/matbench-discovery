@@ -11,8 +11,9 @@ export type CpsConfig = Record<
   keyof typeof DEFAULT_CPS_CONFIG,
   Label & { weight: number }
 >
-// Make CPS_CONFIG reactive (using Svelte 5 runes)
-export const CPS_CONFIG: CpsConfig = $state({ ...DEFAULT_CPS_CONFIG })
+// deep clone: a shallow spread would share the nested metric objects with
+// DEFAULT_CPS_CONFIG, coupling weight edits to the defaults they're reset from
+export const CPS_CONFIG: CpsConfig = $state(structuredClone(DEFAULT_CPS_CONFIG))
 
 // F1 score is between 0-1 where higher is better (no normalization needed)
 function normalize_f1(value: number | undefined): number {
@@ -47,23 +48,16 @@ function normalize_kappa_srme(value: number | undefined): number {
 }
 
 // Calculate a combined score using normalized metrics weighted by importance factors.
-// This uses fixed normalization reference points to ensure score stability when new models are added.
-
-// Normalization reference points:
-// - F1 score for discovery already in [0,1] range, higher is better
-// - RMSD Root mean square displacement in range 0 (perfect) to RMSD_BASELINE, lower is better
-// - κ_SRME symmetric relative mean error for lattice thermal conductivity,
-//    Range [0,2] linearly mapped to [1,0], lower is better
+// Fixed normalization reference points keep scores stable as new models are added.
 export function calculate_cps(
   f1: number | undefined,
   rmsd: number | undefined,
   kappa: number | undefined,
   cps_config: CpsConfig, // Weights for each metric
 ): number | null {
-  // Find weights from config by metric names
   const { F1, RMSD, κ_SRME } = cps_config
 
-  // Check if any metrics with non-zero weights are missing
+  // Any metric with non-zero weight must be present, else the score is undefined
   if (
     (F1.weight > 0 && (f1 === undefined || isNaN(f1))) ||
     (RMSD.weight > 0 && (rmsd === undefined || isNaN(rmsd))) ||
@@ -71,28 +65,16 @@ export function calculate_cps(
   )
     return null
 
-  // Skip the calculation if all weights are zero
+  // all-zero weights leave the score undefined rather than tying every model at 0
+  // (matches calculate_cmds; unreachable via UI, which rejects all-zero weights)
   const total_weight = F1.weight + RMSD.weight + κ_SRME.weight
-  if (total_weight === 0) return 0
+  if (total_weight === 0) return null
 
-  // Calculate weighted sum
-  let weighted_sum = 0
+  // zero-weight metrics contribute 0 regardless of value (normalizers map undefined to 0)
+  const weighted_sum =
+    normalize_f1(f1) * F1.weight +
+    normalize_rmsd(rmsd) * RMSD.weight +
+    normalize_kappa_srme(kappa) * κ_SRME.weight
 
-  // Add F1 contribution if available and weighted
-  if (f1 !== undefined && !isNaN(f1) && F1.weight > 0) {
-    weighted_sum += normalize_f1(f1) * F1.weight
-  }
-
-  // Add RMSD contribution if available and weighted
-  if (rmsd !== undefined && !isNaN(rmsd) && RMSD.weight > 0) {
-    weighted_sum += normalize_rmsd(rmsd) * RMSD.weight
-  }
-
-  // Add kappa contribution if available and weighted
-  if (kappa !== undefined && !isNaN(kappa) && κ_SRME.weight > 0) {
-    weighted_sum += normalize_kappa_srme(kappa) * κ_SRME.weight
-  }
-
-  // Return weighted average
   return weighted_sum / total_weight
 }

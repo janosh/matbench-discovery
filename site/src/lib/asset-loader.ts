@@ -21,8 +21,9 @@ export interface ParityModel {
   model_key: string
   model_label: string
 }
-// fields shared by every parity scatter point
-export interface ParityPoint {
+// fields shared by every parity scatter point. Type alias (not interface) so
+// point types satisfy ScatterPlot's Record<string, unknown> metadata constraint
+export type ParityPoint = {
   material_id: string
   formula: string
 }

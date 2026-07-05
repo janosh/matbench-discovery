@@ -14,8 +14,8 @@
     selected = $bindable(``),
     options = [],
   }: {
-    selected: string // Currently selected value
-    options: OptionInfo[] // Options to display, either a record or an array of tuples
+    selected: string
+    options: OptionInfo[]
   } = $props()
   const target = { target: `_blank`, rel: `noopener noreferrer` }
 </script>

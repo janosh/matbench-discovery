@@ -175,10 +175,12 @@
   const point_fill = (color_value: unknown): string =>
     point_color ?? (legend_color_scale(color_value as number) as string) ?? `gray`
 
-  let can_log_x = $derived(can_log(extent(plot_data, (d) => d.x)))
-  let can_log_y = $derived(can_log(extent(plot_data, (d) => d.y)))
-  let can_log_color = $derived(can_log(extent(plot_data, (d) => d.color_value as number)))
-  let can_log_size = $derived(can_log(extent(plot_data, (d) => d.size_value)))
+  let can_log_x = $derived(can_log(extent(plot_data, (point) => point.x)))
+  let can_log_y = $derived(can_log(extent(plot_data, (point) => point.y)))
+  let can_log_color = $derived(
+    can_log(extent(plot_data, (point) => point.color_value as number)),
+  )
+  let can_log_size = $derived(can_log(extent(plot_data, (point) => point.size_value)))
 
   // One series per model enables per-model legend toggles and distinct marker shapes.
   let series: DataSeries<PointMetadata>[] = $derived(
@@ -371,7 +373,7 @@
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
       {#if metadata}
         {@const point = plot_data.find(
-          (m) => m.metadata.model_name === metadata.model_name,
+          (item) => item.metadata.model_name === metadata.model_name,
         )}
         <strong>{metadata.model_name}</strong><br />
         {@html axes.x?.label}: {x_formatted}
@@ -384,7 +386,7 @@
         {/if}
         {#if axes.size_value && point?.size_value !== undefined}
           {@html axes.size_value.label}:
-          {format_num(point.size_value as number)}<br />
+          {format_num(point.size_value)}<br />
         {/if}
       {/if}
     {/snippet}

@@ -2,14 +2,15 @@ name: Update site figures
 
 # Keep site figure payloads (site/src/figs) in sync with model submissions. Two modes:
 #
-# 1. Ingest (maintainer labels a submission PR 'ingest-model'): run `just ingest-model`
-#    per new model (evals + checklist, archive the author's pred files to the project's
-#    figshare, publish parity assets to the GH release, refresh payloads) and commit the
-#    results onto the PR branch, so one merge lands the model fully integrated.
+# 1. Ingest (maintainer labels a submission PR 'ingest-model'): run
+#    `uv run --with-editable . scripts/ingest_model.py <model> --archive` per new
+#    model (evals + checklist, archive the author's pred files to the project's
+#    figshare, publish parity assets to the GH release, refresh payloads) and commit
+#    the results onto the PR branch, so one merge lands the model fully integrated.
 #    SECURITY: PR code is never executed. The job runs trusted main and overlays only PR
 #    *data* via scripts/apply_pr_models_overlay.py - models/** plus enums.py iff its diff
 #    is provably additive Model members (else fails closed -> a maintainer runs
-#    `just ingest-model` locally after review). That's why FIGSHARE_TOKEN (account-wide!)
+#    the ingest locally after review). That's why FIGSHARE_TOKEN (account-wide!)
 #    + WANDB_API_KEY are safe here; the label is a cost gate, not a security boundary.
 #    Requires the label, secrets.SITE_FIGS_PAT (classic PAT with public_repo scope;
 #    fine-grained PATs can't push to fork branches; the PR's "allow edits by maintainers"
@@ -59,12 +60,9 @@ jobs:
           persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v8.2.0
+        uses: astral-sh/setup-uv@v8.3.0
         with:
           python-version: "3.12"
-
-      - name: Set up just
-        uses: extractions/setup-just@v4
 
       - name: Cache model prediction + analysis files
         uses: actions/cache@v5
@@ -117,7 +115,7 @@ jobs:
             exit 1
           fi
           for model in $MODELS; do
-            just ingest-model "$model"
+            uv run --with-editable . scripts/ingest_model.py "$model" --archive
           done
 
       # Copy generated artifacts into the PR checkout and push from there, preserving the
@@ -162,7 +160,7 @@ jobs:
       # === fallback mode: refresh payloads, follow-up PR only when they differ ===
       - name: Regenerate site figure payloads
         if: github.event_name != 'pull_request_target'
-        run: just update-site-figs
+        run: uv run --with-editable . scripts/ingest_model.py --payloads-only
 
       # diff each regenerated .jsonl payload's model roster against the committed (HEAD)
       # one so the PR body lists which payloads changed and which models were added/removed.

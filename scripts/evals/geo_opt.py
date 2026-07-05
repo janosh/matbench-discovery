@@ -24,7 +24,7 @@ from plotly.subplots import make_subplots
 from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 
-from matbench_discovery import PDF_FIGS, ROOT, figs, today
+from matbench_discovery import ROOT, figs
 from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model
@@ -119,7 +119,6 @@ for model_label in {*df_spg} - {Key.dft.label}:
     spg_sankey_models.append(
         {"key": model.key, "label": model.label, **figs.sankey_data(fig)}
     )
-    pmv.save_fig(fig, f"{PDF_FIGS}/spg-sankey-{model.key}-{symprec=}.pdf")
 
 # one combined payload for all models (loop order is a set -> sort for determinism)
 figs.write_site_payload("spg-sankeys", {"models": spg_sankey_models})
@@ -217,7 +216,6 @@ fig_sym.layout.height = 600
 fig_sym.update_traces(orientation="h", side="positive", width=1.8)
 
 fig_sym.show()
-pmv.save_fig(fig_sym, f"{PDF_FIGS}/{today}-sym-violin-{symprec=}.pdf")
 
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures
@@ -233,7 +231,6 @@ fig_sym_ops.layout.margin.t = 50
 fig_sym_ops.layout.height = 600
 fig_sym_ops.update_traces(orientation="h", side="positive", width=1.8)
 fig_sym_ops.show()
-pmv.save_fig(fig_sym_ops, f"{PDF_FIGS}/{today}-sym-ops-violin-{symprec=}.pdf")
 
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures vs DFT

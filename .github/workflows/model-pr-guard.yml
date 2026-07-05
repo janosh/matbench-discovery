@@ -5,7 +5,8 @@ name: Model PR guard
 # the committed parity manifests and every manifest asset to exist in the GitHub
 # release the site downloads from. Model PRs fail until a maintainer applies the
 # 'ingest-model' label (full ingest in CI, see update-site-figs.yml, whose result
-# commit re-triggers this check via synchronize) or runs `just ingest-model <model>`
+# commit re-triggers this check via synchronize) or runs
+# `uv run --with-editable . scripts/ingest_model.py <model> --archive`
 # locally. Runs on ALL PRs (a path-filtered required check would block non-model PRs
 # forever); non-model PRs pass in ~1 min. Also runs on main pushes + weekly to catch
 # drift (e.g. release assets deleted post-merge).
@@ -34,7 +35,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@v8.2.0
+      - uses: astral-sh/setup-uv@v8.3.0
         with:
           python-version: "3.12"
 

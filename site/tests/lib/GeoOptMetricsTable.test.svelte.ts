@@ -1,20 +1,33 @@
 import { MODELS } from '$lib'
 import GeoOptMetricsTable from '$lib/table/GeoOptMetricsTable.svelte'
 import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
+import { model_is_compliant } from '$lib/models.svelte'
 import type { ModelData } from '$lib/types'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount } from '../index'
+
+// mirrors the table's filters: geo-opt metrics + full_test_set discovery data
+// (energy-only models are always hidden)
+const geo_opt_row_count = (show_compliant = true, show_non_compliant = true) =>
+  MODELS.filter(
+    (model) =>
+      model.metrics?.geo_opt != null &&
+      typeof model.metrics.geo_opt === `object` &&
+      model.targets !== `E` &&
+      typeof model.metrics?.discovery === `object` &&
+      model.metrics.discovery.full_test_set &&
+      (model_is_compliant(model) ? show_compliant : show_non_compliant),
+  ).length
 
 describe(`GeoOptMetricsTable`, () => {
   it(`renders table with correct structure, columns, groups, and units`, async () => {
     mount(GeoOptMetricsTable, { target: document.body })
     await tick()
 
-    const table = document.querySelector(`table`)
-    expect(table).not.toBeNull()
-    expect(table?.querySelector(`thead`)).not.toBeNull()
-    expect(table?.querySelector(`tbody`)).not.toBeNull()
+    const table = doc_query(`table`)
+    doc_query(`thead`, table)
+    doc_query(`tbody`, table)
 
     const headers = [...document.querySelectorAll(`th`)]
     const header_texts = headers.map((h) => h.textContent?.trim())
@@ -44,7 +57,9 @@ describe(`GeoOptMetricsTable`, () => {
     ).toBe(false)
 
     // At least some symmetry metrics present
-    const symmetry_labels = Object.values(GEO_OPT_SYMMETRY_METRICS).map((m) => m.label)
+    const symmetry_labels = Object.values(GEO_OPT_SYMMETRY_METRICS).map(
+      (metric) => metric.label,
+    )
     const found_symmetry = symmetry_labels.filter((label) =>
       header_html.some((html) => html.includes(label)),
     ).length
@@ -100,7 +115,7 @@ describe(`GeoOptMetricsTable`, () => {
       expect(document.body.textContent).not.toContain(model_key)
 
       const rows = document.querySelectorAll(`tbody tr`)
-      expect(rows.length).toBeGreaterThan(0)
+      expect(rows).toHaveLength(geo_opt_row_count())
 
       const model_cells = [...document.querySelectorAll(`td[data-col="Model"]`)]
       expect(model_cells).toHaveLength(rows.length)
@@ -209,7 +224,7 @@ describe(`GeoOptMetricsTable`, () => {
     const changed =
       JSON.stringify(initial) !== JSON.stringify(after_click) ||
       JSON.stringify(after_click) !== JSON.stringify(after_second)
-    expect(initial.length).toBeGreaterThan(1)
+    expect(initial).toHaveLength(geo_opt_row_count())
     expect(changed).toBe(true)
   })
 
@@ -225,12 +240,13 @@ describe(`GeoOptMetricsTable`, () => {
     })
     await tick()
 
-    const table = doc_query(`table`)
-    expect(table.querySelector(`thead`)).not.toBeNull()
+    doc_query(`thead`, doc_query(`table`))
 
     const rows = document.querySelectorAll(`tbody tr`)
+    const expected_rows = geo_opt_row_count(show_compliant, show_non_compliant)
     // HeatmapTable may render a "no data" placeholder row when empty
-    expect(show_compliant || show_non_compliant || rows.length <= 1).toBe(true)
+    if (expected_rows === 0) expect(rows.length).toBeLessThanOrEqual(1)
+    else expect(rows).toHaveLength(expected_rows)
   })
 
   it.each([

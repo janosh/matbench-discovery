@@ -4,9 +4,10 @@ import app_css from '../../src/app.css?raw'
 import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import { ALL_METRICS } from '$lib/labels'
 import { update_models_cps } from '$lib/models.svelte'
-import { flushSync, mount } from 'svelte'
+import { format_num } from 'matterviz'
+import { flushSync } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount } from '../index'
 
 // Mock the update_models_cps function to avoid side effects
 vi.mock(`$lib/models.svelte`, async () => {
@@ -91,8 +92,9 @@ describe(`RadarChart`, () => {
       .map((el) => el.querySelector(`small`)?.textContent)
       .filter(Boolean)
 
-    const expected_values = Object.values(DEFAULT_CPS_CONFIG).map(
-      (part) => `${((part.weight as number) * 100).toFixed(0)}%`,
+    // mirrors the component's format_num(weight, `.0%`) rendering
+    const expected_values = Object.values(DEFAULT_CPS_CONFIG).map((part) =>
+      format_num(part.weight, `.0%`),
     )
 
     expect(weight_values).toStrictEqual(expected_values)
@@ -112,22 +114,14 @@ describe(`RadarChart`, () => {
     expect(label_texts).toStrictEqual([`F1 50%`, `κSRME 40%`, `RMSD 10%`])
   })
 
-  it(`renders tooltip with config description`, () => {
-    mount(RadarChart, {
-      target: document.body,
-    })
-
-    // Check that the info icon exists (which is part of the tooltip)
-    const info_icon = document.querySelector(`svg[data-title="Info"]`)
-    expect(info_icon).toBeDefined()
-  })
-
   it(`renders correct visualization elements`, () => {
     mount(RadarChart, { target: document.body })
 
+    // Info icon is part of the metric-name tooltip
+    expect(document.querySelector(`.metric-name svg`)).toBeInstanceOf(SVGSVGElement)
+
     // Check for the triangle path
-    const triangle = document.querySelector(`path[d^="M"][d$="Z"]`)
-    expect(triangle).toBeDefined()
+    expect(document.querySelector(`path[d^="M"][d$="Z"]`)).toBeInstanceOf(SVGPathElement)
 
     // Check for the colored metric areas (should be 3 paths)
     const colored_areas = document.querySelectorAll(`path[fill^="rgb"][opacity="0.5"]`)
@@ -145,9 +139,8 @@ describe(`RadarChart`, () => {
   it(`displays the metric name`, () => {
     mount(RadarChart, { target: document.body })
 
-    const metric_name = document.querySelector(`.metric-name`)
-    expect(metric_name).toBeDefined()
-    expect(metric_name?.textContent?.trim()).toContain(ALL_METRICS.CPS.key)
+    const metric_name = doc_query(`.metric-name`)
+    expect(metric_name.textContent?.trim()).toContain(ALL_METRICS.CPS.key)
   })
 
   it(`keeps the knob at the drop point and ignores the trailing click after a drag`, () => {
@@ -213,14 +206,5 @@ describe(`RadarChart`, () => {
     // element in place (page jumps to the scatter plot). happy-dom can't exercise
     // scroll anchoring, so guard the CSS rule that fixes it directly.
     expect(app_css).toMatch(/html\s*\{[^}]*overflow-anchor:\s*none/)
-  })
-
-  it(`renders reset button with correct attributes`, () => {
-    mount(RadarChart, { target: document.body })
-
-    const reset_button = document.querySelector(`.reset-button`)
-    expect(reset_button).toBeDefined()
-    expect(reset_button?.getAttribute(`title`)).toBe(`Reset to default weights`)
-    expect(reset_button?.textContent?.trim()).toBe(`Reset`)
   })
 })

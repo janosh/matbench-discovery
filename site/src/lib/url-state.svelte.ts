@@ -37,6 +37,53 @@ export const sort_from_query = (
   dir: valid_query_param(params, `dir`, default_sort.dir, sort_dirs),
 })
 
+// -- Weighted-score (CPS/CMDS) radar weights as a single URL param --------------
+// Serialized as comma-joined values in config-key order, e.g. weights=0.5,0.4,0.1.
+type WeightsConfig = Record<string, { weight: number }>
+
+const round_weight = (weight: number): number => Math.round(weight * 1000) / 1000
+
+// Empty string when weights match the defaults (so sync_url_params drops the param)
+export function weights_to_param(
+  config: WeightsConfig,
+  default_config: WeightsConfig,
+): string {
+  const keys = Object.keys(config)
+  const is_default = keys.every(
+    (key) =>
+      round_weight(config[key].weight) ===
+      round_weight(default_config[key]?.weight ?? NaN),
+  )
+  return is_default ? `` : keys.map((key) => round_weight(config[key].weight)).join(`,`)
+}
+
+// Parse a weights param and write it into config (normalized to sum 1). A missing
+// param resets to default_config: weight configs are shared module state, so without
+// the reset, weights customized earlier in the session would survive navigating to a
+// weights-less URL while all other URL-bound page state (sort, axes) resets.
+// Silently ignores malformed params (wrong count, negative/non-finite, all-zero).
+export function apply_weights_param(
+  param: string | null,
+  config: WeightsConfig,
+  default_config: WeightsConfig,
+): void {
+  const keys = Object.keys(config)
+  if (!param) {
+    for (const key of keys) {
+      config[key].weight = default_config[key]?.weight ?? config[key].weight
+    }
+    return
+  }
+  // empty segments parse to NaN (not Number(``) which is 0) so a mangled URL like
+  // weights=0.5,,0.5 is rejected by the finiteness check instead of zeroing a metric
+  const values = param.split(`,`).map((part) => (part.trim() ? Number(part) : NaN))
+  if (values.length !== keys.length) return
+  if (values.some((val) => !Number.isFinite(val) || val < 0)) return
+  const total = values.reduce((sum, val) => sum + val, 0)
+  if (total === 0) return
+  for (const [idx, key] of keys.entries()) config[key].weight = values[idx] / total
+}
+
 export function sync_url_params(entries: UrlParamEntry[], state: PageState): void {
   const params = new URLSearchParams(location.search)
   for (const [key, value, default_value = ``] of entries) {
@@ -44,7 +91,12 @@ export function sync_url_params(entries: UrlParamEntry[], state: PageState): voi
     else params.set(key, value)
   }
 
-  const next_url = params.size ? `${location.pathname}?${params}` : location.pathname
+  // keep commas human-readable: they're legal in query strings (RFC 3986 sub-delims)
+  // but URLSearchParams percent-encodes them, turning ?weights=0.5,0.4,0.1 into
+  // ?weights=0.5%2C0.4%2C0.1. Decoding is value-preserving since URLSearchParams
+  // parses literal and encoded commas identically
+  const query = params.toString().replaceAll(`%2C`, `,`)
+  const next_url = query ? `${location.pathname}?${query}` : location.pathname
   if (next_url !== `${location.pathname}${location.search}`) replaceState(next_url, state)
 }
 
