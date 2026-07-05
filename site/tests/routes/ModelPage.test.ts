@@ -126,6 +126,24 @@ describe(`Model Detail Page`, () => {
     expect(training_set?.textContent).toContain(`BogusDataset (unknown dataset)`)
   })
 
+  it(`renders leaderboard rank card with task-prefixed metric labels`, () => {
+    mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
+
+    const rank_links = [...document.querySelectorAll(`.rank-card a`)]
+    expect(rank_links.length).toBeGreaterThan(0)
+    const link_texts = rank_links.map((link) => link.textContent?.trim() ?? ``)
+    // every rendered rank reads "<task-prefixed label> #<rank> /<field size>"
+    for (const text of link_texts) {
+      expect(text).toMatch(/#\d+ \/\d+$/)
+    }
+    expect(link_texts.some((text) => text.startsWith(`Discovery F1`))).toBe(true)
+    // rank links lead to leaderboard pages (subset: models may lack some tasks' metrics)
+    const leaderboard_hrefs = [`/`, `/tasks/geo-opt`, `/tasks/phonons`, `/tasks/md`]
+    for (const link of rank_links) {
+      expect(leaderboard_hrefs).toContain(link.getAttribute(`href`))
+    }
+  })
+
   it(`lazy-mounts energy parity tab plots`, async () => {
     mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
     await tick()

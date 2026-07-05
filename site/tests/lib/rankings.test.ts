@@ -58,3 +58,14 @@ describe(`model_metric_ranks`, () => {
     expect(ranks[0].metric.key).toBe(`F1`)
   })
 })
+
+it(`RANKED_METRICS carry task-prefixed labels and leaderboard hrefs`, () => {
+  expect(RANKED_METRICS.map(({ label, rank_href }) => [label, rank_href])).toStrictEqual([
+    [`CPS`, `/`],
+    [`Discovery F1`, `/`],
+    [`Discovery MAE`, `/`],
+    [`Geo Opt RMSD`, `/tasks/geo-opt`],
+    [`Phonons κ<sub>SRME</sub>`, `/tasks/phonons`],
+    [`MD CMDS`, `/tasks/md`],
+  ])
+})

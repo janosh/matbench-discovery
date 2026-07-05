@@ -77,9 +77,6 @@
     font-size: 0.9em;
     color: var(--text-secondary);
   }
-  a strong {
-    filter: brightness(1.25);
-  }
   a small {
     color: var(--text-secondary);
   }
