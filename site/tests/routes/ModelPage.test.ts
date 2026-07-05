@@ -2,8 +2,9 @@ import { MODELS } from '$lib'
 import { get_org_logo } from '$lib/labels'
 import type { ModelData } from '$lib/types'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mount } from '../index'
 
 beforeEach(() =>
   vi.stubGlobal(
@@ -13,15 +14,13 @@ beforeEach(() =>
 )
 afterEach(() => vi.unstubAllGlobals())
 
-const mirror_physics_model = MODELS.find((model) =>
+const test_model = MODELS.find((model) =>
   model.authors.some((author) => author.affiliation === `Mirror Physics`),
 )
-if (!mirror_physics_model) throw new Error(`missing Mirror Physics model`)
-const test_model = mirror_physics_model
+if (!test_model) throw new Error(`missing Mirror Physics model`)
 
 describe(`Model Detail Page`, () => {
   it(`renders model details correctly`, () => {
-    // First verify test model exists
     mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
 
     // Check basic model info
@@ -90,21 +89,15 @@ describe(`Model Detail Page`, () => {
     expect(model_info?.textContent).toContain(test_model.targets.replaceAll(`_`, ``))
     expect(model_info?.textContent).toContain(test_model.openness)
 
-    // Check training set section if present
-    const training_set = document.querySelector(`.training-set`)
-    const train_set_links = training_set?.querySelectorAll(`a`)
-    const expected_train_set_links = test_model.training_set
-      ? Array.isArray(test_model.training_set)
-        ? test_model.training_set.length
-        : 1
-      : 0
-    expect(training_set !== null || !test_model.training_set).toBe(true)
-    expect(train_set_links?.length ?? 0).toBe(expected_train_set_links)
+    // Check training set section: one dataset link per training_set entry
+    expect(document.querySelectorAll(`.training-set a`)).toHaveLength(
+      test_model.training_set.length,
+    )
 
-    // Check hyperparameters section if present
+    // Hyperparameters section renders iff the model declares hyperparams
     const hyperparams = document.querySelector(`.hyperparams`)
     const hyperparam_entries = Object.entries(test_model.hyperparams ?? {})
-    expect(hyperparams !== null || hyperparam_entries.length === 0).toBe(true)
+    expect(hyperparams !== null).toBe(test_model.hyperparams != null)
     for (const [key, value] of hyperparam_entries) {
       expect(hyperparams?.textContent).toContain(key)
       expect(hyperparams?.textContent).toContain(JSON.stringify(value))
@@ -123,6 +116,24 @@ describe(`Model Detail Page`, () => {
     // known dataset still renders as link, unknown one falls back to plain text
     expect(training_set?.querySelectorAll(`a`)).toHaveLength(1)
     expect(training_set?.textContent).toContain(`BogusDataset (unknown dataset)`)
+  })
+
+  it(`renders leaderboard rank card with task-prefixed metric labels`, () => {
+    mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
+
+    const rank_links = [...document.querySelectorAll(`.rank-card a`)]
+    expect(rank_links.length).toBeGreaterThan(0)
+    const link_texts = rank_links.map((link) => link.textContent?.trim() ?? ``)
+    // every rendered rank reads "<task-prefixed label> #<rank> /<field size>"
+    for (const text of link_texts) {
+      expect(text).toMatch(/#\d+ \/\d+$/)
+    }
+    expect(link_texts.some((text) => text.startsWith(`Discovery F1`))).toBe(true)
+    // rank links lead to leaderboard pages (subset: models may lack some tasks' metrics)
+    const leaderboard_hrefs = [`/`, `/tasks/geo-opt`, `/tasks/phonons`, `/tasks/md`]
+    for (const link of rank_links) {
+      expect(leaderboard_hrefs).toContain(link.getAttribute(`href`))
+    }
   })
 
   it(`lazy-mounts energy parity tab plots`, async () => {

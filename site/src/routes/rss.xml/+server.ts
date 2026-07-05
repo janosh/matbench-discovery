@@ -11,7 +11,6 @@ const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
 
 // Formats model data as XML for RSS feed
 function format_model_for_rss(model: ModelData): string {
-  // Extract metrics from the 'full_test_set' or fallback to first available discovery set
   const discovery = model.metrics?.discovery
   const discovery_metrics =
     discovery && typeof discovery === `object`
@@ -19,7 +18,6 @@ function format_model_for_rss(model: ModelData): string {
       : null
 
   const training_set = format_train_set(model.training_set, model)
-  // Remove HTML tags for plain text display
   const clean_training_set = strip_html(training_set)
 
   const metrics_text = discovery_metrics
@@ -79,9 +77,8 @@ function format_model_for_rss(model: ModelData): string {
   `.trim()
 }
 
-// Generates an RSS feed of all models
+// Generates an RSS feed of all models, newest first
 export function GET() {
-  // Sort models by date added (newest first)
   const sorted_models = MODELS.toSorted(by_date_added_desc)
   const headers = { 'Content-Type': `application/xml` }
   const rss_feed_url = `${base_url}rss.xml`

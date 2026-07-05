@@ -44,6 +44,6 @@
 {"key":"sevennet-l3i5","label":"SevenNet-l3i5","quantiles":[-0.113,-0.036,-0.008,0.009,0.071]}
 {"key":"sevennet-omni-i12","label":"SevenNet-Omni-i12","quantiles":[-0.041,-0.007,0.0,0.006,0.028]}
 {"key":"tace-oam-l","label":"TACE-OAM-L","quantiles":[-0.04,-0.007,-0.001,0.005,0.025]}
-{"key":"tace-oam-rra-preview","label":"TACE-OAM-RRA-Preview","quantiles":[-0.033,-0.004,0.0,0.004,0.021]}
+{"key":"tece-oam-rra-1.0","label":"TECE-OAM-RRA-1.0","quantiles":[-0.033,-0.004,0.0,0.004,0.021]}
 {"key":"voronoi-rf","label":"Voronoi RF","quantiles":[-0.404,-0.164,-0.048,0.036,0.22]}
 {"key":"wrenformer","label":"Wrenformer","quantiles":[-0.304,-0.125,-0.047,0.003,0.116]}

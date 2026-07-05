@@ -27,7 +27,6 @@ const to_page_curves = (curves: DiatomicsCurves): PageDiatomicsCurves => ({
 })
 
 export const load: PageServerLoad = async () => {
-  // Filter models that have diatomics metrics, newest first
   const diatomic_models = MODELS.filter(
     (model) => model.metrics?.diatomics && typeof model.metrics.diatomics === `object`,
   ).toSorted(by_date_added_desc)
@@ -42,11 +41,10 @@ export const load: PageServerLoad = async () => {
       const diatomics = model.metrics?.diatomics
       if (typeof diatomics !== `object` || diatomics === null) return
 
-      const source = diatomics as Record<string, unknown>
       const pred_file =
-        typeof source.pred_file === `string` ? source.pred_file : undefined
+        typeof diatomics.pred_file === `string` ? diatomics.pred_file : undefined
       const pred_file_url =
-        typeof source.pred_file_url === `string` ? source.pred_file_url : undefined
+        typeof diatomics.pred_file_url === `string` ? diatomics.pred_file_url : undefined
 
       if (!pred_file && !pred_file_url) {
         errors[model.model_name] = `No prediction file path or URL`

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Label, ModelData } from '$lib'
   import { AuthorBrief, DATASETS } from '$lib'
-  import { get_nested_value, label_data_path } from '$lib/metrics'
+  import { get_nested_number, label_data_path } from '$lib/metrics'
   import pkg from '$site/package.json'
   import { format_num, Icon } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
@@ -175,7 +175,7 @@
       {@const { key, label, unit, description } = metric}
       <!-- resolve by the label's own data path so any metric works (RMSD lives under
       metrics.geo_opt.symprec=1e-2, which a hardcoded section merge would miss) -->
-      {@const value = get_nested_value(model, label_data_path(metric)) as number}
+      {@const value = get_nested_number(model, label_data_path(metric))}
       <li
         class:active={sort_by == key}
         title={description}
@@ -183,7 +183,7 @@
       >
         <label for={key}>{@html label ?? key}</label>
         <strong>
-          {#if isNaN(Number(value))}
+          {#if value === undefined || isNaN(value)}
             n/a
           {:else}
             {format_num(value)}

@@ -12,8 +12,8 @@
 
   let {
     size = 200,
-    config = CPS_CONFIG as WeightsConfig,
-    default_config = DEFAULT_CPS_CONFIG as WeightsConfig,
+    config = CPS_CONFIG,
+    default_config = DEFAULT_CPS_CONFIG,
     title_label = ALL_METRICS.CPS,
     on_change = (cfg: WeightsConfig) => update_models_cps(MODELS, cfg as CpsConfig),
   }: {
@@ -82,31 +82,23 @@
     }
   }
 
+  // Derive weights from the knob position via barycentric coordinates
   function update_weights_from_point() {
-    // Calculate weights using barycentric coordinates for triangular space
     if (Object.values(config).length !== 3) {
       console.error(`This implementation only supports exactly 3 metrics/dimensions`)
       return
     }
 
-    // Implementation for a 3-point spider diagram
-    // Calculate barycentric coordinates of the point relative to the triangle
-
-    // First convert to triangle coordinates
     const [a, b, c] = axis_points
     const triangle_area = calc_triangle_area(a, b, c)
-    // Calculate areas of sub-triangles
     const area1 = calc_triangle_area(point, b, c)
     const area2 = calc_triangle_area(point, a, c)
     const area3 = calc_triangle_area(point, a, b)
 
-    // Calculate normalized barycentric weights
     let new_values = [area1 / triangle_area, area2 / triangle_area, area3 / triangle_area]
 
-    // Handle center point specially - equal weights
+    // Snap to equal weights when very close to the center
     const dist_from_center = Math.hypot(point.x - center.x, point.y - center.y)
-
-    // If very close to center, use equal weights
     if (dist_from_center < radius * 0.05) {
       new_values = [1 / 3, 1 / 3, 1 / 3]
     }
@@ -123,7 +115,6 @@
 
   // Handle click on SVG to jump to position
   function handle_svg_click(event: MouseEvent) {
-    // Prevent default behavior including scrolling
     event.preventDefault()
 
     // Ignore the synthetic click the browser fires right after a knob drag
@@ -132,13 +123,9 @@
       return
     }
 
-    // Get click coordinates relative to SVG
     const target = event.currentTarget as SVGSVGElement
     const svg_rect = target.getBoundingClientRect()
-    const click_x = event.clientX - svg_rect.left
-    const click_y = event.clientY - svg_rect.top
-
-    move_to_position(click_x, click_y)
+    move_to_position(event.clientX - svg_rect.left, event.clientY - svg_rect.top)
   }
 
   // Handle keyboard activation - move to SVG center (equal weights)
@@ -149,44 +136,31 @@
     }
   }
 
+  // Shared by the click and drag paths so their clamping behavior can't drift
+  function clamp_to_triangle(x: number, y: number): Point {
+    const [a, b, c] = axis_points
+    const pt = { x, y }
+    return Object.values(config).length === 3 && is_point_in_triangle(pt, a, b, c)
+      ? pt
+      : get_closest_point_on_triangle(pt, a, b, c)
+  }
+
   // Move the point to a position, constraining to triangle if needed
   function move_to_position(click_x: number, click_y: number) {
-    const [a, b, c] = axis_points
-    const click_point = { x: click_x, y: click_y }
-
-    if (is_point_in_triangle(click_point, a, b, c)) {
-      // Update the draggable point position
-      point = click_point
-    } else {
-      // If outside the triangle, find the closest point on the triangle
-      point = get_closest_point_on_triangle(click_point, a, b, c)
-    }
-
-    // Update weights based on new position
+    point = clamp_to_triangle(click_x, click_y)
     update_weights_from_point()
   }
 
-  // Move point to a position with triangle constraints
-  // During dragging, don't update weights - only move the point visually
-  // This prevents table rerendering during drag which causes viewport to scroll (terrible UX)
+  // Visually move the knob during a drag without touching weights (see end_drag)
   function move_point_to_position(x: number, y: number) {
-    const [a, b, c] = axis_points
-    if (Object.values(config).length === 3 && is_point_in_triangle({ x, y }, a, b, c)) {
-      point = { x, y }
-    } else {
-      // If outside the triangle, constrain to the closest point on the triangle
-      const closest_point = get_closest_point_on_triangle({ x, y }, a, b, c)
-      point = closest_point
-    }
+    point = clamp_to_triangle(x, y)
   }
 
-  // Handle dragging
   function start_drag(event: MouseEvent | TouchEvent) {
     event.preventDefault()
     is_dragging = true
     suppress_next_click = true
 
-    // Add global event listeners
     globalThis.addEventListener(`mousemove`, handle_drag)
     globalThis.addEventListener(`touchmove`, handle_drag, { passive: false })
     globalThis.addEventListener(`mouseup`, end_drag)
@@ -198,31 +172,16 @@
     event.preventDefault()
     if (!svg_element) return
 
-    // Get SVG coordinates
     const rect = svg_element.getBoundingClientRect()
-
-    // Get position depending on event type
-    let client_x: number, client_y: number
-
-    if (event instanceof MouseEvent) {
-      client_x = event.clientX
-      client_y = event.clientY
-    } else {
-      client_x = event.touches[0].clientX
-      client_y = event.touches[0].clientY
-    }
-
-    const x = client_x - rect.left
-    const y = client_y - rect.top
-
-    // Update point position during drag
-    move_point_to_position(x, y)
+    const { clientX, clientY } = event instanceof MouseEvent ? event : event.touches[0]
+    move_point_to_position(clientX - rect.left, clientY - rect.top)
   }
 
   function end_drag() {
     if (is_dragging) {
       is_dragging = false
-      // Update weights when drag ends
+      // Update weights only on drag end: doing it live would rerender the table
+      // and scroll the viewport mid-drag
       update_weights_from_point()
       globalThis.removeEventListener(`mousemove`, handle_drag)
       globalThis.removeEventListener(`touchmove`, handle_drag)

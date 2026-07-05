@@ -3,7 +3,7 @@
 # %%
 import pymatviz as pmv
 
-from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD, figs
+from matbench_discovery import STABILITY_THRESHOLD, figs
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import df_metrics
@@ -53,8 +53,6 @@ fig.show()
 
 
 # %%
-img_suffix = "" if show_non_compliant else "-only-compliant"
-img_name = f"roc-models{img_suffix}"
 roc_models = []
 for trace in fig.data:
     # skip the "No skill" random-classifier diagonal (drawn inline on the site)
@@ -72,7 +70,5 @@ for trace in fig.data:
             "tpr": figs.round_list(tpr),
         }
     )
-if show_non_compliant:  # site payload = full model set;
-    # the compliant-only variant exists as PDF only (paper SI)
+if show_non_compliant:  # site payload = full model set
     figs.write_site_payload("roc-models", {"models": roc_models})
-pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

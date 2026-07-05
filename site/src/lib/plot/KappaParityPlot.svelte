@@ -15,7 +15,7 @@
   } from '$lib/parity/kappa-parity'
   import type { LoadStatus } from '$lib/asset-loader'
   import { parity_diagonal } from '$lib/fig-helpers'
-  import { get_nested_number } from '$lib/metrics'
+  import { get_nested_number, is_finite_num } from '$lib/metrics'
   import type { ModelData } from '$lib/types'
   import { Dos, format_num, Icon, sanitize_compact_formula } from 'matterviz'
   import { Spinner } from 'matterviz/feedback'
@@ -32,6 +32,10 @@
   let base = $state<KappaParityBase>()
   let parity_model = $state<KappaParityModel>()
   let selected_idx = $state<number | null>(null)
+  // per-material κ_SRME from the kappa-103 analysis payload (null = not computable);
+  // undefined until loaded or when the model has no analysis entry
+  let srme_by_id = $state<Map<string, number | null>>()
+  let color_metric = $state<`srme` | `sre`>(`srme`)
   let load_id = 0
 
   let model_label = $derived(parity_model?.model_label ?? model.model_name)
@@ -52,6 +56,19 @@
     const values = [...parity.x, ...parity.y]
     return [Math.min(...values) / 1.3, Math.max(...values) * 1.3]
   })
+  // colorbar metric: per-material κ_SRME (default) or κ_SRE, switchable via the
+  // colorbar's property dropdown. SRE derives from the parity points themselves;
+  // SRME comes from the kappa-103 analysis payload and may be missing per material
+  const color_metric_labels = { srme: `κ<sub>SRME</sub>`, sre: `κ<sub>SRE</sub>` }
+  let color_values = $derived(
+    (parity?.points ?? []).map((pt) =>
+      color_metric === `srme` ? (srme_by_id?.get(pt.material_id) ?? null) : pt.sre,
+    ),
+  )
+  let color_range = $derived.by((): [number, number] => {
+    const finite = color_values.filter(is_finite_num)
+    return finite.length > 0 ? [Math.min(...finite), Math.max(...finite)] : [0, 1]
+  })
   let series = $derived<DataSeries<KappaParityPoint>[]>(
     parity
       ? [
@@ -62,7 +79,7 @@
             markers: `points`,
             label: model_label,
             size_values: parity.points.map((pt) => pt.n_sites),
-            color_values: parity.points.map((pt) => pt.sre),
+            color_values,
             point_style: { radius: 6, stroke: `white`, stroke_width: 0.5 },
           },
         ]
@@ -97,6 +114,15 @@
     return out
   })
 
+  // dynamic import so the ~160 kB gz analysis payload becomes its own chunk fetched
+  // only when a kappa plot mounts, instead of bloating every model page's bundle
+  async function load_srme_map(model_key: string) {
+    const analysis = (await import(`$figs/kappa-103-analysis.jsonl`)).default
+    const entry = analysis.models.find((mdl) => mdl.key === model_key)
+    if (!entry) return undefined
+    return new Map(analysis.material_ids.map((mat_id, idx) => [mat_id, entry.srme[idx]]))
+  }
+
   async function load_data(model_key = model.model_key) {
     const current_load_id = ++load_id
     selected_idx = null
@@ -108,13 +134,16 @@
     status = `loading`
     error_message = ``
     try {
-      const [base_asset, model_asset] = await Promise.all([
+      const [base_asset, model_asset, srme_map] = await Promise.all([
         base ?? load_kappa_parity_base(),
         load_kappa_parity_model(model_key),
+        load_srme_map(model_key),
       ])
       if (current_load_id !== load_id) return
       base = base_asset
       parity_model = model_asset
+      srme_by_id = srme_map
+      if (!srme_map) color_metric = `sre` // no per-material SRME -> only SRE offered
       status = `ready`
     } catch (error) {
       if (current_load_id !== load_id) return
@@ -142,7 +171,7 @@
     </div>
   {:else}
     <ScatterPlot
-      series={series as unknown as DataSeries[]}
+      {series}
       ref_lines={parity_ref_lines}
       style="height: 480px"
       x_axis={{
@@ -159,7 +188,18 @@
       }}
       size_scale={{ type: `linear`, radius_range: [4, 7] }}
       color_bar={{
-        title: `κ<sub>SRE</sub> (${format_num(parity?.points.length ?? 0, `,`)} points)`,
+        title: `${color_metric_labels[color_metric]} (${format_num(
+          parity?.points.length ?? 0,
+          `,`,
+        )} points)`,
+        property_options: srme_by_id
+          ? Object.entries(color_metric_labels).map(([key, label]) => ({ key, label }))
+          : undefined,
+        selected_property_key: color_metric,
+        data_loader: async (key) => {
+          if (key === `srme` || key === `sre`) color_metric = key
+          return { range: color_range }
+        },
       }}
       selected_point={selected_point_ref}
       on_point_click={({ point }) => {
@@ -168,13 +208,17 @@
     >
       {#snippet tooltip({ metadata })}
         {#if metadata}
-          {@const pt = metadata as unknown as KappaParityPoint}
+          {@const pt = metadata as KappaParityPoint}
           {@const sys = crystal_sys(pt)}
           <strong>{pt.material_id}</strong>
           {@html sanitize_compact_formula(pt.formula)}<br />
           PBE κ: {format_num(pt.kappa_dft, `.3~`)} <small>W/mK</small><br />
           {model_label} κ: {format_num(pt.kappa_ml, `.3~`)} <small>W/mK</small><br />
+          {@const pt_srme = srme_by_id?.get(pt.material_id)}
           κ<sub>SRE</sub>: {format_num(pt.sre, `.3~`)}
+          {#if pt_srme != null}
+            &nbsp;κ<sub>SRME</sub>: {format_num(pt_srme, `.3~`)}
+          {/if}
           {#if sys}<br />{sys}{pt.spacegroup != null ? ` (SG ${pt.spacegroup})` : ``}{/if}
           {#if pt.n_sites != null}<br />{pt.n_sites} atoms{/if}
         {/if}
@@ -274,6 +318,21 @@
     border: none;
     border-radius: 50%;
     cursor: pointer;
+    opacity: 0;
+    padding: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.15s ease,
+      background 0.15s ease;
+  }
+  .detail-panel:is(:hover, :focus-within) header button {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .detail-panel header button :global(svg) {
+    display: block;
+    height: 1em;
+    width: 1em;
   }
   .detail-panel header button:hover {
     background: color-mix(in srgb, currentColor 18%, transparent);

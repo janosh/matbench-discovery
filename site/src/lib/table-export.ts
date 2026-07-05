@@ -400,7 +400,6 @@ function format_value_for_export(value: number, header: string): number | string
   return format_number(value, label?.format)
 }
 
-// Function to export table data as CSV
 export function generate_csv({
   show_non_compliant = false,
   discovery_set = `unique_prototypes`,
@@ -439,7 +438,6 @@ export function generate_csv({
   }
 }
 
-// Function to export table data as Excel (XLSX)
 export async function generate_excel({
   show_non_compliant = false,
   discovery_set = `unique_prototypes`,
