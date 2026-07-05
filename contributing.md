@@ -319,14 +319,14 @@ Once your submission PR looks ready, a maintainer applies the `ingest-model` lab
 2. **Evals + checklist** — your prediction files are downloaded from the `pred_file_url` links in your YAML, all evals run (discovery, kappa, geo-opt, diatomics), metrics are written into your model YAML, and the PR checklist is enforced.
 3. **Figshare archival** — your prediction + analysis files are re-uploaded to the project's own Figshare articles (one per prediction task) for longevity, and your YAML's `*_url` keys are rewritten to the archived copies.
 4. **Per-model site assets** — energy/kappa parity assets (published to the GitHub release the site build downloads from), parity manifests and per-element error data are generated.
-5. **Multi-model figures** — all site figure payloads (`site/src/figs/*.json.gz`) are regenerated so every page (`/models/tmi`, `/tasks/geo-opt`, data pages) includes your model, validated by payload shape tests before committing.
+5. **Multi-model figures** — all site figure payloads (`site/src/figs/*.jsonl`) are regenerated so every page (`/models/tmi`, `/tasks/geo-opt`, data pages) includes your model, validated by payload shape tests before committing.
 6. **One commit onto your PR** — the updated YAML, payloads and manifests are pushed to your PR branch (this is why "Allow edits by maintainers" must stay enabled), retriggering CI on the result. Merging the PR lands your model fully integrated.
 
 A post-merge + weekly fallback job regenerates the figure payloads and opens a follow-up PR only if they're stale, so the site can't silently fall out of date even if a PR merges without the label.
 
 Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `uv run --with-editable . scripts/ingest_model.py <model_name> --archive` locally for submissions whose enum diff fails validation. `uv run --with-editable . scripts/ingest_model.py --payloads-only` refreshes the multi-model figure payloads on their own.
 
-If CI flags the figure payloads as stale for your PR (e.g. `test_discovery_payload_covers_active_models` fails after adding or superseding a model), run `uv run --with-editable . scripts/ingest_model.py <model_name> --payloads-only` and commit the changed `site/src/figs/*.json.gz` files. This splices only your model's freshly computed entries into the committed payloads, pulling your prediction files from the `pred_file_url` entries in the model YAML, the same links used by automated ingestion.
+If CI flags the figure payloads as stale for your PR (e.g. `test_discovery_payload_covers_active_models` fails after adding or superseding a model), run `uv run --with-editable . scripts/ingest_model.py <model_name> --payloads-only` and commit the changed `site/src/figs/*.jsonl` files. This splices only your model's freshly computed entries into the committed payloads, pulling your prediction files from the `pred_file_url` entries in the model YAML, the same links used by automated ingestion.
 
 ## 😵‍💫 &thinsp; Troubleshooting
 

@@ -76,7 +76,7 @@ training_cost: # list any hardware used to train the model and for how long
 
 requirements: # strongly recommended
   torch: '>=2.8'
-  tace: '>=0.2.0' # recommended newest github commit
+  tace: '>=0.2.0' # no release includes TECE yet: needs git commit >= e2595c26 ('prepare TECE-OAM-RRA-1.0', 2026-07-04)
 
 training_set: [OMat24, sAlex, MPtrj]
 
