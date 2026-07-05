@@ -14,15 +14,13 @@ beforeEach(() =>
 )
 afterEach(() => vi.unstubAllGlobals())
 
-const mirror_physics_model = MODELS.find((model) =>
+const test_model = MODELS.find((model) =>
   model.authors.some((author) => author.affiliation === `Mirror Physics`),
 )
-if (!mirror_physics_model) throw new Error(`missing Mirror Physics model`)
-const test_model = mirror_physics_model
+if (!test_model) throw new Error(`missing Mirror Physics model`)
 
 describe(`Model Detail Page`, () => {
   it(`renders model details correctly`, () => {
-    // First verify test model exists
     mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
 
     // Check basic model info
@@ -91,21 +89,15 @@ describe(`Model Detail Page`, () => {
     expect(model_info?.textContent).toContain(test_model.targets.replaceAll(`_`, ``))
     expect(model_info?.textContent).toContain(test_model.openness)
 
-    // Check training set section if present
-    const training_set = document.querySelector(`.training-set`)
-    const train_set_links = training_set?.querySelectorAll(`a`)
-    const expected_train_set_links = test_model.training_set
-      ? Array.isArray(test_model.training_set)
-        ? test_model.training_set.length
-        : 1
-      : 0
-    expect(training_set !== null || !test_model.training_set).toBe(true)
-    expect(train_set_links?.length ?? 0).toBe(expected_train_set_links)
+    // Check training set section: one dataset link per training_set entry
+    expect(document.querySelectorAll(`.training-set a`)).toHaveLength(
+      test_model.training_set.length,
+    )
 
-    // Check hyperparameters section if present
+    // Hyperparameters section renders iff the model declares hyperparams
     const hyperparams = document.querySelector(`.hyperparams`)
     const hyperparam_entries = Object.entries(test_model.hyperparams ?? {})
-    expect(hyperparams !== null || hyperparam_entries.length === 0).toBe(true)
+    expect(hyperparams !== null).toBe(test_model.hyperparams != null)
     for (const [key, value] of hyperparam_entries) {
       expect(hyperparams?.textContent).toContain(key)
       expect(hyperparams?.textContent).toContain(JSON.stringify(value))
