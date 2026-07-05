@@ -3,7 +3,7 @@
   "base": {
     "asset": "energy-parity-wbm-v1-base.json.gz",
     "bytes": 3344033,
-    "sha256": "03bf73de5e7fe45ac07e8532c17033902d7ca2623e0e02b8adc840de228a7800"
+    "sha256": "1f78fccf9036c8c3ad51f12fcdc3d40c5027b3a0c2a9aeebdabc3ad24cdd80dc"
   },
   "benchmark": "wbm",
   "dataset": "wbm",
@@ -244,6 +244,11 @@
       "asset": "energy-parity-wbm-v1-model-tace-oam-rra-preview.json.gz",
       "bytes": 643526,
       "sha256": "253b399ed058e93a9b4ec523051a5c032ac59abe231f9b12b1b0a9a23e88b2a8"
+    },
+    "tece-oam-rra-1.0": {
+      "asset": "energy-parity-wbm-v1-model-tece-oam-rra-1.0.json.gz",
+      "bytes": 643329,
+      "sha256": "6c76f710168dbdb1c6e06608315d3b6b36744ceb87b8202807fb5b4d0f88805d"
     },
     "voronoi-rf": {
       "asset": "energy-parity-wbm-v1-model-voronoi-rf.json.gz",
