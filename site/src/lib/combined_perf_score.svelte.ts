@@ -11,8 +11,9 @@ export type CpsConfig = Record<
   keyof typeof DEFAULT_CPS_CONFIG,
   Label & { weight: number }
 >
-// Make CPS_CONFIG reactive (using Svelte 5 runes)
-export const CPS_CONFIG: CpsConfig = $state({ ...DEFAULT_CPS_CONFIG })
+// deep clone: a shallow spread would share the nested metric objects with
+// DEFAULT_CPS_CONFIG, coupling weight edits to the defaults they're reset from
+export const CPS_CONFIG: CpsConfig = $state(structuredClone(DEFAULT_CPS_CONFIG))
 
 // F1 score is between 0-1 where higher is better (no normalization needed)
 function normalize_f1(value: number | undefined): number {

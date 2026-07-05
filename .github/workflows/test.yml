@@ -68,7 +68,18 @@ jobs:
         with:
           python-version: "3.12"
 
+      # same cache as update-site-figs.yml: discovery.py downloads every active
+      # model's WBM predictions, several GB on a cold cache
+      - name: Cache model prediction + analysis files
+        uses: actions/cache@v5
+        with:
+          path: |
+            models/**/*.csv.gz
+            models/**/*.json.gz
+            data/mp
+            data/wbm
+          key: model-preds-${{ hashFiles('models/**/*.yml') }}
+          restore-keys: model-preds-
+
       - name: Run discovery eval script
         run: uv run --with-editable . python scripts/evals/discovery.py
-        env:
-          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}

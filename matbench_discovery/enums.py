@@ -371,10 +371,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
     sevennet_omni_i12 = auto(), "sevennet/sevennet-omni-i12.yml"
 
-    # Tensor Atomic/Edge Cluster Expansion
+    # Tensor Atomic Cluster Expansion
     tace_v1_oam_m = auto(), "tace/tace-v1-oam-m.yml"
     tace_oam_l = auto(), "tace/tace-oam-l.yml"
     tace_oam_rra_preview = auto(), "tace/tace-oam-rra-preview.yml"
+    # TECE = Tensor Edge Cluster Expansion
     tece_oam_rra_1_0 = auto(), "tace/tece-oam-rra-1.0.yml"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest

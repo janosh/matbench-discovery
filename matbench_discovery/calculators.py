@@ -479,6 +479,12 @@ TACE_DEPS = (
     "torch-geometric==2.7.0",
     "pytorch-lightning==2.5.5",
 )
+# TECE needs a tace commit >= e2595c26 ("prepare TECE-OAM-RRA-1.0", 2026-07-04); the
+# TACE_DEPS pin above predates the TECE architecture, so pin a newer commit here
+TECE_DEPS = (
+    "tace @ git+https://github.com/xvzemin/tace@88d8dcd5724e94751783b0a3405cb49573af1583",
+    *TACE_DEPS[1:],
+)
 # EquFlash (Samsung GGNN): UCalculator is ASE-compatible. Heavy env pinned to the
 # discovery/kappa scripts: torch 2.9.1+cu126 from pytorch's index (EQUFLASH_INDEX), PyG
 # extensions from the matching cu126 wheel page (EQUFLASH_LINKS), cuequivariance, and
@@ -637,6 +643,7 @@ CALCULATORS: dict[str, CalcSpec] = {
     # package that can't instantiate the checkpoint config); pins per its YAML
     "tace_oam_l": CalcSpec(_tace("tace_oam_l"), deps=TACE_DEPS),
     "tace_oam_rra_preview": CalcSpec(_tace("tace_oam_rra_preview"), deps=TACE_DEPS),
+    "tece_oam_rra_1_0": CalcSpec(_tace("tece_oam_rra_1_0"), deps=TECE_DEPS),
     # deepmd DPA (figshare frozen .pth checkpoints, DP() loads by suffix).
     # NOTE: dpa_4_0_pro_mptrj omitted - its figshare file is a training checkpoint
     # (state dict), not a frozen TorchScript model; needs `dp --pt freeze` first

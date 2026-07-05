@@ -1,5 +1,6 @@
 <script lang="ts">
   import { MODELS, PtableInset } from '$lib'
+  import type { ModelData } from '$lib/types'
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
   import { ColorBar, format_num, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -8,7 +9,8 @@
   import { per_element_each_errors as each_errors } from '$lib/per-element-errors'
 
   const models_with_errors = MODELS.filter(
-    (model) => model.model_key && model.model_key in each_errors,
+    (model): model is ModelData & { model_key: string } =>
+      typeof model.model_key === `string` && model.model_key in each_errors,
   )
   const model_names_with_errors = models_with_errors.map((model) => model.model_name)
 
@@ -50,11 +52,7 @@
       .filter((model) => model !== undefined)
     return resolved.length > 0 ? resolved : models_with_errors.slice(0, 1)
   })
-  let selected_keys = $derived(
-    selected_models
-      .map((model) => model.model_key)
-      .filter((key): key is string => typeof key === `string`),
-  )
+  let selected_keys = $derived(selected_models.map((model) => model.model_key))
 
   const norm_error = (model_key: string, element: string): number => {
     const val = each_errors[model_key]?.[element]
@@ -167,11 +165,11 @@
           />
         {:else}
           <strong class="multi-model-inset">
-            {active_element.name}: {#each selected_keys as model_key, idx (model_key)}
+            {active_element.name}: {#each selected_models as model, idx (model.model_key)}
               {#if idx > 0}&ensp;{/if}
               <span>
-                {selected_models[idx].model_name}
-                <b>{format_num(norm_error(model_key, active_element.symbol))}</b>
+                {model.model_name}
+                <b>{format_num(norm_error(model.model_key, active_element.symbol))}</b>
               </span>
             {/each}
           </strong>

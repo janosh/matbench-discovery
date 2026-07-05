@@ -40,6 +40,8 @@ targets: EFS_G # see `Targets` enum in matbench_discovery/enums.py
 model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
 model_params: 213690158
 trained_for_benchmark: false
+status: superseded
+superseded_by: tece-oam-rra-1.0
 n_estimators: 1
 
 license:
