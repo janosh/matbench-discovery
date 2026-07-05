@@ -49,7 +49,7 @@
     scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
     scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
     sort = sort_from_query(params, default_sort)
-    apply_weights_param(params.get(`weights`), CMDS_CONFIG)
+    apply_weights_param(params.get(`weights`), CMDS_CONFIG, DEFAULT_CMDS_CONFIG)
   }
   bind_url_params(read_url_params, () => [
     [`x`, scatter_x, default_scatter_x],

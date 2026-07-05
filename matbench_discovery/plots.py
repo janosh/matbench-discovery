@@ -246,6 +246,15 @@ def hist_classified_stable_vs_hull_dist(
     return fig
 
 
+def stable_screening_sort(srs_pred: pd.Series) -> pd.Series:
+    """Sort predictions into canonical screening order: stable sort by value with ties
+    broken by material ID (via the prior index sort). Pandas' default unstable
+    quicksort makes tied/near-degenerate rankings depend on input row order and numpy
+    version, which flip-flopped CI payload regens between equivalent orderings.
+    """
+    return srs_pred.sort_index(kind="stable").sort_values(kind="stable")
+
+
 LegendLoc = Literal["figure", "below", "default"]
 
 
@@ -592,11 +601,7 @@ def cumulative_metrics(
         )
 
     for model_name in df_preds:
-        # canonical screening order: stable sort with ties broken by material ID
-        # (unstable default sort made tied rankings depend on row order/numpy version)
-        each_pred = (
-            df_preds[model_name].sort_index(kind="stable").sort_values(kind="stable")
-        )
+        each_pred = stable_screening_sort(df_preds[model_name])
         # sort targets by model ranking
         each_true = e_above_hull_true.loc[each_pred.index]
 

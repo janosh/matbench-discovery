@@ -14,7 +14,7 @@ from matbench_discovery import STABILITY_THRESHOLD, figs
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import classify_stable
-from matbench_discovery.plots import cumulative_metrics
+from matbench_discovery.plots import cumulative_metrics, stable_screening_sort
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
 __author__ = "Janosh Riebesell, Rhys Goodall"
@@ -88,13 +88,7 @@ if metrics == ("Precision", "Recall") and show_non_compliant:
     # in the run) so an entry is identical in full regens and single-model merge runs
     cum_pr_models = []
     for label in models_to_plot:
-        # canonical screening order: stable sort by prediction with ties broken by
-        # material ID (via prior sort_index). The default unstable quicksort made tied/
-        # near-degenerate rankings depend on input row order and numpy version, so CI
-        # regens flip-flopped between orderings and spammed spurious payload-update PRs
-        each_pred = (
-            df_each_pred[label].sort_index(kind="stable").sort_values(kind="stable")
-        )
+        each_pred = stable_screening_sort(df_each_pred[label])
         each_true = df_preds[MbdKey.each_true].loc[each_pred.index]
         true_pos, false_neg, false_pos, _true_neg = classify_stable(
             each_true, each_pred, stability_threshold=STABILITY_THRESHOLD

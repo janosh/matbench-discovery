@@ -145,7 +145,7 @@
     show_energy_only = params.get(`energy_only`) === `1`
     show_non_compliant = params.get(`non_compliant`) !== `0`
     show_compliant = params.get(`compliant`) !== `0`
-    apply_weights_param(params.get(`weights`), CPS_CONFIG)
+    apply_weights_param(params.get(`weights`), CPS_CONFIG, DEFAULT_CPS_CONFIG)
     col_preset = next_preset
     previous_col_preset = next_preset
   })

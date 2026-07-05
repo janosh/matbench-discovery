@@ -148,14 +148,15 @@ describe(`weights_to_param / apply_weights_param`, () => {
   it.each([
     [`valid param`, `0.7,0.2,0.1`, [0.7, 0.2, 0.1]],
     [`unnormalized weights get normalized`, `2,1,1`, [0.5, 0.25, 0.25]],
-    [`null param is a no-op`, null, [0.5, 0.4, 0.1]],
-    [`wrong count is ignored`, `0.5,0.5`, [0.5, 0.4, 0.1]],
-    [`negative weight is ignored`, `-1,1,1`, [0.5, 0.4, 0.1]],
-    [`non-numeric is ignored`, `a,b,c`, [0.5, 0.4, 0.1]],
-    [`all-zero is ignored`, `0,0,0`, [0.5, 0.4, 0.1]],
+    // custom weights are shared module state; a weights-less URL must reset them
+    [`null param resets to defaults`, null, [0.5, 0.4, 0.1]],
+    [`wrong count is ignored`, `0.5,0.5`, [0.2, 0.3, 0.5]],
+    [`negative weight is ignored`, `-1,1,1`, [0.2, 0.3, 0.5]],
+    [`non-numeric is ignored`, `a,b,c`, [0.2, 0.3, 0.5]],
+    [`all-zero is ignored`, `0,0,0`, [0.2, 0.3, 0.5]],
   ] as const)(`%s`, (_name, param, expected) => {
-    const config = make_config([0.5, 0.4, 0.1])
-    apply_weights_param(param, config)
+    const config = make_config([0.2, 0.3, 0.5]) // start from non-default weights
+    apply_weights_param(param, config, defaults)
     const weights = Object.values(config).map(({ weight }) => weight)
     for (const [idx, weight] of weights.entries()) {
       expect(weight).toBeCloseTo(expected[idx], 10)
@@ -166,7 +167,7 @@ describe(`weights_to_param / apply_weights_param`, () => {
     const config = make_config([0.62, 0.25, 0.13])
     const param = weights_to_param(config, defaults)
     const restored = make_config([0.5, 0.4, 0.1])
-    apply_weights_param(param, restored)
+    apply_weights_param(param, restored, defaults)
     for (const key of Object.keys(config) as (keyof typeof config)[]) {
       expect(restored[key].weight).toBeCloseTo(config[key].weight, 3)
     }

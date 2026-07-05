@@ -141,9 +141,10 @@
     const [a, b, c] = axis_points
     const click_point = { x: click_x, y: click_y }
 
-    point = is_point_in_triangle(click_point, a, b, c)
-      ? click_point
-      : get_closest_point_on_triangle(click_point, a, b, c)
+    point =
+      Object.values(config).length === 3 && is_point_in_triangle(click_point, a, b, c)
+        ? click_point
+        : get_closest_point_on_triangle(click_point, a, b, c)
 
     update_weights_from_point()
   }

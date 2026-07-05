@@ -58,11 +58,23 @@ export function weights_to_param(
   return keys.map((key) => round_weight(config[key].weight)).join(`,`)
 }
 
-// Parse a weights param and write it into config (normalized to sum 1).
+// Parse a weights param and write it into config (normalized to sum 1). A missing
+// param resets to default_config: weight configs are shared module state, so without
+// the reset, weights customized earlier in the session would survive navigating to a
+// weights-less URL while all other URL-bound page state (sort, axes) resets.
 // Silently ignores malformed params (wrong count, negative/non-finite, all-zero).
-export function apply_weights_param(param: string | null, config: WeightsConfig): void {
-  if (!param) return
+export function apply_weights_param(
+  param: string | null,
+  config: WeightsConfig,
+  default_config: WeightsConfig,
+): void {
   const keys = Object.keys(config)
+  if (!param) {
+    for (const key of keys) {
+      config[key].weight = default_config[key]?.weight ?? config[key].weight
+    }
+    return
+  }
   const values = param.split(`,`).map(Number)
   if (values.length !== keys.length) return
   if (values.some((val) => !Number.isFinite(val) || val < 0)) return
