@@ -1,6 +1,5 @@
 <script lang="ts">
   import { data_files, PtableHeatmap } from '$lib'
-  import type { DataFile } from '*data-files.yml'
   import type { ElementSymbol } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
 
@@ -22,8 +21,9 @@
   const elem_counts_key = $derived(`../mp-trj-element-counts-by-${count_mode}.json`)
   let mp_trj_elem_counts = $derived(elem_counts[elem_counts_key] ?? {})
 
-  const mp_trj_data = data_files[`mp_trj_json_gz`] as DataFile | undefined
-  if (!mp_trj_data) {
+  // narrow instead of casting: the data-files.yml index signature is DataFile | string
+  const mp_trj_data = data_files[`mp_trj_json_gz`]
+  if (!mp_trj_data || typeof mp_trj_data === `string`) {
     throw new Error(`mp_trj_json_gz not found in data-files.yml`)
   }
 </script>

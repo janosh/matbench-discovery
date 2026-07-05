@@ -10,7 +10,7 @@
   import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
 
   // payload models arrive pre-styled (stable MODELS colors + leaderboard order) from the
-  // figure_payload plugin, so each dropdown below defaults to a top model as before
+  // json_payload plugin, so each dropdown below defaults to a top model
   const fp_diff_label = `|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|`
   // mirrors the metrics-table toggle: filters all discovery figures below to the
   // compliant-only cohort (models trained on MP-anchored data)

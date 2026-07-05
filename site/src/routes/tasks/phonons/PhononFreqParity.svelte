@@ -96,7 +96,7 @@
   >
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
       {#if metadata}
-        {@const point = metadata as unknown as FreqParityPoint}
+        {@const point = metadata as FreqParityPoint}
         <strong>{point.material_id}</strong>
         {@html sanitize_compact_formula(point.formula)} ({point.crystal_system}, SG
         {point.spg_num})<br />

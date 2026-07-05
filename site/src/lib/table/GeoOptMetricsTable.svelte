@@ -81,7 +81,6 @@
   const has_geo_opt_metrics = (model: ModelData): boolean =>
     model.metrics?.geo_opt != null && typeof model.metrics.geo_opt === `object`
 
-  // Recalculate metrics_data whenever filter settings change
   let metrics_data = $derived(
     assemble_row_data(
       `full_test_set`,

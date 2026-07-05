@@ -6,10 +6,9 @@ histogram stacks true/false positives/negatives with different colors.
 # %%
 from typing import Any, Final
 
-import pymatviz as pmv
 from pymatviz.enums import Key
 
-from matbench_discovery import PDF_FIGS, figs, plots
+from matbench_discovery import figs, plots
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -102,9 +101,6 @@ fig.show()
 
 
 # %%
-img_suffix = "" if show_non_compliant else "-only-compliant"
-img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}{img_suffix}"
-
 # site payload: per-model stability-classification counts on shared hull-dist bins
 # (binned over the displayed x-range only; the old fig binned (-0.7, 0.7) but clipped
 # the view to +/-0.4 eV/atom)
@@ -137,4 +133,3 @@ if show_non_compliant:  # site payload = full model set, sorted by F1 (site rend
         f"hist-clf-{which_energy}-hull-dist",
         {"bin_centers": bin_centers, "models": clf_models},
     )
-pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

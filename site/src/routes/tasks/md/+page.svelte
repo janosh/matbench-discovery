@@ -14,9 +14,11 @@
   } from '$lib/md_combined_score.svelte'
   import { DynamicScatter, RadarChart } from '$lib/plot'
   import {
+    apply_weights_param,
     bind_url_params,
     sort_from_query,
     valid_query_param,
+    weights_to_param,
   } from '$lib/url-state.svelte'
   import MdNote from './md-note.md'
 
@@ -47,12 +49,15 @@
     scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
     scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
     sort = sort_from_query(params, default_sort)
+    apply_weights_param(params.get(`weights`), CMDS_CONFIG, DEFAULT_CMDS_CONFIG)
   }
   bind_url_params(read_url_params, () => [
     [`x`, scatter_x, default_scatter_x],
     [`y`, scatter_y, default_scatter_y],
     [`sort`, sort.column, default_sort.column],
     [`dir`, sort.dir, default_sort.dir],
+    // custom CMDS weights (ADF,vDOS,pressure); omitted at defaults
+    [`weights`, weights_to_param(CMDS_CONFIG, DEFAULT_CMDS_CONFIG)],
   ])
 </script>
 

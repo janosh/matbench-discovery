@@ -2,9 +2,8 @@
 
 # %%
 import numpy as np
-import pymatviz as pmv
 
-from matbench_discovery import PDF_FIGS, figs
+from matbench_discovery import figs
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
@@ -82,8 +81,6 @@ fig.show()
 
 
 # %%
-img_suffix = "" if show_non_compliant else "-only-compliant"
-img_name = f"rolling-mae-vs-hull-dist{img_suffix}"
 model_names = set(df_err.columns)
 rolling_models = []
 shared_x: list[float] | None = None
@@ -109,4 +106,3 @@ if show_non_compliant:  # site payload = full model set (styling applied client-
             },
         },
     )
-pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

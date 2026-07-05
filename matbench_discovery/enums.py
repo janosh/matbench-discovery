@@ -375,6 +375,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     tace_v1_oam_m = auto(), "tace/tace-v1-oam-m.yml"
     tace_oam_l = auto(), "tace/tace-oam-l.yml"
     tace_oam_rra_preview = auto(), "tace/tace-oam-rra-preview.yml"
+    # TECE = Tensor Edge Cluster Expansion
+    tece_oam_rra_1_0 = auto(), "tace/tece-oam-rra-1.0.yml"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = auto(), "voronoi_rf/voronoi-rf.yml"

@@ -12,7 +12,7 @@ declare module '*.json.gz' {
 
 declare module '*.jsonl' {
   // line-delimited multi-model figure payloads, reassembled at build time by the
-  // figure_payload plugin in vite.config.ts, typed per payload in src/figs/payloads.d.ts
+  // json_payload plugin in vite.config.ts, typed per payload in src/figs/payloads.d.ts
   const data: unknown
   export default data
 }
@@ -34,11 +34,6 @@ declare module '*/datasets.yml' {
   export default data
 }
 
-declare module '*model-schema.yml' {
-  import type { ModelMetadata } from '$lib/schema/model'
-  export const ModelMetadata: ModelMetadata
-} // Model metadata schema
-
 declare module '*data-files.yml' {
   export interface DataFile {
     url: string
@@ -57,11 +52,6 @@ declare module '*data-files.yml' {
   const data_files: DataFiles
   export default data_files
 }
-
-declare module '*element-counts.json' {
-  const map: Record<string, number>
-  export default map
-} // Element counts for different datasets
 
 declare module '*modeling-tasks.yml' {
   export interface SubTask {

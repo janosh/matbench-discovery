@@ -194,8 +194,11 @@
 />
 
 {#snippet affiliation_cell({ row }: CellSnippetArgs)}
-  {@const model = row as ModelData}
-  <OrgLogos org_logos={model.org_logos ?? []} authors={model.authors ?? []} />
+  {@const { org_logos = [], authors = [] } = row as Pick<
+    ModelData,
+    `org_logos` | `authors`
+  >}
+  <OrgLogos {org_logos} {authors} />
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}

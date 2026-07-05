@@ -31,9 +31,8 @@
   {#if element?.name}
     {element?.name}: {format_num(value)}
     {@html unit}
-    <!-- compute percent of total -->
     {#if show_percent && total > 0}
-      ({format_num((100 * value) / total)}%)
+      ({format_num(value / total, `.3~p`)})
     {/if}
   {/if}
 </strong>

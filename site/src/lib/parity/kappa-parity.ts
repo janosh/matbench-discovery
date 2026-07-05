@@ -36,7 +36,9 @@ export interface KappaParityModel extends ParityModel {
   ml_dos: Record<string, RawDos | undefined>
 }
 
-export interface KappaParityPoint extends ParityPoint {
+// type alias (not interface) so it satisfies ScatterPlot's Record<string, unknown>
+// metadata constraint without casts
+export type KappaParityPoint = ParityPoint & {
   kappa_dft: number
   kappa_ml: number
   sre: number // symmetric relative error of scalar conductivity

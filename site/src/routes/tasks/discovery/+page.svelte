@@ -3,15 +3,13 @@
   import { DynamicScatter } from '$lib/plot'
   import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import * as labels from '$lib/labels'
-  import type { DiscoverySet } from '$lib/types'
+  import { DISCOVERY_SETS, type DiscoverySet } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
 
   const default_discovery_set: DiscoverySet = `unique_prototypes`
   const default_scatter_x = labels.HYPERPARAMS.model_params.key
   const default_scatter_y = labels.ALL_METRICS.F1.key
-  const discovery_sets = new Set<DiscoverySet>(
-    labels.discovery_set_toggle_options.map(({ value }) => value as DiscoverySet),
-  )
+  const discovery_sets = new Set<DiscoverySet>(DISCOVERY_SETS)
 
   let discovery_set: DiscoverySet = $state(default_discovery_set)
   let show_energy_only = $state(false)

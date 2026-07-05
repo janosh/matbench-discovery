@@ -1,7 +1,7 @@
 import { type Label, TableControls } from '$lib'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount } from '../index'
 
 describe(`TableControls`, () => {
   const sample_columns: Label[] = [

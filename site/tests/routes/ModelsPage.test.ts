@@ -2,9 +2,9 @@ import { MODELS } from '$lib/models.svelte'
 import { ALL_METRICS, MD_METRICS } from '$lib/labels'
 import { sort_models } from '$lib/metrics'
 import { default as ModelsPage } from '$routes/models/+page.svelte'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query, mount_with_url } from '../index'
+import { doc_query, mount, mount_with_url } from '../index'
 
 describe(`Models Page`, () => {
   it(`renders model sorting controls`, () => {
@@ -76,9 +76,10 @@ describe(`Models Page`, () => {
 
   it(`sorts models by selected metric`, async () => {
     mount(ModelsPage, { target: document.body })
+    await tick() // let the simulated afterNavigate URL-param read settle before clicking
 
     const initial_models = [...document.querySelectorAll(`ol > li h2 a`)].map(
-      (a) => a.textContent,
+      (link) => link.textContent,
     )
 
     const f1_btn = doc_query<HTMLButtonElement>(`button#F1`)
@@ -87,7 +88,7 @@ describe(`Models Page`, () => {
     await tick()
 
     const sorted_models = [...document.querySelectorAll(`ol > li h2 a`)].map(
-      (a) => a.textContent,
+      (link) => link.textContent,
     )
     // Order should be different
     expect(sorted_models).not.toStrictEqual(initial_models)
@@ -216,14 +217,14 @@ describe(`Models Page`, () => {
     })
 
     const limited_names = [...document.querySelectorAll(`ol > li h2 a`)].map(
-      (a) => a.textContent,
+      (link) => link.textContent,
     )
 
     document.body.innerHTML = ``
     mount(ModelsPage, { target: document.body })
 
     const all_names = [...document.querySelectorAll(`ol > li h2 a`)].map(
-      (a) => a.textContent,
+      (link) => link.textContent,
     )
     expect(all_names.slice(0, 3)).toStrictEqual(limited_names)
   })

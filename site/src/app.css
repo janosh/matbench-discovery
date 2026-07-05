@@ -19,7 +19,6 @@
   --light-card-bg: rgba(255, 255, 255, 0.4);
   --light-card-border: rgba(0, 0, 0, 0.12);
   --light-shadow: rgba(0, 0, 0, 0.06);
-  --light-selection: rgba(42, 111, 187, 0.16);
 
   /* Dark theme palette matches current site appearance */
   --dark-page-bg: #061e25;
@@ -42,7 +41,6 @@
   --dark-chip-bg: rgba(255, 255, 255, 0.08); /* card-bg reads near-black on small chips */
   --dark-card-border: rgba(255, 255, 255, 0.1);
   --dark-shadow: rgba(0, 0, 0, 0.5);
-  --dark-selection: rgba(0, 255, 255, 0.2);
 
   /* Theme-aware aliases */
   --page-bg: light-dark(var(--light-page-bg), var(--dark-page-bg));
@@ -66,7 +64,6 @@
   --chip-bg: light-dark(var(--light-card-bg), var(--dark-chip-bg));
   --card-border: light-dark(var(--light-card-border), var(--dark-card-border));
   --shadow: light-dark(var(--light-shadow), var(--dark-shadow));
-  --selection: light-dark(var(--light-selection), var(--dark-selection));
   --struct-bg: light-dark(var(--light-pre-bg), var(--dark-pre-bg));
 
   /* Component variables and layout */
@@ -102,11 +99,6 @@
 
   --compliant-color: #4caf50;
   --non-compliant-color: #4682b4;
-  --panel-bg: var(--pre-bg);
-
-  /* Defaults for tables/heatmaps */
-  --heatmap-header-bg: var(--page-bg);
-  --heatmap-header-hover-bg: var(--nav-bg);
   --text-muted: var(--text-secondary);
 }
 

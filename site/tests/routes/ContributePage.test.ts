@@ -1,6 +1,6 @@
 import Page from '$routes/contribute/+page.svelte'
-import { mount } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { mount } from '../index'
 
 describe(`Contribute Page`, () => {
   beforeEach(() => {

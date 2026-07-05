@@ -242,10 +242,10 @@ export const energy_parity_manifest = {
       bytes: 643210,
       sha256: '9c8864612e897b0ad48d79565b57bc871967e203b412d5baadbbcb5b06ed2cce',
     },
-    'tace-oam-rra-preview': {
-      asset: 'energy-parity-wbm-v1-model-tace-oam-rra-preview.json.gz',
-      bytes: 643526,
-      sha256: '253b399ed058e93a9b4ec523051a5c032ac59abe231f9b12b1b0a9a23e88b2a8',
+    'tece-oam-rra-1.0': {
+      asset: 'energy-parity-wbm-v1-model-tece-oam-rra-1.0.json.gz',
+      bytes: 643329,
+      sha256: '288640a26e95f3ce3c723d7cbd31906ea9bc8688819cc1d7f2ede58ff55a1712',
     },
     'voronoi-rf': {
       asset: 'energy-parity-wbm-v1-model-voronoi-rf.json.gz',

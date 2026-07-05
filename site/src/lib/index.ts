@@ -11,6 +11,7 @@ export { default as AuthorBrief } from './model/ModelAuthor.svelte'
 export { default as GeoOptMetricsTable } from './table/GeoOptMetricsTable.svelte'
 export { default as MetricsTable } from './table/MetricsTable.svelte'
 export { default as ModelCard } from './model/ModelCard.svelte'
+export { default as ModelRankCard } from './model/ModelRankCard.svelte'
 export { default as ModelSelect } from './ModelSelect.svelte'
 export { MODELS } from './models.svelte'
 export { default as OrgLogos } from './model/OrgLogos.svelte'
@@ -28,11 +29,10 @@ export { default as data_files } from '$pkg/data-files.yml'
 const md_parser = unified().use(remarkParse).use(remarkRehype).use(rehypeStringify)
 const md_to_html = (md: string): string => String(md_parser.processSync(md)?.value ?? ``)
 
-// Function to slugify text for URLs
 export const slugify = (text: string): string =>
   text.toLowerCase().replaceAll(/[\s_]+/g, `-`)
 
-// Convert array types to strings and handle missing values
+// Stringify values for display, rendering nullish/empty values as 'n/a'
 export function arr_to_str(value: unknown): string {
   if (value === null || value === undefined || value === ``) return `n/a`
   if (Array.isArray(value)) return value.join(`, `)

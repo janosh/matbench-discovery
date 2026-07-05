@@ -1,7 +1,8 @@
 import PtableHeatmap from '$lib/PtableHeatmap.svelte'
 import type { ElementSymbol } from 'matterviz'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
+import { mount } from '../index'
 
 type ElemCounts = Record<ElementSymbol, number>
 const sample_values = { H: 100, C: 250, O: 300, Fe: 150 } as ElemCounts

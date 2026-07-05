@@ -1,16 +1,11 @@
 // Running-best ("SOTA") frontier helpers for the model progress timeline.
 
-export interface SotaPoint {
-  date: number // unix epoch ms
-  value: number
-}
-
 // Indices (into the input array) of points that set a new record at their date.
 // Points are processed in date order; same-date ties are processed best-first so
 // only the best model of a given day can define the frontier. Only strict
 // improvements count as new records.
 export const sota_frontier_indices = (
-  points: readonly SotaPoint[],
+  points: readonly { date: number; value: number }[],
   better: `higher` | `lower` = `higher`,
 ): number[] => {
   const sign = better === `higher` ? 1 : -1
@@ -37,7 +32,7 @@ export const sota_frontier_indices = (
 // record's value, jumping vertically at the date of the next record, extended to
 // `end_date` (typically today) so the current SOTA reads as "still standing".
 export const sota_step_line = (
-  records: readonly SotaPoint[],
+  records: readonly { date: number; value: number }[],
   end_date: number,
 ): { x: number[]; y: number[] } => {
   const x: number[] = []

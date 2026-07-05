@@ -58,7 +58,7 @@
     '/tasks/geo-opt': `Metrics and analysis of predicting ground state geometries.`,
     '/tasks/md': `Metrics and analysis of molecular dynamics observables vs ab-initio reference trajectories.`,
   }
-  let description = $derived(descriptions[url ?? ``] ?? base_description)
+  let description = $derived(descriptions[url] ?? base_description)
   let title = $derived(url === `/` ? `` : `${url} • `)
 
   const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))

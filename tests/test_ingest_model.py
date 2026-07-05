@@ -132,13 +132,11 @@ def test_run_model_steps_installs_project_extras(
 ) -> None:
     """Per-model eval subprocesses resolve project extras such as phonons."""
     checks = ingest.Checklist()
-    step_cmd = "--extra phonons python scripts/evals/kappa.py"
+    step_cmd = "--extra phonons scripts/evals/kappa.py"
     steps = [("Kappa metrics", True, True, step_cmd)]
     ingest.run_model_steps("evals", steps, Model.mace_mpa_0, checks, energy_only=False)
 
-    expected = uv_cmd(
-        ".[phonons]", "python", "scripts/evals/kappa.py", "--models", "mace_mpa_0"
-    )
+    expected = uv_cmd(".[phonons]", "scripts/evals/kappa.py", "--models", "mace_mpa_0")
     assert run_cmd_calls == [expected]
     assert checks.n_failed == 0
 
@@ -160,7 +158,7 @@ def uv_cmd(project_req: str, *args: str) -> tuple[str, ...]:
             uv_cmd(".", "python", "child.py", "--extra", "keep", "--flag", "value"),
         ),
         (
-            "--extra=phonons --extra symmetry -- python child.py --extra keep",
+            "--extra phonons --extra symmetry python child.py --extra keep",
             uv_cmd(".[phonons,symmetry]", "python", "child.py", "--extra", "keep"),
         ),
     ],
@@ -172,7 +170,7 @@ def test_uv_run_args_parses_only_top_level_extras(
     assert ingest.uv_run_args(args) == expected
 
 
-@pytest.mark.parametrize("args", ["--extra", "--extra=", '--extra ""'])
+@pytest.mark.parametrize("args", ["--extra", '--extra ""'])
 def test_uv_run_args_rejects_empty_extra(args: str) -> None:
     """Top-level --extra must have a non-empty value."""
     with pytest.raises(ValueError, match="--extra requires"):

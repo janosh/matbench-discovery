@@ -82,10 +82,8 @@
   }
   let sort = $state({ ...default_sort })
 
-  // Generate list of homo-nuclear diatomic formulas for elements 1-119
   const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
 
-  // Create a Map to store model colors consistently
   let model_colors = $derived(
     new Map<string, string>(
       diatomic_models.map((model, idx) => [

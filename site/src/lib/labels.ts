@@ -556,7 +556,7 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   },
 }
 
-export type AllMetrics = DiscoveryMetricsLabels &
+type AllMetrics = DiscoveryMetricsLabels &
   GeoOptSymmetryMetricsLabels &
   MdMetricsLabels &
   Record<DiatomicsMetricKey, Label> & {

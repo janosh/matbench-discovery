@@ -1,3 +1,4 @@
+import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
 import { MODELS } from '$lib'
 import { ALL_METRICS } from '$lib/labels'
 import { assemble_row_data, get_nested_number } from '$lib/metrics'
@@ -5,6 +6,17 @@ import PhononsPage from '$routes/tasks/phonons/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query, mount, mount_with_url } from '../index'
+
+// mirrors the page's leaderboard filter: phonon metrics + discovery data (energy-only
+// models are hidden by MetricsTable's defaults)
+const phonon_leaderboard_count = MODELS.filter(
+  (model) =>
+    get_nested_number(model, `metrics.phonons.kappa_103.κ_SRME`) != null &&
+    get_nested_number(model, `metrics.phonons.kappa_103.κ_SRE`) != null &&
+    model.targets !== `E` &&
+    typeof model.metrics?.discovery === `object` &&
+    model.metrics.discovery.unique_prototypes,
+).length
 
 const get_headers = (root: ParentNode) =>
   Array.from(root.querySelectorAll(`th`), (header) =>
@@ -43,8 +55,10 @@ describe(`Phonons Task Page`, () => {
       `MLFF Phonon Modeling Metrics`,
     )
 
-    expect(document.querySelector(`section.full-bleed table`)).not.toBeNull()
-    expect(document.querySelectorAll(`tbody tr`).length).toBeGreaterThan(0)
+    const leaderboard = doc_query(`section.full-bleed:not(.robustness-table)`)
+    expect(leaderboard.querySelectorAll(`tbody tr`)).toHaveLength(
+      phonon_leaderboard_count,
+    )
 
     const headings = heading_texts()
     expect(headings).toContain(`Failure Modes`)
@@ -65,7 +79,10 @@ describe(`Phonons Task Page`, () => {
     for (const column of [`κ failed`, `Imag. modes`, `Spectrum W1`]) {
       expect(headers, `missing column ${column}`).toContain(column)
     }
-    expect(section.querySelectorAll(`td a[href^="/models/"]`).length).toBeGreaterThan(30)
+    // one model-page link per entry in the kappa-103 analysis payload
+    expect(section.querySelectorAll(`td a[href^="/models/"]`)).toHaveLength(
+      kappa_103_analysis.models.length,
+    )
   })
 
   it(`shows only phonon leaderboard columns and rows with phonon metrics`, () => {
@@ -81,13 +98,12 @@ describe(`Phonons Task Page`, () => {
     }
 
     const kappa_col_indices = [`κSRME`, `κSRE`].map((header) => headers.indexOf(header))
+    expect(kappa_col_indices.every((col_idx) => col_idx >= 0)).toBe(true)
     const rows = [...leaderboard.querySelectorAll<HTMLTableRowElement>(`tbody tr`)]
-    expect(rows.length).toBeGreaterThan(0)
+    expect(rows).toHaveLength(phonon_leaderboard_count)
     for (const row of rows) {
       const cells = [...row.querySelectorAll(`td`)]
       for (const col_idx of kappa_col_indices) {
-        expect(col_idx).toBeGreaterThanOrEqual(0)
-        expect(cells[col_idx]).toBeDefined()
         expect(cells[col_idx].textContent?.trim()).not.toBe(`n/a`)
       }
     }
@@ -137,7 +153,7 @@ describe(`Phonons Task Page`, () => {
 
     expect(kappa_sort_select().value).toBe(`name`)
     const mace_name = MODELS.find((mdl) => mdl.model_key === `mace-mp-0`)?.model_name
-    expect(mace_name).toBeDefined()
+    if (!mace_name) throw new Error(`mace-mp-0 not found in MODELS`)
     expect(kappa_selected_model()).toContain(mace_name)
     expect(heading_texts()).toContain(`κSRE vs F1`)
   })

@@ -1,8 +1,9 @@
+import { DATASETS } from '$lib'
 import { heatmap_class } from '$lib/table-export'
 import Page from '$routes/data/sets/+page.svelte'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount } from '../index'
 
 describe(`Datasets Page`, () => {
   beforeEach(() => {
@@ -16,15 +17,11 @@ describe(`Datasets Page`, () => {
 
   it(`renders the table with correct structure`, () => {
     const table = doc_query<HTMLTableElement>(`.${heatmap_class}`)
-    const thead = table.querySelector(`thead`)
-    const tbody = table.querySelector(`tbody`)
-
-    // Check table structure
-    expect(thead).not.toBeNull()
-    expect(tbody).not.toBeNull()
+    const thead = doc_query(`thead`, table)
+    const tbody = doc_query(`tbody`, table)
 
     // Check header columns
-    const header_cols = thead?.querySelectorAll(`th`) ?? []
+    const header_cols = thead.querySelectorAll(`th`)
     expect(header_cols).toHaveLength(10)
 
     // Verify expected column headers are present
@@ -38,14 +35,14 @@ describe(`Datasets Page`, () => {
     expect(column_headers.some((header) => header.includes(`API`))).toBe(true)
     expect(column_headers.some((header) => header.includes(`Links`))).toBe(true)
 
-    // Check that we have rows in the table
-    const rows = tbody?.querySelectorAll(`tr`) ?? []
-    expect(rows.length).toBeGreaterThan(0)
+    // One row per dataset in datasets.yml
+    const rows = tbody.querySelectorAll(`tr`)
+    expect(rows).toHaveLength(Object.keys(DATASETS).length)
   })
 
   it(`displays information about multiple datasets`, () => {
     const rows = document.querySelectorAll(`.${heatmap_class} tbody tr`)
-    expect(rows.length).toBeGreaterThan(5)
+    expect(rows).toHaveLength(Object.keys(DATASETS).length)
 
     // Check for some expected dataset names in the table
     const dataset_names = [...rows].map((row) => {
@@ -81,11 +78,8 @@ describe(`Datasets Page`, () => {
       resource_links.forEach((link) => {
         expect(link.getAttribute(`target`)).toBe(`_blank`)
         expect(link.getAttribute(`rel`)).toContain(`noopener`)
-        // Ensure title is one of the expected ones and not null/empty
         const title =
           link.getAttribute(`title`) ?? link.getAttribute(`data-original-title`)
-        expect(title).not.toBeNull()
-        expect(title).not.toBe(``)
         expect([`Website`, `Download`, `DOI`]).toContain(title)
         expect(link.getAttribute(`aria-label`)).toBe(title)
       })
@@ -101,8 +95,11 @@ describe(`Datasets Page`, () => {
       `.${heatmap_class} tbody td:nth-child(9) a`,
     )
 
-    // There should be some API links found
-    expect(api_links.length).toBeGreaterThan(0)
+    // One API link per dataset native_api/optimade_api URL
+    const expected_api_count = Object.values(DATASETS)
+      .flatMap((dataset) => [dataset.native_api, dataset.optimade_api])
+      .filter(Boolean).length
+    expect(api_links).toHaveLength(expected_api_count)
 
     // Verify each link has the correct attributes and title
     api_links.forEach((link) => {
@@ -131,13 +128,12 @@ describe(`Datasets Page`, () => {
     })
 
     // Find and click the Structures column header to sort (usually the 2nd header)
-    const headers = document.querySelectorAll(`.${heatmap_class} th`)
+    const headers = document.querySelectorAll<HTMLElement>(`.${heatmap_class} th`)
     const structures_header = [...headers].find((th) =>
       th.textContent?.includes(`Structures`),
     )
-    if (structures_header) {
-      ;(structures_header as HTMLElement).click()
-    }
+    if (!structures_header) throw new Error(`Structures header not found`)
+    structures_header.click()
     await tick()
 
     // Get new order after sorting
@@ -162,12 +158,11 @@ describe(`Datasets Page`, () => {
     })
 
     // Find and click the Links column header (which should be non-sortable)
-    const links_header = [...document.querySelectorAll(`.${heatmap_class} th`)].find(
-      (th) => th.textContent?.includes(`Links`),
-    )
-    if (links_header) {
-      ;(links_header as HTMLElement).click()
-    }
+    const links_header = [
+      ...document.querySelectorAll<HTMLElement>(`.${heatmap_class} th`),
+    ].find((th) => th.textContent?.includes(`Links`))
+    if (!links_header) throw new Error(`Links header not found`)
+    links_header.click()
     await tick()
 
     // Get order after clicking Links column

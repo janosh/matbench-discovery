@@ -1,7 +1,7 @@
 import { DATASETS } from '$lib'
 import Page from '$routes/data/[slug]/+page.svelte'
-import { mount } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { doc_query, mount } from '../index'
 
 // Find two real datasets to test with
 const mp2022_key = `MP 2022`
@@ -25,18 +25,15 @@ describe(`Dataset Detail Page`, () => {
     // Check title is displayed
     expect(document.querySelector(`h1`)?.textContent).toBe(mp_dataset.name)
 
-    // Check metadata section
-    const meta_info = document.querySelector(`.meta-info`)
-    expect(meta_info).not.toBeNull()
-
     // Check key metadata fields are displayed
-    expect(meta_info?.textContent).toContain(`structures`)
-    expect(meta_info?.textContent).toContain(mp_dataset.open ? `Open` : `Closed`)
-    expect(meta_info?.textContent).toContain(mp_dataset.license)
+    const meta_info = doc_query(`.meta-info`)
+    expect(meta_info.textContent).toContain(`structures`)
+    expect(meta_info.textContent).toContain(mp_dataset.open ? `Open` : `Closed`)
+    expect(meta_info.textContent).toContain(mp_dataset.license)
 
-    // Check links and description
-    expect(document.querySelector(`.links`)).not.toBeNull()
-    expect(document.querySelector(`.description`)).not.toBeNull()
+    // Check links and description have content
+    expect(doc_query(`.links`).querySelectorAll(`a`).length).toBeGreaterThan(0)
+    expect(doc_query(`.description`).textContent).toMatch(/\S/)
   })
 
   it(`renders a minimal dataset correctly`, () => {
@@ -53,13 +50,12 @@ describe(`Dataset Detail Page`, () => {
 
     // Check title and basic content
     expect(document.querySelector(`h1`)?.textContent).toBe(minimal_dataset.name)
-    expect(document.querySelector(`.meta-info`)).not.toBeNull()
-    expect(document.querySelector(`.description`)).not.toBeNull()
+    expect(doc_query(`.description`).textContent).toMatch(/\S/)
 
     // Check some specific fields
-    const meta_info = document.querySelector(`.meta-info`)
-    expect(meta_info?.textContent).toContain(`structures`)
-    expect(meta_info?.textContent).toContain(minimal_dataset.open ? `Open` : `Closed`)
-    expect(meta_info?.textContent).toContain(minimal_dataset.license)
+    const meta_info = doc_query(`.meta-info`)
+    expect(meta_info.textContent).toContain(`structures`)
+    expect(meta_info.textContent).toContain(minimal_dataset.open ? `Open` : `Closed`)
+    expect(meta_info.textContent).toContain(minimal_dataset.license)
   })
 })

@@ -7,14 +7,15 @@
   import { BarPlot } from 'matterviz/plot'
   import { Toggle } from 'svelte-multiselect'
 
-  const raw_counts = import.meta.glob<unknown>(`../wbm-element-counts-*=*.json`, {
-    eager: true,
-    import: 'default',
-  })
-  const elem_counts: Record<string, unknown> = $state({})
+  const raw_counts = import.meta.glob<Record<string, number>>(
+    `../wbm-element-counts-*=*.json`,
+    { eager: true, import: 'default' },
+  )
+  // key files by their `arity=N`/`batch=N` filename suffix
+  const elem_counts: Record<string, Record<string, number>> = $state({})
   for (const [key, value] of Object.entries(raw_counts)) {
-    const short_key = key.split(`-`).at(-1)?.split(`.`)[0] as string
-    elem_counts[short_key] = value
+    const short_key = key.split(`-`).at(-1)?.split(`.`)[0]
+    if (short_key) elem_counts[short_key] = value
   }
 
   const all_keys = Object.keys(elem_counts)
@@ -22,10 +23,10 @@
   let arity_keys = all_keys.filter(starts_with_arity)
   let batch_keys = all_keys.filter((key) => key.startsWith(`batch=`))
   let log = $state(false) // Log color scale
-  let filter = $state(all_keys.find(starts_with_arity) as string)
+  let filter = $state(all_keys.find(starts_with_arity) ?? all_keys[0] ?? ``)
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
-  let active_counts = $derived(elem_counts[filter] as Record<string, number>)
+  let active_counts = $derived(elem_counts[filter])
   let normalized_bar_counts: boolean = $state(false)
 
   const style = `display: flex; place-items: center; place-content: center;`

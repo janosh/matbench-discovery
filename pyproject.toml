@@ -4,7 +4,8 @@ version = "1.3.1"
 description = "A benchmark for machine learning models on inorganic crystal"
 authors = [{ name = "Janosh Riebesell", email = "janosh.riebesell@gmail.com" }]
 readme = "readme.md"
-license = { file = "license" }
+license = "MIT"
+license-files = ["license"]
 keywords = [
   "force field",
   "geometry optimization",
@@ -18,7 +19,6 @@ keywords = [
 ]
 classifiers = [
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -60,7 +60,7 @@ phonons = ["phono3py==3.30.0", "phonopy>=2.35"]
 symmetry = ["moyopy>=0.12"]
 
 [build-system]
-requires = ["uv_build>=0.11.21"]
+requires = ["uv_build>=0.11.21,<0.12"]
 build-backend = "uv_build"
 
 [tool.uv]

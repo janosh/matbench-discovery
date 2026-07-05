@@ -12,7 +12,7 @@
   import GeoOptReadme from './geo-opt-readme.md'
 
   // payload models arrive pre-styled (colors + discovery-F1-desc leaderboard order) from the
-  // figure_payload plugin; re-rank the two that want a different order (struct-rmsd by AUC
+  // json_payload plugin; re-rank the two that want a different order (struct-rmsd by AUC
   // desc, sym-ops by symmetry-op-diff sigma asc). spg sankeys keep the leaderboard order.
   const struct_rmsd_sorted = order_models(struct_rmsd_cdf.models, (mdl) => -mdl.auc)
   const sym_ops_sorted = order_models(sym_ops_diff.models, (mdl) => mdl.sigma)

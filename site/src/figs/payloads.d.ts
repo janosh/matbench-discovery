@@ -5,7 +5,7 @@
 // Static payloads are committed as gzipped `<name>.json.gz`; multi-model payloads as
 // line-delimited `<name>.jsonl` (one model per line, reassembled into the aggregate
 // shape) so concurrent model submissions git-merge cleanly. Both are loaded at build by
-// the figure_payload plugin (vite.config.ts) and import as a parsed default export. The
+// the json_payload plugin (vite.config.ts) and import as a parsed default export. The
 // plugin pipes each .jsonl payload through attach_style, so models arrive in leaderboard
 // (discovery-F1-desc) order with the `color` it injects, typed on KeyedModel and on the
 // label-only payloads that read it.

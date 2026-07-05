@@ -1,10 +1,11 @@
 """Guards for the energy/kappa parity plot assets on model detail pages.
 
 Model pages fetch their energy/kappa parity plot data (too large for git) from the
-v1.0.0 GitHub release. Ingesting a model (`just ingest-model <model>`, or the
-'ingest-model' PR label which runs it in CI) generates the assets, uploads them to
-the release, and commits their metadata to the parity manifests. These tests fail
-fast when either step was skipped (which 404s model pages in production).
+v1.0.0 GitHub release. Ingesting a model (`uv run --with-editable .
+scripts/ingest_model.py <model> --archive`, or the 'ingest-model' PR label which runs
+it in CI) generates the assets, uploads them to the release, and commits their
+metadata to the parity manifests. These tests fail fast when either step was skipped
+(404s model pages in production).
 
 model-pr-guard.yml runs this file as a required PR check (authed, so the release
 test never rate-limit-skips there).
@@ -24,7 +25,8 @@ from matbench_discovery.enums import Model
 
 INGEST_HINT = (
     "apply the 'ingest-model' label to the submission PR (runs the full ingest in "
-    "CI) or run `just ingest-model <model>` locally"
+    "CI) or run `uv run --with-editable . scripts/ingest_model.py <model> "
+    "--archive` locally"
 )
 
 

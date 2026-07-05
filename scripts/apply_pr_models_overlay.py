@@ -85,7 +85,8 @@ def main(pr_tree: str) -> int:
         print(
             f"::error::{ENUMS_REL_PATH} diff goes beyond adding Model members - "
             "refusing to run PR code in CI. Review the PR and run "
-            "`just ingest-model <model>` locally instead. Violations:"
+            "`uv run --with-editable . scripts/ingest_model.py <model> "
+            "--archive` locally instead. Violations:"
         )
         for violation in violations:
             print(f"  {violation}")

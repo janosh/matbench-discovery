@@ -1,14 +1,14 @@
-"""Model-submission ingestion pipeline (single source of truth for `just` recipes).
+"""Model-submission ingestion pipeline.
 
-Replaces the former 240-line bash recipe in the justfile: the checklist now reads the
-model YAML through the Model enum's metadata API instead of grep/sed, making it
-testable (tests/test_ingest_model.py) and robust to YAML formatting.
+The checklist reads the model YAML through the Model enum's metadata API instead of
+grep/sed, making it testable (tests/test_ingest_model.py) and robust to YAML
+formatting.
 
-Usage (via the justfile, or directly):
-    uv run python scripts/ingest_model.py <model>            # check+evals+figs+payloads
-    uv run python scripts/ingest_model.py <model> --archive  # + figshare/release upload
-    uv run python scripts/ingest_model.py --payloads-only    # full payload regen
-    uv run python scripts/ingest_model.py <model> --payloads-only  # merge single model
+Usage:
+    uv run scripts/ingest_model.py <model>            # check+evals+figs+payloads
+    uv run scripts/ingest_model.py <model> --archive  # + figshare/release upload
+    uv run scripts/ingest_model.py --payloads-only    # full payload regen
+    uv run scripts/ingest_model.py <model> --payloads-only  # merge single model
 """
 
 import argparse
@@ -27,19 +27,18 @@ PASS, FAIL, SKIP = "✓", "✗", "○"
 # --show-non-compliant: site payloads always contain the full model set (pages can
 # filter client-side); --no-show: don't open plotly figs in the browser
 PAYLOAD_FLAGS = ("--auto-download", "--show-non-compliant", "--no-show")
-UV_PROJECT_ARGS = ("--with-editable", ".")
 # each entry is the `uv run` argument string for one payload script; kappa needs the
 # phonons extra (phono3py/phonopy) when computing conductivity diagnostics
 PAYLOAD_SCRIPTS = (
-    "python scripts/model_figs/roc_curves_models.py",
-    "python scripts/model_figs/hull_dist_box_plot.py",
-    "python scripts/model_figs/cumulative_metrics.py",
-    "python scripts/model_figs/rolling_hull_dist_mae_models.py",
-    "python scripts/model_figs/tiles_hist_classified_stable_models.py",
-    "python scripts/model_figs/tmi-page-figures.py",
-    "python scripts/model_figs/single_model_per_element_errors.py",
-    "--extra phonons python scripts/model_figs/kappa_103_analysis.py",
-    "python scripts/evals/geo_opt.py",
+    "scripts/model_figs/roc_curves_models.py",
+    "scripts/model_figs/hull_dist_box_plot.py",
+    "scripts/model_figs/cumulative_metrics.py",
+    "scripts/model_figs/rolling_hull_dist_mae_models.py",
+    "scripts/model_figs/tiles_hist_classified_stable_models.py",
+    "scripts/model_figs/tmi-page-figures.py",
+    "scripts/model_figs/single_model_per_element_errors.py",
+    "--extra phonons scripts/model_figs/kappa_103_analysis.py",
+    "scripts/evals/geo_opt.py",
 )
 PARITY_ASSET_DIRS = (
     "site/static/energy-parity/assets",
@@ -48,28 +47,23 @@ PARITY_ASSET_DIRS = (
 # (label, skipped for energy-only models, fatal on failure, `uv run` args).
 # kappa needs the phonons extra (phono3py/phonopy); geo-opt the symmetry extra (moyopy)
 EVAL_STEPS = (
-    ("Discovery metrics", False, True, "python scripts/evals/discovery.py"),
-    ("Kappa metrics", True, True, "--extra phonons python scripts/evals/kappa.py"),
-    (
-        "Geo-opt analysis",
-        True,
-        True,
-        "--extra symmetry python scripts/analyze_geo_opt.py",
-    ),
-    ("Diatomic metrics", True, False, "python scripts/evals/diatomic_metrics.py"),
+    ("Discovery metrics", False, True, "scripts/evals/discovery.py"),
+    ("Kappa metrics", True, True, "--extra phonons scripts/evals/kappa.py"),
+    ("Geo-opt analysis", True, True, "--extra symmetry scripts/analyze_geo_opt.py"),
+    ("Diatomic metrics", True, False, "scripts/evals/diatomic_metrics.py"),
 )
 FIG_STEPS = (
     (
         "Energy parity assets",
         False,
         True,
-        "python site/scripts/generate-energy-parity-assets.py --skip-structures",
+        "site/scripts/generate-energy-parity-assets.py --skip-structures",
     ),
     (
         "Kappa parity assets",
         True,
         True,
-        "python site/scripts/generate-kappa-parity-assets.py",
+        "site/scripts/generate-kappa-parity-assets.py",
     ),
 )
 
@@ -116,30 +110,19 @@ def run_cmd(*cmd: str) -> bool:
 
 
 def uv_run_args(args: str) -> tuple[str, ...]:
-    """Build ``uv run`` args, resolving project extras as editable requirements."""
+    """Build ``uv run`` args, resolving leading ``--extra NAME`` flags into an
+    editable project requirement (e.g. '--extra phonons x.py' -> --with-editable
+    .[phonons] x.py).
+    """
     tokens = shlex.split(args)
     extras: list[str] = []
-    token_idx = 0
-    while token_idx < len(tokens) and tokens[token_idx].startswith("--extra"):
-        arg = tokens[token_idx]
-        if arg.startswith("--extra="):
-            extra = arg.removeprefix("--extra=")
-            token_idx += 1
-        elif arg == "--extra":
-            if token_idx + 1 >= len(tokens):
-                raise ValueError("uv run --extra requires a value")
-            extra = tokens[token_idx + 1]
-            token_idx += 2
-        else:
-            break
-        if not extra:
+    while tokens[:1] == ["--extra"]:
+        if len(tokens) < 2 or not tokens[1]:
             raise ValueError("uv run --extra requires a non-empty value")
-        extras.append(extra)
-    if token_idx < len(tokens) and tokens[token_idx] == "--":
-        token_idx += 1
-    cmd_args = tokens[token_idx:]
+        extras.append(tokens[1])
+        tokens = tokens[2:]
     project_req = f".[{','.join(extras)}]" if extras else "."
-    return ("uv", "run", "--with-editable", project_req, *cmd_args)
+    return ("uv", "run", "--with-editable", project_req, *tokens)
 
 
 def task_metrics(model: Model, task: str) -> dict | str | None:
@@ -239,7 +222,7 @@ def run_archive(model: Model, checks: Checklist) -> None:
     """
     banner("STEP 4: Archiving prediction files + publishing parity assets")
     if run_cmd(
-        *("uv", "run", "python", "scripts/upload_model_preds_to_figshare.py"),
+        *uv_run_args("scripts/upload_model_preds_to_figshare.py"),
         *("--models", model.name, "--no-interactive"),
     ):
         checks.ok("Prediction files archived to project figshare articles")
@@ -270,16 +253,7 @@ def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
         if not run_cmd(*uv_run_args(script), *PAYLOAD_FLAGS, *model_args):
             checks.fail(f"{script} failed")
             return
-    if run_cmd(
-        "uv",
-        "run",
-        *UV_PROJECT_ARGS,
-        "--with",
-        "pytest",
-        "pytest",
-        "tests/test_fig_payloads.py",
-        "-q",
-    ):
+    if run_cmd(*uv_run_args("--with pytest pytest tests/test_fig_payloads.py -q")):
         checks.ok("Multi-model payloads regenerated + shape tests passed")
     else:
         checks.fail("Payload shape tests failed after regeneration")
@@ -293,7 +267,7 @@ def map_yaml_paths(paths: Sequence[str]) -> list[str]:
     """
     names: list[str] = []
     for path in paths:
-        model = next((m for m in Model if m.yaml_path.endswith(path)), None)
+        model = next((mdl for mdl in Model if mdl.yaml_path.endswith(path)), None)
         if model is None:
             raise SystemExit(f"No Model enum entry maps to {path} - add it to enums.py")
         names.append(model.name)
