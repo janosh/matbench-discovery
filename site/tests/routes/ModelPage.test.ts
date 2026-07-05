@@ -2,8 +2,9 @@ import { MODELS } from '$lib'
 import { get_org_logo } from '$lib/labels'
 import type { ModelData } from '$lib/types'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mount } from '../index'
 
 beforeEach(() =>
   vi.stubGlobal(

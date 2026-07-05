@@ -37,6 +37,40 @@ export const sort_from_query = (
   dir: valid_query_param(params, `dir`, default_sort.dir, sort_dirs),
 })
 
+// -- Weighted-score (CPS/CMDS) radar weights as a single URL param --------------
+// Serialized as comma-joined values in config-key order, e.g. weights=0.5,0.4,0.1.
+type WeightsConfig = Record<string, { weight: number }>
+
+const round_weight = (weight: number): number => Math.round(weight * 1000) / 1000
+
+// Empty string when weights match the defaults (so sync_url_params drops the param)
+export function weights_to_param(
+  config: WeightsConfig,
+  default_config: WeightsConfig,
+): string {
+  const keys = Object.keys(config)
+  const is_default = keys.every(
+    (key) =>
+      round_weight(config[key].weight) ===
+      round_weight(default_config[key]?.weight ?? NaN),
+  )
+  if (is_default) return ``
+  return keys.map((key) => round_weight(config[key].weight)).join(`,`)
+}
+
+// Parse a weights param and write it into config (normalized to sum 1).
+// Silently ignores malformed params (wrong count, negative/non-finite, all-zero).
+export function apply_weights_param(param: string | null, config: WeightsConfig): void {
+  if (!param) return
+  const keys = Object.keys(config)
+  const values = param.split(`,`).map(Number)
+  if (values.length !== keys.length) return
+  if (values.some((val) => !Number.isFinite(val) || val < 0)) return
+  const total = values.reduce((sum, val) => sum + val, 0)
+  if (total === 0) return
+  for (const [idx, key] of keys.entries()) config[key].weight = values[idx] / total
+}
+
 export function sync_url_params(entries: UrlParamEntry[], state: PageState): void {
   const params = new URLSearchParams(location.search)
   for (const [key, value, default_value = ``] of entries) {

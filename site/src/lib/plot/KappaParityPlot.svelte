@@ -142,7 +142,7 @@
     </div>
   {:else}
     <ScatterPlot
-      series={series as unknown as DataSeries[]}
+      {series}
       ref_lines={parity_ref_lines}
       style="height: 480px"
       x_axis={{
@@ -168,7 +168,7 @@
     >
       {#snippet tooltip({ metadata })}
         {#if metadata}
-          {@const pt = metadata as unknown as KappaParityPoint}
+          {@const pt = metadata as KappaParityPoint}
           {@const sys = crystal_sys(pt)}
           <strong>{pt.material_id}</strong>
           {@html sanitize_compact_formula(pt.formula)}<br />

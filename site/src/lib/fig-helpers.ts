@@ -6,7 +6,7 @@ import { SvelteSet } from 'svelte/reactivity'
 
 // === multi-model payload styling ===
 // .jsonl payloads hold position-independent data only (no color/order) so models merge
-// cleanly. The figure_payload plugin (vite.config.ts) runs each through attach_style on
+// cleanly. The json_payload plugin (vite.config.ts) runs each through attach_style on
 // import, so pages get models pre-colored in discovery-F1-desc leaderboard order;
 // order_models re-sorts the few figures wanting a different order (MAE, AUC, sigma).
 
@@ -40,7 +40,7 @@ export const model_mae = (model: { key?: string; label?: string }): number =>
 export const order_models = <T>(models: T[], order: (model: T) => number): T[] =>
   models.toSorted((row_a, row_b) => order(row_a) - order(row_b))
 
-// import-time pass (run by the figure_payload plugin): attach each model's stable color
+// import-time pass (run by the json_payload plugin): attach each model's stable color
 // and sort into discovery-F1-desc leaderboard order. Deriving it on import keeps the
 // committed .jsonl position-independent and merge-friendly.
 export const attach_style = <

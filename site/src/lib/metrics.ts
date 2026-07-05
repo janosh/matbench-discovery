@@ -59,10 +59,7 @@ export const discovery_task_tooltips: Record<
 } as const
 
 // Access (possibly deeply) nested metrics and parameters from ModelData objects
-export function get_nested_value(
-  model: ModelData, // Model data to extract value from
-  dotted_path: string, // Dotted path to nested value to extract
-): unknown {
+export function get_nested_value(model: ModelData, dotted_path: string): unknown {
   const keys = dotted_path.split(`.`).filter(Boolean) // Remove empty parts
   if (keys.length === 0) return undefined // Empty path returns undefined, not the whole model
   let value: unknown = model
@@ -175,19 +172,17 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 // Combined filter function that respects both prediction type and compliance filters
 export const make_combined_filter =
   (
-    model_filter: (model: ModelData) => boolean, // Custom model filter function
-    show_energy: boolean, // Whether to show energy-only models
-    show_compliant: boolean, // Whether to show compliant models
-    show_non_compliant: boolean, // Whether to show non-compliant models
+    model_filter: (model: ModelData) => boolean,
+    show_energy: boolean,
+    show_compliant: boolean,
+    show_non_compliant: boolean,
   ): ((model: ModelData) => boolean) =>
   (model: ModelData) => {
-    if (!model_filter(model)) return false // Apply user-provided model_filter first
+    if (!model_filter(model)) return false
 
-    // Filter energy-only models if not shown
     const is_energy_only = model.targets === `E`
     if (is_energy_only && !show_energy) return false
 
-    // Filter noncompliant models if not shown
     const is_compliant = model_is_compliant(model)
     if (is_compliant && !show_compliant) return false
     if (!is_compliant && !show_non_compliant) return false
@@ -200,12 +195,12 @@ export const make_combined_filter =
 
 // Calculate table data for the metrics table with combined scores
 export function assemble_row_data(
-  discovery_set: DiscoverySet, // Discovery set to use for metrics
-  model_filter: (model: ModelData) => boolean, // Filter function for models
-  show_energy_only: boolean, // Show energy-only models
-  show_non_compliant: boolean, // Show non-compliant models
-  show_compliant: boolean, // Show compliant models
-  models: ModelData[] = MODELS, // Model collection, injectable for tests
+  discovery_set: DiscoverySet,
+  model_filter: (model: ModelData) => boolean,
+  show_energy_only: boolean,
+  show_non_compliant: boolean,
+  show_compliant: boolean,
+  models: ModelData[] = MODELS, // injectable for tests
 ) {
   const current_filter = make_combined_filter(
     model_filter,

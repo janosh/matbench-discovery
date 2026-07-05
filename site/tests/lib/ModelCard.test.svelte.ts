@@ -1,12 +1,13 @@
 import { DATASETS, ModelCard, MODELS } from '$lib'
 import { ALL_METRICS } from '$lib/labels'
 import { format_num } from 'matterviz'
-import { type ComponentProps, mount } from 'svelte'
+import type { ComponentProps } from 'svelte'
 import { describe, expect, it } from 'vitest'
+import { mount } from '../index'
 
 describe(`ModelCard`, () => {
   // Get a real model from MODELS
-  const found_model = MODELS.find((m) => m.model_key === `mace-mp-0`)
+  const found_model = MODELS.find((model) => model.model_key === `mace-mp-0`)
   if (!found_model) throw new Error(`Could not find mace-mp-0 model in MODELS`)
   const model = found_model
 
@@ -22,6 +23,13 @@ describe(`ModelCard`, () => {
       props: { model, metrics, sort_by: `F1`, ...overrides },
     })
 
+  // nav renders one link per http(s) URL among repo/paper/docs/checkpoint, plus the
+  // always-present Files link built from pkg.repository
+  const nav_link_count = (mdl: typeof model) =>
+    [mdl.repo, mdl.paper, mdl.url, mdl.checkpoint_url].filter((href) =>
+      href?.startsWith(`http`),
+    ).length + 1
+
   describe(`Basic Rendering`, () => {
     it(`renders model header and basic info`, () => {
       mount_card()
@@ -30,16 +38,13 @@ describe(`ModelCard`, () => {
       expect(header?.textContent).toContain(`MACE`)
 
       const links = document.querySelectorAll<HTMLAnchorElement>(`nav a`)
-      expect(links.length).toBeGreaterThan(0)
+      expect(links).toHaveLength(nav_link_count(model))
       expect(links[0].href).toBe(model.repo)
 
       const info_spans = document.querySelectorAll(`section.metadata > span`)
-      // Training set is now first in the metadata section, so we need to check other spans
-      // Find the date_added span by its content
       const date_added_span = [...info_spans].find((span) =>
         span.textContent?.includes(`Added ${model.date_added}`),
       )
-      expect(date_added_span).toBeDefined()
       expect(date_added_span?.textContent).toContain(model.date_added)
 
       const date_published_span = [...info_spans].find((span) =>
@@ -53,15 +58,20 @@ describe(`ModelCard`, () => {
       const params_span = [...info_spans].find((span) =>
         span.textContent?.includes(`${format_num(model.model_params, `.3~s`)} params`),
       )
-      expect(params_span).toBeDefined()
+      expect(params_span?.textContent).toContain(`params`)
+
+      // show_details defaults to false: no detail sections rendered
+      expect(
+        document.querySelectorAll(`section:not(.metrics):not(.metadata) h3`),
+      ).toHaveLength(0)
     })
 
     it(`handles missing optional fields gracefully`, () => {
       // empty strings are falsy, so the component treats these as missing
-      mount_card({ model: { ...model, date_published: ``, paper: ``, url: `` } })
+      const stripped = { ...model, date_published: ``, paper: ``, url: `` }
+      mount_card({ model: stripped })
 
-      const links = document.querySelectorAll(`nav a`)
-      expect(links.length).toBeGreaterThan(0)
+      expect(document.querySelectorAll(`nav a`)).toHaveLength(nav_link_count(stripped))
       expect(document.body.textContent).not.toContain(`Published`)
     })
   })
@@ -73,7 +83,6 @@ describe(`ModelCard`, () => {
     const training_set = [...document.querySelectorAll(`section.metadata span`)].find(
       (span) => span.textContent?.includes(`Training data`),
     )
-    expect(training_set).toBeDefined()
     expect(training_set?.textContent).toContain(`Training data:`)
 
     // Test actual training set data
@@ -94,9 +103,9 @@ describe(`ModelCard`, () => {
       mount_card()
 
       const metrics_lis = document.querySelectorAll(`.metrics li`)
-      expect(metrics_lis.length).toBeGreaterThan(0)
+      expect(metrics_lis).toHaveLength(metrics.length)
 
-      const f1_metric = [...metrics_lis].find((m) => m.textContent?.includes(`F1`))
+      const f1_metric = [...metrics_lis].find((item) => item.textContent?.includes(`F1`))
       const discovery_metrics = model.metrics?.discovery
       const f1_value =
         discovery_metrics && typeof discovery_metrics === `object`
@@ -107,7 +116,9 @@ describe(`ModelCard`, () => {
       )
       expect(f1_metric?.classList.contains(`active`)).toBe(true)
 
-      const kappa_metric = [...metrics_lis].find((m) => m.textContent?.includes(`κ`))
+      const kappa_metric = [...metrics_lis].find((item) =>
+        item.textContent?.includes(`κ`),
+      )
       const phonon_metrics = model.metrics?.phonons
       const kappa_value =
         phonon_metrics && typeof phonon_metrics === `object`
@@ -154,24 +165,12 @@ describe(`ModelCard`, () => {
 
       // Check package versions
       const packages = [...document.querySelectorAll(`section:nth-child(2) li`)]
-      expect(packages.length).toBeGreaterThan(0)
+      expect(packages).toHaveLength(Object.keys(model.requirements ?? {}).length)
       const first_package = Object.entries(model.requirements ?? {})[0]
       const [pkg_name, pkg_version] = first_package ?? []
       expect(packages[0]?.textContent?.trim() ?? null).toBe(
         first_package ? `${pkg_name}: ${pkg_version}` : null,
       )
-    })
-  })
-
-  describe(`regression tests for default values`, () => {
-    it(`verifies show_details defaults to false to catch regressions`, () => {
-      mount_card()
-
-      // Test show_details default (should be false - no detail sections visible)
-      const detail_sections = document.querySelectorAll(
-        `section:not(.metrics):not(.metadata) h3`,
-      )
-      expect(detail_sections).toHaveLength(0)
     })
   })
 })

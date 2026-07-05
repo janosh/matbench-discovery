@@ -12,7 +12,7 @@ declare module '*.json.gz' {
 
 declare module '*.jsonl' {
   // line-delimited multi-model figure payloads, reassembled at build time by the
-  // figure_payload plugin in vite.config.ts, typed per payload in src/figs/payloads.d.ts
+  // json_payload plugin in vite.config.ts, typed per payload in src/figs/payloads.d.ts
   const data: unknown
   export default data
 }

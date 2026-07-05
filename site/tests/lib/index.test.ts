@@ -1,15 +1,17 @@
 import { arr_to_str, data_files, DATASETS, format_date, slugify } from '$lib'
 import {
+  apply_weights_param,
   sort_from_query,
   sync_url_params,
   valid_query_param,
+  weights_to_param,
 } from '$lib/url-state.svelte'
 import { describe, expect, it, vi } from 'vitest'
 
 describe(`$lib data re-exports reflect index.ts mutations`, () => {
   it(`DATASETS entries expose computed slug and description_html`, () => {
     const entries = Object.entries(DATASETS)
-    expect(entries.length).toBeGreaterThan(0)
+    expect(entries.length).toBeGreaterThanOrEqual(20) // datasets.yml entry count
     for (const [key, dataset] of entries) {
       expect(dataset.slug, `${key} missing slug`).toBe(slugify(key))
       expect(
@@ -23,7 +25,7 @@ describe(`$lib data re-exports reflect index.ts mutations`, () => {
     const entries = Object.entries(data_files).filter(
       ([key, entry]) => !key.startsWith(`_`) && typeof entry === `object`,
     )
-    expect(entries.length).toBeGreaterThan(0)
+    expect(entries.length).toBeGreaterThanOrEqual(10) // data-files.yml entry count
     for (const [key, entry] of entries) {
       expect(
         (entry as { html?: string }).html?.length,
@@ -124,5 +126,49 @@ describe(`sync_url_params`, () => {
     sync_url_params([[`x`, `force_rmse`]], {})
 
     expect(replace_spy).not.toHaveBeenCalled()
+  })
+})
+
+describe(`weights_to_param / apply_weights_param`, () => {
+  const make_config = (weights: number[]) => ({
+    F1: { weight: weights[0] },
+    κ_SRME: { weight: weights[1] },
+    RMSD: { weight: weights[2] },
+  })
+  const defaults = make_config([0.5, 0.4, 0.1])
+
+  it.each([
+    [`defaults serialize to empty string`, [0.5, 0.4, 0.1], ``],
+    [`custom weights serialize in key order`, [0.7, 0.2, 0.1], `0.7,0.2,0.1`],
+    [`weights are rounded to 3 decimals`, [1 / 3, 1 / 3, 1 / 3], `0.333,0.333,0.333`],
+  ] as const)(`%s`, (_name, weights, expected) => {
+    expect(weights_to_param(make_config([...weights]), defaults)).toBe(expected)
+  })
+
+  it.each([
+    [`valid param`, `0.7,0.2,0.1`, [0.7, 0.2, 0.1]],
+    [`unnormalized weights get normalized`, `2,1,1`, [0.5, 0.25, 0.25]],
+    [`null param is a no-op`, null, [0.5, 0.4, 0.1]],
+    [`wrong count is ignored`, `0.5,0.5`, [0.5, 0.4, 0.1]],
+    [`negative weight is ignored`, `-1,1,1`, [0.5, 0.4, 0.1]],
+    [`non-numeric is ignored`, `a,b,c`, [0.5, 0.4, 0.1]],
+    [`all-zero is ignored`, `0,0,0`, [0.5, 0.4, 0.1]],
+  ] as const)(`%s`, (_name, param, expected) => {
+    const config = make_config([0.5, 0.4, 0.1])
+    apply_weights_param(param, config)
+    const weights = Object.values(config).map(({ weight }) => weight)
+    for (const [idx, weight] of weights.entries()) {
+      expect(weight).toBeCloseTo(expected[idx], 10)
+    }
+  })
+
+  it(`round-trips through serialize -> parse`, () => {
+    const config = make_config([0.62, 0.25, 0.13])
+    const param = weights_to_param(config, defaults)
+    const restored = make_config([0.5, 0.4, 0.1])
+    apply_weights_param(param, restored)
+    for (const key of Object.keys(config) as (keyof typeof config)[]) {
+      expect(restored[key].weight).toBeCloseTo(config[key].weight, 3)
+    }
   })
 })

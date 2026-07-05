@@ -362,11 +362,8 @@ describe(`calculate_cps`, () => {
       expect(all_undefined_score).toBeNull()
     })
 
-    it(`handles NaN inputs correctly`, () => {
-      // The function should return null for NaN inputs
-      const nan_score = calculate_cps(NaN, 0.01, 0.5, DEFAULT_CPS_CONFIG)
-      // Verify that it returns null
-      expect(nan_score).toBeNull()
+    it(`returns null for NaN inputs`, () => {
+      expect(calculate_cps(NaN, 0.01, 0.5, DEFAULT_CPS_CONFIG)).toBeNull()
     })
 
     it(`handles empty weights configuration`, () => {
@@ -766,7 +763,7 @@ describe(`Model Sorting Logic`, () => {
     // Test ascending sort (runtime 0 should be last)
     const sorted_asc = models.toSorted(sort_models(`Run Time`, `asc`))
     // Check the non-zero values are sorted correctly first
-    expect(sorted_asc.slice(0, 2).map((m) => m.model_key)).toStrictEqual([
+    expect(sorted_asc.slice(0, 2).map((model) => model.model_key)).toStrictEqual([
       `model_c`,
       `model_a`,
     ])
@@ -774,8 +771,8 @@ describe(`Model Sorting Logic`, () => {
     expect(
       sorted_asc
         .slice(2)
-        .map((m) => m.model_key)
-        .toSorted((a, b) => (a ?? ``).localeCompare(b ?? ``)),
+        .map((model) => model.model_key)
+        .toSorted((key_1, key_2) => (key_1 ?? ``).localeCompare(key_2 ?? ``)),
     ).toStrictEqual([`model_b`, `model_d`])
 
     // Test descending sort (runtime 0 should be first)
@@ -784,11 +781,11 @@ describe(`Model Sorting Logic`, () => {
     expect(
       sorted_desc
         .slice(0, 2)
-        .map((m) => m.model_key)
-        .toSorted((a, b) => (a ?? ``).localeCompare(b ?? ``)),
+        .map((model) => model.model_key)
+        .toSorted((key_1, key_2) => (key_1 ?? ``).localeCompare(key_2 ?? ``)),
     ).toStrictEqual([`model_b`, `model_d`])
     // Check the non-zero values are sorted correctly after
-    expect(sorted_desc.slice(2).map((m) => m.model_key)).toStrictEqual([
+    expect(sorted_desc.slice(2).map((model) => model.model_key)).toStrictEqual([
       `model_a`,
       `model_c`,
     ])
@@ -842,7 +839,7 @@ describe(`Model Sorting Logic`, () => {
 
     // Ascending sort
     const sorted_asc = models_with_null.toSorted(sort_models(`metric`, `asc`))
-    expect(sorted_asc.map((m) => m.model_key)).toStrictEqual([
+    expect(sorted_asc.map((model) => model.model_key)).toStrictEqual([
       `val_1`,
       `null_1`,
       `null_2`,
@@ -850,7 +847,7 @@ describe(`Model Sorting Logic`, () => {
 
     // Descending sort
     const sorted_desc = models_with_null.toSorted(sort_models(`metric`, `desc`))
-    expect(sorted_desc.map((m) => m.model_key)).toStrictEqual([
+    expect(sorted_desc.map((model) => model.model_key)).toStrictEqual([
       `val_1`,
       `null_1`,
       `null_2`,
