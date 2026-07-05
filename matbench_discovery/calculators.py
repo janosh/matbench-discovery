@@ -256,6 +256,8 @@ def _tace(model_key: str) -> Callable[[str], "Calculator"]:
     def make_calc(device: str) -> "Calculator":
         from tace.interface.ase import TACEAseCalc
 
+        # export TACE_USE_OEQ=1 or export TACE_USE_CUE=1 to use oeq or cueq for
+        # all TACE model, recommend to use oeq
         return TACEAseCalc(download_checkpoint(model_key), use_ema=True, device=device)
 
     return make_calc

@@ -89,12 +89,12 @@ metrics:
   phonons:
     kappa_103:
       pred_file: models/tace/tece-oam-rra-1.0/2026-07-05-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05.json.gz
-      pred_file_url: https://figshare.com/files/66035516
+      pred_file_url: https://figshare.com/files/66313763
       κ_SRME: 0.0927
       κ_SRE: 0.0447
   geo_opt:
     pred_file: models/tace/tece-oam-rra-1.0/2026-07-05-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/66036395
+    pred_file_url: https://figshare.com/files/66313751
     struct_col: tace_structure
     symprec=1e-2:
       rmsd: 0.0575 # unitless
@@ -103,8 +103,8 @@ metrics:
       symmetry_match: 0.8183 # fraction
       symmetry_increase: 0.1245 # fraction
       n_structures: 256963 # count
-      analysis_file: models/tace/tece-oam-rra-1.0/2026-07-05-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.13.0.csv.gz
-      analysis_file_url: https://figshare.com/files/66085373
+      analysis_file: models/tace/tece-oam-rra-1.0/2026-07-05-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.14.0.csv.gz
+      analysis_file_url: https://figshare.com/files/66313874
     symprec=1e-5:
       rmsd: 0.0575 # unitless
       n_sym_ops_mae: 2.7951 # unitless
@@ -112,11 +112,11 @@ metrics:
       symmetry_match: 0.5907 # fraction
       symmetry_increase: 0.2102 # fraction
       n_structures: 256963 # count
-      analysis_file: models/tace/tace-oam-rra-preview/2026-07-05-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.13.0.csv.gz
-      analysis_file_url: https://figshare.com/files/66085367
+      analysis_file: models/tace/tece-oam-rra-1.0/2026-07-05-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.14.0.csv.gz
+      analysis_file_url: https://figshare.com/files/66313868
   discovery:
     pred_file: models/tace/tece-oam-rra-1.0/2026-07-05-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/66036038
+    pred_file_url: https://figshare.com/files/66313757
     pred_col: e_form_per_atom_tace
     full_test_set:
       F1: 0.91 # fraction
@@ -172,3 +172,20 @@ metrics:
       RMSE: 0.066 # eV/atom
       R2: 0.871 # dimensionless
       missing_preds: 0 # count
+  diatomics:
+    pred_file: models/tace/tece-oam-rra-1.0/2026-07-05-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66313844
+    hardware: NVIDIA GeForce RTX 4090
+    run_time_sec: 4505.61
+    pbe_wall_dist_mae: 0.3116
+    pbe_energy_mae: 3.913
+    pbe_bond_length_error: 0.7143
+    pbe_well_depth_error: 0.8372
+    pbe_vib_freq_error: 99.39
+    tortuosity: 1.335
+    energy_diff_flips: 3.805
+    energy_jump: 2.718
+    force_flips: 3.586
+    force_total_variation: 299.6
+    force_jump: 70.17
+    pbe_force_mae: 2.299
