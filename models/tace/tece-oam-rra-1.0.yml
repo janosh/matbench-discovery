@@ -84,7 +84,7 @@ notes:
   Description: |
     This model is based on Atomic Cluster Expansion, Edge Cluster Expansion
     and Radial Rotary Attention.
-     
+
 metrics:
   phonons:
     kappa_103:
