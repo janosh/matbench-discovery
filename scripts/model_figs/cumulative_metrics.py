@@ -9,9 +9,8 @@ will provide the best hit rate for the given budget.
 
 # %%
 import numpy as np
-import pymatviz as pmv
 
-from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD, figs
+from matbench_discovery import STABILITY_THRESHOLD, figs
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import classify_stable
@@ -83,8 +82,6 @@ fig.show()
 
 
 # %%
-img_suffix = "" if show_non_compliant else "-only-compliant"
-img_name = f"cumulative-{'-'.join(metrics).lower()}{img_suffix}"
 if metrics == ("Precision", "Recall") and show_non_compliant:
     # site payload = full model set. curves are recomputed on a model-intrinsic grid
     # (not extracted from the figure, whose shared x grid depends on which models are
@@ -139,4 +136,3 @@ if metrics == ("Precision", "Recall") and show_non_compliant:
         "cumulative-precision-recall",
         {"n_stable": n_stable, "models": cum_pr_models},
     )
-pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
