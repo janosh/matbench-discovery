@@ -13,10 +13,13 @@
   // models); CPS/CMDS ranks track the session's current weight configs
   let ranks = $derived(model_metric_ranks(model_key, models, RANKED_METRICS))
 
-  // green (best) -> red (worst) by rank position within the field
+  // link-blue (best) -> red (worst) by rank position within the field, mixed in oklab
+  // so mid-field ranks render as muted purple. Reusing --link-color (theme-aware)
+  // keeps the best-rank blue consistent with the page's link styling
   const rank_color = (rank: number, n_models: number): string => {
     const frac = n_models > 1 ? (rank - 1) / (n_models - 1) : 0
-    return `hsl(${Math.round(120 * (1 - frac))}, 60%, 42%)`
+    const blue_pct = Math.round(100 * (1 - frac))
+    return `color-mix(in oklab, var(--link-color) ${blue_pct}%, hsl(0, 65%, 45%))`
   }
 
   const chip_title = ({ metric, rank, n_models, value }: (typeof ranks)[number]) => {
@@ -35,14 +38,12 @@
     {#each ranks as rank_entry (rank_entry.metric.key)}
       {@const { metric, rank, n_models } = rank_entry}
       <a
-        class="rank-chip"
         href={metric.rank_href}
-        style:--rank-color={rank_color(rank, n_models)}
         title={chip_title(rank_entry)}
         {@attach tooltip({ allow_html: true })}
       >
         <span class="metric-label">{@html metric.label}</span>
-        <strong>#{rank}</strong>
+        <strong style:color={rank_color(rank, n_models)}>#{rank}</strong>
         <small>/{n_models}</small>
       </a>
     {/each}
@@ -53,37 +54,33 @@
   .rank-card {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: baseline;
     justify-content: center;
-    gap: 1ex;
+    gap: 3pt 1.4em;
     margin: 1em auto;
   }
   .rank-card-label {
     font-size: 0.9em;
     color: var(--text-secondary);
   }
-  .rank-chip {
+  a {
     display: inline-flex;
     align-items: baseline;
-    gap: 3pt;
-    padding: 1pt 7pt;
-    border-radius: 4pt;
-    background: color-mix(in srgb, var(--rank-color) 14%, transparent);
-    border: 1px solid color-mix(in srgb, var(--rank-color) 45%, transparent);
+    gap: 4pt;
     color: var(--text-color);
     text-decoration: none;
   }
-  .rank-chip:hover {
-    background: color-mix(in srgb, var(--rank-color) 26%, transparent);
+  a:hover .metric-label {
+    text-decoration: underline;
   }
-  .rank-chip .metric-label {
+  .metric-label {
     font-size: 0.9em;
+    color: var(--text-secondary);
   }
-  .rank-chip strong {
-    color: var(--rank-color);
+  a strong {
     filter: brightness(1.25);
   }
-  .rank-chip small {
+  a small {
     color: var(--text-secondary);
   }
 </style>

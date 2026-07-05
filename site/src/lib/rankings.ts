@@ -12,14 +12,19 @@ export interface MetricRank {
   value: number
 }
 
-// headline metrics to rank models by, with the page where each leaderboard lives
+// headline metrics to rank models by, with the page where each leaderboard lives.
+// labels carry their task name for context on model detail pages
 export const RANKED_METRICS: (Label & { rank_href: string })[] = [
   { ...ALL_METRICS.CPS, rank_href: `/` },
-  { ...ALL_METRICS.F1, rank_href: `/` },
-  { ...ALL_METRICS.MAE, rank_href: `/` },
-  { ...ALL_METRICS.RMSD, rank_href: `/tasks/geo-opt` },
-  { ...ALL_METRICS.κ_SRME, rank_href: `/tasks/phonons` },
-  { ...MD_METRICS.md_combined_score, rank_href: `/tasks/md` },
+  { ...ALL_METRICS.F1, label: `Discovery F1`, rank_href: `/` },
+  { ...ALL_METRICS.MAE, label: `Discovery MAE`, rank_href: `/` },
+  { ...ALL_METRICS.RMSD, label: `Geo Opt RMSD`, rank_href: `/tasks/geo-opt` },
+  {
+    ...ALL_METRICS.κ_SRME,
+    label: `Phonons κ<sub>SRME</sub>`,
+    rank_href: `/tasks/phonons`,
+  },
+  { ...MD_METRICS.md_combined_score, label: `MD CMDS`, rank_href: `/tasks/md` },
 ]
 
 const metric_value = (model: ModelData, metric: Label): number | undefined => {

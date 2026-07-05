@@ -274,6 +274,21 @@
     border: none;
     border-radius: 50%;
     cursor: pointer;
+    opacity: 0;
+    padding: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.15s ease,
+      background 0.15s ease;
+  }
+  .detail-panel:is(:hover, :focus-within) header button {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .detail-panel header button :global(svg) {
+    display: block;
+    height: 1em;
+    width: 1em;
   }
   .detail-panel header button:hover {
     background: color-mix(in srgb, currentColor 18%, transparent);
