@@ -592,7 +592,11 @@ def cumulative_metrics(
         )
 
     for model_name in df_preds:
-        each_pred = df_preds[model_name].sort_values()
+        # canonical screening order: stable sort with ties broken by material ID
+        # (unstable default sort made tied rankings depend on row order/numpy version)
+        each_pred = (
+            df_preds[model_name].sort_index(kind="stable").sort_values(kind="stable")
+        )
         # sort targets by model ranking
         each_true = e_above_hull_true.loc[each_pred.index]
 

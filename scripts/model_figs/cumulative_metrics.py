@@ -10,7 +10,6 @@ will provide the best hit rate for the given budget.
 # %%
 import numpy as np
 import pymatviz as pmv
-import scipy.interpolate
 
 from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD, figs
 from matbench_discovery.cli import cli_args, complete_models
@@ -92,7 +91,13 @@ if metrics == ("Precision", "Recall") and show_non_compliant:
     # in the run) so an entry is identical in full regens and single-model merge runs
     cum_pr_models = []
     for label in models_to_plot:
-        each_pred = df_each_pred[label].sort_values()
+        # canonical screening order: stable sort by prediction with ties broken by
+        # material ID (via prior sort_index). The default unstable quicksort made tied/
+        # near-degenerate rankings depend on input row order and numpy version, so CI
+        # regens flip-flopped between orderings and spammed spurious payload-update PRs
+        each_pred = (
+            df_each_pred[label].sort_index(kind="stable").sort_values(kind="stable")
+        )
         each_true = df_preds[MbdKey.each_true].loc[each_pred.index]
         true_pos, false_neg, false_pos, _true_neg = classify_stable(
             each_true, each_pred, stability_threshold=STABILITY_THRESHOLD
@@ -109,13 +114,10 @@ if metrics == ("Precision", "Recall") and show_non_compliant:
         # rounded to ints since x counts screened materials (also compresses better)
         log_xs = np.logspace(0, np.log2(n_pred_stable - 1), 100, base=2)
         xs = np.unique([*log_xs.round().astype(int), n_pred_stable])
-        model_range = np.arange(n_pred_stable) + 1
-        spline_degree = min(3, n_pred_stable - 1)  # k must be < n curve points
+        # xs are 1-based material counts, so the curves can be sampled exactly by
+        # indexing (no interpolation: a spline fit here only added LAPACK float noise)
         precision, recall = (
-            scipy.interpolate.make_interp_spline(
-                model_range, curve.to_numpy()[:n_pred_stable], k=spline_degree
-            )(xs)
-            for curve in (precision_cum, recall_cum)
+            curve.to_numpy()[xs - 1] for curve in (precision_cum, recall_cum)
         )
         cum_pr_models.append(
             {
