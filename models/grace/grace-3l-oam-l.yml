@@ -1,0 +1,164 @@
+model_name: GRACE-3L-OAM-L
+model_key: grace-3l-oam-l
+model_version: 0.5.10
+date_added: '2026-07-02'
+date_published: '2026-07-02'
+authors:
+  - name: Anton Bochkarev
+    affiliation: ICAMS, Ruhr University Bochum
+    email: anton.bochkarev@rub.de
+  - name: Yury Lysogorskiy
+    affiliation: ICAMS, Ruhr University Bochum
+    email: yury.lysogorskiy@rub.de
+  - name: Ralf Drautz
+    affiliation: ICAMS, Ruhr University Bochum
+    email: ralf.drautz@rub.de
+trained_by:
+  - name: Anton Bochkarev
+    affiliation: ICAMS, Ruhr University Bochum
+    email: anton.bochkarev@rub.de
+
+openness: OSOD
+trained_for_benchmark: true
+train_task: S2EF
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 42112223
+n_estimators: 1
+training_set: [OMat24, sAlex, MPtrj]
+requirements:
+  tensorpotential: 0.5.10
+  tensorflow: 2.20.0
+training_cost:
+  Nvidia H100 80GB GPUs: {amount: 16, hours: 124}
+
+repo: https://github.com/ICAMS/grace-tensorpotential
+paper: https://doi.org/10.1038/s41524-026-01979-1
+url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation
+checkpoint_url: https://huggingface.co/AMS-ICAMS-RUB/grace-foundation-models/blob/main/models/GRACE-3L-OMAT-large-ft-AM-model.tar.gz
+license:
+  code: ASL
+  code_url: https://github.com/ICAMS/grace-tensorpotential/blob/3f614c8ae6/LICENSE.md
+  checkpoint: ASL
+  checkpoint_url: https://github.com/ICAMS/grace-tensorpotential/blob/3f614c8ae6/LICENSE.md
+
+hyperparams:
+  max_force: 0.01
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  graph_construction_radius: 6.0 
+  max_neighbors: .inf
+
+metrics:
+  md:
+    pred_file: models/grace/grace-3l-oam-l/2026-07-03-grace-3l-oam-l-md-metrics.csv.gz
+    pred_file_url: https://figshare.com/files/66293507
+    energy_rmse: 0.535    # meV/atom
+    force_rmse: 54.2289   # meV/Å
+    rdf_error: 3.45
+    adf_error: 1.2845
+    vdos_error: 21.9708
+    pressure_mae: 0.7995
+    pressure_wasserstein: 0.8075
+    pressure_error: 43.1865
+    combined_score: 0.825253
+    n_systems: 17
+  diatomics:
+    pred_file: models/grace/grace-3l-oam-l/2026-07-02-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66293261
+    pbe_wall_dist_mae: 0.2053
+    pbe_energy_mae: 1.2189
+    pbe_force_mae: 0.977
+    pbe_bond_length_error: 0.4312
+    pbe_well_depth_error: 2.0469
+    pbe_vib_freq_error: 126.1348
+    tortuosity: 1.0463
+    energy_diff_flips: 3.1839
+    energy_jump: 0.4181
+    force_flips: 3.3448
+    force_total_variation: 173.4084
+    force_jump: 7.2319
+  phonons:
+    kappa_103:
+      κ_SRME: 0.1211
+      κ_SRE: 0.0536
+      pred_file: models/grace/grace-3l-oam-l/2026-07-02-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/66293450
+  geo_opt:
+    pred_file: models/grace/grace-3l-oam-l/2026-07-02-wbm-geo-opt.jsonl.gz
+    pred_file_url: https://figshare.com/files/66293579
+    struct_col: grace_structure
+    symprec=1e-2:
+      rmsd: 0.0575
+      n_sym_ops_mae: 1.6163
+      symmetry_decrease: 0.0384
+      symmetry_match: 0.824
+      symmetry_increase: 0.13
+      n_structures: 256963
+    symprec=1e-5:
+      rmsd: 0.0575
+      n_sym_ops_mae: 2.1343
+      symmetry_decrease: 0.0427
+      symmetry_match: 0.6929
+      symmetry_increase: 0.2594
+      n_structures: 256963
+  discovery:
+    pred_file: models/grace/grace-3l-oam-l/2026-07-02-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/66293645
+    pred_col: e_form_per_atom_grace
+    full_test_set:
+      F1: 0.907
+      DAF: 5.396
+      Precision: 0.899
+      Recall: 0.914
+      Accuracy: 0.969
+      TPR: 0.914
+      FPR: 0.02
+      TNR: 0.98
+      FNR: 0.086
+      TP: 39135.0
+      FP: 4379.0
+      TN: 209759.0
+      FN: 3690.0
+      MAE: 0.0175
+      RMSE: 0.0668
+      R2: 0.8631
+      missing_preds: 0
+    most_stable_10k:
+      F1: 0.985
+      DAF: 6.346
+      Precision: 0.97
+      Recall: 1.0
+      Accuracy: 0.97
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 9701.0
+      FP: 299.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.0177
+      RMSE: 0.0788
+      R2: 0.8662
+      missing_preds: 0
+    unique_prototypes:
+      F1: 0.925
+      DAF: 6.036
+      Precision: 0.923
+      Recall: 0.927
+      Accuracy: 0.977
+      TPR: 0.927
+      FPR: 0.014
+      TNR: 0.986
+      FNR: 0.073
+      TP: 30527.0
+      FP: 2554.0
+      TN: 179992.0
+      FN: 2415.0
+      MAE: 0.0177
+      RMSE: 0.065
+      R2: 0.8754
+      missing_preds: 0
