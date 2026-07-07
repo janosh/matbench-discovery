@@ -222,6 +222,29 @@ export function assemble_row_data(
   )
 
   const { RMSD, CPS } = ALL_METRICS
+  // label_data_path prefers label.property over label.key, so columns whose row key
+  // must differ from the YAML field (e.g. the two run_time_sec columns) resolve too
+  const metric_num = (model: ModelData, label: Label) =>
+    get_nested_number(model, label_data_path(label))
+  const finite_positive = (value: unknown): value is number =>
+    is_finite_num(value) && value > 0
+  // × Fastest columns: wall time relative to the fastest model in the current
+  // filtered view (roster-dependent, so computed here rather than stored on models)
+  const time_multiplier = (run_time_label: Label) => {
+    const fastest = Math.min(
+      ...filtered_models
+        .map((model) => metric_num(model, run_time_label))
+        .filter(finite_positive),
+    )
+    return (model: ModelData) => {
+      const run_time = metric_num(model, run_time_label)
+      return finite_positive(run_time) ? run_time / fastest : undefined
+    }
+  }
+  const md_time_multiplier = time_multiplier(MD_METRICS.md_run_time_sec)
+  const diatomics_time_multiplier = time_multiplier(
+    DIATOMICS_METRICS.diatomics_run_time_sec,
+  )
   const all_metrics = filtered_models.map((model) => {
     const { license, metrics } = model
     const discovery_metrics =
@@ -229,9 +252,6 @@ export function assemble_row_data(
         ? metrics.discovery[discovery_set]
         : undefined
     const is_compliant = model_is_compliant(model)
-    const metric_num = (label: Label) =>
-      get_nested_number(model, `${label.path}.${label.key}`)
-
     const targets = model.targets.replaceAll(/_(?<char>.)/g, `<sub>$<char></sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
 
@@ -295,15 +315,21 @@ export function assemble_row_data(
       MAE: discovery_metrics?.MAE,
       RMSE: discovery_metrics?.RMSE,
       R2: discovery_metrics?.R2,
-      [ALL_METRICS.κ_SRME.key]: metric_num(ALL_METRICS.κ_SRME),
-      [ALL_METRICS.κ_SRE.key]: metric_num(ALL_METRICS.κ_SRE),
-      [RMSD.key]: metric_num(RMSD),
+      [ALL_METRICS.κ_SRME.key]: metric_num(model, ALL_METRICS.κ_SRME),
+      [ALL_METRICS.κ_SRE.key]: metric_num(model, ALL_METRICS.κ_SRE),
+      [RMSD.key]: metric_num(model, RMSD),
       ...Object.fromEntries(
-        Object.values(MD_METRICS).map((label) => [label.key, metric_num(label)]),
+        Object.values(MD_METRICS).map((label) => [label.key, metric_num(model, label)]),
       ),
       ...Object.fromEntries(
-        Object.values(DIATOMICS_METRICS).map((label) => [label.key, metric_num(label)]),
+        Object.values(DIATOMICS_METRICS).map((label) => [
+          label.key,
+          metric_num(model, label),
+        ]),
       ),
+      // computed after the spreads so they override the (pathless) spread entries
+      [MD_METRICS.md_time_multiplier.key]: md_time_multiplier(model),
+      [DIATOMICS_METRICS.diatomics_time_multiplier.key]: diatomics_time_multiplier(model),
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.key]:
         `<span title="${format_num(model.model_params, `,`)} trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,
@@ -317,7 +343,7 @@ export function assemble_row_data(
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
           col.key,
-          get_nested_number(model, `${col.path}.${col.property}`),
+          metric_num(model, col),
         ]),
       ),
       Targets: targets_str,

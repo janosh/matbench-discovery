@@ -913,8 +913,9 @@ describe(`MetricsTable`, () => {
   it(`renders the correct default columns`, () => {
     mount(MetricsTable, { target: document.body })
 
-    // Core text expected in default visible columns
-    const expected_core_columns = new Set([
+    // Core text expected in default visible columns (duplicates intended: MD and
+    // diatomics each have Time and × Fastest columns, disambiguated by tooltip)
+    const expected_core_columns = [
       `Model`, // METADATA_COLS
       `Training Set`, // METADATA_COLS
       `Targets`, // METADATA_COLS
@@ -951,6 +952,11 @@ describe(`MetricsTable`, () => {
       `PW1`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `ΔP`, // ALL_METRICS (MD)
       `CMDS`, // ALL_METRICS (MD)
+      `Time`, // ALL_METRICS (MD)
+      `× Fastest`, // ALL_METRICS (MD)
+      `CDS`, // DIATOMICS_METRICS
+      `Time`, // DIATOMICS_METRICS
+      `× Fastest`, // DIATOMICS_METRICS
       `E flips`, // DIATOMICS_METRICS
       `E jump`, // DIATOMICS_METRICS
       `F TV`, // DIATOMICS_METRICS
@@ -964,20 +970,18 @@ describe(`MetricsTable`, () => {
       `PBE F MAE`, // DIATOMICS_METRICS
       `τ`, // DIATOMICS_METRICS
       `CPS`, // Added in assemble_row_data
-    ])
+    ]
 
     const header_elements = document.querySelectorAll(`thead th`)
-    const actual_core_columns = new Set(
-      [...header_elements].map((th) =>
-        // Get text content, remove sort indicator (↑/↓) and any trailing spaces
-        (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim(),
-      ),
+    const actual_core_columns = [...header_elements].map((th) =>
+      // Get text content, remove sort indicator (↑/↓) and any trailing spaces
+      (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
 
     // The default visible columns should stay intentionally curated: new default
-    // columns must be added to expected_core_columns explicitly.
-    expect(actual_core_columns).toEqual(expected_core_columns)
-    expect(header_elements).toHaveLength(expected_core_columns.size)
+    // columns must be added to expected_core_columns explicitly. Sorted comparison
+    // ignores order but checks exact multiset (incl. duplicate Time/× Fastest labels).
+    expect(actual_core_columns.toSorted()).toEqual(expected_core_columns.toSorted())
 
     // Header tooltip content is attached to inner labels so HeatmapTable's
     // generic title-based tooltip doesn't flash below before our desired top placement.

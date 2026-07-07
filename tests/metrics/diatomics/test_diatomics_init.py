@@ -257,10 +257,10 @@ def test_calc_diatomic_metrics_gates_low_quality_refs_and_non_mp_elements() -> N
 
 
 def test_find_low_quality_dft_refs_on_bundled_pbe_reference() -> None:
-    """The bundled PBE reference flags exactly the 8 jumpy lanthanides."""
+    """The bundled PBE reference quality gate flags the 8 jumpy lanthanides."""
     ref_curves = diatomics.load_dft_reference_curves("PBE")
 
-    jumpy_lanthanides = {"Pr", "Nd", "Pm", "Tb", "Dy", "Ho", "Er", "Tm"}
+    jumpy_lanthanides = {"Pr", "Pm", "Sm", "Tb", "Dy", "Ho", "Er", "Tm"}
     assert diatomics.find_low_quality_dft_refs(ref_curves) == jumpy_lanthanides
 
 
@@ -406,26 +406,32 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     # pred_file_path overrides the existing pred_file; run_metadata is recorded ahead of
     # the metric values
     write_diatomics_yaml(model, yaml_path, {"pred_file_url": pred_file_url})
+    expected_run_metadata = {
+        "hardware": "NVIDIA H100 80GB HBM3",
+        "run_time_sec": 120.0,
+        "max_rss_gb": 4.2,
+        "max_gpu_mem_gb": 11.5,
+    }
     result = diatomics.write_metrics_to_yaml(
         model,
         metrics_by_element,
         pred_file_path=new_pred_file,
         run_metadata={
-            "hardware": "NVIDIA H100 80GB HBM3",
-            "run_time_sec": 120.0,
+            **expected_run_metadata,
             "excluded_formula_reasons": {"He-He": "exploding errors"},
             "invalid_key": "ignored",
         },
     )
     assert result == {
         "pred_file": new_pred_file,
-        "hardware": "NVIDIA H100 80GB HBM3",
-        "run_time_sec": 120.0,
+        **expected_run_metadata,
         "excluded_formula_reasons": {"He-He": "exploding errors"},
         **expected_metrics,
     }
     yaml_content = yaml_path.read_text()
     assert yaml_content.index("hardware:") < yaml_content.index("energy_jump:")
+    assert "max_rss_gb: 4.2" in yaml_content
+    assert "max_gpu_mem_gb: 11.5" in yaml_content
 
     # a recompute with current empty exclusions clears stale exclusions while preserving
     # the other existing run metadata
@@ -433,9 +439,16 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     recomputed = diatomics.write_metrics_to_yaml(
         model, metrics_by_element, run_metadata={"excluded_formula_reasons": {}}
     )
-    assert recomputed["hardware"] == "NVIDIA H100 80GB HBM3"
-    assert recomputed["run_time_sec"] == 120.0
+    for key, value in expected_run_metadata.items():
+        assert recomputed[key] == value
     assert recomputed["excluded_formula_reasons"] == {}
+
+    model.__dict__.pop("metadata", None)
+    recomputed = diatomics.write_metrics_to_yaml(model, metrics_by_element)
+    assert {
+        key: recomputed[key]
+        for key in ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb")
+    } == expected_run_metadata
 
 
 def test_eval_window(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -475,11 +488,11 @@ def test_write_metrics_drops_deprecated_and_handles_nan(
     """Recompute drops deprecated keys, skips NaN elements, unions per-element keys."""
     model, yaml_path = diatomics_model
     # existing block carries a deprecated metric (smoothness) + a url
-    write_diatomics_yaml(
-        model,
-        yaml_path,
-        {"pred_file_url": "https://figshare.com/files/x", "smoothness": 9.9},
-    )
+    existing_file_refs = {
+        "pred_file_url": "https://figshare.com/files/x",
+        "smoothness": 9.9,
+    }
+    write_diatomics_yaml(model, yaml_path, existing_file_refs)
 
     # H has a finite tortuosity + an extra (ref-only) metric; He's tortuosity is NaN
     metrics: dict[str, dict[str, float]] = {

@@ -37,7 +37,7 @@ export const sort_from_query = (
   dir: valid_query_param(params, `dir`, default_sort.dir, sort_dirs),
 })
 
-// -- Weighted-score (CPS/CMDS) radar weights as a single URL param --------------
+// -- Weighted-score radar weights as a single URL param ------------------------
 // Serialized as comma-joined values in config-key order, e.g. weights=0.5,0.4,0.1.
 type WeightsConfig = Record<string, { weight: number }>
 
@@ -58,30 +58,35 @@ export function weights_to_param(
 }
 
 // Parse a weights param and write it into config (normalized to sum 1). A missing
-// param resets to default_config: weight configs are shared module state, so without
-// the reset, weights customized earlier in the session would survive navigating to a
-// weights-less URL while all other URL-bound page state (sort, axes) resets.
-// Silently ignores malformed params (wrong count, negative/non-finite, all-zero).
+// OR malformed param (wrong count, negative/non-finite, all-zero) resets to
+// default_config: weight configs are shared module state, so without the reset,
+// weights customized earlier in the session would survive navigating to a
+// weights-less (or mangled) URL while all other URL-bound page state (sort, axes)
+// resets - and the URL-sync effect would then launder those stale weights back into
+// a valid-looking URL.
 export function apply_weights_param(
   param: string | null,
   config: WeightsConfig,
   default_config: WeightsConfig,
 ): void {
   const keys = Object.keys(config)
-  if (!param) {
-    for (const key of keys) {
-      config[key].weight = default_config[key]?.weight ?? config[key].weight
+  if (param) {
+    // empty segments parse to NaN (not Number(``) which is 0) so a mangled URL like
+    // weights=0.5,,0.5 is rejected by the finiteness check instead of zeroing a metric
+    const values = param.split(`,`).map((part) => (part.trim() ? Number(part) : NaN))
+    const total = values.reduce((sum, val) => sum + val, 0)
+    if (
+      values.length === keys.length &&
+      values.every((val) => Number.isFinite(val) && val >= 0) &&
+      total > 0
+    ) {
+      for (const [idx, key] of keys.entries()) config[key].weight = values[idx] / total
+      return
     }
-    return
   }
-  // empty segments parse to NaN (not Number(``) which is 0) so a mangled URL like
-  // weights=0.5,,0.5 is rejected by the finiteness check instead of zeroing a metric
-  const values = param.split(`,`).map((part) => (part.trim() ? Number(part) : NaN))
-  if (values.length !== keys.length) return
-  if (values.some((val) => !Number.isFinite(val) || val < 0)) return
-  const total = values.reduce((sum, val) => sum + val, 0)
-  if (total === 0) return
-  for (const [idx, key] of keys.entries()) config[key].weight = values[idx] / total
+  for (const key of keys) {
+    config[key].weight = default_config[key]?.weight ?? config[key].weight
+  }
 }
 
 export function sync_url_params(entries: UrlParamEntry[], state: PageState): void {

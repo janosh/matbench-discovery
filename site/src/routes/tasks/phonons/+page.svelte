@@ -109,7 +109,7 @@
 <section class="full-bleed">
   <MetricsTable
     model_filter={has_phonon_metrics}
-    col_filter={(col) => visible_cols[col.label] ?? true}
+    col_filter={(col) => visible_cols[col.key] ?? true}
   />
 </section>
 

@@ -101,6 +101,30 @@ dynamat_v1_0_md_trajectories:
   md5: 09d32104888b9639599a15d3ecb124cb
   url: https://figshare.com/files/66309926
 
+_private_reference_data:
+  article_id: 32900105
+  article_url: https://figshare.com/account/articles/32900105
+  title: Matbench Discovery - private reference data
+  warning: Maintainer-only Figshare draft for withheld labels/references. Never publish this article. Share only via revocable private links when needed.
+  files:
+    dynamat_v1_0_private_labeled_reference_trajectories:
+      file_id: 66310031
+      file_url: https://figshare.com/files/66310031
+      name: dynamat-v1.0-private-labeled-reference-trajectories.h5
+      local_path: data/md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.h5
+      size: 876143672
+      md5: 9da61aeb3f99c5bbfb1f9499dcf2ef88
+      public_counterpart: dynamat_v1_0_md_trajectories
+      description: Labeled DynaMat v1.0 trajectories with energies and forces, used for maintainer-only MD energy/force RMSE diagnostics.
+    diatomics_dft_reference:
+      file_id: 66390650
+      file_url: https://figshare.com/files/66390650
+      name: diatomics-dft.json.gz
+      local_path: site/src/lib/diatomics-dft.json.gz
+      size: 165479
+      md5: f27f524d85fd150823f52028c4d397f5
+      description: Private mirror of the bundled homonuclear PBE/r2SCAN DFT diatomic reference curves used by the site and diatomics metrics.
+
 _links: |
   [`PatchedPhaseDiagram`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814
   [`ComputedStructureEntries`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/entries/computed_entries.py#L579-L722

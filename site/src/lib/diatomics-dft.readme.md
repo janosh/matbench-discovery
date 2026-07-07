@@ -1,43 +1,88 @@
 # Homonuclear Diatomic DFT Reference Curves
 
-`diatomics-dft.json.gz` contains VASP potential-energy curves E(r) for homonuclear dimers X2 (X = H to U, Z=1-92) at PBE and r2SCAN, used as the DFT overlay on the Diatomics page. Format after decompression: `{ functional: { "<El>-<El>": { distances: number[], energies: number[], forces?: number[][][] } } }`; energies are sigma-to-0 (E0) values in eV.
+`diatomics-dft.json.gz` contains VASP reference potential-energy curves for homonuclear dimers `X2` with `X = H...U` (`Z = 1...92`) at PBE and r2SCAN. The site uses this file for the DFT overlays on the Diatomics page and the Python metrics code uses the PBE subset for reference-relative model metrics.
 
-The choices below were needed for smooth, physical curves; relaxing them caused cliffs, spikes, multi-eV jumps, or wrong dissociation limits.
+After decompression, the schema is:
 
-## DFT setup
+```ts
+{
+  [functional: string]: {
+    [formula: string]: {
+      distances: number[]
+      energies: number[]
+      forces: number[][][] // [point][atom][x|y|z]
+    }
+  }
+}
+```
 
-VASP 6 (GPU) inputs came from ferrox's MP24 static set: `ferrox vasp write-inputs --set mp24-static --xc-functional {pbe,r2scan} --potcar-mode real`. Per-point overrides:
+`functional` is `PBE` or `r2SCAN`; `formula` is e.g. `O-O`. `distances`, `energies`, and `forces` share the same first axis over curve points. Energies are final sigma-to-0 VASP energies in eV; forces are per-point, per-atom Cartesian 3-vectors in eV/Å with axis order `[point][atom][x|y|z]`.
 
-- ISMEAR=0, SIGMA=0.05; KSPACING=0.6 (Gamma). A 2x2x2 check changed energies by <4 meV mean, max ~20 meV for diffuse atoms at large r.
-- ISPIN=2 with pinned NUPDOWN/MAGMOM; NELM=250 for hard stretched/repulsive SCF.
-- LWAVE=.TRUE. for warm starts; LCHARG/LAECHG/LVTOT/LELF=.FALSE. and LORBIT deleted to avoid ~180 MB per-point grid output.
-- ISTART=1, ICHARG=0 with a seed wavefunction, else 0 and 2.
+## DFT Setup
 
-Box: 15 Å cubic vacuum. 13 Å left ~0.15 eV periodic-image error on diffuse atoms; 15 Å lowers this to ~0.03 eV; 18 Å was converged but ~2.7x costlier.
+Each candidate curve was produced with VASP 6 using Materials Project (MP24)-style static input settings and real-space PAW potentials for PBE and r2SCAN.
 
-Distance grid: 50 geomspaced separations from 0.8\*r_cov to 6 Å. Going deeper caused severe PAW augmentation-sphere overlap and hundreds-of-eV repulsive energies, degrading the DFT reference.
+Important per-point settings:
 
-## Warm-start: reuse the wavefunction from x+-dx for x
+- `ISMEAR=0`, `SIGMA=0.05`.
+- `KSPACING=0.6` (Gamma-only in this large cell). A 2x2x2 $k$-grid spot check on Na/PBE and Al/PBE changed final energies by 2.3 meV mean absolute over 40 matched points; Na's diffuse 6 Å tail (the largest separation) reached 23 meV, while Al stayed below 6.2 meV.
+- `ISPIN=2` with fixed `NUPDOWN` for every spin candidate and explicit `MAGMOM` initialization where needed.
+- `NELM=250` for difficult stretched or repulsive geometries.
+- `LWAVE=.TRUE.` so neighboring geometries can reuse the wavefunction.
+- `LCHARG`, `LAECHG`, `LVTOT`, and `LELF` disabled, and `LORBIT` removed, to avoid roughly 180 MB of unused grid output per point.
+- With a seed wavefunction: `ISTART=1`, `ICHARG=0`; otherwise cold start with `ISTART=0`, `ICHARG=2`.
 
-Cold SCF at large separation is near-degenerate open-shell atoms and barely converges. Instead, cold-start the bonded anchor (nearest 2\*r_cov), then warm-start outward and inward. Each point reuses `wavecar`/`vaspwave.h5` from its neighbor one step toward the anchor (`x+dx` inward, `x-dx` outward); the constant box keeps FFT grids compatible and reaches the hardest large-r SCF last.
+The distance grid is 50 geometrically spaced separations from `0.8 * r_cov` to 6 Å. Going deeper into the repulsive wall caused severe PAW augmentation-sphere overlap and hundreds-of-eV energies, which made the reference less useful for MLIP scoring.
 
-## Spin: NUPDOWN pinning plus 2-candidate adiabatic
+The 15 Å box was chosen after checking the vacuum error/cost tradeoff. A 13 Å box left roughly 0.15 eV periodic-image errors for diffuse large-distance atoms; 15 Å reduced this to roughly 0.03 eV; 18 Å was closer to converged but about 2.7x more expensive.
 
-Cliffs and spikes mainly came from SCF hops between spin multiplicities. Each sweep pins total spin (`NUPDOWN=2S`) with ferromagnetic MAGMOM summing to NUPDOWN. Two fixed multiplicities are run per dimer and merged by per-point minimum:
+## Spin Ladder
 
-- Molecular ground-state 2S (the experimental multiplicity) gives the correct well. Main group from MO theory; 3d metals from Gutsev and Bauschlicher, J. Phys. Chem. A 2003 (Cr2 singlet, Fe2 septet, Mn2 11-plet); known 4d/5d hardcoded (Mo2, W2 singlet).
-- Ferromagnetic atomic 2S = 2\*(free-atom Hund moment) gives the correct open-shell dissociation; a single restricted multiplicity can dissociate to the wrong limit (restricted-singlet N2 is ~6 eV too high).
-- Uncertain 4d/5d/4f/5f use a coarse {0, ~Hund, 2\*Hund} scan; Mn2 uses DFT high-spin (11-plet) because its antiferromagnetic ground state is not single-determinant accessible.
+The reference is not a single fixed-spin sweep. SCF branch hops between spin multiplicities can create cliffs and spikes, so each element uses a spin ladder:
 
-Antiferromagnetic MAGMOM init did not fix singlet dissociation because warm steps read the wavefunction and ignore MAGMOM; the FM candidate is needed.
+- even `NUPDOWN` values `0, 2, ...` up to the larger of the known molecular ground-state spin and `2 *` the free-atom Hund moment;
+- one extra rung for elements whose dimer spin state is uncertain;
+- an additional broken-symmetry AFM candidate (`NUPDOWN=0`, `MAGMOM=+m -m`) for every open-shell atom.
 
-## Reconciliation: escape warm-start branch traps
+The candidate map is a JSON object `{ element: candidate[] }` where each candidate is an even integer `NUPDOWN` value or the string `afm`. It defines which spin candidates are merged for each element and functional. Raw candidate curve directories follow this naming convention:
 
-A post-sweep pass treats interior local maxima as warm-start branch traps (e.g. Cr2 orbital-occupation branches). It re-runs each bump seeded from its lower-energy neighbor, iterating until multi-point bumps collapse. To avoid f-electron thrashing: only bumps >= 0.3 eV are retried, unimproved points are not retried, with caps of 15 re-runs and 4 passes.
+```text
+<El>_<xc>_n<NUPDOWN>/curve.json
+<El>_<xc>_n0afm/curve.json
+```
 
-## Pipeline
+## Warm Starts
 
-1. pec*sweep.py: one (element, functional, NUPDOWN) sweep (anchor cold-start, bidirectional warm-start, reconciliation). Writes `<El>*<xc>\_n<NUPDOWN>/curve.json`.
-2. gen_tasks.py: emits per-dimer candidate multiplicities and adiabatic_cands.json.
-3. merge*adiabatic.py: per-point minimum over a dimer's candidates into the adiabatic ground-state `<El>*<xc>/curve.json`.
-4. build_dft_references.py: aggregates merged curves into diatomics-dft.json.gz (sigma-to-0 energy per point, non-finite points dropped).
+For most fixed-spin candidates, the sweep cold-started near the bonded anchor (nearest `2 * r_cov`) and then warm-started in both directions. Inward points seeded from the next larger separation; outward points seeded from the next smaller separation. The constant box keeps FFT grids compatible, so `WAVECAR` or `vaspwave.h5` can be reused.
+
+AFM candidates are different: they anchor at the largest separation and sweep inward. This preserves the broken-symmetry free-atom solution, which otherwise tends to collapse if the chain is started near the bonded geometry.
+
+After the main sweep, a conservative reconciliation pass retried obvious warm-start branch traps. Interior energy bumps of at least 0.3 eV were retried from the lower-energy neighbor, with hard caps on the number of passes and retries to avoid f-electron thrashing.
+
+## Building The Bundled Reference
+
+The checked-in builder is `scripts/evals/build_diatomic_reference.py`.
+
+For each element and functional, it:
+
+1. reads the per-element spin state candidate map;
+1. loads finite-energy, finite-force points from the spin-candidate curves;
+1. merges candidate curves by taking the per-distance minimum energy;
+1. applies the checked-in postprocess in `matbench_discovery.metrics.diatomics.reference` to remove isolated SCF artifacts (see [Postprocessing](#postprocessing));
+1. checks the merged PECs for branch jumps and missing candidate coverage;
+1. writes the compact, public, version-controlled site artifact to `site/src/lib/diatomics-dft.json.gz`;
+1. rebuilds model diatomic metrics and confirms the DFT curves display on the Diatomics page.
+
+The artifact contains 92 PBE and 92 r2SCAN homonuclear entries. Known caveats: `Er/r2SCAN` has two short spin candidates (`NUPDOWN=2` with 43 finite points and AFM with 44 finite points, below the 45-point completeness threshold); `Ho/r2SCAN` and similar heavy lanthanides and actinides remain branch-trapped and jumpy despite all postprocessing and checks. These seem irrecoverable, at least with current VASP 6.4 pseudo-potentials.
+
+## Postprocessing
+
+The postprocess is deliberately narrow. It is meant to fix isolated SCF artifacts without smoothing away real physics like spin crossovers.
+
+It currently handles three cases:
+
+- isolated severe spin-branch drops, replacing the dropped point with the smoother neighboring branch;
+- short, low-gain spin-branch islands, only when the surrounding branch is locally smoother than the adiabatic minimum point;
+- isolated upward energy bumps.
+
+Tests for this logic live in `tests/metrics/diatomics/test_diatomics_reference.py` and `tests/metrics/diatomics/test_build_diatomic_reference.py`.

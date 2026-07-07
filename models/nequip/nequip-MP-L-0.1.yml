@@ -185,6 +185,8 @@ metrics:
       missing_preds: 0 # count
   md:
     pred_file: models/nequip/nequip-MP-L-0.1/2026-06-28-nequip_mp_l_0_1-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 65205.38 # s
     energy_rmse: 1.2407 # meV/atom
     force_rmse: 116.8054 # meV/Å
     rdf_error: 5.0273 # %
@@ -200,15 +202,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104645
     hardware: NVIDIA H200
     run_time_sec: 462.93
-    pbe_wall_dist_mae: 0.1161
-    pbe_energy_mae: 2.04
-    pbe_bond_length_error: 0.3063
-    pbe_well_depth_error: 1.095
-    pbe_vib_freq_error: 123.6
+    pbe_wall_dist_mae: 0.1157
+    pbe_energy_mae: 2.008
+    pbe_bond_length_error: 0.2961
+    pbe_well_depth_error: 1.002
+    pbe_vib_freq_error: 110.0
     tortuosity: 1.026
     energy_diff_flips: 1.828
     energy_jump: 0.2483
     force_flips: 1.839
     force_total_variation: 372.5
     force_jump: 2.188
-    pbe_force_mae: 3.271
+    pbe_force_mae: 3.277

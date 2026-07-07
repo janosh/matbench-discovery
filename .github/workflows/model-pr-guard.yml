@@ -1,18 +1,30 @@
 name: Model PR guard
 
-# Block merging model submissions that weren't fully ingested: the tests in
-# tests/test_parity_assets.py require every active model with predictions to be in
-# the committed parity manifests and every manifest asset to exist in the GitHub
-# release the site downloads from. Model PRs fail until a maintainer applies the
-# 'ingest-model' label (full ingest in CI, see update-site-figs.yml, whose result
-# commit re-triggers this check via synchronize) or runs
-# `uv run --with-editable . scripts/ingest_model.py <model> --archive`
-# locally. Runs on ALL PRs (a path-filtered required check would block non-model PRs
+# Block merging PRs that would leave committed site assets stale. Two guards:
+#
+# 1. Un-ingested model submissions: tests/test_parity_assets.py requires every active
+#    model with predictions to be in the committed parity manifests and every manifest
+#    asset to exist in the GitHub release the site downloads from. Model PRs fail until
+#    a maintainer applies the 'ingest-model' label (full CI ingest via
+#    update-site-figs.yml, whose result commit re-triggers this check) or runs
+#    `uv run --with-editable . scripts/ingest_model.py <model> --archive` locally.
+# 2. Payload-format changes without regenerated payloads: stale-format payloads would
+#    ship to the site unnoticed (shape tests assert the tests' expectations, not the
+#    generators'; a CI regen-and-compare would be too slow and not byte-reproducible,
+#    hence this cheap diff-consistency check). Regenerate locally with
+#    `scripts/ingest_model.py --payloads-only`, or apply the 'payloads-unchanged'
+#    label for output-neutral refactors. Label edits re-run this whole job (types
+#    below) - the redundant ~1 min parity re-run is intentional: skipping it on label
+#    events would post a 'skipped' check run that masks its last real result in
+#    branch protection (newest check run of a name wins, skipped counts as passing).
+#
+# Runs on ALL PRs (a path-filtered required check would block non-model PRs
 # forever); non-model PRs pass in ~1 min. Also runs on main pushes + weekly to catch
 # drift (e.g. release assets deleted post-merge).
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
   schedule:
@@ -21,6 +33,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read # list PR changed files in the payload-consistency check
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -38,6 +51,24 @@ jobs:
       - uses: astral-sh/setup-uv@v8.3.0
         with:
           python-version: "3.12"
+
+      # guard 2 (see header). GEN = generators/writers whose edits alter payload
+      # output (one-off data/ EDA scripts also write static site/src/figs payloads
+      # but --payloads-only can't regenerate those, so they're excluded). PAYLOADS =
+      # generated data artifacts only (payloads.d.ts edits alone don't satisfy).
+      - name: Require payload updates when payload-shaping code changes
+        if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'payloads-unchanged')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].path')
+          GEN=$(grep -E '^(scripts/model_figs/.*\.py|scripts/evals/(geo_opt|md|diatomic_metrics|build_diatomic_reference)\.py|scripts/ingest_model\.py|matbench_discovery/(figs\.py|metrics/(md\.py|diatomics/.*\.py)))$' <<< "$CHANGED" || true)
+          PAYLOADS=$(grep -E '^(site/src/figs/.*\.(jsonl|json\.gz)|site/src/routes/models/per-element-each-errors\.jsonl|site/src/lib/diatomics-dft\.json\.gz)$' <<< "$CHANGED" || true)
+          if [ -n "$GEN" ] && [ -z "$PAYLOADS" ]; then
+            echo "::error::PR changes payload-generating code ($(tr '\n' ' ' <<< "$GEN")) but no committed generated payloads (site/src/figs data files, models/per-element-each-errors.jsonl, or diatomics-dft.json.gz). Regenerate the affected payloads locally, or apply the 'payloads-unchanged' label if output is provably unchanged."
+            exit 1
+          fi
 
       - name: Check parity manifests + release assets
         env:

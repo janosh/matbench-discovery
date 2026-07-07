@@ -65,6 +65,7 @@ describe(`model_metric_ranks`, () => {
       [`Geo Opt RMSD`, `/tasks/geo-opt`],
       [`Phonons κ<sub>SRME</sub>`, `/tasks/phonons`],
       [`MD CMDS`, `/tasks/md`],
+      [`Diatomics CDS`, `/tasks/diatomics`],
     ])
   })
 })

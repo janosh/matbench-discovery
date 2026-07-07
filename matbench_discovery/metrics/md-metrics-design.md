@@ -21,7 +21,7 @@ models, and the open questions.
 | `pressure_mae`          | mean stress bias              | `abs(mean(P_ref) − mean(P_pred))` (GPa)                         | lower  |
 | `pressure_wasserstein`  | pressure distribution         | W1 between pressure distributions (GPa)                         | lower  |
 | `pressure_error` (E_P)  | pressure distribution overlap | L1 histogram non-overlap, %                                     | lower  |
-| `combined_score` (CMDS) | aggregate                     | `1 − mean(adf, vdos, pressure_error)/100`, [0,1]                | higher |
+| `combined_score` (CMDS) | aggregate                     | weighted mean of vdos/adf/pressure + speed subscores, [0,1]     | higher |
 
 `rdf_error` is still computed and shown on model detail pages but hidden from the
 leaderboard and excluded from CMDS: across models it has Spearman r = 0.91 with
@@ -156,11 +156,21 @@ L1 virtues/flaws:
 
 ## Combined score (CMDS)
 
-`CMDS = 1 − mean(adf_error, vdos_error, pressure_error)/100`, in [0,1], higher is better.
+CMDS is a weighted mean of four subscores in [0,1], higher is better: the observables
+`vdos_error`, `adf_error` and `pressure_error` (each with subscore `1 − error/100`) plus
+**speed** — the summed NVT rollout wall time `run_time_sec`, log-clamped from 9e3 s
+(subscore 1) to 3e5 s (subscore 0), bounds frozen at the mid-2026 field (33 models, one
+H200 per system), mirroring the CDS speed pillar. All four are **equally weighted at 1/4
+by default**, which sits the radar knob dead center and is trivially knob-expressible
+(opposite-corner products 1/16 == 1/16, see `DEFAULT_CDS_CONFIG`). The square knob can't
+express a vDOS-dominant default at this speed weight — the diagonal-opposite product would
+force ADF·pressure too large — so equal weighting is the natural pick; users can reweight
+live on the MD task page. Models without a recorded `run_time_sec` get no CMDS unless the
+speed weight is zeroed.
 `rdf_error` was dropped from the aggregate (and hidden from the leaderboard, kept on model
 detail pages): across N=34 models it is Spearman-correlated 0.91 with `vdos_error`, 0.92
 with `adf_error` and 0.94 with `force_rmse`, so it double-counted structural accuracy while
-adding a column. The 3-component CMDS agrees with the old 4-component one at Spearman
+adding a column. The 3-observable CMDS agrees with the old 4-observable one at Spearman
 0.9994 (max rank shift: 1 place).
 
 **Pressure dominates the aggregate.** Because the components live on very different raw
@@ -176,7 +186,7 @@ equal-influence mean:
 Empirically `pressure_error` alone explains **R² ≈ 0.9** of the CMDS ranking — CMDS is
 largely a pressure ranking. Aggregation options considered:
 
-- **equal-weighted mean** (current): simple; lets the largest-magnitude (hardest) error
+- **raw-error mean** (kept): simple; lets the largest-magnitude (hardest) error
   dominate.
 - **Lehmer mean** `Σx²/Σx`: amplifies the dominant error further (more pressure-weighted).
 - **per-component calibration**: map each error to a comparable subscore (noise floor +
@@ -200,8 +210,9 @@ more spread is ever wanted, the stable option is **normalization scales frozen a
 v1.0 cohort** (fixed min/max per component, documented and never recomputed), which keeps
 scores roster-independent by construction.
 
-Decision: keep the **simple equal-weighted mean** as a `[0,1]` score. Naming/semantics: it
-is a *score* (higher = better), distinct from the component *errors* (lower = better).
+Decision: keep the **simple weighted mean of raw-error subscores** as a `[0,1]` score (no
+roster-dependent calibration). Naming/semantics: it is a *score* (higher = better),
+distinct from the component *errors* (lower = better).
 
 CMDS is **not stored** in model YAMLs (only its components are): the site computes it on
 the fly like CPS, so a formula change can never leave stale scores behind, and users can
@@ -218,7 +229,8 @@ reweight the components live via the radar-chart UI on the MD task page.
   redundant with RDF — see results below.
 - **`pressure_mae` = mean-stress bias**, not a frame-paired MAE (independent trajectories
   decorrelate).
-- **CMDS** stays a simple equal-weighted `[0,1]` mean score.
+- **CMDS** stays a simple weighted `[0,1]` mean score (observables + log-scaled speed,
+  no roster-dependent calibration).
 - **`adf_error`** uses W1 + background normalization; minority-environment / per-triplet
   redesign is a candidate, gated on whether it adds signal independent of RDF.
 - Input validation (finite/non-negative) on all distribution-error functions.

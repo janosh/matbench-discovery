@@ -1,61 +1,42 @@
 name: Update site figures
 
-# Keep site figure payloads (site/src/figs) in sync with model submissions. Two modes:
+# Ingest a model submission after a maintainer applies the `ingest-model` label.
+# The workflow runs trusted base code, overlays only validated PR data, archives the
+# submitted files, regenerates site assets and pushes one commit onto the PR branch.
 #
-# 1. Ingest (maintainer labels a submission PR 'ingest-model'): run
-#    `uv run --with-editable . scripts/ingest_model.py <model> --archive` per new
-#    model (evals + checklist, archive the author's pred files to the project's
-#    figshare, publish parity assets to the GH release, refresh payloads) and commit
-#    the results onto the PR branch, so one merge lands the model fully integrated.
-#    SECURITY: PR code is never executed. The job runs trusted main and overlays only PR
-#    *data* via scripts/apply_pr_models_overlay.py - models/** plus enums.py iff its diff
-#    is provably additive Model members (else fails closed -> a maintainer runs
-#    the ingest locally after review). That's why FIGSHARE_TOKEN (account-wide!)
-#    + WANDB_API_KEY are safe here; the label is a cost gate, not a security boundary.
-#    Requires the label, secrets.SITE_FIGS_PAT (classic PAT with public_repo scope;
-#    fine-grained PATs can't push to fork branches; the PR's "allow edits by maintainers"
-#    must stay on) and secrets.FIGSHARE_TOKEN. Re-trigger by re-applying the label.
-#
-# 2. Fallback (push to main touching model YAMLs, or weekly): regenerate payloads and
-#    open a follow-up PR only if they differ. No-op when already current.
+# SECURITY: this secret-bearing workflow never executes PR code. PRs that change
+# payload-generating code must regenerate and commit payloads locally; they fail here
+# before archival or push credentials are exposed.
 on:
   pull_request_target:
     types: [labeled]
-  push:
-    branches: [main]
-    paths: [models/**/*.yml] # new/updated model submissions
-  schedule:
-    - cron: 17 4 * * 1 # weekly safety net (Mon 04:17 UTC)
-  workflow_dispatch:
 
 permissions:
-  contents: write # push release assets; create fallback-PR branches
-  pull-requests: write
-  actions: write # dispatch CI workflows on the fallback auto-PR branch
+  contents: write # upload parity assets to the release
+  pull-requests: read # inspect the PR diff
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   update-site-figs:
-    if: github.event_name != 'pull_request_target' || github.event.label.name == 'ingest-model'
+    if: github.event.label.name == 'ingest-model'
     runs-on: ubuntu-latest
-    timeout-minutes: 150 # downloads every model's preds on a cold cache
+    timeout-minutes: 150
     steps:
-      # always the trusted ref (main); ingest-mode PR content is overlaid as data, never run
       - name: Check out trusted repo
         uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      # ingest mode: PR head as a data source + later push target (checkout never runs PR code)
+      # Pinned to the SHA reviewed when the label event fired. The live-head check
+      # below and final non-forced push reject later force-pushes.
       - name: Check out submission PR head (data only)
-        if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
           path: pr-tree
           persist-credentials: false
 
@@ -64,147 +45,115 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Cache model prediction + analysis files
+      - name: Cache stable site input data
         uses: actions/cache@v5
         with:
-          # figshare downloads land next to each model's YAML (models/**) and in data/
           path: |
-            models/**/*.csv.gz
-            models/**/*.json.gz
             data/mp
             data/wbm
-          key: model-preds-${{ hashFiles('models/**/*.yml') }}
-          # partial restore on new submissions: only the new model's files download
-          restore-keys: model-preds-
+          key: site-input-data-${{ runner.os }}-${{ hashFiles('matbench_discovery/enums.py', 'matbench_discovery/data.py') }}
+          restore-keys: site-input-data-${{ runner.os }}-
 
-      # === ingest mode: full pipeline on trusted code + overlaid PR data ===
       - name: Overlay submission data onto trusted checkout
-        if: github.event_name == 'pull_request_target'
         run: uv run --with-editable . python scripts/apply_pr_models_overlay.py pr-tree
 
       - name: Detect submitted models
         id: detect
-        if: github.event_name == 'pull_request_target'
         env:
           GH_TOKEN: ${{ github.token }}
+          LABELED_SHA: ${{ github.event.pull_request.head.sha }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          CHANGED=$(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only |
-            grep -E '^models/.*\.yml$' | grep -v model-schema || true)
-          if [ -z "$CHANGED" ]; then
+          CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].path')
+          LIVE_HEAD=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" \
+            --json headRefOid -q .headRefOid)
+          if [ "$LIVE_HEAD" != "$LABELED_SHA" ]; then
+            echo "::error::PR #$PR head moved since the ingest-model label was applied. Review the new commits and re-apply the label."
+            exit 1
+          fi
+
+          FORMAT_CHANGED=$(grep -E '^(scripts/model_figs/.*\.py|scripts/evals/(geo_opt|md|diatomic_metrics|build_diatomic_reference)\.py|scripts/ingest_model\.py|matbench_discovery/(figs\.py|metrics/(md\.py|diatomics/.*\.py)))$' <<< "$CHANGED" || true)
+          if [ -n "$FORMAT_CHANGED" ]; then
+            echo "::error::This PR changes payload-generating code. Regenerate the affected payloads locally and commit them; this secret-bearing workflow never executes PR code."
+            exit 1
+          fi
+
+          CHANGED_YML=$(grep -E '^models/.*\.yml$' <<< "$CHANGED" | grep -v model-schema || true)
+          if [ -z "$CHANGED_YML" ]; then
             echo "::error::No model YAML changes found in PR #$PR"
             exit 1
           fi
           # word splitting of the newline-separated paths is intended
           # shellcheck disable=SC2086
-          MODELS=$(uv run --with-editable . python scripts/ingest_model.py --map-yaml-paths $CHANGED)
+          MODELS=$(uv run --with-editable . python \
+            scripts/ingest_model.py --map-yaml-paths $CHANGED_YML)
+          if [ -z "$MODELS" ]; then
+            echo "::error::No submitted models detected"
+            exit 1
+          fi
           echo "models=$MODELS" >> "$GITHUB_OUTPUT"
           echo "Detected submitted models: $MODELS"
 
+      # Restore after overlay so model prediction artifacts never cross submissions.
+      # Key is PR-scoped: pull_request_target caches live in the base-branch scope
+      # (readable by main and every other PR) and contain submitter-controlled pred
+      # files, so a shared key would let one submission poison another's inputs. The
+      # prefix is distinct from test.yml's model-preds- to make that isolation
+      # explicit; restore-keys warms re-ingests of the same PR after new commits.
+      - name: Cache model prediction + analysis files
+        uses: actions/cache@v5
+        with:
+          path: |
+            models/**/*.csv.gz
+            models/**/*.json.gz
+            models/**/*.jsonl.gz
+          key: ingest-preds-pr${{ github.event.pull_request.number }}-${{ hashFiles('models/**/*.yml') }}
+          restore-keys: ingest-preds-pr${{ github.event.pull_request.number }}-
+
       - name: Ingest submitted models
-        if: github.event_name == 'pull_request_target'
         env:
-          # safe to expose: only trusted main code executes in this job (see header)
           FIGSHARE_TOKEN: ${{ secrets.FIGSHARE_TOKEN }}
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-          GH_TOKEN: ${{ github.token }} # gh release upload of parity assets
-          MODELS: ${{ steps.detect.outputs.models }} # env (not inline) per injection-hardening guidance
+          GH_TOKEN: ${{ github.token }}
+          MODELS: ${{ steps.detect.outputs.models }}
         run: |
-          if [ -z "$MODELS" ]; then
-            echo "::error::Detect step produced no models - refusing to no-op silently"
-            exit 1
-          fi
           for model in $MODELS; do
             uv run --with-editable . scripts/ingest_model.py "$model" --archive
           done
 
-      # Copy generated artifacts into the PR checkout and push from there, preserving the
-      # contributor's other changes. The maintainer PAT (not GITHUB_TOKEN) is needed to
-      # push to forks and to trigger pull_request CI on the new SHA; gitignore keeps
-      # downloaded pred files out of the commit.
-      - name: Commit ingested changes to the submission PR
-        if: github.event_name == 'pull_request_target'
+      - name: Copy generated artifacts into the PR checkout
+        run: |
+          rsync -a --include='*/' --include='*.yml' --exclude='*' \
+            models/ pr-tree/models/
+          rsync -a --delete site/src/figs/ pr-tree/site/src/figs/
+          rsync -aR site/src/lib/parity/*-parity-manifest.ts \
+            site/static/*-parity/manifest.json \
+            site/src/routes/models/per-element-each-errors.jsonl pr-tree/
+
+      - name: Commit updated assets to the PR
         env:
           GH_TOKEN: ${{ secrets.SITE_FIGS_PAT }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::error::secrets.SITE_FIGS_PAT is not set (classic PAT with public_repo scope needed to push to fork branches)"
+            echo "::error::secrets.SITE_FIGS_PAT is not set"
             exit 1
           fi
-          # model YAMLs (archived URLs + metrics) and regenerated site assets. --delete on
-          # the figs dir so renamed/removed payloads don't linger (the generators fully own
-          # it). Multi-model payloads are single <name>.jsonl files, including per-element.
-          rsync -a --include='*/' --include='*.yml' --exclude='*' models/ pr-tree/models/
-          rsync -a --delete site/src/figs/ pr-tree/site/src/figs/
-          # both parity manifest forms must land on the PR: the site bundles the .ts,
-          # while tests/test_parity_assets.py (the model-pr-guard required check)
-          # validates the committed static manifest.json. -R preserves each source's
-          # full relative path under pr-tree/, creating parent dirs as needed
-          rsync -aR site/src/lib/parity/*-parity-manifest.ts \
-            site/static/*-parity/manifest.json \
-            site/src/routes/models/per-element-each-errors.jsonl pr-tree/
           cd pr-tree
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add models site/src/figs site/src/lib site/src/routes/models \
-            site/static/energy-parity/manifest.json site/static/kappa-parity/manifest.json
+            site/static/energy-parity/manifest.json \
+            site/static/kappa-parity/manifest.json
           if git diff --cached --quiet; then
             echo "Everything already up to date - nothing to commit"
             exit 0
           fi
-          git commit -m "Ingest model submission: archive pred files + refresh site assets"
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${HEAD_REPO}.git" "HEAD:${HEAD_REF}"
-
-      # === fallback mode: refresh payloads, follow-up PR only when they differ ===
-      - name: Regenerate site figure payloads
-        if: github.event_name != 'pull_request_target'
-        run: uv run --with-editable . scripts/ingest_model.py --payloads-only
-
-      # diff each regenerated .jsonl payload's model roster against the committed (HEAD)
-      # one so the PR body lists which payloads changed and which models were added/removed.
-      # Payloads are line-delimited (one model per line, a lone _base line for shared
-      # fields), so the roster is the set of model ids inside each file
-      - name: Summarize payload model-count changes
-        id: payload_diff
-        if: github.event_name != 'pull_request_target'
-        run: |
-          {
-            echo "model_counts<<PR_BODY_EOF"
-            uv run --with-editable . python scripts/summarize_payload_changes.py
-            echo "PR_BODY_EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Open PR with updated payloads
-        id: cpr
-        if: github.event_name != 'pull_request_target'
-        uses: peter-evans/create-pull-request@v8
-        with:
-          add-paths: |
-            site/src/figs
-            site/src/routes/models/per-element-each-errors.jsonl
-          commit-message: Update multi-model site figure payloads
-          title: Update multi-model site figure payloads
-          body: |
-            Auto-generated by [`${{ github.workflow }}` workflow](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/.github/workflows/update-site-figs.yml) after changes to
-            `models/**/*.yml` ([CI run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})).
-
-            Payload shapes were validated by [`tests/test_fig_payloads.py`](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/tests/test_fig_payloads.py) before
-            this PR was opened.
-
-            ${{ steps.payload_diff.outputs.model_counts }}
-          branch: auto/update-site-figs
-          delete-branch: true
-
-      # GITHUB_TOKEN-opened PRs don't trigger push/pull_request workflows, but
-      # workflow_dispatch is exempt. Dispatch the required checks (all four in test.yml) and
-      # the site build (gh-pages.yml builds without deploying off-main) onto the PR head
-      # so branch protection is satisfied.
-      - name: Trigger CI on the fallback auto-PR
-        if: github.event_name != 'pull_request_target' && steps.cpr.outputs.pull-request-number
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh workflow run test.yml --ref auto/update-site-figs
-          gh workflow run gh-pages.yml --ref auto/update-site-figs
+          SUMMARY=$(python3 ../scripts/summarize_payload_changes.py)
+          git commit --no-verify \
+            -m "Ingest model submission: archive pred files + refresh site assets" \
+            -m "$SUMMARY"
+          git push --no-verify \
+            "https://x-access-token:${GH_TOKEN}@github.com/${HEAD_REPO}.git" \
+            "HEAD:${HEAD_REF}"

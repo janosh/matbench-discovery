@@ -1,12 +1,19 @@
 <script lang="ts">
-  import { MetricsTable, ModelSelect, type ModelData } from '$lib'
+  import { MetricsTable, ModelSelect, type ModelData, MODELS } from '$lib'
+  import {
+    CDS_CONFIG,
+    DEFAULT_CDS_CONFIG,
+    update_models_cds,
+  } from '$lib/combined-scores.svelte'
   import { DIATOMICS_METRICS, task_page_visible_cols } from '$lib/labels'
-  import { DiatomicCurve } from '$lib/plot'
+  import { DiatomicCurve, RadarChart } from '$lib/plot'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
   import {
+    apply_weights_param,
     bind_url_params,
     sort_from_query,
     valid_query_param,
+    weights_to_param,
   } from '$lib/url-state.svelte'
   import type { SortDir } from '$lib/types'
   import DiatomicsNote from './diatomics-note.md'
@@ -76,9 +83,10 @@
   const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
   const has_diatomics_metrics = (model: ModelData): boolean =>
     model.metrics?.diatomics != null && typeof model.metrics.diatomics === `object`
+  // default-sort by the combined diatomics score (CDS), best (highest) first
   const default_sort: { column: string; dir: SortDir } = {
-    column: DIATOMICS_METRICS.energy_jump.key,
-    dir: `asc`,
+    column: DIATOMICS_METRICS.diatomics_combined_score.key,
+    dir: `desc`,
   }
   let sort = $state({ ...default_sort })
 
@@ -183,12 +191,15 @@
       element_group_keys,
     )
     sort = sort_from_query(params, default_sort)
+    apply_weights_param(params.get(`weights`), CDS_CONFIG, DEFAULT_CDS_CONFIG)
   }
   bind_url_params(read_url_params, () => [
     model_selection.url_entry,
     [`elements`, selected_element_group, `all`],
     [`sort`, sort.column, default_sort.column],
     [`dir`, sort.dir, default_sort.dir],
+    // custom CDS pillar weights (accuracy,geometry,speed,physicality); omitted at defaults
+    [`weights`, weights_to_param(CDS_CONFIG, DEFAULT_CDS_CONFIG)],
   ])
 
   const curves_for_formula = (formula: string) =>
@@ -237,11 +248,30 @@
 
 <h1>Diatomics</h1>
 
-<DiatomicsNote />
+<div class="intro">
+  <!-- wrapper div: the markdown renders multiple top-level elements which would
+  otherwise each become their own flex item -->
+  <div><DiatomicsNote /></div>
+  <figure class="cds-weights">
+    <RadarChart
+      size={260}
+      config={CDS_CONFIG}
+      default_config={DEFAULT_CDS_CONFIG}
+      title_label={DIATOMICS_METRICS.diatomics_combined_score}
+      on_change={(cfg) => update_models_cds(MODELS, cfg as typeof CDS_CONFIG)}
+    />
+    <figcaption>
+      Drag the knob to reweight the four CDS pillars (see &#9432; for definitions); the
+      table updates live. Caveats: Accuracy and Geometry score agreement with PBE, which
+      is itself unreliable for stretched diatomics, and Speed compares wall times measured
+      on heterogeneous hardware.
+    </figcaption>
+  </figure>
+</div>
 
 <MetricsTable
   model_filter={has_diatomics_metrics}
-  col_filter={(col) => visible_cols[col.label] ?? true}
+  col_filter={(col) => visible_cols[col.key] ?? true}
   bind:sort
 />
 
@@ -308,10 +338,30 @@
   h1 {
     margin: 0;
   }
+  .intro {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em 2em;
+    align-items: center;
+    margin-bottom: 1em;
+  }
+  /* markdown intro takes remaining width, chart column keeps its natural size */
+  .intro > div {
+    flex: 1 1 30em;
+  }
+  .cds-weights {
+    flex: 0 1 22em;
+    margin: 0 auto;
+  }
+  .cds-weights figcaption {
+    margin-top: 1em;
+    font-size: 0.85em;
+    color: var(--text-muted, inherit);
+  }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
-    gap: 45pt 15pt;
+    gap: 55pt 15pt;
   }
   .plot-shell,
   .plot-placeholder {

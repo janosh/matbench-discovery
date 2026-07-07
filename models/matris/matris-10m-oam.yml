@@ -178,6 +178,8 @@ metrics:
       missing_preds: 0 # count
   md:
     pred_file: models/matris/matris-10m-oam/2026-06-28-matris_10m_oam-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 511454.02 # s
     energy_rmse: 0.6826 # meV/atom
     force_rmse: 71.8543 # meV/Å
     rdf_error: 3.5865 # %
@@ -193,15 +195,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104630
     hardware: NVIDIA H200
     run_time_sec: 783.24
-    pbe_wall_dist_mae: 0.07152
-    pbe_energy_mae: 1.248
-    pbe_bond_length_error: 0.2403
-    pbe_well_depth_error: 0.6966
-    pbe_vib_freq_error: 103.1
+    pbe_wall_dist_mae: 0.0661
+    pbe_energy_mae: 1.233
+    pbe_bond_length_error: 0.2102
+    pbe_well_depth_error: 0.6529
+    pbe_vib_freq_error: 97.66
     tortuosity: 1.033
     energy_diff_flips: 2.839
     energy_jump: 0.2951
     force_flips: 2.816
     force_total_variation: 288.0
     force_jump: 35.92
-    pbe_force_mae: 1.529
+    pbe_force_mae: 1.546

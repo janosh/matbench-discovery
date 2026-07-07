@@ -40,6 +40,15 @@
       // +page) above the dropdown; Nav filters the duplicate out of the submenu
       return sub_routes.length ? { href: route, children: [route, ...sub_routes] } : route
     })
+  const route_href = (route: string | { href: string }) =>
+    typeof route === `string` ? route : route.href
+  const nav_order: Record<string, number> = { [`/tasks`]: 0, [`/models`]: 1 }
+  const ordered_routes = routes
+    .filter((route) => route_href(route) !== `/changelog`)
+    .toSorted(
+      (route_a, route_b) =>
+        (nav_order[route_href(route_a)] ?? 2) - (nav_order[route_href(route_b)] ?? 2),
+    )
 
   let url = $derived(page.url.pathname)
   let headingSelector = $derived(`main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4)`)
@@ -119,7 +128,7 @@
 
 <Nav
   {page}
-  routes={[`/`, ...routes.filter((route) => route != `/changelog`), [pkg.paper, `Paper`]]}
+  routes={[`/`, ...ordered_routes, [pkg.paper, `Paper`]]}
   style="margin-block: 1em 0"
   menu_props={{ style: `gap: 1.5em` }}
   labels={{

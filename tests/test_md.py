@@ -1,7 +1,9 @@
 """Tests for molecular dynamics rollout helpers."""
 
 import hashlib
+import json
 import os
+import platform
 import shlex
 import sys
 from pathlib import Path
@@ -234,15 +236,31 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
 
     if dry_run:
         assert not out_dir.exists()  # dry run must not write outputs
+        assert "run_time_sec" not in df_md  # in-memory rollout leaves no sidecar
         return
 
     assert (out_dir / f"{today}-emt-md-metrics.csv.gz").is_file()
     rollout = out_dir / "bulkCu_300K_test-nvt-emt.extxyz"
     assert rollout.is_file()
-    # second run reuses the existing rollout
+    # completed rollout leaves a run-info sidecar whose cost lands in the CSV row
+    run_info_file = out_dir / "bulkCu_300K_test-nvt-emt-run-info.json"
+    assert run_info_file.is_file()
+    run_info = json.loads(run_info_file.read_text())
+    # audit-only provenance stays in the sidecar (not copied into CSV rows)
+    assert {"completed_at", "hostname", "versions"} <= set(run_info)
+    assert run_info["versions"]["python"] == platform.python_version()
+    assert df_md.loc["bulkCu_300K_test", "run_time_sec"] > 0
+    assert isinstance(df_md.loc["bulkCu_300K_test", "hardware"], str)
+    assert df_md.loc["bulkCu_300K_test", "n_atoms"] == 32  # 2x2x2 cubic Cu cell
+    if sys.platform != "win32":  # Windows lacks the resource module
+        assert df_md.loc["bulkCu_300K_test", "max_rss_gb"] > 0
+    # second run reuses the existing rollout but still reports its recorded cost
     rollout_mtime = rollout.stat().st_mtime
-    run()
+    df_rerun = run()
     assert rollout.stat().st_mtime == rollout_mtime
+    assert df_rerun.loc["bulkCu_300K_test", "run_time_sec"] == pytest.approx(
+        df_md.loc["bulkCu_300K_test", "run_time_sec"]
+    )
 
 
 def test_run_md_benchmark_private_ref_adds_energy_force_rmse(tmp_path: Path) -> None:
@@ -350,7 +368,11 @@ def test_run_md_benchmark_resume_matches_single_run(
     assert resumed is not None, "resume loop did not complete"
     assert saves["n"] >= 3, "test did not exercise interruptions"
 
-    numeric_cols = single.select_dtypes("number").columns
+    # wall time and memory high-water marks are process state, not trajectory
+    # observables - deterministic reproduction doesn't apply to them
+    numeric_cols = single.select_dtypes("number").columns.drop(
+        ["run_time_sec", "max_rss_gb", "max_gpu_mem_gb"], errors="ignore"
+    )
     for col in numeric_cols:
         np.testing.assert_allclose(
             resumed[col].to_numpy(),
@@ -366,6 +388,8 @@ def test_run_md_benchmark_resume_matches_single_run(
     assert not (out_dir / "bulkCu_300K_test-nvt-emt.part.extxyz").is_file()
     assert not (out_dir / "bulkCu_300K_test-nvt-emt.extxyz.ckpt.npz").is_file()
     assert len(read_trajectory(str(rollout))) == 21
+    # rollout wall time accumulated across the interrupted sessions
+    assert resumed.loc["bulkCu_300K_test", "run_time_sec"] > 0
 
 
 def test_md_convert_resolve_settings() -> None:
@@ -468,6 +492,28 @@ def test_run_md_benchmark_rejects_empty_or_unknown_systems(
             out_dir=str(tmp_path / "out"),
             ref_file=ref_file,
             systems=systems,
+        )
+
+
+@pytest.mark.parametrize("dt_factor", [5.0, 0.2])
+def test_run_md_benchmark_rejects_mislabeled_reference_dt(
+    tmp_path: Path, dt_factor: float
+) -> None:
+    """Bad reference dt_fs attrs should fail before rollout."""
+    ref_file = make_reference_h5(tmp_path)
+    with h5py.File(ref_file, "r+") as file:
+        file["bulkCu_300K_test"].attrs["dt_fs"] *= dt_factor
+
+    with pytest.raises(ValueError, match="mislabeled or stale"):
+        run_md_benchmark(
+            calculator=EMT(),
+            model_key="emt",
+            out_dir=str(tmp_path / "out"),
+            ref_file=ref_file,
+            n_steps=20,
+            time_step_fs=1,
+            record_interval=1,
+            dry_run=True,
         )
 
 

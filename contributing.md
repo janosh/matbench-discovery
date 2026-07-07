@@ -15,28 +15,11 @@ There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for f
 
 To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch][repo] that includes the 3 required items:
 
-1. You should share your model's predictions through a cloud storage service (we recommend [Figshare](https://figshare.com)) and include the download links in your PR description. Your cloud storage directory should contain files in a compressed format with the following naming convention: `<arch-name>/<model-variant>/<yyyy-mm-dd>-<eval-task>.{csv.gz|json.gz}`. For example, a in the case of MACE-MP-0, the file paths would be:
+1. You should share your model's predictions through a cloud storage service (we recommend [Figshare](https://figshare.com)) and include the download links in your PR description. Your cloud storage directory should contain compressed files following the naming convention `<arch-name>/<model-variant>/<yyyy-mm-dd>-<eval-task>.{csv|json|jsonl}.gz`, one per task (MACE-MP-0 paths as examples):
 
-   - geometry optimization: `mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.jsonl.gz` (use [JSON Lines format](https://jsonlines.org) for fast loading of small numbers of structures with `pandas.read_json(lines=True, nrows=100)` for inspection)
-   - discovery: `mace/mace-mp-0/2023-12-11-wbm-IS2RE.csv.gz`
-   - phonons: `mace/mace-mp-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz`
-
-   The files should contain the following information:
-
-   1. `<arch-name>/<model-variant>/<yyyy-mm-dd>-wbm-geo-opt-<optimizer>.json.gz`: The model's relaxed structures as compressed JSON containing:
-
-      - Final relaxed structures (as ASE `Atoms` or pymatgen `Structures`)
-      - Final energies (eV), forces (eV/Å), stress (eV/Å³) and volume (Å³)
-      - Material IDs matching the WBM test set
-
-   2. `<arch-name>/<model-variant>/<yyyy-mm-dd>-wbm-IS2RE.csv.gz`: A compressed CSV file with:
-
-      - Material IDs matching the WBM test set
-      - Final formation energies per atom (eV/atom)
-
-   3. `<arch-name>/<model-variant>/<yyyy-mm-dd>-kappa-103-FIRE-<values-of-dist|fmax|symprec>.json.gz`: A compressed JSON file with:
-      - Material IDs matching the WBM test set
-      - Predicted thermal conductivity (κ) values (W/mK)
+   - geometry optimization: `mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.jsonl.gz` — the final relaxed structures (as ASE `Atoms` or pymatgen `Structures`), final energies (eV), forces (eV/Å), stress (eV/Å³) and volume (Å³), and material IDs matching the WBM test set. Use [JSON Lines format](https://jsonlines.org), which allows fast inspection of a few structures via `pandas.read_json(lines=True, nrows=100)`.
+   - discovery: `mace/mace-mp-0/2023-12-11-wbm-IS2RE.csv.gz` — compressed CSV with material IDs matching the WBM test set and final formation energies per atom (eV/atom)
+   - phonons: `mace/mace-mp-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz` (encode your `dist`/`fmax`/`symprec` values in the name) — compressed JSON with material IDs and predicted thermal conductivity (κ) values (W/mK)
 
    Optionally you can also share the complete relaxation trajectories. Having the forces and stresses at each relaxation step also allows analyzing any pathological behavior for structures where relaxation failed or went haywire.
 
@@ -81,13 +64,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    ### Script Dependencies Declaration (Required)
 
-   **All test scripts must include a script dependencies section** using the [PEP 723 inline metadata format](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies). This is critical for reproducibility and allows others to easily rerun your code with `uv run test_<model_name>_<task>.py` without manually setting up virtual environments or installing dependencies.
-
-   #### Why This Matters
-
-   - **Reproducibility**: Future readers can still run your scripts even if there are breaking changes in package releases
-   - **Convenience**: One command (`uv run script.py`) installs dependencies and runs the script
-   - **Documentation**: Makes it clear which exact package versions were used for your submission
+   **All test scripts must include a script dependencies section** using the [PEP 723 inline metadata format](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies): a single `uv run test_<model_name>_<task>.py` then installs dependencies and runs the script without manual environment setup, documents the exact package versions used for your submission, and keeps your code runnable even after breaking changes in package releases.
 
    ```python
    # /// script
@@ -283,14 +260,7 @@ Run the ingestion script (via [`uv`](https://docs.astral.sh/uv), no extra instal
 
 ```sh
 uv run --with-editable . scripts/ingest_model.py <model_name>
-```
-
-For example:
-
-```sh
-uv run --with-editable . scripts/ingest_model.py mace-mpa-0
-# or with underscores (both work)
-uv run --with-editable . scripts/ingest_model.py mace_mpa_0
+# e.g. mace-mpa-0 or mace_mpa_0 (dashes and underscores both work)
 ```
 
 This command will:
@@ -301,15 +271,7 @@ This command will:
 
 ### Step 6 (optional): Copy WandB runs into our project
 
-[Weights and Biases](https://wandb.ai) ([GitHub](https://github.com/wandb/wandb)) is a tool for logging training and test runs of ML models. It auto-collects metadata like:
-
-- what hardware the model is running on
-- and for how long,
-- what the CPU, GPU and network utilization was over that period,
-- the exact code in the script that launched the run, and
-- which versions of dependencies were installed in the environment your model ran in.
-
-This information can be useful for others looking to reproduce your results or compare their model to yours i.t.o. computational cost. We therefore strongly recommend tracking all runs that went into a model submission with WandB so that the runs can be copied over to our WandB project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect.
+[Weights and Biases](https://wandb.ai) ([GitHub](https://github.com/wandb/wandb)) logs training and test runs of ML models, auto-collecting metadata like what hardware the model ran on and for how long, CPU/GPU/network utilization over that period, the exact code in the launching script, and the dependency versions installed in the environment. This helps others reproduce your results or compare computational cost, so we strongly recommend tracking all runs that went into a model submission with WandB so they can be copied over to our project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect.
 
 ## 🤖 &thinsp; Automated ingestion (what happens after your PR is opened)
 
@@ -322,11 +284,12 @@ Once your submission PR looks ready, a maintainer applies the `ingest-model` lab
 5. **Multi-model figures** — all site figure payloads (`site/src/figs/*.jsonl`) are regenerated so every page (`/models/tmi`, `/tasks/geo-opt`, data pages) includes your model, validated by payload shape tests before committing.
 6. **One commit onto your PR** — the updated YAML, payloads and manifests are pushed to your PR branch (this is why "Allow edits by maintainers" must stay enabled), retriggering CI on the result. Merging the PR lands your model fully integrated.
 
-A post-merge + weekly fallback job regenerates the figure payloads and opens a follow-up PR only if they're stale, so the site can't silently fall out of date even if a PR merges without the label.
+The secret-bearing ingestion workflow never executes PR code. PRs that change the payload *format* (new keys/metrics or schema tweaks in generator code) must regenerate payloads locally and commit them in the same PR:
 
-Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `uv run --with-editable . scripts/ingest_model.py <model_name> --archive` locally for submissions whose enum diff fails validation. `uv run --with-editable . scripts/ingest_model.py --payloads-only` refreshes the multi-model figure payloads on their own.
+- Roster drift fails `tests/test_fig_payloads.py`'s coverage tests (e.g. `test_discovery_payload_covers_active_models` after adding or superseding a model). Fix by running `uv run --with-editable . scripts/ingest_model.py <model_name> --payloads-only` and committing the changed `site/src/figs/*.jsonl` files — this splices only your model's freshly computed entries into the committed payloads, pulling your prediction files from the `pred_file_url` entries in the model YAML (the same links automated ingestion uses).
+- The `model-pr-guard` check fails any PR that changes payload-generating code without also updating committed payloads (`site/src/figs` data files or the route-local `per-element-each-errors.jsonl`): regenerate locally with `scripts/ingest_model.py --payloads-only` (no model name needed for pure format changes), or add the `payloads-unchanged` label for output-neutral refactors.
 
-If CI flags the figure payloads as stale for your PR (e.g. `test_discovery_payload_covers_active_models` fails after adding or superseding a model), run `uv run --with-editable . scripts/ingest_model.py <model_name> --payloads-only` and commit the changed `site/src/figs/*.jsonl` files. This splices only your model's freshly computed entries into the committed payloads, pulling your prediction files from the `pred_file_url` entries in the model YAML, the same links used by automated ingestion.
+Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `uv run --with-editable . scripts/ingest_model.py <model_name> --archive` locally for submissions whose enum diff fails validation.
 
 ## 😵‍💫 &thinsp; Troubleshooting
 
