@@ -328,7 +328,7 @@ def collect_run_info(rollout_sec: float) -> dict[str, object]:
 
 
 def read_run_info(traj_path: str) -> dict[str, object]:
-    """Load a rollout's run-info sidecar, or {} when absent/unreadable."""
+    """Load a rollout's run-info sidecar, or an empty dict when absent/unreadable."""
     try:
         with open(run_info_path(traj_path), encoding="utf-8") as file:
             run_info = json.load(file)
