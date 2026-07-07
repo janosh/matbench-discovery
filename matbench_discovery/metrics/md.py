@@ -730,15 +730,26 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
             f"expected a subset of {PER_SYSTEM_METRIC_COLS}"
         )
     metrics: dict[str, float | str] = {}
-    if "hardware" in df_md and df_md["hardware"].notna().all():
+    # hardware is uniform when every row has the same non-null label; an incomplete or
+    # mixed column also drops the GPU-dependent costs (summed wall time, peak VRAM): a
+    # total over an H200 and an A100 (or rows of unknown provenance) would misrepresent
+    # the model's cost with no hardware label left to qualify it. Host RSS is kept: it
+    # reflects model/system size, not the GPU.
+    hardware_uniform = True
+    if "hardware" in df_md:
         hardware_vals = df_md["hardware"].unique()
-        if len(hardware_vals) == 1:
+        hardware_uniform = len(hardware_vals) == 1 and pd.notna(hardware_vals[0])
+        if hardware_uniform:
             metrics["hardware"] = str(hardware_vals[0])
-    if "run_time_sec" in df_md and df_md["run_time_sec"].notna().all():
-        metrics["run_time_sec"] = float(df_md["run_time_sec"].sum())
-    for mem_col in ("max_rss_gb", "max_gpu_mem_gb"):
-        if mem_col in df_md and df_md[mem_col].notna().all():
-            metrics[mem_col] = float(df_md[mem_col].max())
+    for col, agg, gpu_dependent in (
+        ("run_time_sec", "sum", True),
+        ("max_rss_gb", "max", False),
+        ("max_gpu_mem_gb", "max", True),
+    ):
+        if gpu_dependent and not hardware_uniform:
+            continue
+        if col in df_md and df_md[col].notna().all():
+            metrics[col] = float(df_md[col].agg(agg))
     metrics |= {
         col: float(df_md[col].mean())
         * (1000 if col in ("energy_rmse", "force_rmse") else 1)

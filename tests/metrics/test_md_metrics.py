@@ -900,15 +900,20 @@ def test_calc_md_metrics() -> None:
             ("run_time_sec",),
         ),
         (
+            # mixed GPUs also drop the GPU-dependent costs: a wall-time sum or VRAM
+            # max over an H200 and an A100 misrepresents the model's cost with no
+            # hardware label left to qualify it. Host RSS is GPU-independent -> kept
             {
                 "run_time_sec": [100.0, 200.0],
+                "max_rss_gb": [4.2, 6.1],
+                "max_gpu_mem_gb": [11.5, 9.0],
                 "hardware": ["NVIDIA H200", "NVIDIA A100"],
             },
-            ("hardware",),
+            ("hardware", "run_time_sec", "max_gpu_mem_gb"),
         ),
         (
             {"run_time_sec": [100.0, 200.0], "hardware": ["NVIDIA H200", None]},
-            ("hardware",),
+            ("hardware", "run_time_sec"),
         ),
         (
             # partial memory coverage -> dropped (a subset max could hide the true

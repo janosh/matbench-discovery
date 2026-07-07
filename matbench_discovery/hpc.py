@@ -52,12 +52,14 @@ def reset_gpu_peak_memory() -> None:
     multi-system process). No-op without torch/CUDA; host RSS has no reset (it is a
     process-lifetime high-water mark).
     """
+    # broad except: a broken CUDA runtime (e.g. driver mismatch mid-job) raises
+    # RuntimeError, which must not crash the rollout this instruments
     try:
         import torch
 
         if torch.cuda.is_available():
             torch.cuda.reset_peak_memory_stats()
-    except ImportError:
+    except Exception:  # noqa: BLE001, S110
         pass
 
 
@@ -80,12 +82,14 @@ def peak_memory_gb() -> dict[str, float]:
         mem["max_rss_gb"] = round(max_rss / 1e9, 3)
     except ImportError:
         pass
+    # broad except like reset_gpu_peak_memory: memory introspection failing (broken
+    # CUDA runtime) must not crash collect_run_info after a multi-hour rollout
     try:
         import torch
 
         if torch.cuda.is_available():
             mem["max_gpu_mem_gb"] = round(torch.cuda.max_memory_allocated() / 1e9, 3)
-    except ImportError:
+    except Exception:  # noqa: BLE001, S110
         pass
     return mem
 
