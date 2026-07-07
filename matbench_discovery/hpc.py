@@ -1,6 +1,7 @@
 """Slurm job submission helper function."""
 
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,82 @@ import numpy as np
 
 if TYPE_CHECKING:
     import pandas as pd
+
+
+def detect_hardware() -> str:
+    """Human-readable name for the accelerator the run executed on.
+
+    Tries torch, then JAX, then TensorFlow (MLIP backends expose the GPU differently),
+    falling back to the CPU model when no GPU is visible.
+    """
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            return torch.cuda.get_device_name(0)
+    except ImportError:
+        pass
+    try:
+        import jax
+
+        if gpus := [dev for dev in jax.devices() if dev.platform == "gpu"]:
+            return gpus[0].device_kind
+    except ImportError:
+        pass
+    try:
+        import tensorflow as tf
+
+        if gpus := tf.config.list_physical_devices("GPU"):
+            details = tf.config.experimental.get_device_details(gpus[0])
+            return details.get("device_name", "GPU")
+    except ImportError:
+        pass
+    return f"CPU ({platform.processor() or platform.machine()})"
+
+
+def reset_gpu_peak_memory() -> None:
+    """Reset torch's peak-VRAM counter so the next peak_memory_gb() call attributes
+    GPU memory to work done after this point (e.g. one system's rollout in a
+    multi-system process). No-op without torch/CUDA; host RSS has no reset (it is a
+    process-lifetime high-water mark).
+    """
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+    except ImportError:
+        pass
+
+
+def peak_memory_gb() -> dict[str, float]:
+    """Peak memory footprint of this process in GB (1e9 bytes), rounded to 3 decimals.
+
+    Returns up to two entries: ``max_rss_gb``, the host resident-set-size high-water
+    mark since process start (via getrusage; omitted on platforms without the
+    ``resource`` module, i.e. Windows), and ``max_gpu_mem_gb``, torch's peak allocated
+    CUDA memory since the last reset_gpu_peak_memory() call (omitted without
+    torch/CUDA).
+    """
+    mem: dict[str, float] = {}
+    try:
+        import resource
+
+        # ru_maxrss unit is bytes on macOS but KiB on Linux
+        factor = 1 if sys.platform == "darwin" else 1024
+        max_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * factor
+        mem["max_rss_gb"] = round(max_rss / 1e9, 3)
+    except ImportError:
+        pass
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            mem["max_gpu_mem_gb"] = round(torch.cuda.max_memory_allocated() / 1e9, 3)
+    except ImportError:
+        pass
+    return mem
+
 
 # taken from https://slurm.schedmd.com/job_array.html#env_vars, lower-cased and
 # and removed the SLURM_ prefix
@@ -153,10 +230,12 @@ def slurm_submit(
 def merge_run_metadata(
     shard_metadatas: list[dict[str, object]],
 ) -> dict[str, str | float]:
-    """Shared hardware + summed run_time_sec across Slurm shard run_metadata dicts.
+    """Shared hardware, summed run_time_sec and peak memory across Slurm shard
+    run_metadata dicts.
 
-    Shards run in parallel, so the summed run_time_sec ~ a serial sweep and hardware is
-    shared. Keys no shard recorded are omitted, so a merge keeps existing YAML values.
+    Shards run in parallel, so the summed run_time_sec ~ a serial sweep, memory peaks
+    are maxed (each shard is its own process) and hardware is shared. Keys no shard
+    recorded are omitted, so a merge keeps existing YAML values.
     """
     hardware = next(
         (meta["hardware"] for meta in shard_metadatas if meta.get("hardware")), None
@@ -166,10 +245,19 @@ def merge_run_metadata(
         for meta in shard_metadatas
         if isinstance(secs := meta.get("run_time_sec"), int | float)
     )
-    return {
+    merged: dict[str, str | float] = {
         **({"hardware": hardware} if isinstance(hardware, str) else {}),
         **({"run_time_sec": round(run_time, 2)} if run_time else {}),
     }
+    for mem_key in ("max_rss_gb", "max_gpu_mem_gb"):
+        peaks = [
+            val
+            for meta in shard_metadatas
+            if isinstance(val := meta.get(mem_key), int | float)
+        ]
+        if peaks:
+            merged[mem_key] = max(peaks)
+    return merged
 
 
 def df_slurm_chunk(

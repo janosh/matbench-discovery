@@ -1,9 +1,12 @@
-"""Summarize per-payload model-roster changes for the update-site-figs PR body.
+"""Summarize per-payload model-roster changes for the update-site-figs auto-commit.
 
 Diffs each regenerated JSONL figure payload (site/src/figs/*.jsonl + the route-local
 per-element-errors.jsonl) against its committed (HEAD) version and prints a markdown
 bullet list of which payloads changed and which models were added/removed. The
-update-site-figs workflow captures stdout into the PR body. Run from the repo root.
+update-site-figs workflow captures stdout into the body of the commit it pushes onto
+the labeled submission PR. Stdlib-only on purpose: the workflow runs this file from
+the trusted checkout with plain python (cwd = PR tree), so no PR code executes.
+Run from the root of the tree whose payloads changed.
 """
 
 import json

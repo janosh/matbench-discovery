@@ -37,7 +37,7 @@ export const sort_from_query = (
   dir: valid_query_param(params, `dir`, default_sort.dir, sort_dirs),
 })
 
-// -- Weighted-score (CPS/CMDS) radar weights as a single URL param --------------
+// -- Weighted-score radar weights as a single URL param ------------------------
 // Serialized as comma-joined values in config-key order, e.g. weights=0.5,0.4,0.1.
 type WeightsConfig = Record<string, { weight: number }>
 

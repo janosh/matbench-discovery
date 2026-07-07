@@ -157,6 +157,8 @@ metrics:
       missing_preds: 0 # count
   md:
     pred_file: models/eSEN/eSEN-30m-oam/2026-06-28-esen_30m_oam-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 213187.13 # s
     energy_rmse: 0.5077 # meV/atom
     force_rmse: 50.7907 # meV/Å
     rdf_error: 3.308 # %
@@ -172,15 +174,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104600
     hardware: NVIDIA H200
     run_time_sec: 869.53
-    pbe_wall_dist_mae: 0.06512
-    pbe_energy_mae: 1.099
-    pbe_bond_length_error: 0.1905
-    pbe_well_depth_error: 0.3177
-    pbe_vib_freq_error: 53.08
+    pbe_wall_dist_mae: 0.06391
+    pbe_energy_mae: 1.061
+    pbe_bond_length_error: 0.168
+    pbe_well_depth_error: 0.2986
+    pbe_vib_freq_error: 40.41
     tortuosity: 1.091
     energy_diff_flips: 2.253
     energy_jump: 0.5307
     force_flips: 2.322
     force_total_variation: 142.8
     force_jump: 38.02
-    pbe_force_mae: 2.052
+    pbe_force_mae: 2.032
