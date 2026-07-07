@@ -188,6 +188,8 @@ metrics:
       missing_preds: 0 # count
   md:
     pred_file: models/nequix/nequix-mp-1/2026-06-28-nequix_mp_1-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 41313.81 # s
     energy_rmse: 1.3652 # meV/atom
     force_rmse: 136.1155 # meV/Å
     rdf_error: 6.085 # %
@@ -203,15 +205,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104669
     hardware: NVIDIA H200
     run_time_sec: 56.83
-    pbe_wall_dist_mae: 0.1143
-    pbe_energy_mae: 1.761
-    pbe_bond_length_error: 0.3101
-    pbe_well_depth_error: 0.63
-    pbe_vib_freq_error: 103.0
+    pbe_wall_dist_mae: 0.1035
+    pbe_energy_mae: 1.707
+    pbe_bond_length_error: 0.2885
+    pbe_well_depth_error: 0.5738
+    pbe_vib_freq_error: 90.16
     tortuosity: 1.306
     energy_diff_flips: 2.172
     energy_jump: 0.5506
     force_flips: 2.172
     force_total_variation: 79.92
     force_jump: 16.73
-    pbe_force_mae: 2.952
+    pbe_force_mae: 2.907

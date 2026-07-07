@@ -184,8 +184,8 @@ def load_dft_reference_curves(
 def find_low_quality_dft_refs(
     ref_curves: DiatomicCurves,
     *,
-    min_energy_jump: float = 2.0,
-    min_energy_flips: int = 10,
+    min_energy_jump: float = 1.5,
+    min_energy_flips: int = 3,
 ) -> set[str]:
     """Elements whose DFT reference curve is too jumpy to score models against.
 
@@ -194,8 +194,8 @@ def find_low_quality_dft_refs(
     energy jump at sign-flip points >= min_energy_jump AND number of energy-difference
     sign flips >= min_energy_flips. Requiring both avoids flagging curves with a few
     large but possibly physical features (e.g. Cr2's shelf) or many tiny numerical
-    wiggles. On the current PBE reference, this flags 8 lanthanides (Pr, Nd, Pm, Tb,
-    Dy, Ho, Er, Tm) whose f-electron SCF convergence issues produce eV-scale
+    wiggles. On the current PBE reference, this flags 8 lanthanides (Pr, Pm, Sm,
+    Tb, Dy, Ho, Er, Tm) whose f-electron SCF convergence issues produce eV-scale
     discontinuities, next to which any model error signal drowns.
 
     Args:
@@ -465,7 +465,11 @@ def write_metrics_to_yaml(
     if pred_file_url is not None:
         block["pred_file_url"] = pred_file_url
 
-    for key in ("hardware", "run_time_sec", "excluded_formula_reasons"):
+    run_metadata_keys = (
+        *("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"),
+        "excluded_formula_reasons",
+    )
+    for key in run_metadata_keys:
         if (val := run_metadata.get(key)) is None:
             val = existing.get(key)
         if val is not None:

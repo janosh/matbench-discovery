@@ -1,13 +1,14 @@
 <script lang="ts">
-  import type { CpsConfig } from '$lib/combined_perf_score.svelte'
+  import type { CpsConfig } from '$lib/combined-scores.svelte'
   import { ALL_METRICS } from '$lib/labels'
   import type { Label } from '$lib/types'
   import { format_num, Icon, type Point } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
-  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
+  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { MODELS, update_models_cps } from '$lib/models.svelte'
 
-  // any 3-component weighted score works (CPS is the default, CMDS uses the same UI)
+  // any weighted score with >= 3 components works (CPS is the default; CMDS and CDS
+  // use the same UI with 3 and 4 corners respectively)
   type WeightsConfig = Record<string, Label & { weight: number }>
 
   let {
@@ -29,23 +30,34 @@
   // A pointer interaction that starts on the knob makes the browser fire a
   // trailing click on the SVG. Dropping the knob updates the weights and can
   // reflow the page (shifting the SVG), so handling that click would remap the
-  // cursor against a moved rect and jump the knob (often into a triangle
-  // corner). Skip that one click.
+  // cursor against a moved rect and jump the knob (often into a polygon corner).
+  // Skip that one click.
   let suppress_next_click = false
   let svg_element = $state<SVGSVGElement | null>(null)
+  let title_element = $state<HTMLElement | null>(null)
   let radius = $derived(size / 2)
   let center = $derived({ x: radius, y: radius })
 
   const colors = [
-    `rgb(255, 99, 132)`, // Red for F1
-    `rgb(255, 206, 86)`, // Yellow for kappa
-    `rgb(54, 162, 235)`, // Blue for RMSD
+    `rgb(255, 99, 132)`, // red
+    `rgb(255, 206, 86)`, // yellow
+    `rgb(54, 162, 235)`, // blue
+    `rgb(75, 192, 120)`, // green
+    `rgb(153, 102, 255)`, // purple
+    `rgb(255, 159, 64)`, // orange
   ]
+
+  // Corner angle for axis idx: when the corner count is divisible by 4, rotate by
+  // half a sector so no corner points straight up into the title text
+  function corner_angle(idx: number, n_corners: number): number {
+    const offset = n_corners % 4 === 0 ? Math.PI / n_corners : 0
+    return (2 * Math.PI * idx) / n_corners + offset
+  }
 
   // Compute axes points coordinates
   let axis_points = $derived(
-    Object.values(config).map((_, idx) => {
-      const angle = (2 * Math.PI * idx) / Object.values(config).length
+    Object.values(config).map((_, idx, { length }) => {
+      const angle = corner_angle(idx, length)
       const x = center.x + Math.cos(angle) * radius * 0.8
       const y = center.y + Math.sin(angle) * radius * 0.8
       return { x, y }
@@ -64,7 +76,23 @@
 
   // Initialized eagerly (not in an effect) so the knob renders at the correct
   // position on first paint and in prerendered HTML instead of jumping from (0, 0)
+  // svelte-ignore state_referenced_locally
   let point = $state<Point>(point_from_weights(config))
+  // Compare weights, not knob geometry: for 4+ corners the weights->point map is
+  // many-to-one (e.g. 50/0/50/0 on opposite corners lands on the center, same as
+  // equal weights), so a position check would hide the Reset button for non-default
+  // weights. Weight-based gating also keeps the button stable mid-drag (weights only
+  // update on drop). Keys absent from default_config don't count as custom since
+  // reset_weights can't restore them anyway.
+  let has_custom_weights = $derived(
+    Object.keys(config).some((key) => {
+      const default_weight = default_config[key]?.weight
+      return (
+        default_weight !== undefined &&
+        Math.abs(config[key].weight - default_weight) > 1e-6
+      )
+    }),
+  )
 
   // Keep knob + model scores in sync when weights change (drag end, reset,
   // or edits from elsewhere)
@@ -80,33 +108,50 @@
       const default_weight = default_config[key]?.weight
       if (default_weight !== undefined) config[key].weight = default_weight
     }
+    title_element?.focus({ preventScroll: true })
   }
 
-  // Derive weights from the knob position via barycentric coordinates
+  // Derive weights from the knob position via Wachspress generalized barycentric
+  // coordinates: non-negative inside any convex polygon, sum to 1 by construction
+  // (so the knob can never express weights totaling more or less than 1), reduce to
+  // classic barycentric coordinates for triangles, and satisfy Σ λᵢ·vᵢ = p so they
+  // round-trip exactly with point_from_weights. Every point inside the polygon is a
+  // valid weight assignment - the reachable set of weighted centroids IS the
+  // straight-edged polygon, no curved boundary needed. For n > 3 corners the map
+  // point -> weights is no longer unique (a 2D point can't encode an
+  // (n-1)-simplex); Wachspress picks the canonical smooth choice.
   function update_weights_from_point() {
-    if (Object.values(config).length !== 3) {
-      console.error(`This implementation only supports exactly 3 metrics/dimensions`)
-      return
+    const keys = Object.keys(config)
+    const n_corners = axis_points.length
+    const wachspress = (pt: Point) =>
+      axis_points.map((vertex, idx) => {
+        const prev = axis_points[(idx - 1 + n_corners) % n_corners]
+        const next = axis_points[(idx + 1) % n_corners]
+        const corner_area = calc_triangle_area(prev, vertex, next)
+        return (
+          corner_area /
+          (calc_triangle_area(pt, prev, vertex) * calc_triangle_area(pt, vertex, next))
+        )
+      })
+    let raw = wachspress(point)
+    // a knob exactly on a corner/edge zeroes Wachspress denominators (-> Infinity):
+    // recompute nudged sub-pixel toward the polygon center where the limit weights
+    // emerge numerically. Interior points keep the exact round-trip.
+    if (!raw.every(Number.isFinite)) {
+      raw = wachspress({
+        x: point.x + (center.x - point.x) * 1e-6,
+        y: point.y + (center.y - point.y) * 1e-6,
+      })
     }
-
-    const [a, b, c] = axis_points
-    const triangle_area = calc_triangle_area(a, b, c)
-    const area1 = calc_triangle_area(point, b, c)
-    const area2 = calc_triangle_area(point, a, c)
-    const area3 = calc_triangle_area(point, a, b)
-
-    let new_values = [area1 / triangle_area, area2 / triangle_area, area3 / triangle_area]
+    const total = raw.reduce((sum, val) => sum + val, 0)
+    let new_values = raw.map((val) => val / total)
 
     // Snap to equal weights when very close to the center
     const dist_from_center = Math.hypot(point.x - center.x, point.y - center.y)
-    if (dist_from_center < radius * 0.05) {
-      new_values = [1 / 3, 1 / 3, 1 / 3]
-    }
+    if (dist_from_center < radius * 0.05) new_values = keys.map(() => 1 / n_corners)
 
     // Update weights in the config directly (axis order == config key order)
-    for (const [idx, key] of Object.keys(config).entries()) {
-      config[key].weight = new_values[idx]
-    }
+    for (const [idx, key] of keys.entries()) config[key].weight = new_values[idx]
   }
 
   // Helper to calculate triangle area using cross product
@@ -137,23 +182,20 @@
   }
 
   // Shared by the click and drag paths so their clamping behavior can't drift
-  function clamp_to_triangle(x: number, y: number): Point {
-    const [a, b, c] = axis_points
+  function clamp_to_polygon(x: number, y: number): Point {
     const pt = { x, y }
-    return Object.values(config).length === 3 && is_point_in_triangle(pt, a, b, c)
-      ? pt
-      : get_closest_point_on_triangle(pt, a, b, c)
+    return is_point_in_polygon(pt) ? pt : closest_point_on_polygon(pt)
   }
 
-  // Move the point to a position, constraining to triangle if needed
+  // Move the point to a position, constraining to the corner polygon if needed
   function move_to_position(click_x: number, click_y: number) {
-    point = clamp_to_triangle(click_x, click_y)
+    point = clamp_to_polygon(click_x, click_y)
     update_weights_from_point()
   }
 
   // Visually move the knob during a drag without touching weights (see end_drag)
   function move_point_to_position(x: number, y: number) {
-    point = clamp_to_triangle(x, y)
+    point = clamp_to_polygon(x, y)
   }
 
   function start_drag(event: MouseEvent | TouchEvent) {
@@ -178,47 +220,42 @@
   }
 
   function end_drag() {
-    if (is_dragging) {
-      is_dragging = false
-      // Update weights only on drag end: doing it live would rerender the table
-      // and scroll the viewport mid-drag
-      update_weights_from_point()
-      globalThis.removeEventListener(`mousemove`, handle_drag)
-      globalThis.removeEventListener(`touchmove`, handle_drag)
-      globalThis.removeEventListener(`mouseup`, end_drag)
-      globalThis.removeEventListener(`touchend`, end_drag)
+    if (!is_dragging) return
+    is_dragging = false
+    // Update weights only on drag end: doing it live would rerender the table
+    // and scroll the viewport mid-drag
+    update_weights_from_point()
+    globalThis.removeEventListener(`mousemove`, handle_drag)
+    globalThis.removeEventListener(`touchmove`, handle_drag)
+    globalThis.removeEventListener(`mouseup`, end_drag)
+    globalThis.removeEventListener(`touchend`, end_drag)
+  }
+
+  // Convex polygon with consistently ordered vertices: pt is inside iff it lies on
+  // the same side of every edge
+  function is_point_in_polygon(pt: Point): boolean {
+    let sign = 0
+    for (const [idx, v1] of axis_points.entries()) {
+      const v2 = axis_points[(idx + 1) % axis_points.length]
+      const cross = (v2.x - v1.x) * (pt.y - v1.y) - (v2.y - v1.y) * (pt.x - v1.x)
+      if (cross === 0) continue
+      if (sign === 0) sign = Math.sign(cross)
+      else if (Math.sign(cross) !== sign) return false
     }
+    return true
   }
 
-  // Helper to check if a point pt is inside a triangle with corners c1, c2, c3
-  function is_point_in_triangle(pt: Point, c1: Point, c2: Point, c3: Point) {
-    // Compute barycentric coordinates
-    const denominator = (c2.y - c3.y) * (c1.x - c3.x) + (c3.x - c2.x) * (c1.y - c3.y)
-    const alpha =
-      ((c2.y - c3.y) * (pt.x - c3.x) + (c3.x - c2.x) * (pt.y - c3.y)) / denominator
-    const beta =
-      ((c3.y - c1.y) * (pt.x - c3.x) + (c1.x - c3.x) * (pt.y - c3.y)) / denominator
-    const gamma = 1 - alpha - beta
-
-    // If all coordinates are between 0 and 1, point is inside
-    return alpha >= 0 && beta >= 0 && gamma >= 0 && alpha <= 1 && beta <= 1 && gamma <= 1
-  }
-
-  // Helper to find closest point pt on triangle with corners c1, c2, c3
-  function get_closest_point_on_triangle(pt: Point, c1: Point, c2: Point, c3: Point) {
-    // First, find the closest point on each edge
-    const p12 = closest_point_on_line(pt, c1, c2)
-    const p23 = closest_point_on_line(pt, c2, c3)
-    const p31 = closest_point_on_line(pt, c3, c1)
-
-    // Then, find which of those points is closest to p
-    const dist_p12 = (p12.x - pt.x) ** 2 + (p12.y - pt.y) ** 2
-    const dist_p23 = (p23.x - pt.x) ** 2 + (p23.y - pt.y) ** 2
-    const dist_p31 = (p31.x - pt.x) ** 2 + (p31.y - pt.y) ** 2
-
-    if (dist_p12 <= dist_p23 && dist_p12 <= dist_p31) return p12
-    if (dist_p23 <= dist_p12 && dist_p23 <= dist_p31) return p23
-    return p31
+  // Nearest boundary point: the closest of the per-edge segment projections
+  function closest_point_on_polygon(pt: Point): Point {
+    let best = axis_points[0]
+    let best_dist = Infinity
+    for (const [idx, v1] of axis_points.entries()) {
+      const v2 = axis_points[(idx + 1) % axis_points.length]
+      const candidate = closest_point_on_line(pt, v1, v2)
+      const dist = (candidate.x - pt.x) ** 2 + (candidate.y - pt.y) ** 2
+      if (dist < best_dist) [best_dist, best] = [dist, candidate]
+    }
+    return best
   }
 
   // Helper to find closest point on a line segment
@@ -233,15 +270,28 @@
   }
 </script>
 
-<div class="radar-chart">
-  <span class="metric-name" title={title_label.description} {@attach tooltip()}>
-    {@html title_label.label ?? title_label.key}
-    <Icon icon="Info" />
-  </span>
-
-  <button class="reset-button" onclick={reset_weights} title="Reset to default weights">
-    Reset
-  </button>
+<div class="radar-chart" style="--chart-size: {size}px">
+  <div class="chart-title">
+    <span
+      bind:this={title_element}
+      class="metric-name"
+      title={title_label.description}
+      tabindex="-1"
+      {@attach tooltip()}
+    >
+      {@html title_label.label ?? title_label.key}
+      <Icon icon="Info" />
+    </span>
+    {#if has_custom_weights}
+      <button
+        class="reset-button"
+        onclick={reset_weights}
+        aria-label="Reset to default weights"
+      >
+        <Icon icon="Reset" />
+      </button>
+    {/if}
+  </div>
 
   <svg
     bind:this={svg_element}
@@ -256,10 +306,11 @@
   >
     <!-- Axes -->
     {#each Object.values(config) as weight, idx (weight.label)}
-      {@const angle = (2 * Math.PI * idx) / Object.values(config).length}
-      {@const x = center.x + Math.cos(angle) * radius * 0.8}
-      {@const y = center.y + Math.sin(angle) * radius * 0.8}
-      {@const label_radius = idx === 2 ? radius * 1.0 : radius * 0.9}
+      {@const angle = corner_angle(idx, Object.values(config).length)}
+      {@const { x, y } = axis_points[idx]}
+      <!-- push labels above the center further out so they don't collide with the
+      title (SVG y grows downward, so sin < 0 = upper half) -->
+      {@const label_radius = radius * (Math.sin(angle) < -1e-9 ? 1.0 : 0.9)}
       {@const label_x = center.x + Math.cos(angle) * label_radius}
       {@const label_y = center.y + Math.sin(angle) * label_radius}
       <line
@@ -276,23 +327,22 @@
         x={label_x}
         y={label_y}
         style="font-size: 14px; transform: translate(-1ex, -1em); overflow: visible; white-space: nowrap"
-        style:color={colors[idx]}
+        style:color={colors[idx % colors.length]}
       >
         {@html weight.label ?? weight.key}
         <small>{format_num(weight.weight, `.0%`)}</small>
       </foreignObject>
     {/each}
 
-    <!-- Triangle area -->
-    {#if Object.values(config).length === 3}
-      <path
-        d="M {axis_points[0].x} {axis_points[0].y} L {axis_points[1].x} {axis_points[1]
-          .y} L {axis_points[2].x} {axis_points[2].y} Z"
-        fill="var(--nav-bg)"
-        stroke="var(--border)"
-        stroke-width="1"
-      />
-    {/if}
+    <!-- Draggable corner-polygon area -->
+    <path
+      d="{axis_points
+        .map(({ x, y }, idx) => `${idx === 0 ? `M` : `L`} ${x} ${y}`)
+        .join(` `)} Z"
+      fill="var(--nav-bg)"
+      stroke="var(--border)"
+      stroke-width="1"
+    />
 
     <!-- Background circular grid -->
     {#each [0.2, 0.4, 0.6, 0.8] as grid_radius (grid_radius)}
@@ -307,13 +357,10 @@
     {/each}
 
     <!-- Colored areas for each metric -->
-    {#if Object.values(config).length === 3}
-      {@const [{ x, y }, { x: px, y: py }] = [center, point]}
-      {#each axis_points as { x: x0, y: y0 }, idx (idx)}
-        {@const path = `M ${x} ${y} L ${x0} ${y0} L ${px} ${py} Z`}
-        <path d={path} fill={colors[idx]} stroke="none" opacity="0.5" />
-      {/each}
-    {/if}
+    {#each axis_points as { x: x0, y: y0 }, idx (idx)}
+      {@const path = `M ${center.x} ${center.y} L ${x0} ${y0} L ${point.x} ${point.y} Z`}
+      <path d={path} fill={colors[idx % colors.length]} stroke="none" opacity="0.5" />
+    {/each}
 
     <!-- Draggable knob: first element is larger invisible hit area for the smaller visible knob above it -->
     <!-- page-bg (not card-bg): the knob needs an opaque fill, card-bg is 0.3-0.4 alpha -->
@@ -335,35 +382,55 @@
 
 <style>
   .radar-chart {
-    padding: 1em 3ex 0 0;
-    margin: 0;
-    position: relative;
+    display: grid;
+    grid-template-columns: 3ex var(--chart-size) 3ex;
+    justify-content: center;
+    justify-items: center;
+    width: calc(var(--chart-size) + 6ex);
+    margin: 0 auto;
     background: var(--card-bg);
     border-radius: 4px;
+  }
+  .chart-title,
+  svg {
+    grid-column: 2;
   }
   svg {
     touch-action: none; /* Prevents default touch behaviors */
     cursor: pointer; /* Show pointer cursor to hint clickability */
     overflow: visible;
   }
-  span.metric-name {
-    position: absolute;
-    top: 2pt;
-    left: 40%;
+  svg:focus:not(:focus-visible) {
+    outline: none;
+  }
+  svg:focus-visible {
+    outline: 2px solid var(--link-color);
+    outline-offset: 2px;
+  }
+  .chart-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    min-height: 1em;
+    white-space: nowrap;
+  }
+  .metric-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    line-height: 1;
+  }
+  .metric-name:focus {
+    outline: 2px solid var(--link-color);
+    outline-offset: 2px;
   }
   .reset-button {
-    position: absolute;
-    top: 4pt;
-    right: 5pt;
+    display: inline-flex;
+    align-items: center;
     background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 3px;
+    border: 0;
+    color: inherit;
     cursor: pointer;
-    padding: 0.15em 0.35em;
-    font-size: 0.8em;
-    margin-left: auto;
-  }
-  .reset-button:hover {
-    background: var(--nav-bg);
+    padding: 0.2em;
   }
 </style>

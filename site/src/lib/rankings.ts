@@ -25,6 +25,11 @@ export const RANKED_METRICS: (Label & { rank_href: string })[] = [
     rank_href: `/tasks/phonons`,
   },
   { ...MD_METRICS.md_combined_score, label: `MD CMDS`, rank_href: `/tasks/md` },
+  {
+    ...ALL_METRICS.diatomics_combined_score,
+    label: `Diatomics CDS`,
+    rank_href: `/tasks/diatomics`,
+  },
 ]
 
 const metric_value = (model: ModelData, metric: Label): number | undefined => {

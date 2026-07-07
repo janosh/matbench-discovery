@@ -16,7 +16,7 @@
     MD_METRICS,
     METADATA_COLS,
   } from '$lib/labels'
-  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
+  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { make_combined_filter } from '$lib/metrics'
   import { find_best_model, MODELS } from '$lib/models.svelte'
   import {
@@ -49,14 +49,15 @@
 
   // Column presets focus the table on one task's metrics. Headline cols (CPS, F1, RMSD,
   // κ_SRME) stay visible across presets; supplementary discovery cols (TPR/TNR/RMSE) stay
-  // hidden but remain toggleable via the per-column controls.
-  const headline_metric_labels = new Set(
+  // hidden but remain toggleable via the per-column controls. Sets are keyed by col.key
+  // (unique) not label, which repeats across tasks (MD/diatomics Time and × Fastest).
+  const headline_metric_keys = new Set(
     [ALL_METRICS.CPS, DISCOVERY_METRICS.F1, ALL_METRICS.RMSD, ALL_METRICS.κ_SRME].map(
-      (col) => col.label,
+      (col) => col.key,
     ),
   )
   const supplementary_hidden = new Set([`TPR`, `TNR`, `RMSE`])
-  const metadata_labels = new Set(Object.values(METADATA_COLS).map((col) => col.label))
+  const metadata_keys = new Set(Object.values(METADATA_COLS).map((col) => col.key))
   const col_presets = {
     Discovery: Object.values(DISCOVERY_METRICS),
     Phonons: [ALL_METRICS.κ_SRE],
@@ -88,11 +89,8 @@
   let export_error: string | null = $state(null)
 
   let col_preset = $state<ColPreset>(`Discovery`)
-  let preset_metric_labels = $derived(
-    new Set([
-      ...headline_metric_labels,
-      ...col_presets[col_preset].map((col) => col.label),
-    ]),
+  let preset_metric_keys = $derived(
+    new Set([...headline_metric_keys, ...col_presets[col_preset].map((col) => col.key)]),
   )
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
   let sort = $state<{ column: string; dir: SortDir }>({
@@ -259,9 +257,9 @@
   >
     <MetricsTable
       col_filter={(col) =>
-        metadata_labels.has(col.label)
+        metadata_keys.has(col.key)
           ? col.visible !== false
-          : preset_metric_labels.has(col.label) && !supplementary_hidden.has(col.label)}
+          : preset_metric_keys.has(col.key) && !supplementary_hidden.has(col.key)}
       {discovery_set}
       bind:sort
       bind:show_energy_only

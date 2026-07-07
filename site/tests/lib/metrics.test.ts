@@ -239,6 +239,58 @@ describe(`assemble_row_data`, () => {
   })
 
   it.each([
+    { task: `diatomics`, multiplier_key: `diatomics_time_multiplier` },
+    { task: `md`, multiplier_key: `md_time_multiplier` },
+  ] as const)(
+    `computes $task runtime multipliers relative to fastest shown model`,
+    ({ task, multiplier_key }) => {
+      const base_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
+      if (!base_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
+      const rows = assemble_row_data(
+        `unique_prototypes`,
+        (model) => model.model_key?.startsWith(`${task}-time-`) ?? false,
+        true,
+        true,
+        true,
+        Object.entries({
+          Fast: 10,
+          Medium: 20,
+          Slow: 40,
+          Zero: 0,
+          Missing: undefined,
+          Infinite: Infinity,
+          NaN: Number.NaN,
+        }).map(([model_name, run_time_sec]) => ({
+          ...base_model,
+          model_key: `${task}-time-${model_name.toLowerCase()}`,
+          model_name,
+          metrics: {
+            ...base_model.metrics,
+            [task]: run_time_sec === undefined ? {} : { run_time_sec },
+          },
+        })),
+      )
+
+      expect(
+        Object.fromEntries(
+          rows.map((row) => [
+            row.model_name,
+            (row as Record<string, unknown>)[multiplier_key],
+          ]),
+        ),
+      ).toEqual({
+        Fast: 1,
+        Medium: 2,
+        Slow: 4,
+        Zero: undefined,
+        Missing: undefined,
+        Infinite: undefined,
+        NaN: undefined,
+      })
+    },
+  )
+
+  it.each([
     {
       model_key: `sevennet-l3i5`,
       diatomics: undefined,

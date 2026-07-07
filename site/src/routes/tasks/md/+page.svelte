@@ -11,7 +11,7 @@
     CMDS_CONFIG,
     DEFAULT_CMDS_CONFIG,
     update_models_cmds,
-  } from '$lib/md_combined_score.svelte'
+  } from '$lib/combined-scores.svelte'
   import { DynamicScatter, RadarChart } from '$lib/plot'
   import {
     apply_weights_param,
@@ -25,10 +25,8 @@
   // show only MD metrics and metadata columns
   const visible_cols = task_page_visible_cols(...Object.values(MD_METRICS))
 
-  // guard against null since typeof null === `object` (a null metrics.md is not data)
   const has_md_metrics = (model: ModelData) =>
     model.metrics?.md != null && typeof model.metrics.md === `object`
-  const n_md_models = MODELS.filter(has_md_metrics).length
 
   // default to public observables: force_rmse is a maintainer-only diagnostic that
   // future public submissions won't have, which would leave the scatter mostly empty
@@ -41,8 +39,7 @@
 
   let scatter_x = $state(default_scatter_x)
   let scatter_y = $state(default_scatter_y)
-  // default-sort by the combined MD score (CMDS), best (highest) first. matterviz sorts
-  // by the column's key (falling back to label), so use the key, not the 'CMDS' label
+  // default-sort by the combined MD score (CMDS), best (highest) first
   let sort = $state({ ...default_sort })
 
   const read_url_params = (params: URLSearchParams) => {
@@ -56,7 +53,7 @@
     [`y`, scatter_y, default_scatter_y],
     [`sort`, sort.column, default_sort.column],
     [`dir`, sort.dir, default_sort.dir],
-    // custom CMDS weights (ADF,vDOS,pressure); omitted at defaults
+    // custom CMDS weights (vDOS,ADF,speed,pressure); omitted at defaults
     [`weights`, weights_to_param(CMDS_CONFIG, DEFAULT_CMDS_CONFIG)],
   ])
 </script>
@@ -65,46 +62,44 @@
 
 <MdNote />
 
-<p>
-  This task evaluates how well machine-learning interatomic potentials reproduce
-  structural, thermodynamic and vibrational observables of ab-initio molecular dynamics
-  (AIMD) trajectories at finite temperature. Each model runs NVT simulations from the same
-  initial structures and thermodynamic conditions as the reference first-principles
-  trajectories. The resulting trajectories are compared via radial distribution functions
-  (RDF), angular distribution functions (ADF), pressure distributions from the stress
-  tensor trace, and the vibrational density of states (vDOS) obtained from the velocity
-  autocorrelation function. Energy-fluctuation and force RMSEs are shown as
-  maintainer-computed private-label diagnostics when available, but they are excluded from
-  CMDS.
-  {#if n_md_models === 0}
-    No models have reported MD metrics yet.
-  {/if}
-</p>
+<div class="intro bleed-1400">
+  <p>
+    This task evaluates how well machine-learning interatomic potentials reproduce
+    structural, thermodynamic and vibrational observables of ab-initio molecular dynamics
+    (AIMD) trajectories at finite temperature. Each model runs NVT simulations from the
+    same initial structures and thermodynamic conditions as the reference first-principles
+    trajectories. The resulting trajectories are compared via radial distribution
+    functions (RDF), angular distribution functions (ADF), pressure distributions from the
+    stress tensor trace, and the vibrational density of states (vDOS) obtained from the
+    velocity autocorrelation function. Energy-fluctuation and force RMSEs are shown as
+    maintainer-computed private-label diagnostics when available, but they are excluded
+    from CMDS.
+    {#if !MODELS.some(has_md_metrics)}
+      No models have reported MD metrics yet.
+    {/if}
+  </p>
+  <figure class="cmds-weights">
+    <RadarChart
+      size={260}
+      config={CMDS_CONFIG}
+      default_config={DEFAULT_CMDS_CONFIG}
+      title_label={MD_METRICS.md_combined_score}
+      on_change={(cfg) => update_models_cmds(MODELS, cfg as typeof CMDS_CONFIG)}
+    />
+    <figcaption>
+      Drag the knob to reweight which CMDS components matter to you; the table and plots
+      update live. Hover the ⓘ icon for how CMDS is computed.
+    </figcaption>
+  </figure>
+</div>
 
 <section class="full-bleed">
-  <!-- ?? true: columns absent from visible_cols (e.g. the sticky model name) default to
-  shown, matching the phonons and landing-page tables; visible_cols only hides non-MD metrics -->
   <MetricsTable
     model_filter={has_md_metrics}
-    col_filter={(col) => visible_cols[col.label] ?? true}
+    col_filter={(col) => visible_cols[col.key] ?? true}
     bind:sort
   />
 </section>
-
-<figure class="cmds-weights">
-  <figcaption>
-    CMDS is computed on the fly as a weighted mean of the component subscores (1 −
-    error/100), not stored with model submissions. Drag the knob to reweight which
-    observables matter to you; the table and plots update live.
-  </figcaption>
-  <RadarChart
-    size={260}
-    config={CMDS_CONFIG}
-    default_config={DEFAULT_CMDS_CONFIG}
-    title_label={MD_METRICS.md_combined_score}
-    on_change={(cfg) => update_models_cmds(MODELS, cfg as typeof CMDS_CONFIG)}
-  />
-</figure>
 
 <h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
 <p>
@@ -123,17 +118,23 @@
 />
 
 <style>
-  .cmds-weights {
+  .intro {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.5em;
+    gap: 1em 2em;
     align-items: center;
-    margin: 1em auto;
-    max-width: 45em;
+  }
+  .intro > p {
+    flex: 1 1 30em;
+  }
+  .cmds-weights {
+    flex: 0 1 22em;
+    margin: 0 auto;
   }
   .cmds-weights figcaption {
-    font-size: 0.92em;
-    color: var(--text-color-muted, inherit);
+    margin-top: 1em;
+    font-size: 0.85em;
+    color: var(--text-muted, inherit);
   }
   .beta-badge {
     font-size: 0.45em;

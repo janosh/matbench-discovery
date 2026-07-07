@@ -111,6 +111,7 @@ isort.split-on-trailing-comma = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-p no:warnings"
+pythonpath = ["."]
 
 [tool.codespell]
 ignore-words-list = "nd,te,fpr,matris,titel"
