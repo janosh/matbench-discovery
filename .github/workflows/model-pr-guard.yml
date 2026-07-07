@@ -33,7 +33,7 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read # gh pr diff in the payload-consistency check
+  pull-requests: read # list PR changed files in the payload-consistency check
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -62,7 +62,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          CHANGED=$(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only)
+          CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].path')
           GEN=$(grep -E '^(scripts/model_figs/.*\.py|scripts/evals/(geo_opt|md|diatomic_metrics)\.py|scripts/ingest_model\.py|matbench_discovery/(figs\.py|metrics/(md\.py|diatomics/.*\.py)))$' <<< "$CHANGED" || true)
           PAYLOADS=$(grep -E '^(site/src/figs/.*\.(jsonl|json\.gz)|site/src/routes/models/per-element-each-errors\.jsonl)$' <<< "$CHANGED" || true)
           if [ -n "$GEN" ] && [ -z "$PAYLOADS" ]; then

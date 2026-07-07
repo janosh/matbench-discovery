@@ -56,7 +56,7 @@ def summarize() -> str:
         with open(path) as file:
             now = roster(file.read())
         # command via a variable so ruff can't flag the partial git path (S607)
-        git_show = ["git", "show", f"HEAD:{path}"]
+        git_show = ["git", "show", "HEAD:" + path.replace("\\", "/")]
         head = subprocess.run(git_show, capture_output=True, text=True, check=False)
         was = roster(head.stdout) if head.returncode == 0 else set()
         name = os.path.basename(path).removesuffix(".jsonl")

@@ -251,10 +251,10 @@ describe(`RadarChart`, () => {
       expect(weights.reduce((sum, weight) => sum + weight, 0)).toBeCloseTo(1, 10)
     }
 
-    // corner-adjacent click: the nearest pillar dominates. 4-corner charts are
-    // rotated by half a sector (45°), so corner 0 sits at center + 0.8·radius·(cos
-    // 45°, sin 45°) ≈ (156.6, 156.6) for size 200
-    const corner = 100 + 0.8 * 100 * Math.SQRT1_2
+    const corner_0_offset = 80 * Math.SQRT1_2
+
+    // corner-adjacent click: the nearest pillar dominates (≈156.6 for size 200)
+    const corner = 100 + corner_0_offset
     const [first_pillar, ...rest] = click_at(corner, corner)
     expect(first_pillar).toBeGreaterThan(0.9)
     expect(Math.max(...rest)).toBeLessThan(0.1)
@@ -266,7 +266,7 @@ describe(`RadarChart`, () => {
     // knob position visually disagree with the displayed percentages). Last click,
     // so it doubles as the shared-module-state restore for other tests
     const defaults = Object.values(DEFAULT_CDS_CONFIG).map(({ weight }) => weight)
-    const reset_pos = 100 + (0.8 * 100 * Math.SQRT1_2) / 3
+    const reset_pos = 100 + corner_0_offset / 3
     for (const [idx, weight] of click_at(reset_pos, reset_pos).entries()) {
       expect(weight).toBeCloseTo(defaults[idx], 6)
     }

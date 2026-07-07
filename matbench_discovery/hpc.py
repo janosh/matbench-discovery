@@ -19,21 +19,21 @@ def detect_hardware() -> str:
     """Human-readable name for the accelerator the run executed on.
 
     Tries torch, then JAX, then TensorFlow (MLIP backends expose the GPU differently),
-    falling back to the CPU model when no GPU is visible.
+    falling back to the CPU model when no GPU is visible or accelerator probes fail.
     """
     try:
         import torch
 
         if torch.cuda.is_available():
             return torch.cuda.get_device_name(0)
-    except ImportError:
+    except Exception:  # noqa: BLE001, S110
         pass
     try:
         import jax
 
         if gpus := [dev for dev in jax.devices() if dev.platform == "gpu"]:
             return gpus[0].device_kind
-    except ImportError:
+    except Exception:  # noqa: BLE001, S110
         pass
     try:
         import tensorflow as tf
@@ -41,7 +41,7 @@ def detect_hardware() -> str:
         if gpus := tf.config.list_physical_devices("GPU"):
             details = tf.config.experimental.get_device_details(gpus[0])
             return details.get("device_name", "GPU")
-    except ImportError:
+    except Exception:  # noqa: BLE001, S110
         pass
     return f"CPU ({platform.processor() or platform.machine()})"
 
