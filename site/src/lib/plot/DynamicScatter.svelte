@@ -4,11 +4,7 @@
   import { extent } from 'd3-array'
   import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import {
-    ColorScaleSelect,
-    create_color_scale,
-    DEFAULT_SERIES_SYMBOLS,
-  } from 'matterviz/plot'
+  import { ColorScaleSelect, create_color_scale } from 'matterviz/plot'
   import type { DataSeries } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
@@ -60,6 +56,7 @@
     x_key = $bindable(ALL_METRICS.κ_SRME.key),
     y_key = $bindable(ALL_METRICS.CPS.key),
     color_key = $bindable(ALL_METRICS.F1.key),
+    initial_log = {},
     ...rest
   }: ComponentProps<typeof ScatterPlot> & {
     models: ModelData[]
@@ -69,9 +66,11 @@
     x_key?: string
     y_key?: string
     color_key?: string
+    // seed the log-scale toggles, e.g. { color: true } for wide-range color data
+    initial_log?: Partial<Record<`x` | `y` | `color` | `size`, boolean>>
   } = $props()
 
-  let log = $state({ x: false, y: false, color: false, size: false })
+  let log = $state({ x: false, y: false, color: false, size: false, ...initial_log })
   let size_prop = $state(HYPERPARAMS.model_params as (typeof scatter_options)[number])
 
   let axes = $derived({
@@ -182,19 +181,18 @@
   )
   let can_log_size = $derived(can_log(extent(plot_data, (point) => point.size_value)))
 
-  // One series per model enables per-model legend toggles and distinct marker shapes.
+  // One series per model enables per-model legend toggles.
   let series: DataSeries<PointMetadata>[] = $derived(
-    plot_data.map((item, idx) => ({
+    plot_data.map((item) => ({
       x: [item.x],
       y: [item.y],
       label: item.metadata.model_name,
       legend_group,
       markers: `points` as const,
       metadata: [item.metadata],
-      point_style: {
-        fill: point_fill(item.color_value),
-        symbol_type: DEFAULT_SERIES_SYMBOLS[idx % DEFAULT_SERIES_SYMBOLS.length],
-      },
+      // uniform circles: color and size already encode data, and cycling 7 shapes
+      // across 30+ models distinguished nothing while adding visual noise
+      point_style: { fill: point_fill(item.color_value), symbol_type: `Circle` },
       color_values: point_color === null ? [item.color_value as number] : undefined,
       size_values: axes.size_value ? [item.size_value] : undefined,
       point_label: show_model_labels

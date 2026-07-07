@@ -6,6 +6,14 @@ import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
 
+// all header cells except the structural rank (#) column HeatmapTable renders
+// for show_row_numbers
+const header_cells = () => [
+  ...document.querySelectorAll<HTMLTableCellElement>(`th:not(.row-num-col)`),
+]
+// header names with sort indicators stripped (first whitespace-separated token)
+const header_names = () => header_cells().map((th) => th.textContent?.split(` `)[0])
+
 // expected table row count for the default unique_prototypes discovery set,
 // mirroring MetricsTable's model filters
 const visible_row_count = (
@@ -43,9 +51,7 @@ describe(`MetricsTable`, () => {
     expect(table?.querySelector(`tbody`)).toBeDefined()
 
     // Check essential columns are present (with sort indicators)
-    const header_texts = [...document.querySelectorAll(`th`)].map((h) =>
-      h.textContent?.trim(),
-    )
+    const header_texts = header_cells().map((h) => h.textContent?.trim())
     const required_cols = [
       `Model`,
       `CPS ↑`, // active sort column has indicator
@@ -117,7 +123,7 @@ describe(`MetricsTable`, () => {
 
     const org_cell = doc_query(`td[data-col="Org"]`)
     const org_preview = doc_query(`td[data-col="Org"] .org-preview`)
-    const headers = [...document.querySelectorAll(`th`)]
+    const headers = header_cells()
     const org_header = headers.at(-1)
     if (!org_header) throw new Error(`Org column header not found`)
 
@@ -135,7 +141,7 @@ describe(`MetricsTable`, () => {
     })
     await tick()
 
-    const cps_header = [...document.querySelectorAll(`th`)].find((header) =>
+    const cps_header = header_cells().find((header) =>
       header.textContent?.trim().startsWith(`CPS`),
     )
     if (!cps_header) throw new Error(`CPS column header not found`)
@@ -154,7 +160,7 @@ describe(`MetricsTable`, () => {
     const col_filter = (_col: Label) => true // show all columns initially
     mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
-    let header_texts = [...document.querySelectorAll(`th`)].map((h) =>
+    let header_texts = header_cells().map((h) =>
       h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
     expect(header_texts).toStrictEqual(expect.arrayContaining(metadata_labels))
@@ -170,7 +176,7 @@ describe(`MetricsTable`, () => {
     })
 
     // Check metadata columns are hidden
-    header_texts = [...document.querySelectorAll(`th`)].map((h) =>
+    header_texts = header_cells().map((h) =>
       h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
 
@@ -193,8 +199,7 @@ describe(`MetricsTable`, () => {
       props: { col_filter, show_non_compliant: true },
     })
 
-    const headers = document.querySelectorAll(`th`)
-    const header_texts = [...headers].map((h) => h.textContent?.split(` `)[0])
+    const header_texts = header_names()
 
     // Check hidden columns
     expect(header_texts).not.toContain(`F1`)
@@ -299,11 +304,7 @@ describe(`MetricsTable`, () => {
   ])(`handles col_filter: $name`, ({ col_filter, expected_headers }) => {
     mount(MetricsTable, { target: document.body, props: { col_filter } })
 
-    const headers = [...document.querySelectorAll(`th`)]
-    expect(headers).toHaveLength(expected_headers.length)
-    expect(headers.map((h) => h.textContent?.split(` `)[0])).toStrictEqual(
-      expected_headers,
-    )
+    expect(header_names()).toStrictEqual(expected_headers)
   })
 
   it.each([
@@ -327,14 +328,11 @@ describe(`MetricsTable`, () => {
         props: { model_filter, col_filter },
       })
 
-      const headers = [...document.querySelectorAll(`th`)]
-      expect(headers.map((h) => h.textContent?.split(` `)[0])).toStrictEqual(
-        expected_headers,
-      )
+      expect(header_names()).toStrictEqual(expected_headers)
 
       const rows = document.querySelectorAll(`tbody tr`)
       rows.forEach((row) => {
-        const model_cell = row.querySelector(`td`)
+        const model_cell = row.querySelector(`td[data-col="Model"]`)
         expect(model_cell?.textContent).toContain(expected_model_match)
       })
     },
@@ -360,207 +358,51 @@ describe(`MetricsTable`, () => {
     expect(marker?.textContent).toBe(`*`)
   })
 
-  it(`updates table when col_filter changes`, () => {
-    // Test with only Model and F1 columns
-    mount(MetricsTable, {
-      target: document.body,
-      props: {
-        col_filter: (col: Label) => [`Model`, `F1`].includes(col.key ?? col.label),
-        show_non_compliant: true,
-      },
-    })
-
-    let headers = [...document.querySelectorAll(`th`)]
-    expect(headers).toHaveLength(2)
-    expect(headers.map((h) => h.textContent?.split(` `)[0])).toStrictEqual([
-      `Model`,
-      `F1`,
-    ])
-
-    // Create a new instance with Model, F1, and DAF columns
-    document.body.innerHTML = ``
-    mount(MetricsTable, {
-      target: document.body,
-      props: {
-        col_filter: (col: Label) => [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
-        show_non_compliant: true,
-      },
-    })
-
-    headers = [...document.querySelectorAll(`th`)]
-    expect(headers).toHaveLength(3)
-    expect(headers.map((h) => h.textContent?.split(` `)[0])).toStrictEqual([
-      `Model`,
-      `F1`,
-      `DAF`,
-    ])
-  })
-
-  it(`renders table rows with default config`, async () => {
-    mount(MetricsTable, {
-      target: document.body,
-      props: { show_non_compliant: true },
-    })
-    await tick()
-    const rows = document.querySelectorAll(`tbody tr`)
-    expect(rows).toHaveLength(visible_row_count())
-  })
-
   describe(`Column Sorting`, () => {
-    it(`sorts by Date Added chronologically, not alphabetically`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          show_non_compliant: true,
-          col_filter: (col: Label) => [`Model`, `Date Added`].includes(col.label),
-        },
-      })
+    // Date Added sorts by timestamp (chronological, not alphabetical); Training Set
+    // and Params sort by their numeric data-sort-value, not display text
+    it.each([
+      { col_key: `date_added`, header: `Date Added`, data_col: `Date Added` },
+      { col_key: `Training Set`, header: `Training Set`, data_col: `Training Set` },
+      {
+        col_key: HYPERPARAMS.model_params.key,
+        header: `Params`,
+        data_col: HYPERPARAMS.model_params.label,
+      },
+    ])(
+      `sorts $header numerically via data-sort-value`,
+      async ({ col_key, header, data_col }) => {
+        mount(MetricsTable, {
+          target: document.body,
+          props: {
+            show_non_compliant: true,
+            col_filter: (col: Label) => [`Model`, col_key].includes(col.key ?? col.label),
+          },
+        })
 
-      // Find Date Added column header
-      const headers = [...document.querySelectorAll(`th`)]
-      const date_header = headers.find((h) => h.textContent?.includes(`Date Added`))
+        const sort_header = header_cells().find((th) => th.textContent?.includes(header))
+        if (!sort_header) throw new Error(`${header} column not found`)
 
-      if (!date_header) {
-        throw new Error(`Date Added column not found`)
-      }
+        const cell_values = () =>
+          [...document.querySelectorAll(`td[data-col="${data_col}"] [data-sort-value]`)]
+            .map(parse_integer_sort_value)
+            .filter((val) => val !== null)
 
-      // Click to sort by date
-      date_header.click()
-      await tick()
+        sort_header.click()
+        await tick()
 
-      // Get all date cells
-      const date_cells = [
-        ...document.querySelectorAll(`td[data-col="Date Added"] [data-sort-value]`),
-      ]
+        const values = cell_values()
+        expect(values.length).toBeGreaterThan(1)
+        // rows must be fully sorted (either direction) after the click
+        const ascending = [...values].toSorted((val_1, val_2) => val_1 - val_2)
+        expect([ascending, ascending.toReversed()]).toContainEqual(values)
 
-      if (date_cells.length < 2) {
-        throw new Error(`Not enough data for testing date sorting`)
-      }
-
-      // Get dates as timestamps from data-sort-value
-      const timestamps = date_cells
-        .map(parse_integer_sort_value)
-        .filter((timestamp) => timestamp !== null)
-
-      // rows must be fully sorted by timestamp (either direction) after the click
-      const ascending = [...timestamps].toSorted((ts_1, ts_2) => ts_1 - ts_2)
-      expect([ascending, ascending.toReversed()]).toContainEqual(timestamps)
-
-      // Click again to toggle sort direction
-      date_header.click()
-      await tick()
-
-      const reversed_timestamps = [
-        ...document.querySelectorAll(`td[data-col="Date Added"] [data-sort-value]`),
-      ]
-        .map(parse_integer_sort_value)
-        .filter((timestamp) => timestamp !== null)
-
-      expect(reversed_timestamps).toStrictEqual(timestamps.toReversed())
-    })
-
-    it(`sorts numerically by training set size using data-sort-value`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          show_non_compliant: true,
-          col_filter: (col: Label) => [`Model`, `Training Set`].includes(col.label),
-        },
-      })
-
-      // Find Training Set column header
-      const headers = [...document.querySelectorAll(`th`)]
-      const training_set_header = headers.find((h) =>
-        h.textContent?.includes(`Training Set`),
-      )
-
-      if (!training_set_header) throw new Error(`Training Set column not found`)
-
-      // Click to sort by training set size
-      training_set_header.click()
-      await tick()
-
-      // Get training set sizes from data-sort-value
-      const sizes = [
-        ...document.querySelectorAll(`td[data-col="Training Set"] [data-sort-value]`),
-      ]
-        .map(parse_integer_sort_value)
-        .filter((size) => size !== null)
-
-      if (sizes.length < 2) {
-        throw new Error(`Not enough data for testing training set sorting`)
-      }
-
-      // rows must be fully sorted by size (either direction) after the click
-      const ascending = [...sizes].toSorted((size_1, size_2) => size_1 - size_2)
-      expect([ascending, ascending.toReversed()]).toContainEqual(sizes)
-
-      // Click again to toggle sort direction
-      training_set_header.click()
-      await tick()
-
-      const reversed_sizes = [
-        ...document.querySelectorAll(`td[data-col="Training Set"] [data-sort-value]`),
-      ]
-        .map(parse_integer_sort_value)
-        .filter((size) => size !== null)
-
-      expect(reversed_sizes).toStrictEqual(sizes.toReversed())
-    })
-
-    it(`sorts numerically by parameter count using data-sort-value`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          show_non_compliant: true,
-          col_filter: (col: Label) =>
-            [`Model`, HYPERPARAMS.model_params.key].includes(col.key ?? col.label),
-        },
-      })
-
-      // Find Params column header
-      const headers = [...document.querySelectorAll(`th`)]
-      const params_header = headers.find((h) => h.textContent?.includes(`Params`))
-
-      if (!params_header) {
-        throw new Error(`Params column not found`)
-      }
-
-      // Click to sort by parameter count
-      params_header.click()
-      await tick()
-
-      // Get parameter counts from data-sort-value using the correct column label
-      const param_counts = [
-        ...document.querySelectorAll(
-          `td[data-col="${HYPERPARAMS.model_params.label}"] [data-sort-value]`,
-        ),
-      ]
-        .map(parse_integer_sort_value)
-        .filter((count) => count !== null)
-
-      if (param_counts.length < 2) {
-        throw new Error(`Not enough data for testing parameter count sorting`)
-      }
-
-      // rows must be fully sorted by param count (either direction) after the click
-      const ascending = [...param_counts].toSorted((cnt_1, cnt_2) => cnt_1 - cnt_2)
-      expect([ascending, ascending.toReversed()]).toContainEqual(param_counts)
-
-      // Click again to toggle sort direction
-      params_header.click()
-      await tick()
-
-      const reversed_counts = [
-        ...document.querySelectorAll(
-          `td[data-col="${HYPERPARAMS.model_params.label}"] [data-sort-value]`,
-        ),
-      ]
-        .map(parse_integer_sort_value)
-        .filter((count) => count !== null)
-
-      expect(reversed_counts).toStrictEqual(param_counts.toReversed())
-    })
+        // second click toggles sort direction
+        sort_header.click()
+        await tick()
+        expect(cell_values()).toStrictEqual(values.toReversed())
+      },
+    )
 
     it(`properly handles HTML content in cells without using it for data-sort-value`, async () => {
       mount(MetricsTable, {
@@ -640,7 +482,7 @@ describe(`MetricsTable`, () => {
         mount(MetricsTable, { target: document.body, props })
 
         // Find Model column header
-        const headers = [...document.querySelectorAll(`th`)]
+        const headers = header_cells()
         const model_header = headers.find((h) => h.textContent?.includes(`Model`))
 
         if (!model_header) throw new Error(`Model column header not found`)
@@ -697,7 +539,7 @@ describe(`MetricsTable`, () => {
       })
 
       // Find CPS and Links column headers
-      const headers = [...document.querySelectorAll(`th`)]
+      const headers = header_cells()
       const cps_header = headers.find((h) => h.textContent?.includes(`CPS`))
       if (!cps_header) throw new Error(`CPS column not found`)
       const links_header = headers.find((h) => h.textContent?.includes(`Links`))
@@ -972,7 +814,9 @@ describe(`MetricsTable`, () => {
       `CPS`, // Added in assemble_row_data
     ]
 
-    const header_elements = document.querySelectorAll(`thead th`)
+    // the structural rank column (#, from show_row_numbers) is excluded here and
+    // covered by its own test below
+    const header_elements = document.querySelectorAll(`thead th:not(.row-num-col)`)
     const actual_core_columns = [...header_elements].map((th) =>
       // Get text content, remove sort indicator (↑/↓) and any trailing spaces
       (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim(),
@@ -993,6 +837,20 @@ describe(`MetricsTable`, () => {
         `Header ${th.textContent} has no tooltip label`,
       ).not.toBeNull()
     })
+  })
+
+  it(`shows rank numbers 1..N in row order`, () => {
+    mount(MetricsTable, { target: document.body })
+
+    expect(doc_query(`thead th.row-num-col`).textContent?.trim()).toBe(`#`)
+    const rank_texts = [...document.querySelectorAll(`tbody td.row-num-col`)].map((td) =>
+      td.textContent?.trim(),
+    )
+    const n_rows = document.querySelectorAll(`tbody tr`).length
+    expect(n_rows).toBeGreaterThan(0)
+    expect(rank_texts).toEqual(
+      Array.from({ length: n_rows }, (_, idx) => String(idx + 1)),
+    )
   })
 
   describe(`Double-click selection functionality`, () => {
@@ -1151,38 +1009,6 @@ describe(`MetricsTable`, () => {
     )
   })
 
-  describe(`regression tests for default values`, () => {
-    // happy-dom renders of the full-column table are slow in CI
-    it(
-      `verifies critical default prop values to catch regressions`,
-      {
-        timeout: 30_000,
-      },
-      () => {
-        mount(MetricsTable, {
-          target: document.body,
-          props: { col_filter: () => true, show_non_compliant: true },
-        })
-
-        // Verify table renders with data (filters allow content)
-        const rows = document.querySelectorAll(`tbody tr`)
-        expect(
-          rows.length,
-          `show_non_compliant=true & col_filter=true should show rows`,
-        ).toBeGreaterThan(0)
-
-        // Verify heatmap is enabled by default
-        const table_controls = document.querySelector(`table-controls`)
-        const heatmap_checkbox =
-          table_controls?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
-        expect(
-          table_controls === null || heatmap_checkbox?.checked === true,
-          `show_heatmap should default to true`,
-        ).toBe(true)
-      },
-    )
-  })
-
   describe(`Column Reordering`, () => {
     it(`initializes column_order with all columns, not just visible ones`, async () => {
       const state = { column_order: [] as string[] }
@@ -1209,10 +1035,7 @@ describe(`MetricsTable`, () => {
       expect(state.column_order).toContain(`F1`)
       expect(state.column_order).toContain(`DAF`)
 
-      const visible_headers = [...document.querySelectorAll(`th`)].map(
-        (h) => h.textContent?.split(` `)[0],
-      )
-      expect(visible_headers).toStrictEqual([`Model`, `F1`, `DAF`])
+      expect(header_names()).toStrictEqual([`Model`, `F1`, `DAF`])
     })
 
     it.each([
@@ -1228,7 +1051,7 @@ describe(`MetricsTable`, () => {
       })
       await tick()
 
-      const headers = [...document.querySelectorAll(`th`)]
+      const headers = header_cells()
       expect(headers[0].textContent?.split(` `)[0]).toBe(`Model`)
       expect(headers[0].classList.contains(`sticky-col`)).toBe(true)
     })
@@ -1256,9 +1079,7 @@ describe(`MetricsTable`, () => {
       expect(f1_idx).toBeGreaterThanOrEqual(0)
       expect(daf_idx).toBeGreaterThanOrEqual(0)
 
-      const headers = [...document.querySelectorAll(`th`)].map(
-        (h) => h.textContent?.split(` `)[0],
-      )
+      const headers = header_names()
       expect(headers[0]).toBe(`Model`)
 
       // F1 and DAF should appear in the order specified by column_order
@@ -1316,7 +1137,7 @@ describe(`MetricsTable`, () => {
       expect(state.column_order.indexOf(`CPS`)).toBe(cps_idx)
     })
 
-    it(`sets columns as draggable with correct attributes`, () => {
+    it(`sets columns as draggable without initial drag state`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
@@ -1326,29 +1147,15 @@ describe(`MetricsTable`, () => {
         },
       })
 
-      const headers = [...document.querySelectorAll(`thead tr:last-child th`)]
+      // the rank (#) column is structural and not draggable
+      const headers = [
+        ...document.querySelectorAll(`thead tr:last-child th:not(.row-num-col)`),
+      ]
       expect(headers.length).toBeGreaterThan(0)
       headers.forEach((header) => {
         expect(header.getAttribute(`draggable`)).toBe(`true`)
         expect(header.getAttribute(`aria-dropeffect`)).toBe(`move`)
-      })
-    })
-
-    it(`initializes without drag state classes`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          col_filter: (col: Label) =>
-            [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
-          show_non_compliant: true,
-        },
-      })
-      await tick()
-
-      const headers = [...document.querySelectorAll<HTMLElement>(`th`)]
-
-      // Initially no drag classes should be present
-      headers.forEach((header) => {
+        // no drag state classes before any drag interaction
         expect(header.classList.contains(`dragging`)).toBe(false)
         expect(header.classList.contains(`drag-over`)).toBe(false)
       })

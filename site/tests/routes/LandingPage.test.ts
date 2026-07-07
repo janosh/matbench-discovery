@@ -82,7 +82,7 @@ describe(`Landing Page`, () => {
   it(`surfaces a beta warning for the MD metrics`, async () => {
     const n_beta_warnings = () =>
       [...document.querySelectorAll(`blockquote`)].filter((bq) =>
-        bq.textContent?.includes(`interpret with caution`),
+        bq.textContent?.toLowerCase().includes(`interpret with caution`),
       ).length
     expect(n_beta_warnings()).toBe(1) // always shown in the page's MD note
 

@@ -128,6 +128,9 @@
           better,
           description: append_better_hint(col, better),
           visible,
+          // tuck the Model cells (always adjacent to the rank column, being pinned
+          // first) against the rank numbers
+          ...(col === model_name && { style: `padding-left: 0;${col.style ?? ``}` }),
         }
       })
       // Keep the sticky model column first, preserving definition order for the rest.
@@ -241,6 +244,7 @@
     Links: links_cell,
     Org: affiliation_cell,
   }}
+  show_row_numbers
   default_num_format=".3f"
   bind:show_heatmap
   bind:column_order

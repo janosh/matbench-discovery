@@ -73,9 +73,12 @@ ability to correctly identify hypothetical crystals in the WBM test set as lying
 below the Materials Project convex hull. Use the axis/color/size selectors to compare
 models across any pair of metrics and metadata.
 
+<!-- color by energy MAE: an orthogonal 3rd axis (the default color is F1, which is
+already the y-axis here, so it wastes the color channel) -->
 <DynamicScatter
   models={MODELS}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
+  color_key={labels.ALL_METRICS.MAE.key}
   style="height: 800px"
 />

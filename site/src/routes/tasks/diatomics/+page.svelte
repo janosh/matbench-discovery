@@ -5,8 +5,14 @@
     DEFAULT_CDS_CONFIG,
     update_models_cds,
   } from '$lib/combined-scores.svelte'
-  import { DIATOMICS_METRICS, task_page_visible_cols } from '$lib/labels'
-  import { DiatomicCurve, RadarChart } from '$lib/plot'
+  import {
+    DIATOMICS_METRICS,
+    METADATA_COLS,
+    scatter_axis_label,
+    scatter_options_by_key,
+    task_page_visible_cols,
+  } from '$lib/labels'
+  import { DiatomicCurve, DynamicScatter, RadarChart } from '$lib/plot'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
   import {
     apply_weights_param,
@@ -89,6 +95,13 @@
     dir: `desc`,
   }
   let sort = $state({ ...default_sort })
+
+  // cost-vs-fidelity Pareto: sweep wall time (x) vs CDS (y), size = model params,
+  // color = training-set size (the two scaling levers)
+  const default_scatter_x = DIATOMICS_METRICS.diatomics_run_time_sec.key
+  const default_scatter_y = DIATOMICS_METRICS.diatomics_combined_score.key
+  let scatter_x = $state(default_scatter_x)
+  let scatter_y = $state(default_scatter_y)
 
   const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
 
@@ -191,6 +204,8 @@
       element_group_keys,
     )
     sort = sort_from_query(params, default_sort)
+    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
+    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
     apply_weights_param(params.get(`weights`), CDS_CONFIG, DEFAULT_CDS_CONFIG)
   }
   bind_url_params(read_url_params, () => [
@@ -198,6 +213,8 @@
     [`elements`, selected_element_group, `all`],
     [`sort`, sort.column, default_sort.column],
     [`dir`, sort.dir, default_sort.dir],
+    [`x`, scatter_x, default_scatter_x],
+    [`y`, scatter_y, default_scatter_y],
     // custom CDS pillar weights (accuracy,geometry,speed,physicality); omitted at defaults
     [`weights`, weights_to_param(CDS_CONFIG, DEFAULT_CDS_CONFIG)],
   ])
@@ -273,6 +290,23 @@
   model_filter={has_diatomics_metrics}
   col_filter={(col) => visible_cols[col.key] ?? true}
   bind:sort
+/>
+
+<h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
+<p>
+  This defaults to a cost-vs-fidelity Pareto: each model's full diatomic-sweep wall time
+  against its CDS, with marker size showing model parameters and color the training-set
+  size. Use the axis/color/size selectors to compare any pair of metrics and metadata.
+</p>
+
+<DynamicScatter
+  models={MODELS}
+  model_filter={has_diatomics_metrics}
+  bind:x_key={scatter_x}
+  bind:y_key={scatter_y}
+  color_key={METADATA_COLS.n_training_materials.key}
+  initial_log={{ color: true }}
+  style="height: 800px"
 />
 
 <h2>Diatomic Energy Curves</h2>

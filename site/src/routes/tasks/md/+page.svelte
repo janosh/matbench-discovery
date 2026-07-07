@@ -2,6 +2,7 @@
   import { MetricsTable, type ModelData, MODELS } from '$lib'
   import {
     MD_METRICS,
+    METADATA_COLS,
     scatter_axis_label,
     scatter_options_by_key,
     task_page_visible_cols,
@@ -28,10 +29,12 @@
   const has_md_metrics = (model: ModelData) =>
     model.metrics?.md != null && typeof model.metrics.md === `object`
 
-  // default to public observables: force_rmse is a maintainer-only diagnostic that
-  // future public submissions won't have, which would leave the scatter mostly empty
-  const default_scatter_x = MD_METRICS.md_pressure_error.key
-  const default_scatter_y = MD_METRICS.md_vdos_error.key
+  // headline MD view now that CMDS folds in rollout speed: a cost-vs-fidelity Pareto -
+  // wall time (x) vs CMDS (y), with marker size = model params and color = training-set
+  // size (the two scaling levers). All-public axes (force_rmse is a maintainer-only
+  // diagnostic future public submissions lack, which would leave the plot mostly empty)
+  const default_scatter_x = MD_METRICS.md_run_time_sec.key
+  const default_scatter_y = MD_METRICS.md_combined_score.key
   const default_sort: { column: string; dir: SortDir } = {
     column: MD_METRICS.md_combined_score.key,
     dir: `desc`,
@@ -60,25 +63,26 @@
 
 <h1>Molecular Dynamics Metrics <span class="beta-badge">beta</span></h1>
 
-<MdNote />
+<p>
+  This task evaluates how well machine-learning interatomic potentials reproduce
+  structural, thermodynamic and vibrational observables of ab-initio molecular dynamics
+  (AIMD) trajectories at finite temperature. Each model runs NVT simulations from the same
+  initial structures and thermodynamic conditions as the reference first-principles
+  trajectories. The resulting trajectories are compared via radial distribution functions
+  (RDF), angular distribution functions (ADF), pressure distributions from the stress
+  tensor trace, and the vibrational density of states (vDOS) obtained from the velocity
+  autocorrelation function. Energy-fluctuation and force RMSEs are shown as
+  maintainer-computed private-label diagnostics when available, but they are excluded from
+  CMDS.
+  {#if !MODELS.some(has_md_metrics)}
+    No models have reported MD metrics yet.
+  {/if}
+</p>
 
 <div class="intro bleed-1400">
-  <p>
-    This task evaluates how well machine-learning interatomic potentials reproduce
-    structural, thermodynamic and vibrational observables of ab-initio molecular dynamics
-    (AIMD) trajectories at finite temperature. Each model runs NVT simulations from the
-    same initial structures and thermodynamic conditions as the reference first-principles
-    trajectories. The resulting trajectories are compared via radial distribution
-    functions (RDF), angular distribution functions (ADF), pressure distributions from the
-    stress tensor trace, and the vibrational density of states (vDOS) obtained from the
-    velocity autocorrelation function. Energy-fluctuation and force RMSEs are shown as
-    maintainer-computed private-label diagnostics when available, but they are excluded
-    from CMDS. This modeling task was introduced in
-    <a href="https://arxiv.org/abs/2607.03433">arXiv:2607.03433</a>.
-    {#if !MODELS.some(has_md_metrics)}
-      No models have reported MD metrics yet.
-    {/if}
-  </p>
+  <!-- wrapper div: the markdown renders multiple top-level elements which would
+  otherwise each become their own flex item -->
+  <div><MdNote /></div>
   <figure class="cmds-weights">
     <RadarChart
       size={260}
@@ -104,9 +108,11 @@
 
 <h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
 <p>
-  RDF, ADF and vDOS errors range from 0% (perfect match with the AIMD reference) to 100%
-  (as different from the reference as an ideal gas / non-overlapping distributions). Use
-  the axis/color/size selectors to compare models across any pair of metrics and metadata.
+  This defaults to a cost-vs-fidelity Pareto: each model's total rollout wall time against
+  its CMDS, with marker size showing model parameters and color the training-set size. Use
+  the axis/color/size selectors to compare any pair of metrics: the RDF, ADF and vDOS
+  errors range from 0% (perfect match with the AIMD reference) to 100% (as different from
+  the reference as an ideal gas / non-overlapping distributions).
 </p>
 
 <DynamicScatter
@@ -114,7 +120,8 @@
   model_filter={has_md_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
-  color_key={MD_METRICS.md_combined_score.key}
+  color_key={METADATA_COLS.n_training_materials.key}
+  initial_log={{ color: true }}
   style="height: 800px"
 />
 
@@ -125,7 +132,8 @@
     gap: 1em 2em;
     align-items: center;
   }
-  .intro > p {
+  /* caution note takes remaining width, chart column keeps its natural size */
+  .intro > div {
     flex: 1 1 30em;
   }
   .cmds-weights {
