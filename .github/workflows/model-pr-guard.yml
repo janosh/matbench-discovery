@@ -55,7 +55,7 @@ jobs:
       # guard 2 (see header). GEN = generators/writers whose edits alter payload
       # output (one-off data/ EDA scripts also write static site/src/figs payloads
       # but --payloads-only can't regenerate those, so they're excluded). PAYLOADS =
-      # data files only (payloads.d.ts edits alone don't satisfy).
+      # generated data artifacts only (payloads.d.ts edits alone don't satisfy).
       - name: Require payload updates when payload-shaping code changes
         if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'payloads-unchanged')
         env:
@@ -63,10 +63,10 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].path')
-          GEN=$(grep -E '^(scripts/model_figs/.*\.py|scripts/evals/(geo_opt|md|diatomic_metrics)\.py|scripts/ingest_model\.py|matbench_discovery/(figs\.py|metrics/(md\.py|diatomics/.*\.py)))$' <<< "$CHANGED" || true)
-          PAYLOADS=$(grep -E '^(site/src/figs/.*\.(jsonl|json\.gz)|site/src/routes/models/per-element-each-errors\.jsonl)$' <<< "$CHANGED" || true)
+          GEN=$(grep -E '^(scripts/model_figs/.*\.py|scripts/evals/(geo_opt|md|diatomic_metrics|build_diatomic_reference)\.py|scripts/ingest_model\.py|matbench_discovery/(figs\.py|metrics/(md\.py|diatomics/.*\.py)))$' <<< "$CHANGED" || true)
+          PAYLOADS=$(grep -E '^(site/src/figs/.*\.(jsonl|json\.gz)|site/src/routes/models/per-element-each-errors\.jsonl|site/src/lib/diatomics-dft\.json\.gz)$' <<< "$CHANGED" || true)
           if [ -n "$GEN" ] && [ -z "$PAYLOADS" ]; then
-            echo "::error::PR changes payload-generating code ($(tr '\n' ' ' <<< "$GEN")) but no committed payloads (site/src/figs data files or models/per-element-each-errors.jsonl). Run 'uv run --with-editable . scripts/ingest_model.py --payloads-only', or apply the 'payloads-unchanged' label if output is provably unchanged."
+            echo "::error::PR changes payload-generating code ($(tr '\n' ' ' <<< "$GEN")) but no committed generated payloads (site/src/figs data files, models/per-element-each-errors.jsonl, or diatomics-dft.json.gz). Regenerate the affected payloads locally, or apply the 'payloads-unchanged' label if output is provably unchanged."
             exit 1
           fi
 

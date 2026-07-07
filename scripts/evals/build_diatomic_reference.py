@@ -93,7 +93,12 @@ def build_reference(
         candidate_map: dict[str, list[int | str]] = json.load(file)
 
     refs: dict[str, dict[str, dict[str, list]]] = {"PBE": {}, "r2SCAN": {}}
-    summary = {"merged": {}, "short_candidate_pairs": {}, "postprocess_edits": {}}
+    summary = {
+        "merged": {},
+        "skipped": {},
+        "short_candidate_pairs": {},
+        "postprocess_edits": {},
+    }
     quality_rows: list[dict[str, object]] = []
     for symbol, candidates in candidate_map.items():
         for xc in XC_ORDER:
@@ -113,10 +118,23 @@ def build_reference(
             else:
                 merged_points = merge_min_energy_curve(candidate_points)
                 replacements = []
+            label = FUNC_LABEL[xc]
             if len(merged_points) < 2:
+                # surface dropped elements in the summary and quality report: a pair
+                # silently vanishing from the bundled reference between rebuilds
+                # (e.g. all candidate curves missing/corrupt) should be visible
+                summary["skipped"][label] = summary["skipped"].get(label, 0) + 1
+                quality_rows.append(
+                    {
+                        "symbol": symbol,
+                        "xc": xc,
+                        "merged_points": len(merged_points),
+                        "short_candidates": short_candidates,
+                        "skipped": True,
+                    }
+                )
                 continue
 
-            label = FUNC_LABEL[xc]
             refs[label][f"{symbol}-{symbol}"] = serializable_curve(merged_points)
             summary["merged"][label] = summary["merged"].get(label, 0) + 1
             summary["postprocess_edits"][label] = summary["postprocess_edits"].get(

@@ -64,7 +64,7 @@ jobs:
           LABELED_SHA: ${{ github.event.pull_request.head.sha }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          CHANGED=$(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only)
+          CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].path')
           LIVE_HEAD=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" \
             --json headRefOid -q .headRefOid)
           if [ "$LIVE_HEAD" != "$LABELED_SHA" ]; then
@@ -72,9 +72,9 @@ jobs:
             exit 1
           fi
 
-          FORMAT_CHANGED=$(grep -E '^(scripts/model_figs/.*\.py|scripts/evals/(geo_opt|md|diatomic_metrics)\.py|scripts/ingest_model\.py|matbench_discovery/(figs\.py|metrics/(md\.py|diatomics/.*\.py)))$' <<< "$CHANGED" || true)
+          FORMAT_CHANGED=$(grep -E '^(scripts/model_figs/.*\.py|scripts/evals/(geo_opt|md|diatomic_metrics|build_diatomic_reference)\.py|scripts/ingest_model\.py|matbench_discovery/(figs\.py|metrics/(md\.py|diatomics/.*\.py)))$' <<< "$CHANGED" || true)
           if [ -n "$FORMAT_CHANGED" ]; then
-            echo "::error::This PR changes payload-generating code. Regenerate locally with 'uv run --with-editable . scripts/ingest_model.py --payloads-only' and commit the payloads; this secret-bearing workflow never executes PR code."
+            echo "::error::This PR changes payload-generating code. Regenerate the affected payloads locally and commit them; this secret-bearing workflow never executes PR code."
             exit 1
           fi
 
@@ -95,6 +95,11 @@ jobs:
           echo "Detected submitted models: $MODELS"
 
       # Restore after overlay so model prediction artifacts never cross submissions.
+      # Key is PR-scoped: pull_request_target caches live in the base-branch scope
+      # (readable by main and every other PR) and contain submitter-controlled pred
+      # files, so a shared key would let one submission poison another's inputs. The
+      # prefix is distinct from test.yml's model-preds- to make that isolation
+      # explicit; restore-keys warms re-ingests of the same PR after new commits.
       - name: Cache model prediction + analysis files
         uses: actions/cache@v5
         with:
@@ -102,7 +107,8 @@ jobs:
             models/**/*.csv.gz
             models/**/*.json.gz
             models/**/*.jsonl.gz
-          key: model-preds-${{ hashFiles('models/**/*.yml') }}
+          key: ingest-preds-pr${{ github.event.pull_request.number }}-${{ hashFiles('models/**/*.yml') }}
+          restore-keys: ingest-preds-pr${{ github.event.pull_request.number }}-
 
       - name: Ingest submitted models
         env:

@@ -7,6 +7,8 @@ import json
 from dataclasses import asdict
 from typing import TYPE_CHECKING
 
+import pytest
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -56,12 +58,34 @@ def test_load_candidate_points_skips_malformed_points(tmp_path: Path) -> None:
     assert loaded_points == [valid_point]
 
 
-def test_build_reference_writes_empty_quality_file(tmp_path: Path) -> None:
-    """Empty inputs still create the optional merged diagnostics file."""
+@pytest.mark.parametrize(
+    ("candidate_map", "expected_skipped", "expected_quality"),
+    [
+        ({}, {}, []),
+        # a pair merging to <2 points (H has one valid point) is counted as skipped
+        # and logged in the quality report instead of silently vanishing from the
+        # bundled reference
+        (
+            {"H": [0]},
+            {"PBE": 1, "r2SCAN": 1},
+            [("H", "pbe", True), ("H", "r2scan", True)],
+        ),
+    ],
+    ids=["empty_map", "too_few_points"],
+)
+def test_build_reference_reports_skipped_pairs(
+    tmp_path: Path,
+    candidate_map: dict[str, list[int]],
+    expected_skipped: dict[str, int],
+    expected_quality: list[tuple[str, str, bool]],
+) -> None:
+    """Empty/too-short inputs yield an empty reference plus skip diagnostics."""
     candidate_map_path = tmp_path / "candidate-map.json"
     out_path = tmp_path / "reference.json.gz"
     merged_dir = tmp_path / "merged"
-    candidate_map_path.write_text("{}")
+    candidate_map_path.write_text(json.dumps(candidate_map))
+    if candidate_map:
+        write_curve_points(tmp_path, [])  # one valid point -> merged curve too short
 
     summary = build_reference(
         src_dir=str(tmp_path),
@@ -76,10 +100,14 @@ def test_build_reference_writes_empty_quality_file(tmp_path: Path) -> None:
         assert json.load(file) == {"PBE": {}, "r2SCAN": {}}
     assert summary == {
         "merged": {},
+        "skipped": expected_skipped,
         "short_candidate_pairs": {},
         "postprocess_edits": {},
     }
-    assert json.loads((merged_dir / "reference-quality.json").read_text()) == []
+    quality_rows = json.loads((merged_dir / "reference-quality.json").read_text())
+    assert [
+        (row["symbol"], row["xc"], row["skipped"]) for row in quality_rows
+    ] == expected_quality
 
 
 def test_write_merged_curve_serializes_postprocess_edits(tmp_path: Path) -> None:
