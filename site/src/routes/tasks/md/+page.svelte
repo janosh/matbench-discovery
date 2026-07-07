@@ -73,7 +73,8 @@
     stress tensor trace, and the vibrational density of states (vDOS) obtained from the
     velocity autocorrelation function. Energy-fluctuation and force RMSEs are shown as
     maintainer-computed private-label diagnostics when available, but they are excluded
-    from CMDS.
+    from CMDS. This modeling task was introduced in
+    <a href="https://arxiv.org/abs/2607.03433">arXiv:2607.03433</a>.
     {#if !MODELS.some(has_md_metrics)}
       No models have reported MD metrics yet.
     {/if}
