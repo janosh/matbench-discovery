@@ -2,7 +2,7 @@ import {
   calculate_cps,
   CPS_CONFIG,
   DEFAULT_CPS_CONFIG,
-} from '$lib/combined_perf_score.svelte'
+} from '$lib/combined-scores.svelte'
 import { attach_style, order_models } from '$lib/fig-helpers'
 import { ALL_METRICS } from '$lib/labels'
 import {
@@ -255,7 +255,7 @@ describe(`COMPLIANT_TRAINING_SETS`, () => {
   })
 })
 
-// NB: CPS_CONFIG defaults + reactivity are covered in combined_perf_score.test.ts
+// NB: CPS_CONFIG defaults + reactivity are covered in combined-scores.test.ts
 describe(`update_models_cps`, () => {
   it(`should update CPS for models based on metrics and current weights`, () => {
     // Skip test if no models available

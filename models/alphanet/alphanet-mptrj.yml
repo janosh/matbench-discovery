@@ -187,3 +187,17 @@ metrics:
   diatomics:
     pred_file: models/alphanet/2025-03-08-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52868972
+    hardware: NVIDIA H200
+    run_time_sec: 196.1
+    pbe_wall_dist_mae: 0.2832
+    pbe_energy_mae: 8.571
+    pbe_bond_length_error: 0.5899
+    pbe_well_depth_error: 8.938
+    pbe_vib_freq_error: 450.0
+    tortuosity: 2.491
+    energy_diff_flips: 6.909
+    energy_jump: 64.18
+    force_flips: 6.318
+    force_total_variation: 16610.0
+    force_jump: 23140.0
+    pbe_force_mae: 44.32

@@ -60,6 +60,9 @@ def _check_density(values: np.ndarray, label: str, *, check_area: bool = True) -
 # per-system CSVs written by run_md_benchmark, energy_rmse/force_rmse are still in
 # eV/atom and eV/Å (calc_energy_force_rmse output); calc_md_metrics scales them x1000.
 METRIC_UNITS = {
+    "run_time_sec": "s",
+    "max_rss_gb": "GB",
+    "max_gpu_mem_gb": "GB",
     "energy_rmse": "meV/atom",
     "force_rmse": "meV/Å",
     "rdf_error": "%",
@@ -70,7 +73,12 @@ METRIC_UNITS = {
     "pressure_error": "%",  # pressure-histogram overlap error (paper Eq. 9)
     "n_systems": "count",
 }
-PER_SYSTEM_METRIC_COLS = tuple(key for key in METRIC_UNITS if key != "n_systems")
+# run-provenance columns aggregated by sum/max/passthrough instead of the mean
+RUN_PROVENANCE_COLS = ("run_time_sec", "max_rss_gb", "max_gpu_mem_gb", "hardware")
+# mean-aggregated per-system error columns
+PER_SYSTEM_METRIC_COLS = tuple(
+    key for key in METRIC_UNITS if key != "n_systems" and key not in RUN_PROVENANCE_COLS
+)
 
 
 def min_image_radius(cells: np.ndarray, pbc: np.ndarray) -> float:
@@ -698,7 +706,7 @@ def combine_per_system_metrics(frames: Sequence[pd.DataFrame]) -> pd.DataFrame:
     return df_all.drop_duplicates(subset="system", keep="last").set_index("system")
 
 
-def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
+def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
     """Aggregate per-system MD metric rows (one row per system with a subset of
     PER_SYSTEM_METRIC_COLS columns) into model-level metrics.
 
@@ -706,6 +714,14 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
     The combined MD score (CMDS) is deliberately absent: it is site-computed (see
     module docstring). Private-label energy/force RMSE rows are in eV but reported
     here in meV for readability.
+
+    Run provenance columns (RUN_PROVENANCE_COLS) aggregate differently:
+    ``run_time_sec`` is summed over systems (parallel per-system jobs ~ one serial
+    sweep, mirroring the diatomics shard merge), the memory peaks take the max over
+    systems (the largest system sets the hardware requirement) and ``hardware``
+    passes through. All are all-or-nothing like the private-label diagnostics: a
+    partial sum/max or mixed-GPU label would misrepresent the model's cost, so they
+    are only published when every system row agrees.
     """
     metric_cols = [col for col in PER_SYSTEM_METRIC_COLS if col in df_md]
     if not metric_cols:
@@ -713,7 +729,28 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
             f"No recognized MD metric columns in {list(df_md.columns)=}, "
             f"expected a subset of {PER_SYSTEM_METRIC_COLS}"
         )
-    metrics = {
+    metrics: dict[str, float | str] = {}
+    # hardware is uniform when every row has the same non-null label; an incomplete or
+    # mixed column also drops the GPU-dependent costs (summed wall time, peak VRAM): a
+    # total over an H200 and an A100 (or rows of unknown provenance) would misrepresent
+    # the model's cost with no hardware label left to qualify it. Host RSS is kept: it
+    # reflects model/system size, not the GPU.
+    hardware_uniform = True
+    if "hardware" in df_md:
+        hardware_vals = df_md["hardware"].unique()
+        hardware_uniform = len(hardware_vals) == 1 and pd.notna(hardware_vals[0])
+        if hardware_uniform:
+            metrics["hardware"] = str(hardware_vals[0])
+    for col, agg, gpu_dependent in (
+        ("run_time_sec", "sum", True),
+        ("max_rss_gb", "max", False),
+        ("max_gpu_mem_gb", "max", True),
+    ):
+        if gpu_dependent and not hardware_uniform:
+            continue
+        if col in df_md and df_md[col].notna().all():
+            metrics[col] = float(df_md[col].agg(agg))
+    metrics |= {
         col: float(df_md[col].mean())
         * (1000 if col in ("energy_rmse", "force_rmse") else 1)
         for col in metric_cols
@@ -731,7 +768,7 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
 
 def write_metrics_to_yaml(
     model: "Model",
-    metrics: dict[str, float],
+    metrics: dict[str, float | str],
     pred_file_path: str | None = None,
     pred_file_url: str | None = None,
 ) -> dict[str, Any]:
@@ -746,6 +783,8 @@ def write_metrics_to_yaml(
     for key, value in metrics.items():
         if key == "n_systems":
             yaml_metrics[key] = int(value)
+        elif isinstance(value, str):  # e.g. hardware
+            yaml_metrics[key] = value
         else:
             yaml_metrics[key] = float(round(value, 4))
         if unit := METRIC_UNITS.get(key):

@@ -207,6 +207,8 @@ export type DiatomicsMetrics = PredFileRequiresUrl & {
   pred_file_url?: string
   hardware?: string
   run_time_sec?: number
+  max_rss_gb?: number
+  max_gpu_mem_gb?: number
   excluded_formula_reasons?: Record<string, string>
   tortuosity?: number
   energy_diff_flips?: number
@@ -228,6 +230,10 @@ export type DiatomicsMetrics = PredFileRequiresUrl & {
 export type MdMetrics = PredFileRequiresUrl & {
   pred_file?: string | null
   pred_file_url?: string
+  hardware?: string
+  run_time_sec?: number
+  max_rss_gb?: number
+  max_gpu_mem_gb?: number
   energy_rmse?: number
   force_rmse?: number
   rdf_error?: number

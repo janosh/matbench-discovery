@@ -223,6 +223,7 @@
       bind:value={size_prop}
       maxSelect={1}
       minSelect={1}
+      key={(opt: (typeof scatter_options)[number]) => opt.key}
       style="flex: 1; max-width: 300px; margin: 0"
       ulSelectedStyle="flex-wrap: nowrap; overflow: hidden; min-width: 0;"
       liSelectedStyle="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"

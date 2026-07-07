@@ -12,9 +12,9 @@ const model_data = [
 const curve = { distances: [1], 'homo-nuclear': { 'H-H': { energies: [0] } } }
 const page_data = {
   diatomic_models: model_data,
-  diatomic_curves: { PBE: curve, 'Model A': curve, 'Model B': curve },
+  diatomic_curves: { PBE: curve, r2SCAN: curve, 'Model A': curve, 'Model B': curve },
   errors: {},
-  reference_names: [`PBE`],
+  reference_names: [`PBE`, `r2SCAN`],
 }
 
 const button_for = (text: string): HTMLButtonElement => {
@@ -58,6 +58,7 @@ describe(`Diatomics Page URL state`, () => {
 
     const selected_text = selected_options()?.textContent
     expect(selected_text).toContain(`PBE (DFT)`)
+    expect(selected_text).toContain(`r2SCAN (DFT)`)
     expect(selected_text).toContain(`Model A`)
     expect(selected_text).toContain(`Model B`)
   })
@@ -69,6 +70,7 @@ describe(`Diatomics Page URL state`, () => {
     expect(selected?.textContent).toContain(`Model B`)
     expect(selected?.textContent).not.toContain(`Model A`)
     expect(selected?.textContent).not.toContain(`PBE (DFT)`)
+    expect(selected?.textContent).not.toContain(`r2SCAN (DFT)`)
     const selected_item = selected?.querySelector<HTMLLIElement>(`li`)
     expect(selected_item?.style.background).toContain(`#68d391`)
     expect(selected_item?.style.color).not.toBe(``)
@@ -108,7 +110,7 @@ describe(`Diatomics Page URL state`, () => {
   })
 
   it(`preserves metrics-table sort params when other controls update the URL`, async () => {
-    await mount_page(`?models=model-b&sort=pbe_force_mae&dir=desc`)
+    await mount_page(`?models=model-b&sort=pbe_force_mae&dir=asc`)
 
     button_for(`Nonmetals`).click()
     await tick()
@@ -117,6 +119,7 @@ describe(`Diatomics Page URL state`, () => {
     expect(params.get(`models`)).toBe(`model-b`)
     expect(params.get(`elements`)).toBe(`nonmetal`)
     expect(params.get(`sort`)).toBe(`pbe_force_mae`)
-    expect(params.get(`dir`)).toBe(`desc`)
+    // asc is non-default (default sort is CDS desc), so dir must survive in the URL
+    expect(params.get(`dir`)).toBe(`asc`)
   })
 })

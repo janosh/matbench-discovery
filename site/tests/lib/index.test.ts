@@ -158,12 +158,14 @@ describe(`weights_to_param / apply_weights_param`, () => {
   it.each([
     [`valid param`, `0.7,0.2,0.1`, [0.7, 0.2, 0.1]],
     [`unnormalized weights get normalized`, `2,1,1`, [0.5, 0.25, 0.25]],
-    // custom weights are shared module state; a weights-less URL must reset them
+    // custom weights are shared module state; a weights-less URL must reset them,
+    // and so must a malformed one - keeping stale in-session weights would show
+    // wrong scores and launder them back into a valid-looking URL via the sync effect
     [`null param resets to defaults`, null, [0.5, 0.4, 0.1]],
-    [`wrong count is ignored`, `0.5,0.5`, [0.2, 0.3, 0.5]],
-    [`negative weight is ignored`, `-1,1,1`, [0.2, 0.3, 0.5]],
-    [`non-numeric is ignored`, `a,b,c`, [0.2, 0.3, 0.5]],
-    [`all-zero is ignored`, `0,0,0`, [0.2, 0.3, 0.5]],
+    [`wrong count resets to defaults`, `0.5,0.5`, [0.5, 0.4, 0.1]],
+    [`negative weight resets to defaults`, `-1,1,1`, [0.5, 0.4, 0.1]],
+    [`non-numeric resets to defaults`, `a,b,c`, [0.5, 0.4, 0.1]],
+    [`all-zero resets to defaults`, `0,0,0`, [0.5, 0.4, 0.1]],
   ] as const)(`%s`, (_name, param, expected) => {
     const config = make_config([0.2, 0.3, 0.5]) // start from non-default weights
     apply_weights_param(param, config, defaults)
