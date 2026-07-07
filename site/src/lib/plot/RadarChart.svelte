@@ -78,9 +78,20 @@
   // position on first paint and in prerendered HTML instead of jumping from (0, 0)
   // svelte-ignore state_referenced_locally
   let point = $state<Point>(point_from_weights(config))
-  let default_point = $derived(point_from_weights(default_config))
-  let has_custom_position = $derived(
-    Math.hypot(point.x - default_point.x, point.y - default_point.y) > 1e-6,
+  // Compare weights, not knob geometry: for 4+ corners the weights->point map is
+  // many-to-one (e.g. 50/0/50/0 on opposite corners lands on the center, same as
+  // equal weights), so a position check would hide the Reset button for non-default
+  // weights. Weight-based gating also keeps the button stable mid-drag (weights only
+  // update on drop). Keys absent from default_config don't count as custom since
+  // reset_weights can't restore them anyway.
+  let has_custom_weights = $derived(
+    Object.keys(config).some((key) => {
+      const default_weight = default_config[key]?.weight
+      return (
+        default_weight !== undefined &&
+        Math.abs(config[key].weight - default_weight) > 1e-6
+      )
+    }),
   )
 
   // Keep knob + model scores in sync when weights change (drag end, reset,
@@ -271,7 +282,7 @@
       {@html title_label.label ?? title_label.key}
       <Icon icon="Info" />
     </span>
-    {#if has_custom_position}
+    {#if has_custom_weights}
       <button
         class="reset-button"
         onclick={reset_weights}

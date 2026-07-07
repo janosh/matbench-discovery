@@ -272,6 +272,40 @@ describe(`RadarChart`, () => {
     }
   })
 
+  it(`shows the reset button for non-default weights even when the knob lands on the default position`, () => {
+    // 50/0/50/0 on opposite corners of a 4-corner chart has its weighted centroid at
+    // the polygon center - for these configs the weights->point map is many-to-one,
+    // so reset-button visibility must derive from the weights, not knob geometry
+    for (const [key, pillar] of Object.entries(CDS_CONFIG)) {
+      pillar.weight = [`accuracy`, `speed`].includes(key) ? 0.5 : 0
+    }
+    try {
+      mount(RadarChart, {
+        target: document.body,
+        props: {
+          config: CDS_CONFIG,
+          default_config: DEFAULT_CDS_CONFIG,
+          title_label: ALL_METRICS.diatomics_combined_score,
+          on_change: () => {},
+        },
+      })
+      flushSync()
+
+      doc_query<HTMLButtonElement>(`.reset-button`).click()
+      flushSync()
+
+      expect(Object.values(CDS_CONFIG).map(({ weight }) => weight)).toEqual(
+        Object.values(DEFAULT_CDS_CONFIG).map(({ weight }) => weight),
+      )
+      expect(document.querySelector(`.reset-button`)).toBeNull()
+    } finally {
+      // restore shared module state for other tests even if assertions throw
+      for (const [key, pillar] of Object.entries(DEFAULT_CDS_CONFIG)) {
+        CDS_CONFIG[key as keyof typeof CDS_CONFIG].weight = pillar.weight
+      }
+    }
+  })
+
   it(`disables scroll anchoring so adjusting CPS weights can't jump the page`, () => {
     // Dragging the knob re-renders the metrics table, reflowing content above the
     // viewport. Without overflow-anchor:none the browser scrolls to keep an anchor
