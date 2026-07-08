@@ -8,7 +8,7 @@ import {
   METADATA_COLS,
 } from '$lib/labels'
 import type { ModelMetadata, ModelType, TargetType } from '$lib/schema/model'
-import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
+import { get_pred_file_urls } from '$lib/models.svelte'
 import type { DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { escape_html, format_num } from 'matterviz'
@@ -169,13 +169,13 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
   )
 }
 
-// Combined filter function that respects both prediction type and compliance filters
+// Combined filter respecting the base predicate, prediction-type toggle and the
+// training-data/openness filters (pass UrlTableFilters.matches as filter_matches)
 export const make_combined_filter =
   (
     model_filter: (model: ModelData) => boolean,
     show_energy: boolean,
-    show_compliant: boolean,
-    show_non_compliant: boolean,
+    filter_matches: (model: ModelData) => boolean = () => true,
   ): ((model: ModelData) => boolean) =>
   (model: ModelData) => {
     if (!model_filter(model)) return false
@@ -183,11 +183,7 @@ export const make_combined_filter =
     const is_energy_only = model.targets === `E`
     if (is_energy_only && !show_energy) return false
 
-    const is_compliant = model_is_compliant(model)
-    if (is_compliant && !show_compliant) return false
-    if (!is_compliant && !show_non_compliant) return false
-
-    return true
+    return filter_matches(model)
   }
 
 // NB: cell background/text colors are computed by matterviz's HeatmapTable internally
@@ -198,15 +194,13 @@ export function assemble_row_data(
   discovery_set: DiscoverySet,
   model_filter: (model: ModelData) => boolean,
   show_energy_only: boolean,
-  show_non_compliant: boolean,
-  show_compliant: boolean,
+  filter_matches: (model: ModelData) => boolean = () => true,
   models: ModelData[] = MODELS, // injectable for tests
 ) {
   const current_filter = make_combined_filter(
     model_filter,
     show_energy_only,
-    show_compliant,
-    show_non_compliant,
+    filter_matches,
   )
 
   const license_str = (license: string | undefined, url: string | undefined) =>
@@ -228,7 +222,7 @@ export function assemble_row_data(
     get_nested_number(model, label_data_path(label))
   const finite_positive = (value: unknown): value is number =>
     is_finite_num(value) && value > 0
-  // × Fastest columns: wall time relative to the fastest model in the current
+  // Slowdown columns: wall time relative to the fastest model in the current
   // filtered view (roster-dependent, so computed here rather than stored on models)
   const time_multiplier = (run_time_label: Label) => {
     const fastest = Math.min(
@@ -251,7 +245,6 @@ export function assemble_row_data(
       typeof metrics?.discovery === `object`
         ? metrics.discovery[discovery_set]
         : undefined
-    const is_compliant = model_is_compliant(model)
     const targets = model.targets.replaceAll(/_(?<char>.)/g, `<sub>$<char></sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
 
@@ -367,7 +360,6 @@ export function assemble_row_data(
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
       [HYPERPARAMS.graph_construction_radius.key]: r_cut_str,
-      style: `border-left: 3px solid var(--${is_compliant ? `` : `non-`}compliant-color);`,
       org_logos: model.org_logos,
       authors: model.authors,
     }

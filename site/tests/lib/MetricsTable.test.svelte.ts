@@ -1,5 +1,5 @@
 import { HYPERPARAMS } from '$lib/labels'
-import { model_is_compliant, MODELS } from '$lib/models.svelte'
+import { make_table_filters, MODELS } from '$lib/models.svelte'
 import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
 import { tick } from 'svelte'
@@ -16,14 +16,20 @@ const header_names = () => header_cells().map((th) => th.textContent?.split(` `)
 
 // expected table row count for the default unique_prototypes discovery set,
 // mirroring MetricsTable's model filters
+// table filters restricted to models trained (at least in part) on MPtrj
+const mptrj_only_filters = () => {
+  const filters = make_table_filters()
+  filters.training = { MPtrj: `require` }
+  return filters
+}
+
 const visible_row_count = (
-  { energy = false, non_compliant = true } = {},
+  { energy = false } = {},
   extra_filter: (model: ModelData) => boolean = () => true,
 ) =>
   MODELS.filter(
     (model) =>
       (energy || model.targets !== `E`) &&
-      (non_compliant || model_is_compliant(model)) &&
       typeof model.metrics?.discovery === `object` &&
       model.metrics.discovery.unique_prototypes &&
       extra_filter(model),
@@ -41,7 +47,7 @@ describe(`MetricsTable`, () => {
   it(`renders with default props`, async () => {
     mount(MetricsTable, {
       target: document.body,
-      props: { col_filter: () => true, show_non_compliant: true },
+      props: { col_filter: () => true },
     })
 
     // Check table structure
@@ -117,7 +123,7 @@ describe(`MetricsTable`, () => {
   it(`renders Org as a regular rightmost metadata column`, async () => {
     mount(MetricsTable, {
       target: document.body,
-      props: { col_filter: () => true, show_non_compliant: true },
+      props: { col_filter: () => true },
     })
     await tick()
 
@@ -137,7 +143,7 @@ describe(`MetricsTable`, () => {
   it(`renders header tooltips on inner labels`, async () => {
     mount(MetricsTable, {
       target: document.body,
-      props: { col_filter: () => true, show_non_compliant: true },
+      props: { col_filter: () => true },
     })
     await tick()
 
@@ -171,7 +177,6 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         col_filter: (col: Label) => !metadata_keys.has(col.key ?? col.label),
-        show_non_compliant: true,
       },
     })
 
@@ -196,7 +201,7 @@ describe(`MetricsTable`, () => {
     const col_filter = (col: Label) => ![`F1`, `DAF`].includes(col.key ?? col.label)
     mount(MetricsTable, {
       target: document.body,
-      props: { col_filter, show_non_compliant: true },
+      props: { col_filter },
     })
 
     const header_texts = header_names()
@@ -216,7 +221,7 @@ describe(`MetricsTable`, () => {
     // First test with energy-only models hidden
     mount(MetricsTable, {
       target: document.body,
-      props: { show_energy_only: false, show_non_compliant: true },
+      props: { show_energy_only: false },
     })
     await tick()
     const rows_without_energy = document.querySelectorAll(`tbody tr`).length
@@ -225,7 +230,7 @@ describe(`MetricsTable`, () => {
     document.body.innerHTML = ``
     mount(MetricsTable, {
       target: document.body,
-      props: { show_energy_only: true, show_non_compliant: true },
+      props: { show_energy_only: true },
     })
     await tick()
     const rows_with_energy = document.querySelectorAll(`tbody tr`).length
@@ -241,7 +246,6 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         model_filter: no_model_filter,
-        show_non_compliant: true,
       },
     })
 
@@ -255,7 +259,6 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         model_filter: () => true,
-        show_non_compliant: true,
       },
     })
 
@@ -268,7 +271,6 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         model_filter: (model: ModelData) => model.model_name.includes(`CHG`),
-        show_non_compliant: true,
       },
     })
 
@@ -345,7 +347,6 @@ describe(`MetricsTable`, () => {
       props: {
         model_filter: (model: ModelData) => model.model_name === `AlphaNet-v1-OAM`,
         col_filter: (col: Label) => col.label === `Model`,
-        show_non_compliant: true,
       },
     })
     await tick()
@@ -375,7 +376,6 @@ describe(`MetricsTable`, () => {
         mount(MetricsTable, {
           target: document.body,
           props: {
-            show_non_compliant: true,
             col_filter: (col: Label) => [`Model`, col_key].includes(col.key ?? col.label),
           },
         })
@@ -408,7 +408,6 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          show_non_compliant: true,
           col_filter: (col: Label) => [`Model`, `Training Set`].includes(col.label),
         },
       })
@@ -462,18 +461,17 @@ describe(`MetricsTable`, () => {
     it.each([
       {
         test_name: `with all models shown`,
-        props: { show_non_compliant: true, show_energy_only: true },
+        props: { show_energy_only: true },
       },
       {
         test_name: `with filtered columns`,
         props: {
-          show_non_compliant: true,
           col_filter: (col: Label) => [`Model`, `CPS`, `F1`].includes(col.label),
         },
       },
       {
-        test_name: `with non-compliant models hidden`,
-        props: { show_non_compliant: false, show_energy_only: true },
+        test_name: `with an MPtrj-only training filter`,
+        props: { show_energy_only: true, filters: mptrj_only_filters() },
       },
     ])(
       `alphabetically sorts by Model name on $test_name header click`,
@@ -502,10 +500,10 @@ describe(`MetricsTable`, () => {
         const sorted_model_names = get_model_names()
 
         expect(sorted_model_names).toHaveLength(
-          visible_row_count({
-            energy: `show_energy_only` in props && props.show_energy_only,
-            non_compliant: props.show_non_compliant,
-          }),
+          visible_row_count(
+            { energy: `show_energy_only` in props && props.show_energy_only },
+            `filters` in props && props.filters ? props.filters.matches : () => true,
+          ),
         )
 
         // Verify sorted in some alphabetical order (ascending or descending)
@@ -532,7 +530,6 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          show_non_compliant: true,
           col_filter: (col: Label) =>
             [`Model`, `CPS`, `Links`].includes(col.key ?? col.label),
         },
@@ -576,7 +573,7 @@ describe(`MetricsTable`, () => {
       const col_filter = (col: Label) => [`Model`, `Links`].includes(col.label)
       mount(MetricsTable, {
         target: document.body,
-        props: { col_filter, show_non_compliant: true },
+        props: { col_filter },
       })
 
       await tick() // Wait for component to process data
@@ -618,7 +615,6 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           col_filter: (col: Label) => [`Model`, `Links`].includes(col.label),
-          show_non_compliant: true,
         },
       })
 
@@ -645,7 +641,6 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           col_filter: (col: Label) => [`Model`, `Links`].includes(col.label),
-          show_non_compliant: true,
         },
       })
 
@@ -670,7 +665,6 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           col_filter: (col: Label) => [`Model`, `Links`].includes(col.label),
-          show_non_compliant: true,
         },
       })
 
@@ -722,7 +716,7 @@ describe(`MetricsTable`, () => {
       async () => {
         mount(MetricsTable, {
           target: document.body,
-          props: { show_non_compliant: true },
+          props: {},
         })
         await tick() // Wait for initial render
 
@@ -756,7 +750,7 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, { target: document.body })
 
     // Core text expected in default visible columns (duplicates intended: MD and
-    // diatomics each have Time and × Fastest columns, disambiguated by tooltip)
+    // diatomics each have Speed and Slowdown columns, disambiguated by tooltip)
     const expected_core_columns = [
       `Model`, // METADATA_COLS
       `Training Set`, // METADATA_COLS
@@ -794,11 +788,11 @@ describe(`MetricsTable`, () => {
       `PW1`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `ΔP`, // ALL_METRICS (MD)
       `CMDS`, // ALL_METRICS (MD)
-      `Time`, // ALL_METRICS (MD)
-      `× Fastest`, // ALL_METRICS (MD)
+      `Speed`, // ALL_METRICS (MD)
+      `Slowdown`, // ALL_METRICS (MD)
       `CDS`, // DIATOMICS_METRICS
-      `Time`, // DIATOMICS_METRICS
-      `× Fastest`, // DIATOMICS_METRICS
+      `Speed`, // DIATOMICS_METRICS
+      `Slowdown`, // DIATOMICS_METRICS
       `E flips`, // DIATOMICS_METRICS
       `E jump`, // DIATOMICS_METRICS
       `F TV`, // DIATOMICS_METRICS
@@ -814,17 +808,17 @@ describe(`MetricsTable`, () => {
       `CPS`, // Added in assemble_row_data
     ]
 
-    // the structural rank column (#, from show_row_numbers) is excluded here and
-    // covered by its own test below
-    const header_elements = document.querySelectorAll(`thead th:not(.row-num-col)`)
-    const actual_core_columns = [...header_elements].map((th) =>
+    // the structural rank column (#, from show_row_numbers) is excluded by
+    // header_cells() and covered by its own test below
+    const header_elements = header_cells()
+    const actual_core_columns = header_elements.map((th) =>
       // Get text content, remove sort indicator (↑/↓) and any trailing spaces
       (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
 
     // The default visible columns should stay intentionally curated: new default
     // columns must be added to expected_core_columns explicitly. Sorted comparison
-    // ignores order but checks exact multiset (incl. duplicate Time/× Fastest labels).
+    // ignores order but checks exact multiset (incl. duplicate Speed/Slowdown labels).
     expect(actual_core_columns.toSorted()).toEqual(expected_core_columns.toSorted())
 
     // Header tooltip content is attached to inner labels so HeatmapTable's
@@ -870,7 +864,7 @@ describe(`MetricsTable`, () => {
       async () => {
         mount(MetricsTable, {
           target: document.body,
-          props: { col_filter: () => true, show_non_compliant: true },
+          props: { col_filter: () => true },
         })
         await tick() // Wait for initial render
 
@@ -906,7 +900,7 @@ describe(`MetricsTable`, () => {
       async () => {
         mount(MetricsTable, {
           target: document.body,
-          props: { col_filter: () => true, show_non_compliant: true },
+          props: { col_filter: () => true },
         })
 
         // Initially no toggle
@@ -942,7 +936,7 @@ describe(`MetricsTable`, () => {
       async () => {
         mount(MetricsTable, {
           target: document.body,
-          props: { col_filter: () => true, show_non_compliant: true },
+          props: { col_filter: () => true },
         })
 
         // Select a model to make toggle visible
@@ -976,7 +970,7 @@ describe(`MetricsTable`, () => {
       async () => {
         mount(MetricsTable, {
           target: document.body,
-          props: { col_filter: () => true, show_non_compliant: true },
+          props: { col_filter: () => true },
         })
 
         const initial_count = get_rows().length
@@ -1023,7 +1017,6 @@ describe(`MetricsTable`, () => {
           },
           col_filter: (col: Label) =>
             [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
-          show_non_compliant: true,
         },
       })
       await tick()
@@ -1046,7 +1039,6 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           col_filter: (col: Label) => columns.includes(col.key ?? col.label),
-          show_non_compliant: true,
         },
       })
       await tick()
@@ -1069,7 +1061,6 @@ describe(`MetricsTable`, () => {
           },
           col_filter: (col: Label) =>
             [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
-          show_non_compliant: true,
         },
       })
       await tick()
@@ -1111,7 +1102,6 @@ describe(`MetricsTable`, () => {
           set column_order(val) {
             state.column_order = val
           },
-          show_non_compliant: true,
         },
       })
       await tick()
@@ -1143,14 +1133,12 @@ describe(`MetricsTable`, () => {
         props: {
           col_filter: (col: Label) =>
             [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
-          show_non_compliant: true,
         },
       })
 
-      // the rank (#) column is structural and not draggable
-      const headers = [
-        ...document.querySelectorAll(`thead tr:last-child th:not(.row-num-col)`),
-      ]
+      // header_cells() excludes the rank (#) column, which is structural and
+      // deliberately not draggable
+      const headers = header_cells()
       expect(headers.length).toBeGreaterThan(0)
       headers.forEach((header) => {
         expect(header.getAttribute(`draggable`)).toBe(`true`)

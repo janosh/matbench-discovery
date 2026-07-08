@@ -1,7 +1,16 @@
 <script lang="ts">
   import { MetricsTable, MODELS, SelectToggle } from '$lib'
+  import { make_table_filters } from '$lib/models.svelte'
   import { DynamicScatter } from '$lib/plot'
-  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
+  import { DEFAULT_TABLE_SORT } from '$lib/table/MetricsTable.svelte'
+  import {
+    bind_url_params,
+    bool_from_param,
+    bool_url_entry,
+    sort_from_query,
+    sort_url_entries,
+    valid_query_param,
+  } from '$lib/url-state.svelte'
   import * as labels from '$lib/labels'
   import { DISCOVERY_SETS, type DiscoverySet } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
@@ -13,6 +22,8 @@
 
   let discovery_set: DiscoverySet = $state(default_discovery_set)
   let show_energy_only = $state(false)
+  const filters = make_table_filters()
+  let sort = $state({ ...DEFAULT_TABLE_SORT })
 
   // axis selections for the model-comparison scatter, bound so the section title
   // tracks whatever properties the user picks
@@ -27,13 +38,17 @@
       default_discovery_set,
       discovery_sets,
     )
-    show_energy_only = params.get(`energy_only`) === `1`
+    show_energy_only = bool_from_param(params, `energy_only`)
+    filters.read(params)
+    sort = sort_from_query(params, DEFAULT_TABLE_SORT)
     scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_keys)
     scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_keys)
   }
   bind_url_params(read_url_params, () => [
     [`set`, discovery_set, default_discovery_set],
-    [`energy_only`, show_energy_only ? `1` : ``],
+    bool_url_entry(`energy_only`, show_energy_only),
+    ...filters.url_entries,
+    ...sort_url_entries(sort, DEFAULT_TABLE_SORT),
     [`x`, scatter_x, default_scatter_x],
     [`y`, scatter_y, default_scatter_y],
   ])
@@ -56,6 +71,8 @@
       ].includes(col)}
     {discovery_set}
     bind:show_energy_only
+    {filters}
+    bind:sort
     show_energy_only_toggle
   />
 </section>

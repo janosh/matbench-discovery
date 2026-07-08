@@ -1,6 +1,7 @@
 import Page from '$routes/data/data-files-direct-download.md'
+import DataRoute from '$routes/data/+page.svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { mount } from '../index'
+import { mount, mount_with_url } from '../index'
 
 describe(`Data Page`, () => {
   beforeEach(() => {
@@ -82,5 +83,24 @@ describe(`Data Page`, () => {
     expect(
       descriptions.some((desc) => /summary|structure|energy/i.test(desc ?? ``)),
     ).toBe(true)
+  })
+})
+
+describe(`Data Route URL state`, () => {
+  // the id prop lands on the Select's text input; walk up to its .multiselect wrapper
+  const count_mode_text = (): string | undefined =>
+    document
+      .querySelector(`#count-mode`)
+      ?.closest(`.multiselect`)
+      ?.querySelector(`ul[aria-label="selected options"]`)?.textContent ?? undefined
+
+  it.each([
+    [``, `occurrence`],
+    [`?count_mode=composition`, `composition`],
+    [`?count_mode=bogus`, `occurrence`], // invalid value falls back to default
+  ])(`restores count mode from URL %s`, async (query, expected_mode) => {
+    await mount_with_url(DataRoute, `http://localhost/data${query}`)
+
+    expect(count_mode_text()).toContain(expected_mode)
   })
 })

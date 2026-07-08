@@ -18,6 +18,7 @@
     apply_weights_param,
     bind_url_params,
     sort_from_query,
+    sort_url_entries,
     valid_query_param,
     weights_to_param,
   } from '$lib/url-state.svelte'
@@ -211,8 +212,7 @@
   bind_url_params(read_url_params, () => [
     model_selection.url_entry,
     [`elements`, selected_element_group, `all`],
-    [`sort`, sort.column, default_sort.column],
-    [`dir`, sort.dir, default_sort.dir],
+    ...sort_url_entries(sort, default_sort),
     [`x`, scatter_x, default_scatter_x],
     [`y`, scatter_y, default_scatter_y],
     // custom CDS pillar weights (accuracy,geometry,speed,physicality); omitted at defaults
@@ -306,6 +306,7 @@
   bind:y_key={scatter_y}
   color_key={METADATA_COLS.n_training_materials.key}
   initial_log={{ color: true }}
+  show_pareto_frontier
   style="height: 800px"
 />
 

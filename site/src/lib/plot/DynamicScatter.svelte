@@ -5,7 +5,7 @@
   import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { ColorScaleSelect, create_color_scale } from 'matterviz/plot'
-  import type { DataSeries } from 'matterviz/plot'
+  import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
   import Select from 'svelte-multiselect'
@@ -20,6 +20,7 @@
   } from '$lib/labels'
   import { get_nested_value, is_finite_num, label_data_path } from '$lib/metrics'
   import { make_models_legend } from '$lib/fig-helpers'
+  import { pareto_staircase, sota_frontier_indices, sota_step_line } from '$lib/sota'
   import type { Label } from '$lib/types'
 
   // Keep size-select labels short by dropping discovery-set segments and abbreviating
@@ -57,6 +58,7 @@
     y_key = $bindable(ALL_METRICS.CPS.key),
     color_key = $bindable(ALL_METRICS.F1.key),
     initial_log = {},
+    show_pareto_frontier = false,
     ...rest
   }: ComponentProps<typeof ScatterPlot> & {
     models: ModelData[]
@@ -68,6 +70,8 @@
     color_key?: string
     // seed the log-scale toggles, e.g. { color: true } for wide-range color data
     initial_log?: Partial<Record<`x` | `y` | `color` | `size`, boolean>>
+    // trace the staircase of non-dominated models (needs better-direction on both axes)
+    show_pareto_frontier?: boolean
   } = $props()
 
   const log_dims = [`x`, `y`, `color`, `size`] as const
@@ -186,9 +190,48 @@
   const point_fill = (color_value: unknown): string =>
     point_color ?? (legend_color_scale(color_value as number) as string) ?? `gray`
 
+  // Staircase through the non-dominated models, tracing the boundary of the dominated
+  // region. With a date on the x-axis it becomes the running best over time (records
+  // extended to today); otherwise it needs a better-direction on both axes.
+  let pareto_series = $derived.by((): DataSeries<PointMetadata> | null => {
+    const [x_better, y_better] = [axes.x?.better, axes.y?.better]
+    if (!show_pareto_frontier || !y_better) return null
+
+    const line_series = (label: string, xs: number[], ys: number[]) => ({
+      x: xs,
+      y: ys,
+      label,
+      legend_group,
+      markers: `line` as const,
+      line_style: { stroke: `gray`, stroke_width: 1.5, line_dash: `5 3` },
+    })
+
+    if (label_data_path(axes.x).includes(`date`)) {
+      // field-progress view: which releases moved the frontier, and where it stands
+      const points = plot_data.map((pt) => ({ date: pt.x, value: pt.y }))
+      const records = sota_frontier_indices(points, y_better).map((idx) => points[idx])
+      if (records.length === 0) return null
+      const { x, y } = sota_step_line(records, Date.now())
+      return line_series(`Running best`, x, y)
+    }
+
+    if (!x_better) return null
+    const staircase = pareto_staircase(plot_data, x_better, y_better)
+    return staircase && line_series(`Pareto frontier`, staircase.x, staircase.y)
+  })
+
+  // Suppress hover on the frontier line: its staircase corners are not models (no
+  // metadata), so snapping to them showed a useless tooltip. Frontier vertices that ARE
+  // models still get the model tooltip: the model series win the closest-point tie by
+  // coming first in `series`.
+  let tooltip_point: InternalPoint | null = $state(null)
+  $effect(() => {
+    if (tooltip_point && !tooltip_point.metadata) tooltip_point = null
+  })
+
   // One series per model enables per-model legend toggles.
-  let series: DataSeries<PointMetadata>[] = $derived(
-    plot_data.map((item) => ({
+  let series: DataSeries<PointMetadata>[] = $derived([
+    ...plot_data.map((item) => ({
       x: [item.x],
       y: [item.y],
       label: item.metadata.model_name,
@@ -197,7 +240,7 @@
       metadata: [item.metadata],
       // uniform circles: color and size already encode data, and cycling 7 shapes
       // across 30+ models distinguished nothing while adding visual noise
-      point_style: { fill: point_fill(item.color_value), symbol_type: `Circle` },
+      point_style: { fill: point_fill(item.color_value), symbol_type: `Circle` as const },
       color_values: point_color === null ? [item.color_value as number] : undefined,
       size_values: axes.size_value ? [item.size_value] : undefined,
       point_label: show_model_labels
@@ -210,7 +253,8 @@
           ]
         : [],
     })),
-  )
+    ...(pareto_series ? [pareto_series] : []),
+  ])
 </script>
 
 <div
@@ -252,6 +296,7 @@
   <ScatterPlot
     style="height: 600px"
     bind:series
+    bind:tooltip_point
     legend={models_legend}
     padding={{ b: 70 }}
     x_axis={{

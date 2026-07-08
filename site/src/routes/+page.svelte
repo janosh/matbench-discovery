@@ -1,12 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state'
   import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
-  import {
-    DynamicScatter,
-    GitHubActivityScatter,
-    RadarChart,
-    SotaTimeline,
-  } from '$lib/plot'
+  import { DynamicScatter, GitHubActivityScatter, RadarChart } from '$lib/plot'
   import {
     ALL_METRICS,
     DIATOMICS_METRICS,
@@ -18,11 +13,14 @@
   } from '$lib/labels'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { make_combined_filter } from '$lib/metrics'
-  import { find_best_model, MODELS } from '$lib/models.svelte'
+  import { find_best_model, make_table_filters, MODELS } from '$lib/models.svelte'
   import {
     apply_weights_param,
     bind_url_params,
+    bool_from_param,
+    bool_url_entry,
     sort_from_query,
+    sort_url_entries,
     valid_query_param,
     weights_to_param,
   } from '$lib/url-state.svelte'
@@ -50,7 +48,7 @@
   // Column presets focus the table on one task's metrics. Headline cols (CPS, F1, RMSD,
   // κ_SRME) stay visible across presets; supplementary discovery cols (TPR/TNR/RMSE) stay
   // hidden but remain toggleable via the per-column controls. Sets are keyed by col.key
-  // (unique) not label, which repeats across tasks (MD/diatomics Time and × Fastest).
+  // (unique) not label, which repeats across tasks (MD/diatomics Time and Slowdown).
   const headline_metric_keys = new Set(
     [ALL_METRICS.CPS, DISCOVERY_METRICS.F1, ALL_METRICS.RMSD, ALL_METRICS.κ_SRME].map(
       (col) => col.key,
@@ -76,16 +74,14 @@
     MD: { column: MD_METRICS.md_combined_score.key, dir: `desc` },
     Diatomics: { column: DIATOMICS_METRICS.energy_jump.key, dir: `asc` },
   }
-  let show_non_compliant = $state(true)
   let show_energy_only = $state(false)
-  let show_compliant = $state(true)
+  const filters = make_table_filters()
   const col_preset_options = col_preset_names.map((name) => ({
     value: name,
     label: name,
     tooltip: `Focus the table on ${name} metrics`,
   }))
 
-  let show_heatmap = $state(true)
   let export_error: string | null = $state(null)
 
   let col_preset = $state<ColPreset>(`Discovery`)
@@ -140,9 +136,8 @@
     sort = next_sort
 
     discovery_set = valid_query_param(params, `set`, `unique_prototypes`, valid_sets)
-    show_energy_only = params.get(`energy_only`) === `1`
-    show_non_compliant = params.get(`non_compliant`) !== `0`
-    show_compliant = params.get(`compliant`) !== `0`
+    show_energy_only = bool_from_param(params, `energy_only`)
+    filters.read(params)
     col_preset = next_preset
     previous_col_preset = next_preset
   })
@@ -161,24 +156,19 @@
         // columns (a preset no longer describes the visible column set)
         [`preset`, custom_col_config || col_preset === `Discovery` ? `` : col_preset],
         [`set`, discovery_set, `unique_prototypes`],
-        [`sort`, sort.column, default_sort.column],
-        [`dir`, sort.dir, default_sort.dir],
-        [`energy_only`, show_energy_only ? `1` : ``],
-        [`non_compliant`, show_non_compliant ? `` : `0`],
-        [`compliant`, show_compliant ? `` : `0`],
+        ...sort_url_entries(sort, default_sort),
+        bool_url_entry(`energy_only`, show_energy_only),
+        ...filters.url_entries,
         // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
         [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
       ]
     },
   )
 
-  let export_state = $derived({ export_error, show_non_compliant, discovery_set })
+  let export_state = $derived({ export_error, discovery_set })
 
-  let best_model = $derived(
-    find_best_model(MODELS, { show_non_compliant, show_compliant, discovery_set }),
-  )
-  // Landing-page cohort: the metrics-table filters (energy/compliance) plus a base
-  // predicate of "has discovery data for the selected set" (applied first internally)
+  // Landing-page cohort: the metrics-table filters (energy/training-data/openness)
+  // plus a base predicate of "has discovery data for the selected set"
   let in_cohort = $derived(
     make_combined_filter(
       (model: ModelData) => {
@@ -190,10 +180,11 @@
         )
       },
       show_energy_only,
-      show_compliant,
-      show_non_compliant,
+      filters.matches,
     ),
   )
+  // best model within the same cohort the table shows
+  let best_model = $derived(find_best_model(MODELS.filter(in_cohort), discovery_set))
 
   export const snapshot: Snapshot = {
     capture: () => ({
@@ -202,10 +193,10 @@
       custom_col_config,
       sort,
       auto_sort_enabled,
-      show_non_compliant,
       show_energy_only,
-      show_compliant,
-      show_heatmap,
+      training_filter: { ...filters.training },
+      openness: [...filters.openness],
+      show_heatmap: filters.show_heatmap,
     }),
     restore: (values) => {
       custom_col_config = values.custom_col_config ?? custom_col_config
@@ -214,10 +205,10 @@
       discovery_set = values.discovery_set ?? discovery_set
       col_preset = values.col_preset ?? col_preset
       previous_col_preset = col_preset
-      show_non_compliant = values.show_non_compliant ?? show_non_compliant
       show_energy_only = values.show_energy_only ?? show_energy_only
-      show_compliant = values.show_compliant ?? show_compliant
-      show_heatmap = values.show_heatmap ?? show_heatmap
+      filters.training = values.training_filter ?? filters.training
+      filters.openness = values.openness ?? filters.openness
+      filters.show_heatmap = values.show_heatmap ?? filters.show_heatmap
     },
   }
 </script>
@@ -263,9 +254,7 @@
       {discovery_set}
       bind:sort
       bind:show_energy_only
-      bind:show_non_compliant
-      bind:show_compliant
-      bind:show_heatmap
+      {filters}
       show_energy_only_toggle
     />
   </section>
@@ -331,9 +320,23 @@
   </figcaption>
 </figure>
 
-<!-- Dynamic axis scatter plot -->
-<p>Compare models across different metrics and parameters:</p>
-<DynamicScatter models={MODELS} model_filter={in_cohort} />
+<!-- Dynamic axis scatter plot: defaults to field progress over time (CPS vs date
+added) with a running-best line showing which releases moved the frontier -->
+<h2>Progress Over Time</h2>
+<p>
+  Each point is a model placed at its submission date; the dashed step line traces the
+  running best ("SOTA frontier") CPS, so its jumps mark the models that set a new record
+  when they were added. Use the axis/color/size selectors to compare models across any
+  pair of metrics and parameters. The plot respects the compliance toggles of the metrics
+  table above.
+</p>
+<DynamicScatter
+  models={MODELS}
+  model_filter={in_cohort}
+  x_key={METADATA_COLS.date_added.key}
+  y_key={ALL_METRICS.CPS.key}
+  show_pareto_frontier
+/>
 
 <Readme>
   {#snippet title()}{/snippet}
@@ -368,15 +371,6 @@ lives in MdNote and also renders on the /tasks/md page -->
 </blockquote>
 <MdNote />
 <KappaNote warning={false} />
-
-<h2>Progress Over Time</h2>
-<p>
-  Benchmark progress since launch: each point is a model placed at its submission date.
-  The dashed step line traces the running best ("SOTA frontier") of the selected metric;
-  labeled models are those that set a new record when they were added. The plot respects
-  the compliance toggles of the metrics table above.
-</p>
-<SotaTimeline model_filter={in_cohort} style="height: 500px" />
 
 <h2>GitHub Activity</h2>
 <p>

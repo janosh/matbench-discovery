@@ -2,7 +2,15 @@ import { MODELS } from '$lib'
 import { MD_METRICS } from '$lib/labels'
 import MdPage from '$routes/tasks/md/+page.svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query, has_md_metrics, mount, mount_with_url, sorted_header } from '../index'
+import {
+  checkbox_for,
+  doc_query,
+  filter_summary_badge,
+  has_md_metrics,
+  mount,
+  mount_with_url,
+  sorted_header,
+} from '../index'
 
 describe(`MD Task Page`, () => {
   it(`renders page structure with filtered leaderboard and scatter`, () => {
@@ -20,20 +28,20 @@ describe(`MD Task Page`, () => {
       th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
     const expected = [`ΔERMSE`, `FRMSE`, `ΔADF`, `ΔvDOS`, `PMAE`, `PW1`, `CMDS`]
-    for (const header of [...expected, `Time`, `× Fastest`]) {
+    for (const header of [...expected, `Speed`, `Slowdown`]) {
       expect(headers, `missing column ${header}`).toContain(header)
     }
     // ΔRDF is hidden from the leaderboard (redundant with ΔvDOS/ΔADF, out of CMDS);
-    // the diatomics Time/× Fastest columns must not leak onto the MD page despite
+    // the diatomics Speed/Slowdown columns must not leak onto the MD page despite
     // sharing labels with the MD ones (col visibility is keyed by unique col.key)
     expect(headers).not.toContain(`ΔRDF`)
-    expect(headers.filter((header) => header === `Time`)).toHaveLength(1)
-    expect(headers.filter((header) => header === `× Fastest`)).toHaveLength(1)
+    expect(headers.filter((header) => header === `Speed`)).toHaveLength(1)
+    expect(headers.filter((header) => header === `Slowdown`)).toHaveLength(1)
 
     const headings = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)].map((h2) =>
       h2.textContent?.replaceAll(/\s+/g, ` `).trim(),
     )
-    expect(headings).toContain(`CMDS vs Time`)
+    expect(headings).toContain(`CMDS vs Speed`)
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
@@ -42,7 +50,7 @@ describe(`MD Task Page`, () => {
   it.each(Object.values(MD_METRICS))(
     `$key label points at metrics.md and has correct direction`,
     (label) => {
-      // × Fastest is computed per table view in assemble_row_data, not read from models
+      // Slowdown is computed per table view in assemble_row_data, not read from models
       const expected_path = label.key === `md_time_multiplier` ? undefined : `metrics.md`
       expect(label.path).toBe(expected_path)
       // combined_score (CMDS) is a score (higher=better); the rest are errors (lower)
@@ -51,10 +59,10 @@ describe(`MD Task Page`, () => {
     },
   )
 
-  it(`restores URL state for scatter axes and table sort`, async () => {
+  it(`restores URL state for scatter axes, table sort and filters`, async () => {
     await mount_with_url(
       MdPage,
-      `http://localhost/tasks/md?x=combined_score&y=force_rmse&sort=vdos_error&dir=asc`,
+      `http://localhost/tasks/md?x=combined_score&y=force_rmse&sort=vdos_error&dir=asc&train=-OMat24&heatmap=0`,
     )
 
     const heading = document.querySelector(`h2`)?.textContent?.replaceAll(/\s+/g, ` `)
@@ -62,5 +70,7 @@ describe(`MD Task Page`, () => {
     const header = sorted_header()
     expect(header?.textContent).toContain(`vDOS`)
     expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
+    expect(filter_summary_badge(`Training data`)).toContain(`(1)`)
+    expect(checkbox_for(`Heatmap`).checked).toBe(false)
   })
 })
