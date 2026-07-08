@@ -2,21 +2,24 @@
   import { MetricsTable, type ModelData, MODELS } from '$lib'
   import {
     MD_METRICS,
+    METADATA_COLS,
     scatter_axis_label,
     scatter_options_by_key,
     task_page_visible_cols,
   } from '$lib/labels'
-  import type { SortDir } from '$lib/types'
+  import type { SortState } from '$lib/url-state.svelte'
   import {
     CMDS_CONFIG,
     DEFAULT_CMDS_CONFIG,
     update_models_cmds,
   } from '$lib/combined-scores.svelte'
   import { DynamicScatter, RadarChart } from '$lib/plot'
+  import { make_table_filters } from '$lib/models.svelte'
   import {
     apply_weights_param,
     bind_url_params,
     sort_from_query,
+    sort_url_entries,
     valid_query_param,
     weights_to_param,
   } from '$lib/url-state.svelte'
@@ -28,11 +31,13 @@
   const has_md_metrics = (model: ModelData) =>
     model.metrics?.md != null && typeof model.metrics.md === `object`
 
-  // default to public observables: force_rmse is a maintainer-only diagnostic that
-  // future public submissions won't have, which would leave the scatter mostly empty
-  const default_scatter_x = MD_METRICS.md_pressure_error.key
-  const default_scatter_y = MD_METRICS.md_vdos_error.key
-  const default_sort: { column: string; dir: SortDir } = {
+  // headline MD view now that CMDS folds in rollout speed: a cost-vs-fidelity Pareto -
+  // wall time (x) vs CMDS (y), with marker size = model params and color = training-set
+  // size (the two scaling levers). All-public axes (force_rmse is a maintainer-only
+  // diagnostic future public submissions lack, which would leave the plot mostly empty)
+  const default_scatter_x = MD_METRICS.md_run_time_sec.key
+  const default_scatter_y = MD_METRICS.md_combined_score.key
+  const default_sort: SortState = {
     column: MD_METRICS.md_combined_score.key,
     dir: `desc`,
   }
@@ -41,18 +46,20 @@
   let scatter_y = $state(default_scatter_y)
   // default-sort by the combined MD score (CMDS), best (highest) first
   let sort = $state({ ...default_sort })
+  const filters = make_table_filters()
 
   const read_url_params = (params: URLSearchParams) => {
     scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
     scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
     sort = sort_from_query(params, default_sort)
+    filters.read(params)
     apply_weights_param(params.get(`weights`), CMDS_CONFIG, DEFAULT_CMDS_CONFIG)
   }
   bind_url_params(read_url_params, () => [
     [`x`, scatter_x, default_scatter_x],
     [`y`, scatter_y, default_scatter_y],
-    [`sort`, sort.column, default_sort.column],
-    [`dir`, sort.dir, default_sort.dir],
+    ...sort_url_entries(sort, default_sort),
+    ...filters.url_entries,
     // custom CMDS weights (vDOS,ADF,speed,pressure); omitted at defaults
     [`weights`, weights_to_param(CMDS_CONFIG, DEFAULT_CMDS_CONFIG)],
   ])
@@ -60,24 +67,26 @@
 
 <h1>Molecular Dynamics Metrics <span class="beta-badge">beta</span></h1>
 
-<MdNote />
+<p>
+  This task evaluates how well machine-learning interatomic potentials reproduce
+  structural, thermodynamic and vibrational observables of ab-initio molecular dynamics
+  (AIMD) trajectories at finite temperature. Each model runs NVT simulations from the same
+  initial structures and thermodynamic conditions as the reference first-principles
+  trajectories. The resulting trajectories are compared via radial distribution functions
+  (RDF), angular distribution functions (ADF), pressure distributions from the stress
+  tensor trace, and the vibrational density of states (vDOS) obtained from the velocity
+  autocorrelation function. Energy-fluctuation and force RMSEs are shown as
+  maintainer-computed private-label diagnostics when available, but they are excluded from
+  CMDS.
+  {#if !MODELS.some(has_md_metrics)}
+    No models have reported MD metrics yet.
+  {/if}
+</p>
 
 <div class="intro bleed-1400">
-  <p>
-    This task evaluates how well machine-learning interatomic potentials reproduce
-    structural, thermodynamic and vibrational observables of ab-initio molecular dynamics
-    (AIMD) trajectories at finite temperature. Each model runs NVT simulations from the
-    same initial structures and thermodynamic conditions as the reference first-principles
-    trajectories. The resulting trajectories are compared via radial distribution
-    functions (RDF), angular distribution functions (ADF), pressure distributions from the
-    stress tensor trace, and the vibrational density of states (vDOS) obtained from the
-    velocity autocorrelation function. Energy-fluctuation and force RMSEs are shown as
-    maintainer-computed private-label diagnostics when available, but they are excluded
-    from CMDS.
-    {#if !MODELS.some(has_md_metrics)}
-      No models have reported MD metrics yet.
-    {/if}
-  </p>
+  <!-- wrapper div: the markdown renders multiple top-level elements which would
+  otherwise each become their own flex item -->
+  <div><MdNote /></div>
   <figure class="cmds-weights">
     <RadarChart
       size={260}
@@ -98,14 +107,17 @@
     model_filter={has_md_metrics}
     col_filter={(col) => visible_cols[col.key] ?? true}
     bind:sort
+    {filters}
   />
 </section>
 
 <h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
 <p>
-  RDF, ADF and vDOS errors range from 0% (perfect match with the AIMD reference) to 100%
-  (as different from the reference as an ideal gas / non-overlapping distributions). Use
-  the axis/color/size selectors to compare models across any pair of metrics and metadata.
+  This defaults to a cost-vs-fidelity Pareto: each model's total rollout wall time against
+  its CMDS, with marker size showing model parameters and color the training-set size. Use
+  the axis/color/size selectors to compare any pair of metrics: the RDF, ADF and vDOS
+  errors range from 0% (perfect match with the AIMD reference) to 100% (as different from
+  the reference as an ideal gas / non-overlapping distributions).
 </p>
 
 <DynamicScatter
@@ -113,7 +125,9 @@
   model_filter={has_md_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
-  color_key={MD_METRICS.md_combined_score.key}
+  color_key={METADATA_COLS.n_training_materials.key}
+  initial_log={{ color: true }}
+  show_pareto_frontier
   style="height: 800px"
 />
 
@@ -124,7 +138,8 @@
     gap: 1em 2em;
     align-items: center;
   }
-  .intro > p {
+  /* caution note takes remaining width, chart column keeps its natural size */
+  .intro > div {
     flex: 1 1 30em;
   }
   .cmds-weights {

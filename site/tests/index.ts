@@ -119,6 +119,25 @@ export async function mount_with_url(
 export const sorted_header = (): HTMLTableCellElement | null =>
   document.querySelector(`thead th[aria-sort]:not([aria-sort="none"])`)
 
+// text of a table-controls filter dropdown summary (e.g. `Training data (2)`)
+export function filter_summary_badge(menu_name: string): string {
+  const summary = [...document.querySelectorAll(`details.filter-menu summary`)].find(
+    (el) => el.textContent?.includes(menu_name),
+  )
+  if (!summary) throw new Error(`No filter menu found for ${menu_name}`)
+  return summary.textContent?.trim() ?? ``
+}
+
+// find a checkbox by the text of its wrapping <label> (e.g. table-control toggles)
+export function checkbox_for(label_text: string): HTMLInputElement {
+  const label = [...document.querySelectorAll(`label`)].find((lbl) =>
+    lbl.textContent?.includes(label_text),
+  )
+  const input = label?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
+  if (!input) throw new Error(`No checkbox found for label ${label_text}`)
+  return input
+}
+
 afterEach(async () => {
   const instances = mounted_components.splice(0)
   await Promise.all(instances.map((instance) => unmount(instance)))

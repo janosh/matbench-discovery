@@ -167,7 +167,7 @@ describe(`format_train_set`, () => {
 describe(`make_combined_filter`, () => {
   it(`returns false when the user filter returns false`, () => {
     const model_filter = vi.fn().mockReturnValue(false)
-    const filter = make_combined_filter(model_filter, true, true, true)
+    const filter = make_combined_filter(model_filter, true)
     const model = { targets: `E`, training_set: [`MP 2022`] } as ModelData
 
     expect(filter(model)).toBe(false)
@@ -182,9 +182,8 @@ describe(`assemble_row_data`, () => {
     // Ensure model_key exists before checking includes
     model.model_key ? test_model_keys.includes(model.model_key) : false
 
-  // assemble rows for the two test models with show_energy_only/non_compliant/compliant all on
-  const get_test_rows = () =>
-    assemble_row_data(`unique_prototypes`, model_filter, true, true, true)
+  // assemble rows for the two test models with show_energy_only on and no model filters
+  const get_test_rows = () => assemble_row_data(`unique_prototypes`, model_filter, true)
 
   it(`returns formatted rows for selected models with expected properties`, () => {
     const rows = get_test_rows()
@@ -229,8 +228,6 @@ describe(`assemble_row_data`, () => {
           `unique_prototypes`,
           (model) => model.model_key === model_key,
           true,
-          true,
-          true,
         ),
       ).toStrictEqual([])
     } finally {
@@ -250,8 +247,7 @@ describe(`assemble_row_data`, () => {
         `unique_prototypes`,
         (model) => model.model_key?.startsWith(`${task}-time-`) ?? false,
         true,
-        true,
-        true,
+        () => true,
         Object.entries({
           Fast: 10,
           Medium: 20,
@@ -331,8 +327,7 @@ describe(`assemble_row_data`, () => {
         `unique_prototypes`,
         (model) => model.model_key === model_key,
         true,
-        true,
-        true,
+        () => true,
         test_models,
       )
 

@@ -1,6 +1,25 @@
+<script module lang="ts">
+  import type { SortState } from '$lib/url-state.svelte'
+
+  // the table's default sort; pages binding `sort` reuse this so URL sort params
+  // are omitted when the table is at its resting state
+  export const DEFAULT_TABLE_SORT: SortState = { column: `CPS`, dir: `desc` }
+
+  // theme HeatmapTable via its CSS custom props (shared with GeoOptMetricsTable):
+  // composite the app.css row stripe over the opaque sticky Model cells (which must
+  // stay opaque to occlude columns scrolling beneath them) and left-align rank digits
+  // flush with the table edge (right-aligned digits in a 2-digit-wide column read as
+  // left padding on single-digit rows)
+  export const TABLE_STYLE_VARS =
+    `--heatmap-sticky-cell-odd-bg: linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg);` +
+    `--heatmap-row-num-align: left; --heatmap-row-num-padding-left: 0;`
+</script>
+
 <script lang="ts">
   import { OrgLogos, TableControls } from '$lib'
   import { append_better_hint, metric_better_as } from '$lib/metrics'
+  import { make_table_filters } from '$lib/models.svelte'
+  import type { UrlTableFilters } from '$lib/url-state.svelte'
   import type { DiscoverySet, Label, LinkData, ModelData, SortDir } from '$lib/types'
   import type { CellSnippetArgs, Label as MattervizLabel } from 'matterviz'
   import { HeatmapTable, Icon } from 'matterviz'
@@ -19,16 +38,14 @@
     model_filter = $bindable(() => true),
     col_filter = $bindable(() => true),
     show_energy_only = $bindable(false),
-    show_non_compliant = $bindable(true),
-    show_heatmap = $bindable(true),
-    show_compliant = $bindable(true),
+    filters = make_table_filters(),
     show_selected_only = $bindable(false),
     active_files = $bindable([]),
     active_model_name = $bindable(``),
     pred_files_dropdown_pos = $bindable(null),
     selected_models = $bindable(new SvelteSet<string>()),
     column_order = $bindable([]),
-    sort = $bindable({ column: `CPS`, dir: `desc` }),
+    sort = $bindable({ ...DEFAULT_TABLE_SORT }),
     show_energy_only_toggle = false,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
@@ -37,9 +54,7 @@
     col_filter?: (col: Label) => boolean
     show_energy_only?: boolean
     show_energy_only_toggle?: boolean
-    show_non_compliant?: boolean
-    show_heatmap?: boolean
-    show_compliant?: boolean
+    filters?: UrlTableFilters
     show_selected_only?: boolean
     active_files?: { name: string; url: string }[]
     active_model_name?: string
@@ -72,8 +87,7 @@
       discovery_set,
       model_filter,
       show_energy_only,
-      show_non_compliant,
-      show_compliant,
+      filters.matches,
     ).filter((row) => !show_selected_only || selected_names.has(row.model_name))
     // cache access is untracked so callers don't subscribe to the very row signals
     // this merge writes (which would re-trigger them and double-render the table)
@@ -128,6 +142,9 @@
           better,
           description: append_better_hint(col, better),
           visible,
+          // tuck the Model cells (always adjacent to the rank column, being pinned
+          // first) against the rank numbers
+          ...(col === model_name && { style: `padding-left: 0;${col.style ?? ``}` }),
         }
       })
       // Keep the sticky model column first, preserving definition order for the rest.
@@ -241,8 +258,9 @@
     Links: links_cell,
     Org: affiliation_cell,
   }}
+  show_row_numbers
   default_num_format=".3f"
-  bind:show_heatmap
+  bind:show_heatmap={filters.show_heatmap}
   bind:column_order
   {heatmap_class}
   {header_cell}
@@ -252,15 +270,14 @@
     }
   }}
   {...rest}
+  style="{TABLE_STYLE_VARS}{rest.style ?? ``}"
 >
   {#snippet controls()}
     <TableControls
       bind:columns
       bind:show_energy_only
-      bind:show_heatmap
-      bind:show_compliant
-      bind:show_non_compliant
       bind:show_selected_only
+      {filters}
       {show_energy_only_toggle}
       {selected_count}
     />
@@ -289,6 +306,17 @@
 {/if}
 
 <style>
+  /* TODO remove both :global rules below after the next matterviz release: they
+  duplicate the --heatmap-sticky-cell-odd-bg / --heatmap-row-num-* custom props
+  passed via TABLE_STYLE_VARS, which the installed matterviz 0.4.1 doesn't support
+  yet (the vars were added to HeatmapTable after 0.4.1) */
+  :global(tbody tr:nth-child(odd) td.sticky-col) {
+    background: linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg);
+  }
+  :global(table :is(th, td).row-num-col.row-num-col) {
+    padding-left: 0;
+    text-align: left;
+  }
   .header-label {
     display: inline-block;
   }

@@ -2,8 +2,13 @@
   import { type Label, ModelCard } from '$lib'
   import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
-  import { model_is_compliant, MODELS } from '$lib/models.svelte'
-  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
+  import { MODELS } from '$lib/models.svelte'
+  import {
+    bind_url_params,
+    bool_from_param,
+    bool_url_entry,
+    valid_query_param,
+  } from '$lib/url-state.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
   import { ColorBar, Icon, pick_contrast_color } from 'matterviz'
   import { untrack } from 'svelte'
@@ -15,7 +20,6 @@
   let { data }: { data?: { initial_show_n_best?: number } } = $props()
 
   let sort_by: Label = $state(ALL_METRICS.CPS)
-  let show_non_compliant: boolean = $state(true)
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
   const min_models: number = 2
@@ -52,13 +56,13 @@
     // any non-numeric or out-of-range n_best (incl. missing param -> 0) resets
     const n_best = Math.trunc(Number(params.get(`n_best`) ?? ``))
     show_n_best = n_best >= min_models ? Math.min(n_best, MODELS.length) : initial_n_best
-    show_non_compliant = params.get(`non_compliant`) !== `0`
+    show_details = bool_from_param(params, `details`)
   }
   bind_url_params(read_url_params, () => [
     [`sort`, sort_by.key, default_sort_key],
     [`dir`, order, `desc`],
     [`n_best`, `${show_n_best}`, `${initial_n_best}`],
-    [`non_compliant`, show_non_compliant ? `` : `0`],
+    bool_url_entry(`details`, show_details),
   ])
 
   const capture_state = () => ({ show_details, sort_by, order, show_n_best })
@@ -75,11 +79,7 @@
 
   let lower_is_better = $derived(metric_better_as(sort_by.key) === `lower`)
 
-  let models = $derived(
-    MODELS.filter((model) => show_non_compliant || model_is_compliant(model)).toSorted(
-      sort_models(sort_by_path, order),
-    ),
-  )
+  let models = $derived(MODELS.toSorted(sort_models(sort_by_path, order)))
 
   let [min_val, max_val] = $derived.by(() => {
     if (!sort_by.better) return [NaN, NaN]
@@ -102,8 +102,7 @@ resolved against the wrong containing block -> off-center at 100% zoom and
 horizontal overflow at wider viewports (e.g. browser zoom < 100%) -->
 <div style="display: grid; grid-template-columns: minmax(0, 1fr)">
   <span>
-    <input type="checkbox" bind:checked={show_non_compliant} />Show non-compliant models
-    &ensp; &emsp;&emsp; Sort
+    Sort
     <input type="number" min={min_models} max={models.length} bind:value={show_n_best} />
     best models
     <span class="radio-group">
@@ -256,8 +255,5 @@ horizontal overflow at wider viewports (e.g. browser zoom < 100%) -->
   }
   input[type='number']::-webkit-inner-spin-button {
     display: none;
-  }
-  input[type='checkbox'] {
-    transform: scale(1.3);
   }
 </style>

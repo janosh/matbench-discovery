@@ -1,7 +1,7 @@
 import { MODELS } from '$lib'
 import GeoOptMetricsTable from '$lib/table/GeoOptMetricsTable.svelte'
 import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
-import { model_is_compliant } from '$lib/models.svelte'
+import { make_table_filters } from '$lib/models.svelte'
 import type { ModelData } from '$lib/types'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -9,7 +9,7 @@ import { doc_query, mount } from '../index'
 
 // mirrors the table's filters: geo-opt metrics + full_test_set discovery data
 // (energy-only models are always hidden)
-const geo_opt_row_count = (show_compliant = true, show_non_compliant = true) =>
+const geo_opt_row_count = (matches: (model: ModelData) => boolean = () => true) =>
   MODELS.filter(
     (model) =>
       model.metrics?.geo_opt != null &&
@@ -17,7 +17,7 @@ const geo_opt_row_count = (show_compliant = true, show_non_compliant = true) =>
       model.targets !== `E` &&
       typeof model.metrics?.discovery === `object` &&
       model.metrics.discovery.full_test_set &&
-      (model_is_compliant(model) ? show_compliant : show_non_compliant),
+      matches(model),
   ).length
 
 describe(`GeoOptMetricsTable`, () => {
@@ -74,10 +74,7 @@ describe(`GeoOptMetricsTable`, () => {
   })
 
   it(`sets initial sort to RMSD ascending`, async () => {
-    mount(GeoOptMetricsTable, {
-      target: document.body,
-      props: { show_compliant: true, show_non_compliant: true },
-    })
+    mount(GeoOptMetricsTable, { target: document.body })
     await tick()
 
     const rmsd_header = [...document.querySelectorAll(`th`)].find((header) =>
@@ -106,10 +103,7 @@ describe(`GeoOptMetricsTable`, () => {
     } as unknown as ModelData)
 
     try {
-      mount(GeoOptMetricsTable, {
-        target: document.body,
-        props: { show_compliant: true, show_non_compliant: true },
-      })
+      mount(GeoOptMetricsTable, { target: document.body })
       await tick()
 
       expect(document.body.textContent).not.toContain(model_key)
@@ -194,10 +188,7 @@ describe(`GeoOptMetricsTable`, () => {
   })
 
   it.each([`RMSD`, `Model`])(`sorts by %s when header is clicked`, async (col_name) => {
-    mount(GeoOptMetricsTable, {
-      target: document.body,
-      props: { show_compliant: true, show_non_compliant: true },
-    })
+    mount(GeoOptMetricsTable, { target: document.body })
     await tick()
 
     const headers = [...document.querySelectorAll(`th`)]
@@ -229,52 +220,21 @@ describe(`GeoOptMetricsTable`, () => {
   })
 
   it.each([
-    { show_compliant: true, show_non_compliant: true, desc: `all models` },
-    { show_compliant: true, show_non_compliant: false, desc: `compliant only` },
-    { show_compliant: false, show_non_compliant: true, desc: `non-compliant only` },
-    { show_compliant: false, show_non_compliant: false, desc: `no models` },
-  ])(`renders correctly with $desc`, async ({ show_compliant, show_non_compliant }) => {
-    mount(GeoOptMetricsTable, {
-      target: document.body,
-      props: { show_compliant, show_non_compliant },
-    })
+    { training: {}, desc: `no filters` },
+    { training: { MPtrj: `require` }, desc: `MPtrj-trained only` },
+    { training: { OMat24: `exclude` }, desc: `OMat24 excluded` },
+  ] as const)(`filters rows with $desc`, async ({ training }) => {
+    const filters = make_table_filters()
+    filters.training = { ...training } as typeof filters.training
+    mount(GeoOptMetricsTable, { target: document.body, props: { filters } })
     await tick()
 
     doc_query(`thead`, doc_query(`table`))
 
     const rows = document.querySelectorAll(`tbody tr`)
-    const expected_rows = geo_opt_row_count(show_compliant, show_non_compliant)
+    const expected_rows = geo_opt_row_count(filters.matches)
     // HeatmapTable may render a "no data" placeholder row when empty
     if (expected_rows === 0) expect(rows.length).toBeLessThanOrEqual(1)
     else expect(rows).toHaveLength(expected_rows)
-  })
-
-  it.each([
-    { prop: `show_compliant`, label_match: /^Compliant$|Compliant(?! only)/ },
-    { prop: `show_non_compliant`, label_match: /Non-compliant/ },
-  ])(`binds $prop prop correctly`, async ({ prop, label_match }) => {
-    const state: Record<string, boolean> = { [prop]: true }
-    mount(GeoOptMetricsTable, {
-      target: document.body,
-      props: {
-        get [prop]() {
-          return state[prop]
-        },
-        set [prop](val: boolean) {
-          state[prop] = val
-        },
-      },
-    })
-    await tick()
-
-    const labels = [...document.querySelectorAll(`label`)]
-    const label = labels.find((l) => label_match.test(l.textContent ?? ``))
-    const checkbox = label?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
-
-    expect(state[prop]).toBe(true)
-    expect(checkbox).toBeInstanceOf(HTMLInputElement)
-    checkbox?.click()
-    await tick()
-    expect(state[prop]).toBe(false)
   })
 })
