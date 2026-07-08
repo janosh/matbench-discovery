@@ -12,6 +12,9 @@ definitions:
     type: object
     properties:
       key: { type: string, description: 'Unique identifier for the metric' }
+      property:
+        type: string
+        description: 'Model-data field name when it differs from key (e.g. columns whose row key must be unique while reading a shared YAML field name like run_time_sec)'
       short: { type: string, description: 'Short label for the metric' }
       label: { type: string, description: 'Full label for the metric' }
       group: { type: string, description: 'Group header label' }
@@ -151,6 +154,8 @@ definitions:
       md_pressure_wasserstein: { $ref: '#/definitions/Label' }
       md_pressure_error: { $ref: '#/definitions/Label' }
       md_combined_score: { $ref: '#/definitions/Label' }
+      md_run_time_sec: { $ref: '#/definitions/Label' }
+      md_time_multiplier: { $ref: '#/definitions/Label' }
     required:
       - md_energy_rmse
       - md_force_rmse
@@ -161,6 +166,8 @@ definitions:
       - md_pressure_wasserstein
       - md_pressure_error
       - md_combined_score
+      - md_run_time_sec
+      - md_time_multiplier
     additionalProperties: false
 
   DatasetMetadataLabels:

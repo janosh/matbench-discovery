@@ -19,7 +19,7 @@
     show_non_compliant ? models : models.filter((mdl) => compliant_keys.has(mdl.key))
 
   // payload models arrive pre-styled (stable MODELS colors + discovery-F1-desc leaderboard
-  // order) from the figure_payload plugin. cumulative P/R keeps that default order; the rest
+  // order) from the json_payload plugin. cumulative P/R keeps that default order; the rest
   // re-rank for their figure: box + rolling by discovery MAE (best first, rolling shows the 6
   // best by default), roc by AUC, hist-clf by each model's own payload F1.
   const cum_styled = $derived(shown(cum_pr.models))

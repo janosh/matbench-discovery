@@ -173,6 +173,8 @@ metrics:
       missing_preds: 1 # count
   md:
     pred_file: models/sevennet/sevennet-l3i5/2026-06-28-sevennet_l3i5-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 54360.02 # s
     energy_rmse: 1.2403 # meV/atom
     force_rmse: 123.3479 # meV/Å
     rdf_error: 5.0235 # %
@@ -181,7 +183,6 @@ metrics:
     pressure_mae: 0.8113 # GPa
     pressure_wasserstein: 0.8154 # GPa
     pressure_error: 56.086 # %
-    combined_score: 0.779981
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048932
   diatomics:
@@ -191,15 +192,15 @@ metrics:
     run_time_sec: 2733.1
     excluded_formula_reasons:
       He-He: exploding errors
-    pbe_wall_dist_mae: 0.09945
-    pbe_energy_mae: 1.211
-    pbe_bond_length_error: 0.206
-    pbe_well_depth_error: 7.293
-    pbe_vib_freq_error: 131.4
+    pbe_wall_dist_mae: 0.09519
+    pbe_energy_mae: 1.148
+    pbe_bond_length_error: 0.1927
+    pbe_well_depth_error: 7.239
+    pbe_vib_freq_error: 148.5
     tortuosity: 1.073
     energy_diff_flips: 1.953
     energy_jump: 1.428
     force_flips: 2.058
     force_total_variation: 563.6
     force_jump: 192.5
-    pbe_force_mae: 2.668
+    pbe_force_mae: 2.647

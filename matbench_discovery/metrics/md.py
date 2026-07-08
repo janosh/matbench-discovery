@@ -1,12 +1,12 @@
 """Metrics comparing MLIP molecular dynamics trajectories to ab-initio references.
 
 Implements the finite-temperature observables proposed for the MD benchmark task
-(https://github.com/janosh/matbench-discovery/pull/344): energy/force RMSE on
-reference MD frames, radial distribution function (RDF) error, angular distribution
-function (ADF) error, pressure MAE from the stress tensor trace, vibrational density
-of states (vDOS) error from the velocity autocorrelation function, and a combined
-MD score. Also adds a Wasserstein-1 distance between pressure distributions as a
-frame-pairing-independent complement to the pressure MAE.
+(https://github.com/janosh/matbench-discovery/pull/344): radial distribution
+function (RDF) error, angular distribution function (ADF) error, pressure metrics
+from the stress tensor trace, vibrational density of states (vDOS) error from the
+velocity autocorrelation function, and private-label energy/force diagnostics.
+The combined MD score (CMDS) is computed on the fly by the site from these
+components (like CPS), never here or in model YAMLs.
 """
 
 import math
@@ -55,7 +55,14 @@ def _check_density(values: np.ndarray, label: str, *, check_area: bool = True) -
 
 
 # units of per-system metric columns shared between eval scripts and aggregation
+# (no combined_score here: CMDS is site-computed, see module docstring)
+# NOTE: these are the *model-level* units after calc_md_metrics aggregation. In the
+# per-system CSVs written by run_md_benchmark, energy_rmse/force_rmse are still in
+# eV/atom and eV/Å (calc_energy_force_rmse output); calc_md_metrics scales them x1000.
 METRIC_UNITS = {
+    "run_time_sec": "s",
+    "max_rss_gb": "GB",
+    "max_gpu_mem_gb": "GB",
     "energy_rmse": "meV/atom",
     "force_rmse": "meV/Å",
     "rdf_error": "%",
@@ -64,12 +71,13 @@ METRIC_UNITS = {
     "pressure_mae": "GPa",
     "pressure_wasserstein": "GPa",
     "pressure_error": "%",  # pressure-histogram overlap error (paper Eq. 9)
-    # 1 - mean(errors)/100, in [0,1], higher=better (no unit comment)
-    "combined_score": "",
     "n_systems": "count",
 }
+# run-provenance columns aggregated by sum/max/passthrough instead of the mean
+RUN_PROVENANCE_COLS = ("run_time_sec", "max_rss_gb", "max_gpu_mem_gb", "hardware")
+# mean-aggregated per-system error columns
 PER_SYSTEM_METRIC_COLS = tuple(
-    key for key in METRIC_UNITS if key not in ("combined_score", "n_systems")
+    key for key in METRIC_UNITS if key != "n_systems" and key not in RUN_PROVENANCE_COLS
 )
 
 
@@ -542,108 +550,44 @@ def calc_pressure_histogram_error(
     return float(50 * np.sum(np.abs(density_ref - density_pred) * np.diff(edges)))
 
 
-def calc_combined_score(
-    rdf_error: float, adf_error: float, vdos_error: float, pressure_error: float
-) -> float:
-    """Combined MD score (CMDS) in [0, 1], higher is better.
-
-    A Matbench addition aggregating the four MD errors (RDF, ADF, vDOS, pressure) into a
-    single normalized score, ``1 - mean(errors) / 100``; the paper aggregates its own
-    observables differently. All four errors must be finite and non-negative.
-    """
-    errors = np.array([rdf_error, adf_error, vdos_error, pressure_error], dtype=float)
-    if not np.all(np.isfinite(errors)):
-        raise ValueError(f"Combined score needs finite components, got {errors=}")
-    if np.any(errors < 0):
-        raise ValueError(f"Errors must be non-negative, got {errors=}")
-    return float(max(0.0, 1 - errors.mean() / 100))
-
-
-def predict_on_reference(
+def calc_energy_force_rmse(
     trajectory: TrajectoryLike, calculator: "Calculator"
-) -> dict[str, np.ndarray]:
-    """Single-point the calculator on every reference frame, returning the per-frame
-    quantities the energy/force metrics are built from: predicted potential energy
-    (``e_pred``) and summed squared force error vs the reference (``force_se``), each a
-    (n_frames,) array.
+) -> dict[str, float]:
+    """Private-label energy-fluctuation (eV/atom) and force (eV/Å) RMSE of calculator
+    single-points on labeled reference frames.
 
-    This is the one GPU-expensive step of MD evaluation. Persisting its output (two tiny
-    float arrays) lets the energy/force metric *definitions* be re-derived later on CPU
-    via ``energy_force_rmse_from_preds``, without re-running the model.
+    The energy RMSE uses per-trajectory mean-subtracted energies, i.e. the energy
+    *fluctuations* sampled along the trajectory, not absolute energies (invariant to
+    the reference's arbitrary energy zero). Forces are reference-zero-invariant, so
+    their RMSE stays absolute.
     """
     traj = _as_trajectory(trajectory)
     if traj.n_frames == 0:
         raise ValueError("Cannot evaluate a calculator on an empty trajectory")
     if traj.energy is None or traj.forces is None:
-        raise ValueError("trajectory lacks reference energy/forces for RMSE")
+        raise ValueError("trajectory lacks private reference energy/forces for RMSE")
 
-    e_pred = np.empty(traj.n_frames)
+    energy_pred = np.empty(traj.n_frames)
     force_se = np.empty(traj.n_frames)
-    for idx in range(traj.n_frames):
+    for frame_idx in range(traj.n_frames):
         # fresh Atoms (no stored results) so the calculator computes the prediction
         atoms = Atoms(
             numbers=traj.atomic_numbers,
-            positions=traj.positions[idx],
-            cell=traj.cell[idx],
+            positions=traj.positions[frame_idx],
+            cell=traj.cell[frame_idx],
             pbc=traj.pbc,
         )
         atoms.calc = calculator
-        e_pred[idx] = atoms.get_potential_energy()
-        force_se[idx] = ((atoms.get_forces() - traj.forces[idx]) ** 2).sum()
-    return {"e_pred": e_pred, "force_se": force_se}
+        energy_pred[frame_idx] = atoms.get_potential_energy()
+        force_se[frame_idx] = ((atoms.get_forces() - traj.forces[frame_idx]) ** 2).sum()
 
-
-def energy_force_rmse_from_preds(
-    trajectory: TrajectoryLike, predictions: dict[str, np.ndarray]
-) -> dict[str, float]:
-    """Energy-fluctuation (eV/atom) and force (eV/Å) RMSE from per-frame ``predictions``
-    (``predict_on_reference`` output). Pure CPU, so changing how the energy/force RMSE
-    is defined never needs a model re-run.
-
-    The energy RMSE uses per-trajectory mean-subtracted energies, i.e. the energy
-    *fluctuations* sampled along the trajectory, not absolute energies. That is the
-    physically meaningful quantity at finite T (how well the model tracks the sampled
-    PES) and is invariant to the absolute energy zero. This mean-subtracted fluctuation
-    RMSE is the Matbench variant; the paper's energy error (Eq. 1) is absolute and
-    isolated-atom-referenced. The zero matters because CFPMD-26
-    mixes DFT references across systems: the molecular crystals carry all-electron
-    energies near -600 eV/atom while the inorganics use PAW near -5 eV/atom, so a raw
-    absolute-energy RMSE is swamped by that ~600 eV/atom offset and goes model-blind.
-    Forces are reference-zero-invariant, so their RMSE stays absolute (paper Eq. 2).
-    """
-    traj = _as_trajectory(trajectory)
-    if traj.energy is None:
-        raise ValueError("trajectory lacks reference energy for RMSE")
-    e_pred, force_se = predictions["e_pred"], predictions["force_se"]
-    # guard against a stale/mismatched prediction sidecar: a wrong-length force_se
-    # would otherwise silently skew force_rmse (it's just summed), giving a
-    # plausible-but-wrong value rather than an error
-    if e_pred.shape != (traj.n_frames,) or force_se.shape != (traj.n_frames,):
-        raise ValueError(
-            f"prediction arrays {e_pred.shape=}, {force_se.shape=} don't match "
-            f"{traj.n_frames=}; stale or mismatched prediction sidecar?"
-        )
-    # subtract each trajectory's own mean so we compare energy fluctuations, not the
-    # (reference-dependent, physically arbitrary) absolute energy zero
-    pred_dev = (e_pred - e_pred.mean()) / traj.n_atoms
+    pred_dev = (energy_pred - energy_pred.mean()) / traj.n_atoms
     ref_dev = (traj.energy - traj.energy.mean()) / traj.n_atoms
     n_force_components = traj.n_frames * traj.n_atoms * 3
     return {
         "energy_rmse": float(np.sqrt(np.mean((pred_dev - ref_dev) ** 2))),
         "force_rmse": float(np.sqrt(force_se.sum() / n_force_components)),
     }
-
-
-def calc_energy_force_rmse(
-    trajectory: TrajectoryLike, calculator: "Calculator"
-) -> dict[str, float]:
-    """Energy-fluctuation (eV/atom) and force (eV/Å) RMSE of calculator single-point
-    predictions on reference MD frames. Thin wrapper over ``predict_on_reference`` +
-    ``energy_force_rmse_from_preds``; persist the former's output to avoid GPU re-runs
-    when the metric definition changes.
-    """
-    traj = _as_trajectory(trajectory)
-    return energy_force_rmse_from_preds(traj, predict_on_reference(traj, calculator))
 
 
 def matched_frame_counts(
@@ -673,8 +617,6 @@ def evaluate_md_system(
     *,
     ref_time_step_fs: float,
     pred_time_step_fs: float,
-    calculator: "Calculator | None" = None,
-    ref_predictions: "dict[str, np.ndarray] | None" = None,
     n_rdf_bins: int = 500,
     progress_label: str | None = None,
 ) -> dict[str, float]:
@@ -684,17 +626,13 @@ def evaluate_md_system(
     Both trajectories are truncated to the same total simulation time (given their
     respective time steps in fs between saved frames) before computing observables,
     matching the paper's same-simulation-length protocol. Pressure metrics are NaN
-    when either trajectory lacks stress data. Energy and force RMSE on the full
-    reference trajectory are included when ``ref_predictions`` (from
-    ``predict_on_reference``) or a ``calculator`` to compute them is passed.
+    when either trajectory lacks stress data.
 
     Args:
         ref_trajectory: Ab-initio reference trajectory.
         pred_trajectory: Model-predicted trajectory.
         ref_time_step_fs: Time between saved reference frames in fs.
         pred_time_step_fs: Time between saved predicted frames in fs.
-        calculator: Optional model calculator for energy/force RMSE.
-        ref_predictions: Optional cached predictions from ``predict_on_reference``.
         n_rdf_bins: Number of RDF histogram bins.
         progress_label: Optional label for coarse per-metric progress logging.
     """
@@ -747,12 +685,6 @@ def evaluate_md_system(
             ("pressure_mae", "pressure_wasserstein", "pressure_error"), float("nan")
         )
 
-    log_progress("energy/force RMSE")
-    if ref_predictions is None and calculator is not None:
-        ref_predictions = predict_on_reference(ref, calculator)
-    if ref_predictions is not None:
-        metrics |= energy_force_rmse_from_preds(ref, ref_predictions)
-
     log_progress("metrics done")
     return metrics
 
@@ -774,16 +706,22 @@ def combine_per_system_metrics(frames: Sequence[pd.DataFrame]) -> pd.DataFrame:
     return df_all.drop_duplicates(subset="system", keep="last").set_index("system")
 
 
-def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
+def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
     """Aggregate per-system MD metric rows (one row per system with a subset of
     PER_SYSTEM_METRIC_COLS columns) into model-level metrics.
 
     Means are taken over systems, skipping NaNs (e.g. systems without stress data).
-    When RDF, ADF, vDOS and pressure errors are all available and finite,
-    ``combined_score`` (CMDS) is 1 - their simple mean / 100, computed from model-level
-    mean errors (a [0,1] score, higher=better).
-    Per-system energy/force RMSE rows are in eV but reported here in meV for readability
-    (fluctuation energy RMSE is ~1e-3 eV/atom), matching METRIC_UNITS.
+    The combined MD score (CMDS) is deliberately absent: it is site-computed (see
+    module docstring). Private-label energy/force RMSE rows are in eV but reported
+    here in meV for readability.
+
+    Run provenance columns (RUN_PROVENANCE_COLS) aggregate differently:
+    ``run_time_sec`` is summed over systems (parallel per-system jobs ~ one serial
+    sweep, mirroring the diatomics shard merge), the memory peaks take the max over
+    systems (the largest system sets the hardware requirement) and ``hardware``
+    passes through. All are all-or-nothing like the private-label diagnostics: a
+    partial sum/max or mixed-GPU label would misrepresent the model's cost, so they
+    are only published when every system row agrees.
     """
     metric_cols = [col for col in PER_SYSTEM_METRIC_COLS if col in df_md]
     if not metric_cols:
@@ -791,24 +729,46 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float]:
             f"No recognized MD metric columns in {list(df_md.columns)=}, "
             f"expected a subset of {PER_SYSTEM_METRIC_COLS}"
         )
-    metrics = {
+    metrics: dict[str, float | str] = {}
+    # hardware is uniform when every row has the same non-null label; an incomplete or
+    # mixed column also drops the GPU-dependent costs (summed wall time, peak VRAM): a
+    # total over an H200 and an A100 (or rows of unknown provenance) would misrepresent
+    # the model's cost with no hardware label left to qualify it. Host RSS is kept: it
+    # reflects model/system size, not the GPU.
+    hardware_uniform = True
+    if "hardware" in df_md:
+        hardware_vals = df_md["hardware"].unique()
+        hardware_uniform = len(hardware_vals) == 1 and pd.notna(hardware_vals[0])
+        if hardware_uniform:
+            metrics["hardware"] = str(hardware_vals[0])
+    for col, agg, gpu_dependent in (
+        ("run_time_sec", "sum", True),
+        ("max_rss_gb", "max", False),
+        ("max_gpu_mem_gb", "max", True),
+    ):
+        if gpu_dependent and not hardware_uniform:
+            continue
+        if col in df_md and df_md[col].notna().all():
+            metrics[col] = float(df_md[col].agg(agg))
+    metrics |= {
         col: float(df_md[col].mean())
         * (1000 if col in ("energy_rmse", "force_rmse") else 1)
         for col in metric_cols
     }
-    component_errors = [
-        metrics.get(key, float("nan"))
-        for key in ("rdf_error", "adf_error", "vdos_error", "pressure_error")
-    ]
-    if np.all(np.isfinite(component_errors)):
-        metrics["combined_score"] = calc_combined_score(*component_errors)
+    # private-label diagnostics must cover every system or not be published at all: a
+    # NaN-skipping subset mean (mixed runs with/without a private ref) would silently
+    # misrepresent the model while n_systems suggests full coverage. (Pressure NaNs
+    # differ: stress-less systems are NaN for every model alike, means stay comparable.)
+    for col in ("energy_rmse", "force_rmse"):
+        if col in metrics and df_md[col].isna().any():
+            del metrics[col]
     metrics["n_systems"] = len(df_md)
     return metrics
 
 
 def write_metrics_to_yaml(
     model: "Model",
-    metrics: dict[str, float],
+    metrics: dict[str, float | str],
     pred_file_path: str | None = None,
     pred_file_url: str | None = None,
 ) -> dict[str, Any]:
@@ -823,9 +783,10 @@ def write_metrics_to_yaml(
     for key, value in metrics.items():
         if key == "n_systems":
             yaml_metrics[key] = int(value)
+        elif isinstance(value, str):  # e.g. hardware
+            yaml_metrics[key] = value
         else:
-            # finer rounding for the [0,1] combined_score keeps close models distinct
-            yaml_metrics[key] = float(round(value, 6 if key == "combined_score" else 4))
+            yaml_metrics[key] = float(round(value, 4))
         if unit := METRIC_UNITS.get(key):
             yaml_metrics.yaml_add_eol_comment(unit, key, column=1)
 

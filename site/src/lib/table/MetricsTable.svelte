@@ -5,6 +5,7 @@
   import type { CellSnippetArgs, Label as MattervizLabel } from 'matterviz'
   import { HeatmapTable, Icon } from 'matterviz'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
+  import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
   import { SvelteSet } from 'svelte/reactivity'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '../labels'
@@ -55,28 +56,56 @@
 
   let selected_count = $derived(selected_models.size)
 
-  let metrics_data = $derived(
-    assemble_row_data(
+  // Reuse one row object per model across rebuilds: HeatmapTable keys its {#each}
+  // by row-object identity, so its flip animation only runs when the SAME objects
+  // reorder. Without this cache, every CPS/CMDS weight change rebuilds all rows and
+  // re-sorts happen as delete+recreate with no row-movement animation. Cached rows
+  // must be $state proxies: in-place updates on plain objects wouldn't trigger
+  // fine-grained re-renders of changed cells (same object identity = no signal).
+  type MetricsRow = ReturnType<typeof assemble_row_data>[number]
+  const row_cache = new Map<string, MetricsRow>()
+  function build_rows(): MetricsRow[] {
+    // tracked snapshot of selections: reads inside the untrack block below wouldn't
+    // subscribe, but selection changes must re-run this sync
+    const selected_names = new Set(selected_models)
+    const fresh_rows = assemble_row_data(
       discovery_set,
       model_filter,
       show_energy_only,
       show_non_compliant,
       show_compliant,
-    )
-      .filter((row) => {
-        // If show_selected_only is true, only show selected models
-        if (show_selected_only) {
-          return selected_models.has(row.model_name)
-        }
-        return true
-      })
-      .map((row) => {
-        const is_selected = selected_models.has(row.model_name)
+    ).filter((row) => !show_selected_only || selected_names.has(row.model_name))
+    // cache access is untracked so callers don't subscribe to the very row signals
+    // this merge writes (which would re-trigger them and double-render the table)
+    return untrack(() =>
+      fresh_rows.map((row) => {
         // Only apply selected styles when not filtering to show only selected models
-        row.class = is_selected && !show_selected_only ? `highlight` : null
-        return row
+        row.class =
+          !show_selected_only && selected_names.has(row.model_name) ? `highlight` : null
+        const cached = row_cache.get(row.model_name)
+        if (!cached) {
+          const proxied = $state(row) // deep proxy for fine-grained cell updates
+          row_cache.set(row.model_name, proxied)
+          return proxied
+        }
+        // blank keys absent from the fresh row (e.g. after a discovery-set switch);
+        // undefined renders/sorts like a missing key and avoids dynamic `delete`
+        for (const key of Object.keys(cached)) {
+          if (!(key in row)) (cached as Record<string, unknown>)[key] = undefined
+        }
+        return Object.assign(cached, row)
       }),
-  )
+    )
+  }
+  // initialized eagerly (so SSR/prerendered HTML isn't empty), then synced by
+  // $effect.pre. NOT a $derived: the cache merge writes $state proxies, and state
+  // writes during derived evaluation schedule a second render flush -- the table then
+  // reconciled twice per weight change and the second pass cancelled the first's flip
+  // animations (rows jumped instantly). $effect.pre settles everything in one flush.
+  let metrics_data = $state(build_rows())
+  $effect.pre(() => {
+    metrics_data = build_rows()
+  })
   let columns = $derived(
     [
       ...Object.values(ALL_METRICS),
@@ -165,8 +194,11 @@
 />
 
 {#snippet affiliation_cell({ row }: CellSnippetArgs)}
-  {@const model = row as ModelData}
-  <OrgLogos org_logos={model.org_logos ?? []} authors={model.authors ?? []} />
+  {@const { org_logos = [], authors = [] } = row as Pick<
+    ModelData,
+    `org_logos` | `authors`
+  >}
+  <OrgLogos {org_logos} {authors} />
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}

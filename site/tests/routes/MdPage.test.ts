@@ -19,14 +19,21 @@ describe(`MD Task Page`, () => {
     const headers = [...table.querySelectorAll(`th`)].map((th) =>
       th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
-    for (const header of [`ΔRDF`, `ΔADF`, `ΔvDOS`, `PMAE`, `PW1`, `CMDS`]) {
+    const expected = [`ΔERMSE`, `FRMSE`, `ΔADF`, `ΔvDOS`, `PMAE`, `PW1`, `CMDS`]
+    for (const header of [...expected, `Time`, `× Fastest`]) {
       expect(headers, `missing column ${header}`).toContain(header)
     }
+    // ΔRDF is hidden from the leaderboard (redundant with ΔvDOS/ΔADF, out of CMDS);
+    // the diatomics Time/× Fastest columns must not leak onto the MD page despite
+    // sharing labels with the MD ones (col visibility is keyed by unique col.key)
+    expect(headers).not.toContain(`ΔRDF`)
+    expect(headers.filter((header) => header === `Time`)).toHaveLength(1)
+    expect(headers.filter((header) => header === `× Fastest`)).toHaveLength(1)
 
     const headings = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)].map((h2) =>
       h2.textContent?.replaceAll(/\s+/g, ` `).trim(),
     )
-    expect(headings).toContain(`ΔRDF vs FRMSE`)
+    expect(headings).toContain(`ΔvDOS vs ΔP`)
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
@@ -35,7 +42,9 @@ describe(`MD Task Page`, () => {
   it.each(Object.values(MD_METRICS))(
     `$key label points at metrics.md and has correct direction`,
     (label) => {
-      expect(label.path).toBe(`metrics.md`)
+      // × Fastest is computed per table view in assemble_row_data, not read from models
+      const expected_path = label.key === `md_time_multiplier` ? undefined : `metrics.md`
+      expect(label.path).toBe(expected_path)
       // combined_score (CMDS) is a score (higher=better); the rest are errors (lower)
       const expected = label.key === `combined_score` ? `higher` : `lower`
       expect(label.better).toBe(expected)
@@ -45,13 +54,13 @@ describe(`MD Task Page`, () => {
   it(`restores URL state for scatter axes and table sort`, async () => {
     await mount_with_url(
       MdPage,
-      `http://localhost/tasks/md?x=combined_score&y=force_rmse&sort=rdf_error&dir=asc`,
+      `http://localhost/tasks/md?x=combined_score&y=force_rmse&sort=vdos_error&dir=asc`,
     )
 
     const heading = document.querySelector(`h2`)?.textContent?.replaceAll(/\s+/g, ` `)
     expect(heading).toContain(`FRMSE vs CMDS`)
     const header = sorted_header()
-    expect(header?.textContent).toContain(`RDF`)
+    expect(header?.textContent).toContain(`vDOS`)
     expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
   })
 })

@@ -1,7 +1,8 @@
 import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
-import { mount, tick } from 'svelte'
+import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
+import { mount } from '../index'
 
 // Models carry values for the default axes (x=κ_SRME, y=CPS, color=F1, size=Params)
 const mock_models: ModelData[] = [

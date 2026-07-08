@@ -1,13 +1,17 @@
 """Tests for molecular dynamics rollout helpers."""
 
 import hashlib
+import json
 import os
+import platform
 import shlex
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+from typing import Any
 
 import ase.io
+import h5py
 import numpy as np
 import pandas as pd
 import pytest
@@ -36,8 +40,8 @@ from matbench_discovery.trajectory import Trajectory
 
 def test_reference_h5_roundtrip(tmp_path: Path) -> None:
     """write_reference_h5 then list_reference_systems / read_reference_trajectory
-    round-trip preserves frames, dt_fs and temperature; missing systems raise;
-    max_frames caps reads; an empty entries dict is rejected.
+    round-trip preserves public frame data, dt_fs and temperature; missing systems
+    raise; max_frames caps reads; an empty entries dict is rejected.
     """
     ref_file = str(tmp_path / "ref.h5")
     traj_a = Trajectory.from_ase(
@@ -69,7 +73,9 @@ def test_reference_h5_roundtrip(tmp_path: Path) -> None:
     assert dt_fs == 1.5
     assert temperature == 500.0
     np.testing.assert_array_equal(traj.positions, traj_b.positions)
-    np.testing.assert_array_equal(traj.forces, traj_b.forces)
+    assert traj.energy is None
+    assert traj.forces is None
+    np.testing.assert_array_equal(traj.stress, traj_b.stress)
 
     # max_frames only reads the leading frames (cheap head reads of huge references)
     capped, _dt, _temp = read_reference_trajectory(ref_file, "sysA_300K", max_frames=3)
@@ -149,7 +155,6 @@ def test_md_pipeline_end_to_end(tmp_path: Path) -> None:
         pred_traj_io,
         ref_time_step_fs=5 * 0.25,
         pred_time_step_fs=10 * 0.25,
-        calculator=EMT(),
         n_rdf_bins=100,
     )
 
@@ -160,14 +165,11 @@ def test_md_pipeline_end_to_end(tmp_path: Path) -> None:
     assert 0 < system_metrics["vdos_error"] < 100
     assert 0 <= system_metrics["pressure_mae"] < 5
     assert 0 <= system_metrics["pressure_wasserstein"] < 5
-    # reference labels come from the same EMT calculator -> zero RMSE
-    assert system_metrics["energy_rmse"] == pytest.approx(0, abs=1e-12)
-    assert system_metrics["force_rmse"] == pytest.approx(0, abs=1e-12)
 
     df_md = pd.DataFrame([system_metrics])
     model_metrics = md_metrics.calc_md_metrics(df_md)
     assert model_metrics["n_systems"] == 1
-    assert 0 <= model_metrics["combined_score"] <= 1
+    assert "combined_score" not in model_metrics  # CMDS is site-computed, not stored
 
 
 def make_reference_h5(tmp_path: Path, *, system: str = "bulkCu_300K_test") -> str:
@@ -179,6 +181,24 @@ def make_reference_h5(tmp_path: Path, *, system: str = "bulkCu_300K_test") -> st
     ref_file = str(tmp_path / "ref.h5")
     # dt = saved-frame cadence = time_step_fs * record_interval = 0.25 * 1
     write_reference_h5(ref_file, [(system, Trajectory.from_ase(ref), 0.25, 300.0)])
+    return ref_file
+
+
+def make_private_reference_h5(
+    tmp_path: Path, *, system: str = "bulkCu_300K_test", atoms: Atoms | None = None
+) -> str:
+    """Tiny private reference HDF5 retaining energy/force labels for diagnostics."""
+    if atoms is None:
+        atoms = bulk("Cu", cubic=True) * (2, 2, 2)
+    ref = Trajectory.from_ase(
+        run_nvt_md(atoms, EMT(), temperature_kelvin=300, n_steps=80, record_interval=1)
+    )
+    ref_file = str(tmp_path / "private-ref.h5")
+    with h5py.File(ref_file, "w") as file:
+        group = file.create_group(system)
+        ref.write_to_h5_group(group)
+        group.attrs["dt_fs"] = 0.25
+        group.attrs["temperature_kelvin"] = 300.0
     return ref_file
 
 
@@ -208,37 +228,96 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
         "rdf_error",
         "adf_error",
         "vdos_error",
-        "energy_rmse",
-        "force_rmse",
+        "pressure_mae",
+        "pressure_wasserstein",
+        "pressure_error",
     }
     assert metric_cols <= set(df_md.columns)
 
     if dry_run:
         assert not out_dir.exists()  # dry run must not write outputs
+        assert "run_time_sec" not in df_md  # in-memory rollout leaves no sidecar
         return
 
     assert (out_dir / f"{today}-emt-md-metrics.csv.gz").is_file()
     rollout = out_dir / "bulkCu_300K_test-nvt-emt.extxyz"
-    refeval = out_dir / "bulkCu_300K_test-nvt-emt-refeval.npz"
     assert rollout.is_file()
-    assert refeval.is_file()
-    # second run reuses the existing rollout and reference single-points
-    mtimes = {path: path.stat().st_mtime for path in (rollout, refeval)}
-    run()
-    assert {path: path.stat().st_mtime for path in mtimes} == mtimes
+    # completed rollout leaves a run-info sidecar whose cost lands in the CSV row
+    run_info_file = out_dir / "bulkCu_300K_test-nvt-emt-run-info.json"
+    assert run_info_file.is_file()
+    run_info = json.loads(run_info_file.read_text())
+    # audit-only provenance stays in the sidecar (not copied into CSV rows)
+    assert {"completed_at", "hostname", "versions"} <= set(run_info)
+    assert run_info["versions"]["python"] == platform.python_version()
+    assert df_md.loc["bulkCu_300K_test", "run_time_sec"] > 0
+    assert isinstance(df_md.loc["bulkCu_300K_test", "hardware"], str)
+    assert df_md.loc["bulkCu_300K_test", "n_atoms"] == 32  # 2x2x2 cubic Cu cell
+    if sys.platform != "win32":  # Windows lacks the resource module
+        assert df_md.loc["bulkCu_300K_test", "max_rss_gb"] > 0
+    # second run reuses the existing rollout but still reports its recorded cost
+    rollout_mtime = rollout.stat().st_mtime
+    df_rerun = run()
+    assert rollout.stat().st_mtime == rollout_mtime
+    assert df_rerun.loc["bulkCu_300K_test", "run_time_sec"] == pytest.approx(
+        df_md.loc["bulkCu_300K_test", "run_time_sec"]
+    )
 
-    ref_trajectory, _, _ = read_reference_trajectory(ref_file, "bulkCu_300K_test")
-    refeval.write_bytes(b"not a complete npz")
-    run()
-    with np.load(refeval, allow_pickle=False) as cached:
-        e_pred = cached["e_pred"].copy()
-        force_se = cached["force_se"].copy()
-        assert int(cached["n_atoms"]) == ref_trajectory.n_atoms
 
-    np.savez(refeval, e_pred=e_pred, force_se=force_se, n_atoms=-1)
-    run()
-    with np.load(refeval, allow_pickle=False) as cached:
-        assert int(cached["n_atoms"]) == ref_trajectory.n_atoms
+def test_run_md_benchmark_private_ref_adds_energy_force_rmse(tmp_path: Path) -> None:
+    """Private labeled reference file enables E/F diagnostics in benchmark rows."""
+    ref_file = make_reference_h5(tmp_path)
+    private_ref_file = make_private_reference_h5(tmp_path)
+
+    df_private_md = run_md_benchmark(
+        calculator=EMT(),
+        model_key="emt",
+        out_dir=str(tmp_path / "out"),
+        ref_file=ref_file,
+        private_ref_file=private_ref_file,
+        n_steps=20,
+        time_step_fs=1,
+        record_interval=1,
+        dry_run=True,
+    )
+
+    assert {"energy_rmse", "force_rmse"} <= set(df_private_md.columns)
+    assert np.isfinite(df_private_md.loc["bulkCu_300K_test", "energy_rmse"])
+    assert np.isfinite(df_private_md.loc["bulkCu_300K_test", "force_rmse"])
+
+
+@pytest.mark.parametrize(
+    ("private_kwargs", "err_cls", "match"),
+    [
+        # stale file: right group name but different (4 vs 32 atom) structure
+        ({"atoms": bulk("Cu", cubic=True)}, ValueError, "different atoms than the"),
+        # incomplete file: system missing entirely
+        ({"system": "other_system"}, KeyError, "bulkCu_300K_test"),
+    ],
+)
+def test_run_md_benchmark_rejects_bad_private_ref(
+    tmp_path: Path,
+    private_kwargs: dict[str, Any],
+    err_cls: type[Exception],
+    match: str,
+) -> None:
+    """A stale or incomplete private reference must fail loud, not yield
+    plausible-but-wrong RMSEs or partial E/F coverage.
+    """
+    ref_file = make_reference_h5(tmp_path)
+    private_ref_file = make_private_reference_h5(tmp_path, **private_kwargs)
+
+    with pytest.raises(err_cls, match=match):
+        run_md_benchmark(
+            calculator=EMT(),
+            model_key="emt",
+            out_dir=str(tmp_path / "out"),
+            ref_file=ref_file,
+            private_ref_file=private_ref_file,
+            n_steps=20,
+            time_step_fs=1,
+            record_interval=1,
+            dry_run=True,
+        )
 
 
 def test_run_md_benchmark_resume_matches_single_run(
@@ -289,7 +368,11 @@ def test_run_md_benchmark_resume_matches_single_run(
     assert resumed is not None, "resume loop did not complete"
     assert saves["n"] >= 3, "test did not exercise interruptions"
 
-    numeric_cols = single.select_dtypes("number").columns
+    # wall time and memory high-water marks are process state, not trajectory
+    # observables - deterministic reproduction doesn't apply to them
+    numeric_cols = single.select_dtypes("number").columns.drop(
+        ["run_time_sec", "max_rss_gb", "max_gpu_mem_gb"], errors="ignore"
+    )
     for col in numeric_cols:
         np.testing.assert_allclose(
             resumed[col].to_numpy(),
@@ -305,6 +388,8 @@ def test_run_md_benchmark_resume_matches_single_run(
     assert not (out_dir / "bulkCu_300K_test-nvt-emt.part.extxyz").is_file()
     assert not (out_dir / "bulkCu_300K_test-nvt-emt.extxyz.ckpt.npz").is_file()
     assert len(read_trajectory(str(rollout))) == 21
+    # rollout wall time accumulated across the interrupted sessions
+    assert resumed.loc["bulkCu_300K_test", "run_time_sec"] > 0
 
 
 def test_md_convert_resolve_settings() -> None:
@@ -407,6 +492,28 @@ def test_run_md_benchmark_rejects_empty_or_unknown_systems(
             out_dir=str(tmp_path / "out"),
             ref_file=ref_file,
             systems=systems,
+        )
+
+
+@pytest.mark.parametrize("dt_factor", [5.0, 0.2])
+def test_run_md_benchmark_rejects_mislabeled_reference_dt(
+    tmp_path: Path, dt_factor: float
+) -> None:
+    """Bad reference dt_fs attrs should fail before rollout."""
+    ref_file = make_reference_h5(tmp_path)
+    with h5py.File(ref_file, "r+") as file:
+        file["bulkCu_300K_test"].attrs["dt_fs"] *= dt_factor
+
+    with pytest.raises(ValueError, match="mislabeled or stale"):
+        run_md_benchmark(
+            calculator=EMT(),
+            model_key="emt",
+            out_dir=str(tmp_path / "out"),
+            ref_file=ref_file,
+            n_steps=20,
+            time_step_fs=1,
+            record_interval=1,
+            dry_run=True,
         )
 
 
@@ -628,15 +735,20 @@ def test_run_md_cli_write_yaml_skips_non_submission_model(
     run_md = import_repo_script("run_md", "models/run_md.py")
 
     # avoid the real calculator + rollout pipeline; return metrics calc_md_metrics reads
+    captured_kwargs: dict[str, object] = {}
+
+    def fake_run_md_benchmark(**kwargs: object) -> pd.DataFrame:
+        """Capture runner kwargs while returning minimal aggregateable metrics."""
+        captured_kwargs.update(kwargs)
+        return pd.DataFrame({"rdf_error": [1.0], "vdos_error": [2.0]})
+
     monkeypatch.setattr(run_md, "load_calculator", lambda *_a, **_k: EMT())
-    monkeypatch.setattr(
-        run_md,
-        "run_md_benchmark",
-        lambda **_kwargs: pd.DataFrame({"rdf_error": [1.0], "vdos_error": [2.0]}),
-    )
+    monkeypatch.setattr(run_md, "run_md_benchmark", fake_run_md_benchmark)
+    monkeypatch.setenv("MBD_MD_PRIVATE_REF_FILE", "/private/ref.h5")
     monkeypatch.setattr(sys, "argv", ["run_md", "--model", "emt", "--write-yaml"])
 
     assert run_md.main() == 0  # would raise ValueError without the non-enum guard
+    assert captured_kwargs["private_ref_file"] == "/private/ref.h5"
 
 
 @pytest.mark.parametrize(

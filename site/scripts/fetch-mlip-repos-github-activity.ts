@@ -72,7 +72,9 @@ const load_repos_from_models = async (): Promise<ModelInfo[]> => {
           })
         }
       } catch (error) {
-        console.warn(`  Warning: ${yml_file} - ${(error as Error).message}`)
+        console.warn(
+          `  Warning: ${yml_file} - ${error instanceof Error ? error.message : error}`,
+        )
       }
     }
   }
@@ -172,7 +174,7 @@ const get_github_stats = async (
     )
     return data
   } catch (error) {
-    console.error(`✗ ${repo}:`, (error as Error).message)
+    console.error(`✗ ${repo}:`, error instanceof Error ? error.message : error)
     return null
   }
 }

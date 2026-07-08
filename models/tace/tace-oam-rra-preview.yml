@@ -40,6 +40,8 @@ targets: EFS_G # see `Targets` enum in matbench_discovery/enums.py
 model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
 model_params: 213690158
 trained_for_benchmark: false
+status: superseded
+superseded_by: tece-oam-rra-1.0
 n_estimators: 1
 
 license:
@@ -186,7 +188,6 @@ metrics:
     pressure_mae: 0.7995 # GPa
     pressure_wasserstein: 0.805 # GPa
     pressure_error: 45.5266 # %
-    combined_score: 0.819756
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66085361
 
@@ -195,15 +196,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66108713
     hardware: NVIDIA H200
     run_time_sec: 4432.1
-    pbe_wall_dist_mae: 0.3877
-    pbe_energy_mae: 4.929
-    pbe_bond_length_error: 0.6004
-    pbe_well_depth_error: 0.7579
-    pbe_vib_freq_error: 95.94
+    pbe_wall_dist_mae: 0.4054
+    pbe_energy_mae: 4.896
+    pbe_bond_length_error: 0.6183
+    pbe_well_depth_error: 0.751
+    pbe_vib_freq_error: 86.3
     tortuosity: 1.202
     energy_diff_flips: 2.736
     energy_jump: 1.197
     force_flips: 2.851
     force_total_variation: 277.2
     force_jump: 33.68
-    pbe_force_mae: 2.685
+    pbe_force_mae: 2.676

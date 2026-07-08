@@ -97,7 +97,7 @@
     scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
   }
   bind_url_params(read_url_params, () => [
-    [`model`, selected_key ?? ``, default_selected_key],
+    [`model`, selected_key, default_selected_key],
     [`model_sort`, sort_mode, default_sort_mode],
     [`x`, scatter_x, default_scatter_x],
     [`y`, scatter_y, default_scatter_y],
@@ -109,7 +109,7 @@
 <section class="full-bleed">
   <MetricsTable
     model_filter={has_phonon_metrics}
-    col_filter={(col) => visible_cols[col.label] ?? true}
+    col_filter={(col) => visible_cols[col.key] ?? true}
   />
 </section>
 

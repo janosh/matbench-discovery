@@ -1,9 +1,9 @@
 import type { Author } from '$lib'
 import type { OrgLogo } from '$lib/labels'
 import OrgLogos from '$lib/model/OrgLogos.svelte'
-import { flushSync, mount } from 'svelte'
+import { flushSync } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, mount } from '../index'
 
 describe(`OrgLogos.svelte`, () => {
   // mount, hover the preview, and return the resulting tooltip content element

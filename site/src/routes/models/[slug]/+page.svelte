@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AuthorBrief, DATASETS, PtableInset } from '$lib'
+  import { AuthorBrief, DATASETS, ModelRankCard, PtableInset, SelectToggle } from '$lib'
   import {
     discovery_task_tooltips,
     model_type_tooltips,
@@ -17,6 +17,8 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import { CopyButton } from 'svelte-multiselect'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
+  import { SvelteSet } from 'svelte/reactivity'
+  import type { LoadStatus } from '$lib/asset-loader'
   import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
 
   type ModelInfoItem = readonly [key: string, value: string, title?: string | null]
@@ -26,6 +28,19 @@
 
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
+  // energy-parity tab bar: only the active plot is visible; a tab's plot mounts on
+  // first activation and stays mounted (hidden) after, so toggling never reloads
+  const energy_parity_options = [
+    { value: `e-form`, label: `ML vs DFT Formation Energies` },
+    { value: `each`, label: `ML vs DFT Convex Hull Distance` },
+  ] as const
+  let energy_parity_tab = $state(`e-form`)
+  const mounted_energy_tabs = new SvelteSet([`e-form`])
+  // per-tab load status, reported by each EnergyParityPlot (drives button spinners)
+  let energy_parity_statuses = $state<Record<string, LoadStatus>>({})
+  $effect(() => {
+    mounted_energy_tabs.add(energy_parity_tab)
+  })
   let { model } = $derived(data)
   let added_ago = $derived(format_relative_time(model.date_added))
   let published_ago = $derived(format_relative_time(model.date_published))
@@ -71,281 +86,309 @@
     capture: () => ({ color_scale }),
     restore: (values: { color_scale: D3InterpolateName }) => ({ color_scale } = values),
   }
+
+  let missing_preds = $derived(
+    typeof model.metrics?.discovery === `object`
+      ? model.metrics.discovery.unique_prototypes?.missing_preds
+      : undefined,
+  )
 </script>
 
-{#if data.model}
-  {@const discovery = model.metrics?.discovery}
-  {@const { missing_preds } =
-    (typeof discovery === `object` ? discovery?.unique_prototypes : undefined) ?? {}}
-  <div class="model-detail">
-    <h1 style="font-size: 2.5em; margin: 0">{model.model_name}</h1>
+<div class="model-detail">
+  <h1 style="font-size: 2.5em; margin: 0">{model.model_name}</h1>
 
-    <section class="meta-info">
-      <span>
-        <Icon icon="Versions" />
-        Version: {#if model.repo?.startsWith(`http`)}
-          <a
-            href="{model.repo}/releases/tag/{model.model_version}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {model.model_version}
-          </a>
-        {:else}
-          {model.model_version}
-        {/if}
-      </span>
-
-      <span title={added_ago} {@attach tooltip()}
-        ><Icon icon="Calendar" />
-        Added: {model.date_added}
-      </span>
-
-      <span title={published_ago} {@attach tooltip()}>
-        <Icon icon="CalendarCheck" /> Published: {model.date_published}
-      </span>
-
-      <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
-        <Icon icon="NeuralNetwork" />
-        {format_num(model.model_params, `.3~s`)}
-        parameters
-      </span>
-
-      {#if model.n_estimators > 1}
-        <span><Icon icon="Forest" /> Ensemble of {model.n_estimators} models</span>
-      {/if}
-
-      {#if missing_preds != undefined}
-        <span
-          {@attach tooltip({
-            content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances.`,
-          })}
+  <section class="meta-info">
+    <span>
+      <Icon icon="Versions" />
+      Version: {#if model.repo?.startsWith(`http`)}
+        <a
+          href="{model.repo}/releases/tag/{model.model_version}"
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          <Icon icon="MissingMetadata" />
-          Missing preds: {format_num(missing_preds, `,.0f`)}
-          {#if missing_preds != 0}
-            <small>
-              ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})
-            </small>
-          {/if}
-        </span>
+          {model.model_version}
+        </a>
+      {:else}
+        {model.model_version}
       {/if}
+    </span>
 
-      {#if model.pypi}
-        <code style="padding: 0 4pt; place-content: center">
-          pip install {model.pypi.split(`/`).pop()}
-          <CopyButton
-            content="pip install {model.pypi.split(`/`).pop()}"
-            labels={{
-              ready: { icon: `Copy`, text: `` },
-              success: { icon: `Check`, text: `` },
-              error: { icon: `Alert`, text: `` },
-            }}
-          />
-        </code>
-      {/if}
-    </section>
+    <span title={added_ago} {@attach tooltip()}
+      ><Icon icon="Calendar" />
+      Added: {model.date_added}
+    </span>
 
-    <section class="links" {@attach tooltip()}>
-      {#each external_links as { href, icon, label, title } (label)}
-        {#if href?.startsWith(`http`)}
-          <a {href} target="_blank" rel="noopener noreferrer" {title}>
-            <Icon {icon} />
-            {label}
-          </a>
-        {/if}
-      {/each}
-      {#if model.metrics}
-        {@const pred_files = get_pred_file_urls(model)}
-        {#if pred_files.length > 0}
-          <details
-            class="pred-files"
-            {@attach click_outside({ callback: (node) => (node.open = false) })}
-          >
-            <summary>
-              <Icon icon="Graph" /> Predictions
-            </summary>
-            <div class="dropdown">
-              {#each pred_files as { name, url } (url)}
-                <a href={url} target="_blank" rel="noopener noreferrer">
-                  {@html name}
-                </a>
-              {/each}
-            </div>
-          </details>
-        {/if}
-      {/if}
-    </section>
+    <span title={published_ago} {@attach tooltip()}>
+      <Icon icon="CalendarCheck" /> Published: {model.date_published}
+    </span>
 
-    <EnergyParityPlot {model} energy_kind="e-form" />
-    <EnergyParityPlot {model} energy_kind="each" />
+    <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
+      <Icon icon="NeuralNetwork" />
+      {format_num(model.model_params, `.3~s`)}
+      parameters
+    </span>
 
-    {#if has_kappa_parity_model(model.model_key)}
-      <KappaParityPlot {model} />
+    {#if model.n_estimators > 1}
+      <span><Icon icon="Forest" /> Ensemble of {model.n_estimators} models</span>
     {/if}
 
-    {#if model.model_key && model.model_key in per_elem_each_errors}
-      {@const raw_heatmap = per_elem_each_errors[model.model_key]}
-      {@const heatmap_values = Object.fromEntries(
-        Object.entries(raw_heatmap).filter(
-          (entry): entry is [string, number] => entry[1] !== null,
-        ),
-      )}
-      <h2 style="margin: 1em auto; text-align: center" class="toc-exclude">
-        Convex hull distance prediction errors projected onto elements
-      </h2>
-      <PeriodicTable
-        {heatmap_values}
-        {color_scale}
-        bind:active_element
-        tile_props={{ float_fmt: `.2f` }}
-        show_photo={false}
-        missing_color="rgba(255,255,255,0.3)"
+    {#if missing_preds != undefined}
+      <span
+        {@attach tooltip({
+          content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances.`,
+        })}
       >
-        {#snippet inset()}
-          <TableInset style="align-content: center">
-            <div style="height: 2em">
-              {#if active_element}
-                <PtableInset
-                  element={active_element}
-                  elem_counts={heatmap_values}
-                  show_percent={false}
-                  unit="<small style='font-weight: lighter;'>eV / atom</small>"
-                />
-              {/if}
-            </div>
-            <ColorBar
-              title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
-              title_side="top"
-              {color_scale}
-              range={[0, Math.max(0, ...(Object.values(heatmap_values) as number[]))]}
-              style="width: 80%; margin: 0 2em"
-            />
-          </TableInset>
-        {/snippet}
-      </PeriodicTable>
+        <Icon icon="MissingMetadata" />
+        Missing preds: {format_num(missing_preds, `,.0f`)}
+        {#if missing_preds != 0}
+          <small>
+            ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})
+          </small>
+        {/if}
+      </span>
     {/if}
 
-    <section class="authors">
-      <h2>Model Authors</h2>
+    {#if model.pypi}
+      <code style="padding: 0 4pt; place-content: center">
+        pip install {model.pypi.split(`/`).pop()}
+        <CopyButton
+          content="pip install {model.pypi.split(`/`).pop()}"
+          labels={{
+            ready: { icon: `Copy`, text: `` },
+            success: { icon: `Check`, text: `` },
+            error: { icon: `Alert`, text: `` },
+          }}
+        />
+      </code>
+    {/if}
+  </section>
+
+  <section class="links" {@attach tooltip()}>
+    {#each external_links as { href, icon, label, title } (label)}
+      {#if href?.startsWith(`http`)}
+        <a {href} target="_blank" rel="noopener noreferrer" {title}>
+          <Icon {icon} />
+          {label}
+        </a>
+      {/if}
+    {/each}
+    {#if model.metrics}
+      {@const pred_files = get_pred_file_urls(model)}
+      {#if pred_files.length > 0}
+        <details
+          class="pred-files"
+          {@attach click_outside({ callback: (node) => (node.open = false) })}
+        >
+          <summary>
+            <Icon icon="Graph" /> Predictions
+          </summary>
+          <div class="dropdown">
+            {#each pred_files as { name, url } (url)}
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                {@html name}
+              </a>
+            {/each}
+          </div>
+        </details>
+      {/if}
+    {/if}
+  </section>
+
+  {#if model.model_key}
+    <ModelRankCard model_key={model.model_key} />
+  {/if}
+
+  <!-- segmented tab bar doubles as the plot title; the active button shows a
+  spinner while its plot's data is still loading -->
+  <div class="energy-parity-tabs">
+    <SelectToggle
+      bind:selected={energy_parity_tab}
+      options={energy_parity_options.map((option) => ({
+        ...option,
+        loading:
+          energy_parity_tab === option.value &&
+          energy_parity_statuses[option.value] === `loading`,
+      }))}
+    />
+  </div>
+  <!-- only the default tab's plot mounts on page load; the other mounts on first
+  activation and then stays mounted-but-hidden so toggling back is instant (asset
+  loads are also promise-cached, and keeping the component alive preserves zoom) -->
+  {#each energy_parity_options as { value: energy_kind } (energy_kind)}
+    {#if mounted_energy_tabs.has(energy_kind)}
+      <div hidden={energy_parity_tab !== energy_kind}>
+        <EnergyParityPlot
+          {model}
+          {energy_kind}
+          onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
+        />
+      </div>
+    {/if}
+  {/each}
+
+  {#if has_kappa_parity_model(model.model_key)}
+    <KappaParityPlot {model} />
+  {/if}
+
+  {#if model.model_key && model.model_key in per_elem_each_errors}
+    {@const raw_heatmap = per_elem_each_errors[model.model_key]}
+    {@const heatmap_values = Object.fromEntries(
+      Object.entries(raw_heatmap).filter(
+        (entry): entry is [string, number] => entry[1] !== null,
+      ),
+    )}
+    <h2 style="margin: 1em auto; text-align: center" class="toc-exclude">
+      Convex hull distance prediction errors projected onto elements
+    </h2>
+    <PeriodicTable
+      {heatmap_values}
+      {color_scale}
+      bind:active_element
+      tile_props={{ float_fmt: `.2f` }}
+      show_photo={false}
+      missing_color="rgba(255,255,255,0.3)"
+    >
+      {#snippet inset()}
+        <TableInset style="align-content: center">
+          <div style="height: 2em">
+            {#if active_element}
+              <PtableInset
+                element={active_element}
+                elem_counts={heatmap_values}
+                show_percent={false}
+                unit="<small style='font-weight: lighter;'>eV / atom</small>"
+              />
+            {/if}
+          </div>
+          <ColorBar
+            title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
+            title_side="top"
+            {color_scale}
+            range={[0, Math.max(0, ...Object.values(heatmap_values))]}
+            style="width: 80%; margin: 0 2em"
+          />
+        </TableInset>
+      {/snippet}
+    </PeriodicTable>
+  {/if}
+
+  <section class="authors">
+    <h2>Model Authors</h2>
+    <ol>
+      {#each model.authors as author (author.name)}
+        <li>
+          <AuthorBrief {author} show_affiliation />
+        </li>
+      {/each}
+    </ol>
+  </section>
+
+  {#if model.trained_by}
+    <section class="trained-by">
+      <h2>Trained By</h2>
       <ol>
-        {#each model.authors as author (author.name)}
+        {#each model.trained_by as author (author.name)}
           <li>
             <AuthorBrief {author} show_affiliation />
           </li>
         {/each}
       </ol>
     </section>
+  {/if}
 
-    {#if model.trained_by}
-      <section class="trained-by">
-        <h2>Trained By</h2>
-        <ol>
-          {#each model.trained_by as author (author.name)}
-            <li>
-              <AuthorBrief {author} show_affiliation />
-            </li>
-          {/each}
-        </ol>
-      </section>
-    {/if}
+  <section class="model-info">
+    <h2>Model Info</h2>
+    <ul>
+      {#each model_info_items as [key, value, title = null] (key)}
+        <li {title} {@attach tooltip()}>
+          {key}
+          {#if key === `Targets`}
+            <strong>{@html value.replace(/_(.)/g, `<sub>$1</sub>`)}</strong>
+          {:else}
+            <strong>{value}</strong>
+          {/if}
+        </li>
+      {/each}
+    </ul>
+  </section>
 
-    <section class="model-info">
-      <h2>Model Info</h2>
-      <ul>
-        {#each model_info_items as [key, value, title = null] (key)}
-          <li {title} {@attach tooltip()}>
-            {key}
-            {#if key === `Targets`}
-              <strong>{@html value.replace(/_(.)/g, `<sub>$1</sub>`)}</strong>
-            {:else}
-              <strong>{value}</strong>
+  {#if model.training_set}
+    <h2>Training Set</h2>
+    <section class="training-set">
+      {#each model.training_set as dataset_key (dataset_key)}
+        {@const dataset = DATASETS[dataset_key]}
+        {#if dataset}
+          {@const { n_structures, name, slug, n_materials } = dataset}
+          <p>
+            <a href="/data/{slug}">{name}</a>:
+            <span title={n_structures.toLocaleString()} {@attach tooltip()}>
+              <strong>{format_num(n_structures)}</strong>
+            </span>
+            structures
+            {#if typeof n_materials == `number`}
+              from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
+                <strong>{format_num(n_materials)}</strong>
+              </span> materials
             {/if}
+          </p>
+        {:else}
+          <p>{dataset_key} (unknown dataset)</p>
+        {/if}
+      {/each}
+    </section>
+  {/if}
+
+  {#if model.notes?.html && typeof model.notes.html === `object`}
+    <section class="notes">
+      {#each Object.entries(model.notes.html as Record<string, string | string[] | Record<string, unknown>>) as [key, note] (key)}
+        <h2>{key}</h2>
+        {#if typeof note === `string`}
+          <p>{@html note}</p>
+        {:else if Array.isArray(note)}
+          <ol>
+            {#each note as val (val)}
+              <li>{@html val}</li>
+            {/each}
+          </ol>
+        {:else if note && typeof note === `object`}
+          <ul>
+            {#each Object.entries(note) as [sub_key, val] (sub_key)}
+              <li><strong>{sub_key}:</strong> {val}</li>
+            {/each}
+          </ul>
+        {/if}
+      {/each}
+    </section>
+  {/if}
+
+  {#if model.hyperparams}
+    <section class="hyperparams">
+      <h2>Hyperparameters</h2>
+      <ul>
+        {#each Object.entries(model.hyperparams) as [key, value] (key)}
+          <li><strong>{key}:</strong> <code>{JSON.stringify(value)}</code></li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
+
+  {#if model.requirements}
+    <section class="deps">
+      <h2>Dependencies</h2>
+      <ul>
+        {#each Object.entries(model.requirements) as [pkg, version] (pkg)}
+          {@const href = version?.startsWith(`http`)
+            ? version
+            : `https://pypi.org/project/${pkg}/${version}`}
+          <li>
+            {pkg}
+            <a {href} target="_blank" rel="noopener noreferrer">{version}</a>
           </li>
         {/each}
       </ul>
     </section>
-
-    {#if model.training_set}
-      <h2>Training Set</h2>
-      <section class="training-set">
-        {#each model.training_set as dataset_key (dataset_key)}
-          {@const dataset = DATASETS[dataset_key]}
-          {#if dataset}
-            {@const { n_structures, name, slug, n_materials } = dataset}
-            <p>
-              <a href="/data/{slug}">{name}</a>:
-              <span title={n_structures.toLocaleString()} {@attach tooltip()}>
-                <strong>{format_num(n_structures)}</strong>
-              </span>
-              structures
-              {#if typeof n_materials == `number`}
-                from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
-                  <strong>{format_num(n_materials)}</strong>
-                </span> materials
-              {/if}
-            </p>
-          {:else}
-            <p>{dataset_key} (unknown dataset)</p>
-          {/if}
-        {/each}
-      </section>
-    {/if}
-
-    {#if model.notes?.html && typeof model.notes.html === `object`}
-      <section class="notes">
-        {#each Object.entries(model.notes.html as Record<string, string | string[] | Record<string, unknown>>) as [key, note] (key)}
-          <h2>{key}</h2>
-          {#if typeof note === `string`}
-            <p>{@html note}</p>
-          {:else if Array.isArray(note)}
-            <ol>
-              {#each note as val (val)}
-                <li>{@html val}</li>
-              {/each}
-            </ol>
-          {:else if note && typeof note === `object`}
-            <ul>
-              {#each Object.entries(note) as [sub_key, val] (sub_key)}
-                <li><strong>{sub_key}:</strong> {val}</li>
-              {/each}
-            </ul>
-          {/if}
-        {/each}
-      </section>
-    {/if}
-
-    {#if model.hyperparams}
-      <section class="hyperparams">
-        <h2>Hyperparameters</h2>
-        <ul>
-          {#each Object.entries(model.hyperparams) as [key, value] (key)}
-            <li><strong>{key}:</strong> <code>{JSON.stringify(value)}</code></li>
-          {/each}
-        </ul>
-      </section>
-    {/if}
-
-    {#if model.requirements}
-      <section class="deps">
-        <h2>Dependencies</h2>
-        <ul>
-          {#each Object.entries(model.requirements) as [pkg, version] (pkg)}
-            {@const href = version?.startsWith(`http`)
-              ? version
-              : `https://pypi.org/project/${pkg}/${version}`}
-            <li>
-              {pkg}
-              <a {href} target="_blank" rel="noopener noreferrer">{version}</a>
-            </li>
-          {/each}
-        </ul>
-      </section>
-    {/if}
-  </div>
-{:else}
-  <p>Model not found.</p>
-{/if}
+  {/if}
+</div>
 
 <style>
   h2 {
@@ -361,7 +404,7 @@
     padding: 0;
   }
   section:is(.deps, .model-info) ul li {
-    background-color: var(--card-bg);
+    background-color: var(--chip-bg);
     padding: 2pt 6pt;
     border-radius: 3pt;
     text-align: center;
@@ -372,6 +415,43 @@
   section:is(.deps, .model-info) ul li :is(a, strong) {
     display: block;
     font-weight: bold;
+  }
+  /* segmented control: buttons fused into one bar with rounded outer corners,
+  compact height, sitting directly above the plot as its title */
+  .energy-parity-tabs {
+    display: flex;
+    justify-content: center;
+    margin: 2em auto 0.5em;
+  }
+  .energy-parity-tabs :global(.selection-toggle) {
+    gap: 0;
+  }
+  .energy-parity-tabs :global(.selection-toggle button) {
+    padding: 2px 12px;
+    border-radius: 0;
+    border-width: 0.5px; /* hairline on HiDPI, incl. the active colored border */
+  }
+  /* fuse adjacent borders; the active button sits on top so its colored border
+  wins the shared edge regardless of which side is selected */
+  .energy-parity-tabs :global(.selection-toggle button + button) {
+    margin-left: -0.5px;
+  }
+  .energy-parity-tabs :global(.selection-toggle button.active) {
+    position: relative;
+    z-index: 1;
+  }
+  .energy-parity-tabs :global(.selection-toggle button:first-child) {
+    border-radius: 9999px 0 0 9999px;
+  }
+  .energy-parity-tabs :global(.selection-toggle button:last-child) {
+    border-radius: 0 9999px 9999px 0;
+  }
+  /* version numbers as light code, less prominent than the package name */
+  section.deps ul li a {
+    font-weight: normal;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.9em;
+    opacity: 0.85;
   }
   :is(.meta-info, .links) {
     display: flex;
@@ -385,7 +465,7 @@
     place-items: center;
     gap: 5px;
     padding: 0 5pt;
-    background-color: var(--card-bg);
+    background-color: var(--chip-bg);
     border-radius: 5px;
   }
   .links details {

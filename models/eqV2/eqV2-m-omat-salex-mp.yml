@@ -183,6 +183,8 @@ metrics:
       missing_preds: 0 # count
   md:
     pred_file: models/eqV2/eqV2-m-omat-salex-mp/2026-06-28-eqv2_m_omat_salex_mp-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 151213.2 # s
     energy_rmse: 0.6491 # meV/atom
     force_rmse: 44.5524 # meV/Å
     rdf_error: 3.474 # %
@@ -191,7 +193,6 @@ metrics:
     pressure_mae: 0.9027 # GPa
     pressure_wasserstein: 0.913 # GPa
     pressure_error: 58.1849 # %
-    combined_score: 0.78672
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048866
   diatomics:
@@ -199,15 +200,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104594
     hardware: NVIDIA H200
     run_time_sec: 617.58
-    pbe_wall_dist_mae: 0.2467
-    pbe_energy_mae: 2.206
-    pbe_bond_length_error: 0.4079
-    pbe_well_depth_error: 1.026
-    pbe_vib_freq_error: 251.6
+    pbe_wall_dist_mae: 0.2494
+    pbe_energy_mae: 2.154
+    pbe_bond_length_error: 0.3792
+    pbe_well_depth_error: 0.994
+    pbe_vib_freq_error: 242.1
     tortuosity: 1.932
     energy_diff_flips: 8.575
     energy_jump: 4.161
     force_flips: 2.115
     force_total_variation: 345.2
     force_jump: 7.942
-    pbe_force_mae: 4.961
+    pbe_force_mae: 4.982

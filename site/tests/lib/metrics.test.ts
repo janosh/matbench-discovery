@@ -1,6 +1,4 @@
 import { DATASETS, MODELS } from '$lib'
-import type { CpsConfig } from '$lib/combined_perf_score.svelte'
-import { calculate_cps, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
 import {
   assemble_row_data,
@@ -177,238 +175,6 @@ describe(`make_combined_filter`, () => {
   })
 })
 
-// Build a CpsConfig from DEFAULT_CPS_CONFIG, overriding the given metric weights
-// (any metric not listed gets weight 0)
-const make_cps_config = (
-  weights: Partial<Record<keyof CpsConfig, number>>,
-): CpsConfig => ({
-  ...DEFAULT_CPS_CONFIG,
-  F1: { ...DEFAULT_CPS_CONFIG.F1, weight: weights.F1 ?? 0 },
-  κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: weights.κ_SRME ?? 0 },
-  RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: weights.RMSD ?? 0 },
-})
-
-// Config where only `metric_name` carries weight (others zero)
-const create_single_metric_config = (metric_name: string, weight = 1): CpsConfig =>
-  make_cps_config({
-    F1: metric_name === `F1` ? weight : 0,
-    κ_SRME: metric_name === `κ_SRME` ? weight : 0,
-    RMSD: metric_name === `RMSD` ? weight : 0,
-  })
-
-// Config splitting weight equally across all metrics
-const create_equal_weights_config = (weight_count = 3): CpsConfig => {
-  const equal_weight = 1 / weight_count
-  return make_cps_config({ F1: equal_weight, κ_SRME: equal_weight, RMSD: equal_weight })
-}
-
-describe(`calculate_cps`, () => {
-  it(`correctly calculates score with all metrics available`, () => {
-    // Test with sample values for F1, RMSD, and kappa
-    const f1 = 0.8 // Good F1 score (higher is better)
-    const rmsd = 0.005 // Good RMSD (lower is better)
-    const kappa = 0.3 // Good kappa SRME (lower is better)
-
-    const score = calculate_cps(f1, rmsd, kappa, DEFAULT_CPS_CONFIG)
-
-    // Calculate expected score based on known behavior
-    // F1 with value 0.8 contributes 0.8 * 0.5 = 0.4
-    // RMSD with value 0.005 contributes ~0.9 * 0.1 = ~0.09
-    // kappa with value 0.3 contributes ~0.85 * 0.4 = ~0.34
-    // Expected total ~0.83
-    expect(score).toBeCloseTo(0.83, 1)
-  })
-
-  it.each([
-    [`F1 only`, 0.8, undefined, undefined],
-    [`RMSD only`, undefined, 0.005, undefined],
-    [`kappa only`, undefined, undefined, 0.3],
-  ])(`returns null when %s is provided with default config`, (_, f1, rmsd, kappa) => {
-    const score = calculate_cps(f1, rmsd, kappa, DEFAULT_CPS_CONFIG)
-    // Should return null because with DEFAULT_CPS_CONFIG all metrics have weights
-    expect(score).toBeNull()
-  })
-
-  // a single-metric config scores purely from its one available metric (the others are
-  // zero-weight); RMSD/κ_SRME are inverted+normalized so their scores are approximate
-  it.each([
-    { metric: `F1`, vals: [0.8, undefined, undefined], expected: 0.8, prec: 4 },
-    { metric: `RMSD`, vals: [undefined, 0.005, undefined], expected: 0.97, prec: 2 },
-    { metric: `κ_SRME`, vals: [undefined, undefined, 0.3], expected: 0.85, prec: 2 },
-  ])(
-    `scores a $metric-only config from its single available metric`,
-    ({ metric, vals: [f1, rmsd, kappa], expected, prec }) => {
-      const config = create_single_metric_config(metric)
-      expect(calculate_cps(f1, rmsd, kappa, config)).toBeCloseTo(expected, prec)
-    },
-  )
-
-  it(`returns null when weighted metrics are missing`, () => {
-    // Create a config with non-zero weights for F1 only
-    const f1_only_config = create_single_metric_config(`F1`)
-
-    // Missing F1 but F1 weight is 1
-    const score = calculate_cps(undefined, 0.005, 0.3, f1_only_config)
-
-    expect(score).toBeNull()
-  })
-
-  it(`correctly weights metrics according to config`, () => {
-    const f1 = 1.0 // perfect F1
-    const rmsd = 0.15 // poor RMSD (maximum baseline value)
-    const kappa = 2.0 // poor kappa (maximum value)
-
-    // Test with equal weights
-    const equal_weights = create_equal_weights_config()
-    const equal_score = calculate_cps(f1, rmsd, kappa, equal_weights)
-
-    // Perfect F1 (1.0), worst RMSD (0.0), worst kappa (0.0)
-    // Equal weights: (1.0 + 0.0 + 0.0) / 3 = 0.333...
-    expect(equal_score).toBeCloseTo(1 / 3, 3)
-
-    // Test with F1-only weight
-    const f1_only_weights = create_single_metric_config(`F1`)
-    const f1_weighted_score = calculate_cps(f1, rmsd, kappa, f1_only_weights)
-
-    // Should be equal to F1 value (1.0)
-    expect(f1_weighted_score).toBeCloseTo(1.0, 4)
-  })
-
-  describe(`metric normalization`, () => {
-    // RMSD: lower=better, linearly mapped from [0, RMSD_BASELINE=0.15] to [1, 0]
-    it.each([
-      [0, 1],
-      [0.001, 0.9933],
-      [0.015, 0.9],
-      [0.03, 0.8],
-      [0.05, 0.6667],
-      [0.075, 0.5],
-      [0.1, 0.3333],
-      [0.125, 0.1667],
-      [0.15, 0],
-      [0.175, 0],
-    ])(`normalizes RMSD %f → %f`, (rmsd, expected_score) => {
-      const config = create_single_metric_config(`RMSD`)
-      const score = calculate_cps(undefined, rmsd, undefined, config)
-      expect(score).toBeCloseTo(expected_score, 4)
-    })
-
-    // κ_SRME: lower=better, linearly mapped from [0, 2] to [1, 0]
-    it.each([
-      [0, 1],
-      [0.1, 0.95],
-      [0.2, 0.9],
-      [0.4, 0.8],
-      [0.6, 0.7],
-      [0.8, 0.6],
-      [1.0, 0.5],
-      [1.2, 0.4],
-      [1.4, 0.3],
-      [1.6, 0.2],
-      [1.8, 0.1],
-      [2.0, 0],
-      [2.2, 0],
-    ])(`normalizes κ_SRME %f → %f`, (kappa, expected_score) => {
-      const config = create_single_metric_config(`κ_SRME`)
-      const score = calculate_cps(undefined, undefined, kappa, config)
-      expect(score).toBeCloseTo(expected_score, 4)
-    })
-  })
-
-  it(`assigns correct default weights`, () => {
-    expect(DEFAULT_CPS_CONFIG.F1.weight).toBeCloseTo(0.5, 5)
-    expect(DEFAULT_CPS_CONFIG.RMSD.weight).toBeCloseTo(0.1, 5)
-    expect(DEFAULT_CPS_CONFIG.κ_SRME.weight).toBeCloseTo(0.4, 5)
-
-    const sum_of_weights = Object.values(DEFAULT_CPS_CONFIG).reduce(
-      (acc, part) => acc + part.weight,
-      0,
-    )
-    expect(sum_of_weights).toBeCloseTo(1.0, 5)
-  })
-
-  describe(`combined scores calculation`, () => {
-    it.each([
-      [`perfect scores`, 1.0, 0.0, 0.0, 1.0],
-      [`worst scores`, 0.0, 0.15, 2.0, 0.0],
-      [`mixed scores`, 0.75, 0.075, 0.5, 0.6667],
-      [`specific values`, 0.95, 0.015, 0.2, 0.9167],
-    ])(`calculates %s correctly`, (_, f1, rmsd, kappa, expected_score) => {
-      const equal_weights = create_equal_weights_config()
-      const score = calculate_cps(f1, rmsd, kappa, equal_weights)
-      expect(score).toBeCloseTo(expected_score, 4)
-    })
-  })
-
-  describe(`edge cases`, () => {
-    const f1_only_config = create_single_metric_config(`F1`)
-
-    it.each([
-      [`negative RMSD`, 0.8, -0.01, undefined, 0.8],
-      [`extreme kappa`, 0.8, undefined, 3.0, 0.8],
-      [`F1 > 1`, 1.2, undefined, undefined, 1.2],
-    ])(`handles %s correctly`, (_, f1, rmsd, kappa, expected_score) => {
-      const score = calculate_cps(f1, rmsd, kappa, f1_only_config)
-      expect(score).toBeCloseTo(expected_score, 4)
-    })
-
-    it(`returns null when all metrics undefined but weights are non-zero`, () => {
-      const all_undefined_score = calculate_cps(
-        undefined,
-        undefined,
-        undefined,
-        f1_only_config,
-      )
-      expect(all_undefined_score).toBeNull()
-    })
-
-    it(`handles NaN inputs correctly`, () => {
-      // The function should return null for NaN inputs
-      const nan_score = calculate_cps(NaN, 0.01, 0.5, DEFAULT_CPS_CONFIG)
-      // Verify that it returns null
-      expect(nan_score).toBeNull()
-    })
-
-    it(`handles empty weights configuration`, () => {
-      // Create a config with all weights set to 0
-      const empty_weights_config = make_cps_config({})
-
-      // With all weights at 0, the score should be 0
-      const score = calculate_cps(0.8, 0.01, 0.5, empty_weights_config)
-      expect(score).toBe(0)
-    })
-
-    it(`normalizes weights that do not sum to 1`, () => {
-      // Create a config with weights that sum to 2
-      const unnormalized_weights_config = make_cps_config({
-        F1: 1.0,
-        κ_SRME: 0.5,
-        RMSD: 0.5,
-      })
-
-      // Perfect F1, poor RMSD and kappa
-      const score = calculate_cps(1.0, 0.15, 2.0, unnormalized_weights_config)
-
-      // With normalization: (1.0 * 0.5) + (0 * 0.25) + (0 * 0.25) = 0.5
-      // Weight distribution should be F1: 1.0/2 = 0.5, RMSD: 0.5/2 = 0.25, kappa: 0.5/2 = 0.25
-      expect(score).toBeCloseTo(0.5, 4)
-    })
-
-    it(`handles very small weights correctly`, () => {
-      // Create a config with a very small weight for RMSD
-      const small_weights_config = make_cps_config({ F1: 0.999, RMSD: 0.001 })
-
-      // With F1=1.0 and RMSD=0.15 (worst value), expect score to be very close to F1 value
-      // but slightly less due to tiny RMSD contribution
-      const score = calculate_cps(1.0, 0.15, undefined, small_weights_config)
-
-      // Should be almost 1.0 but not quite due to small RMSD contribution
-      // (1.0 * 0.999) + (0 * 0.001) / (0.999 + 0.001) = 0.999
-      expect(score).toBeCloseTo(0.999, 3)
-    })
-  })
-})
-
 describe(`assemble_row_data`, () => {
   // Use fixed model keys to ensure tests are stable against live data
   const test_model_keys = [`mace-mp-0`, `chgnet-0.3.0`]
@@ -473,6 +239,58 @@ describe(`assemble_row_data`, () => {
   })
 
   it.each([
+    { task: `diatomics`, multiplier_key: `diatomics_time_multiplier` },
+    { task: `md`, multiplier_key: `md_time_multiplier` },
+  ] as const)(
+    `computes $task runtime multipliers relative to fastest shown model`,
+    ({ task, multiplier_key }) => {
+      const base_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
+      if (!base_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
+      const rows = assemble_row_data(
+        `unique_prototypes`,
+        (model) => model.model_key?.startsWith(`${task}-time-`) ?? false,
+        true,
+        true,
+        true,
+        Object.entries({
+          Fast: 10,
+          Medium: 20,
+          Slow: 40,
+          Zero: 0,
+          Missing: undefined,
+          Infinite: Infinity,
+          NaN: Number.NaN,
+        }).map(([model_name, run_time_sec]) => ({
+          ...base_model,
+          model_key: `${task}-time-${model_name.toLowerCase()}`,
+          model_name,
+          metrics: {
+            ...base_model.metrics,
+            [task]: run_time_sec === undefined ? {} : { run_time_sec },
+          },
+        })),
+      )
+
+      expect(
+        Object.fromEntries(
+          rows.map((row) => [
+            row.model_name,
+            (row as Record<string, unknown>)[multiplier_key],
+          ]),
+        ),
+      ).toEqual({
+        Fast: 1,
+        Medium: 2,
+        Slow: 4,
+        Zero: undefined,
+        Missing: undefined,
+        Infinite: undefined,
+        NaN: undefined,
+      })
+    },
+  )
+
+  it.each([
     {
       model_key: `sevennet-l3i5`,
       diatomics: undefined,
@@ -494,10 +312,8 @@ describe(`assemble_row_data`, () => {
   ])(
     `renders reason-aware diatomics exclusion tooltip for $model_key`,
     ({ model_key, diatomics, expected_title }) => {
-      const base_model = MODELS.find(
-        (model) => model.model_key === `tace-oam-rra-preview`,
-      )
-      if (!base_model) throw new Error(`missing TACE-OAM-RRA-Preview test fixture`)
+      const base_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
+      if (!base_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
       const test_models = [
         ...MODELS,
         ...(diatomics
@@ -766,7 +582,7 @@ describe(`Model Sorting Logic`, () => {
     // Test ascending sort (runtime 0 should be last)
     const sorted_asc = models.toSorted(sort_models(`Run Time`, `asc`))
     // Check the non-zero values are sorted correctly first
-    expect(sorted_asc.slice(0, 2).map((m) => m.model_key)).toStrictEqual([
+    expect(sorted_asc.slice(0, 2).map((model) => model.model_key)).toStrictEqual([
       `model_c`,
       `model_a`,
     ])
@@ -774,8 +590,8 @@ describe(`Model Sorting Logic`, () => {
     expect(
       sorted_asc
         .slice(2)
-        .map((m) => m.model_key)
-        .toSorted((a, b) => (a ?? ``).localeCompare(b ?? ``)),
+        .map((model) => model.model_key)
+        .toSorted((key_1, key_2) => (key_1 ?? ``).localeCompare(key_2 ?? ``)),
     ).toStrictEqual([`model_b`, `model_d`])
 
     // Test descending sort (runtime 0 should be first)
@@ -784,11 +600,11 @@ describe(`Model Sorting Logic`, () => {
     expect(
       sorted_desc
         .slice(0, 2)
-        .map((m) => m.model_key)
-        .toSorted((a, b) => (a ?? ``).localeCompare(b ?? ``)),
+        .map((model) => model.model_key)
+        .toSorted((key_1, key_2) => (key_1 ?? ``).localeCompare(key_2 ?? ``)),
     ).toStrictEqual([`model_b`, `model_d`])
     // Check the non-zero values are sorted correctly after
-    expect(sorted_desc.slice(2).map((m) => m.model_key)).toStrictEqual([
+    expect(sorted_desc.slice(2).map((model) => model.model_key)).toStrictEqual([
       `model_a`,
       `model_c`,
     ])
@@ -842,7 +658,7 @@ describe(`Model Sorting Logic`, () => {
 
     // Ascending sort
     const sorted_asc = models_with_null.toSorted(sort_models(`metric`, `asc`))
-    expect(sorted_asc.map((m) => m.model_key)).toStrictEqual([
+    expect(sorted_asc.map((model) => model.model_key)).toStrictEqual([
       `val_1`,
       `null_1`,
       `null_2`,
@@ -850,7 +666,7 @@ describe(`Model Sorting Logic`, () => {
 
     // Descending sort
     const sorted_desc = models_with_null.toSorted(sort_models(`metric`, `desc`))
-    expect(sorted_desc.map((m) => m.model_key)).toStrictEqual([
+    expect(sorted_desc.map((model) => model.model_key)).toStrictEqual([
       `val_1`,
       `null_1`,
       `null_2`,

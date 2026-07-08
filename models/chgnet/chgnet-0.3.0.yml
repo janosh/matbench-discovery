@@ -166,6 +166,8 @@ metrics:
       missing_preds: 0 # count
   md:
     pred_file: models/chgnet/chgnet-0.3.0/2026-06-28-chgnet_030-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 87023.78 # s
     energy_rmse: 2.3775 # meV/atom
     force_rmse: 202.2351 # meV/Å
     rdf_error: 9.6568 # %
@@ -174,7 +176,6 @@ metrics:
     pressure_mae: 1.1106 # GPa
     pressure_wasserstein: 1.1162 # GPa
     pressure_error: 65.8987 # %
-    combined_score: 0.706433
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048854
   diatomics:
@@ -182,15 +183,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104585
     hardware: NVIDIA H200
     run_time_sec: 99.4
-    pbe_wall_dist_mae: 0.1405
-    pbe_energy_mae: 3.29
-    pbe_bond_length_error: 0.3019
-    pbe_well_depth_error: 16.91
-    pbe_vib_freq_error: 195.5
+    pbe_wall_dist_mae: 0.1218
+    pbe_energy_mae: 3.205
+    pbe_bond_length_error: 0.2675
+    pbe_well_depth_error: 16.86
+    pbe_vib_freq_error: 182.6
     tortuosity: 2.21
     energy_diff_flips: 1.839
     energy_jump: 2.105
     force_flips: 2.011
     force_total_variation: 415.0
     force_jump: 205.5
-    pbe_force_mae: 4.975
+    pbe_force_mae: 4.924

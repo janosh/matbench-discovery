@@ -185,6 +185,8 @@ metrics:
       missing_preds: 0 # count
   md:
     pred_file: models/hienet/hienet/2026-06-28-hienet-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 82631.1 # s
     energy_rmse: 1.1753 # meV/atom
     force_rmse: 118.8973 # meV/Å
     rdf_error: 4.9918 # %
@@ -193,7 +195,6 @@ metrics:
     pressure_mae: 0.7196 # GPa
     pressure_wasserstein: 0.7264 # GPa
     pressure_error: 47.6248 # %
-    combined_score: 0.801863
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048890
   diatomics:
@@ -201,15 +202,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104606
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 265.43
-    pbe_wall_dist_mae: 0.2001
-    pbe_energy_mae: 1.305
-    pbe_bond_length_error: 0.504
-    pbe_well_depth_error: 0.7139
-    pbe_vib_freq_error: 100.5
+    pbe_wall_dist_mae: 0.2054
+    pbe_energy_mae: 1.251
+    pbe_bond_length_error: 0.5221
+    pbe_well_depth_error: 0.7301
+    pbe_vib_freq_error: 94.26
     tortuosity: 1.016
     energy_diff_flips: 2.46
     energy_jump: 0.6371
     force_flips: 2.287
     force_total_variation: 118.2
     force_jump: 3.029
-    pbe_force_mae: 1.46
+    pbe_force_mae: 1.443

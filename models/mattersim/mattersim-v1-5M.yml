@@ -225,20 +225,22 @@ metrics:
     pred_file_url: https://figshare.com/files/66104636
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 170.22
-    pbe_wall_dist_mae: 0.09483
-    pbe_energy_mae: 1.261
-    pbe_bond_length_error: 0.3762
-    pbe_well_depth_error: 1.396
-    pbe_vib_freq_error: 76.21
+    pbe_wall_dist_mae: 0.0966
+    pbe_energy_mae: 1.298
+    pbe_bond_length_error: 0.3823
+    pbe_well_depth_error: 1.359
+    pbe_vib_freq_error: 64.14
     tortuosity: 1.021
     energy_diff_flips: 2.471
     energy_jump: 0.1688
     force_flips: 2.471
     force_total_variation: 225.4
     force_jump: 2.414
-    pbe_force_mae: 1.085
+    pbe_force_mae: 1.097
   md:
     pred_file: models/mattersim/mattersim-v1-5M/2026-06-28-mattersim_v1_5m-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 33705.03 # s
     energy_rmse: 1.1775 # meV/atom
     force_rmse: 112.7295 # meV/Å
     rdf_error: 4.5991 # %
@@ -247,6 +249,5 @@ metrics:
     pressure_mae: 0.9319 # GPa
     pressure_wasserstein: 0.9458 # GPa
     pressure_error: 64.3483 # %
-    combined_score: 0.765019
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048905

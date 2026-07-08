@@ -1,7 +1,7 @@
 import PtableInset from '$lib/PtableInset.svelte'
 import type { ChemicalElement, ElementSymbol } from 'matterviz'
-import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
+import { mount } from '../index'
 
 type ElemCounts = Record<ElementSymbol, number>
 const mock_Fe = { symbol: `Fe`, name: `Iron`, number: 26 } as ChemicalElement

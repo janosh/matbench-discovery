@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Author } from '$lib'
   import { get_org_logo, type OrgLogo } from '$lib/labels'
-  import { ICON_DATA } from 'matterviz'
+  import { escape_html, ICON_DATA } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
   import Logo from '../Logo.svelte'
 
@@ -16,16 +16,7 @@
     authors?: Author[]
   } = $props()
 
-  const html_escape: Record<string, string> = {
-    '&': `&amp;`,
-    '<': `&lt;`,
-    '>': `&gt;`,
-    '"': `&quot;`,
-  }
-  const escape_html = (str: string): string =>
-    str.replaceAll(/[&<>"]/g, (char) => html_escape[char] ?? char)
-
-  // Render a logo as a standalone HTML str ing (the tooltip content is injected via
+  // Render a logo as a standalone HTML string (the tooltip content is injected via
   // innerHTML into document.body, so component-scoped styles don't apply — inline only).
   const logo_html = (logo: OrgLogo): string => {
     const style = `height: 1.1em; width: auto; flex: 0 0 auto; vertical-align: middle`

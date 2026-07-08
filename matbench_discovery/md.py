@@ -1,15 +1,21 @@
 """Molecular dynamics rollout helpers for the MD benchmark task.
 
-Runs NVT simulations with MLIP calculators using the protocol from the CFPMD-26
-benchmark paper: Nose-Hoover chain thermostat, 0.25 fs timestep, 25 fs thermostat
-time scale, frames recorded every 10 steps for 20 ps.
+Runs NVT simulations with MLIP calculators using the DynaMat v1.0 protocol:
+Nose-Hoover chain thermostat, 0.25 fs timestep, 25 fs thermostat time scale, and
+frames recorded every 10 steps for 20 ps.
 """
 
 import contextlib
+import dataclasses
+import json
 import os
+import platform
+import time
 import zipfile
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any, cast
 
 import ase
 import ase.io
@@ -28,27 +34,28 @@ from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
 # === single-file multi-system reference dataset ===
-# CFPMD-26 references ship as one HDF5 with a group per system, each carrying the
+# DynaMat v1.0 references ship as one HDF5 with a group per system, each carrying the
 # trajectory arrays (guarded by Trajectory's per-group TRAJECTORY_SCHEMA) plus its
 # saved-frame interval (dt_fs) and target temperature as group attrs. Self-describing
 # -> no separate settings CSV or system-name matching.
 
 
 def default_md_reference_path() -> str:
-    """Path to the auto-downloaded CFPMD-26 reference HDF5 (one group per system)."""
+    """Path to the auto-downloaded DynaMat v1.0 reference HDF5."""
     from matbench_discovery.enums import DataFiles
 
-    return DataFiles.aimd_reference_md_trajectories.path
+    return DataFiles.dynamat_v1_0_md_trajectories.path
 
 
 def write_reference_h5(
     path: str, entries: Iterable[tuple[str, Trajectory, float, float]]
 ) -> None:
     """Atomically write a multi-system reference HDF5: one group per system holding the
-    trajectory arrays plus ``dt_fs`` (saved-frame interval) and ``temperature_kelvin``
-    attrs. ``entries`` yields (system_name, trajectory, dt_fs, temperature_kelvin); it
-    may be a lazy generator so the converter parses one trajectory at a time and writes
-    it straight to disk, bounding peak memory to the single largest system.
+    label-free trajectory arrays plus ``dt_fs`` (saved-frame interval) and
+    ``temperature_kelvin`` attrs. ``entries`` yields (system_name, trajectory, dt_fs,
+    temperature_kelvin); it may be a lazy generator so the converter parses one
+    trajectory at a time and writes it straight to disk, bounding peak memory to the
+    single largest system.
     """
     if dir_name := os.path.dirname(path):
         os.makedirs(dir_name, exist_ok=True)
@@ -57,7 +64,12 @@ def write_reference_h5(
     with h5py.File(tmp_path, "w") as file:
         for system_name, trajectory, dt_fs, temperature_kelvin in entries:
             group = file.create_group(system_name)
-            trajectory.write_to_h5_group(group)
+            # strip supervised labels so the public artifact can't double as a
+            # validation set; dataclasses.replace keeps any future fields intact
+            public_trajectory = dataclasses.replace(
+                trajectory, energy=None, forces=None
+            )
+            public_trajectory.write_to_h5_group(group)
             group.attrs["dt_fs"] = float(dt_fs)
             group.attrs["temperature_kelvin"] = float(temperature_kelvin)
             n_written += 1
@@ -264,8 +276,65 @@ class NvtParams:
 # so its full state is these five fields; restoring them reproduces an uninterrupted
 # run to ~1e-14. Schema-tagged + ASE-version-gated so a renamed attr or upgrade fails
 # closed (recompute) rather than silently corrupting trajectories.
-CHECKPOINT_SCHEMA = 1
+# Schema 2 added rollout_sec (cumulative rollout wall time surviving resumes).
+CHECKPOINT_SCHEMA = 2
 NpzValue = np.ndarray | np.generic | str | int | float | bool
+
+
+def run_info_path(traj_path: str) -> str:
+    """Path of the JSON sidecar storing rollout cost and hardware provenance.
+
+    Written next to the trajectory once a rollout completes so later jobs that reuse
+    the cached rollout (e.g. metric recomputes) can still report its cost. Trajectory
+    files carry no timestamps, so this data is unrecoverable once lost - hence a
+    persistent sidecar rather than an in-memory return value.
+    """
+    return f"{traj_path.removesuffix('.extxyz')}-run-info.json"
+
+
+# sidecar keys copied into per-system metric rows (the rest is audit-only provenance)
+RUN_INFO_METRIC_KEYS = ("run_time_sec", "max_rss_gb", "max_gpu_mem_gb", "hardware")
+
+
+def collect_run_info(rollout_sec: float) -> dict[str, object]:
+    """Assemble a completed rollout's run-info sidecar contents.
+
+    Cost fields (RUN_INFO_METRIC_KEYS) flow into the per-system metric CSVs:
+    ``run_time_sec`` (wall time, accumulated across resumes by the caller),
+    ``max_rss_gb`` (host RSS high-water mark since process start - exact per system in
+    one-system-per-job cluster runs), ``max_gpu_mem_gb`` (peak CUDA memory since the
+    rollout-start reset) and ``hardware``. The rest is audit-only provenance:
+    completion timestamp, host/job identity (how the 2026-07 timing salvage traced
+    trajectories back to Slurm logs) and key package versions.
+    """
+    from importlib.metadata import PackageNotFoundError, version
+
+    from matbench_discovery.hpc import detect_hardware, peak_memory_gb
+
+    run_info: dict[str, object] = {
+        "run_time_sec": round(rollout_sec, 2),
+        **peak_memory_gb(),
+        "hardware": detect_hardware(),
+        "completed_at": f"{datetime.now(tz=UTC):%Y-%m-%dT%H:%M:%SZ}",
+        "hostname": platform.node(),
+    }
+    if slurm_job_id := os.getenv("SLURM_JOB_ID"):
+        run_info["slurm_job_id"] = slurm_job_id
+    versions: dict[str, str] = {"python": platform.python_version()}
+    for pkg in ("ase", "numpy", "torch"):
+        with contextlib.suppress(PackageNotFoundError):
+            versions[pkg] = version(pkg)
+    return run_info | {"versions": versions}
+
+
+def read_run_info(traj_path: str) -> dict[str, object]:
+    """Load a rollout's run-info sidecar, or an empty dict when absent/unreadable."""
+    try:
+        with open(run_info_path(traj_path), encoding="utf-8") as file:
+            run_info = json.load(file)
+    except (OSError, ValueError):
+        return {}
+    return run_info if isinstance(run_info, dict) else {}
 
 
 def _atomic_savez(path: str, **arrays: NpzValue) -> None:
@@ -273,7 +342,7 @@ def _atomic_savez(path: str, **arrays: NpzValue) -> None:
     tmp_path = f"{path}.{os.getpid()}.tmp"
     try:
         with open(tmp_path, "wb") as file:
-            np.savez(file, **arrays)
+            np.savez(file, **cast("dict[str, Any]", arrays))
         os.replace(tmp_path, path)
     except Exception:
         with contextlib.suppress(OSError):
@@ -313,8 +382,17 @@ def _load_checkpoint(
 
     target_frames = n_steps // params.record_interval + 1
     try:
-        nsteps = int(ckpt["nsteps"])
-        n_frames = int(ckpt["n_frames"])
+        schema = int(ckpt["schema"])
+        ase_version = str(ckpt["ase_version"])
+    except (KeyError, TypeError, ValueError):
+        print(f"  ignoring checkpoint {ckpt_path}: missing/corrupt schema metadata")
+        return None
+    if schema != CHECKPOINT_SCHEMA or ase_version != ase.__version__:
+        print(f"  ignoring checkpoint {ckpt_path}: schema/version mismatch")
+        return None
+
+    try:
+        rollout_sec = float(ckpt["rollout_sec"])
         stored = NvtParams(
             temperature_kelvin=float(ckpt["temperature_kelvin"]),
             time_step_fs=float(ckpt["time_step_fs"]),
@@ -322,12 +400,14 @@ def _load_checkpoint(
             thermostat_time_scale_fs=float(ckpt["thermostat_time_scale_fs"]),
             seed=int(ckpt["seed"]),
         )
+        nsteps = int(ckpt["nsteps"])
+        n_frames = int(ckpt["n_frames"])
         consistent = (
-            int(ckpt["schema"]) == CHECKPOINT_SCHEMA
-            and str(ckpt["ase_version"]) == ase.__version__
-            and stored == params
+            stored == params
             and nsteps <= n_steps
             and n_frames <= target_frames
+            and np.isfinite(rollout_sec)
+            and rollout_sec >= 0
             and nsteps == (n_frames - 1) * params.record_interval
             and list(ckpt["symbols"]) == atoms.get_chemical_symbols()
             and np.allclose(ckpt["cell"], atoms.cell.array)
@@ -377,6 +457,10 @@ def run_nvt_md_resumable(
     from the last checkpoint (truncating any un-checkpointed tail), continuing the same
     deterministic trajectory. Only on completion is ``.part`` atomically promoted to
     ``out_path`` and the checkpoint removed. Returns the full trajectory.
+
+    Rollout wall time is accumulated across resumes (persisted in the checkpoint) and,
+    once the rollout completes, written with the detected hardware to a
+    ``run_info_path(out_path)`` JSON sidecar, so its cost survives later reuse.
     """
     # .part.extxyz (not .part) so ASE infers the extxyz format on read/write/append
     part_path = f"{out_path.removesuffix('.extxyz')}.part.extxyz"
@@ -403,8 +487,14 @@ def run_nvt_md_resumable(
         seed=seed,
     )
 
+    from matbench_discovery.hpc import reset_gpu_peak_memory
+
     ckpt = _load_checkpoint(ckpt_path, atoms=atoms, params=params, n_steps=n_steps)
     frames_written = 0
+    prior_rollout_sec = 0.0  # wall time spent in earlier (timed-out) sessions
+    session_start = time.perf_counter()
+    # attribute peak VRAM to this rollout even when one process runs several systems
+    reset_gpu_peak_memory()
     if ckpt is not None and os.path.isfile(part_path):
         n_ckpt = int(ckpt["n_frames"])
         # keep only checkpointed frames; a kill may have appended an un-checkpointed
@@ -418,6 +508,7 @@ def run_nvt_md_resumable(
             _restore_nvt_state(dynamics, ckpt)
             ase.io.write(part_path, kept)  # truncate to the checkpointed frames
             frames_written = n_ckpt
+            prior_rollout_sec = float(ckpt["rollout_sec"])
             print(f"  resuming {out_path} from frame {frames_written}/{target_frames}")
 
     if frames_written == 0:  # fresh start: clear any stale partial files
@@ -450,6 +541,7 @@ def run_nvt_md_resumable(
                 symbols=np.array(dynamics.atoms.get_chemical_symbols()),
                 cell=dynamics.atoms.cell.array,
                 pbc=dynamics.atoms.pbc,
+                rollout_sec=prior_rollout_sec + (time.perf_counter() - session_start),
             )
 
     dynamics.attach(record_and_checkpoint, interval=record_interval)
@@ -465,6 +557,10 @@ def run_nvt_md_resumable(
         raise RuntimeError(
             f"{out_path} rollout produced {len(frames)} frames != {target_frames}"
         )
+    rollout_sec = prior_rollout_sec + (time.perf_counter() - session_start)
+    run_info = collect_run_info(rollout_sec)
+    with open(run_info_path(out_path), mode="w", encoding="utf-8") as file:
+        json.dump(run_info, file, indent=2)
     os.replace(part_path, out_path)  # atomic promote only once complete
     with contextlib.suppress(FileNotFoundError):
         os.remove(ckpt_path)
@@ -523,6 +619,7 @@ def run_md_benchmark(
     model_key: str,
     out_dir: str,
     ref_file: str | None = None,
+    private_ref_file: str | None = None,
     systems: list[str] | None = None,
     n_steps: int = 80_000,
     time_step_fs: float = 0.25,
@@ -534,15 +631,22 @@ def run_md_benchmark(
 
     For each system in the reference HDF5, this rolls out an NVT trajectory from the
     reference initial structure (reusing an existing rollout if present), then compares
-    it to the reference via energy/force RMSE, RDF, ADF, vDOS and pressure. Writes one
-    gzipped per-system metrics CSV and returns the per-system DataFrame.
+    it to the reference via RDF, ADF, vDOS and pressure observables. If a private
+    labeled reference file is provided, diagnostic energy/force RMSEs are computed from
+    that file's hidden labels. Writes one gzipped per-system metrics CSV and returns
+    the per-system DataFrame. Each row also carries ``n_atoms`` plus the rollout's cost
+    provenance (RUN_INFO_METRIC_KEYS: wall time, peak host/GPU memory, hardware) read
+    from the trajectory's run-info sidecar, which survives metric-recompute jobs that
+    reuse cached rollouts.
 
     Args:
         calculator: ASE calculator for the model under test.
         model_key: Model enum name/key, used in output filenames.
         out_dir: Directory for rollout trajectories and the metrics CSV.
         ref_file: Reference HDF5 (one group per system, each carrying dt_fs and
-            temperature_kelvin attrs). Defaults to the auto-downloaded CFPMD-26 set.
+            temperature_kelvin attrs). Defaults to the auto-downloaded DynaMat v1.0 set.
+        private_ref_file: Optional private HDF5 with matching system groups and
+            energy/force labels for maintainer-only diagnostic RMSEs.
         systems: Subset of system names to run. Defaults to all in ref_file.
         n_steps: MD steps per rollout (80,000 = 20 ps at 0.25 fs).
         time_step_fs: MD integration time step.
@@ -578,16 +682,29 @@ def run_md_benchmark(
         os.makedirs(out_dir, exist_ok=True)  # for rollout trajectories and metrics CSV
 
     pred_time_step_fs = time_step_fs * record_interval
-    rows: list[dict[str, float | str]] = []
+    rows: list[dict[str, float | int | str]] = []
     for system_name in tqdm(system_names, desc=f"MD systems ({model_key})"):
         progress_label = f"{model_key} {system_name}"
-        # dry run reads only the first 64 reference frames so the single-point eval
-        # stays fast; the HDF5 reader only decompresses the frames it returns
+        # dry run reads only the first 64 reference frames; the HDF5 reader only
+        # decompresses the frames it returns
         ref_trajectory, ref_time_step_fs, temperature_kelvin = (
             read_reference_trajectory(
                 ref_file, system_name, max_frames=64 if dry_run else None
             )
         )
+        # abort before any GPU time is spent if the reference's dt_fs attr is stale:
+        # finite-difference kinetic temperature scales as 1/dt_fs**2, so a wrong
+        # saved-frame interval corrupts vDOS and every time-matched metric
+        kinetic_temp = md_metrics.equipartition_temperature(
+            ref_trajectory[:256], time_step_fs=ref_time_step_fs
+        )
+        if not temperature_kelvin / 3 <= kinetic_temp <= temperature_kelvin * 3:
+            raise ValueError(
+                f"reference {system_name!r} implies {kinetic_temp:.0f} K from "
+                f"dt_fs={ref_time_step_fs}, >3x off temperature_kelvin="
+                f"{temperature_kelvin}; dt_fs is likely mislabeled or stale, fix the "
+                "reference file before evaluating"
+            )
         initial_atoms = ref_trajectory.frame_as_atoms(0)
 
         pred_traj_path = f"{out_dir}/{system_name}-nvt-{model_key}.extxyz"
@@ -627,57 +744,43 @@ def run_md_benchmark(
                     progress_label=progress_label,
                 )
 
-        refeval_path = f"{out_dir}/{system_name}-nvt-{model_key}-refeval.npz"
-        ref_predictions: dict[str, np.ndarray] | None = None
-        if os.path.isfile(refeval_path):
-            try:
-                with np.load(refeval_path, allow_pickle=False) as cached:
-                    if int(cached["n_atoms"]) != ref_trajectory.n_atoms:
-                        raise ValueError(
-                            f"cached n_atoms={int(cached['n_atoms'])} != "
-                            f"{ref_trajectory.n_atoms}"
-                        )
-                    ref_predictions = {
-                        key: cached[key] for key in ("e_pred", "force_se")
-                    }
-                md_metrics.energy_force_rmse_from_preds(ref_trajectory, ref_predictions)
-            except (
-                EOFError,
-                KeyError,
-                OSError,
-                TypeError,
-                ValueError,
-                zipfile.BadZipFile,
-            ) as exc:
-                print(f"  recomputing {refeval_path}: {exc}", flush=True)
-                ref_predictions = None
-            else:
-                print(f"  reusing {refeval_path}", flush=True)
-
-        if ref_predictions is None:
-            ref_predictions = md_metrics.predict_on_reference(
-                ref_trajectory, calculator
-            )
-            if not dry_run:
-                # e_ref lives in HDF5; the sidecar stores only model predictions.
-                _atomic_savez(
-                    refeval_path,
-                    e_pred=ref_predictions["e_pred"],
-                    force_se=ref_predictions["force_se"],
-                    n_atoms=ref_trajectory.n_atoms,
-                )
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectory,
             pred_frames,  # evaluate_md_system coerces the Atoms list to a Trajectory
             ref_time_step_fs=ref_time_step_fs,
             pred_time_step_fs=pred_time_step_fs,
-            ref_predictions=ref_predictions,
             progress_label=progress_label,
         )
-        rows.append(
-            {"system": system_name, "temperature_kelvin": temperature_kelvin}
-            | system_metrics
-        )
+        if private_ref_file is not None:
+            # only the labeled trajectory is needed here; the private file's dt_fs and
+            # temperature are already validated on the public reference above
+            private_ref_trajectory = read_reference_trajectory(
+                private_ref_file, system_name, max_frames=64 if dry_run else None
+            )[0]
+            # guard against a stale/mismatched private file: matching group names
+            # with different structures would yield plausible-but-wrong diagnostics
+            if not np.array_equal(
+                private_ref_trajectory.atomic_numbers, ref_trajectory.atomic_numbers
+            ):
+                raise ValueError(
+                    f"private reference {system_name!r} has different atoms than the "
+                    f"public reference ({private_ref_trajectory.n_atoms} vs "
+                    f"{ref_trajectory.n_atoms}); stale {private_ref_file=}?"
+                )
+            system_metrics |= md_metrics.calc_energy_force_rmse(
+                private_ref_trajectory, calculator
+            )
+        row: dict[str, float | int | str] = {
+            "system": system_name,
+            "temperature_kelvin": temperature_kelvin,
+            "n_atoms": ref_trajectory.n_atoms,
+        }
+        if not dry_run:  # rollout cost provenance (absent for legacy trajectories)
+            run_info = read_run_info(pred_traj_path)
+            for key in RUN_INFO_METRIC_KEYS:
+                if isinstance(value := run_info.get(key), str | int | float):
+                    row[key] = value
+        rows.append(row | system_metrics)
 
     df_md = pd.DataFrame(rows).set_index("system")
     if dry_run:

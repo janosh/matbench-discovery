@@ -169,20 +169,22 @@ metrics:
     pred_file_url: https://figshare.com/files/66104624
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 294.72
-    pbe_wall_dist_mae: 0.1165
-    pbe_energy_mae: 1.233
-    pbe_bond_length_error: 0.1672
-    pbe_well_depth_error: 0.5511
-    pbe_vib_freq_error: 62.29
+    pbe_wall_dist_mae: 0.1135
+    pbe_energy_mae: 1.169
+    pbe_bond_length_error: 0.1518
+    pbe_well_depth_error: 0.5054
+    pbe_vib_freq_error: 48.18
     tortuosity: 1.005
     energy_diff_flips: 1.345
     energy_jump: 0.08138
     force_flips: 1.322
     force_total_variation: 107.7
     force_jump: 2.423
-    pbe_force_mae: 1.654
+    pbe_force_mae: 1.617
   md:
     pred_file: models/mace/mace-mpa-0/2026-06-28-mace_mpa_0-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 31786.33 # s
     energy_rmse: 1.0977 # meV/atom
     force_rmse: 109.7301 # meV/Å
     rdf_error: 4.0917 # %
@@ -191,6 +193,5 @@ metrics:
     pressure_mae: 1.2087 # GPa
     pressure_wasserstein: 1.209 # GPa
     pressure_error: 65.8362 # %
-    combined_score: 0.764401
     n_systems: 17 # count
     pred_file_url: https://figshare.com/files/66048896

@@ -1,6 +1,7 @@
 """Tests for high-performance computing utilities."""
 
 import os
+import sys
 from collections.abc import Callable, Sequence
 from unittest.mock import mock_open, patch
 
@@ -344,11 +345,31 @@ def test_get_calling_file_path() -> None:
         ),
         ([{}, {}], {}),  # no provenance -> empty (leaves existing YAML untouched)
         ([{"run_time_sec": 12.0}, {}], {"run_time_sec": 12.0}),  # partial
+        (
+            # memory peaks max over shards (each shard is its own process)
+            [
+                {"run_time_sec": 10.0, "max_rss_gb": 4.2, "max_gpu_mem_gb": 11.5},
+                {"run_time_sec": 20.0, "max_rss_gb": 6.1, "max_gpu_mem_gb": 9.0},
+                {"run_time_sec": 5.0},  # shard without memory info still sums time
+            ],
+            {"run_time_sec": 35.0, "max_rss_gb": 6.1, "max_gpu_mem_gb": 11.5},
+        ),
     ],
-    ids=["full", "missing", "partial"],
+    ids=["full", "missing", "partial", "memory_peaks"],
 )
 def test_merge_run_metadata(
     shard_metadatas: list[dict[str, object]], expected: dict[str, str | float]
 ) -> None:
-    """merge_run_metadata sums run_time_sec + takes shared hardware across shards."""
+    """merge_run_metadata sums run_time_sec, maxes memory peaks + shares hardware."""
     assert hpc.merge_run_metadata(shard_metadatas) == expected
+
+
+def test_peak_memory_gb() -> None:
+    """peak_memory_gb reports a positive host RSS high-water mark on Unix (GPU key
+    only when torch+CUDA are present) and reset_gpu_peak_memory is a safe no-op.
+    """
+    mem = hpc.peak_memory_gb()
+    if sys.platform != "win32":  # Windows lacks the resource module
+        assert mem["max_rss_gb"] > 0
+    assert set(mem) <= {"max_rss_gb", "max_gpu_mem_gb"}
+    hpc.reset_gpu_peak_memory()  # must not raise without torch/CUDA

@@ -2,7 +2,7 @@ import {
   calculate_cps,
   CPS_CONFIG,
   DEFAULT_CPS_CONFIG,
-} from '$lib/combined_perf_score.svelte'
+} from '$lib/combined-scores.svelte'
 import { attach_style, order_models } from '$lib/fig-helpers'
 import { ALL_METRICS } from '$lib/labels'
 import {
@@ -54,9 +54,9 @@ describe(`calculate_training_sizes`, () => {
 })
 
 describe(`MODELS array`, () => {
-  it(`should be defined and be an array`, () => {
-    expect(MODELS).toBeDefined()
+  it(`should be a non-empty array`, () => {
     expect(Array.isArray(MODELS)).toBe(true)
+    expect(MODELS.length).toBeGreaterThan(0)
   })
 
   it(`should have processed models with calculated properties`, () => {
@@ -87,7 +87,6 @@ describe(`MODELS array`, () => {
 
 describe(`MODEL_METADATA_PATHS`, () => {
   it(`should be defined and be an object`, () => {
-    expect(MODEL_METADATA_PATHS).toBeDefined()
     expect(typeof MODEL_METADATA_PATHS).toBe(`object`)
     const model_keys = new Set(
       Object.values(MODEL_METADATA_PATHS).map((model) => model.model_key),
@@ -256,29 +255,7 @@ describe(`COMPLIANT_TRAINING_SETS`, () => {
   })
 })
 
-describe(`CPS_CONFIG`, () => {
-  it(`should be defined and match DEFAULT_CPS_CONFIG initially`, () => {
-    expect(CPS_CONFIG).toBeDefined()
-    expect(CPS_CONFIG.F1.weight).toBeDefined()
-    expect(CPS_CONFIG.RMSD.weight).toBeDefined()
-    expect(CPS_CONFIG.κ_SRME.weight).toBeDefined()
-  })
-
-  it(`should be reactive (modifiable)`, () => {
-    // Store original weights
-    const original_f1_weight = CPS_CONFIG.F1.weight
-
-    // Modify weight
-    CPS_CONFIG.F1.weight = 0.8
-
-    // Check that it was updated
-    expect(CPS_CONFIG.F1.weight).toBe(0.8)
-
-    // Restore original weight
-    CPS_CONFIG.F1.weight = original_f1_weight
-  })
-})
-
+// NB: CPS_CONFIG defaults + reactivity are covered in combined-scores.test.ts
 describe(`update_models_cps`, () => {
   it(`should update CPS for models based on metrics and current weights`, () => {
     // Skip test if no models available

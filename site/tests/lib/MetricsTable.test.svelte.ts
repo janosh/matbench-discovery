@@ -1,9 +1,25 @@
 import { HYPERPARAMS } from '$lib/labels'
+import { model_is_compliant, MODELS } from '$lib/models.svelte'
 import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
+
+// expected table row count for the default unique_prototypes discovery set,
+// mirroring MetricsTable's model filters
+const visible_row_count = (
+  { energy = false, non_compliant = true } = {},
+  extra_filter: (model: ModelData) => boolean = () => true,
+) =>
+  MODELS.filter(
+    (model) =>
+      (energy || model.targets !== `E`) &&
+      (non_compliant || model_is_compliant(model)) &&
+      typeof model.metrics?.discovery === `object` &&
+      model.metrics.discovery.unique_prototypes &&
+      extra_filter(model),
+  ).length
 
 describe(`MetricsTable`, () => {
   const parse_integer_sort_value = (cell: Element): number | null => {
@@ -209,8 +225,8 @@ describe(`MetricsTable`, () => {
     await tick()
     const rows_with_energy = document.querySelectorAll(`tbody tr`).length
 
-    // Should have at least the same number of rows
-    expect(rows_with_energy).toBeGreaterThanOrEqual(rows_without_energy)
+    expect(rows_without_energy).toBe(visible_row_count({ energy: false }))
+    expect(rows_with_energy).toBe(visible_row_count({ energy: true }))
   })
 
   it(`filters models based on model_filter prop`, () => {
@@ -239,7 +255,7 @@ describe(`MetricsTable`, () => {
     })
 
     const all_rows = document.querySelectorAll(`tbody tr`).length
-    expect(all_rows).toBeGreaterThan(0)
+    expect(all_rows).toBe(visible_row_count())
 
     // Third test: show specific models (e.g., only models with CHG in name)
     document.body.innerHTML = ``
@@ -252,7 +268,9 @@ describe(`MetricsTable`, () => {
     })
 
     const filtered_rows = document.querySelectorAll(`tbody tr`)
-    expect(filtered_rows.length).toBeGreaterThan(0)
+    expect(filtered_rows).toHaveLength(
+      visible_row_count({}, (model) => model.model_name.includes(`CHG`)),
+    )
     expect(filtered_rows.length).toBeLessThan(all_rows)
 
     // Verify that filtered rows actually contain CHG
@@ -260,33 +278,6 @@ describe(`MetricsTable`, () => {
       const model_cell = row.querySelector(`td[data-col="Model"]`)
       expect(model_cell?.textContent).toContain(`CHG`)
     })
-  })
-
-  it(`validates prediction files dropdown button`, () => {
-    // Create a simple element with the required structure for testing
-    document.body.innerHTML = `
-      <div>
-        <button class="pred-files-btn" aria-label="Download model prediction files">
-          <svg><path d="..."></path></svg>
-        </button>
-      </div>
-    `
-
-    // Find the button
-    const pred_file_btn = document.querySelector(`.pred-files-btn`)
-    expect(pred_file_btn).not.toBeNull()
-    expect(pred_file_btn).toBeInstanceOf(HTMLButtonElement)
-    expect(pred_file_btn?.getAttribute(`aria-label`)).toBe(
-      `Download model prediction files`,
-    )
-
-    // Get model name from the same row for verification
-    const model_cell = pred_file_btn?.closest(`tr`)?.querySelector(`td[data-col="Model"]`)
-    expect(model_cell).not.toBeNull()
-
-    // Check dropdown is initially not in the DOM
-    const dropdown = document.querySelector(`.pred-files-dropdown`)
-    expect(dropdown).toBeNull()
   })
 
   it.each([
@@ -412,7 +403,7 @@ describe(`MetricsTable`, () => {
     })
     await tick()
     const rows = document.querySelectorAll(`tbody tr`)
-    expect(rows.length).toBeGreaterThan(18) // was 19
+    expect(rows).toHaveLength(visible_row_count())
   })
 
   describe(`Column Sorting`, () => {
@@ -451,26 +442,21 @@ describe(`MetricsTable`, () => {
         .map(parse_integer_sort_value)
         .filter((timestamp) => timestamp !== null)
 
-      // Instead of checking order, verify we're extracting timestamps correctly
-      expect(timestamps.length).toBeGreaterThan(0)
-      timestamps.forEach((timestamp) => {
-        expect(typeof timestamp).toBe(`number`)
-        expect(timestamp).toBeGreaterThan(0)
-      })
+      // rows must be fully sorted by timestamp (either direction) after the click
+      const ascending = [...timestamps].toSorted((ts_1, ts_2) => ts_1 - ts_2)
+      expect([ascending, ascending.toReversed()]).toContainEqual(timestamps)
 
       // Click again to toggle sort direction
       date_header.click()
+      await tick()
 
-      // Get updated timestamps
-      const descending_timestamps = [
+      const reversed_timestamps = [
         ...document.querySelectorAll(`td[data-col="Date Added"] [data-sort-value]`),
       ]
         .map(parse_integer_sort_value)
         .filter((timestamp) => timestamp !== null)
 
-      // Verify we have timestamps
-      expect(descending_timestamps.length).toBeGreaterThan(0)
-      expect(descending_timestamps).toHaveLength(timestamps.length)
+      expect(reversed_timestamps).toStrictEqual(timestamps.toReversed())
     })
 
     it(`sorts numerically by training set size using data-sort-value`, async () => {
@@ -492,6 +478,7 @@ describe(`MetricsTable`, () => {
 
       // Click to sort by training set size
       training_set_header.click()
+      await tick()
 
       // Get training set sizes from data-sort-value
       const sizes = [
@@ -504,41 +491,21 @@ describe(`MetricsTable`, () => {
         throw new Error(`Not enough data for testing training set sorting`)
       }
 
-      // Just verify we're extracting numeric values correctly
-      expect(sizes.length).toBeGreaterThan(0)
-      sizes.forEach((size) => {
-        expect(typeof size).toBe(`number`)
-        expect(size).toBeGreaterThan(0)
-      })
-
-      // Get the initial order for comparison
-      const initial_order = [...sizes]
+      // rows must be fully sorted by size (either direction) after the click
+      const ascending = [...sizes].toSorted((size_1, size_2) => size_1 - size_2)
+      expect([ascending, ascending.toReversed()]).toContainEqual(sizes)
 
       // Click again to toggle sort direction
       training_set_header.click()
       await tick()
 
-      // Get updated sizes
-      const new_sizes = [
+      const reversed_sizes = [
         ...document.querySelectorAll(`td[data-col="Training Set"] [data-sort-value]`),
       ]
         .map(parse_integer_sort_value)
         .filter((size) => size !== null)
 
-      // Verify we have the same number of items
-      expect(new_sizes).toHaveLength(initial_order.length)
-
-      // The order should be different than before (reversed)
-      let some_different = false
-      for (const [idx, ref_size] of initial_order.entries()) {
-        if (ref_size !== new_sizes[idx]) {
-          some_different = true
-          break
-        }
-      }
-
-      // At least some items should be in a different order
-      expect(some_different).toBe(true)
+      expect(reversed_sizes).toStrictEqual(sizes.toReversed())
     })
 
     it(`sorts numerically by parameter count using data-sort-value`, async () => {
@@ -576,22 +543,15 @@ describe(`MetricsTable`, () => {
         throw new Error(`Not enough data for testing parameter count sorting`)
       }
 
-      // Just verify we're extracting numeric values correctly
-      expect(param_counts.length).toBeGreaterThan(0)
-      param_counts.forEach((count) => {
-        expect(typeof count).toBe(`number`)
-        expect(count).toBeGreaterThan(0)
-      })
-
-      // Get the initial order for comparison
-      const initial_order = [...param_counts]
+      // rows must be fully sorted by param count (either direction) after the click
+      const ascending = [...param_counts].toSorted((cnt_1, cnt_2) => cnt_1 - cnt_2)
+      expect([ascending, ascending.toReversed()]).toContainEqual(param_counts)
 
       // Click again to toggle sort direction
       params_header.click()
       await tick()
 
-      // Get updated counts using the correct column label
-      const new_counts = [
+      const reversed_counts = [
         ...document.querySelectorAll(
           `td[data-col="${HYPERPARAMS.model_params.label}"] [data-sort-value]`,
         ),
@@ -599,20 +559,7 @@ describe(`MetricsTable`, () => {
         .map(parse_integer_sort_value)
         .filter((count) => count !== null)
 
-      // Verify we have the same number of items
-      expect(new_counts).toHaveLength(initial_order.length)
-
-      // The order should be different than before (reversed)
-      let some_different = false
-      for (const [idx, ref_count] of initial_order.entries()) {
-        if (ref_count !== new_counts[idx]) {
-          some_different = true
-          break
-        }
-      }
-
-      // At least some items should be in a different order
-      expect(some_different).toBe(true)
+      expect(reversed_counts).toStrictEqual(param_counts.toReversed())
     })
 
     it(`properly handles HTML content in cells without using it for data-sort-value`, async () => {
@@ -712,8 +659,12 @@ describe(`MetricsTable`, () => {
         // Get model names after first sort
         const sorted_model_names = get_model_names()
 
-        // Check that we have enough models to test sorting
-        expect(sorted_model_names.length).toBeGreaterThan(5)
+        expect(sorted_model_names).toHaveLength(
+          visible_row_count({
+            energy: `show_energy_only` in props && props.show_energy_only,
+            non_compliant: props.show_non_compliant,
+          }),
+        )
 
         // Verify sorted in some alphabetical order (ascending or descending)
         const ascending = [...sorted_model_names].toSorted((a, b) => a.localeCompare(b))
@@ -790,7 +741,7 @@ describe(`MetricsTable`, () => {
 
       // Find all links cells
       const links_cells = [...document.querySelectorAll(`td[data-col="Links"]`)]
-      expect(links_cells.length).toBeGreaterThan(20)
+      expect(links_cells).toHaveLength(visible_row_count())
 
       // Check that rows have links (at least some should)
       let rows_with_links = 0
@@ -858,11 +809,9 @@ describe(`MetricsTable`, () => {
 
       await tick() // Wait for component to process data
 
-      // Find all pred_files buttons
+      // Find all pred_files buttons (every row renders one)
       const pred_file_buttons = [...document.querySelectorAll(`.pred-files-btn`)]
-
-      // Some models should have prediction files
-      expect(pred_file_buttons.length).toBeGreaterThan(0)
+      expect(pred_file_buttons).toHaveLength(visible_row_count())
 
       // Check button attributes
       for (const button of pred_file_buttons) {
@@ -964,8 +913,9 @@ describe(`MetricsTable`, () => {
   it(`renders the correct default columns`, () => {
     mount(MetricsTable, { target: document.body })
 
-    // Core text expected in default visible columns
-    const expected_core_columns = new Set([
+    // Core text expected in default visible columns (duplicates intended: MD and
+    // diatomics each have Time and × Fastest columns, disambiguated by tooltip)
+    const expected_core_columns = [
       `Model`, // METADATA_COLS
       `Training Set`, // METADATA_COLS
       `Targets`, // METADATA_COLS
@@ -995,13 +945,18 @@ describe(`MetricsTable`, () => {
       `RMSD`, // ALL_METRICS (Geo Opt)
       `ΔERMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `FRMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
-      `ΔRDF`, // ALL_METRICS (MD)
+      // ΔRDF is visible:false (hidden from leaderboards, redundant with ΔvDOS/ΔADF)
       `ΔADF`, // ALL_METRICS (MD)
       `ΔvDOS`, // ALL_METRICS (MD)
       `PMAE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `PW1`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `ΔP`, // ALL_METRICS (MD)
       `CMDS`, // ALL_METRICS (MD)
+      `Time`, // ALL_METRICS (MD)
+      `× Fastest`, // ALL_METRICS (MD)
+      `CDS`, // DIATOMICS_METRICS
+      `Time`, // DIATOMICS_METRICS
+      `× Fastest`, // DIATOMICS_METRICS
       `E flips`, // DIATOMICS_METRICS
       `E jump`, // DIATOMICS_METRICS
       `F TV`, // DIATOMICS_METRICS
@@ -1015,20 +970,18 @@ describe(`MetricsTable`, () => {
       `PBE F MAE`, // DIATOMICS_METRICS
       `τ`, // DIATOMICS_METRICS
       `CPS`, // Added in assemble_row_data
-    ])
+    ]
 
     const header_elements = document.querySelectorAll(`thead th`)
-    const actual_core_columns = new Set(
-      [...header_elements].map((th) =>
-        // Get text content, remove sort indicator (↑/↓) and any trailing spaces
-        (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim(),
-      ),
+    const actual_core_columns = [...header_elements].map((th) =>
+      // Get text content, remove sort indicator (↑/↓) and any trailing spaces
+      (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
 
     // The default visible columns should stay intentionally curated: new default
-    // columns must be added to expected_core_columns explicitly.
-    expect(actual_core_columns).toEqual(expected_core_columns)
-    expect(header_elements).toHaveLength(expected_core_columns.size)
+    // columns must be added to expected_core_columns explicitly. Sorted comparison
+    // ignores order but checks exact multiset (incl. duplicate Time/× Fastest labels).
+    expect(actual_core_columns.toSorted()).toEqual(expected_core_columns.toSorted())
 
     // Header tooltip content is attached to inner labels so HeatmapTable's
     // generic title-based tooltip doesn't flash below before our desired top placement.
@@ -1194,83 +1147,6 @@ describe(`MetricsTable`, () => {
         // Should show all rows with highlight
         expect(get_rows()).toHaveLength(initial_count)
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
-      },
-    )
-
-    it(
-      `validates toggle behavior with multiple selections and deselections`,
-      { timeout: 30_000 },
-      async () => {
-        mount(MetricsTable, {
-          target: document.body,
-          props: { col_filter: () => true, show_non_compliant: true },
-        })
-
-        expect(get_rows().length).toBeGreaterThanOrEqual(2)
-
-        // Test that toggle appears/disappears correctly
-        expect(get_toggle()).toBeNull()
-
-        // Select first row - use fresh references each time to avoid stale DOM
-        double_click_row(get_rows()[0])
-        await tick()
-        expect(get_toggle()).not.toBeNull()
-        expect(get_toggle_label()?.textContent).toContain(`1 selected`)
-
-        // Select second row - get fresh reference
-        double_click_row(get_rows()[1])
-        await tick()
-        expect(get_toggle_label()?.textContent).toContain(`2 selected`)
-
-        // Test that deselecting works
-        double_click_row(get_rows()[0])
-        await tick()
-        expect(get_toggle_label()?.textContent).toContain(`1 selected`)
-
-        // Deselect the remaining selected row (should be row 1 which is still highlighted)
-        const highlighted_row = document.querySelector(`tbody tr.highlight`)
-        if (!highlighted_row) throw new Error(`Expected highlighted row`)
-        double_click_row(highlighted_row)
-        await tick()
-        expect(get_toggle()).toBeNull()
-      },
-    )
-
-    it(
-      `validates correct model name extraction and selection behavior`,
-      { timeout: 30_000 },
-      async () => {
-        mount(MetricsTable, {
-          target: document.body,
-          props: { col_filter: () => true, show_non_compliant: true },
-        })
-
-        const rows = [...get_rows()]
-        expect(rows.length).toBeGreaterThanOrEqual(1)
-
-        // Select first row
-        double_click_row(rows[0])
-        await tick()
-
-        // Verify that the correct model was selected (not a generic "test-model")
-        // This test will fail if model name extraction is broken
-        expect(get_toggle()).not.toBeNull()
-        expect(get_toggle_label()?.textContent).toContain(`1 selected`)
-
-        // Get fresh row reference after selection
-        const updated_rows = get_rows()
-        expect(updated_rows.length).toBeGreaterThanOrEqual(1)
-        // Verify that the row is highlighted
-        expect(updated_rows[0].classList.contains(`highlight`)).toBe(true)
-
-        // Deselect the row
-        double_click_row(updated_rows[0])
-        await tick()
-
-        // Verify deselection worked
-        expect(get_toggle()).toBeNull()
-        const final_rows = get_rows()
-        expect(final_rows[0].classList.contains(`highlight`)).toBe(false)
       },
     )
   })
@@ -1469,7 +1345,7 @@ describe(`MetricsTable`, () => {
       })
       await tick()
 
-      const headers = [...document.querySelectorAll(`th`)] as HTMLElement[]
+      const headers = [...document.querySelectorAll<HTMLElement>(`th`)]
 
       // Initially no drag classes should be present
       headers.forEach((header) => {

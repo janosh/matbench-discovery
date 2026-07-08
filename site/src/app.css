@@ -1,3 +1,5 @@
+@import '@wooorm/starry-night/style/dark';
+
 :root {
   /* Light theme palette */
   --light-page-bg: #fefefe; /* softer than pure white */
@@ -19,7 +21,6 @@
   --light-card-bg: rgba(255, 255, 255, 0.4);
   --light-card-border: rgba(0, 0, 0, 0.12);
   --light-shadow: rgba(0, 0, 0, 0.06);
-  --light-selection: rgba(42, 111, 187, 0.16);
 
   /* Dark theme palette matches current site appearance */
   --dark-page-bg: #061e25;
@@ -39,9 +40,41 @@
   --dark-table-odd: rgba(0, 0, 0, 0.5);
   --dark-nav-bg: rgba(255, 255, 255, 0.08);
   --dark-card-bg: rgba(0, 0, 0, 0.3);
+  --dark-chip-bg: rgba(255, 255, 255, 0.08); /* card-bg reads near-black on small chips */
   --dark-card-border: rgba(255, 255, 255, 0.1);
   --dark-shadow: rgba(0, 0, 0, 0.5);
-  --dark-selection: rgba(0, 255, 255, 0.2);
+
+  /* Starry Night syntax colors used by @wooorm/starry-night/style/dark */
+  --color-prettylights-syntax-brackethighlighter-angle: light-dark(#59636e, #9198a1);
+  --color-prettylights-syntax-brackethighlighter-unmatched: light-dark(#82071e, #f85149);
+  --color-prettylights-syntax-carriage-return-bg: light-dark(#cf222e, #b62324);
+  --color-prettylights-syntax-carriage-return-text: light-dark(#f6f8fa, #f0f6fc);
+  --color-prettylights-syntax-comment: light-dark(#59636e, #9198a1);
+  --color-prettylights-syntax-constant: light-dark(#0550ae, #79c0ff);
+  --color-prettylights-syntax-constant-other-reference-link: light-dark(#0a3069, #a5d6ff);
+  --color-prettylights-syntax-entity: light-dark(#6639ba, #d2a8ff);
+  --color-prettylights-syntax-entity-tag: light-dark(#0550ae, #7ee787);
+  --color-prettylights-syntax-invalid-illegal-bg: light-dark(#82071e, #8e1519);
+  --color-prettylights-syntax-invalid-illegal-text: light-dark(#f6f8fa, #f0f6fc);
+  --color-prettylights-syntax-keyword: light-dark(#cf222e, #ff7b72);
+  --color-prettylights-syntax-markup-bold: light-dark(#1f2328, #f0f6fc);
+  --color-prettylights-syntax-markup-changed-bg: light-dark(#ffd8b5, #5a1e02);
+  --color-prettylights-syntax-markup-changed-text: light-dark(#953800, #ffdfb6);
+  --color-prettylights-syntax-markup-deleted-bg: light-dark(#ffebe9, #67060c);
+  --color-prettylights-syntax-markup-deleted-text: light-dark(#82071e, #ffdcd7);
+  --color-prettylights-syntax-markup-heading: light-dark(#0550ae, #1f6feb);
+  --color-prettylights-syntax-markup-ignored-bg: light-dark(#0550ae, #1158c7);
+  --color-prettylights-syntax-markup-ignored-text: light-dark(#d1d9e0, #f0f6fc);
+  --color-prettylights-syntax-markup-inserted-bg: light-dark(#dafbe1, #033a16);
+  --color-prettylights-syntax-markup-inserted-text: light-dark(#116329, #aff5b4);
+  --color-prettylights-syntax-markup-italic: light-dark(#1f2328, #f0f6fc);
+  --color-prettylights-syntax-markup-list: light-dark(#3b2300, #f2cc60);
+  --color-prettylights-syntax-meta-diff-range: light-dark(#8250df, #d2a8ff);
+  --color-prettylights-syntax-storage-modifier-import: light-dark(#1f2328, #f0f6fc);
+  --color-prettylights-syntax-string: light-dark(#0a3069, #a5d6ff);
+  --color-prettylights-syntax-string-regexp: light-dark(#116329, #7ee787);
+  --color-prettylights-syntax-sublimelinter-gutter-mark: light-dark(#818b98, #3d444d);
+  --color-prettylights-syntax-variable: light-dark(#953800, #ffa657);
 
   /* Theme-aware aliases */
   --page-bg: light-dark(var(--light-page-bg), var(--dark-page-bg));
@@ -61,9 +94,10 @@
   --table-odd: light-dark(var(--light-table-odd), var(--dark-table-odd));
   --nav-bg: light-dark(var(--light-nav-bg), var(--dark-nav-bg));
   --card-bg: light-dark(var(--light-card-bg), var(--dark-card-bg));
+  /* small chips/pills (deps, model info, external links): lightly shaded in dark mode */
+  --chip-bg: light-dark(var(--light-card-bg), var(--dark-chip-bg));
   --card-border: light-dark(var(--light-card-border), var(--dark-card-border));
   --shadow: light-dark(var(--light-shadow), var(--dark-shadow));
-  --selection: light-dark(var(--light-selection), var(--dark-selection));
   --struct-bg: light-dark(var(--light-pre-bg), var(--dark-pre-bg));
 
   /* Component variables and layout */
@@ -99,11 +133,6 @@
 
   --compliant-color: #4caf50;
   --non-compliant-color: #4682b4;
-  --panel-bg: var(--pre-bg);
-
-  /* Defaults for tables/heatmaps */
-  --heatmap-header-bg: var(--page-bg);
-  --heatmap-header-hover-bg: var(--nav-bg);
   --text-muted: var(--text-secondary);
 }
 

@@ -215,6 +215,10 @@ definitions:
         type: string
       run_time_sec:
         type: number
+      max_rss_gb:
+        type: number
+      max_gpu_mem_gb:
+        type: number
       excluded_formula_reasons:
         type: object
         additionalProperties:
@@ -255,6 +259,14 @@ definitions:
       pred_file_url:
         type: [string, 'null']
         $ref: '#/definitions/http_url'
+      hardware:
+        type: string
+      run_time_sec:
+        type: number
+      max_rss_gb:
+        type: number
+      max_gpu_mem_gb:
+        type: number
       energy_rmse:
         type: number
       force_rmse:
@@ -271,10 +283,8 @@ definitions:
         type: number
       pressure_error:
         type: number
-      combined_score:
-        type: number
-        minimum: 0
-        maximum: 1
+      # NB: no combined_score -- CMDS is computed on the fly by the site (like CPS)
+      # from the stored components, so it can never go stale and stays reweightable
       n_systems:
         type: number
     allOf:
