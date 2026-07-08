@@ -6,6 +6,13 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import { BarPlot } from 'matterviz/plot'
   import { Toggle } from 'svelte-multiselect'
+  import {
+    bind_url_params,
+    bool_from_param,
+    bool_url_entry,
+    url_color_scale,
+    valid_query_param,
+  } from '$lib/url-state.svelte'
 
   const raw_counts = import.meta.glob<Record<string, number>>(
     `../wbm-element-counts-*=*.json`,
@@ -22,12 +29,26 @@
   const starts_with_arity = (key: string) => key.startsWith(`arity=`)
   let arity_keys = all_keys.filter(starts_with_arity)
   let batch_keys = all_keys.filter((key) => key.startsWith(`batch=`))
+  const default_filter = all_keys.find(starts_with_arity) ?? all_keys[0] ?? ``
   let log = $state(false) // Log color scale
-  let filter = $state(all_keys.find(starts_with_arity) ?? all_keys[0] ?? ``)
-  let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
+  let filter = $state(default_filter)
+  let color_scale = $state<D3InterpolateName>(url_color_scale.default)
   let active_element: ChemicalElement | null = $state(null)
   let active_counts = $derived(elem_counts[filter])
   let normalized_bar_counts: boolean = $state(false)
+
+  const read_url_params = (params: URLSearchParams) => {
+    filter = valid_query_param(params, `filter`, default_filter, new Set(all_keys))
+    log = bool_from_param(params, `log`)
+    normalized_bar_counts = bool_from_param(params, `normalized`)
+    color_scale = url_color_scale.read(params)
+  }
+  bind_url_params(read_url_params, () => [
+    [`filter`, filter, default_filter],
+    bool_url_entry(`log`, log),
+    bool_url_entry(`normalized`, normalized_bar_counts),
+    url_color_scale.entry(color_scale),
+  ])
 
   const style = `display: flex; place-items: center; place-content: center;`
 </script>

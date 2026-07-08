@@ -1,12 +1,29 @@
 import { afterNavigate, replaceState } from '$app/navigation'
 import { page } from '$app/state'
+import * as d3_sc from 'd3-scale-chromatic'
+import type { D3InterpolateName } from 'matterviz/colors'
 import type { SortDir } from './types'
 
 type PageState = Parameters<typeof replaceState>[1]
-type SortState = { column: string; dir: SortDir }
-type UrlParamEntry = [key: string, value: string, default_value?: string]
+export type SortState = { column: string; dir: SortDir }
+export type UrlParamEntry = [key: string, value: string, default_value?: string]
 type ValidValues<T extends string> = ReadonlySet<T> | Record<string, unknown>
 const sort_dirs = new Set<SortDir>([`asc`, `desc`])
+
+// Boolean flag params: default-true flags encode "off" as `0` (any other value = on),
+// default-false flags encode "on" as `1` (any other value = off). At their default,
+// flags are omitted from the URL.
+export const bool_from_param = (
+  params: URLSearchParams,
+  key: string,
+  fallback = false,
+): boolean => (fallback ? params.get(key) !== `0` : params.get(key) === `1`)
+
+export const bool_url_entry = (
+  key: string,
+  value: boolean,
+  fallback = false,
+): UrlParamEntry => [key, value === fallback ? `` : value ? `1` : `0`]
 
 export function valid_query_param<T extends string>(
   params: URLSearchParams,
@@ -36,6 +53,15 @@ export const sort_from_query = (
     : (params.get(`sort`) ?? default_sort.column),
   dir: valid_query_param(params, `dir`, default_sort.dir, sort_dirs),
 })
+
+// write-side counterpart of sort_from_query
+export const sort_url_entries = (
+  sort: SortState,
+  default_sort: SortState,
+): UrlParamEntry[] => [
+  [`sort`, sort.column, default_sort.column],
+  [`dir`, sort.dir, default_sort.dir],
+]
 
 // -- Weighted-score radar weights as a single URL param ------------------------
 // Serialized as comma-joined values in config-key order, e.g. weights=0.5,0.4,0.1.
@@ -86,6 +112,126 @@ export function apply_weights_param(
   }
   for (const key of keys) {
     config[key].weight = default_config[key]?.weight ?? config[key].weight
+  }
+}
+
+// color_scale param: valid d3 interpolate names, defaulting to Viridis
+const d3_color_scale_names = new Set(
+  Object.keys(d3_sc).filter((key) => key.startsWith(`interpolate`)),
+) as Set<D3InterpolateName>
+
+export const url_color_scale = {
+  default: `interpolateViridis` as D3InterpolateName,
+  read: (params: URLSearchParams): D3InterpolateName =>
+    valid_query_param(
+      params,
+      `color_scale`,
+      url_color_scale.default,
+      d3_color_scale_names,
+    ),
+  entry: (value: D3InterpolateName): UrlParamEntry => [
+    `color_scale`,
+    value,
+    url_color_scale.default,
+  ],
+}
+
+// -- Metrics-table model filters (training data, openness, heatmap) ---------------
+// Encoded as:
+//   train=MPtrj,-OMat24   comma list of dataset keys; a bare key requires the dataset
+//                         in a model's training set (multiple keys AND together), a
+//                         -prefixed key excludes models trained on that dataset.
+//                         Omitted when no dataset is filtered.
+//   openness=OSOD,OSCD    subset of openness values to show; omitted when all shown
+//   heatmap=0             heatmap colors off (default on)
+export const OPENNESS_OPTIONS = [`OSOD`, `OSCD`, `CSOD`, `CSCD`] as const
+export type Openness = (typeof OPENNESS_OPTIONS)[number]
+export type TrainFilterMode = `require` | `exclude`
+// minimal structural model shape keeps this module decoupled from $lib/types
+type FilterableModel = { training_set: string[]; openness?: string }
+
+export class UrlTableFilters {
+  // dataset key -> require/exclude; keys absent from the record are unfiltered
+  training = $state<Record<string, TrainFilterMode>>({})
+  openness = $state<Openness[]>([...OPENNESS_OPTIONS])
+  show_heatmap = $state(true)
+
+  constructor(readonly training_sets: string[]) {}
+
+  // number of active dataset/openness constraints (drives filter-button badges)
+  get n_active(): number {
+    return (
+      Object.keys(this.training).length +
+      (this.openness.length < OPENNESS_OPTIONS.length ? 1 : 0)
+    )
+  }
+
+  matches = (model: FilterableModel): boolean => {
+    if (!this.openness.includes((model.openness ?? `OSOD`) as Openness)) return false
+    return Object.entries(this.training).every(
+      ([key, mode]) => model.training_set.includes(key) === (mode === `require`),
+    )
+  }
+
+  // toggle a dataset constraint; picking the already-active mode clears it
+  set_training = (key: string, mode: TrainFilterMode): void => {
+    if (this.training[key] === mode) {
+      this.training = Object.fromEntries(
+        Object.entries(this.training).filter(([other]) => other !== key),
+      )
+    } else this.training[key] = mode
+  }
+
+  // flip an openness value's membership (keeping canonical order), refusing to
+  // hide the last one (would empty the table)
+  toggle_openness = (value: Openness): void => {
+    const next = OPENNESS_OPTIONS.filter((op) =>
+      op === value ? !this.openness.includes(op) : this.openness.includes(op),
+    )
+    if (next.length > 0) this.openness = next
+  }
+
+  clear = (): void => {
+    this.training = {}
+    this.openness = [...OPENNESS_OPTIONS]
+  }
+
+  read = (params: URLSearchParams): void => {
+    const valid_sets = new Set(this.training_sets)
+    const training: Record<string, TrainFilterMode> = {}
+    for (const token of params.get(`train`)?.split(`,`) ?? []) {
+      const exclude = token.startsWith(`-`)
+      const key = exclude ? token.slice(1) : token
+      if (valid_sets.has(key)) training[key] = exclude ? `exclude` : `require`
+    }
+    this.training = training
+
+    const shown = params
+      .get(`openness`)
+      ?.split(`,`)
+      .filter((token): token is Openness =>
+        (OPENNESS_OPTIONS as readonly string[]).includes(token),
+      )
+    this.openness = shown?.length
+      ? OPENNESS_OPTIONS.filter((op) => shown.includes(op))
+      : [...OPENNESS_OPTIONS]
+
+    this.show_heatmap = bool_from_param(params, `heatmap`, true)
+  }
+
+  get url_entries(): UrlParamEntry[] {
+    // serialize in canonical dataset order so URLs are order-insensitive
+    const train = this.training_sets
+      .filter((key) => key in this.training)
+      .map((key) => (this.training[key] === `exclude` ? `-${key}` : key))
+      .join(`,`)
+    const openness =
+      this.openness.length < OPENNESS_OPTIONS.length ? this.openness.join(`,`) : ``
+    return [
+      [`train`, train],
+      [`openness`, openness],
+      bool_url_entry(`heatmap`, this.show_heatmap, true),
+    ]
   }
 }
 

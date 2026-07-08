@@ -5,6 +5,7 @@
   import { GeoOptMetricsTable, ModelSelect, MODELS } from '$lib'
   import { order_models } from '$lib/fig-helpers'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
+  import { make_table_filters } from '$lib/models.svelte'
   import { bind_url_params } from '$lib/url-state.svelte'
   import { min } from 'd3-array'
   import { format_num, pick_contrast_color } from 'matterviz'
@@ -73,7 +74,16 @@
     spg_sankeys.models.filter(({ key }) => selected_model_key_set.has(key)),
   )
 
-  bind_url_params(model_selection.read, () => [model_selection.url_entry])
+  const filters = make_table_filters()
+
+  const read_url_params = (params: URLSearchParams) => {
+    model_selection.read(params)
+    filters.read(params)
+  }
+  bind_url_params(read_url_params, () => [
+    model_selection.url_entry,
+    ...filters.url_entries,
+  ])
 
   const n_min_relaxed_structures =
     min(MODELS, ({ metrics }) =>
@@ -86,7 +96,7 @@
 <GeoOptReadme>
   {#snippet geo_opt_metrics_table()}
     <section class="full-bleed">
-      <GeoOptMetricsTable show_non_compliant />
+      <GeoOptMetricsTable {filters} />
     </section>
   {/snippet}
   {#snippet min_relaxed_structures()}

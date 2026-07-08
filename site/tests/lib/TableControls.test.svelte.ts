@@ -1,4 +1,6 @@
 import { type Label, TableControls } from '$lib'
+import { ALL_TRAINING_SETS, make_table_filters } from '$lib/models.svelte'
+import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
@@ -11,42 +13,71 @@ describe(`TableControls`, () => {
     { key: `rmse`, label: `RMSE`, description: `RMSE`, visible: false },
   ]
 
-  const find_checkbox_by_label = (text: string): HTMLInputElement => {
-    const labels = document.querySelectorAll(`label`)
-    const label = [...labels].find((lbl) => lbl.textContent?.includes(text))
-    if (!label) throw new Error(`No checkbox label found containing: ${text}`)
-    return doc_query<HTMLInputElement>(`input[type="checkbox"]`, label)
+  const summary_for = (text: string): HTMLElement => {
+    const summary = [...document.querySelectorAll(`details.filter-menu summary`)].find(
+      (el) => el.textContent?.includes(text),
+    )
+    if (!summary) throw new Error(`No filter summary found containing: ${text}`)
+    return summary as HTMLElement
   }
 
-  it(`renders filter controls with correct initial state`, () => {
+  it(`renders filter dropdowns and heatmap toggle`, () => {
     mount(TableControls, { target: document.body })
 
-    // Verify filter checkboxes are present
+    expect(summary_for(`Training data`)).toBeDefined()
+    expect(summary_for(`Openness`)).toBeDefined()
     const labels = [...document.querySelectorAll(`label`)].map((label) =>
       label.textContent?.replaceAll(/\s+/g, ` `).trim(),
     )
-    expect(labels).toContain(`Compliant models`)
-    expect(labels).toContain(`Non-compliant models`)
     expect(labels).toContain(`Heatmap`)
   })
 
-  it(`toggles compliance filter checkboxes`, () => {
-    mount(TableControls, { target: document.body })
+  it(`training-data dropdown lists all datasets with only/not checkboxes`, async () => {
+    const filters = make_table_filters()
+    mount(TableControls, { target: document.body, props: { filters } })
+    await tick()
 
-    const compliant_checkbox = find_checkbox_by_label(`Compliant`)
-    const noncompliant_checkbox = find_checkbox_by_label(`Non-compliant`)
+    const dropdown = summary_for(`Training data`).closest(`details`)
+    const rows = dropdown?.querySelectorAll(`.filter-row`) ?? []
+    expect(rows).toHaveLength(ALL_TRAINING_SETS.length)
 
-    // Both should start checked
-    expect(compliant_checkbox.checked).toBe(true)
-    expect(noncompliant_checkbox.checked).toBe(true)
+    // check `only` for the first dataset: require-mode filter becomes active,
+    // its checkbox checks, and the summary shows a count badge
+    const first_row = rows[0]
+    const [only_box, not_box] = first_row.querySelectorAll<HTMLInputElement>(`input`)
+    only_box.click()
+    await tick()
+    expect(filters.training[ALL_TRAINING_SETS[0]]).toBe(`require`)
+    expect(only_box.checked).toBe(true)
+    expect(summary_for(`Training data (1)`)).toBeDefined()
 
-    // Toggle non-compliant off
-    noncompliant_checkbox.click()
-    expect(noncompliant_checkbox.checked).toBe(false)
+    // checking `not` on the same dataset flips the mode (mutually exclusive)
+    not_box.click()
+    await tick()
+    expect(filters.training[ALL_TRAINING_SETS[0]]).toBe(`exclude`)
+    expect(only_box.checked).toBe(false)
+    expect(not_box.checked).toBe(true)
 
-    // Toggle back on
-    noncompliant_checkbox.click()
-    expect(noncompliant_checkbox.checked).toBe(true)
+    // clear-filters button resets everything
+    doc_query<HTMLButtonElement>(`button.clear-filters`).click()
+    await tick()
+    expect(filters.n_active).toBe(0)
+  })
+
+  it(`openness dropdown toggles values but never hides the last one`, async () => {
+    const filters = make_table_filters()
+    mount(TableControls, { target: document.body, props: { filters } })
+    await tick()
+
+    const dropdown = summary_for(`Openness`).closest(`details`)
+    const boxes = dropdown?.querySelectorAll<HTMLInputElement>(`input`) ?? []
+    expect(boxes).toHaveLength(OPENNESS_OPTIONS.length)
+    expect([...boxes].every((box) => box.checked)).toBe(true)
+
+    boxes[1].click() // hide OSCD
+    await tick()
+    expect(filters.openness).toStrictEqual([`OSOD`, `CSOD`, `CSCD`])
+    expect(summary_for(`Openness (3/4)`)).toBeDefined()
   })
 
   it(`opens and closes column visibility panel`, async () => {

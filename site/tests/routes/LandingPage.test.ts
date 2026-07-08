@@ -82,7 +82,7 @@ describe(`Landing Page`, () => {
   it(`surfaces a beta warning for the MD metrics`, async () => {
     const n_beta_warnings = () =>
       [...document.querySelectorAll(`blockquote`)].filter((bq) =>
-        bq.textContent?.includes(`interpret with caution`),
+        bq.textContent?.toLowerCase().includes(`interpret with caution`),
       ).length
     expect(n_beta_warnings()).toBe(1) // always shown in the page's MD note
 
@@ -176,25 +176,30 @@ describe(`Landing Page`, () => {
     expect(details.open).toBe(false)
   })
 
-  it(`toggles non-compliant models`, async () => {
+  it(`filters models via the training-data dropdown`, async () => {
     const selected_scatter_label = () =>
       doc_query(`span.selected-label`).textContent?.replaceAll(/\s+/g, ` `)
-    const toggle = doc_query<HTMLInputElement>(
-      `.table-controls label input[type="checkbox"]`,
-    )
-    expect(toggle.parentElement?.textContent).toContain(`Compliant models`)
-    expect(toggle.checked).toBe(true)
-
     const n_models_on_load = document.querySelectorAll(`tbody tr`).length
     expect(selected_scatter_label()).toContain(`Params`)
     expect(selected_scatter_label()).toContain(`${n_models_on_load} models`)
 
-    toggle.click()
-    expect(toggle.checked).toBe(false)
+    // exclude OMat24-trained models via the dataset's `not` checkbox (many default-
+    // visible models train on OMat24, so the row count must drop; the first dataset,
+    // MP 2022, would be a no-op since its models are energy-only and already hidden)
+    const training_menu = [...document.querySelectorAll(`details.filter-menu`)].find(
+      (menu) => menu.querySelector(`summary`)?.textContent?.includes(`Training`),
+    )
+    if (!training_menu) throw new Error(`Training data filter menu not found`)
+    const omat_row = [...training_menu.querySelectorAll(`.filter-row`)].find(
+      (row) => row.querySelector(`span`)?.textContent?.trim() === `OMat24`,
+    )
+    if (!omat_row) throw new Error(`OMat24 filter row not found`)
+    omat_row.querySelectorAll<HTMLInputElement>(`input`)[1].click()
     await tick()
-    const n_non_compliant_only = document.querySelectorAll(`tbody tr`).length
-    expect(n_non_compliant_only).toBeLessThan(n_models_on_load)
-    expect(selected_scatter_label()).toContain(`${n_non_compliant_only} models`)
+
+    const n_filtered = document.querySelectorAll(`tbody tr`).length
+    expect(n_filtered).toBeLessThan(n_models_on_load)
+    expect(selected_scatter_label()).toContain(`${n_filtered} models`)
   })
 
   it(`displays valid best model information`, () => {
@@ -267,6 +272,19 @@ describe(`Landing Page URL state`, () => {
     await tick()
     expect(sorted_header()?.textContent).toContain(`RMSD`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`ascending`)
+  })
+
+  it(`restores the heatmap toggle from the URL and omits it at default`, async () => {
+    await mount_with_url(Page, `http://localhost/?heatmap=0`)
+
+    const heatmap_toggle = document.querySelector<HTMLInputElement>(
+      `input[aria-label="Toggle heatmap colors"]`,
+    )
+    expect(heatmap_toggle?.checked).toBe(false)
+
+    heatmap_toggle?.click()
+    await tick()
+    expect(location.search).not.toContain(`heatmap=`)
   })
 
   it(`drops preset from the URL only while columns are customized`, async () => {

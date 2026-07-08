@@ -160,13 +160,13 @@ CMDS is a weighted mean of four subscores in [0,1], higher is better: the observ
 `vdos_error`, `adf_error` and `pressure_error` (each with subscore `1 − error/100`) plus
 **speed** — the summed NVT rollout wall time `run_time_sec`, log-clamped from 9e3 s
 (subscore 1) to 3e5 s (subscore 0), bounds frozen at the mid-2026 field (33 models, one
-H200 per system), mirroring the CDS speed pillar. All four are **equally weighted at 1/4
-by default**, which sits the radar knob dead center and is trivially knob-expressible
-(opposite-corner products 1/16 == 1/16, see `DEFAULT_CDS_CONFIG`). The square knob can't
-express a vDOS-dominant default at this speed weight — the diagonal-opposite product would
-force ADF·pressure too large — so equal weighting is the natural pick; users can reweight
-live on the MD task page. Models without a recorded `run_time_sec` get no CMDS unless the
-speed weight is zeroed.
+H200 per system), mirroring the CDS speed pillar. Default weights are **vDOS 30%, ΔP 30%,
+ADF 20%, speed 20%**: vDOS is the headline dynamical observable and pressure the least
+correlated with the other components, while ADF errors are small (~2% field mean) and
+speed is a cost- rather than fidelity-signal. The vector is knob-expressible on the square
+radar (opposite-corner products 0.3·0.2 == 0.2·0.3, see `DEFAULT_CDS_CONFIG`); users can
+reweight live on the MD task page. Models without a recorded `run_time_sec` get no CMDS
+unless the speed weight is zeroed.
 `rdf_error` was dropped from the aggregate (and hidden from the leaderboard, kept on model
 detail pages): across N=34 models it is Spearman-correlated 0.91 with `vdos_error`, 0.92
 with `adf_error` and 0.94 with `force_rmse`, so it double-counted structural accuracy while

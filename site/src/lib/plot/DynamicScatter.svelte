@@ -4,12 +4,8 @@
   import { extent } from 'd3-array'
   import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import {
-    ColorScaleSelect,
-    create_color_scale,
-    DEFAULT_SERIES_SYMBOLS,
-  } from 'matterviz/plot'
-  import type { DataSeries } from 'matterviz/plot'
+  import { ColorScaleSelect, create_color_scale } from 'matterviz/plot'
+  import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
   import Select from 'svelte-multiselect'
@@ -24,6 +20,7 @@
   } from '$lib/labels'
   import { get_nested_value, is_finite_num, label_data_path } from '$lib/metrics'
   import { make_models_legend } from '$lib/fig-helpers'
+  import { pareto_staircase, sota_frontier_indices, sota_step_line } from '$lib/sota'
   import type { Label } from '$lib/types'
 
   // Keep size-select labels short by dropping discovery-set segments and abbreviating
@@ -60,6 +57,8 @@
     x_key = $bindable(ALL_METRICS.κ_SRME.key),
     y_key = $bindable(ALL_METRICS.CPS.key),
     color_key = $bindable(ALL_METRICS.F1.key),
+    initial_log = {},
+    show_pareto_frontier = false,
     ...rest
   }: ComponentProps<typeof ScatterPlot> & {
     models: ModelData[]
@@ -69,9 +68,16 @@
     x_key?: string
     y_key?: string
     color_key?: string
+    // seed the log-scale toggles, e.g. { color: true } for wide-range color data
+    initial_log?: Partial<Record<`x` | `y` | `color` | `size`, boolean>>
+    // trace the staircase of non-dominated models (needs better-direction on both axes)
+    show_pareto_frontier?: boolean
   } = $props()
 
-  let log = $state({ x: false, y: false, color: false, size: false })
+  const log_dims = [`x`, `y`, `color`, `size`] as const
+  // seed-once by design: initial_log only sets the starting toggle state
+  // svelte-ignore state_referenced_locally
+  let log = $state({ x: false, y: false, color: false, size: false, ...initial_log })
   let size_prop = $state(HYPERPARAMS.model_params as (typeof scatter_options)[number])
 
   let axes = $derived({
@@ -89,8 +95,8 @@
   let label_font_size = $state(12)
   let leader_line_threshold = $state(15)
 
-  // Enable log scale only for positive ranges spanning at least two decades.
-  const can_log = (ext: [number | undefined, number | undefined]): boolean =>
+  // Log scale needs positive values spanning at least two decades.
+  const supports_log = (ext: [number | undefined, number | undefined]): boolean =>
     ext[0] !== undefined && ext[0] > 0 && 100 * ext[0] <= (ext[1] ?? 0)
 
   let filtered_models = $derived(models.filter(model_filter))
@@ -164,37 +170,77 @@
     }),
   )
 
-  // Mirror the plot color scale so built-in legend swatches match their points.
+  let can_log = $derived({
+    x: supports_log(extent(plot_data, (pt) => pt.x)),
+    y: supports_log(extent(plot_data, (pt) => pt.y)),
+    color: supports_log(extent(plot_data, (pt) => pt.color_value as number)),
+    size: supports_log(extent(plot_data, (pt) => pt.size_value)),
+  })
+  // log scale only when toggled on AND the data supports it: a seeded (initial_log)
+  // or stale toggle falls back to linear, matching the hidden/disabled checkboxes
+  const scale_of = (dim: keyof typeof log) =>
+    log[dim] && can_log[dim] ? (`log` as const) : (`linear` as const)
+
+  // plot and legend share this scale so legend swatches always match point colors
+  let color_scale = $derived({ scheme: color_scheme, type: scale_of(`color`) })
   let legend_color_scale = $derived.by(() => {
     const [min, max] = extent(plot_data, (item) => item.color_value as number)
-    return create_color_scale(
-      { scheme: color_scheme, type: log.color ? `log` : `linear` },
-      [min ?? 0, max ?? 1],
-    )
+    return create_color_scale(color_scale, [min ?? 0, max ?? 1])
   })
   const point_fill = (color_value: unknown): string =>
     point_color ?? (legend_color_scale(color_value as number) as string) ?? `gray`
 
-  let can_log_x = $derived(can_log(extent(plot_data, (point) => point.x)))
-  let can_log_y = $derived(can_log(extent(plot_data, (point) => point.y)))
-  let can_log_color = $derived(
-    can_log(extent(plot_data, (point) => point.color_value as number)),
-  )
-  let can_log_size = $derived(can_log(extent(plot_data, (point) => point.size_value)))
+  // Staircase through the non-dominated models, tracing the boundary of the dominated
+  // region. With a date on the x-axis it becomes the running best over time (records
+  // extended to today); otherwise it needs a better-direction on both axes.
+  let pareto_series = $derived.by((): DataSeries<PointMetadata> | null => {
+    const [x_better, y_better] = [axes.x?.better, axes.y?.better]
+    if (!show_pareto_frontier || !y_better) return null
 
-  // One series per model enables per-model legend toggles and distinct marker shapes.
-  let series: DataSeries<PointMetadata>[] = $derived(
-    plot_data.map((item, idx) => ({
+    const line_series = (label: string, xs: number[], ys: number[]) => ({
+      x: xs,
+      y: ys,
+      label,
+      legend_group,
+      markers: `line` as const,
+      line_style: { stroke: `gray`, stroke_width: 1.5, line_dash: `5 3` },
+    })
+
+    if (label_data_path(axes.x).includes(`date`)) {
+      // field-progress view: which releases moved the frontier, and where it stands
+      const points = plot_data.map((pt) => ({ date: pt.x, value: pt.y }))
+      const records = sota_frontier_indices(points, y_better).map((idx) => points[idx])
+      if (records.length === 0) return null
+      const { x, y } = sota_step_line(records, Date.now())
+      return line_series(`Running best`, x, y)
+    }
+
+    if (!x_better) return null
+    const staircase = pareto_staircase(plot_data, x_better, y_better)
+    return staircase && line_series(`Pareto frontier`, staircase.x, staircase.y)
+  })
+
+  // Suppress hover on the frontier line: its staircase corners are not models (no
+  // metadata), so snapping to them showed a useless tooltip. Frontier vertices that ARE
+  // models still get the model tooltip: the model series win the closest-point tie by
+  // coming first in `series`.
+  let tooltip_point: InternalPoint | null = $state(null)
+  $effect(() => {
+    if (tooltip_point && !tooltip_point.metadata) tooltip_point = null
+  })
+
+  // One series per model enables per-model legend toggles.
+  let series: DataSeries<PointMetadata>[] = $derived([
+    ...plot_data.map((item) => ({
       x: [item.x],
       y: [item.y],
       label: item.metadata.model_name,
       legend_group,
       markers: `points` as const,
       metadata: [item.metadata],
-      point_style: {
-        fill: point_fill(item.color_value),
-        symbol_type: DEFAULT_SERIES_SYMBOLS[idx % DEFAULT_SERIES_SYMBOLS.length],
-      },
+      // uniform circles: color and size already encode data, and cycling 7 shapes
+      // across 30+ models distinguished nothing while adding visual noise
+      point_style: { fill: point_fill(item.color_value), symbol_type: `Circle` as const },
       color_values: point_color === null ? [item.color_value as number] : undefined,
       size_values: axes.size_value ? [item.size_value] : undefined,
       point_label: show_model_labels
@@ -207,7 +253,8 @@
           ]
         : [],
     })),
-  )
+    ...(pareto_series ? [pareto_series] : []),
+  ])
 </script>
 
 <div
@@ -249,12 +296,13 @@
   <ScatterPlot
     style="height: 600px"
     bind:series
+    bind:tooltip_point
     legend={models_legend}
     padding={{ b: 70 }}
     x_axis={{
       label: axes.x?.label,
       format: axes.x?.format,
-      scale_type: log.x ? `log` : `linear`,
+      scale_type: scale_of(`x`),
       label_shift: { y: -50 },
       ticks,
       options: prop_options,
@@ -263,7 +311,7 @@
     y_axis={{
       label: axes.y?.label,
       format: axes.y?.format,
-      scale_type: log.y ? `log` : `linear`,
+      scale_type: scale_of(`y`),
       label_shift: {
         x: -10,
         y: [`date_added`, `model_params`].includes(axes.y?.key ?? ``) ? -40 : -10,
@@ -273,10 +321,10 @@
       selected_key: y_key,
     }}
     bind:display
-    color_scale={{ scheme: color_scheme, type: log.color ? `log` : `linear` }}
+    {color_scale}
     size_scale={{
       radius_range: [5 * size_multiplier, 10 * size_multiplier],
-      type: log.size ? `log` : `linear`,
+      type: scale_of(`size`),
     }}
     color_bar={{
       title: format_label_title(axes.color_value),
@@ -309,20 +357,12 @@
   >
     {#snippet controls_extra()}
       <div class="log-toggles" style="display: flex; gap: 1em; flex-wrap: wrap">
-        <label style:visibility={can_log_x ? `visible` : `hidden`}>
-          <input type="checkbox" bind:checked={log.x} disabled={!can_log_x} /> Log X
-        </label>
-        <label style:visibility={can_log_y ? `visible` : `hidden`}>
-          <input type="checkbox" bind:checked={log.y} disabled={!can_log_y} /> Log Y
-        </label>
-        <label style:visibility={can_log_color ? `visible` : `hidden`}>
-          <input type="checkbox" bind:checked={log.color} disabled={!can_log_color} />
-          Log Color
-        </label>
-        <label style:visibility={can_log_size ? `visible` : `hidden`}>
-          <input type="checkbox" bind:checked={log.size} disabled={!can_log_size} />
-          Log Size
-        </label>
+        {#each log_dims as dim (dim)}
+          <label style:visibility={can_log[dim] ? `visible` : `hidden`}>
+            <input type="checkbox" bind:checked={log[dim]} disabled={!can_log[dim]} />
+            Log <span style="text-transform: capitalize">{dim}</span>
+          </label>
+        {/each}
       </div>
 
       <label title="Toggle visibility of model name labels on the scatter plot points">

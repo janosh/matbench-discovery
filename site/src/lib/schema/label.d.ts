@@ -215,6 +215,8 @@ export interface MdMetricsLabels {
   md_combined_score: Label1
   md_run_time_sec: Label1
   md_time_multiplier: Label1
+  md_max_gpu_mem_gb: Label1
+  md_max_rss_gb: Label1
 }
 /**
  * This interface was referenced by `Label`'s JSON-Schema

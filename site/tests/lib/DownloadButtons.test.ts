@@ -4,14 +4,12 @@ import { doc_query } from '../index'
 
 type ExportState = {
   export_error: string | null
-  show_non_compliant: boolean
   discovery_set: string
 }
 
 describe(`Download Buttons UI`, () => {
   const default_state: ExportState = {
     export_error: null,
-    show_non_compliant: false,
     discovery_set: `unique_prototypes`,
   }
 
@@ -63,7 +61,6 @@ describe(`Download Buttons UI`, () => {
 
       expect(generate_spy).toHaveBeenCalledTimes(1)
       expect(generate_spy).toHaveBeenCalledWith({
-        show_non_compliant: false,
         discovery_set: `unique_prototypes`,
       })
 

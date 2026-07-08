@@ -5,6 +5,8 @@
   import fp_diff from '$figs/scatter-largest-fp-diff-each-error.jsonl'
   import { ModelSelect } from '$lib'
   import { dashed, plotly_blue, plotly_red, wide_legend } from '$lib/fig-helpers'
+  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
+  import type { UrlParamEntry } from '$lib/url-state.svelte'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
   import DiscoveryMetricFigs from './discovery-metric-figs.md'
   import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
@@ -12,9 +14,6 @@
   // payload models arrive pre-styled (stable MODELS colors + leaderboard order) from the
   // json_payload plugin, so each dropdown below defaults to a top model
   const fp_diff_label = `|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|`
-  // mirrors the metrics-table toggle: filters all discovery figures below to the
-  // compliant-only cohort (models trained on MP-anchored data)
-  let show_non_compliant = $state(true)
 
   // per-figure model selection via dropdowns (faster than the old all-series-behind-a-
   // huge-legend figs). bind the model labels (svelte-multiselect string options; binding
@@ -23,19 +22,50 @@
   const find_model = <T extends { label: string }>(models: T[], label: string): T =>
     models.find((mdl) => mdl.label === label) ?? models[0]
 
-  let elem_prev_selected = $state(elem_prev.models.slice(0, 3).map((mdl) => mdl.label))
-  let fp_diff_model = $state(fp_diff.models[0].label)
-  let each_errors_model = $state(each_errors.models[0].label)
-  let hist_largest_model = $state(hist_largest.models[0].label)
+  const elem_prev_labels = elem_prev.models.map((mdl) => mdl.label)
+  const default_elem_prev = elem_prev_labels.slice(0, 3)
+  // per-figure single-model dropdowns: one URL param each, defaulting to the top model
+  const single_selects: Record<string, string[]> = {
+    fp_model: fp_diff.models.map((mdl) => mdl.label),
+    each_model: each_errors.models.map((mdl) => mdl.label),
+    hist_model: hist_largest.models.map((mdl) => mdl.label),
+  }
+
+  let elem_prev_selected = $state([...default_elem_prev])
+  let picked = $state(
+    Object.fromEntries(
+      Object.entries(single_selects).map(([key, labels]) => [key, labels[0]]),
+    ),
+  )
+
+  // serialize the multi-select in canonical payload order so URL comparison against
+  // the default is insensitive to the order models were clicked in
+  const elem_prev_param = (selected: string[]): string =>
+    elem_prev_labels.filter((label) => selected.includes(label)).join(`,`)
+
+  const read_url_params = (params: URLSearchParams) => {
+    const parsed = params
+      .get(`models`)
+      ?.split(`,`)
+      .filter((label) => elem_prev_labels.includes(label))
+    elem_prev_selected = parsed?.length ? parsed : [...default_elem_prev]
+    for (const [key, labels] of Object.entries(single_selects)) {
+      picked[key] = valid_query_param(params, key, labels[0], new Set(labels))
+    }
+  }
+  bind_url_params(read_url_params, () => [
+    [`models`, elem_prev_param(elem_prev_selected), elem_prev_param(default_elem_prev)],
+    ...Object.entries(single_selects).map(
+      ([key, labels]): UrlParamEntry => [key, picked[key], labels[0]],
+    ),
+  ])
 
   const elem_prev_models = $derived(
     elem_prev.models.filter((mdl) => elem_prev_selected.includes(mdl.label)),
   )
-  const fp_diff_active = $derived(find_model(fp_diff.models, fp_diff_model))
-  const each_errors_active = $derived(find_model(each_errors.models, each_errors_model))
-  const hist_largest_active = $derived(
-    find_model(hist_largest.models, hist_largest_model),
-  )
+  const fp_diff_active = $derived(find_model(fp_diff.models, picked.fp_model))
+  const each_errors_active = $derived(find_model(each_errors.models, picked.each_model))
+  const hist_largest_active = $derived(find_model(hist_largest.models, picked.hist_model))
 
   // x extent of the shared fingerprint-diff values for the MAE ref line
   const fp_diff_extent = [Math.min(...fp_diff.fp_diff), Math.max(...fp_diff.fp_diff)]
@@ -69,12 +99,7 @@ Stuff that didn't make the cut into the&nbsp;<a href="/models">model page</a>.
 
 <br />
 
-<label class="compliance-toggle">
-  <input type="checkbox" bind:checked={show_non_compliant} />
-  Show non-compliant models in figures below
-</label>
-
-<DiscoveryMetricFigs {show_non_compliant} />
+<DiscoveryMetricFigs />
 
 <h2>Does error correlate with element prevalence in training set?</h2>
 
@@ -90,7 +115,7 @@ dependent on geometry than chemistry.
 <label>
   Models
   <ModelSelect
-    options={elem_prev.models.map((mdl) => mdl.label)}
+    options={elem_prev_labels}
     bind:selected={elem_prev_selected}
     minSelect={1}
   />
@@ -128,8 +153,8 @@ plotting against that the absolute E<sub>above hull</sub> errors for each model.
 <label>
   Model
   <ModelSelect
-    options={fp_diff.models.map((mdl) => mdl.label)}
-    bind:value={fp_diff_model}
+    options={single_selects.fp_model}
+    bind:value={picked.fp_model}
     minSelect={1}
     maxSelect={1}
   />
@@ -167,8 +192,8 @@ errors.
 <label>
   Model
   <ModelSelect
-    options={each_errors.models.map((mdl) => mdl.label)}
-    bind:value={each_errors_model}
+    options={single_selects.each_model}
+    bind:value={picked.each_model}
     minSelect={1}
     maxSelect={1}
   />
@@ -197,8 +222,8 @@ each model and the mean of all models.
 <label>
   Model
   <ModelSelect
-    options={hist_largest.models.map((mdl) => mdl.label)}
-    bind:value={hist_largest_model}
+    options={single_selects.hist_model}
+    bind:value={picked.hist_model}
     minSelect={1}
     maxSelect={1}
   />
@@ -214,12 +239,3 @@ each model and the mean of all models.
   show_legend
   show_controls={false}
 />
-
-<style>
-  .compliance-toggle {
-    display: flex;
-    gap: 1ex;
-    align-items: center;
-    margin: 1em 0;
-  }
-</style>

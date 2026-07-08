@@ -1,16 +1,17 @@
 <script lang="ts">
   import type { Label } from '$lib'
+  import { openness_tooltips } from '$lib/metrics'
+  import { make_table_filters } from '$lib/models.svelte'
+  import { OPENNESS_OPTIONS, type UrlTableFilters } from '$lib/url-state.svelte'
   import { Icon } from 'matterviz'
   import { type Label as MvLabel, ToggleMenu } from 'matterviz/table'
-  import { tooltip } from 'svelte-multiselect/attachments'
+  import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
   let {
     show_energy_only = $bindable(false),
     columns = $bindable([]),
-    show_heatmap = $bindable(true),
-    show_compliant = $bindable(true),
-    show_non_compliant = $bindable(true),
+    filters = make_table_filters(),
     show_selected_only = $bindable(false),
     selected_count = 0,
     show_energy_only_toggle = false,
@@ -18,13 +19,22 @@
   }: HTMLAttributes<HTMLDivElement> & {
     columns?: Label[]
     show_energy_only?: boolean
-    show_heatmap?: boolean
-    show_compliant?: boolean
-    show_non_compliant?: boolean
+    filters?: UrlTableFilters
     show_selected_only?: boolean
     selected_count?: number
     show_energy_only_toggle?: boolean
   } = $props()
+
+  const close_on_outside_click = click_outside({
+    callback: (node) => ((node as HTMLDetailsElement).open = false),
+  })
+
+  const train_modes = [
+    { mode: `require`, label: `only`, title: `Only show models trained on` },
+    { mode: `exclude`, label: `not`, title: `Only show models NOT trained on` },
+  ] as const
+  const n_train = $derived(Object.keys(filters.training).length)
+  const n_openness = $derived(filters.openness.length)
 </script>
 
 <div class="table-controls" {...rest}>
@@ -39,50 +49,70 @@
     </label>
   {/if}
 
-  <label class="legend-item" title="Toggle visibility of compliant models">
-    <span class="color-swatch" style="background-color: var(--compliant-color)"></span>
-    <input
-      type="checkbox"
-      bind:checked={show_compliant}
-      onchange={(evt) => {
-        if (!(evt.target as HTMLInputElement).checked && !show_non_compliant) {
-          show_non_compliant = true // Prevent hiding both compliant and non-compliant models
-        }
-      }}
-    />
-    Compliant models
-  </label>
-
-  <label class="legend-item" title="Toggle visibility of non-compliant models">
-    <input
-      type="checkbox"
-      bind:checked={show_non_compliant}
-      onchange={(evt) => {
-        if (!(evt.target as HTMLInputElement).checked && !show_compliant) {
-          show_compliant = true // Prevent hiding both compliant and non-compliant models
-        }
-      }}
-    />
-    <span class="color-swatch" style="background-color: var(--non-compliant-color)"
-    ></span>
-    Non-compliant models
-    <span
-      {@attach tooltip({
-        allow_html: true,
-        content: `
-      Models can be non-compliant for multiple reasons:<br />
-      - closed source (model implementation and/or train/test code)<br />
-      - closed weights<br />
-      - trained on more than the permissible training set (<a
-        href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
-      >MP v2022.10.28 release</a>)<br />
-      We still show these models behind a toggle as we expect them<br />
-      to nonetheless provide helpful signals for developing future models.`,
-      })}
+  <details class="filter-menu" {@attach close_on_outside_click}>
+    <summary
+      title="Filter models by the datasets they were trained on"
+      {@attach tooltip()}
     >
-      <Icon icon="Info" />
-    </span>
-  </label>
+      Training data{n_train ? ` (${n_train})` : ``}
+    </summary>
+    <div class="dropdown">
+      <span class="hint">
+        <em>only</em> = only models trained on this dataset (combined constraints must all
+        hold), <em>not</em> = only models <em>not</em> trained on it
+      </span>
+      {#each filters.training_sets as dataset_key (dataset_key)}
+        <div class="filter-row">
+          <span>{dataset_key}</span>
+          {#each train_modes as { mode, label, title } (mode)}
+            <label title="{title} {dataset_key}" {@attach tooltip()}>
+              <input
+                type="checkbox"
+                checked={filters.training[dataset_key] === mode}
+                onchange={() => filters.set_training(dataset_key, mode)}
+              />
+              {label}
+            </label>
+          {/each}
+        </div>
+      {/each}
+    </div>
+  </details>
+
+  <details class="filter-menu" {@attach close_on_outside_click}>
+    <summary
+      title="Filter models by whether their source code and training data are open"
+      {@attach tooltip()}
+    >
+      Openness{n_openness < OPENNESS_OPTIONS.length
+        ? ` (${n_openness}/${OPENNESS_OPTIONS.length})`
+        : ``}
+    </summary>
+    <div class="dropdown">
+      {#each OPENNESS_OPTIONS as openness (openness)}
+        <label class="filter-row" title={openness_tooltips[openness]} {@attach tooltip()}>
+          <input
+            type="checkbox"
+            checked={filters.openness.includes(openness)}
+            onchange={() => filters.toggle_openness(openness)}
+          />
+          {openness}
+        </label>
+      {/each}
+    </div>
+  </details>
+
+  {#if filters.n_active > 0}
+    <button
+      class="clear-filters"
+      onclick={() => filters.clear()}
+      title="Reset training-data and openness filters"
+      {@attach tooltip()}
+    >
+      <Icon icon="Cross" /> clear filters
+    </button>
+  {/if}
+
   {#if show_energy_only_toggle}
     <label>
       <input type="checkbox" bind:checked={show_energy_only} />
@@ -99,7 +129,7 @@
   <label>
     <input
       type="checkbox"
-      bind:checked={show_heatmap}
+      bind:checked={filters.show_heatmap}
       aria-label="Toggle heatmap colors"
     />
     Heatmap
@@ -117,14 +147,60 @@
     align-items: center;
     font-size: clamp(9pt, 1.4cqw, 11pt);
   }
-  label.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.3em;
+  details.filter-menu {
+    position: relative;
   }
-  span.color-swatch {
-    width: 3pt;
-    height: 20pt;
-    border-radius: 1pt;
+  details.filter-menu summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 1pt 6pt;
+    border-radius: 4px;
+    background: var(--btn-bg);
+  }
+  details.filter-menu[open] summary {
+    background: color-mix(in srgb, var(--link-color) 25%, transparent);
+  }
+  details.filter-menu .dropdown {
+    position: absolute;
+    right: 0;
+    z-index: 6;
+    display: grid;
+    gap: 3pt;
+    min-width: max-content;
+    margin-top: 4px;
+    padding: 6pt 8pt;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    box-shadow: 0 0 10px var(--shadow);
+  }
+  details.filter-menu .hint {
+    max-width: 28em;
+    font-size: 0.85em;
+    opacity: 0.75;
+    text-wrap: balance;
+    margin-bottom: 3pt;
+  }
+  .filter-row {
+    display: flex;
+    gap: 1em;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .filter-row > span:first-child {
+    margin-right: auto;
+  }
+  .filter-row label {
+    display: flex;
+    gap: 3pt;
+    align-items: center;
+  }
+  button.clear-filters {
+    display: flex;
+    gap: 3pt;
+    align-items: center;
+    background: none;
+    padding: 0;
+    color: var(--link-color);
   }
 </style>

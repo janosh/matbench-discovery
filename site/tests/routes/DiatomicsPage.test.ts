@@ -26,7 +26,9 @@ const button_for = (text: string): HTMLButtonElement => {
 }
 
 const model_select = (): HTMLElement => {
-  const select = document.querySelector<HTMLElement>(`.multiselect`)
+  // scope to the curve-controls div: the Pareto scatter adds its own marker-size
+  // multiselect earlier in the DOM, so a bare `.multiselect` would match that instead
+  const select = document.querySelector<HTMLElement>(`.controls .multiselect`)
   if (!select) throw new Error(`No model multiselect found`)
   return select
 }

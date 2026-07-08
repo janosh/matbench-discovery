@@ -4,7 +4,7 @@ import type { ModelData } from '$lib/types'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { tick } from 'svelte'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '../index'
+import { mount, mount_with_url } from '../index'
 
 beforeEach(() =>
   vi.stubGlobal(
@@ -102,6 +102,9 @@ describe(`Model Detail Page`, () => {
       expect(hyperparams?.textContent).toContain(key)
       expect(hyperparams?.textContent).toContain(JSON.stringify(value))
     }
+
+    // no md_per_system page data -> no per-system MD section
+    expect(document.querySelector(`section.md-per-system`)).toBeNull()
   }, 10_000)
 
   it(`renders without crashing when training_set has an unknown dataset key`, () => {
@@ -136,6 +139,38 @@ describe(`Model Detail Page`, () => {
     }
   })
 
+  it(`renders per-system MD breakdown from page data`, () => {
+    const md_per_system = [
+      {
+        system: `bulkCu_1000K`,
+        temperature_kelvin: 1000,
+        vdos_error: 12.3,
+        n_atoms: 108,
+      },
+      {
+        system: `anthracene_293K`,
+        temperature_kelvin: 293,
+        vdos_error: 45.6,
+        n_atoms: 72,
+      },
+    ]
+    mount(ModelPage, {
+      target: document.body,
+      props: { data: { model: test_model, md_per_system } },
+    })
+
+    const section = document.querySelector(`section.md-per-system`)
+    expect(section?.textContent).toContain(`per-system breakdown`)
+    expect(section?.querySelectorAll(`tbody tr`)).toHaveLength(2)
+    // only columns present in the rows render (no pressure/RMSE/time cols here)
+    const headers = [...(section?.querySelectorAll(`th`) ?? [])].map((th) =>
+      th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
+    )
+    expect(headers).toContain(`System`)
+    expect(headers).toContain(`ΔvDOS (%)`)
+    expect(headers).not.toContain(`ΔP (%)`)
+  })
+
   it(`lazy-mounts energy parity tab plots`, async () => {
     mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
     await tick()
@@ -150,5 +185,24 @@ describe(`Model Detail Page`, () => {
     tab_buttons[0].click()
     await tick()
     expect(document.querySelectorAll(`section.energy-parity-plot`)).toHaveLength(2)
+  })
+
+  it(`restores the active energy parity tab from the energy_tab URL param`, async () => {
+    await mount_with_url(
+      ModelPage,
+      `http://localhost/models/${test_model.model_key}?energy_tab=each`,
+      { props: { data: { model: test_model } } },
+    )
+
+    const tab_buttons = document.querySelectorAll<HTMLButtonElement>(
+      `.energy-parity-tabs button`,
+    )
+    expect(tab_buttons[0].classList.contains(`active`)).toBe(false)
+    expect(tab_buttons[1].classList.contains(`active`)).toBe(true)
+
+    // clicking back to the default tab drops the param from the URL
+    tab_buttons[0].click()
+    await tick()
+    expect(new URL(location.href).searchParams.get(`energy_tab`)).toBeNull()
   })
 })

@@ -1,4 +1,5 @@
 import { MODELS } from '$lib'
+import { read_md_per_system } from '$lib/server/md'
 import { error, redirect } from '@sveltejs/kit'
 import type { EntryGenerator, PageServerLoad } from './$types'
 
@@ -19,7 +20,7 @@ export const load: PageServerLoad = async ({ params }) => {
     error(404, { message: `Model "${params.slug}" not found` })
   }
 
-  return { model }
+  return { model, md_per_system: await read_md_per_system(model) }
 }
 
 export const entries: EntryGenerator = () => LEGACY_SLUGS.map((slug) => ({ slug }))

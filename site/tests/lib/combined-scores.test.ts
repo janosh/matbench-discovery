@@ -232,14 +232,14 @@ describe(`calculate_cmds`, () => {
       },
       0,
     ],
-    // default weights: equal 1/4 each (vdos, adf, pressure, speed)
+    // default weights: 30% vdos, 20% adf, 20% speed, 30% pressure
     [
       { adf_error: 10, vdos_error: 20, pressure_error: 30, run_time_sec: mid_speed },
-      (0.8 + 0.9 + 0.7 + 0.5) / 4,
+      0.3 * 0.8 + 0.2 * 0.9 + 0.2 * 0.5 + 0.3 * 0.7,
     ],
     // per-component subscores clamp to [0,1]: the >100% ADF error clamps to subscore
     // 0 and the faster-than-floor speed clamps to 1, so neither over/undershoots
-    [{ adf_error: 150, vdos_error: 0, pressure_error: 0, run_time_sec: 1 }, 3 / 4],
+    [{ adf_error: 150, vdos_error: 0, pressure_error: 0, run_time_sec: 1 }, 0.8],
   ])(`default-weight score for %o = %f`, (values, expected) => {
     expect(calculate_cmds(values, clone_config())).toBeCloseTo(expected, 10)
   })
@@ -304,7 +304,10 @@ describe(`update_models_cmds`, () => {
     update_models_cmds(models, clone_config())
 
     const scored_md = models[0].metrics?.md as { combined_score?: number }
-    expect(scored_md.combined_score).toBeCloseTo((0.8 + 0.9 + 0.7 + 0.5) / 4, 10)
+    expect(scored_md.combined_score).toBeCloseTo(
+      0.3 * 0.8 + 0.2 * 0.9 + 0.2 * 0.5 + 0.3 * 0.7,
+      10,
+    )
     // incomplete components: stale score removed, not overwritten with NaN (a NaN
     // field would count as present in scatter model counts and export as 'NaN')
     expect(models[1].metrics?.md).not.toHaveProperty(`combined_score`)

@@ -156,6 +156,8 @@ definitions:
       md_combined_score: { $ref: '#/definitions/Label' }
       md_run_time_sec: { $ref: '#/definitions/Label' }
       md_time_multiplier: { $ref: '#/definitions/Label' }
+      md_max_gpu_mem_gb: { $ref: '#/definitions/Label' }
+      md_max_rss_gb: { $ref: '#/definitions/Label' }
     required:
       - md_energy_rmse
       - md_force_rmse
@@ -168,6 +170,8 @@ definitions:
       - md_combined_score
       - md_run_time_sec
       - md_time_multiplier
+      - md_max_gpu_mem_gb
+      - md_max_rss_gb
     additionalProperties: false
 
   DatasetMetadataLabels:

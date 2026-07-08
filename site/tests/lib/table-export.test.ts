@@ -16,10 +16,13 @@ vi.mock(`html-to-image`, () => ({
 const today = () => new Date().toISOString().split(`T`)[0]
 
 const mount_table = (): HTMLTableElement => {
+  // includes the structural rank (#) column MetricsTable renders via
+  // show_row_numbers, which exports must skip like the icon columns
   document.body.innerHTML = `
     <table class="heatmap">
       <thead>
         <tr>
+          <th class="row-num-col">#</th>
           <th>Model</th>
           <th>F1</th>
           <th>Org</th>
@@ -31,6 +34,7 @@ const mount_table = (): HTMLTableElement => {
       </thead>
       <tbody>
         <tr>
+          <td class="row-num-col">1</td>
           <td data-sort-value="Model A"><a href="/models/a">Model A</a></td>
           <td data-sort-value="0.851">0.851</td>
           <td><svg aria-label="Org"></svg></td>
@@ -40,6 +44,7 @@ const mount_table = (): HTMLTableElement => {
           <td>0.75</td>
         </tr>
         <tr>
+          <td class="row-num-col">2</td>
           <td data-sort-value='Model "Special"'>Model "Special"</td>
           <td data-sort-value="0.123">0.123</td>
           <td><svg aria-label="Org"></svg></td>
@@ -96,16 +101,13 @@ describe(`Table Export Functionality`, () => {
         return Promise.resolve(`data:image/${extension.slice(1)};base64,test`)
       })
 
-      const result = await generator({
-        show_non_compliant: false,
-        discovery_set: `unique_prototypes`,
-      })
+      const result = await generator({ discovery_set: `unique_prototypes` })
 
       if (!result) throw new Error(`${_format} export returned null`)
       if (!captured_container) throw new Error(`${_format} export did not call encoder`)
 
       expect(result.filename).toBe(
-        `matbench-unique-prototypes-compliant-2models-${today()}${extension}`,
+        `matbench-unique-prototypes-2models-${today()}${extension}`,
       )
       expect(result.url).toBe(
         extension === `.svg` ? `mock-url` : `data:image/png;base64,test`,
@@ -113,6 +115,8 @@ describe(`Table Export Functionality`, () => {
       expect(click_spy).toHaveBeenCalled()
       expect(captured_container.querySelectorAll(`svg, a[href]`)).toHaveLength(0)
       expect(captured_container.querySelectorAll(`sub, sup`)).toHaveLength(1)
+      // the structural rank (#) column is stripped from image exports
+      expect(captured_container.querySelector(`.row-num-col`)).toBeNull()
     },
   )
 
@@ -135,16 +139,11 @@ describe(`Table Export Functionality`, () => {
   )
 
   it(`generates CSV with formatted data and excludes icon columns`, async () => {
-    const result = generate_csv({
-      show_non_compliant: false,
-      discovery_set: `unique_prototypes`,
-    })
+    const result = generate_csv({ discovery_set: `unique_prototypes` })
 
     if (!result) throw new Error(`CSV export returned null`)
 
-    expect(result.filename).toBe(
-      `matbench-unique-prototypes-compliant-2models-${today()}.csv`,
-    )
+    expect(result.filename).toBe(`matbench-unique-prototypes-2models-${today()}.csv`)
     expect(result.url).toBe(`mock-url`)
     expect(click_spy).toHaveBeenCalled()
 
@@ -152,6 +151,7 @@ describe(`Table Export Functionality`, () => {
     expect(csv_content).toContain(`Model,F1,DAF,CPS,R2`)
     expect(csv_content).not.toContain(`Org`)
     expect(csv_content).not.toContain(`Links`)
+    expect(csv_content).not.toContain(`#`) // rank column excluded
     expect(csv_content).toContain(`Model A`)
     expect(csv_content).toContain(`"Model ""Special"""`)
   })
@@ -180,14 +180,11 @@ describe(`Table Export Functionality`, () => {
   })
 
   it(`generates Excel with the expected MIME type`, async () => {
-    const result = await generate_excel({
-      show_non_compliant: true,
-      discovery_set: `test_set`,
-    })
+    const result = await generate_excel({ discovery_set: `test_set` })
 
     if (!result) throw new Error(`Excel export returned null`)
 
-    expect(result.filename).toBe(`matbench-test-set-all-2models-${today()}.xlsx`)
+    expect(result.filename).toBe(`matbench-test-set-2models-${today()}.xlsx`)
     expect(result.url).toBe(`mock-url`)
     expect(click_spy).toHaveBeenCalled()
 
@@ -210,11 +207,7 @@ describe(`Table Export Functionality`, () => {
       `handles %s case correctly`,
       async (_test_name, generator_result, expected_error) => {
         const generator_spy = vi.fn()
-        const state = {
-          export_error: null,
-          discovery_set: `test`,
-          show_non_compliant: false,
-        }
+        const state = { export_error: null, discovery_set: `test` }
 
         if (generator_result instanceof Error || typeof generator_result === `string`) {
           generator_spy.mockRejectedValue(generator_result)
@@ -228,7 +221,6 @@ describe(`Table Export Functionality`, () => {
 
         expect(generator_spy).toHaveBeenCalledWith({
           discovery_set: state.discovery_set,
-          show_non_compliant: state.show_non_compliant,
         })
         expect(state.export_error).toBe(expected_error)
 

@@ -3,7 +3,7 @@ import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
 import { MODELS } from '$lib'
 import GeoOptPage from '$routes/tasks/geo-opt/+page.svelte'
 import { describe, expect, it } from 'vitest'
-import { mount_with_url } from '../index'
+import { checkbox_for, filter_summary_badge, mount_with_url } from '../index'
 
 const key_label_pairs = MODELS.flatMap((model) =>
   model.model_key ? [[model.model_key, model.model_name] as const] : [],
@@ -66,5 +66,16 @@ describe(`Geo Opt Task Page`, () => {
     expect(sort_labels(histogram_labels())).toStrictEqual(sort_labels(expected_labels))
     expect(sort_labels(sankey_labels())).toStrictEqual(sort_labels(expected_labels))
     for (const label of expected_labels) expect(selected_text()).toContain(label)
+  })
+
+  it(`restores metrics-table filters from URL params`, async () => {
+    await mount_with_url(
+      GeoOptPage,
+      `http://localhost/tasks/geo-opt?train=MPtrj&openness=OSOD,OSCD&heatmap=0`,
+    )
+
+    expect(filter_summary_badge(`Training data`)).toContain(`(1)`)
+    expect(filter_summary_badge(`Openness`)).toContain(`(2/4)`)
+    expect(checkbox_for(`Heatmap`).checked).toBe(false)
   })
 })

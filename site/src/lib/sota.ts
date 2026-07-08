@@ -52,3 +52,51 @@ export const sota_step_line = (
   }
   return { x, y }
 }
+
+// Non-dominated staircase for two directed axes: keeps points no other point beats
+// (at least as good on both axes, strictly better on one), sorted along x, with a
+// corner inserted between consecutive frontier points so the line steps along the
+// dominated-region boundary instead of cutting across. Both ends extend to the data
+// extents so the boundary frames the whole dominated region - crucially, a single
+// model dominating the entire field still draws an L through its point instead of
+// nothing. Null only when < 2 input points (no region to frame).
+export const pareto_staircase = (
+  points: readonly { x: number; y: number }[],
+  x_better: `higher` | `lower`,
+  y_better: `higher` | `lower`,
+): { x: number[]; y: number[] } | null => {
+  if (points.length < 2) return null
+  // sign-flip so both axes minimize
+  const [sx, sy] = [x_better === `higher` ? -1 : 1, y_better === `higher` ? -1 : 1]
+  const frontier = points
+    .filter(
+      (pt) =>
+        !points.some(
+          (other) =>
+            sx * other.x <= sx * pt.x &&
+            sy * other.y <= sy * pt.y &&
+            (sx * other.x < sx * pt.x || sy * other.y < sy * pt.y),
+        ),
+    )
+    .toSorted((p1, p2) => sx * (p1.x - p2.x))
+  if (frontier.length === 0) return null // all points non-finite/mutually dominated
+
+  const [x, y] = [[] as number[], [] as number[]]
+  const push = (px: number, py: number) => {
+    if (px === x.at(-1) && py === y.at(-1)) return // skip zero-length segments
+    x.push(px)
+    y.push(py)
+  }
+  // data extremes in the "worse" direction of each axis
+  const worst_x = (sx > 0 ? Math.max : Math.min)(...points.map((pt) => pt.x))
+  const worst_y = (sy > 0 ? Math.max : Math.min)(...points.map((pt) => pt.y))
+
+  push(frontier[0].x, worst_y) // vertical lead-in at the best-x end
+  push(frontier[0].x, frontier[0].y)
+  for (const [idx, pt] of frontier.slice(1).entries()) {
+    push(pt.x, frontier[idx].y) // corner along the dominated-region boundary
+    push(pt.x, pt.y)
+  }
+  push(worst_x, frontier[frontier.length - 1].y) // horizontal tail-out
+  return x.length < 2 ? null : { x, y }
+}

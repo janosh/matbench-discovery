@@ -3,7 +3,14 @@
   import { by_date_added_desc, MetricsTable, ModelSelect, MODELS } from '$lib'
   import type { ModelData } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
-  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
+  import { make_table_filters } from '$lib/models.svelte'
+  import { DEFAULT_TABLE_SORT } from '$lib/table/MetricsTable.svelte'
+  import {
+    bind_url_params,
+    sort_from_query,
+    sort_url_entries,
+    valid_query_param,
+  } from '$lib/url-state.svelte'
   import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
   import {
     ALL_METRICS,
@@ -90,17 +97,24 @@
   let scatter_x = $state(default_scatter_x)
   let scatter_y = $state(default_scatter_y)
 
+  let table_sort = $state({ ...DEFAULT_TABLE_SORT })
+  const filters = make_table_filters()
+
   const read_url_params = (params: URLSearchParams) => {
     selected_key = valid_query_param(params, `model`, default_selected_key, model_keys)
     sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_modes)
     scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
     scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
+    table_sort = sort_from_query(params, DEFAULT_TABLE_SORT)
+    filters.read(params)
   }
   bind_url_params(read_url_params, () => [
     [`model`, selected_key, default_selected_key],
     [`model_sort`, sort_mode, default_sort_mode],
     [`x`, scatter_x, default_scatter_x],
     [`y`, scatter_y, default_scatter_y],
+    ...sort_url_entries(table_sort, DEFAULT_TABLE_SORT),
+    ...filters.url_entries,
   ])
 </script>
 
@@ -110,6 +124,8 @@
   <MetricsTable
     model_filter={has_phonon_metrics}
     col_filter={(col) => visible_cols[col.key] ?? true}
+    bind:sort={table_sort}
+    {filters}
   />
 </section>
 

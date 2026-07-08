@@ -11,6 +11,7 @@ import {
   update_models_cmds,
 } from './combined-scores.svelte'
 import { get_org_logo, type OrgLogo } from './labels'
+import { UrlTableFilters } from './url-state.svelte'
 
 export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(
   `$root/models/[^_]**/[^_]*.yml`,
@@ -136,38 +137,27 @@ update_models_cmds(MODELS, CMDS_CONFIG)
 // semantics as CPS/CMDS
 update_models_cds(MODELS, CDS_CONFIG)
 
-// Compute compliant training sets from datasets.yml (datasets with compliant: true)
-export const COMPLIANT_TRAINING_SETS: string[] = Object.entries(DATASETS)
-  .filter(([_, val]) => typeof val === `object` && !Array.isArray(val) && val.compliant)
-  .map(([key]) => key)
+// All dataset keys used by at least one model's training_set, in datasets.yml
+// declaration order — the roster for the table's training-data filter dropdown
+export const ALL_TRAINING_SETS: string[] = Object.keys(DATASETS).filter((key) =>
+  MODELS.some((model) => (model.training_set as string[]).includes(key)),
+)
 
-export function model_is_compliant(model: ModelData): boolean {
-  if ((model.openness ?? `OSOD`) !== `OSOD`) return false
+// table filter (training data + openness + heatmap) pre-wired with the dataset roster
+export const make_table_filters = (): UrlTableFilters =>
+  new UrlTableFilters(ALL_TRAINING_SETS)
 
-  return model.training_set.every((set) => COMPLIANT_TRAINING_SETS.includes(set))
-}
-
-// Find the model with the highest F1 score on the given discovery set.
-// Mirrors the metrics table cohort (compliant/non-compliant toggles) so the landing
-// summary describes the same models the table shows. Returns null if none qualifies.
+// Find the model with the highest F1 score on the given discovery set among the
+// passed models (pre-filter to the table cohort so the landing summary describes
+// the same models the table shows). Returns null if none qualifies.
 export function find_best_model(
   models: ModelData[],
-  {
-    show_non_compliant = false,
-    show_compliant = true,
-    discovery_set = `full_test_set`,
-  }: {
-    show_non_compliant?: boolean
-    show_compliant?: boolean
-    discovery_set?: DiscoverySet
-  } = {},
+  discovery_set: DiscoverySet = `full_test_set`,
 ): ModelData | null {
   let best: ModelData | null = null
   let best_f1 = -Infinity
 
   for (const model of models) {
-    // keep a model only if its compliance class is toggled on (same rule as the table)
-    if (!(model_is_compliant(model) ? show_compliant : show_non_compliant)) continue
     const discovery = model.metrics?.discovery
     const f1 = typeof discovery === `object` ? discovery?.[discovery_set]?.F1 : undefined
     if (typeof f1 !== `number` || Number.isNaN(f1)) continue

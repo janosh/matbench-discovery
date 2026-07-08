@@ -124,6 +124,19 @@ _private_reference_data:
       size: 165479
       md5: f27f524d85fd150823f52028c4d397f5
       description: Private mirror of the bundled homonuclear PBE/r2SCAN DFT diatomic reference curves used by the site and diatomics metrics.
+    diatomics_dft_reference_provenance:
+      file_id: 66396755
+      file_url: https://figshare.com/files/66396755
+      name: diatomics-dft-reference-provenance-2026-07-07.zip
+      size: 12422
+      md5: 8ff81b52d450b5fc3e1892910f9fdee5
+      source_files:
+        - site/src/lib/diatomics-dft.readme.md
+        - scripts/evals/build_diatomic_reference.py
+        - matbench_discovery/metrics/diatomics/reference.py
+        - tests/metrics/diatomics/test_build_diatomic_reference.py
+        - tests/metrics/diatomics/test_diatomics_reference.py
+      description: Provenance note, builder, postprocess implementation, and tests for the bundled homonuclear PBE/r2SCAN DFT diatomic reference curves.
 
 _links: |
   [`PatchedPhaseDiagram`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814

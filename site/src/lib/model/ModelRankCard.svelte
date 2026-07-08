@@ -8,7 +8,7 @@
   let { model_key, models = MODELS }: { model_key: string; models?: ModelData[] } =
     $props()
 
-  // ranks span the full active roster (compliant + non-compliant + energy-only, so
+  // ranks span the full active roster (all models incl. energy-only, so
   // the cohort can exceed the default leaderboard view, which hides energy-only
   // models); CPS/CMDS ranks track the session's current weight configs
   let ranks = $derived(model_metric_ranks(model_key, models, RANKED_METRICS))

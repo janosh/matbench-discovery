@@ -4,24 +4,22 @@ import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
 
 export const heatmap_class = `heatmap`
 
-type ExportOptions = { show_non_compliant?: boolean; discovery_set?: string }
+type ExportOptions = { discovery_set?: string }
 type ExportResult = { filename: string; url: string }
 
 // Simple function to generate descriptive filename with current table state
 function generate_filename(
   format: string,
-  show_non_compliant: boolean = false,
   discovery_set: string = `unique_prototypes`,
 ): string {
   const date = new Date().toISOString().split(`T`)[0]
-  const compliance = show_non_compliant ? `all` : `compliant`
   const discovery = discovery_set.replaceAll(`_`, `-`)
 
   // Get current table state for context
   const table_el = document.querySelector(`.${heatmap_class}`)
   const model_count = table_el?.querySelectorAll(`tbody tr`).length ?? 0
 
-  return `matbench-${discovery}-${compliance}-${model_count}models-${date}.${format.toLowerCase()}`
+  return `matbench-${discovery}-${model_count}models-${date}.${format.toLowerCase()}`
 }
 
 // Create a download link and click it
@@ -41,6 +39,7 @@ function download_blob(blob: Blob, filename: string): ExportResult {
 }
 
 // Headers and column indices to export, excluding SVG icon columns (Org and Links)
+// and the structural rank (#) column (just 1..N under the current sort)
 function get_export_columns(table_el: Element): { headers: string[]; indices: number[] } {
   const header_rows = table_el.querySelectorAll(`thead tr`)
   const main_header_row = header_rows.item(header_rows.length - 1)
@@ -48,6 +47,7 @@ function get_export_columns(table_el: Element): { headers: string[]; indices: nu
   const indices: number[] = []
   const all_headers = [...(main_header_row?.querySelectorAll(`th`) ?? [])]
   all_headers.forEach((th, col_idx) => {
+    if (th.classList.contains(`row-num-col`)) return
     const header_text = th.textContent?.replaceAll(/[↑↓]/g, ``).trim() || ``
     if (header_text !== `Org` && header_text !== `Links`) {
       headers.push(header_text)
@@ -254,7 +254,7 @@ function log_export_error(
 // Shared SVG/PNG export: clone + clean table, render off-screen, encode, download
 async function generate_image(
   format: `svg` | `png`,
-  { show_non_compliant = false, discovery_set = `unique_prototypes` }: ExportOptions,
+  { discovery_set = `unique_prototypes` }: ExportOptions,
 ): Promise<ExportResult | null> {
   let container: HTMLElement | undefined
   let table_clone: HTMLElement | undefined
@@ -269,7 +269,7 @@ async function generate_image(
     }
     document.body.append(container)
 
-    const filename = generate_filename(format, show_non_compliant, discovery_set)
+    const filename = generate_filename(format, discovery_set)
 
     if (format === `svg`) {
       const svg_data_url = await toSvg(container, {
@@ -401,7 +401,6 @@ function format_value_for_export(value: number, header: string): number | string
 }
 
 export function generate_csv({
-  show_non_compliant = false,
   discovery_set = `unique_prototypes`,
 }: ExportOptions): ExportResult | null {
   try {
@@ -430,7 +429,7 @@ export function generate_csv({
 
     // Create and download CSV file
     const blob = new Blob([csv_content], { type: `text/csv;charset=utf-8;` })
-    const filename = generate_filename(`csv`, show_non_compliant, discovery_set)
+    const filename = generate_filename(`csv`, discovery_set)
     return download_blob(blob, filename)
   } catch (error) {
     console.error(`Error generating CSV:`, error)
@@ -439,7 +438,6 @@ export function generate_csv({
 }
 
 export async function generate_excel({
-  show_non_compliant = false,
   discovery_set = `unique_prototypes`,
 }: ExportOptions): Promise<ExportResult | null> {
   try {
@@ -485,7 +483,7 @@ export async function generate_excel({
     const blob = new Blob([excel_buffer], {
       type: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
     })
-    const filename = generate_filename(`xlsx`, show_non_compliant, discovery_set)
+    const filename = generate_filename(`xlsx`, discovery_set)
     return download_blob(blob, filename)
   } catch (error) {
     console.error(`Error generating Excel:`, error)
@@ -504,7 +502,6 @@ export const handle_export =
       state.export_error = null // Reset error state before trying
       // Extract only ExportOptions keys — T extends ExportOptions so this is safe
       const generator_args = {
-        show_non_compliant: state.show_non_compliant,
         discovery_set: state.discovery_set,
       } as T // unavoidable: TS can't prove ExportOptions subset satisfies generic T
       const result = await generator(generator_args)
