@@ -70,6 +70,9 @@
     initial_log?: Partial<Record<`x` | `y` | `color` | `size`, boolean>>
   } = $props()
 
+  const log_dims = [`x`, `y`, `color`, `size`] as const
+  // seed-once by design: initial_log only sets the starting toggle state
+  // svelte-ignore state_referenced_locally
   let log = $state({ x: false, y: false, color: false, size: false, ...initial_log })
   let size_prop = $state(HYPERPARAMS.model_params as (typeof scatter_options)[number])
 
@@ -88,8 +91,8 @@
   let label_font_size = $state(12)
   let leader_line_threshold = $state(15)
 
-  // Enable log scale only for positive ranges spanning at least two decades.
-  const can_log = (ext: [number | undefined, number | undefined]): boolean =>
+  // Log scale needs positive values spanning at least two decades.
+  const supports_log = (ext: [number | undefined, number | undefined]): boolean =>
     ext[0] !== undefined && ext[0] > 0 && 100 * ext[0] <= (ext[1] ?? 0)
 
   let filtered_models = $derived(models.filter(model_filter))
@@ -163,23 +166,25 @@
     }),
   )
 
-  // Mirror the plot color scale so built-in legend swatches match their points.
+  let can_log = $derived({
+    x: supports_log(extent(plot_data, (pt) => pt.x)),
+    y: supports_log(extent(plot_data, (pt) => pt.y)),
+    color: supports_log(extent(plot_data, (pt) => pt.color_value as number)),
+    size: supports_log(extent(plot_data, (pt) => pt.size_value)),
+  })
+  // log scale only when toggled on AND the data supports it: a seeded (initial_log)
+  // or stale toggle falls back to linear, matching the hidden/disabled checkboxes
+  const scale_of = (dim: keyof typeof log) =>
+    log[dim] && can_log[dim] ? (`log` as const) : (`linear` as const)
+
+  // plot and legend share this scale so legend swatches always match point colors
+  let color_scale = $derived({ scheme: color_scheme, type: scale_of(`color`) })
   let legend_color_scale = $derived.by(() => {
     const [min, max] = extent(plot_data, (item) => item.color_value as number)
-    return create_color_scale(
-      { scheme: color_scheme, type: log.color ? `log` : `linear` },
-      [min ?? 0, max ?? 1],
-    )
+    return create_color_scale(color_scale, [min ?? 0, max ?? 1])
   })
   const point_fill = (color_value: unknown): string =>
     point_color ?? (legend_color_scale(color_value as number) as string) ?? `gray`
-
-  let can_log_x = $derived(can_log(extent(plot_data, (point) => point.x)))
-  let can_log_y = $derived(can_log(extent(plot_data, (point) => point.y)))
-  let can_log_color = $derived(
-    can_log(extent(plot_data, (point) => point.color_value as number)),
-  )
-  let can_log_size = $derived(can_log(extent(plot_data, (point) => point.size_value)))
 
   // One series per model enables per-model legend toggles.
   let series: DataSeries<PointMetadata>[] = $derived(
@@ -252,7 +257,7 @@
     x_axis={{
       label: axes.x?.label,
       format: axes.x?.format,
-      scale_type: log.x ? `log` : `linear`,
+      scale_type: scale_of(`x`),
       label_shift: { y: -50 },
       ticks,
       options: prop_options,
@@ -261,7 +266,7 @@
     y_axis={{
       label: axes.y?.label,
       format: axes.y?.format,
-      scale_type: log.y ? `log` : `linear`,
+      scale_type: scale_of(`y`),
       label_shift: {
         x: -10,
         y: [`date_added`, `model_params`].includes(axes.y?.key ?? ``) ? -40 : -10,
@@ -271,10 +276,10 @@
       selected_key: y_key,
     }}
     bind:display
-    color_scale={{ scheme: color_scheme, type: log.color ? `log` : `linear` }}
+    {color_scale}
     size_scale={{
       radius_range: [5 * size_multiplier, 10 * size_multiplier],
-      type: log.size ? `log` : `linear`,
+      type: scale_of(`size`),
     }}
     color_bar={{
       title: format_label_title(axes.color_value),
@@ -307,20 +312,12 @@
   >
     {#snippet controls_extra()}
       <div class="log-toggles" style="display: flex; gap: 1em; flex-wrap: wrap">
-        <label style:visibility={can_log_x ? `visible` : `hidden`}>
-          <input type="checkbox" bind:checked={log.x} disabled={!can_log_x} /> Log X
-        </label>
-        <label style:visibility={can_log_y ? `visible` : `hidden`}>
-          <input type="checkbox" bind:checked={log.y} disabled={!can_log_y} /> Log Y
-        </label>
-        <label style:visibility={can_log_color ? `visible` : `hidden`}>
-          <input type="checkbox" bind:checked={log.color} disabled={!can_log_color} />
-          Log Color
-        </label>
-        <label style:visibility={can_log_size ? `visible` : `hidden`}>
-          <input type="checkbox" bind:checked={log.size} disabled={!can_log_size} />
-          Log Size
-        </label>
+        {#each log_dims as dim (dim)}
+          <label style:visibility={can_log[dim] ? `visible` : `hidden`}>
+            <input type="checkbox" bind:checked={log[dim]} disabled={!can_log[dim]} />
+            Log <span style="text-transform: capitalize">{dim}</span>
+          </label>
+        {/each}
       </div>
 
       <label title="Toggle visibility of model name labels on the scatter plot points">
