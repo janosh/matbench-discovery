@@ -327,8 +327,8 @@ added) with a running-best line showing which releases moved the frontier -->
   Each point is a model placed at its submission date; the dashed step line traces the
   running best ("SOTA frontier") CPS, so its jumps mark the models that set a new record
   when they were added. Use the axis/color/size selectors to compare models across any
-  pair of metrics and parameters. The plot respects the compliance toggles of the metrics
-  table above.
+  pair of metrics and parameters. The plot shows the same model cohort as the metrics
+  table above, following its energy-only, training-data and openness filters.
 </p>
 <DynamicScatter
   models={MODELS}

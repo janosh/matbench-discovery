@@ -7,6 +7,10 @@ const repo_root = resolve(import.meta.dirname, `../../../..`)
 
 export type MdPerSystemRow = Record<string, number | string>
 
+// per-system energy/force RMSEs are stored in eV; report meV to match the model-level
+// MD table units
+const mev_cols = new Set([`energy_rmse`, `force_rmse`])
+
 // Read a model's per-system MD metrics from its committed pred_file CSV (one row per
 // DynaMat system). Returns null when the model has no MD data or the CSV is absent
 // (e.g. a pred_file pending re-upload). Build-time only (node:fs).
@@ -39,10 +43,8 @@ export async function read_md_per_system(
     for (const [idx, raw] of line.split(`,`).entries()) {
       if (raw === ``) continue // missing value (e.g. stress-less system pressure)
       const num = Number(raw)
-      // per-system energy/force RMSEs are stored in eV; report meV to match the
-      // model-level MD table units
       row[cols[idx]] = Number.isFinite(num)
-        ? [`energy_rmse`, `force_rmse`].includes(cols[idx])
+        ? mev_cols.has(cols[idx])
           ? num * 1000
           : num
         : raw

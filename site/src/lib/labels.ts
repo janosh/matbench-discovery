@@ -442,7 +442,7 @@ export const MD_METRICS: MdMetricsLabels = {
   md_time_multiplier: {
     key: `md_time_multiplier`,
     label: `Slowdown`,
-    description: `MD wall time as a multiple of the fastest finite MD wall time among models matching the active task, compliance and energy filters (1× = fastest model in view)`,
+    description: `MD wall time as a multiple of the fastest finite MD wall time among models matching the active task, energy-only, training-data and openness filters (1× = fastest model in view)`,
     unit: `×`,
     better: `lower`,
     format: `.2~f`,
@@ -624,7 +624,7 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   diatomics_time_multiplier: {
     key: `diatomics_time_multiplier`,
     label: `Slowdown`,
-    description: `Diatomics wall time as a multiple of the fastest finite wall time among models matching the active task, compliance and energy filters (1× = fastest model in view)`,
+    description: `Diatomics wall time as a multiple of the fastest finite wall time among models matching the active task, energy-only, training-data and openness filters (1× = fastest model in view)`,
     unit: `×`,
     better: `lower`,
     format: `.2~f`,
