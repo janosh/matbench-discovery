@@ -80,20 +80,19 @@ export const CMDS_SPEED = { baseline: 300_000, floor: 9000, log: true } as const
 
 // Key order = RadarChart corner order (cyclic; diagonals vDOS↔speed, ADF↔pressure).
 // Default weights must be knob-expressible (see DEFAULT_CDS_CONFIG): opposite-corner
-// products must match. Equal weights (1/4 each, 1/16 == 1/16) satisfy this, park the
-// knob dead center, and make speed a first-class component alongside the observables.
-// The square geometry can't express a vDOS-dominant default at this speed weight (the
-// diagonal-opposite product would force ADF·pressure too large), so equal is natural.
+// products must match, which 30/20/20/30 satisfies (0.3·0.2 == 0.2·0.3). vDOS and
+// pressure get the emphasis: vDOS is the headline dynamical observable and pressure
+// the least correlated with the other components (see md-metrics-design.md).
 export const DEFAULT_CMDS_CONFIG = {
-  vdos_error: { ...MD_METRICS.md_vdos_error, weight: 1 / 4 },
-  adf_error: { ...MD_METRICS.md_adf_error, weight: 1 / 4 },
+  vdos_error: { ...MD_METRICS.md_vdos_error, weight: 0.3 },
+  adf_error: { ...MD_METRICS.md_adf_error, weight: 0.2 },
   run_time_sec: {
     ...MD_METRICS.md_run_time_sec,
     label: `Speed`,
     description: `Wall time to roll out all 17 DynaMat v1.0 NVT trajectories, scored on a log scale from 9,000 s (subscore 1) to 300,000 s (subscore 0). All timings to date were measured on one NVIDIA H200 per system; models without recorded timings get no CMDS unless this weight is zeroed`,
-    weight: 1 / 4,
+    weight: 0.2,
   },
-  pressure_error: { ...MD_METRICS.md_pressure_error, weight: 1 / 4 },
+  pressure_error: { ...MD_METRICS.md_pressure_error, weight: 0.3 },
 } as const
 
 export type CmdsConfig = Record<

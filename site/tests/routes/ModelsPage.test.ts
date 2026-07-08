@@ -10,10 +10,6 @@ describe(`Models Page`, () => {
   it(`renders model sorting controls`, () => {
     mount(ModelsPage, { target: document.body })
 
-    const toggle = doc_query<HTMLInputElement>(`input[type="checkbox"]`)
-    expect(toggle.checked).toBe(true)
-    expect(toggle.parentElement?.textContent).toMatch(/show non-compliant models/i)
-
     const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
     expect(n_best_input.value).toBe(String(MODELS.length))
     expect(n_best_input.min).toBe(`2`) // min_models = 2
@@ -99,6 +95,7 @@ describe(`Models Page`, () => {
       target: document.body,
       props: { data: { initial_show_n_best: 3 } },
     })
+    await tick() // let the simulated afterNavigate URL-param read settle before clicking
 
     const [first_card, second_card] = [...document.querySelectorAll(`ol > li`)]
     const details_btn = doc_query<HTMLButtonElement>(`h2 button`, first_card)
@@ -253,10 +250,10 @@ describe(`Models Page`, () => {
     }
   })
 
-  it(`restores sort key/dir, n_best and compliance filter from URL params`, async () => {
+  it(`restores sort key/dir, n_best and details from URL params`, async () => {
     await mount_with_url(
       ModelsPage,
-      `http://localhost/models?sort=F1&dir=asc&n_best=5&non_compliant=0`,
+      `http://localhost/models?sort=F1&dir=asc&n_best=5&details=1`,
     )
 
     expect(doc_query(`ul li.active button`).id).toBe(`F1`)
@@ -264,11 +261,11 @@ describe(`Models Page`, () => {
     // card slicing from n_best is covered by the initial_show_n_best test; asserting
     // DOM counts here would race the out:fade transition on the re-render
     expect(doc_query<HTMLInputElement>(`input[type="number"]`).value).toBe(`5`)
-    expect(doc_query<HTMLInputElement>(`input[type="checkbox"]`).checked).toBe(false)
+    expect(doc_query(`ol > li h2 button`).getAttribute(`aria-expanded`)).toBe(`true`)
   })
 
   it.each([
-    `?sort=bogus&dir=sideways&n_best=1e99&non_compliant=maybe`,
+    `?sort=bogus&dir=sideways&n_best=1e99&details=maybe`,
     `?n_best=-3`,
     `?n_best=abc`,
   ])(`falls back to defaults for invalid URL params: %s`, async (query) => {
@@ -276,6 +273,5 @@ describe(`Models Page`, () => {
 
     expect(doc_query(`ul li.active button`).id).toBe(`CPS`)
     expect(doc_query<HTMLInputElement>(`input[type="radio"]:checked`).value).toBe(`desc`)
-    expect(doc_query<HTMLInputElement>(`input[type="checkbox"]`).checked).toBe(true)
   })
 })

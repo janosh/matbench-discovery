@@ -1,7 +1,13 @@
 import DiscoveryPage from '$routes/tasks/discovery/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { mount, mount_with_url } from '../index'
+import {
+  checkbox_for,
+  filter_summary_badge,
+  mount,
+  mount_with_url,
+  sorted_header,
+} from '../index'
 
 const active_toggle = (): string | undefined =>
   document.querySelector(`button.active`)?.textContent?.trim()
@@ -83,12 +89,17 @@ describe(`Discovery Task Page`, () => {
   })
 
   it(`restores and syncs URL state`, async () => {
-    const url = `http://localhost/tasks/discovery?set=full_test_set&energy_only=1&x=F1&y=rmsd`
+    const url = `http://localhost/tasks/discovery?set=full_test_set&energy_only=1&x=F1&y=rmsd&sort=F1&dir=asc&train=MPtrj,-OMat24&heatmap=0`
     await mount_with_url(DiscoveryPage, url)
 
     expect(active_toggle()).toBe(`Full Test Set`)
     expect(energy_only_checkbox().checked).toBe(true)
     expect(heading_texts()).toContainEqual(expect.stringContaining(`RMSD vs F1`))
+    expect(filter_summary_badge(`Training data`)).toContain(`(2)`)
+    expect(checkbox_for(`Heatmap`).checked).toBe(false)
+    const header = sorted_header()
+    expect(header?.textContent).toContain(`F1`)
+    expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
 
     button_for(`10k Most Stable`).click()
     await tick()

@@ -131,8 +131,6 @@
   --main-max-width: 50rem;
   --main-padding: 3rex;
 
-  --compliant-color: #4caf50;
-  --non-compliant-color: #4682b4;
   --text-muted: var(--text-secondary);
 }
 
