@@ -447,7 +447,7 @@ title, so label the section for screen readers instead -->
      plot omits for per-point tooltips -> give them a readable theme-aware fallback */
   .energy-parity-plot :global(.plot-tooltip) {
     background: var(--tooltip-bg, light-dark(#f5f5f7, #2a2a2e));
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px var(--shadow, rgba(0, 0, 0, 0.15));
   }
   .popup-anchor {
     height: 0;
@@ -460,7 +460,7 @@ title, so label the section for screen readers instead -->
     border: 1px solid
       var(--border-color, color-mix(in srgb, currentColor 20%, transparent));
     border-radius: 4px;
-    box-shadow: 0 16px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 16px 24px var(--shadow, rgba(0, 0, 0, 0.15));
     min-width: 220px;
     padding: 0.75em 1em;
     position: absolute;

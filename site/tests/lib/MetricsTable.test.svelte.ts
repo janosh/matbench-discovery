@@ -24,16 +24,22 @@ const mptrj_only_filters = () => {
 }
 
 const visible_row_count = (
-  { energy = false } = {},
-  extra_filter: (model: ModelData) => boolean = () => true,
+  extra_filter: (model: ModelData) => boolean = make_table_filters().matches,
 ) =>
   MODELS.filter(
     (model) =>
-      (energy || model.targets !== `E`) &&
       typeof model.metrics?.discovery === `object` &&
       model.metrics.discovery.unique_prototypes &&
       extra_filter(model),
   ).length
+
+// table filters with the default require-forces constraint cleared (shows all models
+// incl. energy-only ones)
+const all_targets_filters = () => {
+  const filters = make_table_filters()
+  filters.targets = {}
+  return filters
+}
 
 describe(`MetricsTable`, () => {
   const parse_integer_sort_value = (cell: Element): number | null => {
@@ -217,27 +223,29 @@ describe(`MetricsTable`, () => {
     expect(header_texts).toContain(`Acc`)
   })
 
-  it(`filters energy-only models`, { timeout: 30_000 }, async () => {
-    // First test with energy-only models hidden
-    mount(MetricsTable, {
-      target: document.body,
-      props: { show_energy_only: false },
-    })
-    await tick()
-    const rows_without_energy = document.querySelectorAll(`tbody tr`).length
+  it(
+    `hides energy-only models by default via the targets filter`,
+    {
+      timeout: 30_000,
+    },
+    async () => {
+      // default filters require force prediction, hiding energy-only models
+      mount(MetricsTable, { target: document.body })
+      await tick()
+      const rows_without_energy = document.querySelectorAll(`tbody tr`).length
 
-    // Then test with energy-only models shown
-    document.body.innerHTML = ``
-    mount(MetricsTable, {
-      target: document.body,
-      props: { show_energy_only: true },
-    })
-    await tick()
-    const rows_with_energy = document.querySelectorAll(`tbody tr`).length
+      // clearing the targets filter shows them
+      document.body.innerHTML = ``
+      const show_all = all_targets_filters()
+      mount(MetricsTable, { target: document.body, props: { filters: show_all } })
+      await tick()
+      const rows_with_energy = document.querySelectorAll(`tbody tr`).length
 
-    expect(rows_without_energy).toBe(visible_row_count({ energy: false }))
-    expect(rows_with_energy).toBe(visible_row_count({ energy: true }))
-  })
+      expect(rows_without_energy).toBe(visible_row_count())
+      expect(rows_with_energy).toBe(visible_row_count(show_all.matches))
+      expect(rows_with_energy).toBeGreaterThan(rows_without_energy)
+    },
+  )
 
   it(`filters models based on model_filter prop`, () => {
     // First test: show no models
@@ -275,8 +283,11 @@ describe(`MetricsTable`, () => {
     })
 
     const filtered_rows = document.querySelectorAll(`tbody tr`)
+    const default_matches = make_table_filters().matches
     expect(filtered_rows).toHaveLength(
-      visible_row_count({}, (model) => model.model_name.includes(`CHG`)),
+      visible_row_count(
+        (model) => default_matches(model) && model.model_name.includes(`CHG`),
+      ),
     )
     expect(filtered_rows.length).toBeLessThan(all_rows)
 
@@ -461,7 +472,7 @@ describe(`MetricsTable`, () => {
     it.each([
       {
         test_name: `with all models shown`,
-        props: { show_energy_only: true },
+        props: { filters: all_targets_filters() },
       },
       {
         test_name: `with filtered columns`,
@@ -471,7 +482,7 @@ describe(`MetricsTable`, () => {
       },
       {
         test_name: `with an MPtrj-only training filter`,
-        props: { show_energy_only: true, filters: mptrj_only_filters() },
+        props: { filters: mptrj_only_filters() },
       },
     ])(
       `alphabetically sorts by Model name on $test_name header click`,
@@ -501,8 +512,7 @@ describe(`MetricsTable`, () => {
 
         expect(sorted_model_names).toHaveLength(
           visible_row_count(
-            { energy: `show_energy_only` in props && props.show_energy_only },
-            `filters` in props && props.filters ? props.filters.matches : () => true,
+            `filters` in props && props.filters ? props.filters.matches : undefined,
           ),
         )
 

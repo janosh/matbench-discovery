@@ -81,7 +81,7 @@
     model.metrics?.geo_opt != null && typeof model.metrics.geo_opt === `object`
 
   let metrics_data = $derived(
-    assemble_row_data(`full_test_set`, has_geo_opt_metrics, false, filters.matches).map(
+    assemble_row_data(`full_test_set`, has_geo_opt_metrics, filters.matches).map(
       (row) => {
         for (const [from, to] of Object.entries(key_remap)) {
           if (from in row) row[to] = row[from]

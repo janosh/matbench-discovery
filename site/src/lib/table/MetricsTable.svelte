@@ -37,7 +37,6 @@
     discovery_set = $bindable(`unique_prototypes`),
     model_filter = $bindable(() => true),
     col_filter = $bindable(() => true),
-    show_energy_only = $bindable(false),
     filters = make_table_filters(),
     show_selected_only = $bindable(false),
     active_files = $bindable([]),
@@ -46,14 +45,11 @@
     selected_models = $bindable(new SvelteSet<string>()),
     column_order = $bindable([]),
     sort = $bindable({ ...DEFAULT_TABLE_SORT }),
-    show_energy_only_toggle = false,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     discovery_set?: DiscoverySet
     model_filter?: (model: ModelData) => boolean
     col_filter?: (col: Label) => boolean
-    show_energy_only?: boolean
-    show_energy_only_toggle?: boolean
     filters?: UrlTableFilters
     show_selected_only?: boolean
     active_files?: { name: string; url: string }[]
@@ -86,7 +82,6 @@
     const fresh_rows = assemble_row_data(
       discovery_set,
       model_filter,
-      show_energy_only,
       filters.matches,
     ).filter((row) => !show_selected_only || selected_names.has(row.model_name))
     // cache access is untracked so callers don't subscribe to the very row signals
@@ -273,14 +268,7 @@
   style="{TABLE_STYLE_VARS}{rest.style ?? ``}"
 >
   {#snippet controls()}
-    <TableControls
-      bind:columns
-      bind:show_energy_only
-      bind:show_selected_only
-      {filters}
-      {show_energy_only_toggle}
-      {selected_count}
-    />
+    <TableControls bind:columns bind:show_selected_only {filters} {selected_count} />
   {/snippet}
 </HeatmapTable>
 
@@ -315,7 +303,6 @@
   }
   :global(table :is(th, td).row-num-col.row-num-col) {
     padding-left: 0;
-    text-align: left;
   }
   .header-label {
     display: inline-block;

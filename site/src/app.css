@@ -20,7 +20,8 @@
   --light-nav-bg: rgba(0, 0, 0, 0.06); /* lighter surface tint */
   --light-card-bg: rgba(255, 255, 255, 0.4);
   --light-card-border: rgba(0, 0, 0, 0.12);
-  --light-shadow: rgba(0, 0, 0, 0.06);
+  /* strong enough to be visible on white (0.06 made light-mode shadows invisible) */
+  --light-shadow: rgba(0, 0, 0, 0.2);
 
   /* Dark theme palette matches current site appearance */
   --dark-page-bg: #061e25;
@@ -120,6 +121,11 @@
   --sms-focus-border: 1px solid var(--link-color);
   --sms-active-color: cornflowerblue;
   --sms-selected-bg: color-mix(in srgb, currentcolor 12%, transparent);
+
+  /* matterviz ToggleMenu (column-select) pane: its currentColor-based defaults are
+  near-invisible in light mode; use the theme border + shadow instead */
+  --tgl-dropdown-border: var(--border);
+  --tgl-dropdown-shadow: 0 4px 12px var(--shadow);
 
   --radio-btn-bg: var(--btn-bg);
   --radio-btn-checked-shadow: none;

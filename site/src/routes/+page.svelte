@@ -17,8 +17,6 @@
   import {
     apply_weights_param,
     bind_url_params,
-    bool_from_param,
-    bool_url_entry,
     sort_from_query,
     sort_url_entries,
     valid_query_param,
@@ -74,7 +72,6 @@
     MD: { column: MD_METRICS.md_combined_score.key, dir: `desc` },
     Diatomics: { column: DIATOMICS_METRICS.energy_jump.key, dir: `asc` },
   }
-  let show_energy_only = $state(false)
   const filters = make_table_filters()
   const col_preset_options = col_preset_names.map((name) => ({
     value: name,
@@ -136,7 +133,6 @@
     sort = next_sort
 
     discovery_set = valid_query_param(params, `set`, `unique_prototypes`, valid_sets)
-    show_energy_only = bool_from_param(params, `energy_only`)
     filters.read(params)
     col_preset = next_preset
     previous_col_preset = next_preset
@@ -157,7 +153,6 @@
         [`preset`, custom_col_config || col_preset === `Discovery` ? `` : col_preset],
         [`set`, discovery_set, `unique_prototypes`],
         ...sort_url_entries(sort, default_sort),
-        bool_url_entry(`energy_only`, show_energy_only),
         ...filters.url_entries,
         // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
         [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
@@ -167,21 +162,17 @@
 
   let export_state = $derived({ export_error, discovery_set })
 
-  // Landing-page cohort: the metrics-table filters (energy/training-data/openness)
+  // Landing-page cohort: the metrics-table filters (training-data/openness/targets)
   // plus a base predicate of "has discovery data for the selected set"
   let in_cohort = $derived(
-    make_combined_filter(
-      (model: ModelData) => {
-        const discovery = model.metrics?.discovery
-        return (
-          discovery !== null &&
-          typeof discovery === `object` &&
-          Boolean(discovery[discovery_set])
-        )
-      },
-      show_energy_only,
-      filters.matches,
-    ),
+    make_combined_filter((model: ModelData) => {
+      const discovery = model.metrics?.discovery
+      return (
+        discovery !== null &&
+        typeof discovery === `object` &&
+        Boolean(discovery[discovery_set])
+      )
+    }, filters.matches),
   )
   // best model within the same cohort the table shows
   let best_model = $derived(find_best_model(MODELS.filter(in_cohort), discovery_set))
@@ -193,7 +184,6 @@
       custom_col_config,
       sort,
       auto_sort_enabled,
-      show_energy_only,
       training_filter: { ...filters.training },
       openness: [...filters.openness],
       show_heatmap: filters.show_heatmap,
@@ -205,7 +195,6 @@
       discovery_set = values.discovery_set ?? discovery_set
       col_preset = values.col_preset ?? col_preset
       previous_col_preset = col_preset
-      show_energy_only = values.show_energy_only ?? show_energy_only
       filters.training = values.training_filter ?? filters.training
       filters.openness = values.openness ?? filters.openness
       filters.show_heatmap = values.show_heatmap ?? filters.show_heatmap
@@ -253,9 +242,7 @@
           : preset_metric_keys.has(col.key) && !supplementary_hidden.has(col.key)}
       {discovery_set}
       bind:sort
-      bind:show_energy_only
       {filters}
-      show_energy_only_toggle
     />
   </section>
 

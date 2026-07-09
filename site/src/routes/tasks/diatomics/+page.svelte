@@ -29,6 +29,7 @@
   import { pick_contrast_color, PLOT_COLORS } from 'matterviz'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
   import { SvelteSet } from 'svelte/reactivity'
+  import { make_plot_observer } from './observe-plot'
 
   let { data } = $props()
   let diatomic_models = $derived(data?.diatomic_models ?? [])
@@ -180,6 +181,7 @@
   }))
   let selected_model_names = $derived(model_selection.values)
   const visible_diatomics = new SvelteSet<string>()
+  const observe_plot = make_plot_observer(visible_diatomics)
   let diatomics_to_render = $derived(
     // Only render diatomics where at least one model has data
     homo_diatomic_formulas.filter((formula) => {
@@ -237,30 +239,6 @@
         },
       ]
     })
-
-  function observe_plot(node: HTMLElement, formula: string) {
-    const hide_plot = () => visible_diatomics.delete(formula)
-    const Observer = globalThis.IntersectionObserver
-    if (!Observer) {
-      visible_diatomics.add(formula)
-      return { destroy: hide_plot }
-    }
-    const observer = new Observer(
-      ([entry]) => {
-        if (!entry) return
-        if (entry.isIntersecting) visible_diatomics.add(formula)
-        else visible_diatomics.delete(formula)
-      },
-      { rootMargin: `300px 0px` },
-    )
-    observer.observe(node)
-    return {
-      destroy: () => {
-        hide_plot()
-        observer.disconnect()
-      },
-    }
-  }
 </script>
 
 <h1>Diatomics</h1>
@@ -353,7 +331,7 @@
 
 <div class="grid" style="--plot-height: {clamped_plot_height}px">
   {#each diatomics_to_render as formula (formula)}
-    <div class="plot-shell" use:observe_plot={formula}>
+    <div class="plot-shell" {@attach observe_plot(formula)}>
       {#if visible_diatomics.has(formula)}
         <DiatomicCurve
           {formula}
