@@ -219,15 +219,15 @@ metrics:
     run_time_sec: 4521.48
     excluded_formula_reasons:
       Bi-Bi: exploding errors
-    pbe_wall_dist_mae: 0.0404
+    pbe_wall_dist_mae: 0.04039
     pbe_energy_mae: 0.5703
-    pbe_bond_length_error: 0.1744
+    pbe_bond_length_error: 0.1743
     pbe_well_depth_error: 0.4007
-    pbe_vib_freq_error: 57.69
+    pbe_vib_freq_error: 57.71
     tortuosity: 1.034
     energy_diff_flips: 1.535
     energy_jump: 0.5265
     force_flips: 1.512
     force_total_variation: 630.6
     force_jump: 15.8
-    pbe_force_mae: 1.773
+    pbe_force_mae: 1.772

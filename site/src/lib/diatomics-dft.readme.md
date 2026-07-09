@@ -11,16 +11,119 @@ After decompression, the schema is:
       distances: number[]
       energies: number[]
       forces: number[][][] // [point][atom][x|y|z]
+      magmoms: ([number, number] | null)[] // per-point site-projected moments (μB)
+      spin_candidates: (string | null)[] // winning spin candidate, "<NUPDOWN>" or "afm"
     }
   }
 }
 ```
 
-`functional` is `PBE` or `r2SCAN`; `formula` is e.g. `O-O`. `distances`, `energies`, and `forces` share the same first axis over curve points. Energies are final sigma-to-0 VASP energies in eV; forces are per-point, per-atom Cartesian 3-vectors in eV/Å with axis order `[point][atom][x|y|z]`.
+`functional` is `PBE` or `r2SCAN`; `formula` is e.g. `O-O`. `distances`, `energies`, `forces`, `magmoms`, and `spin_candidates` share the same first axis over curve points. Energies are final sigma-to-0 VASP energies in eV; forces are per-point, per-atom Cartesian 3-vectors in eV/Å with axis order `[point][atom][x|y|z]`.
+
+`magmoms` are the site-projected magnetic moments of the two atoms (`LORBIT=11`, in μB) and `spin_candidates` records which spin-ladder rung won the per-distance energy minimum (an even `NUPDOWN` integer as string, or `afm` for the broken-symmetry candidate). Both serve two purposes: discontinuities in atom-wise moments vs distance flag SCF spin-state hops that the total (pinned) moment cannot show, and spin-aware MLIPs (which take magnetic moments or spin as input) can be compared against the reference spin state directly. A few points (6 of 9104) have `null` magmoms where the OUTCAR block was unavailable.
 
 ## DFT Setup
 
 Each candidate curve was produced with VASP 6 using Materials Project (MP24)-style static input settings and real-space PAW potentials for PBE and r2SCAN.
+
+The PBE 6.4 PAW labels used for `H...U` were the `MP24StaticSet` labels:
+
+```yaml
+H: H
+He: He
+Li: Li_sv
+Be: Be_sv
+B: B
+C: C
+N: N
+O: O
+F: F
+Ne: Ne
+Na: Na_pv
+Mg: Mg_pv
+Al: Al
+Si: Si
+P: P
+S: S
+Cl: Cl
+Ar: Ar
+K: K_sv
+Ca: Ca_sv
+Sc: Sc_sv
+Ti: Ti_pv
+V: V_pv
+Cr: Cr_pv
+Mn: Mn_pv
+Fe: Fe_pv
+Co: Co
+Ni: Ni_pv
+Cu: Cu_pv
+Zn: Zn
+Ga: Ga_d
+Ge: Ge_d
+As: As
+Se: Se
+Br: Br
+Kr: Kr
+Rb: Rb_sv
+Sr: Sr_sv
+Y: Y_sv
+Zr: Zr_sv
+Nb: Nb_pv
+Mo: Mo_pv
+Tc: Tc_pv
+Ru: Ru_pv
+Rh: Rh_pv
+Pd: Pd
+Ag: Ag
+Cd: Cd
+In: In_d
+Sn: Sn_d
+Sb: Sb
+Te: Te
+I: I
+Xe: Xe_GW
+Cs: Cs_sv
+Ba: Ba_sv_GW
+La: La
+Ce: Ce
+Pr: Pr_h
+Nd: Nd_h
+Pm: Pm_h
+Sm: Sm_h
+Eu: Eu
+Gd: Gd
+Tb: Tb_h
+Dy: Dy_h
+Ho: Ho_h
+Er: Er_h
+Tm: Tm_h
+Yb: Yb_h
+Lu: Lu_3
+Hf: Hf_pv
+Ta: Ta_pv
+W: W_sv
+Re: Re_pv
+Os: Os_pv
+Ir: Ir
+Pt: Pt
+Au: Au
+Hg: Hg
+Tl: Tl_d
+Pb: Pb_d
+Bi: Bi
+Po: Po_d
+At: At
+Rn: Rn
+Fr: Fr_sv
+Ra: Ra_sv
+Ac: Ac
+Th: Th
+Pa: Pa
+U: U
+```
+
+Note on pseudo-potential variants for dimers: fixed-oxidation-state lanthanide potentials (e.g. `Ho_3`, which pins Ho at a 3+ configuration by freezing f-electrons in the core) would be unphysical for neutral homonuclear dimers. The `_h` lanthanide variants used here (`Pr_h` ... `Yb_h`) treat f-electrons explicitly, so this concern does not apply — though explicit f-electrons are also what makes the heavy-lanthanide SCF convergence so fragile (see caveats below). The one frozen-f exception is `Lu_3`, where the f-shell is full (f¹⁴) and chemically inert. Rh uses `Rh_pv` (semi-core p in valence, no oxidation-state constraint).
 
 Important per-point settings:
 
@@ -29,7 +132,7 @@ Important per-point settings:
 - `ISPIN=2` with fixed `NUPDOWN` for every spin candidate and explicit `MAGMOM` initialization where needed.
 - `NELM=250` for difficult stretched or repulsive geometries.
 - `LWAVE=.TRUE.` so neighboring geometries can reuse the wavefunction.
-- `LCHARG`, `LAECHG`, `LVTOT`, and `LELF` disabled, and `LORBIT` removed, to avoid roughly 180 MB of unused grid output per point.
+- `LCHARG`, `LAECHG`, `LVTOT`, and `LELF` disabled to avoid roughly 180 MB of unused grid output per point; `LORBIT=11` to record site-projected magnetic moments for every point (the spin-hop diagnostic and spin-aware-MLIP reference described above).
 - With a seed wavefunction: `ISTART=1`, `ICHARG=0`; otherwise cold start with `ISTART=0`, `ICHARG=2`.
 
 The distance grid is 50 geometrically spaced separations from `0.8 * r_cov` to 6 Å. Going deeper into the repulsive wall caused severe PAW augmentation-sphere overlap and hundreds-of-eV energies, which made the reference less useful for MLIP scoring.
@@ -77,12 +180,18 @@ The artifact contains 92 PBE and 92 r2SCAN homonuclear entries. Known caveats: `
 
 ## Postprocessing
 
-The postprocess is deliberately narrow. It is meant to fix isolated SCF artifacts without smoothing away real physics like spin crossovers.
+The postprocess is deliberately narrow. It is meant to fix isolated SCF artifacts without smoothing away real physics like spin crossovers. Each filter targets a failure mode no smooth adiabatic PEC can produce; anything less clear-cut is published as computed (per-point magmoms and spin candidates make residual branch flicker visible rather than hidden).
 
-It currently handles three cases:
+It handles three cases:
 
-- isolated severe spin-branch drops, replacing the dropped point with the smoother neighboring branch;
-- short, low-gain spin-branch islands, only when the surrounding branch is locally smoother than the adiabatic minimum point;
-- isolated upward energy bumps.
+- variationally collapsed SCF points, dropped per spin candidate before merging: mostly f-electron heavy lanthanides where single points fall tens to thousands of eV below their own branch (no physical PEC well is more than a few eV deep, and such points would otherwise always win the per-distance minimum);
+- isolated severe (&ge;3 eV) spin-branch drops in the merged curve, replaced by the smoother neighboring branch (a real spin crossover stays lower over a range of separations; a single-point notch is an SCF failure);
+- isolated upward energy bumps (&ge;0.1 eV single-grid-point local maxima, which no smooth PEC has), dropped.
+
+An earlier revision also substituted short, near-degenerate (&le;0.2 eV) "spin-branch islands" with the surrounding branch for cosmetic smoothness. That step was removed: it edited far more points than all other filters combined (427 of 605 edits) for negligible smoothness gain, and replacing the computed adiabatic minimum with a higher-energy branch is hand-curation, not physics.
 
 Tests for this logic live in `tests/metrics/diatomics/test_diatomics_reference.py` and `tests/metrics/diatomics/test_build_diatomic_reference.py`.
+
+## Acknowledgements
+
+Thanks to [Andrew S. Rosen](https://cbe.princeton.edu/people/andrew-rosen) [[Google Scholar](https://scholar.google.com/citations?user=lHBjgLsAAAAJ&hl=en)] for guidance on how to obtain high quality dimer energy curves!

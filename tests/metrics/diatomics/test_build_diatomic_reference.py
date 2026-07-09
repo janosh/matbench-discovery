@@ -16,6 +16,7 @@ from matbench_discovery.metrics.diatomics.reference import CurvePostprocessEdit
 from scripts.evals.build_diatomic_reference import (
     build_reference,
     load_candidate_points,
+    serializable_curve,
     write_merged_curve,
 )
 
@@ -108,6 +109,27 @@ def test_build_reference_reports_skipped_pairs(
     assert [
         (row["symbol"], row["xc"], row["skipped"]) for row in quality_rows
     ] == expected_quality
+
+
+def test_serializable_curve_reports_magmoms_and_spin_candidates() -> None:
+    """Per-point magmoms and winning spin candidates survive serialization."""
+    points = [
+        {
+            "distance": 1.0,
+            "energies": [-1.0],
+            "forces": FINITE_FORCES,
+            "magmoms": [1.5464, -1.5464],
+            "spin_candidate": "afm",
+        },
+        # points missing magmoms (e.g. truncated OUTCAR) serialize as null
+        {"distance": 2.0, "energies": [-0.5], "forces": FINITE_FORCES},
+    ]
+
+    curve = serializable_curve(points)
+
+    assert curve["magmoms"] == [[1.546, -1.546], None]
+    assert curve["spin_candidates"] == ["afm", None]
+    assert len(curve["distances"]) == len(curve["magmoms"]) == 2
 
 
 def test_write_merged_curve_serializes_postprocess_edits(tmp_path: Path) -> None:

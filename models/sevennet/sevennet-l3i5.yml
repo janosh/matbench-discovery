@@ -196,7 +196,7 @@ metrics:
     pbe_energy_mae: 1.148
     pbe_bond_length_error: 0.1927
     pbe_well_depth_error: 7.239
-    pbe_vib_freq_error: 148.5
+    pbe_vib_freq_error: 148.4
     tortuosity: 1.073
     energy_diff_flips: 1.953
     energy_jump: 1.428

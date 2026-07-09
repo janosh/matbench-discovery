@@ -68,15 +68,35 @@ def load_candidate_points(
 
 
 def serializable_curve(points: list[dict[str, Any]]) -> dict[str, list]:
-    """Convert merged curve points to the bundled reference JSON schema."""
+    """Convert merged curve points to the bundled reference JSON schema.
+
+    Besides distances/energies/forces, each point carries its site-projected magnetic
+    moments (LORBIT=11, eV-scale spin-state hops show up as magmom discontinuities)
+    and the winning spin candidate ("<NUPDOWN>" or "afm") so spin-aware MLIPs can be
+    compared against the reference spin state directly (suggested by Andrew Rosen).
+    """
     distances: list[float] = []
     energies: list[float] = []
     forces: list[list[list[float]]] = []
+    magmoms: list[list[float] | None] = []
+    spin_candidates: list[str | None] = []
     for point in points:
         distances.append(round(point["distance"], 6))
         energies.append(round(point["energies"][-1], 6))
         forces.append([[round(comp, 6) for comp in atom] for atom in point["forces"]])
-    return {"distances": distances, "energies": energies, "forces": forces}
+        point_magmoms = point.get("magmoms")
+        magmoms.append(
+            [round(moment, 3) for moment in point_magmoms] if point_magmoms else None
+        )
+        spin_candidate = point.get("spin_candidate")
+        spin_candidates.append(None if spin_candidate is None else str(spin_candidate))
+    return {
+        "distances": distances,
+        "energies": energies,
+        "forces": forces,
+        "magmoms": magmoms,
+        "spin_candidates": spin_candidates,
+    }
 
 
 def build_reference(
