@@ -85,20 +85,17 @@ def drop_collapsed_scf_points(
     win the per-distance min-merge, so they must be removed per candidate before
     merging. Iterates so consecutive collapsed points peel off one by one.
     """
-    kept = sorted(
-        (dict(point) for point in finite_energy_points(points)),
-        key=point_distance,
-    )
+    kept = sorted(finite_energy_points(points), key=point_distance)
     edits: list[CurvePostprocessEdit] = []
     while len(kept) > 1:
         for idx, point in enumerate(kept):
-            neighbor_energies = [
+            expected_energy = min(
                 point_energy(kept[jdx])
                 for jdx in (idx - 1, idx + 1)
                 if 0 <= jdx < len(kept)
-            ]
+            )
             energy = point_energy(point)
-            if energy < min(neighbor_energies) - min_collapse_ev:
+            if energy < expected_energy - min_collapse_ev:
                 edits.append(
                     CurvePostprocessEdit(
                         kind="collapsed_scf_point",
@@ -107,7 +104,7 @@ def drop_collapsed_scf_points(
                         replacement_spin=None,
                         original_energy=energy,
                         replacement_energy=None,
-                        expected_energy=min(neighbor_energies),
+                        expected_energy=expected_energy,
                     )
                 )
                 del kept[idx]

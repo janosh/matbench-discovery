@@ -3,14 +3,13 @@ import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
 import {
   assemble_row_data,
   format_train_set,
-  make_combined_filter,
   metric_better_as,
   sort_models,
   targets_tooltips,
 } from '$lib/metrics'
 import type { TargetType } from '$lib/schema/model'
 import type { ModelData } from '$lib/types'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 describe(`targets_tooltips`, () => {
   it.each([
@@ -161,17 +160,6 @@ describe(`format_train_set`, () => {
       // Clean up by restoring original DATASETS
       delete DATASETS.Modified_MPtrj
     }
-  })
-})
-
-describe(`make_combined_filter`, () => {
-  it(`returns false when the user filter returns false`, () => {
-    const model_filter = vi.fn().mockReturnValue(false)
-    const filter = make_combined_filter(model_filter)
-    const model = { targets: `E`, training_set: [`MP 2022`] } as ModelData
-
-    expect(filter(model)).toBe(false)
-    expect(model_filter).toHaveBeenCalledWith(model)
   })
 })
 

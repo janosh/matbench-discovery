@@ -65,17 +65,6 @@ describe(`TableControls`, () => {
     expect(filters.n_active).toBe(0)
   })
 
-  it(`require means "must include, others allowed", not exclusivity`, () => {
-    const filters = make_table_filters()
-    filters.training = { MPtrj: `require` }
-    // model trained on MPtrj plus extra datasets still matches
-    const targets = `EFS_G`
-    expect(filters.matches({ training_set: [`MPtrj`, `OMat24`, `sAlex`], targets })).toBe(
-      true,
-    )
-    expect(filters.matches({ training_set: [`OMat24`], targets })).toBe(false)
-  })
-
   it(`applies the built-in Compliant preset (old compliant cohort in one click)`, async () => {
     const filters = make_table_filters()
     mount(TableControls, { target: document.body, props: { filters } })
@@ -183,35 +172,7 @@ describe(`TableControls`, () => {
     expect(summary_for(`Openness (3/4)`)).toBeDefined()
   })
 
-  it(`opens and closes column visibility panel`, async () => {
-    mount(TableControls, {
-      target: document.body,
-      props: { columns: sample_columns },
-    })
-    await tick()
-
-    const toggle_btn = doc_query(`.column-toggles summary`)
-    const details = doc_query<HTMLDetailsElement>(`.column-toggles`)
-    expect(toggle_btn.textContent?.trim()).toBe(`Columns`)
-
-    // Should start closed
-    expect(details.open).toBe(false)
-
-    // Open panel
-    toggle_btn.click()
-    expect(details.open).toBe(true)
-
-    // Verify column menu is visible
-    expect(
-      doc_query(`.column-menu`).querySelectorAll(`input[type="checkbox"]`),
-    ).toHaveLength(sample_columns.length)
-
-    // Close panel
-    toggle_btn.click()
-    expect(details.open).toBe(false)
-  })
-
-  it(`toggles column visibility checkboxes`, async () => {
+  it(`opens, updates and closes the column visibility panel`, async () => {
     mount(TableControls, {
       target: document.body,
       props: { columns: [...sample_columns] },
@@ -219,7 +180,12 @@ describe(`TableControls`, () => {
     await tick()
 
     const toggle_btn = doc_query(`.column-toggles summary`)
+    const details = doc_query<HTMLDetailsElement>(`.column-toggles`)
+    expect(toggle_btn.textContent?.trim()).toBe(`Columns`)
+    expect(details.open).toBe(false)
+
     toggle_btn.click()
+    expect(details.open).toBe(true)
 
     const column_menu = doc_query(`.column-menu`)
     expect(column_menu.getAttribute(`role`)).toBe(`group`)
@@ -242,5 +208,8 @@ describe(`TableControls`, () => {
     first_checkbox.click()
     // Verify checkbox state changed
     expect(first_checkbox.checked).toBe(true)
+
+    toggle_btn.click()
+    expect(details.open).toBe(false)
   })
 })

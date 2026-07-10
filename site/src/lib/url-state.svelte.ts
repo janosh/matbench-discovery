@@ -233,20 +233,14 @@ export class UrlTableFilters {
 
   // toggle a dataset constraint; picking the already-active mode clears it
   set_training = (key: string, mode: TrainFilterMode): void => {
-    if (this.training[key] === mode) {
-      this.training = Object.fromEntries(
-        Object.entries(this.training).filter(([other]) => other !== key),
-      )
-    } else this.training[key] = mode
+    if (this.training[key] === mode) Reflect.deleteProperty(this.training, key)
+    else this.training[key] = mode
   }
 
   // toggle a predicted-output constraint, same cycling as set_training
   set_target = (key: TargetOutput, mode: TrainFilterMode): void => {
-    if (this.targets[key] === mode) {
-      this.targets = Object.fromEntries(
-        Object.entries(this.targets).filter(([other]) => other !== key),
-      )
-    } else this.targets = { ...this.targets, [key]: mode }
+    if (this.targets[key] === mode) Reflect.deleteProperty(this.targets, key)
+    else this.targets[key] = mode
   }
 
   // flip an openness value's membership (keeping canonical order), refusing to

@@ -12,7 +12,6 @@
     METADATA_COLS,
   } from '$lib/labels'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
-  import { make_combined_filter } from '$lib/metrics'
   import { find_best_model, make_table_filters, MODELS } from '$lib/models.svelte'
   import {
     apply_weights_param,
@@ -164,16 +163,15 @@
 
   // Landing-page cohort: the metrics-table filters (training-data/openness/targets)
   // plus a base predicate of "has discovery data for the selected set"
-  let in_cohort = $derived(
-    make_combined_filter((model: ModelData) => {
-      const discovery = model.metrics?.discovery
-      return (
-        discovery !== null &&
-        typeof discovery === `object` &&
-        Boolean(discovery[discovery_set])
-      )
-    }, filters.matches),
-  )
+  let in_cohort = $derived((model: ModelData) => {
+    const discovery = model.metrics?.discovery
+    return (
+      discovery !== null &&
+      typeof discovery === `object` &&
+      Boolean(discovery[discovery_set]) &&
+      filters.matches(model)
+    )
+  })
   // best model within the same cohort the table shows
   let best_model = $derived(find_best_model(MODELS.filter(in_cohort), discovery_set))
 
@@ -186,6 +184,8 @@
       auto_sort_enabled,
       training_filter: { ...filters.training },
       openness: [...filters.openness],
+      targets: { ...filters.targets },
+      fs_mode: filters.fs_mode,
       show_heatmap: filters.show_heatmap,
     }),
     restore: (values) => {
@@ -197,6 +197,8 @@
       previous_col_preset = col_preset
       filters.training = values.training_filter ?? filters.training
       filters.openness = values.openness ?? filters.openness
+      filters.targets = values.targets ?? filters.targets
+      filters.fs_mode = values.fs_mode ?? filters.fs_mode
       filters.show_heatmap = values.show_heatmap ?? filters.show_heatmap
     },
   }

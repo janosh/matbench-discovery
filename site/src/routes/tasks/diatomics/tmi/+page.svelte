@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type InternalPoint, ScatterPlot } from 'matterviz'
+  import { ScatterPlot } from 'matterviz'
   import { element_data, type ChemicalElement } from 'matterviz/element'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
   import { SvelteSet } from 'svelte/reactivity'
@@ -27,7 +27,6 @@
 
   const visible_plots = new SvelteSet<string>()
   const observe_plot = make_plot_observer(visible_plots)
-  let tooltip_point: InternalPoint | null = $state(null)
 
   function series_for(formula: string) {
     return Object.entries(magmom_curves[formula] ?? {}).flatMap(([functional, curve]) =>
@@ -117,7 +116,6 @@
               label_shift: { y: -30 },
             }}
             y_axis={{ label: `Magmom (μB)`, format: `.1f` }}
-            bind:tooltip_point
             legend={null}
             point_tween={{ duration: 0 }}
             line_tween={{ duration: 0 }}

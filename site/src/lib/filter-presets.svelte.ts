@@ -9,9 +9,10 @@ import type { FilterPreset } from './url-state.svelte'
 export const BUILTIN_PRESETS: Record<string, FilterPreset> = {
   Compliant: {
     training: Object.fromEntries(
-      ALL_TRAINING_SETS.filter(
-        (key) => !(DATASETS[key] as { compliant?: boolean } | undefined)?.compliant,
-      ).map((key) => [key, `exclude` as const]),
+      ALL_TRAINING_SETS.filter((key) => !DATASETS[key]?.compliant).map((key) => [
+        key,
+        `exclude` as const,
+      ]),
     ),
     openness: [`OSOD`],
     description:
