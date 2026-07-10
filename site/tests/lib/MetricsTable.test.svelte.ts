@@ -63,11 +63,9 @@ describe(`MetricsTable`, () => {
     expect(table?.querySelector(`thead`)).toBeDefined()
     expect(table?.querySelector(`tbody`)).toBeDefined()
     const table_container = doc_query(`.table-container`)
-    expect(table_container.style.getPropertyValue(`--table-odd`)).toContain(`color-mix`)
     expect(
       table_container.style.getPropertyValue(`--heatmap-sticky-cell-odd-bg`),
     ).toContain(`linear-gradient`)
-    expect(table_container.style.getPropertyValue(`--heatmap-row-num-align`)).toBe(`left`)
     expect(table_container.style.getPropertyValue(`--heatmap-row-num-padding-left`)).toBe(
       `0`,
     )

@@ -3,8 +3,8 @@
   import { make_table_filters } from '$lib/models.svelte'
   import { METRICS_TABLE_ROOT_STYLE } from '$lib/table/MetricsTable.svelte'
   import type { UrlTableFilters } from '$lib/url-state.svelte'
-  import type { Label, ModelData } from '$lib/types'
-  import { HeatmapTable, type Label as MattervizLabel } from 'matterviz'
+  import type { Label, ModelData, TableLabel } from '$lib/types'
+  import { HeatmapTable } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
   import {
     ALL_METRICS,
@@ -24,12 +24,18 @@
   } = $props()
 
   // Append unit in thin font and (higher/lower=better) hint to column tooltip
-  function enrich_col(col: Label, overrides: Partial<Label> = {}): Label {
+  function enrich_col(col: Label, overrides: Partial<Label> = {}): TableLabel {
     let { label } = col
     if (col.unit) {
       label = `${label} <span style="font-weight: 200">(${col.unit})</span>`
     }
-    return { ...col, ...overrides, label, description: append_better_hint(col) }
+    return {
+      ...col,
+      ...overrides,
+      label,
+      better: overrides.better ?? col.better ?? undefined,
+      description: append_better_hint(col),
+    }
   }
 
   // Define grouped columns: [source_cols, group_name, extra_overrides]
@@ -55,8 +61,8 @@
     HYPERPARAMS.graph_construction_radius.key,
   ])
 
-  let columns = $state<Label[]>([
-    METADATA_COLS.model_name,
+  let columns = $state<TableLabel[]>([
+    enrich_col(METADATA_COLS.model_name),
     enrich_col(ALL_METRICS.RMSD),
     ...grouped_defs.flatMap(([cols, group, extras]) =>
       cols.map((col) =>
@@ -94,7 +100,7 @@
 
 <HeatmapTable
   data={metrics_data}
-  columns={columns as MattervizLabel[]}
+  {columns}
   initial_sort={{ column: ALL_METRICS.RMSD.key, direction: `asc` }}
   default_num_format=".3f"
   bind:column_order
