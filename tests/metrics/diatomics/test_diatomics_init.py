@@ -471,8 +471,8 @@ def test_eval_window(monkeypatch: pytest.MonkeyPatch) -> None:
     assert eval_window("Og-Og", 6.0) == (0.0, 6.0)
 
 
-def test_window_excludes_deep_overlap() -> None:
-    """Metrics ignore the unphysical deep-overlap region below 0.9*r_cov."""
+def test_general_window_excludes_deeper_overlap() -> None:
+    """General metrics ignore the steep repulsive region below 0.9*r_cov."""
     dists = np.linspace(0.1, 6.0, 60)  # spans below H's window (~0.28 Å) and above
     energies = np.exp(-dists)  # smooth, small gradient in-window
     energies[dists < 0.2] = 1e6  # huge spike in the excluded deep-overlap region
@@ -480,6 +480,25 @@ def test_window_excludes_deep_overlap() -> None:
     metrics = diatomics.calc_diatomic_metrics(ref_curves=None, pred_curves=pred)
     # the 1e6 spike is below H's r_min so the in-window smooth curve has no jump
     assert metrics["H"][MbdKey.energy_jump] == pytest.approx(0)
+
+
+def test_wall_metric_uses_full_dft_range() -> None:
+    """Wall scoring reaches 0.8*r_cov without extending general energy MAE."""
+    radius_h = covalent_radii[atomic_numbers["H"]]
+    distances = np.array(
+        [0.8 * radius_h, 0.85 * radius_h, 0.9 * radius_h, 0.35, 0.5, 0.74, 1.2, 2, 3]
+    )
+    reference_energies = np.array([100, 50, 20, 5, 0, -1, -0.5, 0, 0])
+    predicted_energies = reference_energies.copy()
+    predicted_energies[:2] = 20
+
+    metrics = diatomics.calc_diatomic_metrics(
+        ref_curves=h_curves(distances, reference_energies),
+        pred_curves=h_curves(distances, predicted_energies),
+    )["H"]
+
+    assert metrics[MbdKey.pbe_energy_mae] == pytest.approx(0)
+    assert metrics[MbdKey.pbe_wall_dist_mae] == pytest.approx(0.08538778)
 
 
 def test_write_metrics_drops_deprecated_and_handles_nan(

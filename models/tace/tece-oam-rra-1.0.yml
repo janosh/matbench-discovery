@@ -177,11 +177,11 @@ metrics:
     pred_file_url: https://figshare.com/files/66313844
     hardware: NVIDIA GeForce RTX 4090
     run_time_sec: 4505.61
-    pbe_wall_dist_mae: 0.3124
+    pbe_wall_dist_mae: 0.3036
     pbe_energy_mae: 3.918
     pbe_bond_length_error: 0.6949
     pbe_well_depth_error: 0.773
-    pbe_vib_freq_error: 82.56
+    pbe_vib_freq_error: 82.58
     tortuosity: 1.335
     energy_diff_flips: 3.805
     energy_jump: 2.718

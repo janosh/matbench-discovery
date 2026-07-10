@@ -47,20 +47,20 @@ from matbench_discovery.diatomics import (
     homo_nuc,
 )
 from matbench_discovery.hpc import detect_hardware, merge_run_metadata, peak_memory_gb
-from matbench_discovery.metrics.diatomics import NON_MP_ELEMENTS, eval_window
+from matbench_discovery.metrics.diatomics import (
+    DIATOMIC_WALL_R_MIN_FACTOR,
+    NON_MP_ELEMENTS,
+    eval_window,
+)
 
 module_dir = os.path.dirname(__file__)
 
 
 def trim_curve_to_finite(formula: str, curve: CurveDict) -> CurveDict | None:
-    """Drop non-finite curve points outside the scored window, or the whole curve.
+    """Trim unscored non-finite points or reject a curve with scored ones.
 
-    NaN/Infinity are not valid JSON, so non-finite samples cannot be saved. Models
-    often blow up only outside the scored window [0.9x covalent radius, 3.1x vdW
-    radius], typically in the deep-overlap region; trimming those points keeps the
-    curve scoreable. Non-finite values at scored separations mean the model is
-    unstable there, so the whole curve is dropped (returns None) and recorded as
-    excluded.
+    JSON cannot store NaN/Infinity. The scored range starts at 0.8x covalent radius;
+    a non-finite value within it returns None so the curve is recorded as excluded.
     """
     energies = np.asarray(curve["energies"], dtype=float)
     forces = np.asarray(curve["forces"], dtype=float)
@@ -68,8 +68,12 @@ def trim_curve_to_finite(formula: str, curve: CurveDict) -> CurveDict | None:
         return None
     distances = np.asarray(curve["distances"], dtype=float)
     finite = np.isfinite(energies) & np.isfinite(forces).all(axis=(1, 2))
-    r_min, r_max = eval_window(formula, float(distances.max()))
-    if not finite[(distances >= r_min) & (distances <= r_max)].all():
+    r_min, r_max = eval_window(
+        formula,
+        float(distances.max()),
+        r_min_factor=DIATOMIC_WALL_R_MIN_FACTOR,
+    )
+    if not finite[(distances >= r_min - 1e-12) & (distances <= r_max)].all():
         return None
     if finite.all():
         return curve

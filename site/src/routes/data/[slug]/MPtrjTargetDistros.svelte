@@ -30,7 +30,7 @@
 
 <ul>
   {#each targets as { key, title, x_label, arcsinh } (key)}
-    <div>
+    <li>
       <h3>{title}</h3>
       <BarPlot
         series={[{ ...mp_trj_hists[key], color: plotly_blue }]}
@@ -42,12 +42,12 @@
         show_controls={false}
         style="height: 300px; width: 100%; max-width: 700px"
       />
-    </div>
+    </li>
   {/each}
-  <div>
+  <li>
     <h3>Number of Sites</h3>
     <MpTrjNSitesHist style="height: 300px; width: 100%; max-width: 700px" />
-  </div>
+  </li>
 </ul>
 
 <h2>Elemental Prevalence</h2>
@@ -59,6 +59,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
     gap: 1em;
+    list-style: none;
   }
   ul h3 {
     text-transform: capitalize;

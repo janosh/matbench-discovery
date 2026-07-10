@@ -13,14 +13,15 @@
   --light-btn-bg: rgba(0, 0, 0, 0.04); /* calm teal */
   --light-btn-bg-hover: rgba(0, 0, 0, 0.1);
   --light-btn-text: #27323f; /* readable on teal */
-  --light-border: rgba(0, 0, 0, 0.15);
+  --light-border: rgba(0, 0, 0, 0.2);
   --light-highlight: seagreen; /* cyan-teal accent */
   --light-blockquote-bg: rgba(0, 0, 0, 0.03);
   --light-table-odd: rgba(0, 0, 0, 0.03);
   --light-nav-bg: rgba(0, 0, 0, 0.06); /* lighter surface tint */
   --light-card-bg: rgba(255, 255, 255, 0.4);
   --light-card-border: rgba(0, 0, 0, 0.12);
-  --light-shadow: rgba(0, 0, 0, 0.06);
+  /* strong enough to be visible on white (0.06 made light-mode shadows invisible) */
+  --light-shadow: rgba(0, 0, 0, 0.2);
 
   /* Dark theme palette matches current site appearance */
   --dark-page-bg: #061e25;
@@ -110,6 +111,8 @@
   --dropdown-color: var(--text-color);
   --dropdown-border: var(--border);
 
+  --pane-border: 1px solid var(--border);
+
   --sms-margin: 1em auto;
   --sms-border: 1px solid var(--border);
   --sms-options-bg: var(--page-bg);
@@ -120,6 +123,11 @@
   --sms-focus-border: 1px solid var(--link-color);
   --sms-active-color: cornflowerblue;
   --sms-selected-bg: color-mix(in srgb, currentcolor 12%, transparent);
+
+  /* matterviz ToggleMenu (column-select) pane: its currentColor-based defaults are
+  near-invisible in light mode; use the theme border + shadow instead */
+  --tgl-dropdown-border: var(--border);
+  --tgl-dropdown-shadow: 0 4px 12px var(--shadow);
 
   --radio-btn-bg: var(--btn-bg);
   --radio-btn-checked-shadow: none;
@@ -150,9 +158,6 @@ body {
   margin: 0;
   scrollbar-width: none; /* hide scroll bars on non-scrollable like MetricsTable in MS Edge */
   /* fix confirmed with https://live.browserstack.com/dashboard#os=Windows&os_version=11&browser=Edge&browser_version=135.0 */
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
   /* smooth transition between dark/light theme  */
   transition:
     color 0.2s,
@@ -189,6 +194,10 @@ button:hover {
    the surrounding font size so the icons match the handle. */
 .control-tab button {
   font-size: inherit;
+}
+/* Remove after matterviz widens PlotControls range inputs beyond DraggablePane's generic 2.2em. */
+.draggable-pane.plot-controls-pane input.range-input[type='number'] {
+  width: 3.5em;
 }
 :is(div.multiselect) button {
   background: transparent;
@@ -389,6 +398,54 @@ kbd {
   box-sizing: border-box;
   /* Calculate padding: min page margin, grows to center content within max-width */
   padding-inline: max(var(--margin), calc(50vw - 1400px / 2));
+}
+
+/* Shared task-page intro with a flexible note and fixed-width score chart. */
+.task-intro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em 2em;
+  align-items: center;
+}
+.task-intro > div {
+  flex: 1 1 30em;
+}
+.task-weights {
+  flex: 0 1 22em;
+  margin-inline: auto;
+}
+.task-weights figcaption {
+  margin-block-start: 1em;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+/* Shared lazy-rendered grid for the diatomics task and spin-state detail page. */
+.diatomics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: 55pt 15pt;
+}
+.diatomic-plot-shell {
+  min-height: var(--plot-height, 300px);
+}
+.diatomic-plot-placeholder {
+  display: grid;
+  place-items: start center;
+  color: var(--text-muted);
+}
+.diatomic-plot {
+  --scatter-font-size: 14px;
+
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+.diatomic-plot-title {
+  align-self: center;
+  margin: 0 0 -5pt;
+  text-align: center;
+  font-size: 0.9em;
 }
 
 /* In-plot metric annotation, bottom-right corner (energy/kappa parity plots) */

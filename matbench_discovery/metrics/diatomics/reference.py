@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from itertools import pairwise
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
@@ -19,8 +20,8 @@ class CurvePostprocessEdit:
 
     kind: Literal[
         "isolated_spin_branch_drop",
-        "low_gain_spin_branch_island",
         "isolated_energy_bump",
+        "collapsed_scf_point",
     ]
     distance: float
     original_spin: str
@@ -68,6 +69,87 @@ def finite_energy_points(points: Sequence[Mapping[str, Any]]) -> list[CurvePoint
             continue
         finite_points.append(dict(point))
     return finite_points
+
+
+def count_dissociation_tail_jumps(
+    energies: Sequence[float], *, min_jump_ev: float = 0.1
+) -> int:
+    """Count large energy steps among up to the final three dissociation-tail points.
+
+    At the largest sampled separations, a molecular PEC should be approaching its
+    dissociation limit. A large step there signals a branch hop such as the failed
+    O/r2SCAN 6 Å point. The short-range endpoint is deliberately ignored because a
+    steep repulsive wall is physical.
+    """
+    return sum(
+        abs(energies[idx] - energies[idx - 1]) >= min_jump_ev
+        for idx in range(max(1, len(energies) - 2), len(energies))
+    )
+
+
+def count_magmom_discontinuities(
+    magmoms: Sequence[Sequence[float] | None], *, min_jump_mub: float = 1.0
+) -> int:
+    """Count adjacent points with a large change in either atom's local moment.
+
+    Missing moments are skipped. This is a diagnostic rather than an automatic
+    rejection criterion because a genuine spin crossover can also change local
+    moments discontinuously.
+    """
+    count = 0
+    for previous, current in pairwise(magmoms):
+        if previous is None or current is None or len(previous) != len(current):
+            continue
+        if any(
+            abs(after - before) >= min_jump_mub
+            for before, after in zip(previous, current, strict=True)
+        ):
+            count += 1
+    return count
+
+
+def drop_collapsed_scf_points(
+    points: Sequence[Mapping[str, Any]],
+    *,
+    min_collapse_ev: float = 20.0,
+    spin_candidate: str = "",
+) -> tuple[list[CurvePoint], list[CurvePostprocessEdit]]:
+    """Drop variationally collapsed SCF points from one candidate curve.
+
+    Some fixed-spin runs (mostly f-electron heavy lanthanides) collapse to spurious
+    solutions tens to thousands of eV below the rest of their own branch (e.g. one
+    Gd/r2SCAN AFM point at -261 eV between -74 eV neighbors). No smooth PEC has a
+    single-point dip of min_collapse_ev; wells are eV-scale. Such points would always
+    win the per-distance min-merge, so they must be removed per candidate before
+    merging. Iterates so consecutive collapsed points peel off one by one.
+    """
+    kept = sorted(finite_energy_points(points), key=point_distance)
+    edits: list[CurvePostprocessEdit] = []
+    while len(kept) > 1:
+        for idx, point in enumerate(kept):
+            expected_energy = min(
+                point_energy(kept[jdx])
+                for jdx in (idx - 1, idx + 1)
+                if 0 <= jdx < len(kept)
+            )
+            energy = point_energy(point)
+            if energy < expected_energy - min_collapse_ev:
+                edits.append(
+                    CurvePostprocessEdit(
+                        kind="collapsed_scf_point",
+                        distance=point_distance(point),
+                        original_spin=spin_candidate,
+                        replacement_spin=None,
+                        original_energy=energy,
+                        replacement_energy=None,
+                        expected_energy=expected_energy,
+                    )
+                )
+                del kept[idx]
+                break
+        else:
+            break
+    return kept, edits
 
 
 def merge_min_energy_curve(
@@ -163,47 +245,6 @@ def replace_isolated_spin_branch_drops(
     return processed, edits
 
 
-def replace_low_gain_spin_branch_islands(
-    merged_points: Sequence[Mapping[str, Any]],
-    candidate_points: Mapping[SpinCandidate, Sequence[Mapping[str, Any]]],
-    *,
-    max_island_points: int = 2,
-    max_energy_penalty_ev: float = 0.2,
-) -> tuple[list[CurvePoint], list[CurvePostprocessEdit]]:
-    """Replace short, low-gain spin islands by the surrounding spin branch."""
-    processed = [dict(point) for point in merged_points]
-    candidate_lookup = _candidate_points_by_spin_and_distance(candidate_points)
-    edits: list[CurvePostprocessEdit] = []
-    idx = 0
-    while idx < len(processed):
-        spin = str(processed[idx].get("spin_candidate", ""))
-        start_idx = idx
-        while (
-            idx + 1 < len(processed)
-            and processed[idx + 1].get("spin_candidate") == spin
-        ):
-            idx += 1
-        end_idx = idx
-        island_len = end_idx - start_idx + 1
-        if (
-            start_idx > 0
-            and end_idx < len(processed) - 1
-            and island_len <= max_island_points
-        ):
-            left_spin = str(processed[start_idx - 1].get("spin_candidate", ""))
-            right_spin = str(processed[end_idx + 1].get("spin_candidate", ""))
-            if left_spin and left_spin == right_spin and spin != left_spin:
-                edits += _replace_spin_island(
-                    processed,
-                    candidate_lookup,
-                    range(start_idx, end_idx + 1),
-                    left_spin,
-                    max_energy_penalty_ev,
-                )
-        idx += 1
-    return processed, edits
-
-
 def remove_isolated_energy_bumps(
     merged_points: Sequence[Mapping[str, Any]],
     *,
@@ -272,65 +313,21 @@ def merge_postprocessed_min_energy_curve(
     min_drop_ev: float = 3.0,
 ) -> tuple[list[CurvePoint], list[CurvePostprocessEdit]]:
     """Merge spin candidates and remove isolated SCF artifacts."""
-    merged = merge_min_energy_curve(candidate_points)
+    # drop variationally collapsed points per candidate first: they'd always win the
+    # per-distance min-merge and no neighbor-branch replacement could outbid them
+    cleaned: dict[SpinCandidate, list[CurvePoint]] = {}
+    collapse_edits: list[CurvePostprocessEdit] = []
+    for candidate, points in candidate_points.items():
+        kept, edits = drop_collapsed_scf_points(points, spin_candidate=str(candidate))
+        cleaned[candidate] = kept
+        collapse_edits += edits
+
+    merged = merge_min_energy_curve(cleaned)
     merged, drop_edits = replace_isolated_spin_branch_drops(
-        merged, candidate_points, min_drop_ev=min_drop_ev
-    )
-    merged, island_edits = replace_low_gain_spin_branch_islands(
-        merged, candidate_points
+        merged, cleaned, min_drop_ev=min_drop_ev
     )
     merged, bump_edits = remove_isolated_energy_bumps(merged)
-    return merged, drop_edits + island_edits + bump_edits
-
-
-def _replace_spin_island(
-    processed: list[CurvePoint],
-    candidate_lookup: Mapping[tuple[str, float], CurvePoint],
-    island_indices: range,
-    replacement_spin: str,
-    max_energy_penalty_ev: float,
-) -> list[CurvePostprocessEdit]:
-    """Replace one spin island if replacements exist and are near-degenerate."""
-    replacements: list[tuple[int, CurvePoint, float]] = []
-    for point_idx in island_indices:
-        point = processed[point_idx]
-        replacement = candidate_lookup.get(
-            (replacement_spin, distance_key(point_distance(point)))
-        )
-        if replacement is None:
-            return []
-        expected_energy = _linear_expected_energy(
-            processed[point_idx - 1], point, processed[point_idx + 1]
-        )
-        original_residual = abs(point_energy(point) - expected_energy)
-        replacement_residual = abs(point_energy(replacement) - expected_energy)
-        if replacement_residual > original_residual:
-            return []
-        if point_energy(replacement) - point_energy(point) > max_energy_penalty_ev:
-            return []
-        replacements.append((point_idx, replacement, expected_energy))
-
-    edits: list[CurvePostprocessEdit] = []
-    for point_idx, replacement, expected_energy in replacements:
-        point = processed[point_idx]
-        processed[point_idx] = {
-            **replacement,
-            "spin_candidate": replacement_spin,
-            "dropped_spin_candidate": str(point.get("spin_candidate", "")),
-            "postprocess_reason": "low_gain_spin_branch_island",
-        }
-        edits.append(
-            CurvePostprocessEdit(
-                kind="low_gain_spin_branch_island",
-                distance=point_distance(point),
-                original_spin=str(point.get("spin_candidate", "")),
-                replacement_spin=replacement_spin,
-                original_energy=point_energy(point),
-                replacement_energy=point_energy(replacement),
-                expected_energy=expected_energy,
-            )
-        )
-    return edits
+    return merged, collapse_edits + drop_edits + bump_edits
 
 
 def _candidate_points_by_spin_and_distance(
