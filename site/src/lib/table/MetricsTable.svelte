@@ -14,8 +14,15 @@
   import { append_better_hint, metric_better_as } from '$lib/metrics'
   import { make_table_filters } from '$lib/models.svelte'
   import type { UrlTableFilters } from '$lib/url-state.svelte'
-  import type { DiscoverySet, Label, LinkData, ModelData, SortDir } from '$lib/types'
-  import type { CellSnippetArgs, Label as MattervizLabel } from 'matterviz'
+  import type {
+    DiscoverySet,
+    Label,
+    LinkData,
+    ModelData,
+    SortDir,
+    TableLabel,
+  } from '$lib/types'
+  import type { CellSnippetArgs } from 'matterviz'
   import { HeatmapTable, Icon } from 'matterviz'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import { untrack } from 'svelte'
@@ -25,7 +32,10 @@
   import { assemble_row_data } from '../metrics'
   import { heatmap_class } from '../table-export'
 
-  type HeaderLabel = MattervizLabel & { tooltip_description?: string }
+  type HeaderLabel = Omit<TableLabel, `description`> & {
+    description?: string
+    tooltip_description?: string
+  }
 
   let {
     discovery_set = $bindable(`unique_prototypes`),
@@ -123,7 +133,7 @@
       training_set,
       org,
     ]
-      .map((col): Label => {
+      .map((col): TableLabel => {
         const better = col.better ?? metric_better_as(col.label) ?? undefined
         const visible = col.visible !== false && col_filter(col)
         return {
@@ -241,7 +251,7 @@
 
 <HeatmapTable
   data={metrics_data}
-  columns={table_columns as MattervizLabel[]}
+  columns={table_columns}
   bind:sort
   special_cells={{
     Links: links_cell,

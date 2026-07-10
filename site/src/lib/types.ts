@@ -1,5 +1,5 @@
 import type * as d3sc from 'd3-scale-chromatic'
-import type { IconName } from 'matterviz'
+import type { IconName, Label as MattervizLabel } from 'matterviz'
 import type { Label1 as LabelType } from './schema/label'
 import type { ModelMetadata } from './schema/model'
 
@@ -30,6 +30,7 @@ export type Label = LabelType & {
   color_scale?: keyof typeof d3sc // D3-scale-chromatic color scale name
   property?: string // Actual property name for data access (when different from key)
 }
+export type TableLabel = Omit<Label, `better`> & MattervizLabel
 
 export const DISCOVERY_SETS = [
   `full_test_set`,

@@ -1,4 +1,4 @@
-import { type Label, TableControls } from '$lib'
+import { TableControls, type TableLabel } from '$lib'
 import { ALL_TRAINING_SETS, make_table_filters, MODELS } from '$lib/models.svelte'
 import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
 import { tick } from 'svelte'
@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
 
 describe(`TableControls`, () => {
-  const sample_columns: Label[] = [
+  const sample_columns: TableLabel[] = [
     { key: `model`, label: `Model`, description: `Model name`, visible: true },
     { key: `f1`, label: `F1`, description: `F1 Score`, visible: true },
     { key: `daf`, label: `DAF`, description: `DAF Score`, visible: true },
@@ -14,11 +14,18 @@ describe(`TableControls`, () => {
   ]
 
   const summary_for = (text: string): HTMLElement => {
-    const summary = [...document.querySelectorAll(`details.filter-menu summary`)].find(
-      (el) => el.textContent?.includes(text),
-    )
+    const summary = [
+      ...document.querySelectorAll<HTMLElement>(`details.filter-menu summary`),
+    ].find((element) => element.textContent?.includes(text))
     if (!summary) throw new Error(`No filter summary found containing: ${text}`)
-    return summary as HTMLElement
+    return summary
+  }
+
+  const mount_with_filters = async () => {
+    const filters = make_table_filters()
+    mount(TableControls, { target: document.body, props: { filters } })
+    await tick()
+    return filters
   }
 
   it(`renders filter dropdowns and heatmap toggle`, () => {
@@ -33,9 +40,7 @@ describe(`TableControls`, () => {
   })
 
   it(`training-data dropdown lists all datasets with require/exclude checkboxes`, async () => {
-    const filters = make_table_filters()
-    mount(TableControls, { target: document.body, props: { filters } })
-    await tick()
+    const filters = await mount_with_filters()
 
     const dropdown = summary_for(`Training data`).closest(`details`)
     const boxes = dropdown?.querySelectorAll<HTMLInputElement>(`input`) ?? []
@@ -43,8 +48,10 @@ describe(`TableControls`, () => {
     const require_boxes = [...boxes].filter((box) =>
       box.getAttribute(`aria-label`)?.startsWith(`require `),
     )
+    const dataset_for = (box: HTMLInputElement): string =>
+      box.getAttribute(`aria-label`)?.slice(`require `.length) ?? ``
     const usage_counts = require_boxes.map((box) => {
-      const dataset = box.getAttribute(`aria-label`)?.slice(`require `.length) ?? ``
+      const dataset = dataset_for(box)
       return MODELS.filter((model) =>
         model.training_set.some((training_dataset) => training_dataset === dataset),
       ).length
@@ -56,8 +63,7 @@ describe(`TableControls`, () => {
     // check `require` for the first dataset: require-mode filter becomes active,
     // its checkbox checks, and the summary shows a count badge
     const [require_box, exclude_box] = boxes
-    const first_dataset =
-      require_box.getAttribute(`aria-label`)?.slice(`require `.length) ?? ``
+    const first_dataset = dataset_for(require_box)
     require_box.click()
     await tick()
     expect(filters.training[first_dataset]).toBe(`require`)
@@ -78,9 +84,7 @@ describe(`TableControls`, () => {
   })
 
   it(`applies the built-in Compliant preset (old compliant cohort in one click)`, async () => {
-    const filters = make_table_filters()
-    mount(TableControls, { target: document.body, props: { filters } })
-    await tick()
+    const filters = await mount_with_filters()
 
     const dropdown = summary_for(`Presets`).closest(`details`)
     const compliant_btn = [
@@ -103,9 +107,7 @@ describe(`TableControls`, () => {
 
   it(`saves, applies and deletes user presets via localStorage`, async () => {
     localStorage.removeItem(`metrics-table-filter-presets`)
-    const filters = make_table_filters()
-    mount(TableControls, { target: document.body, props: { filters } })
-    await tick()
+    const filters = await mount_with_filters()
 
     filters.set_training(`OMat24`, `exclude`)
     const dropdown = summary_for(`Presets`).closest(`details`)
@@ -169,9 +171,7 @@ describe(`TableControls`, () => {
   })
 
   it(`openness dropdown toggles values but never hides the last one`, async () => {
-    const filters = make_table_filters()
-    mount(TableControls, { target: document.body, props: { filters } })
-    await tick()
+    const filters = await mount_with_filters()
 
     const dropdown = summary_for(`Openness`).closest(`details`)
     const boxes = dropdown?.querySelectorAll<HTMLInputElement>(`input`) ?? []

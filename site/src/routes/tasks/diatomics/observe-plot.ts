@@ -3,8 +3,8 @@ import type { SvelteSet } from 'svelte/reactivity'
 // Attachment factory: track which plot keys are near the viewport so pages with
 // dozens of per-element plots only render the visible ones. Falls back to
 // always-visible when IntersectionObserver is unavailable (e.g. happy-dom tests).
-export function make_plot_observer(visible: SvelteSet<string>) {
-  return (key: string) => (node: HTMLElement) => {
+export const make_plot_observer =
+  (visible: SvelteSet<string>) => (key: string) => (node: HTMLElement) => {
     const observer = globalThis.IntersectionObserver
       ? new IntersectionObserver(
           ([entry]) => {
@@ -20,4 +20,3 @@ export function make_plot_observer(visible: SvelteSet<string>) {
       observer?.disconnect()
     }
   }
-}

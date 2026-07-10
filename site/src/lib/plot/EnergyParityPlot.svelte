@@ -23,6 +23,7 @@
   import { BinnedScatterPlot } from 'matterviz/plot'
   import type {
     BinnedOverlaysConfig,
+    BinnedPointDataFn,
     BinnedPointPayload,
     DensePointSeries,
   } from 'matterviz/plot'
@@ -46,8 +47,16 @@
     formula: string
     n_sites: number
     measure_text: string
-  } & Record<string, unknown>
-  type EnergyParityPayload = BinnedPointPayload<Record<string, unknown>>
+  }
+  type EnergyParityMetadata = Record<string, unknown>
+  type EnergyParityPayload = BinnedPointPayload<
+    EnergyParityMetadata,
+    EnergyParityPointData
+  >
+  const EnergyParityScatter = BinnedScatterPlot<
+    EnergyParityMetadata,
+    EnergyParityPointData
+  >
   const structure_popup_size = { outer_width: 500, view_width: 460, view_height: 340 }
   const parity_overlays: BinnedOverlaysConfig = {
     ref_lines: [
@@ -66,17 +75,16 @@
   const loading_spinner_style = `--spinner-size: 0.9em; --spinner-border-width: 2px; --spinner-margin: 0`
 
   // Wait for loading UI to paint; timeout avoids throttled rAF in background tabs.
-  function wait_for_loading_paint(): Promise<void> {
-    return new Promise((resolve) => {
-      const timeout_id = window.setTimeout(resolve, 100)
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          window.clearTimeout(timeout_id)
+  const wait_for_loading_paint = (): Promise<void> =>
+    new Promise((resolve) => {
+      const timeout_id = globalThis.setTimeout(resolve, 100)
+      globalThis.requestAnimationFrame(() =>
+        globalThis.requestAnimationFrame(() => {
+          globalThis.clearTimeout(timeout_id)
           resolve()
         }),
       )
     })
-  }
 
   let status = $state<LoadStatus>(`idle`)
   $effect(() => onstatus?.(status))
@@ -141,7 +149,7 @@
     return [min - padding, max + padding]
   })
 
-  async function load_plot_data(model_key = model.model_key) {
+  async function load_plot_data(model_key: string | undefined) {
     const current_load_id = ++load_id
     if (!model_key) {
       status = `error`
@@ -161,10 +169,8 @@
       await wait_for_loading_paint()
       if (current_load_id !== load_id) return
       const [base_asset, model_asset] = await Promise.all([
-        base ?? load_energy_parity_base(),
-        parity_model?.model_key === model_key
-          ? parity_model
-          : load_energy_parity_model(model_key),
+        load_energy_parity_base(),
+        load_energy_parity_model(model_key),
       ])
       if (current_load_id !== load_id) return
       base = base_asset
@@ -221,20 +227,9 @@
     return { material_id, formula, n_sites, measure_text }
   }
 
-  const point_data = ({ point }: EnergyParityPayload): EnergyParityPointData | null =>
-    energy_parity_point_data(point.point_id)
-
-  function is_energy_parity_point_data(
-    value: Record<string, unknown> | undefined,
-  ): value is EnergyParityPointData {
-    return (
-      typeof value?.material_id === `string` &&
-      typeof value.formula === `string` &&
-      typeof value.measure_text === `string` &&
-      typeof value.n_sites === `number` &&
-      Number.isFinite(value.n_sites)
-    )
-  }
+  const point_data: BinnedPointDataFn<EnergyParityMetadata, EnergyParityPointData> = ({
+    point,
+  }) => energy_parity_point_data(point.point_id)
 
   async function show_structure(point_idx: number) {
     if (!base || !parity_model || !Number.isInteger(point_idx)) return
@@ -341,18 +336,17 @@ title, so label the section for screen readers instead -->
     </div>
   {:else}
     {#snippet energy_point_label({ point_data }: EnergyParityPayload)}
-      {@const label = is_energy_parity_point_data(point_data) ? point_data : null}
-      {#if label}
-        <span class="point-label-id">{label.material_id}</span>
-        {#if label.formula}
+      {#if point_data}
+        <span class="point-label-id">{point_data.material_id}</span>
+        {#if point_data.formula}
           <br /><span class="point-label-formula"
-            >{@html sanitize_compact_formula(label.formula)}</span
+            >{@html sanitize_compact_formula(point_data.formula)}</span
           >
         {/if}
       {/if}
     {/snippet}
 
-    <BinnedScatterPlot
+    <EnergyParityScatter
       {series}
       style="height: 520px"
       x_axis={{ label: x_label, format: `.2f`, range: extent }}
@@ -370,18 +364,15 @@ title, so label the section for screen readers instead -->
       point_labels={{
         render: energy_point_label,
         measure_text: ({ point, point_data }: EnergyParityPayload) =>
-          is_energy_parity_point_data(point_data)
-            ? point_data.measure_text
-            : String(point.point_id ?? ``),
+          point_data?.measure_text ?? String(point.point_id ?? ``),
       }}
     >
       {#snippet tooltip({ x, y, x_formatted, y_formatted, point_data })}
-        {@const label = is_energy_parity_point_data(point_data) ? point_data : null}
         {@html x_label}: {x_formatted} <small>eV/atom</small><br />
         {@html y_label}: {y_formatted} <small>eV/atom</small><br />
         MLFF - DFT error: {format_num(y - x, `+.3~`)} <small>eV/atom</small>
-        {#if label}
-          <br />Points sized by N<sub>atoms</sub>: {format_num(label.n_sites, `.0f`)}
+        {#if point_data}
+          <br />Points sized by N<sub>atoms</sub>: {format_num(point_data.n_sites, `.0f`)}
         {/if}
       {/snippet}
 
@@ -393,7 +384,7 @@ title, so label the section for screen readers instead -->
           </div>
         {/if}
       {/snippet}
-    </BinnedScatterPlot>
+    </EnergyParityScatter>
 
     {#if selected_point}
       {@const point = selected_point}

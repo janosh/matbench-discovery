@@ -55,37 +55,41 @@
     () => [[`elements`, selected_element_group, `all`]],
   )
 
-  function series_for(formula: string) {
-    return Object.entries(magmom_curves[formula] ?? {})
+  const series_for = (formula: string) =>
+    Object.entries(magmom_curves[formula] ?? {})
       .filter(([functional]) => visible_functionals.has(functional))
       .flatMap(([functional, curve]) =>
-        [0, 1].map((atom_idx) => ({
-          id: `${formula}-${functional}-atom${atom_idx + 1}`,
-          label: `${functional} atom ${atom_idx + 1}`,
-          x: curve.distances,
-          y: curve.magmoms.map((moments) => moments?.[atom_idx] ?? Number.NaN),
-          markers: `line+points` as const,
-          metadata: curve.distances.map(
-            (_, point_idx): PointMeta => ({
-              functional,
-              atom_idx: atom_idx + 1,
-              spin_candidate: curve.spin_candidates[point_idx],
-            }),
-          ),
-          point_style: {
-            fill: xc_colors[functional] ?? `gray`,
-            radius: 1.5,
-            stroke_width: 0,
-            ...(atom_idx === 1 ? { fill_opacity: 0.5 } : {}),
-          },
-          line_style: {
-            stroke: xc_colors[functional] ?? `gray`,
-            // atom 2 dashed so overlapping FM branches (m1 == m2) stay legible
-            ...(atom_idx === 1 ? { line_dash: `4 3` } : {}),
-          },
-        })),
+        [0, 1].map((atom_idx) => {
+          const atom_number = atom_idx + 1
+          const is_second_atom = atom_idx === 1
+          const color = xc_colors[functional] ?? `gray`
+          return {
+            id: `${formula}-${functional}-atom${atom_number}`,
+            label: `${functional} atom ${atom_number}`,
+            x: curve.distances,
+            y: curve.magmoms.map((moments) => moments?.[atom_idx] ?? Number.NaN),
+            markers: `line+points` as const,
+            metadata: curve.distances.map(
+              (_, point_idx): PointMeta => ({
+                functional,
+                atom_idx: atom_number,
+                spin_candidate: curve.spin_candidates[point_idx],
+              }),
+            ),
+            point_style: {
+              fill: color,
+              radius: 1.5,
+              stroke_width: 0,
+              ...(is_second_atom ? { fill_opacity: 0.5 } : {}),
+            },
+            line_style: {
+              stroke: color,
+              // atom 2 dashed so overlapping FM branches (m1 == m2) stay legible
+              ...(is_second_atom ? { line_dash: `4 3` } : {}),
+            },
+          }
+        }),
       )
-  }
 </script>
 
 <h1>Diatomics TMI: DFT Reference Spin States</h1>

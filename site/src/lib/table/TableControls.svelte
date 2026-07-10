@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Label } from '$lib'
+  import type { TableLabel } from '$lib'
   import {
     BUILTIN_PRESETS,
     delete_user_preset,
@@ -15,11 +15,10 @@
     parse_targets,
     TARGET_OUTPUTS,
     TRAIN_FILTER_MODES,
-    type TargetOutput,
-    type UrlTableFilters,
   } from '$lib/url-state.svelte'
+  import type { TargetOutput, UrlTableFilters } from '$lib/url-state.svelte'
   import { Icon } from 'matterviz'
-  import { type Label as MvLabel, ToggleMenu } from 'matterviz/table'
+  import { ToggleMenu } from 'matterviz/table'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
@@ -30,14 +29,14 @@
     selected_count = 0,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
-    columns?: Label[]
+    columns?: TableLabel[]
     filters?: UrlTableFilters
     show_selected_only?: boolean
     selected_count?: number
   } = $props()
 
   const close_on_outside_click = click_outside({
-    callback: (node) => ((node as HTMLDetailsElement).open = false),
+    callback: (node) => node.removeAttribute(`open`),
   })
 
   // summaries open their pane directly below, so tooltips go above the button
@@ -87,6 +86,12 @@
   }
 </script>
 
+{#snippet filter_mode_headers()}
+  {#each TRAIN_FILTER_MODES as mode, mode_idx (mode)}
+    <span class="col-head" style:grid-column={mode_idx + 2}>{mode}</span>
+  {/each}
+{/snippet}
+
 <div class="table-controls" {...rest}>
   {#if selected_count > 0 || show_selected_only}
     <label>
@@ -111,9 +116,7 @@
         <em>require</em> = model's training set must include this dataset,
         <em>exclude</em> = hide models trained on it
       </span>
-      {#each TRAIN_FILTER_MODES as mode, mode_idx (mode)}
-        <span class="col-head" style:grid-column={mode_idx + 2}>{mode}</span>
-      {/each}
+      {@render filter_mode_headers()}
       {#each training_sets_by_model_count as dataset_key (dataset_key)}
         <span>{dataset_key} ({training_counts[dataset_key] ?? 0})</span>
         {#each TRAIN_FILTER_MODES as mode (mode)}
@@ -163,9 +166,7 @@
         Every model predicts energy (E). <em>require</em>/<em>exclude</em> filter by the other
         predicted outputs; forces are required by default (hides energy-only models)
       </span>
-      {#each TRAIN_FILTER_MODES as mode, mode_idx (mode)}
-        <span class="col-head" style:grid-column={mode_idx + 2}>{mode}</span>
-      {/each}
+      {@render filter_mode_headers()}
       {#each target_outputs as [key, label] (key)}
         <span>{label} ({key}) ({target_counts[key] ?? 0})</span>
         {#each TRAIN_FILTER_MODES as mode (mode)}
@@ -255,7 +256,7 @@
     Heatmap
   </label>
 
-  <ToggleMenu bind:columns={columns as MvLabel[]} />
+  <ToggleMenu bind:columns />
 </div>
 
 <style>

@@ -47,8 +47,8 @@
     base && parity_model ? build_kappa_parity_series(base, parity_model) : null,
   )
   // crystal system (derived from space group) shown in the tooltip for context
-  const crystal_sys = (pt: KappaParityPoint): CrystalSystem | null =>
-    pt.spacegroup == null ? null : spacegroup_num_to_crystal_sys(pt.spacegroup)
+  const crystal_sys = (point: KappaParityPoint): CrystalSystem | null =>
+    point.spacegroup == null ? null : spacegroup_num_to_crystal_sys(point.spacegroup)
   // shared, multiplicatively-padded range so both axes match and the y=x
   // diagonal runs exactly corner to corner (padding is a factor on a log scale)
   let extent = $derived.by((): [number, number] => {
@@ -61,13 +61,15 @@
   // SRME comes from the kappa-103 analysis payload and may be missing per material
   const color_metric_labels = { srme: `κ<sub>SRME</sub>`, sre: `κ<sub>SRE</sub>` }
   let color_values = $derived(
-    (parity?.points ?? []).map((pt) =>
-      color_metric === `srme` ? (srme_by_id?.get(pt.material_id) ?? null) : pt.sre,
+    (parity?.points ?? []).map((point) =>
+      color_metric === `srme` ? (srme_by_id?.get(point.material_id) ?? null) : point.sre,
     ),
   )
   let color_range = $derived.by((): [number, number] => {
-    const finite = color_values.filter(is_finite_num)
-    return finite.length > 0 ? [Math.min(...finite), Math.max(...finite)] : [0, 1]
+    const finite_values = color_values.filter(is_finite_num)
+    return finite_values.length > 0
+      ? [Math.min(...finite_values), Math.max(...finite_values)]
+      : [0, 1]
   })
   let series = $derived<DataSeries<KappaParityPoint>[]>(
     parity
@@ -78,7 +80,7 @@
             metadata: parity.points,
             markers: `points`,
             label: model_label,
-            size_values: parity.points.map((pt) => pt.n_sites),
+            size_values: parity.points.map((point) => point.n_sites),
             color_values,
             point_style: { radius: 6, stroke: `white`, stroke_width: 0.5 },
           },
@@ -106,24 +108,31 @@
   )
   let doses = $derived.by((): Record<string, PhononDos> => {
     if (!base || !parity_model || !selected) return {}
-    const out: Record<string, PhononDos> = {}
+    const phonon_dos: Record<string, PhononDos> = {}
     const dft = as_phonon_dos(base.dft_dos[selected.material_id])
     const ml = as_phonon_dos(parity_model.ml_dos[selected.material_id])
-    if (dft) out[`DFT (PBE)`] = dft
-    if (ml) out[model_label] = ml
-    return out
+    if (dft) phonon_dos[`DFT (PBE)`] = dft
+    if (ml) phonon_dos[model_label] = ml
+    return phonon_dos
   })
 
   // dynamic import so the ~160 kB gz analysis payload becomes its own chunk fetched
   // only when a kappa plot mounts, instead of bloating every model page's bundle
   async function load_srme_map(model_key: string) {
     const analysis = (await import(`$figs/kappa-103-analysis.jsonl`)).default
-    const entry = analysis.models.find((mdl) => mdl.key === model_key)
-    if (!entry) return undefined
-    return new Map(analysis.material_ids.map((mat_id, idx) => [mat_id, entry.srme[idx]]))
+    const model_analysis = analysis.models.find(
+      (model_data) => model_data.key === model_key,
+    )
+    if (!model_analysis) return undefined
+    return new Map(
+      analysis.material_ids.map((material_id, idx) => [
+        material_id,
+        model_analysis.srme[idx],
+      ]),
+    )
   }
 
-  async function load_data(model_key = model.model_key) {
+  async function load_data(model_key: string | undefined) {
     const current_load_id = ++load_id
     selected_idx = null
     if (!model_key || !has_kappa_parity_model(model_key)) {
@@ -135,7 +144,7 @@
     error_message = ``
     try {
       const [base_asset, model_asset, srme_map] = await Promise.all([
-        base ?? load_kappa_parity_base(),
+        load_kappa_parity_base(),
         load_kappa_parity_model(model_key),
         load_srme_map(model_key),
       ])

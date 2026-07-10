@@ -1,4 +1,5 @@
 import { ALL_METRICS, MD_METRICS, RMSD_BASELINE } from '$lib/labels'
+import type { DiatomicsMetrics, MdMetrics } from '$lib/schema/model'
 import type { Label, ModelData } from '$lib/types'
 
 export const DEFAULT_CPS_CONFIG = {
@@ -16,22 +17,20 @@ export type CpsConfig = Record<
 export const CPS_CONFIG: CpsConfig = $state(structuredClone(DEFAULT_CPS_CONFIG))
 
 // F1 score is between 0-1 where higher is better (no normalization needed)
-function normalize_f1(value: number | undefined): number {
-  return value === undefined || isNaN(value) ? 0 : value
-}
+const normalize_f1 = (value: number | undefined): number =>
+  value === undefined || isNaN(value) ? 0 : value
 
 // RMSD is lower=better, with current models in the range of ~0.01-0.25 (unitless)
 // We invert this so that better performance = higher score
-function normalize_rmsd(value: number | undefined): number {
-  if (value === undefined || isNaN(value)) return 0
-  return Math.max(0, Math.min(1, 1 - value / RMSD_BASELINE))
-}
+const normalize_rmsd = (value: number | undefined): number =>
+  value === undefined || isNaN(value)
+    ? 0
+    : Math.max(0, Math.min(1, 1 - value / RMSD_BASELINE))
 
 // κ_SRME is symmetric relative mean error, with range [0,2] by definition
 // Lower values are better (0 is perfect)
-function normalize_kappa_srme(value: number | undefined): number {
-  return value === undefined || isNaN(value) ? 0 : Math.max(0, 1 - value / 2)
-}
+const normalize_kappa_srme = (value: number | undefined): number =>
+  value === undefined || isNaN(value) ? 0 : Math.max(0, 1 - value / 2)
 
 // Calculate a combined score using normalized metrics weighted by importance factors.
 // Fixed normalization reference points keep scores stable as new models are added.
@@ -145,15 +144,14 @@ export function calculate_cmds(
 function write_combined_scores(
   models: ModelData[],
   task: `md` | `diatomics`,
-  score: (metrics: Record<string, number>) => number | null,
+  score: (metrics: DiatomicsMetrics | MdMetrics) => number | null,
 ) {
   for (const model of models) {
     const metrics = model.metrics?.[task]
     if (!metrics || typeof metrics !== `object`) continue
-    const scored = metrics as { combined_score?: number }
-    const value = score(metrics as Record<string, number>)
-    if (value === null) delete scored.combined_score
-    else scored.combined_score = value
+    const value = score(metrics)
+    if (value === null) Reflect.deleteProperty(metrics, `combined_score`)
+    else Object.assign(metrics, { combined_score: value })
   }
 }
 
