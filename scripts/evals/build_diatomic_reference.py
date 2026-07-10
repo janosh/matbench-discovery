@@ -13,6 +13,8 @@ from typing import Any
 from matbench_discovery import ROOT
 from matbench_discovery.metrics.diatomics.reference import (
     CurvePostprocessEdit,
+    count_dissociation_tail_jumps,
+    count_magmom_discontinuities,
     merge_min_energy_curve,
     merge_postprocessed_min_energy_curve,
     point_distance,
@@ -117,6 +119,8 @@ def build_reference(
         "merged": {},
         "skipped": {},
         "short_candidate_pairs": {},
+        "tail_jump_pairs": {},
+        "magmom_jump_pairs": {},
         "postprocess_edits": {},
     }
     quality_rows: list[dict[str, object]] = []
@@ -160,16 +164,33 @@ def build_reference(
             summary["postprocess_edits"][label] = summary["postprocess_edits"].get(
                 label, 0
             ) + len(replacements)
+            tail_jumps = count_dissociation_tail_jumps(
+                [point_energy(point) for point in merged_points]
+            )
+            magmom_jumps = count_magmom_discontinuities(
+                [point.get("magmoms") for point in merged_points]
+            )
+            if tail_jumps:
+                summary["tail_jump_pairs"][label] = (
+                    summary["tail_jump_pairs"].get(label, 0) + 1
+                )
+            if magmom_jumps:
+                summary["magmom_jump_pairs"][label] = (
+                    summary["magmom_jump_pairs"].get(label, 0) + 1
+                )
             if short_candidates:
                 summary["short_candidate_pairs"][label] = (
                     summary["short_candidate_pairs"].get(label, 0) + 1
                 )
+            if short_candidates or tail_jumps or magmom_jumps:
                 quality_rows.append(
                     {
                         "symbol": symbol,
                         "xc": xc,
                         "merged_points": len(merged_points),
                         "short_candidates": short_candidates,
+                        "tail_jumps": tail_jumps,
+                        "magmom_jumps": magmom_jumps,
                     }
                 )
             if merged_dir:

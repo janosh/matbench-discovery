@@ -103,12 +103,44 @@ def test_build_reference_reports_skipped_pairs(
         "merged": {},
         "skipped": expected_skipped,
         "short_candidate_pairs": {},
+        "tail_jump_pairs": {},
+        "magmom_jump_pairs": {},
         "postprocess_edits": {},
     }
     quality_rows = json.loads((merged_dir / "reference-quality.json").read_text())
     assert [
         (row["symbol"], row["xc"], row["skipped"]) for row in quality_rows
     ] == expected_quality
+
+
+def test_build_reference_reports_dissociation_tail_jump(tmp_path: Path) -> None:
+    """A large final energy step is recorded without modifying the merged curve."""
+    candidate_map_path = tmp_path / "candidate-map.json"
+    out_path = tmp_path / "reference.json.gz"
+    merged_dir = tmp_path / "merged"
+    candidate_map_path.write_text(json.dumps({"H": [0]}))
+    write_curve_points(
+        tmp_path,
+        [
+            {"distance": 2.0, "energies": [-0.95], "forces": FINITE_FORCES},
+            {"distance": 3.0, "energies": [-0.5], "forces": FINITE_FORCES},
+        ],
+    )
+
+    summary = build_reference(
+        src_dir=str(tmp_path),
+        candidate_map_path=str(candidate_map_path),
+        out_path=str(out_path),
+        merged_dir=str(merged_dir),
+        min_drop_ev=3.0,
+        postprocess=True,
+    )
+
+    assert summary["tail_jump_pairs"] == {"PBE": 1}
+    assert summary["magmom_jump_pairs"] == {}
+    quality_rows = json.loads((merged_dir / "reference-quality.json").read_text())
+    pbe_row = next(row for row in quality_rows if row["xc"] == "pbe")
+    assert pbe_row["tail_jumps"] == 1
 
 
 def test_serializable_curve_reports_magmoms_and_spin_candidates() -> None:

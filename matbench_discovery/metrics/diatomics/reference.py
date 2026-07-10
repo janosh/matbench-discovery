@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from itertools import pairwise
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
@@ -68,6 +69,43 @@ def finite_energy_points(points: Sequence[Mapping[str, Any]]) -> list[CurvePoint
             continue
         finite_points.append(dict(point))
     return finite_points
+
+
+def count_dissociation_tail_jumps(
+    energies: Sequence[float], *, min_jump_ev: float = 0.1
+) -> int:
+    """Count large energy steps among the final three dissociation-tail points.
+
+    At the largest sampled separations, a molecular PEC should be approaching its
+    dissociation limit. A large step there signals a branch hop such as the failed
+    O/r2SCAN 6 Å point. The short-range endpoint is deliberately ignored because a
+    steep repulsive wall is physical.
+    """
+    return sum(
+        abs(energies[idx] - energies[idx - 1]) >= min_jump_ev
+        for idx in range(max(1, len(energies) - 2), len(energies))
+    )
+
+
+def count_magmom_discontinuities(
+    magmoms: Sequence[Sequence[float] | None], *, min_jump_mub: float = 1.0
+) -> int:
+    """Count adjacent points with a large change in either atom's local moment.
+
+    Missing moments are skipped. This is a diagnostic rather than an automatic
+    rejection criterion because a genuine spin crossover can also change local
+    moments discontinuously.
+    """
+    count = 0
+    for previous, current in pairwise(magmoms):
+        if previous is None or current is None or len(previous) != len(current):
+            continue
+        if any(
+            abs(after - before) >= min_jump_mub
+            for before, after in zip(previous, current, strict=True)
+        ):
+            count += 1
+    return count
 
 
 def drop_collapsed_scf_points(

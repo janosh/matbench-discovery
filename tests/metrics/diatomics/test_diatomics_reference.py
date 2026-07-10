@@ -7,6 +7,8 @@ from typing import Any
 import pytest
 
 from matbench_discovery.metrics.diatomics.reference import (
+    count_dissociation_tail_jumps,
+    count_magmom_discontinuities,
     drop_collapsed_scf_points,
     merge_postprocessed_min_energy_curve,
 )
@@ -23,6 +25,35 @@ def make_point(distance: float, energy: float, magmom: float = 0) -> CurvePoint:
         "forces": [[0, 0, 0], [0, 0, 0]],
         "magmoms": [magmom, magmom],
     }
+
+
+@pytest.mark.parametrize(
+    ("energies", "expected"),
+    [
+        ([0, 0.02, 0.05], 0),
+        ([0, 0.05, 0.3], 1),
+        ([0, 0.3, 0], 2),
+        ([100, 0, 0.01, 0.02], 0),  # short-range repulsion is not inspected
+    ],
+)
+def test_counts_dissociation_tail_jumps(energies: list[float], expected: int) -> None:
+    """Large final-three-point energy steps are counted, not the repulsive wall."""
+    assert count_dissociation_tail_jumps(energies) == expected
+
+
+@pytest.mark.parametrize(
+    ("magmoms", "expected"),
+    [
+        ([[1.0, -1.0], [1.1, -1.1], [1.2, -1.2]], 0),
+        ([[1.0, -1.0], [2.2, -1.1], [2.3, -2.4]], 2),
+        ([[1.0, -1.0], None, [3.0, -3.0]], 0),
+    ],
+)
+def test_counts_magmom_discontinuities(
+    magmoms: list[list[float] | None], expected: int
+) -> None:
+    """Large per-site moment changes are counted while missing points are skipped."""
+    assert count_magmom_discontinuities(magmoms) == expected
 
 
 def test_replaces_isolated_spin_branch_energy_drop() -> None:

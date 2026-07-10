@@ -20,7 +20,7 @@ After decompression, the schema is:
 
 `functional` is `PBE` or `r2SCAN`; `formula` is e.g. `O-O`. `distances`, `energies`, `forces`, `magmoms`, and `spin_candidates` share the same first axis over curve points. Energies are final sigma-to-0 VASP energies in eV; forces are per-point, per-atom Cartesian 3-vectors in eV/Å with axis order `[point][atom][x|y|z]`.
 
-`magmoms` are the site-projected magnetic moments of the two atoms (`LORBIT=11`, in μB) and `spin_candidates` records which spin-ladder rung won the per-distance energy minimum (an even `NUPDOWN` integer as string, or `afm` for the broken-symmetry candidate). Both serve two purposes: discontinuities in atom-wise moments vs distance flag SCF spin-state hops that the total (pinned) moment cannot show, and spin-aware MLIPs (which take magnetic moments or spin as input) can be compared against the reference spin state directly. A few points (6 of 9104) have `null` magmoms where the OUTCAR block was unavailable.
+`magmoms` are the site-projected magnetic moments of the two atoms (`LORBIT=11`, in μB) and `spin_candidates` records which spin-ladder rung won the per-distance energy minimum (an even `NUPDOWN` integer as string, or `afm` for the broken-symmetry candidate). Both serve two purposes: discontinuities in atom-wise moments vs distance flag SCF spin-state hops that the total (pinned) moment cannot show, and spin-aware MLIPs (which take magnetic moments or spin as input) can be compared against the reference spin state directly. A few points (6 of 9113) have `null` magmoms where the OUTCAR block was unavailable.
 
 ## DFT Setup
 
@@ -123,7 +123,7 @@ Pa: Pa
 U: U
 ```
 
-Note on pseudo-potential variants for dimers: fixed-oxidation-state lanthanide potentials (e.g. `Ho_3`, which pins Ho at a 3+ configuration by freezing f-electrons in the core) would be unphysical for neutral homonuclear dimers. The `_h` lanthanide variants used here (`Pr_h` ... `Yb_h`) treat f-electrons explicitly, so this concern does not apply — though explicit f-electrons are also what makes the heavy-lanthanide SCF convergence so fragile (see caveats below). The one frozen-f exception is `Lu_3`, where the f-shell is full (f¹⁴) and chemically inert. Rh uses `Rh_pv` (semi-core p in valence, no oxidation-state constraint).
+Fixed-oxidation-state lanthanide potentials such as `Ho_3` freeze f-electrons in the core and effectively pin Ho to 3+, so they are not appropriate for neutral Ho₂. We instead use the `_h` potentials (`Pr_h` through `Yb_h`), which include f-electrons in the valence. This choice also makes SCF convergence difficult for heavy lanthanides (see caveats below). `Lu_3` is the only exception because Lu has a full, chemically inert f¹⁴ shell. For Rh, we use `Rh_pv`, which includes semicore p states in the valence and does not impose an oxidation state.
 
 Important per-point settings:
 
@@ -176,7 +176,7 @@ For each element and functional, it:
 1. writes the compact, public, version-controlled site artifact to `site/src/lib/diatomics-dft.json.gz`;
 1. rebuilds model diatomic metrics and confirms the DFT curves display on the Diatomics page.
 
-The artifact contains 92 PBE and 92 r2SCAN homonuclear entries. Known caveats: `Er/r2SCAN` has two short spin candidates (`NUPDOWN=2` with 43 finite points and AFM with 44 finite points, below the 45-point completeness threshold); `Ho/r2SCAN` and similar heavy lanthanides and actinides remain branch-trapped and jumpy despite all postprocessing and checks. These seem irrecoverable, at least with current VASP 6.4 pseudo-potentials.
+The artifact contains 92 PBE and 92 r2SCAN homonuclear entries; every spin candidate now meets the 45-point completeness threshold. Known caveats: `O/r2SCAN` and `Rh/r2SCAN` still hop spin branches near the 6 Å dissociation endpoint, while `Ho/r2SCAN`, `Er/r2SCAN`, and similar heavy lanthanides and actinides remain branch-trapped and jumpy despite all postprocessing and checks. The heavy-element failures seem irrecoverable, at least with current VASP 6.4 pseudo-potentials.
 
 ## Postprocessing
 
