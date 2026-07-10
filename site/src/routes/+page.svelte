@@ -273,7 +273,6 @@
       href="/rss.xml"
       class="download-btn"
       title="Be notified of new model submissions through an RSS reader"
-      style="color: var(--text-color)"
       {@attach tooltip()}
     >
       <Icon icon="RSS" /> RSS
@@ -408,6 +407,12 @@ lives in MdNote and also renders on the /tasks/md page -->
   .downloads .download-btn {
     padding: 1pt 6pt;
     font: inherit;
+  }
+  .downloads a.download-btn {
+    padding-inline-start: 2pt;
+    &:not(:hover) {
+      color: var(--text-color);
+    }
   }
   .export-error {
     color: #ff6b6b;
