@@ -1,3 +1,4 @@
+// TODO: Remove this file once the next MatterViz release exports these element groups.
 import { element_data } from 'matterviz/element'
 import type { ChemicalElement, ElementCategory } from 'matterviz/element'
 

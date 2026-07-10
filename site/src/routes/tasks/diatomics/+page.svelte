@@ -89,8 +89,6 @@
   const color_for = (key: string): string =>
     ref_colors[key] ?? model_colors.get(key) ?? `gray`
 
-  let plot_height = $state<number | null>(300)
-  let clamped_plot_height = $derived(Math.min(500, Math.max(100, plot_height ?? 300)))
   let selected_element_group = $state(`all`)
   let selected_group = $derived(
     element_groups.find((group) => group.value === selected_element_group) ??
@@ -265,20 +263,6 @@
 {/if}
 
 <div class="controls">
-  <label class="plot-height-control">
-    Plot height:
-    <input type="range" min="100" max="500" bind:value={plot_height} />
-    <input
-      class="plot-height-number"
-      type="number"
-      min="100"
-      max="500"
-      step="10"
-      bind:value={plot_height}
-      aria-label="Plot height in pixels"
-    />px
-  </label>
-
   <div aria-label="Element group filter">
     <SelectToggle options={element_groups} bind:selected={selected_element_group} />
   </div>
@@ -286,7 +270,7 @@
   <ModelSelect options={selectable_options} bind:selected={model_selection.selected} />
 </div>
 
-<div class="diatomics-grid bleed-1400" style="--plot-height: {clamped_plot_height}px">
+<div class="diatomics-grid bleed-1400">
   {#each diatomics_to_render as formula (formula)}
     <div
       class="diatomic-plot-shell"
@@ -297,7 +281,7 @@
         <DiatomicCurve
           {formula}
           curves={curves_for_formula(formula)}
-          style="height: var(--plot-height)"
+          style="height: 300px"
         />
       {:else}
         <h3 class="diatomic-plot-title">{formula}</h3>
@@ -319,14 +303,6 @@
     align-items: center;
     gap: 1em;
     padding: 1em;
-  }
-  .plot-height-control {
-    display: flex;
-    align-items: center;
-    gap: 1ex;
-  }
-  .plot-height-number {
-    width: 5em;
   }
   .error-summary {
     margin: 1em auto;

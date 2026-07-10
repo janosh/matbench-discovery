@@ -13,7 +13,7 @@
   --light-btn-bg: rgba(0, 0, 0, 0.04); /* calm teal */
   --light-btn-bg-hover: rgba(0, 0, 0, 0.1);
   --light-btn-text: #27323f; /* readable on teal */
-  --light-border: rgba(0, 0, 0, 0.15);
+  --light-border: rgba(0, 0, 0, 0.2);
   --light-highlight: seagreen; /* cyan-teal accent */
   --light-blockquote-bg: rgba(0, 0, 0, 0.03);
   --light-table-odd: rgba(0, 0, 0, 0.03);
@@ -158,9 +158,6 @@ body {
   margin: 0;
   scrollbar-width: none; /* hide scroll bars on non-scrollable like MetricsTable in MS Edge */
   /* fix confirmed with https://live.browserstack.com/dashboard#os=Windows&os_version=11&browser=Edge&browser_version=135.0 */
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
   /* smooth transition between dark/light theme  */
   transition:
     color 0.2s,
