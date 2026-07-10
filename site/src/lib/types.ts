@@ -48,7 +48,7 @@ export interface DiatomicsCurves {
 }
 
 // Links data structure used for model resource links
-export interface LinkData {
+export type LinkData = {
   paper: { url: string; title: string; icon: IconName }
   repo: { url: string; title: string; icon: IconName }
   pr_url: { url: string; title: string; icon: IconName }

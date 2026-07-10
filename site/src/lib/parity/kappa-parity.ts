@@ -59,7 +59,7 @@ export const {
 } = parity_asset_resolver(
   `kappa`,
   kappa_parity_manifest,
-  import.meta.env.VITE_KAPPA_PARITY_ASSET_BASE_URL as string | undefined,
+  import.meta.env.VITE_KAPPA_PARITY_ASSET_BASE_URL,
 )
 
 export async function load_kappa_parity_base(): Promise<KappaParityBase> {

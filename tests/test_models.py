@@ -85,7 +85,7 @@ def test_model_dirs_have_metadata() -> None:
             assert 3 <= len(name) < 50, (
                 f"Invalid {name=} not between 3 and 50 characters"
             )
-        assert 1 < len(model_version) < 30, (
+        assert 1 <= len(model_version) < 30, (
             f"Invalid {model_version=} not between 1 and 30 characters"
         )
         assert isinstance(date_added, str), f"Invalid {date_added=} not a string"

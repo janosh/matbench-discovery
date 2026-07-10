@@ -15,7 +15,7 @@
     EnergyParityPoint,
     StructurePopupPlacement,
   } from '$lib/parity/energy-parity'
-  import type { LoadStatus } from '$lib/asset-loader'
+  import { get_error_message, type LoadStatus } from '$lib/asset-loader'
   import type { ModelData } from '$lib/types'
   import { compact_formula, format_num, sanitize_compact_formula } from 'matterviz'
   import { Spinner } from 'matterviz/feedback'
@@ -103,6 +103,7 @@
     $state<(typeof import('matterviz/convex-hull'))['StructurePopup']>()
   let popup_placement = $state<StructurePopupPlacement>({ side: `left`, left: 0, top: 0 })
 
+  let model_label = $derived(parity_model?.model_label ?? model.model_name)
   let parity = $derived(
     base && parity_model
       ? build_energy_parity_series(base, parity_model, energy_kind)
@@ -117,7 +118,7 @@
             y: parity.y,
             point_ids: parity.point_ids,
             size_values: parity.size_values,
-            label: parity_model?.model_label ?? model.model_name,
+            label: model_label,
             color: model.color ?? `#4dabf7`,
           },
         ]
@@ -130,7 +131,7 @@
     energy_kind === `e-form` ? `formation energy` : `convex hull distance`,
   )
   let x_label = $derived(`PBE ${axis_label}`)
-  let y_label = $derived(`${parity_model?.model_label ?? model.model_name} ${axis_label}`)
+  let y_label = $derived(`${model_label} ${axis_label}`)
   // manual min/max loop (not Math.min(...arr)) because WBM x/y arrays are too large
   // to spread as function args without overflowing the call stack
   let extent = $derived.by((): [number, number] => {
@@ -182,7 +183,7 @@
     } catch (error) {
       if (current_load_id !== load_id) return
       status = `error`
-      error_message = error instanceof Error ? error.message : String(error)
+      error_message = get_error_message(error)
     }
   }
 
@@ -235,7 +236,7 @@
     if (!base || !parity_model || !Number.isInteger(point_idx)) return
     const point = get_energy_parity_point(base, parity_model, point_idx, energy_kind)
     if (!point) return
-    const selected_row_idx = point.row_idx
+    const selection_is_current = () => selected_point?.row_idx === point.row_idx
     selected_point = point
     selected_structure = null
     structure_error = ``
@@ -249,13 +250,13 @@
             StructurePopup = mod.StructurePopup
           }),
       ])
-      if (selected_point?.row_idx === selected_row_idx) selected_structure = structure
+      if (selection_is_current()) selected_structure = structure
     } catch (error) {
-      if (selected_point?.row_idx === selected_row_idx) {
-        structure_error = error instanceof Error ? error.message : String(error)
+      if (selection_is_current()) {
+        structure_error = get_error_message(error)
       }
     } finally {
-      if (selected_point?.row_idx === selected_row_idx) structure_loading = false
+      if (selection_is_current()) structure_loading = false
     }
   }
 

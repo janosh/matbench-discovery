@@ -22,7 +22,7 @@
     SortDir,
     TableLabel,
   } from '$lib/types'
-  import type { CellSnippetArgs } from 'matterviz'
+  import type { CellSnippetArgs, Label as MattervizLabel } from 'matterviz'
   import { HeatmapTable, Icon } from 'matterviz'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import { untrack } from 'svelte'
@@ -32,10 +32,7 @@
   import { assemble_row_data } from '../metrics'
   import { heatmap_class } from '../table-export'
 
-  type HeaderLabel = Omit<TableLabel, `description`> & {
-    description?: string
-    tooltip_description?: string
-  }
+  type HeaderLabel = MattervizLabel & { tooltip_description?: string }
 
   let {
     discovery_set = $bindable(`unique_prototypes`),
@@ -104,7 +101,7 @@
         // blank keys absent from the fresh row (e.g. after a discovery-set switch);
         // undefined renders/sorts like a missing key and avoids dynamic `delete`
         for (const key of Object.keys(cached)) {
-          if (!(key in row)) (cached as Record<string, unknown>)[key] = undefined
+          if (!(key in row)) Reflect.set(cached, key, undefined)
         }
         return Object.assign(cached, row)
       }),
@@ -160,18 +157,18 @@
     ),
   )
 
-  function show_dropdown(event: MouseEvent, link_data: LinkData) {
+  type ButtonMouseEvent = MouseEvent & { currentTarget: HTMLButtonElement }
+  function show_dropdown(event: ButtonMouseEvent, link_data: LinkData) {
     event.stopPropagation()
 
     // Get button position for dropdown placement
-    const button = event.currentTarget as HTMLElement
-    const rect = button.getBoundingClientRect()
+    const rect = event.currentTarget.getBoundingClientRect()
+    const { files, name } = link_data.pred_files
 
-    active_model_name = link_data.pred_files.name
-    active_files = link_data.pred_files.files
+    active_model_name = name
+    active_files = files
 
     // Position dropdown relative to the button's position in the document
-    const { name } = link_data.pred_files
     pred_files_dropdown_pos = {
       x: rect.left + window.scrollX,
       y: rect.bottom + window.scrollY,
@@ -218,7 +215,7 @@
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}
-  {@const links = val as unknown as LinkData}
+  {@const links = val as LinkData}
   {#if links}
     {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
       {#if `url` in link && ![`missing`, `not available`, ``, null, undefined].includes(link.url)}

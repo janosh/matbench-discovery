@@ -13,7 +13,7 @@
     KappaParityPoint,
     PhononDos,
   } from '$lib/parity/kappa-parity'
-  import type { LoadStatus } from '$lib/asset-loader'
+  import { get_error_message, type LoadStatus } from '$lib/asset-loader'
   import { parity_diagonal } from '$lib/fig-helpers'
   import { get_nested_number, is_finite_num } from '$lib/metrics'
   import type { ModelData } from '$lib/types'
@@ -27,6 +27,7 @@
 
   let { model, ...rest }: HTMLAttributes<HTMLElement> & { model: ModelData } = $props()
 
+  const KappaScatter = ScatterPlot<KappaParityPoint>
   let status = $state<LoadStatus>(`idle`)
   let error_message = $state(``)
   let base = $state<KappaParityBase>()
@@ -99,9 +100,8 @@
   // out of every page's initial chunk graph
   let Structure = $state<(typeof import('matterviz/structure'))['Structure']>()
   $effect(() => {
-    if (selected_structure && !Structure) {
+    if (selected_structure && !Structure)
       void import('matterviz/structure').then((mod) => (Structure = mod.Structure))
-    }
   })
   let selected_point_ref = $derived(
     selected_idx === null ? null : { series_idx: 0, point_idx: selected_idx },
@@ -157,7 +157,7 @@
     } catch (error) {
       if (current_load_id !== load_id) return
       status = `error`
-      error_message = error instanceof Error ? error.message : String(error)
+      error_message = get_error_message(error)
     }
   }
 
@@ -179,7 +179,7 @@
       <Spinner text="Loading κ parity data..." />
     </div>
   {:else}
-    <ScatterPlot
+    <KappaScatter
       {series}
       ref_lines={parity_ref_lines}
       style="height: 480px"
@@ -217,19 +217,21 @@
     >
       {#snippet tooltip({ metadata })}
         {#if metadata}
-          {@const pt = metadata as KappaParityPoint}
-          {@const sys = crystal_sys(pt)}
-          <strong>{pt.material_id}</strong>
-          {@html sanitize_compact_formula(pt.formula)}<br />
-          PBE κ: {format_num(pt.kappa_dft, `.3~`)} <small>W/mK</small><br />
-          {model_label} κ: {format_num(pt.kappa_ml, `.3~`)} <small>W/mK</small><br />
-          {@const pt_srme = srme_by_id?.get(pt.material_id)}
-          κ<sub>SRE</sub>: {format_num(pt.sre, `.3~`)}
-          {#if pt_srme != null}
-            &nbsp;κ<sub>SRME</sub>: {format_num(pt_srme, `.3~`)}
+          {@const point = metadata}
+          {@const system = crystal_sys(point)}
+          {@const spacegroup =
+            point.spacegroup == null ? `` : ` (SG ${point.spacegroup})`}
+          <strong>{point.material_id}</strong>
+          {@html sanitize_compact_formula(point.formula)}<br />
+          PBE κ: {format_num(point.kappa_dft, `.3~`)} <small>W/mK</small><br />
+          {model_label} κ: {format_num(point.kappa_ml, `.3~`)} <small>W/mK</small><br />
+          {@const material_srme = srme_by_id?.get(point.material_id)}
+          κ<sub>SRE</sub>: {format_num(point.sre, `.3~`)}
+          {#if material_srme != null}
+            &nbsp;κ<sub>SRME</sub>: {format_num(material_srme, `.3~`)}
           {/if}
-          {#if sys}<br />{sys}{pt.spacegroup != null ? ` (SG ${pt.spacegroup})` : ``}{/if}
-          {#if pt.n_sites != null}<br />{pt.n_sites} atoms{/if}
+          {#if system}<br />{system}{spacegroup}{/if}
+          {#if point.n_sites != null}<br />{point.n_sites} atoms{/if}
         {/if}
       {/snippet}
 
@@ -246,7 +248,7 @@
           </foreignObject>
         {/if}
       {/snippet}
-    </ScatterPlot>
+    </KappaScatter>
 
     <p class="plot-note"><small>marker size &propto; atom count</small></p>
 

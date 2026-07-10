@@ -67,7 +67,7 @@ export function get_nested_value(model: ModelData, dotted_path: string): unknown
   for (const key of keys) {
     // Check if value is an object and has the key
     if (typeof value === `object` && value && key in value) {
-      value = (value as Record<string, unknown>)[key] // cast unavoidable: TS can't narrow `in` check on `unknown`
+      value = Reflect.get(value, key) // dynamic lookup without weakening the surrounding type
     } else return undefined // Can't go deeper/property doesn't exist
   }
 
