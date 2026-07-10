@@ -111,6 +111,8 @@
   --dropdown-color: var(--text-color);
   --dropdown-border: var(--border);
 
+  --pane-border: 1px solid var(--border);
+
   --sms-margin: 1em auto;
   --sms-border: 1px solid var(--border);
   --sms-options-bg: var(--page-bg);
@@ -195,6 +197,10 @@ button:hover {
    the surrounding font size so the icons match the handle. */
 .control-tab button {
   font-size: inherit;
+}
+/* Remove after matterviz widens PlotControls range inputs beyond DraggablePane's generic 2.2em. */
+.draggable-pane.plot-controls-pane input.range-input[type='number'] {
+  width: 3.5em;
 }
 :is(div.multiselect) button {
   background: transparent;
@@ -433,6 +439,7 @@ kbd {
 }
 .diatomic-plot {
   --scatter-font-size: 14px;
+
   display: flex;
   flex-direction: column;
   box-sizing: border-box;

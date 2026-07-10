@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricsTable, ModelSelect, type ModelData, MODELS } from '$lib'
+  import { MetricsTable, ModelSelect, type ModelData, MODELS, SelectToggle } from '$lib'
   import {
     CDS_CONFIG,
     DEFAULT_CDS_CONFIG,
@@ -24,14 +24,27 @@
   } from '$lib/url-state.svelte'
   import type { SortDir } from '$lib/types'
   import DiatomicsNote from './diatomics-note.md'
-  import { element_data } from 'matterviz/element'
-  import type { ChemicalElement, ElementCategory } from 'matterviz/element'
+  import type { ChemicalElement } from 'matterviz/element'
   import { pick_contrast_color, PLOT_COLORS } from 'matterviz'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
   import { SvelteSet } from 'svelte/reactivity'
+  import { element_by_symbol, element_group_keys, element_groups } from './element-groups'
   import { make_plot_observer } from './observe-plot'
 
-  let { data } = $props()
+  type DiatomicsPageData = {
+    diatomic_models: ModelData[]
+    diatomic_curves: Record<
+      string,
+      {
+        distances: number[]
+        'homo-nuclear': Record<string, { energies: number[]; distances?: number[] }>
+      }
+    >
+    reference_names: string[]
+    errors: Record<string, string>
+  }
+
+  let { data }: { data: DiatomicsPageData } = $props()
   let diatomic_models = $derived(data?.diatomic_models ?? [])
   let diatomic_curves = $derived(data?.diatomic_curves ?? {})
   let reference_names = $derived(data?.reference_names ?? [])
@@ -42,52 +55,6 @@
   )
 
   const homo_nuc_key = `homo-nuclear`
-  const elements = element_data as ChemicalElement[]
-  const element_by_symbol = new Map(elements.map((element) => [element.symbol, element]))
-  const nonmetal_categories = new Set<ElementCategory>([
-    `diatomic nonmetal`,
-    `polyatomic nonmetal`,
-  ])
-  type ElementGroup = {
-    key: string
-    label: string
-    title: string
-    includes: (element: ChemicalElement) => boolean
-  }
-  const category_group = (
-    key: string,
-    label: string,
-    category: ElementCategory,
-  ): ElementGroup => ({
-    key,
-    label,
-    title: label,
-    includes: (element) => element.category === category,
-  })
-  const element_groups: ElementGroup[] = [
-    { key: `all`, label: `All`, title: `Show all elements`, includes: () => true },
-    category_group(`alkali`, `Alkali metals`, `alkali metal`),
-    category_group(`alkaline_earth`, `Alkaline earth metals`, `alkaline earth metal`),
-    category_group(`transition`, `Transition metals`, `transition metal`),
-    category_group(`post_transition`, `Post-transition metals`, `post-transition metal`),
-    category_group(`metalloid`, `Metalloids`, `metalloid`),
-    {
-      key: `nonmetal`,
-      label: `Nonmetals`,
-      title: `Diatomic and polyatomic nonmetals`,
-      includes: (element) => nonmetal_categories.has(element.category),
-    },
-    {
-      key: `halogen`,
-      label: `Halogens`,
-      title: `Group 17 halogen elements`,
-      includes: (element) => element.column === 17 && element.row <= 7,
-    },
-    category_group(`noble_gas`, `Noble gases`, `noble gas`),
-    category_group(`lanthanide`, `Lanthanides`, `lanthanide`),
-    category_group(`actinide`, `Actinides`, `actinide`),
-  ]
-  const element_group_keys = new Set(element_groups.map(({ key }) => key))
   const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
   const has_diatomics_metrics = (model: ModelData): boolean =>
     model.metrics?.diatomics != null && typeof model.metrics.diatomics === `object`
@@ -126,7 +93,7 @@
   let clamped_plot_height = $derived(Math.min(500, Math.max(100, plot_height ?? 300)))
   let selected_element_group = $state(`all`)
   let selected_group = $derived(
-    element_groups.find((group) => group.key === selected_element_group) ??
+    element_groups.find((group) => group.value === selected_element_group) ??
       element_groups[0],
   )
 
@@ -312,24 +279,14 @@
     />px
   </label>
 
-  <div class="element-groups" aria-label="Element group filter">
-    {#each element_groups as { label, title, key } (key)}
-      {@const selected = selected_element_group === key}
-      <button
-        class:selected
-        aria-pressed={selected}
-        onclick={() => (selected_element_group = key)}
-        {title}
-      >
-        {label}
-      </button>
-    {/each}
+  <div aria-label="Element group filter">
+    <SelectToggle options={element_groups} bind:selected={selected_element_group} />
   </div>
 
   <ModelSelect options={selectable_options} bind:selected={model_selection.selected} />
 </div>
 
-<div class="diatomics-grid" style="--plot-height: {clamped_plot_height}px">
+<div class="diatomics-grid bleed-1400" style="--plot-height: {clamped_plot_height}px">
   {#each diatomics_to_render as formula (formula)}
     <div
       class="diatomic-plot-shell"
@@ -343,7 +300,7 @@
           style="height: var(--plot-height)"
         />
       {:else}
-        <h3>{formula}</h3>
+        <h3 class="diatomic-plot-title">{formula}</h3>
       {/if}
     </div>
   {/each}
@@ -371,34 +328,11 @@
   .plot-height-number {
     width: 5em;
   }
-  .element-groups {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em;
-    justify-content: center;
-  }
-  .element-groups button {
-    --model-color: var(--text-color, currentColor);
-  }
-  button {
-    padding: 0.3em 0.6em;
-    border-radius: 4px;
-    background: color-mix(in srgb, var(--model-color, currentColor) 12%, transparent);
-    color: var(--text-color, currentColor);
-    font-weight: 500;
-  }
-  button.selected {
-    background: color-mix(in srgb, var(--model-color, currentColor) 35%, transparent);
-    font-weight: 650;
-  }
   .error-summary {
     margin: 1em auto;
     max-width: 80ch;
     padding: 0.75em 1em;
     border: 1px solid var(--danger, #b91c1c);
     border-radius: 4px;
-  }
-  button:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--model-color, currentColor) 22%, transparent);
   }
 </style>

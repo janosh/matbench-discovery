@@ -37,7 +37,13 @@ def write_curve_points(
 
 
 def test_load_candidate_points_skips_malformed_points(tmp_path: Path) -> None:
-    """Malformed VASP points are skipped instead of aborting the load."""
+    """Bad required data is skipped while malformed optional moments are nulled."""
+    bad_magmom_point: dict[str, object] = {
+        "distance": 1.1,
+        "energies": [-0.9],
+        "forces": FINITE_FORCES,
+        "magmoms": [float("nan"), 0],
+    }
     valid_point = write_curve_points(
         tmp_path,
         [
@@ -51,12 +57,15 @@ def test_load_candidate_points_skips_malformed_points(tmp_path: Path) -> None:
                 [[0, 0, "x"], [0, 0, 0]],
             )
         ]
-        + [{"distance": "bad", "energies": [-0.8], "forces": FINITE_FORCES}],
+        + [
+            {"distance": "bad", "energies": [-0.8], "forces": FINITE_FORCES},
+            bad_magmom_point,
+        ],
     )
 
     loaded_points = load_candidate_points(str(tmp_path), "H", "pbe", 0)
 
-    assert loaded_points == [valid_point]
+    assert loaded_points == [valid_point, bad_magmom_point | {"magmoms": None}]
 
 
 @pytest.mark.parametrize(
@@ -76,14 +85,16 @@ def test_load_candidate_points_skips_malformed_points(tmp_path: Path) -> None:
 )
 def test_build_reference_reports_skipped_pairs(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
     candidate_map: dict[str, list[int]],
     expected_skipped: dict[str, int],
     expected_quality: list[tuple[str, str, bool]],
 ) -> None:
     """Empty/too-short inputs yield an empty reference plus skip diagnostics."""
     candidate_map_path = tmp_path / "candidate-map.json"
-    out_path = tmp_path / "reference.json.gz"
+    out_path = "reference.json.gz"
     merged_dir = tmp_path / "merged"
+    monkeypatch.chdir(tmp_path)
     candidate_map_path.write_text(json.dumps(candidate_map))
     if candidate_map:
         write_curve_points(tmp_path, [])  # one valid point -> merged curve too short
@@ -91,10 +102,9 @@ def test_build_reference_reports_skipped_pairs(
     summary = build_reference(
         src_dir=str(tmp_path),
         candidate_map_path=str(candidate_map_path),
-        out_path=str(out_path),
+        out_path=out_path,
         merged_dir=str(merged_dir),
-        min_drop_ev=3.0,
-        postprocess=True,
+        allow_incomplete=True,
     )
 
     with gzip.open(out_path, "rt", encoding="utf-8") as file:
@@ -111,6 +121,22 @@ def test_build_reference_reports_skipped_pairs(
     assert [
         (row["symbol"], row["xc"], row["skipped"]) for row in quality_rows
     ] == expected_quality
+
+
+def test_build_reference_refuses_incomplete_candidate_ladder(tmp_path: Path) -> None:
+    """Production builds fail before overwriting the artifact with incomplete spins."""
+    candidate_map_path = tmp_path / "candidate-map.json"
+    out_path = tmp_path / "reference.json.gz"
+    candidate_map_path.write_text(json.dumps({"H": [0, 2]}))
+    write_curve_points(tmp_path, [])  # n0 is short and n2 is missing
+
+    with pytest.raises(ValueError, match="Refusing to write incomplete DFT reference"):
+        build_reference(
+            src_dir=str(tmp_path),
+            candidate_map_path=str(candidate_map_path),
+            out_path=str(out_path),
+        )
+    assert not out_path.exists()
 
 
 def test_build_reference_reports_dissociation_tail_jump(tmp_path: Path) -> None:
@@ -136,8 +162,7 @@ def test_build_reference_reports_dissociation_tail_jump(tmp_path: Path) -> None:
         candidate_map_path=str(candidate_map_path),
         out_path=str(out_path),
         merged_dir=str(merged_dir),
-        min_drop_ev=3.0,
-        postprocess=True,
+        allow_incomplete=True,
     )
 
     assert summary["tail_jump_pairs"] == {"PBE": 1}
@@ -148,6 +173,7 @@ def test_build_reference_reports_dissociation_tail_jump(tmp_path: Path) -> None:
     assert pbe_row["tail_jumps"] == 1
     with gzip.open(out_path, "rt", encoding="utf-8") as file:
         assert json.load(file)["PBE"]["H-H"]["energies"] == [-1.0, *tail_energies]
+    assert out_path.read_bytes()[3:8] == bytes(5)  # no filename and mtime=0
 
 
 def test_serializable_curve_reports_magmoms_and_spin_candidates() -> None:
@@ -162,13 +188,20 @@ def test_serializable_curve_reports_magmoms_and_spin_candidates() -> None:
         },
         # points missing magmoms (e.g. truncated OUTCAR) serialize as null
         {"distance": 2.0, "energies": [-0.5], "forces": FINITE_FORCES},
+        # malformed/non-finite moments must not emit invalid JSON NaN tokens
+        {
+            "distance": 3.0,
+            "energies": [-0.2],
+            "forces": FINITE_FORCES,
+            "magmoms": [float("nan"), 0],
+        },
     ]
 
     curve = serializable_curve(points)
 
-    assert curve["magmoms"] == [[1.546, -1.546], None]
-    assert curve["spin_candidates"] == ["afm", None]
-    assert len(curve["distances"]) == len(curve["magmoms"]) == 2
+    assert curve["magmoms"] == [[1.546, -1.546], None, None]
+    assert curve["spin_candidates"] == ["afm", None, None]
+    assert len(curve["distances"]) == len(curve["magmoms"]) == 3
 
 
 def test_write_merged_curve_serializes_postprocess_edits(tmp_path: Path) -> None:

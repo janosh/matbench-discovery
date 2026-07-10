@@ -13,9 +13,11 @@
   let {
     selected = $bindable(``),
     options = [],
+    tooltip_placement = `bottom`,
   }: {
     selected: string
     options: OptionInfo[]
+    tooltip_placement?: `top` | `bottom` | `left` | `right`
   } = $props()
   const target = { target: `_blank`, rel: `noopener noreferrer` }
 </script>
@@ -26,7 +28,7 @@
       class:active={selected === value}
       aria-pressed={selected === value}
       onclick={() => (selected = value)}
-      {@attach tip({ allow_html: true, content: tooltip })}
+      {@attach tip({ allow_html: true, content: tooltip, placement: tooltip_placement })}
     >
       {@html label}
       {#if loading}

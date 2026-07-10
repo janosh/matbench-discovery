@@ -1,17 +1,33 @@
 <script lang="ts">
+  import SelectToggle from '$lib/SelectToggle.svelte'
+  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import { ScatterPlot } from 'matterviz'
-  import { element_data, type ChemicalElement } from 'matterviz/element'
+  import type { ChemicalElement } from 'matterviz/element'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
   import { SvelteSet } from 'svelte/reactivity'
+  import {
+    element_by_symbol,
+    element_group_keys,
+    element_groups,
+  } from '../element-groups'
   import { make_plot_observer } from '../observe-plot'
 
-  let { data } = $props()
+  type MagmomCurve = {
+    distances: number[]
+    magmoms: ([number, number] | null)[]
+    spin_candidates: (string | null)[]
+  }
+
+  let {
+    data,
+  }: {
+    data: { magmom_curves: Record<string, Record<string, MagmomCurve>> }
+  } = $props()
   let magmom_curves = $derived(data?.magmom_curves ?? {})
 
   // same fixed reference colors as the main diatomics page
   const xc_colors: Record<string, string> = { PBE: `#4c78e0`, r2SCAN: `#f032e6` }
-  const elements = element_data as ChemicalElement[]
-  const element_by_symbol = new Map(elements.map((element) => [element.symbol, element]))
+  const visible_functionals = new SvelteSet(Object.keys(xc_colors))
 
   type PointMeta = {
     functional: string
@@ -19,51 +35,74 @@
     spin_candidate: string | null
   }
 
+  let selected_element_group = $state(`all`)
+  let selected_group = $derived(
+    element_groups.find((group) => group.value === selected_element_group) ??
+      element_groups[0],
+  )
   let formulas = $derived(
-    ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`).filter(
-      (formula) => formula in magmom_curves,
-    ),
+    ELEM_SYMBOLS.filter((symbol) => {
+      const formula = `${symbol}-${symbol}`
+      const element = element_by_symbol.get(symbol)
+      return (
+        formula in magmom_curves && Boolean(element && selected_group.includes(element))
+      )
+    }).map((symbol) => `${symbol}-${symbol}`),
   )
 
   const visible_plots = new SvelteSet<string>()
   const observe_plot = make_plot_observer(visible_plots)
 
+  bind_url_params(
+    (params) => {
+      selected_element_group = valid_query_param(
+        params,
+        `elements`,
+        `all`,
+        element_group_keys,
+      )
+    },
+    () => [[`elements`, selected_element_group, `all`]],
+  )
+
   function series_for(formula: string) {
-    return Object.entries(magmom_curves[formula] ?? {}).flatMap(([functional, curve]) =>
-      [0, 1].map((atom_idx) => {
-        const points = curve.distances.map((distance, point_idx) => ({
-          distance,
-          magmom: curve.magmoms[point_idx]?.[atom_idx] ?? Number.NaN,
-          spin_candidate: curve.spin_candidates[point_idx],
-        }))
-        const color = xc_colors[functional] ?? `gray`
-        return {
-          id: `${formula}-${functional}-atom${atom_idx + 1}`,
-          label: `${functional} atom ${atom_idx + 1}`,
-          x: points.map((point) => point.distance),
-          y: points.map((point) => point.magmom),
-          markers: `line+points` as const,
-          metadata: points.map(
-            (point): PointMeta => ({
-              functional,
-              atom_idx: atom_idx + 1,
-              spin_candidate: point.spin_candidate,
-            }),
-          ),
-          point_style: {
-            fill: color,
-            radius: 1.5,
-            stroke_width: 0,
-            ...(atom_idx === 1 ? { fill_opacity: 0.5 } : {}),
-          },
-          line_style: {
-            stroke: color,
-            // atom 2 dashed so overlapping FM branches (m1 == m2) stay legible
-            ...(atom_idx === 1 ? { line_dash: `4 3` } : {}),
-          },
-        }
-      }),
-    )
+    return Object.entries(magmom_curves[formula] ?? {})
+      .filter(([functional]) => visible_functionals.has(functional))
+      .flatMap(([functional, curve]) =>
+        [0, 1].map((atom_idx) => {
+          const points = curve.distances.map((distance, point_idx) => ({
+            distance,
+            magmom: curve.magmoms[point_idx]?.[atom_idx] ?? Number.NaN,
+            spin_candidate: curve.spin_candidates[point_idx],
+          }))
+          const color = xc_colors[functional] ?? `gray`
+          return {
+            id: `${formula}-${functional}-atom${atom_idx + 1}`,
+            label: `${functional} atom ${atom_idx + 1}`,
+            x: points.map((point) => point.distance),
+            y: points.map((point) => point.magmom),
+            markers: `line+points` as const,
+            metadata: points.map(
+              (point): PointMeta => ({
+                functional,
+                atom_idx: atom_idx + 1,
+                spin_candidate: point.spin_candidate,
+              }),
+            ),
+            point_style: {
+              fill: color,
+              radius: 1.5,
+              stroke_width: 0,
+              ...(atom_idx === 1 ? { fill_opacity: 0.5 } : {}),
+            },
+            line_style: {
+              stroke: color,
+              // atom 2 dashed so overlapping FM branches (m1 == m2) stay legible
+              ...(atom_idx === 1 ? { line_dash: `4 3` } : {}),
+            },
+          }
+        }),
+      )
   }
 </script>
 
@@ -87,11 +126,27 @@
 
 <div class="legend">
   {#each Object.entries(xc_colors) as [functional, color] (functional)}
-    <span><span class="swatch" style="background: {color}"></span>{functional}</span>
+    {@const visible = visible_functionals.has(functional)}
+    <button
+      class:visible
+      aria-pressed={visible}
+      onclick={() =>
+        visible
+          ? visible_functionals.delete(functional)
+          : visible_functionals.add(functional)}
+    >
+      <span class="swatch" style="background: {color}"></span>{functional}
+    </button>
   {/each}
 </div>
 
-<div class="diatomics-grid">
+<div class="controls">
+  <div aria-label="Element group filter">
+    <SelectToggle options={element_groups} bind:selected={selected_element_group} />
+  </div>
+</div>
+
+<div class="diatomics-grid bleed-1400">
   {#each formulas as formula (formula)}
     {@const element_symbol = formula.split(`-`, 1)[0] as ChemicalElement[`symbol`]}
     {@const element = element_by_symbol.get(element_symbol)}
@@ -146,10 +201,22 @@
     justify-content: center;
     margin: 1em 0;
   }
-  .legend > span {
+  .legend button {
     display: inline-flex;
     align-items: center;
     gap: 0.4em;
+    padding: 2pt 5pt;
+    background: transparent;
+    opacity: 0.45;
+  }
+  .legend button.visible {
+    opacity: 1;
+  }
+  .legend button:hover {
+    background: var(--btn-bg-hover);
+  }
+  .controls {
+    margin-block: 1em;
   }
   .swatch {
     width: 1em;

@@ -74,7 +74,7 @@ def finite_energy_points(points: Sequence[Mapping[str, Any]]) -> list[CurvePoint
 def count_dissociation_tail_jumps(
     energies: Sequence[float], *, min_jump_ev: float = 0.1
 ) -> int:
-    """Count large energy steps among the final three dissociation-tail points.
+    """Count large energy steps among up to the final three dissociation-tail points.
 
     At the largest sampled separations, a molecular PEC should be approaching its
     dissociation limit. A large step there signals a branch hop such as the failed

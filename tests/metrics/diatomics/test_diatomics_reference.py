@@ -30,6 +30,8 @@ def make_point(distance: float, energy: float, magmom: float = 0) -> CurvePoint:
 @pytest.mark.parametrize(
     ("energies", "expected"),
     [
+        ([], 0),
+        ([0], 0),
         ([0, 0.02, 0.05], 0),
         ([0, 0.05, 0.3], 1),
         ([0, 0.3, 0], 2),
@@ -37,7 +39,7 @@ def make_point(distance: float, energy: float, magmom: float = 0) -> CurvePoint:
     ],
 )
 def test_counts_dissociation_tail_jumps(energies: list[float], expected: int) -> None:
-    """Large final-three-point energy steps are counted, not the repulsive wall."""
+    """Large steps among up to three tail points are counted, not the repulsive wall."""
     assert count_dissociation_tail_jumps(energies) == expected
 
 

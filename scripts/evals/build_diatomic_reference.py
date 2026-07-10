@@ -8,7 +8,7 @@ import json
 import math
 import os
 from dataclasses import asdict
-from typing import Any
+from typing import Any, cast
 
 from matbench_discovery import ROOT
 from matbench_discovery.metrics.diatomics.reference import (
@@ -41,9 +41,30 @@ def has_finite_forces(forces: object) -> bool:
     )
 
 
+def finite_magmoms(magmoms: object) -> list[float] | None:
+    """Return two finite site moments, or None when the block is missing/malformed."""
+    if (
+        not isinstance(magmoms, list)
+        or len(magmoms) != 2
+        or not all(
+            isinstance(moment, int | float) and math.isfinite(moment)
+            for moment in magmoms
+        )
+    ):
+        return None
+    return cast("list[float]", magmoms)
+
+
 def spin_suffix(candidate: int | str) -> str:
     """Return the output directory suffix for one spin candidate token."""
     return "n0afm" if candidate == "afm" else f"n{candidate}"
+
+
+def increment_summary(
+    summary: dict[str, dict[str, int]], metric: str, label: str, count: int = 1
+) -> None:
+    """Increment one functional-specific summary count."""
+    summary[metric][label] = summary[metric].get(label, 0) + count
 
 
 def load_candidate_points(
@@ -65,7 +86,10 @@ def load_candidate_points(
                 continue
         except (KeyError, TypeError, ValueError):
             continue
-        finite_points.append(point)
+        clean_point = dict(point)
+        if "magmoms" in clean_point:
+            clean_point["magmoms"] = finite_magmoms(clean_point["magmoms"])
+        finite_points.append(clean_point)
     return finite_points
 
 
@@ -86,9 +110,11 @@ def serializable_curve(points: list[dict[str, Any]]) -> dict[str, list]:
         distances.append(round(point["distance"], 6))
         energies.append(round(point["energies"][-1], 6))
         forces.append([[round(comp, 6) for comp in atom] for atom in point["forces"]])
-        point_magmoms = point.get("magmoms")
+        point_magmoms = finite_magmoms(point.get("magmoms"))
         magmoms.append(
-            [round(moment, 3) for moment in point_magmoms] if point_magmoms else None
+            [round(moment, 3) for moment in point_magmoms]
+            if point_magmoms is not None
+            else None
         )
         spin_candidate = point.get("spin_candidate")
         spin_candidates.append(None if spin_candidate is None else str(spin_candidate))
@@ -106,11 +132,16 @@ def build_reference(
     src_dir: str,
     candidate_map_path: str,
     out_path: str,
-    merged_dir: str | None,
-    min_drop_ev: float,
-    postprocess: bool,
+    merged_dir: str | None = None,
+    min_drop_ev: float = 3.0,
+    postprocess: bool = True,
+    allow_incomplete: bool = False,
 ) -> dict[str, dict[str, int]]:
-    """Build and write the reference file, returning summary counts."""
+    """Build and write the reference file, returning summary counts.
+
+    Raises:
+        ValueError: If any spin candidate is incomplete and allow_incomplete is False.
+    """
     with open(candidate_map_path) as file:
         candidate_map: dict[str, list[int | str]] = json.load(file)
 
@@ -147,7 +178,7 @@ def build_reference(
                 # surface dropped elements in the summary and quality report: a pair
                 # silently vanishing from the bundled reference between rebuilds
                 # (e.g. all candidate curves missing/corrupt) should be visible
-                summary["skipped"][label] = summary["skipped"].get(label, 0) + 1
+                increment_summary(summary, "skipped", label)
                 quality_rows.append(
                     {
                         "symbol": symbol,
@@ -160,10 +191,8 @@ def build_reference(
                 continue
 
             refs[label][f"{symbol}-{symbol}"] = serializable_curve(merged_points)
-            summary["merged"][label] = summary["merged"].get(label, 0) + 1
-            summary["postprocess_edits"][label] = summary["postprocess_edits"].get(
-                label, 0
-            ) + len(replacements)
+            increment_summary(summary, "merged", label)
+            increment_summary(summary, "postprocess_edits", label, len(replacements))
             tail_jumps = count_dissociation_tail_jumps(
                 [point_energy(point) for point in merged_points]
             )
@@ -171,17 +200,11 @@ def build_reference(
                 [point.get("magmoms") for point in merged_points]
             )
             if tail_jumps:
-                summary["tail_jump_pairs"][label] = (
-                    summary["tail_jump_pairs"].get(label, 0) + 1
-                )
+                increment_summary(summary, "tail_jump_pairs", label)
             if magmom_jumps:
-                summary["magmom_jump_pairs"][label] = (
-                    summary["magmom_jump_pairs"].get(label, 0) + 1
-                )
+                increment_summary(summary, "magmom_jump_pairs", label)
             if short_candidates:
-                summary["short_candidate_pairs"][label] = (
-                    summary["short_candidate_pairs"].get(label, 0) + 1
-                )
+                increment_summary(summary, "short_candidate_pairs", label)
             if short_candidates or tail_jumps or magmom_jumps:
                 quality_rows.append(
                     {
@@ -196,13 +219,28 @@ def build_reference(
             if merged_dir:
                 write_merged_curve(merged_dir, symbol, xc, merged_points, replacements)
 
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    with gzip.open(out_path, "wt", encoding="utf-8") as file:
-        json.dump(refs, file, separators=(",", ":"))
     if merged_dir:
         os.makedirs(merged_dir, exist_ok=True)
         with open(f"{merged_dir}/reference-quality.json", "w") as file:
             json.dump(quality_rows, file, indent=2)
+    if not allow_incomplete and (
+        summary["skipped"] or summary["short_candidate_pairs"]
+    ):
+        raise ValueError(
+            "Refusing to write incomplete DFT reference: "
+            f"skipped={summary['skipped']}, "
+            f"short_candidates={summary['short_candidate_pairs']}"
+        )
+
+    if out_dir := os.path.dirname(out_path):
+        os.makedirs(out_dir, exist_ok=True)
+    payload = json.dumps(refs, separators=(",", ":")).encode()
+    # Fixed mtime + no filename makes identical references byte-for-byte reproducible.
+    with (
+        open(out_path, "wb") as file,
+        gzip.GzipFile(filename="", mode="wb", fileobj=file, mtime=0) as gzip_file,
+    ):
+        gzip_file.write(payload)
     return summary
 
 
@@ -240,6 +278,11 @@ def main() -> None:
     parser.add_argument("--merged-dir", default=f"{ROOT}/tmp/diatomics-merged")
     parser.add_argument("--min-drop-ev", type=float, default=3.0)
     parser.add_argument("--no-postprocess", action="store_true")
+    parser.add_argument(
+        "--allow-incomplete",
+        action="store_true",
+        help="Write an incomplete reference instead of failing (diagnostics only)",
+    )
     args = parser.parse_args()
 
     summary = build_reference(
@@ -249,6 +292,7 @@ def main() -> None:
         merged_dir=args.merged_dir,
         min_drop_ev=args.min_drop_ev,
         postprocess=not args.no_postprocess,
+        allow_incomplete=args.allow_incomplete,
     )
     size_kb = os.path.getsize(args.out_path) / 1024
     print(f"wrote {args.out_path} ({size_kb:.0f} KB)")

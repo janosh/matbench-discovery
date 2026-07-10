@@ -176,7 +176,9 @@ For each element and functional, it:
 1. writes the compact, public, version-controlled site artifact to `site/src/lib/diatomics-dft.json.gz`;
 1. rebuilds model diatomic metrics and confirms the DFT curves display on the Diatomics page.
 
-The artifact contains 92 PBE and 92 r2SCAN homonuclear entries; every spin candidate now meets the 45-point completeness threshold. Known caveats: `O/r2SCAN` and `Rh/r2SCAN` still hop spin branches near the 6 Å dissociation endpoint, while `Ho/r2SCAN`, `Er/r2SCAN`, and similar heavy lanthanides and actinides remain branch-trapped and jumpy despite all postprocessing and checks. The heavy-element failures seem irrecoverable, at least with current VASP 6.4 pseudo-potentials.
+The artifact contains 92 PBE and 92 r2SCAN homonuclear entries. Every raw spin-candidate curve now meets the 45-point completeness threshold. Merged curves can be shorter because postprocessing drops invalid points.
+
+The quality checks are diagnostic and do not alter endpoints. `count_dissociation_tail_jumps` inspects adjacent energy steps among up to the final three merged points, flags steps of at least 0.1 eV, and ignores the short-range repulsive wall. `reference-quality.json` records the number of flagged steps as `tail_jumps`; the `tail_jump_pairs` summary counts each affected element-functional pair once. The current artifact flags 7 PBE and 12 r2SCAN pairs. The clearest known endpoint spin-branch hops are `O/r2SCAN` and `Rh/r2SCAN` near 6 Å. `Ho/r2SCAN`, `Er/r2SCAN`, and similar heavy lanthanides and actinides remain branch-trapped and jumpy despite all postprocessing and checks. The heavy-element failures seem irrecoverable, at least with current VASP 6.4 pseudo-potentials.
 
 ## Postprocessing
 

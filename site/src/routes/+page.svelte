@@ -212,7 +212,11 @@
 <figure style="margin-top: 3em" id="metrics-table">
   <div class="toggle-row">
     <span>Column presets:</span>
-    <SelectToggle bind:selected={col_preset} options={col_preset_options} />
+    <SelectToggle
+      bind:selected={col_preset}
+      options={col_preset_options}
+      tooltip_placement="top"
+    />
   </div>
   <!-- the test-set selector only affects discovery metrics, so only show it in the
   Discovery preset where those columns are visible -->
