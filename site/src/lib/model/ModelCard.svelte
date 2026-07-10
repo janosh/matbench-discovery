@@ -60,10 +60,10 @@
 </h2>
 <nav>
   {#each links.filter( ([href]) => href?.startsWith(`http`), ) as [href, title, icon] (title)}
-    <span>
+    <a {href} {...target}>
       <Icon {icon} />
-      <a {href} {...target}>{title}</a>
-    </span>
+      {title}
+    </a>
   {/each}
 </nav>
 
@@ -219,8 +219,8 @@
     flex-wrap: wrap;
     place-content: center;
   }
-  nav > span {
-    display: flex;
+  nav > a {
+    display: inline-flex;
     gap: 6pt;
     place-items: center;
   }

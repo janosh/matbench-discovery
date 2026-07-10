@@ -18,10 +18,11 @@ const test_model = MODELS.find((model) =>
   model.authors.some((author) => author.affiliation === `Mirror Physics`),
 )
 if (!test_model) throw new Error(`missing Mirror Physics model`)
+const test_page_data = { model: test_model, md_per_system: null }
 
 describe(`Model Detail Page`, () => {
   it(`renders model details correctly`, () => {
-    mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
+    mount(ModelPage, { target: document.body, props: { data: test_page_data } })
 
     // Check basic model info
     expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)
@@ -103,7 +104,7 @@ describe(`Model Detail Page`, () => {
       expect(hyperparams?.textContent).toContain(JSON.stringify(value))
     }
 
-    // no md_per_system page data -> no per-system MD section
+    // null md_per_system page data -> no per-system MD section
     expect(document.querySelector(`section.md-per-system`)).toBeNull()
   }, 10_000)
 
@@ -112,7 +113,10 @@ describe(`Model Detail Page`, () => {
     // on DATASETS[key] and crash the whole page
     const bogus_sets = [`BogusDataset`, `MPtrj`] as ModelData[`training_set`]
     const model = { ...test_model, training_set: bogus_sets }
-    mount(ModelPage, { target: document.body, props: { data: { model } } })
+    mount(ModelPage, {
+      target: document.body,
+      props: { data: { ...test_page_data, model } },
+    })
 
     expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)
     const training_set = document.querySelector(`.training-set`)
@@ -122,7 +126,7 @@ describe(`Model Detail Page`, () => {
   })
 
   it(`renders leaderboard rank card with task-prefixed metric labels`, () => {
-    mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
+    mount(ModelPage, { target: document.body, props: { data: test_page_data } })
 
     const rank_links = [...document.querySelectorAll(`.rank-card a`)]
     expect(rank_links.length).toBeGreaterThan(0)
@@ -172,7 +176,7 @@ describe(`Model Detail Page`, () => {
   })
 
   it(`lazy-mounts energy parity tab plots`, async () => {
-    mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
+    mount(ModelPage, { target: document.body, props: { data: test_page_data } })
     await tick()
 
     // only the default tab's plot mounts on load; toggling mounts the other for good

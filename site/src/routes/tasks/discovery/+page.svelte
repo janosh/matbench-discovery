@@ -5,8 +5,6 @@
   import { DEFAULT_TABLE_SORT } from '$lib/table/MetricsTable.svelte'
   import {
     bind_url_params,
-    bool_from_param,
-    bool_url_entry,
     sort_from_query,
     sort_url_entries,
     valid_query_param,
@@ -21,7 +19,6 @@
   const discovery_sets = new Set<DiscoverySet>(DISCOVERY_SETS)
 
   let discovery_set: DiscoverySet = $state(default_discovery_set)
-  let show_energy_only = $state(false)
   const filters = make_table_filters()
   let sort = $state({ ...DEFAULT_TABLE_SORT })
 
@@ -38,7 +35,6 @@
       default_discovery_set,
       discovery_sets,
     )
-    show_energy_only = bool_from_param(params, `energy_only`)
     filters.read(params)
     sort = sort_from_query(params, DEFAULT_TABLE_SORT)
     scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_keys)
@@ -46,7 +42,6 @@
   }
   bind_url_params(read_url_params, () => [
     [`set`, discovery_set, default_discovery_set],
-    bool_url_entry(`energy_only`, show_energy_only),
     ...filters.url_entries,
     ...sort_url_entries(sort, DEFAULT_TABLE_SORT),
     [`x`, scatter_x, default_scatter_x],
@@ -70,10 +65,8 @@
         labels.METADATA_COLS.date_added,
       ].includes(col)}
     {discovery_set}
-    bind:show_energy_only
     {filters}
     bind:sort
-    show_energy_only_toggle
   />
 </section>
 

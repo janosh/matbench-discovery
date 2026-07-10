@@ -493,6 +493,7 @@ type DiatomicsMetricKey =
   | `diatomics_max_rss_gb`
 
 const scored_diatomic_range = `scored range from 0.9× covalent radius to min(3.1× Alvarez vdW radius, max sampled distance)`
+const scored_diatomic_wall_range = `repulsive-wall range from 0.8× covalent radius to min(3.1× Alvarez vdW radius, max sampled distance)`
 
 export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   tortuosity: {
@@ -524,7 +525,7 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   pbe_wall_dist_mae: {
     key: `pbe_wall_dist_mae`,
     label: `PBE Δr wall`,
-    description: `Mean repulsive-wall distance error relative to PBE over ${scored_diatomic_range}, at 1, 5 and 10 eV above the well minimum`,
+    description: `Mean repulsive-wall distance error relative to PBE over the ${scored_diatomic_wall_range}, at 1, 5, 10, 20, 50 and 100 eV above the well minimum where reached by the reference; predictions that miss a supported threshold receive the full reference-radius error`,
     unit: `Å`,
     path: `metrics.diatomics`,
     better: `lower`,
@@ -605,7 +606,7 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
     key: `diatomics_combined_score`,
     property: `combined_score`,
     label: `CDS`,
-    description: `Combined Diatomics Score in [0,1] (higher is better): weighted mean of 4 pillar subscores - Accuracy (PBE energy/force MAE, 44%), Geometry (repulsive wall, bond length, well depth vs PBE, 22%), Physicality (reference-free smoothness: energy jumps, force flips, tortuosity, 22%) and Speed (sweep wall time, log-scaled, 11%; hardware varies by submission) - reweightable on the diatomics page. Components are normalized against baselines frozen near the 90th percentile of the mid-2026 model field. Computed on the fly like CPS/CMDS, never stored with submissions`,
+    description: `Combined Diatomics Score in [0,1] (higher is better): weighted mean of 4 pillar subscores - Accuracy (PBE energy/force MAE, 44%), Geometry (repulsive wall, bond length, well depth vs PBE, 22%), Physicality (reference-free smoothness: energy jumps, force flips, tortuosity, 22%) and Speed (sweep wall time, log-scaled, 11%; hardware varies by submission) - multiplied by the fraction of 87 benchmark elements completed and reweightable on the diatomics page. Components use fixed normalization baselines so scores remain stable as models are added. Computed on the fly like CPS/CMDS, never stored with submissions`,
     path: `metrics.diatomics`,
     range: [0, 1],
     better: `higher`,

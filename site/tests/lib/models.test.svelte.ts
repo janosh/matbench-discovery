@@ -101,10 +101,12 @@ describe(`MODEL_METADATA_PATHS`, () => {
 })
 
 describe(`make_table_filters`, () => {
-  it(`defaults to matching every model`, () => {
+  it(`default filters only hide energy-only models`, () => {
     const filters = make_table_filters()
-    expect(filters.n_active).toBe(0)
-    expect(MODELS.every((model) => filters.matches(model))).toBe(true)
+    expect(filters.n_active).toBe(0) // the default require-F isn't counted as active
+    for (const model of MODELS) {
+      expect(filters.matches(model), model.model_name).toBe(model.targets !== `E`)
+    }
   })
 
   it.each<{
@@ -138,7 +140,7 @@ describe(`make_table_filters`, () => {
     ({ training, training_set, expected }) => {
       const filters = make_table_filters()
       filters.training = training
-      expect(filters.matches({ training_set })).toBe(expected)
+      expect(filters.matches({ training_set, targets: `EFS_G` })).toBe(expected)
     },
   )
 
@@ -152,11 +154,54 @@ describe(`make_table_filters`, () => {
     ({ openness, model_openness, expected }) => {
       const filters = make_table_filters()
       filters.openness = [...openness]
-      expect(filters.matches({ training_set: [`MPtrj`], openness: model_openness })).toBe(
-        expected,
-      )
+      expect(
+        filters.matches({
+          training_set: [`MPtrj`],
+          openness: model_openness,
+          targets: `EFS_G`,
+        }),
+      ).toBe(expected)
     },
   )
+
+  it.each([
+    // default targets filter (require F) hides energy-only models
+    { model_targets: `E`, expected: false },
+    { model_targets: `EFS_G`, expected: true },
+    // exclude magmoms
+    { targets: { F: `require`, M: `exclude` }, model_targets: `EFS_GM`, expected: false },
+    { targets: { F: `require`, M: `exclude` }, model_targets: `EFS_G`, expected: true },
+    // require stress
+    { targets: { S: `require` }, model_targets: `EF_G`, expected: false },
+    { targets: { S: `require` }, model_targets: `EFSH_G`, expected: true },
+    // direct-only force/stress excludes gradient-based and force-less models
+    { fs_mode: `direct`, model_targets: `EFS_G`, expected: false },
+    { fs_mode: `direct`, model_targets: `EFS_DM`, expected: true },
+    { fs_mode: `gradient`, targets: {}, model_targets: `E`, expected: false },
+  ] as const)(
+    `targets filter $targets/$fs_mode matches $model_targets -> $expected`,
+    ({ targets, fs_mode, model_targets, expected }) => {
+      const filters = make_table_filters()
+      if (targets) filters.targets = { ...targets }
+      if (fs_mode) filters.fs_mode = fs_mode
+      expect(filters.matches({ training_set: [], targets: model_targets })).toBe(expected)
+    },
+  )
+
+  it(`round-trips the targets URL param incl. the cleared (empty) state`, () => {
+    const filters = make_table_filters()
+    filters.read(new URLSearchParams(`targets=-M,direct`))
+    expect(filters.targets).toStrictEqual({ M: `exclude` })
+    expect(filters.fs_mode).toBe(`direct`)
+    expect(filters.targets_param).toBe(`-M,direct`)
+
+    // absent param = default (require F); present-but-empty = no targets filter
+    filters.read(new URLSearchParams(``))
+    expect(filters.targets).toStrictEqual({ F: `require` })
+    filters.read(new URLSearchParams(`targets=`))
+    expect(filters.targets).toStrictEqual({})
+    expect(filters.targets_param).toBe(``)
+  })
 
   it(`set_training cycles require -> off and toggle_openness keeps at least one`, () => {
     const filters = make_table_filters()

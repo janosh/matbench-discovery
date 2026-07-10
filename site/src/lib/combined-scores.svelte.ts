@@ -168,9 +168,8 @@ export const update_models_cmds = (models: ModelData[], config: CmdsConfig) =>
 // with value/floor/baseline in log10 space for log: true components (run time spans
 // two orders of magnitude, 57s-4500s across models, so a linear clamp would compress
 // most of the field into the top decile; log treats 2x slower the same at any scale).
-// Baselines are FROZEN near the 90th percentile of the mid-2026 model field (35
-// models) so subscores span [0,1] usefully and scores stay stable as models are
-// added. floor=1 for metrics with a physical minimum of 1: tortuosity (path length /
+// Baselines are frozen reference scales so scores stay stable as models are added.
+// floor=1 for metrics with a physical minimum of 1: tortuosity (path length /
 // net displacement) and force_flips (a well-formed PEC has exactly one force
 // zero-crossing at the equilibrium bond length).
 //
@@ -205,7 +204,10 @@ export const CDS_COMPONENTS = {
 export type CdsPillar = keyof typeof CDS_COMPONENTS
 export type CdsConfig = Record<CdsPillar, Label & { weight: number }>
 type CdsComponent = (typeof CDS_COMPONENTS)[CdsPillar][number]
-export type CdsValues = Partial<Record<CdsComponent[`key`], number>>
+export type CdsValues = Partial<Record<CdsComponent[`key`], number>> & {
+  excluded_formula_reasons?: Record<string, string>
+}
+const N_SCORED_DIATOMIC_ELEMENTS = 87
 
 // Default weights MUST be a weight vector the RadarChart knob can express, else
 // Reset shows a knob position whose canonical reading disagrees with the displayed
@@ -225,7 +227,7 @@ export const DEFAULT_CDS_CONFIG: CdsConfig = {
   geometry: {
     key: `cds_geometry`,
     label: `Geometry`,
-    description: `Curve-shape agreement with PBE: repulsive-wall distance (1/2), equilibrium bond length (1/3) and well depth (1/6) errors`,
+    description: `Curve-shape agreement with PBE: repulsive-wall distance from 1 to 100 eV where supported by the reference (1/2), equilibrium bond length (1/3) and well depth (1/6) errors`,
     weight: 2 / 9,
   },
   speed: {
@@ -246,8 +248,9 @@ export const DEFAULT_CDS_CONFIG: CdsConfig = {
 export const CDS_CONFIG: CdsConfig = $state(structuredClone(DEFAULT_CDS_CONFIG))
 
 // CDS is the weighted mean of the pillar subscores, each pillar a fixed-weight mean
-// of its component subscores. Any missing/NaN component in a non-zero-weight pillar
-// invalidates the score (matches calculate_cps/calculate_cmds).
+// of its component subscores, multiplied by the fraction of the 87 benchmark elements
+// the model completed. Any missing/NaN component in a non-zero-weight pillar invalidates
+// the score (matches calculate_cps/calculate_cmds).
 export function calculate_cds(values: CdsValues, cds_config: CdsConfig): number | null {
   const pillars = Object.keys(cds_config) as CdsPillar[]
   const total_weight = pillars.reduce((sum, key) => sum + cds_config[key].weight, 0)
@@ -267,7 +270,9 @@ export function calculate_cds(values: CdsValues, cds_config: CdsConfig): number 
     }
     weighted_sum += pillar_score * weight
   }
-  return weighted_sum / total_weight
+  const n_excluded = Object.keys(values.excluded_formula_reasons ?? {}).length
+  const coverage = Math.max(0, 1 - n_excluded / N_SCORED_DIATOMIC_ELEMENTS)
+  return (weighted_sum / total_weight) * coverage
 }
 
 export const update_models_cds = (models: ModelData[], config: CdsConfig) =>

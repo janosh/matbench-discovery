@@ -83,11 +83,11 @@
   {/if}
 </p>
 
-<div class="intro bleed-1400">
+<div class="task-intro bleed-1400">
   <!-- wrapper div: the markdown renders multiple top-level elements which would
   otherwise each become their own flex item -->
   <div><MdNote /></div>
-  <figure class="cmds-weights">
+  <figure class="task-weights">
     <RadarChart
       size={260}
       config={CMDS_CONFIG}
@@ -132,25 +132,6 @@
 />
 
 <style>
-  .intro {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1em 2em;
-    align-items: center;
-  }
-  /* caution note takes remaining width, chart column keeps its natural size */
-  .intro > div {
-    flex: 1 1 30em;
-  }
-  .cmds-weights {
-    flex: 0 1 22em;
-    margin: 0 auto;
-  }
-  .cmds-weights figcaption {
-    margin-top: 1em;
-    font-size: 0.85em;
-    color: var(--text-muted, inherit);
-  }
   .beta-badge {
     font-size: 0.45em;
     font-weight: 600;

@@ -428,9 +428,7 @@
     display: inline-flex;
     align-items: center;
     background: transparent;
-    border: 0;
     color: inherit;
-    cursor: pointer;
     padding: 0.2em;
   }
 </style>

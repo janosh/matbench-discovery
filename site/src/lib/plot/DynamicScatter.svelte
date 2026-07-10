@@ -3,8 +3,7 @@
   import type { ModelData } from '$lib'
   import { extent } from 'd3-array'
   import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
-  import type { D3InterpolateName } from 'matterviz/colors'
-  import { ColorScaleSelect, create_color_scale } from 'matterviz/plot'
+  import { create_color_scale } from 'matterviz/plot'
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
@@ -87,13 +86,8 @@
     size_value: size_prop,
   })
 
-  let color_scheme: D3InterpolateName = $state(`interpolateViridis`)
   const ticks = 5
   let display = $state({ x_grid: true, y_grid: true })
-
-  let size_multiplier = $state(1)
-  let label_font_size = $state(12)
-  let leader_line_threshold = $state(15)
 
   // Log scale needs positive values spanning at least two decades.
   const supports_log = (ext: [number | undefined, number | undefined]): boolean =>
@@ -182,7 +176,10 @@
     log[dim] && can_log[dim] ? (`log` as const) : (`linear` as const)
 
   // plot and legend share this scale so legend swatches always match point colors
-  let color_scale = $derived({ scheme: color_scheme, type: scale_of(`color`) })
+  let color_scale = $derived({
+    scheme: `interpolateViridis` as const,
+    type: scale_of(`color`),
+  })
   let legend_color_scale = $derived.by(() => {
     const [min, max] = extent(plot_data, (item) => item.color_value as number)
     return create_color_scale(color_scale, [min ?? 0, max ?? 1])
@@ -247,7 +244,7 @@
         ? [
             {
               text: item.metadata.model_name,
-              font_size: `${label_font_size}px`,
+              font_size: `12px`,
               auto_placement: true,
             },
           ]
@@ -323,7 +320,7 @@
     bind:display
     {color_scale}
     size_scale={{
-      radius_range: [5 * size_multiplier, 10 * size_multiplier],
+      radius_range: [5, 10],
       type: scale_of(`size`),
     }}
     color_bar={{
@@ -346,7 +343,7 @@
       },
     }}
     label_placement_config={{
-      leader_line_threshold,
+      leader_line_threshold: 15,
       max_neighbors: { count: 3, radius: 40 },
     }}
     point_events={{
@@ -356,59 +353,19 @@
     {data_loader}
   >
     {#snippet controls_extra()}
-      <div class="log-toggles" style="display: flex; gap: 1em; flex-wrap: wrap">
+      <div style="display: flex; gap: 1em; flex-wrap: wrap">
         {#each log_dims as dim (dim)}
-          <label style:visibility={can_log[dim] ? `visible` : `hidden`}>
-            <input type="checkbox" bind:checked={log[dim]} disabled={!can_log[dim]} />
-            Log <span style="text-transform: capitalize">{dim}</span>
-          </label>
+          {#if can_log[dim]}
+            <label>
+              <input type="checkbox" bind:checked={log[dim]} />
+              Log <span style="text-transform: capitalize">{dim}</span>
+            </label>
+          {/if}
         {/each}
       </div>
-
-      <label title="Toggle visibility of model name labels on the scatter plot points">
+      <label title="Toggle model names on the plot">
         <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
       </label>
-      <ColorScaleSelect bind:value={color_scheme} style="margin: 0" />
-      <label
-        for="size-multiplier"
-        title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
-        >Point Size
-      </label>
-      <input
-        id="size-multiplier"
-        type="range"
-        min="0.1"
-        max="5"
-        step="0.1"
-        bind:value={size_multiplier}
-      />
-      <label
-        for="label-font-size"
-        title="Adjust the font size of the model name labels (in pixels)"
-        >Label Size
-      </label>
-      <input
-        id="label-font-size"
-        type="range"
-        min="8"
-        max="24"
-        step="1"
-        bind:value={label_font_size}
-      />
-      <label
-        title="Minimum label displacement in pixels before drawing a leader line"
-        for="leader-line-threshold">Leader Line</label
-      >
-      <div class="combined-link-controls">
-        <input
-          id="leader-line-threshold"
-          type="number"
-          min="0"
-          max="100"
-          bind:value={leader_line_threshold}
-          title="Leader line threshold"
-        />
-      </div>
     {/snippet}
 
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
@@ -469,14 +426,6 @@
   div.bleed-1400 :global(.scatter > .legend:has(.legend-item)) {
     left: 10px !important;
     width: calc(100% - 20px) !important;
-  }
-  div.combined-link-controls {
-    display: flex;
-    gap: 0.5em;
-    align-items: center;
-  }
-  div.combined-link-controls input[type='number'] {
-    width: 50px;
   }
   span.selected-label {
     display: block;

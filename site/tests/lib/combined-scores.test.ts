@@ -331,6 +331,14 @@ describe(`calculate_cds`, () => {
     expect(calculate_cds(values, clone_cds_config())).toBeCloseTo(expected, 10)
   })
 
+  it(`penalizes excluded benchmark elements through coverage`, () => {
+    const values = {
+      ...perfect_cds_values,
+      excluded_formula_reasons: { [`He-He`]: `non-finite repulsive wall` },
+    }
+    expect(calculate_cds(values, clone_cds_config())).toBeCloseTo(86 / 87, 10)
+  })
+
   it.each([
     [{ ...halfway_cds_values, tortuosity: undefined }],
     [{ ...halfway_cds_values, pbe_force_mae: Number.NaN }],

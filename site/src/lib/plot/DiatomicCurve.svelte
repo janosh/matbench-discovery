@@ -82,8 +82,12 @@
   )
 </script>
 
-<div {...rest} class="plot {rest.class ?? ``}">
-  <h3 aria-label={header_title} {@attach add_tooltip({ placement: `top` })}>
+<div {...rest} class="diatomic-plot {rest.class ?? ``}">
+  <h3
+    class="diatomic-plot-title"
+    aria-label={header_title}
+    {@attach add_tooltip({ placement: `top` })}
+  >
     {header_text}
   </h3>
   <ScatterPlot
@@ -108,19 +112,3 @@
     {/snippet}
   </ScatterPlot>
 </div>
-
-<style>
-  .plot {
-    /* bump axis titles + tick labels (matterviz default inherits smaller SVG size) */
-    --scatter-font-size: 14px;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-  }
-  h3 {
-    align-self: center;
-    margin: 0 0 -5pt;
-    text-align: center;
-    font-size: 0.9em;
-  }
-</style>

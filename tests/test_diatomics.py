@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 from ase import Atoms
 from ase.calculators.emt import EMT
+from ase.data import atomic_numbers, covalent_radii
 from conftest import import_repo_script
 
 from matbench_discovery.diatomics import (
@@ -181,12 +182,19 @@ def test_trim_curve_to_finite(run_diatomics: ModuleType) -> None:
     }
     assert run_diatomics.trim_curve_to_finite("Cu-Cu", finite_curve) == finite_curve
 
-    # Cu window starts at 0.9 * r_cov ~ 1.19 A; NaN below that gets trimmed
+    # Cu wall scoring starts at 0.8 * r_cov ~ 1.06 A; NaN below that gets trimmed
     deep_overlap_nan = {**finite_curve, "energies": [np.nan, *[1.0] * 29]}
     trimmed = run_diatomics.trim_curve_to_finite("Cu-Cu", deep_overlap_nan)
     assert trimmed is not None
     assert len(trimmed["energies"]) == len(trimmed["distances"]) == 29
     assert trimmed["distances"] == distances[1:]
+
+    wall_r_min = 0.8 * covalent_radii[atomic_numbers["Cu"]]
+    wall_idx = int(np.flatnonzero(np.asarray(distances) >= wall_r_min)[0])
+    wall_nan_energies = [1.0] * 30
+    wall_nan_energies[wall_idx] = np.nan
+    wall_nan = {**finite_curve, "energies": wall_nan_energies}
+    assert run_diatomics.trim_curve_to_finite("Cu-Cu", wall_nan) is None
 
     # non-finite at scored separations (last point = 6 A is inside Cu's window since
     # 3.1 * r_vdw(Cu) > 6 A) drops the whole curve

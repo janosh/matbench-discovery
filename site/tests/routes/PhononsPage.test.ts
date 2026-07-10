@@ -120,7 +120,7 @@ describe(`Phonons Task Page`, () => {
     const rows = assemble_row_data(
       `unique_prototypes`,
       () => true, // model_filter: keep all
-      false, // show_energy_only
+      () => true, // filter_matches: no training/openness/targets filters
     )
     const mace = rows.find((row) => String(row.Model).includes(`MACE-MP-0`))
     // mace-mp-0.yml has κ_SRE 0.471 (and κ_SRME 0.6823) — the column must use κ_SRE

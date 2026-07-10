@@ -94,7 +94,7 @@
   {color_scale}
   bind:active_element
   show_photo={false}
-  missing_color="rgba(255,255,255,0.3)"
+  missing={{ color: `rgba(255,255,255,0.3)` }}
 >
   {#snippet inset()}
     <TableInset>

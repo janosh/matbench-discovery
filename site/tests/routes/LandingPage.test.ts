@@ -183,18 +183,18 @@ describe(`Landing Page`, () => {
     expect(selected_scatter_label()).toContain(`Params`)
     expect(selected_scatter_label()).toContain(`${n_models_on_load} models`)
 
-    // exclude OMat24-trained models via the dataset's `not` checkbox (many default-
+    // exclude OMat24-trained models via the dataset's `exclude` checkbox (many default-
     // visible models train on OMat24, so the row count must drop; the first dataset,
     // MP 2022, would be a no-op since its models are energy-only and already hidden)
     const training_menu = [...document.querySelectorAll(`details.filter-menu`)].find(
       (menu) => menu.querySelector(`summary`)?.textContent?.includes(`Training`),
     )
     if (!training_menu) throw new Error(`Training data filter menu not found`)
-    const omat_row = [...training_menu.querySelectorAll(`.filter-row`)].find(
-      (row) => row.querySelector(`span`)?.textContent?.trim() === `OMat24`,
+    const omat_exclude = training_menu.querySelector<HTMLInputElement>(
+      `input[aria-label="exclude OMat24"]`,
     )
-    if (!omat_row) throw new Error(`OMat24 filter row not found`)
-    omat_row.querySelectorAll<HTMLInputElement>(`input`)[1].click()
+    if (!omat_exclude) throw new Error(`OMat24 exclude checkbox not found`)
+    omat_exclude.click()
     await tick()
 
     const n_filtered = document.querySelectorAll(`tbody tr`).length

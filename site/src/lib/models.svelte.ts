@@ -143,7 +143,7 @@ export const ALL_TRAINING_SETS: string[] = Object.keys(DATASETS).filter((key) =>
   MODELS.some((model) => (model.training_set as string[]).includes(key)),
 )
 
-// table filter (training data + openness + heatmap) pre-wired with the dataset roster
+// table filter (training data + openness + targets + heatmap) with the dataset roster
 export const make_table_filters = (): UrlTableFilters =>
   new UrlTableFilters(ALL_TRAINING_SETS)
 

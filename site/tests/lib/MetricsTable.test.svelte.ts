@@ -11,8 +11,9 @@ import { doc_query, mount } from '../index'
 const header_cells = () => [
   ...document.querySelectorAll<HTMLTableCellElement>(`th:not(.row-num-col)`),
 ]
-// header names with sort indicators stripped (first whitespace-separated token)
-const header_names = () => header_cells().map((th) => th.textContent?.split(` `)[0])
+const header_name = (header: HTMLTableCellElement) =>
+  header.querySelector(`.header-label`)?.textContent?.trim()
+const header_names = () => header_cells().map(header_name)
 
 // expected table row count for the default unique_prototypes discovery set,
 // mirroring MetricsTable's model filters
@@ -24,16 +25,22 @@ const mptrj_only_filters = () => {
 }
 
 const visible_row_count = (
-  { energy = false } = {},
-  extra_filter: (model: ModelData) => boolean = () => true,
+  extra_filter: (model: ModelData) => boolean = make_table_filters().matches,
 ) =>
   MODELS.filter(
     (model) =>
-      (energy || model.targets !== `E`) &&
       typeof model.metrics?.discovery === `object` &&
       model.metrics.discovery.unique_prototypes &&
       extra_filter(model),
   ).length
+
+// table filters with the default require-forces constraint cleared (shows all models
+// incl. energy-only ones)
+const all_targets_filters = () => {
+  const filters = make_table_filters()
+  filters.targets = {}
+  return filters
+}
 
 describe(`MetricsTable`, () => {
   const parse_integer_sort_value = (cell: Element): number | null => {
@@ -55,6 +62,15 @@ describe(`MetricsTable`, () => {
     expect(table).toBeDefined()
     expect(table?.querySelector(`thead`)).toBeDefined()
     expect(table?.querySelector(`tbody`)).toBeDefined()
+    const table_container = doc_query(`.table-container`)
+    expect(table_container.style.getPropertyValue(`--table-odd`)).toContain(`color-mix`)
+    expect(
+      table_container.style.getPropertyValue(`--heatmap-sticky-cell-odd-bg`),
+    ).toContain(`linear-gradient`)
+    expect(table_container.style.getPropertyValue(`--heatmap-row-num-align`)).toBe(`left`)
+    expect(table_container.style.getPropertyValue(`--heatmap-row-num-padding-left`)).toBe(
+      `0`,
+    )
 
     // Check essential columns are present (with sort indicators)
     const header_texts = header_cells().map((h) => h.textContent?.trim())
@@ -166,9 +182,7 @@ describe(`MetricsTable`, () => {
     const col_filter = (_col: Label) => true // show all columns initially
     mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
-    let header_texts = header_cells().map((h) =>
-      h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
-    )
+    let header_texts = header_names()
     expect(header_texts).toStrictEqual(expect.arrayContaining(metadata_labels))
 
     // Create a new instance that hides metadata columns
@@ -181,9 +195,7 @@ describe(`MetricsTable`, () => {
     })
 
     // Check metadata columns are hidden
-    header_texts = header_cells().map((h) =>
-      h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
-    )
+    header_texts = header_names()
 
     // Each metadata column label should be hidden
     for (const col of metadata_labels) {
@@ -217,27 +229,29 @@ describe(`MetricsTable`, () => {
     expect(header_texts).toContain(`Acc`)
   })
 
-  it(`filters energy-only models`, { timeout: 30_000 }, async () => {
-    // First test with energy-only models hidden
-    mount(MetricsTable, {
-      target: document.body,
-      props: { show_energy_only: false },
-    })
-    await tick()
-    const rows_without_energy = document.querySelectorAll(`tbody tr`).length
+  it(
+    `hides energy-only models by default via the targets filter`,
+    {
+      timeout: 30_000,
+    },
+    async () => {
+      // default filters require force prediction, hiding energy-only models
+      mount(MetricsTable, { target: document.body })
+      await tick()
+      const rows_without_energy = document.querySelectorAll(`tbody tr`).length
 
-    // Then test with energy-only models shown
-    document.body.innerHTML = ``
-    mount(MetricsTable, {
-      target: document.body,
-      props: { show_energy_only: true },
-    })
-    await tick()
-    const rows_with_energy = document.querySelectorAll(`tbody tr`).length
+      // clearing the targets filter shows them
+      document.body.innerHTML = ``
+      const show_all = all_targets_filters()
+      mount(MetricsTable, { target: document.body, props: { filters: show_all } })
+      await tick()
+      const rows_with_energy = document.querySelectorAll(`tbody tr`).length
 
-    expect(rows_without_energy).toBe(visible_row_count({ energy: false }))
-    expect(rows_with_energy).toBe(visible_row_count({ energy: true }))
-  })
+      expect(rows_without_energy).toBe(visible_row_count())
+      expect(rows_with_energy).toBe(visible_row_count(show_all.matches))
+      expect(rows_with_energy).toBeGreaterThan(rows_without_energy)
+    },
+  )
 
   it(`filters models based on model_filter prop`, () => {
     // First test: show no models
@@ -275,8 +289,11 @@ describe(`MetricsTable`, () => {
     })
 
     const filtered_rows = document.querySelectorAll(`tbody tr`)
+    const default_matches = make_table_filters().matches
     expect(filtered_rows).toHaveLength(
-      visible_row_count({}, (model) => model.model_name.includes(`CHG`)),
+      visible_row_count(
+        (model) => default_matches(model) && model.model_name.includes(`CHG`),
+      ),
     )
     expect(filtered_rows.length).toBeLessThan(all_rows)
 
@@ -384,8 +401,13 @@ describe(`MetricsTable`, () => {
         if (!sort_header) throw new Error(`${header} column not found`)
 
         const cell_values = () =>
-          [...document.querySelectorAll(`td[data-col="${data_col}"] [data-sort-value]`)]
-            .map(parse_integer_sort_value)
+          [...document.querySelectorAll(`td[data-col="${data_col}"]`)]
+            .map((cell) => {
+              const sortable = cell.querySelector(`[data-sort-value]`)
+              if (sortable) return parse_integer_sort_value(sortable)
+              const timestamp = Date.parse(cell.textContent?.trim() ?? ``)
+              return Number.isNaN(timestamp) ? null : timestamp
+            })
             .filter((val) => val !== null)
 
         sort_header.click()
@@ -461,7 +483,7 @@ describe(`MetricsTable`, () => {
     it.each([
       {
         test_name: `with all models shown`,
-        props: { show_energy_only: true },
+        props: { filters: all_targets_filters() },
       },
       {
         test_name: `with filtered columns`,
@@ -471,7 +493,7 @@ describe(`MetricsTable`, () => {
       },
       {
         test_name: `with an MPtrj-only training filter`,
-        props: { show_energy_only: true, filters: mptrj_only_filters() },
+        props: { filters: mptrj_only_filters() },
       },
     ])(
       `alphabetically sorts by Model name on $test_name header click`,
@@ -501,8 +523,7 @@ describe(`MetricsTable`, () => {
 
         expect(sorted_model_names).toHaveLength(
           visible_row_count(
-            { energy: `show_energy_only` in props && props.show_energy_only },
-            `filters` in props && props.filters ? props.filters.matches : () => true,
+            `filters` in props && props.filters ? props.filters.matches : undefined,
           ),
         )
 
@@ -811,15 +832,18 @@ describe(`MetricsTable`, () => {
     // the structural rank column (#, from show_row_numbers) is excluded by
     // header_cells() and covered by its own test below
     const header_elements = header_cells()
-    const actual_core_columns = header_elements.map((th) =>
-      // Get text content, remove sort indicator (↑/↓) and any trailing spaces
-      (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim(),
-    )
+    const actual_core_columns = header_elements.map(header_name)
 
     // The default visible columns should stay intentionally curated: new default
     // columns must be added to expected_core_columns explicitly. Sorted comparison
     // ignores order but checks exact multiset (incl. duplicate Speed/Slowdown labels).
-    expect(actual_core_columns.toSorted()).toEqual(expected_core_columns.toSorted())
+    const compare_labels = (
+      label_a: string | undefined,
+      label_b: string | undefined,
+    ): number => (label_a ?? ``).localeCompare(label_b ?? ``)
+    expect(actual_core_columns.toSorted(compare_labels)).toEqual(
+      expected_core_columns.toSorted(compare_labels),
+    )
 
     // Header tooltip content is attached to inner labels so HeatmapTable's
     // generic title-based tooltip doesn't flash below before our desired top placement.

@@ -191,7 +191,7 @@ metrics:
     pred_file_url: https://figshare.com/files/66104633
     hardware: NVIDIA H200
     run_time_sec: 788.18
-    pbe_wall_dist_mae: 0.5529
+    pbe_wall_dist_mae: 0.6522
     pbe_energy_mae: 3.294
     pbe_bond_length_error: 0.7709
     pbe_well_depth_error: 1.659

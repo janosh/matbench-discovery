@@ -144,6 +144,21 @@ def test_pbe_reference_energy_metrics() -> None:
     ) == pytest.approx(99.1, abs=1)
 
 
+def test_wall_dist_penalizes_unreached_prediction_threshold() -> None:
+    """A too-soft predicted wall receives the full reference-radius error."""
+    separations = np.array([0.5, 1.0, 1.5, 2.0])
+    reference_energies = np.array([100.0, 25.0, 0.0, 0.0])
+    predicted_energies = np.array([10.0, 5.0, 0.0, 0.0])
+
+    assert calc_pbe_wall_dist_mae(
+        separations,
+        reference_energies,
+        separations,
+        predicted_energies,
+        thresholds_ev=(50,),
+    ) == pytest.approx(5 / 6)
+
+
 def test_pbe_reference_metrics_skip_unbound_refs() -> None:
     """Well-based PBE metrics skip unbound reference curves."""
     seps = np.linspace(1, 5, 20)

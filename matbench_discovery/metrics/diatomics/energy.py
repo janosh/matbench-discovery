@@ -4,6 +4,8 @@ import numpy as np
 from ase.data import atomic_masses, atomic_numbers
 from numpy.typing import ArrayLike
 
+PBE_WALL_ENERGY_THRESHOLDS_EV: tuple[float, ...] = (1, 5, 10, 20, 50, 100)
+
 
 def _validate_diatomic_curve(
     xs: ArrayLike,
@@ -186,17 +188,25 @@ def calc_pbe_wall_dist_mae(
     seps_pred: ArrayLike,
     energy_pred: ArrayLike,
     *,
-    thresholds_ev: tuple[float, ...] = (1.0, 5.0, 10.0),
+    thresholds_ev: tuple[float, ...] = PBE_WALL_ENERGY_THRESHOLDS_EV,
 ) -> float:
-    """Mean absolute repulsive-wall radius error at fixed energies above the well."""
+    """Mean wall-radius error from 1 to 100 eV above the well.
+
+    Thresholds beyond the reference wall are skipped. If the reference reaches a
+    threshold but the prediction does not within the scored range, the missing crossing
+    receives the full reference-radius error instead of being silently dropped.
+    """
     errors = []
     for threshold_ev in thresholds_ev:
         radius_ref = _repulsive_radius_at_threshold(seps_ref, energy_ref, threshold_ev)
+        if not np.isfinite(radius_ref):
+            continue
         radius_pred = _repulsive_radius_at_threshold(
             seps_pred, energy_pred, threshold_ev
         )
-        if np.isfinite(radius_ref) and np.isfinite(radius_pred):
-            errors.append(abs(radius_pred - radius_ref))
+        errors.append(
+            abs(radius_pred - radius_ref) if np.isfinite(radius_pred) else radius_ref
+        )
     return float(np.mean(errors)) if errors else np.nan
 
 

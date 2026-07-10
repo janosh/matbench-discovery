@@ -1,7 +1,7 @@
 <script lang="ts">
-  let { data } = $props()
+  import type { PageData } from './$types'
+
+  let { data }: { data: PageData } = $props()
 </script>
 
-<main>
-  {@html data.changelog?.code}
-</main>
+{@html data.changelog?.code}

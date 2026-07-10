@@ -1,12 +1,12 @@
 <script lang="ts">
   import { arr_to_str, DATASETS, format_date } from '$lib'
   import { format_num, format_relative_time, Icon } from 'matterviz'
-  import type { Dataset } from '$lib/types'
   import pkg from '$site/package.json'
   import { tooltip } from 'svelte-multiselect/attachments'
+  import type { PageData } from './$types'
   import MPtrjTargetDistros from './MPtrjTargetDistros.svelte'
 
-  let { data }: { data: { dataset: Dataset } } = $props()
+  let { data }: { data: PageData } = $props()
   let dataset = $derived(data.dataset)
   const link_props = { target: `_blank`, rel: `noopener noreferrer` }
 

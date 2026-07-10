@@ -21,7 +21,11 @@
   import { Spinner } from 'matterviz/feedback'
   import type { AnyStructure } from 'matterviz/structure'
   import { BinnedScatterPlot } from 'matterviz/plot'
-  import type { BinnedPointPayload, DensePointSeries } from 'matterviz/plot'
+  import type {
+    BinnedOverlaysConfig,
+    BinnedPointPayload,
+    DensePointSeries,
+  } from 'matterviz/plot'
   import { onMount, tick, untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
 
@@ -42,9 +46,19 @@
     formula: string
     n_sites: number
     measure_text: string
-  }
+  } & Record<string, unknown>
   type EnergyParityPayload = BinnedPointPayload<Record<string, unknown>>
   const structure_popup_size = { outer_width: 500, view_width: 460, view_height: 340 }
+  const parity_overlays: BinnedOverlaysConfig = {
+    ref_lines: [
+      {
+        type: `diagonal`,
+        slope: 1,
+        intercept: 0,
+        style: { color: `var(--text-color, currentColor)` },
+      },
+    ],
+  }
   // small gap lets the popup sit over the (data-free) axis-label padding, so it moves
   // into the side gutter as soon as it clears the data area instead of needing a full
   // popup-width of empty space beside the plot
@@ -60,7 +74,7 @@
   let selected_structure = $state<AnyStructure | null>(null)
   let structure_error = $state(``)
   let structure_loading = $state(false)
-  let plot_wrap = $state<HTMLDivElement>()
+  let plot_wrap = $state<HTMLElement>()
   let load_id = 0
   // three.js stack (~MBs) loads only when a structure is first clicked, keeping it
   // out of every page's initial chunk graph
@@ -121,8 +135,6 @@
       error_message = `${model.model_name} has no model key`
       return
     }
-
-    if (parity_model?.model_key !== model_key) clear_selection()
 
     if (base && parity_model?.model_key === model_key) {
       status = `ready`
@@ -195,19 +207,14 @@
     energy_parity_point_data(point.point_id)
 
   function is_energy_parity_point_data(
-    point_data_value: unknown,
-  ): point_data_value is EnergyParityPointData {
-    if (!point_data_value || typeof point_data_value !== `object`) return false
+    value: Record<string, unknown> | undefined,
+  ): value is EnergyParityPointData {
     return (
-      `material_id` in point_data_value &&
-      typeof point_data_value.material_id === `string` &&
-      `formula` in point_data_value &&
-      typeof point_data_value.formula === `string` &&
-      `measure_text` in point_data_value &&
-      typeof point_data_value.measure_text === `string` &&
-      `n_sites` in point_data_value &&
-      typeof point_data_value.n_sites === `number` &&
-      Number.isFinite(point_data_value.n_sites)
+      typeof value?.material_id === `string` &&
+      typeof value.formula === `string` &&
+      typeof value.measure_text === `string` &&
+      typeof value.n_sites === `number` &&
+      Number.isFinite(value.n_sites)
     )
   }
 
@@ -300,6 +307,7 @@ title, so label the section for screen readers instead -->
 <section
   class="energy-parity-plot"
   aria-label="ML vs DFT {energy_label} parity plot"
+  bind:this={plot_wrap}
   {...rest}
 >
   {#if status === `error`}
@@ -314,140 +322,123 @@ title, so label the section for screen readers instead -->
       />
     </div>
   {:else}
-    <div class="plot-wrap" bind:this={plot_wrap}>
-      {#snippet energy_point_label({ point_data }: EnergyParityPayload)}
+    {#snippet energy_point_label({ point_data }: EnergyParityPayload)}
+      {@const label = is_energy_parity_point_data(point_data) ? point_data : null}
+      {#if label}
+        <span class="point-label-id">{label.material_id}</span>
+        {#if label.formula}
+          <br /><span class="point-label-formula"
+            >{@html sanitize_compact_formula(label.formula)}</span
+          >
+        {/if}
+      {/if}
+    {/snippet}
+
+    <BinnedScatterPlot
+      {series}
+      style="height: 520px"
+      x_axis={{ label: x_label, format: `.2f`, range: extent }}
+      y_axis={{ label: y_label, format: `.2f`, range: extent }}
+      density={{
+        color_scale: { type: `log`, scheme: `interpolateMagma` },
+        color_bar: { title: `Density`, class: colorbar_class },
+      }}
+      size_scale={{ radius_range: [2, 18], pick_radius: `auto` }}
+      overlays={parity_overlays}
+      on_point_click={({ point }) => void show_structure(Number(point.point_id))}
+      on_density_zoom={clear_selection}
+      selected_point_id={selected_point?.row_idx ?? null}
+      {point_data}
+      point_labels={{
+        render: energy_point_label,
+        measure_text: ({ point, point_data }: EnergyParityPayload) =>
+          is_energy_parity_point_data(point_data)
+            ? point_data.measure_text
+            : String(point.point_id ?? ``),
+      }}
+    >
+      {#snippet tooltip({ x, y, x_formatted, y_formatted, point_data })}
         {@const label = is_energy_parity_point_data(point_data) ? point_data : null}
+        {@html x_label}: {x_formatted} <small>eV/atom</small><br />
+        {@html y_label}: {y_formatted} <small>eV/atom</small><br />
+        MLFF - DFT error: {format_num(y - x, `+.3~`)} <small>eV/atom</small>
         {#if label}
-          <span class="point-label-id">{label.material_id}</span>
-          {#if label.formula}
-            <br /><span class="point-label-formula"
-              >{@html sanitize_compact_formula(label.formula)}</span
-            >
-          {/if}
+          <br />Points sized by N<sub>atoms</sub>: {format_num(label.n_sites, `.0f`)}
         {/if}
       {/snippet}
 
-      <BinnedScatterPlot
-        {series}
-        style="height: 520px"
-        x_axis={{ label: x_label, format: `.2f`, range: extent }}
-        y_axis={{ label: y_label, format: `.2f`, range: extent }}
-        density={{
-          color_scale: { type: `log`, scheme: `interpolateMagma` },
-          color_bar: { title: `Density`, class: colorbar_class },
-        }}
-        size_scale={{ radius_range: [2, 18], pick_radius: `auto` }}
-        overlays={{
-          // TODO adopt the declarative RefLine form once the next matterviz release
-          // ships BinnedScatterPlot support for it (added 2026-07-04): replace these
-          // hardcoded endpoints with a y=x `{ type: 'diagonal', slope: 1, intercept:
-          // 0 }` (cf. parity_diagonal in fig-helpers.ts) so the diagonal auto-fills
-          // the plot area and stays correct under zoom instead of tracking `extent`
-          ref_lines: [
-            {
-              x1: extent[0],
-              y1: extent[0],
-              x2: extent[1],
-              y2: extent[1],
-              color: `var(--text-color, currentColor)`,
-            },
-          ],
-        }}
-        on_point_click={({ point }) => void show_structure(Number(point.point_id))}
-        on_density_zoom={clear_selection}
-        selected_point_id={selected_point?.row_idx ?? null}
-        {point_data}
-        point_labels={{
-          render: energy_point_label,
-          measure_text: ({ point, point_data }: EnergyParityPayload) =>
-            is_energy_parity_point_data(point_data)
-              ? point_data.measure_text
-              : String(point.point_id ?? ``),
-        }}
+      {#snippet children()}
+        {#if stats && Number.isFinite(stats.mae)}
+          <div class="plot-annotation" style:inset={annotation_inset}>
+            MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br />
+            R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
+          </div>
+        {/if}
+      {/snippet}
+    </BinnedScatterPlot>
+
+    {#if selected_point}
+      {@const point = selected_point}
+      <div
+        class="popup-anchor {popup_placement.side}"
+        style:left="{popup_placement.left}px"
+        style:top="{popup_placement.top}px"
+        style:--structure-popup-gap="{structure_popup_gap}px"
       >
-        {#snippet tooltip({ x, y, x_formatted, y_formatted, point_data })}
-          {@const label = is_energy_parity_point_data(point_data) ? point_data : null}
-          {@html x_label}: {x_formatted} <small>eV/atom</small><br />
-          {@html y_label}: {y_formatted} <small>eV/atom</small><br />
-          MLFF - DFT error: {format_num(y - x, `+.3~`)} <small>eV/atom</small>
-          {#if label}
-            <br />Points sized by N<sub>atoms</sub>: {format_num(label.n_sites, `.0f`)}
-          {/if}
-        {/snippet}
-
-        {#snippet children()}
-          {#if stats && Number.isFinite(stats.mae)}
-            <div class="plot-annotation" style:inset={annotation_inset}>
-              MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br />
-              R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
-            </div>
-          {/if}
-        {/snippet}
-      </BinnedScatterPlot>
-
-      {#if selected_point}
-        {@const point = selected_point}
-        <div
-          class="popup-anchor {popup_placement.side}"
-          style:left="{popup_placement.left}px"
-          style:top="{popup_placement.top}px"
-          style:--structure-popup-gap="{structure_popup_gap}px"
-        >
-          {#if selected_structure && StructurePopup}
-            <StructurePopup
-              structure={selected_structure}
-              place_right={popup_placement.side === `right`}
-              width={structure_popup_size.view_width}
-              height={structure_popup_size.view_height}
-              stats={{ formula: point.formula }}
-              onclose={clear_selection}
-            >
-              {#snippet top_left({ formula_html })}
-                <strong>{point.material_id}</strong>
-                {#if formula_html}
-                  ({@html formula_html})<br />
-                {:else}
-                  <br />
-                {/if}
-                PBE {@html axis_label}: {format_num(point.x, `.3~`)}
-                <small>eV/atom</small><br />
-                {parity_model?.model_label ?? model.model_name}
-                {@html axis_label}:
-                {format_num(point.y, `.3~`)} <small>eV/atom</small><br />
-                MLFF - DFT error: {format_num(point.y - point.x, `+.3~`)}
-                <small>eV/atom</small>
-              {/snippet}
-            </StructurePopup>
-          {:else}
-            <div
-              class="structure-status {popup_placement.side}"
-              role={structure_error ? `alert` : undefined}
-            >
-              {#if structure_loading}
-                <Spinner
-                  text="Loading structure for {energy_label} point..."
-                  style={loading_spinner_style}
-                />
+        {#if selected_structure && StructurePopup}
+          <StructurePopup
+            structure={selected_structure}
+            place_right={popup_placement.side === `right`}
+            width={structure_popup_size.view_width}
+            height={structure_popup_size.view_height}
+            stats={{ formula: point.formula }}
+            onclose={clear_selection}
+          >
+            {#snippet top_left({ formula_html })}
+              <strong>{point.material_id}</strong>
+              {#if formula_html}
+                ({@html formula_html})<br />
               {:else}
-                {structure_error}
+                <br />
               {/if}
-            </div>
-          {/if}
-        </div>
-      {/if}
-    </div>
+              PBE {@html axis_label}: {format_num(point.x, `.3~`)}
+              <small>eV/atom</small><br />
+              {parity_model?.model_label ?? model.model_name}
+              {@html axis_label}:
+              {format_num(point.y, `.3~`)} <small>eV/atom</small><br />
+              MLFF - DFT error: {format_num(point.y - point.x, `+.3~`)}
+              <small>eV/atom</small>
+            {/snippet}
+          </StructurePopup>
+        {:else}
+          <div
+            class="structure-status {popup_placement.side}"
+            role={structure_error ? `alert` : undefined}
+          >
+            {#if structure_loading}
+              <Spinner
+                text="Loading structure for {energy_label} point..."
+                style={loading_spinner_style}
+              />
+            {:else}
+              {structure_error}
+            {/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
   {/if}
 </section>
 
 <style>
-  .plot-wrap {
+  .energy-parity-plot {
     position: relative;
   }
   /* matterviz only sets the tooltip background inline via bg_color, which the binned
      plot omits for per-point tooltips -> give them a readable theme-aware fallback */
   .energy-parity-plot :global(.plot-tooltip) {
     background: var(--tooltip-bg, light-dark(#f5f5f7, #2a2a2e));
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px var(--shadow, rgba(0, 0, 0, 0.15));
   }
   .popup-anchor {
     height: 0;
@@ -457,10 +448,9 @@ title, so label the section for screen readers instead -->
   }
   .structure-status {
     background: var(--surface-bg, rgba(255, 255, 255, 0.95));
-    border: 1px solid
-      var(--border-color, color-mix(in srgb, currentColor 20%, transparent));
+    border: 1px solid var(--border);
     border-radius: 4px;
-    box-shadow: 0 16px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 16px 24px var(--shadow, rgba(0, 0, 0, 0.15));
     min-width: 220px;
     padding: 0.75em 1em;
     position: absolute;
