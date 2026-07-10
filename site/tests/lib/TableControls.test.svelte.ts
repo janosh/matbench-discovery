@@ -38,14 +38,12 @@ describe(`TableControls`, () => {
     await tick()
 
     const dropdown = summary_for(`Training data`).closest(`details`)
-    const rows = dropdown?.querySelectorAll(`.filter-row`) ?? []
-    expect(rows).toHaveLength(ALL_TRAINING_SETS.length)
+    const boxes = dropdown?.querySelectorAll<HTMLInputElement>(`input`) ?? []
+    expect(boxes).toHaveLength(2 * ALL_TRAINING_SETS.length)
 
     // check `require` for the first dataset: require-mode filter becomes active,
     // its checkbox checks, and the summary shows a count badge
-    const first_row = rows[0]
-    const [require_box, exclude_box] =
-      first_row.querySelectorAll<HTMLInputElement>(`input`)
+    const [require_box, exclude_box] = boxes
     require_box.click()
     await tick()
     expect(filters.training[ALL_TRAINING_SETS[0]]).toBe(`require`)

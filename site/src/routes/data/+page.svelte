@@ -236,6 +236,5 @@
     gap: 1ex;
     place-content: center;
     align-items: start;
-    justify-items: center;
   }
 </style>

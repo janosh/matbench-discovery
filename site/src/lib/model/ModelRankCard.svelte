@@ -59,8 +59,10 @@
     gap: 3pt 1.4em;
     margin: 1em auto;
   }
-  .rank-card-label {
+  :is(.rank-card-label, .metric-label) {
     font-size: 0.9em;
+  }
+  :is(.rank-card-label, .metric-label, a small) {
     color: var(--text-secondary);
   }
   a {
@@ -68,16 +70,8 @@
     align-items: baseline;
     gap: 4pt;
     color: var(--text-color);
-    text-decoration: none;
   }
   a:hover .metric-label {
     text-decoration: underline;
-  }
-  .metric-label {
-    font-size: 0.9em;
-    color: var(--text-secondary);
-  }
-  a small {
-    color: var(--text-secondary);
   }
 </style>

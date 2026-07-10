@@ -457,8 +457,7 @@ title, so label the section for screen readers instead -->
   }
   .structure-status {
     background: var(--surface-bg, rgba(255, 255, 255, 0.95));
-    border: 1px solid
-      var(--border-color, color-mix(in srgb, currentColor 20%, transparent));
+    border: 1px solid var(--border);
     border-radius: 4px;
     box-shadow: 0 16px 24px var(--shadow, rgba(0, 0, 0, 0.15));
     min-width: 220px;

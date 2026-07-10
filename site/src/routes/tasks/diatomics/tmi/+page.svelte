@@ -31,17 +31,11 @@
   function series_for(formula: string) {
     return Object.entries(magmom_curves[formula] ?? {}).flatMap(([functional, curve]) =>
       [0, 1].map((atom_idx) => {
-        const points = curve.distances.flatMap((distance, pt_idx) => {
-          const moments = curve.magmoms[pt_idx]
-          if (!moments) return []
-          return [
-            {
-              distance,
-              magmom: moments[atom_idx],
-              spin_candidate: curve.spin_candidates[pt_idx],
-            },
-          ]
-        })
+        const points = curve.distances.map((distance, point_idx) => ({
+          distance,
+          magmom: curve.magmoms[point_idx]?.[atom_idx] ?? Number.NaN,
+          spin_candidate: curve.spin_candidates[point_idx],
+        }))
         const color = xc_colors[functional] ?? `gray`
         return {
           id: `${formula}-${functional}-atom${atom_idx + 1}`,
@@ -97,43 +91,49 @@
   {/each}
 </div>
 
-<div class="grid">
+<div class="diatomics-grid">
   {#each formulas as formula (formula)}
     {@const element_symbol = formula.split(`-`, 1)[0] as ChemicalElement[`symbol`]}
     {@const element = element_by_symbol.get(element_symbol)}
-    <div class="plot-shell" {@attach observe_plot(formula)}>
+    <div
+      class="diatomic-plot-shell"
+      class:diatomic-plot={visible_plots.has(formula)}
+      class:diatomic-plot-placeholder={!visible_plots.has(formula)}
+      {@attach observe_plot(formula)}
+    >
       {#if visible_plots.has(formula)}
-        <div class="plot">
-          <h3 title={element ? `${element.name} (Z=${element.number})` : formula}>
-            {element ? `${element.number} ${formula}` : formula}
-          </h3>
-          <ScatterPlot
-            series={series_for(formula)}
-            x_axis={{
-              label: `Distance (Å)`,
-              format: `.1f`,
-              range: [0.2, 6],
-              label_shift: { y: -30 },
-            }}
-            y_axis={{ label: `Magmom (μB)`, format: `.1f` }}
-            legend={null}
-            point_tween={{ duration: 0 }}
-            line_tween={{ duration: 0 }}
-          >
-            {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-              <strong>{metadata?.functional} atom {metadata?.atom_idx}</strong><br />
-              Distance = {x_formatted} Å<br />
-              Magmom = {y_formatted} μB<br />
-              {#if metadata?.spin_candidate != null}
-                Spin candidate = {metadata.spin_candidate === `afm`
-                  ? `AFM`
-                  : `NUPDOWN=${metadata.spin_candidate}`}
-              {/if}
-            {/snippet}
-          </ScatterPlot>
-        </div>
+        <h2
+          class="diatomic-plot-title toc-exclude"
+          title={element ? `${element.name} (Z=${element.number})` : formula}
+        >
+          {element ? `${element.number} ${formula}` : formula}
+        </h2>
+        <ScatterPlot
+          series={series_for(formula)}
+          x_axis={{
+            label: `Distance (Å)`,
+            format: `.1f`,
+            range: [0.2, 6],
+            label_shift: { y: -30 },
+          }}
+          y_axis={{ label: `Magmom (μB)`, format: `.1f` }}
+          legend={null}
+          point_tween={{ duration: 0 }}
+          line_tween={{ duration: 0 }}
+        >
+          {#snippet tooltip({ x_formatted, y_formatted, metadata })}
+            <strong>{metadata?.functional} atom {metadata?.atom_idx}</strong><br />
+            Distance = {x_formatted} Å<br />
+            Magmom = {y_formatted} μB<br />
+            {#if metadata?.spin_candidate != null}
+              Spin candidate = {metadata.spin_candidate === `afm`
+                ? `AFM`
+                : `NUPDOWN=${metadata.spin_candidate}`}
+            {/if}
+          {/snippet}
+        </ScatterPlot>
       {:else}
-        <div class="plot-placeholder"><h3>{formula}</h3></div>
+        <h2 class="diatomic-plot-title toc-exclude">{formula}</h2>
       {/if}
     </div>
   {/each}
@@ -156,31 +156,7 @@
     height: 0.35em;
     border-radius: 2px;
   }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
-    gap: 55pt 15pt;
-  }
-  .plot-shell,
-  .plot-placeholder {
-    min-height: 300px;
-  }
-  .plot {
-    --scatter-font-size: 14px;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
+  .diatomic-plot {
     height: 300px;
-  }
-  .plot-placeholder {
-    display: grid;
-    place-items: start center;
-    color: var(--text-muted, #777);
-  }
-  h3 {
-    align-self: center;
-    margin: 0 0 -5pt;
-    text-align: center;
-    font-size: 0.9em;
   }
 </style>

@@ -373,7 +373,7 @@ lives in MdNote and also renders on the /tasks/md page -->
     margin-block: -1.2em 1em;
     display: flex;
     align-items: center;
-    place-content: center;
+    justify-content: center;
     gap: 7pt;
   }
   h1 img {
@@ -387,35 +387,32 @@ lives in MdNote and also renders on the /tasks/md page -->
     display: grid;
     gap: 1ex;
   }
-  div.toggle-row {
+  :is(.toggle-row, .downloads) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
+  }
+  .toggle-row {
     gap: 8pt;
     font-size: smaller;
   }
-  div.downloads {
-    display: flex;
-    flex-wrap: wrap;
+  .downloads {
     gap: 1ex;
-    justify-content: center;
     margin-block: 1ex;
-    align-items: center;
   }
-  div.downloads .download-btn {
+  .downloads .download-btn {
     padding: 1pt 6pt;
     font: inherit;
   }
-  div.export-error {
+  .export-error {
     color: #ff6b6b;
-    margin-top: 0.5em;
+    margin-block: 0.5em 1em;
     flex-basis: 100%;
     background-color: color-mix(in oklab, #ff6b6b 10%, transparent);
     padding: 1em;
     border-radius: 4px;
-    border-left: 4px solid #ff6b6b;
-    margin-bottom: 1em;
+    border-inline-start: 4px solid #ff6b6b;
   }
   /* Caption Radar Container Styles */
   figcaption.caption-radar-container {
@@ -424,9 +421,5 @@ lives in MdNote and also renders on the /tasks/md page -->
     align-items: start;
     gap: 1em;
     font-size: 0.9em;
-    background-color: transparent;
-  }
-  figure#metrics-table :global(:is(sub, sup)) {
-    font-size: 0.7em;
   }
 </style>

@@ -397,6 +397,53 @@ kbd {
   padding-inline: max(var(--margin), calc(50vw - 1400px / 2));
 }
 
+/* Shared task-page intro with a flexible note and fixed-width score chart. */
+.task-intro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em 2em;
+  align-items: center;
+}
+.task-intro > div {
+  flex: 1 1 30em;
+}
+.task-weights {
+  flex: 0 1 22em;
+  margin-inline: auto;
+}
+.task-weights figcaption {
+  margin-block-start: 1em;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+/* Shared lazy-rendered grid for the diatomics task and spin-state detail page. */
+.diatomics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: 55pt 15pt;
+}
+.diatomic-plot-shell {
+  min-height: var(--plot-height, 300px);
+}
+.diatomic-plot-placeholder {
+  display: grid;
+  place-items: start center;
+  color: var(--text-muted);
+}
+.diatomic-plot {
+  --scatter-font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+.diatomic-plot-title {
+  align-self: center;
+  margin: 0 0 -5pt;
+  text-align: center;
+  font-size: 0.9em;
+}
+
 /* In-plot metric annotation, bottom-right corner (energy/kappa parity plots) */
 .plot-annotation {
   position: absolute;

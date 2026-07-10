@@ -2,6 +2,4 @@
   let { data } = $props()
 </script>
 
-<main>
-  {@html data.changelog?.code}
-</main>
+{@html data.changelog?.code}

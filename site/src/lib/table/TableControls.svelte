@@ -105,22 +105,19 @@
         <em>require</em> = model's training set must include this dataset,
         <em>exclude</em> = hide models trained on it
       </span>
-      <span></span>
-      {#each train_modes as mode (mode)}
-        <span class="col-head">{mode}</span>
+      {#each train_modes as mode, mode_idx (mode)}
+        <span class="col-head" style:grid-column={mode_idx + 2}>{mode}</span>
       {/each}
       {#each filters.training_sets as dataset_key (dataset_key)}
-        <div class="filter-row">
-          <span>{dataset_key} ({training_counts[dataset_key] ?? 0})</span>
-          {#each train_modes as mode (mode)}
-            <input
-              type="checkbox"
-              aria-label="{mode} {dataset_key}"
-              checked={filters.training[dataset_key] === mode}
-              onchange={() => filters.set_training(dataset_key, mode)}
-            />
-          {/each}
-        </div>
+        <span>{dataset_key} ({training_counts[dataset_key] ?? 0})</span>
+        {#each train_modes as mode (mode)}
+          <input
+            type="checkbox"
+            aria-label="{mode} {dataset_key}"
+            checked={filters.training[dataset_key] === mode}
+            onchange={() => filters.set_training(dataset_key, mode)}
+          />
+        {/each}
       {/each}
     </div>
   </details>
@@ -160,22 +157,19 @@
         Every model predicts energy (E). <em>require</em>/<em>exclude</em> filter by the other
         predicted outputs; forces are required by default (hides energy-only models)
       </span>
-      <span></span>
-      {#each train_modes as mode (mode)}
-        <span class="col-head">{mode}</span>
+      {#each train_modes as mode, mode_idx (mode)}
+        <span class="col-head" style:grid-column={mode_idx + 2}>{mode}</span>
       {/each}
       {#each Object.entries(TARGET_OUTPUTS) as [key, label] (key)}
-        <div class="filter-row">
-          <span>{label} ({key}) ({target_counts[key] ?? 0})</span>
-          {#each train_modes as mode (mode)}
-            <input
-              type="checkbox"
-              aria-label="{mode} {label}"
-              checked={filters.targets[key as TargetOutput] === mode}
-              onchange={() => filters.set_target(key as TargetOutput, mode)}
-            />
-          {/each}
-        </div>
+        <span>{label} ({key}) ({target_counts[key] ?? 0})</span>
+        {#each train_modes as mode (mode)}
+          <input
+            type="checkbox"
+            aria-label="{mode} {label}"
+            checked={filters.targets[key as TargetOutput] === mode}
+            onchange={() => filters.set_target(key as TargetOutput, mode)}
+          />
+        {/each}
       {/each}
       <span class="fs-mode">
         forces/stress via
@@ -259,7 +253,7 @@
 </div>
 
 <style>
-  div.table-controls {
+  .table-controls {
     display: inline-flex;
     flex-wrap: wrap;
     justify-content: end;
@@ -300,9 +294,7 @@
     text-wrap: balance;
     margin-bottom: 1pt;
   }
-  /* training-data panel: 3-column grid (dataset | require | exclude) with shared
-  column headers; per-dataset .filter-row wrappers use display: contents so their
-  cells participate in the grid while tests can still query rows */
+  /* training-data panel: 3-column grid (dataset | require | exclude) */
   .train-grid {
     grid-template-columns: auto repeat(2, min-content);
     gap: 2pt 8pt;
@@ -316,9 +308,6 @@
     min-width: 100%;
     text-wrap: wrap;
   }
-  .train-grid .filter-row {
-    display: contents;
-  }
   .train-grid :is(.col-head, input) {
     justify-self: center;
   }
@@ -329,14 +318,16 @@
   .train-grid input {
     margin: 0;
   }
-  /* label left + vertically centered, radio options stacked on the right (mirrors the
-  label-left/inputs-right layout of the require/exclude rows above) */
-  .train-grid .fs-mode {
-    grid-column: 1 / -1;
+  :is(.fs-mode, .filter-row) {
     display: flex;
     gap: 1em;
     align-items: center;
     justify-content: space-between;
+  }
+  /* label left + vertically centered, radio options stacked on the right (mirrors the
+  label-left/inputs-right layout of the require/exclude rows above) */
+  .train-grid .fs-mode {
+    grid-column: 1 / -1;
     margin-top: 1pt;
   }
   .fs-mode-options {
@@ -348,21 +339,9 @@
     display: flex;
     gap: 3pt;
     align-items: center;
+  }
+  .fs-mode-options label {
     justify-content: end;
-  }
-  .filter-row {
-    display: flex;
-    gap: 1em;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .filter-row > span:first-child {
-    margin-right: auto;
-  }
-  .filter-row label {
-    display: flex;
-    gap: 3pt;
-    align-items: center;
   }
   button.clear-filters {
     display: flex;

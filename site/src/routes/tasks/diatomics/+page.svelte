@@ -243,11 +243,11 @@
 
 <h1>Diatomics</h1>
 
-<div class="intro">
+<div class="task-intro">
   <!-- wrapper div: the markdown renders multiple top-level elements which would
   otherwise each become their own flex item -->
   <div><DiatomicsNote /></div>
-  <figure class="cds-weights">
+  <figure class="task-weights">
     <RadarChart
       size={260}
       config={CDS_CONFIG}
@@ -329,9 +329,13 @@
   <ModelSelect options={selectable_options} bind:selected={model_selection.selected} />
 </div>
 
-<div class="grid" style="--plot-height: {clamped_plot_height}px">
+<div class="diatomics-grid" style="--plot-height: {clamped_plot_height}px">
   {#each diatomics_to_render as formula (formula)}
-    <div class="plot-shell" {@attach observe_plot(formula)}>
+    <div
+      class="diatomic-plot-shell"
+      class:diatomic-plot-placeholder={!visible_diatomics.has(formula)}
+      {@attach observe_plot(formula)}
+    >
       {#if visible_diatomics.has(formula)}
         <DiatomicCurve
           {formula}
@@ -339,9 +343,7 @@
           style="height: var(--plot-height)"
         />
       {:else}
-        <div class="plot-placeholder">
-          <h3>{formula}</h3>
-        </div>
+        <h3>{formula}</h3>
       {/if}
     </div>
   {/each}
@@ -351,39 +353,8 @@
   h1 {
     margin: 0;
   }
-  .intro {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1em 2em;
-    align-items: center;
+  .task-intro {
     margin-bottom: 1em;
-  }
-  /* markdown intro takes remaining width, chart column keeps its natural size */
-  .intro > div {
-    flex: 1 1 30em;
-  }
-  .cds-weights {
-    flex: 0 1 22em;
-    margin: 0 auto;
-  }
-  .cds-weights figcaption {
-    margin-top: 1em;
-    font-size: 0.85em;
-    color: var(--text-muted, inherit);
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
-    gap: 55pt 15pt;
-  }
-  .plot-shell,
-  .plot-placeholder {
-    min-height: var(--plot-height, 300px);
-  }
-  .plot-placeholder {
-    display: grid;
-    place-items: start center;
-    color: var(--text-muted, #777);
   }
   .controls {
     display: flex;
@@ -411,11 +382,9 @@
   }
   button {
     padding: 0.3em 0.6em;
-    border: none;
     border-radius: 4px;
     background: color-mix(in srgb, var(--model-color, currentColor) 12%, transparent);
     color: var(--text-color, currentColor);
-    cursor: pointer;
     font-weight: 500;
   }
   button.selected {

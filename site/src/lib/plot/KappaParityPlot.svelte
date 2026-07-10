@@ -289,15 +289,14 @@
   .plot-note {
     margin: 0.4em 0 0;
     text-align: center;
-    color: var(--muted-text-color, color-mix(in srgb, currentColor 70%, transparent));
+    color: var(--text-muted);
   }
   .detail-panel {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 21.25rem), 1fr));
     column-gap: 1em;
-    margin-top: 1em;
-    border: 1px solid
-      var(--border-color, color-mix(in srgb, currentColor 20%, transparent));
+    margin-block-start: 1em;
+    border: 1px solid var(--border);
     border-radius: 4px;
     overflow: hidden;
   }
@@ -308,25 +307,20 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.2em 1em;
-    background: var(--nav-bg, color-mix(in srgb, currentColor 6%, transparent));
+    background: var(--nav-bg);
   }
   .detail-panel header button {
-    width: 1em;
-    height: 1em;
+    inline-size: 1em;
+    block-size: 1em;
     background: transparent;
-    transform: translate(0, 2pt);
+    translate: 0 2pt;
   }
   .detail-panel header button :global(svg) {
     display: block;
-    height: 1em;
-    width: 1em;
+    inline-size: 1em;
+    block-size: 1em;
   }
   .detail-panel header button:hover {
     color: var(--link-color);
-  }
-  @media (max-width: 700px) {
-    .detail-panel {
-      grid-template-columns: 1fr;
-    }
   }
 </style>

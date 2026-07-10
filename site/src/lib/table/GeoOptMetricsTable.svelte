@@ -104,8 +104,6 @@
 >
   {#snippet controls()}
     <!-- z-index > 2 to sit above sticky table headers (z-index: 2) -->
-    <div style="position: relative; z-index: 5">
-      <TableControls bind:columns {filters} />
-    </div>
+    <TableControls bind:columns {filters} style="position: relative; z-index: 5" />
   {/snippet}
 </HeatmapTable>

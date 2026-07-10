@@ -57,7 +57,6 @@
     padding: 4px 8px;
     border: 1px solid var(--border);
     background: transparent;
-    cursor: pointer;
   }
   .selection-toggle button:hover {
     background: var(--nav-bg);

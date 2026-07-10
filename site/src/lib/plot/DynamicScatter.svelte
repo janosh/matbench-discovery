@@ -399,16 +399,14 @@
         title="Minimum label displacement in pixels before drawing a leader line"
         for="leader-line-threshold">Leader Line</label
       >
-      <div class="combined-link-controls">
-        <input
-          id="leader-line-threshold"
-          type="number"
-          min="0"
-          max="100"
-          bind:value={leader_line_threshold}
-          title="Leader line threshold"
-        />
-      </div>
+      <input
+        id="leader-line-threshold"
+        type="number"
+        min="0"
+        max="100"
+        bind:value={leader_line_threshold}
+        title="Leader line threshold"
+      />
     {/snippet}
 
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
@@ -470,12 +468,7 @@
     left: 10px !important;
     width: calc(100% - 20px) !important;
   }
-  div.combined-link-controls {
-    display: flex;
-    gap: 0.5em;
-    align-items: center;
-  }
-  div.combined-link-controls input[type='number'] {
+  #leader-line-threshold {
     width: 50px;
   }
   span.selected-label {
