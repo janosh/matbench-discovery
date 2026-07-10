@@ -177,21 +177,23 @@ metrics:
     pred_file_url: https://figshare.com/files/66313844
     hardware: NVIDIA GeForce RTX 4090
     run_time_sec: 4505.61
-    pbe_wall_dist_mae: 0.3116
-    pbe_energy_mae: 3.913
-    pbe_bond_length_error: 0.7143
-    pbe_well_depth_error: 0.8372
-    pbe_vib_freq_error: 99.39
+    pbe_wall_dist_mae: 0.3036
+    pbe_energy_mae: 3.918
+    pbe_bond_length_error: 0.6949
+    pbe_well_depth_error: 0.773
+    pbe_vib_freq_error: 82.58
     tortuosity: 1.335
     energy_diff_flips: 3.805
     energy_jump: 2.718
     force_flips: 3.586
     force_total_variation: 299.6
     force_jump: 70.17
-    pbe_force_mae: 2.299
+    pbe_force_mae: 2.312
   md:
     pred_file: models/tace/tece-oam-rra-1.0/2026-07-05-tece_oam_rra_1_0-md-metrics.csv.gz
     pred_file_url: https://figshare.com/files/66323729
+    hardware: NVIDIA H200
+    run_time_sec: 401724.73 # s
     energy_rmse: 0.4353 # meV/atom
     force_rmse: 42.3737 # meV/Å
     rdf_error: 3.1337 # %

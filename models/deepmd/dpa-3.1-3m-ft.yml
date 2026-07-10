@@ -191,6 +191,8 @@ metrics:
       missing_preds: 0 # count
   md:
     pred_file: models/deepmd/dpa-3.1-3m-ft/2026-06-28-dpa_3_1_3m_ft-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 93116.24 # s
     energy_rmse: 0.7376 # meV/atom
     force_rmse: 68.9079 # meV/Å
     rdf_error: 3.5632 # %
@@ -206,15 +208,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104588
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 671.31
-    pbe_wall_dist_mae: 0.05908
-    pbe_energy_mae: 1.197
-    pbe_bond_length_error: 0.1919
-    pbe_well_depth_error: 0.4265
-    pbe_vib_freq_error: 59.03
+    pbe_wall_dist_mae: 0.2577
+    pbe_energy_mae: 1.123
+    pbe_bond_length_error: 0.1827
+    pbe_well_depth_error: 0.3984
+    pbe_vib_freq_error: 51.83
     tortuosity: 1.77
     energy_diff_flips: 2.471
     energy_jump: 2.099
     force_flips: 2.839
     force_total_variation: 306.5
     force_jump: 269.7
-    pbe_force_mae: 2.387
+    pbe_force_mae: 2.367

@@ -1,3 +1,4 @@
 # exclude generated plot files when calculating repo language statistics on GitHub
-**/figs/**/* linguist-generated
-data/**/*.svelte linguist-generated
+site/src/figs/**/* linguist-generated
+site/src/app.css linguist-generated
+paper/references.bib linguist-generated

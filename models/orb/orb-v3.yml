@@ -176,6 +176,8 @@ metrics:
       missing_preds: 0 # count
   md:
     pred_file: models/orb/orb-v3/2026-06-28-orb_v3-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 16872.77 # s
     energy_rmse: 0.7329 # meV/atom
     force_rmse: 73.628 # meV/Å
     rdf_error: 3.6861 # %
@@ -191,15 +193,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104654
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 139.85
-    pbe_wall_dist_mae: 0.1164
-    pbe_energy_mae: 1.106
-    pbe_bond_length_error: 0.4821
-    pbe_well_depth_error: 1.167
-    pbe_vib_freq_error: 75.76
+    pbe_wall_dist_mae: 0.1456
+    pbe_energy_mae: 1.128
+    pbe_bond_length_error: 0.4747
+    pbe_well_depth_error: 1.096
+    pbe_vib_freq_error: 64.63
     tortuosity: 1.015
     energy_diff_flips: 2.299
     energy_jump: 0.1381
     force_flips: 2.276
     force_total_variation: 221.0
     force_jump: 37.21
-    pbe_force_mae: 1.371
+    pbe_force_mae: 1.376

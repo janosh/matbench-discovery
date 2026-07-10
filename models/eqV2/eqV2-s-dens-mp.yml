@@ -185,6 +185,8 @@ metrics:
       missing_preds: 309 # count
   md:
     pred_file: models/eqV2/eqV2-s-dens-mp/2026-06-28-eqv2_s_dens_mp-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 93184.12 # s
     energy_rmse: 6.0618 # meV/atom
     force_rmse: 110.1912 # meV/Å
     rdf_error: 5.8936 # %
@@ -200,15 +202,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104591
     hardware: NVIDIA H200
     run_time_sec: 435.9
-    pbe_wall_dist_mae: 0.9433
-    pbe_energy_mae: 2.998
-    pbe_bond_length_error: 1.048
-    pbe_well_depth_error: 1.219
-    pbe_vib_freq_error: 292.0
+    pbe_wall_dist_mae: 1.262
+    pbe_energy_mae: 2.959
+    pbe_bond_length_error: 1.038
+    pbe_well_depth_error: 1.179
+    pbe_vib_freq_error: 294.7
     tortuosity: 2.99
     energy_diff_flips: 11.95
     energy_jump: 8.205
     force_flips: 4.54
     force_total_variation: 176.1
     force_jump: 14.08
-    pbe_force_mae: 2.203
+    pbe_force_mae: 2.217

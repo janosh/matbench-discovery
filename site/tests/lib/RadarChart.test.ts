@@ -1,7 +1,12 @@
 import { MODELS } from '$lib'
 import RadarChart from '$lib/plot/RadarChart.svelte'
 import app_css from '../../src/app.css?raw'
-import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
+import {
+  CPS_CONFIG,
+  DEFAULT_CPS_CONFIG,
+  CDS_CONFIG,
+  DEFAULT_CDS_CONFIG,
+} from '$lib/combined-scores.svelte'
 import { ALL_METRICS } from '$lib/labels'
 import { update_models_cps } from '$lib/models.svelte'
 import { format_num } from 'matterviz'
@@ -63,17 +68,21 @@ describe(`RadarChart`, () => {
   it(`resets weights when reset button is clicked`, () => {
     mount(RadarChart, { target: document.body })
 
-    // Modify weights to non-default values
-    CPS_CONFIG.F1.weight = 0.6
-    CPS_CONFIG.κ_SRME.weight = 0.3
-    CPS_CONFIG.RMSD.weight = 0.1
+    // The reset control stays hidden until the user moves the knob.
+    expect(document.querySelector(`.reset-button`)).toBeNull()
+    doc_query<SVGSVGElement>(`svg[aria-label^="Radar chart"]`).dispatchEvent(
+      new MouseEvent(`click`, { bubbles: true, clientX: 100, clientY: 100 }),
+    )
+    flushSync()
 
-    // Find and click the reset button
     const reset_button = doc_query<HTMLButtonElement>(`.reset-button`)
-    expect(reset_button.textContent?.trim()).toBe(`Reset`)
-    expect(reset_button.title).toBe(`Reset to default weights`)
+    expect(reset_button.getAttribute(`aria-label`)).toBe(`Reset to default weights`)
+    expect(reset_button.querySelector(`svg`)).toBeInstanceOf(SVGSVGElement)
+    expect(reset_button.parentElement?.classList.contains(`chart-title`)).toBe(true)
 
+    reset_button.focus()
     reset_button.click()
+    flushSync()
 
     // Check that weights were reset to default values
     expect(CPS_CONFIG.F1.weight).toBe(DEFAULT_CPS_CONFIG.F1.weight)
@@ -82,6 +91,8 @@ describe(`RadarChart`, () => {
 
     // Check that update_models_cps was called
     expect(update_models_cps).toHaveBeenCalledWith(MODELS, CPS_CONFIG)
+    expect(document.querySelector(`.reset-button`)).toBeNull()
+    expect(document.activeElement).toBe(doc_query(`.metric-name`))
   })
 
   it(`displays correct weight percentages`, () => {
@@ -198,6 +209,101 @@ describe(`RadarChart`, () => {
     )
     flushSync()
     expect(read()).not.toEqual(dropped)
+  })
+
+  it(`supports 4-corner configs: weights stay non-negative and sum to 1 for clicks inside and outside the polygon`, () => {
+    mount(RadarChart, {
+      target: document.body,
+      props: {
+        config: CDS_CONFIG,
+        default_config: DEFAULT_CDS_CONFIG,
+        title_label: ALL_METRICS.diatomics_combined_score,
+        on_change: () => {},
+      },
+    })
+    flushSync()
+    const svg = doc_query<SVGSVGElement>(`svg[aria-label^="Radar chart"]`)
+    const click_at = (x: number, y: number) => {
+      svg.dispatchEvent(
+        new MouseEvent(`click`, {
+          bubbles: true,
+          cancelable: true,
+          clientX: x,
+          clientY: y,
+        }),
+      )
+      flushSync()
+      return Object.values(CDS_CONFIG).map(({ weight }) => weight)
+    }
+
+    // one axis line + label per pillar
+    expect(svg.querySelectorAll(`line`)).toHaveLength(4)
+    expect(svg.querySelectorAll(`foreignObject`)).toHaveLength(4)
+
+    // interior click, off-center + outside-polygon click (must clamp to boundary):
+    // Wachspress coordinates guarantee weights >= 0 summing to 1 either way
+    for (const [x, y] of [
+      [130, 80],
+      [2, 3],
+    ]) {
+      const weights = click_at(x, y)
+      expect(weights.every((weight) => weight >= 0)).toBe(true)
+      expect(weights.reduce((sum, weight) => sum + weight, 0)).toBeCloseTo(1, 10)
+    }
+
+    const corner_0_offset = 80 * Math.SQRT1_2
+
+    // corner-adjacent click: the nearest pillar dominates (≈156.6 for size 200)
+    const corner = 100 + corner_0_offset
+    const [first_pillar, ...rest] = click_at(corner, corner)
+    expect(first_pillar).toBeGreaterThan(0.9)
+    expect(Math.max(...rest)).toBeLessThan(0.1)
+
+    // the reset/default knob position must round-trip: DEFAULT_CDS_CONFIG weights
+    // are canonical (bilinear) coordinates of the point 1/3 of the way to the
+    // accuracy corner, so clicking exactly there must reproduce the defaults -
+    // guards against defaults the knob can't express (which would make the reset
+    // knob position visually disagree with the displayed percentages). Last click,
+    // so it doubles as the shared-module-state restore for other tests
+    const defaults = Object.values(DEFAULT_CDS_CONFIG).map(({ weight }) => weight)
+    const reset_pos = 100 + corner_0_offset / 3
+    for (const [idx, weight] of click_at(reset_pos, reset_pos).entries()) {
+      expect(weight).toBeCloseTo(defaults[idx], 6)
+    }
+  })
+
+  it(`shows the reset button for non-default weights even when the knob lands on the default position`, () => {
+    // 50/0/50/0 on opposite corners of a 4-corner chart has its weighted centroid at
+    // the polygon center - for these configs the weights->point map is many-to-one,
+    // so reset-button visibility must derive from the weights, not knob geometry
+    for (const [key, pillar] of Object.entries(CDS_CONFIG)) {
+      pillar.weight = [`accuracy`, `speed`].includes(key) ? 0.5 : 0
+    }
+    try {
+      mount(RadarChart, {
+        target: document.body,
+        props: {
+          config: CDS_CONFIG,
+          default_config: DEFAULT_CDS_CONFIG,
+          title_label: ALL_METRICS.diatomics_combined_score,
+          on_change: () => {},
+        },
+      })
+      flushSync()
+
+      doc_query<HTMLButtonElement>(`.reset-button`).click()
+      flushSync()
+
+      expect(Object.values(CDS_CONFIG).map(({ weight }) => weight)).toEqual(
+        Object.values(DEFAULT_CDS_CONFIG).map(({ weight }) => weight),
+      )
+      expect(document.querySelector(`.reset-button`)).toBeNull()
+    } finally {
+      // restore shared module state for other tests even if assertions throw
+      for (const [key, pillar] of Object.entries(DEFAULT_CDS_CONFIG)) {
+        CDS_CONFIG[key as keyof typeof CDS_CONFIG].weight = pillar.weight
+      }
+    }
   })
 
   it(`disables scroll anchoring so adjusting CPS weights can't jump the page`, () => {

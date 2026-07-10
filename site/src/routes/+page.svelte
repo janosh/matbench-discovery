@@ -1,12 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state'
   import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
-  import {
-    DynamicScatter,
-    GitHubActivityScatter,
-    RadarChart,
-    SotaTimeline,
-  } from '$lib/plot'
+  import { DynamicScatter, GitHubActivityScatter, RadarChart } from '$lib/plot'
   import {
     ALL_METRICS,
     DIATOMICS_METRICS,
@@ -16,13 +11,13 @@
     MD_METRICS,
     METADATA_COLS,
   } from '$lib/labels'
-  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
-  import { make_combined_filter } from '$lib/metrics'
-  import { find_best_model, MODELS } from '$lib/models.svelte'
+  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
+  import { find_best_model, make_table_filters, MODELS } from '$lib/models.svelte'
   import {
     apply_weights_param,
     bind_url_params,
     sort_from_query,
+    sort_url_entries,
     valid_query_param,
     weights_to_param,
   } from '$lib/url-state.svelte'
@@ -49,14 +44,15 @@
 
   // Column presets focus the table on one task's metrics. Headline cols (CPS, F1, RMSD,
   // κ_SRME) stay visible across presets; supplementary discovery cols (TPR/TNR/RMSE) stay
-  // hidden but remain toggleable via the per-column controls.
-  const headline_metric_labels = new Set(
+  // hidden but remain toggleable via the per-column controls. Sets are keyed by col.key
+  // (unique) not label, which repeats across tasks (MD/diatomics Time and Slowdown).
+  const headline_metric_keys = new Set(
     [ALL_METRICS.CPS, DISCOVERY_METRICS.F1, ALL_METRICS.RMSD, ALL_METRICS.κ_SRME].map(
-      (col) => col.label,
+      (col) => col.key,
     ),
   )
   const supplementary_hidden = new Set([`TPR`, `TNR`, `RMSE`])
-  const metadata_labels = new Set(Object.values(METADATA_COLS).map((col) => col.label))
+  const metadata_keys = new Set(Object.values(METADATA_COLS).map((col) => col.key))
   const col_presets = {
     Discovery: Object.values(DISCOVERY_METRICS),
     Phonons: [ALL_METRICS.κ_SRE],
@@ -75,24 +71,18 @@
     MD: { column: MD_METRICS.md_combined_score.key, dir: `desc` },
     Diatomics: { column: DIATOMICS_METRICS.energy_jump.key, dir: `asc` },
   }
-  let show_non_compliant = $state(true)
-  let show_energy_only = $state(false)
-  let show_compliant = $state(true)
+  const filters = make_table_filters()
   const col_preset_options = col_preset_names.map((name) => ({
     value: name,
     label: name,
     tooltip: `Focus the table on ${name} metrics`,
   }))
 
-  let show_heatmap = $state(true)
   let export_error: string | null = $state(null)
 
   let col_preset = $state<ColPreset>(`Discovery`)
-  let preset_metric_labels = $derived(
-    new Set([
-      ...headline_metric_labels,
-      ...col_presets[col_preset].map((col) => col.label),
-    ]),
+  let preset_metric_keys = $derived(
+    new Set([...headline_metric_keys, ...col_presets[col_preset].map((col) => col.key)]),
   )
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
   let sort = $state<{ column: string; dir: SortDir }>({
@@ -142,9 +132,7 @@
     sort = next_sort
 
     discovery_set = valid_query_param(params, `set`, `unique_prototypes`, valid_sets)
-    show_energy_only = params.get(`energy_only`) === `1`
-    show_non_compliant = params.get(`non_compliant`) !== `0`
-    show_compliant = params.get(`compliant`) !== `0`
+    filters.read(params)
     col_preset = next_preset
     previous_col_preset = next_preset
   })
@@ -163,39 +151,29 @@
         // columns (a preset no longer describes the visible column set)
         [`preset`, custom_col_config || col_preset === `Discovery` ? `` : col_preset],
         [`set`, discovery_set, `unique_prototypes`],
-        [`sort`, sort.column, default_sort.column],
-        [`dir`, sort.dir, default_sort.dir],
-        [`energy_only`, show_energy_only ? `1` : ``],
-        [`non_compliant`, show_non_compliant ? `` : `0`],
-        [`compliant`, show_compliant ? `` : `0`],
+        ...sort_url_entries(sort, default_sort),
+        ...filters.url_entries,
         // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
         [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
       ]
     },
   )
 
-  let export_state = $derived({ export_error, show_non_compliant, discovery_set })
+  let export_state = $derived({ export_error, discovery_set })
 
-  let best_model = $derived(
-    find_best_model(MODELS, { show_non_compliant, show_compliant, discovery_set }),
-  )
-  // Landing-page cohort: the metrics-table filters (energy/compliance) plus a base
-  // predicate of "has discovery data for the selected set" (applied first internally)
-  let in_cohort = $derived(
-    make_combined_filter(
-      (model: ModelData) => {
-        const discovery = model.metrics?.discovery
-        return (
-          discovery !== null &&
-          typeof discovery === `object` &&
-          Boolean(discovery[discovery_set])
-        )
-      },
-      show_energy_only,
-      show_compliant,
-      show_non_compliant,
-    ),
-  )
+  // Landing-page cohort: the metrics-table filters (training-data/openness/targets)
+  // plus a base predicate of "has discovery data for the selected set"
+  let in_cohort = $derived((model: ModelData) => {
+    const discovery = model.metrics?.discovery
+    return (
+      discovery !== null &&
+      typeof discovery === `object` &&
+      Boolean(discovery[discovery_set]) &&
+      filters.matches(model)
+    )
+  })
+  // best model within the same cohort the table shows
+  let best_model = $derived(find_best_model(MODELS.filter(in_cohort), discovery_set))
 
   export const snapshot: Snapshot = {
     capture: () => ({
@@ -204,10 +182,11 @@
       custom_col_config,
       sort,
       auto_sort_enabled,
-      show_non_compliant,
-      show_energy_only,
-      show_compliant,
-      show_heatmap,
+      training_filter: { ...filters.training },
+      openness: [...filters.openness],
+      targets: { ...filters.targets },
+      fs_mode: filters.fs_mode,
+      show_heatmap: filters.show_heatmap,
     }),
     restore: (values) => {
       custom_col_config = values.custom_col_config ?? custom_col_config
@@ -216,10 +195,11 @@
       discovery_set = values.discovery_set ?? discovery_set
       col_preset = values.col_preset ?? col_preset
       previous_col_preset = col_preset
-      show_non_compliant = values.show_non_compliant ?? show_non_compliant
-      show_energy_only = values.show_energy_only ?? show_energy_only
-      show_compliant = values.show_compliant ?? show_compliant
-      show_heatmap = values.show_heatmap ?? show_heatmap
+      filters.training = values.training_filter ?? filters.training
+      filters.openness = values.openness ?? filters.openness
+      filters.targets = values.targets ?? filters.targets
+      filters.fs_mode = values.fs_mode ?? filters.fs_mode
+      filters.show_heatmap = values.show_heatmap ?? filters.show_heatmap
     },
   }
 </script>
@@ -232,7 +212,11 @@
 <figure style="margin-top: 3em" id="metrics-table">
   <div class="toggle-row">
     <span>Column presets:</span>
-    <SelectToggle bind:selected={col_preset} options={col_preset_options} />
+    <SelectToggle
+      bind:selected={col_preset}
+      options={col_preset_options}
+      tooltip_placement="top"
+    />
   </div>
   <!-- the test-set selector only affects discovery metrics, so only show it in the
   Discovery preset where those columns are visible -->
@@ -259,16 +243,12 @@
   >
     <MetricsTable
       col_filter={(col) =>
-        metadata_labels.has(col.label)
+        metadata_keys.has(col.key)
           ? col.visible !== false
-          : preset_metric_labels.has(col.label) && !supplementary_hidden.has(col.label)}
+          : preset_metric_keys.has(col.key) && !supplementary_hidden.has(col.key)}
       {discovery_set}
       bind:sort
-      bind:show_energy_only
-      bind:show_non_compliant
-      bind:show_compliant
-      bind:show_heatmap
-      show_energy_only_toggle
+      {filters}
     />
   </section>
 
@@ -293,7 +273,6 @@
       href="/rss.xml"
       class="download-btn"
       title="Be notified of new model submissions through an RSS reader"
-      style="color: var(--text-color)"
       {@attach tooltip()}
     >
       <Icon icon="RSS" /> RSS
@@ -333,9 +312,23 @@
   </figcaption>
 </figure>
 
-<!-- Dynamic axis scatter plot -->
-<p>Compare models across different metrics and parameters:</p>
-<DynamicScatter models={MODELS} model_filter={in_cohort} />
+<!-- Dynamic axis scatter plot: defaults to field progress over time (CPS vs date
+added) with a running-best line showing which releases moved the frontier -->
+<h2>Progress Over Time</h2>
+<p>
+  Each point is a model placed at its submission date; the dashed step line traces the
+  running best ("SOTA frontier") CPS, so its jumps mark the models that set a new record
+  when they were added. Use the axis/color/size selectors to compare models across any
+  pair of metrics and parameters. The plot shows the same model cohort as the metrics
+  table above, following its energy-only, training-data and openness filters.
+</p>
+<DynamicScatter
+  models={MODELS}
+  model_filter={in_cohort}
+  x_key={METADATA_COLS.date_added.key}
+  y_key={ALL_METRICS.CPS.key}
+  show_pareto_frontier
+/>
 
 <Readme>
   {#snippet title()}{/snippet}
@@ -371,15 +364,6 @@ lives in MdNote and also renders on the /tasks/md page -->
 <MdNote />
 <KappaNote warning={false} />
 
-<h2>Progress Over Time</h2>
-<p>
-  Benchmark progress since launch: each point is a model placed at its submission date.
-  The dashed step line traces the running best ("SOTA frontier") of the selected metric;
-  labeled models are those that set a new record when they were added. The plot respects
-  the compliance toggles of the metrics table above.
-</p>
-<SotaTimeline model_filter={in_cohort} style="height: 500px" />
-
 <h2>GitHub Activity</h2>
 <p>
   Development activity and community engagement of MLIP GitHub repos. Points are sized by
@@ -392,7 +376,7 @@ lives in MdNote and also renders on the /tasks/md page -->
     margin-block: -1.2em 1em;
     display: flex;
     align-items: center;
-    place-content: center;
+    justify-content: center;
     gap: 7pt;
   }
   h1 img {
@@ -406,35 +390,38 @@ lives in MdNote and also renders on the /tasks/md page -->
     display: grid;
     gap: 1ex;
   }
-  div.toggle-row {
+  :is(.toggle-row, .downloads) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
+  }
+  .toggle-row {
     gap: 8pt;
     font-size: smaller;
   }
-  div.downloads {
-    display: flex;
-    flex-wrap: wrap;
+  .downloads {
     gap: 1ex;
-    justify-content: center;
     margin-block: 1ex;
-    align-items: center;
   }
-  div.downloads .download-btn {
+  .downloads .download-btn {
     padding: 1pt 6pt;
     font: inherit;
   }
-  div.export-error {
+  .downloads a.download-btn {
+    padding-inline-start: 2pt;
+    &:not(:hover) {
+      color: var(--text-color);
+    }
+  }
+  .export-error {
     color: #ff6b6b;
-    margin-top: 0.5em;
+    margin-block: 0.5em 1em;
     flex-basis: 100%;
     background-color: color-mix(in oklab, #ff6b6b 10%, transparent);
     padding: 1em;
     border-radius: 4px;
-    border-left: 4px solid #ff6b6b;
-    margin-bottom: 1em;
+    border-inline-start: 4px solid #ff6b6b;
   }
   /* Caption Radar Container Styles */
   figcaption.caption-radar-container {
@@ -443,9 +430,5 @@ lives in MdNote and also renders on the /tasks/md page -->
     align-items: start;
     gap: 1em;
     font-size: 0.9em;
-    background-color: transparent;
-  }
-  figure#metrics-table :global(:is(sub, sup)) {
-    font-size: 0.7em;
   }
 </style>

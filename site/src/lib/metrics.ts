@@ -8,7 +8,7 @@ import {
   METADATA_COLS,
 } from '$lib/labels'
 import type { ModelMetadata, ModelType, TargetType } from '$lib/schema/model'
-import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
+import { get_pred_file_urls } from '$lib/models.svelte'
 import type { DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { escape_html, format_num } from 'matterviz'
@@ -169,27 +169,6 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
   )
 }
 
-// Combined filter function that respects both prediction type and compliance filters
-export const make_combined_filter =
-  (
-    model_filter: (model: ModelData) => boolean,
-    show_energy: boolean,
-    show_compliant: boolean,
-    show_non_compliant: boolean,
-  ): ((model: ModelData) => boolean) =>
-  (model: ModelData) => {
-    if (!model_filter(model)) return false
-
-    const is_energy_only = model.targets === `E`
-    if (is_energy_only && !show_energy) return false
-
-    const is_compliant = model_is_compliant(model)
-    if (is_compliant && !show_compliant) return false
-    if (!is_compliant && !show_non_compliant) return false
-
-    return true
-  }
-
 // NB: cell background/text colors are computed by matterviz's HeatmapTable internally
 // (calc_cell_color in matterviz/table) — no local color logic needed
 
@@ -197,18 +176,9 @@ export const make_combined_filter =
 export function assemble_row_data(
   discovery_set: DiscoverySet,
   model_filter: (model: ModelData) => boolean,
-  show_energy_only: boolean,
-  show_non_compliant: boolean,
-  show_compliant: boolean,
+  filter_matches: (model: ModelData) => boolean = () => true,
   models: ModelData[] = MODELS, // injectable for tests
 ) {
-  const current_filter = make_combined_filter(
-    model_filter,
-    show_energy_only,
-    show_compliant,
-    show_non_compliant,
-  )
-
   const license_str = (license: string | undefined, url: string | undefined) =>
     url?.startsWith(`http`)
       ? `<a href="${url}" target="_blank" rel="noopener noreferrer" title="View license">${license}</a>`
@@ -216,22 +186,42 @@ export function assemble_row_data(
 
   const filtered_models = models.filter(
     (model) =>
-      current_filter(model) &&
+      model_filter(model) &&
+      filter_matches(model) &&
       typeof model.metrics?.discovery === `object` &&
       model.metrics.discovery[discovery_set],
   )
 
   const { RMSD, CPS } = ALL_METRICS
+  // label_data_path prefers label.property over label.key, so columns whose row key
+  // must differ from the YAML field (e.g. the two run_time_sec columns) resolve too
+  const metric_num = (model: ModelData, label: Label) =>
+    get_nested_number(model, label_data_path(label))
+  const finite_positive = (value: unknown): value is number =>
+    is_finite_num(value) && value > 0
+  // Slowdown columns: wall time relative to the fastest model in the current
+  // filtered view (roster-dependent, so computed here rather than stored on models)
+  const time_multiplier = (run_time_label: Label) => {
+    const fastest = Math.min(
+      ...filtered_models
+        .map((model) => metric_num(model, run_time_label))
+        .filter(finite_positive),
+    )
+    return (model: ModelData) => {
+      const run_time = metric_num(model, run_time_label)
+      return finite_positive(run_time) ? run_time / fastest : undefined
+    }
+  }
+  const md_time_multiplier = time_multiplier(MD_METRICS.md_run_time_sec)
+  const diatomics_time_multiplier = time_multiplier(
+    DIATOMICS_METRICS.diatomics_run_time_sec,
+  )
   const all_metrics = filtered_models.map((model) => {
     const { license, metrics } = model
     const discovery_metrics =
       typeof metrics?.discovery === `object`
         ? metrics.discovery[discovery_set]
         : undefined
-    const is_compliant = model_is_compliant(model)
-    const metric_num = (label: Label) =>
-      get_nested_number(model, `${label.path}.${label.key}`)
-
     const targets = model.targets.replaceAll(/_(?<char>.)/g, `<sub>$<char></sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
 
@@ -295,15 +285,21 @@ export function assemble_row_data(
       MAE: discovery_metrics?.MAE,
       RMSE: discovery_metrics?.RMSE,
       R2: discovery_metrics?.R2,
-      [ALL_METRICS.κ_SRME.key]: metric_num(ALL_METRICS.κ_SRME),
-      [ALL_METRICS.κ_SRE.key]: metric_num(ALL_METRICS.κ_SRE),
-      [RMSD.key]: metric_num(RMSD),
+      [ALL_METRICS.κ_SRME.key]: metric_num(model, ALL_METRICS.κ_SRME),
+      [ALL_METRICS.κ_SRE.key]: metric_num(model, ALL_METRICS.κ_SRE),
+      [RMSD.key]: metric_num(model, RMSD),
       ...Object.fromEntries(
-        Object.values(MD_METRICS).map((label) => [label.key, metric_num(label)]),
+        Object.values(MD_METRICS).map((label) => [label.key, metric_num(model, label)]),
       ),
       ...Object.fromEntries(
-        Object.values(DIATOMICS_METRICS).map((label) => [label.key, metric_num(label)]),
+        Object.values(DIATOMICS_METRICS).map((label) => [
+          label.key,
+          metric_num(model, label),
+        ]),
       ),
+      // computed after the spreads so they override the (pathless) spread entries
+      [MD_METRICS.md_time_multiplier.key]: md_time_multiplier(model),
+      [DIATOMICS_METRICS.diatomics_time_multiplier.key]: diatomics_time_multiplier(model),
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.key]:
         `<span title="${format_num(model.model_params, `,`)} trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,
@@ -317,7 +313,7 @@ export function assemble_row_data(
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
           col.key,
-          get_nested_number(model, `${col.path}.${col.property}`),
+          metric_num(model, col),
         ]),
       ),
       Targets: targets_str,
@@ -341,7 +337,6 @@ export function assemble_row_data(
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
       [HYPERPARAMS.graph_construction_radius.key]: r_cut_str,
-      style: `border-left: 3px solid var(--${is_compliant ? `` : `non-`}compliant-color);`,
       org_logos: model.org_logos,
       authors: model.authors,
     }

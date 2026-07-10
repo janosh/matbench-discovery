@@ -17,6 +17,11 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import { BarPlot, sunburst_from_labels_parents, Sunburst } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
+  import {
+    bind_url_params,
+    url_color_scale,
+    valid_query_param,
+  } from '$lib/url-state.svelte'
   import { tooltip } from 'svelte-multiselect/attachments'
   import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './[slug]/MpTrjNSitesHist.svelte'
@@ -42,9 +47,23 @@
   )
 
   let log_scale = $state(false) // Log color scale
-  let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
+  let color_scale = $state<D3InterpolateName>(url_color_scale.default)
   const count_modes = [`occurrence`, `composition`]
   let count_mode = $state(count_modes[0])
+
+  const read_url_params = (params: URLSearchParams) => {
+    count_mode = valid_query_param(
+      params,
+      `count_mode`,
+      count_modes[0],
+      new Set(count_modes),
+    )
+    color_scale = url_color_scale.read(params)
+  }
+  bind_url_params(read_url_params, () => [
+    [`count_mode`, count_mode, count_modes[0]],
+    url_color_scale.entry(color_scale),
+  ])
 
   let mp_elem_counts = $derived(elem_counts[`./mp-element-counts-by-${count_mode}.json`])
   let mp_trj_elem_counts = $derived(
@@ -217,6 +236,5 @@
     gap: 1ex;
     place-content: center;
     align-items: start;
-    justify-items: center;
   }
 </style>

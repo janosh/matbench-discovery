@@ -41,6 +41,7 @@ DiatomicsYamlValue = str | float | dict[str, str] | None
 # cannot predict them, so diatomic metrics skip them for every model (and the runner
 # tolerates their missing curves without per-model exclusion bookkeeping).
 NON_MP_ELEMENTS = frozenset({"Po", "At", "Rn", "Fr", "Ra"})
+DIATOMIC_WALL_R_MIN_FACTOR = 0.8
 DIATOMIC_METRIC_KEYS = frozenset(
     str(key)
     for key in (
@@ -184,8 +185,8 @@ def load_dft_reference_curves(
 def find_low_quality_dft_refs(
     ref_curves: DiatomicCurves,
     *,
-    min_energy_jump: float = 2.0,
-    min_energy_flips: int = 10,
+    min_energy_jump: float = 1.5,
+    min_energy_flips: int = 3,
 ) -> set[str]:
     """Elements whose DFT reference curve is too jumpy to score models against.
 
@@ -194,8 +195,8 @@ def find_low_quality_dft_refs(
     energy jump at sign-flip points >= min_energy_jump AND number of energy-difference
     sign flips >= min_energy_flips. Requiring both avoids flagging curves with a few
     large but possibly physical features (e.g. Cr2's shelf) or many tiny numerical
-    wiggles. On the current PBE reference, this flags 8 lanthanides (Pr, Nd, Pm, Tb,
-    Dy, Ho, Er, Tm) whose f-electron SCF convergence issues produce eV-scale
+    wiggles. On the current PBE reference, this flags 8 lanthanides (Pr, Pm, Sm,
+    Tb, Dy, Ho, Er, Tm) whose f-electron SCF convergence issues produce eV-scale
     discontinuities, next to which any model error signal drowns.
 
     Args:
@@ -228,26 +229,26 @@ def find_low_quality_dft_refs(
     return low_quality
 
 
-def eval_window(elem_symbol: str, seps_max: float) -> tuple[float, float]:
-    """Element-specific [r_min, r_max] metric-evaluation window, matching MLIP Arena.
+def eval_window(
+    elem_symbol: str, seps_max: float, *, r_min_factor: float = 0.9
+) -> tuple[float, float]:
+    """Return the element-specific metric-evaluation window.
 
-    MLIP Arena samples (and thus evaluates) homonuclear curves only over
-    ``[0.9 * covalent_radius, 3.1 * vdW_radius]`` (capped at ``seps_max``), deliberately
-    excluding the deep-overlap region (below ~the covalent radius) that no model saw in
-    training and where energies/forces extrapolate to unphysical magnitudes. Without it
-    every magnitude metric (energy/force jumps, total variation) is dominated
-    by the steep repulsive wall at sub-Angstrom separations.
+    The default lower bound matches MLIP Arena at ``0.9 * covalent_radius`` so the
+    steep repulsive wall does not dominate every magnitude metric. Reference-relative
+    wall scoring passes ``r_min_factor=0.8`` to include the full DFT-supported range.
 
     Args:
         elem_symbol (str): Homonuclear pair label, e.g. "H-H".
         seps_max (float): Largest available separation, used to cap r_max.
+        r_min_factor (float): Lower-bound multiplier on the covalent radius.
 
     Returns:
         tuple[float, float]: (r_min, r_max) in Å.
     """
     atomic_num = atomic_numbers[elem_symbol.split("-", maxsplit=1)[0]]
     r_cov = covalent_radii[atomic_num] if atomic_num < len(covalent_radii) else np.nan
-    r_min = 0.9 * r_cov if np.isfinite(r_cov) else 0.0
+    r_min = r_min_factor * r_cov if np.isfinite(r_cov) else 0.0
     vdw_radii = vdw_alvarez.vdw_radii
     r_vdw = vdw_radii[atomic_num] if atomic_num < len(vdw_radii) else np.nan
     r_max = min(3.1 * r_vdw, seps_max) if np.isfinite(r_vdw) else seps_max
@@ -306,18 +307,19 @@ def calc_diatomic_metrics(
     for elem_symbol, pred_data in pred_curves.homo_nuclear.items():
         if _homo_key(elem_symbol) in NON_MP_ELEMENTS:
             continue  # score all models on the same MP-supported element set
-        # restrict to MLIP Arena's element-specific evaluation window first, excluding
-        # the unphysical deep-overlap region that otherwise dominates every magnitude
-        # metric (and where unstable models tend to produce non-finite values; checking
-        # finiteness below the window means a curve only bad in deep overlap is kept)
+        # Restrict general metrics to MLIP Arena's element-specific window so the steep
+        # repulsive wall does not dominate every magnitude metric. The dedicated wall
+        # metric below uses the full DFT range down to 0.8 * covalent radius.
         pred_dists = pred_data.distances
-        r_min, r_max = eval_window(elem_symbol, float(np.max(pred_dists)))
+        seps_max = float(pred_dists.max())
+        r_min, r_max = eval_window(elem_symbol, seps_max)
         pred_mask = (pred_dists >= r_min) & (pred_dists <= r_max)
         if pred_mask.sum() < 5:  # too few points in window for stable metrics
             print(f"Skipping {elem_symbol} diatomic metrics: <5 points in eval window")
             continue
         seps_pred = pred_dists[pred_mask]
-        pred_energies = np.asarray(pred_data.energies)[pred_mask]
+        pred_energies_raw = np.asarray(pred_data.energies)
+        pred_energies = pred_energies_raw[pred_mask]
         pred_forces_raw = np.asarray(pred_data.forces)
         if not pred_forces_raw.size:
             raise ValueError(f"{elem_symbol} diatomic curve is missing forces")
@@ -358,11 +360,11 @@ def calc_diatomic_metrics(
             ref_dists = ref_data.distances
             ref_mask = (ref_dists >= r_min) & (ref_dists <= r_max)
             seps_ref = ref_dists[ref_mask]
-            ref_energies = np.asarray(ref_data.energies)[ref_mask]
+            ref_energies_raw = np.asarray(ref_data.energies)
+            ref_energies = ref_energies_raw[ref_mask]
             if len(seps_ref) >= 2:
                 pair_args = (seps_ref, ref_energies, seps_pred, pred_energies)
                 metric_calls[:0] = [
-                    (MbdKey.pbe_wall_dist_mae, calc_pbe_wall_dist_mae, pair_args),
                     (MbdKey.pbe_energy_mae, calc_pbe_energy_mae, pair_args),
                     (
                         MbdKey.pbe_bond_length_error,
@@ -376,6 +378,24 @@ def calc_diatomic_metrics(
                         (elem_symbol, *pair_args),
                     ),
                 ]
+            wall_r_min = eval_window(
+                elem_symbol, seps_max, r_min_factor=DIATOMIC_WALL_R_MIN_FACTOR
+            )[0]
+            # The generated DFT endpoint can differ from exactly 0.8*r_cov by one
+            # floating-point ulp, so include numerically equal boundary points.
+            wall_r_min -= 1e-12
+            pred_wall_mask = (pred_dists >= wall_r_min) & (pred_dists <= r_max)
+            ref_wall_mask = (ref_dists >= wall_r_min) & (ref_dists <= r_max)
+            if pred_wall_mask.sum() >= 2 and ref_wall_mask.sum() >= 2:
+                wall_args = (
+                    ref_dists[ref_wall_mask],
+                    ref_energies_raw[ref_wall_mask],
+                    pred_dists[pred_wall_mask],
+                    pred_energies_raw[pred_wall_mask],
+                )
+                metric_calls.insert(
+                    0, (MbdKey.pbe_wall_dist_mae, calc_pbe_wall_dist_mae, wall_args)
+                )
             ref_forces = np.asarray(ref_data.forces)
             if (
                 ref_forces.size
@@ -465,7 +485,11 @@ def write_metrics_to_yaml(
     if pred_file_url is not None:
         block["pred_file_url"] = pred_file_url
 
-    for key in ("hardware", "run_time_sec", "excluded_formula_reasons"):
+    run_metadata_keys = (
+        *("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"),
+        "excluded_formula_reasons",
+    )
+    for key in run_metadata_keys:
         if (val := run_metadata.get(key)) is None:
             val = existing.get(key)
         if val is not None:

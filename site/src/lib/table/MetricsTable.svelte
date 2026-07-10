@@ -1,6 +1,19 @@
+<script module lang="ts">
+  import type { SortState } from '$lib/url-state.svelte'
+
+  // the table's default sort; pages binding `sort` reuse this so URL sort params
+  // are omitted when the table is at its resting state
+  export const DEFAULT_TABLE_SORT: SortState = { column: `CPS`, dir: `desc` }
+
+  // Shared HeatmapTable theme for striped sticky cells and flush-left row numbers.
+  export const METRICS_TABLE_ROOT_STYLE = `--heatmap-sticky-cell-odd-bg: linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg); --heatmap-row-num-padding-left: 0;`
+</script>
+
 <script lang="ts">
   import { OrgLogos, TableControls } from '$lib'
   import { append_better_hint, metric_better_as } from '$lib/metrics'
+  import { make_table_filters } from '$lib/models.svelte'
+  import type { UrlTableFilters } from '$lib/url-state.svelte'
   import type { DiscoverySet, Label, LinkData, ModelData, SortDir } from '$lib/types'
   import type { CellSnippetArgs, Label as MattervizLabel } from 'matterviz'
   import { HeatmapTable, Icon } from 'matterviz'
@@ -18,28 +31,20 @@
     discovery_set = $bindable(`unique_prototypes`),
     model_filter = $bindable(() => true),
     col_filter = $bindable(() => true),
-    show_energy_only = $bindable(false),
-    show_non_compliant = $bindable(true),
-    show_heatmap = $bindable(true),
-    show_compliant = $bindable(true),
+    filters = make_table_filters(),
     show_selected_only = $bindable(false),
     active_files = $bindable([]),
     active_model_name = $bindable(``),
     pred_files_dropdown_pos = $bindable(null),
     selected_models = $bindable(new SvelteSet<string>()),
     column_order = $bindable([]),
-    sort = $bindable({ column: `CPS`, dir: `desc` }),
-    show_energy_only_toggle = false,
+    sort = $bindable({ ...DEFAULT_TABLE_SORT }),
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     discovery_set?: DiscoverySet
     model_filter?: (model: ModelData) => boolean
     col_filter?: (col: Label) => boolean
-    show_energy_only?: boolean
-    show_energy_only_toggle?: boolean
-    show_non_compliant?: boolean
-    show_heatmap?: boolean
-    show_compliant?: boolean
+    filters?: UrlTableFilters
     show_selected_only?: boolean
     active_files?: { name: string; url: string }[]
     active_model_name?: string
@@ -71,9 +76,7 @@
     const fresh_rows = assemble_row_data(
       discovery_set,
       model_filter,
-      show_energy_only,
-      show_non_compliant,
-      show_compliant,
+      filters.matches,
     ).filter((row) => !show_selected_only || selected_names.has(row.model_name))
     // cache access is untracked so callers don't subscribe to the very row signals
     // this merge writes (which would re-trigger them and double-render the table)
@@ -128,6 +131,9 @@
           better,
           description: append_better_hint(col, better),
           visible,
+          // tuck the Model cells (always adjacent to the rank column, being pinned
+          // first) against the rank numbers
+          ...(col === model_name && { style: `padding-left: 0;${col.style ?? ``}` }),
         }
       })
       // Keep the sticky model column first, preserving definition order for the rest.
@@ -241,8 +247,9 @@
     Links: links_cell,
     Org: affiliation_cell,
   }}
+  show_row_numbers
   default_num_format=".3f"
-  bind:show_heatmap
+  bind:show_heatmap={filters.show_heatmap}
   bind:column_order
   {heatmap_class}
   {header_cell}
@@ -252,18 +259,10 @@
     }
   }}
   {...rest}
+  root_style={METRICS_TABLE_ROOT_STYLE}
 >
   {#snippet controls()}
-    <TableControls
-      bind:columns
-      bind:show_energy_only
-      bind:show_heatmap
-      bind:show_compliant
-      bind:show_non_compliant
-      bind:show_selected_only
-      {show_energy_only_toggle}
-      {selected_count}
-    />
+    <TableControls bind:columns bind:show_selected_only {filters} {selected_count} />
   {/snippet}
 </HeatmapTable>
 

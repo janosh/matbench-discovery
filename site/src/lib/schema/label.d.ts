@@ -64,6 +64,10 @@ export interface Label1 {
    */
   key: string
   /**
+   * Model-data field name when it differs from key (e.g. columns whose row key must be unique while reading a shared YAML field name like run_time_sec)
+   */
+  property?: string
+  /**
    * Short label for the metric
    */
   short?: string
@@ -209,6 +213,10 @@ export interface MdMetricsLabels {
   md_pressure_wasserstein: Label1
   md_pressure_error: Label1
   md_combined_score: Label1
+  md_run_time_sec: Label1
+  md_time_multiplier: Label1
+  md_max_gpu_mem_gb: Label1
+  md_max_rss_gb: Label1
 }
 /**
  * This interface was referenced by `Label`'s JSON-Schema

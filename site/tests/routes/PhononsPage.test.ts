@@ -5,7 +5,14 @@ import { assemble_row_data, get_nested_number } from '$lib/metrics'
 import PhononsPage from '$routes/tasks/phonons/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { doc_query, mount, mount_with_url } from '../index'
+import {
+  checkbox_for,
+  doc_query,
+  filter_summary_badge,
+  mount,
+  mount_with_url,
+  sorted_header,
+} from '../index'
 
 // mirrors the page's leaderboard filter: phonon metrics + discovery data (energy-only
 // models are hidden by MetricsTable's defaults)
@@ -113,9 +120,7 @@ describe(`Phonons Task Page`, () => {
     const rows = assemble_row_data(
       `unique_prototypes`,
       () => true, // model_filter: keep all
-      false, // show_energy_only
-      true, // show_non_compliant
-      true, // show_compliant
+      () => true, // filter_matches: no training/openness/targets filters
     )
     const mace = rows.find((row) => String(row.Model).includes(`MACE-MP-0`))
     // mace-mp-0.yml has κ_SRE 0.471 (and κ_SRME 0.6823) — the column must use κ_SRE
@@ -156,5 +161,18 @@ describe(`Phonons Task Page`, () => {
     if (!mace_name) throw new Error(`mace-mp-0 not found in MODELS`)
     expect(kappa_selected_model()).toContain(mace_name)
     expect(heading_texts()).toContain(`κSRE vs F1`)
+  })
+
+  it(`restores URL state for table sort and filters`, async () => {
+    await mount_with_url(
+      PhononsPage,
+      `http://localhost/tasks/phonons?sort=κ_SRE&dir=asc&openness=OSOD&heatmap=0`,
+    )
+
+    const header = sorted_header()
+    expect(header?.textContent).toContain(`κSRE`)
+    expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
+    expect(filter_summary_badge(`Openness`)).toContain(`(1/4)`)
+    expect(checkbox_for(`Heatmap`).checked).toBe(false)
   })
 })

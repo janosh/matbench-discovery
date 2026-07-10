@@ -423,11 +423,53 @@ export const MD_METRICS: MdMetricsLabels = {
   md_combined_score: {
     key: `combined_score`,
     label: `CMDS`,
-    description: `Combined MD score in [0,1] (higher is better): weighted mean of the ΔADF, ΔvDOS and ΔP subscores (1 − error/100), equal weights by default and reweightable on the MD task page. Computed on the fly like CPS, never stored with submissions. ΔRDF is excluded as redundant (0.9+ correlation with ΔvDOS/ΔADF). Higher = closer to ab-initio dynamics.`,
+    description: `Combined MD score in [0,1] (higher is better): weighted mean of the ΔvDOS (30%), ΔADF (20%), ΔP (30%) subscores (1 − error/100) and Speed (summed rollout wall time, log-scaled, 20%), reweightable on the MD task page. Computed on the fly like CPS/CDS, never stored with submissions. ΔRDF is excluded as redundant (0.9+ correlation with ΔvDOS/ΔADF); models without recorded timings get no CMDS unless the Speed weight is zeroed. Higher = closer to ab-initio dynamics.`,
     path: `metrics.md`,
     range: [0, 1],
     better: `higher`,
     format: `.3f`,
+  },
+  md_run_time_sec: {
+    key: `md_run_time_sec`,
+    property: `run_time_sec`,
+    label: `Speed`,
+    description: `MD wall time in seconds to roll out all 17 DynaMat v1.0 NVT trajectories (20 ps each), summed over systems, excluding metric evaluation. All timings to date were measured on a single NVIDIA H200 per system (recorded in the model YAML's hardware field); blank for submissions without recorded timings`,
+    unit: `s`,
+    path: `metrics.md`,
+    better: `lower`,
+    format: `.3~s`,
+  },
+  md_time_multiplier: {
+    key: `md_time_multiplier`,
+    label: `Slowdown`,
+    description: `MD wall time as a multiple of the fastest finite MD wall time among models matching the active task, energy-only, training-data and openness filters (1× = fastest model in view)`,
+    unit: `×`,
+    better: `lower`,
+    format: `.2~f`,
+  },
+  // memory columns are hidden by default until enough models have re-run with memory
+  // tracking (published all-or-nothing over the 17 systems); toggle via column controls
+  md_max_gpu_mem_gb: {
+    key: `md_max_gpu_mem_gb`,
+    property: `max_gpu_mem_gb`,
+    label: `VRAM`,
+    description: `Peak GPU memory (torch CUDA allocator high-water mark) over all 17 DynaMat v1.0 NVT rollouts, set by the largest system (~500 atoms). Answers "what GPU does this model need for MD?"`,
+    unit: `GB`,
+    path: `metrics.md`,
+    better: `lower`,
+    format: `.3~s`,
+    visible: false,
+  },
+  md_max_rss_gb: {
+    key: `md_max_rss_gb`,
+    property: `max_rss_gb`,
+    label: `RAM`,
+    description: `Peak host memory (resident set size high-water mark) over all 17 DynaMat v1.0 NVT rollouts`,
+    unit: `GB`,
+    path: `metrics.md`,
+    better: `lower`,
+    format: `.3~s`,
+    visible: false,
   },
 } as const
 
@@ -444,8 +486,14 @@ type DiatomicsMetricKey =
   | `force_flips`
   | `force_total_variation`
   | `force_jump`
+  | `diatomics_combined_score`
+  | `diatomics_run_time_sec`
+  | `diatomics_time_multiplier`
+  | `diatomics_max_gpu_mem_gb`
+  | `diatomics_max_rss_gb`
 
 const scored_diatomic_range = `scored range from 0.9× covalent radius to min(3.1× Alvarez vdW radius, max sampled distance)`
+const scored_diatomic_wall_range = `repulsive-wall range from 0.8× covalent radius to min(3.1× Alvarez vdW radius, max sampled distance)`
 
 export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   tortuosity: {
@@ -477,7 +525,7 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   pbe_wall_dist_mae: {
     key: `pbe_wall_dist_mae`,
     label: `PBE Δr wall`,
-    description: `Mean repulsive-wall distance error relative to PBE over ${scored_diatomic_range}, at 1, 5 and 10 eV above the well minimum`,
+    description: `Mean repulsive-wall distance error relative to PBE over the ${scored_diatomic_wall_range}, at 1, 5, 10, 20, 50 and 100 eV above the well minimum where reached by the reference; predictions that miss a supported threshold receive the full reference-radius error`,
     unit: `Å`,
     path: `metrics.diatomics`,
     better: `lower`,
@@ -554,6 +602,57 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
     better: `lower`,
     format: `.3~g`,
   },
+  diatomics_combined_score: {
+    key: `diatomics_combined_score`,
+    property: `combined_score`,
+    label: `CDS`,
+    description: `Combined Diatomics Score in [0,1] (higher is better): weighted mean of 4 pillar subscores - Accuracy (PBE energy/force MAE, 44%), Geometry (repulsive wall, bond length, well depth vs PBE, 22%), Physicality (reference-free smoothness: energy jumps, force flips, tortuosity, 22%) and Speed (sweep wall time, log-scaled, 11%; hardware varies by submission) - multiplied by the fraction of 87 benchmark elements completed and reweightable on the diatomics page. Components use fixed normalization baselines so scores remain stable as models are added. Computed on the fly like CPS/CMDS, never stored with submissions`,
+    path: `metrics.diatomics`,
+    range: [0, 1],
+    better: `higher`,
+    format: `.3f`,
+  },
+  diatomics_run_time_sec: {
+    key: `diatomics_run_time_sec`,
+    property: `run_time_sec`,
+    label: `Speed`,
+    description: `Wall time in seconds for the full homonuclear diatomic curve sweep (H-U, 119 separations each), including calculator setup; summed over shards for parallel runs. Hardware varies by submission (recorded in the model YAML's hardware field); blank for submissions without recorded timings`,
+    unit: `s`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~s`,
+  },
+  diatomics_time_multiplier: {
+    key: `diatomics_time_multiplier`,
+    label: `Slowdown`,
+    description: `Diatomics wall time as a multiple of the fastest finite wall time among models matching the active task, energy-only, training-data and openness filters (1× = fastest model in view)`,
+    unit: `×`,
+    better: `lower`,
+    format: `.2~f`,
+  },
+  // memory columns hidden by default until submissions record them (see MD equivalents)
+  diatomics_max_gpu_mem_gb: {
+    key: `diatomics_max_gpu_mem_gb`,
+    property: `max_gpu_mem_gb`,
+    label: `VRAM`,
+    description: `Peak GPU memory (torch CUDA allocator high-water mark) over the full homonuclear diatomic sweep; max over shards for parallel runs`,
+    unit: `GB`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~s`,
+    visible: false,
+  },
+  diatomics_max_rss_gb: {
+    key: `diatomics_max_rss_gb`,
+    property: `max_rss_gb`,
+    label: `RAM`,
+    description: `Peak host memory (resident set size high-water mark) over the full homonuclear diatomic sweep; max over shards for parallel runs`,
+    unit: `GB`,
+    path: `metrics.diatomics`,
+    better: `lower`,
+    format: `.3~s`,
+    visible: false,
+  },
 }
 
 type AllMetrics = DiscoveryMetricsLabels &
@@ -609,15 +708,17 @@ export const ALL_METRICS: AllMetrics = {
 } as const
 
 // Column-visibility map for task pages: hide every metric except those passed in,
-// keep all metadata columns visible. Columns absent from the map (e.g. the sticky
-// model name) default to shown via `?? true` in the pages' col_filter.
+// keep all metadata columns visible. Keyed by col.key (unique per column) rather than
+// label, which repeats across tasks (MD and diatomics both have Speed/Slowdown cols).
+// Columns absent from the map (e.g. hyperparams) default to shown via `?? true` in
+// the pages' col_filter.
 export const task_page_visible_cols = (
   ...shown_metrics: Label[]
 ): Record<string, boolean> =>
   Object.fromEntries([
-    ...Object.values(ALL_METRICS).map((col) => [col.label, false]),
-    ...Object.values(METADATA_COLS).map((col) => [col.label, true]),
-    ...shown_metrics.map((col) => [col.label, true]),
+    ...Object.values(ALL_METRICS).map((col) => [col.key, false]),
+    ...Object.values(METADATA_COLS).map((col) => [col.key, true]),
+    ...shown_metrics.map((col) => [col.key, true]),
   ])
 
 export const DISCOVERY_SET_LABELS: Record<
@@ -649,8 +750,14 @@ export const discovery_set_toggle_options = Object.entries(DISCOVERY_SET_LABELS)
   ([value, { label, description: tooltip, link }]) => ({ value, label, tooltip, link }),
 )
 
+// Slowdown columns are roster-dependent (computed per filtered table view, not
+// stored on models), so they can't be scatter axes
+const time_multiplier_keys = new Set([
+  DIATOMICS_METRICS.diatomics_time_multiplier.key,
+  MD_METRICS.md_time_multiplier.key,
+])
 export const scatter_options = [
-  ...Object.values(ALL_METRICS),
+  ...Object.values(ALL_METRICS).filter((metric) => !time_multiplier_keys.has(metric.key)),
   HYPERPARAMS.model_params,
   METADATA_COLS.date_added,
   METADATA_COLS.n_training_materials,

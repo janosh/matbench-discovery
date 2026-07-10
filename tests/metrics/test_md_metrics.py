@@ -841,7 +841,9 @@ def test_evaluate_md_system_rejects_short_trajectories() -> None:
 
 
 def test_calc_md_metrics() -> None:
-    """Aggregation should average per-system rows, skipping NaNs."""
+    """Aggregation should average per-system rows, skipping NaNs, sum run_time_sec,
+    max the memory peaks and pass through a unique hardware label.
+    """
     df_md = pd.DataFrame(
         {
             "energy_rmse": [0.001, 0.003],
@@ -852,21 +854,32 @@ def test_calc_md_metrics() -> None:
             "pressure_mae": [1.0, np.nan],  # one system without stress data
             "pressure_wasserstein": [0.5, np.nan],
             "pressure_error": [40.0, np.nan],
+            "run_time_sec": [100.5, 200.25],
+            "max_rss_gb": [4.2, 6.1],
+            "max_gpu_mem_gb": [11.5, 9.0],
+            "hardware": ["NVIDIA H200", "NVIDIA H200"],
         }
     )
     metrics = md_metrics.calc_md_metrics(df_md)
 
-    assert metrics["energy_rmse"] == pytest.approx(2)
-    assert metrics["force_rmse"] == pytest.approx(200)
-    assert metrics["rdf_error"] == pytest.approx(15)
-    assert metrics["adf_error"] == pytest.approx(30)
-    assert metrics["vdos_error"] == pytest.approx(20)
-    assert metrics["pressure_mae"] == pytest.approx(1)
-    assert metrics["pressure_wasserstein"] == pytest.approx(0.5)
-    assert metrics["pressure_error"] == pytest.approx(40)
-    # CMDS is deliberately absent: the site computes it on the fly from the components
-    assert "combined_score" not in metrics
-    assert metrics["n_systems"] == 2
+    assert metrics.pop("hardware") == "NVIDIA H200"
+    # exact-key equality also proves combined_score is absent (CMDS is site-computed)
+    assert metrics == pytest.approx(
+        {
+            "run_time_sec": 300.75,  # summed, not averaged
+            "max_rss_gb": 6.1,  # max over systems, not averaged
+            "max_gpu_mem_gb": 11.5,
+            "energy_rmse": 2,
+            "force_rmse": 200,
+            "rdf_error": 15,
+            "adf_error": 30,
+            "vdos_error": 20,
+            "pressure_mae": 1,
+            "pressure_wasserstein": 0.5,
+            "pressure_error": 40,
+            "n_systems": 2,
+        }
+    )
 
     # partial columns work, unrecognized columns raise
     partial = md_metrics.calc_md_metrics(pd.DataFrame({"rdf_error": [10.0, 20.0]}))
@@ -875,22 +888,60 @@ def test_calc_md_metrics() -> None:
         md_metrics.calc_md_metrics(pd.DataFrame({"unrelated": [1]}))
 
 
-def test_calc_md_metrics_drops_partial_energy_force_coverage() -> None:
-    """E/F diagnostics with NaN rows (mixed private-ref coverage) must be dropped, not
-    averaged over the covered subset while n_systems suggests full coverage.
+@pytest.mark.parametrize(
+    ("cols", "dropped"),
+    [
+        (
+            {"energy_rmse": [0.001, np.nan], "force_rmse": [0.1, np.nan]},
+            ("energy_rmse", "force_rmse"),
+        ),
+        (
+            {"run_time_sec": [100.0, np.nan], "hardware": ["NVIDIA H200"] * 2},
+            ("run_time_sec",),
+        ),
+        (
+            # mixed GPUs also drop the GPU-dependent costs: a wall-time sum or VRAM
+            # max over an H200 and an A100 misrepresents the model's cost with no
+            # hardware label left to qualify it. Host RSS is GPU-independent -> kept
+            {
+                "run_time_sec": [100.0, 200.0],
+                "max_rss_gb": [4.2, 6.1],
+                "max_gpu_mem_gb": [11.5, 9.0],
+                "hardware": ["NVIDIA H200", "NVIDIA A100"],
+            },
+            ("hardware", "run_time_sec", "max_gpu_mem_gb"),
+        ),
+        (
+            {"run_time_sec": [100.0, 200.0], "hardware": ["NVIDIA H200", None]},
+            ("hardware", "run_time_sec"),
+        ),
+        (
+            # partial memory coverage -> dropped (a subset max could hide the true
+            # peak); the complete sibling memory column is kept
+            {"max_rss_gb": [4.2, np.nan], "max_gpu_mem_gb": [11.5, 9.0]},
+            ("max_rss_gb",),
+        ),
+    ],
+    ids=[
+        "partial_energy_force",
+        "partial_run_time",
+        "mixed_gpus",
+        "missing_gpu",
+        "partial_memory",
+    ],
+)
+def test_calc_md_metrics_all_or_nothing_columns(
+    cols: dict[str, list[float | str | None]], dropped: tuple[str, ...]
+) -> None:
+    """E/F diagnostics and run provenance publish only when every system row agrees:
+    partial coverage or a mixed/missing GPU label is dropped (a subset mean/sum would
+    misrepresent the model while n_systems suggests full coverage), but complete
+    sibling columns are kept.
     """
-    df_md = pd.DataFrame(
-        {
-            "rdf_error": [10.0, 20.0],
-            "energy_rmse": [0.001, np.nan],
-            "force_rmse": [0.1, np.nan],
-        }
-    )
-
+    df_md = pd.DataFrame({"rdf_error": [10.0, 20.0]} | cols)
     metrics = md_metrics.calc_md_metrics(df_md)
-
-    assert "energy_rmse" not in metrics
-    assert "force_rmse" not in metrics
+    assert set(dropped).isdisjoint(metrics)
+    assert set(cols) - set(dropped) <= set(metrics)
     assert metrics["rdf_error"] == pytest.approx(15)
     assert metrics["n_systems"] == 2
 
@@ -946,7 +997,9 @@ def test_write_metrics_to_yaml(
     model = Model.mace_mp_0
     monkeypatch.setattr(Model, "yaml_path", yaml_path)
 
-    metrics = {
+    metrics: dict[str, float | str] = {
+        "hardware": "NVIDIA H200",
+        "run_time_sec": 4521.484,
         "energy_rmse": 1.23456,
         "force_rmse": 98.7654,
         "rdf_error": 12.34567,
@@ -961,6 +1014,8 @@ def test_write_metrics_to_yaml(
     text = yaml_path.read_text(encoding="utf-8")
     assert "pred_file: models/test/md-metrics.csv" in text
     assert "pred_file_url: https://example.com/md-metrics.csv" in text
+    assert "hardware: NVIDIA H200" in text
+    assert "run_time_sec: 4521.484 # s" in text
     assert "energy_rmse: 1.2346 # meV/atom" in text
     assert "force_rmse: 98.7654 # meV/Å" in text
     assert "rdf_error: 12.3457 # %" in text
@@ -969,3 +1024,11 @@ def test_write_metrics_to_yaml(
     assert "combined_score" not in text
     # the 'not available' placeholder must be replaced, not kept
     assert "not available" not in text
+
+    # a later recompute from per-system CSVs lacking timing columns (e.g. legacy runs)
+    # must preserve the recorded run provenance, not silently drop it
+    md_metrics.write_metrics_to_yaml(model, {"rdf_error": 11.0, "n_systems": 17})
+    text = yaml_path.read_text(encoding="utf-8")
+    assert "hardware: NVIDIA H200" in text
+    assert "run_time_sec: 4521.484" in text
+    assert "rdf_error: 11.0 # %" in text

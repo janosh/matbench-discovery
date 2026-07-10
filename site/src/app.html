@@ -50,7 +50,6 @@
       data-domain="matbench-discovery.materialsproject.org"
       src="https://plausible.io/js/plausible.js"
     ></script>
-    <link rel="stylesheet" href="/prism-syntax-highlight-theme-aware.css" />
     <!-- math display -->
     <link
       rel="stylesheet"
@@ -61,6 +60,9 @@
   </head>
 
   <body data-sveltekit-preload-data="hover">
-    <div style="display: contents">%sveltekit.body%</div>
+    <!-- Let main grow to keep the footer at the viewport bottom on sparse pages. -->
+    <div style="display: flex; min-height: 100dvh; flex-direction: column">
+      %sveltekit.body%
+    </div>
   </body>
 </html>

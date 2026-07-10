@@ -1,3 +1,5 @@
+@import '@wooorm/starry-night/style/dark';
+
 :root {
   /* Light theme palette */
   --light-page-bg: #fefefe; /* softer than pure white */
@@ -11,14 +13,15 @@
   --light-btn-bg: rgba(0, 0, 0, 0.04); /* calm teal */
   --light-btn-bg-hover: rgba(0, 0, 0, 0.1);
   --light-btn-text: #27323f; /* readable on teal */
-  --light-border: rgba(0, 0, 0, 0.15);
+  --light-border: rgba(0, 0, 0, 0.2);
   --light-highlight: seagreen; /* cyan-teal accent */
   --light-blockquote-bg: rgba(0, 0, 0, 0.03);
   --light-table-odd: rgba(0, 0, 0, 0.03);
   --light-nav-bg: rgba(0, 0, 0, 0.06); /* lighter surface tint */
   --light-card-bg: rgba(255, 255, 255, 0.4);
   --light-card-border: rgba(0, 0, 0, 0.12);
-  --light-shadow: rgba(0, 0, 0, 0.06);
+  /* strong enough to be visible on white (0.06 made light-mode shadows invisible) */
+  --light-shadow: rgba(0, 0, 0, 0.2);
 
   /* Dark theme palette matches current site appearance */
   --dark-page-bg: #061e25;
@@ -41,6 +44,38 @@
   --dark-chip-bg: rgba(255, 255, 255, 0.08); /* card-bg reads near-black on small chips */
   --dark-card-border: rgba(255, 255, 255, 0.1);
   --dark-shadow: rgba(0, 0, 0, 0.5);
+
+  /* Starry Night syntax colors used by @wooorm/starry-night/style/dark */
+  --color-prettylights-syntax-brackethighlighter-angle: light-dark(#59636e, #9198a1);
+  --color-prettylights-syntax-brackethighlighter-unmatched: light-dark(#82071e, #f85149);
+  --color-prettylights-syntax-carriage-return-bg: light-dark(#cf222e, #b62324);
+  --color-prettylights-syntax-carriage-return-text: light-dark(#f6f8fa, #f0f6fc);
+  --color-prettylights-syntax-comment: light-dark(#59636e, #9198a1);
+  --color-prettylights-syntax-constant: light-dark(#0550ae, #79c0ff);
+  --color-prettylights-syntax-constant-other-reference-link: light-dark(#0a3069, #a5d6ff);
+  --color-prettylights-syntax-entity: light-dark(#6639ba, #d2a8ff);
+  --color-prettylights-syntax-entity-tag: light-dark(#0550ae, #7ee787);
+  --color-prettylights-syntax-invalid-illegal-bg: light-dark(#82071e, #8e1519);
+  --color-prettylights-syntax-invalid-illegal-text: light-dark(#f6f8fa, #f0f6fc);
+  --color-prettylights-syntax-keyword: light-dark(#cf222e, #ff7b72);
+  --color-prettylights-syntax-markup-bold: light-dark(#1f2328, #f0f6fc);
+  --color-prettylights-syntax-markup-changed-bg: light-dark(#ffd8b5, #5a1e02);
+  --color-prettylights-syntax-markup-changed-text: light-dark(#953800, #ffdfb6);
+  --color-prettylights-syntax-markup-deleted-bg: light-dark(#ffebe9, #67060c);
+  --color-prettylights-syntax-markup-deleted-text: light-dark(#82071e, #ffdcd7);
+  --color-prettylights-syntax-markup-heading: light-dark(#0550ae, #1f6feb);
+  --color-prettylights-syntax-markup-ignored-bg: light-dark(#0550ae, #1158c7);
+  --color-prettylights-syntax-markup-ignored-text: light-dark(#d1d9e0, #f0f6fc);
+  --color-prettylights-syntax-markup-inserted-bg: light-dark(#dafbe1, #033a16);
+  --color-prettylights-syntax-markup-inserted-text: light-dark(#116329, #aff5b4);
+  --color-prettylights-syntax-markup-italic: light-dark(#1f2328, #f0f6fc);
+  --color-prettylights-syntax-markup-list: light-dark(#3b2300, #f2cc60);
+  --color-prettylights-syntax-meta-diff-range: light-dark(#8250df, #d2a8ff);
+  --color-prettylights-syntax-storage-modifier-import: light-dark(#1f2328, #f0f6fc);
+  --color-prettylights-syntax-string: light-dark(#0a3069, #a5d6ff);
+  --color-prettylights-syntax-string-regexp: light-dark(#116329, #7ee787);
+  --color-prettylights-syntax-sublimelinter-gutter-mark: light-dark(#818b98, #3d444d);
+  --color-prettylights-syntax-variable: light-dark(#953800, #ffa657);
 
   /* Theme-aware aliases */
   --page-bg: light-dark(var(--light-page-bg), var(--dark-page-bg));
@@ -76,6 +111,8 @@
   --dropdown-color: var(--text-color);
   --dropdown-border: var(--border);
 
+  --pane-border: 1px solid var(--border);
+
   --sms-margin: 1em auto;
   --sms-border: 1px solid var(--border);
   --sms-options-bg: var(--page-bg);
@@ -87,6 +124,11 @@
   --sms-active-color: cornflowerblue;
   --sms-selected-bg: color-mix(in srgb, currentcolor 12%, transparent);
 
+  /* matterviz ToggleMenu (column-select) pane: its currentColor-based defaults are
+  near-invisible in light mode; use the theme border + shadow instead */
+  --tgl-dropdown-border: var(--border);
+  --tgl-dropdown-shadow: 0 4px 12px var(--shadow);
+
   --radio-btn-bg: var(--btn-bg);
   --radio-btn-checked-shadow: none;
   --radio-btn-checked-bg: var(--btn-bg-hover);
@@ -97,8 +139,6 @@
   --main-max-width: 50rem;
   --main-padding: 3rex;
 
-  --compliant-color: #4caf50;
-  --non-compliant-color: #4682b4;
   --text-muted: var(--text-secondary);
 }
 
@@ -118,9 +158,6 @@ body {
   margin: 0;
   scrollbar-width: none; /* hide scroll bars on non-scrollable like MetricsTable in MS Edge */
   /* fix confirmed with https://live.browserstack.com/dashboard#os=Windows&os_version=11&browser=Edge&browser_version=135.0 */
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
   /* smooth transition between dark/light theme  */
   transition:
     color 0.2s,
@@ -157,6 +194,10 @@ button:hover {
    the surrounding font size so the icons match the handle. */
 .control-tab button {
   font-size: inherit;
+}
+/* Remove after matterviz widens PlotControls range inputs beyond DraggablePane's generic 2.2em. */
+.draggable-pane.plot-controls-pane input.range-input[type='number'] {
+  width: 3.5em;
 }
 :is(div.multiselect) button {
   background: transparent;
@@ -357,6 +398,54 @@ kbd {
   box-sizing: border-box;
   /* Calculate padding: min page margin, grows to center content within max-width */
   padding-inline: max(var(--margin), calc(50vw - 1400px / 2));
+}
+
+/* Shared task-page intro with a flexible note and fixed-width score chart. */
+.task-intro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em 2em;
+  align-items: center;
+}
+.task-intro > div {
+  flex: 1 1 30em;
+}
+.task-weights {
+  flex: 0 1 22em;
+  margin-inline: auto;
+}
+.task-weights figcaption {
+  margin-block-start: 1em;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+/* Shared lazy-rendered grid for the diatomics task and spin-state detail page. */
+.diatomics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: 55pt 15pt;
+}
+.diatomic-plot-shell {
+  min-height: var(--plot-height, 300px);
+}
+.diatomic-plot-placeholder {
+  display: grid;
+  place-items: start center;
+  color: var(--text-muted);
+}
+.diatomic-plot {
+  --scatter-font-size: 14px;
+
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+.diatomic-plot-title {
+  align-self: center;
+  margin: 0 0 -5pt;
+  text-align: center;
+  font-size: 0.9em;
 }
 
 /* In-plot metric annotation, bottom-right corner (energy/kappa parity plots) */

@@ -1,5 +1,8 @@
 <script lang="ts">
   import { TableControls } from '$lib'
+  import { make_table_filters } from '$lib/models.svelte'
+  import { METRICS_TABLE_ROOT_STYLE } from '$lib/table/MetricsTable.svelte'
+  import type { UrlTableFilters } from '$lib/url-state.svelte'
   import type { Label, ModelData } from '$lib/types'
   import { HeatmapTable, type Label as MattervizLabel } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -13,15 +16,11 @@
 
   let {
     column_order = $bindable([]),
-    show_heatmap = $bindable(true),
-    show_compliant = $bindable(true),
-    show_non_compliant = $bindable(true),
+    filters = make_table_filters(),
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     column_order?: string[]
-    show_heatmap?: boolean
-    show_compliant?: boolean
-    show_non_compliant?: boolean
+    filters?: UrlTableFilters
   } = $props()
 
   // Append unit in thin font and (higher/lower=better) hint to column tooltip
@@ -82,18 +81,14 @@
     model.metrics?.geo_opt != null && typeof model.metrics.geo_opt === `object`
 
   let metrics_data = $derived(
-    assemble_row_data(
-      `full_test_set`,
-      has_geo_opt_metrics,
-      false,
-      show_non_compliant,
-      show_compliant,
-    ).map((row) => {
-      for (const [from, to] of Object.entries(key_remap)) {
-        if (from in row) row[to] = row[from]
-      }
-      return row
-    }),
+    assemble_row_data(`full_test_set`, has_geo_opt_metrics, filters.matches).map(
+      (row) => {
+        for (const [from, to] of Object.entries(key_remap)) {
+          if (from in row) row[to] = row[from]
+        }
+        return row
+      },
+    ),
   )
 </script>
 
@@ -103,18 +98,12 @@
   initial_sort={{ column: ALL_METRICS.RMSD.key, direction: `asc` }}
   default_num_format=".3f"
   bind:column_order
-  bind:show_heatmap
+  bind:show_heatmap={filters.show_heatmap}
   {...rest}
+  root_style={METRICS_TABLE_ROOT_STYLE}
 >
   {#snippet controls()}
     <!-- z-index > 2 to sit above sticky table headers (z-index: 2) -->
-    <div style="position: relative; z-index: 5">
-      <TableControls
-        bind:columns
-        bind:show_heatmap
-        bind:show_compliant
-        bind:show_non_compliant
-      />
-    </div>
+    <TableControls bind:columns {filters} style="position: relative; z-index: 5" />
   {/snippet}
 </HeatmapTable>

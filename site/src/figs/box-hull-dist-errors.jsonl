@@ -37,7 +37,7 @@
 {"key":"nequip-OAM-XL-0.1","label":"Nequip-OAM-XL","quantiles":[-0.043,-0.007,-0.001,0.005,0.025]}
 {"key":"nequix-mp-1","label":"Nequix MP","quantiles":[-0.12,-0.04,-0.011,0.007,0.064]}
 {"key":"nequix-mp-1-pft","label":"Nequix MP PFT","quantiles":[-0.116,-0.037,-0.009,0.009,0.07]}
-{"key":"orb-v2","label":"ORB v2","quantiles":[-0.033,-0.003,0.004,0.016,0.083]}
+{"key":"orb-v2","label":"ORB v2 MPA","quantiles":[-0.033,-0.003,0.004,0.016,0.083]}
 {"key":"orb-v2-mptrj","label":"ORB v2 MPtrj","quantiles":[-0.112,-0.033,-0.006,0.011,0.082]}
 {"key":"orb-v3","label":"ORB v3","quantiles":[-0.075,-0.007,0.0,0.005,0.024]}
 {"key":"pet-oam-xl-1.0.0","label":"PET-OAM-XL","quantiles":[-0.043,-0.004,0.0,0.004,0.021]}

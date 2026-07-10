@@ -53,7 +53,7 @@
   })
 
   // null = no data (null error, or null std in normalized mode). Tiles coerce null to
-  // 0 (rendered as missing_color); the hover inset shows n/a instead so missing data
+  // 0 (rendered with the missing style); the hover inset shows n/a instead so missing data
   // can't read as a perfect score
   const norm_error = (model_key: string, element: string): number | null => {
     const val = each_errors[model_key]?.[element]
@@ -153,7 +153,7 @@
   color_scale_range={cs_range}
   tile_props={{ float_fmt: `.2` }}
   show_photo={false}
-  missing_color="rgba(255,255,255,0.3)"
+  missing={{ color: `rgba(255,255,255,0.3)` }}
   {...rest}
 >
   {#snippet inset()}

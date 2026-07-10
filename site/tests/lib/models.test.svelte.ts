@@ -2,14 +2,14 @@ import {
   calculate_cps,
   CPS_CONFIG,
   DEFAULT_CPS_CONFIG,
-} from '$lib/combined_perf_score.svelte'
+} from '$lib/combined-scores.svelte'
 import { attach_style, order_models } from '$lib/fig-helpers'
 import { ALL_METRICS } from '$lib/labels'
 import {
+  ALL_TRAINING_SETS,
   calculate_training_sizes,
-  COMPLIANT_TRAINING_SETS,
   find_best_model,
-  model_is_compliant,
+  make_table_filters,
   MODEL_METADATA_PATHS,
   MODELS,
   update_models_cps,
@@ -100,56 +100,124 @@ describe(`MODEL_METADATA_PATHS`, () => {
   })
 })
 
-describe(`model_is_compliant`, () => {
-  it.each([
-    { training_set: [`MPtrj`], openness: `OSOD`, expected: true },
-    { training_set: [`MP 2022`], openness: `OSOD`, expected: true },
-    { training_set: [`MPF`], openness: `OSOD`, expected: true },
-    { training_set: [`MP Graphs`], openness: `OSOD`, expected: true },
-    { training_set: [`MPtrj`, `MP 2022`], openness: `OSOD`, expected: true },
-    // MDR-MP PBE ω_q is compliant (phonon fine-tuning on MPtrj subset)
-    { training_set: [`MDR-MP PBE ω_q`], openness: `OSOD`, expected: true },
+describe(`make_table_filters`, () => {
+  it(`default filters only hide energy-only models`, () => {
+    const filters = make_table_filters()
+    expect(filters.n_active).toBe(0) // the default require-F isn't counted as active
+    for (const model of MODELS) {
+      expect(filters.matches(model), model.model_name).toBe(model.targets !== `E`)
+    }
+  })
+
+  it.each<{
+    training: Record<string, `require` | `exclude`>
+    training_set: string[]
+    expected: boolean
+  }>([
+    // require: only models trained on the dataset
+    { training: { MPtrj: `require` }, training_set: [`MPtrj`], expected: true },
+    { training: { MPtrj: `require` }, training_set: [`OMat24`], expected: false },
+    // exclude: only models NOT trained on the dataset
+    { training: { OMat24: `exclude` }, training_set: [`MPtrj`], expected: true },
     {
-      training_set: [`MPtrj`, `MDR-MP PBE ω_q`],
-      openness: `OSOD`,
+      training: { OMat24: `exclude` },
+      training_set: [`MPtrj`, `OMat24`],
+      expected: false,
+    },
+    // multiple requires AND together
+    {
+      training: { MPtrj: `require`, sAlex: `require` },
+      training_set: [`MPtrj`, `sAlex`, `OMat24`],
       expected: true,
     },
+    {
+      training: { MPtrj: `require`, sAlex: `require` },
+      training_set: [`MPtrj`],
+      expected: false,
+    },
   ])(
-    `returns true for compliant training_set=$training_set`,
-    ({ training_set, openness, expected }) => {
-      const model = { training_set, openness } as Parameters<typeof model_is_compliant>[0]
-      expect(model_is_compliant(model)).toBe(expected)
+    `training filter $training matches $training_set -> $expected`,
+    ({ training, training_set, expected }) => {
+      const filters = make_table_filters()
+      filters.training = training
+      expect(filters.matches({ training_set, targets: `EFS_G` })).toBe(expected)
     },
   )
 
   it.each([
-    { training_set: [`OMat24`], openness: `OSOD`, expected: false },
-    { training_set: [`GNoME`], openness: `OSOD`, expected: false },
-    { training_set: [`MPtrj`, `OMat24`], openness: `OSOD`, expected: false },
-    { training_set: [`Alex`], openness: `OSOD`, expected: false },
-  ])(
-    `returns false for non-compliant training_set=$training_set`,
-    ({ training_set, openness, expected }) => {
-      const model = { training_set, openness } as Parameters<typeof model_is_compliant>[0]
-      expect(model_is_compliant(model)).toBe(expected)
+    { openness: [`OSOD`], model_openness: `OSOD`, expected: true },
+    { openness: [`OSOD`], model_openness: `CSCD`, expected: false },
+    { openness: [`OSOD`], model_openness: undefined, expected: true }, // defaults OSOD
+    { openness: [`OSCD`, `CSCD`], model_openness: `OSOD`, expected: false },
+  ] as const)(
+    `openness filter $openness matches $model_openness -> $expected`,
+    ({ openness, model_openness, expected }) => {
+      const filters = make_table_filters()
+      filters.openness = [...openness]
+      expect(
+        filters.matches({
+          training_set: [`MPtrj`],
+          openness: model_openness,
+          targets: `EFS_G`,
+        }),
+      ).toBe(expected)
     },
   )
 
   it.each([
-    { training_set: [`MPtrj`], openness: `CSOD`, expected: false },
-    { training_set: [`MPtrj`], openness: `OSCD`, expected: false },
-    { training_set: [`MPtrj`], openness: `CSCD`, expected: false },
-  ])(
-    `returns false for non-OSOD openness=$openness`,
-    ({ training_set, openness, expected }) => {
-      const model = { training_set, openness } as Parameters<typeof model_is_compliant>[0]
-      expect(model_is_compliant(model)).toBe(expected)
+    // default targets filter (require F) hides energy-only models
+    { model_targets: `E`, expected: false },
+    { model_targets: `EFS_G`, expected: true },
+    // exclude magmoms
+    { targets: { F: `require`, M: `exclude` }, model_targets: `EFS_GM`, expected: false },
+    { targets: { F: `require`, M: `exclude` }, model_targets: `EFS_G`, expected: true },
+    // require stress
+    { targets: { S: `require` }, model_targets: `EF_G`, expected: false },
+    { targets: { S: `require` }, model_targets: `EFSH_G`, expected: true },
+    // direct-only force/stress excludes gradient-based and force-less models
+    { fs_mode: `direct`, model_targets: `EFS_G`, expected: false },
+    { fs_mode: `direct`, model_targets: `EFS_DM`, expected: true },
+    { fs_mode: `gradient`, targets: {}, model_targets: `E`, expected: false },
+  ] as const)(
+    `targets filter $targets/$fs_mode matches $model_targets -> $expected`,
+    ({ targets, fs_mode, model_targets, expected }) => {
+      const filters = make_table_filters()
+      if (targets) filters.targets = { ...targets }
+      if (fs_mode) filters.fs_mode = fs_mode
+      expect(filters.matches({ training_set: [], targets: model_targets })).toBe(expected)
     },
   )
 
-  it(`defaults to OSOD when openness is undefined`, () => {
-    const model = { training_set: [`MPtrj`] } as Parameters<typeof model_is_compliant>[0]
-    expect(model_is_compliant(model)).toBe(true)
+  it(`round-trips the targets URL param incl. the cleared (empty) state`, () => {
+    const filters = make_table_filters()
+    filters.read(new URLSearchParams(`targets=-M,direct`))
+    expect(filters.targets).toStrictEqual({ M: `exclude` })
+    expect(filters.fs_mode).toBe(`direct`)
+    expect(filters.targets_param).toBe(`-M,direct`)
+
+    // absent param = default (require F); present-but-empty = no targets filter
+    filters.read(new URLSearchParams(``))
+    expect(filters.targets).toStrictEqual({ F: `require` })
+    filters.read(new URLSearchParams(`targets=`))
+    expect(filters.targets).toStrictEqual({})
+    expect(filters.targets_param).toBe(``)
+  })
+
+  it(`set_training cycles require -> off and toggle_openness keeps at least one`, () => {
+    const filters = make_table_filters()
+    filters.set_training(`MPtrj`, `require`)
+    expect(filters.training.MPtrj).toBe(`require`)
+    filters.set_training(`MPtrj`, `exclude`)
+    expect(filters.training.MPtrj).toBe(`exclude`)
+    filters.set_training(`MPtrj`, `exclude`) // same mode again clears it
+    expect(filters.training.MPtrj).toBeUndefined()
+
+    for (const openness of [`OSOD`, `OSCD`, `CSOD`, `CSCD`] as const) {
+      filters.toggle_openness(openness)
+    }
+    expect(filters.openness).toHaveLength(1) // refuses to hide the last value
+    filters.clear()
+    expect(filters.n_active).toBe(0)
   })
 })
 
@@ -167,7 +235,7 @@ describe(`find_best_model`, () => {
       ...overrides,
     }) as unknown as ModelData
 
-  it(`picks the compliant model with the highest full-test-set F1`, () => {
+  it(`picks the model with the highest full-test-set F1`, () => {
     const models = [
       make_model(`low`, 0.5),
       make_model(`high`, 0.9),
@@ -180,27 +248,6 @@ describe(`find_best_model`, () => {
     // regression: best_model used to seed with a truthy {}, so when no model qualified
     // the empty object rendered 'undefined' model names instead of being falsy
     expect(find_best_model([])).toBeNull()
-    const non_compliant = [make_model(`closed`, 0.95, { openness: `CSOD` })]
-    expect(find_best_model(non_compliant)).toBeNull()
-  })
-
-  // compliance toggles mirror the metrics table cohort. The excluded class gets the
-  // higher F1 so each assertion proves the filter (not ranking) chose the winner.
-  it(`respects show_compliant and show_non_compliant toggles`, () => {
-    const pair = (compliant_f1: number, non_compliant_f1: number) => [
-      make_model(`compliant`, compliant_f1),
-      make_model(`non-compliant`, non_compliant_f1, { training_set: [`OMat24`] }),
-    ]
-    const best = (models: ModelData[], opts = {}) =>
-      find_best_model(models, opts)?.model_name ?? null
-
-    expect(best(pair(0.7, 0.95))).toBe(`compliant`) // non-compliant hidden by default
-    expect(best(pair(0.7, 0.95), { show_non_compliant: true })).toBe(`non-compliant`)
-    const both = { show_compliant: false, show_non_compliant: true }
-    expect(best(pair(0.9, 0.6), both)).toBe(`non-compliant`) // better compliant dropped
-    expect(
-      best(pair(0.9, 0.6), { show_compliant: false, show_non_compliant: false }),
-    ).toBeNull()
   })
 
   it(`ranks by the requested discovery_set`, () => {
@@ -215,9 +262,7 @@ describe(`find_best_model`, () => {
       make_discovery_model(`best-uniq`, 0.5, 0.8),
     ]
     expect(find_best_model(models)?.model_name).toBe(`best-full`)
-    expect(
-      find_best_model(models, { discovery_set: `unique_prototypes` })?.model_name,
-    ).toBe(`best-uniq`)
+    expect(find_best_model(models, `unique_prototypes`)?.model_name).toBe(`best-uniq`)
   })
 
   it(`skips models with missing or non-numeric F1`, () => {
@@ -235,27 +280,24 @@ describe(`find_best_model`, () => {
   it(`finds a best model in the real MODELS data`, () => {
     const best = find_best_model(MODELS)
     if (!best) throw new Error(`expected a best model in real data`)
-    expect(model_is_compliant(best)).toBe(true)
     const discovery = best.metrics?.discovery
     const f1 = typeof discovery === `object` ? discovery.full_test_set?.F1 : undefined
     expect(f1).toBeGreaterThan(0.5)
   })
 })
 
-describe(`COMPLIANT_TRAINING_SETS`, () => {
-  it(`matches expected compliant datasets from datasets.yml`, () => {
-    // This test ensures Python and TypeScript compute the same compliant sets
-    // Both should derive from datasets.yml where compliant: true
-    const expected = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`, `MDR-MP PBE ω_q`]
-    expect(COMPLIANT_TRAINING_SETS.toSorted()).toStrictEqual(expected.toSorted())
-  })
-
-  it(`is exported as an array`, () => {
-    expect(Array.isArray(COMPLIANT_TRAINING_SETS)).toBe(true)
+describe(`ALL_TRAINING_SETS`, () => {
+  it(`lists only datasets used by at least one model, in datasets.yml order`, () => {
+    expect(ALL_TRAINING_SETS.length).toBeGreaterThan(5)
+    for (const key of [`MPtrj`, `OMat24`, `sAlex`, `MP 2022`]) {
+      expect(ALL_TRAINING_SETS, `missing ${key}`).toContain(key)
+    }
+    const used_keys = new Set<string>(MODELS.flatMap((model) => model.training_set))
+    expect(ALL_TRAINING_SETS.every((key) => used_keys.has(key))).toBe(true)
   })
 })
 
-// NB: CPS_CONFIG defaults + reactivity are covered in combined_perf_score.test.ts
+// NB: CPS_CONFIG defaults + reactivity are covered in combined-scores.test.ts
 describe(`update_models_cps`, () => {
   it(`should update CPS for models based on metrics and current weights`, () => {
     // Skip test if no models available

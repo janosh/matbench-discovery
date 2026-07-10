@@ -101,6 +101,43 @@ dynamat_v1_0_md_trajectories:
   md5: 09d32104888b9639599a15d3ecb124cb
   url: https://figshare.com/files/66309926
 
+_private_reference_data:
+  article_id: 32900105
+  article_url: https://figshare.com/account/articles/32900105
+  title: Matbench Discovery - private reference data
+  warning: Maintainer-only Figshare draft for withheld labels/references. Never publish this article. Share only via revocable private links when needed.
+  files:
+    dynamat_v1_0_private_labeled_reference_trajectories:
+      file_id: 66310031
+      file_url: https://figshare.com/files/66310031
+      name: dynamat-v1.0-private-labeled-reference-trajectories.h5
+      local_path: data/md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.h5
+      size: 876143672
+      md5: 9da61aeb3f99c5bbfb1f9499dcf2ef88
+      public_counterpart: dynamat_v1_0_md_trajectories
+      description: Labeled DynaMat v1.0 trajectories with energies and forces, used for maintainer-only MD energy/force RMSE diagnostics.
+    diatomics_dft_reference:
+      file_id: 66464621
+      file_url: https://figshare.com/files/66464621
+      name: diatomics-dft.json.gz
+      local_path: site/src/lib/diatomics-dft.json.gz
+      size: 203155
+      md5: 0998ff21658f9c99d270a885d4be1b47
+      description: Private mirror of the bundled homonuclear PBE/r2SCAN DFT diatomic reference curves used by the site and diatomics metrics. Includes per-point site-projected magnetic moments and winning spin candidates.
+    diatomics_dft_reference_provenance:
+      file_id: 66396755
+      file_url: https://figshare.com/files/66396755
+      name: diatomics-dft-reference-provenance-2026-07-07.zip
+      size: 12422
+      md5: 8ff81b52d450b5fc3e1892910f9fdee5
+      source_files:
+        - site/src/lib/diatomics-dft.readme.md
+        - scripts/evals/build_diatomic_reference.py
+        - matbench_discovery/metrics/diatomics/reference.py
+        - tests/metrics/diatomics/test_build_diatomic_reference.py
+        - tests/metrics/diatomics/test_diatomics_reference.py
+      description: Provenance note, builder, postprocess implementation, and tests for the bundled homonuclear PBE/r2SCAN DFT diatomic reference curves.
+
 _links: |
   [`PatchedPhaseDiagram`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814
   [`ComputedStructureEntries`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/entries/computed_entries.py#L579-L722

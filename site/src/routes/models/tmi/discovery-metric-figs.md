@@ -5,32 +5,19 @@
   import roc from '$figs/roc-models.jsonl'
   import rolling_mae from '$figs/rolling-mae-vs-hull-dist.jsonl'
   import { dashed, labeled_vline, model_mae, order_models, wide_legend } from '$lib/fig-helpers'
-  import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { BarPlot, BoxPlot, PlotLegend, ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, FillRegion, LegendItem } from 'matterviz/plot'
-
-  let { show_non_compliant = true }: { show_non_compliant?: boolean } = $props()
-
-  // payload model entries carry `key` (= MODELS model_key) for this compliance join
-  const compliant_keys = new Set(
-    MODELS.filter(model_is_compliant).map((model) => model.model_key),
-  )
-  const shown = <T extends { key: string }>(models: T[]): T[] =>
-    show_non_compliant ? models : models.filter((mdl) => compliant_keys.has(mdl.key))
 
   // payload models arrive pre-styled (stable MODELS colors + discovery-F1-desc leaderboard
   // order) from the json_payload plugin. cumulative P/R keeps that default order; the rest
   // re-rank for their figure: box + rolling by discovery MAE (best first, rolling shows the 6
   // best by default), roc by AUC, hist-clf by each model's own payload F1.
-  const cum_styled = $derived(shown(cum_pr.models))
-  const box_styled = $derived(order_models(shown(box_data.models), model_mae))
-  const roc_styled = $derived(order_models(shown(roc.models), (mdl) => -mdl.auc))
-  const hist_clf_styled = $derived(order_models(shown(hist_clf.models), (mdl) => -mdl.f1))
-  const rolling_styled = $derived(
-    order_models(shown(rolling_mae.models), model_mae).map((mdl, idx) => ({
-      ...mdl,
-      visible: idx < 6,
-    })),
+  const cum_styled = cum_pr.models
+  const box_styled = order_models(box_data.models, model_mae)
+  const roc_styled = order_models(roc.models, (mdl) => -mdl.auc)
+  const hist_clf_styled = order_models(hist_clf.models, (mdl) => -mdl.f1)
+  const rolling_styled = order_models(rolling_mae.models, model_mae).map(
+    (mdl, idx) => ({ ...mdl, visible: idx < 6 }),
   )
 
   // each model's cumulative precision/recall line plus a dot marking the end of its

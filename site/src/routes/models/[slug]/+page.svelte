@@ -9,24 +9,68 @@
   import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
   import { EnergyParityPlot, KappaParityPlot } from '$lib/plot'
   import { get_pred_file_urls } from '$lib/models.svelte'
-  import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
   import type { ChemicalElement, IconName } from 'matterviz'
-  import { format_num, format_relative_time, Icon, ColorBar } from 'matterviz'
+  import {
+    format_num,
+    format_relative_time,
+    HeatmapTable,
+    Icon,
+    ColorBar,
+  } from 'matterviz'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { CopyButton } from 'svelte-multiselect'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import { SvelteSet } from 'svelte/reactivity'
+  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import type { LoadStatus } from '$lib/asset-loader'
   import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
+  import type { PageData } from './$types'
 
   type ModelInfoItem = readonly [key: string, value: string, title?: string | null]
   type ExternalLink = { href?: string; icon: IconName; label: string; title: string }
 
-  let { data }: { data: { model: ModelData } } = $props()
+  let { data }: { data: PageData } = $props()
 
-  let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
+  // per-system MD breakdown: columns shown only when present in the CSV (older
+  // pred files lack n_atoms/cost provenance; pressure is NaN for stress-less systems)
+  const md_col_defs = [
+    { key: `system`, label: `System`, sticky: true },
+    { key: `temperature_kelvin`, label: `T (K)`, format: `.0f` },
+    { key: `n_atoms`, label: `Atoms`, format: `.0f` },
+    { key: `rdf_error`, label: `ΔRDF (%)`, better: `lower`, format: `.1f` },
+    { key: `adf_error`, label: `ΔADF (%)`, better: `lower`, format: `.1f` },
+    { key: `vdos_error`, label: `ΔvDOS (%)`, better: `lower`, format: `.1f` },
+    {
+      key: `pressure_mae`,
+      label: `P<sub>MAE</sub> (GPa)`,
+      better: `lower`,
+      format: `.2f`,
+    },
+    { key: `pressure_error`, label: `ΔP (%)`, better: `lower`, format: `.1f` },
+    {
+      key: `energy_rmse`,
+      label: `ΔE<sub>RMSE</sub> (meV/atom)`,
+      better: `lower`,
+      format: `.2f`,
+    },
+    {
+      key: `force_rmse`,
+      label: `F<sub>RMSE</sub> (meV/Å)`,
+      better: `lower`,
+      format: `.1f`,
+    },
+    { key: `run_time_sec`, label: `Time (s)`, better: `lower`, format: `.3~s` },
+    { key: `max_gpu_mem_gb`, label: `VRAM (GB)`, better: `lower`, format: `.2f` },
+  ] as const
+  let md_rows = $derived(data.md_per_system ?? [])
+  let md_cols = $derived(
+    md_col_defs.filter((col) => md_rows.some((row) => col.key in row)),
+  )
+
+  // static: this page has no color-scale picker (see /models/tmi for one that does)
+  const color_scale: D3InterpolateName = `interpolateViridis`
   let active_element: ChemicalElement | null = $state(null)
   // energy-parity tab bar: only the active plot is visible; a tab's plot mounts on
   // first activation and stays mounted (hidden) after, so toggling never reloads
@@ -34,13 +78,29 @@
     { value: `e-form`, label: `ML vs DFT Formation Energies` },
     { value: `each`, label: `ML vs DFT Convex Hull Distance` },
   ] as const
-  let energy_parity_tab = $state(`e-form`)
-  const mounted_energy_tabs = new SvelteSet([`e-form`])
+  type EnergyTab = (typeof energy_parity_options)[number][`value`]
+  const default_energy_tab: EnergyTab = `e-form`
+  const energy_tab_values = new Set<EnergyTab>(
+    energy_parity_options.map((option) => option.value),
+  )
+  let energy_parity_tab = $state<EnergyTab>(default_energy_tab)
+  const mounted_energy_tabs = new SvelteSet<EnergyTab>([default_energy_tab])
   // per-tab load status, reported by each EnergyParityPlot (drives button spinners)
   let energy_parity_statuses = $state<Record<string, LoadStatus>>({})
   $effect(() => {
     mounted_energy_tabs.add(energy_parity_tab)
   })
+  bind_url_params(
+    (params) => {
+      energy_parity_tab = valid_query_param(
+        params,
+        `energy_tab`,
+        default_energy_tab,
+        energy_tab_values,
+      )
+    },
+    () => [[`energy_tab`, energy_parity_tab, default_energy_tab]],
+  )
   let { model } = $derived(data)
   let added_ago = $derived(format_relative_time(model.date_added))
   let published_ago = $derived(format_relative_time(model.date_published))
@@ -81,11 +141,6 @@
     [`Test Task`, model.test_task, discovery_task_tooltips[model.test_task]],
     [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`],
   ])
-
-  export const snapshot = {
-    capture: () => ({ color_scale }),
-    restore: (values: { color_scale: D3InterpolateName }) => ({ color_scale } = values),
-  }
 
   let missing_preds = $derived(
     typeof model.metrics?.discovery === `object`
@@ -149,10 +204,11 @@
     {/if}
 
     {#if model.pypi}
+      {@const pip_cmd = `pip install ${model.pypi.split(`/`).pop()}`}
       <code style="padding: 0 4pt; place-content: center">
-        pip install {model.pypi.split(`/`).pop()}
+        {pip_cmd}
         <CopyButton
-          content="pip install {model.pypi.split(`/`).pop()}"
+          content={pip_cmd}
           labels={{
             ready: { icon: `Copy`, text: `` },
             success: { icon: `Check`, text: `` },
@@ -200,34 +256,50 @@
 
   <!-- segmented tab bar doubles as the plot title; the active button shows a
   spinner while its plot's data is still loading -->
-  <div class="energy-parity-tabs">
-    <SelectToggle
-      bind:selected={energy_parity_tab}
-      options={energy_parity_options.map((option) => ({
-        ...option,
-        loading:
-          energy_parity_tab === option.value &&
-          energy_parity_statuses[option.value] === `loading`,
-      }))}
-    />
-  </div>
+  <SelectToggle
+    class="energy-parity-tabs"
+    bind:selected={energy_parity_tab}
+    options={energy_parity_options.map((option) => ({
+      ...option,
+      loading:
+        energy_parity_tab === option.value &&
+        energy_parity_statuses[option.value] === `loading`,
+    }))}
+  />
   <!-- only the default tab's plot mounts on page load; the other mounts on first
   activation and then stays mounted-but-hidden so toggling back is instant (asset
   loads are also promise-cached, and keeping the component alive preserves zoom) -->
   {#each energy_parity_options as { value: energy_kind } (energy_kind)}
     {#if mounted_energy_tabs.has(energy_kind)}
-      <div hidden={energy_parity_tab !== energy_kind}>
-        <EnergyParityPlot
-          {model}
-          {energy_kind}
-          onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
-        />
-      </div>
+      <EnergyParityPlot
+        hidden={energy_parity_tab !== energy_kind}
+        {model}
+        {energy_kind}
+        onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
+      />
     {/if}
   {/each}
 
   {#if has_kappa_parity_model(model.model_key)}
     <KappaParityPlot {model} />
+  {/if}
+
+  {#if md_rows.length > 0}
+    <section class="md-per-system">
+      <h2 style="text-align: center">Molecular dynamics: per-system breakdown</h2>
+      <p>
+        Errors of this model's NVT rollouts against each DynaMat v1.0 ab-initio reference
+        trajectory (see the <a href="/tasks/md">MD task page</a> for metric definitions). Reveals
+        which chemistries a model struggles with, which the leaderboard's cross-system means
+        hide.
+      </p>
+      <HeatmapTable
+        data={md_rows}
+        columns={md_cols}
+        initial_sort="system"
+        default_num_format=".3~f"
+      />
+    </section>
   {/if}
 
   {#if model.model_key && model.model_key in per_elem_each_errors}
@@ -246,7 +318,7 @@
       bind:active_element
       tile_props={{ float_fmt: `.2f` }}
       show_photo={false}
-      missing_color="rgba(255,255,255,0.3)"
+      missing={{ color: `rgba(255,255,255,0.3)` }}
     >
       {#snippet inset()}
         <TableInset style="align-content: center">
@@ -418,32 +490,28 @@
   }
   /* segmented control: buttons fused into one bar with rounded outer corners,
   compact height, sitting directly above the plot as its title */
-  .energy-parity-tabs {
-    display: flex;
-    justify-content: center;
+  :global(.energy-parity-tabs.selection-toggle) {
+    gap: 0;
     margin: 2em auto 0.5em;
   }
-  .energy-parity-tabs :global(.selection-toggle) {
-    gap: 0;
-  }
-  .energy-parity-tabs :global(.selection-toggle button) {
+  :global(.energy-parity-tabs.selection-toggle button) {
     padding: 2px 12px;
     border-radius: 0;
     border-width: 0.5px; /* hairline on HiDPI, incl. the active colored border */
   }
   /* fuse adjacent borders; the active button sits on top so its colored border
   wins the shared edge regardless of which side is selected */
-  .energy-parity-tabs :global(.selection-toggle button + button) {
+  :global(.energy-parity-tabs.selection-toggle button + button) {
     margin-left: -0.5px;
   }
-  .energy-parity-tabs :global(.selection-toggle button.active) {
+  :global(.energy-parity-tabs.selection-toggle button.active) {
     position: relative;
     z-index: 1;
   }
-  .energy-parity-tabs :global(.selection-toggle button:first-child) {
+  :global(.energy-parity-tabs.selection-toggle button:first-child) {
     border-radius: 9999px 0 0 9999px;
   }
-  .energy-parity-tabs :global(.selection-toggle button:last-child) {
+  :global(.energy-parity-tabs.selection-toggle button:last-child) {
     border-radius: 0 9999px 9999px 0;
   }
   /* version numbers as light code, less prominent than the package name */

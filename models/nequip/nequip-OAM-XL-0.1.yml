@@ -186,6 +186,8 @@ metrics:
       missing_preds: 0 # count
   md:
     pred_file: models/nequip/nequip-OAM-XL-0.1/2026-06-28-nequip_oam_xl_0_1-md-metrics.csv.gz
+    hardware: NVIDIA H200
+    run_time_sec: 141379.87 # s
     energy_rmse: 0.6107 # meV/atom
     force_rmse: 62.8994 # meV/Å
     rdf_error: 3.3501 # %
@@ -201,15 +203,15 @@ metrics:
     pred_file_url: https://figshare.com/files/66104639
     hardware: NVIDIA H200
     run_time_sec: 699.25
-    pbe_wall_dist_mae: 0.05934
-    pbe_energy_mae: 0.7923
-    pbe_bond_length_error: 0.2842
-    pbe_well_depth_error: 0.5907
-    pbe_vib_freq_error: 76.96
+    pbe_wall_dist_mae: 0.06182
+    pbe_energy_mae: 0.7552
+    pbe_bond_length_error: 0.2609
+    pbe_well_depth_error: 0.537
+    pbe_vib_freq_error: 66.03
     tortuosity: 1.003
     energy_diff_flips: 1.31
     energy_jump: 0.1046
     force_flips: 1.287
     force_total_variation: 223.8
     force_jump: 3.479
-    pbe_force_mae: 0.8996
+    pbe_force_mae: 0.8957

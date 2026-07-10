@@ -8,7 +8,7 @@
   let { model_key, models = MODELS }: { model_key: string; models?: ModelData[] } =
     $props()
 
-  // ranks span the full active roster (compliant + non-compliant + energy-only, so
+  // ranks span the full active roster (all models incl. energy-only, so
   // the cohort can exceed the default leaderboard view, which hides energy-only
   // models); CPS/CMDS ranks track the session's current weight configs
   let ranks = $derived(model_metric_ranks(model_key, models, RANKED_METRICS))
@@ -59,8 +59,10 @@
     gap: 3pt 1.4em;
     margin: 1em auto;
   }
-  .rank-card-label {
+  :is(.rank-card-label, .metric-label) {
     font-size: 0.9em;
+  }
+  :is(.rank-card-label, .metric-label, a small) {
     color: var(--text-secondary);
   }
   a {
@@ -68,16 +70,8 @@
     align-items: baseline;
     gap: 4pt;
     color: var(--text-color);
-    text-decoration: none;
   }
   a:hover .metric-label {
     text-decoration: underline;
-  }
-  .metric-label {
-    font-size: 0.9em;
-    color: var(--text-secondary);
-  }
-  a small {
-    color: var(--text-secondary);
   }
 </style>

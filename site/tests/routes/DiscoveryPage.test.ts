@@ -1,7 +1,13 @@
 import DiscoveryPage from '$routes/tasks/discovery/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { mount, mount_with_url } from '../index'
+import {
+  checkbox_for,
+  filter_summary_badge,
+  mount,
+  mount_with_url,
+  sorted_header,
+} from '../index'
 
 const active_toggle = (): string | undefined =>
   document.querySelector(`button.active`)?.textContent?.trim()
@@ -12,15 +18,6 @@ const button_for = (label: string): HTMLButtonElement => {
   )
   if (!button) throw new Error(`No button found for ${label}`)
   return button
-}
-
-const energy_only_checkbox = (): HTMLInputElement => {
-  const label = [...document.querySelectorAll(`label`)].find((candidate) =>
-    candidate.textContent?.includes(`Energy-only models`),
-  )
-  const input = label?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
-  if (!input) throw new Error(`Energy-only checkbox not found`)
-  return input
 }
 
 const heading_texts = (): (string | undefined)[] =>
@@ -73,8 +70,8 @@ describe(`Discovery Task Page`, () => {
   it(`shows discovery-specific columns in MetricsTable`, () => {
     mount(DiscoveryPage, { target: document.body })
 
-    const headers = [...document.querySelectorAll(`th`)].map((th) =>
-      th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
+    const headers = [...document.querySelectorAll(`th .header-label`)].map((header) =>
+      header.textContent?.trim(),
     )
 
     for (const col of [`Model`, `F1`, `DAF`, `Links`, `Date Added`]) {
@@ -83,12 +80,17 @@ describe(`Discovery Task Page`, () => {
   })
 
   it(`restores and syncs URL state`, async () => {
-    const url = `http://localhost/tasks/discovery?set=full_test_set&energy_only=1&x=F1&y=rmsd`
+    const url = `http://localhost/tasks/discovery?set=full_test_set&targets=F,S,gradient&x=F1&y=rmsd&sort=F1&dir=asc&train=MPtrj,-OMat24&heatmap=0`
     await mount_with_url(DiscoveryPage, url)
 
     expect(active_toggle()).toBe(`Full Test Set`)
-    expect(energy_only_checkbox().checked).toBe(true)
+    expect(filter_summary_badge(`Targets`)).toContain(`(F,S,gradient)`)
     expect(heading_texts()).toContainEqual(expect.stringContaining(`RMSD vs F1`))
+    expect(filter_summary_badge(`Training data`)).toContain(`(2)`)
+    expect(checkbox_for(`Heatmap`).checked).toBe(false)
+    const header = sorted_header()
+    expect(header?.textContent).toContain(`F1`)
+    expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
 
     button_for(`10k Most Stable`).click()
     await tick()
