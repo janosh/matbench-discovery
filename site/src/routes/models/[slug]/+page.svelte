@@ -9,8 +9,6 @@
   import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
   import { EnergyParityPlot, KappaParityPlot } from '$lib/plot'
   import { get_pred_file_urls } from '$lib/models.svelte'
-  import type { MdPerSystemRow } from '$lib/server/md'
-  import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
   import type { ChemicalElement, IconName } from 'matterviz'
   import {
@@ -28,12 +26,12 @@
   import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import type { LoadStatus } from '$lib/asset-loader'
   import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
+  import type { PageData } from './$types'
 
   type ModelInfoItem = readonly [key: string, value: string, title?: string | null]
   type ExternalLink = { href?: string; icon: IconName; label: string; title: string }
 
-  let { data }: { data: { model: ModelData; md_per_system?: MdPerSystemRow[] | null } } =
-    $props()
+  let { data }: { data: PageData } = $props()
 
   // per-system MD breakdown: columns shown only when present in the CSV (older
   // pred files lack n_atoms/cost provenance; pressure is NaN for stress-less systems)

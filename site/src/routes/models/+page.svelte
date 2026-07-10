@@ -16,8 +16,7 @@
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
 
-  // Accept data prop for SvelteKit compliance (used for testing initial_show_n_best)
-  let { data }: { data?: { initial_show_n_best?: number } } = $props()
+  let { initial_show_n_best }: { initial_show_n_best?: number } = $props()
 
   let sort_by: Label = $state(ALL_METRICS.CPS)
   let show_details: boolean = $state(false)
@@ -25,10 +24,7 @@
   const min_models: number = 2
   // Enforce minimum and maximum when initializing from prop (intentionally captures initial value only)
   const initial_n_best = untrack(() =>
-    Math.min(
-      MODELS.length,
-      Math.max(min_models, data?.initial_show_n_best ?? MODELS.length),
-    ),
+    Math.min(MODELS.length, Math.max(min_models, initial_show_n_best ?? MODELS.length)),
   )
   let show_n_best: number = $state(initial_n_best)
   let sort_by_path: string = $derived(

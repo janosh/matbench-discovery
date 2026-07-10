@@ -28,23 +28,11 @@
   import { pick_contrast_color, PLOT_COLORS } from 'matterviz'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
   import { SvelteSet } from 'svelte/reactivity'
+  import type { PageData } from './$types'
   import { element_by_symbol, element_group_keys, element_groups } from './element-groups'
   import { make_plot_observer } from './observe-plot'
 
-  type DiatomicsPageData = {
-    diatomic_models: ModelData[]
-    diatomic_curves: Record<
-      string,
-      {
-        distances: number[]
-        'homo-nuclear': Record<string, { energies: number[]; distances?: number[] }>
-      }
-    >
-    reference_names: string[]
-    errors: Record<string, string>
-  }
-
-  let { data }: { data: DiatomicsPageData } = $props()
+  let { data }: { data: PageData } = $props()
   let diatomic_models = $derived(data?.diatomic_models ?? [])
   let diatomic_curves = $derived(data?.diatomic_curves ?? {})
   let reference_names = $derived(data?.reference_names ?? [])

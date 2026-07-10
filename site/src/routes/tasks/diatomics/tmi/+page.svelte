@@ -4,6 +4,7 @@
   import { ScatterPlot } from 'matterviz'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
   import { SvelteSet } from 'svelte/reactivity'
+  import type { PageData } from './$types'
   import {
     element_by_symbol,
     element_group_keys,
@@ -11,17 +12,7 @@
   } from '../element-groups'
   import { make_plot_observer } from '../observe-plot'
 
-  type MagmomCurve = {
-    distances: number[]
-    magmoms: ([number, number] | null)[]
-    spin_candidates: (string | null)[]
-  }
-
-  let {
-    data,
-  }: {
-    data: { magmom_curves: Record<string, Record<string, MagmomCurve>> }
-  } = $props()
+  let { data }: { data: PageData } = $props()
   let magmom_curves = $derived(data.magmom_curves)
 
   // same fixed reference colors as the main diatomics page
