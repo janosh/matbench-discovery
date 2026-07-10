@@ -21,7 +21,11 @@
   import { Spinner } from 'matterviz/feedback'
   import type { AnyStructure } from 'matterviz/structure'
   import { BinnedScatterPlot } from 'matterviz/plot'
-  import type { BinnedPointPayload, DensePointSeries } from 'matterviz/plot'
+  import type {
+    BinnedOverlaysConfig,
+    BinnedPointPayload,
+    DensePointSeries,
+  } from 'matterviz/plot'
   import { onMount, tick, untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
 
@@ -42,9 +46,19 @@
     formula: string
     n_sites: number
     measure_text: string
-  }
+  } & Record<string, unknown>
   type EnergyParityPayload = BinnedPointPayload<Record<string, unknown>>
   const structure_popup_size = { outer_width: 500, view_width: 460, view_height: 340 }
+  const parity_overlays: BinnedOverlaysConfig = {
+    ref_lines: [
+      {
+        type: `diagonal`,
+        slope: 1,
+        intercept: 0,
+        style: { color: `var(--text-color, currentColor)` },
+      },
+    ],
+  }
   // small gap lets the popup sit over the (data-free) axis-label padding, so it moves
   // into the side gutter as soon as it clears the data area instead of needing a full
   // popup-width of empty space beside the plot
@@ -122,8 +136,6 @@
       return
     }
 
-    if (parity_model?.model_key !== model_key) clear_selection()
-
     if (base && parity_model?.model_key === model_key) {
       status = `ready`
       return
@@ -195,19 +207,14 @@
     energy_parity_point_data(point.point_id)
 
   function is_energy_parity_point_data(
-    point_data_value: unknown,
-  ): point_data_value is EnergyParityPointData {
-    if (!point_data_value || typeof point_data_value !== `object`) return false
+    value: Record<string, unknown> | undefined,
+  ): value is EnergyParityPointData {
     return (
-      `material_id` in point_data_value &&
-      typeof point_data_value.material_id === `string` &&
-      `formula` in point_data_value &&
-      typeof point_data_value.formula === `string` &&
-      `measure_text` in point_data_value &&
-      typeof point_data_value.measure_text === `string` &&
-      `n_sites` in point_data_value &&
-      typeof point_data_value.n_sites === `number` &&
-      Number.isFinite(point_data_value.n_sites)
+      typeof value?.material_id === `string` &&
+      typeof value.formula === `string` &&
+      typeof value.measure_text === `string` &&
+      typeof value.n_sites === `number` &&
+      Number.isFinite(value.n_sites)
     )
   }
 
@@ -337,22 +344,7 @@ title, so label the section for screen readers instead -->
         color_bar: { title: `Density`, class: colorbar_class },
       }}
       size_scale={{ radius_range: [2, 18], pick_radius: `auto` }}
-      overlays={{
-        // TODO adopt the declarative RefLine form once the next matterviz release
-        // ships BinnedScatterPlot support for it (added 2026-07-04): replace these
-        // hardcoded endpoints with a y=x `{ type: 'diagonal', slope: 1, intercept:
-        // 0 }` (cf. parity_diagonal in fig-helpers.ts) so the diagonal auto-fills
-        // the plot area and stays correct under zoom instead of tracking `extent`
-        ref_lines: [
-          {
-            x1: extent[0],
-            y1: extent[0],
-            x2: extent[1],
-            y2: extent[1],
-            color: `var(--text-color, currentColor)`,
-          },
-        ],
-      }}
+      overlays={parity_overlays}
       on_point_click={({ point }) => void show_structure(Number(point.point_id))}
       on_density_zoom={clear_selection}
       selected_point_id={selected_point?.row_idx ?? null}

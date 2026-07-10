@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TableControls } from '$lib'
   import { make_table_filters } from '$lib/models.svelte'
-  import { TABLE_STYLE_VARS } from '$lib/table/MetricsTable.svelte'
+  import { METRICS_TABLE_ROOT_STYLE } from '$lib/table/MetricsTable.svelte'
   import type { UrlTableFilters } from '$lib/url-state.svelte'
   import type { Label, ModelData } from '$lib/types'
   import { HeatmapTable, type Label as MattervizLabel } from 'matterviz'
@@ -100,7 +100,7 @@
   bind:column_order
   bind:show_heatmap={filters.show_heatmap}
   {...rest}
-  style="{TABLE_STYLE_VARS}{rest.style ?? ``}"
+  root_style={METRICS_TABLE_ROOT_STYLE}
 >
   {#snippet controls()}
     <!-- z-index > 2 to sit above sticky table headers (z-index: 2) -->

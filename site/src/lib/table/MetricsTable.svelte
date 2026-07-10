@@ -5,14 +5,8 @@
   // are omitted when the table is at its resting state
   export const DEFAULT_TABLE_SORT: SortState = { column: `CPS`, dir: `desc` }
 
-  // theme HeatmapTable via its CSS custom props (shared with GeoOptMetricsTable):
-  // composite the app.css row stripe over the opaque sticky Model cells (which must
-  // stay opaque to occlude columns scrolling beneath them) and left-align rank digits
-  // flush with the table edge (right-aligned digits in a 2-digit-wide column read as
-  // left padding on single-digit rows)
-  export const TABLE_STYLE_VARS =
-    `--heatmap-sticky-cell-odd-bg: linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg);` +
-    `--heatmap-row-num-align: left; --heatmap-row-num-padding-left: 0;`
+  // Shared HeatmapTable theme for striped sticky cells and flush-left row numbers.
+  export const METRICS_TABLE_ROOT_STYLE = `--heatmap-sticky-cell-odd-bg: linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg); --heatmap-row-num-padding-left: 0;`
 </script>
 
 <script lang="ts">
@@ -265,7 +259,7 @@
     }
   }}
   {...rest}
-  style="{TABLE_STYLE_VARS}{rest.style ?? ``}"
+  root_style={METRICS_TABLE_ROOT_STYLE}
 >
   {#snippet controls()}
     <TableControls bind:columns bind:show_selected_only {filters} {selected_count} />
@@ -294,16 +288,6 @@
 {/if}
 
 <style>
-  /* TODO remove both :global rules below after the next matterviz release: they
-  duplicate the --heatmap-sticky-cell-odd-bg / --heatmap-row-num-* custom props
-  passed via TABLE_STYLE_VARS, which the installed matterviz 0.4.1 doesn't support
-  yet (the vars were added to HeatmapTable after 0.4.1) */
-  :global(tbody tr:nth-child(odd) td.sticky-col) {
-    background: linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg);
-  }
-  :global(table :is(th, td).row-num-col.row-num-col) {
-    padding-left: 0;
-  }
   .header-label {
     display: inline-block;
   }
