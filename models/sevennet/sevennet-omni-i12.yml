@@ -219,7 +219,7 @@ metrics:
     run_time_sec: 4521.48
     excluded_formula_reasons:
       Bi-Bi: exploding errors
-    pbe_wall_dist_mae: 0.04039
+    pbe_wall_dist_mae: 0.116
     pbe_energy_mae: 0.5703
     pbe_bond_length_error: 0.1743
     pbe_well_depth_error: 0.4007

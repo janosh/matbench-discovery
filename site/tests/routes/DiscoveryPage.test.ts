@@ -70,8 +70,8 @@ describe(`Discovery Task Page`, () => {
   it(`shows discovery-specific columns in MetricsTable`, () => {
     mount(DiscoveryPage, { target: document.body })
 
-    const headers = [...document.querySelectorAll(`th`)].map((th) =>
-      th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
+    const headers = [...document.querySelectorAll(`th .header-label`)].map((header) =>
+      header.textContent?.trim(),
     )
 
     for (const col of [`Model`, `F1`, `DAF`, `Links`, `Date Added`]) {

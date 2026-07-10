@@ -11,8 +11,9 @@ import { doc_query, mount } from '../index'
 const header_cells = () => [
   ...document.querySelectorAll<HTMLTableCellElement>(`th:not(.row-num-col)`),
 ]
-// header names with sort indicators stripped (first whitespace-separated token)
-const header_names = () => header_cells().map((th) => th.textContent?.split(` `)[0])
+const header_name = (header: HTMLTableCellElement) =>
+  header.querySelector(`.header-label`)?.textContent?.trim()
+const header_names = () => header_cells().map(header_name)
 
 // expected table row count for the default unique_prototypes discovery set,
 // mirroring MetricsTable's model filters
@@ -172,9 +173,7 @@ describe(`MetricsTable`, () => {
     const col_filter = (_col: Label) => true // show all columns initially
     mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
-    let header_texts = header_cells().map((h) =>
-      h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
-    )
+    let header_texts = header_names()
     expect(header_texts).toStrictEqual(expect.arrayContaining(metadata_labels))
 
     // Create a new instance that hides metadata columns
@@ -187,9 +186,7 @@ describe(`MetricsTable`, () => {
     })
 
     // Check metadata columns are hidden
-    header_texts = header_cells().map((h) =>
-      h.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
-    )
+    header_texts = header_names()
 
     // Each metadata column label should be hidden
     for (const col of metadata_labels) {
@@ -395,8 +392,13 @@ describe(`MetricsTable`, () => {
         if (!sort_header) throw new Error(`${header} column not found`)
 
         const cell_values = () =>
-          [...document.querySelectorAll(`td[data-col="${data_col}"] [data-sort-value]`)]
-            .map(parse_integer_sort_value)
+          [...document.querySelectorAll(`td[data-col="${data_col}"]`)]
+            .map((cell) => {
+              const sortable = cell.querySelector(`[data-sort-value]`)
+              if (sortable) return parse_integer_sort_value(sortable)
+              const timestamp = Date.parse(cell.textContent?.trim() ?? ``)
+              return Number.isNaN(timestamp) ? null : timestamp
+            })
             .filter((val) => val !== null)
 
         sort_header.click()
@@ -821,15 +823,18 @@ describe(`MetricsTable`, () => {
     // the structural rank column (#, from show_row_numbers) is excluded by
     // header_cells() and covered by its own test below
     const header_elements = header_cells()
-    const actual_core_columns = header_elements.map((th) =>
-      // Get text content, remove sort indicator (↑/↓) and any trailing spaces
-      (th.textContent ?? ``).replace(/\s*[↑↓]\s*$/, ``).trim(),
-    )
+    const actual_core_columns = header_elements.map(header_name)
 
     // The default visible columns should stay intentionally curated: new default
     // columns must be added to expected_core_columns explicitly. Sorted comparison
     // ignores order but checks exact multiset (incl. duplicate Speed/Slowdown labels).
-    expect(actual_core_columns.toSorted()).toEqual(expected_core_columns.toSorted())
+    const compare_labels = (
+      label_a: string | undefined,
+      label_b: string | undefined,
+    ): number => (label_a ?? ``).localeCompare(label_b ?? ``)
+    expect(actual_core_columns.toSorted(compare_labels)).toEqual(
+      expected_core_columns.toSorted(compare_labels),
+    )
 
     // Header tooltip content is attached to inner labels so HeatmapTable's
     // generic title-based tooltip doesn't flash below before our desired top placement.
