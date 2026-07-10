@@ -65,19 +65,16 @@
   const structure_popup_gap = 16
   const loading_spinner_style = `--spinner-size: 0.9em; --spinner-border-width: 2px; --spinner-margin: 0`
 
-  // Give the loading UI one painted frame before parity construction and plot mounting
-  // block the main thread. The timeout keeps background tabs from waiting on throttled rAF.
+  // Wait for loading UI to paint; timeout avoids throttled rAF in background tabs.
   function wait_for_loading_paint(): Promise<void> {
     return new Promise((resolve) => {
-      let resolved = false
-      const finish = (): void => {
-        if (resolved) return
-        resolved = true
-        window.clearTimeout(timeout_id)
-        resolve()
-      }
-      const timeout_id = window.setTimeout(finish, 100)
-      requestAnimationFrame(() => requestAnimationFrame(finish))
+      const timeout_id = window.setTimeout(resolve, 100)
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          window.clearTimeout(timeout_id)
+          resolve()
+        }),
+      )
     })
   }
 
@@ -161,7 +158,6 @@
     error_message = ``
     clear_selection()
     try {
-      await tick()
       await wait_for_loading_paint()
       if (current_load_id !== load_id) return
       const [base_asset, model_asset] = await Promise.all([

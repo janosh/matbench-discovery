@@ -413,7 +413,7 @@
 
   {#if model.notes?.html && typeof model.notes.html === `object`}
     <section class="notes">
-      {#each Object.entries(model.notes.html) as [key, note] (key)}
+      {#each Object.entries(model.notes.html as Record<string, string | string[] | Record<string, unknown>>) as [key, note] (key)}
         <h2>{key}</h2>
         {#if typeof note === `string`}
           <p>{@html note}</p>
