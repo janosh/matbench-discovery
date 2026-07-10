@@ -68,7 +68,7 @@ interface EnergyParityStructureBundle {
 export const { asset_url: energy_parity_asset_url, model_asset } = parity_asset_resolver(
   `energy`,
   energy_parity_manifest,
-  import.meta.env.VITE_ENERGY_PARITY_ASSET_BASE_URL as string | undefined,
+  import.meta.env.VITE_ENERGY_PARITY_ASSET_BASE_URL,
 )
 
 export function structure_popup_placement({

@@ -1,0 +1,167 @@
+model_name: GRACE-3L-OAM-L
+model_key: grace-3l-oam-l
+model_version: '1'
+date_added: '2026-07-02'
+date_published: '2026-07-02'
+authors:
+  - name: Anton Bochkarev
+    affiliation: ICAMS, Ruhr University Bochum
+    email: anton.bochkarev@rub.de
+  - name: Yury Lysogorskiy
+    affiliation: ICAMS, Ruhr University Bochum
+    email: yury.lysogorskiy@rub.de
+  - name: Ralf Drautz
+    affiliation: ICAMS, Ruhr University Bochum
+    email: ralf.drautz@rub.de
+trained_by:
+  - name: Anton Bochkarev
+    affiliation: ICAMS, Ruhr University Bochum
+    email: anton.bochkarev@rub.de
+
+openness: OSOD
+trained_for_benchmark: true
+train_task: S2EF
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 42112223
+n_estimators: 1
+training_set: [OMat24, sAlex, MPtrj]
+requirements:
+  tensorpotential: 0.6.0
+  tensorflow: 2.20.0
+training_cost:
+  Nvidia H100 80GB GPUs: {amount: 16, hours: 124}
+
+repo: https://github.com/ICAMS/grace-tensorpotential
+doi: https://doi.org/10.1038/s41524-026-01979-1
+paper: https://doi.org/10.1038/s41524-026-01979-1
+url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation
+pr_url: https://github.com/janosh/matbench-discovery/pull/368
+checkpoint_url: https://huggingface.co/AMS-ICAMS-RUB/grace-foundation-models/resolve/main/models/GRACE-3L-OMAT-large-ft-AM-model.tar.gz
+license:
+  code: ASL
+  code_url: https://github.com/ICAMS/grace-tensorpotential/blob/3f614c8ae6/LICENSE.md
+  checkpoint: ASL
+  checkpoint_url: https://github.com/ICAMS/grace-tensorpotential/blob/3f614c8ae6/LICENSE.md
+
+hyperparams:
+  max_force: 0.01
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  graph_construction_radius: 6.0
+  max_neighbors: .inf
+
+metrics:
+  md:
+    pred_file: models/grace/grace-3l-oam-l/2026-07-03-grace-3l-oam-l-md-metrics.csv.gz
+    pred_file_url: https://figshare.com/files/66505409
+    energy_rmse: 0.535 # meV/atom
+    force_rmse: 54.2289 # meV/Å
+    rdf_error: 3.45 # %
+    adf_error: 1.2845 # %
+    vdos_error: 21.9708 # %
+    pressure_mae: 0.7995 # GPa
+    pressure_wasserstein: 0.8075 # GPa
+    pressure_error: 43.1865 # %
+    n_systems: 17 # count
+  diatomics:
+    pred_file: models/grace/grace-3l-oam-l/2026-07-02-diatomics.json.gz
+    pred_file_url: https://figshare.com/files/66505406
+    pbe_wall_dist_mae: 0.1667
+    pbe_energy_mae: 1.111
+    pbe_bond_length_error: 0.4294
+    pbe_well_depth_error: 0.8973
+    pbe_vib_freq_error: 62.41
+    tortuosity: 1.046
+    energy_diff_flips: 3.184
+    energy_jump: 0.4181
+    force_flips: 3.345
+    force_total_variation: 173.4
+    force_jump: 7.232
+    pbe_force_mae: 0.9748
+  phonons:
+    kappa_103:
+      κ_SRME: 0.1211
+      κ_SRE: 0.0536
+      pred_file: models/grace/grace-3l-oam-l/2026-07-02-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/66505403
+  geo_opt:
+    pred_file: models/grace/grace-3l-oam-l/2026-07-02-wbm-geo-opt.jsonl.gz
+    pred_file_url: https://figshare.com/files/66505400
+    struct_col: grace_structure
+    symprec=1e-2:
+      rmsd: 0.0575 # unitless
+      n_sym_ops_mae: 1.6163 # unitless
+      symmetry_decrease: 0.0384 # fraction
+      symmetry_match: 0.824 # fraction
+      symmetry_increase: 0.13 # fraction
+      n_structures: 256963 # count
+    symprec=1e-5:
+      rmsd: 0.0575 # unitless
+      n_sym_ops_mae: 2.1343 # unitless
+      symmetry_decrease: 0.0427 # fraction
+      symmetry_match: 0.6929 # fraction
+      symmetry_increase: 0.2594 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/grace/grace-3l-oam-l/2026-07-02-wbm-geo-opt-symprec=1e-5-moyo=0.14.0.csv.gz
+      analysis_file_url: https://figshare.com/files/66505427
+  discovery:
+    pred_file: models/grace/grace-3l-oam-l/2026-07-02-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/66505397
+    pred_col: e_form_per_atom_grace
+    full_test_set:
+      F1: 0.905 # fraction
+      DAF: 5.259 # dimensionless
+      Precision: 0.902 # fraction
+      Recall: 0.908 # fraction
+      Accuracy: 0.967 # fraction
+      TPR: 0.908 # fraction
+      FPR: 0.02 # fraction
+      TNR: 0.98 # fraction
+      FNR: 0.092 # fraction
+      TP: 40043.0 # count
+      FP: 4328.0 # count
+      TN: 208543.0 # count
+      FN: 4049.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.869 # dimensionless
+      missing_preds: 2 # count
+    most_stable_10k:
+      F1: 0.985 # fraction
+      DAF: 6.345 # dimensionless
+      Precision: 0.97 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.97 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9700.0 # count
+      FP: 300.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.08 # eV/atom
+      R2: 0.862 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.925 # fraction
+      DAF: 6.041 # dimensionless
+      Precision: 0.923 # fraction
+      Recall: 0.926 # fraction
+      Accuracy: 0.977 # fraction
+      TPR: 0.926 # fraction
+      FPR: 0.014 # fraction
+      TNR: 0.986 # fraction
+      FNR: 0.074 # fraction
+      TP: 30913.0 # count
+      FP: 2562.0 # count
+      TN: 179552.0 # count
+      FN: 2461.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.875 # dimensionless
+      missing_preds: 0 # count

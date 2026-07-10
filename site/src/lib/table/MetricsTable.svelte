@@ -14,7 +14,14 @@
   import { append_better_hint, metric_better_as } from '$lib/metrics'
   import { make_table_filters } from '$lib/models.svelte'
   import type { UrlTableFilters } from '$lib/url-state.svelte'
-  import type { DiscoverySet, Label, LinkData, ModelData, SortDir } from '$lib/types'
+  import type {
+    DiscoverySet,
+    Label,
+    LinkData,
+    ModelData,
+    SortDir,
+    TableLabel,
+  } from '$lib/types'
   import type { CellSnippetArgs, Label as MattervizLabel } from 'matterviz'
   import { HeatmapTable, Icon } from 'matterviz'
   import { click_outside, tooltip } from 'svelte-multiselect/attachments'
@@ -26,6 +33,7 @@
   import { heatmap_class } from '../table-export'
 
   type HeaderLabel = MattervizLabel & { tooltip_description?: string }
+  type PredFilesDropdown = LinkData[`pred_files`] & { x: number; y: number }
 
   let {
     discovery_set = $bindable(`unique_prototypes`),
@@ -33,9 +41,6 @@
     col_filter = $bindable(() => true),
     filters = make_table_filters(),
     show_selected_only = $bindable(false),
-    active_files = $bindable([]),
-    active_model_name = $bindable(``),
-    pred_files_dropdown_pos = $bindable(null),
     selected_models = $bindable(new SvelteSet<string>()),
     column_order = $bindable([]),
     sort = $bindable({ ...DEFAULT_TABLE_SORT }),
@@ -46,9 +51,6 @@
     col_filter?: (col: Label) => boolean
     filters?: UrlTableFilters
     show_selected_only?: boolean
-    active_files?: { name: string; url: string }[]
-    active_model_name?: string
-    pred_files_dropdown_pos?: { x: number; y: number; name: string } | null
     selected_models?: Set<string>
     column_order?: string[]
     sort?: { column: string; dir: SortDir }
@@ -60,6 +62,7 @@
   const pinned_col_rank = (col: Label): number => (col.label === model_name.label ? 0 : 1)
 
   let selected_count = $derived(selected_models.size)
+  let pred_files_dropdown = $state<PredFilesDropdown | null>(null)
 
   // Reuse one row object per model across rebuilds: HeatmapTable keys its {#each}
   // by row-object identity, so its flip animation only runs when the SAME objects
@@ -94,7 +97,7 @@
         // blank keys absent from the fresh row (e.g. after a discovery-set switch);
         // undefined renders/sorts like a missing key and avoids dynamic `delete`
         for (const key of Object.keys(cached)) {
-          if (!(key in row)) (cached as Record<string, unknown>)[key] = undefined
+          if (!(key in row)) Reflect.set(cached, key, undefined)
         }
         return Object.assign(cached, row)
       }),
@@ -123,7 +126,7 @@
       training_set,
       org,
     ]
-      .map((col): Label => {
+      .map((col): TableLabel => {
         const better = col.better ?? metric_better_as(col.label) ?? undefined
         const visible = col.visible !== false && col_filter(col)
         return {
@@ -143,43 +146,33 @@
     columns.map(
       (col): HeaderLabel => ({
         ...col,
-        better: col.better ?? undefined,
         description: undefined,
         tooltip_description: col.description,
       }),
     ),
   )
 
-  function show_dropdown(event: MouseEvent, link_data: LinkData) {
+  type ButtonMouseEvent = MouseEvent & { currentTarget: HTMLButtonElement }
+  function show_dropdown(event: ButtonMouseEvent, link_data: LinkData) {
     event.stopPropagation()
 
     // Get button position for dropdown placement
-    const button = event.currentTarget as HTMLElement
-    const rect = button.getBoundingClientRect()
-
-    active_model_name = link_data.pred_files.name
-    active_files = link_data.pred_files.files
+    const rect = event.currentTarget.getBoundingClientRect()
 
     // Position dropdown relative to the button's position in the document
-    const { name } = link_data.pred_files
-    pred_files_dropdown_pos = {
-      x: rect.left + window.scrollX,
-      y: rect.bottom + window.scrollY,
-      name,
+    pred_files_dropdown = {
+      ...link_data.pred_files,
+      x: rect.left + globalThis.scrollX,
+      y: rect.bottom + globalThis.scrollY,
     }
   }
-  const close_dropdown = () => (pred_files_dropdown_pos = null)
+  const close_dropdown = () => (pred_files_dropdown = null)
 
   function toggle_model_selection(row_model_name: string) {
     const new_selected = new SvelteSet(selected_models)
     if (new_selected.has(row_model_name)) new_selected.delete(row_model_name)
     else new_selected.add(row_model_name)
     selected_models = new_selected
-  }
-
-  function handle_row_double_click(event: MouseEvent, row_model_name: string) {
-    event.preventDefault()
-    toggle_model_selection(row_model_name)
   }
 
   const header_tooltip = (content: string | undefined) => (node: Element) => {
@@ -192,7 +185,7 @@
 
 <svelte:window
   onkeydown={(event) => {
-    if (event.key === `Escape` && pred_files_dropdown_pos) {
+    if (event.key === `Escape` && pred_files_dropdown) {
       close_dropdown()
       event.preventDefault()
     }
@@ -208,7 +201,7 @@
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}
-  {@const links = val as unknown as LinkData}
+  {@const links = val as LinkData}
   {#if links}
     {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
       {#if `url` in link && ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
@@ -241,7 +234,7 @@
 
 <HeatmapTable
   data={metrics_data}
-  columns={table_columns as MattervizLabel[]}
+  columns={table_columns}
   bind:sort
   special_cells={{
     Links: links_cell,
@@ -255,7 +248,8 @@
   {header_cell}
   onrowdblclick={(event, row) => {
     if (typeof row.model_name === `string`) {
-      handle_row_double_click(event, row.model_name)
+      event.preventDefault()
+      toggle_model_selection(row.model_name)
     }
   }}
   {...rest}
@@ -266,20 +260,20 @@
   {/snippet}
 </HeatmapTable>
 
-{#if pred_files_dropdown_pos}
-  {@const { x, y } = pred_files_dropdown_pos}
+{#if pred_files_dropdown}
+  {@const { x, y, name, files } = pred_files_dropdown}
   {@const style = `position: absolute; left: ${x}px; top: ${y}px;`}
   <div
     class="pred-files-dropdown"
     {style}
     {@attach click_outside({ callback: close_dropdown })}
   >
-    <h4>Files for {active_model_name}</h4>
+    <h4>Files for {name}</h4>
     <ol>
-      {#each active_files as { name, url } (url)}
+      {#each files as { name: file_name, url } (url)}
         <li>
           <a href={url} target="_blank" rel="noopener noreferrer">
-            {@html name}
+            {@html file_name}
           </a>
         </li>
       {/each}

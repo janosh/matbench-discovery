@@ -59,7 +59,7 @@ export const {
 } = parity_asset_resolver(
   `kappa`,
   kappa_parity_manifest,
-  import.meta.env.VITE_KAPPA_PARITY_ASSET_BASE_URL as string | undefined,
+  import.meta.env.VITE_KAPPA_PARITY_ASSET_BASE_URL,
 )
 
 export async function load_kappa_parity_base(): Promise<KappaParityBase> {
@@ -109,9 +109,9 @@ export function build_kappa_parity_series(
 ): KappaParitySeries {
   const points = base.material_ids
     .map((_material_id, row_idx) => get_kappa_parity_point(base, model, row_idx))
-    .filter((pt): pt is KappaParityPoint => pt !== null)
-  const x = points.map((pt) => pt.kappa_dft)
-  const y = points.map((pt) => pt.kappa_ml)
+    .filter((point): point is KappaParityPoint => point !== null)
+  const x = points.map((point) => point.kappa_dft)
+  const y = points.map((point) => point.kappa_ml)
   return { x, y, points }
 }
 

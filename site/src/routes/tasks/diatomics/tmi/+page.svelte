@@ -55,8 +55,8 @@
     () => [[`elements`, selected_element_group, `all`]],
   )
 
-  function series_for(formula: string) {
-    return Object.entries(magmom_curves[formula] ?? {})
+  const series_for = (formula: string) =>
+    Object.entries(magmom_curves[formula] ?? {})
       .filter(([functional]) => visible_functionals.has(functional))
       .flatMap(([functional, curve]) =>
         [0, 1].map((atom_idx) => ({
@@ -85,7 +85,6 @@
           },
         })),
       )
-  }
 </script>
 
 <h1>Diatomics TMI: DFT Reference Spin States</h1>
