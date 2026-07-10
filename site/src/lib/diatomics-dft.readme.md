@@ -123,7 +123,7 @@ Pa: Pa
 U: U
 ```
 
-Fixed-oxidation-state lanthanide potentials such as `Ho_3` freeze f-electrons in the core and effectively pin Ho to 3+, so they are not appropriate for neutral Ho₂. We instead use the `_h` potentials (`Pr_h` through `Yb_h`), which include f-electrons in the valence. This choice also makes SCF convergence difficult for heavy lanthanides (see caveats below). `Lu_3` is the only exception because Lu has a full, chemically inert f¹⁴ shell. For Rh, we use `Rh_pv`, which includes semicore p states in the valence and does not impose an oxidation state.
+Fixed-oxidation-state lanthanide potentials such as `Ho_3` freeze f-electrons in the core with the occupancy of the trivalent ion, so they are not appropriate for neutral Ho₂. We instead use the `_h` potentials (`Pr_h` through `Yb_h`), which include f-electrons in the valence. This choice also makes SCF convergence difficult for heavy lanthanides (see caveats below). The current Lu curve uses `Lu_3`, which freezes 4f¹⁴ but retains the neutral atom's 5d¹6s² bonding electrons (plus 5p⁶ semicore). Matching the neutral f-shell occupancy does not by itself establish transferability to Lu₂, so we are validating it against the standard `Lu` potential with 4f¹⁴ in the valence. For Rh, we use `Rh_pv`, which includes semicore p states in the valence and does not impose an oxidation state.
 
 Important per-point settings:
 

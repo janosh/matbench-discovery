@@ -14,6 +14,7 @@
     OPENNESS_OPTIONS,
     parse_targets,
     TARGET_OUTPUTS,
+    TRAIN_FILTER_MODES,
     type TargetOutput,
     type UrlTableFilters,
   } from '$lib/url-state.svelte'
@@ -42,7 +43,7 @@
   // summaries open their pane directly below, so tooltips go above the button
   const summary_tooltip = tooltip({ placement: `top` })
 
-  const train_modes = [`require`, `exclude`] as const
+  const target_outputs = Object.entries(TARGET_OUTPUTS) as [TargetOutput, string][]
   // static per-category model tallies shown in the filter panels. Semantics mirror
   // UrlTableFilters.matches: missing openness counts as OSOD, targets are parsed with
   // the same parse_targets, and fs_mode `any` counts every model.
@@ -53,7 +54,7 @@
   for (const model of MODELS) {
     const openness = model.openness ?? `OSOD`
     openness_counts[openness] = (openness_counts[openness] ?? 0) + 1
-    for (const dataset of model.training_set as string[]) {
+    for (const dataset of model.training_set) {
       training_counts[dataset] = (training_counts[dataset] ?? 0) + 1
     }
     const { outputs, fs_mode } = parse_targets(model.targets)
@@ -63,7 +64,6 @@
     if (fs_mode) fs_mode_counts[fs_mode] = (fs_mode_counts[fs_mode] ?? 0) + 1
   }
   const n_train = $derived(Object.keys(filters.training).length)
-  const n_openness = $derived(filters.openness.length)
   // badge shows the active constraints when they differ from the default (require F)
   const targets_badge = $derived(
     filters.targets_param === DEFAULT_TARGETS_PARAM
@@ -105,12 +105,12 @@
         <em>require</em> = model's training set must include this dataset,
         <em>exclude</em> = hide models trained on it
       </span>
-      {#each train_modes as mode, mode_idx (mode)}
+      {#each TRAIN_FILTER_MODES as mode, mode_idx (mode)}
         <span class="col-head" style:grid-column={mode_idx + 2}>{mode}</span>
       {/each}
       {#each filters.training_sets as dataset_key (dataset_key)}
         <span>{dataset_key} ({training_counts[dataset_key] ?? 0})</span>
-        {#each train_modes as mode (mode)}
+        {#each TRAIN_FILTER_MODES as mode (mode)}
           <input
             type="checkbox"
             aria-label="{mode} {dataset_key}"
@@ -127,8 +127,8 @@
       title="Filter models by whether their source code and training data are open"
       {@attach summary_tooltip}
     >
-      Openness{n_openness < OPENNESS_OPTIONS.length
-        ? ` (${n_openness}/${OPENNESS_OPTIONS.length})`
+      Openness{filters.openness.length < OPENNESS_OPTIONS.length
+        ? ` (${filters.openness.length}/${OPENNESS_OPTIONS.length})`
         : ``}
     </summary>
     <div class="dropdown">
@@ -157,17 +157,17 @@
         Every model predicts energy (E). <em>require</em>/<em>exclude</em> filter by the other
         predicted outputs; forces are required by default (hides energy-only models)
       </span>
-      {#each train_modes as mode, mode_idx (mode)}
+      {#each TRAIN_FILTER_MODES as mode, mode_idx (mode)}
         <span class="col-head" style:grid-column={mode_idx + 2}>{mode}</span>
       {/each}
-      {#each Object.entries(TARGET_OUTPUTS) as [key, label] (key)}
+      {#each target_outputs as [key, label] (key)}
         <span>{label} ({key}) ({target_counts[key] ?? 0})</span>
-        {#each train_modes as mode (mode)}
+        {#each TRAIN_FILTER_MODES as mode (mode)}
           <input
             type="checkbox"
             aria-label="{mode} {label}"
-            checked={filters.targets[key as TargetOutput] === mode}
-            onchange={() => filters.set_target(key as TargetOutput, mode)}
+            checked={filters.targets[key] === mode}
+            onchange={() => filters.set_target(key, mode)}
           />
         {/each}
       {/each}
@@ -263,60 +263,64 @@
   }
   details.filter-menu {
     position: relative;
-  }
-  details.filter-menu summary {
-    cursor: pointer;
-    list-style: none;
-    padding: 1pt 6pt;
-    border-radius: 4px;
-    background: var(--btn-bg);
-  }
-  details.filter-menu[open] summary {
-    background: color-mix(in srgb, var(--link-color) 25%, transparent);
-  }
-  details.filter-menu .dropdown {
-    position: absolute;
-    right: 0;
-    z-index: 6;
-    display: grid;
-    gap: 2pt;
-    min-width: max-content;
-    margin-top: 4px;
-    padding: 4pt 6pt;
-    background: var(--page-bg);
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    box-shadow: 0 0 10px var(--shadow);
-  }
-  details.filter-menu .hint {
-    font-size: 0.85em;
-    opacity: 0.75;
-    text-wrap: balance;
-    margin-bottom: 1pt;
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 1pt 6pt;
+      border-radius: 4px;
+      background: var(--btn-bg);
+    }
+    &[open] summary {
+      background: color-mix(in srgb, var(--link-color) 25%, transparent);
+    }
+    .dropdown {
+      position: absolute;
+      right: 0;
+      z-index: 6;
+      display: grid;
+      gap: 2pt;
+      min-width: max-content;
+      margin-top: 4px;
+      padding: 4pt 6pt;
+      background: var(--page-bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      box-shadow: 0 0 10px var(--shadow);
+    }
+    .hint {
+      font-size: 0.85em;
+      opacity: 0.75;
+      text-wrap: balance;
+      margin-bottom: 1pt;
+    }
   }
   /* training-data panel: 3-column grid (dataset | require | exclude) */
   .train-grid {
     grid-template-columns: auto repeat(2, min-content);
     gap: 2pt 8pt;
     align-items: center;
-  }
-  .train-grid .hint {
-    grid-column: 1 / -1;
-    /* contribute zero to grid column sizing (the dataset rows set the panel width),
-    then stretch to whatever width they produce and wrap */
-    width: 0;
-    min-width: 100%;
-    text-wrap: wrap;
-  }
-  .train-grid :is(.col-head, input) {
-    justify-self: center;
-  }
-  .train-grid .col-head {
-    font-style: italic;
-    opacity: 0.75;
-  }
-  .train-grid input {
-    margin: 0;
+    .hint {
+      grid-column: 1 / -1;
+      /* contribute zero to grid column sizing (the dataset rows set the panel width),
+      then stretch to whatever width they produce and wrap */
+      width: 0;
+      min-width: 100%;
+      text-wrap: wrap;
+    }
+    :is(.col-head, input) {
+      justify-self: center;
+    }
+    .col-head {
+      font-style: italic;
+      opacity: 0.75;
+    }
+    input {
+      margin: 0;
+    }
+    .fs-mode {
+      grid-column: 1 / -1;
+      margin-top: 1pt;
+    }
   }
   :is(.fs-mode, .filter-row) {
     display: flex;
@@ -326,22 +330,16 @@
   }
   /* label left + vertically centered, radio options stacked on the right (mirrors the
   label-left/inputs-right layout of the require/exclude rows above) */
-  .train-grid .fs-mode {
-    grid-column: 1 / -1;
-    margin-top: 1pt;
-  }
   .fs-mode-options {
     display: flex;
     flex-direction: column;
     gap: 2pt;
-  }
-  .fs-mode-options label {
-    display: flex;
-    gap: 3pt;
-    align-items: center;
-  }
-  .fs-mode-options label {
-    justify-content: end;
+    label {
+      display: flex;
+      gap: 3pt;
+      align-items: center;
+      justify-content: end;
+    }
   }
   button.clear-filters {
     display: flex;

@@ -110,9 +110,8 @@ export function apply_weights_param(
       return
     }
   }
-  for (const key of keys) {
+  for (const key of keys)
     config[key].weight = default_config[key]?.weight ?? config[key].weight
-  }
 }
 
 // color_scale param: valid d3 interpolate names, defaulting to Viridis
@@ -150,7 +149,8 @@ export const url_color_scale = {
 //   heatmap=0             heatmap colors off (default on)
 export const OPENNESS_OPTIONS = [`OSOD`, `OSCD`, `CSOD`, `CSCD`] as const
 export type Openness = (typeof OPENNESS_OPTIONS)[number]
-export type TrainFilterMode = `require` | `exclude`
+export const TRAIN_FILTER_MODES = [`require`, `exclude`] as const
+export type TrainFilterMode = (typeof TRAIN_FILTER_MODES)[number]
 // filterable predicted outputs (energy is universal, so not filterable): forces,
 // stress, magmoms, Hessian. Keys match the letters in model.targets (e.g. EFS_GM).
 export const TARGET_OUTPUTS = {
@@ -160,6 +160,7 @@ export const TARGET_OUTPUTS = {
   H: `Hessian`,
 } as const
 export type TargetOutput = keyof typeof TARGET_OUTPUTS
+const target_output_keys = Object.keys(TARGET_OUTPUTS) as TargetOutput[]
 // how forces/stress are computed: direct model heads vs energy gradients
 export const FS_MODES = [`any`, `direct`, `gradient`] as const
 export type FsMode = (typeof FS_MODES)[number]
@@ -175,6 +176,10 @@ export type FilterPreset = {
 }
 // minimal structural model shape keeps this module decoupled from $lib/types
 type FilterableModel = { training_set: string[]; openness?: string; targets?: string }
+const is_one_of = <Value extends string>(
+  options: readonly Value[],
+  value: unknown,
+): value is Value => typeof value === `string` && options.includes(value as Value)
 
 // Split a model.targets string like `EFS_GM` into its predicted outputs and the
 // force/stress computation mode: prefix letters are E/F/S/H outputs, the suffix
@@ -266,8 +271,7 @@ export class UrlTableFilters {
     this.training = Object.fromEntries(
       Object.entries(preset.training).filter(
         ([key, mode]) =>
-          this.training_sets.includes(key) &&
-          ([`require`, `exclude`] as string[]).includes(mode),
+          this.training_sets.includes(key) && is_one_of(TRAIN_FILTER_MODES, mode),
       ),
     )
     // filter OPENNESS_OPTIONS (not spread the preset) to keep canonical order and
@@ -277,12 +281,10 @@ export class UrlTableFilters {
     this.targets = Object.fromEntries(
       Object.entries(preset.targets ?? DEFAULT_TARGETS).filter(
         ([key, mode]) =>
-          key in TARGET_OUTPUTS && ([`require`, `exclude`] as string[]).includes(mode),
+          is_one_of(target_output_keys, key) && is_one_of(TRAIN_FILTER_MODES, mode),
       ),
     )
-    this.fs_mode = FS_MODES.includes(preset.fs_mode as FsMode)
-      ? (preset.fs_mode as FsMode)
-      : `any`
+    this.fs_mode = is_one_of(FS_MODES, preset.fs_mode) ? preset.fs_mode : `any`
   }
 
   // snapshot of the active filters, e.g. for saving as a preset
@@ -308,9 +310,7 @@ export class UrlTableFilters {
     const shown = params
       .get(`openness`)
       ?.split(`,`)
-      .filter((token): token is Openness =>
-        (OPENNESS_OPTIONS as readonly string[]).includes(token),
-      )
+      .filter((token) => is_one_of(OPENNESS_OPTIONS, token))
     this.openness = shown?.length
       ? OPENNESS_OPTIONS.filter((op) => shown.includes(op))
       : [...OPENNESS_OPTIONS]
@@ -320,7 +320,7 @@ export class UrlTableFilters {
     const targets: Partial<Record<TargetOutput, TrainFilterMode>> = {}
     let fs_mode: FsMode = `any`
     for (const token of targets_param?.split(`,`).filter(Boolean) ?? []) {
-      if ((FS_MODES as readonly string[]).includes(token)) fs_mode = token as FsMode
+      if (is_one_of(FS_MODES, token)) fs_mode = token
       else {
         const exclude = token.startsWith(`-`)
         const key = (exclude ? token.slice(1) : token) as TargetOutput
@@ -336,11 +336,9 @@ export class UrlTableFilters {
   // canonical serialization of the targets + fs_mode constraints (F,-M,direct)
   get targets_param(): string {
     return [
-      ...Object.keys(TARGET_OUTPUTS)
+      ...target_output_keys
         .filter((key) => key in this.targets)
-        .map((key) =>
-          this.targets[key as TargetOutput] === `exclude` ? `-${key}` : key,
-        ),
+        .map((key) => (this.targets[key] === `exclude` ? `-${key}` : key)),
       ...(this.fs_mode === `any` ? [] : [this.fs_mode]),
     ].join(`,`)
   }
