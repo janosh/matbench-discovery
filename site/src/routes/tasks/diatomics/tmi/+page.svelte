@@ -140,11 +140,12 @@
   {/each}
 </div>
 
-<div class="controls">
-  <div aria-label="Element group filter">
-    <SelectToggle options={element_groups} bind:selected={selected_element_group} />
-  </div>
-</div>
+<SelectToggle
+  aria-label="Element group filter"
+  options={element_groups}
+  bind:selected={selected_element_group}
+  style="margin-block: 1em"
+/>
 
 <div class="diatomics-grid bleed-1400">
   {#each formulas as formula (formula)}
@@ -214,9 +215,6 @@
   }
   .legend button:hover {
     background: var(--btn-bg-hover);
-  }
-  .controls {
-    margin-block: 1em;
   }
   .swatch {
     width: 1em;

@@ -263,9 +263,11 @@
 {/if}
 
 <div class="controls">
-  <div aria-label="Element group filter">
-    <SelectToggle options={element_groups} bind:selected={selected_element_group} />
-  </div>
+  <SelectToggle
+    aria-label="Element group filter"
+    options={element_groups}
+    bind:selected={selected_element_group}
+  />
 
   <ModelSelect options={selectable_options} bind:selected={model_selection.selected} />
 </div>

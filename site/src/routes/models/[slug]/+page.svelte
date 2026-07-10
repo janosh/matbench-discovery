@@ -258,29 +258,27 @@
 
   <!-- segmented tab bar doubles as the plot title; the active button shows a
   spinner while its plot's data is still loading -->
-  <div class="energy-parity-tabs">
-    <SelectToggle
-      bind:selected={energy_parity_tab}
-      options={energy_parity_options.map((option) => ({
-        ...option,
-        loading:
-          energy_parity_tab === option.value &&
-          energy_parity_statuses[option.value] === `loading`,
-      }))}
-    />
-  </div>
+  <SelectToggle
+    class="energy-parity-tabs"
+    bind:selected={energy_parity_tab}
+    options={energy_parity_options.map((option) => ({
+      ...option,
+      loading:
+        energy_parity_tab === option.value &&
+        energy_parity_statuses[option.value] === `loading`,
+    }))}
+  />
   <!-- only the default tab's plot mounts on page load; the other mounts on first
   activation and then stays mounted-but-hidden so toggling back is instant (asset
   loads are also promise-cached, and keeping the component alive preserves zoom) -->
   {#each energy_parity_options as { value: energy_kind } (energy_kind)}
     {#if mounted_energy_tabs.has(energy_kind)}
-      <div hidden={energy_parity_tab !== energy_kind}>
-        <EnergyParityPlot
-          {model}
-          {energy_kind}
-          onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
-        />
-      </div>
+      <EnergyParityPlot
+        hidden={energy_parity_tab !== energy_kind}
+        {model}
+        {energy_kind}
+        onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
+      />
     {/if}
   {/each}
 
@@ -494,32 +492,28 @@
   }
   /* segmented control: buttons fused into one bar with rounded outer corners,
   compact height, sitting directly above the plot as its title */
-  .energy-parity-tabs {
-    display: flex;
-    justify-content: center;
+  :global(.energy-parity-tabs.selection-toggle) {
+    gap: 0;
     margin: 2em auto 0.5em;
   }
-  .energy-parity-tabs :global(.selection-toggle) {
-    gap: 0;
-  }
-  .energy-parity-tabs :global(.selection-toggle button) {
+  :global(.energy-parity-tabs.selection-toggle button) {
     padding: 2px 12px;
     border-radius: 0;
     border-width: 0.5px; /* hairline on HiDPI, incl. the active colored border */
   }
   /* fuse adjacent borders; the active button sits on top so its colored border
   wins the shared edge regardless of which side is selected */
-  .energy-parity-tabs :global(.selection-toggle button + button) {
+  :global(.energy-parity-tabs.selection-toggle button + button) {
     margin-left: -0.5px;
   }
-  .energy-parity-tabs :global(.selection-toggle button.active) {
+  :global(.energy-parity-tabs.selection-toggle button.active) {
     position: relative;
     z-index: 1;
   }
-  .energy-parity-tabs :global(.selection-toggle button:first-child) {
+  :global(.energy-parity-tabs.selection-toggle button:first-child) {
     border-radius: 9999px 0 0 9999px;
   }
-  .energy-parity-tabs :global(.selection-toggle button:last-child) {
+  :global(.energy-parity-tabs.selection-toggle button:last-child) {
     border-radius: 0 9999px 9999px 0;
   }
   /* version numbers as light code, less prominent than the package name */

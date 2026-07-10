@@ -2,6 +2,7 @@
   import { Icon } from 'matterviz'
   import { Spinner } from 'matterviz/feedback'
   import { tooltip as tip } from 'svelte-multiselect/attachments'
+  import type { HTMLAttributes } from 'svelte/elements'
 
   interface OptionInfo {
     value: string
@@ -14,15 +15,16 @@
     selected = $bindable(``),
     options = [],
     tooltip_placement = `bottom`,
+    ...rest
   }: {
     selected: string
     options: OptionInfo[]
     tooltip_placement?: `top` | `bottom` | `left` | `right`
-  } = $props()
+  } & HTMLAttributes<HTMLDivElement> = $props()
   const target = { target: `_blank`, rel: `noopener noreferrer` }
 </script>
 
-<div class="selection-toggle">
+<div role="group" {...rest} class={[`selection-toggle`, rest.class]}>
   {#each options as { value, label, tooltip, link, loading } (value)}
     <button
       class:active={selected === value}
