@@ -119,13 +119,17 @@ def test_build_reference_reports_dissociation_tail_jump(tmp_path: Path) -> None:
     out_path = tmp_path / "reference.json.gz"
     merged_dir = tmp_path / "merged"
     candidate_map_path.write_text(json.dumps({"H": [0]}))
-    write_curve_points(
-        tmp_path,
-        [
-            {"distance": 2.0, "energies": [-0.95], "forces": FINITE_FORCES},
-            {"distance": 3.0, "energies": [-0.5], "forces": FINITE_FORCES},
-        ],
-    )
+    tail_energies = [-1 + point_idx / 1000 for point_idx in range(1, 45)]
+    tail_energies[-1] = -0.5
+    points: list[dict[str, object]] = [
+        {
+            "distance": float(point_idx + 1),
+            "energies": [energy],
+            "forces": FINITE_FORCES,
+        }
+        for point_idx, energy in enumerate(tail_energies, start=1)
+    ]
+    write_curve_points(tmp_path, points)
 
     summary = build_reference(
         src_dir=str(tmp_path),
@@ -138,9 +142,12 @@ def test_build_reference_reports_dissociation_tail_jump(tmp_path: Path) -> None:
 
     assert summary["tail_jump_pairs"] == {"PBE": 1}
     assert summary["magmom_jump_pairs"] == {}
+    assert summary["short_candidate_pairs"] == {}
     quality_rows = json.loads((merged_dir / "reference-quality.json").read_text())
     pbe_row = next(row for row in quality_rows if row["xc"] == "pbe")
     assert pbe_row["tail_jumps"] == 1
+    with gzip.open(out_path, "rt", encoding="utf-8") as file:
+        assert json.load(file)["PBE"]["H-H"]["energies"] == [-1.0, *tail_energies]
 
 
 def test_serializable_curve_reports_magmoms_and_spin_candidates() -> None:

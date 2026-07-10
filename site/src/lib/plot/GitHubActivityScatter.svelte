@@ -9,8 +9,6 @@
     github_data = [],
     show_model_labels = true,
     color_scale = { type: `log` },
-    class: class_name = ``,
-    style = ``,
     ...rest
   }: {
     github_data?: GitHubActivityData[]
@@ -79,45 +77,46 @@
   })
 </script>
 
-<ScatterPlot
-  class="bleed-1400 {class_name}"
-  style="height: 600px; margin-block: 2em; {style}"
-  series={[series]}
-  x_axis={{
-    label: axes.x.label,
-    format: axes.x.format,
-    label_shift: { y: -50 },
-    range: [0, null],
-  }}
-  y_axis={{
-    label: axes.y.label,
-    format: axes.y.format,
-    range: [0, null],
-  }}
-  color_bar={{ title: axes.color_value.label, tick_format: `~s` }}
-  {color_scale}
-  label_placement_config={{ max_neighbors: { count: 3, radius: 40 } }}
-  point_events={{
-    onclick: ({ point }) => {
-      const slug = point.metadata?.model_key ?? point.metadata?.name
-      if (typeof slug === `string`) goto(`/models/${encodeURIComponent(slug)}`)
-    },
-  }}
-  {...rest}
->
-  {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-    {@const name = (metadata as { name?: string })?.name}
-    {#if name}
-      {@const point = plot_data_by_name.get(name)}
-      <strong>{name}</strong><br />
-      {axes.x.label}: {x_formatted}<br />
-      {axes.y.label}: {y_formatted}<br />
-      {#if point?.color_value != null}
-        {axes.color_value.label}: {format_num(point.color_value)}<br />
+<div class="bleed-1400" style="margin-block: 2em">
+  <ScatterPlot
+    style="height: 600px"
+    series={[series]}
+    x_axis={{
+      label: axes.x.label,
+      format: axes.x.format,
+      label_shift: { y: -50 },
+      range: [0, null],
+    }}
+    y_axis={{
+      label: axes.y.label,
+      format: axes.y.format,
+      range: [0, null],
+    }}
+    color_bar={{ title: axes.color_value.label, tick_format: `~s` }}
+    {color_scale}
+    label_placement_config={{ max_neighbors: { count: 3, radius: 40 } }}
+    point_events={{
+      onclick: ({ point }) => {
+        const slug = point.metadata?.model_key ?? point.metadata?.name
+        if (typeof slug === `string`) goto(`/models/${encodeURIComponent(slug)}`)
+      },
+    }}
+    {...rest}
+  >
+    {#snippet tooltip({ x_formatted, y_formatted, metadata })}
+      {@const name = (metadata as { name?: string })?.name}
+      {#if name}
+        {@const point = plot_data_by_name.get(name)}
+        <strong>{name}</strong><br />
+        {axes.x.label}: {x_formatted}<br />
+        {axes.y.label}: {y_formatted}<br />
+        {#if point?.color_value != null}
+          {axes.color_value.label}: {format_num(point.color_value)}<br />
+        {/if}
+        {#if point?.size_value != null}
+          {axes.size_value.label}: {format_num(point.size_value)}<br />
+        {/if}
       {/if}
-      {#if point?.size_value != null}
-        {axes.size_value.label}: {format_num(point.size_value)}<br />
-      {/if}
-    {/if}
-  {/snippet}
-</ScatterPlot>
+    {/snippet}
+  </ScatterPlot>
+</div>
