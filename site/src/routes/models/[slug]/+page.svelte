@@ -319,7 +319,9 @@
       bind:active_element
       tile_props={{ float_fmt: `.2f` }}
       show_photo={false}
-      missing={{ color: `rgba(255,255,255,0.3)` }}
+      missing={{
+        color: `light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.5))`,
+      }}
     >
       {#snippet inset()}
         <TableInset style="align-content: center">
