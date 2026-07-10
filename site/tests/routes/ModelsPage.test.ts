@@ -93,7 +93,7 @@ describe(`Models Page`, () => {
   it(`toggles model details, shared across all cards via bound state`, async () => {
     mount(ModelsPage, {
       target: document.body,
-      props: { data: { initial_show_n_best: 3 } },
+      props: { initial_show_n_best: 3 },
     })
     await tick() // let the simulated afterNavigate URL-param read settle before clicking
 
@@ -144,7 +144,7 @@ describe(`Models Page`, () => {
       ({ input, expected }) => {
         mount(ModelsPage, {
           target: document.body,
-          props: { data: { initial_show_n_best: input } },
+          props: { initial_show_n_best: input },
         })
 
         const model_cards = document.querySelectorAll(`ol > li`)
@@ -160,7 +160,7 @@ describe(`Models Page`, () => {
     it(`renders valid card structure with unique model names`, () => {
       mount(ModelsPage, {
         target: document.body,
-        props: { data: { initial_show_n_best: 10 } },
+        props: { initial_show_n_best: 10 },
       })
 
       const cards = document.querySelectorAll(`ol > li`)
@@ -184,7 +184,7 @@ describe(`Models Page`, () => {
     const limit = 5
     mount(ModelsPage, {
       target: document.body,
-      props: { data: { initial_show_n_best: limit } },
+      props: { initial_show_n_best: limit },
     })
 
     const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
@@ -210,7 +210,7 @@ describe(`Models Page`, () => {
   it(`shows correct subset when limiting models`, () => {
     mount(ModelsPage, {
       target: document.body,
-      props: { data: { initial_show_n_best: 3 } },
+      props: { initial_show_n_best: 3 },
     })
 
     const limited_names = [...document.querySelectorAll(`ol > li h2 a`)].map(
@@ -229,7 +229,7 @@ describe(`Models Page`, () => {
   it(`renders color legend`, () => {
     mount(ModelsPage, {
       target: document.body,
-      props: { data: { initial_show_n_best: 3 } },
+      props: { initial_show_n_best: 3 },
     })
 
     const legend = doc_query(`legend`)

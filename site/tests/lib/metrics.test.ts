@@ -3,14 +3,13 @@ import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
 import {
   assemble_row_data,
   format_train_set,
-  make_combined_filter,
   metric_better_as,
   sort_models,
   targets_tooltips,
 } from '$lib/metrics'
 import type { TargetType } from '$lib/schema/model'
 import type { ModelData } from '$lib/types'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 describe(`targets_tooltips`, () => {
   it.each([
@@ -164,17 +163,6 @@ describe(`format_train_set`, () => {
   })
 })
 
-describe(`make_combined_filter`, () => {
-  it(`returns false when the user filter returns false`, () => {
-    const model_filter = vi.fn().mockReturnValue(false)
-    const filter = make_combined_filter(model_filter, true)
-    const model = { targets: `E`, training_set: [`MP 2022`] } as ModelData
-
-    expect(filter(model)).toBe(false)
-    expect(model_filter).toHaveBeenCalledWith(model)
-  })
-})
-
 describe(`assemble_row_data`, () => {
   // Use fixed model keys to ensure tests are stable against live data
   const test_model_keys = [`mace-mp-0`, `chgnet-0.3.0`]
@@ -182,8 +170,8 @@ describe(`assemble_row_data`, () => {
     // Ensure model_key exists before checking includes
     model.model_key ? test_model_keys.includes(model.model_key) : false
 
-  // assemble rows for the two test models with show_energy_only on and no model filters
-  const get_test_rows = () => assemble_row_data(`unique_prototypes`, model_filter, true)
+  // assemble rows for the two test models with no extra filters
+  const get_test_rows = () => assemble_row_data(`unique_prototypes`, model_filter)
 
   it(`returns formatted rows for selected models with expected properties`, () => {
     const rows = get_test_rows()
@@ -224,11 +212,7 @@ describe(`assemble_row_data`, () => {
 
     try {
       expect(
-        assemble_row_data(
-          `unique_prototypes`,
-          (model) => model.model_key === model_key,
-          true,
-        ),
+        assemble_row_data(`unique_prototypes`, (model) => model.model_key === model_key),
       ).toStrictEqual([])
     } finally {
       MODELS.pop()
@@ -246,7 +230,6 @@ describe(`assemble_row_data`, () => {
       const rows = assemble_row_data(
         `unique_prototypes`,
         (model) => model.model_key?.startsWith(`${task}-time-`) ?? false,
-        true,
         () => true,
         Object.entries({
           Fast: 10,
@@ -326,7 +309,6 @@ describe(`assemble_row_data`, () => {
       const [row] = assemble_row_data(
         `unique_prototypes`,
         (model) => model.model_key === model_key,
-        true,
         () => true,
         test_models,
       )

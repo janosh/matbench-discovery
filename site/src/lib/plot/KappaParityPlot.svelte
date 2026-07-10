@@ -264,17 +264,15 @@
             <Icon icon="Cross" />
           </button>
         </header>
-        <div class="detail-body">
-          {#if selected_structure && Structure}
-            {@const style = 'height: 100%; min-height: 360px'}
-            <Structure structure={selected_structure} {style} />
-          {/if}
-          {#if Object.keys(doses).length}
-            <Dos {doses} style="height: 360px" padding={{ t: 20, b: 65, r: 10 }} />
-          {:else}
-            <p class="plot-state">No phonon DOS available for this material.</p>
-          {/if}
-        </div>
+        {#if selected_structure && Structure}
+          {@const style = 'height: 100%; min-height: 360px'}
+          <Structure structure={selected_structure} {style} />
+        {/if}
+        {#if Object.keys(doses).length}
+          <Dos {doses} style="height: 360px" padding={{ t: 20, b: 65, r: 10 }} />
+        {:else}
+          <p class="plot-state">No phonon DOS available for this material.</p>
+        {/if}
       </div>
     {/if}
   {/if}
@@ -291,60 +289,38 @@
   .plot-note {
     margin: 0.4em 0 0;
     text-align: center;
-    color: var(--muted-text-color, color-mix(in srgb, currentColor 70%, transparent));
+    color: var(--text-muted);
   }
   .detail-panel {
-    margin-top: 1em;
-    border: 1px solid
-      var(--border-color, color-mix(in srgb, currentColor 20%, transparent));
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 21.25rem), 1fr));
+    column-gap: 1em;
+    margin-block-start: 1em;
+    border: 1px solid var(--border);
     border-radius: 4px;
     overflow: hidden;
   }
   .detail-panel header {
+    grid-column: 1 / -1;
     display: flex;
     gap: 1em;
     align-items: center;
     justify-content: space-between;
     padding: 0.2em 1em;
-    background: var(--nav-bg, color-mix(in srgb, currentColor 6%, transparent));
+    background: var(--nav-bg);
   }
   .detail-panel header button {
-    flex: none;
-    display: grid;
-    place-items: center;
-    width: 1.7em;
-    height: 1.7em;
-    background: color-mix(in srgb, currentColor 10%, transparent);
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    opacity: 0;
-    padding: 0;
-    pointer-events: none;
-    transition:
-      opacity 0.15s ease,
-      background 0.15s ease;
-  }
-  .detail-panel:is(:hover, :focus-within) header button {
-    opacity: 1;
-    pointer-events: auto;
+    inline-size: 1em;
+    block-size: 1em;
+    background: transparent;
+    translate: 0 2pt;
   }
   .detail-panel header button :global(svg) {
     display: block;
-    height: 1em;
-    width: 1em;
+    inline-size: 1em;
+    block-size: 1em;
   }
   .detail-panel header button:hover {
-    background: color-mix(in srgb, currentColor 18%, transparent);
-  }
-  .detail-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 1em;
-  }
-  @media (max-width: 700px) {
-    .detail-body {
-      grid-template-columns: 1fr;
-    }
+    color: var(--link-color);
   }
 </style>

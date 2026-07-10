@@ -225,11 +225,11 @@ metrics:
     pred_file_url: https://figshare.com/files/66104636
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 170.22
-    pbe_wall_dist_mae: 0.0966
+    pbe_wall_dist_mae: 0.09296
     pbe_energy_mae: 1.298
     pbe_bond_length_error: 0.3823
     pbe_well_depth_error: 1.359
-    pbe_vib_freq_error: 64.14
+    pbe_vib_freq_error: 64.16
     tortuosity: 1.021
     energy_diff_flips: 2.471
     energy_jump: 0.1688

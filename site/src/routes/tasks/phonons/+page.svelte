@@ -242,12 +242,7 @@
   }
   .diagnostics-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 25rem), 1fr));
     gap: 1em;
-  }
-  @media (max-width: 900px) {
-    .diagnostics-grid {
-      grid-template-columns: 1fr;
-    }
   }
 </style>

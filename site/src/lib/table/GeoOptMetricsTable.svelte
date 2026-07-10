@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TableControls } from '$lib'
   import { make_table_filters } from '$lib/models.svelte'
-  import { TABLE_STYLE_VARS } from '$lib/table/MetricsTable.svelte'
+  import { METRICS_TABLE_ROOT_STYLE } from '$lib/table/MetricsTable.svelte'
   import type { UrlTableFilters } from '$lib/url-state.svelte'
   import type { Label, ModelData } from '$lib/types'
   import { HeatmapTable, type Label as MattervizLabel } from 'matterviz'
@@ -81,7 +81,7 @@
     model.metrics?.geo_opt != null && typeof model.metrics.geo_opt === `object`
 
   let metrics_data = $derived(
-    assemble_row_data(`full_test_set`, has_geo_opt_metrics, false, filters.matches).map(
+    assemble_row_data(`full_test_set`, has_geo_opt_metrics, filters.matches).map(
       (row) => {
         for (const [from, to] of Object.entries(key_remap)) {
           if (from in row) row[to] = row[from]
@@ -100,12 +100,10 @@
   bind:column_order
   bind:show_heatmap={filters.show_heatmap}
   {...rest}
-  style="{TABLE_STYLE_VARS}{rest.style ?? ``}"
+  root_style={METRICS_TABLE_ROOT_STYLE}
 >
   {#snippet controls()}
     <!-- z-index > 2 to sit above sticky table headers (z-index: 2) -->
-    <div style="position: relative; z-index: 5">
-      <TableControls bind:columns {filters} />
-    </div>
+    <TableControls bind:columns {filters} style="position: relative; z-index: 5" />
   {/snippet}
 </HeatmapTable>

@@ -20,15 +20,6 @@ const button_for = (label: string): HTMLButtonElement => {
   return button
 }
 
-const energy_only_checkbox = (): HTMLInputElement => {
-  const label = [...document.querySelectorAll(`label`)].find((candidate) =>
-    candidate.textContent?.includes(`Energy-only models`),
-  )
-  const input = label?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
-  if (!input) throw new Error(`Energy-only checkbox not found`)
-  return input
-}
-
 const heading_texts = (): (string | undefined)[] =>
   [...document.querySelectorAll(`h2`)].map((heading) =>
     heading.textContent?.replaceAll(/\s+/g, ` `).trim(),
@@ -79,8 +70,8 @@ describe(`Discovery Task Page`, () => {
   it(`shows discovery-specific columns in MetricsTable`, () => {
     mount(DiscoveryPage, { target: document.body })
 
-    const headers = [...document.querySelectorAll(`th`)].map((th) =>
-      th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
+    const headers = [...document.querySelectorAll(`th .header-label`)].map((header) =>
+      header.textContent?.trim(),
     )
 
     for (const col of [`Model`, `F1`, `DAF`, `Links`, `Date Added`]) {
@@ -89,11 +80,11 @@ describe(`Discovery Task Page`, () => {
   })
 
   it(`restores and syncs URL state`, async () => {
-    const url = `http://localhost/tasks/discovery?set=full_test_set&energy_only=1&x=F1&y=rmsd&sort=F1&dir=asc&train=MPtrj,-OMat24&heatmap=0`
+    const url = `http://localhost/tasks/discovery?set=full_test_set&targets=F,S,gradient&x=F1&y=rmsd&sort=F1&dir=asc&train=MPtrj,-OMat24&heatmap=0`
     await mount_with_url(DiscoveryPage, url)
 
     expect(active_toggle()).toBe(`Full Test Set`)
-    expect(energy_only_checkbox().checked).toBe(true)
+    expect(filter_summary_badge(`Targets`)).toContain(`(F,S,gradient)`)
     expect(heading_texts()).toContainEqual(expect.stringContaining(`RMSD vs F1`))
     expect(filter_summary_badge(`Training data`)).toContain(`(2)`)
     expect(checkbox_for(`Heatmap`).checked).toBe(false)

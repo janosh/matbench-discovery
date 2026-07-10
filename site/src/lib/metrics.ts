@@ -169,23 +169,6 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
   )
 }
 
-// Combined filter respecting the base predicate, prediction-type toggle and the
-// training-data/openness filters (pass UrlTableFilters.matches as filter_matches)
-export const make_combined_filter =
-  (
-    model_filter: (model: ModelData) => boolean,
-    show_energy: boolean,
-    filter_matches: (model: ModelData) => boolean = () => true,
-  ): ((model: ModelData) => boolean) =>
-  (model: ModelData) => {
-    if (!model_filter(model)) return false
-
-    const is_energy_only = model.targets === `E`
-    if (is_energy_only && !show_energy) return false
-
-    return filter_matches(model)
-  }
-
 // NB: cell background/text colors are computed by matterviz's HeatmapTable internally
 // (calc_cell_color in matterviz/table) — no local color logic needed
 
@@ -193,16 +176,9 @@ export const make_combined_filter =
 export function assemble_row_data(
   discovery_set: DiscoverySet,
   model_filter: (model: ModelData) => boolean,
-  show_energy_only: boolean,
   filter_matches: (model: ModelData) => boolean = () => true,
   models: ModelData[] = MODELS, // injectable for tests
 ) {
-  const current_filter = make_combined_filter(
-    model_filter,
-    show_energy_only,
-    filter_matches,
-  )
-
   const license_str = (license: string | undefined, url: string | undefined) =>
     url?.startsWith(`http`)
       ? `<a href="${url}" target="_blank" rel="noopener noreferrer" title="View license">${license}</a>`
@@ -210,7 +186,8 @@ export function assemble_row_data(
 
   const filtered_models = models.filter(
     (model) =>
-      current_filter(model) &&
+      model_filter(model) &&
+      filter_matches(model) &&
       typeof model.metrics?.discovery === `object` &&
       model.metrics.discovery[discovery_set],
   )
