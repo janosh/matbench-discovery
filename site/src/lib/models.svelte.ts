@@ -140,7 +140,7 @@ update_models_cds(MODELS, CDS_CONFIG)
 // All dataset keys used by at least one model's training_set, in datasets.yml
 // declaration order — the roster for the table's training-data filter dropdown
 export const ALL_TRAINING_SETS: string[] = Object.keys(DATASETS).filter((key) =>
-  MODELS.some((model) => (model.training_set as string[]).includes(key)),
+  MODELS.some((model) => model.training_set.some((dataset) => dataset === key)),
 )
 
 // table filter (training data + openness + targets + heatmap) with the dataset roster

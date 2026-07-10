@@ -15,7 +15,7 @@
     EnergyParityPoint,
     StructurePopupPlacement,
   } from '$lib/parity/energy-parity'
-  import type { LoadStatus } from '$lib/asset-loader'
+  import { get_error_message, type LoadStatus } from '$lib/asset-loader'
   import type { ModelData } from '$lib/types'
   import { compact_formula, format_num, sanitize_compact_formula } from 'matterviz'
   import { Spinner } from 'matterviz/feedback'
@@ -46,8 +46,15 @@
     formula: string
     n_sites: number
     measure_text: string
-  } & Record<string, unknown>
-  type EnergyParityPayload = BinnedPointPayload<Record<string, unknown>>
+  }
+  type EnergyParityPayload = BinnedPointPayload<
+    Record<string, unknown>,
+    EnergyParityPointData
+  >
+  const EnergyParityScatter = BinnedScatterPlot<
+    Record<string, unknown>,
+    EnergyParityPointData
+  >
   const structure_popup_size = { outer_width: 500, view_width: 460, view_height: 340 }
   const parity_overlays: BinnedOverlaysConfig = {
     ref_lines: [
@@ -64,6 +71,18 @@
   // popup-width of empty space beside the plot
   const structure_popup_gap = 16
   const loading_spinner_style = `--spinner-size: 0.9em; --spinner-border-width: 2px; --spinner-margin: 0`
+
+  // Wait for loading UI to paint; timeout avoids throttled rAF in background tabs.
+  const wait_for_loading_paint = (): Promise<void> =>
+    new Promise((resolve) => {
+      const timeout_id = globalThis.setTimeout(resolve, 100)
+      globalThis.requestAnimationFrame(() =>
+        globalThis.requestAnimationFrame(() => {
+          globalThis.clearTimeout(timeout_id)
+          resolve()
+        }),
+      )
+    })
 
   let status = $state<LoadStatus>(`idle`)
   $effect(() => onstatus?.(status))
@@ -82,6 +101,7 @@
     $state<(typeof import('matterviz/convex-hull'))['StructurePopup']>()
   let popup_placement = $state<StructurePopupPlacement>({ side: `left`, left: 0, top: 0 })
 
+  let model_label = $derived(parity_model?.model_label ?? model.model_name)
   let parity = $derived(
     base && parity_model
       ? build_energy_parity_series(base, parity_model, energy_kind)
@@ -96,7 +116,7 @@
             y: parity.y,
             point_ids: parity.point_ids,
             size_values: parity.size_values,
-            label: parity_model?.model_label ?? model.model_name,
+            label: model_label,
             color: model.color ?? `#4dabf7`,
           },
         ]
@@ -109,7 +129,7 @@
     energy_kind === `e-form` ? `formation energy` : `convex hull distance`,
   )
   let x_label = $derived(`PBE ${axis_label}`)
-  let y_label = $derived(`${parity_model?.model_label ?? model.model_name} ${axis_label}`)
+  let y_label = $derived(`${model_label} ${axis_label}`)
   // manual min/max loop (not Math.min(...arr)) because WBM x/y arrays are too large
   // to spread as function args without overflowing the call stack
   let extent = $derived.by((): [number, number] => {
@@ -128,7 +148,7 @@
     return [min - padding, max + padding]
   })
 
-  async function load_plot_data(model_key = model.model_key) {
+  async function load_plot_data(model_key: string | undefined) {
     const current_load_id = ++load_id
     if (!model_key) {
       status = `error`
@@ -145,20 +165,23 @@
     error_message = ``
     clear_selection()
     try {
+      await wait_for_loading_paint()
+      if (current_load_id !== load_id) return
       const [base_asset, model_asset] = await Promise.all([
-        base ?? load_energy_parity_base(),
-        parity_model?.model_key === model_key
-          ? parity_model
-          : load_energy_parity_model(model_key),
+        load_energy_parity_base(),
+        load_energy_parity_model(model_key),
       ])
       if (current_load_id !== load_id) return
       base = base_asset
       parity_model = model_asset
+      // Keep status=loading while the expensive derived series and plot DOM render.
+      await tick()
+      if (current_load_id !== load_id) return
       status = `ready`
     } catch (error) {
       if (current_load_id !== load_id) return
       status = `error`
-      error_message = error instanceof Error ? error.message : String(error)
+      error_message = get_error_message(error)
     }
   }
 
@@ -203,26 +226,11 @@
     return { material_id, formula, n_sites, measure_text }
   }
 
-  const point_data = ({ point }: EnergyParityPayload): EnergyParityPointData | null =>
-    energy_parity_point_data(point.point_id)
-
-  function is_energy_parity_point_data(
-    value: Record<string, unknown> | undefined,
-  ): value is EnergyParityPointData {
-    return (
-      typeof value?.material_id === `string` &&
-      typeof value.formula === `string` &&
-      typeof value.measure_text === `string` &&
-      typeof value.n_sites === `number` &&
-      Number.isFinite(value.n_sites)
-    )
-  }
-
   async function show_structure(point_idx: number) {
     if (!base || !parity_model || !Number.isInteger(point_idx)) return
     const point = get_energy_parity_point(base, parity_model, point_idx, energy_kind)
     if (!point) return
-    const selected_row_idx = point.row_idx
+    const selection_is_current = () => selected_point?.row_idx === point.row_idx
     selected_point = point
     selected_structure = null
     structure_error = ``
@@ -236,13 +244,13 @@
             StructurePopup = mod.StructurePopup
           }),
       ])
-      if (selected_point?.row_idx === selected_row_idx) selected_structure = structure
+      if (selection_is_current()) selected_structure = structure
     } catch (error) {
-      if (selected_point?.row_idx === selected_row_idx) {
-        structure_error = error instanceof Error ? error.message : String(error)
+      if (selection_is_current()) {
+        structure_error = get_error_message(error)
       }
     } finally {
-      if (selected_point?.row_idx === selected_row_idx) structure_loading = false
+      if (selection_is_current()) structure_loading = false
     }
   }
 
@@ -314,7 +322,7 @@ title, so label the section for screen readers instead -->
     <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
       {error_message}
     </p>
-  {:else if status !== `ready` || !parity}
+  {:else if !parity || parity_model?.model_key !== model.model_key}
     <div class="plot-state">
       <Spinner
         text="Loading {energy_label} parity data..."
@@ -323,18 +331,17 @@ title, so label the section for screen readers instead -->
     </div>
   {:else}
     {#snippet energy_point_label({ point_data }: EnergyParityPayload)}
-      {@const label = is_energy_parity_point_data(point_data) ? point_data : null}
-      {#if label}
-        <span class="point-label-id">{label.material_id}</span>
-        {#if label.formula}
+      {#if point_data}
+        <span class="point-label-id">{point_data.material_id}</span>
+        {#if point_data.formula}
           <br /><span class="point-label-formula"
-            >{@html sanitize_compact_formula(label.formula)}</span
+            >{@html sanitize_compact_formula(point_data.formula)}</span
           >
         {/if}
       {/if}
     {/snippet}
 
-    <BinnedScatterPlot
+    <EnergyParityScatter
       {series}
       style="height: 520px"
       x_axis={{ label: x_label, format: `.2f`, range: extent }}
@@ -348,22 +355,19 @@ title, so label the section for screen readers instead -->
       on_point_click={({ point }) => void show_structure(Number(point.point_id))}
       on_density_zoom={clear_selection}
       selected_point_id={selected_point?.row_idx ?? null}
-      {point_data}
+      point_data={({ point }) => energy_parity_point_data(point.point_id)}
       point_labels={{
         render: energy_point_label,
         measure_text: ({ point, point_data }: EnergyParityPayload) =>
-          is_energy_parity_point_data(point_data)
-            ? point_data.measure_text
-            : String(point.point_id ?? ``),
+          point_data?.measure_text ?? String(point.point_id ?? ``),
       }}
     >
       {#snippet tooltip({ x, y, x_formatted, y_formatted, point_data })}
-        {@const label = is_energy_parity_point_data(point_data) ? point_data : null}
         {@html x_label}: {x_formatted} <small>eV/atom</small><br />
         {@html y_label}: {y_formatted} <small>eV/atom</small><br />
         MLFF - DFT error: {format_num(y - x, `+.3~`)} <small>eV/atom</small>
-        {#if label}
-          <br />Points sized by N<sub>atoms</sub>: {format_num(label.n_sites, `.0f`)}
+        {#if point_data}
+          <br />Points sized by N<sub>atoms</sub>: {format_num(point_data.n_sites, `.0f`)}
         {/if}
       {/snippet}
 
@@ -375,7 +379,7 @@ title, so label the section for screen readers instead -->
           </div>
         {/if}
       {/snippet}
-    </BinnedScatterPlot>
+    </EnergyParityScatter>
 
     {#if selected_point}
       {@const point = selected_point}
@@ -403,7 +407,7 @@ title, so label the section for screen readers instead -->
               {/if}
               PBE {@html axis_label}: {format_num(point.x, `.3~`)}
               <small>eV/atom</small><br />
-              {parity_model?.model_label ?? model.model_name}
+              {model_label}
               {@html axis_label}:
               {format_num(point.y, `.3~`)} <small>eV/atom</small><br />
               MLFF - DFT error: {format_num(point.y - point.x, `+.3~`)}

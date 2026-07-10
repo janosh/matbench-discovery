@@ -79,14 +79,14 @@
     { value: `each`, label: `ML vs DFT Convex Hull Distance` },
   ] as const
   type EnergyTab = (typeof energy_parity_options)[number][`value`]
-  const default_energy_tab: EnergyTab = `e-form`
+  const default_energy_tab = energy_parity_options[0].value
   const energy_tab_values = new Set<EnergyTab>(
     energy_parity_options.map((option) => option.value),
   )
   let energy_parity_tab = $state<EnergyTab>(default_energy_tab)
   const mounted_energy_tabs = new SvelteSet<EnergyTab>([default_energy_tab])
   // per-tab load status, reported by each EnergyParityPlot (drives button spinners)
-  let energy_parity_statuses = $state<Record<string, LoadStatus>>({})
+  let energy_parity_statuses = $state<Partial<Record<EnergyTab, LoadStatus>>>({})
   $effect(() => {
     mounted_energy_tabs.add(energy_parity_tab)
   })
@@ -263,7 +263,8 @@
       ...option,
       loading:
         energy_parity_tab === option.value &&
-        energy_parity_statuses[option.value] === `loading`,
+        energy_parity_statuses[option.value] !== `ready` &&
+        energy_parity_statuses[option.value] !== `error`,
     }))}
   />
   <!-- only the default tab's plot mounts on page load; the other mounts on first
@@ -318,7 +319,9 @@
       bind:active_element
       tile_props={{ float_fmt: `.2f` }}
       show_photo={false}
-      missing={{ color: `rgba(255,255,255,0.3)` }}
+      missing={{
+        color: `light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.5))`,
+      }}
     >
       {#snippet inset()}
         <TableInset style="align-content: center">
@@ -410,25 +413,11 @@
     </section>
   {/if}
 
-  {#if model.notes?.html && typeof model.notes.html === `object`}
+  {#if model.notes?.html}
     <section class="notes">
-      {#each Object.entries(model.notes.html as Record<string, string | string[] | Record<string, unknown>>) as [key, note] (key)}
+      {#each Object.entries(model.notes.html) as [key, note] (key)}
         <h2>{key}</h2>
-        {#if typeof note === `string`}
-          <p>{@html note}</p>
-        {:else if Array.isArray(note)}
-          <ol>
-            {#each note as val (val)}
-              <li>{@html val}</li>
-            {/each}
-          </ol>
-        {:else if note && typeof note === `object`}
-          <ul>
-            {#each Object.entries(note) as [sub_key, val] (sub_key)}
-              <li><strong>{sub_key}:</strong> {val}</li>
-            {/each}
-          </ul>
-        {/if}
+        <p>{@html note}</p>
       {/each}
     </section>
   {/if}

@@ -1,4 +1,5 @@
 import { ALL_METRICS, MD_METRICS, RMSD_BASELINE } from '$lib/labels'
+import type { DiatomicsMetrics, MdMetrics } from '$lib/schema/model'
 import type { Label, ModelData } from '$lib/types'
 
 export const DEFAULT_CPS_CONFIG = {
@@ -15,23 +16,22 @@ export type CpsConfig = Record<
 // DEFAULT_CPS_CONFIG, coupling weight edits to the defaults they're reset from
 export const CPS_CONFIG: CpsConfig = $state(structuredClone(DEFAULT_CPS_CONFIG))
 
+const is_valid_score = (value: number | undefined): value is number =>
+  value !== undefined && !isNaN(value)
+
 // F1 score is between 0-1 where higher is better (no normalization needed)
-function normalize_f1(value: number | undefined): number {
-  return value === undefined || isNaN(value) ? 0 : value
-}
+const normalize_f1 = (value: number | undefined): number =>
+  is_valid_score(value) ? value : 0
 
 // RMSD is lower=better, with current models in the range of ~0.01-0.25 (unitless)
 // We invert this so that better performance = higher score
-function normalize_rmsd(value: number | undefined): number {
-  if (value === undefined || isNaN(value)) return 0
-  return Math.max(0, Math.min(1, 1 - value / RMSD_BASELINE))
-}
+const normalize_rmsd = (value: number | undefined): number =>
+  is_valid_score(value) ? Math.max(0, Math.min(1, 1 - value / RMSD_BASELINE)) : 0
 
 // κ_SRME is symmetric relative mean error, with range [0,2] by definition
 // Lower values are better (0 is perfect)
-function normalize_kappa_srme(value: number | undefined): number {
-  return value === undefined || isNaN(value) ? 0 : Math.max(0, 1 - value / 2)
-}
+const normalize_kappa_srme = (value: number | undefined): number =>
+  is_valid_score(value) ? Math.max(0, 1 - value / 2) : 0
 
 // Calculate a combined score using normalized metrics weighted by importance factors.
 // Fixed normalization reference points keep scores stable as new models are added.
@@ -45,9 +45,9 @@ export function calculate_cps(
 
   // Any metric with non-zero weight must be present, else the score is undefined
   if (
-    (F1.weight > 0 && (f1 === undefined || isNaN(f1))) ||
-    (RMSD.weight > 0 && (rmsd === undefined || isNaN(rmsd))) ||
-    (κ_SRME.weight > 0 && (kappa === undefined || isNaN(kappa)))
+    (F1.weight > 0 && !is_valid_score(f1)) ||
+    (RMSD.weight > 0 && !is_valid_score(rmsd)) ||
+    (κ_SRME.weight > 0 && !is_valid_score(kappa))
   )
     return null
 
@@ -118,14 +118,11 @@ export function calculate_cmds(
   values: Partial<Record<keyof CmdsConfig, number>>,
   cmds_config: CmdsConfig,
 ): number | null {
-  const keys = Object.keys(cmds_config) as (keyof CmdsConfig)[]
-  const total_weight = keys.reduce((sum, key) => sum + cmds_config[key].weight, 0)
-  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
-  if (total_weight === 0) return null
-
   let weighted_sum = 0
-  for (const key of keys) {
+  let total_weight = 0
+  for (const key of Object.keys(cmds_config) as (keyof CmdsConfig)[]) {
     const { weight } = cmds_config[key]
+    total_weight += weight
     if (weight === 0) continue
     const value = values[key]
     // any missing/invalid component with non-zero weight invalidates the score
@@ -135,6 +132,8 @@ export function calculate_cmds(
       weighted_sum += subscore(CMDS_SPEED, value) * weight
     } else weighted_sum += Math.max(0, 1 - value / 100) * weight
   }
+  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
+  if (total_weight === 0) return null
   return weighted_sum / total_weight
 }
 
@@ -145,15 +144,14 @@ export function calculate_cmds(
 function write_combined_scores(
   models: ModelData[],
   task: `md` | `diatomics`,
-  score: (metrics: Record<string, number>) => number | null,
+  score: (metrics: DiatomicsMetrics | MdMetrics) => number | null,
 ) {
   for (const model of models) {
     const metrics = model.metrics?.[task]
     if (!metrics || typeof metrics !== `object`) continue
-    const scored = metrics as { combined_score?: number }
-    const value = score(metrics as Record<string, number>)
-    if (value === null) delete scored.combined_score
-    else scored.combined_score = value
+    const value = score(metrics)
+    if (value === null) Reflect.deleteProperty(metrics, `combined_score`)
+    else Object.assign(metrics, { combined_score: value })
   }
 }
 
@@ -252,14 +250,11 @@ export const CDS_CONFIG: CdsConfig = $state(structuredClone(DEFAULT_CDS_CONFIG))
 // the model completed. Any missing/NaN component in a non-zero-weight pillar invalidates
 // the score (matches calculate_cps/calculate_cmds).
 export function calculate_cds(values: CdsValues, cds_config: CdsConfig): number | null {
-  const pillars = Object.keys(cds_config) as CdsPillar[]
-  const total_weight = pillars.reduce((sum, key) => sum + cds_config[key].weight, 0)
-  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
-  if (total_weight === 0) return null
-
   let weighted_sum = 0
-  for (const pillar of pillars) {
+  let total_weight = 0
+  for (const pillar of Object.keys(cds_config) as CdsPillar[]) {
     const { weight } = cds_config[pillar]
+    total_weight += weight
     if (weight === 0) continue
     let pillar_score = 0
     for (const component of CDS_COMPONENTS[pillar]) {
@@ -270,6 +265,8 @@ export function calculate_cds(values: CdsValues, cds_config: CdsConfig): number 
     }
     weighted_sum += pillar_score * weight
   }
+  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
+  if (total_weight === 0) return null
   const n_excluded = Object.keys(values.excluded_formula_reasons ?? {}).length
   const coverage = Math.max(0, 1 - n_excluded / N_SCORED_DIATOMIC_ELEMENTS)
   return (weighted_sum / total_weight) * coverage

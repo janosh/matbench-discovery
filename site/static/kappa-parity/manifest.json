@@ -105,6 +105,11 @@
       "bytes": 59632,
       "sha256": "336d6523bf2239a7b495eef1a7ee5f3b8302342a3fc0e830a5465844982ccd11"
     },
+    "grace-3l-oam-l": {
+      "asset": "kappa-parity-phonondb-v1-model-grace-3l-oam-l.json.gz",
+      "bytes": 59525,
+      "sha256": "bc9a760e9a7ab48c89813d1e7b70ea9c72711cd4ed69ecee521dbbc8b4092ccb"
+    },
     "hienet": {
       "asset": "kappa-parity-phonondb-v1-model-hienet.json.gz",
       "bytes": 59388,

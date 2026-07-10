@@ -6,6 +6,8 @@ const asset_cache = new Map<string, Promise<unknown>>()
 
 // load lifecycle status shared by the parity plot components
 export type LoadStatus = `idle` | `loading` | `ready` | `error`
+export const get_error_message = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
 
 // per-model asset files wrap their payload as { model: ... }
 interface ModelAsset<TModel> {
@@ -35,17 +37,13 @@ export const clear_asset_cache = () => asset_cache.clear()
 // the manifest's local default base URL.
 export function parity_asset_resolver(
   kind: string,
-  manifest: { local_asset_base_url: string; model_assets: object },
+  manifest: {
+    local_asset_base_url: string
+    model_assets: Readonly<Record<string, { readonly asset: string } | undefined>>
+  },
   env_base_url: string | undefined,
-): {
-  asset_url: (asset: string) => string
-  model_asset: (model_key: string) => string
-  has_model: (model_key: string | undefined) => boolean
-} {
-  const model_assets = manifest.model_assets as Record<
-    string,
-    { asset: string } | undefined
-  >
+) {
+  const { model_assets } = manifest
   const configured_base_url = env_base_url?.trim() ?? ``
   const base_url = (
     configured_base_url.length > 0 ? configured_base_url : manifest.local_asset_base_url

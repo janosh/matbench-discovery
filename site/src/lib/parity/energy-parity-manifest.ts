@@ -142,6 +142,11 @@ export const energy_parity_manifest = {
       bytes: 645176,
       sha256: 'dbc268294677bd557f09b86130e22edc7cebeee792c3428a388c2e8b054ece16',
     },
+    'grace-3l-oam-l': {
+      asset: 'energy-parity-wbm-v1-model-grace-3l-oam-l.json.gz',
+      bytes: 955266,
+      sha256: '39026ff8b9c7772fbfae837771aced264d4668e109d14a76aacff7a9e268edb4',
+    },
     hienet: {
       asset: 'energy-parity-wbm-v1-model-hienet.json.gz',
       bytes: 646806,
