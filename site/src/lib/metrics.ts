@@ -197,6 +197,10 @@ export function assemble_row_data(
   // must differ from the YAML field (e.g. the two run_time_sec columns) resolve too
   const metric_num = (model: ModelData, label: Label) =>
     get_nested_number(model, label_data_path(label))
+  const metric_columns = (model: ModelData, labels: object) =>
+    Object.fromEntries(
+      Object.values(labels).map((label) => [label.key, metric_num(model, label)]),
+    )
   const finite_positive = (value: unknown): value is number =>
     is_finite_num(value) && value > 0
   // Slowdown columns: wall time relative to the fastest model in the current
@@ -288,15 +292,8 @@ export function assemble_row_data(
       [ALL_METRICS.κ_SRME.key]: metric_num(model, ALL_METRICS.κ_SRME),
       [ALL_METRICS.κ_SRE.key]: metric_num(model, ALL_METRICS.κ_SRE),
       [RMSD.key]: metric_num(model, RMSD),
-      ...Object.fromEntries(
-        Object.values(MD_METRICS).map((label) => [label.key, metric_num(model, label)]),
-      ),
-      ...Object.fromEntries(
-        Object.values(DIATOMICS_METRICS).map((label) => [
-          label.key,
-          metric_num(model, label),
-        ]),
-      ),
+      ...metric_columns(model, MD_METRICS),
+      ...metric_columns(model, DIATOMICS_METRICS),
       // computed after the spreads so they override the (pathless) spread entries
       [MD_METRICS.md_time_multiplier.key]: md_time_multiplier(model),
       [DIATOMICS_METRICS.diatomics_time_multiplier.key]: diatomics_time_multiplier(model),
@@ -310,12 +307,7 @@ export function assemble_row_data(
         ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
         : `n/a`,
       [HYPERPARAMS.n_layers.key]: sortable_span(n_layers),
-      ...Object.fromEntries(
-        Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
-          col.key,
-          metric_num(model, col),
-        ]),
-      ),
+      ...metric_columns(model, GEO_OPT_SYMMETRY_METRICS),
       Targets: targets_str,
       [METADATA_COLS.date_added.key]:
         `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,

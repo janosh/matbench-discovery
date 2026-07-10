@@ -23,7 +23,6 @@
   import { BinnedScatterPlot } from 'matterviz/plot'
   import type {
     BinnedOverlaysConfig,
-    BinnedPointDataFn,
     BinnedPointPayload,
     DensePointSeries,
   } from 'matterviz/plot'
@@ -48,13 +47,12 @@
     n_sites: number
     measure_text: string
   }
-  type EnergyParityMetadata = Record<string, unknown>
   type EnergyParityPayload = BinnedPointPayload<
-    EnergyParityMetadata,
+    Record<string, unknown>,
     EnergyParityPointData
   >
   const EnergyParityScatter = BinnedScatterPlot<
-    EnergyParityMetadata,
+    Record<string, unknown>,
     EnergyParityPointData
   >
   const structure_popup_size = { outer_width: 500, view_width: 460, view_height: 340 }
@@ -228,10 +226,6 @@
     return { material_id, formula, n_sites, measure_text }
   }
 
-  const point_data: BinnedPointDataFn<EnergyParityMetadata, EnergyParityPointData> = ({
-    point,
-  }) => energy_parity_point_data(point.point_id)
-
   async function show_structure(point_idx: number) {
     if (!base || !parity_model || !Number.isInteger(point_idx)) return
     const point = get_energy_parity_point(base, parity_model, point_idx, energy_kind)
@@ -361,7 +355,7 @@ title, so label the section for screen readers instead -->
       on_point_click={({ point }) => void show_structure(Number(point.point_id))}
       on_density_zoom={clear_selection}
       selected_point_id={selected_point?.row_idx ?? null}
-      {point_data}
+      point_data={({ point }) => energy_parity_point_data(point.point_id)}
       point_labels={{
         render: energy_point_label,
         measure_text: ({ point, point_data }: EnergyParityPayload) =>
@@ -413,7 +407,7 @@ title, so label the section for screen readers instead -->
               {/if}
               PBE {@html axis_label}: {format_num(point.x, `.3~`)}
               <small>eV/atom</small><br />
-              {parity_model?.model_label ?? model.model_name}
+              {model_label}
               {@html axis_label}:
               {format_num(point.y, `.3~`)} <small>eV/atom</small><br />
               MLFF - DFT error: {format_num(point.y - point.x, `+.3~`)}

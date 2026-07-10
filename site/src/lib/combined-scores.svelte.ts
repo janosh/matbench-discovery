@@ -118,14 +118,11 @@ export function calculate_cmds(
   values: Partial<Record<keyof CmdsConfig, number>>,
   cmds_config: CmdsConfig,
 ): number | null {
-  const keys = Object.keys(cmds_config) as (keyof CmdsConfig)[]
-  const total_weight = keys.reduce((sum, key) => sum + cmds_config[key].weight, 0)
-  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
-  if (total_weight === 0) return null
-
   let weighted_sum = 0
-  for (const key of keys) {
+  let total_weight = 0
+  for (const key of Object.keys(cmds_config) as (keyof CmdsConfig)[]) {
     const { weight } = cmds_config[key]
+    total_weight += weight
     if (weight === 0) continue
     const value = values[key]
     // any missing/invalid component with non-zero weight invalidates the score
@@ -135,6 +132,8 @@ export function calculate_cmds(
       weighted_sum += subscore(CMDS_SPEED, value) * weight
     } else weighted_sum += Math.max(0, 1 - value / 100) * weight
   }
+  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
+  if (total_weight === 0) return null
   return weighted_sum / total_weight
 }
 
@@ -251,14 +250,11 @@ export const CDS_CONFIG: CdsConfig = $state(structuredClone(DEFAULT_CDS_CONFIG))
 // the model completed. Any missing/NaN component in a non-zero-weight pillar invalidates
 // the score (matches calculate_cps/calculate_cmds).
 export function calculate_cds(values: CdsValues, cds_config: CdsConfig): number | null {
-  const pillars = Object.keys(cds_config) as CdsPillar[]
-  const total_weight = pillars.reduce((sum, key) => sum + cds_config[key].weight, 0)
-  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
-  if (total_weight === 0) return null
-
   let weighted_sum = 0
-  for (const pillar of pillars) {
+  let total_weight = 0
+  for (const pillar of Object.keys(cds_config) as CdsPillar[]) {
     const { weight } = cds_config[pillar]
+    total_weight += weight
     if (weight === 0) continue
     let pillar_score = 0
     for (const component of CDS_COMPONENTS[pillar]) {
@@ -269,6 +265,8 @@ export function calculate_cds(values: CdsValues, cds_config: CdsConfig): number 
     }
     weighted_sum += pillar_score * weight
   }
+  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
+  if (total_weight === 0) return null
   const n_excluded = Object.keys(values.excluded_formula_reasons ?? {}).length
   const coverage = Math.max(0, 1 - n_excluded / N_SCORED_DIATOMIC_ELEMENTS)
   return (weighted_sum / total_weight) * coverage
