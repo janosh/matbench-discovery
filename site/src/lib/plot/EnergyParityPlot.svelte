@@ -65,6 +65,22 @@
   const structure_popup_gap = 16
   const loading_spinner_style = `--spinner-size: 0.9em; --spinner-border-width: 2px; --spinner-margin: 0`
 
+  // Give the loading UI one painted frame before parity construction and plot mounting
+  // block the main thread. The timeout keeps background tabs from waiting on throttled rAF.
+  function wait_for_loading_paint(): Promise<void> {
+    return new Promise((resolve) => {
+      let resolved = false
+      const finish = (): void => {
+        if (resolved) return
+        resolved = true
+        window.clearTimeout(timeout_id)
+        resolve()
+      }
+      const timeout_id = window.setTimeout(finish, 100)
+      requestAnimationFrame(() => requestAnimationFrame(finish))
+    })
+  }
+
   let status = $state<LoadStatus>(`idle`)
   $effect(() => onstatus?.(status))
   let error_message = $state(``)
@@ -145,6 +161,9 @@
     error_message = ``
     clear_selection()
     try {
+      await tick()
+      await wait_for_loading_paint()
+      if (current_load_id !== load_id) return
       const [base_asset, model_asset] = await Promise.all([
         base ?? load_energy_parity_base(),
         parity_model?.model_key === model_key
@@ -154,6 +173,9 @@
       if (current_load_id !== load_id) return
       base = base_asset
       parity_model = model_asset
+      // Keep status=loading while the expensive derived series and plot DOM render.
+      await tick()
+      if (current_load_id !== load_id) return
       status = `ready`
     } catch (error) {
       if (current_load_id !== load_id) return
@@ -314,7 +336,7 @@ title, so label the section for screen readers instead -->
     <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
       {error_message}
     </p>
-  {:else if status !== `ready` || !parity}
+  {:else if !parity || parity_model?.model_key !== model.model_key}
     <div class="plot-state">
       <Spinner
         text="Loading {energy_label} parity data..."

@@ -64,6 +64,12 @@
     if (fs_mode) fs_mode_counts[fs_mode] = (fs_mode_counts[fs_mode] ?? 0) + 1
   }
   const n_train = $derived(Object.keys(filters.training).length)
+  const training_sets_by_model_count = $derived(
+    filters.training_sets.toSorted(
+      (dataset_left, dataset_right) =>
+        (training_counts[dataset_right] ?? 0) - (training_counts[dataset_left] ?? 0),
+    ),
+  )
   // badge shows the active constraints when they differ from the default (require F)
   const targets_badge = $derived(
     filters.targets_param === DEFAULT_TARGETS_PARAM
@@ -108,7 +114,7 @@
       {#each TRAIN_FILTER_MODES as mode, mode_idx (mode)}
         <span class="col-head" style:grid-column={mode_idx + 2}>{mode}</span>
       {/each}
-      {#each filters.training_sets as dataset_key (dataset_key)}
+      {#each training_sets_by_model_count as dataset_key (dataset_key)}
         <span>{dataset_key} ({training_counts[dataset_key] ?? 0})</span>
         {#each TRAIN_FILTER_MODES as mode (mode)}
           <input

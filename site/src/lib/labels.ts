@@ -173,7 +173,7 @@ export const METADATA_COLS: MetadataLabels = {
     label: `Org`,
     sortable: false,
     description: `Model author affiliations`,
-    cell_style: `text-align: center; width: 3.2em; max-width: 3.2em;`,
+    cell_style: `text-align: center; width: 2.5em; max-width: 2.5em;`,
     visible: true,
     better: undefined,
   },

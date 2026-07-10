@@ -1,6 +1,6 @@
 model_name: GRACE-3L-OAM-L
 model_key: grace-3l-oam-l
-model_version: 1
+model_version: '1'
 date_added: '2026-07-02'
 date_published: '2026-07-02'
 authors:
@@ -34,9 +34,11 @@ training_cost:
   Nvidia H100 80GB GPUs: {amount: 16, hours: 124}
 
 repo: https://github.com/ICAMS/grace-tensorpotential
+doi: https://doi.org/10.1038/s41524-026-01979-1
 paper: https://doi.org/10.1038/s41524-026-01979-1
 url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation
-checkpoint_url: https://huggingface.co/AMS-ICAMS-RUB/grace-foundation-models/blob/main/models/GRACE-3L-OMAT-large-ft-AM-model.tar.gz
+pr_url: https://github.com/janosh/matbench-discovery/pull/368
+checkpoint_url: https://huggingface.co/AMS-ICAMS-RUB/grace-foundation-models/resolve/main/models/GRACE-3L-OMAT-large-ft-AM-model.tar.gz
 license:
   code: ASL
   code_url: https://github.com/ICAMS/grace-tensorpotential/blob/3f614c8ae6/LICENSE.md
@@ -54,7 +56,7 @@ hyperparams:
 metrics:
   md:
     pred_file: models/grace/grace-3l-oam-l/2026-07-03-grace-3l-oam-l-md-metrics.csv.gz
-    pred_file_url: https://figshare.com/files/66293507
+    pred_file_url: https://figshare.com/files/66505409
     energy_rmse: 0.535 # meV/atom
     force_rmse: 54.2289 # meV/Å
     rdf_error: 3.45 # %
@@ -66,7 +68,7 @@ metrics:
     n_systems: 17 # count
   diatomics:
     pred_file: models/grace/grace-3l-oam-l/2026-07-02-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/66293261
+    pred_file_url: https://figshare.com/files/66505406
     pbe_wall_dist_mae: 0.1667
     pbe_energy_mae: 1.111
     pbe_bond_length_error: 0.4294
@@ -84,10 +86,10 @@ metrics:
       κ_SRME: 0.1211
       κ_SRE: 0.0536
       pred_file: models/grace/grace-3l-oam-l/2026-07-02-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/66384143
+      pred_file_url: https://figshare.com/files/66505403
   geo_opt:
     pred_file: models/grace/grace-3l-oam-l/2026-07-02-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/66293579
+    pred_file_url: https://figshare.com/files/66505400
     struct_col: grace_structure
     symprec=1e-2:
       rmsd: 0.0575 # unitless
@@ -96,8 +98,6 @@ metrics:
       symmetry_match: 0.824 # fraction
       symmetry_increase: 0.13 # fraction
       n_structures: 256963 # count
-      analysis_file: models/grace/grace-3l-oam-l/2026-07-02-wbm-geo-opt-symprec=1e-2-moyo=0.14.0.csv.gz
-      analysis_file_url:
     symprec=1e-5:
       rmsd: 0.0575 # unitless
       n_sym_ops_mae: 2.1343 # unitless
@@ -106,10 +106,10 @@ metrics:
       symmetry_increase: 0.2594 # fraction
       n_structures: 256963 # count
       analysis_file: models/grace/grace-3l-oam-l/2026-07-02-wbm-geo-opt-symprec=1e-5-moyo=0.14.0.csv.gz
-      analysis_file_url:
+      analysis_file_url: https://figshare.com/files/66505427
   discovery:
     pred_file: models/grace/grace-3l-oam-l/2026-07-02-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/66293645
+    pred_file_url: https://figshare.com/files/66505397
     pred_col: e_form_per_atom_grace
     full_test_set:
       F1: 0.905 # fraction

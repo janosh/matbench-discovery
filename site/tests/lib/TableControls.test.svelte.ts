@@ -1,5 +1,5 @@
 import { type Label, TableControls } from '$lib'
-import { ALL_TRAINING_SETS, make_table_filters } from '$lib/models.svelte'
+import { ALL_TRAINING_SETS, make_table_filters, MODELS } from '$lib/models.svelte'
 import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -40,20 +40,34 @@ describe(`TableControls`, () => {
     const dropdown = summary_for(`Training data`).closest(`details`)
     const boxes = dropdown?.querySelectorAll<HTMLInputElement>(`input`) ?? []
     expect(boxes).toHaveLength(2 * ALL_TRAINING_SETS.length)
+    const require_boxes = [...boxes].filter((box) =>
+      box.getAttribute(`aria-label`)?.startsWith(`require `),
+    )
+    const usage_counts = require_boxes.map((box) => {
+      const dataset = box.getAttribute(`aria-label`)?.slice(`require `.length) ?? ``
+      return MODELS.filter((model) =>
+        model.training_set.some((training_dataset) => training_dataset === dataset),
+      ).length
+    })
+    expect(usage_counts).toStrictEqual(
+      usage_counts.toSorted((count_left, count_right) => count_right - count_left),
+    )
 
     // check `require` for the first dataset: require-mode filter becomes active,
     // its checkbox checks, and the summary shows a count badge
     const [require_box, exclude_box] = boxes
+    const first_dataset =
+      require_box.getAttribute(`aria-label`)?.slice(`require `.length) ?? ``
     require_box.click()
     await tick()
-    expect(filters.training[ALL_TRAINING_SETS[0]]).toBe(`require`)
+    expect(filters.training[first_dataset]).toBe(`require`)
     expect(require_box.checked).toBe(true)
     expect(summary_for(`Training data (1)`)).toBeDefined()
 
     // checking `exclude` on the same dataset flips the mode (mutually exclusive)
     exclude_box.click()
     await tick()
-    expect(filters.training[ALL_TRAINING_SETS[0]]).toBe(`exclude`)
+    expect(filters.training[first_dataset]).toBe(`exclude`)
     expect(require_box.checked).toBe(false)
     expect(exclude_box.checked).toBe(true)
 
