@@ -76,7 +76,6 @@ definitions:
       n_training_structures: { $ref: '#/definitions/Label' }
       checkpoint_license: { $ref: '#/definitions/Label' }
       code_license: { $ref: '#/definitions/Label' }
-      missing_preds: { $ref: '#/definitions/Label' }
       'Run Time (h)': { $ref: '#/definitions/Label' }
       org: { $ref: '#/definitions/Label' }
     required:
@@ -89,7 +88,6 @@ definitions:
       - n_training_structures
       - checkpoint_license
       - code_license
-      - missing_preds
       - 'Run Time (h)'
       - org
     additionalProperties: false

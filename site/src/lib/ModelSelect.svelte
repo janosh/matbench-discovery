@@ -9,7 +9,7 @@
     selected = $bindable([]),
     value = $bindable(null),
     placeholder = `Select models to plot`,
-    style = `width: fit-content; max-width: 100%; min-width: min(19rem, 100%); border: 1px solid var(--border)`,
+    style = `width: fit-content; max-width: min(48rem, 100%); min-width: min(19rem, 100%); border: 1px solid var(--border)`,
     ...rest
   }: Pick<MultiSelectProps<T>, `options` | `selected` | `value`> &
     Omit<MultiSelectProps<Option>, `options` | `selected` | `value`> = $props()

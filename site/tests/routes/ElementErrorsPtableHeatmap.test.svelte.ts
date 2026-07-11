@@ -1,5 +1,5 @@
 import { MODELS } from '$lib'
-import ElementErrorsPtableHeatmap from '$routes/models/tmi/ElementErrorsPtableHeatmap.svelte'
+import ElementErrorsPtableHeatmap from '$routes/tasks/discovery/tmi/ElementErrorsPtableHeatmap.svelte'
 import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
 import { describe, expect, it } from 'vitest'
 import { mount } from '../index'

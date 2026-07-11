@@ -38,7 +38,7 @@ interface KeyedModel {
   color: string | undefined
 }
 
-// === models/tmi discovery metrics ===
+// === tasks/discovery/tmi metrics ===
 declare module '$figs/box-hull-dist-errors.jsonl' {
   const data: {
     // quantiles = [q05, q25, median, q75, q95] of each model's hull distance error
@@ -92,7 +92,7 @@ declare module '$figs/hist-clf-pred-hull-dist.jsonl' {
   export default data
 }
 
-// === models/tmi extras ===
+// === tasks/discovery/tmi extras ===
 declare module '$figs/element-prevalence-vs-error.jsonl' {
   const data: {
     elements: string[] // element symbols, same order as occurrences
@@ -185,8 +185,8 @@ declare module '$figs/mp-elemental-ref-energies.json.gz' {
 declare module '$figs/element-counts-mp-vs-wbm.json.gz' {
   // x = element symbols sorted by count, one series per dataset (WBM, MP)
   const data: {
-    raw: (LabeledXY<string> & { color: string })[]
-    normalized: (LabeledXY<string> & { color: string })[]
+    raw: LabeledXY<string>[]
+    normalized: LabeledXY<string>[]
   }
   export default data
 }

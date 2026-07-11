@@ -1,12 +1,8 @@
-# %%
-import plotly.express as px
-import plotly.graph_objects as go
-import pymatviz as pmv
+"""Generate per-model hull-distance error box statistics for the site."""
 
 from matbench_discovery import figs
-from matbench_discovery.cli import cli_args, complete_models
+from matbench_discovery.cli import complete_models
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.preds.discovery import df_each_err, df_preds
 
 __author__ = "Janosh Riebesell"
@@ -21,68 +17,17 @@ if test_subset == TestSubset.uniq_protos:
 
 
 # %%
-show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
-models_to_plot = complete_models(show_non_compliant=show_non_compliant)
-models_to_plot = sorted(
-    models_to_plot,
-    key=lambda model: dfs_metrics[test_subset][model.label][pmv.enums.Key.mae.symbol],
-)
-fig = go.Figure()
-fig.layout.yaxis.title = MbdKey.e_above_hull_error
-fig.layout.margin = dict(l=0, r=0, b=0, t=0)
-
-# Get the default Plotly colors that will be used for the boxes
-color_seq = px.colors.qualitative.Plotly
-
-box_models: list[dict[str, object]] = []
-for idx, model in enumerate(models_to_plot):
-    ys = [
-        df_each_err[model.label].quantile(quant)
-        for quant in (0.05, 0.25, 0.5, 0.75, 0.95)
-    ]
-
-    # Use the same color for both box and label
-    color = color_seq[idx % len(color_seq)]
-    box_models.append(
-        {
-            "key": model.key,
-            "label": model.label,
-            "color": color,
-            "quantiles": figs.round_list(ys),
-        }
-    )
-    fig.add_box(
-        y=ys,
-        name=model.label,
-        width=0.8,
-        marker_color=color,
-        hoverinfo="y",
-    )
-
-    # annotate median with numeric value
-    median = ys[2]
-    fig.add_annotation(
-        x=idx, y=median, text=f"{median:.2}", showarrow=False, font_size=9
-    )
-
-fig.layout.showlegend = False
-# use line breaks to offset every other x-label and color them
-x_labels_with_offset = [
-    f"<span style='color: {color_seq[idx % len(color_seq)]}'>{model.label}</span>"
-    for idx, model in enumerate(models_to_plot)
+box_models: list[dict[str, object]] = [
+    {
+        "key": model.key,
+        "label": model.label,
+        "quantiles": figs.round_list(
+            df_each_err[model.label].quantile((0.05, 0.25, 0.5, 0.75, 0.95))
+        ),
+    }
+    for model in complete_models()
 ]
-
-# rotate x-labels 90deg to avoid overlap (PDF only; the site sets tick rotation inline)
-fig.layout.xaxis.range = [-0.7, len(models_to_plot) - 0.3]
-fig.layout.xaxis.update(
-    tickangle=90,
-    tickvals=[*range(len(models_to_plot))],
-    ticktext=x_labels_with_offset,
-)
-fig.layout.yaxis.update(title=MbdKey.e_above_hull_error.label, tickformat=".3")
-fig.show()
 
 
 # %%
-if show_non_compliant:  # site payload = full model set (styling applied client-side)
-    figs.write_site_payload("box-hull-dist-errors", {"models": box_models})
+figs.write_site_payload("box-hull-dist-errors", {"models": box_models})
