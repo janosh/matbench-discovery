@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 from matbench_discovery import today
 from matbench_discovery.data import ase_atoms_from_zip
-from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import DataFiles
 
 if TYPE_CHECKING:
@@ -85,9 +85,9 @@ def parse_relaxed_atoms_list_as_df(
         )
         corrected_energy = processed.energy if processed is not None else energy
         formation_energy = (
-            get_e_form_per_atom(processed)
+            calc_energy_from_e_refs(processed, mp_elemental_ref_energies)
             if processed is not None
-            else get_e_form_per_atom(cse)
+            else calc_energy_from_e_refs(cse, mp_elemental_ref_energies)
         )
 
         return mat_id, converged, formation_energy, energy, corrected_energy

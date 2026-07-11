@@ -1,8 +1,9 @@
 """Test CLI argument parsing module."""
 
+import plotly.io as pio
 import pytest
 
-from matbench_discovery.cli import cli_args, cli_parser
+from matbench_discovery.cli import cli_args, cli_parser, shared_payload_test_subset
 from matbench_discovery.enums import Model, TestSubset
 
 
@@ -75,19 +76,17 @@ def test_cli_parser_jupyter_compat() -> None:
     assert set(unknown) == {"--f=/path/to/kernel.json", "--ip=127.0.0.1"}
 
 
-def test_cli_args_global() -> None:
-    """Test global cli_args is properly initialized."""
-    assert cli_args is not None
-    # Test all expected attributes are present and of correct type
-    assert isinstance(cli_args.models, list)
-    assert isinstance(cli_args.test_subset, TestSubset)
-    assert isinstance(cli_args.use_full_rows, bool)
+def test_shared_payload_test_subset_rejects_model_specific_cohort(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Shared payloads reject the per-model most-stable cohort."""
+    monkeypatch.setattr(cli_args, "test_subset", TestSubset.most_stable_10k)
+    with pytest.raises(ValueError, match="model-specific"):
+        shared_payload_test_subset()
 
 
 def test_browser_renderers_never_steal_focus() -> None:
-    """Figures opened as browser tabs must not autoraise (switch screen focus)."""
-    import plotly.io as pio
-
+    """Browser renderers do not raise their tabs above the active window."""
     for renderer_name in ("browser", "chrome", "chromium", "firefox"):
         assert pio.renderers[renderer_name].autoraise is False, renderer_name
 

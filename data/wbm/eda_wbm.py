@@ -13,7 +13,7 @@ from pymatgen.core import Composition, Structure
 from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
+from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD
 from matbench_discovery.data import DATASETS, df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import DataFiles, MbdKey
@@ -23,7 +23,6 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-03-30"
 
 module_dir = os.path.dirname(__file__)
-data_page = f"{ROOT}/site/src/routes/data"
 
 
 # %% load MP training set
@@ -80,18 +79,13 @@ for df, label, n_expected in (
 
 
 # %%
-for dataset, count_mode, elem_counts in all_counts:
-    img_name = f"{dataset}-element-counts-by-{count_mode}"
-    elem_counts.to_json(f"{data_page}/{img_name}.json")
-
+for dataset, _count_mode, elem_counts in all_counts:
     colorbar_title = f"Number of {dataset.upper()} structures containing each element"
     fig_elem_counts = pmv.ptable_heatmap(
-        elem_counts, log=(log := True), colorbar=dict(title=colorbar_title)
+        elem_counts, log=True, colorbar=dict(title=colorbar_title)
     )
     fig_elem_counts.show()
 
-    if log:
-        img_name += "-log"
     # pmv.save_fig(fig_elem_counts, f"{PDF_FIGS}/{filename}.pdf")
 
 
@@ -108,21 +102,9 @@ if normalized:
 pmv.save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 
-# %% export element counts by WBM step to JSON
+# %% derive WBM step for exploratory plots
 df_wbm["step"] = df_wbm.index.str.split("-").str[1].astype(int)
 assert df_wbm.step.between(1, 5).all()
-for batch in range(1, 6):
-    pmv.count_elements(df_wbm[df_wbm.step == batch][Key.formula]).to_json(
-        f"{data_page}/wbm-element-counts-{batch=}.json"
-    )
-
-# export element counts by arity (how many elements in the formula)
-df_wbm[Key.composition] = df_wbm[Key.formula].map(Composition)
-
-for arity, df_mp in df_wbm.groupby(df_wbm[Key.composition].map(len)):
-    pmv.count_elements(df_mp[Key.formula]).to_json(
-        f"{data_page}/wbm-element-counts-{arity=}.json"
-    )
 
 
 # %%
@@ -220,23 +202,6 @@ suffix = {
     MbdKey.e_form_raw: "e-form-uncorrected",
 }[e_col]
 img_name = f"hist-wbm-{suffix}"
-if e_col == MbdKey.each_true:  # only the hull-dist variant is shown on the site
-    figs.write_json_gz(
-        f"{SITE_FIG_DATA}/hist-wbm-hull-dist.json.gz",
-        {
-            "bar_width": round(float(bins[1] - bins[0]), 6),
-            "stable": {
-                "x": figs.round_list(bins[bins < 0]),
-                "y": left_counts.tolist(),
-            },
-            "unstable": {
-                "x": figs.round_list(bins[bins >= 0]),
-                "y": right_counts.tolist(),
-            },
-            "mean": round(float(mean), 5),
-            "std": round(float(std), 5),
-        },
-    )
 # pmv.save_fig(fig, f"./figs/{img_name}.svg", width=800, height=500)
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
 
@@ -273,10 +238,6 @@ for symbol, e_per_atom, num, *_ in df_ref.itertuples(index=False):
 
 fig.show()
 
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/mp-elemental-ref-energies.json.gz",
-    {"x": figs.round_list(df_ref[atom_num_col]), "y": figs.round_list(df_ref[e_col])},
-)
 pmv.save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
 
 
@@ -342,7 +303,6 @@ fig = pmv.spacegroup_sunburst(
 fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
-wbm_sunburst = figs.sunburst_data(fig)
 pmv.save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
 
 
@@ -353,10 +313,6 @@ fig = pmv.spacegroup_sunburst(
 fig.layout.title.update(text="MP Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/spacegroup-sunbursts.json.gz",
-    {"mp": figs.sunburst_data(fig), "wbm": wbm_sunburst},
-)
 pmv.save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-mp.pdf")
 # would be good to have consistent order of crystal systems between sunbursts but not
 # controllable yet
