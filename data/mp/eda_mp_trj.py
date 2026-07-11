@@ -15,24 +15,25 @@ from pymatgen.core.tensors import Tensor
 from pymatviz.enums import ElemCountMode, Key
 from tqdm import tqdm
 
-from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIG_DATA, figs
+from matbench_discovery import MP_DIR, PDF_FIGS
 from matbench_discovery.data import ase_atoms_from_zip, df_wbm
-from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import DataFiles, MbdKey
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"
 
-data_page = f"{ROOT}/site/src/routes/data"
-
 
 # %% load MP element counts by occurrence to compute ratio with MPtrj
-mp_occu_counts = pd.read_json(
-    f"{data_page}/mp-element-counts-by-occurrence.json", typ="series"
-)
 df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False)
 df_mp = df_mp.set_index(Key.mat_id)
 assert sum(df_mp[Key.formula].isna() | (df_mp[Key.formula] == "")) == 0
+# Preserve the route payload convention: three literal "NaN" formulas were
+# historically parsed as missing rather than sodium nitride.
+mp_formulas = df_mp[Key.formula]
+mp_occu_counts = pmv.count_elements(
+    mp_formulas[mp_formulas != "NaN"], count_mode=ElemCountMode.occurrence
+)
 
 
 # %% --- load preprocessed MPtrj summary data if available ---
@@ -90,8 +91,9 @@ if Key.formula not in df_mp_trj:
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
 # relaxation step
 df_mp_trj[MbdKey.e_form_dft] = [
-    get_e_form_per_atom(
-        {"composition": row[Key.formula], "energy": row["mp2020_corrected_energy"]}
+    calc_energy_from_e_refs(
+        {"composition": row[Key.formula], "energy": row["mp2020_corrected_energy"]},
+        mp_elemental_ref_energies,
     )
     for _idx, row in tqdm(
         df_mp_trj.iterrows(), total=len(df_mp_trj), desc="Compute formation energies"
@@ -229,15 +231,11 @@ elem_counts: dict[ElemCountMode, pd.Series[int]] = {}
 for count_mode in (ElemCountMode.composition, ElemCountMode.occurrence):
     trj_elem_counts = pmv.count_elements(df_mp_trj[Key.formula], count_mode=count_mode)
     elem_counts[count_mode] = trj_elem_counts
-    filename = f"mp-trj-element-counts-by-{count_mode}"
-    trj_elem_counts.to_json(f"{data_page}/{filename}.json")
 
 
 # %% TODO https://github.com/janosh/pymatviz/issues/188 font sizes and box sizes
-count_mode = "composition"
-trj_elem_counts = pd.read_json(
-    f"{data_page}/mp-trj-element-counts-by-{count_mode}.json", typ="series"
-)
+count_mode = ElemCountMode.composition
+trj_elem_counts = elem_counts[count_mode]
 
 excl_elems = ("He", "Ne", "Ar", "Kr", "Xe") if (excl_noble := False) else ()
 
@@ -258,20 +256,16 @@ fig.show()
 
 
 # %%
-normalized = True
 fig = pmv.ptable_heatmap(
     {
-        elem: (trj_count / 1_580_395) / (mp_count / len(df_mp))
+        elem: (trj_count / 1_580_395) / (mp_occu_counts[elem] / len(df_mp))
         for elem, trj_count in trj_elem_counts.items()
         if elem in mp_occu_counts
-        for mp_count in [mp_occu_counts[elem]]  # clever way to get mp_count in scope
     },  # ty: ignore[invalid-argument-type]
     colorbar=dict(title="MPtrj/MP Element Count Ratio"),
 )
 
-img_name = "mp-trj-mp-ratio-element-counts-by-occurrence"
-if normalized:
-    img_name += "-normalized"
+img_name = "mp-trj-mp-ratio-element-counts-by-occurrence-normalized"
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 fig.show()
 
@@ -346,22 +340,6 @@ fig.layout.xaxis.title = "Number of Elements in Formula"
 
 fig.show()
 img_name = "mp-vs-mp-trj-vs-wbm-arity-hist"
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/{img_name}.json.gz",
-    {
-        "datasets": [
-            {
-                "label": str(key),
-                "color": color,
-                "x": figs.round_list(df_arity.index),
-                "y": figs.round_list(df_arity[key]),
-            }
-            for key, color in zip(
-                df_arity.columns, px.colors.qualitative.Plotly, strict=False
-            )
-        ]
-    },
-)
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 
@@ -442,22 +420,4 @@ fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.layout.legend.update(x=0.96, y=0.18, xanchor="right", bgcolor="rgba(0,0,0,0)")
 fig.layout.xaxis.rangemode = "tozero"  # start x-axis at 0 (no negative padding)
 fig.show()
-
-
-# %% combined MPtrj histogram payload for the site (one file, five targets)
-mp_trj_hists = {
-    "e-form": figs.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300),
-    "forces": figs.histogram(df_mp_trj[Key.forces].explode().explode().abs(), bins=300),
-    "stresses": figs.histogram(df_mp_trj[Key.stress_trace], bins=300),
-    "magmoms": figs.histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300),
-    "n-sites": {
-        "x": figs.round_list(df_n_sites[Key.n_sites]),
-        "y": df_n_sites[n_struct_col].tolist(),
-        "bar_width": int(bin_width),
-        "cumulative": figs.round_list(
-            df_n_sites[n_struct_col].cumsum() / df_n_sites[n_struct_col].sum()
-        ),
-    },
-}
-figs.write_json_gz(f"{SITE_FIG_DATA}/mp-trj-hists.json.gz", mp_trj_hists)
 # pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=300)

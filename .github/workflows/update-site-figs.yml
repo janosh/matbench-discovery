@@ -72,7 +72,7 @@ jobs:
             exit 1
           fi
 
-          FORMAT_CHANGED=$(grep -E '^(scripts/model_figs/.*\.py|scripts/evals/(geo_opt|md|diatomic_metrics|build_diatomic_reference)\.py|scripts/ingest_model\.py|matbench_discovery/(figs\.py|metrics/(md\.py|diatomics/.*\.py)))$' <<< "$CHANGED" || true)
+          FORMAT_CHANGED=$(grep -E '^(scripts/(model_figs/.*\.py|export_data_fig_payloads\.py)|scripts/evals/(geo_opt|md|diatomic_metrics|build_diatomic_reference)\.py|scripts/ingest_model\.py|matbench_discovery/((cli|data_figs|energy|enums|figs|plots)\.py|preds/discovery\.py|metrics/(discovery|md)\.py|metrics/diatomics/.*\.py))$' <<< "$CHANGED" || true)
           if [ -n "$FORMAT_CHANGED" ]; then
             echo "::error::This PR changes payload-generating code. Regenerate the affected payloads locally and commit them; this secret-bearing workflow never executes PR code."
             exit 1
