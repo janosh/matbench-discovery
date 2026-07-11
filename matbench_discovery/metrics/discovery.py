@@ -198,7 +198,7 @@ def discovery_subset_indices(
         raise ValueError(
             f"Predictions contain unknown material IDs: {sorted(unknown_ids)}"
         )
-    model_preds = model_preds.reindex(df_wbm.index)
+    model_preds = pd.to_numeric(model_preds.reindex(df_wbm.index), errors="coerce")
     each_pred = df_wbm[MbdKey.each_true] + model_preds - df_wbm[MbdKey.e_form_dft]
     uniq_proto_idx = df_wbm.index[df_wbm[MbdKey.uniq_proto].astype(bool)]
     most_stable_10k_idx = each_pred.loc[uniq_proto_idx].nsmallest(10_000).index
@@ -210,13 +210,17 @@ def discovery_subset_indices(
 
 
 def calc_discovery_metrics(
-    df_wbm: pd.DataFrame, model_preds: pd.Series
+    df_wbm: pd.DataFrame,
+    model_preds: pd.Series,
+    *,
+    subset_indices: Mapping[TestSubset, pd.Index] | None = None,
 ) -> dict[TestSubset, dict[str, float]]:
     """Calculate discovery metrics for all three canonical WBM test subsets.
 
     ``model_preds`` contains formation energies in eV/atom. Predicted hull distances
     use the fixed DFT convex hull, matching the leaderboard and eval script. Reference
     columns and model predictions must use the same rounding convention.
+    Pass ``subset_indices`` to reuse rankings already derived from these predictions.
     """
     required_cols = {
         str(MbdKey.each_true),
@@ -229,7 +233,8 @@ def calc_discovery_metrics(
     model_preds = pd.to_numeric(model_preds.reindex(df_wbm.index), errors="coerce")
     each_true = df_wbm[MbdKey.each_true]
     each_pred = each_true + model_preds - df_wbm[MbdKey.e_form_dft]
-    subset_indices = discovery_subset_indices(df_wbm, model_preds)
+    if subset_indices is None:
+        subset_indices = discovery_subset_indices(df_wbm, model_preds)
     metrics_by_subset = {
         subset: stable_metrics(
             each_true.loc[subset_idx], each_pred.loc[subset_idx], fillna=True
@@ -256,9 +261,17 @@ def write_all_metrics_to_yaml(
     metrics_by_subset: Mapping[TestSubset, Mapping[str, float]],
     df_wbm: pd.DataFrame,
     model_preds: pd.Series,
+    *,
+    subset_indices: Mapping[TestSubset, pd.Index] | None = None,
 ) -> dict[TestSubset, dict[str, str | float]]:
-    """Round and write all canonical discovery subsets to one model YAML."""
-    subset_indices = discovery_subset_indices(df_wbm, model_preds)
+    """Round and write all canonical discovery subsets to one model YAML.
+
+    Pass ``subset_indices`` from :func:`calc_discovery_metrics`' input preparation to
+    avoid reranking predictions before writing subset predictions and missing counts.
+    """
+    model_preds = pd.to_numeric(model_preds.reindex(df_wbm.index), errors="coerce")
+    if subset_indices is None:
+        subset_indices = discovery_subset_indices(df_wbm, model_preds)
     written_metrics: dict[TestSubset, dict[str, str | float]] = {}
     for test_subset, metrics in metrics_by_subset.items():
         written_metrics[test_subset] = write_metrics_to_yaml(

@@ -320,9 +320,14 @@ def _write_yaml_results(
     bad_mask = abs(model_preds - df_wbm[MbdKey.e_form_dft]) > 5
     model_preds.loc[bad_mask] = pd.NA
     metric_reference = df_wbm.round(3)
-    model_preds = model_preds.round(3)
-    metrics_by_subset = discovery_metrics.calc_discovery_metrics(
+    model_preds = pd.to_numeric(
+        model_preds.round(3).reindex(metric_reference.index), errors="coerce"
+    )
+    subset_indices = discovery_metrics.discovery_subset_indices(
         metric_reference, model_preds
+    )
+    metrics_by_subset = discovery_metrics.calc_discovery_metrics(
+        metric_reference, model_preds, subset_indices=subset_indices
     )
 
     for task, path, column_key, column in (
@@ -338,7 +343,11 @@ def _write_yaml_results(
         if "pred_file_url" in artifact_data:
             print(f"Cleared stale {task}.pred_file_url; upload the new artifact")
     discovery_metrics.write_all_metrics_to_yaml(
-        model, metrics_by_subset, metric_reference, model_preds
+        model,
+        metrics_by_subset,
+        metric_reference,
+        model_preds,
+        subset_indices=subset_indices,
     )
 
 

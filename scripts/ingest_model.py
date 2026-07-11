@@ -189,6 +189,8 @@ def check_submission(model: Model, checks: Checklist) -> bool:
         elif task in ("discovery", "diatomics") and calculator_backed:
             runner = f"{ROOT}/models/run_{task}.py"
             try:
+                if not os.path.isfile(runner):
+                    raise ValueError(f"shared runner not found: {runner}")
                 CALCULATORS[model.name].uv_run_cmd(
                     runner, "--model", model.name, "--dry-run"
                 )

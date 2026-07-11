@@ -15,6 +15,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.metrics import discovery as discovery_module
 from matbench_discovery.metrics import metrics_df_from_yaml
 from matbench_discovery.metrics.discovery import (
     calc_discovery_metrics,
@@ -266,6 +267,51 @@ def test_calc_discovery_metrics_matches_manual_three_subset_calculation() -> Non
             ).mean()
             expected["DAF"] = expected["Precision"] / uniq_prevalence
             assert metrics_by_subset[subset] == pytest.approx(expected, nan_ok=True)
+
+
+def test_precomputed_discovery_subset_indices_are_reused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Metric calculation and YAML writing reuse one normalized subset ranking."""
+    material_ids = pd.Index([f"wbm-{idx}" for idx in range(4)])
+    df_test = pd.DataFrame(
+        {
+            MbdKey.each_true: [-0.2, -0.1, 0.1, 0.2],
+            MbdKey.e_form_dft: [-1.0, -0.9, -0.8, -0.7],
+            MbdKey.uniq_proto: [True, True, False, True],
+        },
+        index=material_ids,
+    )
+    model_preds = pd.to_numeric(
+        pd.Series(["-1.1", "-0.7", None, "-0.6"], index=material_ids),
+        errors="coerce",
+    )
+    subset_indices = discovery_subset_indices(df_test, model_preds)
+
+    def reject_recomputation(
+        _df_wbm: pd.DataFrame, _model_preds: pd.Series
+    ) -> dict[TestSubset, pd.Index]:
+        """Fail if either public operation recalculates subset rankings."""
+        raise AssertionError("subset rankings were recomputed")
+
+    monkeypatch.setattr(
+        discovery_module, "discovery_subset_indices", reject_recomputation
+    )
+    metrics_by_subset = discovery_module.calc_discovery_metrics(
+        df_test, model_preds, subset_indices=subset_indices
+    )
+    test_yaml = tmp_path / "test_model.yml"
+    test_yaml.write_text("metrics:\n  discovery: {}\n")
+    mock_model = cast("Model", SimpleNamespace(yaml_path=str(test_yaml)))
+    written_metrics = discovery_module.write_all_metrics_to_yaml(
+        mock_model,
+        metrics_by_subset,
+        df_test,
+        model_preds,
+        subset_indices=subset_indices,
+    )
+    assert set(written_metrics) == set(TestSubset)
+    assert written_metrics[TestSubset.full_test_set][str(MbdKey.missing_preds)] == 1
 
 
 def test_df_discovery_metrics() -> None:

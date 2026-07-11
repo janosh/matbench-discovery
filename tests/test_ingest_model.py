@@ -42,9 +42,33 @@ def test_force_model_discovery_pipelines_pass_checklist() -> None:
 
     checks = ingest.Checklist()
     ingest.check_submission(Model.equflash_29m_oam, checks)
+    assert not msgs(checks, ingest.FAIL)
     passed = msgs(checks, ingest.PASS)
     assert any("test_equflash_discovery.py" in msg for msg in passed)
     assert not any("discovery uses shared runner" in msg for msg in passed)
+
+
+@pytest.mark.parametrize("task", ["discovery", "diatomics"])
+def test_missing_shared_runner_fails_checklist(
+    monkeypatch: pytest.MonkeyPatch, task: str
+) -> None:
+    """Calculator-backed tasks fail validation when their shared runner is absent."""
+
+    def fake_isfile(path: str) -> bool:
+        """Pretend one shared task runner is missing."""
+        return not path.endswith(f"run_{task}.py")
+
+    monkeypatch.setattr(ingest.os.path, "isfile", fake_isfile)
+    checks = ingest.Checklist()
+    ingest.check_submission(Model.mace_mpa_0, checks)
+    failures = msgs(checks, ingest.FAIL)
+    assert any(
+        f"Invalid shared {task} runner configuration: shared runner not found" in msg
+        for msg in failures
+    )
+    assert not any(
+        f"{task} uses shared runner" in msg for msg in msgs(checks, ingest.PASS)
+    )
 
 
 def test_energy_only_model_skips_force_tasks() -> None:
