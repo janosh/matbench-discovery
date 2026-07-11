@@ -664,7 +664,7 @@ export const ALL_METRICS: AllMetrics = {
   CPS: {
     key: `CPS`,
     label: `CPS`,
-    description: `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights. Warning: This is not a stable metric. Further prediction tasks will be added to it in the future with the goal of making it a more holistic measure of overall model utility over time. When referring to it in papers, best include the benchmark version to avoid confusion (e.g. CPS-1 for the first version of CPS introduced in Matbench Discovery v1)`,
+    description: `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights. Warning: This is not a stable metric. Further prediction tasks will be added to it in the future with the goal of making it a more holistic measure of overall model utility over time. When referring to it in papers, best include the benchmark version to avoid confusion (e.g. CPS v1 for the first version of CPS introduced in Matbench Discovery v1)`,
     range: [0, 1],
     better: `higher`,
     format: `.3f`,
