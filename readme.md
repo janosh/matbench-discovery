@@ -15,13 +15,13 @@
 
 </h4>
 
-Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery/models) which ranks ML models on multiple tasks designed to simulate high-throughput discovery of new stable inorganic crystals, finding their ground state atomic positions and predicting their thermal conductivity.
+Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery/models) that ranks ML interatomic potentials across crystal stability prediction, geometry optimization, phonons and thermal conductivity, molecular dynamics, and diatomic potential-energy curves.
 
 We rank <slot name="model_count">20+</slot> models covering multiple methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
 
 <slot name="best_report" />
 
-Our results show that ML models have become robust enough to deploy them as triaging steps to more effectively allocate compute in high-throughput DFT relaxations. This work provides valuable insights for anyone looking to build large-scale materials databases.
+The benchmark exposes accuracy, robustness, and computational-cost trade-offs across these tasks to help users choose models for static and finite-temperature materials simulations.
 
 > 📖 **Important:** In Matbench Discovery, the convex hull used to evaluate stability is constructed from DFT reference energies, not from model predictions. This differs from some other benchmarking approaches and has important implications for metric interpretation. See [`/tasks/discovery`](https://janosh.github.io/matbench-discovery/tasks/discovery#convex-hull-construction-in-matbench-discovery) for more information.
 

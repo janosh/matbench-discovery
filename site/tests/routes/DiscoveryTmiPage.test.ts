@@ -1,6 +1,6 @@
 import elem_prev from '$figs/element-prevalence-vs-error.jsonl'
 import fp_diff from '$figs/scatter-largest-fp-diff-each-error.jsonl'
-import ModelsTmiPage from '$routes/models/tmi/+page.svelte'
+import DiscoveryTmiPage from '$routes/tasks/discovery/tmi/+page.svelte'
 import { describe, expect, it } from 'vitest'
 import { mount_with_url } from '../index'
 
@@ -11,9 +11,9 @@ const selected_texts = (): (string | undefined)[] =>
     ...document.querySelectorAll(`label .multiselect ul[aria-label="selected options"]`),
   ].map((list) => list.textContent ?? undefined)
 
-describe(`Models TMI Page`, () => {
+describe(`Discovery TMI Page`, () => {
   it(`defaults model selections when URL has no params`, async () => {
-    await mount_with_url(ModelsTmiPage, `http://localhost/models/tmi`)
+    await mount_with_url(DiscoveryTmiPage, `http://localhost/tasks/discovery/tmi`)
 
     // element-prevalence multi-select defaults to the top 3 payload models
     const [elem_prev_text, fp_text] = selected_texts()
@@ -29,7 +29,8 @@ describe(`Models TMI Page`, () => {
     const query = `models=${encodeURIComponent(elem_model)}&fp_model=${encodeURIComponent(
       fp_model,
     )}`
-    await mount_with_url(ModelsTmiPage, `http://localhost/models/tmi?${query}`)
+    const url = `http://localhost/tasks/discovery/tmi?${query}`
+    await mount_with_url(DiscoveryTmiPage, url)
 
     const [elem_prev_text, fp_text] = selected_texts()
     expect(elem_prev_text).toContain(elem_model)
@@ -41,10 +42,8 @@ describe(`Models TMI Page`, () => {
   })
 
   it(`falls back to defaults for unknown model tokens`, async () => {
-    await mount_with_url(
-      ModelsTmiPage,
-      `http://localhost/models/tmi?models=bogus&fp_model=bogus`,
-    )
+    const url = `http://localhost/tasks/discovery/tmi?models=bogus&fp_model=bogus`
+    await mount_with_url(DiscoveryTmiPage, url)
 
     const [elem_prev_text, fp_text] = selected_texts()
     for (const model of elem_prev.models.slice(0, 3)) {

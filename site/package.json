@@ -1,6 +1,6 @@
 {
   "name": "matbench-discovery",
-  "description": "Benchmarking machine learning energy models for materials discovery.",
+  "description": "Benchmarking machine-learning interatomic potentials across crystal discovery, geometry optimization, phonons, molecular dynamics, and diatomics.",
   "homepage": "https://matbench-discovery.materialsproject.org",
   "bugs": "https://github.com/janosh/matbench-discovery/issues",
   "license": "MIT",

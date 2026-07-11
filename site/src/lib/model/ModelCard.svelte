@@ -26,11 +26,6 @@
   } = $props()
 
   let { model_name, model_key, model_params, training_set } = $derived(model)
-  let missing_preds = $derived(
-    typeof model.metrics?.discovery === `object`
-      ? model.metrics.discovery.unique_prototypes?.missing_preds
-      : undefined,
-  )
 
   let links = $derived([
     [model.repo, `Repo`, `GitHub`],
@@ -121,17 +116,6 @@
       </span>
     </span>
   {/if}
-  <span
-    {@attach tooltip({
-      content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds ?? 0, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances.`,
-    })}
-  >
-    <Icon icon="MissingMetadata" /> Missing preds:
-    {format_num(missing_preds ?? 0, `,.0f`)}
-    {#if missing_preds && missing_preds > 0}
-      <small>({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})</small>
-    {/if}
-  </span>
 </section>
 {#if show_details}
   <div transition:fade={{ duration: 200 }}>

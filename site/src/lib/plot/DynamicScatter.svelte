@@ -33,9 +33,12 @@
     )
   }
 
+  const get_label_path = (label: Label | undefined): string =>
+    label_path_overrides[label?.key ?? ``] ?? label_data_path(label)
+
   // Get value from model using label's path, converting dates to timestamps
   function get_label_value(model: ModelData, label: Label | undefined): unknown {
-    const path = label_data_path(label)
+    const path = get_label_path(label)
     let val = get_nested_value(model, path)
     if (path.includes(`date`)) val = new Date(val as string).getTime()
     return val
@@ -56,6 +59,7 @@
     x_key = $bindable(ALL_METRICS.κ_SRME.key),
     y_key = $bindable(ALL_METRICS.CPS.key),
     color_key = $bindable(ALL_METRICS.F1.key),
+    label_path_overrides = {},
     initial_log = {},
     show_pareto_frontier = false,
     ...rest
@@ -67,6 +71,8 @@
     x_key?: string
     y_key?: string
     color_key?: string
+    // Override data paths by label key, e.g. for discovery-set-dependent metrics.
+    label_path_overrides?: Record<string, string>
     // seed the log-scale toggles, e.g. { color: true } for wide-range color data
     initial_log?: Partial<Record<`x` | `y` | `color` | `size`, boolean>>
     // trace the staircase of non-dominated models (needs better-direction on both axes)
@@ -99,7 +105,7 @@
       scatter_options.map((prop) => [
         prop.key,
         filtered_models.filter(
-          (model) => get_nested_value(model, label_data_path(prop)) !== undefined,
+          (model) => get_nested_value(model, get_label_path(prop)) !== undefined,
         ).length,
       ]),
     ),

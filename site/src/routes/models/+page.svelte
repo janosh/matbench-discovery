@@ -19,26 +19,24 @@
   let { initial_show_n_best }: { initial_show_n_best?: number } = $props()
 
   let sort_by: Label = $state(ALL_METRICS.CPS)
-  let show_details: boolean = $state(false)
+  let show_details = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
-  const min_models: number = 2
+  const min_models = 2
   // Enforce minimum and maximum when initializing from prop (intentionally captures initial value only)
   const initial_n_best = untrack(() =>
     Math.min(MODELS.length, Math.max(min_models, initial_show_n_best ?? MODELS.length)),
   )
-  let show_n_best: number = $state(initial_n_best)
-  let sort_by_path: string = $derived(
-    `${sort_by.path ?? ``}.${sort_by.key}`.replace(/^\./, ``),
-  )
+  let show_n_best = $state(initial_n_best)
+  let sort_by_path = $derived(`${sort_by.path ?? ``}.${sort_by.key}`.replace(/^\./, ``))
 
-  // only the 1-2 headline metrics per task (CPS overall; F1+MAE discovery; RMSD
-  // geo-opt; κ_SRME phonons; CMDS+ΔvDOS molecular dynamics) -- the full metric set
-  // lives in the landing-page table, this sort list stays skimmable
-  const metric_keys = [`CPS`, `F1`, `MAE`, `RMSD`, `κ_SRME`] as const
+  // One headline metric per task plus the overall CPS keeps the sort list balanced.
   const metrics = [
-    ...metric_keys.map((key) => ALL_METRICS[key]),
+    ALL_METRICS.CPS,
+    ALL_METRICS.F1,
+    ALL_METRICS.RMSD,
+    ALL_METRICS.κ_SRME,
     MD_METRICS.md_combined_score,
-    MD_METRICS.md_vdos_error,
+    ALL_METRICS.diatomics_combined_score,
   ]
   const sort_options = [{ ...METADATA_COLS.model_name, label: `Model Name` }, ...metrics]
 
@@ -77,25 +75,19 @@
 
   let models = $derived(MODELS.toSorted(sort_models(sort_by_path, order)))
 
-  let [min_val, max_val] = $derived.by(() => {
+  let [best_val, worst_val] = $derived.by(() => {
     if (!sort_by.better) return [NaN, NaN]
-
     const vals = models
       .map((model) => get_nested_value(model, sort_by_path))
       .filter((val): val is number => typeof val === `number` && !isNaN(val))
-
-    return vals.length ? [Math.min(...vals), Math.max(...vals)] : [0, 1]
+    if (!vals.length) return [0, 1]
+    const [min_val, max_val] = [Math.min(...vals), Math.max(...vals)]
+    return lower_is_better ? [max_val, min_val] : [min_val, max_val]
   })
-  let [best_val, worst_val] = $derived(
-    lower_is_better ? [max_val, min_val] : [min_val, max_val],
-  )
 </script>
 
-<!-- explicit minmax(0, 1fr) column: with the default auto track, the full-bleed
-ol's own 100vw-based width inflates the track beyond this wrapper's content width
-(% margins count as 0 during track sizing), so the ol's -50vw + 50% centering
-resolved against the wrong containing block -> off-center at 100% zoom and
-horizontal overflow at wider viewports (e.g. browser zoom < 100%) -->
+<!-- minmax(0, 1fr) prevents the full-bleed 100vw list from inflating its grid
+track, which would miscenter it and overflow at wider browser zoom levels. -->
 <div style="display: grid; grid-template-columns: minmax(0, 1fr)">
   <span>
     Sort

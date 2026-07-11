@@ -1,39 +1,31 @@
 import spg_sankeys from '$figs/spg-sankeys.jsonl'
+import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
 import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
 import { MODELS } from '$lib'
 import GeoOptPage from '$routes/tasks/geo-opt/+page.svelte'
 import { describe, expect, it } from 'vitest'
-import { checkbox_for, filter_summary_badge, mount_with_url } from '../index'
+import {
+  checkbox_for,
+  doc_query,
+  filter_summary_badge,
+  mount_with_url,
+  sorted_header,
+} from '../index'
 
 const key_label_pairs = MODELS.flatMap((model) =>
   model.model_key ? [[model.model_key, model.model_name] as const] : [],
 )
 const label_by_model_key = new Map(key_label_pairs)
-const model_key_by_label = new Map(key_label_pairs.map(([key, label]) => [label, key]))
-const date_added_by_key = new Map(
-  MODELS.map((model) => [model.model_key, Date.parse(model.date_added ?? ``) || 0]),
-)
-// mirror the page's default derivation exactly (same initial order + stable sort) so
-// date_added ties at the rank-5 cutoff resolve identically here and in the page
-const selectable_model_keys = [
-  ...new Set([
-    ...sym_ops_diff.models.map(({ label }) => model_key_by_label.get(label) ?? label),
-    ...spg_sankeys.models.map(({ key }) => key),
-  ]),
-]
-const default_model_keys = selectable_model_keys
-  .toSorted(
-    (key_1, key_2) =>
-      (date_added_by_key.get(key_2) ?? 0) - (date_added_by_key.get(key_1) ?? 0),
-  )
-  .slice(0, 5)
-const last_default_key = default_model_keys.at(-1) ?? ``
-
-const sort_labels = (labels: string[]): string[] =>
-  labels.toSorted((label_1, label_2) => label_1.localeCompare(label_2))
 
 const selected_text = (): string | undefined =>
-  document.querySelector(`.multiselect ul[aria-label="selected options"]`)?.textContent
+  document.querySelector(`.plot-controls .multiselect ul[aria-label="selected options"]`)
+    ?.textContent
+
+const cdf_labels = (): string[] =>
+  (document.querySelector(`.rmsd-cdf`)?.getAttribute(`aria-label`) ?? ``)
+    .replace(`RMSD CDF models: `, ``)
+    .split(`, `)
+    .filter(Boolean)
 
 const histogram_labels = (): string[] =>
   [...document.querySelectorAll(`.sym-ops-list figcaption`)].map(
@@ -46,34 +38,59 @@ const sankey_labels = (): string[] =>
   )
 
 describe(`Geo Opt Task Page`, () => {
-  it.each([
-    {
-      name: `defaults symmetry plots to the 5 most recently added models`,
-      query: ``,
-      expected_keys: default_model_keys,
-    },
-    {
-      name: `filters symmetry histograms and sankeys from the models query param`,
-      query: `?models=${last_default_key}`,
-      expected_keys: [last_default_key],
-    },
-  ])(`$name`, async ({ query, expected_keys }) => {
-    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt${query}`)
+  it(`renders intro, leaderboard, comparison, and diagnostics in order`, async () => {
+    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt`)
 
-    const expected_labels = expected_keys.map(
-      (model_key) => label_by_model_key.get(model_key) ?? model_key,
+    expect(doc_query(`h1`).textContent).toContain(`MLFF Geometry Optimization`)
+    const section_headings = [...document.querySelectorAll(`h2`)].map((heading) =>
+      heading.textContent?.trim(),
     )
-    expect(sort_labels(histogram_labels())).toStrictEqual(sort_labels(expected_labels))
-    expect(sort_labels(sankey_labels())).toStrictEqual(sort_labels(expected_labels))
-    for (const label of expected_labels) expect(selected_text()).toContain(label)
+    expect(section_headings).toStrictEqual([
+      `Leaderboard`,
+      `Model Comparison`,
+      `Aggregate Diagnostics`,
+    ])
+    expect(document.body.textContent).toContain(`RMSD is symprec-invariant`)
+    expect(doc_query(`.collapsible-legend .scatter`)).toBeInstanceOf(HTMLElement)
+    expect(cdf_labels().length).toBeGreaterThan(0)
   })
 
-  it(`restores metrics-table filters from URL params`, async () => {
+  it(`filters every aggregate plot from the models query param`, async () => {
+    const shared_model = spg_sankeys.models.find(
+      (model) =>
+        struct_rmsd_cdf.models.some((entry) => entry.label === model.label) &&
+        sym_ops_diff.models.some((entry) => entry.label === model.label),
+    )
+    if (!shared_model) throw new Error(`No model shared by all geo-opt payloads`)
+    const { key, label } = shared_model
+    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=${key}`)
+
+    expect(selected_text()).toContain(label_by_model_key.get(key) ?? label)
+    expect(cdf_labels()).toStrictEqual([label])
+    expect(histogram_labels()).toStrictEqual([label])
+    expect(sankey_labels()).toStrictEqual([label])
+  })
+
+  it(`keeps empty states for unselected aggregate diagnostics`, async () => {
+    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=`)
+
+    expect(document.querySelectorAll(`.empty-note`)).toHaveLength(3)
+    expect(document.querySelector(`.rmsd-cdf`)).toBeNull()
+  })
+
+  it(`restores scatter, sort, and metrics-table filters from URL params`, async () => {
     await mount_with_url(
       GeoOptPage,
-      `http://localhost/tasks/geo-opt?train=MPtrj&openness=OSOD,OSCD&heatmap=0`,
+      `http://localhost/tasks/geo-opt?x=model_params&y=symmetry_match_1e-5&sort=Model&dir=desc&train=MPtrj&openness=OSOD,OSCD&heatmap=0`,
     )
 
+    const scatter_heading = [...document.querySelectorAll(`h3`)].find((heading) =>
+      heading.textContent?.includes(` vs `),
+    )
+    expect(scatter_heading?.textContent).toContain(`Params`)
+    expect(scatter_heading?.textContent).toContain(`Σ`)
+    expect(sorted_header()?.textContent).toContain(`Model`)
+    expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
     expect(filter_summary_badge(`Training data`)).toContain(`(1)`)
     expect(filter_summary_badge(`Openness`)).toContain(`(2/4)`)
     expect(checkbox_for(`Heatmap`).checked).toBe(false)

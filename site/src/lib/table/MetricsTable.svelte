@@ -87,7 +87,9 @@
       fresh_rows.map((row) => {
         // Only apply selected styles when not filtering to show only selected models
         row.class =
-          !show_selected_only && selected_names.has(row.model_name) ? `highlight` : null
+          !show_selected_only && selected_names.has(row.model_name)
+            ? `highlight`
+            : undefined
         const cached = row_cache.get(row.model_name)
         if (!cached) {
           const proxied = $state(row) // deep proxy for fine-grained cell updates

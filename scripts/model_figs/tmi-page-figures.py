@@ -1,4 +1,4 @@
-"""Generate figures for the TMI (Too Much Information) pages.
+"""Generate data payloads for the TMI (Too Much Information) pages.
 
 Analyzes structures and compositions with largest mean error across all models.
 Maybe there's some chemistry/region of materials space that all models struggle with?
@@ -7,32 +7,19 @@ Might point to deficiencies in the data or models architecture.
 
 # %%
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objs as go
-import pymatviz as pmv
-from pymatgen.core import Element
-from pymatviz.enums import Key
-from pymatviz.utils import df_ptable
 
 from matbench_discovery import SITE_FIG_DATA, figs
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import TestSubset
-from matbench_discovery.preds import (
-    load_per_element_errors,
-    test_set_std_col,
-    train_count_col,
-)
+from matbench_discovery.preds import load_per_element_errors, train_count_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
-elem_col, size_col = "Element", "group"
 fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
 
 # %%
-test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 models_to_plot = cli_args.models
 
 df_preds, df_each_err, df_comp, df_elem_err = load_per_element_errors(
@@ -40,22 +27,7 @@ df_preds, df_each_err, df_comp, df_elem_err = load_per_element_errors(
 )
 
 
-# %% plot number of structures containing each element in MP and WBM
-for label, series in (
-    ("MP", df_elem_err[train_count_col]),
-    ("WBM", df_comp.where(pd.isna, 1).sum()),
-):
-    title = f"Number of {label} structures containing each element"
-    sorted_vals = series.sort_values().copy()
-    sorted_vals.index = [
-        f"{len(sorted_vals) - idx} {el}" for idx, el in enumerate(sorted_vals.index)
-    ]
-    fig = sorted_vals.plot.bar(backend="plotly", title=title)
-    fig.layout.update(showlegend=False)
-    fig.show()
-
-
-# %% plot structure counts for each element in MP and WBM in a grouped bar chart
+# %% Structure counts for each element in MP and WBM
 df_struct_counts_base = pd.DataFrame(index=df_elem_err.index)
 df_struct_counts_base["MP"] = df_elem_err[train_count_col]
 df_struct_counts_base["WBM"] = df_comp.where(pd.isna, 1).sum()
@@ -66,33 +38,17 @@ df_struct_counts_base = df_struct_counts_base[
 
 elem_counts_payload: dict[str, list[dict[str, object]]] = {}
 for normalized in (False, True):
-    df_struct_counts = df_struct_counts_base.copy()
-    if normalized:
-        df_struct_counts["MP"] /= len(df_preds) / 100
-        df_struct_counts["WBM"] /= len(df_preds) / 100
-    y_col = "percent" if normalized else "count"
-
-    df_melt = df_struct_counts.reset_index().melt(
-        var_name=(clr_col := "Dataset"),
-        value_name=y_col,
-        id_vars=(symbol_col := "symbol"),
-    )
-    fig = df_melt.sort_values([y_col, symbol_col]).plot.bar(
-        x=symbol_col,
-        y=y_col,
-        backend="plotly",
-        title="Number of structures containing each element",
-        color=clr_col,
-        barmode="group",
-    )
-
-    fig.layout.update(bargap=0.1)
-    fig.layout.legend.update(x=0.02, y=0.98, font_size=16)
-    fig.layout.yaxis.tickformat = "s"  # SI y ticks (10k not 10000)
-    fig.update_traces(width=0.9)  # wider bars, smaller inter-bar gaps
-    fig.show()
+    scale = len(df_preds) / 100 if normalized else 1
+    df_struct_counts = df_struct_counts_base / scale
     elem_counts_payload["normalized" if normalized else "raw"] = [
-        figs.trace_payload(trace) for trace in fig.data
+        {
+            "label": dataset,
+            "x": [
+                str(symbol) for symbol in df_struct_counts[dataset].sort_values().index
+            ],
+            "y": figs.round_list(df_struct_counts[dataset].sort_values()),
+        }
+        for dataset in ("WBM", "MP")
     ]
 
 # this payload is model-independent (MP/WBM element counts), safe to write on any run
@@ -102,58 +58,31 @@ figs.write_json_gz(
 
 
 # %%
-# plot per-element std dev of DFT hull dist
-fig = pmv.ptable_heatmap(df_elem_err[test_set_std_col], fmt=".2f", colorscale="Inferno")
-fig.show()
-
-
-# %%
-# scatter plot error by element against prevalence in training set
+# Error by element against prevalence in the training set
 # for checking correlation and R2 of elemental prevalence in MP training data vs.
 # model error
 
 # compute mean absolute error per element for each model
 # weight by element presence (1 if element in structure, 0 otherwise)
 df_elem_present = df_comp.where(pd.isna, 1).fillna(0)
+elem_present_counts = df_elem_present.sum()
 for model in models_to_plot:
-    model_err = df_each_err[model.label].abs()
     # for each element, compute mean error across structures containing it
-    weighted_err = df_elem_present.multiply(model_err, axis=0)
-    df_elem_err[model.label] = weighted_err.sum() / df_elem_present.sum()
-
-df_elem_err[elem_col] = [Element(el).long_name for el in df_elem_err.index]
-
-df_melt = df_elem_err.melt(
-    id_vars=[train_count_col, test_set_std_col, elem_col],
-    value_name=(val_col := "Error"),
-    var_name=(clr_col := "Model"),
-    ignore_index=False,
-)
-
-df_melt[size_col] = df_ptable[size_col].fillna(0)
-fig = df_melt.plot.scatter(
-    x=train_count_col,
-    y=val_col,
-    color=clr_col,
-    backend="plotly",
-    hover_name=elem_col,
-    title="Per-element error vs element occurrence in MP training set",
-    hover_data={val_col: ":.2f", train_count_col: ":,.0f"},
-)
-for trace in fig.data:
-    trace.visible = "legendonly"
-fig.update_traces(textposition="top center")  # place text above scatter points
-fig.layout.title.update(xanchor="center", x=0.5)
-fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title="")
-fig.show()
+    df_elem_err[model.label] = (
+        df_elem_present.multiply(df_each_err[model.label].abs(), axis=0).sum()
+        / elem_present_counts
+    )
 
 figs.write_site_payload(
     "element-prevalence-vs-error",
     {
         # element symbols + x (occurrence count per element) shared across models
         "elements": [str(symbol) for symbol in df_elem_err.index],
-        "occurrences": figs.round_list(fig.data[0].x),
-        "models": [figs.trace_payload(trace, x=False) for trace in fig.data],
+        "occurrences": figs.round_list(df_elem_err[train_count_col]),
+        "models": [
+            {"label": model.label, "y": figs.round_list(df_elem_err[model.label])}
+            for model in models_to_plot
+        ],
     },
     id_field="label",
 )
@@ -163,47 +92,20 @@ figs.write_site_payload(
 # Analyze correlation between relaxation change (measured by SiteStatsFingerprint diff)
 # and model errors
 
-model_labels = [m.label for m in models_to_plot]
+model_labels = [model.label for model in models_to_plot]
 
 
 # %% histogram of FP diff for structures with largest/smallest errors
 n_structs = 1000
-fig = go.Figure()
 hist_largest_models: list[dict[str, object]] = []
-for idx, model in enumerate(model_labels):
+for model in model_labels:
     large_errors = df_each_err[model].abs().nlargest(n_structs)
     small_errors = df_each_err[model].abs().nsmallest(n_structs)
     hist_entry: dict[str, object] = {"label": model}
     for label, errors in (("min", small_errors), ("max", large_errors)):
         fp_diff_values = df_wbm.loc[errors.index][fp_diff_col].to_numpy()
         hist_entry[f"err_{label}"] = figs.histogram(fp_diff_values, bins=100)
-        fig.add_histogram(
-            x=fp_diff_values,
-            name=f"{model} err<sub>{label}</sub>",
-            visible="legendonly" if idx else True,
-            legendgroup=model,
-            hovertemplate="SSFP diff: %{x:.2f}<br>Count: %{y}",
-        )
     hist_largest_models.append(hist_entry)
-
-title = (
-    f"Norm-diff between initial/final SiteStatsFingerprint<br>"
-    f"of the {n_structs} highest and lowest error structures for each model"
-)
-fig.layout.title.update(text=title, xanchor="center", x=0.5)
-fig.layout.legend.update(
-    title="",
-    yanchor="top",
-    y=0.98,
-    xanchor="right",
-    x=0.98,
-    font_size=12,
-    orientation="h",
-)
-fig.layout.xaxis.title = "|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|"
-fig.layout.yaxis.title = "Count"
-
-fig.show()
 
 figs.write_site_payload(
     "hist-largest-each-errors-fp-diff",
@@ -212,12 +114,10 @@ figs.write_site_payload(
 )
 
 
-# %% scatter plot:
-# FP diff vs error for highest-error structures
+# %% FP diff vs error for highest-error structures
 n_structs = 100
-fig = go.Figure()
 each_errors_models: list[dict[str, object]] = []
-for idx, model in enumerate(model_labels):
+for model in model_labels:
     errors = df_each_err[model].abs().nlargest(n_structs)
     model_mae = errors.mean()
     each_errors_models.append(
@@ -228,34 +128,6 @@ for idx, model in enumerate(model_labels):
             "y": figs.round_list(errors.values),
         }
     )
-    fig.add_scatter(
-        x=df_wbm.loc[errors.index][fp_diff_col].values,
-        y=errors.values,
-        mode="markers",
-        name=f"{model} · MAE={model_mae:.2f}",
-        visible="legendonly" if idx else True,
-        hovertemplate=(
-            "material ID: %{customdata[0]}<br>"
-            "formula: %{customdata[1]}<br>"
-            "FP norm diff: %{x}<br>"
-            "error: %{y} eV/atom"
-        ),
-        customdata=df_wbm.loc[errors.index][[Key.mat_id, Key.formula]].values,
-        legendrank=model_mae,
-    )
-
-title = (
-    f"Norm-diff between initial/final SiteStatsFingerprint<br>"
-    f"of the {n_structs} highest-error structures for each model"
-)
-fig.layout.title.update(text=title, xanchor="center", x=0.5)
-fig.layout.legend.update(
-    title="", yanchor="top", y=0.98, xanchor="right", x=0.98, font_size=14
-)
-fig.layout.xaxis.title = "|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|"
-fig.layout.yaxis.title = "Absolute error (eV/atom)"
-
-fig.show()
 
 figs.write_site_payload(
     "scatter-largest-each-errors-fp-diff",
@@ -264,78 +136,25 @@ figs.write_site_payload(
 )
 
 
-# %% scatter plot: errors for structures with largest FP diff (most relaxation change)
+# %% Errors for structures with largest FP diff (most relaxation change)
 n_points = 1000
 # filter to only materials in the predictions subset
-df_wbm_subset = df_wbm.loc[df_wbm.index.intersection(df_each_err.index)]
-df_largest_fp_diff = df_wbm_subset[fp_diff_col].nlargest(n_points)
-
-fig = go.Figure()
-colors = px.colors.qualitative.Plotly
+df_largest_fp_diff = df_wbm.loc[
+    df_wbm.index.intersection(df_each_err.index), fp_diff_col
+].nlargest(n_points)
 
 fp_diff_models: list[dict[str, object]] = []
-for idx, model in enumerate(model_labels):
-    color = colors[idx % len(colors)]
+for model in model_labels:
     abs_errors = df_each_err[model].loc[df_largest_fp_diff.index].abs()
     model_mae = abs_errors.mean()
     fp_diff_models.append(
         {
             "label": model,
             "mae": round(float(model_mae), 4),
-            "color": color,
             "y": figs.round_list(abs_errors.values),
         }
     )
 
-    visible = "legendonly" if idx else True
-    fig.add_scatter(
-        x=df_largest_fp_diff.values,
-        y=df_each_err[model].loc[df_largest_fp_diff.index].abs(),
-        mode="markers",
-        name=f"{model} · MAE={model_mae:.2f}",
-        visible=visible,
-        hovertemplate=(
-            "ID: %{customdata[0]}<br>"
-            "formula: %{customdata[1]}<br>"
-            "FP diff: %{x}<br>"
-            "error: %{y}<extra></extra>"
-        ),
-        customdata=df_preds[[Key.mat_id, Key.formula]]
-        .loc[df_largest_fp_diff.index]
-        .values,
-        legendgroup=model,
-        marker=dict(color=color),
-        legendrank=model_mae,
-    )
-    # add dashed mean line for each model
-    fig.add_scatter(
-        x=[df_largest_fp_diff.min(), df_largest_fp_diff.max()],
-        y=[model_mae, model_mae],
-        line=dict(dash="dash", width=2, color=color),
-        legendgroup=model,
-        showlegend=False,
-        visible=visible,
-    )
-
-title = (
-    f"Absolute errors in model-predicted E<sub>above hull</sub> for {n_points} "
-    "structures<br>with largest norm-diff of initial/final SiteStatsFingerprint in WBM "
-    "test set"
-)
-fig.layout.title.update(text=title, xanchor="center", x=0.5)
-fig.layout.legend.update(
-    title="",
-    yanchor="top",
-    y=0.98,
-    xanchor="right",
-    x=0.98,
-    font_size=14,
-    tracegroupgap=0,
-)
-fig.layout.xaxis.title = "|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|"
-fig.layout.yaxis.title = "|E<sub>above hull</sub> error| (eV/atom)"
-fig.layout.margin = dict(t=40, b=0, l=0, r=0)
-fig.show()
 figs.write_site_payload(
     "scatter-largest-fp-diff-each-error",
     {

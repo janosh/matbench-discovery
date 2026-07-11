@@ -1,5 +1,5 @@
 import { default as DATASETS } from '$data/datasets.yml'
-import type { DiscoverySet, ModelData } from '$lib/types'
+import type { ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import type { CpsConfig } from '$lib/combined-scores.svelte'
 import {
@@ -146,25 +146,6 @@ export const ALL_TRAINING_SETS: string[] = Object.keys(DATASETS).filter((key) =>
 // table filter (training data + openness + targets + heatmap) with the dataset roster
 export const make_table_filters = (): UrlTableFilters =>
   new UrlTableFilters(ALL_TRAINING_SETS)
-
-// Find the model with the highest F1 score on the given discovery set among the
-// passed models (pre-filter to the table cohort so the landing summary describes
-// the same models the table shows). Returns null if none qualifies.
-export function find_best_model(
-  models: ModelData[],
-  discovery_set: DiscoverySet = `full_test_set`,
-): ModelData | null {
-  let best: ModelData | null = null
-  let best_f1 = -Infinity
-
-  for (const model of models) {
-    const discovery = model.metrics?.discovery
-    const f1 = typeof discovery === `object` ? discovery?.[discovery_set]?.F1 : undefined
-    if (typeof f1 !== `number` || Number.isNaN(f1)) continue
-    if (f1 > best_f1) [best, best_f1] = [model, f1]
-  }
-  return best
-}
 
 export function get_pred_file_urls(model: ModelData) {
   // Get all pred_file_url from model.metrics

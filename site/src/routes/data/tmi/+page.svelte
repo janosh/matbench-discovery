@@ -1,6 +1,7 @@
 <script lang="ts">
   import elem_counts_bar from '$figs/element-counts-mp-vs-wbm.json.gz'
   import { PtableInset } from '$lib'
+  import { plotly_blue, plotly_red } from '$lib/fig-helpers'
   import type { ChemicalElement } from 'matterviz'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -36,6 +37,12 @@
   let active_element: ChemicalElement | null = $state(null)
   let active_counts = $derived(elem_counts[filter])
   let normalized_bar_counts: boolean = $state(false)
+  const elem_count_series = $derived(
+    elem_counts_bar[normalized_bar_counts ? `normalized` : `raw`].map((series) => ({
+      ...series,
+      color: series.label === `WBM` ? plotly_blue : plotly_red,
+    })),
+  )
 
   const read_url_params = (params: URLSearchParams) => {
     filter = valid_query_param(params, `filter`, default_filter, new Set(all_keys))
@@ -114,7 +121,7 @@
 </label>
 
 <BarPlot
-  series={elem_counts_bar[normalized_bar_counts ? `normalized` : `raw`]}
+  series={elem_count_series}
   mode="grouped"
   x_axis={{ label: `Element`, range: [0, null] }}
   y_axis={{

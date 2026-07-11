@@ -1,3 +1,4 @@
+import DATASETS from '$data/datasets.yml'
 import {
   calculate_cps,
   CPS_CONFIG,
@@ -8,7 +9,6 @@ import { ALL_METRICS } from '$lib/labels'
 import {
   ALL_TRAINING_SETS,
   calculate_training_sizes,
-  find_best_model,
   make_table_filters,
   MODEL_METADATA_PATHS,
   MODELS,
@@ -221,79 +221,14 @@ describe(`make_table_filters`, () => {
   })
 })
 
-describe(`find_best_model`, () => {
-  const make_model = (
-    model_name: string,
-    f1: unknown,
-    overrides: Record<string, unknown> = {},
-  ) =>
-    ({
-      model_name,
-      training_set: [`MPtrj`],
-      openness: `OSOD`,
-      metrics: { discovery: { full_test_set: { F1: f1 } } },
-      ...overrides,
-    }) as unknown as ModelData
-
-  it(`picks the model with the highest full-test-set F1`, () => {
-    const models = [
-      make_model(`low`, 0.5),
-      make_model(`high`, 0.9),
-      make_model(`mid`, 0.7),
-    ]
-    expect(find_best_model(models)?.model_name).toBe(`high`)
-  })
-
-  it(`returns null instead of a truthy empty object when no model qualifies`, () => {
-    // regression: best_model used to seed with a truthy {}, so when no model qualified
-    // the empty object rendered 'undefined' model names instead of being falsy
-    expect(find_best_model([])).toBeNull()
-  })
-
-  it(`ranks by the requested discovery_set`, () => {
-    const make_discovery_model = (model_name: string, full: number, uniq: number) =>
-      make_model(model_name, full, {
-        metrics: {
-          discovery: { full_test_set: { F1: full }, unique_prototypes: { F1: uniq } },
-        },
-      })
-    const models = [
-      make_discovery_model(`best-full`, 0.9, 0.4),
-      make_discovery_model(`best-uniq`, 0.5, 0.8),
-    ]
-    expect(find_best_model(models)?.model_name).toBe(`best-full`)
-    expect(find_best_model(models, `unique_prototypes`)?.model_name).toBe(`best-uniq`)
-  })
-
-  it(`skips models with missing or non-numeric F1`, () => {
-    const models = [
-      make_model(`no-f1`, undefined),
-      make_model(`nan-f1`, Number.NaN),
-      make_model(`string-f1`, `0.99`),
-      make_model(`no-discovery`, 0, { metrics: {} }),
-      make_model(`valid`, 0.6),
-    ]
-    expect(find_best_model(models)?.model_name).toBe(`valid`)
-    expect(find_best_model(models.slice(0, 4))).toBeNull()
-  })
-
-  it(`finds a best model in the real MODELS data`, () => {
-    const best = find_best_model(MODELS)
-    if (!best) throw new Error(`expected a best model in real data`)
-    const discovery = best.metrics?.discovery
-    const f1 = typeof discovery === `object` ? discovery.full_test_set?.F1 : undefined
-    expect(f1).toBeGreaterThan(0.5)
-  })
-})
-
 describe(`ALL_TRAINING_SETS`, () => {
   it(`lists only datasets used by at least one model, in datasets.yml order`, () => {
-    expect(ALL_TRAINING_SETS.length).toBeGreaterThan(5)
-    for (const key of [`MPtrj`, `OMat24`, `sAlex`, `MP 2022`]) {
-      expect(ALL_TRAINING_SETS, `missing ${key}`).toContain(key)
-    }
     const used_keys = new Set<string>(MODELS.flatMap((model) => model.training_set))
-    expect(ALL_TRAINING_SETS.every((key) => used_keys.has(key))).toBe(true)
+    const expected_keys = Object.keys(DATASETS).filter((key) => used_keys.has(key))
+    const unknown_used_keys = [...used_keys].filter((key) => !(key in DATASETS))
+
+    expect(ALL_TRAINING_SETS).toStrictEqual(expected_keys)
+    expect(unknown_used_keys).toStrictEqual([])
   })
 })
 

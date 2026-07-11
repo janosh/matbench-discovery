@@ -19,8 +19,6 @@ Helpers:
 - ``read_jsonl_payload(path)``: reassemble a .jsonl payload into ``{**shared, models}``
 - ``histogram(values)``: bin raw values into ``{x, y, bar_width}`` (HistBins shape)
 - ``lttb``: down-sample over-resolved line series
-- ``trace_xy`` / ``trace_color`` / ``trace_payload``: pull arrays/styles out of
-  plotly traces (for figs built by pymatviz/plots helpers)
 - ``sunburst_data`` / ``sankey_data``: pull the flat arrays out of plotly sunburst/
   sankey figures (matterviz builds the nested structures from these client-side)
 """
@@ -41,7 +39,6 @@ import numpy as np
 if TYPE_CHECKING:
     import numpy.typing as npt
     import plotly.graph_objects as go
-    from plotly.basedatatypes import BaseTraceType
 
 COORD_DECIMALS: Final = 5
 DEFAULT_HIST_BINS: Final = 100
@@ -145,39 +142,6 @@ def histogram(
         "y": counts.tolist(),  # np.histogram counts are already int64
         "bar_width": round(float(edges[1] - edges[0]), 6),
     }
-
-
-# === plotly trace extraction (for pymatviz-built figures) ===
-def trace_xy(trace: BaseTraceType) -> tuple[np.ndarray, np.ndarray]:
-    """Return a plotly trace's x/y as numpy arrays (decoding typed arrays)."""
-    x = decode_array(getattr(trace, "x", None))
-    y = decode_array(getattr(trace, "y", None))
-    if x is None or y is None:
-        raise ValueError(f"trace {getattr(trace, 'name', '')!r} has no x/y data")
-    return x, y
-
-
-def trace_color(trace: BaseTraceType) -> str | None:
-    """Best-effort single color for a trace (line color, else marker color)."""
-    line_color = getattr(getattr(trace, "line", None), "color", None)
-    if isinstance(line_color, str):
-        return line_color
-    marker_color = getattr(getattr(trace, "marker", None), "color", None)
-    return marker_color if isinstance(marker_color, str) else None
-
-
-def trace_payload(trace: BaseTraceType, *, x: bool = True) -> dict[str, Any]:
-    """Standard payload entry for a plotly trace: label, color (if any), x/y arrays.
-
-    Pass ``x=False`` for payloads whose models share a single top-level x array.
-    """
-    x_arr, y_arr = trace_xy(trace)
-    entry: dict[str, Any] = {"label": str(getattr(trace, "name", ""))}
-    if color := trace_color(trace):
-        entry["color"] = color
-    if x:
-        entry["x"] = round_list(x_arr)
-    return entry | {"y": round_list(y_arr)}
 
 
 def _get_trace(fig: go.Figure | dict[str, Any], trace_type: str) -> dict[str, Any]:

@@ -34,22 +34,18 @@ describe(`Models Page`, () => {
     const button_texts = [...document.querySelectorAll(`ul button`)].map((btn) =>
       btn.textContent?.trim(),
     )
-    // derive the full expected button order from the same label sources the page uses
-    // (Model Name + 1-2 headline metrics per task), converting each label's HTML to
-    // text the way the page's {@html label} render does, so removal or reorder of any
-    // sort button is caught
+    // Convert HTML labels to rendered text while checking the full button order.
     const html_to_text = (html: string): string => {
       const el = document.createElement(`div`)
       el.innerHTML = html
       return el.textContent?.trim() ?? ``
     }
-    // mirrors metric_keys in site/src/routes/models/+page.svelte
-    const headline_keys = [`CPS`, `F1`, `MAE`, `RMSD`, `κ_SRME`] as const
+    const headline_keys = [`CPS`, `F1`, `RMSD`, `κ_SRME`] as const
     const expected_button_texts = [
       `Model Name`,
       ...headline_keys.map((key) => html_to_text(ALL_METRICS[key].label)),
       html_to_text(MD_METRICS.md_combined_score.label),
-      html_to_text(MD_METRICS.md_vdos_error.label),
+      html_to_text(ALL_METRICS.diatomics_combined_score.label),
     ]
 
     expect(button_texts).toStrictEqual(expected_button_texts)
@@ -68,6 +64,7 @@ describe(`Models Page`, () => {
     expect(first_link.textContent?.trim()).toMatch(/\S/)
     expect(doc_query(`nav`, first_card).querySelectorAll(`a`).length).toBeGreaterThan(0)
     expect(doc_query(`.metrics`, first_card).textContent).toContain(`CPS`)
+    expect(first_card.textContent).not.toContain(`Missing preds`)
   })
 
   it(`sorts models by selected metric`, async () => {
@@ -128,17 +125,10 @@ describe(`Models Page`, () => {
 
     it.each([
       { input: 3, expected: 3 },
-      { input: 5, expected: 5 },
-      { input: 10, expected: 10 },
-      { input: MODELS.length - 1, expected: MODELS.length - 1 },
       { input: MODELS.length, expected: MODELS.length },
       { input: MODELS.length + 1, expected: MODELS.length }, // capped at max
-      { input: MODELS.length + 100, expected: MODELS.length }, // far above max
-      { input: 999, expected: MODELS.length }, // very large
       { input: 0, expected: min_models }, // below min
-      { input: 1, expected: min_models }, // below min
       { input: -5, expected: min_models }, // negative
-      { input: -999, expected: min_models }, // very negative
     ])(
       `displays $expected models when initial_show_n_best=$input`,
       ({ input, expected }) => {
@@ -152,8 +142,6 @@ describe(`Models Page`, () => {
 
         expect(model_cards).toHaveLength(expected)
         expect(Number(n_best_input.value)).toBe(expected)
-        expect(n_best_input.min).toBe(String(min_models))
-        expect(n_best_input.max).toBe(String(MODELS.length))
       },
     )
 

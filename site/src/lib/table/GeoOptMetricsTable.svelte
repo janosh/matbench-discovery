@@ -2,8 +2,8 @@
   import { TableControls } from '$lib'
   import { make_table_filters } from '$lib/models.svelte'
   import { METRICS_TABLE_ROOT_STYLE } from '$lib/table/MetricsTable.svelte'
-  import type { UrlTableFilters } from '$lib/url-state.svelte'
-  import type { Label, ModelData, TableLabel } from '$lib/types'
+  import type { SortState, UrlTableFilters } from '$lib/url-state.svelte'
+  import type { Label, TableLabel } from '$lib/types'
   import { HeatmapTable } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
   import {
@@ -12,15 +12,17 @@
     HYPERPARAMS,
     METADATA_COLS,
   } from '../labels'
-  import { append_better_hint, assemble_row_data } from '../metrics'
+  import { append_better_hint, assemble_row_data, has_geo_opt_metrics } from '../metrics'
 
   let {
     column_order = $bindable([]),
     filters = make_table_filters(),
+    sort = $bindable({ column: ALL_METRICS.RMSD.key, dir: `asc` }),
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     column_order?: string[]
     filters?: UrlTableFilters
+    sort?: SortState
   } = $props()
 
   // Append unit in thin font and (higher/lower=better) hint to column tooltip
@@ -83,9 +85,6 @@
     ),
   )
 
-  const has_geo_opt_metrics = (model: ModelData): boolean =>
-    model.metrics?.geo_opt != null && typeof model.metrics.geo_opt === `object`
-
   let metrics_data = $derived(
     assemble_row_data(`full_test_set`, has_geo_opt_metrics, filters.matches).map(
       (row) => {
@@ -101,7 +100,7 @@
 <HeatmapTable
   data={metrics_data}
   {columns}
-  initial_sort={{ column: ALL_METRICS.RMSD.key, direction: `asc` }}
+  bind:sort
   default_num_format=".3f"
   bind:column_order
   bind:show_heatmap={filters.show_heatmap}

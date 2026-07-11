@@ -69,7 +69,7 @@
     md_col_defs.filter((col) => md_rows.some((row) => col.key in row)),
   )
 
-  // static: this page has no color-scale picker (see /models/tmi for one that does)
+  // static: this page has no color-scale picker (see /tasks/discovery/tmi for one)
   const color_scale: D3InterpolateName = `interpolateViridis`
   let active_element: ChemicalElement | null = $state(null)
   // energy-parity tab bar: only the active plot is visible; a tab's plot mounts on
@@ -137,8 +137,8 @@
     [`Model Type`, model.model_type, model_type_tooltips[model.model_type]],
     [`Targets`, model.targets, targets_tooltips[model.targets]],
     [`Openness`, model.openness, openness_tooltips[model.openness]],
-    [`Train Task`, model.train_task, discovery_task_tooltips[model.train_task]],
-    [`Test Task`, model.test_task, discovery_task_tooltips[model.test_task]],
+    [`Discovery Train Task`, model.train_task, discovery_task_tooltips[model.train_task]],
+    [`Discovery Test Task`, model.test_task, discovery_task_tooltips[model.test_task]],
     [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`],
   ])
 
@@ -185,22 +185,6 @@
 
     {#if model.n_estimators > 1}
       <span><Icon icon="Forest" /> Ensemble of {model.n_estimators} models</span>
-    {/if}
-
-    {#if missing_preds != undefined}
-      <span
-        {@attach tooltip({
-          content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances.`,
-        })}
-      >
-        <Icon icon="MissingMetadata" />
-        Missing preds: {format_num(missing_preds, `,.0f`)}
-        {#if missing_preds != 0}
-          <small>
-            ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})
-          </small>
-        {/if}
-      </span>
     {/if}
 
     {#if model.pypi}
@@ -254,32 +238,94 @@
     <ModelRankCard model_key={model.model_key} />
   {/if}
 
-  <!-- segmented tab bar doubles as the plot title; the active button shows a
-  spinner while its plot's data is still loading -->
-  <SelectToggle
-    class="energy-parity-tabs"
-    bind:selected={energy_parity_tab}
-    options={energy_parity_options.map((option) => ({
-      ...option,
-      loading:
-        energy_parity_tab === option.value &&
-        energy_parity_statuses[option.value] !== `ready` &&
-        energy_parity_statuses[option.value] !== `error`,
-    }))}
-  />
-  <!-- only the default tab's plot mounts on page load; the other mounts on first
-  activation and then stays mounted-but-hidden so toggling back is instant (asset
-  loads are also promise-cached, and keeping the component alive preserves zoom) -->
-  {#each energy_parity_options as { value: energy_kind } (energy_kind)}
-    {#if mounted_energy_tabs.has(energy_kind)}
-      <EnergyParityPlot
-        hidden={energy_parity_tab !== energy_kind}
-        {model}
-        {energy_kind}
-        onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
+  <section class="discovery-detail">
+    <h2>
+      <a href="/tasks/discovery">Discovery</a>: energy and convex hull diagnostics
+    </h2>
+    <!-- segmented tab bar controls the parity plot; the active button shows a
+    spinner while its plot's data is still loading -->
+    <div class="energy-parity-controls">
+      <SelectToggle
+        class="energy-parity-tabs"
+        bind:selected={energy_parity_tab}
+        options={energy_parity_options.map((option) => ({
+          ...option,
+          loading:
+            energy_parity_tab === option.value &&
+            energy_parity_statuses[option.value] !== `ready` &&
+            energy_parity_statuses[option.value] !== `error`,
+        }))}
       />
+      {#if missing_preds != undefined}
+        <span
+          class="missing-preds"
+          {@attach tooltip({
+            content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances.`,
+          })}
+        >
+          <Icon icon="MissingMetadata" />
+          Missing preds: {format_num(missing_preds, `,.0f`)}
+          {#if missing_preds != 0}
+            <small>
+              ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})
+            </small>
+          {/if}
+        </span>
+      {/if}
+    </div>
+    {#each energy_parity_options as { value: energy_kind } (energy_kind)}
+      {#if mounted_energy_tabs.has(energy_kind)}
+        <EnergyParityPlot
+          hidden={energy_parity_tab !== energy_kind}
+          {model}
+          {energy_kind}
+          onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
+        />
+      {/if}
+    {/each}
+
+    {#if model.model_key && model.model_key in per_elem_each_errors}
+      {@const raw_heatmap = per_elem_each_errors[model.model_key]}
+      {@const heatmap_values = Object.fromEntries(
+        Object.entries(raw_heatmap).filter(
+          (entry): entry is [string, number] => entry[1] !== null,
+        ),
+      )}
+      <h3 class="toc-exclude">Per-element convex hull distance errors</h3>
+      <PeriodicTable
+        {heatmap_values}
+        {color_scale}
+        bind:active_element
+        tile_props={{ float_fmt: `.2f` }}
+        show_photo={false}
+        missing={{
+          color: `light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.5))`,
+        }}
+      >
+        {#snippet inset()}
+          <TableInset style="align-content: center">
+            <div style="height: 2em">
+              {#if active_element}
+                <PtableInset
+                  element={active_element}
+                  elem_counts={heatmap_values}
+                  show_percent={false}
+                  unit="<small style='font-weight: lighter;'>eV / atom</small>"
+                />
+              {/if}
+            </div>
+            <ColorBar
+              title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
+              title_side="top"
+              {color_scale}
+              range={[0, Math.max(0, ...Object.values(heatmap_values))]}
+              style="width: 80%; margin: 0 2em"
+            />
+          </TableInset>
+        {/snippet}
+      </PeriodicTable>
     {/if}
-  {/each}
+  </section>
 
   {#if has_kappa_parity_model(model.model_key)}
     <KappaParityPlot {model} />
@@ -301,50 +347,6 @@
         default_num_format=".3~f"
       />
     </section>
-  {/if}
-
-  {#if model.model_key && model.model_key in per_elem_each_errors}
-    {@const raw_heatmap = per_elem_each_errors[model.model_key]}
-    {@const heatmap_values = Object.fromEntries(
-      Object.entries(raw_heatmap).filter(
-        (entry): entry is [string, number] => entry[1] !== null,
-      ),
-    )}
-    <h2 style="margin: 1em auto; text-align: center" class="toc-exclude">
-      Convex hull distance prediction errors projected onto elements
-    </h2>
-    <PeriodicTable
-      {heatmap_values}
-      {color_scale}
-      bind:active_element
-      tile_props={{ float_fmt: `.2f` }}
-      show_photo={false}
-      missing={{
-        color: `light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.5))`,
-      }}
-    >
-      {#snippet inset()}
-        <TableInset style="align-content: center">
-          <div style="height: 2em">
-            {#if active_element}
-              <PtableInset
-                element={active_element}
-                elem_counts={heatmap_values}
-                show_percent={false}
-                unit="<small style='font-weight: lighter;'>eV / atom</small>"
-              />
-            {/if}
-          </div>
-          <ColorBar
-            title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
-            title_side="top"
-            {color_scale}
-            range={[0, Math.max(0, ...Object.values(heatmap_values))]}
-            style="width: 80%; margin: 0 2em"
-          />
-        </TableInset>
-      {/snippet}
-    </PeriodicTable>
   {/if}
 
   <section class="authors">
@@ -477,11 +479,22 @@
     display: block;
     font-weight: bold;
   }
-  /* segmented control: buttons fused into one bar with rounded outer corners,
-  compact height, sitting directly above the plot as its title */
+  /* Compact fused parity tabs sit directly above the plot. */
+  .energy-parity-controls {
+    display: flex;
+    flex-wrap: wrap;
+    place-content: center;
+    align-items: center;
+    gap: 1em;
+    margin: 0.5em auto;
+  }
+  .missing-preds {
+    color: var(--text-secondary);
+    font-size: 0.8em;
+    font-weight: lighter;
+  }
   :global(.energy-parity-tabs.selection-toggle) {
     gap: 0;
-    margin: 2em auto 0.5em;
   }
   :global(.energy-parity-tabs.selection-toggle button) {
     padding: 2px 12px;

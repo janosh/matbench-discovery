@@ -165,7 +165,6 @@ export interface MetadataLabels {
   n_training_structures: Label1
   checkpoint_license: Label1
   code_license: Label1
-  missing_preds: Label1
   'Run Time (h)': Label1
   org: Label1
 }
