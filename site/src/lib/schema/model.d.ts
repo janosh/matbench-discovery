@@ -194,6 +194,10 @@ export type DiscoveryMetrics = PredFileRequiresUrl & {
   pred_col: string
   pred_file?: string | null
   pred_file_url?: string
+  hardware?: string
+  run_time_sec?: number
+  max_rss_gb?: number
+  max_gpu_mem_gb?: number
   full_test_set?: DiscoveryMetricsSet
   most_stable_10k?: DiscoveryMetricsSet
   unique_prototypes?: DiscoveryMetricsSet

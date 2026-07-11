@@ -1,4 +1,6 @@
-# exclude generated plot files when calculating repo language statistics on GitHub
+# exclude generated files and shell/HTML auxiliaries from GitHub language statistics
 site/src/figs/**/* linguist-generated
 site/src/app.css linguist-generated
 paper/references.bib linguist-generated
+*.sh linguist-detectable=false
+*.html linguist-detectable=false

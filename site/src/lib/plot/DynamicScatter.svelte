@@ -60,7 +60,6 @@
     y_key = $bindable(ALL_METRICS.CPS.key),
     color_key = $bindable(ALL_METRICS.F1.key),
     label_path_overrides = {},
-    initial_log = {},
     show_pareto_frontier = false,
     ...rest
   }: ComponentProps<typeof ScatterPlot> & {
@@ -73,16 +72,12 @@
     color_key?: string
     // Override data paths by label key, e.g. for discovery-set-dependent metrics.
     label_path_overrides?: Record<string, string>
-    // seed the log-scale toggles, e.g. { color: true } for wide-range color data
-    initial_log?: Partial<Record<`x` | `y` | `color` | `size`, boolean>>
     // trace the staircase of non-dominated models (needs better-direction on both axes)
     show_pareto_frontier?: boolean
   } = $props()
 
   const log_dims = [`x`, `y`, `color`, `size`] as const
-  // seed-once by design: initial_log only sets the starting toggle state
-  // svelte-ignore state_referenced_locally
-  let log = $state({ x: false, y: false, color: false, size: false, ...initial_log })
+  const log_dim_labels = { x: `X`, y: `Y`, color: `Color`, size: `Size` } as const
   let size_prop = $state(HYPERPARAMS.model_params as (typeof scatter_options)[number])
 
   let axes = $derived({
@@ -94,10 +89,6 @@
 
   const ticks = 5
   let display = $state({ x_grid: true, y_grid: true })
-
-  // Log scale needs positive values spanning at least two decades.
-  const supports_log = (ext: [number | undefined, number | undefined]): boolean =>
-    ext[0] !== undefined && ext[0] > 0 && 100 * ext[0] <= (ext[1] ?? 0)
 
   let filtered_models = $derived(models.filter(model_filter))
   let model_counts_by_prop = $derived(
@@ -170,14 +161,34 @@
     }),
   )
 
+  // Log scales need positive values spanning at least two decades.
+  const supports_log = (
+    prop: Label | undefined,
+    value_key: `x` | `y` | `color_value` | `size_value`,
+  ): boolean => {
+    const [min, max] = extent(plot_data, (point) => point[value_key] as number)
+    return (
+      !label_data_path(prop).includes(`date`) &&
+      min !== undefined &&
+      max !== undefined &&
+      min > 0 &&
+      100 * min <= max
+    )
+  }
   let can_log = $derived({
-    x: supports_log(extent(plot_data, (pt) => pt.x)),
-    y: supports_log(extent(plot_data, (pt) => pt.y)),
-    color: supports_log(extent(plot_data, (pt) => pt.color_value as number)),
-    size: supports_log(extent(plot_data, (pt) => pt.size_value)),
+    x: supports_log(axes.x, `x`),
+    y: supports_log(axes.y, `y`),
+    color: supports_log(axes.color_value, `color_value`),
+    size: supports_log(axes.size_value, `size_value`),
   })
-  // log scale only when toggled on AND the data supports it: a seeded (initial_log)
-  // or stale toggle falls back to linear, matching the hidden/disabled checkboxes
+  // Seed the initial render automatically. Manual toggles persist until the data or
+  // axis/size selection changes, at which point all dimensions are re-evaluated.
+  // svelte-ignore state_referenced_locally
+  let log = $state({ ...can_log })
+  $effect(() => {
+    log = { ...can_log }
+  })
+  // A stale manual toggle falls back to linear when the data no longer supports logs.
   const scale_of = (dim: keyof typeof log) =>
     log[dim] && can_log[dim] ? (`log` as const) : (`linear` as const)
 
@@ -274,7 +285,7 @@
       maxSelect={1}
       minSelect={1}
       key={(opt: (typeof scatter_options)[number]) => opt.key}
-      style="flex: 1; max-width: 300px; margin: 0"
+      style="flex: 1; max-width: 300px; margin: 0; line-height: normal; --sms-min-height: 24px"
       ulSelectedStyle="flex-wrap: nowrap; overflow: hidden; min-width: 0;"
       liSelectedStyle="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"
       liOptionStyle="font-size: 13px;"
@@ -294,6 +305,20 @@
         </span>
       {/snippet}
     </Select>
+    <div class="log-controls" role="group" aria-label="Logarithmic scales">
+      <strong>Log Scale</strong>
+      {#each log_dims as dim (dim)}
+        {@const supported = can_log[dim]}
+        <label
+          title={supported
+            ? undefined
+            : `Requires positive, non-date values spanning at least 100×`}
+        >
+          <input type="checkbox" bind:checked={log[dim]} disabled={!supported} />
+          {log_dim_labels[dim]}
+        </label>
+      {/each}
+    </div>
   </div>
 
   <ScatterPlot
@@ -306,7 +331,6 @@
       label: axes.x?.label,
       format: axes.x?.format,
       scale_type: scale_of(`x`),
-      label_shift: { y: -50 },
       ticks,
       options: prop_options,
       selected_key: x_key,
@@ -351,6 +375,8 @@
     label_placement_config={{
       leader_line_threshold: 15,
       max_neighbors: { count: 3, radius: 40 },
+      // Avoid blocking point-tween frames while axes change scale.
+      sa_iterations: 100,
     }}
     point_events={{
       onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
@@ -359,16 +385,6 @@
     {data_loader}
   >
     {#snippet controls_extra()}
-      <div style="display: flex; gap: 1em; flex-wrap: wrap">
-        {#each log_dims as dim (dim)}
-          {#if can_log[dim]}
-            <label>
-              <input type="checkbox" bind:checked={log[dim]} />
-              Log <span style="text-transform: capitalize">{dim}</span>
-            </label>
-          {/if}
-        {/each}
-      </div>
       <label title="Toggle model names on the plot">
         <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
       </label>
@@ -403,14 +419,26 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 1ex 0.6em;
-    /* asymmetric margin counterbalances the collapsed legend parked right of center
-       (a `translate` would be simpler but turns the row into a containing block for
-       the marker-size dropdown's position: fixed options list, breaking it) */
-    margin: 0 12em 1em 3em;
-    justify-content: center;
+    margin: 0 0 1em 3em;
     /* paint above the (later-DOM) plot so the open dropdown stays interactive */
     position: relative;
     z-index: 1;
+  }
+  div.log-controls,
+  div.log-controls label {
+    display: flex;
+    align-items: center;
+  }
+  div.log-controls {
+    gap: 0.6em;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  div.log-controls label {
+    gap: 0.25em;
+  }
+  div.log-controls input {
+    margin: 0;
   }
   div.controls-row label {
     font-weight: 500;
@@ -424,7 +452,7 @@
   }
   /* collapsed: show only the group header beside the size select */
   div.bleed-1400 :global(.scatter > .legend:not(:has(.legend-item))) {
-    left: calc(50% + 10em) !important;
+    left: calc(50% + 5em) !important;
     width: max-content !important;
     justify-content: flex-start !important;
   }

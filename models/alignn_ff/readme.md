@@ -33,7 +33,7 @@ Traceback (most recent call last):
 OSError: [Errno 24] Too many open files
 ```
 
-## Scripts
-
-1. [`alignn_ff_relax.py`](alignn_ff_relax.py): Relax WBM test set structures. Set the variable `n_splits` to the number of GPU compute nodes. On each compute node, set the environment variable `TASK_ID` to a value in the range 1-`n_splits`. Set the variable `n_processes_per_task` to the number of processes on a single node. For 48 CPU cores with 4 GPUs a good setting is to use 10 processes.
-2. [`test_alignn_ff_discovery.py`](test_alignn_ff_discovery.py): Read the relaxed structures from `alignn_ff_relax.py` and make formation energy predictions. Set the variable `n_splits` accordingly.
+The abandoned relaxation and discovery scripts were removed when
+[PR #375](https://github.com/janosh/matbench-discovery/pull/375) centralized
+discovery execution. This directory retains the metadata and patches as a
+historical record of the aborted submission.

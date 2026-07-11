@@ -21,6 +21,9 @@ from collections.abc import Sequence
 from functools import partialmethod
 from pathlib import Path
 
+from matbench_discovery import ROOT
+from matbench_discovery.calculators import CALCULATORS
+from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS, RelaxationSettings
 from matbench_discovery.enums import Model
 
 PASS, FAIL, SKIP = "✓", "✗", "○"
@@ -146,6 +149,7 @@ def check_submission(model: Model, checks: Checklist) -> bool:
 
     # E = energy only (no forces -> no relaxation, phonons or diatomics)
     energy_only = model.metadata.get("targets") == "E"
+    calc_spec = CALCULATORS.get(model.name)
 
     discovery = task_metrics(model, "discovery")
     if isinstance(discovery, dict) and discovery.get("pred_file_url"):
@@ -179,6 +183,40 @@ def check_submission(model: Model, checks: Checklist) -> bool:
     for task in ("discovery", "kappa", "diatomics"):
         if energy_only and task != "discovery":
             checks.skip(f"{task} test script check skipped (targets=E, no forces)")
+            continue
+        if task == "discovery" and (
+            reason := ARCHIVED_DISCOVERY_MODELS.get(model.name)
+        ):
+            checks.skip(f"discovery is archived: {reason}")
+            continue
+        if task == "discovery" and calc_spec is None:
+            checks.fail(
+                "discovery model is not registered with the shared runner: add an "
+                "ASE calculator to matbench_discovery/calculators.py, or discuss "
+                "non-ASE inference with the maintainers first (see contributing.md)"
+            )
+            continue
+
+        if task in ("discovery", "diatomics") and calc_spec is not None:
+            runner = f"{ROOT}/models/run_{task}.py"
+            try:
+                if not os.path.isfile(runner):
+                    raise ValueError(f"shared runner not found: {runner}")
+                command = calc_spec.uv_run_cmd(
+                    runner, "--model", model.name, "--dry-run"
+                )
+                subprocess.run(command, check=True)
+                if task == "discovery":
+                    RelaxationSettings.from_model(model.name)
+            except (
+                subprocess.CalledProcessError,
+                OSError,
+                TypeError,
+                ValueError,
+            ) as exc:
+                checks.fail(f"Invalid shared {task} runner configuration: {exc}")
+            else:
+                checks.ok(f"{task} uses shared runner: models/run_{task}.py")
         elif scripts := sorted(yaml_path.parent.glob(f"test_*_{task}.py")):
             checks.ok(f"{task} test script found: {scripts[0].name}")
         elif task == "diatomics":

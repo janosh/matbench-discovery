@@ -68,8 +68,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      # same cache as update-site-figs.yml: discovery.py downloads every active
-      # model's WBM predictions, several GB on a cold cache
+      # same cache as update-site-figs.yml: scripts/evals/discovery.py downloads
+      # every active model's WBM predictions, several GB on a cold cache
       - name: Cache model prediction + analysis files
         uses: actions/cache@v5
         with:

@@ -15,7 +15,7 @@
 
 </h4>
 
-Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery/models) that ranks ML interatomic potentials across crystal stability prediction, geometry optimization, phonons and thermal conductivity, molecular dynamics, and diatomic potential-energy curves.
+Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery) that ranks ML interatomic potentials across crystal stability prediction, geometry optimization, phonons and thermal conductivity, molecular dynamics, and diatomic potential-energy curves.
 
 We rank <slot name="model_count">20+</slot> models covering multiple methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
 

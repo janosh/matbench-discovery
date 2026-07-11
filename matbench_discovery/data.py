@@ -215,6 +215,10 @@ df_wbm = pd.read_csv(DataFiles.wbm_summary.path)
 # str() around Key.mat_id added for https://github.com/janosh/matbench-discovery/issues/81
 df_wbm.index = df_wbm[str(Key.mat_id)]
 
+# formation-energy predictions further than this from DFT (eV/atom) are treated as
+# unrealistic outliers and masked out of all downstream metrics
+MAX_E_FORM_ERROR_THRESHOLD = 5.0
+
 
 def load_df_wbm_with_preds(
     *,
@@ -222,7 +226,7 @@ def load_df_wbm_with_preds(
     pbar: bool = True,
     id_col: str = Key.mat_id,
     subset: pd.Index | Sequence[str] | TestSubset | None = None,
-    max_error_threshold: float | None = 5.0,
+    max_error_threshold: float | None = MAX_E_FORM_ERROR_THRESHOLD,
     nrows: int | None = None,
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.

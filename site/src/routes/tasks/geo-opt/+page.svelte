@@ -154,7 +154,6 @@
       bind:x_key={scatter_x}
       bind:y_key={scatter_y}
       color_key={METADATA_COLS.n_training_materials.key}
-      initial_log={{ color: true }}
       show_pareto_frontier
       style="height: 800px"
     />

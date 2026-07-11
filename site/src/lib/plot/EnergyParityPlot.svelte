@@ -344,6 +344,7 @@ title, so label the section for screen readers instead -->
     <EnergyParityScatter
       {series}
       style="height: 520px"
+      padding={{ l: 75 }}
       x_axis={{ label: x_label, format: `.2f`, range: extent }}
       y_axis={{ label: y_label, format: `.2f`, range: extent }}
       density={{
@@ -443,6 +444,13 @@ title, so label the section for screen readers instead -->
   .energy-parity-plot :global(.plot-tooltip) {
     background: var(--tooltip-bg, light-dark(#f5f5f7, #2a2a2e));
     box-shadow: 0 4px 12px var(--shadow, rgba(0, 0, 0, 0.15));
+  }
+  /* the binned plot pins the y-axis title 20px left of the plot edge, ignoring both
+     tick-label width and axis label_shift, so long model names overlap the tick
+     labels. Shift the title further left (local +y maps to screen +x inside the
+     rotate(-90) group) into the room made by the wider left padding above. */
+  .energy-parity-plot :global(g.y-axis .axis-label) {
+    transform: translateY(-21px);
   }
   .popup-anchor {
     height: 0;

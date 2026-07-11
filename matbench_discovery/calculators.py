@@ -27,6 +27,9 @@ from filelock import FileLock
 from matbench_discovery import DEFAULT_CACHE_DIR
 
 if TYPE_CHECKING:
+    import argparse
+    from collections.abc import Mapping
+
     from ase.calculators.calculator import Calculator
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
@@ -405,18 +408,6 @@ def _m3gnet(device: str) -> "Calculator":  # noqa: ARG001 - matgl manages device
     return PESCalculator(matgl.load_model("M3GNet-MP-2021.2.8-PES"))
 
 
-def _equflash(model_key: str) -> Callable[[str], "Calculator"]:
-    def make_calc(device: str) -> "Calculator":
-        from GGNN.common.calculator import UCalculator
-
-        # UCalculator is an ASE Calculator (the kappa task drives phonopy with it);
-        # figshare ships a torch .pt checkpoint that it loads by path
-        ckpt = download_checkpoint(model_key, ext=".pt")
-        return UCalculator(checkpoint_path=ckpt, cpu=device == "cpu")
-
-    return make_calc
-
-
 def _emt(device: str) -> "Calculator":  # noqa: ARG001 - CPU only, debug model
     from ase.calculators.emt import EMT
 
@@ -485,49 +476,6 @@ TECE_DEPS = (
     "tace @ git+https://github.com/xvzemin/tace@88d8dcd5724e94751783b0a3405cb49573af1583",
     *TACE_DEPS[1:],
 )
-# EquFlash (Samsung GGNN): UCalculator is ASE-compatible. Heavy env pinned to the
-# discovery/kappa scripts: torch 2.9.1+cu126 from pytorch's index (EQUFLASH_INDEX), PyG
-# extensions from the matching cu126 wheel page (EQUFLASH_LINKS), cuequivariance, and
-# GGNN itself (git). py3.12 per its requires-python.
-EQUFLASH_DEPS = (
-    "GGNN @ git+https://github.com/SamsungDS/GGNN@16b5cae47437",
-    "fairchem-core==1.10.0",
-    "cuequivariance==0.6.0",
-    "cuequivariance-ops-torch-cu12==0.6.0",
-    "cuequivariance-torch==0.6.0",
-    "e3nn==0.5.6",
-    "torch==2.9.1+cu126",
-    "torch-geometric==2.6.1",
-    "torch-scatter==2.1.2",
-    "torch-sparse==0.6.18",
-    "numba==0.65.1",
-    "hydra-core==1.3.3",
-    "lmdb==1.6.2",
-    "pydantic==2.13.4",
-    "spglib==2.6.0",
-    "torchtnt==0.2.4",
-    "submitit==1.5.3",
-    "huggingface-hub==1.19.0",
-    "numpy<3",
-    "pandas<4",
-    "scipy==1.16.1",
-    "pymatgen>=2026.5.4",
-)
-EQUFLASH_LINKS = ("https://data.pyg.org/whl/torch-2.9.1+cu126.html",)
-EQUFLASH_INDEX = ("https://download.pytorch.org/whl/cu126",)
-
-
-def _equflash_spec(model_key: str) -> CalcSpec:
-    """Return shared calculator metadata for EquFlash variants."""
-    return CalcSpec(
-        _equflash(model_key),
-        deps=EQUFLASH_DEPS,
-        find_links=EQUFLASH_LINKS,
-        extra_index_url=EQUFLASH_INDEX,
-        python_version="3.12",
-    )
-
-
 CALCULATORS: dict[str, CalcSpec] = {
     "mace_mp_0": CalcSpec(_mace("medium"), deps=MACE_DEPS),
     "mace_mpa_0": CalcSpec(_mace("medium-mpa-0"), deps=MACE_DEPS),
@@ -547,6 +495,9 @@ CALCULATORS: dict[str, CalcSpec] = {
     "grace_1l_oam": CalcSpec(_grace("GRACE-1L-OAM"), deps=("tensorpotential",)),
     "grace_2l_oam_l": CalcSpec(
         _grace("GRACE-2L-OMAT-large-ft-AM"), deps=("tensorpotential",)
+    ),
+    "grace_3l_oam_l": CalcSpec(
+        _grace("GRACE-3L-OMAT-large-ft-AM"), deps=("tensorpotential",)
     ),
     # grace_2l_mptrj == registry name "GRACE-2L-MP-r6" (sciebo 42Ivgi3eaLCynwC), but
     # tensorpotential>=0.5 (all that's on PyPI) dropped the MP-r6 models, so pin the
@@ -654,27 +605,61 @@ CALCULATORS: dict[str, CalcSpec] = {
         _deepmd_freeze("dpa_4_0_1_pro_mptrj"),
         deps=("deepmd-kit[torch]==3.2.0b0",),
     ),
-    "equflash_29m_oam": _equflash_spec("equflash_29m_oam"),
-    "equflashv2_45m_oam": _equflash_spec("equflashv2_45m_oam"),
     # CPU-only debug model for smoke-testing the pipeline without heavy installs
     "emt": CalcSpec(_emt),
 }
 
 
-def resolve_calculator_key(model_ref: str) -> str:
-    """Resolve a Model ref or debug key to a registered calculator key."""
+def _canonical_model_key(model_ref: str) -> str:
+    """Resolve Model refs while preserving calculator-only debug keys."""
     from matbench_discovery.enums import Model
 
     try:
-        model_key = Model.from_ref(model_ref).name
+        return Model.from_ref(model_ref).name
     except ValueError:
-        model_key = model_ref
+        return model_ref
+
+
+def resolve_calculator_key(model_ref: str) -> str:
+    """Resolve a Model ref or debug key to a registered calculator key."""
+    model_key = _canonical_model_key(model_ref)
     if model_key not in CALCULATORS:
         raise ValueError(
             f"Unknown model {model_ref!r}, pick from {sorted(CALCULATORS)} or "
             "register it in matbench_discovery/calculators.py"
         )
     return model_key
+
+
+def resolve_cli_calculator(
+    parser: "argparse.ArgumentParser",
+    model_ref: str | None,
+    *,
+    list_models: bool = False,
+    archived_reasons: "Mapping[str, str] | None" = None,
+    task: str = "task",
+) -> str | None:
+    """Shared-runner CLI preamble: print the registry or resolve ``--model``.
+
+    Returns None after printing one ``key: deps`` line per registered calculator
+    for ``--list-models``. Otherwise resolves the model reference to a calculator
+    key, exiting via ``parser.error`` when the model is missing, archived for this
+    ``task`` (per ``archived_reasons``), or not registered.
+    """
+    if list_models:
+        for model_key, spec in CALCULATORS.items():
+            print(f"{model_key}: {', '.join(spec.deps) or '(core deps only)'}")
+        return None
+    if not model_ref:
+        parser.error("--model is required (or pass --list-models)")
+
+    model_key = _canonical_model_key(model_ref)
+    if archived_reasons and (reason := archived_reasons.get(model_key)):
+        parser.error(f"{model_key} {task} is archived: {reason}")
+    try:
+        return resolve_calculator_key(model_key)
+    except ValueError as exc:
+        parser.error(f"{exc}, see --list-models")
 
 
 def load_calculator(
