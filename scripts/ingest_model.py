@@ -24,8 +24,7 @@ from pathlib import Path
 from matbench_discovery.enums import Model
 
 PASS, FAIL, SKIP = "✓", "✗", "○"
-# --no-show: don't open plotly figs in the browser
-PAYLOAD_FLAGS = ("--auto-download", "--no-show")
+PAYLOAD_FLAGS = ("--auto-download",)
 # each entry is the `uv run` argument string for one payload script; kappa needs the
 # phonons extra (phono3py/phonopy) when computing conductivity diagnostics
 PAYLOAD_SCRIPTS = (

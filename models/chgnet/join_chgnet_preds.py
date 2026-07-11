@@ -12,7 +12,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.data import as_dict_handler
-from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.preds.discovery import df_preds
 
@@ -55,7 +55,9 @@ e_pred_col = "chgnet_energy"
 e_form_chgnet_col = f"e_form_per_atom_{e_pred_col.split('_energy', maxsplit=1)[0]}"
 df_chgnet[Key.formula] = df_preds[Key.formula]
 df_chgnet[e_form_chgnet_col] = [
-    get_e_form_per_atom(dict(energy=ene, composition=formula))
+    calc_energy_from_e_refs(
+        dict(energy=ene, composition=formula), mp_elemental_ref_energies
+    )
     for formula, ene in tqdm(
         df_chgnet.set_index(Key.formula)[e_pred_col].items(), total=len(df_chgnet)
     )

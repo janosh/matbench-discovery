@@ -3,7 +3,6 @@ pymatgen EntryLikes.
 """
 
 import itertools
-import warnings
 from collections.abc import Sequence
 from typing import Any, cast
 
@@ -148,35 +147,3 @@ def calc_energy_from_e_refs(
     e_ref = sum(ref_energies[str(el)] * amt for el, amt in comp.items())
 
     return (energy - e_ref) / comp.num_atoms
-
-
-def get_e_form_per_atom(
-    entry: EntryLike, elemental_ref_energies: dict[str, float] | None = None
-) -> float:
-    """Get formation energy for a phase diagram entry (composition + absolute energy)
-    and a dict mapping elements to per-atom reference energies.
-
-    Args:
-        entry (EntryLike): pymatgen Entry (PDEntry, ComputedEntry or
-            ComputedStructureEntry) or dict with energy (absolute, not per atom) and
-            composition keys to compute formation energy of.
-        elemental_ref_energies (dict[str, float], optional): Must be a covering set (for
-            entry) of terminal reference energies, i.e. eV/atom of the lowest energy
-            elemental phase for each element. Defaults to MP elemental reference
-            energies as collected on 2022-09-19 get_elemental_ref_entries(). This was
-            tested to give the same formation energies as found in MP.
-
-    Returns:
-        float: formation energy in eV/atom.
-
-    Raises:
-        TypeError: If entry is not a pymatgen Entry or dict.
-    """
-    warnings.warn(
-        "get_e_form_per_atom is deprecated. Use calc_energy_from_e_refs instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    if elemental_ref_energies is None:
-        elemental_ref_energies = mp_elemental_ref_energies
-    return calc_energy_from_e_refs(entry, ref_energies=elemental_ref_energies)

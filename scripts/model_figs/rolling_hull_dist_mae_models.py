@@ -4,17 +4,11 @@
 import numpy as np
 
 from matbench_discovery import figs
-from matbench_discovery.cli import complete_models
+from matbench_discovery.cli import complete_models, shared_payload_test_subset
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
-__author__ = "Rhys Goodall, Janosh Riebesell"
-__date__ = "2022-06-18"
-
-
-# %%
-test_subset = globals().get("test_subset", TestSubset.uniq_protos)
-
+test_subset = shared_payload_test_subset()
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]

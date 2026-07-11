@@ -9,7 +9,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.data import as_dict_handler, df_wbm
-from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_energies
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import DataFiles
 
 e_form_col = "e_form_per_atom_hienet"
@@ -66,7 +66,7 @@ df_out[Key.formula] = df_wbm[Key.formula]
 df_out[e_form_col] = [
     # see https://matbench-discovery.materialsproject.org/data#mp-elemental-reference-energies
     # MP ref energies are the lowest energies found for unary structures of each element
-    get_e_form_per_atom(
+    calc_energy_from_e_refs(
         dict(energy=cse.energy, composition=formula), mp_elemental_ref_energies
     )
     for formula, cse in tqdm(

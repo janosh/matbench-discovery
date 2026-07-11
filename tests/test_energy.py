@@ -11,7 +11,6 @@ from pymatgen.util.typing import EntryLike
 
 from matbench_discovery.energy import (
     calc_energy_from_e_refs,
-    get_e_form_per_atom,
     get_elemental_ref_entries,
     mp_elem_ref_entries,
     mp_elemental_ref_energies,
@@ -20,14 +19,8 @@ from matbench_discovery.energy import (
 
 @pytest.fixture
 def ref_energies() -> dict[str, float]:
+    """Return elemental reference energies for Fe-O test entries."""
     return {"Fe": -1.0, "O": -2.0}
-
-
-def test_get_e_form_per_atom() -> None:
-    """Test formation energy calculation."""
-    entry = {"composition": {"Fe": 1, "O": 1}, "energy": -2.5}
-    ref_energies = {"Fe": -1.0, "O": -1.0}
-    assert get_e_form_per_atom(entry, ref_energies) == -0.25
 
 
 @pytest.mark.parametrize("constructor", [PDEntry, ComputedEntry, lambda **x: x])
@@ -124,13 +117,3 @@ def test_calc_energy_from_e_refs_error_cases(
 
     with pytest.raises(ValueError, match="Entry dict missing required keys"):
         calc_energy_from_e_refs({"energy": -5.0}, ref_energies)
-
-
-def test_calc_energy_from_e_refs_equivalence_with_get_e_form(
-    ref_energies: dict[str, float],
-) -> None:
-    """Test equivalence with get_e_form_per_atom."""
-    test_entry = ComputedEntry("FeO", -5.0)
-    e_form1 = calc_energy_from_e_refs(test_entry, ref_energies)
-    e_form2 = get_e_form_per_atom(test_entry, ref_energies)
-    assert e_form1 == pytest.approx(e_form2)

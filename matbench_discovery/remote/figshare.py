@@ -11,10 +11,10 @@ import requests
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, repo_relative_path
-from matbench_discovery.cli import CLI_TIMEOUT
 
 ENV_PATH: Final[str] = f"{ROOT}/site/.env"
 BASE_URL: Final[str] = "https://api.figshare.com/v2"
+CLI_TIMEOUT: Final = 30
 
 # Maps modeling tasks to their Figshare article IDs. New figshare articles will be
 # created if the ID is None. Be sure to paste the new article ID into the

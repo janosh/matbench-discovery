@@ -369,6 +369,28 @@ def test_discovery_payload_covers_active_models(name: str) -> None:
     )
 
 
+GEO_OPT_PAYLOADS = ("spg-sankeys", "struct-rmsd-cdf", "sym-ops-diff-bar")
+
+
+@pytest.mark.parametrize("name", GEO_OPT_PAYLOADS)
+def test_geo_opt_payload_covers_active_models(name: str) -> None:
+    """Each geo-opt payload includes every active model with an analysis file."""
+    expected = {
+        model.label
+        for model in Model.active()
+        if isinstance(geo_opt := (model.metrics or {}).get("geo_opt"), dict)
+        and geo_opt.get("pred_file")
+        and isinstance(symprec := geo_opt.get("symprec=1e-5"), dict)
+        and symprec.get("analysis_file")
+    }
+    assert len(expected) > 30, f"sanity: too few geo-opt models ({len(expected)})"
+    labels = payload_model_ids(name, "label")
+    assert labels == expected, (
+        f"{name} roster drift: missing={expected - labels}, extra={labels - expected}. "
+        "Run `python scripts/evals/geo_opt.py --auto-download`."
+    )
+
+
 def test_kappa_payload_covers_active_models() -> None:
     """The kappa-103-analysis payload must include every active model with kappa_103
     predictions, so a partial regen fails fast instead of silently dropping models.
@@ -392,7 +414,6 @@ def test_kappa_payload_covers_active_models() -> None:
 # sibling figures from a shared data source must agree on their model roster (these
 # carry only `label`, not `key`), so a partial regen of one fails against the rest
 LABEL_PAYLOAD_FAMILIES = {
-    "geo-opt": ("struct-rmsd-cdf", "sym-ops-diff-bar"),
     "tmi-extras": (
         "element-prevalence-vs-error",
         "scatter-largest-fp-diff-each-error",

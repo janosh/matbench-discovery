@@ -28,7 +28,7 @@ from tqdm import tqdm, trange
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
-from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
 
 
@@ -235,7 +235,9 @@ class MBDRunner:
         # %% compute corrected formation energies
         df_fairchem[Key.formula] = df_wbm[Key.formula]
         df_fairchem["pred_e_form_per_atom"] = [
-            get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
+            calc_energy_from_e_refs(
+                dict(energy=cse.energy, composition=formula), mp_elemental_ref_energies
+            )
             for formula, cse in tqdm(
                 df_fairchem.set_index(Key.formula)[
                     Key.computed_structure_entry

@@ -19,13 +19,11 @@ Helpers:
 - ``read_jsonl_payload(path)``: reassemble a .jsonl payload into ``{**shared, models}``
 - ``histogram(values)``: bin raw values into ``{x, y, bar_width}`` (HistBins shape)
 - ``lttb``: down-sample over-resolved line series
-- ``sunburst_data`` / ``sankey_data``: pull the flat arrays out of plotly sunburst/
-  sankey figures (matterviz builds the nested structures from these client-side)
+- ``sankey_payload_from_flow``: canonicalize ``pymatviz.sankey_flow_data`` output
 """
 
 from __future__ import annotations
 
-import base64
 import contextlib
 import gzip
 import json
@@ -37,8 +35,9 @@ from typing import TYPE_CHECKING, Any, Final
 import numpy as np
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     import numpy.typing as npt
-    import plotly.graph_objects as go
 
 COORD_DECIMALS: Final = 5
 DEFAULT_HIST_BINS: Final = 100
@@ -61,31 +60,6 @@ def round_list(values: npt.ArrayLike | None) -> list[Any]:
         else val
         for val in np.asarray(values).tolist()
     ]
-
-
-def str_list(values: npt.ArrayLike | dict[str, str] | None) -> list[str]:
-    """Convert a (possibly base64-encoded plotly) array of labels to a list of str.
-    ``None`` -> ``[]``.
-    """
-    arr = decode_array(values)
-    return [] if arr is None else [str(val) for val in arr.tolist()]
-
-
-def decode_array(value: npt.ArrayLike | dict[str, str] | None) -> np.ndarray | None:
-    """Decode a plotly value (plain list/array or base64 typed array) to numpy."""
-    if value is None:
-        return None
-    if isinstance(value, dict) and "bdata" in value and "dtype" in value:
-        # plotly base64 typed-array payload; coerce to a plain str dict so indexing is
-        # typed (isinstance narrowing alone yields dict[Unknown] via npt.ArrayLike)
-        meta = {str(key): str(val) for key, val in value.items()}
-        raw = base64.b64decode(meta["bdata"])
-        dtype = np.dtype(meta["dtype"]).newbyteorder("<")
-        arr = np.frombuffer(raw, dtype=dtype)
-        if shape := meta.get("shape"):  # meta values are already str
-            arr = arr.reshape([int(dim) for dim in shape.replace(" ", "").split(",")])
-        return arr
-    return np.asarray(value)
 
 
 # === down-sampling ===
@@ -144,51 +118,24 @@ def histogram(
     }
 
 
-def _get_trace(fig: go.Figure | dict[str, Any], trace_type: str) -> dict[str, Any]:
-    """Find the first trace of ``trace_type`` in a plotly figure (or fig dict)."""
-    fig_dict: dict[str, Any] = fig if isinstance(fig, dict) else fig.to_plotly_json()  # ty: ignore[invalid-assignment]
-    trace = next(
-        (tr for tr in fig_dict.get("data", []) if tr.get("type") == trace_type), None
-    )
-    if trace is None:
-        raise ValueError(f"figure contains no {trace_type} trace")
-    return trace
+def sankey_payload_from_flow(flow_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Canonicalize ``pymatviz.sankey_flow_data`` output for a site payload."""
+    labels = [str(label) for label in flow_data["labels"]]
+    src_idx = np.asarray(flow_data["source_indices"], dtype=int).tolist()
+    tgt_idx = np.asarray(flow_data["target_indices"], dtype=int).tolist()
+    values = round_list(flow_data["value"])
+    if not labels or not src_idx or not tgt_idx:
+        raise ValueError("sankey flow has no nodes or links")
+    return _canonicalize_sankey(labels, src_idx, tgt_idx, values)
 
 
-def sunburst_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
-    """Extract a plotly sunburst's flat labels/parents/values(/ids) arrays.
-
-    matterviz's ``sunburst_from_labels_parents`` builds the nested SunburstNode tree
-    from these client-side (and handles duplicate ids), so shipping the flat arrays
-    keeps payloads ~20% smaller than a pre-nested tree and avoids duplicating its logic.
-    """
-    trace = _get_trace(fig, "sunburst")
-    out: dict[str, Any] = {
-        "labels": str_list(trace.get("labels")),
-        "parents": str_list(trace.get("parents")),
-        "values": round_list(decode_array(trace.get("values"))),
-    }
-    if (raw_ids := trace.get("ids")) is not None:
-        out["ids"] = str_list(raw_ids)
-    return out
-
-
-def sankey_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
-    """Extract a plotly sankey's node labels + link source/target/value arrays.
-
-    matterviz's sankey_from_links builds the ``{nodes, links}`` SankeyData from these
-    flat arrays, so shipping them keeps payloads smaller + avoids duplicating its logic.
-    """
-    trace = _get_trace(fig, "sankey")
-    node, link = trace.get("node") or {}, trace.get("link") or {}
-    labels = str_list(node.get("label"))
-    sources = decode_array(link.get("source"))
-    targets = decode_array(link.get("target"))
-    if not labels or sources is None or targets is None or len(sources) == 0:
-        raise ValueError("sankey trace has no nodes or links")
-    # link indices are ints; round_list would map a non-finite to None -> int(None)
-    src_idx = np.asarray(sources, dtype=int).tolist()
-    tgt_idx = np.asarray(targets, dtype=int).tolist()
+def _canonicalize_sankey(
+    labels: list[str],
+    src_idx: list[int],
+    tgt_idx: list[int],
+    values: list[Any],
+) -> dict[str, Any]:
+    """Drop unused nodes, reindex links, and sort them deterministically."""
     # drop nodes no link references (plotly keeps many unused spacegroup nodes whose
     # crammed labels overlap) and reindex the links onto the kept nodes
     used = sorted({*src_idx, *tgt_idx})
@@ -199,7 +146,7 @@ def sankey_data(fig: go.Figure | dict[str, Any]) -> dict[str, Any]:
         zip(
             (remap[src] for src in src_idx),
             (remap[tgt] for tgt in tgt_idx),
-            round_list(decode_array(link.get("value"))),
+            values,
             strict=True,
         )
     )

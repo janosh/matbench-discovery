@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### Unreleased
+
+- Remove the deprecated `get_e_form_per_atom()` API. Use `calc_energy_from_e_refs()` with explicit reference energies instead.
+- Remove the unused Plotly figure builders and layout globals from the public `matbench_discovery.plots` module. Only `stable_screening_sort()` and `wandb_scatter()` remain.
+- Remove the unused Plotly trace decoders `sunburst_data()` and `sankey_data()` from `matbench_discovery.figs`; payload generators now consume data directly.
+
 #### [v1.3.1](https://github.com/janosh/matbench-discovery/compare/v1.3.0...v1.3.1)
 
 > 11 September 2024

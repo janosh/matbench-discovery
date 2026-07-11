@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import base64
 import gzip
 import json
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-import plotly.graph_objects as go
 import pytest
 
 from matbench_discovery import figs
@@ -16,35 +14,7 @@ from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import Model
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from pathlib import Path
-
-
-def make_bdata(values: list[float], dtype: str = "f8") -> dict[str, str]:
-    """Encode a numeric list as a Plotly base64 typed-array dict."""
-    arr = np.asarray(values, dtype=np.dtype(dtype))
-    return {"dtype": dtype, "bdata": base64.b64encode(arr.tobytes()).decode()}
-
-
-@pytest.mark.parametrize(
-    ("value", "expected"),
-    [
-        (make_bdata([1.0, 2.0, 3.0]), [1.0, 2.0, 3.0]),
-        (make_bdata([4, 5, 6], dtype="i4"), [4, 5, 6]),
-        ([7.0, 8.0], [7.0, 8.0]),
-        (None, None),
-    ],
-)
-def test_decode_array(
-    value: dict[str, str] | list[float] | None, expected: list[float] | None
-) -> None:
-    """decode_array handles base64 typed arrays, plain lists, and None."""
-    result = figs.decode_array(value)
-    if expected is None:
-        assert result is None
-    else:
-        assert result is not None
-        np.testing.assert_allclose(result, expected, rtol=0, atol=0)
 
 
 @pytest.mark.parametrize(
@@ -86,56 +56,21 @@ def test_histogram_bins_raw_values() -> None:
     assert result["x"][0] == pytest.approx(0.05)  # first bin center
 
 
-def test_sunburst_data_extracts_flat_arrays() -> None:
-    """sunburst_data returns the flat labels/parents/values/ids arrays unchanged."""
-    ids = ["cubic", "cubic/225", "cubic/221", "hexagonal"]
-    labels = ["cubic", "225", "221", "hexagonal"]
-    parents = ["", "cubic", "cubic", ""]
-    values = [10, 6, 4, 5]
-    fig = go.Figure(
-        go.Sunburst(
-            branchvalues="total", ids=ids, labels=labels, parents=parents, values=values
-        )
-    )
-    result = figs.sunburst_data(fig)
-    assert result == {
-        "labels": labels,
-        "parents": parents,
-        "values": values,
-        "ids": ids,
+def test_sankey_flow_canonicalization() -> None:
+    """Sankey flow data drops unused nodes and sorts links deterministically."""
+    # "X" is unreferenced; links are deliberately non-canonical.
+    flow_data = {
+        "labels": ["A", "B", "X", "C"],
+        "source_indices": [1, 0],
+        "target_indices": [3, 3],
+        "value": [4.0, 3.0],
     }
-
-
-def test_sankey_data_from_sankey_trace() -> None:
-    """sankey_data drops unreferenced nodes, reindexes links onto the kept ones and
-    canonicalizes link order (payload bytes must not depend on input link order).
-    """
-    fig = go.Figure(
-        go.Sankey(
-            # "X" (index 2) is unreferenced -> dropped; "C" reindexed 3 -> 2.
-            # links given in non-canonical order to exercise the link sorting
-            node=dict(label=["A", "B", "X", "C"]),
-            link=dict(source=[1, 0], target=[3, 3], value=[4.0, 3.0]),
-        )
-    )
-    assert figs.sankey_data(fig) == {
+    assert figs.sankey_payload_from_flow(flow_data) == {
         "labels": ["A", "B", "C"],
         "source": [0, 1],
         "target": [2, 2],
         "value": [3.0, 4.0],
     }
-
-
-@pytest.mark.parametrize(
-    ("converter", "trace_type"),
-    [(figs.sunburst_data, "sunburst"), (figs.sankey_data, "sankey")],
-)
-def test_converters_require_matching_trace(
-    converter: Callable[[go.Figure | dict[str, Any]], dict[str, Any]], trace_type: str
-) -> None:
-    """sunburst_data/sankey_data raise on figures without their trace type."""
-    with pytest.raises(ValueError, match=f"no {trace_type} trace"):
-        converter(go.Figure(go.Scatter(x=[1], y=[2])))
 
 
 def test_write_json_gz_roundtrip(tmp_path: Path) -> None:

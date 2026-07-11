@@ -5,6 +5,8 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -13,14 +15,16 @@ from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, Model, TestSubset
-from matbench_discovery.metrics import discovery
+from matbench_discovery.metrics import metrics_df_from_yaml
 from matbench_discovery.metrics.discovery import (
     classify_stable,
-    df_metrics,
     stable_metrics,
     write_metrics_to_yaml,
 )
 from matbench_discovery.preds.discovery import df_each_err, df_each_pred, df_preds
+
+df_full_discovery_metrics = metrics_df_from_yaml(["discovery.full_test_set"])
+full_discovery_model_labels = set(df_full_discovery_metrics.index)
 
 
 @pytest.mark.parametrize(
@@ -222,19 +226,12 @@ def test_stable_metrics() -> None:
 
 
 def test_df_discovery_metrics() -> None:
-    """Test df_metrics dataframe is valid."""
-    missing_cols = {model.label for model in Model.active()} - set(discovery.df_metrics)
-    assert missing_cols == set(), f"{missing_cols=}"
-    assert discovery.df_metrics.T.MAE.between(0, 0.2).all(), (
-        f"unexpected {discovery.df_metrics.T.MAE=}"
-    )
-    assert discovery.df_metrics.T.R2.between(-1.5, 1).all(), (
-        f"unexpected {discovery.df_metrics.T.R2=}"
-    )
-    assert discovery.df_metrics.T.RMSE.between(0, 0.3).all(), (
-        f"unexpected {discovery.df_metrics.T.RMSE=}"
-    )
-    assert discovery.df_metrics.T.isna().sum().sum() == 0, "NaNs in metrics"
+    """Discovery metrics stored in model YAML files are complete and valid."""
+    assert {model.label for model in Model.active()} <= full_discovery_model_labels
+    assert df_full_discovery_metrics.MAE.between(0, 0.2).all()
+    assert df_full_discovery_metrics.R2.between(-1.5, 1).all()
+    assert df_full_discovery_metrics.RMSE.between(0, 0.3).all()
+    assert df_full_discovery_metrics.isna().sum().sum() == 0, "NaNs in metrics"
 
 
 def test_discovery_eval_skips_incomplete_cli_model() -> None:
@@ -245,7 +242,6 @@ def test_discovery_eval_skips_incomplete_cli_model() -> None:
             "scripts/evals/discovery.py",
             "--models",
             "alphanet-mptrj",
-            "--no-show",
         ],
         cwd=f"{Path(__file__).parents[2]}",
         env=os.environ | {"CI": "1"},
@@ -264,14 +260,9 @@ def test_discovery_eval_skips_incomplete_cli_model() -> None:
 
 def test_write_metrics_to_yaml(tmp_path: Path) -> None:
     """Test write_metrics_to_yaml writes metrics with comments to YAML file."""
-    from pathlib import Path
-    from unittest.mock import MagicMock, patch
-
-    # Create mock model with yaml_path pointing to temp file
-    mock_model = MagicMock(spec=Model)
     test_yaml = tmp_path / "test_model.yml"
     test_yaml.write_text("metrics:\n  discovery: {}\n")
-    mock_model.yaml_path = str(test_yaml)
+    mock_model = cast("Model", SimpleNamespace(yaml_path=str(test_yaml)))
 
     # Create test metrics and predictions
     test_metrics: dict[str, str | float] = {
@@ -282,13 +273,12 @@ def test_write_metrics_to_yaml(tmp_path: Path) -> None:
     }
     test_preds = pd.Series([0.1, 0.2, np.nan, 0.4])  # 1 missing prediction
 
-    with patch.object(Model, "__instancecheck__", return_value=True):
-        result = write_metrics_to_yaml(
-            mock_model,
-            test_metrics,
-            test_preds,
-            TestSubset.full_test_set,
-        )
+    result = write_metrics_to_yaml(
+        mock_model,
+        test_metrics,
+        test_preds,
+        TestSubset.full_test_set,
+    )
 
     # Check that missing_preds was added
     assert str(MbdKey.missing_preds) in result
@@ -299,7 +289,7 @@ def test_write_metrics_to_yaml(tmp_path: Path) -> None:
     assert result["Precision"] == 0.9
 
     # Verify YAML file was updated
-    content = Path(test_yaml).read_text()
+    content = test_yaml.read_text()
     assert "MAE" in content
     assert "full_test_set" in content
 
@@ -309,8 +299,8 @@ def test_df_each_pred() -> None:
     n_rows, _n_cols = df_each_pred.shape
     assert n_rows == len(df_wbm)
     assert n_rows == len(df_preds)
-    assert {*df_each_pred} == {*df_metrics}, (
-        f"{df_each_pred.columns=}, expected {df_metrics.columns=}"
+    assert set(df_each_pred) == full_discovery_model_labels, (
+        f"{df_each_pred.columns=}, expected {full_discovery_model_labels=}"
     )
 
 
@@ -318,6 +308,6 @@ def test_df_each_err() -> None:
     """Per-model hull-distance errors span all WBM rows plus each_err_models."""
     assert len(df_each_err) == len(df_wbm)
     assert len(df_each_err) == len(df_preds)
-    assert {*df_each_err} == {*df_metrics, MbdKey.each_err_models}, (
-        f"{df_each_err.columns=}, expected {df_metrics.columns=}"
+    assert set(df_each_err) == full_discovery_model_labels | {MbdKey.each_err_models}, (
+        f"{df_each_err.columns=}, expected {full_discovery_model_labels=}"
     )

@@ -15,7 +15,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.data import as_dict_handler
-from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import DataFiles, Task
 
 __author__ = "Janosh Riebesell"
@@ -81,7 +81,8 @@ if len(processed) != len(df_m3gnet):
 
 # %% compute corrected formation energies
 df_m3gnet["e_form_per_atom_m3gnet"] = [
-    get_e_form_per_atom(cse) for cse in tqdm(df_m3gnet[Key.computed_structure_entry])
+    calc_energy_from_e_refs(cse, mp_elemental_ref_energies)
+    for cse in tqdm(df_m3gnet[Key.computed_structure_entry])
 ]
 
 

@@ -10,18 +10,13 @@ expected hit rate for a given DFT calculation budget.
 import numpy as np
 
 from matbench_discovery import STABILITY_THRESHOLD, figs
-from matbench_discovery.cli import complete_models
+from matbench_discovery.cli import complete_models, shared_payload_test_subset
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import classify_stable
 from matbench_discovery.plots import stable_screening_sort
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
-__author__ = "Janosh Riebesell, Rhys Goodall"
-__date__ = "2022-12-04"
-
-
-test_subset = globals().get("test_subset", TestSubset.uniq_protos)
-
+test_subset = shared_payload_test_subset()
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
@@ -30,8 +25,7 @@ if test_subset == TestSubset.uniq_protos:
 # %%
 cum_pr_models = []
 for model in complete_models():
-    label = model.label
-    each_pred = stable_screening_sort(df_each_pred[label])
+    each_pred = stable_screening_sort(df_each_pred[model.label])
     each_true = df_preds[MbdKey.each_true].loc[each_pred.index]
     true_pos, false_neg, false_pos, _true_neg = classify_stable(
         each_true, each_pred, stability_threshold=STABILITY_THRESHOLD
@@ -42,7 +36,7 @@ for model in complete_models():
     # number of materials the model predicts stable = where its curve ends
     n_pred_stable = int((each_pred <= STABILITY_THRESHOLD).sum())
     if n_pred_stable < 2:  # can't happen for real models (thousands stable)
-        raise ValueError(f"{label} predicts {n_pred_stable} stable materials")
+        raise ValueError(f"{model.label} predicts {n_pred_stable} stable materials")
     # log2-spaced sampling for higher density at the start of the discovery campaign
     # where metrics fluctuate most. Rounded to ints since x counts screened materials
     # (also compresses better).
@@ -56,7 +50,7 @@ for model in complete_models():
     cum_pr_models.append(
         {
             "key": model.key,
-            "label": label,
+            "label": model.label,
             "x": figs.round_list(xs),
             "precision": figs.round_list(precision),
             "recall": figs.round_list(recall),

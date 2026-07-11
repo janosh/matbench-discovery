@@ -8,13 +8,10 @@ Might point to deficiencies in the data or models architecture.
 # %%
 import pandas as pd
 
-from matbench_discovery import SITE_FIG_DATA, figs
+from matbench_discovery import figs
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import load_per_element_errors, train_count_col
-
-__author__ = "Janosh Riebesell"
-__date__ = "2023-02-15"
 
 fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
@@ -22,38 +19,8 @@ fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 # %%
 models_to_plot = cli_args.models
 
-df_preds, df_each_err, df_comp, df_elem_err = load_per_element_errors(
+_df_preds, df_each_err, df_comp, df_elem_err = load_per_element_errors(
     models_to_plot, subset=cli_args.test_subset
-)
-
-
-# %% Structure counts for each element in MP and WBM
-df_struct_counts_base = pd.DataFrame(index=df_elem_err.index)
-df_struct_counts_base["MP"] = df_elem_err[train_count_col]
-df_struct_counts_base["WBM"] = df_comp.where(pd.isna, 1).sum()
-min_count = 10  # only show elements with at least 10 structures
-df_struct_counts_base = df_struct_counts_base[
-    df_struct_counts_base.sum(axis=1) > min_count
-]
-
-elem_counts_payload: dict[str, list[dict[str, object]]] = {}
-for normalized in (False, True):
-    scale = len(df_preds) / 100 if normalized else 1
-    df_struct_counts = df_struct_counts_base / scale
-    elem_counts_payload["normalized" if normalized else "raw"] = [
-        {
-            "label": dataset,
-            "x": [
-                str(symbol) for symbol in df_struct_counts[dataset].sort_values().index
-            ],
-            "y": figs.round_list(df_struct_counts[dataset].sort_values()),
-        }
-        for dataset in ("WBM", "MP")
-    ]
-
-# this payload is model-independent (MP/WBM element counts), safe to write on any run
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/element-counts-mp-vs-wbm.json.gz", elem_counts_payload
 )
 
 
