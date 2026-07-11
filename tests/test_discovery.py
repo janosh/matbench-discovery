@@ -316,10 +316,13 @@ def test_merge_rejects_incomplete_duplicate_and_wrong_coverage(
         )
 
 
-def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
-    """Unified MP2020 formation energies equal the former CSE mutation workflow."""
+def test_artifacts_match_legacy_mp2020_join_semantics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """MP2020 artifacts retain valid entries and record individual rejections."""
     material_id = "wbm-1"
     failed_id = "wbm-2"
+    rejected_id = "wbm-3"
     structure = Structure(
         Lattice.cubic(3.6),
         ["Cu"] * 4,
@@ -339,6 +342,13 @@ def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
         records=(
             record,
             RelaxationRecord(
+                material_id=rejected_id,
+                structure=structure.as_dict(),
+                energy=-13.0,
+                converged=True,
+                n_steps=3,
+            ),
+            RelaxationRecord(
                 material_id=failed_id,
                 structure=None,
                 energy=None,
@@ -352,15 +362,16 @@ def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
     )
     df_summary = pd.DataFrame(
         {
-            Key.mat_id: [material_id, failed_id],
-            Key.formula: ["Cu4", "Cu"],
+            Key.mat_id: [material_id, failed_id, rejected_id],
+            Key.formula: ["Cu4", "Cu", "Cu4"],
         }
     ).set_index(Key.mat_id)
     original_entry = ComputedStructureEntry(
         structure, -8.0, parameters={"run_type": "GGA"}
     )
     df_entries = pd.DataFrame(
-        {Key.computed_structure_entry: [original_entry]}, index=[material_id]
+        {Key.computed_structure_entry: [original_entry, copy.deepcopy(original_entry)]},
+        index=[material_id, rejected_id],
     )
     compatibility = MaterialsProject2020Compatibility(check_potcar=False)
     ref_energies = {"Cu": -3.0}
@@ -375,6 +386,17 @@ def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
         "Cu4", ref_energies, total_energy=processed_entry.energy
     )
 
+    process_entry = compatibility.process_entry
+
+    def reject_selected_entry(
+        entry: ComputedStructureEntry, **kwargs: bool
+    ) -> ComputedStructureEntry | None:
+        """Reject one entry while processing all others normally."""
+        if entry.energy == -13.0:
+            return None
+        return process_entry(entry, **kwargs)
+
+    monkeypatch.setattr(compatibility, "process_entry", reject_selected_entry)
     pred_file = tmp_path / "preds.csv.gz"
     geo_file = tmp_path / "geo.jsonl.gz"
     artifacts = write_discovery_artifacts(
@@ -383,7 +405,7 @@ def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
         geo_opt_file_path=str(geo_file),
         df_wbm_summary=df_summary,
         df_wbm_cse=df_entries,
-        compatibility=MaterialsProject2020Compatibility(check_potcar=False),
+        compatibility=compatibility,
         elemental_ref_energies=ref_energies,
     )
     pred_col = discovery_pred_col("emt")
@@ -393,7 +415,12 @@ def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
     assert pd.read_csv(pred_file).loc[0, pred_col] == pytest.approx(expected_e_form)
     assert pd.isna(artifacts.predictions.loc[failed_id, pred_col])
     assert artifacts.predictions.loc[failed_id, "error"] == "RuntimeError: failed"
-    assert artifacts.n_failed == 1
+    assert pd.isna(artifacts.predictions.loc[rejected_id, pred_col])
+    assert (
+        artifacts.predictions.loc[rejected_id, "error"]
+        == "MP2020 compatibility rejected entry"
+    )
+    assert artifacts.n_failed == 2
     df_geo = pd.read_json(geo_file, lines=True)
     assert len(df_geo) == 1
     assert df_geo.loc[0, Key.mat_id] == material_id

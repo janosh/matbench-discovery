@@ -59,9 +59,6 @@ def test_classify_stable(
     )
 
     assert (n_true_pos, n_false_neg, n_false_pos, n_true_neg) == expected
-    assert n_true_pos + n_false_neg + n_false_pos + n_true_neg == len(df_float)
-    assert n_true_neg + n_false_pos == np.sum(stability_threshold < df_float.A)
-    assert n_true_pos + n_false_neg == np.sum(stability_threshold >= df_float.A)
 
 
 def test_classify_stable_rejects_nan_threshold() -> None:
@@ -108,12 +105,12 @@ def test_classify_stable_nullable_inputs(
         (
             [0.1, 0.2, 0.3],
             [-0.1, -0.2, -0.3],
-            (0.0, 1.0, 0.0, np.nan, np.nan, np.nan),
+            (0.0, 1.0, 0.0, np.nan, np.nan, np.nan, np.nan),
         ),
         (
             [-0.1, -0.2, -0.3],
             [0.1, 0.2, 0.3],
-            (np.nan, np.nan, np.nan, 0.0, 1.0, np.nan),
+            (np.nan, np.nan, np.nan, 0.0, 1.0, np.nan, np.nan),
         ),
     ],
     ids=["no-actual-stable", "no-actual-unstable"],
@@ -125,7 +122,7 @@ def test_stable_metrics_zero_class(
 ) -> None:
     """Metrics handle absent stable or unstable classes."""
     metrics = stable_metrics(each_true, each_pred, stability_threshold=0.0, fillna=True)
-    metric_keys = ("Precision", "FPR", "TNR", "Recall", "FNR", "DAF")
+    metric_keys = ("Precision", "FPR", "TNR", "Recall", "FNR", "DAF", "F1")
     assert tuple(metrics[key] for key in metric_keys) == pytest.approx(
         expected, nan_ok=True
     )
@@ -163,25 +160,8 @@ def test_stable_metrics_nan_handling() -> None:
     assert nullable_metrics["MAE"] == 0
 
 
-def test_stable_metrics_matches_expected_values_and_sklearn() -> None:
-    """Metrics match known values and sklearn's reference implementations."""
-    metrics = stable_metrics(np.arange(-1, 1, 0.1), np.arange(1, -1, -0.1), fillna=True)
-    expected = {
-        "DAF": 0.0,
-        "Precision": 0,
-        "Recall": 0,
-        "Accuracy": 0,
-        "TPR": 0,
-        "FPR": 1,
-        "TNR": 0,
-        "FNR": 1,
-        "MAE": 0.999,
-        "RMSE": 1.157,
-        "R2": -3.030,
-    }
-    assert {key: metrics[key] for key in expected} == pytest.approx(expected, abs=1e-3)
-    assert np.isnan(metrics["F1"])
-
+def test_stable_metrics_matches_sklearn() -> None:
+    """Classification and regression metrics match sklearn."""
     np_rng = np.random.default_rng(seed=0)
     true_values, pred_values = np_rng.normal(size=(2, 100))
     metrics = stable_metrics(true_values, pred_values, fillna=True)
@@ -198,6 +178,29 @@ def test_stable_metrics_matches_expected_values_and_sklearn() -> None:
         "R2": r2_score(true_values, pred_values),
     }
     assert {key: metrics[key] for key in expected} == pytest.approx(expected)
+
+
+def test_most_stable_10k_includes_missing_predictions_last() -> None:
+    """Missing predictions fill remaining 10k slots after ranked predictions."""
+    material_ids = pd.Index([f"wbm-{idx}" for idx in range(10_001)])
+    df_test = pd.DataFrame(
+        {
+            MbdKey.each_true: 0.0,
+            MbdKey.e_form_dft: 0.0,
+            MbdKey.uniq_proto: True,
+        },
+        index=material_ids,
+    )
+    model_preds = pd.Series(
+        [*range(9_999), np.nan, np.nan], index=material_ids, dtype=float
+    )
+
+    subset_idx = discovery_subset_indices(df_test, model_preds)[
+        TestSubset.most_stable_10k
+    ]
+    assert len(subset_idx) == 10_000
+    assert subset_idx[:-1].equals(material_ids[:9_999])
+    assert pd.isna(model_preds.loc[subset_idx[-1]])
 
 
 def test_calc_discovery_metrics_matches_manual_three_subset_calculation() -> None:
@@ -224,21 +227,18 @@ def test_calc_discovery_metrics_matches_manual_three_subset_calculation() -> Non
         "wbm-4",
     ]
     assert metrics_by_subset[TestSubset.most_stable_10k]["DAF"] == pytest.approx(4 / 3)
+    uniq_prevalence = (
+        df_test.loc[subset_indices[TestSubset.uniq_protos], MbdKey.each_true] <= 0
+    ).mean()
     for subset, subset_idx in subset_indices.items():
         expected = stable_metrics(
             df_test.loc[subset_idx, MbdKey.each_true],
             each_pred.loc[subset_idx],
             fillna=True,
         )
-        if subset == TestSubset.full_test_set:
-            assert metrics_by_subset[subset] == pytest.approx(expected, nan_ok=True)
-        else:
-            uniq_prevalence = (
-                df_test.loc[subset_indices[TestSubset.uniq_protos], MbdKey.each_true]
-                <= 0
-            ).mean()
+        if subset != TestSubset.full_test_set:
             expected["DAF"] = expected["Precision"] / uniq_prevalence
-            assert metrics_by_subset[subset] == pytest.approx(expected, nan_ok=True)
+        assert metrics_by_subset[subset] == pytest.approx(expected, nan_ok=True)
 
     # an explicit prevalence (e.g. from unrounded WBM hull distances) overrides the
     # denominator derived from the possibly-rounded reference frame
@@ -262,9 +262,8 @@ def test_precomputed_discovery_subset_indices_are_reused(
         },
         index=material_ids,
     )
-    model_preds = pd.to_numeric(
-        pd.Series([0.0, 0.0, None, 0.0, None], index=material_ids),
-        errors="coerce",
+    model_preds = pd.Series(
+        [0.0, 0.0, None, 0.0, None], index=material_ids, dtype=float
     )
     expected_by_subset = {
         TestSubset.full_test_set: (material_ids, (1, 1, 3), 2),

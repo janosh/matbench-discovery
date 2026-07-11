@@ -216,7 +216,9 @@ def discovery_subset_indices(
     model_preds = _align_preds(df_wbm, model_preds)
     each_pred = df_wbm[MbdKey.each_true] + model_preds - df_wbm[MbdKey.e_form_dft]
     uniq_proto_idx = df_wbm.index[df_wbm[MbdKey.uniq_proto].astype(bool)]
-    most_stable_10k_idx = each_pred.loc[uniq_proto_idx].nsmallest(10_000).index
+    most_stable_10k_idx = (
+        each_pred.loc[uniq_proto_idx].sort_values(na_position="last").head(10_000).index
+    )
     return {
         TestSubset.full_test_set: df_wbm.index,
         TestSubset.uniq_protos: uniq_proto_idx,

@@ -198,20 +198,28 @@ def check_submission(model: Model, checks: Checklist) -> bool:
             continue
 
         scripts = sorted(yaml_path.parent.glob(f"test_*_{task}.py"))
-        if task != "discovery" and scripts:
-            checks.ok(f"{task} test script found: {scripts[0].name}")
-        elif task in ("discovery", "diatomics") and calc_spec is not None:
+        if task in ("discovery", "diatomics") and calc_spec is not None:
             runner = f"{ROOT}/models/run_{task}.py"
             try:
                 if not os.path.isfile(runner):
                     raise ValueError(f"shared runner not found: {runner}")
-                calc_spec.uv_run_cmd(runner, "--model", model.name, "--dry-run")
+                command = calc_spec.uv_run_cmd(
+                    runner, "--model", model.name, "--dry-run"
+                )
+                subprocess.run(command, check=True)
                 if task == "discovery":
                     RelaxationSettings.from_model(model.name)
-            except (TypeError, ValueError) as exc:
+            except (
+                subprocess.CalledProcessError,
+                OSError,
+                TypeError,
+                ValueError,
+            ) as exc:
                 checks.fail(f"Invalid shared {task} runner configuration: {exc}")
             else:
                 checks.ok(f"{task} uses shared runner: models/run_{task}.py")
+        elif task != "discovery" and scripts:
+            checks.ok(f"{task} test script found: {scripts[0].name}")
         elif task == "diatomics":
             checks.skip(f"{task} test script not found (test_*_{task}.py)")
         else:

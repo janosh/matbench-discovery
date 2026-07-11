@@ -719,7 +719,7 @@ def _load_wbm_cse_frame(material_ids: Sequence[str] | None = None) -> pd.DataFra
         DataFiles.wbm_computed_structure_entries.path, lines=True
     ).set_index(Key.mat_id)
     if material_ids is not None:
-        df_wbm_cse = df_wbm_cse.loc[list(material_ids)]
+        df_wbm_cse = df_wbm_cse.loc[df_wbm_cse.index.isin(material_ids)]
     df_wbm_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(entry)
         for entry in tqdm(
@@ -776,8 +776,7 @@ def write_discovery_artifacts(
 
     output_rows: dict[str, dict[str, Any]] = {}
     geo_opt_rows: list[dict[str, Any]] = []
-    successful_records: list[RelaxationRecord] = []
-    entries_to_process: list[ComputedStructureEntry] = []
+    processed_records: list[tuple[RelaxationRecord, ComputedStructureEntry]] = []
     for record in merged_run.records:
         output_rows[record.material_id] = {
             "energy": record.energy,
@@ -800,21 +799,15 @@ def write_discovery_artifacts(
             entry = ComputedStructureEntry.from_dict(entry)
         entry._energy = record.energy  # noqa: SLF001 - preserves legacy join semantics
         entry._structure = Structure.from_dict(record.structure)  # noqa: SLF001
-        successful_records.append(record)
-        entries_to_process.append(entry)
+        processed_entry = compatibility.process_entry(entry, clean=True)
+        if processed_entry is None:
+            output_rows[record.material_id]["error"] = (
+                "MP2020 compatibility rejected entry"
+            )
+            continue
+        processed_records.append((record, processed_entry))
 
-    processed_entries = compatibility.process_entries(
-        entries_to_process, clean=True, verbose=False
-    )
-    if len(processed_entries) != len(entries_to_process):
-        raise ValueError(
-            "MP2020 compatibility rejected entries: "
-            f"{len(processed_entries)=}, {len(entries_to_process)=}"
-        )
-
-    for record, processed_entry in zip(
-        successful_records, processed_entries, strict=True
-    ):
+    for record, processed_entry in processed_records:
         if record.material_id not in df_summary.index:
             raise ValueError(f"No WBM summary row for {record.material_id}")
         formula = str(df_summary.loc[record.material_id, Key.formula])
@@ -856,8 +849,8 @@ def write_discovery_artifacts(
         pred_col=pred_col,
         struct_col=struct_col,
         predictions=df_predictions,
-        n_success=len(successful_records),
-        n_failed=len(merged_run.records) - len(successful_records),
+        n_success=len(processed_records),
+        n_failed=len(merged_run.records) - len(processed_records),
     )
 
 
