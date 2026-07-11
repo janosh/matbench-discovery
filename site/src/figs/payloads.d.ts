@@ -185,8 +185,8 @@ declare module '$figs/mp-elemental-ref-energies.json.gz' {
 declare module '$figs/element-counts-mp-vs-wbm.json.gz' {
   // x = element symbols sorted by count, one series per dataset (WBM, MP)
   const data: {
-    raw: (LabeledXY<string> & { color: string })[]
-    normalized: (LabeledXY<string> & { color: string })[]
+    raw: LabeledXY<string>[]
+    normalized: LabeledXY<string>[]
   }
   export default data
 }

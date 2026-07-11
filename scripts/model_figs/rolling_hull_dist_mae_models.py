@@ -1,19 +1,15 @@
-"""Plot rolling MAE as a function of hull distance for all models."""
+"""Generate rolling MAE and hull-distance density payloads for all models."""
 
 # %%
 import numpy as np
 
 from matbench_discovery import figs
 from matbench_discovery.cli import complete_models
-from matbench_discovery.enums import MbdKey, Model, TestSubset
-from matbench_discovery.metrics.discovery import dfs_metrics
-from matbench_discovery.plots import rolling_mae_vs_hull_dist
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
-
-df_err, df_std = None, None  # variables to cache rolling MAE and std
 
 
 # %%
@@ -23,27 +19,26 @@ if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
-models_to_plot = [model.label for model in complete_models()]
-mae_vals = dfs_metrics[test_subset].loc["MAE", models_to_plot]
-model_ranking = mae_vals.sort_values().index[::-1]
-
-fig, df_err, df_std = rolling_mae_vs_hull_dist(
-    e_above_hull_true=df_preds[MbdKey.each_true],
-    e_above_hull_preds=df_each_pred[models_to_plot][model_ranking],
-    with_sem=False,
-    df_rolling_err=df_err,
-    df_err_std=df_std,
-    show_dummy_mae=False,
-    legend_loc="default",
-    y_lim=(0, 0.1),
-)
-
-
-# Show only the top N models by default
-show_n_best_models = 6
-for trace in fig.data:
-    trace.visible = (
-        True if trace.name in model_ranking[-show_n_best_models:] else "legendonly"
+window = 0.04
+rolling_x = np.arange(-0.2, 0.2, 0.005)
+rolling_models: list[dict[str, object]] = []
+for model in complete_models():
+    each_pred = df_each_pred[model.label].dropna()
+    each_true = df_preds[MbdKey.each_true].loc[each_pred.index]
+    abs_error = (each_pred - each_true).abs()
+    rolling_mae = [
+        abs_error[
+            (each_true <= bin_center + window / 2)
+            & (each_true > bin_center - window / 2)
+        ].mean()
+        for bin_center in rolling_x
+    ]
+    rolling_models.append(
+        {
+            "key": model.key,
+            "label": model.label,
+            "y": figs.round_list(rolling_mae),
+        }
     )
 
 # add negligible noise to prevent strange binning artifacts in the marginal plot
@@ -53,47 +48,10 @@ counts, bins = np.histogram(
     bins=200,  # match the histogram clf plots.
     range=(-0.7, 0.7),
 )
-fig.add_scatter(
-    # plot counts at bin centers: np.histogram returns N counts but N+1 bin edges
-    x=(bins[:-1] + bins[1:]) / 2,
-    y=counts,
-    name="Density",
-    fill="tozeroy",
-    showlegend=False,
-    yaxis="y2",
-)
-fig.data[-1].marker.color = "rgba(0, 150, 200, 1)"
-
-# update layout to include marginal plot
-fig.layout.update(
-    yaxis1=dict(domain=[0, 0.75]),  # main yaxis
-    yaxis2=dict(  # marginal yaxis
-        domain=[0.8, 1],
-        tickformat="s",
-        tickvals=[*range(0, 100_000, 2_000)],
-        range=[0, 8_000],
-    ),
-)
-fig.show()
-
-
-# %%
-model_names = set(df_err.columns)
-rolling_models = []
-shared_x: list[float] | None = None
-for trace in fig.data:
-    if trace.name not in model_names:
-        continue
-    if shared_x is None:
-        shared_x = figs.round_list(figs.trace_xy(trace)[0])
-    entry = {"key": Model.from_label(trace.name).key} | figs.trace_payload(
-        trace, x=False
-    )
-    rolling_models.append(entry)
 figs.write_site_payload(
     "rolling-mae-vs-hull-dist",
     {
-        "x": shared_x or [],  # never null: payload contract requires x to be a list
+        "x": figs.round_list(rolling_x),
         "models": rolling_models,
         # rolling count of test-set structures per hull-dist bin (drawn on y2)
         "density": {
