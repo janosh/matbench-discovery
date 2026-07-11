@@ -17,7 +17,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
 1. You should share your model's predictions through a cloud storage service (we recommend [Figshare](https://figshare.com)) and include the download links in your PR description. Your cloud storage directory should contain compressed files following the naming convention `<arch-name>/<model-variant>/<yyyy-mm-dd>-<eval-task>.{csv|json|jsonl}.gz`, one per task (MACE-MP-0 paths as examples):
 
-   - geometry optimization: `mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.jsonl.gz` — the final relaxed structures (as ASE `Atoms` or pymatgen `Structures`), final energies (eV), forces (eV/Å), stress (eV/Å³) and volume (Å³), and material IDs matching the WBM test set. Use [JSON Lines format](https://jsonlines.org), which allows fast inspection of a few structures via `pandas.read_json(lines=True, nrows=100)`.
+   - geometry optimization: `mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.jsonl.gz` — final relaxed structures, total energies (eV), convergence/step metadata, and material IDs matching the WBM test set. Forces (eV/Å), stress (eV/Å³), and volume (Å³) are optional. Use [JSON Lines format](https://jsonlines.org), which allows fast inspection of a few structures via `pandas.read_json(lines=True, nrows=100)`.
    - discovery: `mace/mace-mp-0/2023-12-11-wbm-IS2RE.csv.gz` — compressed CSV with material IDs matching the WBM test set and final formation energies per atom (eV/atom)
    - phonons: `mace/mace-mp-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz` (encode your `dist`/`fmax`/`symprec` values in the name) — compressed JSON with material IDs and predicted thermal conductivity (κ) values (W/mK)
 
@@ -60,11 +60,13 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    df_traj.to_csv("trajectory.csv.gz")  # Save final structure and trajectory data
    ```
 
-1. `test_<model_name>_discovery.py`: The Python script that generated the WBM final energy predictions given the initial (unrelaxed) DFT structures. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.py`.
+2. Reproducible inference code. If your model exposes an ASE calculator and uses the standard per-structure ASE relaxation loop, register its constructor and isolated `uv` dependencies in [`matbench_discovery/calculators.py`](matbench_discovery/calculators.py). The shared [`models/run_discovery.py`](models/run_discovery.py) runner then handles WBM relaxation, atom-balanced Slurm shards, resume, MP2020 corrections, artifacts, and discovery metrics. Do not add a per-model discovery or join script for this standard case.
+
+   Models without an ASE calculator, such as direct formation-energy predictors, and models requiring a custom batched relaxation or dependency environment should still include `test_<model_name>_discovery.py` with enough high-level comments to reproduce the submitted predictions. If the model was trained specifically for this benchmark, also include `train_<model_name>.py`.
 
    ### Script Dependencies Declaration (Required)
 
-   **All test scripts must include a script dependencies section** using the [PEP 723 inline metadata format](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies): a single `uv run test_<model_name>_<task>.py` then installs dependencies and runs the script without manual environment setup, documents the exact package versions used for your submission, and keeps your code runnable even after breaking changes in package releases.
+   **All custom test scripts must include a script dependencies section** using the [PEP 723 inline metadata format](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies): a single `uv run test_<model_name>_<task>.py` then installs dependencies and runs the script without manual environment setup, documents the exact package versions used for your submission, and keeps your code runnable even after breaking changes in package releases. If the resolver cannot express a required installation step such as `--no-deps`, include a documented install script as well. Standard calculator-backed models declare dependencies once in the shared registry instead.
 
    ```python
    # /// script
@@ -91,7 +93,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    Your script should automatically download the model checkpoint when first run and cache it to a standard location such as `~/.cache/<model_name>/checkpoint.pt` for later reuse. This also lowers the barrier for others to reproduce results.
 
-1. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
+3. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
 
    ```yml
    model_name: My new model # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
@@ -135,10 +137,11 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
      # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
      checkpoint_url: https://url.of/model-checkpoint-license
 
-   hyperparams: # strongly recommended to list relaxation hyperparams
+   hyperparams: # required for calculator-backed shared discovery runs
      max_force: 0.05
      max_steps: 500
      ase_optimizer: FIRE
+     cell_filter: FrechetCellFilter
      optimizer: Adam
      graph_construction_radius: 6.0
      max_neighbors: 50
@@ -168,11 +171,11 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
          pred_file: models/<model_dir>/<yyyy-mm-dd>-kappa-103-<values-of-dist|fmax|symprec>.json.gz
          pred_file_url: https://figshare.com/files/<figshare_id>
      geo_opt: # only applicable if the model performed structure relaxation
-       pred_file: models/<model_dir>/<yyyy-mm-dd>-wbm-geo-opt-<optimizer>.json.gz # should contain the models relaxed structures as ASE Atoms or pymatgen Structures, and separate columns for material_id and energies/forces/stresses at each relaxation step
+       pred_file: models/<arch>/<model_variant>/<yyyy-mm-dd>-wbm-IS2RE-<optimizer>.jsonl.gz # final relaxed structures and material IDs
        pred_file_url: https://figshare.com/files/<figshare_id>
        struct_col: <column_name_of_material_ids_in_relaxed_structures>
      discovery:
-       pred_file: models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz # should contain the models energy predictions for the WBM test set
+       pred_file: models/<arch>/<model_variant>/<yyyy-mm-dd>-wbm-IS2RE-<optimizer>.csv.gz # WBM formation-energy predictions
        pred_file_url: https://figshare.com/files/<figshare_id>
        pred_col: e_form_per_atom_<model_name>
      md: # optional: finite-temperature molecular dynamics metrics
@@ -209,25 +212,34 @@ matbench-discovery-root
 └── models
     └── <model_name>
         ├── <model_name>.yml
-        ├── test_<model_name>_discovery.py
         ├── test_<model_name>_kappa.py
+        ├── test_<model_name>_discovery.py  # only for non-calculator/custom pipelines
         ├── readme.md  # optional
         └── train_<model_name>.py  # optional
 ```
 
 You can include arbitrary other supporting files like metadata and model features (below 10MB total to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and share the link in your PR description.
 
-The molecular dynamics task does not need a per-model script. Instead register your model's ASE calculator and its `uv` dependencies once in the shared calculator registry [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py) (the same registry also powers the diatomics task via `models/run_diatomics.py`), then run it through the shared runner (which auto-downloads the label-free DynaMat v1.0 reference set):
+Discovery, molecular dynamics, and diatomics do not need per-model scripts when a model exposes an ASE calculator and follows each task's standard execution loop. Register the calculator and its `uv` dependencies once in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py), smoke-test the exact isolated command, and run the task-specific shared runner. Keep a custom script when published results require materially different batching, relaxation, or installation behavior.
 
 ```sh
-# smoke-test the pipeline in seconds, then launch the full 20 ps NVT benchmark
+# WBM discovery: relax/resume shards, then strictly merge and write YAML metrics
+uv run models/run_discovery.py --print-cmd --model <model_key> --dry-run
+uv run --with <your-deps> models/run_discovery.py --model <model_key>
+uv run --with <your-deps> models/run_discovery.py --model <model_key> --merge-shards --write-yaml
+
+# 20 ps NVT molecular dynamics
 uv run --with <your-deps> models/run_md.py --model <model_key> --dry-run
 uv run --with <your-deps> models/run_md.py --model <model_key> --write-yaml
-# or let the runner print the exact uv command for your model:
-uv run models/run_md.py --print-cmd --model <model_key>
+
+# homonuclear diatomic curves
+uv run --with <your-deps> models/run_diatomics.py --model <model_key> --dry-run
+uv run --with <your-deps> models/run_diatomics.py --model <model_key> --write-yaml
 ```
 
-`--write-yaml` records the model-level MD metrics under `metrics.md` in your model's YAML and writes the per-system predictions to a gzipped CSV named `<yyyy-mm-dd>-<model_name>-md-metrics.csv.gz`. Public runs compute the observable metrics only; energy/force RMSEs are maintainer-computed private-label diagnostics and are not required in external submissions. Upload that CSV to Figshare (or similar) and set its download URL as the `pred_file_url` field of `metrics.md` — see [Step 3](#step-3-upload-results-files-to-figshare-or-similar) for the upload conventions and YAML field definitions.
+For a full contiguous Slurm discovery array, the runner can infer shard selection from `SLURM_ARRAY_TASK_COUNT`, `SLURM_ARRAY_TASK_ID`, `SLURM_ARRAY_TASK_MIN`, and `SLURM_ARRAY_TASK_MAX`. Sparse rerun arrays must pass the original `--n-shards`; their zero-based task IDs are then reused as the original shard indices. Only the complete `--merge-shards --write-yaml` step updates model metadata.
+
+The MD runner's `--write-yaml` records model-level metrics under `metrics.md` and writes the per-system predictions to a gzipped CSV named `<yyyy-mm-dd>-<model_name>-md-metrics.csv.gz`. Public runs compute the observable metrics only; energy/force RMSEs are maintainer-computed private-label diagnostics and are not required in external submissions. Upload generated artifacts to Figshare (or similar) and set their download URLs in the corresponding YAML `pred_file_url` fields — see [Step 3](#step-3-upload-results-files-to-figshare-or-similar) for the upload conventions.
 
 Add the model to the `Model` enum in [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/57d0d0c8a14cd3/matbench_discovery/enums.py#L274) pointing to the correct metadata file.
 

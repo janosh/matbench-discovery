@@ -1,37 +1,25 @@
 # EquFlash
 
-This folder contains the EquFlash model submission scripts and metadata for Matbench Discovery.
+This folder contains the EquFlash model submission support code and metadata for Matbench Discovery.
 
-## WBM discovery input files
+## WBM discovery
 
-`test_equflash_discovery.py` requires two WBM input paths:
-
-```bash
---init-structs-dir
---wbm-metadata-file
-```
-
-These files can be downloaded from the Figshare metadata bundle:
-
-https://figshare.com/articles/dataset/Equflash_Matbench_Discovery_submission_Metadata/32625693?file=65423763
-
-After downloading and extracting the files, run the discovery script by passing the extracted WBM initial structures directory to `--init-structs-dir` and the WBM metadata file path to `--wbm-metadata-file`.
-
-Example:
+The published EquFlash predictions use the retained custom batched relaxation
+pipeline in `test_equflash_discovery.py`. It packs structures by atom count and
+calls Fair-Chem's `ml_relax`, so it is not equivalent to the shared per-structure
+ASE relaxation loop.
 
 ```bash
+./models/equflash/install.sh
 python models/equflash/test_equflash_discovery.py \
-  --checkpoint /path/to/checkpoint.pt \
-  --out /path/to/output_dir \
-  --init-structs-dir /path/to/wbm_initial_structures \
-  --wbm-metadata-file /path/to/wbm_metadata.csv
+  --checkpoint CHECKPOINT --out OUT_DIR \
+  --init-structs-dir WBM_INITIAL_STRUCTURES \
+  --wbm-metadata-file WBM_METADATA_CSV
 ```
 
-Additional optional arguments include:
+`install.sh` intentionally installs `fairchem-core==1.10.0` without its pinned
+Torch dependencies so EquFlash can use Torch 2.9.1. This environment therefore
+cannot be expressed by the shared runner's ordinary `uv run --with` resolution.
 
-```bash
---rank 0
---worldsize 1
---fmax 0.02
---max-atoms 1000
-```
+The original submission metadata bundle remains archived at
+https://figshare.com/articles/dataset/Equflash_Matbench_Discovery_submission_Metadata/32625693?file=65423763.

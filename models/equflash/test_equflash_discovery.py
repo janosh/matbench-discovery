@@ -55,7 +55,7 @@
 """Test EquFlash model on matbench-discovery IS2RE task.
 
 Run with:
-uv run models/equflash/test_equflash_discovery.py \
+python models/equflash/test_equflash_discovery.py \
   --checkpoint CHECKPOINT --out OUT_DIR \
   --init-structs-dir WBM_INITIAL_STRUCTURES \
   --wbm-metadata-file WBM_METADATA_CSV
@@ -207,7 +207,11 @@ if __name__ == "__main__":
         n_traj, batch = ml_relax(batch, trainer, 500, args.fmax, relax_cell=True)
         atoms_list = batch_to_atoms(
             batch,
-            {"forces": batch.forces, "energy": batch.energy, "stress": batch.stress},
+            {
+                "forces": batch.forces,  # ty: ignore[unresolved-attribute]
+                "energy": batch.energy,  # ty: ignore[unresolved-attribute]
+                "stress": batch.stress,  # ty: ignore[unresolved-attribute]
+            },
         )
 
         for mat_id, atoms, _ntraj in zip(

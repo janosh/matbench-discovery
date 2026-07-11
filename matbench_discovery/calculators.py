@@ -548,6 +548,9 @@ CALCULATORS: dict[str, CalcSpec] = {
     "grace_2l_oam_l": CalcSpec(
         _grace("GRACE-2L-OMAT-large-ft-AM"), deps=("tensorpotential",)
     ),
+    "grace_3l_oam_l": CalcSpec(
+        _grace("GRACE-3L-OMAT-large-ft-AM"), deps=("tensorpotential",)
+    ),
     # grace_2l_mptrj == registry name "GRACE-2L-MP-r6" (sciebo 42Ivgi3eaLCynwC), but
     # tensorpotential>=0.5 (all that's on PyPI) dropped the MP-r6 models, so pin the
     # 0.4.4-era commit from git that still registers it

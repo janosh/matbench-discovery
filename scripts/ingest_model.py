@@ -21,6 +21,9 @@ from collections.abc import Sequence
 from functools import partialmethod
 from pathlib import Path
 
+from matbench_discovery import ROOT
+from matbench_discovery.calculators import CALCULATORS
+from matbench_discovery.discovery import RelaxationSettings
 from matbench_discovery.enums import Model
 
 PASS, FAIL, SKIP = "✓", "✗", "○"
@@ -146,6 +149,7 @@ def check_submission(model: Model, checks: Checklist) -> bool:
 
     # E = energy only (no forces -> no relaxation, phonons or diatomics)
     energy_only = model.metadata.get("targets") == "E"
+    calculator_backed = model.name in CALCULATORS
 
     discovery = task_metrics(model, "discovery")
     if isinstance(discovery, dict) and discovery.get("pred_file_url"):
@@ -177,10 +181,23 @@ def check_submission(model: Model, checks: Checklist) -> bool:
             checks.fail(f"{label} not found in {yaml_path}")
 
     for task in ("discovery", "kappa", "diatomics"):
+        scripts = sorted(yaml_path.parent.glob(f"test_*_{task}.py"))
         if energy_only and task != "discovery":
             checks.skip(f"{task} test script check skipped (targets=E, no forces)")
-        elif scripts := sorted(yaml_path.parent.glob(f"test_*_{task}.py")):
+        elif scripts:
             checks.ok(f"{task} test script found: {scripts[0].name}")
+        elif task in ("discovery", "diatomics") and calculator_backed:
+            runner = f"{ROOT}/models/run_{task}.py"
+            try:
+                CALCULATORS[model.name].uv_run_cmd(
+                    runner, "--model", model.name, "--dry-run"
+                )
+                if task == "discovery":
+                    RelaxationSettings.from_model(model.name)
+            except (TypeError, ValueError) as exc:
+                checks.fail(f"Invalid shared {task} runner configuration: {exc}")
+            else:
+                checks.ok(f"{task} uses shared runner: models/run_{task}.py")
         elif task == "diatomics":
             checks.skip(f"{task} test script not found (test_*_{task}.py)")
         else:

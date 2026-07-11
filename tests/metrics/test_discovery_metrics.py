@@ -17,7 +17,9 @@ from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics import metrics_df_from_yaml
 from matbench_discovery.metrics.discovery import (
+    calc_discovery_metrics,
     classify_stable,
+    discovery_subset_indices,
     stable_metrics,
     write_metrics_to_yaml,
 )
@@ -223,6 +225,47 @@ def test_stable_metrics() -> None:
     )
     precision = n_true_pos / (n_true_pos + n_false_pos)
     assert metrics[str(Key.daf.symbol)] == precision / dummy_hit_rate
+
+
+def test_calc_discovery_metrics_matches_manual_three_subset_calculation() -> None:
+    """Reusable three-subset metrics preserve the former eval-script semantics."""
+    material_ids = pd.Index([f"wbm-{idx}" for idx in range(6)])
+    df_test = pd.DataFrame(
+        {
+            MbdKey.each_true: [-0.2, -0.1, 0.1, 0.2, -0.05, 0.3],
+            MbdKey.e_form_dft: [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5],
+            MbdKey.uniq_proto: [True, True, False, True, True, False],
+        },
+        index=material_ids,
+    )
+    model_preds = pd.Series([-1.1, -0.7, -0.9, -0.6, np.nan, -0.4], index=material_ids)
+    metrics_by_subset = calc_discovery_metrics(df_test, model_preds)
+    subset_indices = discovery_subset_indices(df_test, model_preds)
+    each_pred = df_test[MbdKey.each_true] + model_preds - df_test[MbdKey.e_form_dft]
+
+    assert set(metrics_by_subset) == set(TestSubset)
+    assert list(subset_indices[TestSubset.most_stable_10k]) == [
+        "wbm-0",
+        "wbm-1",
+        "wbm-3",
+        "wbm-4",
+    ]
+    assert metrics_by_subset[TestSubset.most_stable_10k]["DAF"] == pytest.approx(4 / 3)
+    for subset, subset_idx in subset_indices.items():
+        expected = stable_metrics(
+            df_test.loc[subset_idx, MbdKey.each_true],
+            each_pred.loc[subset_idx],
+            fillna=True,
+        )
+        if subset == TestSubset.full_test_set:
+            assert metrics_by_subset[subset] == pytest.approx(expected, nan_ok=True)
+        else:
+            uniq_prevalence = (
+                df_test.loc[subset_indices[TestSubset.uniq_protos], MbdKey.each_true]
+                <= 0
+            ).mean()
+            expected["DAF"] = expected["Precision"] / uniq_prevalence
+            assert metrics_by_subset[subset] == pytest.approx(expected, nan_ok=True)
 
 
 def test_df_discovery_metrics() -> None:

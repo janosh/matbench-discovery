@@ -28,16 +28,23 @@ def run_cmd_calls(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, ...]]:
     return calls
 
 
-def test_complete_force_model_passes_checklist() -> None:
-    """A complete UIP submission (mace-mpa-0) passes every applicable check."""
+def test_force_model_discovery_pipelines_pass_checklist() -> None:
+    """Complete shared and custom force-model pipelines pass applicable checks."""
     checks = ingest.Checklist()
-    energy_only = ingest.check_submission(Model.mace_mpa_0, checks)
-    assert energy_only is False
-    assert msgs(checks, ingest.FAIL) == []
+    assert ingest.check_submission(Model.mace_mpa_0, checks) is False
+    assert not msgs(checks, ingest.FAIL)
     # force-based checks must actually run, not skip
     passed = msgs(checks, ingest.PASS)
     assert any("geo_opt" in msg for msg in passed)
     assert any("Phonon" in msg for msg in passed)
+    assert any("models/run_discovery.py" in msg for msg in passed)
+    assert any("models/run_diatomics.py" in msg for msg in passed)
+
+    checks = ingest.Checklist()
+    ingest.check_submission(Model.equflash_29m_oam, checks)
+    passed = msgs(checks, ingest.PASS)
+    assert any("test_equflash_discovery.py" in msg for msg in passed)
+    assert not any("discovery uses shared runner" in msg for msg in passed)
 
 
 def test_energy_only_model_skips_force_tasks() -> None:
@@ -48,7 +55,7 @@ def test_energy_only_model_skips_force_tasks() -> None:
     assert e_only is not None
     checks = ingest.Checklist()
     assert ingest.check_submission(e_only, checks) is True
-    assert msgs(checks, ingest.FAIL) == []
+    assert not msgs(checks, ingest.FAIL)
     skips = msgs(checks, ingest.SKIP)
     assert sum("skipped (targets=E" in msg for msg in skips) >= 4
 
@@ -63,10 +70,9 @@ def test_all_active_models_have_required_metadata() -> None:
     for model in Model.active():
         checks = ingest.Checklist()
         ingest.check_submission(model, checks)
-        hard_fails = [
+        if hard_fails := [
             msg for msg in msgs(checks, ingest.FAIL) if "test script" not in msg
-        ]
-        if hard_fails:
+        ]:
             failures[model.name] = hard_fails
     assert not failures, failures
 
