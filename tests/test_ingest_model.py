@@ -5,6 +5,8 @@ old grep/sed bash recipe), so it can be tested against the real repo metadata
 without running any evals.
 """
 
+import subprocess
+
 import pytest
 
 import scripts.ingest_model as ingest
@@ -12,7 +14,22 @@ from matbench_discovery.enums import Model
 
 
 def msgs(checks: "ingest.Checklist", status: str) -> list[str]:
+    """Return checklist messages with the requested status."""
     return [msg for stat, msg in checks.results if stat == status]
+
+
+@pytest.fixture(autouse=True)
+def shared_runner_calls(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
+    """Capture shared-runner subprocesses without executing model environments."""
+    calls: list[list[str]] = []
+
+    def fake_run(command: list[str], *, check: bool) -> None:
+        """Record a successful checked subprocess call."""
+        assert check is True
+        calls.append(command)
+
+    monkeypatch.setattr(ingest.subprocess, "run", fake_run)
+    return calls
 
 
 @pytest.fixture
@@ -28,27 +45,127 @@ def run_cmd_calls(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, ...]]:
     return calls
 
 
-def test_complete_force_model_passes_checklist() -> None:
-    """A complete UIP submission (mace-mpa-0) passes every applicable check."""
+def test_force_model_discovery_pipelines_pass_checklist(
+    monkeypatch: pytest.MonkeyPatch, shared_runner_calls: list[list[str]]
+) -> None:
+    """Calculator-backed force models use the shared discovery runner."""
+    original_glob = ingest.Path.glob
+
+    def glob_with_legacy_diatomics(
+        path: ingest.Path, pattern: str
+    ) -> list[ingest.Path]:
+        """Pretend a stale diatomics script remains beside the model YAML."""
+        if pattern == "test_*_diatomics.py":
+            return [path / "test_legacy_diatomics.py"]
+        return list(original_glob(path, pattern))
+
+    monkeypatch.setattr(ingest.Path, "glob", glob_with_legacy_diatomics)
     checks = ingest.Checklist()
-    energy_only = ingest.check_submission(Model.mace_mpa_0, checks)
-    assert energy_only is False
-    assert msgs(checks, ingest.FAIL) == []
-    # force-based checks must actually run, not skip
-    passed = msgs(checks, ingest.PASS)
-    assert any("geo_opt" in msg for msg in passed)
-    assert any("Phonon" in msg for msg in passed)
+    assert ingest.check_submission(Model.mace_mpa_0, checks) is False
+    assert not msgs(checks, ingest.FAIL)
+    assert not any(
+        "diatomics test script found" in msg for msg in msgs(checks, ingest.PASS)
+    )
+    assert {command[-4] for command in shared_runner_calls} == {
+        f"{ingest.ROOT}/models/run_discovery.py",
+        f"{ingest.ROOT}/models/run_diatomics.py",
+    }
+    assert all(
+        command[-3:] == ["--model", Model.mace_mpa_0.name, "--dry-run"]
+        for command in shared_runner_calls
+    )
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        Model.alignn,
+        Model.equflash_29m_oam,
+        Model.equiformer_v3_mp,
+        Model.gnome,
+    ],
+)
+def test_archived_discovery_models_skip_shared_runner(model: Model) -> None:
+    """Archived models report why shared discovery execution is unavailable."""
+    checks = ingest.Checklist()
+    ingest.check_submission(model, checks)
+    assert any("discovery is archived:" in msg for msg in msgs(checks, ingest.SKIP))
+    assert not any("discovery model" in msg for msg in msgs(checks, ingest.FAIL))
+    assert not any(
+        msg.startswith(("discovery uses shared runner", "diatomics uses shared runner"))
+        for msg in msgs(checks, ingest.PASS)
+    )
+
+
+def test_unregistered_discovery_model_fails_checklist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unclassified models cannot silently bypass shared discovery validation."""
+    monkeypatch.delitem(ingest.CALCULATORS, Model.mace_mpa_0.name)
+    checks = ingest.Checklist()
+    ingest.check_submission(Model.mace_mpa_0, checks)
+    assert any(
+        "discovery model is not registered with the shared runner" in msg
+        for msg in msgs(checks, ingest.FAIL)
+    )
+
+
+@pytest.mark.parametrize("task", ["discovery", "diatomics"])
+def test_missing_shared_runner_fails_checklist(
+    monkeypatch: pytest.MonkeyPatch, task: str
+) -> None:
+    """Calculator-backed tasks fail validation when their shared runner is absent."""
+
+    def fake_isfile(path: str) -> bool:
+        """Pretend one shared task runner is missing."""
+        return not path.endswith(f"run_{task}.py")
+
+    monkeypatch.setattr(ingest.os.path, "isfile", fake_isfile)
+    checks = ingest.Checklist()
+    ingest.check_submission(Model.mace_mpa_0, checks)
+    failures = msgs(checks, ingest.FAIL)
+    assert any(
+        f"Invalid shared {task} runner configuration: shared runner not found" in msg
+        for msg in failures
+    )
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        subprocess.CalledProcessError(1, ["uv", "run"]),
+        OSError("runner unavailable"),
+    ],
+    ids=["nonzero-exit", "os-error"],
+)
+def test_shared_runner_process_errors_fail_checklist(
+    monkeypatch: pytest.MonkeyPatch, error: Exception
+) -> None:
+    """Shared-runner execution errors become checklist failures."""
+
+    def raise_process_error(*_args: object, **_kwargs: object) -> None:
+        """Raise the configured subprocess failure."""
+        raise error
+
+    monkeypatch.setattr(ingest.subprocess, "run", raise_process_error)
+    checks = ingest.Checklist()
+    ingest.check_submission(Model.mace_mpa_0, checks)
+    failures = "\n".join(msgs(checks, ingest.FAIL))
+    assert "Invalid shared discovery runner configuration:" in failures
+    assert "Invalid shared diatomics runner configuration:" in failures
 
 
 def test_energy_only_model_skips_force_tasks() -> None:
     """targets=E models skip geo-opt/phonons/diatomics instead of failing."""
-    e_only = next((mdl for mdl in Model if mdl.metadata.get("targets") == "E"), None)
-    if e_only is None:
+    energy_only_model = next(
+        (model for model in Model if model.metadata.get("targets") == "E"), None
+    )
+    if energy_only_model is None:
         pytest.skip("no energy-only model in registry")
-    assert e_only is not None
+    assert energy_only_model is not None
     checks = ingest.Checklist()
-    assert ingest.check_submission(e_only, checks) is True
-    assert msgs(checks, ingest.FAIL) == []
+    assert ingest.check_submission(energy_only_model, checks) is True
+    assert not msgs(checks, ingest.FAIL)
     skips = msgs(checks, ingest.SKIP)
     assert sum("skipped (targets=E" in msg for msg in skips) >= 4
 
@@ -63,15 +180,15 @@ def test_all_active_models_have_required_metadata() -> None:
     for model in Model.active():
         checks = ingest.Checklist()
         ingest.check_submission(model, checks)
-        hard_fails = [
+        if hard_fails := [
             msg for msg in msgs(checks, ingest.FAIL) if "test script" not in msg
-        ]
-        if hard_fails:
+        ]:
             failures[model.name] = hard_fails
     assert not failures, failures
 
 
 def test_checklist_summary_counts() -> None:
+    """Checklist summaries report each status count."""
     checks = ingest.Checklist()
     checks.ok("a")
     checks.fail("b")
@@ -91,6 +208,7 @@ def test_cli_rejects_unknown_model_and_missing_args(argv: list[str]) -> None:
 
 
 def test_cli_archive_requires_figshare_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Archiving requires a Figshare token."""
     monkeypatch.delenv("FIGSHARE_TOKEN", raising=False)
     with pytest.raises(SystemExit, match="2"):
         ingest.main(["mace-mpa-0", "--archive"])

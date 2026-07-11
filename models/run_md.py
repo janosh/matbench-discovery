@@ -36,7 +36,7 @@ from matbench_discovery import today
 from matbench_discovery.calculators import (
     CALCULATORS,
     load_calculator,
-    resolve_calculator_key,
+    resolve_cli_calculator,
 )
 from matbench_discovery.md import run_md_benchmark
 
@@ -89,17 +89,10 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    if args.list_models:
-        for key, spec in CALCULATORS.items():
-            print(f"{key}: {', '.join(spec.deps) or '(core deps only)'}")
+    model_key = resolve_cli_calculator(parser, args.model, list_models=args.list_models)
+    if model_key is None:
         return 0
-
-    if not args.model:
-        parser.error("--model is required (or pass --list-models)")
-    try:
-        args.model = resolve_calculator_key(args.model)
-    except ValueError as exc:
-        parser.error(f"{exc}, see --list-models")
+    args.model = model_key
     # a subset run writes model-level metrics from incomplete coverage; aggregation
     # over all systems belongs to scripts/evals/md.py, not a per-array-task write
     if args.write_yaml and args.systems:
