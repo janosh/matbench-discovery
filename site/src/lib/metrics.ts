@@ -172,6 +172,9 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 // NB: cell background/text colors are computed by matterviz's HeatmapTable internally
 // (calc_cell_color in matterviz/table) — no local color logic needed
 
+export const has_geo_opt_metrics = (model: ModelData): boolean =>
+  model.metrics?.geo_opt != null && typeof model.metrics.geo_opt === `object`
+
 // Calculate table data for the metrics table with combined scores
 export function assemble_row_data(
   discovery_set: DiscoverySet,
@@ -185,21 +188,20 @@ export function assemble_row_data(
       : `<span title="License file not available">${license}</span>`
 
   const filtered_models = models.filter(
-    (model) =>
-      model_filter(model) &&
-      filter_matches(model) &&
-      typeof model.metrics?.discovery === `object` &&
-      model.metrics.discovery[discovery_set],
+    (model) => model_filter(model) && filter_matches(model),
   )
 
-  const { RMSD, CPS } = ALL_METRICS
+  const { RMSD } = ALL_METRICS
   // label_data_path prefers label.property over label.key, so columns whose row key
   // must differ from the YAML field (e.g. the two run_time_sec columns) resolve too
   const metric_num = (model: ModelData, label: Label) =>
     get_nested_number(model, label_data_path(label))
-  const metric_columns = (model: ModelData, labels: object) =>
+  const metric_columns = <Labels extends Record<keyof Labels, Label>>(
+    model: ModelData,
+    labels: Labels,
+  ) =>
     Object.fromEntries(
-      Object.values(labels).map((label) => [label.key, metric_num(model, label)]),
+      Object.values<Label>(labels).map((label) => [label.key, metric_num(model, label)]),
     )
   const finite_positive = (value: unknown): value is number =>
     is_finite_num(value) && value > 0
@@ -278,7 +280,7 @@ export function assemble_row_data(
     return {
       model_name: model.model_name,
       Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
-      CPS: model[CPS.key],
+      CPS: model.CPS,
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,
       Precision: discovery_metrics?.Precision,
@@ -336,16 +338,11 @@ export function assemble_row_data(
 
   // Sort by combined performance score (descending)
   return all_metrics.toSorted((row1, row2) => {
-    const [score1, score2] = [row1.CPS, row2.CPS]
-
-    // Handle undefined or null values (they should be sorted to the bottom)
-    const is_nan1 = score1 === null || isNaN(score1)
-    const is_nan2 = score2 === null || isNaN(score2)
-    if (is_nan1 && is_nan2) return 0
-    if (is_nan1) return 1
-    if (is_nan2) return -1
-
-    return score2 - score1
+    const score1 = row1.CPS ?? Number.NaN
+    const score2 = row2.CPS ?? Number.NaN
+    // Handle missing or NaN values (they should be sorted to the bottom)
+    if (Number.isNaN(score1)) return Number.isNaN(score2) ? 0 : 1
+    return Number.isNaN(score2) ? -1 : score2 - score1
   })
 }
 

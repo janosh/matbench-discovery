@@ -1,5 +1,6 @@
 import { MODELS } from '$lib'
 import { get_org_logo } from '$lib/labels'
+import { RANKED_METRICS } from '$lib/rankings'
 import type { ModelData } from '$lib/types'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { tick } from 'svelte'
@@ -36,6 +37,14 @@ describe(`Model Detail Page`, () => {
     expect(
       meta_info?.textContent?.includes(`Ensemble ${test_model.n_estimators} models`),
     ).toBe(test_model.n_estimators > 1)
+    expect(meta_info?.textContent).not.toContain(`Missing preds`)
+    const discovery_detail = document.querySelector(`section.discovery-detail`)
+    expect(discovery_detail?.querySelector(`h2`)?.textContent).toContain(
+      `Discovery: energy and convex hull diagnostics`,
+    )
+    expect(
+      discovery_detail?.querySelector(`.energy-parity-controls`)?.textContent,
+    ).toContain(`Missing preds`)
 
     // Check links section
     const links = document.querySelectorAll(`.links a`)
@@ -89,6 +98,8 @@ describe(`Model Detail Page`, () => {
     expect(model_info?.textContent).toContain(test_model.model_type)
     expect(model_info?.textContent).toContain(test_model.targets.replaceAll(`_`, ``))
     expect(model_info?.textContent).toContain(test_model.openness)
+    expect(model_info?.textContent).toContain(`Discovery Train Task`)
+    expect(model_info?.textContent).toContain(`Discovery Test Task`)
 
     // Check training set section: one dataset link per training_set entry
     expect(document.querySelectorAll(`.training-set a`)).toHaveLength(
@@ -137,7 +148,7 @@ describe(`Model Detail Page`, () => {
     }
     expect(link_texts.some((text) => text.startsWith(`Discovery F1`))).toBe(true)
     // rank links lead to leaderboard pages (subset: models may lack some tasks' metrics)
-    const leaderboard_hrefs = [`/`, `/tasks/geo-opt`, `/tasks/phonons`, `/tasks/md`]
+    const leaderboard_hrefs = RANKED_METRICS.map((metric) => metric.rank_href)
     for (const link of rank_links) {
       expect(leaderboard_hrefs).toContain(link.getAttribute(`href`))
     }

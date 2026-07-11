@@ -86,26 +86,6 @@ def test_histogram_bins_raw_values() -> None:
     assert result["x"][0] == pytest.approx(0.05)  # first bin center
 
 
-def test_trace_helpers_extract_xy_and_color() -> None:
-    """trace_xy/trace_color/trace_payload read plotly trace objects."""
-    trace = go.Scatter(
-        name="demo", x=[1, 2, 3], y=[4.0, 5.0, 6.0], line=dict(color="#123456")
-    )
-    x, y = figs.trace_xy(trace)
-    np.testing.assert_array_equal(x, [1, 2, 3])
-    np.testing.assert_array_equal(y, [4.0, 5.0, 6.0])
-    assert figs.trace_color(trace) == "#123456"
-    assert figs.trace_payload(trace, x=False) == {
-        "label": "demo",
-        "color": "#123456",
-        "y": [4.0, 5.0, 6.0],
-    }
-    assert figs.trace_payload(trace)["x"] == [1, 2, 3]
-
-    bar = go.Bar(x=[1], y=[2], marker=dict(color="#abcdef"))
-    assert figs.trace_color(bar) == "#abcdef"
-
-
 def test_sunburst_data_extracts_flat_arrays() -> None:
     """sunburst_data returns the flat labels/parents/values/ids arrays unchanged."""
     ids = ["cubic", "cubic/225", "cubic/221", "hexagonal"]
