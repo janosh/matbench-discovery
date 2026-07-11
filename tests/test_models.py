@@ -8,7 +8,9 @@ import pytest
 import yaml
 
 from matbench_discovery import ROOT
+from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import DATASETS
+from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
 from matbench_discovery.enums import Model
 
 OPEN_DATASETS = {
@@ -29,11 +31,7 @@ def test_model_dirs_have_metadata() -> None:
         "model_name": str,
         "model_version": str,
         "repo": str,
-        "training_set": {
-            "title": str,  # name of training set
-            "url": str,  # url to e.g. figshare
-            "n_structures": int,  # number of structures
-        },
+        "training_set": list,
     }
 
     # Count completed models
@@ -55,21 +53,18 @@ def test_model_dirs_have_metadata() -> None:
                     f"Invalid training set: {training_sets}"
                 )
                 # Check if model was trained only on open datasets
-                openness = model.metadata["openness"].endswith("OD")
-                if set(training_sets) <= OPEN_DATASETS and not openness:
+                if set(training_sets) <= OPEN_DATASETS and not model.metadata[
+                    "openness"
+                ].endswith("OD"):
                     # if so, check that the model is marked as OD (open data)
                     raise ValueError(
                         f"{model.label} was only trained on open datasets but is "
                         f"marked as {model.metadata['openness']}. Should be marked as "
                         "OD."
                     )
-
-            actual_val = model.metadata[key]
-            if isinstance(expected, dict) and key != "training_set":
-                missing_keys = {*expected} - {*actual_val}
-                assert not missing_keys, f"{missing_keys=} under {key=} in {model_dir}"
                 continue
 
+            actual_val = model.metadata[key]
             if type(expected) is type:
                 err_msg = f"Invalid {key=}, expected {expected} in {model_dir}"
                 assert isinstance(actual_val, expected), err_msg
@@ -95,12 +90,47 @@ def test_model_dirs_have_metadata() -> None:
         )
 
 
-def test_model_dirs_have_test_scripts() -> None:
-    """Test that all model directories have at least one model test script/notebook."""
-    for model_dir in MODEL_DIRS:
-        test_scripts = glob(f"{model_dir}*test_*.py")
-        test_nbs = glob(f"{model_dir}*test_*.ipynb")
-        assert len(test_scripts + test_nbs) > 0, f"Missing test file in {model_dir}"
+def test_model_dirs_have_reproducible_runners() -> None:
+    """Require runnable models to have shared calculator or retained task coverage."""
+    for model in Model:
+        if (
+            model.name in CALCULATORS
+            or model.metadata.get("targets") == "E"
+            or model.metadata.get("checkpoint_url") == "missing"
+            or model.metadata.get("status") == "aborted"
+        ):
+            continue
+        model_dir = os.path.dirname(model.yaml_path)
+        assert glob(f"{model_dir}/test_*.py") or glob(f"{model_dir}/test_*.ipynb"), (
+            f"Missing test file in {model_dir}"
+        )
+
+
+def test_discovery_uses_only_shared_runner() -> None:
+    """Runnable calculators use one runner and contributor policy forbids forks."""
+    assert os.path.isfile(f"{ROOT}/models/run_discovery.py")
+    assert os.path.isfile(f"{ROOT}/models/run_diatomics.py")
+    assert not glob(f"{ROOT}/models/**/test_*_discovery.py", recursive=True)
+    assert set(CALCULATORS).isdisjoint(ARCHIVED_DISCOVERY_MODELS)
+    for model_key in set(CALCULATORS) - {"emt"}:
+        assert Model.from_ref(model_key).name == model_key
+    with open(f"{ROOT}/.github/pull_request_template.md") as file:
+        pr_template = file.read()
+    assert "test_<arch_name>_discovery.py" not in pr_template
+
+
+def test_active_discovery_models_have_reproducible_runner() -> None:
+    """Active discovery models are shared-runner-backed or explicitly archived."""
+    assert set(ARCHIVED_DISCOVERY_MODELS) <= {model.name for model in Model}
+    for model in Model.active():
+        discovery_metrics = model.metrics.get("discovery")
+        if not isinstance(discovery_metrics, dict) or not discovery_metrics.get(
+            "pred_file"
+        ):
+            continue
+        assert model.name in CALCULATORS or model.name in ARCHIVED_DISCOVERY_MODELS, (
+            f"{model.name} has discovery results but no shared or archived runner state"
+        )
 
 
 def test_model_enum() -> None:

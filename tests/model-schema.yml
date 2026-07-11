@@ -193,6 +193,14 @@ definitions:
       pred_file_url:
         type: [string, 'null']
         $ref: '#/definitions/http_url'
+      hardware:
+        type: string
+      run_time_sec:
+        type: number
+      max_rss_gb:
+        type: number
+      max_gpu_mem_gb:
+        type: number
       full_test_set:
         $ref: '#/definitions/DiscoveryMetricsSet'
       most_stable_10k:
