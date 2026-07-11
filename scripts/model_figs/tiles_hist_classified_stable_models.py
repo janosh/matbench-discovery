@@ -4,18 +4,17 @@ The histograms use model-predicted energy to the convex hull for materials in th
 data set and separate true/false positives/negatives.
 """
 
+# %%
 from matbench_discovery import figs
-from matbench_discovery.cli import complete_models
+from matbench_discovery.cli import complete_models, shared_payload_test_subset
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.metrics.discovery import classify_stable, dfs_metrics
-
-__author__ = "Janosh Riebesell"
-__date__ = "2022-12-01"
+from matbench_discovery.metrics.discovery import classify_stable
 
 models_to_plot = complete_models()
-test_subset: TestSubset = globals().get("test_subset", TestSubset.uniq_protos)
-df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=test_subset)
+test_subset = shared_payload_test_subset()
+load_subset = test_subset if test_subset == TestSubset.uniq_protos else None
+df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=load_subset)
 
 
 # %%
@@ -31,7 +30,8 @@ for model in models_to_plot:
     true_pos, false_neg, false_pos, true_neg = classify_stable(
         df_preds[MbdKey.each_true], each_pred
     )
-    f1_score = dfs_metrics[test_subset][model.label]["F1"]
+    discovery_metrics = (model.metrics or {})["discovery"]
+    f1_score = discovery_metrics[test_subset]["F1"]
     clf_models.append(
         {"key": model.key, "label": model.label, "f1": round(float(f1_score), 4)}
         | {

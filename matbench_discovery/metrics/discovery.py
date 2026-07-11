@@ -6,12 +6,10 @@ from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
-from pymatviz.enums import Key
 from sklearn.metrics import r2_score
 
-from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD
+from matbench_discovery import STABILITY_THRESHOLD
 from matbench_discovery.enums import MbdKey, Model, TestSubset
-from matbench_discovery.metrics import metrics_df_from_yaml
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-01"
@@ -244,49 +242,3 @@ def write_metrics_to_yaml(
     )
 
     return commented_metrics
-
-
-# Create DataFrames with models as rows
-df_metrics = (
-    metrics_df_from_yaml(["discovery.full_test_set"])
-    .sort_values(by=Key.f1.upper(), ascending=False)
-    .T
-)
-df_metrics_10k = (
-    metrics_df_from_yaml(["discovery.most_stable_10k"])
-    .sort_values(by=Key.f1.upper(), ascending=False)
-    .T
-)
-df_metrics_uniq_protos = (
-    metrics_df_from_yaml(["discovery.unique_prototypes", "phonons"])
-    .sort_values(by=Key.f1.upper(), ascending=False)
-    .T
-)
-df_metrics_uniq_protos = df_metrics_uniq_protos.drop(index=[MbdKey.missing_preds])
-
-for df, title in (
-    (df_metrics, "Metrics for Full Test Set"),
-    (df_metrics_10k, "Metrics for 10k Most Stable Predictions"),
-    (df_metrics_uniq_protos, "Metrics for unique non-MP prototypes"),
-):
-    df.attrs["title"] = title
-
-
-dfs_metrics: dict[TestSubset, pd.DataFrame] = {
-    TestSubset.full_test_set: df_metrics,
-    TestSubset.uniq_protos: df_metrics_uniq_protos,
-    TestSubset.most_stable_10k: df_metrics_10k,
-}
-
-if __name__ == "__main__":
-    # export metrics tables to latex
-    for test_subset, df_subset in dfs_metrics.items():
-        tex_path = f"{PDF_FIGS}/metrics-table-{test_subset.replace('_', '-')}.tex"
-        df_subset.to_latex(
-            tex_path,
-            float_format=lambda x: f"{x:.3f}",
-            escape=True,
-            bold_rows=True,
-            caption=df_subset.attrs["title"],
-        )
-        print(f"Wrote {tex_path}")
