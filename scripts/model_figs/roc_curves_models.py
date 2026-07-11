@@ -4,7 +4,7 @@
 import pymatviz as pmv
 
 from matbench_discovery import STABILITY_THRESHOLD, figs
-from matbench_discovery.cli import cli_args, complete_models
+from matbench_discovery.cli import complete_models
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import df_metrics
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
@@ -19,10 +19,7 @@ if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
-show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
-models_to_plot = [
-    model.label for model in complete_models(show_non_compliant=show_non_compliant)
-]
+models_to_plot = [model.label for model in complete_models()]
 
 
 # %% Convert E_(hull dist) continuous targets to binary classification labels
@@ -70,5 +67,4 @@ for trace in fig.data:
             "tpr": figs.round_list(tpr),
         }
     )
-if show_non_compliant:  # site payload = full model set
-    figs.write_site_payload("roc-models", {"models": roc_models})
+figs.write_site_payload("roc-models", {"models": roc_models})

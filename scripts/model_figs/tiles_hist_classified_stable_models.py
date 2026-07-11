@@ -18,8 +18,7 @@ from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
 
-show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
-models_to_plot = complete_models(show_non_compliant=show_non_compliant)
+models_to_plot = complete_models()
 test_subset: TestSubset = globals().get("test_subset", TestSubset.uniq_protos)
 models_to_plot = sorted(  # sort models by F1
     models_to_plot,
@@ -127,9 +126,8 @@ for model in models_to_plot:
     )
 # bin centers depend only on hist_clf_kwargs (bins/range), not the per-model data
 bin_centers = figs.histogram([], **hist_clf_kwargs)["x"]
-if show_non_compliant:  # site payload = full model set, sorted by F1 (site renders
-    # panels in payload order)
-    figs.write_site_payload(
-        f"hist-clf-{which_energy}-hull-dist",
-        {"bin_centers": bin_centers, "models": clf_models},
-    )
+# Panels render in payload order, so preserve the F1 sorting above.
+figs.write_site_payload(
+    f"hist-clf-{which_energy}-hull-dist",
+    {"bin_centers": bin_centers, "models": clf_models},
+)

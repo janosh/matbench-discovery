@@ -4,7 +4,7 @@
 import numpy as np
 
 from matbench_discovery import figs
-from matbench_discovery.cli import cli_args, complete_models
+from matbench_discovery.cli import complete_models
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
@@ -23,10 +23,7 @@ if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
-show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
-models_to_plot = [
-    model.label for model in complete_models(show_non_compliant=show_non_compliant)
-]
+models_to_plot = [model.label for model in complete_models()]
 mae_vals = dfs_metrics[test_subset].loc["MAE", models_to_plot]
 model_ranking = mae_vals.sort_values().index[::-1]
 
@@ -93,16 +90,15 @@ for trace in fig.data:
         trace, x=False
     )
     rolling_models.append(entry)
-if show_non_compliant:  # site payload = full model set (styling applied client-side)
-    figs.write_site_payload(
-        "rolling-mae-vs-hull-dist",
-        {
-            "x": shared_x or [],  # never null: payload contract requires x to be a list
-            "models": rolling_models,
-            # rolling count of test-set structures per hull-dist bin (drawn on y2)
-            "density": {
-                "x": figs.round_list((bins[:-1] + bins[1:]) / 2),
-                "y": counts.tolist(),
-            },
+figs.write_site_payload(
+    "rolling-mae-vs-hull-dist",
+    {
+        "x": shared_x or [],  # never null: payload contract requires x to be a list
+        "models": rolling_models,
+        # rolling count of test-set structures per hull-dist bin (drawn on y2)
+        "density": {
+            "x": figs.round_list((bins[:-1] + bins[1:]) / 2),
+            "y": counts.tolist(),
         },
-    )
+    },
+)

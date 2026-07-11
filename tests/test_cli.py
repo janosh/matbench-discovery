@@ -29,10 +29,7 @@ from matbench_discovery.enums import Model, TestSubset
                 "test_subset": TestSubset.most_stable_10k,
             },
         ),
-        (
-            ["--energy-type", "e_form", "--show-non-compliant"],
-            {"energy_type": Key.e_form, "show_non_compliant": True},
-        ),
+        (["--energy-type", "e_form"], {"energy_type": Key.e_form}),
     ],
 )
 def test_cli_parser(
@@ -88,7 +85,6 @@ def test_cli_args_global() -> None:
     assert isinstance(cli_args.models, list)
     assert isinstance(cli_args.test_subset, TestSubset)
     assert isinstance(cli_args.energy_type, str)
-    assert isinstance(cli_args.show_non_compliant, bool)
     assert isinstance(cli_args.use_full_rows, bool)
     assert isinstance(cli_args.update_existing, bool)
 

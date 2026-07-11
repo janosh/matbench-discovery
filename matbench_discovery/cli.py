@@ -88,11 +88,6 @@ plot_group.add_argument(
     help="Whether to use formation energy or convex hull distance.",
 )
 plot_group.add_argument(
-    "--show-non-compliant",
-    action="store_true",
-    help="Whether to show non-compliant models.",
-)
-plot_group.add_argument(
     "--use-full-rows",
     action="store_true",
     help="Whether to drop models that don't fit in complete rows.",
@@ -119,15 +114,9 @@ def is_full_model_run() -> bool:
     return set(cli_args.models) >= set(Model.active())
 
 
-def complete_models(*, show_non_compliant: bool) -> list[Model]:
-    """CLI-selected models with complete discovery metrics, optionally filtered to
-    compliant ones. Used by plotting scripts to decide which models to include.
-    """
-    return [
-        model
-        for model in cli_args.models
-        if model.is_complete and (show_non_compliant or model.is_compliant)
-    ]
+def complete_models() -> list[Model]:
+    """Return CLI-selected models with complete discovery metrics."""
+    return [model for model in cli_args.models if model.is_complete]
 
 
 # Set env var to auto-confirm file downloads when --auto-download is passed

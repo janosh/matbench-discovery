@@ -4,8 +4,7 @@ import type { FilterPreset } from './url-state.svelte'
 
 // Built-in presets shipped with the site. `Compliant` recreates the pre-2026 leaderboard
 // "compliant models" cohort in one click: open source + open data (OSOD) models trained
-// exclusively on MP-anchored datasets (those with compliant: true in datasets.yml, same
-// source of truth as the Python API's model_is_compliant).
+// exclusively on MP-anchored datasets (those with compliant: true in datasets.yml).
 export const BUILTIN_PRESETS: Record<string, FilterPreset> = {
   Compliant: {
     training: Object.fromEntries(

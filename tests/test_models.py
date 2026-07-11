@@ -10,7 +10,6 @@ import yaml
 from matbench_discovery import ROOT
 from matbench_discovery.data import DATASETS
 from matbench_discovery.enums import Model
-from matbench_discovery.models import model_is_compliant, validate_model_metadata
 
 OPEN_DATASETS = {
     dataset["name"]
@@ -155,63 +154,6 @@ def test_model_missing_invalid_inputs(
 ) -> None:
     """Test that _missing_ method returns None for invalid inputs."""
     assert Model._missing_(input_value) is None
-
-
-@pytest.mark.parametrize(
-    "model, is_compliant",
-    [
-        (Model.megnet, True),
-        (Model.eqv2_m_omat_salex_mp, False),
-        (Model.eqv2_s_dens_mp, True),
-        (Model.orb_v2, False),
-        (Model.wrenformer, True),
-        (Model.voronoi_rf, True),
-        (Model.gnome, False),
-        (Model.mattersim_v1_5m, False),
-        (Model.nequix_mp_1_pft, True),
-    ],
-)
-def test_model_is_compliant(model: Model, is_compliant: bool) -> None:
-    """Test model compliance checking."""
-    assert model.is_compliant is is_compliant
-    # Also test the function directly for consistency
-    assert model_is_compliant(model.metadata) is is_compliant
-
-
-@pytest.mark.parametrize(
-    "func, metadata, error_type, error_match",
-    [
-        # model_is_compliant errors
-        (
-            model_is_compliant,
-            {"openness": "OSOD", "training_set": "MPtrj", "model_name": "test"},
-            TypeError,
-            "expected list of training sets",
-        ),
-        # validate_model_metadata errors
-        (
-            lambda m: validate_model_metadata(m, "test.yml"),
-            {"status": "incomplete"},
-            ValueError,
-            "has status != 'complete'",
-        ),
-        (
-            lambda m: validate_model_metadata(m, "test.yml"),
-            {"model_type": "InvalidType"},
-            ValueError,
-            "is not a valid ModelType",
-        ),
-    ],
-)
-def test_model_validation_errors(
-    func: object,
-    metadata: dict[str, str],
-    error_type: type[Exception],
-    error_match: str,
-) -> None:
-    """Test model validation functions raise appropriate errors."""
-    with pytest.raises(error_type, match=error_match):
-        func(metadata)  # ty: ignore[call-non-callable]
 
 
 @pytest.mark.parametrize(

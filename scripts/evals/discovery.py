@@ -7,7 +7,6 @@ the site.
 """
 
 # %%
-import itertools
 import traceback
 from datetime import date
 
@@ -100,10 +99,6 @@ if __name__ == "__main__":
 date_added_col = "Date Added"
 model_name_col = "Model"
 
-non_compliant_models = [
-    model.label for model in Model if model.is_complete and not model.is_compliant
-]
-
 # Add model metadata to df_metrics(_10k|_uniq_protos)
 models = discovery.df_metrics_uniq_protos.columns
 for model_label in models:
@@ -136,12 +131,8 @@ for model_label in models:
 
         # Add model version as hover tooltip to model name
         model_version = model.metadata.get("model_version", "")
-        # NB: model is a Model enum (str value = snake-case key), so membership in
-        # the list of non-compliant labels would always be False
-        compliant_css_cls = "" if model.is_compliant else "non-compliant"
         attrs = {
             "title": f"Version: {model_version}",
-            "class": compliant_css_cls,
             "data-model-key": model_key,
         }
         html_attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
@@ -317,13 +308,10 @@ show_cols = [
     *meta_cols,
 ]
 
-for (label, df_met), show_non_compliant in itertools.product(
-    (
-        ("", discovery.df_metrics),
-        ("-first-10k", discovery.df_metrics_10k),
-        ("-uniq-protos", discovery.df_metrics_uniq_protos),
-    ),
-    (True, False),
+for label, df_met in (
+    ("", discovery.df_metrics),
+    ("-first-10k", discovery.df_metrics_10k),
+    ("-uniq-protos", discovery.df_metrics_uniq_protos),
 ):
     out_label = label
     df_show = df_met.copy().T.rename_axis(index=model_name_col)
@@ -344,10 +332,6 @@ for (label, df_met), show_non_compliant in itertools.product(
     # only keep columns we want to show
     df_table = df_show.filter([model_name_col, *show_cols])
     df_table = df_table.convert_dtypes()
-    # hide models that are not compliant if show_non_compliant is False
-    if not show_non_compliant:
-        df_table = df_table.drop(non_compliant_models)
-
     if make_uip_megnet_comparison:
         df_table = df_table[
             df_table.index.str.contains("MEGNet|CHGNet|M3GNet")

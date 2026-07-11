@@ -11,7 +11,7 @@ will provide the best hit rate for the given budget.
 import numpy as np
 
 from matbench_discovery import STABILITY_THRESHOLD, figs
-from matbench_discovery.cli import cli_args, complete_models
+from matbench_discovery.cli import complete_models
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import classify_stable
 from matbench_discovery.plots import cumulative_metrics, stable_screening_sort
@@ -38,10 +38,7 @@ range_y = {
     ("Precision", "Recall"): (0, 1),
 }[metrics]
 
-show_non_compliant = globals().get("show_non_compliant", cli_args.show_non_compliant)
-models_to_plot = [
-    model.label for model in complete_models(show_non_compliant=show_non_compliant)
-]
+models_to_plot = [model.label for model in complete_models()]
 
 fig, _df_metric = cumulative_metrics(
     e_above_hull_true=df_preds[MbdKey.each_true],
@@ -82,7 +79,7 @@ fig.show()
 
 
 # %%
-if metrics == ("Precision", "Recall") and show_non_compliant:
+if metrics == ("Precision", "Recall"):
     # site payload = full model set. curves are recomputed on a model-intrinsic grid
     # (not extracted from the figure, whose shared x grid depends on which models are
     # in the run) so an entry is identical in full regens and single-model merge runs

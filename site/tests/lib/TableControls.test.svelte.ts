@@ -95,7 +95,7 @@ describe(`TableControls`, () => {
     await tick()
 
     expect(filters.openness).toStrictEqual([`OSOD`])
-    // mirrors old model_is_compliant: OSOD + only MP-anchored training data
+    // the preset selects OSOD models trained only on MP-anchored data
     const targets = `EFS_G`
     const compliant = { training_set: [`MPtrj`, `MP 2022`], openness: `OSOD`, targets }
     const extra_data = { training_set: [`MPtrj`, `OMat24`], openness: `OSOD`, targets }

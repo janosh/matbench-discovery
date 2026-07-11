@@ -520,13 +520,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return abs_path
 
     @property
-    def is_compliant(self) -> bool:
-        """Check if model complies with benchmark restrictions."""
-        from matbench_discovery.models import model_is_compliant
-
-        return model_is_compliant(self.metadata)
-
-    @property
     def is_complete(self) -> bool:
         """Check if model has all required metrics."""
         return self.metadata.get("status", "complete") == "complete"
