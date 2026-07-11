@@ -11,8 +11,19 @@ from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import classify_stable
 
-models_to_plot = complete_models()
 test_subset = shared_payload_test_subset()
+model_f1_pairs = []
+for model in complete_models():
+    discovery_metrics = (model.metrics or {}).get("discovery")
+    if not isinstance(discovery_metrics, dict):
+        continue
+    subset_metrics = discovery_metrics.get(test_subset)
+    f1_score = subset_metrics.get("F1") if isinstance(subset_metrics, dict) else None
+    if not isinstance(f1_score, int | float):
+        continue
+    model_f1_pairs.append((model, float(f1_score)))
+
+models_to_plot = [model for model, _f1_score in model_f1_pairs]
 load_subset = test_subset if test_subset == TestSubset.uniq_protos else None
 df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=load_subset)
 
@@ -23,17 +34,15 @@ df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=load_subset)
 n_bins = 64
 hist_range = (-0.45, 0.45)
 clf_models: list[dict[str, object]] = []
-for model in models_to_plot:
+for model, f1_score in model_f1_pairs:
     each_pred = (
         df_preds[MbdKey.each_true] + df_preds[model.label] - df_preds[MbdKey.e_form_dft]
     )
     true_pos, false_neg, false_pos, true_neg = classify_stable(
         df_preds[MbdKey.each_true], each_pred
     )
-    discovery_metrics = (model.metrics or {})["discovery"]
-    f1_score = discovery_metrics[test_subset]["F1"]
     clf_models.append(
-        {"key": model.key, "label": model.label, "f1": round(float(f1_score), 4)}
+        {"key": model.key, "label": model.label, "f1": round(f1_score, 4)}
         | {
             key: figs.histogram(each_pred[mask], bins=n_bins, value_range=hist_range)[
                 "y"

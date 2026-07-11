@@ -1,0 +1,1 @@
+^(scripts/(model_figs/.*\.py|export_data_fig_payloads\.py)|scripts/evals/(geo_opt|md|diatomic_metrics|build_diatomic_reference)\.py|scripts/ingest_model\.py|matbench_discovery/((cli|data_figs|energy|enums|figs|plots)\.py|preds/discovery\.py|metrics/(discovery|md)\.py|metrics/diatomics/.*\.py))$

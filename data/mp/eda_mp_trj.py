@@ -17,6 +17,7 @@ from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS
 from matbench_discovery.data import ase_atoms_from_zip, df_wbm
+from matbench_discovery.data_figs import build_route_element_counts
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import DataFiles, MbdKey
 
@@ -28,12 +29,6 @@ __date__ = "2023-11-22"
 df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False)
 df_mp = df_mp.set_index(Key.mat_id)
 assert sum(df_mp[Key.formula].isna() | (df_mp[Key.formula] == "")) == 0
-# Preserve the route payload convention: three literal "NaN" formulas were
-# historically parsed as missing rather than sodium nitride.
-mp_formulas = df_mp[Key.formula]
-mp_occu_counts = pmv.count_elements(
-    mp_formulas[mp_formulas != "NaN"], count_mode=ElemCountMode.occurrence
-)
 
 
 # %% --- load preprocessed MPtrj summary data if available ---
@@ -227,20 +222,21 @@ pmv.save_fig(fig_ptable_sites, f"{PDF_FIGS}/mp-trj-n-sites-ptable-hists.pdf")
 
 
 # %%
-elem_counts: dict[ElemCountMode, pd.Series[int]] = {}
-for count_mode in (ElemCountMode.composition, ElemCountMode.occurrence):
-    trj_elem_counts = pmv.count_elements(df_mp_trj[Key.formula], count_mode=count_mode)
-    elem_counts[count_mode] = trj_elem_counts
+# Preserve the route payload convention: three literal "NaN" MP formulas are
+# parsed as missing rather than sodium nitride inside build_route_element_counts.
+route_elem_counts = build_route_element_counts(df_mp, df_wbm, df_mp_trj)
+mp_occu_counts = route_elem_counts["mp-element-counts-by-occurrence"]
+trj_comp_counts = route_elem_counts["mp-trj-element-counts-by-composition"]
+trj_occu_counts = route_elem_counts["mp-trj-element-counts-by-occurrence"]
 
 
 # %% TODO https://github.com/janosh/pymatviz/issues/188 font sizes and box sizes
 count_mode = ElemCountMode.composition
-trj_elem_counts = elem_counts[count_mode]
 
 excl_elems = ("He", "Ne", "Ar", "Kr", "Xe") if (excl_noble := False) else ()
 
 fig = pmv.ptable_heatmap(
-    trj_elem_counts,
+    trj_comp_counts,
     exclude_elements=excl_elems,  # drop noble gases
     log=(log := True),
     colorbar=dict(title="MPtrj Element Counts"),
@@ -258,8 +254,8 @@ fig.show()
 # %%
 fig = pmv.ptable_heatmap(
     {
-        elem: (trj_count / 1_580_395) / (mp_occu_counts[elem] / len(df_mp))
-        for elem, trj_count in trj_elem_counts.items()
+        elem: (trj_count / len(df_mp_trj)) / (mp_occu_counts[elem] / len(df_mp))
+        for elem, trj_count in trj_occu_counts.items()
         if elem in mp_occu_counts
     },  # ty: ignore[invalid-argument-type]
     colorbar=dict(title="MPtrj/MP Element Count Ratio"),

@@ -54,7 +54,8 @@ jobs:
 
       # guard 2 (see header). GEN = generators/writers whose edits alter payload
       # output. PAYLOADS = generated data artifacts only (payloads.d.ts edits alone
-      # don't satisfy).
+      # don't satisfy). The data/mp and data/wbm EDA/compile scripts no longer write
+      # site payloads directly and are intentionally excluded.
       - name: Require payload updates when payload-shaping code changes
         if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'payloads-unchanged')
         env:
@@ -62,7 +63,8 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].path')
-          GEN=$(grep -E '^(scripts/(model_figs/.*\.py|export_data_fig_payloads\.py)|scripts/evals/(geo_opt|md|diatomic_metrics|build_diatomic_reference)\.py|scripts/ingest_model\.py|matbench_discovery/((cli|data_figs|energy|enums|figs|plots)\.py|preds/discovery\.py|metrics/(discovery|md)\.py|metrics/diatomics/.*\.py))$' <<< "$CHANGED" || true)
+          GENERATOR_PATTERN=$(<.github/payload-generator-paths.regex)
+          GEN=$(grep -E "$GENERATOR_PATTERN" <<< "$CHANGED" || true)
           PAYLOADS=$(grep -E '^(site/src/figs/.*\.(jsonl|json\.gz)|site/src/routes/(data/.*\.json|models/per-element-each-errors\.jsonl)|site/src/lib/diatomics-dft\.json\.gz)$' <<< "$CHANGED" || true)
           if [ -n "$GEN" ] && [ -z "$PAYLOADS" ]; then
             echo "::error::PR changes payload-generating code ($(tr '\n' ' ' <<< "$GEN")) but no committed generated payloads (site/src/figs data files, route-local JSON, models/per-element-each-errors.jsonl, or diatomics-dft.json.gz). Regenerate the affected payloads locally, or apply the 'payloads-unchanged' label if output is provably unchanged."
