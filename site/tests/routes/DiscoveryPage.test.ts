@@ -1,8 +1,9 @@
 import { MODELS } from '$lib'
 import { make_table_filters } from '$lib/models.svelte'
 import DiscoveryPage from '$routes/tasks/discovery/+page.svelte'
+import { format_num } from 'matterviz'
 import { tick } from 'svelte'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   checkbox_for,
   filter_summary_badge,
@@ -10,6 +11,38 @@ import {
   mount_with_url,
   sorted_header,
 } from '../index'
+
+const plot_mocks = vi.hoisted(() => ({ ScatterPlot: vi.fn() }))
+
+vi.mock(`matterviz/plot`, async (import_original) => ({
+  ...(await import_original<Record<string, unknown>>()),
+  ScatterPlot: plot_mocks.ScatterPlot,
+}))
+
+interface ScatterPlotProps {
+  series: {
+    x: number[]
+    y: number[]
+    metadata?: { model_key?: string }[]
+  }[]
+  style?: string
+}
+
+const comparison_scatter_props = (): ScatterPlotProps | undefined =>
+  plot_mocks.ScatterPlot.mock.calls
+    .flat()
+    .findLast(
+      (call_arg): call_arg is ScatterPlotProps =>
+        typeof call_arg === `object` &&
+        call_arg !== null &&
+        `series` in call_arg &&
+        call_arg.style === `height: 800px`,
+    )
+
+const scatter_y_for = (model_key: string): number | undefined =>
+  comparison_scatter_props()?.series.find(
+    (series) => series.metadata?.[0]?.model_key === model_key,
+  )?.y[0]
 
 const active_toggle = (): string | undefined =>
   document.querySelector(`button.active`)?.textContent?.trim()
@@ -48,18 +81,21 @@ describe(`Discovery Task Page`, () => {
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
 
     expect(heading_texts()).toContain(`F1 vs Params`)
-    expect(document.querySelector(`[style*="height: 800px"]`)).not.toBeNull()
-
+    expect(heading_texts()).toContain(`Failure and Coverage Diagnostics`)
+    expect(comparison_scatter_props()).toBeDefined()
     expect(document.body.textContent).toContain(`Convex Hull Construction`)
   })
 
-  it(`renders discovery-set controls and filters rows when toggled`, async () => {
+  it(`filters rows and resolves scatter values from the active discovery set`, async () => {
     const default_filters = make_table_filters()
     const source_model = MODELS.find((model) => {
       const discovery = model.metrics?.discovery
       return (
         discovery != null &&
         typeof discovery === `object` &&
+        typeof discovery.unique_prototypes?.F1 === `number` &&
+        typeof discovery.full_test_set?.F1 === `number` &&
+        discovery.unique_prototypes?.F1 !== discovery.full_test_set?.F1 &&
         default_filters.matches(model)
       )
     })
@@ -67,6 +103,8 @@ describe(`Discovery Task Page`, () => {
     if (!source_model || !discovery || typeof discovery !== `object`) {
       throw new Error(`No visible model with discovery metrics found`)
     }
+    const model_key = source_model.model_key
+    if (!model_key) throw new Error(`Discovery model has no key`)
     const partial_model = {
       ...source_model,
       model_key: `partial-discovery-test-model`,
@@ -88,6 +126,7 @@ describe(`Discovery Task Page`, () => {
         expect.arrayContaining([`Unique Prototypes`, `Full Test Set`, `10k Most Stable`]),
       )
       expect(active_toggle()).toBe(`Unique Prototypes`)
+      expect(scatter_y_for(model_key)).toBe(discovery.unique_prototypes?.F1)
 
       const table_text = () =>
         document.querySelector(`section.full-bleed tbody`)?.textContent
@@ -98,9 +137,36 @@ describe(`Discovery Task Page`, () => {
 
       expect(active_toggle()).toBe(`Full Test Set`)
       expect(table_text()).not.toContain(partial_model.model_name)
+      expect(scatter_y_for(model_key)).toBe(discovery.full_test_set?.F1)
     } finally {
       MODELS.pop()
     }
+  })
+
+  it(`counts missing predictions within the confusion-matrix total`, () => {
+    mount(DiscoveryPage, { target: document.body })
+    const filters = make_table_filters()
+    const model = MODELS.find((candidate) => {
+      const metrics = candidate.metrics?.discovery
+      return (
+        typeof metrics === `object` &&
+        (metrics?.unique_prototypes?.missing_preds ?? 0) > 0 &&
+        filters.matches(candidate)
+      )
+    })
+    const metrics = model?.metrics?.discovery
+    const values = typeof metrics === `object` ? metrics.unique_prototypes : undefined
+    if (!model || !values) throw new Error(`No visible model with missing predictions`)
+    const table = [...document.querySelectorAll(`section.full-bleed table`)].find(
+      (entry) => entry.textContent?.includes(`Missing predictions`),
+    )
+    const row = [...(table?.querySelectorAll(`tbody tr`) ?? [])].find((entry) =>
+      entry.textContent?.includes(model.model_name),
+    )
+    const total = values.TP + values.FP + values.TN + values.FN
+    expect(row?.querySelector(`[data-col="Missing predictions"]`)?.textContent).toContain(
+      format_num(values.missing_preds / total, `.2~%`),
+    )
   })
 
   it(`restores and syncs URL state`, async () => {

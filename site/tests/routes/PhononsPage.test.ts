@@ -53,14 +53,15 @@ const heading_texts = (): (string | undefined)[] =>
   )
 
 describe(`Phonons Task Page`, () => {
-  it(`renders page structure, scatter, and diagnostics`, () => {
+  it(`renders the task narrative, scatter, and diagnostics`, () => {
     mount(PhononsPage, { target: document.body })
 
     expect(doc_query(`h1`).textContent).toContain(`MLFF Phonon Modeling Metrics`)
+    expect(document.body.textContent).toContain(`wrong microscopic reasons`)
 
     const headings = heading_texts()
-    expect(headings).toContain(`Failure Modes`)
-    expect(headings).toContain(`κSRME vs Params`)
+    expect(headings).toContain(`Failure Diagnostics`)
+    expect(headings).toContain(`Model Comparison: κSRME vs κSRE`)
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
@@ -165,7 +166,7 @@ describe(`Phonons Task Page`, () => {
     const mace_name = MODELS.find((model) => model.model_key === `mace-mp-0`)?.model_name
     if (!mace_name) throw new Error(`mace-mp-0 not found in MODELS`)
     expect(kappa_selected_model()).toContain(mace_name)
-    expect(heading_texts()).toContain(`κSRE vs F1`)
+    expect(heading_texts()).toContain(`Model Comparison: κSRE vs F1`)
 
     const header = sorted_header()
     expect(header?.textContent).toContain(`κSRE`)

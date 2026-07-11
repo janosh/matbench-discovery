@@ -11,6 +11,7 @@
   } from '$lib/url-state.svelte'
   import * as labels from '$lib/labels'
   import { DISCOVERY_SETS, type DiscoverySet, type ModelData } from '$lib/types'
+  import DiscoveryRobustnessTable from './DiscoveryRobustnessTable.svelte'
   import HullConstructionNote from './hull-construction-note.md'
 
   const default_discovery_set: DiscoverySet = `unique_prototypes`
@@ -22,10 +23,21 @@
   let discovery_set: DiscoverySet = $state(default_discovery_set)
   const filters = make_table_filters()
   let sort = $state({ ...default_sort })
+  let scatter_path_overrides = $derived(
+    Object.fromEntries(
+      Object.values(labels.DISCOVERY_METRICS).map(({ key }) => [
+        key,
+        `metrics.discovery.${discovery_set}.${key}`,
+      ]),
+    ),
+  )
   const has_discovery_metrics = (model: ModelData): boolean => {
     const discovery = model.metrics?.discovery
     return typeof discovery === `object` && discovery?.[discovery_set] != null
   }
+  let visible_models = $derived(
+    MODELS.filter((model) => has_discovery_metrics(model) && filters.matches(model)),
+  )
 
   // axis selections for the model-comparison scatter, bound so the section title
   // tracks whatever properties the user picks
@@ -56,6 +68,28 @@
 
 <h1>Crystal Stability Prediction Metrics</h1>
 
+<div class="task-intro">
+  <div>
+    <p>
+      This task measures how effectively a model can triage hypothetical WBM crystals for
+      DFT validation. Models must identify structures that lie on or below a fixed
+      DFT-computed Materials Project convex hull while minimizing costly false positives.
+    </p>
+    <p>
+      Switch between the full test set, unique prototypes, and each model's 10,000
+      most-stable predictions to compare overall accuracy, structural diversity, and
+      fixed-budget discovery performance. See
+      <a href="/tasks/discovery/tmi">Discovery TMI</a> for calibration, element-level, and error-distribution
+      diagnostics.
+    </p>
+  </div>
+</div>
+
+<details class="methodology">
+  <summary>Methodology: fixed DFT convex hull</summary>
+  <HullConstructionNote />
+</details>
+
 <SelectToggle
   bind:selected={discovery_set}
   options={labels.discovery_set_toggle_options}
@@ -76,7 +110,15 @@
   />
 </section>
 
-<HullConstructionNote />
+<h2>Failure and Coverage Diagnostics</h2>
+<p>
+  F1 alone hides why a model fails. These rates separate missing predictions, false
+  discoveries that would waste validation effort, and stable materials the model would
+  overlook. They follow the selected discovery set and the leaderboard filters above.
+</p>
+<section class="full-bleed">
+  <DiscoveryRobustnessTable models={visible_models} {discovery_set} />
+</section>
 
 <h2>
   {@html labels.scatter_axis_label(scatter_y)} vs {@html labels.scatter_axis_label(
@@ -92,9 +134,20 @@ models across any pair of metrics and metadata.
 <!-- color by energy MAE: an orthogonal 3rd axis (the default color is F1, which is
 already the y-axis here, so it wastes the color channel) -->
 <DynamicScatter
-  models={MODELS}
+  models={visible_models}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
   color_key={labels.ALL_METRICS.MAE.key}
+  label_path_overrides={scatter_path_overrides}
   style="height: 800px"
 />
+
+<style>
+  .methodology {
+    margin-block: 1em;
+  }
+  .methodology summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+</style>

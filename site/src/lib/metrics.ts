@@ -172,6 +172,9 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 // NB: cell background/text colors are computed by matterviz's HeatmapTable internally
 // (calc_cell_color in matterviz/table) — no local color logic needed
 
+export const has_geo_opt_metrics = (model: ModelData): boolean =>
+  model.metrics?.geo_opt != null && typeof model.metrics.geo_opt === `object`
+
 // Calculate table data for the metrics table with combined scores
 export function assemble_row_data(
   discovery_set: DiscoverySet,
