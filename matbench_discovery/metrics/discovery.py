@@ -186,8 +186,7 @@ def stable_metrics(
 
 def _align_preds(df_wbm: pd.DataFrame, model_preds: pd.Series) -> pd.Series:
     """Validate prediction IDs against the reference index and coerce to numeric."""
-    unknown_ids = set(model_preds.index) - set(df_wbm.index)
-    if unknown_ids:
+    if unknown_ids := set(model_preds.index) - set(df_wbm.index):
         raise ValueError(
             f"Predictions contain unknown material IDs: {sorted(unknown_ids)}"
         )
@@ -268,10 +267,8 @@ def calc_discovery_metrics(
     }
 
     if uniq_proto_prevalence is None:
-        uniq_proto_idx = subset_indices[TestSubset.uniq_protos]
-        uniq_proto_prevalence = (
-            each_true.loc[uniq_proto_idx] <= STABILITY_THRESHOLD
-        ).mean()
+        each_true_uniq = each_true.loc[subset_indices[TestSubset.uniq_protos]]
+        uniq_proto_prevalence = (each_true_uniq <= STABILITY_THRESHOLD).mean()
     for subset in (TestSubset.uniq_protos, TestSubset.most_stable_10k):
         precision = metrics_by_subset[subset]["Precision"]
         metrics_by_subset[subset]["DAF"] = (

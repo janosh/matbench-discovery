@@ -284,8 +284,7 @@ def _print_cmd_args(args: argparse.Namespace, model_key: str) -> list[str]:
 def _repo_relative_path(path: str) -> str:
     """Return a repository-relative path, preserving external absolute paths."""
     absolute_path = os.path.abspath(path)
-    relative_path = os.path.relpath(absolute_path, ROOT)
-    relative_path = relative_path.replace("\\", "/")
+    relative_path = os.path.relpath(absolute_path, ROOT).replace("\\", "/")
     return relative_path if not relative_path.startswith("../") else absolute_path
 
 
@@ -341,11 +340,7 @@ def _write_yaml_results(
         ("geo_opt", artifacts.geo_opt_file_path, "struct_col", artifacts.struct_col),
     ):
         artifact_data = _artifact_yaml_data(model, task, path, column_key, column)
-        update_yaml_file(
-            model.yaml_path,
-            f"metrics.{task}",
-            artifact_data,
-        )
+        update_yaml_file(model.yaml_path, f"metrics.{task}", artifact_data)
         if "pred_file_url" in artifact_data:
             print(f"Cleared stale {task}.pred_file_url; upload the new artifact")
     discovery_metrics.write_all_metrics_to_yaml(

@@ -475,33 +475,29 @@ def test_runner_preserves_existing_artifact_columns(
     )
     assert discovery_runner._artifact_columns(None) == (None, None)  # noqa: SLF001
     existing_path = Model.mace_mp_0.metrics["discovery"]["pred_file"]
+    make_artifact_data = partial(
+        discovery_runner._artifact_yaml_data,  # noqa: SLF001
+        Model.mace_mp_0,
+        "discovery",
+        column_key="pred_col",
+        column="e_form_per_atom_mace",
+    )
     for path, clears_url in (
         (f"{discovery_runner.ROOT}/{existing_path}", False),
         (f"{discovery_runner.ROOT}/models/mace/new-preds.csv.gz", True),
     ):
-        artifact_data = discovery_runner._artifact_yaml_data(  # noqa: SLF001
-            Model.mace_mp_0,
-            "discovery",
-            path,
-            "pred_col",
-            "e_form_per_atom_mace",
-        )
+        artifact_data = make_artifact_data(path)
         assert ("pred_file_url" in artifact_data) is clears_url
         if clears_url:
             assert artifact_data["pred_file_url"] is None
 
-    def windows_relpath(_path: str, _start: str) -> str:
-        """Simulate the Windows path returned by os.path.relpath."""
-        return existing_path.replace("/", "\\")
-
-    monkeypatch.setattr(discovery_runner.os.path, "relpath", windows_relpath)
-    artifact_data = discovery_runner._artifact_yaml_data(  # noqa: SLF001
-        Model.mace_mp_0,
-        "discovery",
-        f"{discovery_runner.ROOT}/{existing_path}",
-        "pred_col",
-        "e_form_per_atom_mace",
+    # simulate the backslash-separated relative path os.path.relpath returns on Windows
+    monkeypatch.setattr(
+        discovery_runner.os.path,
+        "relpath",
+        lambda _path, _start: existing_path.replace("/", "\\"),
     )
+    artifact_data = make_artifact_data(f"{discovery_runner.ROOT}/{existing_path}")
     assert artifact_data["pred_file"] == existing_path
     assert "pred_file_url" not in artifact_data
 
@@ -541,12 +537,7 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
         "pred_file": "models/old/preds.csv.gz",
         "pred_file_url": "https://example.com/old",
     }
-    yaml_path.write_text(
-        "metrics:\n"
-        "  discovery:\n"
-        f"    pred_file: {old_discovery['pred_file']}\n"
-        f"    pred_file_url: {old_discovery['pred_file_url']}\n"
-    )
+    yaml_path.write_text(yaml.safe_dump({"metrics": {"discovery": old_discovery}}))
     mock_model = cast(
         "Model",
         SimpleNamespace(yaml_path=str(yaml_path), metrics={"discovery": old_discovery}),
