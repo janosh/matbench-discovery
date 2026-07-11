@@ -32,6 +32,7 @@
   const child_routes = Object.keys(import.meta.glob(`./*/*/**/+page.{svelte,md}`))
     .filter((filename) => !filename.includes(`[`))
     .map((filename) => `/${filename.split(`/`).slice(1, -1).join(`/`)}`)
+    .filter((route) => !(route.startsWith(`/tasks/`) && route.includes(`/tmi`)))
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`))
     .map((filename) => `/${filename.split(`/`)[1]}`)
     .map((route) => {

@@ -53,11 +53,12 @@
   )
 
   const roc_series: DataSeries[] = $derived(
-    roc_styled.map(({ label, auc, fpr, tpr }) => ({
+    roc_styled.map(({ label, color, auc, fpr, tpr }) => ({
       x: fpr,
       y: tpr,
       label: `${label} · AUC=${auc.toFixed(2)}`,
       markers: `line` as const,
+      line_style: { stroke: color },
     })),
   )
 

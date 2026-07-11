@@ -3,7 +3,7 @@ import { make_table_filters } from '$lib/models.svelte'
 import DiscoveryPage from '$routes/tasks/discovery/+page.svelte'
 import { format_num } from 'matterviz'
 import { tick } from 'svelte'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   checkbox_for,
   filter_summary_badge,
@@ -61,6 +61,8 @@ const heading_texts = (): (string | undefined)[] =>
   )
 
 describe(`Discovery Task Page`, () => {
+  beforeEach(() => plot_mocks.ScatterPlot.mockClear())
+
   it(`renders page structure, discovery columns, and scatter`, () => {
     mount(DiscoveryPage, { target: document.body })
 
