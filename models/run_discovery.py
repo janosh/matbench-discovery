@@ -43,6 +43,7 @@ from matbench_discovery.calculators import (
 )
 from matbench_discovery.data import update_yaml_file
 from matbench_discovery.discovery import (
+    ARCHIVED_DISCOVERY_MODELS,
     DiscoveryArtifacts,
     RelaxationSettings,
     dry_run_settings,
@@ -55,7 +56,6 @@ from matbench_discovery.discovery import (
 from matbench_discovery.enums import MbdKey, Model
 
 module_dir = os.path.dirname(__file__)
-CUSTOM_DISCOVERY_MODELS = frozenset({"equflash_29m_oam", "equflashv2_45m_oam"})
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -358,23 +358,20 @@ def main(raw_args: Sequence[str] | None = None) -> int:
 
     if args.list_models:
         for model_key, spec in CALCULATORS.items():
-            if model_key in CUSTOM_DISCOVERY_MODELS:
-                continue
             print(f"{model_key}: {', '.join(spec.deps) or '(core deps only)'}")
         return 0
     if not args.model:
         parser.error("--model is required (or pass --list-models)")
     try:
-        model_key = resolve_calculator_key(args.model)
+        requested_model_key = Model.from_ref(args.model).name
+    except ValueError:
+        requested_model_key = args.model
+    if reason := ARCHIVED_DISCOVERY_MODELS.get(requested_model_key):
+        parser.error(f"{requested_model_key} discovery is archived: {reason}")
+    try:
+        model_key = resolve_calculator_key(requested_model_key)
     except ValueError as exc:
         parser.error(f"{exc}, see --list-models")
-    if model_key in CUSTOM_DISCOVERY_MODELS:
-        parser.error(
-            f"{model_key} uses models/equflash/test_equflash_discovery.py because "
-            "its batched relaxation and no-deps environment are not shared-runner "
-            "compatible"
-        )
-
     if args.write_yaml and not args.merge_shards:
         parser.error("--write-yaml is only supported with --merge-shards")
     if args.write_yaml and args.dry_run:

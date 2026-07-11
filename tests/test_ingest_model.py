@@ -29,7 +29,7 @@ def run_cmd_calls(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, ...]]:
 
 
 def test_force_model_discovery_pipelines_pass_checklist() -> None:
-    """Complete shared and custom force-model pipelines pass applicable checks."""
+    """Calculator-backed force models use the shared discovery runner."""
     checks = ingest.Checklist()
     assert ingest.check_submission(Model.mace_mpa_0, checks) is False
     assert not msgs(checks, ingest.FAIL)
@@ -40,12 +40,39 @@ def test_force_model_discovery_pipelines_pass_checklist() -> None:
     assert any("models/run_discovery.py" in msg for msg in passed)
     assert any("models/run_diatomics.py" in msg for msg in passed)
 
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        Model.alignn,
+        Model.equflash_29m_oam,
+        Model.equiformer_v3_mp,
+        Model.gnome,
+    ],
+)
+def test_archived_discovery_models_skip_shared_runner(model: Model) -> None:
+    """Archived models report why shared discovery execution is unavailable."""
     checks = ingest.Checklist()
-    ingest.check_submission(Model.equflash_29m_oam, checks)
-    assert not msgs(checks, ingest.FAIL)
+    ingest.check_submission(model, checks)
+    assert any("discovery is archived:" in msg for msg in msgs(checks, ingest.SKIP))
+    assert not any("discovery model" in msg for msg in msgs(checks, ingest.FAIL))
     passed = msgs(checks, ingest.PASS)
-    assert any("test_equflash_discovery.py" in msg for msg in passed)
-    assert not any("discovery uses shared runner" in msg for msg in passed)
+    assert not any(
+        msg.startswith(("discovery uses shared runner", "diatomics uses shared runner"))
+        for msg in passed
+    )
+
+
+def test_unregistered_discovery_model_fails_checklist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unclassified models cannot silently bypass shared discovery validation."""
+    monkeypatch.delitem(ingest.CALCULATORS, Model.mace_mpa_0.name)
+    checks = ingest.Checklist()
+    ingest.check_submission(Model.mace_mpa_0, checks)
+    assert "discovery model is not registered with the shared runner" in msgs(
+        checks, ingest.FAIL
+    )
 
 
 @pytest.mark.parametrize("task", ["discovery", "diatomics"])

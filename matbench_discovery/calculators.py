@@ -405,18 +405,6 @@ def _m3gnet(device: str) -> "Calculator":  # noqa: ARG001 - matgl manages device
     return PESCalculator(matgl.load_model("M3GNet-MP-2021.2.8-PES"))
 
 
-def _equflash(model_key: str) -> Callable[[str], "Calculator"]:
-    def make_calc(device: str) -> "Calculator":
-        from GGNN.common.calculator import UCalculator
-
-        # UCalculator is an ASE Calculator (the kappa task drives phonopy with it);
-        # figshare ships a torch .pt checkpoint that it loads by path
-        ckpt = download_checkpoint(model_key, ext=".pt")
-        return UCalculator(checkpoint_path=ckpt, cpu=device == "cpu")
-
-    return make_calc
-
-
 def _emt(device: str) -> "Calculator":  # noqa: ARG001 - CPU only, debug model
     from ase.calculators.emt import EMT
 
@@ -485,49 +473,6 @@ TECE_DEPS = (
     "tace @ git+https://github.com/xvzemin/tace@88d8dcd5724e94751783b0a3405cb49573af1583",
     *TACE_DEPS[1:],
 )
-# EquFlash (Samsung GGNN): UCalculator is ASE-compatible. Heavy env pinned to the
-# discovery/kappa scripts: torch 2.9.1+cu126 from pytorch's index (EQUFLASH_INDEX), PyG
-# extensions from the matching cu126 wheel page (EQUFLASH_LINKS), cuequivariance, and
-# GGNN itself (git). py3.12 per its requires-python.
-EQUFLASH_DEPS = (
-    "GGNN @ git+https://github.com/SamsungDS/GGNN@16b5cae47437",
-    "fairchem-core==1.10.0",
-    "cuequivariance==0.6.0",
-    "cuequivariance-ops-torch-cu12==0.6.0",
-    "cuequivariance-torch==0.6.0",
-    "e3nn==0.5.6",
-    "torch==2.9.1+cu126",
-    "torch-geometric==2.6.1",
-    "torch-scatter==2.1.2",
-    "torch-sparse==0.6.18",
-    "numba==0.65.1",
-    "hydra-core==1.3.3",
-    "lmdb==1.6.2",
-    "pydantic==2.13.4",
-    "spglib==2.6.0",
-    "torchtnt==0.2.4",
-    "submitit==1.5.3",
-    "huggingface-hub==1.19.0",
-    "numpy<3",
-    "pandas<4",
-    "scipy==1.16.1",
-    "pymatgen>=2026.5.4",
-)
-EQUFLASH_LINKS = ("https://data.pyg.org/whl/torch-2.9.1+cu126.html",)
-EQUFLASH_INDEX = ("https://download.pytorch.org/whl/cu126",)
-
-
-def _equflash_spec(model_key: str) -> CalcSpec:
-    """Return shared calculator metadata for EquFlash variants."""
-    return CalcSpec(
-        _equflash(model_key),
-        deps=EQUFLASH_DEPS,
-        find_links=EQUFLASH_LINKS,
-        extra_index_url=EQUFLASH_INDEX,
-        python_version="3.12",
-    )
-
-
 CALCULATORS: dict[str, CalcSpec] = {
     "mace_mp_0": CalcSpec(_mace("medium"), deps=MACE_DEPS),
     "mace_mpa_0": CalcSpec(_mace("medium-mpa-0"), deps=MACE_DEPS),
@@ -657,8 +602,6 @@ CALCULATORS: dict[str, CalcSpec] = {
         _deepmd_freeze("dpa_4_0_1_pro_mptrj"),
         deps=("deepmd-kit[torch]==3.2.0b0",),
     ),
-    "equflash_29m_oam": _equflash_spec("equflash_29m_oam"),
-    "equflashv2_45m_oam": _equflash_spec("equflashv2_45m_oam"),
     # CPU-only debug model for smoke-testing the pipeline without heavy installs
     "emt": CalcSpec(_emt),
 }

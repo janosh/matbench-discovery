@@ -43,6 +43,31 @@ if TYPE_CHECKING:
 DISCOVERY_SHARD_SCHEMA_VERSION = 1
 DISCOVERY_STRUCT_COL = "structure"
 DEFAULT_DRY_RUN_STRUCTURES = 4
+ARCHIVED_DISCOVERY_MODELS: dict[str, str] = {
+    **dict.fromkeys(
+        (
+            "alchembert",
+            "alignn",
+            "bowsr_megnet",
+            "cgcnn",
+            "cgcnn_p",
+            "esnet",
+            "megnet",
+            "voronoi_rf",
+            "wrenformer",
+        ),
+        "archived direct predictor without an ASE calculator",
+    ),
+    **dict.fromkeys(
+        ("equflash_29m_oam", "equflashv2_45m_oam"),
+        "batched runtime requires an unsupported --no-deps install",
+    ),
+    **dict.fromkeys(
+        ("equiformer_v3_mp", "equiformer_v3_oam"),
+        "no stable checkpoint artifact or isolated runtime",
+    ),
+    "gnome": "model weights were not released",
+}
 
 OPTIMIZERS: dict[str, type[Optimizer]] = {
     "FIRE": FIRE,

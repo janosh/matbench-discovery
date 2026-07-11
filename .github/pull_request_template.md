@@ -13,7 +13,7 @@ Please open PRs as `draft` and only mark as `ready to review` after checking off
 - [ ] I uploaded the phonon predictions to Figshare or another cloud storage service (`<yyyy-mm-dd>-kappa-103-FIRE-<values-of-dist|fmax|symprec>.gz`).
 - [ ] I have uploaded the diatomic predictions to Figshare or another cloud storage service (`<yyyy-mm-dd>-diatomics.json.gz`).
 - [ ] I included the urls to the Figshare files in the YAML metadata file (`models/<arch_name>/<model_variant>.yml`). If not using Figshare I have included the urls to the cloud storage service in the description of the PR.
-- [ ] For a model with an ASE calculator, I registered its constructor and isolated dependencies in `matbench_discovery/calculators.py` and ran the shared `models/run_discovery.py` and `models/run_diatomics.py` smoke tests. For a direct-prediction or custom pipeline, I included the corresponding `test_<arch_name>_<task>.py` scripts instead.
+- [ ] For a model with an ASE calculator, I registered its constructor and isolated dependencies in `matbench_discovery/calculators.py` and ran the shared `models/run_discovery.py` and `models/run_diatomics.py` smoke tests. I discussed non-ASE discovery inference with the maintainers instead of adding a per-model discovery executable; custom scripts are limited to tasks without a shared runner.
 - [ ] I have run `uv run --with-editable . scripts/ingest_model.py <model_variant>` as described in the [contributing guide](https://github.com/janosh/matbench-discovery/blob/main/contributing.md) to check metadata and generate the plots needed for submission.
 - [ ] I have installed/run the pre-commit hooks (`prek install` or `uvx prek`) and ensured all checks are passing.
 

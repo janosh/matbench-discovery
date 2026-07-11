@@ -397,28 +397,59 @@ def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
     assert df_geo.loc[0, artifacts.struct_col]["@class"] == "Structure"
 
 
-def test_cli_validation_and_dependency_isolated_print_cmd(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """CLI rejects unsafe YAML writes and prints calculator-specific uv dependencies."""
+def test_cli_rejects_unsafe_yaml_write() -> None:
+    """CLI rejects YAML writes outside complete shard merges."""
     with pytest.raises(SystemExit, match="2"):
         discovery_runner.main(["--model", "emt", "--write-yaml"])
-    with pytest.raises(SystemExit, match="2"):
-        discovery_runner.main(
-            ["--model", "equflash_29m_oam", "--print-cmd", "--dry-run"]
-        )
 
+
+@pytest.mark.parametrize(
+    "model_ref",
+    [*discovery_core.ARCHIVED_DISCOVERY_MODELS, "equflash-29M-oam"],
+)
+def test_cli_rejects_archived_discovery_models(
+    capsys: pytest.CaptureFixture[str], model_ref: str
+) -> None:
+    """Archived model names and YAML keys fail with their canonical reason."""
+    model_key = Model.from_ref(model_ref).name
+    with pytest.raises(SystemExit, match="2"):
+        discovery_runner.main(["--model", model_ref, "--print-cmd", "--dry-run"])
+    assert f"{model_key} discovery is archived:" in capsys.readouterr().err
+
+
+def test_list_models_matches_calculator_registry(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Model listing contains every runnable calculator exactly once."""
+    assert discovery_runner.main(["--list-models"]) == 0
+    listed_models = {
+        line.partition(":")[0] for line in capsys.readouterr().out.splitlines()
+    }
+    assert listed_models == set(CALCULATORS)
+
+
+@pytest.mark.parametrize(
+    ("model_key", "extra_args"),
+    [
+        ("mace_mp_0", ["--max-steps", "3"]),
+        ("emt", []),
+    ],
+)
+def test_dependency_isolated_print_cmd(
+    capsys: pytest.CaptureFixture[str], model_key: str, extra_args: list[str]
+) -> None:
+    """Print commands include model dependencies and forwarded run options."""
     assert (
         discovery_runner.main(
-            ["--model", "mace_mp_0", "--print-cmd", "--dry-run", "--max-steps", "3"]
+            ["--model", model_key, "--print-cmd", "--dry-run", *extra_args]
         )
         == 0
     )
     command = capsys.readouterr().out
     assert "uv run --no-project" in command
-    assert all(dependency in command for dependency in CALCULATORS["mace_mp_0"].deps)
-    assert "models/run_discovery.py --model mace_mp_0" in command
-    assert "--max-steps 3" in command
+    assert all(dependency in command for dependency in CALCULATORS[model_key].deps)
+    assert f"models/run_discovery.py --model {model_key}" in command
+    assert all(arg in command for arg in extra_args)
     assert "--dry-run" in command
     assert "--print-cmd" not in command
 

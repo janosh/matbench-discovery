@@ -10,6 +10,7 @@ import yaml
 from matbench_discovery import ROOT
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import DATASETS
+from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
 from matbench_discovery.enums import Model
 
 OPEN_DATASETS = {
@@ -93,62 +94,46 @@ def test_model_dirs_have_metadata() -> None:
 
 
 def test_model_dirs_have_reproducible_runners() -> None:
-    """Require shared calculator coverage or a custom per-directory test runner."""
-    calculator_backed_dirs = {
-        f"{os.path.dirname(model.yaml_path)}/"
-        for model in Model
-        if model.name in CALCULATORS
-    }
-    for model_dir in MODEL_DIRS:
-        if model_dir in calculator_backed_dirs:
+    """Require runnable models to have shared calculator or retained task coverage."""
+    for model in Model:
+        if (
+            model.name in CALCULATORS
+            or model.metadata.get("targets") == "E"
+            or model.metadata.get("checkpoint_url") == "missing"
+            or model.metadata.get("status") == "aborted"
+        ):
             continue
-        assert glob(f"{model_dir}*test_*.py") or glob(f"{model_dir}*test_*.ipynb"), (
+        model_dir = os.path.dirname(model.yaml_path)
+        assert glob(f"{model_dir}/test_*.py") or glob(f"{model_dir}/test_*.ipynb"), (
             f"Missing test file in {model_dir}"
         )
 
 
-def test_calculator_backed_discovery_uses_shared_runner() -> None:
-    """Every registered calculator is covered without a per-model discovery runner."""
+def test_discovery_uses_only_shared_runner() -> None:
+    """Runnable calculators use one runner and contributor policy forbids forks."""
     assert os.path.isfile(f"{ROOT}/models/run_discovery.py")
     assert os.path.isfile(f"{ROOT}/models/run_diatomics.py")
+    assert not glob(f"{ROOT}/models/**/test_*_discovery.py", recursive=True)
+    assert set(CALCULATORS).isdisjoint(ARCHIVED_DISCOVERY_MODELS)
     for model_key in set(CALCULATORS) - {"emt"}:
         assert Model.from_ref(model_key).name == model_key
+    with open(f"{ROOT}/.github/pull_request_template.md") as file:
+        pr_template = file.read()
+    assert "test_<arch_name>_discovery.py" not in pr_template
 
 
 def test_active_discovery_models_have_reproducible_runner() -> None:
-    """Active force models use either the shared runner or a custom pipeline."""
+    """Active discovery models are shared-runner-backed or explicitly archived."""
+    assert set(ARCHIVED_DISCOVERY_MODELS) <= {model.name for model in Model}
     for model in Model.active():
-        if model.metadata.get("targets") == "E":
-            continue
         discovery_metrics = model.metrics.get("discovery")
         if not isinstance(discovery_metrics, dict) or not discovery_metrics.get(
             "pred_file"
         ):
             continue
-        assert model.name in CALCULATORS or glob(
-            f"{os.path.dirname(model.yaml_path)}/test_*_discovery.py"
-        ), f"{model.name} has discovery results but no reproducible runner"
-
-
-@pytest.mark.parametrize(
-    "runner_path",
-    [
-        "models/alchembert/test_alchembert_discovery.py",
-        "models/alignn/test_alignn_discovery.py",
-        "models/alignn_ff/test_alignn_ff_discovery.py",
-        "models/bowsr/test_bowsr_discovery.py",
-        "models/cgcnn/test_cgcnn_discovery.py",
-        "models/equflash/test_equflash_discovery.py",
-        "models/equiformer_v3/test_equiformer_v3_discovery.py",
-        "models/esnet/test_esnet_discovery.py",
-        "models/gnome/test_gnome_discovery.py",
-        "models/megnet/test_megnet_discovery.py",
-        "models/wrenformer/test_wrenformer_discovery.py",
-    ],
-)
-def test_custom_discovery_runners_are_retained(runner_path: str) -> None:
-    """Direct-prediction and custom models keep their own discovery pipelines."""
-    assert os.path.isfile(f"{ROOT}/{runner_path}")
+        assert model.name in CALCULATORS or model.name in ARCHIVED_DISCOVERY_MODELS, (
+            f"{model.name} has discovery results but no shared or archived runner state"
+        )
 
 
 def test_model_enum() -> None:

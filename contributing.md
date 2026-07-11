@@ -60,9 +60,9 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    df_traj.to_csv("trajectory.csv.gz")  # Save final structure and trajectory data
    ```
 
-2. Reproducible inference code. If your model exposes an ASE calculator and uses the standard per-structure ASE relaxation loop, register its constructor and isolated `uv` dependencies in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py). The shared [`models/run_discovery.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_discovery.py) runner then handles WBM relaxation, atom-balanced Slurm shards, resume, MP2020 corrections, artifacts, and discovery metrics. Do not add a per-model discovery or join script for this standard case.
+2. Reproducible inference code. If your model exposes an ASE calculator, register its constructor and isolated `uv` dependencies in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py). The shared [`models/run_discovery.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_discovery.py) runner handles WBM relaxation, atom-balanced Slurm shards, resume, MP2020 corrections, artifacts, and discovery metrics. It is the sole discovery entry point; do not add per-model discovery or join scripts.
 
-   Models without an ASE calculator, such as direct formation-energy predictors, and models requiring a custom batched relaxation or dependency environment should still include `test_<model_name>_discovery.py` with enough high-level comments to reproduce the submitted predictions. If the model was trained specifically for this benchmark, also include `train_<model_name>.py`.
+   Discuss models without an ASE calculator before submission so their inference can be integrated without creating another task-specific executable. If the model was trained specifically for this benchmark, include `train_<model_name>.py`.
 
    ### Script Dependencies Declaration (Required)
 
@@ -213,14 +213,13 @@ matbench-discovery-root
     └── <model_name>
         ├── <model_name>.yml
         ├── test_<model_name>_kappa.py
-        ├── test_<model_name>_discovery.py  # only for non-calculator/custom pipelines
         ├── readme.md  # optional
         └── train_<model_name>.py  # optional
 ```
 
 You can include arbitrary other supporting files like metadata and model features (below 10MB total to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and share the link in your PR description.
 
-Discovery, molecular dynamics, and diatomics do not need per-model scripts when a model exposes an ASE calculator and follows each task's standard execution loop. Register the calculator and its `uv` dependencies once in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py), smoke-test the exact isolated command, and run the task-specific shared runner. Keep a custom script when published results require materially different batching, relaxation, or installation behavior.
+Discovery, molecular dynamics, and diatomics do not need per-model scripts when a model exposes an ASE calculator and follows each task's standard execution loop. Register the calculator and its `uv` dependencies once in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py), smoke-test the exact isolated command, and run the task-specific shared runner. Discovery intentionally has no per-model executables.
 
 ```sh
 # WBM discovery: relax/resume shards, then strictly merge and write YAML metrics
