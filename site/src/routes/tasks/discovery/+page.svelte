@@ -10,7 +10,7 @@
     valid_query_param,
   } from '$lib/url-state.svelte'
   import * as labels from '$lib/labels'
-  import { DISCOVERY_SETS, type DiscoverySet } from '$lib/types'
+  import { DISCOVERY_SETS, type DiscoverySet, type ModelData } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
 
   const default_discovery_set: DiscoverySet = `unique_prototypes`
@@ -22,6 +22,10 @@
   let discovery_set: DiscoverySet = $state(default_discovery_set)
   const filters = make_table_filters()
   let sort = $state({ ...default_sort })
+  const has_discovery_metrics = (model: ModelData): boolean => {
+    const discovery = model.metrics?.discovery
+    return typeof discovery === `object` && discovery?.[discovery_set] != null
+  }
 
   // axis selections for the model-comparison scatter, bound so the section title
   // tracks whatever properties the user picks
@@ -66,6 +70,7 @@
         labels.METADATA_COLS.date_added,
       ].includes(col)}
     {discovery_set}
+    model_filter={has_discovery_metrics}
     {filters}
     bind:sort
   />

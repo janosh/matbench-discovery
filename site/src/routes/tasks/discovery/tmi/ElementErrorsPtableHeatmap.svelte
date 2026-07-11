@@ -1,6 +1,7 @@
 <script lang="ts">
   import { MODELS, PtableInset } from '$lib'
   import type { ModelData } from '$lib/types'
+  import { max } from 'd3-array'
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
   import { ColorBar, format_num, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -72,7 +73,7 @@
       }),
     ) as Record<ElementSymbol, number | number[]>,
   )
-  let current_data_max = $derived(Math.max(...Object.values(heatmap_values).flat()))
+  let current_data_max = $derived(max(Object.values(heatmap_values).flat()) ?? 0)
   let cs_range = $derived<[number, number]>([
     0,
     manual_cbar_max ? (cbar_max ?? 0) : current_data_max,

@@ -7,9 +7,10 @@
   import { dashed, plotly_blue, plotly_red, wide_legend } from '$lib/fig-helpers'
   import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import type { UrlParamEntry } from '$lib/url-state.svelte'
-  import DiscoveryMetricFigs from '$routes/models/tmi/discovery-metric-figs.md'
-  import ElementErrorsPtableHeatmap from '$routes/models/tmi/ElementErrorsPtableHeatmap.svelte'
+  import { extent } from 'd3-array'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
+  import DiscoveryMetricFigs from './discovery-metric-figs.md'
+  import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
 
   // payload models arrive pre-styled (stable MODELS colors + leaderboard order) from the
   // json_payload plugin, so each dropdown below defaults to a top model
@@ -68,7 +69,7 @@
   const hist_largest_active = $derived(find_model(hist_largest.models, picked.hist_model))
 
   // x extent of the shared fingerprint-diff values for the MAE ref line
-  const fp_diff_extent = [Math.min(...fp_diff.fp_diff), Math.max(...fp_diff.fp_diff)]
+  const [fp_diff_min = 0, fp_diff_max = 0] = extent(fp_diff.fp_diff)
 
   const numeric_pairs = (
     x_values: (number | null)[],
@@ -176,9 +177,9 @@ plotting against that the absolute E<sub>above hull</sub> errors for each model.
   overlays={{
     ref_lines: [
       {
-        x1: fp_diff_extent[0],
+        x1: fp_diff_min,
         y1: fp_diff_active.mae,
-        x2: fp_diff_extent[1],
+        x2: fp_diff_max,
         y2: fp_diff_active.mae,
         ...dashed,
       },

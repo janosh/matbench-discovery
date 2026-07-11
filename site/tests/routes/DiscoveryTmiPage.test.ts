@@ -29,10 +29,8 @@ describe(`Discovery TMI Page`, () => {
     const query = `models=${encodeURIComponent(elem_model)}&fp_model=${encodeURIComponent(
       fp_model,
     )}`
-    await mount_with_url(
-      DiscoveryTmiPage,
-      `http://localhost/tasks/discovery/tmi?${query}`,
-    )
+    const url = `http://localhost/tasks/discovery/tmi?${query}`
+    await mount_with_url(DiscoveryTmiPage, url)
 
     const [elem_prev_text, fp_text] = selected_texts()
     expect(elem_prev_text).toContain(elem_model)
@@ -44,10 +42,8 @@ describe(`Discovery TMI Page`, () => {
   })
 
   it(`falls back to defaults for unknown model tokens`, async () => {
-    await mount_with_url(
-      DiscoveryTmiPage,
-      `http://localhost/tasks/discovery/tmi?models=bogus&fp_model=bogus`,
-    )
+    const url = `http://localhost/tasks/discovery/tmi?models=bogus&fp_model=bogus`
+    await mount_with_url(DiscoveryTmiPage, url)
 
     const [elem_prev_text, fp_text] = selected_texts()
     for (const model of elem_prev.models.slice(0, 3)) {

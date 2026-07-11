@@ -28,10 +28,10 @@
       task.label,
     ]),
   )
-  // Static second-level pages render as dropdowns under their top-level parent route.
-  const child_routes = Object.keys(import.meta.glob(`./*/*/+page.{svelte,md}`))
+  // Static child pages render as dropdowns under their top-level parent route.
+  const child_routes = Object.keys(import.meta.glob(`./*/*/**/+page.{svelte,md}`))
     .filter((filename) => !filename.includes(`[`))
-    .map((filename) => `/${filename.split(`/`).slice(1, 3).join(`/`)}`)
+    .map((filename) => `/${filename.split(`/`).slice(1, -1).join(`/`)}`)
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`))
     .map((filename) => `/${filename.split(`/`)[1]}`)
     .map((route) => {

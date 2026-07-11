@@ -2,6 +2,7 @@ import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
 import { MODELS } from '$lib'
 import { ALL_METRICS } from '$lib/labels'
 import { assemble_row_data, get_nested_number, label_data_path } from '$lib/metrics'
+import { make_table_filters } from '$lib/models.svelte'
 import PhononsPage from '$routes/tasks/phonons/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -14,12 +15,15 @@ import {
   sorted_header,
 } from '../index'
 
-// Mirrors the page's leaderboard filter; target defaults hide energy-only models.
+const default_filters = make_table_filters()
+const kappa_srme_path = label_data_path(ALL_METRICS.κ_SRME)
+const kappa_sre_path = label_data_path(ALL_METRICS.κ_SRE)
+// Mirrors the page's model_filter plus MetricsTable's default filters.
 const phonon_leaderboard_count = MODELS.filter(
   (model) =>
-    get_nested_number(model, `metrics.phonons.kappa_103.κ_SRME`) != null &&
-    get_nested_number(model, `metrics.phonons.kappa_103.κ_SRE`) != null &&
-    model.targets !== `E`,
+    get_nested_number(model, kappa_srme_path) != null &&
+    get_nested_number(model, kappa_sre_path) != null &&
+    default_filters.matches(model),
 ).length
 
 const get_headers = (root: ParentNode) =>
@@ -126,12 +130,11 @@ describe(`Phonons Task Page`, () => {
     // `<model_name> (<κSRME>)`, so strip the suffix to look up each model's metric
     const current_selection = kappa_selected_model() ?? ``
     const options = await kappa_model_options()
-    const srme_path = label_data_path(ALL_METRICS.κ_SRME)
     const srme_values = options.map((option) => {
       const label = option.textContent?.trim() ?? ``
       const model_name = label.replace(/ \([^()]*\)$/, ``)
       const model = MODELS.find((candidate) => candidate.model_name === model_name)
-      return model ? (get_nested_number(model, srme_path) ?? Infinity) : Infinity
+      return model ? (get_nested_number(model, kappa_srme_path) ?? Infinity) : Infinity
     })
     expect(srme_values.filter(Number.isFinite).length).toBeGreaterThan(1)
     expect(srme_values).toEqual(

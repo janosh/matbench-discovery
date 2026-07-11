@@ -1,3 +1,5 @@
+import { MODELS } from '$lib'
+import { make_table_filters } from '$lib/models.svelte'
 import DiscoveryPage from '$routes/tasks/discovery/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -26,7 +28,7 @@ const heading_texts = (): (string | undefined)[] =>
   )
 
 describe(`Discovery Task Page`, () => {
-  it(`renders page structure with title, table, and scatter`, () => {
+  it(`renders page structure, discovery columns, and scatter`, () => {
     mount(DiscoveryPage, { target: document.body })
 
     expect(document.querySelector(`h1`)?.textContent).toContain(
@@ -36,49 +38,69 @@ describe(`Discovery Task Page`, () => {
     const table = document.querySelector(`section.full-bleed table`)
     expect(table).not.toBeNull()
 
+    const headers = [...document.querySelectorAll(`th .header-label`)].map((header) =>
+      header.textContent?.trim(),
+    )
+    for (const col of [`Model`, `F1`, `DAF`, `Links`, `Date Added`]) {
+      expect(headers).toContain(col)
+    }
+    expect(sorted_header()?.textContent).toContain(`F1`)
+    expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
+
     expect(heading_texts()).toContain(`F1 vs Params`)
     expect(document.querySelector(`[style*="height: 800px"]`)).not.toBeNull()
 
     expect(document.body.textContent).toContain(`Convex Hull Construction`)
   })
 
-  it(`renders SelectToggle with correct options and default selection`, () => {
-    mount(DiscoveryPage, { target: document.body })
-
-    const button_texts = [...document.querySelectorAll(`button`)].map((button) =>
-      button.textContent?.trim(),
-    )
-
-    expect(button_texts).toContain(`Unique Prototypes`)
-    expect(button_texts).toContain(`Full Test Set`)
-    expect(button_texts).toContain(`10k Most Stable`)
-
-    // Default selection
-    expect(active_toggle()).toBe(`Unique Prototypes`)
-  })
-
-  it(`toggles discovery sets on button click`, async () => {
-    mount(DiscoveryPage, { target: document.body })
-    await tick()
-
-    button_for(`Full Test Set`).click()
-    await tick()
-
-    expect(active_toggle()).toBe(`Full Test Set`)
-  })
-
-  it(`shows discovery-specific columns in MetricsTable`, () => {
-    mount(DiscoveryPage, { target: document.body })
-
-    const headers = [...document.querySelectorAll(`th .header-label`)].map((header) =>
-      header.textContent?.trim(),
-    )
-
-    for (const col of [`Model`, `F1`, `DAF`, `Links`, `Date Added`]) {
-      expect(headers).toContain(col)
+  it(`renders discovery-set controls and filters rows when toggled`, async () => {
+    const default_filters = make_table_filters()
+    const source_model = MODELS.find((model) => {
+      const discovery = model.metrics?.discovery
+      return (
+        discovery != null &&
+        typeof discovery === `object` &&
+        default_filters.matches(model)
+      )
+    })
+    const discovery = source_model?.metrics?.discovery
+    if (!source_model || !discovery || typeof discovery !== `object`) {
+      throw new Error(`No visible model with discovery metrics found`)
     }
-    expect(sorted_header()?.textContent).toContain(`F1`)
-    expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
+    const partial_model = {
+      ...source_model,
+      model_key: `partial-discovery-test-model`,
+      model_name: `Partial Discovery Test Model`,
+      metrics: {
+        ...source_model.metrics,
+        discovery: { ...discovery, full_test_set: undefined },
+      },
+    }
+    MODELS.push(partial_model)
+    try {
+      mount(DiscoveryPage, { target: document.body })
+      await tick()
+
+      const button_texts = [...document.querySelectorAll(`button`)].map((button) =>
+        button.textContent?.trim(),
+      )
+      expect(button_texts).toEqual(
+        expect.arrayContaining([`Unique Prototypes`, `Full Test Set`, `10k Most Stable`]),
+      )
+      expect(active_toggle()).toBe(`Unique Prototypes`)
+
+      const table_text = () =>
+        document.querySelector(`section.full-bleed tbody`)?.textContent
+      expect(table_text()).toContain(partial_model.model_name)
+
+      button_for(`Full Test Set`).click()
+      await tick()
+
+      expect(active_toggle()).toBe(`Full Test Set`)
+      expect(table_text()).not.toContain(partial_model.model_name)
+    } finally {
+      MODELS.pop()
+    }
   })
 
   it(`restores and syncs URL state`, async () => {
