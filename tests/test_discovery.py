@@ -5,10 +5,12 @@ from __future__ import annotations
 import copy
 import os
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, cast
 
 import pandas as pd
 import pytest
+import yaml
 from ase.build import bulk
 from ase.calculators.emt import EMT
 from pymatgen.core import Lattice, Structure
@@ -20,6 +22,7 @@ import matbench_discovery.discovery as discovery_core
 import models.run_discovery as discovery_runner
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.discovery import (
+    DiscoveryArtifacts,
     MergedDiscoveryRun,
     RelaxationRecord,
     RelaxationSettings,
@@ -32,7 +35,7 @@ from matbench_discovery.discovery import (
     write_discovery_artifacts,
 )
 from matbench_discovery.energy import calc_energy_from_e_refs
-from matbench_discovery.enums import Model
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -397,10 +400,18 @@ def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
     assert df_geo.loc[0, artifacts.struct_col]["@class"] == "Structure"
 
 
-def test_cli_rejects_unsafe_yaml_write() -> None:
-    """CLI rejects YAML writes outside complete shard merges."""
+@pytest.mark.parametrize(
+    "cli_args",
+    [
+        ["--write-yaml"],
+        ["--merge-shards", "--write-yaml", "--dry-run"],
+        ["--merge-shards", "--shard-index", "0"],
+    ],
+)
+def test_cli_rejects_unsafe_flag_combinations(cli_args: list[str]) -> None:
+    """CLI rejects YAML writes outside complete merges and sharded merge runs."""
     with pytest.raises(SystemExit, match="2"):
-        discovery_runner.main(["--model", "emt", "--write-yaml"])
+        discovery_runner.main(["--model", "emt", *cli_args])
 
 
 @pytest.mark.parametrize(
@@ -454,7 +465,9 @@ def test_dependency_isolated_print_cmd(
     assert "--print-cmd" not in command
 
 
-def test_runner_preserves_existing_artifact_columns() -> None:
+def test_runner_preserves_existing_artifact_columns(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Unified artifacts retain established YAML columns for published models."""
     assert discovery_runner._artifact_columns(Model.mace_mp_0) == (  # noqa: SLF001
         "e_form_per_atom_mace",
@@ -477,10 +490,89 @@ def test_runner_preserves_existing_artifact_columns() -> None:
         if clears_url:
             assert artifact_data["pred_file_url"] is None
 
+    def windows_relpath(_path: str, _start: str) -> str:
+        """Simulate the Windows path returned by os.path.relpath."""
+        return existing_path.replace("/", "\\")
+
+    monkeypatch.setattr(discovery_runner.os.path, "relpath", windows_relpath)
+    artifact_data = discovery_runner._artifact_yaml_data(  # noqa: SLF001
+        Model.mace_mp_0,
+        "discovery",
+        f"{discovery_runner.ROOT}/{existing_path}",
+        "pred_col",
+        "e_form_per_atom_mace",
+    )
+    assert artifact_data["pred_file"] == existing_path
+    assert "pred_file_url" not in artifact_data
+
+
+def test_write_yaml_results_masks_outliers_and_updates_yaml(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--write-yaml masks unrealistic outliers and writes subset metrics + paths."""
+    import matbench_discovery.data as data_module
+
+    material_ids = ["wbm-1", "wbm-2", "wbm-3", "wbm-4"]
+    df_fake_wbm = pd.DataFrame(
+        {
+            MbdKey.each_true: [-0.1, 0.2, 0.0, -0.2],
+            MbdKey.e_form_dft: [-1.0, -0.5, -0.8, -0.9],
+            MbdKey.uniq_proto: [True, True, False, True],
+        },
+        index=pd.Index(material_ids, name=str(Key.mat_id)),
+    )
+    monkeypatch.setattr(data_module, "df_wbm", df_fake_wbm)
+
+    pred_col = discovery_pred_col("emt")
+    artifacts = DiscoveryArtifacts(
+        pred_file_path=f"{tmp_path}/preds.csv.gz",
+        geo_opt_file_path=f"{tmp_path}/geo.jsonl.gz",
+        pred_col=pred_col,
+        struct_col="structure",
+        # wbm-3 is a 7.8 eV/atom outlier, wbm-4 failed to relax
+        predictions=pd.DataFrame(
+            {pred_col: [-1.05, -0.45, 7.0, None]}, index=material_ids
+        ),
+        n_success=3,
+        n_failed=1,
+    )
+    yaml_path = tmp_path / "model.yml"
+    old_discovery = {
+        "pred_file": "models/old/preds.csv.gz",
+        "pred_file_url": "https://example.com/old",
+    }
+    yaml_path.write_text(
+        "metrics:\n"
+        "  discovery:\n"
+        f"    pred_file: {old_discovery['pred_file']}\n"
+        f"    pred_file_url: {old_discovery['pred_file_url']}\n"
+    )
+    mock_model = cast(
+        "Model",
+        SimpleNamespace(yaml_path=str(yaml_path), metrics={"discovery": old_discovery}),
+    )
+    discovery_runner._write_yaml_results(mock_model, artifacts)  # noqa: SLF001
+
+    written = yaml.safe_load(yaml_path.read_text())
+    discovery_yaml = written["metrics"]["discovery"]
+    assert discovery_yaml["pred_file"] == artifacts.pred_file_path
+    assert discovery_yaml["pred_file_url"] is None, "stale URL must be invalidated"
+    assert discovery_yaml["pred_col"] == pred_col
+    assert written["metrics"]["geo_opt"]["struct_col"] == "structure"
+    assert set(discovery_yaml) >= {str(subset) for subset in TestSubset}
+    full_metrics = discovery_yaml[str(TestSubset.full_test_set)]
+    assert full_metrics[str(MbdKey.missing_preds)] == 2
+    assert full_metrics["TP"] == 1.0
+    assert isinstance(full_metrics["TP"], float), "counts are written as floats"
+    # DAF denominator is the uniq-proto stable prevalence 2/3, Precision is 1
+    uniq_metrics = discovery_yaml[str(TestSubset.uniq_protos)]
+    assert uniq_metrics["DAF"] == pytest.approx(1.5)
+
 
 def test_merge_paths_reuse_shard_run_date(tmp_path: Path) -> None:
     """A next-day run or merge resumes one prior directory and its artifact prefix."""
-    old_shard_dir = tmp_path / "2026-07-10-wbm-IS2RE-FIRE-shards"
+    # clearly-past dates so today's default shard dir can never shadow the glob
+    old_shard_dir = tmp_path / "2020-01-02-wbm-IS2RE-FIRE-shards"
     old_shard_dir.mkdir()
     resolve_paths = partial(
         discovery_runner._resolve_output_paths,  # noqa: SLF001
@@ -493,28 +585,33 @@ def test_merge_paths_reuse_shard_run_date(tmp_path: Path) -> None:
     )
     shard_dir, pred_file, geo_opt_file = resolve_paths()
     assert shard_dir == str(old_shard_dir)
-    assert pred_file == str(tmp_path / "2026-07-10-wbm-IS2RE-FIRE.csv.gz")
-    assert geo_opt_file == str(tmp_path / "2026-07-10-wbm-IS2RE-FIRE.jsonl.gz")
+    assert pred_file == str(tmp_path / "2020-01-02-wbm-IS2RE-FIRE.csv.gz")
+    assert geo_opt_file == str(tmp_path / "2020-01-02-wbm-IS2RE-FIRE.jsonl.gz")
 
-    (tmp_path / "2026-07-09-wbm-IS2RE-FIRE-shards").mkdir()
+    (tmp_path / "2020-01-01-wbm-IS2RE-FIRE-shards").mkdir()
     with pytest.raises(ValueError, match="Multiple discovery shard directories"):
         resolve_paths()
 
 
-def test_cli_returns_failure_when_every_relaxation_fails(
+def test_cli_returns_failure_when_any_relaxation_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A smoke test cannot report success when its calculator fails everywhere."""
+    """A shard cannot report success when even one material fails."""
 
-    def load_failing_atoms(
+    def load_partially_failing_atoms(
         model_key: str, *, dry_run: bool = False
     ) -> dict[str, Atoms]:
-        """Return one EMT-incompatible structure for the CLI smoke test."""
+        """Return one EMT-compatible and one incompatible structure."""
         assert model_key == "emt"
         assert dry_run is True
-        return {"wbm-si": _bulk_atoms("wbm-si", "Si")}
+        return {
+            "wbm-cu": _bulk_atoms("wbm-cu"),
+            "wbm-si": _bulk_atoms("wbm-si", "Si"),
+        }
 
-    monkeypatch.setattr(discovery_runner, "load_wbm_atoms", load_failing_atoms)
+    monkeypatch.setattr(
+        discovery_runner, "load_wbm_atoms", load_partially_failing_atoms
+    )
     assert (
         discovery_runner.main(
             [

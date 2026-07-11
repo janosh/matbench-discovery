@@ -70,8 +70,9 @@ def test_unregistered_discovery_model_fails_checklist(
     monkeypatch.delitem(ingest.CALCULATORS, Model.mace_mpa_0.name)
     checks = ingest.Checklist()
     ingest.check_submission(Model.mace_mpa_0, checks)
-    assert "discovery model is not registered with the shared runner" in msgs(
-        checks, ingest.FAIL
+    assert any(
+        "discovery model is not registered with the shared runner" in msg
+        for msg in msgs(checks, ingest.FAIL)
     )
 
 

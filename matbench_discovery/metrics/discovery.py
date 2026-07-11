@@ -6,7 +6,6 @@ from collections.abc import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
-from pymatviz.enums import Key
 from sklearn.metrics import r2_score
 
 from matbench_discovery import STABILITY_THRESHOLD
@@ -185,6 +184,28 @@ def stable_metrics(
     )
 
 
+def _align_preds(df_wbm: pd.DataFrame, model_preds: pd.Series) -> pd.Series:
+    """Validate prediction IDs against the reference index and coerce to numeric."""
+    unknown_ids = set(model_preds.index) - set(df_wbm.index)
+    if unknown_ids:
+        raise ValueError(
+            f"Predictions contain unknown material IDs: {sorted(unknown_ids)}"
+        )
+    return pd.to_numeric(model_preds.reindex(df_wbm.index), errors="coerce")
+
+
+def wbm_uniq_proto_prevalence() -> float:
+    """Fraction of stable materials among canonical WBM unique prototypes.
+
+    The DAF denominator, computed from the unrounded hull distances so re-evaluated
+    models stay comparable to published leaderboard values.
+    """
+    from matbench_discovery.data import df_wbm
+
+    each_true_uniq = df_wbm.query(MbdKey.uniq_proto)[MbdKey.each_true]
+    return float((each_true_uniq <= STABILITY_THRESHOLD).mean())
+
+
 def discovery_subset_indices(
     df_wbm: pd.DataFrame, model_preds: pd.Series
 ) -> dict[TestSubset, pd.Index]:
@@ -193,12 +214,7 @@ def discovery_subset_indices(
     The most-stable 10k are ranked by predicted hull distance, not raw formation
     energy, because discovery uses the fixed DFT convex hull.
     """
-    unknown_ids = set(model_preds.index) - set(df_wbm.index)
-    if unknown_ids:
-        raise ValueError(
-            f"Predictions contain unknown material IDs: {sorted(unknown_ids)}"
-        )
-    model_preds = pd.to_numeric(model_preds.reindex(df_wbm.index), errors="coerce")
+    model_preds = _align_preds(df_wbm, model_preds)
     each_pred = df_wbm[MbdKey.each_true] + model_preds - df_wbm[MbdKey.e_form_dft]
     uniq_proto_idx = df_wbm.index[df_wbm[MbdKey.uniq_proto].astype(bool)]
     most_stable_10k_idx = each_pred.loc[uniq_proto_idx].nsmallest(10_000).index
@@ -214,6 +230,7 @@ def calc_discovery_metrics(
     model_preds: pd.Series,
     *,
     subset_indices: Mapping[TestSubset, pd.Index] | None = None,
+    uniq_proto_prevalence: float | None = None,
 ) -> dict[TestSubset, dict[str, float]]:
     """Calculate discovery metrics for all three canonical WBM test subsets.
 
@@ -221,6 +238,14 @@ def calc_discovery_metrics(
     use the fixed DFT convex hull, matching the leaderboard and eval script. Reference
     columns and model predictions must use the same rounding convention.
     Pass ``subset_indices`` to reuse rankings already derived from these predictions.
+
+    ``uniq_proto_prevalence`` is the DAF denominator for the uniq-proto and 10k
+    subsets. Callers evaluating against the canonical WBM test set must pass
+    :func:`wbm_uniq_proto_prevalence` since ``df_wbm`` reference columns are
+    conventionally rounded to 3 decimals, which flips ~430 barely-unstable unique
+    prototypes to stable and would silently inflate the prevalence by ~1.3% relative
+    to all published DAF values. Defaults to the prevalence of the (possibly rounded)
+    ``df_wbm`` frame, intended for synthetic test data only.
     """
     required_cols = {
         str(MbdKey.each_true),
@@ -230,7 +255,7 @@ def calc_discovery_metrics(
     if missing_cols := required_cols - set(df_wbm):
         raise ValueError(f"WBM dataframe missing columns: {sorted(missing_cols)}")
 
-    model_preds = pd.to_numeric(model_preds.reindex(df_wbm.index), errors="coerce")
+    model_preds = _align_preds(df_wbm, model_preds)
     each_true = df_wbm[MbdKey.each_true]
     each_pred = each_true + model_preds - df_wbm[MbdKey.e_form_dft]
     if subset_indices is None:
@@ -242,13 +267,14 @@ def calc_discovery_metrics(
         for subset, subset_idx in subset_indices.items()
     }
 
-    uniq_proto_idx = subset_indices[TestSubset.uniq_protos]
-    uniq_proto_prevalence = (
-        each_true.loc[uniq_proto_idx] <= STABILITY_THRESHOLD
-    ).mean()
+    if uniq_proto_prevalence is None:
+        uniq_proto_idx = subset_indices[TestSubset.uniq_protos]
+        uniq_proto_prevalence = (
+            each_true.loc[uniq_proto_idx] <= STABILITY_THRESHOLD
+        ).mean()
     for subset in (TestSubset.uniq_protos, TestSubset.most_stable_10k):
         precision = metrics_by_subset[subset]["Precision"]
-        metrics_by_subset[subset][str(Key.daf.symbol)] = (
+        metrics_by_subset[subset]["DAF"] = (
             precision / uniq_proto_prevalence
             if uniq_proto_prevalence > 0
             else float("nan")
@@ -266,10 +292,11 @@ def write_all_metrics_to_yaml(
 ) -> dict[TestSubset, dict[str, str | float]]:
     """Round and write all canonical discovery subsets to one model YAML.
 
-    Pass ``subset_indices`` from :func:`calc_discovery_metrics`' input preparation to
-    avoid reranking predictions before writing subset predictions and missing counts.
+    Pass the ``subset_indices`` from :func:`discovery_subset_indices` that also fed
+    :func:`calc_discovery_metrics` to avoid reranking predictions before writing
+    subset predictions and missing counts.
     """
-    model_preds = pd.to_numeric(model_preds.reindex(df_wbm.index), errors="coerce")
+    model_preds = _align_preds(df_wbm, model_preds)
     if subset_indices is None:
         subset_indices = discovery_subset_indices(df_wbm, model_preds)
     return {

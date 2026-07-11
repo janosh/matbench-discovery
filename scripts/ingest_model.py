@@ -190,7 +190,11 @@ def check_submission(model: Model, checks: Checklist) -> bool:
             checks.skip(f"discovery is archived: {reason}")
             continue
         if task == "discovery" and calc_spec is None:
-            checks.fail("discovery model is not registered with the shared runner")
+            checks.fail(
+                "discovery model is not registered with the shared runner: add an "
+                "ASE calculator to matbench_discovery/calculators.py, or discuss "
+                "non-ASE inference with the maintainers first (see contributing.md)"
+            )
             continue
 
         scripts = sorted(yaml_path.parent.glob(f"test_*_{task}.py"))

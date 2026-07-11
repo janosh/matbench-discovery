@@ -285,6 +285,7 @@ def _repo_relative_path(path: str) -> str:
     """Return a repository-relative path, preserving external absolute paths."""
     absolute_path = os.path.abspath(path)
     relative_path = os.path.relpath(absolute_path, ROOT)
+    relative_path = relative_path.replace("\\", "/")
     return relative_path if not relative_path.startswith("../") else absolute_path
 
 
@@ -313,11 +314,13 @@ def _write_yaml_results(
     artifacts: DiscoveryArtifacts,
 ) -> None:
     """Update artifact paths and all three discovery metric subsets."""
-    from matbench_discovery.data import df_wbm
+    from matbench_discovery.data import MAX_E_FORM_ERROR_THRESHOLD, df_wbm
     from matbench_discovery.metrics import discovery as discovery_metrics
 
+    # mirror load_df_wbm_with_preds's outlier masking and .round(3) convention so
+    # metrics written here match a later scripts/evals/discovery.py recompute
     model_preds = artifacts.predictions[artifacts.pred_col].copy()
-    bad_mask = abs(model_preds - df_wbm[MbdKey.e_form_dft]) > 5
+    bad_mask = abs(model_preds - df_wbm[MbdKey.e_form_dft]) > MAX_E_FORM_ERROR_THRESHOLD
     model_preds.loc[bad_mask] = pd.NA
     metric_reference = df_wbm.round(3)
     model_preds = pd.to_numeric(
@@ -327,7 +330,10 @@ def _write_yaml_results(
         metric_reference, model_preds
     )
     metrics_by_subset = discovery_metrics.calc_discovery_metrics(
-        metric_reference, model_preds, subset_indices=subset_indices
+        metric_reference,
+        model_preds,
+        subset_indices=subset_indices,
+        uniq_proto_prevalence=discovery_metrics.wbm_uniq_proto_prevalence(),
     )
 
     for task, path, column_key, column in (
@@ -494,7 +500,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         f"Wrote shard {shard_index + 1}/{n_shards} with "
         f"{len(shard.records):,} records ({n_failures:,} failures) to {shard_path}"
     )
-    return int(n_failures == len(shard.records))
+    return int(n_failures > 0)
 
 
 if __name__ == "__main__":
