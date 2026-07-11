@@ -11,7 +11,6 @@
   } from '$lib/url-state.svelte'
   import * as labels from '$lib/labels'
   import { DISCOVERY_SETS, type DiscoverySet, type ModelData } from '$lib/types'
-  import DiscoveryRobustnessTable from './DiscoveryRobustnessTable.svelte'
   import HullConstructionNote from './hull-construction-note.md'
 
   const default_discovery_set: DiscoverySet = `unique_prototypes`
@@ -108,16 +107,6 @@
     {filters}
     bind:sort
   />
-</section>
-
-<h2>Failure and Coverage Diagnostics</h2>
-<p>
-  F1 alone hides why a model fails. These rates separate missing predictions, false
-  discoveries that would waste validation effort, and stable materials the model would
-  overlook. They follow the selected discovery set and the leaderboard filters above.
-</p>
-<section class="full-bleed">
-  <DiscoveryRobustnessTable models={visible_models} {discovery_set} />
 </section>
 
 <h2>

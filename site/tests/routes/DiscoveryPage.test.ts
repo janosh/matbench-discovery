@@ -1,7 +1,6 @@
 import { MODELS } from '$lib'
 import { make_table_filters } from '$lib/models.svelte'
 import DiscoveryPage from '$routes/tasks/discovery/+page.svelte'
-import { format_num } from 'matterviz'
 import { tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -83,7 +82,6 @@ describe(`Discovery Task Page`, () => {
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
 
     expect(heading_texts()).toContain(`F1 vs Params`)
-    expect(heading_texts()).toContain(`Failure and Coverage Diagnostics`)
     expect(comparison_scatter_props()).toBeDefined()
     expect(document.body.textContent).toContain(`Convex Hull Construction`)
   })
@@ -143,32 +141,6 @@ describe(`Discovery Task Page`, () => {
     } finally {
       MODELS.pop()
     }
-  })
-
-  it(`counts missing predictions within the confusion-matrix total`, () => {
-    mount(DiscoveryPage, { target: document.body })
-    const filters = make_table_filters()
-    const model = MODELS.find((candidate) => {
-      const metrics = candidate.metrics?.discovery
-      return (
-        typeof metrics === `object` &&
-        (metrics?.unique_prototypes?.missing_preds ?? 0) > 0 &&
-        filters.matches(candidate)
-      )
-    })
-    const metrics = model?.metrics?.discovery
-    const values = typeof metrics === `object` ? metrics.unique_prototypes : undefined
-    if (!model || !values) throw new Error(`No visible model with missing predictions`)
-    const table = [...document.querySelectorAll(`section.full-bleed table`)].find(
-      (entry) => entry.textContent?.includes(`Missing predictions`),
-    )
-    const row = [...(table?.querySelectorAll(`tbody tr`) ?? [])].find((entry) =>
-      entry.textContent?.includes(model.model_name),
-    )
-    const total = values.TP + values.FP + values.TN + values.FN
-    expect(row?.querySelector(`[data-col="Missing predictions"]`)?.textContent).toContain(
-      format_num(values.missing_preds / total, `.2~%`),
-    )
   })
 
   it(`restores and syncs URL state`, async () => {

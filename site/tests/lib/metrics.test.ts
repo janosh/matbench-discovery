@@ -320,7 +320,6 @@ describe(`METADATA_COLS`, () => {
       `Training Structures`,
       `Ckpt License`,
       `Code License`,
-      `Missing Preds`,
       `Run Time`,
       `Org`,
     ]

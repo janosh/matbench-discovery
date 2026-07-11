@@ -13,7 +13,6 @@ from tqdm.auto import tqdm
 
 from matbench_discovery import SITE_DIR, figs
 from matbench_discovery.cli import cli_args, is_full_model_run
-from matbench_discovery.enums import TestSubset
 from matbench_discovery.preds import (
     load_per_element_errors,
     test_set_std_col,
@@ -24,7 +23,6 @@ elem_col, size_col = "Element", "group"
 
 
 # %%
-test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 models_to_plot = cli_args.models
 
 df_preds, df_each_err, df_comp, df_elem_err = load_per_element_errors(

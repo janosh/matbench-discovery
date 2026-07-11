@@ -1,7 +1,6 @@
 """Test CLI argument parsing module."""
 
 import pytest
-from pymatviz.enums import Key
 
 from matbench_discovery.cli import cli_args, cli_parser
 from matbench_discovery.enums import Model, TestSubset
@@ -29,11 +28,10 @@ from matbench_discovery.enums import Model, TestSubset
                 "test_subset": TestSubset.most_stable_10k,
             },
         ),
-        (["--energy-type", "e_form"], {"energy_type": Key.e_form}),
     ],
 )
 def test_cli_parser(
-    args: list[str], expected: dict[str, str | bool | TestSubset | list[Model]]
+    args: list[str], expected: dict[str, TestSubset | list[Model]]
 ) -> None:
     """Test CLI argument parsing with various inputs."""
     parsed_args, _ = cli_parser.parse_known_args(args)
@@ -47,7 +45,6 @@ def test_cli_parser(
         ["--models"],
         ["--models", "invalid_model"],
         ["--test-subset", "invalid_subset"],
-        ["--energy-type", "invalid_type"],
     ],
 )
 def test_cli_parser_invalid_args(
@@ -84,9 +81,7 @@ def test_cli_args_global() -> None:
     # Test all expected attributes are present and of correct type
     assert isinstance(cli_args.models, list)
     assert isinstance(cli_args.test_subset, TestSubset)
-    assert isinstance(cli_args.energy_type, str)
     assert isinstance(cli_args.use_full_rows, bool)
-    assert isinstance(cli_args.update_existing, bool)
 
 
 def test_browser_renderers_never_steal_focus() -> None:

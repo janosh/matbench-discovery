@@ -15,14 +15,15 @@
     return `color-mix(in oklab, var(--link-color) ${Math.round(100 * (1 - frac))}%, hsl(0, 65%, 45%))`
   }
 
-  const chip_title = ({ metric, rank, n_models, value }: (typeof ranks)[number]) => {
-    const value_str = `${format_num(value, metric.format ?? `.3`)}${metric.unit ? ` ${metric.unit}` : ``}`
-    // tooltip renders with allow_html, so use <br/> (not \r) for the line break
-    return `Ranked ${rank} of ${n_models} models with a ${metric.label} of ${value_str}.<br/>${metric.description}`
-  }
+  // tooltip renders with allow_html, so use <br/> (not \r) for the line break
+  const chip_title = ({ metric, rank, n_models, value }: (typeof ranks)[number]) =>
+    `Ranked ${rank} of ${n_models} models with a ${metric.label} of ${format_num(
+      value,
+      metric.format ?? `.3`,
+    )}${metric.unit ? ` ${metric.unit}` : ``}.<br/>${metric.description ?? ``}`
 </script>
 
-{#if ranks.length > 0}
+{#if ranks.length}
   <section class="rank-card">
     <span class="rank-card-label">Leaderboard ranks</span>
     {#each ranks as rank_entry (rank_entry.metric.key)}

@@ -154,12 +154,6 @@ export const METADATA_COLS: MetadataLabels = {
     description: `Model code license`,
     visible: false,
   },
-  missing_preds: {
-    key: `Missing Preds`,
-    label: `Missing Preds`,
-    description: `Number of missing predictions`,
-    visible: false,
-  },
   'Run Time (h)': {
     key: `Run Time`,
     label: `Run Time`,

@@ -17,7 +17,6 @@ from pymatviz.utils import df_ptable
 from matbench_discovery import SITE_FIG_DATA, figs
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import TestSubset
 from matbench_discovery.preds import (
     load_per_element_errors,
     test_set_std_col,
@@ -32,7 +31,6 @@ fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
 
 # %%
-test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 models_to_plot = cli_args.models
 
 df_preds, df_each_err, df_comp, df_elem_err = load_per_element_errors(

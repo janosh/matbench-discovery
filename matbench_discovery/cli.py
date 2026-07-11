@@ -4,8 +4,6 @@ import multiprocessing as mp
 import os
 from argparse import ArgumentParser, ArgumentTypeError
 
-from pymatviz.enums import Key
-
 from matbench_discovery.enums import Model, TestSubset
 
 CLI_TIMEOUT = 30
@@ -60,13 +58,6 @@ cli_parser.add_argument(
     action="store_true",
     help="Print what would be done without actually doing it.",
 )
-cli_parser.add_argument(
-    "--timeout",
-    type=int,
-    default=CLI_TIMEOUT,
-    help="Timeout in seconds for HTTP requests (default: 30).",
-)
-
 plot_group = cli_parser.add_argument_group(
     "plot", "Arguments for controlling figure generation"
 )
@@ -81,21 +72,9 @@ plot_group.add_argument(
     " overlap with WBM, resulting in a slightly more out-of-distribution test set.",
 )
 plot_group.add_argument(
-    "--energy-type",
-    type=str,
-    default=Key.each,
-    choices=[Key.e_form, Key.each],
-    help="Whether to use formation energy or convex hull distance.",
-)
-plot_group.add_argument(
     "--use-full-rows",
     action="store_true",
     help="Whether to drop models that don't fit in complete rows.",
-)
-plot_group.add_argument(
-    "--update-existing",
-    action="store_true",
-    help="Whether to update figures whose file paths already exist.",
 )
 plot_group.add_argument(
     "--no-show",
