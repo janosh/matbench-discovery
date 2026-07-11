@@ -64,6 +64,7 @@ jobs:
         run: |
           CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].path')
           GENERATOR_PATTERN=$(<.github/payload-generator-paths.regex)
+          [ -z "$GENERATOR_PATTERN" ] && { echo "::error::Empty generator pattern"; exit 1; }
           GEN=$(grep -E "$GENERATOR_PATTERN" <<< "$CHANGED" || true)
           PAYLOADS=$(grep -E '^(site/src/figs/.*\.(jsonl|json\.gz)|site/src/routes/(data/.*\.json|models/per-element-each-errors\.jsonl)|site/src/lib/diatomics-dft\.json\.gz)$' <<< "$CHANGED" || true)
           if [ -n "$GEN" ] && [ -z "$PAYLOADS" ]; then

@@ -73,6 +73,7 @@ jobs:
           fi
 
           GENERATOR_PATTERN=$(<.github/payload-generator-paths.regex)
+          [ -z "$GENERATOR_PATTERN" ] && { echo "::error::Empty generator pattern"; exit 1; }
           FORMAT_CHANGED=$(grep -E "$GENERATOR_PATTERN" <<< "$CHANGED" || true)
           if [ -n "$FORMAT_CHANGED" ]; then
             echo "::error::This PR changes payload-generating code. Regenerate the affected payloads locally and commit them; this secret-bearing workflow never executes PR code."
