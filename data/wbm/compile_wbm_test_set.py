@@ -24,7 +24,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIG_DATA, WBM_DIR, figs, today
+from matbench_discovery import PDF_FIGS, WBM_DIR, today
 from matbench_discovery.data import DATASETS, DataFiles
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
@@ -486,14 +486,6 @@ fig.show(
 
 # %%
 img_name = "hist-wbm-e-form-per-atom"
-figs.write_json_gz(
-    f"{SITE_FIG_DATA}/{img_name}.json.gz",
-    {
-        "x": figs.round_list(e_form_bins[:-1]),
-        "y": e_form_hist.tolist(),
-        "bar_width": round(float(e_form_bins[1] - e_form_bins[0]), 6),
-    },
-)
 # recommended to upload SVG to vecta.io/nano for compression
 # pmv.save_fig(fig, f"{img_name}.svg", width=800, height=300)
 
@@ -619,8 +611,8 @@ for mat_id, row in tqdm(
     e_form = calc_energy_from_e_refs(entry_like, ref_energies=mp_elemental_ref_energies)
     e_form_ppd = ppd_mp.get_form_energy_per_atom(cse) - cse.correction_per_atom
 
-    # make sure the PPD.get_e_form_per_atom() and standalone get_e_form_per_atom()
-    # method of calculating formation energy agree
+    # make sure the phase diagram and standalone reference-energy methods of
+    # calculating formation energy agree
     assert abs(e_form - e_form_ppd) < 1e-4, (
         f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
     )

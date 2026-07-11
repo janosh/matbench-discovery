@@ -167,6 +167,8 @@ As WBM explores regions of materials space not well sampled by MP, many of the d
 
 == Models
 <sec:models>
+// This v1 paper's metric-table PDFs are frozen publication artifacts. The evolving
+// online leaderboard is generated independently from current model YAML metrics.
 #figure(
   image("figs/metrics-table-uniq-protos-only-compliant.pdf"),
   caption: [
