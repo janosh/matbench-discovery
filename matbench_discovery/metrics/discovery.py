@@ -272,15 +272,15 @@ def write_all_metrics_to_yaml(
     model_preds = pd.to_numeric(model_preds.reindex(df_wbm.index), errors="coerce")
     if subset_indices is None:
         subset_indices = discovery_subset_indices(df_wbm, model_preds)
-    written_metrics: dict[TestSubset, dict[str, str | float]] = {}
-    for test_subset, metrics in metrics_by_subset.items():
-        written_metrics[test_subset] = write_metrics_to_yaml(
+    return {
+        test_subset: write_metrics_to_yaml(
             model,
             {key: round(float(value), 3) for key, value in metrics.items()},
             model_preds.reindex(subset_indices[test_subset]),
             test_subset,
         )
-    return written_metrics
+        for test_subset, metrics in metrics_by_subset.items()
+    }
 
 
 def write_metrics_to_yaml(
