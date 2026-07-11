@@ -2,7 +2,7 @@
   import { MetricsTable, MODELS, SelectToggle } from '$lib'
   import { make_table_filters } from '$lib/models.svelte'
   import { DynamicScatter } from '$lib/plot'
-  import { DEFAULT_TABLE_SORT } from '$lib/table/MetricsTable.svelte'
+  import type { SortState } from '$lib/url-state.svelte'
   import {
     bind_url_params,
     sort_from_query,
@@ -16,11 +16,12 @@
   const default_discovery_set: DiscoverySet = `unique_prototypes`
   const default_scatter_x = labels.HYPERPARAMS.model_params.key
   const default_scatter_y = labels.ALL_METRICS.F1.key
+  const default_sort: SortState = { column: default_scatter_y, dir: `desc` }
   const discovery_sets = new Set<DiscoverySet>(DISCOVERY_SETS)
 
   let discovery_set: DiscoverySet = $state(default_discovery_set)
   const filters = make_table_filters()
-  let sort = $state({ ...DEFAULT_TABLE_SORT })
+  let sort = $state({ ...default_sort })
 
   // axis selections for the model-comparison scatter, bound so the section title
   // tracks whatever properties the user picks
@@ -36,14 +37,14 @@
       discovery_sets,
     )
     filters.read(params)
-    sort = sort_from_query(params, DEFAULT_TABLE_SORT)
+    sort = sort_from_query(params, default_sort)
     scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_keys)
     scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_keys)
   }
   bind_url_params(read_url_params, () => [
     [`set`, discovery_set, default_discovery_set],
     ...filters.url_entries,
-    ...sort_url_entries(sort, DEFAULT_TABLE_SORT),
+    ...sort_url_entries(sort, default_sort),
     [`x`, scatter_x, default_scatter_x],
     [`y`, scatter_y, default_scatter_y],
   ])

@@ -28,7 +28,7 @@
       task.label,
     ]),
   )
-  // static (non-[slug]) 2nd-level pages render as dropdowns under their parent route
+  // Static second-level pages render as dropdowns under their top-level parent route.
   const child_routes = Object.keys(import.meta.glob(`./*/*/+page.{svelte,md}`))
     .filter((filename) => !filename.includes(`[`))
     .map((filename) => `/${filename.split(`/`).slice(1, 3).join(`/`)}`)
@@ -53,7 +53,7 @@
   let url = $derived(page.url.pathname)
   let headingSelector = $derived(`main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4)`)
 
-  const base_description = `Matbench Discovery - Benchmarking machine learning energy models for materials discovery.`
+  const base_description = `Matbench Discovery - ${pkg.description}`
   const descriptions: Record<string, string> = {
     '/': base_description,
     '/data': `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
@@ -62,6 +62,8 @@
     '/contribute': `Steps for contributing a new model to the benchmark.`,
     '/models': `Details on each model sortable by metrics.`,
     '/tasks': `Overview of all benchmark tasks for machine-learning interatomic potentials.`,
+    '/tasks/discovery': `Metrics and analysis of crystal stability prediction on the WBM test set.`,
+    '/tasks/discovery/tmi': `Detailed diagnostics for the crystal discovery task.`,
     '/tasks/diatomics': `Metrics and analysis of predicting diatomic energies.`,
     '/tasks/phonons': `Metrics and analysis of predicting phonon modes and frequencies.`,
     '/tasks/geo-opt': `Metrics and analysis of predicting ground state geometries.`,
@@ -136,7 +138,7 @@
     '/api': `API`,
     '/data/sets': `Datasets`,
     '/data/tmi': `TMI`,
-    '/models/tmi': `TMI`,
+    '/tasks/discovery/tmi': `TMI`,
     ...task_labels,
   }}
   --nav-item-padding="0 3pt"

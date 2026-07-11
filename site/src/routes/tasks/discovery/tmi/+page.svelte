@@ -7,9 +7,9 @@
   import { dashed, plotly_blue, plotly_red, wide_legend } from '$lib/fig-helpers'
   import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import type { UrlParamEntry } from '$lib/url-state.svelte'
+  import DiscoveryMetricFigs from '$routes/models/tmi/discovery-metric-figs.md'
+  import ElementErrorsPtableHeatmap from '$routes/models/tmi/ElementErrorsPtableHeatmap.svelte'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
-  import DiscoveryMetricFigs from './discovery-metric-figs.md'
-  import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
 
   // payload models arrive pre-styled (stable MODELS colors + leaderboard order) from the
   // json_payload plugin, so each dropdown below defaults to a top model
@@ -20,21 +20,21 @@
   // the model objects directly would JSON-serialize their arrays into the DOM via the
   // hidden form-validation input) and look up the matching model object(s) for plotting.
   const find_model = <T extends { label: string }>(models: T[], label: string): T =>
-    models.find((mdl) => mdl.label === label) ?? models[0]
+    models.find((model) => model.label === label) ?? models[0]
 
-  const elem_prev_labels = elem_prev.models.map((mdl) => mdl.label)
+  const elem_prev_labels = elem_prev.models.map((model) => model.label)
   const default_elem_prev = elem_prev_labels.slice(0, 3)
   // per-figure single-model dropdowns: one URL param each, defaulting to the top model
   const single_selects: Record<string, string[]> = {
-    fp_model: fp_diff.models.map((mdl) => mdl.label),
-    each_model: each_errors.models.map((mdl) => mdl.label),
-    hist_model: hist_largest.models.map((mdl) => mdl.label),
+    fp_model: fp_diff.models.map((model) => model.label),
+    each_model: each_errors.models.map((model) => model.label),
+    hist_model: hist_largest.models.map((model) => model.label),
   }
 
   let elem_prev_selected = $state([...default_elem_prev])
   let picked = $state(
     Object.fromEntries(
-      Object.entries(single_selects).map(([key, labels]) => [key, labels[0]]),
+      Object.entries(single_selects).map(([key, model_labels]) => [key, model_labels[0]]),
     ),
   )
 
@@ -49,19 +49,19 @@
       ?.split(`,`)
       .filter((label) => elem_prev_labels.includes(label))
     elem_prev_selected = parsed?.length ? parsed : [...default_elem_prev]
-    for (const [key, labels] of Object.entries(single_selects)) {
-      picked[key] = valid_query_param(params, key, labels[0], new Set(labels))
+    for (const [key, model_labels] of Object.entries(single_selects)) {
+      picked[key] = valid_query_param(params, key, model_labels[0], new Set(model_labels))
     }
   }
   bind_url_params(read_url_params, () => [
     [`models`, elem_prev_param(elem_prev_selected), elem_prev_param(default_elem_prev)],
     ...Object.entries(single_selects).map(
-      ([key, labels]): UrlParamEntry => [key, picked[key], labels[0]],
+      ([key, model_labels]): UrlParamEntry => [key, picked[key], model_labels[0]],
     ),
   ])
 
   const elem_prev_models = $derived(
-    elem_prev.models.filter((mdl) => elem_prev_selected.includes(mdl.label)),
+    elem_prev.models.filter((model) => elem_prev_selected.includes(model.label)),
   )
   const fp_diff_active = $derived(find_model(fp_diff.models, picked.fp_model))
   const each_errors_active = $derived(find_model(each_errors.models, picked.each_model))
@@ -75,23 +75,25 @@
     y_values: (number | null)[],
     elements: string[] = [],
   ) => {
-    const x: number[] = []
-    const y: number[] = []
+    const numeric_x_values: number[] = []
+    const numeric_y_values: number[] = []
     const metadata: { elem?: string }[] = []
     for (const [idx, x_val] of x_values.entries()) {
       const y_val = y_values[idx]
       if (x_val == null || y_val == null) continue
-      x.push(x_val)
-      y.push(y_val)
+      numeric_x_values.push(x_val)
+      numeric_y_values.push(y_val)
       if (elements.length) metadata.push({ elem: elements[idx] })
     }
-    return elements.length ? { x, y, metadata } : { x, y }
+    const numeric_values = { x: numeric_x_values, y: numeric_y_values }
+    return elements.length ? { ...numeric_values, metadata } : numeric_values
   }
 </script>
 
-<h1>Too Much Information</h1>
+<h1>Discovery: Too Much Information</h1>
 
-Stuff that didn't make the cut into the&nbsp;<a href="/models">model page</a>.
+Discovery diagnostics that didn't make the cut into the
+<a href="/tasks/discovery">task page</a>.
 
 <h2>Per-Element Model Error Heatmaps</h2>
 
@@ -121,8 +123,8 @@ dependent on geometry than chemistry.
   />
 </label>
 <ScatterPlot
-  series={elem_prev_models.map(({ label, color, y }) => ({
-    ...numeric_pairs(elem_prev.occurrences, y, elem_prev.elements),
+  series={elem_prev_models.map(({ label, color, y: error_values }) => ({
+    ...numeric_pairs(elem_prev.occurrences, error_values, elem_prev.elements),
     label,
     markers: `points` as const,
     point_style: { fill: color },

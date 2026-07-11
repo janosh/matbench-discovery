@@ -1,5 +1,5 @@
 import { DATASETS, MODELS } from '$lib'
-import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
+import { ALL_METRICS, DIATOMICS_METRICS, METADATA_COLS } from '$lib/labels'
 import {
   assemble_row_data,
   format_train_set,
@@ -164,22 +164,19 @@ describe(`format_train_set`, () => {
 })
 
 describe(`assemble_row_data`, () => {
-  // Use fixed model keys to ensure tests are stable against live data
   const test_model_keys = [`mace-mp-0`, `chgnet-0.3.0`]
   const model_filter = (model: ModelData): boolean =>
-    // Ensure model_key exists before checking includes
-    model.model_key ? test_model_keys.includes(model.model_key) : false
-
-  // assemble rows for the two test models with no extra filters
+    test_model_keys.includes(model.model_key ?? ``)
   const get_test_rows = () => assemble_row_data(`unique_prototypes`, model_filter)
+  const tece_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
+  if (!tece_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
 
   it(`returns formatted rows for selected models with expected properties`, () => {
     const rows = get_test_rows()
 
-    // Expect only the selected models
     expect(rows).toHaveLength(test_model_keys.length)
-    const mace_row = rows.find((row) => (row.Model ?? ``).includes(`mace-mp-0`))
-    const chgnet_row = rows.find((row) => (row.Model ?? ``).includes(`chgnet-0.3.0`))
+    const mace_row = rows.find((row) => row.Model.includes(`mace-mp-0`))
+    const chgnet_row = rows.find((row) => row.Model.includes(`chgnet-0.3.0`))
 
     expect(mace_row?.Model).toContain(`mace-mp-0`)
     expect(mace_row?.graph_construction_radius).toBe(
@@ -189,34 +186,30 @@ describe(`assemble_row_data`, () => {
     const n_layers_val = mace_row?.n_layers as string
     expect(n_layers_val).toMatch(/^(?:<span data-sort-value="\d+">\d+<\/span>|n\/a)$/)
     expect(chgnet_row?.Model).toContain(`chgnet-0.3.0`)
-  })
-
-  it(`sorts selected models by CPS in descending order`, () => {
-    const rows = get_test_rows()
-
-    expect(rows).toHaveLength(test_model_keys.length)
-
     const cps_vals = rows.map((row) => row.CPS) as number[]
-    const sorted_cps_vals = cps_vals.toSorted((cps1, cps2) => cps2 - cps1)
-    expect(cps_vals).toStrictEqual(sorted_cps_vals)
+    expect(cps_vals).toStrictEqual(
+      cps_vals.toSorted((score_1, score_2) => score_2 - score_1),
+    )
   })
 
-  it(`excludes task-only models without discovery metrics for the active set`, () => {
+  it(`includes task-only models without discovery metrics`, () => {
     const model_key = `task-only-regression`
-    MODELS.push({
+    const task_only_model = {
+      ...tece_model,
       model_key,
-      targets: `EFS_G`,
-      training_set: [],
-      metrics: { diatomics: { energy_mae: 1 } },
-    } as unknown as ModelData)
+      model_name: `Task-only regression`,
+      metrics: { diatomics: { pbe_energy_mae: 1 } },
+    } as ModelData
 
-    try {
-      expect(
-        assemble_row_data(`unique_prototypes`, (model) => model.model_key === model_key),
-      ).toStrictEqual([])
-    } finally {
-      MODELS.pop()
-    }
+    const rows = assemble_row_data(
+      `unique_prototypes`,
+      (model) => model.model_key === model_key,
+      () => true,
+      [task_only_model],
+    )
+    expect(rows).toHaveLength(1)
+    expect(rows[0].F1).toBeUndefined()
+    expect(rows[0][DIATOMICS_METRICS.pbe_energy_mae.key]).toBe(1)
   })
 
   it.each([
@@ -225,8 +218,6 @@ describe(`assemble_row_data`, () => {
   ] as const)(
     `computes $task runtime multipliers relative to fastest shown model`,
     ({ task, multiplier_key }) => {
-      const base_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
-      if (!base_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
       const rows = assemble_row_data(
         `unique_prototypes`,
         (model) => model.model_key?.startsWith(`${task}-time-`) ?? false,
@@ -240,11 +231,11 @@ describe(`assemble_row_data`, () => {
           Infinite: Infinity,
           NaN: Number.NaN,
         }).map(([model_name, run_time_sec]) => ({
-          ...base_model,
+          ...tece_model,
           model_key: `${task}-time-${model_name.toLowerCase()}`,
           model_name,
           metrics: {
-            ...base_model.metrics,
+            ...tece_model.metrics,
             [task]: run_time_sec === undefined ? {} : { run_time_sec },
           },
         })),
@@ -291,17 +282,15 @@ describe(`assemble_row_data`, () => {
   ])(
     `renders reason-aware diatomics exclusion tooltip for $model_key`,
     ({ model_key, diatomics, expected_title }) => {
-      const base_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
-      if (!base_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
       const test_models = [
         ...MODELS,
         ...(diatomics
           ? [
               {
-                ...base_model,
+                ...tece_model,
                 model_key,
                 model_name: `Mixed Diatomics Exclusions`,
-                metrics: { ...base_model.metrics, diatomics },
+                metrics: { ...tece_model.metrics, diatomics },
               } as ModelData,
             ]
           : []),
@@ -626,27 +615,17 @@ describe(`Model Sorting Logic`, () => {
     ).toThrow(/Unexpected type.*encountered sorting by key/)
   })
 
-  it(`handles sorting when both compared values are null`, () => {
+  it.each([`asc`, `desc`] as const)(`sorts nulls last in %s order`, (order) => {
     const models_with_null = [
       { model_name: `Model Null 1`, model_key: `null_1`, metric: null },
       { model_name: `Model Null 2`, model_key: `null_2`, metric: null },
       { model_name: `Model Val`, model_key: `val_1`, metric: 10 },
     ] as unknown as ModelData[]
 
-    // Ascending sort
-    const sorted_asc = models_with_null.toSorted(sort_models(`metric`, `asc`))
-    expect(sorted_asc.map((model) => model.model_key)).toStrictEqual([
-      `val_1`,
-      `null_1`,
-      `null_2`,
-    ])
-
-    // Descending sort
-    const sorted_desc = models_with_null.toSorted(sort_models(`metric`, `desc`))
-    expect(sorted_desc.map((model) => model.model_key)).toStrictEqual([
-      `val_1`,
-      `null_1`,
-      `null_2`,
-    ])
+    expect(
+      models_with_null
+        .toSorted(sort_models(`metric`, order))
+        .map((model) => model.model_key),
+    ).toStrictEqual([`val_1`, `null_1`, `null_2`])
   })
 })

@@ -4,7 +4,7 @@
   import type { ModelData } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
   import { make_table_filters } from '$lib/models.svelte'
-  import { DEFAULT_TABLE_SORT } from '$lib/table/MetricsTable.svelte'
+  import type { SortState } from '$lib/url-state.svelte'
   import {
     bind_url_params,
     sort_from_query,
@@ -19,7 +19,7 @@
     scatter_options_by_key,
     task_page_visible_cols,
   } from '$lib/labels'
-  import { get_nested_number } from '$lib/metrics'
+  import { get_nested_number, label_data_path } from '$lib/metrics'
   import { format_num } from 'matterviz'
   import KappaNote from './kappa-note.md'
   import { SvelteSet } from 'svelte/reactivity'
@@ -35,8 +35,8 @@
   const diagnostics_keys = new SvelteSet(
     kappa_103_analysis.models.map((entry) => entry.key),
   )
-  const kappa_srme_path = `${ALL_METRICS.κ_SRME.path}.${ALL_METRICS.κ_SRME.key}`
-  const kappa_sre_path = `${ALL_METRICS.κ_SRE.path}.${ALL_METRICS.κ_SRE.key}`
+  const kappa_srme_path = label_data_path(ALL_METRICS.κ_SRME)
+  const kappa_sre_path = label_data_path(ALL_METRICS.κ_SRE)
   const has_phonon_metrics = (model: ModelData): boolean =>
     get_nested_number(model, kappa_srme_path) != null &&
     get_nested_number(model, kappa_sre_path) != null
@@ -61,6 +61,10 @@
   const default_sort_mode: SortMode = `kappa`
   const default_scatter_x = HYPERPARAMS.model_params.key
   const default_scatter_y = ALL_METRICS.κ_SRME.key
+  const default_table_sort: SortState = {
+    column: default_scatter_y,
+    dir: `asc`,
+  }
   const sort_modes = new Set(sort_options.map(({ mode }) => mode))
   const model_keys = new Set(kappa_models.flatMap((model) => model.model_key ?? []))
 
@@ -97,7 +101,7 @@
   let scatter_x = $state(default_scatter_x)
   let scatter_y = $state(default_scatter_y)
 
-  let table_sort = $state({ ...DEFAULT_TABLE_SORT })
+  let table_sort = $state({ ...default_table_sort })
   const filters = make_table_filters()
 
   const read_url_params = (params: URLSearchParams) => {
@@ -105,7 +109,7 @@
     sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_modes)
     scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
     scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
-    table_sort = sort_from_query(params, DEFAULT_TABLE_SORT)
+    table_sort = sort_from_query(params, default_table_sort)
     filters.read(params)
   }
   bind_url_params(read_url_params, () => [
@@ -113,9 +117,11 @@
     [`model_sort`, sort_mode, default_sort_mode],
     [`x`, scatter_x, default_scatter_x],
     [`y`, scatter_y, default_scatter_y],
-    ...sort_url_entries(table_sort, DEFAULT_TABLE_SORT),
+    ...sort_url_entries(table_sort, default_table_sort),
     ...filters.url_entries,
   ])
+
+  const phonon_url = `https://github.com/atztogo/phonondb/blob/main/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe`
 </script>
 
 <h1>MLFF Phonon Modeling Metrics</h1>
@@ -152,12 +158,9 @@
   would not have been possible without the
   <a href="https://github.com/atztogo/phonondb">PhononDB</a>
   and the help of Atsushi Togo who kindly shared the
-  <a
-    href="https://github.com/atztogo/phonondb/blob/main/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe"
-    >PBE reference data for the 103 MP structures</a
-  > that form the test set for this task. Use the axis/color/size selectors to compare models
-  across any pair of metrics and metadata. Clicking a point selects that model in the inspector
-  below.
+  <a href={phonon_url}>PBE reference data for the 103 MP structures</a> that form the test set
+  for this task. Use the axis/color/size selectors to compare models across any pair of metrics
+  and metadata. Clicking a point selects that model in the inspector below.
 </p>
 
 <DynamicScatter
@@ -184,11 +187,11 @@
       minSelect={1}
       maxSelect={1}
       style="width: 22em; border: 1px solid var(--border)"
-      bind:value={
-        () => model_options.find((opt) => opt.value === selected_key) ?? null,
-        // Array.isArray only narrows the type; with maxSelect=1 value is never an array
-        (option) => {
-          if (option && !Array.isArray(option)) selected_key = option.value
+      bind:selected={
+        () => model_options.filter((option) => option.value === selected_key),
+        (selected_options) => {
+          const selected_option = selected_options[0]
+          if (selected_option) selected_key = String(selected_option.value)
         }
       }
     />

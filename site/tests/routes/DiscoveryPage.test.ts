@@ -77,6 +77,8 @@ describe(`Discovery Task Page`, () => {
     for (const col of [`Model`, `F1`, `DAF`, `Links`, `Date Added`]) {
       expect(headers).toContain(col)
     }
+    expect(sorted_header()?.textContent).toContain(`F1`)
+    expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
   })
 
   it(`restores and syncs URL state`, async () => {

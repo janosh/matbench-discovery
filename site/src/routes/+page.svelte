@@ -8,11 +8,13 @@
     DISCOVERY_METRICS,
     discovery_set_toggle_options,
     GEO_OPT_SYMMETRY_METRICS,
+    HYPERPARAMS,
     MD_METRICS,
     METADATA_COLS,
   } from '$lib/labels'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
-  import { find_best_model, make_table_filters, MODELS } from '$lib/models.svelte'
+  import { get_nested_number, is_finite_num, label_data_path } from '$lib/metrics'
+  import { make_table_filters, MODELS } from '$lib/models.svelte'
   import {
     apply_weights_param,
     bind_url_params,
@@ -28,7 +30,7 @@
     generate_svg,
     handle_export,
   } from '$lib/table-export'
-  import type { DiscoverySet, ModelData, SortDir } from '$lib/types'
+  import type { DiscoverySet, Label, ModelData, SortDir } from '$lib/types'
   import Readme from '$root/readme.md'
   import MdNote from '$routes/tasks/md/md-note.md'
   import KappaNote from '$routes/tasks/phonons/kappa-note.md'
@@ -42,35 +44,45 @@
   const n_wbm_stable_uniq_protos = 32_942
   const n_wbm_uniq_protos = DATASETS.WBM.n_materials
 
-  // Column presets focus the table on one task's metrics. Headline cols (CPS, F1, RMSD,
-  // κ_SRME) stay visible across presets; supplementary discovery cols (TPR/TNR/RMSE) stay
-  // hidden but remain toggleable via the per-column controls. Sets are keyed by col.key
-  // (unique) not label, which repeats across tasks (MD/diatomics Time and Slowdown).
-  const headline_metric_keys = new Set(
-    [ALL_METRICS.CPS, DISCOVERY_METRICS.F1, ALL_METRICS.RMSD, ALL_METRICS.κ_SRME].map(
-      (col) => col.key,
+  const supplementary_hidden = new Set(
+    [DISCOVERY_METRICS.TPR, DISCOVERY_METRICS.TNR, DISCOVERY_METRICS.RMSE].map(
+      (metric) => metric.key,
     ),
   )
-  const supplementary_hidden = new Set([`TPR`, `TNR`, `RMSE`])
-  const metadata_keys = new Set(Object.values(METADATA_COLS).map((col) => col.key))
+  const metadata_keys = new Set([
+    ...Object.values(METADATA_COLS).map((col) => col.key),
+    HYPERPARAMS.model_params.key,
+    HYPERPARAMS.graph_construction_radius.key,
+  ])
   const col_presets = {
     Discovery: Object.values(DISCOVERY_METRICS),
-    Phonons: [ALL_METRICS.κ_SRE],
     'Geo Opt': Object.values(GEO_OPT_SYMMETRY_METRICS),
+    Phonons: [ALL_METRICS.κ_SRE],
     MD: Object.values(MD_METRICS),
     Diatomics: Object.values(DIATOMICS_METRICS),
   }
   type ColPreset = keyof typeof col_presets
+  const default_col_preset: ColPreset = `Discovery`
   const col_preset_names = Object.keys(col_presets) as ColPreset[]
-  const is_col_preset = (value: string | null): value is ColPreset =>
-    col_preset_names.includes(value as ColPreset)
-  const preset_default_sorts: Record<ColPreset, { column: string; dir: SortDir }> = {
-    Discovery: { column: ALL_METRICS.CPS.key, dir: `desc` },
-    Phonons: { column: ALL_METRICS.κ_SRME.key, dir: `asc` },
-    'Geo Opt': { column: ALL_METRICS.RMSD.key, dir: `asc` },
-    MD: { column: MD_METRICS.md_combined_score.key, dir: `desc` },
-    Diatomics: { column: DIATOMICS_METRICS.energy_jump.key, dir: `asc` },
+  const preset_primary_metrics: Record<ColPreset, Label> = {
+    Discovery: DISCOVERY_METRICS.F1,
+    'Geo Opt': ALL_METRICS.RMSD,
+    Phonons: ALL_METRICS.κ_SRME,
+    MD: MD_METRICS.md_combined_score,
+    Diatomics: DIATOMICS_METRICS.diatomics_combined_score,
   }
+  // CPS and one headline metric per task stay visible across presets.
+  const headline_metric_keys = new Set(
+    [ALL_METRICS.CPS, ...Object.values(preset_primary_metrics)].map(
+      (metric) => metric.key,
+    ),
+  )
+  const preset_default_sorts = Object.fromEntries(
+    Object.entries(preset_primary_metrics).map(([preset, metric]) => [
+      preset,
+      { column: metric.key, dir: metric.better === `lower` ? `asc` : `desc` },
+    ]),
+  ) as Record<ColPreset, { column: string; dir: SortDir }>
   const filters = make_table_filters()
   const col_preset_options = col_preset_names.map((name) => ({
     value: name,
@@ -80,18 +92,18 @@
 
   let export_error: string | null = $state(null)
 
-  let col_preset = $state<ColPreset>(`Discovery`)
+  let col_preset = $state<ColPreset>(default_col_preset)
   let preset_metric_keys = $derived(
     new Set([...headline_metric_keys, ...col_presets[col_preset].map((col) => col.key)]),
   )
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
-  let sort = $state<{ column: string; dir: SortDir }>({
-    ...preset_default_sorts.Discovery,
-  })
+  let sort = $state({ ...preset_default_sorts[default_col_preset] })
   let auto_sort_enabled = $state(true)
   let custom_col_config = $state(false)
-  let previous_col_preset: ColPreset = `Discovery`
+  let previous_col_preset: ColPreset = default_col_preset
   const sortable_header_selector = `thead th[role="button"]`
+  const column_toggles_selector = `details.column-toggles`
+  const reset_columns_selector = `${column_toggles_selector} button[aria-label="Reset all columns to defaults"]`
 
   $effect(() => {
     if (col_preset === previous_col_preset) return
@@ -102,20 +114,12 @@
   })
 
   function handle_table_event(event: Event) {
+    if (event instanceof KeyboardEvent && ![`Enter`, ` `].includes(event.key)) return
     const target = event.target
     if (!(target instanceof Element)) return
     if (target.closest(sortable_header_selector)) auto_sort_enabled = false
-    const reset_btn = target.closest(`button[aria-label="Reset all columns to defaults"]`)
-    if (reset_btn?.closest(`details.column-toggles`)) custom_col_config = false
-  }
-
-  function handle_table_keydown(event: KeyboardEvent) {
-    if ([`Enter`, ` `].includes(event.key)) handle_table_event(event)
-  }
-
-  function disable_col_preset_url(event: Event) {
-    const target = event.target
-    if (target instanceof HTMLInputElement && target.closest(`details.column-toggles`)) {
+    if (target.closest(reset_columns_selector)) custom_col_config = false
+    if (event.type === `change` && target.matches(`${column_toggles_selector} input`)) {
       custom_col_config = true
     }
   }
@@ -123,8 +127,9 @@
   const valid_sets = new Set(DISCOVERY_SETS)
   onMount(() => {
     const params = page.url.searchParams
-    const param_preset = params.get(`preset`)
-    const next_preset = is_col_preset(param_preset) ? param_preset : `Discovery`
+    const next_preset =
+      col_preset_names.find((preset) => preset === params.get(`preset`)) ??
+      default_col_preset
     const next_sort = sort_from_query(params, preset_default_sorts[next_preset])
     const default_sort = preset_default_sorts[next_preset]
     auto_sort_enabled =
@@ -144,36 +149,52 @@
     (params) => {
       apply_weights_param(params.get(`weights`), CPS_CONFIG, DEFAULT_CPS_CONFIG)
     },
-    () => {
-      const default_sort = preset_default_sorts[col_preset]
-      return [
-        // omit `preset` for the default (Discovery) and when the user customized
-        // columns (a preset no longer describes the visible column set)
-        [`preset`, custom_col_config || col_preset === `Discovery` ? `` : col_preset],
-        [`set`, discovery_set, `unique_prototypes`],
-        ...sort_url_entries(sort, default_sort),
-        ...filters.url_entries,
-        // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
-        [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
-      ]
-    },
+    () => [
+      // omit `preset` for the default and when the user customized
+      // columns (a preset no longer describes the visible column set)
+      [`preset`, custom_col_config ? default_col_preset : col_preset, default_col_preset],
+      [`set`, discovery_set, `unique_prototypes`],
+      ...sort_url_entries(sort, preset_default_sorts[col_preset]),
+      ...filters.url_entries,
+      // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
+      [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
+    ],
   )
 
   let export_state = $derived({ export_error, discovery_set })
 
-  // Landing-page cohort: the metrics-table filters (training-data/openness/targets)
-  // plus a base predicate of "has discovery data for the selected set"
-  let in_cohort = $derived((model: ModelData) => {
+  const preset_metric_value = (
+    model: ModelData,
+    preset: ColPreset,
+  ): number | undefined => {
     const discovery = model.metrics?.discovery
-    return (
-      discovery !== null &&
-      typeof discovery === `object` &&
-      Boolean(discovery[discovery_set]) &&
-      filters.matches(model)
-    )
+    const value =
+      preset === `Discovery`
+        ? discovery !== null && typeof discovery === `object`
+          ? discovery[discovery_set]?.F1
+          : undefined
+        : get_nested_number(model, label_data_path(preset_primary_metrics[preset]))
+    return is_finite_num(value) ? value : undefined
+  }
+
+  // Each task view includes only models with its headline metric.
+  let has_preset_data = $derived(
+    (model: ModelData) => preset_metric_value(model, col_preset) !== undefined,
+  )
+  let in_cohort = $derived(
+    (model: ModelData) => has_preset_data(model) && filters.matches(model),
+  )
+  let primary_metric = $derived(preset_primary_metrics[col_preset])
+  let best_entry = $derived.by(() => {
+    const entries = MODELS.filter(in_cohort).flatMap((model) => {
+      const value = preset_metric_value(model, col_preset)
+      return value === undefined ? [] : [{ model, value }]
+    })
+    const sort_factor = primary_metric.better === `lower` ? 1 : -1
+    return entries.toSorted(
+      (entry_1, entry_2) => sort_factor * (entry_1.value - entry_2.value),
+    )[0]
   })
-  // best model within the same cohort the table shows
-  let best_model = $derived(find_best_model(MODELS.filter(in_cohort), discovery_set))
 
   export const snapshot: Snapshot = {
     capture: () => ({
@@ -222,7 +243,7 @@
   Discovery preset where those columns are visible -->
   {#if col_preset === `Discovery`}
     <div class="toggle-row" in:slide={{ duration: 250 }}>
-      <span>Test set:</span>
+      <span>Discovery test set:</span>
       <SelectToggle
         bind:selected={discovery_set}
         options={discovery_set_toggle_options}
@@ -238,8 +259,8 @@
   <section
     class="full-bleed"
     onclickcapture={handle_table_event}
-    onchangecapture={disable_col_preset_url}
-    onkeydowncapture={handle_table_keydown}
+    onchangecapture={handle_table_event}
+    onkeydowncapture={handle_table_event}
   >
     <MetricsTable
       col_filter={(col) =>
@@ -247,6 +268,7 @@
           ? col.visible !== false
           : preset_metric_keys.has(col.key) && !supplementary_hidden.has(col.key)}
       {discovery_set}
+      model_filter={has_preset_data}
       bind:sort
       {filters}
     />
@@ -292,19 +314,22 @@
       trained on DFT relaxations, we show the number of distinct frames in parentheses. In cases
       where only the number of frames is known, we report the number of frames as the training
       set size. <code>(N=x)</code> in the Model Params column shows the number of
-      estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures how
-      many more stable materials a model finds compared to random selection from the test
-      set. The unique structure prototypes in the WBM test set
-      {#if n_wbm_uniq_protos}
-        have a
-        <code>{format_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
-        rate of stable crystals, meaning the max possible DAF is
-        <code>
-          ({format_num(n_wbm_stable_uniq_protos)} / {format_num(n_wbm_uniq_protos)})^−1 ≈
-          {format_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}
-        </code>.
-      {:else}
-        have an unknown rate of stable crystals (WBM n_materials unavailable).
+      estimators if an ensemble was used.
+      {#if col_preset === `Discovery`}
+        DAF = Discovery Acceleration Factor measures how many more stable materials a
+        model finds compared to random selection from the test set. The unique structure
+        prototypes in the WBM test set
+        {#if n_wbm_uniq_protos}
+          have a
+          <code>{format_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
+          rate of stable crystals, meaning the max possible DAF is
+          <code>
+            ({format_num(n_wbm_stable_uniq_protos)} / {format_num(n_wbm_uniq_protos)})^−1
+            ≈ {format_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}
+          </code>.
+        {:else}
+          have an unknown rate of stable crystals (WBM n_materials unavailable).
+        {/if}
       {/if}
     </div>
     <!-- CPS weight controls -->
@@ -314,13 +339,13 @@
 
 <!-- Dynamic axis scatter plot: defaults to field progress over time (CPS vs date
 added) with a running-best line showing which releases moved the frontier -->
-<h2>Progress Over Time</h2>
+<h2>CPS Progress Over Time</h2>
 <p>
   Each point is a model placed at its submission date; the dashed step line traces the
-  running best ("SOTA frontier") CPS, so its jumps mark the models that set a new record
+  running best ("SOTA frontier") CPS-1, so its jumps mark the models that set a new record
   when they were added. Use the axis/color/size selectors to compare models across any
   pair of metrics and parameters. The plot shows the same model cohort as the metrics
-  table above, following its energy-only, training-data and openness filters.
+  table above, following the active task preset and table filters.
 </p>
 <DynamicScatter
   models={MODELS}
@@ -337,17 +362,15 @@ added) with a running-best line showing which releases moved the frontier -->
   {/snippet}
 
   {#snippet best_report()}
-    {#if best_model}
-      {@const { model_name, model_key, repo, paper, metrics = {} } = best_model}
-      {@const discovery_metrics =
-        typeof metrics?.discovery === `object` ? metrics.discovery : null}
-      {@const { F1, R2, DAF } = discovery_metrics?.[discovery_set] ?? {}}
+    {#if best_entry}
+      {@const { model: best_model, value } = best_entry}
       <span id="best-report">
-        <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
-        <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
-        and a discovery acceleration factor (DAF) of {DAF}
-        (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to
-        dummy discovery in the already enriched test set containing 16% stable materials).
+        <a href="/models/{best_model.model_key}">{best_model.model_name}</a> leads the
+        {col_preset} view with the best {@html primary_metric.label} of {format_num(
+          value,
+          primary_metric.format ?? `.3`,
+        )}
+        {primary_metric.unit ?? ``}.
       </span>
     {/if}
   {/snippet}

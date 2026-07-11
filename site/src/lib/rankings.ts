@@ -16,8 +16,7 @@ export interface MetricRank {
 // labels carry their task name for context on model detail pages
 export const RANKED_METRICS: (Label & { rank_href: string })[] = [
   { ...ALL_METRICS.CPS, rank_href: `/` },
-  { ...ALL_METRICS.F1, label: `Discovery F1`, rank_href: `/` },
-  { ...ALL_METRICS.MAE, label: `Discovery MAE`, rank_href: `/` },
+  { ...ALL_METRICS.F1, label: `Discovery F1`, rank_href: `/tasks/discovery` },
   { ...ALL_METRICS.RMSD, label: `Geo Opt RMSD`, rank_href: `/tasks/geo-opt` },
   {
     ...ALL_METRICS.κ_SRME,
