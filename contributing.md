@@ -60,7 +60,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    df_traj.to_csv("trajectory.csv.gz")  # Save final structure and trajectory data
    ```
 
-2. Reproducible inference code. If your model exposes an ASE calculator and uses the standard per-structure ASE relaxation loop, register its constructor and isolated `uv` dependencies in [`matbench_discovery/calculators.py`](matbench_discovery/calculators.py). The shared [`models/run_discovery.py`](models/run_discovery.py) runner then handles WBM relaxation, atom-balanced Slurm shards, resume, MP2020 corrections, artifacts, and discovery metrics. Do not add a per-model discovery or join script for this standard case.
+2. Reproducible inference code. If your model exposes an ASE calculator and uses the standard per-structure ASE relaxation loop, register its constructor and isolated `uv` dependencies in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py). The shared [`models/run_discovery.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_discovery.py) runner then handles WBM relaxation, atom-balanced Slurm shards, resume, MP2020 corrections, artifacts, and discovery metrics. Do not add a per-model discovery or join script for this standard case.
 
    Models without an ASE calculator, such as direct formation-energy predictors, and models requiring a custom batched relaxation or dependency environment should still include `test_<model_name>_discovery.py` with enough high-level comments to reproduce the submitted predictions. If the model was trained specifically for this benchmark, also include `train_<model_name>.py`.
 
