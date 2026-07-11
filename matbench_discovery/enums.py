@@ -55,14 +55,8 @@ class MbdKey(LabelEnum):
     e_form_wbm = "e_form_per_atom_wbm", f"WBM E<sub>form</sub> {eV_per_atom}"
     each_true = "e_above_hull_mp2020_corrected_ppd_mp", "E<sub>MP hull dist</sub>"
     each_wbm = "e_above_hull_wbm", "E<sub>WBM hull dist</sub>"
-    each_mean_models = "each_mean_models", "E<sub>hull dist</sub> mean of models"
     each_err_models = "each_err_models", "E<sub>hull dist</sub> mean error of models"
-    model_std_each = "each_std_models", "Std. dev. over models"
     openness = "openness", "Openness"
-    e_above_hull_error = (
-        "e_above_hull_error",
-        f"Error in E<sub>hull dist</sub> {eV_per_atom}",
-    )
 
     init_protostructure_spglib = (
         "protostructure_spglib_initial_structure",
@@ -334,8 +328,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # original M3GNet straight from publication, not re-trained
     m3gnet_ms = auto(), "m3gnet/m3gnet.yml"
-    # m3gnet_direct = auto(), "M3GNet DIRECT"
-    # m3gnet_ms = auto(), "M3GNet MS"
 
     # MACE-MP-0 medium as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
     mace_mp_0 = auto(), "mace/mace-mp-0.yml"
@@ -395,13 +387,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # EquiformerV3 model
     equiformer_v3_mp = auto(), "equiformer_v3/equiformer_v3_mp.yml"
     equiformer_v3_oam = auto(), "equiformer_v3/equiformer_v3_oam.yml"
-
-    # --- Model Combos
-    # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
-    # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz"
-    # # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
-    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
-    # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
 
     @functools.cached_property  # cache to avoid re-reading same file multiple times
     def metadata(self) -> dict[str, Any]:

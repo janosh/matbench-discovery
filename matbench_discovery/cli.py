@@ -4,9 +4,9 @@ import multiprocessing as mp
 import os
 from argparse import ArgumentParser, ArgumentTypeError
 
-from matbench_discovery.enums import Model, TestSubset
+import plotly.io as pio
 
-CLI_TIMEOUT = 30
+from matbench_discovery.enums import Model, TestSubset
 
 
 def parse_model(value: str) -> Model:
@@ -71,16 +71,6 @@ plot_group.add_argument(
     "Training sets like MPtrj, sAlex and Omat24 were filtered to remove protostructures"
     " overlap with WBM, resulting in a slightly more out-of-distribution test set.",
 )
-plot_group.add_argument(
-    "--use-full-rows",
-    action="store_true",
-    help="Whether to drop models that don't fit in complete rows.",
-)
-plot_group.add_argument(
-    "--no-show",
-    action="store_true",
-    help="Suppress Plotly figures from opening in browser.",
-)
 cli_args, _ignore_unknown = cli_parser.parse_known_args()
 
 
@@ -98,21 +88,22 @@ def complete_models() -> list[Model]:
     return [model for model in cli_args.models if model.is_complete]
 
 
+def shared_payload_test_subset() -> TestSubset:
+    """Return the selected subset if it has one shared cohort across models."""
+    if cli_args.test_subset == TestSubset.most_stable_10k:
+        raise ValueError(
+            "most_stable_10k is model-specific and cannot be represented in a shared "
+            "multi-model payload"
+        )
+    return cli_args.test_subset
+
+
 # Set env var to auto-confirm file downloads when --auto-download is passed
 if cli_args.auto_download:
     os.environ["MBD_AUTO_DOWNLOAD_FILES"] = "true"
 
-# Monkey-patch Plotly to suppress browser opening when --no-show is passed
-if cli_args.no_show:
-    import plotly.graph_objects as go
-
-    go.Figure.show = lambda *_args, **_kwargs: None
-else:
-    # figures may open as browser tabs, but never steal focus: plotly's browser
-    # renderers default to autoraise=True which switches the screen to every new tab
-    import plotly.io as pio
-
-    for renderer_name in pio.renderers:
-        renderer = pio.renderers[renderer_name]
-        if hasattr(renderer, "autoraise"):
-            renderer.autoraise = False
+# Figures may open in browser tabs, but never steal focus.
+for renderer_name in pio.renderers:
+    renderer = pio.renderers[renderer_name]
+    if hasattr(renderer, "autoraise"):
+        renderer.autoraise = False

@@ -19,7 +19,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.data import df_wbm
-from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import DataFiles
 
 wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
@@ -48,11 +48,11 @@ processed = MaterialsProject2020Compatibility().process_entries(ces, verbose=Tru
 assert len(processed) == len(df_wbm_cse)
 
 df_wbm["e_form_per_atom_mp2020_from_ce"] = [
-    get_e_form_per_atom(entry)
+    calc_energy_from_e_refs(entry, mp_elemental_ref_energies)
     for entry in tqdm(ces, desc="Calculating formation energies from ComputedEntries")
 ]
 df_wbm["e_form_per_atom_mp2020_from_cse"] = [
-    get_e_form_per_atom(entry)
+    calc_energy_from_e_refs(entry, mp_elemental_ref_energies)
     for entry in tqdm(
         cses, desc="Calculating formation energies from ComputedStructureEntries"
     )
@@ -71,10 +71,10 @@ processed = MaterialsProjectCompatibility().process_entries(ces, verbose=True)
 assert len(processed) == len(df_wbm_cse)
 
 df_wbm["e_form_per_atom_legacy_from_ce"] = [
-    get_e_form_per_atom(entry) for entry in tqdm(ces)
+    calc_energy_from_e_refs(entry, mp_elemental_ref_energies) for entry in tqdm(ces)
 ]
 df_wbm["e_form_per_atom_legacy_from_cse"] = [
-    get_e_form_per_atom(entry) for entry in tqdm(cses)
+    calc_energy_from_e_refs(entry, mp_elemental_ref_energies) for entry in tqdm(cses)
 ]
 df_wbm["legacy_cse_correction"] = [cse.correction for cse in tqdm(cses)]
 df_wbm["legacy_ce_correction"] = [ce.correction for ce in tqdm(ces)]

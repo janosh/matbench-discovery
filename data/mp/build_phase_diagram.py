@@ -18,7 +18,11 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, ROOT, today
-from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
+from matbench_discovery.energy import (
+    calc_energy_from_e_refs,
+    get_elemental_ref_entries,
+    mp_elemental_ref_energies,
+)
 from matbench_discovery.enums import DataFiles
 
 module_dir = os.path.dirname(__file__)
@@ -121,8 +125,10 @@ df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.m
 
 # %%
 e_form_us = "e_form_us"
+mp_entries_by_id = {entry.entry_id: entry for entry in mp_computed_entries}
 df_mp[e_form_us] = [
-    get_e_form_per_atom(mp_computed_entries[mp_id]) for mp_id in df_mp.index
+    calc_energy_from_e_refs(mp_entries_by_id[mp_id], mp_elemental_ref_energies)
+    for mp_id in df_mp.index
 ]
 
 
