@@ -17,7 +17,9 @@ export type CpsConfig = Record<
 export const CPS_CONFIG: CpsConfig = $state(structuredClone(DEFAULT_CPS_CONFIG))
 
 const is_valid_score = (value: number | undefined): value is number =>
-  value !== undefined && !isNaN(value)
+  value !== undefined && Number.isFinite(value)
+const is_valid_kappa_score = (value: number | undefined): value is number =>
+  is_valid_score(value) && value >= 0 && value <= 2
 
 // F1 score is between 0-1 where higher is better (no normalization needed)
 const normalize_f1 = (value: number | undefined): number =>
@@ -31,7 +33,7 @@ const normalize_rmsd = (value: number | undefined): number =>
 // κ_SRME is symmetric relative mean error, with range [0,2] by definition
 // Lower values are better (0 is perfect)
 const normalize_kappa_srme = (value: number | undefined): number =>
-  is_valid_score(value) ? Math.max(0, 1 - value / 2) : 0
+  is_valid_kappa_score(value) ? 1 - value / 2 : 0
 
 // Calculate a combined score using normalized metrics weighted by importance factors.
 // Fixed normalization reference points keep scores stable as new models are added.
@@ -47,7 +49,7 @@ export function calculate_cps(
   if (
     (F1.weight > 0 && !is_valid_score(f1)) ||
     (RMSD.weight > 0 && !is_valid_score(rmsd)) ||
-    (κ_SRME.weight > 0 && !is_valid_score(kappa))
+    (κ_SRME.weight > 0 && !is_valid_kappa_score(kappa))
   )
     return null
 

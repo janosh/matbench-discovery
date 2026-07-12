@@ -73,14 +73,15 @@ definitions:
       temperatures:
         type: array
         minItems: 1
+        maxItems: 1
         items:
           type: number
-          exclusiveMinimum: 0
+          enum: [300]
       ase_optimizer:
         type: string
       ase_filter:
         type: [string, 'null']
-        enum: [FrechetCellFilter, ExpCellFilter, frechet, exp, none, null]
+        enum: [FrechetCellFilter, ExpCellFilter, UnitCellFilter, frechet, exp, none, null]
       max_steps:
         type: integer
         minimum: 0
@@ -88,6 +89,9 @@ definitions:
         type: number
         exclusiveMinimum: 0
       symprec:
+        type: number
+        exclusiveMinimum: 0
+      relax_symprec:
         type: number
         exclusiveMinimum: 0
       enforce_relax_symm:
@@ -144,8 +148,12 @@ definitions:
         type: number
       κ_SRME:
         type: number
+        minimum: 0
+        maximum: 2
       κ_SRE:
         type: number
+        minimum: 0
+        maximum: 2
     dependencies:
       pred_file: [pred_file_url]
       force_file: [force_file_url]

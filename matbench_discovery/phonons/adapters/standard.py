@@ -89,7 +89,7 @@ class StandardKappaAdapter:
         atoms.calc = calculator
         filter_class = resolve_cell_filter(settings.ase_filter)
         if settings.enforce_relax_symm:
-            atoms.set_constraint(FixSymmetry(atoms))
+            atoms.set_constraint(FixSymmetry(atoms, symprec=settings.relax_symprec))
         if filter_class is None:
             relax_target: Atoms | Filter = atoms
         elif settings.enforce_relax_symm:
@@ -137,7 +137,7 @@ class StandardKappaAdapter:
 
         atoms.calc = calculator
         if settings.enforce_relax_symm:
-            atoms.set_constraint(FixSymmetry(atoms))
+            atoms.set_constraint(FixSymmetry(atoms, symprec=settings.relax_symprec))
         stage1_target: Atoms | Filter = (
             atoms if filter_class is None else filter_class(atoms, mask=NO_TILT_MASK)
         )

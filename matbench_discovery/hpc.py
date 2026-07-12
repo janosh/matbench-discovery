@@ -349,14 +349,15 @@ def merge_run_metadata(
     hardware = next(
         (meta["hardware"] for meta in shard_metadatas if meta.get("hardware")), None
     )
-    run_time = sum(
-        secs
+    run_times = [
+        float(secs)
         for meta in shard_metadatas
         if isinstance(secs := meta.get("run_time_sec"), int | float)
-    )
+    ]
+    run_time = sum(run_times)
     merged: dict[str, str | float] = {
         **({"hardware": hardware} if isinstance(hardware, str) else {}),
-        **({"run_time_sec": round(run_time, 2)} if run_time else {}),
+        **({"run_time_sec": round(run_time, 2)} if run_times else {}),
     }
     for mem_key in ("max_rss_gb", "max_gpu_mem_gb"):
         peaks = [

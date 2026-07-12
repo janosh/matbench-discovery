@@ -26,6 +26,7 @@ from matbench_discovery.phonons.adapters.equflash import EquFlashKappaAdapter
 from matbench_discovery.phonons.adapters.pet import PetKappaAdapter
 from matbench_discovery.phonons.pipeline import (
     DRY_RUN_MAX_FC3_EVALUATIONS,
+    KAPPA_MANIFEST_SCHEMA_VERSION,
     KAPPA_PROTOCOL,
     KappaComputation,
     KappaRecord,
@@ -250,6 +251,14 @@ def test_kappa_settings_validate_and_canonicalize() -> None:
     raw_settings.pop("protocol")
     with pytest.raises(ValueError, match="protocol must be"):
         KappaSettings.from_mapping(raw_settings)
+    with pytest.raises(ValueError, match="batch_size"):
+        KappaSettings(batch_size=2).validate_for_adapter("standard")
+    KappaSettings(batch_size=2).validate_for_adapter("pet")
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        KappaSettings(batch_size=2, max_atoms_per_batch=100).validate_for_adapter(
+            "equflash"
+        )
+    assert KAPPA_MANIFEST_SCHEMA_VERSION == 3
 
 
 @pytest.mark.parametrize(
@@ -257,10 +266,11 @@ def test_kappa_settings_validate_and_canonicalize() -> None:
     [
         ("displacement_distance", 0, ValueError, "positive and finite"),
         ("temperatures", (), ValueError, "positive finite"),
+        ("temperatures", (300, 600), ValueError, "requires temperatures"),
         ("max_steps", -1, ValueError, "non-negative integer"),
         ("batch_size", 0, ValueError, "positive integer"),
         ("max_atoms_per_batch", 0, ValueError, "positive integer or null"),
-        ("ase_filter", "UnitCellFilter", ValueError, "Unsupported kappa ASE filter"),
+        ("ase_filter", "invalid", ValueError, "Unknown ASE cell filter"),
         ("relaxation_mode", "three-stage", ValueError, "must be one of"),
         ("is_plusminus", "sometimes", TypeError, "boolean or 'auto'"),
     ],
@@ -419,7 +429,6 @@ def test_yaml_write_requires_verified_settings_and_dataset(tmp_path: Path) -> No
 def test_dry_run_uses_and_merges_capped_protocol(shard_env: SimpleNamespace) -> None:
     """Dry runs execute and record the capped smoke-test protocol."""
     settings = KappaSettings(
-        temperatures=(300, 600),
         max_steps=300,
         relaxation_mode="none",
         save_forces=True,
@@ -572,6 +581,12 @@ def test_normalize_kappa_schema_aliases_and_voigt() -> None:
     )
     assert np.isnan(failed_result[str(MbdKey.kappa_tot_rta)])
     assert voigt_6_to_full_3x3([1, 2, 3]) == [1, 2, 3]
+    with pytest.raises(ValueError, match="Conflicting aliases"):
+        normalize_kappa_result({str(Key.mat_id): "mp-1", "mp_id": "different-material"})
+    bool_alias = normalize_kappa_result(
+        {str(Key.has_imag_ph_modes): False, "imaginary_freqs": 0}
+    )
+    assert bool_alias[str(Key.has_imag_ph_modes)] is False
 
 
 def test_normalize_kappa_dataframe_preserves_order() -> None:
@@ -593,6 +608,11 @@ def test_normalize_kappa_dataframe_preserves_order() -> None:
         3,
         3,
     )
+    df_mixed = pd.DataFrame([{str(Key.mat_id): "mp-1"}, {"mp_id": "mp-2"}])
+    assert list(normalize_kappa_dataframe(df_mixed)[str(Key.mat_id)]) == [
+        "mp-1",
+        "mp-2",
+    ]
 
 
 @pytest.mark.parametrize(

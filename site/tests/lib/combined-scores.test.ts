@@ -76,6 +76,9 @@ describe(`calculate_cps`, () => {
     { metric: `F1 (NaN)`, f1: NaN, rmsd: 0.05, kappa: 0.5 },
     { metric: `RMSD (NaN)`, f1: 0.8, rmsd: NaN, kappa: 0.5 },
     { metric: `κ_SRME (NaN)`, f1: 0.8, rmsd: 0.05, kappa: NaN },
+    { metric: `κ_SRME (Infinity)`, f1: 0.8, rmsd: 0.05, kappa: Infinity },
+    { metric: `κ_SRME (negative)`, f1: 0.8, rmsd: 0.05, kappa: -1 },
+    { metric: `κ_SRME (>2)`, f1: 0.8, rmsd: 0.05, kappa: 3 },
     { metric: `every metric`, f1: undefined, rmsd: undefined, kappa: undefined },
   ])(
     `returns null when $metric is missing/NaN with non-zero weight`,
@@ -147,7 +150,6 @@ describe(`calculate_cps`, () => {
     { name: `κ_SRME worst`, value: 2, weights: [0, 0, 1], expected: 0.0 },
     { name: `κ_SRME linear`, value: 0.4, weights: [0, 0, 1], expected: 0.8 },
     { name: `κ_SRME midpoint`, value: 1, weights: [0, 0, 1], expected: 0.5 },
-    { name: `κ_SRME clamps high`, value: 3, weights: [0, 0, 1], expected: 0.0 },
   ])(`$name normalizes correctly`, ({ value, weights, expected }) => {
     const config = make_cps_config(weights[0], weights[1], weights[2])
     const args: [number | undefined, number | undefined, number | undefined] = [

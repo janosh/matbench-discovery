@@ -310,13 +310,22 @@ export interface KappaSettings {
   displacement_distance?: number
   /**
    * @minItems 1
+   * @maxItems 1
    */
-  temperatures?: [number, ...number[]]
+  temperatures?: [300]
   ase_optimizer?: string
-  ase_filter?: 'FrechetCellFilter' | 'ExpCellFilter' | 'frechet' | 'exp' | 'none' | null
+  ase_filter?:
+    | 'FrechetCellFilter'
+    | 'ExpCellFilter'
+    | 'UnitCellFilter'
+    | 'frechet'
+    | 'exp'
+    | 'none'
+    | null
   max_steps?: number
   force_max?: number
   symprec?: number
+  relax_symprec?: number
   enforce_relax_symm?: boolean
   conductivity_broken_symm?: boolean
   ignore_imaginary_freqs?: boolean

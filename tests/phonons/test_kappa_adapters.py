@@ -173,9 +173,10 @@ class NoOpOptimizer:
 class ConstraintStub:
     """Copyable placeholder for ASE's symmetry constraint."""
 
-    def __init__(self, atoms: Atoms) -> None:
-        """Retain the constrained atoms only for debugging."""
+    def __init__(self, atoms: Atoms, *, symprec: float) -> None:
+        """Retain constrained atoms and verify the relaxation tolerance."""
         self.atoms = atoms
+        assert symprec == 0.01
 
 
 class SpaceGroupSequence:
@@ -330,17 +331,19 @@ def test_equflash_fc3_streams_graph_batches_and_preserves_null_entries(
     preprocessing_module.__dict__["AtomsToGraphs"] = GraphConverterStub
     data_module = ModuleType("torch_geometric.data")
     data_module.__dict__["Batch"] = GraphBatchStub
+    torch_module = ModuleType("torch")
+    torch_module.__dict__["cuda"] = SimpleNamespace(is_available=bool)
     for module_name, module in (
         ("fairchem", ModuleType("fairchem")),
         ("fairchem.core", ModuleType("fairchem.core")),
         ("fairchem.core.preprocessing", preprocessing_module),
+        ("torch", torch_module),
         ("torch_geometric", ModuleType("torch_geometric")),
         ("torch_geometric.data", data_module),
     ):
         monkeypatch.setitem(sys.modules, module_name, module)
 
     trainer = EquFlashTrainerStub()
-    monkeypatch.setattr("torch.cuda.is_available", bool)
     calculator = cast("Calculator", SimpleNamespace(trainer=trainer))
     phono3py = cast(
         "Phono3py",

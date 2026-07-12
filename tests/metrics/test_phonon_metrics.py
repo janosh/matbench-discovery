@@ -266,6 +266,8 @@ def test_calc_kappa_srme_error_cases(
         (Key.has_imag_ph_modes, True),
         (Key.final_spg_num, 2),
         (MbdKey.kappa_tot_avg, np.nan),
+        (MbdKey.kappa_tot_avg, np.inf),
+        (MbdKey.kappa_tot_avg, -1),
     ],
 )
 def test_calc_kappa_srme_invalid_predictions_score_two(
@@ -276,6 +278,7 @@ def test_calc_kappa_srme_invalid_predictions_score_two(
 ) -> None:
     """Imaginary modes, broken symmetry, and missing data receive maximum SRME."""
     modified = df_pred.copy()
+    modified[column] = modified[column].astype(object)
     modified.loc[0, column] = value
     assert phonon_metrics.calc_kappa_srme_dataframes(modified, df_true)[0] == 2
 
@@ -361,16 +364,41 @@ def test_calc_kappa_srme_temperature_dependence(series_multi_temp: pd.Series) ->
     assert len(kappa_srmes) == len(ml_data[MbdKey.kappa_tot_avg])
     assert list(kappa_srmes) == pytest.approx([2 / 3, 2 / 3, 2 / 3])
 
-    # The dataframe wrapper keeps one scalar SRME per material, using the first
-    # temperature for consistency with SRD/SRE and YAML metrics.
+    # Dataframe metrics reject ambiguous multi-temperature rows.
     ml_data[Key.has_imag_ph_modes] = False
     ml_data[Key.final_spg_num] = 1
     ml_data[Key.init_spg_num] = 1
 
-    kappa_srmes = phonon_metrics.calc_kappa_srme_dataframes(
-        pd.DataFrame([ml_data]), pd.DataFrame([dft_data])
+    with pytest.raises(ValueError, match="Reference kappa"):
+        phonon_metrics.calc_kappa_srme_dataframes(
+            pd.DataFrame([ml_data]), pd.DataFrame([dft_data])
+        )
+
+
+@pytest.mark.parametrize("invalid_value", [np.nan, np.inf, -1.0])
+def test_calc_kappa_srme_rejects_invalid_reference(invalid_value: float) -> None:
+    """Invalid reference totals abort scoring instead of penalizing a model."""
+    prediction = pd.Series(
+        {
+            MbdKey.kappa_tot_avg: np.array([1.0]),
+            MbdKey.mode_kappa_tot_rta: np.eye(3),
+            Key.mode_weights: np.ones(3),
+        }
     )
-    assert kappa_srmes == pytest.approx([2 / 3])
+    reference = prediction.copy()
+    reference[MbdKey.kappa_tot_avg] = np.array([invalid_value])
+    with pytest.raises(ValueError, match="Reference kappa totals"):
+        phonon_metrics.calc_kappa_srme(prediction, reference)
+    if np.isnan(invalid_value):
+        reference[MbdKey.kappa_tot_avg] = np.array([1.0])
+        reference[MbdKey.mode_kappa_tot_rta] = np.full((3, 3), np.nan)
+        with pytest.raises(ValueError, match="Reference mode"):
+            phonon_metrics.calc_kappa_srme_dataframes(
+                pd.DataFrame([prediction]), pd.DataFrame([reference])
+            )
+        prediction[MbdKey.kappa_tot_avg] = np.array([np.nan])
+        with pytest.raises(ValueError, match="Reference mode"):
+            phonon_metrics.calc_kappa_srme(prediction, reference)
 
 
 def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:

@@ -38,6 +38,24 @@ def phonopy_atoms_to_ase(supercell: PhonopyAtoms) -> Atoms:
     )
 
 
+def _validate_forces(
+    forces: object, expected_shape: tuple[int, ...], context: str
+) -> np.ndarray:
+    """Return finite real numeric forces with exactly the expected shape."""
+    force_array = np.asarray(forces)
+    if (
+        force_array.shape != expected_shape
+        or not np.issubdtype(force_array.dtype, np.number)
+        or np.iscomplexobj(force_array)
+        or np.any(~np.isfinite(force_array))
+    ):
+        raise ValueError(
+            f"Invalid {context} forces: shape={force_array.shape}, "
+            f"dtype={force_array.dtype}, expected_shape={expected_shape}"
+        )
+    return force_array
+
+
 def batched_displacement_forces(
     displacements: Sequence[PhonopyAtoms | None],
     evaluate_batch: Callable[[list[Atoms]], np.ndarray],
@@ -59,6 +77,10 @@ def batched_displacement_forces(
         Force array shaped ``(len(displacements), n_atoms, 3)``. Only non-null entries
         up to ``max_evaluations`` are evaluated; null and unevaluated slots remain zero.
     """
+    if batch_size < 1 or n_atoms < 1:
+        raise ValueError("batch_size and n_atoms must be positive")
+    if max_evaluations is not None and max_evaluations < 0:
+        raise ValueError("max_evaluations must be non-negative or None")
     entries = [
         (displacement_idx, supercell)
         for displacement_idx, supercell in enumerate(displacements)
@@ -67,13 +89,11 @@ def batched_displacement_forces(
     forces = np.zeros((len(displacements), n_atoms, 3))
     for batch_start in range(0, len(entries), batch_size):
         batch = entries[batch_start : batch_start + batch_size]
-        predicted = np.asarray(
-            evaluate_batch([phonopy_atoms_to_ase(supercell) for _, supercell in batch])
+        predicted = _validate_forces(
+            evaluate_batch([phonopy_atoms_to_ase(supercell) for _, supercell in batch]),
+            (len(batch), n_atoms, 3),
+            "batched displacement",
         )
-        if len(predicted) != len(batch):
-            raise ValueError(
-                f"Force batch size mismatch: {len(predicted)} != {len(batch)}"
-            )
         forces[[displacement_idx for displacement_idx, _ in batch]] = predicted
     return forces
 
@@ -107,7 +127,9 @@ def calculate_fc2_set(
         if supercell is not None:
             atoms = phonopy_atoms_to_ase(supercell)
             atoms.calc = calculator
-            force = atoms.get_forces()
+            force = _validate_forces(
+                atoms.get_forces(), (n_atoms, 3), "FC2 displacement"
+            )
         else:
             force = np.zeros((n_atoms, 3))
         forces += [force]
@@ -138,6 +160,8 @@ def calculate_fc3_set(
     Returns:
         np.ndarray: Array of forces for each displacement
     """
+    if max_evaluations is not None and max_evaluations < 0:
+        raise ValueError("max_evaluations must be non-negative or None")
     forces: list[np.ndarray] = []
     n_atoms = len(ph3.supercell)
 
@@ -155,7 +179,9 @@ def calculate_fc3_set(
         else:
             atoms = phonopy_atoms_to_ase(supercell)
             atoms.calc = calculator
-            forces += [atoms.get_forces()]
+            forces += [
+                _validate_forces(atoms.get_forces(), (n_atoms, 3), "FC3 displacement")
+            ]
             n_evaluated += 1
 
     force_set = np.array(forces)
@@ -259,8 +285,16 @@ def load_force_sets(
     Returns:
         Phono3py: Phono3py object with loaded force sets
     """
-    ph3.phonon_forces = fc2_set
-    ph3.forces = fc3_set
+    ph3.phonon_forces = _validate_forces(
+        fc2_set,
+        (len(ph3.phonon_supercells_with_displacements), len(ph3.phonon_supercell), 3),
+        "FC2",
+    )
+    ph3.forces = _validate_forces(
+        fc3_set,
+        (len(ph3.supercells_with_displacements), len(ph3.supercell), 3),
+        "FC3",
+    )
     ph3.produce_fc2(symmetrize_fc2=True)
     ph3.produce_fc3(symmetrize_fc3r=True)
 

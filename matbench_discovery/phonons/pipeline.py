@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
 KAPPA_RECORD_SCHEMA_VERSION = 1
-KAPPA_MANIFEST_SCHEMA_VERSION = 2
+KAPPA_MANIFEST_SCHEMA_VERSION = 3
 PHONONDB_N_STRUCTURES = 103
 KAPPA_MANIFEST_FILE = "manifest.json"
 KAPPA_RECORD_DIR = "records"
@@ -70,6 +70,7 @@ class KappaSettings:
     max_steps: int = 300
     force_max: float = 1e-4
     symprec: float = 1e-5
+    relax_symprec: float = 0.01
     enforce_relax_symm: bool = True
     conductivity_broken_symm: bool = False
     ignore_imaginary_freqs: bool = False
@@ -81,7 +82,12 @@ class KappaSettings:
 
     def __post_init__(self) -> None:
         """Canonicalize names and reject physically or structurally invalid values."""
-        for field_name in ("displacement_distance", "force_max", "symprec"):
+        for field_name in (
+            "displacement_distance",
+            "force_max",
+            "symprec",
+            "relax_symprec",
+        ):
             value = getattr(self, field_name)
             if (
                 isinstance(value, bool)
@@ -122,6 +128,10 @@ class KappaSettings:
             raise ValueError(
                 f"temperatures must contain positive finite values, got {temperatures}"
             )
+        if temperatures != (300.0,):
+            raise ValueError(
+                f"{KAPPA_PROTOCOL} requires temperatures=(300,), got {temperatures}"
+            )
         if self.relaxation_mode not in {"single-stage", "two-stage", "none"}:
             raise ValueError(
                 "relaxation_mode must be one of single-stage, two-stage, none; "
@@ -139,13 +149,33 @@ class KappaSettings:
             raise TypeError("is_plusminus must be a boolean or 'auto'")
 
         filter_name = canonical_filter_name(self.ase_filter)
-        if filter_name not in {"FrechetCellFilter", "ExpCellFilter", None}:
+        if filter_name not in {
+            "FrechetCellFilter",
+            "ExpCellFilter",
+            "UnitCellFilter",
+            None,
+        }:
             raise ValueError(f"Unsupported kappa ASE filter {filter_name!r}")
         object.__setattr__(self, "temperatures", temperatures)
         object.__setattr__(
             self, "ase_optimizer", canonical_optimizer_name(self.ase_optimizer)
         )
         object.__setattr__(self, "ase_filter", filter_name)
+
+    def validate_for_adapter(self, adapter_name: str) -> None:
+        """Reject execution options ignored by the selected adapter."""
+        if self.batch_size != 1 and adapter_name not in {"pet", "equflash"}:
+            raise ValueError(f"batch_size is unsupported by {adapter_name}")
+        if self.max_atoms_per_batch is not None and adapter_name != "equflash":
+            raise ValueError(f"max_atoms_per_batch is unsupported by {adapter_name}")
+        if (
+            adapter_name == "equflash"
+            and self.batch_size != 1
+            and self.max_atoms_per_batch is not None
+        ):
+            raise ValueError(
+                "batch_size and max_atoms_per_batch are mutually exclusive"
+            )
 
     @classmethod
     def from_mapping(cls, data: Mapping[str, Any]) -> KappaSettings:
@@ -261,6 +291,7 @@ class KappaRunManifest:
             raise ValueError("Kappa manifest material_id_hash is invalid")
         if self.settings_hash != self.settings.digest:
             raise ValueError("Kappa manifest settings_hash is invalid")
+        self.settings.validate_for_adapter(self.adapter_name)
         if self.dtype not in {"float32", "float64"}:
             raise ValueError(f"Kappa manifest has invalid dtype {self.dtype!r}")
         if self.device not in {"cpu", "cuda"}:
@@ -1072,7 +1103,7 @@ def material_run_metadata(
     metadata: dict[str, Any] = {
         **_manifest_provenance(manifest),
         "hardware": hardware,
-        "run_time_sec": round(run_time_sec, 2),
+        "run_time_sec": float(run_time_sec),
         "shard_index": shard_index,
         "completed_at": datetime.now(UTC).isoformat(),
         "hostname": socket.gethostname(),
@@ -1092,7 +1123,6 @@ def dry_run_settings(settings: KappaSettings) -> KappaSettings:
     return replace(
         settings,
         max_steps=min(settings.max_steps, 2),
-        temperatures=settings.temperatures[:1],
         save_forces=False,
     )
 

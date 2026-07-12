@@ -21,6 +21,7 @@ import subprocess
 import zipfile
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from importlib.metadata import version
 from typing import TYPE_CHECKING
 
 from filelock import FileLock
@@ -39,6 +40,40 @@ CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
 def _is_non_empty_file(path: str) -> bool:
     """Return whether path exists and has non-zero size."""
     return os.path.isfile(path) and os.path.getsize(path) > 0
+
+
+def _file_sha256(path: str) -> str:
+    """Return a file's SHA-256 digest."""
+    digest = hashlib.sha256()
+    with open(path, mode="rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _file_state(path: str) -> tuple[int, int, int]:
+    """Return cheap fields that change whenever normal file writes occur."""
+    file_stat = os.stat(path)
+    return file_stat.st_size, file_stat.st_mtime_ns, file_stat.st_ctime_ns
+
+
+def _stable_file_sha256(path: str) -> tuple[str, tuple[int, int, int]]:
+    """Hash a file outside locks and reject concurrent mutation."""
+    state = _file_state(path)
+    digest = _file_sha256(path)
+    if _file_state(path) != state:
+        raise RuntimeError(f"File changed while hashing: {path}")
+    return digest, state
+
+
+def _cached_file_sha256(path: str) -> tuple[str, tuple[int, int, int]] | None:
+    """Hash an existing cache entry, tolerating a concurrent atomic replacement."""
+    if not _is_non_empty_file(path):
+        return None
+    try:
+        return _stable_file_sha256(path)
+    except (FileNotFoundError, RuntimeError):
+        return None
 
 
 def download_checkpoint(model_key: str, ext: str | None = None) -> str:
@@ -101,24 +136,70 @@ def _stage_checkpoint(
 
     This bypasses framework downloaders that a WAF may serve as empty files.
     """
+    source = source_path or download_checkpoint(model_key, ext=ext)
+    source_hash, source_state = _stable_file_sha256(source)
+    cached_dest = _cached_file_sha256(dest)
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     with FileLock(f"{dest}.lock"):
-        if _is_non_empty_file(dest):
+        if _file_state(source) != source_state:
+            raise RuntimeError(f"Source changed while staging {dest}")
+        if (
+            cached_dest is not None
+            and _is_non_empty_file(dest)
+            and _file_state(dest) == cached_dest[1]
+            and cached_dest[0] == source_hash
+        ):
             return
         tmp_dest = f"{dest}.tmp"
-        shutil.copy(source_path or download_checkpoint(model_key, ext=ext), tmp_dest)
+        shutil.copy(source, tmp_dest)
+        if _file_state(source) != source_state:
+            os.remove(tmp_dest)
+            raise RuntimeError(f"Source changed while staging {dest}")
         os.replace(tmp_dest, dest)
 
 
-def _run_to_atomic_output(command: Sequence[str], dest: str) -> None:
-    """Run a command containing ``{output}`` and atomically promote its output."""
+def _run_to_atomic_output(
+    command: Sequence[str],
+    dest: str,
+    *,
+    source_paths: Sequence[str] = (),
+    tool_packages: Sequence[str] = (),
+) -> None:
+    """Atomically cache output by command, source contents, and tool versions."""
     if command.count("{output}") != 1:
         raise ValueError("Atomic output command must contain one {output} placeholder")
     dest_base, dest_ext = os.path.splitext(dest)
     tmp_dest = f"{dest_base}.tmp{dest_ext}"
+    identity_path = f"{dest}.sha256"
+    source_identities = tuple(
+        (path, *_stable_file_sha256(path)) for path in source_paths
+    )
+    tool_versions = tuple((package, version(package)) for package in tool_packages)
+    recipe_hash = hashlib.sha256(
+        repr(
+            (
+                tuple(command),
+                tuple(identity[1] for identity in source_identities),
+                tool_versions,
+            )
+        ).encode()
+    ).hexdigest()
+    cached_dest = _cached_file_sha256(dest)
     with FileLock(f"{dest}.lock"):
-        if _is_non_empty_file(dest):
-            return
+        if any(
+            _file_state(path) != state for path, _digest, state in source_identities
+        ):
+            raise RuntimeError(f"Source changed while creating {dest}")
+        if (
+            cached_dest is not None
+            and _is_non_empty_file(dest)
+            and _file_state(dest) == cached_dest[1]
+            and os.path.isfile(identity_path)
+        ):
+            with open(identity_path, encoding="utf-8") as file:
+                cached_recipe, _, cached_output = file.read().partition("\n")
+            if cached_recipe == recipe_hash and cached_output == cached_dest[0]:
+                return
         if os.path.isfile(tmp_dest):
             os.remove(tmp_dest)
         try:
@@ -129,7 +210,14 @@ def _run_to_atomic_output(command: Sequence[str], dest: str) -> None:
             if not _is_non_empty_file(tmp_dest):
                 command_text = " ".join(rendered_command)
                 raise RuntimeError(f"{command_text=} wrote no output to {tmp_dest}")
+            if any(
+                _file_state(path) != state for path, _digest, state in source_identities
+            ):
+                raise RuntimeError(f"Source changed while creating {dest}")
+            output_hash = _file_sha256(tmp_dest)
             os.replace(tmp_dest, dest)
+            with open(identity_path, mode="w", encoding="utf-8") as file:
+                file.write(f"{recipe_hash}\n{output_hash}")
         finally:
             if os.path.isfile(tmp_dest):
                 os.remove(tmp_dest)
@@ -261,7 +349,9 @@ def _sevennet(model_name: str, modal: str | None = None) -> Callable[..., "Calcu
     return make_calc
 
 
-def _sevennet_checkpoint(model_key: str) -> Callable[..., "Calculator"]:
+def _sevennet_checkpoint(
+    model_key: str, modal: str | None = None
+) -> Callable[..., "Calculator"]:
     """Load a SevenNet variant distributed as a standalone checkpoint."""
 
     def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
@@ -269,7 +359,8 @@ def _sevennet_checkpoint(model_key: str) -> Callable[..., "Calculator"]:
         from sevenn.calculator import SevenNetCalculator
 
         checkpoint = checkpoint or download_checkpoint(model_key)
-        return SevenNetCalculator(model=checkpoint, device=device)
+        kwargs = {"modal": modal} if modal else {}
+        return SevenNetCalculator(model=checkpoint, device=device, **kwargs)
 
     return make_calc
 
@@ -409,7 +500,10 @@ def _deepmd_freeze(model_key: str) -> Callable[..., "Calculator"]:
         # deepmd 3.2's pt backend freezes to a torch-export .pt2 (not TorchScript .pth)
         frozen = f"{os.path.splitext(ckpt)[0]}-frozen.pt2"
         _run_to_atomic_output(
-            ["dp", "--pt", "freeze", "-c", ckpt, "-o", "{output}"], frozen
+            ["dp", "--pt", "freeze", "-c", ckpt, "-o", "{output}"],
+            frozen,
+            source_paths=(ckpt,),
+            tool_packages=("deepmd-kit",),
         )
         return DP(frozen)
 
@@ -466,6 +560,7 @@ def _nequip(model_key: str) -> Callable[[str], "Calculator"]:
                 "ase",
             ],
             compiled,
+            tool_packages=("nequip",),
         )
         return NequIPCalculator.from_compiled_model(
             compile_path=compiled, device=device
@@ -524,15 +619,18 @@ def _matris(model: str, cache_name: str) -> Callable[..., "Calculator"]:
 
 
 def _alphanet(model_key: str, config_url: str) -> Callable[..., "Calculator"]:
-    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+    def make_calc(
+        device: str, dtype: str = "float64", checkpoint: str | None = None
+    ) -> "Calculator":
         from alphanet.config import All_Config
         from alphanet.infer.calc import AlphaNetCalculator
 
         from matbench_discovery.remote.fetch import download_file
 
         # AlphaNet needs an architecture config json (not bundled in the weights) that
-        # matches the checkpoint; fetch the OMA config that ships in the AlphaNet repo
-        config_path = f"{CHECKPOINT_DIR}/{model_key}-config.json"
+        # matches the checkpoint; use the model-specific commit-pinned upstream config
+        config_hash = hashlib.sha256(config_url.encode()).hexdigest()[:12]
+        config_path = f"{CHECKPOINT_DIR}/{model_key}-config-{config_hash}.json"
         os.makedirs(CHECKPOINT_DIR, exist_ok=True)
         with FileLock(f"{config_path}.lock"):
             if not _is_non_empty_file(config_path):
@@ -540,14 +638,21 @@ def _alphanet(model_key: str, config_url: str) -> Callable[..., "Calculator"]:
         config = All_Config().from_json(config_path)
         ckpt_path = checkpoint or download_checkpoint(model_key)
         return AlphaNetCalculator(
-            ckpt_path=ckpt_path, device=device, precision="32", config=config
+            ckpt_path=ckpt_path,
+            device=device,
+            precision={"float32": "32", "float64": "64"}[dtype],
+            config=config,
         )
 
     return make_calc
 
 
 def _pet(model_key: str) -> Callable[..., "Calculator"]:
-    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+    def make_calc(
+        device: str, dtype: str = "float64", checkpoint: str | None = None
+    ) -> "Calculator":
+        import torch
+        from metatomic.torch import load_atomistic_model
         from metatomic.torch.ase_calculator import MetatomicCalculator
 
         # PET ships a metatrain .ckpt that must be exported to a TorchScript .pt before
@@ -555,8 +660,19 @@ def _pet(model_key: str) -> Callable[..., "Calculator"]:
         ckpt = checkpoint or download_checkpoint(model_key)
         pt_file = f"{os.path.splitext(ckpt)[0]}.pt"
         # The temp name must end in .pt: mtt appends .pt otherwise, writing elsewhere.
-        _run_to_atomic_output(["mtt", "export", ckpt, "-o", "{output}"], pt_file)
-        return MetatomicCalculator(pt_file, device=device)
+        _run_to_atomic_output(
+            ["mtt", "export", ckpt, "-o", "{output}"],
+            pt_file,
+            source_paths=(ckpt,),
+            tool_packages=("metatrain",),
+        )
+        model = load_atomistic_model(pt_file)
+        model.capabilities().dtype = dtype
+        model = model.to(
+            dtype={"float32": torch.float32, "float64": torch.float64}[dtype],
+            device=device,
+        )
+        return MetatomicCalculator(model, device=device, non_conservative=False)
 
     return make_calc
 
@@ -734,7 +850,7 @@ CALCULATORS: dict[str, CalcSpec] = {
     "mace_mpa_0": CalcSpec(_mace("medium-mpa-0"), deps=MACE_DEPS),
     "orb_v2": CalcSpec(_orb("orb-v2"), deps=("orb-models==0.4.3",)),
     "orb_v3": CalcSpec(
-        _orb("orb-v3-conservative-inf-omat"), deps=("orb-models==0.5.4",)
+        _orb("orb-v3-conservative-inf-mpa"), deps=("orb-models==0.5.4",)
     ),
     "orb_v2_mptrj": CalcSpec(_orb("orb-mptraj-only-v2"), deps=("orb-models==0.4.3",)),
     "mattersim_v1_5m": CalcSpec(
@@ -743,7 +859,7 @@ CALCULATORS: dict[str, CalcSpec] = {
     "sevennet_0": CalcSpec(_sevennet("7net-0"), deps=("sevenn",)),
     "sevennet_l3i5": CalcSpec(_sevennet("7net-l3i5"), deps=("sevenn",)),
     "sevennet_mf_ompa": CalcSpec(
-        _sevennet_checkpoint("sevennet_mf_ompa"),
+        _sevennet_checkpoint("sevennet_mf_ompa", modal="mpa"),
         deps=("sevenn",),
         auto_checkpoint=True,
     ),
@@ -827,7 +943,7 @@ CALCULATORS: dict[str, CalcSpec] = {
     "alphanet_mptrj": _alphanet_spec(
         "alphanet_mptrj",
         "https://raw.githubusercontent.com/zmyybc/AlphaNet/"
-        "65f8ea9330459e0106867d1c694aec4139c6cb19/pretrained/MP/mp.json",
+        "65f8ea9330459e0106867d1c694aec4139c6cb19/pretrained/MPtrj/mp.json",
     ),
     "alphanet_v1_oam": _alphanet_spec(
         "alphanet_v1_oam",
@@ -952,8 +1068,8 @@ def load_calculator(
         model_key: Key into CALCULATORS (a Model enum name).
         device: 'cuda' or 'cpu'. Defaults to auto-detection (cuda if torch sees a GPU,
             except the CPU-only 'emt' debug model).
-        dtype: Floating-point precision ('float64' or 'float32'). Only MACE models
-            honor it; other calculators keep their package defaults.
+        dtype: Floating-point precision ('float64' or 'float32'). Passed to MACE,
+            AlphaNet, and PET; other calculators keep their package defaults.
         checkpoint: Explicit local model artifact for factories that support one.
 
     Returns:

@@ -18,6 +18,20 @@ from matbench_discovery.phonons.thermal_conductivity import calculate_fc2_set
 NP_RNG = np.random.default_rng(seed=0)
 
 
+@pytest.mark.parametrize(
+    "forces",
+    [
+        np.zeros((2, 2)),
+        np.full((2, 3), np.nan),
+        np.full((2, 3), 1j),
+    ],
+)
+def test_force_validation_rejects_malformed_predictions(forces: np.ndarray) -> None:
+    """Force predictions require exact shape, real dtype, and finite values."""
+    with pytest.raises(ValueError, match="Invalid test forces"):
+        ltc._validate_forces(forces, (2, 3), "test")  # noqa: SLF001
+
+
 @pytest.fixture
 def test_atoms() -> Atoms:
     """Create a simple FCC test structure using Cu (supported by EMT).
