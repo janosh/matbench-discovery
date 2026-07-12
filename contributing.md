@@ -19,7 +19,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    - geometry optimization: `mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.jsonl.gz` — final relaxed structures, total energies (eV), convergence/step metadata, and material IDs matching the WBM test set. Forces (eV/Å), stress (eV/Å³), and volume (Å³) are optional. Use [JSON Lines format](https://jsonlines.org), which allows fast inspection of a few structures via `pandas.read_json(lines=True, nrows=100)`.
    - discovery: `mace/mace-mp-0/2023-12-11-wbm-IS2RE.csv.gz` — compressed CSV with material IDs matching the WBM test set and final formation energies per atom (eV/atom)
-   - phonons: `mace/mace-mp-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz` (encode your `dist`/`fmax`/`symprec` values in the name) — compressed JSON with material IDs and predicted thermal conductivity (κ) values (W/mK)
+   - phonons: `mace/mace-mp-0/2024-11-09-phonondb-kappa-103.json.gz` — compressed JSON with exactly the 103 PhononDB material IDs and normalized predicted thermal conductivity (κ) values (W/mK). Force sets, when retained, belong in a separate `-force-sets.json.gz` artifact, while the runner writes manifest and environment provenance to `-run-info.json`.
 
    Optionally you can also share the complete relaxation trajectories. Having the forces and stresses at each relaxation step also allows analyzing any pathological behavior for structures where relaxation failed or went haywire.
 
@@ -142,6 +142,10 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
      max_steps: 500
      ase_optimizer: FIRE
      cell_filter: FrechetCellFilter
+     kappa: # verified protocol defaults used by models/run_kappa.py
+       protocol: phonondb-v1
+       # Only list model-specific deviations from the versioned defaults.
+       save_forces: true
      optimizer: Adam
      graph_construction_radius: 6.0
      max_neighbors: 50
@@ -168,7 +172,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    metrics:
      phonons:
        kappa_103:
-         pred_file: models/<model_dir>/<yyyy-mm-dd>-kappa-103-<values-of-dist|fmax|symprec>.json.gz
+         pred_file: models/<model_dir>/<yyyy-mm-dd>-phonondb-kappa-103.json.gz
          pred_file_url: https://figshare.com/files/<figshare_id>
      geo_opt: # only applicable if the model performed structure relaxation
        pred_file: models/<arch>/<model_variant>/<yyyy-mm-dd>-wbm-IS2RE-<optimizer>.jsonl.gz # final relaxed structures and material IDs
@@ -197,7 +201,7 @@ git checkout -b model-name-you-want-to-add
 
 Tip: `--depth 1` only clones the latest commit, not the full `git history` which is faster if a repo contains large data files that changed over time.
 
-### Step 2: Commit model metadata and train/test scripts to the repo
+### Step 2: Commit model metadata and task-specific code to the repo
 
 Create a new folder
 
@@ -212,20 +216,25 @@ matbench-discovery-root
 └── models
     └── <model_name>
         ├── <model_name>.yml
-        ├── test_<model_name>_kappa.py
+        ├── test_<model_name>_<task>.py  # only for tasks without a shared runner
         ├── readme.md  # optional
         └── train_<model_name>.py  # optional
 ```
 
 You can include arbitrary other supporting files like metadata and model features (below 10MB total to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and share the link in your PR description.
 
-Discovery, molecular dynamics, and diatomics do not need per-model scripts when a model exposes an ASE calculator and follows each task's standard execution loop. Register the calculator and its `uv` dependencies once in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py), smoke-test the exact isolated command, and run the task-specific shared runner. Discovery intentionally has no per-model executables.
+Discovery, phonons, molecular dynamics, and diatomics do not need per-model scripts when a model exposes an ASE calculator. Register the calculator and its isolated `uv` dependencies once in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py), put the verified phonon protocol under `hyperparams.kappa`, smoke-test the exact isolated command, and run the task-specific shared runner. Model-specific phonon batching or relaxation belongs in a typed adapter under `matbench_discovery/phonons/adapters`, not a forked executable.
 
 ```sh
 # WBM discovery: relax/resume shards, then strictly merge and write YAML metrics
 uv run models/run_discovery.py --print-cmd --model <model_key> --dry-run
 uv run --with <your-deps> models/run_discovery.py --model <model_key>
 uv run --with <your-deps> models/run_discovery.py --model <model_key> --merge-shards --write-yaml
+
+# PhononDB thermal conductivity: resumable per-material records + strict merge
+uv run models/run_kappa.py --print-cmd --model <model_key> --dry-run
+eval "$(uv run models/run_kappa.py --print-cmd --model <model_key>)"
+eval "$(uv run models/run_kappa.py --print-cmd --model <model_key> --merge-shards --write-yaml)"
 
 # 20 ps NVT molecular dynamics
 uv run --with <your-deps> models/run_md.py --model <model_key> --dry-run
@@ -236,11 +245,11 @@ uv run --with <your-deps> models/run_diatomics.py --model <model_key> --dry-run
 uv run --with <your-deps> models/run_diatomics.py --model <model_key> --write-yaml
 ```
 
-For a full contiguous Slurm discovery array, the runner can infer shard selection from `SLURM_ARRAY_TASK_COUNT`, `SLURM_ARRAY_TASK_ID`, `SLURM_ARRAY_TASK_MIN`, and `SLURM_ARRAY_TASK_MAX`. Any rerun of a shard subset (contiguous or sparse) must pass the original `--n-shards`; zero-based task IDs are then reused as the original shard indices. Only the complete `--merge-shards --write-yaml` step updates model metadata.
+For a full contiguous Slurm discovery or kappa array, the runner can infer shard selection from `SLURM_ARRAY_TASK_COUNT`, `SLURM_ARRAY_TASK_ID`, `SLURM_ARRAY_TASK_MIN`, and `SLURM_ARRAY_TASK_MAX`. Any rerun of a shard subset (contiguous or sparse) must pass the original `--n-shards`; zero-based task IDs are then reused as the original shard indices. Kappa shards are balanced deterministically by atom count and resume from atomic per-material records. Only a strict, complete `--merge-shards --write-yaml` step updates model metadata, and official YAML writes reject protocol overrides and noncanonical dataset content.
 
 The MD runner's `--write-yaml` records model-level metrics under `metrics.md` and writes the per-system predictions to a gzipped CSV named `<yyyy-mm-dd>-<model_name>-md-metrics.csv.gz`. Public runs compute the observable metrics only; energy/force RMSEs are maintainer-computed private-label diagnostics and are not required in external submissions. Upload generated artifacts to Figshare (or similar) and set their download URLs in the corresponding YAML `pred_file_url` fields — see [Step 3](#step-3-upload-results-files-to-figshare-or-similar) for the upload conventions.
 
-Add the model to the `Model` enum in [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/57d0d0c8a14cd3/matbench_discovery/enums.py#L274) pointing to the correct metadata file.
+Add the model to the `Model` enum in [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/enums.py) pointing to the correct metadata file.
 
 > [!WARNING]
 > Do not include a `filter_bad_preds.py` script or equivalent. This was a historical flaw in the evaluation and now all OOM outlier prediction handling is handled internally and consistently removing the need for this filtering stage.
@@ -276,7 +285,7 @@ uv run --with-editable . scripts/ingest_model.py <model_name>
 
 This command will:
 
-1. **Check PR requirements**: Verify your YAML file exists, model is registered in the `Model` enum, prediction URLs are in the YAML, and test scripts exist
+1. **Check PR requirements**: Verify model metadata, prediction URLs, shared-runner registration, and any task-specific scripts
 2. **Run evaluation scripts**: Execute discovery, kappa (phonon), and diatomic metrics evaluation for your model
 3. **Generate figures**: Create the required energy parity and per-element error plots
 
@@ -297,7 +306,7 @@ Once your submission PR looks ready, a maintainer applies the `ingest-model` lab
 
 The secret-bearing ingestion workflow never executes PR code. PRs that change the payload *format* (new keys/metrics or schema tweaks in generator code) must regenerate payloads locally and commit them in the same PR:
 
-- Roster drift fails `tests/test_fig_payloads.py`'s coverage tests (e.g. `test_discovery_payload_covers_active_models` after adding or superseding a model). Fix by running `uv run --with-editable . scripts/ingest_model.py <model_name> --payloads-only` and committing the changed `site/src/figs/*.jsonl` files — this splices only your model's freshly computed entries into the committed payloads, pulling your prediction files from the `pred_file_url` entries in the model YAML (the same links automated ingestion uses).
+- Roster drift fails `tests/site/test_fig_payloads.py`'s coverage tests (e.g. `test_discovery_payload_covers_active_models` after adding or superseding a model). Fix by running `uv run --with-editable . scripts/ingest_model.py <model_name> --payloads-only` and committing the changed `site/src/figs/*.jsonl` files — this splices only your model's freshly computed entries into the committed payloads, pulling your prediction files from the `pred_file_url` entries in the model YAML (the same links automated ingestion uses).
 - The `model-pr-guard` check fails any PR that changes payload-generating code without also updating committed payloads (`site/src/figs` data files or the route-local `per-element-each-errors.jsonl`): regenerate locally with `scripts/ingest_model.py --payloads-only` (no model name needed for pure format changes), or add the `payloads-unchanged` label for output-neutral refactors.
 - Model-independent data-page payloads and route-local element counts are owned by `scripts/export_data_fig_payloads.py`. Run it after changing that script or `matbench_discovery/data_figs.py`; it requires the local `data/mp/2022-09-16-mp-trj-summary.json.bz2` cache. If absent, regenerate that cache from the extXYZ source with `python data/mp/eda_mp_trj.py`.
 

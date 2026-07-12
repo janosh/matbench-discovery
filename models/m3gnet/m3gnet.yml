@@ -60,6 +60,7 @@ hyperparams:
   three_body_cutoff: 4.0
   max_neighbors: .inf
 
+  kappa: {protocol: phonondb-v1}
 training_set: [MPF]
 training_cost: missing
 

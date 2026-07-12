@@ -62,6 +62,11 @@ hyperparams:
   graph_construction_radius: 6.0 # Å, from https://github.com/ICAMS/grace-tensorpotential/blob/3115a931429/tensorpotential/calculator/foundation_models.py#L83-L84
   max_neighbors: .inf
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    force_max: 0.00001
+    relaxation_mode: two-stage
 metrics:
   phonons:
     kappa_103:

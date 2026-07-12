@@ -40,7 +40,7 @@ doi: https://doi.org/10.1021/jacs.4c14455
 paper: https://arxiv.org/abs/2409.07947
 pypi: https://pypi.org/project/sevenn
 pr_url: https://github.com/janosh/matbench-discovery/pull/221
-checkpoint_url: https://figshare.com/articles/software/28590722?file=53029859
+checkpoint_url: https://figshare.com/files/53029859
 
 license:
   code: GPL-3.0
@@ -87,6 +87,10 @@ hyperparams:
   max_neighbors: .inf
   sph_harmonics_l_max: 3
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    save_forces: true
 requirements:
   torch: 2.2.1
   torch-geometric: 2.5.2

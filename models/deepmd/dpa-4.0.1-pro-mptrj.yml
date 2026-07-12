@@ -114,6 +114,10 @@ hyperparams:
     bf16_amp: true
     tf32_matmul: true
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    save_forces: true
 requirements:
   deepmd-kit: 3.2.0
   torch: 2.11.0+cu128

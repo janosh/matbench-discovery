@@ -3,7 +3,7 @@
 
 export type ModelMetadata = Record<string, unknown> & {
   model_name: string
-  model_key?: string
+  model_key: string
   model_version: string
   date_added: string
   date_published: string
@@ -89,6 +89,7 @@ export type ModelMetadata = Record<string, unknown> & {
      * ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)
      */
     cell_filter?: string
+    kappa?: KappaSettings
     learning_rate?: number
     batch_size?: number
     epochs?: number
@@ -157,6 +158,11 @@ export type TargetType =
   | 'EFS_D'
   | 'EFS_GM'
   | 'EFS_DM'
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "http_url".
+ */
+export type HttpUrl = string
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "GeoOptMetrics".
@@ -250,11 +256,6 @@ export type MdMetrics = PredFileRequiresUrl & {
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
- * via the `definition` "http_url".
- */
-export type HttpUrl = string
-/**
- * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "pred_files".
  */
 export type PredFiles = PredFileRequiresUrl
@@ -302,10 +303,61 @@ export interface Person {
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "KappaSettings".
+ */
+export interface KappaSettings {
+  protocol: 'phonondb-v1'
+  displacement_distance?: number
+  /**
+   * @minItems 1
+   * @maxItems 1
+   */
+  temperatures?: [300]
+  ase_optimizer?: string
+  ase_filter?:
+    | 'FrechetCellFilter'
+    | 'ExpCellFilter'
+    | 'UnitCellFilter'
+    | 'frechet'
+    | 'exp'
+    | 'none'
+    | null
+  max_steps?: number
+  force_max?: number
+  symprec?: number
+  relax_symprec?: number
+  enforce_relax_symm?: boolean
+  conductivity_broken_symm?: boolean
+  is_plusminus?: true | false | 'auto'
+  batch_size?: number
+  max_atoms_per_batch?: number | null
+  relaxation_mode?: 'single-stage' | 'two-stage' | 'none'
+  save_forces?: boolean
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "PhononMetrics".
  */
 export interface PhononMetrics {
-  kappa_103?: PredFileRequiresUrl
+  kappa_103?: KappaMetrics
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "KappaMetrics".
+ */
+export interface KappaMetrics {
+  pred_file?: string | null
+  pred_file_url?: HttpUrl | null
+  force_file?: string | null
+  force_file_url?: HttpUrl | null
+  run_info_file?: string | null
+  run_info_file_url?: HttpUrl | null
+  hardware?: string
+  run_time_sec?: number
+  max_rss_gb?: number
+  max_gpu_mem_gb?: number
+  κ_SRME: number
+  κ_SRE?: number
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema

@@ -2,7 +2,7 @@ name: Model PR guard
 
 # Block merging PRs that would leave committed site assets stale. Two guards:
 #
-# 1. Un-ingested model submissions: tests/test_parity_assets.py requires every active
+# 1. Un-ingested model submissions: tests/site/test_parity_assets.py requires every active
 #    model with predictions to be in the committed parity manifests and every manifest
 #    asset to exist in the GitHub release the site downloads from. Model PRs fail until
 #    a maintainer applies the 'ingest-model' label (full CI ingest via
@@ -62,7 +62,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].path')
+          CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename')
           GENERATOR_PATTERN=$(<.github/payload-generator-paths.regex)
           [ -z "$GENERATOR_PATTERN" ] && { echo "::error::Empty generator pattern"; exit 1; }
           GEN=$(grep -E "$GENERATOR_PATTERN" <<< "$CHANGED" || true)
@@ -75,4 +75,4 @@ jobs:
       - name: Check parity manifests + release assets
         env:
           GH_TOKEN: ${{ github.token }} # avoids GitHub API rate limits
-        run: uv run --with-editable . --with pytest pytest tests/test_parity_assets.py -q
+        run: uv run --with-editable . --with pytest pytest tests/site/test_parity_assets.py -q

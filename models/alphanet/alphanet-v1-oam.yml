@@ -82,6 +82,9 @@ hyperparams:
   graph_construction_radius: 5.0 # Å
   max_neighbors: 50
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
 requirements:
   torch: 2.5.1
   torch-geometric: 2.6.1

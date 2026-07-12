@@ -89,6 +89,7 @@ hyperparams:
   graph_construction_radius: 12.0 # Å
   max_neighbors: 20 # see table 7 in arXiv:2410.12771
 
+  kappa: {protocol: phonondb-v1}
 notes:
   Description: |
     EquiformerV2 is an equivariant transformer that uses graph attention, attention re-normalization, and separable S^2 activations and layer normalization.

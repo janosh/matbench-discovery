@@ -53,6 +53,9 @@ hyperparams:
   graph_construction_radius: 6.0
   max_neighbors: .inf
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
 metrics:
   md:
     pred_file: models/grace/grace-3l-oam-l/2026-07-03-grace-3l-oam-l-md-metrics.csv.gz

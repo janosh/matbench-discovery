@@ -13,8 +13,8 @@ from matbench_discovery.enums import Model, TestSubset
         ([], {"models": list(Model.active()), "test_subset": TestSubset.uniq_protos}),
         (["--models", str(Model.chgnet_030)], {"models": [Model.chgnet_030]}),
         (
-            ["--models", "alphanet-mptrj"],
-            {"models": [Model.alphanet_mptrj]},
+            ["--models", "alphanet-v1-mptrj"],
+            {"models": [Model.alphanet_v1_mptrj]},
         ),
         (
             [

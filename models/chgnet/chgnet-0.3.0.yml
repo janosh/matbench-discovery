@@ -70,6 +70,7 @@ hyperparams:
   three_body_cutoff: 3.0 # Å
   max_neighbors: .inf
 
+  kappa: {protocol: phonondb-v1}
 notes:
   Description: |
     The Crystal Hamiltonian Graph Neural Network (CHGNet) is a universal GNN-based interatomic potential trained on energies, forces, stresses and magnetic moments from the MP trajectory dataset containing ∼1.5 million inorganic structures.

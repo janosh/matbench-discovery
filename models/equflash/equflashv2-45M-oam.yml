@@ -56,6 +56,11 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   graph_construction_radius: 6.0 # Å
   max_neighbors: .inf # additional hyperparameters describing training and inference
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    relaxation_mode: two-stage
+    max_atoms_per_batch: 128
 training_cost: # list any hardware used to train the model and for how long
   # hardware: { amount: float, hours: float, cost: float [USD] }
   Nvidia H100 GPUs: {amount: 16, hours: 100}

@@ -192,7 +192,7 @@ It handles three cases:
 
 An earlier revision also substituted short, near-degenerate (&le;0.2 eV) "spin-branch islands" with the surrounding branch for cosmetic smoothness. That step was removed: it edited far more points than all other filters combined (427 of 605 edits) for negligible smoothness gain and imposed a stronger hand-curation assumption by replacing the computed minimum with a higher-energy branch.
 
-Tests for this logic live in `tests/metrics/diatomics/test_diatomics_reference.py` and `tests/metrics/diatomics/test_build_diatomic_reference.py`.
+Tests for this logic live in `tests/metrics/diatomics/test_diatomics_reference.py` and `tests/scripts/test_build_diatomic_reference.py`.
 
 ## Acknowledgements
 

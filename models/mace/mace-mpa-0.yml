@@ -72,6 +72,9 @@ hyperparams:
   graph_construction_radius: 6.0 # Å
   max_neighbors: .inf
 
+  kappa:
+    protocol: phonondb-v1
+    save_forces: true
 notes:
   Description: |
     MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields.

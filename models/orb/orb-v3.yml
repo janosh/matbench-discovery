@@ -68,6 +68,11 @@ hyperparams:
   graph_construction_radius: 6.0 # Å
   max_neighbors: 120
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    is_plusminus: true
+    save_forces: true
 requirements:
   orb-models: '0.5.0'
 
@@ -174,34 +179,3 @@ metrics:
       RMSE: 0.078 # eV/atom
       R2: 0.821 # dimensionless
       missing_preds: 0 # count
-  md:
-    pred_file: models/orb/orb-v3/2026-06-28-orb_v3-md-metrics.csv.gz
-    hardware: NVIDIA H200
-    run_time_sec: 16872.77 # s
-    energy_rmse: 0.7329 # meV/atom
-    force_rmse: 73.628 # meV/Å
-    rdf_error: 3.6861 # %
-    adf_error: 1.7409 # %
-    vdos_error: 21.9842 # %
-    pressure_mae: 0.703 # GPa
-    pressure_wasserstein: 0.7096 # GPa
-    pressure_error: 48.4512 # %
-    n_systems: 17 # count
-    pred_file_url: https://figshare.com/files/66048929
-  diatomics:
-    pred_file: models/orb/orb-v3/2026-06-28-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/66104654
-    hardware: NVIDIA H100 80GB HBM3
-    run_time_sec: 139.85
-    pbe_wall_dist_mae: 0.1456
-    pbe_energy_mae: 1.128
-    pbe_bond_length_error: 0.4747
-    pbe_well_depth_error: 1.096
-    pbe_vib_freq_error: 64.63
-    tortuosity: 1.015
-    energy_diff_flips: 2.299
-    energy_jump: 0.1381
-    force_flips: 2.276
-    force_total_variation: 221.0
-    force_jump: 37.21
-    pbe_force_mae: 1.376
