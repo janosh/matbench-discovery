@@ -77,15 +77,16 @@ export const wide_legend: LegendConfig = {
 // individual model visibility. Attach `collapse_on_outside_click` to the plot wrapper.
 export const make_models_legend = (legend_group = `Toggle Models`) => {
   const collapsed_groups = new SvelteSet([legend_group])
-  const toggle = () => {
-    if (!collapsed_groups.delete(legend_group)) collapsed_groups.add(legend_group)
+  const toggle_group = (group: string) => {
+    if (!collapsed_groups.delete(group)) collapsed_groups.add(group)
   }
+  const toggle = () => toggle_group(legend_group)
   const legend: LegendConfig = {
     ...wide_legend,
     collapsed_groups,
     // keep expanded legend readable over plot points
     style: `${wide_legend.style} --plot-legend-bg-color: light-dark(rgb(255, 255, 255), rgb(40, 40, 40))`,
-    on_group_toggle: toggle,
+    on_group_toggle: toggle_group,
   }
   // Capture-phase listener also sees clicks whose inner handlers stop propagation.
   const collapse_on_outside_click: Attachment = (node) => {

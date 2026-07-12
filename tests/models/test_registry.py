@@ -86,14 +86,19 @@ def test_model_dirs_have_metadata() -> None:
                 f"Invalid training set: {training_sets}"
             )
             # Check if model was trained only on open datasets
-            if training_set_keys <= OPEN_DATASETS and not model.metadata[
-                "openness"
-            ].endswith("OD"):
-                # if so, check that the model is marked as OD (open data)
-                raise ValueError(
-                    f"{model.label} was only trained on open datasets but is "
-                    f"marked as {model.metadata['openness']}. Should be marked as OD."
-                )
+            if training_set_keys <= OPEN_DATASETS:
+                openness = model.metadata.get("openness")
+                if openness is None:
+                    raise ValueError(
+                        f"{model.label} was only trained on open datasets but has no "
+                        "openness metadata. Should be marked as OD."
+                    )
+                if not openness.endswith("OD"):
+                    # if so, check that the model is marked as OD (open data)
+                    raise ValueError(
+                        f"{model.label} was only trained on open datasets but is "
+                        f"marked as {openness}. Should be marked as OD."
+                    )
 
         authors = model.metadata["authors"]
         metadata_model_name = model.metadata["model_name"]

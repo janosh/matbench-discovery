@@ -115,5 +115,6 @@ it(`opens the model legend from the controls row`, async () => {
 
   doc_query(`button.models-toggle`).click()
   await tick()
+  expect(document.querySelector(`.scatter > .legend:has(.legend-item)`)).not.toBeNull()
   expect(document.querySelector(`button.models-toggle`)).toBeNull()
 })
