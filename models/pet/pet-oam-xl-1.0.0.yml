@@ -53,6 +53,12 @@ hyperparams:
   cutoff_width: 0.5
   cutoff_function: Bump
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    ignore_imaginary_freqs: true
+    is_plusminus: true
+    save_forces: true
 training_cost:
   Nvidia H100 GPUs: {amount: 512, hours: 40}
 

@@ -322,7 +322,7 @@ def load_df_wbm_with_preds(
 def update_yaml_file(
     file_path: str | Path,
     dotted_path: str,
-    data: dict[str, Any],
+    data: dict[str, Any] | Callable[[dict[str, Any]], dict[str, Any]],
     *,
     preserve_existing: bool = True,
 ) -> dict[str, Any]:
@@ -334,7 +334,7 @@ def update_yaml_file(
     Args:
         file_path (str | Path): Path to YAML file to update
         dotted_path (str): Dotted path to update (e.g. 'metrics.discovery')
-        data (dict[str, Any]): Data to write at the specified path
+        data (dict | Callable): Data to write, or a locked section transformer.
         preserve_existing (bool): If True (default), keep existing keys in the target
             dict section that aren't in `data`. If False, replace the section entirely.
 
@@ -374,10 +374,15 @@ def update_yaml_file(
         # available'). Pass preserve_existing=False to fully replace the section, so a
         # recompute drops keys that are no longer emitted (deprecated metrics).
         previous = current.get(last)
+        updated_data = (
+            data
+            if isinstance(data, dict)
+            else data(dict(previous) if isinstance(previous, dict) else {})
+        )
         if preserve_existing and isinstance(previous, dict):
             for key, val in previous.items():
-                data.setdefault(key, val)
-        current[last] = data
+                updated_data.setdefault(key, val)
+        current[last] = updated_data
 
         # Write back to file
         with open(file_path, mode="w", encoding="utf-8") as file:

@@ -108,6 +108,10 @@ hyperparams:
     batch_size: 500
     gradient_max_norm: 5
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    save_forces: true
 requirements:
   deepmd-kit: 3.1.4
   torch: 2.11.0+cu128

@@ -62,6 +62,9 @@ hyperparams:
   graph_construction_radius: 6.0 # Å, from table 5 in arXiv:2502.12147
   max_neighbors: .inf # see sec. 5.3 in arXiv:2502.12147
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
 notes:
   Description: |
     equivariant Smooth Energy Network (eSEN), described in https://arxiv.org/abs/2502.12147.

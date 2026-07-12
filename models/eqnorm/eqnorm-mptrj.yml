@@ -81,6 +81,11 @@ hyperparams:
   shift_trainable: false
   scale_trainable: false
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    max_steps: 500
+    save_forces: true
 requirements:
   torch: '2.2.2'
   torch-geometric: '2.6.1'

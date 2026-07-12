@@ -82,6 +82,11 @@ hyperparams:
   epochs: 30 # actual epochs run; max_epochs=100 in Trainer config
   max_neighbors: .inf
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    ignore_imaginary_freqs: true
+    save_forces: true
 training_cost:
   # ~9.8h per epoch, 30 epochs plus fine-tune
   Nvidia H100 GPUs: {amount: 8, hours: 300, cost: 2400}

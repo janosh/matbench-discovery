@@ -82,6 +82,11 @@ hyperparams:
   epochs: 300
   max_neighbors: .inf
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    ignore_imaginary_freqs: true
+    save_forces: true
 training_cost:
   Nvidia H100 GPUs: {amount: 4, hours: 72, cost: 288}
 

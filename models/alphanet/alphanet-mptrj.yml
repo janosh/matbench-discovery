@@ -84,6 +84,7 @@ hyperparams:
   graph_construction_radius: 6.0 # Å, from table 6 in arXiv:2501.07155
   max_neighbors: .inf # max_num_neighbors_threshold seems to be unused in https://github.com/zmyybc/AlphaNet/blob/243fe71cb9/alphanet/models/graph.py#L28
 
+  kappa: {protocol: phonondb-v1}
 requirements:
   torch: 2.5.1
   torch-geometric: 2.6.1

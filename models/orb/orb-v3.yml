@@ -68,6 +68,11 @@ hyperparams:
   graph_construction_radius: 6.0 # Å
   max_neighbors: 120
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    is_plusminus: true
+    save_forces: true
 requirements:
   orb-models: '0.5.0'
 

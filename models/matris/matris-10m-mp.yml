@@ -69,6 +69,10 @@ hyperparams:
   three_body_cutoff: 4.5 # Å
   max_neighbors: .inf # see sec. 3.2 in arXiv:2502.12147
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    force_max: 0.00001
 requirements:
   torch: 2.6.0
   ase: 3.26.0

@@ -15,17 +15,22 @@ structures and scale thermal-conductivity metrics to larger test sets.
 
 import traceback
 import warnings
+from collections.abc import Mapping
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
 
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
 
 def calc_kappa_metrics_from_dfs(
-    df_pred: pd.DataFrame, df_true: pd.DataFrame
+    df_pred: pd.DataFrame,
+    df_true: pd.DataFrame,
+    *,
+    ignore_imaginary_freqs: bool = False,
 ) -> pd.DataFrame:
     """Compute per-material thermal-conductivity metrics from two dataframes.
 
@@ -36,6 +41,9 @@ def calc_kappa_metrics_from_dfs(
         df_pred: ML predictions with conductivity tensors, mode-resolved properties,
             and structural information.
         df_true: DFT references with the same structure as df_pred.
+        ignore_imaginary_freqs: Score finite conductivity results even when their
+            frequency diagnostic reports imaginary modes, matching protocols that
+            explicitly opted into this historical benchmark behavior.
 
     Returns:
         df_pred with added benchmark columns:
@@ -44,7 +52,10 @@ def calc_kappa_metrics_from_dfs(
         - SRME: Mode-resolved error
         - DFT_kappa_tot_avg: Reference DFT conductivity values
     """
-    # Remove precomputed columns
+    if ignore_imaginary_freqs:
+        df_pred = df_pred.copy()
+        df_pred[Key.has_imag_ph_modes] = False
+
     df_pred[MbdKey.kappa_tot_avg] = df_pred[MbdKey.kappa_tot_rta].map(
         calculate_kappa_avg
     )
@@ -71,6 +82,30 @@ def calc_kappa_metrics_from_dfs(
     df_pred[MbdKey.true_kappa_tot_avg] = df_true[MbdKey.kappa_tot_avg]
 
     return df_pred
+
+
+def evaluate_kappa_predictions(
+    df_predictions: pd.DataFrame,
+    *,
+    ignore_imaginary_freqs: bool = False,
+) -> dict[str, float]:
+    """Evaluate complete PhononDB predictions and return aggregate metrics."""
+    from matbench_discovery.phonons import read_kappa_json
+
+    df_reference = read_kappa_json(DataFiles.phonondb_pbe_103_kappa_no_nac.path)
+    if not df_predictions.index.is_unique:
+        raise ValueError("Cannot evaluate kappa predictions: duplicate material IDs")
+    if set(df_predictions.index) != set(df_reference.index):
+        raise ValueError("Cannot evaluate kappa predictions: reference IDs differ")
+    df_metrics = calc_kappa_metrics_from_dfs(
+        df_predictions.loc[df_reference.index],
+        df_reference,
+        ignore_imaginary_freqs=ignore_imaginary_freqs,
+    )
+    return {
+        "srme": float(df_metrics[Key.srme].mean()),
+        "sre": float(df_metrics[Key.sre].mean()),
+    }
 
 
 def weighted_quantiles(
@@ -302,7 +337,14 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
 
 
 def write_metrics_to_yaml(
-    model: Model, metrics: dict[str, float], pred_file_path: str
+    model: Model,
+    metrics: dict[str, float],
+    pred_file_path: str,
+    *,
+    run_metadata: Mapping[str, object] | None = None,
+    force_file_path: str | None = None,
+    run_info_path: str | None = None,
+    replace_pred_file: bool = False,
 ) -> None:
     """Write kappa metrics to a model YAML file's phonons section.
 
@@ -310,27 +352,51 @@ def write_metrics_to_yaml(
         model: Model to write metrics for.
         metrics: Kappa metrics for this model.
         pred_file_path: Path to prediction file.
+        run_metadata: Optional complete-run timing, hardware, and memory provenance.
+        force_file_path: Optional separate force-set artifact path.
+        run_info_path: Optional small manifest/provenance sidecar path.
+        replace_pred_file: Replace an existing local prediction path and clear its
+            stale remote URL. The legacy default preserves established artifact paths.
     """
-    from matbench_discovery import data as mbd_data
     from matbench_discovery import repo_relative_path
+    from matbench_discovery.data import update_yaml_file
 
-    # Convert absolute path to repo-relative path
     pred_file_path = repo_relative_path(pred_file_path)
 
-    with open(model.yaml_path, encoding="utf-8") as file:
-        data = mbd_data.round_trip_yaml.load(file)
+    def update_kappa_103(kappa_103: dict[str, Any]) -> dict[str, Any]:
+        """Update metrics and provenance from the latest locked YAML section."""
+        kappa_103.update(
+            κ_SRME=round(metrics["srme"], 4),
+            κ_SRE=round(metrics["sre"], 4),
+        )
+        if replace_pred_file:
+            kappa_103 |= {"pred_file": pred_file_path, "pred_file_url": None}
+        else:
+            kappa_103.setdefault("pred_file", pred_file_path)
+        for artifact_key, artifact_path in (
+            ("force_file", force_file_path),
+            ("run_info_file", run_info_path),
+        ):
+            url_key = f"{artifact_key}_url"
+            if artifact_path is not None:
+                relative_path = repo_relative_path(artifact_path)
+                artifact_changed = kappa_103.get(artifact_key) != relative_path
+                kappa_103[artifact_key] = relative_path
+                if replace_pred_file or artifact_changed:
+                    kappa_103[url_key] = None
+            elif replace_pred_file:
+                kappa_103.pop(artifact_key, None)
+                kappa_103.pop(url_key, None)
+        for key in ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"):
+            if run_metadata is not None and key in run_metadata:
+                kappa_103[key] = run_metadata[key]
+            elif replace_pred_file:
+                kappa_103.pop(key, None)
+        return kappa_103
 
-    # Ensure nested structure exists and update non-destructively
-    kappa_103 = (
-        data.setdefault("metrics", {})
-        .setdefault("phonons", {})
-        .setdefault("kappa_103", {})
+    update_yaml_file(
+        model.yaml_path,
+        "metrics.phonons.kappa_103",
+        update_kappa_103,
+        preserve_existing=False,
     )
-    kappa_103.update(
-        κ_SRME=float(round(metrics["srme"], 4)),
-        κ_SRE=float(round(metrics["sre"], 4)),
-    )
-    kappa_103.setdefault("pred_file", pred_file_path)
-
-    with open(model.yaml_path, mode="w", encoding="utf-8") as file:
-        mbd_data.round_trip_yaml.dump(data, file)

@@ -25,6 +25,7 @@ from matbench_discovery import ROOT
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS, RelaxationSettings
 from matbench_discovery.enums import Model
+from matbench_discovery.phonons.pipeline import KappaSettings
 
 PASS, FAIL, SKIP = "✓", "✗", "○"
 PAYLOAD_FLAGS = ("--auto-download",)
@@ -197,17 +198,30 @@ def check_submission(model: Model, checks: Checklist) -> bool:
             )
             continue
 
-        if task in ("discovery", "diatomics") and calc_spec is not None:
+        # Kappa has one repository-wide runner; model-local scripts are unsupported.
+        scripts = (
+            []
+            if task == "kappa"
+            else sorted(yaml_path.parent.glob(f"test_*_{task}.py"))
+        )
+        if task == "kappa" and isinstance(task_metrics(model, "phonons"), str):
+            checks.skip("kappa shared runner check skipped (phonons unavailable)")
+            continue
+
+        if calc_spec is not None:
             runner = f"{ROOT}/models/run_{task}.py"
             try:
                 if not os.path.isfile(runner):
                     raise ValueError(f"shared runner not found: {runner}")
-                command = calc_spec.uv_run_cmd(
-                    runner, "--model", model.name, "--dry-run"
-                )
-                subprocess.run(command, check=True)
+                if not (task == "kappa" and calc_spec.requires_checkpoint):
+                    command = calc_spec.uv_run_cmd(
+                        runner, "--model", model.name, "--dry-run"
+                    )
+                    subprocess.run(command, check=True)
                 if task == "discovery":
                     RelaxationSettings.from_model(model.name)
+                elif task == "kappa":
+                    KappaSettings.from_model(model.name)
             except (
                 subprocess.CalledProcessError,
                 OSError,
@@ -217,8 +231,13 @@ def check_submission(model: Model, checks: Checklist) -> bool:
                 checks.fail(f"Invalid shared {task} runner configuration: {exc}")
             else:
                 checks.ok(f"{task} uses shared runner: models/run_{task}.py")
-        elif scripts := sorted(yaml_path.parent.glob(f"test_*_{task}.py")):
+        elif scripts:
             checks.ok(f"{task} test script found: {scripts[0].name}")
+        elif task == "kappa":
+            checks.fail(
+                "kappa shared runner unsupported: no registered calculator for "
+                f"{model.name}"
+            )
         elif task == "diatomics":
             checks.skip(f"{task} test script not found (test_*_{task}.py)")
         else:

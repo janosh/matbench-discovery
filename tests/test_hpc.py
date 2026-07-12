@@ -364,6 +364,24 @@ def test_merge_run_metadata(
     assert hpc.merge_run_metadata(shard_metadatas) == expected
 
 
+def test_merge_audit_metadata_drops_partial_cost_fields() -> None:
+    """Audit aggregation publishes each cost field only with complete coverage."""
+    merged = hpc.merge_audit_metadata(
+        [
+            {"hardware": "H200", "run_time_sec": 10.0, "max_rss_gb": 4.0},
+            {"hardware": "H200", "run_time_sec": 20.0},
+        ]
+    )
+    assert merged == {"hardware": "H200", "run_time_sec": 30.0}
+    segments = [
+        {"hardware": "H200", "versions": {}},
+        {"hardware": "", "versions": {}},
+    ]
+    assert "hardware" not in hpc.merge_audit_metadata(segments)
+    with pytest.raises(ValueError, match="missing hardware"):
+        hpc.merge_audit_metadata(segments, strict=True)
+
+
 def test_peak_memory_gb() -> None:
     """peak_memory_gb reports a positive host RSS high-water mark on Unix (GPU key
     only when torch+CUDA are present) and reset_gpu_peak_memory is a safe no-op.

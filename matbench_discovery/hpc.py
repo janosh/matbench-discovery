@@ -1,12 +1,13 @@
 """Slurm job submission helper function."""
 
+import importlib.metadata
 import os
 import platform
 import shutil
 import subprocess
 import sys
 import tempfile
-from collections.abc import Sequence, Sized
+from collections.abc import Iterable, Mapping, Sequence, Sized
 from typing import TYPE_CHECKING, Final, TypeVar
 
 import numpy as np
@@ -94,6 +95,17 @@ def peak_memory_gb() -> dict[str, float]:
     return mem
 
 
+def package_versions(package_names: Iterable[str]) -> dict[str, str]:
+    """Return installed versions for Python and the requested packages."""
+    versions = {"python": sys.version.split()[0]}
+    for package_name in sorted(set(package_names)):
+        try:
+            versions[package_name] = importlib.metadata.version(package_name)
+        except importlib.metadata.PackageNotFoundError:
+            continue
+    return versions
+
+
 # taken from https://slurm.schedmd.com/job_array.html#env_vars, lower-cased and
 # and removed the SLURM_ prefix
 SLURM_KEYS: Final[tuple[str, ...]] = (
@@ -111,6 +123,99 @@ SLURM_KEYS: Final[tuple[str, ...]] = (
 )
 SLURM_SUBMIT_KEY: Final[str] = "slurm-submit"
 HasLen = TypeVar("HasLen", bound=Sized)
+COST_PROVENANCE_KEYS = ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb")
+
+
+def slurm_shard_selection(
+    n_shards_arg: int | None, shard_index_arg: int | None
+) -> tuple[int, int]:
+    """Resolve zero-based shard selection from CLI flags or Slurm environment."""
+    n_shards = (
+        n_shards_arg
+        if n_shards_arg is not None
+        else int(os.getenv("SLURM_ARRAY_TASK_COUNT") or 1)
+    )
+    if n_shards < 1:
+        raise ValueError(f"n_shards must be positive, got {n_shards}")
+
+    if shard_index_arg is not None:
+        shard_index = shard_index_arg
+    elif slurm_task_id := os.getenv("SLURM_ARRAY_TASK_ID"):
+        if n_shards_arg is not None:
+            # Explicit shard counts make partial reruns such as --array=3,7 map back
+            # to their original zero-based shard indices.
+            slurm_task_max = os.getenv("SLURM_ARRAY_TASK_MAX")
+            if slurm_task_max is not None and int(slurm_task_max) >= n_shards:
+                # fail every task of a 1-based --array=1-N immediately instead of
+                # running N-1 shards and silently never producing shard 0
+                raise ValueError(
+                    f"SLURM_ARRAY_TASK_MAX={slurm_task_max} exceeds the last shard "
+                    f"index {n_shards - 1}; with explicit --n-shards, array task IDs "
+                    "are treated as zero-based original shard indices"
+                )
+            shard_index = int(slurm_task_id)
+        else:
+            slurm_task_min = int(os.getenv("SLURM_ARRAY_TASK_MIN", "0"))
+            slurm_task_max_id = int(
+                os.getenv("SLURM_ARRAY_TASK_MAX", str(slurm_task_min + n_shards - 1))
+            )
+            if slurm_task_max_id - slurm_task_min + 1 != n_shards:
+                raise ValueError(
+                    "Partial Slurm arrays require explicit --n-shards so task IDs "
+                    "retain their original shard indices (any rerun of a shard "
+                    "subset, contiguous or not, must pass the original --n-shards)"
+                )
+            shard_index = int(slurm_task_id) - slurm_task_min
+    elif n_shards == 1:
+        shard_index = 0
+    else:
+        raise ValueError("--shard-index is required outside a Slurm array")
+
+    if not 0 <= shard_index < n_shards:
+        raise ValueError(
+            f"shard_index must be in [0, {n_shards - 1}], got {shard_index}"
+        )
+    return n_shards, shard_index
+
+
+def effective_shard_args(
+    n_shards: int | None,
+    shard_index: int | None,
+    *,
+    dry_run: bool,
+) -> tuple[int | None, int | None, bool]:
+    """Run one dry-run shard on only the first task of an implicit Slurm array."""
+    if (
+        not dry_run
+        or n_shards is not None
+        or shard_index is not None
+        or not os.getenv("SLURM_ARRAY_TASK_COUNT")
+    ):
+        return n_shards, shard_index, False
+    slurm_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
+    slurm_task_min = int(os.getenv("SLURM_ARRAY_TASK_MIN", "0"))
+    return 1, 0, slurm_task_id != slurm_task_min
+
+
+def partition_material_ids(
+    items_by_id: Mapping[str, Sized], n_shards: int
+) -> list[list[str]]:
+    """Deterministically balance sized items across shards by total length."""
+    if n_shards < 1:
+        raise ValueError(f"n_shards must be positive, got {n_shards}")
+    if n_shards > len(items_by_id):
+        raise ValueError(
+            f"n_shards ({n_shards}) cannot exceed structures ({len(items_by_id)})"
+        )
+    shards: list[list[str]] = [[] for _ in range(n_shards)]
+    shard_sizes = [0] * n_shards
+    for item_id, item in sorted(
+        items_by_id.items(), key=lambda pair: (-len(pair[1]), pair[0])
+    ):
+        shard_idx = min(range(n_shards), key=lambda idx: (shard_sizes[idx], idx))
+        shards[shard_idx].append(item_id)
+        shard_sizes[shard_idx] += len(item)
+    return shards
 
 
 def _get_calling_file_path(frame: int = 1) -> str:
@@ -261,6 +366,78 @@ def merge_run_metadata(
         ]
         if peaks:
             merged[mem_key] = max(peaks)
+    return merged
+
+
+def merge_audit_metadata(
+    metadata_segments: Sequence[Mapping[str, object]], *, strict: bool = False
+) -> dict[str, object]:
+    """Merge cost and audit provenance, optionally rejecting incomplete segments."""
+    segments = [dict(segment) for segment in metadata_segments]
+    versions = [
+        value
+        for segment in segments
+        if isinstance(value := segment.get("versions"), dict)
+    ]
+    hardware_labels = {
+        str(segment["hardware"]) for segment in segments if segment.get("hardware")
+    }
+    cost_counts = {
+        key: sum(
+            (
+                isinstance(segment.get(key), str) and bool(segment.get(key))
+                if key == "hardware"
+                else isinstance(segment.get(key), int | float)
+            )
+            for segment in segments
+        )
+        for key in COST_PROVENANCE_KEYS
+    }
+    if strict:
+        if len(versions) != len(segments) or any(
+            value != versions[0] for value in versions[1:]
+        ):
+            raise ValueError("Run segments contain mixed or missing package versions")
+        if cost_counts["hardware"] != len(segments) or len(hardware_labels) != 1:
+            raise ValueError(
+                "Run segments contain mixed or missing hardware provenance"
+            )
+        if cost_counts["run_time_sec"] != len(segments):
+            raise ValueError("Run segments contain missing runtime provenance")
+        for memory_key in COST_PROVENANCE_KEYS[2:]:
+            if cost_counts[memory_key] not in {0, len(segments)}:
+                raise ValueError(
+                    f"Run segments contain partial {memory_key} provenance"
+                )
+
+    merged = dict[str, object](merge_run_metadata(segments))
+    if len(hardware_labels) > 1:
+        merged.pop("hardware", None)
+    for cost_key, count in cost_counts.items():
+        if count != len(segments):
+            merged.pop(cost_key, None)
+    if versions:
+        merged["versions"] = versions[0]
+    if completed_at := [
+        str(segment["completed_at"])
+        for segment in segments
+        if segment.get("completed_at")
+    ]:
+        merged["completed_at"] = max(completed_at)
+    for source_key, merged_key in (
+        ("hostname", "hostnames"),
+        ("slurm_job_id", "slurm_job_ids"),
+        ("slurm_array_task_id", "slurm_array_task_ids"),
+    ):
+        values = sorted(
+            {
+                str(segment[source_key])
+                for segment in segments
+                if segment.get(source_key)
+            }
+        )
+        if values:
+            merged[merged_key] = values
     return merged
 
 

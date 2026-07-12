@@ -29,7 +29,6 @@ from matbench_discovery.discovery import (
     RelaxationSettings,
     discovery_pred_col,
     merge_discovery_shards,
-    partition_material_ids,
     read_discovery_shard,
     relax_atoms,
     run_discovery_shard,
@@ -37,6 +36,7 @@ from matbench_discovery.discovery import (
 )
 from matbench_discovery.energy import calc_energy_from_e_refs
 from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.hpc import partition_material_ids
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -514,7 +514,9 @@ def test_list_models_matches_calculator_registry(
     listed_models = {
         line.partition(":")[0] for line in capsys.readouterr().out.splitlines()
     }
-    assert listed_models == set(CALCULATORS)
+    assert listed_models == set(CALCULATORS) - set(
+        discovery_core.ARCHIVED_DISCOVERY_MODELS
+    )
 
 
 @pytest.mark.parametrize(

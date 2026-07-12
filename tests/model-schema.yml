@@ -60,26 +60,104 @@ definitions:
     type: string
     enum: [E, EF_G, EF_D, EFS_G, EFSH_G, EFS_D, EFS_GM, EFS_DM]
 
+  KappaSettings:
+    type: object
+    additionalProperties: false
+    properties:
+      protocol:
+        type: string
+        enum: [phonondb-v1]
+      displacement_distance:
+        type: number
+        exclusiveMinimum: 0
+      temperatures:
+        type: array
+        minItems: 1
+        items:
+          type: number
+          exclusiveMinimum: 0
+      ase_optimizer:
+        type: string
+      ase_filter:
+        type: [string, 'null']
+        enum: [FrechetCellFilter, ExpCellFilter, null]
+      max_steps:
+        type: integer
+        minimum: 0
+      force_max:
+        type: number
+        exclusiveMinimum: 0
+      symprec:
+        type: number
+        exclusiveMinimum: 0
+      enforce_relax_symm:
+        type: boolean
+      conductivity_broken_symm:
+        type: boolean
+      ignore_imaginary_freqs:
+        type: boolean
+      is_plusminus:
+        type: [boolean, string]
+        enum: [true, false, auto]
+      batch_size:
+        type: integer
+        minimum: 1
+      max_atoms_per_batch:
+        type: [integer, 'null']
+        minimum: 1
+      relaxation_mode:
+        type: string
+        enum: [single-stage, two-stage, none]
+      save_forces:
+        type: boolean
+    required: [protocol]
+
+  KappaMetrics:
+    type: object
+    additionalProperties: false
+    properties:
+      pred_file:
+        type: [string, 'null']
+      pred_file_url:
+        anyOf:
+          - $ref: '#/definitions/http_url'
+          - type: 'null'
+      force_file:
+        type: [string, 'null']
+      force_file_url:
+        anyOf:
+          - $ref: '#/definitions/http_url'
+          - type: 'null'
+      run_info_file:
+        type: [string, 'null']
+      run_info_file_url:
+        anyOf:
+          - $ref: '#/definitions/http_url'
+          - type: 'null'
+      hardware:
+        type: string
+      run_time_sec:
+        type: number
+      max_rss_gb:
+        type: number
+      max_gpu_mem_gb:
+        type: number
+      κ_SRME:
+        type: number
+      κ_SRE:
+        type: number
+    dependencies:
+      pred_file: [pred_file_url]
+      force_file: [force_file_url]
+      run_info_file: [run_info_file_url]
+    required: ['κ_SRME']
+
   PhononMetrics:
     type: object
     additionalProperties: false
     properties:
       kappa_103:
-        type: object
-        additionalProperties: false
-        properties:
-          pred_file:
-            type: [string, 'null']
-          pred_file_url:
-            type: [string, 'null']
-            $ref: '#/definitions/http_url'
-          κ_SRME:
-            type: number
-          κ_SRE:
-            type: number
-        allOf:
-          - $ref: '#/definitions/pred_file_requires_url'
-        required: ['κ_SRME']
+        $ref: '#/definitions/KappaMetrics'
 
   GeoOptMetrics:
     type: object
@@ -439,6 +517,8 @@ properties:
       cell_filter:
         type: string
         description: ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)
+      kappa:
+        $ref: '#/definitions/KappaSettings'
       learning_rate:
         type: number
       batch_size:

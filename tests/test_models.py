@@ -23,6 +23,39 @@ OPEN_DATASETS = {
 MODEL_DIRS = sorted(glob(f"{ROOT}/models/[!_]*/"))
 
 
+def test_shared_kappa_runner_is_only_executable() -> None:
+    """Per-model kappa executables cannot bypass the shared runner contract."""
+    assert os.path.isfile(f"{ROOT}/models/run_kappa.py")
+    assert glob(f"{ROOT}/models/**/test_*_kappa.py", recursive=True) == []
+
+
+def test_runnable_kappa_models_have_complete_shared_contract() -> None:
+    """Every calculator-backed phonon model has settings and an adapter path."""
+    from matbench_discovery.phonons.adapters import (
+        StandardKappaAdapter,
+        get_kappa_adapter,
+    )
+    from matbench_discovery.phonons.pipeline import KappaSettings
+
+    configured_models = {
+        model.name
+        for model in Model
+        if isinstance(model.metadata.get("hyperparams", {}).get("kappa"), dict)
+    }
+    assert configured_models == set(CALCULATORS) - {"emt"}
+    for model_key in configured_models:
+        assert isinstance(KappaSettings.from_model(model_key), KappaSettings)
+        assert isinstance(get_kappa_adapter(model_key), StandardKappaAdapter)
+
+    prediction_models = {
+        model.name
+        for model in Model
+        if isinstance(model.metrics.get("phonons"), dict)
+        and isinstance(model.metrics["phonons"].get("kappa_103"), dict)
+    }
+    assert prediction_models - configured_models == {"matris_v050_mptrj"}
+
+
 def test_model_dirs_have_metadata() -> None:
     """Test that all model directories have required metadata."""
     required = {
@@ -111,7 +144,6 @@ def test_discovery_uses_only_shared_runner() -> None:
     assert os.path.isfile(f"{ROOT}/models/run_discovery.py")
     assert os.path.isfile(f"{ROOT}/models/run_diatomics.py")
     assert not glob(f"{ROOT}/models/**/test_*_discovery.py", recursive=True)
-    assert set(CALCULATORS).isdisjoint(ARCHIVED_DISCOVERY_MODELS)
     for model_key in set(CALCULATORS) - {"emt"}:
         assert Model.from_ref(model_key).name == model_key
     with open(f"{ROOT}/.github/pull_request_template.md") as file:

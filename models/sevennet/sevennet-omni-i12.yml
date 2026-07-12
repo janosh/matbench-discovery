@@ -93,6 +93,10 @@ hyperparams:
   max_neighbors: .inf
   sph_harmonics_l_max: 3
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    save_forces: true
 requirements:
   torch: 2.7.0
   torch-geometric: 2.6.1

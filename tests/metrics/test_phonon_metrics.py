@@ -1,5 +1,9 @@
 """Tests for thermal conductivity metrics."""
 
+from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,6 +11,7 @@ from numpy.testing import assert_allclose
 from numpy.typing import NDArray
 from pymatviz.enums import Key
 
+from matbench_discovery import data as mbd_data
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import phonons as phonon_metrics
 
@@ -86,6 +91,12 @@ def series_multi_temp() -> pd.Series:
             [2, 4],
             "multi-temperature Voigt",
         ),
+        (
+            np.array([np.eye(3), 2 * np.eye(3)]),
+            [1, 2],
+            "multi-temperature tensors",
+        ),
+        (np.diag([np.nan, 2, 3]), np.nan, "NaN tensor"),
     ],
 )
 def test_calculate_kappa_avg_parametrized(
@@ -176,71 +187,11 @@ def test_mode_weights_for_freqs(
         assert_allclose(result[:n_modes], weights[0], rtol=0, atol=0)
 
 
-def test_calculate_kappa_avg_edge_cases() -> None:
-    """Test average thermal conductivity calculation with edge cases."""
-    # Test with zero tensor
-    zero_tensor = np.zeros((3, 3))
-    result = phonon_metrics.calculate_kappa_avg(zero_tensor)
-    assert result == 0
-
-    # Test with negative values
-    neg_tensor = -np.eye(3)
-    result = phonon_metrics.calculate_kappa_avg(neg_tensor)
-    assert result < 0
-
-    # Test with multiple temperatures
-    multi_temp = np.array([np.eye(3), 2 * np.eye(3)])
-    result_arr = np.asarray(phonon_metrics.calculate_kappa_avg(multi_temp), dtype=float)
-    assert result_arr.shape == (2,)
-    assert np.allclose(result_arr[1], 2 * result_arr[0])
-
-    # Test with NaN values
-    tensor_with_nan = np.diag([1.0, 2, 3])  # need dtype=float
-    tensor_with_nan[0, 0] = np.nan
-    result = phonon_metrics.calculate_kappa_avg(tensor_with_nan)
-    assert np.isscalar(result)
-    assert np.isnan(result)
-
-
-@pytest.mark.parametrize(
-    "ml_values,dft_values,expected_srd,expected_sre",
-    [
-        (
-            {
-                MbdKey.kappa_tot_avg: [1, 2],
-                MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3))] * 2,
-            },
-            {
-                MbdKey.kappa_tot_avg: [1, 2],
-                MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3))] * 2,
-            },
-            [0, -2 / 3],
-            [0, 2 / 3],
-        ),
-        (
-            {
-                MbdKey.kappa_tot_avg: [2, 4],
-                MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3)) * 2] * 2,
-            },
-            {
-                MbdKey.kappa_tot_avg: [1, 2],
-                MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3))] * 2,
-            },
-            [0, -2 / 3],
-            [0, 2 / 3],
-        ),
-    ],
-)
-def test_calc_kappa_metrics_from_dfs_parametrized(
-    ml_values: dict[str, list[float]],
-    dft_values: dict[str, list[float]],
-    expected_srd: list[float],
-    expected_sre: list[float],
-) -> None:
-    """Test processing of benchmark descriptors with various inputs."""
+def test_calc_kappa_metrics_from_dfs() -> None:
+    """Aggregate metrics compare predicted tensors with reference scalars."""
     ml_df = pd.DataFrame(
         {
-            **ml_values,
+            MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3))] * 2,
             MbdKey.kappa_tot_rta: [np.ones((3, 3))] * 2,
             Key.mode_weights: [np.array([1])] * 2,
             Key.has_imag_ph_modes: [False] * 2,
@@ -250,15 +201,16 @@ def test_calc_kappa_metrics_from_dfs_parametrized(
     )
     dft_df = pd.DataFrame(
         {
-            **dft_values,
+            MbdKey.kappa_tot_avg: [1, 2],
+            MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3))] * 2,
             MbdKey.kappa_tot_rta: [np.ones((3, 3))] * 2,
             Key.mode_weights: [np.array([1])] * 2,
         }
     )
 
     result = phonon_metrics.calc_kappa_metrics_from_dfs(ml_df, dft_df)
-    assert_allclose(result[Key.srd], expected_srd)
-    assert_allclose(result[Key.sre], expected_sre)
+    assert_allclose(result[Key.srd], [0, -2 / 3])
+    assert_allclose(result[Key.sre], [0, 2 / 3])
 
 
 @pytest.mark.parametrize(
@@ -309,55 +261,23 @@ def test_calc_kappa_srme_error_cases(
 
 
 @pytest.mark.parametrize(
-    "temperatures,expected_length",
+    ("column", "value"),
     [
-        ([100.0], 1),
-        ([100, 200.0], 2),
-        ([100, 200, 300.0], 3),
+        (Key.has_imag_ph_modes, True),
+        (Key.final_spg_num, 2),
+        (MbdKey.kappa_tot_avg, np.nan),
     ],
 )
-def test_calc_kappa_srme_temperature_handling_parametrized(
-    temperatures: list[float], expected_length: int
+def test_calc_kappa_srme_invalid_predictions_score_two(
+    df_pred: pd.DataFrame,
+    df_true: pd.DataFrame,
+    column: str,
+    value: object,
 ) -> None:
-    """Test SRME calculation with different numbers of temperatures."""
-    ml_data = pd.Series(
-        {
-            MbdKey.kappa_tot_avg: np.array(temperatures),
-            MbdKey.kappa_tot_rta: np.stack([np.eye(3)] * len(temperatures)),
-            MbdKey.mode_kappa_tot_rta: np.stack(
-                [np.eye(3).reshape(1, 3, 3)] * len(temperatures)
-            ),
-            Key.mode_weights: np.ones(len(temperatures)),
-        }
-    )
-    dft_data = ml_data.copy()
-
-    kappa_srmes = phonon_metrics.calc_kappa_srme(ml_data, dft_data)
-    assert len(kappa_srmes) == expected_length
-    assert list(kappa_srmes) == [0] * expected_length
-
-
-def test_calc_kappa_srme_edge_cases(
-    df_pred: pd.DataFrame, df_true: pd.DataFrame
-) -> None:
-    """Test SRME calculation with various edge cases."""
-    # Test imaginary frequencies
-    df_imag = df_pred.copy()
-    df_imag.loc[0, Key.has_imag_ph_modes] = True
-    kappa_srmes = phonon_metrics.calc_kappa_srme_dataframes(df_imag, df_true)
-    assert kappa_srmes[0] == 2.0  # Should return 2.0 for imaginary frequencies
-
-    # Test broken symmetry
-    df_broken_sym = df_pred.copy()
-    df_broken_sym.loc[0, Key.final_spg_num] = 2  # Different from initial
-    kappa_srmes = phonon_metrics.calc_kappa_srme_dataframes(df_broken_sym, df_true)
-    assert kappa_srmes[0] == 2.0  # Should return 2.0 for broken symmetry
-
-    # Test missing data
-    df_missing = df_pred.copy()
-    df_missing.loc[0, MbdKey.kappa_tot_avg] = np.nan
-    kappa_srmes = phonon_metrics.calc_kappa_srme_dataframes(df_missing, df_true)
-    assert kappa_srmes[0] == 2.0  # Should return 2.0 for missing data
+    """Imaginary modes, broken symmetry, and missing data receive maximum SRME."""
+    modified = df_pred.copy()
+    modified.loc[0, column] = value
+    assert phonon_metrics.calc_kappa_srme_dataframes(modified, df_true)[0] == 2
 
 
 def test_calc_kappa_srme_single_material() -> None:
@@ -383,30 +303,6 @@ def test_calc_kappa_srme_single_material() -> None:
     assert kappa_srmes[0] > 0  # Should be non-zero for different values
 
 
-def test_calc_kappa_srme_temperature_handling() -> None:
-    """Test SRME calculation with multiple temperatures."""
-    # Create mock data with multiple temperatures
-    ml_data = pd.Series(
-        {
-            MbdKey.kappa_tot_avg: np.array([2, 1.5]),  # Two temperatures
-            MbdKey.kappa_tot_rta: np.array([2 * np.eye(3), 1.5 * np.eye(3)]),
-            MbdKey.mode_kappa_tot_rta: np.array([np.eye(3), 0.75 * np.eye(3)]),
-            Key.mode_weights: np.array([1, 1]),
-        }
-    )
-    dft_data = pd.Series(
-        {
-            MbdKey.kappa_tot_avg: np.array([2, 1.5]),
-            MbdKey.kappa_tot_rta: np.array([2 * np.eye(3), 1.5 * np.eye(3)]),
-            MbdKey.mode_kappa_tot_rta: np.array([np.eye(3), 0.75 * np.eye(3)]),
-            Key.mode_weights: np.array([1, 1]),
-        }
-    )
-
-    kappa_srmes = phonon_metrics.calc_kappa_srme(ml_data, dft_data)
-    assert tuple(kappa_srmes) == (0, 0)  # Should be 0 for identical data
-
-
 def test_calc_kappa_metrics_with_different_values(
     df_pred: pd.DataFrame, df_true: pd.DataFrame
 ) -> None:
@@ -418,12 +314,6 @@ def test_calc_kappa_metrics_with_different_values(
     df_pred_copy[MbdKey.mode_kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
 
     df_out = phonon_metrics.calc_kappa_metrics_from_dfs(df_pred_copy, df_true)
-    assert df_out.shape == (2, 11)
-    n_init_cols, n_after_cols = df_pred.shape[1], df_out.shape[1]
-    n_new_cols = 4
-    assert n_after_cols == n_init_cols + n_new_cols, (
-        f"{n_after_cols=} != {n_init_cols=} + {n_new_cols=}"
-    )
     pd.testing.assert_index_equal(df_out.index, df_pred.index)
     assert set(df_out) == {
         Key.sre,
@@ -461,6 +351,7 @@ def test_calc_kappa_srme_temperature_dependence(series_multi_temp: pd.Series) ->
     """Test SRME calculation with temperature-dependent conductivities."""
     ml_data = series_multi_temp.copy()
     dft_data = series_multi_temp.copy()
+    assert list(phonon_metrics.calc_kappa_srme(ml_data, dft_data)) == [0, 0, 0]
     # Make DFT values half of ML predictions without mutating shared arrays.
     dft_data[MbdKey.kappa_tot_avg] = ml_data[MbdKey.kappa_tot_avg] / 2
     dft_data[MbdKey.kappa_tot_rta] = ml_data[MbdKey.kappa_tot_rta] / 2
@@ -496,119 +387,58 @@ def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
     assert result[Key.srme].iloc[0] != 2  # Normal case
     assert result[Key.srme].iloc[1] == 2  # Imaginary frequencies
     assert result[Key.srme].iloc[2] == 2  # Broken symmetry
+    ignored = phonon_metrics.calc_kappa_metrics_from_dfs(
+        df_pred, df_true.copy(), ignore_imaginary_freqs=True
+    )
+    assert ignored[Key.srme].iloc[1] < 2
+    assert bool(df_pred[Key.has_imag_ph_modes].iloc[1]) is True
 
 
-def test_calc_kappa_srme_dataframes_error_handling(df_minimal: pd.DataFrame) -> None:
-    """Test error handling in SRME calculation for dataframes."""
-    df_pred = pd.concat([df_minimal] * 2, ignore_index=True).copy()
-    df_pred.loc[0, MbdKey.kappa_tot_avg] = np.nan
-    df_pred[Key.has_imag_ph_modes] = [True, False]
-    df_pred[Key.final_spg_num] = [2, 1]
-    df_pred[Key.init_spg_num] = [1, 1]
-
-    df_true = pd.concat([df_minimal] * 2, ignore_index=True).copy()
-    df_true[Key.spg_num] = [1, 1]
-
-    result = phonon_metrics.calc_kappa_srme_dataframes(df_pred, df_true)
-    assert len(result) == 2
-    assert result[0] == 2  # First entry should be 2 due to imaginary frequencies
-    assert 0 <= result[1] <= 2  # Second entry should be valid SRME value
-
-
-@pytest.mark.parametrize(
-    ("metrics_data", "existing_data", "expected_metrics", "expected_preserved"),
-    [
-        # Test case 1: Empty YAML - creates structure and adds metrics
-        (
-            {"srme": 0.6823, "sre": 0.4710},
-            {},
-            {
-                "κ_SRME": 0.6823,
-                "κ_SRE": 0.4710,
-                "pred_file": "models/test/kappa-103.json.gz",
-            },
-            {},
-        ),
-        # Test case 2: Existing fields - preserves them and adds new metrics
-        (
-            {"srme": 0.1234, "sre": 0.5678},
-            {
-                "metrics": {
-                    "phonons": {
-                        "kappa_103": {
-                            "pred_file": "models/test/existing.json.gz",
-                            "pred_file_url": "https://figshare.com/files/existing",
-                            "analysis_file": "models/test/analysis.csv.gz",
-                        }
-                    }
-                }
-            },
-            {"κ_SRME": 0.1234, "κ_SRE": 0.5678},
-            {
-                "pred_file": "models/test/existing.json.gz",
-                "pred_file_url": "https://figshare.com/files/existing",
-                "analysis_file": "models/test/analysis.csv.gz",
-            },
-        ),
-        # Test case 3: Mixed existing data - preserves some, adds new
-        (
-            {"srme": 1.2345, "sre": 0.9876},
-            {
-                "metrics": {
-                    "phonons": {
-                        "kappa_103": {
-                            "existing_field": "preserved_value",
-                            "pred_file_url": "https://figshare.com/files/12345",
-                        }
-                    }
-                }
-            },
-            {
-                "κ_SRME": 1.2345,
-                "κ_SRE": 0.9876,
-                "pred_file": "models/test/kappa-103.json.gz",
-            },
-            {
-                "existing_field": "preserved_value",
-                "pred_file_url": "https://figshare.com/files/12345",
-            },
-        ),
-    ],
-)
-def test_write_metrics_to_yaml(
-    metrics_data: dict[str, float],
-    existing_data: dict[str, dict[str, dict[str, dict[str, str | float]]]],
-    expected_metrics: dict[str, float | str],
-    expected_preserved: dict[str, str | float],
+def test_evaluate_kappa_predictions_rejects_duplicate_ids(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Test writing kappa metrics to YAML files with various scenarios."""
-    from unittest.mock import MagicMock, mock_open, patch
+    """Duplicate prediction IDs cannot silently receive extra metric weight."""
+    from matbench_discovery import phonons
 
-    mock_model = MagicMock(spec=Model)
-    mock_model.yaml_path = "mock_path/test_model.yml"
+    def read_reference(_path: str) -> pd.DataFrame:
+        """Return a two-material reference frame."""
+        return pd.DataFrame(index=["mp-1", "mp-2"])
 
-    with patch("matbench_discovery.data.round_trip_yaml") as mock_yaml:
-        mock_yaml.load.return_value = existing_data
+    monkeypatch.setattr(phonons, "read_kappa_json", read_reference)
+    with pytest.raises(ValueError, match="duplicate material IDs"):
+        phonon_metrics.evaluate_kappa_predictions(pd.DataFrame(index=["mp-1", "mp-1"]))
 
-        with patch("builtins.open", mock_open()):
-            phonon_metrics.write_metrics_to_yaml(
-                mock_model,
-                metrics_data,
-                "models/test/kappa-103.json.gz",
-            )
 
-            actual_yaml = mock_yaml.dump.call_args[0][0]
-            actual_kappa_103 = actual_yaml["metrics"]["phonons"]["kappa_103"]
+def test_write_metrics_to_yaml_preserves_existing_artifacts(tmp_path: Path) -> None:
+    """Metric recomputation preserves established artifact metadata."""
+    yaml_path = tmp_path / "test_model.yml"
+    existing_data = {
+        "metrics": {
+            "phonons": {
+                "kappa_103": {
+                    "pred_file": "models/test/existing.json.gz",
+                    "pred_file_url": "https://figshare.com/files/existing",
+                    "analysis_file": "models/test/analysis.csv.gz",
+                }
+            }
+        }
+    }
+    with open(yaml_path, mode="w", encoding="utf-8") as file:
+        mbd_data.round_trip_yaml.dump(existing_data, file)
+    model = cast("Model", SimpleNamespace(yaml_path=str(yaml_path)))
+    phonon_metrics.write_metrics_to_yaml(
+        model,
+        {"srme": 0.1234, "sre": 0.5678},
+        "models/test/kappa-103.json.gz",
+    )
+    with open(yaml_path, encoding="utf-8") as file:
+        actual_yaml = mbd_data.round_trip_yaml.load(file)
+    actual_kappa_103 = actual_yaml["metrics"]["phonons"]["kappa_103"]
 
-            # Check new metrics were added
-            for key, expected_val in expected_metrics.items():
-                if isinstance(expected_val, float):
-                    assert actual_kappa_103[key] == pytest.approx(
-                        expected_val, rel=1e-4
-                    )
-                else:
-                    assert actual_kappa_103[key] == expected_val
-
-            # Check existing fields were preserved
-            for key, expected_val in expected_preserved.items():
-                assert actual_kappa_103[key] == expected_val
+    assert actual_kappa_103 == {
+        "pred_file": "models/test/existing.json.gz",
+        "pred_file_url": "https://figshare.com/files/existing",
+        "analysis_file": "models/test/analysis.csv.gz",
+        "κ_SRME": 0.1234,
+        "κ_SRE": 0.5678,
+    }

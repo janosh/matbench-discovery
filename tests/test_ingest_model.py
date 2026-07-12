@@ -68,6 +68,7 @@ def test_force_model_discovery_pipelines_pass_checklist(
     )
     assert {command[-4] for command in shared_runner_calls} == {
         f"{ingest.ROOT}/models/run_discovery.py",
+        f"{ingest.ROOT}/models/run_kappa.py",
         f"{ingest.ROOT}/models/run_diatomics.py",
     }
     assert all(
@@ -92,7 +93,7 @@ def test_archived_discovery_models_skip_shared_runner(model: Model) -> None:
     assert any("discovery is archived:" in msg for msg in msgs(checks, ingest.SKIP))
     assert not any("discovery model" in msg for msg in msgs(checks, ingest.FAIL))
     assert not any(
-        msg.startswith(("discovery uses shared runner", "diatomics uses shared runner"))
+        msg.startswith("discovery uses shared runner")
         for msg in msgs(checks, ingest.PASS)
     )
 
@@ -110,7 +111,7 @@ def test_unregistered_discovery_model_fails_checklist(
     )
 
 
-@pytest.mark.parametrize("task", ["discovery", "diatomics"])
+@pytest.mark.parametrize("task", ["discovery", "kappa", "diatomics"])
 def test_missing_shared_runner_fails_checklist(
     monkeypatch: pytest.MonkeyPatch, task: str
 ) -> None:
@@ -171,11 +172,7 @@ def test_energy_only_model_skips_force_tasks() -> None:
 
 
 def test_all_active_models_have_required_metadata() -> None:
-    """Every active model has the YAML + discovery pred URL that evals and the site
-    depend on. Test-script checks are excluded: pre-kappa-era models are
-    grandfathered without test_*_kappa.py and the checklist only gates NEW
-    submissions on those.
-    """
+    """Every active model has metadata required by evals and the site."""
     failures: dict[str, list[str]] = {}
     for model in Model.active():
         checks = ingest.Checklist()
@@ -185,6 +182,15 @@ def test_all_active_models_have_required_metadata() -> None:
         ]:
             failures[model.name] = hard_fails
     assert not failures, failures
+
+
+def test_prediction_only_kappa_model_is_explicitly_unsupported() -> None:
+    """A kappa artifact without a calculator is not treated as reproducible."""
+    checks = ingest.Checklist()
+    ingest.check_submission(Model.matris_v050_mptrj, checks)
+    assert any(
+        "kappa shared runner unsupported" in msg for msg in msgs(checks, ingest.FAIL)
+    )
 
 
 def test_checklist_summary_counts() -> None:

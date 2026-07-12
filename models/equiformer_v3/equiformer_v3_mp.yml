@@ -89,6 +89,10 @@ hyperparams:
   DeNS_corruption_ratio: 0.5
 
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    save_forces: true
 notes:
   Description: EquiformerV3 is the third generation of SE(3)-equivariant graph attention Transformers. Please refer to our paper for more details.
 
