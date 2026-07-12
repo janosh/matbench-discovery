@@ -705,7 +705,7 @@ def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
         "mace-mp-0", device="cpu", dtype="float32", checkpoint=checkpoint_path
     )
     assert seen_dtype == "float32"
-    assert seen_checkpoint == checkpoint_path
+    assert seen_checkpoint == os.path.abspath(checkpoint_path)
 
     def download_checkpoint_stub(model_key: str, ext: str | None = None) -> str:
         """Return the local artifact used to test registry-managed downloads."""

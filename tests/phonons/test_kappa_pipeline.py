@@ -307,8 +307,11 @@ def test_kappa_settings_reject_invalid_values(
         replace(KappaSettings(), **{field_name: invalid_value})
 
 
-def test_checkpoint_digest_hashes_artifact_bytes(tmp_path: Path) -> None:
-    """Checkpoint provenance follows file content rather than only its path."""
+def test_checkpoint_digest_hashes_artifact_bytes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Windows checkpoint provenance follows file content rather than stale metadata."""
+    monkeypatch.setattr("matbench_discovery.phonons.pipeline.sys.platform", "win32")
     checkpoint_path = f"{tmp_path}/model.pt"
     with open(checkpoint_path, mode="wb") as file:
         file.write(b"first checkpoint")
@@ -347,8 +350,8 @@ def test_kappa_output_paths_reuse_exactly_one_prior_shard_tree(tmp_path: Path) -
         shard_dir=None,
     )
     assert paths == (
-        first_shard_dir,
-        first_shard_dir.removesuffix("-shards") + ".json.gz",
+        os.path.normpath(first_shard_dir),
+        os.path.normpath(first_shard_dir.removesuffix("-shards") + ".json.gz"),
     )
     custom_shard_dir = f"{out_dir}/custom-run"
     assert (

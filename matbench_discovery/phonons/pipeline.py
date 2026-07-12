@@ -354,6 +354,8 @@ def checkpoint_digest(checkpoint: str | None) -> str | None:
     if checkpoint is None:
         return None
     if os.path.isfile(checkpoint):
+        if sys.platform == "win32":
+            return file_sha256(checkpoint)
         file_stats = os.stat(checkpoint)
         cache_path = f"{checkpoint}.sha256.json"
         try:
