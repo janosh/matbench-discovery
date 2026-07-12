@@ -23,10 +23,11 @@ OPEN_DATASETS = {
 MODEL_DIRS = sorted(glob(f"{ROOT}/models/[!_]*/"))
 
 
-def test_shared_kappa_runner_is_only_executable() -> None:
-    """Per-model kappa executables cannot bypass the shared runner contract."""
-    assert os.path.isfile(f"{ROOT}/models/run_kappa.py")
-    assert glob(f"{ROOT}/models/**/test_*_kappa.py", recursive=True) == []
+@pytest.mark.parametrize("task", ["diatomics", "discovery", "kappa"])
+def test_shared_runner_is_only_executable(task: str) -> None:
+    """Shared benchmark tasks have one runner and no per-model forks."""
+    assert os.path.isfile(f"{ROOT}/models/run_{task}.py")
+    assert not glob(f"{ROOT}/models/**/test_*_{task}.py", recursive=True)
 
 
 def test_runnable_kappa_models_have_complete_shared_contract() -> None:
@@ -53,7 +54,7 @@ def test_runnable_kappa_models_have_complete_shared_contract() -> None:
 
 def test_model_dirs_have_metadata() -> None:
     """Test that all model directories have required metadata."""
-    required = {
+    required_types = {
         "authors": list,  # dict with name, affiliation, orcid?, email?
         "date_added": str,
         "model_name": str,
@@ -70,48 +71,45 @@ def test_model_dirs_have_metadata() -> None:
 
     for model in completed_models:
         model_dir = f"{ROOT}/models/{model.key}/"
-        for key, expected in required.items():
+        for key, expected_type in required_types.items():
             assert key in model.metadata, f"Required {key=} missing in {model_dir}"
+            actual_value = model.metadata[key]
+            err_msg = f"Invalid {key=}, expected {expected_type} in {model_dir}"
+            assert isinstance(actual_value, expected_type), err_msg
 
-            if key == "training_set":
-                training_sets = model.metadata[key]
-                # allow either string key or dict
-                assert isinstance(training_sets, list)
-                assert set(training_sets) <= {*DATASETS}, (
-                    f"Invalid training set: {training_sets}"
-                )
-                # Check if model was trained only on open datasets
-                if set(training_sets) <= OPEN_DATASETS and not model.metadata[
-                    "openness"
-                ].endswith("OD"):
-                    # if so, check that the model is marked as OD (open data)
-                    raise ValueError(
-                        f"{model.label} was only trained on open datasets but is "
-                        f"marked as {model.metadata['openness']}. Should be marked as "
-                        "OD."
-                    )
+            if key != "training_set":
                 continue
+            training_sets = actual_value
+            # allow either string key or dict
+            training_set_keys = set(training_sets)
+            assert training_set_keys <= set(DATASETS), (
+                f"Invalid training set: {training_sets}"
+            )
+            # Check if model was trained only on open datasets
+            if training_set_keys <= OPEN_DATASETS and not model.metadata[
+                "openness"
+            ].endswith("OD"):
+                # if so, check that the model is marked as OD (open data)
+                raise ValueError(
+                    f"{model.label} was only trained on open datasets but is "
+                    f"marked as {model.metadata['openness']}. Should be marked as OD."
+                )
 
-            actual_val = model.metadata[key]
-            if type(expected) is type:
-                err_msg = f"Invalid {key=}, expected {expected} in {model_dir}"
-                assert isinstance(actual_val, expected), err_msg
-
-        authors, date_added, yml_model_name, model_version, repo = (
-            model.metadata[key] for key in list(required)[:-1]
+        authors = model.metadata["authors"]
+        metadata_model_name = model.metadata["model_name"]
+        model_version = model.metadata["model_version"]
+        repo = model.metadata["repo"]
+        assert model.label == metadata_model_name, (
+            f"{model.label=} != {metadata_model_name=}"
         )
-        assert model.label == yml_model_name, f"{model.label=} != {yml_model_name=}"
 
         # make sure all keys are valid
-        for name in model.label if isinstance(model.label, list) else [model.label]:
-            assert 3 <= len(name) < 50, (
-                f"Invalid {name=} not between 3 and 50 characters"
-            )
+        assert 3 <= len(model.label) < 50, (
+            f"Invalid name={model.label!r} not between 3 and 50 characters"
+        )
         assert 1 <= len(model_version) < 30, (
             f"Invalid {model_version=} not between 1 and 30 characters"
         )
-        assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
-        assert isinstance(authors, list)
         assert 1 < len(authors) < 30, f"{len(authors)=} not between 1 and 30"
         assert repo == "missing" or repo.startswith("https://"), (
             f"Invalid {repo=} not starting with https://"
@@ -125,7 +123,7 @@ def test_model_dirs_have_reproducible_runners() -> None:
             model.name in CALCULATORS
             or model.metadata.get("targets") == "E"
             or model.metadata.get("checkpoint_url") == "missing"
-            or model.metadata.get("status") == "aborted"
+            or model.metadata.get("status") in {"aborted", "superseded"}
         ):
             continue
         model_dir = os.path.dirname(model.yaml_path)
@@ -134,11 +132,8 @@ def test_model_dirs_have_reproducible_runners() -> None:
         )
 
 
-def test_discovery_uses_only_shared_runner() -> None:
-    """Runnable calculators use one runner and contributor policy forbids forks."""
-    assert os.path.isfile(f"{ROOT}/models/run_discovery.py")
-    assert os.path.isfile(f"{ROOT}/models/run_diatomics.py")
-    assert not glob(f"{ROOT}/models/**/test_*_discovery.py", recursive=True)
+def test_discovery_contributor_policy_forbids_runner_forks() -> None:
+    """Contributor policy forbids per-model discovery runners."""
     with open(f"{ROOT}/.github/pull_request_template.md") as file:
         pr_template = file.read()
     assert "test_<arch_name>_discovery.py" not in pr_template

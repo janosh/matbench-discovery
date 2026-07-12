@@ -3,7 +3,7 @@ import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { tick } from 'svelte'
 import { expect, it } from 'vitest'
-import { mount } from '../index'
+import { doc_query, mount } from '../index'
 
 const make_models = (min_value: number, max_value: number): ModelData[] =>
   [min_value, max_value].map(
@@ -17,6 +17,11 @@ const make_models = (min_value: number, max_value: number): ModelData[] =>
         n_training_structures: value,
       }) as ModelData,
   )
+const scatter_props = {
+  y_key: METADATA_COLS.n_training_materials.key,
+  color_key: METADATA_COLS.n_training_structures.key,
+  show_model_labels: false,
+}
 
 it.each([
   {
@@ -24,46 +29,53 @@ it.each([
     min_value: 1,
     max_value: 99,
     x_key: HYPERPARAMS.model_params.key,
-    expected: [false, false, false, false],
+    expected_labels: [],
   },
   {
     scenario: `100-fold positive range`,
     min_value: 1,
     max_value: 100,
     x_key: HYPERPARAMS.model_params.key,
-    expected: [true, true, true, true],
+    expected_labels: [`X`, `Y`, `Color`, `Size`],
   },
   {
     scenario: `non-positive minimum`,
     min_value: 0,
     max_value: 100,
     x_key: HYPERPARAMS.model_params.key,
-    expected: [false, false, false, false],
+    expected_labels: [],
   },
   {
     scenario: `date x-axis`,
     min_value: 1,
     max_value: 100,
     x_key: METADATA_COLS.date_added.key,
-    expected: [false, true, true, true],
+    expected_labels: [`Y`, `Color`, `Size`],
   },
-])(`sets log toggles for $scenario`, ({ min_value, max_value, x_key, expected }) => {
-  mount(DynamicScatter, {
-    target: document.body,
-    props: {
-      models: make_models(min_value, max_value),
-      x_key,
-      y_key: METADATA_COLS.n_training_materials.key,
-      color_key: METADATA_COLS.n_training_structures.key,
-      show_model_labels: false,
-    },
-  })
+])(
+  `sets log toggles for $scenario`,
+  ({ min_value, max_value, x_key, expected_labels }) => {
+    mount(DynamicScatter, {
+      target: document.body,
+      props: {
+        models: make_models(min_value, max_value),
+        x_key,
+        ...scatter_props,
+      },
+    })
 
-  const toggles = [...document.querySelectorAll<HTMLInputElement>(`.log-controls input`)]
-  expect(toggles.map(({ checked, disabled }) => ({ checked, disabled }))).toStrictEqual(
-    expected.map((enabled) => ({ checked: enabled, disabled: !enabled })),
-  )
-})
+    const toggles = [
+      ...document.querySelectorAll<HTMLInputElement>(`.log-controls input`),
+    ]
+    expect(
+      toggles.map((toggle) => toggle.parentElement?.textContent?.trim()),
+    ).toStrictEqual(expected_labels)
+    expect(toggles.every((toggle) => toggle.checked && !toggle.disabled)).toBe(true)
+    expect(document.querySelector(`.log-controls`) !== null).toBe(
+      expected_labels.length > 0,
+    )
+  },
+)
 
 it(`re-evaluates manual log choices after an axis change`, async () => {
   let x_key = $state(HYPERPARAMS.model_params.key)
@@ -71,15 +83,13 @@ it(`re-evaluates manual log choices after an axis change`, async () => {
     target: document.body,
     props: {
       models: make_models(1, 100),
+      ...scatter_props,
       get x_key() {
         return x_key
       },
       set x_key(value) {
         x_key = value
       },
-      y_key: METADATA_COLS.n_training_materials.key,
-      color_key: METADATA_COLS.n_training_structures.key,
-      show_model_labels: false,
     },
   })
 
@@ -91,4 +101,19 @@ it(`re-evaluates manual log choices after an axis change`, async () => {
   x_key = METADATA_COLS.n_training_materials.key
   await tick()
   expect(x_toggle?.checked).toBe(true)
+})
+
+it(`opens the model legend from the controls row`, async () => {
+  mount(DynamicScatter, {
+    target: document.body,
+    props: {
+      models: make_models(1, 100),
+      x_key: HYPERPARAMS.model_params.key,
+      ...scatter_props,
+    },
+  })
+
+  doc_query(`button.models-toggle`).click()
+  await tick()
+  expect(document.querySelector(`button.models-toggle`)).toBeNull()
 })

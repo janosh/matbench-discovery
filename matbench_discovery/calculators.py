@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
+DERIVED_ARTIFACT_TIMEOUT_SEC = 10 * 60
 
 
 def _is_non_empty_file(path: str) -> bool:
@@ -168,6 +169,7 @@ def _run_to_atomic_output(
     """Atomically cache output by command, source contents, and tool versions."""
     if command.count("{output}") != 1:
         raise ValueError("Atomic output command must contain one {output} placeholder")
+    os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
     dest_base, dest_ext = os.path.splitext(dest)
     tmp_dest = f"{dest_base}.tmp{dest_ext}"
     identity_path = f"{dest}.sha256"
@@ -175,15 +177,12 @@ def _run_to_atomic_output(
         (path, *_stable_file_sha256(path)) for path in source_paths
     )
     tool_versions = tuple((package, version(package)) for package in tool_packages)
-    recipe_hash = hashlib.sha256(
-        repr(
-            (
-                tuple(command),
-                tuple(identity[1] for identity in source_identities),
-                tool_versions,
-            )
-        ).encode()
-    ).hexdigest()
+    recipe = (
+        tuple(command),
+        tuple(digest for _path, digest, _state in source_identities),
+        tool_versions,
+    )
+    recipe_hash = hashlib.sha256(repr(recipe).encode()).hexdigest()
     cached_dest = _cached_file_sha256(dest)
     with FileLock(f"{dest}.lock"):
         if any(
@@ -206,7 +205,9 @@ def _run_to_atomic_output(
             rendered_command = [
                 tmp_dest if argument == "{output}" else argument for argument in command
             ]
-            subprocess.run(rendered_command, check=True)
+            subprocess.run(
+                rendered_command, check=True, timeout=DERIVED_ARTIFACT_TIMEOUT_SEC
+            )
             if not _is_non_empty_file(tmp_dest):
                 command_text = " ".join(rendered_command)
                 raise RuntimeError(f"{command_text=} wrote no output to {tmp_dest}")

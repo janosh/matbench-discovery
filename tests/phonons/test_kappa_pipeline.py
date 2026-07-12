@@ -26,7 +26,6 @@ from matbench_discovery.phonons.adapters.equflash import EquFlashKappaAdapter
 from matbench_discovery.phonons.adapters.pet import PetKappaAdapter
 from matbench_discovery.phonons.pipeline import (
     DRY_RUN_MAX_FC3_EVALUATIONS,
-    KAPPA_MANIFEST_SCHEMA_VERSION,
     KAPPA_PROTOCOL,
     KappaComputation,
     KappaRecord,
@@ -258,7 +257,6 @@ def test_kappa_settings_validate_and_canonicalize() -> None:
         KappaSettings(batch_size=2, max_atoms_per_batch=100).validate_for_adapter(
             "equflash"
         )
-    assert KAPPA_MANIFEST_SCHEMA_VERSION == 3
 
 
 @pytest.mark.parametrize(

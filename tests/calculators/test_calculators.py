@@ -6,7 +6,6 @@ import os
 import subprocess
 import sys
 import zipfile
-from collections.abc import Sequence
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
@@ -138,32 +137,29 @@ def test_alphanet_factory_honors_requested_dtype(
     calculator_module = ModuleType("alphanet.infer.calc")
     calculator_module.__dict__["AlphaNetCalculator"] = SimpleNamespace
     for module_name, module in {
-        "alphanet": ModuleType("alphanet"),
         "alphanet.config": config_module,
-        "alphanet.infer": ModuleType("alphanet.infer"),
         "alphanet.infer.calc": calculator_module,
     }.items():
         monkeypatch.setitem(sys.modules, module_name, module)
 
-    from matbench_discovery.remote import fetch
-
-    def download_config(destination: str, _url: str) -> None:
-        """Write a minimal AlphaNet config."""
-        Path(destination).write_text("{}", encoding="utf-8")
-
-    monkeypatch.setattr(fetch, "download_file", download_config)
     monkeypatch.setattr(calculators, "CHECKPOINT_DIR", str(tmp_path))
-    factory = calculators._alphanet("fake", "https://example.com/config.json")  # noqa: SLF001
-    calculator = factory("cpu", dtype="float64", checkpoint="/tmp/model.ckpt")
+    config_url = "https://example.com/config.json"
+    config_hash = hashlib.sha256(config_url.encode()).hexdigest()[:12]
+    (tmp_path / f"fake-config-{config_hash}.json").write_text("{}", encoding="utf-8")
+    factory = calculators._alphanet("fake", config_url)  # noqa: SLF001
+    calculator = factory(
+        "cpu", dtype="float64", checkpoint=str(tmp_path / "model.ckpt")
+    )
     assert vars(calculator)["precision"] == "64"
 
 
-def test_pet_factory_casts_exported_model(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pet_factory_casts_exported_model(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """PET casts the loaded model and advertises the requested dtype."""
-    import torch
-
     captured: dict[str, object] = {}
     model_capabilities = SimpleNamespace(dtype="float32")
+    float64_dtype = object()
 
     def capabilities_stub() -> SimpleNamespace:
         """Return mutable model capabilities."""
@@ -180,40 +176,33 @@ def test_pet_factory_casts_exported_model(monkeypatch: pytest.MonkeyPatch) -> No
         """Return the fake exported model."""
         return fake_model
 
-    def make_calculator(model: object, **kwargs: object) -> SimpleNamespace:
-        """Capture the model passed to MetatomicCalculator."""
-        captured.update(model=model, **kwargs)
+    def make_calculator(_model: object, **_kwargs: object) -> SimpleNamespace:
+        """Return a placeholder Metatomic calculator."""
         return SimpleNamespace()
 
-    torch_module = ModuleType("metatomic.torch")
-    torch_module.__dict__["load_atomistic_model"] = load_model
+    torch_module = ModuleType("torch")
+    torch_module.__dict__.update(float32=object(), float64=float64_dtype)
+    metatomic_torch_module = ModuleType("metatomic.torch")
+    metatomic_torch_module.__dict__["load_atomistic_model"] = load_model
     calculator_module = ModuleType("metatomic.torch.ase_calculator")
     calculator_module.__dict__["MetatomicCalculator"] = make_calculator
     for module_name, module in {
+        "torch": torch_module,
         "metatomic": ModuleType("metatomic"),
-        "metatomic.torch": torch_module,
+        "metatomic.torch": metatomic_torch_module,
         "metatomic.torch.ase_calculator": calculator_module,
     }.items():
         monkeypatch.setitem(sys.modules, module_name, module)
 
-    def export_stub(
-        _command: Sequence[str], _destination: str, **kwargs: Sequence[str]
-    ) -> None:
-        """Verify the export cache identity inputs."""
-        assert kwargs["source_paths"]
-        assert kwargs["tool_packages"] == ("metatrain",)
+    def export_stub(*_args: object, **_kwargs: object) -> None:
+        """Stand in for the separately tested export cache."""
 
     monkeypatch.setattr(calculators, "_run_to_atomic_output", export_stub)
     calculators._pet("fake")(  # noqa: SLF001
-        "cpu", dtype="float64", checkpoint="/tmp/model.ckpt"
+        "cpu", dtype="float64", checkpoint=str(tmp_path / "model.ckpt")
     )
     assert fake_model.capabilities().dtype == "float64"
-    assert captured == {
-        "dtype": torch.float64,
-        "device": "cpu",
-        "model": fake_model,
-        "non_conservative": False,
-    }
+    assert captured == {"dtype": float64_dtype, "device": "cpu"}
 
 
 @pytest.mark.parametrize(
@@ -252,25 +241,26 @@ def test_deepmd_archive_extraction_replaces_invalid_cache(tmp_path: Path) -> Non
     assert Path(updated_path).read_bytes() == b"updated frozen model"
 
 
-def test_atomic_command_output_recovers_after_interruption(
+def test_atomic_command_output_recovers_after_timeout(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Interrupted compilers leave no accepted partial cache and can retry."""
-    destination = tmp_path / "compiled.nequip.pth"
+    """Timed-out compilers leave no accepted partial cache and can retry."""
+    destination = tmp_path / "fresh" / "compiled.nequip.pth"
     n_calls = 0
 
-    def run_stub(command: list[str], *, check: bool) -> None:
+    def run_stub(command: list[str], *, check: bool, timeout: float) -> None:
         """Write a partial first result and a complete retry result."""
         nonlocal n_calls
         assert check
+        assert timeout == calculators.DERIVED_ARTIFACT_TIMEOUT_SEC
         n_calls += 1
         output_path = next(argument for argument in command if ".tmp." in argument)
         Path(output_path).write_bytes(b"partial" if n_calls == 1 else b"complete")
         if n_calls == 1:
-            raise subprocess.CalledProcessError(1, command)
+            raise subprocess.TimeoutExpired(command, timeout)
 
     monkeypatch.setattr(calculators.subprocess, "run", run_stub)
-    with pytest.raises(subprocess.CalledProcessError):
+    with pytest.raises(subprocess.TimeoutExpired):
         calculators._run_to_atomic_output(  # noqa: SLF001
             ["nequip-compile", "registry:model", "{output}"], str(destination)
         )

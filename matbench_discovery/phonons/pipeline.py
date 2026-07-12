@@ -149,13 +149,6 @@ class KappaSettings:
             raise TypeError("is_plusminus must be a boolean or 'auto'")
 
         filter_name = canonical_filter_name(self.ase_filter)
-        if filter_name not in {
-            "FrechetCellFilter",
-            "ExpCellFilter",
-            "UnitCellFilter",
-            None,
-        }:
-            raise ValueError(f"Unsupported kappa ASE filter {filter_name!r}")
         object.__setattr__(self, "temperatures", temperatures)
         object.__setattr__(
             self, "ase_optimizer", canonical_optimizer_name(self.ase_optimizer)
@@ -166,13 +159,11 @@ class KappaSettings:
         """Reject execution options ignored by the selected adapter."""
         if self.batch_size != 1 and adapter_name not in {"pet", "equflash"}:
             raise ValueError(f"batch_size is unsupported by {adapter_name}")
-        if self.max_atoms_per_batch is not None and adapter_name != "equflash":
+        if self.max_atoms_per_batch is None:
+            return
+        if adapter_name != "equflash":
             raise ValueError(f"max_atoms_per_batch is unsupported by {adapter_name}")
-        if (
-            adapter_name == "equflash"
-            and self.batch_size != 1
-            and self.max_atoms_per_batch is not None
-        ):
+        if self.batch_size != 1:
             raise ValueError(
                 "batch_size and max_atoms_per_batch are mutually exclusive"
             )

@@ -43,13 +43,15 @@ KAPPA_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
 }
 
 
+def _is_missing_scalar(value: object) -> bool:
+    """Return whether a scalar is a DataFrame placeholder rather than alias data."""
+    missing = pd.isna(value)
+    return isinstance(missing, bool | np.bool_) and bool(missing)
+
+
 def _has_errors(value: object) -> bool:
     """Treat missing error cells as empty and populated values as failures."""
-    if value is None or (
-        isinstance(value, float | np.floating) and bool(np.isnan(value))
-    ):
-        return False
-    return bool(value)
+    return not _is_missing_scalar(value) and bool(value)
 
 
 def voigt_6_to_full_3x3(tensor: object) -> object:
@@ -72,26 +74,12 @@ def _values_equal(first: object, second: object) -> bool:
         first_array, second_array = np.asarray(first), np.asarray(second)
         if first_array.shape != second_array.shape:
             return False
-        if first_array.shape == () and (
-            first_array.dtype == np.dtype(bool) or second_array.dtype == np.dtype(bool)
-        ):
-            first_value, second_value = first_array.item(), second_array.item()
-            if first_value in (0, 1) and second_value in (0, 1):
-                return bool(first_value) == bool(second_value)
         try:
             return bool(np.array_equal(first_array, second_array, equal_nan=True))
         except TypeError:
             return bool(np.array_equal(first_array, second_array))
     except (TypeError, ValueError):
         return False
-
-
-def _is_missing_scalar(value: object) -> bool:
-    """Return whether a scalar is a DataFrame placeholder rather than alias data."""
-    if value is None:
-        return True
-    missing = pd.isna(value)
-    return isinstance(missing, bool | np.bool_) and bool(missing)
 
 
 def normalize_kappa_result(result: Mapping[str, Any]) -> dict[str, Any]:
@@ -103,16 +91,13 @@ def normalize_kappa_result(result: Mapping[str, Any]) -> dict[str, Any]:
             for name in (canonical, *aliases)
             if name in normalized and not _is_missing_scalar(normalized[name])
         ]
-        if not present_names:
-            for alias in aliases:
-                normalized.pop(alias, None)
-            continue
-        value = normalized[present_names[0]]
-        if any(
-            not _values_equal(value, normalized[name]) for name in present_names[1:]
-        ):
-            raise ValueError(f"Conflicting aliases for kappa column {canonical!r}")
-        normalized[canonical] = value
+        if present_names:
+            value = normalized[present_names[0]]
+            if any(
+                not _values_equal(value, normalized[name]) for name in present_names[1:]
+            ):
+                raise ValueError(f"Conflicting aliases for kappa column {canonical!r}")
+            normalized[canonical] = value
         for alias in aliases:
             normalized.pop(alias, None)
 

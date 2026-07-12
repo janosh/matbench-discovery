@@ -29,6 +29,14 @@ def run_diatomics_fixture() -> ModuleType:
         ("--model emt --max-z 0", None),
         ("--model emt --n-points 1", None),
         ("--model mace-mp-0", "--model mace_mp_0"),
+        ("--model matris_10m_oam", "--model matris_10m_oam"),
+        ("--model matris_10m_mp", "--model matris_10m_mp"),
+        ("--model sevennet_0", "--model sevennet_0"),
+        ("--model sevennet_l3i5", "--model sevennet_l3i5"),
+        ("--model sevennet_mf_ompa", "--model sevennet_mf_ompa"),
+        ("--model sevennet_omni_i12", "--model sevennet_omni_i12"),
+        ("--model alphanet_mptrj", "--model alphanet_mptrj"),
+        ("--model alphanet_v1_oam", "--model alphanet_v1_oam"),
         # --print-cmd must forward computation params, not just --model (else a copied
         # command silently runs with defaults)
         ("--model mace-mp-0 --min-dist 0.2", "--min-dist 0.2"),
@@ -41,16 +49,17 @@ def test_run_diatomics_cli_validation(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """run_diatomics validates distances and canonicalizes model refs."""
-    argv = ["run_diatomics", "--print-cmd", *argv_tail.split()]
-    monkeypatch.setattr(sys, "argv", argv)
+    """run_diatomics validates inputs and resolves shared-runner models."""
+    monkeypatch.setattr(
+        sys, "argv", ["run_diatomics", "--print-cmd", *argv_tail.split()]
+    )
 
     if expected_stdout is None:
         with pytest.raises(SystemExit):
             run_diatomics.main()
-    else:
-        assert run_diatomics.main() == 0
-        assert expected_stdout in capsys.readouterr().out
+        return
+    assert run_diatomics.main() == 0
+    assert expected_stdout in capsys.readouterr().out
 
 
 def test_trim_curve_to_finite(run_diatomics: ModuleType) -> None:

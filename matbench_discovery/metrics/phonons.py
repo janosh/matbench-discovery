@@ -143,10 +143,7 @@ def evaluate_kappa_predictions(
         "srme": float(df_metrics[Key.srme].mean()),
         "sre": float(df_metrics[Key.sre].mean()),
     }
-    if any(
-        not np.isfinite(value) or not 0 <= value <= KAPPA_ERROR_MAX
-        for value in metrics.values()
-    ):
+    if any(not 0 <= value <= KAPPA_ERROR_MAX for value in metrics.values()):
         raise ValueError(f"Invalid aggregate kappa metrics: {metrics}")
     return metrics
 
@@ -254,6 +251,29 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
         return np.array([np.nan])
 
 
+def _mode_kappa_values(kappas: pd.Series) -> np.ndarray | None:
+    """Return finite mode conductivities from the best available representation."""
+    keys = set(kappas.index)
+    if MbdKey.mode_kappa_tot_avg in keys:
+        mode_kappa = kappas[MbdKey.mode_kappa_tot_avg]
+    elif MbdKey.mode_kappa_tot_rta in keys:
+        mode_kappa = calculate_kappa_avg(kappas[MbdKey.mode_kappa_tot_rta])
+    elif {MbdKey.kappa_p_rta, MbdKey.kappa_c, Key.heat_capacity} <= keys:
+        try:
+            mode_kappa = calculate_kappa_avg(
+                ltc.calc_mode_kappa_tot(
+                    kappas[MbdKey.kappa_p_rta],
+                    kappas[MbdKey.kappa_c],
+                    kappas[Key.heat_capacity],
+                )
+            )
+        except (TypeError, ValueError):
+            return None
+    else:
+        return None
+    return _finite_array(mode_kappa)
+
+
 def calc_kappa_srme_dataframes(
     df_pred: pd.DataFrame, df_true: pd.DataFrame
 ) -> list[float]:
@@ -296,6 +316,8 @@ def calc_kappa_srme_dataframes(
             ):
                 srme_list.append(KAPPA_ERROR_MAX)
                 continue
+        # Keep this discarded validation outside the try so InvalidKappaReferenceError
+        # is not swallowed by the broader ValueError handler.
         _single_kappa(row_true[MbdKey.kappa_tot_avg], reference=True)
         try:
             result = np.ravel(calc_kappa_srme(row_pred, row_true))
@@ -304,11 +326,7 @@ def calc_kappa_srme_dataframes(
         except (KeyError, TypeError, ValueError, ZeroDivisionError):
             result = np.array([KAPPA_ERROR_MAX])
         score = float(result[0]) if result.size == 1 else KAPPA_ERROR_MAX
-        srme_list.append(
-            score
-            if np.isfinite(score) and 0 <= score <= KAPPA_ERROR_MAX
-            else KAPPA_ERROR_MAX
-        )
+        srme_list.append(score if 0 <= score <= KAPPA_ERROR_MAX else KAPPA_ERROR_MAX)
 
     return srme_list
 
@@ -348,44 +366,14 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
         )
     true_totals = np.atleast_1d(true_totals)
     failure = np.full(true_totals.shape, KAPPA_ERROR_MAX)
-    mode_kappa_tot_avgs: dict[str, np.ndarray] = {}
-    # Try different data sources in order of preference for both pred and true data
-    for label, kappas in {"true": kappas_true, "preds": kappas_pred}.items():
-        keys = set(kappas.index)
-        if MbdKey.mode_kappa_tot_avg in keys:
-            mode_kappa = kappas[MbdKey.mode_kappa_tot_avg]
-        elif MbdKey.mode_kappa_tot_rta in keys:
-            mode_kappa = calculate_kappa_avg(kappas[MbdKey.mode_kappa_tot_rta])
-        elif {MbdKey.kappa_p_rta, MbdKey.kappa_c, Key.heat_capacity} <= keys:
-            try:
-                mode_kappa = calculate_kappa_avg(
-                    ltc.calc_mode_kappa_tot(
-                        kappas[MbdKey.kappa_p_rta],
-                        kappas[MbdKey.kappa_c],
-                        kappas[Key.heat_capacity],
-                    )
-                )
-            except (TypeError, ValueError) as exc:
-                if label == "true":
-                    raise InvalidKappaReferenceError(
-                        "Invalid reference mode conductivity components"
-                    ) from exc
-                mode_kappa = np.nan
-        else:
-            if label == "preds":
-                return failure
-            raise InvalidKappaReferenceError(
-                f"Neither mode_kappa_tot_avg, mode_kappa_tot nor individual kappa\n"
-                f"components found in {label}, got\n{keys}"
-            )
-        mode_values = _finite_array(mode_kappa)
-        if mode_values is None:
-            if label == "true":
-                raise InvalidKappaReferenceError(
-                    "Reference mode conductivities must be finite"
-                )
-            return failure
-        mode_kappa_tot_avgs[label] = mode_values
+    true_mode_kappa = _mode_kappa_values(kappas_true)
+    if true_mode_kappa is None:
+        raise InvalidKappaReferenceError(
+            "Reference mode conductivities are missing or invalid"
+        )
+    predicted_mode_kappa = _mode_kappa_values(kappas_pred)
+    if predicted_mode_kappa is None:
+        return failure
 
     predicted_totals = _finite_array(
         kappas_pred.get(MbdKey.kappa_tot_avg), nonnegative=True
@@ -399,13 +387,13 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
     ):
         return failure
     predicted_totals = np.atleast_1d(predicted_totals)
-    if mode_kappa_tot_avgs["preds"].shape != mode_kappa_tot_avgs["true"].shape:
+    if predicted_mode_kappa.shape != true_mode_kappa.shape:
         return failure
 
     # calculating microscopic error for all temperatures
     microscopic_error = np.atleast_1d(
-        np.abs(mode_kappa_tot_avgs["preds"] - mode_kappa_tot_avgs["true"]).sum(
-            axis=tuple(range(1, mode_kappa_tot_avgs["preds"].ndim))
+        np.abs(predicted_mode_kappa - true_mode_kappa).sum(
+            axis=tuple(range(1, predicted_mode_kappa.ndim))
         )
         / mode_weights.sum()
     )
