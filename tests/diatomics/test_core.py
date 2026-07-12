@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from ase import Atoms
 from ase.calculators.emt import EMT
+from ase.formula import Formula
 
 from matbench_discovery.diatomics import (
     DiatomicResults,
@@ -32,7 +33,7 @@ def test_generate_diatomics(
         atoms_list, distances, expected_formulas, strict=True
     ):
         assert isinstance(atoms, Atoms)
-        assert set(atoms.get_chemical_formula()) == set(formula)
+        assert atoms.get_chemical_formula() == Formula(formula).format("hill")
         assert atoms.get_distance(0, 1) == pytest.approx(dist)
         # large periodic box so cell-requiring calculators work; images don't interact
         assert all(atoms.pbc)
