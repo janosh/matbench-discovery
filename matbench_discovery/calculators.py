@@ -69,10 +69,8 @@ def _stable_file_sha256(path: str) -> tuple[str, tuple[int, int, int]]:
 
 def _cached_file_sha256(path: str) -> tuple[str, tuple[int, int, int]] | None:
     """Hash an existing cache entry, tolerating a concurrent atomic replacement."""
-    if not _is_non_empty_file(path):
-        return None
     try:
-        return _stable_file_sha256(path)
+        return _stable_file_sha256(path) if _is_non_empty_file(path) else None
     except (FileNotFoundError, RuntimeError):
         return None
 
@@ -201,9 +199,8 @@ def _run_to_atomic_output(
             and os.path.isfile(identity_path)
         ):
             with open(identity_path, encoding="utf-8") as file:
-                cached_recipe, _, cached_output = file.read().partition("\n")
-            if cached_recipe == recipe_hash and cached_output == cached_dest[0]:
-                return
+                if file.read() == f"{recipe_hash}\n{cached_dest[0]}":
+                    return
         if os.path.isfile(tmp_dest):
             os.remove(tmp_dest)
         try:
@@ -254,20 +251,12 @@ class CalcSpec:
             tok for url in self.extra_index_url for tok in ("--extra-index-url", url)
         ]
         if self.project:
-            base_cmd = ["uv", "run", "--project", self.project, "--isolated"]
-            dependency_args: list[str] = []
-            target = ["python", script]
+            command = ["uv", "run", "--project", self.project, "--isolated", *py_args]
+            command.append("python")
         else:
-            base_cmd = ["uv", "run", "--no-project"]
-            dependency_args = [*with_args, *link_args, *index_args]
-            target = [script]
-        return [
-            *base_cmd,
-            *py_args,
-            *dependency_args,
-            *target,
-            *args,
-        ]
+            command = ["uv", "run", "--no-project", *py_args]
+            command += [*with_args, *link_args, *index_args]
+        return [*command, script, *args]
 
 
 def resolve_checkpoint(model_key: str, checkpoint: str | None = None) -> str | None:
@@ -414,25 +403,19 @@ def _deepmd(model_key: str) -> Callable[..., "Calculator"]:
 
 def _deepmd_model_paths(extract_dir: str) -> list[str]:
     """Return frozen DeePMD artifacts recursively contained in a directory."""
-    model_paths = []
-    for root_dir, _dir_names, file_names in os.walk(extract_dir):
-        model_paths.extend(
-            f"{root_dir}/{file_name}"
-            for file_name in file_names
-            if os.path.splitext(file_name)[1] in {".pb", ".pth", ".pt2"}
-        )
-    return model_paths
+    return [
+        f"{root_dir}/{file_name}"
+        for root_dir, _dir_names, file_names in os.walk(extract_dir)
+        for file_name in file_names
+        if os.path.splitext(file_name)[1] in {".pb", ".pth", ".pt2"}
+    ]
 
 
 def _extract_single_deepmd_model(archive_path: str) -> str:
     """Safely and atomically extract one frozen model from a DeePMD ZIP."""
     extract_dir = f"{os.path.splitext(archive_path)[0]}-extracted"
     tmp_extract_dir = f"{extract_dir}.tmp"
-    archive_stats = os.stat(archive_path)
-    archive_identity = (
-        f"{archive_stats.st_size}:{archive_stats.st_mtime_ns}:"
-        f"{archive_stats.st_ctime_ns}"
-    )
+    archive_identity = ":".join(map(str, _file_state(archive_path)))
     identity_path = f"{extract_dir}/.archive-stat"
     with FileLock(f"{extract_dir}.lock"):
         existing_paths = _deepmd_model_paths(extract_dir)
@@ -450,9 +433,8 @@ def _extract_single_deepmd_model(archive_path: str) -> str:
                     target_path = os.path.realpath(
                         f"{tmp_extract_dir}/{member.filename}"
                     )
-                    if os.path.commonpath((real_extract_dir, target_path)) != (
-                        real_extract_dir
-                    ):
+                    common_path = os.path.commonpath((real_extract_dir, target_path))
+                    if common_path != real_extract_dir:
                         raise ValueError(
                             f"Unsafe path {member.filename!r} in {archive_path}"
                         )
@@ -555,7 +537,6 @@ def _nequip(model_key: str) -> Callable[[str], "Calculator"]:
         url = Model.from_ref(model_key).metadata["checkpoint_url"]
         registry = f"nequip.net:{url.split('nequip.net/models/')[-1]}"
         compiled = f"{CHECKPOINT_DIR}/{model_key}-{device}.nequip.pth"
-        os.makedirs(CHECKPOINT_DIR, exist_ok=True)
         _run_to_atomic_output(
             [
                 "nequip-compile",
@@ -645,9 +626,8 @@ def _alphanet(model_key: str, config_url: str) -> Callable[..., "Calculator"]:
             if not _is_non_empty_file(config_path):
                 download_file(config_path, config_url)
         config = All_Config().from_json(config_path)
-        ckpt_path = checkpoint or download_checkpoint(model_key)
         return AlphaNetCalculator(
-            ckpt_path=ckpt_path,
+            ckpt_path=checkpoint or download_checkpoint(model_key),
             device=device,
             precision={"float32": "32", "float64": "64"}[dtype],
             config=config,
@@ -725,6 +705,7 @@ def _emt(device: str) -> "Calculator":  # noqa: ARG001 - CPU only, debug model
 # Models get their weights either from their calculator's own auto-download (mace, orb,
 # sevennet, grace, chgnet, mattersim) or via download_checkpoint() from the YAML
 # checkpoint_url (fairchem, deepmd, tace). Gated repos (fairchem OMAT24) need HF_TOKEN.
+GRACE_DEPS = ("tensorpotential",)
 
 # fairchem-core v1 pins torch~=2.4 and imports torch_geometric (needs torch-scatter).
 # PyG ships prebuilt wheels per torch+CUDA build; PYG_LINKS must match the torch pin.
@@ -876,14 +857,10 @@ CALCULATORS: dict[str, CalcSpec] = {
         _sevennet("7net-omni-i12", modal="mpa"),
         deps=("sevenn",),
     ),
-    "grace_2l_oam": CalcSpec(_grace("GRACE-2L-OAM"), deps=("tensorpotential",)),
-    "grace_1l_oam": CalcSpec(_grace("GRACE-1L-OAM"), deps=("tensorpotential",)),
-    "grace_2l_oam_l": CalcSpec(
-        _grace("GRACE-2L-OMAT-large-ft-AM"), deps=("tensorpotential",)
-    ),
-    "grace_3l_oam_l": CalcSpec(
-        _grace("GRACE-3L-OMAT-large-ft-AM"), deps=("tensorpotential",)
-    ),
+    "grace_2l_oam": CalcSpec(_grace("GRACE-2L-OAM"), deps=GRACE_DEPS),
+    "grace_1l_oam": CalcSpec(_grace("GRACE-1L-OAM"), deps=GRACE_DEPS),
+    "grace_2l_oam_l": CalcSpec(_grace("GRACE-2L-OMAT-large-ft-AM"), deps=GRACE_DEPS),
+    "grace_3l_oam_l": CalcSpec(_grace("GRACE-3L-OMAT-large-ft-AM"), deps=GRACE_DEPS),
     # grace_2l_mptrj == registry name "GRACE-2L-MP-r6" (sciebo 42Ivgi3eaLCynwC), but
     # tensorpotential>=0.5 (all that's on PyPI) dropped the MP-r6 models, so pin the
     # 0.4.4-era commit from git that still registers it
@@ -1088,16 +1065,13 @@ def load_calculator(
     device = resolve_device(model_key, device)
     calc_spec = CALCULATORS[model_key]
     checkpoint = resolve_checkpoint(model_key, checkpoint)
-    make_calc = calc_spec.make_calc
-    factory_params = inspect.signature(make_calc).parameters
-    kwargs: dict[str, str] = {}
+    factory_params = inspect.signature(calc_spec.make_calc).parameters
+    kwargs: dict[str, str] = {"dtype": dtype} if "dtype" in factory_params else {}
     # Pass optional runtime values only to factories that explicitly declare them.
-    if "dtype" in factory_params:
-        kwargs["dtype"] = dtype
     if checkpoint is not None:
         if "checkpoint" not in factory_params:
             raise ValueError(
                 f"{model_key} does not support an explicit checkpoint override"
             )
         kwargs["checkpoint"] = checkpoint
-    return make_calc(device, **kwargs)
+    return calc_spec.make_calc(device, **kwargs)

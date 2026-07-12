@@ -2,7 +2,7 @@ import { HYPERPARAMS, METADATA_COLS } from '$lib/labels'
 import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { tick } from 'svelte'
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import { doc_query, mount } from '../index'
 
 const make_models = (min_value: number, max_value: number): ModelData[] =>
@@ -104,6 +104,8 @@ it(`re-evaluates manual log choices after an axis change`, async () => {
 })
 
 it(`opens the model legend from the controls row`, async () => {
+  vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
+  vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
   mount(DynamicScatter, {
     target: document.body,
     props: {
@@ -117,4 +119,5 @@ it(`opens the model legend from the controls row`, async () => {
   await tick()
   expect(document.querySelector(`.scatter > .legend:has(.legend-item)`)).not.toBeNull()
   expect(document.querySelector(`button.models-toggle`)).toBeNull()
+  vi.restoreAllMocks()
 })
