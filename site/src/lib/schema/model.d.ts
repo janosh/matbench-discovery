@@ -313,7 +313,7 @@ export interface KappaSettings {
    */
   temperatures?: [number, ...number[]]
   ase_optimizer?: string
-  ase_filter?: 'FrechetCellFilter' | 'ExpCellFilter' | null
+  ase_filter?: 'FrechetCellFilter' | 'ExpCellFilter' | 'frechet' | 'exp' | 'none' | null
   max_steps?: number
   force_max?: number
   symprec?: number

@@ -410,7 +410,7 @@ def merge_audit_metadata(
                     f"Run segments contain partial {memory_key} provenance"
                 )
 
-    merged = dict[str, object](merge_run_metadata(segments))
+    merged: dict[str, object] = dict(merge_run_metadata(segments))
     if len(hardware_labels) > 1:
         merged.pop("hardware", None)
     for cost_key, count in cost_counts.items():

@@ -375,7 +375,7 @@ def update_yaml_file(
         # recompute drops keys that are no longer emitted (deprecated metrics).
         previous = current.get(last)
         updated_data = (
-            data
+            data.copy()
             if isinstance(data, dict)
             else data(dict(previous) if isinstance(previous, dict) else {})
         )

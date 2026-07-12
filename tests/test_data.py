@@ -370,13 +370,13 @@ def test_update_yaml_file(tmp_path: Path) -> None:
     with open(test_file, mode="w") as file:
         round_trip_yaml.dump(initial_data, file)
 
-    updated_yaml = update_yaml_file(
-        test_file, "metrics.discovery", {"mae": 0.2, "rmse": 0.3}
-    )
+    update_data = {"mae": 0.2, "rmse": 0.3}
+    updated_yaml = update_yaml_file(test_file, "metrics.discovery", update_data)
     result = updated_yaml["metrics"]["discovery"]
     assert result["mae"] == 0.2
     assert result["rmse"] == 0.3
     assert result["pred_file"] == "old.csv"
+    assert update_data == {"mae": 0.2, "rmse": 0.3}
 
     # Test case 2: Create new nested path
     updated_yaml = update_yaml_file(test_file, "metrics.new.nested.path", {"value": 42})

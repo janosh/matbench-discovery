@@ -43,7 +43,11 @@ class EquFlashKappaAdapter(StandardKappaAdapter):
         trainer = getattr(calculator, "trainer", None)
         if trainer is None:
             raise TypeError("EquFlash calculator has no trainer for batched FC3")
-        device = getattr(trainer, "device", None) or "cuda"
+        device = getattr(trainer, "device", None)
+        if device is None:
+            import torch
+
+            device = "cuda" if torch.cuda.is_available() else "cpu"
 
         def evaluate_batch(batch_atoms: list[Atoms]) -> np.ndarray:
             """Evaluate one EquFlash displacement batch through its trainer."""

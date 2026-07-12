@@ -1130,3 +1130,5 @@ def atomic_write_gzip_json(path: str, data: object) -> None:
         gzip.open(temporary_path, mode="wt", encoding="utf-8") as file,
     ):
         json.dump(json_ready(data), file, sort_keys=True, allow_nan=False)
+        file.flush()
+        os.fsync(file.fileno())

@@ -58,7 +58,7 @@ class PetKappaAdapter(StandardKappaAdapter):
         self, calculator: Calculator, settings: KappaSettings
     ) -> Calculator:
         """Wrap a metatomic calculator in its rotational symmetrizer."""
-        from metatomic.torch.ase_calculator import SymmetrizedCalculator
+        from metatomic_ase import SymmetrizedCalculator
 
         if isinstance(calculator, SymmetrizedCalculator):
             return calculator

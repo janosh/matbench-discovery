@@ -820,7 +820,7 @@ CALCULATORS: dict[str, CalcSpec] = {
     # PET (metatrain/metatomic): download .ckpt, `mtt export` to .pt, then load
     "pet_oam_xl_1_0_0": CalcSpec(
         _pet("pet_oam_xl_1_0_0"),
-        deps=("upet==0.1.0",),
+        deps=("upet==0.1.0", "metatomic-ase"),
         auto_checkpoint=True,
     ),
     # AlphaNet (config json from repo + figshare weights, torch-scatter from PyG links)

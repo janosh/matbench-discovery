@@ -80,7 +80,7 @@ definitions:
         type: string
       ase_filter:
         type: [string, 'null']
-        enum: [FrechetCellFilter, ExpCellFilter, null]
+        enum: [FrechetCellFilter, ExpCellFilter, frechet, exp, none, null]
       max_steps:
         type: integer
         minimum: 0

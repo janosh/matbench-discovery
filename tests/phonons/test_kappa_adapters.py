@@ -109,7 +109,7 @@ class ArrayTensorStub:
 class EquFlashTrainerStub:
     """Echo graph positions as forces while recording prediction batch sizes."""
 
-    device = "cpu"
+    device: str | None = None
 
     def __init__(self) -> None:
         """Initialize an empty prediction log."""
@@ -340,6 +340,7 @@ def test_equflash_fc3_streams_graph_batches_and_preserves_null_entries(
         monkeypatch.setitem(sys.modules, module_name, module)
 
     trainer = EquFlashTrainerStub()
+    monkeypatch.setattr("torch.cuda.is_available", bool)
     calculator = cast("Calculator", SimpleNamespace(trainer=trainer))
     phono3py = cast(
         "Phono3py",

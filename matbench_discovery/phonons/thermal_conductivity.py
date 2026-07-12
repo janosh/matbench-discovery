@@ -46,7 +46,19 @@ def batched_displacement_forces(
     n_atoms: int,
     max_evaluations: int | None = None,
 ) -> np.ndarray:
-    """Evaluate valid displaced supercells in batches while retaining null slots."""
+    """Evaluate non-null displaced supercells in batches.
+
+    Args:
+        displacements: Sequence of displaced phonon supercells or null placeholders.
+        evaluate_batch: Callable returning forces for one batch of ASE structures.
+        batch_size: Maximum number of displaced structures per evaluation.
+        n_atoms: Number of atoms in each displaced supercell.
+        max_evaluations: Optional cap on evaluated non-null displacements.
+
+    Returns:
+        Force array shaped ``(len(displacements), n_atoms, 3)``. Only non-null entries
+        up to ``max_evaluations`` are evaluated; null and unevaluated slots remain zero.
+    """
     entries = [
         (displacement_idx, supercell)
         for displacement_idx, supercell in enumerate(displacements)
