@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -409,36 +409,161 @@ def test_evaluate_kappa_predictions_rejects_duplicate_ids(
         phonon_metrics.evaluate_kappa_predictions(pd.DataFrame(index=["mp-1", "mp-1"]))
 
 
-def test_write_metrics_to_yaml_preserves_existing_artifacts(tmp_path: Path) -> None:
-    """Metric recomputation preserves established artifact metadata."""
-    yaml_path = tmp_path / "test_model.yml"
-    existing_data = {
-        "metrics": {
-            "phonons": {
-                "kappa_103": {
-                    "pred_file": "models/test/existing.json.gz",
-                    "pred_file_url": "https://figshare.com/files/existing",
-                    "analysis_file": "models/test/analysis.csv.gz",
-                }
-            }
-        }
-    }
+def update_temp_kappa_yaml(
+    tmp_path: Path,
+    initial_yaml: str,
+    *,
+    metrics: dict[str, float] | None = None,
+    pred_file_path: str = "models/test/new.json.gz",
+    run_metadata: dict[str, object] | None = None,
+    force_file_path: str | None = None,
+    run_info_path: str | None = None,
+    replace_pred_file: bool = False,
+) -> dict[str, Any]:
+    """Update a temporary model YAML and return its kappa metrics mapping."""
+    yaml_path = f"{tmp_path}/model.yml"
     with open(yaml_path, mode="w", encoding="utf-8") as file:
-        mbd_data.round_trip_yaml.dump(existing_data, file)
-    model = cast("Model", SimpleNamespace(yaml_path=str(yaml_path)))
+        file.write(initial_yaml)
+    model = cast("Model", SimpleNamespace(yaml_path=yaml_path))
     phonon_metrics.write_metrics_to_yaml(
         model,
-        {"srme": 0.1234, "sre": 0.5678},
-        "models/test/kappa-103.json.gz",
+        {"srme": 0.25, "sre": 0.125} if metrics is None else metrics,
+        pred_file_path,
+        run_metadata=run_metadata,
+        force_file_path=force_file_path,
+        run_info_path=run_info_path,
+        replace_pred_file=replace_pred_file,
     )
     with open(yaml_path, encoding="utf-8") as file:
-        actual_yaml = mbd_data.round_trip_yaml.load(file)
-    actual_kappa_103 = actual_yaml["metrics"]["phonons"]["kappa_103"]
+        metadata = mbd_data.round_trip_yaml.load(file)
+    return cast("dict[str, Any]", metadata["metrics"]["phonons"]["kappa_103"])
 
-    assert actual_kappa_103 == {
+
+def test_write_metrics_to_yaml_preserves_existing_artifacts(tmp_path: Path) -> None:
+    """Metric recomputation preserves established artifact metadata."""
+    kappa_metrics = update_temp_kappa_yaml(
+        tmp_path,
+        (
+            "metrics:\n"
+            "  phonons:\n"
+            "    kappa_103:\n"
+            "      pred_file: models/test/existing.json.gz\n"
+            "      pred_file_url: https://figshare.com/files/existing\n"
+            "      analysis_file: models/test/analysis.csv.gz\n"
+        ),
+        metrics={"srme": 0.1234, "sre": 0.5678},
+        pred_file_path="models/test/kappa-103.json.gz",
+    )
+    assert kappa_metrics == {
         "pred_file": "models/test/existing.json.gz",
         "pred_file_url": "https://figshare.com/files/existing",
         "analysis_file": "models/test/analysis.csv.gz",
         "κ_SRME": 0.1234,
         "κ_SRE": 0.5678,
     }
+
+
+@pytest.mark.parametrize(
+    "initial_yaml",
+    ["metrics: {}\n", "metrics:\n  phonons: not available\n"],
+)
+def test_kappa_metric_yaml_replaces_missing_or_unavailable_phonons(
+    tmp_path: Path, initial_yaml: str
+) -> None:
+    """Completed runs replace absent or unavailable phonon metadata."""
+    kappa_metrics = update_temp_kappa_yaml(
+        tmp_path, initial_yaml, replace_pred_file=True
+    )
+    assert kappa_metrics["κ_SRME"] == 0.25
+    assert kappa_metrics["pred_file"] == "models/test/new.json.gz"
+
+
+def test_kappa_metric_yaml_round_trip_updates_provenance(tmp_path: Path) -> None:
+    """Complete-run metadata and sidecars round-trip through model YAML."""
+    kappa_metrics = update_temp_kappa_yaml(
+        tmp_path,
+        (
+            "metrics:\n"
+            "  phonons:\n"
+            "    kappa_103:\n"
+            "      κ_SRME: 1.0\n"
+            "      pred_file: models/test/new.json.gz\n"
+            "      pred_file_url: https://example.com/old.json.gz\n"
+            "      force_file_url: https://example.com/old-forces.json.gz\n"
+            "      run_info_file_url: https://example.com/old-run-info.json\n"
+        ),
+        run_metadata={
+            "hardware": "NVIDIA H200",
+            "run_time_sec": 12.5,
+            "max_rss_gb": 3.5,
+            "max_gpu_mem_gb": 4.5,
+        },
+        force_file_path="models/test/forces.json.gz",
+        run_info_path="models/test/run-info.json",
+        replace_pred_file=True,
+    )
+    assert kappa_metrics["κ_SRME"] == 0.25
+    assert kappa_metrics["κ_SRE"] == 0.125
+    assert kappa_metrics["pred_file"] == "models/test/new.json.gz"
+    assert kappa_metrics["pred_file_url"] is None
+    assert kappa_metrics["force_file"] == "models/test/forces.json.gz"
+    assert kappa_metrics["force_file_url"] is None
+    assert kappa_metrics["run_info_file"] == "models/test/run-info.json"
+    assert kappa_metrics["run_info_file_url"] is None
+    assert kappa_metrics["hardware"] == "NVIDIA H200"
+    assert kappa_metrics["run_time_sec"] == 12.5
+    assert kappa_metrics["max_rss_gb"] == 3.5
+    assert kappa_metrics["max_gpu_mem_gb"] == 4.5
+
+
+def test_kappa_metric_yaml_clears_url_when_sidecar_path_changes(
+    tmp_path: Path,
+) -> None:
+    """Changing a sidecar path invalidates its existing remote URL."""
+    kappa_metrics = update_temp_kappa_yaml(
+        tmp_path,
+        (
+            "metrics:\n"
+            "  phonons:\n"
+            "    kappa_103:\n"
+            "      κ_SRME: 1.0\n"
+            "      pred_file: models/test/pred.json.gz\n"
+            "      pred_file_url: https://example.com/pred.json.gz\n"
+            "      force_file: models/test/old-forces.json.gz\n"
+            "      force_file_url: https://example.com/old-forces.json.gz\n"
+        ),
+        pred_file_path="models/test/pred.json.gz",
+        force_file_path="models/test/new-forces.json.gz",
+    )
+    assert kappa_metrics["pred_file_url"] == "https://example.com/pred.json.gz"
+    assert kappa_metrics["force_file"] == "models/test/new-forces.json.gz"
+    assert kappa_metrics["force_file_url"] is None
+
+
+def test_kappa_metric_yaml_replacement_clears_stale_sidecars(
+    tmp_path: Path,
+) -> None:
+    """Replacing predictions removes provenance absent from the new run."""
+    kappa_metrics = update_temp_kappa_yaml(
+        tmp_path,
+        (
+            "metrics:\n"
+            "  phonons:\n"
+            "    kappa_103:\n"
+            "      κ_SRME: 1.0\n"
+            "      force_file: models/test/old-forces.json.gz\n"
+            "      force_file_url: https://example.com/old-forces.json.gz\n"
+            "      run_info_file: models/test/old-run-info.json\n"
+            "      run_info_file_url: https://example.com/old-run-info.json\n"
+            "      max_gpu_mem_gb: 9.0\n"
+        ),
+        replace_pred_file=True,
+    )
+    for stale_key in (
+        "force_file",
+        "force_file_url",
+        "run_info_file",
+        "run_info_file_url",
+        "max_gpu_mem_gb",
+    ):
+        assert stale_key not in kappa_metrics

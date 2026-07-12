@@ -1,7 +1,7 @@
 """Model-submission ingestion pipeline.
 
 The checklist reads the model YAML through the Model enum's metadata API instead of
-grep/sed, making it testable (tests/test_ingest_model.py) and robust to YAML
+grep/sed, making it testable (tests/scripts/test_ingest_model.py) and robust to YAML
 formatting.
 
 Usage:
@@ -308,7 +308,7 @@ def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
         if not run_cmd(*uv_run_args(script), *PAYLOAD_FLAGS, *model_args):
             checks.fail(f"{script} failed")
             return
-    if run_cmd(*uv_run_args("--with pytest pytest tests/test_fig_payloads.py -q")):
+    if run_cmd(*uv_run_args("--with pytest pytest tests/site/test_fig_payloads.py -q")):
         checks.ok("Multi-model payloads regenerated + shape tests passed")
     else:
         checks.fail("Payload shape tests failed after regeneration")

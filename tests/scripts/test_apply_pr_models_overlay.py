@@ -6,7 +6,8 @@ FIGSHARE_TOKEN etc. in env on the resulting tree.
 """
 
 import pytest
-from conftest import import_repo_script
+
+from tests.utils import import_repo_script
 
 overlay = import_repo_script(
     "apply_pr_models_overlay", "scripts/apply_pr_models_overlay.py"

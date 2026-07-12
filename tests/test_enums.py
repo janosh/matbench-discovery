@@ -412,6 +412,52 @@ def test_model_enum() -> None:
     assert isinstance(metrics, dict)
     assert {*metrics} >= {"discovery", "geo_opt", "phonons"}
 
+    # Test registry-wide model properties and backing files
+    for model in Model:
+        assert os.path.isfile(model.yaml_path)
+    for model in Model.active():
+        assert "/models/" in model.discovery_path
+
+    assert Model.mace_mp_0.label == "MACE-MP-0"
+    assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
+    assert not Model.alphanet_mptrj.is_complete
+    assert not Model.dpa_3_1_mptrj.is_complete
+    model_keys = {model.key for model in Model}
+    for model in Model:
+        if model.metadata.get("status") == "superseded":
+            assert model.metadata["superseded_by"] in model_keys
+
+
+@pytest.mark.parametrize(
+    "input_value, expected_model",
+    [
+        # Exact matches
+        ("mace_mp_0", Model.mace_mp_0),
+        ("eqv2_s_dens_mp", Model.eqv2_s_dens_mp),
+        # Dash conversion
+        ("mace-mp-0", Model.mace_mp_0),
+        ("eqV2-s-dens-mp", Model.eqv2_s_dens_mp),
+        # Case insensitive
+        ("MACE-MP-0", Model.mace_mp_0),
+        ("EQV2-S-DENS-MP", Model.eqv2_s_dens_mp),
+        # Mixed separators
+        ("mace-mp_0", Model.mace_mp_0),
+        ("mace_mp-0", Model.mace_mp_0),
+        (123, None),
+        (None, None),
+        ([], None),
+        ({}, None),
+        ("nonexistent", None),
+        ("mace-mp-1", None),
+        ("eqv2-s-dens", None),
+        ("", None),
+        ("   ", None),
+    ],
+)
+def test_model_missing(input_value: object, expected_model: Model | None) -> None:
+    """Model._missing_ normalizes valid references and rejects invalid ones."""
+    assert Model._missing_(input_value) is expected_model
+
 
 def test_model_md_path_passes_huggingface_token(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch

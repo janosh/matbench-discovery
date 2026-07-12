@@ -30,11 +30,7 @@ def test_shared_kappa_runner_is_only_executable() -> None:
 
 
 def test_runnable_kappa_models_have_complete_shared_contract() -> None:
-    """Every calculator-backed phonon model has settings and an adapter path."""
-    from matbench_discovery.phonons.adapters import (
-        StandardKappaAdapter,
-        get_kappa_adapter,
-    )
+    """Every calculator-backed phonon model has settings and backend dispatch."""
     from matbench_discovery.phonons.pipeline import KappaSettings
 
     configured_models = {
@@ -45,7 +41,6 @@ def test_runnable_kappa_models_have_complete_shared_contract() -> None:
     assert configured_models == set(CALCULATORS) - {"emt"}
     for model_key in configured_models:
         assert isinstance(KappaSettings.from_model(model_key), KappaSettings)
-        assert isinstance(get_kappa_adapter(model_key), StandardKappaAdapter)
 
     prediction_models = {
         model.name
@@ -144,8 +139,6 @@ def test_discovery_uses_only_shared_runner() -> None:
     assert os.path.isfile(f"{ROOT}/models/run_discovery.py")
     assert os.path.isfile(f"{ROOT}/models/run_diatomics.py")
     assert not glob(f"{ROOT}/models/**/test_*_discovery.py", recursive=True)
-    for model_key in set(CALCULATORS) - {"emt"}:
-        assert Model.from_ref(model_key).name == model_key
     with open(f"{ROOT}/.github/pull_request_template.md") as file:
         pr_template = file.read()
     assert "test_<arch_name>_discovery.py" not in pr_template
@@ -163,59 +156,6 @@ def test_active_discovery_models_have_reproducible_runner() -> None:
         assert model.name in CALCULATORS or model.name in ARCHIVED_DISCOVERY_MODELS, (
             f"{model.name} has discovery results but no shared or archived runner state"
         )
-
-
-def test_model_enum() -> None:
-    """Test Model enum functionality."""
-    # Skip file existence checks in CI environment
-    for model in Model:
-        assert os.path.isfile(model.yaml_path)
-    for model in Model.active():
-        assert "/models/" in model.discovery_path
-
-    # Test model properties that don't depend on file existence
-    assert Model.mace_mp_0.label == "MACE-MP-0"
-    assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
-    assert Model.active() == tuple(model for model in Model if model.is_complete)
-    assert not Model.alphanet_mptrj.is_complete
-    assert not Model.dpa_3_1_mptrj.is_complete
-    model_keys = {model.key for model in Model}
-    for model in Model:
-        if model.metadata.get("status") == "superseded":
-            assert model.metadata["superseded_by"] in model_keys
-
-
-@pytest.mark.parametrize(
-    "input_value, expected_model",
-    [
-        # Exact matches
-        ("mace_mp_0", Model.mace_mp_0),
-        ("eqv2_s_dens_mp", Model.eqv2_s_dens_mp),
-        # Dash conversion
-        ("mace-mp-0", Model.mace_mp_0),
-        ("eqV2-s-dens-mp", Model.eqv2_s_dens_mp),
-        # Case insensitive
-        ("MACE-MP-0", Model.mace_mp_0),
-        ("EQV2-S-DENS-MP", Model.eqv2_s_dens_mp),
-        # Mixed separators
-        ("mace-mp_0", Model.mace_mp_0),
-        ("mace_mp-0", Model.mace_mp_0),
-    ],
-)
-def test_model_missing_valid_inputs(input_value: str, expected_model: Model) -> None:
-    """Test that _missing_ method correctly handles valid inputs."""
-    assert Model._missing_(input_value) is expected_model
-
-
-@pytest.mark.parametrize(
-    "input_value",
-    [123, None, [], {}, "nonexistent", "mace-mp-1", "eqv2-s-dens", "", "   "],
-)
-def test_model_missing_invalid_inputs(
-    input_value: str | int | None | list | dict,
-) -> None:
-    """Test that _missing_ method returns None for invalid inputs."""
-    assert Model._missing_(input_value) is None
 
 
 @pytest.mark.parametrize(
