@@ -15,7 +15,7 @@ import yaml
 from tqdm import tqdm
 
 from matbench_discovery import PKG_DIR, ROOT, repo_relative_path
-from matbench_discovery.cli import cli_parser
+from matbench_discovery.cli import cli_parser, models_arg
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
 from matbench_discovery.remote import figshare
@@ -25,30 +25,12 @@ with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
 
 
 def process_exclusion_prefixes(items: list[str], all_items: list[str]) -> list[str]:
-    """Process items with exclusion prefixes (!) and return the final list.
-
-    Args:
-        items: List of items, some of which may be prefixed with '!' for exclusion
-        all_items: Complete list of all possible items
-
-    Returns:
-        List of items after processing exclusions
-    """
-    include_items, exclude_items = [], []
-    for item in items:
-        if isinstance(item, str) and item.startswith("!"):
-            exclude_items.append(item.removeprefix("!"))
-        else:
-            include_items.append(item)
-
+    """Apply ``!`` exclusions to explicit items or the complete item list."""
+    include_items = [item for item in items if not item.startswith("!")]
+    excluded_items = {item[1:] for item in items if item.startswith("!")}
     # If there are explicit inclusions, use those
     # Otherwise, start with all items and remove exclusions
-    result = include_items or all_items.copy()
-    for item in exclude_items:
-        if item in result:
-            result.remove(item)
-
-    return result
+    return [item for item in include_items or all_items if item not in excluded_items]
 
 
 def get_article_metadata(task_info: dict[str, Any]) -> dict[str, Sequence[object]]:
@@ -70,11 +52,25 @@ def get_article_metadata(task_info: dict[str, Any]) -> dict[str, Sequence[object
     }
 
 
-def should_process_file(
-    key: str, file_type: Literal["all", "analysis", "pred"]
-) -> bool:
-    """Filter files by type."""
-    return file_type == "all" or key.endswith(f"{file_type}_file")
+def resolve_artifact_path(
+    model_yaml_path: str,
+    relative_file_path: str,
+    root_dir: str = ROOT,
+) -> str:
+    """Resolve an artifact file confined to its model architecture directory."""
+    if os.path.isabs(relative_file_path):
+        raise ValueError(f"Artifact path must be relative: {relative_file_path!r}")
+
+    file_path = os.path.abspath(f"{root_dir}/{relative_file_path}")
+    model_dir = os.path.realpath(os.path.dirname(model_yaml_path))
+    if os.path.commonpath((model_dir, os.path.realpath(file_path))) != model_dir:
+        raise ValueError(
+            f"Artifact path escapes model directory {model_dir!r}: "
+            f"{relative_file_path!r}"
+        )
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(file_path)
+    return file_path
 
 
 def update_one_modeling_task_article(
@@ -96,21 +92,19 @@ def update_one_modeling_task_article(
     article_id = figshare.ARTICLE_IDS[f"model_preds_{task}"]
     article_is_new = False
 
-    if article_id is not None:
-        # Check if article exists and is accessible
-        if figshare.article_exists(article_id):
-            print(f"\nFound existing article for {task=} with ID {article_id}")
-        else:
-            print(f"\nArticle {article_id} for {task=} not found")
-            article_id = None
+    # Check if article exists and is accessible
+    if article_id is not None and figshare.article_exists(article_id):
+        print(f"\nFound existing article for {task=} with ID {article_id}")
+    elif article_id is not None:
+        print(f"\nArticle {article_id} for {task=} not found")
+        article_id = None
 
     if article_id is None:
         if dry_run:
             print(f"\nWould create new article for {task=}")
             article_id = 0
         else:
-            metadata = get_article_metadata(task_info)
-            article_id = figshare.create_article(metadata)
+            article_id = figshare.create_article(get_article_metadata(task_info))
             article_is_new = True
             print(
                 f"\n⚠️ Created new Figshare article for {task=} with {article_id=}"
@@ -149,28 +143,31 @@ def update_one_modeling_task_article(
         if not isinstance(metric_data, dict):
             continue
 
-        # Recursively find all keys ending in _file in the metric_data dictionary
         def find_file_keys(data: dict[str, Any], prefix: str = "") -> dict[str, str]:
-            """Find all keys ending in _file and their values in a nested dictionary."""
+            """Find supported artifact keys in nested task metadata."""
             result: dict[str, str] = {}
             for key, value in data.items():
                 full_key = f"{prefix}.{key}" if prefix else key
+                if key.endswith("_file") and (
+                    key not in {"analysis_file", "pred_file"}
+                    or not isinstance(value, str)
+                ):
+                    raise ValueError(f"Unsupported artifact at {full_key!r}")
                 if isinstance(value, dict):
                     result |= find_file_keys(value, full_key)
-                elif (
-                    isinstance(value, str)
-                    and key.endswith("_file")
-                    and should_process_file(key, file_type)
+                elif key.endswith("_file") and (
+                    file_type == "all" or key == f"{file_type}_file"
                 ):
                     result[full_key] = value
             return result
 
         for key_path, rel_file_path in find_file_keys(metric_data).items():
-            file_path = f"{ROOT}/{rel_file_path}"
-            if not os.path.isfile(file_path):
+            try:
+                file_path = resolve_artifact_path(model.yaml_path, rel_file_path)
+            except FileNotFoundError:
                 print(
                     f"Warning: {task} file for {model.name} not found, "
-                    f"expected at {file_path}"
+                    f"expected at {ROOT}/{rel_file_path}"
                 )
                 continue
 
@@ -232,10 +229,10 @@ def update_one_modeling_task_article(
                 )
                 file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
 
-                if filename in existing_files:
-                    updated_files[filename] = (file_url, model)
-                else:
-                    new_files[filename] = (file_url, model)
+                target_files = (
+                    updated_files if filename in existing_files else new_files
+                )
+                target_files[filename] = (file_url, model)
 
                 # Update model metadata with URL
                 *parts, last = key_path.split(".")
@@ -298,14 +295,7 @@ def update_one_modeling_task_article(
 
 
 def main(raw_args: Sequence[str] | None = None) -> int:
-    """Main function to upload model prediction files to Figshare.
-
-    Args:
-        raw_args: Command line arguments. If None, sys.argv[1:] will be used.
-
-    Returns:
-        int: Exit code (0 for success).
-    """
+    """Upload selected model prediction artifacts to Figshare."""
     with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
         modeling_tasks = yaml.safe_load(file)
     # remove 'cps' task as it's a dynamic metric with changing weights
@@ -343,39 +333,36 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         help="Disable interactive prompts for file deletion (files will be skipped)",
     )
 
+    models_arg.type = str
+    models_arg.choices = None
+    models_arg.default = [model.name for model in Model.active()]
     args, _unknown = cli_parser.parse_known_args(raw_args)
 
     # Process exclusion prefixes for tasks
-    all_tasks = list(modeling_tasks)
-    args.tasks = process_exclusion_prefixes(args.tasks, all_tasks)
+    args.tasks = process_exclusion_prefixes(args.tasks, list(modeling_tasks))
 
     # Process exclusion prefixes for models
-    if hasattr(args, "models") and args.models is not None:
-        # Convert Model enum instances to strings for exclusion processing
-        model_names = [model.name for model in args.models]
-        all_models = [model.name for model in Model]
-        processed_models = process_exclusion_prefixes(model_names, all_models)
-        # Convert back to Model enum instances
-        args.models = [Model[model] for model in processed_models]
+    processed_models = process_exclusion_prefixes(
+        args.models, [model.name for model in Model]
+    )
+    args.models = [Model(model_name) for model_name in processed_models]
 
-    models_to_update = args.models
-    tasks_to_update = args.tasks
     if dry_run := args.dry_run:
         print("\nDry run mode - no files will be uploaded")
     print(
-        f"Updating {len(models_to_update)} models: "
-        f"{', '.join(model.name for model in models_to_update)}"
+        f"Updating {len(args.models)} models: "
+        f"{', '.join(model.name for model in args.models)}"
     )
-    print(f"Updating {len(tasks_to_update)} tasks: {', '.join(tasks_to_update)}")
+    print(f"Updating {len(args.tasks)} tasks: {', '.join(args.tasks)}")
     print(f"File type filter: {args.file_type}")
     if args.force_reupload:
         print("Force reupload: True - will reupload files even if they already exist")
 
-    for task in tasks_to_update:
+    for task in args.tasks:
         try:
             update_one_modeling_task_article(
                 task,
-                models_to_update,
+                args.models,
                 modeling_tasks=modeling_tasks,
                 dry_run=dry_run,
                 file_type=args.file_type,
@@ -383,11 +370,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
                 interactive=not args.no_interactive,
             )
         except Exception as exc:  # prompt to delete article if something went wrong
-            state = {
-                key: locals().get(key)
-                for key in ("task", "models_to_update", "tasks_to_update")
-            }
-            exc.add_note(f"Upload failed with {state=}")
+            exc.add_note(f"Upload failed for {task=}")
             raise
 
     return 0

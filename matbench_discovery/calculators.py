@@ -875,7 +875,7 @@ CALCULATORS: dict[str, CalcSpec] = {
     ),
     # anywidget: chgnet's resolution otherwise omits it, breaking the pymatviz import
     # chain that matbench_discovery pulls in
-    "chgnet_030": CalcSpec(_chgnet, deps=("chgnet", "anywidget")),
+    "chgnet_0_3_0": CalcSpec(_chgnet, deps=("chgnet", "anywidget")),
     # HIENet (e3nn-based, github checkpoint). torch 2.1.2 needs python 3.11.
     "hienet": CalcSpec(
         _hienet("hienet"),

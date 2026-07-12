@@ -204,9 +204,9 @@ metrics:
     hardware: NVIDIA H200
     run_time_sec: 435.9
     pbe_wall_dist_mae: 1.262
-    pbe_energy_mae: 2.959
+    pbe_energy_mae: 2.96
     pbe_bond_length_error: 1.038
-    pbe_well_depth_error: 1.179
+    pbe_well_depth_error: 1.178
     pbe_vib_freq_error: 294.7
     tortuosity: 2.99
     energy_diff_flips: 11.95
@@ -214,4 +214,4 @@ metrics:
     force_flips: 4.54
     force_total_variation: 176.1
     force_jump: 14.08
-    pbe_force_mae: 2.217
+    pbe_force_mae: 2.218

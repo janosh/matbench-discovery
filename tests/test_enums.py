@@ -10,7 +10,8 @@ import pytest
 import requests
 import requests.adapters
 
-from matbench_discovery import DATA_DIR
+import scripts.generate_model_enum as model_enum_generator
+from matbench_discovery import DATA_DIR, ROOT
 from matbench_discovery.enums import (
     DataFiles,
     Files,
@@ -430,6 +431,13 @@ def test_model_enum() -> None:
             assert model.metadata["superseded_by"] in model_keys
 
 
+def test_generated_model_enum_is_current() -> None:
+    """Committed Model members match the YAML-driven generator."""
+    with open(f"{ROOT}/matbench_discovery/enums.py", encoding="utf-8") as file:
+        source = file.read()
+    assert model_enum_generator.generate_source(source) == source
+
+
 @pytest.mark.parametrize(
     "input_value, expected_model",
     [
@@ -439,7 +447,7 @@ def test_model_enum() -> None:
         # Dash conversion
         ("mace-mp-0", Model.mace_mp_0),
         ("eqV2-s-dens-mp", Model.eqv2_s_dens_mp),
-        ("chgnet-0.3.0", Model.chgnet_030),
+        ("chgnet-0.3.0", Model.chgnet_0_3_0),
         ("cgcnn+p", Model.cgcnn_p),
         # Case insensitive
         ("MACE-MP-0", Model.mace_mp_0),

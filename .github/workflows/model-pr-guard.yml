@@ -59,10 +59,23 @@ jobs:
       - name: Require payload updates when payload-shaping code changes
         if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'payloads-unchanged')
         env:
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename')
+          if (( CHANGED_FILES > 3000 )); then
+            echo "::error::PR has $CHANGED_FILES changed files; GitHub's API exposes at most 3000."
+            exit 1
+          fi
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
+            > "$RUNNER_TEMP/pr-files.json"
+          RETURNED_FILES=$(jq '[.[][]] | length' "$RUNNER_TEMP/pr-files.json")
+          if (( RETURNED_FILES != CHANGED_FILES )); then
+            echo "::error::GitHub returned $RETURNED_FILES of $CHANGED_FILES changed files."
+            exit 1
+          fi
+          CHANGED=$(jq -r '.[][] | .filename' "$RUNNER_TEMP/pr-files.json")
           GENERATOR_PATTERN=$(<.github/payload-generator-paths.regex)
           [ -z "$GENERATOR_PATTERN" ] && { echo "::error::Empty generator pattern"; exit 1; }
           GEN=$(grep -E "$GENERATOR_PATTERN" <<< "$CHANGED" || true)

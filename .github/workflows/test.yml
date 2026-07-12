@@ -82,4 +82,4 @@ jobs:
           restore-keys: model-preds-
 
       - name: Run discovery eval script
-        run: uv run --with-editable . python scripts/evals/discovery.py
+        run: uv run --with-editable . scripts/evals/discovery.py

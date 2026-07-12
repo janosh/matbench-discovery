@@ -1,7 +1,7 @@
 name: Update site figures
 
 # Ingest a model submission after a maintainer applies the `ingest-model` label.
-# The workflow runs trusted base code, overlays only validated PR data, archives the
+# The workflow runs trusted base code, overlays only PR model data, archives the
 # submitted files, regenerates site assets and pushes one commit onto the PR branch.
 #
 # SECURITY: this secret-bearing workflow never executes PR code. PRs that change
@@ -51,20 +51,28 @@ jobs:
           path: |
             data/mp
             data/wbm
-          key: site-input-data-${{ runner.os }}-${{ hashFiles('matbench_discovery/enums.py', 'matbench_discovery/data.py') }}
+          key: site-input-data-${{ runner.os }}-${{ hashFiles('matbench_discovery/data.py', 'matbench_discovery/data-files.yml') }}
           restore-keys: site-input-data-${{ runner.os }}-
 
-      - name: Overlay submission data onto trusted checkout
-        run: uv run --with-editable . python scripts/apply_pr_models_overlay.py pr-tree
-
-      - name: Detect submitted models
-        id: detect
+      - name: Validate submission diff
         env:
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
           GH_TOKEN: ${{ github.token }}
           LABELED_SHA: ${{ github.event.pull_request.head.sha }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          CHANGED=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].path')
+          if (( CHANGED_FILES > 3000 )); then
+            echo "::error::PR has $CHANGED_FILES changed files; GitHub's API exposes at most 3000."
+            exit 1
+          fi
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
+            > "$RUNNER_TEMP/pr-files.json"
+          RETURNED_FILES=$(jq '[.[][]] | length' "$RUNNER_TEMP/pr-files.json")
+          if (( RETURNED_FILES != CHANGED_FILES )); then
+            echo "::error::GitHub returned $RETURNED_FILES of $CHANGED_FILES changed files."
+            exit 1
+          fi
           LIVE_HEAD=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" \
             --json headRefOid -q .headRefOid)
           if [ "$LIVE_HEAD" != "$LABELED_SHA" ]; then
@@ -74,34 +82,57 @@ jobs:
 
           GENERATOR_PATTERN=$(<.github/payload-generator-paths.regex)
           [ -z "$GENERATOR_PATTERN" ] && { echo "::error::Empty generator pattern"; exit 1; }
-          FORMAT_CHANGED=$(grep -E "$GENERATOR_PATTERN" <<< "$CHANGED" || true)
-          if [ -n "$FORMAT_CHANGED" ]; then
-            echo "::error::This PR changes payload-generating code. Regenerate the affected payloads locally and commit them; this secret-bearing workflow never executes PR code."
+          MODEL_YAML_PATTERN='^models/[A-Za-z0-9][A-Za-z0-9_.+@-]*/[A-Za-z0-9][A-Za-z0-9_.+@-]*\.yml$'
+          TRUSTED_CODE_PATTERN='^(\.github/(payload-generator-paths\.regex|workflows/update-site-figs\.yml)|matbench_discovery/.*\.py|scripts/(apply_pr_models_overlay|generate_model_enum|summarize_payload_changes|upload_model_preds_to_figshare)\.py|pyproject\.toml|models/run_[A-Za-z0-9_.-]+\.py)$'
+          BLOCKED=$(jq -r --arg calculator matbench_discovery/calculators.py \
+            '.[][] | select(.filename != $calculator or (.status != "added" and .status != "modified")) | .filename, (.previous_filename // empty)' \
+            "$RUNNER_TEMP/pr-files.json" |
+            grep -E "($GENERATOR_PATTERN)|($TRUSTED_CODE_PATTERN)" || true)
+          if [ -n "$BLOCKED" ]; then
+            echo "::error::This PR changes privileged or payload-generating code. Calculator integration is the only code allowed alongside model YAMLs."
+            echo "$BLOCKED"
             exit 1
           fi
 
-          CHANGED_YML=$(grep -E '^models/.*\.yml$' <<< "$CHANGED" | grep -v model-schema || true)
-          if [ -z "$CHANGED_YML" ]; then
+          jq -r --arg pat "$MODEL_YAML_PATTERN" \
+            '.[][] | select(.status != "removed" and (.filename | test($pat))) | .filename' \
+            "$RUNNER_TEMP/pr-files.json" > "$RUNNER_TEMP/changed-model-yamls"
+          jq -r --arg pat "$MODEL_YAML_PATTERN" \
+            '.[][] | (if .status == "removed" then .filename elif .status == "renamed" then .previous_filename else empty end) | select(test($pat))' \
+            "$RUNNER_TEMP/pr-files.json" > "$RUNNER_TEMP/removed-model-yamls"
+          if [ ! -s "$RUNNER_TEMP/changed-model-yamls" ] &&
+             [ ! -s "$RUNNER_TEMP/removed-model-yamls" ]; then
             echo "::error::No model YAML changes found in PR #$PR"
             exit 1
           fi
-          # word splitting of the newline-separated paths is intended
-          # shellcheck disable=SC2086
-          MODELS=$(uv run --with-editable . python \
-            scripts/ingest_model.py --map-yaml-paths $CHANGED_YML)
-          if [ -z "$MODELS" ]; then
-            echo "::error::No submitted models detected"
-            exit 1
+          jq -r --arg pat "$MODEL_YAML_PATTERN" \
+            'any(.[][]; .status != "added" and (.filename | test($pat)))' \
+            "$RUNNER_TEMP/pr-files.json" > "$RUNNER_TEMP/full-payload-refresh"
+
+      - name: Prepare submitted models
+        id: detect
+        run: |
+          mapfile -t CHANGED_YML < "$RUNNER_TEMP/changed-model-yamls"
+          mapfile -t REMOVED_YML < "$RUNNER_TEMP/removed-model-yamls"
+          uv run --with-editable . scripts/apply_pr_models_overlay.py \
+            pr-tree "${CHANGED_YML[@]}" --remove "${REMOVED_YML[@]}"
+          uv run --with-editable . scripts/generate_model_enum.py
+          MODELS=""
+          if (( ${#CHANGED_YML[@]} )); then
+            MODELS=$(uv run --with-editable . scripts/ingest_model.py \
+              --map-yaml-paths "${CHANGED_YML[@]}")
+          fi
+          read -r -a DETECTED_MODELS <<< "$MODELS"
+          FULL_PAYLOAD_REFRESH=$(<"$RUNNER_TEMP/full-payload-refresh")
+          if (( ${#REMOVED_YML[@]} ||
+                ${#DETECTED_MODELS[@]} != ${#CHANGED_YML[@]} ||
+                ${#DETECTED_MODELS[@]} > 1 )); then
+            FULL_PAYLOAD_REFRESH=true
           fi
           echo "models=$MODELS" >> "$GITHUB_OUTPUT"
-          echo "Detected submitted models: $MODELS"
+          echo "full_payload_refresh=$FULL_PAYLOAD_REFRESH" >> "$GITHUB_OUTPUT"
+          echo "Detected submitted models: ${MODELS:-<roster-only>}"
 
-      # Restore after overlay so model prediction artifacts never cross submissions.
-      # Key is PR-scoped: pull_request_target caches live in the base-branch scope
-      # (readable by main and every other PR) and contain submitter-controlled pred
-      # files, so a shared key would let one submission poison another's inputs. The
-      # prefix is distinct from test.yml's model-preds- to make that isolation
-      # explicit; restore-keys warms re-ingests of the same PR after new commits.
       - name: Cache model prediction + analysis files
         uses: actions/cache@v5
         with:
@@ -110,23 +141,70 @@ jobs:
             models/**/*.json.gz
             models/**/*.jsonl.gz
           key: ingest-preds-pr${{ github.event.pull_request.number }}-${{ hashFiles('models/**/*.yml') }}
-          restore-keys: ingest-preds-pr${{ github.event.pull_request.number }}-
 
-      - name: Ingest submitted models
+      - name: Validate submitted models without secrets
+        env:
+          MODELS: ${{ steps.detect.outputs.models }}
+        run: |
+          for model in $MODELS; do
+            uv run --with-editable . scripts/ingest_model.py "$model" \
+              --validate-only
+          done
+
+      - name: Recheck submission head before archival
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          LABELED_SHA: ${{ github.event.pull_request.head.sha }}
+          PR: ${{ github.event.pull_request.number }}
+          SITE_FIGS_PAT: ${{ secrets.SITE_FIGS_PAT }}
+        run: |
+          [ -n "$SITE_FIGS_PAT" ] || { echo "::error::secrets.SITE_FIGS_PAT is not set"; exit 1; }
+          LIVE_HEAD=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" \
+            --json headRefOid -q .headRefOid)
+          if [ "$LIVE_HEAD" != "$LABELED_SHA" ]; then
+            echo "::error::PR #$PR head moved during setup. Review the new commits and re-apply the ingest-model label."
+            exit 1
+          fi
+          if [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            CAN_MODIFY=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" \
+              --json maintainerCanModify -q .maintainerCanModify)
+            if [ "$CAN_MODIFY" != "true" ]; then
+              echo "::error::Enable 'Allow edits by maintainers' before archival."
+              exit 1
+            fi
+          fi
+
+      - name: Archive validated model artifacts
         env:
           FIGSHARE_TOKEN: ${{ secrets.FIGSHARE_TOKEN }}
-          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           MODELS: ${{ steps.detect.outputs.models }}
         run: |
           for model in $MODELS; do
-            uv run --with-editable . scripts/ingest_model.py "$model" --archive
+            uv run --with-editable . scripts/ingest_model.py "$model" --archive-only
           done
+
+      - name: Refresh payloads without secrets
+        env:
+          FULL_PAYLOAD_REFRESH: ${{ steps.detect.outputs.full_payload_refresh }}
+          MODELS: ${{ steps.detect.outputs.models }}
+        run: |
+          if [ "$FULL_PAYLOAD_REFRESH" = "true" ]; then
+            uv run --with-editable . scripts/ingest_model.py --payloads-only
+          else
+            for model in $MODELS; do
+              uv run --with-editable . scripts/ingest_model.py "$model" --payloads-only
+            done
+          fi
 
       - name: Copy generated artifacts into the PR checkout
         run: |
-          rsync -a --include='*/' --include='*.yml' --exclude='*' \
-            models/ pr-tree/models/
+          mapfile -t CHANGED_YML < "$RUNNER_TEMP/changed-model-yamls"
+          for yaml_path in "${CHANGED_YML[@]}"; do
+            cp -- "$yaml_path" "pr-tree/$yaml_path"
+          done
+          cp matbench_discovery/enums.py pr-tree/matbench_discovery/enums.py
           rsync -a --delete site/src/figs/ pr-tree/site/src/figs/
           rsync -aR site/src/lib/parity/*-parity-manifest.ts \
             site/static/*-parity/manifest.json \
@@ -138,14 +216,11 @@ jobs:
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          if [ -z "$GH_TOKEN" ]; then
-            echo "::error::secrets.SITE_FIGS_PAT is not set"
-            exit 1
-          fi
           cd pr-tree
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add models site/src/figs site/src/lib site/src/routes/models \
+          git add matbench_discovery/enums.py models site/src/figs site/src/lib \
+            site/src/routes/models \
             site/static/energy-parity/manifest.json \
             site/static/kappa-parity/manifest.json
           if git diff --cached --quiet; then

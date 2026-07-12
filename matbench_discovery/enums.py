@@ -2,6 +2,7 @@
 
 import functools
 import os
+import re
 from enum import EnumType, StrEnum, _EnumDict, auto, unique
 from typing import Any, Self, TypeVar
 
@@ -254,139 +255,79 @@ class Files(StrEnum, metaclass=MetaFiles):
         return file
 
 
-# ruff: noqa: E501, ERA001 (ignore long lines in class Model)
+# ruff: noqa: E501 (ignore long lines in class Model)
 class Model(Files, base_dir=f"{ROOT}/models"):
-    """Enum of file paths to model YAML files. These files are the single source of truth (SSoT) for model metrics and
-    metadata such as hyperparameters, package versions, code and paper links, submission times, etc.
+    """Generated registry of non-aborted model YAML files.
+
+    YAML ``model_key`` values determine member names. YAML metadata also provides
+    status, metrics, hyperparameters, package versions, links, and submission details.
+    Regenerate the marked block with ``python scripts/generate_model_enum.py``.
     """
 
+    # BEGIN GENERATED MODEL MEMBERS
     alchembert = auto(), "alchembert/alchembert.yml"
-
-    # AlphaNet: https://arxiv.org/abs/2501.07155
-    alphanet_v1_oam = auto(), "alphanet/alphanet-v1-oam.yml"
-    alphanet_v1_mptrj = auto(), "alphanet/alphanet-v1-mptrj.yml"
-    # alignn with global pooling: https://arxiv.org/abs/2106.01829
     alignn = auto(), "alignn/alignn.yml"
-
-    # alignn-ff with local pooling: https://arxiv.org/abs/2209.05554
-    # Commented out because the model could not be evaluated due to OOM errors
-    # see models/alignn_ff/readme.md
-    # alignn_ff = auto(), "alignn/alignn-ff.yml"
-
-    # Allegro (NequIP arch)
-    allegro_oam_l_0_1 = auto(), "allegro/allegro-OAM-L-0.1.yml"
     allegro_mp_l_0_1 = auto(), "allegro/allegro-MP-L-0.1.yml"
-
-    # BOWSR optimizer coupled with original megnet
-    bowsr_megnet = auto(), "bowsr/bowsr.yml"
-
-    # default CHGNet model from publication with 400,438 params
-    chgnet_030 = auto(), "chgnet/chgnet-0.3.0.yml"
-
-    # CGCNN 10-member ensemble
+    allegro_oam_l_0_1 = auto(), "allegro/allegro-OAM-L-0.1.yml"
+    alphanet_v1_mptrj = auto(), "alphanet/alphanet-v1-mptrj.yml"
+    alphanet_v1_oam = auto(), "alphanet/alphanet-v1-oam.yml"
+    bowsr = auto(), "bowsr/bowsr.yml"
     cgcnn = auto(), "cgcnn/cgcnn.yml"
-
-    # CGCNN 10-member ensemble with 5-fold training set perturbations
     cgcnn_p = auto(), "cgcnn/cgcnn+p.yml"
-
-    # DeePMD-DPA3 models: https://arxiv.org/abs/2506.01686
-    dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
-    dpa_3_1_3m_ft = auto(), "deepmd/dpa-3.1-3m-ft.yml"
-    dpa_4_0_pro_mptrj = auto(), "deepmd/dpa-4.0-pro-mptrj.yml"
-    dpa_4_0_1_pro_mptrj = auto(), "deepmd/dpa-4.0.1-pro-mptrj.yml"
-    dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
-    dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
+    chgnet_0_3_0 = auto(), "chgnet/chgnet-0.3.0.yml"
     dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
     dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
-
-    # FAIR-Chem
-    eqv2_s_dens_mp = auto(), "eqV2/eqV2-s-dens-mp.yml"
-    eqv2_m_omat_salex_mp = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
-    esen_30m_mp = auto(), "eSEN/eSEN-30m-mp.yml"
-    esen_30m_oam = auto(), "eSEN/eSEN-30m-oam.yml"
-
-    # Materials AI Lab at Samsung Electronics
+    dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
+    dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
+    dpa_3_1_3m_ft = auto(), "deepmd/dpa-3.1-3m-ft.yml"
+    dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
+    dpa_4_0_1_pro_mptrj = auto(), "deepmd/dpa-4.0.1-pro-mptrj.yml"
+    dpa_4_0_pro_mptrj = auto(), "deepmd/dpa-4.0-pro-mptrj.yml"
+    eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
     equflash_29m_oam = auto(), "equflash/equflash-29M-oam.yml"
     equflashv2_45m_oam = auto(), "equflash/equflashv2-45M-oam.yml"
-
-    # Zhejiang Lab
-    eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
-
-    # Texas A&M University
-    hienet = auto(), "hienet/hienet.yml"
-
-    # ICAMS, Ruhr University Bochum https://arxiv.org/abs/2311.16326v2
+    equiformer_v3_mp = auto(), "equiformer_v3/equiformer_v3_mp.yml"
+    equiformer_v3_oam = auto(), "equiformer_v3/equiformer_v3_oam.yml"
+    eqv2_m_omat_salex_mp = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
+    eqv2_s_dens_mp = auto(), "eqV2/eqV2-s-dens-mp.yml"
+    esen_30m_mp = auto(), "eSEN/eSEN-30m-mp.yml"
+    esen_30m_oam = auto(), "eSEN/eSEN-30m-oam.yml"
+    esnet = auto(), "esnet/esnet.yml"
+    gnome = auto(), "gnome/gnome.yml"
+    grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
     grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
     grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
-    grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
     grace_2l_oam_l = auto(), "grace/grace-2l-oam-l.yml"
     grace_3l_oam_l = auto(), "grace/grace-3l-oam-l.yml"
-
-    # Google DeepMind; GNoME is a Nequip architecture trained on Google's proprietary data. Weights
-    # are not publicly available and so these results cannot be reproduced.
-    gnome = auto(), "gnome/gnome.yml"
-
-    # original M3GNet straight from publication, not re-trained
-    m3gnet_ms = auto(), "m3gnet/m3gnet.yml"
-
-    # MACE-MP-0 medium as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
+    hienet = auto(), "hienet/hienet.yml"
+    m3gnet = auto(), "m3gnet/m3gnet.yml"
     mace_mp_0 = auto(), "mace/mace-mp-0.yml"
-    mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
-
-    # MatRIS
-    matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
-    matris_10m_oam = auto(), "matris/matris-10m-oam.yml"
+    mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"
     matris_10m_mp = auto(), "matris/matris-10m-mp.yml"
-
-    # MatterSim - M3gNet architecture trained on proprietary MSFT data. Weights
-    # are open-sourced.
+    matris_10m_oam = auto(), "matris/matris-10m-oam.yml"
+    matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
     mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5M.yml"
-
-    # original MEGNet straight from publication, not re-trained
     megnet = auto(), "megnet/megnet.yml"
-
-    # NequIP
-    nequip_oam_xl_0_1 = auto(), "nequip/nequip-OAM-XL-0.1.yml"
-    nequip_oam_l_0_1 = auto(), "nequip/nequip-OAM-L-0.1.yml"
     nequip_mp_l_0_1 = auto(), "nequip/nequip-MP-L-0.1.yml"
-
-    # ORB
+    nequip_oam_l_0_1 = auto(), "nequip/nequip-OAM-L-0.1.yml"
+    nequip_oam_xl_0_1 = auto(), "nequip/nequip-OAM-XL-0.1.yml"
+    nequix_mp_1 = auto(), "nequix/nequix-mp-1.yml"
+    nequix_mp_1_pft = auto(), "nequix/nequix-mp-1-pft.yml"
     orb_v2 = auto(), "orb/orb-v2.yml"
     orb_v2_mptrj = auto(), "orb/orb-v2-mptrj.yml"
     orb_v3 = auto(), "orb/orb-v3.yml"
-
-    # PET
     pet_oam_xl_1_0_0 = auto(), "pet/pet-oam-xl-1.0.0.yml"
-
-    # SevenNet trained on MPtrj
     sevennet_0 = auto(), "sevennet/sevennet-0.yml"
     sevennet_l3i5 = auto(), "sevennet/sevennet-l3i5.yml"
     sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
     sevennet_omni_i12 = auto(), "sevennet/sevennet-omni-i12.yml"
-
-    # Tensor Atomic Cluster Expansion
-    tace_v1_oam_m = auto(), "tace/tace-v1-oam-m.yml"
     tace_oam_l = auto(), "tace/tace-oam-l.yml"
     tace_oam_rra_preview = auto(), "tace/tace-oam-rra-preview.yml"
-    # TECE = Tensor Edge Cluster Expansion
+    tace_v1_oam_m = auto(), "tace/tace-v1-oam-m.yml"
     tece_oam_rra_1_0 = auto(), "tace/tece-oam-rra-1.0.yml"
-
-    # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = auto(), "voronoi_rf/voronoi-rf.yml"
-
-    # wrenformer 10-member ensemble
     wrenformer = auto(), "wrenformer/wrenformer.yml"
-
-    # ESNet model
-    esnet = auto(), "esnet/esnet.yml"
-
-    # Nequix model
-    nequix_mp_1 = auto(), "nequix/nequix-mp-1.yml"
-    nequix_mp_1_pft = auto(), "nequix/nequix-mp-1-pft.yml"
-
-    # EquiformerV3 model
-    equiformer_v3_mp = auto(), "equiformer_v3/equiformer_v3_mp.yml"
-    equiformer_v3_oam = auto(), "equiformer_v3/equiformer_v3_oam.yml"
+    # END GENERATED MODEL MEMBERS
 
     @functools.cached_property  # cache to avoid re-reading same file multiple times
     def metadata(self) -> dict[str, Any]:
@@ -531,16 +472,14 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     @classmethod
     def _missing_(cls, value: object) -> Self | None:
-        """Normalizing casing and dashes before matching enum values.
+        """Normalize casing and punctuation before matching enum values.
         If no match is found, return None.
 
         This allows CLI arguments like --models mace-mp-0 to be recognized as mace_mp_0.
         """
-        if isinstance(value, str):  # convert dashes to underscores and case fold
-            converted_value = value.replace("-", "_").casefold()
-
-            if converted_value in cls._value2member_map_:
-                return cls._value2member_map_[converted_value]  # ty: ignore[invalid-return-type]
+        if isinstance(value, str):
+            converted_value = re.sub(r"[^a-z0-9]+", "_", value.casefold()).strip("_")
+            return cls._value2member_map_.get(converted_value)  # ty: ignore[invalid-return-type]
 
         return None
 

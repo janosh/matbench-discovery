@@ -27,7 +27,7 @@ cli_parser.add_argument(
     help="Auto-confirm file downloads without prompting.",
 )
 
-cli_parser.add_argument(
+models_arg = cli_parser.add_argument(
     "--models",
     nargs="+",
     type=parse_model,
