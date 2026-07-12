@@ -298,6 +298,8 @@ def test_calc_kappa_srme_single_material() -> None:
 
     kappa_srmes = phonon_metrics.calc_kappa_srme(ml_data, dft_data)
     assert kappa_srmes[0] == 0.0  # Should be 0 for identical data
+    ml_data[MbdKey.mode_kappa_tot_avg] = dft_data[MbdKey.mode_kappa_tot_avg] = np.nan
+    assert phonon_metrics.calc_kappa_srme(ml_data, dft_data)[0] == 0
 
     # Test with different values
     ml_data[MbdKey.kappa_tot_avg] = np.array([3.0])
@@ -392,6 +394,7 @@ def test_calc_kappa_srme_rejects_invalid_reference(invalid_value: float) -> None
     if np.isnan(invalid_value):
         reference[MbdKey.kappa_tot_avg] = np.array([1.0])
         reference[MbdKey.mode_kappa_tot_rta] = np.full((3, 3), np.nan)
+        prediction[Key.has_imag_ph_modes] = True
         with pytest.raises(ValueError, match="Reference mode"):
             phonon_metrics.calc_kappa_srme_dataframes(
                 pd.DataFrame([prediction]), pd.DataFrame([reference])
@@ -415,11 +418,49 @@ def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
     assert result[Key.srme].iloc[0] != 2  # Normal case
     assert result[Key.srme].iloc[1] == 2  # Imaginary frequencies
     assert result[Key.srme].iloc[2] == 2  # Broken symmetry
-    ignored = phonon_metrics.calc_kappa_metrics_from_dfs(
-        df_pred, df_true.copy(), ignore_imaginary_freqs=True
-    )
-    assert ignored[Key.srme].iloc[1] < 2
-    assert bool(df_pred[Key.has_imag_ph_modes].iloc[1]) is True
+
+
+def test_calc_kappa_srme_dataframes_missing_init_spg_uses_reference(
+    df_minimal: pd.DataFrame,
+) -> None:
+    """Predictions without init_spg_num compare final_spg_num to the DFT reference.
+
+    read_kappa_json canonicalizes the reference's legacy spg_num column into
+    init_spg_num, so the fallback must check both keys instead of penalizing
+    every material with SRME=2 when only the canonical name is present.
+    """
+    df_pred = pd.concat([df_minimal] * 2, ignore_index=True).copy()
+    df_pred[Key.final_spg_num] = [225, 186]  # matches ref, differs from ref
+
+    for reference_spg_col in (Key.init_spg_num, Key.spg_num):
+        df_true = pd.concat([df_minimal] * 2, ignore_index=True).copy()
+        df_true[reference_spg_col] = [225, 225]
+        srme_values = phonon_metrics.calc_kappa_srme_dataframes(df_pred, df_true)
+        assert srme_values[0] != 2, f"{reference_spg_col=}"
+        assert srme_values[1] == 2, f"{reference_spg_col=}"
+
+    # with no reference spacegroup at all, final_spg_num alone must not penalize
+    df_true = pd.concat([df_minimal] * 2, ignore_index=True).copy()
+    srme_values = phonon_metrics.calc_kappa_srme_dataframes(df_pred, df_true)
+    assert all(value != 2 for value in srme_values)
+
+
+def test_calc_kappa_srme_dataframes_penalizes_float_typed_imaginary_flag(
+    df_minimal: pd.DataFrame,
+) -> None:
+    """Imaginary-mode rows score 2 even when the flag deserializes as 1.0/NaN.
+
+    A has_imag_ph_modes column with missing values becomes float dtype, so an
+    `is True` identity check would silently skip the penalty for those files.
+    """
+    df_pred = pd.concat([df_minimal] * 3, ignore_index=True).copy()
+    df_pred[Key.has_imag_ph_modes] = [1.0, 0.0, np.nan]
+    df_true = pd.concat([df_minimal] * 3, ignore_index=True).copy()
+
+    srme_values = phonon_metrics.calc_kappa_srme_dataframes(df_pred, df_true)
+    assert srme_values[0] == 2, "flag=1.0 must score the maximum penalty"
+    assert srme_values[1] != 2, "flag=0.0 must not be penalized"
+    assert srme_values[2] != 2, "missing flag must not be penalized"
 
 
 def test_evaluate_kappa_predictions_rejects_duplicate_ids(

@@ -77,10 +77,9 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   kappa:
     protocol: phonondb-v1
     displacement_distance: 0.03
-    ignore_imaginary_freqs: true
     save_forces: true
 training_cost: # list any hardware used to train the model and for how long
-  Nvidia H100 GPUs: { amount: 8, hours: 120, cost: 960 }
+  Nvidia H100 GPUs: {amount: 8, hours: 120, cost: 960}
 
 requirements: # strongly recommended
   python: '3.12.11'
@@ -102,12 +101,6 @@ metrics:
     kappa_103:
       pred_file: models/tace/tace-v1-oam-m/2026-01-06-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05.json.gz
       pred_file_url: https://figshare.com/files/60807073
-      # # OMat24, before finetune
-      # κ_SRME: 0.1575
-      # κ_SRE: 0.0699
-      # # sAlex + MPtrj, after finetune
-      # κ_SRME: 0.1729
-      # κ_SRE: 0.0765
       κ_SRME: 0.1729
       κ_SRE: 0.0765
   geo_opt:

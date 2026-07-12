@@ -85,7 +85,6 @@ hyperparams:
   kappa:
     protocol: phonondb-v1
     displacement_distance: 0.03
-    ignore_imaginary_freqs: true
     save_forces: true
 training_cost:
   # ~9.8h per epoch, 30 epochs plus fine-tune

@@ -98,8 +98,6 @@ definitions:
         type: boolean
       conductivity_broken_symm:
         type: boolean
-      ignore_imaginary_freqs:
-        type: boolean
       is_plusminus:
         type: [boolean, string]
         enum: [true, false, auto]
@@ -184,6 +182,7 @@ definitions:
         properties:
           rmsd:
             type: number
+            minimum: 0
           n_sym_ops_mae:
             type: number
           symmetry_decrease:
@@ -216,6 +215,8 @@ definitions:
     properties:
       F1:
         type: number
+        minimum: 0
+        maximum: 1
       DAF:
         type: number
       Precision:

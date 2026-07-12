@@ -32,13 +32,7 @@ def main() -> int:
 
             # Load and process data
             df_ml = read_kappa_json(kappa_103_path)
-            kappa_settings = model.metadata.get("hyperparams", {}).get("kappa", {})
-            metrics = phonons.evaluate_kappa_predictions(
-                df_ml,
-                ignore_imaginary_freqs=(
-                    kappa_settings.get("ignore_imaginary_freqs") is True
-                ),
-            )
+            metrics = phonons.evaluate_kappa_predictions(df_ml)
 
             print(f"\tκ_SRME={metrics['srme']:.4f}")
             print(f"\tκ_SRE={metrics['sre']:.4f}")

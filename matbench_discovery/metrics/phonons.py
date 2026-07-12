@@ -76,8 +76,6 @@ def _symmetric_relative_difference(predicted: object, reference: object) -> floa
 def calc_kappa_metrics_from_dfs(
     df_pred: pd.DataFrame,
     df_true: pd.DataFrame,
-    *,
-    ignore_imaginary_freqs: bool = False,
 ) -> pd.DataFrame:
     """Compute per-material thermal-conductivity metrics from two dataframes.
 
@@ -88,9 +86,6 @@ def calc_kappa_metrics_from_dfs(
         df_pred: ML predictions with conductivity tensors, mode-resolved properties,
             and structural information.
         df_true: DFT references with the same structure as df_pred.
-        ignore_imaginary_freqs: Score finite conductivity results even when their
-            frequency diagnostic reports imaginary modes, matching protocols that
-            explicitly opted into this historical benchmark behavior.
 
     Returns:
         df_pred with added benchmark columns:
@@ -100,9 +95,6 @@ def calc_kappa_metrics_from_dfs(
         - DFT_kappa_tot_avg: Reference DFT conductivity values
     """
     df_pred = df_pred.copy()
-    if ignore_imaginary_freqs:
-        df_pred[Key.has_imag_ph_modes] = False
-
     df_pred[MbdKey.kappa_tot_avg] = df_pred[MbdKey.kappa_tot_rta].map(
         calculate_kappa_avg
     )
@@ -121,11 +113,7 @@ def calc_kappa_metrics_from_dfs(
     return df_pred
 
 
-def evaluate_kappa_predictions(
-    df_predictions: pd.DataFrame,
-    *,
-    ignore_imaginary_freqs: bool = False,
-) -> dict[str, float]:
+def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float]:
     """Evaluate complete PhononDB predictions and return aggregate metrics."""
     from matbench_discovery.phonons import read_kappa_json
 
@@ -135,9 +123,7 @@ def evaluate_kappa_predictions(
     if set(df_predictions.index) != set(df_reference.index):
         raise ValueError("Cannot evaluate kappa predictions: reference IDs differ")
     df_metrics = calc_kappa_metrics_from_dfs(
-        df_predictions.loc[df_reference.index],
-        df_reference,
-        ignore_imaginary_freqs=ignore_imaginary_freqs,
+        df_predictions.loc[df_reference.index], df_reference
     )
     metrics = {
         "srme": float(df_metrics[Key.srme].mean()),
@@ -254,11 +240,15 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
 def _mode_kappa_values(kappas: pd.Series) -> np.ndarray | None:
     """Return finite mode conductivities from the best available representation."""
     keys = set(kappas.index)
-    if MbdKey.mode_kappa_tot_avg in keys:
-        mode_kappa = kappas[MbdKey.mode_kappa_tot_avg]
-    elif MbdKey.mode_kappa_tot_rta in keys:
-        mode_kappa = calculate_kappa_avg(kappas[MbdKey.mode_kappa_tot_rta])
-    elif {MbdKey.kappa_p_rta, MbdKey.kappa_c, Key.heat_capacity} <= keys:
+    for mode_key in (MbdKey.mode_kappa_tot_avg, MbdKey.mode_kappa_tot_rta):
+        if mode_key not in keys:
+            continue
+        mode_kappa = kappas[mode_key]
+        if mode_key == MbdKey.mode_kappa_tot_rta:
+            mode_kappa = calculate_kappa_avg(mode_kappa)
+        if (mode_values := _finite_array(mode_kappa)) is not None:
+            return mode_values
+    if {MbdKey.kappa_p_rta, MbdKey.kappa_c, Key.heat_capacity} <= keys:
         try:
             mode_kappa = calculate_kappa_avg(
                 ltc.calc_mode_kappa_tot(
@@ -269,9 +259,8 @@ def _mode_kappa_values(kappas: pd.Series) -> np.ndarray | None:
             )
         except (TypeError, ValueError):
             return None
-    else:
-        return None
-    return _finite_array(mode_kappa)
+        return _finite_array(mode_kappa)
+    return None
 
 
 def calc_kappa_srme_dataframes(
@@ -302,22 +291,9 @@ def calc_kappa_srme_dataframes(
     for row_idx, row_pred in df_pred.iterrows():
         row_true = df_true.loc[row_idx]
 
-        if row_pred.get(Key.has_imag_ph_modes) is True:
-            srme_list.append(KAPPA_ERROR_MAX)
-            continue
-        if relaxed_space_group_number := row_pred.get(Key.final_spg_num):
-            initial_space_group_number = row_pred.get(Key.init_spg_num)
-            if (
-                initial_space_group_number
-                and relaxed_space_group_number != initial_space_group_number
-            ) or (
-                not initial_space_group_number
-                and relaxed_space_group_number != row_true.get(Key.spg_num)
-            ):
-                srme_list.append(KAPPA_ERROR_MAX)
-                continue
-        # Keep this discarded validation outside the try so InvalidKappaReferenceError
-        # is not swallowed by the broader ValueError handler.
+        # Validate the reference before any prediction-failure short-circuit. Keep
+        # this outside the try so InvalidKappaReferenceError is not swallowed by the
+        # broader ValueError handler.
         _single_kappa(row_true[MbdKey.kappa_tot_avg], reference=True)
         try:
             result = np.ravel(calc_kappa_srme(row_pred, row_true))
@@ -325,6 +301,25 @@ def calc_kappa_srme_dataframes(
             raise
         except (KeyError, TypeError, ValueError, ZeroDivisionError):
             result = np.array([KAPPA_ERROR_MAX])
+        # bool(...) not `is True`: a column with missing values deserializes as
+        # float (1.0/NaN), which an identity check would silently score leniently
+        has_imag_modes = row_pred.get(Key.has_imag_ph_modes)
+        if not pd.isna(has_imag_modes) and bool(has_imag_modes):
+            srme_list.append(KAPPA_ERROR_MAX)
+            continue
+        relaxed_spg = row_pred.get(Key.final_spg_num)
+        if not pd.isna(relaxed_spg) and relaxed_spg:
+            initial_spg = row_pred.get(Key.init_spg_num)
+            # normalize_kappa_result canonicalizes the reference's spg_num alias
+            # into init_spg_num, so check both keys for the DFT spacegroup
+            reference_spg = row_true.get(Key.init_spg_num, row_true.get(Key.spg_num))
+            if (not pd.isna(initial_spg) and relaxed_spg != initial_spg) or (
+                pd.isna(initial_spg)
+                and not pd.isna(reference_spg)
+                and relaxed_spg != reference_spg
+            ):
+                srme_list.append(KAPPA_ERROR_MAX)
+                continue
         score = float(result[0]) if result.size == 1 else KAPPA_ERROR_MAX
         srme_list.append(score if 0 <= score <= KAPPA_ERROR_MAX else KAPPA_ERROR_MAX)
 

@@ -47,7 +47,8 @@ if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
 KAPPA_RECORD_SCHEMA_VERSION = 1
-KAPPA_MANIFEST_SCHEMA_VERSION = 3
+# v4: removed the per-model ignore_imaginary_freqs leniency from KappaSettings
+KAPPA_MANIFEST_SCHEMA_VERSION = 4
 PHONONDB_N_STRUCTURES = 103
 KAPPA_MANIFEST_FILE = "manifest.json"
 KAPPA_RECORD_DIR = "records"
@@ -73,7 +74,6 @@ class KappaSettings:
     relax_symprec: float = 0.01
     enforce_relax_symm: bool = True
     conductivity_broken_symm: bool = False
-    ignore_imaginary_freqs: bool = False
     is_plusminus: PlusMinusSetting = "auto"
     batch_size: int = 1
     max_atoms_per_batch: int | None = None
@@ -140,7 +140,6 @@ class KappaSettings:
         for field_name in (
             "enforce_relax_symm",
             "conductivity_broken_symm",
-            "ignore_imaginary_freqs",
             "save_forces",
         ):
             if not isinstance(getattr(self, field_name), bool):
@@ -585,9 +584,11 @@ def should_calculate_conductivity(
     broken_symmetry: bool,
     settings: KappaSettings,
 ) -> bool:
-    """Apply the historical imaginary-mode and broken-symmetry gate policy."""
-    if settings.ignore_imaginary_freqs:
-        return True
+    """Gate conductivity on a dynamically stable, symmetry-preserving relaxation.
+
+    Imaginary modes mean the harmonic reference is unstable, so BTE conductivity is
+    not physically well-defined and the material scores the maximum SRME penalty.
+    """
     return not has_imaginary_modes and (
         settings.conductivity_broken_symm or not broken_symmetry
     )

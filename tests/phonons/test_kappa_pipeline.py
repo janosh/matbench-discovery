@@ -116,9 +116,10 @@ class Phono3pyStub:
 class PipelineAdapterStub(StandardKappaAdapter):
     """Exercise the shared orchestration without invoking external phonon packages."""
 
-    def __init__(self) -> None:
-        """Initialize deterministic phono state and call counters."""
+    def __init__(self, fc2_frequencies: tuple[float, ...]) -> None:
+        """Initialize deterministic phono state, FC2 frequencies, and call counters."""
         self.phono3py = Phono3pyStub()
+        self.fc2_frequencies = fc2_frequencies
         self.n_fc3_calls = 0
 
     def relax(
@@ -153,9 +154,9 @@ class PipelineAdapterStub(StandardKappaAdapter):
         *,
         progress: dict[str, Any] | None = None,
     ) -> tuple[Phono3py, np.ndarray, np.ndarray]:
-        """Return one imaginary mode and a deterministic FC2 force set."""
+        """Return configured mode frequencies and a deterministic FC2 force set."""
         del calculator, settings, progress
-        return phono3py, np.ones((1, 1, 3)), np.array([[-1.0, 0.0, 0.0, 1.0]])
+        return phono3py, np.ones((1, 1, 3)), np.array([self.fc2_frequencies])
 
     def calculate_fc3(
         self,
@@ -460,51 +461,45 @@ def test_dry_run_uses_and_merges_capped_protocol(shard_env: SimpleNamespace) -> 
     (
         "has_imaginary_modes",
         "broken_symmetry",
-        "ignore_imaginary_freqs",
         "conductivity_broken_symm",
         "expected",
     ),
     [
-        (False, False, False, False, True),
-        (True, False, False, False, False),
-        (True, False, True, False, True),
-        (False, True, False, False, False),
-        (False, True, True, False, True),
-        (True, True, True, False, True),
-        (False, True, False, True, True),
+        (False, False, False, True),
+        (True, False, False, False),
+        (False, True, False, False),
+        (False, True, True, True),
+        (True, True, True, False),
+        (True, False, True, False),
     ],
 )
-def test_conductivity_gates_match_legacy_policy(
+def test_conductivity_gates_require_dynamically_stable_relaxation(
     has_imaginary_modes: bool,
     broken_symmetry: bool,
-    ignore_imaginary_freqs: bool,
     conductivity_broken_symm: bool,
     expected: bool,
 ) -> None:
-    """The ignore flag preserves the legacy policy of bypassing both gates."""
-    settings = replace(
-        KappaSettings(),
-        ignore_imaginary_freqs=ignore_imaginary_freqs,
-        conductivity_broken_symm=conductivity_broken_symm,
-    )
+    """Imaginary modes always gate conductivity; broken symmetry unless opted in."""
     assert (
         should_calculate_conductivity(
             has_imaginary_modes=has_imaginary_modes,
             broken_symmetry=broken_symmetry,
-            settings=settings,
+            settings=KappaSettings(conductivity_broken_symm=conductivity_broken_symm),
         )
         is expected
     )
 
 
 @pytest.mark.parametrize(
-    ("ignore_imaginary_freqs", "expected_fc3_calls", "expected_skipped"),
-    [(False, 0, True), (True, 1, False)],
+    ("fc2_frequencies", "expected_skipped"),
+    [
+        ((-1.0, 0.0, 0.0, 1.0), True),  # imaginary acoustic mode at Γ gates FC3
+        ((0.0, 0.0, 0.0, 1.0), False),  # dynamically stable -> full flow
+    ],
 )
 def test_calculate_kappa_for_structure_runs_shared_physics_flow(
     monkeypatch: pytest.MonkeyPatch,
-    ignore_imaginary_freqs: bool,
-    expected_fc3_calls: int,
+    fc2_frequencies: tuple[float, ...],
     expected_skipped: bool,
 ) -> None:
     """The shared flow executes FC2, gates FC3, and retains separate force sets."""
@@ -526,25 +521,24 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
     )
     atoms = Atoms("H", cell=np.eye(3), positions=[[0, 0, 0]], pbc=True)
     atoms.info[Key.mat_id] = "mp-core"
-    adapter = PipelineAdapterStub()
+    adapter = PipelineAdapterStub(fc2_frequencies=fc2_frequencies)
     computation = calculate_kappa_for_structure(
         atoms=atoms,
         calculator=cast("Calculator", object()),
         settings=KappaSettings(
             relaxation_mode="none",
             max_steps=0,
-            ignore_imaginary_freqs=ignore_imaginary_freqs,
             save_forces=True,
         ),
         adapter=adapter,
     )
 
     assert computation.error is None
-    assert adapter.n_fc3_calls == expected_fc3_calls
+    assert adapter.n_fc3_calls == int(not expected_skipped)
     assert computation.result.get("conductivity_skipped", False) is expected_skipped
     assert computation.forces is not None
     assert np.asarray(computation.forces["fc2_set"]).shape == (1, 1, 3)
-    assert np.asarray(computation.forces["fc3_set"]).size == expected_fc3_calls * 3
+    assert np.asarray(computation.forces["fc3_set"]).size == adapter.n_fc3_calls * 3
 
 
 def test_normalize_kappa_schema_aliases_and_voigt() -> None:

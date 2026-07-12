@@ -85,7 +85,6 @@ hyperparams:
   kappa:
     protocol: phonondb-v1
     displacement_distance: 0.03
-    ignore_imaginary_freqs: true
     save_forces: true
 training_cost:
   Nvidia H100 GPUs: {amount: 4, hours: 72, cost: 288}
@@ -106,7 +105,7 @@ metrics:
     kappa_103:
       pred_file: models/nequip/nequip-MP-L-0.1/2025-08-27-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05.json.gz
       pred_file_url: https://figshare.com/files/57576187
-      κ_SRME: 0.4517
+      κ_SRME: 0.4659
       κ_SRE: 0.3065
   geo_opt:
     pred_file: models/nequip/nequip-MP-L-0.1/2025-08-27-wbm-IS2RE-GOQN.jsonl.gz

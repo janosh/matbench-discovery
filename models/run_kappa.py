@@ -186,10 +186,7 @@ def write_yaml_results(
     from matbench_discovery.metrics import phonons as phonon_metrics
 
     validate_yaml_write_provenance(model, merged_run)
-    metrics = phonon_metrics.evaluate_kappa_predictions(
-        artifacts.predictions,
-        ignore_imaginary_freqs=merged_run.manifest.settings.ignore_imaginary_freqs,
-    )
+    metrics = phonon_metrics.evaluate_kappa_predictions(artifacts.predictions)
     phonon_metrics.write_metrics_to_yaml(
         model,
         metrics,

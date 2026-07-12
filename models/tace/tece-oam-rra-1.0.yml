@@ -74,7 +74,6 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   kappa:
     protocol: phonondb-v1
     displacement_distance: 0.03
-    ignore_imaginary_freqs: true
     save_forces: true
 training_cost: # list any hardware used to train the model and for how long
   Nvidia H20 GPUs: {amount: 32, hours: 240, cost: 7680}

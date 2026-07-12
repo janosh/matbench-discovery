@@ -328,7 +328,6 @@ export interface KappaSettings {
   relax_symprec?: number
   enforce_relax_symm?: boolean
   conductivity_broken_symm?: boolean
-  ignore_imaginary_freqs?: boolean
   is_plusminus?: true | false | 'auto'
   batch_size?: number
   max_atoms_per_batch?: number | null
