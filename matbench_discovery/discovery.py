@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import copy
 import hashlib
-import importlib.metadata
 import json
 import os
 import socket
-import sys
 import time
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
@@ -16,8 +14,6 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
-from ase.filters import ExpCellFilter, Filter, FrechetCellFilter, UnitCellFilter
-from ase.optimize import BFGS, FIRE, LBFGS, GoodOldQuasiNewton
 from filelock import FileLock
 from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
@@ -26,10 +22,18 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
+from matbench_discovery.ase_relax import (
+    canonical_filter_name,
+    canonical_optimizer_name,
+    resolve_cell_filter,
+    resolve_optimizer,
+)
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import (
+    COST_PROVENANCE_KEYS,
     detect_hardware,
-    merge_run_metadata,
+    merge_audit_metadata,
+    package_versions,
     peak_memory_gb,
     reset_gpu_peak_memory,
 )
@@ -39,19 +43,16 @@ if TYPE_CHECKING:
 
     from ase import Atoms
     from ase.calculators.calculator import Calculator
-    from ase.optimize.optimize import Optimizer
 
 DISCOVERY_SHARD_SCHEMA_VERSION = 1
 DISCOVERY_STRUCT_COL = "structure"
 DEFAULT_DRY_RUN_STRUCTURES = 4
-# rollout cost provenance persisted to model YAMLs, mirroring the MD/diatomics runners
-COST_PROVENANCE_KEYS = ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb")
 ARCHIVED_DISCOVERY_MODELS: dict[str, str] = {
     **dict.fromkeys(
         (
             "alchembert",
             "alignn",
-            "bowsr_megnet",
+            "bowsr",
             "cgcnn",
             "cgcnn_p",
             "esnet",
@@ -72,22 +73,6 @@ ARCHIVED_DISCOVERY_MODELS: dict[str, str] = {
     "gnome": "model weights were not released",
 }
 
-OPTIMIZERS: dict[str, type[Optimizer]] = {
-    "FIRE": FIRE,
-    "LBFGS": LBFGS,
-    "BFGS": BFGS,
-    "GOQN": GoodOldQuasiNewton,
-    "GoodOldQuasiNewton": GoodOldQuasiNewton,
-}
-CELL_FILTERS: dict[str, type[Filter] | None] = {
-    "FrechetCellFilter": FrechetCellFilter,
-    "ExpCellFilter": ExpCellFilter,
-    "UnitCellFilter": UnitCellFilter,
-    "none": None,
-}
-OPTIMIZER_LOOKUP = {name.casefold(): cls for name, cls in OPTIMIZERS.items()}
-CELL_FILTER_LOOKUP = {name.casefold(): cls for name, cls in CELL_FILTERS.items()}
-
 
 @dataclass(frozen=True)
 class RelaxationSettings:
@@ -106,15 +91,10 @@ class RelaxationSettings:
             )
         if self.max_steps < 0:
             raise ValueError(f"max_steps must be non-negative, got {self.max_steps}")
-        optimizer_cls = resolve_optimizer(self.ase_optimizer)
-        optimizer_name = (
-            "GOQN" if optimizer_cls is GoodOldQuasiNewton else optimizer_cls.__name__
-        )
-        filter_cls = resolve_cell_filter(self.cell_filter)
-        object.__setattr__(self, "ase_optimizer", optimizer_name)
         object.__setattr__(
-            self, "cell_filter", filter_cls.__name__ if filter_cls is not None else None
+            self, "ase_optimizer", canonical_optimizer_name(self.ase_optimizer)
         )
+        object.__setattr__(self, "cell_filter", canonical_filter_name(self.cell_filter))
 
     @classmethod
     def from_model(
@@ -254,55 +234,10 @@ class DiscoveryArtifacts:
     n_failed: int
 
 
-def resolve_optimizer(name: str) -> type[Optimizer]:
-    """Resolve an ASE optimizer name used in model YAML hyperparameters."""
-    try:
-        return OPTIMIZER_LOOKUP[name.casefold()]
-    except KeyError:
-        raise ValueError(
-            f"Unknown ASE optimizer {name!r}, choose from {sorted(OPTIMIZERS)}"
-        ) from None
-
-
-def resolve_cell_filter(name: str | None) -> type[Filter] | None:
-    """Resolve an ASE cell-filter name, accepting ``None`` and ``none``."""
-    if name is None:
-        return None
-    try:
-        return CELL_FILTER_LOOKUP[name.casefold()]
-    except KeyError:
-        raise ValueError(
-            f"Unknown ASE cell filter {name!r}, choose from {sorted(CELL_FILTERS)}"
-        ) from None
-
-
 def material_id_hash(material_ids: Sequence[str]) -> str:
     """Return an order-independent digest for a material-ID collection."""
     joined_ids = "\n".join(sorted(map(str, material_ids)))
     return hashlib.sha256(joined_ids.encode()).hexdigest()
-
-
-def partition_material_ids(
-    atoms_by_id: Mapping[str, Atoms], n_shards: int
-) -> list[list[str]]:
-    """Deterministically balance structures across shards by total atom count."""
-    if n_shards < 1:
-        raise ValueError(f"n_shards must be positive, got {n_shards}")
-    if n_shards > len(atoms_by_id):
-        raise ValueError(
-            f"n_shards ({n_shards}) cannot exceed structures ({len(atoms_by_id)})"
-        )
-
-    sorted_items = sorted(
-        atoms_by_id.items(), key=lambda item: (-len(item[1]), item[0])
-    )
-    shards: list[list[str]] = [[] for _ in range(n_shards)]
-    shard_sizes = [0] * n_shards
-    for material_id, atoms in sorted_items:
-        shard_index = min(range(n_shards), key=lambda idx: (shard_sizes[idx], idx))
-        shards[shard_index].append(material_id)
-        shard_sizes[shard_index] += len(atoms)
-    return shards
 
 
 def _material_id_from_atoms(atoms: Atoms) -> str:
@@ -456,7 +391,7 @@ def read_discovery_shard(shard_path: str) -> LoadedShard:
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
-            if line_index != len(lines) - 1:
+            if line_index != len(lines) - 1 or line.endswith("\n"):
                 raise ValueError(
                     f"Malformed JSON event at line {line_index + 1} in {shard_path}"
                 ) from None
@@ -499,17 +434,6 @@ def read_discovery_shard(shard_path: str) -> LoadedShard:
     )
 
 
-def _package_versions() -> dict[str, str]:
-    """Collect lightweight core-package versions for run provenance."""
-    versions = {"python": sys.version.split()[0]}
-    for package in ("ase", "numpy", "pymatgen"):
-        try:
-            versions[package] = importlib.metadata.version(package)
-        except importlib.metadata.PackageNotFoundError:
-            continue
-    return versions
-
-
 def _run_segment_metadata(run_time_sec: float) -> dict[str, Any]:
     """Collect provenance for one execution segment of a resumable shard."""
     metadata: dict[str, Any] = {
@@ -517,7 +441,7 @@ def _run_segment_metadata(run_time_sec: float) -> dict[str, Any]:
         "run_time_sec": round(run_time_sec, 2),
         "completed_at": datetime.now(UTC).isoformat(),
         "hostname": socket.gethostname(),
-        "versions": _package_versions(),
+        "versions": package_versions(("ase", "numpy", "pymatgen")),
         **peak_memory_gb(),
     }
     if slurm_job_id := os.getenv("SLURM_JOB_ID"):
@@ -541,7 +465,8 @@ def _discard_interrupted_header(shard_path: str) -> None:
     try:
         json.loads(content_lines[0])
     except json.JSONDecodeError:
-        os.remove(shard_path)
+        if not content_lines[0].endswith("\n"):
+            os.remove(shard_path)
 
 
 def run_discovery_shard(
@@ -647,36 +572,7 @@ def _merge_metadata_segments(
     metadata_segments: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
     """Merge timing/memory plus audit provenance across runs or shards."""
-    segments = [dict(segment) for segment in metadata_segments]
-    merged: dict[str, Any] = merge_run_metadata(segments)
-    hardware_labels = {
-        str(segment["hardware"]) for segment in segments if segment.get("hardware")
-    }
-    if len(hardware_labels) > 1:  # mixed hardware makes a single label misleading
-        merged.pop("hardware", None)
-    if versions := [
-        segment.get("versions") for segment in segments if segment.get("versions")
-    ]:
-        merged["versions"] = versions[0]
-    if completed_at := [
-        str(segment["completed_at"])
-        for segment in segments
-        if segment.get("completed_at")
-    ]:
-        merged["completed_at"] = max(completed_at)
-    if hostnames := sorted(
-        {str(segment["hostname"]) for segment in segments if segment.get("hostname")}
-    ):
-        merged["hostnames"] = hostnames
-    if slurm_job_ids := sorted(
-        {
-            str(segment["slurm_job_id"])
-            for segment in segments
-            if segment.get("slurm_job_id")
-        }
-    ):
-        merged["slurm_job_ids"] = slurm_job_ids
-    return merged
+    return merge_audit_metadata(metadata_segments)
 
 
 def merge_discovery_shards(

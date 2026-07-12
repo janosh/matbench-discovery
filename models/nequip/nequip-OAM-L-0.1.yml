@@ -1,5 +1,5 @@
-model_name: Nequip-OAM-L # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
-model_key: nequip-OAM-L-0.1 # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
+model_name: Nequip-OAM-L
+model_key: nequip-OAM-L-0.1
 model_version: '0.1'
 date_added: '2025-09-08'
 date_published: '2025-08-28'
@@ -82,8 +82,12 @@ hyperparams:
   epochs: 30
   max_neighbors: .inf
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    save_forces: true
 training_cost:
-  Nvidia H100 GPUs: {amount: 4, hours: 100, cost: 400}
+  Nvidia H100 GPUs: { amount: 4, hours: 100, cost: 400 }
 
 requirements:
   torch: '2'

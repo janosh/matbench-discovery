@@ -88,6 +88,7 @@ hyperparams:
   graph_construction_radius: 6.0 # Å
   max_neighbors: 120 # from https://github.com/deepmodeling/deepmd-kit/discussions/4682#discussioncomment-12836651
 
+  kappa: {protocol: phonondb-v1}
 requirements:
   torch: 2.3.1
   torch-geometric: 2.5.2

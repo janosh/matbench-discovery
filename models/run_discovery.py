@@ -50,11 +50,14 @@ from matbench_discovery.discovery import (
     dry_run_settings,
     load_wbm_atoms,
     merge_discovery_shards,
-    partition_material_ids,
     run_discovery_shard,
     write_discovery_artifacts,
 )
 from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.hpc import effective_shard_args as _effective_shard_args
+from matbench_discovery.hpc import partition_material_ids
+from matbench_discovery.hpc import slurm_shard_selection as _slurm_shard_selection
+from matbench_discovery.runner_cli import dependency_run_args, resolve_sharded_prefix
 
 module_dir = os.path.dirname(__file__)
 
@@ -132,77 +135,6 @@ def _artifact_columns(model: Model | None) -> tuple[str | None, str | None]:
     )
 
 
-def _slurm_shard_selection(
-    n_shards_arg: int | None, shard_index_arg: int | None
-) -> tuple[int, int]:
-    """Resolve zero-based shard selection from CLI flags or Slurm environment."""
-    n_shards = (
-        n_shards_arg
-        if n_shards_arg is not None
-        else int(os.getenv("SLURM_ARRAY_TASK_COUNT") or 1)
-    )
-    if n_shards < 1:
-        raise ValueError(f"n_shards must be positive, got {n_shards}")
-
-    if shard_index_arg is not None:
-        shard_index = shard_index_arg
-    elif slurm_task_id := os.getenv("SLURM_ARRAY_TASK_ID"):
-        if n_shards_arg is not None:
-            # Explicit shard counts make partial reruns such as --array=3,7 map back
-            # to their original zero-based shard indices.
-            slurm_task_max = os.getenv("SLURM_ARRAY_TASK_MAX")
-            if slurm_task_max is not None and int(slurm_task_max) >= n_shards:
-                # fail every task of a 1-based --array=1-N immediately instead of
-                # running N-1 shards and silently never producing shard 0
-                raise ValueError(
-                    f"SLURM_ARRAY_TASK_MAX={slurm_task_max} exceeds the last shard "
-                    f"index {n_shards - 1}; with explicit --n-shards, array task IDs "
-                    "are treated as zero-based original shard indices"
-                )
-            shard_index = int(slurm_task_id)
-        else:
-            slurm_task_min = int(os.getenv("SLURM_ARRAY_TASK_MIN", "0"))
-            slurm_task_max_id = int(
-                os.getenv("SLURM_ARRAY_TASK_MAX", str(slurm_task_min + n_shards - 1))
-            )
-            if slurm_task_max_id - slurm_task_min + 1 != n_shards:
-                raise ValueError(
-                    "Partial Slurm arrays require explicit --n-shards so task IDs "
-                    "retain their original shard indices (any rerun of a shard "
-                    "subset, contiguous or not, must pass the original --n-shards)"
-                )
-            shard_index = int(slurm_task_id) - slurm_task_min
-    elif n_shards == 1:
-        shard_index = 0
-    else:
-        raise ValueError("--shard-index is required outside a Slurm array")
-
-    if not 0 <= shard_index < n_shards:
-        raise ValueError(
-            f"shard_index must be in [0, {n_shards - 1}], got {shard_index}"
-        )
-    return n_shards, shard_index
-
-
-def _effective_shard_args(
-    n_shards: int | None,
-    shard_index: int | None,
-    *,
-    dry_run: bool,
-) -> tuple[int | None, int | None, bool]:
-    """Run one dry-run shard on only the first task of an implicit Slurm array."""
-    if (
-        not dry_run
-        or n_shards is not None
-        or shard_index is not None
-        or not os.getenv("SLURM_ARRAY_TASK_COUNT")
-    ):
-        return n_shards, shard_index, False
-    slurm_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-    slurm_task_min = int(os.getenv("SLURM_ARRAY_TASK_MIN", "0"))
-    return 1, 0, slurm_task_id != slurm_task_min
-
-
 def _resolve_output_paths(
     *,
     out_dir: str,
@@ -216,22 +148,13 @@ def _resolve_output_paths(
     dry_suffix = "-dry-run" if dry_run else ""
     run_name = f"{today}-wbm-IS2RE-{settings.ase_optimizer}{dry_suffix}"
     default_prefix = f"{out_dir}/{run_name}"
-    selected_shard_dir = shard_dir or f"{default_prefix}-shards"
-    if shard_dir is None and not os.path.isdir(selected_shard_dir):
-        pattern = f"{out_dir}/*-wbm-IS2RE-{settings.ase_optimizer}{dry_suffix}-shards"
-        candidates = sorted(path for path in glob.glob(pattern) if os.path.isdir(path))
-        if len(candidates) > 1:
-            raise ValueError(
-                f"Multiple discovery shard directories found: {candidates}. "
-                "Select one with --shard-dir."
-            )
-        if candidates:
-            selected_shard_dir = candidates[0]
-
-    artifact_prefix = (
-        selected_shard_dir.removesuffix("-shards")
-        if selected_shard_dir.endswith("-shards")
-        else default_prefix
+    selected_shard_dir, artifact_prefix = resolve_sharded_prefix(
+        default_prefix=default_prefix,
+        prior_shard_pattern=(
+            f"{out_dir}/*-wbm-IS2RE-{settings.ase_optimizer}{dry_suffix}-shards"
+        ),
+        task="discovery",
+        shard_dir=shard_dir,
     )
     return (
         selected_shard_dir,
@@ -242,29 +165,25 @@ def _resolve_output_paths(
 
 def _print_cmd_args(args: argparse.Namespace, model_key: str) -> list[str]:
     """Forward meaningful CLI options into a dependency-isolated uv command."""
-    run_args = ["--model", model_key, "--dtype", args.dtype]
-    value_options = (
-        ("device", args.device),
-        ("out-dir", args.out_dir),
-        ("shard-dir", args.shard_dir),
-        ("pred-file", args.pred_file),
-        ("geo-opt-file", args.geo_opt_file),
-        ("max-force", args.max_force),
-        ("max-steps", args.max_steps),
-        ("ase-optimizer", args.ase_optimizer),
-        ("cell-filter", args.cell_filter),
-        ("n-shards", args.n_shards),
-        ("shard-index", args.shard_index),
+    return dependency_run_args(
+        args,
+        model_key,
+        {
+            "dtype": args.dtype,
+            "device": args.device,
+            "out-dir": args.out_dir,
+            "shard-dir": args.shard_dir,
+            "pred-file": args.pred_file,
+            "geo-opt-file": args.geo_opt_file,
+            "max-force": args.max_force,
+            "max-steps": args.max_steps,
+            "ase-optimizer": args.ase_optimizer,
+            "cell-filter": args.cell_filter,
+            "n-shards": args.n_shards,
+            "shard-index": args.shard_index,
+        },
+        ("dry-run", "merge-shards", "write-yaml"),
     )
-    for option, value in value_options:
-        if value is not None:
-            run_args.extend([f"--{option}", str(value)])
-    run_args.extend(
-        f"--{flag}"
-        for flag in ("dry-run", "merge-shards", "write-yaml")
-        if getattr(args, flag.replace("-", "_"))
-    )
-    return run_args
 
 
 def _repo_relative_path(path: str) -> str:

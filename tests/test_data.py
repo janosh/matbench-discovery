@@ -286,11 +286,8 @@ def test_load_df_wbm_with_preds(
 
 def test_load_df_wbm_with_preds_mock_data_models() -> None:
     """Test default and explicit model loading with pytest mock data."""
-    inactive_model_refs = (
-        Model.alphanet_mptrj,
-        Model.alphanet_mptrj.name,
-        Model.alphanet_mptrj.label,
-    )
+    inactive_model = Model.alphanet_v1_mptrj
+    inactive_model_refs = (inactive_model, inactive_model.name, inactive_model.label)
     with patch("matbench_discovery.data.glob", return_value=[]):
         df_default = load_df_wbm_with_preds(pbar=False)
         inactive_cols = [
@@ -303,9 +300,7 @@ def test_load_df_wbm_with_preds_mock_data_models() -> None:
     assert set(default_cols).isdisjoint(
         model.label for model in Model if not model.is_complete
     )
-    assert inactive_cols == [[*df_wbm, Model.alphanet_mptrj.label]] * len(
-        inactive_model_refs
-    )
+    assert inactive_cols == [[*df_wbm, inactive_model.label]] * len(inactive_model_refs)
 
 
 @pytest.mark.skipif(
@@ -370,13 +365,13 @@ def test_update_yaml_file(tmp_path: Path) -> None:
     with open(test_file, mode="w") as file:
         round_trip_yaml.dump(initial_data, file)
 
-    updated_yaml = update_yaml_file(
-        test_file, "metrics.discovery", {"mae": 0.2, "rmse": 0.3}
-    )
+    update_data = {"mae": 0.2, "rmse": 0.3}
+    updated_yaml = update_yaml_file(test_file, "metrics.discovery", update_data)
     result = updated_yaml["metrics"]["discovery"]
     assert result["mae"] == 0.2
     assert result["rmse"] == 0.3
     assert result["pred_file"] == "old.csv"
+    assert update_data == {"mae": 0.2, "rmse": 0.3}
 
     # Test case 2: Create new nested path
     updated_yaml = update_yaml_file(test_file, "metrics.new.nested.path", {"value": 42})

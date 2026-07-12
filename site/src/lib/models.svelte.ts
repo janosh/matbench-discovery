@@ -116,9 +116,7 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
         : undefined
     const kappa =
       model.metrics?.phonons && typeof model.metrics.phonons !== `string`
-        ? model.metrics.phonons.kappa_103?.κ_SRME !== undefined
-          ? Number(model.metrics.phonons.kappa_103.κ_SRME)
-          : undefined
+        ? model.metrics.phonons.kappa_103?.κ_SRME
         : undefined
 
     // Calculate and update CPS

@@ -89,7 +89,7 @@ repos:
         name: check-jsonschema-datasets
         files: ^data/datasets\.yml$
         args: [--schemafile, tests/dataset-schema.yml]
-      - id: check-github-actions
+      - id: check-github-workflows
 
   - repo: https://github.com/crate-ci/typos
     rev: v1.48.0

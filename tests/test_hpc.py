@@ -364,6 +364,38 @@ def test_merge_run_metadata(
     assert hpc.merge_run_metadata(shard_metadatas) == expected
 
 
+INCOMPLETE_HARDWARE_SEGMENTS = (
+    {"hardware": "H200", "versions": {}},
+    {"hardware": "", "versions": {}},
+)
+
+
+def test_merge_audit_metadata_drops_partial_cost_fields() -> None:
+    """Audit aggregation publishes each cost field only with complete coverage."""
+    merged = hpc.merge_audit_metadata(
+        [
+            {"hardware": "H200", "run_time_sec": 10.0, "max_rss_gb": 4.0},
+            {"hardware": "H200", "run_time_sec": 20.0},
+        ]
+    )
+    assert merged == {"hardware": "H200", "run_time_sec": 30.0}
+    base_segment = {"versions": {"numpy": "1"}}
+    for other_segment in ({}, {"versions": {"numpy": "2"}}):
+        merged = hpc.merge_audit_metadata([base_segment, other_segment])
+        assert "versions" not in merged
+
+
+def test_merge_audit_metadata_drops_mismatched_hardware() -> None:
+    """Mismatched hardware provenance is silently omitted from merged metadata."""
+    assert "hardware" not in hpc.merge_audit_metadata(INCOMPLETE_HARDWARE_SEGMENTS)
+
+
+def test_merge_audit_metadata_strictly_rejects_missing_hardware() -> None:
+    """Strict audit merging rejects a segment with missing hardware provenance."""
+    with pytest.raises(ValueError, match="missing hardware"):
+        hpc.merge_audit_metadata(INCOMPLETE_HARDWARE_SEGMENTS, strict=True)
+
+
 def test_peak_memory_gb() -> None:
     """peak_memory_gb reports a positive host RSS high-water mark on Unix (GPU key
     only when torch+CUDA are present) and reset_gpu_peak_memory is a safe no-op.

@@ -1,5 +1,5 @@
-model_name: Nequip-OAM-XL # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
-model_key: nequip-OAM-XL-0.1 # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
+model_name: Nequip-OAM-XL
+model_key: nequip-OAM-XL-0.1
 model_version: '0.1'
 date_added: '2025-11-30'
 date_published: '2025-11-30'
@@ -82,9 +82,13 @@ hyperparams:
   epochs: 30 # actual epochs run; max_epochs=100 in Trainer config
   max_neighbors: .inf
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    save_forces: true
 training_cost:
   # ~9.8h per epoch, 30 epochs plus fine-tune
-  Nvidia H100 GPUs: {amount: 8, hours: 300, cost: 2400}
+  Nvidia H100 GPUs: { amount: 8, hours: 300, cost: 2400 }
 
 requirements:
   torch: '2'

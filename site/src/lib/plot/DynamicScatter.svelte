@@ -48,6 +48,7 @@
     legend_group,
     legend: models_legend,
     collapse_on_outside_click,
+    toggle: toggle_models,
   } = make_models_legend()
 
   let {
@@ -181,8 +182,8 @@
     color: supports_log(axes.color_value, `color_value`),
     size: supports_log(axes.size_value, `size_value`),
   })
-  // Seed the initial render automatically. Manual toggles persist until the data or
-  // axis/size selection changes, at which point all dimensions are re-evaluated.
+  let supported_log_dims = $derived(log_dims.filter((dim) => can_log[dim]))
+  // Initialize automatically; manual toggles reset when data or dimensions change.
   // svelte-ignore state_referenced_locally
   let log = $state({ ...can_log })
   $effect(() => {
@@ -305,20 +306,27 @@
         </span>
       {/snippet}
     </Select>
-    <div class="log-controls" role="group" aria-label="Logarithmic scales">
-      <strong>Log Scale</strong>
-      {#each log_dims as dim (dim)}
-        {@const supported = can_log[dim]}
-        <label
-          title={supported
-            ? undefined
-            : `Requires positive, non-date values spanning at least 100×`}
-        >
-          <input type="checkbox" bind:checked={log[dim]} disabled={!supported} />
-          {log_dim_labels[dim]}
-        </label>
-      {/each}
-    </div>
+    {#if supported_log_dims.length}
+      <div class="log-controls" role="group" aria-label="Logarithmic scales">
+        <strong>Log Scale</strong>
+        {#each supported_log_dims as dim (dim)}
+          <label>
+            <input type="checkbox" bind:checked={log[dim]} />
+            {log_dim_labels[dim]}
+          </label>
+        {/each}
+      </div>
+    {/if}
+    {#if models_legend.collapsed_groups?.has(legend_group)}
+      <button
+        type="button"
+        class="models-toggle"
+        aria-expanded="false"
+        onclick={toggle_models}
+      >
+        ▶ {legend_group}
+      </button>
+    {/if}
   </div>
 
   <ScatterPlot
@@ -444,17 +452,26 @@
     font-weight: 500;
     font-size: 14px;
   }
-  /* move ScatterPlot's legend into the controls row */
+  button.models-toggle {
+    margin-left: auto;
+    padding: 2px 4px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  /* align ScatterPlot's expanded legend with the controls row */
   div.bleed-1400 :global(.scatter > .legend) {
     top: -42px !important;
     bottom: auto !important;
     font-size: 14px;
   }
-  /* collapsed: show only the group header beside the size select */
-  div.bleed-1400 :global(.scatter > .legend:not(:has(.legend-item))) {
-    left: calc(50% + 5em) !important;
-    width: max-content !important;
-    justify-content: flex-start !important;
+  /* the right-aligned controls-row button replaces the collapsed legend shell */
+  div.bleed-1400:has(button.models-toggle) :global(.scatter > .legend) {
+    display: none !important;
   }
   /* expanded: wrap model items across the plot width */
   div.bleed-1400 :global(.scatter > .legend:has(.legend-item)) {

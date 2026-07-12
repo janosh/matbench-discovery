@@ -16,12 +16,12 @@ export type CpsConfig = Record<
 // DEFAULT_CPS_CONFIG, coupling weight edits to the defaults they're reset from
 export const CPS_CONFIG: CpsConfig = $state(structuredClone(DEFAULT_CPS_CONFIG))
 
-const is_valid_score = (value: number | undefined): value is number =>
-  value !== undefined && !isNaN(value)
+const is_valid_score = (value: number | undefined, max = Infinity): value is number =>
+  value !== undefined && Number.isFinite(value) && value >= 0 && value <= max
 
 // F1 score is between 0-1 where higher is better (no normalization needed)
 const normalize_f1 = (value: number | undefined): number =>
-  is_valid_score(value) ? value : 0
+  is_valid_score(value, 1) ? value : 0
 
 // RMSD is lower=better, with current models in the range of ~0.01-0.25 (unitless)
 // We invert this so that better performance = higher score
@@ -31,7 +31,7 @@ const normalize_rmsd = (value: number | undefined): number =>
 // κ_SRME is symmetric relative mean error, with range [0,2] by definition
 // Lower values are better (0 is perfect)
 const normalize_kappa_srme = (value: number | undefined): number =>
-  is_valid_score(value) ? Math.max(0, 1 - value / 2) : 0
+  is_valid_score(value, 2) ? 1 - value / 2 : 0
 
 // Calculate a combined score using normalized metrics weighted by importance factors.
 // Fixed normalization reference points keep scores stable as new models are added.
@@ -45,9 +45,9 @@ export function calculate_cps(
 
   // Any metric with non-zero weight must be present, else the score is undefined
   if (
-    (F1.weight > 0 && !is_valid_score(f1)) ||
+    (F1.weight > 0 && !is_valid_score(f1, 1)) ||
     (RMSD.weight > 0 && !is_valid_score(rmsd)) ||
-    (κ_SRME.weight > 0 && !is_valid_score(kappa))
+    (κ_SRME.weight > 0 && !is_valid_score(kappa, 2))
   )
     return null
 

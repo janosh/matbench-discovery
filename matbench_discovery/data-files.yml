@@ -134,7 +134,7 @@ _private_reference_data:
         - site/src/lib/diatomics-dft.readme.md
         - scripts/evals/build_diatomic_reference.py
         - matbench_discovery/metrics/diatomics/reference.py
-        - tests/metrics/diatomics/test_build_diatomic_reference.py
+        - tests/scripts/test_build_diatomic_reference.py
         - tests/metrics/diatomics/test_diatomics_reference.py
       description: Provenance note, builder, postprocess implementation, and tests for the bundled homonuclear PBE/r2SCAN DFT diatomic reference curves.
 

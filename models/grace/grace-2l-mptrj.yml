@@ -59,6 +59,7 @@ hyperparams:
   graph_construction_radius: 6.0 # Å
   max_neighbors: .inf
 
+  kappa: {protocol: phonondb-v1}
 metrics:
   phonons:
     kappa_103:

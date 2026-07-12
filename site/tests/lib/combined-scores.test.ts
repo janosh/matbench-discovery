@@ -76,44 +76,26 @@ describe(`calculate_cps`, () => {
     { metric: `F1 (NaN)`, f1: NaN, rmsd: 0.05, kappa: 0.5 },
     { metric: `RMSD (NaN)`, f1: 0.8, rmsd: NaN, kappa: 0.5 },
     { metric: `κ_SRME (NaN)`, f1: 0.8, rmsd: 0.05, kappa: NaN },
+    { metric: `κ_SRME (Infinity)`, f1: 0.8, rmsd: 0.05, kappa: Infinity },
+    { metric: `F1 (negative)`, f1: -1, rmsd: 0.05, kappa: 0.5 },
+    { metric: `F1 (>1)`, f1: 2, rmsd: 0.05, kappa: 0.5 },
+    { metric: `RMSD (negative)`, f1: 0.8, rmsd: -1, kappa: 0.5 },
+    { metric: `κ_SRME (negative)`, f1: 0.8, rmsd: 0.05, kappa: -1 },
+    { metric: `κ_SRME (>2)`, f1: 0.8, rmsd: 0.05, kappa: 3 },
     { metric: `every metric`, f1: undefined, rmsd: undefined, kappa: undefined },
-  ])(
-    `returns null when $metric is missing/NaN with non-zero weight`,
-    ({ f1, rmsd, kappa }) => {
-      const config = make_cps_config(0.5, 0.3, 0.2)
-      expect(calculate_cps(f1, rmsd, kappa, config)).toBeNull()
-    },
-  )
+  ])(`returns null for invalid required $metric`, ({ f1, rmsd, kappa }) => {
+    const config = make_cps_config(0.5, 0.3, 0.2)
+    expect(calculate_cps(f1, rmsd, kappa, config)).toBeNull()
+  })
 
   it.each([
-    { case: `missing F1`, weights: [0, 0.5, 0.5], vals: [undefined, 0, 0], expected: 1 },
-    {
-      case: `missing RMSD`,
-      weights: [0.5, 0, 0.5],
-      vals: [1, undefined, 0],
-      expected: 1,
-    },
-    {
-      case: `missing κ_SRME`,
-      weights: [0.5, 0.5, 0],
-      vals: [1, 0, undefined],
-      expected: 1,
-    },
-    {
-      case: `out-of-range values`,
-      weights: [1, 0, 0],
-      vals: [0.8, -0.01, 3],
-      expected: 0.8,
-    },
-    {
-      case: `F1 above 1`,
-      weights: [1, 0, 0],
-      vals: [1.2, undefined, undefined],
-      expected: 1.2,
-    },
-  ])(`ignores zero-weight metrics: $case`, ({ weights, vals, expected }) => {
+    { case: `missing F1`, weights: [0, 0.5, 0.5], vals: [undefined, 0, 0] },
+    { case: `missing RMSD`, weights: [0.5, 0, 0.5], vals: [1, undefined, 0] },
+    { case: `missing κ_SRME`, weights: [0.5, 0.5, 0], vals: [1, 0, undefined] },
+    { case: `out-of-range values`, weights: [0, 1, 0], vals: [1.2, 0, 3] },
+  ])(`ignores zero-weight metrics: $case`, ({ weights, vals }) => {
     const config = make_cps_config(weights[0], weights[1], weights[2])
-    expect(calculate_cps(vals[0], vals[1], vals[2], config)).toBeCloseTo(expected, 5)
+    expect(calculate_cps(vals[0], vals[1], vals[2], config)).toBeCloseTo(1, 5)
   })
 
   it(`returns null when all weights are 0 (score undefined, matches CMDS)`, () => {
@@ -147,7 +129,6 @@ describe(`calculate_cps`, () => {
     { name: `κ_SRME worst`, value: 2, weights: [0, 0, 1], expected: 0.0 },
     { name: `κ_SRME linear`, value: 0.4, weights: [0, 0, 1], expected: 0.8 },
     { name: `κ_SRME midpoint`, value: 1, weights: [0, 0, 1], expected: 0.5 },
-    { name: `κ_SRME clamps high`, value: 3, weights: [0, 0, 1], expected: 0.0 },
   ])(`$name normalizes correctly`, ({ value, weights, expected }) => {
     const config = make_cps_config(weights[0], weights[1], weights[2])
     const args: [number | undefined, number | undefined, number | undefined] = [

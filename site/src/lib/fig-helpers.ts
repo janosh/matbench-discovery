@@ -73,26 +73,20 @@ export const wide_legend: LegendConfig = {
   style: `width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px;`,
 }
 
-type ModelsLegendConfig = {
-  legend_group: string
-  legend: LegendConfig
-  collapse_on_outside_click: Attachment
-}
-
 // Collapsible per-model legend: group headers collapse/expand while items still toggle
 // individual model visibility. Attach `collapse_on_outside_click` to the plot wrapper.
-export const make_models_legend = (
-  legend_group = `Toggle Models`,
-): ModelsLegendConfig => {
+export const make_models_legend = (legend_group = `Toggle Models`) => {
   const collapsed_groups = new SvelteSet([legend_group])
+  const toggle_group = (group: string) => {
+    if (!collapsed_groups.delete(group)) collapsed_groups.add(group)
+  }
+  const toggle = () => toggle_group(legend_group)
   const legend: LegendConfig = {
     ...wide_legend,
     collapsed_groups,
     // keep expanded legend readable over plot points
     style: `${wide_legend.style} --plot-legend-bg-color: light-dark(rgb(255, 255, 255), rgb(40, 40, 40))`,
-    on_group_toggle: (group) => {
-      if (!collapsed_groups.delete(group)) collapsed_groups.add(group)
-    },
+    on_group_toggle: toggle_group,
   }
   // Capture-phase listener also sees clicks whose inner handlers stop propagation.
   const collapse_on_outside_click: Attachment = (node) => {
@@ -108,7 +102,7 @@ export const make_models_legend = (
     document.addEventListener(`click`, on_click, true)
     return () => document.removeEventListener(`click`, on_click, true)
   }
-  return { legend_group, legend, collapse_on_outside_click }
+  return { legend_group, legend, collapse_on_outside_click, toggle }
 }
 
 // full-span y=x parity diagonal; a diagonal ref line is clipped to the axis range

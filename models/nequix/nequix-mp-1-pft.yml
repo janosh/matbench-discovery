@@ -93,6 +93,12 @@ hyperparams:
     stress: 50.0
   ema_decay: 0.999
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    max_steps: 500
+    force_max: 0.02
+    save_forces: true
 training_cost:
   Nvidia A100 GPUs: {amount: 1, hours: 140}
 

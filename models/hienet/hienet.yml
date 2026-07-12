@@ -65,6 +65,7 @@ hyperparams:
   max_neighbors: .inf
   graph_construction_radius: 5.0
 
+  kappa: {protocol: phonondb-v1}
 license:
   code: GPL-3.0
   code_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/LICENSE

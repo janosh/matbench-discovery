@@ -59,6 +59,11 @@ hyperparams:
   cell_filter: FrechetCellFilter
   graph_construction_radius: 6.0 # Å
   max_neighbors: .inf
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    relaxation_mode: two-stage
+    max_atoms_per_batch: 128
 notes:
   Description: |
     EquFlash is an E(3)-equivariant model based on the SevenNet-0 architecture, with tensor products accelerated by FlashTP.

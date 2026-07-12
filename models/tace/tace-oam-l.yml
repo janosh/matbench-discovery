@@ -71,6 +71,10 @@ hyperparams: # strongly recommended to list relaxation hyperparams
   num_layers: 5
   correlation: 2
 
+  kappa:
+    protocol: phonondb-v1
+    displacement_distance: 0.03
+    save_forces: true
 training_cost: # list any hardware used to train the model and for how long
   Nvidia H20 GPUs: {amount: 8, hours: 105, cost: 840}
 

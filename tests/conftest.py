@@ -1,40 +1,17 @@
 """Shared pytest fixtures for the test suite."""
 
-import importlib.util
-import sys
-from types import ModuleType
-
 import numpy as np
 import pandas as pd
 import pytest
 from pymatgen.core import Lattice, Structure
 
-from matbench_discovery import ROOT
 from matbench_discovery.metrics.diatomics import DiatomicCurves
-
-
-def import_repo_script(module_name: str, rel_path: str) -> ModuleType:
-    """Import a repo-local script without package-name collisions."""
-    spec = importlib.util.spec_from_file_location(module_name, f"{ROOT}/{rel_path}")
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot import {module_name} from {rel_path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    try:
-        spec.loader.exec_module(module)
-    except BaseException:
-        sys.modules.pop(module_name, None)
-        raise
-    return module
 
 
 @pytest.fixture
 def dummy_struct() -> Structure:
-    return Structure(
-        lattice=Lattice.cubic(4.2),
-        species=("Fe", "O"),
-        coords=((0, 0, 0), (0.5, 0.5, 0.5)),
-    )
+    coords = ((0, 0, 0), (0.5, 0.5, 0.5))
+    return Structure(lattice=Lattice.cubic(4.2), species=("Fe", "O"), coords=coords)
 
 
 @pytest.fixture
@@ -64,11 +41,7 @@ def monoclinic_struct() -> Structure:
 @pytest.fixture
 def df_float() -> pd.DataFrame:
     rng = np.random.default_rng(seed=0)
-
-    return pd.DataFrame(
-        rng.normal(size=(10, 5)),
-        columns=list("ABCDE"),
-    )
+    return pd.DataFrame(rng.normal(size=(10, 5)), columns=list("ABCDE"))
 
 
 @pytest.fixture

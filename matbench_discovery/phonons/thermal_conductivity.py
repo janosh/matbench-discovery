@@ -6,32 +6,19 @@ Balázs Póta, Paramvir Ahlawat, Gábor Csányi, Michele Simoncelli. See
 https://arxiv.org/abs/2408.00755 for details. They were ported to this repo in
 https://github.com/janosh/matbench-discovery/pull/196 to implement parallelization
 across input structures which allows scaling thermal conductivity metric to larger test
-sets. The high-level per-structure orchestrator ``calc_kappa_for_structure`` (relax ->
-FC2/freqs -> FC3 -> conductivity) is matbench-discovery's own and shared across all
-ML-potential kappa model scripts.
+sets. High-level orchestration lives in ``matbench_discovery.phonons.pipeline``.
 """
 
-import inspect
-import os
-import traceback
 import warnings
 from collections.abc import Callable, Sequence
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
-import ase.optimize
-import ase.optimize.sciopt
 import numpy as np
 from ase import Atoms
 from ase.calculators.calculator import Calculator
-from ase.constraints import FixSymmetry
-from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
-from ase.optimize.optimize import Optimizer
-from moyopy import MoyoDataset
-from moyopy.interface import MoyoAdapter
 from phono3py.api_phono3py import Phono3py
 from phonopy.structure.atoms import PhonopyAtoms
-from pymatgen.core.structure import Structure
 from pymatviz.enums import Key
 from tqdm import tqdm
 
@@ -39,6 +26,76 @@ from matbench_discovery.enums import MbdKey
 
 if TYPE_CHECKING:
     from phono3py.conductivity.calculators import LBTECalculator, RTACalculator
+
+
+def phonopy_atoms_to_ase(supercell: PhonopyAtoms) -> Atoms:
+    """Convert a Phonopy supercell to periodic ASE atoms."""
+    return Atoms(
+        supercell.symbols,
+        cell=supercell.cell,
+        positions=supercell.positions,
+        pbc=True,
+    )
+
+
+def _validate_forces(
+    forces: object, expected_shape: tuple[int, ...], context: str
+) -> np.ndarray:
+    """Return finite real numeric forces with exactly the expected shape."""
+    force_array = np.asarray(forces)
+    if (
+        force_array.shape != expected_shape
+        or not np.issubdtype(force_array.dtype, np.number)
+        or np.iscomplexobj(force_array)
+        or np.any(~np.isfinite(force_array))
+    ):
+        raise ValueError(
+            f"Invalid {context} forces: shape={force_array.shape}, "
+            f"dtype={force_array.dtype}, expected_shape={expected_shape}"
+        )
+    return force_array
+
+
+def batched_displacement_forces(
+    displacements: Sequence[PhonopyAtoms | None],
+    evaluate_batch: Callable[[list[Atoms]], np.ndarray],
+    *,
+    batch_size: int,
+    n_atoms: int,
+    max_evaluations: int | None = None,
+) -> np.ndarray:
+    """Evaluate non-null displaced supercells in batches.
+
+    Args:
+        displacements: Sequence of displaced phonon supercells or null placeholders.
+        evaluate_batch: Callable returning forces for one batch of ASE structures.
+        batch_size: Maximum number of displaced structures per evaluation.
+        n_atoms: Number of atoms in each displaced supercell.
+        max_evaluations: Optional cap on evaluated non-null displacements.
+
+    Returns:
+        Force array shaped ``(len(displacements), n_atoms, 3)``. Only non-null entries
+        up to ``max_evaluations`` are evaluated; null and unevaluated slots remain zero.
+    """
+    if batch_size < 1 or n_atoms < 1:
+        raise ValueError("batch_size and n_atoms must be positive")
+    if max_evaluations is not None and max_evaluations < 0:
+        raise ValueError("max_evaluations must be non-negative or None")
+    entries = [
+        (displacement_idx, supercell)
+        for displacement_idx, supercell in enumerate(displacements)
+        if supercell is not None
+    ][:max_evaluations]
+    forces = np.zeros((len(displacements), n_atoms, 3))
+    for batch_start in range(0, len(entries), batch_size):
+        batch = entries[batch_start : batch_start + batch_size]
+        predicted = _validate_forces(
+            evaluate_batch([phonopy_atoms_to_ase(supercell) for _, supercell in batch]),
+            (len(batch), n_atoms, 3),
+            "batched displacement",
+        )
+        forces[[displacement_idx for displacement_idx, _ in batch]] = predicted
+    return forces
 
 
 def calculate_fc2_set(
@@ -68,14 +125,11 @@ def calculate_fc2_set(
         **pbar_kwargs or {},
     ):
         if supercell is not None:
-            atoms = Atoms(
-                supercell.symbols,
-                cell=supercell.cell,
-                positions=supercell.positions,
-                pbc=True,
-            )
+            atoms = phonopy_atoms_to_ase(supercell)
             atoms.calc = calculator
-            force = atoms.get_forces()
+            force = _validate_forces(
+                atoms.get_forces(), (n_atoms, 3), "FC2 displacement"
+            )
         else:
             force = np.zeros((n_atoms, 3))
         forces += [force]
@@ -89,6 +143,8 @@ def calculate_fc3_set(
     ph3: Phono3py,
     calculator: Calculator,
     pbar_kwargs: dict[str, Any] | None = None,
+    *,
+    max_evaluations: int | None = None,
 ) -> np.ndarray:
     """Calculate 3rd order force constants.
 
@@ -97,10 +153,15 @@ def calculate_fc3_set(
         calculator (Calculator): ASE calculator to compute forces.
         pbar_kwargs (dict[str, Any] | None): Passed to tqdm progress bar.
             Defaults to None.
+        max_evaluations (int | None): Maximum non-null displaced supercells to
+            evaluate. Remaining entries are zero-filled to preserve the force-set
+            shape. Defaults to None.
 
     Returns:
         np.ndarray: Array of forces for each displacement
     """
+    if max_evaluations is not None and max_evaluations < 0:
+        raise ValueError("max_evaluations must be non-negative or None")
     forces: list[np.ndarray] = []
     n_atoms = len(ph3.supercell)
 
@@ -109,18 +170,19 @@ def calculate_fc3_set(
     if task_idx:
         desc = f"{task_idx}. {desc}"
     displacements = ph3.supercells_with_displacements
+    n_evaluated = 0
     for supercell in tqdm(displacements, desc=desc, **pbar_kwargs or {}):
-        if supercell is None:
+        if supercell is None or (
+            max_evaluations is not None and n_evaluated >= max_evaluations
+        ):
             forces += [np.zeros((n_atoms, 3))]
         else:
-            atoms = Atoms(
-                supercell.symbols,
-                cell=supercell.cell,
-                positions=supercell.positions,
-                pbc=True,
-            )
+            atoms = phonopy_atoms_to_ase(supercell)
             atoms.calc = calculator
-            forces += [atoms.get_forces()]
+            forces += [
+                _validate_forces(atoms.get_forces(), (n_atoms, 3), "FC3 displacement")
+            ]
+            n_evaluated += 1
 
     force_set = np.array(forces)
     ph3.forces = force_set
@@ -135,6 +197,7 @@ def init_phono3py(
     q_point_mesh: tuple[int, int, int] = (20, 20, 20),
     displacement_distance: float = 0.01,
     symprec: float = 1e-5,
+    is_plusminus: bool | Literal["auto"] = "auto",
 ) -> Phono3py:
     """Initialize Phono3py object from ASE Atoms.
 
@@ -147,6 +210,8 @@ def init_phono3py(
         displacement_distance (float): Displacement distance for force calculations.
             Defaults to 0.01.
         symprec (float): Symmetry precision for finding space group. Defaults to 1e-5.
+        is_plusminus (bool | Literal["auto"]): Whether to generate plus/minus
+            displacements. Defaults to Phono3py's automatic selection.
 
     Returns:
         Phono3py: Initialized Phono3py object
@@ -164,7 +229,9 @@ def init_phono3py(
     )
     ph3.mesh_numbers = q_point_mesh
 
-    ph3.generate_displacements(distance=displacement_distance)
+    ph3.generate_displacements(
+        distance=displacement_distance, is_plusminus=is_plusminus
+    )
 
     return ph3
 
@@ -218,8 +285,16 @@ def load_force_sets(
     Returns:
         Phono3py: Phono3py object with loaded force sets
     """
-    ph3.phonon_forces = fc2_set
-    ph3.forces = fc3_set
+    ph3.phonon_forces = _validate_forces(
+        fc2_set,
+        (len(ph3.phonon_supercells_with_displacements), len(ph3.phonon_supercell), 3),
+        "FC2",
+    )
+    ph3.forces = _validate_forces(
+        fc3_set,
+        (len(ph3.supercells_with_displacements), len(ph3.supercell), 3),
+        "FC3",
+    )
     ph3.produce_fc2(symmetrize_fc2=True)
     ph3.produce_fc3(symmetrize_fc3r=True)
 
@@ -321,244 +396,3 @@ def calc_mode_kappa_tot(
     mode_kappa_c_per_mode[np.isnan(mode_kappa_c_per_mode)] = 0
 
     return mode_kappa_c_per_mode + mode_kappa_p_rta
-
-
-def calc_kappa_for_structure(
-    *,
-    atoms: Atoms,
-    calculator: Calculator,
-    displacement_distance: float,
-    temperatures: list[float],
-    ase_optimizer: str,
-    max_steps: int,
-    force_max: float,
-    symprec: float,
-    enforce_relax_symm: bool,
-    save_forces: bool,
-    out_dir: str,
-    task_id: int,
-    ase_filter: str | None = None,
-    conductivity_broken_symm: bool = False,
-    ignore_imaginary_freqs: bool = False,
-    formula_getter: Callable[[Atoms], str] | None = None,
-    **_kwargs: object,
-) -> tuple[str, dict[str, Any], dict[str, Any] | None]:
-    """Calculate thermal conductivity (kappa) for a single structure.
-
-    This is a shared implementation used by different ML potential models
-    (NequIP, Allegro, MACE, etc.).
-
-    Args:
-        atoms (Atoms): ASE Atoms object with fc2_supercell, fc3_supercell,
-            q_point_mesh keys in its info dict.
-        calculator (Calculator): ASE calculator to use for force calculations
-        displacement_distance (float): Displacement distance for phono3py (Å)
-        temperatures (list[float]): Temperatures in Kelvin for conductivity calculation
-        ase_optimizer (str): ASE optimizer name (e.g., 'FIRE', 'BFGS', 'LBFGS')
-        max_steps (int): Maximum relaxation steps
-        force_max (float): Maximum force convergence criterion (eV/Å)
-        symprec (float): Symmetry precision for spglib
-        enforce_relax_symm (bool): Whether to enforce symmetry during relaxation
-        save_forces (bool): Whether to save force sets to disk
-        out_dir (str): Output directory for results
-        task_id (int): Task ID for logging
-        ase_filter (str | None): Cell filter for relaxation ('frechet' or 'exp').
-            If None, uses FrechetCellFilter. Default None.
-        conductivity_broken_symm (bool): Whether to calculate kappa if symmetry
-            breaks. Only used if ignore_imaginary_freqs=False. Default False.
-        ignore_imaginary_freqs (bool): Whether to ignore imaginary frequencies
-            and calculate kappa anyway. Default False.
-        formula_getter (Callable[[Atoms], str] | None): Custom function to extract
-            formula from atoms. If None, uses atoms.get_chemical_formula().
-            Default None.
-        **_kwargs: Additional keywords (unused).
-
-    Returns:
-        tuple[str, dict[str, Any], dict[str, Any] | None]:
-            material ID, results dict, force results dict
-    """
-    formula = formula_getter(atoms) if formula_getter else atoms.get_chemical_formula()
-
-    print(f"Calculating {Structure.from_ase_atoms(atoms).reduced_formula}")
-
-    # Ensure arrays are writable
-    atoms.arrays = {key: val.copy() for key, val in atoms.arrays.items()}
-
-    mat_id = atoms.info[Key.mat_id]
-    init_info = deepcopy(atoms.info)
-    info_dict: dict[str, Any] = {
-        str(Key.mat_id): mat_id,
-        str(Key.formula): formula,
-    }
-    err_dict: dict[str, list[str]] = {"errors": [], "error_traceback": []}
-
-    # Select filter class
-    if ase_filter in {"frechet", "exp"}:
-        filter_cls: type[Filter] = {
-            "frechet": FrechetCellFilter,
-            "exp": ExpCellFilter,
-        }[ase_filter]
-    else:
-        # Default to FrechetCellFilter if not specified (for MACE compatibility)
-        filter_cls = FrechetCellFilter
-
-    # Select optimizer class
-    optimizer_dict: dict[str, type[Optimizer]] = {
-        name: value
-        for module in (ase.optimize, ase.optimize.sciopt)
-        for name, value in vars(module).items()
-        if inspect.isclass(value)
-        and issubclass(value, Optimizer)
-        and value is not Optimizer
-    }
-    optimizer_dict["GOQN"] = optimizer_dict["GoodOldQuasiNewton"]
-    if ase_optimizer not in optimizer_dict:
-        supported = ", ".join(sorted(optimizer_dict))
-        raise ValueError(f"Unknown {ase_optimizer=}. Supported options: {supported}")
-    optim_cls: type[Optimizer] = optimizer_dict[ase_optimizer]
-
-    # Initialize variables that might be needed in error handling
-    relax_dict: dict[str, Any] = {
-        "max_stress": None,
-        "reached_max_steps": False,
-        "broken_symmetry": False,
-    }
-    force_results = None
-
-    # Relaxation
-    try:
-        # initial space group for symmetry-breaking detection (on the unrelaxed atoms);
-        # computed inside the try so MoyoDataset/MoyoAdapter failures are captured into
-        # err_dict like the relaxed-symmetry calculation below, not crashing the task
-        init_spg_num = MoyoDataset(
-            MoyoAdapter.from_atoms(atoms), symprec=symprec
-        ).number
-        atoms.calc = calculator
-        if max_steps > 0:
-            if enforce_relax_symm:
-                atoms.set_constraint(FixSymmetry(atoms))
-                filtered_atoms = filter_cls(atoms, mask=[True] * 3 + [False] * 3)
-            else:
-                filtered_atoms = filter_cls(atoms)
-
-            os.makedirs(relax_dir := f"{out_dir}/relaxations", exist_ok=True)
-            optimizer = optim_cls(filtered_atoms, logfile=f"{relax_dir}/{task_id}.log")  # ty: ignore[invalid-argument-type]
-            optimizer.run(fmax=force_max, steps=max_steps)
-
-            step_count = getattr(optimizer, "nsteps", None)  # Get optimizer step count
-            if step_count is None:  # fallback to extract from state_dict if available
-                state = getattr(optimizer, "state_dict", dict)()
-                step_count = state.get("step", 0)
-
-            reached_max_steps = step_count >= max_steps
-            if reached_max_steps:
-                print(f"Material {mat_id=} reached {max_steps=} during relaxation")
-
-            # max residual stress component in for xx,yy,zz and xy,yz,xz
-            # components separately, result is 2-element array
-            max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
-
-            atoms.calc = None
-            atoms.constraints = None
-            atoms.info = init_info | atoms.info
-
-            # Check if symmetry was broken during relaxation
-            moyo_cell = MoyoAdapter.from_atoms(atoms)
-            relaxed_spg_num = MoyoDataset(moyo_cell, symprec=symprec).number
-            broken_symmetry = init_spg_num != relaxed_spg_num
-
-            relax_dict = {
-                "max_stress": max_stress,
-                "reached_max_steps": reached_max_steps,
-                "broken_symmetry": broken_symmetry,
-                "relaxed_space_group_number": relaxed_spg_num,
-            }
-
-    except (ValueError, RuntimeError, OSError, KeyError) as exc:
-        warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
-        traceback.print_exc()
-        err_dict["errors"] += [f"RelaxError: {exc!r}"]
-        err_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict | err_dict, None
-
-    # Calculation of force sets
-    try:
-        ph3 = init_phono3py(
-            atoms,
-            fc2_supercell=atoms.info["fc2_supercell"],
-            fc3_supercell=atoms.info["fc3_supercell"],
-            q_point_mesh=atoms.info["q_point_mesh"],
-            displacement_distance=displacement_distance,
-            symprec=symprec,
-        )
-
-        ph3, fc2_set, freqs = get_fc2_and_freqs(
-            ph3, calculator=calculator, pbar_kwargs={"disable": True}
-        )
-
-        # Lazy import to avoid circular dependency
-        from matbench_discovery.phonons import check_imaginary_freqs
-
-        has_imaginary_freqs = check_imaginary_freqs(freqs)
-        freqs_dict = {Key.has_imag_ph_modes: has_imaginary_freqs, Key.ph_freqs: freqs}
-
-        # Determine if conductivity calculation should proceed
-        if ignore_imaginary_freqs:
-            # NequIP/Allegro mode: ignore imaginary frequencies
-            ltc_condition = True
-        else:
-            # MACE mode: check both imaginary freqs and broken symmetry
-            broken_symmetry = relax_dict.get("broken_symmetry", False)
-            ltc_condition = not has_imaginary_freqs and (
-                not broken_symmetry or conductivity_broken_symm
-            )
-
-        if ltc_condition:
-            fc3_set = calculate_fc3_set(
-                ph3, calculator=calculator, pbar_kwargs={"position": task_id}
-            )
-            ph3.produce_fc3(symmetrize_fc3r=True)
-        else:
-            reason = []
-            if has_imaginary_freqs:
-                reason.append("imaginary frequencies")
-            if relax_dict.get("broken_symmetry") and not conductivity_broken_symm:
-                reason.append("broken symmetry")
-            warnings.warn(
-                f"{' and '.join(reason).capitalize()} detected for {mat_id}, "
-                f"skipping FC3 and LTC calculation!",
-                stacklevel=2,
-            )
-            fc3_set = []
-
-        force_results = (
-            {"fc2_set": fc2_set, "fc3_set": fc3_set} if save_forces else None
-        )
-
-        if not ltc_condition:
-            return mat_id, info_dict | relax_dict | freqs_dict | err_dict, force_results
-
-    except (ValueError, RuntimeError, OSError, KeyError) as exc:
-        warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
-        traceback.print_exc()
-        err_dict["errors"] += [f"ForceConstantError: {exc!r}"]
-        err_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict | err_dict, force_results
-
-    # Calculation of conductivity
-    try:
-        ph3, kappa_dict, _cond = calculate_conductivity(ph3, temperatures=temperatures)
-        return (
-            mat_id,
-            info_dict | relax_dict | freqs_dict | kappa_dict | err_dict,
-            force_results,
-        )
-
-    except (ValueError, RuntimeError, OSError, KeyError) as exc:
-        warnings.warn(
-            f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
-        )
-        traceback.print_exc()
-        err_dict["errors"] += [f"ConductivityError: {exc!r}"]
-        err_dict["error_traceback"] += [traceback.format_exc()]
-        return mat_id, info_dict | relax_dict | freqs_dict | err_dict, force_results

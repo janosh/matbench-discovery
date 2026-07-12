@@ -324,7 +324,7 @@ def test_df_discovery_metrics() -> None:
 def test_discovery_eval_skips_incomplete_cli_model() -> None:
     """Test discovery eval skips incomplete CLI models before writing metrics."""
     result = subprocess.run(
-        [sys.executable, "scripts/evals/discovery.py", "--models", "alphanet-mptrj"],
+        [sys.executable, "scripts/evals/discovery.py", "--models", "alphanet-v1-mptrj"],
         cwd=ROOT,
         env=os.environ | {"CI": "1"},
         text=True,
