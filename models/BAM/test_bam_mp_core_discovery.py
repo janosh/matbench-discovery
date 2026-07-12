@@ -340,6 +340,10 @@ def main() -> None:
     log_header_needed = not relax_log_path.exists()
     n_success = len(relax_results)
     n_failed = 0
+    n_attempted = 0
+    consecutive_failures = 0
+    max_consecutive_failures = 10
+    max_initial_failures = 25
     relax_times: list[float] = []
     total_start = time.time()
 
@@ -355,6 +359,7 @@ def main() -> None:
             if mat_id in relax_results:
                 continue
             atoms = deepcopy(atoms_orig)
+            n_attempted += 1
             try:
                 t0 = time.time()
                 atoms.calc = race_calc
@@ -369,9 +374,7 @@ def main() -> None:
                     traj_writer.close()
 
                 n_steps = dyn.get_number_of_steps()
-                final_fmax = float(
-                    dyn.optimizable.gradient_norm(dyn.optimizable.get_gradient())
-                )
+                final_fmax = float(np.linalg.norm(atoms.get_forces(), axis=1).max())
                 dt = time.time() - t0
                 relax_log_f.write(
                     f"{mat_id}\t{len(atoms)}\t{n_steps}\t{final_fmax:.4f}\t"
@@ -384,6 +387,7 @@ def main() -> None:
                 }
                 relax_times.append(dt)
                 n_success += 1
+                consecutive_failures = 0
 
                 if n_success % 100 == 0:
                     avg_t = sum(relax_times[-500:]) / min(len(relax_times), 500)
@@ -396,14 +400,25 @@ def main() -> None:
                 if n_success % SAVE_EVERY == 0:
                     save_checkpoint(relax_results, ckpt_save_path)
                     print(f"  Checkpoint saved: {n_success} structures")
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 n_failed += 1
+                consecutive_failures += 1
                 if n_failed <= 3:
                     import traceback
 
                     traceback.print_exc()
                 else:
                     print(f"Failed {mat_id}: {exc!r}")
+                if consecutive_failures >= max_consecutive_failures:
+                    raise RuntimeError(
+                        "Aborting BAM-MP-core relaxation after "
+                        f"{consecutive_failures} consecutive failures."
+                    ) from exc
+                if n_success == 0 and n_failed >= max_initial_failures:
+                    raise RuntimeError(
+                        "Aborting BAM-MP-core relaxation after "
+                        f"{n_failed}/{n_attempted} initial failures and no successes."
+                    ) from exc
     finally:
         relax_log_f.close()
 
@@ -411,6 +426,10 @@ def main() -> None:
     # Finalize split and registered artifacts
     # -------------------------------------------------------------------------
     total_time = time.time() - total_start
+    if not relax_results:
+        raise RuntimeError(
+            "No successful BAM-MP-core relaxations; refusing to write artifacts."
+        )
     save_checkpoint(relax_results, out_path)
     if ckpt_save_path.exists():
         ckpt_save_path.unlink()
