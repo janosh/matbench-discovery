@@ -393,10 +393,11 @@ def merge_audit_metadata(
         )
         for key in COST_PROVENANCE_KEYS
     }
+    versions_complete_and_equal = len(versions) == len(segments) and all(
+        value == versions[0] for value in versions[1:]
+    )
     if strict:
-        if len(versions) != len(segments) or any(
-            value != versions[0] for value in versions[1:]
-        ):
+        if not versions_complete_and_equal:
             raise ValueError("Run segments contain mixed or missing package versions")
         if cost_counts["hardware"] != len(segments) or len(hardware_labels) != 1:
             raise ValueError(
@@ -416,7 +417,7 @@ def merge_audit_metadata(
     for cost_key, count in cost_counts.items():
         if count != len(segments):
             merged.pop(cost_key, None)
-    if versions:
+    if versions and versions_complete_and_equal:
         merged["versions"] = versions[0]
     if completed_at := [
         str(segment["completed_at"])

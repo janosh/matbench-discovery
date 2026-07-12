@@ -21,7 +21,7 @@ import subprocess
 import zipfile
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from typing import TYPE_CHECKING
 
 from filelock import FileLock
@@ -140,7 +140,7 @@ def _stage_checkpoint(
     source = source_path or download_checkpoint(model_key, ext=ext)
     source_hash, source_state = _stable_file_sha256(source)
     cached_dest = _cached_file_sha256(dest)
-    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
     with FileLock(f"{dest}.lock"):
         if _file_state(source) != source_state:
             raise RuntimeError(f"Source changed while staging {dest}")
@@ -176,11 +176,16 @@ def _run_to_atomic_output(
     source_identities = tuple(
         (path, *_stable_file_sha256(path)) for path in source_paths
     )
-    tool_versions = tuple((package, version(package)) for package in tool_packages)
+    tool_versions = []
+    for package in tool_packages:
+        try:
+            tool_versions.append((package, version(package)))
+        except PackageNotFoundError:
+            tool_versions.append((package, "unknown"))
     recipe = (
         tuple(command),
         tuple(digest for _path, digest, _state in source_identities),
-        tool_versions,
+        tuple(tool_versions),
     )
     recipe_hash = hashlib.sha256(repr(recipe).encode()).hexdigest()
     cached_dest = _cached_file_sha256(dest)
@@ -340,12 +345,15 @@ def _mattersim(checkpoint: str) -> Callable[[str], "Calculator"]:
 
 def _sevennet(model_name: str, modal: str | None = None) -> Callable[..., "Calculator"]:
     def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+        """Construct SevenNet while serializing package-managed downloads."""
         from sevenn.calculator import SevenNetCalculator
 
         kwargs = {"modal": modal} if modal else {}
-        return SevenNetCalculator(
-            model=checkpoint or model_name, device=device, **kwargs
-        )
+        os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+        with FileLock(f"{CHECKPOINT_DIR}/sevennet-{model_name}.lock"):
+            return SevenNetCalculator(
+                model=checkpoint or model_name, device=device, **kwargs
+            )
 
     return make_calc
 
@@ -546,7 +554,7 @@ def _nequip(model_key: str) -> Callable[[str], "Calculator"]:
         # Cache + lock so it builds once.
         url = Model.from_ref(model_key).metadata["checkpoint_url"]
         registry = f"nequip.net:{url.split('nequip.net/models/')[-1]}"
-        compiled = f"{CHECKPOINT_DIR}/{model_key}.nequip.pth"
+        compiled = f"{CHECKPOINT_DIR}/{model_key}-{device}.nequip.pth"
         os.makedirs(CHECKPOINT_DIR, exist_ok=True)
         _run_to_atomic_output(
             [
@@ -665,7 +673,7 @@ def _pet(model_key: str) -> Callable[..., "Calculator"]:
             ["mtt", "export", ckpt, "-o", "{output}"],
             pt_file,
             source_paths=(ckpt,),
-            tool_packages=("metatrain",),
+            tool_packages=("metatrain", "upet"),
         )
         model = load_atomistic_model(pt_file)
         model.capabilities().dtype = dtype

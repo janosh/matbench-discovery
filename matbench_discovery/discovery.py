@@ -391,7 +391,7 @@ def read_discovery_shard(shard_path: str) -> LoadedShard:
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
-            if line_index != len(lines) - 1:
+            if line_index != len(lines) - 1 or line.endswith("\n"):
                 raise ValueError(
                     f"Malformed JSON event at line {line_index + 1} in {shard_path}"
                 ) from None
@@ -465,7 +465,8 @@ def _discard_interrupted_header(shard_path: str) -> None:
     try:
         json.loads(content_lines[0])
     except json.JSONDecodeError:
-        os.remove(shard_path)
+        if not content_lines[0].endswith("\n"):
+            os.remove(shard_path)
 
 
 def run_discovery_shard(

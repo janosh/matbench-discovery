@@ -287,29 +287,27 @@ def test_atomic_command_output_recovers_after_timeout(
     )
     assert n_calls == 4
 
-    tool_versions = {"compiler": "1.0"}
+    tool_versions: dict[str, str | None] = {"compiler": "1.0"}
 
     def version_stub(package: str) -> str:
         """Return the mutable fake compiler version."""
-        return tool_versions[package]
+        package_version = tool_versions[package]
+        if package_version is None:
+            raise calculators.PackageNotFoundError(package)
+        return package_version
 
     monkeypatch.setattr(calculators, "version", version_stub)
-    for expected_calls in (5, 5):
+    seen_tool_versions: set[str | None] = set()
+    for package_version in ("1.0", "1.0", "2.0", None, None):
+        tool_versions["compiler"] = package_version
+        seen_tool_versions.add(package_version)
         calculators._run_to_atomic_output(  # noqa: SLF001
             command,
             str(destination),
             source_paths=(str(source),),
             tool_packages=("compiler",),
         )
-        assert n_calls == expected_calls
-    tool_versions["compiler"] = "2.0"
-    calculators._run_to_atomic_output(  # noqa: SLF001
-        command,
-        str(destination),
-        source_paths=(str(source),),
-        tool_packages=("compiler",),
-    )
-    assert n_calls == 6
+        assert n_calls == 4 + len(seen_tool_versions)
 
 
 def test_download_checkpoint_replaces_zero_byte_cache(

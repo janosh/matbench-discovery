@@ -649,6 +649,10 @@ def test_shard_resume_handles_incomplete_events_and_header_change(
             str(shard_path),
             settings=RelaxationSettings(max_steps=1, cell_filter=None),
         )
+    with shard_path.open(mode="a", encoding="utf-8") as file:
+        file.write("{malformed}\n")
+    with pytest.raises(ValueError, match="Malformed JSON event"):
+        read_discovery_shard(str(shard_path))
 
 
 def test_shard_survives_unserializable_calculator_info(tmp_path: Path) -> None:

@@ -379,6 +379,10 @@ def test_merge_audit_metadata_drops_partial_cost_fields() -> None:
         ]
     )
     assert merged == {"hardware": "H200", "run_time_sec": 30.0}
+    base_segment = {"versions": {"numpy": "1"}}
+    for other_segment in ({}, {"versions": {"numpy": "2"}}):
+        merged = hpc.merge_audit_metadata([base_segment, other_segment])
+        assert "versions" not in merged
 
 
 def test_merge_audit_metadata_drops_mismatched_hardware() -> None:
