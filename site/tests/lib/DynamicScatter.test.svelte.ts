@@ -1,8 +1,8 @@
-import { HYPERPARAMS, METADATA_COLS } from '$lib/labels'
+import { HYPERPARAMS, METADATA_COLS, scatter_options } from '$lib/labels'
 import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { tick } from 'svelte'
-import { expect, it, vi } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 import { doc_query, mount } from '../index'
 
 const make_models = (min_value: number, max_value: number): ModelData[] =>
@@ -22,6 +22,7 @@ const scatter_props = {
   color_key: METADATA_COLS.n_training_structures.key,
   show_model_labels: false,
 }
+afterEach(() => vi.restoreAllMocks())
 
 it.each([
   {
@@ -103,6 +104,49 @@ it(`re-evaluates manual log choices after an axis change`, async () => {
   expect(x_toggle?.checked).toBe(true)
 })
 
+it.each([
+  { scenario: `default threshold`, select_filter_threshold: undefined, has_filter: true },
+  {
+    scenario: `threshold equal to the option count`,
+    select_filter_threshold: scatter_options.length,
+    has_filter: false,
+  },
+])(
+  `adds a dropdown filter for option lists above the $scenario`,
+  async ({ select_filter_threshold, has_filter }) => {
+    vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
+    vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
+    mount(DynamicScatter, {
+      target: document.body,
+      props: {
+        models: make_models(1, 100),
+        x_key: HYPERPARAMS.model_params.key,
+        select_filter_threshold,
+        ...scatter_props,
+      },
+    })
+    await tick()
+
+    doc_query<HTMLButtonElement>(`.axis-trigger`).click()
+    await vi.waitFor(() =>
+      expect(document.querySelector(`.portal-select-filter input`) !== null).toBe(
+        has_filter,
+      ),
+    )
+    const filter_input = document.querySelector<HTMLInputElement>(
+      `.portal-select-filter input`,
+    )
+
+    if (filter_input) {
+      filter_input.value = `no option has this label`
+      filter_input.dispatchEvent(new InputEvent(`input`, { bubbles: true }))
+      expect(
+        document.querySelectorAll(`.portal-select-dropdown [role="option"]`),
+      ).toHaveLength(0)
+    }
+  },
+)
+
 it(`opens the model legend from the controls row`, async () => {
   vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
@@ -119,5 +163,4 @@ it(`opens the model legend from the controls row`, async () => {
   await tick()
   expect(document.querySelector(`.scatter > .legend:has(.legend-item)`)).not.toBeNull()
   expect(document.querySelector(`button.models-toggle`)).toBeNull()
-  vi.restoreAllMocks()
 })

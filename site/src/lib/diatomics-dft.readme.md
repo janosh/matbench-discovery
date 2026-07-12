@@ -99,7 +99,7 @@ Ho: Ho_h
 Er: Er_h
 Tm: Tm_h
 Yb: Yb_h
-Lu: Lu_3
+Lu: Lu
 Hf: Hf_pv
 Ta: Ta_pv
 W: W_sv
@@ -123,7 +123,7 @@ Pa: Pa
 U: U
 ```
 
-Lanthanide `_3` PAW datasets use a valence configuration intended for trivalent environments and freeze the f-electrons in the core. They do not strictly fix an oxidation state, but that frozen-core approximation likely transfers poorly to a neutral dimer. We therefore use datasets with f-electrons in the valence: `_h` variants for Pr-Sm and Tb-Yb, and the standard `Eu` and `Gd` datasets. Their larger valence spaces cost more, and the heavy-lanthanide SCF branches proved difficult to converge with the present protocol (see caveats below). The current Lu curve still uses `Lu_3` (`ZVAL=9`). Although its frozen 4f¹⁴ shell has the same nominal occupancy as neutral Lu, that alone does not establish transferability to Lu₂ (analysis for `Lu` PSP with `ZVAL=25` which treats 4f¹⁴ explicitly ongoing). For Rh, `Rh_pv` includes the 4p semicore states in the valence.
+Lanthanide `_3` PAW datasets use a valence configuration intended for trivalent environments and freeze the f-electrons in the core. They do not strictly fix an oxidation state, but that frozen-core approximation seemed dangerous as it might transfer poorly to a neutral dimer (tl;dr empirically seems fine, saw little between e.g. `Lu_3` and `Lu`). To be safe, we nonetheless opted for datasets with f-electrons in the valence: `_h` variants for Pr-Sm and Tb-Yb, and the standard `Eu`, `Gd`, and `Lu` datasets. The standard `Lu` potential (`ZVAL=25`) treats its 4f¹⁴ shell explicitly and replaces the earlier `Lu_3` (`ZVAL=9`) curves (though assaid,the difference was minor). These larger valences cost more, and the heavy-lanthanide SCF branches proved difficult to converge with the present protocol (see caveats below). For Rh, `Rh_pv` includes the 4p semicore states in the valence.
 
 Important per-point settings:
 
@@ -178,7 +178,7 @@ For each element and functional, it:
 
 The artifact contains 92 PBE and 92 r2SCAN homonuclear entries. Every raw spin-candidate curve now meets the 45-point completeness threshold. Merged curves can be shorter because postprocessing drops invalid points.
 
-The quality checks are diagnostic and do not alter endpoints. `count_dissociation_tail_jumps` inspects adjacent energy steps among up to the final three merged points, flags steps of at least 0.1 eV, and ignores the short-range repulsive wall. `reference-quality.json` records the number of flagged steps as `tail_jumps`; the `tail_jump_pairs` summary counts each affected element-functional pair once. The current artifact flags 7 PBE and 12 r2SCAN pairs. The largest known endpoint discontinuities associated with changes in the selected candidate or projected moments include `O/r2SCAN` and `Rh/r2SCAN` near 6 Å. `Ho/r2SCAN`, `Er/r2SCAN`, and several other heavy lanthanide and actinide curves still show large discontinuities or strong branch sensitivity. The present spin ladder and warm-start retries did not resolve those cases; this does not show that alternative initializations, PAW datasets, relativistic treatments, or electronic-structure methods could not.
+The quality checks are diagnostic and do not alter endpoints. `count_dissociation_tail_jumps` inspects adjacent energy steps among up to the final three merged points, flags steps of at least 0.1 eV, and ignores the short-range repulsive wall. `reference-quality.json` records the number of flagged steps as `tail_jumps`; the `tail_jump_pairs` summary counts each affected element-functional pair once. The current artifact flags 7 PBE and 10 r2SCAN pairs. The latest `Rh/r2SCAN` `NUPDOWN=6` retry removed its previous endpoint discontinuity, while `O/r2SCAN` still changes branch near 6 Å. `Ho/r2SCAN`, `Er/r2SCAN`, and several other heavy lanthanide and actinide curves still show large discontinuities or strong branch sensitivity. The present spin ladder and warm-start retries did not resolve those cases; this does not show that alternative initializations, PAW datasets, relativistic treatments, or electronic-structure methods could not.
 
 ## Postprocessing
 

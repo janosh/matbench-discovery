@@ -72,18 +72,18 @@ metrics:
   diatomics:
     pred_file: models/grace/grace-3l-oam-l/2026-07-02-diatomics.json.gz
     pred_file_url: https://figshare.com/files/66505406
-    pbe_wall_dist_mae: 0.1667
-    pbe_energy_mae: 1.111
-    pbe_bond_length_error: 0.4294
-    pbe_well_depth_error: 0.8973
-    pbe_vib_freq_error: 62.41
+    pbe_wall_dist_mae: 0.1618
+    pbe_energy_mae: 1.097
+    pbe_bond_length_error: 0.4187
+    pbe_well_depth_error: 0.8665
+    pbe_vib_freq_error: 66.54
     tortuosity: 1.046
     energy_diff_flips: 3.184
     energy_jump: 0.4181
     force_flips: 3.345
     force_total_variation: 173.4
     force_jump: 7.232
-    pbe_force_mae: 0.9748
+    pbe_force_mae: 0.9585
   phonons:
     kappa_103:
       κ_SRME: 0.1211

@@ -62,6 +62,8 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
 2. Reproducible inference code. If your model exposes an ASE calculator, register its constructor and isolated `uv` dependencies in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py). The shared [`models/run_discovery.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_discovery.py) runner handles WBM relaxation, atom-balanced Slurm shards, resume, MP2020 corrections, artifacts, and discovery metrics. It is the sole discovery entry point; do not add per-model discovery or join scripts.
 
+   Calculator integration belongs in the same model PR. Normal secretless PR CI validates that code, while automated ingestion evaluates the submitted artifacts using trusted base-branch code and never executes PR code with credentials.
+
    Discuss models without an ASE calculator before submission so their inference can be integrated without creating another task-specific executable. If the model was trained specifically for this benchmark, include `train_<model_name>.py`.
 
    ### Script Dependencies Declaration (Required)
@@ -96,8 +98,8 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 3. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
 
    ```yml
-   model_name: My new model # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
-   model_key: my-new-model # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
+   model_name: My new model # human-readable label
+   model_key: my-new-model # URL slug; its lower snake-case form is the Python Model enum name
    model_version: 1.0.0
    date_added: '2023-01-01'
    date_published: '2022-12-05'
@@ -249,7 +251,7 @@ For a full contiguous Slurm discovery or kappa array, the runner can infer shard
 
 The MD runner's `--write-yaml` records model-level metrics under `metrics.md` and writes the per-system predictions to a gzipped CSV named `<yyyy-mm-dd>-<model_name>-md-metrics.csv.gz`. Public runs compute the observable metrics only; energy/force RMSEs are maintainer-computed private-label diagnostics and are not required in external submissions. Upload generated artifacts to Figshare (or similar) and set their download URLs in the corresponding YAML `pred_file_url` fields — see [Step 3](#step-3-upload-results-files-to-figshare-or-similar) for the upload conventions.
 
-Add the model to the `Model` enum in [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/enums.py) pointing to the correct metadata file.
+The `Model` enum is generated during ingestion from each model YAML's required `model_key`; do not edit [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/enums.py) in submission PRs. Models with `status: aborted` are omitted, while `Model.active()` selects models whose status is `complete` (the default).
 
 > [!WARNING]
 > Do not include a `filter_bad_preds.py` script or equivalent. This was a historical flaw in the evaluation and now all OOM outlier prediction handling is handled internally and consistently removing the need for this filtering stage.
@@ -263,7 +265,7 @@ Upload the files for the predictions, optimized geometries and phonons to [Figsh
 Commit your files to the repo on a branch called `<model_name>` and create a pull request (PR) to the Matbench repository.
 
 ```sh
-git add -a models/<model_name>
+git add models/<arch_name>/<model_variant>.yml
 git commit -m 'add <model_name> to Matbench Discovery leaderboard'
 ```
 
@@ -297,20 +299,20 @@ This command will:
 
 Once your submission PR looks ready, a maintainer applies the `ingest-model` label. CI ([`update-site-figs.yml`](https://github.com/janosh/matbench-discovery/blob/-/.github/workflows/update-site-figs.yml)) then runs the full pipeline — no manual work needed from you:
 
-1. **Safe checkout** — CI checks out trusted `main` code and overlays *only your PR's data*: `models/**` plus your `Model` enum addition, which is accepted only if the diff is provably additive member lines (anything else fails closed and a maintainer ingests locally after review). Submission code is never executed in CI, which is what makes it safe to run this on unreviewed PRs with credentials present.
-2. **Evals + checklist** — your prediction files are downloaded from the `pred_file_url` links in your YAML, all evals run (discovery, kappa, geo-opt, diatomics), metrics are written into your model YAML, and the PR checklist is enforced.
-3. **Figshare archival** — your prediction + analysis files are re-uploaded to the project's own Figshare articles (one per prediction task) for longevity, and your YAML's `*_url` keys are rewritten to the archived copies.
+1. **Safe checkout** — CI checks out trusted `main` code, applies *only canonical `models/<arch>/<model>.yml` additions, updates, renames, and removals*, and generates the `Model` enum with trusted code. Submission code is never executed in CI, which makes it safe to run this workflow on unreviewed PRs with credentials present.
+2. **Evals + checklist** — trusted code validates submission metadata, downloads predictions from the YAML URLs, runs all evals (discovery, kappa, geo-opt, diatomics), and writes metrics without importing PR calculator code.
+3. **Figshare archival** — only after every model passes validation, prediction + analysis files are re-uploaded to the project's own Figshare articles (one per prediction task) for longevity, and your YAML's `*_url` keys are rewritten to the archived copies.
 4. **Per-model site assets** — energy/kappa parity assets (published to the GitHub release the site build downloads from), parity manifests and per-element error data are generated.
 5. **Multi-model figures** — all site figure payloads (`site/src/figs/*.jsonl`) are regenerated so every page (`/tasks/discovery/tmi`, `/tasks/geo-opt`, data pages) includes your model, validated by payload shape tests before committing.
 6. **One commit onto your PR** — the updated YAML, payloads and manifests are pushed to your PR branch (this is why "Allow edits by maintainers" must stay enabled), retriggering CI on the result. Merging the PR lands your model fully integrated.
 
-The secret-bearing ingestion workflow never executes PR code. PRs that change the payload *format* (new keys/metrics or schema tweaks in generator code) must regenerate payloads locally and commit them in the same PR:
+Calculator changes may ship with their model YAML. Changes to payload-generating or other privileged ingestion code still require a reviewed prerequisite PR or local maintainer ingestion. For ordinary non-ingestion PRs that change the payload *format*, regenerate payloads locally and commit them in the same PR:
 
-- Roster drift fails `tests/site/test_fig_payloads.py`'s coverage tests (e.g. `test_discovery_payload_covers_active_models` after adding or superseding a model). Fix by running `uv run --with-editable . scripts/ingest_model.py <model_name> --payloads-only` and committing the changed `site/src/figs/*.jsonl` files — this splices only your model's freshly computed entries into the committed payloads, pulling your prediction files from the `pred_file_url` entries in the model YAML (the same links automated ingestion uses).
+- Roster drift fails `tests/site/test_fig_payloads.py`'s coverage tests. After adding or updating an active model, run `uv run --with-editable . scripts/ingest_model.py <model_name> --payloads-only` to splice its freshly computed entries into the committed payloads. After removing, aborting, deprecating, or superseding a model, omit the model name and run `uv run --with-editable . scripts/ingest_model.py --payloads-only` to rebuild payloads from the full active roster.
 - The `model-pr-guard` check fails any PR that changes payload-generating code without also updating committed payloads (`site/src/figs` data files or the route-local `per-element-each-errors.jsonl`): regenerate locally with `scripts/ingest_model.py --payloads-only` (no model name needed for pure format changes), or add the `payloads-unchanged` label for output-neutral refactors.
 - Model-independent data-page payloads and route-local element counts are owned by `scripts/export_data_fig_payloads.py`. Run it after changing that script or `matbench_discovery/data_figs.py`; it requires the local `data/mp/2022-09-16-mp-trj-summary.json.bz2` cache. If absent, regenerate that cache from the extXYZ source with `python data/mp/eda_mp_trj.py`.
 
-Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `uv run --with-editable . scripts/ingest_model.py <model_name> --archive` locally for submissions whose enum diff fails validation.
+Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `uv run --with-editable . scripts/ingest_model.py <model_name> --archive` locally.
 
 ## 😵‍💫 &thinsp; Troubleshooting
 

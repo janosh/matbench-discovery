@@ -11,7 +11,7 @@ from matbench_discovery.enums import Model, TestSubset
     "args, expected",
     [
         ([], {"models": list(Model.active()), "test_subset": TestSubset.uniq_protos}),
-        (["--models", str(Model.chgnet_030)], {"models": [Model.chgnet_030]}),
+        (["--models", str(Model.chgnet_0_3_0)], {"models": [Model.chgnet_0_3_0]}),
         (
             ["--models", "alphanet-v1-mptrj"],
             {"models": [Model.alphanet_v1_mptrj]},
@@ -19,13 +19,13 @@ from matbench_discovery.enums import Model, TestSubset
         (
             [
                 "--models",
-                str(Model.chgnet_030),
-                str(Model.m3gnet_ms),
+                str(Model.chgnet_0_3_0),
+                str(Model.m3gnet),
                 "--test-subset",
                 "most_stable_10k",
             ],
             {
-                "models": [Model.chgnet_030, Model.m3gnet_ms],
+                "models": [Model.chgnet_0_3_0, Model.m3gnet],
                 "test_subset": TestSubset.most_stable_10k,
             },
         ),
@@ -67,11 +67,11 @@ def test_cli_parser_jupyter_compat() -> None:
         "--f=/path/to/kernel.json",
         "--ip=127.0.0.1",
         "--models",
-        str(Model.chgnet_030),
+        str(Model.chgnet_0_3_0),
     ]
     args, unknown = cli_parser.parse_known_args(jupyter_args)
     # Our args should be parsed correctly
-    assert args.models == [Model.chgnet_030]
+    assert args.models == [Model.chgnet_0_3_0]
     # Jupyter args should be preserved but ignored
     assert set(unknown) == {"--f=/path/to/kernel.json", "--ip=127.0.0.1"}
 
@@ -98,5 +98,5 @@ def test_is_full_model_run(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli.cli_args, "models", list(Model.active()))
     assert cli.is_full_model_run() is True
 
-    monkeypatch.setattr(cli.cli_args, "models", [Model.chgnet_030])
+    monkeypatch.setattr(cli.cli_args, "models", [Model.chgnet_0_3_0])
     assert cli.is_full_model_run() is False

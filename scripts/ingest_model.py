@@ -8,7 +8,7 @@ Usage:
     uv run scripts/ingest_model.py <model>            # check+evals+figs+payloads
     uv run scripts/ingest_model.py <model> --archive  # + figshare/release upload
     uv run scripts/ingest_model.py --payloads-only    # full payload regen
-    uv run scripts/ingest_model.py <model> --payloads-only  # merge single model
+    uv run scripts/ingest_model.py <model> --payloads-only  # merge one model
 """
 
 import argparse
@@ -19,7 +19,8 @@ import subprocess
 from collections import Counter
 from collections.abc import Sequence
 from functools import partialmethod
-from pathlib import Path
+
+import yaml
 
 from matbench_discovery import ROOT
 from matbench_discovery.calculators import CALCULATORS
@@ -134,23 +135,26 @@ def task_metrics(model: Model, task: str) -> dict | str | None:
     return model.metadata.get("metrics", {}).get(task)
 
 
-def check_submission(model: Model, checks: Checklist) -> bool:
-    """Validate PR checklist requirements via the model's parsed YAML metadata.
+def check_submission(
+    model: Model,
+    checks: Checklist,
+    *,
+    validate_runner: bool = True,
+) -> bool:
+    """Validate the checklist and return whether the model predicts energy only.
 
-    Returns True when the model is energy-only (targets=E), which downstream steps
-    use to skip force-based tasks (geo-opt, phonons, diatomics).
+    ``validate_runner=False`` limits trusted CI to submitted metadata and artifacts.
     """
     banner("STEP 1: Checking PR checklist requirements")
-    yaml_path = Path(model.yaml_path)
-    if yaml_path.is_file():
+    yaml_path = model.yaml_path
+    if os.path.isfile(yaml_path):
         checks.ok(f"Model YAML file exists: {yaml_path}")
     else:
         checks.fail(f"Model YAML file not found at: {yaml_path}")
-    checks.ok(f"Model '{model.name}' is registered in the Model enum")
+    checks.ok(f"Model '{model.name}' is present in the generated Model enum")
 
     # E = energy only (no forces -> no relaxation, phonons or diatomics)
     energy_only = model.metadata.get("targets") == "E"
-    calc_spec = CALCULATORS.get(model.name)
 
     discovery = task_metrics(model, "discovery")
     if isinstance(discovery, dict) and discovery.get("pred_file_url"):
@@ -181,6 +185,10 @@ def check_submission(model: Model, checks: Checklist) -> bool:
         else:
             checks.fail(f"{label} not found in {yaml_path}")
 
+    if not validate_runner:
+        return energy_only
+
+    calc_spec = CALCULATORS.get(model.name)
     for task in ("discovery", "kappa", "diatomics"):
         if energy_only and task != "discovery":
             checks.skip(f"{task} test script check skipped (targets=E, no forces)")
@@ -198,12 +206,6 @@ def check_submission(model: Model, checks: Checklist) -> bool:
             )
             continue
 
-        # Kappa has one repository-wide runner; model-local scripts are unsupported.
-        scripts = (
-            []
-            if task == "kappa"
-            else sorted(yaml_path.parent.glob(f"test_*_{task}.py"))
-        )
         if task == "kappa" and isinstance(task_metrics(model, "phonons"), str):
             checks.skip("kappa shared runner check skipped (phonons unavailable)")
             continue
@@ -231,19 +233,13 @@ def check_submission(model: Model, checks: Checklist) -> bool:
                 checks.fail(f"Invalid shared {task} runner configuration: {exc}")
             else:
                 checks.ok(f"{task} uses shared runner: models/run_{task}.py")
-        elif scripts:
-            checks.ok(f"{task} test script found: {scripts[0].name}")
         elif task == "kappa":
             checks.fail(
                 "kappa shared runner unsupported: no registered calculator for "
                 f"{model.name}"
             )
-        elif task == "diatomics":
-            checks.skip(f"{task} test script not found (test_*_{task}.py)")
         else:
-            checks.fail(
-                f"{task} test script not found (test_*_{task}.py) in {yaml_path.parent}"
-            )
+            checks.skip(f"{task} unsupported: no registered calculator")
 
     return energy_only
 
@@ -304,8 +300,13 @@ def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
     suffix = f" for {model.name}" if model else ""
     banner(f"Refreshing multi-model site figure payloads{suffix}")
     model_args = ("--models", model.name) if model else ()
-    for script in PAYLOAD_SCRIPTS:
-        if not run_cmd(*uv_run_args(script), *PAYLOAD_FLAGS, *model_args):
+    scripts: list[tuple[str, tuple[str, ...]]] = [
+        (script, PAYLOAD_FLAGS) for script in PAYLOAD_SCRIPTS
+    ]
+    if model is None:
+        scripts.extend((step[3], ()) for step in FIG_STEPS)
+    for script, script_flags in scripts:
+        if not run_cmd(*uv_run_args(script), *script_flags, *model_args):
             checks.fail(f"{script} failed")
             return
     if run_cmd(*uv_run_args("--with pytest pytest tests/site/test_fig_payloads.py -q")):
@@ -315,33 +316,38 @@ def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
 
 
 def map_yaml_paths(paths: Sequence[str]) -> list[str]:
-    """Map model YAML paths (as in a PR diff) to Model enum member names.
+    """Map model YAML paths (as in a PR diff) to generated enum names.
 
-    Raises SystemExit for paths without an enum entry (used by CI to fail closed on
-    submissions that forgot to register their model).
+    Aborted models are omitted; unknown active paths fail closed.
     """
+    enum_names_by_path = {f"models/{model.rel_path}": model.name for model in Model}
     names: list[str] = []
     for path in paths:
-        model = next((mdl for mdl in Model if mdl.yaml_path.endswith(path)), None)
-        if model is None:
-            raise SystemExit(f"No Model enum entry maps to {path} - add it to enums.py")
-        names.append(model.name)
+        if enum_name := enum_names_by_path.get(path):
+            names.append(enum_name)
+            continue
+        try:
+            with open(f"{ROOT}/{path}", encoding="utf-8") as file:
+                metadata = yaml.safe_load(file)
+        except OSError as exc:
+            raise SystemExit(f"Unknown model YAML: {path}") from exc
+        if not (isinstance(metadata, dict) and metadata.get("status") == "aborted"):
+            raise SystemExit(f"{path} is not in the generated Model enum")
     return list(dict.fromkeys(names))
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("model", nargs="?", help="Model enum name (dashes ok)")
-    bool_flags = {
-        "--overwrite": "Overwrite existing eval outputs",
-        "--archive": "Also archive pred files to figshare + publish parity assets "
-        "(needs FIGSHARE_TOKEN and gh auth)",
-        "--payloads-only": "Only refresh the multi-model site figure payloads "
-        "(merging just <model>'s entries if a model is given)",
-    }
-    for flag, help_msg in bool_flags.items():
-        parser.add_argument(flag, action="store_true", help=help_msg)
     parser.add_argument(
+        "--overwrite", action="store_true", help="Overwrite existing eval outputs"
+    )
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument("--archive", action="store_true")
+    mode_group.add_argument("--archive-only", action="store_true")
+    mode_group.add_argument("--validate-only", action="store_true")
+    mode_group.add_argument("--payloads-only", action="store_true")
+    mode_group.add_argument(
         "--map-yaml-paths",
         nargs="+",
         metavar="PATH",
@@ -356,15 +362,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     checks = Checklist()
     model: Model | None = None
     if args.model:
-        try:  # Model(...) invokes _missing_ to normalize dashes/casing
+        try:  # Model(...) invokes _missing_ to normalize punctuation/casing
             model = Model(args.model)
         except ValueError:
             parser.error(
-                f"{args.model!r} not in Model enum - add it to "
-                "matbench_discovery/enums.py"
+                f"{args.model!r} not in the generated Model enum - check its "
+                "model_key/status and run python scripts/generate_model_enum.py"
             )
     if args.payloads_only:
         run_payload_refresh(checks, model=model)
+    elif args.archive_only:
+        if model is None:
+            parser.error("model is required with --archive-only")
+        if not os.getenv("FIGSHARE_TOKEN"):
+            parser.error("FIGSHARE_TOKEN must be set for --archive-only")
+        run_archive(model, checks)
     else:
         if model is None:
             parser.error("model is required unless --payloads-only")
@@ -372,7 +384,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error("FIGSHARE_TOKEN must be set for --archive")
 
         banner(f"Ingesting model submission: {model.name}")
-        energy_only = check_submission(model, checks)
+        energy_only = check_submission(
+            model,
+            checks,
+            validate_runner=not args.validate_only,
+        )
         overwrite = ("--overwrite",) if args.overwrite else ()
         run_model_steps(
             "STEP 2: Running evaluation scripts", EVAL_STEPS, model, checks,
@@ -382,9 +398,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             "STEP 3: Generating per-model figures", FIG_STEPS, model, checks,
             energy_only=energy_only,
         )  # fmt: skip
-        if args.archive:
+        if args.archive and not checks.n_failed:
             run_archive(model, checks)
-        run_payload_refresh(checks, model=model)
+        elif args.archive:
+            checks.skip("Archival skipped because validation failed")
+        if not args.validate_only and not checks.n_failed:
+            run_payload_refresh(checks, model=model)
 
     banner("SUMMARY")
     print(checks.summary())

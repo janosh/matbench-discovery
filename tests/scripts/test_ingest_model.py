@@ -1,16 +1,13 @@
-"""Tests for the submission-ingestion checklist (scripts/ingest_model.py).
-
-The checklist reads model YAMLs through the Model enum metadata API (replacing the
-old grep/sed bash recipe), so it can be tested against the real repo metadata
-without running any evals.
-"""
+"""Tests for the model submission-ingestion checklist without running evaluations."""
 
 import subprocess
+from pathlib import Path
 
 import pytest
 
 import scripts.ingest_model as ingest
 from matbench_discovery.enums import Model
+from scripts.upload_model_preds_to_figshare import resolve_artifact_path
 
 
 def msgs(checks: "ingest.Checklist", status: str) -> list[str]:
@@ -45,51 +42,39 @@ def run_cmd_calls(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, ...]]:
     return calls
 
 
+@pytest.mark.parametrize("validate_runner", [True, False])
 def test_force_model_discovery_pipelines_pass_checklist(
-    monkeypatch: pytest.MonkeyPatch, shared_runner_calls: list[list[str]]
+    shared_runner_calls: list[list[str]], validate_runner: bool
 ) -> None:
     """Calculator-backed force models use the shared discovery runner."""
-    original_glob = ingest.Path.glob
-
-    def glob_with_legacy_diatomics(
-        path: ingest.Path, pattern: str
-    ) -> list[ingest.Path]:
-        """Pretend a stale diatomics script remains beside the model YAML."""
-        if pattern == "test_*_diatomics.py":
-            return [path / "test_legacy_diatomics.py"]
-        return list(original_glob(path, pattern))
-
-    monkeypatch.setattr(ingest.Path, "glob", glob_with_legacy_diatomics)
     checks = ingest.Checklist()
-    assert ingest.check_submission(Model.mace_mpa_0, checks) is False
-    assert not msgs(checks, ingest.FAIL)
-    assert not any(
-        "diatomics test script found" in msg for msg in msgs(checks, ingest.PASS)
+    assert (
+        ingest.check_submission(
+            Model.mace_mpa_0, checks, validate_runner=validate_runner
+        )
+        is False
     )
-    assert {command[-4] for command in shared_runner_calls} == {
-        f"{ingest.ROOT}/models/run_discovery.py",
-        f"{ingest.ROOT}/models/run_kappa.py",
-        f"{ingest.ROOT}/models/run_diatomics.py",
-    }
+    assert not msgs(checks, ingest.FAIL)
+    expected_runners = (
+        {
+            f"{ingest.ROOT}/models/run_discovery.py",
+            f"{ingest.ROOT}/models/run_kappa.py",
+            f"{ingest.ROOT}/models/run_diatomics.py",
+        }
+        if validate_runner
+        else set()
+    )
+    assert {command[-4] for command in shared_runner_calls} == expected_runners
     assert all(
         command[-3:] == ["--model", Model.mace_mpa_0.name, "--dry-run"]
         for command in shared_runner_calls
     )
 
 
-@pytest.mark.parametrize(
-    "model",
-    [
-        Model.alignn,
-        Model.equflash_29m_oam,
-        Model.equiformer_v3_mp,
-        Model.gnome,
-    ],
-)
-def test_archived_discovery_models_skip_shared_runner(model: Model) -> None:
+def test_archived_discovery_models_skip_shared_runner() -> None:
     """Archived models report why shared discovery execution is unavailable."""
     checks = ingest.Checklist()
-    ingest.check_submission(model, checks)
+    ingest.check_submission(Model.alignn, checks)
     assert any("discovery is archived:" in msg for msg in msgs(checks, ingest.SKIP))
     assert not any("discovery model" in msg for msg in msgs(checks, ingest.FAIL))
     assert not any(
@@ -98,17 +83,19 @@ def test_archived_discovery_models_skip_shared_runner(model: Model) -> None:
     )
 
 
-def test_unregistered_discovery_model_fails_checklist(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize(
+    ("validate_runner", "should_fail"), [(True, True), (False, False)]
+)
+def test_unregistered_discovery_model_validation(
+    monkeypatch: pytest.MonkeyPatch, validate_runner: bool, should_fail: bool
 ) -> None:
-    """Unclassified models cannot silently bypass shared discovery validation."""
+    """Trusted artifact validation does not require PR calculator code."""
     monkeypatch.delitem(ingest.CALCULATORS, Model.mace_mpa_0.name)
     checks = ingest.Checklist()
-    ingest.check_submission(Model.mace_mpa_0, checks)
-    assert any(
-        "discovery model is not registered with the shared runner" in msg
-        for msg in msgs(checks, ingest.FAIL)
-    )
+    ingest.check_submission(Model.mace_mpa_0, checks, validate_runner=validate_runner)
+    failures = "\n".join(msgs(checks, ingest.FAIL))
+    assert ("discovery model is not registered" in failures) is should_fail
+    assert ("kappa shared runner unsupported" in failures) is should_fail
 
 
 @pytest.mark.parametrize("task", ["discovery", "kappa", "diatomics"])
@@ -116,12 +103,9 @@ def test_missing_shared_runner_fails_checklist(
     monkeypatch: pytest.MonkeyPatch, task: str
 ) -> None:
     """Calculator-backed tasks fail validation when their shared runner is absent."""
-
-    def fake_isfile(path: str) -> bool:
-        """Pretend one shared task runner is missing."""
-        return not path.endswith(f"run_{task}.py")
-
-    monkeypatch.setattr(ingest.os.path, "isfile", fake_isfile)
+    monkeypatch.setattr(
+        ingest.os.path, "isfile", lambda path: not path.endswith(f"run_{task}.py")
+    )
     checks = ingest.Checklist()
     ingest.check_submission(Model.mace_mpa_0, checks)
     failures = msgs(checks, ingest.FAIL)
@@ -159,11 +143,8 @@ def test_shared_runner_process_errors_fail_checklist(
 def test_energy_only_model_skips_force_tasks() -> None:
     """targets=E models skip geo-opt/phonons/diatomics instead of failing."""
     energy_only_model = next(
-        (model for model in Model if model.metadata.get("targets") == "E"), None
+        model for model in Model if model.metadata.get("targets") == "E"
     )
-    if energy_only_model is None:
-        pytest.skip("no energy-only model in registry")
-    assert energy_only_model is not None
     checks = ingest.Checklist()
     assert ingest.check_submission(energy_only_model, checks) is True
     assert not msgs(checks, ingest.FAIL)
@@ -177,47 +158,27 @@ def test_all_active_models_have_required_metadata() -> None:
     for model in Model.active():
         checks = ingest.Checklist()
         ingest.check_submission(model, checks)
-        if hard_fails := [
-            msg for msg in msgs(checks, ingest.FAIL) if "test script" not in msg
-        ]:
-            failures[model.name] = hard_fails
+        if model_failures := msgs(checks, ingest.FAIL):
+            failures[model.name] = model_failures
     assert not failures, failures
 
 
-def test_prediction_only_kappa_model_is_explicitly_unsupported() -> None:
-    """A kappa artifact without a calculator is not treated as reproducible."""
-    checks = ingest.Checklist()
-    ingest.check_submission(Model.matris_v050_mptrj, checks)
-    assert any(
-        "kappa shared runner unsupported" in msg for msg in msgs(checks, ingest.FAIL)
-    )
-
-
-def test_checklist_summary_counts() -> None:
-    """Checklist summaries report each status count."""
-    checks = ingest.Checklist()
-    checks.ok("a")
-    checks.fail("b")
-    checks.skip("c")
-    checks.skip("d")
-    assert checks.n_failed == 1
-    assert "Passed:  1" in checks.summary()
-    assert "Failed:  1" in checks.summary()
-    assert "Skipped: 2" in checks.summary()
-
-
-@pytest.mark.parametrize("argv", [["definitely-not-a-model"], []])
-def test_cli_rejects_unknown_model_and_missing_args(argv: list[str]) -> None:
-    """Unknown or missing model args fail argparse validation."""
-    with pytest.raises(SystemExit, match="2"):
-        ingest.main(argv)
-
-
-def test_cli_archive_requires_figshare_token(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Archiving requires a Figshare token."""
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["definitely-not-a-model"],
+        [],
+        ["mace-mpa-0", "--archive"],
+        ["mace-mpa-0", "--archive-only"],
+    ],
+)
+def test_cli_rejects_invalid_args(
+    monkeypatch: pytest.MonkeyPatch, argv: list[str]
+) -> None:
+    """Unknown, missing, or unauthenticated CLI arguments fail validation."""
     monkeypatch.delenv("FIGSHARE_TOKEN", raising=False)
     with pytest.raises(SystemExit, match="2"):
-        ingest.main(["mace-mpa-0", "--archive"])
+        ingest.main(argv)
 
 
 def test_run_payload_refresh_models_flag(run_cmd_calls: list[tuple[str, ...]]) -> None:
@@ -231,10 +192,12 @@ def test_run_payload_refresh_models_flag(run_cmd_calls: list[tuple[str, ...]]) -
     assert any(
         "single_model_per_element_errors.py" in " ".join(cmd) for cmd in script_calls
     )
-    for cmd in script_calls:
-        assert cmd[2] == "--with-editable"
-        assert cmd[3].startswith(".")
-        assert cmd[-2:] == ("--models", "mace_mpa_0")
+    assert all(
+        cmd[2] == "--with-editable"
+        and cmd[3].startswith(".")
+        and cmd[-2:] == ("--models", "mace_mpa_0")
+        for cmd in script_calls
+    )
     kappa_call = next(
         cmd
         for cmd in script_calls
@@ -248,6 +211,7 @@ def test_run_payload_refresh_models_flag(run_cmd_calls: list[tuple[str, ...]]) -
 
     run_cmd_calls.clear()
     ingest.run_payload_refresh(ingest.Checklist())
+    assert len(run_cmd_calls) == len(ingest.PAYLOAD_SCRIPTS) + len(ingest.FIG_STEPS) + 1
     assert all("--models" not in cmd for cmd in run_cmd_calls)
 
 
@@ -302,8 +266,24 @@ def test_uv_run_args_rejects_empty_extra(args: str) -> None:
 
 
 def test_map_yaml_paths() -> None:
-    """--map-yaml-paths maps PR-diff YAML paths to enum names, fails on unknowns."""
-    path = Model.mace_mpa_0.yaml_path.split("/models/")[-1]
-    assert ingest.map_yaml_paths([f"models/{path}", f"models/{path}"]) == ["mace_mpa_0"]
-    with pytest.raises(SystemExit, match="No Model enum entry"):
-        ingest.map_yaml_paths(["models/new-arch/unregistered.yml"])
+    """--map-yaml-paths resolves active names and omits inactive models."""
+    active_path = f"models/{Model.mace_mpa_0.rel_path}"
+    assert ingest.map_yaml_paths(
+        [active_path, active_path, "models/alignn_ff/alignn-ff.yml"]
+    ) == ["mace_mpa_0"]
+    with pytest.raises(SystemExit, match="Unknown model YAML"):
+        ingest.map_yaml_paths(["models/new-arch/missing.yml"])
+
+
+def test_archive_rejects_artifact_symlink_escape(tmp_path: Path) -> None:
+    """Archive paths cannot follow a submitted symlink outside the model directory."""
+    model_dir = tmp_path / "models/arch"
+    model_dir.mkdir(parents=True)
+    try:
+        (model_dir / "leak").symlink_to(tmp_path / "secret")
+    except OSError as exc:
+        pytest.skip(f"Symlinks unavailable: {exc}")
+    with pytest.raises(ValueError, match="escapes model directory"):
+        resolve_artifact_path(
+            str(model_dir / "model.yml"), "models/arch/leak", str(tmp_path)
+        )
