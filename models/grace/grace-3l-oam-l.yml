@@ -56,10 +56,13 @@ hyperparams:
   kappa:
     protocol: phonondb-v1
     displacement_distance: 0.03
+  md: {calc_mode: uniform}
 metrics:
   md:
     pred_file: models/grace/grace-3l-oam-l/2026-07-03-grace-3l-oam-l-md-metrics.csv.gz
     pred_file_url: https://figshare.com/files/66505409
+    hardware: NVIDIA H200 NVL
+    run_time_sec: 27172.99
     energy_rmse: 0.535 # meV/atom
     force_rmse: 54.2289 # meV/Å
     rdf_error: 3.45 # %
@@ -72,6 +75,8 @@ metrics:
   diatomics:
     pred_file: models/grace/grace-3l-oam-l/2026-07-02-diatomics.json.gz
     pred_file_url: https://figshare.com/files/66505406
+    hardware: NVIDIA H200 NVL
+    run_time_sec: 88.88
     pbe_wall_dist_mae: 0.1618
     pbe_energy_mae: 1.097
     pbe_bond_length_error: 0.4187
