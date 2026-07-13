@@ -5,6 +5,9 @@
 # dependencies = [
 #   "aviary-models==1.2.1",
 #   "matbench-discovery",
+#   "numpy>=2,<3",
+#   "torch",
+#   "tqdm>=4.67.3",
 #   "wandb>=0.27",
 # ]
 #
@@ -23,7 +26,6 @@ import wandb
 from aviary import ROOT as AVIARY_ROOT
 from aviary.cgcnn.data import CrystalGraphData, collate_batch
 from aviary.cgcnn.model import CrystalGraphConvNet
-from aviary.core import TaskType
 from aviary.utils import train_ensemble
 from pymatgen.core import Structure
 from pymatviz.enums import Key
@@ -61,10 +63,9 @@ input_col = Key.structure
 # 0 for no perturbation, n>1 means train on n perturbations of each crystal
 # in the training set all assigned the same original target energy
 n_perturb = 0
-model_name = f"cgcnn-robust-{n_perturb=}"
+model_name = f"cgcnn-robust-{n_perturb}"
 job_name = f"{today}-train-{model_name}"
 print(f"{job_name=}")
-robust = "robust" in job_name.lower()
 ensemble_size = 10
 module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
@@ -80,12 +81,9 @@ slurm_vars = slurm_submit(
 
 
 # %%
-optimizer = "AdamW"
 learning_rate = 3e-4
-weight_decay = 0.01
 batch_size = 128
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
-task_type: TaskType = "regression"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -120,7 +118,7 @@ del df_aug
 df_shuffled = df_in.sample(frac=1, random_state=0)
 train_df = df_shuffled.sample(frac=0.95, random_state=0)
 test_df = df_shuffled.drop(train_df.index)
-task_dict = {target_col: task_type}
+task_dict = {target_col: "regression"}
 
 print(f"{train_df.shape=}")
 train_data = CrystalGraphData(train_df, task_dict=task_dict)
@@ -137,12 +135,12 @@ test_loader = DataLoader(
 model_params = dict(
     n_targets=train_data.n_targets,
     task_dict=task_dict,
-    robust=robust,
+    robust=True,
 )
 setup_params = dict(
-    optim=optimizer,
+    optim="AdamW",
     learning_rate=learning_rate,
-    weight_decay=weight_decay,
+    weight_decay=0.01,
     momentum=0.9,
     device=device,
 )
@@ -161,7 +159,7 @@ run_params = dict(
     slurm_vars=slurm_vars,
     n_perturb=n_perturb,
     input_col=input_col,
-    task_type=task_type,
+    task_type="regression",
     loss_dict=loss_dict,
     model_params=model_params,
     setup_params={**setup_params, "device": str(device)},

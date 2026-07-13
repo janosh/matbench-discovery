@@ -5,6 +5,7 @@
 # dependencies = [
 #   "aviary-models==1.2.1",
 #   "matbench-discovery",
+#   "torch",
 #   "wandb>=0.27",
 # ]
 #
