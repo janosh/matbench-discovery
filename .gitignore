@@ -31,6 +31,7 @@ models/**/*.pt
 models/**/*.tgz
 models/**/*.csv*
 models/**/*.json*
+!models/alignn/alignn-config.json
 
 # WIP model submissions
 models/_*

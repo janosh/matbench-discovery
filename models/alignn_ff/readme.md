@@ -1,4 +1,10 @@
-# ALIGNN-FF (submission aborted)
+# ALIGNN-FF
+
+Aborted ALIGNN-FF force-field submission (historical record).
+
+Metadata in `models/alignn_ff/*.yml`; task scripts and coverage live in each YAML `tasks` block.
+
+## Family notes
 
 The [ALIGNN FF model submission](https://github.com/janosh/matbench-discovery/pull/47) intended to get a complete set of formation energy predictions for the WBM test set post-ALIGNN-FF structure relaxation (i.e. the WBM IS2RE task).
 
@@ -14,7 +20,8 @@ The decision to abort testing ALIGNN FF was made after weeks of work due to ongo
 
 We attempted fine-tuning the [`alignnff_wt10` checkpoint](https://github.com/usnistgov/alignn/blob/461b35fe/alignn/ff/alignnff_wt10/best_model.pt).
 
-The patch `alignn-ff-2023.07.05.patch` fixes the following issue:
+The patch [`alignn-ff/alignn-ff-2023.07.05.patch`](alignn-ff/alignn-ff-2023.07.05.patch)
+fixes the following issue:
 
 ```bash
 Traceback (most recent call last):

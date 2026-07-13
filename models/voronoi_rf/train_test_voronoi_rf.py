@@ -18,7 +18,6 @@ from matbench_discovery import ROOT, today
 from matbench_discovery.data import df_wbm, glob_to_df
 from matbench_discovery.enums import DataFiles, MbdKey, Task
 from matbench_discovery.hpc import slurm_submit
-from matbench_discovery.plots import wandb_scatter
 
 sys.path.append(f"{ROOT}/models")
 
@@ -152,4 +151,14 @@ R2 = r2_score(*df_wbm[[MbdKey.e_form_dft, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.3} {R2=:.3}"
 print(title)
 
-wandb_scatter(table, fields=dict(x=MbdKey.e_form_dft, y=pred_col), title=title)
+scatter_plot = wandb.plot_table(
+    vega_spec_name="janosh/scatter-parity",
+    data_table=table,
+    fields={"x": MbdKey.e_form_dft, "y": pred_col},
+    string_fields={
+        "title": title,
+        "x_label": "DFT formation energy (eV/atom)",
+        "y_label": "Predicted formation energy (eV/atom)",
+    },
+)
+wandb.log({"true_pred_scatter": scatter_plot})

@@ -1,5 +1,6 @@
 """Test enums module."""
 
+import ntpath
 import os
 from enum import auto
 from pathlib import Path
@@ -431,8 +432,9 @@ def test_model_enum() -> None:
             assert model.metadata["superseded_by"] in model_keys
 
 
-def test_generated_model_enum_is_current() -> None:
-    """Committed Model members match the YAML-driven generator."""
+def test_generated_model_enum_is_current(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Committed Model members use portable paths generated on Windows."""
+    monkeypatch.setattr(model_enum_generator.os.path, "relpath", ntpath.relpath)
     with open(f"{ROOT}/matbench_discovery/enums.py", encoding="utf-8") as file:
         source = file.read()
     assert model_enum_generator.generate_source(source) == source
