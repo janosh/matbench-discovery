@@ -9,7 +9,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
 from matbench_discovery.data_figs import (
-    PLOTLY_COLORS,
+    SERIES_COLORS,
     build_arity_hist_payload,
     build_element_counts_payload,
     build_mp_elemental_ref_energies,
@@ -71,7 +71,7 @@ def test_build_arity_hist_payload() -> None:
         "MPtrj",
         "WBM",
     ]
-    assert [series["color"] for series in payload["datasets"]] == list(PLOTLY_COLORS)
+    assert [series["color"] for series in payload["datasets"]] == list(SERIES_COLORS)
     assert all(
         sum(value for value in series["y"] if value is not None) == pytest.approx(1)
         for series in payload["datasets"]

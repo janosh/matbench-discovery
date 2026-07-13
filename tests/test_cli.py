@@ -1,6 +1,5 @@
 """Test CLI argument parsing module."""
 
-import plotly.io as pio
 import pytest
 
 from matbench_discovery.cli import cli_args, cli_parser, shared_payload_test_subset
@@ -83,12 +82,6 @@ def test_shared_payload_test_subset_rejects_model_specific_cohort(
     monkeypatch.setattr(cli_args, "test_subset", TestSubset.most_stable_10k)
     with pytest.raises(ValueError, match="model-specific"):
         shared_payload_test_subset()
-
-
-def test_browser_renderers_never_steal_focus() -> None:
-    """Browser renderers do not raise their tabs above the active window."""
-    for renderer_name in ("browser", "chrome", "chromium", "firefox"):
-        assert pio.renderers[renderer_name].autoraise is False, renderer_name
 
 
 def test_is_full_model_run(monkeypatch: pytest.MonkeyPatch) -> None:

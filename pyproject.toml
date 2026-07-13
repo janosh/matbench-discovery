@@ -35,7 +35,6 @@ dependencies = [
   "h5py>=3.11",
   "numpy>=2,<3",
   "pandas>=3,<4",
-  "plotly>=6.7",
   "pymatgen>=2026.5.4",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209
   "pymatviz[export]==0.18.0",
@@ -43,7 +42,6 @@ dependencies = [
   "scikit-learn>=1.8",
   "scipy>=1.17.1",
   "tqdm>=4.67.3",
-  "wandb>=0.27",
 ]
 
 [project.urls]

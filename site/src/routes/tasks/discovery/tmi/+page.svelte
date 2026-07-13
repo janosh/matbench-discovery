@@ -4,7 +4,7 @@
   import each_errors from '$figs/scatter-largest-each-errors-fp-diff.jsonl'
   import fp_diff from '$figs/scatter-largest-fp-diff-each-error.jsonl'
   import { ModelSelect } from '$lib'
-  import { dashed, plotly_blue, plotly_red, wide_legend } from '$lib/fig-helpers'
+  import { dashed, series_blue, series_red, wide_legend } from '$lib/fig-helpers'
   import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import type { UrlParamEntry } from '$lib/url-state.svelte'
   import { extent } from 'd3-array'
@@ -233,8 +233,8 @@ each model and the mean of all models.
 </label>
 <BarPlot
   series={[
-    { ...hist_largest_active.err_min, label: `err<sub>min</sub>`, color: plotly_blue },
-    { ...hist_largest_active.err_max, label: `err<sub>max</sub>`, color: plotly_red },
+    { ...hist_largest_active.err_min, label: `err<sub>min</sub>`, color: series_blue },
+    { ...hist_largest_active.err_max, label: `err<sub>max</sub>`, color: series_red },
   ]}
   mode="overlay"
   x_axis={{ label: fp_diff_label, range: [0, null] }}

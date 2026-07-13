@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from pymatgen.analysis.phase_diagram import Entry
 
-PLOTLY_COLORS = ("#636EFA", "#EF553B", "#00CC96")
+SERIES_COLORS = ("#636EFA", "#EF553B", "#00CC96")
 
 
 def build_wbm_hull_dist_hist(each_true: pd.Series) -> dict[str, Any]:
@@ -130,7 +130,7 @@ def build_arity_hist_payload(
                 "x": figs.round_list(df_arity.index),
                 "y": figs.round_list(df_arity[label]),
             }
-            for label, color in zip(df_arity.columns, PLOTLY_COLORS, strict=True)
+            for label, color in zip(df_arity.columns, SERIES_COLORS, strict=True)
         ]
     }
 
