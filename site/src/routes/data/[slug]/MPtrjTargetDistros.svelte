@@ -1,6 +1,6 @@
 <script lang="ts">
   import mp_trj_hists from '$figs/mp-trj-hists.json.gz'
-  import { plotly_blue } from '$lib/fig-helpers'
+  import { series_blue } from '$lib/fig-helpers'
   import { BarPlot } from 'matterviz/plot'
   import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './MpTrjNSitesHist.svelte'
@@ -33,7 +33,7 @@
     <li>
       <h3>{title}</h3>
       <BarPlot
-        series={[{ ...mp_trj_hists[key], color: plotly_blue }]}
+        series={[{ ...mp_trj_hists[key], color: series_blue }]}
         x_axis={{ label: x_label }}
         y_axis={{
           label: `Number of Structures`,

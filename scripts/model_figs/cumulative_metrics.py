@@ -13,7 +13,6 @@ from matbench_discovery import STABILITY_THRESHOLD, figs
 from matbench_discovery.cli import complete_models, shared_payload_test_subset
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import classify_stable
-from matbench_discovery.plots import stable_screening_sort
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
 test_subset = shared_payload_test_subset()
@@ -25,7 +24,9 @@ if test_subset == TestSubset.uniq_protos:
 # %%
 cum_pr_models = []
 for model in complete_models():
-    each_pred = stable_screening_sort(df_each_pred[model.label])
+    each_pred = (
+        df_each_pred[model.label].sort_index(kind="stable").sort_values(kind="stable")
+    )
     each_true = df_preds[MbdKey.each_true].loc[each_pred.index]
     true_pos, false_neg, false_pos, _true_neg = classify_stable(
         each_true, each_pred, stability_threshold=STABILITY_THRESHOLD

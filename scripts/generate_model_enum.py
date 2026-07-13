@@ -35,7 +35,8 @@ def generate_source(source: str) -> str:
         if not name.isidentifier() or keyword.iskeyword(name) or name in seen_names:
             raise ValueError(f"{yaml_path} has invalid or duplicate enum name {name!r}")
         seen_names.add(name)
-        members.append((name, os.path.relpath(yaml_path, f"{ROOT}/models")))
+        rel_path = os.path.relpath(yaml_path, f"{ROOT}/models").replace("\\", "/")
+        members.append((name, rel_path))
     member_source = "".join(
         f'    {name} = auto(), "{path}"\n' for name, path in sorted(members)
     )

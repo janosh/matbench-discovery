@@ -1,16 +1,25 @@
 """Download all MP formation and above hull energies on 2023-01-10.
 
-The main purpose of this script is produce the file at DataFiles.mp_energies.path.
+The main purpose of this script is to produce the file at DataFiles.mp_energies.path.
 
 Related EDA of MP formation energies:
 https://github.com/janosh/pymatviz/blob/-/examples/mp_bimodal_e_form.ipynb
 """
 
-# %%
+# /// script
+# requires-python = ">=3.12,<3.13"
+# dependencies = [
+#   "matbench-discovery",
+#   "mp-api==0.46.4",
+# ]
+#
+# [tool.uv.sources]
+# matbench-discovery = { path = "../..", editable = true }
+# ///
+
 import os
 
 import pandas as pd
-import plotly.express as px
 import pymatviz as pmv
 from mp_api.client import MPRester
 from pymatgen.core import Element, Structure
@@ -42,7 +51,7 @@ fields = {
 
 # %%
 with MPRester(use_document_model=False) as mpr:
-    docs = mpr.thermo.search(fields=fields, thermo_types=["GGA_GGA+U"])
+    docs = mpr.materials.thermo.search(fields=fields, thermo_types=["GGA_GGA+U"])
 
 assert fields == set(docs[0]), f"missing fields: {fields - set(docs[0])}"
 print(f"{today}: {len(docs)=:,}")
@@ -126,7 +135,7 @@ ax.set(
 # %% pull all single-element entries and filter for lowest energy per atom system for
 # each thermo type to use as elemental reference energies
 with MPRester(use_document_model=False) as mpr:
-    docs = mpr.thermo.search(num_elements=1)
+    docs = mpr.materials.thermo.search(num_elements=1)
 
 
 # %%
@@ -149,12 +158,16 @@ df_elem_refs = (
 
 
 # %%
-fig = px.scatter(
-    df_elem_refs,
+fig = pmv.density_scatter(
+    df=df_elem_refs,
     x=Key.atomic_number,
     y=e_per_atom_key,
-    color=thermo_type_key,
+    facet_col=thermo_type_key,
     hover_name=Key.mat_id,
     hover_data=["formula_pretty", "energy_above_hull", potcar_spec_key],
+    n_bins=False,
+    identity_line=False,
+    best_fit_line=False,
+    stats=False,
 )
 fig.show()

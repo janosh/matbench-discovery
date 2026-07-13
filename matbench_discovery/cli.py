@@ -4,8 +4,6 @@ import multiprocessing as mp
 import os
 from argparse import ArgumentParser, ArgumentTypeError
 
-import plotly.io as pio
-
 from matbench_discovery.enums import Model, TestSubset
 
 
@@ -18,7 +16,7 @@ def parse_model(value: str) -> Model:
 
 
 cli_parser = ArgumentParser(
-    description="CLI flags for eval, plot and analysis scripts."
+    description="CLI flags for evaluation, payload and analysis scripts."
 )
 
 cli_parser.add_argument(
@@ -58,10 +56,10 @@ cli_parser.add_argument(
     action="store_true",
     help="Print what would be done without actually doing it.",
 )
-plot_group = cli_parser.add_argument_group(
-    "plot", "Arguments for controlling figure generation"
+payload_group = cli_parser.add_argument_group(
+    "payload", "Arguments for controlling payload generation"
 )
-plot_group.add_argument(
+payload_group.add_argument(
     "--test-subset",
     type=TestSubset,
     default=TestSubset.uniq_protos,
@@ -101,9 +99,3 @@ def shared_payload_test_subset() -> TestSubset:
 # Set env var to auto-confirm file downloads when --auto-download is passed
 if cli_args.auto_download:
     os.environ["MBD_AUTO_DOWNLOAD_FILES"] = "true"
-
-# Figures may open in browser tabs, but never steal focus.
-for renderer_name in pio.renderers:
-    renderer = pio.renderers[renderer_name]
-    if hasattr(renderer, "autoraise"):
-        renderer.autoraise = False

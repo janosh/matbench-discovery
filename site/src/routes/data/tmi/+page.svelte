@@ -1,7 +1,7 @@
 <script lang="ts">
   import elem_counts_bar from '$figs/element-counts-mp-vs-wbm.json.gz'
   import { PtableInset } from '$lib'
-  import { plotly_blue, plotly_red } from '$lib/fig-helpers'
+  import { series_blue, series_red } from '$lib/fig-helpers'
   import type { ChemicalElement } from 'matterviz'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -40,7 +40,7 @@
   const elem_count_series = $derived(
     elem_counts_bar[normalized_bar_counts ? `normalized` : `raw`].map((series) => ({
       ...series,
-      color: series.label === `WBM` ? plotly_blue : plotly_red,
+      color: series.label === `WBM` ? series_blue : series_red,
     })),
   )
 

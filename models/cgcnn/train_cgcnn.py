@@ -1,21 +1,38 @@
-"""Train a CGCNN ensemble on target_col of data_path."""
+"""Train a CGCNN ensemble on Materials Project formation energies."""
 
-# %%
+# /// script
+# requires-python = ">=3.12,<3.13"
+# dependencies = [
+#   "aviary-models==1.2.1",
+#   "matbench-discovery",
+#   "numpy>=2,<3",
+#   "torch",
+#   "tqdm>=4.67.3",
+#   "wandb>=0.27",
+# ]
+#
+# [tool.uv.sources]
+# matbench-discovery = { path = "../..", editable = true }
+# ///
+
 import os
+import shutil
 from importlib.metadata import version
 
 import numpy as np
 import pandas as pd
+import torch
+import wandb
+from aviary import ROOT as AVIARY_ROOT
 from aviary.cgcnn.data import CrystalGraphData, collate_batch
 from aviary.cgcnn.model import CrystalGraphConvNet
-from aviary.core import TaskType
-from aviary.train import df_train_test_split, train_model
+from aviary.utils import train_ensemble
 from pymatgen.core import Structure
 from pymatviz.enums import Key
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
-from matbench_discovery import WANDB_PATH, timestamp, today
+from matbench_discovery import timestamp, today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.hpc import slurm_submit
 
@@ -30,10 +47,10 @@ def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
     perturbed = struct.copy()
     for site in perturbed:
         magnitude = np_rng.weibull(gamma)
-        vec = np_rng.normal(size=3)
-        norm = np.linalg.norm(vec)
-        vec = vec / norm if norm > np.finfo(float).eps else np.array([1.0, 0, 0])
-        site.coords += vec * magnitude
+        vector = np_rng.normal(size=3)
+        norm = np.linalg.norm(vector)
+        vector = vector / norm if norm > np.finfo(float).eps else np.array([1.0, 0, 0])
+        site.coords += vector * magnitude
         site.to_unit_cell(in_place=True)
 
     return perturbed
@@ -46,9 +63,9 @@ input_col = Key.structure
 # 0 for no perturbation, n>1 means train on n perturbations of each crystal
 # in the training set all assigned the same original target energy
 n_perturb = 0
-job_name = f"{today}-train-cgcnn-robust-{n_perturb=}"
+model_name = f"cgcnn-robust-{n_perturb}"
+job_name = f"{today}-train-{model_name}"
 print(f"{job_name=}")
-robust = "robust" in job_name.lower()
 ensemble_size = 10
 module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
@@ -64,12 +81,10 @@ slurm_vars = slurm_submit(
 
 
 # %%
-optimizer = "AdamW"
 learning_rate = 3e-4
 batch_size = 128
-swa_start = None
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "1"))
-task_type: TaskType = "regression"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # %%
@@ -80,77 +95,106 @@ df_mp_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index
     Key.mat_id
 )
 df_in[input_col] = [
-    Structure.from_dict(cse[input_col]) for cse in tqdm(df_mp_cse.entry)
+    Structure.from_dict(computed_entry[input_col])
+    for computed_entry in tqdm(df_mp_cse.entry, desc="Structures from dict")
 ]
 
 if target_col not in df_in:
     raise TypeError(f"{target_col!s} not in {df_in.columns=}")
 
 df_aug = df_in.copy()
-structs = df_aug.pop(input_col)
-for idx in trange(n_perturb, desc="Generating perturbed structures"):
-    df_aug[input_col] = [perturb_structure(struct) for struct in structs]
-    df_in = pd.concat(
-        [df_in, df_aug.set_index(f"{x}-aug={idx + 1}" for x in df_aug.index)]
-    )
+structures = df_aug.pop(input_col)
+material_ids = df_aug.index
+for perturb_idx in trange(n_perturb, desc="Generating perturbed structures"):
+    df_aug[input_col] = [perturb_structure(struct) for struct in structures]
+    df_aug.index = [
+        f"{material_id}-aug={perturb_idx + 1}" for material_id in material_ids
+    ]
+    df_in = pd.concat([df_in, df_aug])
 
 del df_aug
 
-train_df, test_df = df_train_test_split(df_in, test_size=0.05)
+# Match the deterministic split used by aviary v0.1.0's df_train_test_split().
+df_shuffled = df_in.sample(frac=1, random_state=0)
+train_df = df_shuffled.sample(frac=0.95, random_state=0)
+test_df = df_shuffled.drop(train_df.index)
+task_dict = {target_col: "regression"}
 
 print(f"{train_df.shape=}")
-train_data = CrystalGraphData(train_df, task_dict={target_col: task_type})
+train_data = CrystalGraphData(train_df, task_dict=task_dict)
 train_loader = DataLoader(
     train_data, batch_size=batch_size, shuffle=True, collate_fn=collate_batch
 )
 
 print(f"{test_df.shape=}")
-test_data = CrystalGraphData(test_df, task_dict={target_col: task_type})
+test_data = CrystalGraphData(test_df, task_dict=task_dict)
 test_loader = DataLoader(
     test_data, batch_size=batch_size, shuffle=False, collate_fn=collate_batch
 )
 
-# 1 for regression, n_classes for classification
-n_targets = [1 if task_type == "regression" else int(df_in[target_col].max()) + 1]
-
 model_params = dict(
-    n_targets=n_targets,
-    elem_emb_len=train_data.elem_emb_len,
-    nbr_fea_len=train_data.nbr_fea_dim,
-    task_dict={target_col: task_type},  # e.g. {'exfoliation_en': 'regression'}
-    robust=robust,
+    n_targets=train_data.n_targets,
+    task_dict=task_dict,
+    robust=True,
 )
-model = CrystalGraphConvNet(**model_params)
-
+setup_params = dict(
+    optim="AdamW",
+    learning_rate=learning_rate,
+    weight_decay=0.01,
+    momentum=0.9,
+    device=device,
+)
+restart_params = dict(resume=None, fine_tune=None, transfer=None)
+loss_dict = {target_col: "L1"}
+run_name = f"{job_name}-{slurm_array_task_id}"
 run_params = dict(
     data_path=data_path,
+    epochs=epochs,
     batch_size=batch_size,
-    versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
+    versions={
+        dep: version(dep) for dep in ("aviary-models", "numpy", "torch", "wandb")
+    },
     train_df=dict(shape=str(train_data.df.shape), columns=", ".join(train_df)),
     test_df=dict(shape=str(test_data.df.shape), columns=", ".join(test_df)),
     slurm_vars=slurm_vars,
     n_perturb=n_perturb,
     input_col=input_col,
+    task_type="regression",
+    loss_dict=loss_dict,
+    model_params=model_params,
+    setup_params={**setup_params, "device": str(device)},
+    restart_params=restart_params,
 )
 
 
 # %%
 print(f"\nJob {job_name} started {timestamp}")
 
-train_model(
-    checkpoint="wandb",  # None | 'local' | 'wandb',
-    epochs=epochs,
-    learning_rate=learning_rate,
-    model_params=model_params,
-    model=model,
-    optimizer=optimizer,
-    run_name=f"{job_name}-{slurm_array_task_id}",
-    swa_start=swa_start,
-    target_col=target_col,
-    task_type=task_type,
-    train_loader=train_loader,
-    test_loader=test_loader,
-    timestamp=timestamp,
-    wandb_path=WANDB_PATH,
-    run_params=run_params,
+# Pre-initializing keeps Aviary's W&B logging in the public benchmark project.
+wandb.init(
+    entity="janosh", project="matbench-discovery", name=run_name, config=run_params
 )
+train_ensemble(
+    model_class=CrystalGraphConvNet,
+    model_name=model_name,
+    run_id=slurm_array_task_id,
+    ensemble_folds=1,
+    epochs=epochs,
+    patience=None,
+    train_loader=train_loader,
+    val_loader=test_loader,
+    log="wandb",
+    setup_params=setup_params,
+    restart_params=restart_params,
+    model_params=model_params,
+    loss_dict=loss_dict,
+)
+
+aviary_checkpoint = (
+    f"{AVIARY_ROOT}/models/{model_name}/checkpoint-r{slurm_array_task_id}.pth.tar"
+)
+os.makedirs(out_dir, exist_ok=True)
+checkpoint_path = f"{out_dir}/checkpoint-r{slurm_array_task_id}.pth.tar"
+shutil.copy2(aviary_checkpoint, checkpoint_path)
+wandb.save(checkpoint_path, base_path=out_dir)
+wandb.finish()

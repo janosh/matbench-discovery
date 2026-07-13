@@ -55,7 +55,7 @@ training_set: [MP 2022]
 training_cost: missing
 
 hyperparams:
-  # taken from alignn/alignn-mp22/alignn-config.json
+  # taken from models/alignn/alignn-config.json
   graph_construction_radius: 8.0 # `cutoff` in Å, based on original implementation
   max_neighbors: 12
 

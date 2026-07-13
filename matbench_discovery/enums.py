@@ -6,7 +6,6 @@ import re
 from enum import EnumType, StrEnum, _EnumDict, auto, unique
 from typing import Any, Self, TypeVar
 
-import plotly.express as px
 import pymatviz as pmv
 import yaml
 
@@ -584,7 +583,3 @@ class DataFiles(Files):
                     f"to {abs_path} with {expected_md5=}."
                 )
         return abs_path
-
-
-# register pretty labels to use instead of enum keys in plotly axes and legends
-px.defaults.labels |= {key.name: key.label for key in (*Model, *MbdKey, *pmv.enums.Key)}

@@ -11,8 +11,6 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import pymatviz as pmv
 from pandas.core.util.hashing import hash_pandas_object
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.core import Composition, Structure
@@ -24,7 +22,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, WBM_DIR, today
+from matbench_discovery import WBM_DIR, today
 from matbench_discovery.data import DATASETS, DataFiles
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
@@ -434,7 +432,7 @@ df_summary.loc["wbm-2-18689", MbdKey.dft_energy] = df_wbm.loc["wbm-2-18689"][
 # whereas cse.as_dict()["energy"] == cse.uncorrected_energy
 
 
-# %% scatter plot summary energies vs CSE energies
+# %% compare summary energies with CSE energies
 df_summary[f"{MbdKey.dft_energy}_from_cse"] = [
     cse["energy"] for cse in tqdm(df_wbm[Key.computed_structure_entry])
 ]
@@ -446,8 +444,6 @@ diff_e_cse_e_summary = (
 assert diff_e_cse_e_summary.max() < 0.15
 assert sum(diff_e_cse_e_summary > 0.1) == 2
 
-pmv.density_scatter(df=df_summary, x=MbdKey.dft_energy, y="uncorrected_energy_from_cse")
-
 
 # %% remove suspicious formation energy outliers
 e_form_cutoff = 5
@@ -456,45 +452,7 @@ print(f"{n_too_stable = }")  # n_too_stable = 502
 n_too_unstable = sum(df_summary[MbdKey.e_form_wbm] > e_form_cutoff)
 print(f"{n_too_unstable = }")  # n_too_unstable = 22
 
-e_form_hist, e_form_bins = np.histogram(
-    df_summary[MbdKey.e_form_wbm], bins=300, range=(-5.5, 5.5)
-)
-x_label = {MbdKey.e_form_wbm: "WBM uncorrected formation energy (eV/atom)"}[
-    MbdKey.e_form_wbm
-]
-fig = px.bar(
-    x=e_form_bins[:-1],  # [:-1] to drop last bin edge which is not needed
-    y=e_form_hist,
-    log_y=True,
-    labels=dict(x=x_label, y="Number of Structures"),
-)
-fig.update_traces(width=(e_form_bins[1] - e_form_bins[0]), marker_line_width=0)
-fig.add_vline(x=e_form_cutoff, line=dict(dash="dash"))
-fig.add_vline(x=-e_form_cutoff, line=dict(dash="dash"))
-fig.layout.title = dict(
-    text=f"dataset cropped to within +/- {e_form_cutoff} eV/atom", x=0.5
-)
-fig.layout.margin = dict(l=0, r=0, b=0, t=40)
-fig.update_yaxes(fixedrange=True)  # disable zooming y-axis
-fig.show(
-    config=dict(
-        modeBarButtonsToRemove=["lasso2d", "select2d", "autoScale2d", "toImage"],
-        displaylogo=False,
-    )
-)
 
-
-# %%
-img_name = "hist-wbm-e-form-per-atom"
-# recommended to upload SVG to vecta.io/nano for compression
-# pmv.save_fig(fig, f"{img_name}.svg", width=800, height=300)
-
-# make full data range visible in PDF
-# fig.layout.xaxis.range = [-12, 82]
-pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
-
-
-# %%
 assert len(df_summary) == len(df_wbm) == 257_487
 
 query_str = f"{-e_form_cutoff} < {MbdKey.e_form_wbm} < {e_form_cutoff}"

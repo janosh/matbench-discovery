@@ -4,9 +4,6 @@ import os
 import warnings
 from datetime import UTC, datetime
 
-import plotly.io as pio
-import pymatviz as pmv
-
 __version__ = "1.3.1"
 
 PKG_DIR = os.path.dirname(__file__)  # Python package directory
@@ -56,11 +53,6 @@ os.makedirs(MP_DIR := f"{DATA_DIR}/mp", exist_ok=True)
 os.makedirs(WBM_DIR := f"{DATA_DIR}/wbm", exist_ok=True)
 # JSON files with URLS to data files on figshare
 
-# directory to store model checkpoints downloaded from wandb cloud storage
-CHECKPOINT_DIR = f"{ROOT}/wandb/checkpoints"
-# wandb <entity>/<project name> to record new runs to
-WANDB_PATH = "janosh/matbench-discovery"
-
 # threshold on hull distance for a material to be considered stable
 STABILITY_THRESHOLD = 0
 
@@ -82,19 +74,3 @@ for msg, category, module in {
     warnings.filterwarnings(
         action="ignore", category=category, module=module, message=msg
     )
-
-
-# --- start global plot settings
-global_layout = dict(
-    paper_bgcolor="rgba(0,0,0,0)",
-    font_size=13,
-    # increase legend marker size and make background transparent
-    legend=dict(itemsizing="constant", bgcolor="rgba(0, 0, 0, 0)"),
-)
-pio.templates["mbd_global"] = dict(layout=global_layout)
-pmv.set_plotly_template("pymatviz_white+mbd_global")
-
-# https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
-# when seeing MathJax "loading" message in exported PDFs,
-# use pio.kaleido.scope.mathjax = None
-# --- end global plot settings
