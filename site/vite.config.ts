@@ -115,7 +115,11 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const schema_files = new Set(
         fs
           .readdirSync(`../tests`)
-          .filter((file_name) => file_name.endsWith(`-schema.yml`))
+          .filter((file_name) =>
+            [`dataset-schema.yml`, `label-schema.yml`, `model-schema.yml`].includes(
+              file_name,
+            ),
+          )
           .map((file_name) => {
             const schema_file = path.resolve(`../tests/${file_name}`)
             void yaml_schema_to_ts(schema_file)

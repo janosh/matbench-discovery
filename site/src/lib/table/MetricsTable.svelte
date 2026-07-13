@@ -56,7 +56,7 @@
     sort?: { column: string; dir: SortDir }
   } = $props()
 
-  const { model_name, training_set, targets, date_added, links } = METADATA_COLS
+  const { model_name, training_sets, targets, benchmark_added, links } = METADATA_COLS
   const { checkpoint_license, code_license, org } = METADATA_COLS
   const { graph_construction_radius, model_params } = HYPERPARAMS
   const pinned_col_rank = (col: Label): number => (col.label === model_name.label ? 0 : 1)
@@ -120,12 +120,12 @@
       model_name,
       model_params,
       targets,
-      date_added,
+      benchmark_added,
       links,
       graph_construction_radius,
       checkpoint_license,
       code_license,
-      training_set,
+      training_sets,
       org,
     ]
       .map((col): TableLabel => {

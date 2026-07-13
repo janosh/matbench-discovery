@@ -151,8 +151,7 @@ export const gzipped_json_response = async (data: unknown) =>
 export const request_url = (url: RequestInfo | URL) =>
   typeof url === `string` || url instanceof URL ? String(url) : url.url
 
-export const has_md_metrics = (model: ModelData): boolean =>
-  model.metrics?.md != null && typeof model.metrics.md === `object`
+export const has_md_metrics = (model: ModelData): boolean => model.metrics?.md != null
 
 export function doc_query<T extends Element = HTMLElement>(
   selector: string,

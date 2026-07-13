@@ -53,7 +53,7 @@
   for (const model of MODELS) {
     const openness = model.openness ?? `OSOD`
     openness_counts[openness] = (openness_counts[openness] ?? 0) + 1
-    for (const dataset of model.training_set) {
+    for (const dataset of model.training_sets) {
       training_counts[dataset] = (training_counts[dataset] ?? 0) + 1
     }
     const { outputs, fs_mode } = parse_targets(model.targets)

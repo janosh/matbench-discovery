@@ -7,7 +7,7 @@ import {
   MD_METRICS,
   METADATA_COLS,
 } from '$lib/labels'
-import type { ModelMetadata, ModelType, TargetType } from '$lib/schema/model'
+import type { ModelMetadata, TargetType } from '$lib/schema/model'
 import { get_pred_file_urls } from '$lib/models.svelte'
 import type { DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
@@ -25,14 +25,22 @@ export const targets_tooltips: Record<TargetType, string> = {
   EFS_DM: `Energy with direct forces, stress, and magmoms`,
 } as const
 
-export const model_type_tooltips: Record<ModelType, string> = {
-  GNN: `Graph Neural Network`,
-  UIP: `Universal Interatomic Potential`,
-  'BO-GNN': `Bayesian Optimization with Graph Neural Network`,
-  Fingerprint: `Handcrafted feature-based model`,
-  Transformer: `Attention-based transformer architecture`,
-  RF: `Random Forest`,
-} as const
+// Derive display role from targets: energy-only vs force-capable MLIP.
+export function model_role_from_targets(targets: TargetType): {
+  label: string
+  title: string
+} {
+  if (targets === `E`) {
+    return {
+      label: `Energy predictor`,
+      title: `Structure-to-energy predictor (no forces)`,
+    }
+  }
+  return {
+    label: `Interatomic potential`,
+    title: `Force-capable interatomic potential`,
+  }
+}
 
 export const openness_tooltips: Record<ModelMetadata[`openness`], string> = {
   OSOD: `Open source, open data`,
@@ -173,7 +181,7 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 // (calc_cell_color in matterviz/table) — no local color logic needed
 
 export const has_geo_opt_metrics = (model: ModelData): boolean =>
-  model.metrics?.geo_opt != null && typeof model.metrics.geo_opt === `object`
+  model.metrics?.geo_opt != null
 
 // Calculate table data for the metrics table with combined scores
 export function assemble_row_data(
@@ -182,7 +190,7 @@ export function assemble_row_data(
   filter_matches: (model: ModelData) => boolean = () => true,
   models: ModelData[] = MODELS, // injectable for tests
 ) {
-  const license_str = (license: string | undefined, url: string | undefined) =>
+  const license_str = (license: string | undefined, url: string | null | undefined) =>
     url?.startsWith(`http`)
       ? `<a href="${url}" target="_blank" rel="noopener noreferrer" title="View license">${license}</a>`
       : `<span title="License file not available">${license}</span>`
@@ -224,10 +232,7 @@ export function assemble_row_data(
   )
   const all_metrics = filtered_models.map((model) => {
     const { license, metrics } = model
-    const discovery_metrics =
-      typeof metrics?.discovery === `object`
-        ? metrics.discovery[discovery_set]
-        : undefined
+    const discovery_metrics = metrics?.discovery?.[discovery_set]
     const targets = model.targets.replaceAll(/_(?<char>.)/g, `<sub>$<char></sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
 
@@ -239,18 +244,18 @@ export function assemble_row_data(
       ? license_str(license.checkpoint, license.checkpoint_url)
       : `n/a`
 
-    const r_cut = model.hyperparams?.graph_construction_radius
+    const r_cut = model.hyperparams?.architecture?.graph_construction_radius
     const r_cut_str = r_cut ? `<span data-sort-value="${r_cut}">${r_cut} Å</span>` : `n/a`
 
-    // Get geometry optimization hyperparameters
-    const { ase_optimizer, max_steps, max_force, cell_filter, n_layers } =
-      model.hyperparams ?? {}
+    // Get geometry optimization hyperparams
+    const { ase_optimizer, max_steps, max_force, cell_filter } =
+      model.hyperparams?.evaluation ?? {}
+    const { n_layers } = model.hyperparams?.architecture ?? {}
     const cell_filter_display =
       cell_filter && typeof cell_filter === `string`
         ? cell_filter.replace(/CellFilter$/, ``)
         : null
-    const diatomics_metrics =
-      typeof metrics?.diatomics === `object` ? metrics.diatomics : null
+    const diatomics_metrics = metrics?.diatomics ?? null
     const excluded_formula_reasons = diatomics_metrics?.excluded_formula_reasons ?? {}
     // group excluded formulas by reason for a compact tooltip like
     // "Diatomics metrics exclude A-A, B-B due to <reason>; C-C due to <other>"
@@ -279,7 +284,7 @@ export function assemble_row_data(
 
     return {
       model_name: model.model_name,
-      Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
+      Model: `<a title="Version: ${model.model_version ?? `unknown`}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
       CPS: model.CPS,
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,
@@ -299,7 +304,7 @@ export function assemble_row_data(
       // computed after the spreads so they override the (pathless) spread entries
       [MD_METRICS.md_time_multiplier.key]: md_time_multiplier(model),
       [DIATOMICS_METRICS.diatomics_time_multiplier.key]: diatomics_time_multiplier(model),
-      'Training Set': format_train_set(model.training_set, model),
+      'Training Set': format_train_set(model.training_sets, model),
       [HYPERPARAMS.model_params.key]:
         `<span title="${format_num(model.model_params, `,`)} trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,
       [HYPERPARAMS.ase_optimizer.key]: ase_optimizer ?? `n/a`,
@@ -311,11 +316,11 @@ export function assemble_row_data(
       [HYPERPARAMS.n_layers.key]: sortable_span(n_layers),
       ...metric_columns(model, GEO_OPT_SYMMETRY_METRICS),
       Targets: targets_str,
-      [METADATA_COLS.date_added.key]:
-        `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
+      [METADATA_COLS.benchmark_added.key]:
+        `<span title="${model.dates.benchmark_added ? format_date(model.dates.benchmark_added) : `Unknown`}" data-sort-value="${new Date(model.dates.benchmark_added ?? ``).getTime()}">${model.dates.benchmark_added ?? `n/a`}</span>`,
       Links: {
         paper: {
-          url: model.paper || model.doi,
+          url: model.paper ?? model.doi,
           title: `Read model paper`,
           icon: `Paper`,
         },

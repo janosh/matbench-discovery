@@ -18,9 +18,11 @@ import sys
 import zipfile
 from collections import defaultdict
 from collections.abc import Callable, Sequence
+from datetime import date
+from decimal import Decimal, InvalidOperation
 from glob import glob
 from pathlib import Path
-from typing import Any
+from typing import Any, Final, TypedDict
 
 import ase.io
 import pandas as pd
@@ -38,6 +40,197 @@ round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata fil
 round_trip_yaml.preserve_quotes = True
 round_trip_yaml.width = 1000  # avoid changing line wrapping
 round_trip_yaml.indent(mapping=2, sequence=4, offset=2)
+
+ISO_DATE_PATTERN: Final = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+MOYO_VERSION_PATTERN: Final = re.compile(
+    r"^[0-9]+(?:\.[0-9]+)*(?:[-+][0-9A-Za-z.-]+)?$"
+)
+_GEO_OPT_ANALYSIS_SUFFIX: Final = re.compile(
+    r"^geo-opt-symprec=([^=]+)-moyo=([^=]+)\.csv\.gz$"
+)
+
+# role -> suffix after ``YYYY-MM-DD-``
+ARTIFACT_SUFFIXES: Final[dict[str, str]] = {
+    "discovery": "discovery.csv.gz",
+    "geo_opt": "geo-opt.jsonl.gz",
+    "phonons_kappa_103": "phonons-kappa-103.json.gz",
+    "phonons_kappa_103_forces": "phonons-kappa-103-forces.json.gz",
+    "phonons_kappa_103_run_info": "phonons-kappa-103-run-info.json",
+    "md_metrics": "md-metrics.csv.gz",
+    "diatomics": "diatomics.json.gz",
+}
+
+FILE_REF_KEYS: Final = frozenset(
+    {"pred_file", "analysis_file", "force_file", "run_info_file"}
+)
+# Tasks that require forces (not applicable when targets == "E")
+FORCE_TASKS: Final = frozenset({"geo_opt", "phonons", "md", "diatomics"})
+BENCHMARK_TASKS: Final = ("discovery", "geo_opt", "phonons", "md", "diatomics")
+_COVERAGE_META_KEYS: Final = frozenset({"status", "reason"})
+
+
+class FileRef(TypedDict, total=False):
+    """Local path plus optional download URL and content checksums."""
+
+    name: str
+    url: str
+    size: int
+    md5: str
+
+
+def task_coverage(metadata: dict[str, Any], task: str) -> tuple[str, str | None]:
+    """Derive task coverage from metrics, targets, and lifecycle.
+
+    Precedence:
+    1. Explicit ``metrics.<task>.status`` (optional exception note)
+    2. Metrics results present → complete
+    3. ``lifecycle: aborted`` → not_available
+    4. ``targets: E`` for force tasks → not_applicable
+    5. Else → pending
+    """
+    metrics_root = metadata.get("metrics")
+    task_metrics = metrics_root.get(task) if isinstance(metrics_root, dict) else None
+    if isinstance(task_metrics, dict):
+        status = task_metrics.get("status")
+        if isinstance(status, str):
+            reason = task_metrics.get("reason")
+            return status, reason if isinstance(reason, str) else None
+        if any(key not in _COVERAGE_META_KEYS for key in task_metrics):
+            return "complete", None
+
+    if metadata.get("lifecycle") == "aborted":
+        return "not_available", None
+    if metadata.get("targets") == "E" and task in FORCE_TASKS:
+        return "not_applicable", "energy-only (no forces)"
+    return "pending", None
+
+
+def make_file_ref(
+    name: str,
+    *,
+    url: str | None = None,
+    size: int | None = None,
+    md5: str | None = None,
+) -> FileRef:
+    """Build a file reference, omitting unset optional fields."""
+    if name.startswith("models/"):
+        parse_artifact_filename(name)
+    ref: FileRef = {"name": name}
+    if url is not None:
+        ref["url"] = url
+    if size is not None:
+        ref["size"] = size
+    if md5 is not None:
+        ref["md5"] = md5
+    return ref
+
+
+def file_ref_name(ref: object) -> str | None:
+    """Return the local path from a nested file ref or legacy string path."""
+    if isinstance(ref, str):
+        return ref
+    if isinstance(ref, dict):
+        name = ref.get("name")
+        return name if isinstance(name, str) else None
+    return None
+
+
+def file_ref_url(ref: object) -> str | None:
+    """Return the download URL from a nested file ref, if present."""
+    if isinstance(ref, dict):
+        url = ref.get("url")
+        return url if isinstance(url, str) else None
+    return None
+
+
+def canonical_scientific_notation(value: float | str | Decimal) -> str:
+    """Format a positive finite number without exponent padding (e.g. ``1e-5``)."""
+    try:
+        decimal_value = Decimal(str(value))
+    except InvalidOperation as exc:
+        raise ValueError(f"Invalid numeric value {value!r}") from exc
+    if not decimal_value.is_finite() or decimal_value <= 0:
+        raise ValueError(f"Expected a positive finite number, got {value!r}")
+
+    normalized = decimal_value.normalize()
+    sign, digits, exponent = normalized.as_tuple()
+    if not isinstance(exponent, int):
+        raise TypeError(f"Expected a finite decimal exponent, got {value!r}")
+    coefficient = "".join(map(str, digits))
+    scientific_exponent = exponent + len(coefficient) - 1
+    mantissa = coefficient[0]
+    if len(coefficient) > 1:
+        mantissa += f".{coefficient[1:].rstrip('0')}"
+        mantissa = mantissa.rstrip(".")
+    if sign:
+        mantissa = f"-{mantissa}"
+    return f"{mantissa}e{scientific_exponent}"
+
+
+def _iso_date(value: date | str) -> str:
+    """Return a validated ISO calendar date."""
+    iso_date = value.isoformat() if isinstance(value, date) else value
+    if not ISO_DATE_PATTERN.fullmatch(iso_date):
+        raise ValueError(f"Expected an ISO date, got {value!r}")
+    try:
+        date.fromisoformat(iso_date)
+    except ValueError as exc:
+        raise ValueError(f"Invalid ISO date {value!r}") from exc
+    return iso_date
+
+
+def artifact_filename(
+    artifact_date: date | str,
+    role: str,
+    *,
+    symprec: float | str | Decimal | None = None,
+    moyo_version: str | None = None,
+) -> str:
+    """Return a canonical dated artifact basename for ``role``."""
+    iso_date = _iso_date(artifact_date)
+    if role == "geo_opt_analysis":
+        if symprec is None or moyo_version is None:
+            raise ValueError(
+                "symprec and moyo_version are required for geo_opt_analysis"
+            )
+        if not MOYO_VERSION_PATTERN.fullmatch(moyo_version):
+            raise ValueError(f"Invalid moyo version {moyo_version!r}")
+        suffix = (
+            f"geo-opt-symprec={canonical_scientific_notation(symprec)}"
+            f"-moyo={moyo_version}.csv.gz"
+        )
+    else:
+        if symprec is not None or moyo_version is not None:
+            raise ValueError("symprec and moyo_version are only for geo_opt_analysis")
+        try:
+            suffix = ARTIFACT_SUFFIXES[role]
+        except KeyError as exc:
+            raise ValueError(f"Unknown artifact role {role!r}") from exc
+    return f"{iso_date}-{suffix}"
+
+
+def parse_artifact_filename(filename: str) -> str:
+    """Validate a canonical artifact filename and return its role key."""
+    basename = filename.rsplit("/", maxsplit=1)[-1]
+    if not ISO_DATE_PATTERN.match(basename[:10]) or basename[10:11] != "-":
+        raise ValueError(f"Not a canonical model artifact filename: {filename!r}")
+    artifact_date, suffix = basename[:10], basename[11:]
+    for role, expected_suffix in ARTIFACT_SUFFIXES.items():
+        if suffix == expected_suffix:
+            return role
+    if match := _GEO_OPT_ANALYSIS_SUFFIX.fullmatch(suffix):
+        symprec, moyo_version = match.groups()
+        if (
+            artifact_filename(
+                artifact_date,
+                "geo_opt_analysis",
+                symprec=symprec,
+                moyo_version=moyo_version,
+            )
+            == basename
+        ):
+            return "geo_opt_analysis"
+    raise ValueError(f"Not a canonical model artifact filename: {filename!r}")
 
 
 with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
@@ -98,16 +291,11 @@ def glob_to_df(
         # from MACE-MPA-0 WBM energy preds)
         if "pytest" in sys.modules or "CI" in os.environ:
             df_mock = pd.read_csv(f"{TEST_FILES}/mock-wbm-energy-preds.csv.gz")
-            # .set_index( "material_id" )
-            # make sure pred_cols for all models are present in df_mock
-            for model in Model:
-                with open(model.yaml_path, encoding="utf-8") as file:
-                    model_data = yaml.safe_load(file)
-
-                pred_col = (
-                    model_data.get("metrics", {}).get("discovery", {}).get("pred_col")
-                )
-                df_mock[pred_col] = df_mock[Key.formation_energy_per_atom]
+            if (
+                "e_form_per_atom" not in df_mock
+                and str(Key.formation_energy_per_atom) in df_mock
+            ):
+                df_mock["e_form_per_atom"] = df_mock[str(Key.formation_energy_per_atom)]
             return df_mock
         raise FileNotFoundError(f"No files matching glob {pattern=}")
 
@@ -263,6 +451,9 @@ def load_df_wbm_with_preds(
     else:
         models_to_load = tuple(map(Model.from_ref, models))
 
+    if max_error_threshold is not None and max_error_threshold < 0:
+        raise ValueError(f"{max_error_threshold=} must be a positive number")
+
     model_name = ""
     df_out = df_wbm.copy()
 
@@ -274,29 +465,15 @@ def load_df_wbm_with_preds(
 
             df_preds = glob_to_df(model.discovery_path, pbar=False, nrows=nrows)
 
-            with open(model.yaml_path, encoding="utf-8") as file:
-                model_data = yaml.safe_load(file)
-
-            pred_col = (
-                model_data.get("metrics", {}).get("discovery", {}).get("pred_col")
-            )
-            if not pred_col:
-                raise ValueError(
-                    f"pred_col not specified for {model_name} in {model.yaml_path!r}"
-                )
-
+            pred_col = "e_form_per_atom"
             if pred_col not in df_preds:
                 raise ValueError(
-                    f"{pred_col=} set in {model.yaml_path!r}:metrics.discovery."
-                    f"pred_col not found in {model.discovery_path}"
+                    f"{pred_col} column not found in {model.discovery_path}"
                 )
 
-            df_out[model.label] = df_preds.set_index(id_col)[pred_col]
+            index_column = "material_id" if "material_id" in df_preds else id_col
+            df_out[model.label] = df_preds.set_index(index_column)[pred_col]
             if max_error_threshold is not None:
-                if max_error_threshold < 0:
-                    raise ValueError(
-                        f"{max_error_threshold=} must be a positive number"
-                    )
                 # Apply centralized model prediction cleaning criterion (see doc string)
                 bad_mask = (
                     abs(df_out[model.label] - df_out[MbdKey.e_form_dft])

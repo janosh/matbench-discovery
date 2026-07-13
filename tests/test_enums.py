@@ -1,6 +1,5 @@
 """Test enums module."""
 
-import ntpath
 import os
 from enum import auto
 from pathlib import Path
@@ -13,12 +12,13 @@ import requests.adapters
 
 import scripts.generate_model_enum as model_enum_generator
 from matbench_discovery import DATA_DIR, ROOT
+from matbench_discovery.data import file_ref_name
 from matbench_discovery.enums import (
+    ArchitectureType,
     DataFiles,
     Files,
     MbdKey,
     Model,
-    ModelType,
     Open,
     Task,
     TestSubset,
@@ -73,6 +73,7 @@ def test_task() -> None:
     assert Task.S2E.label == "structure to energy"
     assert Task.S2EFS == "S2EFS"
     assert Task.S2EFS.label == "structure to energy, force, stress"
+    assert Task.IS2RE_SR == "IS2RE-SR"
 
     # Test that all tasks have values and labels
     for task in Task:
@@ -88,26 +89,11 @@ def test_task() -> None:
     assert "magmoms" in Task.S2EFSM.label
 
 
-def test_model_type() -> None:
-    """Test ModelType enum."""
-    # Test basic enum functionality
-    assert ModelType.GNN == "GNN"
-    assert ModelType.GNN.label == "Graph Neural Network"
-    assert ModelType.RF == "RF"
-    assert ModelType.RF.label == "Random Forest"
-
-    # Test that all model types have values and labels
-    for model_type in ModelType:
-        assert isinstance(model_type.value, str)
-        assert isinstance(model_type.label, str)
-        assert model_type.value != ""
-        assert model_type.label != ""
-
-    # Test model type descriptions make sense
-    assert "Neural" in ModelType.GNN.label
-    assert "Forest" in ModelType.RF.label
-    assert "Transformer" in ModelType.Transformer.label
-    assert "Fingerprint" in ModelType.Fingerprint.label
+def test_model_taxonomy_enums() -> None:
+    """Architecture taxonomy exposes non-empty labels."""
+    for taxonomy_value in ArchitectureType:
+        assert taxonomy_value.value
+        assert taxonomy_value.label
 
 
 def test_open() -> None:
@@ -405,14 +391,12 @@ def test_model_enum() -> None:
     assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
     grace_kappa_path = Model.grace_2l_mptrj.kappa_103_path
     assert isinstance(grace_kappa_path, str)
-    assert grace_kappa_path.endswith(
-        "2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz"
-    )
+    assert grace_kappa_path.endswith("2024-11-20-phonons-kappa-103.json.gz")
 
     # Test Model metrics property
     metrics = Model.alignn.metrics
     assert isinstance(metrics, dict)
-    assert {*metrics} >= {"discovery", "geo_opt", "phonons"}
+    assert metrics.keys() == {"discovery"}
 
     # Test registry-wide model properties and backing files
     for model in Model:
@@ -420,21 +404,20 @@ def test_model_enum() -> None:
     for model in Model.active():
         discovery_metrics = model.metrics["discovery"]
         assert isinstance(discovery_metrics, dict)
-        assert "/models/" in f"/{discovery_metrics['pred_file']}"
+        assert "/models/" in f"/{file_ref_name(discovery_metrics['pred_file'])}"
 
     assert Model.mace_mp_0.label == "MACE-MP-0"
     assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
-    assert not Model.alphanet_v1_mptrj.is_complete
-    assert not Model.dpa_3_1_mptrj.is_complete
+    assert not Model.alphanet_v1_mptrj.is_active
+    assert not Model.dpa_3_1_mptrj.is_active
     model_keys = {model.key for model in Model}
     for model in Model:
-        if model.metadata.get("status") == "superseded":
+        if model.metadata.get("lifecycle") == "superseded":
             assert model.metadata["superseded_by"] in model_keys
 
 
-def test_generated_model_enum_is_current(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Committed Model members use portable paths generated on Windows."""
-    monkeypatch.setattr(model_enum_generator.os.path, "relpath", ntpath.relpath)
+def test_generated_model_enum_is_current() -> None:
+    """Committed Model members match the YAML-driven generator."""
     with open(f"{ROOT}/matbench_discovery/enums.py", encoding="utf-8") as file:
         source = file.read()
     assert model_enum_generator.generate_source(source) == source
@@ -448,9 +431,9 @@ def test_generated_model_enum_is_current(monkeypatch: pytest.MonkeyPatch) -> Non
         ("eqv2_s_dens_mp", Model.eqv2_s_dens_mp),
         # Dash conversion
         ("mace-mp-0", Model.mace_mp_0),
-        ("eqV2-s-dens-mp", Model.eqv2_s_dens_mp),
+        ("eqv2-s-dens-mp", Model.eqv2_s_dens_mp),
         ("chgnet-0.3.0", Model.chgnet_0_3_0),
-        ("cgcnn+p", Model.cgcnn_p),
+        ("cgcnn-p", Model.cgcnn_p),
         # Case insensitive
         ("MACE-MP-0", Model.mace_mp_0),
         ("EQV2-S-DENS-MP", Model.eqv2_s_dens_mp),
@@ -488,7 +471,7 @@ def test_model_md_path_passes_huggingface_token(
         "metadata",
         {
             "model_name": "Gated MD",
-            "metrics": {"md": {"pred_file": rel_path, "pred_file_url": url}},
+            "metrics": {"md": {"pred_file": {"name": rel_path, "url": url}}},
         },
     )
 

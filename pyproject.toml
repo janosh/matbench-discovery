@@ -92,6 +92,7 @@ ignore = [
   "PTH",
   "S108",
   "S603", # subprocess-without-shell-equals-true
+  "SIM105", # suppressible-exception (try/except/pass is clearer with a why-comment)
   "T201",
   "TD",
   "TRY003",

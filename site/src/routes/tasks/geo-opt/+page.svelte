@@ -60,9 +60,9 @@
   }
 
   const date_added_ms = (key: string): number =>
-    Date.parse(model_by_key.get(key)?.date_added ?? ``) || 0
+    Date.parse(model_by_key.get(key)?.dates.benchmark_added ?? ``) || 0
 
-  // newest models first; plot-only models without a date_added sort last
+  // newest models first; plot-only models without a benchmark date sort last
   const selectable_options = [...plot_label_by_key]
     .toSorted(([key_1], [key_2]) => date_added_ms(key_2) - date_added_ms(key_1))
     .map(([key, label]) => {

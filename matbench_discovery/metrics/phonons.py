@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
 
+from matbench_discovery.data import file_ref_name, file_ref_url, make_file_ref
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
@@ -439,28 +440,38 @@ def write_metrics_to_yaml(
             κ_SRE=round(metrics["sre"], 4),
         )
         if replace_pred_file:
-            kappa_103 |= {"pred_file": pred_file_path, "pred_file_url": None}
+            kappa_103["pred_file"] = make_file_ref(pred_file_path)
         else:
-            kappa_103.setdefault("pred_file", pred_file_path)
+            kappa_103.setdefault("pred_file", make_file_ref(pred_file_path))
         for artifact_key, artifact_path in (
             ("force_file", force_file_path),
             ("run_info_file", run_info_path),
         ):
-            url_key = f"{artifact_key}_url"
             if artifact_path is not None:
                 relative_path = repo_relative_path(artifact_path)
-                artifact_changed = kappa_103.get(artifact_key) != relative_path
-                kappa_103[artifact_key] = relative_path
-                if replace_pred_file or artifact_changed:
-                    kappa_103[url_key] = None
+                existing_name = file_ref_name(kappa_103.get(artifact_key))
+                artifact_changed = existing_name != relative_path
+                existing_url = None
+                if not replace_pred_file and not artifact_changed:
+                    existing_url = file_ref_url(kappa_103.get(artifact_key))
+                kappa_103[artifact_key] = make_file_ref(relative_path, url=existing_url)
             elif replace_pred_file:
                 kappa_103.pop(artifact_key, None)
-                kappa_103.pop(url_key, None)
         for key in ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"):
             if run_metadata is not None and key in run_metadata:
                 kappa_103[key] = run_metadata[key]
             elif replace_pred_file:
                 kappa_103.pop(key, None)
+        # Drop legacy companion keys if still present from older YAMLs.
+        for legacy_key in (
+            "pred_file_url",
+            "pred_file_artifact",
+            "force_file_url",
+            "force_file_artifact",
+            "run_info_file_url",
+            "run_info_file_artifact",
+        ):
+            kappa_103.pop(legacy_key, None)
         return kappa_103
 
     update_yaml_file(

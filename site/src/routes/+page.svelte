@@ -170,9 +170,7 @@
     const discovery = model.metrics?.discovery
     const value =
       preset === `Discovery`
-        ? discovery !== null && typeof discovery === `object`
-          ? discovery[discovery_set]?.F1
-          : undefined
+        ? discovery?.[discovery_set]?.F1
         : get_nested_number(model, label_data_path(preset_primary_metrics[preset]))
     return is_finite_num(value) ? value : undefined
   }
@@ -350,7 +348,7 @@ added) with a running-best line showing which releases moved the frontier -->
 <DynamicScatter
   models={MODELS}
   model_filter={in_cohort}
-  x_key={METADATA_COLS.date_added.key}
+  x_key={METADATA_COLS.benchmark_added.key}
   y_key={ALL_METRICS.CPS.key}
   show_pareto_frontier
 />

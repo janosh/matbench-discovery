@@ -174,7 +174,7 @@ describe(`MetricsTable`, () => {
 
   it(`toggles metadata columns`, () => {
     // Keys used by col_filter (col.key ?? col.label)
-    const metadata_keys = new Set([`Training Set`, `Targets`, `date_added`, `Links`])
+    const metadata_keys = new Set([`Training Set`, `Targets`, `benchmark_added`, `Links`])
     // Labels displayed in table headers
     const metadata_labels = [`Training Set`, `Targets`, `Date Added`, `Links`]
     const col_filter = (_col: Label) => true // show all columns initially
@@ -378,7 +378,11 @@ describe(`MetricsTable`, () => {
     // Date Added sorts by timestamp (chronological, not alphabetical); Training Set
     // and Params sort by their numeric data-sort-value, not display text
     it.each([
-      { col_key: `date_added`, header: `Date Added`, data_col: `Date Added` },
+      {
+        col_key: `benchmark_added`,
+        header: `Date Added`,
+        data_col: `Date Added`,
+      },
       { col_key: `Training Set`, header: `Training Set`, data_col: `Training Set` },
       {
         col_key: HYPERPARAMS.model_params.key,

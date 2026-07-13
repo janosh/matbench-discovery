@@ -1,5 +1,5 @@
-import { by_date_added_desc, MODELS } from '$lib'
-import { format_train_set } from '$lib/metrics'
+import { by_benchmark_added_desc, MODELS } from '$lib'
+import { format_train_set, model_role_from_targets } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
 import pkg from '$site/package.json'
 import { format_num, strip_html } from 'matterviz'
@@ -12,12 +12,9 @@ const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
 // Formats model data as XML for RSS feed
 function format_model_for_rss(model: ModelData): string {
   const discovery = model.metrics?.discovery
-  const discovery_metrics =
-    discovery && typeof discovery === `object`
-      ? (discovery.full_test_set ?? Object.values(discovery)[0])
-      : null
+  const discovery_metrics = discovery?.full_test_set ?? discovery?.unique_prototypes
 
-  const training_set = format_train_set(model.training_set, model)
+  const training_set = format_train_set(model.training_sets, model)
   const clean_training_set = strip_html(training_set)
 
   const metrics_text = discovery_metrics
@@ -38,36 +35,36 @@ function format_model_for_rss(model: ModelData): string {
         .join(`, `)
     : `Unknown authors`
 
-  const model_type = model.model_type
-    ? `<p><strong>Model Type:</strong> ${model.model_type}</p>`
-    : ``
+  const model_role = `<p><strong>Role:</strong> ${model_role_from_targets(model.targets).label}</p>`
   const hyperparams = model.hyperparams
-    ? `<p><strong>Key Hyperparameters:</strong><br>&nbsp;&nbsp;${Object.entries(
+    ? `<p><strong>Key Hyperparams:</strong><br>&nbsp;&nbsp;${Object.entries(
         model.hyperparams,
       )
-        .flatMap(([key, value]) =>
-          key.startsWith(`_`) ? [] : [`${key}: ${String(value)}`],
+        .flatMap(([namespace, values]) =>
+          Object.entries(values).map(
+            ([key, value]) => `${namespace}.${key}: ${String(value)}`,
+          ),
         )
         .join(`,<br>&nbsp;&nbsp;`)}</p>`
     : ``
   const license_info = model.license
     ? `<p><strong>License:</strong> ${model.license.code || model.license}</p>`
     : ``
-  const date_published = model.date_published
-    ? `<p><strong>Date Published:</strong> ${model.date_published}</p>`
+  const paper_published = model.dates.paper_published
+    ? `<p><strong>Paper Published:</strong> ${model.dates.paper_published}</p>`
     : ``
 
   return `
     <h2>${model.model_name}</h2>
     <p><strong>Metrics:</strong><br>&nbsp;&nbsp;${metrics_text}</p>
     <p><strong>Parameters:</strong> ${format_num(model.model_params)}</p>
-    ${model_type}
+    ${model_role}
     <p><strong>Targets:</strong> ${model.targets}</p>
     <p><strong>Training Set:</strong> ${clean_training_set}</p>
     ${hyperparams}
     ${license_info}
-    <p><strong>Date Added:</strong> ${model.date_added}</p>
-    ${date_published}
+    <p><strong>Date Added:</strong> ${model.dates.benchmark_added}</p>
+    ${paper_published}
     <p><strong>Authors:</strong> ${authors_text}</p>
     <p>
       <a href="${base_url}models/${model.model_key}">View model details</a>
@@ -79,7 +76,7 @@ function format_model_for_rss(model: ModelData): string {
 
 // Generates an RSS feed of all models, newest first
 export function GET() {
-  const sorted_models = MODELS.toSorted(by_date_added_desc)
+  const sorted_models = MODELS.toSorted(by_benchmark_added_desc)
   const headers = { 'Content-Type': `application/xml` }
   const rss_feed_url = `${base_url}rss.xml`
 
@@ -98,7 +95,7 @@ export function GET() {
               <description><![CDATA[${format_model_for_rss(model)}]]></description>
               <link>${base_url}models/${model.model_key}</link>
               <guid isPermaLink="true">${base_url}models/${model.model_key}</guid>
-              <pubDate>${new Date(model.date_added).toUTCString()}</pubDate>
+              <pubDate>${new Date(model.dates.benchmark_added ?? 0).toUTCString()}</pubDate>
             </item>
           `,
           )

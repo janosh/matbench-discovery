@@ -123,14 +123,16 @@ describe(`RSS feed endpoint`, () => {
     // regression: the filter used !key.includes('_') instead of startsWith, dropping
     // nearly every hyperparam (max_steps, ase_optimizer, ...) so the section was empty
     const inner_underscore = (key: string) => key.includes(`_`) && !key.startsWith(`_`)
-    const hyperparam_key = MODELS.flatMap((md) => Object.keys(md.hyperparams ?? {})).find(
-      inner_underscore,
-    )
-    if (!hyperparam_key)
+    const hyperparameter_key = MODELS.flatMap((model) =>
+      Object.entries(model.hyperparams ?? {}).flatMap(([namespace, values]) =>
+        Object.keys(values).map((key) => `${namespace}.${key}`),
+      ),
+    ).find(inner_underscore)
+    if (!hyperparameter_key)
       throw new Error(`no model with underscore-containing hyperparams`)
 
     const xml = await GET().text()
-    expect(xml).toContain(`${hyperparam_key}: `)
+    expect(xml).toContain(`${hyperparameter_key}: `)
   })
 
   it(`should sort models by date in descending order`, async () => {
@@ -143,19 +145,17 @@ describe(`RSS feed endpoint`, () => {
     const response = GET()
     const xml = await response.text()
 
-    // Find models with different dates
     const sorted_models = MODELS.toSorted(
-      (a, b) => new Date(b.date_added).getTime() - new Date(a.date_added).getTime(),
+      (model_a, model_b) =>
+        new Date(model_b.dates.benchmark_added ?? 0).getTime() -
+        new Date(model_a.dates.benchmark_added ?? 0).getTime(),
     )
 
-    // Take the first two models with different dates
     let newer_model: ModelData | null = null
     let older_model: ModelData | null = null
-
-    // Use for...of loop instead of index-based loop
     let prev_model = sorted_models[0]
     for (const current_model of sorted_models.slice(1)) {
-      if (prev_model.date_added !== current_model.date_added) {
+      if (prev_model.dates.benchmark_added !== current_model.dates.benchmark_added) {
         newer_model = prev_model
         older_model = current_model
         break
@@ -163,16 +163,15 @@ describe(`RSS feed endpoint`, () => {
       prev_model = current_model
     }
 
-    // Skip test if we couldn't find two models with different dates
     if (!newer_model || !older_model) {
       console.warn(`Skipping test: Couldn't find two models with different dates`)
       return
     }
 
     // Verify the models have different dates
-    expect(newer_model.date_added).not.toBe(older_model.date_added)
-    expect(new Date(newer_model.date_added).getTime()).toBeGreaterThan(
-      new Date(older_model.date_added).getTime(),
+    expect(newer_model.dates.benchmark_added).not.toBe(older_model.dates.benchmark_added)
+    expect(new Date(newer_model.dates.benchmark_added ?? 0).getTime()).toBeGreaterThan(
+      new Date(older_model.dates.benchmark_added ?? 0).getTime(),
     )
 
     // Newer model should appear before older model in the XML

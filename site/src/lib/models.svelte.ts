@@ -65,14 +65,14 @@ export function calculate_training_sizes(model_train_sets: string[] = []): {
 export const MODELS = $state(
   Object.entries(MODEL_METADATA_PATHS)
     .filter(
-      // Ignore models with status != completed (the default status)
-      ([_key, metadata]) => (metadata?.status ?? `complete`) === `complete`,
+      // Inactive lifecycle states remain addressable but stay off benchmark views.
+      ([_key, metadata]) => metadata.lifecycle === `active`,
     )
     .map(([key, metadata], index): ModelData => {
       // Assign color to each model for consistent coloring across plots
       const model_color = MODEL_COLORS[index % MODEL_COLORS.length]
 
-      const sizes = calculate_training_sizes(metadata.training_set)
+      const sizes = calculate_training_sizes(metadata.training_sets)
 
       const org_logos: OrgLogo[] = []
       for (const author of metadata.authors ?? []) {
@@ -94,6 +94,7 @@ export const MODELS = $state(
         metadata_file: key.replace(/^..\//, ``),
         color: model_color,
         CPS: Number.NaN, // Initial CPS placeholder
+        n_estimators: metadata.n_estimators ?? 1,
         n_training_materials: sizes.total_materials,
         n_training_structures: sizes.total_structures,
         org_logos,
@@ -105,19 +106,15 @@ export const MODELS = $state(
 export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
   models.forEach((model: ModelData) => {
     // Extract required metrics for CPS calculation
-    const discovery = model.metrics?.discovery
-    const f1 =
-      typeof discovery === `object` ? discovery?.unique_prototypes?.F1 : undefined
+    const f1 = model.metrics?.discovery?.unique_prototypes?.F1
     // use symprec=1e-2 to match the RMSD column path declared in ALL_METRICS.RMSD,
     // so the displayed RMSD is the same value that feeds into CPS
-    const rmsd =
-      model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
-        ? model.metrics.geo_opt[`symprec=1e-2`]?.rmsd
-        : undefined
-    const kappa =
-      model.metrics?.phonons && typeof model.metrics.phonons !== `string`
-        ? model.metrics.phonons.kappa_103?.κ_SRME
-        : undefined
+    const rmsd = model.metrics?.geo_opt
+      ? model.metrics.geo_opt[`symprec=1e-2`]?.rmsd
+      : undefined
+    const kappa = model.metrics?.phonons
+      ? model.metrics.phonons.kappa_103?.κ_SRME
+      : undefined
 
     // Calculate and update CPS
     model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? Number.NaN
@@ -135,10 +132,10 @@ update_models_cmds(MODELS, CMDS_CONFIG)
 // semantics as CPS/CMDS
 update_models_cds(MODELS, CDS_CONFIG)
 
-// All dataset keys used by at least one model's training_set, in datasets.yml
+// All dataset keys used by at least one model's training_sets, in datasets.yml
 // declaration order — the roster for the table's training-data filter dropdown
 export const ALL_TRAINING_SETS: string[] = Object.keys(DATASETS).filter((key) =>
-  MODELS.some((model) => model.training_set.some((dataset) => dataset === key)),
+  MODELS.some((model) => model.training_sets.some((dataset) => dataset === key)),
 )
 
 // table filter (training data + openness + targets + heatmap) with the dataset roster
@@ -146,17 +143,21 @@ export const make_table_filters = (): UrlTableFilters =>
   new UrlTableFilters(ALL_TRAINING_SETS)
 
 export function get_pred_file_urls(model: ModelData) {
-  // Get all pred_file_url from model.metrics
+  // Collect downloadable pred_file.url values from model.metrics
   const files: { name: string; url: string }[] = []
 
   function find_pred_files(obj: object, parent_key = ``) {
     if (!obj || typeof obj !== `object`) return
 
     for (const [key, val] of Object.entries(obj)) {
-      if (key === `pred_file_url` && val && typeof val === `string`) {
-        // Look up the label by traversing the MODELINGS_TASKS hierarchy
+      if (
+        key === `pred_file` &&
+        val &&
+        typeof val === `object` &&
+        typeof (val as { url?: unknown }).url === `string`
+      ) {
         const pretty_label = get_label_for_key_path(parent_key)
-        files.push({ name: pretty_label, url: val })
+        files.push({ name: pretty_label, url: (val as { url: string }).url })
       } else if (typeof val === `object`) {
         find_pred_files(val, key)
       }

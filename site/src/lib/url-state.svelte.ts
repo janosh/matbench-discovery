@@ -175,7 +175,11 @@ export type FilterPreset = {
   description?: string // tooltip, only set on built-in presets
 }
 // minimal structural model shape keeps this module decoupled from $lib/types
-type FilterableModel = { training_set: string[]; openness?: string; targets?: string }
+type FilterableModel = {
+  training_sets: string[]
+  openness?: string
+  targets?: string
+}
 const is_one_of = <Value extends string>(
   options: readonly Value[],
   value: unknown,
@@ -232,7 +236,7 @@ export class UrlTableFilters {
     // direct/gradient also drops models without any force/stress prediction
     if (this.fs_mode !== `any` && fs_mode !== this.fs_mode) return false
     return Object.entries(this.training).every(
-      ([key, mode]) => model.training_set.includes(key) === (mode === `require`),
+      ([key, mode]) => model.training_sets.includes(key) === (mode === `require`),
     )
   }
 

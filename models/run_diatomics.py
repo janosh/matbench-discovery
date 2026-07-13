@@ -40,6 +40,7 @@ from matbench_discovery.calculators import (
     load_calculator,
     resolve_cli_calculator,
 )
+from matbench_discovery.data import artifact_filename
 from matbench_discovery.diatomics import (
     CurveDict,
     DiatomicResults,
@@ -278,7 +279,8 @@ def main() -> int:
         if unexpected_missing := missing_formulas - set(exclusion_reasons):
             parser.error(f"Missing curves in shards: {sorted(unexpected_missing)}")
         run_metadata = {**merge_run_metadata(shard_metadatas)}
-        json_path = f"{out_dir}/{today}-diatomics.json.gz"
+        artifact_name = artifact_filename(today, "diatomics")
+        json_path = f"{out_dir}/{artifact_name}"
     else:
         start_time = time.perf_counter()
         calculator = load_calculator(args.model, dtype=args.dtype)
@@ -314,7 +316,8 @@ def main() -> int:
         if slurm_task_id:
             json_path = f"{shard_dir}/Z{z_values[0]:03d}-diatomics.json.gz"
         else:
-            json_path = f"{out_dir}/{today}-diatomics.json.gz"
+            artifact_name = artifact_filename(today, "diatomics")
+            json_path = f"{out_dir}/{artifact_name}"
 
     run_metadata["excluded_formula_reasons"] = exclusion_reasons
     # flat on-disk schema read by DiatomicCurves.from_dict / the site's diatomics parser

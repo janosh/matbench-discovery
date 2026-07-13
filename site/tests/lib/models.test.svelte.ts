@@ -111,36 +111,36 @@ describe(`make_table_filters`, () => {
 
   it.each<{
     training: Record<string, `require` | `exclude`>
-    training_set: string[]
+    training_sets: string[]
     expected: boolean
   }>([
     // require: only models trained on the dataset
-    { training: { MPtrj: `require` }, training_set: [`MPtrj`], expected: true },
-    { training: { MPtrj: `require` }, training_set: [`OMat24`], expected: false },
+    { training: { MPtrj: `require` }, training_sets: [`MPtrj`], expected: true },
+    { training: { MPtrj: `require` }, training_sets: [`OMat24`], expected: false },
     // exclude: only models NOT trained on the dataset
-    { training: { OMat24: `exclude` }, training_set: [`MPtrj`], expected: true },
+    { training: { OMat24: `exclude` }, training_sets: [`MPtrj`], expected: true },
     {
       training: { OMat24: `exclude` },
-      training_set: [`MPtrj`, `OMat24`],
+      training_sets: [`MPtrj`, `OMat24`],
       expected: false,
     },
     // multiple requires AND together
     {
       training: { MPtrj: `require`, sAlex: `require` },
-      training_set: [`MPtrj`, `sAlex`, `OMat24`],
+      training_sets: [`MPtrj`, `sAlex`, `OMat24`],
       expected: true,
     },
     {
       training: { MPtrj: `require`, sAlex: `require` },
-      training_set: [`MPtrj`],
+      training_sets: [`MPtrj`],
       expected: false,
     },
   ])(
-    `training filter $training matches $training_set -> $expected`,
-    ({ training, training_set, expected }) => {
+    `training filter $training matches $training_sets -> $expected`,
+    ({ training, training_sets, expected }) => {
       const filters = make_table_filters()
       filters.training = training
-      expect(filters.matches({ training_set, targets: `EFS_G` })).toBe(expected)
+      expect(filters.matches({ training_sets, targets: `EFS_G` })).toBe(expected)
     },
   )
 
@@ -156,7 +156,7 @@ describe(`make_table_filters`, () => {
       filters.openness = [...openness]
       expect(
         filters.matches({
-          training_set: [`MPtrj`],
+          training_sets: [`MPtrj`],
           openness: model_openness,
           targets: `EFS_G`,
         }),
@@ -184,7 +184,9 @@ describe(`make_table_filters`, () => {
       const filters = make_table_filters()
       if (targets) filters.targets = { ...targets }
       if (fs_mode) filters.fs_mode = fs_mode
-      expect(filters.matches({ training_set: [], targets: model_targets })).toBe(expected)
+      expect(filters.matches({ training_sets: [], targets: model_targets })).toBe(
+        expected,
+      )
     },
   )
 
@@ -223,7 +225,7 @@ describe(`make_table_filters`, () => {
 
 describe(`ALL_TRAINING_SETS`, () => {
   it(`lists only datasets used by at least one model, in datasets.yml order`, () => {
-    const used_keys = new Set<string>(MODELS.flatMap((model) => model.training_set))
+    const used_keys = new Set<string>(MODELS.flatMap((model) => model.training_sets))
     const expected_keys = Object.keys(DATASETS).filter((key) => used_keys.has(key))
     const unknown_used_keys = [...used_keys].filter((key) => !(key in DATASETS))
 
@@ -329,7 +331,7 @@ describe(`fig-helpers payload styling`, () => {
   )
 
   it(`attach_style attaches MODELS colors and sorts models by discovery F1 desc`, () => {
-    const keys = [`eSEN-30m-oam`, `equiformer-v3-oam`, `chgnet-0.3.0`]
+    const keys = [`esen-30m-oam`, `equiformer-v3-oam`, `chgnet-0.3.0`]
     const f1 = (key: string) => {
       const disc = MODELS.find((mdl) => mdl.model_key === key)?.metrics?.discovery
       return typeof disc === `object`

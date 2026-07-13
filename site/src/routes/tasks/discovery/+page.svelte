@@ -30,10 +30,8 @@
       ]),
     ),
   )
-  const has_discovery_metrics = (model: ModelData): boolean => {
-    const discovery = model.metrics?.discovery
-    return typeof discovery === `object` && discovery?.[discovery_set] != null
-  }
+  const has_discovery_metrics = (model: ModelData): boolean =>
+    model.metrics?.discovery?.[discovery_set] != null
   let visible_models = $derived(
     MODELS.filter((model) => has_discovery_metrics(model) && filters.matches(model)),
   )
@@ -100,7 +98,7 @@
         labels.METADATA_COLS.model_name,
         ...Object.values(labels.DISCOVERY_METRICS),
         labels.METADATA_COLS.links,
-        labels.METADATA_COLS.date_added,
+        labels.METADATA_COLS.benchmark_added,
       ].includes(col)}
     {discovery_set}
     model_filter={has_discovery_metrics}

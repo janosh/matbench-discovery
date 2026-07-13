@@ -11,6 +11,7 @@ import yaml
 from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
 
 from matbench_discovery import ROOT
+from matbench_discovery.data import file_ref_url, make_file_ref
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import (
@@ -348,9 +349,11 @@ def test_diatomic_curve_metrics(
 def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     """Test writing diatomic metrics to YAML file."""
     model, yaml_path = diatomics_model
-    pred_file = "models/mace/mace-mp-0/2025-02-13-test-diatomics.json.gz"
+    pred_file = "models/mace/mace-mp-0/2025-02-13-diatomics.json.gz"
     pred_file_url = "https://figshare.com/files/fake-url-00000"
-    existing_file_refs = {"pred_file": pred_file, "pred_file_url": pred_file_url}
+    existing_file_refs = {
+        "pred_file": make_file_ref(pred_file, url=pred_file_url),
+    }
 
     write_diatomics_yaml(model, yaml_path, existing_file_refs)
 
@@ -358,17 +361,20 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     assert result == existing_file_refs
     yaml_content = yaml_path.read_text()
     assert "diatomics:" in yaml_content
-    assert f"pred_file_url: {pred_file_url}" in yaml_content
+    assert f"url: {pred_file_url}" in yaml_content
+    assert "pred_file_url:" not in yaml_content
 
-    write_diatomics_yaml(model, yaml_path, {"pred_file": pred_file})
-    assert diatomics.write_metrics_to_yaml(model, {}) == {"pred_file": pred_file}
+    write_diatomics_yaml(model, yaml_path, {"pred_file": make_file_ref(pred_file)})
+    assert diatomics.write_metrics_to_yaml(model, {}) == {
+        "pred_file": make_file_ref(pred_file),
+    }
 
     # relative and absolute pred_file_path both record the repo-relative path
     new_pred_file = "models/mace/mace-mp-0/2026-06-28-diatomics.json.gz"
     write_diatomics_yaml(model, yaml_path, {})
     for path_arg in (new_pred_file, f"{ROOT}/{new_pred_file}"):
         assert diatomics.write_metrics_to_yaml(model, {}, pred_file_path=path_arg) == {
-            "pred_file": new_pred_file
+            "pred_file": make_file_ref(new_pred_file),
         }
     with pytest.raises(ValueError, match="must be inside repo root"):
         diatomics.write_metrics_to_yaml(
@@ -405,7 +411,11 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
 
     # pred_file_path overrides the existing pred_file; run_metadata is recorded ahead of
     # the metric values
-    write_diatomics_yaml(model, yaml_path, {"pred_file_url": pred_file_url})
+    write_diatomics_yaml(
+        model,
+        yaml_path,
+        {"pred_file": make_file_ref(pred_file, url=pred_file_url)},
+    )
     expected_run_metadata = {
         "hardware": "NVIDIA H100 80GB HBM3",
         "run_time_sec": 120.0,
@@ -423,7 +433,7 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
         },
     )
     assert result == {
-        "pred_file": new_pred_file,
+        "pred_file": make_file_ref(new_pred_file),
         **expected_run_metadata,
         "excluded_formula_reasons": {"He-He": "exploding errors"},
         **expected_metrics,
@@ -506,9 +516,12 @@ def test_write_metrics_drops_deprecated_and_handles_nan(
 ) -> None:
     """Recompute drops deprecated keys, skips NaN elements, unions per-element keys."""
     model, yaml_path = diatomics_model
-    # existing block carries a deprecated metric (smoothness) + a url
+    # existing block carries a deprecated metric (smoothness) + a nested file ref
     existing_file_refs = {
-        "pred_file_url": "https://figshare.com/files/x",
+        "pred_file": make_file_ref(
+            "models/mace/mace-mp-0/2025-02-13-diatomics.json.gz",
+            url="https://figshare.com/files/x",
+        ),
         "smoothness": 9.9,
     }
     write_diatomics_yaml(model, yaml_path, existing_file_refs)
@@ -522,7 +535,8 @@ def test_write_metrics_drops_deprecated_and_handles_nan(
 
     assert "smoothness" not in result  # deprecated key fully dropped
     assert "smoothness" not in yaml_path.read_text()
-    assert result["pred_file_url"] == "https://figshare.com/files/x"  # url preserved
+    assert file_ref_url(result["pred_file"]) == "https://figshare.com/files/x"
+    assert "pred_file_url" not in result
     assert result["tortuosity"] == 2.0  # mean over the one finite value
     assert result["pbe_energy_mae"] == 1.0  # unioned key present only on H
 

@@ -237,8 +237,8 @@ export interface Person {
   name: string
   affiliation?: string
   email?: string
-  url?: string
-  orcid?: string
-  github?: string
+  url?: HttpUrl
+  orcid?: HttpUrl
+  github?: HttpUrl
   corresponding?: boolean
 }

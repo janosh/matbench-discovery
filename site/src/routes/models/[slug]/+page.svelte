@@ -2,7 +2,7 @@
   import { AuthorBrief, DATASETS, ModelRankCard, PtableInset, SelectToggle } from '$lib'
   import {
     discovery_task_tooltips,
-    model_type_tooltips,
+    model_role_from_targets,
     openness_tooltips,
     targets_tooltips,
   } from '$lib/metrics'
@@ -25,11 +25,17 @@
   import { SvelteSet } from 'svelte/reactivity'
   import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import type { LoadStatus } from '$lib/asset-loader'
+  import { parse_dependency_spec } from '$lib/environment'
   import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
   import type { PageData } from './$types'
 
   type ModelInfoItem = readonly [key: string, value: string, title?: string | null]
-  type ExternalLink = { href?: string; icon: IconName; label: string; title: string }
+  type ExternalLink = {
+    href?: string | null
+    icon: IconName
+    label: string
+    title: string
+  }
 
   let { data }: { data: PageData } = $props()
 
@@ -102,8 +108,12 @@
     () => [[`energy_tab`, energy_parity_tab, default_energy_tab]],
   )
   let { model } = $derived(data)
-  let added_ago = $derived(format_relative_time(model.date_added))
-  let published_ago = $derived(format_relative_time(model.date_published))
+  let env_packages = $derived(
+    (model.environment?.dependencies ?? []).map(parse_dependency_spec),
+  )
+  let added_ago = $derived(
+    model.dates.benchmark_added ? format_relative_time(model.dates.benchmark_added) : ``,
+  )
   // rendered in order; links whose href isn't an http(s) URL are skipped
   let external_links: ExternalLink[] = $derived([
     {
@@ -113,7 +123,7 @@
       title: `View source code repository`,
     },
     { href: model.paper, icon: `Paper`, label: `Paper`, title: `Read model paper` },
-    { href: model.url, icon: `Docs`, label: `Docs`, title: `View model documentation` },
+    { href: model.docs, icon: `Docs`, label: `Docs`, title: `View model documentation` },
     { href: model.doi, icon: `DOI`, label: `DOI`, title: `Digital Object Identifier` },
     {
       href: model.dirname
@@ -132,21 +142,18 @@
       title: `Download model checkpoint`,
     },
   ])
+  let model_role = $derived(model_role_from_targets(model.targets))
   let model_info_items: ModelInfoItem[] = $derived([
-    [`Model Version`, model.model_version],
-    [`Model Type`, model.model_type, model_type_tooltips[model.model_type]],
+    [`Version`, model.model_version ?? `Unknown`],
+    [`Role`, model_role.label, model_role.title],
+    [`Architecture`, model.architecture_types.join(`, `)],
     [`Targets`, model.targets, targets_tooltips[model.targets]],
     [`Openness`, model.openness, openness_tooltips[model.openness]],
     [`Discovery Train Task`, model.train_task, discovery_task_tooltips[model.train_task]],
     [`Discovery Test Task`, model.test_task, discovery_task_tooltips[model.test_task]],
-    [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`],
   ])
 
-  let missing_preds = $derived(
-    typeof model.metrics?.discovery === `object`
-      ? model.metrics.discovery.unique_prototypes?.missing_preds
-      : undefined,
-  )
+  let missing_preds = $derived(model.metrics?.discovery?.unique_prototypes?.missing_preds)
 </script>
 
 <div class="model-detail">
@@ -155,7 +162,7 @@
   <section class="meta-info">
     <span>
       <Icon icon="Versions" />
-      Version: {#if model.repo?.startsWith(`http`)}
+      Version: {#if model.repo?.startsWith(`http`) && model.model_version}
         <a
           href="{model.repo}/releases/tag/{model.model_version}"
           target="_blank"
@@ -164,18 +171,20 @@
           {model.model_version}
         </a>
       {:else}
-        {model.model_version}
+        {model.model_version ?? `Unknown`}
       {/if}
     </span>
 
     <span title={added_ago} {@attach tooltip()}
       ><Icon icon="Calendar" />
-      Added: {model.date_added}
+      Added: {model.dates.benchmark_added ?? `Unknown`}
     </span>
 
-    <span title={published_ago} {@attach tooltip()}>
-      <Icon icon="CalendarCheck" /> Published: {model.date_published}
-    </span>
+    {#if model.dates.paper_published}
+      <span title={format_relative_time(model.dates.paper_published)} {@attach tooltip()}>
+        <Icon icon="CalendarCheck" /> Published: {model.dates.paper_published}
+      </span>
+    {/if}
 
     <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
       <Icon icon="NeuralNetwork" />
@@ -183,7 +192,7 @@
       parameters
     </span>
 
-    {#if model.n_estimators > 1}
+    {#if (model.n_estimators ?? 1) > 1}
       <span><Icon icon="Forest" /> Ensemble of {model.n_estimators} models</span>
     {/if}
 
@@ -389,10 +398,10 @@
     </ul>
   </section>
 
-  {#if model.training_set}
+  {#if model.training_sets.length}
     <h2>Training Set</h2>
     <section class="training-set">
-      {#each model.training_set as dataset_key (dataset_key)}
+      {#each model.training_sets as dataset_key (dataset_key)}
         {@const dataset = DATASETS[dataset_key]}
         {#if dataset}
           {@const { n_structures, name, slug, n_materials } = dataset}
@@ -426,7 +435,7 @@
 
   {#if model.hyperparams}
     <section class="hyperparams">
-      <h2>Hyperparameters</h2>
+      <h2>Hyperparams</h2>
       <ul>
         {#each Object.entries(model.hyperparams) as [key, value] (key)}
           <li><strong>{key}:</strong> <code>{JSON.stringify(value)}</code></li>
@@ -435,17 +444,16 @@
     </section>
   {/if}
 
-  {#if model.requirements}
+  {#if env_packages.length}
     <section class="deps">
       <h2>Dependencies</h2>
       <ul>
-        {#each Object.entries(model.requirements) as [pkg, version] (pkg)}
-          {@const href = version?.startsWith(`http`)
-            ? version
-            : `https://pypi.org/project/${pkg}/${version}`}
+        {#each env_packages as { name, detail, href } (name + detail)}
           <li>
-            {pkg}
-            <a {href} target="_blank" rel="noopener noreferrer">{version}</a>
+            {name}
+            {#if detail}
+              <a {href} target="_blank" rel="noopener noreferrer">{detail}</a>
+            {/if}
           </li>
         {/each}
       </ul>

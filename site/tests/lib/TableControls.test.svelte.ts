@@ -53,7 +53,7 @@ describe(`TableControls`, () => {
     const usage_counts = require_boxes.map((box) => {
       const dataset = dataset_for(box)
       return MODELS.filter((model) =>
-        model.training_set.some((training_dataset) => training_dataset === dataset),
+        model.training_sets.some((training_dataset) => training_dataset === dataset),
       ).length
     })
     expect(usage_counts).toStrictEqual(
@@ -97,12 +97,14 @@ describe(`TableControls`, () => {
     expect(filters.openness).toStrictEqual([`OSOD`])
     // the preset selects OSOD models trained only on MP-anchored data
     const targets = `EFS_G`
-    const compliant = { training_set: [`MPtrj`, `MP 2022`], openness: `OSOD`, targets }
-    const extra_data = { training_set: [`MPtrj`, `OMat24`], openness: `OSOD`, targets }
-    const closed = { training_set: [`MPtrj`], openness: `CSOD`, targets }
-    expect(filters.matches(compliant)).toBe(true)
-    expect(filters.matches(extra_data)).toBe(false)
-    expect(filters.matches(closed)).toBe(false)
+    const filter_model = (training_sets: string[], openness: string) => ({
+      training_sets,
+      openness,
+      targets,
+    })
+    expect(filters.matches(filter_model([`MPtrj`, `MP 2022`], `OSOD`))).toBe(true)
+    expect(filters.matches(filter_model([`MPtrj`, `OMat24`], `OSOD`))).toBe(false)
+    expect(filters.matches(filter_model([`MPtrj`], `CSOD`))).toBe(false)
   })
 
   it(`saves, applies and deletes user presets via localStorage`, async () => {

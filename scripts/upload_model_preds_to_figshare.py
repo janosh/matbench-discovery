@@ -145,21 +145,33 @@ def update_one_modeling_task_article(
 
         def find_file_keys(data: dict[str, Any], prefix: str = "") -> dict[str, str]:
             """Find supported artifact keys in nested task metadata."""
+            from matbench_discovery.data import FILE_REF_KEYS, file_ref_name
+
             result: dict[str, str] = {}
             for key, value in data.items():
                 full_key = f"{prefix}.{key}" if prefix else key
-                if key.endswith("_file") and (
-                    key not in {"analysis_file", "pred_file"}
-                    or not isinstance(value, str)
-                ):
-                    raise ValueError(f"Unsupported artifact at {full_key!r}")
-                if isinstance(value, dict):
+                if key in FILE_REF_KEYS:
+                    name = file_ref_name(value)
+                    if name is None:
+                        raise ValueError(f"Unsupported artifact at {full_key!r}")
+                    if file_type == "all" or key == f"{file_type}_file":
+                        result[full_key] = name
+                elif isinstance(value, dict):
                     result |= find_file_keys(value, full_key)
-                elif key.endswith("_file") and (
-                    file_type == "all" or key == f"{file_type}_file"
-                ):
-                    result[full_key] = value
             return result
+
+        def set_file_ref_url(
+            data: dict[str, Any], key_path: str, file_url: str
+        ) -> None:
+            """Set ``url`` (and checksums when known) on a nested FileRef."""
+            *parts, last = key_path.split(".")
+            target = data
+            for part in parts:
+                target = target[part]
+            ref = target.get(last)
+            if not isinstance(ref, dict):
+                raise TypeError(f"Expected FileRef object at {key_path}, got {ref!r}")
+            ref["url"] = file_url
 
         for key_path, rel_file_path in find_file_keys(metric_data).items():
             try:
@@ -185,13 +197,13 @@ def update_one_modeling_task_article(
                     skipped_files[filename] = (file_url, model)
 
                     # Update model metadata if URL not present
-                    url_key = f"{key_path}_url"  # append _url to YAML key
-                    if url_key not in metric_data:
-                        *parts, last = url_key.split(".")
-                        target = metric_data
-                        for part in parts:
-                            target = target[part]
-                        target[last] = file_url
+                    *parts, last = key_path.split(".")
+                    target = metric_data
+                    for part in parts:
+                        target = target[part]
+                    ref = target.get(last)
+                    if isinstance(ref, dict) and not ref.get("url"):
+                        set_file_ref_url(metric_data, key_path, file_url)
 
                     continue
 
@@ -235,11 +247,7 @@ def update_one_modeling_task_article(
                 target_files[filename] = (file_url, model)
 
                 # Update model metadata with URL
-                *parts, last = key_path.split(".")
-                target = metric_data
-                for part in parts:
-                    target = target[part]
-                target[f"{last}_url"] = file_url
+                set_file_ref_url(metric_data, key_path, file_url)
 
         # Save updated model metadata if changed
         if not dry_run:

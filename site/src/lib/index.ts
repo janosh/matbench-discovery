@@ -85,8 +85,9 @@ export const format_date = (
   })
 
 // Compare two models by submission date, newest first (for Array.toSorted)
-export const by_date_added_desc = (
-  model_1: { date_added: string },
-  model_2: { date_added: string },
+export const by_benchmark_added_desc = (
+  model_1: { dates: { benchmark_added: string | null } },
+  model_2: { dates: { benchmark_added: string | null } },
 ): number =>
-  new Date(model_2.date_added).getTime() - new Date(model_1.date_added).getTime()
+  new Date(model_2.dates.benchmark_added ?? 0).getTime() -
+  new Date(model_1.dates.benchmark_added ?? 0).getTime()

@@ -3,8 +3,9 @@
 import os
 import sys
 import zipfile
+from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 import numpy as np
@@ -16,13 +17,20 @@ from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery.data import (
+    artifact_filename,
     as_dict_handler,
     ase_atoms_from_zip,
     ase_atoms_to_zip,
+    canonical_scientific_notation,
     df_wbm,
+    file_ref_name,
+    file_ref_url,
     glob_to_df,
     load_df_wbm_with_preds,
+    make_file_ref,
+    parse_artifact_filename,
     round_trip_yaml,
+    task_coverage,
     update_yaml_file,
 )
 from matbench_discovery.enums import MbdKey, Model, TestSubset
@@ -298,7 +306,7 @@ def test_load_df_wbm_with_preds_mock_data_models() -> None:
     default_cols = list(df_default)
     assert default_cols == [*df_wbm, *(model.label for model in Model.active())]
     assert set(default_cols).isdisjoint(
-        model.label for model in Model if not model.is_complete
+        model.label for model in Model if not model.is_active
     )
     assert inactive_cols == [[*df_wbm, inactive_model.label]] * len(inactive_model_refs)
 
@@ -332,14 +340,14 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
     ):
         load_df_wbm_with_preds(max_error_threshold=-1)
 
-    # Test pred_col not in predictions file
+    # Test missing canonical prediction column
     with (
         # Make glob return a non-empty list to skip the mock data loading path
         patch("matbench_discovery.data.glob", return_value=["dummy_file.csv"]),
         # Patch only the specific read_csv call in glob_to_df that loads predictions,
         # not the one that loads mock data
         patch("pandas.read_csv", return_value=df_float),
-        pytest.raises(ValueError, match=r"pred_col.*not found in"),
+        pytest.raises(ValueError, match=r"e_form_per_atom column not found in"),
     ):
         load_df_wbm_with_preds(models=["alignn"])
 
@@ -420,3 +428,113 @@ metrics:
     for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
         with pytest.raises(ValueError, match="Invalid dotted_path="):
             update_yaml_file(test_file, path, {"data": 1})
+
+
+# --- model artifact filenames / FileRef helpers ---
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (1e-5, "1e-5"),
+        ("0.00001", "1e-5"),
+        (1e-2, "1e-2"),
+        (2.5e-3, "2.5e-3"),
+    ],
+)
+def test_canonical_scientific_notation(value: float | str, expected: str) -> None:
+    """Positive finite values render without exponent padding."""
+    assert canonical_scientific_notation(value) == expected
+
+
+@pytest.mark.parametrize("value", [0, -1.0, "not-a-number"])
+def test_canonical_scientific_notation_rejects_invalid(value: object) -> None:
+    """Non-positive or non-numeric symprec values are rejected."""
+    with pytest.raises(
+        ValueError,
+        match=r"Expected a positive finite number|Invalid numeric",
+    ):
+        canonical_scientific_notation(cast("Any", value))
+
+
+@pytest.mark.parametrize(
+    ("role", "expected_suffix"),
+    [
+        ("discovery", "discovery.csv.gz"),
+        ("geo_opt", "geo-opt.jsonl.gz"),
+        ("md_metrics", "md-metrics.csv.gz"),
+        ("diatomics", "diatomics.json.gz"),
+    ],
+)
+def test_artifact_filename_static_roles(role: str, expected_suffix: str) -> None:
+    """Static artifact roles render dated canonical filenames."""
+    assert artifact_filename("2026-07-01", role) == f"2026-07-01-{expected_suffix}"
+    assert parse_artifact_filename(f"2026-07-01-{expected_suffix}") == role
+
+
+def test_artifact_filename_geo_opt_analysis_round_trip() -> None:
+    """Geo-opt analysis filenames round-trip through parse_artifact_filename()."""
+    filename = artifact_filename(
+        date(2026, 7, 1),
+        "geo_opt_analysis",
+        symprec=1e-5,
+        moyo_version="0.4.2",
+    )
+    assert filename == "2026-07-01-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz"
+    assert parse_artifact_filename(filename) == "geo_opt_analysis"
+
+
+def test_make_file_ref_omits_unset_optional_fields() -> None:
+    """File refs omit unset optional URL/checksum fields."""
+    assert make_file_ref("models/mace/mace-mp-0/2026-07-01-discovery.csv.gz") == {
+        "name": "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
+    }
+    assert make_file_ref(
+        "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
+        url="https://figshare.com/files/1",
+        size=10,
+        md5="a" * 32,
+    ) == {
+        "name": "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
+        "url": "https://figshare.com/files/1",
+        "size": 10,
+        "md5": "a" * 32,
+    }
+
+
+def test_file_ref_accessors() -> None:
+    """Nested and legacy string file refs expose name/url helpers."""
+    nested = {
+        "name": "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
+        "url": "https://figshare.com/files/1",
+    }
+    assert file_ref_name(nested) == nested["name"]
+    assert file_ref_url(nested) == nested["url"]
+    assert file_ref_name("legacy/path.csv.gz") == "legacy/path.csv.gz"
+    assert file_ref_url("legacy/path.csv.gz") is None
+
+
+@pytest.mark.parametrize(
+    ("metadata", "task", "expected_status"),
+    [
+        (
+            {"metrics": {"discovery": {"pred_file": {"name": "x.csv.gz"}}}},
+            "discovery",
+            "complete",
+        ),
+        ({"targets": "E"}, "md", "not_applicable"),
+        ({"lifecycle": "aborted"}, "discovery", "not_available"),
+        ({}, "md", "pending"),
+        (
+            {"metrics": {"md": {"status": "pending", "reason": "not run yet"}}},
+            "md",
+            "pending",
+        ),
+    ],
+)
+def test_task_coverage_derivation(
+    metadata: dict[str, object], task: str, expected_status: str
+) -> None:
+    """Coverage is derived from metrics, targets, lifecycle, or explicit status."""
+    status, _reason = task_coverage(metadata, task)  # type: ignore[arg-type]
+    assert status == expected_status

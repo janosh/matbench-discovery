@@ -8,6 +8,7 @@ import sys
 
 from matbench_discovery import ROOT
 from matbench_discovery.cli import cli_args
+from matbench_discovery.data import file_ref_name, file_ref_url
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
@@ -52,14 +53,14 @@ for model in models_to_evaluate:
         n_skipped += 1
         continue
 
-    pred_file = diatomics_metrics.get("pred_file")
-    if not isinstance(pred_file, str):
+    pred_name = file_ref_name(diatomics_metrics.get("pred_file"))
+    if pred_name is None:
         print(f"Skipping {model.label}: no pred_file in diatomics config")
         n_skipped += 1
         continue
 
-    abs_path = f"{ROOT}/{pred_file}"
-    pred_file_url = diatomics_metrics.get("pred_file_url")
+    abs_path = f"{ROOT}/{pred_name}"
+    pred_file_url = file_ref_url(diatomics_metrics.get("pred_file"))
 
     # Try to download if file doesn't exist and URL is available
     if not os.path.isfile(abs_path) and pred_file_url:
@@ -68,7 +69,7 @@ for model in models_to_evaluate:
         )
 
     if not os.path.isfile(abs_path):
-        print(f"Skipping {model.label}: prediction file not found at {pred_file}")
+        print(f"Skipping {model.label}: prediction file not found at {pred_name}")
         n_skipped += 1
         continue
 

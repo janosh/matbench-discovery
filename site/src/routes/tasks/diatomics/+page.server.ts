@@ -1,4 +1,4 @@
-import { by_date_added_desc, type DiatomicsCurves, MODELS } from '$lib'
+import { by_benchmark_added_desc, type DiatomicsCurves, MODELS } from '$lib'
 import dft_references from '$lib/diatomics-dft.json.gz'
 import { fetch_diatomics_data } from '$lib/server/diatomics'
 import type { PageServerLoad } from './$types'
@@ -28,8 +28,8 @@ const to_page_curves = (curves: DiatomicsCurves): PageDiatomicsCurves => ({
 
 export const load: PageServerLoad = async () => {
   const diatomic_models = MODELS.filter(
-    (model) => model.metrics?.diatomics && typeof model.metrics.diatomics === `object`,
-  ).toSorted(by_date_added_desc)
+    (model) => model.metrics?.diatomics != null,
+  ).toSorted(by_benchmark_added_desc)
 
   // Fetch data for all models at build time. Return only the homonuclear
   // energies used by the page; forces and heteronuclear curves are large and unused.
@@ -38,21 +38,10 @@ export const load: PageServerLoad = async () => {
 
   await Promise.all(
     diatomic_models.map(async (model) => {
-      const diatomics = model.metrics?.diatomics
-      if (typeof diatomics !== `object` || diatomics === null) return
-
-      const pred_file =
-        typeof diatomics.pred_file === `string` ? diatomics.pred_file : undefined
-      const pred_file_url =
-        typeof diatomics.pred_file_url === `string` ? diatomics.pred_file_url : undefined
-
-      if (!pred_file && !pred_file_url) {
-        errors[model.model_name] = `No prediction file path or URL`
-        return
-      }
-
       try {
-        const curves = await fetch_diatomics_data({ pred_file, pred_file_url })
+        const curves = await fetch_diatomics_data({
+          pred_file: model.metrics?.diatomics?.pred_file,
+        })
         diatomic_curves[model.model_name] = to_page_curves(curves)
       } catch (error) {
         console.error(`Failed to fetch data for ${model.model_name}:`, error)

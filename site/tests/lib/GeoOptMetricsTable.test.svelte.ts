@@ -91,11 +91,11 @@ describe(`GeoOptMetricsTable`, () => {
       model_name: model_key,
       model_version: `test`,
       targets: `EFS_G`,
-      training_set: [],
+      training_sets: [],
       n_training_materials: 1,
       n_training_structures: 1,
       model_params: 1,
-      date_added: `2026-06-30`,
+      dates: { benchmark_added: `2026-06-30` },
       metrics: {
         discovery: { full_test_set: { F1: 0.1 } },
         diatomics: { energy_mae: 1 },

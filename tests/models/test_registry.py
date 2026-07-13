@@ -1,26 +1,181 @@
-"""Tests for model metadata YAML files and registry."""
+"""Model metadata schema, identity, registry, and runner guardrails."""
+
+from __future__ import annotations
 
 import os
 import re
+import shutil
 from glob import glob
+from typing import TYPE_CHECKING
 
 import pytest
 import yaml
 
-from matbench_discovery import ROOT
+import scripts.apply_pr_models_overlay as overlay
+from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import DATASETS
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
-from matbench_discovery.enums import Model
+from matbench_discovery.enums import ArchitectureType, Model, Open, Targets, Task
+from tests.models._helpers import (
+    FAMILY_DIR_PATTERN,
+    MODEL_KEY_PATTERN,
+    assert_canonical_artifact_path,
+    declared_artifact_paths,
+    enum_values_from_schema,
+    load_model_schema,
+    model_yaml_paths,
+    non_aborted_model_yaml_paths,
+    validate_model_yaml,
+    validate_modeling_tasks_yaml,
+)
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 OPEN_DATASETS = {
     dataset["name"]
     for dataset in DATASETS.values()
     if isinstance(dataset, dict) and dataset.get("open")
 }
-
-# Get model directories for testing
 MODEL_DIRS = sorted(glob(f"{ROOT}/models/[!_]*/"))
+TRAIN_TASK_NAMES = {"IP2E", "IS2E", "IS2RE", "IS2RE_SR"}
+
+
+@pytest.mark.parametrize("yaml_path", model_yaml_paths())
+def test_model_yaml_schema_and_identity(yaml_path: str) -> None:
+    """Each model YAML passes schema checks and uses canonical identity/paths."""
+    validate_model_yaml(yaml_path)
+    with open(yaml_path, encoding="utf-8") as file:
+        metadata = yaml.safe_load(file)
+    assert isinstance(metadata, dict)
+    model_key = metadata["model_key"]
+    family_dir = os.path.basename(os.path.dirname(yaml_path))
+    assert MODEL_KEY_PATTERN.fullmatch(model_key)
+    assert FAMILY_DIR_PATTERN.fullmatch(family_dir)
+    assert yaml_path == f"{ROOT}/models/{family_dir}/{model_key}.yml"
+    for artifact_path in declared_artifact_paths(metadata):
+        assert_canonical_artifact_path(
+            artifact_path,
+            family_dir=family_dir,
+            model_key=model_key,
+            yaml_path=yaml_path,
+        )
+
+
+def test_modeling_tasks_align_with_schema() -> None:
+    """modeling-tasks.yml validates and its keys match model-schema metrics."""
+    validate_modeling_tasks_yaml()
+    with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
+        modeling_tasks = yaml.safe_load(file)
+    metrics_schema = load_model_schema()["properties"]["metrics"]
+    assert set(modeling_tasks) - {"cps"} == set(metrics_schema["properties"])
+
+
+def test_overlaid_model_yaml_revalidates_schema(tmp_path: Path) -> None:
+    """The ingest overlay path revalidates schema before trusted code proceeds."""
+    trusted_root = os.path.join(tmp_path, "trusted")
+    pr_root = os.path.join(tmp_path, "pr")
+    os.makedirs(trusted_root)
+    source_yaml = model_yaml_paths()[0]
+    relative_path = os.path.relpath(source_yaml, ROOT)
+    destination = os.path.join(trusted_root, relative_path)
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    shutil.copy2(source_yaml, destination)
+    invalid_yaml = os.path.join(pr_root, relative_path)
+    os.makedirs(os.path.dirname(invalid_yaml), exist_ok=True)
+    with open(invalid_yaml, "w", encoding="utf-8") as file:
+        file.write("model_key: INVALID\n")
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(trusted_root)
+        assert overlay.main(str(pr_root), [relative_path]) == 0
+        with pytest.raises(AssertionError, match="Schema validation failed"):
+            validate_model_yaml(relative_path)
+    finally:
+        os.chdir(original_cwd)
+
+
+def test_datasets_yaml_matches_python_registry() -> None:
+    """Training-set keys cannot drift between data/datasets.yml and Python."""
+    with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
+        datasets_from_file = yaml.safe_load(file)
+    assert set(datasets_from_file) == set(DATASETS)
+
+
+@pytest.mark.parametrize(
+    ("py_values", "schema_property"),
+    [
+        ({member.value for member in ArchitectureType}, "architecture_types"),
+        ({member.value for member in Open}, "openness"),
+        ({member.value for member in Targets}, "targets"),
+        (
+            {task.value for task in Task if task.name not in TRAIN_TASK_NAMES},
+            "train_task",
+        ),
+        (
+            {task.value for task in Task if task.name in TRAIN_TASK_NAMES},
+            "test_task",
+        ),
+    ],
+)
+def test_enums_match_schema(py_values: set[str], schema_property: str) -> None:
+    """Python taxonomy/task enums stay aligned with model-schema vocabulary."""
+    assert py_values == enum_values_from_schema(load_model_schema(), schema_property)
+
+
+def test_model_yaml_enum_bijection() -> None:
+    """Model YAMLs and the generated enum form an exact identity/path bijection."""
+    yaml_paths = non_aborted_model_yaml_paths()
+    enum_paths = sorted(f"{model.yaml_path}" for model in Model)
+    assert sorted(yaml_paths) == enum_paths
+
+    for model in Model:
+        metadata = model.metadata
+        model_key = metadata["model_key"]
+        family_dir = os.path.basename(os.path.dirname(model.yaml_path))
+        assert model.name == model_key.replace("-", "_").replace(".", "_")
+        assert model.key == model_key
+        assert "family" not in metadata
+        assert model.family == family_dir
+        assert model.rel_path == f"{family_dir}/{model_key}.yml"
+        assert model.yaml_path == f"{ROOT}/models/{family_dir}/{model_key}.yml"
+
+
+@pytest.mark.parametrize(
+    "registry_key",
+    sorted(key for key in (*CALCULATORS, *ARCHIVED_DISCOVERY_MODELS) if key != "emt"),
+)
+def test_registry_keys_resolve_to_model_enum(registry_key: str) -> None:
+    """CALCULATORS and archived discovery keys resolve to Model enum members."""
+    assert registry_key in Model.__members__
+
+
+@pytest.mark.parametrize(
+    ("model_key", "is_valid"),
+    [
+        ("equiformer-v3-mp", True),
+        ("mace-mp-0", True),
+        ("esen-30m-mp", True),
+        ("cgcnn-p", True),
+        ("dpa-4.0-pro-mptrj", True),
+        ("chgnet-0.3.0", True),
+        ("pet-oam-xl-1.0.0", True),
+        ("model.1", True),
+        ("Uppercase-model", False),
+        ("model+plus", False),
+        ("model..1", False),
+        ("double--hyphen", False),
+        ("equiformer_v3_mp", False),
+        ("foo_bar", False),
+    ],
+)
+def test_model_key_schema_requires_canonical_keys(
+    model_key: str, is_valid: bool
+) -> None:
+    """Model key schema accepts only canonical lowercase kebab-case."""
+    pattern = load_model_schema()["properties"]["model_key"]["pattern"]
+    assert bool(re.search(pattern, model_key)) is is_valid
 
 
 @pytest.mark.parametrize("task", ["diatomics", "discovery", "kappa"])
@@ -37,7 +192,10 @@ def test_runnable_kappa_models_have_complete_shared_contract() -> None:
     configured_models = {
         model.name
         for model in Model
-        if isinstance(model.metadata.get("hyperparams", {}).get("kappa"), dict)
+        if isinstance(
+            model.metadata.get("hyperparams", {}).get("evaluation", {}).get("kappa"),
+            dict,
+        )
     }
     assert configured_models == set(CALCULATORS) - {"emt"}
     for model_key in configured_models:
@@ -52,90 +210,70 @@ def test_runnable_kappa_models_have_complete_shared_contract() -> None:
     assert prediction_models - configured_models == {"matris_v050_mptrj"}
 
 
-def test_model_dirs_have_metadata() -> None:
-    """Test that all model directories have required metadata."""
-    required_types = {
-        "authors": list,  # dict with name, affiliation, orcid?, email?
-        "date_added": str,
-        "model_key": str,
-        "model_name": str,
-        "model_version": str,
-        "repo": str,
-        "training_set": list,
-    }
+@pytest.mark.parametrize("model", Model.active())
+def test_active_model_training_set_policy(model: Model) -> None:
+    """Training sets follow DATASETS order; open-only models must be marked OD."""
+    training_sets = model.metadata["training_sets"]
+    training_set_keys = set(training_sets)
+    assert training_set_keys <= set(DATASETS), f"Invalid training set: {training_sets}"
+    expected_order = [key for key in DATASETS if key in training_set_keys]
+    assert training_sets == expected_order
+    if training_set_keys <= OPEN_DATASETS:
+        openness = model.metadata.get("openness")
+        assert openness is not None, (
+            f"{model.label} was only trained on open datasets but has no "
+            "openness metadata. Should be marked as OD."
+        )
+        assert openness.endswith("OD"), (
+            f"{model.label} was only trained on open datasets but is "
+            f"marked as {openness}. Should be marked as OD."
+        )
 
-    # Count completed models
-    completed_models = [model for model in Model if model.is_complete]
-    assert len(completed_models) >= len(MODEL_DIRS) - 5, (
-        "Missing metadata for some models"
+    assert model.label == model.metadata["model_name"]
+    assert 3 <= len(model.label) < 50
+    model_version = model.metadata["model_version"]
+    assert model_version is None or 1 <= len(model_version) < 40
+    assert 1 < len(model.metadata["authors"]) < 30
+    repo = model.metadata["repo"]
+    assert repo is None or repo.startswith(("http://", "https://"))
+
+
+def test_active_model_count_matches_family_dirs() -> None:
+    """Every model family directory has a corresponding active enum entry."""
+    active_models = [model for model in Model if model.is_active]
+    assert len(active_models) >= len(MODEL_DIRS) - 5
+
+
+@pytest.mark.parametrize("model", list(Model))
+def test_runnable_models_have_reproducible_runners(model: Model) -> None:
+    """Runnable models expose shared calculators or retained task scripts."""
+    if (
+        model.name in CALCULATORS
+        or model.metadata.get("targets") == "E"
+        or model.metadata.get("checkpoint_url") is None
+        or model.metadata.get("lifecycle") in {"aborted", "superseded"}
+    ):
+        return
+    model_dir = os.path.dirname(model.yaml_path)
+    assert glob(f"{model_dir}/test_*.py") or glob(f"{model_dir}/test_*.ipynb"), (
+        f"Missing test file in {model_dir}"
     )
 
-    for model in completed_models:
-        model_dir = f"{ROOT}/models/{model.key}/"
-        for key, expected_type in required_types.items():
-            assert key in model.metadata, f"Required {key=} missing in {model_dir}"
-            actual_value = model.metadata[key]
-            err_msg = f"Invalid {key=}, expected {expected_type} in {model_dir}"
-            assert isinstance(actual_value, expected_type), err_msg
 
-            if key != "training_set":
-                continue
-            training_sets = actual_value
-            # allow either string key or dict
-            training_set_keys = set(training_sets)
-            assert training_set_keys <= set(DATASETS), (
-                f"Invalid training set: {training_sets}"
-            )
-            # Check if model was trained only on open datasets
-            if training_set_keys <= OPEN_DATASETS:
-                openness = model.metadata.get("openness")
-                if openness is None:
-                    raise ValueError(
-                        f"{model.label} was only trained on open datasets but has no "
-                        "openness metadata. Should be marked as OD."
-                    )
-                if not openness.endswith("OD"):
-                    # if so, check that the model is marked as OD (open data)
-                    raise ValueError(
-                        f"{model.label} was only trained on open datasets but is "
-                        f"marked as {openness}. Should be marked as OD."
-                    )
-
-        authors = model.metadata["authors"]
-        metadata_model_name = model.metadata["model_name"]
-        model_version = model.metadata["model_version"]
-        repo = model.metadata["repo"]
-        assert model.label == metadata_model_name, (
-            f"{model.label=} != {metadata_model_name=}"
-        )
-
-        # make sure all keys are valid
-        assert 3 <= len(model.label) < 50, (
-            f"Invalid name={model.label!r} not between 3 and 50 characters"
-        )
-        assert 1 <= len(model_version) < 30, (
-            f"Invalid {model_version=} not between 1 and 30 characters"
-        )
-        assert 1 < len(authors) < 30, f"{len(authors)=} not between 1 and 30"
-        assert repo == "missing" or repo.startswith("https://"), (
-            f"Invalid {repo=} not starting with https://"
-        )
-
-
-def test_model_dirs_have_reproducible_runners() -> None:
-    """Require runnable models to have shared calculator or retained task coverage."""
-    for model in Model:
-        if (
-            model.name in CALCULATORS
-            or model.metadata.get("targets") == "E"
-            or model.metadata.get("checkpoint_url") == "missing"
-            or model.metadata.get("status") in {"aborted", "superseded"}
-        ):
+def test_environments_drive_calculator_dependencies() -> None:
+    """Registered calculators expose exactly their YAML environment blocks."""
+    for calculator_key, calc_spec in CALCULATORS.items():
+        if calculator_key == "emt":
             continue
-        model_dir = os.path.dirname(model.yaml_path)
-        assert glob(f"{model_dir}/test_*.py") or glob(f"{model_dir}/test_*.ipynb"), (
-            f"Missing test file in {model_dir}"
+        model = Model[calculator_key]
+        environment = model.metadata["environment"]
+        assert calc_spec.deps == tuple(environment["dependencies"])
+        assert calc_spec.python_version == environment.get("python_version")
+        assert calc_spec.find_links == tuple(environment.get("find_links", []))
+        assert calc_spec.extra_index_url == tuple(
+            environment.get("extra_index_urls", [])
         )
+        assert calc_spec.project == environment.get("project")
 
 
 def test_discovery_contributor_policy_forbids_runner_forks() -> None:
@@ -145,35 +283,14 @@ def test_discovery_contributor_policy_forbids_runner_forks() -> None:
     assert "test_<arch_name>_discovery.py" not in pr_template
 
 
-def test_active_discovery_models_have_reproducible_runner() -> None:
+@pytest.mark.parametrize("model", Model.active())
+def test_active_discovery_models_have_shared_or_archived_runner(model: Model) -> None:
     """Active discovery models are shared-runner-backed or explicitly archived."""
-    assert set(ARCHIVED_DISCOVERY_MODELS) <= {model.name for model in Model}
-    for model in Model.active():
-        discovery_metrics = model.metrics.get("discovery")
-        if not isinstance(discovery_metrics, dict) or not discovery_metrics.get(
-            "pred_file"
-        ):
-            continue
-        assert model.name in CALCULATORS or model.name in ARCHIVED_DISCOVERY_MODELS, (
-            f"{model.name} has discovery results but no shared or archived runner state"
-        )
-
-
-@pytest.mark.parametrize(
-    "model_key, is_valid",
-    [
-        ("equiformer-v3-mp", True),  # kebab-cased
-        ("mace-mp-0", True),
-        ("eSEN-30m-mp", True),  # uppercase and digits allowed
-        ("cgcnn+p", True),  # + allowed
-        ("dpa-4.0-pro-mptrj", True),  # dots allowed
-        ("equiformer_v3_mp", False),  # underscores rejected
-        ("foo_bar", False),
-    ],
-)
-def test_model_key_schema_forbids_underscores(model_key: str, is_valid: bool) -> None:
-    """model_key schema pattern rejects underscores to keep model URLs param-cased."""
-    with open(f"{ROOT}/tests/model-schema.yml") as file:
-        pattern = yaml.safe_load(file)["properties"]["model_key"]["pattern"]
-    # JSON Schema applies `pattern` as an (anchored here) regex, same as re.search
-    assert bool(re.search(pattern, model_key)) is is_valid
+    discovery_metrics = model.metrics.get("discovery")
+    if not isinstance(discovery_metrics, dict):
+        return
+    if not discovery_metrics.get("pred_file"):
+        return
+    assert model.name in CALCULATORS or model.name in ARCHIVED_DISCOVERY_MODELS, (
+        f"{model.name} has discovery results but no shared or archived runner state"
+    )

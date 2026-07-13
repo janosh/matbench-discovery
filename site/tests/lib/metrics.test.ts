@@ -4,12 +4,32 @@ import {
   assemble_row_data,
   format_train_set,
   metric_better_as,
+  model_role_from_targets,
   sort_models,
   targets_tooltips,
 } from '$lib/metrics'
 import type { TargetType } from '$lib/schema/model'
 import type { ModelData } from '$lib/types'
 import { describe, expect, it } from 'vitest'
+
+describe(`model_role_from_targets`, () => {
+  it.each([
+    {
+      targets: `E`,
+      label: `Energy predictor`,
+    },
+    {
+      targets: `EFS_G`,
+      label: `Interatomic potential`,
+    },
+    {
+      targets: `EF_D`,
+      label: `Interatomic potential`,
+    },
+  ])(`maps $targets → $label`, ({ targets, label }) => {
+    expect(model_role_from_targets(targets as TargetType).label).toBe(label)
+  })
+})
 
 describe(`targets_tooltips`, () => {
   it.each([

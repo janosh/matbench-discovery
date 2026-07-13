@@ -133,7 +133,7 @@
 
   interface PointMetadata extends Record<string, unknown> {
     model_name: string
-    date_added: string
+    benchmark_added: string | null
     days_ago: string
     model_key?: string
   }
@@ -153,11 +153,12 @@
         return []
       }
 
-      const { model_name, date_added: model_date, model_key } = model
-      const days_ago = format_relative_time(model.date_added)
+      const { model_name, model_key } = model
+      const benchmark_added = model.dates.benchmark_added
+      const days_ago = benchmark_added ? format_relative_time(benchmark_added) : ``
       const metadata: PointMetadata = {
         model_name,
-        date_added: model_date,
+        benchmark_added,
         days_ago,
         model_key,
       }
@@ -399,7 +400,7 @@
       scale_type: scale_of(`y`),
       label_shift: {
         x: -10,
-        y: [`date_added`, `model_params`].includes(axes.y?.key ?? ``) ? -40 : -10,
+        y: [`benchmark_added`, `model_params`].includes(axes.y?.key ?? ``) ? -40 : -10,
       },
       ticks,
       options: prop_options,
@@ -455,10 +456,10 @@
         )}
         <strong>{metadata.model_name}</strong><br />
         {@html axes.x?.label}: {x_formatted}
-        {#if axes.x?.key === `date_added` && metadata.days_ago}
+        {#if axes.x?.key === `benchmark_added` && metadata.days_ago}
           <small>({metadata.days_ago})</small>{/if}<br />
         {@html axes.y?.label}: {y_formatted}<br />
-        {#if ![`model_params`, `date_added`].includes(axes.color_value?.key ?? ``) && point?.color_value !== undefined}
+        {#if ![`model_params`, `benchmark_added`].includes(axes.color_value?.key ?? ``) && point?.color_value !== undefined}
           {@html axes.color_value?.label}:
           {format_num(point.color_value as number)}<br />
         {/if}

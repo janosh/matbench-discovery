@@ -1005,15 +1005,17 @@ def test_write_metrics_to_yaml(
         "rdf_error": 12.34567,
         "n_systems": 17,
     }
-    path = "models/test/md-metrics.csv"
-    url = "https://example.com/md-metrics.csv"
+    path = "models/mace/mace-mp-0/2026-07-01-md-metrics.csv.gz"
+    url = "https://example.com/2026-07-01-md-metrics.csv.gz"
     md_metrics.write_metrics_to_yaml(
         model, metrics, pred_file_path=path, pred_file_url=url
     )
 
     text = yaml_path.read_text(encoding="utf-8")
-    assert "pred_file: models/test/md-metrics.csv" in text
-    assert "pred_file_url: https://example.com/md-metrics.csv" in text
+    assert "pred_file:" in text
+    assert f"name: {path}" in text
+    assert f"url: {url}" in text
+    assert "pred_file_url:" not in text
     assert "hardware: NVIDIA H200" in text
     assert "run_time_sec: 4521.484 # s" in text
     assert "energy_rmse: 1.2346 # meV/atom" in text

@@ -45,7 +45,7 @@
   const homo_nuc_key = `homo-nuclear`
   const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
   const has_diatomics_metrics = (model: ModelData): boolean =>
-    model.metrics?.diatomics != null && typeof model.metrics.diatomics === `object`
+    model.metrics?.diatomics != null
   // default-sort by the combined diatomics score (CDS), best (highest) first
   const default_sort: { column: string; dir: SortDir } = {
     column: DIATOMICS_METRICS.diatomics_combined_score.key,

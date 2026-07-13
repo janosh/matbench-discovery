@@ -32,6 +32,7 @@ from matbench_discovery.calculators import (
     resolve_checkpoint,
     resolve_device,
 )
+from matbench_discovery.data import artifact_filename
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import effective_shard_args, slurm_shard_selection
 from matbench_discovery.phonons.pipeline import (
@@ -134,7 +135,7 @@ def resolve_output_paths(
     dry_run: bool,
     shard_dir: str | None,
 ) -> tuple[str, str]:
-    """Reuse one prior shard directory and align final artifact basenames."""
+    """Reuse one prior shard directory and emit a canonical prediction artifact."""
     dry_suffix = "-dry-run" if dry_run else ""
     default_stem = f"{out_dir}/{today}-phonondb-kappa-103{dry_suffix}"
     selected_shard_dir, artifact_stem = resolve_sharded_prefix(
@@ -143,7 +144,10 @@ def resolve_output_paths(
         task="kappa",
         shard_dir=shard_dir,
     )
-    return selected_shard_dir, f"{artifact_stem}.json.gz"
+    artifact_date = os.path.basename(artifact_stem)[:10]
+    artifact_dir = f"{out_dir}/dry-run" if dry_run else out_dir
+    artifact_name = artifact_filename(artifact_date, "phonons_kappa_103")
+    return selected_shard_dir, f"{artifact_dir}/{artifact_name}"
 
 
 def resolved_artifact_identifier(model: Model, checkpoint: str | None) -> str | None:

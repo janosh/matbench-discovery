@@ -24,6 +24,13 @@ import yaml
 
 from matbench_discovery import ROOT
 from matbench_discovery.calculators import CALCULATORS
+from matbench_discovery.data import (
+    FILE_REF_KEYS,
+    file_ref_name,
+    file_ref_url,
+    parse_artifact_filename,
+    task_coverage,
+)
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS, RelaxationSettings
 from matbench_discovery.enums import Model
 from matbench_discovery.phonons.pipeline import KappaSettings
@@ -128,11 +135,23 @@ def uv_run_args(args: str) -> tuple[str, ...]:
     return ("uv", "run", "--with-editable", project_req, *tokens)
 
 
-def task_metrics(model: Model, task: str) -> dict | str | None:
-    """A task's raw metrics from the model YAML: dict if present, str for declared
-    opt-outs like 'not available', None if missing.
-    """
-    return model.metadata.get("metrics", {}).get(task)
+def declared_artifacts(
+    value: object, prefix: tuple[str, ...] = ()
+) -> list[tuple[tuple[str, ...], str]]:
+    """Collect nested FileRef local paths from model metadata."""
+    if not isinstance(value, dict):
+        return []
+    artifacts: list[tuple[tuple[str, ...], str]] = []
+    for key, nested in value.items():
+        if not isinstance(key, str):
+            continue
+        key_path = (*prefix, key)
+        if key in FILE_REF_KEYS:
+            if name := file_ref_name(nested):
+                artifacts.append((key_path, name))
+        elif isinstance(nested, dict):
+            artifacts.extend(declared_artifacts(nested, key_path))
+    return artifacts
 
 
 def check_submission(
@@ -152,15 +171,26 @@ def check_submission(
     else:
         checks.fail(f"Model YAML file not found at: {yaml_path}")
     checks.ok(f"Model '{model.name}' is present in the generated Model enum")
+    expected_artifact_dir = f"models/{model.family}/{model.metadata['model_key']}"
+    for key_path, artifact_path in declared_artifacts(
+        model.metadata.get("metrics", {}), ("metrics",)
+    ):
+        try:
+            parse_artifact_filename(os.path.basename(artifact_path))
+            if os.path.dirname(artifact_path) != expected_artifact_dir:
+                raise ValueError("artifact is not directly model-owned")
+        except ValueError as exc:
+            checks.fail(f"Invalid {'.'.join(key_path)}: {exc}")
 
     # E = energy only (no forces -> no relaxation, phonons or diatomics)
     energy_only = model.metadata.get("targets") == "E"
 
-    discovery = task_metrics(model, "discovery")
-    if isinstance(discovery, dict) and discovery.get("pred_file_url"):
-        checks.ok("Prediction file URL found in YAML (discovery.pred_file_url)")
+    discovery = model.metadata.get("metrics", {}).get("discovery")
+
+    if isinstance(discovery, dict) and file_ref_url(discovery.get("pred_file")):
+        checks.ok("Prediction file URL found in YAML (discovery.pred_file.url)")
     else:
-        checks.fail(f"No discovery.pred_file_url found in {yaml_path}")
+        checks.fail(f"No discovery.pred_file.url found in {yaml_path}")
 
     # (task, label, optional). phonons pred file nests under kappa_103.
     force_tasks = (
@@ -172,10 +202,12 @@ def check_submission(
         if energy_only:
             checks.skip(f"{label} check skipped (targets=E, no forces)")
             continue
-        metrics = task_metrics(model, task)
-        if isinstance(metrics, str):  # declared opt-out, e.g. 'not available'
-            checks.skip(f"{label} declared {metrics!r}")
+        status, reason = task_coverage(model.metadata, task)
+        if status not in {"complete", "partial"}:
+            suffix = f": {reason}" if reason else ""
+            checks.skip(f"{label} declared {status!r}{suffix}")
             continue
+        metrics = model.metadata.get("metrics", {}).get(task)
         if task == "phonons" and isinstance(metrics, dict):
             metrics = metrics.get("kappa_103")
         if isinstance(metrics, dict) and metrics.get("pred_file"):
@@ -206,7 +238,10 @@ def check_submission(
             )
             continue
 
-        if task == "kappa" and isinstance(task_metrics(model, "phonons"), str):
+        if task == "kappa" and task_coverage(model.metadata, "phonons")[0] not in {
+            "complete",
+            "partial",
+        }:
             checks.skip("kappa shared runner check skipped (phonons unavailable)")
             continue
 
@@ -274,7 +309,7 @@ def run_archive(model: Model, checks: Checklist) -> None:
     banner("STEP 4: Archiving prediction files + publishing parity assets")
     if run_cmd(
         *uv_run_args("scripts/upload_model_preds_to_figshare.py"),
-        *("--models", model.name, "--no-interactive"),
+        *("--models", model.name, "--publish"),
     ):
         checks.ok("Prediction files archived to project figshare articles")
     else:
@@ -331,7 +366,7 @@ def map_yaml_paths(paths: Sequence[str]) -> list[str]:
                 metadata = yaml.safe_load(file)
         except OSError as exc:
             raise SystemExit(f"Unknown model YAML: {path}") from exc
-        if not (isinstance(metadata, dict) and metadata.get("status") == "aborted"):
+        if not (isinstance(metadata, dict) and metadata.get("lifecycle") == "aborted"):
             raise SystemExit(f"{path} is not in the generated Model enum")
     return list(dict.fromkeys(names))
 
@@ -367,7 +402,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         except ValueError:
             parser.error(
                 f"{args.model!r} not in the generated Model enum - check its "
-                "model_key/status and run python scripts/generate_model_enum.py"
+                "model_key/lifecycle and run python scripts/generate_model_enum.py"
             )
     if args.payloads_only:
         run_payload_refresh(checks, model=model)

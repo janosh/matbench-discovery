@@ -237,7 +237,7 @@ def test_write_site_payload_subset_run_prunes_inactive_models(
     """Subset runs drop committed entries of superseded/inactive models (by key or
     label) while preserving unknown reference lines like 'Test set standard deviation'.
     """
-    inactive = next(model for model in Model if not model.is_complete)
+    inactive = next(model for model in Model if not model.is_active)
     stale_id = getattr(inactive, id_field)
     figs.write_site_payload(
         "demo",

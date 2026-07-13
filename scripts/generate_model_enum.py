@@ -2,7 +2,6 @@
 
 import keyword
 import os
-import re
 from glob import glob
 
 import yaml
@@ -21,17 +20,17 @@ def generate_source(source: str) -> str:
     _, suffix = remainder.split(END_MARKER)
     members: list[tuple[str, str]] = []
     seen_names: set[str] = set()
-    for yaml_path in glob(f"{ROOT}/models/[!_]*/[!_]*.yml"):
+    for yaml_path in sorted(glob(f"{ROOT}/models/[!_]*/[!_]*.yml")):
         with open(yaml_path, encoding="utf-8") as file:
             metadata = yaml.safe_load(file)
         if not isinstance(metadata, dict):
             raise TypeError(f"{yaml_path} must contain a YAML mapping")
-        if metadata.get("status") == "aborted":
+        if metadata.get("lifecycle") == "aborted":
             continue
         model_key = metadata.get("model_key")
         if not isinstance(model_key, str):
             raise TypeError(f"{yaml_path} has invalid {model_key=}")
-        name = re.sub(r"[^a-z0-9]+", "_", model_key.casefold()).strip("_")
+        name = model_key.replace("-", "_").replace(".", "_")
         if not name.isidentifier() or keyword.iskeyword(name) or name in seen_names:
             raise ValueError(f"{yaml_path} has invalid or duplicate enum name {name!r}")
         seen_names.add(name)

@@ -82,8 +82,12 @@ def is_full_model_run() -> bool:
 
 
 def complete_models() -> list[Model]:
-    """Return CLI-selected models with complete discovery metrics."""
-    return [model for model in cli_args.models if model.is_complete]
+    """Return CLI-selected active models that have discovery prediction files."""
+    return [
+        model
+        for model in cli_args.models
+        if model.is_active and model.metrics.get("discovery", {}).get("pred_file")
+    ]
 
 
 def shared_payload_test_subset() -> TestSubset:

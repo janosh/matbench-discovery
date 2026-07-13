@@ -12,8 +12,17 @@ from numpy.typing import NDArray
 from pymatviz.enums import Key
 
 from matbench_discovery import data as mbd_data
+from matbench_discovery.data import file_ref_url, make_file_ref
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import phonons as phonon_metrics
+
+_K = "models/mace/mace-mp-0"
+KAPPA_PRED = f"{_K}/2026-07-01-phonons-kappa-103.json.gz"
+KAPPA_FORCE = f"{_K}/2026-07-01-phonons-kappa-103-forces.json.gz"
+KAPPA_RUN_INFO = f"{_K}/2026-07-01-phonons-kappa-103-run-info.json"
+KAPPA_PRED_LEGACY = f"{_K}/2025-01-01-phonons-kappa-103.json.gz"
+KAPPA_FORCE_NEW = f"{_K}/2026-07-02-phonons-kappa-103-forces.json.gz"
+_GEO = "models/alignn/alignn/2026-07-01-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz"
 
 
 @pytest.fixture
@@ -483,7 +492,7 @@ def update_temp_kappa_yaml(
     initial_yaml: str,
     *,
     metrics: dict[str, float] | None = None,
-    pred_file_path: str = "models/test/new.json.gz",
+    pred_file_path: str = KAPPA_PRED,
     run_metadata: dict[str, object] | None = None,
     force_file_path: str | None = None,
     run_info_path: str | None = None,
@@ -513,23 +522,26 @@ def test_write_metrics_to_yaml_preserves_existing_artifacts(tmp_path: Path) -> N
     kappa_metrics = update_temp_kappa_yaml(
         tmp_path,
         (
-            "metrics:\n"
-            "  phonons:\n"
-            "    kappa_103:\n"
-            "      pred_file: models/test/existing.json.gz\n"
-            "      pred_file_url: https://figshare.com/files/existing\n"
-            "      analysis_file: models/test/analysis.csv.gz\n"
+            f"metrics:\n  phonons:\n    kappa_103:\n"
+            f"      pred_file:\n"
+            f"        name: {KAPPA_PRED_LEGACY}\n"
+            f"        url: https://figshare.com/files/existing\n"
+            f"      analysis_file:\n"
+            f"        name: {_GEO}\n"
         ),
         metrics={"srme": 0.1234, "sre": 0.5678},
-        pred_file_path="models/test/kappa-103.json.gz",
+        pred_file_path=KAPPA_PRED,
     )
     assert kappa_metrics == {
-        "pred_file": "models/test/existing.json.gz",
-        "pred_file_url": "https://figshare.com/files/existing",
-        "analysis_file": "models/test/analysis.csv.gz",
+        "pred_file": make_file_ref(
+            KAPPA_PRED_LEGACY, url="https://figshare.com/files/existing"
+        ),
+        "analysis_file": make_file_ref(_GEO),
         "κ_SRME": 0.1234,
         "κ_SRE": 0.5678,
     }
+    assert "pred_file_url" not in kappa_metrics
+    assert "pred_file_artifact" not in kappa_metrics
 
 
 @pytest.mark.parametrize(
@@ -544,7 +556,7 @@ def test_kappa_metric_yaml_replaces_missing_or_unavailable_phonons(
         tmp_path, initial_yaml, replace_pred_file=True
     )
     assert kappa_metrics["κ_SRME"] == 0.25
-    assert kappa_metrics["pred_file"] == "models/test/new.json.gz"
+    assert kappa_metrics["pred_file"] == make_file_ref(KAPPA_PRED)
 
 
 def test_kappa_metric_yaml_round_trip_updates_provenance(tmp_path: Path) -> None:
@@ -552,14 +564,17 @@ def test_kappa_metric_yaml_round_trip_updates_provenance(tmp_path: Path) -> None
     kappa_metrics = update_temp_kappa_yaml(
         tmp_path,
         (
-            "metrics:\n"
-            "  phonons:\n"
-            "    kappa_103:\n"
-            "      κ_SRME: 1.0\n"
-            "      pred_file: models/test/new.json.gz\n"
-            "      pred_file_url: https://example.com/old.json.gz\n"
-            "      force_file_url: https://example.com/old-forces.json.gz\n"
-            "      run_info_file_url: https://example.com/old-run-info.json\n"
+            f"metrics:\n  phonons:\n    kappa_103:\n"
+            f"      κ_SRME: 1.0\n"
+            f"      pred_file:\n"
+            f"        name: {KAPPA_PRED}\n"
+            f"        url: https://example.com/old.json.gz\n"
+            f"      force_file:\n"
+            f"        name: {KAPPA_FORCE}\n"
+            f"        url: https://example.com/old-forces.json.gz\n"
+            f"      run_info_file:\n"
+            f"        name: {KAPPA_RUN_INFO}\n"
+            f"        url: https://example.com/old-run-info.json\n"
         ),
         run_metadata={
             "hardware": "NVIDIA H200",
@@ -567,22 +582,25 @@ def test_kappa_metric_yaml_round_trip_updates_provenance(tmp_path: Path) -> None
             "max_rss_gb": 3.5,
             "max_gpu_mem_gb": 4.5,
         },
-        force_file_path="models/test/forces.json.gz",
-        run_info_path="models/test/run-info.json",
+        force_file_path=KAPPA_FORCE,
+        run_info_path=KAPPA_RUN_INFO,
         replace_pred_file=True,
     )
     assert kappa_metrics["κ_SRME"] == 0.25
     assert kappa_metrics["κ_SRE"] == 0.125
-    assert kappa_metrics["pred_file"] == "models/test/new.json.gz"
-    assert kappa_metrics["pred_file_url"] is None
-    assert kappa_metrics["force_file"] == "models/test/forces.json.gz"
-    assert kappa_metrics["force_file_url"] is None
-    assert kappa_metrics["run_info_file"] == "models/test/run-info.json"
-    assert kappa_metrics["run_info_file_url"] is None
+    assert kappa_metrics["pred_file"] == make_file_ref(KAPPA_PRED)
+    assert kappa_metrics["force_file"] == make_file_ref(KAPPA_FORCE)
+    assert kappa_metrics["run_info_file"] == make_file_ref(KAPPA_RUN_INFO)
     assert kappa_metrics["hardware"] == "NVIDIA H200"
     assert kappa_metrics["run_time_sec"] == 12.5
     assert kappa_metrics["max_rss_gb"] == 3.5
     assert kappa_metrics["max_gpu_mem_gb"] == 4.5
+    assert file_ref_url(kappa_metrics["pred_file"]) is None
+    assert file_ref_url(kappa_metrics["force_file"]) is None
+    assert file_ref_url(kappa_metrics["run_info_file"]) is None
+    assert "pred_file_url" not in kappa_metrics
+    assert "force_file_url" not in kappa_metrics
+    assert "run_info_file_url" not in kappa_metrics
 
 
 def test_kappa_metric_yaml_clears_url_when_sidecar_path_changes(
@@ -592,21 +610,24 @@ def test_kappa_metric_yaml_clears_url_when_sidecar_path_changes(
     kappa_metrics = update_temp_kappa_yaml(
         tmp_path,
         (
-            "metrics:\n"
-            "  phonons:\n"
-            "    kappa_103:\n"
-            "      κ_SRME: 1.0\n"
-            "      pred_file: models/test/pred.json.gz\n"
-            "      pred_file_url: https://example.com/pred.json.gz\n"
-            "      force_file: models/test/old-forces.json.gz\n"
-            "      force_file_url: https://example.com/old-forces.json.gz\n"
+            f"metrics:\n  phonons:\n    kappa_103:\n"
+            f"      κ_SRME: 1.0\n"
+            f"      pred_file:\n"
+            f"        name: {KAPPA_PRED}\n"
+            f"        url: https://example.com/pred.json.gz\n"
+            f"      force_file:\n"
+            f"        name: {KAPPA_FORCE}\n"
+            f"        url: https://example.com/old-forces.json.gz\n"
         ),
-        pred_file_path="models/test/pred.json.gz",
-        force_file_path="models/test/new-forces.json.gz",
+        pred_file_path=KAPPA_PRED,
+        force_file_path=KAPPA_FORCE_NEW,
     )
-    assert kappa_metrics["pred_file_url"] == "https://example.com/pred.json.gz"
-    assert kappa_metrics["force_file"] == "models/test/new-forces.json.gz"
-    assert kappa_metrics["force_file_url"] is None
+    assert (
+        file_ref_url(kappa_metrics["pred_file"]) == "https://example.com/pred.json.gz"
+    )
+    assert kappa_metrics["force_file"] == make_file_ref(KAPPA_FORCE_NEW)
+    assert file_ref_url(kappa_metrics["force_file"]) is None
+    assert "force_file_url" not in kappa_metrics
 
 
 def test_kappa_metric_yaml_replacement_clears_stale_sidecars(
@@ -616,23 +637,19 @@ def test_kappa_metric_yaml_replacement_clears_stale_sidecars(
     kappa_metrics = update_temp_kappa_yaml(
         tmp_path,
         (
-            "metrics:\n"
-            "  phonons:\n"
-            "    kappa_103:\n"
-            "      κ_SRME: 1.0\n"
-            "      force_file: models/test/old-forces.json.gz\n"
-            "      force_file_url: https://example.com/old-forces.json.gz\n"
-            "      run_info_file: models/test/old-run-info.json\n"
-            "      run_info_file_url: https://example.com/old-run-info.json\n"
-            "      max_gpu_mem_gb: 9.0\n"
+            f"metrics:\n  phonons:\n    kappa_103:\n"
+            f"      κ_SRME: 1.0\n"
+            f"      force_file:\n"
+            f"        name: {KAPPA_FORCE}\n"
+            f"        url: https://example.com/old-forces.json.gz\n"
+            f"      run_info_file:\n"
+            f"        name: {KAPPA_RUN_INFO}\n"
+            f"        url: https://example.com/old-run-info.json\n"
+            f"      max_gpu_mem_gb: 9.0\n"
         ),
         replace_pred_file=True,
     )
-    for stale_key in (
-        "force_file",
-        "force_file_url",
-        "run_info_file",
-        "run_info_file_url",
-        "max_gpu_mem_gb",
-    ):
+    for stale_key in ("force_file", "run_info_file", "max_gpu_mem_gb"):
         assert stale_key not in kappa_metrics
+    assert "force_file_url" not in kappa_metrics
+    assert "run_info_file_url" not in kappa_metrics

@@ -22,6 +22,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import ROOT, figs
 from matbench_discovery.cli import cli_args, is_full_model_run
+from matbench_discovery.data import file_ref_name, file_ref_url
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
@@ -35,18 +36,18 @@ df_dft_analysis = pd.read_csv(DataFiles.wbm_dft_geo_opt_symprec_1e_5.path, index
 model_data: dict[str, pd.DataFrame] = {}
 for model in cli_args.models:
     metrics = model.metadata.get("metrics", {}).get("geo_opt", {})
-    if not isinstance(metrics, dict) or not metrics.get("pred_file"):
+    if not isinstance(metrics, dict) or not file_ref_name(metrics.get("pred_file")):
         continue
 
     symprec_metrics = metrics.get(symprec_str, {})
-    if not (analysis_file := symprec_metrics.get("analysis_file")):
+    if not (analysis_name := file_ref_name(symprec_metrics.get("analysis_file"))):
         print(f"Warning: {model.label} has no analysis file for {symprec_str}")
         continue
 
-    analysis_path = f"{ROOT}/{analysis_file}"
+    analysis_path = f"{ROOT}/{analysis_name}"
     # fetch the (small) symmetry-analysis CSV from figshare if missing so payloads can
     # be regenerated on machines/CI that never ran the model locally
-    if analysis_file_url := symprec_metrics.get("analysis_file_url"):
+    if analysis_file_url := file_ref_url(symprec_metrics.get("analysis_file")):
         maybe_auto_download_file(analysis_file_url, analysis_path, label=model.label)
     if not os.path.isfile(analysis_path):
         print(f"Warning: {model.label} analysis file not found at {analysis_path}")

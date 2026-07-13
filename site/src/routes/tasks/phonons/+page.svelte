@@ -1,6 +1,6 @@
 <script lang="ts">
   import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
-  import { by_date_added_desc, MetricsTable, ModelSelect, MODELS } from '$lib'
+  import { by_benchmark_added_desc, MetricsTable, ModelSelect, MODELS } from '$lib'
   import type { ModelData } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
   import { make_table_filters } from '$lib/models.svelte'
@@ -68,7 +68,7 @@
   > = {
     kappa: (model_1, model_2) => kappa_srme(model_1) - kappa_srme(model_2),
     name: (model_1, model_2) => model_1.model_name.localeCompare(model_2.model_name),
-    date: by_date_added_desc,
+    date: by_benchmark_added_desc,
   }
   let sorted_models = $derived(leaderboard_models.toSorted(sort_compare[sort_mode]))
   // per-material diagnostics (SRME scatter + frequency parity) for the selected model
@@ -81,7 +81,7 @@
       const srme = get_nested_number(model, kappa_srme_path)
       const suffix = {
         name: ``,
-        date: ` (${model.date_added})`,
+        date: ` (${model.dates.benchmark_added})`,
         kappa: srme == null ? `` : ` (${format_num(srme, `.3~f`)})`,
       }[sort_mode]
       return {

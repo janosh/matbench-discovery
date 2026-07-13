@@ -28,8 +28,7 @@
   // show only MD metrics and metadata columns
   const visible_cols = task_page_visible_cols(...Object.values(MD_METRICS))
 
-  const has_md_metrics = (model: ModelData) =>
-    model.metrics?.md != null && typeof model.metrics.md === `object`
+  const has_md_metrics = (model: ModelData) => model.metrics?.md != null
 
   // headline MD view now that CMDS folds in rollout speed: a cost-vs-fidelity Pareto -
   // wall time (x) vs CMDS (y), with marker size = model params and color = training-set
