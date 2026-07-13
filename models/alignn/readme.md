@@ -21,7 +21,7 @@ Replace `/path/to/` with the actual path to the patch file.
 The directory retains the training workflow and metadata used for the published
 predictions:
 
-1. [`train_alignn.py`](train_alignn.py): Train an ALIGNN model on all 154k MP-computed structure entries. The resulting model checkpoint is saved to the `out_dir` variable in that script and also uploaded to `wandb` from where it is publicly available for 3rd party reproducibility.
+1. [`train_alignn.py`](train_alignn.py): Train an ALIGNN model on all 154k MP-computed structure entries. Run it with `uv run models/alignn/train_alignn.py`; its inline metadata installs ALIGNN, W&B, and this repository in an isolated environment. The script uses the original [`alignn-config.json`](alignn-config.json), ported to the current ALIGNN data-loader API. The resulting model checkpoint is saved to the `out_dir` variable in that script; the published checkpoint is linked above.
 
 The legacy one-off discovery executable that generated
 `2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz` was retired when

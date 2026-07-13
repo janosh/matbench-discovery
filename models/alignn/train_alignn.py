@@ -1,19 +1,29 @@
-# %%
+"""Train ALIGNN on Materials Project formation energies."""
+
+# /// script
+# requires-python = ">=3.12,<3.13"
+# dependencies = [
+#   "alignn==2026.5.20",
+#   "matbench-discovery",
+#   "wandb>=0.27",
+# ]
+#
+# [tool.uv.sources]
+# matbench-discovery = { path = "../..", editable = true }
+# ///
+
 import json
 import os
 from importlib.metadata import version
 
 import pandas as pd
-import torch
 import wandb
 from alignn.config import TrainingConfig
-from alignn.data import StructureDataset, load_graphs
+from alignn.data import get_train_val_loaders
 from alignn.train import train_dgl
 from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from pymatviz.enums import Key
-from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from matbench_discovery import today
@@ -30,11 +40,9 @@ module_dir = os.path.dirname(__file__)
 model_name = f"{Model.alignn}-mp-e_form"
 target_col = Key.formation_energy_per_atom
 input_col = "atoms"
-device = "cuda" if torch.cuda.is_available() else "cpu"
 job_name = f"{today}-train-{model_name}"
 
 
-pred_col = "e_form_per_atom_alignn"
 with open(f"{module_dir}/alignn-config.json") as file:
     config = TrainingConfig(**json.load(file))
 
@@ -79,69 +87,58 @@ run_params = dict(
     target_col=target_col,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
-    alignn_config=config.dict(),
+    alignn_config=config.model_dump(),
 )
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%
-df_train, df_val = train_test_split(
-    df_in.head(1000).reset_index()[[Key.mat_id, input_col, target_col]],
-    test_size=0.05,
-    random_state=42,
+dataset_array = [
+    {
+        config.id_tag: material_id,
+        input_col: atoms.to_dict(),
+        config.target: float(target),
+    }
+    for material_id, atoms, target in df_in[[input_col, target_col]].itertuples()
+]
+train_loader, val_loader, test_loader, prepare_batch = get_train_val_loaders(
+    dataset=config.dataset,
+    dataset_array=dataset_array,
+    target=config.target,
+    n_train=config.n_train,
+    n_val=config.n_val,
+    n_test=config.n_test,
+    train_ratio=config.train_ratio,
+    val_ratio=config.val_ratio,
+    test_ratio=config.test_ratio,
+    batch_size=config.batch_size,
+    atom_features=config.atom_features,
+    neighbor_strategy=config.neighbor_strategy,
+    standardize=config.atom_features != "cgcnn",
+    line_graph=config.compute_line_graph,
+    split_seed=config.random_seed,
+    id_tag=config.id_tag,
+    pin_memory=config.pin_memory,
+    workers=config.num_workers,
+    save_dataloader=config.save_dataloader,
+    use_canonize=config.use_canonize,
+    filename=config.filename,
+    cutoff=config.cutoff,
+    cutoff_extra=config.cutoff_extra,
+    max_neighbors=config.max_neighbors,
+    three_body_cutoff=config.three_body_cutoff,
+    classification_threshold=config.classification_threshold,
+    target_multiplication_factor=config.target_multiplication_factor,
+    standard_scalar_and_pca=config.standard_scalar_and_pca,
+    keep_data_order=config.keep_data_order,
+    output_features=config.model.output_features,
+    output_dir=config.output_dir,
+    use_lmdb=config.use_lmdb,
+    read_existing=config.read_existing,
+    dtype=config.dtype,
 )
 
-
-def df_to_loader(
-    df: pd.DataFrame,
-    *,
-    batch_size: int = 128,
-    line_graph: bool = True,
-    pin_memory: bool = False,
-    shuffle: bool = True,
-) -> DataLoader:
-    """Converts a dataframe to a regular PyTorch dataloader for train/val/test.
-
-    Args:
-        df (pd.DataFrame): With id, input and target columns
-        batch_size (int, optional): Defaults to 128.
-        line_graph (bool, optional): Whether to train line (True) or atom (False)  graph
-            version of ALIGNN. Defaults to True.
-        pin_memory (bool, optional): Whether torch DataLoader should pin memory.
-            Defaults to False.
-        shuffle (bool, optional): Whether to shuffle the dataset. Defaults to True.
-
-    Returns:
-        DataLoader: PyTorch data loader
-    """
-    graphs = load_graphs(
-        df, neighbor_strategy=config.neighbor_strategy, use_canonize=config.use_canonize
-    )
-    dataset = StructureDataset(
-        df.reset_index(drop=True),
-        graphs,
-        target=target_col,
-        line_graph=line_graph,
-        atom_features=config.atom_features,
-        id_tag=Key.mat_id,
-    )
-    collate_fn = getattr(dataset, f"collate{'_line' if line_graph else ''}_graph")
-
-    return DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        collate_fn=collate_fn,
-        pin_memory=pin_memory,
-    )
-
-
-train_loader, val_loader = df_to_loader(df_train), df_to_loader(df_val, shuffle=False)
-
-
-# %%
-prepare_batch = train_loader.dataset.prepare_batch
 # triggers error in alignn/train.py line 1059 in train_dgl()
 # f.write("%s, %6f, %6f\n" % (id, target, out_data))
 # TypeError: must be real number, not list
@@ -149,7 +146,12 @@ config.write_predictions = False
 
 train_hist = train_dgl(
     config,
-    train_val_test_loaders=[train_loader, val_loader, val_loader, prepare_batch],
+    train_val_test_loaders=[
+        train_loader,
+        val_loader,
+        test_loader or val_loader,
+        prepare_batch,
+    ],
 )
 
 wandb.log(train_hist)
