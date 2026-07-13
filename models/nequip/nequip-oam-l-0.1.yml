@@ -1,0 +1,238 @@
+model_name: Nequip-OAM-L
+model_key: nequip-oam-l-0.1
+model_version: '0.1'
+dates:
+  benchmark_added: '2025-09-08'
+  paper_published: '2025-08-28'
+lifecycle: active
+authors:
+  - name: Seán R. Kavanagh
+    affiliation: Center for the Environment, Harvard University & MIR Group, Harvard University
+    email: skavanagh@seas.harvard.edu
+    orcid: https://orcid.org/0000-0003-4577-9647
+    url: https://seankavanagh.com
+    corresponding: true
+  - name: Chuin Wei Tan
+    affiliation: MIR Group, Harvard University
+  - name: Albert Musaelian
+    affiliation: MIR Group, Harvard University & Mirian Technologies
+  - name: William C. Witt
+    affiliation: MIR Group, Harvard University
+  - name: Gabriel de Miranda Nascimento
+    affiliation: MIR Group, Harvard University & MIT
+  - name: Ulrik Unneberg
+    affiliation: MIR Group, Harvard University & MIT
+  - name: Marc L. Descoteaux
+    affiliation: MIR Group, Harvard University
+  - name: Boris Kozinsky
+    affiliation: MIR Group, Harvard University
+trained_by:
+  - name: Seán R. Kavanagh
+    affiliation: Center for the Environment, Harvard University & MIR Group, Harvard University
+    email: skavanagh@seas.harvard.edu
+    orcid: https://orcid.org/0000-0003-4577-9647
+    url: https://seankavanagh.com
+    corresponding: true
+
+repo: https://github.com/mir-group/nequip
+doi: https://doi.org/10.5281/zenodo.16980200
+paper: https://arxiv.org/abs/2504.16068
+docs: https://nequip.readthedocs.io/en/latest/
+pr_url: https://github.com/janosh/matbench-discovery/pull/282
+checkpoint_url: https://www.nequip.net/models/mir-group/NequIP-OAM-L:0.1
+license:
+  code: MIT
+  code_url: https://github.com/mir-group/nequip/blob/main/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+environment:
+  dependencies: ['nequip>=0.14', 'torch<2.10']
+  python_version: '3.12'
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj, OMat24, sAlex]
+size: L
+model_params: 9600000
+training_cost:
+  entries:
+    - hardware: NVIDIA H100
+      count: 4
+      hours_per_device: 100.0
+hyperparams:
+  evaluation:
+    max_force: 0.05
+    max_steps: 500
+    ase_optimizer: GOQN
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      save_forces: true
+  architecture:
+    graph_construction_radius: 6.0
+    n_layers: 6
+  training:
+    batch_size: 640
+    initial_learning_rate: 0.005
+    epochs: 30
+    optimizer: AdamW
+  upstream_config:
+    weight_decay: 1e-8
+    sph_harmonics_l_max: 3
+    n_features: 128 (l=0 scalars), 64 (l=1 vectors), 32 (l=2,3 tensors)
+    parity: false
+    zbl_potential: true
+    type_embed_num_features: 48
+    polynomial_cutoff: 5
+    n_radial_bessel_basis: 8
+    loss: Huber - delta=0.01 for energy, delta=0.1 for stress, stratified delta (0.01, 0.007, 0.004, 0.001) for force
+    loss_weights:
+      energy: 1.0
+      force: 5.0
+      stress: 0.01
+    gradient_clip_val: 1
+    learning_rate_schedule: ReduceLROnPlateau - factor=0.1, patience=10, min_lr=1e-6
+notes:
+  description: Large NequIP foundation potential; see <https://www.nequip.net/models/mir-group/NequIP-OAM-L:0.1> for details and <https://arxiv.org/abs/2504.16068> for model/training infrastructure.
+  steps: |
+    Training performed by: (1) pre-training on OMat24; (2) fine-tuning on MPtrj+sAlex, with a reduced learning rate (1e-4), energy-loss-upweighting (1:1:0.01 instead of 1:5:0.01) and `StochasticWeightAveraging` (SWA).
+
+metrics:
+  diatomics:
+    pred_file:
+      name: models/nequip/nequip-oam-l-0.1/2026-06-28-diatomics.json.gz
+      url: https://figshare.com/files/66104642
+      size: 260978
+      md5: 24f5921af62f2150cf650f2491080e25
+    hardware: NVIDIA H200
+    run_time_sec: 456.98
+    pbe_wall_dist_mae: 0.06374
+    pbe_energy_mae: 0.618
+    pbe_bond_length_error: 0.2472
+    pbe_well_depth_error: 0.5059
+    pbe_vib_freq_error: 70.19
+    tortuosity: 1.004
+    energy_diff_flips: 1.575
+    energy_jump: 0.1032
+    force_flips: 1.575
+    force_total_variation: 201.7
+    force_jump: 5.586
+    pbe_force_mae: 0.605
+  discovery:
+    pred_file:
+      name: models/nequip/nequip-oam-l-0.1/2025-08-27-discovery.csv.gz
+      url: https://figshare.com/files/57574462
+      size: 2634867
+      md5: d6c5679e0cf47d09b6211552e0734ca6
+    full_test_set:
+      F1: 0.87  # fraction
+      DAF: 5.06 # dimensionless
+      Precision: 0.868 # fraction
+      Recall: 0.872 # fraction
+      Accuracy: 0.955 # fraction
+      TPR: 0.872 # fraction
+      FPR: 0.027 # fraction
+      TNR: 0.973 # fraction
+      FNR: 0.128 # fraction
+      TP: 38456 # count
+      FP: 5835 # count
+      TN: 207036 # count
+      FN: 5636 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.858 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.893  # fraction
+      DAF: 5.823 # dimensionless
+      Precision: 0.89 # fraction
+      Recall: 0.895 # fraction
+      Accuracy: 0.967 # fraction
+      TPR: 0.895 # fraction
+      FPR: 0.02 # fraction
+      TNR: 0.98 # fraction
+      FNR: 0.105 # fraction
+      TP: 29867 # count
+      FP: 3684 # count
+      TN: 178430 # count
+      FN: 3507 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.865 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.985  # fraction
+      DAF: 6.344 # dimensionless
+      Precision: 0.97 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.97 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9698 # count
+      FP: 302 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.083 # eV/atom
+      R2: 0.854 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57731005
+      size: 107105369
+      md5: 2fd8130bbfca1d2a566308c806a02695
+    symprec=1e-5:
+      rmsd: 0.0647
+      n_sym_ops_mae: 1.9352
+      symmetry_decrease: 0.0792
+      symmetry_match: 0.7125
+      symmetry_increase: 0.2018
+      n_structures: 256963
+      analysis_file:
+        name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
+        url: https://figshare.com/files/57731032
+        size: 9046755
+        md5: 1eab178007279afbb2ff29f2732eb1d3
+    symprec=1e-2:
+      rmsd: 0.0647
+      n_sym_ops_mae: 1.7483
+      symmetry_decrease: 0.0543
+      symmetry_match: 0.816
+      symmetry_increase: 0.1226
+      n_structures: 256963
+      analysis_file:
+        name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
+        url: https://figshare.com/files/57731035
+        size: 9235677
+        md5: 88ff54c22d93253374b9bae71f17b53f
+  md:
+    pred_file:
+      name: models/nequip/nequip-oam-l-0.1/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048911
+      size: 1587
+      md5: d5d56a13957953015a9b677f22f98db1
+    hardware: NVIDIA H200
+    run_time_sec: 65073.83
+    energy_rmse: 0.7021
+    force_rmse: 74.8646
+    rdf_error: 3.568
+    adf_error: 1.4564
+    vdos_error: 22.3789
+    pressure_mae: 0.8163
+    pressure_wasserstein: 0.8197
+    pressure_error: 49.14
+    n_systems: 17
+  phonons:
+    kappa_103:
+      pred_file:
+        name: models/nequip/nequip-oam-l-0.1/2025-08-27-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/57475504
+      κ_SRME: 0.1657
+      κ_SRE: 0.0812

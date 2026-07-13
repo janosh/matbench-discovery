@@ -1,8 +1,10 @@
 model_name: ALIGNN FF
 model_key: alignn-ff
 model_version: 2023.07.01
-date_added: '2023-07-11'
-date_published: '2022-09-16'
+dates:
+  benchmark_added: '2023-07-11'
+  paper_published: '2022-09-16'
+lifecycle: aborted
 authors:
   - name: Kamal Choudhary
     affiliation: National Institute of Standards and Technology
@@ -30,45 +32,35 @@ trained_by:
     github: https://github.com/pbenner
 
 repo: https://github.com/usnistgov/alignn
-url: https://jarvis.nist.gov/jalignn
 doi: https://doi.org/10.1039/D2DD00096B
 paper: https://arxiv.org/abs/2209.05554
+docs: https://jarvis.nist.gov/jalignn
 pypi: https://pypi.org/project/alignn
 pr_url: https://github.com/janosh/matbench-discovery/pull/37
-checkpoint_url: https://github.com/usnistgov/alignn/blob/461b35fe/alignn/ff/alignnff_wt10/best_model.pt
-
+checkpoint_url: https://raw.githubusercontent.com/usnistgov/alignn/461b35fe/alignn/ff/alignnff_wt10/best_model.pt
 license:
   code: MIT
   code_url: https://github.com/usnistgov/alignn/blob/408bb6e996/LICENSE.rst
   checkpoint: MIT
   checkpoint_url: https://github.com/usnistgov/alignn/blob/408bb6e996/LICENSE.rst
 
-requirements:
-  ase: 3.22.0
-  dgl-cu111: 0.6.1
-  numpy: 1.24.3
-  pandas: 2.0.1
-  scikit-learn: 1.2.2
-  torch: 1.9.0+cu111
-
-targets: EFS_G
+environment:
+  dependencies:
+    - ase==3.22.0
+    - dgl-cu111==0.6.1
+    - numpy==1.24.3
+    - pandas==2.0.1
+    - scikit-learn==1.2.2
+    - torch==1.9.0+cu111
+  python_version: '3.12'
+openness: OSOD
+architecture_types: [gnn]
 train_task: S2EFS
 test_task: IS2RE
-openness: OSOD
-model_type: UIP
-n_estimators: 1
-model_params: 0 # paper doesn't mention and no longer able to load model checkpoint to count parameters
-trained_for_benchmark: true
-status: aborted
-
+targets: EFS_G
+training_sets: [MPtrj]
+model_params: 0
 hyperparams:
-  graph_construction_radius: 8.0 # Å, from Methodology section in arXiv:2209.05554
-  max_neighbors: 12
-
-training_set: [MPtrj]
-training_cost: missing
-
-metrics:
-  discovery: not available # model was aborted
-  phonons: not available
-  geo_opt: not available
+  architecture:
+    graph_construction_radius: 8.0
+    max_neighbors: 12

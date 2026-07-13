@@ -1,8 +1,10 @@
 model_name: MEGNet
 model_key: megnet
 model_version: v2022.9.20
-date_added: '2022-11-14'
-date_published: '2021-12-18'
+dates:
+  benchmark_added: '2022-11-14'
+  paper_published: '2021-12-18'
+lifecycle: active
 authors:
   - name: Chi Chen
     affiliation: UC San Diego
@@ -22,60 +24,49 @@ authors:
     email: ongsp@ucsd.edu
 
 repo: https://github.com/materialsvirtuallab/megnet
-url: https://materialsvirtuallab.github.io/megnet
 doi: https://doi.org/10.1021/acs.chemmater.9b01294
 paper: https://arxiv.org/abs/1812.05055
+docs: https://materialsvirtuallab.github.io/megnet
 pypi: https://pypi.org/project/megnet
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
-# checkpoint used: Eform_MP_2019 MAML checkpoint
-# https://github.com/materialsvirtuallab/megnet/blob/f37057602/megnet/utils/models.py#L21
 checkpoint_url: https://figshare.com/files/22291785
-
 license:
   code: BSD-3-Clause
   code_url: https://github.com/materialsvirtuallab/megnet/blob/f3705760/LICENSE.md
   checkpoint: BSD-3-Clause
   checkpoint_url: https://github.com/materialsvirtuallab/megnet/blob/f3705760/LICENSE.md
 
-requirements:
-  megnet: 1.3.2
-  pymatgen: 2022.10.22
-  numpy: 1.24.0
-  pandas: 1.5.1
-
+environment:
+  dependencies:
+    - megnet==1.3.2
+    - pymatgen==2022.10.22
+    - numpy==1.24.0
+    - pandas==1.5.1
+  python_version: '3.12'
 openness: OSOD
-trained_for_benchmark: false
+architecture_types: [gnn]
 train_task: RS2RE
 test_task: IS2E
 targets: E
-model_type: GNN
+training_sets: [MP Graphs]
 model_params: 167761
-n_estimators: 1
-
-# we tested the Eform_MP_2019 checkpoint of MEGNet, the original 2018 version was trained on 'Graphs of MP 2018'
-# title: Graphs of MP 2018
-# url: https://figshare.com/articles/dataset/7451351
-# n_structures: 69_239
-training_set: [MP Graphs]
-training_cost: missing
-
 hyperparams:
-  graph_construction_radius: 4.0 # Å, from https://github.com/materialsvirtuallab/megnet/blob/f370576026/README.md#data-sets
-  max_neighbors: .inf
+  architecture:
+    graph_construction_radius: 4.0
 
 notes:
-  Description: MatErials Graph Network is another GNN for material properties of relaxed structure which showed that learned element embeddings encode periodic chemical trends and can be transfer-learned from large data sets (formation energies) to predictions on small data properties (band gaps, elastic moduli).
-  Training: Using pre-trained model released with paper. Was only trained on `MP-crystals-2018.6.1` dataset [available on Figshare](https://figshare.com/articles/Graphs_of_materials_project/7451351).
+  description: MatErials Graph Network is another GNN for material properties of relaxed structure which showed that learned element embeddings encode periodic chemical trends and can be transfer-learned from large data sets (formation energies) to predictions on small data properties (band gaps, elastic moduli).
+  training: Using pre-trained model released with paper. Was only trained on `MP-crystals-2018.6.1` dataset [available on Figshare](https://figshare.com/articles/Graphs_of_materials_project/7451351).
 
 metrics:
-  phonons: not applicable # model doesn't predict forces
-  geo_opt: not applicable
   discovery:
-    pred_file: models/megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/51607286
-    pred_col: e_form_per_atom_megnet
+    pred_file:
+      name: models/megnet/megnet/2022-11-18-discovery.csv.gz
+      url: https://figshare.com/files/51607286
+      size: 1336038
+      md5: 15377f3afc773d651828304593ce12e7
     full_test_set:
-      F1: 0.513 # fraction
+      F1: 0.513  # fraction
       DAF: 2.699 # dimensionless
       Precision: 0.463 # fraction
       Recall: 0.574 # fraction
@@ -84,16 +75,16 @@ metrics:
       FPR: 0.138 # fraction
       TNR: 0.862 # fraction
       FNR: 0.426 # fraction
-      TP: 25311.0 # count
-      FP: 29342.0 # count
-      TN: 183529.0 # count
-      FN: 18781.0 # count
+      TP: 25311 # count
+      FP: 29342 # count
+      TN: 183529 # count
+      FN: 18781 # count
       MAE: 0.128 # eV/atom
       RMSE: 0.204 # eV/atom
       R2: -0.277 # dimensionless
       missing_preds: 1 # count
     most_stable_10k:
-      F1: 0.632 # fraction
+      F1: 0.632  # fraction
       DAF: 3.022 # dimensionless
       Precision: 0.462 # fraction
       Recall: 1.0 # fraction
@@ -102,16 +93,16 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 4620.0 # count
-      FP: 5380.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
+      TP: 4620 # count
+      FP: 5380 # count
+      TN: 0 # count
+      FN: 0 # count
       MAE: 0.304 # eV/atom
       RMSE: 0.336 # eV/atom
       R2: -0.908 # dimensionless
       missing_preds: 0 # count
     unique_prototypes:
-      F1: 0.51 # fraction
+      F1: 0.51  # fraction
       DAF: 2.959 # dimensionless
       Precision: 0.452 # fraction
       Recall: 0.585 # fraction
@@ -120,10 +111,10 @@ metrics:
       FPR: 0.13 # fraction
       TNR: 0.87 # fraction
       FNR: 0.415 # fraction
-      TP: 19537.0 # count
-      FP: 23651.0 # count
-      TN: 158463.0 # count
-      FN: 13837.0 # count
+      TP: 19537 # count
+      FP: 23651 # count
+      TN: 158463 # count
+      FN: 13837 # count
       MAE: 0.13 # eV/atom
       RMSE: 0.206 # eV/atom
       R2: -0.248 # dimensionless

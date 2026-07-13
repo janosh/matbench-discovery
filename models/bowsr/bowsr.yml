@@ -1,8 +1,10 @@
 model_name: BOWSR
 model_key: bowsr
 model_version: 2022.9.20
-date_added: '2022-11-17'
-date_published: '2021-04-20'
+dates:
+  benchmark_added: '2022-11-17'
+  paper_published: '2021-04-20'
+lifecycle: active
 authors:
   - name: Yunxing Zuo
     affiliation: UC San Diego
@@ -17,85 +19,54 @@ authors:
     email: ongsp@ucsd.edu
 
 repo: https://github.com/materialsvirtuallab/maml
-url: https://materialsvirtuallab.github.io/maml
 doi: https://doi.org/10.1016/j.mattod.2021.08.012
 paper: https://arxiv.org/abs/2104.10242
+docs: https://materialsvirtuallab.github.io/maml
 pypi: https://pypi.org/project/maml
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
-# checkpoint used: maml/apps/bowsr/model/model_files/megnet/formation_energy.hdf5
-# see https://github.com/materialsvirtuallab/maml/blob/43619d4fb/maml/apps/bowsr/model/megnet.py#L27
 checkpoint_url: https://github.com/materialsvirtuallab/maml/raw/43619d4fb/maml/apps/bowsr/model/model_files/megnet/formation_energy.hdf5
-
 license:
   code: BSD-3-Clause
   code_url: https://github.com/materialsvirtuallab/maml/blob/50c61ea45f/LICENSE
   checkpoint: BSD-3-Clause
   checkpoint_url: https://github.com/materialsvirtuallab/maml/raw/50c61ea45f/LICENSE
 
-requirements:
-  maml: 2022.9.20
-  pymatgen: 2022.10.22
-  megnet: 1.3.2
-  numpy: 1.24.0
-  pandas: 1.5.1
-
+environment:
+  dependencies:
+    - maml==2022.9.20
+    - pymatgen==2022.10.22
+    - megnet==1.3.2
+    - numpy==1.24.0
+    - pandas==1.5.1
+  python_version: '3.12'
 openness: OSOD
-trained_for_benchmark: false
+architecture_types: [gnn, bayesian_optimization]
 train_task: RS2RE
 test_task: IS2RE-SR
 targets: E
-model_type: BO-GNN
+training_sets: [MP Graphs]
 model_params: 167761
-n_estimators: 1
-
-# we tested the Eform_MP_2019 checkpoint of MEGNet, the original 2018 version was trained on 'Graphs of MP 2018'
-# title: Graphs of MP 2018
-# url: https://figshare.com/articles/dataset/7451351
-# n_structures: 69_239
-training_set: [MP Graphs]
-training_cost: missing
-
 hyperparams:
-  Optimizer Params:
-    alpha: 0.000676
-    n_init: 100
-    n_iter: 100
+  upstream_config:
+    Optimizer Params:
+      alpha: 0.000676
+      n_init: 100
+      n_iter: 100
 
 notes:
-  Description: BOWSR is a Bayesian optimizer with symmetry constraints using a graph deep learning energy model to perform "DFT-free" relaxations of crystal structures.
-  Long: The authors show that this iterative approach improves the accuracy of ML-predicted formation energies over single-shot predictions.
-  Training: Uses same version of MEGNet as standalone MEGNet.
+  description: BOWSR is a Bayesian optimizer with symmetry constraints using a graph deep learning energy model to perform "DFT-free" relaxations of crystal structures.
+  long: The authors show that this iterative approach improves the accuracy of ML-predicted formation energies over single-shot predictions.
+  training: Uses same version of MEGNet as standalone MEGNet.
 
 metrics:
-  phonons: not applicable # model doesn't predict forces
-  geo_opt:
-    pred_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53153456
-    struct_col: structure_bowsr_megnet
-    symprec=1e-5:
-      rmsd: 0.195 # unitless
-      n_sym_ops_mae: 29.4219 # unitless
-      symmetry_decrease: 0.0038 # fraction
-      symmetry_match: 0.5299 # fraction
-      symmetry_increase: 0.4642 # fraction
-      n_structures: 250779 # count
-      analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504507
-    symprec=1e-2:
-      rmsd: 0.195 # unitless
-      n_sym_ops_mae: 25.4696 # unitless
-      symmetry_decrease: 0.0694 # fraction
-      symmetry_match: 0.7978 # fraction
-      symmetry_increase: 0.1198 # fraction
-      n_structures: 250779 # count
-      analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504510
   discovery:
-    pred_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52057523
-    pred_col: e_form_per_atom_bowsr_megnet
+    pred_file:
+      name: models/bowsr/bowsr/2023-01-23-discovery.csv.gz
+      url: https://figshare.com/files/52057523
+      size: 1293333
+      md5: f2375f53cdd947b38a55c7c2b6925779
     full_test_set:
-      F1: 0.437 # fraction
+      F1: 0.437  # fraction
       DAF: 1.836 # dimensionless
       Precision: 0.315 # fraction
       Recall: 0.711 # fraction
@@ -104,16 +75,16 @@ metrics:
       FPR: 0.32 # fraction
       TNR: 0.68 # fraction
       FNR: 0.289 # fraction
-      TP: 31347.0 # count
-      FP: 68139.0 # count
-      TN: 144732.0 # count
-      FN: 12745.0 # count
+      TP: 31347 # count
+      FP: 68139 # count
+      TN: 144732 # count
+      FN: 12745 # count
       MAE: 0.114 # eV/atom
       RMSE: 0.164 # eV/atom
       R2: 0.142 # dimensionless
       missing_preds: 6185 # count
     most_stable_10k:
-      F1: 0.664 # fraction
+      F1: 0.664  # fraction
       DAF: 3.252 # dimensionless
       Precision: 0.497 # fraction
       Recall: 1.0 # fraction
@@ -122,16 +93,16 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 4971.0 # count
-      FP: 5029.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
+      TP: 4971 # count
+      FP: 5029 # count
+      TN: 0 # count
+      FN: 0 # count
       MAE: 0.259 # eV/atom
       RMSE: 0.32 # eV/atom
       R2: -1.172 # dimensionless
       missing_preds: 0 # count
     unique_prototypes:
-      F1: 0.423 # fraction
+      F1: 0.423  # fraction
       DAF: 1.964 # dimensionless
       Precision: 0.3 # fraction
       Recall: 0.718 # fraction
@@ -140,11 +111,41 @@ metrics:
       FPR: 0.307 # fraction
       TNR: 0.693 # fraction
       FNR: 0.282 # fraction
-      TP: 23963.0 # count
-      FP: 55843.0 # count
-      TN: 126271.0 # count
-      FN: 9411.0 # count
+      TP: 23963 # count
+      FP: 55843 # count
+      TN: 126271 # count
+      FN: 9411 # count
       MAE: 0.118 # eV/atom
       RMSE: 0.167 # eV/atom
       R2: 0.151 # dimensionless
       missing_preds: 4484 # count
+  geo_opt:
+    pred_file:
+      name: models/bowsr/bowsr/2023-01-23-geo-opt.jsonl.gz
+      url: https://figshare.com/files/53153456
+      size: 79341126
+      md5: 7afc7e279b0ffb3b7e0fd5a8df8f2f32
+    symprec=1e-5:
+      rmsd: 0.195
+      n_sym_ops_mae: 29.4219
+      symmetry_decrease: 0.0038
+      symmetry_match: 0.5299
+      symmetry_increase: 0.4642
+      n_structures: 250779
+      analysis_file:
+        name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504507
+        size: 7097318
+        md5: 7432876053a070a939f919abc3b53b4d
+    symprec=1e-2:
+      rmsd: 0.195
+      n_sym_ops_mae: 25.4696
+      symmetry_decrease: 0.0694
+      symmetry_match: 0.7978
+      symmetry_increase: 0.1198
+      n_structures: 250779
+      analysis_file:
+        name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504510
+        size: 7051969
+        md5: 9a36c5e5a42a227cf498c82b310695ff

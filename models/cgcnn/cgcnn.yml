@@ -1,8 +1,10 @@
 model_name: CGCNN
 model_key: cgcnn
-model_version: v0.1.0 # the aviary version
-date_added: '2022-12-28'
-date_published: '2017-10-27'
+model_version: v0.1.0
+dates:
+  benchmark_added: '2022-12-28'
+  paper_published: '2017-10-27'
+lifecycle: active
 authors:
   - name: Tian Xie
     email: txie@csail.mit.edu
@@ -21,54 +23,48 @@ repo: https://github.com/CompRhys/aviary
 doi: https://doi.org/10.1103/PhysRevLett.120.145301
 paper: https://arxiv.org/abs/1710.10324
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
-# submission used an ensemble of 10 models, URL is just the first checkpoint
 checkpoint_url: https://api.wandb.ai/files/janosh/matbench-discovery/cvrqqjf1/checkpoint.pth
-
 license:
   code: MIT
   code_url: https://github.com/CompRhys/aviary/blob/3238fb415/LICENSE
   checkpoint: MIT
   checkpoint_url: https://github.com/janosh/matbench-discovery/blob/7c0b089e7/license
 
-requirements:
-  aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
-  torch: 1.11.0
-  torch-scatter: 2.0.9
-  numpy: 1.24.0
-  pandas: 1.5.1
-
+environment:
+  dependencies:
+    - aviary @ https://github.com/CompRhys/aviary/releases/tag/v0.1.0
+    - torch==1.11.0
+    - torch-scatter==2.0.9
+    - numpy==1.24.0
+    - pandas==1.5.1
+  python_version: '3.12'
 openness: OSOD
+architecture_types: [gnn]
 train_task: RS2RE
 test_task: IS2E
 targets: E
-model_type: GNN
+training_sets: [MP 2022]
 model_params: 128450
-trained_for_benchmark: true
 n_estimators: 10
-
-training_set: [MP 2022]
-training_cost: missing
-
 hyperparams:
-  graph_construction_radius: 5.0 # Å, from  https://github.com/CompRhys/aviary/blob/451f5739/aviary/cgcnn/data.py#L28
-  max_neighbors: .inf # CGCNN paper benchmarks on 6.0 Å against 12 NNs graph construction
-
+  architecture:
+    graph_construction_radius: 5.0
 notes:
-  Description: |
+  description: |
     Published in 2018, CGCNN was the first crystal graph convolutional neural network to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a crystal.
     ![Illustration of the crystal graph convolutional neural networks](https://researchgate.net/profile/Tian-Xie-11/publication/320726915/figure/fig1/AS:635258345119746@1528468800829/Illustration-of-the-crystal-graph-convolutional-neural-networks-a-Construction-of-the.png)
     Aviary CGCNN model is based on the original implementation in https://github.com/txie-93/cgcnn.
-  Long: CGCNN was among the first to show that just like in other areas of ML, given large enough training sets, neural networks can learn embeddings that reliably outperform all human-engineered structure features directly from the data.
+  long: CGCNN was among the first to show that just like in other areas of ML, given large enough training sets, neural networks can learn embeddings that reliably outperform all human-engineered structure features directly from the data.
 
 metrics:
-  phonons: not applicable # model doesn't predict forces
-  geo_opt: not applicable # model doesn't predict forces
   discovery:
-    pred_file: models/cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/51607271
-    pred_col: e_form_per_atom_mp2020_corrected_pred_ens
+    pred_file:
+      name: models/cgcnn/cgcnn/2023-01-26-discovery.csv.gz
+      url: https://figshare.com/files/51607271
+      size: 13127994
+      md5: f09ab902adc5dddc835bea8a12b2df5f
     full_test_set:
-      F1: 0.51 # fraction
+      F1: 0.51  # fraction
       DAF: 2.631 # dimensionless
       Precision: 0.451 # fraction
       Recall: 0.587 # fraction
@@ -77,16 +73,16 @@ metrics:
       FPR: 0.148 # fraction
       TNR: 0.852 # fraction
       FNR: 0.413 # fraction
-      TP: 25895.0 # count
-      FP: 31474.0 # count
-      TN: 181397.0 # count
-      FN: 18197.0 # count
+      TP: 25895 # count
+      FP: 31474 # count
+      TN: 181397 # count
+      FN: 18197 # count
       MAE: 0.135 # eV/atom
       RMSE: 0.229 # eV/atom
       R2: -0.624 # dimensionless
       missing_preds: 4 # count
     most_stable_10k:
-      F1: 0.745 # fraction
+      F1: 0.745  # fraction
       DAF: 3.88 # dimensionless
       Precision: 0.593 # fraction
       Recall: 1.0 # fraction
@@ -95,16 +91,16 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 5931.0 # count
-      FP: 4069.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
+      TP: 5931 # count
+      FP: 4069 # count
+      TN: 0 # count
+      FN: 0 # count
       MAE: 0.165 # eV/atom
       RMSE: 0.23 # eV/atom
       R2: 0.181 # dimensionless
       missing_preds: 0 # count
     unique_prototypes:
-      F1: 0.507 # fraction
+      F1: 0.507  # fraction
       DAF: 2.855 # dimensionless
       Precision: 0.436 # fraction
       Recall: 0.605 # fraction
@@ -113,10 +109,10 @@ metrics:
       FPR: 0.143 # fraction
       TNR: 0.857 # fraction
       FNR: 0.395 # fraction
-      TP: 20191.0 # count
-      FP: 26073.0 # count
-      TN: 156041.0 # count
-      FN: 13183.0 # count
+      TP: 20191 # count
+      FP: 26073 # count
+      TN: 156041 # count
+      FN: 13183 # count
       MAE: 0.138 # eV/atom
       RMSE: 0.233 # eV/atom
       R2: -0.603 # dimensionless

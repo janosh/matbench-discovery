@@ -1,8 +1,10 @@
 model_name: HIENet
 model_key: hienet
 model_version: v1.0.1
-date_added: '2025-07-01'
-date_published: '2025-02-25'
+dates:
+  benchmark_added: '2025-07-01'
+  paper_published: '2025-02-25'
+lifecycle: active
 authors:
   - name: Keqiang Yan
     affiliation: Texas A&M University
@@ -20,187 +22,94 @@ authors:
 repo: https://github.com/divelab/AIRS/tree/main/OpenMat/HIENet
 doi: https://doi.org/10.48550/arXiv.2503.05771
 paper: https://arxiv.org/pdf/2503.05771
-checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/checkpoints/HIENet-V3.pth
 pr_url: https://github.com/janosh/matbench-discovery/pull/268
-
-openness: OSOD
-trained_for_benchmark: false
-train_task: S2EFS
-test_task: IS2RE-SR
-targets: EFS_G
-model_type: UIP
-model_params: 7510280
-n_estimators: 1
-
-hyperparams:
-  max_force: 0.05
-  max_steps: 500
-  ase_optimizer: FIRE
-  cell_filter: FrechetCellFilter
-  epochs: 200
-  optimizer: AdamW
-  loss: Huber - delta=0.01
-  loss_weights:
-    energy: 1.0
-    force: 1.0
-    stress: 0.01
-  batch_size: 48
-  initial_learning_rate: 0.01
-  learning_rate_schedule: CosineWarmupLR - warmup_factor=0.2, warmup_epochs=0.1, lr_min_factor=0.0005
-  weight_decay: 0.001
-  lmax: 3
-  num_invariant_conv: 1
-  inv_features: [384, 384]
-  irreps: 384x0e -> 512x0e+128x1e+64x2e -> 512x0e+128x1e+64x2e+32x3e -> 512x0e
-  radial_basis: bessel
-  n_radial_bessel_basis: 8
-  cutoff_function: poly_cut - p_value=6
-  activation_gate: silu/tanh
-  activation_scalar: silu/tanh
-  dropout: 0.04
-  dropout_attention: 0.08
-  conv_denominator: 35.989574
-  ema_decay: 0.999
-  forces_rms_scale: 0.799
-  max_neighbors: .inf
-  graph_construction_radius: 5.0
-
-  kappa: {protocol: phonondb-v1}
+checkpoint_url: https://raw.githubusercontent.com/divelab/AIRS/main/OpenMat/HIENet/checkpoints/HIENet-V3.pth
 license:
   code: GPL-3.0
   code_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/LICENSE
   checkpoint: GPL-3.0
   checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/LICENSE
 
-requirements:
-  torch: 2.1.2
-  torch-geometric: 2.6.1
-  numpy: 1.26.4
-  ase: 3.25.0
-  braceexpand: 0.1.7
-  e3nn: 0.5.6
-  pymatviz: 0.16.0
-  pyyaml: 6.0.1
-  torch-scatter: 2.1.2
-  scikit-learn: 1.7.0
-  pymatgen: 2025.6.14
-  wandb: 0.20.1
-  torch-ema: 0.3.0
-
-training_set: [MPtrj]
-
+environment:
+  dependencies:
+    - hienet @ git+https://github.com/divelab/AIRS.git#subdirectory=OpenMat/HIENet
+    - torch==2.1.2
+    - torch-geometric==2.6.1
+    - torch-scatter==2.1.2
+    - e3nn==0.5.6
+    - braceexpand
+    - numpy<2
+    - plotly<6
+    - ase==3.25.0
+    - pymatviz==0.16.0
+    - pyyaml==6.0.1
+    - scikit-learn==1.7.0
+    - pymatgen==2025.6.14
+    - wandb==0.20.1
+    - torch-ema==0.3.0
+  python_version: '3.11'
+  find_links: ['https://data.pyg.org/whl/torch-2.1.2+cu121.html']
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj]
+model_params: 7510280
 training_cost:
-  Nvidia A100 GPUs: {amount: 8, hours: 361}
-
+  entries:
+    - hardware: NVIDIA A100
+      count: 8
+      hours_per_device: 361.0
+hyperparams:
+  evaluation:
+    max_force: 0.05
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+  architecture:
+    graph_construction_radius: 5.0
+  training:
+    epochs: 200
+    batch_size: 48
+    initial_learning_rate: 0.01
+    optimizer: AdamW
+  upstream_config:
+    loss: Huber - delta=0.01
+    loss_weights:
+      energy: 1.0
+      force: 1.0
+      stress: 0.01
+    learning_rate_schedule: CosineWarmupLR - warmup_factor=0.2, warmup_epochs=0.1, lr_min_factor=0.0005
+    weight_decay: 0.001
+    lmax: 3
+    num_invariant_conv: 1
+    inv_features: [384, 384]
+    irreps: 384x0e -> 512x0e+128x1e+64x2e -> 512x0e+128x1e+64x2e+32x3e -> 512x0e
+    radial_basis: bessel
+    n_radial_bessel_basis: 8
+    cutoff_function: poly_cut - p_value=6
+    activation_gate: silu/tanh
+    activation_scalar: silu/tanh
+    dropout: 0.04
+    dropout_attention: 0.08
+    conv_denominator: 35.989574
+    ema_decay: 0.999
+    forces_rms_scale: 0.799
 notes:
-  Description: |
+  description: |
     HIENet is a hybrid invariant-equivariant graph neural network interatomic potential that combines E(3) invariant and O(3) equivariant message passing layers for materials discovery.
     The model uses physics-informed gradient-based predictions to ensure all outputs satisfy key physical constraints including force conservation and rotational symmetries, enabling accurate prediction of energy, forces, and stress for crystalline materials.
 
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 0.6423
-      pred_file: models/hienet/hienet/2025-07-01-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/55909451
-      κ_SRE: 0.4898
-  geo_opt:
-    pred_file: models/hienet/hienet/2025-07-01-wbm-geo-opt-IS2RE-FIRE.json.gz
-    struct_col: hienet_structure
-    pred_file_url: https://figshare.com/files/55909424
-    symprec=1e-2:
-      rmsd: 0.0795 # unitless
-      n_sym_ops_mae: 1.8758 # unitless
-      symmetry_decrease: 0.0755 # fraction
-      symmetry_match: 0.8002 # fraction
-      symmetry_increase: 0.1163 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/hienet/hienet/2025-07-01-wbm-geo-opt-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/55909445
-    symprec=1e-5:
-      rmsd: 0.0795 # unitless
-      n_sym_ops_mae: 2.6208 # unitless
-      symmetry_decrease: 0.3493 # fraction
-      symmetry_match: 0.4521 # fraction
-      symmetry_increase: 0.1532 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/hienet/hienet/2025-07-01-wbm-geo-opt-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/55909448
-  discovery:
-    pred_file_url: https://figshare.com/files/55909421
-    pred_file: models/hienet/hienet/2025-07-01-wbm-IS2RE.csv.gz
-    pred_col: e_form_per_atom_hienet
-    full_test_set:
-      F1: 0.766 # fraction
-      DAF: 4.361 # dimensionless
-      Precision: 0.748 # fraction
-      Recall: 0.784 # fraction
-      Accuracy: 0.918 # fraction
-      TPR: 0.784 # fraction
-      FPR: 0.055 # fraction
-      TNR: 0.945 # fraction
-      FNR: 0.216 # fraction
-      TP: 34551.0 # count
-      FP: 11622.0 # count
-      TN: 201249.0 # count
-      FN: 9541.0 # count
-      MAE: 0.039 # eV/atom
-      RMSE: 0.082 # eV/atom
-      R2: 0.791 # dimensionless
-      missing_preds: 2 # count
-    most_stable_10k:
-      F1: 0.973 # fraction
-      DAF: 6.194 # dimensionless
-      Precision: 0.947 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.947 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9469.0 # count
-      FP: 531.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
-      MAE: 0.033 # eV/atom
-      RMSE: 0.069 # eV/atom
-      R2: 0.894 # dimensionless
-      missing_preds: 0 # count
-    unique_prototypes:
-      F1: 0.777 # fraction
-      DAF: 4.932 # dimensionless
-      Precision: 0.754 # fraction
-      Recall: 0.801 # fraction
-      Accuracy: 0.929 # fraction
-      TPR: 0.801 # fraction
-      FPR: 0.048 # fraction
-      TNR: 0.952 # fraction
-      FNR: 0.199 # fraction
-      TP: 26723.0 # count
-      FP: 8721.0 # count
-      TN: 173393.0 # count
-      FN: 6651.0 # count
-      MAE: 0.041 # eV/atom
-      RMSE: 0.084 # eV/atom
-      R2: 0.793 # dimensionless
-      missing_preds: 0 # count
-  md:
-    pred_file: models/hienet/hienet/2026-06-28-hienet-md-metrics.csv.gz
-    hardware: NVIDIA H200
-    run_time_sec: 82631.1 # s
-    energy_rmse: 1.1753 # meV/atom
-    force_rmse: 118.8973 # meV/Å
-    rdf_error: 4.9918 # %
-    adf_error: 2.2689 # %
-    vdos_error: 24.3692 # %
-    pressure_mae: 0.7196 # GPa
-    pressure_wasserstein: 0.7264 # GPa
-    pressure_error: 47.6248 # %
-    n_systems: 17 # count
-    pred_file_url: https://figshare.com/files/66048890
   diatomics:
-    pred_file: models/hienet/hienet/2026-06-28-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/66104606
+    pred_file:
+      name: models/hienet/hienet/2026-06-28-diatomics.json.gz
+      url: https://figshare.com/files/66104606
+      size: 204062
+      md5: 50c28c8fd59781cc8ed6e0eda809e451
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 265.43
     pbe_wall_dist_mae: 0.245
@@ -215,3 +124,119 @@ metrics:
     force_total_variation: 118.2
     force_jump: 3.029
     pbe_force_mae: 1.446
+  discovery:
+    pred_file:
+      name: models/hienet/hienet/2025-07-01-discovery.csv.gz
+      url: https://figshare.com/files/55909421
+      size: 2377954
+      md5: 456ab3c4d7cf47a04b492c0bccd566dd
+    full_test_set:
+      F1: 0.766  # fraction
+      DAF: 4.361 # dimensionless
+      Precision: 0.748 # fraction
+      Recall: 0.784 # fraction
+      Accuracy: 0.918 # fraction
+      TPR: 0.784 # fraction
+      FPR: 0.055 # fraction
+      TNR: 0.945 # fraction
+      FNR: 0.216 # fraction
+      TP: 34551 # count
+      FP: 11622 # count
+      TN: 201249 # count
+      FN: 9541 # count
+      MAE: 0.039 # eV/atom
+      RMSE: 0.082 # eV/atom
+      R2: 0.791 # dimensionless
+      missing_preds: 2 # count
+    most_stable_10k:
+      F1: 0.973  # fraction
+      DAF: 6.194 # dimensionless
+      Precision: 0.947 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.947 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9469 # count
+      FP: 531 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.033 # eV/atom
+      RMSE: 0.069 # eV/atom
+      R2: 0.894 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.777  # fraction
+      DAF: 4.932 # dimensionless
+      Precision: 0.754 # fraction
+      Recall: 0.801 # fraction
+      Accuracy: 0.929 # fraction
+      TPR: 0.801 # fraction
+      FPR: 0.048 # fraction
+      TNR: 0.952 # fraction
+      FNR: 0.199 # fraction
+      TP: 26723 # count
+      FP: 8721 # count
+      TN: 173393 # count
+      FN: 6651 # count
+      MAE: 0.041 # eV/atom
+      RMSE: 0.084 # eV/atom
+      R2: 0.793 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/hienet/hienet/2025-07-01-geo-opt.jsonl.gz
+      url: https://figshare.com/files/55909424
+      size: 142678752
+      md5: 3f0bafd55bbb9a1923c39e69b388a31f
+    symprec=1e-2:
+      rmsd: 0.0795
+      n_sym_ops_mae: 1.8758
+      symmetry_decrease: 0.0755
+      symmetry_match: 0.8002
+      symmetry_increase: 0.1163
+      n_structures: 256963
+      analysis_file:
+        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/55909445
+        size: 7303338
+        md5: 2eb207d266814937e4b31519ed8b3335
+    symprec=1e-5:
+      rmsd: 0.0795
+      n_sym_ops_mae: 2.6208
+      symmetry_decrease: 0.3493
+      symmetry_match: 0.4521
+      symmetry_increase: 0.1532
+      n_structures: 256963
+      analysis_file:
+        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/55909448
+        size: 7157751
+        md5: f7bbbc6312aa731bec1a948078b91850
+  md:
+    pred_file:
+      name: models/hienet/hienet/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048890
+      size: 1568
+      md5: 94eb737a2b7ddb00364ef2c158a97eb3
+    hardware: NVIDIA H200
+    run_time_sec: 82631.1
+    energy_rmse: 1.1753
+    force_rmse: 118.8973
+    rdf_error: 4.9918
+    adf_error: 2.2689
+    vdos_error: 24.3692
+    pressure_mae: 0.7196
+    pressure_wasserstein: 0.7264
+    pressure_error: 47.6248
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 0.6423
+      pred_file:
+        name: models/hienet/hienet/2025-07-01-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/55909451
+        size: 8275900
+        md5: 3b8b5fe890adeaa37b86b185dbadfcf8
+      κ_SRE: 0.4898

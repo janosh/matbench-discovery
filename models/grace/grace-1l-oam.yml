@@ -1,8 +1,10 @@
 model_name: GRACE-1L-OAM
 model_key: grace-1l-oam
 model_version: 0.4.5
-date_added: '2025-02-06'
-date_published: '2025-02-06'
+dates:
+  benchmark_added: '2025-02-06'
+  paper_published: '2025-02-06'
+lifecycle: active
 authors:
   - name: Anton Bochkarev
     affiliation: ICAMS, Ruhr University Bochum
@@ -24,149 +26,48 @@ trained_by:
 repo: https://github.com/ICAMS/grace-tensorpotential
 doi: https://doi.org/10.1103/PhysRevX.14.021036
 paper: https://journals.aps.org/prx/abstract/10.1103/PhysRevX.14.021036
-url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation
+docs: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation
 pr_url: https://github.com/janosh/matbench-discovery/pull/202
-# checkpoint URL copied from https://github.com/ICAMS/grace-tensorpotential/blob/3115a931429/tensorpotential/calculator/foundation_models.py#L81
 checkpoint_url: https://ruhr-uni-bochum.sciebo.de/s/gFAv8pX2DJbk1kb
-
 license:
   code: ASL
   code_url: https://github.com/ICAMS/grace-tensorpotential/blob/3f614c8ae6/LICENSE.md
   checkpoint: ASL
   checkpoint_url: https://github.com/ICAMS/grace-tensorpotential/blob/3f614c8ae6/LICENSE.md
 
-requirements:
-  tensorpotential: 0.4.5
-  tensorflow: 2.16.2
-  ase: 3.23.0
-  pymatgen: 2023.7.14
-  numpy: 1.26.4
-
+environment:
+  dependencies:
+    - tensorpotential
+    - tensorflow==2.16.2
+    - ase==3.23.0
+    - pymatgen==2023.7.14
+    - numpy==1.26.4
+  python_version: '3.12'
 openness: OSOD
-trained_for_benchmark: true
+architecture_types: [gnn]
 train_task: S2EF
 test_task: IS2RE-SR
 targets: EFS_G
-model_type: UIP
+training_sets: [MPtrj, OMat24, sAlex]
 model_params: 3447148
-n_estimators: 1
-
-training_set: [OMat24, sAlex, MPtrj]
-training_cost: missing
-
 hyperparams:
-  max_force: 0.03
-  max_steps: 500
-  ase_optimizer: FIRE
-  cell_filter: FrechetCellFilter
-  graph_construction_radius: 6.0 # Å, from https://github.com/ICAMS/grace-tensorpotential/blob/3115a931429/tensorpotential/calculator/foundation_models.py#L83-L84
-  max_neighbors: .inf
+  evaluation:
+    max_force: 0.03
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+  architecture:
+    graph_construction_radius: 6.0
 
-  kappa: {protocol: phonondb-v1}
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 0.5166 # https://github.com/MPA2suite/k_SRME/pull/20
-      pred_file: models/grace/grace-1L-oam/2025-02-02-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/53090597
-      κ_SRE: 0.282
-  geo_opt:
-    pred_file: models/grace/grace-1L-oam/2025-02-02-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53504588
-    struct_col: grace_structure
-    symprec=1e-5:
-      rmsd: 0.0721 # unitless
-      n_sym_ops_mae: 1.8528 # unitless
-      symmetry_decrease: 0.0329 # fraction
-      symmetry_match: 0.7336 # fraction
-      symmetry_increase: 0.2292 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/grace/grace-1L-oam/2025-02-02-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504588
-    symprec=1e-2:
-      rmsd: 0.0721 # unitless
-      n_sym_ops_mae: 1.8157 # unitless
-      symmetry_decrease: 0.0576 # fraction
-      symmetry_match: 0.814 # fraction
-      symmetry_increase: 0.1216 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/grace/grace-1L-oam/2025-02-02-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504591
-  discovery:
-    pred_file: models/grace/grace-1L-oam/2025-02-02-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52204898
-    pred_col: e_form_per_atom_grace
-    full_test_set:
-      F1: 0.808 # fraction
-      DAF: 4.617 # dimensionless
-      Precision: 0.792 # fraction
-      Recall: 0.824 # fraction
-      Accuracy: 0.933 # fraction
-      TPR: 0.824 # fraction
-      FPR: 0.045 # fraction
-      TNR: 0.955 # fraction
-      FNR: 0.176 # fraction
-      TP: 36331.0 # count
-      FP: 9524.0 # count
-      TN: 203347.0 # count
-      FN: 7761.0 # count
-      MAE: 0.03 # eV/atom
-      RMSE: 0.073 # eV/atom
-      R2: 0.836 # dimensionless
-      missing_preds: 2 # count
-    most_stable_10k:
-      F1: 0.962 # fraction
-      DAF: 6.063 # dimensionless
-      Precision: 0.927 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.927 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9269.0 # count
-      FP: 731.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
-      MAE: 0.035 # eV/atom
-      RMSE: 0.087 # eV/atom
-      R2: 0.843 # dimensionless
-      missing_preds: 0 # count
-    unique_prototypes:
-      F1: 0.824 # fraction
-      DAF: 5.255 # dimensionless
-      Precision: 0.803 # fraction
-      Recall: 0.846 # fraction
-      Accuracy: 0.944 # fraction
-      TPR: 0.846 # fraction
-      FPR: 0.038 # fraction
-      TNR: 0.962 # fraction
-      FNR: 0.154 # fraction
-      TP: 28244.0 # count
-      FP: 6917.0 # count
-      TN: 175197.0 # count
-      FN: 5130.0 # count
-      MAE: 0.031 # eV/atom
-      RMSE: 0.073 # eV/atom
-      R2: 0.842 # dimensionless
-      missing_preds: 0 # count
-  md:
-    pred_file: models/grace/grace-1l-oam/2026-06-28-grace_1l_oam-md-metrics.csv.gz
-    hardware: NVIDIA H200
-    run_time_sec: 11657.17 # s
-    energy_rmse: 1.0557 # meV/atom
-    force_rmse: 121.5272 # meV/Å
-    rdf_error: 4.3645 # %
-    adf_error: 1.4896 # %
-    vdos_error: 24.8034 # %
-    pressure_mae: 0.7623 # GPa
-    pressure_wasserstein: 0.7814 # GPa
-    pressure_error: 52.8745 # %
-    n_systems: 17 # count
-    pred_file_url: https://figshare.com/files/66048878
   diatomics:
-    pred_file: models/grace/grace-1l-oam/2026-06-28-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/66104615
+    pred_file:
+      name: models/grace/grace-1l-oam/2026-06-28-diatomics.json.gz
+      url: https://figshare.com/files/66104615
+      size: 256962
+      md5: 39b653cfd5f9922fe823aa6b78464af0
     hardware: NVIDIA H200
     run_time_sec: 79.27
     pbe_wall_dist_mae: 0.1553
@@ -181,3 +82,119 @@ metrics:
     force_total_variation: 129.6
     force_jump: 3.569
     pbe_force_mae: 1.683
+  discovery:
+    pred_file:
+      name: models/grace/grace-1l-oam/2025-02-02-discovery.csv.gz
+      url: https://figshare.com/files/52204898
+      size: 5823029
+      md5: 74adff441dafe8284cb07886579a3512
+    full_test_set:
+      F1: 0.808  # fraction
+      DAF: 4.617 # dimensionless
+      Precision: 0.792 # fraction
+      Recall: 0.824 # fraction
+      Accuracy: 0.933 # fraction
+      TPR: 0.824 # fraction
+      FPR: 0.045 # fraction
+      TNR: 0.955 # fraction
+      FNR: 0.176 # fraction
+      TP: 36331 # count
+      FP: 9524 # count
+      TN: 203347 # count
+      FN: 7761 # count
+      MAE: 0.03 # eV/atom
+      RMSE: 0.073 # eV/atom
+      R2: 0.836 # dimensionless
+      missing_preds: 2 # count
+    most_stable_10k:
+      F1: 0.962  # fraction
+      DAF: 6.063 # dimensionless
+      Precision: 0.927 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.927 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9269 # count
+      FP: 731 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.035 # eV/atom
+      RMSE: 0.087 # eV/atom
+      R2: 0.843 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.824  # fraction
+      DAF: 5.255 # dimensionless
+      Precision: 0.803 # fraction
+      Recall: 0.846 # fraction
+      Accuracy: 0.944 # fraction
+      TPR: 0.846 # fraction
+      FPR: 0.038 # fraction
+      TNR: 0.962 # fraction
+      FNR: 0.154 # fraction
+      TP: 28244 # count
+      FP: 6917 # count
+      TN: 175197 # count
+      FN: 5130 # count
+      MAE: 0.031 # eV/atom
+      RMSE: 0.073 # eV/atom
+      R2: 0.842 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/grace/grace-1l-oam/2025-02-02-geo-opt.jsonl.gz
+      url: https://figshare.com/files/53504588
+      size: 7228548
+      md5: c2839110f6d42227978e28d7580fbfa4
+    symprec=1e-5:
+      rmsd: 0.0721
+      n_sym_ops_mae: 1.8528
+      symmetry_decrease: 0.0329
+      symmetry_match: 0.7336
+      symmetry_increase: 0.2292
+      n_structures: 256963
+      analysis_file:
+        name: models/grace/grace-1l-oam/2025-02-02-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504588
+        size: 7228548
+        md5: c2839110f6d42227978e28d7580fbfa4
+    symprec=1e-2:
+      rmsd: 0.0721
+      n_sym_ops_mae: 1.8157
+      symmetry_decrease: 0.0576
+      symmetry_match: 0.814
+      symmetry_increase: 0.1216
+      n_structures: 256963
+      analysis_file:
+        name: models/grace/grace-1l-oam/2025-02-02-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504591
+        size: 7271290
+        md5: 4a5f631dc1bfc9b31226172a707f9e6a
+  md:
+    pred_file:
+      name: models/grace/grace-1l-oam/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048878
+      size: 1571
+      md5: f2731b702d7574c3e653eac82f12cbba
+    hardware: NVIDIA H200
+    run_time_sec: 11657.17
+    energy_rmse: 1.0557
+    force_rmse: 121.5272
+    rdf_error: 4.3645
+    adf_error: 1.4896
+    vdos_error: 24.8034
+    pressure_mae: 0.7623
+    pressure_wasserstein: 0.7814
+    pressure_error: 52.8745
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 0.5166 # https://github.com/MPA2suite/k_SRME/pull/20
+      pred_file:
+        name: models/grace/grace-1l-oam/2025-02-02-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/53090597
+        size: 7404887
+        md5: 8af96fe24bddfc510a2c481259630bb3
+      κ_SRE: 0.282

@@ -1,4 +1,5 @@
 '$schema': http://json-schema.org/draft-07/schema#
+title: ModelMetadata
 
 definitions:
   # Shared URL schema for all HTTP(S) URLs
@@ -7,29 +8,36 @@ definitions:
     format: uri
     pattern: '^https?://'
 
-  pred_file_requires_url:
-    if:
-      properties:
-        pred_file: { type: string }
-      required: [pred_file]
-    then:
-      required: [pred_file_url]
-      properties:
-        pred_file_url:
-          $ref: '#/definitions/http_url'
+  nullable_http_url:
+    oneOf:
+      - $ref: '#/definitions/http_url'
+      - type: 'null'
 
-  # Shared schema for prediction files
-  pred_files:
+  # Local path + optional Figshare URL and content checksums
+  FileRef:
     type: object
     additionalProperties: false
+    required: [name]
     properties:
-      pred_file:
-        type: [string, 'null']
-      pred_file_url:
-        type: [string, 'null']
+      name:
+        type: string
+        minLength: 1
+      url:
         $ref: '#/definitions/http_url'
-    allOf:
-      - $ref: '#/definitions/pred_file_requires_url'
+      size:
+        type: integer
+        minimum: 0
+      md5:
+        type: string
+        pattern: '^[0-9a-f]{32}$'
+    dependencies:
+      size: [md5]
+      md5: [size]
+
+  nullable_file_ref:
+    oneOf:
+      - $ref: '#/definitions/FileRef'
+      - type: 'null'
 
   # Define a shared schema for authors and trained_by
   person:
@@ -43,18 +51,19 @@ definitions:
       email:
         type: string
         format: email
-      url: &url
-        type: string
-        format: uri
-      orcid: *url
-      github: *url
+      url:
+        $ref: '#/definitions/http_url'
+      orcid:
+        $ref: '#/definitions/http_url'
+      github:
+        $ref: '#/definitions/http_url'
       corresponding:
         type: boolean
     required: [name]
 
-  ModelType:
+  ArchitectureType:
     type: string
-    enum: [GNN, UIP, BO-GNN, Fingerprint, Transformer, RF]
+    enum: [gnn, transformer, random_forest, fingerprint, bayesian_optimization, unknown]
 
   TargetType:
     type: string
@@ -119,23 +128,11 @@ definitions:
     additionalProperties: false
     properties:
       pred_file:
-        type: [string, 'null']
-      pred_file_url:
-        anyOf:
-          - $ref: '#/definitions/http_url'
-          - type: 'null'
+        $ref: '#/definitions/nullable_file_ref'
       force_file:
-        type: [string, 'null']
-      force_file_url:
-        anyOf:
-          - $ref: '#/definitions/http_url'
-          - type: 'null'
+        $ref: '#/definitions/nullable_file_ref'
       run_info_file:
-        type: [string, 'null']
-      run_info_file_url:
-        anyOf:
-          - $ref: '#/definitions/http_url'
-          - type: 'null'
+        $ref: '#/definitions/nullable_file_ref'
       hardware:
         type: string
       run_time_sec:
@@ -152,30 +149,39 @@ definitions:
         type: number
         minimum: 0
         maximum: 2
-    dependencies:
-      pred_file: [pred_file_url]
-      force_file: [force_file_url]
-      run_info_file: [run_info_file_url]
     required: ['κ_SRME']
 
   PhononMetrics:
     type: object
     additionalProperties: false
     properties:
+      status: &task_status
+        type: string
+        enum: [complete, partial, not_available, not_applicable, pending]
+      reason: &task_reason
+        type: [string, 'null']
       kappa_103:
         $ref: '#/definitions/KappaMetrics'
+    allOf: &task_status_reason_rule
+      - if:
+          properties:
+            status:
+              enum: [partial, not_available, not_applicable, pending]
+          required: [status]
+        then:
+          properties:
+            reason:
+              type: string
+              minLength: 1
 
   GeoOptMetrics:
     type: object
     additionalProperties: false
     properties:
-      struct_col:
-        type: string
+      status: *task_status
+      reason: *task_reason
       pred_file:
-        type: [string, 'null']
-      pred_file_url:
-        type: [string, 'null']
-        $ref: '#/definitions/http_url'
+        $ref: '#/definitions/nullable_file_ref'
       symprec=1e-5: &symprec_metrics
         type: object
         additionalProperties: false
@@ -192,12 +198,9 @@ definitions:
           symmetry_increase:
             type: number
           n_structures:
-            type: number
+            type: integer
           analysis_file:
-            type: [string, 'null']
-          analysis_file_url:
-            type: [string, 'null']
-            $ref: '#/definitions/http_url'
+            $ref: '#/definitions/nullable_file_ref'
         required:
           - rmsd
           - n_sym_ops_mae
@@ -206,8 +209,7 @@ definitions:
           - symmetry_increase
           - n_structures
       symprec=1e-2: *symprec_metrics
-    allOf:
-      - $ref: '#/definitions/pred_file_requires_url'
+    allOf: *task_status_reason_rule
 
   DiscoveryMetricsSet:
     type: object
@@ -234,13 +236,13 @@ definitions:
       FNR:
         type: number
       TP:
-        type: number
+        type: integer
       FP:
-        type: number
+        type: integer
       TN:
-        type: number
+        type: integer
       FN:
-        type: number
+        type: integer
       MAE:
         type: number
       RMSE:
@@ -248,7 +250,7 @@ definitions:
       R2:
         type: number
       missing_preds:
-        type: number
+        type: integer
     required:
       - F1
       - DAF
@@ -271,15 +273,11 @@ definitions:
   DiscoveryMetrics:
     type: object
     additionalProperties: false
-    required: [pred_col]
     properties:
-      pred_col:
-        type: string
+      status: *task_status
+      reason: *task_reason
       pred_file:
-        type: [string, 'null']
-      pred_file_url:
-        type: [string, 'null']
-        $ref: '#/definitions/http_url'
+        $ref: '#/definitions/nullable_file_ref'
       hardware:
         type: string
       run_time_sec:
@@ -294,18 +292,16 @@ definitions:
         $ref: '#/definitions/DiscoveryMetricsSet'
       unique_prototypes:
         $ref: '#/definitions/DiscoveryMetricsSet'
-    allOf:
-      - $ref: '#/definitions/pred_file_requires_url'
+    allOf: *task_status_reason_rule
 
   DiatomicsMetrics:
     type: object
     additionalProperties: false
     properties:
+      status: *task_status
+      reason: *task_reason
       pred_file:
-        type: [string, 'null']
-      pred_file_url:
-        type: [string, 'null']
-        $ref: '#/definitions/http_url'
+        $ref: '#/definitions/nullable_file_ref'
       hardware:
         type: string
       run_time_sec:
@@ -342,18 +338,16 @@ definitions:
         type: number
       force_jump:
         type: number
-    allOf:
-      - $ref: '#/definitions/pred_file_requires_url'
+    allOf: *task_status_reason_rule
 
   MdMetrics:
     type: object
     additionalProperties: false
     properties:
+      status: *task_status
+      reason: *task_reason
       pred_file:
-        type: [string, 'null']
-      pred_file_url:
-        type: [string, 'null']
-        $ref: '#/definitions/http_url'
+        $ref: '#/definitions/nullable_file_ref'
       hardware:
         type: string
       run_time_sec:
@@ -381,9 +375,8 @@ definitions:
       # NB: no combined_score -- CMDS is computed on the fly by the site (like CPS)
       # from the stored components, so it can never go stale and stays reweightable
       n_systems:
-        type: number
-    allOf:
-      - $ref: '#/definitions/pred_file_requires_url'
+        type: integer
+    allOf: *task_status_reason_rule
 
   # Define license types from dataset schema
   license_enum:
@@ -412,21 +405,171 @@ definitions:
       - ASL: Academic Software License
       - unreleased: No license since not released
 
+  Dates:
+    type: object
+    additionalProperties: false
+    required: [benchmark_added, paper_published]
+    properties:
+      benchmark_added: &nullable_date
+        oneOf:
+          - type: string
+            format: date
+          - type: 'null'
+      paper_published: *nullable_date
+
+  Environment:
+    type: object
+    additionalProperties: false
+    required: [dependencies, python_version]
+    description: >
+      Isolated runner / provenance environment. Keyed by model_key (dashes and
+      dots mapped to underscores) when loading CALCULATORS specs.
+    properties:
+      dependencies:
+        type: array
+        minItems: 1
+        items:
+          type: string
+        description: >-
+          uv-installable dependency specs used both as provenance display and as
+          the isolated runner environment (e.g. torch==2.6.0, pkg @ git+…).
+      python_version:
+        type: string
+        pattern: '^[0-9]+\.[0-9]+$'
+        description: >
+          Python version pin for the isolated uv runner (e.g. '3.12'). Use 3.11
+          only when a dependency stack requires it (e.g. older torch wheels).
+      find_links:
+        type: array
+        items:
+          $ref: '#/definitions/http_url'
+      extra_index_urls:
+        type: array
+        items:
+          $ref: '#/definitions/http_url'
+      project:
+        type: [string, 'null']
+
+  TrainingCostEntry:
+    type: object
+    additionalProperties: false
+    required: [hardware, count, hours_per_device]
+    properties:
+      hardware:
+        type: string
+        minLength: 1
+        description: Accelerator / device label (e.g. NVIDIA H100).
+      count:
+        type: integer
+        minimum: 1
+        description: Number of devices used.
+      hours_per_device:
+        type: number
+        minimum: 0
+        description: Wall hours per device. Total device-hours = count × hours_per_device.
+
+  TrainingCost:
+    type: object
+    additionalProperties: false
+    required: [entries]
+    description: >
+      Reported training hardware/cost. Omit the whole field when unknown —
+      do not add a placeholder reason.
+    properties:
+      entries:
+        type: array
+        minItems: 1
+        items:
+          $ref: '#/definitions/TrainingCostEntry'
+      reason:
+        type: string
+        minLength: 1
+        description: Optional note about how cost was estimated or aggregated.
+
+  Hyperparams:
+    type: object
+    additionalProperties: false
+    properties:
+      evaluation:
+        type: object
+        additionalProperties: true
+        properties:
+          max_force:
+            type: number
+            exclusiveMinimum: 0
+            description: Geometry-optimization force convergence threshold in eV/Å.
+          force_max:
+            type: number
+            exclusiveMinimum: 0
+          max_steps:
+            type: integer
+            minimum: 0
+          ase_optimizer:
+            type: string
+          ase_filter:
+            type: [string, 'null']
+          cell_filter:
+            type: string
+          kappa:
+            $ref: '#/definitions/KappaSettings'
+      architecture:
+        type: object
+        additionalProperties: true
+        properties:
+          graph_construction_radius:
+            type: number
+            exclusiveMinimum: 0
+            description: Graph construction cutoff radius in Å.
+          max_neighbors:
+            type: [integer, 'null']
+            minimum: 1
+            description: Maximum graph neighbors; null means unlimited.
+          n_layers:
+            type: integer
+            minimum: 1
+      training:
+        type: object
+        additionalProperties: true
+        properties:
+          learning_rate:
+            type: number
+            exclusiveMinimum: 0
+          initial_learning_rate:
+            type: number
+            exclusiveMinimum: 0
+          batch_size:
+            type: integer
+            minimum: 1
+          epochs:
+            type: number
+            exclusiveMinimum: 0
+          optimizer:
+            type: string
+            description: Canonical optimizer label (Adam, AdamW, Muon, ...).
+      upstream_config:
+        type: object
+        additionalProperties: true
+
 type: object
 properties:
   model_name:
     type: string
   model_key:
     type: string
-    # used as the /models/<model_key> URL slug; use hyphens (not underscores) as
-    # word separators so model page URLs stay param-cased
-    pattern: '^[a-zA-Z0-9.+-]+$'
+    # canonical /models/<model_key> URL slug: lowercase alphanumeric segments
+    # separated by single hyphens or dots (dots keep readable version tokens)
+    pattern: '^[a-z0-9]+(?:[.-][a-z0-9]+)*$'
   model_version:
+    type: [string, 'null']
+    description: Upstream package / checkpoint version label (semver, date, tag, …).
+  dates:
+    $ref: '#/definitions/Dates'
+  lifecycle:
     type: string
-  date_added: &date
+    enum: [active, superseded, deprecated, aborted]
+  superseded_by:
     type: string
-    format: date
-  date_published: *date
+    description: model_key of the newer model replacing this one
   authors:
     type: array
     items:
@@ -445,19 +588,21 @@ properties:
     type: array
     items:
       $ref: '#/definitions/person'
-  repo: *url
-  doi: *url
-  paper: *url
-  url: *url
-  pypi: *url
-  pr_url: *url
+  repo:
+    $ref: '#/definitions/nullable_http_url'
+  doi:
+    $ref: '#/definitions/nullable_http_url'
+  paper:
+    $ref: '#/definitions/nullable_http_url'
+  docs:
+    $ref: '#/definitions/nullable_http_url'
+    description: Model documentation / homepage URL (not the code repo).
+  pypi:
+    $ref: '#/definitions/nullable_http_url'
+  pr_url:
+    $ref: '#/definitions/nullable_http_url'
   checkpoint_url:
-    oneOf:
-      - type: string
-        format: uri
-        $ref: '#/definitions/http_url'
-      - type: string
-        enum: [missing]
+    $ref: '#/definitions/nullable_http_url'
   license:
     type: object
     additionalProperties: false
@@ -467,123 +612,57 @@ properties:
         $ref: '#/definitions/license_enum'
         description: License for the model code
       code_url:
-        oneOf:
-          - type: string
-            format: uri
-            $ref: '#/definitions/http_url'
-          - type: string
-            enum: [missing]
+        $ref: '#/definitions/nullable_http_url'
+      code_url_reason:
+        type: string
       checkpoint:
         $ref: '#/definitions/license_enum'
         description: License for the model checkpoint
       checkpoint_url:
-        oneOf:
-          - type: string
-            format: uri
-            $ref: '#/definitions/http_url'
-          - type: string
-            enum: [missing]
-  requirements:
-    type: object
-    patternProperties:
-      "^[a-zA-Z]{1}[a-zA-Z0-9_\\-]{0,}$":
+        $ref: '#/definitions/nullable_http_url'
+      checkpoint_url_reason:
         type: string
-  trained_for_benchmark:
-    type: boolean
-  training_set:
+  environment:
+    $ref: '#/definitions/Environment'
+  training_sets:
     type: array
+    minItems: 1
+    uniqueItems: true
     items:
-      enum: &training_sets
-        - MP 2022
-        - MPtrj
-        - MPF
-        - MP Graphs
-        - GNoME
-        - MatterSim
-        - Alex
-        - OMat24
-        - MatPES PBE
-        - MatPES r2SCAN
-        - sAlex
-        - OpenLAM
-        - MDR-MP PBE ω_q
-        - COSMOSDataset
+      type: string
+    description: Dataset keys validated against data/datasets.yml in registry tests.
+  size:
+    type: string
+    description: Optional model-size label (e.g. 10M, L, XL).
+  fine_tune:
+    type: boolean
+    description: Whether this checkpoint is a fine-tune of another training run.
   hyperparams:
-    type: object
-    additionalProperties: true
-    properties:
-      max_force:
-        type: number
-        description: Maximum remaining force allowed on any atom in eV/Å for geometry optimization convergence
-      max_steps:
-        type: number
-        description: Maximum number of optimization steps allowed
-      optimizer:
-        type: string
-      ase_optimizer:
-        type: string
-        description: ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)
-      cell_filter:
-        type: string
-        description: ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)
-      kappa:
-        $ref: '#/definitions/KappaSettings'
-      learning_rate:
-        type: number
-      batch_size:
-        type: number
-      epochs:
-        type: number
-      n_layers:
-        type: number
-      graph_construction_radius:
-        type: number
-        description: Cutoff radius in Angstroms for graph construction (required for GNN and UIP models)
-      max_neighbors:
-        oneOf:
-          - type: number
-          - type: string
-            enum: [missing]
-        description: Maximum number of neighbors to consider in graph construction (required for GNN and UIP models)
+    $ref: '#/definitions/Hyperparams'
   notes:
     type: object
     additionalProperties: true
+    propertyNames:
+      pattern: '^[a-z0-9]+(?:_[a-z0-9]+)*$'
     properties:
-      Description:
+      description:
         type: string
-      Training:
+      training:
         type: string
       html:
         type: object
         additionalProperties:
           type: string
   model_params:
-    type: number
+    type: integer
     minimum: 0
   n_estimators:
-    type: number
-    minimum: 1
+    type: integer
+    minimum: 2
+    description: >
+      Ensemble size. Omit for single models (default 1); only set when > 1.
   training_cost:
-    oneOf:
-      - type: object
-        minProperties: 1
-        patternProperties:
-          "^[a-zA-Z0-9\\s]+ (GPUs|CPUs|TPUs)$":
-            type: object
-            required: ['amount', 'hours']
-            additionalProperties: false
-            properties:
-              amount:
-                type: number
-                minimum: 1
-              hours:
-                type: number
-                minimum: 0
-              cost:
-                type: number
-                minimum: 0
-      - type: string
-        enum: [missing]
+    $ref: '#/definitions/TrainingCost'
   train_task:
     type: string
     enum: &train_task_enum
@@ -601,116 +680,61 @@ properties:
       - IS2E # initial structure to energy
       - IS2RE # initial structure to relaxed energy -- CGCNN+P
       - IS2RE-SR # initial structure to relaxed energy with structure relaxation
-  model_type:
-    $ref: '#/definitions/ModelType'
+  architecture_types:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items:
+      $ref: '#/definitions/ArchitectureType'
   targets:
     $ref: '#/definitions/TargetType'
   openness:
     type: string
     enum: [OSOD, OSCD, CSOD, CSCD]
-  status:
-    type: string
-    enum: [aborted, complete, deprecated, superseded]
-    # superseded: model is superseded by a newer model
-    # deprecated: model is deprecated and should not be used e.g. because serious bugs were found
-    # aborted: model was aborted before testing could be completed due e.g. to OOM/stability issues
-    # complete: model has been tested and all metrics are available (the default if no status is specified)
-  superseded_by:
-    type: string
-    description: model_key of the newer model replacing this one
   metrics:
     type: object
     additionalProperties: false
     properties:
       phonons:
-        oneOf:
-          - $ref: '#/definitions/PhononMetrics'
-          - type: string
-            enum: [not applicable, not available]
+        $ref: '#/definitions/PhononMetrics'
       geo_opt:
-        oneOf:
-          - $ref: '#/definitions/GeoOptMetrics'
-          - type: string
-            enum: [not applicable, not available]
+        $ref: '#/definitions/GeoOptMetrics'
       discovery:
-        oneOf:
-          - $ref: '#/definitions/DiscoveryMetrics'
-          - type: string
-            enum: [not available]
+        $ref: '#/definitions/DiscoveryMetrics'
       diatomics:
-        oneOf:
-          - $ref: '#/definitions/DiatomicsMetrics'
-          - type: string
-            enum: [not applicable, not available]
+        $ref: '#/definitions/DiatomicsMetrics'
       md:
-        oneOf:
-          - $ref: '#/definitions/MdMetrics'
-          - type: string
-            enum: [not applicable, not available]
+        $ref: '#/definitions/MdMetrics'
 
-# Require graph_construction_radius, max_neighbors for GNN and UIP models
 allOf:
   - if:
       properties:
-        status:
+        lifecycle:
           enum: [superseded]
-      required: [status]
+      required: [lifecycle]
     then:
       required: [superseded_by]
-  - if:
-      properties:
-        model_type:
-          enum: [GNN, UIP]
-      required: [model_type]
-    then:
-      required: [hyperparams]
-      properties:
-        hyperparams:
-          required: [graph_construction_radius, max_neighbors]
-  # Require geo_opt hyperparams for MLIPs with force predictions that have geo_opt metrics
-  - if:
-      properties:
-        model_type:
-          enum: [GNN, UIP]
-        targets:
-          # Any target type that includes forces (F in the name)
-          enum: [EF_G, EF_D, EFS_G, EFSH_G, EFS_D, EFS_GM, EFS_DM]
-        metrics:
-          properties:
-            geo_opt:
-              type: object
-          required: [geo_opt]
-      required: [model_type, targets, metrics]
-    then:
-      required: [hyperparams]
-      properties:
-        hyperparams:
-          required: [ase_optimizer, max_steps, max_force, cell_filter]
 
 required:
   - authors
-  # checkpoint_url is required for all models, but can be 'not available' for closed source models
+  - architecture_types
+  - environment
   - checkpoint_url
-  - date_added
-  - date_published
+  - dates
   - doi
   - license
+  - lifecycle
   - model_key
   - model_name
   - model_params
-  - model_type
   - model_version
-  - n_estimators
   - openness
   - paper
   - pr_url
   - repo
-  - requirements
   - targets
   - test_task
   - train_task
-  - trained_for_benchmark
-  - training_cost
-  - training_set
+  - training_sets
 
 additionalProperties: false

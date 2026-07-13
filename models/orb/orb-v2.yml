@@ -1,8 +1,10 @@
 model_name: ORB v2 MPA
 model_key: orb-v2
 model_version: v2
-date_added: '2024-10-11'
-date_published: '2024-10-29'
+dates:
+  benchmark_added: '2024-10-11'
+  paper_published: '2024-10-29'
+lifecycle: active
 authors:
   - name: Mark Neumann
     affiliation: Orbital Materials
@@ -26,175 +28,72 @@ authors:
     affiliation: Orbital Materials
 
 repo: https://github.com/orbital-materials/orb-models
-url: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-based-interatomic-potential
 doi: https://doi.org/10.48550/arXiv.2410.22570
 paper: https://arxiv.org/abs/2410.22570
-pr_url: https://github.com/janosh/matbench-discovery/pull/133
-# v1 checkpoint: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orbff-v1-20240827.ckpt
-# v2 URL taken from: https://github.com/orbital-materials/orb-models/blob/637a98d49c/MODELS.md
-checkpoint_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-v2-20241011.ckpt
+docs: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-based-interatomic-potential
 pypi: https://pypi.org/project/orb-models
-
+pr_url: https://github.com/janosh/matbench-discovery/pull/133
+checkpoint_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-v2-20241011.ckpt
 license:
   code: Apache-2.0
   code_url: https://github.com/orbital-materials/orb-models/blob/637a98d49/LICENSE
   checkpoint: Apache-2.0
   checkpoint_url: https://github.com/orbital-materials/orb-models/blob/637a98d49/LICENSE
 
+environment:
+  dependencies: ['orb-models==0.4.3', 'pynanoflann==pynanoflann@git+https://github.com/dwastberg/pynanoflann#egg=af434039ae14bedcbb838a7808924d6689274168']
+  python_version: '3.12'
 openness: OSCD
-trained_for_benchmark: false
+architecture_types: [transformer]
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_D
-model_type: UIP
+training_sets: [MPtrj, Alex]
 model_params: 25161727
-n_estimators: 1
-
 hyperparams:
-  max_force: 0.02
-  max_steps: 500
-  ase_optimizer: FIRE
-  cell_filter: FrechetCellFilter
-  optimizer: Adam
-  loss: MAE
-  loss_weights:
-    energy: 10.0
-    force: 1.0
-    stress: 1.0
-  batch_size: 300 # (avg, as batch size is dynamic)
-  initial_learning_rate: 0.0003
-  learning_rate_schedule: CosineAnnealingLR(T_max=100)
-  gradient_clip: 0.5
-  ema_decay: 0.999
-  n_layers: 15
-  features: 256 latent dim, 512 MLP dim
-  num_rbfs: 50
-  graph_construction_radius: 10.0 # Å
-  max_neighbors: 20
-
-  kappa:
-    protocol: phonondb-v1
-    is_plusminus: true
-    save_forces: true
-requirements:
-  orb-models: '0.4.0'
-  pynanoflann: 'pynanoflann@git+https://github.com/dwastberg/pynanoflann#egg=af434039ae14bedcbb838a7808924d6689274168'
-
-training_set: [MPtrj, Alex]
-training_cost: missing
-
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      is_plusminus: true
+      save_forces: true
+  architecture:
+    n_layers: 15
+    graph_construction_radius: 10.0
+    max_neighbors: 20
+  training:
+    batch_size: 300
+    initial_learning_rate: 0.0003
+    optimizer: Adam
+  upstream_config:
+    loss: MAE
+    loss_weights:
+      energy: 10.0
+      force: 1.0
+      stress: 1.0
+    learning_rate_schedule: CosineAnnealingLR(T_max=100)
+    gradient_clip: 0.5
+    ema_decay: 0.999
+    features: 256 latent dim, 512 MLP dim
+    num_rbfs: 50
 notes:
-  Description: |
+  description: |
     ORB is a pretrained model for atomic simulations. ORB uses a pretrained diffusion model backbone which is fine-tuned on MPtrj + Alexandria.
-  Data Leakage: |
+  data_leakage: |
     Note that the Alexandria dataset contains structure prototypes that overlap with the WBM test set (~97k overlapping prototypes).
     Models trained on this dataset benefit from some amount of train/test leakage, though testing on Orb v2 showed that brief (less than 1 epoch)
     fine-tuning resulted in identical metrics whether fine-tuning on Alexandria or sAlex.
 
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 1.7338
-      pred_file: models/orb/orbff-v2/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/52134887
-      κ_SRE: 1.4876
-  geo_opt:
-    pred_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/57753511
-    struct_col: orb_structure
-    symprec=1e-5:
-      rmsd: 0.0973 # unitless
-      n_sym_ops_mae: 9.9331 # unitless
-      symmetry_decrease: 0.8531 # fraction
-      symmetry_match: 0.1433 # fraction
-      symmetry_increase: 0.0034 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504681
-    symprec=1e-2:
-      rmsd: 0.0973 # unitless
-      n_sym_ops_mae: 5.0639 # unitless
-      symmetry_decrease: 0.4547 # fraction
-      symmetry_match: 0.4926 # fraction
-      symmetry_increase: 0.0453 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504684
-  discovery:
-    pred_file: models/orb/orbff-v2/2024-10-11-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52057562
-    pred_col: e_form_per_atom_orb
-    full_test_set:
-      F1: 0.858 # fraction
-      DAF: 5.281 # dimensionless
-      Precision: 0.906 # fraction
-      Recall: 0.815 # fraction
-      Accuracy: 0.954 # fraction
-      TPR: 0.815 # fraction
-      FPR: 0.017 # fraction
-      TNR: 0.983 # fraction
-      FNR: 0.185 # fraction
-      TP: 35949.0 # count
-      FP: 3725.0 # count
-      TN: 209146.0 # count
-      FN: 8143.0 # count
-      MAE: 0.028 # eV/atom
-      RMSE: 0.078 # eV/atom
-      R2: 0.814 # dimensionless
-      missing_preds: 2 # count
-    most_stable_10k:
-      F1: 0.985 # fraction
-      DAF: 6.348 # dimensionless
-      Precision: 0.97 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.97 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9704.0 # count
-      FP: 296.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
-      MAE: 0.019 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.897 # dimensionless
-      missing_preds: 0 # count
-    unique_prototypes:
-      F1: 0.88 # fraction
-      DAF: 6.041 # dimensionless
-      Precision: 0.924 # fraction
-      Recall: 0.841 # fraction
-      Accuracy: 0.965 # fraction
-      TPR: 0.841 # fraction
-      FPR: 0.013 # fraction
-      TNR: 0.987 # fraction
-      FNR: 0.159 # fraction
-      TP: 28055.0 # count
-      FP: 2323.0 # count
-      TN: 179791.0 # count
-      FN: 5319.0 # count
-      MAE: 0.028 # eV/atom
-      RMSE: 0.077 # eV/atom
-      R2: 0.824 # dimensionless
-      missing_preds: 0 # count
-  md:
-    pred_file: models/orb/orb-v2/2026-06-28-orb_v2-md-metrics.csv.gz
-    hardware: NVIDIA H200
-    run_time_sec: 9380.96 # s
-    energy_rmse: 1.3069 # meV/atom
-    force_rmse: 102.4366 # meV/Å
-    rdf_error: 5.1116 # %
-    adf_error: 1.61 # %
-    vdos_error: 24.0358 # %
-    pressure_mae: 0.8755 # GPa
-    pressure_wasserstein: 0.8863 # GPa
-    pressure_error: 57.3565 # %
-    n_systems: 17 # count
-    pred_file_url: https://figshare.com/files/66048923
   diatomics:
-    pred_file: models/orb/orb-v2/2026-06-28-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/66104648
+    pred_file:
+      name: models/orb/orb-v2/2026-06-28-diatomics.json.gz
+      url: https://figshare.com/files/66104648
+      size: 315775
+      md5: 2fea6d0cea983bcca4af081748f2a3bf
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 119.93
     pbe_wall_dist_mae: 0.4834
@@ -209,3 +108,119 @@ metrics:
     force_total_variation: 103.8
     force_jump: 0.1912
     pbe_force_mae: 1.247
+  discovery:
+    pred_file:
+      name: models/orb/orb-v2/2024-10-11-discovery.csv.gz
+      url: https://figshare.com/files/52057562
+      size: 2385306
+      md5: d00f381dac27d367133452a24f17a4e5
+    full_test_set:
+      F1: 0.858  # fraction
+      DAF: 5.281 # dimensionless
+      Precision: 0.906 # fraction
+      Recall: 0.815 # fraction
+      Accuracy: 0.954 # fraction
+      TPR: 0.815 # fraction
+      FPR: 0.017 # fraction
+      TNR: 0.983 # fraction
+      FNR: 0.185 # fraction
+      TP: 35949 # count
+      FP: 3725 # count
+      TN: 209146 # count
+      FN: 8143 # count
+      MAE: 0.028 # eV/atom
+      RMSE: 0.078 # eV/atom
+      R2: 0.814 # dimensionless
+      missing_preds: 2 # count
+    most_stable_10k:
+      F1: 0.985  # fraction
+      DAF: 6.348 # dimensionless
+      Precision: 0.97 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.97 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9704 # count
+      FP: 296 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.897 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.88  # fraction
+      DAF: 6.041 # dimensionless
+      Precision: 0.924 # fraction
+      Recall: 0.841 # fraction
+      Accuracy: 0.965 # fraction
+      TPR: 0.841 # fraction
+      FPR: 0.013 # fraction
+      TNR: 0.987 # fraction
+      FNR: 0.159 # fraction
+      TP: 28055 # count
+      FP: 2323 # count
+      TN: 179791 # count
+      FN: 5319 # count
+      MAE: 0.028 # eV/atom
+      RMSE: 0.077 # eV/atom
+      R2: 0.824 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/orb/orb-v2/2024-10-11-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57753511
+      size: 134322930
+      md5: cc6d3a611cc83234b41b9ecf0e0fead7
+    symprec=1e-5:
+      rmsd: 0.0973
+      n_sym_ops_mae: 9.9331
+      symmetry_decrease: 0.8531
+      symmetry_match: 0.1433
+      symmetry_increase: 0.0034
+      n_structures: 256963
+      analysis_file:
+        name: models/orb/orb-v2/2024-10-11-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504681
+        size: 6373937
+        md5: b23bcc4a6198c7d2273de8c419ce450e
+    symprec=1e-2:
+      rmsd: 0.0973
+      n_sym_ops_mae: 5.0639
+      symmetry_decrease: 0.4547
+      symmetry_match: 0.4926
+      symmetry_increase: 0.0453
+      n_structures: 256963
+      analysis_file:
+        name: models/orb/orb-v2/2024-10-11-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504684
+        size: 7314860
+        md5: a41e0b35983e5010c0da15adda325a39
+  md:
+    pred_file:
+      name: models/orb/orb-v2/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048923
+      size: 1574
+      md5: e34b8d044aad156f9d7b6f0d96b1f2cc
+    hardware: NVIDIA H200
+    run_time_sec: 9380.96
+    energy_rmse: 1.3069
+    force_rmse: 102.4366
+    rdf_error: 5.1116
+    adf_error: 1.61
+    vdos_error: 24.0358
+    pressure_mae: 0.8755
+    pressure_wasserstein: 0.8863
+    pressure_error: 57.3565
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 1.7338
+      pred_file:
+        name: models/orb/orb-v2/2024-11-09-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/52134887
+        size: 7165976
+        md5: f95795db879595958ae37138891f0f38
+      κ_SRE: 1.4876

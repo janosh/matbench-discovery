@@ -1,8 +1,10 @@
 model_name: GNoME
 model_key: gnome
-model_version: n/a
-date_added: '2024-02-03'
-date_published: '2023-11-29'
+model_version:
+dates:
+  benchmark_added: '2024-02-03'
+  paper_published: '2023-11-29'
+lifecycle: active
 authors:
   - name: Amil Merchant
     affiliation: Google DeepMind
@@ -25,58 +27,53 @@ repo: https://github.com/google-deepmind/materials_discovery
 doi: https://doi.org/10.1038/s41586-023-06735-9
 paper: https://nature.com/articles/s41586-023-06735-9
 pr_url: https://github.com/janosh/matbench-discovery/pull/84
-checkpoint_url: missing
-
+checkpoint_url:
 license:
   code: Apache-2.0
   code_url: https://github.com/google-deepmind/materials_discovery/blob/be1fa43a9/LICENSE
   checkpoint: unreleased
-  checkpoint_url: missing
-
+  checkpoint_url:
+environment:
+  dependencies:
+    - e3nn-jax==0.20.3
+    - flax==0.7.5
+    - jax-md==0.2.8
+    - jax==0.4.20
+    - numpy==1.26.2
+    - pymatgen==2023.11.12
+  python_version: '3.12'
 openness: OSCD
-trained_for_benchmark: false
+architecture_types: [gnn]
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EF_G
-model_type: UIP
+training_sets: [GNoME]
 model_params: 16240000
-n_estimators: 1
-
-requirements:
-  e3nn-jax: 0.20.3
-  flax: 0.7.5
-  jax-md: 0.2.8
-  jax: 0.4.20
-  numpy: 1.26.2
-  pymatgen: 2023.11.12
-
-training_set: [GNoME]
-training_cost: missing
-
 hyperparams:
-  optimizer: Adam
-  learning_rate: 2e-3
-  batch_size: 32
-  n_layers: 5
-  n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
-  graph_construction_radius: 5.0 # Å
-  max_neighbors: .inf
-
+  architecture:
+    n_layers: 5
+    graph_construction_radius: 5.0
+  training:
+    learning_rate: 0.002
+    batch_size: 32
+    optimizer: Adam
+  upstream_config:
+    n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
 notes:
-  Description: |
+  description: |
     GNoME is an equivariant Nequip-type graph neural network implemented in e3nn-jax.
-  Training: Using pre-trained model released with "Scaling deep learning for materials discovery" paper. Training set unpublished as of 2024-02-03. The model was trained 1.5 years prior to submission to Matbench Discovery according to private communication.
-  Missing Preds: According to the authors, the 1734 missing WBM predictions are mostly due out-of-memory (OOM) errors. The model was evaluated on A100s but without neighbor lists. The plan is to backfill the missing predictions once H100s are available or neighbor list implementation goes live.
+  training: Using pre-trained model released with "Scaling deep learning for materials discovery" paper. Training set unpublished as of 2024-02-03. The model was trained 1.5 years prior to submission to Matbench Discovery according to private communication.
+  missing_preds: According to the authors, the 1734 missing WBM predictions are mostly due out-of-memory (OOM) errors. The model was evaluated on A100s but without neighbor lists. The plan is to backfill the missing predictions once H100s are available or neighbor list implementation goes live.
 
 metrics:
-  phonons: not available # model is closed source, original GnoME submission predates phonon tasks and DeepMind did not resubmit later
-  geo_opt: not available # author's declined to share model-relaxed structures and can't be reproduced without model access
   discovery:
-    pred_file: models/gnome/2023-11-01-gnome-50076332-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52057556
-    pred_col: e_gnome_after_relax
+    pred_file:
+      name: models/gnome/gnome/2023-11-01-discovery.csv.gz
+      url: https://figshare.com/files/52057556
+      size: 2184155
+      md5: 4b28e10dc4283dc1a1eb63b94c3080d4
     full_test_set:
-      F1: 0.81 # fraction
+      F1: 0.81  # fraction
       DAF: 4.81 # dimensionless
       Precision: 0.825 # fraction
       Recall: 0.796 # fraction
@@ -85,16 +82,16 @@ metrics:
       FPR: 0.035 # fraction
       TNR: 0.965 # fraction
       FNR: 0.204 # fraction
-      TP: 35082.0 # count
-      FP: 7421.0 # count
-      TN: 205450.0 # count
-      FN: 9010.0 # count
+      TP: 35082 # count
+      FP: 7421 # count
+      TN: 205450 # count
+      FN: 9010 # count
       MAE: 0.034 # eV/atom
       RMSE: 0.083 # eV/atom
       R2: 0.786 # dimensionless
       missing_preds: 1744 # count
     most_stable_10k:
-      F1: 0.967 # fraction
+      F1: 0.967  # fraction
       DAF: 6.127 # dimensionless
       Precision: 0.937 # fraction
       Recall: 1.0 # fraction
@@ -103,16 +100,16 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 9366.0 # count
-      FP: 634.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
+      TP: 9366 # count
+      FP: 634 # count
+      TN: 0 # count
+      FN: 0 # count
       MAE: 0.035 # eV/atom
       RMSE: 0.089 # eV/atom
       R2: 0.836 # dimensionless
       missing_preds: 0 # count
     unique_prototypes:
-      F1: 0.829 # fraction
+      F1: 0.829  # fraction
       DAF: 5.523 # dimensionless
       Precision: 0.844 # fraction
       Recall: 0.814 # fraction
@@ -121,10 +118,10 @@ metrics:
       FPR: 0.028 # fraction
       TNR: 0.972 # fraction
       FNR: 0.186 # fraction
-      TP: 27178.0 # count
-      FP: 5009.0 # count
-      TN: 177105.0 # count
-      FN: 6196.0 # count
+      TP: 27178 # count
+      FP: 5009 # count
+      TN: 177105 # count
+      FN: 6196 # count
       MAE: 0.035 # eV/atom
       RMSE: 0.085 # eV/atom
       R2: 0.785 # dimensionless

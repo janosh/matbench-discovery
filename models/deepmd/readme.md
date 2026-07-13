@@ -1,5 +1,7 @@
 # DeePMD
 
+DPA3 is an advanced interatomic potential leveraging the message passing architecture, implemented within the DeePMD-kit framework, available on [GitHub](https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha).
+
 ## DeePMD-DPA3
 
 ### Model
@@ -81,55 +83,8 @@ print(water.get_forces())
 
 ### Results
 
-#### DPA-3.1-3M-FT
-
-`2025-06-05-dpa-3.1-3M-ft-preds.csv.gz`
-
-```txt
-    Full-set    Unique  10K
-F1              0.864375       0.884321     0.986675
-DAF             4.911418       5.667089     6.369397
-Precision       0.842745       0.866337     0.973700
-Recall          0.887145       0.903068     1.000000
-Accuracy        0.952230       0.963409     0.973700
-TPR             0.887145       0.903068     1.000000
-FPR             0.034288       0.025533     1.000000
-TNR             0.965712       0.974467     0.000000
-FNR             0.112855       0.096932     0.000000
-TP          39116.000000   30139.000000  9737.000000
-FP           7299.000000    4650.000000   263.000000
-TN         205572.000000  177464.000000     0.000000
-FN           4976.000000    3235.000000     0.000000
-MAE             0.022537       0.022778     0.019031
-RMSE            0.068373       0.066638     0.067072
-R2              0.856592       0.869046     0.900992
-```
-
-#### DPA-3.1-MPtrj
-
-`2025-06-05-dpa-3.1-mptrj-preds.csv.gz`
-
-```txt
-    Full-set    Unique  10K
-F1              0.788720       0.802815     0.980216
-DAF             4.418684       5.024052     6.287629
-Precision       0.758197       0.768035     0.961200
-Recall          0.821804       0.840894     1.000000
-Accuracy        0.924452       0.936024     0.961200
-TPR             0.821804       0.840894     1.000000
-FPR             0.054286       0.046542     1.000000
-TNR             0.945714       0.953458     0.000000
-FNR             0.178196       0.159106     0.000000
-TP          36235.000000   28064.000000  9612.000000
-FP          11556.000000    8476.000000   388.000000
-TN         201315.000000  173638.000000     0.000000
-FN           7857.000000    5310.000000     0.000000
-MAE             0.035629       0.036945     0.031540
-RMSE            0.079964       0.079838     0.087248
-R2              0.803849       0.812029     0.837659
-```
-
-#### Relaxed Structure
+Discovery metrics are recorded in each model YAML. Relaxed structures are available
+from Figshare:
 
 ```sh
 # DPA-3.1-3M-FT
