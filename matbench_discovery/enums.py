@@ -4,7 +4,7 @@ import functools
 import os
 import re
 from enum import EnumType, StrEnum, _EnumDict, auto, unique
-from typing import Any, Self, TypeVar
+from typing import Any, Self, TypeVar, cast
 
 import pymatviz as pmv
 import yaml
@@ -378,87 +378,57 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """YAML file path associated with the model."""
         return f"{type(self).base_dir}/{self.rel_path}"
 
+    def _metric_pred_path(
+        self,
+        metrics_key: str,
+        *,
+        nested_key: str | None = None,
+        required: bool = False,
+    ) -> str | None:
+        """Resolve metrics pred_file to a local path, downloading when a URL is set."""
+        from matbench_discovery.data import file_ref_name, file_ref_url
+
+        section = self.metrics.get(metrics_key)
+        if not isinstance(section, dict):
+            if required:
+                raise ValueError(
+                    f"metrics.{metrics_key}.pred_file not found in {self.rel_path!r}"
+                )
+            return None
+        if nested_key is not None:
+            section = section.get(nested_key) or {}
+        field = (
+            f"metrics.{metrics_key}.{nested_key}.pred_file"
+            if nested_key
+            else f"metrics.{metrics_key}.pred_file"
+        )
+        pred_file = section.get("pred_file")
+        if not (rel_path := file_ref_name(pred_file)):
+            raise ValueError(f"{field} not found in {self.rel_path!r}")
+        abs_path = f"{ROOT}/{rel_path}"
+        if file_url := file_ref_url(pred_file):
+            maybe_auto_download_file(file_url, abs_path, label=self.label)
+        return abs_path
+
     @property
     def discovery_path(self) -> str:
         """Prediction file path associated with the model."""
-        from matbench_discovery.data import file_ref_name, file_ref_url
-
-        pred_file = self.metrics.get("discovery", {}).get("pred_file")
-        rel_path = file_ref_name(pred_file)
-        file_url = file_ref_url(pred_file)
-        if not rel_path:
-            raise ValueError(
-                f"metrics.discovery.pred_file not found in {self.rel_path!r}"
-            )
-        abs_path = f"{ROOT}/{rel_path}"
-        if file_url:
-            maybe_auto_download_file(file_url, abs_path, label=self.label)
-        return abs_path
+        return cast("str", self._metric_pred_path("discovery", required=True))
 
     @property
     def geo_opt_path(self) -> str | None:
-        """File path associated with the file URL if it exists, otherwise
-        download the file first, then return the path.
-        """
-        from matbench_discovery.data import file_ref_name, file_ref_url
-
-        geo_opt_metrics = self.metrics.get("geo_opt")
-        if not isinstance(geo_opt_metrics, dict):
-            return None
-        pred_file = geo_opt_metrics.get("pred_file")
-        rel_path = file_ref_name(pred_file)
-        file_url = file_ref_url(pred_file)
-        if not rel_path:
-            raise ValueError(
-                f"metrics.geo_opt.pred_file not found in {self.rel_path!r}"
-            )
-        abs_path = f"{ROOT}/{rel_path}"
-        if file_url:
-            maybe_auto_download_file(file_url, abs_path, label=self.label)
-        return abs_path
+        """Geo-opt prediction path, downloading when a URL is present."""
+        return self._metric_pred_path("geo_opt")
 
     @property
     def kappa_103_path(self) -> str | None:
-        """File path associated with the file URL if it exists, otherwise
-        download the file first, then return the path.
-        """
-        from matbench_discovery.data import file_ref_name, file_ref_url
-
-        phonons_metrics = self.metrics.get("phonons")
-        if not isinstance(phonons_metrics, dict):
-            return None
-        kappa103 = phonons_metrics.get("kappa_103") or {}
-        pred_file = kappa103.get("pred_file")
-        rel_path = file_ref_name(pred_file)
-        file_url = file_ref_url(pred_file)
-        if not rel_path:
-            raise ValueError(
-                f"metrics.phonons.kappa_103.pred_file not found in {self.rel_path!r}"
-            )
-        abs_path = f"{ROOT}/{rel_path}"
-        if file_url:
-            maybe_auto_download_file(file_url, abs_path, label=self.label)
-        return abs_path
+        """Phonon kappa_103 prediction path, downloading when a URL is present."""
+        return self._metric_pred_path("phonons", nested_key="kappa_103")
 
     @property
     def md_path(self) -> str | None:
-        """File path associated with the file URL if it exists, otherwise
-        download the file first, then return the path.
-        """
-        from matbench_discovery.data import file_ref_name, file_ref_url
-
-        md_metrics = self.metrics.get("md")
-        if not isinstance(md_metrics, dict):
-            return None
-        pred_file = md_metrics.get("pred_file")
-        rel_path = file_ref_name(pred_file)
-        file_url = file_ref_url(pred_file)
-        if not rel_path:
-            raise ValueError(f"metrics.md.pred_file not found in {self.rel_path!r}")
-        abs_path = f"{ROOT}/{rel_path}"
-        if file_url:
-            maybe_auto_download_file(file_url, abs_path, label=self.label)
-        return abs_path
+        """MD prediction path, downloading when a URL is present."""
+        return self._metric_pred_path("md")
 
     @property
     def is_active(self) -> bool:

@@ -52,7 +52,7 @@ environment:
     - pandas==2.0.1
     - scikit-learn==1.2.2
     - torch==1.9.0+cu111
-  python_version: '3.12'
+  python_version: '3.9'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS

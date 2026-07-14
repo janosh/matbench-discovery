@@ -86,7 +86,7 @@ hyperparams:
     mmax: 4
     Lmax: 4
     lmax: 4
-    l1l2: <=
+    l1l2: l1 <= l2
     correlation: 2
 notes:
   description: |

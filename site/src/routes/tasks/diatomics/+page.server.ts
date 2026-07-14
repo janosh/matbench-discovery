@@ -1,4 +1,4 @@
-import { by_benchmark_added_desc, type DiatomicsCurves, MODELS } from '$lib'
+import { by_benchmark_added_desc, type DiatomicsCurves, ACTIVE_MODELS } from '$lib'
 import dft_references from '$lib/diatomics-dft.json.gz'
 import { fetch_diatomics_data } from '$lib/server/diatomics'
 import type { PageServerLoad } from './$types'
@@ -27,7 +27,7 @@ const to_page_curves = (curves: DiatomicsCurves): PageDiatomicsCurves => ({
 })
 
 export const load: PageServerLoad = async () => {
-  const diatomic_models = MODELS.filter(
+  const diatomic_models = ACTIVE_MODELS.filter(
     (model) => model.metrics?.diatomics != null,
   ).toSorted(by_benchmark_added_desc)
 

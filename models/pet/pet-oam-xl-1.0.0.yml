@@ -91,6 +91,8 @@ metrics:
     pred_file:
       name: models/pet/pet-oam-xl-1.0.0/2026-01-10-discovery.csv.gz
       url: https://figshare.com/files/60934828
+      size: 1315508
+      md5: 0e7d1c2f73118eadd33dc777ab48eb0a
     pred_col: e_form_per_atom_pet
     full_test_set:
       F1: 0.904  # fraction
@@ -150,6 +152,8 @@ metrics:
     pred_file:
       name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt.jsonl.gz
       url: https://figshare.com/files/60934831
+      size: 109142457
+      md5: 0493739bfd5f7446cb88b5f1225b6453
     symprec=1e-2:
       rmsd: 0.0596
       n_sym_ops_mae: 1.8238
@@ -160,6 +164,8 @@ metrics:
       analysis_file:
         name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
         url: https://figshare.com/files/60934825
+        size: 7527250
+        md5: 33912091772d2fd40e82c278a960a4e7
     symprec=1e-5:
       rmsd: 0.0596
       n_sym_ops_mae: 10.1237
@@ -170,6 +176,8 @@ metrics:
       analysis_file:
         name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
         url: https://figshare.com/files/60934822
+        size: 6627769
+        md5: 67a827f160bc6aafdf3afe72ee173564
   md:
     pred_file:
       name: models/pet/pet-oam-xl-1.0.0/2026-06-28-md-metrics.csv.gz
@@ -192,5 +200,7 @@ metrics:
       pred_file:
         name: models/pet/pet-oam-xl-1.0.0/2026-01-10-phonons-kappa-103.json.gz
         url: https://figshare.com/files/60934819
+        size: 8175344
+        md5: ba6c867a4d0bae1df9c5c478b5bc8ddb
       κ_SRME: 0.1192
       κ_SRE: 0.0603

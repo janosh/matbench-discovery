@@ -425,8 +425,8 @@ def write_metrics_to_yaml(
         run_metadata: Optional complete-run timing, hardware, and memory provenance.
         force_file_path: Optional separate force-set artifact path.
         run_info_path: Optional small manifest/provenance sidecar path.
-        replace_pred_file: Replace an existing local prediction path and clear its
-            stale remote URL. The legacy default preserves established artifact paths.
+        replace_pred_file: If True, replace pred_file and clear stale force/run_info
+            URLs plus unset run_metadata fields. Default preserves existing metadata.
     """
     from matbench_discovery import repo_relative_path
     from matbench_discovery.data import update_yaml_file

@@ -155,16 +155,3 @@ index 4fa072e..0b6330a 100644
          if config.store_outputs and not classification:
              x = []
              y = []
-diff --git a/alignn/train_folder.py b/alignn/train_folder.py
-index b532d4e..c9eb4a5 100644
---- a/alignn/train_folder.py
-+++ b/alignn/train_folder.py
-@@ -180,7 +180,7 @@ def train_for_folder(
-         train_val_test_loaders=[
-             train_loader,
-             val_loader,
--            test_loader,
-+            None,
-             prepare_batch,
-         ],
-     )

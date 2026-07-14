@@ -54,7 +54,7 @@ environment:
   - ase==3.22.1
   - pymatgen==2023.7.14
   - numpy==1.25.0
-  python_version: '3.12'
+  python_version: '3.11'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS

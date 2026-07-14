@@ -447,9 +447,9 @@ def write_metrics_to_yaml(
             metrics.diatomics.pred_file. Absolute paths must be inside the repo and are
             converted to repo-relative paths. Otherwise an existing pred_file is
             preserved.
-        run_metadata (dict[str, str | float | dict[str, str]] | None): Extra
-            non-metric fields describing the prediction run (e.g. hardware,
-            run_time_sec). Recorded ahead of the metric values; a recompute without
+        run_metadata (dict[str, str | float | dict[str, str]] | None): Extra run
+            fields (e.g. hardware, run_time_sec, pred_file_url). ``pred_file_url``
+            overrides or supplies the prediction file URL. A recompute without
             run_metadata preserves existing values.
 
     Returns:

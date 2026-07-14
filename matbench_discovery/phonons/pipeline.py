@@ -1065,8 +1065,8 @@ def package_versions(model_key: str | None = None) -> dict[str, str]:
         "tensorflow",
         "torch",
     }
-    if model_key in CALCULATORS:
-        for dependency in CALCULATORS[model_key].deps:
+    if model_key is not None and (calc_spec := CALCULATORS.get(model_key)):
+        for dependency in calc_spec.deps:
             try:
                 package_names.add(Requirement(dependency).name)
             except InvalidRequirement:

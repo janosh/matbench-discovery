@@ -20,7 +20,7 @@ import os
 import shutil
 import subprocess
 import zipfile
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import cache
 from importlib.metadata import PackageNotFoundError, version
@@ -299,33 +299,39 @@ def _runtime_calc_spec(
     requires_checkpoint: bool = False,
     auto_checkpoint: bool = False,
     checkpoint_ext: str | None = None,
-) -> CalcSpec:
-    """Build a calculator spec from executable metadata in its model YAML."""
-    try:
-        environment = _model_environments()[model_key]
-    except KeyError as exc:
-        raise ValueError(
-            f"{model_key} has no environment block in its model YAML"
-        ) from exc
-    python_version = environment.get("python_version")
-    project = environment.get("project")
-    if not all(
-        value is None or isinstance(value, str) for value in (python_version, project)
-    ):
-        raise TypeError(
-            f"{model_key} environment python_version/project must be a string or null"
+) -> Callable[[], CalcSpec]:
+    """Return a CalcSpec factory so YAML env validation runs on first use."""
+
+    def build() -> CalcSpec:
+        try:
+            environment = _model_environments()[model_key]
+        except KeyError as exc:
+            raise ValueError(
+                f"{model_key} has no environment block in its model YAML"
+            ) from exc
+        python_version = environment.get("python_version")
+        project = environment.get("project")
+        if not all(
+            value is None or isinstance(value, str)
+            for value in (python_version, project)
+        ):
+            raise TypeError(
+                f"{model_key} environment python_version/project must be a "
+                "string or null"
+            )
+        return CalcSpec(
+            make_calc,
+            deps=_env_str_tuple(environment, "dependencies", model_key),
+            find_links=_env_str_tuple(environment, "find_links", model_key),
+            extra_index_url=_env_str_tuple(environment, "extra_index_urls", model_key),
+            python_version=python_version,
+            project=project,
+            requires_checkpoint=requires_checkpoint,
+            auto_checkpoint=auto_checkpoint,
+            checkpoint_ext=checkpoint_ext,
         )
-    return CalcSpec(
-        make_calc,
-        deps=_env_str_tuple(environment, "dependencies", model_key),
-        find_links=_env_str_tuple(environment, "find_links", model_key),
-        extra_index_url=_env_str_tuple(environment, "extra_index_urls", model_key),
-        python_version=python_version,
-        project=project,
-        requires_checkpoint=requires_checkpoint,
-        auto_checkpoint=auto_checkpoint,
-        checkpoint_ext=checkpoint_ext,
-    )
+
+    return build
 
 
 def _checkpoint_spec(
@@ -334,8 +340,8 @@ def _checkpoint_spec(
     *,
     ext: str | None = None,
     requires_checkpoint: bool = False,
-) -> CalcSpec:
-    """Build a YAML-backed spec that auto-downloads or requires a checkpoint."""
+) -> Callable[[], CalcSpec]:
+    """Lazy YAML-backed spec with auto-download or required-checkpoint flags."""
     return _runtime_calc_spec(
         model_key,
         make_calc,
@@ -343,6 +349,49 @@ def _checkpoint_spec(
         auto_checkpoint=not requires_checkpoint,
         checkpoint_ext=ext,
     )
+
+
+class _CalcRegistry:
+    """Resolve lazy CalcSpec builders on first ``[]`` / ``.get`` / iteration."""
+
+    def __init__(self, mapping: dict[str, CalcSpec | Callable[[], CalcSpec]]) -> None:
+        self._data = dict(mapping)
+
+    def __getitem__(self, key: str) -> CalcSpec:
+        value = self._data[key]
+        if not isinstance(value, CalcSpec):
+            self._data[key] = value = value()
+        return value
+
+    def __setitem__(self, key: str, value: CalcSpec | Callable[[], CalcSpec]) -> None:
+        self._data[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self._data[key]
+
+    def __contains__(self, key: object) -> bool:
+        return key in self._data
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def get(self, key: str, default: CalcSpec | None = None) -> CalcSpec | None:
+        """Return a resolved CalcSpec, or ``default`` when the key is missing."""
+        if key not in self._data:
+            return default
+        return self[key]
+
+    def keys(self) -> Iterator[str]:
+        return iter(self._data)
+
+    def values(self) -> Iterator[CalcSpec]:
+        return (self[key] for key in self._data)
+
+    def items(self) -> Iterator[tuple[str, CalcSpec]]:
+        return ((key, self[key]) for key in self._data)
 
 
 def resolve_checkpoint(model_key: str, checkpoint: str | None = None) -> str | None:
@@ -799,122 +848,139 @@ def _deepmd_spec(
     factory: Callable[[str], Callable[..., "Calculator"]] = _deepmd,
     *,
     ext: str = ".pth",
-) -> CalcSpec:
+) -> Callable[[], CalcSpec]:
     """Return shared DeePMD dependencies and managed-checkpoint metadata."""
     return _checkpoint_spec(model_key, factory(model_key), ext=ext)
 
 
-CALCULATORS: dict[str, CalcSpec] = {
-    "mace_mp_0": _runtime_calc_spec("mace_mp_0", _mace("medium")),
-    "mace_mpa_0": _runtime_calc_spec("mace_mpa_0", _mace("medium-mpa-0")),
-    "orb_v2": _runtime_calc_spec("orb_v2", _orb("orb-v2")),
-    "orb_v3": _runtime_calc_spec("orb_v3", _orb("orb-v3-conservative-inf-mpa")),
-    "orb_v2_mptrj": _runtime_calc_spec("orb_v2_mptrj", _orb("orb-mptraj-only-v2")),
-    "mattersim_v1_5m": _runtime_calc_spec(
-        "mattersim_v1_5m", _mattersim("mattersim-v1.0.0-5m.pth")
-    ),
-    "sevennet_0": _runtime_calc_spec("sevennet_0", _sevennet("7net-0")),
-    "sevennet_l3i5": _runtime_calc_spec("sevennet_l3i5", _sevennet("7net-l3i5")),
-    "sevennet_mf_ompa": _checkpoint_spec(
-        "sevennet_mf_ompa", _sevennet("sevennet_mf_ompa", modal="mpa", from_url=True)
-    ),
-    "sevennet_omni_i12": _runtime_calc_spec(
-        "sevennet_omni_i12", _sevennet("7net-omni-i12", modal="mpa")
-    ),
-    "grace_2l_oam": _runtime_calc_spec("grace_2l_oam", _grace("GRACE-2L-OAM")),
-    "grace_1l_oam": _runtime_calc_spec("grace_1l_oam", _grace("GRACE-1L-OAM")),
-    "grace_2l_oam_l": _runtime_calc_spec(
-        "grace_2l_oam_l", _grace("GRACE-2L-OMAT-large-ft-AM")
-    ),
-    "grace_3l_oam_l": _runtime_calc_spec(
-        "grace_3l_oam_l", _grace("GRACE-3L-OMAT-large-ft-AM")
-    ),
-    "grace_2l_mptrj": _runtime_calc_spec("grace_2l_mptrj", _grace("GRACE-2L-MP-r6")),
-    "chgnet_0_3_0": _runtime_calc_spec("chgnet_0_3_0", _chgnet),
-    "hienet": _checkpoint_spec("hienet", _hienet("hienet")),
-    "nequip_mp_l_0_1": _runtime_calc_spec(
-        "nequip_mp_l_0_1", _nequip("nequip_mp_l_0_1")
-    ),
-    "nequip_oam_l_0_1": _runtime_calc_spec(
-        "nequip_oam_l_0_1", _nequip("nequip_oam_l_0_1")
-    ),
-    "nequip_oam_xl_0_1": _runtime_calc_spec(
-        "nequip_oam_xl_0_1", _nequip("nequip_oam_xl_0_1")
-    ),
-    "allegro_mp_l_0_1": _runtime_calc_spec(
-        "allegro_mp_l_0_1", _nequip("allegro_mp_l_0_1")
-    ),
-    "allegro_oam_l_0_1": _runtime_calc_spec(
-        "allegro_oam_l_0_1", _nequip("allegro_oam_l_0_1")
-    ),
-    "matris_10m_oam": _checkpoint_spec(
-        "matris_10m_oam", _matris("matris_10m_oam", "MatRIS_10M_OAM.pth.tar")
-    ),
-    "matris_10m_mp": _checkpoint_spec(
-        "matris_10m_mp", _matris("matris_10m_mp", "MatRIS_10M_MP.pth.tar")
-    ),
-    "eqnorm_mptrj": _checkpoint_spec(
-        "eqnorm_mptrj", _eqnorm("eqnorm_mptrj", "eqnorm-mptrj"), ext=".pt"
-    ),
-    "nequix_mp_1": _checkpoint_spec("nequix_mp_1", _nequix("nequix_mp_1"), ext=".nqx"),
-    "nequix_mp_1_pft": _checkpoint_spec(
-        "nequix_mp_1_pft", _nequix("nequix_mp_1_pft"), ext=".nqx"
-    ),
-    "pet_oam_xl_1_0_0": _checkpoint_spec("pet_oam_xl_1_0_0", _pet("pet_oam_xl_1_0_0")),
-    "alphanet_v1_mptrj": _checkpoint_spec(
-        "alphanet_v1_mptrj",
-        _alphanet(
+CALCULATORS: _CalcRegistry = _CalcRegistry(
+    {
+        "mace_mp_0": _runtime_calc_spec("mace_mp_0", _mace("medium")),
+        "mace_mpa_0": _runtime_calc_spec("mace_mpa_0", _mace("medium-mpa-0")),
+        "orb_v2": _runtime_calc_spec("orb_v2", _orb("orb-v2")),
+        "orb_v3": _runtime_calc_spec("orb_v3", _orb("orb-v3-conservative-inf-mpa")),
+        "orb_v2_mptrj": _runtime_calc_spec("orb_v2_mptrj", _orb("orb-mptraj-only-v2")),
+        "mattersim_v1_5m": _runtime_calc_spec(
+            "mattersim_v1_5m", _mattersim("mattersim-v1.0.0-5m.pth")
+        ),
+        "sevennet_0": _runtime_calc_spec("sevennet_0", _sevennet("7net-0")),
+        "sevennet_l3i5": _runtime_calc_spec("sevennet_l3i5", _sevennet("7net-l3i5")),
+        "sevennet_mf_ompa": _checkpoint_spec(
+            "sevennet_mf_ompa",
+            _sevennet("sevennet_mf_ompa", modal="mpa", from_url=True),
+        ),
+        "sevennet_omni_i12": _runtime_calc_spec(
+            "sevennet_omni_i12", _sevennet("7net-omni-i12", modal="mpa")
+        ),
+        "grace_2l_oam": _runtime_calc_spec("grace_2l_oam", _grace("GRACE-2L-OAM")),
+        "grace_1l_oam": _runtime_calc_spec("grace_1l_oam", _grace("GRACE-1L-OAM")),
+        "grace_2l_oam_l": _runtime_calc_spec(
+            "grace_2l_oam_l", _grace("GRACE-2L-OMAT-large-ft-AM")
+        ),
+        "grace_3l_oam_l": _runtime_calc_spec(
+            "grace_3l_oam_l", _grace("GRACE-3L-OMAT-large-ft-AM")
+        ),
+        "grace_2l_mptrj": _runtime_calc_spec(
+            "grace_2l_mptrj", _grace("GRACE-2L-MP-r6")
+        ),
+        "chgnet_0_3_0": _runtime_calc_spec("chgnet_0_3_0", _chgnet),
+        "hienet": _checkpoint_spec("hienet", _hienet("hienet")),
+        "nequip_mp_l_0_1": _runtime_calc_spec(
+            "nequip_mp_l_0_1", _nequip("nequip_mp_l_0_1")
+        ),
+        "nequip_oam_l_0_1": _runtime_calc_spec(
+            "nequip_oam_l_0_1", _nequip("nequip_oam_l_0_1")
+        ),
+        "nequip_oam_xl_0_1": _runtime_calc_spec(
+            "nequip_oam_xl_0_1", _nequip("nequip_oam_xl_0_1")
+        ),
+        "allegro_mp_l_0_1": _runtime_calc_spec(
+            "allegro_mp_l_0_1", _nequip("allegro_mp_l_0_1")
+        ),
+        "allegro_oam_l_0_1": _runtime_calc_spec(
+            "allegro_oam_l_0_1", _nequip("allegro_oam_l_0_1")
+        ),
+        "matris_10m_oam": _checkpoint_spec(
+            "matris_10m_oam", _matris("matris_10m_oam", "MatRIS_10M_OAM.pth.tar")
+        ),
+        "matris_10m_mp": _checkpoint_spec(
+            "matris_10m_mp", _matris("matris_10m_mp", "MatRIS_10M_MP.pth.tar")
+        ),
+        "eqnorm_mptrj": _checkpoint_spec(
+            "eqnorm_mptrj", _eqnorm("eqnorm_mptrj", "eqnorm-mptrj"), ext=".pt"
+        ),
+        "nequix_mp_1": _checkpoint_spec(
+            "nequix_mp_1", _nequix("nequix_mp_1"), ext=".nqx"
+        ),
+        "nequix_mp_1_pft": _checkpoint_spec(
+            "nequix_mp_1_pft", _nequix("nequix_mp_1_pft"), ext=".nqx"
+        ),
+        "pet_oam_xl_1_0_0": _checkpoint_spec(
+            "pet_oam_xl_1_0_0", _pet("pet_oam_xl_1_0_0")
+        ),
+        "alphanet_v1_mptrj": _checkpoint_spec(
             "alphanet_v1_mptrj",
-            "https://raw.githubusercontent.com/zmyybc/AlphaNet/"
-            "65f8ea9330459e0106867d1c694aec4139c6cb19/pretrained/MPtrj/mp.json",
+            _alphanet(
+                "alphanet_v1_mptrj",
+                "https://raw.githubusercontent.com/zmyybc/AlphaNet/"
+                "65f8ea9330459e0106867d1c694aec4139c6cb19/pretrained/MPtrj/mp.json",
+            ),
         ),
-    ),
-    "alphanet_v1_oam": _checkpoint_spec(
-        "alphanet_v1_oam",
-        _alphanet(
+        "alphanet_v1_oam": _checkpoint_spec(
             "alphanet_v1_oam",
-            "https://raw.githubusercontent.com/zmyybc/AlphaNet/"
-            "65f8ea9330459e0106867d1c694aec4139c6cb19/pretrained/OMA/oma.json",
+            _alphanet(
+                "alphanet_v1_oam",
+                "https://raw.githubusercontent.com/zmyybc/AlphaNet/"
+                "65f8ea9330459e0106867d1c694aec4139c6cb19/pretrained/OMA/oma.json",
+            ),
         ),
-    ),
-    "m3gnet": _runtime_calc_spec("m3gnet", _m3gnet),
-    "eqv2_s_dens_mp": _checkpoint_spec("eqv2_s_dens_mp", _fairchem("eqv2_s_dens_mp")),
-    "eqv2_m_omat_salex_mp": _checkpoint_spec(
-        "eqv2_m_omat_salex_mp", _fairchem("eqv2_m_omat_salex_mp")
-    ),
-    "esen_30m_oam": _checkpoint_spec("esen_30m_oam", _fairchem("esen_30m_oam")),
-    "esen_30m_mp": _checkpoint_spec("esen_30m_mp", _fairchem("esen_30m_mp")),
-    "equiformer_v3_mp": _checkpoint_spec(
-        "equiformer_v3_mp", _fairchem("equiformer_v3_mp"), requires_checkpoint=True
-    ),
-    "equiformer_v3_oam": _checkpoint_spec(
-        "equiformer_v3_oam", _fairchem("equiformer_v3_oam"), requires_checkpoint=True
-    ),
-    "tace_v1_oam_m": _checkpoint_spec("tace_v1_oam_m", _tace("tace_v1_oam_m")),
-    "tace_oam_l": _checkpoint_spec("tace_oam_l", _tace("tace_oam_l")),
-    "tace_oam_rra_preview": _checkpoint_spec(
-        "tace_oam_rra_preview", _tace("tace_oam_rra_preview")
-    ),
-    "tece_oam_rra_1_0": _checkpoint_spec("tece_oam_rra_1_0", _tace("tece_oam_rra_1_0")),
-    "dpa_3_1_mptrj": _deepmd_spec("dpa_3_1_mptrj"),
-    "dpa_3_1_3m_ft": _deepmd_spec("dpa_3_1_3m_ft"),
-    "dpa3_v2_mptrj": _deepmd_spec("dpa3_v2_mptrj"),
-    "dpa3_v2_openlam": _deepmd_spec("dpa3_v2_openlam"),
-    "dpa3_v1_mptrj": _deepmd_spec("dpa3_v1_mptrj", _deepmd_archive, ext=".zip"),
-    "dpa3_v1_openlam": _deepmd_spec("dpa3_v1_openlam", _deepmd_archive, ext=".zip"),
-    "dpa_4_0_pro_mptrj": _deepmd_spec("dpa_4_0_pro_mptrj", _deepmd_freeze, ext=".pt"),
-    "dpa_4_0_1_pro_mptrj": _deepmd_spec(
-        "dpa_4_0_1_pro_mptrj", _deepmd_freeze, ext=".pt"
-    ),
-    "equflash_29m_oam": _checkpoint_spec(
-        "equflash_29m_oam", _equflash("equflash_29m_oam"), ext=".pt"
-    ),
-    "equflashv2_45m_oam": _checkpoint_spec(
-        "equflashv2_45m_oam", _equflash("equflashv2_45m_oam"), ext=".pt"
-    ),
-    # CPU-only debug model for smoke-testing the pipeline without heavy installs
-    "emt": CalcSpec(_emt),
-}
+        "m3gnet": _runtime_calc_spec("m3gnet", _m3gnet),
+        "eqv2_s_dens_mp": _checkpoint_spec(
+            "eqv2_s_dens_mp", _fairchem("eqv2_s_dens_mp")
+        ),
+        "eqv2_m_omat_salex_mp": _checkpoint_spec(
+            "eqv2_m_omat_salex_mp", _fairchem("eqv2_m_omat_salex_mp")
+        ),
+        "esen_30m_oam": _checkpoint_spec("esen_30m_oam", _fairchem("esen_30m_oam")),
+        "esen_30m_mp": _checkpoint_spec("esen_30m_mp", _fairchem("esen_30m_mp")),
+        "equiformer_v3_mp": _checkpoint_spec(
+            "equiformer_v3_mp", _fairchem("equiformer_v3_mp"), requires_checkpoint=True
+        ),
+        "equiformer_v3_oam": _checkpoint_spec(
+            "equiformer_v3_oam",
+            _fairchem("equiformer_v3_oam"),
+            requires_checkpoint=True,
+        ),
+        "tace_v1_oam_m": _checkpoint_spec("tace_v1_oam_m", _tace("tace_v1_oam_m")),
+        "tace_oam_l": _checkpoint_spec("tace_oam_l", _tace("tace_oam_l")),
+        "tace_oam_rra_preview": _checkpoint_spec(
+            "tace_oam_rra_preview", _tace("tace_oam_rra_preview")
+        ),
+        "tece_oam_rra_1_0": _checkpoint_spec(
+            "tece_oam_rra_1_0", _tace("tece_oam_rra_1_0")
+        ),
+        "dpa_3_1_mptrj": _deepmd_spec("dpa_3_1_mptrj"),
+        "dpa_3_1_3m_ft": _deepmd_spec("dpa_3_1_3m_ft"),
+        "dpa3_v2_mptrj": _deepmd_spec("dpa3_v2_mptrj"),
+        "dpa3_v2_openlam": _deepmd_spec("dpa3_v2_openlam"),
+        "dpa3_v1_mptrj": _deepmd_spec("dpa3_v1_mptrj", _deepmd_archive, ext=".zip"),
+        "dpa3_v1_openlam": _deepmd_spec("dpa3_v1_openlam", _deepmd_archive, ext=".zip"),
+        "dpa_4_0_pro_mptrj": _deepmd_spec(
+            "dpa_4_0_pro_mptrj", _deepmd_freeze, ext=".pt"
+        ),
+        "dpa_4_0_1_pro_mptrj": _deepmd_spec(
+            "dpa_4_0_1_pro_mptrj", _deepmd_freeze, ext=".pt"
+        ),
+        "equflash_29m_oam": _checkpoint_spec(
+            "equflash_29m_oam", _equflash("equflash_29m_oam"), ext=".pt"
+        ),
+        "equflashv2_45m_oam": _checkpoint_spec(
+            "equflashv2_45m_oam", _equflash("equflashv2_45m_oam"), ext=".pt"
+        ),
+        # CPU-only debug model for smoke-testing the pipeline without heavy installs
+        "emt": CalcSpec(_emt),
+    }
+)
 
 
 def _model_ref_key(model_ref: str) -> str:

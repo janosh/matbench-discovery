@@ -92,7 +92,6 @@ environment:
   - Graphormer==v1
   - numpy==1.26.2
   - pymatgen==2024.5.1
-  - python>=3.9
   python_version: '3.12'
 openness: OSCD
 architecture_types: [gnn]

@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { MetricsTable, ModelSelect, type ModelData, MODELS, SelectToggle } from '$lib'
+  import {
+    MetricsTable,
+    ModelSelect,
+    type ModelData,
+    ACTIVE_MODELS,
+    SelectToggle,
+  } from '$lib'
   import {
     CDS_CONFIG,
     DEFAULT_CDS_CONFIG,
@@ -206,7 +212,7 @@
       config={CDS_CONFIG}
       default_config={DEFAULT_CDS_CONFIG}
       title_label={DIATOMICS_METRICS.diatomics_combined_score}
-      on_change={(cfg) => update_models_cds(MODELS, cfg as typeof CDS_CONFIG)}
+      on_change={(cfg) => update_models_cds(ACTIVE_MODELS, cfg as typeof CDS_CONFIG)}
     />
     <figcaption>
       Drag the knob to reweight the four CDS pillars (see &#9432; for definitions); the
@@ -231,7 +237,7 @@
 </p>
 
 <DynamicScatter
-  models={MODELS}
+  models={ACTIVE_MODELS}
   model_filter={has_diatomics_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}

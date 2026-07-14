@@ -117,7 +117,7 @@ jobs:
           uv run --with-editable . scripts/apply_pr_models_overlay.py \
             pr-tree "${CHANGED_YML[@]}" --remove "${REMOVED_YML[@]}"
           if (( ${#CHANGED_YML[@]} )); then
-            uv pip install check-jsonschema --system
+            uv pip install 'check-jsonschema==0.37.4' --system
             check-jsonschema --schemafile tests/model-schema.yml "${CHANGED_YML[@]}"
           fi
           uv run --with-editable . scripts/generate_model_enum.py

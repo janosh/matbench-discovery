@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricsTable, MODELS, SelectToggle } from '$lib'
+  import { MetricsTable, ACTIVE_MODELS, SelectToggle } from '$lib'
   import { make_table_filters } from '$lib/models.svelte'
   import { DynamicScatter } from '$lib/plot'
   import type { SortState } from '$lib/url-state.svelte'
@@ -33,7 +33,9 @@
   const has_discovery_metrics = (model: ModelData): boolean =>
     model.metrics?.discovery?.[discovery_set] != null
   let visible_models = $derived(
-    MODELS.filter((model) => has_discovery_metrics(model) && filters.matches(model)),
+    ACTIVE_MODELS.filter(
+      (model) => has_discovery_metrics(model) && filters.matches(model),
+    ),
   )
 
   // axis selections for the model-comparison scatter, bound so the section title

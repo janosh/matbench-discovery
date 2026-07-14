@@ -132,6 +132,8 @@ metrics:
     pred_file:
       name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-discovery.csv.gz
       url: https://figshare.com/files/64733577
+      size: 1316182
+      md5: 537be5f47fb938c415af623ce22b6772
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.832  # fraction
@@ -191,6 +193,8 @@ metrics:
     pred_file:
       name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt.jsonl.gz
       url: https://figshare.com/files/64733670
+      size: 106633293
+      md5: fee1a8aec62f9e3f9933f25211282f05
     symprec=1e-2:
       rmsd: 0.0694
       n_sym_ops_mae: 2.3791
@@ -201,6 +205,8 @@ metrics:
       analysis_file:
         name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
         url: https://figshare.com/files/64735083
+        size: 3049389
+        md5: 04d0baf7784bbe5f2d54262eec97452f
     symprec=1e-5:
       rmsd: 0.0694
       n_sym_ops_mae: 6.818
@@ -211,6 +217,8 @@ metrics:
       analysis_file:
         name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
         url: https://figshare.com/files/64735089
+        size: 2883211
+        md5: 66213199cb721675b7b0a11dd5608fed
   phonons:
     kappa_103:
       κ_SRME: 0.2414
@@ -218,3 +226,5 @@ metrics:
       pred_file:
         name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-14-phonons-kappa-103.json.gz
         url: https://figshare.com/files/64733580
+        size: 13430887
+        md5: 93bcb5626a528446b9ca1637d49ae131

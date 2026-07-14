@@ -1,6 +1,6 @@
 <script lang="ts">
   import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
-  import { by_benchmark_added_desc, MetricsTable, ModelSelect, MODELS } from '$lib'
+  import { by_benchmark_added_desc, MetricsTable, ModelSelect, ACTIVE_MODELS } from '$lib'
   import type { ModelData } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
   import { make_table_filters } from '$lib/models.svelte'
@@ -34,7 +34,7 @@
     get_nested_number(model, kappa_sre_path) != null
   const kappa_srme = (model: ModelData): number =>
     get_nested_number(model, kappa_srme_path) ?? Infinity
-  const leaderboard_models = MODELS.filter(has_phonon_metrics)
+  const leaderboard_models = ACTIVE_MODELS.filter(has_phonon_metrics)
   const default_selected_key =
     leaderboard_models.toSorted(
       (model_1, model_2) => kappa_srme(model_1) - kappa_srme(model_2),
@@ -194,7 +194,7 @@
 </p>
 
 <DynamicScatter
-  models={MODELS}
+  models={ACTIVE_MODELS}
   model_filter={has_phonon_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}

@@ -529,6 +529,8 @@ def test_artifact_filename_geo_opt_analysis_round_trip() -> None:
     )
     assert filename == "2026-07-01-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz"
     assert parse_artifact_filename(filename) == "geo_opt_analysis"
+    with pytest.raises(ValueError, match="Invalid ISO date"):
+        parse_artifact_filename("2026-02-30-discovery.csv.gz")
 
 
 def test_make_file_ref_omits_unset_optional_fields() -> None:

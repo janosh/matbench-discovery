@@ -98,6 +98,8 @@ metrics:
     pred_file:
       name: models/esen/esen-30m-oam/2025-03-17-discovery.csv.gz
       url: https://figshare.com/files/53054369
+      size: 1318830
+      md5: 9b58f65f581aa6785e48e693d3ee842d
     pred_col: pred_e_form_per_atom_esen
     full_test_set:
       F1: 0.902  # fraction

@@ -62,46 +62,42 @@ export function calculate_training_sizes(model_train_sets: string[] = []): {
   return { total_materials, total_structures }
 }
 
+function to_model_data([key, metadata]: [string, ModelData], index: number): ModelData {
+  const org_logos: OrgLogo[] = []
+  for (const author of metadata.authors ?? []) {
+    const org_logo = author.affiliation ? get_org_logo(author.affiliation) : undefined
+    if (author.affiliation && !org_logo && !import.meta.env.PROD) {
+      console.warn(`No logo found for affiliation: ${author.affiliation}`)
+    }
+    if (org_logo && !org_logos.some((logo) => logo.name === org_logo.name)) {
+      org_logos.push(org_logo)
+    }
+  }
+  const sizes = calculate_training_sizes(metadata.training_sets)
+  return {
+    ...metadata,
+    dirname: key.split(`/`)[2],
+    metadata_file: key.replace(/^..\//, ``),
+    color: MODEL_COLORS[index % MODEL_COLORS.length],
+    CPS: Number.NaN,
+    n_estimators: metadata.n_estimators ?? 1,
+    n_training_materials: sizes.total_materials,
+    n_training_structures: sizes.total_structures,
+    org_logos,
+  }
+}
+
+const metadata_entries = Object.entries(MODEL_METADATA_PATHS)
+const active_entries = metadata_entries.filter(([, meta]) => meta.lifecycle === `active`)
+// Active first keeps color indices stable; inactive stay in MODELS for /models/[slug].
 export const MODELS = $state(
-  Object.entries(MODEL_METADATA_PATHS)
-    .filter(
-      // Inactive lifecycle states remain addressable but stay off benchmark views.
-      ([_key, metadata]) => metadata.lifecycle === `active`,
-    )
-    .map(([key, metadata], index): ModelData => {
-      // Assign color to each model for consistent coloring across plots
-      const model_color = MODEL_COLORS[index % MODEL_COLORS.length]
-
-      const sizes = calculate_training_sizes(metadata.training_sets)
-
-      const org_logos: OrgLogo[] = []
-      for (const author of metadata.authors ?? []) {
-        const org_logo = author.affiliation ? get_org_logo(author.affiliation) : undefined
-
-        if (author.affiliation && !org_logo && !import.meta.env.PROD) {
-          // Only warn about missing logos in dev mode
-          console.warn(`No logo found for affiliation: ${author.affiliation}`)
-        }
-
-        if (org_logo && !org_logos.some((logo) => logo.name === org_logo.name)) {
-          org_logos.push(org_logo)
-        }
-      }
-
-      return {
-        ...metadata,
-        dirname: key.split(`/`)[2],
-        metadata_file: key.replace(/^..\//, ``),
-        color: model_color,
-        CPS: Number.NaN, // Initial CPS placeholder
-        n_estimators: metadata.n_estimators ?? 1,
-        n_training_materials: sizes.total_materials,
-        n_training_structures: sizes.total_structures,
-        org_logos,
-      }
-    }),
+  [
+    ...active_entries,
+    ...metadata_entries.filter(([, meta]) => meta.lifecycle !== `active`),
+  ].map(to_model_data),
 )
-
+/** Leaderboards and other benchmark views. */
+export const ACTIVE_MODELS = MODELS.slice(0, active_entries.length)
 // Update CPSs of models based on current CPS weights
 export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
   models.forEach((model: ModelData) => {

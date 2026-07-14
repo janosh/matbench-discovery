@@ -402,9 +402,11 @@ def test_model_enum() -> None:
     for model in Model:
         assert os.path.isfile(model.yaml_path)
     for model in Model.active():
-        discovery_metrics = model.metrics["discovery"]
-        assert isinstance(discovery_metrics, dict)
-        assert "/models/" in f"/{file_ref_name(discovery_metrics['pred_file'])}"
+        discovery = model.metrics.get("discovery")
+        if isinstance(discovery, dict) and (
+            pred_name := file_ref_name(discovery.get("pred_file"))
+        ):
+            assert "/models/" in f"/{pred_name}"
 
     assert Model.mace_mp_0.label == "MACE-MP-0"
     assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"

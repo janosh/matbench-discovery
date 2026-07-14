@@ -39,7 +39,7 @@ OPEN_DATASETS = {
     if isinstance(dataset, dict) and dataset.get("open")
 }
 MODEL_DIRS = sorted(glob(f"{ROOT}/models/[!_]*/"))
-TRAIN_TASK_NAMES = {"IP2E", "IS2E", "IS2RE", "IS2RE_SR"}
+TEST_TASK_NAMES = {"IP2E", "IS2E", "IS2RE", "IS2RE_SR"}
 
 
 @pytest.mark.parametrize("yaml_path", model_yaml_paths())
@@ -112,11 +112,11 @@ def test_datasets_yaml_matches_python_registry() -> None:
         ({member.value for member in Open}, "openness"),
         ({member.value for member in Targets}, "targets"),
         (
-            {task.value for task in Task if task.name not in TRAIN_TASK_NAMES},
+            {task.value for task in Task if task.name not in TEST_TASK_NAMES},
             "train_task",
         ),
         (
-            {task.value for task in Task if task.name in TRAIN_TASK_NAMES},
+            {task.value for task in Task if task.name in TEST_TASK_NAMES},
             "test_task",
         ),
     ],

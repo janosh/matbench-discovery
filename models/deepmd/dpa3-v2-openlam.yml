@@ -29,10 +29,10 @@ trained_by:
   affiliation: AI for Science Institute, Beijing
   orcid: https://orcid.org/0000-0002-0630-2187
 
-repo:
+repo: https://github.com/deepmodeling/deepmd-kit
 doi:
 paper:
-docs:
+docs: https://github.com/deepmodeling/deepmd-kit
 pr_url: https://github.com/janosh/matbench-discovery/pull/222
 checkpoint_url: https://figshare.com/files/52989059
 license:

@@ -215,6 +215,7 @@ def parse_artifact_filename(filename: str) -> str:
     if not ISO_DATE_PATTERN.match(basename[:10]) or basename[10:11] != "-":
         raise ValueError(f"Not a canonical model artifact filename: {filename!r}")
     artifact_date, suffix = basename[:10], basename[11:]
+    _iso_date(artifact_date)
     for role, expected_suffix in ARTIFACT_SUFFIXES.items():
         if suffix == expected_suffix:
             return role

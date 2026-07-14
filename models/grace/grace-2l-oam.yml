@@ -37,7 +37,7 @@ license:
 
 environment:
   dependencies:
-  - tensorpotential
+  - tensorpotential @ git+https://github.com/ICAMS/grace-tensorpotential@3115a9314
   - tensorflow==2.16.2
   - ase==3.23.0
   - pymatgen==2023.7.14

@@ -32,7 +32,7 @@ license:
 
 environment:
   dependencies:
-  - aviary @ https://github.com/CompRhys/aviary/releases/tag/v0.1.0
+  - aviary @ git+https://github.com/CompRhys/aviary@v0.1.0
   - torch==1.11.0
   - torch-scatter==2.0.9
   - numpy==1.24.0

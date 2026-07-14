@@ -63,7 +63,7 @@ function format_model_for_rss(model: ModelData): string {
     <p><strong>Training Set:</strong> ${clean_training_set}</p>
     ${hyperparams}
     ${license_info}
-    <p><strong>Date Added:</strong> ${model.dates.benchmark_added}</p>
+    <p><strong>Date Added:</strong> ${model.dates.benchmark_added ?? `Unknown`}</p>
     ${paper_published}
     <p><strong>Authors:</strong> ${authors_text}</p>
     <p>

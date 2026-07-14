@@ -194,9 +194,8 @@ export type DiscoveryMetrics = Record<string, unknown> & {
   reason?: string | null
   pred_file?: NullableFileRef
   /**
-   * Column name in pred_file containing formation-energy predictions.
-   * Prefer the canonical e_form_per_atom when present; required for older
-   * multi-column ensemble artifacts.
+   * Column name in pred_file containing formation-energy predictions. Prefer the canonical e_form_per_atom when present; required for older multi-column ensemble artifacts.
+   *
    */
   pred_col?: string
   hardware?: string

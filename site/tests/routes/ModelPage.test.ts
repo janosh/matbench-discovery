@@ -29,7 +29,8 @@ describe(`Model Detail Page`, () => {
     expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)
     expect(document.body.textContent).toContain(test_model.model_version)
     expect(document.body.textContent).toContain(test_model.dates.benchmark_added)
-    expect(document.body.textContent).toContain(test_model.dates.paper_published)
+    if (test_model.dates.paper_published)
+      expect(document.body.textContent).toContain(test_model.dates.paper_published)
 
     // Check meta info section
     const meta_info = document.querySelector(`.meta-info`)

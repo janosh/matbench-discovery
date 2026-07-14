@@ -14,7 +14,7 @@
   } from '$lib/labels'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { get_nested_number, is_finite_num, label_data_path } from '$lib/metrics'
-  import { make_table_filters, MODELS } from '$lib/models.svelte'
+  import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
   import {
     apply_weights_param,
     bind_url_params,
@@ -184,7 +184,7 @@
   )
   let primary_metric = $derived(preset_primary_metrics[col_preset])
   let best_entry = $derived.by(() => {
-    const entries = MODELS.filter(in_cohort).flatMap((model) => {
+    const entries = ACTIVE_MODELS.filter(in_cohort).flatMap((model) => {
       const value = preset_metric_value(model, col_preset)
       return value === undefined ? [] : [{ model, value }]
     })
@@ -346,7 +346,7 @@ added) with a running-best line showing which releases moved the frontier -->
   table above, following the active task preset and table filters.
 </p>
 <DynamicScatter
-  models={MODELS}
+  models={ACTIVE_MODELS}
   model_filter={in_cohort}
   x_key={METADATA_COLS.benchmark_added.key}
   y_key={ALL_METRICS.CPS.key}
@@ -356,7 +356,7 @@ added) with a running-best line showing which releases moved the frontier -->
 <Readme>
   {#snippet title()}{/snippet}
   {#snippet model_count()}
-    {MODELS.filter(in_cohort).length}
+    {ACTIVE_MODELS.filter(in_cohort).length}
   {/snippet}
 
   {#snippet best_report()}

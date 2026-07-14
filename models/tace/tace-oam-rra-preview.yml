@@ -48,8 +48,7 @@ environment:
   - torch==2.9.1
   - torch-geometric==2.7.0
   - pytorch-lightning==2.5.5
-  - python==3.13.11
-  python_version: '3.12'
+  python_version: '3.13'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS

@@ -169,6 +169,7 @@ definitions:
               enum: [partial, not_available, not_applicable, pending]
           required: [status]
         then:
+          required: [reason]
           properties:
             reason:
               type: string

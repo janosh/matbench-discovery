@@ -7,7 +7,7 @@
     user_presets,
   } from '$lib/filter-presets.svelte'
   import { openness_tooltips } from '$lib/metrics'
-  import { make_table_filters, MODELS } from '$lib/models.svelte'
+  import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
   import {
     DEFAULT_TARGETS_PARAM,
     FS_MODES,
@@ -49,8 +49,8 @@
   const openness_counts: Record<string, number> = {}
   const training_counts: Record<string, number> = {}
   const target_counts: Record<string, number> = {}
-  const fs_mode_counts: Record<string, number> = { any: MODELS.length }
-  for (const model of MODELS) {
+  const fs_mode_counts: Record<string, number> = { any: ACTIVE_MODELS.length }
+  for (const model of ACTIVE_MODELS) {
     const openness = model.openness ?? `OSOD`
     openness_counts[openness] = (openness_counts[openness] ?? 0) + 1
     for (const dataset of model.training_sets) {

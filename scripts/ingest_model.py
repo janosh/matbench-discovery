@@ -309,7 +309,7 @@ def run_archive(model: Model, checks: Checklist) -> None:
     banner("STEP 4: Archiving prediction files + publishing parity assets")
     if run_cmd(
         *uv_run_args("scripts/upload_model_preds_to_figshare.py"),
-        *("--models", model.name, "--publish"),
+        *("--models", model.name, "--no-interactive"),
     ):
         checks.ok("Prediction files archived to project figshare articles")
     else:

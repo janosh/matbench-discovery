@@ -11,7 +11,7 @@ Model checkpoints for the two models submitted and additional models of differen
 
 ## Datasets
 
-The OMat24 training and validation dataset splits used to pre-train non-compliant models can be downloaded [from HuggingFace](https://huggingface.co/datasets/fairchem/OMAT24)
+The OMat24 training and validation dataset splits used to pretrain non-compliant models can be downloaded [from HuggingFace](https://huggingface.co/datasets/fairchem/OMAT24)
 
 1. The splits do not contain any structure that has a protostructure label present in the initial or relaxed structures of the WBM dataset.
 2. The splits do not include any structure that was generated starting from an Alexandria relaxed structure with protostructure label in the initial or relaxed structures of the WBM dataset.
@@ -25,14 +25,14 @@ The sAlex training and validation dataset splits used for fine-tuning are also a
 
 The code and training config files necessary to train and evaluate the models is available in the official [FAIRChem repo](https://github.com/FAIR-Chem/fairchem)
 
-- Currently the functionality to reproduce training results and run relaxations with stress enabled is on this [branch](https://github.com/FAIR-Chem/fairchem/tree/omat24). We will be merging the functionality to the the main codebase in the coming weeks.
+- Currently the functionality to reproduce training results and run relaxations with stress enabled is on this [branch](https://github.com/FAIR-Chem/fairchem/tree/omat24). We will be merging the functionality to the main codebase in the coming weeks.
 
 Additional information about the datasets and models can be found in [our pre-print](https://arxiv.org/abs/2410.12771):
 
 ```bib
 @article{barroso_omat24,
   title={Open Materials 2024 (OMat24) Inorganic Materials Dataset and Models},
-  author={Barroso-Luque, Luis and Muhammed, Shuaibi and Fu, Xiang and Wood, Brandon, Dzamba, Misko, and Gao, Meng and Rizvi, Ammar and  Zitnick, C. Lawrence and Ulissi, Zachary W.},
+  author={Barroso-Luque, Luis and Muhammed, Shuaibi and Fu, Xiang and Wood, Brandon and Dzamba, Misko and Gao, Meng and Rizvi, Ammar and Zitnick, C. Lawrence and Ulissi, Zachary W.},
   journal={arXiv preprint arXiv:2410.12771},
   year={2024}
 }

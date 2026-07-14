@@ -2,7 +2,7 @@
   import spg_sankeys from '$figs/spg-sankeys.jsonl'
   import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
   import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
-  import { GeoOptMetricsTable, ModelSelect, MODELS } from '$lib'
+  import { GeoOptMetricsTable, ModelSelect, ACTIVE_MODELS } from '$lib'
   import { order_models } from '$lib/fig-helpers'
   import {
     ALL_METRICS,
@@ -39,9 +39,9 @@
     column: ALL_METRICS.RMSD.key,
     dir: `asc`,
   }
-  const model_by_key = new Map(MODELS.map((model) => [model.model_key, model]))
+  const model_by_key = new Map(ACTIVE_MODELS.map((model) => [model.model_key, model]))
   const model_key_by_label = new Map(
-    MODELS.map((model) => [model.model_name, model.model_key]),
+    ACTIVE_MODELS.map((model) => [model.model_name, model.model_key]),
   )
   const plot_label_by_key = new Map([
     ...struct_rmsd_cdf.models.map(
@@ -123,7 +123,7 @@
   ])
 
   const n_min_relaxed_structures =
-    min(MODELS, ({ metrics }) =>
+    min(ACTIVE_MODELS, ({ metrics }) =>
       typeof metrics?.geo_opt === `string`
         ? undefined
         : metrics?.geo_opt?.[`symprec=1e-2`]?.n_structures,
@@ -149,7 +149,7 @@
       size defaults to model parameters and color to training-set size.
     </p>
     <DynamicScatter
-      models={MODELS}
+      models={ACTIVE_MODELS}
       model_filter={has_geo_opt_metrics}
       bind:x_key={scatter_x}
       bind:y_key={scatter_y}

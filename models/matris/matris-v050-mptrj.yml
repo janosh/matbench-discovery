@@ -35,7 +35,7 @@ trained_by:
   orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
-doi: https://github.com/HPC-AI-Team/MatRIS
+doi:
 paper: https://github.com/HPC-AI-Team/MatRIS
 docs: https://github.com/HPC-AI-Team/MatRIS
 pr_url: https://github.com/janosh/matbench-discovery/pull/293

@@ -38,7 +38,7 @@ license:
   code_url: https://github.com/SamsungDS/GGNN
   checkpoint: CC-BY-4.0
   # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
-  checkpoint_url: https://figshare.com/ndownloader/files/65435007
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
   dependencies:

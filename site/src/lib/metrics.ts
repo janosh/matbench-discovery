@@ -1,4 +1,4 @@
-import { DATASETS, format_date, MODELS } from '$lib'
+import { DATASETS, format_date, ACTIVE_MODELS } from '$lib'
 import {
   ALL_METRICS,
   DIATOMICS_METRICS,
@@ -188,7 +188,7 @@ export function assemble_row_data(
   discovery_set: DiscoverySet,
   model_filter: (model: ModelData) => boolean,
   filter_matches: (model: ModelData) => boolean = () => true,
-  models: ModelData[] = MODELS, // injectable for tests
+  models: ModelData[] = ACTIVE_MODELS, // injectable for tests
 ) {
   const license_str = (license: string | undefined, url: string | null | undefined) =>
     url?.startsWith(`http`)
