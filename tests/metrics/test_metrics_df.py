@@ -24,6 +24,15 @@ def test_metrics_df_from_yaml_phonons() -> None:
     assert all(df_metrics[kappa_cols[0]] >= 0), f"{df_metrics[kappa_cols[0]]=}"
 
 
+def test_metrics_df_from_yaml_preserves_non_numeric_values() -> None:
+    """String and mapping metadata survive metric aggregation."""
+    df_metrics = metrics_df_from_yaml(["md"])
+    assert "hardware" in df_metrics
+    assert "pred_file" in df_metrics
+    assert df_metrics.hardware.dropna().map(type).eq(str).all()
+    assert df_metrics.pred_file.dropna().map(type).eq(dict).all()
+
+
 def test_metrics_df_from_yaml_multiple_paths() -> None:
     """Multiple metric paths concatenate columns without dropping either task."""
     df_metrics_1 = metrics_df_from_yaml([f"discovery.{TestSubset.uniq_protos}"])

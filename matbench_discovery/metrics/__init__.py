@@ -20,7 +20,7 @@ def metrics_df_from_yaml(nested_keys: Sequence[str]) -> pd.DataFrame:
         try:
             if not model.is_active:
                 continue
-            combined_metrics: dict[str, float] = {}
+            combined_metrics: dict[object, object] = {}
             for nested_key in nested_keys:
                 metrics: object = model.metadata.get("metrics", {})
                 for sub_key in nested_key.split("."):
@@ -28,9 +28,7 @@ def metrics_df_from_yaml(nested_keys: Sequence[str]) -> pd.DataFrame:
                         break
                     metrics = metrics.get(sub_key) or {}
                 if isinstance(metrics, dict):
-                    for key, val in metrics.items():
-                        if isinstance(key, str) and isinstance(val, int | float):
-                            combined_metrics[key] = float(val)
+                    combined_metrics = {**combined_metrics, **metrics}
             if combined_metrics:
                 out_dict[model.label] = combined_metrics
 
