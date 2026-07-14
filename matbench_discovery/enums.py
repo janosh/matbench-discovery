@@ -404,7 +404,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         )
         pred_file = section.get("pred_file")
         if not (rel_path := file_ref_name(pred_file)):
-            raise ValueError(f"{field} not found in {self.rel_path!r}")
+            if required:
+                raise ValueError(f"{field} not found in {self.rel_path!r}")
+            return None
         abs_path = f"{ROOT}/{rel_path}"
         if file_url := file_ref_url(pred_file):
             maybe_auto_download_file(file_url, abs_path, label=self.label)
@@ -433,7 +435,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def is_active(self) -> bool:
         """Return whether the model participates in current benchmark views."""
-        return self.metadata["lifecycle"] == "active"
+        return self.metadata.get("lifecycle") == "active"
 
     @classmethod
     def active(cls) -> tuple[Self, ...]:

@@ -41,9 +41,13 @@ function format_model_for_rss(model: ModelData): string {
         model.hyperparams,
       )
         .flatMap(([namespace, values]) =>
-          Object.entries(values).map(
-            ([key, value]) => `${namespace}.${key}: ${String(value)}`,
-          ),
+          Object.entries(values).map(([key, value]) => {
+            const formatted =
+              value !== null && typeof value === `object`
+                ? JSON.stringify(value)
+                : String(value)
+            return `${namespace}.${key}: ${formatted}`
+          }),
         )
         .join(`,<br>&nbsp;&nbsp;`)}</p>`
     : ``

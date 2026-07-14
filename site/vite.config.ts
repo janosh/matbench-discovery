@@ -65,6 +65,12 @@ export default /* @__PURE__ */ attach_style(JSON.parse(${JSON.stringify(json)}))
 
 // Custom Vite plugin that watches *-schema.yml files and writes src/lib/schema/*.d.ts
 function yaml_schema_to_typescript_plugin(): Plugin {
+  const schema_map = {
+    'dataset-schema': { type_name: `DatasetRecord`, file_name: `dataset` },
+    'label-schema': { type_name: `Label`, file_name: `label` },
+    'model-schema': { type_name: `ModelMetadata`, file_name: `model` },
+  } as const
+
   async function yaml_schema_to_ts(file: string): Promise<boolean> {
     try {
       const yaml_content = fs.readFileSync(file, `utf-8`)
@@ -74,11 +80,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const parsed_yaml = load_yaml(yaml_content) as JSONSchema4
       const base_name = path.basename(file, `.yml`)
 
-      const output = {
-        'dataset-schema': { type_name: `DatasetRecord`, file_name: `dataset` },
-        'label-schema': { type_name: `Label`, file_name: `label` },
-        'model-schema': { type_name: `ModelMetadata`, file_name: `model` },
-      }[base_name]
+      const output = schema_map[base_name as keyof typeof schema_map]
       if (!output) throw new Error(`No schema output configured for ${base_name}.yml`)
 
       const model_metadata_ts = await json_to_ts(parsed_yaml, output.type_name, {
@@ -116,9 +118,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
         fs
           .readdirSync(`../tests`)
           .filter((file_name) =>
-            [`dataset-schema.yml`, `label-schema.yml`, `model-schema.yml`].includes(
-              file_name,
-            ),
+            Object.keys(schema_map).some((key) => `${key}.yml` === file_name),
           )
           .map((file_name) => {
             const schema_file = path.resolve(`../tests/${file_name}`)

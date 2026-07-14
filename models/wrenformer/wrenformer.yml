@@ -36,13 +36,13 @@ license:
 
 environment:
   dependencies:
-  - aviary @ https://github.com/CompRhys/aviary/releases/tag/v0.1.0
+  - aviary @ git+https://github.com/CompRhys/aviary@v0.1.0
   - torch==1.11.0
   - torch-scatter==2.0.9
   - pymatgen==2022.10.22
   - numpy==1.24.0
   - pandas==1.5.1
-  python_version: '3.12'
+  python_version: '3.10'
 openness: OSOD
 architecture_types: [transformer]
 train_task: RP2RE

@@ -29,17 +29,22 @@ authors:
 
 repo: https://github.com/SamsungDS/GGNN
 doi:
-paper: https://openreview.net/pdf?id=wiQe95BPaB
+paper: https://proceedings.mlr.press/v267/lee25l.html
 pr_url: https://github.com/janosh/matbench-discovery/pull/269
 checkpoint_url: https://figshare.com/ndownloader/files/65435004
 license:
   code: MIT
   code_url: https://github.com/SamsungDS/GGNN
   checkpoint: CC-BY-4.0
-  checkpoint_url: https://figshare.com/ndownloader/files/65435004
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
-  dependencies: ['torch==2.8.0+cu126', 'cuEquivariance==0.6.0', 'fairchem-core==1.10.0']
+  # Display/provenance pins; install is owned by project (override-dependencies).
+  dependencies:
+  - torch==2.9.1+cu126
+  - fairchem-core==1.10.0
+  - cuequivariance==0.6.0
+  - GGNN @ git+https://github.com/SamsungDS/GGNN@16b5cae47437
   python_version: '3.12'
   project: models/equflash/kappa-env
 openness: CSOD

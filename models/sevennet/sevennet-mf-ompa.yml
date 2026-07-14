@@ -109,6 +109,8 @@ metrics:
     pred_file:
       name: models/sevennet/sevennet-mf-ompa/2025-03-11-discovery.csv.gz
       url: https://figshare.com/files/52983488
+      size: 1344444
+      md5: bbee516a1b6b2cc154d012d9283ac33f
     pred_col: e_form_per_atom_sevennet
     unique_prototypes:
       F1: 0.901  # fraction
@@ -168,6 +170,8 @@ metrics:
     pred_file:
       name: models/sevennet/sevennet-mf-ompa/2025-03-11-geo-opt.jsonl.gz
       url: https://figshare.com/files/52983491
+      size: 93179538
+      md5: 8a59ca55116e7ac10174a89c187e1418
     symprec=1e-2:
       rmsd: 0.0639
       n_sym_ops_mae: 1.7053

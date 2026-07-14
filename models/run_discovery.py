@@ -28,6 +28,7 @@ import argparse
 import glob
 import os
 import shlex
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -42,6 +43,7 @@ from matbench_discovery.calculators import (
     resolve_cli_calculator,
 )
 from matbench_discovery.data import (
+    artifact_date_from_prefix,
     artifact_filename,
     make_file_ref,
     parse_artifact_filename,
@@ -145,7 +147,7 @@ def _resolve_output_paths(
         task="discovery",
         shard_dir=shard_dir,
     )
-    artifact_date = os.path.basename(artifact_prefix)[:10]
+    artifact_date = artifact_date_from_prefix(artifact_prefix, fallback=today)
     artifact_dir = f"{out_dir}/dry-run" if dry_run else out_dir
     discovery_file = artifact_filename(artifact_date, "discovery")
     geo_opt_file_name = artifact_filename(artifact_date, "geo_opt")
@@ -199,6 +201,24 @@ def _artifact_yaml_data(path: str) -> dict[str, Any]:
     return {"pred_file": make_file_ref(relative_path)}
 
 
+_LEGACY_ARTIFACT_KEYS = (
+    "pred_file_url",
+    "pred_file_artifact",
+    "pred_col",
+    "struct_col",
+)
+
+
+def _clear_legacy_and_update(
+    section: dict[str, Any], *, updates: dict[str, Any]
+) -> dict[str, Any]:
+    """Drop stale flat artifact keys, then apply regenerated FileRef metadata."""
+    for key in _LEGACY_ARTIFACT_KEYS:
+        section.pop(key, None)
+    section.update(updates)
+    return section
+
+
 def _write_yaml_results(
     model: Model,
     artifacts: DiscoveryArtifacts,
@@ -241,7 +261,11 @@ def _write_yaml_results(
         artifact_data = _artifact_yaml_data(path)
         if task == "discovery":
             artifact_data |= cost_data
-        update_yaml_file(model.yaml_path, f"metrics.{task}", artifact_data)
+        update_yaml_file(
+            model.yaml_path,
+            f"metrics.{task}",
+            partial(_clear_legacy_and_update, updates=artifact_data),
+        )
         print(f"Updated {task}.pred_file; re-upload if a prior Figshare URL existed")
     discovery_metrics.write_all_metrics_to_yaml(
         model,

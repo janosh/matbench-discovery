@@ -440,8 +440,10 @@ definitions:
         items:
           type: string
         description: >-
-          uv-installable dependency specs used both as provenance display and as
-          the isolated runner environment (e.g. torch==2.6.0, pkg @ git+…).
+          Provenance dependency specs shown on the site. Without ``project``,
+          these are also installed via ``uv run --with``. With ``project``, the
+          project's pyproject.toml owns install resolution and these pins are
+          display-only (keep them aligned with that project).
       python_version:
         type: string
         pattern: '^[0-9]+\.[0-9]+$'
@@ -452,12 +454,22 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/http_url'
+        description: >
+          Extra ``uv --find-links`` URLs for the non-project runner path. Ignored
+          when ``project`` is set (put find-links in that project's pyproject).
       extra_index_urls:
         type: array
         items:
           $ref: '#/definitions/http_url'
+        description: >
+          Extra ``uv --extra-index-url`` entries for the non-project runner path.
+          Ignored when ``project`` is set.
       project:
         type: [string, 'null']
+        description: >
+          Optional path to a uv project whose pyproject.toml owns dependency
+          resolution (``uv run --project … --isolated``). Use when ``--with``
+          cannot express needed overrides (e.g. EquFlash).
 
   TrainingCostEntry:
     type: object

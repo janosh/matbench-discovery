@@ -5,6 +5,7 @@ name: Model PR guard
 #    `uv run --with-editable . scripts/ingest_model.py <model> --archive` locally.
 # 2) Payload-format changes without regenerated payloads fail unless the PR also
 #    updates committed site payloads or carries the `payloads-unchanged` label.
+# 3) Model registry/schema guardrails (tests/models/, tests/test_url_skips.py) always run.
 # Runs on all PRs (~1 min for non-model PRs), main pushes, and weekly drift checks.
 
 on:

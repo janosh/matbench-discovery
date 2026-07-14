@@ -488,7 +488,15 @@ def write_metrics_to_yaml(
         pred_file_url = file_ref_url(existing_pred_file)
     if pred_name is not None:
         url = pred_file_url if isinstance(pred_file_url, str) else None
-        block["pred_file"] = make_file_ref(pred_name, url=url)
+        size = md5 = None
+        if pred_name == existing_name and isinstance(existing_pred_file, dict):
+            size_val, md5_val = (
+                existing_pred_file.get("size"),
+                existing_pred_file.get("md5"),
+            )
+            if isinstance(size_val, int) and isinstance(md5_val, str):
+                size, md5 = size_val, md5_val
+        block["pred_file"] = make_file_ref(pred_name, url=url, size=size, md5=md5)
 
     run_metadata_keys = (
         *("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"),

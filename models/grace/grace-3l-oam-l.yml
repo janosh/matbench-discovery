@@ -34,7 +34,7 @@ license:
   checkpoint_url: https://github.com/ICAMS/grace-tensorpotential/blob/3f614c8ae6/LICENSE.md
 
 environment:
-  dependencies: [tensorpotential, 'tensorflow==2.20.0']
+  dependencies: ['tensorpotential @ git+https://github.com/ICAMS/grace-tensorpotential@3115a9314', 'tensorflow==2.20.0']
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]

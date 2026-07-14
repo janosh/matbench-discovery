@@ -7,7 +7,8 @@ from matbench_discovery.metrics import metrics_df_from_yaml
 def test_metrics_df_from_yaml_discovery() -> None:
     """Discovery unique-prototype metrics load with non-negative MAE."""
     df_metrics = metrics_df_from_yaml([f"discovery.{TestSubset.uniq_protos}"])
-    assert df_metrics.shape >= (24, 18)
+    assert df_metrics.shape[0] >= 24
+    assert df_metrics.shape[1] >= 15
     assert "MAE" in df_metrics
     assert all(df_metrics.MAE >= 0), f"{df_metrics.MAE=}"
     metrics_df_from_yaml(["discovery.full_test_set"])
@@ -18,7 +19,8 @@ def test_metrics_df_from_yaml_phonons() -> None:
     df_metrics = metrics_df_from_yaml(["phonons.kappa_103"])
     kappa_cols = [col for col in df_metrics if col.endswith("_SRME")]
     assert len(kappa_cols) == 1, f"{df_metrics.columns=}"
-    assert df_metrics.shape >= (16, 3)
+    assert df_metrics.shape[0] >= 16
+    assert df_metrics.shape[1] >= 2
     assert all(df_metrics[kappa_cols[0]] >= 0), f"{df_metrics[kappa_cols[0]]=}"
 
 

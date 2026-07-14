@@ -51,7 +51,7 @@ environment:
   - ase==3.22.0
   - pymatgen==2022.10.22
   - numpy==1.24.0
-  python_version: '3.12'
+  python_version: '3.10'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFSM
@@ -75,7 +75,7 @@ notes:
   description: |
     The Crystal Hamiltonian Graph Neural Network (CHGNet) is a universal GNN-based interatomic potential trained on energies, forces, stresses and magnetic moments from the MP trajectory dataset containing ∼1.5 million inorganic structures.
     ![CHGNet Pipeline](https://user-images.githubusercontent.com/30958850/222924937-1d09bbce-ee18-4b19-8061-ec689cd15887.svg)
-  training: Using pre-trained model with 400,438 params released with paper. The MPtrj data set used to train CHGNet was pulled in September 2022 from the at-the-time latest [v2021.11.10 MP release](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) (see [description for construction of MPtrj](https://github.com/CederGroupHub/chgnet/blob/7c21a9488/examples/QueryMPtrj.md)). The CHGNet authors' MPtrj data set has since been used to train other models like [MACE-MP](https://arxiv.org/abs/2401.00096) and [Equiformer v1/2](https://github.com/pbenner/equitrain).
+  training: Using pre-trained model with 412,525 params released with paper. The MPtrj data set used to train CHGNet was pulled in September 2022 from the at-the-time latest [v2021.11.10 MP release](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) (see [description for construction of MPtrj](https://github.com/CederGroupHub/chgnet/blob/7c21a9488/examples/QueryMPtrj.md)). The CHGNet authors' MPtrj data set has since been used to train other models like [MACE-MP](https://arxiv.org/abs/2401.00096) and [Equiformer v1/2](https://github.com/pbenner/equitrain).
   corrections: Unlike e.g. [M3GNet](/models/m3gnet) which predicts raw DFT energies, CHGNet targets include MP2020 corrections. Hence no need to correct again.
 
 metrics:

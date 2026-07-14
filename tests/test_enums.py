@@ -418,6 +418,14 @@ def test_model_enum() -> None:
             assert model.metadata["superseded_by"] in model_keys
 
 
+def test_is_active_tolerates_missing_lifecycle(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing lifecycle is inactive rather than raising KeyError."""
+    monkeypatch.setattr(Model, "metadata", property(lambda _self: {}))
+    assert Model.mace_mp_0.is_active is False
+
+
 def test_generated_model_enum_is_current() -> None:
     """Committed Model members match the YAML-driven generator."""
     with open(f"{ROOT}/matbench_discovery/enums.py", encoding="utf-8") as file:

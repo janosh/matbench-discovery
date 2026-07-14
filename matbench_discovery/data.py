@@ -112,16 +112,16 @@ def make_file_ref(
     size: int | None = None,
     md5: str | None = None,
 ) -> FileRef:
-    """Build a file reference, omitting unset optional fields."""
+    """Build a file reference; ``size``/``md5`` must both be set or both omitted."""
+    if (size is None) ^ (md5 is None):
+        raise ValueError("size and md5 must both be set or both omitted")
     if name.startswith("models/"):
         parse_artifact_filename(name)
     ref: FileRef = {"name": name}
     if url is not None:
         ref["url"] = url
-    if size is not None:
-        ref["size"] = size
-    if md5 is not None:
-        ref["md5"] = md5
+    if size is not None and md5 is not None:
+        ref["size"], ref["md5"] = size, md5
     return ref
 
 
@@ -177,6 +177,14 @@ def _iso_date(value: date | str) -> str:
     except ValueError as exc:
         raise ValueError(f"Invalid ISO date {value!r}") from exc
     return iso_date
+
+
+def artifact_date_from_prefix(prefix: str, *, fallback: str) -> str:
+    """Return the leading ISO date from an artifact prefix, else ``fallback``."""
+    try:
+        return _iso_date(os.path.basename(prefix)[:10])
+    except ValueError:
+        return fallback
 
 
 def artifact_filename(
@@ -582,14 +590,15 @@ def update_yaml_file(
         # available'). Pass preserve_existing=False to fully replace the section, so a
         # recompute drops keys that are no longer emitted (deprecated metrics).
         previous = current.get(last)
-        updated_data = (
-            data.copy()
-            if isinstance(data, dict)
-            else data(dict(previous) if isinstance(previous, dict) else {})
-        )
-        if preserve_existing and isinstance(previous, dict):
-            for key, val in previous.items():
-                updated_data.setdefault(key, val)
+        # Callables own the merge (they receive a copy of the prior section). Plain
+        # dict updates optionally keep unspecified prior keys via preserve_existing.
+        if isinstance(data, dict):
+            updated_data = data.copy()
+            if preserve_existing and isinstance(previous, dict):
+                for key, val in previous.items():
+                    updated_data.setdefault(key, val)
+        else:
+            updated_data = data(dict(previous) if isinstance(previous, dict) else {})
         current[last] = updated_data
 
         # Write back to file

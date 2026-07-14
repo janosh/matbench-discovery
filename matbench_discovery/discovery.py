@@ -753,6 +753,9 @@ def write_discovery_artifacts(
             {
                 DISCOVERY_ID_COL: record.material_id,
                 DISCOVERY_STRUCT_COL: record.structure,
+                "energy": record.energy,
+                "converged": record.converged,
+                "n_steps": record.n_steps,
             }
         )
 

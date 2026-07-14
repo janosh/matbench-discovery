@@ -109,6 +109,8 @@ metrics:
     pred_file:
       name: models/equiformer_v3/equiformer-v3-mp/2026-04-07-discovery.csv.gz
       url: https://figshare.com/files/63515172
+      size: 1554589
+      md5: d165d1a3ca4ece89e41785c152d937e5
     pred_col: e_form_per_atom_fairchem
     full_test_set:
       F1: 0.848  # fraction
@@ -168,6 +170,8 @@ metrics:
     pred_file:
       name: models/equiformer_v3/equiformer-v3-mp/2026-04-07-geo-opt.jsonl.gz
       url: https://figshare.com/files/63515178
+      size: 108172554
+      md5: d62b4dbfd1043e472e70e8a429737bb2
     symprec=1e-5:
       rmsd: 0.0701
       n_sym_ops_mae: 3.3334
@@ -178,6 +182,8 @@ metrics:
       analysis_file:
         name: models/equiformer_v3/equiformer-v3-mp/2026-04-07-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
         url: https://figshare.com/files/63520452
+        size: 8248867
+        md5: 37d2a6d8b41103bd8af19abc03109f26
     symprec=1e-2:
       rmsd: 0.0701
       n_sym_ops_mae: 2.4068
@@ -188,10 +194,14 @@ metrics:
       analysis_file:
         name: models/equiformer_v3/equiformer-v3-mp/2026-04-07-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
         url: https://figshare.com/files/63520449
+        size: 8764098
+        md5: 5999d5baaf77036760efc94606c39734
   phonons:
     kappa_103:
       pred_file:
         name: models/equiformer_v3/equiformer-v3-mp/2026-04-07-phonons-kappa-103.json.gz
         url: https://figshare.com/files/63515175
+        size: 8211874
+        md5: 429bd0f8d4c58c99ab46555366866f5b
       κ_SRME: 0.2753
       κ_SRE: 0.1136

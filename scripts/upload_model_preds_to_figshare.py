@@ -161,17 +161,28 @@ def update_one_modeling_task_article(
             return result
 
         def set_file_ref_url(
-            data: dict[str, Any], key_path: str, file_url: str
+            data: dict[str, Any],
+            key_path: str,
+            file_url: str,
+            *,
+            size: int | None = None,
+            md5: str | None = None,
         ) -> None:
-            """Set ``url`` (and checksums when known) on a nested FileRef."""
+            """Set ``url`` (and optional size/md5) on a nested FileRef."""
             *parts, last = key_path.split(".")
             target = data
             for part in parts:
                 target = target[part]
             ref = target.get(last)
+            if isinstance(ref, str):
+                target[last] = ref = {"name": ref}
             if not isinstance(ref, dict):
                 raise TypeError(f"Expected FileRef object at {key_path}, got {ref!r}")
-            ref["url"] = file_url
+            updated: dict[str, Any] = {**ref, "url": file_url}
+            if size is not None and md5 is not None:
+                updated["size"] = size
+                updated["md5"] = md5
+            target[last] = updated
 
         for key_path, rel_file_path in find_file_keys(metric_data).items():
             try:
@@ -187,7 +198,7 @@ def update_one_modeling_task_article(
 
             # First check if the exact same file already exists
             if not force_reupload and not dry_run:
-                file_hash, _ = figshare.get_file_hash_and_size(file_path)
+                file_hash, file_size = figshare.get_file_hash_and_size(file_path)
                 exists, file_id = figshare.file_exists_with_same_hash(
                     article_id, filename, file_hash
                 )
@@ -195,16 +206,13 @@ def update_one_modeling_task_article(
                 if exists and file_id is not None:
                     file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
                     skipped_files[filename] = (file_url, model)
-
-                    # Update model metadata if URL not present
-                    *parts, last = key_path.split(".")
-                    target = metric_data
-                    for part in parts:
-                        target = target[part]
-                    ref = target.get(last)
-                    if isinstance(ref, dict) and not ref.get("url"):
-                        set_file_ref_url(metric_data, key_path, file_url)
-
+                    set_file_ref_url(
+                        metric_data,
+                        key_path,
+                        file_url,
+                        size=file_size,
+                        md5=file_hash,
+                    )
                     continue
 
             # Check for similar files that should be deleted
@@ -233,6 +241,7 @@ def update_one_modeling_task_article(
 
             # Upload file if it doesn't exist or force_reupload is True
             if not dry_run:
+                file_hash, file_size = figshare.get_file_hash_and_size(file_path)
                 file_id, _was_uploaded = figshare.upload_file_if_needed(
                     article_id,
                     file_path,
@@ -247,7 +256,13 @@ def update_one_modeling_task_article(
                 target_files[filename] = (file_url, model)
 
                 # Update model metadata with URL
-                set_file_ref_url(metric_data, key_path, file_url)
+                set_file_ref_url(
+                    metric_data,
+                    key_path,
+                    file_url,
+                    size=file_size,
+                    md5=file_hash,
+                )
 
         # Save updated model metadata if changed
         if not dry_run:

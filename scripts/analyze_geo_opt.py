@@ -89,6 +89,13 @@ def analyze_model_symprec(
             f"Missing canonical geo-opt columns {sorted(missing_columns)} in "
             f"{ml_relaxed_structs_path}"
         )
+    material_ids = df_ml_structs["material_id"]
+    if material_ids.isna().any():
+        raise ValueError(f"Null material_id values in {ml_relaxed_structs_path}")
+    if dupes := sorted(material_ids[material_ids.duplicated()].astype(str).unique()):
+        raise ValueError(
+            f"Duplicate material_id values in {ml_relaxed_structs_path}: {dupes}"
+        )
     df_ml_structs = df_ml_structs.set_index("material_id")
 
     if debug_mode:

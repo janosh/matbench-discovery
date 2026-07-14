@@ -86,7 +86,7 @@ hyperparams:
     huber_delta: [0.015, 0.040, 0.1]
     num_channel: 64
     lmax: 5
-    l1l2: <=
+    l1l2: l1 <= l2
     correlation: 2
 notes:
   description: |

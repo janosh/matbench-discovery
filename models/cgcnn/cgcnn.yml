@@ -37,7 +37,7 @@ environment:
   - torch-scatter==2.0.9
   - numpy==1.24.0
   - pandas==1.5.1
-  python_version: '3.12'
+  python_version: '3.10'
 openness: OSOD
 architecture_types: [gnn]
 train_task: RS2RE

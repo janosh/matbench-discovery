@@ -2,7 +2,7 @@
 
 ## Models
 
-Two equiformerV2 models submitted:
+Two EquiformerV2 models were submitted:
 
 1. **eqV2 S DeNS** - A compliant model trained on MPtrj only
 2. **eqV2 M** - A non-compliant model pretrained with the OMat24 dataset and finetuned with MPtrj + sAlex

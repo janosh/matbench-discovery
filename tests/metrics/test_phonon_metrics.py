@@ -544,6 +544,28 @@ def test_write_metrics_to_yaml_preserves_existing_artifacts(tmp_path: Path) -> N
     assert "pred_file_artifact" not in kappa_metrics
 
 
+def test_write_metrics_migrates_legacy_companion_urls(tmp_path: Path) -> None:
+    """Legacy flat *_url keys fold into nested FileRefs before cleanup."""
+    refs = {
+        "pred_file": (KAPPA_PRED_LEGACY, "https://figshare.com/files/legacy-pred"),
+        "force_file": (KAPPA_FORCE, "https://figshare.com/files/legacy-force"),
+        "run_info_file": (KAPPA_RUN_INFO, "https://figshare.com/files/legacy-run"),
+    }
+    yaml_body = "metrics:\n  phonons:\n    kappa_103:\n" + "".join(
+        f"      {key}: {path}\n      {key}_url: {url}\n"
+        for key, (path, url) in refs.items()
+    )
+    kappa_metrics = update_temp_kappa_yaml(
+        tmp_path,
+        yaml_body,
+        metrics={"srme": 0.1, "sre": 0.2},
+        pred_file_path=KAPPA_PRED,
+    )
+    for key, (path, url) in refs.items():
+        assert kappa_metrics[key] == make_file_ref(path, url=url)
+        assert f"{key}_url" not in kappa_metrics
+
+
 @pytest.mark.parametrize(
     "initial_yaml",
     ["metrics: {}\n", "metrics:\n  phonons: not available\n"],

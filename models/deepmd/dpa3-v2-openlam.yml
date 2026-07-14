@@ -30,8 +30,8 @@ trained_by:
   orcid: https://orcid.org/0000-0002-0630-2187
 
 repo: https://github.com/deepmodeling/deepmd-kit
-doi:
-paper:
+doi: https://doi.org/10.1038/s41524-026-02146-2
+paper: https://arxiv.org/abs/2506.01686
 docs: https://github.com/deepmodeling/deepmd-kit
 pr_url: https://github.com/janosh/matbench-discovery/pull/222
 checkpoint_url: https://figshare.com/files/52989059

@@ -22,7 +22,7 @@ paper: https://arxiv.org/abs/2202.02450
 docs: https://materialsvirtuallab.github.io/m3gnet
 pypi: https://pypi.org/project/matgl
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
-checkpoint_url: https://raw.githubusercontent.com/materialsvirtuallab/m3gnet/3a8b14dfd5/pretrained/MP-2021.2.8-EFS/checkpoint
+checkpoint_url: https://github.com/materialsvirtuallab/m3gnet/tree/3a8b14dfd5/pretrained/MP-2021.2.8-EFS
 license:
   code: BSD-3-Clause
   code_url: https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd59/LICENSE
@@ -36,9 +36,9 @@ environment:
   - torch==2.4.0
   - m3gnet==0.1.0
   - pymatgen==2022.10.22
-  - numpy==1.24.0
+  - numpy==1.26.4
   - pandas==1.5.1
-  python_version: '3.12'
+  python_version: '3.11'
   find_links: ['https://data.dgl.ai/wheels/torch-2.4/cu121/repo.html']
 openness: OSOD
 architecture_types: [gnn]
@@ -171,4 +171,6 @@ metrics:
       pred_file:
         name: models/m3gnet/m3gnet/2024-11-09-phonons-kappa-103.json.gz
         url: https://figshare.com/files/52134866
+        size: 18034939
+        md5: 5bf90c8e0e755132b88a2875ff111f12
       κ_SRE: 1.3404

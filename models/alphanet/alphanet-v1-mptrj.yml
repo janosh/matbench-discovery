@@ -105,6 +105,8 @@ metrics:
     pred_file:
       name: models/alphanet/alphanet-v1-mptrj/2025-03-08-diatomics.json.gz
       url: https://figshare.com/files/52868972
+      size: 250321
+      md5: 42d9c254b72e99802d3a34acdc66eb61
     hardware: NVIDIA H200
     run_time_sec: 196.1
     pbe_wall_dist_mae: 0.2832
@@ -211,6 +213,8 @@ metrics:
         size: 7355028
         md5: 80e0e4298a9343e7c8525d433afec80f
   phonons:
+    status: partial
+    reason: kappa_103 missing κ_SRE metric
     kappa_103:
       κ_SRME: 1.310
       pred_file:                                                                                                      #find a lots of imag freqs, will look into this in the future

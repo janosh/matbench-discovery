@@ -5,6 +5,7 @@ import inspect
 import os
 import subprocess
 import sys
+import tomllib
 import zipfile
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -12,7 +13,7 @@ from types import ModuleType, SimpleNamespace
 import pytest
 from ase.calculators.emt import EMT
 
-from matbench_discovery import calculators
+from matbench_discovery import ROOT, calculators
 from matbench_discovery.calculators import CALCULATORS, load_calculator
 from matbench_discovery.enums import Model
 
@@ -78,9 +79,10 @@ def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_equflash_uv_command_uses_isolated_override_project() -> None:
-    """EquFlash relaxes fairchem's torch bound without affecting other models."""
+    """EquFlash installs via project env; YAML deps are provenance-only."""
     calc_spec = CALCULATORS["equflash_29m_oam"]
-    assert calc_spec.uv_run_cmd("models/run_kappa.py") == [
+    command = calc_spec.uv_run_cmd("models/run_kappa.py")
+    assert command == [
         "uv",
         "run",
         "--project",
@@ -91,8 +93,31 @@ def test_equflash_uv_command_uses_isolated_override_project() -> None:
         "python",
         "models/run_kappa.py",
     ]
+    # Project mode must not inject --with (would fight override-dependencies).
+    assert "--with" not in command
+    assert calc_spec.deps  # still exposed for site provenance
     assert calc_spec.project
     assert os.path.isfile(f"{calc_spec.project}/pyproject.toml")
+
+
+def test_project_backed_yaml_deps_match_install_project() -> None:
+    """Provenance pins must match the authoritative project (no silent drift)."""
+    for model_key, calc_spec in CALCULATORS.items():
+        if not calc_spec.project:
+            continue
+        pyproject_path = f"{ROOT}/{calc_spec.project}/pyproject.toml"
+        assert os.path.isfile(pyproject_path), model_key
+        with open(pyproject_path, mode="rb") as file:
+            pyproject = tomllib.load(file)
+        project_deps = {
+            *pyproject.get("project", {}).get("dependencies", []),
+            *pyproject.get("tool", {}).get("uv", {}).get("override-dependencies", []),
+        }
+        missing = [dep for dep in calc_spec.deps if dep not in project_deps]
+        assert not missing, (
+            f"{model_key}: YAML environment.dependencies {missing} are not in "
+            f"{calc_spec.project}; keep display pins identical to the install project"
+        )
 
 
 def test_checkpoint_specs_accept_declared_overrides() -> None:

@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+import yaml
 from ase import Atoms, units
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.singlepoint import SinglePointCalculator
@@ -1012,10 +1013,10 @@ def test_write_metrics_to_yaml(
     )
 
     text = yaml_path.read_text(encoding="utf-8")
-    assert "pred_file:" in text
-    assert f"name: {path}" in text
-    assert f"url: {url}" in text
-    assert "pred_file_url:" not in text
+    written = yaml.safe_load(text)
+    md = written["metrics"]["md"]
+    assert md["pred_file"] == {"name": path, "url": url}
+    assert "pred_file_url" not in md
     assert "hardware: NVIDIA H200" in text
     assert "run_time_sec: 4521.484 # s" in text
     assert "energy_rmse: 1.2346 # meV/atom" in text

@@ -270,4 +270,6 @@ metrics:
       pred_file:
         name: models/mattersim/mattersim-v1-5m/2024-12-09-phonons-kappa-103.json.gz
         url: https://figshare.com/files/52134884
+        size: 7568736
+        md5: e774bb3a1ae9cbc27cbe5f3335ebf0eb
       κ_SRE: 0.4126

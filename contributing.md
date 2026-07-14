@@ -17,7 +17,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
 1. You should share your model's predictions through a cloud storage service (we recommend [Figshare](https://figshare.com)) and include the stable direct-download links in your model YAML. Each artifact lives directly under `models/<family>/<model_key>/` and follows the canonical filename grammar:
 
-   - geometry optimization: `<yyyy-mm-dd>-geo-opt.jsonl.gz` — final relaxed structures and WBM material IDs in [JSON Lines format](https://jsonlines.org). Optional analysis files use `<yyyy-mm-dd>-geo-opt-symprec=<symprec>-moyo=<version>.csv.gz`.
+   - geometry optimization: `<yyyy-mm-dd>-geo-opt.jsonl.gz` — final relaxed structures with `energy`, `converged`, `n_steps`, and WBM material IDs in [JSON Lines format](https://jsonlines.org). Optional analysis files use `<yyyy-mm-dd>-geo-opt-symprec=<symprec>-moyo=<version>.csv.gz`.
    - discovery: `<yyyy-mm-dd>-discovery.csv.gz` — compressed CSV with `material_id` and final `e_form_per_atom` columns.
    - phonons: `<yyyy-mm-dd>-phonons-kappa-103.json.gz` — predictions for exactly the 103 PhononDB material IDs. Optional force sets and run provenance use `-forces.json.gz` and `-run-info.json`.
    - molecular dynamics: `<yyyy-mm-dd>-md-metrics.csv.gz`.

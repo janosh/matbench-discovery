@@ -1,6 +1,6 @@
 # DeePMD
 
-DPA3 is an advanced interatomic potential leveraging the message passing architecture, implemented within the DeePMD-kit framework, available on [GitHub](https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha).
+DPA3 is an advanced interatomic potential leveraging the message-passing architecture, implemented within the DeePMD-kit framework, available on [GitHub](https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha).
 
 ## DeePMD-DPA3
 

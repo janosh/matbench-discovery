@@ -20,7 +20,7 @@ trained_by:
   github: https://github.com/pbenner
 
 repo: https://github.com/usnistgov/alignn
-doi: https://nature.com/articles/s41524-021-00650-1
+doi: https://doi.org/10.1038/s41524-021-00650-1
 paper: https://arxiv.org/abs/2106.01829
 docs: https://jarvis.nist.gov/jalignn
 pypi: https://pypi.org/project/alignn
@@ -40,7 +40,7 @@ environment:
   - pandas==2.0.1
   - scikit-learn==1.2.2
   - torch==1.9.0+cu111
-  python_version: '3.12'
+  python_version: '3.9'
 openness: OSOD
 architecture_types: [gnn]
 train_task: RS2RE

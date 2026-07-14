@@ -48,7 +48,7 @@ license:
   code: MIT
   code_url: https://github.com/MDIL-SNU/SevenNet/blob/main/LICENSE
   checkpoint: MIT
-  checkpoint_url: https://figshare.com/files/60977863
+  checkpoint_url: https://github.com/MDIL-SNU/SevenNet/blob/main/LICENSE
 
 environment:
   dependencies:
@@ -144,6 +144,8 @@ metrics:
     pred_file:
       name: models/sevennet/sevennet-omni-i12/2026-01-12-discovery.csv.gz
       url: https://figshare.com/files/60977137
+      size: 1338289
+      md5: 8de869237eeb3cff00e30339233170ec
     pred_col: e_form_per_atom_sevennet
     full_test_set:
       F1: 0.887  # fraction
@@ -203,6 +205,8 @@ metrics:
     pred_file:
       name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt.jsonl.gz
       url: https://figshare.com/files/60979039
+      size: 92916028
+      md5: a8b39f29537f8d20673fd66ef80a5e5a
     symprec=1e-2:
       rmsd: 0.0618
       n_sym_ops_mae: 1.7097
@@ -213,6 +217,8 @@ metrics:
       analysis_file:
         name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt-symprec=1e-2-moyo=0.7.3.csv.gz
         url: https://figshare.com/files/60979033
+        size: 7367253
+        md5: b33282e0f1b7b5e448c7f82e5ef26386
     symprec=1e-5:
       rmsd: 0.0618
       n_sym_ops_mae: 2.0291
@@ -223,6 +229,8 @@ metrics:
       analysis_file:
         name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt-symprec=1e-5-moyo=0.7.3.csv.gz
         url: https://figshare.com/files/60979036
+        size: 7363898
+        md5: badc77d07358f80a34c76c6a9a18ed6d
   md:
     pred_file:
       name: models/sevennet/sevennet-omni-i12/2026-06-28-md-metrics.csv.gz
@@ -245,5 +253,7 @@ metrics:
       pred_file:
         name: models/sevennet/sevennet-omni-i12/2026-01-12-phonons-kappa-103.json.gz
         url: https://figshare.com/files/60977131
+        size: 8201591
+        md5: ea7e2e3753f76093f00457ad7f34a78c
       κ_SRME: 0.1917
       κ_SRE: 0.0963

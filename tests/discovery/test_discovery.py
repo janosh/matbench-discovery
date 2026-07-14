@@ -172,9 +172,13 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
     assert artifacts.n_failed == 2
     df_geo = pd.read_json(geo_file, lines=True)
     assert len(df_geo) == 1
-    assert set(df_geo) == {"material_id", "structure"}
-    assert df_geo.loc[0, "material_id"] == material_id
-    assert df_geo.loc[0, "structure"]["@class"] == "Structure"
+    geo = df_geo.iloc[0]
+    assert {*df_geo} == {"material_id", "structure", "energy", "converged", "n_steps"}
+    assert geo["material_id"] == material_id
+    assert geo["structure"]["@class"] == "Structure"
+    assert geo["energy"] == pytest.approx(raw_energy)
+    assert bool(geo["converged"])
+    assert int(geo["n_steps"]) == 4
 
 
 def test_runner_writes_canonical_artifact_metadata(
@@ -252,8 +256,20 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
             "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
             url="https://example.com/old",
         ),
+        "pred_file_url": "https://example.com/legacy",
+        "pred_file_artifact": "legacy",
+        "pred_col": "legacy_pred",
     }
-    yaml_path.write_text(yaml.safe_dump({"metrics": {"discovery": old_discovery}}))
+    yaml_path.write_text(
+        yaml.safe_dump(
+            {
+                "metrics": {
+                    "discovery": old_discovery,
+                    "geo_opt": {"struct_col": "legacy_structure"},
+                }
+            }
+        )
+    )
     mock_model = cast(
         "Model",
         SimpleNamespace(yaml_path=str(yaml_path), metrics={"discovery": old_discovery}),
@@ -276,6 +292,7 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
         "stale URL must be invalidated"
     )
     assert "pred_file_url" not in discovery_yaml
+    assert "pred_file_artifact" not in discovery_yaml
     assert "pred_col" not in discovery_yaml
     assert discovery_yaml["hardware"] == "NVIDIA H200"
     assert discovery_yaml["run_time_sec"] == pytest.approx(123.45)

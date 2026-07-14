@@ -409,6 +409,24 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
         **expected_metrics,
     }
 
+    # Recomputation with same pred path preserves size/md5 on the nested FileRef.
+    write_diatomics_yaml(
+        model,
+        yaml_path,
+        {
+            "pred_file": make_file_ref(
+                pred_file,
+                url=pred_file_url,
+                size=12345,
+                md5="a" * 32,
+            )
+        },
+    )
+    preserved = diatomics.write_metrics_to_yaml(model, metrics_by_element)
+    assert preserved["pred_file"] == make_file_ref(
+        pred_file, url=pred_file_url, size=12345, md5="a" * 32
+    )
+
     # pred_file_path overrides the existing pred_file; run_metadata is recorded ahead of
     # the metric values
     write_diatomics_yaml(

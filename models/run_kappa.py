@@ -32,7 +32,7 @@ from matbench_discovery.calculators import (
     resolve_checkpoint,
     resolve_device,
 )
-from matbench_discovery.data import artifact_filename
+from matbench_discovery.data import artifact_date_from_prefix, artifact_filename
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import effective_shard_args, slurm_shard_selection
 from matbench_discovery.phonons.pipeline import (
@@ -144,7 +144,7 @@ def resolve_output_paths(
         task="kappa",
         shard_dir=shard_dir,
     )
-    artifact_date = os.path.basename(artifact_stem)[:10]
+    artifact_date = artifact_date_from_prefix(artifact_stem, fallback=today)
     artifact_dir = f"{out_dir}/dry-run" if dry_run else out_dir
     artifact_name = artifact_filename(artifact_date, "phonons_kappa_103")
     return selected_shard_dir, f"{artifact_dir}/{artifact_name}"

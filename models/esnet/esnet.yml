@@ -29,7 +29,7 @@ license:
   code: Apache-2.0
   code_url: https://github.com/zzz-sl/ESNet/blob/main/LICENSE
   checkpoint: CC-BY-4.0
-  checkpoint_url: https://figshare.com/files/55540055
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
   dependencies:
@@ -46,7 +46,7 @@ environment:
   - pymatgen==2025.4.24
   - pytorch-ignite==0.5.2
   - scikit-learn==1.6.1
-  python_version: '3.12'
+  python_version: '3.11'
 openness: OSOD
 architecture_types: [transformer]
 train_task: RS2RE

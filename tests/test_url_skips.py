@@ -62,6 +62,13 @@ def _skip_literals(node: ast.AST) -> list[str]:
                 for arg in child.args
                 if isinstance(arg, ast.Constant) and isinstance(arg.value, str)
             )
+            literals.extend(
+                keyword.value.value
+                for keyword in child.keywords
+                if keyword.arg == "reason"
+                and isinstance(keyword.value, ast.Constant)
+                and isinstance(keyword.value.value, str)
+            )
     return literals
 
 

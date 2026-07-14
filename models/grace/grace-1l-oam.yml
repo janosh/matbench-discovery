@@ -37,7 +37,7 @@ license:
 
 environment:
   dependencies:
-  - tensorpotential
+  - tensorpotential @ git+https://github.com/ICAMS/grace-tensorpotential@3115a9314
   - tensorflow==2.16.2
   - ase==3.23.0
   - pymatgen==2023.7.14
@@ -146,9 +146,8 @@ metrics:
   geo_opt:
     pred_file:
       name: models/grace/grace-1l-oam/2025-02-02-geo-opt.jsonl.gz
-      url: https://figshare.com/files/53504588
-      size: 7228548
-      md5: c2839110f6d42227978e28d7580fbfa4
+      size: 93094424
+      md5: 24d1f465b6780d4a6c44932bc65f015d
     symprec=1e-5:
       rmsd: 0.0721
       n_sym_ops_mae: 1.8528

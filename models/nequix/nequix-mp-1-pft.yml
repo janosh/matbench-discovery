@@ -155,6 +155,8 @@ metrics:
     pred_file:
       name: models/nequix/nequix-mp-1-pft/2026-01-12-discovery.csv.gz
       url: https://figshare.com/files/61019521
+      size: 1511054
+      md5: dbcba569bcb0f28b0d69581d79c720b3
     pred_col: e_form_per_atom_nequix
     full_test_set:
       F1: 0.74  # fraction
@@ -214,6 +216,8 @@ metrics:
     pred_file:
       name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt.jsonl.gz
       url: https://figshare.com/files/61019686
+      size: 104224729
+      md5: eb6a8f03eee8acf49c8c93b681dd098d
     symprec=1e-2:
       rmsd: 0.0866
       n_sym_ops_mae: 1.7984
@@ -224,6 +228,8 @@ metrics:
       analysis_file:
         name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-2-moyo=0.7.4.csv.gz
         url: https://figshare.com/files/61021306
+        size: 8402588
+        md5: 045c47309c18650ff72bf32ab2d82403
     symprec=1e-5:
       rmsd: 0.0866
       n_sym_ops_mae: 2.0578
@@ -234,6 +240,8 @@ metrics:
       analysis_file:
         name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-5-moyo=0.7.4.csv.gz
         url: https://figshare.com/files/61021309
+        size: 8316389
+        md5: f0c9e0985141a750d56e5f76dc348d3c
   md:
     pred_file:
       name: models/nequix/nequix-mp-1-pft/2026-06-28-md-metrics.csv.gz
@@ -256,5 +264,7 @@ metrics:
       pred_file:
         name: models/nequix/nequix-mp-1-pft/2026-01-12-phonons-kappa-103.json.gz
         url: https://figshare.com/files/61019518
+        size: 8156601
+        md5: 5ac260ddcdd16f201de2cf45d7a1f646
       κ_SRME: 0.3066
       κ_SRE: 0.1689

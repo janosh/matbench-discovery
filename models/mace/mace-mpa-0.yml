@@ -27,7 +27,6 @@ trained_by:
   affiliation: University of Oxford
   github: https://github.com/birdyLinch
   email: will.c.lynch@gmail.com
-  orcid: https://orcid.org/0000-0002-0854-2635
 - name: Ilyes Batatia
   affiliation: University of Cambridge
   email: ilyes.batatia@ens-paris-saclay.fr
@@ -215,4 +214,6 @@ metrics:
       pred_file:
         name: models/mace/mace-mpa-0/2024-11-25-phonons-kappa-103.json.gz
         url: https://figshare.com/files/52134875
+        size: 7418356
+        md5: 786e9518f4b2f6c051a7054dad20980a
       κ_SRE: 0.2048

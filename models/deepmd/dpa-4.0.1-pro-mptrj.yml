@@ -98,29 +98,29 @@ hyperparams:
       precision: float32
 
   # Training parameters
-    training:
-      optimizer: HybridMuon
-      muon_mode: slice
-      magma_lite: true
-      weight_decay: 1.0e-3
-      lr_scheduler: WSD
-      max_lr: 5.0e-4
-      min_lr: 1.0e-6
-      warmup_steps: 5000
-      decay_ratio: 0.65
-      decay_type: cosine
-      loss: MAE
-      loss_weights:
-        energy: 20
-        force: 20
-        virial: 5
-      batch_size_per_gpu: "filter:300"
-      training_steps: 2000000
-      gradient_max_norm: 5
-      n_gpus: 16
-      compile: true
-      bf16_amp: true
-      tf32_matmul: true
+  training:
+    optimizer: HybridMuon
+    muon_mode: slice
+    magma_lite: true
+    weight_decay: 1.0e-3
+    lr_scheduler: WSD
+    max_lr: 5.0e-4
+    min_lr: 1.0e-6
+    warmup_steps: 5000
+    decay_ratio: 0.65
+    decay_type: cosine
+    loss: MAE
+    loss_weights:
+      energy: 20
+      force: 20
+      virial: 5
+    batch_size_per_gpu: "filter:300"
+    training_steps: 2000000
+    gradient_max_norm: 5
+    n_gpus: 16
+    compile: true
+    bf16_amp: true
+    tf32_matmul: true
 
 notes:
   description: |
@@ -142,6 +142,8 @@ metrics:
     pred_file:
       name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-discovery.csv.gz
       url: https://figshare.com/files/65469198
+      size: 1316682
+      md5: 78fd7c8365a29446e25c317a152626ca
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.837  # fraction
@@ -201,6 +203,8 @@ metrics:
     pred_file:
       name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt.jsonl.gz
       url: https://figshare.com/files/65469201
+      size: 102808527
+      md5: 9a6489770e53cd4c3fd268e8dc33091a
     symprec=1e-2:
       rmsd: 0.0687
       n_sym_ops_mae: 2.2966
@@ -211,6 +215,8 @@ metrics:
       analysis_file:
         name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
         url: https://figshare.com/files/65469888
+        size: 2914627
+        md5: 2d0fdaac9cbdade2fee6229f587ebb1f
     symprec=1e-5:
       rmsd: 0.0687
       n_sym_ops_mae: 3.522
@@ -221,6 +227,8 @@ metrics:
       analysis_file:
         name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
         url: https://figshare.com/files/65469885
+        size: 2768975
+        md5: 86cd11c8b0b60bf68c9bc880a6e21055
   md:
     pred_file:
       name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-28-md-metrics.csv.gz
@@ -245,3 +253,5 @@ metrics:
       pred_file:
         name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-04-phonons-kappa-103.json.gz
         url: https://figshare.com/files/65469372
+        size: 10138365
+        md5: 432e494c3a4185c057c4484ad68cc286

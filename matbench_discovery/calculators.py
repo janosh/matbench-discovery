@@ -1,17 +1,10 @@
 """Registry of MLIP ASE calculators shared across benchmark tasks.
 
-Benchmark runners build their calculators through this single registry: e.g.
-``models/run_md.py`` (molecular dynamics) and ``models/run_diatomics.py`` (diatomic
-pair-repulsion curves). Because MLIP dependency trees conflict (torch vs jax vs
-tensorflow, mutually exclusive CUDA builds), they cannot share one environment. Instead
-each model declares its own executable ``uv`` environment in its YAML
-``environment`` block; a runner resolves that environment on the fly with
-``uv run --no-project --with`` (see ``CalcSpec``), on top of the core dependencies
-declared in each runner's inline script metadata.
-Calculator construction is lazy (imports happen inside the factory) so listing models
-and printing dependencies work with only the core dependencies installed.
+Runners resolve each model's YAML ``environment`` via ``CalcSpec.uv_run_cmd``
+(``uv run --with`` or ``--project`` for override-heavy stacks like EquFlash).
+Factories import packages lazily so listing models needs only core deps.
 
-Registry keys are ``Model`` enum names so metrics can be written to the right YAML.
+Registry keys are ``Model`` enum names so metrics write to the right YAML.
 """
 
 import hashlib
@@ -245,11 +238,24 @@ class CalcSpec:
     checkpoint_ext: str | None = None
 
     def uv_run_cmd(self, script: str, *args: str) -> list[str]:
-        """``uv run`` command that resolves this model's env and runs the script."""
+        """``uv run`` command that resolves this model's env and runs the script.
+
+        With ``project``, that pyproject owns resolution (incl. override-dependencies);
+        YAML ``dependencies`` stay for display only. Otherwise ``deps`` / indexes apply.
+        """
         py_args = ["--python", self.python_version] if self.python_version else []
         if self.project:
-            base_args = ["uv", "run", "--project", self.project, "--isolated"]
-            return [*base_args, *py_args, "python", script, *args]
+            return [
+                "uv",
+                "run",
+                "--project",
+                self.project,
+                "--isolated",
+                *py_args,
+                "python",
+                script,
+                *args,
+            ]
         with_args = [tok for dep in self.deps for tok in ("--with", dep)]
         link_args = [tok for url in self.find_links for tok in ("--find-links", url)]
         index_args = [
@@ -285,9 +291,7 @@ def _env_str_tuple(
 ) -> tuple[str, ...]:
     """Validate and tuple-ize one environment string list."""
     values = environment.get(field, [])
-    if not isinstance(values, list) or not all(
-        isinstance(value, str) for value in values
-    ):
+    if not isinstance(values, list) or not all(isinstance(val, str) for val in values):
         raise TypeError(f"{model_key} environment.{field} must be strings")
     return tuple(values)
 
@@ -300,19 +304,16 @@ def _runtime_calc_spec(
     auto_checkpoint: bool = False,
     checkpoint_ext: str | None = None,
 ) -> Callable[[], CalcSpec]:
-    """Return a CalcSpec factory so YAML env validation runs on first use."""
+    """Lazy CalcSpec factory that reads ``environment`` from the model YAML."""
 
     def build() -> CalcSpec:
-        try:
-            environment = _model_environments()[model_key]
-        except KeyError as exc:
-            raise ValueError(
-                f"{model_key} has no environment block in its model YAML"
-            ) from exc
+        environment = _model_environments().get(model_key)
+        if environment is None:
+            raise ValueError(f"{model_key} has no environment block in its model YAML")
         python_version = environment.get("python_version")
         project = environment.get("project")
-        if not all(
-            value is None or isinstance(value, str)
+        if any(
+            value is not None and not isinstance(value, str)
             for value in (python_version, project)
         ):
             raise TypeError(
@@ -349,6 +350,25 @@ def _checkpoint_spec(
         auto_checkpoint=not requires_checkpoint,
         checkpoint_ext=ext,
     )
+
+
+def _named_spec(
+    factory: Callable[[str], Callable[..., "Calculator"]],
+    model_key: str,
+    *,
+    checkpoint: bool = False,
+    ext: str | None = None,
+    requires_checkpoint: bool = False,
+) -> Callable[[], CalcSpec]:
+    """Register ``factory(model_key)`` under the same YAML-backed key."""
+    if checkpoint:
+        return _checkpoint_spec(
+            model_key,
+            factory(model_key),
+            ext=ext,
+            requires_checkpoint=requires_checkpoint,
+        )
+    return _runtime_calc_spec(model_key, factory(model_key))
 
 
 class _CalcRegistry:
@@ -825,22 +845,21 @@ def _emt(device: str) -> "Calculator":  # noqa: ARG001 - CPU only, debug model
     return EMT()
 
 
-# Executable dependency pins, Python versions, package indexes, and isolated-project
-# paths live only in each model YAML's environment. Factory code below retains
-# checkpoint behavior; _runtime_calc_spec supplies the uv environment. Models obtain
-# weights either from package-managed downloads or checkpoint_url. Gated repositories
-# such as fairchem OMAT24 still require HF_TOKEN.
-#
-# Keep these compatibility constraints when updating the YAML environments:
-# - fairchem-core v1 needs torch 2.4, matching PyG wheels, numpy<2, and scipy<1.15.
-# - HIENet's torch 2.1.2 has no cp312 wheel, needs matching PyG wheels, and resolves an
-#   older pymatviz that requires plotly<6.
-# - NequIP/Allegro need torch<2.10 because their GPU path still uses TorchScript.
-# - MACE enables cuEquivariance on CUDA and therefore needs the CUDA 12 CUEQ extras.
-# - EqNorm's torch 2.2.2 pin requires vesin 0.3.2 and matching PyG wheels.
-# - M3GNet needs matgl<4 with the DGL backend and a downloadable dgl 2.4 wheel.
-# - TACE must install from its upstream repository; PyPI's `tace` is unrelated, and
-#   TECE needs a newer commit than the other TACE variants.
+# Executable pins live in each model YAML's environment. Factories below keep
+# checkpoint behavior; _runtime_calc_spec supplies the uv env. Compatibility notes:
+# - fairchem-core v1: torch 2.4, matching PyG wheels, numpy<2, scipy<1.15
+# - HIENet: torch 2.1.2 needs Python 3.11 + matching PyG wheels
+# - NequIP/Allegro: torch<2.10 (TorchScript GPU path)
+# - MACE on CUDA: cuEquivariance CUDA 12 extras
+# - EqNorm: torch 2.2.2 + vesin 0.3.2 + matching PyG wheels
+# - M3GNet: matgl<4 + DGL backend + dgl 2.4 wheel
+# - TACE: install from upstream git (PyPI `tace` is unrelated); TECE needs a
+#   newer commit
+
+_ALPHANET_PRETRAINED = (
+    "https://raw.githubusercontent.com/zmyybc/AlphaNet/"
+    "65f8ea9330459e0106867d1c694aec4139c6cb19/pretrained"
+)
 
 
 def _deepmd_spec(
@@ -849,8 +868,8 @@ def _deepmd_spec(
     *,
     ext: str = ".pth",
 ) -> Callable[[], CalcSpec]:
-    """Return shared DeePMD dependencies and managed-checkpoint metadata."""
-    return _checkpoint_spec(model_key, factory(model_key), ext=ext)
+    """YAML-backed DeePMD spec with managed checkpoint download."""
+    return _named_spec(factory, model_key, checkpoint=True, ext=ext)
 
 
 CALCULATORS: _CalcRegistry = _CalcRegistry(
@@ -884,22 +903,12 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
             "grace_2l_mptrj", _grace("GRACE-2L-MP-r6")
         ),
         "chgnet_0_3_0": _runtime_calc_spec("chgnet_0_3_0", _chgnet),
-        "hienet": _checkpoint_spec("hienet", _hienet("hienet")),
-        "nequip_mp_l_0_1": _runtime_calc_spec(
-            "nequip_mp_l_0_1", _nequip("nequip_mp_l_0_1")
-        ),
-        "nequip_oam_l_0_1": _runtime_calc_spec(
-            "nequip_oam_l_0_1", _nequip("nequip_oam_l_0_1")
-        ),
-        "nequip_oam_xl_0_1": _runtime_calc_spec(
-            "nequip_oam_xl_0_1", _nequip("nequip_oam_xl_0_1")
-        ),
-        "allegro_mp_l_0_1": _runtime_calc_spec(
-            "allegro_mp_l_0_1", _nequip("allegro_mp_l_0_1")
-        ),
-        "allegro_oam_l_0_1": _runtime_calc_spec(
-            "allegro_oam_l_0_1", _nequip("allegro_oam_l_0_1")
-        ),
+        "hienet": _named_spec(_hienet, "hienet", checkpoint=True),
+        "nequip_mp_l_0_1": _named_spec(_nequip, "nequip_mp_l_0_1"),
+        "nequip_oam_l_0_1": _named_spec(_nequip, "nequip_oam_l_0_1"),
+        "nequip_oam_xl_0_1": _named_spec(_nequip, "nequip_oam_xl_0_1"),
+        "allegro_mp_l_0_1": _named_spec(_nequip, "allegro_mp_l_0_1"),
+        "allegro_oam_l_0_1": _named_spec(_nequip, "allegro_oam_l_0_1"),
         "matris_10m_oam": _checkpoint_spec(
             "matris_10m_oam", _matris("matris_10m_oam", "MatRIS_10M_OAM.pth.tar")
         ),
@@ -909,56 +918,38 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "eqnorm_mptrj": _checkpoint_spec(
             "eqnorm_mptrj", _eqnorm("eqnorm_mptrj", "eqnorm-mptrj"), ext=".pt"
         ),
-        "nequix_mp_1": _checkpoint_spec(
-            "nequix_mp_1", _nequix("nequix_mp_1"), ext=".nqx"
+        "nequix_mp_1": _named_spec(_nequix, "nequix_mp_1", checkpoint=True, ext=".nqx"),
+        "nequix_mp_1_pft": _named_spec(
+            _nequix, "nequix_mp_1_pft", checkpoint=True, ext=".nqx"
         ),
-        "nequix_mp_1_pft": _checkpoint_spec(
-            "nequix_mp_1_pft", _nequix("nequix_mp_1_pft"), ext=".nqx"
-        ),
-        "pet_oam_xl_1_0_0": _checkpoint_spec(
-            "pet_oam_xl_1_0_0", _pet("pet_oam_xl_1_0_0")
-        ),
+        "pet_oam_xl_1_0_0": _named_spec(_pet, "pet_oam_xl_1_0_0", checkpoint=True),
         "alphanet_v1_mptrj": _checkpoint_spec(
             "alphanet_v1_mptrj",
-            _alphanet(
-                "alphanet_v1_mptrj",
-                "https://raw.githubusercontent.com/zmyybc/AlphaNet/"
-                "65f8ea9330459e0106867d1c694aec4139c6cb19/pretrained/MPtrj/mp.json",
-            ),
+            _alphanet("alphanet_v1_mptrj", f"{_ALPHANET_PRETRAINED}/MPtrj/mp.json"),
         ),
         "alphanet_v1_oam": _checkpoint_spec(
             "alphanet_v1_oam",
-            _alphanet(
-                "alphanet_v1_oam",
-                "https://raw.githubusercontent.com/zmyybc/AlphaNet/"
-                "65f8ea9330459e0106867d1c694aec4139c6cb19/pretrained/OMA/oma.json",
-            ),
+            _alphanet("alphanet_v1_oam", f"{_ALPHANET_PRETRAINED}/OMA/oma.json"),
         ),
         "m3gnet": _runtime_calc_spec("m3gnet", _m3gnet),
-        "eqv2_s_dens_mp": _checkpoint_spec(
-            "eqv2_s_dens_mp", _fairchem("eqv2_s_dens_mp")
+        "eqv2_s_dens_mp": _named_spec(_fairchem, "eqv2_s_dens_mp", checkpoint=True),
+        "eqv2_m_omat_salex_mp": _named_spec(
+            _fairchem, "eqv2_m_omat_salex_mp", checkpoint=True
         ),
-        "eqv2_m_omat_salex_mp": _checkpoint_spec(
-            "eqv2_m_omat_salex_mp", _fairchem("eqv2_m_omat_salex_mp")
+        "esen_30m_oam": _named_spec(_fairchem, "esen_30m_oam", checkpoint=True),
+        "esen_30m_mp": _named_spec(_fairchem, "esen_30m_mp", checkpoint=True),
+        "equiformer_v3_mp": _named_spec(
+            _fairchem, "equiformer_v3_mp", checkpoint=True, requires_checkpoint=True
         ),
-        "esen_30m_oam": _checkpoint_spec("esen_30m_oam", _fairchem("esen_30m_oam")),
-        "esen_30m_mp": _checkpoint_spec("esen_30m_mp", _fairchem("esen_30m_mp")),
-        "equiformer_v3_mp": _checkpoint_spec(
-            "equiformer_v3_mp", _fairchem("equiformer_v3_mp"), requires_checkpoint=True
+        "equiformer_v3_oam": _named_spec(
+            _fairchem, "equiformer_v3_oam", checkpoint=True, requires_checkpoint=True
         ),
-        "equiformer_v3_oam": _checkpoint_spec(
-            "equiformer_v3_oam",
-            _fairchem("equiformer_v3_oam"),
-            requires_checkpoint=True,
+        "tace_v1_oam_m": _named_spec(_tace, "tace_v1_oam_m", checkpoint=True),
+        "tace_oam_l": _named_spec(_tace, "tace_oam_l", checkpoint=True),
+        "tace_oam_rra_preview": _named_spec(
+            _tace, "tace_oam_rra_preview", checkpoint=True
         ),
-        "tace_v1_oam_m": _checkpoint_spec("tace_v1_oam_m", _tace("tace_v1_oam_m")),
-        "tace_oam_l": _checkpoint_spec("tace_oam_l", _tace("tace_oam_l")),
-        "tace_oam_rra_preview": _checkpoint_spec(
-            "tace_oam_rra_preview", _tace("tace_oam_rra_preview")
-        ),
-        "tece_oam_rra_1_0": _checkpoint_spec(
-            "tece_oam_rra_1_0", _tace("tece_oam_rra_1_0")
-        ),
+        "tece_oam_rra_1_0": _named_spec(_tace, "tece_oam_rra_1_0", checkpoint=True),
         "dpa_3_1_mptrj": _deepmd_spec("dpa_3_1_mptrj"),
         "dpa_3_1_3m_ft": _deepmd_spec("dpa_3_1_3m_ft"),
         "dpa3_v2_mptrj": _deepmd_spec("dpa3_v2_mptrj"),
@@ -971,14 +962,13 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "dpa_4_0_1_pro_mptrj": _deepmd_spec(
             "dpa_4_0_1_pro_mptrj", _deepmd_freeze, ext=".pt"
         ),
-        "equflash_29m_oam": _checkpoint_spec(
-            "equflash_29m_oam", _equflash("equflash_29m_oam"), ext=".pt"
+        "equflash_29m_oam": _named_spec(
+            _equflash, "equflash_29m_oam", checkpoint=True, ext=".pt"
         ),
-        "equflashv2_45m_oam": _checkpoint_spec(
-            "equflashv2_45m_oam", _equflash("equflashv2_45m_oam"), ext=".pt"
+        "equflashv2_45m_oam": _named_spec(
+            _equflash, "equflashv2_45m_oam", checkpoint=True, ext=".pt"
         ),
-        # CPU-only debug model for smoke-testing the pipeline without heavy installs
-        "emt": CalcSpec(_emt),
+        "emt": CalcSpec(_emt),  # CPU-only smoke-test calculator
     }
 )
 

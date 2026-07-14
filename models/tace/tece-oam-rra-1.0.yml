@@ -3,7 +3,7 @@ model_key: tece-oam-rra-1.0
 model_version: v2026.07.05
 dates:
   benchmark_added: '2026-07-05'
-  paper_published: '2026-07-05'
+  paper_published: '2025-09-18'
 lifecycle: active
 authors:
 - name: Zemin Xu
@@ -98,6 +98,8 @@ metrics:
     pred_file:
       name: models/tace/tece-oam-rra-1.0/2026-07-05-diatomics.json.gz
       url: https://figshare.com/files/66313844
+      size: 219926
+      md5: b9f172f5a1a2c092eb09ebe1df9f9664
     hardware: NVIDIA GeForce RTX 4090
     run_time_sec: 4505.61
     pbe_wall_dist_mae: 0.3074
@@ -116,6 +118,8 @@ metrics:
     pred_file:
       name: models/tace/tece-oam-rra-1.0/2026-07-05-discovery.csv.gz
       url: https://figshare.com/files/66313757
+      size: 1648875
+      md5: 3db866edbc4a6bc337c9d2abd04f5210
     pred_col: e_form_per_atom_tace
     full_test_set:
       F1: 0.91  # fraction
@@ -175,6 +179,8 @@ metrics:
     pred_file:
       name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt.jsonl.gz
       url: https://figshare.com/files/66313751
+      size: 107698558
+      md5: 35c7b9cf6e7125a0522df128d399dcbd
     symprec=1e-2:
       rmsd: 0.0575
       n_sym_ops_mae: 1.6991
@@ -185,6 +191,8 @@ metrics:
       analysis_file:
         name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-2-moyo=0.14.0.csv.gz
         url: https://figshare.com/files/66313874
+        size: 8181358
+        md5: 5317026469b7112b399b2a769eecfe7e
     symprec=1e-5:
       rmsd: 0.0575
       n_sym_ops_mae: 2.7951
@@ -195,10 +203,14 @@ metrics:
       analysis_file:
         name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-5-moyo=0.14.0.csv.gz
         url: https://figshare.com/files/66313868
+        size: 8151778
+        md5: 1e2da838262b15a68fddbb3fd27247ba
   md:
     pred_file:
       name: models/tace/tece-oam-rra-1.0/2026-07-05-md-metrics.csv.gz
       url: https://figshare.com/files/66323729
+      size: 1576
+      md5: 57292c80cf74b7b273a084c7b87f6c96
     hardware: NVIDIA H200
     run_time_sec: 401724.73
     energy_rmse: 0.4353
@@ -215,5 +227,7 @@ metrics:
       pred_file:
         name: models/tace/tece-oam-rra-1.0/2026-07-05-phonons-kappa-103.json.gz
         url: https://figshare.com/files/66313763
+        size: 8254592
+        md5: ce6e7185bd2385209692a639d06522d5
       κ_SRME: 0.0927
       κ_SRE: 0.0447

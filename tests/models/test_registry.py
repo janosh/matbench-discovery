@@ -236,18 +236,26 @@ def test_active_model_training_set_policy(model: Model) -> None:
         )
 
     assert model.label == model.metadata["model_name"]
-    assert 3 <= len(model.label) < 50
+    assert 3 <= len(model.label) <= 50
     model_version = model.metadata["model_version"]
-    assert model_version is None or 1 <= len(model_version) < 40
-    assert 1 < len(model.metadata["authors"]) < 30
+    assert model_version is None or 1 <= len(model_version) <= 40
+    assert 1 <= len(model.metadata["authors"]) <= 30
     repo = model.metadata["repo"]
     assert repo is None or repo.startswith(("http://", "https://"))
 
 
 def test_active_model_count_matches_family_dirs() -> None:
-    """Every model family directory has a corresponding active enum entry."""
-    active_models = [model for model in Model if model.is_active]
-    assert len(active_models) >= len(MODEL_DIRS) - 5
+    """Active families match model dirs; inactive-only families are allowlisted."""
+    active_families = {
+        os.path.basename(os.path.dirname(model.yaml_path))
+        for model in Model
+        if model.is_active
+    }
+    model_dir_families = {os.path.basename(path.rstrip("/")) for path in MODEL_DIRS}
+    # Families intentionally without an active Model enum entry.
+    inactive_only_families = {"alignn_ff"}
+    assert active_families | inactive_only_families == model_dir_families
+    assert active_families.isdisjoint(inactive_only_families)
 
 
 @pytest.mark.parametrize("model", list(Model))

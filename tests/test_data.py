@@ -533,6 +533,20 @@ def test_artifact_filename_geo_opt_analysis_round_trip() -> None:
         parse_artifact_filename("2026-02-30-discovery.csv.gz")
 
 
+@pytest.mark.parametrize(
+    ("size", "md5"),
+    [(10, None), (None, "a" * 32)],
+)
+def test_make_file_ref_requires_paired_size_and_md5(
+    size: int | None, md5: str | None
+) -> None:
+    """Size and md5 must both be set or both omitted."""
+    with pytest.raises(ValueError, match="size and md5"):
+        make_file_ref(
+            "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz", size=size, md5=md5
+        )
+
+
 def test_make_file_ref_omits_unset_optional_fields() -> None:
     """File refs omit unset optional URL/checksum fields."""
     assert make_file_ref("models/mace/mace-mp-0/2026-07-01-discovery.csv.gz") == {

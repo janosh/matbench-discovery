@@ -177,3 +177,5 @@ metrics:
       pred_file:
         name: models/sevennet/sevennet-0/2024-11-09-phonons-kappa-103.json.gz
         url: https://figshare.com/files/52134878
+        size: 7491734
+        md5: f3ccb03abc8a82c6047236504c1b0e6c

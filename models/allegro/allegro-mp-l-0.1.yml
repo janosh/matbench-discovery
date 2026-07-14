@@ -236,5 +236,7 @@ metrics:
       pred_file:
         name: models/allegro/allegro-mp-l-0.1/2025-09-08-phonons-kappa-103.json.gz
         url: https://figshare.com/files/57576301
+        size: 10867066
+        md5: bf29271bd238a0dc8ca5279010a02d97
       κ_SRME: 0.5039
       κ_SRE: 0.2309

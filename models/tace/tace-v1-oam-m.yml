@@ -88,7 +88,7 @@ hyperparams:
     num_channel: 48
     Lmax: 2
     lmax: 3
-    l1l2: <=
+    l1l2: l1 <= l2
     correlation: 2
 notes:
   description: |
