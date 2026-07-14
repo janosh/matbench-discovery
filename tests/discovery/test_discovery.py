@@ -377,9 +377,13 @@ def test_merge_paths_reuse_shard_run_date(tmp_path: Path) -> None:
         geo_opt_file=None,
     )
     shard_dir, pred_file, geo_opt_file = resolve_paths()
-    assert shard_dir == str(old_shard_dir)
-    assert pred_file == str(tmp_path / "2020-01-02-discovery.csv.gz")
-    assert geo_opt_file == str(tmp_path / "2020-01-02-geo-opt.jsonl.gz")
+    assert os.path.normpath(shard_dir) == os.path.normpath(old_shard_dir)
+    assert os.path.normpath(pred_file) == os.path.normpath(
+        tmp_path / "2020-01-02-discovery.csv.gz"
+    )
+    assert os.path.normpath(geo_opt_file) == os.path.normpath(
+        tmp_path / "2020-01-02-geo-opt.jsonl.gz"
+    )
 
     (tmp_path / "2020-01-01-wbm-IS2RE-FIRE-shards").mkdir()
     with pytest.raises(ValueError, match="Multiple discovery shard directories"):

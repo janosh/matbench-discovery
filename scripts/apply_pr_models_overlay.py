@@ -20,47 +20,85 @@ MODEL_YAML_PATTERN = re.compile(
 )
 
 
-def main(
+def _canonical_model_yaml_path(path: str) -> str | None:
+    """Return a POSIX models/<family>/<key>.yml path, or None if unsafe."""
+    normalized = path.replace("\\", "/")
+    if not MODEL_YAML_PATTERN.fullmatch(normalized):
+        return None
+    return normalized
+
+
+def _canonicalize_paths(paths: Sequence[str]) -> list[str] | str:
+    """Validate and POSIX-normalize model YAML paths, or return an error."""
+    canonical_paths: list[str] = []
+    for relative_path in dict.fromkeys(paths):
+        canonical = _canonical_model_yaml_path(relative_path)
+        if canonical is None:
+            return f"::error::Unsafe model YAML path: {relative_path!r}"
+        canonical_paths.append(canonical)
+    return canonical_paths
+
+
+def _validate_overlay(
     pr_tree: str,
     yaml_paths: Sequence[str],
-    removed_paths: Sequence[str] = (),
-) -> int:
-    """Apply explicit, canonical model YAML changes to the trusted checkout."""
-    yaml_paths = tuple(dict.fromkeys(yaml_paths))
-    removed_paths = tuple(dict.fromkeys(removed_paths))
-    all_paths = (*yaml_paths, *removed_paths)
-    if not all_paths:
-        print("::error::No changed model YAML paths supplied")
-        return 1
-    if os.path.islink(f"{pr_tree}/models"):
-        print(f"::error::Unsafe submitted models directory: {pr_tree}/models")
-        return 1
+    removed_paths: Sequence[str],
+) -> tuple[list[str], list[str]] | str:
+    """Return canonical path lists, or an error message string."""
+    canonical_yaml_paths = _canonicalize_paths(yaml_paths)
+    if isinstance(canonical_yaml_paths, str):
+        return canonical_yaml_paths
+    canonical_removed_paths = _canonicalize_paths(removed_paths)
+    if isinstance(canonical_removed_paths, str):
+        return canonical_removed_paths
 
-    for relative_path in all_paths:
-        if not MODEL_YAML_PATTERN.fullmatch(relative_path):
-            print(f"::error::Unsafe model YAML path: {relative_path!r}")
-            return 1
+    checks = (
+        (
+            not canonical_yaml_paths and not canonical_removed_paths,
+            "::error::No changed model YAML paths supplied",
+        ),
+        (
+            os.path.islink(f"{pr_tree}/models"),
+            f"::error::Unsafe submitted models directory: {pr_tree}/models",
+        ),
+    )
+    for failed, message in checks:
+        if failed:
+            return message
 
-    for relative_path in removed_paths:
+    for relative_path in canonical_removed_paths:
         if not (os.path.isfile(relative_path) or os.path.islink(relative_path)):
-            print(f"::error::Missing trusted YAML to remove: {relative_path}")
-            return 1
+            return f"::error::Missing trusted YAML to remove: {relative_path}"
 
-    for relative_path in yaml_paths:
+    for relative_path in canonical_yaml_paths:
         source_path = f"{pr_tree}/{relative_path}"
         if (
             os.path.islink(os.path.dirname(source_path))
             or not os.path.isfile(source_path)
             or os.path.islink(source_path)
         ):
-            print(f"::error::Missing or unsafe submitted YAML: {source_path}")
-            return 1
+            return f"::error::Missing or unsafe submitted YAML: {source_path}"
 
-    for relative_path in removed_paths:
+    return canonical_yaml_paths, canonical_removed_paths
+
+
+def main(
+    pr_tree: str,
+    yaml_paths: Sequence[str],
+    removed_paths: Sequence[str] = (),
+) -> int:
+    """Apply explicit, canonical model YAML changes to the trusted checkout."""
+    validated = _validate_overlay(pr_tree, yaml_paths, removed_paths)
+    if isinstance(validated, str):
+        print(validated)
+        return 1
+
+    canonical_yaml_paths, canonical_removed_paths = validated
+    for relative_path in canonical_removed_paths:
         os.remove(relative_path)
         print(f"Removed {relative_path}")
 
-    for relative_path in yaml_paths:
+    for relative_path in canonical_yaml_paths:
         source_path = f"{pr_tree}/{relative_path}"
         os.makedirs(os.path.dirname(relative_path), exist_ok=True)
         shutil.copy2(source_path, relative_path)

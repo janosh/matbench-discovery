@@ -43,6 +43,9 @@ def test_overlay_validates_then_copies_only_model_data(
     assert (trusted_root / "models/untouched/model.yml").is_file()
     assert (trusted_root / "models/new/model.yml").read_text() == "submitted: true\n"
     assert not (trusted_root / "matbench_discovery").is_dir()
+    (pr_root / "models/new/model.yml").write_text("windows-path: true\n")
+    assert overlay.main(str(pr_root), [r"models\new\model.yml"]) == 0
+    assert (trusted_root / "models/new/model.yml").read_text() == "windows-path: true\n"
 
 
 @pytest.mark.parametrize(

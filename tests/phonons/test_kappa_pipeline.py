@@ -327,14 +327,16 @@ def test_kappa_output_paths_reuse_exactly_one_prior_shard_tree(tmp_path: Path) -
         dry_run=False,
         shard_dir=None,
     )
-    assert paths == (
+    assert tuple(map(os.path.normpath, paths)) == (
         os.path.normpath(first_shard_dir),
         os.path.normpath(f"{out_dir}/2026-07-08-phonons-kappa-103.json.gz"),
     )
     custom_shard_dir = f"{out_dir}/2026-07-10-phonondb-kappa-103-shards"
-    assert run_kappa.resolve_output_paths(
-        out_dir=out_dir, dry_run=False, shard_dir=custom_shard_dir
-    )[1] == os.path.normpath(f"{out_dir}/2026-07-10-phonons-kappa-103.json.gz")
+    assert os.path.normpath(
+        run_kappa.resolve_output_paths(
+            out_dir=out_dir, dry_run=False, shard_dir=custom_shard_dir
+        )[1]
+    ) == os.path.normpath(f"{out_dir}/2026-07-10-phonons-kappa-103.json.gz")
 
     os.makedirs(f"{out_dir}/2026-07-09-phonondb-kappa-103-shards")
     with pytest.raises(ValueError, match="Multiple kappa shard directories"):

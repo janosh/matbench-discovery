@@ -53,7 +53,9 @@ def test_model_yaml_schema_and_identity(yaml_path: str) -> None:
     family_dir = os.path.basename(os.path.dirname(yaml_path))
     assert MODEL_KEY_PATTERN.fullmatch(model_key)
     assert FAMILY_DIR_PATTERN.fullmatch(family_dir)
-    assert yaml_path == f"{ROOT}/models/{family_dir}/{model_key}.yml"
+    assert os.path.normpath(yaml_path) == os.path.normpath(
+        f"{ROOT}/models/{family_dir}/{model_key}.yml"
+    )
     for artifact_path in declared_artifact_paths(metadata):
         assert_canonical_artifact_path(
             artifact_path,
@@ -78,7 +80,7 @@ def test_overlaid_model_yaml_revalidates_schema(tmp_path: Path) -> None:
     pr_root = os.path.join(tmp_path, "pr")
     os.makedirs(trusted_root)
     source_yaml = model_yaml_paths()[0]
-    relative_path = os.path.relpath(source_yaml, ROOT)
+    relative_path = os.path.relpath(source_yaml, ROOT).replace("\\", "/")
     destination = os.path.join(trusted_root, relative_path)
     os.makedirs(os.path.dirname(destination), exist_ok=True)
     shutil.copy2(source_yaml, destination)
@@ -128,7 +130,9 @@ def test_model_yaml_enum_bijection() -> None:
     """Model YAMLs and the generated enum form an exact identity/path bijection."""
     yaml_paths = non_aborted_model_yaml_paths()
     enum_paths = sorted(f"{model.yaml_path}" for model in Model)
-    assert sorted(yaml_paths) == enum_paths
+    assert sorted(map(os.path.normpath, yaml_paths)) == sorted(
+        map(os.path.normpath, enum_paths)
+    )
 
     for model in Model:
         metadata = model.metadata
@@ -139,7 +143,9 @@ def test_model_yaml_enum_bijection() -> None:
         assert "family" not in metadata
         assert model.family == family_dir
         assert model.rel_path == f"{family_dir}/{model_key}.yml"
-        assert model.yaml_path == f"{ROOT}/models/{family_dir}/{model_key}.yml"
+        assert os.path.normpath(model.yaml_path) == os.path.normpath(
+            f"{ROOT}/models/{family_dir}/{model_key}.yml"
+        )
 
 
 @pytest.mark.parametrize(
