@@ -354,20 +354,40 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
 
 
 @pytest.mark.parametrize(
-    ("columns", "expected"),
+    ("columns", "preferred", "expected"),
     [
-        (["material_id", "e_form_per_atom"], "e_form_per_atom"),
-        (["material_id", "e_form_per_atom_alignn"], "e_form_per_atom_alignn"),
+        (["material_id", "e_form_per_atom"], None, "e_form_per_atom"),
+        (["material_id", "e_form_per_atom_alignn"], None, "e_form_per_atom_alignn"),
         (
             ["material_id", "e_form_per_atom", "e_form_per_atom_alignn"],
+            None,
             "e_form_per_atom",
+        ),
+        (
+            [
+                "material_id",
+                "e_form_per_atom_mp2020_corrected_ale_n0",
+                "e_form_per_atom_mp2020_corrected_pred_ens",
+            ],
+            "e_form_per_atom_mp2020_corrected_pred_ens",
+            "e_form_per_atom_mp2020_corrected_pred_ens",
+        ),
+        (
+            ["material_id", "e_form_per_atom", "e_form_per_atom_alignn"],
+            "e_form_per_atom_alignn",
+            "e_form_per_atom_alignn",
         ),
     ],
 )
-def test_resolve_discovery_pred_col(columns: list[str], expected: str) -> None:
-    """Canonical e_form_per_atom wins; unique legacy suffixes still resolve."""
+def test_resolve_discovery_pred_col(
+    columns: list[str], preferred: str | None, expected: str
+) -> None:
+    """Prefer YAML pred_col when present; else canonical, else unique legacy."""
     df_preds = pd.DataFrame(columns=columns)
-    assert resolve_discovery_pred_col(df_preds, path="preds.csv") == expected
+    assert (
+        resolve_discovery_pred_col(df_preds, path="preds.csv", preferred=preferred)
+        == expected
+    )
 
 
 def test_resolve_discovery_pred_col_ambiguous() -> None:

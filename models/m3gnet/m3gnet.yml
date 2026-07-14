@@ -6,15 +6,15 @@ dates:
   paper_published: '2022-02-05'
 lifecycle: active
 authors:
-  - name: Chi Chen
-    affiliation: UC San Diego
-    orcid: https://orcid.org/0000-0001-8008-7043
-    github: https://github.com/chc273
-  - name: Shyue Ping Ong
-    affiliation: UC San Diego
-    orcid: https://orcid.org/0000-0001-5726-2587
-    email: ongsp@ucsd.edu
-    github: https://github.com/shyuep
+- name: Chi Chen
+  affiliation: UC San Diego
+  orcid: https://orcid.org/0000-0001-8008-7043
+  github: https://github.com/chc273
+- name: Shyue Ping Ong
+  affiliation: UC San Diego
+  orcid: https://orcid.org/0000-0001-5726-2587
+  email: ongsp@ucsd.edu
+  github: https://github.com/shyuep
 
 repo: https://github.com/materialsvirtuallab/m3gnet
 doi: https://doi.org/10.1038/s43588-022-00349-3
@@ -31,13 +31,13 @@ license:
 
 environment:
   dependencies:
-    - matgl==3.0.5
-    - dgl==2.4.0
-    - torch==2.4.0
-    - m3gnet==0.1.0
-    - pymatgen==2022.10.22
-    - numpy==1.24.0
-    - pandas==1.5.1
+  - matgl==3.0.5
+  - dgl==2.4.0
+  - torch==2.4.0
+  - m3gnet==0.1.0
+  - pymatgen==2022.10.22
+  - numpy==1.24.0
+  - pandas==1.5.1
   python_version: '3.12'
   find_links: ['https://data.dgl.ai/wheels/torch-2.4/cu121/repo.html']
 openness: OSOD
@@ -80,6 +80,7 @@ metrics:
       url: https://figshare.com/files/52057535
       size: 2377101
       md5: b309e4a28d8f91814e7fb7ca1160bc8c
+    pred_col: e_form_per_atom_m3gnet
     full_test_set:
       F1: 0.576  # fraction
       DAF: 2.647 # dimensionless

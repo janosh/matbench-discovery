@@ -6,26 +6,26 @@ dates:
   paper_published: '2024-10-29'
 lifecycle: active
 authors:
-  - name: Mark Neumann
-    affiliation: Orbital Materials
-    email: mark@orbitalmaterials.com
-    corresponding: true
-  - name: Jonathan Godwin
-    affiliation: Orbital Materials
-    email: jonathan@orbitalmaterials.com
-    corresponding: true
-  - name: James Gin-Pollock
-    affiliation: Orbital Materials
-  - name: Zhiyi Li
-    affiliation: Orbital Materials
-  - name: Ben Rhodes
-    affiliation: Orbital Materials
-  - name: Hitarth Choubisa
-    affiliation: Orbital Materials
-  - name: Steven Bennett
-    affiliation: Orbital Materials
-  - name: Arthur Hussey
-    affiliation: Orbital Materials
+- name: Mark Neumann
+  affiliation: Orbital Materials
+  email: mark@orbitalmaterials.com
+  corresponding: true
+- name: Jonathan Godwin
+  affiliation: Orbital Materials
+  email: jonathan@orbitalmaterials.com
+  corresponding: true
+- name: James Gin-Pollock
+  affiliation: Orbital Materials
+- name: Zhiyi Li
+  affiliation: Orbital Materials
+- name: Ben Rhodes
+  affiliation: Orbital Materials
+- name: Hitarth Choubisa
+  affiliation: Orbital Materials
+- name: Steven Bennett
+  affiliation: Orbital Materials
+- name: Arthur Hussey
+  affiliation: Orbital Materials
 
 repo: https://github.com/orbital-materials/orb-models
 doi: https://doi.org/10.48550/arXiv.2410.22570
@@ -110,6 +110,7 @@ metrics:
       url: https://figshare.com/files/52057565
       size: 2385270
       md5: f7a397217a85955bdc45e51f6a434f73
+    pred_col: e_form_per_atom_orb
     full_test_set:
       F1: 0.755  # fraction
       DAF: 4.188 # dimensionless

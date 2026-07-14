@@ -6,27 +6,27 @@ dates:
   paper_published: '2026-06-11'
 lifecycle: active
 authors:
-  - name: Hyuntae Cho
-    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
-    email: robert.cho@samsung.com
-    orcid: https://orcid.org/0000-0001-9379-6877
-  - name: Geonu Kim
-    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
-  - name: Heejae Kim
-    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
-  - name: Hyeonwoo Lee
-    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
-  - name: Suhwan Song
-    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
-  - name: Jaehee Jang
-    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
-  - name: Jeongmin Choi
-    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
-  - name: Yongdeok Kim
-    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
-  - name: Gunhee Kim
-    email: ghij.kim@samsung.com
-    affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Hyuntae Cho
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+  email: robert.cho@samsung.com
+  orcid: https://orcid.org/0000-0001-9379-6877
+- name: Geonu Kim
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Heejae Kim
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Hyeonwoo Lee
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Suhwan Song
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Jaehee Jang
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Jeongmin Choi
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Yongdeok Kim
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Gunhee Kim
+  email: ghij.kim@samsung.com
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
 
 repo: https://github.com/SamsungDS/GGNN
 doi:
@@ -42,10 +42,10 @@ license:
 
 environment:
   dependencies:
-    - torch==2.9.1
-    - fairchem-core==1.10.0
-    - torch-geometric==2.6.1
-    - cuEquivariance==0.6.0
+  - torch==2.9.1
+  - fairchem-core==1.10.0
+  - torch-geometric==2.6.1
+  - cuEquivariance==0.6.0
   python_version: '3.12'
   project: models/equflash/kappa-env
 openness: OSOD
@@ -58,9 +58,9 @@ size: 45M
 model_params: 44890492
 training_cost:
   entries:
-    - hardware: NVIDIA H100
-      count: 16
-      hours_per_device: 100.0
+  - hardware: NVIDIA H100
+    count: 16
+    hours_per_device: 100.0
 hyperparams:
   evaluation:
     max_force: 0.02
@@ -83,6 +83,7 @@ metrics:
     pred_file:                                                                         # should contain the models energy predictions for the WBM test set
       name: models/equflash/equflashv2-45m-oam/2026-06-11-discovery.csv.gz
       url: https://figshare.com/files/65434992
+    pred_col: e_form_per_atom_ggnn
     full_test_set:
       F1: 0.91  # fraction
       DAF: 5.291 # dimensionless

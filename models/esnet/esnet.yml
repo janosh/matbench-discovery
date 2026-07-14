@@ -6,19 +6,19 @@ dates:
   paper_published: '2025-06-20'
 lifecycle: active
 authors:
-  - name: Chao Huang
-    affiliation: Institute of Computing Technology, Chinese Academy of Science, Beijing
-    email: chuang@ict.ac.cn
-  - name: Chunyan Chen
-    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
-  - name: Ling Shi
-    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+- name: Chao Huang
+  affiliation: Institute of Computing Technology, Chinese Academy of Science, Beijing
+  email: chuang@ict.ac.cn
+- name: Chunyan Chen
+  affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+- name: Ling Shi
+  affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
 
 trained_by:
-  - name: Ling Shi
-    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
-    orcid: https://orcid.org/0000-0002-7185-5044
-    github: https://github.com/zzz-sl/
+- name: Ling Shi
+  affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+  orcid: https://orcid.org/0000-0002-7185-5044
+  github: https://github.com/zzz-sl/
 
 repo: https://github.com/zzz-sl/ESNet
 doi: https://doi.org/10.21203/rs.3.rs-5979703/v1
@@ -33,19 +33,19 @@ license:
 
 environment:
   dependencies:
-    - torch==2.1.0+cu121
-    - torch_sparse==0.6.18
-    - torch_geometric==2.6.1
-    - torch_scatter==2.1.2
-    - pandarallel==1.6.5
-    - pydantic_settings==2.9.1
-    - e3nn==0.5.6
-    - numpy==1.26.4
-    - jarvis-tools==2022.9.26
-    - einops==0.8.1
-    - pymatgen==2025.4.24
-    - pytorch-ignite==0.5.2
-    - scikit-learn==1.6.1
+  - torch==2.1.0+cu121
+  - torch_sparse==0.6.18
+  - torch_geometric==2.6.1
+  - torch_scatter==2.1.2
+  - pandarallel==1.6.5
+  - pydantic_settings==2.9.1
+  - e3nn==0.5.6
+  - numpy==1.26.4
+  - jarvis-tools==2022.9.26
+  - einops==0.8.1
+  - pymatgen==2025.4.24
+  - pytorch-ignite==0.5.2
+  - scikit-learn==1.6.1
   python_version: '3.12'
 openness: OSOD
 architecture_types: [transformer]
@@ -56,9 +56,9 @@ training_sets: [MP 2022]
 model_params: 5429033
 training_cost:
   entries:
-    - hardware: NVIDIA A100
-      count: 1
-      hours_per_device: 96.0
+  - hardware: NVIDIA A100
+    count: 1
+    hours_per_device: 96.0
 hyperparams:
   architecture:
     graph_construction_radius: 8.0
@@ -75,6 +75,7 @@ metrics:
       url: https://figshare.com/files/55546568
       size: 1333453
       md5: 8caf69f6737bc12f6740d5dc71012c81
+    pred_col: e_form_per_atom_esnet
     full_test_set:
       F1: 0.568  # fraction
       DAF: 3.151 # dimensionless

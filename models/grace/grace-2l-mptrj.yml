@@ -6,19 +6,19 @@ dates:
   paper_published: '2024-11-21'
 lifecycle: active
 authors:
-  - name: Anton Bochkarev
-    affiliation: ICAMS, Ruhr University Bochum
-    email: anton.bochkarev@rub.de
-  - name: Yury Lysogorskiy
-    affiliation: ICAMS, Ruhr University Bochum
-    email: yury.lysogorskiy@rub.de
-  - name: Ralf Drautz
-    affiliation: ICAMS, Ruhr University Bochum
-    email: ralf.drautz@rub.de
+- name: Anton Bochkarev
+  affiliation: ICAMS, Ruhr University Bochum
+  email: anton.bochkarev@rub.de
+- name: Yury Lysogorskiy
+  affiliation: ICAMS, Ruhr University Bochum
+  email: yury.lysogorskiy@rub.de
+- name: Ralf Drautz
+  affiliation: ICAMS, Ruhr University Bochum
+  email: ralf.drautz@rub.de
 trained_by:
-  - name: Yury Lysogorskiy
-    affiliation: ICAMS, Ruhr University Bochum
-    email: yury.lysogorskiy@rub.de
+- name: Yury Lysogorskiy
+  affiliation: ICAMS, Ruhr University Bochum
+  email: yury.lysogorskiy@rub.de
 
 repo: https://github.com/ICAMS/grace-tensorpotential
 doi: https://doi.org/10.1103/PhysRevX.14.021036
@@ -34,12 +34,12 @@ license:
 
 environment:
   dependencies:
-    - tensorpotential @ git+https://github.com/ICAMS/grace-tensorpotential@3115a9314
-    - plotly
-    - tensorflow==2.16.2
-    - ase==3.23.0
-    - pymatgen==2023.7.14
-    - numpy==1.26.4
+  - tensorpotential @ git+https://github.com/ICAMS/grace-tensorpotential@3115a9314
+  - plotly
+  - tensorflow==2.16.2
+  - ase==3.23.0
+  - pymatgen==2023.7.14
+  - numpy==1.26.4
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -86,6 +86,7 @@ metrics:
       url: https://figshare.com/files/52057577
       size: 2378730
       md5: 1e016a258e6752c1cbf8d94724f6627e
+    pred_col: e_form_per_atom_grace
     full_test_set:
       F1: 0.687  # fraction
       DAF: 3.714 # dimensionless

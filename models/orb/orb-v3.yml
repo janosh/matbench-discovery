@@ -6,24 +6,24 @@ dates:
   paper_published: '2025-04-05'
 lifecycle: active
 authors:
-  - name: Ben Rhodes
-    affiliation: Orbital Materials
-    corresponding: true
-  - name: Sander Vandenhaute
-    affiliation: Orbital Materials
-  - name: Vaidotas Šimkus
-    affiliation: Orbital Materials
-  - name: James Gin-Pollock
-    affiliation: Orbital Materials
-  - name: Tim Duignan
-    affiliation: Orbital Materials
-  - name: Jonathan Godwin
-    affiliation: Orbital Materials
-    email: jonathan@orbitalmaterials.com
-  - name: Mark Neumann
-    affiliation: Orbital Materials
-    email: mark@orbitalmaterials.com
-    corresponding: true
+- name: Ben Rhodes
+  affiliation: Orbital Materials
+  corresponding: true
+- name: Sander Vandenhaute
+  affiliation: Orbital Materials
+- name: Vaidotas Šimkus
+  affiliation: Orbital Materials
+- name: James Gin-Pollock
+  affiliation: Orbital Materials
+- name: Tim Duignan
+  affiliation: Orbital Materials
+- name: Jonathan Godwin
+  affiliation: Orbital Materials
+  email: jonathan@orbitalmaterials.com
+- name: Mark Neumann
+  affiliation: Orbital Materials
+  email: mark@orbitalmaterials.com
+  corresponding: true
 
 repo: https://github.com/orbital-materials/orb-models
 doi: https://doi.org/10.48550/arXiv.2504.06231
@@ -50,9 +50,9 @@ training_sets: [MPtrj, Alex, OMat24]
 model_params: 25510582
 training_cost:
   entries:
-    - hardware: NVIDIA H100
-      count: 8
-      hours_per_device: 125.0
+  - hardware: NVIDIA H100
+    count: 8
+    hours_per_device: 125.0
 hyperparams:
   evaluation:
     max_force: 0.02
@@ -102,6 +102,7 @@ metrics:
       url: https://figshare.com/files/53461037
       size: 2748602
       md5: 78077b6dfca8c7dd75e9d42debefbeb9
+    pred_col: e_form_per_atom_orb
     full_test_set:
       F1: 0.887  # fraction
       DAF: 5.159 # dimensionless

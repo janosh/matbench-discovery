@@ -6,22 +6,22 @@ dates:
   paper_published: '2022-02-28'
 lifecycle: active
 authors:
-  - name: Jason B. Gibson
-    affiliation: University of Florida
-    orcid: https://orcid.org/0000-0001-7974-5264
-  - name: Ajinkya C. Hire
-    affiliation: University of Florida
-    orcid: https://orcid.org/0000-0003-3147-2521
-  - name: Richard G. Hennig
-    affiliation: University of Florida
-    url: https://hennig.mse.ufl.edu
-    email: rhennig@ufl.edu
-    orcid: https://orcid.org/0000-0003-4933-7686
+- name: Jason B. Gibson
+  affiliation: University of Florida
+  orcid: https://orcid.org/0000-0001-7974-5264
+- name: Ajinkya C. Hire
+  affiliation: University of Florida
+  orcid: https://orcid.org/0000-0003-3147-2521
+- name: Richard G. Hennig
+  affiliation: University of Florida
+  url: https://hennig.mse.ufl.edu
+  email: rhennig@ufl.edu
+  orcid: https://orcid.org/0000-0003-4933-7686
 trained_by:
-  - name: Janosh Riebesell
-    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
-    email: janosh.riebesell@gmail.com
-    orcid: https://orcid.org/0000-0001-5233-3462
+- name: Janosh Riebesell
+  affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+  email: janosh.riebesell@gmail.com
+  orcid: https://orcid.org/0000-0001-5233-3462
 
 repo: https://github.com/JasonGibsonUfl/Augmented_CGCNN
 doi: https://doi.org/10.1038/s41524-022-00891-8
@@ -36,11 +36,11 @@ license:
 
 environment:
   dependencies:
-    - aviary @ https://github.com/CompRhys/aviary/releases/tag/v0.1.0
-    - torch==1.11.0
-    - torch-scatter==2.0.9
-    - numpy==1.24.0
-    - pandas==1.5.1
+  - aviary @ https://github.com/CompRhys/aviary/releases/tag/v0.1.0
+  - torch==1.11.0
+  - torch-scatter==2.0.9
+  - numpy==1.24.0
+  - pandas==1.5.1
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -68,6 +68,7 @@ metrics:
       url: https://figshare.com/files/51607274
       size: 12810481
       md5: 643a08063075ee1e08bb4590b7ab6cdb
+    pred_col: e_form_per_atom_cgcnn_pred_ens
     full_test_set:
       F1: 0.51  # fraction
       DAF: 2.398 # dimensionless

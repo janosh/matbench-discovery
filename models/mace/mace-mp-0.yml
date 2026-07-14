@@ -6,31 +6,31 @@ dates:
   paper_published: '2022-05-13'
 lifecycle: active
 authors:
-  - name: Ilyes Batatia
-    affiliation: University of Cambridge
-    email: ilyes.batatia@ens-paris-saclay.fr
-    orcid: https://orcid.org/0000-0001-6915-9851
-  - name: David P Kovacs
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0002-0854-2635
-  - name: Gregor Simm
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0001-6815-352X
-  - name: Christoph Ortner
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0003-1498-8120
-  - name: Gabor Csanyi
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0002-8180-2034
+- name: Ilyes Batatia
+  affiliation: University of Cambridge
+  email: ilyes.batatia@ens-paris-saclay.fr
+  orcid: https://orcid.org/0000-0001-6915-9851
+- name: David P Kovacs
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0002-0854-2635
+- name: Gregor Simm
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0001-6815-352X
+- name: Christoph Ortner
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0003-1498-8120
+- name: Gabor Csanyi
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0002-8180-2034
 trained_by:
-  - name: Philipp Benner
-    affiliation: German Federal Institute of Materials Research and Testing (BAM)
-    orcid: https://orcid.org/0000-0002-0912-8137
-    github: https://github.com/pbenner
-  - name: Yuan Chiang
-    affiliation: Lawrence Berkeley National Laboratory
-    orcid: https://orcid.org/0000-0002-4017-7084
-    github: https://github.com/chiang-yuan
+- name: Philipp Benner
+  affiliation: German Federal Institute of Materials Research and Testing (BAM)
+  orcid: https://orcid.org/0000-0002-0912-8137
+  github: https://github.com/pbenner
+- name: Yuan Chiang
+  affiliation: Lawrence Berkeley National Laboratory
+  orcid: https://orcid.org/0000-0002-4017-7084
+  github: https://github.com/chiang-yuan
 
 repo: https://github.com/ACEsuit/mace
 doi: https://doi.org/10.48550/arXiv.2401.00096
@@ -46,14 +46,14 @@ license:
 
 environment:
   dependencies:
-    - mace-torch>=0.3.16
-    - cuequivariance
-    - cuequivariance-torch
-    - cuequivariance-ops-torch-cu12
-    - torch==2.0.1
-    - ase==3.22.1
-    - pymatgen==2023.7.14
-    - numpy==1.25.0
+  - mace-torch>=0.3.16
+  - cuequivariance
+  - cuequivariance-torch
+  - cuequivariance-ops-torch-cu12
+  - torch==2.0.1
+  - ase==3.22.1
+  - pymatgen==2023.7.14
+  - numpy==1.25.0
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -106,6 +106,7 @@ metrics:
       url: https://figshare.com/files/52057538
       size: 2377718
       md5: f7560864b7e01bb874cce23d24e79b27
+    pred_col: e_form_per_atom_mace
     full_test_set:
       F1: 0.668  # fraction
       DAF: 3.4 # dimensionless

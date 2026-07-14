@@ -193,6 +193,12 @@ export type DiscoveryMetrics = Record<string, unknown> & {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   pred_file?: NullableFileRef
+  /**
+   * Column name in pred_file containing formation-energy predictions.
+   * Prefer the canonical e_form_per_atom when present; required for older
+   * multi-column ensemble artifacts.
+   */
+  pred_col?: string
   hardware?: string
   run_time_sec?: number
   max_rss_gb?: number

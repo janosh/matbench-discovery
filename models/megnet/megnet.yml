@@ -6,22 +6,22 @@ dates:
   paper_published: '2021-12-18'
 lifecycle: active
 authors:
-  - name: Chi Chen
-    affiliation: UC San Diego
-    orcid: https://orcid.org/0000-0001-8008-7043
-  - name: Weike Ye
-    affiliation: UC San Diego
-    orcid: https://orcid.org/0000-0002-9541-7006
-  - name: Yunxing Zuo
-    affiliation: UC San Diego
-    orcid: https://orcid.org/0000-0002-2734-7720
-  - name: Chen Zheng
-    affiliation: UC San Diego
-    orcid: https://orcid.org/0000-0002-2344-5892
-  - name: Shyue Ping Ong
-    affiliation: UC San Diego
-    orcid: https://orcid.org/0000-0001-5726-2587
-    email: ongsp@ucsd.edu
+- name: Chi Chen
+  affiliation: UC San Diego
+  orcid: https://orcid.org/0000-0001-8008-7043
+- name: Weike Ye
+  affiliation: UC San Diego
+  orcid: https://orcid.org/0000-0002-9541-7006
+- name: Yunxing Zuo
+  affiliation: UC San Diego
+  orcid: https://orcid.org/0000-0002-2734-7720
+- name: Chen Zheng
+  affiliation: UC San Diego
+  orcid: https://orcid.org/0000-0002-2344-5892
+- name: Shyue Ping Ong
+  affiliation: UC San Diego
+  orcid: https://orcid.org/0000-0001-5726-2587
+  email: ongsp@ucsd.edu
 
 repo: https://github.com/materialsvirtuallab/megnet
 doi: https://doi.org/10.1021/acs.chemmater.9b01294
@@ -38,10 +38,10 @@ license:
 
 environment:
   dependencies:
-    - megnet==1.3.2
-    - pymatgen==2022.10.22
-    - numpy==1.24.0
-    - pandas==1.5.1
+  - megnet==1.3.2
+  - pymatgen==2022.10.22
+  - numpy==1.24.0
+  - pandas==1.5.1
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -65,6 +65,7 @@ metrics:
       url: https://figshare.com/files/51607286
       size: 1336038
       md5: 15377f3afc773d651828304593ce12e7
+    pred_col: e_form_per_atom_megnet
     full_test_set:
       F1: 0.513  # fraction
       DAF: 2.699 # dimensionless

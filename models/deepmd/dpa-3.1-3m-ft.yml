@@ -6,27 +6,27 @@ dates:
   paper_published: '2025-06-05'
 lifecycle: active
 authors:
-  - name: Duo Zhang
-    affiliation: AI for Science Institute, Beijing
-    orcid: https://orcid.org/0000-0001-9591-2659
-  - name: Anyang Peng
-    affiliation: AI for Science Institute, Beijing
-    orcid: https://orcid.org/0000-0002-0630-2187
-  - name: Chun Cai
-    affiliation: AI for Science Institute, Beijing
-    orcid: https://orcid.org/0000-0001-6242-0439
-  - name: Linfeng Zhang
-    affiliation: AI for Science Institute, Beijing; DP Technology
-    email: linfeng.zhang.zlf@gmail.com
-    corresponding: true
-  - name: Han Wang
-    affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
-    email: wang_han@iapcm.ac.cn
-    corresponding: true
+- name: Duo Zhang
+  affiliation: AI for Science Institute, Beijing
+  orcid: https://orcid.org/0000-0001-9591-2659
+- name: Anyang Peng
+  affiliation: AI for Science Institute, Beijing
+  orcid: https://orcid.org/0000-0002-0630-2187
+- name: Chun Cai
+  affiliation: AI for Science Institute, Beijing
+  orcid: https://orcid.org/0000-0001-6242-0439
+- name: Linfeng Zhang
+  affiliation: AI for Science Institute, Beijing; DP Technology
+  email: linfeng.zhang.zlf@gmail.com
+  corresponding: true
+- name: Han Wang
+  affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
+  email: wang_han@iapcm.ac.cn
+  corresponding: true
 trained_by:
-  - name: Anyang Peng
-    affiliation: AI for Science Institute, Beijing
-    orcid: https://orcid.org/0000-0002-0630-2187
+- name: Anyang Peng
+  affiliation: AI for Science Institute, Beijing
+  orcid: https://orcid.org/0000-0002-0630-2187
 
 repo: https://github.com/deepmodeling/deepmd-kit
 doi: https://arxiv.org/abs/2506.01686
@@ -42,12 +42,12 @@ license:
 
 environment:
   dependencies:
-    - 'deepmd-kit[torch]'
-    - torch==2.3.1
-    - torch-geometric==2.5.2
-    - ase==3.23.0
-    - pymatgen==2024.6.10
-    - numpy==1.26.4
+  - 'deepmd-kit[torch]'
+  - torch==2.3.1
+  - torch-geometric==2.5.2
+  - ase==3.23.0
+  - pymatgen==2024.6.10
+  - numpy==1.26.4
   python_version: '3.12'
 openness: OSCD
 architecture_types: [gnn]
@@ -133,6 +133,7 @@ metrics:
       url: https://figshare.com/files/55410167
       size: 2372199
       md5: b3ace9a07c898ddd873bec1890939058
+    pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.864  # fraction
       DAF: 4.912 # dimensionless

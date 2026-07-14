@@ -6,31 +6,31 @@ dates:
   paper_published: '2026-04-07'
 lifecycle: active
 authors:
-  - name: Yi-Lun Liao
-    affiliation: Massachusetts Institute of Technology
-    email: ylliao@mit.edu
-    github: https://github.com/yilunliao
-    corresponding: true
-  - name: Alexander J. Hoffman
-    affiliation: Mirror Physics
-  - name: Sabrina C. Shen
-    affiliation: Mirror Physics
-  - name: Sam Walton Norwood
-    affiliation: Mirror Physics
-    email: sam@mirrorphysics.com
-    corresponding: true
-  - name: Tess Smidt
-    affiliation: Massachusetts Institute of Technology
-    email: tsmidt@mit.edu
-    url: https://blondegeek.github.io/
-    orcid: https://orcid.org/0000-0001-5581-5344
-    corresponding: true
+- name: Yi-Lun Liao
+  affiliation: Massachusetts Institute of Technology
+  email: ylliao@mit.edu
+  github: https://github.com/yilunliao
+  corresponding: true
+- name: Alexander J. Hoffman
+  affiliation: Mirror Physics
+- name: Sabrina C. Shen
+  affiliation: Mirror Physics
+- name: Sam Walton Norwood
+  affiliation: Mirror Physics
+  email: sam@mirrorphysics.com
+  corresponding: true
+- name: Tess Smidt
+  affiliation: Massachusetts Institute of Technology
+  email: tsmidt@mit.edu
+  url: https://blondegeek.github.io/
+  orcid: https://orcid.org/0000-0001-5581-5344
+  corresponding: true
 
 
 trained_by:
-  - name: Yi-Lun Liao
-    affiliation: Massachusetts Institute of Technology
-    email: ylliao@mit.edu
+- name: Yi-Lun Liao
+  affiliation: Massachusetts Institute of Technology
+  email: ylliao@mit.edu
 
 
 repo: https://github.com/atomicarchitects/equiformer_v3
@@ -48,16 +48,16 @@ license:
 
 environment:
   dependencies:
-    - 'fairchem-core[torch-extras]==1.10.0'
-    - torch==2.4.0
-    - numpy<2
-    - scipy<1.15
-    - ase==3.25.0
-    - ase-db-backends==0.10.0
-    - e3nn==0.5.6
-    - tqdm==4.67.1
-    - wandb==0.21.0
-    - pyyaml==6.0.2
+  - 'fairchem-core[torch-extras]==1.10.0'
+  - torch==2.4.0
+  - numpy<2
+  - scipy<1.15
+  - ase==3.25.0
+  - ase-db-backends==0.10.0
+  - e3nn==0.5.6
+  - tqdm==4.67.1
+  - wandb==0.21.0
+  - pyyaml==6.0.2
   python_version: '3.12'
   find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
 openness: OSOD
@@ -69,9 +69,9 @@ training_sets: [MPtrj]
 model_params: 30278113
 training_cost:
   entries:
-    - hardware: NVIDIA H100
-      count: 16
-      hours_per_device: 66.875
+  - hardware: NVIDIA H100
+    count: 16
+    hours_per_device: 66.875
 hyperparams:
   evaluation:
     max_force: 0.02
@@ -109,6 +109,7 @@ metrics:
     pred_file:
       name: models/equiformer_v3/equiformer-v3-mp/2026-04-07-discovery.csv.gz
       url: https://figshare.com/files/63515172
+    pred_col: e_form_per_atom_fairchem
     full_test_set:
       F1: 0.848  # fraction
       DAF: 4.778 # dimensionless

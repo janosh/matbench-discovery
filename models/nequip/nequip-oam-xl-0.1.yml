@@ -6,33 +6,33 @@ dates:
   paper_published: '2025-11-30'
 lifecycle: active
 authors:
-  - name: Seán R. Kavanagh
-    affiliation: Department of Chemistry, University of Cambridge
-    email: sk2045@cam.ac.uk
-    orcid: https://orcid.org/0000-0003-4577-9647
-    url: https://sam-lab.net
-    corresponding: true
-  - name: Chuin Wei Tan
-    affiliation: MIR Group, Harvard University
-  - name: Albert Musaelian
-    affiliation: MIR Group, Harvard University & Mirian Technologies
-  - name: William C. Witt
-    affiliation: MIR Group, Harvard University
-  - name: Gabriel de Miranda Nascimento
-    affiliation: MIR Group, Harvard University & MIT
-  - name: Ulrik Unneberg
-    affiliation: MIR Group, Harvard University & MIT
-  - name: Marc L. Descoteaux
-    affiliation: MIR Group, Harvard University
-  - name: Boris Kozinsky
-    affiliation: MIR Group, Harvard University
+- name: Seán R. Kavanagh
+  affiliation: Department of Chemistry, University of Cambridge
+  email: sk2045@cam.ac.uk
+  orcid: https://orcid.org/0000-0003-4577-9647
+  url: https://sam-lab.net
+  corresponding: true
+- name: Chuin Wei Tan
+  affiliation: MIR Group, Harvard University
+- name: Albert Musaelian
+  affiliation: MIR Group, Harvard University & Mirian Technologies
+- name: William C. Witt
+  affiliation: MIR Group, Harvard University
+- name: Gabriel de Miranda Nascimento
+  affiliation: MIR Group, Harvard University & MIT
+- name: Ulrik Unneberg
+  affiliation: MIR Group, Harvard University & MIT
+- name: Marc L. Descoteaux
+  affiliation: MIR Group, Harvard University
+- name: Boris Kozinsky
+  affiliation: MIR Group, Harvard University
 trained_by:
-  - name: Seán R. Kavanagh
-    affiliation: Department of Chemistry, University of Cambridge
-    email: sk2045@cam.ac.uk
-    orcid: https://orcid.org/0000-0003-4577-9647
-    url: https://sam-lab.net
-    corresponding: true
+- name: Seán R. Kavanagh
+  affiliation: Department of Chemistry, University of Cambridge
+  email: sk2045@cam.ac.uk
+  orcid: https://orcid.org/0000-0003-4577-9647
+  url: https://sam-lab.net
+  corresponding: true
 
 repo: https://github.com/mir-group/nequip
 doi: https://doi.org/10.5281/zenodo.16980200
@@ -60,9 +60,9 @@ model_params: 32100000
 training_cost:
   # ~9.8h per epoch, 30 epochs plus fine-tune
   entries:
-    - hardware: NVIDIA H100
-      count: 8
-      hours_per_device: 300.0
+  - hardware: NVIDIA H100
+    count: 8
+    hours_per_device: 300.0
 hyperparams:
   evaluation:
     max_force: 0.005
@@ -129,6 +129,7 @@ metrics:
       url: https://figshare.com/files/60007793
       size: 2608826
       md5: fdc6b855d30d40e368119a469b93de1f
+    pred_col: e_form_per_atom_nequip
     full_test_set:
       F1: 0.885  # fraction
       DAF: 5.098 # dimensionless

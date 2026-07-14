@@ -7,30 +7,30 @@ dates:
 lifecycle: superseded
 superseded_by: dpa-4.0.1-pro-mptrj
 authors:
-  - name: Tiancheng Li
-    affiliation: AI for Science Institute, Beijing; Peking University
-    email: LTC201806070316@outlook.com
-    orcid: https://orcid.org/0009-0009-2459-0635
-    github: https://github.com/OutisLi
-  - name: Duo Zhang
-    affiliation: AI for Science Institute, Beijing
-    orcid: https://orcid.org/0000-0001-9591-2659
-    corresponding: true
-  - name: Linfeng Zhang
-    affiliation: AI for Science Institute, Beijing; DP Technology
-    email: linfeng.zhang.zlf@gmail.com
-    corresponding: true
-  - name: Han Wang
-    affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
-    email: wang_han@iapcm.ac.cn
-    corresponding: true
+- name: Tiancheng Li
+  affiliation: AI for Science Institute, Beijing; Peking University
+  email: LTC201806070316@outlook.com
+  orcid: https://orcid.org/0009-0009-2459-0635
+  github: https://github.com/OutisLi
+- name: Duo Zhang
+  affiliation: AI for Science Institute, Beijing
+  orcid: https://orcid.org/0000-0001-9591-2659
+  corresponding: true
+- name: Linfeng Zhang
+  affiliation: AI for Science Institute, Beijing; DP Technology
+  email: linfeng.zhang.zlf@gmail.com
+  corresponding: true
+- name: Han Wang
+  affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
+  email: wang_han@iapcm.ac.cn
+  corresponding: true
 
 trained_by:
-  - name: Tiancheng Li
-    affiliation: AI for Science Institute, Beijing; Peking University
-    email: LTC201806070316@outlook.com
-    orcid: https://orcid.org/0009-0009-2459-0635
-    github: https://github.com/OutisLi
+- name: Tiancheng Li
+  affiliation: AI for Science Institute, Beijing; Peking University
+  email: LTC201806070316@outlook.com
+  orcid: https://orcid.org/0009-0009-2459-0635
+  github: https://github.com/OutisLi
 
 repo: https://github.com/deepmodeling/deepmd-kit
 doi: https://doi.org/10.48550/arXiv.2606.02419
@@ -56,9 +56,9 @@ training_sets: [MPtrj]
 model_params: 32724908
 training_cost:
   entries:
-    - hardware: NVIDIA H20
-      count: 8
-      hours_per_device: 288.0
+  - hardware: NVIDIA H20
+    count: 8
+    hours_per_device: 288.0
 hyperparams:
   evaluation:
     max_force: 0.02
@@ -132,6 +132,7 @@ metrics:
     pred_file:
       name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-discovery.csv.gz
       url: https://figshare.com/files/64733577
+    pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.832  # fraction
       DAF: 4.943 # dimensionless

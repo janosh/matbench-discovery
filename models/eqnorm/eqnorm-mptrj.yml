@@ -6,25 +6,25 @@ dates:
   paper_published: '2025-05-26'
 lifecycle: active
 authors:
-  - name: Yuzhuo Chen
-    affiliation: Zhejiang Lab
-    email: chenyuzhuo@zhejianglab.org
-    orcid: https://orcid.org/0009-0003-4044-2372
-  - name: Lyuwen Fu
-    affiliation: Zhejiang Lab
-    email: lyuwenfu@zhejianglab.org
-  - name: Shuxiang Yang
-    affiliation: Zhejiang Lab
-    email: yang_shuxiang@zhejianglab.org
-  - name: Lipeng Chen
-    affiliation: Zhejiang Lab
-    email: chenlp@zhejianglab.org
-    corresponding: true
+- name: Yuzhuo Chen
+  affiliation: Zhejiang Lab
+  email: chenyuzhuo@zhejianglab.org
+  orcid: https://orcid.org/0009-0003-4044-2372
+- name: Lyuwen Fu
+  affiliation: Zhejiang Lab
+  email: lyuwenfu@zhejianglab.org
+- name: Shuxiang Yang
+  affiliation: Zhejiang Lab
+  email: yang_shuxiang@zhejianglab.org
+- name: Lipeng Chen
+  affiliation: Zhejiang Lab
+  email: chenlp@zhejianglab.org
+  corresponding: true
 trained_by:
-  - name: Yuzhuo Chen
-    affiliation: Zhejiang Lab
-    email: chenyuzhuo@zhejianglab.org
-    orcid: https://orcid.org/0009-0003-4044-2372
+- name: Yuzhuo Chen
+  affiliation: Zhejiang Lab
+  email: chenyuzhuo@zhejianglab.org
+  orcid: https://orcid.org/0009-0003-4044-2372
 
 repo: https://github.com/yzchen08/eqnorm
 doi: https://github.com/yzchen08/eqnorm
@@ -40,16 +40,16 @@ license:
 
 environment:
   dependencies:
-    - eqnorm @ git+https://github.com/yzchen08/eqnorm
-    - torch==2.2.2
-    - torch-geometric==2.6.1
-    - torch-scatter
-    - vesin==0.3.2
-    - numpy<2
-    - ase==3.24.0
-    - e3nn==0.5.6
-    - pymatgen==2025.3.10
-    - wget==3.2
+  - eqnorm @ git+https://github.com/yzchen08/eqnorm
+  - torch==2.2.2
+  - torch-geometric==2.6.1
+  - torch-scatter
+  - vesin==0.3.2
+  - numpy<2
+  - ase==3.24.0
+  - e3nn==0.5.6
+  - pymatgen==2025.3.10
+  - wget==3.2
   python_version: '3.12'
   find_links: ['https://data.pyg.org/whl/torch-2.2.2+cu121.html']
 openness: OSOD
@@ -61,9 +61,9 @@ training_sets: [MPtrj]
 model_params: 1310024
 training_cost:
   entries:
-    - hardware: NVIDIA A100
-      count: 4
-      hours_per_device: 500.0
+  - hardware: NVIDIA A100
+    count: 4
+    hours_per_device: 500.0
 hyperparams:
   evaluation:
     max_force: 0.02
@@ -138,6 +138,7 @@ metrics:
       url: https://figshare.com/files/55546649
       size: 2590822
       md5: 77c84e44c1d9a0782eb480c1c8ebf5ec
+    pred_col: e_form_per_atom_eqnorm
     full_test_set:
       F1: 0.779  # fraction
       DAF: 4.296 # dimensionless

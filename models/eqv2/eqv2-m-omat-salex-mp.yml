@@ -6,31 +6,31 @@ dates:
   paper_published: '2024-10-18'
 lifecycle: active
 authors:
-  - name: Luis Barroso-Luque
-    affiliation: FAIR at Meta
-    email: lbluque@meta.com
-    orcid: https://orcid.org/0000-0002-6453-9545
-    github: https://github.com/lbluque
-    corresponding: true
-  - name: Muhammed Shuaibi
-    affiliation: FAIR at Meta
-  - name: Xiang Fu
-    affiliation: FAIR at Meta
-  - name: Brandon M. Wood
-    affiliation: FAIR at Meta
-  - name: Misko Dzamba
-    affiliation: FAIR at Meta
-  - name: Meng Gao
-    affiliation: FAIR at Meta
-  - name: Ammar Rizvi
-    affiliation: FAIR at Meta
-  - name: C.~Lawrence Zitnick
-    affiliation: FAIR at Meta
-  - name: Zachary W. Ulissi
-    affiliation: FAIR at Meta
-    email: zulissi@meta.com
-    orcid: https://orcid.org/0000-0002-9401-4918
-    corresponding: true
+- name: Luis Barroso-Luque
+  affiliation: FAIR at Meta
+  email: lbluque@meta.com
+  orcid: https://orcid.org/0000-0002-6453-9545
+  github: https://github.com/lbluque
+  corresponding: true
+- name: Muhammed Shuaibi
+  affiliation: FAIR at Meta
+- name: Xiang Fu
+  affiliation: FAIR at Meta
+- name: Brandon M. Wood
+  affiliation: FAIR at Meta
+- name: Misko Dzamba
+  affiliation: FAIR at Meta
+- name: Meng Gao
+  affiliation: FAIR at Meta
+- name: Ammar Rizvi
+  affiliation: FAIR at Meta
+- name: C.~Lawrence Zitnick
+  affiliation: FAIR at Meta
+- name: Zachary W. Ulissi
+  affiliation: FAIR at Meta
+  email: zulissi@meta.com
+  orcid: https://orcid.org/0000-0002-9401-4918
+  corresponding: true
 
 repo: https://github.com/FAIR-Chem/fairchem
 doi: https://doi.org/10.48550/arXiv.2410.12771
@@ -47,10 +47,10 @@ license:
 
 environment:
   dependencies:
-    - 'fairchem-core[torch-extras]==1.10.0'
-    - torch==2.4.0
-    - numpy<2
-    - scipy<1.15
+  - 'fairchem-core[torch-extras]==1.10.0'
+  - torch==2.4.0
+  - numpy<2
+  - scipy<1.15
   python_version: '3.12'
   find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
 openness: OSOD
@@ -124,6 +124,7 @@ metrics:
       url: https://figshare.com/files/52057571
       size: 3065219
       md5: 86642db564ecf51263e2c0a553603154
+    pred_col: e_form_per_atom_eqV2-86M-omat-mp-salex
     full_test_set:
       F1: 0.896  # fraction
       DAF: 5.243 # dimensionless

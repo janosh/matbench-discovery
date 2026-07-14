@@ -6,18 +6,18 @@ dates:
   paper_published: '2026-01-10'
 lifecycle: active
 authors:
-  - name: Filippo Bigi
-    affiliation: COSMO, EPFL
-    email: filippo.bigi@epfl.ch
-  - name: Paolo Pegolo
-    affiliation: COSMO, EPFL
-    email: paolo.pegolo@epfl.ch
-  - name: Arslan Mazitov
-    affiliation: COSMO, EPFL
-    email: arslan.mazitov@epfl.ch
-  - name: Michele Ceriotti
-    affiliation: COSMO, EPFL
-    email: michele.ceriotti@epfl.ch
+- name: Filippo Bigi
+  affiliation: COSMO, EPFL
+  email: filippo.bigi@epfl.ch
+- name: Paolo Pegolo
+  affiliation: COSMO, EPFL
+  email: paolo.pegolo@epfl.ch
+- name: Arslan Mazitov
+  affiliation: COSMO, EPFL
+  email: arslan.mazitov@epfl.ch
+- name: Michele Ceriotti
+  affiliation: COSMO, EPFL
+  email: michele.ceriotti@epfl.ch
 repo: https://github.com/lab-cosmo/upet
 doi: https://doi.org/10.1038/s41467-025-65662-7
 paper: https://www.nature.com/articles/s41467-025-65662-7
@@ -41,9 +41,9 @@ training_sets: [MPtrj, OMat24, sAlex]
 model_params: 730000000
 training_cost:
   entries:
-    - hardware: NVIDIA H100
-      count: 512
-      hours_per_device: 40.0
+  - hardware: NVIDIA H100
+    count: 512
+    hours_per_device: 40.0
 hyperparams:
   evaluation:
     max_force: 0.02
@@ -91,6 +91,7 @@ metrics:
     pred_file:
       name: models/pet/pet-oam-xl-1.0.0/2026-01-10-discovery.csv.gz
       url: https://figshare.com/files/60934828
+    pred_col: e_form_per_atom_pet
     full_test_set:
       F1: 0.904  # fraction
       DAF: 5.312 # dimensionless

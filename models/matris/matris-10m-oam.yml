@@ -6,28 +6,28 @@ dates:
   paper_published: '2025-10-29'
 lifecycle: active
 authors:
-  - name: Yuanchang Zhou
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: zhouyuanchang23s@ict.ac.cn
-    orcid: https://orcid.org/0009-0004-6801-7033
-  - name: Siyu Hu
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: husiyu@ict.ac.cn
-    orcid: https://orcid.org/0009-0008-6085-4645
-  - name: Guangming Tan
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: tgm@ict.ac.cn
-    orcid: https://orcid.org/0000-0002-6361-5948
-  - name: Weile Jia
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: jiaweile@ict.ac.cn
-    orcid: https://orcid.org/0000-0001-8539-8326
-    corresponding: true
+- name: Yuanchang Zhou
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: zhouyuanchang23s@ict.ac.cn
+  orcid: https://orcid.org/0009-0004-6801-7033
+- name: Siyu Hu
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: husiyu@ict.ac.cn
+  orcid: https://orcid.org/0009-0008-6085-4645
+- name: Guangming Tan
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: tgm@ict.ac.cn
+  orcid: https://orcid.org/0000-0002-6361-5948
+- name: Weile Jia
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: jiaweile@ict.ac.cn
+  orcid: https://orcid.org/0000-0001-8539-8326
+  corresponding: true
 trained_by:
-  - name: Yuanchang Zhou
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: zhouyuanchang23s@ict.ac.cn
-    orcid: https://orcid.org/0009-0004-6801-7033
+- name: Yuanchang Zhou
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: zhouyuanchang23s@ict.ac.cn
+  orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
 doi: https://github.com/HPC-AI-Team/MatRIS
@@ -43,11 +43,11 @@ license:
 
 environment:
   dependencies:
-    - matris @ git+https://github.com/HPC-AI-Team/MatRIS
-    - torch==2.6.0
-    - numpy<3
-    - ase==3.26.0
-    - pymatgen==2025.10.07
+  - matris @ git+https://github.com/HPC-AI-Team/MatRIS
+  - torch==2.6.0
+  - numpy<3
+  - ase==3.26.0
+  - pymatgen==2025.10.07
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -59,9 +59,9 @@ size: 10M
 model_params: 10443505
 training_cost:
   entries:
-    - hardware: NVIDIA H100
-      count: 64
-      hours_per_device: 80.0
+  - hardware: NVIDIA H100
+    count: 64
+    hours_per_device: 80.0
 hyperparams:
   evaluation:
     max_force: 0.02
@@ -119,6 +119,7 @@ metrics:
       url: https://figshare.com/files/59233856
       size: 2368330
       md5: f747fbfb1ac7259d930fce415f46bc58
+    pred_col: e_form_per_atom_matris
     full_test_set:
       F1: 0.903  # fraction
       DAF: 5.275 # dimensionless

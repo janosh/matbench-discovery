@@ -6,22 +6,22 @@ dates:
   paper_published: '2023-11-29'
 lifecycle: active
 authors:
-  - name: Amil Merchant
-    affiliation: Google DeepMind
-    email: amilmerchant@google.com
-    orcid: https://orcid.org/0000-0001-5262-6599
-  - name: Simon Batzner
-    affiliation: Google DeepMind
-  - name: Samuel S. Schoenholz
-    affiliation: Google DeepMind
-  - name: Muratahan Aykol
-    affiliation: Google DeepMind
-  - name: Gowoon Cheon
-    affiliation: Google DeepMind
-  - name: Ekin Dogus Cubuk
-    affiliation: Google DeepMind
-    email: cubuk@google.com
-    orcid: https://orcid.org/0000-0003-0524-2837
+- name: Amil Merchant
+  affiliation: Google DeepMind
+  email: amilmerchant@google.com
+  orcid: https://orcid.org/0000-0001-5262-6599
+- name: Simon Batzner
+  affiliation: Google DeepMind
+- name: Samuel S. Schoenholz
+  affiliation: Google DeepMind
+- name: Muratahan Aykol
+  affiliation: Google DeepMind
+- name: Gowoon Cheon
+  affiliation: Google DeepMind
+- name: Ekin Dogus Cubuk
+  affiliation: Google DeepMind
+  email: cubuk@google.com
+  orcid: https://orcid.org/0000-0003-0524-2837
 
 repo: https://github.com/google-deepmind/materials_discovery
 doi: https://doi.org/10.1038/s41586-023-06735-9
@@ -35,12 +35,12 @@ license:
   checkpoint_url:
 environment:
   dependencies:
-    - e3nn-jax==0.20.3
-    - flax==0.7.5
-    - jax-md==0.2.8
-    - jax==0.4.20
-    - numpy==1.26.2
-    - pymatgen==2023.11.12
+  - e3nn-jax==0.20.3
+  - flax==0.7.5
+  - jax-md==0.2.8
+  - jax==0.4.20
+  - numpy==1.26.2
+  - pymatgen==2023.11.12
   python_version: '3.12'
 openness: OSCD
 architecture_types: [gnn]
@@ -72,6 +72,7 @@ metrics:
       url: https://figshare.com/files/52057556
       size: 2184155
       md5: 4b28e10dc4283dc1a1eb63b94c3080d4
+    pred_col: e_gnome_after_relax
     full_test_set:
       F1: 0.81  # fraction
       DAF: 4.81 # dimensionless

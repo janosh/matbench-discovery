@@ -6,23 +6,23 @@ dates:
   paper_published: '2025-08-17'
 lifecycle: active
 authors:
-  - name: Teddy Koker
-    affiliation: Massachusetts Institute of Technology
-    email: tekoker@mit.edu
-    url: https://teddykoker.com
-    orcid: https://orcid.org/0000-0001-8861-9788
-  - name: Tess Smidt
-    affiliation: Massachusetts Institute of Technology
-    email: tsmidt@mit.edu
-    url: https://blondegeek.github.io/
-    orcid: https://orcid.org/0000-0001-5581-5344
+- name: Teddy Koker
+  affiliation: Massachusetts Institute of Technology
+  email: tekoker@mit.edu
+  url: https://teddykoker.com
+  orcid: https://orcid.org/0000-0001-8861-9788
+- name: Tess Smidt
+  affiliation: Massachusetts Institute of Technology
+  email: tsmidt@mit.edu
+  url: https://blondegeek.github.io/
+  orcid: https://orcid.org/0000-0001-5581-5344
 
 trained_by:
-  - name: Teddy Koker
-    affiliation: Massachusetts Institute of Technology
-    email: tekoker@mit.edu
-    url: https://teddykoker.com
-    orcid: https://orcid.org/0000-0001-8861-9788
+- name: Teddy Koker
+  affiliation: Massachusetts Institute of Technology
+  email: tekoker@mit.edu
+  url: https://teddykoker.com
+  orcid: https://orcid.org/0000-0001-8861-9788
 
 repo: https://github.com/atomicarchitects/nequix
 doi: https://doi.org/10.48550/arXiv.2508.16067
@@ -38,20 +38,20 @@ license:
 
 environment:
   dependencies:
-    - nequix
-    - 'jax[cuda12]'
-    - e3nn-jax==0.20.7
-    - jraph==0.0.6.dev0
-    - equinox==0.11.11
-    - optax==0.2.5
-    - ase==3.24.0
-    - tqdm==4.67.1
-    - wandb==0.19.11
-    - pyyaml==6.0.2
-    - matscipy==1.1.1
-    - h5py==3.14.0
-    - wandb-osh==1.2.2
-    - cloudpickle==3.1.1
+  - nequix
+  - 'jax[cuda12]'
+  - e3nn-jax==0.20.7
+  - jraph==0.0.6.dev0
+  - equinox==0.11.11
+  - optax==0.2.5
+  - ase==3.24.0
+  - tqdm==4.67.1
+  - wandb==0.19.11
+  - pyyaml==6.0.2
+  - matscipy==1.1.1
+  - h5py==3.14.0
+  - wandb-osh==1.2.2
+  - cloudpickle==3.1.1
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -62,9 +62,9 @@ training_sets: [MPtrj]
 model_params: 707658
 training_cost:
   entries:
-    - hardware: NVIDIA A100
-      count: 4
-      hours_per_device: 125.0
+  - hardware: NVIDIA A100
+    count: 4
+    hours_per_device: 125.0
 hyperparams:
   evaluation:
     max_force: 0.02
@@ -134,6 +134,7 @@ metrics:
       url: https://figshare.com/files/57262712
       size: 2455250
       md5: b2896ac7db2d4bd87595347dccb15d62
+    pred_col: e_form_per_atom_nequix
     full_test_set:
       F1: 0.744  # fraction
       DAF: 3.95 # dimensionless

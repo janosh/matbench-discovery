@@ -6,26 +6,26 @@ dates:
   paper_published: '2025-03-17'
 lifecycle: active
 authors:
-  - name: Xiang Fu
-    affiliation: FAIR at Meta
-    email: xiangfu@meta.com
-    orcid: https://orcid.org/0000-0001-7480-6312
-    github: https://github.com/kyonofx
-    corresponding: true
-  - name: Brandon M. Wood
-    affiliation: FAIR at Meta
-  - name: Luis Barroso-Luque
-    affiliation: FAIR at Meta
-  - name: Daniel S. Levine
-    affiliation: FAIR at Meta
-  - name: Meng Gao
-    affiliation: FAIR at Meta
-  - name: Misko Dzamba
-    affiliation: FAIR at Meta
-  - name: C. Lawrence Zitnick
-    affiliation: FAIR at Meta
-    email: zitnick@meta.com
-    corresponding: true
+- name: Xiang Fu
+  affiliation: FAIR at Meta
+  email: xiangfu@meta.com
+  orcid: https://orcid.org/0000-0001-7480-6312
+  github: https://github.com/kyonofx
+  corresponding: true
+- name: Brandon M. Wood
+  affiliation: FAIR at Meta
+- name: Luis Barroso-Luque
+  affiliation: FAIR at Meta
+- name: Daniel S. Levine
+  affiliation: FAIR at Meta
+- name: Meng Gao
+  affiliation: FAIR at Meta
+- name: Misko Dzamba
+  affiliation: FAIR at Meta
+- name: C. Lawrence Zitnick
+  affiliation: FAIR at Meta
+  email: zitnick@meta.com
+  corresponding: true
 
 repo: https://github.com/FAIR-Chem/fairchem
 doi: https://doi.org/10.48550/arXiv.2502.12147
@@ -42,10 +42,10 @@ license:
 
 environment:
   dependencies:
-    - 'fairchem-core[torch-extras]==1.10.0'
-    - torch==2.4.0
-    - numpy<2
-    - scipy<1.15
+  - 'fairchem-core[torch-extras]==1.10.0'
+  - torch==2.4.0
+  - numpy<2
+  - scipy<1.15
   python_version: '3.12'
   find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
 openness: OSOD
@@ -98,6 +98,7 @@ metrics:
     pred_file:
       name: models/esen/esen-30m-oam/2025-03-17-discovery.csv.gz
       url: https://figshare.com/files/53054369
+    pred_col: pred_e_form_per_atom_esen
     full_test_set:
       F1: 0.902  # fraction
       DAF: 5.281 # dimensionless

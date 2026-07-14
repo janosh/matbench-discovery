@@ -6,32 +6,32 @@ dates:
   paper_published: '2024-12-09'
 lifecycle: active
 authors:
-  - name: Ilyes Batatia
-    affiliation: University of Cambridge
-    email: ilyes.batatia@ens-paris-saclay.fr
-    orcid: https://orcid.org/0000-0001-6915-9851
-  - name: David P Kovacs
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0002-0854-2635
-  - name: Gregor Simm
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0001-6815-352X
-  - name: Christoph Ortner
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0003-1498-8120
-  - name: Gabor Csanyi
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0002-8180-2034
+- name: Ilyes Batatia
+  affiliation: University of Cambridge
+  email: ilyes.batatia@ens-paris-saclay.fr
+  orcid: https://orcid.org/0000-0001-6915-9851
+- name: David P Kovacs
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0002-0854-2635
+- name: Gregor Simm
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0001-6815-352X
+- name: Christoph Ortner
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0003-1498-8120
+- name: Gabor Csanyi
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0002-8180-2034
 trained_by:
-  - name: Chen Lin
-    affiliation: University of Oxford
-    github: https://github.com/birdyLinch
-    email: will.c.lynch@gmail.com
-    orcid: https://orcid.org/0000-0002-0854-2635
-  - name: Ilyes Batatia
-    affiliation: University of Cambridge
-    email: ilyes.batatia@ens-paris-saclay.fr
-    orcid: https://orcid.org/0000-0001-6915-9851
+- name: Chen Lin
+  affiliation: University of Oxford
+  github: https://github.com/birdyLinch
+  email: will.c.lynch@gmail.com
+  orcid: https://orcid.org/0000-0002-0854-2635
+- name: Ilyes Batatia
+  affiliation: University of Cambridge
+  email: ilyes.batatia@ens-paris-saclay.fr
+  orcid: https://orcid.org/0000-0001-6915-9851
 
 repo: https://github.com/ACEsuit/mace
 doi: https://doi.org/10.48550/arXiv.2401.00096
@@ -47,14 +47,14 @@ license:
 
 environment:
   dependencies:
-    - mace-torch>=0.3.16
-    - cuequivariance
-    - cuequivariance-torch
-    - cuequivariance-ops-torch-cu12
-    - torch==2.5.1
-    - ase==3.23.0
-    - pymatgen==2024.11.13
-    - numpy==1.26.4
+  - mace-torch>=0.3.16
+  - cuequivariance
+  - cuequivariance-torch
+  - cuequivariance-ops-torch-cu12
+  - torch==2.5.1
+  - ase==3.23.0
+  - pymatgen==2024.11.13
+  - numpy==1.26.4
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -107,6 +107,7 @@ metrics:
       url: https://figshare.com/files/52057541
       size: 2373693
       md5: 35704766adccc536abce620dfc773f6d
+    pred_col: e_form_per_atom_mace
     full_test_set:
       F1: 0.836  # fraction
       DAF: 4.869 # dimensionless

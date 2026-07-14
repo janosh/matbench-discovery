@@ -408,14 +408,23 @@ df_wbm.index = df_wbm[str(Key.mat_id)]
 MAX_E_FORM_ERROR_THRESHOLD = 5.0
 
 
-def resolve_discovery_pred_col(df_preds: pd.DataFrame, *, path: str) -> str:
+def resolve_discovery_pred_col(
+    df_preds: pd.DataFrame,
+    *,
+    path: str,
+    preferred: str | None = None,
+) -> str:
     """Return the formation-energy prediction column from a discovery CSV.
 
-    Prefer the canonical ``e_form_per_atom`` column. Fall back to a unique legacy
-    ``e_form_per_atom_<model>`` column so archived prediction files keep loading
-    after ``pred_col`` was removed from model YAML.
+    Resolution order:
+    1. ``preferred`` from YAML ``metrics.discovery.pred_col`` when present in the
+       frame (needed for multi-column ensemble artifacts on Figshare)
+    2. Canonical ``e_form_per_atom`` (current runner output / rewritten locals)
+    3. A unique legacy ``e_form_per_atom_*`` column
     """
     canonical = "e_form_per_atom"
+    if preferred and preferred in df_preds.columns:
+        return preferred
     if canonical in df_preds.columns:
         return canonical
     legacy = [col for col in df_preds.columns if str(col).startswith(f"{canonical}_")]
@@ -480,7 +489,17 @@ def load_df_wbm_with_preds(
             prog_bar.set_postfix_str(model_name)
 
             df_preds = glob_to_df(model.discovery_path, pbar=False, nrows=nrows)
-            pred_col = resolve_discovery_pred_col(df_preds, path=model.discovery_path)
+            discovery_metrics = model.metrics.get("discovery", {})
+            preferred = (
+                discovery_metrics.get("pred_col")
+                if isinstance(discovery_metrics, dict)
+                else None
+            )
+            pred_col = resolve_discovery_pred_col(
+                df_preds,
+                path=model.discovery_path,
+                preferred=preferred if isinstance(preferred, str) else None,
+            )
 
             index_column = "material_id" if "material_id" in df_preds else id_col
             df_out[model.label] = df_preds.set_index(index_column)[pred_col]

@@ -6,39 +6,39 @@ dates:
   paper_published: '2025-05-12'
 lifecycle: active
 authors:
-  - name: Bangchen Yin
-    affiliation: Tsinghua University
-    email: yinbc24@mails.tsinghua.edu.cn
-  - name: Jiaao Wang
-    email: wangjiaao0720@utexas.edu
-    affiliation: University of Texas at Austin
-    corresponding: true
-  - name: Weitao Du
-    affiliation: DAMO Academy, Alibaba Inc
-    email: duweitao.dwt@alibaba-inc.com
-  - name: Yuanqi Du
-    affiliation: Cornell University
-    email: yd392@cornell.edu
-    corresponding: true
-  - name: Chenru Duan
-    affiliation: Deep Principle, Inc
-    email: duanchenru@deepprinciple.com
-    corresponding: true
-  - name: Carla P. Gomes
-    affiliation: Cornell University
-    email: gomes@cs.cornell.edu
-  - name: Graeme Henkelman
-    corresponding: true
-    affiliation: The University of Texas at Austin
-    email: henkelman@utexas.edu
-  - name: Hai Xiao
-    affiliation: Tsinghua University
-    email: haixiao@tsinghua.edu.cn
-    corresponding: true
+- name: Bangchen Yin
+  affiliation: Tsinghua University
+  email: yinbc24@mails.tsinghua.edu.cn
+- name: Jiaao Wang
+  email: wangjiaao0720@utexas.edu
+  affiliation: University of Texas at Austin
+  corresponding: true
+- name: Weitao Du
+  affiliation: DAMO Academy, Alibaba Inc
+  email: duweitao.dwt@alibaba-inc.com
+- name: Yuanqi Du
+  affiliation: Cornell University
+  email: yd392@cornell.edu
+  corresponding: true
+- name: Chenru Duan
+  affiliation: Deep Principle, Inc
+  email: duanchenru@deepprinciple.com
+  corresponding: true
+- name: Carla P. Gomes
+  affiliation: Cornell University
+  email: gomes@cs.cornell.edu
+- name: Graeme Henkelman
+  corresponding: true
+  affiliation: The University of Texas at Austin
+  email: henkelman@utexas.edu
+- name: Hai Xiao
+  affiliation: Tsinghua University
+  email: haixiao@tsinghua.edu.cn
+  corresponding: true
 trained_by:
-  - name: Bangchen Yin
-    affiliation: Tsinghua University
-    email: yinbc24@mails.tsinghua.edu.cn
+- name: Bangchen Yin
+  affiliation: Tsinghua University
+  email: yinbc24@mails.tsinghua.edu.cn
 
 repo: https://github.com/zmyybc/AlphaNet
 doi: https://doi.org/10.48550/arXiv.2501.07155
@@ -54,13 +54,13 @@ license:
 
 environment:
   dependencies:
-    - alphanet @ git+https://github.com/zmyybc/AlphaNet
-    - torch==2.5.1
-    - torch-geometric==2.6.1
-    - torch-scatter
-    - numpy<2
-    - ase==3.24.0
-    - pymatgen==2024.6.10
+  - alphanet @ git+https://github.com/zmyybc/AlphaNet
+  - torch==2.5.1
+  - torch-geometric==2.6.1
+  - torch-scatter
+  - numpy<2
+  - ase==3.24.0
+  - pymatgen==2024.6.10
   python_version: '3.12'
   find_links: ['https://data.pyg.org/whl/torch-2.5.1+cu121.html']
 openness: OSOD
@@ -131,6 +131,7 @@ metrics:
       url: https://figshare.com/files/56871809
       size: 2349399
       md5: 4216cae0261a1ed6441f2197bd90d7d3
+    pred_col: e_form_per_atom_alphanet
     full_test_set:
       F1: 0.883  # fraction
       DAF: 5.0 # dimensionless

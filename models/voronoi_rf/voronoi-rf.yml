@@ -6,19 +6,19 @@ dates:
   paper_published: '2017-07-14'
 lifecycle: active
 authors:
-  - name: Logan Ward
-    affiliation: Argonne National Laboratory
-    email: lward@anl.gov
-    orcid: https://orcid.org/0000-0002-1323-5939
-  - name: Chris Wolverton
-    affiliation: Northwestern University
-    email: c-wolverton@northwestern.edu
-    orcid: https://orcid.org/0000-0003-2248-474X
+- name: Logan Ward
+  affiliation: Argonne National Laboratory
+  email: lward@anl.gov
+  orcid: https://orcid.org/0000-0002-1323-5939
+- name: Chris Wolverton
+  affiliation: Northwestern University
+  email: c-wolverton@northwestern.edu
+  orcid: https://orcid.org/0000-0003-2248-474X
 trained_by:
-  - name: Janosh Riebesell
-    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
-    email: janosh.riebesell@gmail.com
-    orcid: https://orcid.org/0000-0001-5233-3462
+- name: Janosh Riebesell
+  affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+  email: janosh.riebesell@gmail.com
+  orcid: https://orcid.org/0000-0001-5233-3462
 
 repo: https://github.com/janosh/matbench-discovery
 doi: https://doi.org/10.1103/PhysRevB.96.024104
@@ -34,11 +34,11 @@ license:
 
 environment:
   dependencies:
-    - matminer==0.8.0
-    - scikit-learn==1.1.2
-    - pymatgen==2022.10.22
-    - numpy==1.24.0
-    - pandas==1.5.1
+  - matminer==0.8.0
+  - scikit-learn==1.1.2
+  - pymatgen==2022.10.22
+  - numpy==1.24.0
+  - pandas==1.5.1
   python_version: '3.12'
 openness: OSOD
 architecture_types: [fingerprint, random_forest]
@@ -58,6 +58,7 @@ metrics:
       url: https://figshare.com/files/52057550
       size: 1316269
       md5: 00c5673afe34dcdd5a951ee451a2a462
+    pred_col: e_form_per_atom_voronoi_rf
     full_test_set:
       F1: 0.344  # fraction
       DAF: 1.509 # dimensionless

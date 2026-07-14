@@ -7,35 +7,35 @@ dates:
 lifecycle: superseded
 superseded_by: sevennet-omni-i12
 authors:
-  - name: Jaesun Kim
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0009-0000-6646-1318
-  - name: Jisu Kim
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0009-0000-7380-6089
-  - name: Jaehoon Kim
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0009-0006-3182-9411
-  - name: Jiho lee
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0009-0008-7266-091X
-  - name: Yutack Park
-    affiliation: Seoul National University
-    email: parkyutack@snu.ac.kr
-    orcid: https://orcid.org/0009-0008-8690-935X
-  - name: Youngho Kang
-    affiliation: Incheon National University
-    orcid: https://orcid.org/0000-0003-4532-0027
-    corresponding: true
-  - name: Seungwu Han
-    affiliation: Seoul National University, Korea Institute for Advanced Study
-    email: hansw@snu.ac.kr
-    orcid: https://orcid.org/0000-0003-3958-0922
-    corresponding: true
+- name: Jaesun Kim
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0009-0000-6646-1318
+- name: Jisu Kim
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0009-0000-7380-6089
+- name: Jaehoon Kim
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0009-0006-3182-9411
+- name: Jiho lee
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0009-0008-7266-091X
+- name: Yutack Park
+  affiliation: Seoul National University
+  email: parkyutack@snu.ac.kr
+  orcid: https://orcid.org/0009-0008-8690-935X
+- name: Youngho Kang
+  affiliation: Incheon National University
+  orcid: https://orcid.org/0000-0003-4532-0027
+  corresponding: true
+- name: Seungwu Han
+  affiliation: Seoul National University, Korea Institute for Advanced Study
+  email: hansw@snu.ac.kr
+  orcid: https://orcid.org/0000-0003-3958-0922
+  corresponding: true
 trained_by:
-  - name: Jaesun Kim
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0009-0000-6646-1318
+- name: Jaesun Kim
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0009-0000-6646-1318
 
 repo: https://github.com/MDIL-SNU/SevenNet
 doi: https://doi.org/10.1021/jacs.4c14455
@@ -52,12 +52,12 @@ license:
 
 environment:
   dependencies:
-    - sevenn
-    - torch==2.2.1
-    - torch-geometric==2.5.2
-    - ase==3.22.1
-    - pymatgen==2024.6.10
-    - numpy==1.26.4
+  - sevenn
+  - torch==2.2.1
+  - torch-geometric==2.5.2
+  - ase==3.22.1
+  - pymatgen==2024.6.10
+  - numpy==1.26.4
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -92,12 +92,12 @@ hyperparams:
       stress: 0.0001
     learning_rate_schedule: LinearLR - start_factor=1.0, total_iters=600, end_factor=0.0001
     n_features:
-      - 128x0e
-      - 128x0e+64x1o+32x2e+32x3o
-      - 128x0e+64x1o+64x1e+32x2o+32x2e+32x3o+32x3e
-      - 128x0o+128x0e+64x1o+64x1e+32x2o+32x2e+32x3o+32x3e
-      - 128x0e+64x1o+32x2e+32x3o
-      - 128x0e
+    - 128x0e
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e+64x1o+64x1e+32x2o+32x2e+32x3o+32x3e
+    - 128x0o+128x0e+64x1o+64x1e+32x2o+32x2e+32x3o+32x3e
+    - 128x0e+64x1o+32x2e+32x3o
+    - 128x0e
     n_radial_bessel_basis: 8
     sph_harmonics_l_max: 3
 notes:
@@ -109,6 +109,7 @@ metrics:
     pred_file:
       name: models/sevennet/sevennet-mf-ompa/2025-03-11-discovery.csv.gz
       url: https://figshare.com/files/52983488
+    pred_col: e_form_per_atom_sevennet
     unique_prototypes:
       F1: 0.901  # fraction
       DAF: 5.825 # dimensionless

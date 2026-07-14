@@ -6,18 +6,18 @@ dates:
   paper_published: '2021-02-22'
 lifecycle: active
 authors:
-  - name: Kamal Choudhary
-    affiliation: National Institute of Standards and Technology
-    email: kamal.choudhary@nist.gov
-    orcid: https://orcid.org/0000-0001-9737-8074
-  - name: Brian DeCost
-    affiliation: National Institute of Standards and Technology
-    orcid: https://orcid.org/0000-0002-3459-5888
+- name: Kamal Choudhary
+  affiliation: National Institute of Standards and Technology
+  email: kamal.choudhary@nist.gov
+  orcid: https://orcid.org/0000-0001-9737-8074
+- name: Brian DeCost
+  affiliation: National Institute of Standards and Technology
+  orcid: https://orcid.org/0000-0002-3459-5888
 trained_by:
-  - name: Philipp Benner
-    affiliation: German Federal Institute of Materials Research and Testing (BAM)
-    orcid: https://orcid.org/0000-0002-0912-8137
-    github: https://github.com/pbenner
+- name: Philipp Benner
+  affiliation: German Federal Institute of Materials Research and Testing (BAM)
+  orcid: https://orcid.org/0000-0002-0912-8137
+  github: https://github.com/pbenner
 
 repo: https://github.com/usnistgov/alignn
 doi: https://nature.com/articles/s41524-021-00650-1
@@ -34,12 +34,12 @@ license:
 
 environment:
   dependencies:
-    - ase==3.22.0
-    - dgl-cu111==0.6.1
-    - numpy==1.24.3
-    - pandas==2.0.1
-    - scikit-learn==1.2.2
-    - torch==1.9.0+cu111
+  - ase==3.22.0
+  - dgl-cu111==0.6.1
+  - numpy==1.24.3
+  - pandas==2.0.1
+  - scikit-learn==1.2.2
+  - torch==1.9.0+cu111
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -59,6 +59,7 @@ metrics:
       url: https://figshare.com/files/51607262
       size: 2010134
       md5: c7a1cb4f2c3db99e2124a17ce0ac8554
+    pred_col: e_form_per_atom_alignn
     full_test_set:
       F1: 0.565  # fraction
       DAF: 2.921 # dimensionless

@@ -6,25 +6,25 @@ dates:
   paper_published: '2024-02-06'
 lifecycle: active
 authors:
-  - name: Yutack Park
-    affiliation: Seoul National University
-    email: parkyutack@snu.ac.kr
-    orcid: https://orcid.org/0009-0008-8690-935X
-  - name: Jaesun Kim
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0009-0000-6646-1318
-  - name: Seungwoo Hwang
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0000-0002-1523-8340
-  - name: Seungwu Han
-    affiliation: Seoul National University, Korea Institute for Advanced Study
-    email: hansw@snu.ac.kr
-    orcid: https://orcid.org/0000-0003-3958-0922
-    corresponding: true
+- name: Yutack Park
+  affiliation: Seoul National University
+  email: parkyutack@snu.ac.kr
+  orcid: https://orcid.org/0009-0008-8690-935X
+- name: Jaesun Kim
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0009-0000-6646-1318
+- name: Seungwoo Hwang
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0000-0002-1523-8340
+- name: Seungwu Han
+  affiliation: Seoul National University, Korea Institute for Advanced Study
+  email: hansw@snu.ac.kr
+  orcid: https://orcid.org/0000-0003-3958-0922
+  corresponding: true
 trained_by:
-  - name: Saerom Choi
-    affiliation: Samsung Advanced Institute of Technology, Seoul National University
-    orcid: https://orcid.org/0009-0004-2240-5428
+- name: Saerom Choi
+  affiliation: Samsung Advanced Institute of Technology, Seoul National University
+  orcid: https://orcid.org/0009-0004-2240-5428
 
 repo: https://github.com/MDIL-SNU/SevenNet
 doi: https://doi.org/10.1021/acs.jctc.4c00190
@@ -41,12 +41,12 @@ license:
 
 environment:
   dependencies:
-    - sevenn
-    - torch==2.2.1
-    - torch-geometric==2.5.2
-    - ase==3.22.1
-    - pymatgen==2024.6.10
-    - numpy==1.26.4
+  - sevenn
+  - torch==2.2.1
+  - torch-geometric==2.5.2
+  - ase==3.22.1
+  - pymatgen==2024.6.10
+  - numpy==1.26.4
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -116,6 +116,7 @@ metrics:
       url: https://figshare.com/files/52057547
       size: 2748742
       md5: f4bba4fe40115c3d3a380e53ddc1389a
+    pred_col: e_form_per_atom_chgTot_l3i5
     full_test_set:
       F1: 0.751  # fraction
       DAF: 4.112 # dimensionless

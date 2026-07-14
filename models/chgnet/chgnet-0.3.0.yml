@@ -6,30 +6,30 @@ dates:
   paper_published: '2023-03-01'
 lifecycle: active
 authors:
-  - name: Bowen Deng
-    affiliation: UC Berkeley
-    orcid: https://orcid.org/0000-0002-5720-5299
-  - name: Peichen Zhong
-    affiliation: UC Berkeley
-    orcid: https://orcid.org/0000-0003-1921-1628
-    email: zhongpc@berkeley.edu
-  - name: KyuJung Jun
-    affiliation: UC Berkeley
-    orcid: https://orcid.org/0000-0003-1974-028X
-  - name: Janosh Riebesell
-    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
-    email: janosh.riebesell@gmail.com
-    orcid: https://orcid.org/0000-0001-5233-3462
-  - name: Kevin Han
-    affiliation: UC Berkeley
-    orcid: https://orcid.org/0000-0002-4028-2108
-  - name: Christopher J. Bartel
-    affiliation: University of Minnesota
-    orcid: https://orcid.org/0000-0002-5198-5036
-  - name: Gerbrand Ceder
-    affiliation: UC Berkeley
-    orcid: https://orcid.org/0000-0001-9275-3605
-    email: gceder@berkeley.edu
+- name: Bowen Deng
+  affiliation: UC Berkeley
+  orcid: https://orcid.org/0000-0002-5720-5299
+- name: Peichen Zhong
+  affiliation: UC Berkeley
+  orcid: https://orcid.org/0000-0003-1921-1628
+  email: zhongpc@berkeley.edu
+- name: KyuJung Jun
+  affiliation: UC Berkeley
+  orcid: https://orcid.org/0000-0003-1974-028X
+- name: Janosh Riebesell
+  affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+  email: janosh.riebesell@gmail.com
+  orcid: https://orcid.org/0000-0001-5233-3462
+- name: Kevin Han
+  affiliation: UC Berkeley
+  orcid: https://orcid.org/0000-0002-4028-2108
+- name: Christopher J. Bartel
+  affiliation: University of Minnesota
+  orcid: https://orcid.org/0000-0002-5198-5036
+- name: Gerbrand Ceder
+  affiliation: UC Berkeley
+  orcid: https://orcid.org/0000-0001-9275-3605
+  email: gceder@berkeley.edu
 
 repo: https://github.com/CederGroupHub/chgnet
 doi: https://doi.org/10.48550/arXiv.2302.14231
@@ -45,12 +45,12 @@ license:
 
 environment:
   dependencies:
-    - chgnet
-    - anywidget
-    - torch==1.11.0
-    - ase==3.22.0
-    - pymatgen==2022.10.22
-    - numpy==1.24.0
+  - chgnet
+  - anywidget
+  - torch==1.11.0
+  - ase==3.22.0
+  - pymatgen==2022.10.22
+  - numpy==1.24.0
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -105,6 +105,7 @@ metrics:
       url: https://figshare.com/files/52057526
       size: 2378095
       md5: e1119bcc0ba012f898a1e8d11c6ad2de
+    pred_col: e_form_per_atom_chgnet
     full_test_set:
       F1: 0.612  # fraction
       DAF: 3.038 # dimensionless

@@ -6,18 +6,18 @@ dates:
   paper_published: '2025-02-25'
 lifecycle: active
 authors:
-  - name: Keqiang Yan
-    affiliation: Texas A&M University
-  - name: Montgomery Bohde
-    affiliation: Texas A&M University
-    orcid: https://orcid.org/0009-0007-7705-1219
-    corresponding: true
-  - name: Kryvenko Andrii
-    affiliation: Texas A&M University
-    orcid: https://orcid.org/0009-0000-3395-0967
-  - name: Ziyu Xiang
-    affiliation: Texas A&M University
-    orcid: https://orcid.org/0000-0003-0925-8705
+- name: Keqiang Yan
+  affiliation: Texas A&M University
+- name: Montgomery Bohde
+  affiliation: Texas A&M University
+  orcid: https://orcid.org/0009-0007-7705-1219
+  corresponding: true
+- name: Kryvenko Andrii
+  affiliation: Texas A&M University
+  orcid: https://orcid.org/0009-0000-3395-0967
+- name: Ziyu Xiang
+  affiliation: Texas A&M University
+  orcid: https://orcid.org/0000-0003-0925-8705
 
 repo: https://github.com/divelab/AIRS/tree/main/OpenMat/HIENet
 doi: https://doi.org/10.48550/arXiv.2503.05771
@@ -32,21 +32,21 @@ license:
 
 environment:
   dependencies:
-    - hienet @ git+https://github.com/divelab/AIRS.git#subdirectory=OpenMat/HIENet
-    - torch==2.1.2
-    - torch-geometric==2.6.1
-    - torch-scatter==2.1.2
-    - e3nn==0.5.6
-    - braceexpand
-    - numpy<2
-    - plotly<6
-    - ase==3.25.0
-    - pymatviz==0.16.0
-    - pyyaml==6.0.1
-    - scikit-learn==1.7.0
-    - pymatgen==2025.6.14
-    - wandb==0.20.1
-    - torch-ema==0.3.0
+  - hienet @ git+https://github.com/divelab/AIRS.git#subdirectory=OpenMat/HIENet
+  - torch==2.1.2
+  - torch-geometric==2.6.1
+  - torch-scatter==2.1.2
+  - e3nn==0.5.6
+  - braceexpand
+  - numpy<2
+  - plotly<6
+  - ase==3.25.0
+  - pymatviz==0.16.0
+  - pyyaml==6.0.1
+  - scikit-learn==1.7.0
+  - pymatgen==2025.6.14
+  - wandb==0.20.1
+  - torch-ema==0.3.0
   python_version: '3.11'
   find_links: ['https://data.pyg.org/whl/torch-2.1.2+cu121.html']
 openness: OSOD
@@ -58,9 +58,9 @@ training_sets: [MPtrj]
 model_params: 7510280
 training_cost:
   entries:
-    - hardware: NVIDIA A100
-      count: 8
-      hours_per_device: 361.0
+  - hardware: NVIDIA A100
+    count: 8
+    hours_per_device: 361.0
 hyperparams:
   evaluation:
     max_force: 0.05
@@ -130,6 +130,7 @@ metrics:
       url: https://figshare.com/files/55909421
       size: 2377954
       md5: 456ab3c4d7cf47a04b492c0bccd566dd
+    pred_col: e_form_per_atom_hienet
     full_test_set:
       F1: 0.766  # fraction
       DAF: 4.361 # dimensionless

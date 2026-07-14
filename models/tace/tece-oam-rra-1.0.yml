@@ -6,27 +6,27 @@ dates:
   paper_published: '2026-07-05'
 lifecycle: active
 authors:
-  - name: Zemin Xu
-    affiliation: ShanghaiTech University, Nanjing University
-    email: xv_chana@foxmail.com
-    github: https://github.com/xvzemin
-    corresponding: false
-  - name: Wenbo Xie
-    affiliation: ShanghaiTech University
-    email: xiewb1@shanghaitech.edu.cn
-    orcid: https://orcid.org/0000-0001-5321-2494
-    corresponding: true
-  - name: P. Hu
-    affiliation: ShanghaiTech University
-    email: hupj@shanghaitech.edu.cn
-    orcid: https://orcid.org/0000-0002-6318-1051
-    corresponding: true
+- name: Zemin Xu
+  affiliation: ShanghaiTech University, Nanjing University
+  email: xv_chana@foxmail.com
+  github: https://github.com/xvzemin
+  corresponding: false
+- name: Wenbo Xie
+  affiliation: ShanghaiTech University
+  email: xiewb1@shanghaitech.edu.cn
+  orcid: https://orcid.org/0000-0001-5321-2494
+  corresponding: true
+- name: P. Hu
+  affiliation: ShanghaiTech University
+  email: hupj@shanghaitech.edu.cn
+  orcid: https://orcid.org/0000-0002-6318-1051
+  corresponding: true
 trained_by:
-  - name: Zemin Xu
-    affiliation: ShanghaiTech University, Nanjing University
-    email: xv_chana@foxmail.com
-    github: https://github.com/xvzemin
-    corresponding: false
+- name: Zemin Xu
+  affiliation: ShanghaiTech University, Nanjing University
+  email: xv_chana@foxmail.com
+  github: https://github.com/xvzemin
+  corresponding: false
 
 repo: https://github.com/xvzemin/tace
 doi: https://doi.org/10.57967/hf/7458
@@ -43,10 +43,10 @@ license:
 
 environment:
   dependencies:
-    - tace @ git+https://github.com/xvzemin/tace@88d8dcd5724e94751783b0a3405cb49573af1583
-    - torch==2.9.1
-    - torch-geometric==2.7.0
-    - pytorch-lightning==2.5.5
+  - tace @ git+https://github.com/xvzemin/tace@88d8dcd5724e94751783b0a3405cb49573af1583
+  - torch==2.9.1
+  - torch-geometric==2.7.0
+  - pytorch-lightning==2.5.5
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -57,9 +57,9 @@ training_sets: [MPtrj, OMat24, sAlex]
 model_params: 221853358
 training_cost:
   entries:
-    - hardware: NVIDIA H20
-      count: 32
-      hours_per_device: 240.0
+  - hardware: NVIDIA H20
+    count: 32
+    hours_per_device: 240.0
 hyperparams:
   evaluation:
     max_force: 0.02
@@ -116,6 +116,7 @@ metrics:
     pred_file:
       name: models/tace/tece-oam-rra-1.0/2026-07-05-discovery.csv.gz
       url: https://figshare.com/files/66313757
+    pred_col: e_form_per_atom_tace
     full_test_set:
       F1: 0.91  # fraction
       DAF: 5.3 # dimensionless

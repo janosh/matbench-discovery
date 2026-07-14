@@ -7,32 +7,32 @@ dates:
 lifecycle: superseded
 superseded_by: matris-10m-mp
 authors:
-  - name: Yuanchang Zhou
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: zhouyuanchang23s@ict.ac.cn
-    orcid: https://orcid.org/0009-0004-6801-7033
-  - name: Siyu Hu
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: husiyu@ict.ac.cn
-    orcid: https://orcid.org/0009-0008-6085-4645
-  - name: Chen Wang
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: wangchen246@mails.ucas.ac.cn
-    orcid: https://orcid.org/0009-0006-7542-8281
-  - name: Guangming Tan
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: tgm@ict.ac.cn
-    orcid: https://orcid.org/0000-0002-6361-5948
-  - name: Weile Jia
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: jiaweile@ict.ac.cn
-    orcid: https://orcid.org/0000-0001-8539-8326
-    corresponding: true
+- name: Yuanchang Zhou
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: zhouyuanchang23s@ict.ac.cn
+  orcid: https://orcid.org/0009-0004-6801-7033
+- name: Siyu Hu
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: husiyu@ict.ac.cn
+  orcid: https://orcid.org/0009-0008-6085-4645
+- name: Chen Wang
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: wangchen246@mails.ucas.ac.cn
+  orcid: https://orcid.org/0009-0006-7542-8281
+- name: Guangming Tan
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: tgm@ict.ac.cn
+  orcid: https://orcid.org/0000-0002-6361-5948
+- name: Weile Jia
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: jiaweile@ict.ac.cn
+  orcid: https://orcid.org/0000-0001-8539-8326
+  corresponding: true
 trained_by:
-  - name: Yuanchang Zhou
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: zhouyuanchang23s@ict.ac.cn
-    orcid: https://orcid.org/0009-0004-6801-7033
+- name: Yuanchang Zhou
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: zhouyuanchang23s@ict.ac.cn
+  orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
 doi: https://github.com/HPC-AI-Team/MatRIS
@@ -48,10 +48,10 @@ license:
 
 environment:
   dependencies:
-    - torch==2.4.1
-    - ase==3.23.0
-    - pymatgen==2024.11.23
-    - numpy==1.26.4
+  - torch==2.4.1
+  - ase==3.23.0
+  - pymatgen==2024.11.23
+  - numpy==1.26.4
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -62,9 +62,9 @@ training_sets: [MPtrj]
 model_params: 5825620
 training_cost:
   entries:
-    - hardware: NVIDIA A100
-      count: 16
-      hours_per_device: 120.0
+  - hardware: NVIDIA A100
+    count: 16
+    hours_per_device: 120.0
 hyperparams:
   evaluation:
     max_force: 0.05
@@ -101,6 +101,7 @@ metrics:
       url: https://figshare.com/files/53000174
       size: 2381245
       md5: eabc8c9046a068271b483b1750f60ffd
+    pred_col: e_form_per_atom_matris_mp
     full_test_set:
       F1: 0.798  # fraction
       DAF: 4.456 # dimensionless

@@ -6,12 +6,12 @@ dates:
   paper_published: '2024-12-11'
 lifecycle: active
 authors:
-  - name: Xiaotong Liu
-    affiliation: Beijing Information Science and Technology University
-    email: liuxiaotong@bistu.edu.cn
-  - name: Yuhang Wang
-    affiliation: Beijing Information Science and Technology University
-    email: 2024020669@bistu.edu.cn
+- name: Xiaotong Liu
+  affiliation: Beijing Information Science and Technology University
+  email: liuxiaotong@bistu.edu.cn
+- name: Yuhang Wang
+  affiliation: Beijing Information Science and Technology University
+  email: 2024020669@bistu.edu.cn
 
 repo: https://gitee.com/liuxiaotong15/alchemBERT
 doi: https://doi.org/10.26434/chemrxiv-2024-r4dnl
@@ -26,10 +26,10 @@ license:
 
 environment:
   dependencies:
-    - torch==2.5.1
-    - lightning==2.4.0
-    - transformers==4.46.3
-    - pymatgen==2024.11.13
+  - torch==2.5.1
+  - lightning==2.4.0
+  - transformers==4.46.3
+  - pymatgen==2024.11.13
   python_version: '3.12'
 openness: OSOD
 architecture_types: [transformer]
@@ -48,6 +48,7 @@ metrics:
       url: https://figshare.com/files/52874099
       size: 2985991
       md5: 4b8176886098ae2b253de742cf709987
+    pred_col: e_form_per_atom_alchembert
     full_test_set:
       F1: 0.436  # fraction
       DAF: 1.9 # dimensionless
