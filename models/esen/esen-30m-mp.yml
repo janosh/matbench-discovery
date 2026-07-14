@@ -158,7 +158,7 @@ metrics:
   geo_opt:
     pred_file:
       name: models/esen/esen-30m-mp/2025-03-17-geo-opt.jsonl.gz
-      url: https://figshare.com/files/53153477
+      url: https://figshare.com/files/53153474
       size: 206959696
       md5: f491cfac2f4e9151c3a7bb62ed45a225
     symprec=1e-5:

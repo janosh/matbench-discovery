@@ -146,6 +146,7 @@ metrics:
   geo_opt:
     pred_file:
       name: models/grace/grace-2l-oam/2025-01-28-geo-opt.jsonl.gz
+      url: https://figshare.com/files/66575555
       size: 93343405
       md5: 449451d414a7dda247ae9e3748590fe3
     symprec=1e-5:

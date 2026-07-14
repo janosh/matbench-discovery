@@ -33,25 +33,17 @@ def test_overlay_validates_then_copies_only_model_data(
     (pr_root / "models/other/model.yml").write_text("other: true\n")
     (pr_root / "matbench_discovery/enums.py").write_text("raise RuntimeError\n")
 
-    assert (
-        overlay.main(str(pr_root), ["models/new/missing.yml"], ["models/old/model.yml"])
-        == 1
-    )
+    yaml_paths = ["models/new/missing.yml"]
+    assert overlay.main(str(pr_root), yaml_paths, ["models/old/model.yml"]) == 1
     assert removed_file.is_file()
 
-    assert (
-        overlay.main(
-            str(pr_root),
-            [
-                "models/new/model.yml",
-                r"models\new\model.yml",
-                "models/other/model.yml",
-                "models/new/model.yml",
-            ],
-            ["models/old/model.yml"],
-        )
-        == 0
-    )
+    yaml_paths = [
+        "models/new/model.yml",
+        r"models\new\model.yml",
+        "models/other/model.yml",
+        "models/new/model.yml",
+    ]
+    assert overlay.main(str(pr_root), yaml_paths, ["models/old/model.yml"]) == 0
     assert not removed_file.is_file()
     assert (trusted_root / "models/untouched/model.yml").is_file()
     assert (trusted_root / "models/new/model.yml").read_text() == "submitted: true\n"
