@@ -22,6 +22,8 @@ def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     """Emt loads with no extra deps; dtype is ignored by models that don't declare it;
     unknown keys raise a helpful error.
     """
+    # emt has no model YAML: must stay an eager CalcSpec, not _runtime_calc_spec.
+    assert isinstance(CALCULATORS._data["emt"], calculators.CalcSpec)  # noqa: SLF001
     assert isinstance(load_calculator("emt"), EMT)
     assert isinstance(load_calculator("emt", dtype="float32"), EMT)  # dtype ignored
 

@@ -1,4 +1,4 @@
-import { MODELS } from '$lib'
+import { ACTIVE_MODELS } from '$lib'
 import GeoOptMetricsTable from '$lib/table/GeoOptMetricsTable.svelte'
 import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
 import { make_table_filters } from '$lib/models.svelte'
@@ -10,7 +10,7 @@ import { doc_query, mount } from '../index'
 // mirrors the table's filters: geo-opt metrics + full_test_set discovery data
 // (energy-only models are always hidden)
 const geo_opt_row_count = (matches: (model: ModelData) => boolean = () => true) =>
-  MODELS.filter(
+  ACTIVE_MODELS.filter(
     (model) =>
       model.metrics?.geo_opt != null &&
       typeof model.metrics.geo_opt === `object` &&
@@ -86,7 +86,7 @@ describe(`GeoOptMetricsTable`, () => {
 
   it(`renders geo-opt rows and excludes models without geo-opt metrics`, async () => {
     const model_key = `no-geo-opt-regression`
-    MODELS.push({
+    ACTIVE_MODELS.push({
       model_key,
       model_name: model_key,
       model_version: `test`,
@@ -127,7 +127,7 @@ describe(`GeoOptMetricsTable`, () => {
         }),
       ).toBe(true)
     } finally {
-      MODELS.pop()
+      ACTIVE_MODELS.pop()
     }
   })
 

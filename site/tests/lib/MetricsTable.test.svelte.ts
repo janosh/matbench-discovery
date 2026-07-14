@@ -1,5 +1,5 @@
 import { HYPERPARAMS } from '$lib/labels'
-import { make_table_filters, MODELS } from '$lib/models.svelte'
+import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
 import { tick } from 'svelte'
@@ -27,7 +27,7 @@ const mptrj_only_filters = () => {
 const visible_row_count = (
   extra_filter: (model: ModelData) => boolean = make_table_filters().matches,
 ) =>
-  MODELS.filter(
+  ACTIVE_MODELS.filter(
     (model) =>
       typeof model.metrics?.discovery === `object` &&
       model.metrics.discovery.unique_prototypes &&

@@ -123,7 +123,7 @@ export const METADATA_COLS: MetadataLabels = {
     label: `Date Added`,
     path: `dates`,
     format: `%b %y`,
-    description: `Submission date to the leaderboard`,
+    description: `Date the model was included on the benchmark leaderboard`,
   },
   links: {
     key: `Links`,

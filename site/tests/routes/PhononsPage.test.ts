@@ -1,5 +1,5 @@
 import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
-import { MODELS } from '$lib'
+import { ACTIVE_MODELS, MODELS } from '$lib'
 import { ALL_METRICS } from '$lib/labels'
 import { assemble_row_data, get_nested_number, label_data_path } from '$lib/metrics'
 import { make_table_filters } from '$lib/models.svelte'
@@ -19,7 +19,7 @@ const default_filters = make_table_filters()
 const kappa_srme_path = label_data_path(ALL_METRICS.κ_SRME)
 const kappa_sre_path = label_data_path(ALL_METRICS.κ_SRE)
 // Mirrors the page's model_filter plus MetricsTable's default filters.
-const phonon_leaderboard_count = MODELS.filter(
+const phonon_leaderboard_count = ACTIVE_MODELS.filter(
   (model) =>
     get_nested_number(model, kappa_srme_path) != null &&
     get_nested_number(model, kappa_sre_path) != null &&

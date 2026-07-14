@@ -196,9 +196,14 @@ def update_one_modeling_task_article(
 
             filename = repo_relative_path(file_path)
 
-            # First check if the exact same file already exists
-            if not force_reupload and not dry_run:
+            # Hash once when we may upload or need an exact-match check; reuse below.
+            file_hash: str | None = None
+            file_size: int | None = None
+            if not dry_run:
                 file_hash, file_size = figshare.get_file_hash_and_size(file_path)
+
+            # First check if the exact same file already exists
+            if not force_reupload and file_hash is not None and file_size is not None:
                 exists, file_id = figshare.file_exists_with_same_hash(
                     article_id, filename, file_hash
                 )
@@ -241,7 +246,8 @@ def update_one_modeling_task_article(
 
             # Upload file if it doesn't exist or force_reupload is True
             if not dry_run:
-                file_hash, file_size = figshare.get_file_hash_and_size(file_path)
+                if file_hash is None or file_size is None:
+                    raise RuntimeError(f"Missing hash/size for {file_path}")
                 file_id, _was_uploaded = figshare.upload_file_if_needed(
                     article_id,
                     file_path,

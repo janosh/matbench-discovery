@@ -29,12 +29,20 @@ def _canonical_model_yaml_path(path: str) -> str | None:
 
 
 def _canonicalize_paths(paths: Sequence[str]) -> list[str] | str:
-    """Validate and POSIX-normalize model YAML paths, or return an error."""
+    """Validate and POSIX-normalize model YAML paths, or return an error.
+
+    Canonicalizes before deduplicating so separator-equivalent inputs collapse
+    to one entry while preserving first-seen order.
+    """
     canonical_paths: list[str] = []
-    for relative_path in dict.fromkeys(paths):
+    seen: set[str] = set()
+    for relative_path in paths:
         canonical = _canonical_model_yaml_path(relative_path)
         if canonical is None:
             return f"::error::Unsafe model YAML path: {relative_path!r}"
+        if canonical in seen:
+            continue
+        seen.add(canonical)
         canonical_paths.append(canonical)
     return canonical_paths
 

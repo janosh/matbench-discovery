@@ -550,9 +550,12 @@ def update_yaml_file(
     Args:
         file_path (str | Path): Path to YAML file to update
         dotted_path (str): Dotted path to update (e.g. 'metrics.discovery')
-        data (dict | Callable): Data to write, or a locked section transformer.
-        preserve_existing (bool): If True (default), keep existing keys in the target
-            dict section that aren't in `data`. If False, replace the section entirely.
+        data (dict | Callable): Data to write, or a locked section transformer
+            that receives a copy of the prior section and returns the replacement.
+            Callables own merging; preserve_existing does not apply to them.
+        preserve_existing (bool): If True (default) and data is a dict, keep
+            existing keys in the target section that aren't in data. If False,
+            replace the section with data as given. Ignored for callables.
 
     Returns:
         dict[str, Any]: The complete updated YAML data written to file.

@@ -313,7 +313,7 @@ export interface Person {
  */
 export interface Environment {
   /**
-   * Provenance dependency specs shown on the site. Without `project`, these are also installed via `uv run --with`. With `project`, the project's pyproject.toml owns install resolution and these pins are display-only (keep them aligned with that project).
+   * Provenance dependency specs shown on the site. Without ``project``, these are also installed via ``uv run --with``. With ``project``, the project's pyproject.toml owns install resolution and these pins are display-only (keep them aligned with that project).
    *
    * @minItems 1
    */
@@ -324,15 +324,18 @@ export interface Environment {
    */
   python_version: string
   /**
-   * Extra `uv --find-links` URLs for the non-project runner path. Ignored when `project` is set (put find-links in that project's pyproject).
+   * Extra ``uv --find-links`` URLs for the non-project runner path. Ignored when ``project`` is set (put find-links in that project's pyproject).
+   *
    */
   find_links?: HttpUrl[]
   /**
-   * Extra `uv --extra-index-url` entries for the non-project runner path. Ignored when `project` is set.
+   * Extra ``uv --extra-index-url`` entries for the non-project runner path. Ignored when ``project`` is set.
+   *
    */
   extra_index_urls?: HttpUrl[]
   /**
-   * Optional path to a uv project whose pyproject.toml owns dependency resolution (`uv run --project … --isolated`). Use when `--with` cannot express needed overrides (e.g. EquFlash).
+   * Optional path to a uv project whose pyproject.toml owns dependency resolution (``uv run --project … --isolated``). Use when ``--with`` cannot express needed overrides (e.g. EquFlash).
+   *
    */
   project?: string | null
 }

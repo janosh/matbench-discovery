@@ -212,8 +212,12 @@ _LEGACY_ARTIFACT_KEYS = (
 def _clear_legacy_and_update(
     section: dict[str, Any], *, updates: dict[str, Any]
 ) -> dict[str, Any]:
-    """Drop stale flat artifact keys, then apply regenerated FileRef metadata."""
-    for key in _LEGACY_ARTIFACT_KEYS:
+    """Drop stale flat artifact and cost keys, then apply regenerated metadata.
+
+    Cost provenance is cleared before the merge so omitted fields (e.g. missing
+    max_gpu_mem_gb) cannot linger from a prior YAML write.
+    """
+    for key in (*_LEGACY_ARTIFACT_KEYS, *COST_PROVENANCE_KEYS):
         section.pop(key, None)
     section.update(updates)
     return section

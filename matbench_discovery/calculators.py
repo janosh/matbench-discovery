@@ -1,10 +1,10 @@
 """Registry of MLIP ASE calculators shared across benchmark tasks.
 
-Runners resolve each model's YAML ``environment`` via ``CalcSpec.uv_run_cmd``
-(``uv run --with`` or ``--project`` for override-heavy stacks like EquFlash).
+Runners resolve each model's YAML environment via CalcSpec.uv_run_cmd
+(uv run --with or --project for override-heavy stacks like EquFlash).
 Factories import packages lazily so listing models needs only core deps.
 
-Registry keys are ``Model`` enum names so metrics write to the right YAML.
+Registry keys are Model enum names so metrics write to the right YAML.
 """
 
 import hashlib
@@ -71,13 +71,13 @@ def _cached_file_sha256(path: str) -> tuple[str, tuple[int, int, int]] | None:
 
 
 def download_checkpoint(model_key: str, ext: str | None = None) -> str:
-    """Download a model's weights from its YAML ``checkpoint_url`` to a local cache
-    and return the path. Normalizes HuggingFace ``/blob/`` to ``/resolve/`` and
+    """Download a model's weights from its YAML checkpoint_url to a local cache
+    and return the path. Normalizes HuggingFace /blob/ to /resolve/ and
     sciebo share links to direct downloads; figshare URLs are handled by
-    ``download_file``. Cached after the first call.
+    download_file. Cached after the first call.
 
     Args:
-        model_key: Model enum name whose YAML carries ``checkpoint_url``.
+        model_key: Model enum name whose YAML carries checkpoint_url.
         ext: Force this file extension (e.g. '.pth' for deepmd, whose loader picks
             its backend by suffix). Defaults to the extension parsed from the URL.
     """
@@ -238,10 +238,10 @@ class CalcSpec:
     checkpoint_ext: str | None = None
 
     def uv_run_cmd(self, script: str, *args: str) -> list[str]:
-        """``uv run`` command that resolves this model's env and runs the script.
+        """Uv run command that resolves this model's env and runs the script.
 
-        With ``project``, that pyproject owns resolution (incl. override-dependencies);
-        YAML ``dependencies`` stay for display only. Otherwise ``deps`` / indexes apply.
+        With project, that pyproject owns resolution (incl. override-dependencies);
+        YAML dependencies stay for display only. Otherwise deps / indexes apply.
         """
         py_args = ["--python", self.python_version] if self.python_version else []
         if self.project:
@@ -276,7 +276,7 @@ class CalcSpec:
 
 @cache
 def _model_environments() -> dict[str, dict[str, Any]]:
-    """Load ``environment`` blocks from model metadata, keyed by Model enum name."""
+    """Load environment blocks from model metadata, keyed by Model enum name."""
     from matbench_discovery.enums import Model
 
     return {
@@ -304,7 +304,11 @@ def _runtime_calc_spec(
     auto_checkpoint: bool = False,
     checkpoint_ext: str | None = None,
 ) -> Callable[[], CalcSpec]:
-    """Lazy CalcSpec factory that reads ``environment`` from the model YAML."""
+    """Lazy CalcSpec factory that reads environment from the model YAML.
+
+    model_key must be a Model enum name with an environment block.
+    Debug-only keys like emt (no YAML) must register an eager CalcSpec.
+    """
 
     def build() -> CalcSpec:
         environment = _model_environments().get(model_key)
@@ -360,7 +364,7 @@ def _named_spec(
     ext: str | None = None,
     requires_checkpoint: bool = False,
 ) -> Callable[[], CalcSpec]:
-    """Register ``factory(model_key)`` under the same YAML-backed key."""
+    """Register factory(model_key) under the same YAML-backed key."""
     if checkpoint:
         return _checkpoint_spec(
             model_key,
@@ -372,7 +376,7 @@ def _named_spec(
 
 
 class _CalcRegistry:
-    """Resolve lazy CalcSpec builders on first ``[]`` / ``.get`` / iteration."""
+    """Resolve lazy CalcSpec builders on first [] / .get / iteration."""
 
     def __init__(self, mapping: dict[str, CalcSpec | Callable[[], CalcSpec]]) -> None:
         self._data = dict(mapping)
@@ -399,7 +403,7 @@ class _CalcRegistry:
         return len(self._data)
 
     def get(self, key: str, default: CalcSpec | None = None) -> CalcSpec | None:
-        """Return a resolved CalcSpec, or ``default`` when the key is missing."""
+        """Return a resolved CalcSpec, or default when the key is missing."""
         if key not in self._data:
             return default
         return self[key]
@@ -707,7 +711,7 @@ def _eqnorm(model_key: str, model_variant: str) -> Callable[..., "Calculator"]:
     def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
         from eqnorm.calculator import EqnormCalculator
 
-        # EqnormCalculator downloads via the `wget` package, which figshare's WAF serves
+        # EqnormCalculator downloads via the wget package, which figshare's WAF serves
         # as 0 bytes (-> torch.load EOFError), so stage our checkpoint where it looks
         dest = os.path.expanduser(f"~/.cache/eqnorm/{model_variant}.pt")
         _stage_checkpoint(model_key, dest, ext=".pt", source_path=checkpoint)
@@ -853,7 +857,7 @@ def _emt(device: str) -> "Calculator":  # noqa: ARG001 - CPU only, debug model
 # - MACE on CUDA: cuEquivariance CUDA 12 extras
 # - EqNorm: torch 2.2.2 + vesin 0.3.2 + matching PyG wheels
 # - M3GNet: matgl<4 + DGL backend + dgl 2.4 wheel
-# - TACE: install from upstream git (PyPI `tace` is unrelated); TECE needs a
+# - TACE: install from upstream git (PyPI tace is unrelated); TECE needs a
 #   newer commit
 
 _ALPHANET_PRETRAINED = (
@@ -968,7 +972,8 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "equflashv2_45m_oam": _named_spec(
             _equflash, "equflashv2_45m_oam", checkpoint=True, ext=".pt"
         ),
-        "emt": CalcSpec(_emt),  # CPU-only smoke-test calculator
+        # Eager: no Model YAML / environment; do not wrap with _runtime_calc_spec.
+        "emt": CalcSpec(_emt),
     }
 )
 
@@ -1002,12 +1007,12 @@ def resolve_cli_calculator(
     archived_reasons: "Mapping[str, str] | None" = None,
     task: str = "task",
 ) -> str | None:
-    """Shared-runner CLI preamble: print the registry or resolve ``--model``.
+    """Shared-runner CLI preamble: print the registry or resolve --model.
 
-    Returns None after printing one ``key: deps`` line per registered calculator
-    for ``--list-models``. Otherwise resolves the model reference to a calculator
-    key, exiting via ``parser.error`` when the model is missing, archived for this
-    ``task`` (per ``archived_reasons``), or not registered.
+    Returns None after printing one key: deps line per registered calculator
+    for --list-models. Otherwise resolves the model reference to a calculator
+    key, exiting via parser.error when the model is missing, archived for this
+    task (per archived_reasons), or not registered.
     """
     if list_models:
         for model_key, spec in CALCULATORS.items():

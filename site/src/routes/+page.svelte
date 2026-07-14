@@ -339,11 +339,11 @@
 added) with a running-best line showing which releases moved the frontier -->
 <h2>CPS Progress Over Time</h2>
 <p>
-  Each point is a model placed at its submission date; the dashed step line traces the
-  running best ("SOTA frontier") CPS v1, so its jumps mark the models that set a new
-  record when they were added. Use the axis/color/size selectors to compare models across
-  any pair of metrics and parameters. The plot shows the same model cohort as the metrics
-  table above, following the active task preset and table filters.
+  Each point is a model placed at its benchmark inclusion date; the dashed step line
+  traces the running best ("SOTA frontier") CPS v1, so its jumps mark the models that set
+  a new record when they joined the leaderboard. Use the axis/color/size selectors to
+  compare models across any pair of metrics and parameters. The plot shows the same model
+  cohort as the metrics table above, following the active task preset and table filters.
 </p>
 <DynamicScatter
   models={ACTIVE_MODELS}

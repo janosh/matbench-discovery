@@ -1,5 +1,5 @@
 import { TableControls, type TableLabel } from '$lib'
-import { ALL_TRAINING_SETS, make_table_filters, MODELS } from '$lib/models.svelte'
+import { ACTIVE_MODELS, ALL_TRAINING_SETS, make_table_filters } from '$lib/models.svelte'
 import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -52,7 +52,7 @@ describe(`TableControls`, () => {
       box.getAttribute(`aria-label`)?.slice(`require `.length) ?? ``
     const usage_counts = require_boxes.map((box) => {
       const dataset = dataset_for(box)
-      return MODELS.filter((model) =>
+      return ACTIVE_MODELS.filter((model) =>
         model.training_sets.some((training_dataset) => training_dataset === dataset),
       ).length
     })

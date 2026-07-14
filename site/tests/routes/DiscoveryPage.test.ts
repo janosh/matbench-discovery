@@ -1,4 +1,4 @@
-import { MODELS } from '$lib'
+import { ACTIVE_MODELS } from '$lib'
 import { make_table_filters } from '$lib/models.svelte'
 import DiscoveryPage from '$routes/tasks/discovery/+page.svelte'
 import { tick } from 'svelte'
@@ -88,7 +88,7 @@ describe(`Discovery Task Page`, () => {
 
   it(`filters rows and resolves scatter values from the active discovery set`, async () => {
     const default_filters = make_table_filters()
-    const source_model = MODELS.find((model) => {
+    const source_model = ACTIVE_MODELS.find((model) => {
       const discovery = model.metrics?.discovery
       return (
         discovery != null &&
@@ -114,7 +114,7 @@ describe(`Discovery Task Page`, () => {
         discovery: { ...discovery, full_test_set: undefined },
       },
     }
-    MODELS.push(partial_model)
+    ACTIVE_MODELS.push(partial_model)
     try {
       mount(DiscoveryPage, { target: document.body })
       await tick()
@@ -139,7 +139,7 @@ describe(`Discovery Task Page`, () => {
       expect(table_text()).not.toContain(partial_model.model_name)
       expect(scatter_y_for(model_key)).toBe(discovery.full_test_set?.F1)
     } finally {
-      MODELS.pop()
+      ACTIVE_MODELS.pop()
     }
   })
 

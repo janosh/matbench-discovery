@@ -259,6 +259,8 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
         "pred_file_url": "https://example.com/legacy",
         "pred_file_artifact": "legacy",
         "pred_col": "legacy_pred",
+        "hardware": "NVIDIA A100",
+        "max_gpu_mem_gb": 40.0,
     }
     yaml_path.write_text(
         yaml.safe_dump(

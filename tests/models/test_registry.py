@@ -251,7 +251,10 @@ def test_active_model_count_matches_family_dirs() -> None:
         for model in Model
         if model.is_active
     }
-    model_dir_families = {os.path.basename(path.rstrip("/")) for path in MODEL_DIRS}
+    # normpath: Windows globs may end in `\`; basename of a trailing-sep path is "".
+    model_dir_families = {
+        os.path.basename(os.path.normpath(path)) for path in MODEL_DIRS
+    }
     # Families intentionally without an active Model enum entry.
     inactive_only_families = {"alignn_ff"}
     assert active_families | inactive_only_families == model_dir_families
