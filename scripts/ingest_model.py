@@ -25,9 +25,8 @@ import yaml
 from matbench_discovery import ROOT
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import (
-    FILE_REF_KEYS,
-    file_ref_name,
     file_ref_url,
+    iter_file_refs,
     parse_artifact_filename,
     task_coverage,
 )
@@ -135,25 +134,6 @@ def uv_run_args(args: str) -> tuple[str, ...]:
     return ("uv", "run", "--with-editable", project_req, *tokens)
 
 
-def declared_artifacts(
-    value: object, prefix: tuple[str, ...] = ()
-) -> list[tuple[tuple[str, ...], str]]:
-    """Collect nested FileRef local paths from model metadata."""
-    if not isinstance(value, dict):
-        return []
-    artifacts: list[tuple[tuple[str, ...], str]] = []
-    for key, nested in value.items():
-        if not isinstance(key, str):
-            continue
-        key_path = (*prefix, key)
-        if key in FILE_REF_KEYS:
-            if name := file_ref_name(nested):
-                artifacts.append((key_path, name))
-        elif isinstance(nested, dict):
-            artifacts.extend(declared_artifacts(nested, key_path))
-    return artifacts
-
-
 def check_submission(
     model: Model,
     checks: Checklist,
@@ -172,7 +152,7 @@ def check_submission(
         checks.fail(f"Model YAML file not found at: {yaml_path}")
     checks.ok(f"Model '{model.name}' is present in the generated Model enum")
     expected_artifact_dir = f"models/{model.family}/{model.metadata['model_key']}"
-    for key_path, artifact_path in declared_artifacts(
+    for key_path, artifact_path in iter_file_refs(
         model.metadata.get("metrics", {}), ("metrics",)
     ):
         try:

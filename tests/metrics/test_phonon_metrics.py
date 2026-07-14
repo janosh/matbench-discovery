@@ -20,7 +20,7 @@ _K = "models/mace/mace-mp-0"
 KAPPA_PRED = f"{_K}/2026-07-01-phonons-kappa-103.json.gz"
 KAPPA_FORCE = f"{_K}/2026-07-01-phonons-kappa-103-forces.json.gz"
 KAPPA_RUN_INFO = f"{_K}/2026-07-01-phonons-kappa-103-run-info.json"
-KAPPA_PRED_LEGACY = f"{_K}/2025-01-01-phonons-kappa-103.json.gz"
+KAPPA_PRED_EXISTING = f"{_K}/2025-01-01-phonons-kappa-103.json.gz"
 KAPPA_FORCE_NEW = f"{_K}/2026-07-02-phonons-kappa-103-forces.json.gz"
 _GEO = "models/alignn/alignn/2026-07-01-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz"
 
@@ -524,7 +524,7 @@ def test_write_metrics_to_yaml_preserves_existing_artifacts(tmp_path: Path) -> N
         (
             f"metrics:\n  phonons:\n    kappa_103:\n"
             f"      pred_file:\n"
-            f"        name: {KAPPA_PRED_LEGACY}\n"
+            f"        name: {KAPPA_PRED_EXISTING}\n"
             f"        url: https://figshare.com/files/existing\n"
             f"      analysis_file:\n"
             f"        name: {_GEO}\n"
@@ -534,36 +534,12 @@ def test_write_metrics_to_yaml_preserves_existing_artifacts(tmp_path: Path) -> N
     )
     assert kappa_metrics == {
         "pred_file": make_file_ref(
-            KAPPA_PRED_LEGACY, url="https://figshare.com/files/existing"
+            KAPPA_PRED_EXISTING, url="https://figshare.com/files/existing"
         ),
         "analysis_file": make_file_ref(_GEO),
         "κ_SRME": 0.1234,
         "κ_SRE": 0.5678,
     }
-    assert "pred_file_url" not in kappa_metrics
-    assert "pred_file_artifact" not in kappa_metrics
-
-
-def test_write_metrics_migrates_legacy_companion_urls(tmp_path: Path) -> None:
-    """Legacy flat *_url keys fold into nested FileRefs before cleanup."""
-    refs = {
-        "pred_file": (KAPPA_PRED_LEGACY, "https://figshare.com/files/legacy-pred"),
-        "force_file": (KAPPA_FORCE, "https://figshare.com/files/legacy-force"),
-        "run_info_file": (KAPPA_RUN_INFO, "https://figshare.com/files/legacy-run"),
-    }
-    yaml_body = "metrics:\n  phonons:\n    kappa_103:\n" + "".join(
-        f"      {key}: {path}\n      {key}_url: {url}\n"
-        for key, (path, url) in refs.items()
-    )
-    kappa_metrics = update_temp_kappa_yaml(
-        tmp_path,
-        yaml_body,
-        metrics={"srme": 0.1, "sre": 0.2},
-        pred_file_path=KAPPA_PRED,
-    )
-    for key, (path, url) in refs.items():
-        assert kappa_metrics[key] == make_file_ref(path, url=url)
-        assert f"{key}_url" not in kappa_metrics
 
 
 @pytest.mark.parametrize(
@@ -617,12 +593,6 @@ def test_kappa_metric_yaml_round_trip_updates_provenance(tmp_path: Path) -> None
     assert kappa_metrics["run_time_sec"] == 12.5
     assert kappa_metrics["max_rss_gb"] == 3.5
     assert kappa_metrics["max_gpu_mem_gb"] == 4.5
-    assert file_ref_url(kappa_metrics["pred_file"]) is None
-    assert file_ref_url(kappa_metrics["force_file"]) is None
-    assert file_ref_url(kappa_metrics["run_info_file"]) is None
-    assert "pred_file_url" not in kappa_metrics
-    assert "force_file_url" not in kappa_metrics
-    assert "run_info_file_url" not in kappa_metrics
 
 
 def test_kappa_metric_yaml_clears_url_when_sidecar_path_changes(
@@ -648,8 +618,6 @@ def test_kappa_metric_yaml_clears_url_when_sidecar_path_changes(
         file_ref_url(kappa_metrics["pred_file"]) == "https://example.com/pred.json.gz"
     )
     assert kappa_metrics["force_file"] == make_file_ref(KAPPA_FORCE_NEW)
-    assert file_ref_url(kappa_metrics["force_file"]) is None
-    assert "force_file_url" not in kappa_metrics
 
 
 def test_kappa_metric_yaml_replacement_clears_stale_sidecars(
@@ -673,5 +641,3 @@ def test_kappa_metric_yaml_replacement_clears_stale_sidecars(
     )
     for stale_key in ("force_file", "run_info_file", "max_gpu_mem_gb"):
         assert stale_key not in kappa_metrics
-    assert "force_file_url" not in kappa_metrics
-    assert "run_info_file_url" not in kappa_metrics

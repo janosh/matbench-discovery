@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 from matbench_discovery import PKG_DIR, ROOT, repo_relative_path
 from matbench_discovery.cli import cli_parser, models_arg
-from matbench_discovery.data import round_trip_yaml
+from matbench_discovery.data import iter_file_refs, round_trip_yaml
 from matbench_discovery.enums import Model
 from matbench_discovery.remote import figshare
 
@@ -143,48 +143,33 @@ def update_one_modeling_task_article(
         if not isinstance(metric_data, dict):
             continue
 
-        def find_file_keys(data: dict[str, Any], prefix: str = "") -> dict[str, str]:
-            """Find supported artifact keys in nested task metadata."""
-            from matbench_discovery.data import FILE_REF_KEYS, file_ref_name
-
-            result: dict[str, str] = {}
-            for key, value in data.items():
-                full_key = f"{prefix}.{key}" if prefix else key
-                if key in FILE_REF_KEYS:
-                    name = file_ref_name(value)
-                    if name is None:
-                        raise ValueError(f"Unsupported artifact at {full_key!r}")
-                    if file_type == "all" or key == f"{file_type}_file":
-                        result[full_key] = name
-                elif isinstance(value, dict):
-                    result |= find_file_keys(value, full_key)
-            return result
-
         def set_file_ref_url(
             data: dict[str, Any],
-            key_path: str,
+            key_path: tuple[str, ...],
             file_url: str,
             *,
             size: int | None = None,
             md5: str | None = None,
         ) -> None:
             """Set ``url`` (and optional size/md5) on a nested FileRef."""
-            *parts, last = key_path.split(".")
+            *parts, last = key_path
             target = data
             for part in parts:
                 target = target[part]
             ref = target.get(last)
-            if isinstance(ref, str):
-                target[last] = ref = {"name": ref}
             if not isinstance(ref, dict):
-                raise TypeError(f"Expected FileRef object at {key_path}, got {ref!r}")
+                raise TypeError(
+                    f"Expected FileRef object at {'.'.join(key_path)}, got {ref!r}"
+                )
             updated: dict[str, Any] = {**ref, "url": file_url}
             if size is not None and md5 is not None:
-                updated["size"] = size
-                updated["md5"] = md5
+                updated.update(size=size, md5=md5)
             target[last] = updated
 
-        for key_path, rel_file_path in find_file_keys(metric_data).items():
+        for key_parts, rel_file_path in iter_file_refs(metric_data):
+            artifact_key = key_parts[-1]
+            if file_type != "all" and artifact_key != f"{file_type}_file":
+                continue
             try:
                 file_path = resolve_artifact_path(model.yaml_path, rel_file_path)
             except FileNotFoundError:
@@ -213,7 +198,7 @@ def update_one_modeling_task_article(
                     skipped_files[filename] = (file_url, model)
                     set_file_ref_url(
                         metric_data,
-                        key_path,
+                        key_parts,
                         file_url,
                         size=file_size,
                         md5=file_hash,
@@ -264,7 +249,7 @@ def update_one_modeling_task_article(
                 # Update model metadata with URL
                 set_file_ref_url(
                     metric_data,
-                    key_path,
+                    key_parts,
                     file_url,
                     size=file_size,
                     md5=file_hash,

@@ -59,15 +59,4 @@ properties:
   md:
     $ref: '#/definitions/benchmark_task'
   cps:
-    type: object
-    additionalProperties: false
-    required: [label, description, metrics]
-    properties:
-      label:
-        type: string
-        minLength: 1
-      description:
-        type: string
-        minLength: 1
-      metrics:
-        $ref: '#/definitions/metric_orientation'
+    $ref: '#/definitions/benchmark_task'

@@ -265,7 +265,7 @@ def test_model_md_path_returns_path_for_dict_md(
     monkeypatch.setattr(
         type(model),
         "metrics",
-        property(lambda _self: {"md": {"pred_file": "models/x/md.csv.gz"}}),
+        property(lambda _self: {"md": {"pred_file": {"name": "models/x/md.csv.gz"}}}),
     )
     download_calls: list[tuple[object, ...]] = []
     monkeypatch.setattr(

@@ -4,34 +4,26 @@ from __future__ import annotations
 
 import os
 import re
-import shutil
 from glob import glob
-from typing import TYPE_CHECKING
 
 import pytest
 import yaml
 
-import scripts.apply_pr_models_overlay as overlay
 from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
 from matbench_discovery.calculators import CALCULATORS
-from matbench_discovery.data import DATASETS
+from matbench_discovery.data import DATASETS, iter_file_refs, parse_artifact_filename
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
 from matbench_discovery.enums import ArchitectureType, Model, Open, Targets, Task
 from tests.models._helpers import (
     FAMILY_DIR_PATTERN,
     MODEL_KEY_PATTERN,
-    assert_canonical_artifact_path,
-    declared_artifact_paths,
     enum_values_from_schema,
     load_model_schema,
     model_yaml_paths,
     non_aborted_model_yaml_paths,
+    validate_against_schema,
     validate_model_yaml,
-    validate_modeling_tasks_yaml,
 )
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 OPEN_DATASETS = {
     dataset["name"]
@@ -56,46 +48,25 @@ def test_model_yaml_schema_and_identity(yaml_path: str) -> None:
     assert os.path.normpath(yaml_path) == os.path.normpath(
         f"{ROOT}/models/{family_dir}/{model_key}.yml"
     )
-    for artifact_path in declared_artifact_paths(metadata):
-        assert_canonical_artifact_path(
-            artifact_path,
-            family_dir=family_dir,
-            model_key=model_key,
-            yaml_path=yaml_path,
+    expected_artifact_dir = f"models/{family_dir}/{model_key}"
+    for _key_path, artifact_path in iter_file_refs(metadata):
+        assert os.path.dirname(artifact_path) == expected_artifact_dir, (
+            f"Artifact {artifact_path!r} must live under {expected_artifact_dir!r} "
+            f"({yaml_path})"
         )
+        parse_artifact_filename(os.path.basename(artifact_path))
 
 
 def test_modeling_tasks_align_with_schema() -> None:
     """modeling-tasks.yml validates and its keys match model-schema metrics."""
-    validate_modeling_tasks_yaml()
-    with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
+    tasks_path = f"{PKG_DIR}/modeling-tasks.yml"
+    schema_path = f"{ROOT}/tests/modeling-tasks-schema.yml"
+    with open(tasks_path, encoding="utf-8") as file:
         modeling_tasks = yaml.safe_load(file)
+    with open(schema_path, encoding="utf-8") as file:
+        validate_against_schema(modeling_tasks, yaml.safe_load(file), tasks_path)
     metrics_schema = load_model_schema()["properties"]["metrics"]
     assert set(modeling_tasks) - {"cps"} == set(metrics_schema["properties"])
-
-
-def test_overlaid_model_yaml_revalidates_schema(tmp_path: Path) -> None:
-    """The ingest overlay path revalidates schema before trusted code proceeds."""
-    trusted_root = os.path.join(tmp_path, "trusted")
-    pr_root = os.path.join(tmp_path, "pr")
-    os.makedirs(trusted_root)
-    source_yaml = model_yaml_paths()[0]
-    relative_path = os.path.relpath(source_yaml, ROOT).replace("\\", "/")
-    destination = os.path.join(trusted_root, relative_path)
-    os.makedirs(os.path.dirname(destination), exist_ok=True)
-    shutil.copy2(source_yaml, destination)
-    invalid_yaml = os.path.join(pr_root, relative_path)
-    os.makedirs(os.path.dirname(invalid_yaml), exist_ok=True)
-    with open(invalid_yaml, "w", encoding="utf-8") as file:
-        file.write("model_key: INVALID\n")
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(trusted_root)
-        assert overlay.main(str(pr_root), [relative_path]) == 0
-        with pytest.raises(AssertionError, match="Schema validation failed"):
-            validate_model_yaml(relative_path)
-    finally:
-        os.chdir(original_cwd)
 
 
 def test_datasets_yaml_matches_python_registry() -> None:

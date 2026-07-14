@@ -25,6 +25,7 @@ from matbench_discovery.data import (
     file_ref_name,
     file_ref_url,
     glob_to_df,
+    iter_file_refs,
     load_df_wbm_with_preds,
     make_file_ref,
     parse_artifact_filename,
@@ -533,15 +534,19 @@ def test_make_file_ref() -> None:
 
 
 def test_file_ref_accessors() -> None:
-    """Nested and legacy string file refs expose name/url helpers."""
+    """Nested file refs expose names/URLs and can be traversed."""
     nested = {
         "name": "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
         "url": "https://figshare.com/files/1",
     }
     assert file_ref_name(nested) == nested["name"]
     assert file_ref_url(nested) == nested["url"]
-    assert file_ref_name("legacy/path.csv.gz") == "legacy/path.csv.gz"
-    assert file_ref_url("legacy/path.csv.gz") is None
+    assert file_ref_name("legacy/path.csv.gz") is None
+    assert list(iter_file_refs({"metrics": {"pred_file": nested}})) == [
+        (("metrics", "pred_file"), nested["name"])
+    ]
+    with pytest.raises(ValueError, match=r"Invalid FileRef at metrics\.pred_file"):
+        list(iter_file_refs({"metrics": {"pred_file": "legacy/path.csv.gz"}}))
 
 
 @pytest.mark.parametrize(

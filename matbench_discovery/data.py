@@ -17,12 +17,12 @@ import re
 import sys
 import zipfile
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from glob import glob
 from pathlib import Path
-from typing import Any, Final, TypedDict
+from typing import Any, Final, NotRequired, TypedDict
 
 import ase.io
 import pandas as pd
@@ -60,22 +60,21 @@ ARTIFACT_SUFFIXES: Final[dict[str, str]] = {
     "diatomics": "diatomics.json.gz",
 }
 
-FILE_REF_KEYS: Final = frozenset(
+_FILE_REF_KEYS: Final = frozenset(
     {"pred_file", "analysis_file", "force_file", "run_info_file"}
 )
 # Tasks that require forces (not applicable when targets == "E")
 FORCE_TASKS: Final = frozenset({"geo_opt", "phonons", "md", "diatomics"})
-BENCHMARK_TASKS: Final = ("discovery", "geo_opt", "phonons", "md", "diatomics")
 _COVERAGE_META_KEYS: Final = frozenset({"status", "reason"})
 
 
-class FileRef(TypedDict, total=False):
+class FileRef(TypedDict):
     """Local path plus optional download URL and content checksums."""
 
     name: str
-    url: str
-    size: int
-    md5: str
+    url: NotRequired[str]
+    size: NotRequired[int]
+    md5: NotRequired[str]
 
 
 def task_coverage(metadata: dict[str, Any], task: str) -> tuple[str, str | None]:
@@ -126,21 +125,35 @@ def make_file_ref(
 
 
 def file_ref_name(ref: object) -> str | None:
-    """Return the local path from a nested file ref or legacy string path."""
-    if isinstance(ref, str):
-        return ref
-    if isinstance(ref, dict):
-        name = ref.get("name")
-        return name if isinstance(name, str) else None
-    return None
+    """Return the local path from a nested file reference."""
+    name = ref.get("name") if isinstance(ref, dict) else None
+    return name if isinstance(name, str) else None
 
 
 def file_ref_url(ref: object) -> str | None:
     """Return the download URL from a nested file ref, if present."""
-    if isinstance(ref, dict):
-        url = ref.get("url")
-        return url if isinstance(url, str) else None
-    return None
+    url = ref.get("url") if isinstance(ref, dict) else None
+    return url if isinstance(url, str) else None
+
+
+def iter_file_refs(
+    value: object, prefix: tuple[str, ...] = ()
+) -> Iterator[tuple[tuple[str, ...], str]]:
+    """Yield dotted key paths and local names for nested model artifact refs."""
+    if not isinstance(value, dict):
+        return
+    for key, nested in value.items():
+        if not isinstance(key, str):
+            continue
+        key_path = (*prefix, key)
+        if key in _FILE_REF_KEYS:
+            if nested is None:
+                continue
+            if (name := file_ref_name(nested)) is None:
+                raise ValueError(f"Invalid FileRef at {'.'.join(key_path)}")
+            yield key_path, name
+        elif isinstance(nested, dict):
+            yield from iter_file_refs(nested, key_path)
 
 
 def canonical_scientific_notation(value: float | str | Decimal) -> str:

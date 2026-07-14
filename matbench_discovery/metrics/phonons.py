@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
 
-from matbench_discovery.data import file_ref_name, file_ref_url, make_file_ref
+from matbench_discovery.data import file_ref_name, make_file_ref
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
@@ -440,59 +440,26 @@ def write_metrics_to_yaml(
             κ_SRE=round(metrics["sre"], 4),
         )
 
-        def legacy_or_nested_url(artifact_key: str) -> str | None:
-            """Prefer nested FileRef.url, else a legacy ``*_url`` companion key."""
-            return file_ref_url(kappa_103.get(artifact_key)) or (
-                url
-                if isinstance(url := kappa_103.get(f"{artifact_key}_url"), str)
-                else None
-            )
-
-        def ensure_file_ref(artifact_key: str, *, name: str | None = None) -> None:
-            """Normalize string/dict refs and fold in a nested or legacy URL."""
-            ref = kappa_103.get(artifact_key)
-            url = legacy_or_nested_url(artifact_key)
-            if isinstance(ref, dict):
-                if url and not ref.get("url"):
-                    ref["url"] = url
-                return
-            path = name if name is not None else file_ref_name(ref)
-            if path is not None:
-                kappa_103[artifact_key] = make_file_ref(path, url=url)
-
-        if replace_pred_file:
+        if replace_pred_file or file_ref_name(kappa_103.get("pred_file")) is None:
             kappa_103["pred_file"] = make_file_ref(pred_file_path)
-        else:
-            ensure_file_ref(
-                "pred_file",
-                name=file_ref_name(kappa_103.get("pred_file")) or pred_file_path,
-            )
         for artifact_key, artifact_path in (
             ("force_file", force_file_path),
             ("run_info_file", run_info_path),
         ):
             if artifact_path is not None:
                 relative_path = repo_relative_path(artifact_path)
-                keep_url = (
-                    not replace_pred_file
-                    and file_ref_name(kappa_103.get(artifact_key)) == relative_path
-                )
-                kappa_103[artifact_key] = make_file_ref(
-                    relative_path,
-                    url=legacy_or_nested_url(artifact_key) if keep_url else None,
-                )
+                if (
+                    replace_pred_file
+                    or file_ref_name(kappa_103.get(artifact_key)) != relative_path
+                ):
+                    kappa_103[artifact_key] = make_file_ref(relative_path)
             elif replace_pred_file:
                 kappa_103.pop(artifact_key, None)
-            else:
-                ensure_file_ref(artifact_key)
         for key in ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"):
             if run_metadata is not None and key in run_metadata:
                 kappa_103[key] = run_metadata[key]
             elif replace_pred_file:
                 kappa_103.pop(key, None)
-        for role in ("pred_file", "force_file", "run_info_file"):
-            for suffix in ("_url", "_artifact"):
-                kappa_103.pop(f"{role}{suffix}", None)
         return kappa_103
 
     update_yaml_file(
