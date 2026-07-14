@@ -408,6 +408,22 @@ df_wbm.index = df_wbm[str(Key.mat_id)]
 MAX_E_FORM_ERROR_THRESHOLD = 5.0
 
 
+def resolve_discovery_pred_col(df_preds: pd.DataFrame, *, path: str) -> str:
+    """Return the formation-energy prediction column from a discovery CSV.
+
+    Prefer the canonical ``e_form_per_atom`` column. Fall back to a unique legacy
+    ``e_form_per_atom_<model>`` column so archived prediction files keep loading
+    after ``pred_col`` was removed from model YAML.
+    """
+    canonical = "e_form_per_atom"
+    if canonical in df_preds.columns:
+        return canonical
+    legacy = [col for col in df_preds.columns if str(col).startswith(f"{canonical}_")]
+    if len(legacy) == 1:
+        return legacy[0]
+    raise ValueError(f"{canonical} column not found in {path}")
+
+
 def load_df_wbm_with_preds(
     *,
     models: Sequence[str | Model] | None = None,
@@ -464,12 +480,7 @@ def load_df_wbm_with_preds(
             prog_bar.set_postfix_str(model_name)
 
             df_preds = glob_to_df(model.discovery_path, pbar=False, nrows=nrows)
-
-            pred_col = "e_form_per_atom"
-            if pred_col not in df_preds:
-                raise ValueError(
-                    f"{pred_col} column not found in {model.discovery_path}"
-                )
+            pred_col = resolve_discovery_pred_col(df_preds, path=model.discovery_path)
 
             index_column = "material_id" if "material_id" in df_preds else id_col
             df_out[model.label] = df_preds.set_index(index_column)[pred_col]

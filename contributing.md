@@ -110,7 +110,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    Your script should automatically download the model checkpoint when first run and cache it to a standard location such as `~/.cache/<model_key>/checkpoint.pt` for later reuse. This also lowers the barrier for others to reproduce results.
 
-3. `models/<family>/<model_key>.yml`: A file recording the model's canonical identity, release, provenance, environments, task coverage, and artifacts. It is validated by [`tests/model-schema.yml`](tests/model-schema.yml). Copy a current model such as `models/mace/mace-mp-0.yml`; this abbreviated template highlights the required structure:
+3. `models/<family>/<model_key>.yml`: A file recording the model's canonical identity, release, provenance, environments, task coverage, and artifacts. It is validated by [`tests/model-schema.yml`](https://github.com/janosh/matbench-discovery/blob/main/tests/model-schema.yml). Copy a current model such as `models/mace/mace-mp-0.yml`; this abbreviated template highlights the required structure:
 
    ```yml
    model_name: My new model # human-readable label

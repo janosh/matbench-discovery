@@ -29,6 +29,7 @@ from matbench_discovery.data import (
     load_df_wbm_with_preds,
     make_file_ref,
     parse_artifact_filename,
+    resolve_discovery_pred_col,
     round_trip_yaml,
     task_coverage,
     update_yaml_file,
@@ -350,6 +351,32 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
         pytest.raises(ValueError, match=r"e_form_per_atom column not found in"),
     ):
         load_df_wbm_with_preds(models=["alignn"])
+
+
+@pytest.mark.parametrize(
+    ("columns", "expected"),
+    [
+        (["material_id", "e_form_per_atom"], "e_form_per_atom"),
+        (["material_id", "e_form_per_atom_alignn"], "e_form_per_atom_alignn"),
+        (
+            ["material_id", "e_form_per_atom", "e_form_per_atom_alignn"],
+            "e_form_per_atom",
+        ),
+    ],
+)
+def test_resolve_discovery_pred_col(columns: list[str], expected: str) -> None:
+    """Canonical e_form_per_atom wins; unique legacy suffixes still resolve."""
+    df_preds = pd.DataFrame(columns=columns)
+    assert resolve_discovery_pred_col(df_preds, path="preds.csv") == expected
+
+
+def test_resolve_discovery_pred_col_ambiguous() -> None:
+    """Multiple legacy pred columns without a canonical name are rejected."""
+    df_preds = pd.DataFrame(
+        columns=["e_form_per_atom_alignn", "e_form_per_atom_alchembert"]
+    )
+    with pytest.raises(ValueError, match=r"e_form_per_atom column not found in"):
+        resolve_discovery_pred_col(df_preds, path="preds.csv")
 
 
 @pytest.mark.parametrize(
