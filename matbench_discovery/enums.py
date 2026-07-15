@@ -382,7 +382,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         required: bool = False,
     ) -> str | None:
         """Resolve metrics pred_file to a local path, downloading when a URL is set."""
-        from matbench_discovery.data import file_ref_name, file_ref_url
+        from matbench_discovery.data import file_ref_md5, file_ref_name, file_ref_url
 
         section = self.metrics.get(metrics_key) or {}
         if nested_key is not None:
@@ -396,7 +396,12 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             return None
         abs_path = f"{ROOT}/{rel_path}"
         if file_url := file_ref_url(pred_file):
-            maybe_auto_download_file(file_url, abs_path, label=self.label)
+            maybe_auto_download_file(
+                file_url,
+                abs_path,
+                label=self.label,
+                md5=file_ref_md5(pred_file),
+            )
         return abs_path
 
     @property

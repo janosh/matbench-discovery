@@ -22,6 +22,7 @@ from matbench_discovery.data import (
     ase_atoms_to_zip,
     canonical_scientific_notation,
     df_wbm,
+    file_ref_md5,
     file_ref_name,
     file_ref_url,
     glob_to_df,
@@ -491,9 +492,11 @@ def test_file_ref_accessors() -> None:
     nested = {
         "name": "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
         "url": "https://figshare.com/files/1",
+        "md5": "a" * 32,
     }
     assert file_ref_name(nested) == nested["name"]
     assert file_ref_url(nested) == nested["url"]
+    assert file_ref_md5(nested) == nested["md5"]
     assert file_ref_name("legacy/path.csv.gz") is None
     assert list(iter_file_refs({"metrics": {"pred_file": nested}})) == [
         (("metrics", "pred_file"), nested["name"])

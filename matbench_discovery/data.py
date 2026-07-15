@@ -87,15 +87,11 @@ def task_coverage(metadata: dict[str, Any], task: str) -> tuple[str, str | None]
     4. ``targets: E`` for force tasks → not_applicable
     5. Else → pending
     """
-    metrics_root = metadata.get("metrics")
-    task_metrics = metrics_root.get(task) if isinstance(metrics_root, dict) else None
-    if isinstance(task_metrics, dict):
-        status = task_metrics.get("status")
-        if isinstance(status, str):
-            reason = task_metrics.get("reason")
-            return status, reason if isinstance(reason, str) else None
-        if any(key not in _COVERAGE_META_KEYS for key in task_metrics):
-            return "complete", None
+    task_metrics = (metadata.get("metrics") or {}).get(task, {})
+    if (status := task_metrics.get("status")) is not None:
+        return status, task_metrics.get("reason")
+    if task_metrics.keys() - _COVERAGE_META_KEYS:
+        return "complete", None
 
     if metadata.get("lifecycle") == "aborted":
         return "not_available", None
@@ -134,6 +130,12 @@ def file_ref_url(ref: object) -> str | None:
     """Return the download URL from a nested file ref, if present."""
     url = ref.get("url") if isinstance(ref, dict) else None
     return url if isinstance(url, str) else None
+
+
+def file_ref_md5(ref: object) -> str | None:
+    """Return the MD5 checksum from a nested file ref, if present."""
+    md5 = ref.get("md5") if isinstance(ref, dict) else None
+    return md5 if isinstance(md5, str) else None
 
 
 def iter_file_refs(
@@ -212,16 +214,14 @@ def artifact_filename(
     else:
         if symprec is not None or moyo_version is not None:
             raise ValueError("symprec and moyo_version are only for geo_opt_analysis")
-        try:
-            suffix = ARTIFACT_SUFFIXES[role]
-        except KeyError as exc:
-            raise ValueError(f"Unknown artifact role {role!r}") from exc
+        if (suffix := ARTIFACT_SUFFIXES.get(role)) is None:
+            raise ValueError(f"Unknown artifact role {role!r}")
     return f"{iso_date}-{suffix}"
 
 
 def parse_artifact_filename(filename: str) -> str:
     """Validate a canonical artifact filename and return its role key."""
-    basename = filename.rsplit("/", maxsplit=1)[-1]
+    basename = os.path.basename(filename)
     if not ISO_DATE_PATTERN.match(basename[:10]) or basename[10:11] != "-":
         raise ValueError(f"Not a canonical model artifact filename: {filename!r}")
     artifact_date, suffix = basename[:10], basename[11:]
@@ -297,25 +297,20 @@ def glob_to_df(
 
     files = glob(pattern)
 
-    if len(files) == 0:
+    if not files:
         # load mocked model predictions when running pytest (just first 500 lines
         # from MACE-MPA-0 WBM energy preds)
         if "pytest" in sys.modules or "CI" in os.environ:
             df_mock = pd.read_csv(f"{TEST_FILES}/mock-wbm-energy-preds.csv.gz")
-            if (
-                "e_form_per_atom" not in df_mock
-                and str(Key.formation_energy_per_atom) in df_mock
-            ):
-                df_mock["e_form_per_atom"] = df_mock[str(Key.formation_energy_per_atom)]
-            return df_mock
+            if "e_form_per_atom" in df_mock:
+                return df_mock
+            return df_mock.rename(
+                columns={str(Key.formation_energy_per_atom): "e_form_per_atom"}
+            )
         raise FileNotFoundError(f"No files matching glob {pattern=}")
 
-    sub_dfs = {}  # used to join slurm job array results into single df
-    for file in tqdm(files, disable=not pbar):
-        df_i = reader(file, **kwargs)
-        sub_dfs[file] = df_i
-
-    return pd.concat(sub_dfs.values())
+    # Join Slurm job array results into a single dataframe
+    return pd.concat(reader(file, **kwargs) for file in tqdm(files, disable=not pbar))
 
 
 def ase_atoms_from_zip(
@@ -380,39 +375,39 @@ def ase_atoms_to_zip(
     """
     # Group atoms by mat_id to avoid overwriting files with the same name
 
+    atoms_dict: dict[str, list[Atoms]]
     if isinstance(atoms_set, dict):
-        atoms_dict = atoms_set
+        atoms_dict = {material_id: [atoms] for material_id, atoms in atoms_set.items()}
     else:
         atoms_dict = defaultdict(list)
 
         # If input is a list, get material ID from atoms.info falling back to formula
         # if missing
         for atoms in atoms_set:
-            mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
-            atoms_dict[mat_id] += [atoms]
+            material_id = atoms.info.get(
+                Key.mat_id, f"no-id-{atoms.get_chemical_formula()}"
+            )
+            atoms_dict[material_id].append(atoms)
 
     # Write grouped atoms to the ZIP archive
     with zipfile.ZipFile(
         zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED
     ) as zip_file:
-        for mat_id, atoms_or_list in tqdm(
+        for material_id, atoms_list in tqdm(
             atoms_dict.items(), desc=f"Writing ASE Atoms to {zip_filename=}"
         ):
             buffer = io.StringIO()  # string buffer to write the extxyz content
-            for atoms in (
-                atoms_or_list if isinstance(atoms_or_list, list) else [atoms_or_list]
-            ):
+            for atoms in atoms_list:
                 ase.io.write(
                     buffer, atoms, format="extxyz", append=True, write_info=True
                 )
 
             # Write the combined buffer content to the ZIP file
-            zip_file.writestr(f"{mat_id}.extxyz", buffer.getvalue())
+            zip_file.writestr(f"{material_id}.extxyz", buffer.getvalue())
 
 
-df_wbm = pd.read_csv(DataFiles.wbm_summary.path)
 # str() around Key.mat_id added for https://github.com/janosh/matbench-discovery/issues/81
-df_wbm.index = df_wbm[str(Key.mat_id)]
+df_wbm = pd.read_csv(DataFiles.wbm_summary.path).set_index(str(Key.mat_id), drop=False)
 
 # formation-energy predictions further than this from DFT (eV/atom) are treated as
 # unrealistic outliers and masked out of all downstream metrics
@@ -457,10 +452,9 @@ def load_df_wbm_with_preds(
     Returns:
         pd.DataFrame: WBM summary dataframe with model predictions.
     """
-    if models is None:
-        models_to_load = Model.active()
-    else:
-        models_to_load = tuple(map(Model.from_ref, models))
+    models_to_load = (
+        Model.active() if models is None else tuple(map(Model.from_ref, models))
+    )
 
     if max_error_threshold is not None and max_error_threshold < 0:
         raise ValueError(f"{max_error_threshold=} must be a positive number")
@@ -474,18 +468,20 @@ def load_df_wbm_with_preds(
             model_name = model.name
             prog_bar.set_postfix_str(model_name)
 
-            df_preds = glob_to_df(model.discovery_path, pbar=False, nrows=nrows)
+            pred_path = model.discovery_path
+            df_preds = glob_to_df(pred_path, pbar=False, nrows=nrows)
             try:
                 df_out[model.label] = df_preds.set_index(id_col)["e_form_per_atom"]
             except KeyError as exc:
                 raise ValueError(
-                    f"e_form_per_atom column not found in {model.discovery_path}"
+                    f"e_form_per_atom column not found in {pred_path}"
                 ) from exc
             if max_error_threshold is not None:
                 # Apply centralized model prediction cleaning criterion (see doc string)
                 bad_mask = (
                     abs(df_out[model.label] - df_out[MbdKey.e_form_dft])
-                ) > max_error_threshold
+                    > max_error_threshold
+                )
                 df_out.loc[bad_mask, model.label] = pd.NA
                 n_preds, n_bad = len(df_out[model.label].dropna()), sum(bad_mask)
                 if n_bad > 0:

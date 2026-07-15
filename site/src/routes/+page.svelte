@@ -102,8 +102,8 @@
   let custom_col_config = $state(false)
   let previous_col_preset: ColPreset = default_col_preset
   const sortable_header_selector = `thead th[role="button"]`
-  const column_toggles_selector = `details.column-toggles`
-  const reset_columns_selector = `${column_toggles_selector} button[aria-label="Reset all columns to defaults"]`
+  const column_toggle_input_selector = `.column-menu input[type="checkbox"]`
+  const reset_columns_selector = `button[aria-label="Reset all columns to defaults"]`
 
   $effect(() => {
     if (col_preset === previous_col_preset) return
@@ -119,13 +119,13 @@
     if (!(target instanceof Element)) return
     if (target.closest(sortable_header_selector)) auto_sort_enabled = false
     if (target.closest(reset_columns_selector)) custom_col_config = false
-    if (event.type === `change` && target.matches(`${column_toggles_selector} input`)) {
-      custom_col_config = true
-    }
+    if (target.matches(column_toggle_input_selector)) custom_col_config = true
   }
 
   const valid_sets = new Set(DISCOVERY_SETS)
   onMount(() => {
+    // MatterViz portals column toggle inputs to document.body, outside the table section.
+    document.addEventListener(`click`, handle_table_event, { capture: true })
     const params = page.url.searchParams
     const next_preset =
       col_preset_names.find((preset) => preset === params.get(`preset`)) ??
@@ -140,6 +140,8 @@
     filters.read(params)
     col_preset = next_preset
     previous_col_preset = next_preset
+    return () =>
+      document.removeEventListener(`click`, handle_table_event, { capture: true })
   })
 
   // Sync table state back to URL query params after the initial URL read (table state
