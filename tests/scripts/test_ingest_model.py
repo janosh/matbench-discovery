@@ -143,7 +143,7 @@ def test_shared_runner_process_errors_fail_checklist(
 def test_energy_only_model_skips_force_tasks() -> None:
     """targets=E models skip geo-opt/phonons/diatomics instead of failing."""
     energy_only_model = next(
-        model for model in Model if model.metadata.get("targets") == "E"
+        model for model in Model if model.metadata["targets"] == "E"
     )
     checks = ingest.Checklist()
     assert ingest.check_submission(energy_only_model, checks) is True

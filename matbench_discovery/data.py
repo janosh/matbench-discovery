@@ -551,16 +551,11 @@ def update_yaml_file(
         *parts, last = dotted_path.split(".")
 
         for part in parts:
-            # replace missing or scalar intermediate nodes (e.g. 'not available'
-            # placeholders) with dicts so traversal can continue
-            if not isinstance(current.get(part), dict):
-                current[part] = {}
-            current = current[part]
+            current = current.setdefault(part, {})
 
         # Update the data at the final level. By default, preserve existing keys when
-        # replacing a dict section (and replace placeholder strings like 'not
-        # available'). Pass preserve_existing=False to fully replace the section, so a
-        # recompute drops keys that are no longer emitted (deprecated metrics).
+        # replacing a dict section. Pass preserve_existing=False to fully replace the
+        # section, so a recompute drops keys that are no longer emitted.
         previous = current.get(last)
         # Callables own the merge (they receive a copy of the prior section). Plain
         # dict updates optionally keep unspecified prior keys via preserve_existing.

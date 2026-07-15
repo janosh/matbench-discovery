@@ -398,31 +398,24 @@
     </ul>
   </section>
 
-  {#if model.training_sets.length}
-    <h2>Training Set</h2>
-    <section class="training-set">
-      {#each model.training_sets as dataset_key (dataset_key)}
-        {@const dataset = DATASETS[dataset_key]}
-        {#if dataset}
-          {@const { n_structures, name, slug, n_materials } = dataset}
-          <p>
-            <a href="/data/{slug}">{name}</a>:
-            <span title={n_structures.toLocaleString()} {@attach tooltip()}>
-              <strong>{format_num(n_structures)}</strong>
-            </span>
-            structures
-            {#if typeof n_materials == `number`}
-              from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
-                <strong>{format_num(n_materials)}</strong>
-              </span> materials
-            {/if}
-          </p>
-        {:else}
-          <p>{dataset_key} (unknown dataset)</p>
+  <h2>Training Set</h2>
+  <section class="training-set">
+    {#each model.training_sets as dataset_key (dataset_key)}
+      {@const { n_structures, name, slug, n_materials } = DATASETS[dataset_key]}
+      <p>
+        <a href="/data/{slug}">{name}</a>:
+        <span title={n_structures.toLocaleString()} {@attach tooltip()}>
+          <strong>{format_num(n_structures)}</strong>
+        </span>
+        structures
+        {#if typeof n_materials == `number`}
+          from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
+            <strong>{format_num(n_materials)}</strong>
+          </span> materials
         {/if}
-      {/each}
-    </section>
-  {/if}
+      </p>
+    {/each}
+  </section>
 
   {#if model.notes?.html}
     <section class="notes">

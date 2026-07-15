@@ -162,7 +162,7 @@ describe(`format_train_set`, () => {
 describe(`assemble_row_data`, () => {
   const test_model_keys = [`mace-mp-0`, `chgnet-0.3.0`]
   const model_filter = (model: ModelData): boolean =>
-    test_model_keys.includes(model.model_key ?? ``)
+    test_model_keys.includes(model.model_key)
   const get_test_rows = () => assemble_row_data(`unique_prototypes`, model_filter)
   const tece_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
   if (!tece_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
@@ -216,7 +216,7 @@ describe(`assemble_row_data`, () => {
     ({ task, multiplier_key }) => {
       const rows = assemble_row_data(
         `unique_prototypes`,
-        (model) => model.model_key?.startsWith(`${task}-time-`) ?? false,
+        (model) => model.model_key.startsWith(`${task}-time-`),
         () => true,
         Object.entries({
           Fast: 10,

@@ -216,17 +216,12 @@ def test_data_files_path_raises_when_md5_download_fails(
     assert not os.path.isfile(f"{tmp_path}/{data_file.rel_path}")
 
 
-@pytest.mark.parametrize("md_value", [None, "not available", 42])
-def test_model_md_path_returns_none_for_non_dict_md(
-    md_value: object, monkeypatch: pytest.MonkeyPatch
+def test_model_md_path_returns_none_when_absent(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """md_path returns None for any non-dict metrics.md (absent, the 'not available'
-    placeholder, or an unexpected scalar) instead of raising AttributeError on .get.
-    """
+    """md_path returns None when metrics.md is absent."""
     model = Model.mace_mp_0
-    monkeypatch.setattr(
-        type(model), "metrics", property(lambda _self: {"md": md_value})
-    )
+    monkeypatch.setattr(type(model), "metrics", property(lambda _self: {}))
     assert model.md_path is None
 
 
@@ -378,10 +373,8 @@ def test_model_enum() -> None:
     for model in Model:
         assert os.path.isfile(model.yaml_path)
     for model in Model.active():
-        discovery = model.metrics.get("discovery")
-        if isinstance(discovery, dict) and (
-            pred_name := file_ref_name(discovery.get("pred_file"))
-        ):
+        discovery = model.metrics.get("discovery") or {}
+        if pred_name := file_ref_name(discovery.get("pred_file")):
             assert "/models/" in f"/{pred_name}"
 
     assert Model.mace_mp_0.label == "MACE-MP-0"
@@ -390,16 +383,8 @@ def test_model_enum() -> None:
     assert not Model.dpa_3_1_mptrj.is_active
     model_keys = {model.key for model in Model}
     for model in Model:
-        if model.metadata.get("lifecycle") == "superseded":
+        if model.metadata["lifecycle"] == "superseded":
             assert model.metadata["superseded_by"] in model_keys
-
-
-def test_is_active_tolerates_missing_lifecycle(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Missing lifecycle is inactive rather than raising KeyError."""
-    monkeypatch.setattr(Model, "metadata", property(lambda _self: {}))
-    assert Model.mace_mp_0.is_active is False
 
 
 def test_generated_model_enum_is_current() -> None:

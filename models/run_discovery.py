@@ -191,16 +191,15 @@ def _repo_relative_path(path: str) -> str:
     return relative_path if not relative_path.startswith("../") else absolute_path
 
 
-def _clear_legacy_and_update(
+def _update_artifact_metadata(
     section: dict[str, Any], *, updates: dict[str, Any]
 ) -> dict[str, Any]:
-    """Drop stale flat artifact and cost keys, then apply regenerated metadata.
+    """Replace cost provenance and apply regenerated artifact metadata.
 
     Cost provenance is cleared before the merge so omitted fields (e.g. missing
     max_gpu_mem_gb) cannot linger from a prior YAML write.
     """
-    legacy_keys = ("pred_file_url", "pred_file_artifact", "struct_col")
-    for key in (*legacy_keys, *COST_PROVENANCE_KEYS):
+    for key in COST_PROVENANCE_KEYS:
         section.pop(key, None)
     section.update(updates)
     return section
@@ -251,7 +250,7 @@ def _write_yaml_results(
         update_yaml_file(
             model.yaml_path,
             f"metrics.{task}",
-            partial(_clear_legacy_and_update, updates=artifact_data),
+            partial(_update_artifact_metadata, updates=artifact_data),
         )
         print(f"Updated {task}.pred_file; re-upload if a prior Figshare URL existed")
     discovery_metrics.write_all_metrics_to_yaml(

@@ -38,7 +38,7 @@ def resolve_metrics(
         return df_md, pred_file, None, True
 
     md_path = model.md_path  # getter may download the file
-    if not isinstance(md_path, str) or not os.path.isfile(md_path):
+    if not md_path or not os.path.isfile(md_path):
         return None
     df_md = pd.read_csv(md_path)
     if "system" in df_md:  # index by system to match the per-system path
@@ -77,10 +77,7 @@ def main() -> int:
     expected: set[str] | None = None  # DynaMat v1.0 system set, resolved lazily once
 
     for model in models_to_evaluate:
-        # only a dict carries pred_file/pred_file_url; a missing key (None) or a
-        # 'not available' placeholder string must not flow into md_yaml.get(...) below
-        md_yaml = model.metrics.get("md")
-        md_yaml = md_yaml if isinstance(md_yaml, dict) else {}
+        md_yaml = model.metrics.get("md") or {}
         try:
             # resolve inside the try so a malformed CSV skips only this model
             resolved = resolve_metrics(model, md_yaml)

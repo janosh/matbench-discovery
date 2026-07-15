@@ -140,14 +140,15 @@ describe(`make_table_filters`, () => {
     ({ training, training_sets, expected }) => {
       const filters = make_table_filters()
       filters.training = training
-      expect(filters.matches({ training_sets, targets: `EFS_G` })).toBe(expected)
+      expect(filters.matches({ training_sets, openness: `OSOD`, targets: `EFS_G` })).toBe(
+        expected,
+      )
     },
   )
 
   it.each([
     { openness: [`OSOD`], model_openness: `OSOD`, expected: true },
     { openness: [`OSOD`], model_openness: `CSCD`, expected: false },
-    { openness: [`OSOD`], model_openness: undefined, expected: true }, // defaults OSOD
     { openness: [`OSCD`, `CSCD`], model_openness: `OSOD`, expected: false },
   ] as const)(
     `openness filter $openness matches $model_openness -> $expected`,
@@ -184,9 +185,13 @@ describe(`make_table_filters`, () => {
       const filters = make_table_filters()
       if (targets) filters.targets = { ...targets }
       if (fs_mode) filters.fs_mode = fs_mode
-      expect(filters.matches({ training_sets: [], targets: model_targets })).toBe(
-        expected,
-      )
+      expect(
+        filters.matches({
+          training_sets: [],
+          openness: `OSOD`,
+          targets: model_targets,
+        }),
+      ).toBe(expected)
     },
   )
 

@@ -103,7 +103,6 @@ describe(`Discovery Task Page`, () => {
       throw new Error(`No visible model with discovery metrics found`)
     }
     const model_key = source_model.model_key
-    if (!model_key) throw new Error(`Discovery model has no key`)
     const partial_model = {
       ...source_model,
       model_key: `partial-discovery-test-model`,

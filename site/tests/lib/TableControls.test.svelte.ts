@@ -1,6 +1,6 @@
 import { TableControls, type TableLabel } from '$lib'
 import { ACTIVE_MODELS, ALL_TRAINING_SETS, make_table_filters } from '$lib/models.svelte'
-import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
+import { OPENNESS_OPTIONS, type Openness } from '$lib/url-state.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
@@ -97,7 +97,7 @@ describe(`TableControls`, () => {
     expect(filters.openness).toStrictEqual([`OSOD`])
     // the preset selects OSOD models trained only on MP-anchored data
     const targets = `EFS_G`
-    const filter_model = (training_sets: string[], openness: string) => ({
+    const filter_model = (training_sets: string[], openness: Openness) => ({
       training_sets,
       openness,
       targets,

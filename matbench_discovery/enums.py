@@ -352,11 +352,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def pr_url(self) -> str:
         """Pull request URL in which the model was originally added to the repo."""
-        try:
-            return self.metadata["pr_url"]
-        except KeyError as exc:
-            exc.add_note(f"{self.rel_path!r} missing required field 'pr_url'")
-            raise
+        return self.metadata["pr_url"]
 
     @property
     def key(self) -> str:
@@ -388,9 +384,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """Resolve metrics pred_file to a local path, downloading when a URL is set."""
         from matbench_discovery.data import file_ref_name, file_ref_url
 
-        section = self.metrics.get(metrics_key)
-        if not isinstance(section, dict):
-            section = {}
+        section = self.metrics.get(metrics_key) or {}
         if nested_key is not None:
             section = section.get(nested_key) or {}
         pred_file = section.get("pred_file")
@@ -428,7 +422,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def is_active(self) -> bool:
         """Return whether the model participates in current benchmark views."""
-        return self.metadata.get("lifecycle") == "active"
+        return self.metadata["lifecycle"] == "active"
 
     @classmethod
     def active(cls) -> tuple[Self, ...]:

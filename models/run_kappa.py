@@ -155,10 +155,7 @@ def resolved_artifact_identifier(model: Model, checkpoint: str | None) -> str | 
     checkpoint_path = resolve_checkpoint(model.name, checkpoint)
     if checkpoint_path:
         return checkpoint_path
-    for key in ("checkpoint_url", "model_url"):
-        if identifier := model.metadata.get(key):
-            return str(identifier)
-    return None
+    return model.metadata["checkpoint_url"]
 
 
 def print_cmd_args(args: argparse.Namespace, model_key: str) -> list[str]:

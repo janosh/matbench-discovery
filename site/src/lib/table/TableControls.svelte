@@ -44,14 +44,14 @@
 
   const target_outputs = Object.entries(TARGET_OUTPUTS) as [TargetOutput, string][]
   // static per-category model tallies shown in the filter panels. Semantics mirror
-  // UrlTableFilters.matches: missing openness counts as OSOD, targets are parsed with
-  // the same parse_targets, and fs_mode `any` counts every model.
+  // UrlTableFilters.matches: targets use the same parser, and fs_mode `any` counts
+  // every model.
   const openness_counts: Record<string, number> = {}
   const training_counts: Record<string, number> = {}
   const target_counts: Record<string, number> = {}
   const fs_mode_counts: Record<string, number> = { any: ACTIVE_MODELS.length }
   for (const model of ACTIVE_MODELS) {
-    const openness = model.openness ?? `OSOD`
+    const openness = model.openness
     openness_counts[openness] = (openness_counts[openness] ?? 0) + 1
     for (const dataset of model.training_sets) {
       training_counts[dataset] = (training_counts[dataset] ?? 0) + 1

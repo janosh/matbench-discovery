@@ -985,16 +985,10 @@ def test_combine_per_system_metrics() -> None:
         md_metrics.combine_per_system_metrics([pd.DataFrame({"rdf_error": [10.0]})])
 
 
-@pytest.mark.parametrize(
-    "init_yaml",  # placeholder strings at leaf and intermediate level get replaced
-    ["metrics:\n  md: not available\n", "metrics: not available\n"],
-)
-def test_write_metrics_to_yaml(
-    tmp_path: Path, init_yaml: str, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Metrics should be written under metrics.md with units and rounding."""
     yaml_path = tmp_path / "model.yml"
-    yaml_path.write_text(f"model_name: test\n{init_yaml}", encoding="utf-8")
+    yaml_path.write_text("model_name: test\nmetrics: {}\n", encoding="utf-8")
     model = Model.mace_mp_0
     monkeypatch.setattr(Model, "yaml_path", yaml_path)
 
@@ -1025,8 +1019,6 @@ def test_write_metrics_to_yaml(
     assert "n_systems: 17 # count" in text
     # CMDS is site-computed, never persisted
     assert "combined_score" not in text
-    # the 'not available' placeholder must be replaced, not kept
-    assert "not available" not in text
 
     # a later recompute from per-system CSVs lacking timing columns (e.g. legacy runs)
     # must preserve the recorded run provenance, not silently drop it

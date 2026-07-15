@@ -177,8 +177,8 @@ export type FilterPreset = {
 // minimal structural model shape keeps this module decoupled from $lib/types
 type FilterableModel = {
   training_sets: string[]
-  openness?: string
-  targets?: string
+  openness: Openness
+  targets: string
 }
 const is_one_of = <Value extends string>(
   options: readonly Value[],
@@ -189,7 +189,7 @@ const is_one_of = <Value extends string>(
 // force/stress computation mode: prefix letters are E/F/S/H outputs, the suffix
 // holds G(radient)/D(irect) plus M when the model also predicts magmoms.
 // Exported so filter UIs can tally models per output with the same semantics.
-export function parse_targets(targets = ``): {
+export function parse_targets(targets: string): {
   outputs: Set<string>
   fs_mode: FsMode | null
 } {
@@ -227,7 +227,7 @@ export class UrlTableFilters {
   }
 
   matches = (model: FilterableModel): boolean => {
-    if (!this.openness.includes((model.openness ?? `OSOD`) as Openness)) return false
+    if (!this.openness.includes(model.openness)) return false
     const { outputs, fs_mode } = parse_targets(model.targets)
     const outputs_ok = Object.entries(this.targets).every(
       ([key, mode]) => outputs.has(key) === (mode === `require`),

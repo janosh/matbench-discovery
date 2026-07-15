@@ -230,7 +230,6 @@ class DiscoveryArtifacts:
 
     pred_file_path: str
     geo_opt_file_path: str
-    struct_col: str
     predictions: pd.DataFrame
     n_success: int
     n_failed: int
@@ -777,7 +776,6 @@ def write_discovery_artifacts(
     return DiscoveryArtifacts(
         pred_file_path=pred_file_path,
         geo_opt_file_path=geo_opt_file_path,
-        struct_col=DISCOVERY_STRUCT_COL,
         predictions=df_predictions,
         n_success=len(geo_opt_rows),
         n_failed=len(merged_run.records) - len(geo_opt_rows),

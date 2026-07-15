@@ -542,16 +542,10 @@ def test_write_metrics_to_yaml_preserves_existing_artifacts(tmp_path: Path) -> N
     }
 
 
-@pytest.mark.parametrize(
-    "initial_yaml",
-    ["metrics: {}\n", "metrics:\n  phonons: not available\n"],
-)
-def test_kappa_metric_yaml_replaces_missing_or_unavailable_phonons(
-    tmp_path: Path, initial_yaml: str
-) -> None:
-    """Completed runs replace absent or unavailable phonon metadata."""
+def test_kappa_metric_yaml_creates_missing_phonons(tmp_path: Path) -> None:
+    """Completed runs create absent phonon metadata."""
     kappa_metrics = update_temp_kappa_yaml(
-        tmp_path, initial_yaml, replace_pred_file=True
+        tmp_path, "metrics: {}\n", replace_pred_file=True
     )
     assert kappa_metrics["κ_SRME"] == 0.25
     assert kappa_metrics["pred_file"] == make_file_ref(KAPPA_PRED)

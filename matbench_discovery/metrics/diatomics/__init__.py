@@ -474,8 +474,7 @@ def write_metrics_to_yaml(
 
     # carry over only recognized run metadata (it describes the source run, not the
     # computed metrics, so it stays valid on recalculation)
-    existing = model.metrics.get("diatomics", {})
-    existing = existing if isinstance(existing, dict) else {}
+    existing = model.metrics.get("diatomics") or {}
     run_metadata = run_metadata or {}
     block: dict[str, DiatomicsYamlValue] = {}
     existing_pred_file = existing.get("pred_file")

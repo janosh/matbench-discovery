@@ -102,14 +102,10 @@ def get_excluded_formula_reasons(
     from matbench_discovery.enums import Model
 
     try:
-        diatomics_metrics = Model.from_ref(model_key).metrics.get("diatomics")
+        diatomics_metrics = Model.from_ref(model_key).metrics.get("diatomics") or {}
     except ValueError:  # debug models like emt have no Model enum entry
-        diatomics_metrics = None
-    curated_reasons = (
-        diatomics_metrics.get("excluded_formula_reasons", {})
-        if isinstance(diatomics_metrics, dict)
-        else {}
-    )
+        diatomics_metrics = {}
+    curated_reasons = diatomics_metrics.get("excluded_formula_reasons", {})
     reasons = dict.fromkeys(invalid_formulas, "invalid or unsupported curve")
     reasons |= curated_reasons
     return {

@@ -56,45 +56,36 @@ def analyze_model_symprec(
     overwrite: bool = False,  # Whether to overwrite existing analysis files
 ) -> pd.DataFrame | None:
     """Analyze a single model for a single symprec value."""
-    geo_opt_metrics: dict[str, Any] = model.metadata.get("metrics", {}).get(
-        "geo_opt", {}
-    )
+    geo_opt_metrics: dict[str, Any] = model.metrics.get("geo_opt") or {}
 
-    # skip models that don't support geometry optimization
-    if geo_opt_metrics in ("not applicable", "not available"):
-        print(f"⚠️ {model.label} does not support geometry optimization")
-        return None
-
-    if not model.geo_opt_path:
+    geo_opt_path = model.geo_opt_path
+    if not geo_opt_path:
         print(f"⚠️ {model.label} has no relaxed structures file")
         return None
 
-    if not os.path.isfile(ml_relaxed_structs_path := model.geo_opt_path):
+    if not os.path.isfile(geo_opt_path):
         print(
-            f"⚠️ {model.label}-relaxed structures not found, expected "
-            f"at {ml_relaxed_structs_path}"
+            f"⚠️ {model.label}-relaxed structures not found, expected at {geo_opt_path}"
         )
         return None
 
     # Load model structures
     try:
-        df_ml_structs = pd.read_json(ml_relaxed_structs_path, lines=True)
+        df_ml_structs = pd.read_json(geo_opt_path, lines=True)
     except Exception as exc:
-        exc.add_note(f"{model.label=} {ml_relaxed_structs_path=}")
+        exc.add_note(f"{model.label=} {geo_opt_path=}")
         raise
 
     if missing_columns := {"material_id", "structure"} - set(df_ml_structs):
         raise ValueError(
             f"Missing canonical geo-opt columns {sorted(missing_columns)} in "
-            f"{ml_relaxed_structs_path}"
+            f"{geo_opt_path}"
         )
     material_ids = df_ml_structs["material_id"]
     if material_ids.isna().any():
-        raise ValueError(f"Null material_id values in {ml_relaxed_structs_path}")
+        raise ValueError(f"Null material_id values in {geo_opt_path}")
     if dupes := sorted(material_ids[material_ids.duplicated()].astype(str).unique()):
-        raise ValueError(
-            f"Duplicate material_id values in {ml_relaxed_structs_path}: {dupes}"
-        )
+        raise ValueError(f"Duplicate material_id values in {geo_opt_path}: {dupes}")
     df_ml_structs = df_ml_structs.set_index("material_id")
 
     if debug_mode:
@@ -107,36 +98,35 @@ def analyze_model_symprec(
     }
 
     symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
-    geo_opt_basename = os.path.basename(model.geo_opt_path)
+    geo_opt_basename = os.path.basename(geo_opt_path)
     if parse_artifact_filename(geo_opt_basename) != "geo_opt":
-        raise ValueError(f"Expected geo-opt artifact, got {model.geo_opt_path!r}")
+        raise ValueError(f"Expected geo-opt artifact, got {geo_opt_path!r}")
     analysis_name = artifact_filename(
         geo_opt_basename[:10],
         "geo_opt_analysis",
         symprec=symprec,
         moyo_version=moyo_version,
     )
-    geo_opt_csv_path = f"{os.path.dirname(model.geo_opt_path)}/{analysis_name}"
+    geo_opt_csv_path = f"{os.path.dirname(geo_opt_path)}/{analysis_name}"
 
     # Try to download existing analysis file only if path matches exactly
     symprec_metrics = geo_opt_metrics.get(symprec_str, {})
-    if isinstance(symprec_metrics, dict):
-        analysis_ref = symprec_metrics.get("analysis_file")
-        analysis_url = file_ref_url(analysis_ref)
-        analysis_file = file_ref_name(analysis_ref)
-        analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
+    analysis_ref = symprec_metrics.get("analysis_file")
+    analysis_url = file_ref_url(analysis_ref)
+    analysis_file = file_ref_name(analysis_ref)
+    analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
 
-        if analysis_file_path == geo_opt_csv_path:
-            # Paths match - try to download if file missing
-            if not os.path.isfile(geo_opt_csv_path) and analysis_url:
-                maybe_auto_download_file(
-                    analysis_url, geo_opt_csv_path, label=f"{model.label} {symprec_str}"
-                )
-        elif analysis_file:
-            # Paths differ (moyo version change, etc.) - will recompute
-            print(f"⚠️ {model.label} {symprec_str=} path mismatch, will recompute")
-            print(f"  - Expected: {geo_opt_csv_path}")
-            print(f"  - Found: {analysis_file_path}")
+    if analysis_file_path == geo_opt_csv_path:
+        # Paths match - try to download if file missing
+        if not os.path.isfile(geo_opt_csv_path) and analysis_url:
+            maybe_auto_download_file(
+                analysis_url, geo_opt_csv_path, label=f"{model.label} {symprec_str}"
+            )
+    elif analysis_file:
+        # Paths differ (moyo version change, etc.) - will recompute
+        print(f"⚠️ {model.label} {symprec_str=} path mismatch, will recompute")
+        print(f"  - Expected: {geo_opt_csv_path}")
+        print(f"  - Found: {analysis_file_path}")
 
     if os.path.isfile(geo_opt_csv_path) and not overwrite:
         print(f"{model.label} already analyzed at {geo_opt_csv_path}")

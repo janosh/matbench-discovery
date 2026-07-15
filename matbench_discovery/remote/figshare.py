@@ -226,17 +226,32 @@ def list_article_files(article_id: int) -> list[dict[str, Any]]:
     Raises:
         requests.HTTPError: If the request fails for any reason other than 404.
     """
-    try:
-        files = make_request(
-            "GET", f"{BASE_URL}/account/articles/{article_id}/files?page_size=1000"
-        )
-    except requests.HTTPError as exc:
-        if exc.response is not None and exc.response.status_code == 404:
-            return []
-        raise
-    if not isinstance(files, list):
-        raise TypeError(f"expected list of file dicts, got {type(files).__name__}")
-    return files
+    page_size = 1000
+    files: list[dict[str, Any]] = []
+    page = 1
+    while True:
+        try:
+            page_files = make_request(
+                "GET",
+                f"{BASE_URL}/account/articles/{article_id}/files"
+                f"?page_size={page_size}&page={page}",
+            )
+        except requests.HTTPError as exc:
+            if (
+                not files
+                and exc.response is not None
+                and exc.response.status_code == 404
+            ):
+                return []
+            raise
+        if not isinstance(page_files, list):
+            raise TypeError(
+                f"expected list of file dicts, got {type(page_files).__name__}"
+            )
+        files.extend(page_files)
+        if len(page_files) < page_size:
+            return files
+        page += 1
 
 
 def get_existing_files(article_id: int) -> dict[str, dict[str, Any]]:

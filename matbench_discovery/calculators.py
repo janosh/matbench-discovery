@@ -15,9 +15,8 @@ import subprocess
 import zipfile
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
-from functools import cache
 from importlib.metadata import PackageNotFoundError, version
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from filelock import FileLock
 
@@ -84,7 +83,7 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
     from matbench_discovery.enums import Model
     from matbench_discovery.remote.fetch import download_file
 
-    url = Model.from_ref(model_key).metadata.get("checkpoint_url")
+    url = Model.from_ref(model_key).metadata["checkpoint_url"]
     if not url:
         raise ValueError(f"{model_key} has no checkpoint_url in its YAML")
     headers = None
@@ -256,28 +255,6 @@ class CalcSpec:
         return ["uv", "run", *mode, script, *args]
 
 
-@cache
-def _model_environments() -> dict[str, dict[str, Any]]:
-    """Load environment blocks from model metadata, keyed by Model enum name."""
-    from matbench_discovery.enums import Model
-
-    return {
-        model.name: environment
-        for model in Model
-        if isinstance(environment := model.metadata.get("environment"), dict)
-    }
-
-
-def _env_str_tuple(
-    environment: dict[str, Any], field: str, model_key: str
-) -> tuple[str, ...]:
-    """Validate and tuple-ize one environment string list."""
-    values = environment.get(field, [])
-    if not isinstance(values, list) or not all(isinstance(val, str) for val in values):
-        raise TypeError(f"{model_key} environment.{field} must be strings")
-    return tuple(values)
-
-
 def _runtime_calc_spec(
     model_key: str,
     make_calc: Callable[..., "Calculator"],
@@ -293,26 +270,16 @@ def _runtime_calc_spec(
     """
 
     def build() -> CalcSpec:
-        environment = _model_environments().get(model_key)
-        if environment is None:
-            raise ValueError(f"{model_key} has no environment block in its model YAML")
-        python_version = environment.get("python_version")
-        project = environment.get("project")
-        if any(
-            value is not None and not isinstance(value, str)
-            for value in (python_version, project)
-        ):
-            raise TypeError(
-                f"{model_key} environment python_version/project must be a "
-                "string or null"
-            )
+        from matbench_discovery.enums import Model
+
+        environment = Model[model_key].metadata["environment"]
         return CalcSpec(
             make_calc,
-            deps=_env_str_tuple(environment, "dependencies", model_key),
-            find_links=_env_str_tuple(environment, "find_links", model_key),
-            extra_index_url=_env_str_tuple(environment, "extra_index_urls", model_key),
-            python_version=python_version,
-            project=project,
+            deps=tuple(environment["dependencies"]),
+            find_links=tuple(environment.get("find_links", ())),
+            extra_index_url=tuple(environment.get("extra_index_urls", ())),
+            python_version=environment["python_version"],
+            project=environment.get("project"),
             requires_checkpoint=requires_checkpoint,
             auto_checkpoint=auto_checkpoint,
             checkpoint_ext=checkpoint_ext,

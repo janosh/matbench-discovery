@@ -47,8 +47,8 @@ for model in models_to_evaluate:
         n_skipped += 1
         continue
 
-    diatomics_metrics = model.metrics.get("diatomics")
-    if not isinstance(diatomics_metrics, dict):
+    diatomics_metrics = model.metrics.get("diatomics") or {}
+    if not diatomics_metrics:
         print(f"Skipping {model.label}: no diatomics metrics config in YAML")
         n_skipped += 1
         continue

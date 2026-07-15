@@ -220,8 +220,27 @@ def test_list_article_files(files: list[dict[str, Any]]) -> None:
     ) as request:
         assert figshare.list_article_files(12345) == files
     request.assert_called_once_with(
-        "GET", f"{figshare.BASE_URL}/account/articles/12345/files?page_size=1000"
+        "GET",
+        f"{figshare.BASE_URL}/account/articles/12345/files?page_size=1000&page=1",
     )
+
+
+def test_list_article_files_paginates() -> None:
+    """Fetch subsequent pages until Figshare returns a short page."""
+    first_page = [
+        {"name": f"file-{file_idx}.txt", "id": file_idx} for file_idx in range(1000)
+    ]
+    with patch(
+        "matbench_discovery.remote.figshare.make_request",
+        side_effect=[first_page, DUMMY_FILES],
+    ) as request:
+        assert figshare.list_article_files(12345) == [*first_page, *DUMMY_FILES]
+
+    base_url = f"{figshare.BASE_URL}/account/articles/12345/files?page_size=1000"
+    assert [mock_call.args for mock_call in request.call_args_list] == [
+        ("GET", f"{base_url}&page=1"),
+        ("GET", f"{base_url}&page=2"),
+    ]
 
 
 def test_list_article_files_errors(capsys: pytest.CaptureFixture) -> None:

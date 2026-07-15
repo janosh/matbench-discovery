@@ -40,8 +40,8 @@ df_dft_analysis = pd.read_csv(DataFiles.wbm_dft_geo_opt_symprec_1e_5.path, index
 # %% Load all model data
 model_data: dict[str, pd.DataFrame] = {}
 for model in cli_args.models:
-    metrics = model.metadata.get("metrics", {}).get("geo_opt", {})
-    if not isinstance(metrics, dict) or not file_ref_name(metrics.get("pred_file")):
+    metrics = model.metrics.get("geo_opt") or {}
+    if not file_ref_name(metrics.get("pred_file")):
         continue
 
     symprec_metrics = metrics.get(symprec_str, {})

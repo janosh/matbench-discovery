@@ -241,9 +241,9 @@ def test_runnable_models_have_reproducible_runners(model: Model) -> None:
         )
     if (
         model.name in CALCULATORS
-        or model.metadata.get("targets") == "E"
-        or model.metadata.get("checkpoint_url") is None
-        or model.metadata.get("lifecycle") in {"aborted", "superseded"}
+        or model.metadata["targets"] == "E"
+        or model.metadata["checkpoint_url"] is None
+        or model.metadata["lifecycle"] in {"aborted", "superseded"}
     ):
         return
     model_dir = os.path.dirname(model.yaml_path)

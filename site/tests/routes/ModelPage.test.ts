@@ -1,7 +1,6 @@
 import { MODELS } from '$lib'
 import { get_org_logo } from '$lib/labels'
 import { RANKED_METRICS } from '$lib/rankings'
-import type { ModelData } from '$lib/types'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { tick } from 'svelte'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -122,26 +121,6 @@ describe(`Model Detail Page`, () => {
     // null md_per_system page data -> no per-system MD section
     expect(document.querySelector(`section.md-per-system`)).toBeNull()
   }, 10_000)
-
-  it(`renders without crashing when training_sets has an unknown dataset key`, () => {
-    // regression: an unknown training_sets key (e.g. a model-YAML typo) used to throw
-    // on DATASETS[key] and crash the whole page
-    const bogus_sets = [`BogusDataset`, `MPtrj`] as ModelData[`training_sets`]
-    const model = {
-      ...test_model,
-      training_sets: bogus_sets,
-    }
-    mount(ModelPage, {
-      target: document.body,
-      props: { data: { ...test_page_data, model } },
-    })
-
-    expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)
-    const training_set = document.querySelector(`.training-set`)
-    // known dataset still renders as link, unknown one falls back to plain text
-    expect(training_set?.querySelectorAll(`a`)).toHaveLength(1)
-    expect(training_set?.textContent).toContain(`BogusDataset (unknown dataset)`)
-  })
 
   it(`renders leaderboard rank card with task-prefixed metric labels`, () => {
     mount(ModelPage, { target: document.body, props: { data: test_page_data } })

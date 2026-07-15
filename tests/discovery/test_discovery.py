@@ -187,8 +187,7 @@ def test_runner_normalizes_artifact_paths(
     """Artifact paths use POSIX repo-relative identity where possible."""
     rel_path = "models/mace/mace-mp-0/2026-07-02-discovery.csv.gz"
     normalize = discovery_runner._repo_relative_path  # noqa: SLF001
-    # The YAML integration test below pins the absence of legacy flat keys and
-    # stale URLs.
+    # The YAML integration test below pins stale URL replacement.
     assert normalize(f"{discovery_runner.ROOT}/{rel_path}") == rel_path
 
     def windows_relpath(_path: str, _start: str) -> str:
@@ -227,7 +226,6 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     artifacts = DiscoveryArtifacts(
         pred_file_path=f"{tmp_path}/preds.csv.gz",
         geo_opt_file_path=f"{tmp_path}/geo.jsonl.gz",
-        struct_col="structure",
         # wbm-3 is a 7.8 eV/atom outlier, wbm-4 failed to relax
         predictions=pd.DataFrame(
             {pred_col: [-1.05, -0.45, 7.0, None]}, index=material_ids
@@ -241,8 +239,6 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
             "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
             url="https://example.com/old",
         ),
-        "pred_file_url": "https://example.com/legacy",
-        "pred_file_artifact": "legacy",
         "hardware": "NVIDIA A100",
         "max_gpu_mem_gb": 40.0,
     }
@@ -251,7 +247,7 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
             {
                 "metrics": {
                     "discovery": old_discovery,
-                    "geo_opt": {"struct_col": "legacy_structure"},
+                    "geo_opt": {},
                 }
             }
         )
@@ -274,15 +270,12 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     assert file_ref_url(discovery_yaml["pred_file"]) is None, (
         "stale URL must be invalidated"
     )
-    assert "pred_file_url" not in discovery_yaml
-    assert "pred_file_artifact" not in discovery_yaml
     assert discovery_yaml["hardware"] == "NVIDIA H200"
     assert discovery_yaml["run_time_sec"] == pytest.approx(123.45)
     assert discovery_yaml["max_rss_gb"] == pytest.approx(4.2)
     assert "hostnames" not in discovery_yaml
     assert "max_gpu_mem_gb" not in discovery_yaml, "absent cost fields stay absent"
     geo_opt_yaml = written["metrics"]["geo_opt"]
-    assert "struct_col" not in geo_opt_yaml
     assert "hardware" not in geo_opt_yaml, "cost provenance lives under discovery"
     assert set(discovery_yaml) >= {str(subset) for subset in TestSubset}
     full_metrics = discovery_yaml[str(TestSubset.full_test_set)]

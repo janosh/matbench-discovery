@@ -22,13 +22,10 @@ def metrics_df_from_yaml(nested_keys: Sequence[str]) -> pd.DataFrame:
                 continue
             combined_metrics: dict[object, object] = {}
             for nested_key in nested_keys:
-                metrics: object = model.metadata.get("metrics", {})
+                metrics = model.metrics
                 for sub_key in nested_key.split("."):
-                    if not isinstance(metrics, dict):
-                        break
                     metrics = metrics.get(sub_key) or {}
-                if isinstance(metrics, dict):
-                    combined_metrics = {**combined_metrics, **metrics}
+                combined_metrics.update(metrics)
             if combined_metrics:
                 out_dict[model.label] = combined_metrics
 

@@ -157,10 +157,8 @@ def update_one_modeling_task_article(
         with open(model.yaml_path) as file:
             model_data = round_trip_yaml.load(file)
 
-        metrics = model_data.get("metrics", {})
-        metric_data = metrics.get(task, {})
-        if not isinstance(metric_data, dict):
-            continue
+        metrics = model_data.get("metrics") or {}
+        metric_data = metrics.get(task) or {}
 
         # Ingestion schema-validates model YAMLs before archival, so malformed FileRefs
         # intentionally fail fast here rather than being silently skipped.

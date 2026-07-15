@@ -59,7 +59,7 @@
     dir: `asc`,
   }
   const sort_modes = new Set(sort_options.map(({ mode }) => mode))
-  const model_keys = new Set(leaderboard_models.flatMap((model) => model.model_key ?? []))
+  const model_keys = new Set(leaderboard_models.map((model) => model.model_key))
 
   let sort_mode = $state<SortMode>(default_sort_mode)
   const sort_compare: Record<
@@ -86,7 +86,7 @@
       }[sort_mode]
       return {
         label: `${model.model_name}${suffix}`,
-        value: model.model_key ?? ``,
+        value: model.model_key,
       }
     }),
   )
