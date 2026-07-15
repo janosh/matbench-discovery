@@ -73,6 +73,25 @@ def resolve_artifact_path(
     return file_path
 
 
+def set_file_ref_url(
+    data: dict[str, Any],
+    key_path: tuple[str, ...],
+    file_url: str,
+    *,
+    size: int,
+    md5: str,
+) -> None:
+    """Set ``url``, ``size`` and ``md5`` on a nested FileRef."""
+    *parts, last = key_path
+    target = data
+    for part in parts:
+        target = target[part]
+    ref = target.get(last)
+    if not isinstance(ref, dict):
+        raise TypeError(f"Expected FileRef object at {'.'.join(key_path)}, got {ref!r}")
+    target[last] = {**ref, "url": file_url, "size": size, "md5": md5}
+
+
 def update_one_modeling_task_article(
     task: str,
     models: list[Model],
@@ -143,29 +162,8 @@ def update_one_modeling_task_article(
         if not isinstance(metric_data, dict):
             continue
 
-        def set_file_ref_url(
-            data: dict[str, Any],
-            key_path: tuple[str, ...],
-            file_url: str,
-            *,
-            size: int | None = None,
-            md5: str | None = None,
-        ) -> None:
-            """Set ``url`` (and optional size/md5) on a nested FileRef."""
-            *parts, last = key_path
-            target = data
-            for part in parts:
-                target = target[part]
-            ref = target.get(last)
-            if not isinstance(ref, dict):
-                raise TypeError(
-                    f"Expected FileRef object at {'.'.join(key_path)}, got {ref!r}"
-                )
-            updated: dict[str, Any] = {**ref, "url": file_url}
-            if size is not None and md5 is not None:
-                updated.update(size=size, md5=md5)
-            target[last] = updated
-
+        # Ingestion schema-validates model YAMLs before archival, so malformed FileRefs
+        # intentionally fail fast here rather than being silently skipped.
         for key_parts, rel_file_path in iter_file_refs(metric_data):
             artifact_key = key_parts[-1]
             if file_type != "all" and artifact_key != f"{file_type}_file":
@@ -181,10 +179,11 @@ def update_one_modeling_task_article(
 
             filename = repo_relative_path(file_path)
 
-            # Hash once when we may upload or need an exact-match check; reuse below.
+            # Hash feeds the exact-match check (skipped when forcing) and the upload
+            # (skipped on dry runs); a forced dry run needs neither. Reused below.
             file_hash: str | None = None
             file_size: int | None = None
-            if not dry_run:
+            if not (dry_run and force_reupload):
                 file_hash, file_size = figshare.get_file_hash_and_size(file_path)
 
             # First check if the exact same file already exists
@@ -215,19 +214,19 @@ def update_one_modeling_task_article(
                     print(f"{idx}. {similar_name} (ID: {similar_id})")
 
                 # Ask for user confirmation to delete similar files
-                if interactive:
-                    confirm = input("Delete these files before uploading? [y/N] ")
-                    if confirm.lower() == "y":
-                        for similar_name, similar_id in similar_files:
-                            if similar_id is not None and figshare.delete_file(
-                                article_id, similar_id
-                            ):
-                                deleted_files[similar_name] = similar_id
-                                # keep local view in sync to classify uploads correctly
-                                existing_files.pop(similar_name, None)
-                                print(f"Deleted similar file: {similar_name}")
-                else:
+                if not interactive:
                     print("Skipping deletion of similar files (non-interactive mode)")
+                elif (
+                    input("Delete these files before uploading? [y/N] ").lower() == "y"
+                ):
+                    for similar_name, similar_id in similar_files:
+                        if similar_id is not None and figshare.delete_file(
+                            article_id, similar_id
+                        ):
+                            deleted_files[similar_name] = similar_id
+                            # keep local view in sync to classify uploads correctly
+                            existing_files.pop(similar_name, None)
+                            print(f"Deleted similar file: {similar_name}")
 
             # Upload file if it doesn't exist or force_reupload is True
             if not dry_run:
@@ -275,24 +274,15 @@ def update_one_modeling_task_article(
             for idx, (filename, file_id) in enumerate(deleted_files.items(), start=1):
                 print(f"{idx}. {filename}: {file_id}")
 
-        if new_files:
-            print("\nNewly added files:")
-            for idx, (filename, (url, model)) in enumerate(new_files.items(), start=1):
-                print(f"{idx}. {model.name} {filename}: {url}")
-
-        if updated_files:
-            print("\nUpdated files:")
-            for idx, (filename, (url, model)) in enumerate(
-                updated_files.items(), start=1
-            ):
-                print(f"{idx}. {model.name} {filename}: {url}")
-
-        if skipped_files:
-            print("\nSkipped files (already exist with same hash):")
-            for idx, (filename, (url, model)) in enumerate(
-                skipped_files.items(), start=1
-            ):
-                print(f"{idx}. {model.name} {filename}: {url}")
+        for heading, files in (
+            ("Newly added files", new_files),
+            ("Updated files", updated_files),
+            ("Skipped files (already exist with same hash)", skipped_files),
+        ):
+            if files:
+                print(f"\n{heading}:")
+                for idx, (filename, (url, model)) in enumerate(files.items(), start=1):
+                    print(f"{idx}. {model.name} {filename}: {url}")
 
         # Publish the article if any new files were added, it's not a dry run,
         # and the article wasn't newly created

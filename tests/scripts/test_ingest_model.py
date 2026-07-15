@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 
 import scripts.ingest_model as ingest
+import scripts.upload_model_preds_to_figshare as upload
 from matbench_discovery.enums import Model
-from scripts.upload_model_preds_to_figshare import resolve_artifact_path
 
 
 def msgs(checks: "ingest.Checklist", status: str) -> list[str]:
@@ -163,6 +163,19 @@ def test_all_active_models_have_required_metadata() -> None:
     assert not failures, failures
 
 
+def test_malformed_file_ref_fails_checklist(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Malformed artifact metadata becomes a checklist failure instead of raising."""
+    model = Model.mace_mpa_0
+    discovery = model.metadata["metrics"]["discovery"]
+    monkeypatch.setitem(discovery, "pred_file", "legacy/path.csv.gz")
+    checks = ingest.Checklist()
+    ingest.check_submission(model, checks, validate_runner=False)
+    assert any(
+        "Invalid FileRef at metrics.discovery.pred_file" in message
+        for message in msgs(checks, ingest.FAIL)
+    )
+
+
 @pytest.mark.parametrize(
     "argv",
     [
@@ -275,6 +288,43 @@ def test_map_yaml_paths() -> None:
         ingest.map_yaml_paths(["models/new-arch/missing.yml"])
 
 
+@pytest.mark.parametrize("force_reupload", [False, True])
+def test_figshare_dry_run_hashes_only_for_exact_match(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    force_reupload: bool,
+) -> None:
+    """Dry runs hash for exact-match reporting unless forced upload bypasses it."""
+
+    def fake_hash(_file_path: str) -> tuple[str, int]:
+        """Fail if forced dry runs perform unnecessary hashing."""
+        if force_reupload:
+            pytest.fail("forced dry run hashed the artifact")
+        return "abc123", 11
+
+    monkeypatch.setattr(upload.figshare, "article_exists", lambda _article_id: True)
+    monkeypatch.setattr(upload.figshare, "get_existing_files", lambda _article_id: {})
+    monkeypatch.setattr(upload.figshare, "get_file_hash_and_size", fake_hash)
+    monkeypatch.setattr(
+        upload.figshare, "file_exists_with_same_hash", lambda *_args: (True, 123)
+    )
+    monkeypatch.setattr(
+        upload, "resolve_artifact_path", lambda *_args: Model.mace_mp_0.yaml_path
+    )
+
+    upload.update_one_modeling_task_article(
+        "discovery",
+        [Model.mace_mp_0],
+        modeling_tasks={"discovery": {"label": "Discovery"}},
+        dry_run=True,
+        force_reupload=force_reupload,
+    )
+
+    assert (
+        "Skipped (already exists with same hash): 1" in capsys.readouterr().out
+    ) is not force_reupload
+
+
 def test_archive_rejects_artifact_symlink_escape(tmp_path: Path) -> None:
     """Archive paths cannot follow a submitted symlink outside the model directory."""
     model_dir = tmp_path / "models/arch"
@@ -284,6 +334,6 @@ def test_archive_rejects_artifact_symlink_escape(tmp_path: Path) -> None:
     except OSError as exc:
         pytest.skip(f"Symlinks unavailable: {exc}")
     with pytest.raises(ValueError, match="escapes model directory"):
-        resolve_artifact_path(
+        upload.resolve_artifact_path(
             str(model_dir / "model.yml"), "models/arch/leak", str(tmp_path)
         )
