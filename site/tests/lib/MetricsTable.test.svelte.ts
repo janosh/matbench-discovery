@@ -15,8 +15,6 @@ const header_name = (header: HTMLTableCellElement) =>
   header.querySelector(`.header-label`)?.textContent?.trim()
 const header_names = () => header_cells().map(header_name)
 
-// expected table row count for the default unique_prototypes discovery set,
-// mirroring MetricsTable's model filters
 // table filters restricted to models trained (at least in part) on MPtrj
 const mptrj_only_filters = () => {
   const filters = make_table_filters()
@@ -26,10 +24,7 @@ const mptrj_only_filters = () => {
 
 const visible_row_count = (
   extra_filter: (model: ModelData) => boolean = make_table_filters().matches,
-) =>
-  ACTIVE_MODELS.filter(
-    (model) => model.metrics?.discovery?.unique_prototypes && extra_filter(model),
-  ).length
+) => ACTIVE_MODELS.filter(extra_filter).length
 
 // table filters with the default require-forces constraint cleared (shows all models
 // incl. energy-only ones)

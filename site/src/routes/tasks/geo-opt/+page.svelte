@@ -58,12 +58,12 @@
     return selectable_model_keys.has(model_key) ? model_key : undefined
   }
 
-  const date_added_ms = (key: string): number =>
+  const benchmark_added_ms = (key: string): number =>
     Date.parse(model_by_key.get(key)?.dates.benchmark_added ?? ``) || 0
 
   // newest models first; plot-only models without a benchmark date sort last
   const selectable_options = [...plot_label_by_key]
-    .toSorted(([key_1], [key_2]) => date_added_ms(key_2) - date_added_ms(key_1))
+    .toSorted(([key_1], [key_2]) => benchmark_added_ms(key_2) - benchmark_added_ms(key_1))
     .map(([key, label]) => {
       const model_color = model_by_key.get(key)?.color ?? `gray`
       const text_color = pick_contrast_color({ bg_color: model_color })

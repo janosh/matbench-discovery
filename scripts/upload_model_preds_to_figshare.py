@@ -57,12 +57,13 @@ def resolve_artifact_path(
     relative_file_path: str,
     root_dir: str = ROOT,
 ) -> str:
-    """Resolve an artifact file confined to its model architecture directory."""
+    """Resolve an artifact file confined to its model-owned directory."""
     if os.path.isabs(relative_file_path):
         raise ValueError(f"Artifact path must be relative: {relative_file_path!r}")
 
     file_path = os.path.abspath(f"{root_dir}/{relative_file_path}")
-    model_dir = os.path.realpath(os.path.dirname(model_yaml_path))
+    model_key = os.path.splitext(os.path.basename(model_yaml_path))[0]
+    model_dir = os.path.realpath(f"{os.path.dirname(model_yaml_path)}/{model_key}")
     if os.path.commonpath((model_dir, os.path.realpath(file_path))) != model_dir:
         raise ValueError(
             f"Artifact path escapes model directory {model_dir!r}: "
@@ -186,7 +187,10 @@ def update_one_modeling_task_article(
             # First check if the exact same file already exists
             if not force_reupload and file_hash is not None and file_size is not None:
                 exists, file_id = figshare.file_exists_with_same_hash(
-                    article_id, filename, file_hash
+                    article_id,
+                    filename,
+                    file_hash,
+                    existing_files=existing_files,
                 )
 
                 if exists and file_id is not None:
@@ -229,17 +233,18 @@ def update_one_modeling_task_article(
             if not dry_run:
                 if file_hash is None or file_size is None:
                     raise RuntimeError(f"Missing hash/size for {file_path}")
+                file_existed = filename in existing_files
                 file_id, _was_uploaded = figshare.upload_file_if_needed(
                     article_id,
                     file_path,
                     file_name=filename,
                     force_reupload=force_reupload,
+                    existing_files=existing_files,
+                    file_hash=file_hash,
                 )
                 file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
 
-                target_files = (
-                    updated_files if filename in existing_files else new_files
-                )
+                target_files = updated_files if file_existed else new_files
                 target_files[filename] = (file_url, model)
 
                 # Update model metadata with URL

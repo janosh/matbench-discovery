@@ -108,9 +108,7 @@
     () => [[`energy_tab`, energy_parity_tab, default_energy_tab]],
   )
   let { model } = $derived(data)
-  let env_packages = $derived(
-    (model.environment?.dependencies ?? []).map(parse_dependency_spec),
-  )
+  let env_packages = $derived(model.environment.dependencies.map(parse_dependency_spec))
   let added_ago = $derived(
     model.dates.benchmark_added ? format_relative_time(model.dates.benchmark_added) : ``,
   )
@@ -243,9 +241,7 @@
     {/if}
   </section>
 
-  {#if model.model_key}
-    <ModelRankCard model_key={model.model_key} />
-  {/if}
+  <ModelRankCard model_key={model.model_key} />
 
   <section class="discovery-detail">
     <h2>

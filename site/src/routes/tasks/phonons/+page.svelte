@@ -44,7 +44,7 @@
     leaderboard_models.find((model) => model.model_key === selected_key),
   )
 
-  // sort the Compare-model dropdown by κ_SRME (best first), name, or submission date
+  // sort the Compare-model dropdown by κ_SRME (best first), name, or benchmark date
   type SortMode = `kappa` | `name` | `date`
   const sort_options: { mode: SortMode; label: string }[] = [
     { mode: `kappa`, label: `κSRME` },

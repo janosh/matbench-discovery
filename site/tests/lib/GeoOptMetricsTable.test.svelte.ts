@@ -7,16 +7,11 @@ import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
 
-// mirrors the table's filters: geo-opt metrics + full_test_set discovery data
-// (energy-only models are always hidden)
-const geo_opt_row_count = (matches: (model: ModelData) => boolean = () => true) =>
-  ACTIVE_MODELS.filter(
-    (model) =>
-      model.metrics?.geo_opt != null &&
-      model.targets !== `E` &&
-      model.metrics?.discovery?.full_test_set &&
-      matches(model),
-  ).length
+// Mirrors the component's geo-opt presence check and default table filters.
+const geo_opt_row_count = (
+  matches: (model: ModelData) => boolean = make_table_filters().matches,
+) =>
+  ACTIVE_MODELS.filter((model) => model.metrics?.geo_opt != null && matches(model)).length
 
 describe(`GeoOptMetricsTable`, () => {
   it(`renders table with correct structure, columns, groups, and units`, async () => {

@@ -1,5 +1,4 @@
-import { MODELS } from '$lib'
-import type { ModelData } from '$lib/types'
+import { by_benchmark_added_desc, MODELS } from '$lib'
 import { GET } from '$routes/rss.xml/+server'
 import pkg from '$site/package.json'
 import { describe, expect, it } from 'vitest'
@@ -50,12 +49,6 @@ describe(`RSS feed endpoint`, () => {
   })
 
   it(`should include model details in the description`, async () => {
-    // Skip test if no models available
-    if (MODELS.length === 0) {
-      console.warn(`Skipping test: No models available`)
-      return
-    }
-
     const response = GET()
     const xml = await response.text()
 
@@ -77,20 +70,14 @@ describe(`RSS feed endpoint`, () => {
     expect(metrics_pos).toBeLessThan(authors_pos)
 
     // Check for proper HTML structure
-    const strongTags = [...cdata_content.matchAll(/<strong>/g)]
-    const strongCloseTags = [...cdata_content.matchAll(/<\/strong>/g)]
+    const strong_tags = [...cdata_content.matchAll(/<strong>/g)]
+    const strong_close_tags = [...cdata_content.matchAll(/<\/strong>/g)]
 
-    expect(strongTags.length).toBeGreaterThanOrEqual(5)
-    expect(strongCloseTags.length).toBeGreaterThanOrEqual(5)
+    expect(strong_tags.length).toBeGreaterThanOrEqual(5)
+    expect(strong_close_tags.length).toBeGreaterThanOrEqual(5)
   })
 
   it(`should include links to model resources`, async () => {
-    // Skip test if no models available
-    if (MODELS.length === 0) {
-      console.warn(`Skipping test: No models available`)
-      return
-    }
-
     const response = GET()
     const xml = await response.text()
 
@@ -136,12 +123,9 @@ describe(`RSS feed endpoint`, () => {
   it(`should sort models by date in descending order`, async () => {
     const xml = await GET().text()
 
-    // every item appears newest-first, i.e. in benchmark_added descending order
-    const to_time = (model: ModelData) =>
-      new Date(model.dates.benchmark_added ?? 0).getTime()
-    const expected_names = MODELS.toSorted(
-      (model_a, model_b) => to_time(model_b) - to_time(model_a),
-    ).map((model) => model.model_name)
+    const expected_names = MODELS.toSorted(by_benchmark_added_desc).map(
+      (model) => model.model_name,
+    )
     const item_names = [...xml.matchAll(/<item>\s*<title>(?<name>[^<]+)<\/title>/g)].map(
       (match) => match.groups?.name ?? ``,
     )

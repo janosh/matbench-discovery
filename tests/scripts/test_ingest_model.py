@@ -306,7 +306,9 @@ def test_figshare_dry_run_hashes_only_for_exact_match(
     monkeypatch.setattr(upload.figshare, "get_existing_files", lambda _article_id: {})
     monkeypatch.setattr(upload.figshare, "get_file_hash_and_size", fake_hash)
     monkeypatch.setattr(
-        upload.figshare, "file_exists_with_same_hash", lambda *_args: (True, 123)
+        upload.figshare,
+        "file_exists_with_same_hash",
+        lambda *_args, **_kwargs: (True, 123),
     )
     monkeypatch.setattr(
         upload, "resolve_artifact_path", lambda *_args: Model.mace_mp_0.yaml_path
@@ -327,7 +329,8 @@ def test_figshare_dry_run_hashes_only_for_exact_match(
 
 def test_archive_rejects_artifact_symlink_escape(tmp_path: Path) -> None:
     """Archive paths cannot follow a submitted symlink outside the model directory."""
-    model_dir = tmp_path / "models/arch"
+    family_dir = tmp_path / "models/arch"
+    model_dir = family_dir / "model"
     model_dir.mkdir(parents=True)
     try:
         (model_dir / "leak").symlink_to(tmp_path / "secret")
@@ -335,5 +338,20 @@ def test_archive_rejects_artifact_symlink_escape(tmp_path: Path) -> None:
         pytest.skip(f"Symlinks unavailable: {exc}")
     with pytest.raises(ValueError, match="escapes model directory"):
         upload.resolve_artifact_path(
-            str(model_dir / "model.yml"), "models/arch/leak", str(tmp_path)
+            str(family_dir / "model.yml"), "models/arch/model/leak", str(tmp_path)
+        )
+
+
+def test_archive_rejects_sibling_model_artifact(tmp_path: Path) -> None:
+    """Archive paths cannot reference another model in the same family."""
+    family_dir = tmp_path / "models/arch"
+    sibling_file = family_dir / "model-a/preds.csv.gz"
+    sibling_file.parent.mkdir(parents=True)
+    sibling_file.touch()
+
+    with pytest.raises(ValueError, match="escapes model directory"):
+        upload.resolve_artifact_path(
+            str(family_dir / "model-b.yml"),
+            "models/arch/model-a/preds.csv.gz",
+            str(tmp_path),
         )

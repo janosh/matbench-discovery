@@ -43,7 +43,7 @@ const MODEL_COLORS = [
 ]
 
 // Calculate the total number of materials and structures in a model's training set
-export function calculate_training_sizes(model_train_sets: string[] = []): {
+export function calculate_training_sizes(model_train_sets: string[]): {
   total_materials: number
   total_structures: number
 } {
@@ -64,7 +64,7 @@ export function calculate_training_sizes(model_train_sets: string[] = []): {
 
 function to_model_data([key, metadata]: [string, ModelData], index: number): ModelData {
   const org_logos: OrgLogo[] = []
-  for (const author of metadata.authors ?? []) {
+  for (const author of metadata.authors) {
     const org_logo = author.affiliation ? get_org_logo(author.affiliation) : undefined
     if (author.affiliation && !org_logo && !import.meta.env.PROD) {
       console.warn(`No logo found for affiliation: ${author.affiliation}`)
@@ -100,7 +100,7 @@ export const MODELS = $state(
 export const ACTIVE_MODELS = MODELS.slice(0, active_entries.length)
 // Update CPSs of models based on current CPS weights
 export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
-  models.forEach((model: ModelData) => {
+  models.forEach((model) => {
     // Extract required metrics for CPS calculation
     const f1 = model.metrics?.discovery?.unique_prototypes?.F1
     // use symprec=1e-2 to match the RMSD column path declared in ALL_METRICS.RMSD,
@@ -127,42 +127,28 @@ update_models_cds(MODELS, CDS_CONFIG)
 // All dataset keys used by at least one model's training_sets, in datasets.yml
 // declaration order — the roster for the table's training-data filter dropdown
 export const ALL_TRAINING_SETS: string[] = Object.keys(DATASETS).filter((key) =>
-  MODELS.some((model) => model.training_sets.some((dataset) => dataset === key)),
+  MODELS.some((model) => model.training_sets.includes(key)),
 )
 
 // table filter (training data + openness + targets + heatmap) with the dataset roster
 export const make_table_filters = (): UrlTableFilters =>
   new UrlTableFilters(ALL_TRAINING_SETS)
 
+export const has_diatomics_curves = (model: ModelData): boolean =>
+  Boolean(model.metrics?.diatomics?.pred_file?.name)
+
 export function get_pred_file_urls(model: ModelData) {
-  // Collect downloadable pred_file.url values from model.metrics
-  const files: { name: string; url: string }[] = []
-
-  function find_pred_files(obj: object, parent_key = ``) {
-    for (const [key, val] of Object.entries(obj)) {
-      if (key === `pred_file` && typeof val?.url === `string`) {
-        files.push({ name: get_label_for_key_path(parent_key), url: val.url })
-      } else if (val !== null && typeof val === `object`) {
-        find_pred_files(val, key)
-      }
-    }
-  }
-
-  // Recursively look up labels in the MODELINGS_TASKS object
-  function get_label_for_key_path(key_path: string): string {
-    const tasks = MODELINGS_TASKS
-    if (key_path in tasks) return tasks[key_path].label
-
-    // Check if it's a subtask by searching all tasks
-    for (const task_value of Object.values(tasks)) {
-      if (task_value.subtasks?.[key_path]) {
-        return task_value.subtasks[key_path].label
-      }
-    }
-
-    return key_path // Default to key itself if no label is found
-  }
-
-  if (model.metrics) find_pred_files(model.metrics)
-  return files
+  const pred_files = [
+    [MODELINGS_TASKS.discovery.label, model.metrics?.discovery?.pred_file],
+    [MODELINGS_TASKS.geo_opt.label, model.metrics?.geo_opt?.pred_file],
+    [MODELINGS_TASKS.diatomics.label, model.metrics?.diatomics?.pred_file],
+    [MODELINGS_TASKS.md.label, model.metrics?.md?.pred_file],
+    [
+      MODELINGS_TASKS.phonons.subtasks?.kappa_103.label ?? MODELINGS_TASKS.phonons.label,
+      model.metrics?.phonons?.kappa_103?.pred_file,
+    ],
+  ] as const
+  return pred_files.flatMap(([name, file]) =>
+    file?.url ? [{ name, url: file.url }] : [],
+  )
 }

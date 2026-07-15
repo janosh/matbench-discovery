@@ -1,7 +1,7 @@
 import type * as d3sc from 'd3-scale-chromatic'
 import type { IconName, Label as MattervizLabel } from 'matterviz'
 import type { Label1 as LabelType } from './schema/label'
-import type { ModelMetadata } from './schema/model'
+import type { ModelMetadata, Person } from './schema/model'
 
 export type { Dataset } from './schema/dataset'
 
@@ -16,15 +16,7 @@ export type ModelData = ModelMetadata & {
   CPS?: number
 }
 
-export interface Author {
-  name: string
-  email?: string
-  affiliation?: string
-  orcid?: string
-  url?: string
-  twitter?: string
-  github?: string
-}
+export type Author = Person
 
 export type Label = LabelType & {
   color_scale?: keyof typeof d3sc // D3-scale-chromatic color scale name
@@ -52,7 +44,7 @@ export type LinkData = {
   paper: { url: string | null; title: string; icon: IconName }
   repo: { url: string | null; title: string; icon: IconName }
   pr_url: { url: string | null; title: string; icon: IconName }
-  checkpoint?: { url: string | null; title: string; icon: IconName; is_missing?: boolean }
+  checkpoint?: { url: string | null; title: string; icon: IconName }
   pred_files: { files: { name: string; url: string }[]; name: string }
 }
 

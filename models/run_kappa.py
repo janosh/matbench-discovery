@@ -59,7 +59,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--list-models",
         action="store_true",
-        help="Print calculators with verified hyperparams.kappa settings",
+        help="Print calculators with verified hyperparams.evaluation.kappa settings",
     )
     parser.add_argument(
         "--print-cmd",

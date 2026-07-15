@@ -60,9 +60,6 @@ describe(`MODELS array`, () => {
   })
 
   it(`should have processed models with calculated properties`, () => {
-    // Skip if no models available in test environment
-    if (MODELS.length === 0) return
-
     // Check that models have the expected structure
     const model = MODELS[0]
     expect(model).toHaveProperty(`dirname`)
@@ -242,9 +239,6 @@ describe(`ALL_TRAINING_SETS`, () => {
 // NB: CPS_CONFIG defaults + reactivity are covered in combined-scores.test.ts
 describe(`update_models_cps`, () => {
   it(`should update CPS for models based on metrics and current weights`, () => {
-    // Skip test if no models available
-    if (MODELS.length === 0) return
-
     // Act: Call the function under test
     update_models_cps(MODELS, CPS_CONFIG)
 
@@ -254,9 +248,6 @@ describe(`update_models_cps`, () => {
   })
 
   it(`should set CPS to NaN when required metrics are missing`, () => {
-    // Skip test if no models available
-    if (MODELS.length === 0) return
-
     // Act: Set weights that would require all metrics to be present
     CPS_CONFIG.F1.weight = 0.3
     CPS_CONFIG.RMSD.weight = 0.3

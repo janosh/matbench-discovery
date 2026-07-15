@@ -243,9 +243,8 @@ export const HYPERPARAMS: HyperparamLabels = {
     description: `Maximum number of neighbors during graph construction`,
   },
   n_estimators: {
-    key: `Estimators`,
+    key: `n_estimators`,
     label: `Estimators`,
-    path: `hyperparams.upstream_config`,
     description: `Number of estimators`,
   },
 } as const

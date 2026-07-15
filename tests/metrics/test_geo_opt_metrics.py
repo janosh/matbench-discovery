@@ -178,8 +178,6 @@ def test_write_geo_opt_metrics_to_yaml(
 
         # Compare metrics while handling NaN values
         for key, value in actual_yaml["metrics"]["geo_opt"][symprec_key].items():
-            if key.endswith("_artifact"):
-                continue
             expected_val = expected_block[key]
             if key in {"analysis_file", "pred_file", "force_file", "run_info_file"}:
                 assert value == expected_val

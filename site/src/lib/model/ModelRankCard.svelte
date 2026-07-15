@@ -6,7 +6,7 @@
 
   let { model_key }: { model_key: string } = $props()
 
-  // Includes energy-only models hidden by default and tracks live score weights.
+  // Rank against the active leaderboard cohort and track live score weights.
   let ranks = $derived(model_metric_ranks(model_key, ACTIVE_MODELS, RANKED_METRICS))
 
   // Mix theme-aware link blue (best) through muted purple to red (worst).

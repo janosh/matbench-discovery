@@ -26,14 +26,8 @@ function format_model_for_rss(model: ModelData): string {
     : `No metrics available`
 
   const authors_text = model.authors
-    ? model.authors
-        .map((author) => {
-          const parts = [author.name]
-          if (author.affiliation) parts.push(`(${author.affiliation})`)
-          return parts.join(` `)
-        })
-        .join(`, `)
-    : `Unknown authors`
+    .map(({ name, affiliation }) => `${name}${affiliation ? ` (${affiliation})` : ``}`)
+    .join(`, `)
 
   const model_role = `<p><strong>Role:</strong> ${model_role_from_targets(model.targets).label}</p>`
   const hyperparams = model.hyperparams
@@ -51,9 +45,7 @@ function format_model_for_rss(model: ModelData): string {
         )
         .join(`,<br>&nbsp;&nbsp;`)}</p>`
     : ``
-  const license_info = model.license
-    ? `<p><strong>License:</strong> ${model.license.code || model.license}</p>`
-    : ``
+  const license_info = `<p><strong>License:</strong> ${model.license.code}</p>`
   const paper_published = model.dates.paper_published
     ? `<p><strong>Paper Published:</strong> ${model.dates.paper_published}</p>`
     : ``

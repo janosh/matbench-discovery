@@ -454,22 +454,26 @@ def test_model_md_path_passes_huggingface_token(
     assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer hf_secret"}
 
 
-def get_urls_from_dict(
+def get_file_ref_urls(
     dct: dict[str, Any], parent_key: str = ""
 ) -> list[tuple[str, str]]:
-    """Recursively find all keys ending in _url in a nested dictionary.
-    Returns list of tuples with (dotted.path.to.key, url_value).
-    """
+    """Recursively find nested FileRef URLs and return their dotted paths."""
     urls = []
     for key, val in dct.items():
         current_key = f"{parent_key}.{key}" if parent_key else key
 
-        if key.endswith("_url") and isinstance(val, str):
+        if key == "url" and isinstance(val, str):
             urls.append((current_key, val))
         elif isinstance(val, dict):
-            urls.extend(get_urls_from_dict(val, current_key))
+            urls.extend(get_file_ref_urls(val, current_key))
 
     return urls
+
+
+def test_get_file_ref_urls() -> None:
+    """Nested FileRef URLs are included in model URL validation."""
+    metrics = {"discovery": {"pred_file": {"name": "preds.csv", "url": "https://x"}}}
+    assert get_file_ref_urls(metrics) == [("discovery.pred_file.url", "https://x")]
 
 
 TIMEOUT = 30
@@ -523,7 +527,7 @@ def test_model_prediction_urls(url_session: requests.Session) -> None:
         metrics = model.metrics
         if not metrics:
             continue
-        for key_path, url in get_urls_from_dict(metrics):
+        for key_path, url in get_file_ref_urls(metrics):
             tasks[url] = f"{model.name}.{key_path}"
 
     n_workers = min(len(tasks), mp.cpu_count())

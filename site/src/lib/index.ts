@@ -84,7 +84,7 @@ export const format_date = (
     ...options,
   })
 
-// Compare two models by submission date, newest first (for Array.toSorted)
+// Compare models by benchmark inclusion date, newest first.
 export const by_benchmark_added_desc = (
   model_1: { dates: { benchmark_added: string | null } },
   model_2: { dates: { benchmark_added: string | null } },

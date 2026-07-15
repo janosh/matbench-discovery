@@ -37,8 +37,7 @@ describe(`read_md_per_system`, () => {
   })
 
   it.each([
-    [`no metrics`, {}],
-    [`no pred_file`, { metrics: { md: {} } }],
+    [`no pred_file`, {}],
     [`missing file`, { metrics: { md: { pred_file: { name: `missing.csv.gz` } } } }],
   ])(`returns null for %s`, async (_name, model) => {
     expect(await read_md_per_system(model)).toBeNull()

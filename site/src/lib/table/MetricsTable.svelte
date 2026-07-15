@@ -206,7 +206,7 @@
   {@const links = val as LinkData}
   {#if links}
     {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
-      {#if `url` in link && ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
+      {#if `url` in link && link.url}
         <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
           <Icon icon={link.icon} />
         </a>

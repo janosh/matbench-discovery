@@ -12,6 +12,7 @@
     scatter_options_by_key,
     task_page_visible_cols,
   } from '$lib/labels'
+  import { has_diatomics_curves } from '$lib/models.svelte'
   import { DiatomicCurve, DynamicScatter, RadarChart } from '$lib/plot'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
   import {
@@ -216,7 +217,7 @@
 </div>
 
 <MetricsTable
-  model_filter={(model) => model.metrics?.diatomics != null}
+  model_filter={has_diatomics_curves}
   col_filter={(col) => visible_cols[col.key] ?? true}
   bind:sort
 />
@@ -230,7 +231,7 @@
 
 <DynamicScatter
   models={ACTIVE_MODELS}
-  model_filter={(model) => model.metrics?.diatomics != null}
+  model_filter={has_diatomics_curves}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
   color_key={METADATA_COLS.n_training_materials.key}

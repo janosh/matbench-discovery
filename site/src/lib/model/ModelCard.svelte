@@ -27,9 +27,7 @@
   } = $props()
 
   let { model_name, model_key, model_params, training_sets } = $derived(model)
-  let env_packages = $derived(
-    (model.environment?.dependencies ?? []).map(parse_dependency_spec),
-  )
+  let env_packages = $derived(model.environment.dependencies.map(parse_dependency_spec))
 
   let links = $derived([
     [model.repo, `Repo`, `GitHub`],
@@ -67,33 +65,24 @@
 </nav>
 
 <section class="metadata" {...rest}>
-  {#if training_sets}
-    <span style="grid-column: span 2">
-      <Icon icon="Database" />
-      Training data:
-      {#each training_sets as train_set_key, idx (train_set_key)}
-        {#if idx > 0}
-          &nbsp;+&nbsp;
-        {/if}
-        {@const dataset = DATASETS[train_set_key]}
-        {#if dataset}
-          {@const { n_structures, name, slug, n_materials } = dataset}
-          {@const pretty_n_mat =
-            typeof n_materials === `number` ? format_num(n_materials) : n_materials}
-          {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
-          <a
-            href="/data/{slug}"
-            title="{name}: {format_num(n_structures)} structures{n_mat_str}"
-            {@attach tooltip()}
-          >
-            {train_set_key}
-          </a>
-        {:else}
-          <span title="Unknown dataset key: {train_set_key}">{train_set_key}</span>
-        {/if}
-      {/each}
-    </span>
-  {/if}
+  <span style="grid-column: span 2">
+    <Icon icon="Database" />
+    Training data:
+    {#each training_sets as train_set_key, idx (train_set_key)}
+      {#if idx > 0}
+        &nbsp;+&nbsp;
+      {/if}
+      {@const { n_structures, name, slug, n_materials } = DATASETS[train_set_key]}
+      {@const n_mat_str = n_materials ? ` from ${format_num(n_materials)} materials` : ``}
+      <a
+        href="/data/{slug}"
+        title="{name}: {format_num(n_structures)} structures{n_mat_str}"
+        {@attach tooltip()}
+      >
+        {train_set_key}
+      </a>
+    {/each}
+  </span>
   <span title="Date added">
     <Icon icon="Calendar" />
     Added {model.dates.benchmark_added}

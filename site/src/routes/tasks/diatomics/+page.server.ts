@@ -1,5 +1,6 @@
 import { by_benchmark_added_desc, type DiatomicsCurves, ACTIVE_MODELS } from '$lib'
 import dft_references from '$lib/diatomics-dft.json.gz'
+import { has_diatomics_curves } from '$lib/models.svelte'
 import { fetch_diatomics_data } from '$lib/server/diatomics'
 import type { PageServerLoad } from './$types'
 
@@ -27,9 +28,9 @@ const to_page_curves = (curves: DiatomicsCurves): PageDiatomicsCurves => ({
 })
 
 export const load: PageServerLoad = async () => {
-  const diatomic_models = ACTIVE_MODELS.filter((model) =>
-    Boolean(model.metrics?.diatomics?.pred_file?.name),
-  ).toSorted(by_benchmark_added_desc)
+  const diatomic_models = ACTIVE_MODELS.filter(has_diatomics_curves).toSorted(
+    by_benchmark_added_desc,
+  )
 
   // Fetch data for all models at build time. Return only the homonuclear
   // energies used by the page; forces and heteronuclear curves are large and unused.

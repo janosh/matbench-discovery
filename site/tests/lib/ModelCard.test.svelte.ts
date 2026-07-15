@@ -1,4 +1,5 @@
 import { DATASETS, ModelCard, MODELS } from '$lib'
+import { parse_dependency_spec } from '$lib/environment'
 import { ALL_METRICS } from '$lib/labels'
 import { format_num } from 'matterviz'
 import type { ComponentProps } from 'svelte'
@@ -41,10 +42,11 @@ describe(`ModelCard`, () => {
       expect(links).toHaveLength(nav_link_count(model))
       expect(links[0].href).toBe(model.repo ?? ``)
       expect(document.body.textContent).toContain(`Added ${model.dates.benchmark_added}`)
-      expect(
-        !model.dates.paper_published ||
-          document.body.textContent?.includes(`Published ${model.dates.paper_published}`),
-      ).toBe(true)
+      if (model.dates.paper_published) {
+        expect(document.body.textContent).toContain(
+          `Published ${model.dates.paper_published}`,
+        )
+      }
       expect(document.body.textContent).toContain(
         `${format_num(model.model_params, `.3~s`)} params`,
       )
@@ -140,7 +142,7 @@ describe(`ModelCard`, () => {
       expect(packages).toHaveLength(expected.length)
       const first_dep = expected[0] ?? ``
       expect(packages[0]?.textContent?.trim() ?? ``).toContain(
-        first_dep.split(/[=<>!~@]/)[0]?.trim() ?? ``,
+        parse_dependency_spec(first_dep).name,
       )
     })
   })
