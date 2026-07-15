@@ -132,12 +132,6 @@ def file_ref_url(ref: object) -> str | None:
     return url if isinstance(url, str) else None
 
 
-def file_ref_md5(ref: object) -> str | None:
-    """Return the MD5 checksum from a nested file ref, if present."""
-    md5 = ref.get("md5") if isinstance(ref, dict) else None
-    return md5 if isinstance(md5, str) else None
-
-
 def iter_file_refs(
     value: object, prefix: tuple[str, ...] = ()
 ) -> Iterator[tuple[tuple[str, ...], str]]:
