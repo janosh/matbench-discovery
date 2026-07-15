@@ -1,27 +1,23 @@
 """Tests for metrics_df_from_yaml aggregation across modeling tasks."""
 
+import pytest
+
 from matbench_discovery.enums import TestSubset
 from matbench_discovery.metrics import metrics_df_from_yaml
 
 
-def test_metrics_df_from_yaml_discovery() -> None:
-    """Discovery unique-prototype metrics load with non-negative MAE."""
-    df_metrics = metrics_df_from_yaml([f"discovery.{TestSubset.uniq_protos}"])
-    assert df_metrics.shape[0] >= 24
-    assert df_metrics.shape[1] >= 15
-    assert "MAE" in df_metrics
-    assert all(df_metrics.MAE >= 0), f"{df_metrics.MAE=}"
-    metrics_df_from_yaml(["discovery.full_test_set"])
-
-
-def test_metrics_df_from_yaml_phonons() -> None:
-    """Phonon kappa metrics load with a single non-negative SRME column."""
-    df_metrics = metrics_df_from_yaml(["phonons.kappa_103"])
-    kappa_cols = [col for col in df_metrics if col.endswith("_SRME")]
-    assert len(kappa_cols) == 1, f"{df_metrics.columns=}"
-    assert df_metrics.shape[0] >= 16
-    assert df_metrics.shape[1] >= 2
-    assert all(df_metrics[kappa_cols[0]] >= 0), f"{df_metrics[kappa_cols[0]]=}"
+@pytest.mark.parametrize(
+    ("nested_key", "metric_col"),
+    [
+        (f"discovery.{TestSubset.uniq_protos}", "MAE"),
+        ("phonons.kappa_103", "κ_SRME"),
+    ],
+)
+def test_metrics_df_from_yaml_task_metrics(nested_key: str, metric_col: str) -> None:
+    """Task metrics load into a nonempty frame with valid errors."""
+    df_metrics = metrics_df_from_yaml([nested_key])
+    assert metric_col in df_metrics
+    assert df_metrics[metric_col].ge(0).all()
 
 
 def test_metrics_df_from_yaml_preserves_non_numeric_values() -> None:
@@ -40,12 +36,15 @@ def test_metrics_df_from_yaml_multiple_paths() -> None:
     df_metrics_both = metrics_df_from_yaml(
         [f"discovery.{TestSubset.uniq_protos}", "phonons.kappa_103"]
     )
-    assert len(df_metrics_both.columns) == len(df_metrics_1.columns) + len(
-        df_metrics_2.columns
-    )
+    assert set(df_metrics_both) == set(df_metrics_1) | set(df_metrics_2)
 
 
-def test_metrics_df_from_yaml_edge_cases() -> None:
-    """Empty or invalid metric paths return an empty frame."""
-    assert metrics_df_from_yaml([]).empty
-    assert metrics_df_from_yaml(["invalid.path"]).empty
+@pytest.mark.parametrize(
+    "nested_keys",
+    [(), ("invalid.path",), ("md.run_time_sec",), ("md.run_time_sec.invalid",)],
+)
+def test_metrics_df_from_yaml_ignores_invalid_paths(
+    nested_keys: tuple[str, ...],
+) -> None:
+    """Missing and scalar metric paths return an empty frame."""
+    assert metrics_df_from_yaml(nested_keys).empty

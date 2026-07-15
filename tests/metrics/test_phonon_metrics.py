@@ -551,6 +551,18 @@ def test_kappa_metric_yaml_creates_missing_phonons(tmp_path: Path) -> None:
     assert kappa_metrics["pred_file"] == make_file_ref(KAPPA_PRED)
 
 
+def test_kappa_metric_yaml_uses_run_metadata_pred_file_url(tmp_path: Path) -> None:
+    """An authoritative run URL is retained in the prediction FileRef."""
+    pred_file_url = "https://figshare.com/files/new-prediction"
+    kappa_metrics = update_temp_kappa_yaml(
+        tmp_path,
+        "metrics: {}\n",
+        run_metadata={"pred_file_url": pred_file_url},
+        replace_pred_file=True,
+    )
+    assert kappa_metrics["pred_file"] == make_file_ref(KAPPA_PRED, url=pred_file_url)
+
+
 def test_kappa_metric_yaml_round_trip_updates_provenance(tmp_path: Path) -> None:
     """Complete-run metadata and sidecars round-trip through model YAML."""
     kappa_metrics = update_temp_kappa_yaml(
