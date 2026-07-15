@@ -1,75 +1,73 @@
 model_name: Wrenformer
 model_key: wrenformer
-model_version: v0.1.0 # the aviary version
-date_added: '2022-11-26'
-date_published: '2021-06-21'
+model_version: v0.1.0
+dates:
+  benchmark_added: '2022-11-26'
+  paper_published: '2021-06-21'
+lifecycle: active
 authors:
-  - name: Janosh Riebesell
-    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
-    email: janosh.riebesell@gmail.com
-    orcid: https://orcid.org/0000-0001-5233-3462
-  - name: Rhys Goodall
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0002-6589-1700
-  - name: Rokas Elijošius
-    affiliation: University of Cambridge
-    email: re344@cam.ac.uk
-    orcid: https://orcid.org/0000-0001-6397-0002
+- name: Janosh Riebesell
+  affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+  email: janosh.riebesell@gmail.com
+  orcid: https://orcid.org/0000-0001-5233-3462
+- name: Rhys Goodall
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0002-6589-1700
+- name: Rokas Elijošius
+  affiliation: University of Cambridge
+  email: re344@cam.ac.uk
+  orcid: https://orcid.org/0000-0001-6397-0002
 trained_by:
-  - name: Janosh Riebesell
-    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
-    email: janosh.riebesell@gmail.com
-    orcid: https://orcid.org/0000-0001-5233-3462
-
-requirements:
-  aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
-  torch: 1.11.0
-  torch-scatter: 2.0.9
-  pymatgen: 2022.10.22
-  numpy: 1.24.0
-  pandas: 1.5.1
+- name: Janosh Riebesell
+  affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+  email: janosh.riebesell@gmail.com
+  orcid: https://orcid.org/0000-0001-5233-3462
 
 repo: https://github.com/CompRhys/aviary
 doi: https://doi.org/10.1126/sciadv.abn4117
 paper: https://arxiv.org/abs/2106.11132
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
 checkpoint_url: https://api.wandb.ai/files/janosh/matbench-discovery/2kozbp4q/checkpoint.pth
-
 license:
   code: MIT
   code_url: https://github.com/CompRhys/aviary/blob/3238fb415/LICENSE
   checkpoint: MIT
   checkpoint_url: https://github.com/janosh/matbench-discovery/blob/7c0b089e7/license
 
+environment:
+  dependencies:
+  - aviary @ git+https://github.com/CompRhys/aviary@v0.1.0
+  - torch==1.11.0
+  - torch-scatter==2.0.9
+  - pymatgen==2022.10.22
+  - numpy==1.24.0
+  - pandas==1.5.1
+  python_version: '3.10'
 openness: OSOD
-trained_for_benchmark: true
+architecture_types: [transformer]
 train_task: RP2RE
 test_task: IP2E
 targets: E
-model_type: Transformer
+training_sets: [MP 2022]
 model_params: 5166658
 n_estimators: 10
-
-training_set: [MP 2022]
-training_cost: missing
-
 notes:
-  Description: |
+  description: |
     Wrenformer is a standard PyTorch Transformer Encoder trained to learn material embeddings from composition, space group, Wyckoff positions in a structure.
     ![Model workings](https://science.org/cms/10.1126/sciadv.abn4117/asset/a29e0899-77d1-47c8-82e3-00ab87c3b8d5/assets/images/large/sciadv.abn4117-f1.jpg)
     A ML–powered materials discovery workflow using Wrenformer's Wyckoff string inputs to predict formation energies for candidate materials in an enumerated library of Wyckoff representations (shapes are used to denote different Wyckoff positions and colors to denote different element types). Predicted formation energies are then compared against the known convex hull of stability. Structures satisfying the required symmetries are relaxed for materials predicted to be stable.
 
-  Long: It builds on [Roost](https://doi.org/10.1038/s41467-020-19964-7) and [Wren](https://doi.org/10.1126/sciadv.abn4117), by being a fast structure-free model that is still able to distinguish polymorphs through symmetry.
+  long: It builds on [Roost](https://doi.org/10.1038/s41467-020-19964-7) and [Wren](https://doi.org/10.1126/sciadv.abn4117), by being a fast structure-free model that is still able to distinguish polymorphs through symmetry.
 
 metrics:
-  phonons: not applicable # model doesn't predict forces
-  geo_opt: not applicable
   discovery:
-    pred_file: models/wrenformer/wrenformer-ens=10/2022-11-15-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52057553
-    pred_col: e_form_per_atom_wrenformer_pred_ens
+    pred_file:
+      name: models/wrenformer/wrenformer/2022-11-15-discovery.csv.gz
+      url: https://figshare.com/files/66646136
+      size: 1619355
+      md5: 5d8f9eecf0cfcb2a7f9901af68f3f16e
     full_test_set:
-      F1: 0.479 # fraction
+      F1: 0.479  # fraction
       DAF: 2.13 # dimensionless
       Precision: 0.365 # fraction
       Recall: 0.693 # fraction
@@ -78,16 +76,16 @@ metrics:
       FPR: 0.249 # fraction
       TNR: 0.751 # fraction
       FNR: 0.307 # fraction
-      TP: 30566.0 # count
-      FP: 53076.0 # count
-      TN: 159795.0 # count
-      FN: 13526.0 # count
+      TP: 30566 # count
+      FP: 53076 # count
+      TN: 159795 # count
+      FN: 13526 # count
       MAE: 0.105 # eV/atom
       RMSE: 0.182 # eV/atom
       R2: -0.02 # dimensionless
       missing_preds: 7 # count
     most_stable_10k:
-      F1: 0.721 # fraction
+      F1: 0.721  # fraction
       DAF: 3.691 # dimensionless
       Precision: 0.564 # fraction
       Recall: 1.0 # fraction
@@ -96,16 +94,16 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 5642.0 # count
-      FP: 4358.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
+      TP: 5642 # count
+      FP: 4358 # count
+      TN: 0 # count
+      FN: 0 # count
       MAE: 0.182 # eV/atom
       RMSE: 0.239 # eV/atom
       R2: 0.138 # dimensionless
       missing_preds: 0 # count
     unique_prototypes:
-      F1: 0.466 # fraction
+      F1: 0.466  # fraction
       DAF: 2.256 # dimensionless
       Precision: 0.345 # fraction
       Recall: 0.719 # fraction
@@ -114,10 +112,10 @@ metrics:
       FPR: 0.25 # fraction
       TNR: 0.75 # fraction
       FNR: 0.281 # fraction
-      TP: 23992.0 # count
-      FP: 45575.0 # count
-      TN: 136539.0 # count
-      FN: 9382.0 # count
+      TP: 23992 # count
+      FP: 45575 # count
+      TN: 136539 # count
+      FN: 9382 # count
       MAE: 0.11 # eV/atom
       RMSE: 0.186 # eV/atom
       R2: -0.018 # dimensionless

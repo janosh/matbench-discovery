@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Label, ModelData } from '$lib'
   import { AuthorBrief, DATASETS } from '$lib'
+  import { parse_dependency_spec } from '$lib/environment'
   import { get_nested_number, label_data_path } from '$lib/metrics'
   import pkg from '$site/package.json'
   import { format_num, Icon } from 'matterviz'
@@ -25,12 +26,13 @@
     title_style?: string
   } = $props()
 
-  let { model_name, model_key, model_params, training_set } = $derived(model)
+  let { model_name, model_key, model_params, training_sets } = $derived(model)
+  let env_packages = $derived(model.environment.dependencies.map(parse_dependency_spec))
 
   let links = $derived([
     [model.repo, `Repo`, `GitHub`],
     [model.paper, `Paper`, `Paper`],
-    [model.url, `Docs`, `Docs`],
+    [model.docs, `Docs`, `Docs`],
     [model.checkpoint_url, `Checkpoint`, `Download`],
     [`${pkg.repository}/tree/HEAD/models/${model.dirname}`, `Files`, `Directory`],
   ] as const)
@@ -63,48 +65,39 @@
 </nav>
 
 <section class="metadata" {...rest}>
-  {#if training_set}
-    <span style="grid-column: span 2">
-      <Icon icon="Database" />
-      Training data:
-      {#each training_set as train_set_key, idx (train_set_key)}
-        {#if idx > 0}
-          &nbsp;+&nbsp;
-        {/if}
-        {@const dataset = DATASETS[train_set_key]}
-        {#if dataset}
-          {@const { n_structures, name, slug, n_materials } = dataset}
-          {@const pretty_n_mat =
-            typeof n_materials === `number` ? format_num(n_materials) : n_materials}
-          {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
-          <a
-            href="/data/{slug}"
-            title="{name}: {format_num(n_structures)} structures{n_mat_str}"
-            {@attach tooltip()}
-          >
-            {train_set_key}
-          </a>
-        {:else}
-          <span title="Unknown dataset key: {train_set_key}">{train_set_key}</span>
-        {/if}
-      {/each}
-    </span>
-  {/if}
+  <span style="grid-column: span 2">
+    <Icon icon="Database" />
+    Training data:
+    {#each training_sets as train_set_key, idx (train_set_key)}
+      {#if idx > 0}
+        &nbsp;+&nbsp;
+      {/if}
+      {@const { n_structures, name, slug, n_materials } = DATASETS[train_set_key]}
+      {@const n_mat_str = n_materials ? ` from ${format_num(n_materials)} materials` : ``}
+      <a
+        href="/data/{slug}"
+        title="{name}: {format_num(n_structures)} structures{n_mat_str}"
+        {@attach tooltip()}
+      >
+        {train_set_key}
+      </a>
+    {/each}
+  </span>
   <span title="Date added">
     <Icon icon="Calendar" />
-    Added {model.date_added}
+    Added {model.dates.benchmark_added}
   </span>
-  {#if model.date_published}
+  {#if model.dates.paper_published}
     <span title="Date published">
       <Icon icon="CalendarCheck" />
-      Published {model.date_published}
+      Published {model.dates.paper_published}
     </span>
   {/if}
   <span>
     <Icon icon="NeuralNetwork" />
     {n_model_params} params
   </span>
-  {#if model.n_estimators > 1}
+  {#if (model.n_estimators ?? 1) > 1}
     <span>
       <Icon icon="Forest" />
       Ensemble of {model.n_estimators}
@@ -138,13 +131,10 @@
     <section transition:slide={{ duration: 200 }}>
       <h3>Package versions</h3>
       <ul>
-        {#each Object.entries(model.requirements ?? {}) as [name, version] (name)}
-          {@const [href, link_text] = version?.startsWith(`http`)
-            ? // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
-              [version, version.split(`/`).at(-1)]
-            : [`https://pypi.org/project/${name}/${version}`, version]}
+        {#each env_packages as { name, detail, href } (name + detail)}
           <li style="font-size: smaller">
-            {name}: <a {href} {...target}>{link_text}</a>
+            {name}{#if detail}:
+              <a {href} {...target}>{detail}</a>{/if}
           </li>
         {/each}
       </ul>

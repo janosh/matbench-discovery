@@ -6,21 +6,21 @@ do not track the evolving online leaderboard.
 
 import traceback
 
-from matbench_discovery.cli import cli_args
+from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.metrics import discovery
 
 if __name__ == "__main__":
+    models = complete_models()
     for model in cli_args.models:
-        if not model.is_complete:
+        if model not in models:
             print(f"\nSkipping {model.label}: incomplete discovery metrics")
-    cli_args.models = [model for model in cli_args.models if model.is_complete]
-    if not cli_args.models:
+    if not models:
         raise SystemExit(0)
 
     from matbench_discovery.preds.discovery import df_preds
 
     uniq_proto_prevalence = discovery.wbm_uniq_proto_prevalence()
-    for model in cli_args.models:
+    for model in models:
         try:
             print(f"\nProcessing {model.label}...")
             model_preds = df_preds[model.label]

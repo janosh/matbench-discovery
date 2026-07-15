@@ -14,14 +14,10 @@ from matbench_discovery.metrics.discovery import classify_stable
 test_subset = shared_payload_test_subset()
 model_f1_pairs = []
 for model in complete_models():
-    discovery_metrics = (model.metrics or {}).get("discovery")
-    if not isinstance(discovery_metrics, dict):
+    discovery_metrics = model.metrics.get("discovery") or {}
+    if (subset_metrics := discovery_metrics.get(test_subset)) is None:
         continue
-    subset_metrics = discovery_metrics.get(test_subset)
-    f1_score = subset_metrics.get("F1") if isinstance(subset_metrics, dict) else None
-    if not isinstance(f1_score, int | float):
-        continue
-    model_f1_pairs.append((model, float(f1_score)))
+    model_f1_pairs.append((model, float(subset_metrics["F1"])))
 
 models_to_plot = [model for model, _f1_score in model_f1_pairs]
 load_subset = test_subset if test_subset == TestSubset.uniq_protos else None

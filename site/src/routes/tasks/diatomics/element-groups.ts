@@ -1,6 +1,7 @@
-// TODO: Remove this file once the next MatterViz release exports these element groups.
-import { element_data } from 'matterviz/element'
+// TODO: remove category_groups+element_groups ie this whole file once the next MatterViz release exports these element groups.
 import type { ChemicalElement, ElementCategory } from 'matterviz/element'
+
+export { element_by_symbol } from 'matterviz/element'
 
 export type ElementGroup = {
   value: string
@@ -8,10 +9,6 @@ export type ElementGroup = {
   tooltip?: string
   includes: (element: ChemicalElement) => boolean
 }
-
-export const element_by_symbol = new Map(
-  element_data.map((element) => [element.symbol, element]),
-)
 
 const category_groups: [string, string, ElementCategory][] = [
   [`alkali`, `Alkali metals`, `alkali metal`],

@@ -126,22 +126,8 @@ def sankey_payload_from_flow(flow_data: Mapping[str, Any]) -> dict[str, Any]:
     values = round_list(flow_data["value"])
     if not labels or not src_idx or not tgt_idx:
         raise ValueError("sankey flow has no nodes or links")
-    return _canonicalize_sankey(labels, src_idx, tgt_idx, values)
-
-
-def _canonicalize_sankey(
-    labels: list[str],
-    src_idx: list[int],
-    tgt_idx: list[int],
-    values: list[Any],
-) -> dict[str, Any]:
-    """Drop unused nodes, reindex links, and sort them deterministically."""
-    # drop nodes no link references (plotly keeps many unused spacegroup nodes whose
-    # crammed labels overlap) and reindex the links onto the kept nodes
     used = sorted({*src_idx, *tgt_idx})
     remap = {old: new for new, old in enumerate(used)}
-    # canonicalize link order: upstream pandas value_counts can permute equal-count
-    # links between runs, which would make payload bytes depend on run composition
     links = sorted(
         zip(
             (remap[src] for src in src_idx),
@@ -239,7 +225,7 @@ def write_jsonl_payload(
         inactive_ids = {
             id_attr
             for model in Model
-            if not model.is_complete
+            if not model.is_active
             for id_attr in (model.key, model.label)
         }
         models = [

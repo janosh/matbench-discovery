@@ -3,35 +3,37 @@
 import os
 import sys
 import zipfile
+from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 from ase import Atoms
-from pymatgen.core import Lattice, Structure
 from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery.data import (
+    artifact_filename,
     as_dict_handler,
     ase_atoms_from_zip,
     ase_atoms_to_zip,
+    canonical_scientific_notation,
     df_wbm,
+    file_ref_name,
+    file_ref_url,
     glob_to_df,
+    iter_file_refs,
     load_df_wbm_with_preds,
+    make_file_ref,
+    parse_artifact_filename,
     round_trip_yaml,
+    task_coverage,
     update_yaml_file,
 )
 from matbench_discovery.enums import MbdKey, Model, TestSubset
-
-structure = Structure(
-    lattice=Lattice.cubic(5),
-    species=("Fe", "O"),
-    coords=((0, 0, 0), (0.5, 0.5, 0.5)),
-)
 
 atoms1 = Atoms("H2O", positions=[[0, 0, 0], [0, 0, 1], [0, 1, 0]], cell=[5, 5, 5])
 atoms1.info[Key.mat_id] = "structure1"
@@ -46,6 +48,14 @@ atoms2.info["bandgap"] = 2.34
 atoms2.info["magmoms"] = np.array([0.1, -0.1, 0.1])
 
 dummy_atoms = [atoms1, atoms2]
+
+
+@pytest.fixture
+def dummy_atoms_zip(tmp_path: Path) -> Path:
+    """ZIP containing the module-level dummy_atoms structures."""
+    zip_path = tmp_path / "test_structures.zip"
+    ase_atoms_to_zip(dummy_atoms, zip_path)
+    return zip_path
 
 
 def test_as_dict_handler() -> None:
@@ -107,122 +117,96 @@ def test_glob_to_df(
 
 
 @pytest.mark.parametrize(
-    "dummy_atoms",
+    "atoms_payload",
     [dummy_atoms, {"atoms1": atoms1, "atoms2": atoms2}],
 )
 def test_atoms_zip_round_trip(
-    tmp_path: Path, dummy_atoms: dict[str, Atoms] | list[Atoms]
+    tmp_path: Path, atoms_payload: dict[str, Atoms] | list[Atoms]
 ) -> None:
-    # Write atoms to a temporary ZIP file
+    """List and dict ASE payloads round-trip through zip without info drift."""
     zip_path = tmp_path / "test_structures.zip"
-    ase_atoms_to_zip(dummy_atoms, zip_path)
-
-    # Read atoms back from the ZIP file
+    ase_atoms_to_zip(atoms_payload, zip_path)
     read_atoms = ase_atoms_from_zip(zip_path)
+    assert len(read_atoms) == len(atoms_payload)
 
-    # Check that we got the same number of Atoms objects back
-    assert len(read_atoms) == len(dummy_atoms)
-
-    orig_atoms = dummy_atoms.values() if isinstance(dummy_atoms, dict) else dummy_atoms
+    orig_atoms = (
+        atoms_payload.values() if isinstance(atoms_payload, dict) else atoms_payload
+    )
     for original, read in zip(orig_atoms, read_atoms, strict=True):
-        # Check basic Atoms properties
         assert original.get_chemical_formula() == read.get_chemical_formula()
         assert np.allclose(original.get_positions(), read.get_positions())
         assert np.allclose(original.get_cell(), read.get_cell())
         assert np.all(original.pbc == read.pbc)
-
-        # Check info dictionary
+        assert set(original.info) == set(read.info)
         for key, value in original.info.items():
-            assert key in read.info, f"{key=} not in {list(read.info)}"
             read_val = read.info[key]
-            if np.ndarray in {type(value), type(read_val)}:
+            if isinstance(value, np.ndarray) or isinstance(read_val, np.ndarray):
                 assert np.allclose(value, read_val), f"Mismatch in {key}"
             else:
                 assert value == read_val, f"Mismatch in {key}"
 
-        # Check that no extra keys were added
-        assert set(original.info) == set(read.info)
 
-
-def test_ase_atoms_from_zip_with_file_filter(tmp_path: Path) -> None:
-    zip_path = tmp_path / "test_structures.zip"
-    ase_atoms_to_zip(dummy_atoms, zip_path)
-    read_atoms = ase_atoms_from_zip(
-        zip_path, file_filter=lambda name, _idx: "1" in name
+def test_ase_atoms_from_zip_read_options(dummy_atoms_zip: Path) -> None:
+    """file_filter and filename_to_info options select / annotate zip members."""
+    filtered = ase_atoms_from_zip(
+        dummy_atoms_zip, file_filter=lambda name, _idx: "1" in name
     )
-    assert len(read_atoms) == 1
-    assert read_atoms[0].get_chemical_formula() == "H2O"
+    assert len(filtered) == 1
+    assert filtered[0].get_chemical_formula() == "H2O"
+
+    with_names = ase_atoms_from_zip(dummy_atoms_zip, filename_to_info=True)
+    assert [atoms.info["filename"] for atoms in with_names] == [
+        "structure1.extxyz",
+        "structure2.extxyz",
+    ]
 
 
-def test_ase_atoms_from_zip_with_filename_to_info(tmp_path: Path) -> None:
-    zip_path = tmp_path / "test_structures.zip"
-    ase_atoms_to_zip(dummy_atoms, zip_path)
-    read_atoms = ase_atoms_from_zip(zip_path, filename_to_info=True)
-    assert all("filename" in atoms.info for atoms in read_atoms)
-    assert read_atoms[0].info["filename"] == "structure1.extxyz"
-    assert read_atoms[1].info["filename"] == "structure2.extxyz"
-
-
-def test_ase_atoms_from_zip_empty_file(tmp_path: Path) -> None:
+def test_ase_atoms_from_zip_bad_inputs(tmp_path: Path) -> None:
+    """Empty zips return []; corrupt zips raise BadZipFile."""
     empty_zip = tmp_path / "empty.zip"
     with zipfile.ZipFile(empty_zip, mode="w"):
         pass
-    read_atoms = ase_atoms_from_zip(empty_zip)
-    assert len(read_atoms) == 0
+    assert ase_atoms_from_zip(empty_zip) == []
 
-
-def test_ase_atoms_from_zip_invalid_file(tmp_path: Path) -> None:
     invalid_zip = tmp_path / "invalid.zip"
-    with open(invalid_zip, mode="w") as file:
-        file.write("This is not a zip file")
+    invalid_zip.write_text("This is not a zip file")
     with pytest.raises(zipfile.BadZipFile):
         ase_atoms_from_zip(invalid_zip)
 
 
-def test_ase_atoms_from_zip_with_limit(tmp_path: Path) -> None:
-    zip_path = tmp_path / "test_structures.zip"
-    ase_atoms_to_zip(dummy_atoms, zip_path)
-
-    # Test with limit=1
-    read_atoms = ase_atoms_from_zip(zip_path, limit=1)
-    assert len(read_atoms) == 1
-    assert read_atoms[0].get_chemical_formula() == "H2O"
-
-    # Test with limit=2 (should read all structures as there are only 2)
-    read_atoms = ase_atoms_from_zip(zip_path, limit=2)
-    assert len(read_atoms) == 2
-    assert read_atoms[0].get_chemical_formula() == "H2O"
-    assert read_atoms[1].get_chemical_formula() == "CO2"
-
-    # Test with limit=None (default behavior, should read all structures)
-    read_atoms = ase_atoms_from_zip(zip_path, limit=None)
-    assert len(read_atoms) == 2
-
-    # Test with limit greater than the number of structures
-    read_atoms = ase_atoms_from_zip(zip_path, limit=10)
-    assert len(read_atoms) == 2
+@pytest.mark.parametrize(
+    ("limit", "expected_formulas"),
+    [
+        (1, ["H2O"]),
+        (2, ["H2O", "CO2"]),
+        (None, ["H2O", "CO2"]),
+        (10, ["H2O", "CO2"]),
+    ],
+)
+def test_ase_atoms_from_zip_with_limit(
+    dummy_atoms_zip: Path, limit: int | None, expected_formulas: list[str]
+) -> None:
+    """Integer/None limits truncate or return the full zip contents."""
+    read_atoms = ase_atoms_from_zip(dummy_atoms_zip, limit=limit)
+    assert [atoms.get_chemical_formula() for atoms in read_atoms] == expected_formulas
 
 
 @pytest.mark.parametrize(
-    "slice_limit, expected_formulas, expected_count",
+    ("slice_limit", "expected_formulas"),
     [
-        (slice(1, 3), ["N2", "O2"], 2),
-        (slice(None, 2), ["H2", "N2"], 2),
-        (slice(3, None), ["F2", "Cl2"], 2),
-        (slice(0, None, 2), ["H2", "O2", "Cl2"], 3),
-        (slice(None, None, -1), ["Cl2", "F2", "O2", "N2", "H2"], 5),
-        (slice(5, 5), [], 0),
-        (slice(10, 20), [], 0),
+        (slice(1, 3), ["N2", "O2"]),
+        (slice(None, 2), ["H2", "N2"]),
+        (slice(3, None), ["F2", "Cl2"]),
+        (slice(0, None, 2), ["H2", "O2", "Cl2"]),
+        (slice(None, None, -1), ["Cl2", "F2", "O2", "N2", "H2"]),
+        (slice(5, 5), []),
+        (slice(10, 20), []),
     ],
 )
 def test_ase_atoms_from_zip_with_slice_limit(
-    tmp_path: Path,
-    slice_limit: slice,
-    expected_formulas: list[str],
-    expected_count: int,
+    tmp_path: Path, slice_limit: slice, expected_formulas: list[str]
 ) -> None:
-    """Test ase_atoms_from_zip with slice objects for the limit parameter."""
-    # Create a zip file with more structures for better slice testing
+    """Slice limits select zip members by archive order."""
     more_atoms = [
         Atoms("H2", positions=[[0, 0, 0], [0, 0, 1]], cell=[4, 4, 4]),
         Atoms("N2", positions=[[0, 0, 0], [0, 0, 1.1]], cell=[4, 4, 4]),
@@ -230,24 +214,13 @@ def test_ase_atoms_from_zip_with_slice_limit(
         Atoms("F2", positions=[[0, 0, 0], [0, 0, 1.4]], cell=[4, 4, 4]),
         Atoms("Cl2", positions=[[0, 0, 0], [0, 0, 2.0]], cell=[5, 5, 5]),
     ]
-
-    # Add material IDs to each structure
     for idx, atoms in enumerate(more_atoms):
         atoms.info[Key.mat_id] = f"slice_test_{idx}"
 
     zip_path = tmp_path / "slice_test_structures.zip"
     ase_atoms_to_zip(more_atoms, zip_path)
-
-    # Test with the parametrized slice
     read_atoms = ase_atoms_from_zip(zip_path, limit=slice_limit)
-
-    # Check the number of structures returned
-    assert len(read_atoms) == expected_count
-
-    # Check the chemical formulas of the returned structures
-    for idx, formula in enumerate(expected_formulas):
-        if idx < len(read_atoms):
-            assert read_atoms[idx].get_chemical_formula() == formula
+    assert [atoms.get_chemical_formula() for atoms in read_atoms] == expected_formulas
 
 
 @pytest.mark.skipif(
@@ -298,7 +271,7 @@ def test_load_df_wbm_with_preds_mock_data_models() -> None:
     default_cols = list(df_default)
     assert default_cols == [*df_wbm, *(model.label for model in Model.active())]
     assert set(default_cols).isdisjoint(
-        model.label for model in Model if not model.is_complete
+        model.label for model in Model if not model.is_active
     )
     assert inactive_cols == [[*df_wbm, inactive_model.label]] * len(inactive_model_refs)
 
@@ -332,14 +305,14 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
     ):
         load_df_wbm_with_preds(max_error_threshold=-1)
 
-    # Test pred_col not in predictions file
+    # Test missing canonical prediction column
     with (
         # Make glob return a non-empty list to skip the mock data loading path
         patch("matbench_discovery.data.glob", return_value=["dummy_file.csv"]),
         # Patch only the specific read_csv call in glob_to_df that loads predictions,
         # not the one that loads mock data
         patch("pandas.read_csv", return_value=df_float),
-        pytest.raises(ValueError, match=r"pred_col.*not found in"),
+        pytest.raises(ValueError, match=r"e_form_per_atom column not found in"),
     ):
         load_df_wbm_with_preds(models=["alignn"])
 
@@ -357,10 +330,9 @@ def test_load_df_wbm_with_preds_subset(
 
 
 def test_update_yaml_file(tmp_path: Path) -> None:
-    """Test updating YAML files at specific paths."""
+    """Update YAML at dotted paths; preserve comments; callables own the merge."""
     test_file = f"{tmp_path}/test.yml"
 
-    # Test case 1: Basic update at root level
     initial_data = {"metrics": {"discovery": {"mae": 0.1, "pred_file": "old.csv"}}}
     with open(test_file, mode="w") as file:
         round_trip_yaml.dump(initial_data, file)
@@ -373,11 +345,9 @@ def test_update_yaml_file(tmp_path: Path) -> None:
     assert result["pred_file"] == "old.csv"
     assert update_data == {"mae": 0.2, "rmse": 0.3}
 
-    # Test case 2: Create new nested path
     updated_yaml = update_yaml_file(test_file, "metrics.new.nested.path", {"value": 42})
     assert updated_yaml["metrics"]["new"]["nested"]["path"] == {"value": 42}
 
-    # Test case 3: Update with comments
     yaml_with_comments = """
 metrics:
   discovery:  # Discovery metrics
@@ -392,31 +362,167 @@ metrics:
     )
     assert updated_yaml["metrics"]["discovery"] == {"mae": 0.3, "rmse": 0.4}
 
-    # Verify comments are preserved in the file
     with open(test_file) as file:
         content = file.read()
     assert "discovery:  # Discovery metrics\n    mae: 0.3" in content, f"{content=}"
 
-    # Test case 4: Update with CommentedMap
     commented_data = CommentedMap({"value": 1})
     commented_data.yaml_add_eol_comment("A comment", "value")
     updated_yaml = update_yaml_file(test_file, "new.path", commented_data)
-
-    # Verify the data structure
     assert updated_yaml["new"]["path"]["value"] == 1
-    # Verify comments in the file
     with open(test_file) as file:
         content = file.read()
-    # check that old content is still there
     assert "discovery:  # Discovery metrics\n    mae: 0.3" in content, f"{content=}"
-    # check new content was added
     assert "value: 1  # A comment" in content, f"{content=}"
 
-    # Test case 5: Error cases
+    # Callables ignore preserve_existing and may drop unspecified prior keys.
+    with open(test_file, mode="w") as file:
+        round_trip_yaml.dump(
+            {"metrics": {"discovery": {"mae": 0.1, "pred_file": "old.csv"}}}, file
+        )
+
+    def replace_mae_only(section: dict[str, object]) -> dict[str, object]:
+        """Return only the updated field (drops unspecified prior keys)."""
+        assert section["pred_file"] == "old.csv"
+        return {"mae": 0.9}
+
+    updated = update_yaml_file(
+        test_file, "metrics.discovery", replace_mae_only, preserve_existing=True
+    )
+    assert updated["metrics"]["discovery"] == {"mae": 0.9}
+
+    # Dict updates honor preserve_existing.
+    with open(test_file, mode="w") as file:
+        round_trip_yaml.dump(
+            {"metrics": {"discovery": {"mae": 0.1, "pred_file": "old.csv"}}}, file
+        )
+    updated = update_yaml_file(
+        test_file, "metrics.discovery", {"mae": 0.5}, preserve_existing=True
+    )
+    assert updated["metrics"]["discovery"] == {"mae": 0.5, "pred_file": "old.csv"}
+    updated = update_yaml_file(
+        test_file, "metrics.discovery", {"mae": 0.6}, preserve_existing=False
+    )
+    assert updated["metrics"]["discovery"] == {"mae": 0.6}
+
     with pytest.raises(FileNotFoundError):
         update_yaml_file("non-existent.yml", "path", {"data": 1})
 
-    # Test bad paths
     for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
         with pytest.raises(ValueError, match="Invalid dotted_path="):
             update_yaml_file(test_file, path, {"data": 1})
+
+
+# --- model artifact filenames / FileRef helpers ---
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (1e-5, "1e-5"),
+        ("0.00001", "1e-5"),
+        (1e-2, "1e-2"),
+        (2.5e-3, "2.5e-3"),
+    ],
+)
+def test_canonical_scientific_notation(value: float | str, expected: str) -> None:
+    """Positive finite values render without exponent padding."""
+    assert canonical_scientific_notation(value) == expected
+
+
+@pytest.mark.parametrize("value", [0, -1.0, "not-a-number"])
+def test_canonical_scientific_notation_rejects_invalid(value: object) -> None:
+    """Non-positive or non-numeric symprec values are rejected."""
+    with pytest.raises(
+        ValueError,
+        match=r"Expected a positive finite number|Invalid numeric",
+    ):
+        canonical_scientific_notation(cast("Any", value))
+
+
+@pytest.mark.parametrize(
+    ("role", "expected_suffix"),
+    [
+        ("discovery", "discovery.csv.gz"),
+        ("geo_opt", "geo-opt.jsonl.gz"),
+        ("md_metrics", "md-metrics.csv.gz"),
+        ("diatomics", "diatomics.json.gz"),
+    ],
+)
+def test_artifact_filename_static_roles(role: str, expected_suffix: str) -> None:
+    """Static artifact roles render dated canonical filenames."""
+    assert artifact_filename("2026-07-01", role) == f"2026-07-01-{expected_suffix}"
+    assert parse_artifact_filename(f"2026-07-01-{expected_suffix}") == role
+
+
+def test_artifact_filename_geo_opt_analysis_round_trip() -> None:
+    """Geo-opt analysis filenames round-trip; invalid calendar dates are rejected."""
+    filename = artifact_filename(
+        date(2026, 7, 1),
+        "geo_opt_analysis",
+        symprec=1e-5,
+        moyo_version="0.4.2",
+    )
+    assert filename == "2026-07-01-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz"
+    assert parse_artifact_filename(filename) == "geo_opt_analysis"
+    with pytest.raises(ValueError, match="Invalid ISO date"):
+        parse_artifact_filename("2026-02-30-discovery.csv.gz")
+
+
+def test_make_file_ref() -> None:
+    """Omit unset optionals; reject unpaired size/md5."""
+    path = "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz"
+    assert make_file_ref(path) == {"name": path}
+    assert make_file_ref(
+        path, url="https://figshare.com/files/1", size=10, md5="a" * 32
+    ) == {
+        "name": path,
+        "url": "https://figshare.com/files/1",
+        "size": 10,
+        "md5": "a" * 32,
+    }
+    for size, md5 in ((10, None), (None, "a" * 32)):
+        with pytest.raises(ValueError, match="size and md5"):
+            make_file_ref(path, size=size, md5=md5)
+
+
+def test_file_ref_accessors() -> None:
+    """Nested file refs expose names/URLs and can be traversed."""
+    nested = {
+        "name": "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
+        "url": "https://figshare.com/files/1",
+    }
+    assert file_ref_name(nested) == nested["name"]
+    assert file_ref_url(nested) == nested["url"]
+    assert file_ref_name("legacy/path.csv.gz") is None
+    assert list(iter_file_refs({"metrics": {"pred_file": nested}})) == [
+        (("metrics", "pred_file"), nested["name"])
+    ]
+    with pytest.raises(ValueError, match=r"Invalid FileRef at metrics\.pred_file"):
+        list(iter_file_refs({"metrics": {"pred_file": "legacy/path.csv.gz"}}))
+
+
+@pytest.mark.parametrize(
+    ("metadata", "task", "expected_status"),
+    [
+        (
+            {"metrics": {"discovery": {"pred_file": {"name": "x.csv.gz"}}}},
+            "discovery",
+            "complete",
+        ),
+        ({"targets": "E"}, "md", "not_applicable"),
+        ({"lifecycle": "aborted"}, "discovery", "not_available"),
+        ({}, "md", "pending"),
+        (
+            {"metrics": {"md": {"status": "pending", "reason": "not run yet"}}},
+            "md",
+            "pending",
+        ),
+    ],
+)
+def test_task_coverage_derivation(
+    metadata: dict[str, object], task: str, expected_status: str
+) -> None:
+    """Coverage is derived from metrics, targets, lifecycle, or explicit status."""
+    status, _reason = task_coverage(metadata, task)  # type: ignore[arg-type]
+    assert status == expected_status

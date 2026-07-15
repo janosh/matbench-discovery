@@ -132,10 +132,10 @@
     )
   }
 
-  async function load_data(model_key: string | undefined) {
+  async function load_data(model_key: string) {
     const current_load_id = ++load_id
     selected_idx = null
-    if (!model_key || !has_kappa_parity_model(model_key)) {
+    if (!has_kappa_parity_model(model_key)) {
       status = `error`
       error_message = `${model.model_name} has no κ parity data`
       return

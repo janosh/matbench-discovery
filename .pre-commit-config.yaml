@@ -11,7 +11,7 @@ repos:
       - id: ruff-format
 
   - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: v0.0.58
+    rev: v0.0.59
     hooks:
       - id: ty
         # --isolated: don't create/update uv.lock or the local .venv
@@ -89,6 +89,10 @@ repos:
         name: check-jsonschema-datasets
         files: ^data/datasets\.yml$
         args: [--schemafile, tests/dataset-schema.yml]
+      - id: check-jsonschema
+        name: check-jsonschema-modeling-tasks
+        files: ^matbench_discovery/modeling-tasks\.yml$
+        args: [--schemafile, tests/modeling-tasks-schema.yml]
       - id: check-github-workflows
 
   - repo: https://github.com/crate-ci/typos

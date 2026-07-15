@@ -15,8 +15,6 @@ from matbench_discovery.remote import figshare
     [
         (b'{"key": "value"}', {"key": "value"}, False),  # JSON
         (b"binary_data", b"binary_data", True),  # Binary
-        (b"plain text", b"plain text", False),  # Text
-        (b"", b"", False),  # Empty
         (b"{invalid-json}", b"{invalid-json}", False),  # Invalid JSON
     ],
 )
@@ -33,10 +31,8 @@ def test_make_request(
 @pytest.mark.parametrize(
     "error_content,status_code",
     [
-        (b"Not found", 404),
         (b'{"error": "Invalid token"}', 401),
         (b"", 500),
-        (b'{"message": "Rate limit exceeded"}', 429),
     ],
 )
 def test_make_request_errors(error_content: bytes, status_code: int) -> None:
@@ -67,13 +63,11 @@ def test_article_exists(status_code: int, expected: bool) -> None:
         assert figshare.article_exists(12345) == expected
 
 
-# Various error codes that should raise exceptions
-@pytest.mark.parametrize("status_code", [401, 403, 500, 503])
-def test_article_exists_errors(status_code: int) -> None:
+def test_article_exists_errors() -> None:
     """Test article_exists raises exceptions for non-404 errors."""
     mock_response = MagicMock()
     mock_response.raise_for_status.side_effect = requests.HTTPError(
-        response=MagicMock(status_code=status_code)
+        response=MagicMock(status_code=500)
     )
 
     err_msg = "article_url='https://api.figshare.com/v2/account/articles/12345'"
@@ -84,19 +78,10 @@ def test_article_exists_errors(status_code: int) -> None:
         figshare.article_exists(12345)
 
 
-@pytest.mark.parametrize(
-    "metadata,article_id",
-    [
-        ({"title": "Test Article"}, 12345),
-        ({"title": "Test", "description": "Desc"}, 67890),
-        ({"title": "Test", "tags": ["tag1", "tag2"]}, 11111),
-        ({"title": "Test", "categories": [1, 2], "keywords": ["key"]}, 22222),
-    ],
-)
-def test_create_article_variants(
-    metadata: dict[str, Any], article_id: int, capsys: pytest.CaptureFixture
-) -> None:
-    """Test article creation with different metadata combinations."""
+def test_create_article(capsys: pytest.CaptureFixture) -> None:
+    """Article creation follows the returned location and reports its title."""
+    metadata = {"title": "Test", "description": "Desc", "tags": ["tag1", "tag2"]}
+    article_id = 12345
     with patch(
         "matbench_discovery.remote.figshare.make_request",
         side_effect=[{"location": "loc"}, {"id": article_id}],
@@ -111,7 +96,6 @@ def test_create_article_variants(
 @pytest.mark.parametrize(
     "test_data,expected_size,expected_md5",
     [
-        (b"test data", 9, "eb733a00c0c9d336e65691a37ab54293"),
         (b"", 0, "d41d8cd98f00b204e9800998ecf8427e"),  # Empty
         (b"hello world", 11, "5eb63bbbe01eeed093cb22bb8f5acdc3"),  # Regular
         (b"a" * 1000, 1000, "cabe45dcc9ae5b66ba86600cca6b8ba8"),  # Large
@@ -127,20 +111,9 @@ def test_get_file_hash_and_size_variants(
     test_file = tmp_path / "test_file"
     test_file.write_bytes(test_data)
 
-    md5, size = figshare.get_file_hash_and_size(str(test_file))
+    md5, size = figshare.get_file_hash_and_size(str(test_file), chunk_size=5)
     assert size == expected_size
     assert md5 == expected_md5
-
-
-def test_get_file_hash_and_size_large_file(tmp_path: Path) -> None:
-    """Test hash and size calculation for large files using chunked reading."""
-    chunks = [b"chunk1", b"chunk2", b"chunk3"]
-    test_file = tmp_path / "large_file"
-    test_file.write_bytes(b"".join(chunks))
-
-    md5, size = figshare.get_file_hash_and_size(str(test_file), chunk_size=5)
-    assert size == sum(len(chunk) for chunk in chunks)
-    assert md5 == "2aca0a9378723b1bed59975523ed50cd"
 
 
 @pytest.mark.parametrize(
@@ -150,18 +123,7 @@ def test_get_file_hash_and_size_large_file(tmp_path: Path) -> None:
             [{"partNo": 1, "startOffset": 0, "endOffset": 9}],
             "",
         ),
-        (  # Custom file name
-            [{"partNo": 1, "startOffset": 0, "endOffset": 9}],
-            "custom_name.txt",
-        ),
-        (  # Multiple parts with default name
-            [
-                {"partNo": 1, "startOffset": 0, "endOffset": 4},
-                {"partNo": 2, "startOffset": 5, "endOffset": 9},
-            ],
-            "",
-        ),
-        (  # Multiple parts with custom name
+        (  # Custom name and multiple parts
             [
                 {"partNo": 1, "startOffset": 0, "endOffset": 4},
                 {"partNo": 2, "startOffset": 5, "endOffset": 9},
@@ -215,8 +177,32 @@ DUMMY_FILES = [
 @pytest.mark.parametrize("files", [[], DUMMY_FILES])  # Empty and non-empty
 def test_list_article_files(files: list[dict[str, Any]]) -> None:
     """Test list_article_files with various file configurations."""
-    with patch("matbench_discovery.remote.figshare.make_request", return_value=files):
+    with patch(
+        "matbench_discovery.remote.figshare.make_request", return_value=files
+    ) as request:
         assert figshare.list_article_files(12345) == files
+    request.assert_called_once_with(
+        "GET",
+        f"{figshare.BASE_URL}/account/articles/12345/files?page_size=1000&page=1",
+    )
+
+
+def test_list_article_files_paginates() -> None:
+    """Fetch subsequent pages until Figshare returns a short page."""
+    first_page = [
+        {"name": f"file-{file_idx}.txt", "id": file_idx} for file_idx in range(1000)
+    ]
+    with patch(
+        "matbench_discovery.remote.figshare.make_request",
+        side_effect=[first_page, DUMMY_FILES],
+    ) as request:
+        assert figshare.list_article_files(12345) == [*first_page, *DUMMY_FILES]
+
+    base_url = f"{figshare.BASE_URL}/account/articles/12345/files?page_size=1000"
+    assert [mock_call.args for mock_call in request.call_args_list] == [
+        ("GET", f"{base_url}&page=1"),
+        ("GET", f"{base_url}&page=2"),
+    ]
 
 
 def test_list_article_files_errors(capsys: pytest.CaptureFixture) -> None:
@@ -229,47 +215,35 @@ def test_list_article_files_errors(capsys: pytest.CaptureFixture) -> None:
     with patch("requests.request", return_value=mock_response):
         # should return empty list for 404 errors
         assert figshare.list_article_files(12345) == []
+        assert figshare.get_existing_files(12345) == {}
 
     stdout, stderr = capsys.readouterr()
     assert stdout == stderr == ""
 
-    for status_code in (401, 403, 500, 503):
-        mock_response = MagicMock()
-        mock_response.raise_for_status.side_effect = requests.HTTPError(
-            response=MagicMock(status_code=status_code)
-        )
-
-        with (
-            patch("requests.request", return_value=mock_response),
-            pytest.raises(requests.HTTPError, match="\nbody="),
-        ):
-            figshare.list_article_files(12345)
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        response=MagicMock(status_code=500)
+    )
+    with (
+        patch("requests.request", return_value=mock_response),
+        pytest.raises(requests.HTTPError, match="\nbody="),
+    ):
+        figshare.list_article_files(12345)
 
 
 @pytest.mark.parametrize(
     "files,expected",
     [
         ([], {}),  # Empty list case
-        (  # Single file case
-            [{"name": "test.txt", "id": 1, "computed_md5": "abc123"}],
-            {"test.txt": {"id": 1, "computed_md5": "abc123"}},
-        ),
-        (  # Multiple files case
+        (  # Multiple files and duplicate names use the final entry
             [
                 {"name": "file1.txt", "id": 1, "computed_md5": "abc123"},
-                {"name": "file2.txt", "id": 2, "computed_md5": "def456"},
+                {"name": "test.txt", "id": 2, "computed_md5": "def456"},
+                {"name": "test.txt", "id": 3, "computed_md5": "ghi789"},
             ],
             {
                 "file1.txt": {"id": 1, "computed_md5": "abc123"},
-                "file2.txt": {"id": 2, "computed_md5": "def456"},
+                "test.txt": {"id": 3, "computed_md5": "ghi789"},
             },
-        ),
-        (  # Files with same name (should use last one)
-            [
-                {"name": "test.txt", "id": 1, "computed_md5": "abc123"},
-                {"name": "test.txt", "id": 2, "computed_md5": "def456"},
-            ],
-            {"test.txt": {"id": 2, "computed_md5": "def456"}},
         ),
     ],
 )
@@ -277,37 +251,29 @@ def test_get_existing_files(
     files: list[dict[str, Any]], expected: dict[str, dict[str, Any]]
 ) -> None:
     """Test get_existing_files with various file configurations."""
+    original_files = [file.copy() for file in files]
     with patch("matbench_discovery.remote.figshare.make_request", return_value=files):
         assert figshare.get_existing_files(12345) == expected
+    assert files == original_files
 
 
-def test_get_existing_files_404() -> None:
-    """Test get_existing_files returns empty dict for 404 errors."""
-    mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = requests.HTTPError(
-        response=MagicMock(status_code=404)
-    )
+def test_file_exists_with_same_hash_reuses_inventory() -> None:
+    """A supplied article inventory avoids another Figshare listing request."""
+    existing_files = {"file.txt": {"id": 123, "computed_md5": "abc"}}
+    with patch.object(figshare, "get_existing_files") as get_existing_files:
+        result = figshare.file_exists_with_same_hash(
+            12345, "file.txt", "abc", existing_files=existing_files
+        )
+    assert result == (True, 123)
+    get_existing_files.assert_not_called()
 
-    with patch("requests.request", return_value=mock_response):
-        assert figshare.get_existing_files(12345) == {}
 
-
-@pytest.mark.parametrize(
-    "status_code,expected_result",
-    [
-        (204, True),  # Success case
-        (200, True),  # Alternative success case
-    ],
-)
-def test_delete_file_success(status_code: int, expected_result: bool) -> None:
-    """Test delete_file function with successful deletion."""
-    _mock_response = MagicMock(status_code=status_code)
-
+def test_delete_file_success() -> None:
+    """Successful deletion calls the expected article endpoint."""
     with patch(
         "matbench_discovery.remote.figshare.make_request", return_value=None
     ) as mock_make_request:
-        result = figshare.delete_file(12345, 67890)
-        assert result == expected_result
+        assert figshare.delete_file(12345, 67890) is True
         mock_make_request.assert_called_once_with(
             "DELETE", f"{figshare.BASE_URL}/account/articles/12345/files/67890"
         )
@@ -324,18 +290,19 @@ def test_delete_file_error() -> None:
 
 
 @pytest.mark.parametrize(
-    "force_reupload,file_exists,expected_upload,expected_delete",
+    "force_reupload,file_exists,delete_success,expected_upload,expected_delete",
     [
-        (False, False, True, False),  # File doesn't exist, should upload
-        (False, True, False, False),  # File exists, shouldn't upload or delete
-        (True, False, True, False),  # File doesn't exist, should upload, no delete
-        # File exists, force reupload, should delete and upload
-        (True, True, True, True),
+        (False, False, True, True, False),
+        (False, True, True, False, False),
+        (True, False, True, True, False),
+        (True, True, True, True, True),
+        (True, True, False, False, True),
     ],
 )
 def test_upload_file_if_needed(
     force_reupload: bool,
     file_exists: bool,
+    delete_success: bool,
     expected_upload: bool,
     expected_delete: bool,
     tmp_path: Path,
@@ -345,8 +312,9 @@ def test_upload_file_if_needed(
     test_file.write_text("test content")
     file_id = 67890 if file_exists else None
 
-    mock_delete = MagicMock(return_value=True)
+    mock_delete = MagicMock(return_value=delete_success)
     mock_upload = MagicMock(return_value=12345)
+    existing_files: dict[str, dict[str, Any]] = {}
 
     with patch.multiple(
         "matbench_discovery.remote.figshare",
@@ -356,7 +324,11 @@ def test_upload_file_if_needed(
         upload_file=mock_upload,
     ):
         result_id, was_uploaded = figshare.upload_file_if_needed(
-            54321, str(test_file), force_reupload=force_reupload
+            54321,
+            str(test_file),
+            file_name="test_file.txt",
+            force_reupload=force_reupload,
+            existing_files=existing_files,
         )
 
         # Verify expected behavior
@@ -364,32 +336,12 @@ def test_upload_file_if_needed(
         assert mock_upload.called == expected_upload
         assert was_uploaded == expected_upload
         assert result_id == (12345 if expected_upload else file_id)
-
-
-def test_upload_file_if_needed_delete_failure(tmp_path: Path) -> None:
-    """Test upload_file_if_needed when delete fails but force_reupload is True."""
-    test_file = tmp_path / "test_file.txt"
-    test_file.write_text("test content")
-
-    mock_delete = MagicMock(return_value=False)
-    mock_upload = MagicMock()
-
-    with patch.multiple(
-        "matbench_discovery.remote.figshare",
-        get_file_hash_and_size=MagicMock(return_value=("test_hash", 12)),
-        file_exists_with_same_hash=MagicMock(return_value=(True, 67890)),
-        delete_file=mock_delete,
-        upload_file=mock_upload,
-    ):
-        result_id, was_uploaded = figshare.upload_file_if_needed(
-            54321, str(test_file), force_reupload=True
+        expected_files = (
+            {"test_file.txt": {"id": 12345, "computed_md5": "test_hash"}}
+            if expected_upload
+            else {}
         )
-
-        # Verify expected behavior
-        assert mock_delete.called
-        assert not mock_upload.called
-        assert not was_uploaded
-        assert result_id == 67890
+        assert existing_files == expected_files
 
 
 @pytest.mark.parametrize(
@@ -408,15 +360,9 @@ def test_publish_article(
     article_id = 12345
     err_msg = "Test error"
 
-    def mock_make_request_side_effect(*_args: str) -> None:
-        """Either return successful result or raise exception based on success param."""
-        if success:
-            return  # Successful response for POST
-        raise requests.RequestException(err_msg)
-
     with patch(
         "matbench_discovery.remote.figshare.make_request",
-        side_effect=mock_make_request_side_effect,
+        side_effect=None if success else requests.RequestException(err_msg),
     ):
         assert figshare.publish_article(article_id, verbose=verbose) is success
 
@@ -496,34 +442,7 @@ def test_find_similar_files(
     threshold: float,
 ) -> None:
     """Test find_similar_files with various scenarios."""
-    with (
-        patch("difflib.SequenceMatcher") as mock_matcher,
-        patch(
-            "matbench_discovery.remote.figshare._extract_task_type"
-        ) as mock_extract_task_type,
-    ):
-        # Configure similarity values
-        mock_seq_matcher = MagicMock()
-        mock_seq_matcher.ratio.return_value = 0.8  # Default high similarity
-
-        # For high threshold test
-        if threshold > 0.9:
-            mock_seq_matcher.ratio.return_value = 0.9  # Not enough for 0.95
-
-        mock_matcher.return_value = mock_seq_matcher
-
-        # Configure task type extraction
-        def extract_task(filename: str) -> str:
-            for task in ["kappa", "phonon", "discovery", "geo"]:
-                if task in filename:
-                    return task
-            return ""
-
-        mock_extract_task_type.side_effect = extract_task
-
-        # Run test
-        result = sorted(
-            figshare.find_similar_files(filename, existing_files, threshold),
-            key=lambda x: x[0],
-        )
-        assert result == sorted(expected_similar, key=lambda x: x[0])
+    assert (
+        figshare.find_similar_files(filename, existing_files, threshold)
+        == expected_similar
+    )

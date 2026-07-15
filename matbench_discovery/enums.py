@@ -4,7 +4,7 @@ import functools
 import os
 import re
 from enum import EnumType, StrEnum, _EnumDict, auto, unique
-from typing import Any, Self, TypeVar
+from typing import Any, Self, TypeVar, cast
 
 import pymatviz as pmv
 import yaml
@@ -125,6 +125,10 @@ class Task(LabelEnum):
     IS2E = "IS2E", "initial structure to energy"
     # IS2RE is for models that learned a discrete version of PES like CGCNN+P
     IS2RE = "IS2RE", "initial structure to relaxed energy"
+    IS2RE_SR = (
+        "IS2RE-SR",
+        "initial structure to relaxed energy with structure relaxation",
+    )
 
 
 @unique
@@ -142,15 +146,15 @@ class Targets(LabelEnum):
 
 
 @unique
-class ModelType(LabelEnum):
-    """Model types."""
+class ArchitectureType(LabelEnum):
+    """Model architecture tags (GNN, transformer, classical ML, …)."""
 
-    GNN = "GNN", "Graph Neural Network"
-    UIP = "UIP", "Universal Interatomic Potential"
-    BO_GNN = "BO-GNN", "GNN in a Bayesian Optimization Loop"
-    Fingerprint = "Fingerprint", "Models with Structural Fingerprint Features"  # ex. RF
-    Transformer = "Transformer", "Transformer-Based Models"  # Wrenformer, AlchemBERT
-    RF = "RF", "Random Forest"
+    gnn = "gnn", "Graph Neural Network"
+    transformer = "transformer", "Transformer"
+    random_forest = "random_forest", "Random Forest"
+    fingerprint = "fingerprint", "Structural Fingerprint"
+    bayesian_optimization = "bayesian_optimization", "Bayesian Optimization"
+    unknown = "unknown", "Unknown Architecture"
 
 
 @unique
@@ -259,20 +263,20 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     """Generated registry of non-aborted model YAML files.
 
     YAML ``model_key`` values determine member names. YAML metadata also provides
-    status, metrics, hyperparameters, package versions, links, and submission details.
+    lifecycle, metrics, hyperparams, package versions, links, and submission details.
     Regenerate the marked block with ``python scripts/generate_model_enum.py``.
     """
 
     # BEGIN GENERATED MODEL MEMBERS
     alchembert = auto(), "alchembert/alchembert.yml"
     alignn = auto(), "alignn/alignn.yml"
-    allegro_mp_l_0_1 = auto(), "allegro/allegro-MP-L-0.1.yml"
-    allegro_oam_l_0_1 = auto(), "allegro/allegro-OAM-L-0.1.yml"
+    allegro_mp_l_0_1 = auto(), "allegro/allegro-mp-l-0.1.yml"
+    allegro_oam_l_0_1 = auto(), "allegro/allegro-oam-l-0.1.yml"
     alphanet_v1_mptrj = auto(), "alphanet/alphanet-v1-mptrj.yml"
     alphanet_v1_oam = auto(), "alphanet/alphanet-v1-oam.yml"
     bowsr = auto(), "bowsr/bowsr.yml"
     cgcnn = auto(), "cgcnn/cgcnn.yml"
-    cgcnn_p = auto(), "cgcnn/cgcnn+p.yml"
+    cgcnn_p = auto(), "cgcnn/cgcnn-p.yml"
     chgnet_0_3_0 = auto(), "chgnet/chgnet-0.3.0.yml"
     dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
     dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
@@ -283,14 +287,14 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     dpa_4_0_1_pro_mptrj = auto(), "deepmd/dpa-4.0.1-pro-mptrj.yml"
     dpa_4_0_pro_mptrj = auto(), "deepmd/dpa-4.0-pro-mptrj.yml"
     eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
-    equflash_29m_oam = auto(), "equflash/equflash-29M-oam.yml"
-    equflashv2_45m_oam = auto(), "equflash/equflashv2-45M-oam.yml"
-    equiformer_v3_mp = auto(), "equiformer_v3/equiformer_v3_mp.yml"
-    equiformer_v3_oam = auto(), "equiformer_v3/equiformer_v3_oam.yml"
-    eqv2_m_omat_salex_mp = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
-    eqv2_s_dens_mp = auto(), "eqV2/eqV2-s-dens-mp.yml"
-    esen_30m_mp = auto(), "eSEN/eSEN-30m-mp.yml"
-    esen_30m_oam = auto(), "eSEN/eSEN-30m-oam.yml"
+    equflash_29m_oam = auto(), "equflash/equflash-29m-oam.yml"
+    equflashv2_45m_oam = auto(), "equflash/equflashv2-45m-oam.yml"
+    equiformer_v3_mp = auto(), "equiformer_v3/equiformer-v3-mp.yml"
+    equiformer_v3_oam = auto(), "equiformer_v3/equiformer-v3-oam.yml"
+    eqv2_m_omat_salex_mp = auto(), "eqv2/eqv2-m-omat-salex-mp.yml"
+    eqv2_s_dens_mp = auto(), "eqv2/eqv2-s-dens-mp.yml"
+    esen_30m_mp = auto(), "esen/esen-30m-mp.yml"
+    esen_30m_oam = auto(), "esen/esen-30m-oam.yml"
     esnet = auto(), "esnet/esnet.yml"
     gnome = auto(), "gnome/gnome.yml"
     grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
@@ -305,11 +309,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     matris_10m_mp = auto(), "matris/matris-10m-mp.yml"
     matris_10m_oam = auto(), "matris/matris-10m-oam.yml"
     matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
-    mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5M.yml"
+    mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5m.yml"
     megnet = auto(), "megnet/megnet.yml"
-    nequip_mp_l_0_1 = auto(), "nequip/nequip-MP-L-0.1.yml"
-    nequip_oam_l_0_1 = auto(), "nequip/nequip-OAM-L-0.1.yml"
-    nequip_oam_xl_0_1 = auto(), "nequip/nequip-OAM-XL-0.1.yml"
+    nequip_mp_l_0_1 = auto(), "nequip/nequip-mp-l-0.1.yml"
+    nequip_oam_l_0_1 = auto(), "nequip/nequip-oam-l-0.1.yml"
+    nequip_oam_xl_0_1 = auto(), "nequip/nequip-oam-xl-0.1.yml"
     nequix_mp_1 = auto(), "nequix/nequix-mp-1.yml"
     nequix_mp_1_pft = auto(), "nequix/nequix-mp-1-pft.yml"
     orb_v2 = auto(), "orb/orb-v2.yml"
@@ -348,16 +352,17 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def pr_url(self) -> str:
         """Pull request URL in which the model was originally added to the repo."""
-        try:
-            return self.metadata["pr_url"]
-        except KeyError as exc:
-            exc.add_note(f"{self.rel_path!r} missing required field 'pr_url'")
-            raise
+        return self.metadata["pr_url"]
 
     @property
     def key(self) -> str:
         """Key associated with the file URL."""
         return self.metadata["model_key"]
+
+    @property
+    def family(self) -> str:
+        """Model family directory derived from the YAML parent path."""
+        return os.path.basename(os.path.dirname(self.rel_path))
 
     @property
     def metrics(self) -> dict[str, Any]:
@@ -369,90 +374,65 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """YAML file path associated with the model."""
         return f"{type(self).base_dir}/{self.rel_path}"
 
+    def _metric_pred_path(
+        self,
+        metrics_key: str,
+        *,
+        nested_key: str | None = None,
+        required: bool = False,
+    ) -> str | None:
+        """Resolve metrics pred_file to a local path, downloading when a URL is set."""
+        from matbench_discovery.data import file_ref_name, file_ref_url
+
+        section = self.metrics.get(metrics_key) or {}
+        if nested_key is not None:
+            section = section.get(nested_key) or {}
+        pred_file = section.get("pred_file") or {}
+        if not (rel_path := file_ref_name(pred_file)):
+            if required:
+                raise ValueError(
+                    f"metrics.{metrics_key}.pred_file not found in {self.rel_path!r}"
+                )
+            return None
+        abs_path = f"{ROOT}/{rel_path}"
+        if file_url := file_ref_url(pred_file):
+            maybe_auto_download_file(
+                file_url,
+                abs_path,
+                label=self.label,
+                md5=pred_file.get("md5"),
+            )
+        return abs_path
+
     @property
     def discovery_path(self) -> str:
         """Prediction file path associated with the model."""
-        rel_path = self.metrics.get("discovery", {}).get("pred_file")
-        file_url = self.metrics.get("discovery", {}).get("pred_file_url")
-        if not rel_path:
-            raise ValueError(
-                f"metrics.discovery.pred_file not found in {self.rel_path!r}"
-            )
-        abs_path = f"{ROOT}/{rel_path}"
-        maybe_auto_download_file(file_url, abs_path, label=self.label)
-        return abs_path
+        return cast("str", self._metric_pred_path("discovery", required=True))
 
     @property
     def geo_opt_path(self) -> str | None:
-        """File path associated with the file URL if it exists, otherwise
-        download the file first, then return the path.
-        """
-        geo_opt_metrics = self.metrics.get("geo_opt")
-        if geo_opt_metrics is None or geo_opt_metrics in (
-            "not available",
-            "not applicable",
-        ):
-            return None
-        rel_path = geo_opt_metrics.get("pred_file")
-        file_url = geo_opt_metrics.get("pred_file_url")
-        if not rel_path:
-            raise ValueError(
-                f"metrics.geo_opt.pred_file not found in {self.rel_path!r}"
-            )
-        abs_path = f"{ROOT}/{rel_path}"
-        maybe_auto_download_file(file_url, abs_path, label=self.label)
-        return abs_path
+        """Geo-opt prediction path, downloading when a URL is present."""
+        return self._metric_pred_path("geo_opt")
 
     @property
     def kappa_103_path(self) -> str | None:
-        """File path associated with the file URL if it exists, otherwise
-        download the file first, then return the path.
-        """
-        phonons_metrics = self.metrics.get("phonons")
-        if phonons_metrics is None or phonons_metrics in (
-            "not available",
-            "not applicable",
-        ):
-            return None
-        kappa103 = phonons_metrics.get("kappa_103") or {}
-        rel_path = kappa103.get("pred_file")
-        file_url = kappa103.get("pred_file_url", "")
-        if not rel_path:
-            raise ValueError(
-                f"metrics.phonons.kappa_103.pred_file not found in {self.rel_path!r}"
-            )
-        abs_path = f"{ROOT}/{rel_path}"
-        maybe_auto_download_file(file_url, abs_path, label=self.label)
-        return abs_path
+        """Phonon kappa_103 prediction path, downloading when a URL is present."""
+        return self._metric_pred_path("phonons", nested_key="kappa_103")
 
     @property
     def md_path(self) -> str | None:
-        """File path associated with the file URL if it exists, otherwise
-        download the file first, then return the path.
-        """
-        md_metrics = self.metrics.get("md")
-        # md is absent (None) or a placeholder string ('not available'/'not
-        # applicable') for models without MD results; only a dict carries pred_file
-        if not isinstance(md_metrics, dict):
-            return None
-        rel_path = md_metrics.get("pred_file")
-        file_url = md_metrics.get("pred_file_url", "")
-        if not rel_path:
-            raise ValueError(f"metrics.md.pred_file not found in {self.rel_path!r}")
-        abs_path = f"{ROOT}/{rel_path}"
-        if file_url:
-            maybe_auto_download_file(file_url, abs_path, label=self.label)
-        return abs_path
+        """MD prediction path, downloading when a URL is present."""
+        return self._metric_pred_path("md")
 
     @property
-    def is_complete(self) -> bool:
-        """Check if model has all required metrics."""
-        return self.metadata.get("status", "complete") == "complete"
+    def is_active(self) -> bool:
+        """Return whether the model participates in current benchmark views."""
+        return self.metadata["lifecycle"] == "active"
 
     @classmethod
     def active(cls) -> tuple[Self, ...]:
-        """Complete models included by default in plots, metrics, and eval scripts."""
-        return tuple(model for model in cls if model.is_complete)
+        """Active models included by default in plots, metrics, and eval scripts."""
+        return tuple(model for model in cls if model.is_active)
 
     @classmethod
     def from_ref(cls, ref: str | Self) -> Self:
@@ -464,10 +444,13 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """
         if isinstance(ref, cls):
             return ref
-        member = cls.__members__.get(ref) or cls._missing_(ref)
-        if member is None:
-            member = next((m for m in cls if ref in (m.key, m.label)), None)
-        return member or cls.from_label(ref)  # from_label raises on unknown refs
+        if member := cls.__members__.get(ref) or cls._missing_(ref):
+            return member
+        if member := next(
+            (model for model in cls if ref in (model.key, model.label)), None
+        ):
+            return member
+        return cls.from_label(ref)
 
     @classmethod
     def _missing_(cls, value: object) -> Self | None:

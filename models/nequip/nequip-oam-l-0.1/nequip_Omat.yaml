@@ -109,7 +109,7 @@ trainer:
       auto_insert_metric_name: false
       save_last: true
       verbose: true
-      save_top_k: -1
+      save_top_k: 3
 
     - _target_: lightning.pytorch.callbacks.EarlyStopping
       verbose: true

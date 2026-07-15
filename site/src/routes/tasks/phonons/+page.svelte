@@ -1,6 +1,6 @@
 <script lang="ts">
   import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
-  import { by_date_added_desc, MetricsTable, ModelSelect, MODELS } from '$lib'
+  import { by_benchmark_added_desc, MetricsTable, ModelSelect, ACTIVE_MODELS } from '$lib'
   import type { ModelData } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
   import { make_table_filters } from '$lib/models.svelte'
@@ -34,7 +34,7 @@
     get_nested_number(model, kappa_sre_path) != null
   const kappa_srme = (model: ModelData): number =>
     get_nested_number(model, kappa_srme_path) ?? Infinity
-  const leaderboard_models = MODELS.filter(has_phonon_metrics)
+  const leaderboard_models = ACTIVE_MODELS.filter(has_phonon_metrics)
   const default_selected_key =
     leaderboard_models.toSorted(
       (model_1, model_2) => kappa_srme(model_1) - kappa_srme(model_2),
@@ -44,7 +44,7 @@
     leaderboard_models.find((model) => model.model_key === selected_key),
   )
 
-  // sort the Compare-model dropdown by κ_SRME (best first), name, or submission date
+  // sort the Compare-model dropdown by κ_SRME (best first), name, or benchmark date
   type SortMode = `kappa` | `name` | `date`
   const sort_options: { mode: SortMode; label: string }[] = [
     { mode: `kappa`, label: `κSRME` },
@@ -59,7 +59,7 @@
     dir: `asc`,
   }
   const sort_modes = new Set(sort_options.map(({ mode }) => mode))
-  const model_keys = new Set(leaderboard_models.flatMap((model) => model.model_key ?? []))
+  const model_keys = new Set(leaderboard_models.map((model) => model.model_key))
 
   let sort_mode = $state<SortMode>(default_sort_mode)
   const sort_compare: Record<
@@ -68,7 +68,7 @@
   > = {
     kappa: (model_1, model_2) => kappa_srme(model_1) - kappa_srme(model_2),
     name: (model_1, model_2) => model_1.model_name.localeCompare(model_2.model_name),
-    date: by_date_added_desc,
+    date: by_benchmark_added_desc,
   }
   let sorted_models = $derived(leaderboard_models.toSorted(sort_compare[sort_mode]))
   // per-material diagnostics (SRME scatter + frequency parity) for the selected model
@@ -81,12 +81,12 @@
       const srme = get_nested_number(model, kappa_srme_path)
       const suffix = {
         name: ``,
-        date: ` (${model.date_added})`,
+        date: ` (${model.dates.benchmark_added})`,
         kappa: srme == null ? `` : ` (${format_num(srme, `.3~f`)})`,
       }[sort_mode]
       return {
         label: `${model.model_name}${suffix}`,
-        value: model.model_key ?? ``,
+        value: model.model_key,
       }
     }),
   )
@@ -194,7 +194,7 @@
 </p>
 
 <DynamicScatter
-  models={MODELS}
+  models={ACTIVE_MODELS}
   model_filter={has_phonon_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}

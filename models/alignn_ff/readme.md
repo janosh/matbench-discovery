@@ -2,10 +2,6 @@
 
 Aborted ALIGNN-FF force-field submission (historical record).
 
-Metadata in `models/alignn_ff/*.yml`; task scripts and coverage live in each YAML `tasks` block.
-
-## Family notes
-
 The [ALIGNN FF model submission](https://github.com/janosh/matbench-discovery/pull/47) intended to get a complete set of formation energy predictions for the WBM test set post-ALIGNN-FF structure relaxation (i.e. the WBM IS2RE task).
 
 This effort was aborted for the following reasons:

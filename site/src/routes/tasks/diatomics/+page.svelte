@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricsTable, ModelSelect, type ModelData, MODELS, SelectToggle } from '$lib'
+  import { MetricsTable, ModelSelect, ACTIVE_MODELS, SelectToggle } from '$lib'
   import {
     CDS_CONFIG,
     DEFAULT_CDS_CONFIG,
@@ -12,6 +12,7 @@
     scatter_options_by_key,
     task_page_visible_cols,
   } from '$lib/labels'
+  import { has_diatomics_curves } from '$lib/models.svelte'
   import { DiatomicCurve, DynamicScatter, RadarChart } from '$lib/plot'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
   import {
@@ -44,8 +45,6 @@
 
   const homo_nuc_key = `homo-nuclear`
   const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
-  const has_diatomics_metrics = (model: ModelData): boolean =>
-    model.metrics?.diatomics != null && typeof model.metrics.diatomics === `object`
   // default-sort by the combined diatomics score (CDS), best (highest) first
   const default_sort: { column: string; dir: SortDir } = {
     column: DIATOMICS_METRICS.diatomics_combined_score.key,
@@ -95,7 +94,7 @@
   let selectable_names = $derived([
     ...reference_names,
     ...diatomic_models
-      .map((model: ModelData) => model.model_name)
+      .map((model) => model.model_name)
       .filter((model_name) => model_name in diatomic_curves && !errors[model_name]),
   ])
   let selectable_options = $derived(
@@ -206,7 +205,7 @@
       config={CDS_CONFIG}
       default_config={DEFAULT_CDS_CONFIG}
       title_label={DIATOMICS_METRICS.diatomics_combined_score}
-      on_change={(cfg) => update_models_cds(MODELS, cfg as typeof CDS_CONFIG)}
+      on_change={(cfg) => update_models_cds(ACTIVE_MODELS, cfg as typeof CDS_CONFIG)}
     />
     <figcaption>
       Drag the knob to reweight the four CDS pillars (see &#9432; for definitions); the
@@ -218,7 +217,7 @@
 </div>
 
 <MetricsTable
-  model_filter={has_diatomics_metrics}
+  model_filter={has_diatomics_curves}
   col_filter={(col) => visible_cols[col.key] ?? true}
   bind:sort
 />
@@ -231,8 +230,8 @@
 </p>
 
 <DynamicScatter
-  models={MODELS}
-  model_filter={has_diatomics_metrics}
+  models={ACTIVE_MODELS}
+  model_filter={has_diatomics_curves}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
   color_key={METADATA_COLS.n_training_materials.key}

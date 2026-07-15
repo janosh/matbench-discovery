@@ -1,175 +1,91 @@
 model_name: MACE-MPA-0
 model_key: mace-mpa-0
 model_version: v0.3.9
-date_added: '2024-12-09'
-date_published: '2024-12-09'
+dates:
+  benchmark_added: '2024-12-09'
+  paper_published: '2024-12-09'
+lifecycle: active
 authors:
-  - name: Ilyes Batatia
-    affiliation: University of Cambridge
-    email: ilyes.batatia@ens-paris-saclay.fr
-    orcid: https://orcid.org/0000-0001-6915-9851
-  - name: David P Kovacs
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0002-0854-2635
-  - name: Gregor Simm
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0001-6815-352X
-  - name: Christoph Ortner
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0003-1498-8120
-  - name: Gabor Csanyi
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0002-8180-2034
+- name: Ilyes Batatia
+  affiliation: University of Cambridge
+  email: ilyes.batatia@ens-paris-saclay.fr
+  orcid: https://orcid.org/0000-0001-6915-9851
+- name: David P Kovacs
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0002-0854-2635
+- name: Gregor Simm
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0001-6815-352X
+- name: Christoph Ortner
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0003-1498-8120
+- name: Gabor Csanyi
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0002-8180-2034
 trained_by:
-  - name: Chen Lin
-    affiliation: University of Oxford
-    github: https://github.com/birdyLinch
-    email: will.c.lynch@gmail.com
-    orcid: https://orcid.org/0000-0002-0854-2635
-  - name: Ilyes Batatia
-    affiliation: University of Cambridge
-    email: ilyes.batatia@ens-paris-saclay.fr
-    orcid: https://orcid.org/0000-0001-6915-9851
+- name: Chen Lin
+  affiliation: University of Oxford
+  github: https://github.com/birdyLinch
+  email: will.c.lynch@gmail.com
+- name: Ilyes Batatia
+  affiliation: University of Cambridge
+  email: ilyes.batatia@ens-paris-saclay.fr
+  orcid: https://orcid.org/0000-0001-6915-9851
 
 repo: https://github.com/ACEsuit/mace
 doi: https://doi.org/10.48550/arXiv.2401.00096
 paper: https://arxiv.org/abs/2401.00096
 pypi: https://pypi.org/project/mace-torch
 pr_url: https://github.com/janosh/matbench-discovery/pull/175
-# checkpoint URL copied from https://github.com/ACEsuit/mace-foundations/releases/tag/mace_mpa_0
 checkpoint_url: https://github.com/ACEsuit/mace-foundations/releases/download/mace_mpa_0/mace-mpa-0-medium.model
-
 license:
   code: MIT
   code_url: https://github.com/ACEsuit/mace/blob/b0fa4ef7c/LICENSE.md
   checkpoint: MIT
   checkpoint_url: https://github.com/ACEsuit/mace-foundations/blob/1ff8786eb/LICENSE
 
-requirements:
-  mace-torch: 0.3.9
-  torch: 2.5.1
-  ase: 3.23.0
-  pymatgen: 2024.11.13
-  numpy: 1.26.4
-
+environment:
+  dependencies:
+  - mace-torch>=0.3.16
+  - cuequivariance
+  - cuequivariance-torch
+  - cuequivariance-ops-torch-cu12
+  - torch==2.5.1
+  - ase==3.23.0
+  - pymatgen==2024.11.13
+  - numpy==1.26.4
+  python_version: '3.12'
 openness: OSOD
-trained_for_benchmark: false
+architecture_types: [gnn]
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
-model_type: UIP
+training_sets: [MPtrj, sAlex]
 model_params: 9063204
-n_estimators: 1
-
-training_set: [MPtrj, sAlex]
-training_cost: missing
-
 hyperparams:
-  max_force: 0.05
-  max_steps: 500
-  ase_optimizer: FIRE
-  cell_filter: FrechetCellFilter
-  graph_construction_radius: 6.0 # Å
-  max_neighbors: .inf
+  evaluation:
+    max_force: 0.05
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      save_forces: true
+  architecture:
+    graph_construction_radius: 6.0
 
-  kappa:
-    protocol: phonondb-v1
-    save_forces: true
 notes:
-  Description: |
+  description: |
     MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields.
-  Training: Using model pre-trained on MPTraj and Alexandria.
+  training: Using model pre-trained on MPTraj and Alexandria.
 
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 0.4123
-      pred_file: models/mace/mace-mpa-0/2024-11-25-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/52134875
-      κ_SRE: 0.2048
-  geo_opt:
-    pred_file: models/mace/mace-mpa-0/2025-01-30-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/57751036
-    struct_col: mace_structure
-    symprec=1e-2:
-      rmsd: 0.0731 # unitless
-      n_sym_ops_mae: 1.8086 # unitless
-      symmetry_decrease: 0.0556 # fraction
-      symmetry_match: 0.8144 # fraction
-      symmetry_increase: 0.1231 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/mace/mace-mpa-0/2025-01-30-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504660
-    symprec=1e-5:
-      rmsd: 0.0731 # unitless
-      n_sym_ops_mae: 1.8808 # unitless
-      symmetry_decrease: 0.0328 # fraction
-      symmetry_match: 0.7324 # fraction
-      symmetry_increase: 0.2305 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/mace/mace-mpa-0/2025-01-30-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504663
-  discovery:
-    pred_file: models/mace/mace-mpa-0/2024-12-09-wbm-IS2RE-FIRE.csv.gz
-    pred_file_url: https://figshare.com/files/52057541
-    pred_col: e_form_per_atom_mace
-    full_test_set:
-      F1: 0.836 # fraction
-      DAF: 4.869 # dimensionless
-      Precision: 0.836 # fraction
-      Recall: 0.836 # fraction
-      Accuracy: 0.944 # fraction
-      TPR: 0.836 # fraction
-      FPR: 0.034 # fraction
-      TNR: 0.966 # fraction
-      FNR: 0.164 # fraction
-      TP: 36844.0 # count
-      FP: 7253.0 # count
-      TN: 205618.0 # count
-      FN: 7248.0 # count
-      MAE: 0.028 # eV/atom
-      RMSE: 0.073 # eV/atom
-      R2: 0.837 # dimensionless
-      missing_preds: 4 # count
-    most_stable_10k:
-      F1: 0.978 # fraction
-      DAF: 6.258 # dimensionless
-      Precision: 0.957 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.957 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9566.0 # count
-      FP: 434.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
-      MAE: 0.032 # eV/atom
-      RMSE: 0.105 # eV/atom
-      R2: 0.776 # dimensionless
-      missing_preds: 0 # count
-    unique_prototypes:
-      F1: 0.852 # fraction
-      DAF: 5.582 # dimensionless
-      Precision: 0.853 # fraction
-      Recall: 0.851 # fraction
-      Accuracy: 0.954 # fraction
-      TPR: 0.851 # fraction
-      FPR: 0.027 # fraction
-      TNR: 0.973 # fraction
-      FNR: 0.149 # fraction
-      TP: 28417.0 # count
-      FP: 4886.0 # count
-      TN: 177228.0 # count
-      FN: 4957.0 # count
-      MAE: 0.028 # eV/atom
-      RMSE: 0.073 # eV/atom
-      R2: 0.842 # dimensionless
-      missing_preds: 2 # count
   diatomics:
-    pred_file: models/mace/mace-mpa-0/2026-06-28-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/66104624
+    pred_file:
+      name: models/mace/mace-mpa-0/2026-06-28-diatomics.json.gz
+      url: https://figshare.com/files/66104624
+      size: 259855
+      md5: c8b818aadec120877583f6fb8607a8c7
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 294.72
     pbe_wall_dist_mae: 0.27
@@ -184,17 +100,119 @@ metrics:
     force_total_variation: 107.7
     force_jump: 2.423
     pbe_force_mae: 1.62
+  discovery:
+    pred_file:
+      name: models/mace/mace-mpa-0/2024-12-09-discovery.csv.gz
+      url: https://figshare.com/files/66646196
+      size: 1324924
+      md5: 69c5b43ed1bc972ba623627438e7653b
+    full_test_set:
+      F1: 0.836  # fraction
+      DAF: 4.869 # dimensionless
+      Precision: 0.836 # fraction
+      Recall: 0.836 # fraction
+      Accuracy: 0.944 # fraction
+      TPR: 0.836 # fraction
+      FPR: 0.034 # fraction
+      TNR: 0.966 # fraction
+      FNR: 0.164 # fraction
+      TP: 36844 # count
+      FP: 7253 # count
+      TN: 205618 # count
+      FN: 7248 # count
+      MAE: 0.028 # eV/atom
+      RMSE: 0.073 # eV/atom
+      R2: 0.837 # dimensionless
+      missing_preds: 4 # count
+    most_stable_10k:
+      F1: 0.978  # fraction
+      DAF: 6.258 # dimensionless
+      Precision: 0.957 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.957 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9566 # count
+      FP: 434 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.032 # eV/atom
+      RMSE: 0.105 # eV/atom
+      R2: 0.776 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.852  # fraction
+      DAF: 5.582 # dimensionless
+      Precision: 0.853 # fraction
+      Recall: 0.851 # fraction
+      Accuracy: 0.954 # fraction
+      TPR: 0.851 # fraction
+      FPR: 0.027 # fraction
+      TNR: 0.973 # fraction
+      FNR: 0.149 # fraction
+      TP: 28417 # count
+      FP: 4886 # count
+      TN: 177228 # count
+      FN: 4957 # count
+      MAE: 0.028 # eV/atom
+      RMSE: 0.073 # eV/atom
+      R2: 0.842 # dimensionless
+      missing_preds: 2 # count
+  geo_opt:
+    pred_file:
+      name: models/mace/mace-mpa-0/2025-01-30-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57751036
+      size: 145776132
+      md5: 8dcd0dbd05a819cca7a8b88c5818462e
+    symprec=1e-2:
+      rmsd: 0.0731
+      n_sym_ops_mae: 1.8086
+      symmetry_decrease: 0.0556
+      symmetry_match: 0.8144
+      symmetry_increase: 0.1231
+      n_structures: 256963
+      analysis_file:
+        name: models/mace/mace-mpa-0/2025-01-30-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504660
+        size: 8660193
+        md5: bc5f0087f06fcc976c90b0bbbe3f9c17
+    symprec=1e-5:
+      rmsd: 0.0731
+      n_sym_ops_mae: 1.8808
+      symmetry_decrease: 0.0328
+      symmetry_match: 0.7324
+      symmetry_increase: 0.2305
+      n_structures: 256963
+      analysis_file:
+        name: models/mace/mace-mpa-0/2025-01-30-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504663
+        size: 8569405
+        md5: d0624dc05b91c90d101ddba5233ec559
   md:
-    pred_file: models/mace/mace-mpa-0/2026-06-28-mace_mpa_0-md-metrics.csv.gz
+    pred_file:
+      name: models/mace/mace-mpa-0/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048896
+      size: 1563
+      md5: c5f640838ca84ec3723a3053902a1c89
     hardware: NVIDIA H200
-    run_time_sec: 31786.33 # s
-    energy_rmse: 1.0977 # meV/atom
-    force_rmse: 109.7301 # meV/Å
-    rdf_error: 4.0917 # %
-    adf_error: 1.5363 # %
-    vdos_error: 22.7755 # %
-    pressure_mae: 1.2087 # GPa
-    pressure_wasserstein: 1.209 # GPa
-    pressure_error: 65.8362 # %
-    n_systems: 17 # count
-    pred_file_url: https://figshare.com/files/66048896
+    run_time_sec: 31786.33
+    energy_rmse: 1.0977
+    force_rmse: 109.7301
+    rdf_error: 4.0917
+    adf_error: 1.5363
+    vdos_error: 22.7755
+    pressure_mae: 1.2087
+    pressure_wasserstein: 1.209
+    pressure_error: 65.8362
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 0.4123
+      pred_file:
+        name: models/mace/mace-mpa-0/2024-11-25-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/52134875
+        size: 7418356
+        md5: 786e9518f4b2f6c051a7054dad20980a
+      κ_SRE: 0.2048

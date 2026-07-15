@@ -1,26 +1,12 @@
 name: Model PR guard
 
-# Block merging PRs that would leave committed site assets stale. Two guards:
-#
-# 1. Un-ingested model submissions: tests/site/test_parity_assets.py requires every active
-#    model with predictions to be in the committed parity manifests and every manifest
-#    asset to exist in the GitHub release the site downloads from. Model PRs fail until
-#    a maintainer applies the 'ingest-model' label (full CI ingest via
-#    update-site-figs.yml, whose result commit re-triggers this check) or runs
+# 1) Un-ingested model submissions fail tests/site/test_parity_assets.py until a
+#    maintainer applies `ingest-model` (full ingest via update-site-figs.yml) or runs
 #    `uv run --with-editable . scripts/ingest_model.py <model> --archive` locally.
-# 2. Payload-format changes without regenerated payloads: stale-format payloads would
-#    ship to the site unnoticed (shape tests assert the tests' expectations, not the
-#    generators'; a CI regen-and-compare would be too slow and not byte-reproducible,
-#    hence this cheap diff-consistency check). Regenerate locally with
-#    `scripts/ingest_model.py --payloads-only`, or apply the 'payloads-unchanged'
-#    label for output-neutral refactors. Label edits re-run this whole job (types
-#    below) - the redundant ~1 min parity re-run is intentional: skipping it on label
-#    events would post a 'skipped' check run that masks its last real result in
-#    branch protection (newest check run of a name wins, skipped counts as passing).
-#
-# Runs on ALL PRs (a path-filtered required check would block non-model PRs
-# forever); non-model PRs pass in ~1 min. Also runs on main pushes + weekly to catch
-# drift (e.g. release assets deleted post-merge).
+# 2) Payload-format changes without regenerated payloads fail unless the PR also
+#    updates committed site payloads or carries the `payloads-unchanged` label.
+# 3) Model registry/schema guardrails (tests/models/) always run.
+# Runs on all PRs (~1 min for non-model PRs), main pushes, and weekly drift checks.
 
 on:
   pull_request:
@@ -52,10 +38,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      # guard 2 (see header). GEN = generators/writers whose edits alter payload
-      # output. PAYLOADS = generated data artifacts only (payloads.d.ts edits alone
-      # don't satisfy). The data/mp and data/wbm EDA/compile scripts no longer write
-      # site payloads directly and are intentionally excluded.
+      # guard 2 (see header): payload generators vs committed site payloads.
       - name: Require payload updates when payload-shaping code changes
         if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'payloads-unchanged')
         env:
@@ -84,6 +67,9 @@ jobs:
             echo "::error::PR changes payload-generating code ($(tr '\n' ' ' <<< "$GEN")) but no committed generated payloads (site/src/figs data files, route-local JSON, models/per-element-each-errors.jsonl, or diatomics-dft.json.gz). Regenerate the affected payloads locally, or apply the 'payloads-unchanged' label if output is provably unchanged."
             exit 1
           fi
+
+      - name: Model registry and schema guardrails
+        run: uv run --with-editable . --with pytest --with jsonschema pytest tests/models/ -q
 
       - name: Check parity manifests + release assets
         env:

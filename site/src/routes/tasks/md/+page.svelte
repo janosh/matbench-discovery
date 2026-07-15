@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricsTable, type ModelData, MODELS } from '$lib'
+  import { MetricsTable, type ModelData, ACTIVE_MODELS } from '$lib'
   import {
     MD_METRICS,
     METADATA_COLS,
@@ -28,8 +28,7 @@
   // show only MD metrics and metadata columns
   const visible_cols = task_page_visible_cols(...Object.values(MD_METRICS))
 
-  const has_md_metrics = (model: ModelData) =>
-    model.metrics?.md != null && typeof model.metrics.md === `object`
+  const has_md_metrics = (model: ModelData) => model.metrics?.md != null
 
   // headline MD view now that CMDS folds in rollout speed: a cost-vs-fidelity Pareto -
   // wall time (x) vs CMDS (y), with marker size = model params and color = training-set
@@ -78,7 +77,7 @@
   autocorrelation function. Energy-fluctuation and force RMSEs are shown as
   maintainer-computed private-label diagnostics when available, but they are excluded from
   CMDS.
-  {#if !MODELS.some(has_md_metrics)}
+  {#if !ACTIVE_MODELS.some(has_md_metrics)}
     No models have reported MD metrics yet.
   {/if}
 </p>
@@ -93,7 +92,7 @@
       config={CMDS_CONFIG}
       default_config={DEFAULT_CMDS_CONFIG}
       title_label={MD_METRICS.md_combined_score}
-      on_change={(cfg) => update_models_cmds(MODELS, cfg as typeof CMDS_CONFIG)}
+      on_change={(cfg) => update_models_cmds(ACTIVE_MODELS, cfg as typeof CMDS_CONFIG)}
     />
     <figcaption>
       Drag the knob to reweight which CMDS components matter to you; the table and plots
@@ -121,7 +120,7 @@
 </p>
 
 <DynamicScatter
-  models={MODELS}
+  models={ACTIVE_MODELS}
   model_filter={has_md_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}

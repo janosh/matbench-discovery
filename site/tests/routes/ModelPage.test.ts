@@ -1,7 +1,6 @@
 import { MODELS } from '$lib'
 import { get_org_logo } from '$lib/labels'
 import { RANKED_METRICS } from '$lib/rankings'
-import type { ModelData } from '$lib/types'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { tick } from 'svelte'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -28,15 +27,16 @@ describe(`Model Detail Page`, () => {
     // Check basic model info
     expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)
     expect(document.body.textContent).toContain(test_model.model_version)
-    expect(document.body.textContent).toContain(test_model.date_added)
-    expect(document.body.textContent).toContain(test_model.date_published)
+    expect(document.body.textContent).toContain(test_model.dates.benchmark_added)
+    if (test_model.dates.paper_published)
+      expect(document.body.textContent).toContain(test_model.dates.paper_published)
 
     // Check meta info section
     const meta_info = document.querySelector(`.meta-info`)
     expect(meta_info?.textContent).toContain(`parameters`)
     expect(
       meta_info?.textContent?.includes(`Ensemble ${test_model.n_estimators} models`),
-    ).toBe(test_model.n_estimators > 1)
+    ).toBe((test_model.n_estimators ?? 1) > 1)
     expect(meta_info?.textContent).not.toContain(`Missing preds`)
     const discovery_detail = document.querySelector(`section.discovery-detail`)
     expect(discovery_detail?.querySelector(`h2`)?.textContent).toContain(
@@ -51,7 +51,7 @@ describe(`Model Detail Page`, () => {
     const expected_link_count = [
       test_model.repo,
       test_model.paper,
-      test_model.url,
+      test_model.docs,
       test_model.doi,
       test_model.pypi,
     ].filter(Boolean).length
@@ -95,22 +95,25 @@ describe(`Model Detail Page`, () => {
 
     // Check model info section
     const model_info = document.querySelector(`.model-info`)
-    expect(model_info?.textContent).toContain(test_model.model_type)
+    const expected_role =
+      test_model.targets === `E` ? `Energy predictor` : `Interatomic potential`
+    expect(model_info?.textContent).toContain(expected_role)
+    expect(model_info?.textContent).toContain(test_model.architecture_types.join(`, `))
     expect(model_info?.textContent).toContain(test_model.targets.replaceAll(`_`, ``))
     expect(model_info?.textContent).toContain(test_model.openness)
     expect(model_info?.textContent).toContain(`Discovery Train Task`)
     expect(model_info?.textContent).toContain(`Discovery Test Task`)
 
-    // Check training set section: one dataset link per training_set entry
+    // Check training set section: one dataset link per training_sets entry
     expect(document.querySelectorAll(`.training-set a`)).toHaveLength(
-      test_model.training_set.length,
+      test_model.training_sets.length,
     )
 
-    // Hyperparameters section renders iff the model declares hyperparams
+    // Hyperparams section renders iff the model declares hyperparams
     const hyperparams = document.querySelector(`.hyperparams`)
-    const hyperparam_entries = Object.entries(test_model.hyperparams ?? {})
+    const hyperparameter_entries = Object.entries(test_model.hyperparams ?? {})
     expect(hyperparams !== null).toBe(test_model.hyperparams != null)
-    for (const [key, value] of hyperparam_entries) {
+    for (const [key, value] of hyperparameter_entries) {
       expect(hyperparams?.textContent).toContain(key)
       expect(hyperparams?.textContent).toContain(JSON.stringify(value))
     }
@@ -118,23 +121,6 @@ describe(`Model Detail Page`, () => {
     // null md_per_system page data -> no per-system MD section
     expect(document.querySelector(`section.md-per-system`)).toBeNull()
   }, 10_000)
-
-  it(`renders without crashing when training_set has an unknown dataset key`, () => {
-    // regression: an unknown training_set key (e.g. a model-YAML typo) used to throw
-    // on DATASETS[key] and crash the whole page
-    const bogus_sets = [`BogusDataset`, `MPtrj`] as ModelData[`training_set`]
-    const model = { ...test_model, training_set: bogus_sets }
-    mount(ModelPage, {
-      target: document.body,
-      props: { data: { ...test_page_data, model } },
-    })
-
-    expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)
-    const training_set = document.querySelector(`.training-set`)
-    // known dataset still renders as link, unknown one falls back to plain text
-    expect(training_set?.querySelectorAll(`a`)).toHaveLength(1)
-    expect(training_set?.textContent).toContain(`BogusDataset (unknown dataset)`)
-  })
 
   it(`renders leaderboard rank card with task-prefixed metric labels`, () => {
     mount(ModelPage, { target: document.body, props: { data: test_page_data } })

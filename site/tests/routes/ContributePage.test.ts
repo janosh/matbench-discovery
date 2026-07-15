@@ -27,9 +27,7 @@ describe(`Contribute Page`, () => {
 
     // Check installation section
     const install_section = get_heading_section(document.body, `Installation`)
-    expect(install_section?.textContent).toContain(
-      `Clone the repo and install matbench-discovery`,
-    )
+    expect(install_section?.textContent).toContain(`pip install -e ./matbench-discovery`)
 
     // Check code blocks and PyPI link
     expect(document.querySelectorAll(`pre`).length).toBeGreaterThanOrEqual(2)

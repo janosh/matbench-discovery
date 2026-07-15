@@ -45,7 +45,9 @@ if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
 DISCOVERY_SHARD_SCHEMA_VERSION = 1
+DISCOVERY_PRED_COL = "e_form_per_atom"
 DISCOVERY_STRUCT_COL = "structure"
+DISCOVERY_ID_COL = "material_id"
 DEFAULT_DRY_RUN_STRUCTURES = 4
 ARCHIVED_DISCOVERY_MODELS: dict[str, str] = {
     **dict.fromkeys(
@@ -113,27 +115,28 @@ class RelaxationSettings:
             hyperparams = {}
         if not isinstance(hyperparams, dict):
             raise TypeError(f"{model_key} hyperparams must be a mapping")
+        evaluation = hyperparams.get("evaluation", {})
+        if not isinstance(evaluation, dict):
+            raise TypeError(f"{model_key} hyperparams.evaluation must be a mapping")
 
         return cls(
             max_force=float(
                 max_force
                 if max_force is not None
-                else hyperparams.get("max_force", 0.05)
+                else evaluation.get("max_force", 0.05)
             ),
             max_steps=int(
-                max_steps
-                if max_steps is not None
-                else hyperparams.get("max_steps", 500)
+                max_steps if max_steps is not None else evaluation.get("max_steps", 500)
             ),
             ase_optimizer=str(
                 ase_optimizer
                 if ase_optimizer is not None
-                else hyperparams.get("ase_optimizer", "FIRE")
+                else evaluation.get("ase_optimizer", "FIRE")
             ),
             cell_filter=(
                 cell_filter
                 if cell_filter is not None
-                else hyperparams.get("cell_filter", "FrechetCellFilter")
+                else evaluation.get("cell_filter", "FrechetCellFilter")
             ),
         )
 
@@ -227,8 +230,6 @@ class DiscoveryArtifacts:
 
     pred_file_path: str
     geo_opt_file_path: str
-    pred_col: str
-    struct_col: str
     predictions: pd.DataFrame
     n_success: int
     n_failed: int
@@ -568,13 +569,6 @@ def run_discovery_shard(
         )
 
 
-def _merge_metadata_segments(
-    metadata_segments: Sequence[Mapping[str, Any]],
-) -> dict[str, Any]:
-    """Merge timing/memory plus audit provenance across runs or shards."""
-    return merge_audit_metadata(metadata_segments)
-
-
 def merge_discovery_shards(
     shard_paths: Sequence[str],
     *,
@@ -642,7 +636,7 @@ def merge_discovery_shards(
             f"extra={sorted(merged_ids - expected_id_set)}"
         )
 
-    run_metadata = _merge_metadata_segments(metadata_segments)
+    run_metadata = merge_audit_metadata(metadata_segments)
     # cost fields are all-or-nothing (like scripts/evals/md.py): a shard that never
     # recorded run_metadata would silently understate the summed cost
     if any(not shard.run_metadata_segments for shard in shards):
@@ -661,11 +655,6 @@ def merge_discovery_shards(
         run_metadata=run_metadata,
         n_shards=first_header.n_shards,
     )
-
-
-def discovery_pred_col(model_key: str) -> str:
-    """Return the standardized formation-energy prediction column name."""
-    return f"e_form_per_atom_{model_key}"
 
 
 def _load_wbm_cse_frame(material_ids: Sequence[str] | None = None) -> pd.DataFrame:
@@ -693,14 +682,8 @@ def write_discovery_artifacts(
     df_wbm_cse: pd.DataFrame | None = None,
     compatibility: MaterialsProject2020Compatibility | None = None,
     elemental_ref_energies: Mapping[str, float] | None = None,
-    pred_col: str | None = None,
-    struct_col: str | None = None,
 ) -> DiscoveryArtifacts:
-    """Apply MP2020 corrections and write prediction CSV plus relaxed JSONL.
-
-    Existing model-specific column names can be supplied to preserve published
-    artifact contracts. New models use standardized fallback names.
-    """
+    """Apply MP2020 corrections and write canonical prediction CSV and JSONL."""
     from matbench_discovery.data import df_wbm
     from matbench_discovery.energy import (
         calc_energy_from_e_refs,
@@ -726,16 +709,13 @@ def write_discovery_artifacts(
         else dict(elemental_ref_energies)
     )
     compatibility = compatibility or MaterialsProject2020Compatibility()
-    pred_col = pred_col or discovery_pred_col(merged_run.model_key)
-    struct_col = struct_col or DISCOVERY_STRUCT_COL
-
     output_rows: dict[str, dict[str, Any]] = {}
     geo_opt_rows: list[dict[str, Any]] = []
     for record in merged_run.records:
         row = output_rows[record.material_id] = {
             "energy": record.energy,
             "corrected_energy": np.nan,
-            pred_col: np.nan,
+            DISCOVERY_PRED_COL: np.nan,
             "converged": record.converged,
             "n_steps": record.n_steps,
             "error": record.error,
@@ -762,15 +742,15 @@ def write_discovery_artifacts(
             raise ValueError(f"No WBM summary row for {record.material_id}")
         formula = str(df_summary.loc[record.material_id, Key.formula])
         row["corrected_energy"] = float(processed_entry.energy)
-        row[pred_col] = calc_energy_from_e_refs(
+        row[DISCOVERY_PRED_COL] = calc_energy_from_e_refs(
             formula,
             ref_energies=ref_energies,
             total_energy=float(processed_entry.energy),
         )
         geo_opt_rows.append(
             {
-                str(Key.mat_id): record.material_id,
-                struct_col: record.structure,
+                DISCOVERY_ID_COL: record.material_id,
+                DISCOVERY_STRUCT_COL: record.structure,
                 "energy": record.energy,
                 "converged": record.converged,
                 "n_steps": record.n_steps,
@@ -778,13 +758,14 @@ def write_discovery_artifacts(
         )
 
     df_predictions = pd.DataFrame.from_dict(output_rows, orient="index")
-    df_predictions.index.name = str(Key.mat_id)
+    df_predictions.index.name = DISCOVERY_ID_COL
     numeric_cols = df_predictions.select_dtypes(include="number").columns
     df_predictions[numeric_cols] = df_predictions[numeric_cols].round(4)
     for output_path in (pred_file_path, geo_opt_file_path):
         if output_parent := os.path.dirname(output_path):
             os.makedirs(output_parent, exist_ok=True)
-    df_predictions.reset_index().to_csv(pred_file_path, index=False)
+    # to_csv infers gzip from the .gz suffix; index.name is already DISCOVERY_ID_COL
+    df_predictions[[DISCOVERY_PRED_COL]].to_csv(pred_file_path)
     pd.DataFrame(geo_opt_rows).to_json(
         geo_opt_file_path,
         orient="records",
@@ -795,8 +776,6 @@ def write_discovery_artifacts(
     return DiscoveryArtifacts(
         pred_file_path=pred_file_path,
         geo_opt_file_path=geo_opt_file_path,
-        pred_col=pred_col,
-        struct_col=struct_col,
         predictions=df_predictions,
         n_success=len(geo_opt_rows),
         n_failed=len(merged_run.records) - len(geo_opt_rows),

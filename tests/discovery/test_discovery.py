@@ -22,12 +22,13 @@ from pymatviz.enums import Key
 import matbench_discovery.discovery as discovery_core
 import models.run_discovery as discovery_runner
 from matbench_discovery.calculators import CALCULATORS
+from matbench_discovery.data import file_ref_name, file_ref_url, make_file_ref
 from matbench_discovery.discovery import (
+    DISCOVERY_PRED_COL,
     DiscoveryArtifacts,
     MergedDiscoveryRun,
     RelaxationRecord,
     RelaxationSettings,
-    discovery_pred_col,
     merge_discovery_shards,
     read_discovery_shard,
     relax_atoms,
@@ -154,11 +155,13 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
         compatibility=compatibility,
         elemental_ref_energies=ref_energies,
     )
-    pred_col = discovery_pred_col("emt")
+    pred_col = DISCOVERY_PRED_COL
     assert artifacts.predictions.loc[material_id, pred_col] == pytest.approx(
         expected_e_form
     )
-    assert pd.read_csv(pred_file).loc[0, pred_col] == pytest.approx(expected_e_form)
+    df_pred = pd.read_csv(pred_file)
+    assert set(df_pred) == {"material_id", pred_col}
+    assert df_pred.loc[0, pred_col] == pytest.approx(expected_e_form)
     assert pd.isna(artifacts.predictions.loc[failed_id, pred_col])
     assert artifacts.predictions.loc[failed_id, "error"] == "RuntimeError: failed"
     assert pd.isna(artifacts.predictions.loc[rejected_id, pred_col])
@@ -169,69 +172,38 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
     assert artifacts.n_failed == 2
     df_geo = pd.read_json(geo_file, lines=True)
     assert len(df_geo) == 1
-    assert df_geo.loc[0, Key.mat_id] == material_id
-    assert df_geo.loc[0, artifacts.struct_col]["@class"] == "Structure"
+    geo = df_geo.iloc[0]
+    assert {*df_geo} == {"material_id", "structure", "energy", "converged", "n_steps"}
+    assert geo["material_id"] == material_id
+    assert geo["structure"]["@class"] == "Structure"
+    assert geo["energy"] == pytest.approx(raw_energy)
+    assert bool(geo["converged"])
+    assert int(geo["n_steps"]) == 4
 
 
-def test_runner_preserves_existing_artifact_columns(
+def test_runner_normalizes_artifact_paths(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Unified artifacts retain established YAML columns for published models."""
-    assert discovery_runner._artifact_columns(Model.mace_mp_0) == (  # noqa: SLF001
-        "e_form_per_atom_mace",
-        "mace_structure",
-    )
-    assert discovery_runner._artifact_columns(None) == (None, None)  # noqa: SLF001
-    existing_path = Model.mace_mp_0.metrics["discovery"]["pred_file"]
-    make_artifact_data = partial(
-        discovery_runner._artifact_yaml_data,  # noqa: SLF001
-        Model.mace_mp_0,
-        "discovery",
-        column_key="pred_col",
-        column="e_form_per_atom_mace",
-    )
-    # a regenerated artifact invalidates any uploaded URL even at an unchanged path
-    # (same-path regeneration means the uploaded content is stale)
-    for path in (
-        f"{discovery_runner.ROOT}/{existing_path}",
-        f"{discovery_runner.ROOT}/models/mace/new-preds.csv.gz",
-    ):
-        artifact_data = make_artifact_data(path)
-        assert artifact_data["pred_file_url"] is None
+    """Artifact paths use POSIX repo-relative identity where possible."""
+    rel_path = "models/mace/mace-mp-0/2026-07-02-discovery.csv.gz"
+    normalize = discovery_runner._repo_relative_path  # noqa: SLF001
+    # The YAML integration test below pins stale URL replacement.
+    assert normalize(f"{discovery_runner.ROOT}/{rel_path}") == rel_path
 
-    # a model without an uploaded URL has nothing to invalidate
-    mock_model = cast(
-        "Model",
-        SimpleNamespace(metrics={"discovery": {"pred_file": existing_path}}),
-    )
-    artifact_data = discovery_runner._artifact_yaml_data(  # noqa: SLF001
-        mock_model,
-        "discovery",
-        f"{discovery_runner.ROOT}/{existing_path}",
-        "pred_col",
-        "e_form_per_atom_mace",
-    )
-    assert "pred_file_url" not in artifact_data
-
-    # simulate the backslash-separated relative path os.path.relpath returns on Windows
     def windows_relpath(_path: str, _start: str) -> str:
         """Return a Windows-style relative artifact path."""
-        return existing_path.replace("/", "\\")
+        return rel_path.replace("/", "\\")
 
     monkeypatch.setattr(discovery_runner.os.path, "relpath", windows_relpath)
-    artifact_data = make_artifact_data(f"{discovery_runner.ROOT}/{existing_path}")
-    assert artifact_data["pred_file"] == existing_path
+    assert normalize(f"{discovery_runner.ROOT}/{rel_path}") == rel_path
 
-    # simulate a Windows tmp dir on a different drive than the repo checkout, where
-    # os.path.relpath raises and the platform-native absolute path must be preserved
     def raise_cross_drive(_path: str, _start: str) -> str:
         """Mimic relpath failing across Windows drives."""
         raise ValueError("path is on mount 'C:', start on mount 'D:'")
 
     monkeypatch.setattr(discovery_runner.os.path, "relpath", raise_cross_drive)
     external_path = "/mnt/c/tmp/preds.csv.gz"
-    artifact_data = make_artifact_data(external_path)
-    assert artifact_data["pred_file"] == os.path.abspath(external_path)
+    assert normalize(external_path) == os.path.abspath(external_path)
 
 
 def test_write_yaml_results_masks_outliers_and_updates_yaml(
@@ -250,12 +222,10 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
         index=pd.Index(material_ids, name=str(Key.mat_id)),
     )
     monkeypatch.setattr(data_module, "df_wbm", df_fake_wbm)
-    pred_col = discovery_pred_col("emt")
+    pred_col = DISCOVERY_PRED_COL
     artifacts = DiscoveryArtifacts(
         pred_file_path=f"{tmp_path}/preds.csv.gz",
         geo_opt_file_path=f"{tmp_path}/geo.jsonl.gz",
-        pred_col=pred_col,
-        struct_col="structure",
         # wbm-3 is a 7.8 eV/atom outlier, wbm-4 failed to relax
         predictions=pd.DataFrame(
             {pred_col: [-1.05, -0.45, 7.0, None]}, index=material_ids
@@ -265,14 +235,24 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     )
     yaml_path = tmp_path / "model.yml"
     old_discovery = {
-        "pred_file": "models/old/preds.csv.gz",
-        "pred_file_url": "https://example.com/old",
+        "pred_file": make_file_ref(
+            "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
+            url="https://example.com/old",
+        ),
+        "hardware": "NVIDIA A100",
+        "max_gpu_mem_gb": 40.0,
     }
-    yaml_path.write_text(yaml.safe_dump({"metrics": {"discovery": old_discovery}}))
-    mock_model = cast(
-        "Model",
-        SimpleNamespace(yaml_path=str(yaml_path), metrics={"discovery": old_discovery}),
+    yaml_path.write_text(
+        yaml.safe_dump(
+            {
+                "metrics": {
+                    "discovery": old_discovery,
+                    "geo_opt": {},
+                }
+            }
+        )
     )
+    mock_model = cast("Model", SimpleNamespace(yaml_path=str(yaml_path)))
     run_metadata = {
         "hardware": "NVIDIA H200",
         "run_time_sec": 123.45,
@@ -284,18 +264,18 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     discovery_yaml = written["metrics"]["discovery"]
     # normpath makes the comparison robust to Windows CI, where tmp_path sits on a
     # different drive than the repo (relpath impossible -> absolute native path)
-    assert os.path.normpath(discovery_yaml["pred_file"]) == os.path.normpath(
-        artifacts.pred_file_path
+    pred_name = file_ref_name(discovery_yaml["pred_file"])
+    assert pred_name is not None
+    assert os.path.normpath(pred_name) == os.path.normpath(artifacts.pred_file_path)
+    assert file_ref_url(discovery_yaml["pred_file"]) is None, (
+        "stale URL must be invalidated"
     )
-    assert discovery_yaml["pred_file_url"] is None, "stale URL must be invalidated"
-    assert discovery_yaml["pred_col"] == pred_col
     assert discovery_yaml["hardware"] == "NVIDIA H200"
     assert discovery_yaml["run_time_sec"] == pytest.approx(123.45)
     assert discovery_yaml["max_rss_gb"] == pytest.approx(4.2)
     assert "hostnames" not in discovery_yaml
     assert "max_gpu_mem_gb" not in discovery_yaml, "absent cost fields stay absent"
     geo_opt_yaml = written["metrics"]["geo_opt"]
-    assert geo_opt_yaml["struct_col"] == "structure"
     assert "hardware" not in geo_opt_yaml, "cost provenance lives under discovery"
     assert set(discovery_yaml) >= {str(subset) for subset in TestSubset}
     full_metrics = discovery_yaml[str(TestSubset.full_test_set)]
@@ -323,7 +303,7 @@ def test_cli_rejects_unsafe_flag_combinations(cli_args: list[str]) -> None:
 
 @pytest.mark.parametrize(
     "model_ref",
-    [*discovery_core.ARCHIVED_DISCOVERY_MODELS, "equflash-29M-oam"],
+    [*discovery_core.ARCHIVED_DISCOVERY_MODELS, "equflash-29m-oam"],
 )
 def test_cli_rejects_archived_discovery_models(
     capsys: pytest.CaptureFixture[str], model_ref: str
@@ -389,9 +369,13 @@ def test_merge_paths_reuse_shard_run_date(tmp_path: Path) -> None:
         geo_opt_file=None,
     )
     shard_dir, pred_file, geo_opt_file = resolve_paths()
-    assert shard_dir == str(old_shard_dir)
-    assert pred_file == str(tmp_path / "2020-01-02-wbm-IS2RE-FIRE.csv.gz")
-    assert geo_opt_file == str(tmp_path / "2020-01-02-wbm-IS2RE-FIRE.jsonl.gz")
+    assert os.path.normpath(shard_dir) == os.path.normpath(old_shard_dir)
+    assert os.path.normpath(pred_file) == os.path.normpath(
+        tmp_path / "2020-01-02-discovery.csv.gz"
+    )
+    assert os.path.normpath(geo_opt_file) == os.path.normpath(
+        tmp_path / "2020-01-02-geo-opt.jsonl.gz"
+    )
 
     (tmp_path / "2020-01-01-wbm-IS2RE-FIRE-shards").mkdir()
     with pytest.raises(ValueError, match="Multiple discovery shard directories"):

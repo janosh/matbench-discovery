@@ -14,10 +14,7 @@ import { SvelteSet } from 'svelte/reactivity'
 // both model_key and display name so key- and label-keyed payloads both resolve
 const model_meta: Record<string, { color?: string; f1: number; mae: number }> = {}
 for (const model of MODELS) {
-  const metrics =
-    typeof model.metrics?.discovery === `object`
-      ? model.metrics.discovery?.unique_prototypes
-      : undefined
+  const metrics = model.metrics?.discovery?.unique_prototypes
   for (const id of [model.model_key, model.model_name]) {
     if (id) {
       model_meta[id] = {

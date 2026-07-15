@@ -18,12 +18,10 @@ export async function read_md_per_system(
   model: Pick<ModelData, `metrics`>,
   root_dir: string = repo_root,
 ): Promise<MdPerSystemRow[] | null> {
-  const md = model.metrics?.md
-  if (!md || typeof md !== `object` || !md.pred_file) return null
+  const pred_name = model.metrics?.md?.pred_file?.name
+  if (!pred_name) return null
 
-  const csv_path = isAbsolute(md.pred_file)
-    ? md.pred_file
-    : resolve(root_dir, md.pred_file)
+  const csv_path = isAbsolute(pred_name) ? pred_name : resolve(root_dir, pred_name)
   let csv: string
   try {
     const bytes = await readFile(csv_path)

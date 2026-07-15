@@ -7,8 +7,12 @@ import pandas as pd
 import pytest
 from pymatviz.enums import Key
 
+from matbench_discovery.data import make_file_ref
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import geo_opt
+
+_GEO = "models/alignn/alignn/2026-07-01-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz"
+_GEO_NAN = "models/alignn/alignn/2026-07-02-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz"
 
 
 @pytest.fixture
@@ -103,7 +107,7 @@ def test_calc_geo_opt_metrics_parametrized(
 
 
 @pytest.mark.parametrize(
-    ("metrics_data", "expected_yaml", "symprec", "analysis_file_path"),
+    ("metrics_data", "expected_block", "analysis_file_path"),
     [
         (
             {
@@ -115,23 +119,15 @@ def test_calc_geo_opt_metrics_parametrized(
                 Key.n_structures: 0,
             },
             {
-                "metrics": {
-                    "geo_opt": {
-                        "symprec=1e-2": {
-                            Key.rmsd: 0.1,
-                            Key.n_sym_ops_mae: 0.2,
-                            Key.symmetry_decrease: 0.3,
-                            Key.symmetry_match: 0.4,
-                            Key.symmetry_increase: 0.0,
-                            Key.n_structures: 0,
-                            "analysis_file": "test/path/analysis.csv.gz",
-                            "analysis_file_url": None,
-                        }
-                    }
-                }
+                Key.rmsd: 0.1,
+                Key.n_sym_ops_mae: 0.2,
+                Key.symmetry_decrease: 0.3,
+                Key.symmetry_match: 0.4,
+                Key.symmetry_increase: 0.0,
+                Key.n_structures: 0,
+                "analysis_file": make_file_ref(_GEO),
             },
-            1e-2,
-            "test/path/analysis.csv.gz",
+            _GEO,
         ),
         (
             {
@@ -143,65 +139,54 @@ def test_calc_geo_opt_metrics_parametrized(
                 Key.n_structures: 0,
             },
             {
-                "metrics": {
-                    "geo_opt": {
-                        "symprec=1e-2": {
-                            Key.rmsd: float("nan"),
-                            Key.n_sym_ops_mae: float("nan"),
-                            Key.symmetry_decrease: 0.0,
-                            Key.symmetry_match: 0.0,
-                            Key.symmetry_increase: 0.0,
-                            Key.n_structures: 0,
-                            "analysis_file": "test/path/analysis-nan.csv.gz",
-                            "analysis_file_url": None,
-                        }
-                    }
-                }
+                Key.rmsd: float("nan"),
+                Key.n_sym_ops_mae: float("nan"),
+                Key.symmetry_decrease: 0.0,
+                Key.symmetry_match: 0.0,
+                Key.symmetry_increase: 0.0,
+                Key.n_structures: 0,
+                "analysis_file": make_file_ref(_GEO_NAN),
             },
-            1e-2,
-            "test/path/analysis-nan.csv.gz",
+            _GEO_NAN,
         ),
     ],
 )
 def test_write_geo_opt_metrics_to_yaml(
     metrics_data: dict[MbdKey | Key, float],
-    expected_yaml: dict[str, dict[str, dict[str, dict[MbdKey | Key, float]]]],
-    symprec: float,
+    expected_block: dict[MbdKey | Key | str, float | str | None],
     analysis_file_path: str,
 ) -> None:
     """Test saving geometry optimization metrics to YAML files with edge cases."""
-    symprec_key = f"{symprec=:.0e}".replace("e-0", "e-")
+    symprec = 1e-2
+    symprec_key = "symprec=1e-2"
 
-    # Mock the Model class and file operations
+    # Mock file and YAML operations
     with (
-        patch("matbench_discovery.metrics.geo_opt.Model") as mock_model,
         patch("builtins.open", mock_open()) as mock_file,
+        patch("matbench_discovery.data.round_trip_yaml") as mock_yaml,
     ):
-        # Configure mock model
-        mock_model.from_label.return_value.label = "test_model"
-        mock_model.from_label.return_value.yaml_path = "mock_path/test_model.yml"
+        # Configure mock YAML load to return empty dict
+        mock_yaml.load.return_value = {}
 
-        # Mock the YAML operations
-        with patch("matbench_discovery.data.round_trip_yaml") as mock_yaml:
-            # Configure mock YAML load to return empty dict
-            mock_yaml.load.return_value = {}
+        # Call the function
+        geo_opt.write_metrics_to_yaml(
+            pd.DataFrame([metrics_data]), Model.alignn, symprec, analysis_file_path
+        )
 
-            # Call the function
-            geo_opt.write_metrics_to_yaml(
-                pd.DataFrame([metrics_data]), Model.alignn, symprec, analysis_file_path
-            )
+        # Verify YAML dump was called with expected content
+        actual_yaml = mock_yaml.dump.call_args[0][0]
 
-            # Verify YAML dump was called with expected content
-            actual_yaml = mock_yaml.dump.call_args[0][0]
+        # Compare metrics while handling NaN values
+        for key, value in actual_yaml["metrics"]["geo_opt"][symprec_key].items():
+            expected_val = expected_block[key]
+            if key in {"analysis_file", "pred_file", "force_file", "run_info_file"}:
+                assert value == expected_val
+                continue
+            if isinstance(value, float) and np.isnan(value):
+                assert np.isnan(expected_val)
+            else:
+                assert value == pytest.approx(expected_val)
 
-            # Compare metrics while handling NaN values
-            for key, value in actual_yaml["metrics"]["geo_opt"][symprec_key].items():
-                expected_val = expected_yaml["metrics"]["geo_opt"][symprec_key][key]
-                if isinstance(value, float) and np.isnan(value):
-                    assert np.isnan(expected_val)
-                else:
-                    assert value == pytest.approx(expected_val)
-
-            # Verify file operations
-            mock_file.assert_called()
-            mock_yaml.dump.assert_called_once()
+        # Verify file operations
+        mock_file.assert_called()
+        mock_yaml.dump.assert_called_once()

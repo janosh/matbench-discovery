@@ -36,11 +36,6 @@ export type LicenseEnum =
   | 'unreleased'
 /**
  * This interface was referenced by `Label`'s JSON-Schema
- * via the `definition` "ModelType".
- */
-export type ModelType = 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
-/**
- * This interface was referenced by `Label`'s JSON-Schema
  * via the `definition` "TargetType".
  */
 export type TargetType =
@@ -157,9 +152,9 @@ export interface DiscoveryMetricsLabels {
  */
 export interface MetadataLabels {
   model_name: Label1
-  training_set: Label1
+  training_sets: Label1
   targets: Label1
-  date_added: Label1
+  benchmark_added: Label1
   links: Label1
   n_training_materials: Label1
   n_training_structures: Label1

@@ -38,6 +38,7 @@ from matbench_discovery.calculators import (
     load_calculator,
     resolve_cli_calculator,
 )
+from matbench_discovery.data import artifact_filename
 from matbench_discovery.md import run_md_benchmark
 
 module_dir = os.path.dirname(__file__)
@@ -151,10 +152,10 @@ def main() -> int:
         if model is None:  # debug models like emt have no YAML to write to
             print(f"Skipping metrics.md write: {args.model!r} is not a Model")
             return 0
-        # match the suffix run_md_benchmark adds for --systems subset runs so the
-        # YAML pred_file points at the file actually written
-        suffix = f"-{'-'.join(args.systems)}" if args.systems else ""
-        csv_path = f"{out_dir}/{today}-{args.model}-md-metrics{suffix}.csv.gz"
+        artifact_name = artifact_filename(today, "md_metrics")
+        csv_path = f"{os.path.splitext(model.yaml_path)[0]}/{artifact_name}"
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        df_md.to_csv(csv_path)
         md_metrics.write_metrics_to_yaml(model, model_metrics, pred_file_path=csv_path)
         print(f"Wrote metrics.md to {model.yaml_path}")
     return 0

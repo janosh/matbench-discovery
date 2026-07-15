@@ -1,196 +1,95 @@
 model_name: ORB v2 MPtrj
 model_key: orb-v2-mptrj
 model_version: v2
-date_added: '2024-10-14'
-date_published: '2024-10-29'
+dates:
+  benchmark_added: '2024-10-14'
+  paper_published: '2024-10-29'
+lifecycle: active
 authors:
-  - name: Mark Neumann
-    affiliation: Orbital Materials
-    email: mark@orbitalmaterials.com
-    corresponding: true
-  - name: Jonathan Godwin
-    affiliation: Orbital Materials
-    email: jonathan@orbitalmaterials.com
-    corresponding: true
-  - name: James Gin-Pollock
-    affiliation: Orbital Materials
-  - name: Zhiyi Li
-    affiliation: Orbital Materials
-  - name: Ben Rhodes
-    affiliation: Orbital Materials
-  - name: Hitarth Choubisa
-    affiliation: Orbital Materials
-  - name: Steven Bennett
-    affiliation: Orbital Materials
-  - name: Arthur Hussey
-    affiliation: Orbital Materials
+- name: Mark Neumann
+  affiliation: Orbital Materials
+  email: mark@orbitalmaterials.com
+  corresponding: true
+- name: Jonathan Godwin
+  affiliation: Orbital Materials
+  email: jonathan@orbitalmaterials.com
+  corresponding: true
+- name: James Gin-Pollock
+  affiliation: Orbital Materials
+- name: Zhiyi Li
+  affiliation: Orbital Materials
+- name: Ben Rhodes
+  affiliation: Orbital Materials
+- name: Hitarth Choubisa
+  affiliation: Orbital Materials
+- name: Steven Bennett
+  affiliation: Orbital Materials
+- name: Arthur Hussey
+  affiliation: Orbital Materials
 
 repo: https://github.com/orbital-materials/orb-models
-url: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-based-interatomic-potential
 doi: https://doi.org/10.48550/arXiv.2410.22570
 paper: https://arxiv.org/abs/2410.22570
-pr_url: https://github.com/janosh/matbench-discovery/pull/133
-# v1 checkpoint: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orbff-v1-20240827.ckpt
-# v2 URL taken from: https://github.com/orbital-materials/orb-models/blob/637a98d49c/MODELS.md
-checkpoint_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-mptraj-only-v2-20241014.ckpt
+docs: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-based-interatomic-potential
 pypi: https://pypi.org/project/orb-models
-
+pr_url: https://github.com/janosh/matbench-discovery/pull/133
+checkpoint_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-mptraj-only-v2-20241014.ckpt
 license:
   code: Apache-2.0
   code_url: https://github.com/orbital-materials/orb-models/blob/637a98d49/LICENSE
   checkpoint: Apache-2.0
   checkpoint_url: https://github.com/orbital-materials/orb-models/blob/637a98d49/LICENSE
 
+environment:
+  dependencies: ['orb-models==0.4.3', 'pynanoflann @ git+https://github.com/dwastberg/pynanoflann@af434039ae14bedcbb838a7808924d6689274168']
+  python_version: '3.12'
 openness: OSOD
-trained_for_benchmark: true
+architecture_types: [transformer]
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_D
-model_type: UIP
+training_sets: [MPtrj]
 model_params: 25161727
-n_estimators: 1
-
 hyperparams:
-  max_force: 0.02
-  max_steps: 500
-  ase_optimizer: FIRE
-  cell_filter: FrechetCellFilter
-  optimizer: Adam
-  loss: MAE
-  loss_weights:
-    energy: 10.0
-    force: 1.0
-    stress: 1.0
-  batch_size: 300 # (avg, as batch size is dynamic)
-  initial_learning_rate: 0.0003
-  learning_rate_schedule: CosineAnnealingLR(T_max=100)
-  gradient_clip: 0.5
-  ema_decay: 0.999
-  n_layers: 15
-  features: 256 latent dim, 512 MLP dim
-  num_rbfs: 50
-  graph_construction_radius: 10.0
-  max_neighbors: 20
-
-  kappa:
-    protocol: phonondb-v1
-    is_plusminus: true
-    save_forces: true
-requirements:
-  orb-models: '0.4.0'
-  pynanoflann: 'pynanoflann@git+https://github.com/dwastberg/pynanoflann#egg=af434039ae14bedcbb838a7808924d6689274168'
-
-training_set: [MPtrj]
-training_cost: missing
-
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      is_plusminus: true
+      save_forces: true
+  architecture:
+    n_layers: 15
+    graph_construction_radius: 10.0
+    max_neighbors: 20
+  training:
+    batch_size: 300
+    initial_learning_rate: 0.0003
+    optimizer: Adam
+  upstream_config:
+    loss: MAE
+    loss_weights:
+      energy: 10.0
+      force: 1.0
+      stress: 1.0
+    learning_rate_schedule: CosineAnnealingLR(T_max=100)
+    gradient_clip: 0.5
+    ema_decay: 0.999
+    features: 256 latent dim, 512 MLP dim
+    num_rbfs: 50
 notes:
-  Description: |
+  description: |
     ORB is a pretrained model for atomic simulations. This model is pretrained and fine-tuned on MPtrj only.
 
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 1.7255
-      pred_file: models/orb/orbff-mptrj-v2/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/52134890
-      κ_SRE: 1.4544
-  geo_opt:
-    pred_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/57753379
-    struct_col: orb_structure
-    symprec=1e-5:
-      rmsd: 0.1007 # unitless
-      n_sym_ops_mae: 10.0889 # unitless
-      symmetry_decrease: 0.8655 # fraction
-      symmetry_match: 0.1335 # fraction
-      symmetry_increase: 0.0009 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504690
-    symprec=1e-2:
-      rmsd: 0.1007 # unitless
-      n_sym_ops_mae: 5.6352 # unitless
-      symmetry_decrease: 0.5213 # fraction
-      symmetry_match: 0.4332 # fraction
-      symmetry_increase: 0.0387 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504696
-  discovery:
-    pred_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52057565
-    pred_col: e_form_per_atom_orb
-    full_test_set:
-      F1: 0.755 # fraction
-      DAF: 4.188 # dimensionless
-      Precision: 0.719 # fraction
-      Recall: 0.795 # fraction
-      Accuracy: 0.911 # fraction
-      TPR: 0.795 # fraction
-      FPR: 0.064 # fraction
-      TNR: 0.936 # fraction
-      FNR: 0.205 # fraction
-      TP: 35047.0 # count
-      FP: 13729.0 # count
-      TN: 199142.0 # count
-      FN: 9045.0 # count
-      MAE: 0.043 # eV/atom
-      RMSE: 0.09 # eV/atom
-      R2: 0.752 # dimensionless
-      missing_preds: 2 # count
-    most_stable_10k:
-      F1: 0.971 # fraction
-      DAF: 6.173 # dimensionless
-      Precision: 0.944 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.944 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9437.0 # count
-      FP: 563.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
-      MAE: 0.037 # eV/atom
-      RMSE: 0.098 # eV/atom
-      R2: 0.801 # dimensionless
-      missing_preds: 0 # count
-    unique_prototypes:
-      F1: 0.765 # fraction
-      DAF: 4.702 # dimensionless
-      Precision: 0.719 # fraction
-      Recall: 0.817 # fraction
-      Accuracy: 0.922 # fraction
-      TPR: 0.817 # fraction
-      FPR: 0.059 # fraction
-      TNR: 0.941 # fraction
-      FNR: 0.183 # fraction
-      TP: 27276.0 # count
-      FP: 10668.0 # count
-      TN: 171446.0 # count
-      FN: 6098.0 # count
-      MAE: 0.045 # eV/atom
-      RMSE: 0.091 # eV/atom
-      R2: 0.756 # dimensionless
-      missing_preds: 0 # count
-  md:
-    pred_file: models/orb/orb-v2-mptrj/2026-06-28-orb_v2_mptrj-md-metrics.csv.gz
-    hardware: NVIDIA H200
-    run_time_sec: 9442.93 # s
-    energy_rmse: 1.8851 # meV/atom
-    force_rmse: 115.5047 # meV/Å
-    rdf_error: 4.9339 # %
-    adf_error: 2.4584 # %
-    vdos_error: 23.2066 # %
-    pressure_mae: 0.9339 # GPa
-    pressure_wasserstein: 0.9453 # GPa
-    pressure_error: 65.2442 # %
-    n_systems: 17 # count
-    pred_file_url: https://figshare.com/files/66048926
   diatomics:
-    pred_file: models/orb/orb-v2-mptrj/2026-06-28-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/66104651
+    pred_file:
+      name: models/orb/orb-v2-mptrj/2026-06-28-diatomics.json.gz
+      url: https://figshare.com/files/66104651
+      size: 321503
+      md5: dc8dc3989209beff50285831d9432928
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 105.81
     pbe_wall_dist_mae: 0.7349
@@ -205,3 +104,119 @@ metrics:
     force_total_variation: 109.0
     force_jump: 0.23
     pbe_force_mae: 1.43
+  discovery:
+    pred_file:
+      name: models/orb/orb-v2-mptrj/2024-10-14-discovery.csv.gz
+      url: https://figshare.com/files/66646292
+      size: 1325089
+      md5: 7ad5e62654b2b3511b912a939c085d36
+    full_test_set:
+      F1: 0.755  # fraction
+      DAF: 4.188 # dimensionless
+      Precision: 0.719 # fraction
+      Recall: 0.795 # fraction
+      Accuracy: 0.911 # fraction
+      TPR: 0.795 # fraction
+      FPR: 0.064 # fraction
+      TNR: 0.936 # fraction
+      FNR: 0.205 # fraction
+      TP: 35047 # count
+      FP: 13729 # count
+      TN: 199142 # count
+      FN: 9045 # count
+      MAE: 0.043 # eV/atom
+      RMSE: 0.09 # eV/atom
+      R2: 0.752 # dimensionless
+      missing_preds: 2 # count
+    most_stable_10k:
+      F1: 0.971  # fraction
+      DAF: 6.173 # dimensionless
+      Precision: 0.944 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.944 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9437 # count
+      FP: 563 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.037 # eV/atom
+      RMSE: 0.098 # eV/atom
+      R2: 0.801 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.765  # fraction
+      DAF: 4.702 # dimensionless
+      Precision: 0.719 # fraction
+      Recall: 0.817 # fraction
+      Accuracy: 0.922 # fraction
+      TPR: 0.817 # fraction
+      FPR: 0.059 # fraction
+      TNR: 0.941 # fraction
+      FNR: 0.183 # fraction
+      TP: 27276 # count
+      FP: 10668 # count
+      TN: 171446 # count
+      FN: 6098 # count
+      MAE: 0.045 # eV/atom
+      RMSE: 0.091 # eV/atom
+      R2: 0.756 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57753379
+      size: 135854111
+      md5: 2c164703a563cfea232f8fa99e07b3c0
+    symprec=1e-5:
+      rmsd: 0.1007
+      n_sym_ops_mae: 10.0889
+      symmetry_decrease: 0.8655
+      symmetry_match: 0.1335
+      symmetry_increase: 0.0009
+      n_structures: 256963
+      analysis_file:
+        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504690
+        size: 6282067
+        md5: 839607180cd7a26550413b62e6d20fc2
+    symprec=1e-2:
+      rmsd: 0.1007
+      n_sym_ops_mae: 5.6352
+      symmetry_decrease: 0.5213
+      symmetry_match: 0.4332
+      symmetry_increase: 0.0387
+      n_structures: 256963
+      analysis_file:
+        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504696
+        size: 7312486
+        md5: 8fcfc447a77c864494b5586d150e9715
+  md:
+    pred_file:
+      name: models/orb/orb-v2-mptrj/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048926
+      size: 1579
+      md5: bdceccf69bb210c954d170921134729b
+    hardware: NVIDIA H200
+    run_time_sec: 9442.93
+    energy_rmse: 1.8851
+    force_rmse: 115.5047
+    rdf_error: 4.9339
+    adf_error: 2.4584
+    vdos_error: 23.2066
+    pressure_mae: 0.9339
+    pressure_wasserstein: 0.9453
+    pressure_error: 65.2442
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 1.7255
+      pred_file:
+        name: models/orb/orb-v2-mptrj/2024-11-09-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/52134890
+        size: 7147306
+        md5: 08aa59ad261f1e6cb937702c7dbf759c
+      κ_SRE: 1.4544

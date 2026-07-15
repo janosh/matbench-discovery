@@ -60,9 +60,6 @@ describe(`MODELS array`, () => {
   })
 
   it(`should have processed models with calculated properties`, () => {
-    // Skip if no models available in test environment
-    if (MODELS.length === 0) return
-
     // Check that models have the expected structure
     const model = MODELS[0]
     expect(model).toHaveProperty(`dirname`)
@@ -111,43 +108,44 @@ describe(`make_table_filters`, () => {
 
   it.each<{
     training: Record<string, `require` | `exclude`>
-    training_set: string[]
+    training_sets: string[]
     expected: boolean
   }>([
     // require: only models trained on the dataset
-    { training: { MPtrj: `require` }, training_set: [`MPtrj`], expected: true },
-    { training: { MPtrj: `require` }, training_set: [`OMat24`], expected: false },
+    { training: { MPtrj: `require` }, training_sets: [`MPtrj`], expected: true },
+    { training: { MPtrj: `require` }, training_sets: [`OMat24`], expected: false },
     // exclude: only models NOT trained on the dataset
-    { training: { OMat24: `exclude` }, training_set: [`MPtrj`], expected: true },
+    { training: { OMat24: `exclude` }, training_sets: [`MPtrj`], expected: true },
     {
       training: { OMat24: `exclude` },
-      training_set: [`MPtrj`, `OMat24`],
+      training_sets: [`MPtrj`, `OMat24`],
       expected: false,
     },
     // multiple requires AND together
     {
       training: { MPtrj: `require`, sAlex: `require` },
-      training_set: [`MPtrj`, `sAlex`, `OMat24`],
+      training_sets: [`MPtrj`, `sAlex`, `OMat24`],
       expected: true,
     },
     {
       training: { MPtrj: `require`, sAlex: `require` },
-      training_set: [`MPtrj`],
+      training_sets: [`MPtrj`],
       expected: false,
     },
   ])(
-    `training filter $training matches $training_set -> $expected`,
-    ({ training, training_set, expected }) => {
+    `training filter $training matches $training_sets -> $expected`,
+    ({ training, training_sets, expected }) => {
       const filters = make_table_filters()
       filters.training = training
-      expect(filters.matches({ training_set, targets: `EFS_G` })).toBe(expected)
+      expect(filters.matches({ training_sets, openness: `OSOD`, targets: `EFS_G` })).toBe(
+        expected,
+      )
     },
   )
 
   it.each([
     { openness: [`OSOD`], model_openness: `OSOD`, expected: true },
     { openness: [`OSOD`], model_openness: `CSCD`, expected: false },
-    { openness: [`OSOD`], model_openness: undefined, expected: true }, // defaults OSOD
     { openness: [`OSCD`, `CSCD`], model_openness: `OSOD`, expected: false },
   ] as const)(
     `openness filter $openness matches $model_openness -> $expected`,
@@ -156,7 +154,7 @@ describe(`make_table_filters`, () => {
       filters.openness = [...openness]
       expect(
         filters.matches({
-          training_set: [`MPtrj`],
+          training_sets: [`MPtrj`],
           openness: model_openness,
           targets: `EFS_G`,
         }),
@@ -184,7 +182,13 @@ describe(`make_table_filters`, () => {
       const filters = make_table_filters()
       if (targets) filters.targets = { ...targets }
       if (fs_mode) filters.fs_mode = fs_mode
-      expect(filters.matches({ training_set: [], targets: model_targets })).toBe(expected)
+      expect(
+        filters.matches({
+          training_sets: [],
+          openness: `OSOD`,
+          targets: model_targets,
+        }),
+      ).toBe(expected)
     },
   )
 
@@ -223,7 +227,7 @@ describe(`make_table_filters`, () => {
 
 describe(`ALL_TRAINING_SETS`, () => {
   it(`lists only datasets used by at least one model, in datasets.yml order`, () => {
-    const used_keys = new Set<string>(MODELS.flatMap((model) => model.training_set))
+    const used_keys = new Set<string>(MODELS.flatMap((model) => model.training_sets))
     const expected_keys = Object.keys(DATASETS).filter((key) => used_keys.has(key))
     const unknown_used_keys = [...used_keys].filter((key) => !(key in DATASETS))
 
@@ -235,9 +239,6 @@ describe(`ALL_TRAINING_SETS`, () => {
 // NB: CPS_CONFIG defaults + reactivity are covered in combined-scores.test.ts
 describe(`update_models_cps`, () => {
   it(`should update CPS for models based on metrics and current weights`, () => {
-    // Skip test if no models available
-    if (MODELS.length === 0) return
-
     // Act: Call the function under test
     update_models_cps(MODELS, CPS_CONFIG)
 
@@ -247,9 +248,6 @@ describe(`update_models_cps`, () => {
   })
 
   it(`should set CPS to NaN when required metrics are missing`, () => {
-    // Skip test if no models available
-    if (MODELS.length === 0) return
-
     // Act: Set weights that would require all metrics to be present
     CPS_CONFIG.F1.weight = 0.3
     CPS_CONFIG.RMSD.weight = 0.3
@@ -329,13 +327,10 @@ describe(`fig-helpers payload styling`, () => {
   )
 
   it(`attach_style attaches MODELS colors and sorts models by discovery F1 desc`, () => {
-    const keys = [`eSEN-30m-oam`, `equiformer-v3-oam`, `chgnet-0.3.0`]
-    const f1 = (key: string) => {
-      const disc = MODELS.find((mdl) => mdl.model_key === key)?.metrics?.discovery
-      return typeof disc === `object`
-        ? (disc?.unique_prototypes?.F1 ?? -Infinity)
-        : -Infinity
-    }
+    const keys = [`esen-30m-oam`, `equiformer-v3-oam`, `chgnet-0.3.0`]
+    const f1 = (key: string) =>
+      MODELS.find((model) => model.model_key === key)?.metrics?.discovery
+        ?.unique_prototypes?.F1 ?? -Infinity
     const styled = attach_style({ shared: 1, models: keys.map((key) => ({ key })) })
 
     expect(styled.shared).toBe(1) // non-model shared fields are preserved

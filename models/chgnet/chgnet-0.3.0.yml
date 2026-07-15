@@ -1,187 +1,90 @@
 model_name: CHGNet
 model_key: chgnet-0.3.0
 model_version: v0.3.0
-date_added: '2023-03-03'
-date_published: '2023-03-01'
+dates:
+  benchmark_added: '2023-03-03'
+  paper_published: '2023-03-01'
+lifecycle: active
 authors:
-  - name: Bowen Deng
-    affiliation: UC Berkeley
-    orcid: https://orcid.org/0000-0002-5720-5299
-  - name: Peichen Zhong
-    affiliation: UC Berkeley
-    orcid: https://orcid.org/0000-0003-1921-1628
-    email: zhongpc@berkeley.edu
-  - name: KyuJung Jun
-    affiliation: UC Berkeley
-    orcid: https://orcid.org/0000-0003-1974-028X
-  - name: Janosh Riebesell
-    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
-    email: janosh.riebesell@gmail.com
-    orcid: https://orcid.org/0000-0001-5233-3462
-  - name: Kevin Han
-    affiliation: UC Berkeley
-    orcid: https://orcid.org/0000-0002-4028-2108
-  - name: Christopher J. Bartel
-    affiliation: University of Minnesota
-    orcid: https://orcid.org/0000-0002-5198-5036
-  - name: Gerbrand Ceder
-    affiliation: UC Berkeley
-    orcid: https://orcid.org/0000-0001-9275-3605
-    email: gceder@berkeley.edu
+- name: Bowen Deng
+  affiliation: UC Berkeley
+  orcid: https://orcid.org/0000-0002-5720-5299
+- name: Peichen Zhong
+  affiliation: UC Berkeley
+  orcid: https://orcid.org/0000-0003-1921-1628
+  email: zhongpc@berkeley.edu
+- name: KyuJung Jun
+  affiliation: UC Berkeley
+  orcid: https://orcid.org/0000-0003-1974-028X
+- name: Janosh Riebesell
+  affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+  email: janosh.riebesell@gmail.com
+  orcid: https://orcid.org/0000-0001-5233-3462
+- name: Kevin Han
+  affiliation: UC Berkeley
+  orcid: https://orcid.org/0000-0002-4028-2108
+- name: Christopher J. Bartel
+  affiliation: University of Minnesota
+  orcid: https://orcid.org/0000-0002-5198-5036
+- name: Gerbrand Ceder
+  affiliation: UC Berkeley
+  orcid: https://orcid.org/0000-0001-9275-3605
+  email: gceder@berkeley.edu
 
 repo: https://github.com/CederGroupHub/chgnet
 doi: https://doi.org/10.48550/arXiv.2302.14231
 paper: https://arxiv.org/abs/2302.14231
 pypi: https://pypi.org/project/chgnet
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
-# checkpoint URL copied from https://github.com/CederGroupHub/chgnet/blob/d55f185199fddc9/chgnet/pretrained/0.3.0/chgnet_0.3.0_e29f68s314m37.pth.tar
 checkpoint_url: https://github.com/CederGroupHub/chgnet/raw/refs/heads/main/chgnet/pretrained/0.3.0/chgnet_0.3.0_e29f68s314m37.pth.tar
-
 license:
   code: BSD-3-Clause
   code_url: https://github.com/CederGroupHub/chgnet/blob/d55f185199f/LICENSE
   checkpoint: BSD-3-Clause
   checkpoint_url: https://github.com/CederGroupHub/chgnet/blob/d55f185199f/LICENSE
 
-requirements:
-  torch: 1.11.0
-  ase: 3.22.0
-  pymatgen: 2022.10.22
-  numpy: 1.24.0
-
+environment:
+  dependencies:
+  - chgnet
+  - anywidget
+  - torch==1.11.0
+  - ase==3.22.0
+  - pymatgen==2022.10.22
+  - numpy==1.24.0
+  python_version: '3.10'
 openness: OSOD
-trained_for_benchmark: false
+architecture_types: [gnn]
 train_task: S2EFSM
 test_task: IS2RE-SR
 targets: EFS_GM
-model_type: UIP
+training_sets: [MPtrj]
 model_params: 412525
-n_estimators: 1
-
-training_set: [MPtrj]
-training_cost: missing
-
 hyperparams:
-  ase_optimizer: FIRE
-  cell_filter: FrechetCellFilter
-  max_steps: 500
-  max_force: 0.05 # eV/Å
-  graph_construction_radius: 5.0 # Å, from sec. B. Model design in arXiv:2302.14231
-  three_body_cutoff: 3.0 # Å
-  max_neighbors: .inf
-
-  kappa: {protocol: phonondb-v1}
+  evaluation:
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    max_steps: 500
+    max_force: 0.05
+    kappa:
+      protocol: phonondb-v1
+  architecture:
+    graph_construction_radius: 5.0
+  upstream_config:
+    three_body_cutoff: 3.0
 notes:
-  Description: |
+  description: |
     The Crystal Hamiltonian Graph Neural Network (CHGNet) is a universal GNN-based interatomic potential trained on energies, forces, stresses and magnetic moments from the MP trajectory dataset containing ∼1.5 million inorganic structures.
     ![CHGNet Pipeline](https://user-images.githubusercontent.com/30958850/222924937-1d09bbce-ee18-4b19-8061-ec689cd15887.svg)
-  Training: Using pre-trained model with 400,438 params released with paper. The MPtrj data set used to train CHGNet was pulled in September 2022 from the at-the-time latest [v2021.11.10 MP release](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) (see [description for construction of MPtrj](https://github.com/CederGroupHub/chgnet/blob/7c21a9488/examples/QueryMPtrj.md)). The CHGNet authors' MPtrj data set has since been used to train other models like [MACE-MP](https://arxiv.org/abs/2401.00096) and [Equiformer v1/2](https://github.com/pbenner/equitrain).
-  Corrections: Unlike e.g. [M3GNet](/models/m3gnet) which predicts raw DFT energies, CHGNet targets include MP2020 corrections. Hence no need to correct again.
+  training: Using pre-trained model with 412,525 params released with paper. The MPtrj data set used to train CHGNet was pulled in September 2022 from the at-the-time latest [v2021.11.10 MP release](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) (see [description for construction of MPtrj](https://github.com/CederGroupHub/chgnet/blob/7c21a9488/examples/QueryMPtrj.md)). The CHGNet authors' MPtrj data set has since been used to train other models like [MACE-MP](https://arxiv.org/abs/2401.00096) and [Equiformer v1/2](https://github.com/pbenner/equitrain).
+  corrections: Unlike e.g. [M3GNet](/models/m3gnet) which predicts raw DFT energies, CHGNet targets include MP2020 corrections. Hence no need to correct again.
 
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 1.7167
-      pred_file: models/chgnet/chgnet-0.3.0/2024-11-09-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/52134857
-      κ_SRE: 1.6959
-  geo_opt:
-    pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53153459
-    struct_col: chgnet_structure
-    symprec=1e-5:
-      rmsd: 0.0949 # unitless
-      n_sym_ops_mae: 3.0863 # unitless
-      symmetry_decrease: 0.2241 # fraction
-      symmetry_match: 0.6062 # fraction
-      symmetry_increase: 0.1601 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504513
-    symprec=1e-2:
-      rmsd: 0.0949 # unitless
-      n_sym_ops_mae: 2.0181 # unitless
-      symmetry_decrease: 0.0922 # fraction
-      symmetry_match: 0.7921 # fraction
-      symmetry_increase: 0.1076 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504516
-  discovery:
-    pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52057526
-    pred_col: e_form_per_atom_chgnet
-    full_test_set:
-      F1: 0.612 # fraction
-      DAF: 3.038 # dimensionless
-      Precision: 0.521 # fraction
-      Recall: 0.74 # fraction
-      Accuracy: 0.839 # fraction
-      TPR: 0.74 # fraction
-      FPR: 0.141 # fraction
-      TNR: 0.859 # fraction
-      FNR: 0.26 # fraction
-      TP: 32642.0 # count
-      FP: 29979.0 # count
-      TN: 182892.0 # count
-      FN: 11450.0 # count
-      MAE: 0.061 # eV/atom
-      RMSE: 0.1 # eV/atom
-      R2: 0.69 # dimensionless
-      missing_preds: 2 # count
-    most_stable_10k:
-      F1: 0.92 # fraction
-      DAF: 5.567 # dimensionless
-      Precision: 0.851 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.851 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 8511.0 # count
-      FP: 1489.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
-      MAE: 0.063 # eV/atom
-      RMSE: 0.095 # eV/atom
-      R2: 0.816 # dimensionless
-      missing_preds: 0 # count
-    unique_prototypes:
-      F1: 0.613 # fraction
-      DAF: 3.361 # dimensionless
-      Precision: 0.514 # fraction
-      Recall: 0.758 # fraction
-      Accuracy: 0.851 # fraction
-      TPR: 0.758 # fraction
-      FPR: 0.132 # fraction
-      TNR: 0.868 # fraction
-      FNR: 0.242 # fraction
-      TP: 25313.0 # count
-      FP: 23955.0 # count
-      TN: 158159.0 # count
-      FN: 8061.0 # count
-      MAE: 0.063 # eV/atom
-      RMSE: 0.103 # eV/atom
-      R2: 0.689 # dimensionless
-      missing_preds: 0 # count
-  md:
-    pred_file: models/chgnet/chgnet-0.3.0/2026-06-28-chgnet_030-md-metrics.csv.gz
-    hardware: NVIDIA H200
-    run_time_sec: 87023.78 # s
-    energy_rmse: 2.3775 # meV/atom
-    force_rmse: 202.2351 # meV/Å
-    rdf_error: 9.6568 # %
-    adf_error: 6.2711 # %
-    vdos_error: 35.6003 # %
-    pressure_mae: 1.1106 # GPa
-    pressure_wasserstein: 1.1162 # GPa
-    pressure_error: 65.8987 # %
-    n_systems: 17 # count
-    pred_file_url: https://figshare.com/files/66048854
   diatomics:
-    pred_file: models/chgnet/chgnet-0.3.0/2026-06-29-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/66104585
+    pred_file:
+      name: models/chgnet/chgnet-0.3.0/2026-06-29-diatomics.json.gz
+      url: https://figshare.com/files/66104585
+      size: 254264
+      md5: 14a7646bee8a8bbc30da4d7518e15494
     hardware: NVIDIA H200
     run_time_sec: 99.4
     pbe_wall_dist_mae: 0.403
@@ -196,3 +99,119 @@ metrics:
     force_total_variation: 415.0
     force_jump: 205.5
     pbe_force_mae: 4.927
+  discovery:
+    pred_file:
+      name: models/chgnet/chgnet-0.3.0/2023-12-21-discovery.csv.gz
+      url: https://figshare.com/files/66646268
+      size: 1320974
+      md5: fd7cd3781a24be465aaeadf97663ce58
+    full_test_set:
+      F1: 0.612  # fraction
+      DAF: 3.038 # dimensionless
+      Precision: 0.521 # fraction
+      Recall: 0.74 # fraction
+      Accuracy: 0.839 # fraction
+      TPR: 0.74 # fraction
+      FPR: 0.141 # fraction
+      TNR: 0.859 # fraction
+      FNR: 0.26 # fraction
+      TP: 32642 # count
+      FP: 29979 # count
+      TN: 182892 # count
+      FN: 11450 # count
+      MAE: 0.061 # eV/atom
+      RMSE: 0.1 # eV/atom
+      R2: 0.69 # dimensionless
+      missing_preds: 2 # count
+    most_stable_10k:
+      F1: 0.92  # fraction
+      DAF: 5.567 # dimensionless
+      Precision: 0.851 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.851 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 8511 # count
+      FP: 1489 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.063 # eV/atom
+      RMSE: 0.095 # eV/atom
+      R2: 0.816 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.613  # fraction
+      DAF: 3.361 # dimensionless
+      Precision: 0.514 # fraction
+      Recall: 0.758 # fraction
+      Accuracy: 0.851 # fraction
+      TPR: 0.758 # fraction
+      FPR: 0.132 # fraction
+      TNR: 0.868 # fraction
+      FNR: 0.242 # fraction
+      TP: 25313 # count
+      FP: 23955 # count
+      TN: 158159 # count
+      FN: 8061 # count
+      MAE: 0.063 # eV/atom
+      RMSE: 0.103 # eV/atom
+      R2: 0.689 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt.jsonl.gz
+      url: https://figshare.com/files/53153459
+      size: 117688460
+      md5: bfad645e47a4873e29da8e2b00514db8
+    symprec=1e-5:
+      rmsd: 0.0949
+      n_sym_ops_mae: 3.0863
+      symmetry_decrease: 0.2241
+      symmetry_match: 0.6062
+      symmetry_increase: 0.1601
+      n_structures: 256963
+      analysis_file:
+        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504513
+        size: 7259410
+        md5: 8bd70c16b54a8a4385f16a31a6a680e5
+    symprec=1e-2:
+      rmsd: 0.0949
+      n_sym_ops_mae: 2.0181
+      symmetry_decrease: 0.0922
+      symmetry_match: 0.7921
+      symmetry_increase: 0.1076
+      n_structures: 256963
+      analysis_file:
+        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504516
+        size: 7255635
+        md5: 2f99c1f21b41c6303c260753d8a22f59
+  md:
+    pred_file:
+      name: models/chgnet/chgnet-0.3.0/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048854
+      size: 1561
+      md5: 2a5b828e05301564e98b735e005a40de
+    hardware: NVIDIA H200
+    run_time_sec: 87023.78
+    energy_rmse: 2.3775
+    force_rmse: 202.2351
+    rdf_error: 9.6568
+    adf_error: 6.2711
+    vdos_error: 35.6003
+    pressure_mae: 1.1106
+    pressure_wasserstein: 1.1162
+    pressure_error: 65.8987
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 1.7167
+      pred_file:
+        name: models/chgnet/chgnet-0.3.0/2024-11-09-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/52134857
+        size: 7065302
+        md5: 4d89dbeb0333bf96a7adb59dc7543ac8
+      κ_SRE: 1.6959

@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { MODELS } from '$lib/models.svelte'
+  import { ACTIVE_MODELS } from '$lib/models.svelte'
   import { model_metric_ranks, RANKED_METRICS } from '$lib/rankings'
   import { format_num } from 'matterviz'
   import { tooltip } from 'svelte-multiselect/attachments'
 
   let { model_key }: { model_key: string } = $props()
 
-  // Includes energy-only models hidden by default and tracks live score weights.
-  let ranks = $derived(model_metric_ranks(model_key, MODELS, RANKED_METRICS))
+  // Rank against the active leaderboard cohort and track live score weights.
+  let ranks = $derived(model_metric_ranks(model_key, ACTIVE_MODELS, RANKED_METRICS))
 
   // Mix theme-aware link blue (best) through muted purple to red (worst).
   const rank_color = (rank: number, n_models: number): string => {

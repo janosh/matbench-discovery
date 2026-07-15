@@ -18,18 +18,17 @@ def metrics_df_from_yaml(nested_keys: Sequence[str]) -> pd.DataFrame:
     out_dict = {}
     for model in Model:
         try:
-            if not model.is_complete:
+            if not model.is_active:
                 continue
-            metrics = None
-            combined_metrics: dict[str, float] = {}
+            combined_metrics: dict[object, object] = {}
             for nested_key in nested_keys:
-                metrics = model.metadata.get("metrics", {})
+                metrics: object = model.metrics
                 for sub_key in nested_key.split("."):
                     if not isinstance(metrics, dict):
-                        break  # go straight to next model if sub_key returned non-dict
+                        break
                     metrics = metrics.get(sub_key) or {}
                 if isinstance(metrics, dict):
-                    combined_metrics |= metrics
+                    combined_metrics.update(metrics)
             if combined_metrics:
                 out_dict[model.label] = combined_metrics
 

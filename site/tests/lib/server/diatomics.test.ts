@@ -23,8 +23,10 @@ describe(`diatomics server data loader`, () => {
     await expect(
       fetch_diatomics_data(
         {
-          pred_file: `diatomics.json.gz`,
-          pred_file_url: `https://figshare.com/files/123`,
+          pred_file: {
+            name: `diatomics.json.gz`,
+            url: `https://figshare.com/files/123`,
+          },
         },
         { fetch_fn, root_dir: tmp_dir },
       ),
@@ -45,7 +47,7 @@ describe(`diatomics server data loader`, () => {
 
     await expect(
       fetch_diatomics_data(
-        { pred_file_url: `https://figshare.com/files/123` },
+        { pred_file: { name: `missing.json.gz`, url: `https://figshare.com/files/123` } },
         { fetch_fn, max_attempts: 3 },
       ),
     ).rejects.toThrow(/Figshare WAF challenge: challenge/)
@@ -64,7 +66,9 @@ describe(`diatomics server data loader`, () => {
 
       await expect(
         fetch_diatomics_data(
-          { pred_file_url: `https://figshare.com/files/123` },
+          {
+            pred_file: { name: `missing.json.gz`, url: `https://figshare.com/files/123` },
+          },
           { fetch_fn, max_attempts },
         ),
       ).rejects.toThrow(`max_attempts must be a positive integer`)

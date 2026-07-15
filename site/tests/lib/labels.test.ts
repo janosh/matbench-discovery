@@ -72,18 +72,27 @@ describe(`format_property_path`, () => {
   it.each([
     // Direct properties
     [`model_params`, `Params`],
-    [`date_added`, `Date Added`],
+    [`dates.benchmark_added`, `dates > Date Added`],
     [`n_estimators`, `Estimators`],
     [`unknown_property`, `unknown property`],
     // Discovery metrics
     [`discovery.unique_prototypes.F1`, `Discovery > Unique Prototypes > F1`],
     [`discovery.full_test_set.RMSE`, `Discovery > Full Test Set > RMSE`],
     [`discovery.most_stable_10k.Precision`, `Discovery > 10k Most Stable > Prec`],
-    // Hyperparameters
-    [`hyperparams.learning_rate`, `Hyperparams > LR`],
-    [`hyperparams.graph_construction_radius`, `Hyperparams > r<sub>cut</sub>`],
-    [`hyperparams.max_neighbors`, `Hyperparams > Max neighbors`],
-    [`hyperparams.custom_param`, `Hyperparams > custom param`],
+    // Hyperparams
+    [`hyperparams.training.learning_rate`, `Hyperparams > training > LR`],
+    [
+      `hyperparams.architecture.graph_construction_radius`,
+      `Hyperparams > architecture > r<sub>cut</sub>`,
+    ],
+    [
+      `hyperparams.architecture.max_neighbors`,
+      `Hyperparams > architecture > Max neighbors`,
+    ],
+    [
+      `hyperparams.upstream_config.custom_param`,
+      `Hyperparams > upstream config > custom param`,
+    ],
     // Geo-opt metrics
     [`geo_opt.symprec=1e-5.rmsd`, `Geometry Optimization > RMSD`],
     // Phonon metrics

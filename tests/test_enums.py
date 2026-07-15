@@ -1,6 +1,5 @@
 """Test enums module."""
 
-import ntpath
 import os
 from enum import auto
 from pathlib import Path
@@ -13,12 +12,14 @@ import requests.adapters
 
 import scripts.generate_model_enum as model_enum_generator
 from matbench_discovery import DATA_DIR, ROOT
+from matbench_discovery.data import file_ref_name
 from matbench_discovery.enums import (
+    ArchitectureType,
     DataFiles,
     Files,
+    LabelEnum,
     MbdKey,
     Model,
-    ModelType,
     Open,
     Task,
     TestSubset,
@@ -34,6 +35,16 @@ def make_mock_response(content: bytes) -> requests.Response:
     response._content = content  # noqa: SLF001
     response.iter_content = lambda chunk_size=8192: [content]  # ty: ignore[invalid-assignment] # noqa: ARG005
     return response
+
+
+@pytest.mark.parametrize("enum_cls", [ArchitectureType, MbdKey, Open, Task, TestSubset])
+def test_label_enum_values_and_labels(enum_cls: type[LabelEnum]) -> None:
+    """Every labeled-enum member exposes a non-empty string value and label."""
+    for member in enum_cls:
+        assert isinstance(member.value, str), f"{member=}"
+        assert isinstance(member.label, str), f"{member=}"
+        assert member.value != "", f"{member=}"
+        assert member.label != "", f"{member=}"
 
 
 def test_mbd_key() -> None:
@@ -52,13 +63,6 @@ def test_mbd_key() -> None:
     )
     assert MbdKey.protostructure_spglib == "protostructure_spglib"
 
-    # Test that all keys have values and labels
-    for key in MbdKey:
-        assert isinstance(key.value, str), f"{key=}"
-        assert isinstance(key.label, str), f"{key=}"
-        assert key.value != ""
-        assert key.label != ""
-
     # Test uniqueness of values and labels
     values = [key.value for key in MbdKey]
     labels = [key.label for key in MbdKey]
@@ -73,41 +77,13 @@ def test_task() -> None:
     assert Task.S2E.label == "structure to energy"
     assert Task.S2EFS == "S2EFS"
     assert Task.S2EFS.label == "structure to energy, force, stress"
-
-    # Test that all tasks have values and labels
-    for task in Task:
-        assert isinstance(task.value, str)
-        assert isinstance(task.label, str)
-        assert task.value != ""
-        assert task.label != ""
+    assert Task.IS2RE_SR == "IS2RE-SR"
 
     # Test task descriptions make sense
     assert "energy" in Task.S2E.label
     assert "force" in Task.S2EF.label
     assert "stress" in Task.S2EFS.label
     assert "magmoms" in Task.S2EFSM.label
-
-
-def test_model_type() -> None:
-    """Test ModelType enum."""
-    # Test basic enum functionality
-    assert ModelType.GNN == "GNN"
-    assert ModelType.GNN.label == "Graph Neural Network"
-    assert ModelType.RF == "RF"
-    assert ModelType.RF.label == "Random Forest"
-
-    # Test that all model types have values and labels
-    for model_type in ModelType:
-        assert isinstance(model_type.value, str)
-        assert isinstance(model_type.label, str)
-        assert model_type.value != ""
-        assert model_type.label != ""
-
-    # Test model type descriptions make sense
-    assert "Neural" in ModelType.GNN.label
-    assert "Forest" in ModelType.RF.label
-    assert "Transformer" in ModelType.Transformer.label
-    assert "Fingerprint" in ModelType.Fingerprint.label
 
 
 def test_open() -> None:
@@ -117,13 +93,6 @@ def test_open() -> None:
     assert Open.OSOD.label == "open source, open data"
     assert Open.CSCD == "CSCD"
     assert Open.CSCD.label == "closed source, closed data"
-
-    # Test that all openness types have values and labels
-    for open_type in Open:
-        assert isinstance(open_type.value, str)
-        assert isinstance(open_type.label, str)
-        assert open_type.value != ""
-        assert open_type.label != ""
 
     # Test openness descriptions make sense
     assert "open source" in Open.OSOD.label
@@ -139,13 +108,6 @@ def test_test_subset() -> None:
     assert TestSubset.uniq_protos.label == "Unique Structure Prototypes"
     assert TestSubset.most_stable_10k == "most_stable_10k"
     assert TestSubset.most_stable_10k.label == "10k Most Stable Materials"
-
-    # Test that all test subsets have values and labels
-    for subset in TestSubset:
-        assert isinstance(subset.value, str)
-        assert isinstance(subset.label, str)
-        assert subset.value != ""
-        assert subset.label != ""
 
     # Test subset descriptions make sense
     assert "Unique" in TestSubset.uniq_protos.label
@@ -254,17 +216,12 @@ def test_data_files_path_raises_when_md5_download_fails(
     assert not os.path.isfile(f"{tmp_path}/{data_file.rel_path}")
 
 
-@pytest.mark.parametrize("md_value", [None, "not available", 42])
-def test_model_md_path_returns_none_for_non_dict_md(
-    md_value: object, monkeypatch: pytest.MonkeyPatch
+def test_model_md_path_returns_none_when_absent(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """md_path returns None for any non-dict metrics.md (absent, the 'not available'
-    placeholder, or an unexpected scalar) instead of raising AttributeError on .get.
-    """
+    """md_path returns None when metrics.md is absent."""
     model = Model.mace_mp_0
-    monkeypatch.setattr(
-        type(model), "metrics", property(lambda _self: {"md": md_value})
-    )
+    monkeypatch.setattr(type(model), "metrics", property(lambda _self: {}))
     assert model.md_path is None
 
 
@@ -279,7 +236,7 @@ def test_model_md_path_returns_path_for_dict_md(
     monkeypatch.setattr(
         type(model),
         "metrics",
-        property(lambda _self: {"md": {"pred_file": "models/x/md.csv.gz"}}),
+        property(lambda _self: {"md": {"pred_file": {"name": "models/x/md.csv.gz"}}}),
     )
     download_calls: list[tuple[object, ...]] = []
     monkeypatch.setattr(
@@ -405,36 +362,33 @@ def test_model_enum() -> None:
     assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
     grace_kappa_path = Model.grace_2l_mptrj.kappa_103_path
     assert isinstance(grace_kappa_path, str)
-    assert grace_kappa_path.endswith(
-        "2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz"
-    )
+    assert grace_kappa_path.endswith("2024-11-20-phonons-kappa-103.json.gz")
 
     # Test Model metrics property
     metrics = Model.alignn.metrics
     assert isinstance(metrics, dict)
-    assert {*metrics} >= {"discovery", "geo_opt", "phonons"}
+    assert metrics.keys() == {"discovery"}
 
     # Test registry-wide model properties and backing files
     for model in Model:
         assert os.path.isfile(model.yaml_path)
     for model in Model.active():
-        discovery_metrics = model.metrics["discovery"]
-        assert isinstance(discovery_metrics, dict)
-        assert "/models/" in f"/{discovery_metrics['pred_file']}"
+        discovery = model.metrics.get("discovery") or {}
+        if pred_name := file_ref_name(discovery.get("pred_file")):
+            assert "/models/" in f"/{pred_name}"
 
     assert Model.mace_mp_0.label == "MACE-MP-0"
     assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
-    assert not Model.alphanet_v1_mptrj.is_complete
-    assert not Model.dpa_3_1_mptrj.is_complete
+    assert not Model.alphanet_v1_mptrj.is_active
+    assert not Model.dpa_3_1_mptrj.is_active
     model_keys = {model.key for model in Model}
     for model in Model:
-        if model.metadata.get("status") == "superseded":
+        if model.metadata["lifecycle"] == "superseded":
             assert model.metadata["superseded_by"] in model_keys
 
 
-def test_generated_model_enum_is_current(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Committed Model members use portable paths generated on Windows."""
-    monkeypatch.setattr(model_enum_generator.os.path, "relpath", ntpath.relpath)
+def test_generated_model_enum_is_current() -> None:
+    """Committed Model members match the YAML-driven generator."""
     with open(f"{ROOT}/matbench_discovery/enums.py", encoding="utf-8") as file:
         source = file.read()
     assert model_enum_generator.generate_source(source) == source
@@ -448,9 +402,9 @@ def test_generated_model_enum_is_current(monkeypatch: pytest.MonkeyPatch) -> Non
         ("eqv2_s_dens_mp", Model.eqv2_s_dens_mp),
         # Dash conversion
         ("mace-mp-0", Model.mace_mp_0),
-        ("eqV2-s-dens-mp", Model.eqv2_s_dens_mp),
+        ("eqv2-s-dens-mp", Model.eqv2_s_dens_mp),
         ("chgnet-0.3.0", Model.chgnet_0_3_0),
-        ("cgcnn+p", Model.cgcnn_p),
+        ("cgcnn-p", Model.cgcnn_p),
         # Case insensitive
         ("MACE-MP-0", Model.mace_mp_0),
         ("EQV2-S-DENS-MP", Model.eqv2_s_dens_mp),
@@ -488,7 +442,7 @@ def test_model_md_path_passes_huggingface_token(
         "metadata",
         {
             "model_name": "Gated MD",
-            "metrics": {"md": {"pred_file": rel_path, "pred_file_url": url}},
+            "metrics": {"md": {"pred_file": {"name": rel_path, "url": url}}},
         },
     )
 
@@ -500,22 +454,26 @@ def test_model_md_path_passes_huggingface_token(
     assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer hf_secret"}
 
 
-def get_urls_from_dict(
+def get_file_ref_urls(
     dct: dict[str, Any], parent_key: str = ""
 ) -> list[tuple[str, str]]:
-    """Recursively find all keys ending in _url in a nested dictionary.
-    Returns list of tuples with (dotted.path.to.key, url_value).
-    """
+    """Recursively find nested FileRef URLs and return their dotted paths."""
     urls = []
     for key, val in dct.items():
         current_key = f"{parent_key}.{key}" if parent_key else key
 
-        if key.endswith("_url") and isinstance(val, str):
+        if key == "url" and isinstance(val, str):
             urls.append((current_key, val))
         elif isinstance(val, dict):
-            urls.extend(get_urls_from_dict(val, current_key))
+            urls.extend(get_file_ref_urls(val, current_key))
 
     return urls
+
+
+def test_get_file_ref_urls() -> None:
+    """Nested FileRef URLs are included in model URL validation."""
+    metrics = {"discovery": {"pred_file": {"name": "preds.csv", "url": "https://x"}}}
+    assert get_file_ref_urls(metrics) == [("discovery.pred_file.url", "https://x")]
 
 
 TIMEOUT = 30
@@ -569,7 +527,7 @@ def test_model_prediction_urls(url_session: requests.Session) -> None:
         metrics = model.metrics
         if not metrics:
             continue
-        for key_path, url in get_urls_from_dict(metrics):
+        for key_path, url in get_file_ref_urls(metrics):
             tasks[url] = f"{model.name}.{key_path}"
 
     n_workers = min(len(tasks), mp.cpu_count())

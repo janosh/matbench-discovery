@@ -148,7 +148,7 @@ function write_combined_scores(
 ) {
   for (const model of models) {
     const metrics = model.metrics?.[task]
-    if (!metrics || typeof metrics !== `object`) continue
+    if (!metrics) continue
     const value = score(metrics)
     if (value === null) Reflect.deleteProperty(metrics, `combined_score`)
     else Object.assign(metrics, { combined_score: value })

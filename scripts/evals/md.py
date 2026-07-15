@@ -8,6 +8,7 @@ import pandas as pd
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.cli import cli_args
+from matbench_discovery.data import artifact_filename, file_ref_name, file_ref_url
 from matbench_discovery.enums import Model
 from matbench_discovery.md import default_md_reference_path, list_reference_systems
 from matbench_discovery.metrics import md as md_metrics
@@ -32,19 +33,18 @@ def resolve_metrics(
     ]
     if per_system_dfs:  # parallel runs: concat per-system rows into one CSV
         df_md = md_metrics.combine_per_system_metrics(per_system_dfs)
-        # match other tasks' per-model-subdir layout models/<arch>/<model>/
         model_dir = os.path.splitext(model.rel_path)[0]
-        pred_file = f"models/{model_dir}/{today}-{model.name}-md-metrics.csv.gz"
+        pred_file = f"models/{model_dir}/{artifact_filename(today, 'md_metrics')}"
         return df_md, pred_file, None, True
 
     md_path = model.md_path  # getter may download the file
-    if not isinstance(md_path, str) or not os.path.isfile(md_path):
+    if not md_path or not os.path.isfile(md_path):
         return None
     df_md = pd.read_csv(md_path)
     if "system" in df_md:  # index by system to match the per-system path
         df_md = df_md.set_index("system")
-    pred_file = md_yaml.get("pred_file") or md_path
-    return df_md, pred_file, md_yaml.get("pred_file_url"), False
+    pred_file = file_ref_name(md_yaml.get("pred_file")) or md_path
+    return df_md, pred_file, file_ref_url(md_yaml.get("pred_file")), False
 
 
 def coverage_problems(index: pd.Index, expected: set[str]) -> list[str]:
@@ -77,10 +77,7 @@ def main() -> int:
     expected: set[str] | None = None  # DynaMat v1.0 system set, resolved lazily once
 
     for model in models_to_evaluate:
-        # only a dict carries pred_file/pred_file_url; a missing key (None) or a
-        # 'not available' placeholder string must not flow into md_yaml.get(...) below
-        md_yaml = model.metrics.get("md")
-        md_yaml = md_yaml if isinstance(md_yaml, dict) else {}
+        md_yaml = model.metrics.get("md") or {}
         try:
             # resolve inside the try so a malformed CSV skips only this model
             resolved = resolve_metrics(model, md_yaml)

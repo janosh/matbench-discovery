@@ -1,176 +1,91 @@
 model_name: MACE-MP-0
 model_key: mace-mp-0
 model_version: v0.3.5
-date_added: '2023-07-14'
-date_published: '2022-05-13'
+dates:
+  benchmark_added: '2023-07-14'
+  paper_published: '2022-05-13'
+lifecycle: active
 authors:
-  - name: Ilyes Batatia
-    affiliation: University of Cambridge
-    email: ilyes.batatia@ens-paris-saclay.fr
-    orcid: https://orcid.org/0000-0001-6915-9851
-  - name: David P Kovacs
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0002-0854-2635
-  - name: Gregor Simm
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0001-6815-352X
-  - name: Christoph Ortner
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0003-1498-8120
-  - name: Gabor Csanyi
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0002-8180-2034
+- name: Ilyes Batatia
+  affiliation: University of Cambridge
+  email: ilyes.batatia@ens-paris-saclay.fr
+  orcid: https://orcid.org/0000-0001-6915-9851
+- name: David P Kovacs
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0002-0854-2635
+- name: Gregor Simm
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0001-6815-352X
+- name: Christoph Ortner
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0003-1498-8120
+- name: Gabor Csanyi
+  affiliation: University of Cambridge
+  orcid: https://orcid.org/0000-0002-8180-2034
 trained_by:
-  - name: Philipp Benner
-    affiliation: German Federal Institute of Materials Research and Testing (BAM)
-    orcid: https://orcid.org/0000-0002-0912-8137
-    github: https://github.com/pbenner
-  - name: Yuan Chiang
-    affiliation: Lawrence Berkeley National Laboratory
-    orcid: https://orcid.org/0000-0002-4017-7084
-    github: https://github.com/chiang-yuan
+- name: Philipp Benner
+  affiliation: German Federal Institute of Materials Research and Testing (BAM)
+  orcid: https://orcid.org/0000-0002-0912-8137
+  github: https://github.com/pbenner
+- name: Yuan Chiang
+  affiliation: Lawrence Berkeley National Laboratory
+  orcid: https://orcid.org/0000-0002-4017-7084
+  github: https://github.com/chiang-yuan
 
 repo: https://github.com/ACEsuit/mace
 doi: https://doi.org/10.48550/arXiv.2401.00096
 paper: https://arxiv.org/abs/2401.00096
 pypi: https://pypi.org/project/mace-torch
 pr_url: https://github.com/janosh/matbench-discovery/pull/48
-# checkpoint URL copied from https://github.com/ACEsuit/mace-foundations/releases/tag/mace_mp_0
 checkpoint_url: https://github.com/ACEsuit/mace-foundations/releases/download/mace_mp_0/2023-12-03-mace-128-L1_epoch-199.model
-
 license:
   code: MIT
   code_url: https://github.com/ACEsuit/mace/blob/b0fa4ef7c/LICENSE.md
   checkpoint: MIT
   checkpoint_url: https://github.com/ACEsuit/mace-foundations/blob/1ff8786eb/LICENSE
 
-requirements:
-  mace-torch: 0.3.3
-  torch: 2.0.1
-  ase: 3.22.1
-  pymatgen: 2023.7.14
-  numpy: 1.25.0
-
+environment:
+  dependencies:
+  - mace-torch>=0.3.16
+  - cuequivariance
+  - cuequivariance-torch
+  - cuequivariance-ops-torch-cu12
+  - torch==2.0.1
+  - ase==3.22.1
+  - pymatgen==2023.7.14
+  - numpy==1.25.0
+  python_version: '3.11'
 openness: OSOD
-trained_for_benchmark: true
+architecture_types: [gnn]
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
-model_type: UIP
-# model_params: 2_026_624 # 2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3
-# model_params: 15_847_440 # 2023-10-29-mace-pbenner-mptrj-no-conditional-loss
-model_params: 4688656 # 2023-12-03-mace-128-L1: https://tinyurl.com/y7uhwpje
-n_estimators: 1
-
-training_set: [MPtrj]
-training_cost: missing
-
+training_sets: [MPtrj]
+model_params: 4688656
 hyperparams:
-  max_force: 0.05
-  max_steps: 500
-  ase_optimizer: FIRE
-  cell_filter: FrechetCellFilter
-  graph_construction_radius: 6.0 # Å
-  max_neighbors: .inf
+  evaluation:
+    max_force: 0.05
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      save_forces: true
+  architecture:
+    graph_construction_radius: 6.0
 
-  kappa:
-    protocol: phonondb-v1
-    save_forces: true
 notes:
-  Description: |
+  description: |
     MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields.
-  Training: The Matbench Discovery submission uses the same MPtrj-trained 'medium' checkpoint used for all analysis in the MACE-MP preprint.
+  training: The Matbench Discovery submission uses the same MPtrj-trained 'medium' checkpoint used for all analysis in the MACE-MP preprint.
 
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 0.6823
-      pred_file: models/mace/mace-mp-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/52134872
-      κ_SRE: 0.471
-  geo_opt:
-    pred_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/57751033
-    struct_col: mace_structure
-    symprec=1e-5:
-      rmsd: 0.0915 # unitless
-      n_sym_ops_mae: 1.838 # unitless
-      symmetry_decrease: 0.0335 # fraction
-      symmetry_match: 0.7385 # fraction
-      symmetry_increase: 0.2239 # fraction
-      n_structures: 249254 # count
-      analysis_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504606
-    symprec=1e-2:
-      rmsd: 0.0915 # unitless
-      n_sym_ops_mae: 1.8464 # unitless
-      symmetry_decrease: 0.0599 # fraction
-      symmetry_match: 0.8112 # fraction
-      symmetry_increase: 0.122 # fraction
-      n_structures: 249254 # count
-      analysis_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504657
-  discovery:
-    pred_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.csv.gz
-    pred_file_url: https://figshare.com/files/52057538
-    pred_col: e_form_per_atom_mace
-    full_test_set:
-      F1: 0.668 # fraction
-      DAF: 3.4 # dimensionless
-      Precision: 0.583 # fraction
-      Recall: 0.781 # fraction
-      Accuracy: 0.867 # fraction
-      TPR: 0.781 # fraction
-      FPR: 0.115 # fraction
-      TNR: 0.885 # fraction
-      FNR: 0.219 # fraction
-      TP: 34420.0 # count
-      FP: 24576.0 # count
-      TN: 188295.0 # count
-      FN: 9672.0 # count
-      MAE: 0.055 # eV/atom
-      RMSE: 0.099 # eV/atom
-      R2: 0.698 # dimensionless
-      missing_preds: 38 # count
-    most_stable_10k:
-      F1: 0.888 # fraction
-      DAF: 5.221 # dimensionless
-      Precision: 0.798 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.798 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 7982.0 # count
-      FP: 2018.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
-      MAE: 0.087 # eV/atom
-      RMSE: 0.165 # eV/atom
-      R2: 0.508 # dimensionless
-      missing_preds: 0 # count
-    unique_prototypes:
-      F1: 0.669 # fraction
-      DAF: 3.777 # dimensionless
-      Precision: 0.577 # fraction
-      Recall: 0.796 # fraction
-      Accuracy: 0.878 # fraction
-      TPR: 0.796 # fraction
-      FPR: 0.107 # fraction
-      TNR: 0.893 # fraction
-      FNR: 0.204 # fraction
-      TP: 26582.0 # count
-      FP: 19457.0 # count
-      TN: 162657.0 # count
-      FN: 6792.0 # count
-      MAE: 0.057 # eV/atom
-      RMSE: 0.101 # eV/atom
-      R2: 0.697 # dimensionless
-      missing_preds: 34 # count
   diatomics:
-    pred_file: models/mace/mace-mp-0/2026-06-28-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/66104621
+    pred_file:
+      name: models/mace/mace-mp-0/2026-06-28-diatomics.json.gz
+      url: https://figshare.com/files/66104621
+      size: 260122
+      md5: 3fe6d0f47807e86d264aebce98e7145b
     hardware: NVIDIA H100 80GB HBM3
     run_time_sec: 269.09
     pbe_wall_dist_mae: 0.3994
@@ -185,17 +100,119 @@ metrics:
     force_total_variation: 158.4
     force_jump: 18.93
     pbe_force_mae: 2.088
+  discovery:
+    pred_file:
+      name: models/mace/mace-mp-0/2023-12-11-discovery.csv.gz
+      url: https://figshare.com/files/66646193
+      size: 1322814
+      md5: 5e231a2b3a029714b984890a6fbe5002
+    full_test_set:
+      F1: 0.668  # fraction
+      DAF: 3.4 # dimensionless
+      Precision: 0.583 # fraction
+      Recall: 0.781 # fraction
+      Accuracy: 0.867 # fraction
+      TPR: 0.781 # fraction
+      FPR: 0.115 # fraction
+      TNR: 0.885 # fraction
+      FNR: 0.219 # fraction
+      TP: 34420 # count
+      FP: 24576 # count
+      TN: 188295 # count
+      FN: 9672 # count
+      MAE: 0.055 # eV/atom
+      RMSE: 0.099 # eV/atom
+      R2: 0.698 # dimensionless
+      missing_preds: 38 # count
+    most_stable_10k:
+      F1: 0.888  # fraction
+      DAF: 5.221 # dimensionless
+      Precision: 0.798 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.798 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 7982 # count
+      FP: 2018 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.087 # eV/atom
+      RMSE: 0.165 # eV/atom
+      R2: 0.508 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.669  # fraction
+      DAF: 3.777 # dimensionless
+      Precision: 0.577 # fraction
+      Recall: 0.796 # fraction
+      Accuracy: 0.878 # fraction
+      TPR: 0.796 # fraction
+      FPR: 0.107 # fraction
+      TNR: 0.893 # fraction
+      FNR: 0.204 # fraction
+      TP: 26582 # count
+      FP: 19457 # count
+      TN: 162657 # count
+      FN: 6792 # count
+      MAE: 0.057 # eV/atom
+      RMSE: 0.101 # eV/atom
+      R2: 0.697 # dimensionless
+      missing_preds: 34 # count
+  geo_opt:
+    pred_file:
+      name: models/mace/mace-mp-0/2023-12-11-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57751033
+      size: 112455842
+      md5: 06e9f60a363d1945919fce10ec818306
+    symprec=1e-5:
+      rmsd: 0.0915
+      n_sym_ops_mae: 1.838
+      symmetry_decrease: 0.0335
+      symmetry_match: 0.7385
+      symmetry_increase: 0.2239
+      n_structures: 249254
+      analysis_file:
+        name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504606
+        size: 6909771
+        md5: 41abb8879d11fed37368ef98b6e2e8fb
+    symprec=1e-2:
+      rmsd: 0.0915
+      n_sym_ops_mae: 1.8464
+      symmetry_decrease: 0.0599
+      symmetry_match: 0.8112
+      symmetry_increase: 0.122
+      n_structures: 249254
+      analysis_file:
+        name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504657
+        size: 6961100
+        md5: c24e3e19c92278197611c28b2824ec32
   md:
-    pred_file: models/mace/mace-mp-0/2026-06-28-mace_mp_0-md-metrics.csv.gz
+    pred_file:
+      name: models/mace/mace-mp-0/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048893
+      size: 1555
+      md5: 0ef0c3563f0cd0c2b28e4cc0f4737840
     hardware: NVIDIA H200
-    run_time_sec: 29398.56 # s
-    energy_rmse: 1.717 # meV/atom
-    force_rmse: 165.6567 # meV/Å
-    rdf_error: 7.2668 # %
-    adf_error: 3.2713 # %
-    vdos_error: 31.1807 # %
-    pressure_mae: 0.8036 # GPa
-    pressure_wasserstein: 0.8166 # GPa
-    pressure_error: 66.3752 # %
-    n_systems: 17 # count
-    pred_file_url: https://figshare.com/files/66048893
+    run_time_sec: 29398.56
+    energy_rmse: 1.717
+    force_rmse: 165.6567
+    rdf_error: 7.2668
+    adf_error: 3.2713
+    vdos_error: 31.1807
+    pressure_mae: 0.8036
+    pressure_wasserstein: 0.8166
+    pressure_error: 66.3752
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 0.6823
+      pred_file:
+        name: models/mace/mace-mp-0/2024-11-09-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/52134872
+        size: 7161628
+        md5: 9cf38779b4ad0c5b1b8e51b866fc046c
+      κ_SRE: 0.471

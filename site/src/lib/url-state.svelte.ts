@@ -175,7 +175,11 @@ export type FilterPreset = {
   description?: string // tooltip, only set on built-in presets
 }
 // minimal structural model shape keeps this module decoupled from $lib/types
-type FilterableModel = { training_set: string[]; openness?: string; targets?: string }
+type FilterableModel = {
+  training_sets: string[]
+  openness: Openness
+  targets: string
+}
 const is_one_of = <Value extends string>(
   options: readonly Value[],
   value: unknown,
@@ -185,7 +189,7 @@ const is_one_of = <Value extends string>(
 // force/stress computation mode: prefix letters are E/F/S/H outputs, the suffix
 // holds G(radient)/D(irect) plus M when the model also predicts magmoms.
 // Exported so filter UIs can tally models per output with the same semantics.
-export function parse_targets(targets = ``): {
+export function parse_targets(targets: string): {
   outputs: Set<string>
   fs_mode: FsMode | null
 } {
@@ -223,7 +227,7 @@ export class UrlTableFilters {
   }
 
   matches = (model: FilterableModel): boolean => {
-    if (!this.openness.includes((model.openness ?? `OSOD`) as Openness)) return false
+    if (!this.openness.includes(model.openness)) return false
     const { outputs, fs_mode } = parse_targets(model.targets)
     const outputs_ok = Object.entries(this.targets).every(
       ([key, mode]) => outputs.has(key) === (mode === `require`),
@@ -232,7 +236,7 @@ export class UrlTableFilters {
     // direct/gradient also drops models without any force/stress prediction
     if (this.fs_mode !== `any` && fs_mode !== this.fs_mode) return false
     return Object.entries(this.training).every(
-      ([key, mode]) => model.training_set.includes(key) === (mode === `require`),
+      ([key, mode]) => model.training_sets.includes(key) === (mode === `require`),
     )
   }
 

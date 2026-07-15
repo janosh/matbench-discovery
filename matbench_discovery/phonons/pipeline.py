@@ -174,21 +174,26 @@ class KappaSettings:
         protocol = overrides.pop("protocol", None)
         if protocol != KAPPA_PROTOCOL:
             raise ValueError(
-                f"hyperparams.kappa protocol must be {KAPPA_PROTOCOL!r}, "
+                f"hyperparams.evaluation.kappa protocol must be {KAPPA_PROTOCOL!r}, "
                 f"got {protocol!r}"
             )
         return cls(**overrides)
 
     @classmethod
     def from_model(cls, model_ref: str) -> KappaSettings:
-        """Load a model's versioned ``hyperparams.kappa`` protocol."""
+        """Load a model's versioned ``hyperparams.evaluation.kappa`` protocol."""
         model = Model.from_ref(model_ref)
         hyperparams = model.metadata.get("hyperparams")
         if not isinstance(hyperparams, dict):
             raise TypeError(f"{model.name} hyperparams must be a mapping")
-        kappa_data = hyperparams.get("kappa")
+        evaluation = hyperparams.get("evaluation")
+        if not isinstance(evaluation, dict):
+            raise TypeError(f"{model.name} hyperparams.evaluation must be a mapping")
+        kappa_data = evaluation.get("kappa")
         if not isinstance(kappa_data, dict):
-            raise TypeError(f"{model.name} has no verified hyperparams.kappa settings")
+            raise TypeError(
+                f"{model.name} has no verified hyperparams.evaluation.kappa settings"
+            )
         return cls.from_mapping(kappa_data)
 
     @property
@@ -941,7 +946,7 @@ def write_kappa_artifacts(
     )
     run_info_path = run_info_path or f"{artifact_stem}-run-info.json"
     candidate_force_path = (
-        force_file_path or f"{artifact_stem}-force-sets.json.gz"
+        force_file_path or f"{artifact_stem}-forces.json.gz"
         if merged_run.manifest.settings.save_forces
         else None
     )
@@ -1059,8 +1064,8 @@ def package_versions(model_key: str | None = None) -> dict[str, str]:
         "tensorflow",
         "torch",
     }
-    if model_key in CALCULATORS:
-        for dependency in CALCULATORS[model_key].deps:
+    if model_key is not None and (calc_spec := CALCULATORS.get(model_key)):
+        for dependency in calc_spec.deps:
             try:
                 package_names.add(Requirement(dependency).name)
             except InvalidRequirement:

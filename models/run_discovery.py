@@ -28,6 +28,7 @@ import argparse
 import glob
 import os
 import shlex
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -41,10 +42,16 @@ from matbench_discovery.calculators import (
     load_calculator,
     resolve_cli_calculator,
 )
-from matbench_discovery.data import update_yaml_file
+from matbench_discovery.data import (
+    artifact_date_from_prefix,
+    artifact_filename,
+    make_file_ref,
+    update_yaml_file,
+)
 from matbench_discovery.discovery import (
     ARCHIVED_DISCOVERY_MODELS,
     COST_PROVENANCE_KEYS,
+    DISCOVERY_PRED_COL,
     DiscoveryArtifacts,
     RelaxationSettings,
     dry_run_settings,
@@ -119,22 +126,6 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _artifact_columns(model: Model | None) -> tuple[str | None, str | None]:
-    """Preserve established prediction and structure columns from model YAML."""
-    if model is None:
-        return None, None
-
-    def _metric_column(task: str, key: str) -> str | None:
-        """Return one configured artifact column, if present."""
-        metrics = model.metrics.get(task)
-        value = metrics.get(key) if isinstance(metrics, dict) else None
-        return str(value) if value else None
-
-    return _metric_column("discovery", "pred_col"), _metric_column(
-        "geo_opt", "struct_col"
-    )
-
-
 def _resolve_output_paths(
     *,
     out_dir: str,
@@ -144,7 +135,7 @@ def _resolve_output_paths(
     pred_file: str | None,
     geo_opt_file: str | None,
 ) -> tuple[str, str, str]:
-    """Reuse one prior shard directory and keep final artifact dates aligned."""
+    """Reuse one prior shard directory and emit canonical final artifact names."""
     dry_suffix = "-dry-run" if dry_run else ""
     run_name = f"{today}-wbm-IS2RE-{settings.ase_optimizer}{dry_suffix}"
     default_prefix = f"{out_dir}/{run_name}"
@@ -156,10 +147,14 @@ def _resolve_output_paths(
         task="discovery",
         shard_dir=shard_dir,
     )
+    artifact_date = artifact_date_from_prefix(artifact_prefix, fallback=today)
+    artifact_dir = f"{out_dir}/dry-run" if dry_run else out_dir
+    discovery_file = artifact_filename(artifact_date, "discovery")
+    geo_opt_file_name = artifact_filename(artifact_date, "geo_opt")
     return (
         selected_shard_dir,
-        pred_file or f"{artifact_prefix}.csv.gz",
-        geo_opt_file or f"{artifact_prefix}.jsonl.gz",
+        pred_file or f"{artifact_dir}/{discovery_file}",
+        geo_opt_file or f"{artifact_dir}/{geo_opt_file_name}",
     )
 
 
@@ -196,27 +191,18 @@ def _repo_relative_path(path: str) -> str:
     return relative_path if not relative_path.startswith("../") else absolute_path
 
 
-def _artifact_yaml_data(
-    model: Model,
-    task: str,
-    path: str,
-    column_key: str,
-    column: str,
-) -> dict[str, str | float | None]:
-    """Build artifact metadata, invalidating any previously uploaded URL.
+def _update_artifact_metadata(
+    section: dict[str, Any], *, updates: dict[str, Any]
+) -> dict[str, Any]:
+    """Replace cost provenance and apply regenerated artifact metadata.
 
-    The local artifact was just regenerated, so an existing URL points at stale
-    content even when the file path is unchanged (e.g. a redone shard re-merged
-    on the same day).
+    Cost provenance is cleared before the merge so omitted fields (e.g. missing
+    max_gpu_mem_gb) cannot linger from a prior YAML write.
     """
-    data: dict[str, str | float | None] = {
-        "pred_file": _repo_relative_path(path),
-        column_key: column,
-    }
-    existing = model.metrics.get(task)
-    if isinstance(existing, dict) and existing.get("pred_file_url"):
-        data["pred_file_url"] = None
-    return data
+    for key in COST_PROVENANCE_KEYS:
+        section.pop(key, None)
+    section.update(updates)
+    return section
 
 
 def _write_yaml_results(
@@ -230,7 +216,7 @@ def _write_yaml_results(
 
     # mirror load_df_wbm_with_preds's outlier masking and .round(3) convention so
     # metrics written here match a later scripts/evals/discovery.py recompute
-    model_preds = artifacts.predictions[artifacts.pred_col].copy()
+    model_preds = artifacts.predictions[DISCOVERY_PRED_COL].copy()
     bad_mask = abs(model_preds - df_wbm[MbdKey.e_form_dft]) > MAX_E_FORM_ERROR_THRESHOLD
     model_preds.loc[bad_mask] = pd.NA
     metric_reference = df_wbm.round(3)
@@ -254,16 +240,19 @@ def _write_yaml_results(
         for key in COST_PROVENANCE_KEYS
         if (value := (run_metadata or {}).get(key)) is not None
     }
-    for task, path, column_key, column in (
-        ("discovery", artifacts.pred_file_path, "pred_col", artifacts.pred_col),
-        ("geo_opt", artifacts.geo_opt_file_path, "struct_col", artifacts.struct_col),
+    for task, path in (
+        ("discovery", artifacts.pred_file_path),
+        ("geo_opt", artifacts.geo_opt_file_path),
     ):
-        artifact_data = _artifact_yaml_data(model, task, path, column_key, column)
+        artifact_data = {"pred_file": make_file_ref(_repo_relative_path(path))}
         if task == "discovery":
             artifact_data |= cost_data
-        update_yaml_file(model.yaml_path, f"metrics.{task}", artifact_data)
-        if "pred_file_url" in artifact_data:
-            print(f"Cleared stale {task}.pred_file_url; upload the new artifact")
+        update_yaml_file(
+            model.yaml_path,
+            f"metrics.{task}",
+            partial(_update_artifact_metadata, updates=artifact_data),
+        )
+        print(f"Updated {task}.pred_file; re-upload if a prior Figshare URL existed")
     discovery_metrics.write_all_metrics_to_yaml(
         model,
         metrics_by_subset,
@@ -353,13 +342,10 @@ def main(raw_args: Sequence[str] | None = None) -> int:
             parser.error(
                 f"Merged {merged_run.n_shards} shards, expected {args.n_shards}"
             )
-        pred_col, struct_col = _artifact_columns(model)
         artifacts = write_discovery_artifacts(
             merged_run,
             pred_file_path=pred_file_path,
             geo_opt_file_path=geo_opt_file_path,
-            pred_col=pred_col,
-            struct_col=struct_col,
         )
         print(
             f"Wrote {artifacts.n_success:,} predictions "

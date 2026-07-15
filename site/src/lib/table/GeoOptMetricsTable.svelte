@@ -12,7 +12,7 @@
     HYPERPARAMS,
     METADATA_COLS,
   } from '../labels'
-  import { append_better_hint, assemble_row_data, has_geo_opt_metrics } from '../metrics'
+  import { append_better_hint, assemble_row_data } from '../metrics'
 
   let {
     column_order = $bindable([]),
@@ -31,13 +31,9 @@
     if (col.unit) {
       label = `${label} <span style="font-weight: 200">(${col.unit})</span>`
     }
-    return {
-      ...col,
-      ...overrides,
-      label,
-      better: overrides.better ?? col.better ?? undefined,
-      description: append_better_hint(col),
-    }
+    const better = overrides.better ?? col.better ?? undefined
+    const description = append_better_hint(col)
+    return { ...col, ...overrides, better, description, label }
   }
 
   // Define grouped columns: [source_cols, group_name, extra_overrides]
@@ -86,14 +82,16 @@
   )
 
   let metrics_data = $derived(
-    assemble_row_data(`full_test_set`, has_geo_opt_metrics, filters.matches).map(
-      (row) => {
-        for (const [from, to] of Object.entries(key_remap)) {
-          if (from in row) row[to] = row[from]
-        }
-        return row
-      },
-    ),
+    assemble_row_data(
+      `full_test_set`,
+      (model) => model.metrics?.geo_opt != null,
+      filters.matches,
+    ).map((row) => {
+      for (const [from, to] of Object.entries(key_remap)) {
+        if (from in row) row[to] = row[from]
+      }
+      return row
+    }),
   )
 </script>
 

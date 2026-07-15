@@ -1,69 +1,65 @@
 model_name: Voronoi RF
 model_key: voronoi-rf
-model_version: v1.1.2 # scikit learn version which implements the random forest
-date_added: '2022-11-26'
-date_published: '2017-07-14'
+model_version: v1.1.2
+dates:
+  benchmark_added: '2022-11-26'
+  paper_published: '2017-07-14'
+lifecycle: active
 authors:
-  - name: Logan Ward
-    affiliation: Argonne National Laboratory
-    email: lward@anl.gov
-    orcid: https://orcid.org/0000-0002-1323-5939
-  - name: Chris Wolverton
-    affiliation: Northwestern University
-    email: c-wolverton@northwestern.edu
-    orcid: https://orcid.org/0000-0003-2248-474X
+- name: Logan Ward
+  affiliation: Argonne National Laboratory
+  email: lward@anl.gov
+  orcid: https://orcid.org/0000-0002-1323-5939
+- name: Chris Wolverton
+  affiliation: Northwestern University
+  email: c-wolverton@northwestern.edu
+  orcid: https://orcid.org/0000-0003-2248-474X
 trained_by:
-  - name: Janosh Riebesell
-    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
-    email: janosh.riebesell@gmail.com
-    orcid: https://orcid.org/0000-0001-5233-3462
+- name: Janosh Riebesell
+  affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+  email: janosh.riebesell@gmail.com
+  orcid: https://orcid.org/0000-0001-5233-3462
 
 repo: https://github.com/janosh/matbench-discovery
 doi: https://doi.org/10.1103/PhysRevB.96.024104
 paper: https://doi.org/10.1103/PhysRevB.96.024104
 pypi: https://pypi.org/project/scikit-learn
 pr_url: https://github.com/janosh/matbench-discovery/commit/f28cc6d
-# checkpoint page: https://wandb.ai/janosh/matbench-discovery/artifacts/model/voronoi_rf_model_IS2RE/v0/files
 checkpoint_url: https://api.wandb.ai/artifactsV2/default/janosh/matbench-discovery/voronoi_rf_model_IS2RE/QXJ0aWZhY3Q6MTYwNjgyOTk3NA%3D%3D/fb0cf7ce8454e5fbe1bcd49d42c0e49b/voronoi_rf_model.joblib
-
 license:
   code: MIT
   code_url: https://github.com/janosh/matbench-discovery/blob/7c0b089e7/license
   checkpoint: MIT
   checkpoint_url: https://github.com/janosh/matbench-discovery/blob/7c0b089e7/license
 
-requirements:
-  matminer: 0.8.0
-  scikit-learn: 1.1.2
-  pymatgen: 2022.10.22
-  numpy: 1.24.0
-  pandas: 1.5.1
-
+environment:
+  dependencies:
+  - matminer==0.8.0
+  - scikit-learn==1.1.2
+  - pymatgen==2022.10.22
+  - numpy==1.24.0
+  - pandas==1.5.1
+  python_version: '3.11'
 openness: OSOD
-trained_for_benchmark: true
+architecture_types: [fingerprint, random_forest]
 train_task: RS2RE
 test_task: IS2E
 targets: E
-model_type: Fingerprint
+training_sets: [MP 2022]
 model_params: 26243464
-n_estimators: 1
-
-training_set: [MP 2022]
-training_cost: missing
-
 notes:
-  Description: A random forest trained to map the combo of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (bond angles, coordination numbers, ...) to DFT formation energies.
-  Long: This is an old model that predates most deep learning for materials but significantly improved over Coulomb matrix and partial radial distribution function methods. It therefore serves as a good baseline model to see what modern ML buys us.
+  description: A random forest trained to map the combo of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (bond angles, coordination numbers, ...) to DFT formation energies.
+  long: This is an old model that predates most deep learning for materials but significantly improved over Coulomb matrix and partial radial distribution function methods. It therefore serves as a good baseline model to see what modern ML buys us.
 
 metrics:
-  phonons: not applicable # model doesn't predict forces
-  geo_opt: not applicable
   discovery:
-    pred_file: models/voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52057550
-    pred_col: e_form_per_atom_voronoi_rf
+    pred_file:
+      name: models/voronoi_rf/voronoi-rf/2022-11-27-discovery.csv.gz
+      url: https://figshare.com/files/66646205
+      size: 1316225
+      md5: 0f401e0af05e4b863ac2f94a24966f94
     full_test_set:
-      F1: 0.344 # fraction
+      F1: 0.344  # fraction
       DAF: 1.509 # dimensionless
       Precision: 0.259 # fraction
       Recall: 0.511 # fraction
@@ -72,16 +68,16 @@ metrics:
       FPR: 0.303 # fraction
       TNR: 0.697 # fraction
       FNR: 0.489 # fraction
-      TP: 22517.0 # count
-      FP: 64431.0 # count
-      TN: 148440.0 # count
-      FN: 21575.0 # count
+      TP: 22517 # count
+      FP: 64431 # count
+      TN: 148440 # count
+      FN: 21575 # count
       MAE: 0.141 # eV/atom
       RMSE: 0.206 # eV/atom
       R2: -0.316 # dimensionless
       missing_preds: 19 # count
     most_stable_10k:
-      F1: 0.551 # fraction
+      F1: 0.551  # fraction
       DAF: 2.487 # dimensionless
       Precision: 0.38 # fraction
       Recall: 1.0 # fraction
@@ -90,16 +86,16 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 3802.0 # count
-      FP: 6198.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
+      TP: 3802 # count
+      FP: 6198 # count
+      TN: 0 # count
+      FN: 0 # count
       MAE: 0.349 # eV/atom
       RMSE: 0.417 # eV/atom
       R2: -1.012 # dimensionless
       missing_preds: 0 # count
     unique_prototypes:
-      F1: 0.333 # fraction
+      F1: 0.333  # fraction
       DAF: 1.579 # dimensionless
       Precision: 0.241 # fraction
       Recall: 0.535 # fraction
@@ -108,10 +104,10 @@ metrics:
       FPR: 0.308 # fraction
       TNR: 0.692 # fraction
       FNR: 0.465 # fraction
-      TP: 17854.0 # count
-      FP: 56122.0 # count
-      TN: 125992.0 # count
-      FN: 15520.0 # count
+      TP: 17854 # count
+      FP: 56122 # count
+      TN: 125992 # count
+      FN: 15520 # count
       MAE: 0.148 # eV/atom
       RMSE: 0.212 # eV/atom
       R2: -0.329 # dimensionless

@@ -19,7 +19,6 @@
     freq_w1: number
     crystal_system: string
   }
-
   let {
     entry,
     base,

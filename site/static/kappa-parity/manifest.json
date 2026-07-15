@@ -10,12 +10,12 @@
   "local_asset_base_url": "/kappa-parity/assets",
   "material_ids_sha256": "d70679a288207c8adbe66c722a63c0b934290ff6f7a8b29f51f160f021e2a5f1",
   "model_assets": {
-    "allegro-MP-L-0.1": {
+    "allegro-mp-l-0.1": {
       "asset": "kappa-parity-phonondb-v1-model-allegro-MP-L-0.1.json.gz",
       "bytes": 58976,
       "sha256": "b2547404a252c2f49778cacb5da9b8b7f372b1825355bbffdc6c8b893de0811e"
     },
-    "allegro-OAM-L-0.1": {
+    "allegro-oam-l-0.1": {
       "asset": "kappa-parity-phonondb-v1-model-allegro-OAM-L-0.1.json.gz",
       "bytes": 59362,
       "sha256": "7e6cfd65a18b00715f2eaa3fafba3d016e7a4c2fd12a4daa8ecbfe3581212fc7"
@@ -40,22 +40,22 @@
       "bytes": 59233,
       "sha256": "6582ac2990e237438e54740a3f55e3635b01c322f233f6498d49e3205ed6df25"
     },
-    "eSEN-30m-mp": {
+    "esen-30m-mp": {
       "asset": "kappa-parity-phonondb-v1-model-eSEN-30m-mp.json.gz",
       "bytes": 58338,
       "sha256": "077b15119ee2c6c4344fbae851ab1e87645718525f7ac5ef8f3e7bb50d8b0f5d"
     },
-    "eSEN-30m-oam": {
+    "esen-30m-oam": {
       "asset": "kappa-parity-phonondb-v1-model-eSEN-30m-oam.json.gz",
       "bytes": 58598,
       "sha256": "6fab01939dcf5aa8b2ed919c05ed4389dfc9778e30c63c9db456a478d36d7d91"
     },
-    "eqV2-m-omat-salex-mp": {
+    "eqv2-m-omat-salex-mp": {
       "asset": "kappa-parity-phonondb-v1-model-eqV2-m-omat-salex-mp.json.gz",
       "bytes": 48136,
       "sha256": "88a44bad336429aefa05688ab27e14b6a5fe878acdfeb631dcdffeb4ae7f5925"
     },
-    "eqV2-s-dens-mp": {
+    "eqv2-s-dens-mp": {
       "asset": "kappa-parity-phonondb-v1-model-eqV2-s-dens-mp.json.gz",
       "bytes": 52506,
       "sha256": "70129c69d0934a6e42755d45d3bb47d63eeac6c0b4d9ffa262243226d1c4f8e1"
@@ -65,12 +65,12 @@
       "bytes": 59639,
       "sha256": "f920876f2598c2b1b9d96cedc2bff9f3eff852c231d42c36ff6f3aca712b9ac1"
     },
-    "equflash-29M-oam": {
+    "equflash-29m-oam": {
       "asset": "kappa-parity-phonondb-v1-model-equflash-29M-oam.json.gz",
       "bytes": 59416,
       "sha256": "023527ffb4d3ecc2cfc29aac66d43fc0735780aea8708b4f428a57cf9fedf12e"
     },
-    "equflashv2-45M-oam": {
+    "equflashv2-45m-oam": {
       "asset": "kappa-parity-phonondb-v1-model-equflashv2-45M-oam.json.gz",
       "bytes": 59669,
       "sha256": "8ef9d44f420149eaf836d34f95dd7dc51cae89e90614a8f26b6bcc2c56e06d86"
@@ -140,22 +140,22 @@
       "bytes": 59514,
       "sha256": "a889c91cd6f0f9c6f6e30da85ac38a1307a10c006cc8b96e087bd5659ea55f3f"
     },
-    "mattersim-v1-5M": {
+    "mattersim-v1-5m": {
       "asset": "kappa-parity-phonondb-v1-model-mattersim-v1-5M.json.gz",
       "bytes": 59795,
       "sha256": "5426f39326749481dec1e08a2dae2f43e1caeaf832dd5c20b45ed96a95c09309"
     },
-    "nequip-MP-L-0.1": {
+    "nequip-mp-l-0.1": {
       "asset": "kappa-parity-phonondb-v1-model-nequip-MP-L-0.1.json.gz",
       "bytes": 55802,
       "sha256": "6ab82a40c13221977044171613da0e7fba78722ad18a8c97177b8b7aca26c808"
     },
-    "nequip-OAM-L-0.1": {
+    "nequip-oam-l-0.1": {
       "asset": "kappa-parity-phonondb-v1-model-nequip-OAM-L-0.1.json.gz",
       "bytes": 59970,
       "sha256": "aca6227c433c7a1eb0605d0518b8ddfd0f5e384fc079da56dad3d39c54ff1cda"
     },
-    "nequip-OAM-XL-0.1": {
+    "nequip-oam-xl-0.1": {
       "asset": "kappa-parity-phonondb-v1-model-nequip-OAM-XL-0.1.json.gz",
       "bytes": 59575,
       "sha256": "49bd261f6503466a845cf829ef4cb9ab2528add41d582a9841e985be262f94c5"

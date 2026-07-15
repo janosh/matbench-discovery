@@ -1,0 +1,236 @@
+model_name: eqV2 M
+model_key: eqv2-m-omat-salex-mp
+model_version: v2024.10.18
+dates:
+  benchmark_added: '2024-10-18'
+  paper_published: '2024-10-18'
+lifecycle: active
+authors:
+- name: Luis Barroso-Luque
+  affiliation: FAIR at Meta
+  email: lbluque@meta.com
+  orcid: https://orcid.org/0000-0002-6453-9545
+  github: https://github.com/lbluque
+  corresponding: true
+- name: Muhammed Shuaibi
+  affiliation: FAIR at Meta
+- name: Xiang Fu
+  affiliation: FAIR at Meta
+- name: Brandon M. Wood
+  affiliation: FAIR at Meta
+- name: Misko Dzamba
+  affiliation: FAIR at Meta
+- name: Meng Gao
+  affiliation: FAIR at Meta
+- name: Ammar Rizvi
+  affiliation: FAIR at Meta
+- name: C. Lawrence Zitnick
+  affiliation: FAIR at Meta
+- name: Zachary W. Ulissi
+  affiliation: FAIR at Meta
+  email: zulissi@meta.com
+  orcid: https://orcid.org/0000-0002-9401-4918
+  corresponding: true
+
+repo: https://github.com/FAIR-Chem/fairchem
+doi: https://doi.org/10.48550/arXiv.2410.12771
+paper: https://arxiv.org/abs/2410.12771
+docs: https://huggingface.co/facebook/OMAT24#model-checkpoints
+pypi: https://pypi.org/project/fairchem-core
+pr_url: https://github.com/janosh/matbench-discovery/pull/146
+checkpoint_url: https://huggingface.co/fairchem/OMAT24/resolve/main/eqV2_86M_omat_mp_salex.pt
+license:
+  code: MIT
+  code_url: https://github.com/FAIR-Chem/fairchem/blob/aa160789e1/LICENSE.md
+  checkpoint: Meta Research
+  checkpoint_url: https://huggingface.co/facebook/OMAT24/blob/main/LICENSE
+
+environment:
+  dependencies:
+  - 'fairchem-core[torch-extras]==1.10.0'
+  - torch==2.4.0
+  - numpy<2
+  - scipy<1.15
+  python_version: '3.12'
+  find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
+openness: OSOD
+architecture_types: [transformer]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_D
+training_sets: [MPtrj, OMat24]
+model_params: 86589068
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+  architecture:
+    graph_construction_radius: 12.0
+    max_neighbors: 20
+  training:
+    batch_size: 256
+    epochs: 16
+    optimizer: AdamW
+  upstream_config:
+    loss: MAE
+    loss_weights:
+      energy: 20
+      stress: 1
+      force: 10
+    learning_rate_schedule: Cosine
+    warmup_epochs: 0.1
+    warmup_factor: 0.2
+    max_learning_rate: 0.0002
+    min_learning_rate_factor: 0.01
+    grad_clip_threshold: 100
+    ema_decay: 0.999
+    weight_decay: 0.001
+    dropout_rate: 0.1
+    stochastic_depth: 0.1
+notes:
+  description: |
+    EquiformerV2 is an equivariant transformer that uses graph attention, attention re-normalization, and separable S^2 activations and layer normalization.
+  training: |
+    Training was done by fine-tuning a model pretrained for 2 epochs on the OMat24 dataset.
+
+metrics:
+  diatomics:
+    pred_file:
+      name: models/eqv2/eqv2-m-omat-salex-mp/2026-06-29-diatomics.json.gz
+      url: https://figshare.com/files/66104594
+      size: 708572
+      md5: 28c3c8ef5ae29bb255f755ce58fe0b7c
+    hardware: NVIDIA H200
+    run_time_sec: 617.58
+    pbe_wall_dist_mae: 0.7243
+    pbe_energy_mae: 2.154
+    pbe_bond_length_error: 0.3791
+    pbe_well_depth_error: 0.9936
+    pbe_vib_freq_error: 242.0
+    tortuosity: 1.932
+    energy_diff_flips: 8.575
+    energy_jump: 4.161
+    force_flips: 2.115
+    force_total_variation: 345.2
+    force_jump: 7.942
+    pbe_force_mae: 4.979
+  discovery:
+    pred_file:
+      name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-discovery.csv.gz
+      url: https://figshare.com/files/66646142
+      size: 1327151
+      md5: 3658def6173e02579455ba480ff77ea4
+    full_test_set:
+      F1: 0.896  # fraction
+      DAF: 5.243 # dimensionless
+      Precision: 0.9 # fraction
+      Recall: 0.893 # fraction
+      Accuracy: 0.965 # fraction
+      TPR: 0.893 # fraction
+      FPR: 0.021 # fraction
+      TNR: 0.979 # fraction
+      FNR: 0.107 # fraction
+      TP: 39379 # count
+      FP: 4393 # count
+      TN: 208478 # count
+      FN: 4713 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.071 # eV/atom
+      R2: 0.842 # dimensionless
+      missing_preds: 2 # count
+    most_stable_10k:
+      F1: 0.988  # fraction
+      DAF: 6.382 # dimensionless
+      Precision: 0.976 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.976 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9756 # count
+      FP: 244 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.015 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.904 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.917  # fraction
+      DAF: 6.047 # dimensionless
+      Precision: 0.924 # fraction
+      Recall: 0.91 # fraction
+      Accuracy: 0.975 # fraction
+      TPR: 0.91 # fraction
+      FPR: 0.014 # fraction
+      TNR: 0.986 # fraction
+      FNR: 0.09 # fraction
+      TP: 30372 # count
+      FP: 2481 # count
+      TN: 179633 # count
+      FN: 3002 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.072 # eV/atom
+      R2: 0.848 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt.jsonl.gz
+      url: https://figshare.com/files/53153471
+      size: 196094654
+      md5: ecfaad1911d3a899c9ed30b3294a03c2
+    symprec=1e-5:
+      rmsd: 0.0691
+      n_sym_ops_mae: 9.7872
+      symmetry_decrease: 0.852
+      symmetry_match: 0.1422
+      symmetry_increase: 0.0045
+      n_structures: 256963
+      analysis_file:
+        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504543
+        size: 6626182
+        md5: 5627056ead5fe975a9616a748f447c41
+    symprec=1e-2:
+      rmsd: 0.0691
+      n_sym_ops_mae: 1.9989
+      symmetry_decrease: 0.1118
+      symmetry_match: 0.7725
+      symmetry_increase: 0.1052
+      n_structures: 256963
+      analysis_file:
+        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504549
+        size: 7389394
+        md5: e99b38519cacab639e65cf777e43e5e2
+  md:
+    pred_file:
+      name: models/eqv2/eqv2-m-omat-salex-mp/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048866
+      size: 1579
+      md5: b346ac84feea4aa80103765e1670c57b
+    hardware: NVIDIA H200
+    run_time_sec: 151213.2
+    energy_rmse: 0.6491
+    force_rmse: 44.5524
+    rdf_error: 3.474
+    adf_error: 1.3998
+    vdos_error: 22.2534
+    pressure_mae: 0.9027
+    pressure_wasserstein: 0.913
+    pressure_error: 58.1849
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 1.7707
+      pred_file:
+        name: models/eqv2/eqv2-m-omat-salex-mp/2024-11-09-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/52134893
+        size: 8906650
+        md5: 3706a97220b7c4814d7cf6190b09592d
+      κ_SRE: 1.4827

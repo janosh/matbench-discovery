@@ -1,4 +1,4 @@
-import { MODELS } from '$lib'
+import { ACTIVE_MODELS } from '$lib'
 import RadarChart from '$lib/plot/RadarChart.svelte'
 import app_css from '../../src/app.css?raw'
 import {
@@ -90,7 +90,7 @@ describe(`RadarChart`, () => {
     expect(CPS_CONFIG.RMSD.weight).toBe(DEFAULT_CPS_CONFIG.RMSD.weight)
 
     // Check that update_models_cps was called
-    expect(update_models_cps).toHaveBeenCalledWith(MODELS, CPS_CONFIG)
+    expect(update_models_cps).toHaveBeenCalledWith(ACTIVE_MODELS, CPS_CONFIG)
     expect(document.querySelector(`.reset-button`)).toBeNull()
     expect(document.activeElement).toBe(doc_query(`.metric-name`))
   })

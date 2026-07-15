@@ -1,7 +1,10 @@
 import { MODELS } from '$lib'
 import { read_md_per_system } from '$lib/server/md'
 import { error } from '@sveltejs/kit'
-import type { PageServerLoad } from './$types'
+import type { EntryGenerator, PageServerLoad } from './$types'
+
+export const entries: EntryGenerator = () =>
+  MODELS.map(({ model_key }) => ({ slug: model_key }))
 
 export const load: PageServerLoad = async ({ params }) => {
   const model = MODELS.find((candidate) => candidate.model_key === params.slug)

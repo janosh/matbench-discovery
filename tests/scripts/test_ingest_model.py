@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 
 import scripts.ingest_model as ingest
+import scripts.upload_model_preds_to_figshare as upload
 from matbench_discovery.enums import Model
-from scripts.upload_model_preds_to_figshare import resolve_artifact_path
 
 
 def msgs(checks: "ingest.Checklist", status: str) -> list[str]:
@@ -143,7 +143,7 @@ def test_shared_runner_process_errors_fail_checklist(
 def test_energy_only_model_skips_force_tasks() -> None:
     """targets=E models skip geo-opt/phonons/diatomics instead of failing."""
     energy_only_model = next(
-        model for model in Model if model.metadata.get("targets") == "E"
+        model for model in Model if model.metadata["targets"] == "E"
     )
     checks = ingest.Checklist()
     assert ingest.check_submission(energy_only_model, checks) is True
@@ -161,6 +161,19 @@ def test_all_active_models_have_required_metadata() -> None:
         if model_failures := msgs(checks, ingest.FAIL):
             failures[model.name] = model_failures
     assert not failures, failures
+
+
+def test_malformed_file_ref_fails_checklist(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Malformed artifact metadata becomes a checklist failure instead of raising."""
+    model = Model.mace_mpa_0
+    discovery = model.metadata["metrics"]["discovery"]
+    monkeypatch.setitem(discovery, "pred_file", "legacy/path.csv.gz")
+    checks = ingest.Checklist()
+    ingest.check_submission(model, checks, validate_runner=False)
+    assert any(
+        "Invalid FileRef at metrics.discovery.pred_file" in message
+        for message in msgs(checks, ingest.FAIL)
+    )
 
 
 @pytest.mark.parametrize(
@@ -275,15 +288,70 @@ def test_map_yaml_paths() -> None:
         ingest.map_yaml_paths(["models/new-arch/missing.yml"])
 
 
+@pytest.mark.parametrize("force_reupload", [False, True])
+def test_figshare_dry_run_hashes_only_for_exact_match(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    force_reupload: bool,
+) -> None:
+    """Dry runs hash for exact-match reporting unless forced upload bypasses it."""
+
+    def fake_hash(_file_path: str) -> tuple[str, int]:
+        """Fail if forced dry runs perform unnecessary hashing."""
+        if force_reupload:
+            pytest.fail("forced dry run hashed the artifact")
+        return "abc123", 11
+
+    monkeypatch.setattr(upload.figshare, "article_exists", lambda _article_id: True)
+    monkeypatch.setattr(upload.figshare, "get_existing_files", lambda _article_id: {})
+    monkeypatch.setattr(upload.figshare, "get_file_hash_and_size", fake_hash)
+    monkeypatch.setattr(
+        upload.figshare,
+        "file_exists_with_same_hash",
+        lambda *_args, **_kwargs: (True, 123),
+    )
+    monkeypatch.setattr(
+        upload, "resolve_artifact_path", lambda *_args: Model.mace_mp_0.yaml_path
+    )
+
+    upload.update_one_modeling_task_article(
+        "discovery",
+        [Model.mace_mp_0],
+        modeling_tasks={"discovery": {"label": "Discovery"}},
+        dry_run=True,
+        force_reupload=force_reupload,
+    )
+
+    assert (
+        "Skipped (already exists with same hash): 1" in capsys.readouterr().out
+    ) is not force_reupload
+
+
 def test_archive_rejects_artifact_symlink_escape(tmp_path: Path) -> None:
     """Archive paths cannot follow a submitted symlink outside the model directory."""
-    model_dir = tmp_path / "models/arch"
+    family_dir = tmp_path / "models/arch"
+    model_dir = family_dir / "model"
     model_dir.mkdir(parents=True)
     try:
         (model_dir / "leak").symlink_to(tmp_path / "secret")
     except OSError as exc:
         pytest.skip(f"Symlinks unavailable: {exc}")
     with pytest.raises(ValueError, match="escapes model directory"):
-        resolve_artifact_path(
-            str(model_dir / "model.yml"), "models/arch/leak", str(tmp_path)
+        upload.resolve_artifact_path(
+            str(family_dir / "model.yml"), "models/arch/model/leak", str(tmp_path)
+        )
+
+
+def test_archive_rejects_sibling_model_artifact(tmp_path: Path) -> None:
+    """Archive paths cannot reference another model in the same family."""
+    family_dir = tmp_path / "models/arch"
+    sibling_file = family_dir / "model-a/preds.csv.gz"
+    sibling_file.parent.mkdir(parents=True)
+    sibling_file.touch()
+
+    with pytest.raises(ValueError, match="escapes model directory"):
+        upload.resolve_artifact_path(
+            str(family_dir / "model-b.yml"),
+            "models/arch/model-a/preds.csv.gz",
+            str(tmp_path),
         )

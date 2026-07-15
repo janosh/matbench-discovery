@@ -137,7 +137,7 @@ describe(`Landing Page`, () => {
     const column_menu = doc_query(`.column-menu`)
     const details = doc_query<HTMLDetailsElement>(`details.column-toggles`)
 
-    expect(column_menu.closest(`details`)).toBe(details)
+    expect(column_menu.parentElement).toBe(document.body)
     expect(details.open).toBe(false)
 
     columns_button.click()
@@ -222,7 +222,9 @@ describe(`Landing Page URL state`, () => {
     await tick()
     expect_sort(`RMSD`, `ascending`)
 
-    doc_query<HTMLInputElement>(`details.column-toggles input:not(:disabled)`).click()
+    doc_query<HTMLInputElement>(
+      `.column-menu input[type="checkbox"]:not(:disabled)`,
+    ).click()
     await tick()
     expect(new URLSearchParams(location.search).has(`preset`)).toBe(false)
 

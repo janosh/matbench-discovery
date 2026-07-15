@@ -1,7 +1,5 @@
 # EquFlash
 
-This folder contains the EquFlash model submission support code and metadata for Matbench Discovery.
-
 ## WBM discovery
 
 The published EquFlash predictions were produced with a batched Fair-Chem
