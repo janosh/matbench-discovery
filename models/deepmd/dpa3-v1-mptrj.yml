@@ -7,27 +7,27 @@ dates:
 lifecycle: superseded
 superseded_by: dpa3-v2-mptrj
 authors:
-- name: Duo Zhang
-  affiliation: AI for Science Institute, Beijing
-  orcid: https://orcid.org/0000-0001-9591-2659
-- name: Anyang Peng
-  affiliation: AI for Science Institute, Beijing
-  orcid: https://orcid.org/0000-0002-0630-2187
-- name: Chun Cai
-  affiliation: AI for Science Institute, Beijing
-  orcid: https://orcid.org/0000-0001-6242-0439
-- name: Linfeng Zhang
-  affiliation: AI for Science Institute, Beijing; DP Technology
-  email: linfeng.zhang.zlf@gmail.com
-  corresponding: true
-- name: Han Wang
-  affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
-  email: wang_han@iapcm.ac.cn
-  corresponding: true
+  - name: Duo Zhang
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0001-9591-2659
+  - name: Anyang Peng
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0002-0630-2187
+  - name: Chun Cai
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0001-6242-0439
+  - name: Linfeng Zhang
+    affiliation: AI for Science Institute, Beijing; DP Technology
+    email: linfeng.zhang.zlf@gmail.com
+    corresponding: true
+  - name: Han Wang
+    affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
+    email: wang_han@iapcm.ac.cn
+    corresponding: true
 trained_by:
-- name: Duo Zhang
-  affiliation: AI for Science Institute, Beijing
-  orcid: https://orcid.org/0000-0001-9591-2659
+  - name: Duo Zhang
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0001-9591-2659
 
 repo: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha
 paper: https://arxiv.org/abs/2506.01686
@@ -42,12 +42,12 @@ license:
 
 environment:
   dependencies:
-  - 'deepmd-kit[torch]'
-  - torch==2.3.1
-  - torch-geometric==2.5.2
-  - ase==3.23.0
-  - pymatgen==2024.6.10
-  - numpy==1.26.4
+    - 'deepmd-kit[torch]'
+    - torch==2.3.1
+    - torch-geometric==2.5.2
+    - ase==3.23.0
+    - pymatgen==2024.6.10
+    - numpy==1.26.4
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -107,10 +107,9 @@ metrics:
   discovery:
     pred_file:
       name: models/deepmd/dpa3-v1-mptrj/2025-01-10-discovery.csv.gz
-      url: https://figshare.com/files/52057529
-      size: 2374706
-      md5: 2546f9ac577e4a4e3abee720a991b5eb
-    pred_col: e_form_per_atom_dp
+      url: https://figshare.com/files/66646145
+      size: 1321018
+      md5: 2c60b30c8fe977220e3db0ca8062ee1a
     full_test_set:
       F1: 0.757  # fraction
       DAF: 4.13 # dimensionless
@@ -187,9 +186,10 @@ metrics:
       n_structures: 256955     # count
   phonons:
     kappa_103:
-      κ_SRME: 0.964
+      κ_SRME: 0.9647
       pred_file:
         name: models/deepmd/dpa3-v1-mptrj/2025-01-10-phonons-kappa-103.json.gz
         url: https://figshare.com/files/52134860
         size: 7221925
         md5: c32ca2f9873a63448ea0c320dd2d2553
+      κ_SRE: 0.8363

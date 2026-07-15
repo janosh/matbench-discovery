@@ -215,8 +215,13 @@ DUMMY_FILES = [
 @pytest.mark.parametrize("files", [[], DUMMY_FILES])  # Empty and non-empty
 def test_list_article_files(files: list[dict[str, Any]]) -> None:
     """Test list_article_files with various file configurations."""
-    with patch("matbench_discovery.remote.figshare.make_request", return_value=files):
+    with patch(
+        "matbench_discovery.remote.figshare.make_request", return_value=files
+    ) as request:
         assert figshare.list_article_files(12345) == files
+    request.assert_called_once_with(
+        "GET", f"{figshare.BASE_URL}/account/articles/12345/files?page_size=1000"
+    )
 
 
 def test_list_article_files_errors(capsys: pytest.CaptureFixture) -> None:

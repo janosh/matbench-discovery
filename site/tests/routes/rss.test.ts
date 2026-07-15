@@ -68,10 +68,8 @@ describe(`RSS feed endpoint`, () => {
     expect(cdata_content).toMatch(/<strong>Metrics:<\/strong>/)
     expect(cdata_content).toMatch(/<strong>Parameters:<\/strong>[^<]+/)
 
-    // These sections should exist but may not be in every model
-    expect(cdata_content).toMatch(
-      /<strong>(?:Model Type|Targets|Training Set):<\/strong>/,
-    )
+    // Role is present for every model.
+    expect(cdata_content).toContain(`<strong>Role:</strong>`)
 
     // Authors section should appear later in the content
     const metrics_pos = cdata_content.indexOf(`<strong>Metrics:</strong>`)

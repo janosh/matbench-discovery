@@ -62,10 +62,9 @@ metrics:
   discovery:
     pred_file:
       name: models/megnet/megnet/2022-11-18-discovery.csv.gz
-      url: https://figshare.com/files/51607286
-      size: 1336038
-      md5: 15377f3afc773d651828304593ce12e7
-    pred_col: e_form_per_atom_megnet
+      url: https://figshare.com/files/66646259
+      size: 1336003
+      md5: dc11b7fe709c309f2c5b853114b7f315
     full_test_set:
       F1: 0.513  # fraction
       DAF: 2.699 # dimensionless

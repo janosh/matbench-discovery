@@ -45,10 +45,9 @@ metrics:
   discovery:
     pred_file:
       name: models/alchembert/alchembert/2024-12-25-discovery.csv.gz
-      url: https://figshare.com/files/52874099
-      size: 2985991
-      md5: 4b8176886098ae2b253de742cf709987
-    pred_col: e_form_per_atom_alchembert
+      url: https://figshare.com/files/66646304
+      size: 2985758
+      md5: e2fc28e434b06ba80298d364e5328913
     full_test_set:
       F1: 0.436  # fraction
       DAF: 1.9 # dimensionless

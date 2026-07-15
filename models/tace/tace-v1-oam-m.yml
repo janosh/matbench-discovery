@@ -98,12 +98,11 @@ notes:
 
 metrics:
   discovery:
-    pred_file:                                                       # tace-filtered_preds.csv.gz tace-preds.csv.gz
+    pred_file:
       name: models/tace/tace-v1-oam-m/2026-01-06-discovery.csv.gz
-      url: https://figshare.com/files/60806971
+      url: https://figshare.com/files/66646250
       size: 1647915
       md5: 1b511913eac359e39b6d2d902b8cece5
-    pred_col: e_form_per_atom_tace
     full_test_set:
       F1: 0.868  # fraction
       DAF: 4.986 # dimensionless

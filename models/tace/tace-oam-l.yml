@@ -116,12 +116,11 @@ metrics:
     force_jump: 4.72
     pbe_force_mae: 0.9552
   discovery:
-    pred_file:                                                    # tace-filtered_preds.csv.gz tace-preds.csv.gz
+    pred_file:
       name: models/tace/tace-oam-l/2026-04-09-discovery.csv.gz
-      url: https://figshare.com/files/63590511
+      url: https://figshare.com/files/66646247
       size: 1648063
       md5: deecc3cbb9f2695f5e5ce1763e216ba6
-    pred_col: e_form_per_atom_tace
     full_test_set:
       F1: 0.892  # fraction
       DAF: 5.127 # dimensionless

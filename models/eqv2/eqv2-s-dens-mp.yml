@@ -125,10 +125,9 @@ metrics:
   discovery:
     pred_file:
       name: models/eqv2/eqv2-s-dens-mp/2024-10-18-discovery.csv.gz
-      url: https://figshare.com/files/52057568
-      size: 2381004
-      md5: bfbcec81b6dfbf2d3a569c4d93d86cda
-    pred_col: e_form_per_atom_eqV2-31M-dens-MP-p5
+      url: https://figshare.com/files/66646139
+      size: 1326011
+      md5: e8da37c6c7f3fa3f7cec666d2d0d8706
     full_test_set:
       F1: 0.798  # fraction
       DAF: 4.362 # dimensionless

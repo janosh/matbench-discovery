@@ -108,10 +108,9 @@ metrics:
   discovery:
     pred_file:
       name: models/sevennet/sevennet-mf-ompa/2025-03-11-discovery.csv.gz
-      url: https://figshare.com/files/52983488
+      url: https://figshare.com/files/66646313
       size: 1344444
       md5: bbee516a1b6b2cc154d012d9283ac33f
-    pred_col: e_form_per_atom_sevennet
     unique_prototypes:
       F1: 0.901  # fraction
       DAF: 5.825 # dimensionless

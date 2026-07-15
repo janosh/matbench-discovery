@@ -85,10 +85,9 @@ metrics:
   discovery:
     pred_file:
       name: models/grace/grace-1l-oam/2025-02-02-discovery.csv.gz
-      url: https://figshare.com/files/52204898
-      size: 5823029
-      md5: 74adff441dafe8284cb07886579a3512
-    pred_col: e_form_per_atom_grace
+      url: https://figshare.com/files/66646127
+      size: 2763538
+      md5: 864e68c60d7561206573b56a6d3c4e1e
     full_test_set:
       F1: 0.808  # fraction
       DAF: 4.617 # dimensionless

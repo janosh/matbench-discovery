@@ -139,12 +139,10 @@ export function get_pred_file_urls(model: ModelData) {
   const files: { name: string; url: string }[] = []
 
   function find_pred_files(obj: object, parent_key = ``) {
-    if (!obj || typeof obj !== `object`) return
-
     for (const [key, val] of Object.entries(obj)) {
       if (key === `pred_file` && typeof val?.url === `string`) {
         files.push({ name: get_label_for_key_path(parent_key), url: val.url })
-      } else if (typeof val === `object`) {
+      } else if (val !== null && typeof val === `object`) {
         find_pred_files(val, key)
       }
     }

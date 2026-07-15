@@ -10,7 +10,7 @@
     valid_query_param,
   } from '$lib/url-state.svelte'
   import * as labels from '$lib/labels'
-  import { DISCOVERY_SETS, type DiscoverySet, type ModelData } from '$lib/types'
+  import { DISCOVERY_SETS, type DiscoverySet } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
 
   const default_discovery_set: DiscoverySet = `unique_prototypes`
@@ -30,11 +30,10 @@
       ]),
     ),
   )
-  const has_discovery_metrics = (model: ModelData): boolean =>
-    model.metrics?.discovery?.[discovery_set] != null
   let visible_models = $derived(
     ACTIVE_MODELS.filter(
-      (model) => has_discovery_metrics(model) && filters.matches(model),
+      (model) =>
+        model.metrics?.discovery?.[discovery_set] != null && filters.matches(model),
     ),
   )
 
@@ -103,7 +102,7 @@
         labels.METADATA_COLS.benchmark_added,
       ].includes(col)}
     {discovery_set}
-    model_filter={has_discovery_metrics}
+    model_filter={(model) => model.metrics?.discovery?.[discovery_set] != null}
     {filters}
     bind:sort
   />

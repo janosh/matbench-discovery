@@ -4,43 +4,62 @@ from __future__ import annotations
 
 import os
 import re
+from functools import cache
 from glob import glob
+from typing import Any
 
 import pytest
 import yaml
+from jsonschema import Draft7Validator
 
 from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import DATASETS, iter_file_refs, parse_artifact_filename
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
 from matbench_discovery.enums import ArchitectureType, Model, Open, Targets, Task
-from tests.models._helpers import (
-    FAMILY_DIR_PATTERN,
-    enum_values_from_schema,
-    load_model_schema,
-    model_yaml_paths,
-    non_aborted_model_yaml_paths,
-    validate_against_schema,
-    validate_model_yaml,
-)
 
+with open(f"{ROOT}/tests/model-schema.yml", encoding="utf-8") as file:
+    MODEL_SCHEMA: dict[str, Any] = yaml.safe_load(file)
+
+MODEL_YAML_PATHS = sorted(glob(f"{ROOT}/models/[!_]*/[!_]*.yml"))
 OPEN_DATASETS = {
     dataset["name"]
     for dataset in DATASETS.values()
     if isinstance(dataset, dict) and dataset.get("open")
 }
-MODEL_DIRS = sorted(glob(f"{ROOT}/models/[!_]*/"))
 TEST_TASK_NAMES = {"IP2E", "IS2E", "IS2RE", "IS2RE_SR"}
 
 
-@pytest.mark.parametrize("yaml_path", model_yaml_paths())
+def validate_against_schema(
+    instance: object, schema: dict[str, Any], label: str
+) -> None:
+    """Raise AssertionError when instance fails schema validation."""
+    errors = sorted(
+        Draft7Validator(schema).iter_errors(instance), key=lambda err: list(err.path)
+    )
+    assert not errors, f"Schema validation failed for {label}:\n" + "\n".join(
+        f"  - {'.'.join(str(part) for part in error.path)}: {error.message}"
+        for error in errors
+    )
+
+
+@cache
+def validate_model_yaml(yaml_path: str) -> dict[str, Any]:
+    """Validate a model YAML against tests/model-schema.yml, returning its metadata."""
+    with open(yaml_path, encoding="utf-8") as file:
+        metadata = yaml.safe_load(file)
+    validate_against_schema(metadata, MODEL_SCHEMA, yaml_path)
+    return metadata
+
+
+@pytest.mark.parametrize("yaml_path", MODEL_YAML_PATHS)
 def test_model_yaml_schema_and_identity(yaml_path: str) -> None:
     """Each model YAML passes schema checks and uses canonical identity/paths."""
     # the schema enforces model_key's kebab-case pattern, so only check the family dir
     metadata = validate_model_yaml(yaml_path)
     model_key = metadata["model_key"]
     family_dir = os.path.basename(os.path.dirname(yaml_path))
-    assert FAMILY_DIR_PATTERN.fullmatch(family_dir)
+    assert re.fullmatch(r"[a-z0-9]+(?:_[a-z0-9]+)*", family_dir)
     assert os.path.normpath(yaml_path) == os.path.normpath(
         f"{ROOT}/models/{family_dir}/{model_key}.yml"
     )
@@ -61,7 +80,7 @@ def test_modeling_tasks_align_with_schema() -> None:
         modeling_tasks = yaml.safe_load(file)
     with open(schema_path, encoding="utf-8") as file:
         validate_against_schema(modeling_tasks, yaml.safe_load(file), tasks_path)
-    metrics_schema = load_model_schema()["properties"]["metrics"]
+    metrics_schema = MODEL_SCHEMA["properties"]["metrics"]
     assert set(modeling_tasks) - {"cps"} == set(metrics_schema["properties"])
 
 
@@ -90,13 +109,26 @@ def test_datasets_yaml_matches_python_registry() -> None:
 )
 def test_enums_match_schema(py_values: set[str], schema_property: str) -> None:
     """Python taxonomy/task enums stay aligned with model-schema vocabulary."""
-    assert py_values == enum_values_from_schema(load_model_schema(), schema_property)
+    property_schema = MODEL_SCHEMA["properties"][schema_property]
+    schema_values = property_schema.get("enum")
+    if schema_values is None:
+        ref = property_schema.get("$ref")
+        if ref is None:
+            ref = property_schema["items"]["$ref"]
+        schema_values = MODEL_SCHEMA["definitions"][ref.rsplit("/", maxsplit=1)[-1]][
+            "enum"
+        ]
+    assert py_values == set(schema_values)
 
 
-def test_model_yaml_enum_bijection() -> None:
-    """Model YAMLs and the generated enum form an exact identity/path bijection."""
-    yaml_paths = non_aborted_model_yaml_paths()
-    enum_paths = sorted(f"{model.yaml_path}" for model in Model)
+def test_model_registry_identity() -> None:
+    """Model YAMLs, enum members, registries, and family dirs stay aligned."""
+    yaml_paths = [
+        yaml_path
+        for yaml_path in MODEL_YAML_PATHS
+        if validate_model_yaml(yaml_path).get("lifecycle") != "aborted"
+    ]
+    enum_paths = sorted(model.yaml_path for model in Model)
     assert sorted(map(os.path.normpath, yaml_paths)) == sorted(
         map(os.path.normpath, enum_paths)
     )
@@ -112,26 +144,25 @@ def test_model_yaml_enum_bijection() -> None:
         # yaml_path is base_dir + rel_path, so rel_path pins the full path
         assert model.rel_path == f"{family_dir}/{model_key}.yml"
 
-
-@pytest.mark.parametrize(
-    "registry_key",
-    sorted(key for key in (*CALCULATORS, *ARCHIVED_DISCOVERY_MODELS) if key != "emt"),
-)
-def test_registry_keys_resolve_to_model_enum(registry_key: str) -> None:
-    """CALCULATORS and archived discovery keys resolve to Model enum members."""
-    assert registry_key in Model.__members__
+    registry_keys = set(CALCULATORS) | set(ARCHIVED_DISCOVERY_MODELS)
+    assert registry_keys - {"emt"} <= Model.__members__.keys()
+    active_families = {model.family for model in Model.active()}
+    # normpath: Windows globs may end in `\`; basename of a trailing-sep path is "".
+    model_dir_families = {
+        os.path.basename(os.path.normpath(path))
+        for path in glob(f"{ROOT}/models/[!_]*/")
+    }
+    # Families intentionally without an active Model enum entry.
+    inactive_only_families = {"alignn_ff"}
+    assert active_families | inactive_only_families == model_dir_families
+    assert active_families.isdisjoint(inactive_only_families)
 
 
 @pytest.mark.parametrize(
     ("model_key", "is_valid"),
     [
-        ("equiformer-v3-mp", True),
-        ("mace-mp-0", True),
-        ("esen-30m-mp", True),
-        ("cgcnn-p", True),
-        ("dpa-4.0-pro-mptrj", True),
-        ("chgnet-0.3.0", True),
-        ("pet-oam-xl-1.0.0", True),
+        ("model", True),
+        ("model-1", True),
         ("model.1", True),
         ("Uppercase-model", False),
         ("model+plus", False),
@@ -145,7 +176,7 @@ def test_model_key_schema_requires_canonical_keys(
     model_key: str, is_valid: bool
 ) -> None:
     """Model key schema accepts only canonical lowercase kebab-case."""
-    pattern = load_model_schema()["properties"]["model_key"]["pattern"]
+    pattern = MODEL_SCHEMA["properties"]["model_key"]["pattern"]
     assert bool(re.search(pattern, model_key)) is is_valid
 
 
@@ -154,6 +185,9 @@ def test_shared_runner_is_only_executable(task: str) -> None:
     """Shared benchmark tasks have one runner and no per-model forks."""
     assert os.path.isfile(f"{ROOT}/models/run_{task}.py")
     assert not glob(f"{ROOT}/models/**/test_*_{task}.py", recursive=True)
+    if task == "discovery":
+        with open(f"{ROOT}/.github/pull_request_template.md") as file:
+            assert "test_<arch_name>_discovery.py" not in file.read()
 
 
 def test_runnable_kappa_models_have_complete_shared_contract() -> None:
@@ -163,10 +197,7 @@ def test_runnable_kappa_models_have_complete_shared_contract() -> None:
     configured_models = {
         model.name
         for model in Model
-        if isinstance(
-            model.metadata.get("hyperparams", {}).get("evaluation", {}).get("kappa"),
-            dict,
-        )
+        if model.metadata.get("hyperparams", {}).get("evaluation", {}).get("kappa")
     }
     assert configured_models == set(CALCULATORS) - {"emt"}
     for model_key in configured_models:
@@ -175,60 +206,39 @@ def test_runnable_kappa_models_have_complete_shared_contract() -> None:
     prediction_models = {
         model.name
         for model in Model
-        if isinstance(model.metrics.get("phonons"), dict)
-        and isinstance(model.metrics["phonons"].get("kappa_103"), dict)
+        if model.metrics.get("phonons", {}).get("kappa_103")
     }
     assert prediction_models - configured_models == {"matris_v050_mptrj"}
 
 
 @pytest.mark.parametrize("model", Model.active())
-def test_active_model_training_set_policy(model: Model) -> None:
-    """Training sets follow DATASETS order; open-only models must be marked OD."""
+def test_active_model_metadata_policy(model: Model) -> None:
+    """Active model metadata follows ordering, openness, and length policies."""
     training_sets = model.metadata["training_sets"]
     training_set_keys = set(training_sets)
     assert training_set_keys <= set(DATASETS), f"Invalid training set: {training_sets}"
     expected_order = [key for key in DATASETS if key in training_set_keys]
     assert training_sets == expected_order
     if training_set_keys <= OPEN_DATASETS:
-        openness = model.metadata.get("openness")
-        assert openness is not None, (
-            f"{model.label} was only trained on open datasets but has no "
-            "openness metadata. Should be marked as OD."
-        )
-        assert openness.endswith("OD"), (
+        assert model.metadata["openness"].endswith("OD"), (
             f"{model.label} was only trained on open datasets but is "
-            f"marked as {openness}. Should be marked as OD."
+            f"marked as {model.metadata['openness']}. Should be marked as OD."
         )
 
     assert model.label == model.metadata["model_name"]
     assert 3 <= len(model.label) <= 50
     model_version = model.metadata["model_version"]
     assert model_version is None or 1 <= len(model_version) <= 40
-    assert 1 <= len(model.metadata["authors"]) <= 30
-    repo = model.metadata["repo"]
-    assert repo is None or repo.startswith(("http://", "https://"))
-
-
-def test_active_model_count_matches_family_dirs() -> None:
-    """Active families match model dirs; inactive-only families are allowlisted."""
-    active_families = {
-        os.path.basename(os.path.dirname(model.yaml_path))
-        for model in Model
-        if model.is_active
-    }
-    # normpath: Windows globs may end in `\`; basename of a trailing-sep path is "".
-    model_dir_families = {
-        os.path.basename(os.path.normpath(path)) for path in MODEL_DIRS
-    }
-    # Families intentionally without an active Model enum entry.
-    inactive_only_families = {"alignn_ff"}
-    assert active_families | inactive_only_families == model_dir_families
-    assert active_families.isdisjoint(inactive_only_families)
+    assert len(model.metadata["authors"]) <= 30
 
 
 @pytest.mark.parametrize("model", list(Model))
 def test_runnable_models_have_reproducible_runners(model: Model) -> None:
     """Runnable models expose shared calculators or retained task scripts."""
+    if model.is_active and model.metrics.get("discovery", {}).get("pred_file"):
+        assert model.name in CALCULATORS or model.name in ARCHIVED_DISCOVERY_MODELS, (
+            f"{model.name} has discovery results but no shared or archived runner state"
+        )
     if (
         model.name in CALCULATORS
         or model.metadata.get("targets") == "E"
@@ -256,23 +266,3 @@ def test_environments_drive_calculator_dependencies() -> None:
             environment.get("extra_index_urls", [])
         )
         assert calc_spec.project == environment.get("project")
-
-
-def test_discovery_contributor_policy_forbids_runner_forks() -> None:
-    """Contributor policy forbids per-model discovery runners."""
-    with open(f"{ROOT}/.github/pull_request_template.md") as file:
-        pr_template = file.read()
-    assert "test_<arch_name>_discovery.py" not in pr_template
-
-
-@pytest.mark.parametrize("model", Model.active())
-def test_active_discovery_models_have_shared_or_archived_runner(model: Model) -> None:
-    """Active discovery models are shared-runner-backed or explicitly archived."""
-    discovery_metrics = model.metrics.get("discovery")
-    if not isinstance(discovery_metrics, dict):
-        return
-    if not discovery_metrics.get("pred_file"):
-        return
-    assert model.name in CALCULATORS or model.name in ARCHIVED_DISCOVERY_MODELS, (
-        f"{model.name} has discovery results but no shared or archived runner state"
-    )

@@ -78,15 +78,13 @@ hyperparams:
 notes: # notes can have any key, be multiline and support markdown.
   description: EquFlashV2 is an E(3)-equivariant machine learning force field that adopts a Transformer-style block architecture without attention mechanisms. Instead, it uses Clebsch–Gordan tensor product message passing, efficiently enabled by cuEquivariance, together with a bilinear gate activation for equivariant feature interactions.
 
-
 metrics:
   discovery:
-    pred_file:                                                                         # should contain the models energy predictions for the WBM test set
+    pred_file:
       name: models/equflash/equflashv2-45m-oam/2026-06-11-discovery.csv.gz
-      url: https://figshare.com/files/65434992
+      url: https://figshare.com/files/66646274
       size: 2576423
       md5: 7e498aabe04e32112b632219333aac44
-    pred_col: e_form_per_atom_ggnn
     full_test_set:
       F1: 0.91  # fraction
       DAF: 5.291 # dimensionless
@@ -141,8 +139,8 @@ metrics:
       RMSE: 0.062 # eV/atom
       R2: 0.913 # dimensionless
       missing_preds: 0 # count
-  geo_opt: # only applicable if the model performed structure relaxation
-    pred_file:                                                                        # should contain the models relaxed structures as ASE Atoms or pymatgen Structures, and separate columns for material_id and energies/forces/stresses at each relaxation step
+  geo_opt:
+    pred_file:
       name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt.jsonl.gz
       url: https://figshare.com/files/65434998
       size: 105066086

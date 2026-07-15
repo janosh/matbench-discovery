@@ -181,26 +181,22 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
     assert int(geo["n_steps"]) == 4
 
 
-def test_runner_writes_canonical_artifact_metadata(
+def test_runner_normalizes_artifact_paths(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Artifact refs record repo-relative identity without legacy flat keys."""
+    """Artifact paths use POSIX repo-relative identity where possible."""
     rel_path = "models/mace/mace-mp-0/2026-07-02-discovery.csv.gz"
-    make_artifact_data = discovery_runner._artifact_yaml_data  # noqa: SLF001
-    # exact equality also pins the absence of pred_file_url/pred_file_artifact and
-    # that a regenerated artifact carries no (stale) URL
-    assert make_artifact_data(f"{discovery_runner.ROOT}/{rel_path}") == {
-        "pred_file": make_file_ref(rel_path)
-    }
+    normalize = discovery_runner._repo_relative_path  # noqa: SLF001
+    # The YAML integration test below pins the absence of legacy flat keys and
+    # stale URLs.
+    assert normalize(f"{discovery_runner.ROOT}/{rel_path}") == rel_path
 
     def windows_relpath(_path: str, _start: str) -> str:
         """Return a Windows-style relative artifact path."""
         return rel_path.replace("/", "\\")
 
     monkeypatch.setattr(discovery_runner.os.path, "relpath", windows_relpath)
-    assert make_artifact_data(f"{discovery_runner.ROOT}/{rel_path}") == {
-        "pred_file": make_file_ref(rel_path)
-    }
+    assert normalize(f"{discovery_runner.ROOT}/{rel_path}") == rel_path
 
     def raise_cross_drive(_path: str, _start: str) -> str:
         """Mimic relpath failing across Windows drives."""
@@ -208,9 +204,7 @@ def test_runner_writes_canonical_artifact_metadata(
 
     monkeypatch.setattr(discovery_runner.os.path, "relpath", raise_cross_drive)
     external_path = "/mnt/c/tmp/preds.csv.gz"
-    assert make_artifact_data(external_path) == {
-        "pred_file": make_file_ref(os.path.abspath(external_path))
-    }
+    assert normalize(external_path) == os.path.abspath(external_path)
 
 
 def test_write_yaml_results_masks_outliers_and_updates_yaml(
@@ -233,7 +227,6 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     artifacts = DiscoveryArtifacts(
         pred_file_path=f"{tmp_path}/preds.csv.gz",
         geo_opt_file_path=f"{tmp_path}/geo.jsonl.gz",
-        pred_col=pred_col,
         struct_col="structure",
         # wbm-3 is a 7.8 eV/atom outlier, wbm-4 failed to relax
         predictions=pd.DataFrame(
@@ -250,7 +243,6 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
         ),
         "pred_file_url": "https://example.com/legacy",
         "pred_file_artifact": "legacy",
-        "pred_col": "legacy_pred",
         "hardware": "NVIDIA A100",
         "max_gpu_mem_gb": 40.0,
     }
@@ -284,7 +276,6 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     )
     assert "pred_file_url" not in discovery_yaml
     assert "pred_file_artifact" not in discovery_yaml
-    assert "pred_col" not in discovery_yaml
     assert discovery_yaml["hardware"] == "NVIDIA H200"
     assert discovery_yaml["run_time_sec"] == pytest.approx(123.45)
     assert discovery_yaml["max_rss_gb"] == pytest.approx(4.2)

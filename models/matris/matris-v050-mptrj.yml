@@ -98,10 +98,9 @@ metrics:
   discovery:
     pred_file:
       name: models/matris/matris-v050-mptrj/2025-03-12-discovery.csv.gz
-      url: https://figshare.com/files/53000174
-      size: 2381245
-      md5: eabc8c9046a068271b483b1750f60ffd
-    pred_col: e_form_per_atom_matris_mp
+      url: https://figshare.com/files/66646235
+      size: 1322924
+      md5: 6c7fcb8a5574e71054a93a567c302d98
     full_test_set:
       F1: 0.798  # fraction
       DAF: 4.456 # dimensionless

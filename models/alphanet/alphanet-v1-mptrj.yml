@@ -7,38 +7,38 @@ dates:
 lifecycle: superseded
 superseded_by: alphanet-v1-oam
 authors:
-- name: Bangchen Yin
-  affiliation: Tsinghua University
-  email: yinbc24@mails.tsinghua.edu.cn
-- name: Jiaao Wang
-  email: wangjiaao0720@utexas.edu
-  affiliation: University of Texas at Austin
-  corresponding: true
-- name: Weitao Du
-  affiliation: DAMO Academy, Alibaba Inc
-  email: duweitao.dwt@alibaba-inc.com
-- name: Yuanqi Du
-  affiliation: Cornell University
-  email: yd392@cornell.edu
-  corresponding: true
-- name: Chenru Duan
-  affiliation: Deep Principle
-  email: duanchenru@deepprinciple.com
-  corresponding: true
-- name: Carla P. Gomes
-  affiliation: Cornell University
-  email: gomes@cs.cornell.edu
-- name: Graeme Henkelman
-  affiliation: The University of Texas at Austin
-  email: henkelman@utexas.edu
-- name: Hai Xiao
-  affiliation: Tsinghua University
-  email: haixiao@tsinghua.edu.cn
-  corresponding: true
+  - name: Bangchen Yin
+    affiliation: Tsinghua University
+    email: yinbc24@mails.tsinghua.edu.cn
+  - name: Jiaao Wang
+    email: wangjiaao0720@utexas.edu
+    affiliation: University of Texas at Austin
+    corresponding: true
+  - name: Weitao Du
+    affiliation: DAMO Academy, Alibaba Inc
+    email: duweitao.dwt@alibaba-inc.com
+  - name: Yuanqi Du
+    affiliation: Cornell University
+    email: yd392@cornell.edu
+    corresponding: true
+  - name: Chenru Duan
+    affiliation: Deep Principle
+    email: duanchenru@deepprinciple.com
+    corresponding: true
+  - name: Carla P. Gomes
+    affiliation: Cornell University
+    email: gomes@cs.cornell.edu
+  - name: Graeme Henkelman
+    affiliation: The University of Texas at Austin
+    email: henkelman@utexas.edu
+  - name: Hai Xiao
+    affiliation: Tsinghua University
+    email: haixiao@tsinghua.edu.cn
+    corresponding: true
 trained_by:
-- name: Bangchen Yin
-  affiliation: Tsinghua University
-  email: yinbc24@mails.tsinghua.edu.cn
+  - name: Bangchen Yin
+    affiliation: Tsinghua University
+    email: yinbc24@mails.tsinghua.edu.cn
 
 repo: https://github.com/zmyybc/AlphaNet
 doi: https://doi.org/10.48550/arXiv.2501.07155
@@ -54,13 +54,13 @@ license:
 
 environment:
   dependencies:
-  - alphanet @ git+https://github.com/zmyybc/AlphaNet
-  - torch==2.5.1
-  - torch-geometric==2.6.1
-  - torch-scatter
-  - numpy<2
-  - ase==3.24.0
-  - pymatgen==2024.6.10
+    - alphanet @ git+https://github.com/zmyybc/AlphaNet
+    - torch==2.5.1
+    - torch-geometric==2.6.1
+    - torch-scatter
+    - numpy<2
+    - ase==3.24.0
+    - pymatgen==2024.6.10
   python_version: '3.12'
   find_links: ['https://data.pyg.org/whl/torch-2.5.1+cu121.html']
 openness: OSOD
@@ -124,10 +124,9 @@ metrics:
   discovery:
     pred_file:
       name: models/alphanet/alphanet-v1-mptrj/2025-03-04-discovery.csv.gz
-      url: https://figshare.com/files/52869026
-      size: 2379298
-      md5: 5d792a7fca2f1c8d02d2dc5948a1bc95
-    pred_col: e_form_per_atom_alphanet
+      url: https://figshare.com/files/66646331
+      size: 1321073
+      md5: 8bd5c7eb8a016ebb6091f2c86d7c5d71
     full_test_set:
       F1: 0.789  # fraction
       DAF: 4.312 # dimensionless
@@ -213,12 +212,11 @@ metrics:
         size: 7355028
         md5: 80e0e4298a9343e7c8525d433afec80f
   phonons:
-    status: partial
-    reason: kappa_103 missing κ_SRE metric
     kappa_103:
-      κ_SRME: 1.310
-      pred_file:                                                                                                      #find a lots of imag freqs, will look into this in the future
+      κ_SRME: 1.3046
+      pred_file:
         name: models/alphanet/alphanet-v1-mptrj/2025-03-04-phonons-kappa-103.json.gz
         url: https://figshare.com/files/52869011
         size: 15912336
         md5: ba3105c0bd952dbfcd92d7aea13e0c77
+      κ_SRE: 1.178

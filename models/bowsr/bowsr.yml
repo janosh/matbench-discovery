@@ -62,10 +62,9 @@ metrics:
   discovery:
     pred_file:
       name: models/bowsr/bowsr/2023-01-23-discovery.csv.gz
-      url: https://figshare.com/files/52057523
-      size: 1293333
-      md5: f2375f53cdd947b38a55c7c2b6925779
-    pred_col: e_form_per_atom_bowsr_megnet
+      url: https://figshare.com/files/66646253
+      size: 1293275
+      md5: aa6a1ade7404b686cf0bd120ba12c623
     full_test_set:
       F1: 0.437  # fraction
       DAF: 1.836 # dimensionless

@@ -121,10 +121,9 @@ metrics:
   discovery:
     pred_file:
       name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-discovery.csv.gz
-      url: https://figshare.com/files/52057571
-      size: 3065219
-      md5: 86642db564ecf51263e2c0a553603154
-    pred_col: e_form_per_atom_eqV2-86M-omat-mp-salex
+      url: https://figshare.com/files/66646142
+      size: 1327151
+      md5: 3658def6173e02579455ba480ff77ea4
     full_test_set:
       F1: 0.896  # fraction
       DAF: 5.243 # dimensionless

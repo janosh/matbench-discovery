@@ -125,10 +125,9 @@ metrics:
   discovery:
     pred_file:
       name: models/nequip/nequip-mp-l-0.1/2025-08-27-discovery.csv.gz
-      url: https://figshare.com/files/57574483
-      size: 2747061
-      md5: 1e5e18ca9ec3173243f77c0a58dd354e
-    pred_col: e_form_per_atom_nequip
+      url: https://figshare.com/files/66646181
+      size: 1661375
+      md5: 2afd042f9c986c60cc329f8ff8b5f3b2
     full_test_set:
       F1: 0.752  # fraction
       DAF: 4.136 # dimensionless

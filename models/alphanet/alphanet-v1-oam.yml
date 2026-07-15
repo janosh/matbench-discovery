@@ -127,10 +127,9 @@ metrics:
   discovery:
     pred_file:
       name: models/alphanet/alphanet-v1-oam/2025-07-24-discovery.csv.gz
-      url: https://figshare.com/files/56871809
-      size: 2349399
-      md5: 4216cae0261a1ed6441f2197bd90d7d3
-    pred_col: e_form_per_atom_alphanet
+      url: https://figshare.com/files/66646334
+      size: 1300590
+      md5: c4527dbd82573e664d1885815a90cf54
     full_test_set:
       F1: 0.883  # fraction
       DAF: 5.0 # dimensionless

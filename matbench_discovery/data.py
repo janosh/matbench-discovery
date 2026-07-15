@@ -419,31 +419,6 @@ df_wbm.index = df_wbm[str(Key.mat_id)]
 MAX_E_FORM_ERROR_THRESHOLD = 5.0
 
 
-def resolve_discovery_pred_col(
-    df_preds: pd.DataFrame,
-    *,
-    path: str,
-    preferred: str | None = None,
-) -> str:
-    """Return the formation-energy prediction column from a discovery CSV.
-
-    Resolution order:
-    1. ``preferred`` from YAML ``metrics.discovery.pred_col`` when present in the
-       frame (needed for multi-column ensemble artifacts on Figshare)
-    2. Canonical ``e_form_per_atom`` (current runner output / rewritten locals)
-    3. A unique legacy ``e_form_per_atom_*`` column
-    """
-    canonical = "e_form_per_atom"
-    if preferred and preferred in df_preds.columns:
-        return preferred
-    if canonical in df_preds.columns:
-        return canonical
-    legacy = [col for col in df_preds.columns if str(col).startswith(f"{canonical}_")]
-    if len(legacy) == 1:
-        return legacy[0]
-    raise ValueError(f"{canonical} column not found in {path}")
-
-
 def load_df_wbm_with_preds(
     *,
     models: Sequence[str | Model] | None = None,
@@ -500,17 +475,12 @@ def load_df_wbm_with_preds(
             prog_bar.set_postfix_str(model_name)
 
             df_preds = glob_to_df(model.discovery_path, pbar=False, nrows=nrows)
-            discovery_metrics = model.metrics.get("discovery")
-            preferred = (
-                discovery_metrics.get("pred_col")
-                if isinstance(discovery_metrics, dict)
-                else None
-            )
-            pred_col = resolve_discovery_pred_col(
-                df_preds, path=model.discovery_path, preferred=preferred
-            )
-
-            df_out[model.label] = df_preds.set_index(id_col)[pred_col]
+            try:
+                df_out[model.label] = df_preds.set_index(id_col)["e_form_per_atom"]
+            except KeyError as exc:
+                raise ValueError(
+                    f"e_form_per_atom column not found in {model.discovery_path}"
+                ) from exc
             if max_error_threshold is not None:
                 # Apply centralized model prediction cleaning criterion (see doc string)
                 bad_mask = (

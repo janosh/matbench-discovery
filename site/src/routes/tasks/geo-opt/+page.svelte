@@ -11,7 +11,6 @@
     scatter_axis_label,
     scatter_options_by_key,
   } from '$lib/labels'
-  import { has_geo_opt_metrics } from '$lib/metrics'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
   import { make_table_filters } from '$lib/models.svelte'
   import { DynamicScatter } from '$lib/plot'
@@ -149,7 +148,7 @@
     </p>
     <DynamicScatter
       models={ACTIVE_MODELS}
-      model_filter={has_geo_opt_metrics}
+      model_filter={(model) => model.metrics?.geo_opt != null}
       bind:x_key={scatter_x}
       bind:y_key={scatter_y}
       color_key={METADATA_COLS.n_training_materials.key}

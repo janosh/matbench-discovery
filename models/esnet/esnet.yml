@@ -72,10 +72,9 @@ metrics:
   discovery:
     pred_file:
       name: models/esnet/esnet/2025-06-20-discovery.csv.gz
-      url: https://figshare.com/files/55546568
-      size: 1333453
-      md5: 8caf69f6737bc12f6740d5dc71012c81
-    pred_col: e_form_per_atom_esnet
+      url: https://figshare.com/files/66646337
+      size: 1333389
+      md5: a26c63d6e63c9007fc1e4e88a14a79bf
     full_test_set:
       F1: 0.568  # fraction
       DAF: 3.151 # dimensionless

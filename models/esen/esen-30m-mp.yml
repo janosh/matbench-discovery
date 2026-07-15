@@ -97,10 +97,9 @@ metrics:
   discovery:
     pred_file:
       name: models/esen/esen-30m-mp/2025-03-17-discovery.csv.gz
-      url: https://figshare.com/files/53054366
+      url: https://figshare.com/files/66646343
       size: 1316973
       md5: 11c30079072c928109cb826be9af3671
-    pred_col: pred_e_form_per_atom_esen
     full_test_set:
       F1: 0.819  # fraction
       DAF: 4.616 # dimensionless

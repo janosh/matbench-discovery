@@ -79,10 +79,9 @@ metrics:
   discovery:
     pred_file:
       name: models/equflash/equflash-29m-oam/2025-06-23-discovery.csv.gz
-      url: https://figshare.com/files/57277367
-      size: 2860082
-      md5: 90cf8fe014397a2f896c885b7501d5e7
-    pred_col: pred_formation_energy_per_atom
+      url: https://figshare.com/files/66646271
+      size: 2771470
+      md5: 20f3e747f848fc3f74999c5671f66e02
     full_test_set:
       F1: 0.9  # fraction
       DAF: 5.214 # dimensionless

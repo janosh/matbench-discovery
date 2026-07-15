@@ -92,7 +92,6 @@ describe(`Discovery Task Page`, () => {
       const discovery = model.metrics?.discovery
       return (
         discovery != null &&
-        typeof discovery === `object` &&
         typeof discovery.unique_prototypes?.F1 === `number` &&
         typeof discovery.full_test_set?.F1 === `number` &&
         discovery.unique_prototypes?.F1 !== discovery.full_test_set?.F1 &&
@@ -100,7 +99,7 @@ describe(`Discovery Task Page`, () => {
       )
     })
     const discovery = source_model?.metrics?.discovery
-    if (!source_model || !discovery || typeof discovery !== `object`) {
+    if (!source_model || !discovery) {
       throw new Error(`No visible model with discovery metrics found`)
     }
     const model_key = source_model.model_key

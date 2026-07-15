@@ -111,10 +111,9 @@ metrics:
   discovery:
     pred_file:
       name: models/orb/orb-v2/2024-10-11-discovery.csv.gz
-      url: https://figshare.com/files/52057562
-      size: 2385306
-      md5: d00f381dac27d367133452a24f17a4e5
-    pred_col: e_form_per_atom_orb
+      url: https://figshare.com/files/66646283
+      size: 1325696
+      md5: 114a3fa62efe1ae549a0cf13c752aa25
     full_test_set:
       F1: 0.858  # fraction
       DAF: 5.281 # dimensionless

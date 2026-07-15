@@ -20,39 +20,38 @@ MODEL_YAML_PATTERN = re.compile(
 )
 
 
-class OverlayError(Exception):
-    """An unsafe or missing model YAML path aborts the whole overlay."""
+def main(
+    pr_tree: str,
+    yaml_paths: Sequence[str],
+    removed_paths: Sequence[str] = (),
+) -> int:
+    """Apply explicit, canonical model YAML changes to the trusted checkout."""
+    canonical_yaml_paths: list[str] = []
+    canonical_removed_paths: list[str] = []
+    # Canonicalize before deduplicating so separator-equivalent inputs collapse.
+    for paths, canonical_paths in (
+        (yaml_paths, canonical_yaml_paths),
+        (removed_paths, canonical_removed_paths),
+    ):
+        for relative_path in paths:
+            canonical = relative_path.replace("\\", "/")
+            if not MODEL_YAML_PATTERN.fullmatch(canonical):
+                print(f"::error::Unsafe model YAML path: {relative_path!r}")
+                return 1
+            if canonical not in canonical_paths:
+                canonical_paths.append(canonical)
 
-
-def _canonicalize_paths(paths: Sequence[str]) -> list[str]:
-    """Validate and POSIX-normalize model YAML paths, deduplicated in order.
-
-    Canonicalizes before deduplicating so separator-equivalent inputs collapse
-    to one entry while preserving first-seen order.
-    """
-    canonical_paths: list[str] = []
-    for relative_path in paths:
-        canonical = relative_path.replace("\\", "/")
-        if not MODEL_YAML_PATTERN.fullmatch(canonical):
-            raise OverlayError(f"Unsafe model YAML path: {relative_path!r}")
-        canonical_paths.append(canonical)
-    return list(dict.fromkeys(canonical_paths))
-
-
-def _validate_overlay(
-    pr_tree: str, yaml_paths: Sequence[str], removed_paths: Sequence[str]
-) -> tuple[list[str], list[str]]:
-    """Return canonical path lists, raising OverlayError on the first problem."""
-    canonical_yaml_paths = _canonicalize_paths(yaml_paths)
-    canonical_removed_paths = _canonicalize_paths(removed_paths)
     if not canonical_yaml_paths and not canonical_removed_paths:
-        raise OverlayError("No changed model YAML paths supplied")
+        print("::error::No changed model YAML paths supplied")
+        return 1
     if os.path.islink(f"{pr_tree}/models"):
-        raise OverlayError(f"Unsafe submitted models directory: {pr_tree}/models")
+        print(f"::error::Unsafe submitted models directory: {pr_tree}/models")
+        return 1
 
     for relative_path in canonical_removed_paths:
         if not (os.path.isfile(relative_path) or os.path.islink(relative_path)):
-            raise OverlayError(f"Missing trusted YAML to remove: {relative_path}")
+            print(f"::error::Missing trusted YAML to remove: {relative_path}")
+            return 1
 
     for relative_path in canonical_yaml_paths:
         source_path = f"{pr_tree}/{relative_path}"
@@ -61,24 +60,8 @@ def _validate_overlay(
             or not os.path.isfile(source_path)
             or os.path.islink(source_path)
         ):
-            raise OverlayError(f"Missing or unsafe submitted YAML: {source_path}")
-
-    return canonical_yaml_paths, canonical_removed_paths
-
-
-def main(
-    pr_tree: str,
-    yaml_paths: Sequence[str],
-    removed_paths: Sequence[str] = (),
-) -> int:
-    """Apply explicit, canonical model YAML changes to the trusted checkout."""
-    try:
-        canonical_yaml_paths, canonical_removed_paths = _validate_overlay(
-            pr_tree, yaml_paths, removed_paths
-        )
-    except OverlayError as exc:
-        print(f"::error::{exc}")
-        return 1
+            print(f"::error::Missing or unsafe submitted YAML: {source_path}")
+            return 1
 
     for relative_path in canonical_removed_paths:
         os.remove(relative_path)

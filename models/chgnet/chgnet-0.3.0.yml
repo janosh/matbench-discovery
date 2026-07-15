@@ -102,10 +102,9 @@ metrics:
   discovery:
     pred_file:
       name: models/chgnet/chgnet-0.3.0/2023-12-21-discovery.csv.gz
-      url: https://figshare.com/files/52057526
-      size: 2378095
-      md5: e1119bcc0ba012f898a1e8d11c6ad2de
-    pred_col: e_form_per_atom_chgnet
+      url: https://figshare.com/files/66646268
+      size: 1320974
+      md5: fd7cd3781a24be465aaeadf97663ce58
     full_test_set:
       F1: 0.612  # fraction
       DAF: 3.038 # dimensionless

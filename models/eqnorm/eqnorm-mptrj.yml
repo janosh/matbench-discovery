@@ -135,10 +135,9 @@ metrics:
   discovery:
     pred_file:
       name: models/eqnorm/eqnorm-mptrj/2025-06-16-discovery.csv.gz
-      url: https://figshare.com/files/55546649
-      size: 2590822
-      md5: 77c84e44c1d9a0782eb480c1c8ebf5ec
-    pred_col: e_form_per_atom_eqnorm
+      url: https://figshare.com/files/66646190
+      size: 1510639
+      md5: da1f1f8ef7f6dd63fd0af185395ace40
     full_test_set:
       F1: 0.779  # fraction
       DAF: 4.296 # dimensionless

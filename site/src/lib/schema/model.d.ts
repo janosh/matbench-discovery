@@ -193,11 +193,6 @@ export type DiscoveryMetrics = Record<string, unknown> & {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   pred_file?: NullableFileRef
-  /**
-   * Column name in pred_file containing formation-energy predictions. Prefer the canonical e_form_per_atom when present; required for older multi-column ensemble artifacts.
-   *
-   */
-  pred_col?: string
   hardware?: string
   run_time_sec?: number
   max_rss_gb?: number
@@ -463,7 +458,7 @@ export interface KappaMetrics {
   max_rss_gb?: number
   max_gpu_mem_gb?: number
   κ_SRME: number
-  κ_SRE?: number
+  κ_SRE: number
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema

@@ -143,10 +143,9 @@ metrics:
   discovery:
     pred_file:
       name: models/sevennet/sevennet-omni-i12/2026-01-12-discovery.csv.gz
-      url: https://figshare.com/files/60977137
+      url: https://figshare.com/files/66646316
       size: 1338289
       md5: 8de869237eeb3cff00e30339233170ec
-    pred_col: e_form_per_atom_sevennet
     full_test_set:
       F1: 0.887  # fraction
       DAF: 5.203 # dimensionless

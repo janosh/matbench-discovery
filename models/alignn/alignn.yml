@@ -56,10 +56,9 @@ metrics:
   discovery:
     pred_file:
       name: models/alignn/alignn/2023-06-02-discovery.csv.gz
-      url: https://figshare.com/files/51607262
-      size: 2010134
-      md5: c7a1cb4f2c3db99e2124a17ce0ac8554
-    pred_col: e_form_per_atom_alignn
+      url: https://figshare.com/files/66646265
+      size: 1318215
+      md5: 3943041b7e7826019c846718b9e21262
     full_test_set:
       F1: 0.565  # fraction
       DAF: 2.921 # dimensionless

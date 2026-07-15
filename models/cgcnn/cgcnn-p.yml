@@ -65,10 +65,9 @@ metrics:
   discovery:
     pred_file:
       name: models/cgcnn/cgcnn-p/2023-02-05-discovery.csv.gz
-      url: https://figshare.com/files/51607274
-      size: 12810481
-      md5: 643a08063075ee1e08bb4590b7ab6cdb
-    pred_col: e_form_per_atom_cgcnn_pred_ens
+      url: https://figshare.com/files/66646301
+      size: 1320526
+      md5: 3f4f5b8c89ca7d8677cbf831ba543f5b
     full_test_set:
       F1: 0.51  # fraction
       DAF: 2.398 # dimensionless

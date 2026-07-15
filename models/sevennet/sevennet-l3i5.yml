@@ -113,10 +113,9 @@ metrics:
   discovery:
     pred_file:
       name: models/sevennet/sevennet-l3i5/2024-12-10-discovery.csv.gz
-      url: https://figshare.com/files/52057547
-      size: 2748742
-      md5: f4bba4fe40115c3d3a380e53ddc1389a
-    pred_col: e_form_per_atom_chgTot_l3i5
+      url: https://figshare.com/files/66646319
+      size: 1657501
+      md5: 05b0b77a24264da18c899f5a24d18791
     full_test_set:
       F1: 0.751  # fraction
       DAF: 4.112 # dimensionless

@@ -156,13 +156,10 @@ metrics:
     pbe_force_mae: 1.1
   discovery:
     pred_file:
-    # the original Graphormer-based replaced the M3GNet-based MatterSim on the leaderboard
-    # pred_file: models/mattersim/mattersim-v1-5m/2024-06-16-mattersim-graphormer-wbm-IS2RE.csv.gz
       name: models/mattersim/mattersim-v1-5m/2024-12-16-discovery.csv.gz
-      url: https://figshare.com/files/52057559
-      size: 6817285
-      md5: 71e876fdc0a30358a9993c12d1fb02e3
-    pred_col: e_form_per_atom_mattersim
+      url: https://figshare.com/files/66646208
+      size: 2894333
+      md5: 3779100dfaa5b2f733464006287ed9e0
     full_test_set:
       F1: 0.838  # fraction
       DAF: 5.123 # dimensionless

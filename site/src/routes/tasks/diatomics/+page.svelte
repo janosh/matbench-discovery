@@ -1,11 +1,5 @@
 <script lang="ts">
-  import {
-    MetricsTable,
-    ModelSelect,
-    type ModelData,
-    ACTIVE_MODELS,
-    SelectToggle,
-  } from '$lib'
+  import { MetricsTable, ModelSelect, ACTIVE_MODELS, SelectToggle } from '$lib'
   import {
     CDS_CONFIG,
     DEFAULT_CDS_CONFIG,
@@ -50,8 +44,6 @@
 
   const homo_nuc_key = `homo-nuclear`
   const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
-  const has_diatomics_metrics = (model: ModelData): boolean =>
-    model.metrics?.diatomics != null
   // default-sort by the combined diatomics score (CDS), best (highest) first
   const default_sort: { column: string; dir: SortDir } = {
     column: DIATOMICS_METRICS.diatomics_combined_score.key,
@@ -101,7 +93,7 @@
   let selectable_names = $derived([
     ...reference_names,
     ...diatomic_models
-      .map((model: ModelData) => model.model_name)
+      .map((model) => model.model_name)
       .filter((model_name) => model_name in diatomic_curves && !errors[model_name]),
   ])
   let selectable_options = $derived(
@@ -224,7 +216,7 @@
 </div>
 
 <MetricsTable
-  model_filter={has_diatomics_metrics}
+  model_filter={(model) => model.metrics?.diatomics != null}
   col_filter={(col) => visible_cols[col.key] ?? true}
   bind:sort
 />
@@ -238,7 +230,7 @@
 
 <DynamicScatter
   models={ACTIVE_MODELS}
-  model_filter={has_diatomics_metrics}
+  model_filter={(model) => model.metrics?.diatomics != null}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}
   color_key={METADATA_COLS.n_training_materials.key}

@@ -25,7 +25,6 @@ export const targets_tooltips: Record<TargetType, string> = {
   EFS_DM: `Energy with direct forces, stress, and magmoms`,
 } as const
 
-// Derive display role from targets: energy-only vs force-capable MLIP.
 export const model_role_from_targets = (targets: TargetType) =>
   targets === `E`
     ? { label: `Energy predictor`, title: `Structure-to-energy predictor (no forces)` }
@@ -168,9 +167,6 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 
 // NB: cell background/text colors are computed by matterviz's HeatmapTable internally
 // (calc_cell_color in matterviz/table) — no local color logic needed
-
-export const has_geo_opt_metrics = (model: ModelData): boolean =>
-  model.metrics?.geo_opt != null
 
 // Calculate table data for the metrics table with combined scores
 export function assemble_row_data(

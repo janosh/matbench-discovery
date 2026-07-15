@@ -332,12 +332,9 @@ describe(`fig-helpers payload styling`, () => {
 
   it(`attach_style attaches MODELS colors and sorts models by discovery F1 desc`, () => {
     const keys = [`esen-30m-oam`, `equiformer-v3-oam`, `chgnet-0.3.0`]
-    const f1 = (key: string) => {
-      const disc = MODELS.find((mdl) => mdl.model_key === key)?.metrics?.discovery
-      return typeof disc === `object`
-        ? (disc?.unique_prototypes?.F1 ?? -Infinity)
-        : -Infinity
-    }
+    const f1 = (key: string) =>
+      MODELS.find((model) => model.model_key === key)?.metrics?.discovery
+        ?.unique_prototypes?.F1 ?? -Infinity
     const styled = attach_style({ shared: 1, models: keys.map((key) => ({ key })) })
 
     expect(styled.shared).toBe(1) // non-model shared fields are preserved

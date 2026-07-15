@@ -127,10 +127,9 @@ metrics:
   discovery:
     pred_file:
       name: models/hienet/hienet/2025-07-01-discovery.csv.gz
-      url: https://figshare.com/files/55909421
-      size: 2377954
-      md5: 456ab3c4d7cf47a04b492c0bccd566dd
-    pred_col: e_form_per_atom_hienet
+      url: https://figshare.com/files/66646133
+      size: 1322880
+      md5: 50525b716267ba5e4396a6be01d83dc1
     full_test_set:
       F1: 0.766  # fraction
       DAF: 4.361 # dimensionless

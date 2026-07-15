@@ -103,10 +103,9 @@ metrics:
   discovery:
     pred_file:
       name: models/mace/mace-mpa-0/2024-12-09-discovery.csv.gz
-      url: https://figshare.com/files/52057541
-      size: 2373693
-      md5: 35704766adccc536abce620dfc773f6d
-    pred_col: e_form_per_atom_mace
+      url: https://figshare.com/files/66646196
+      size: 1324924
+      md5: 69c5b43ed1bc972ba623627438e7653b
     full_test_set:
       F1: 0.836  # fraction
       DAF: 4.869 # dimensionless

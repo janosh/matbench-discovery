@@ -131,10 +131,9 @@ metrics:
   discovery:
     pred_file:
       name: models/nequix/nequix-mp-1/2025-08-17-discovery.csv.gz
-      url: https://figshare.com/files/57262712
-      size: 2455250
-      md5: b2896ac7db2d4bd87595347dccb15d62
-    pred_col: e_form_per_atom_nequix
+      url: https://figshare.com/files/66646199
+      size: 1376646
+      md5: 75027984e17c77bfacc160e9e6078c90
     full_test_set:
       F1: 0.744  # fraction
       DAF: 3.95 # dimensionless

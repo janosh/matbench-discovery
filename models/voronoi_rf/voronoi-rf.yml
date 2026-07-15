@@ -55,10 +55,9 @@ metrics:
   discovery:
     pred_file:
       name: models/voronoi_rf/voronoi-rf/2022-11-27-discovery.csv.gz
-      url: https://figshare.com/files/52057550
-      size: 1316269
-      md5: 00c5673afe34dcdd5a951ee451a2a462
-    pred_col: e_form_per_atom_voronoi_rf
+      url: https://figshare.com/files/66646205
+      size: 1316225
+      md5: 0f401e0af05e4b863ac2f94a24966f94
     full_test_set:
       F1: 0.344  # fraction
       DAF: 1.509 # dimensionless

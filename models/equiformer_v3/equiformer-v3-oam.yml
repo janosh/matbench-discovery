@@ -109,10 +109,9 @@ metrics:
   discovery:
     pred_file:
       name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-discovery.csv.gz
-      url: https://figshare.com/files/63518862
+      url: https://figshare.com/files/66646220
       size: 1654051
       md5: 3df9f3ce50957dfc349c678fa4926616
-    pred_col: e_form_per_atom_fairchem
     full_test_set:
       F1: 0.912  # fraction
       DAF: 5.298 # dimensionless

@@ -1,7 +1,5 @@
 // Parse YAML environment.dependencies specs into displayable package links.
 
-export type ParsedDependency = { name: string; detail: string; href: string }
-
 // PEP 508 name, optionally with extras like pkg[extra]
 const PKG = `([A-Za-z0-9][A-Za-z0-9._-]*(?:\\[[^\\]]+\\])?)`
 const AT_SPEC = new RegExp(`^${PKG}\\s*@\\s*(.+)$`)
@@ -10,7 +8,7 @@ const PIN_SPEC = new RegExp(`^${PKG}\\s*(==|>=|<=|!=|~=|<|>)\\s*(.+)$`)
 const pypi_href = (name: string, version = ``): string =>
   `https://pypi.org/project/${name.replace(/\[[^\]]*\]$/, ``)}/${version}`
 
-export function parse_dependency_spec(dep: string): ParsedDependency {
+export function parse_dependency_spec(dep: string) {
   const trimmed = dep.trim()
   const at_match = AT_SPEC.exec(trimmed)
   if (at_match) {

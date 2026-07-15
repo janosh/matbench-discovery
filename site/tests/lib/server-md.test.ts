@@ -1,13 +1,9 @@
 import { read_md_per_system } from '$lib/server/md'
-import type { ModelData } from '$lib/types'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
-
-const model_with = (md: object | string | null): Pick<ModelData, `metrics`> =>
-  ({ metrics: { md } }) as Pick<ModelData, `metrics`>
 
 // mirrors the pred_file CSVs written by scripts/evals/md.py: one row per DynaMat
 // system, RMSEs in eV, empty cells for unavailable values (e.g. stress-less pressure)
@@ -24,7 +20,9 @@ describe(`read_md_per_system`, () => {
     const csv_path = join(tmp_dir, gzip ? `metrics.csv.gz` : `metrics.csv`)
     await writeFile(csv_path, gzip ? gzipSync(csv_fixture) : csv_fixture)
 
-    const rows = await read_md_per_system(model_with({ pred_file: csv_path }))
+    const rows = await read_md_per_system({
+      metrics: { md: { pred_file: { name: csv_path } } },
+    })
     if (!rows) throw new Error(`expected rows from fixture CSV`)
     expect(rows).toHaveLength(2)
     const first = rows.find((row) => row.system === `CsSnI3_500K_Ivor_VASP`)
@@ -39,11 +37,10 @@ describe(`read_md_per_system`, () => {
   })
 
   it.each([
-    [`no md metrics`, null],
-    [`md not an object`, `not available`],
-    [`no pred_file`, {}],
-    [`missing file`, { pred_file: `models/does/not/exist.csv.gz` }],
-  ])(`returns null for %s`, async (_name, md) => {
-    expect(await read_md_per_system(model_with(md))).toBeNull()
+    [`no metrics`, {}],
+    [`no pred_file`, { metrics: { md: {} } }],
+    [`missing file`, { metrics: { md: { pred_file: { name: `missing.csv.gz` } } } }],
+  ])(`returns null for %s`, async (_name, model) => {
+    expect(await read_md_per_system(model)).toBeNull()
   })
 })

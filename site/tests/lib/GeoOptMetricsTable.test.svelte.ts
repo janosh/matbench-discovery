@@ -13,10 +13,8 @@ const geo_opt_row_count = (matches: (model: ModelData) => boolean = () => true) 
   ACTIVE_MODELS.filter(
     (model) =>
       model.metrics?.geo_opt != null &&
-      typeof model.metrics.geo_opt === `object` &&
       model.targets !== `E` &&
-      typeof model.metrics?.discovery === `object` &&
-      model.metrics.discovery.full_test_set &&
+      model.metrics?.discovery?.full_test_set &&
       matches(model),
   ).length
 

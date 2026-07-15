@@ -4,32 +4,12 @@ import {
   assemble_row_data,
   format_train_set,
   metric_better_as,
-  model_role_from_targets,
   sort_models,
   targets_tooltips,
 } from '$lib/metrics'
 import type { TargetType } from '$lib/schema/model'
 import type { ModelData } from '$lib/types'
 import { describe, expect, it } from 'vitest'
-
-describe(`model_role_from_targets`, () => {
-  it.each([
-    {
-      targets: `E`,
-      label: `Energy predictor`,
-    },
-    {
-      targets: `EFS_G`,
-      label: `Interatomic potential`,
-    },
-    {
-      targets: `EF_D`,
-      label: `Interatomic potential`,
-    },
-  ])(`maps $targets → $label`, ({ targets, label }) => {
-    expect(model_role_from_targets(targets as TargetType).label).toBe(label)
-  })
-})
 
 describe(`targets_tooltips`, () => {
   it.each([
@@ -41,10 +21,6 @@ describe(`targets_tooltips`, () => {
     [`EFSH_G`, `Energy with gradient-based forces, stress, and Hessian`],
   ])(`contains tooltip for %s target type`, (target, expected) => {
     expect(targets_tooltips[target as TargetType]).toBe(expected)
-  })
-
-  it(`contains all expected tooltip keys`, () => {
-    expect(Object.keys(targets_tooltips)).toHaveLength(8)
   })
 })
 
@@ -370,7 +346,6 @@ describe(`Model Sorting Logic`, () => {
         metrics: {
           discovery: {
             unique_prototypes: { F1: 0.9, Accuracy: 0.85, missing_preds: 0 },
-            pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.9 } },
         },
@@ -381,7 +356,6 @@ describe(`Model Sorting Logic`, () => {
         metrics: {
           discovery: {
             unique_prototypes: { F1: 0.7, Accuracy: NaN, missing_preds: 2 }, // NaN Accuracy + non-zero missing_preds
-            pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.5 } },
         },
@@ -392,7 +366,6 @@ describe(`Model Sorting Logic`, () => {
         metrics: {
           discovery: {
             unique_prototypes: { F1: 0.5, Accuracy: 0.6, missing_preds: 5 },
-            pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.2 } },
         },

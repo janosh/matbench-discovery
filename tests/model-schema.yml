@@ -149,7 +149,7 @@ definitions:
         type: number
         minimum: 0
         maximum: 2
-    required: ['κ_SRME']
+    required: ['κ_SRME', 'κ_SRE']
 
   PhononMetrics:
     type: object
@@ -279,14 +279,6 @@ definitions:
       reason: *task_reason
       pred_file:
         $ref: '#/definitions/nullable_file_ref'
-      # Legacy Figshare CSVs use model-specific column names; new runners write
-      # the canonical e_form_per_atom column and omit this key.
-      pred_col:
-        type: string
-        description: >
-          Column name in pred_file containing formation-energy predictions.
-          Prefer the canonical e_form_per_atom when present; required for older
-          multi-column ensemble artifacts.
       hardware:
         type: string
       run_time_sec:

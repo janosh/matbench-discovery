@@ -18,8 +18,7 @@ export async function read_md_per_system(
   model: Pick<ModelData, `metrics`>,
   root_dir: string = repo_root,
 ): Promise<MdPerSystemRow[] | null> {
-  const pred_file = model.metrics?.md?.pred_file
-  const pred_name = typeof pred_file === `string` ? pred_file : pred_file?.name
+  const pred_name = model.metrics?.md?.pred_file?.name
   if (!pred_name) return null
 
   const csv_path = isAbsolute(pred_name) ? pred_name : resolve(root_dir, pred_name)

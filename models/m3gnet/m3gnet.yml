@@ -77,10 +77,9 @@ metrics:
   discovery:
     pred_file:
       name: models/m3gnet/m3gnet/2023-12-28-discovery.csv.gz
-      url: https://figshare.com/files/52057535
-      size: 2377101
-      md5: b309e4a28d8f91814e7fb7ca1160bc8c
-    pred_col: e_form_per_atom_m3gnet
+      url: https://figshare.com/files/66646262
+      size: 1320744
+      md5: 76f83ffd2f281e2f8b660cffdb96a172
     full_test_set:
       F1: 0.576  # fraction
       DAF: 2.647 # dimensionless

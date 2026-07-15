@@ -29,7 +29,6 @@ from matbench_discovery.data import (
     load_df_wbm_with_preds,
     make_file_ref,
     parse_artifact_filename,
-    resolve_discovery_pred_col,
     round_trip_yaml,
     task_coverage,
     update_yaml_file,
@@ -316,52 +315,6 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
         pytest.raises(ValueError, match=r"e_form_per_atom column not found in"),
     ):
         load_df_wbm_with_preds(models=["alignn"])
-
-
-@pytest.mark.parametrize(
-    ("columns", "preferred", "expected"),
-    [
-        (["material_id", "e_form_per_atom"], None, "e_form_per_atom"),
-        (["material_id", "e_form_per_atom_alignn"], None, "e_form_per_atom_alignn"),
-        (
-            ["material_id", "e_form_per_atom", "e_form_per_atom_alignn"],
-            None,
-            "e_form_per_atom",
-        ),
-        (
-            [
-                "material_id",
-                "e_form_per_atom_mp2020_corrected_ale_n0",
-                "e_form_per_atom_mp2020_corrected_pred_ens",
-            ],
-            "e_form_per_atom_mp2020_corrected_pred_ens",
-            "e_form_per_atom_mp2020_corrected_pred_ens",
-        ),
-        (
-            ["material_id", "e_form_per_atom", "e_form_per_atom_alignn"],
-            "e_form_per_atom_alignn",
-            "e_form_per_atom_alignn",
-        ),
-        (
-            ["e_form_per_atom_alignn", "e_form_per_atom_alchembert"],
-            None,
-            None,
-        ),
-    ],
-)
-def test_resolve_discovery_pred_col(
-    columns: list[str], preferred: str | None, expected: str | None
-) -> None:
-    """Prefer YAML pred_col when present; else canonical, else unique legacy."""
-    df_preds = pd.DataFrame(columns=columns)
-    if expected is None:
-        with pytest.raises(ValueError, match=r"e_form_per_atom column not found in"):
-            resolve_discovery_pred_col(df_preds, path="preds.csv", preferred=preferred)
-        return
-    assert (
-        resolve_discovery_pred_col(df_preds, path="preds.csv", preferred=preferred)
-        == expected
-    )
 
 
 @pytest.mark.parametrize(

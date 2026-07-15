@@ -117,10 +117,9 @@ metrics:
   discovery:
     pred_file:
       name: models/tace/tece-oam-rra-1.0/2026-07-05-discovery.csv.gz
-      url: https://figshare.com/files/66313757
+      url: https://figshare.com/files/66646241
       size: 1648875
       md5: 3db866edbc4a6bc337c9d2abd04f5210
-    pred_col: e_form_per_atom_tace
     full_test_set:
       F1: 0.91  # fraction
       DAF: 5.3 # dimensionless

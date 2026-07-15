@@ -69,10 +69,9 @@ metrics:
   discovery:
     pred_file:
       name: models/gnome/gnome/2023-11-01-discovery.csv.gz
-      url: https://figshare.com/files/52057556
-      size: 2184155
-      md5: 4b28e10dc4283dc1a1eb63b94c3080d4
-    pred_col: e_gnome_after_relax
+      url: https://figshare.com/files/66646214
+      size: 2184112
+      md5: 89abd091bf20aeaf4523b9658c3db2fe
     full_test_set:
       F1: 0.81  # fraction
       DAF: 4.81 # dimensionless

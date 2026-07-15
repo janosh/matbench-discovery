@@ -131,10 +131,9 @@ metrics:
   discovery:
     pred_file:
       name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-discovery.csv.gz
-      url: https://figshare.com/files/64733577
+      url: https://figshare.com/files/66646169
       size: 1316182
       md5: 537be5f47fb938c415af623ce22b6772
-    pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.832  # fraction
       DAF: 4.943 # dimensionless

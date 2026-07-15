@@ -126,10 +126,9 @@ metrics:
   discovery:
     pred_file:
       name: models/allegro/allegro-mp-l-0.1/2025-09-08-discovery.csv.gz
-      url: https://figshare.com/files/57575095
-      size: 2748101
-      md5: 26a7104fb04891f3ce97e9d625bdddad
-    pred_col: e_form_per_atom_nequip
+      url: https://figshare.com/files/66646325
+      size: 1661321
+      md5: fa28d2d661ff30f993a179466c90bdf1
     full_test_set:
       F1: 0.742  # fraction
       DAF: 3.998 # dimensionless

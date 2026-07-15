@@ -63,10 +63,9 @@ metrics:
   discovery:
     pred_file:
       name: models/wrenformer/wrenformer/2022-11-15-discovery.csv.gz
-      url: https://figshare.com/files/52057553
-      size: 15163762
-      md5: e97f674e75592c1a214c154e25107280
-    pred_col: e_form_per_atom_wrenformer_pred_ens
+      url: https://figshare.com/files/66646136
+      size: 1619355
+      md5: 5d8f9eecf0cfcb2a7f9901af68f3f16e
     full_test_set:
       F1: 0.479  # fraction
       DAF: 2.13 # dimensionless

@@ -51,6 +51,7 @@ from matbench_discovery.data import (
 from matbench_discovery.discovery import (
     ARCHIVED_DISCOVERY_MODELS,
     COST_PROVENANCE_KEYS,
+    DISCOVERY_PRED_COL,
     DiscoveryArtifacts,
     RelaxationSettings,
     dry_run_settings,
@@ -190,11 +191,6 @@ def _repo_relative_path(path: str) -> str:
     return relative_path if not relative_path.startswith("../") else absolute_path
 
 
-def _artifact_yaml_data(path: str) -> dict[str, Any]:
-    """Build a nested pred_file reference for discovery/geo-opt YAML updates."""
-    return {"pred_file": make_file_ref(_repo_relative_path(path))}
-
-
 def _clear_legacy_and_update(
     section: dict[str, Any], *, updates: dict[str, Any]
 ) -> dict[str, Any]:
@@ -203,7 +199,7 @@ def _clear_legacy_and_update(
     Cost provenance is cleared before the merge so omitted fields (e.g. missing
     max_gpu_mem_gb) cannot linger from a prior YAML write.
     """
-    legacy_keys = ("pred_file_url", "pred_file_artifact", "pred_col", "struct_col")
+    legacy_keys = ("pred_file_url", "pred_file_artifact", "struct_col")
     for key in (*legacy_keys, *COST_PROVENANCE_KEYS):
         section.pop(key, None)
     section.update(updates)
@@ -221,7 +217,7 @@ def _write_yaml_results(
 
     # mirror load_df_wbm_with_preds's outlier masking and .round(3) convention so
     # metrics written here match a later scripts/evals/discovery.py recompute
-    model_preds = artifacts.predictions[artifacts.pred_col].copy()
+    model_preds = artifacts.predictions[DISCOVERY_PRED_COL].copy()
     bad_mask = abs(model_preds - df_wbm[MbdKey.e_form_dft]) > MAX_E_FORM_ERROR_THRESHOLD
     model_preds.loc[bad_mask] = pd.NA
     metric_reference = df_wbm.round(3)
@@ -249,7 +245,7 @@ def _write_yaml_results(
         ("discovery", artifacts.pred_file_path),
         ("geo_opt", artifacts.geo_opt_file_path),
     ):
-        artifact_data = _artifact_yaml_data(path)
+        artifact_data = {"pred_file": make_file_ref(_repo_relative_path(path))}
         if task == "discovery":
             artifact_data |= cost_data
         update_yaml_file(

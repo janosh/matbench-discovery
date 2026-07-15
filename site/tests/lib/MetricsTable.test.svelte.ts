@@ -28,10 +28,7 @@ const visible_row_count = (
   extra_filter: (model: ModelData) => boolean = make_table_filters().matches,
 ) =>
   ACTIVE_MODELS.filter(
-    (model) =>
-      typeof model.metrics?.discovery === `object` &&
-      model.metrics.discovery.unique_prototypes &&
-      extra_filter(model),
+    (model) => model.metrics?.discovery?.unique_prototypes && extra_filter(model),
   ).length
 
 // table filters with the default require-forces constraint cleared (shows all models
