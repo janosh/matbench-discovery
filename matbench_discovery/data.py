@@ -165,19 +165,8 @@ def canonical_scientific_notation(value: float | str | Decimal) -> str:
     if not decimal_value.is_finite() or decimal_value <= 0:
         raise ValueError(f"Expected a positive finite number, got {value!r}")
 
-    normalized = decimal_value.normalize()
-    sign, digits, exponent = normalized.as_tuple()
-    if not isinstance(exponent, int):
-        raise TypeError(f"Expected a finite decimal exponent, got {value!r}")
-    coefficient = "".join(map(str, digits))
-    scientific_exponent = exponent + len(coefficient) - 1
-    mantissa = coefficient[0]
-    if len(coefficient) > 1:
-        mantissa += f".{coefficient[1:].rstrip('0')}"
-        mantissa = mantissa.rstrip(".")
-    if sign:
-        mantissa = f"-{mantissa}"
-    return f"{mantissa}e{scientific_exponent}"
+    mantissa, _, exponent = f"{decimal_value.normalize():e}".partition("e")
+    return f"{mantissa.rstrip('0').rstrip('.')}e{int(exponent)}"
 
 
 def _iso_date(value: date | str) -> str:
@@ -511,20 +500,17 @@ def load_df_wbm_with_preds(
             prog_bar.set_postfix_str(model_name)
 
             df_preds = glob_to_df(model.discovery_path, pbar=False, nrows=nrows)
-            discovery_metrics = model.metrics.get("discovery", {})
+            discovery_metrics = model.metrics.get("discovery")
             preferred = (
                 discovery_metrics.get("pred_col")
                 if isinstance(discovery_metrics, dict)
                 else None
             )
             pred_col = resolve_discovery_pred_col(
-                df_preds,
-                path=model.discovery_path,
-                preferred=preferred if isinstance(preferred, str) else None,
+                df_preds, path=model.discovery_path, preferred=preferred
             )
 
-            index_column = "material_id" if "material_id" in df_preds else id_col
-            df_out[model.label] = df_preds.set_index(index_column)[pred_col]
+            df_out[model.label] = df_preds.set_index(id_col)[pred_col]
             if max_error_threshold is not None:
                 # Apply centralized model prediction cleaning criterion (see doc string)
                 bad_mask = (

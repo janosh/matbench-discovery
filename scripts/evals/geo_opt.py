@@ -22,13 +22,18 @@ from pymatviz.enums import Key
 
 from matbench_discovery import ROOT, figs
 from matbench_discovery.cli import cli_args, is_full_model_run
-from matbench_discovery.data import file_ref_name, file_ref_url
+from matbench_discovery.data import (
+    canonical_scientific_notation,
+    file_ref_name,
+    file_ref_url,
+)
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 symprec = 1e-5
 metric_lvl = "metric"
-symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
+# must match the key written by metrics/geo_opt.py, else lookups silently miss
+symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
 df_dft_analysis = pd.read_csv(DataFiles.wbm_dft_geo_opt_symprec_1e_5.path, index_col=0)
 
 

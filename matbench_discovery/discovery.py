@@ -766,17 +766,8 @@ def write_discovery_artifacts(
     for output_path in (pred_file_path, geo_opt_file_path):
         if output_parent := os.path.dirname(output_path):
             os.makedirs(output_parent, exist_ok=True)
-    df_canonical = pd.DataFrame(
-        {
-            DISCOVERY_ID_COL: df_predictions.index.astype(str),
-            DISCOVERY_PRED_COL: df_predictions[DISCOVERY_PRED_COL],
-        }
-    )
-    df_canonical.to_csv(
-        pred_file_path,
-        index=False,
-        compression="gzip" if pred_file_path.endswith(".gz") else None,
-    )
+    # to_csv infers gzip from the .gz suffix; index.name is already DISCOVERY_ID_COL
+    df_predictions[[DISCOVERY_PRED_COL]].to_csv(pred_file_path)
     pd.DataFrame(geo_opt_rows).to_json(
         geo_opt_file_path,
         orient="records",

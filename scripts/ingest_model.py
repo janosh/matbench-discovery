@@ -35,6 +35,8 @@ from matbench_discovery.enums import Model
 from matbench_discovery.phonons.pipeline import KappaSettings
 
 PASS, FAIL, SKIP = "✓", "✗", "○"
+# task_coverage statuses that mean the task has results worth checking artifacts for
+COVERED_STATUSES = frozenset({"complete", "partial"})
 # each entry is the `uv run` argument string for one payload script; kappa needs the
 # phonons extra (phono3py/phonopy) when computing conductivity diagnostics
 PAYLOAD_SCRIPTS = (
@@ -181,7 +183,7 @@ def check_submission(
             checks.skip(f"{label} check skipped (targets=E, no forces)")
             continue
         status, reason = task_coverage(metadata, task)
-        if status not in {"complete", "partial"}:
+        if status not in COVERED_STATUSES:
             suffix = f": {reason}" if reason else ""
             checks.skip(f"{label} declared {status!r}{suffix}")
             continue
@@ -199,10 +201,7 @@ def check_submission(
         return energy_only
 
     calc_spec = CALCULATORS.get(model.name)
-    phonons_available = task_coverage(metadata, "phonons")[0] in {
-        "complete",
-        "partial",
-    }
+    phonons_available = task_coverage(metadata, "phonons")[0] in COVERED_STATUSES
     for task in ("discovery", "kappa", "diatomics"):
         if energy_only and task != "discovery":
             checks.skip(f"{task} test script check skipped (targets=E, no forces)")

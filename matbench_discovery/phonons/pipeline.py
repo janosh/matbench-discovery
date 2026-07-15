@@ -174,8 +174,7 @@ class KappaSettings:
         protocol = overrides.pop("protocol", None)
         if protocol != KAPPA_PROTOCOL:
             raise ValueError(
-                "hyperparams.evaluation.kappa protocol must be "
-                f"{KAPPA_PROTOCOL!r}, "
+                f"hyperparams.evaluation.kappa protocol must be {KAPPA_PROTOCOL!r}, "
                 f"got {protocol!r}"
             )
         return cls(**overrides)

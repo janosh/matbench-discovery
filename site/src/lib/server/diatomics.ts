@@ -8,14 +8,8 @@ const repo_root = resolve(import.meta.dirname, `../../../..`)
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve_sleep) => setTimeout(resolve_sleep, ms))
 
-type DiatomicsSource = { pred_file?: FileRef | string | null }
+type DiatomicsSource = { pred_file?: FileRef | null }
 type FetchOptions = { fetch_fn?: typeof fetch; root_dir?: string; max_attempts?: number }
-
-const file_ref_name = (pred_file: DiatomicsSource[`pred_file`]): string | undefined =>
-  typeof pred_file === `string` ? pred_file : pred_file?.name
-
-const file_ref_url = (pred_file: DiatomicsSource[`pred_file`]): string | undefined =>
-  typeof pred_file === `string` ? undefined : pred_file?.url
 
 const parse_gzipped_json = (
   bytes: Uint8Array | ArrayBuffer,
@@ -78,11 +72,10 @@ export async function fetch_diatomics_data(
   { pred_file }: DiatomicsSource,
   { fetch_fn = fetch, root_dir = repo_root, max_attempts = 3 }: FetchOptions = {},
 ): Promise<DiatomicsCurves> {
-  const local_name = file_ref_name(pred_file)
-  const local_data = await read_local_diatomics(local_name, root_dir)
+  const local_data = await read_local_diatomics(pred_file?.name, root_dir)
   if (local_data) return local_data
 
-  const pred_file_url = file_ref_url(pred_file)
+  const pred_file_url = pred_file?.url
   if (!pred_file_url) throw new Error(`No local diatomics file or remote URL`)
 
   if (!Number.isInteger(max_attempts) || max_attempts < 1) {

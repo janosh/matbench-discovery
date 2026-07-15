@@ -136,59 +136,24 @@ describe(`RSS feed endpoint`, () => {
   })
 
   it(`should sort models by date in descending order`, async () => {
-    // Skip test if not enough models available
-    if (MODELS.length < 2) {
-      console.warn(`Skipping test: Not enough models available to test sorting`)
-      return
-    }
+    const xml = await GET().text()
 
-    const response = GET()
-    const xml = await response.text()
-
-    const sorted_models = MODELS.toSorted(
-      (model_a, model_b) =>
-        new Date(model_b.dates.benchmark_added ?? 0).getTime() -
-        new Date(model_a.dates.benchmark_added ?? 0).getTime(),
+    // every item appears newest-first, i.e. in benchmark_added descending order
+    const to_time = (model: ModelData) =>
+      new Date(model.dates.benchmark_added ?? 0).getTime()
+    const expected_names = MODELS.toSorted(
+      (model_a, model_b) => to_time(model_b) - to_time(model_a),
+    ).map((model) => model.model_name)
+    const item_names = [...xml.matchAll(/<item>\s*<title>(?<name>[^<]+)<\/title>/g)].map(
+      (match) => match.groups?.name ?? ``,
     )
+    expect(item_names).toStrictEqual(expected_names)
 
-    let newer_model: ModelData | null = null
-    let older_model: ModelData | null = null
-    let prev_model = sorted_models[0]
-    for (const current_model of sorted_models.slice(1)) {
-      if (prev_model.dates.benchmark_added !== current_model.dates.benchmark_added) {
-        newer_model = prev_model
-        older_model = current_model
-        break
-      }
-      prev_model = current_model
-    }
-
-    if (!newer_model || !older_model) {
-      console.warn(`Skipping test: Couldn't find two models with different dates`)
-      return
-    }
-
-    // Verify the models have different dates
-    expect(newer_model.dates.benchmark_added).not.toBe(older_model.dates.benchmark_added)
-    expect(new Date(newer_model.dates.benchmark_added ?? 0).getTime()).toBeGreaterThan(
-      new Date(older_model.dates.benchmark_added ?? 0).getTime(),
-    )
-
-    // Newer model should appear before older model in the XML
-    const newer_index = xml.indexOf(newer_model.model_name)
-    const older_index = xml.indexOf(older_model.model_name)
-
-    expect(newer_index).not.toBe(-1)
-    expect(older_index).not.toBe(-1)
-    expect(newer_index).toBeLessThan(older_index)
-
-    // Additional check: every item has a pubDate in correct format
-    const pub_dates = [...xml.matchAll(/<pubDate>[^<]+<\/pubDate>/g)]
+    // every item carries a parseable pubDate
+    const pub_dates = [...xml.matchAll(/<pubDate>(?<date>[^<]+)<\/pubDate>/g)]
     expect(pub_dates).toHaveLength(MODELS.length)
-    for (const [date_str] of pub_dates) {
-      const date_content = date_str.replaceAll(/<\/?pubDate>/g, ``)
-      // Check that this parses as a valid date
-      expect(new Date(date_content).toString()).not.toBe(`Invalid Date`)
+    for (const match of pub_dates) {
+      expect(new Date(match.groups?.date ?? ``).toString()).not.toBe(`Invalid Date`)
     }
   })
 

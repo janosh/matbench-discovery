@@ -245,33 +245,15 @@ class CalcSpec:
         """
         py_args = ["--python", self.python_version] if self.python_version else []
         if self.project:
-            return [
-                "uv",
-                "run",
-                "--project",
-                self.project,
-                "--isolated",
-                *py_args,
-                "python",
-                script,
-                *args,
-            ]
-        with_args = [tok for dep in self.deps for tok in ("--with", dep)]
-        link_args = [tok for url in self.find_links for tok in ("--find-links", url)]
-        index_args = [
-            tok for url in self.extra_index_url for tok in ("--extra-index-url", url)
-        ]
-        return [
-            "uv",
-            "run",
-            "--no-project",
-            *py_args,
-            *with_args,
-            *link_args,
-            *index_args,
-            script,
-            *args,
-        ]
+            mode = ["--project", self.project, "--isolated", *py_args, "python"]
+        else:
+            pairs = (
+                *(("--with", dep) for dep in self.deps),
+                *(("--find-links", url) for url in self.find_links),
+                *(("--extra-index-url", url) for url in self.extra_index_url),
+            )
+            mode = ["--no-project", *py_args, *(tok for pair in pairs for tok in pair)]
+        return ["uv", "run", *mode, script, *args]
 
 
 @cache
@@ -399,20 +381,11 @@ class _CalcRegistry:
     def __iter__(self) -> Iterator[str]:
         return iter(self._data)
 
-    def __len__(self) -> int:
-        return len(self._data)
-
     def get(self, key: str, default: CalcSpec | None = None) -> CalcSpec | None:
         """Return a resolved CalcSpec, or default when the key is missing."""
         if key not in self._data:
             return default
         return self[key]
-
-    def keys(self) -> Iterator[str]:
-        return iter(self._data)
-
-    def values(self) -> Iterator[CalcSpec]:
-        return (self[key] for key in self._data)
 
     def items(self) -> Iterator[tuple[str, CalcSpec]]:
         return ((key, self[key]) for key in self._data)
@@ -849,7 +822,7 @@ def _emt(device: str) -> "Calculator":  # noqa: ARG001 - CPU only, debug model
     return EMT()
 
 
-# Executable pins live in each model YAML's environment. Factories below keep
+# Executable pins live in each model YAML's environment. Factories above keep
 # checkpoint behavior; _runtime_calc_spec supplies the uv env. Compatibility notes:
 # - fairchem-core v1: torch 2.4, matching PyG wheels, numpy<2, scipy<1.15
 # - HIENet: torch 2.1.2 needs Python 3.11 + matching PyG wheels

@@ -107,7 +107,7 @@ def test_calc_geo_opt_metrics_parametrized(
 
 
 @pytest.mark.parametrize(
-    ("metrics_data", "expected_block", "symprec", "analysis_file_path"),
+    ("metrics_data", "expected_block", "analysis_file_path"),
     [
         (
             {
@@ -127,7 +127,6 @@ def test_calc_geo_opt_metrics_parametrized(
                 Key.n_structures: 0,
                 "analysis_file": make_file_ref(_GEO),
             },
-            1e-2,
             _GEO,
         ),
         (
@@ -148,7 +147,6 @@ def test_calc_geo_opt_metrics_parametrized(
                 Key.n_structures: 0,
                 "analysis_file": make_file_ref(_GEO_NAN),
             },
-            1e-2,
             _GEO_NAN,
         ),
     ],
@@ -156,47 +154,41 @@ def test_calc_geo_opt_metrics_parametrized(
 def test_write_geo_opt_metrics_to_yaml(
     metrics_data: dict[MbdKey | Key, float],
     expected_block: dict[MbdKey | Key | str, float | str | None],
-    symprec: float,
     analysis_file_path: str,
 ) -> None:
     """Test saving geometry optimization metrics to YAML files with edge cases."""
-    symprec_key = f"{symprec=:.0e}".replace("e-0", "e-")
+    symprec = 1e-2
+    symprec_key = "symprec=1e-2"
 
-    # Mock the Model class and file operations
+    # Mock file and YAML operations
     with (
-        patch("matbench_discovery.metrics.geo_opt.Model") as mock_model,
         patch("builtins.open", mock_open()) as mock_file,
+        patch("matbench_discovery.data.round_trip_yaml") as mock_yaml,
     ):
-        # Configure mock model
-        mock_model.from_label.return_value.label = "test_model"
-        mock_model.from_label.return_value.yaml_path = "mock_path/test_model.yml"
+        # Configure mock YAML load to return empty dict
+        mock_yaml.load.return_value = {}
 
-        # Mock the YAML operations
-        with patch("matbench_discovery.data.round_trip_yaml") as mock_yaml:
-            # Configure mock YAML load to return empty dict
-            mock_yaml.load.return_value = {}
+        # Call the function
+        geo_opt.write_metrics_to_yaml(
+            pd.DataFrame([metrics_data]), Model.alignn, symprec, analysis_file_path
+        )
 
-            # Call the function
-            geo_opt.write_metrics_to_yaml(
-                pd.DataFrame([metrics_data]), Model.alignn, symprec, analysis_file_path
-            )
+        # Verify YAML dump was called with expected content
+        actual_yaml = mock_yaml.dump.call_args[0][0]
 
-            # Verify YAML dump was called with expected content
-            actual_yaml = mock_yaml.dump.call_args[0][0]
+        # Compare metrics while handling NaN values
+        for key, value in actual_yaml["metrics"]["geo_opt"][symprec_key].items():
+            if key.endswith("_artifact"):
+                continue
+            expected_val = expected_block[key]
+            if key in {"analysis_file", "pred_file", "force_file", "run_info_file"}:
+                assert value == expected_val
+                continue
+            if isinstance(value, float) and np.isnan(value):
+                assert np.isnan(expected_val)
+            else:
+                assert value == pytest.approx(expected_val)
 
-            # Compare metrics while handling NaN values
-            for key, value in actual_yaml["metrics"]["geo_opt"][symprec_key].items():
-                if key.endswith("_artifact"):
-                    continue
-                expected_val = expected_block[key]
-                if key in {"analysis_file", "pred_file", "force_file", "run_info_file"}:
-                    assert value == expected_val
-                    continue
-                if isinstance(value, float) and np.isnan(value):
-                    assert np.isnan(expected_val)
-                else:
-                    assert value == pytest.approx(expected_val)
-
-            # Verify file operations
-            mock_file.assert_called()
-            mock_yaml.dump.assert_called_once()
+        # Verify file operations
+        mock_file.assert_called()
+        mock_yaml.dump.assert_called_once()

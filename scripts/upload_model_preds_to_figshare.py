@@ -165,8 +165,7 @@ def update_one_modeling_task_article(
         # Ingestion schema-validates model YAMLs before archival, so malformed FileRefs
         # intentionally fail fast here rather than being silently skipped.
         for key_parts, rel_file_path in iter_file_refs(metric_data):
-            artifact_key = key_parts[-1]
-            if file_type != "all" and artifact_key != f"{file_type}_file":
+            if file_type != "all" and key_parts[-1] != f"{file_type}_file":
                 continue
             try:
                 file_path = resolve_artifact_path(model.yaml_path, rel_file_path)

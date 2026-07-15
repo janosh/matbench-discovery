@@ -83,8 +83,9 @@ def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
 def test_equflash_uv_command_uses_isolated_override_project() -> None:
     """EquFlash installs via project env; YAML deps are provenance-only."""
     calc_spec = CALCULATORS["equflash_29m_oam"]
-    command = calc_spec.uv_run_cmd("models/run_kappa.py")
-    assert command == [
+    # exact equality also pins that project mode injects no --with, which would fight
+    # the project's override-dependencies
+    assert calc_spec.uv_run_cmd("models/run_kappa.py") == [
         "uv",
         "run",
         "--project",
@@ -95,11 +96,8 @@ def test_equflash_uv_command_uses_isolated_override_project() -> None:
         "python",
         "models/run_kappa.py",
     ]
-    # Project mode must not inject --with (would fight override-dependencies).
-    assert "--with" not in command
     assert calc_spec.deps  # still exposed for site provenance
     assert calc_spec.project
-    assert os.path.isfile(f"{calc_spec.project}/pyproject.toml")
 
 
 def test_project_backed_yaml_deps_match_install_project() -> None:

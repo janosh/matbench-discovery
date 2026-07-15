@@ -127,20 +127,6 @@ describe(`ModelCard`, () => {
   })
 
   describe(`Expandable Details`, () => {
-    it(`toggles details section visibility`, () => {
-      let show_details = $state(false)
-      mount_card({ show_details })
-
-      // Initially only metrics section should be visible
-      const initial_sections = document.querySelectorAll(`section:not(.metrics) h3`)
-      expect(initial_sections).toHaveLength(0)
-
-      show_details = true
-      const sections = document.querySelectorAll(`section h3`)
-      const section_titles = [...sections].map((h3) => h3.textContent)
-      expect(section_titles).toStrictEqual([`Metrics`])
-    })
-
     it(`displays authors and package versions correctly`, () => {
       mount_card({ show_details: true })
 

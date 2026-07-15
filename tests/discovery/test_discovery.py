@@ -184,32 +184,23 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
 def test_runner_writes_canonical_artifact_metadata(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Regenerated artifacts invalidate stale URLs and record logical identity."""
-    existing_path = file_ref_name(Model.mace_mp_0.metrics["discovery"]["pred_file"])
-    assert existing_path is not None
+    """Artifact refs record repo-relative identity without legacy flat keys."""
+    rel_path = "models/mace/mace-mp-0/2026-07-02-discovery.csv.gz"
     make_artifact_data = discovery_runner._artifact_yaml_data  # noqa: SLF001
-    for path in (
-        f"{discovery_runner.ROOT}/{existing_path}",
-        f"{discovery_runner.ROOT}/models/mace/mace-mp-0/2026-07-02-discovery.csv.gz",
-    ):
-        artifact_data = make_artifact_data(path)
-        assert file_ref_url(artifact_data["pred_file"]) is None
-        assert "pred_file_url" not in artifact_data
-        assert "pred_file_artifact" not in artifact_data
-
-    artifact_data = discovery_runner._artifact_yaml_data(  # noqa: SLF001
-        f"{discovery_runner.ROOT}/{existing_path}",
-    )
-    assert "pred_file_url" not in artifact_data
-    assert "pred_file_artifact" not in artifact_data
+    # exact equality also pins the absence of pred_file_url/pred_file_artifact and
+    # that a regenerated artifact carries no (stale) URL
+    assert make_artifact_data(f"{discovery_runner.ROOT}/{rel_path}") == {
+        "pred_file": make_file_ref(rel_path)
+    }
 
     def windows_relpath(_path: str, _start: str) -> str:
         """Return a Windows-style relative artifact path."""
-        return existing_path.replace("/", "\\")
+        return rel_path.replace("/", "\\")
 
     monkeypatch.setattr(discovery_runner.os.path, "relpath", windows_relpath)
-    artifact_data = make_artifact_data(f"{discovery_runner.ROOT}/{existing_path}")
-    assert artifact_data["pred_file"] == make_file_ref(existing_path)
+    assert make_artifact_data(f"{discovery_runner.ROOT}/{rel_path}") == {
+        "pred_file": make_file_ref(rel_path)
+    }
 
     def raise_cross_drive(_path: str, _start: str) -> str:
         """Mimic relpath failing across Windows drives."""
@@ -217,8 +208,9 @@ def test_runner_writes_canonical_artifact_metadata(
 
     monkeypatch.setattr(discovery_runner.os.path, "relpath", raise_cross_drive)
     external_path = "/mnt/c/tmp/preds.csv.gz"
-    artifact_data = make_artifact_data(external_path)
-    assert artifact_data["pred_file"] == make_file_ref(os.path.abspath(external_path))
+    assert make_artifact_data(external_path) == {
+        "pred_file": make_file_ref(os.path.abspath(external_path))
+    }
 
 
 def test_write_yaml_results_masks_outliers_and_updates_yaml(
@@ -272,10 +264,7 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
             }
         )
     )
-    mock_model = cast(
-        "Model",
-        SimpleNamespace(yaml_path=str(yaml_path), metrics={"discovery": old_discovery}),
-    )
+    mock_model = cast("Model", SimpleNamespace(yaml_path=str(yaml_path)))
     run_metadata = {
         "hardware": "NVIDIA H200",
         "run_time_sec": 123.45,

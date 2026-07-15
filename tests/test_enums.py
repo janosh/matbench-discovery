@@ -17,6 +17,7 @@ from matbench_discovery.enums import (
     ArchitectureType,
     DataFiles,
     Files,
+    LabelEnum,
     MbdKey,
     Model,
     Open,
@@ -36,6 +37,16 @@ def make_mock_response(content: bytes) -> requests.Response:
     return response
 
 
+@pytest.mark.parametrize("enum_cls", [ArchitectureType, MbdKey, Open, Task, TestSubset])
+def test_label_enum_values_and_labels(enum_cls: type[LabelEnum]) -> None:
+    """Every labeled-enum member exposes a non-empty string value and label."""
+    for member in enum_cls:
+        assert isinstance(member.value, str), f"{member=}"
+        assert isinstance(member.label, str), f"{member=}"
+        assert member.value != "", f"{member=}"
+        assert member.label != "", f"{member=}"
+
+
 def test_mbd_key() -> None:
     """Test MbdKey enum."""
     # Test basic enum functionality
@@ -51,13 +62,6 @@ def test_mbd_key() -> None:
         "protostructure_spglib_initial_structure"
     )
     assert MbdKey.protostructure_spglib == "protostructure_spglib"
-
-    # Test that all keys have values and labels
-    for key in MbdKey:
-        assert isinstance(key.value, str), f"{key=}"
-        assert isinstance(key.label, str), f"{key=}"
-        assert key.value != ""
-        assert key.label != ""
 
     # Test uniqueness of values and labels
     values = [key.value for key in MbdKey]
@@ -75,25 +79,11 @@ def test_task() -> None:
     assert Task.S2EFS.label == "structure to energy, force, stress"
     assert Task.IS2RE_SR == "IS2RE-SR"
 
-    # Test that all tasks have values and labels
-    for task in Task:
-        assert isinstance(task.value, str)
-        assert isinstance(task.label, str)
-        assert task.value != ""
-        assert task.label != ""
-
     # Test task descriptions make sense
     assert "energy" in Task.S2E.label
     assert "force" in Task.S2EF.label
     assert "stress" in Task.S2EFS.label
     assert "magmoms" in Task.S2EFSM.label
-
-
-def test_model_taxonomy_enums() -> None:
-    """Architecture taxonomy exposes non-empty labels."""
-    for taxonomy_value in ArchitectureType:
-        assert taxonomy_value.value
-        assert taxonomy_value.label
 
 
 def test_open() -> None:
@@ -103,13 +93,6 @@ def test_open() -> None:
     assert Open.OSOD.label == "open source, open data"
     assert Open.CSCD == "CSCD"
     assert Open.CSCD.label == "closed source, closed data"
-
-    # Test that all openness types have values and labels
-    for open_type in Open:
-        assert isinstance(open_type.value, str)
-        assert isinstance(open_type.label, str)
-        assert open_type.value != ""
-        assert open_type.label != ""
 
     # Test openness descriptions make sense
     assert "open source" in Open.OSOD.label
@@ -125,13 +108,6 @@ def test_test_subset() -> None:
     assert TestSubset.uniq_protos.label == "Unique Structure Prototypes"
     assert TestSubset.most_stable_10k == "most_stable_10k"
     assert TestSubset.most_stable_10k.label == "10k Most Stable Materials"
-
-    # Test that all test subsets have values and labels
-    for subset in TestSubset:
-        assert isinstance(subset.value, str)
-        assert isinstance(subset.label, str)
-        assert subset.value != ""
-        assert subset.label != ""
 
     # Test subset descriptions make sense
     assert "Unique" in TestSubset.uniq_protos.label

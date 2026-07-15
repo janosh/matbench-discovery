@@ -16,7 +16,6 @@ from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
 from matbench_discovery.enums import ArchitectureType, Model, Open, Targets, Task
 from tests.models._helpers import (
     FAMILY_DIR_PATTERN,
-    MODEL_KEY_PATTERN,
     enum_values_from_schema,
     load_model_schema,
     model_yaml_paths,
@@ -37,13 +36,10 @@ TEST_TASK_NAMES = {"IP2E", "IS2E", "IS2RE", "IS2RE_SR"}
 @pytest.mark.parametrize("yaml_path", model_yaml_paths())
 def test_model_yaml_schema_and_identity(yaml_path: str) -> None:
     """Each model YAML passes schema checks and uses canonical identity/paths."""
-    validate_model_yaml(yaml_path)
-    with open(yaml_path, encoding="utf-8") as file:
-        metadata = yaml.safe_load(file)
-    assert isinstance(metadata, dict)
+    # the schema enforces model_key's kebab-case pattern, so only check the family dir
+    metadata = validate_model_yaml(yaml_path)
     model_key = metadata["model_key"]
     family_dir = os.path.basename(os.path.dirname(yaml_path))
-    assert MODEL_KEY_PATTERN.fullmatch(model_key)
     assert FAMILY_DIR_PATTERN.fullmatch(family_dir)
     assert os.path.normpath(yaml_path) == os.path.normpath(
         f"{ROOT}/models/{family_dir}/{model_key}.yml"
@@ -113,10 +109,8 @@ def test_model_yaml_enum_bijection() -> None:
         assert model.key == model_key
         assert "family" not in metadata
         assert model.family == family_dir
+        # yaml_path is base_dir + rel_path, so rel_path pins the full path
         assert model.rel_path == f"{family_dir}/{model_key}.yml"
-        assert os.path.normpath(model.yaml_path) == os.path.normpath(
-            f"{ROOT}/models/{family_dir}/{model_key}.yml"
-        )
 
 
 @pytest.mark.parametrize(

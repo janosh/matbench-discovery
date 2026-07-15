@@ -390,22 +390,15 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
         section = self.metrics.get(metrics_key)
         if not isinstance(section, dict):
+            section = {}
+        if nested_key is not None:
+            section = section.get(nested_key) or {}
+        pred_file = section.get("pred_file")
+        if not (rel_path := file_ref_name(pred_file)):
             if required:
                 raise ValueError(
                     f"metrics.{metrics_key}.pred_file not found in {self.rel_path!r}"
                 )
-            return None
-        if nested_key is not None:
-            section = section.get(nested_key) or {}
-        field = (
-            f"metrics.{metrics_key}.{nested_key}.pred_file"
-            if nested_key
-            else f"metrics.{metrics_key}.pred_file"
-        )
-        pred_file = section.get("pred_file")
-        if not (rel_path := file_ref_name(pred_file)):
-            if required:
-                raise ValueError(f"{field} not found in {self.rel_path!r}")
             return None
         abs_path = f"{ROOT}/{rel_path}"
         if file_url := file_ref_url(pred_file):

@@ -26,8 +26,7 @@
     title_style?: string
   } = $props()
 
-  let { model_name, model_key, model_params } = $derived(model)
-  let training_sets = $derived(model.training_sets)
+  let { model_name, model_key, model_params, training_sets } = $derived(model)
   let env_packages = $derived(
     (model.environment?.dependencies ?? []).map(parse_dependency_spec),
   )

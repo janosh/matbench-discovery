@@ -83,8 +83,7 @@ def analyze_model_symprec(
         exc.add_note(f"{model.label=} {ml_relaxed_structs_path=}")
         raise
 
-    required_columns = {"material_id", "structure"}
-    if missing_columns := required_columns - set(df_ml_structs):
+    if missing_columns := {"material_id", "structure"} - set(df_ml_structs):
         raise ValueError(
             f"Missing canonical geo-opt columns {sorted(missing_columns)} in "
             f"{ml_relaxed_structs_path}"

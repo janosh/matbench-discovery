@@ -46,7 +46,6 @@ from matbench_discovery.data import (
     artifact_date_from_prefix,
     artifact_filename,
     make_file_ref,
-    parse_artifact_filename,
     update_yaml_file,
 )
 from matbench_discovery.discovery import (
@@ -193,20 +192,7 @@ def _repo_relative_path(path: str) -> str:
 
 def _artifact_yaml_data(path: str) -> dict[str, Any]:
     """Build a nested pred_file reference for discovery/geo-opt YAML updates."""
-    relative_path = _repo_relative_path(path)
-    try:
-        parse_artifact_filename(relative_path)
-    except ValueError:
-        pass  # allow non-canonical temp paths during local smoke runs
-    return {"pred_file": make_file_ref(relative_path)}
-
-
-_LEGACY_ARTIFACT_KEYS = (
-    "pred_file_url",
-    "pred_file_artifact",
-    "pred_col",
-    "struct_col",
-)
+    return {"pred_file": make_file_ref(_repo_relative_path(path))}
 
 
 def _clear_legacy_and_update(
@@ -217,7 +203,8 @@ def _clear_legacy_and_update(
     Cost provenance is cleared before the merge so omitted fields (e.g. missing
     max_gpu_mem_gb) cannot linger from a prior YAML write.
     """
-    for key in (*_LEGACY_ARTIFACT_KEYS, *COST_PROVENANCE_KEYS):
+    legacy_keys = ("pred_file_url", "pred_file_artifact", "pred_col", "struct_col")
+    for key in (*legacy_keys, *COST_PROVENANCE_KEYS):
         section.pop(key, None)
     section.update(updates)
     return section

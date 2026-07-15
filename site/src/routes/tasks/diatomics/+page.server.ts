@@ -27,10 +27,9 @@ const to_page_curves = (curves: DiatomicsCurves): PageDiatomicsCurves => ({
 })
 
 export const load: PageServerLoad = async () => {
-  const diatomic_models = ACTIVE_MODELS.filter((model) => {
-    const pred_file = model.metrics?.diatomics?.pred_file
-    return typeof pred_file?.name === `string` && pred_file.name.length > 0
-  }).toSorted(by_benchmark_added_desc)
+  const diatomic_models = ACTIVE_MODELS.filter((model) =>
+    Boolean(model.metrics?.diatomics?.pred_file?.name),
+  ).toSorted(by_benchmark_added_desc)
 
   // Fetch data for all models at build time. Return only the homonuclear
   // energies used by the page; forces and heteronuclear curves are large and unused.

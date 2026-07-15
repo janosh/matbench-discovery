@@ -490,12 +490,9 @@ def write_metrics_to_yaml(
         url = pred_file_url if isinstance(pred_file_url, str) else None
         size = md5 = None
         if pred_name == existing_name and isinstance(existing_pred_file, dict):
-            size_val, md5_val = (
-                existing_pred_file.get("size"),
-                existing_pred_file.get("md5"),
-            )
-            if isinstance(size_val, int) and isinstance(md5_val, str):
-                size, md5 = size_val, md5_val
+            size, md5 = existing_pred_file.get("size"), existing_pred_file.get("md5")
+            if not (isinstance(size, int) and isinstance(md5, str)):
+                size = md5 = None
         block["pred_file"] = make_file_ref(pred_name, url=url, size=size, md5=md5)
 
     run_metadata_keys = (

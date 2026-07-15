@@ -7,10 +7,8 @@ const PKG = `([A-Za-z0-9][A-Za-z0-9._-]*(?:\\[[^\\]]+\\])?)`
 const AT_SPEC = new RegExp(`^${PKG}\\s*@\\s*(.+)$`)
 const PIN_SPEC = new RegExp(`^${PKG}\\s*(==|>=|<=|!=|~=|<|>)\\s*(.+)$`)
 
-const pypi_href = (name: string, version?: string): string =>
-  `https://pypi.org/project/${name.replace(/\[[^\]]*\]$/, ``)}${
-    version ? `/${version}` : `/`
-  }`
+const pypi_href = (name: string, version = ``): string =>
+  `https://pypi.org/project/${name.replace(/\[[^\]]*\]$/, ``)}/${version}`
 
 export function parse_dependency_spec(dep: string): ParsedDependency {
   const trimmed = dep.trim()
@@ -18,11 +16,8 @@ export function parse_dependency_spec(dep: string): ParsedDependency {
   if (at_match) {
     const name = at_match[1]
     const locator = at_match[2].trim()
-    const href = locator.startsWith(`http`)
-      ? locator
-      : locator.startsWith(`git+http`)
-        ? locator.slice(4) // drop leading "git+"
-        : pypi_href(name)
+    const url = locator.replace(/^git\+/, ``) // "git+https://..." -> "https://..."
+    const href = url.startsWith(`http`) ? url : pypi_href(name)
     return { name, detail: locator, href }
   }
   const pin_match = PIN_SPEC.exec(trimmed)

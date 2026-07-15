@@ -105,12 +105,8 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
     const f1 = model.metrics?.discovery?.unique_prototypes?.F1
     // use symprec=1e-2 to match the RMSD column path declared in ALL_METRICS.RMSD,
     // so the displayed RMSD is the same value that feeds into CPS
-    const rmsd = model.metrics?.geo_opt
-      ? model.metrics.geo_opt[`symprec=1e-2`]?.rmsd
-      : undefined
-    const kappa = model.metrics?.phonons
-      ? model.metrics.phonons.kappa_103?.κ_SRME
-      : undefined
+    const rmsd = model.metrics?.geo_opt?.[`symprec=1e-2`]?.rmsd
+    const kappa = model.metrics?.phonons?.kappa_103?.κ_SRME
 
     // Calculate and update CPS
     model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? Number.NaN
@@ -146,14 +142,8 @@ export function get_pred_file_urls(model: ModelData) {
     if (!obj || typeof obj !== `object`) return
 
     for (const [key, val] of Object.entries(obj)) {
-      if (
-        key === `pred_file` &&
-        val &&
-        typeof val === `object` &&
-        typeof (val as { url?: unknown }).url === `string`
-      ) {
-        const pretty_label = get_label_for_key_path(parent_key)
-        files.push({ name: pretty_label, url: (val as { url: string }).url })
+      if (key === `pred_file` && typeof val?.url === `string`) {
+        files.push({ name: get_label_for_key_path(parent_key), url: val.url })
       } else if (typeof val === `object`) {
         find_pred_files(val, key)
       }

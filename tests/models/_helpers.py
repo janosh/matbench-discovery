@@ -12,7 +12,6 @@ from jsonschema import Draft7Validator
 
 from matbench_discovery import ROOT
 
-MODEL_KEY_PATTERN = re.compile(r"[a-z0-9]+(?:[.-][a-z0-9]+)*")
 FAMILY_DIR_PATTERN = re.compile(r"[a-z0-9]+(?:_[a-z0-9]+)*")
 
 
@@ -55,11 +54,12 @@ def validate_against_schema(
     raise AssertionError(f"Schema validation failed for {label}:\n{messages}")
 
 
-def validate_model_yaml(yaml_path: str) -> None:
-    """Validate one model YAML file against tests/model-schema.yml."""
+def validate_model_yaml(yaml_path: str) -> dict[str, Any]:
+    """Validate a model YAML against tests/model-schema.yml, returning its metadata."""
     with open(yaml_path, encoding="utf-8") as file:
         metadata = yaml.safe_load(file)
     validate_against_schema(metadata, load_model_schema(), yaml_path)
+    return metadata
 
 
 def enum_values_from_schema(schema: dict[str, Any], property_name: str) -> set[str]:

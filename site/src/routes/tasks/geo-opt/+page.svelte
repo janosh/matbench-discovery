@@ -123,10 +123,9 @@
   ])
 
   const n_min_relaxed_structures =
-    min(ACTIVE_MODELS, ({ metrics }) =>
-      typeof metrics?.geo_opt === `string`
-        ? undefined
-        : metrics?.geo_opt?.[`symprec=1e-2`]?.n_structures,
+    min(
+      ACTIVE_MODELS,
+      ({ metrics }) => metrics?.geo_opt?.[`symprec=1e-2`]?.n_structures,
     ) ?? Infinity
 </script>
 

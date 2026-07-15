@@ -26,21 +26,10 @@ export const targets_tooltips: Record<TargetType, string> = {
 } as const
 
 // Derive display role from targets: energy-only vs force-capable MLIP.
-export function model_role_from_targets(targets: TargetType): {
-  label: string
-  title: string
-} {
-  if (targets === `E`) {
-    return {
-      label: `Energy predictor`,
-      title: `Structure-to-energy predictor (no forces)`,
-    }
-  }
-  return {
-    label: `Interatomic potential`,
-    title: `Force-capable interatomic potential`,
-  }
-}
+export const model_role_from_targets = (targets: TargetType) =>
+  targets === `E`
+    ? { label: `Energy predictor`, title: `Structure-to-energy predictor (no forces)` }
+    : { label: `Interatomic potential`, title: `Force-capable interatomic potential` }
 
 export const openness_tooltips: Record<ModelMetadata[`openness`], string> = {
   OSOD: `Open source, open data`,

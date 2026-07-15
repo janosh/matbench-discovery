@@ -34,8 +34,7 @@ def resolve_metrics(
     if per_system_dfs:  # parallel runs: concat per-system rows into one CSV
         df_md = md_metrics.combine_per_system_metrics(per_system_dfs)
         model_dir = os.path.splitext(model.rel_path)[0]
-        artifact_name = artifact_filename(today, "md_metrics")
-        pred_file = f"models/{model_dir}/{artifact_name}"
+        pred_file = f"models/{model_dir}/{artifact_filename(today, 'md_metrics')}"
         return df_md, pred_file, None, True
 
     md_path = model.md_path  # getter may download the file
