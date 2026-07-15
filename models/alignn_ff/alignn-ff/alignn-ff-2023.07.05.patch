@@ -32,15 +32,14 @@ index 2dc916f..a569184 100644
          logfile="alignn_ff.log",
          dyn=None,
          communicator=None,
-+        device="cuda" if torch.cuda.is_available() else "cpu",
++        device=None,
      ):
          """Initialize class."""
          self.jarvis_atoms = jarvis_atoms
-@@ -225,12 +225,13 @@ class ForceField(object):
+@@ -225,12 +225,12 @@ class ForceField(object):
          # print ('STRUCTURE PROVIDED:')
          # print (ase_to_atoms(self.atoms))
          # print ()
-+        import torch
          self.atoms.set_calculator(
              AlignnAtomwiseCalculator(
                  path=self.model_path,
@@ -51,15 +50,7 @@ index 2dc916f..a569184 100644
              )
          )
 
-@@ -238,6 +239,7 @@ class ForceField(object):
-         """Print info."""
-         if isinstance(self.atoms, ExpCellFilter):
-             self.atoms = self.atoms.atoms
-+        return
-         line = ""
-         try:
-             line = f"time={self.dyn.get_time() / units.fs: 5.0f} fs "
-@@ -297,9 +299,9 @@ class ForceField(object):
+@@ -297,9 +297,9 @@ class ForceField(object):
              raise ValueError("Check optimizer", optimizer)
          if optimize_lattice:
              self.atoms = ExpCellFilter(self.atoms)

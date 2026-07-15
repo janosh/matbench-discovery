@@ -1,0 +1,207 @@
+model_name: EquiformerV3+DeNS-OAM
+model_key: equiformer-v3-oam
+model_version: v2026.04.07
+dates:
+  benchmark_added: '2026-04-07'
+  paper_published: '2026-04-07'
+lifecycle: active
+authors:
+- name: Yi-Lun Liao
+  affiliation: Massachusetts Institute of Technology
+  email: ylliao@mit.edu
+  github: https://github.com/yilunliao
+  corresponding: true
+- name: Alexander J. Hoffman
+  affiliation: Mirror Physics
+- name: Sabrina C. Shen
+  affiliation: Mirror Physics
+- name: Sam Walton Norwood
+  affiliation: Mirror Physics
+  email: sam@mirrorphysics.com
+  corresponding: true
+- name: Tess Smidt
+  affiliation: Massachusetts Institute of Technology
+  email: tsmidt@mit.edu
+  url: https://blondegeek.github.io/
+  orcid: https://orcid.org/0000-0001-5581-5344
+  corresponding: true
+
+
+trained_by:
+- name: Yi-Lun Liao
+  affiliation: Massachusetts Institute of Technology
+  email: ylliao@mit.edu
+
+
+repo: https://github.com/atomicarchitects/equiformer_v3
+doi: https://doi.org/10.48550/arXiv.2604.09130
+paper: https://arxiv.org/abs/2604.09130
+docs: https://github.com/atomicarchitects/equiformer_v3
+pr_url: https://github.com/janosh/matbench-discovery/pull/320
+checkpoint_url: https://github.com/atomicarchitects/equiformer_v3
+license:
+  code: MIT
+  code_url: https://github.com/atomicarchitects/equiformer_v3
+  checkpoint: MIT
+  checkpoint_url: https://github.com/atomicarchitects/equiformer_v3
+
+
+environment:
+  dependencies:
+  - 'fairchem-core[torch-extras]==1.10.0'
+  - torch==2.4.0
+  - numpy<2
+  - scipy<1.15
+  - ase==3.25.0
+  - ase-db-backends==0.10.0
+  - e3nn==0.5.6
+  - tqdm==4.67.1
+  - wandb==0.21.0
+  - pyyaml==6.0.2
+  python_version: '3.12'
+  find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
+openness: OSOD
+architecture_types: [transformer]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj, OMat24, sAlex]
+model_params: 30333409
+training_cost:
+  entries:
+  - hardware: NVIDIA H100
+    count: 32
+    hours_per_device: 177.3125
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      save_forces: true
+  architecture:
+    graph_construction_radius: 6.0
+  upstream_config:
+    num_blocks: 7
+    lmax: 4
+    mmax: 2
+    embedding_dimension: 128
+    attention_value_hidden_size: 32
+    num_attention_heads: 8
+    attention_alpha_hidden_size: 64
+    attention_value_size_per_head: 16
+    ffn_hidden_size_after_swiglu_s2_activation: 512
+    grid_resolution_attention: (14, 8)
+    grid_resolution_ffn: (14, 14)
+    DeNS_probability: 0.5
+    DeNS_coefficient: 1
+    DeNS_noise_std: 0.025
+    DeNS_corruption_ratio: 0.5
+    DeNS_max_force_norm: 2.5
+notes:
+  description: EquiformerV3 is the third generation of SE(3)-equivariant graph attention Transformers. Please refer to our paper for more details.
+
+
+metrics:
+  discovery:
+    pred_file:
+      name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-discovery.csv.gz
+      url: https://figshare.com/files/66646220
+      size: 1654051
+      md5: 3df9f3ce50957dfc349c678fa4926616
+    full_test_set:
+      F1: 0.912  # fraction
+      DAF: 5.298 # dimensionless
+      Precision: 0.909 # fraction
+      Recall: 0.916 # fraction
+      Accuracy: 0.97 # fraction
+      TPR: 0.916 # fraction
+      FPR: 0.019 # fraction
+      TNR: 0.981 # fraction
+      FNR: 0.084 # fraction
+      TP: 40369 # count
+      FP: 4035 # count
+      TN: 208836 # count
+      FN: 3723 # count
+      MAE: 0.017 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.862 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.931  # fraction
+      DAF: 6.074 # dimensionless
+      Precision: 0.928 # fraction
+      Recall: 0.933 # fraction
+      Accuracy: 0.978 # fraction
+      TPR: 0.933 # fraction
+      FPR: 0.013 # fraction
+      TNR: 0.987 # fraction
+      FNR: 0.067 # fraction
+      TP: 31139 # count
+      FP: 2398 # count
+      TN: 179716 # count
+      FN: 2235 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.868 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.986  # fraction
+      DAF: 6.357 # dimensionless
+      Precision: 0.972 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.972 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9718 # count
+      FP: 282 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.015 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.902 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt.jsonl.gz
+      url: https://figshare.com/files/63518865
+      size: 110210090
+      md5: 84e9c30ff3e15892cf57da5e425ad381
+    symprec=1e-5:
+      rmsd: 0.0595
+      n_sym_ops_mae: 4.0648
+      symmetry_decrease: 0.4554
+      symmetry_match: 0.3711
+      symmetry_increase: 0.1299
+      n_structures: 256963
+      analysis_file:
+        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
+        url: https://figshare.com/files/63520848
+        size: 8561122
+        md5: d3f224dfd4b059a4ed8937acb6dfaf66
+    symprec=1e-2:
+      rmsd: 0.0595
+      n_sym_ops_mae: 1.9824
+      symmetry_decrease: 0.129
+      symmetry_match: 0.7424
+      symmetry_increase: 0.1137
+      n_structures: 256963
+      analysis_file:
+        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
+        url: https://figshare.com/files/63520845
+        size: 9125520
+        md5: 060d2294e62bb5306c86270559ca2dd4
+  phonons:
+    kappa_103:
+      pred_file:
+        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/63518859
+        size: 8209780
+        md5: 09000ce85c76cf49e6167d1edeffd829
+      κ_SRME: 0.1178
+      κ_SRE: 0.0495

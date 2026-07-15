@@ -28,7 +28,7 @@
   },
   {
     "name": "eqV2 S DeNS",
-    "model_key": "eqV2-s-dens-mp",
+    "model_key": "eqv2-s-dens-mp",
     "repo": "FAIR-Chem/fairchem",
     "stars": 1928,
     "forks": 425,
@@ -46,7 +46,7 @@
   },
   {
     "name": "Nequip",
-    "model_key": "nequip-OAM-L-0.1",
+    "model_key": "nequip-oam-l-0.1",
     "repo": "mir-group/nequip",
     "stars": 857,
     "forks": 198,
@@ -91,7 +91,7 @@
   },
   {
     "name": "MatterSim v1 5M",
-    "model_key": "mattersim-v1-5M",
+    "model_key": "mattersim-v1-5m",
     "repo": "microsoft/mattersim",
     "stars": 509,
     "forks": 73,
@@ -181,7 +181,7 @@
   },
   {
     "name": "EquFlash",
-    "model_key": "equflash-29M-oam",
+    "model_key": "equflash-29m-oam",
     "repo": "SNU-ARC/flashTP",
     "stars": 34,
     "forks": 1,
@@ -199,7 +199,7 @@
   },
   {
     "name": "CGCNN+P",
-    "model_key": "cgcnn+p",
+    "model_key": "cgcnn-p",
     "repo": "JasonGibsonUfl/Augmented_CGCNN",
     "stars": 9,
     "forks": 0,
@@ -217,7 +217,7 @@
   },
   {
     "name": "Allegro",
-    "model_key": "allegro-OAM-L-0.1",
+    "model_key": "allegro-oam-l-0.1",
     "repo": "mir-group/allegro",
     "stars": 438,
     "forks": 68,

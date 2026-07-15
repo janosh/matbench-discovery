@@ -226,26 +226,50 @@ def list_article_files(article_id: int) -> list[dict[str, Any]]:
     Raises:
         requests.HTTPError: If the request fails for any reason other than 404.
     """
-    try:
-        files = make_request("GET", f"{BASE_URL}/account/articles/{article_id}/files")
-    except requests.HTTPError as exc:
-        if exc.response is not None and exc.response.status_code == 404:
-            return []
-        raise
-    if not isinstance(files, list):
-        raise TypeError(f"expected list of file dicts, got {type(files).__name__}")
-    return files
+    page_size = 1000
+    files: list[dict[str, Any]] = []
+    page = 1
+    while True:
+        try:
+            page_files = make_request(
+                "GET",
+                f"{BASE_URL}/account/articles/{article_id}/files"
+                f"?page_size={page_size}&page={page}",
+            )
+        except requests.HTTPError as exc:
+            if (
+                not files
+                and exc.response is not None
+                and exc.response.status_code == 404
+            ):
+                return []
+            raise
+        if not isinstance(page_files, list):
+            raise TypeError(
+                f"expected list of file dicts, got {type(page_files).__name__}"
+            )
+        files.extend(page_files)
+        if len(page_files) < page_size:
+            return files
+        page += 1
 
 
 def get_existing_files(article_id: int) -> dict[str, dict[str, Any]]:
     """Get a mapping of filenames to dict with file details (usually id and md5 hash)
     for files already in the article.
     """
-    return {file.pop("name"): file for file in list_article_files(article_id)}
+    return {
+        file["name"]: {key: value for key, value in file.items() if key != "name"}
+        for file in list_article_files(article_id)
+    }
 
 
 def file_exists_with_same_hash(
-    article_id: int, file_name: str, file_hash: str
+    article_id: int,
+    file_name: str,
+    file_hash: str,
+    *,
+    existing_files: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[bool, int | None]:
     """Check if a file with the same name and hash already exists in the article.
 
@@ -253,17 +277,18 @@ def file_exists_with_same_hash(
         article_id (int): ID of the article to check.
         file_name (str): Name of the file to check.
         file_hash (str): MD5 hash of the file to check.
+        existing_files: Optional cached article inventory.
 
     Returns:
         tuple[bool, int | None]: A tuple containing:
             - bool: True if a file with the same name and hash exists, False otherwise.
             - int | None: The file ID if it exists, None otherwise.
     """
-    existing_files = get_existing_files(article_id)
-    if file_name in existing_files:
-        existing_file = existing_files[file_name]
-        if existing_file.get("computed_md5") == file_hash:
-            return True, existing_file.get("id")
+    if existing_files is None:
+        existing_files = get_existing_files(article_id)
+    existing_file = existing_files.get(file_name, {})
+    if existing_file.get("computed_md5") == file_hash:
+        return True, existing_file.get("id")
     return False, None
 
 
@@ -356,6 +381,8 @@ def upload_file_if_needed(
     file_name: str = "",
     *,
     force_reupload: bool = False,
+    existing_files: dict[str, dict[str, Any]] | None = None,
+    file_hash: str | None = None,
 ) -> tuple[int, bool]:
     """Upload a file to Figshare if it doesn't already exist with the same hash.
 
@@ -366,6 +393,8 @@ def upload_file_if_needed(
             file path relative to repo's root dir (as a POSIX path).
         force_reupload (bool, optional): If True, delete and reupload the file even if
             it already exists with the same hash. Defaults to False.
+        existing_files: Optional cached article inventory.
+        file_hash: Optional precomputed MD5 hash.
 
     Returns:
         tuple[int, bool]: A tuple containing:
@@ -373,27 +402,26 @@ def upload_file_if_needed(
             - bool: True if the file was uploaded, False if it already existed.
     """
     file_name = file_name or _repo_relative_name(file_path)
-    file_hash, _ = get_file_hash_and_size(file_path)
+    if file_hash is None:
+        file_hash, _ = get_file_hash_and_size(file_path)
 
     # Check if file already exists with same hash
-    exists, file_id = file_exists_with_same_hash(article_id, file_name, file_hash)
+    exists, file_id = file_exists_with_same_hash(
+        article_id, file_name, file_hash, existing_files=existing_files
+    )
 
     if exists and file_id is not None:
-        if force_reupload:
-            print(
-                f"{file_name=} exists but force_reupload=True, deleting and reuploading"
-            )
-            if delete_file(article_id, file_id):
-                # Upload the file after successful deletion
-                file_id = upload_file(article_id, file_path, file_name)
-                return file_id, True
+        if not force_reupload:
+            print(f"File {file_name} already exists with same hash, skipping upload")
+            return file_id, False
+        print(f"{file_name=} exists but force_reupload=True, deleting and reuploading")
+        if not delete_file(article_id, file_id):
             print(f"Failed to delete existing file {file_name}, skipping upload")
             return file_id, False
-        print(f"File {file_name} already exists with same hash, skipping upload")
-        return file_id, False
 
-    # Upload the file
     file_id = upload_file(article_id, file_path, file_name)
+    if existing_files is not None:
+        existing_files[file_name] = {"id": file_id, "computed_md5": file_hash}
     return file_id, True
 
 

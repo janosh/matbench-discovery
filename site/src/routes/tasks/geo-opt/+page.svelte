@@ -2,7 +2,7 @@
   import spg_sankeys from '$figs/spg-sankeys.jsonl'
   import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
   import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
-  import { GeoOptMetricsTable, ModelSelect, MODELS } from '$lib'
+  import { GeoOptMetricsTable, ModelSelect, ACTIVE_MODELS } from '$lib'
   import { order_models } from '$lib/fig-helpers'
   import {
     ALL_METRICS,
@@ -11,7 +11,6 @@
     scatter_axis_label,
     scatter_options_by_key,
   } from '$lib/labels'
-  import { has_geo_opt_metrics } from '$lib/metrics'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
   import { make_table_filters } from '$lib/models.svelte'
   import { DynamicScatter } from '$lib/plot'
@@ -39,9 +38,9 @@
     column: ALL_METRICS.RMSD.key,
     dir: `asc`,
   }
-  const model_by_key = new Map(MODELS.map((model) => [model.model_key, model]))
+  const model_by_key = new Map(ACTIVE_MODELS.map((model) => [model.model_key, model]))
   const model_key_by_label = new Map(
-    MODELS.map((model) => [model.model_name, model.model_key]),
+    ACTIVE_MODELS.map((model) => [model.model_name, model.model_key]),
   )
   const plot_label_by_key = new Map([
     ...struct_rmsd_cdf.models.map(
@@ -59,12 +58,12 @@
     return selectable_model_keys.has(model_key) ? model_key : undefined
   }
 
-  const date_added_ms = (key: string): number =>
-    Date.parse(model_by_key.get(key)?.date_added ?? ``) || 0
+  const benchmark_added_ms = (key: string): number =>
+    Date.parse(model_by_key.get(key)?.dates.benchmark_added ?? ``) || 0
 
-  // newest models first; plot-only models without a date_added sort last
+  // newest models first; plot-only models without a benchmark date sort last
   const selectable_options = [...plot_label_by_key]
-    .toSorted(([key_1], [key_2]) => date_added_ms(key_2) - date_added_ms(key_1))
+    .toSorted(([key_1], [key_2]) => benchmark_added_ms(key_2) - benchmark_added_ms(key_1))
     .map(([key, label]) => {
       const model_color = model_by_key.get(key)?.color ?? `gray`
       const text_color = pick_contrast_color({ bg_color: model_color })
@@ -123,10 +122,9 @@
   ])
 
   const n_min_relaxed_structures =
-    min(MODELS, ({ metrics }) =>
-      typeof metrics?.geo_opt === `string`
-        ? undefined
-        : metrics?.geo_opt?.[`symprec=1e-2`]?.n_structures,
+    min(
+      ACTIVE_MODELS,
+      ({ metrics }) => metrics?.geo_opt?.[`symprec=1e-2`]?.n_structures,
     ) ?? Infinity
 </script>
 
@@ -149,8 +147,8 @@
       size defaults to model parameters and color to training-set size.
     </p>
     <DynamicScatter
-      models={MODELS}
-      model_filter={has_geo_opt_metrics}
+      models={ACTIVE_MODELS}
+      model_filter={(model) => model.metrics?.geo_opt != null}
       bind:x_key={scatter_x}
       bind:y_key={scatter_y}
       color_key={METADATA_COLS.n_training_materials.key}

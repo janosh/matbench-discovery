@@ -108,7 +108,7 @@ export const METADATA_COLS: MetadataLabels = {
     sortable: true,
     better: undefined,
   },
-  training_set: {
+  training_sets: {
     key: `Training Set`,
     label: `Training Set`,
     description: `Size of and link to model training set`,
@@ -118,11 +118,12 @@ export const METADATA_COLS: MetadataLabels = {
     label: `Targets`,
     description: `Target property used to train the model`,
   },
-  date_added: {
-    key: `date_added`,
+  benchmark_added: {
+    key: `benchmark_added`,
     label: `Date Added`,
+    path: `dates`,
     format: `%b %y`,
-    description: `Submission date to the leaderboard`,
+    description: `Date the model was included on the benchmark leaderboard`,
   },
   links: {
     key: `Links`,
@@ -183,68 +184,67 @@ export const HYPERPARAMS: HyperparamLabels = {
   graph_construction_radius: {
     key: `graph_construction_radius`,
     label: `r<sub>cut</sub>`,
-    path: `hyperparams`,
+    path: `hyperparams.architecture`,
     description: `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
   },
   max_force: {
     key: `max_force`,
     label: `f<sub>max</sub>`,
-    path: `hyperparams`,
+    path: `hyperparams.evaluation`,
     description: `Max remaining force allowed on any atom in the structure for geometry optimization convergence`,
     unit: `eV/Å`,
   },
   max_steps: {
     key: `max_steps`,
     label: `Steps`,
-    path: `hyperparams`,
+    path: `hyperparams.evaluation`,
     description: `Maximum number of optimization steps allowed`,
   },
   ase_optimizer: {
     key: `Optimizer`,
     label: `Optimizer`,
-    path: `hyperparams`,
+    path: `hyperparams.evaluation`,
     description: `ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)`,
   },
   cell_filter: {
     key: `Cell filter`,
     label: `Cell filter`,
-    path: `hyperparams`,
+    path: `hyperparams.evaluation`,
     description: `ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)`,
   },
   batch_size: {
     key: `batch_size`,
     label: `Batch size`,
-    path: `hyperparams`,
+    path: `hyperparams.training`,
     description: `Batch size`,
   },
   epochs: {
     key: `epochs`,
     label: `Epochs`,
-    path: `hyperparams`,
+    path: `hyperparams.training`,
     description: `Number of training epochs`,
   },
   n_layers: {
     key: `n_layers`,
     label: `Layers`,
-    path: `hyperparams`,
+    path: `hyperparams.architecture`,
     description: `Number of (usually message passing) layers`,
   },
   learning_rate: {
     key: `LR`,
     label: `LR`,
-    path: `hyperparams`,
+    path: `hyperparams.training`,
     description: `Learning rate`,
   },
   max_neighbors: {
     key: `Max neighbors`,
     label: `Max neighbors`,
-    path: `hyperparams`,
+    path: `hyperparams.architecture`,
     description: `Maximum number of neighbors during graph construction`,
   },
   n_estimators: {
-    key: `Estimators`,
+    key: `n_estimators`,
     label: `Estimators`,
-    path: `hyperparams`,
     description: `Number of estimators`,
   },
 } as const
@@ -753,7 +753,7 @@ const time_multiplier_keys = new Set([
 export const scatter_options = [
   ...Object.values(ALL_METRICS).filter((metric) => !time_multiplier_keys.has(metric.key)),
   HYPERPARAMS.model_params,
-  METADATA_COLS.date_added,
+  METADATA_COLS.benchmark_added,
   METADATA_COLS.n_training_materials,
   METADATA_COLS.n_training_structures,
   HYPERPARAMS.graph_construction_radius,
@@ -807,7 +807,7 @@ const CATEGORY_LABELS = Object.fromEntries(
     ([key, task]) => [key, task.label],
   ),
 )
-// Add explicit mapping for hyperparams to show as "Hyperparams"
+// Add explicit mapping for hyperparams.
 CATEGORY_LABELS.hyperparams = `Hyperparams`
 
 const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)

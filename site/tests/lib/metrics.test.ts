@@ -22,10 +22,6 @@ describe(`targets_tooltips`, () => {
   ])(`contains tooltip for %s target type`, (target, expected) => {
     expect(targets_tooltips[target as TargetType]).toBe(expected)
   })
-
-  it(`contains all expected tooltip keys`, () => {
-    expect(Object.keys(targets_tooltips)).toHaveLength(8)
-  })
 })
 
 describe(`metric_better_as`, () => {
@@ -166,7 +162,7 @@ describe(`format_train_set`, () => {
 describe(`assemble_row_data`, () => {
   const test_model_keys = [`mace-mp-0`, `chgnet-0.3.0`]
   const model_filter = (model: ModelData): boolean =>
-    test_model_keys.includes(model.model_key ?? ``)
+    test_model_keys.includes(model.model_key)
   const get_test_rows = () => assemble_row_data(`unique_prototypes`, model_filter)
   const tece_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
   if (!tece_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
@@ -220,7 +216,7 @@ describe(`assemble_row_data`, () => {
     ({ task, multiplier_key }) => {
       const rows = assemble_row_data(
         `unique_prototypes`,
-        (model) => model.model_key?.startsWith(`${task}-time-`) ?? false,
+        (model) => model.model_key.startsWith(`${task}-time-`),
         () => true,
         Object.entries({
           Fast: 10,
@@ -350,7 +346,6 @@ describe(`Model Sorting Logic`, () => {
         metrics: {
           discovery: {
             unique_prototypes: { F1: 0.9, Accuracy: 0.85, missing_preds: 0 },
-            pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.9 } },
         },
@@ -361,7 +356,6 @@ describe(`Model Sorting Logic`, () => {
         metrics: {
           discovery: {
             unique_prototypes: { F1: 0.7, Accuracy: NaN, missing_preds: 2 }, // NaN Accuracy + non-zero missing_preds
-            pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.5 } },
         },
@@ -372,7 +366,6 @@ describe(`Model Sorting Logic`, () => {
         metrics: {
           discovery: {
             unique_prototypes: { F1: 0.5, Accuracy: 0.6, missing_preds: 5 },
-            pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.2 } },
         },

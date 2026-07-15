@@ -1,0 +1,242 @@
+model_name: Allegro-OAM-L
+model_key: allegro-oam-l-0.1
+model_version: '0.1'
+dates:
+  benchmark_added: '2025-09-08'
+  paper_published: '2025-08-28'
+lifecycle: active
+authors:
+- name: Seán R. Kavanagh
+  affiliation: Center for the Environment, Harvard University & MIR Group, Harvard University
+  email: skavanagh@seas.harvard.edu
+  orcid: https://orcid.org/0000-0003-4577-9647
+  url: https://seankavanagh.com
+  corresponding: true
+- name: Chuin Wei Tan
+  affiliation: MIR Group, Harvard University
+- name: Albert Musaelian
+  affiliation: MIR Group, Harvard University & Mirian Technologies
+- name: William C. Witt
+  affiliation: MIR Group, Harvard University
+- name: Gabriel de Miranda Nascimento
+  affiliation: MIR Group, Harvard University & MIT
+- name: Ulrik Unneberg
+  affiliation: MIR Group, Harvard University & MIT
+- name: Marc L. Descoteaux
+  affiliation: MIR Group, Harvard University
+- name: Boris Kozinsky
+  affiliation: MIR Group, Harvard University
+trained_by:
+- name: Seán R. Kavanagh
+  affiliation: Center for the Environment, Harvard University & MIR Group, Harvard University
+  email: skavanagh@seas.harvard.edu
+  orcid: https://orcid.org/0000-0003-4577-9647
+  url: https://seankavanagh.com
+  corresponding: true
+
+repo: https://github.com/mir-group/allegro
+doi: https://doi.org/10.5281/zenodo.16980200
+paper: https://arxiv.org/abs/2504.16068
+docs: https://allegro.readthedocs.io/en/latest/
+pr_url: https://github.com/janosh/matbench-discovery/pull/282
+checkpoint_url: https://www.nequip.net/models/mir-group/Allegro-OAM-L:0.1
+license:
+  code: MIT
+  code_url: https://github.com/mir-group/nequip/blob/main/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+environment:
+  dependencies: ['nequip>=0.14', 'allegro>=0.7.1', 'torch<2.10']
+  python_version: '3.12'
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj, OMat24, sAlex]
+size: L
+model_params: 9700000
+training_cost:
+  entries:
+  - hardware: NVIDIA H100
+    count: 12
+    hours_per_device: 100.0
+hyperparams:
+  evaluation:
+    max_force: 0.05
+    max_steps: 500
+    ase_optimizer: GOQN
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.05
+      save_forces: true
+  architecture:
+    graph_construction_radius: 7.0
+    n_layers: 4
+  training:
+    batch_size: 480
+    initial_learning_rate: 0.005
+    epochs: 15
+    optimizer: AdamW
+  upstream_config:
+    weight_decay: 1e-8
+    sph_harmonics_l_max: 3
+    n_features: 64
+    parity: false
+    zbl_potential: false
+    allegro_mlp_depth: 2
+    allegro_mlp_width: 1024
+    tensor_path_channel_coupling: true
+    polynomial_cutoff: 8
+    n_radial_bessel_basis: 12
+    loss: Huber - delta=0.01 for energy, delta=0.1 for stress, stratified delta (0.01, 0.007, 0.004, 0.001) for force
+    loss_weights:
+      energy: 1.0
+      force: 5.0
+      stress: 0.01
+    gradient_clip_val: 1e-4
+    learning_rate_schedule: ReduceLROnPlateau - factor=0.1, patience=10, min_lr=1e-6
+notes:
+  description: Large Allegro foundation potential; see <https://www.nequip.net/models/mir-group/Allegro-OAM-L:0.1> for details and <https://arxiv.org/abs/2504.16068> for model/training infrastructure.
+  steps: |
+    Training performed by: (1) pre-training on OMat24; (2) fine-tuning on MPtrj+sAlex, with a reduced learning rate (1e-4), energy-loss-upweighting (1:1:0.01 instead of 1:5:0.01) and `StochasticWeightAveraging` (SWA).
+
+metrics:
+  diatomics:
+    pred_file:
+      name: models/allegro/allegro-oam-l-0.1/2026-06-28-diatomics.json.gz
+      url: https://figshare.com/files/66104579
+      size: 263223
+      md5: 412e833e6f847e92e36f2f1b4345c182
+    hardware: NVIDIA H200
+    run_time_sec: 67.67
+    pbe_wall_dist_mae: 0.1462
+    pbe_energy_mae: 0.9207
+    pbe_bond_length_error: 0.1206
+    pbe_well_depth_error: 0.3849
+    pbe_vib_freq_error: 53.18
+    tortuosity: 1.046
+    energy_diff_flips: 1.448
+    energy_jump: 0.08217
+    force_flips: 1.368
+    force_total_variation: 180.7
+    force_jump: 17.83
+    pbe_force_mae: 1.088
+  discovery:
+    pred_file:
+      name: models/allegro/allegro-oam-l-0.1/2025-09-08-discovery.csv.gz
+      url: https://figshare.com/files/66646322
+      size: 1579616
+      md5: 664493f678e878e6e49d6b954dfc16ed
+    full_test_set:
+      F1: 0.873  # fraction
+      DAF: 4.876 # dimensionless
+      Precision: 0.837 # fraction
+      Recall: 0.912 # fraction
+      Accuracy: 0.954 # fraction
+      TPR: 0.912 # fraction
+      FPR: 0.037 # fraction
+      TNR: 0.963 # fraction
+      FNR: 0.088 # fraction
+      TP: 40220 # count
+      FP: 7854 # count
+      TN: 205017 # count
+      FN: 3872 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.861 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.895  # fraction
+      DAF: 5.674 # dimensionless
+      Precision: 0.867 # fraction
+      Recall: 0.923 # fraction
+      Accuracy: 0.966 # fraction
+      TPR: 0.923 # fraction
+      FPR: 0.026 # fraction
+      TNR: 0.974 # fraction
+      FNR: 0.077 # fraction
+      TP: 30817 # count
+      FP: 4709 # count
+      TN: 177405 # count
+      FN: 2557 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.868 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.987  # fraction
+      DAF: 6.371 # dimensionless
+      Precision: 0.974 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.974 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9739 # count
+      FP: 261 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.908 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57731011
+      size: 106344541
+      md5: 1ba8e28bca78ba8736028688a1aaa3b8
+    symprec=1e-2:
+      rmsd: 0.0651
+      n_sym_ops_mae: 1.7418
+      symmetry_decrease: 0.0542
+      symmetry_match: 0.816
+      symmetry_increase: 0.1226
+      n_structures: 256963
+      analysis_file:
+        name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
+        url: https://figshare.com/files/57731044
+        size: 9231246
+        md5: 5b7a3817a90f3f63e6251f0bb6b52131
+    symprec=1e-5:
+      rmsd: 0.0651
+      n_sym_ops_mae: 1.924
+      symmetry_decrease: 0.0753
+      symmetry_match: 0.7163
+      symmetry_increase: 0.2023
+      n_structures: 256963
+      analysis_file:
+        name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
+        url: https://figshare.com/files/57731047
+        size: 9048813
+        md5: 6bd64b6af8c5fe79f78c50a5f67581d2
+  md:
+    pred_file:
+      name: models/allegro/allegro-oam-l-0.1/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048848
+      size: 1575
+      md5: 275b5833af7b3b7ad265b3b0d8c7db69
+    hardware: NVIDIA H200
+    run_time_sec: 228312.52
+    energy_rmse: 0.7413
+    force_rmse: 84.8288
+    rdf_error: 3.7793
+    adf_error: 1.4411
+    vdos_error: 23.2217
+    pressure_mae: 0.7833
+    pressure_wasserstein: 0.8026
+    pressure_error: 47.0803
+    n_systems: 17
+  phonons:
+    kappa_103:
+      pred_file:
+        name: models/allegro/allegro-oam-l-0.1/2025-09-08-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/57576247
+        size: 10783908
+        md5: 55ed67d6efbc6cc459b9b1c1423c4cf8
+      κ_SRME: 0.3186
+      κ_SRE: 0.1433

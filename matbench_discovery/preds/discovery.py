@@ -13,9 +13,7 @@ distance that is positive for thermodynamically unstable materials above the hul
 negative for stable materials below it.
 """
 
-import pandas as pd
-
-from matbench_discovery.cli import cli_args
+from matbench_discovery.cli import complete_models
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
 
@@ -24,21 +22,13 @@ __date__ = "2023-02-04"
 
 
 # load WBM summary dataframe with all models' formation energy predictions (eV/atom)
-models_to_load = tuple(model for model in cli_args.models if model.is_complete)
+models_to_load = tuple(complete_models())
 df_preds = load_df_wbm_with_preds(models=models_to_load).round(3)
 
-# dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
-df_each_pred = pd.DataFrame()
-for model in models_to_load:
-    df_each_pred[model.label] = (
-        df_preds[MbdKey.each_true] + df_preds[model.label] - df_preds[MbdKey.e_form_dft]
-    )
-
-# dataframe of all model prediction errors for energy above convex hull (EACH) (eV/atom)
-df_each_err = pd.DataFrame()
-for model in models_to_load:
-    df_each_err[model.label] = df_preds[model.label] - df_preds[MbdKey.e_form_dft]
-
+model_labels = [model.label for model in models_to_load]
+each_shift = df_preds[MbdKey.each_true] - df_preds[MbdKey.e_form_dft]
+df_each_pred = df_preds[model_labels].add(each_shift, axis=0)
+df_each_err = df_preds[model_labels].sub(df_preds[MbdKey.e_form_dft], axis=0)
 df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
     df_each_err.abs().mean(axis=1)
 )

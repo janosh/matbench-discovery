@@ -4,21 +4,31 @@
 export type ModelMetadata = Record<string, unknown> & {
   model_name: string
   model_key: string
-  model_version: string
-  date_added: string
-  date_published: string
+  /**
+   * Upstream package / checkpoint version label (semver, date, tag, …).
+   */
+  model_version: string | null
+  dates: Dates
+  lifecycle: 'active' | 'superseded' | 'deprecated' | 'aborted'
+  /**
+   * model_key of the newer model replacing this one
+   */
+  superseded_by?: string
   /**
    * @minItems 1
    */
   authors: Record<string, unknown> & [Person, ...Person[]]
   trained_by?: Person[]
-  repo: string
-  doi: string
-  paper: string
-  url?: string
-  pypi?: string
-  pr_url: string
-  checkpoint_url: string | 'missing'
+  repo: NullableHttpUrl
+  doi: NullableHttpUrl
+  paper: NullableHttpUrl
+  /**
+   * Model documentation / homepage URL (not the code repo).
+   */
+  docs?: HttpUrl | null
+  pypi?: NullableHttpUrl
+  pr_url: NullableHttpUrl
+  checkpoint_url: NullableHttpUrl
   license: {
     /**
      * License for the model code
@@ -35,7 +45,8 @@ export type ModelMetadata = Record<string, unknown> & {
       | 'Meta Research'
       | 'ASL'
       | 'unreleased'
-    code_url?: string | 'missing'
+    code_url?: NullableHttpUrl
+    code_url_reason?: string
     /**
      * License for the model checkpoint
      */
@@ -51,100 +62,75 @@ export type ModelMetadata = Record<string, unknown> & {
       | 'Meta Research'
       | 'ASL'
       | 'unreleased'
-    checkpoint_url?: string | 'missing'
+    checkpoint_url?: NullableHttpUrl
+    checkpoint_url_reason?: string
   }
-  requirements: Record<string, string>
-  trained_for_benchmark: boolean
-  training_set: (
-    | 'MP 2022'
-    | 'MPtrj'
-    | 'MPF'
-    | 'MP Graphs'
-    | 'GNoME'
-    | 'MatterSim'
-    | 'Alex'
-    | 'OMat24'
-    | 'MatPES PBE'
-    | 'MatPES r2SCAN'
-    | 'sAlex'
-    | 'OpenLAM'
-    | 'MDR-MP PBE ω_q'
-    | 'COSMOSDataset'
-  )[]
-  hyperparams?: {
-    /**
-     * Maximum remaining force allowed on any atom in eV/Å for geometry optimization convergence
-     */
-    max_force?: number
-    /**
-     * Maximum number of optimization steps allowed
-     */
-    max_steps?: number
-    optimizer?: string
-    /**
-     * ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)
-     */
-    ase_optimizer?: string
-    /**
-     * ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)
-     */
-    cell_filter?: string
-    kappa?: KappaSettings
-    learning_rate?: number
-    batch_size?: number
-    epochs?: number
-    n_layers?: number
-    /**
-     * Cutoff radius in Angstroms for graph construction (required for GNN and UIP models)
-     */
-    graph_construction_radius?: number
-    /**
-     * Maximum number of neighbors to consider in graph construction (required for GNN and UIP models)
-     */
-    max_neighbors?: number | 'missing'
-    [k: string]: unknown
-  }
+  environment: Environment
+  /**
+   * Dataset keys validated against data/datasets.yml in registry tests.
+   *
+   * @minItems 1
+   */
+  training_sets: [string, ...string[]]
+  /**
+   * Optional model-size label (e.g. 10M, L, XL).
+   */
+  size?: string
+  /**
+   * Whether this checkpoint is a fine-tune of another training run.
+   */
+  fine_tune?: boolean
+  hyperparams?: Hyperparams
   notes?: {
-    Description?: string
-    Training?: string
+    description?: string
+    training?: string
     html?: Record<string, string>
     [k: string]: unknown
   }
   model_params: number
-  n_estimators: number
-  training_cost:
-    | Record<
-        string,
-        {
-          amount: number
-          hours: number
-          cost?: number
-        }
-      >
-    | 'missing'
+  /**
+   * Ensemble size. Omit for single models (default 1); only set when > 1.
+   *
+   */
+  n_estimators?: number
+  training_cost?: TrainingCost
   train_task: 'RP2RE' | 'RS2RE' | 'S2E' | 'S2RE' | 'S2EF' | 'S2EFS' | 'S2EFSM'
   test_task: 'IP2E' | 'IS2E' | 'IS2RE' | 'IS2RE-SR'
-  model_type: ModelType
+  /**
+   * @minItems 1
+   */
+  architecture_types: [ArchitectureType, ...ArchitectureType[]]
   targets: TargetType
   openness: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
-  status?: 'aborted' | 'complete' | 'deprecated' | 'superseded'
-  /**
-   * model_key of the newer model replacing this one
-   */
-  superseded_by?: string
   metrics?: {
-    phonons?: PhononMetrics | ('not applicable' | 'not available')
-    geo_opt?: GeoOptMetrics | ('not applicable' | 'not available')
-    discovery?: DiscoveryMetrics | 'not available'
-    diatomics?: DiatomicsMetrics | ('not applicable' | 'not available')
-    md?: MdMetrics | ('not applicable' | 'not available')
+    phonons?: PhononMetrics
+    geo_opt?: GeoOptMetrics
+    discovery?: DiscoveryMetrics
+    diatomics?: DiatomicsMetrics
+    md?: MdMetrics
   }
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
- * via the `definition` "ModelType".
+ * via the `definition` "http_url".
  */
-export type ModelType = 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
+export type HttpUrl = string
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "nullable_http_url".
+ */
+export type NullableHttpUrl = HttpUrl | null
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "ArchitectureType".
+ */
+export type ArchitectureType =
+  | 'gnn'
+  | 'transformer'
+  | 'random_forest'
+  | 'fingerprint'
+  | 'bayesian_optimization'
+  | 'unknown'
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "TargetType".
@@ -160,17 +146,26 @@ export type TargetType =
   | 'EFS_DM'
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
- * via the `definition` "http_url".
+ * via the `definition` "PhononMetrics".
  */
-export type HttpUrl = string
+export type PhononMetrics = Record<string, unknown> & {
+  status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
+  reason?: string | null
+  kappa_103?: KappaMetrics
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "nullable_file_ref".
+ */
+export type NullableFileRef = FileRef | null
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "GeoOptMetrics".
  */
-export type GeoOptMetrics = PredFileRequiresUrl & {
-  struct_col?: string
-  pred_file?: string | null
-  pred_file_url?: string
+export type GeoOptMetrics = Record<string, unknown> & {
+  status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
+  reason?: string | null
+  pred_file?: NullableFileRef
   'symprec=1e-5'?: {
     rmsd: number
     n_sym_ops_mae: number
@@ -178,8 +173,7 @@ export type GeoOptMetrics = PredFileRequiresUrl & {
     symmetry_match: number
     symmetry_increase: number
     n_structures: number
-    analysis_file?: string | null
-    analysis_file_url?: string
+    analysis_file?: NullableFileRef
   }
   'symprec=1e-2'?: {
     rmsd: number
@@ -188,18 +182,17 @@ export type GeoOptMetrics = PredFileRequiresUrl & {
     symmetry_match: number
     symmetry_increase: number
     n_structures: number
-    analysis_file?: string | null
-    analysis_file_url?: string
+    analysis_file?: NullableFileRef
   }
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "DiscoveryMetrics".
  */
-export type DiscoveryMetrics = PredFileRequiresUrl & {
-  pred_col: string
-  pred_file?: string | null
-  pred_file_url?: string
+export type DiscoveryMetrics = Record<string, unknown> & {
+  status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
+  reason?: string | null
+  pred_file?: NullableFileRef
   hardware?: string
   run_time_sec?: number
   max_rss_gb?: number
@@ -212,9 +205,10 @@ export type DiscoveryMetrics = PredFileRequiresUrl & {
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "DiatomicsMetrics".
  */
-export type DiatomicsMetrics = PredFileRequiresUrl & {
-  pred_file?: string | null
-  pred_file_url?: string
+export type DiatomicsMetrics = Record<string, unknown> & {
+  status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
+  reason?: string | null
+  pred_file?: NullableFileRef
   hardware?: string
   run_time_sec?: number
   max_rss_gb?: number
@@ -237,9 +231,10 @@ export type DiatomicsMetrics = PredFileRequiresUrl & {
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "MdMetrics".
  */
-export type MdMetrics = PredFileRequiresUrl & {
-  pred_file?: string | null
-  pred_file_url?: string
+export type MdMetrics = Record<string, unknown> & {
+  status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
+  reason?: string | null
+  pred_file?: NullableFileRef
   hardware?: string
   run_time_sec?: number
   max_rss_gb?: number
@@ -254,11 +249,6 @@ export type MdMetrics = PredFileRequiresUrl & {
   pressure_error?: number
   n_systems?: number
 }
-/**
- * This interface was referenced by `undefined`'s JSON-Schema
- * via the `definition` "pred_files".
- */
-export type PredFiles = PredFileRequiresUrl
 /**
  * License type:
  * - MIT: Massachusetts Institute of Technology
@@ -290,16 +280,102 @@ export type LicenseEnum =
 
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "Dates".
+ */
+export interface Dates {
+  benchmark_added: string | null
+  paper_published: string | null
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "person".
  */
 export interface Person {
   name: string
   affiliation?: string
   email?: string
-  url?: string
-  orcid?: string
-  github?: string
+  url?: HttpUrl
+  orcid?: HttpUrl
+  github?: HttpUrl
   corresponding?: boolean
+}
+/**
+ * Isolated runner / provenance environment. Keyed by model_key (dashes and dots mapped to underscores) when loading CALCULATORS specs.
+ *
+ *
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "Environment".
+ */
+export interface Environment {
+  /**
+   * Provenance dependency specs shown on the site. Without ``project``, these are also installed via ``uv run --with``. With ``project``, the project's pyproject.toml owns install resolution and these pins are display-only (keep them aligned with that project).
+   *
+   * @minItems 1
+   */
+  dependencies: [string, ...string[]]
+  /**
+   * Python version pin for the isolated uv runner (e.g. '3.12'). Use 3.11 only when a dependency stack requires it (e.g. older torch wheels).
+   *
+   */
+  python_version: string
+  /**
+   * Extra ``uv --find-links`` URLs for the non-project runner path. Ignored when ``project`` is set (put find-links in that project's pyproject).
+   *
+   */
+  find_links?: HttpUrl[]
+  /**
+   * Extra ``uv --extra-index-url`` entries for the non-project runner path. Ignored when ``project`` is set.
+   *
+   */
+  extra_index_urls?: HttpUrl[]
+  /**
+   * Optional path to a uv project whose pyproject.toml owns dependency resolution (``uv run --project … --isolated``). Use when ``--with`` cannot express needed overrides (e.g. EquFlash).
+   *
+   */
+  project?: string | null
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "Hyperparams".
+ */
+export interface Hyperparams {
+  evaluation?: {
+    /**
+     * Geometry-optimization force convergence threshold in eV/Å.
+     */
+    max_force?: number
+    force_max?: number
+    max_steps?: number
+    ase_optimizer?: string
+    ase_filter?: string | null
+    cell_filter?: string
+    kappa?: KappaSettings
+    [k: string]: unknown
+  }
+  architecture?: {
+    /**
+     * Graph construction cutoff radius in Å.
+     */
+    graph_construction_radius?: number
+    /**
+     * Maximum graph neighbors; null means unlimited.
+     */
+    max_neighbors?: number | null
+    n_layers?: number
+    [k: string]: unknown
+  }
+  training?: {
+    learning_rate?: number
+    initial_learning_rate?: number
+    batch_size?: number
+    epochs?: number
+    /**
+     * Canonical optimizer label (Adam, AdamW, Muon, ...).
+     */
+    optimizer?: string
+    [k: string]: unknown
+  }
+  upstream_config?: Record<string, unknown>
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
@@ -335,35 +411,65 @@ export interface KappaSettings {
   save_forces?: boolean
 }
 /**
+ * Reported training hardware/cost. Omit the whole field when unknown — do not add a placeholder reason.
+ *
+ *
  * This interface was referenced by `undefined`'s JSON-Schema
- * via the `definition` "PhononMetrics".
+ * via the `definition` "TrainingCost".
  */
-export interface PhononMetrics {
-  kappa_103?: KappaMetrics
+export interface TrainingCost {
+  /**
+   * @minItems 1
+   */
+  entries: [TrainingCostEntry, ...TrainingCostEntry[]]
+  /**
+   * Optional note about how cost was estimated or aggregated.
+   */
+  reason?: string
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "TrainingCostEntry".
+ */
+export interface TrainingCostEntry {
+  /**
+   * Accelerator / device label (e.g. NVIDIA H100).
+   */
+  hardware: string
+  /**
+   * Number of devices used.
+   */
+  count: number
+  /**
+   * Wall hours per device. Total device-hours = count × hours_per_device.
+   */
+  hours_per_device: number
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "KappaMetrics".
  */
 export interface KappaMetrics {
-  pred_file?: string | null
-  pred_file_url?: HttpUrl | null
-  force_file?: string | null
-  force_file_url?: HttpUrl | null
-  run_info_file?: string | null
-  run_info_file_url?: HttpUrl | null
+  pred_file?: NullableFileRef
+  force_file?: NullableFileRef
+  run_info_file?: NullableFileRef
   hardware?: string
   run_time_sec?: number
   max_rss_gb?: number
   max_gpu_mem_gb?: number
   κ_SRME: number
-  κ_SRE?: number
+  κ_SRE: number
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
- * via the `definition` "pred_file_requires_url".
+ * via the `definition` "FileRef".
  */
-export type PredFileRequiresUrl = Record<string, unknown>
+export interface FileRef {
+  name: string
+  url?: HttpUrl
+  size?: number
+  md5?: string
+}
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "DiscoveryMetricsSet".

@@ -11,7 +11,7 @@ const make_models = (min_value: number, max_value: number): ModelData[] =>
       ({
         model_key: `model-${value}`,
         model_name: `Model ${value}`,
-        date_added: `2025-01-01`,
+        dates: { benchmark_added: `2025-01-01` },
         model_params: value,
         n_training_materials: value,
         n_training_structures: value,
@@ -50,7 +50,7 @@ it.each([
     scenario: `date x-axis`,
     min_value: 1,
     max_value: 100,
-    x_key: METADATA_COLS.date_added.key,
+    x_key: METADATA_COLS.benchmark_added.key,
     expected_labels: [`Y`, `Color`, `Size`],
   },
 ])(

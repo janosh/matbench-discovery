@@ -1,5 +1,5 @@
 import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
-import { MODELS } from '$lib'
+import { ACTIVE_MODELS } from '$lib'
 import { ALL_METRICS } from '$lib/labels'
 import { assemble_row_data, get_nested_number, label_data_path } from '$lib/metrics'
 import { make_table_filters } from '$lib/models.svelte'
@@ -19,7 +19,7 @@ const default_filters = make_table_filters()
 const kappa_srme_path = label_data_path(ALL_METRICS.κ_SRME)
 const kappa_sre_path = label_data_path(ALL_METRICS.κ_SRE)
 // Mirrors the page's model_filter plus MetricsTable's default filters.
-const phonon_leaderboard_count = MODELS.filter(
+const phonon_leaderboard_count = ACTIVE_MODELS.filter(
   (model) =>
     get_nested_number(model, kappa_srme_path) != null &&
     get_nested_number(model, kappa_sre_path) != null &&
@@ -134,7 +134,7 @@ describe(`Phonons Task Page`, () => {
     const srme_values = options.map((option) => {
       const label = option.textContent?.trim() ?? ``
       const model_name = label.replace(/ \([^()]*\)$/, ``)
-      const model = MODELS.find((candidate) => candidate.model_name === model_name)
+      const model = ACTIVE_MODELS.find((candidate) => candidate.model_name === model_name)
       return model ? (get_nested_number(model, kappa_srme_path) ?? Infinity) : Infinity
     })
     expect(srme_values.filter(Number.isFinite).length).toBeGreaterThan(1)
@@ -143,7 +143,7 @@ describe(`Phonons Task Page`, () => {
     )
 
     const target_model = [`chgnet-0.3.0`, `mace-mp-0`]
-      .map((model_key) => MODELS.find((model) => model.model_key === model_key))
+      .map((model_key) => ACTIVE_MODELS.find((model) => model.model_key === model_key))
       .find((model) => model && !current_selection.includes(model.model_name))
     if (!target_model) throw new Error(`No alternate kappa model found`)
     const target_option = options.find((option) =>
@@ -163,8 +163,10 @@ describe(`Phonons Task Page`, () => {
     await mount_with_url(PhononsPage, url)
 
     expect(kappa_sort_select().value).toBe(`name`)
-    const mace_name = MODELS.find((model) => model.model_key === `mace-mp-0`)?.model_name
-    if (!mace_name) throw new Error(`mace-mp-0 not found in MODELS`)
+    const mace_name = ACTIVE_MODELS.find(
+      (model) => model.model_key === `mace-mp-0`,
+    )?.model_name
+    if (!mace_name) throw new Error(`mace-mp-0 not found in ACTIVE_MODELS`)
     expect(kappa_selected_model()).toContain(mace_name)
     expect(heading_texts()).toContain(`Model Comparison: κSRE vs F1`)
 

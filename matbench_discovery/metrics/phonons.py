@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
 
+from matbench_discovery.data import file_ref_name, make_file_ref
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
@@ -421,11 +422,12 @@ def write_metrics_to_yaml(
         model: Model to write metrics for.
         metrics: Kappa metrics for this model.
         pred_file_path: Path to prediction file.
-        run_metadata: Optional complete-run timing, hardware, and memory provenance.
+        run_metadata: Optional complete-run provenance, including pred_file_url.
         force_file_path: Optional separate force-set artifact path.
         run_info_path: Optional small manifest/provenance sidecar path.
-        replace_pred_file: Replace an existing local prediction path and clear its
-            stale remote URL. The legacy default preserves established artifact paths.
+        replace_pred_file: If True, replace pred_file and clear stale force/run_info
+            URLs plus unset run_metadata fields. A pred_file_url supplied in
+            run_metadata is retained. Default preserves existing metadata.
     """
     from matbench_discovery import repo_relative_path
     from matbench_discovery.data import update_yaml_file
@@ -438,24 +440,38 @@ def write_metrics_to_yaml(
             κ_SRME=round(metrics["srme"], 4),
             κ_SRE=round(metrics["sre"], 4),
         )
-        if replace_pred_file:
-            kappa_103 |= {"pred_file": pred_file_path, "pred_file_url": None}
-        else:
-            kappa_103.setdefault("pred_file", pred_file_path)
+
+        existing_pred_file = kappa_103.get("pred_file")
+        existing_pred_name = file_ref_name(existing_pred_file)
+        run_pred_url = run_metadata.get("pred_file_url") if run_metadata else None
+        pred_file_url = run_pred_url if isinstance(run_pred_url, str) else None
+        if replace_pred_file or existing_pred_name is None or pred_file_url is not None:
+            size = md5 = None
+            if (
+                not replace_pred_file
+                and existing_pred_name == pred_file_path
+                and isinstance(existing_pred_file, dict)
+            ):
+                existing_size = existing_pred_file.get("size")
+                existing_md5 = existing_pred_file.get("md5")
+                if isinstance(existing_size, int) and isinstance(existing_md5, str):
+                    size, md5 = existing_size, existing_md5
+            kappa_103["pred_file"] = make_file_ref(
+                pred_file_path, url=pred_file_url, size=size, md5=md5
+            )
         for artifact_key, artifact_path in (
             ("force_file", force_file_path),
             ("run_info_file", run_info_path),
         ):
-            url_key = f"{artifact_key}_url"
             if artifact_path is not None:
                 relative_path = repo_relative_path(artifact_path)
-                artifact_changed = kappa_103.get(artifact_key) != relative_path
-                kappa_103[artifact_key] = relative_path
-                if replace_pred_file or artifact_changed:
-                    kappa_103[url_key] = None
+                if (
+                    replace_pred_file
+                    or file_ref_name(kappa_103.get(artifact_key)) != relative_path
+                ):
+                    kappa_103[artifact_key] = make_file_ref(relative_path)
             elif replace_pred_file:
                 kappa_103.pop(artifact_key, None)
-                kappa_103.pop(url_key, None)
         for key in ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"):
             if run_metadata is not None and key in run_metadata:
                 kappa_103[key] = run_metadata[key]

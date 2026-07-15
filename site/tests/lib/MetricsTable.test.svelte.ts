@@ -1,5 +1,5 @@
 import { HYPERPARAMS } from '$lib/labels'
-import { make_table_filters, MODELS } from '$lib/models.svelte'
+import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
 import { tick } from 'svelte'
@@ -15,8 +15,6 @@ const header_name = (header: HTMLTableCellElement) =>
   header.querySelector(`.header-label`)?.textContent?.trim()
 const header_names = () => header_cells().map(header_name)
 
-// expected table row count for the default unique_prototypes discovery set,
-// mirroring MetricsTable's model filters
 // table filters restricted to models trained (at least in part) on MPtrj
 const mptrj_only_filters = () => {
   const filters = make_table_filters()
@@ -26,13 +24,7 @@ const mptrj_only_filters = () => {
 
 const visible_row_count = (
   extra_filter: (model: ModelData) => boolean = make_table_filters().matches,
-) =>
-  MODELS.filter(
-    (model) =>
-      typeof model.metrics?.discovery === `object` &&
-      model.metrics.discovery.unique_prototypes &&
-      extra_filter(model),
-  ).length
+) => ACTIVE_MODELS.filter(extra_filter).length
 
 // table filters with the default require-forces constraint cleared (shows all models
 // incl. energy-only ones)
@@ -174,7 +166,7 @@ describe(`MetricsTable`, () => {
 
   it(`toggles metadata columns`, () => {
     // Keys used by col_filter (col.key ?? col.label)
-    const metadata_keys = new Set([`Training Set`, `Targets`, `date_added`, `Links`])
+    const metadata_keys = new Set([`Training Set`, `Targets`, `benchmark_added`, `Links`])
     // Labels displayed in table headers
     const metadata_labels = [`Training Set`, `Targets`, `Date Added`, `Links`]
     const col_filter = (_col: Label) => true // show all columns initially
@@ -378,7 +370,11 @@ describe(`MetricsTable`, () => {
     // Date Added sorts by timestamp (chronological, not alphabetical); Training Set
     // and Params sort by their numeric data-sort-value, not display text
     it.each([
-      { col_key: `date_added`, header: `Date Added`, data_col: `Date Added` },
+      {
+        col_key: `benchmark_added`,
+        header: `Date Added`,
+        data_col: `Date Added`,
+      },
       { col_key: `Training Set`, header: `Training Set`, data_col: `Training Set` },
       {
         col_key: HYPERPARAMS.model_params.key,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MODELS, PtableInset } from '$lib'
+  import { ACTIVE_MODELS, PtableInset } from '$lib'
   import type { ModelData } from '$lib/types'
   import { max } from 'd3-array'
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
@@ -9,7 +9,7 @@
   import Select from 'svelte-multiselect'
   import { per_element_each_errors as each_errors } from '$lib/per-element-errors'
 
-  const models_with_errors = MODELS.filter(
+  const models_with_errors = ACTIVE_MODELS.filter(
     (model): model is ModelData & { model_key: string } =>
       typeof model.model_key === `string` && model.model_key in each_errors,
   )

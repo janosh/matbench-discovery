@@ -354,11 +354,7 @@ def test_discovery_payload_covers_active_models(name: str) -> None:
     (by model_key), so a partial regen that drops models fails fast instead of silently
     shipping an incomplete leaderboard figure.
     """
-    expected = {
-        model.key
-        for model in Model.active()
-        if (disc := (model.metrics or {}).get("discovery")) and disc != "not applicable"
-    }
+    expected = {model.key for model in Model.active() if model.metrics.get("discovery")}
     assert len(expected) > 30, f"sanity: too few discovery models ({len(expected)})"
     keys = payload_model_ids(name, "key")
     assert keys == expected, (
@@ -378,10 +374,8 @@ def test_geo_opt_payload_covers_active_models(name: str) -> None:
     expected = {
         model.label
         for model in Model.active()
-        if isinstance(geo_opt := (model.metrics or {}).get("geo_opt"), dict)
-        and geo_opt.get("pred_file")
-        and isinstance(symprec := geo_opt.get("symprec=1e-5"), dict)
-        and symprec.get("analysis_file")
+        if (geo_opt := model.metrics.get("geo_opt") or {}).get("pred_file")
+        and (geo_opt.get("symprec=1e-5") or {}).get("analysis_file")
     }
     assert len(expected) > 30, f"sanity: too few geo-opt models ({len(expected)})"
     labels = payload_model_ids(name, "label")
@@ -398,8 +392,9 @@ def test_kappa_payload_covers_active_models() -> None:
     expected = {
         model.key
         for model in Model.active()
-        if isinstance(phonons := (model.metrics or {}).get("phonons"), dict)
-        and (phonons.get("kappa_103") or {}).get("pred_file")
+        if ((model.metrics.get("phonons") or {}).get("kappa_103") or {}).get(
+            "pred_file"
+        )
     }
     assert len(expected) > 30, f"sanity: too few kappa models ({len(expected)})"
     keys = payload_model_ids("kappa-103-analysis", "key")
