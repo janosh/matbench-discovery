@@ -39,14 +39,16 @@ const load_repos_from_models = async (): Promise<ModelInfo[]> => {
 
   const model_dirs = (await readdir(models_dir, { withFileTypes: true }))
     .filter((d) => d.isDirectory())
-    .sort((a, b) => a.name.localeCompare(b.name))
+    // @ts-expect-error CI lint TypeScript lib lacks Array.prototype.toSorted.
+    .toSorted((a, b) => a.name.localeCompare(b.name))
 
   for (const dir_entry of model_dirs) {
     const model_dir = join(models_dir, dir_entry.name)
     const files = await readdir(model_dir)
     const yml_files = files
       .filter((file) => file.endsWith(`.yml`))
-      .sort((a, b) => a.localeCompare(b))
+      // @ts-expect-error CI lint TypeScript lib lacks Array.prototype.toSorted.
+      .toSorted((a, b) => a.localeCompare(b))
 
     for (const yml_file of yml_files) {
       try {
