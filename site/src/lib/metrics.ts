@@ -6,12 +6,13 @@ import {
   HYPERPARAMS,
   MD_METRICS,
   METADATA_COLS,
+  PHONON_METRICS,
 } from '$lib/labels'
 import type { ModelMetadata, TargetType } from '$lib/schema/model'
 import { get_pred_file_urls } from '$lib/models.svelte'
 import type { DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { escape_html, format_num } from 'matterviz'
+import { escape_html, format_num, type RowData } from 'matterviz'
 
 // Model target type descriptions
 export const targets_tooltips: Record<TargetType, string> = {
@@ -168,13 +169,20 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 // NB: cell background/text colors are computed by matterviz's HeatmapTable internally
 // (calc_cell_color in matterviz/table) — no local color logic needed
 
+type MetricsRowData = RowData & {
+  model_name: string
+  Model: string
+  CPS: number | undefined
+  class?: string
+}
+
 // Calculate table data for the metrics table with combined scores
 export function assemble_row_data(
   discovery_set: DiscoverySet,
   model_filter: (model: ModelData) => boolean,
   filter_matches: (model: ModelData) => boolean = () => true,
   models: ModelData[] = ACTIVE_MODELS, // injectable for tests
-) {
+): MetricsRowData[] {
   const license_str = (license: string | undefined, url: string | null | undefined) =>
     url?.startsWith(`http`)
       ? `<a href="${url}" target="_blank" rel="noopener noreferrer" title="View license">${license}</a>`
@@ -192,7 +200,7 @@ export function assemble_row_data(
   const metric_columns = <Labels extends Record<keyof Labels, Label>>(
     model: ModelData,
     labels: Labels,
-  ) =>
+  ): Record<string, number | undefined> =>
     Object.fromEntries(
       Object.values<Label>(labels).map((label) => [label.key, metric_num(model, label)]),
     )
@@ -281,8 +289,7 @@ export function assemble_row_data(
       MAE: discovery_metrics?.MAE,
       RMSE: discovery_metrics?.RMSE,
       R2: discovery_metrics?.R2,
-      [ALL_METRICS.κ_SRME.key]: metric_num(model, ALL_METRICS.κ_SRME),
-      [ALL_METRICS.κ_SRE.key]: metric_num(model, ALL_METRICS.κ_SRE),
+      ...metric_columns(model, PHONON_METRICS),
       [RMSD.key]: metric_num(model, RMSD),
       ...metric_columns(model, MD_METRICS),
       ...metric_columns(model, DIATOMICS_METRICS),

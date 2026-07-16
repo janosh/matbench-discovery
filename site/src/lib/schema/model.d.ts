@@ -459,6 +459,10 @@ export interface KappaMetrics {
   max_gpu_mem_gb?: number
   κ_SRME: number
   κ_SRE: number
+  κ_SRD: number
+  κ_failure_rate: number
+  imaginary_mode_rate: number
+  spectrum_w1: number | null
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema

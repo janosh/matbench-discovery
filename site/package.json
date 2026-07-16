@@ -47,7 +47,7 @@
     "svelte-toc": "^0.7.0",
     "typescript": "6.0.3",
     "unified": "^11.0.5",
-    "vite": "^8.1.4",
+    "vite": "^8.1.5",
     "vite-plus": "^0.2.4",
     "vitest": "^4.1.10"
   },

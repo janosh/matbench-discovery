@@ -649,13 +649,69 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   },
 }
 
+// Phonon metrics
+export const PHONON_METRICS = {
+  κ_SRME: {
+    key: `κ_SRME`,
+    label: `κ<sub>SRME</sub>`,
+    description: `Symmetric relative mean error in predicted phonon-mode contributions to thermal conductivity κ, averaged over the 103 PhononDB-PBE materials (range [0, 2])`,
+    path: `metrics.phonons.kappa_103`,
+    range: [0, 2],
+    better: `lower`,
+    format: `.3~f`,
+  },
+  κ_SRE: {
+    key: `κ_SRE`,
+    label: `κ<sub>SRE</sub>`,
+    description: `Symmetric relative error of total lattice thermal conductivity κ, averaged over the 103 PhononDB-PBE materials (range [0, 2])`,
+    path: `metrics.phonons.kappa_103`,
+    range: [0, 2],
+    better: `lower`,
+    format: `.3~f`,
+  },
+  κ_SRD: {
+    key: `κ_SRD`,
+    label: `κ<sub>SRD</sub>`,
+    description: `Mean signed symmetric relative difference in total lattice thermal conductivity κ over the 103 PhononDB-PBE materials (range [-2, 2]); negative values indicate underprediction and positive values overprediction. Invalid or missing κ predictions count as zero conductivity (SRD = -2)`,
+    path: `metrics.phonons.kappa_103`,
+    range: [-2, 2],
+    format: `.3~f`,
+  },
+  κ_failure_rate: {
+    key: `κ_failure_rate`,
+    label: `κ failed`,
+    description: `Fraction of the 103 PhononDB-PBE materials where κ prediction failed outright and κ<sub>SRME</sub> was censored to its maximum of 2`,
+    path: `metrics.phonons.kappa_103`,
+    range: [0, 1],
+    better: `lower`,
+    format: `.1~%`,
+  },
+  imaginary_mode_rate: {
+    key: `imaginary_mode_rate`,
+    label: `Im(ω)`,
+    description: `Fraction of the 103 PhononDB-PBE materials with imaginary phonon modes after ML relaxation; missing flags count as unflagged`,
+    path: `metrics.phonons.kappa_103`,
+    range: [0, 1],
+    better: `lower`,
+    format: `.1~%`,
+  },
+  spectrum_w1: {
+    key: `spectrum_w1`,
+    label: `W<sub>1</sub>(ω)`,
+    description: `Mean Wasserstein-1 distance between ML and DFT phonon frequency spectra over materials with usable frequencies; robust to error compounding in κ, with an approximately 0.02 THz mesh-comparison noise floor`,
+    path: `metrics.phonons.kappa_103`,
+    unit: `THz`,
+    better: `lower`,
+    format: `.3~f`,
+  },
+} as const satisfies Record<string, Label>
+
 type AllMetrics = DiscoveryMetricsLabels &
   GeoOptSymmetryMetricsLabels &
   MdMetricsLabels &
+  Record<keyof typeof PHONON_METRICS, Label> &
   Record<DiatomicsMetricKey, Label> & {
     CPS: Label
-    κ_SRME: Label
-    κ_SRE: Label
     RMSD: Label
   }
 
@@ -670,21 +726,7 @@ export const ALL_METRICS: AllMetrics = {
     format: `.3f`,
   },
   ...DISCOVERY_METRICS,
-  // Phonon metrics
-  κ_SRME: {
-    key: `κ_SRME`,
-    label: `κ<sub>SRME</sub>`,
-    description: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
-    path: `metrics.phonons.kappa_103`,
-    better: `lower`,
-  },
-  κ_SRE: {
-    key: `κ_SRE`,
-    label: `κ<sub>SRE</sub>`,
-    description: `Symmetric relative error of total lattice thermal conductivity κ, averaged over the 103 phononDB-PBE materials (range [0, 2])`,
-    path: `metrics.phonons.kappa_103`,
-    better: `lower`,
-  },
+  ...PHONON_METRICS,
   // Geometry optimization metrics
   RMSD: {
     key: `rmsd`,

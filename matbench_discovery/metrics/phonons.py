@@ -6,6 +6,8 @@ Included metrics:
 - SRE (Symmetric Relative Error): Absolute value of SRD
 - SRME (Symmetric Relative Mean Error): Microscopic, mode-resolved error that avoids
   cancellation between over- and underpredicted mode contributions.
+- Failure and imaginary-mode rates across the PhononDB test set.
+- Spectrum W1: Wasserstein-1 distance between predicted and reference phonon spectra.
 
 Adapted from https://github.com/MPA2suite/k_SRME/blob/6ff4c867/k_srme/benchmark.py,
 published in https://arxiv.org/abs/2408.00755. Ported in
@@ -21,6 +23,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
+from scipy.stats import wasserstein_distance
 
 from matbench_discovery.data import file_ref_name, make_file_ref
 from matbench_discovery.enums import DataFiles, MbdKey, Model
@@ -114,7 +117,7 @@ def calc_kappa_metrics_from_dfs(
     return df_pred
 
 
-def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float]:
+def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float | None]:
     """Evaluate complete PhononDB predictions and return aggregate metrics."""
     from matbench_discovery.phonons import read_kappa_json
 
@@ -126,11 +129,45 @@ def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float]
     df_metrics = calc_kappa_metrics_from_dfs(
         df_predictions.loc[df_reference.index], df_reference
     )
-    metrics = {
+    imag_flags = df_metrics.get(Key.has_imag_ph_modes)
+    imaginary_mode_rate = (
+        float(imag_flags.eq(other=True).fillna(value=False).mean())
+        if imag_flags is not None
+        else 0.0
+    )
+    spectrum_w1_values = [
+        round(distance, 4)
+        for material_id in df_reference.index
+        if (
+            distance := phonon_spectrum_w1(
+                df_metrics.loc[material_id], df_reference.loc[material_id]
+            )
+        )
+        is not None
+    ]
+    metrics: dict[str, float | None] = {
         "srme": float(df_metrics[Key.srme].mean()),
         "sre": float(df_metrics[Key.sre].mean()),
+        "srd": float(df_metrics[Key.srd].mean()),
+        "failure_rate": float(df_metrics[Key.srme].eq(KAPPA_ERROR_MAX).mean()),
+        "imaginary_mode_rate": imaginary_mode_rate,
+        "spectrum_w1": (
+            float(np.mean(spectrum_w1_values)) if spectrum_w1_values else None
+        ),
     }
-    if any(not 0 <= value <= KAPPA_ERROR_MAX for value in metrics.values()):
+    bounds = {
+        "srme": (0, KAPPA_ERROR_MAX),
+        "sre": (0, KAPPA_ERROR_MAX),
+        "srd": (-KAPPA_ERROR_MAX, KAPPA_ERROR_MAX),
+        "failure_rate": (0, 1),
+        "imaginary_mode_rate": (0, 1),
+    }
+    for key, (lower, upper) in bounds.items():
+        value = metrics[key]
+        if value is None or not np.isfinite(value) or not lower <= value <= upper:
+            raise ValueError(f"Invalid aggregate kappa metrics: {metrics}")
+    spectrum_w1 = metrics["spectrum_w1"]
+    if spectrum_w1 is not None and (not np.isfinite(spectrum_w1) or spectrum_w1 < 0):
         raise ValueError(f"Invalid aggregate kappa metrics: {metrics}")
     return metrics
 
@@ -200,6 +237,38 @@ def mode_weights_for_freqs(
     if q_weights.shape != (ph_freqs.shape[0],):
         return None
     return np.repeat(q_weights, ph_freqs.shape[1])
+
+
+def phonon_spectrum_data(
+    row: pd.Series,
+) -> tuple[np.ndarray, np.ndarray | None] | None:
+    """Return finite 2D phonon frequencies and optional q-point weights."""
+    frequencies = _finite_array(row.get(Key.ph_freqs))
+    if frequencies is None or frequencies.ndim != 2:
+        return None
+    q_weights = row.get("weights")
+    if q_weights is None:
+        q_weights = row.get(Key.mode_weights)
+    q_weights = _finite_array(q_weights, nonnegative=True)
+    if q_weights is not None and q_weights.sum() <= 0:
+        q_weights = None
+    return frequencies, q_weights
+
+
+def phonon_spectrum_w1(prediction: pd.Series, reference: pd.Series) -> float | None:
+    """Return weighted Wasserstein-1 distance between two phonon spectra in THz."""
+    prediction_data = phonon_spectrum_data(prediction)
+    reference_data = phonon_spectrum_data(reference)
+    if prediction_data is None or reference_data is None:
+        return None
+    return float(
+        wasserstein_distance(
+            prediction_data[0].ravel(),
+            reference_data[0].ravel(),
+            mode_weights_for_freqs(*prediction_data),
+            mode_weights_for_freqs(*reference_data),
+        )
+    )
 
 
 def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
@@ -380,11 +449,10 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
         or np.atleast_1d(predicted_totals).shape != true_totals.shape
         or mode_weights is None
         or mode_weights.sum() <= 0
+        or predicted_mode_kappa.shape != true_mode_kappa.shape
     ):
         return failure
     predicted_totals = np.atleast_1d(predicted_totals)
-    if predicted_mode_kappa.shape != true_mode_kappa.shape:
-        return failure
 
     # calculating microscopic error for all temperatures
     microscopic_error = np.atleast_1d(
@@ -408,7 +476,7 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
 
 def write_metrics_to_yaml(
     model: Model,
-    metrics: dict[str, float],
+    metrics: dict[str, float | None],
     pred_file_path: str,
     *,
     run_metadata: Mapping[str, object] | None = None,
@@ -436,10 +504,16 @@ def write_metrics_to_yaml(
 
     def update_kappa_103(kappa_103: dict[str, Any]) -> dict[str, Any]:
         """Update metrics and provenance from the latest locked YAML section."""
-        kappa_103.update(
-            κ_SRME=round(metrics["srme"], 4),
-            κ_SRE=round(metrics["sre"], 4),
-        )
+        for yaml_key, metric_key in (
+            ("κ_SRME", "srme"),
+            ("κ_SRE", "sre"),
+            ("κ_SRD", "srd"),
+            ("κ_failure_rate", "failure_rate"),
+            ("imaginary_mode_rate", "imaginary_mode_rate"),
+            ("spectrum_w1", "spectrum_w1"),
+        ):
+            value = metrics[metric_key]
+            kappa_103[yaml_key] = None if value is None else round(value, 4)
 
         existing_pred_file = kappa_103.get("pred_file")
         existing_pred_name = file_ref_name(existing_pred_file)

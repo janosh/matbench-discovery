@@ -1,5 +1,10 @@
 import { DATASETS, MODELS } from '$lib'
-import { ALL_METRICS, DIATOMICS_METRICS, METADATA_COLS } from '$lib/labels'
+import {
+  ALL_METRICS,
+  DIATOMICS_METRICS,
+  METADATA_COLS,
+  PHONON_METRICS,
+} from '$lib/labels'
 import {
   assemble_row_data,
   format_train_set,
@@ -35,6 +40,9 @@ describe(`metric_better_as`, () => {
     [`Precision`, `higher`],
     [`MAE`, `lower`],
     [`RMSE`, `lower`],
+    [`κ_failure_rate`, `lower`],
+    [`spectrum_w1`, `lower`],
+    [`κ_SRD`, null],
     [`nonexistent_metric`, null],
   ])(`maps %s -> %s`, (metric, expected) => {
     expect(metric_better_as(metric)).toBe(expected)
@@ -182,6 +190,16 @@ describe(`assemble_row_data`, () => {
     const n_layers_val = mace_row?.n_layers as string
     expect(n_layers_val).toMatch(/^(?:<span data-sort-value="\d+">\d+<\/span>|n\/a)$/)
     expect(chgnet_row?.Model).toContain(`chgnet-0.3.0`)
+    for (const [metric, expected] of [
+      [PHONON_METRICS.κ_SRME, 0.6823],
+      [PHONON_METRICS.κ_SRE, 0.471],
+      [PHONON_METRICS.κ_SRD, -0.2845],
+      [PHONON_METRICS.κ_failure_rate, 0.0291],
+      [PHONON_METRICS.imaginary_mode_rate, 0],
+      [PHONON_METRICS.spectrum_w1, 0.8709],
+    ] as const) {
+      expect(mace_row?.[metric.key]).toBe(expected)
+    }
     const cps_vals = rows.map((row) => row.CPS) as number[]
     expect(cps_vals).toStrictEqual(
       cps_vals.toSorted((score_1, score_2) => score_2 - score_1),

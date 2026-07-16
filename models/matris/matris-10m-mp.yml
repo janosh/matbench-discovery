@@ -224,6 +224,10 @@ metrics:
     kappa_103:
       κ_SRME: 0.4892
       κ_SRE: 0.388
+      κ_SRD: -0.3456
+      κ_failure_rate: 0.0291
+      imaginary_mode_rate: 0.0291
+      spectrum_w1: 0.1586
       pred_file:
         name: models/matris/matris-10m-mp/2025-10-29-phonons-kappa-103.json.gz
         url: https://figshare.com/files/59234210

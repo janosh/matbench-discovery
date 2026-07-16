@@ -11,6 +11,7 @@
     HYPERPARAMS,
     MD_METRICS,
     METADATA_COLS,
+    PHONON_METRICS,
   } from '$lib/labels'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { get_nested_number, is_finite_num, label_data_path } from '$lib/metrics'
@@ -57,17 +58,21 @@
   const col_presets = {
     Discovery: Object.values(DISCOVERY_METRICS),
     'Geo Opt': Object.values(GEO_OPT_SYMMETRY_METRICS),
-    Phonons: [ALL_METRICS.κ_SRE],
+    Phonons: Object.values(PHONON_METRICS),
     MD: Object.values(MD_METRICS),
     Diatomics: Object.values(DIATOMICS_METRICS),
   }
   type ColPreset = keyof typeof col_presets
   const default_col_preset: ColPreset = `Discovery`
   const col_preset_names = Object.keys(col_presets) as ColPreset[]
+  const preset_expansions: Partial<Record<ColPreset, string>> = {
+    'Geo Opt': `Geometry Optimization`,
+    MD: `Molecular Dynamics`,
+  }
   const preset_primary_metrics: Record<ColPreset, Label> = {
     Discovery: DISCOVERY_METRICS.F1,
     'Geo Opt': ALL_METRICS.RMSD,
-    Phonons: ALL_METRICS.κ_SRME,
+    Phonons: PHONON_METRICS.κ_SRME,
     MD: MD_METRICS.md_combined_score,
     Diatomics: DIATOMICS_METRICS.diatomics_combined_score,
   }
@@ -87,7 +92,7 @@
   const col_preset_options = col_preset_names.map((name) => ({
     value: name,
     label: name,
-    tooltip: `Focus the table on ${name} metrics`,
+    tooltip: `Focus the table on ${preset_expansions[name] ?? name} metrics`,
   }))
 
   let export_error: string | null = $state(null)

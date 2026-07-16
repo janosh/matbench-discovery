@@ -79,6 +79,7 @@ export default {
 
   kit: {
     adapter: adapter(),
+    version: { name: process.env.NODE_ENV === `production` ? `${Date.now()}` : `dev` },
 
     alias: {
       $site: `.`,

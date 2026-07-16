@@ -196,3 +196,7 @@ metrics:
         md5: f9c75200997ba52f0a6a6cb6c2689dfc
       κ_SRME: 0.1729
       κ_SRE: 0.0765
+      κ_SRD: -0.0337
+      κ_failure_rate: 0.0
+      imaginary_mode_rate: 0.0
+      spectrum_w1: 0.1142

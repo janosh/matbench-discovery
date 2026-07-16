@@ -149,7 +149,28 @@ definitions:
         type: number
         minimum: 0
         maximum: 2
-    required: ['κ_SRME', 'κ_SRE']
+      κ_SRD:
+        type: number
+        minimum: -2
+        maximum: 2
+      κ_failure_rate:
+        type: number
+        minimum: 0
+        maximum: 1
+      imaginary_mode_rate:
+        type: number
+        minimum: 0
+        maximum: 1
+      spectrum_w1:
+        type: [number, 'null']
+        minimum: 0
+    required:
+      - κ_SRME
+      - κ_SRE
+      - κ_SRD
+      - κ_failure_rate
+      - imaginary_mode_rate
+      - spectrum_w1
 
   PhononMetrics:
     type: object
