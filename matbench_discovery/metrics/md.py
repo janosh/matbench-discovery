@@ -22,7 +22,7 @@ from ase.geometry import find_mic, get_distances, minkowski_reduce
 from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery import repo_relative_path
-from matbench_discovery.data import update_yaml_file
+from matbench_discovery.data import make_file_ref, update_yaml_file
 from matbench_discovery.trajectory import Trajectory
 
 if TYPE_CHECKING:
@@ -777,9 +777,10 @@ def write_metrics_to_yaml(
     """
     yaml_metrics = CommentedMap()
     if pred_file_path is not None:
-        yaml_metrics["pred_file"] = repo_relative_path(pred_file_path)
-    if pred_file_url is not None:
-        yaml_metrics["pred_file_url"] = pred_file_url
+        relative_path = repo_relative_path(pred_file_path)
+        yaml_metrics["pred_file"] = make_file_ref(relative_path, url=pred_file_url)
+    elif pred_file_url is not None:
+        raise ValueError("pred_file_url requires pred_file_path")
     for key, value in metrics.items():
         if key == "n_systems":
             yaml_metrics[key] = int(value)

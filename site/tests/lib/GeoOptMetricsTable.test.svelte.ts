@@ -1,4 +1,4 @@
-import { MODELS } from '$lib'
+import { ACTIVE_MODELS } from '$lib'
 import GeoOptMetricsTable from '$lib/table/GeoOptMetricsTable.svelte'
 import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
 import { make_table_filters } from '$lib/models.svelte'
@@ -7,18 +7,11 @@ import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
 
-// mirrors the table's filters: geo-opt metrics + full_test_set discovery data
-// (energy-only models are always hidden)
-const geo_opt_row_count = (matches: (model: ModelData) => boolean = () => true) =>
-  MODELS.filter(
-    (model) =>
-      model.metrics?.geo_opt != null &&
-      typeof model.metrics.geo_opt === `object` &&
-      model.targets !== `E` &&
-      typeof model.metrics?.discovery === `object` &&
-      model.metrics.discovery.full_test_set &&
-      matches(model),
-  ).length
+// Mirrors the component's geo-opt presence check and default table filters.
+const geo_opt_row_count = (
+  matches: (model: ModelData) => boolean = make_table_filters().matches,
+) =>
+  ACTIVE_MODELS.filter((model) => model.metrics?.geo_opt != null && matches(model)).length
 
 describe(`GeoOptMetricsTable`, () => {
   it(`renders table with correct structure, columns, groups, and units`, async () => {
@@ -86,16 +79,16 @@ describe(`GeoOptMetricsTable`, () => {
 
   it(`renders geo-opt rows and excludes models without geo-opt metrics`, async () => {
     const model_key = `no-geo-opt-regression`
-    MODELS.push({
+    ACTIVE_MODELS.push({
       model_key,
       model_name: model_key,
       model_version: `test`,
       targets: `EFS_G`,
-      training_set: [],
+      training_sets: [],
       n_training_materials: 1,
       n_training_structures: 1,
       model_params: 1,
-      date_added: `2026-06-30`,
+      dates: { benchmark_added: `2026-06-30` },
       metrics: {
         discovery: { full_test_set: { F1: 0.1 } },
         diatomics: { energy_mae: 1 },
@@ -127,7 +120,7 @@ describe(`GeoOptMetricsTable`, () => {
         }),
       ).toBe(true)
     } finally {
-      MODELS.pop()
+      ACTIVE_MODELS.pop()
     }
   })
 

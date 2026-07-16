@@ -28,7 +28,13 @@ from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
 from matbench_discovery.cli import cli_parser
-from matbench_discovery.data import update_yaml_file
+from matbench_discovery.data import (
+    artifact_filename,
+    canonical_scientific_notation,
+    file_ref_name,
+    file_ref_url,
+    parse_artifact_filename,
+)
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.remote.fetch import maybe_auto_download_file
@@ -50,110 +56,77 @@ def analyze_model_symprec(
     overwrite: bool = False,  # Whether to overwrite existing analysis files
 ) -> pd.DataFrame | None:
     """Analyze a single model for a single symprec value."""
-    geo_opt_metrics: dict[str, Any] = model.metadata.get("metrics", {}).get(
-        "geo_opt", {}
-    )
+    geo_opt_metrics: dict[str, Any] = model.metrics.get("geo_opt") or {}
 
-    # skip models that don't support geometry optimization
-    if geo_opt_metrics in ("not applicable", "not available"):
-        print(f"⚠️ {model.label} does not support geometry optimization")
-        return None
-
-    if not model.geo_opt_path:
+    geo_opt_path = model.geo_opt_path
+    if not geo_opt_path:
         print(f"⚠️ {model.label} has no relaxed structures file")
         return None
 
-    if not os.path.isfile(ml_relaxed_structs_path := model.geo_opt_path):
+    if not os.path.isfile(geo_opt_path):
         print(
-            f"⚠️ {model.label}-relaxed structures not found, expected "
-            f"at {ml_relaxed_structs_path}"
+            f"⚠️ {model.label}-relaxed structures not found, expected at {geo_opt_path}"
         )
         return None
 
-    # Convert to JSON lines format if needed
-    jsonl_path = ml_relaxed_structs_path
-    if not ml_relaxed_structs_path.endswith((".jsonl", ".jsonl.gz")):
-        # Try reading as JSON lines first (file might already be in correct format)
-        try:
-            pd.read_json(ml_relaxed_structs_path, lines=True)
-        except ValueError:
-            # Not JSON lines format, convert it
-            jsonl_path = ml_relaxed_structs_path.rsplit(".", 2)[0] + ".jsonl.gz"
-            if not os.path.isfile(jsonl_path):
-                print(f"Converting {ml_relaxed_structs_path} to JSON lines format...")
-                df = pd.read_json(ml_relaxed_structs_path)
-                df.to_json(jsonl_path, orient="records", lines=True, compression="gzip")
-                # Update model yaml with new path
-                yaml_path = f"models/{model.name}/{model.name}.yml"
-                if os.path.isfile(yaml_path):
-                    update_yaml_file(
-                        yaml_path,
-                        "metrics.geo_opt.struct_file",
-                        {"metrics": {"geo_opt": {"struct_file": jsonl_path}}},
-                    )
-            ml_relaxed_structs_path = jsonl_path
-
     # Load model structures
     try:
-        df_ml_structs = pd.read_json(ml_relaxed_structs_path, lines=True)
+        df_ml_structs = pd.read_json(geo_opt_path, lines=True)
     except Exception as exc:
-        exc.add_note(f"{model.label=} {ml_relaxed_structs_path=}")
+        exc.add_note(f"{model.label=} {geo_opt_path=}")
         raise
 
-    # try normalize material ID column or raise
-    if Key.mat_id in df_ml_structs:
-        df_ml_structs = df_ml_structs.set_index(Key.mat_id)
-    elif df_ml_structs.index[0].startswith("wbm-"):
-        df_ml_structs.index.name = Key.mat_id
-        df_ml_structs.reset_index().to_json(ml_relaxed_structs_path)
-    else:
-        raise ValueError(f"Could not infer ID column from {df_ml_structs.columns}")
+    if missing_columns := {"material_id", "structure"} - set(df_ml_structs):
+        raise ValueError(
+            f"Missing canonical geo-opt columns {sorted(missing_columns)} in "
+            f"{geo_opt_path}"
+        )
+    material_ids = df_ml_structs["material_id"]
+    if material_ids.isna().any():
+        raise ValueError(f"Null material_id values in {geo_opt_path}")
+    if dupes := sorted(material_ids[material_ids.duplicated()].astype(str).unique()):
+        raise ValueError(f"Duplicate material_id values in {geo_opt_path}: {dupes}")
+    df_ml_structs = df_ml_structs.set_index("material_id")
 
     if debug_mode:
         df_ml_structs = df_ml_structs.head(debug_mode)
 
-    struct_col = geo_opt_metrics.get("struct_col")
-    if struct_col not in df_ml_structs:
-        struct_cols = [col for col in df_ml_structs if Key.structure in str(col)]
-        print(
-            f"⚠️ {struct_col=} not found in {model.label}-relaxed structures loaded "
-            f"from {ml_relaxed_structs_path}. Did you mean one of {struct_cols}?"
-        )
-        return None
-
     # Convert structures
     model_structs = {
         mat_id: Structure.from_dict(struct_dict)
-        for mat_id, struct_dict in df_ml_structs[struct_col].items()
+        for mat_id, struct_dict in df_ml_structs["structure"].items()
     }
 
-    symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
-    # Remove common file extensions properly
-    geo_opt_filename = model.geo_opt_path
-    for suffix in [".jsonl.gz", ".json.gz", ".jsonl", ".json"]:
-        if geo_opt_filename.endswith(suffix):
-            geo_opt_filename = geo_opt_filename.removesuffix(suffix)
-            break
-    geo_opt_csv_path = f"{geo_opt_filename}-{symprec_str}-{moyo_version}.csv.gz"
+    symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
+    geo_opt_basename = os.path.basename(geo_opt_path)
+    if parse_artifact_filename(geo_opt_basename) != "geo_opt":
+        raise ValueError(f"Expected geo-opt artifact, got {geo_opt_path!r}")
+    analysis_name = artifact_filename(
+        geo_opt_basename[:10],
+        "geo_opt_analysis",
+        symprec=symprec,
+        moyo_version=moyo_version,
+    )
+    geo_opt_csv_path = f"{os.path.dirname(geo_opt_path)}/{analysis_name}"
 
     # Try to download existing analysis file only if path matches exactly
     symprec_metrics = geo_opt_metrics.get(symprec_str, {})
-    if isinstance(symprec_metrics, dict):
-        analysis_url = symprec_metrics.get("analysis_file_url")
-        analysis_file = symprec_metrics.get("analysis_file")
-        analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
+    analysis_ref = symprec_metrics.get("analysis_file")
+    analysis_url = file_ref_url(analysis_ref)
+    analysis_file = file_ref_name(analysis_ref)
+    analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
 
-        if analysis_file_path == geo_opt_csv_path:
-            # Paths match - try to download if file missing
-            if not os.path.isfile(geo_opt_csv_path) and analysis_url:
-                maybe_auto_download_file(
-                    analysis_url, geo_opt_csv_path, label=f"{model.label} {symprec_str}"
-                )
-        elif analysis_file:
-            # Paths differ (moyo version change, etc.) - will recompute
-            print(f"⚠️ {model.label} {symprec_str=} path mismatch, will recompute")
-            print(f"  - Expected: {geo_opt_csv_path}")
-            print(f"  - Found: {analysis_file_path}")
+    if analysis_file_path == geo_opt_csv_path:
+        # Paths match - try to download if file missing
+        if not os.path.isfile(geo_opt_csv_path) and analysis_url:
+            maybe_auto_download_file(
+                analysis_url, geo_opt_csv_path, label=f"{model.label} {symprec_str}"
+            )
+    elif analysis_file:
+        # Paths differ (moyo version change, etc.) - will recompute
+        print(f"⚠️ {model.label} {symprec_str=} path mismatch, will recompute")
+        print(f"  - Expected: {geo_opt_csv_path}")
+        print(f"  - Found: {analysis_file_path}")
 
     if os.path.isfile(geo_opt_csv_path) and not overwrite:
         print(f"{model.label} already analyzed at {geo_opt_csv_path}")
@@ -173,8 +146,7 @@ def analyze_model_symprec(
     )
 
     # Compare with DFT reference
-    pbar_desc = f"Process {pbar_pos}:Comparing DFT vs {model.label} for {symprec=}"
-    # break here
+    pbar_desc = f"Process {pbar_pos}: Comparing DFT vs {model.label} for {symprec=}"
     df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
         df_model_analysis,
         df_dft_analysis,
@@ -222,7 +194,7 @@ def main(raw_args: list[str] | None = None) -> int:
     symprec_values: Final[Sequence[float]] = args.symprec
 
     # Get list of models to analyze
-    moyo_version = f"moyo={importlib.metadata.version('moyopy')}"
+    moyo_version = importlib.metadata.version("moyopy")
 
     # %%
     print("Loading WBM PBE structures...")
@@ -239,13 +211,13 @@ def main(raw_args: list[str] | None = None) -> int:
     # %% Process DFT structures for each symprec value
     dft_analysis_dict: dict[float, pd.DataFrame] = {}
     for symprec in symprec_values:
-        symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
+        symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
 
         # Always use full DFT analysis file, regardless of debug mode, ensuring
         # reference data available for all model structures regardless of debug mode
         # and sorting of material IDs
         dft_csv_path = (
-            f"{ROOT}/data/wbm/dft-geo-opt-{symprec_str}-{moyo_version}.csv.gz"
+            f"{ROOT}/data/wbm/dft-geo-opt-{symprec_str}-moyo={moyo_version}.csv.gz"
         )
 
         if os.path.isfile(dft_csv_path):

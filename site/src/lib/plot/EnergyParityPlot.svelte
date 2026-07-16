@@ -148,14 +148,8 @@
     return [min - padding, max + padding]
   })
 
-  async function load_plot_data(model_key: string | undefined) {
+  async function load_plot_data(model_key: string) {
     const current_load_id = ++load_id
-    if (!model_key) {
-      status = `error`
-      error_message = `${model.model_name} has no model key`
-      return
-    }
-
     if (base && parity_model?.model_key === model_key) {
       status = `ready`
       return

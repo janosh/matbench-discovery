@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+import yaml
 from ase import Atoms, units
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.singlepoint import SinglePointCalculator
@@ -984,16 +985,10 @@ def test_combine_per_system_metrics() -> None:
         md_metrics.combine_per_system_metrics([pd.DataFrame({"rdf_error": [10.0]})])
 
 
-@pytest.mark.parametrize(
-    "init_yaml",  # placeholder strings at leaf and intermediate level get replaced
-    ["metrics:\n  md: not available\n", "metrics: not available\n"],
-)
-def test_write_metrics_to_yaml(
-    tmp_path: Path, init_yaml: str, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Metrics should be written under metrics.md with units and rounding."""
     yaml_path = tmp_path / "model.yml"
-    yaml_path.write_text(f"model_name: test\n{init_yaml}", encoding="utf-8")
+    yaml_path.write_text("model_name: test\nmetrics: {}\n", encoding="utf-8")
     model = Model.mace_mp_0
     monkeypatch.setattr(Model, "yaml_path", yaml_path)
 
@@ -1005,15 +1000,17 @@ def test_write_metrics_to_yaml(
         "rdf_error": 12.34567,
         "n_systems": 17,
     }
-    path = "models/test/md-metrics.csv"
-    url = "https://example.com/md-metrics.csv"
+    path = "models/mace/mace-mp-0/2026-07-01-md-metrics.csv.gz"
+    url = "https://example.com/2026-07-01-md-metrics.csv.gz"
     md_metrics.write_metrics_to_yaml(
         model, metrics, pred_file_path=path, pred_file_url=url
     )
 
     text = yaml_path.read_text(encoding="utf-8")
-    assert "pred_file: models/test/md-metrics.csv" in text
-    assert "pred_file_url: https://example.com/md-metrics.csv" in text
+    written = yaml.safe_load(text)
+    md = written["metrics"]["md"]
+    assert md["pred_file"] == {"name": path, "url": url}
+    assert "pred_file_url" not in md
     assert "hardware: NVIDIA H200" in text
     assert "run_time_sec: 4521.484 # s" in text
     assert "energy_rmse: 1.2346 # meV/atom" in text
@@ -1022,8 +1019,6 @@ def test_write_metrics_to_yaml(
     assert "n_systems: 17 # count" in text
     # CMDS is site-computed, never persisted
     assert "combined_score" not in text
-    # the 'not available' placeholder must be replaced, not kept
-    assert "not available" not in text
 
     # a later recompute from per-system CSVs lacking timing columns (e.g. legacy runs)
     # must preserve the recorded run provenance, not silently drop it

@@ -19,7 +19,6 @@
     freq_w1: number
     crystal_system: string
   }
-
   let {
     entry,
     base,
@@ -91,7 +90,7 @@
     ref_lines={[parity_diagonal]}
     x_axis={{ label: `PBE phonon freq. (THz)`, range: extent, format: `.3~` }}
     y_axis={{ label: `${entry.label} phonon freq. (THz)`, range: extent, format: `.3~` }}
-    color_bar={{ title: `Spectrum W1 (THz)`, tick_format: `.3~` }}
+    color_bar={{ title: `W₁(ω) (THz)`, tick_format: `.3~` }}
     {...rest}
   >
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}

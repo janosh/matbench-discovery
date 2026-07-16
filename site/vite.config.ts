@@ -5,6 +5,7 @@ import type { JSONSchema4 } from 'json-schema'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import type { Plugin } from 'vite'
@@ -63,8 +64,45 @@ export default /* @__PURE__ */ attach_style(JSON.parse(${JSON.stringify(json)}))
   },
 })
 
+// Ignore mtime-only rewrites from concurrent SvelteKit sync/check processes.
+const unchanged_generated_hmr_plugin = (): Plugin => {
+  const generated_dir = path.resolve(`.svelte-kit/generated`)
+  const initial_snapshots = new Map<string, string>()
+  const environment_snapshots = new WeakMap<object, Map<string, string>>()
+
+  return {
+    name: `unchanged-generated-hmr`,
+    configureServer() {
+      for (const file of fs.globSync(`${generated_dir}/**/*`)) {
+        if (!fs.statSync(file).isFile()) continue
+        initial_snapshots.set(file, fs.readFileSync(file, `utf8`))
+      }
+    },
+    async hotUpdate({ file, read, type }) {
+      if (type !== `update` || !file.startsWith(`${generated_dir}${path.sep}`)) {
+        return undefined
+      }
+      let file_snapshots = environment_snapshots.get(this.environment)
+      if (!file_snapshots) {
+        file_snapshots = new Map(initial_snapshots)
+        environment_snapshots.set(this.environment, file_snapshots)
+      }
+      const content = await read()
+      if (file_snapshots.get(file) === content) return []
+      file_snapshots.set(file, content)
+      return undefined
+    },
+  }
+}
+
 // Custom Vite plugin that watches *-schema.yml files and writes src/lib/schema/*.d.ts
 function yaml_schema_to_typescript_plugin(): Plugin {
+  const schema_map = {
+    'dataset-schema': { type_name: `DatasetRecord`, file_name: `dataset` },
+    'label-schema': { type_name: `Label`, file_name: `label` },
+    'model-schema': { type_name: `ModelMetadata`, file_name: `model` },
+  } as const
+
   async function yaml_schema_to_ts(file: string): Promise<boolean> {
     try {
       const yaml_content = fs.readFileSync(file, `utf-8`)
@@ -74,11 +112,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const parsed_yaml = load_yaml(yaml_content) as JSONSchema4
       const base_name = path.basename(file, `.yml`)
 
-      const output = {
-        'dataset-schema': { type_name: `DatasetRecord`, file_name: `dataset` },
-        'label-schema': { type_name: `Label`, file_name: `label` },
-        'model-schema': { type_name: `ModelMetadata`, file_name: `model` },
-      }[base_name]
+      const output = schema_map[base_name as keyof typeof schema_map]
       if (!output) throw new Error(`No schema output configured for ${base_name}.yml`)
 
       const model_metadata_ts = await json_to_ts(parsed_yaml, output.type_name, {
@@ -94,14 +128,26 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       })
 
       const dts_file = path.resolve(`./src/lib/schema/${output.file_name}.d.ts`)
-      fs.writeFileSync(dts_file, model_metadata_ts)
-
       // Rewrite json-schema-to-typescript index signatures (`{ [k: string]: T }`)
       // into `Record<string, T>` via the consistent-indexed-object-style autofix,
-      // then format the generated schema file
+      // then format in a temp directory so unchanged output never touches watched files
       const vp_cmd = path.resolve(`./node_modules/.bin/vp`)
-      execFileSync(vp_cmd, [`lint`, `--fix`, dts_file])
-      execFileSync(vp_cmd, [`fmt`, `--write`, dts_file])
+      const temp_dir = fs.mkdtempSync(path.join(os.tmpdir(), `mbd-schema-`))
+      const temp_file = path.join(temp_dir, `${output.file_name}.d.ts`)
+      try {
+        fs.writeFileSync(temp_file, model_metadata_ts)
+        execFileSync(vp_cmd, [`lint`, `--fix`, temp_file])
+        execFileSync(vp_cmd, [`fmt`, `--write`, temp_file])
+
+        const generated_ts = fs.readFileSync(temp_file, `utf8`)
+        const current_ts = fs.existsSync(dts_file)
+          ? fs.readFileSync(dts_file, `utf8`)
+          : null
+        if (generated_ts === current_ts) return false
+        fs.writeFileSync(dts_file, generated_ts)
+      } finally {
+        fs.rmSync(temp_dir, { recursive: true, force: true })
+      }
       return true
     } catch (error) {
       console.error(`Error processing schema file ${file}:`, error)
@@ -115,7 +161,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const schema_files = new Set(
         fs
           .readdirSync(`../tests`)
-          .filter((file_name) => file_name.endsWith(`-schema.yml`))
+          .filter((file_name) => path.basename(file_name, `.yml`) in schema_map)
           .map((file_name) => {
             const schema_file = path.resolve(`../tests/${file_name}`)
             void yaml_schema_to_ts(schema_file)
@@ -142,6 +188,7 @@ export default {
     yaml_plugin(),
     yaml_schema_to_typescript_plugin(),
     json_payload_plugin(),
+    unchanged_generated_hmr_plugin(),
   ],
 
   server: {

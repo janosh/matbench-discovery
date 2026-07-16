@@ -55,11 +55,10 @@ const load_repos_from_models = async (): Promise<ModelInfo[]> => {
           model_name?: string
           model_key?: string
           repo?: string
-          status?: string
+          lifecycle?: string
         }
 
-        // Skip superseded/aborted models
-        if ([`superseded`, `aborted`].includes(data.status ?? ``)) continue
+        if (data.lifecycle !== `active`) continue
 
         const repo_url = extract_github_repo(data.repo ?? null)
         if (repo_url && data.model_name && data.model_key && !repos_map.has(repo_url)) {

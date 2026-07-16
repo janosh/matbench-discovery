@@ -1,5 +1,4 @@
-import { MODELS } from '$lib'
-import type { ModelData } from '$lib/types'
+import { by_benchmark_added_desc, MODELS } from '$lib'
 import { GET } from '$routes/rss.xml/+server'
 import pkg from '$site/package.json'
 import { describe, expect, it } from 'vitest'
@@ -50,12 +49,6 @@ describe(`RSS feed endpoint`, () => {
   })
 
   it(`should include model details in the description`, async () => {
-    // Skip test if no models available
-    if (MODELS.length === 0) {
-      console.warn(`Skipping test: No models available`)
-      return
-    }
-
     const response = GET()
     const xml = await response.text()
 
@@ -68,10 +61,8 @@ describe(`RSS feed endpoint`, () => {
     expect(cdata_content).toMatch(/<strong>Metrics:<\/strong>/)
     expect(cdata_content).toMatch(/<strong>Parameters:<\/strong>[^<]+/)
 
-    // These sections should exist but may not be in every model
-    expect(cdata_content).toMatch(
-      /<strong>(?:Model Type|Targets|Training Set):<\/strong>/,
-    )
+    // Role is present for every model.
+    expect(cdata_content).toContain(`<strong>Role:</strong>`)
 
     // Authors section should appear later in the content
     const metrics_pos = cdata_content.indexOf(`<strong>Metrics:</strong>`)
@@ -79,20 +70,14 @@ describe(`RSS feed endpoint`, () => {
     expect(metrics_pos).toBeLessThan(authors_pos)
 
     // Check for proper HTML structure
-    const strongTags = [...cdata_content.matchAll(/<strong>/g)]
-    const strongCloseTags = [...cdata_content.matchAll(/<\/strong>/g)]
+    const strong_tags = [...cdata_content.matchAll(/<strong>/g)]
+    const strong_close_tags = [...cdata_content.matchAll(/<\/strong>/g)]
 
-    expect(strongTags.length).toBeGreaterThanOrEqual(5)
-    expect(strongCloseTags.length).toBeGreaterThanOrEqual(5)
+    expect(strong_tags.length).toBeGreaterThanOrEqual(5)
+    expect(strong_close_tags.length).toBeGreaterThanOrEqual(5)
   })
 
   it(`should include links to model resources`, async () => {
-    // Skip test if no models available
-    if (MODELS.length === 0) {
-      console.warn(`Skipping test: No models available`)
-      return
-    }
-
     const response = GET()
     const xml = await response.text()
 
@@ -123,73 +108,34 @@ describe(`RSS feed endpoint`, () => {
     // regression: the filter used !key.includes('_') instead of startsWith, dropping
     // nearly every hyperparam (max_steps, ase_optimizer, ...) so the section was empty
     const inner_underscore = (key: string) => key.includes(`_`) && !key.startsWith(`_`)
-    const hyperparam_key = MODELS.flatMap((md) => Object.keys(md.hyperparams ?? {})).find(
-      inner_underscore,
-    )
-    if (!hyperparam_key)
+    const hyperparameter_key = MODELS.flatMap((model) =>
+      Object.entries(model.hyperparams ?? {}).flatMap(([namespace, values]) =>
+        Object.keys(values).map((key) => `${namespace}.${key}`),
+      ),
+    ).find(inner_underscore)
+    if (!hyperparameter_key)
       throw new Error(`no model with underscore-containing hyperparams`)
 
     const xml = await GET().text()
-    expect(xml).toContain(`${hyperparam_key}: `)
+    expect(xml).toContain(`${hyperparameter_key}: `)
   })
 
   it(`should sort models by date in descending order`, async () => {
-    // Skip test if not enough models available
-    if (MODELS.length < 2) {
-      console.warn(`Skipping test: Not enough models available to test sorting`)
-      return
-    }
+    const xml = await GET().text()
 
-    const response = GET()
-    const xml = await response.text()
-
-    // Find models with different dates
-    const sorted_models = MODELS.toSorted(
-      (a, b) => new Date(b.date_added).getTime() - new Date(a.date_added).getTime(),
+    const expected_names = MODELS.toSorted(by_benchmark_added_desc).map(
+      (model) => model.model_name,
     )
-
-    // Take the first two models with different dates
-    let newer_model: ModelData | null = null
-    let older_model: ModelData | null = null
-
-    // Use for...of loop instead of index-based loop
-    let prev_model = sorted_models[0]
-    for (const current_model of sorted_models.slice(1)) {
-      if (prev_model.date_added !== current_model.date_added) {
-        newer_model = prev_model
-        older_model = current_model
-        break
-      }
-      prev_model = current_model
-    }
-
-    // Skip test if we couldn't find two models with different dates
-    if (!newer_model || !older_model) {
-      console.warn(`Skipping test: Couldn't find two models with different dates`)
-      return
-    }
-
-    // Verify the models have different dates
-    expect(newer_model.date_added).not.toBe(older_model.date_added)
-    expect(new Date(newer_model.date_added).getTime()).toBeGreaterThan(
-      new Date(older_model.date_added).getTime(),
+    const item_names = [...xml.matchAll(/<item>\s*<title>(?<name>[^<]+)<\/title>/g)].map(
+      (match) => match.groups?.name ?? ``,
     )
+    expect(item_names).toStrictEqual(expected_names)
 
-    // Newer model should appear before older model in the XML
-    const newer_index = xml.indexOf(newer_model.model_name)
-    const older_index = xml.indexOf(older_model.model_name)
-
-    expect(newer_index).not.toBe(-1)
-    expect(older_index).not.toBe(-1)
-    expect(newer_index).toBeLessThan(older_index)
-
-    // Additional check: every item has a pubDate in correct format
-    const pub_dates = [...xml.matchAll(/<pubDate>[^<]+<\/pubDate>/g)]
+    // every item carries a parseable pubDate
+    const pub_dates = [...xml.matchAll(/<pubDate>(?<date>[^<]+)<\/pubDate>/g)]
     expect(pub_dates).toHaveLength(MODELS.length)
-    for (const [date_str] of pub_dates) {
-      const date_content = date_str.replaceAll(/<\/?pubDate>/g, ``)
-      // Check that this parses as a valid date
-      expect(new Date(date_content).toString()).not.toBe(`Invalid Date`)
+    for (const match of pub_dates) {
+      expect(new Date(match.groups?.date ?? ``).toString()).not.toBe(`Invalid Date`)
     }
   })
 

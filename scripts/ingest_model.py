@@ -24,12 +24,19 @@ import yaml
 
 from matbench_discovery import ROOT
 from matbench_discovery.calculators import CALCULATORS
+from matbench_discovery.data import (
+    file_ref_url,
+    iter_file_refs,
+    parse_artifact_filename,
+    task_coverage,
+)
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS, RelaxationSettings
 from matbench_discovery.enums import Model
 from matbench_discovery.phonons.pipeline import KappaSettings
 
 PASS, FAIL, SKIP = "✓", "✗", "○"
-PAYLOAD_FLAGS = ("--auto-download",)
+# task_coverage statuses that mean the task has results worth checking artifacts for
+COVERED_STATUSES = frozenset({"complete", "partial"})
 # each entry is the `uv run` argument string for one payload script; kappa needs the
 # phonons extra (phono3py/phonopy) when computing conductivity diagnostics
 PAYLOAD_SCRIPTS = (
@@ -42,10 +49,6 @@ PAYLOAD_SCRIPTS = (
     "scripts/model_figs/single_model_per_element_errors.py",
     "--extra phonons scripts/model_figs/kappa_103_analysis.py",
     "scripts/evals/geo_opt.py",
-)
-PARITY_ASSET_DIRS = (
-    "site/static/energy-parity/assets",
-    "site/static/kappa-parity/assets",
 )
 # (label, skipped for energy-only models, fatal on failure, `uv run` args).
 # kappa needs the phonons extra (phono3py/phonopy); geo-opt the symmetry extra (moyopy)
@@ -128,13 +131,6 @@ def uv_run_args(args: str) -> tuple[str, ...]:
     return ("uv", "run", "--with-editable", project_req, *tokens)
 
 
-def task_metrics(model: Model, task: str) -> dict | str | None:
-    """A task's raw metrics from the model YAML: dict if present, str for declared
-    opt-outs like 'not available', None if missing.
-    """
-    return model.metadata.get("metrics", {}).get(task)
-
-
 def check_submission(
     model: Model,
     checks: Checklist,
@@ -152,15 +148,29 @@ def check_submission(
     else:
         checks.fail(f"Model YAML file not found at: {yaml_path}")
     checks.ok(f"Model '{model.name}' is present in the generated Model enum")
+    metadata = model.metadata
+    metrics_by_task = model.metrics
+    expected_artifact_dir = f"models/{model.family}/{metadata['model_key']}"
+    try:
+        artifact_refs = list(iter_file_refs(metrics_by_task, ("metrics",)))
+    except ValueError as exc:
+        checks.fail(str(exc))
+        artifact_refs = []
+    for key_path, artifact_path in artifact_refs:
+        try:
+            parse_artifact_filename(os.path.basename(artifact_path))
+            if os.path.dirname(artifact_path) != expected_artifact_dir:
+                raise ValueError("artifact is not directly model-owned")
+        except ValueError as exc:
+            checks.fail(f"Invalid {'.'.join(key_path)}: {exc}")
 
     # E = energy only (no forces -> no relaxation, phonons or diatomics)
-    energy_only = model.metadata.get("targets") == "E"
-
-    discovery = task_metrics(model, "discovery")
-    if isinstance(discovery, dict) and discovery.get("pred_file_url"):
-        checks.ok("Prediction file URL found in YAML (discovery.pred_file_url)")
+    energy_only = metadata.get("targets") == "E"
+    discovery = metrics_by_task.get("discovery")
+    if isinstance(discovery, dict) and file_ref_url(discovery.get("pred_file")):
+        checks.ok("Prediction file URL found in YAML (discovery.pred_file.url)")
     else:
-        checks.fail(f"No discovery.pred_file_url found in {yaml_path}")
+        checks.fail(f"No discovery.pred_file.url found in {yaml_path}")
 
     # (task, label, optional). phonons pred file nests under kappa_103.
     force_tasks = (
@@ -172,23 +182,26 @@ def check_submission(
         if energy_only:
             checks.skip(f"{label} check skipped (targets=E, no forces)")
             continue
-        metrics = task_metrics(model, task)
-        if isinstance(metrics, str):  # declared opt-out, e.g. 'not available'
-            checks.skip(f"{label} declared {metrics!r}")
+        status, reason = task_coverage(metadata, task)
+        if status not in COVERED_STATUSES:
+            suffix = f": {reason}" if reason else ""
+            checks.skip(f"{label} declared {status!r}{suffix}")
             continue
-        if task == "phonons" and isinstance(metrics, dict):
-            metrics = metrics.get("kappa_103")
-        if isinstance(metrics, dict) and metrics.get("pred_file"):
+        task_metrics = metrics_by_task.get(task)
+        if task == "phonons" and isinstance(task_metrics, dict):
+            task_metrics = task_metrics.get("kappa_103")
+        if isinstance(task_metrics, dict) and task_metrics.get("pred_file"):
             checks.ok(f"{label} found in YAML")
-        elif optional:
-            checks.skip(f"{label} not found in YAML")
         else:
-            checks.fail(f"{label} not found in {yaml_path}")
+            record = checks.skip if optional else checks.fail
+            location = "YAML" if optional else yaml_path
+            record(f"{label} not found in {location}")
 
     if not validate_runner:
         return energy_only
 
     calc_spec = CALCULATORS.get(model.name)
+    phonons_available = task_coverage(metadata, "phonons")[0] in COVERED_STATUSES
     for task in ("discovery", "kappa", "diatomics"):
         if energy_only and task != "discovery":
             checks.skip(f"{task} test script check skipped (targets=E, no forces)")
@@ -206,40 +219,39 @@ def check_submission(
             )
             continue
 
-        if task == "kappa" and isinstance(task_metrics(model, "phonons"), str):
+        if task == "kappa" and not phonons_available:
             checks.skip("kappa shared runner check skipped (phonons unavailable)")
             continue
 
-        if calc_spec is not None:
-            runner = f"{ROOT}/models/run_{task}.py"
-            try:
-                if not os.path.isfile(runner):
-                    raise ValueError(f"shared runner not found: {runner}")
-                if not (task == "kappa" and calc_spec.requires_checkpoint):
-                    command = calc_spec.uv_run_cmd(
-                        runner, "--model", model.name, "--dry-run"
-                    )
-                    subprocess.run(command, check=True)
-                if task == "discovery":
-                    RelaxationSettings.from_model(model.name)
-                elif task == "kappa":
-                    KappaSettings.from_model(model.name)
-            except (
-                subprocess.CalledProcessError,
-                OSError,
-                TypeError,
-                ValueError,
-            ) as exc:
-                checks.fail(f"Invalid shared {task} runner configuration: {exc}")
-            else:
-                checks.ok(f"{task} uses shared runner: models/run_{task}.py")
-        elif task == "kappa":
-            checks.fail(
-                "kappa shared runner unsupported: no registered calculator for "
+        if calc_spec is None:
+            record = checks.fail if task == "kappa" else checks.skip
+            record(
+                f"{task} shared runner unsupported: no registered calculator for "
                 f"{model.name}"
             )
+            continue
+        runner = f"{ROOT}/models/run_{task}.py"
+        try:
+            if not os.path.isfile(runner):
+                raise ValueError(f"shared runner not found: {runner}")
+            if not (task == "kappa" and calc_spec.requires_checkpoint):
+                command = calc_spec.uv_run_cmd(
+                    runner, "--model", model.name, "--dry-run"
+                )
+                subprocess.run(command, check=True)
+            if task == "discovery":
+                RelaxationSettings.from_model(model.name)
+            elif task == "kappa":
+                KappaSettings.from_model(model.name)
+        except (
+            subprocess.CalledProcessError,
+            OSError,
+            TypeError,
+            ValueError,
+        ) as exc:
+            checks.fail(f"Invalid shared {task} runner configuration: {exc}")
         else:
-            checks.skip(f"{task} unsupported: no registered calculator")
+            checks.ok(f"{task} uses shared runner: models/run_{task}.py")
 
     return energy_only
 
@@ -280,7 +292,8 @@ def run_archive(model: Model, checks: Checklist) -> None:
     else:
         checks.fail("Figshare archival failed")
 
-    for assets_dir in PARITY_ASSET_DIRS:
+    for parity_type in ("energy", "kappa"):
+        assets_dir = f"site/static/{parity_type}-parity/assets"
         if not (assets := glob.glob(f"{assets_dir}/*.json.gz")):
             continue
         if run_cmd("gh", "release", "upload", "v1.0.0", *assets, "--clobber"):
@@ -301,7 +314,7 @@ def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
     banner(f"Refreshing multi-model site figure payloads{suffix}")
     model_args = ("--models", model.name) if model else ()
     scripts: list[tuple[str, tuple[str, ...]]] = [
-        (script, PAYLOAD_FLAGS) for script in PAYLOAD_SCRIPTS
+        (script, ("--auto-download",)) for script in PAYLOAD_SCRIPTS
     ]
     if model is None:
         scripts.extend((step[3], ()) for step in FIG_STEPS)
@@ -331,22 +344,26 @@ def map_yaml_paths(paths: Sequence[str]) -> list[str]:
                 metadata = yaml.safe_load(file)
         except OSError as exc:
             raise SystemExit(f"Unknown model YAML: {path}") from exc
-        if not (isinstance(metadata, dict) and metadata.get("status") == "aborted"):
+        if not (isinstance(metadata, dict) and metadata.get("lifecycle") == "aborted"):
             raise SystemExit(f"{path} is not in the generated Model enum")
     return list(dict.fromkeys(names))
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("model", nargs="?", help="Model enum name (dashes ok)")
+    # Model(...) invokes _missing_ to normalize punctuation/casing
+    parser.add_argument(
+        "model",
+        nargs="?",
+        type=Model,  # ty: ignore[invalid-argument-type]
+        help="Model enum name (dashes ok)",
+    )
     parser.add_argument(
         "--overwrite", action="store_true", help="Overwrite existing eval outputs"
     )
     mode_group = parser.add_mutually_exclusive_group()
-    mode_group.add_argument("--archive", action="store_true")
-    mode_group.add_argument("--archive-only", action="store_true")
-    mode_group.add_argument("--validate-only", action="store_true")
-    mode_group.add_argument("--payloads-only", action="store_true")
+    for mode in ("archive", "archive-only", "validate-only", "payloads-only"):
+        mode_group.add_argument(f"--{mode}", action="store_true")
     mode_group.add_argument(
         "--map-yaml-paths",
         nargs="+",
@@ -360,29 +377,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     checks = Checklist()
-    model: Model | None = None
-    if args.model:
-        try:  # Model(...) invokes _missing_ to normalize punctuation/casing
-            model = Model(args.model)
-        except ValueError:
-            parser.error(
-                f"{args.model!r} not in the generated Model enum - check its "
-                "model_key/status and run python scripts/generate_model_enum.py"
-            )
-    if args.payloads_only:
+    model: Model | None = args.model
+    if model is None:
+        if not args.payloads_only:
+            parser.error("model is required unless --payloads-only")
+        run_payload_refresh(checks)
+    elif (args.archive or args.archive_only) and not os.getenv("FIGSHARE_TOKEN"):
+        parser.error("FIGSHARE_TOKEN must be set for archival")
+    elif args.payloads_only:
         run_payload_refresh(checks, model=model)
     elif args.archive_only:
-        if model is None:
-            parser.error("model is required with --archive-only")
-        if not os.getenv("FIGSHARE_TOKEN"):
-            parser.error("FIGSHARE_TOKEN must be set for --archive-only")
         run_archive(model, checks)
     else:
-        if model is None:
-            parser.error("model is required unless --payloads-only")
-        if args.archive and not os.getenv("FIGSHARE_TOKEN"):
-            parser.error("FIGSHARE_TOKEN must be set for --archive")
-
         banner(f"Ingesting model submission: {model.name}")
         energy_only = check_submission(
             model,

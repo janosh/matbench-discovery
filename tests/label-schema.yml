@@ -3,8 +3,6 @@ definitions:
     $ref: ./model-schema.yml#/definitions/http_url
   license_enum:
     $ref: ./model-schema.yml#/definitions/license_enum
-  ModelType:
-    $ref: ./model-schema.yml#/definitions/ModelType
   TargetType:
     $ref: ./model-schema.yml#/definitions/TargetType
 
@@ -68,9 +66,9 @@ definitions:
     type: object
     properties:
       model_name: { $ref: '#/definitions/Label' }
-      training_set: { $ref: '#/definitions/Label' }
+      training_sets: { $ref: '#/definitions/Label' }
       targets: { $ref: '#/definitions/Label' }
-      date_added: { $ref: '#/definitions/Label' }
+      benchmark_added: { $ref: '#/definitions/Label' }
       links: { $ref: '#/definitions/Label' }
       n_training_materials: { $ref: '#/definitions/Label' }
       n_training_structures: { $ref: '#/definitions/Label' }
@@ -80,9 +78,9 @@ definitions:
       org: { $ref: '#/definitions/Label' }
     required:
       - model_name
-      - training_set
+      - training_sets
       - targets
-      - date_added
+      - benchmark_added
       - links
       - n_training_materials
       - n_training_structures

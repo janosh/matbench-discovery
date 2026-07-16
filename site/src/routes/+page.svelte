@@ -11,10 +11,11 @@
     HYPERPARAMS,
     MD_METRICS,
     METADATA_COLS,
+    PHONON_METRICS,
   } from '$lib/labels'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { get_nested_number, is_finite_num, label_data_path } from '$lib/metrics'
-  import { make_table_filters, MODELS } from '$lib/models.svelte'
+  import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
   import {
     apply_weights_param,
     bind_url_params,
@@ -57,17 +58,21 @@
   const col_presets = {
     Discovery: Object.values(DISCOVERY_METRICS),
     'Geo Opt': Object.values(GEO_OPT_SYMMETRY_METRICS),
-    Phonons: [ALL_METRICS.κ_SRE],
+    Phonons: Object.values(PHONON_METRICS),
     MD: Object.values(MD_METRICS),
     Diatomics: Object.values(DIATOMICS_METRICS),
   }
   type ColPreset = keyof typeof col_presets
   const default_col_preset: ColPreset = `Discovery`
   const col_preset_names = Object.keys(col_presets) as ColPreset[]
+  const preset_expansions: Partial<Record<ColPreset, string>> = {
+    'Geo Opt': `Geometry Optimization`,
+    MD: `Molecular Dynamics`,
+  }
   const preset_primary_metrics: Record<ColPreset, Label> = {
     Discovery: DISCOVERY_METRICS.F1,
     'Geo Opt': ALL_METRICS.RMSD,
-    Phonons: ALL_METRICS.κ_SRME,
+    Phonons: PHONON_METRICS.κ_SRME,
     MD: MD_METRICS.md_combined_score,
     Diatomics: DIATOMICS_METRICS.diatomics_combined_score,
   }
@@ -87,7 +92,7 @@
   const col_preset_options = col_preset_names.map((name) => ({
     value: name,
     label: name,
-    tooltip: `Focus the table on ${name} metrics`,
+    tooltip: `Focus the table on ${preset_expansions[name] ?? name} metrics`,
   }))
 
   let export_error: string | null = $state(null)
@@ -102,8 +107,8 @@
   let custom_col_config = $state(false)
   let previous_col_preset: ColPreset = default_col_preset
   const sortable_header_selector = `thead th[role="button"]`
-  const column_toggles_selector = `details.column-toggles`
-  const reset_columns_selector = `${column_toggles_selector} button[aria-label="Reset all columns to defaults"]`
+  const column_toggle_input_selector = `.column-menu input[type="checkbox"]`
+  const reset_columns_selector = `button[aria-label="Reset all columns to defaults"]`
 
   $effect(() => {
     if (col_preset === previous_col_preset) return
@@ -119,13 +124,13 @@
     if (!(target instanceof Element)) return
     if (target.closest(sortable_header_selector)) auto_sort_enabled = false
     if (target.closest(reset_columns_selector)) custom_col_config = false
-    if (event.type === `change` && target.matches(`${column_toggles_selector} input`)) {
-      custom_col_config = true
-    }
+    if (target.matches(column_toggle_input_selector)) custom_col_config = true
   }
 
   const valid_sets = new Set(DISCOVERY_SETS)
   onMount(() => {
+    // MatterViz portals column toggle inputs to document.body, outside the table section.
+    document.addEventListener(`click`, handle_table_event, { capture: true })
     const params = page.url.searchParams
     const next_preset =
       col_preset_names.find((preset) => preset === params.get(`preset`)) ??
@@ -140,6 +145,8 @@
     filters.read(params)
     col_preset = next_preset
     previous_col_preset = next_preset
+    return () =>
+      document.removeEventListener(`click`, handle_table_event, { capture: true })
   })
 
   // Sync table state back to URL query params after the initial URL read (table state
@@ -170,9 +177,7 @@
     const discovery = model.metrics?.discovery
     const value =
       preset === `Discovery`
-        ? discovery !== null && typeof discovery === `object`
-          ? discovery[discovery_set]?.F1
-          : undefined
+        ? discovery?.[discovery_set]?.F1
         : get_nested_number(model, label_data_path(preset_primary_metrics[preset]))
     return is_finite_num(value) ? value : undefined
   }
@@ -186,7 +191,7 @@
   )
   let primary_metric = $derived(preset_primary_metrics[col_preset])
   let best_entry = $derived.by(() => {
-    const entries = MODELS.filter(in_cohort).flatMap((model) => {
+    const entries = ACTIVE_MODELS.filter(in_cohort).flatMap((model) => {
       const value = preset_metric_value(model, col_preset)
       return value === undefined ? [] : [{ model, value }]
     })
@@ -341,16 +346,16 @@
 added) with a running-best line showing which releases moved the frontier -->
 <h2>CPS Progress Over Time</h2>
 <p>
-  Each point is a model placed at its submission date; the dashed step line traces the
-  running best ("SOTA frontier") CPS v1, so its jumps mark the models that set a new
-  record when they were added. Use the axis/color/size selectors to compare models across
-  any pair of metrics and parameters. The plot shows the same model cohort as the metrics
-  table above, following the active task preset and table filters.
+  Each point is a model placed at its benchmark inclusion date; the dashed step line
+  traces the running best ("SOTA frontier") CPS v1, so its jumps mark the models that set
+  a new record when they joined the leaderboard. Use the axis/color/size selectors to
+  compare models across any pair of metrics and parameters. The plot shows the same model
+  cohort as the metrics table above, following the active task preset and table filters.
 </p>
 <DynamicScatter
-  models={MODELS}
+  models={ACTIVE_MODELS}
   model_filter={in_cohort}
-  x_key={METADATA_COLS.date_added.key}
+  x_key={METADATA_COLS.benchmark_added.key}
   y_key={ALL_METRICS.CPS.key}
   show_pareto_frontier
 />
@@ -358,7 +363,7 @@ added) with a running-best line showing which releases moved the frontier -->
 <Readme>
   {#snippet title()}{/snippet}
   {#snippet model_count()}
-    {MODELS.filter(in_cohort).length}
+    {ACTIVE_MODELS.filter(in_cohort).length}
   {/snippet}
 
   {#snippet best_report()}

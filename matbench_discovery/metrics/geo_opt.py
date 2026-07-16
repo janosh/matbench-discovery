@@ -5,7 +5,11 @@ from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery import repo_relative_path
-from matbench_discovery.data import update_yaml_file
+from matbench_discovery.data import (
+    canonical_scientific_notation,
+    make_file_ref,
+    update_yaml_file,
+)
 from matbench_discovery.enums import MbdKey, Model
 
 
@@ -14,7 +18,7 @@ def write_metrics_to_yaml(
     model: Model,
     symprec: float,
     analysis_file_path: str,
-) -> dict[str, str | float]:
+) -> dict[str, object]:
     """Write geometric optimization metrics to model's YAML file.
 
     Args:
@@ -24,7 +28,7 @@ def write_metrics_to_yaml(
         analysis_file_path (str): Path to analysis file
 
     Returns:
-        dict[str, str | float]: Geometric optimization metrics for this model and
+        dict[str, object]: Geometric optimization metrics for this model and
             symmetry precision.
     """
     # Convert absolute path to relative path if needed
@@ -46,11 +50,10 @@ def write_metrics_to_yaml(
             float(df_geo_opt[Key.symmetry_increase].iloc[0]), 4
         ),
         str(Key.n_structures): int(df_geo_opt[Key.n_structures].iloc[0]),
-        "analysis_file": analysis_file_path,
-        "analysis_file_url": None,  # to be filled after uploading to figshare
+        "analysis_file": make_file_ref(analysis_file_path),
     }
     metrics_for_symprec = CommentedMap(metrics_for_symprec)
-    symprec_key = f"{symprec=:.0e}".replace("e-0", "e-")
+    symprec_key = f"symprec={canonical_scientific_notation(symprec)}"
 
     # Define units for metrics
     metric_units = {

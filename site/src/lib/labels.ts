@@ -108,7 +108,7 @@ export const METADATA_COLS: MetadataLabels = {
     sortable: true,
     better: undefined,
   },
-  training_set: {
+  training_sets: {
     key: `Training Set`,
     label: `Training Set`,
     description: `Size of and link to model training set`,
@@ -118,11 +118,12 @@ export const METADATA_COLS: MetadataLabels = {
     label: `Targets`,
     description: `Target property used to train the model`,
   },
-  date_added: {
-    key: `date_added`,
+  benchmark_added: {
+    key: `benchmark_added`,
     label: `Date Added`,
+    path: `dates`,
     format: `%b %y`,
-    description: `Submission date to the leaderboard`,
+    description: `Date the model was included on the benchmark leaderboard`,
   },
   links: {
     key: `Links`,
@@ -183,68 +184,67 @@ export const HYPERPARAMS: HyperparamLabels = {
   graph_construction_radius: {
     key: `graph_construction_radius`,
     label: `r<sub>cut</sub>`,
-    path: `hyperparams`,
+    path: `hyperparams.architecture`,
     description: `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
   },
   max_force: {
     key: `max_force`,
     label: `f<sub>max</sub>`,
-    path: `hyperparams`,
+    path: `hyperparams.evaluation`,
     description: `Max remaining force allowed on any atom in the structure for geometry optimization convergence`,
     unit: `eV/Å`,
   },
   max_steps: {
     key: `max_steps`,
     label: `Steps`,
-    path: `hyperparams`,
+    path: `hyperparams.evaluation`,
     description: `Maximum number of optimization steps allowed`,
   },
   ase_optimizer: {
     key: `Optimizer`,
     label: `Optimizer`,
-    path: `hyperparams`,
+    path: `hyperparams.evaluation`,
     description: `ASE optimizer used for structure relaxation (e.g., FIRE, LBFGS, BFGS, GOQN)`,
   },
   cell_filter: {
     key: `Cell filter`,
     label: `Cell filter`,
-    path: `hyperparams`,
+    path: `hyperparams.evaluation`,
     description: `ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)`,
   },
   batch_size: {
     key: `batch_size`,
     label: `Batch size`,
-    path: `hyperparams`,
+    path: `hyperparams.training`,
     description: `Batch size`,
   },
   epochs: {
     key: `epochs`,
     label: `Epochs`,
-    path: `hyperparams`,
+    path: `hyperparams.training`,
     description: `Number of training epochs`,
   },
   n_layers: {
     key: `n_layers`,
     label: `Layers`,
-    path: `hyperparams`,
+    path: `hyperparams.architecture`,
     description: `Number of (usually message passing) layers`,
   },
   learning_rate: {
     key: `LR`,
     label: `LR`,
-    path: `hyperparams`,
+    path: `hyperparams.training`,
     description: `Learning rate`,
   },
   max_neighbors: {
     key: `Max neighbors`,
     label: `Max neighbors`,
-    path: `hyperparams`,
+    path: `hyperparams.architecture`,
     description: `Maximum number of neighbors during graph construction`,
   },
   n_estimators: {
-    key: `Estimators`,
+    key: `n_estimators`,
     label: `Estimators`,
-    path: `hyperparams`,
     description: `Number of estimators`,
   },
 } as const
@@ -649,13 +649,69 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   },
 }
 
+// Phonon metrics
+export const PHONON_METRICS = {
+  κ_SRME: {
+    key: `κ_SRME`,
+    label: `κ<sub>SRME</sub>`,
+    description: `Symmetric relative mean error in predicted phonon-mode contributions to thermal conductivity κ, averaged over the 103 PhononDB-PBE materials (range [0, 2])`,
+    path: `metrics.phonons.kappa_103`,
+    range: [0, 2],
+    better: `lower`,
+    format: `.3~f`,
+  },
+  κ_SRE: {
+    key: `κ_SRE`,
+    label: `κ<sub>SRE</sub>`,
+    description: `Symmetric relative error of total lattice thermal conductivity κ, averaged over the 103 PhononDB-PBE materials (range [0, 2])`,
+    path: `metrics.phonons.kappa_103`,
+    range: [0, 2],
+    better: `lower`,
+    format: `.3~f`,
+  },
+  κ_SRD: {
+    key: `κ_SRD`,
+    label: `κ<sub>SRD</sub>`,
+    description: `Mean signed symmetric relative difference in total lattice thermal conductivity κ over the 103 PhononDB-PBE materials (range [-2, 2]); negative values indicate underprediction and positive values overprediction. Invalid or missing κ predictions count as zero conductivity (SRD = -2)`,
+    path: `metrics.phonons.kappa_103`,
+    range: [-2, 2],
+    format: `.3~f`,
+  },
+  κ_failure_rate: {
+    key: `κ_failure_rate`,
+    label: `κ failed`,
+    description: `Fraction of the 103 PhononDB-PBE materials where κ prediction failed outright and κ<sub>SRME</sub> was censored to its maximum of 2`,
+    path: `metrics.phonons.kappa_103`,
+    range: [0, 1],
+    better: `lower`,
+    format: `.1~%`,
+  },
+  imaginary_mode_rate: {
+    key: `imaginary_mode_rate`,
+    label: `Im(ω)`,
+    description: `Fraction of the 103 PhononDB-PBE materials with imaginary phonon modes after ML relaxation; missing flags count as unflagged`,
+    path: `metrics.phonons.kappa_103`,
+    range: [0, 1],
+    better: `lower`,
+    format: `.1~%`,
+  },
+  spectrum_w1: {
+    key: `spectrum_w1`,
+    label: `W<sub>1</sub>(ω)`,
+    description: `Mean Wasserstein-1 distance between ML and DFT phonon frequency spectra over materials with usable frequencies; robust to error compounding in κ, with an approximately 0.02 THz mesh-comparison noise floor`,
+    path: `metrics.phonons.kappa_103`,
+    unit: `THz`,
+    better: `lower`,
+    format: `.3~f`,
+  },
+} as const satisfies Record<string, Label>
+
 type AllMetrics = DiscoveryMetricsLabels &
   GeoOptSymmetryMetricsLabels &
   MdMetricsLabels &
+  Record<keyof typeof PHONON_METRICS, Label> &
   Record<DiatomicsMetricKey, Label> & {
     CPS: Label
-    κ_SRME: Label
-    κ_SRE: Label
     RMSD: Label
   }
 
@@ -670,21 +726,7 @@ export const ALL_METRICS: AllMetrics = {
     format: `.3f`,
   },
   ...DISCOVERY_METRICS,
-  // Phonon metrics
-  κ_SRME: {
-    key: `κ_SRME`,
-    label: `κ<sub>SRME</sub>`,
-    description: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
-    path: `metrics.phonons.kappa_103`,
-    better: `lower`,
-  },
-  κ_SRE: {
-    key: `κ_SRE`,
-    label: `κ<sub>SRE</sub>`,
-    description: `Symmetric relative error of total lattice thermal conductivity κ, averaged over the 103 phononDB-PBE materials (range [0, 2])`,
-    path: `metrics.phonons.kappa_103`,
-    better: `lower`,
-  },
+  ...PHONON_METRICS,
   // Geometry optimization metrics
   RMSD: {
     key: `rmsd`,
@@ -753,7 +795,7 @@ const time_multiplier_keys = new Set([
 export const scatter_options = [
   ...Object.values(ALL_METRICS).filter((metric) => !time_multiplier_keys.has(metric.key)),
   HYPERPARAMS.model_params,
-  METADATA_COLS.date_added,
+  METADATA_COLS.benchmark_added,
   METADATA_COLS.n_training_materials,
   METADATA_COLS.n_training_structures,
   HYPERPARAMS.graph_construction_radius,
@@ -807,7 +849,7 @@ const CATEGORY_LABELS = Object.fromEntries(
     ([key, task]) => [key, task.label],
   ),
 )
-// Add explicit mapping for hyperparams to show as "Hyperparams"
+// Add explicit mapping for hyperparams.
 CATEGORY_LABELS.hyperparams = `Hyperparams`
 
 const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)

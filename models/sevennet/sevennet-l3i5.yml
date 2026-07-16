@@ -1,200 +1,103 @@
 model_name: SevenNet-l3i5
 model_key: sevennet-l3i5
-model_version: v0.10.3 # 2024-07-11
-date_added: '2024-12-10'
-date_published: '2024-02-06'
+model_version: v0.10.3
+dates:
+  benchmark_added: '2024-12-10'
+  paper_published: '2024-02-06'
+lifecycle: active
 authors:
-  - name: Yutack Park
-    affiliation: Seoul National University
-    email: parkyutack@snu.ac.kr
-    orcid: https://orcid.org/0009-0008-8690-935X
-  - name: Jaesun Kim
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0009-0000-6646-1318
-  - name: Seungwoo Hwang
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0000-0002-1523-8340
-  - name: Seungwu Han
-    affiliation: Seoul National University, Korea Institute for Advanced Study
-    email: hansw@snu.ac.kr
-    orcid: https://orcid.org/0000-0003-3958-0922
-    corresponding: true
+- name: Yutack Park
+  affiliation: Seoul National University
+  email: parkyutack@snu.ac.kr
+  orcid: https://orcid.org/0009-0008-8690-935X
+- name: Jaesun Kim
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0009-0000-6646-1318
+- name: Seungwoo Hwang
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0000-0002-1523-8340
+- name: Seungwu Han
+  affiliation: Seoul National University, Korea Institute for Advanced Study
+  email: hansw@snu.ac.kr
+  orcid: https://orcid.org/0000-0003-3958-0922
+  corresponding: true
 trained_by:
-  - name: Saerom Choi
-    affiliation: Samsung Advanced Institute of Technology, Seoul National University
-    orcid: https://orcid.org/0009-0004-2240-5428
+- name: Saerom Choi
+  affiliation: Samsung Advanced Institute of Technology, Seoul National University
+  orcid: https://orcid.org/0009-0004-2240-5428
 
 repo: https://github.com/MDIL-SNU/SevenNet
-url: https://github.com/MDIL-SNU/SevenNet/blob/main/sevenn/pretrained_potentials/SevenNet_l3i5
 doi: https://doi.org/10.1021/acs.jctc.4c00190
 paper: https://arxiv.org/abs/2402.03789
+docs: https://github.com/MDIL-SNU/SevenNet/blob/main/sevenn/pretrained_potentials/SevenNet_l3i5
 pypi: https://pypi.org/project/sevenn
 pr_url: https://github.com/janosh/matbench-discovery/pull/172
-checkpoint_url: https://github.com/MDIL-SNU/SevenNet/blob/dff008ac9c5/sevenn/pretrained_potentials/SevenNet_l3i5/checkpoint_l3i5.pth
-
+checkpoint_url: https://raw.githubusercontent.com/MDIL-SNU/SevenNet/dff008ac9c5/sevenn/pretrained_potentials/SevenNet_l3i5/checkpoint_l3i5.pth
 license:
   code: GPL-3.0
   code_url: https://github.com/MDIL-SNU/SevenNet/blob/8ce2c9d4/LICENSE
   checkpoint: GPL-3.0
   checkpoint_url: https://github.com/MDIL-SNU/SevenNet/blob/8ce2c9d4/LICENSE
 
+environment:
+  dependencies:
+  - sevenn
+  - torch==2.2.1
+  - torch-geometric==2.5.2
+  - ase==3.22.1
+  - pymatgen==2024.6.10
+  - numpy==1.26.4
+  python_version: '3.12'
 openness: OSOD
-trained_for_benchmark: false
+architecture_types: [gnn]
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
-model_type: UIP
+training_sets: [MPtrj]
 model_params: 1171144
-n_estimators: 1
-
 hyperparams:
-  max_force: 0.05
-  max_steps: 500
-  ase_optimizer: FIRE
-  cell_filter: FrechetCellFilter
-  optimizer: Adam
-  loss: Huber - delta=0.01
-  loss_weights:
-    energy: 1.0
-    force: 1.0
-    stress: 0.01
-  batch_size: 1024 # 32 (gpus) * 32 (batch per gpu) = 1024 (total batch size)
-  initial_learning_rate: 0.010
-  learning_rate_schedule: LinearLR - start_factor=1.0, total_iters=600, end_factor=0.0001
-  epochs: 600
-  n_layers: 5
-  n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors, 32 l=3 tensors
-  n_radial_bessel_basis: 8
-  graph_construction_radius: 5.0 # Å, from sevennet-l3i5/hyperparams.yaml
-  max_neighbors: .inf
-  sph_harmonics_l_max: 3
-
-  kappa:
-    protocol: phonondb-v1
-    save_forces: true
-requirements:
-  torch: 2.2.1
-  torch-geometric: 2.5.2
-  ase: 3.22.1
-  pymatgen: 2024.6.10
-  numpy: 1.26.4
-
-training_set: [MPtrj]
-training_cost: missing
-
+  evaluation:
+    max_force: 0.05
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      save_forces: true
+  architecture:
+    n_layers: 5
+    graph_construction_radius: 5.0
+  training:
+    batch_size: 1024
+    initial_learning_rate: 0.010
+    epochs: 600
+    optimizer: Adam
+  upstream_config:
+    loss: Huber - delta=0.01
+    loss_weights:
+      energy: 1.0
+      force: 1.0
+      stress: 0.01
+    learning_rate_schedule: LinearLR - start_factor=1.0, total_iters=600, end_factor=0.0001
+    n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors, 32 l=3 tensors
+    n_radial_bessel_basis: 8
+    sph_harmonics_l_max: 3
 notes:
-  Description: |
+  description: |
     SevenNet is a graph neural network interatomic potential package that supports parallel molecular dynamics simulations.
     In the SevenNet-l3i5 model, based on the NequIP architecture, the self-connection layer is replaced by a linear (or self-interaction) layer removing numerous element-dependent parameters. Compared to the SevenNet-0, which uses spherical harmonics up to l=2, SevenNet-l3i5 employs l=3 resulting in higher accuracy.
 
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 0.5496
-      pred_file: models/sevennet/sevennet-l3i5/2024-12-10-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/52134881
-      κ_SRE: 0.3993
-  geo_opt:
-    pred_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/57753580
-    struct_col: sevennet_structure
-    symprec=1e-5:
-      rmsd: 0.0847 # unitless
-      n_sym_ops_mae: 2.7178 # unitless
-      symmetry_decrease: 0.3667 # fraction
-      symmetry_match: 0.4412 # fraction
-      symmetry_increase: 0.1451 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504699
-    symprec=1e-2:
-      rmsd: 0.0847 # unitless
-      n_sym_ops_mae: 1.9379 # unitless
-      symmetry_decrease: 0.0895 # fraction
-      symmetry_match: 0.788 # fraction
-      symmetry_increase: 0.1134 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504702
-  discovery:
-    pred_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52057547
-    pred_col: e_form_per_atom_chgTot_l3i5
-    full_test_set:
-      F1: 0.751 # fraction
-      DAF: 4.112 # dimensionless
-      Precision: 0.706 # fraction
-      Recall: 0.803 # fraction
-      Accuracy: 0.909 # fraction
-      TPR: 0.803 # fraction
-      FPR: 0.069 # fraction
-      TNR: 0.931 # fraction
-      FNR: 0.197 # fraction
-      TP: 35385.0 # count
-      FP: 14764.0 # count
-      TN: 198107.0 # count
-      FN: 8707.0 # count
-      MAE: 0.042 # eV/atom
-      RMSE: 0.086 # eV/atom
-      R2: 0.773 # dimensionless
-      missing_preds: 3 # count
-    most_stable_10k:
-      F1: 0.952 # fraction
-      DAF: 5.945 # dimensionless
-      Precision: 0.909 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.909 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9088.0 # count
-      FP: 912.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
-      MAE: 0.05 # eV/atom
-      RMSE: 0.114 # eV/atom
-      R2: 0.745 # dimensionless
-      missing_preds: 0 # count
-    unique_prototypes:
-      F1: 0.76 # fraction
-      DAF: 4.629 # dimensionless
-      Precision: 0.708 # fraction
-      Recall: 0.821 # fraction
-      Accuracy: 0.92 # fraction
-      TPR: 0.821 # fraction
-      FPR: 0.062 # fraction
-      TNR: 0.938 # fraction
-      FNR: 0.179 # fraction
-      TP: 27404.0 # count
-      FP: 11322.0 # count
-      TN: 170792.0 # count
-      FN: 5970.0 # count
-      MAE: 0.044 # eV/atom
-      RMSE: 0.087 # eV/atom
-      R2: 0.776 # dimensionless
-      missing_preds: 1 # count
-  md:
-    pred_file: models/sevennet/sevennet-l3i5/2026-06-28-sevennet_l3i5-md-metrics.csv.gz
-    hardware: NVIDIA H200
-    run_time_sec: 54360.02 # s
-    energy_rmse: 1.2403 # meV/atom
-    force_rmse: 123.3479 # meV/Å
-    rdf_error: 5.0235 # %
-    adf_error: 2.0644 # %
-    vdos_error: 24.8337 # %
-    pressure_mae: 0.8113 # GPa
-    pressure_wasserstein: 0.8154 # GPa
-    pressure_error: 56.086 # %
-    n_systems: 17 # count
-    pred_file_url: https://figshare.com/files/66048932
   diatomics:
-    pred_file: models/sevennet/sevennet-l3i5/2026-07-03-diatomics.json.gz
-    pred_file_url: https://figshare.com/files/66289007
-    hardware: NVIDIA A100-SXM4-80GB
-    run_time_sec: 2733.1
+    pred_file:
+      name: models/sevennet/sevennet-l3i5/2026-07-03-diatomics.json.gz
+      url: https://figshare.com/files/66289007
+      size: 228906
+      md5: c028b11d9256fa0355eeeccb67ac22de
     excluded_formula_reasons:
       He-He: exploding errors
+    hardware: NVIDIA A100-SXM4-80GB
+    run_time_sec: 2733.1
     pbe_wall_dist_mae: 0.228
     pbe_energy_mae: 1.149
     pbe_bond_length_error: 0.1928
@@ -207,3 +110,123 @@ metrics:
     force_total_variation: 563.6
     force_jump: 192.5
     pbe_force_mae: 2.65
+  discovery:
+    pred_file:
+      name: models/sevennet/sevennet-l3i5/2024-12-10-discovery.csv.gz
+      url: https://figshare.com/files/66646319
+      size: 1657501
+      md5: 05b0b77a24264da18c899f5a24d18791
+    full_test_set:
+      F1: 0.751  # fraction
+      DAF: 4.112 # dimensionless
+      Precision: 0.706 # fraction
+      Recall: 0.803 # fraction
+      Accuracy: 0.909 # fraction
+      TPR: 0.803 # fraction
+      FPR: 0.069 # fraction
+      TNR: 0.931 # fraction
+      FNR: 0.197 # fraction
+      TP: 35385 # count
+      FP: 14764 # count
+      TN: 198107 # count
+      FN: 8707 # count
+      MAE: 0.042 # eV/atom
+      RMSE: 0.086 # eV/atom
+      R2: 0.773 # dimensionless
+      missing_preds: 3 # count
+    most_stable_10k:
+      F1: 0.952  # fraction
+      DAF: 5.945 # dimensionless
+      Precision: 0.909 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.909 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9088 # count
+      FP: 912 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.05 # eV/atom
+      RMSE: 0.114 # eV/atom
+      R2: 0.745 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.76  # fraction
+      DAF: 4.629 # dimensionless
+      Precision: 0.708 # fraction
+      Recall: 0.821 # fraction
+      Accuracy: 0.92 # fraction
+      TPR: 0.821 # fraction
+      FPR: 0.062 # fraction
+      TNR: 0.938 # fraction
+      FNR: 0.179 # fraction
+      TP: 27404 # count
+      FP: 11322 # count
+      TN: 170792 # count
+      FN: 5970 # count
+      MAE: 0.044 # eV/atom
+      RMSE: 0.087 # eV/atom
+      R2: 0.776 # dimensionless
+      missing_preds: 1 # count
+  geo_opt:
+    pred_file:
+      name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57753580
+      size: 142279929
+      md5: b274a23e0505ad985a628328eb24d029
+    symprec=1e-5:
+      rmsd: 0.0847
+      n_sym_ops_mae: 2.7178
+      symmetry_decrease: 0.3667
+      symmetry_match: 0.4412
+      symmetry_increase: 0.1451
+      n_structures: 256963
+      analysis_file:
+        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504699
+        size: 8710977
+        md5: 4ec969804d3fe0628c0accc635e7bacb
+    symprec=1e-2:
+      rmsd: 0.0847
+      n_sym_ops_mae: 1.9379
+      symmetry_decrease: 0.0895
+      symmetry_match: 0.788
+      symmetry_increase: 0.1134
+      n_structures: 256963
+      analysis_file:
+        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504702
+        size: 9194881
+        md5: ee6cdc6651567d2611e1786455c6aeb8
+  md:
+    pred_file:
+      name: models/sevennet/sevennet-l3i5/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048932
+      size: 1573
+      md5: 1e3efc2c98fecb84a2f1d295901a8b2e
+    hardware: NVIDIA H200
+    run_time_sec: 54360.02
+    energy_rmse: 1.2403
+    force_rmse: 123.3479
+    rdf_error: 5.0235
+    adf_error: 2.0644
+    vdos_error: 24.8337
+    pressure_mae: 0.8113
+    pressure_wasserstein: 0.8154
+    pressure_error: 56.086
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 0.5496
+      pred_file:
+        name: models/sevennet/sevennet-l3i5/2024-12-10-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/52134881
+        size: 7379562
+        md5: e2af4546f3b6ed6a955e27189aeb5813
+      κ_SRE: 0.3993
+      κ_SRD: -0.3718
+      κ_failure_rate: 0.0291
+      imaginary_mode_rate: 0.0291
+      spectrum_w1: 0.5195

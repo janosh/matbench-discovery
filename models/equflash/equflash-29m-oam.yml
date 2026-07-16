@@ -1,0 +1,181 @@
+model_name: EquFlash
+model_key: equflash-29m-oam
+model_version: v2025.06.23
+dates:
+  benchmark_added: '2025-06-23'
+  paper_published: '2025-06-23'
+lifecycle: active
+authors:
+- name: Hyuntae Cho
+  affiliation: Materials AI Lab at Samsung Electronics
+  email: robert.cho@samsung.com
+  orcid: https://orcid.org/0000-0001-9379-6877
+- name: Saerom Choi
+  affiliation: Materials AI Lab at Samsung Electronics
+  email: sincere.choi@samsung.com
+- name: Heejae Kim
+  affiliation: Materials AI Lab at Samsung Electronics
+- name: Jaehee Jang
+  affiliation: Materials AI Lab at Samsung Electronics
+- name: Gunhee Kim
+  affiliation: Materials AI Lab at Samsung Electronics
+- name: Heesun Lee
+  affiliation: Materials AI Lab at Samsung Electronics
+- name: Hyunwoo Lee
+  affiliation: Materials AI Lab at Samsung Electronics
+- name: Yongdeok Kim
+  affiliation: Materials AI Lab at Samsung Electronics
+  email: yd.mlg.kim@samsung.com
+
+repo: https://github.com/SamsungDS/GGNN
+doi:
+paper: https://proceedings.mlr.press/v267/lee25l.html
+pr_url: https://github.com/janosh/matbench-discovery/pull/269
+checkpoint_url: https://figshare.com/ndownloader/files/65435004
+license:
+  code: MIT
+  code_url: https://github.com/SamsungDS/GGNN
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+environment:
+  # Display/provenance pins; install is owned by project (override-dependencies).
+  dependencies:
+  - torch==2.9.1+cu126
+  - fairchem-core==1.10.0
+  - cuequivariance==0.6.0
+  - GGNN @ git+https://github.com/SamsungDS/GGNN@16b5cae47437
+  python_version: '3.12'
+  project: models/equflash/kappa-env
+openness: CSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj, OMat24, sAlex]
+size: 29M
+model_params: 28741188
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      relaxation_mode: two-stage
+      max_atoms_per_batch: 128
+  architecture:
+    graph_construction_radius: 6.0
+notes:
+  description: |
+    EquFlash is an E(3)-equivariant model based on the SevenNet-0 architecture, with tensor products accelerated by FlashTP.
+    FlashTP achieves up to 41.6× and 60.8× kernel speedups over e3nn and NVIDIA cuEquivariance, respectively, while reducing memory usage by 6×.
+    Leveraging these gains, we scaled EquFlash to a larger capacity than the original SevenNet-0.
+  training: EquFlash, a scaled-up model derived from SevenNet-0 and accelerated with FlashTP, was pretrained on OMat24 and finetuned on MPtrj and sAlex.
+
+metrics:
+  discovery:
+    pred_file:
+      name: models/equflash/equflash-29m-oam/2025-06-23-discovery.csv.gz
+      url: https://figshare.com/files/66646271
+      size: 2771470
+      md5: 20f3e747f848fc3f74999c5671f66e02
+    full_test_set:
+      F1: 0.9  # fraction
+      DAF: 5.214 # dimensionless
+      Precision: 0.895 # fraction
+      Recall: 0.906 # fraction
+      Accuracy: 0.966 # fraction
+      TPR: 0.906 # fraction
+      FPR: 0.022 # fraction
+      TNR: 0.978 # fraction
+      FNR: 0.094 # fraction
+      TP: 39932 # count
+      FP: 4699 # count
+      TN: 208172 # count
+      FN: 4160 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.864 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.919  # fraction
+      DAF: 5.983 # dimensionless
+      Precision: 0.915 # fraction
+      Recall: 0.922 # fraction
+      Accuracy: 0.975 # fraction
+      TPR: 0.922 # fraction
+      FPR: 0.016 # fraction
+      TNR: 0.984 # fraction
+      FNR: 0.078 # fraction
+      TP: 30786 # count
+      FP: 2875 # count
+      TN: 179239 # count
+      FN: 2588 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.871 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.985  # fraction
+      DAF: 6.353 # dimensionless
+      Precision: 0.971 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.971 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9712 # count
+      FP: 288 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.017 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.902 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57277370
+      size: 137602306
+      md5: dd462f9350aee7d682e0ed64f63bb870
+    symprec=1e-5:
+      rmsd: 0.0602
+      n_sym_ops_mae: 2.0595
+      symmetry_decrease: 0.0489
+      symmetry_match: 0.7019
+      symmetry_increase: 0.244
+      n_structures: 256963
+      analysis_file:
+        name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
+        url: https://figshare.com/files/57277376
+        size: 7415159
+        md5: e0b1ea4f816de7534a89199e7845c0da
+    symprec=1e-2:
+      rmsd: 0.0602
+      n_sym_ops_mae: 1.6926
+      symmetry_decrease: 0.0468
+      symmetry_match: 0.8198
+      symmetry_increase: 0.1264
+      n_structures: 256963
+      analysis_file:
+        name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
+        url: https://figshare.com/files/57277379
+        size: 7405030
+        md5: 85a12c707c7f0ae14a131266fca3933f
+  phonons:
+    kappa_103:
+      pred_file:
+        name: models/equflash/equflash-29m-oam/2025-06-23-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/57277382
+        size: 12590181
+        md5: 015524fbaf1f9f15b496aeadbc7dbebd
+      κ_SRME: 0.1583
+      κ_SRE: 0.0772
+      κ_SRD: -0.0235
+      κ_failure_rate: 0.0
+      imaginary_mode_rate: 0.0
+      spectrum_w1: 0.0952

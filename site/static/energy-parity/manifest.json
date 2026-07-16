@@ -20,12 +20,12 @@
       "bytes": 643998,
       "sha256": "b22c71ebf642b125c68d3c77d66a8a00bb534bb6cfc4549dc74239a256311202"
     },
-    "allegro-MP-L-0.1": {
+    "allegro-mp-l-0.1": {
       "asset": "energy-parity-wbm-v1-model-allegro-MP-L-0.1.json.gz",
       "bytes": 645870,
       "sha256": "bea8f740f74d7f29ea3379c5056bf30c58961e5475206497d942262550550cb7"
     },
-    "allegro-OAM-L-0.1": {
+    "allegro-oam-l-0.1": {
       "asset": "energy-parity-wbm-v1-model-allegro-OAM-L-0.1.json.gz",
       "bytes": 645432,
       "sha256": "2b5d04db30a64a35be94965b5c29bde59d638f89d7070ea1ec6127ac12332851"
@@ -45,7 +45,7 @@
       "bytes": 934890,
       "sha256": "78e3c5f7a274fc27865df088050d63a6366e161e27d3ef7d3e4725c93ae60078"
     },
-    "cgcnn+p": {
+    "cgcnn-p": {
       "asset": "energy-parity-wbm-v1-model-cgcnn_p.json.gz",
       "bytes": 646171,
       "sha256": "2a6638a0aa1002ad386e4eef218339255efe89070ad1eaccd7d91b239f580161"
@@ -65,22 +65,22 @@
       "bytes": 643656,
       "sha256": "0ca9091f15bb86b48a1bc30f3055d6ae22da053b9736498f5afa4e6a1c3b7fe6"
     },
-    "eSEN-30m-mp": {
+    "esen-30m-mp": {
       "asset": "energy-parity-wbm-v1-model-eSEN-30m-mp.json.gz",
       "bytes": 643323,
       "sha256": "4d374fd8dc09c0c80976d42cfda5e4e052782c93e8f25fded70b900a734d44b9"
     },
-    "eSEN-30m-oam": {
+    "esen-30m-oam": {
       "asset": "energy-parity-wbm-v1-model-eSEN-30m-oam.json.gz",
       "bytes": 643257,
       "sha256": "335d510cb392719f6f23c9343178e8af4cd4b5abf54c11a61a007270f6128218"
     },
-    "eqV2-m-omat-salex-mp": {
+    "eqv2-m-omat-salex-mp": {
       "asset": "energy-parity-wbm-v1-model-eqV2-m-omat-salex-mp.json.gz",
       "bytes": 647380,
       "sha256": "6a260b3f555d7d5a5ddaebb3268c6a1a05a8c2073da343d8c7dc23618db47959"
     },
-    "eqV2-s-dens-mp": {
+    "eqv2-s-dens-mp": {
       "asset": "energy-parity-wbm-v1-model-eqV2-s-dens-mp.json.gz",
       "bytes": 647501,
       "sha256": "ca44544ec934fae2e717e88f983a4a6e2636f3bb2647c72f80174c7fa65351a4"
@@ -90,12 +90,12 @@
       "bytes": 644454,
       "sha256": "fed4437df834a5ff24ae7b7d829e63bcd5c2dd40562df6eb45029e1f27bbd0c9"
     },
-    "equflash-29M-oam": {
+    "equflash-29m-oam": {
       "asset": "energy-parity-wbm-v1-model-equflash-29M-oam.json.gz",
       "bytes": 2040205,
       "sha256": "b603a7fa26e73ceb9e2375bba9df06d5e972ab81ba396d33c6d6de0e833829ea"
     },
-    "equflashv2-45M-oam": {
+    "equflashv2-45m-oam": {
       "asset": "energy-parity-wbm-v1-model-equflashv2-45M-oam.json.gz",
       "bytes": 957367,
       "sha256": "f05bf4368ace546ba2db0d62008cdaced49ce83cce731df0fb47f095c64f83d8"
@@ -175,7 +175,7 @@
       "bytes": 643604,
       "sha256": "d79ce3aa7d42a989fff72f5544867154e7160bdf8b1bf20ad8635d192ac5d18b"
     },
-    "mattersim-v1-5M": {
+    "mattersim-v1-5m": {
       "asset": "energy-parity-wbm-v1-model-mattersim-v1-5M.json.gz",
       "bytes": 2138233,
       "sha256": "07cd9122d8a6d61186eee7ae9ec377c5c820a1fcb3e3d185cb53739434e5d57e"
@@ -185,17 +185,17 @@
       "bytes": 655488,
       "sha256": "bb97c875f6e44870b8afd8462e50519fe10f644516aee8f68915d66ded4de4d8"
     },
-    "nequip-MP-L-0.1": {
+    "nequip-mp-l-0.1": {
       "asset": "energy-parity-wbm-v1-model-nequip-MP-L-0.1.json.gz",
       "bytes": 645455,
       "sha256": "001c426db7237f701f24b6c14bdad9bf74e9f79cf906e58a04e558de120273b5"
     },
-    "nequip-OAM-L-0.1": {
+    "nequip-oam-l-0.1": {
       "asset": "energy-parity-wbm-v1-model-nequip-OAM-L-0.1.json.gz",
       "bytes": 644944,
       "sha256": "5600f4cd548e392625eec2ea11dfd2591875f0be917117ecaeaac036e862786a"
     },
-    "nequip-OAM-XL-0.1": {
+    "nequip-oam-xl-0.1": {
       "asset": "energy-parity-wbm-v1-model-nequip-OAM-XL-0.1.json.gz",
       "bytes": 641391,
       "sha256": "e902b212b0bfa505a8c32c7a0d72e390df5a475d882802669627f8cb4bd0a822"

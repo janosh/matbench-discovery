@@ -1,0 +1,244 @@
+model_name: eqV2 S DeNS
+model_key: eqv2-s-dens-mp
+model_version: v2024.10.18
+dates:
+  benchmark_added: '2024-10-18'
+  paper_published: '2024-10-18'
+lifecycle: active
+authors:
+- name: Luis Barroso-Luque
+  affiliation: FAIR at Meta
+  email: lbluque@meta.com
+  orcid: https://orcid.org/0000-0002-6453-9545
+  github: https://github.com/lbluque
+  corresponding: true
+- name: Muhammed Shuaibi
+  affiliation: FAIR at Meta
+- name: Xiang Fu
+  affiliation: FAIR at Meta
+- name: Brandon M. Wood
+  affiliation: FAIR at Meta
+- name: Misko Dzamba
+  affiliation: FAIR at Meta
+- name: Meng Gao
+  affiliation: FAIR at Meta
+- name: Ammar Rizvi
+  affiliation: FAIR at Meta
+- name: C. Lawrence Zitnick
+  affiliation: FAIR at Meta
+- name: Zachary W. Ulissi
+  affiliation: FAIR at Meta
+  email: zulissi@meta.com
+  orcid: https://orcid.org/0000-0002-9401-4918
+  corresponding: true
+
+repo: https://github.com/FAIR-Chem/fairchem
+doi: https://doi.org/10.48550/arXiv.2410.12771
+paper: https://arxiv.org/abs/2410.12771
+docs: https://huggingface.co/facebook/OMAT24#model-checkpoints
+pypi: https://pypi.org/project/fairchem-core
+pr_url: https://github.com/janosh/matbench-discovery/pull/146
+checkpoint_url: https://huggingface.co/fairchem/OMAT24/resolve/main/eqV2_dens_31M_mp.pt
+license:
+  code: MIT
+  code_url: https://github.com/FAIR-Chem/fairchem/blob/aa160789e1/LICENSE.md
+  checkpoint: Meta Research
+  checkpoint_url: https://huggingface.co/facebook/OMAT24/blob/main/LICENSE
+
+environment:
+  dependencies:
+  - 'fairchem-core[torch-extras]==1.10.0'
+  - torch==2.4.0
+  - numpy<2
+  - scipy<1.15
+  python_version: '3.12'
+  find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
+openness: OSOD
+architecture_types: [transformer]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_D
+training_sets: [MPtrj]
+model_params: 31207434
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+  architecture:
+    graph_construction_radius: 12.0
+    max_neighbors: 20
+  training:
+    batch_size: 512
+    epochs: 150
+    optimizer: AdamW
+  upstream_config:
+    loss: MAE
+    loss_weights:
+      energy: 20
+      stress: 5
+      dens: 10
+      force: 20
+    dens_probability: 0.5
+    noise_std: 0.1
+    learning_rate_schedule: Cosine
+    warmup_epochs: 0.1
+    warmup_factor: 0.2
+    max_learning_rate: 0.0002
+    min_learning_rate_factor: 0.01
+    grad_clip_threshold: 100
+    ema_decay: 0.999
+    weight_decay: 0.001
+    dropout_rate: 0.1
+    stochastic_depth: 0.1
+notes:
+  description: |
+    EquiformerV2 is an equivariant transformer that uses graph attention, attention re-normalization, and separable S^2 activations and layer normalization.
+    Denoising Non-Equilibrium Structures (DeNS) uses a denoising generalized to structures with non-zero forces by encoding forces to obtain a well-posed denoising problem.
+  training: |
+    Training was done from scratch using MPtrj only and a 50% probability for denoising training structures.
+
+metrics:
+  diatomics:
+    pred_file:
+      name: models/eqv2/eqv2-s-dens-mp/2026-06-29-diatomics.json.gz
+      url: https://figshare.com/files/66104591
+      size: 705266
+      md5: 73f5e18d8e0bc98982acb4eda73a715f
+    hardware: NVIDIA H200
+    run_time_sec: 435.9
+    pbe_wall_dist_mae: 1.262
+    pbe_energy_mae: 2.96
+    pbe_bond_length_error: 1.038
+    pbe_well_depth_error: 1.178
+    pbe_vib_freq_error: 294.7
+    tortuosity: 2.99
+    energy_diff_flips: 11.95
+    energy_jump: 8.205
+    force_flips: 4.54
+    force_total_variation: 176.1
+    force_jump: 14.08
+    pbe_force_mae: 2.218
+  discovery:
+    pred_file:
+      name: models/eqv2/eqv2-s-dens-mp/2024-10-18-discovery.csv.gz
+      url: https://figshare.com/files/66646139
+      size: 1326011
+      md5: e8da37c6c7f3fa3f7cec666d2d0d8706
+    full_test_set:
+      F1: 0.798  # fraction
+      DAF: 4.362 # dimensionless
+      Precision: 0.748 # fraction
+      Recall: 0.855 # fraction
+      Accuracy: 0.926 # fraction
+      TPR: 0.855 # fraction
+      FPR: 0.059 # fraction
+      TNR: 0.941 # fraction
+      FNR: 0.145 # fraction
+      TP: 37687 # count
+      FP: 12665 # count
+      TN: 200206 # count
+      FN: 6405 # count
+      MAE: 0.035 # eV/atom
+      RMSE: 0.084 # eV/atom
+      R2: 0.785 # dimensionless
+      missing_preds: 351 # count
+    most_stable_10k:
+      F1: 0.983  # fraction
+      DAF: 6.326 # dimensionless
+      Precision: 0.967 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.967 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9670 # count
+      FP: 330 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.031 # eV/atom
+      RMSE: 0.091 # eV/atom
+      R2: 0.823 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.815  # fraction
+      DAF: 5.042 # dimensionless
+      Precision: 0.771 # fraction
+      Recall: 0.864 # fraction
+      Accuracy: 0.939 # fraction
+      TPR: 0.864 # fraction
+      FPR: 0.047 # fraction
+      TNR: 0.953 # fraction
+      FNR: 0.136 # fraction
+      TP: 28842 # count
+      FP: 8576 # count
+      TN: 173538 # count
+      FN: 4532 # count
+      MAE: 0.036 # eV/atom
+      RMSE: 0.085 # eV/atom
+      R2: 0.788 # dimensionless
+      missing_preds: 309 # count
+  geo_opt:
+    pred_file:
+      name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt.jsonl.gz
+      url: https://figshare.com/files/53153468
+      size: 216323234
+      md5: 77a5e20ff95239aa3a64c25b2664afbc
+    symprec=1e-5:
+      rmsd: 0.0757
+      n_sym_ops_mae: 10.1045
+      symmetry_decrease: 0.8671
+      symmetry_match: 0.1322
+      symmetry_increase: 0.0006
+      n_structures: 256614
+      analysis_file:
+        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504534
+        size: 6375057
+        md5: 479afff2378ae0343816918939d5f6f8
+    symprec=1e-2:
+      rmsd: 0.0757
+      n_sym_ops_mae: 3.7426
+      symmetry_decrease: 0.3724
+      symmetry_match: 0.5396
+      symmetry_increase: 0.0653
+      n_structures: 256614
+      analysis_file:
+        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504540
+        size: 7504183
+        md5: 9e522b6cfb62c727f8c7d6a9b58da97a
+  md:
+    pred_file:
+      name: models/eqv2/eqv2-s-dens-mp/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048869
+      size: 1585
+      md5: b8d9f8e307a23eab7f7b9840f2bbe2dd
+    hardware: NVIDIA H200
+    run_time_sec: 93184.12
+    energy_rmse: 6.0618
+    force_rmse: 110.1912
+    rdf_error: 5.8936
+    adf_error: 2.2193
+    vdos_error: 26.5313
+    pressure_mae: 0.9664
+    pressure_wasserstein: 0.988
+    pressure_error: 56.0059
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 1.6763 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
+      pred_file:
+        name: models/eqv2/eqv2-s-dens-mp/2024-11-08-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/65718186
+        size: 9575311
+        md5: 704f9eb3a394b48ee925391ef697c917
+      κ_SRE: 1.3866
+      κ_SRD: 0.1419
+      κ_failure_rate: 0.0194
+      imaginary_mode_rate: 0.0194
+      spectrum_w1: 1.2869

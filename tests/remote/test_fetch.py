@@ -259,16 +259,31 @@ def test_maybe_auto_download_file_prompt_modes(
         assert not os.path.isfile(abs_path)
 
 
-def test_maybe_auto_download_file_skips_existing_file(tmp_path: Path) -> None:
-    """maybe_auto_download_file does not request an already cached file."""
+@pytest.mark.parametrize(
+    ("md5", "expected_content", "should_download"),
+    [
+        (None, b"cached", False),
+        (hashlib.md5(b"cached").hexdigest(), b"cached", False),  # noqa: S324
+        (hashlib.md5(b"fresh").hexdigest(), b"fresh", True),  # noqa: S324
+    ],
+    ids=["unchecked", "checksum_match", "checksum_mismatch"],
+)
+def test_maybe_auto_download_file_validates_existing_file(
+    tmp_path: Path,
+    md5: str | None,
+    expected_content: bytes,
+    should_download: bool,
+) -> None:
+    """Existing files are reused only when their optional checksum matches."""
     url = "https://example.com/file.txt"
     abs_path = f"{tmp_path}/test/file.txt"
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
     Path(abs_path).write_bytes(b"cached")
 
-    with patch("requests.get") as mock_get:
-        maybe_auto_download_file(url, abs_path, label="test")
-    mock_get.assert_not_called()
+    with patch("requests.get", return_value=make_mock_response(b"fresh")) as mock_get:
+        maybe_auto_download_file(url, abs_path, label="test", md5=md5)
+    assert Path(abs_path).read_bytes() == expected_content
+    assert mock_get.called is should_download
 
 
 def test_maybe_auto_download_file_forwards_huggingface_token(

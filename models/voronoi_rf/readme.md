@@ -1,5 +1,7 @@
 # Voronoi Random Forest
 
+A random forest trained to map the combo of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (bond angles, coordination numbers, ...) to DFT formation energies.
+
 ## Model Architecture
 
 Voronoi tessellation with `matminer` featurization piped into `scikit-learn` [`RandomForestRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor).

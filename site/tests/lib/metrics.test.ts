@@ -1,5 +1,10 @@
 import { DATASETS, MODELS } from '$lib'
-import { ALL_METRICS, DIATOMICS_METRICS, METADATA_COLS } from '$lib/labels'
+import {
+  ALL_METRICS,
+  DIATOMICS_METRICS,
+  METADATA_COLS,
+  PHONON_METRICS,
+} from '$lib/labels'
 import {
   assemble_row_data,
   format_train_set,
@@ -22,10 +27,6 @@ describe(`targets_tooltips`, () => {
   ])(`contains tooltip for %s target type`, (target, expected) => {
     expect(targets_tooltips[target as TargetType]).toBe(expected)
   })
-
-  it(`contains all expected tooltip keys`, () => {
-    expect(Object.keys(targets_tooltips)).toHaveLength(8)
-  })
 })
 
 describe(`metric_better_as`, () => {
@@ -39,6 +40,9 @@ describe(`metric_better_as`, () => {
     [`Precision`, `higher`],
     [`MAE`, `lower`],
     [`RMSE`, `lower`],
+    [`κ_failure_rate`, `lower`],
+    [`spectrum_w1`, `lower`],
+    [`κ_SRD`, null],
     [`nonexistent_metric`, null],
   ])(`maps %s -> %s`, (metric, expected) => {
     expect(metric_better_as(metric)).toBe(expected)
@@ -166,7 +170,7 @@ describe(`format_train_set`, () => {
 describe(`assemble_row_data`, () => {
   const test_model_keys = [`mace-mp-0`, `chgnet-0.3.0`]
   const model_filter = (model: ModelData): boolean =>
-    test_model_keys.includes(model.model_key ?? ``)
+    test_model_keys.includes(model.model_key)
   const get_test_rows = () => assemble_row_data(`unique_prototypes`, model_filter)
   const tece_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
   if (!tece_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
@@ -186,6 +190,16 @@ describe(`assemble_row_data`, () => {
     const n_layers_val = mace_row?.n_layers as string
     expect(n_layers_val).toMatch(/^(?:<span data-sort-value="\d+">\d+<\/span>|n\/a)$/)
     expect(chgnet_row?.Model).toContain(`chgnet-0.3.0`)
+    for (const [metric, expected] of [
+      [PHONON_METRICS.κ_SRME, 0.6823],
+      [PHONON_METRICS.κ_SRE, 0.471],
+      [PHONON_METRICS.κ_SRD, -0.2845],
+      [PHONON_METRICS.κ_failure_rate, 0.0291],
+      [PHONON_METRICS.imaginary_mode_rate, 0],
+      [PHONON_METRICS.spectrum_w1, 0.8709],
+    ] as const) {
+      expect(mace_row?.[metric.key]).toBe(expected)
+    }
     const cps_vals = rows.map((row) => row.CPS) as number[]
     expect(cps_vals).toStrictEqual(
       cps_vals.toSorted((score_1, score_2) => score_2 - score_1),
@@ -220,7 +234,7 @@ describe(`assemble_row_data`, () => {
     ({ task, multiplier_key }) => {
       const rows = assemble_row_data(
         `unique_prototypes`,
-        (model) => model.model_key?.startsWith(`${task}-time-`) ?? false,
+        (model) => model.model_key.startsWith(`${task}-time-`),
         () => true,
         Object.entries({
           Fast: 10,
@@ -350,7 +364,6 @@ describe(`Model Sorting Logic`, () => {
         metrics: {
           discovery: {
             unique_prototypes: { F1: 0.9, Accuracy: 0.85, missing_preds: 0 },
-            pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.9 } },
         },
@@ -361,7 +374,6 @@ describe(`Model Sorting Logic`, () => {
         metrics: {
           discovery: {
             unique_prototypes: { F1: 0.7, Accuracy: NaN, missing_preds: 2 }, // NaN Accuracy + non-zero missing_preds
-            pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.5 } },
         },
@@ -372,7 +384,6 @@ describe(`Model Sorting Logic`, () => {
         metrics: {
           discovery: {
             unique_prototypes: { F1: 0.5, Accuracy: 0.6, missing_preds: 5 },
-            pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.2 } },
         },

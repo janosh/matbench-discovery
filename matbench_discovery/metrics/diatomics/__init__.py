@@ -16,7 +16,13 @@ from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
 from numpy.typing import ArrayLike
 
 from matbench_discovery import repo_relative_path
-from matbench_discovery.data import update_yaml_file
+from matbench_discovery.data import (
+    FileRef,
+    file_ref_name,
+    file_ref_url,
+    make_file_ref,
+    update_yaml_file,
+)
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics.diatomics.energy import (
     calc_energy_diff_flips,
@@ -35,7 +41,7 @@ from matbench_discovery.metrics.diatomics.force import (
     calc_force_total_variation,
 )
 
-DiatomicsYamlValue = str | float | dict[str, str] | None
+DiatomicsYamlValue = str | float | dict[str, str] | FileRef | None
 # Elements absent from the Materials Project (MP covers 89 elements: H-Pu minus these
 # five), and hence from MPtrj/OMat24-derived training data. Models trained on MP data
 # cannot predict them, so diatomic metrics skip them for every model (and the runner
@@ -441,9 +447,9 @@ def write_metrics_to_yaml(
             metrics.diatomics.pred_file. Absolute paths must be inside the repo and are
             converted to repo-relative paths. Otherwise an existing pred_file is
             preserved.
-        run_metadata (dict[str, str | float | dict[str, str]] | None): Extra
-            non-metric fields describing the prediction run (e.g. hardware,
-            run_time_sec). Recorded ahead of the metric values; a recompute without
+        run_metadata (dict[str, str | float | dict[str, str]] | None): Extra run
+            fields (e.g. hardware, run_time_sec, pred_file_url). ``pred_file_url``
+            overrides or supplies the prediction file URL. A recompute without
             run_metadata preserves existing values.
 
     Returns:
@@ -468,22 +474,25 @@ def write_metrics_to_yaml(
 
     # carry over only recognized run metadata (it describes the source run, not the
     # computed metrics, so it stays valid on recalculation)
-    existing = model.metrics.get("diatomics", {})
-    existing = existing if isinstance(existing, dict) else {}
+    existing = model.metrics.get("diatomics") or {}
     run_metadata = run_metadata or {}
     block: dict[str, DiatomicsYamlValue] = {}
     existing_pred_file = existing.get("pred_file")
-    pred_file = existing_pred_file
+    existing_name = file_ref_name(existing_pred_file)
+    pred_name = existing_name
     if pred_file_path is not None:
-        pred_file = repo_relative_path(pred_file_path)
-    if pred_file is not None:
-        block["pred_file"] = pred_file
-
+        pred_name = repo_relative_path(pred_file_path)
     pred_file_url = run_metadata.get("pred_file_url")
-    if pred_file_url is None and pred_file == existing_pred_file:
-        pred_file_url = existing.get("pred_file_url")
-    if pred_file_url is not None:
-        block["pred_file_url"] = pred_file_url
+    if pred_file_url is None and pred_name == existing_name:
+        pred_file_url = file_ref_url(existing_pred_file)
+    if pred_name is not None:
+        url = pred_file_url if isinstance(pred_file_url, str) else None
+        size = md5 = None
+        if pred_name == existing_name and isinstance(existing_pred_file, dict):
+            size, md5 = existing_pred_file.get("size"), existing_pred_file.get("md5")
+            if not (isinstance(size, int) and isinstance(md5, str)):
+                size = md5 = None
+        block["pred_file"] = make_file_ref(pred_name, url=url, size=size, md5=md5)
 
     run_metadata_keys = (
         *("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"),

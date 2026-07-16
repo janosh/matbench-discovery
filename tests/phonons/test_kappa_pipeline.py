@@ -327,14 +327,16 @@ def test_kappa_output_paths_reuse_exactly_one_prior_shard_tree(tmp_path: Path) -
         dry_run=False,
         shard_dir=None,
     )
-    assert paths == (
+    assert tuple(map(os.path.normpath, paths)) == (
         os.path.normpath(first_shard_dir),
-        os.path.normpath(first_shard_dir.removesuffix("-shards") + ".json.gz"),
+        os.path.normpath(f"{out_dir}/2026-07-08-phonons-kappa-103.json.gz"),
     )
-    custom_shard_dir = f"{out_dir}/custom-run"
-    assert run_kappa.resolve_output_paths(
-        out_dir=out_dir, dry_run=False, shard_dir=custom_shard_dir
-    )[1] == os.path.normpath(f"{custom_shard_dir}.json.gz")
+    custom_shard_dir = f"{out_dir}/2026-07-10-phonondb-kappa-103-shards"
+    assert os.path.normpath(
+        run_kappa.resolve_output_paths(
+            out_dir=out_dir, dry_run=False, shard_dir=custom_shard_dir
+        )[1]
+    ) == os.path.normpath(f"{out_dir}/2026-07-10-phonons-kappa-103.json.gz")
 
     os.makedirs(f"{out_dir}/2026-07-09-phonondb-kappa-103-shards")
     with pytest.raises(ValueError, match="Multiple kappa shard directories"):
@@ -570,6 +572,22 @@ def test_normalize_kappa_schema_aliases_and_voigt() -> None:
     )
     assert np.isnan(failed_result[str(MbdKey.kappa_tot_rta)])
     assert voigt_6_to_full_3x3([1, 2, 3]) == [1, 2, 3]
+    canonical_freqs = [[1.0, 2.0]]
+    frequency_result = normalize_kappa_result(
+        {
+            str(Key.ph_freqs): canonical_freqs,
+            "frequencies": [[3.0, 4.0], [5.0, 6.0]],
+        }
+    )
+    assert frequency_result[str(Key.ph_freqs)] == canonical_freqs
+    assert "frequencies" not in frequency_result
+    with pytest.raises(ValueError, match="Conflicting aliases"):
+        normalize_kappa_result(
+            {
+                "frequencies": [[1.0, 2.0]],
+                "phonon_frequencies": [[3.0, 4.0]],
+            }
+        )
     with pytest.raises(ValueError, match="Conflicting aliases"):
         normalize_kappa_result({str(Key.mat_id): "mp-1", "mp_id": "different-material"})
     bool_alias = normalize_kappa_result(
@@ -688,15 +706,15 @@ def test_resumable_shards_strict_merge_and_artifacts(
     atomic_write_gzip_json(mixed_record_path, asdict(original_record))
 
     merged_run = merge_kappa_shards(shard_dir, model_key="test_model")
-    artifacts = write_kappa_artifacts(
-        merged_run, pred_file_path=f"{tmp_path}/kappa.json.gz"
-    )
+    stem = f"{tmp_path}/2026-07-01-phonons-kappa-103"
+    pred_path = f"{stem}.json.gz"
+    artifacts = write_kappa_artifacts(merged_run, pred_file_path=pred_path)
     assert len(artifacts.predictions) == len(atoms_by_id)
-    assert artifacts.force_file_path is not None
-    assert artifacts.force_file_path == f"{tmp_path}/kappa-force-sets.json.gz"
+    assert artifacts.force_file_path == f"{stem}-forces.json.gz"
     with gzip.open(artifacts.pred_file_path, mode="rt", encoding="utf-8") as file:
         prediction_rows = json.load(file)
     assert all("fc2_set" not in row and "fc3_set" not in row for row in prediction_rows)
+    assert artifacts.force_file_path is not None
     with gzip.open(artifacts.force_file_path, mode="rt", encoding="utf-8") as file:
         force_rows = json.load(file)
     assert len(force_rows) == len(atoms_by_id)

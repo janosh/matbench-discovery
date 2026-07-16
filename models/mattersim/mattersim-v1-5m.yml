@@ -1,0 +1,276 @@
+model_name: MatterSim v1 5M
+model_key: mattersim-v1-5m
+model_version: v1.0.0
+dates:
+  benchmark_added: '2024-12-16'
+  paper_published: '2024-05-08'
+lifecycle: active
+authors:
+- name: Han Yang
+  affiliation: Microsoft Research AI for Science
+  email: hanyang@microsoft.com
+  orcid: https://orcid.org/0000-0002-4531-093X
+- name: Chenxi Hu
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0009-0006-8486-9230
+- name: Yichi Zhou
+  affiliation: Microsoft Research AI for Science
+- name: Xixian Liu
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0009-0008-9215-3990
+- name: Yu Shi
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0001-9235-8963
+- name: Jielan Li
+  affiliation: Microsoft Research AI for Science
+  email: jielanli@microsoft.com
+- name: Guanzhi Li
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0002-4167-6432
+- name: Zekun Chen
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0002-4183-2941
+- name: Shuizhou Chen
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0009-0005-2701-5565
+- name: Claudio Zeni
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0002-6334-2679
+- name: Matthew Horton
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0001-7777-8871
+- name: Robert Pinsler
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0003-1454-188X
+- name: Andrew Fowler
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0002-7360-3078
+- name: Daniel Zügner
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0003-1626-5065
+- name: Tian Xie
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0002-0987-4666
+- name: Jake Smith
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0003-0412-1312
+- name: Lixin Sun
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0002-7971-5222
+- name: Qian Wang
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0009-0007-7680-4514
+- name: Lingyu Kong
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0009-0006-2226-5730
+- name: Chang Liu
+  affiliation: Microsoft Research AI for Science
+  orcid: https://orcid.org/0000-0001-5207-5440
+- name: Hongxia Hao
+  affiliation: Microsoft Research AI for Science
+  email: hongxiahao@microsoft.com
+  orcid: https://orcid.org/0000-0002-4382-200X
+- name: Ziheng Lu
+  affiliation: Microsoft Research AI for Science
+  email: zihenglu@microsoft.com
+  orcid: https://orcid.org/0000-0003-2239-8526
+
+repo: https://github.com/microsoft/mattersim
+doi: https://doi.org/10.48550/arXiv.2405.04967
+paper: https://arxiv.org/abs/2405.04967
+pr_url: https://github.com/janosh/matbench-discovery/pull/178
+checkpoint_url: https://github.com/microsoft/mattersim/raw/refs/heads/main/pretrained_models/mattersim-v1.0.0-5M.pth
+license:
+  code: MIT
+  code_url: https://github.com/microsoft/mattersim/blob/d0a52e64fc/LICENSE.txt
+  checkpoint: MIT
+  checkpoint_url: https://github.com/microsoft/mattersim/blob/d0a52e64fc/MODEL_CARD.md
+
+environment:
+  dependencies:
+  - mattersim
+  - Graphormer==v1
+  - numpy==1.26.2
+  - pymatgen==2024.5.1
+  python_version: '3.12'
+openness: OSCD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MatterSim]
+size: 5M
+model_params: 4549142
+hyperparams:
+  evaluation:
+    ase_optimizer: FIRE
+    cell_filter: ExpCellFilter
+    max_steps: 500
+    max_force: 0.02
+    kappa:
+      protocol: phonondb-v1
+  architecture:
+    graph_construction_radius: 5.0
+  training:
+    learning_rate: 0.0005
+    batch_size: 128
+    optimizer: AdamW
+  upstream_config:
+    seed: 42
+    units: 256
+notes:
+  description: This is an open source version of MatterSim V1 based on M3GNet architecture.
+  training: MatterSim was trained on a large, closed dataset covering diverse combinations of 89 elements across many temperatures and pressures.
+  tested_applications: |
+    - Energy, force, stress prediction
+    - Molecular dynamics simulations
+    - Phonons
+    - Mechanical properties
+    - Free energy and phase diagrams
+    - Materials discovery
+  training_data_sources: |
+    - Materials Project
+    - Alexandria dataset
+    - newly generated structures and MD trajectories
+
+metrics:
+  diatomics:
+    pred_file:
+      name: models/mattersim/mattersim-v1-5m/2026-06-28-diatomics.json.gz
+      url: https://figshare.com/files/66104636
+      size: 216465
+      md5: 190a0f65ecf24f23afabf6a293ee4d9f
+    hardware: NVIDIA H100 80GB HBM3
+    run_time_sec: 170.22
+    pbe_wall_dist_mae: 0.0969
+    pbe_energy_mae: 1.298
+    pbe_bond_length_error: 0.3823
+    pbe_well_depth_error: 1.358
+    pbe_vib_freq_error: 64.16
+    tortuosity: 1.021
+    energy_diff_flips: 2.471
+    energy_jump: 0.1688
+    force_flips: 2.471
+    force_total_variation: 225.4
+    force_jump: 2.414
+    pbe_force_mae: 1.1
+  discovery:
+    pred_file:
+      name: models/mattersim/mattersim-v1-5m/2024-12-16-discovery.csv.gz
+      url: https://figshare.com/files/66646208
+      size: 2894333
+      md5: 3779100dfaa5b2f733464006287ed9e0
+    full_test_set:
+      F1: 0.838  # fraction
+      DAF: 5.123 # dimensionless
+      Precision: 0.879 # fraction
+      Recall: 0.801 # fraction
+      Accuracy: 0.947 # fraction
+      TPR: 0.801 # fraction
+      FPR: 0.023 # fraction
+      TNR: 0.977 # fraction
+      FNR: 0.199 # fraction
+      TP: 35309 # count
+      FP: 4858 # count
+      TN: 208013 # count
+      FN: 8783 # count
+      MAE: 0.024 # eV/atom
+      RMSE: 0.069 # eV/atom
+      R2: 0.854 # dimensionless
+      missing_preds: 2 # count
+    most_stable_10k:
+      F1: 0.984  # fraction
+      DAF: 6.339 # dimensionless
+      Precision: 0.969 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.969 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9691 # count
+      FP: 309 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.078 # eV/atom
+      R2: 0.869 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.862  # fraction
+      DAF: 5.852 # dimensionless
+      Precision: 0.895 # fraction
+      Recall: 0.831 # fraction
+      Accuracy: 0.959 # fraction
+      TPR: 0.831 # fraction
+      FPR: 0.018 # fraction
+      TNR: 0.982 # fraction
+      FNR: 0.169 # fraction
+      TP: 27750 # count
+      FP: 3268 # count
+      TN: 178846 # count
+      FN: 5624 # count
+      MAE: 0.024 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.863 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/mattersim/mattersim-v1-5m/2024-12-19-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57753373
+      size: 150241479
+      md5: c55da1cdfcfcc2c5aa71f60baced8932
+    symprec=1e-2:
+      rmsd: 0.0733
+      n_sym_ops_mae: 1.7451
+      symmetry_decrease: 0.0524
+      symmetry_match: 0.8148
+      symmetry_increase: 0.1254
+      n_structures: 256963
+      analysis_file:
+        name: models/mattersim/mattersim-v1-5m/2024-12-19-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504675
+        size: 7302403
+        md5: 845b4581ef3b76ca1f097235051a51d5
+    symprec=1e-5:
+      rmsd: 0.0733
+      n_sym_ops_mae: 2.1408
+      symmetry_decrease: 0.0755
+      symmetry_match: 0.6874
+      symmetry_increase: 0.2305
+      n_structures: 256963
+      analysis_file:
+        name: models/mattersim/mattersim-v1-5m/2024-12-19-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504678
+        size: 7320420
+        md5: a8279590ef8265b26372420bc8ef8b7e
+  md:
+    pred_file:
+      name: models/mattersim/mattersim-v1-5m/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048905
+      size: 1567
+      md5: 4233a44a6de72bc2643317c317d758c2
+    hardware: NVIDIA H200
+    run_time_sec: 33705.03
+    energy_rmse: 1.1775
+    force_rmse: 112.7295
+    rdf_error: 4.5991
+    adf_error: 2.0239
+    vdos_error: 23.0211
+    pressure_mae: 0.9319
+    pressure_wasserstein: 0.9458
+    pressure_error: 64.3483
+    n_systems: 17
+  phonons:
+    kappa_103: # https://github.com/MPA2suite/k_SRME/pull/13
+      κ_SRME: 0.5745 # dimensionless
+      pred_file:
+        name: models/mattersim/mattersim-v1-5m/2024-12-09-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/52134884
+        size: 7568736
+        md5: e774bb3a1ae9cbc27cbe5f3335ebf0eb
+      κ_SRE: 0.4126
+      κ_SRD: -0.38
+      κ_failure_rate: 0.0291
+      imaginary_mode_rate: 0.0291
+      spectrum_w1: 0.2503

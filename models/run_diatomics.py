@@ -40,6 +40,7 @@ from matbench_discovery.calculators import (
     load_calculator,
     resolve_cli_calculator,
 )
+from matbench_discovery.data import artifact_filename
 from matbench_discovery.diatomics import (
     CurveDict,
     DiatomicResults,
@@ -101,14 +102,10 @@ def get_excluded_formula_reasons(
     from matbench_discovery.enums import Model
 
     try:
-        diatomics_metrics = Model.from_ref(model_key).metrics.get("diatomics")
+        diatomics_metrics = Model.from_ref(model_key).metrics.get("diatomics") or {}
     except ValueError:  # debug models like emt have no Model enum entry
-        diatomics_metrics = None
-    curated_reasons = (
-        diatomics_metrics.get("excluded_formula_reasons", {})
-        if isinstance(diatomics_metrics, dict)
-        else {}
-    )
+        diatomics_metrics = {}
+    curated_reasons = diatomics_metrics.get("excluded_formula_reasons", {})
     reasons = dict.fromkeys(invalid_formulas, "invalid or unsupported curve")
     reasons |= curated_reasons
     return {
@@ -278,7 +275,7 @@ def main() -> int:
         if unexpected_missing := missing_formulas - set(exclusion_reasons):
             parser.error(f"Missing curves in shards: {sorted(unexpected_missing)}")
         run_metadata = {**merge_run_metadata(shard_metadatas)}
-        json_path = f"{out_dir}/{today}-diatomics.json.gz"
+        json_path = f"{out_dir}/{artifact_filename(today, 'diatomics')}"
     else:
         start_time = time.perf_counter()
         calculator = load_calculator(args.model, dtype=args.dtype)
@@ -314,7 +311,7 @@ def main() -> int:
         if slurm_task_id:
             json_path = f"{shard_dir}/Z{z_values[0]:03d}-diatomics.json.gz"
         else:
-            json_path = f"{out_dir}/{today}-diatomics.json.gz"
+            json_path = f"{out_dir}/{artifact_filename(today, 'diatomics')}"
 
     run_metadata["excluded_formula_reasons"] = exclusion_reasons
     # flat on-disk schema read by DiatomicCurves.from_dict / the site's diatomics parser

@@ -13,7 +13,7 @@ export { default as MetricsTable } from './table/MetricsTable.svelte'
 export { default as ModelCard } from './model/ModelCard.svelte'
 export { default as ModelRankCard } from './model/ModelRankCard.svelte'
 export { default as ModelSelect } from './ModelSelect.svelte'
-export { MODELS } from './models.svelte'
+export { ACTIVE_MODELS, MODELS } from './models.svelte'
 export { default as OrgLogos } from './model/OrgLogos.svelte'
 export { default as PtableHeatmap } from './PtableHeatmap.svelte'
 export { default as PtableInset } from './PtableInset.svelte'
@@ -84,9 +84,10 @@ export const format_date = (
     ...options,
   })
 
-// Compare two models by submission date, newest first (for Array.toSorted)
-export const by_date_added_desc = (
-  model_1: { date_added: string },
-  model_2: { date_added: string },
+// Compare models by benchmark inclusion date, newest first.
+export const by_benchmark_added_desc = (
+  model_1: { dates: { benchmark_added: string | null } },
+  model_2: { dates: { benchmark_added: string | null } },
 ): number =>
-  new Date(model_2.date_added).getTime() - new Date(model_1.date_added).getTime()
+  new Date(model_2.dates.benchmark_added ?? 0).getTime() -
+  new Date(model_1.dates.benchmark_added ?? 0).getTime()

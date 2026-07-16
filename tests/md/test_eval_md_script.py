@@ -58,34 +58,3 @@ def test_md_evals_skips_incomplete_coverage(
         )
 
     assert eval_md.main() == 1  # missing sysB/sysC -> skip, exit 1, no YAML written
-
-
-def test_md_evals_handles_placeholder_md_metrics(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A model with complete per-system coverage but a 'not available' placeholder for
-    metrics.md (a string, not a dict) must aggregate without crashing on md_yaml.get().
-    """
-    model = Model.mace_mp_0
-    monkeypatch.setattr(
-        type(model), "metrics", property(lambda _self: {"md": "not available"})
-    )
-    eval_md = patch_eval_md(tmp_path, monkeypatch, systems=["sysA"])
-
-    writes: list[dict[str, object]] = []
-    monkeypatch.setattr(
-        eval_md.md_metrics,
-        "write_metrics_to_yaml",
-        lambda *_args, **kwargs: writes.append(kwargs),
-    )
-
-    arch_dir = os.path.dirname(model.rel_path)
-    md_dir = tmp_path / "models" / arch_dir / "2026-06-14-md-nvt"
-    md_dir.mkdir(parents=True)
-    pd.DataFrame({"system": ["sysA"], "rdf_error": [1.0], "vdos_error": [2.0]}).to_csv(
-        md_dir / f"{model.name}-md-metrics-sysA.csv.gz", index=False
-    )
-
-    assert eval_md.main() == 0  # placeholder md must not raise AttributeError
-    assert len(writes) == 1
-    assert writes[0]["pred_file_url"] is None  # no url from a placeholder md section

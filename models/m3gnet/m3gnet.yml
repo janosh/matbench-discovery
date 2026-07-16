@@ -1,110 +1,87 @@
 model_name: M3GNet
 model_key: m3gnet
 model_version: v2022.9.20
-date_added: '2022-09-20'
-date_published: '2022-02-05'
+dates:
+  benchmark_added: '2022-09-20'
+  paper_published: '2022-02-05'
+lifecycle: active
 authors:
-  - name: Chi Chen
-    affiliation: UC San Diego
-    orcid: https://orcid.org/0000-0001-8008-7043
-    github: https://github.com/chc273
-  - name: Shyue Ping Ong
-    affiliation: UC San Diego
-    orcid: https://orcid.org/0000-0001-5726-2587
-    email: ongsp@ucsd.edu
-    github: https://github.com/shyuep
+- name: Chi Chen
+  affiliation: UC San Diego
+  orcid: https://orcid.org/0000-0001-8008-7043
+  github: https://github.com/chc273
+- name: Shyue Ping Ong
+  affiliation: UC San Diego
+  orcid: https://orcid.org/0000-0001-5726-2587
+  email: ongsp@ucsd.edu
+  github: https://github.com/shyuep
 
 repo: https://github.com/materialsvirtuallab/m3gnet
-url: https://materialsvirtuallab.github.io/m3gnet
 doi: https://doi.org/10.1038/s43588-022-00349-3
 paper: https://arxiv.org/abs/2202.02450
+docs: https://materialsvirtuallab.github.io/m3gnet
 pypi: https://pypi.org/project/matgl
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
-# checkpoint used: MP-2021.2.8-EFS https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14df/m3gnet/models/_m3gnet.py#L372
-checkpoint_url: https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd5/pretrained/MP-2021.2.8-EFS/checkpoint
-
+checkpoint_url: https://github.com/materialsvirtuallab/m3gnet/tree/3a8b14dfd5/pretrained/MP-2021.2.8-EFS
 license:
   code: BSD-3-Clause
   code_url: https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd59/LICENSE
   checkpoint: MIT
   checkpoint_url: https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd59/LICENSE
 
-requirements:
-  m3gnet: 0.1.0
-  pymatgen: 2022.10.22
-  numpy: 1.24.0
-  pandas: 1.5.1
-
+environment:
+  dependencies:
+  - matgl==3.0.5
+  - dgl==2.4.0
+  - torch==2.4.0
+  - m3gnet==0.1.0
+  - pymatgen==2022.10.22
+  - numpy==1.26.4
+  - pandas==1.5.1
+  python_version: '3.11'
+  find_links: ['https://data.dgl.ai/wheels/torch-2.4/cu121/repo.html']
 openness: OSOD
-trained_for_benchmark: false
+architecture_types: [gnn]
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
-model_type: UIP
+training_sets: [MPF]
 model_params: 227549
-n_estimators: 1
-
 hyperparams:
-  batch_size: 32
-  learning_rate: 0.001
-  optimizer: Adam
-  ase_optimizer: FIRE
-  cell_filter: ExpCellFilter # see https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd/m3gnet/models/_dynamics.py#L122
-  max_steps: 500
-  max_force: 0.05 # eV/Å
-  loss_weights:
-    energy: 1
-    force: 1
-    stress: 0.1
-  graph_construction_radius: 5.0 # Å, from https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14df/m3gnet/models/_m3gnet.py#L95
-  three_body_cutoff: 4.0
-  max_neighbors: .inf
-
-  kappa: {protocol: phonondb-v1}
-training_set: [MPF]
-training_cost: missing
-
+  evaluation:
+    ase_optimizer: FIRE
+    cell_filter: ExpCellFilter
+    max_steps: 500
+    max_force: 0.05
+    kappa:
+      protocol: phonondb-v1
+  architecture:
+    graph_construction_radius: 5.0
+  training:
+    batch_size: 32
+    learning_rate: 0.001
+    optimizer: Adam
+  upstream_config:
+    loss_weights:
+      energy: 1
+      force: 1
+      stress: 0.1
+    three_body_cutoff: 4.0
 notes:
-  Description: M3GNet is a GNN-based universal (as in full periodic table) interatomic potential for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations.
-  Long: It thereby learns to emulate structure relaxation, MD simulations and property prediction of materials across diverse chemical spaces.
-  Training: Using pre-trained model released with paper. Was only trained on initial, middle and final frames of a subset of 62,783 MP relaxation trajectories in the 2018 database release (see [related issue](https://github.com/materialsvirtuallab/m3gnet/issues/20#issuecomment-1207087219)).
-  Testing: We also tried combining M3GNet with MEGNet where M3GNet is used to relax initial structures which are then passed to MEGNet to predict the formation energy.
+  description: M3GNet is a GNN-based universal (as in full periodic table) interatomic potential for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations.
+  long: It thereby learns to emulate structure relaxation, MD simulations and property prediction of materials across diverse chemical spaces.
+  training: Using pre-trained model released with paper. Was only trained on initial, middle and final frames of a subset of 62,783 MP relaxation trajectories in the 2018 database release (see [related issue](https://github.com/materialsvirtuallab/m3gnet/issues/20#issuecomment-1207087219)).
+  testing: We also tried combining M3GNet with MEGNet where M3GNet is used to relax initial structures which are then passed to MEGNet to predict the formation energy.
 
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 1.4094
-      pred_file: models/m3gnet/m3gnet-matgl-mp-2021-2-8-pes/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/52134866
-      κ_SRE: 1.3404
-  geo_opt:
-    pred_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/57751024
-    struct_col: m3gnet_structure
-    symprec=1e-5:
-      rmsd: 0.1117 # unitless
-      n_sym_ops_mae: 1.8691 # unitless
-      symmetry_decrease: 0.0671 # fraction
-      symmetry_match: 0.7408 # fraction
-      symmetry_increase: 0.1869 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504594
-    symprec=1e-2:
-      rmsd: 0.1117 # unitless
-      n_sym_ops_mae: 1.9848 # unitless
-      symmetry_decrease: 0.0681 # fraction
-      symmetry_match: 0.8031 # fraction
-      symmetry_increase: 0.1217 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504600
   discovery:
-    pred_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-12-28-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52057535
-    pred_col: e_form_per_atom_m3gnet
+    pred_file:
+      name: models/m3gnet/m3gnet/2023-12-28-discovery.csv.gz
+      url: https://figshare.com/files/66646262
+      size: 1320744
+      md5: 76f83ffd2f281e2f8b660cffdb96a172
     full_test_set:
-      F1: 0.576 # fraction
+      F1: 0.576  # fraction
       DAF: 2.647 # dimensionless
       Precision: 0.454 # fraction
       Recall: 0.788 # fraction
@@ -113,16 +90,16 @@ metrics:
       FPR: 0.196 # fraction
       TNR: 0.804 # fraction
       FNR: 0.212 # fraction
-      TP: 34731.0 # count
-      FP: 41738.0 # count
-      TN: 171133.0 # count
-      FN: 9361.0 # count
+      TP: 34731 # count
+      FP: 41738 # count
+      TN: 171133 # count
+      FN: 9361 # count
       MAE: 0.072 # eV/atom
       RMSE: 0.115 # eV/atom
       R2: 0.588 # dimensionless
       missing_preds: 355 # count
     most_stable_10k:
-      F1: 0.868 # fraction
+      F1: 0.868  # fraction
       DAF: 5.02 # dimensionless
       Precision: 0.767 # fraction
       Recall: 1.0 # fraction
@@ -131,16 +108,16 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 7674.0 # count
-      FP: 2326.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
+      TP: 7674 # count
+      FP: 2326 # count
+      TN: 0 # count
+      FN: 0 # count
       MAE: 0.101 # eV/atom
       RMSE: 0.158 # eV/atom
       R2: 0.551 # dimensionless
       missing_preds: 0 # count
     unique_prototypes:
-      F1: 0.569 # fraction
+      F1: 0.569  # fraction
       DAF: 2.882 # dimensionless
       Precision: 0.441 # fraction
       Recall: 0.803 # fraction
@@ -149,11 +126,54 @@ metrics:
       FPR: 0.187 # fraction
       TNR: 0.813 # fraction
       FNR: 0.197 # fraction
-      TP: 26797.0 # count
-      FP: 34034.0 # count
-      TN: 148080.0 # count
-      FN: 6577.0 # count
+      TP: 26797 # count
+      FP: 34034 # count
+      TN: 148080 # count
+      FN: 6577 # count
       MAE: 0.075 # eV/atom
       RMSE: 0.118 # eV/atom
       R2: 0.585 # dimensionless
       missing_preds: 299 # count
+  geo_opt:
+    pred_file:
+      name: models/m3gnet/m3gnet/2023-06-01-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57751024
+      size: 118487634
+      md5: f82191618b2958811c4069e9a2031662
+    symprec=1e-5:
+      rmsd: 0.1117
+      n_sym_ops_mae: 1.8691
+      symmetry_decrease: 0.0671
+      symmetry_match: 0.7408
+      symmetry_increase: 0.1869
+      n_structures: 256963
+      analysis_file:
+        name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504594
+        size: 7062559
+        md5: 18448ea8867f4e2fb35158d0a7020505
+    symprec=1e-2:
+      rmsd: 0.1117
+      n_sym_ops_mae: 1.9848
+      symmetry_decrease: 0.0681
+      symmetry_match: 0.8031
+      symmetry_increase: 0.1217
+      n_structures: 256963
+      analysis_file:
+        name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504600
+        size: 7115973
+        md5: dc5735aaad87d65a3b74f3ed18988a41
+  phonons:
+    kappa_103:
+      κ_SRME: 1.4094
+      pred_file:
+        name: models/m3gnet/m3gnet/2024-11-09-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/52134866
+        size: 18034939
+        md5: 5bf90c8e0e755132b88a2875ff111f12
+      κ_SRE: 1.3404
+      κ_SRD: -1.2855
+      κ_failure_rate: 0.068
+      imaginary_mode_rate: 0.068
+      spectrum_w1: 2.0996

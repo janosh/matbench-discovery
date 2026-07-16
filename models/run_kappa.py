@@ -32,6 +32,7 @@ from matbench_discovery.calculators import (
     resolve_checkpoint,
     resolve_device,
 )
+from matbench_discovery.data import artifact_date_from_prefix, artifact_filename
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import effective_shard_args, slurm_shard_selection
 from matbench_discovery.phonons.pipeline import (
@@ -58,7 +59,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--list-models",
         action="store_true",
-        help="Print calculators with verified hyperparams.kappa settings",
+        help="Print calculators with verified hyperparams.evaluation.kappa settings",
     )
     parser.add_argument(
         "--print-cmd",
@@ -134,7 +135,7 @@ def resolve_output_paths(
     dry_run: bool,
     shard_dir: str | None,
 ) -> tuple[str, str]:
-    """Reuse one prior shard directory and align final artifact basenames."""
+    """Reuse one prior shard directory and emit a canonical prediction artifact."""
     dry_suffix = "-dry-run" if dry_run else ""
     default_stem = f"{out_dir}/{today}-phonondb-kappa-103{dry_suffix}"
     selected_shard_dir, artifact_stem = resolve_sharded_prefix(
@@ -143,7 +144,10 @@ def resolve_output_paths(
         task="kappa",
         shard_dir=shard_dir,
     )
-    return selected_shard_dir, f"{artifact_stem}.json.gz"
+    artifact_date = artifact_date_from_prefix(artifact_stem, fallback=today)
+    artifact_dir = f"{out_dir}/dry-run" if dry_run else out_dir
+    artifact_name = artifact_filename(artifact_date, "phonons_kappa_103")
+    return selected_shard_dir, f"{artifact_dir}/{artifact_name}"
 
 
 def resolved_artifact_identifier(model: Model, checkpoint: str | None) -> str | None:
@@ -151,10 +155,7 @@ def resolved_artifact_identifier(model: Model, checkpoint: str | None) -> str | 
     checkpoint_path = resolve_checkpoint(model.name, checkpoint)
     if checkpoint_path:
         return checkpoint_path
-    for key in ("checkpoint_url", "model_url"):
-        if identifier := model.metadata.get(key):
-            return str(identifier)
-    return None
+    return model.metadata["checkpoint_url"]
 
 
 def print_cmd_args(args: argparse.Namespace, model_key: str) -> list[str]:

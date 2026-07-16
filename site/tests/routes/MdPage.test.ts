@@ -1,4 +1,4 @@
-import { MODELS } from '$lib'
+import { ACTIVE_MODELS } from '$lib'
 import { MD_METRICS } from '$lib/labels'
 import MdPage from '$routes/tasks/md/+page.svelte'
 import { describe, expect, it } from 'vitest'
@@ -22,7 +22,7 @@ describe(`MD Task Page`, () => {
 
     const table = doc_query(`section.full-bleed table`)
     expect(table.querySelectorAll(`tbody tr`)).toHaveLength(
-      MODELS.filter(has_md_metrics).length,
+      ACTIVE_MODELS.filter(has_md_metrics).length,
     )
     const headers = [...table.querySelectorAll(`th`)].map((th) =>
       th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),

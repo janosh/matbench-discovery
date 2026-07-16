@@ -1,133 +1,108 @@
 model_name: MatRIS v0.5.0 MPtrj
 model_key: matris-v050-mptrj
 model_version: v0.5.0
-date_added: '2025-03-13'
-date_published: '2025-03-13'
+dates:
+  benchmark_added: '2025-03-13'
+  paper_published: '2025-03-13'
+lifecycle: superseded
+superseded_by: matris-10m-mp
 authors:
-  - name: Yuanchang Zhou
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: zhouyuanchang23s@ict.ac.cn
-    orcid: https://orcid.org/0009-0004-6801-7033
-  - name: Siyu Hu
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: husiyu@ict.ac.cn
-    orcid: https://orcid.org/0009-0008-6085-4645
-  - name: Chen Wang
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: wangchen246@mails.ucas.ac.cn
-    orcid: https://orcid.org/0009-0006-7542-8281
-  - name: Guangming Tan
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: tgm@ict.ac.cn
-    orcid: https://orcid.org/0000-0002-6361-5948
-  - name: Weile Jia
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: jiaweile@ict.ac.cn
-    orcid: https://orcid.org/0000-0001-8539-8326
-    corresponding: true
+- name: Yuanchang Zhou
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: zhouyuanchang23s@ict.ac.cn
+  orcid: https://orcid.org/0009-0004-6801-7033
+- name: Siyu Hu
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: husiyu@ict.ac.cn
+  orcid: https://orcid.org/0009-0008-6085-4645
+- name: Chen Wang
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: wangchen246@mails.ucas.ac.cn
+  orcid: https://orcid.org/0009-0006-7542-8281
+- name: Guangming Tan
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: tgm@ict.ac.cn
+  orcid: https://orcid.org/0000-0002-6361-5948
+- name: Weile Jia
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: jiaweile@ict.ac.cn
+  orcid: https://orcid.org/0000-0001-8539-8326
+  corresponding: true
 trained_by:
-  - name: Yuanchang Zhou
-    affiliation: Institute of Computing Technology, Chinese Academy of Sciences
-    email: zhouyuanchang23s@ict.ac.cn
-    orcid: https://orcid.org/0009-0004-6801-7033
+- name: Yuanchang Zhou
+  affiliation: Institute of Computing Technology, Chinese Academy of Sciences
+  email: zhouyuanchang23s@ict.ac.cn
+  orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
-url: https://github.com/HPC-AI-Team/MatRIS
-doi: https://github.com/HPC-AI-Team/MatRIS # no paper yet, using repo URL
-paper: https://github.com/HPC-AI-Team/MatRIS # no paper yet, using repo URL
+doi: https://doi.org/10.48550/arXiv.2603.02002
+paper: https://arxiv.org/abs/2603.02002
+docs: https://github.com/HPC-AI-Team/MatRIS
 pr_url: https://github.com/janosh/matbench-discovery/pull/293
 checkpoint_url: https://figshare.com/files/59143058
-
 license:
   code: BSD-3-Clause
   code_url: https://github.com/HPC-AI-Team/MatRIS/blob/main/LICENSE
   checkpoint: BSD-3-Clause
   checkpoint_url: https://github.com/HPC-AI-Team/MatRIS/blob/main/LICENSE
 
+environment:
+  dependencies:
+  - torch==2.4.1
+  - ase==3.23.0
+  - pymatgen==2024.11.23
+  - numpy==1.26.4
+  python_version: '3.12'
 openness: OSOD
+architecture_types: [gnn]
 train_task: S2EFSM
 test_task: IS2RE-SR
 targets: EFS_GM
-model_type: UIP
+training_sets: [MPtrj]
 model_params: 5825620
-trained_for_benchmark: true
-n_estimators: 1
-status: superseded
-superseded_by: matris-10m-mp
-
-hyperparams:
-  max_force: 0.05
-  max_steps: 500
-  ase_optimizer: FIRE
-  cell_filter: FrechetCellFilter
-  optimizer: Adam
-  loss: MAE
-  loss_weights:
-    energy: 5.0
-    force: 5.0
-    stress: 0.1
-    magmom: 0.1
-  batch_size: 160
-  initial_learning_rate: 0.0003
-  learning_rate_schedule: CosineAnnealingLR(T_max=300)
-  epochs: 30
-  n_layers: 6
-  n_features: 128
-  n_radial_bessel_basis: 7
-  graph_construction_radius: 6.0 # Å, from https://github.com/HPC-AI-Team/MatRIS/issues/1#issuecomment-2802181230
-  three_body_cutoff: 4.0 # Å
-  max_neighbors: .inf # see sec. 3.2 in arXiv:2502.12147
-
-requirements:
-  torch: 2.4.1
-  ase: 3.23.0
-  pymatgen: 2024.11.23
-  numpy: 1.26.4
-
-training_set: [MPtrj]
-
 training_cost:
-  Nvidia A100 GPUs: { amount: 16, hours: 120 }
-
+  entries:
+  - hardware: NVIDIA A100
+    count: 16
+    hours_per_device: 120.0
+hyperparams:
+  evaluation:
+    max_force: 0.05
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+  architecture:
+    n_layers: 6
+    graph_construction_radius: 6.0
+  training:
+    batch_size: 160
+    initial_learning_rate: 0.0003
+    epochs: 30
+    optimizer: Adam
+  upstream_config:
+    loss: MAE
+    loss_weights:
+      energy: 5.0
+      force: 5.0
+      stress: 0.1
+      magmom: 0.1
+    learning_rate_schedule: CosineAnnealingLR(T_max=300)
+    n_features: 128
+    n_radial_bessel_basis: 7
+    three_body_cutoff: 4.0
 notes:
-  Description: |
+  description: |
     MatRIS is a foundation model for materials representation and interaction simulation.
 
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 0.8651
-      pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-kappa-103-fire-dist=0.01-fmax1e-4-symprec1e-5.json.gz
-      pred_file_url: https://figshare.com/files/53090600
-      κ_SRE: 0.7711
-  geo_opt:
-    pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/57751045
-    struct_col: matris_structure
-    symprec=1e-5:
-      rmsd: 0.0773 # unitless
-      n_sym_ops_mae: 5.7108 # unitless
-      symmetry_decrease: 0.593 # fraction
-      symmetry_match: 0.3362 # fraction
-      symmetry_increase: 0.0619 # fraction
-      n_structures: 256959 # count
-      analysis_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504666
-    symprec=1e-2:
-      rmsd: 0.0773 # unitless
-      n_sym_ops_mae: 2.0591 # unitless
-      symmetry_decrease: 0.0955 # fraction
-      symmetry_match: 0.7874 # fraction
-      symmetry_increase: 0.1091 # fraction
-      n_structures: 256959 # count
-      analysis_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53504669
   discovery:
-    pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/53000174
-    pred_col: e_form_per_atom_matris_mp
+    pred_file:
+      name: models/matris/matris-v050-mptrj/2025-03-12-discovery.csv.gz
+      url: https://figshare.com/files/66646235
+      size: 1322924
+      md5: 6c7fcb8a5574e71054a93a567c302d98
     full_test_set:
-      F1: 0.798 # fraction
+      F1: 0.798  # fraction
       DAF: 4.456 # dimensionless
       Precision: 0.765 # fraction
       Recall: 0.834 # fraction
@@ -136,16 +111,16 @@ metrics:
       FPR: 0.053 # fraction
       TNR: 0.947 # fraction
       FNR: 0.166 # fraction
-      TP: 36755.0 # count
-      FP: 11312.0 # count
-      TN: 201559.0 # count
-      FN: 7337.0 # count
+      TP: 36755 # count
+      FP: 11312 # count
+      TN: 201559 # count
+      FN: 7337 # count
       MAE: 0.035 # eV/atom
       RMSE: 0.08 # eV/atom
       R2: 0.8 # dimensionless
       missing_preds: 6 # count
     most_stable_10k:
-      F1: 0.984 # fraction
+      F1: 0.984  # fraction
       DAF: 6.341 # dimensionless
       Precision: 0.969 # fraction
       Recall: 1.0 # fraction
@@ -154,16 +129,16 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 9693.0 # count
-      FP: 307.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
+      TP: 9693 # count
+      FP: 307 # count
+      TN: 0 # count
+      FN: 0 # count
       MAE: 0.026 # eV/atom
       RMSE: 0.057 # eV/atom
       R2: 0.926 # dimensionless
       missing_preds: 0 # count
     unique_prototypes:
-      F1: 0.809 # fraction
+      F1: 0.809  # fraction
       DAF: 5.049 # dimensionless
       Precision: 0.772 # fraction
       Recall: 0.85 # fraction
@@ -172,11 +147,54 @@ metrics:
       FPR: 0.046 # fraction
       TNR: 0.954 # fraction
       FNR: 0.15 # fraction
-      TP: 28379.0 # count
-      FP: 8391.0 # count
-      TN: 173723.0 # count
-      FN: 4995.0 # count
+      TP: 28379 # count
+      FP: 8391 # count
+      TN: 173723 # count
+      FN: 4995 # count
       MAE: 0.037 # eV/atom
       RMSE: 0.082 # eV/atom
       R2: 0.803 # dimensionless
       missing_preds: 4 # count
+  geo_opt:
+    pred_file:
+      name: models/matris/matris-v050-mptrj/2025-03-12-geo-opt.jsonl.gz
+      url: https://figshare.com/files/57751045
+      size: 120155344
+      md5: da88122561ad97898dc58ecafae5b65b
+    symprec=1e-5:
+      rmsd: 0.0773
+      n_sym_ops_mae: 5.7108
+      symmetry_decrease: 0.593
+      symmetry_match: 0.3362
+      symmetry_increase: 0.0619
+      n_structures: 256959
+      analysis_file:
+        name: models/matris/matris-v050-mptrj/2025-03-12-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504666
+        size: 7238165
+        md5: 2ced92214be973e1313281582c0d4eae
+    symprec=1e-2:
+      rmsd: 0.0773
+      n_sym_ops_mae: 2.0591
+      symmetry_decrease: 0.0955
+      symmetry_match: 0.7874
+      symmetry_increase: 0.1091
+      n_structures: 256959
+      analysis_file:
+        name: models/matris/matris-v050-mptrj/2025-03-12-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504669
+        size: 7359164
+        md5: 11752bef916acef4d58d23ac2f90dd6b
+  phonons:
+    kappa_103:
+      κ_SRME: 0.8651
+      pred_file:
+        name: models/matris/matris-v050-mptrj/2025-03-12-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/53090600
+        size: 7818436
+        md5: 52c9d64a91244fdeaf36440ee6a74aa9
+      κ_SRE: 0.7711
+      κ_SRD: -0.7355
+      κ_failure_rate: 0.0291
+      imaginary_mode_rate: 0.0291
+      spectrum_w1: 0.58

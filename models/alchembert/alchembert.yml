@@ -1,57 +1,55 @@
 model_name: AlchemBERT
 model_key: alchembert
 model_version: v2024.12.25
-date_added: '2024-12-25'
-date_published: '2024-12-11'
+dates:
+  benchmark_added: '2024-12-25'
+  paper_published: '2024-12-11'
+lifecycle: active
 authors:
-  - name: Xiaotong Liu
-    affiliation: Beijing Information Science and Technology University
-    email: liuxiaotong@bistu.edu.cn
-  - name: Yuhang Wang
-    affiliation: Beijing Information Science and Technology University
-    email: 2024020669@bistu.edu.cn
+- name: Xiaotong Liu
+  affiliation: Beijing Information Science and Technology University
+  email: liuxiaotong@bistu.edu.cn
+- name: Yuhang Wang
+  affiliation: Beijing Information Science and Technology University
+  email: 2024020669@bistu.edu.cn
 
 repo: https://gitee.com/liuxiaotong15/alchemBERT
 doi: https://doi.org/10.26434/chemrxiv-2024-r4dnl
 paper: https://chemrxiv.org/engage/chemrxiv/article-details/67540a28085116a133a62b85
 pr_url: https://github.com/janosh/matbench-discovery/pull/187
 checkpoint_url: https://figshare.com/files/53298683
-
 license:
   code: GPL-3.0
   code_url: https://gitee.com/liuxiaotong15/alchemBERT/blob/master/LICENSE
   checkpoint: CC-BY-4.0
   checkpoint_url: https://figshare.com/articles/dataset/28690583?file=53298683
 
-targets: E
+environment:
+  dependencies:
+  - torch==2.5.1
+  - lightning==2.4.0
+  - transformers==4.46.3
+  - pymatgen==2024.11.13
+  python_version: '3.12'
+openness: OSOD
+architecture_types: [transformer]
 train_task: RS2RE
 test_task: IS2RE
-trained_for_benchmark: true
-openness: OSOD
-
-requirements:
-  torch: 2.5.1
-  lightning: 2.4.0
-  transformers: 4.46.3
-  pymatgen: 2024.11.13
-
-model_type: Transformer
+targets: E
+training_sets: [MP 2022]
 model_params: 110000000
-n_estimators: 1
-
-training_set: [MP 2022]
-training_cost: missing
-
 notes:
-  Description: We tested BERT on the IS2RE task of Matbench Discovery.
+  description: We tested BERT on the IS2RE task of Matbench Discovery.
 
 metrics:
   discovery:
-    pred_file: models/alchembert/2025-2-7-alchembert-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52874099
-    pred_col: e_form_per_atom_alchembert
+    pred_file:
+      name: models/alchembert/alchembert/2024-12-25-discovery.csv.gz
+      url: https://figshare.com/files/66646304
+      size: 2985758
+      md5: e2fc28e434b06ba80298d364e5328913
     full_test_set:
-      F1: 0.436 # fraction
+      F1: 0.436  # fraction
       DAF: 1.9 # dimensionless
       Precision: 0.326 # fraction
       Recall: 0.656 # fraction
@@ -60,16 +58,16 @@ metrics:
       FPR: 0.281 # fraction
       TNR: 0.719 # fraction
       FNR: 0.344 # fraction
-      TP: 28937.0 # count
-      FP: 59830.0 # count
-      TN: 153041.0 # count
-      FN: 15155.0 # count
+      TP: 28937 # count
+      FP: 59830 # count
+      TN: 153041 # count
+      FN: 15155 # count
       MAE: 0.111 # eV/atom
       RMSE: 0.171 # eV/atom
       R2: 0.102 # dimensionless
       missing_preds: 2 # count
     most_stable_10k:
-      F1: 0.603 # fraction
+      F1: 0.603  # fraction
       DAF: 2.821 # dimensionless
       Precision: 0.431 # fraction
       Recall: 1.0 # fraction
@@ -78,16 +76,16 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 4313.0 # count
-      FP: 5687.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
+      TP: 4313 # count
+      FP: 5687 # count
+      TN: 0 # count
+      FN: 0 # count
       MAE: 0.272 # eV/atom
       RMSE: 0.334 # eV/atom
       R2: -0.47 # dimensionless
       missing_preds: 0 # count
     unique_prototypes:
-      F1: 0.421 # fraction
+      F1: 0.421  # fraction
       DAF: 2.001 # dimensionless
       Precision: 0.306 # fraction
       Recall: 0.673 # fraction
@@ -96,10 +94,10 @@ metrics:
       FPR: 0.28 # fraction
       TNR: 0.72 # fraction
       FNR: 0.327 # fraction
-      TP: 22473.0 # count
-      FP: 50988.0 # count
-      TN: 131126.0 # count
-      FN: 10901.0 # count
+      TP: 22473 # count
+      FP: 50988 # count
+      TN: 131126 # count
+      FN: 10901 # count
       MAE: 0.117 # eV/atom
       RMSE: 0.175 # eV/atom
       R2: 0.096 # dimensionless

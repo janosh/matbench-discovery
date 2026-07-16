@@ -97,9 +97,18 @@ def maybe_auto_download_file(
     headers: dict[str, str] | None = None,
     md5: str | None = None,
 ) -> None:
-    """Download file if missing and confirmed, forwarding headers and expected md5."""
+    """Download a missing or checksum-stale file after confirmation."""
     if os.path.isfile(abs_path):
-        return
+        if md5 is None:
+            return
+        with open(abs_path, mode="rb") as file:
+            cached_md5 = hashlib.file_digest(file, "md5").hexdigest()
+        if cached_md5 == md5:
+            return
+        print(
+            f"Cached file {abs_path!r} has MD5 {cached_md5}, expected {md5}; "
+            "re-downloading"
+        )
 
     # whether to auto-download model prediction files without prompting
     auto_download_files = os.getenv("MBD_AUTO_DOWNLOAD_FILES", "true").lower() == "true"

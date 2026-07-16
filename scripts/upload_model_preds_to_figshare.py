@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 from matbench_discovery import PKG_DIR, ROOT, repo_relative_path
 from matbench_discovery.cli import cli_parser, models_arg
-from matbench_discovery.data import round_trip_yaml
+from matbench_discovery.data import iter_file_refs, round_trip_yaml
 from matbench_discovery.enums import Model
 from matbench_discovery.remote import figshare
 
@@ -57,12 +57,13 @@ def resolve_artifact_path(
     relative_file_path: str,
     root_dir: str = ROOT,
 ) -> str:
-    """Resolve an artifact file confined to its model architecture directory."""
+    """Resolve an artifact file confined to its model-owned directory."""
     if os.path.isabs(relative_file_path):
         raise ValueError(f"Artifact path must be relative: {relative_file_path!r}")
 
     file_path = os.path.abspath(f"{root_dir}/{relative_file_path}")
-    model_dir = os.path.realpath(os.path.dirname(model_yaml_path))
+    model_key = os.path.splitext(os.path.basename(model_yaml_path))[0]
+    model_dir = os.path.realpath(f"{os.path.dirname(model_yaml_path)}/{model_key}")
     if os.path.commonpath((model_dir, os.path.realpath(file_path))) != model_dir:
         raise ValueError(
             f"Artifact path escapes model directory {model_dir!r}: "
@@ -71,6 +72,25 @@ def resolve_artifact_path(
     if not os.path.isfile(file_path):
         raise FileNotFoundError(file_path)
     return file_path
+
+
+def set_file_ref_url(
+    data: dict[str, Any],
+    key_path: tuple[str, ...],
+    file_url: str,
+    *,
+    size: int,
+    md5: str,
+) -> None:
+    """Set ``url``, ``size`` and ``md5`` on a nested FileRef."""
+    *parts, last = key_path
+    target = data
+    for part in parts:
+        target = target[part]
+    ref = target.get(last)
+    if not isinstance(ref, dict):
+        raise TypeError(f"Expected FileRef object at {'.'.join(key_path)}, got {ref!r}")
+    target[last] = {**ref, "url": file_url, "size": size, "md5": md5}
 
 
 def update_one_modeling_task_article(
@@ -138,30 +158,14 @@ def update_one_modeling_task_article(
         with open(model.yaml_path) as file:
             model_data = round_trip_yaml.load(file)
 
-        metrics = model_data.get("metrics", {})
-        metric_data = metrics.get(task, {})
-        if not isinstance(metric_data, dict):
-            continue
+        metrics = model_data.get("metrics") or {}
+        metric_data = metrics.get(task) or {}
 
-        def find_file_keys(data: dict[str, Any], prefix: str = "") -> dict[str, str]:
-            """Find supported artifact keys in nested task metadata."""
-            result: dict[str, str] = {}
-            for key, value in data.items():
-                full_key = f"{prefix}.{key}" if prefix else key
-                if key.endswith("_file") and (
-                    key not in {"analysis_file", "pred_file"}
-                    or not isinstance(value, str)
-                ):
-                    raise ValueError(f"Unsupported artifact at {full_key!r}")
-                if isinstance(value, dict):
-                    result |= find_file_keys(value, full_key)
-                elif key.endswith("_file") and (
-                    file_type == "all" or key == f"{file_type}_file"
-                ):
-                    result[full_key] = value
-            return result
-
-        for key_path, rel_file_path in find_file_keys(metric_data).items():
+        # Ingestion schema-validates model YAMLs before archival, so malformed FileRefs
+        # intentionally fail fast here rather than being silently skipped.
+        for key_parts, rel_file_path in iter_file_refs(metric_data):
+            if file_type != "all" and key_parts[-1] != f"{file_type}_file":
+                continue
             try:
                 file_path = resolve_artifact_path(model.yaml_path, rel_file_path)
             except FileNotFoundError:
@@ -173,26 +177,32 @@ def update_one_modeling_task_article(
 
             filename = repo_relative_path(file_path)
 
+            # Hash feeds the exact-match check (skipped when forcing) and the upload
+            # (skipped on dry runs); a forced dry run needs neither. Reused below.
+            file_hash: str | None = None
+            file_size: int | None = None
+            if not (dry_run and force_reupload):
+                file_hash, file_size = figshare.get_file_hash_and_size(file_path)
+
             # First check if the exact same file already exists
-            if not force_reupload and not dry_run:
-                file_hash, _ = figshare.get_file_hash_and_size(file_path)
+            if not force_reupload and file_hash is not None and file_size is not None:
                 exists, file_id = figshare.file_exists_with_same_hash(
-                    article_id, filename, file_hash
+                    article_id,
+                    filename,
+                    file_hash,
+                    existing_files=existing_files,
                 )
 
                 if exists and file_id is not None:
                     file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
                     skipped_files[filename] = (file_url, model)
-
-                    # Update model metadata if URL not present
-                    url_key = f"{key_path}_url"  # append _url to YAML key
-                    if url_key not in metric_data:
-                        *parts, last = url_key.split(".")
-                        target = metric_data
-                        for part in parts:
-                            target = target[part]
-                        target[last] = file_url
-
+                    set_file_ref_url(
+                        metric_data,
+                        key_parts,
+                        file_url,
+                        size=file_size,
+                        md5=file_hash,
+                    )
                     continue
 
             # Check for similar files that should be deleted
@@ -205,41 +215,46 @@ def update_one_modeling_task_article(
                     print(f"{idx}. {similar_name} (ID: {similar_id})")
 
                 # Ask for user confirmation to delete similar files
-                if interactive:
-                    confirm = input("Delete these files before uploading? [y/N] ")
-                    if confirm.lower() == "y":
-                        for similar_name, similar_id in similar_files:
-                            if similar_id is not None and figshare.delete_file(
-                                article_id, similar_id
-                            ):
-                                deleted_files[similar_name] = similar_id
-                                # keep local view in sync to classify uploads correctly
-                                existing_files.pop(similar_name, None)
-                                print(f"Deleted similar file: {similar_name}")
-                else:
+                if not interactive:
                     print("Skipping deletion of similar files (non-interactive mode)")
+                elif (
+                    input("Delete these files before uploading? [y/N] ").lower() == "y"
+                ):
+                    for similar_name, similar_id in similar_files:
+                        if similar_id is not None and figshare.delete_file(
+                            article_id, similar_id
+                        ):
+                            deleted_files[similar_name] = similar_id
+                            # keep local view in sync to classify uploads correctly
+                            existing_files.pop(similar_name, None)
+                            print(f"Deleted similar file: {similar_name}")
 
             # Upload file if it doesn't exist or force_reupload is True
             if not dry_run:
+                if file_hash is None or file_size is None:
+                    raise RuntimeError(f"Missing hash/size for {file_path}")
+                file_existed = filename in existing_files
                 file_id, _was_uploaded = figshare.upload_file_if_needed(
                     article_id,
                     file_path,
                     file_name=filename,
                     force_reupload=force_reupload,
+                    existing_files=existing_files,
+                    file_hash=file_hash,
                 )
                 file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
 
-                target_files = (
-                    updated_files if filename in existing_files else new_files
-                )
+                target_files = updated_files if file_existed else new_files
                 target_files[filename] = (file_url, model)
 
                 # Update model metadata with URL
-                *parts, last = key_path.split(".")
-                target = metric_data
-                for part in parts:
-                    target = target[part]
-                target[f"{last}_url"] = file_url
+                set_file_ref_url(
+                    metric_data,
+                    key_parts,
+                    file_url,
+                    size=file_size,
+                    md5=file_hash,
+                )
 
         # Save updated model metadata if changed
         if not dry_run:
@@ -261,24 +276,15 @@ def update_one_modeling_task_article(
             for idx, (filename, file_id) in enumerate(deleted_files.items(), start=1):
                 print(f"{idx}. {filename}: {file_id}")
 
-        if new_files:
-            print("\nNewly added files:")
-            for idx, (filename, (url, model)) in enumerate(new_files.items(), start=1):
-                print(f"{idx}. {model.name} {filename}: {url}")
-
-        if updated_files:
-            print("\nUpdated files:")
-            for idx, (filename, (url, model)) in enumerate(
-                updated_files.items(), start=1
-            ):
-                print(f"{idx}. {model.name} {filename}: {url}")
-
-        if skipped_files:
-            print("\nSkipped files (already exist with same hash):")
-            for idx, (filename, (url, model)) in enumerate(
-                skipped_files.items(), start=1
-            ):
-                print(f"{idx}. {model.name} {filename}: {url}")
+        for heading, files in (
+            ("Newly added files", new_files),
+            ("Updated files", updated_files),
+            ("Skipped files (already exist with same hash)", skipped_files),
+        ):
+            if files:
+                print(f"\n{heading}:")
+                for idx, (filename, (url, model)) in enumerate(files.items(), start=1):
+                    print(f"{idx}. {model.name} {filename}: {url}")
 
         # Publish the article if any new files were added, it's not a dry run,
         # and the article wasn't newly created

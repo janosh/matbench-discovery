@@ -126,22 +126,8 @@ def sankey_payload_from_flow(flow_data: Mapping[str, Any]) -> dict[str, Any]:
     values = round_list(flow_data["value"])
     if not labels or not src_idx or not tgt_idx:
         raise ValueError("sankey flow has no nodes or links")
-    return _canonicalize_sankey(labels, src_idx, tgt_idx, values)
-
-
-def _canonicalize_sankey(
-    labels: list[str],
-    src_idx: list[int],
-    tgt_idx: list[int],
-    values: list[Any],
-) -> dict[str, Any]:
-    """Drop unused nodes, reindex links, and sort them deterministically."""
-    # drop nodes no link references (plotly keeps many unused spacegroup nodes whose
-    # crammed labels overlap) and reindex the links onto the kept nodes
     used = sorted({*src_idx, *tgt_idx})
     remap = {old: new for new, old in enumerate(used)}
-    # canonicalize link order: upstream pandas value_counts can permute equal-count
-    # links between runs, which would make payload bytes depend on run composition
     links = sorted(
         zip(
             (remap[src] for src in src_idx),
@@ -211,7 +197,8 @@ def write_jsonl_payload(
     client-side). ``full_run`` rewrites the whole roster; subset --models runs splice
     fresh entries into the committed file by ``id_field``, keeping the committed _base
     and dropping entries of models that are no longer active (e.g. superseded by the
-    spliced-in model - a splice alone could never prune them).
+    spliced-in model - a splice alone could never prune them). Content-identical output
+    leaves the existing file untouched.
     """
 
     def model_id(model: dict[str, Any]) -> str:
@@ -239,7 +226,7 @@ def write_jsonl_payload(
         inactive_ids = {
             id_attr
             for model in Model
-            if not model.is_complete
+            if not model.is_active
             for id_attr in (model.key, model.label)
         }
         models = [
@@ -260,10 +247,14 @@ def write_jsonl_payload(
         json.dumps(record, allow_nan=False, separators=(",", ":")) + "\n"
         for record in records
     )
+    n_bytes = len(body.encode())
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as file:
+            if file.read() == body:
+                return n_bytes
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as file:
         file.write(body)
-    n_bytes = len(body.encode())
     print(f"Wrote {os.path.basename(path)} ({n_bytes:,} bytes, {len(models)} models)")
     return n_bytes
 

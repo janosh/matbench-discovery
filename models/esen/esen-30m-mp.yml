@@ -1,0 +1,216 @@
+model_name: eSEN-30M-MP
+model_key: esen-30m-mp
+model_version: v2025.03.17
+dates:
+  benchmark_added: '2025-03-17'
+  paper_published: '2025-02-17'
+lifecycle: active
+authors:
+- name: Xiang Fu
+  affiliation: FAIR at Meta
+  email: xiangfu@meta.com
+  orcid: https://orcid.org/0000-0001-7480-6312
+  github: https://github.com/kyonofx
+  corresponding: true
+- name: Brandon M. Wood
+  affiliation: FAIR at Meta
+- name: Luis Barroso-Luque
+  affiliation: FAIR at Meta
+- name: Daniel S. Levine
+  affiliation: FAIR at Meta
+- name: Meng Gao
+  affiliation: FAIR at Meta
+- name: Misko Dzamba
+  affiliation: FAIR at Meta
+- name: C. Lawrence Zitnick
+  affiliation: FAIR at Meta
+  email: zitnick@meta.com
+  corresponding: true
+
+repo: https://github.com/FAIR-Chem/fairchem
+doi: https://doi.org/10.48550/arXiv.2502.12147
+paper: https://arxiv.org/abs/2502.12147
+docs: https://huggingface.co/facebook/OMAT24#model-checkpoints
+pypi: https://pypi.org/project/fairchem-core
+pr_url: https://github.com/janosh/matbench-discovery/pull/226
+checkpoint_url: https://huggingface.co/fairchem/OMAT24/resolve/main/esen_30m_mptrj.pt
+license:
+  code: MIT
+  code_url: https://github.com/FAIR-Chem/fairchem/blob/aa160789e1/LICENSE.md
+  checkpoint: Meta Research
+  checkpoint_url: https://huggingface.co/facebook/OMAT24/blob/main/LICENSE
+
+environment:
+  dependencies:
+  - 'fairchem-core[torch-extras]==1.10.0'
+  - torch==2.4.0
+  - numpy<2
+  - scipy<1.15
+  python_version: '3.12'
+  find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj]
+size: 30M
+model_params: 30085121
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+  architecture:
+    graph_construction_radius: 6.0
+notes:
+  description: |
+    equivariant Smooth Energy Network (eSEN), described in https://arxiv.org/abs/2502.12147.
+  training: |
+    Training was done by: (1) 70-epoch direct pre-training on MPtrj with DeNS; (2) 30-epoch conservative fine-tuning on MPtrj without DeNS.
+
+metrics:
+  diatomics:
+    pred_file:
+      name: models/esen/esen-30m-mp/2026-06-29-diatomics.json.gz
+      url: https://figshare.com/files/66104597
+      size: 348402
+      md5: 4cfa5c274cbb789d0ad234f883afae12
+    hardware: NVIDIA H200
+    run_time_sec: 877.63
+    pbe_wall_dist_mae: 0.6455
+    pbe_energy_mae: 2.086
+    pbe_bond_length_error: 0.5859
+    pbe_well_depth_error: 0.941
+    pbe_vib_freq_error: 72.41
+    tortuosity: 1.113
+    energy_diff_flips: 3.23
+    energy_jump: 0.3988
+    force_flips: 3.218
+    force_total_variation: 61.98
+    force_jump: 20.12
+    pbe_force_mae: 2.895
+  discovery:
+    pred_file:
+      name: models/esen/esen-30m-mp/2025-03-17-discovery.csv.gz
+      url: https://figshare.com/files/66646343
+      size: 1316973
+      md5: 11c30079072c928109cb826be9af3671
+    full_test_set:
+      F1: 0.819  # fraction
+      DAF: 4.616 # dimensionless
+      Precision: 0.792 # fraction
+      Recall: 0.849 # fraction
+      Accuracy: 0.936 # fraction
+      TPR: 0.849 # fraction
+      FPR: 0.046 # fraction
+      TNR: 0.954 # fraction
+      FNR: 0.151 # fraction
+      TP: 37419 # count
+      FP: 9825 # count
+      TN: 203046 # count
+      FN: 6673 # count
+      MAE: 0.032 # eV/atom
+      RMSE: 0.077 # eV/atom
+      R2: 0.818 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.831  # fraction
+      DAF: 5.26 # dimensionless
+      Precision: 0.804 # fraction
+      Recall: 0.861 # fraction
+      Accuracy: 0.946 # fraction
+      TPR: 0.861 # fraction
+      FPR: 0.038 # fraction
+      TNR: 0.962 # fraction
+      FNR: 0.139 # fraction
+      TP: 28722 # count
+      FP: 7000 # count
+      TN: 175114 # count
+      FN: 4652 # count
+      MAE: 0.033 # eV/atom
+      RMSE: 0.078 # eV/atom
+      R2: 0.822 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.978  # fraction
+      DAF: 6.261 # dimensionless
+      Precision: 0.957 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.957 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9572 # count
+      FP: 428 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.035 # eV/atom
+      RMSE: 0.111 # eV/atom
+      R2: 0.755 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/esen/esen-30m-mp/2025-03-17-geo-opt.jsonl.gz
+      url: https://figshare.com/files/53153474
+      size: 206959696
+      md5: f491cfac2f4e9151c3a7bb62ed45a225
+    symprec=1e-5:
+      rmsd: 0.0752
+      n_sym_ops_mae: 3.3144
+      symmetry_decrease: 0.4281
+      symmetry_match: 0.3859
+      symmetry_increase: 0.1282
+      n_structures: 256963
+      analysis_file:
+        name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504555
+        size: 7162047
+        md5: 1072a536bf1d17c77381d40be8ab34fd
+    symprec=1e-2:
+      rmsd: 0.0752
+      n_sym_ops_mae: 2.521
+      symmetry_decrease: 0.2604
+      symmetry_match: 0.6106
+      symmetry_increase: 0.098
+      n_structures: 256963
+      analysis_file:
+        name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+        url: https://figshare.com/files/53504558
+        size: 7385714
+        md5: a14f76d78ceddb8c9a5ff813a043772a
+  md:
+    pred_file:
+      name: models/esen/esen-30m-mp/2026-06-28-md-metrics.csv.gz
+      url: https://figshare.com/files/66048872
+      size: 1559
+      md5: 41e3c91876a5716c7fe2c064eb8b19d3
+    hardware: NVIDIA H200
+    run_time_sec: 214089.6
+    energy_rmse: 0.8569
+    force_rmse: 81.3654
+    rdf_error: 4.1292
+    adf_error: 1.8722
+    vdos_error: 22.78
+    pressure_mae: 0.7832
+    pressure_wasserstein: 0.7862
+    pressure_error: 51.5299
+    n_systems: 17
+  phonons:
+    kappa_103:
+      κ_SRME: 0.3398
+      pred_file:
+        name: models/esen/esen-30m-mp/2025-03-18-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/53090588
+        size: 8162300
+        md5: dd89e238ea1ccc678dadcc344d8d645b
+      κ_SRE: 0.1854
+      κ_SRD: -0.1126
+      κ_failure_rate: 0.0194
+      imaginary_mode_rate: 0.0097
+      spectrum_w1: 0.1469

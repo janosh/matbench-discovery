@@ -62,21 +62,38 @@ describe(`Landing Page`, () => {
     expect(doc_query(`#best-report`).textContent).toContain(`F1`)
   })
 
+  it.each([
+    [`Geo Opt`, `Geometry Optimization`],
+    [`MD`, `Molecular Dynamics`],
+  ])(`expands %s in its tooltip`, async (label, expanded_label) => {
+    const button = preset_button(label)
+    button.dispatchEvent(new MouseEvent(`mouseenter`))
+    await new Promise((resolve) => setTimeout(resolve, 110))
+
+    const tooltip_id = button.getAttribute(`aria-describedby`)
+    expect(tooltip_id).not.toBeNull()
+    expect(document.querySelector(`[id="${tooltip_id}"]`)?.textContent).toContain(
+      expanded_label,
+    )
+  })
+
   // Each non-default task preset reveals one of its signature columns.
   it.each([
-    [`Phonons`, `SRE`, `κSRME`], // κ_SRE (matches the phonons task page)
-    [`Geo Opt`, `Σ`, `RMSD`], // symmetry metrics (Σ= / Σ↓ / Σ↑)
-    [`MD`, `vDOS`, `CMDS`], // vDOS err (RDF is hidden from leaderboards as redundant)
-    [`Diatomics`, `E jump`, `CDS`],
+    [`Phonons`, [`κSRE`, `κSRME`, `κSRD`, `κ failed`, `Im(ω)`, `W1(ω)`], `κSRME`], // all six phonon metrics
+    [`Geo Opt`, [`Σ`], `RMSD`], // symmetry metrics (Σ= / Σ↓ / Σ↑)
+    [`MD`, [`vDOS`], `CMDS`], // vDOS err (RDF is hidden from leaderboards as redundant)
+    [`Diatomics`, [`E jump`], `CDS`],
   ])(
     `%s preset updates task metrics, headlines and best model`,
-    async (preset, signature_column, primary_metric) => {
-      expect(header_text()).not.toContain(signature_column)
+    async (preset, signature_columns, primary_metric) => {
+      expect(header_text()).not.toContain(signature_columns[0])
 
       await select_preset(preset)
       const headers = header_text()
       const best_report = doc_query(`#best-report`).textContent
-      expect(headers).toContain(signature_column)
+      for (const signature_column of signature_columns) {
+        expect(headers).toContain(signature_column)
+      }
       for (const headline of [`CPS`, `F1`, `RMSD`, `CMDS`, `CDS`]) {
         expect(headers).toContain(headline)
       }
@@ -137,7 +154,7 @@ describe(`Landing Page`, () => {
     const column_menu = doc_query(`.column-menu`)
     const details = doc_query<HTMLDetailsElement>(`details.column-toggles`)
 
-    expect(column_menu.closest(`details`)).toBe(details)
+    expect(column_menu.parentElement).toBe(document.body)
     expect(details.open).toBe(false)
 
     columns_button.click()
@@ -222,7 +239,9 @@ describe(`Landing Page URL state`, () => {
     await tick()
     expect_sort(`RMSD`, `ascending`)
 
-    doc_query<HTMLInputElement>(`details.column-toggles input:not(:disabled)`).click()
+    doc_query<HTMLInputElement>(
+      `.column-menu input[type="checkbox"]:not(:disabled)`,
+    ).click()
     await tick()
     expect(new URLSearchParams(location.search).has(`preset`)).toBe(false)
 

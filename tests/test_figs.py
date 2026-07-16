@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import os
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -237,7 +238,7 @@ def test_write_site_payload_subset_run_prunes_inactive_models(
     """Subset runs drop committed entries of superseded/inactive models (by key or
     label) while preserving unknown reference lines like 'Test set standard deviation'.
     """
-    inactive = next(model for model in Model if not model.is_complete)
+    inactive = next(model for model in Model if not model.is_active)
     stale_id = getattr(inactive, id_field)
     figs.write_site_payload(
         "demo",
@@ -259,12 +260,12 @@ def test_write_site_payload_subset_run_prunes_inactive_models(
     assert by_id == {"m-a": [9], "Test set standard deviation": [2]}
 
 
-def test_write_site_payload_subset_noop_is_byte_identical(
+def test_write_site_payload_subset_noop_does_not_rewrite(
     site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Output is deterministic: a subset run that re-supplies a model's existing data
-    leaves the committed file byte-identical (so a no-op refresh opens no churn PR) and
-    preserves both the shared _base line and the untouched model.
+    """A content-identical subset run preserves the file and its modification time.
+
+    The shared _base line and untouched models must also remain in the payload.
     """
     path = f"{site_fig_dir}/demo.jsonl"
     payload = {
@@ -272,6 +273,7 @@ def test_write_site_payload_subset_noop_is_byte_identical(
         "models": [{"key": "m-b", "y": [2]}, {"key": "m-a", "y": [1]}],
     }
     figs.write_site_payload("demo", payload)
+    os.utime(path, ns=(1_000_000_000, 1_000_000_000))
     with open(path, "rb") as file:
         full = file.read()
     monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
@@ -280,6 +282,7 @@ def test_write_site_payload_subset_noop_is_byte_identical(
     )
     with open(path, "rb") as file:
         assert file.read() == full  # m-a unchanged, m-b + _base preserved
+    assert os.stat(path).st_mtime_ns == 1_000_000_000
 
 
 def test_write_site_payload_subset_preserves_committed_base(

@@ -25,9 +25,7 @@ export const RANKED_METRICS: (Label & { rank_href: string })[] = [
 ]
 
 // Compute the model's rank among `models` for each metric it has a value for.
-// The model is resolved from `models` by key so computed-on-the-fly scores
-// (CPS/CMDS, which only exist on the shared MODELS entries) are picked up even
-// when the caller holds a separately-loaded copy of the model metadata.
+// Resolve the model from the supplied cohort so computed-on-the-fly scores are used.
 export function model_metric_ranks<M extends Label>(
   model_key: string,
   models: ModelData[],

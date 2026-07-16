@@ -26,27 +26,34 @@ def main(
     removed_paths: Sequence[str] = (),
 ) -> int:
     """Apply explicit, canonical model YAML changes to the trusted checkout."""
-    yaml_paths = tuple(dict.fromkeys(yaml_paths))
-    removed_paths = tuple(dict.fromkeys(removed_paths))
-    all_paths = (*yaml_paths, *removed_paths)
-    if not all_paths:
+    canonical_yaml_paths: list[str] = []
+    canonical_removed_paths: list[str] = []
+    # Canonicalize before deduplicating so separator-equivalent inputs collapse.
+    for paths, canonical_paths in (
+        (yaml_paths, canonical_yaml_paths),
+        (removed_paths, canonical_removed_paths),
+    ):
+        for relative_path in paths:
+            canonical = relative_path.replace("\\", "/")
+            if not MODEL_YAML_PATTERN.fullmatch(canonical):
+                print(f"::error::Unsafe model YAML path: {relative_path!r}")
+                return 1
+            if canonical not in canonical_paths:
+                canonical_paths.append(canonical)
+
+    if not canonical_yaml_paths and not canonical_removed_paths:
         print("::error::No changed model YAML paths supplied")
         return 1
     if os.path.islink(f"{pr_tree}/models"):
         print(f"::error::Unsafe submitted models directory: {pr_tree}/models")
         return 1
 
-    for relative_path in all_paths:
-        if not MODEL_YAML_PATTERN.fullmatch(relative_path):
-            print(f"::error::Unsafe model YAML path: {relative_path!r}")
-            return 1
-
-    for relative_path in removed_paths:
+    for relative_path in canonical_removed_paths:
         if not (os.path.isfile(relative_path) or os.path.islink(relative_path)):
             print(f"::error::Missing trusted YAML to remove: {relative_path}")
             return 1
 
-    for relative_path in yaml_paths:
+    for relative_path in canonical_yaml_paths:
         source_path = f"{pr_tree}/{relative_path}"
         if (
             os.path.islink(os.path.dirname(source_path))
@@ -56,11 +63,11 @@ def main(
             print(f"::error::Missing or unsafe submitted YAML: {source_path}")
             return 1
 
-    for relative_path in removed_paths:
+    for relative_path in canonical_removed_paths:
         os.remove(relative_path)
         print(f"Removed {relative_path}")
 
-    for relative_path in yaml_paths:
+    for relative_path in canonical_yaml_paths:
         source_path = f"{pr_tree}/{relative_path}"
         os.makedirs(os.path.dirname(relative_path), exist_ok=True)
         shutil.copy2(source_path, relative_path)

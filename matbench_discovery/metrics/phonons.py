@@ -6,6 +6,8 @@ Included metrics:
 - SRE (Symmetric Relative Error): Absolute value of SRD
 - SRME (Symmetric Relative Mean Error): Microscopic, mode-resolved error that avoids
   cancellation between over- and underpredicted mode contributions.
+- Failure and imaginary-mode rates across the PhononDB test set.
+- Spectrum W1: Wasserstein-1 distance between predicted and reference phonon spectra.
 
 Adapted from https://github.com/MPA2suite/k_SRME/blob/6ff4c867/k_srme/benchmark.py,
 published in https://arxiv.org/abs/2408.00755. Ported in
@@ -21,7 +23,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
+from scipy.stats import wasserstein_distance
 
+from matbench_discovery.data import file_ref_name, make_file_ref
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
@@ -113,7 +117,7 @@ def calc_kappa_metrics_from_dfs(
     return df_pred
 
 
-def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float]:
+def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float | None]:
     """Evaluate complete PhononDB predictions and return aggregate metrics."""
     from matbench_discovery.phonons import read_kappa_json
 
@@ -125,11 +129,45 @@ def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float]
     df_metrics = calc_kappa_metrics_from_dfs(
         df_predictions.loc[df_reference.index], df_reference
     )
-    metrics = {
+    imag_flags = df_metrics.get(Key.has_imag_ph_modes)
+    imaginary_mode_rate = (
+        float(imag_flags.eq(other=True).fillna(value=False).mean())
+        if imag_flags is not None
+        else 0.0
+    )
+    spectrum_w1_values = [
+        round(distance, 4)
+        for material_id in df_reference.index
+        if (
+            distance := phonon_spectrum_w1(
+                df_metrics.loc[material_id], df_reference.loc[material_id]
+            )
+        )
+        is not None
+    ]
+    metrics: dict[str, float | None] = {
         "srme": float(df_metrics[Key.srme].mean()),
         "sre": float(df_metrics[Key.sre].mean()),
+        "srd": float(df_metrics[Key.srd].mean()),
+        "failure_rate": float(df_metrics[Key.srme].eq(KAPPA_ERROR_MAX).mean()),
+        "imaginary_mode_rate": imaginary_mode_rate,
+        "spectrum_w1": (
+            float(np.mean(spectrum_w1_values)) if spectrum_w1_values else None
+        ),
     }
-    if any(not 0 <= value <= KAPPA_ERROR_MAX for value in metrics.values()):
+    bounds = {
+        "srme": (0, KAPPA_ERROR_MAX),
+        "sre": (0, KAPPA_ERROR_MAX),
+        "srd": (-KAPPA_ERROR_MAX, KAPPA_ERROR_MAX),
+        "failure_rate": (0, 1),
+        "imaginary_mode_rate": (0, 1),
+    }
+    for key, (lower, upper) in bounds.items():
+        value = metrics[key]
+        if value is None or not np.isfinite(value) or not lower <= value <= upper:
+            raise ValueError(f"Invalid aggregate kappa metrics: {metrics}")
+    spectrum_w1 = metrics["spectrum_w1"]
+    if spectrum_w1 is not None and (not np.isfinite(spectrum_w1) or spectrum_w1 < 0):
         raise ValueError(f"Invalid aggregate kappa metrics: {metrics}")
     return metrics
 
@@ -199,6 +237,38 @@ def mode_weights_for_freqs(
     if q_weights.shape != (ph_freqs.shape[0],):
         return None
     return np.repeat(q_weights, ph_freqs.shape[1])
+
+
+def phonon_spectrum_data(
+    row: pd.Series,
+) -> tuple[np.ndarray, np.ndarray | None] | None:
+    """Return finite 2D phonon frequencies and optional q-point weights."""
+    frequencies = _finite_array(row.get(Key.ph_freqs))
+    if frequencies is None or frequencies.ndim != 2:
+        return None
+    q_weights = row.get("weights")
+    if q_weights is None:
+        q_weights = row.get(Key.mode_weights)
+    q_weights = _finite_array(q_weights, nonnegative=True)
+    if q_weights is not None and q_weights.sum() <= 0:
+        q_weights = None
+    return frequencies, q_weights
+
+
+def phonon_spectrum_w1(prediction: pd.Series, reference: pd.Series) -> float | None:
+    """Return weighted Wasserstein-1 distance between two phonon spectra in THz."""
+    prediction_data = phonon_spectrum_data(prediction)
+    reference_data = phonon_spectrum_data(reference)
+    if prediction_data is None or reference_data is None:
+        return None
+    return float(
+        wasserstein_distance(
+            prediction_data[0].ravel(),
+            reference_data[0].ravel(),
+            mode_weights_for_freqs(*prediction_data),
+            mode_weights_for_freqs(*reference_data),
+        )
+    )
 
 
 def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
@@ -379,11 +449,10 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
         or np.atleast_1d(predicted_totals).shape != true_totals.shape
         or mode_weights is None
         or mode_weights.sum() <= 0
+        or predicted_mode_kappa.shape != true_mode_kappa.shape
     ):
         return failure
     predicted_totals = np.atleast_1d(predicted_totals)
-    if predicted_mode_kappa.shape != true_mode_kappa.shape:
-        return failure
 
     # calculating microscopic error for all temperatures
     microscopic_error = np.atleast_1d(
@@ -407,7 +476,7 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
 
 def write_metrics_to_yaml(
     model: Model,
-    metrics: dict[str, float],
+    metrics: dict[str, float | None],
     pred_file_path: str,
     *,
     run_metadata: Mapping[str, object] | None = None,
@@ -421,11 +490,12 @@ def write_metrics_to_yaml(
         model: Model to write metrics for.
         metrics: Kappa metrics for this model.
         pred_file_path: Path to prediction file.
-        run_metadata: Optional complete-run timing, hardware, and memory provenance.
+        run_metadata: Optional complete-run provenance, including pred_file_url.
         force_file_path: Optional separate force-set artifact path.
         run_info_path: Optional small manifest/provenance sidecar path.
-        replace_pred_file: Replace an existing local prediction path and clear its
-            stale remote URL. The legacy default preserves established artifact paths.
+        replace_pred_file: If True, replace pred_file and clear stale force/run_info
+            URLs plus unset run_metadata fields. A pred_file_url supplied in
+            run_metadata is retained. Default preserves existing metadata.
     """
     from matbench_discovery import repo_relative_path
     from matbench_discovery.data import update_yaml_file
@@ -434,28 +504,48 @@ def write_metrics_to_yaml(
 
     def update_kappa_103(kappa_103: dict[str, Any]) -> dict[str, Any]:
         """Update metrics and provenance from the latest locked YAML section."""
-        kappa_103.update(
-            κ_SRME=round(metrics["srme"], 4),
-            κ_SRE=round(metrics["sre"], 4),
-        )
-        if replace_pred_file:
-            kappa_103 |= {"pred_file": pred_file_path, "pred_file_url": None}
-        else:
-            kappa_103.setdefault("pred_file", pred_file_path)
+        for yaml_key, metric_key in (
+            ("κ_SRME", "srme"),
+            ("κ_SRE", "sre"),
+            ("κ_SRD", "srd"),
+            ("κ_failure_rate", "failure_rate"),
+            ("imaginary_mode_rate", "imaginary_mode_rate"),
+            ("spectrum_w1", "spectrum_w1"),
+        ):
+            value = metrics[metric_key]
+            kappa_103[yaml_key] = None if value is None else round(value, 4)
+
+        existing_pred_file = kappa_103.get("pred_file")
+        existing_pred_name = file_ref_name(existing_pred_file)
+        run_pred_url = run_metadata.get("pred_file_url") if run_metadata else None
+        pred_file_url = run_pred_url if isinstance(run_pred_url, str) else None
+        if replace_pred_file or existing_pred_name is None or pred_file_url is not None:
+            size = md5 = None
+            if (
+                not replace_pred_file
+                and existing_pred_name == pred_file_path
+                and isinstance(existing_pred_file, dict)
+            ):
+                existing_size = existing_pred_file.get("size")
+                existing_md5 = existing_pred_file.get("md5")
+                if isinstance(existing_size, int) and isinstance(existing_md5, str):
+                    size, md5 = existing_size, existing_md5
+            kappa_103["pred_file"] = make_file_ref(
+                pred_file_path, url=pred_file_url, size=size, md5=md5
+            )
         for artifact_key, artifact_path in (
             ("force_file", force_file_path),
             ("run_info_file", run_info_path),
         ):
-            url_key = f"{artifact_key}_url"
             if artifact_path is not None:
                 relative_path = repo_relative_path(artifact_path)
-                artifact_changed = kappa_103.get(artifact_key) != relative_path
-                kappa_103[artifact_key] = relative_path
-                if replace_pred_file or artifact_changed:
-                    kappa_103[url_key] = None
+                if (
+                    replace_pred_file
+                    or file_ref_name(kappa_103.get(artifact_key)) != relative_path
+                ):
+                    kappa_103[artifact_key] = make_file_ref(relative_path)
             elif replace_pred_file:
                 kappa_103.pop(artifact_key, None)
-                kappa_103.pop(url_key, None)
         for key in ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"):
             if run_metadata is not None and key in run_metadata:
                 kappa_103[key] = run_metadata[key]

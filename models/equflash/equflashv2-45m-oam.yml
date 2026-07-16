@@ -1,0 +1,184 @@
+model_name: EquFlashV2
+model_key: equflashv2-45m-oam
+model_version: v2026.06.11
+dates:
+  benchmark_added: '2026-06-11'
+  paper_published: '2026-06-11'
+lifecycle: active
+authors:
+- name: Hyuntae Cho
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+  email: robert.cho@samsung.com
+  orcid: https://orcid.org/0000-0001-9379-6877
+- name: Geonu Kim
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Heejae Kim
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Hyeonwoo Lee
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Suhwan Song
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Jaehee Jang
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Jeongmin Choi
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Yongdeok Kim
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+- name: Gunhee Kim
+  email: ghij.kim@samsung.com
+  affiliation: Vertical AI 2, AI Center, Device Solutions Division, Samsung Electronics
+
+repo: https://github.com/SamsungDS/GGNN
+doi:
+paper: https://proceedings.mlr.press/v267/lee25l.html
+pr_url: https://github.com/janosh/matbench-discovery/pull/343
+checkpoint_url: https://figshare.com/ndownloader/files/65435007
+license:
+  code: MIT
+  code_url: https://github.com/SamsungDS/GGNN
+  checkpoint: CC-BY-4.0
+  # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+environment:
+  # Display/provenance pins; install is owned by project (override-dependencies).
+  dependencies:
+  - torch==2.9.1+cu126
+  - fairchem-core==1.10.0
+  - cuequivariance==0.6.0
+  - GGNN @ git+https://github.com/SamsungDS/GGNN@16b5cae47437
+  python_version: '3.12'
+  project: models/equflash/kappa-env
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj, OMat24, sAlex]
+size: 45M
+model_params: 44890492
+training_cost:
+  entries:
+  - hardware: NVIDIA H100
+    count: 16
+    hours_per_device: 100.0
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      relaxation_mode: two-stage
+      max_atoms_per_batch: 128
+  architecture:
+    graph_construction_radius: 6.0
+notes: # notes can have any key, be multiline and support markdown.
+  description: EquFlashV2 is an E(3)-equivariant machine learning force field that adopts a Transformer-style block architecture without attention mechanisms. Instead, it uses Clebsch–Gordan tensor product message passing, efficiently enabled by cuEquivariance, together with a bilinear gate activation for equivariant feature interactions.
+
+metrics:
+  discovery:
+    pred_file:
+      name: models/equflash/equflashv2-45m-oam/2026-06-11-discovery.csv.gz
+      url: https://figshare.com/files/66646274
+      size: 2576423
+      md5: 7e498aabe04e32112b632219333aac44
+    full_test_set:
+      F1: 0.91  # fraction
+      DAF: 5.291 # dimensionless
+      Precision: 0.908 # fraction
+      Recall: 0.913 # fraction
+      Accuracy: 0.969 # fraction
+      TPR: 0.913 # fraction
+      FPR: 0.019 # fraction
+      TNR: 0.981 # fraction
+      FNR: 0.087 # fraction
+      TP: 40235 # count
+      FP: 4086 # count
+      TN: 208785 # count
+      FN: 3857 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.866 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.929  # fraction
+      DAF: 6.069 # dimensionless
+      Precision: 0.928 # fraction
+      Recall: 0.93 # fraction
+      Accuracy: 0.978 # fraction
+      TPR: 0.93 # fraction
+      FPR: 0.013 # fraction
+      TNR: 0.987 # fraction
+      FNR: 0.07 # fraction
+      TP: 31031 # count
+      FP: 2413 # count
+      TN: 179701 # count
+      FN: 2343 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.873 # dimensionless
+      missing_preds: 0 # count
+    most_stable_10k:
+      F1: 0.987  # fraction
+      DAF: 6.373 # dimensionless
+      Precision: 0.974 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.974 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9743 # count
+      FP: 257 # count
+      TN: 0 # count
+      FN: 0 # count
+      MAE: 0.015 # eV/atom
+      RMSE: 0.062 # eV/atom
+      R2: 0.913 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt.jsonl.gz
+      url: https://figshare.com/files/65434998
+      size: 105066086
+      md5: 2fedd19d900fc0051986dbca987bbfa4
+    symprec=1e-2:
+      rmsd: 0.0577
+      n_sym_ops_mae: 1.6877
+      symmetry_decrease: 0.0474
+      symmetry_match: 0.8202
+      symmetry_increase: 0.1251
+      n_structures: 256963
+      analysis_file:
+        name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-2-moyo=0.12.0.csv.gz
+        url: https://figshare.com/files/65521161
+        size: 9212539
+        md5: e0094ac7c105ea189c9e9d36831cf3b7
+    symprec=1e-5:
+      rmsd: 0.0577
+      n_sym_ops_mae: 2.0782
+      symmetry_decrease: 0.0507
+      symmetry_match: 0.7005
+      symmetry_increase: 0.2434
+      n_structures: 256963
+      analysis_file:
+        name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-5-moyo=0.12.0.csv.gz
+        url: https://figshare.com/files/65521164
+        size: 9107367
+        md5: 0fcb5327f6746de93df194bd1f884880
+  phonons:
+    kappa_103:
+      pred_file:
+        name: models/equflash/equflashv2-45m-oam/2026-06-11-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/65439012
+        size: 14202644
+        md5: dbc8456a295b0e4b0071053f4780f3b5
+      κ_SRME: 0.0941
+      κ_SRE: 0.0377
+      κ_SRD: 0.0005
+      κ_failure_rate: 0.0
+      imaginary_mode_rate: 0.0
+      spectrum_w1: 0.0554

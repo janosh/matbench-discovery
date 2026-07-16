@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricsTable, MODELS, SelectToggle } from '$lib'
+  import { MetricsTable, ACTIVE_MODELS, SelectToggle } from '$lib'
   import { make_table_filters } from '$lib/models.svelte'
   import { DynamicScatter } from '$lib/plot'
   import type { SortState } from '$lib/url-state.svelte'
@@ -10,7 +10,7 @@
     valid_query_param,
   } from '$lib/url-state.svelte'
   import * as labels from '$lib/labels'
-  import { DISCOVERY_SETS, type DiscoverySet, type ModelData } from '$lib/types'
+  import { DISCOVERY_SETS, type DiscoverySet } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
 
   const default_discovery_set: DiscoverySet = `unique_prototypes`
@@ -30,12 +30,11 @@
       ]),
     ),
   )
-  const has_discovery_metrics = (model: ModelData): boolean => {
-    const discovery = model.metrics?.discovery
-    return typeof discovery === `object` && discovery?.[discovery_set] != null
-  }
   let visible_models = $derived(
-    MODELS.filter((model) => has_discovery_metrics(model) && filters.matches(model)),
+    ACTIVE_MODELS.filter(
+      (model) =>
+        model.metrics?.discovery?.[discovery_set] != null && filters.matches(model),
+    ),
   )
 
   // axis selections for the model-comparison scatter, bound so the section title
@@ -100,10 +99,10 @@
         labels.METADATA_COLS.model_name,
         ...Object.values(labels.DISCOVERY_METRICS),
         labels.METADATA_COLS.links,
-        labels.METADATA_COLS.date_added,
+        labels.METADATA_COLS.benchmark_added,
       ].includes(col)}
     {discovery_set}
-    model_filter={has_discovery_metrics}
+    model_filter={(model) => model.metrics?.discovery?.[discovery_set] != null}
     {filters}
     bind:sort
   />

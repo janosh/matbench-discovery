@@ -1,6 +1,6 @@
 <script lang="ts">
   import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
-  import { by_date_added_desc, MetricsTable, ModelSelect, MODELS } from '$lib'
+  import { by_benchmark_added_desc, MetricsTable, ModelSelect, ACTIVE_MODELS } from '$lib'
   import type { ModelData } from '$lib'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
   import { make_table_filters } from '$lib/models.svelte'
@@ -12,29 +12,24 @@
     valid_query_param,
   } from '$lib/url-state.svelte'
   import {
-    ALL_METRICS,
+    PHONON_METRICS,
     scatter_axis_label,
     scatter_options_by_key,
     task_page_visible_cols,
   } from '$lib/labels'
-  import { get_nested_number, label_data_path } from '$lib/metrics'
   import { format_num } from 'matterviz'
   import KappaNote from './kappa-note.md'
   import KappaSrmeScatter from './KappaSrmeScatter.svelte'
   import PhononFreqParity from './PhononFreqParity.svelte'
-  import PhononRobustnessTable from './PhononRobustnessTable.svelte'
 
   // Default column visibility: metadata + phonon metrics only
-  const visible_cols = task_page_visible_cols(ALL_METRICS.κ_SRME, ALL_METRICS.κ_SRE)
+  const visible_cols = task_page_visible_cols(...Object.values(PHONON_METRICS))
 
-  const kappa_srme_path = label_data_path(ALL_METRICS.κ_SRME)
-  const kappa_sre_path = label_data_path(ALL_METRICS.κ_SRE)
   const has_phonon_metrics = (model: ModelData): boolean =>
-    get_nested_number(model, kappa_srme_path) != null &&
-    get_nested_number(model, kappa_sre_path) != null
+    model.metrics?.phonons?.kappa_103 != null
   const kappa_srme = (model: ModelData): number =>
-    get_nested_number(model, kappa_srme_path) ?? Infinity
-  const leaderboard_models = MODELS.filter(has_phonon_metrics)
+    model.metrics?.phonons?.kappa_103?.κ_SRME ?? Infinity
+  const leaderboard_models = ACTIVE_MODELS.filter(has_phonon_metrics)
   const default_selected_key =
     leaderboard_models.toSorted(
       (model_1, model_2) => kappa_srme(model_1) - kappa_srme(model_2),
@@ -44,7 +39,7 @@
     leaderboard_models.find((model) => model.model_key === selected_key),
   )
 
-  // sort the Compare-model dropdown by κ_SRME (best first), name, or submission date
+  // sort the Compare-model dropdown by κ_SRME (best first), name, or benchmark date
   type SortMode = `kappa` | `name` | `date`
   const sort_options: { mode: SortMode; label: string }[] = [
     { mode: `kappa`, label: `κSRME` },
@@ -52,14 +47,14 @@
     { mode: `date`, label: `date added` },
   ]
   const default_sort_mode: SortMode = `kappa`
-  const default_scatter_x = ALL_METRICS.κ_SRE.key
-  const default_scatter_y = ALL_METRICS.κ_SRME.key
+  const default_scatter_x = PHONON_METRICS.κ_SRE.key
+  const default_scatter_y = PHONON_METRICS.κ_SRME.key
   const default_table_sort: SortState = {
     column: default_scatter_y,
     dir: `asc`,
   }
   const sort_modes = new Set(sort_options.map(({ mode }) => mode))
-  const model_keys = new Set(leaderboard_models.flatMap((model) => model.model_key ?? []))
+  const model_keys = new Set(leaderboard_models.map((model) => model.model_key))
 
   let sort_mode = $state<SortMode>(default_sort_mode)
   const sort_compare: Record<
@@ -68,7 +63,7 @@
   > = {
     kappa: (model_1, model_2) => kappa_srme(model_1) - kappa_srme(model_2),
     name: (model_1, model_2) => model_1.model_name.localeCompare(model_2.model_name),
-    date: by_date_added_desc,
+    date: by_benchmark_added_desc,
   }
   let sorted_models = $derived(leaderboard_models.toSorted(sort_compare[sort_mode]))
   // per-material diagnostics (SRME scatter + frequency parity) for the selected model
@@ -78,15 +73,15 @@
   // Model options include the value currently used for sorting (except A–Z).
   let model_options = $derived(
     sorted_models.map((model) => {
-      const srme = get_nested_number(model, kappa_srme_path)
+      const srme = model.metrics?.phonons?.kappa_103?.κ_SRME
       const suffix = {
         name: ``,
-        date: ` (${model.date_added})`,
+        date: ` (${model.dates.benchmark_added})`,
         kappa: srme == null ? `` : ` (${format_num(srme, `.3~f`)})`,
       }[sort_mode]
       return {
         label: `${model.model_name}${suffix}`,
-        value: model.model_key ?? ``,
+        value: model.model_key,
       }
     }),
   )
@@ -137,7 +132,9 @@
       2]: 0 is perfect, 2 is the maximum error, and <strong>lower is better</strong>.
       Over- and underpredicted mode contributions can cancel in the total, so a model can
       have a small κ<sub>SRE</sub> while retaining a larger κ<sub>SRME</sub>—the right
-      total conductivity for the wrong microscopic reasons.
+      total conductivity for the wrong microscopic reasons. κ<sub>SRD</sub> retains the sign
+      of the total-conductivity error to expose systematic under- or overprediction; the remaining
+      columns report outright failures, imaginary modes, and phonon-spectrum Wasserstein distance.
     </p>
   </div>
 </div>
@@ -147,8 +144,11 @@
 
 <h2>Leaderboard</h2>
 <p>
-  The leaderboard requires both aggregate κ<sub>SRME</sub> and κ<sub>SRE</sub> values in model
-  metadata; the inspector below provides the corresponding per-material views.
+  The leaderboard reports aggregate conductivity error and bias, failure rates, and
+  spectrum agreement. κ<sub>SRME</sub> assigns its maximum error of 2 when the prediction pipeline
+  breaks down entirely through imaginary phonon modes after ML relaxation, symmetry breaking
+  during relaxation, or a crashed κ calculation. The κ failed and Im(ω) columns expose these
+  failures, while the inspector below provides the corresponding per-material views.
 </p>
 <section class="full-bleed">
   <MetricsTable
@@ -159,21 +159,6 @@
   />
 </section>
 
-<h2>Failure Diagnostics</h2>
-<p>
-  κ<sub>SRME</sub> assigns its maximum error of 2 to materials where the prediction
-  pipeline breaks down entirely: imaginary phonon modes after ML relaxation (the model
-  predicts an unstable structure), symmetry broken during relaxation, or a crashed κ
-  calculation. This table shows how much of each model's κ<sub>SRME</sub> comes from such outright
-  failures (and how many of those have imaginary modes as the known cause), alongside the Wasserstein-1
-  distance between ML and DFT phonon frequency spectra (a κ-independent measure of phonon accuracy
-  that doesn't suffer from error compounding in the thermal conductivity calculation). This
-  section covers models with per-material analysis assets.
-</p>
-<section class="full-bleed robustness-table">
-  <PhononRobustnessTable />
-</section>
-
 <h2>
   Model Comparison: {@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(
     scatter_x,
@@ -181,7 +166,7 @@
 </h2>
 <p>
   This defaults to mode-resolved error against scalar-conductivity error for the same
-  two-metric cohort as the leaderboard. Both default axes are lower-is-better, so stronger
+  model cohort as the leaderboard. Both default axes are lower-is-better, so stronger
   models sit toward the lower left; separation between them exposes cancellation across
   mode contributions. Use the axis/color/size selectors to compare other metrics and
   metadata. Clicking a point selects that model in the inspector below. The κ<sub
@@ -194,7 +179,7 @@
 </p>
 
 <DynamicScatter
-  models={MODELS}
+  models={ACTIVE_MODELS}
   model_filter={has_phonon_metrics}
   bind:x_key={scatter_x}
   bind:y_key={scatter_y}

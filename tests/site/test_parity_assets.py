@@ -38,9 +38,7 @@ def parity_manifest(kind: str) -> dict[str, Any]:
 
 def model_has_parity_preds(model: Model, kind: str) -> bool:
     """Whether a model has the prediction file backing its `kind` parity plot."""
-    section = (model.metrics or {}).get("discovery" if kind == "energy" else "phonons")
-    if not isinstance(section, dict):  # e.g. "not available"/"not applicable"
-        return False
+    section = model.metrics.get("discovery" if kind == "energy" else "phonons") or {}
     if kind == "kappa":
         section = section.get("kappa_103") or {}
     return bool(section.get("pred_file"))

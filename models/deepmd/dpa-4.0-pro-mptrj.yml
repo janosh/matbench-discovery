@@ -1,172 +1,141 @@
 model_name: DPA-4.0-Pro-MPtrj
 model_key: dpa-4.0-pro-mptrj
 model_version: v2026.05.20
-date_added: '2026-05-20'
-date_published: '2026-05-20'
-
+dates:
+  benchmark_added: '2026-05-20'
+  paper_published: '2026-05-20'
+lifecycle: superseded
+superseded_by: dpa-4.0.1-pro-mptrj
 authors:
-  - name: Tiancheng Li
-    affiliation: AI for Science Institute, Beijing; Peking University
-    email: LTC201806070316@outlook.com
-    orcid: https://orcid.org/0009-0009-2459-0635
-    github: https://github.com/OutisLi
-  - name: Duo Zhang
-    affiliation: AI for Science Institute, Beijing
-    orcid: https://orcid.org/0000-0001-9591-2659
-    corresponding: true
-  - name: Linfeng Zhang
-    affiliation: AI for Science Institute, Beijing; DP Technology
-    email: linfeng.zhang.zlf@gmail.com
-    corresponding: true
-  - name: Han Wang
-    affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
-    email: wang_han@iapcm.ac.cn
-    corresponding: true
+- name: Tiancheng Li
+  affiliation: AI for Science Institute, Beijing; Peking University
+  email: LTC201806070316@outlook.com
+  orcid: https://orcid.org/0009-0009-2459-0635
+  github: https://github.com/OutisLi
+- name: Duo Zhang
+  affiliation: AI for Science Institute, Beijing
+  orcid: https://orcid.org/0000-0001-9591-2659
+  corresponding: true
+- name: Linfeng Zhang
+  affiliation: AI for Science Institute, Beijing; DP Technology
+  email: linfeng.zhang.zlf@gmail.com
+  corresponding: true
+- name: Han Wang
+  affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
+  email: wang_han@iapcm.ac.cn
+  corresponding: true
 
 trained_by:
-  - name: Tiancheng Li
-    affiliation: AI for Science Institute, Beijing; Peking University
-    email: LTC201806070316@outlook.com
-    orcid: https://orcid.org/0009-0009-2459-0635
-    github: https://github.com/OutisLi
+- name: Tiancheng Li
+  affiliation: AI for Science Institute, Beijing; Peking University
+  email: LTC201806070316@outlook.com
+  orcid: https://orcid.org/0009-0009-2459-0635
+  github: https://github.com/OutisLi
 
 repo: https://github.com/deepmodeling/deepmd-kit
-url: https://github.com/deepmodeling/deepmd-kit
 doi: https://doi.org/10.48550/arXiv.2606.02419
 paper: https://arxiv.org/abs/2606.02419
+docs: https://github.com/deepmodeling/deepmd-kit
 pr_url: https://github.com/janosh/matbench-discovery/pull/324
 checkpoint_url: https://figshare.com/files/64733586
-
 license:
   code: LGPL-3.0
   code_url: https://github.com/deepmodeling/deepmd-kit/blob/master/LICENSE
   checkpoint: CC-BY-4.0
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
+environment:
+  dependencies: ['deepmd-kit[torch]==3.2.0b0', 'torch==2.11.0+cu128', 'ase==3.28.0']
+  python_version: '3.12'
 openness: OSOD
-trained_for_benchmark: true
+architecture_types: [gnn]
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
-model_type: UIP
+training_sets: [MPtrj]
 model_params: 32724908
-n_estimators: 1
-
-status: superseded
-superseded_by: dpa-4.0.1-pro-mptrj
-
-training_set: [MPtrj]
-
 training_cost:
-  Nvidia H20 GPUs: {amount: 8, hours: 288}
-
+  entries:
+  - hardware: NVIDIA H20
+    count: 8
+    hours_per_device: 288.0
 hyperparams:
-  # Matbench Discovery relaxation settings used for the submitted WBM IS2RE results.
-  max_force: 0.02
-  max_steps: 500
-  ase_optimizer: FIRE
-  cell_filter: FrechetCellFilter
-  graph_construction_radius: 6.0
-  max_neighbors: 384
-
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      save_forces: true
   architecture:
-    type: DPA4/SeZM
-    n_blocks: 8
-    lmax: 5
-    mmax: 1
-    channels: 96
-    n_radial: 16
-    so2_layers: 4
-    radial_so2_mode: none
-    radial_so2_rank: 0
-    n_focus: 1
-    n_atten_head: 1
-    ffn_blocks: 1
-    sandwich_norm: [true, false, true, false]
-    s2_activation: [false, true]
-    lebedev_quadrature: false
-    activation_function: silu
-    glu_activation: true
-    precision: float32
-
-  learning_rate_schedule:
-    type: WSD
-
-  loss:
-    loss_func: mae
-    f_use_norm: true
-    loss_prefactor:
-      energy: 20
-      force: 20
-      virial: 5
-
-  optimizer: Muon
-  weight_decay: 0.001
-
+    graph_construction_radius: 6.0
+    max_neighbors: 384
   training:
-    numb_steps: 3000000
-    batch_size: 500
-    gradient_max_norm: 5
+    optimizer: Muon
+  upstream_config:
+    architecture:
+      type: DPA4/SeZM
+      n_blocks: 8
+      lmax: 5
+      mmax: 1
+      channels: 96
+      n_radial: 16
+      so2_layers: 4
+      radial_so2_mode: none
+      radial_so2_rank: 0
+      n_focus: 1
+      n_atten_head: 1
+      ffn_blocks: 1
+      sandwich_norm: [true, false, true, false]
+      s2_activation: [false, true]
+      lebedev_quadrature: false
+      activation_function: silu
+      glu_activation: true
+      precision: float32
 
-  kappa:
-    protocol: phonondb-v1
-    displacement_distance: 0.03
-    save_forces: true
-requirements:
-  deepmd-kit: 3.1.4
-  torch: 2.11.0+cu128
-  ase: 3.28.0
+    learning_rate_schedule:
+      type: WSD
+
+    loss:
+      loss_func: mae
+      f_use_norm: true
+      loss_prefactor:
+        energy: 20
+        force: 20
+        virial: 5
+
+    weight_decay: 0.001
+    training:
+      numb_steps: 3000000
+      batch_size: 500
+      gradient_max_norm: 5
 
 notes:
-  Description: |
+  description: |
     DPA-4.0-Pro-MPtrj is a DeePMD-kit universal interatomic potential in the
     DPA4/SeZM architecture family, trained only on the MPtrj dataset for this
     Matbench Discovery submission.
-  Architecture: |
+  architecture: |
     DPA4 uses local-frame SO(2)-equivariant message passing with envelope-gated
     attention over invariant channels. The submitted model has 8 interaction
     blocks, lmax=5, mmax=1, 96 channels, 16 radial basis functions, and a
     6.0 Å cutoff with up to 384 selected neighbors.
-  Training: |
+  training: |
     The model was trained for 3,000,000 steps using the Muon optimizer, WSD
     learning-rate schedule, MAE energy/force/virial loss weights 20/20/5,
     with AMP, TF32, and compile enabled.
 
 metrics:
-  phonons:
-    kappa_103:
-      κ_SRME: 0.2414
-      κ_SRE: 0.1323
-      pred_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-14-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/64733580
-  geo_opt:
-    pred_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/64733670
-    struct_col: dpa4_structure
-    symprec=1e-2:
-      rmsd: 0.0694 # unitless
-      n_sym_ops_mae: 2.3791 # unitless
-      symmetry_decrease: 0.2207 # fraction
-      symmetry_match: 0.6502 # fraction
-      symmetry_increase: 0.1039 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.7.9.csv.gz
-      analysis_file_url: https://figshare.com/files/64735083
-    symprec=1e-5:
-      rmsd: 0.0694 # unitless
-      n_sym_ops_mae: 6.818 # unitless
-      symmetry_decrease: 0.6561 # fraction
-      symmetry_match: 0.2497 # fraction
-      symmetry_increase: 0.0674 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.7.9.csv.gz
-      analysis_file_url: https://figshare.com/files/64735089
   discovery:
-    pred_file: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-dpa-4.0-pro-mptrj-preds.csv.gz
-    pred_file_url: https://figshare.com/files/64733577
-    pred_col: e_form_per_atom_dp
+    pred_file:
+      name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-discovery.csv.gz
+      url: https://figshare.com/files/66646169
+      size: 1316182
+      md5: 537be5f47fb938c415af623ce22b6772
     full_test_set:
-      F1: 0.832 # fraction
+      F1: 0.832  # fraction
       DAF: 4.943 # dimensionless
       Precision: 0.848 # fraction
       Recall: 0.816 # fraction
@@ -175,16 +144,16 @@ metrics:
       FPR: 0.03 # fraction
       TNR: 0.97 # fraction
       FNR: 0.184 # fraction
-      TP: 35987.0 # count
-      FP: 6439.0 # count
-      TN: 206432.0 # count
-      FN: 8105.0 # count
+      TP: 35987 # count
+      FP: 6439 # count
+      TN: 206432 # count
+      FN: 8105 # count
       MAE: 0.029 # eV/atom
       RMSE: 0.076 # eV/atom
       R2: 0.82 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.85 # fraction
+      F1: 0.85  # fraction
       DAF: 5.628 # dimensionless
       Precision: 0.86 # fraction
       Recall: 0.841 # fraction
@@ -193,16 +162,16 @@ metrics:
       FPR: 0.025 # fraction
       TNR: 0.975 # fraction
       FNR: 0.159 # fraction
-      TP: 28052.0 # count
-      FP: 4554.0 # count
-      TN: 177560.0 # count
-      FN: 5322.0 # count
+      TP: 28052 # count
+      FP: 4554 # count
+      TN: 177560 # count
+      FN: 5322 # count
       MAE: 0.03 # eV/atom
       RMSE: 0.078 # eV/atom
       R2: 0.823 # dimensionless
       missing_preds: 0 # count
     most_stable_10k:
-      F1: 0.982 # fraction
+      F1: 0.982  # fraction
       DAF: 6.307 # dimensionless
       Precision: 0.964 # fraction
       Recall: 1.0 # fraction
@@ -211,11 +180,54 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 9641.0 # count
-      FP: 359.0 # count
-      TN: 0.0 # count
-      FN: 0.0 # count
+      TP: 9641 # count
+      FP: 359 # count
+      TN: 0 # count
+      FN: 0 # count
       MAE: 0.033 # eV/atom
       RMSE: 0.122 # eV/atom
       R2: 0.698 # dimensionless
       missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt.jsonl.gz
+      url: https://figshare.com/files/64733670
+      size: 106633293
+      md5: fee1a8aec62f9e3f9933f25211282f05
+    symprec=1e-2:
+      rmsd: 0.0694
+      n_sym_ops_mae: 2.3791
+      symmetry_decrease: 0.2207
+      symmetry_match: 0.6502
+      symmetry_increase: 0.1039
+      n_structures: 256963
+      analysis_file:
+        name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
+        url: https://figshare.com/files/64735083
+        size: 3049389
+        md5: 04d0baf7784bbe5f2d54262eec97452f
+    symprec=1e-5:
+      rmsd: 0.0694
+      n_sym_ops_mae: 6.818
+      symmetry_decrease: 0.6561
+      symmetry_match: 0.2497
+      symmetry_increase: 0.0674
+      n_structures: 256963
+      analysis_file:
+        name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
+        url: https://figshare.com/files/64735089
+        size: 2883211
+        md5: 66213199cb721675b7b0a11dd5608fed
+  phonons:
+    kappa_103:
+      κ_SRME: 0.2414
+      κ_SRE: 0.1323
+      κ_SRD: -0.0705
+      κ_failure_rate: 0.0
+      imaginary_mode_rate: 0.0
+      spectrum_w1: 0.1348
+      pred_file:
+        name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-14-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/64733580
+        size: 13430887
+        md5: 93bcb5626a528446b9ca1637d49ae131
