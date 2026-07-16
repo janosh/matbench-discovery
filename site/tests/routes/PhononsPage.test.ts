@@ -1,7 +1,5 @@
 import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
 import { ACTIVE_MODELS } from '$lib'
-import { ALL_METRICS } from '$lib/labels'
-import { assemble_row_data, get_nested_number, label_data_path } from '$lib/metrics'
 import { make_table_filters } from '$lib/models.svelte'
 import PhononsPage from '$routes/tasks/phonons/+page.svelte'
 import { tick } from 'svelte'
@@ -16,14 +14,9 @@ import {
 } from '../index'
 
 const default_filters = make_table_filters()
-const kappa_srme_path = label_data_path(ALL_METRICS.κ_SRME)
-const kappa_sre_path = label_data_path(ALL_METRICS.κ_SRE)
 // Mirrors the page's model_filter plus MetricsTable's default filters.
 const phonon_leaderboard_count = ACTIVE_MODELS.filter(
-  (model) =>
-    get_nested_number(model, kappa_srme_path) != null &&
-    get_nested_number(model, kappa_sre_path) != null &&
-    default_filters.matches(model),
+  (model) => model.metrics?.phonons?.kappa_103 != null && default_filters.matches(model),
 ).length
 
 const get_headers = (root: ParentNode) =>
@@ -57,10 +50,11 @@ describe(`Phonons Task Page`, () => {
     mount(PhononsPage, { target: document.body })
 
     expect(doc_query(`h1`).textContent).toContain(`MLFF Phonon Modeling Metrics`)
-    expect(document.body.textContent).toContain(`wrong microscopic reasons`)
+    expect(document.body.textContent).toContain(`cancellation can hide errors`)
+    expect(document.body.textContent).not.toContain(`working on extending the test set`)
+    expect(document.body.textContent).toMatch(/censored\s+to 2 because/)
 
     const headings = heading_texts()
-    expect(headings).toContain(`Failure Diagnostics`)
     expect(headings).toContain(`Model Comparison: κSRME vs κSRE`)
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
@@ -68,16 +62,6 @@ describe(`Phonons Task Page`, () => {
 
     // SRME-vs-kappa scatter and frequency parity plot side by side.
     expect(doc_query(`.diagnostics-grid`).querySelectorAll(`div.scatter`)).toHaveLength(2)
-
-    const section = doc_query(`section.robustness-table`)
-    const headers = get_headers(section)
-    for (const column of [`κ failed`, `Imag. modes`, `Spectrum W1`]) {
-      expect(headers, `missing column ${column}`).toContain(column)
-    }
-    // one model-page link per entry in the kappa-103 analysis payload
-    expect(section.querySelectorAll(`td a[href^="/models/"]`)).toHaveLength(
-      kappa_103_analysis.models.length,
-    )
   })
 
   it(`shows only phonon leaderboard columns and rows with phonon metrics`, () => {
@@ -85,14 +69,25 @@ describe(`Phonons Task Page`, () => {
 
     const leaderboard = doc_query(`section.full-bleed`)
     const headers = get_headers(leaderboard)
-    for (const column of [`Model`, `Links`, `κSRME`, `κSRE`]) {
+    for (const column of [
+      `Model`,
+      `Links`,
+      `κSRME`,
+      `κSRE`,
+      `κSRD`,
+      `κ failed`,
+      `Im(ω)`,
+      `W1(ω)`,
+    ]) {
       expect(headers).toContain(column)
     }
     for (const column of [`F1`, `DAF`, `Acc`, `Prec`]) {
       expect(headers).not.toContain(column)
     }
 
-    const kappa_col_indices = [`κSRME`, `κSRE`].map((header) => headers.indexOf(header))
+    const kappa_col_indices = [`κSRME`, `κSRE`, `κSRD`, `κ failed`, `Im(ω)`].map(
+      (header) => headers.indexOf(header),
+    )
     expect(kappa_col_indices.every((column_idx) => column_idx >= 0)).toBe(true)
     const rows = [...leaderboard.querySelectorAll<HTMLTableRowElement>(`tbody tr`)]
     expect(rows).toHaveLength(phonon_leaderboard_count)
@@ -106,15 +101,49 @@ describe(`Phonons Task Page`, () => {
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`ascending`)
   })
 
-  it(`κ_SRE column carries κ_SRE values (not κ_SRME)`, () => {
-    const rows = assemble_row_data(
-      `unique_prototypes`,
-      () => true, // model_filter: keep all
-      () => true, // filter_matches: no training/openness/targets filters
-    )
-    const mace_row = rows.find((row) => row.Model.includes(`MACE-MP-0`))
-    // mace-mp-0.yml has κ_SRE 0.471 (and κ_SRME 0.6823) — the column must use κ_SRE
-    expect(mace_row?.[ALL_METRICS.κ_SRE.key]).toBe(0.471)
+  it(`matches payload and canonical aggregate diagnostics`, () => {
+    const n_materials = kappa_103_analysis.material_ids.length
+    for (const values of [
+      kappa_103_analysis.formulas,
+      kappa_103_analysis.spg_nums,
+      kappa_103_analysis.kappa_dft,
+    ]) {
+      expect(values).toHaveLength(n_materials)
+    }
+    expect(
+      kappa_103_analysis.spg_nums.every(
+        (spg_num) => Number.isInteger(spg_num) && spg_num >= 1 && spg_num <= 230,
+      ),
+    ).toBe(true)
+
+    for (const entry of kappa_103_analysis.models) {
+      for (const values of [
+        entry.kappa_ml,
+        entry.srme,
+        entry.srme_censored,
+        entry.imag_modes,
+        entry.broken_sym,
+        entry.max_steps,
+        entry.freq_w1,
+      ]) {
+        expect(values).toHaveLength(n_materials)
+      }
+      const model = ACTIVE_MODELS.find((candidate) => candidate.model_key === entry.key)
+      const metrics = model?.metrics?.phonons?.kappa_103
+      if (!metrics) throw new Error(`missing phonon metrics for ${entry.key}`)
+      const payload_failure_rate =
+        entry.srme_censored.filter((value) => value === true).length / n_materials
+      expect(payload_failure_rate).toBeCloseTo(metrics.κ_failure_rate, 4)
+
+      const payload_imaginary_rate =
+        entry.imag_modes.filter((value) => value === true).length / n_materials
+      expect(payload_imaginary_rate).toBeCloseTo(metrics.imaginary_mode_rate, 4)
+      if (metrics.spectrum_w1 === null) {
+        expect(entry.freq_w1_mean).toBeNull()
+      } else {
+        expect(entry.freq_w1_mean).toBeCloseTo(metrics.spectrum_w1, 4)
+      }
+    }
   })
 
   it(`orders Compare models by κSRME and updates the model URL`, async () => {
@@ -135,7 +164,7 @@ describe(`Phonons Task Page`, () => {
       const label = option.textContent?.trim() ?? ``
       const model_name = label.replace(/ \([^()]*\)$/, ``)
       const model = ACTIVE_MODELS.find((candidate) => candidate.model_name === model_name)
-      return model ? (get_nested_number(model, kappa_srme_path) ?? Infinity) : Infinity
+      return model?.metrics?.phonons?.kappa_103?.κ_SRME ?? Infinity
     })
     expect(srme_values.filter(Number.isFinite).length).toBeGreaterThan(1)
     expect(srme_values).toEqual(

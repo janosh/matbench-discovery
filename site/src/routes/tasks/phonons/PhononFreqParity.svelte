@@ -3,13 +3,13 @@
   import type kappa_data from '$figs/kappa-103-analysis.jsonl'
   import { parity_diagonal } from '$lib/fig-helpers'
   import { format_num, sanitize_compact_formula } from 'matterviz'
-  import { DEFAULT_SERIES_SYMBOLS, ScatterPlot } from 'matterviz/plot'
-  import type { DataSeries } from 'matterviz/plot'
+  import { DEFAULT_SERIES_SYMBOLS, ScatterPlot, type DataSeries } from 'matterviz/plot'
   import { spacegroup_num_to_crystal_sys } from 'matterviz/symmetry'
   import type { HTMLAttributes } from 'svelte/elements'
 
   type KappaModelEntry = (typeof kappa_data)[`models`][number]
   const n_quantiles = 17
+  const quantile_bin_labels = [`q = 0–25%`, `q = 25–50%`, `q = 50–75%`, `q = 75–100%`]
 
   interface FreqParityPoint extends Record<string, unknown> {
     material_id: string
@@ -37,8 +37,22 @@
     const pad = (max - min) * 0.05
     return [Math.min(min - pad, 0), max + pad]
   })
-  let points = $derived.by((): FreqParityPoint[] => {
-    const result: FreqParityPoint[] = []
+  let series = $derived.by((): DataSeries<FreqParityPoint>[] => {
+    const series_bins = quantile_bin_labels.map((label, quantile_bin_idx) => ({
+      x: Array<number>(),
+      y: Array<number>(),
+      metadata: Array<FreqParityPoint>(),
+      label,
+      markers: `points` as const,
+      color_values: Array<number>(),
+      point_style: {
+        symbol_type: DEFAULT_SERIES_SYMBOLS[quantile_bin_idx],
+        fill: `var(--text-color)`,
+        radius: 3,
+        stroke: `white`,
+        stroke_width: 0.4,
+      },
+    }))
     let pair_idx = 0
     for (const [mat_idx, material_id] of base.material_ids.entries()) {
       const freq_w1 = entry.freq_w1[mat_idx]
@@ -50,38 +64,28 @@
       pair_idx += n_quantiles
       if (!system || dft.length !== n_quantiles || ml.length !== n_quantiles) continue
 
-      result.push(
-        ...dft.map((_, quantile_idx) => ({
+      for (const [quantile_idx, dft_freq] of dft.entries()) {
+        const quantile = quantile_idx / (n_quantiles - 1)
+        const quantile_bin_idx = Math.min(
+          Math.floor(quantile * quantile_bin_labels.length),
+          quantile_bin_labels.length - 1,
+        )
+        const series_bin = series_bins[quantile_bin_idx]
+        series_bin.x.push(dft_freq)
+        series_bin.y.push(ml[quantile_idx])
+        series_bin.color_values.push(freq_w1)
+        series_bin.metadata.push({
           material_id,
           formula: base.formulas[mat_idx],
           spg_num,
-          quantile: quantile_idx / (n_quantiles - 1),
+          quantile,
           freq_w1,
           crystal_system: system,
-        })),
-      )
+        })
+      }
     }
-    return result
+    return series_bins
   })
-  let series = $derived<DataSeries<FreqParityPoint>[]>([
-    {
-      x: pairs.dft,
-      y: pairs.ml,
-      metadata: points,
-      label: entry.label,
-      markers: `points` as const,
-      color_values: points.map((point) => point.freq_w1),
-      point_style: points.map((point) => ({
-        radius: 3,
-        stroke: `white`,
-        stroke_width: 0.4,
-        symbol_type:
-          DEFAULT_SERIES_SYMBOLS[
-            Math.floor(point.quantile * 3) % DEFAULT_SERIES_SYMBOLS.length
-          ],
-      })),
-    },
-  ])
 </script>
 
 {#if pairs.dft.length}
@@ -90,7 +94,8 @@
     ref_lines={[parity_diagonal]}
     x_axis={{ label: `PBE phonon freq. (THz)`, range: extent, format: `.3~` }}
     y_axis={{ label: `${entry.label} phonon freq. (THz)`, range: extent, format: `.3~` }}
-    color_bar={{ title: `Spectrum W1 (THz)`, tick_format: `.3~` }}
+    color_bar={{ title: `W₁(ω) (THz)`, tick_format: `.3~` }}
+    legend={{ layout: `horizontal`, layout_tracks: 2 }}
     {...rest}
   >
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
@@ -100,7 +105,7 @@
         {@html sanitize_compact_formula(point.formula)} ({point.crystal_system}, SG
         {point.spg_num})<br />
         quantile: {format_num(point.quantile, `.0%`)}<br />
-        spectrum W1: {format_num(point.freq_w1, `.3~`)} <small>THz</small><br />
+        W₁(ω): {format_num(point.freq_w1, `.3~`)} <small>THz</small><br />
       {/if}
       PBE: {x_formatted} THz<br />
       {entry.label}: {y_formatted} THz
@@ -116,7 +121,7 @@
           style="pointer-events: none; overflow: visible"
         >
           <div class="plot-annotation">
-            spectrum W1 = {format_num(entry.freq_w1_mean, `.3~`)} <small>THz</small>
+            W₁(ω) = {format_num(entry.freq_w1_mean, `.3~`)} <small>THz</small>
           </div>
         </foreignObject>
       {/if}

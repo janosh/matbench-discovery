@@ -477,8 +477,9 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 1ex 0.6em;
-    margin: 0 0 1em 3em;
+    margin: 0 0 1em;
     /* paint above the (later-DOM) plot so the open dropdown stays interactive */
     position: relative;
     z-index: 1;
@@ -504,7 +505,6 @@
     font-size: 14px;
   }
   button.models-toggle {
-    margin-left: auto;
     padding: 2px 4px;
     border: 0;
     background: none;
@@ -520,7 +520,7 @@
     bottom: auto !important;
     font-size: 14px;
   }
-  /* the right-aligned controls-row button replaces the collapsed legend shell */
+  /* the controls-row button replaces the collapsed legend shell */
   div.bleed-1400:has(button.models-toggle) :global(.scatter > .legend) {
     display: none !important;
   }

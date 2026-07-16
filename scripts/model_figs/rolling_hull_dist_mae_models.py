@@ -5,9 +5,10 @@ import numpy as np
 
 from matbench_discovery import figs
 from matbench_discovery.cli import complete_models, shared_payload_test_subset
+from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
+df_preds, df_each_pred, _df_each_err = load_discovery_predictions()
 test_subset = shared_payload_test_subset()
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
@@ -42,15 +43,9 @@ counts, bins = np.histogram(
     bins=200,  # match the histogram clf plots.
     range=(-0.7, 0.7),
 )
+# rolling count of test-set structures per hull-dist bin (drawn on y2)
+density = {"x": figs.round_list((bins[:-1] + bins[1:]) / 2), "y": counts.tolist()}
 figs.write_site_payload(
     "rolling-mae-vs-hull-dist",
-    {
-        "x": figs.round_list(rolling_x),
-        "models": rolling_models,
-        # rolling count of test-set structures per hull-dist bin (drawn on y2)
-        "density": {
-            "x": figs.round_list((bins[:-1] + bins[1:]) / 2),
-            "y": counts.tolist(),
-        },
-    },
+    {"x": figs.round_list(rolling_x), "models": rolling_models, "density": density},
 )

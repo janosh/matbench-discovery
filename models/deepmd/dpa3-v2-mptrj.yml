@@ -205,3 +205,7 @@ metrics:
         size: 7255519
         md5: cc291f5c8fafa441a4fdd4140bb97fbc
       κ_SRE: 0.8389
+      κ_SRD: -0.747
+      κ_failure_rate: 0.0777
+      imaginary_mode_rate: 0.0777
+      spectrum_w1: 0.7697

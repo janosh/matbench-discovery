@@ -197,7 +197,8 @@ def write_jsonl_payload(
     client-side). ``full_run`` rewrites the whole roster; subset --models runs splice
     fresh entries into the committed file by ``id_field``, keeping the committed _base
     and dropping entries of models that are no longer active (e.g. superseded by the
-    spliced-in model - a splice alone could never prune them).
+    spliced-in model - a splice alone could never prune them). Content-identical output
+    leaves the existing file untouched.
     """
 
     def model_id(model: dict[str, Any]) -> str:
@@ -246,10 +247,14 @@ def write_jsonl_payload(
         json.dumps(record, allow_nan=False, separators=(",", ":")) + "\n"
         for record in records
     )
+    n_bytes = len(body.encode())
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as file:
+            if file.read() == body:
+                return n_bytes
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as file:
         file.write(body)
-    n_bytes = len(body.encode())
     print(f"Wrote {os.path.basename(path)} ({n_bytes:,} bytes, {len(models)} models)")
     return n_bytes
 

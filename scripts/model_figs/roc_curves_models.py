@@ -5,9 +5,10 @@ import sklearn.metrics as sk_metrics
 
 from matbench_discovery import STABILITY_THRESHOLD, figs
 from matbench_discovery.cli import complete_models, shared_payload_test_subset
+from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
+df_preds, df_each_pred, _df_each_err = load_discovery_predictions()
 test_subset = shared_payload_test_subset()
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
@@ -27,13 +28,12 @@ for model in complete_models():
     auc = sk_metrics.roc_auc_score(targets, model_scores)
     # ROC staircases at full resolution are ~4x over-resolved for a 480px panel
     fpr, tpr = figs.lttb(fpr, tpr, 200)
-    roc_models.append(
-        {
-            "key": model.key,
-            "label": model.label,
-            "auc": round(float(auc), 2),
-            "fpr": figs.round_list(fpr),
-            "tpr": figs.round_list(tpr),
-        }
-    )
+    model_data: dict[str, object] = {
+        "key": model.key,
+        "label": model.label,
+        "auc": round(float(auc), 2),
+        "fpr": figs.round_list(fpr),
+        "tpr": figs.round_list(tpr),
+    }
+    roc_models.append(model_data)
 figs.write_site_payload("roc-models", {"models": roc_models})

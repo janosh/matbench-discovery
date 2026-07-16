@@ -35,7 +35,17 @@ phonons:
   label: Phonons
   description: Modeling harmonic and anharmonic lattice vibrations
   metrics:
-    lower_is_better: [κ_SRME, κ<sub>SRME</sub>]
+    lower_is_better:
+      - κ_SRME
+      - κ<sub>SRME</sub>
+      - κ_SRE
+      - κ<sub>SRE</sub>
+      - κ_failure_rate
+      - κ failed
+      - imaginary_mode_rate
+      - Im(ω)
+      - spectrum_w1
+      - W<sub>1</sub>(ω)
     higher_is_better: []
   subtasks:
     kappa_103:

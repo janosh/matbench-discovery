@@ -169,7 +169,9 @@
       <div
         class="rmsd-cdf"
         role="group"
-        aria-label={`RMSD CDF models: ${filtered_struct_rmsd_sorted.map(({ label }) => label).join(`, `)}`}
+        aria-label="RMSD CDF models: {filtered_struct_rmsd_sorted
+          .map(({ label }) => label)
+          .join(`, `)}"
       >
         <ScatterPlot
           series={filtered_struct_rmsd_sorted.map(({ label, auc, x, y }) => ({
