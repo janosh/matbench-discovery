@@ -14,14 +14,14 @@ from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 
 from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD
-from matbench_discovery.data import DATASETS, df_wbm
+from matbench_discovery.data import DATASETS, df_wbm, load_discovery_predictions
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import DataFiles, MbdKey
-from matbench_discovery.preds.discovery import df_each_err
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-30"
 
+_df_preds, _df_each_pred, df_each_err = load_discovery_predictions()
 module_dir = os.path.dirname(__file__)
 
 

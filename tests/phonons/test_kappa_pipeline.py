@@ -572,6 +572,22 @@ def test_normalize_kappa_schema_aliases_and_voigt() -> None:
     )
     assert np.isnan(failed_result[str(MbdKey.kappa_tot_rta)])
     assert voigt_6_to_full_3x3([1, 2, 3]) == [1, 2, 3]
+    canonical_freqs = [[1.0, 2.0]]
+    frequency_result = normalize_kappa_result(
+        {
+            str(Key.ph_freqs): canonical_freqs,
+            "frequencies": [[3.0, 4.0], [5.0, 6.0]],
+        }
+    )
+    assert frequency_result[str(Key.ph_freqs)] == canonical_freqs
+    assert "frequencies" not in frequency_result
+    with pytest.raises(ValueError, match="Conflicting aliases"):
+        normalize_kappa_result(
+            {
+                "frequencies": [[1.0, 2.0]],
+                "phonon_frequencies": [[3.0, 4.0]],
+            }
+        )
     with pytest.raises(ValueError, match="Conflicting aliases"):
         normalize_kappa_result({str(Key.mat_id): "mp-1", "mp_id": "different-material"})
     bool_alias = normalize_kappa_result(

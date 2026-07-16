@@ -17,8 +17,9 @@ if __name__ == "__main__":
     if not models:
         raise SystemExit(0)
 
-    from matbench_discovery.preds.discovery import df_preds
+    from matbench_discovery.data import load_discovery_predictions
 
+    df_preds, _df_each_pred, _df_each_err = load_discovery_predictions()
     uniq_proto_prevalence = discovery.wbm_uniq_proto_prevalence()
     for model in models:
         try:

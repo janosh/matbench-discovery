@@ -18,7 +18,7 @@ from sklearn.metrics import (
 )
 
 from matbench_discovery import ROOT
-from matbench_discovery.data import df_wbm
+from matbench_discovery.data import df_wbm, load_discovery_predictions
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics import discovery as discovery_module
 from matbench_discovery.metrics import metrics_df_from_yaml
@@ -28,8 +28,8 @@ from matbench_discovery.metrics.discovery import (
     discovery_subset_indices,
     stable_metrics,
 )
-from matbench_discovery.preds.discovery import df_each_err, df_each_pred, df_preds
 
+df_preds, df_each_pred, df_each_err = load_discovery_predictions()
 df_full_discovery_metrics = metrics_df_from_yaml(["discovery.full_test_set"])
 full_discovery_model_labels = set(df_full_discovery_metrics.index)
 

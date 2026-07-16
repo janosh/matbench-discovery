@@ -36,6 +36,14 @@ def main() -> int:
 
             print(f"\tκ_SRME={metrics['srme']:.4f}")
             print(f"\tκ_SRE={metrics['sre']:.4f}")
+            print(f"\tκ_SRD={metrics['srd']:.4f}")
+            print(f"\tκ failure rate={metrics['failure_rate']:.2%}")
+            print(f"\tImaginary-mode rate={metrics['imaginary_mode_rate']:.2%}")
+            spectrum_w1 = metrics["spectrum_w1"]
+            spectrum_w1_text = (
+                f"{spectrum_w1:.4f} THz" if spectrum_w1 is not None else "n/a"
+            )
+            print(f"\tSpectrum W1={spectrum_w1_text}")
 
             # Recompute metrics while preserving the runner's artifact provenance.
             phonons.write_metrics_to_yaml(model, metrics, kappa_103_path)

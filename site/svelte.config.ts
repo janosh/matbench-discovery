@@ -79,6 +79,8 @@ export default {
 
   kit: {
     adapter: adapter(),
+    // Date.now() diverges across Vite+ SSR/client config loads and breaks hydration.
+    version: process.env.NODE_ENV === `production` ? undefined : { name: `dev` },
 
     alias: {
       $site: `.`,

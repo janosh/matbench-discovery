@@ -793,6 +793,10 @@ describe(`MetricsTable`, () => {
       `RMSE`, // ALL_METRICS (Discovery)
       `κSRME`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
       `κSRE`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
+      `κSRD`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
+      `κ failed`, // ALL_METRICS (Phonon)
+      `Im(ω)`, // ALL_METRICS (Phonon)
+      `W1(ω)`, // ALL_METRICS (Phonon)
       `RMSD`, // ALL_METRICS (Geo Opt)
       `ΔERMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `FRMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript

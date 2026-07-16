@@ -139,7 +139,7 @@
       {#if visible_plots.has(formula)}
         <h2
           class="diatomic-plot-title toc-exclude"
-          title={`${element.name} (Z=${element.number})`}
+          title="{element.name} (Z={element.number})"
         >
           {element.number}
           {formula}

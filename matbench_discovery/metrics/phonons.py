@@ -6,6 +6,8 @@ Included metrics:
 - SRE (Symmetric Relative Error): Absolute value of SRD
 - SRME (Symmetric Relative Mean Error): Microscopic, mode-resolved error that avoids
   cancellation between over- and underpredicted mode contributions.
+- Failure and imaginary-mode rates across the PhononDB test set.
+- Spectrum W1: Wasserstein-1 distance between predicted and reference phonon spectra.
 
 Adapted from https://github.com/MPA2suite/k_SRME/blob/6ff4c867/k_srme/benchmark.py,
 published in https://arxiv.org/abs/2408.00755. Ported in
@@ -21,12 +23,14 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
+from scipy.stats import wasserstein_distance
 
 from matbench_discovery.data import file_ref_name, make_file_ref
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
 KAPPA_ERROR_MAX = 2.0
+SRME_CENSORED = "srme_censored"
 
 
 class InvalidKappaReferenceError(ValueError):
@@ -108,13 +112,15 @@ def calc_kappa_metrics_from_dfs(
         )
     ]
     df_pred[Key.sre] = df_pred[Key.srd].abs()
-    df_pred[Key.srme] = calc_kappa_srme_dataframes(df_pred, df_true)
+    srme, srme_censored = _calc_kappa_srme_dataframes(df_pred, df_true)
+    df_pred[Key.srme] = srme
+    df_pred[SRME_CENSORED] = srme_censored
     df_pred[MbdKey.true_kappa_tot_avg] = true_kappa
 
     return df_pred
 
 
-def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float]:
+def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float | None]:
     """Evaluate complete PhononDB predictions and return aggregate metrics."""
     from matbench_discovery.phonons import read_kappa_json
 
@@ -126,11 +132,45 @@ def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float]
     df_metrics = calc_kappa_metrics_from_dfs(
         df_predictions.loc[df_reference.index], df_reference
     )
-    metrics = {
+    imag_flags = df_metrics.get(Key.has_imag_ph_modes)
+    imaginary_mode_rate = (
+        float(imag_flags.eq(other=True).fillna(value=False).mean())
+        if imag_flags is not None
+        else 0.0
+    )
+    spectrum_w1_values = [
+        round(distance, 4)
+        for material_id in df_reference.index
+        if (
+            distance := phonon_spectrum_w1(
+                df_metrics.loc[material_id], df_reference.loc[material_id]
+            )
+        )
+        is not None
+    ]
+    metrics: dict[str, float | None] = {
         "srme": float(df_metrics[Key.srme].mean()),
         "sre": float(df_metrics[Key.sre].mean()),
+        "srd": float(df_metrics[Key.srd].mean()),
+        "failure_rate": float(df_metrics[SRME_CENSORED].mean()),
+        "imaginary_mode_rate": imaginary_mode_rate,
+        "spectrum_w1": (
+            float(np.mean(spectrum_w1_values)) if spectrum_w1_values else None
+        ),
     }
-    if any(not 0 <= value <= KAPPA_ERROR_MAX for value in metrics.values()):
+    bounds = {
+        "srme": (0, KAPPA_ERROR_MAX),
+        "sre": (0, KAPPA_ERROR_MAX),
+        "srd": (-KAPPA_ERROR_MAX, KAPPA_ERROR_MAX),
+        "failure_rate": (0, 1),
+        "imaginary_mode_rate": (0, 1),
+    }
+    for key, (lower, upper) in bounds.items():
+        value = metrics[key]
+        if value is None or not np.isfinite(value) or not lower <= value <= upper:
+            raise ValueError(f"Invalid aggregate kappa metrics: {metrics}")
+    spectrum_w1 = metrics["spectrum_w1"]
+    if spectrum_w1 is not None and (not np.isfinite(spectrum_w1) or spectrum_w1 < 0):
         raise ValueError(f"Invalid aggregate kappa metrics: {metrics}")
     return metrics
 
@@ -200,6 +240,38 @@ def mode_weights_for_freqs(
     if q_weights.shape != (ph_freqs.shape[0],):
         return None
     return np.repeat(q_weights, ph_freqs.shape[1])
+
+
+def phonon_spectrum_data(
+    row: pd.Series,
+) -> tuple[np.ndarray, np.ndarray | None] | None:
+    """Return finite 2D phonon frequencies and optional q-point weights."""
+    frequencies = _finite_array(row.get(Key.ph_freqs))
+    if frequencies is None or frequencies.ndim != 2:
+        return None
+    q_weights = row.get("weights")
+    if q_weights is None:
+        q_weights = row.get(Key.mode_weights)
+    q_weights = _finite_array(q_weights, nonnegative=True)
+    if q_weights is not None and q_weights.sum() <= 0:
+        q_weights = None
+    return frequencies, q_weights
+
+
+def phonon_spectrum_w1(prediction: pd.Series, reference: pd.Series) -> float | None:
+    """Return weighted Wasserstein-1 distance between two phonon spectra in THz."""
+    prediction_data = phonon_spectrum_data(prediction)
+    reference_data = phonon_spectrum_data(reference)
+    if prediction_data is None or reference_data is None:
+        return None
+    return float(
+        wasserstein_distance(
+            prediction_data[0].ravel(),
+            reference_data[0].ravel(),
+            mode_weights_for_freqs(*prediction_data),
+            mode_weights_for_freqs(*reference_data),
+        )
+    )
 
 
 def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
@@ -285,10 +357,18 @@ def calc_kappa_srme_dataframes(
     Returns:
         SRME values for each material, between 0 and 2:
         - 0 indicates perfect agreement in both total κ and mode-resolved properties
-        - 2 indicates complete failure (imaginary frequencies, broken symmetry, etc.)
+        - 2 indicates complete disagreement or a censored invalid prediction
         - Intermediate values indicate partial agreement, lower being better
     """
+    return _calc_kappa_srme_dataframes(df_pred, df_true)[0]
+
+
+def _calc_kappa_srme_dataframes(
+    df_pred: pd.DataFrame, df_true: pd.DataFrame
+) -> tuple[list[float], list[bool]]:
+    """Return per-material SRME values and whether each value was censored."""
     srme_list: list[float] = []
+    censored_list: list[bool] = []
     for row_idx, row_pred in df_pred.iterrows():
         row_true = df_true.loc[row_idx]
 
@@ -297,37 +377,36 @@ def calc_kappa_srme_dataframes(
         # broader ValueError handler.
         _single_kappa(row_true[MbdKey.kappa_tot_avg], reference=True)
         try:
-            result = np.ravel(calc_kappa_srme(row_pred, row_true))
+            result = np.ravel(calc_kappa_srme(row_pred, row_true, nan_on_invalid=True))
         except InvalidKappaReferenceError:
             raise
         except (KeyError, TypeError, ValueError, ZeroDivisionError):
-            result = np.array([KAPPA_ERROR_MAX])
+            result = np.array([np.nan])
         # bool(...) not `is True`: a column with missing values deserializes as
         # float (1.0/NaN), which an identity check would silently score leniently
         has_imag_modes = row_pred.get(Key.has_imag_ph_modes)
-        if not pd.isna(has_imag_modes) and bool(has_imag_modes):
-            srme_list.append(KAPPA_ERROR_MAX)
-            continue
+        censored = not pd.isna(has_imag_modes) and bool(has_imag_modes)
         relaxed_spg = row_pred.get(Key.final_spg_num)
-        if not pd.isna(relaxed_spg) and relaxed_spg:
+        if not censored and not pd.isna(relaxed_spg) and relaxed_spg:
             initial_spg = row_pred.get(Key.init_spg_num)
             # normalize_kappa_result canonicalizes the reference's spg_num alias
             # into init_spg_num, so check both keys for the DFT spacegroup
             reference_spg = row_true.get(Key.init_spg_num, row_true.get(Key.spg_num))
-            if (not pd.isna(initial_spg) and relaxed_spg != initial_spg) or (
-                pd.isna(initial_spg)
-                and not pd.isna(reference_spg)
-                and relaxed_spg != reference_spg
-            ):
-                srme_list.append(KAPPA_ERROR_MAX)
-                continue
-        score = float(result[0]) if result.size == 1 else KAPPA_ERROR_MAX
-        srme_list.append(score if 0 <= score <= KAPPA_ERROR_MAX else KAPPA_ERROR_MAX)
+            expected_spg = reference_spg if pd.isna(initial_spg) else initial_spg
+            censored = not pd.isna(expected_spg) and relaxed_spg != expected_spg
+        valid = not censored and result.size == 1 and np.isfinite(result[0])
+        srme_list.append(float(result[0]) if valid else KAPPA_ERROR_MAX)
+        censored_list.append(not valid)
 
-    return srme_list
+    return srme_list, censored_list
 
 
-def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarray:
+def calc_kappa_srme(
+    kappas_pred: pd.Series,
+    kappas_true: pd.Series,
+    *,
+    nan_on_invalid: bool = False,
+) -> np.ndarray:
     """Calculate Symmetric Relative Mean Error (SRME) for one material.
 
         SRME = 2 * (sum|κ_pred,i - κ_true,i| * w_i) / (κ_pred,tot + κ_true,tot)
@@ -348,12 +427,13 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
             - mode_kappa_tot: Mode-resolved conductivities
             - mode_weights: Mode weights for averaging
         kappas_true: DFT references with the same structure
+        nan_on_invalid: Return NaN instead of 2 for invalid predictions.
 
     Returns:
         SRME values per temperature, each between 0 and 2:
         - 0 indicates perfect agreement in both total κ and mode-resolved properties
-        - 2 indicates complete disagreement or invalid results
-        Missing data or NaNs return np.array([2.0]).
+        - 2 indicates complete disagreement or, by default, invalid results
+        Invalid results are NaN instead when nan_on_invalid is True.
     """
     true_totals = _finite_array(kappas_true[MbdKey.kappa_tot_avg], nonnegative=True)
     if true_totals is None:
@@ -361,7 +441,8 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
             "Reference kappa totals must be finite and non-negative"
         )
     true_totals = np.atleast_1d(true_totals)
-    failure = np.full(true_totals.shape, KAPPA_ERROR_MAX)
+    invalid_value = np.nan if nan_on_invalid else KAPPA_ERROR_MAX
+    failure = np.full(true_totals.shape, invalid_value)
     true_mode_kappa = _mode_kappa_values(kappas_true)
     if true_mode_kappa is None:
         raise InvalidKappaReferenceError(
@@ -380,11 +461,10 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
         or np.atleast_1d(predicted_totals).shape != true_totals.shape
         or mode_weights is None
         or mode_weights.sum() <= 0
+        or predicted_mode_kappa.shape != true_mode_kappa.shape
     ):
         return failure
     predicted_totals = np.atleast_1d(predicted_totals)
-    if predicted_mode_kappa.shape != true_mode_kappa.shape:
-        return failure
 
     # calculating microscopic error for all temperatures
     microscopic_error = np.atleast_1d(
@@ -403,12 +483,12 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
             KAPPA_ERROR_MAX * microscopic_error / denominator,
         )
     valid = np.isfinite(scores) & (scores >= 0) & (scores <= KAPPA_ERROR_MAX)
-    return np.where(valid, scores, KAPPA_ERROR_MAX)
+    return np.where(valid, scores, invalid_value)
 
 
 def write_metrics_to_yaml(
     model: Model,
-    metrics: dict[str, float],
+    metrics: dict[str, float | None],
     pred_file_path: str,
     *,
     run_metadata: Mapping[str, object] | None = None,
@@ -436,10 +516,16 @@ def write_metrics_to_yaml(
 
     def update_kappa_103(kappa_103: dict[str, Any]) -> dict[str, Any]:
         """Update metrics and provenance from the latest locked YAML section."""
-        kappa_103.update(
-            κ_SRME=round(metrics["srme"], 4),
-            κ_SRE=round(metrics["sre"], 4),
-        )
+        for yaml_key, metric_key in (
+            ("κ_SRME", "srme"),
+            ("κ_SRE", "sre"),
+            ("κ_SRD", "srd"),
+            ("κ_failure_rate", "failure_rate"),
+            ("imaginary_mode_rate", "imaginary_mode_rate"),
+            ("spectrum_w1", "spectrum_w1"),
+        ):
+            value = metrics[metric_key]
+            kappa_103[yaml_key] = None if value is None else round(value, 4)
 
         existing_pred_file = kappa_103.get("pred_file")
         existing_pred_name = file_ref_name(existing_pred_file)

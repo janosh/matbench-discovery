@@ -204,6 +204,7 @@ declare module '$figs/kappa-103-analysis.jsonl' {
     models: (KeyedModel & {
       kappa_ml: (number | null)[] // ML kappa_L at 300K (W/mK)
       srme: (number | null)[] // per-material SRME in [0, 2]
+      srme_censored: (boolean | null)[] // SRME replaced by 2 after validation failure, imaginary modes, or broken symmetry
       imag_modes: (boolean | null)[] // imaginary phonon modes after relaxation
       broken_sym: (boolean | null)[] // symmetry broken during relaxation
       max_steps: (boolean | null)[] // relaxation hit max steps (non-converged)

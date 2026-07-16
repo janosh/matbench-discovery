@@ -37,7 +37,7 @@ def load_per_element_errors(
     # error in predicted energy above convex hull (EACH) for each model, computed as
     # the formation energy error since the two are identical: the convex hull is built
     # from fixed DFT reference energies, so each_pred - each_true = e_form_pred -
-    # e_form_dft (see also the note in matbench_discovery/preds/discovery.py)
+    # e_form_dft
     df_each_err = pd.DataFrame(index=df_preds.index)
     for model in models:
         df_each_err[model.label] = df_preds[model.label] - df_preds[MbdKey.e_form_dft]

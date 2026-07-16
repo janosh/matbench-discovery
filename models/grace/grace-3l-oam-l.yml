@@ -57,6 +57,7 @@ hyperparams:
     kappa:
       protocol: phonondb-v1
       displacement_distance: 0.03
+    md: {calc_mode: uniform}
   architecture:
     graph_construction_radius: 6.0
 
@@ -67,6 +68,8 @@ metrics:
       url: https://figshare.com/files/66505406
       size: 245294
       md5: f999e2b581b11570a76dfd8b945e4c53
+    hardware: NVIDIA H200 NVL
+    run_time_sec: 88.88
     pbe_wall_dist_mae: 0.1618
     pbe_energy_mae: 1.097
     pbe_bond_length_error: 0.4187
@@ -170,6 +173,8 @@ metrics:
       url: https://figshare.com/files/66505409
       size: 1557
       md5: 5959cba0d34f0d1ade25bd0f5abefbc7
+    hardware: NVIDIA H200 NVL
+    run_time_sec: 27172.99
     energy_rmse: 0.535
     force_rmse: 54.2289
     rdf_error: 3.45
@@ -183,6 +188,10 @@ metrics:
     kappa_103:
       κ_SRME: 0.1211
       κ_SRE: 0.0536
+      κ_SRD: -0.0141
+      κ_failure_rate: 0.0
+      imaginary_mode_rate: 0.0
+      spectrum_w1: 0.0721
       pred_file:
         name: models/grace/grace-3l-oam-l/2026-07-02-phonons-kappa-103.json.gz
         url: https://figshare.com/files/66505403

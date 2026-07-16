@@ -12,28 +12,22 @@
     valid_query_param,
   } from '$lib/url-state.svelte'
   import {
-    ALL_METRICS,
+    PHONON_METRICS,
     scatter_axis_label,
     scatter_options_by_key,
     task_page_visible_cols,
   } from '$lib/labels'
-  import { get_nested_number, label_data_path } from '$lib/metrics'
   import { format_num } from 'matterviz'
-  import KappaNote from './kappa-note.md'
   import KappaSrmeScatter from './KappaSrmeScatter.svelte'
   import PhononFreqParity from './PhononFreqParity.svelte'
-  import PhononRobustnessTable from './PhononRobustnessTable.svelte'
 
   // Default column visibility: metadata + phonon metrics only
-  const visible_cols = task_page_visible_cols(ALL_METRICS.κ_SRME, ALL_METRICS.κ_SRE)
+  const visible_cols = task_page_visible_cols(...Object.values(PHONON_METRICS))
 
-  const kappa_srme_path = label_data_path(ALL_METRICS.κ_SRME)
-  const kappa_sre_path = label_data_path(ALL_METRICS.κ_SRE)
-  const has_phonon_metrics = (model: ModelData): boolean =>
-    get_nested_number(model, kappa_srme_path) != null &&
-    get_nested_number(model, kappa_sre_path) != null
   const kappa_srme = (model: ModelData): number =>
-    get_nested_number(model, kappa_srme_path) ?? Infinity
+    model.metrics?.phonons?.kappa_103?.κ_SRME ?? Infinity
+  const has_phonon_metrics = (model: ModelData): boolean =>
+    Number.isFinite(kappa_srme(model))
   const leaderboard_models = ACTIVE_MODELS.filter(has_phonon_metrics)
   const default_selected_key =
     leaderboard_models.toSorted(
@@ -52,8 +46,8 @@
     { mode: `date`, label: `date added` },
   ]
   const default_sort_mode: SortMode = `kappa`
-  const default_scatter_x = ALL_METRICS.κ_SRE.key
-  const default_scatter_y = ALL_METRICS.κ_SRME.key
+  const default_scatter_x = PHONON_METRICS.κ_SRE.key
+  const default_scatter_y = PHONON_METRICS.κ_SRME.key
   const default_table_sort: SortState = {
     column: default_scatter_y,
     dir: `asc`,
@@ -78,7 +72,7 @@
   // Model options include the value currently used for sorting (except A–Z).
   let model_options = $derived(
     sorted_models.map((model) => {
-      const srme = get_nested_number(model, kappa_srme_path)
+      const srme = model.metrics?.phonons?.kappa_103?.κ_SRME
       const suffix = {
         name: ``,
         date: ` (${model.dates.benchmark_added})`,
@@ -117,6 +111,7 @@
   ])
 
   const phonon_url = `https://github.com/atztogo/phonondb/blob/main/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe`
+  const github_src_url = `https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery`
 </script>
 
 <h1>MLFF Phonon Modeling Metrics</h1>
@@ -124,31 +119,38 @@
 <div class="task-intro">
   <div>
     <p>
-      This task evaluates whether machine-learning force fields reproduce lattice thermal
-      conductivity at 300 K for 103 Materials Project crystals in the
-      <a href="https://github.com/atztogo/phonondb">PhononDB</a> PBE test set. After one simultaneous
-      cell-and-site relaxation, finite-displacement forces yield second- and third-order force
-      constants, phonons, and each material's scalar conductivity.
+      This benchmark evaluates 300 K lattice thermal conductivity for 103 Materials
+      Project crystals from the <a href={phonon_url}>PhononDB PBE test set</a>. After one
+      simultaneous cell-and-site relaxation, finite-displacement forces yield second- and
+      third-order force constants and each material's conductivity.
     </p>
     <p>
-      κ<sub>SRME</sub> (symmetric relative mean error) compares the individual phonon-mode
-      contributions before they are summed, whereas κ<sub>SRE</sub>
-      (symmetric relative error) compares only the final scalar conductivity. Both are on [0,
-      2]: 0 is perfect, 2 is the maximum error, and <strong>lower is better</strong>.
-      Over- and underpredicted mode contributions can cancel in the total, so a model can
-      have a small κ<sub>SRE</sub> while retaining a larger κ<sub>SRME</sub>—the right
-      total conductivity for the wrong microscopic reasons.
+      κ<sub>SRME</sub> compares mode contributions before summation, while κ<sub>SRE</sub>
+      compares only the final scalar conductivity, where cancellation can hide errors. Both
+      range from 0 (perfect) to 2 (maximum error), with lower values better. κ<sub
+        >SRD</sub
+      > retains the sign of the scalar error to show systematic under- or overprediction.
     </p>
   </div>
 </div>
 
-<!-- wrapper div: the markdown renders multiple top-level blockquotes -->
-<div class="task-note"><KappaNote /></div>
+<blockquote class="task-note">
+  κ<sub>SRME</sub> follows the method of
+  <a href="https://arxiv.org/abs/2408.00755v4">Póta et al.</a>. See the implementations
+  for
+  <a href="{github_src_url}/phonons/thermal_conductivity.py">
+    phonon and conductivity prediction</a
+  >
+  and
+  <a href="{github_src_url}/metrics/phonons.py">metric evaluation</a>.
+</blockquote>
 
 <h2>Leaderboard</h2>
 <p>
-  The leaderboard requires both aggregate κ<sub>SRME</sub> and κ<sub>SRE</sub> values in model
-  metadata; the inspector below provides the corresponding per-material views.
+  κ failed is the fraction of predictions whose κ<sub>SRME</sub> was censored to 2 because
+  of imaginary modes, broken symmetry, or invalid conductivity data. A valid κ<sub
+    >SRME</sub
+  > of 2 is not a failure; Im(ω) separately reports the imaginary-mode rate.
 </p>
 <section class="full-bleed">
   <MetricsTable
@@ -159,38 +161,16 @@
   />
 </section>
 
-<h2>Failure Diagnostics</h2>
-<p>
-  κ<sub>SRME</sub> assigns its maximum error of 2 to materials where the prediction
-  pipeline breaks down entirely: imaginary phonon modes after ML relaxation (the model
-  predicts an unstable structure), symmetry broken during relaxation, or a crashed κ
-  calculation. This table shows how much of each model's κ<sub>SRME</sub> comes from such outright
-  failures (and how many of those have imaginary modes as the known cause), alongside the Wasserstein-1
-  distance between ML and DFT phonon frequency spectra (a κ-independent measure of phonon accuracy
-  that doesn't suffer from error compounding in the thermal conductivity calculation). This
-  section covers models with per-material analysis assets.
-</p>
-<section class="full-bleed robustness-table">
-  <PhononRobustnessTable />
-</section>
-
 <h2>
   Model Comparison: {@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(
     scatter_x,
   )}
 </h2>
 <p>
-  This defaults to mode-resolved error against scalar-conductivity error for the same
-  two-metric cohort as the leaderboard. Both default axes are lower-is-better, so stronger
-  models sit toward the lower left; separation between them exposes cancellation across
-  mode contributions. Use the axis/color/size selectors to compare other metrics and
-  metadata. Clicking a point selects that model in the inspector below. The κ<sub
-    >SRME</sub
-  >
-  metric was introduced in
-  <a href="https://arxiv.org/abs/2408.00755v4">arXiv:2408.00755v4</a>; Atsushi Togo kindly
-  shared the
-  <a href={phonon_url}>PBE reference data for the 103 test structures</a>.
+  This defaults to κ<sub>SRME</sub> versus κ<sub>SRE</sub>: stronger models sit toward the
+  lower left, while separation between the axes reveals cancellation across mode
+  contributions. Use the selectors to compare other properties; clicking a point opens
+  that model below.
 </p>
 
 <DynamicScatter
@@ -210,7 +190,6 @@
 />
 
 <h2>Model Inspector</h2>
-<p>Use the picker to inspect conductivity parity and per-material phonon errors.</p>
 {#if selected_model}
   <label class="kappa-model-select">
     View model:
@@ -240,13 +219,10 @@
       Per-material κ<sub>SRME</sub> and phonon spectrum parity
     </h3>
     <p>
-      Left: each material's κ<sub>SRME</sub> against its DFT conductivity, colored by
-      crystal system &mdash; failures concentrated at low/high κ or in specific symmetries
-      point to systematic weaknesses. Hollow markers at κ<sub>SRME</sub> = 2 are censored values
-      (the κ calculation failed), not measurements. Right: quantile-quantile parity of the ML
-      vs DFT phonon frequency spectra, colored by each material's spectrum W1 error. Tooltips
-      include crystal system and quantile; points below the diagonal mean too-soft phonons,
-      above means too-stiff.
+      Left: per-material κ<sub>SRME</sub> against DFT conductivity, colored by crystal
+      system. Hollow markers are censored failures; valid κ<sub>SRME</sub> = 2 points stay filled.
+      Right: quantile-quantile parity of the ML vs DFT phonon frequency spectra, colored by
+      W₁(ω); points below the diagonal are too soft and points above are too stiff.
     </p>
     <div class="diagnostics-grid bleed-1400">
       <KappaSrmeScatter

@@ -5,7 +5,7 @@ predictions:
 - per-material SRME and scalar conductivity (vs the DFT reference values), driving a
   "kappa error vs kappa magnitude" scatter (colored by crystal system client-side)
 - per-material failure flags (imaginary phonon modes, broken symmetry during
-  relaxation, relaxation hit max steps), driving a robustness/failure-mode table
+  relaxation, relaxation hit max steps), shown in the inspector scatter tooltips
 - phonon frequency spectrum comparison vs DFT: per-material Wasserstein-1 distances
   plus quantile-quantile parity pairs (ML and DFT q-meshes differ - full vs
   irreducible - so frequencies are compared as weighted distributions, not pointwise)
@@ -17,7 +17,6 @@ from typing import Any, Final
 import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
-from scipy.stats import wasserstein_distance
 
 from matbench_discovery import figs
 from matbench_discovery.cli import cli_args, is_full_model_run
@@ -35,7 +34,7 @@ FAILURE_FLAG_COLS: Final = {
 
 
 def first_scalar(value: object) -> float | None:
-    """First element of a value as a rounded float, None if missing/non-finite.
+    """Return the first finite scalar rounded to the payload precision.
 
     Kappa arrays are per-temperature with 300K first; scalars pass through.
     """
@@ -47,26 +46,36 @@ def first_scalar(value: object) -> float | None:
     return round(float(arr[0]), KAPPA_DECIMALS)
 
 
+def canonical_spacegroup_numbers(
+    df_reference: pd.DataFrame, material_ids: list[str]
+) -> list[int]:
+    """Return validated canonical space groups aligned with material IDs."""
+    spacegroup_numbers: list[int] = []
+    for material_id in material_ids:
+        value = df_reference.loc[material_id].get(Key.init_spg_num)
+        try:
+            numeric_value = float(value)
+        except (TypeError, ValueError):
+            numeric_value = float("nan")
+        if (
+            isinstance(value, bool | np.bool_)
+            or not np.isfinite(numeric_value)
+            or not numeric_value.is_integer()
+            or not 1 <= numeric_value <= 230
+        ):
+            raise ValueError(
+                f"Invalid canonical space-group number for {material_id}: {value!r}"
+            )
+        spacegroup_numbers.append(int(numeric_value))
+    return spacegroup_numbers
+
+
 def row_flag(row: pd.Series, col: str) -> bool | None:
     """A boolean failure flag from a kappa prediction row, None if absent."""
     value = row.get(col)
     if value is None or pd.isna(value):
         return None
     return bool(value)
-
-
-def freq_arrays(row: pd.Series) -> tuple[np.ndarray, np.ndarray | None] | None:
-    """(ph_freqs, q_weights) from a kappa row, None if frequencies are unusable."""
-    raw_freqs = row.get(Key.ph_freqs)
-    if raw_freqs is None:
-        return None
-    freqs = np.asarray(raw_freqs, dtype=float)
-    if freqs.ndim != 2 or freqs.size == 0 or not np.isfinite(freqs).all():
-        return None
-    weights = row.get("weights")
-    if weights is None:
-        weights = row.get(Key.mode_weights)
-    return freqs, None if weights is None else np.asarray(weights, dtype=float)
 
 
 def model_payload(
@@ -79,9 +88,8 @@ def model_payload(
 
     # per-material columns, all aligned to material_ids (None = missing/unusable).
     # dict order defines the payload key order
-    cols: dict[str, list[Any]] = {
-        col: [] for col in ("kappa_ml", "srme", *FAILURE_FLAG_COLS, "freq_w1")
-    }
+    payload_cols = ("kappa_ml", "srme", "srme_censored", *FAILURE_FLAG_COLS, "freq_w1")
+    cols: dict[str, list[Any]] = {col: [] for col in payload_cols}
     qq_dft: list[float] = []
     qq_ml: list[float] = []
 
@@ -94,11 +102,12 @@ def model_payload(
         row_dft = df_dft.loc[mat_id]
         cols["kappa_ml"].append(first_scalar(row_ml.get(MbdKey.kappa_tot_avg)))
         cols["srme"].append(first_scalar(row_ml.get(Key.srme)))
+        cols["srme_censored"].append(row_flag(row_ml, phonon_metrics.SRME_CENSORED))
         for key, flag_col in FAILURE_FLAG_COLS.items():
             cols[key].append(row_flag(row_ml, flag_col))
 
-        ml_freqs = freq_arrays(row_ml)
-        dft_freqs = freq_arrays(row_dft)
+        ml_freqs = phonon_metrics.phonon_spectrum_data(row_ml)
+        dft_freqs = phonon_metrics.phonon_spectrum_data(row_dft)
         if ml_freqs is None or dft_freqs is None:
             cols["freq_w1"].append(None)
             continue
@@ -109,10 +118,8 @@ def model_payload(
         # frequencies can't be paired pointwise). ML files store phono3py's BZ grid
         # whose duplicate zone-boundary points are slightly over-weighted under the
         # uniform-weight fallback -> ~0.02 THz noise floor that isn't model error
-        w1_dist = wasserstein_distance(
-            ml_freqs[0].ravel(), dft_freqs[0].ravel(), ml_weights, dft_weights
-        )
-        cols["freq_w1"].append(round(float(w1_dist), KAPPA_DECIMALS))
+        w1_dist = phonon_metrics.phonon_spectrum_w1(row_ml, row_dft)
+        cols["freq_w1"].append(first_scalar(w1_dist))
         for freqs, weights, qq_target in (
             (dft_freqs[0], dft_weights, qq_dft),
             (ml_freqs[0], ml_weights, qq_ml),
@@ -140,6 +147,7 @@ def main() -> int:
 
     df_dft = read_kappa_json(DataFiles.phonondb_pbe_103_kappa_no_nac.path)
     material_ids = [str(mat_id) for mat_id in df_dft.index]
+    spg_nums = canonical_spacegroup_numbers(df_dft, material_ids)
 
     models: list[dict[str, Any]] = []
     for model in cli_args.models:
@@ -166,12 +174,7 @@ def main() -> int:
     payload = {
         "material_ids": material_ids,
         "formulas": [str(df_dft.loc[mid].get("name", "")) for mid in material_ids],
-        "spg_nums": [
-            None
-            if pd.isna(spg_num := df_dft.loc[mid].get(Key.spg_num))
-            else int(spg_num)
-            for mid in material_ids
-        ],
+        "spg_nums": spg_nums,
         "kappa_dft": [
             first_scalar(df_dft.loc[mid].get(MbdKey.kappa_tot_avg))
             for mid in material_ids

@@ -93,7 +93,13 @@ def normalize_kappa_result(result: Mapping[str, Any]) -> dict[str, Any]:
         ]
         if present_names:
             value = normalized[present_names[0]]
-            if any(
+            # Some files contain canonical irreducible-mesh ph_freqs alongside a
+            # legacy full-mesh frequencies field. The canonical field is authoritative;
+            # alias-only and all other canonical/alias conflicts remain errors.
+            check_conflicts = not (
+                canonical == str(Key.ph_freqs) and canonical in present_names
+            )
+            if check_conflicts and any(
                 not _values_equal(value, normalized[name]) for name in present_names[1:]
             ):
                 raise ValueError(f"Conflicting aliases for kappa column {canonical!r}")

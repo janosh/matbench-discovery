@@ -40,7 +40,7 @@
       {/if}
       {#if link}
         <a href={link} onclick={(event) => event.stopPropagation()} {...target}>
-          <Icon icon="Info" style="transform: scale(1.2) translateY(-1px)" />
+          <Icon icon="Info" style="transform: translateY(-1px)" />
         </a>
       {/if}
     </button>
@@ -59,7 +59,7 @@
     align-items: center;
     gap: 0.5ex;
     padding: 4px 8px;
-    border: 1px solid var(--border);
+    border: 0.5px solid var(--border);
     background: transparent;
   }
   .selection-toggle button:hover {

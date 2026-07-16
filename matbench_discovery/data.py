@@ -20,6 +20,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from functools import cache
 from glob import glob
 from pathlib import Path
 from typing import Any, Final, NotRequired, TypedDict
@@ -492,6 +493,24 @@ def load_df_wbm_with_preds(
         df_out = df_out.loc[subset]
 
     return df_out
+
+
+@cache
+def load_discovery_predictions() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Load WBM model predictions and derive hull-distance predictions and errors."""
+    from matbench_discovery.cli import complete_models
+
+    models_to_load = complete_models()
+    df_preds = load_df_wbm_with_preds(models=models_to_load).round(3)
+
+    model_labels = [model.label for model in models_to_load]
+    each_shift = df_preds[MbdKey.each_true] - df_preds[MbdKey.e_form_dft]
+    df_each_pred = df_preds[model_labels].add(each_shift, axis=0)
+    df_each_err = df_preds[model_labels].sub(df_preds[MbdKey.e_form_dft], axis=0)
+    df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
+        df_each_err.abs().mean(axis=1)
+    )
+    return df_preds, df_each_pred, df_each_err
 
 
 def update_yaml_file(

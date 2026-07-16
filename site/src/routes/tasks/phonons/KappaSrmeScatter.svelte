@@ -2,14 +2,12 @@
   // Per-material κ_SRME vs DFT conductivity for one model, grouped by crystal system.
   import type kappa_data from '$figs/kappa-103-analysis.jsonl'
   import { format_num, sanitize_compact_formula } from 'matterviz'
-  import { ScatterPlot } from 'matterviz/plot'
-  import type { DataSeries } from 'matterviz/plot'
+  import { ScatterPlot, type DataSeries } from 'matterviz/plot'
   import {
     CRYSTAL_SYSTEM_COLORS,
     spacegroup_num_to_crystal_sys,
   } from 'matterviz/symmetry'
   import type { CrystalSystem } from 'matterviz/symmetry'
-  import { SvelteMap } from 'svelte/reactivity'
   import type { HTMLAttributes } from 'svelte/elements'
 
   type KappaModelEntry = (typeof kappa_data)[`models`][number]
@@ -21,6 +19,7 @@
     kappa_dft: number
     kappa_ml: number | null
     srme: number
+    censored: boolean
     failures: string
   }
 
@@ -38,10 +37,15 @@
     [`broken_sym`, `broken symmetry`],
     [`max_steps`, `hit max steps`],
   ] as const
+  const series_colors: Record<CrystalSystem, string> = {
+    ...CRYSTAL_SYSTEM_COLORS,
+    hexagonal: `#ab63fa`,
+    cubic: `#ef553b`,
+  }
 
   // One series per crystal system lets the legend filter by symmetry.
   let series = $derived.by((): DataSeries<SrmePoint>[] => {
-    const by_system = new SvelteMap<CrystalSystem, SrmePoint[]>()
+    const by_system = new Map<CrystalSystem, SrmePoint[]>()
     for (const [idx, mat_id] of base.material_ids.entries()) {
       const [kappa_dft, srme] = [base.kappa_dft[idx], entry.srme[idx]]
       const system = spacegroup_num_to_crystal_sys(base.spg_nums[idx])
@@ -49,19 +53,19 @@
       const flagged_failures = failure_labels
         .flatMap(([key, label]) => (entry[key][idx] === true ? [label] : []))
         .join(`, `)
-      // Unflagged SRME=2 means the κ calculation crashed.
-      const failures = flagged_failures || (srme === 2 ? `κ calculation failed` : ``)
-      const point: SrmePoint = {
+      const censored = entry.srme_censored[idx] === true
+      const failures = flagged_failures || (censored ? `κ calculation failed` : ``)
+      const points = by_system.get(system) ?? []
+      points.push({
         material_id: mat_id,
         formula: base.formulas[idx],
         spg_num: base.spg_nums[idx],
         kappa_dft,
         kappa_ml: entry.kappa_ml[idx],
         srme,
+        censored,
         failures,
-      }
-      const points = by_system.get(system) ?? []
-      points.push(point)
+      })
       by_system.set(system, points)
     }
     return [...by_system.entries()].map(([system, points]) => ({
@@ -70,12 +74,12 @@
       metadata: points,
       label: system,
       markers: `points` as const,
-      // Censored SRME=2 values render hollow.
+      // Censored values render hollow; a valid SRME can also equal 2.
       point_style: points.map((point) => ({
-        fill: point.srme === 2 ? `transparent` : CRYSTAL_SYSTEM_COLORS[system],
+        fill: point.censored ? `transparent` : series_colors[system],
         radius: 5,
-        stroke: point.srme === 2 ? CRYSTAL_SYSTEM_COLORS[system] : `white`,
-        stroke_width: point.srme === 2 ? 1.5 : 0.5,
+        stroke: point.censored ? series_colors[system] : `white`,
+        stroke_width: point.censored ? 1.5 : 0.5,
       })),
     }))
   })

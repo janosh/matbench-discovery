@@ -3,9 +3,10 @@
 # %%
 from matbench_discovery import figs
 from matbench_discovery.cli import complete_models, shared_payload_test_subset
+from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.preds.discovery import df_each_err, df_preds
 
+df_preds, _df_each_pred, df_each_err = load_discovery_predictions()
 test_subset = shared_payload_test_subset()
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)

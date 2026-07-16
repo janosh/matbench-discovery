@@ -1,5 +1,5 @@
 import { parse_dependency_spec } from '$lib/environment'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 describe(`parse_dependency_spec`, () => {
   it.each([
@@ -59,4 +59,16 @@ describe(`parse_dependency_spec`, () => {
   ])(`parses $dep`, ({ dep, expected }) => {
     expect(parse_dependency_spec(dep)).toStrictEqual(expected)
   })
+})
+
+it(`uses SvelteKit's stable default version in production`, async () => {
+  vi.stubEnv(`NODE_ENV`, `production`)
+  vi.resetModules()
+  try {
+    const { default: svelte_config } = await import(`../../svelte.config`)
+    expect(svelte_config.kit?.version).toBeUndefined()
+  } finally {
+    vi.unstubAllEnvs()
+    vi.resetModules()
+  }
 })
