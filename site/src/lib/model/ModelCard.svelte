@@ -56,7 +56,7 @@
   </button>
 </h2>
 <nav>
-  {#each links.filter( ([href]) => href?.startsWith(`http`), ) as [href, title, icon] (title)}
+  {#each links.filter( ([href]) => href?.startsWith(`http`) ) as [href, title, icon] (title)}
     <a {href} {...target}>
       <Icon {icon} />
       {title}

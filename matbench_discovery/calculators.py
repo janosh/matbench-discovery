@@ -16,7 +16,7 @@ import zipfile
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from filelock import FileLock
 
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     import argparse
     from collections.abc import Mapping
 
+    from ase import Atoms
     from ase.calculators.calculator import Calculator
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
@@ -679,16 +680,18 @@ def _nequix(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _matris(model: str, cache_name: str) -> Callable[..., "Calculator"]:
+def _matris(
+    model: str, cache_name: str
+) -> Callable[..., "Calculator"]:  # codespell:ignore
     def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
-        from matris.applications import MatRISCalculator
+        from matris.applications import MatRISCalculator  # codespell:ignore
 
-        # MatRIS.load() only takes a registered model name and resolves it to
-        # ~/.cache/matris/<cache_name> (its built-in figshare downloader serves 0 bytes
+        # The loader only takes a registered model name and resolves it to
+        # its cache path; its built-in figshare downloader serves 0 bytes
         # behind a WAF), so stage our YAML checkpoint there before constructing the calc
         _stage_checkpoint(
             model,
-            os.path.expanduser(f"~/.cache/matris/{cache_name}"),
+            os.path.expanduser(f"~/.cache/matris/{cache_name}"),  # codespell:ignore
             source_path=checkpoint,
         )
         return MatRISCalculator(model=model, device=device)
@@ -779,6 +782,60 @@ def _equflash(model_key: str) -> Callable[..., "Calculator"]:
         # figshare ships a torch .pt checkpoint that it loads by path
         ckpt = checkpoint or download_checkpoint(model_key, ext=".pt")
         return UCalculator(checkpoint_path=ckpt, cpu=device == "cpu")
+
+    return make_calc
+
+
+def _bam(model_key: str) -> Callable[..., "Calculator"]:
+    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+        import bam_torch.utils.data as bt_data
+        import numpy as np
+        from ase.calculators.calculator import all_changes
+        from bam_torch.tase.base_calculator import RACECalculator as BaseRACECalculator
+
+        if getattr(bt_data.batch_graphs, "__name__", "") != "batch_graphs_safe":
+            orig_batch_graphs = bt_data.batch_graphs
+
+            def batch_graphs_safe(
+                graphs: list[object], *args: object, **kwargs: object
+            ) -> object:
+                periodic = kwargs.get("periodic", args[0] if args else True)
+                if periodic:
+                    for graph in graphs:
+                        globals_dict = getattr(graph, "globals", None)
+                        if (
+                            isinstance(globals_dict, dict)
+                            and "stress" not in globals_dict
+                        ):
+                            globals_dict["stress"] = np.zeros((1, 6), dtype=np.float32)
+                return orig_batch_graphs(graphs, *args, **kwargs)
+
+            bt_data.batch_graphs = batch_graphs_safe
+
+        class BAMCalculator(BaseRACECalculator):
+            implemented_properties: ClassVar[list[str]] = [
+                "energy",
+                "forces",
+                "stress",
+                "free_energy",
+            ]
+
+            def calculate(
+                self,
+                atoms: "Atoms",
+                properties: list[str] | tuple[str, ...] = ("energy",),
+                system_changes: list[str] | None = None,
+            ) -> None:  # type: ignore[override]
+                if system_changes is None:
+                    system_changes = all_changes
+                super().calculate(atoms, list(properties), system_changes)
+                if "energy" in self.results:
+                    self.results["free_energy"] = self.results["energy"]
+
+        return BAMCalculator(
+            model=checkpoint or download_checkpoint(model_key, ext=".pkl"),
+            device=device,
+        )
 
     return make_calc
 
@@ -894,6 +951,7 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
             _tace, "tace_oam_rra_preview", checkpoint=True
         ),
         "tece_oam_rra_1_0": _named_spec(_tace, "tece_oam_rra_1_0", checkpoint=True),
+        "bam_mp_core": _named_spec(_bam, "bam_mp_core", checkpoint=True, ext=".pkl"),
         "dpa_3_1_mptrj": _deepmd_spec("dpa_3_1_mptrj"),
         "dpa_3_1_3m_ft": _deepmd_spec("dpa_3_1_3m_ft"),
         "dpa3_v2_mptrj": _deepmd_spec("dpa3_v2_mptrj"),
