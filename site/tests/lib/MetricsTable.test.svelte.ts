@@ -84,7 +84,7 @@ describe(`MetricsTable`, () => {
     expect(header_texts[0]).toBe(`Model`)
     expect(header_texts.at(-1)).toBe(`Org`)
     const metric_order = [`CPS ↑`, `F1`, `DAF`].map((col) => header_texts.indexOf(col))
-    expect(metric_order).toStrictEqual([...metric_order].sort((n1, n2) => n1 - n2))
+    expect(metric_order).toStrictEqual([...metric_order].toSorted((n1, n2) => n1 - n2))
 
     // Test prediction files dropdown interaction
     const pred_files_button = doc_query<HTMLButtonElement>(`tbody .pred-files-btn`)

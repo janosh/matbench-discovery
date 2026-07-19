@@ -1,0 +1,181 @@
+model_name: BAM-MP-core
+model_key: bam-mp-core
+model_version: 1.0v
+dates:
+  benchmark_added: "2026-07-16"
+  paper_published: '2025-10-03'
+lifecycle: active
+authors:
+- name: Hyun Gyu Park
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: hgpark95@skku.edu
+  corresponding: true
+- name: Won Woong Choi
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: wonoong5385@skku.edu
+- name: Seungwon Kim
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: swkim1011@skku.edu
+- name: Kwanghyeon Jo
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: khjo24@skku.edu
+- name: Jooyeon Song
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: wndus0920@skku.edu
+- name: Wonho Lee
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: lwh8260@g.skku.edu
+- name: Gi Beom Sim
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: gbsim@skku.edu
+- name: Tae Hyeon Park
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: pth323@skku.edu
+- name: Soohaeng Yoo Willow
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: sy7willow@gmail.com
+- name: Chang Woo Myung
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: cwmyung@skku.edu
+trained_by:
+- name: Hyun Gyu Park
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: hgpark95@skku.edu
+
+repo: https://github.com/myung-group/BAM-torch
+doi: https://doi.org/10.48550/arXiv.2510.03046
+paper: https://arxiv.org/abs/2510.03046
+docs: https://github.com/myung-group/BAM-torch
+pr_url: https://github.com/janosh/matbench-discovery/pull/381
+checkpoint_url: https://ndownloader.figshare.com/files/65859867
+license:
+  code: MIT
+  code_url: https://github.com/myung-group/BAM-torch/blob/main/LICENSE
+  checkpoint: MIT
+  checkpoint_url: https://github.com/myung-group/BAM-torch/blob/main/LICENSE
+
+environment:
+  dependencies:
+  - bam-torch @ git+https://github.com/myung-group/BAM-torch@d104dae1e89c5144156c053570de0b49e4606f84
+  - torch>=2.5.1
+  - ase>=3.26.0
+  - pymatgen>=2025.10.7
+  python_version: '3.12'
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj]
+model_params: 17294554
+hyperparams:
+  evaluation:
+    max_force: 0.05
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      force_max: 1.0e-4
+      symprec: 1.0e-5
+      ase_optimizer: FIRE
+      ase_filter: FrechetCellFilter
+      save_forces: true
+  architecture:
+    graph_construction_radius: 6.0
+    max_neighbors: null
+notes:
+  description: |
+    BAM-MP-core is a universal interatomic potential implemented in the
+    BAM-torch codebase and evaluated here on WBM IS2RE-SR structure relaxation,
+    discovery, and PhononDB kappa-103 tasks.
+
+metrics:
+  discovery:
+    pred_file:
+      name: models/bam/bam-mp-core/2026-05-09-discovery.csv.gz
+      url: https://github.com/Godorina/matbench-discovery/releases/download/bam-mp-core-artifacts-v2/2026-05-09-discovery.csv.gz
+    full_test_set:
+      F1: 0.618
+      DAF: 3.268
+      Precision: 0.561
+      Recall: 0.687
+      Accuracy: 0.854
+      TPR: 0.687
+      FPR: 0.111 # codespell:ignore
+      TNR: 0.889
+      FNR: 0.313
+      TP: 30290
+      FP: 23721
+      TN: 189150
+      FN: 13802
+      MAE: 0.058
+      RMSE: 0.097
+      R2: 0.711
+      missing_preds: 2
+    unique_prototypes:
+      F1: 0.623
+      DAF: 3.682
+      Precision: 0.563
+      Recall: 0.698
+      Accuracy: 0.869
+      TPR: 0.698
+      FPR: 0.099 # codespell:ignore
+      TNR: 0.901
+      FNR: 0.302
+      TP: 23282
+      FP: 18081
+      TN: 164033
+      FN: 10092
+      MAE: 0.06
+      RMSE: 0.099
+      R2: 0.712
+      missing_preds: 0
+    most_stable_10k:
+      F1: 0.891
+      DAF: 5.259
+      Precision: 0.804
+      Recall: 1.0
+      Accuracy: 0.804
+      TPR: 1.0
+      FPR: 1.0 # codespell:ignore
+      TNR: 0.0
+      FNR: 0.0
+      TP: 8040
+      FP: 1960
+      TN: 0
+      FN: 0
+      MAE: 0.079
+      RMSE: 0.132
+      R2: 0.675
+      missing_preds: 0
+  geo_opt:
+    pred_file:
+      name: models/bam/bam-mp-core/2026-05-09-geo-opt.jsonl.gz
+      url: https://github.com/Godorina/matbench-discovery/releases/download/bam-mp-core-artifacts-v2/2026-05-09-geo-opt.jsonl.gz
+    symprec=1e-5:
+      rmsd: 0.0863
+      n_sym_ops_mae: 1.8906
+      symmetry_decrease: 0.0469
+      symmetry_match: 0.7256
+      symmetry_increase: 0.2223
+      n_structures: 256963
+    symprec=1e-2:
+      rmsd: 0.0863
+      n_sym_ops_mae: 1.8469
+      symmetry_decrease: 0.061
+      symmetry_match: 0.8121
+      symmetry_increase: 0.1202
+      n_structures: 256963
+  phonons:
+    kappa_103:
+      pred_file:
+        name: models/bam/bam-mp-core/2026-05-09-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/65859111
+      κ_SRME: 0.8475
+      κ_SRE: 0.7192
+      κ_SRD: -0.6633
+      κ_failure_rate: 0.1262
+      imaginary_mode_rate: 0.068
+      spectrum_w1: 0.8002
