@@ -31,8 +31,8 @@ trained_by:
 
 repo: https://github.com/xvzemin/tace
 doi: https://doi.org/10.57967/hf/7458
-paper: https://arxiv.org/abs/2509.14961
-docs: https://github.com/xvzemin/tace
+paper: https://arxiv.org/abs/2607.10664
+docs: https://tace.readthedocs.io/en/latest/index.html
 pr_url: https://github.com/janosh/matbench-discovery/pull/353
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-OAM-RRA-Preview.pt
 license:
@@ -43,11 +43,11 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
+  # Exact torch and OEQ versions are test pins, not TACE compatibility bounds.
   dependencies:
-  - tace @ git+https://github.com/xvzemin/tace@c669bee71c2f157dce80d80e8a8f0a08ddfc124c
-  - torch==2.9.1
-  - torch-geometric==2.7.0
-  - pytorch-lightning==2.5.5
+  - tace @ git+https://github.com/xvzemin/tace
+  - openequivariance==0.6.4
+  - torch==2.13
   python_version: '3.13'
 openness: OSOD
 architecture_types: [gnn]
@@ -59,8 +59,8 @@ model_params: 213690158
 training_cost:
   entries:
   - hardware: NVIDIA H20
-    count: 8
-    hours_per_device: 330.0
+    count: 32
+    hours_per_device: 82
 hyperparams:
   evaluation:
     max_force: 0.02
@@ -102,8 +102,8 @@ metrics:
       url: https://figshare.com/files/66108713
       size: 221195
       md5: 5064467b273a7d51a1a09cc1dde89e3f
-    hardware: NVIDIA H200
-    run_time_sec: 4432.1
+    # hardware: NVIDIA H200
+    # run_time_sec: 4432.1
     pbe_wall_dist_mae: 0.4054
     pbe_energy_mae: 4.896
     pbe_bond_length_error: 0.6183

@@ -30,8 +30,8 @@ trained_by:
 
 repo: https://github.com/xvzemin/tace
 doi: https://doi.org/10.57967/hf/7458
-paper: https://arxiv.org/abs/2509.14961
-docs: https://github.com/xvzemin/tace
+paper: https://arxiv.org/abs/2607.10664
+docs: https://tace.readthedocs.io/en/latest/index.html
 pr_url: https://github.com/janosh/matbench-discovery/pull/321
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-OAM-L.pt
 license:
@@ -42,12 +42,12 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
+  # Exact torch and OEQ versions are test pins, not TACE compatibility bounds.
   dependencies:
-  - tace @ git+https://github.com/xvzemin/tace@c669bee71c2f157dce80d80e8a8f0a08ddfc124c
-  - torch==2.9.1
-  - torch-geometric==2.7.0
-  - pytorch-lightning==2.5.5
-  python_version: '3.12'
+  - tace @ git+https://github.com/xvzemin/tace
+  - openequivariance==0.6.4
+  - torch==2.13
+  python_version: '3.13'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -101,8 +101,8 @@ metrics:
       url: https://figshare.com/files/66104666
       size: 223996
       md5: f1f24220e1e26ea1b58ea30b0e145dca
-    hardware: NVIDIA H200
-    run_time_sec: 1300.3
+    # hardware: NVIDIA H200
+    # run_time_sec: 1300.3
     pbe_wall_dist_mae: 0.1119
     pbe_energy_mae: 0.9634
     pbe_bond_length_error: 0.2021
@@ -211,8 +211,8 @@ metrics:
       url: https://figshare.com/files/66048938
       size: 1583
       md5: f08d7b7ed68e032e925b6982d3e4b683
-    hardware: NVIDIA H200
-    run_time_sec: 199194.77
+    # hardware: NVIDIA H200
+    # run_time_sec: 199194.77
     energy_rmse: 0.5479
     force_rmse: 60.1476
     rdf_error: 3.4228

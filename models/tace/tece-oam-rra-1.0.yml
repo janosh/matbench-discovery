@@ -30,8 +30,8 @@ trained_by:
 
 repo: https://github.com/xvzemin/tace
 doi: https://doi.org/10.57967/hf/7458
-paper: https://arxiv.org/abs/2509.14961
-docs: https://github.com/xvzemin/tace
+paper: https://arxiv.org/abs/2607.10664
+docs: https://tace.readthedocs.io/en/latest/index.html
 pr_url: https://github.com/janosh/matbench-discovery/pull/365
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TECE-OAM-RRA-1.0.pt
 license:
@@ -42,12 +42,12 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
+  # Exact torch and OEQ versions are test pins, not TACE compatibility bounds.
   dependencies:
-  - tace @ git+https://github.com/xvzemin/tace@88d8dcd5724e94751783b0a3405cb49573af1583
-  - torch==2.9.1
-  - torch-geometric==2.7.0
-  - pytorch-lightning==2.5.5
-  python_version: '3.12'
+  - tace @ git+https://github.com/xvzemin/tace
+  - openequivariance==0.6.4
+  - torch==2.13
+  python_version: '3.13'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -100,8 +100,8 @@ metrics:
       url: https://figshare.com/files/66313844
       size: 219926
       md5: b9f172f5a1a2c092eb09ebe1df9f9664
-    hardware: NVIDIA GeForce RTX 4090
-    run_time_sec: 4505.61
+    # hardware: NVIDIA GeForce RTX 4090
+    # run_time_sec: 4505.61
     pbe_wall_dist_mae: 0.3074
     pbe_energy_mae: 3.918
     pbe_bond_length_error: 0.6948
@@ -210,8 +210,8 @@ metrics:
       url: https://figshare.com/files/66323729
       size: 1576
       md5: 57292c80cf74b7b273a084c7b87f6c96
-    hardware: NVIDIA H200
-    run_time_sec: 401724.73
+    # hardware: NVIDIA H200
+    # run_time_sec: 401724.73
     energy_rmse: 0.4353
     force_rmse: 42.3737
     rdf_error: 3.1337

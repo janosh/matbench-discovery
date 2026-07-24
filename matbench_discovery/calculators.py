@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
-DERIVED_ARTIFACT_TIMEOUT_SEC = 10 * 60
+DERIVED_ARTIFACT_TIMEOUT_SEC = 30 * 60
 
 
 def _is_non_empty_file(path: str) -> bool:
@@ -591,12 +591,58 @@ def _deepmd_freeze(model_key: str) -> Callable[..., "Calculator"]:
 
 def _tace(model_key: str) -> Callable[..., "Calculator"]:
     def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+        import sys
+
         from tace.interface.ase import TACEAseCalc
 
-        # export TACE_USE_OEQ=1 or export TACE_USE_CUE=1 to use oeq or cueq for
-        # all TACE model, recommend to use oeq
         checkpoint = checkpoint or download_checkpoint(model_key)
-        return TACEAseCalc(checkpoint, use_ema=True, device=device)
+        if model_key == "tace_v1_oam_m":
+            return TACEAseCalc(checkpoint, device=device)
+
+        # Configure acceleration before loading the source checkpoint. The export
+        # subprocess inherits these variables, so its graph contains OEQ operators
+        # and uses TACE's compile-compatible model path.
+        os.environ["TACE_USE_OEQ"] = "1"
+        os.environ["TACE_USE_COMPILE"] = "1"
+
+        # A user-supplied .pt2 is already deployable. Otherwise export from scratch.
+        # Cache the package outside benchmark timing and rebuild it when the source
+        # or toolchain changes.
+        if checkpoint.endswith(".pt2"):
+            compiled = checkpoint
+        else:
+            import torch
+
+            torch_device = torch.device(device)
+            device_tag = torch_device.type
+            if torch_device.type == "cuda":
+                major, minor = torch.cuda.get_device_capability(torch_device)
+                device_tag = f"cuda-sm{major}{minor}"
+            compiled = f"{CHECKPOINT_DIR}/{model_key}-{device_tag}-oeq-aoti.pt2"
+            _run_to_atomic_output(
+                [
+                    sys.executable,
+                    "-m",
+                    "tace.scripts.export_eval",
+                    "-m",
+                    checkpoint,
+                    "-o",
+                    "{output}",
+                    "--backend",
+                    "aoti",
+                    "--device",
+                    device,
+                ],
+                compiled,
+                source_paths=(checkpoint,),
+                tool_packages=("tace", "torch", "openequivariance"),
+            )
+        return TACEAseCalc(
+            compiled,
+            device=device,
+            enable_oeq=True,
+            enable_compile=True,
+        )
 
     return make_calc
 
@@ -797,8 +843,8 @@ def _emt(device: str) -> "Calculator":  # noqa: ARG001 - CPU only, debug model
 # - MACE on CUDA: cuEquivariance CUDA 12 extras
 # - EqNorm: torch 2.2.2 + vesin 0.3.2 + matching PyG wheels
 # - M3GNet: matgl<4 + DGL backend + dgl 2.4 wheel
-# - TACE: install from upstream git (PyPI tace is unrelated); TECE needs a
-#   newer commit
+# - TACE: install from upstream git (PyPI tace is unrelated). Exact torch and
+#   OpenEquivariance versions are test pins, not TACE compatibility bounds.
 
 _ALPHANET_PRETRAINED = (
     "https://raw.githubusercontent.com/zmyybc/AlphaNet/"
