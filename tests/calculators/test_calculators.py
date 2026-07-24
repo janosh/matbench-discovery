@@ -230,6 +230,71 @@ def test_pet_factory_casts_exported_model(
     assert captured == {"dtype": float64_dtype, "device": "cpu"}
 
 
+def test_tace_factory_acceleration_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """TACE use cached AOTI packages; v1 remains eager."""
+    calculator_calls: list[tuple[str, dict[str, object]]] = []
+    export_calls: list[tuple[list[str], str]] = []
+    ase_module = ModuleType("tace.interface.ase")
+    ase_module.__dict__["TACEAseCalc"] = lambda model, **kwargs: (
+        calculator_calls.append((model, kwargs))
+    )
+    torch_module = ModuleType("torch")
+    torch_module.__dict__["device"] = lambda _device: SimpleNamespace(type="cuda")
+    torch_module.__dict__["cuda"] = SimpleNamespace(
+        get_device_capability=lambda _device: (8, 9)
+    )
+    for module_name, module in {
+        "tace": ModuleType("tace"),
+        "tace.interface": ModuleType("tace.interface"),
+        "tace.interface.ase": ase_module,
+        "torch": torch_module,
+    }.items():
+        monkeypatch.setitem(sys.modules, module_name, module)
+
+    monkeypatch.delenv("TACE_USE_OEQ", raising=False)
+    monkeypatch.delenv("TACE_USE_COMPILE", raising=False)
+    monkeypatch.setattr(calculators, "CHECKPOINT_DIR", str(tmp_path))
+    monkeypatch.setattr(
+        calculators,
+        "_run_to_atomic_output",
+        lambda command, dest, **_kwargs: export_calls.append((command, dest)),
+    )
+    checkpoint = tmp_path / "model.pt"
+    checkpoint.write_bytes(b"checkpoint")
+
+    calculators._tace("tace_oam_l")(  # noqa: SLF001
+        "cuda", checkpoint=str(checkpoint)
+    )
+
+    compiled = str(tmp_path / "tace_oam_l-cuda-sm89-oeq-aoti.pt2")
+    assert os.environ["TACE_USE_OEQ"] == "1"
+    assert os.environ["TACE_USE_COMPILE"] == "1"
+    assert calculator_calls == [
+        (
+            compiled,
+            {"device": "cuda", "enable_oeq": True, "enable_compile": True},
+        )
+    ]
+    command = export_calls[0][0]
+    assert command[:3] == [sys.executable, "-m", "tace.scripts.export_eval"]
+    assert command[-4:] == ["--backend", "aoti", "--device", "cuda"]
+    assert export_calls[0][1] == compiled
+
+    packaged = tmp_path / "ready.pt2"
+    packaged.write_bytes(b"package")
+    calculators._tace("tace_oam_l")(  # noqa: SLF001
+        "cuda", checkpoint=str(packaged)
+    )
+    calculators._tace("tace_v1_oam_m")(  # noqa: SLF001
+        "cuda", checkpoint=str(checkpoint)
+    )
+    assert len(export_calls) == 1
+    assert calculator_calls[-2][0] == str(packaged)
+    assert calculator_calls[-1] == (str(checkpoint), {"device": "cuda"})
+
+
 @pytest.mark.parametrize(
     "model_key", ["sevennet_0", "sevennet_l3i5", "sevennet_omni_i12"]
 )

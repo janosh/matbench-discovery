@@ -43,11 +43,11 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
+  # Exact torch and OEQ versions are test pins, not TACE compatibility bounds.
   dependencies:
-  - tace @ git+https://github.com/xvzemin/tace@c669bee71c2f157dce80d80e8a8f0a08ddfc124c
-  - torch==2.9.1
-  - torch-geometric==2.7.0
-  - pytorch-lightning==2.5.5
+  - tace @ git+https://github.com/xvzemin/tace
+  - openequivariance==0.6.4
+  - torch==2.13
   python_version: '3.13'
 openness: OSOD
 architecture_types: [gnn]
