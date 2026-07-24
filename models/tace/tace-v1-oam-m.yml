@@ -32,7 +32,7 @@ trained_by:
 repo: https://github.com/xvzemin/tace
 doi: https://doi.org/10.57967/hf/7458
 paper: https://arxiv.org/abs/2509.14961
-docs: https://github.com/xvzemin/tace
+docs: https://tace.readthedocs.io/en/latest/index.html
 pr_url: https://github.com/janosh/matbench-discovery/pull/301
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-v1-OAM-M.pt
 license:
@@ -44,7 +44,7 @@ license:
 
 environment:
   dependencies:
-  - tace @ git+https://github.com/xvzemin/tace@c669bee71c2f157dce80d80e8a8f0a08ddfc124c
+  - tace @ git+https://github.com/xvzemin/tace@v0.1.0
   - torch==2.9.1
   - torch-geometric==2.7.0
   - pytorch-lightning==2.5.5

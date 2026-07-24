@@ -30,8 +30,8 @@ trained_by:
 
 repo: https://github.com/xvzemin/tace
 doi: https://doi.org/10.57967/hf/7458
-paper: https://arxiv.org/abs/2509.14961
-docs: https://github.com/xvzemin/tace
+paper: https://arxiv.org/abs/2607.10664
+docs: https://tace.readthedocs.io/en/latest/index.html
 pr_url: https://github.com/janosh/matbench-discovery/pull/365
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TECE-OAM-RRA-1.0.pt
 license:

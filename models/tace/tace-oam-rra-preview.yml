@@ -31,8 +31,8 @@ trained_by:
 
 repo: https://github.com/xvzemin/tace
 doi: https://doi.org/10.57967/hf/7458
-paper: https://arxiv.org/abs/2509.14961
-docs: https://github.com/xvzemin/tace
+paper: https://arxiv.org/abs/2607.10664
+docs: https://tace.readthedocs.io/en/latest/index.html
 pr_url: https://github.com/janosh/matbench-discovery/pull/353
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-OAM-RRA-Preview.pt
 license:
@@ -59,8 +59,8 @@ model_params: 213690158
 training_cost:
   entries:
   - hardware: NVIDIA H20
-    count: 8
-    hours_per_device: 330.0
+    count: 32
+    hours_per_device: 82
 hyperparams:
   evaluation:
     max_force: 0.02
