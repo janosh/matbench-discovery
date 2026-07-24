@@ -102,8 +102,8 @@ metrics:
       url: https://figshare.com/files/66108713
       size: 221195
       md5: 5064467b273a7d51a1a09cc1dde89e3f
-    hardware: NVIDIA H200
-    run_time_sec: 4432.1
+    # hardware: NVIDIA H200
+    # run_time_sec: 4432.1
     pbe_wall_dist_mae: 0.4054
     pbe_energy_mae: 4.896
     pbe_bond_length_error: 0.6183

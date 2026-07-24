@@ -101,8 +101,8 @@ metrics:
       url: https://figshare.com/files/66104666
       size: 223996
       md5: f1f24220e1e26ea1b58ea30b0e145dca
-    hardware: NVIDIA H200
-    run_time_sec: 1300.3
+    # hardware: NVIDIA H200
+    # run_time_sec: 1300.3
     pbe_wall_dist_mae: 0.1119
     pbe_energy_mae: 0.9634
     pbe_bond_length_error: 0.2021
@@ -211,8 +211,8 @@ metrics:
       url: https://figshare.com/files/66048938
       size: 1583
       md5: f08d7b7ed68e032e925b6982d3e4b683
-    hardware: NVIDIA H200
-    run_time_sec: 199194.77
+    # hardware: NVIDIA H200
+    # run_time_sec: 199194.77
     energy_rmse: 0.5479
     force_rmse: 60.1476
     rdf_error: 3.4228

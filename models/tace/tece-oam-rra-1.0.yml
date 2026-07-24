@@ -100,8 +100,8 @@ metrics:
       url: https://figshare.com/files/66313844
       size: 219926
       md5: b9f172f5a1a2c092eb09ebe1df9f9664
-    hardware: NVIDIA GeForce RTX 4090
-    run_time_sec: 4505.61
+    # hardware: NVIDIA GeForce RTX 4090
+    # run_time_sec: 4505.61
     pbe_wall_dist_mae: 0.3074
     pbe_energy_mae: 3.918
     pbe_bond_length_error: 0.6948
@@ -210,8 +210,8 @@ metrics:
       url: https://figshare.com/files/66323729
       size: 1576
       md5: 57292c80cf74b7b273a084c7b87f6c96
-    hardware: NVIDIA H200
-    run_time_sec: 401724.73
+    # hardware: NVIDIA H200
+    # run_time_sec: 401724.73
     energy_rmse: 0.4353
     force_rmse: 42.3737
     rdf_error: 3.1337
