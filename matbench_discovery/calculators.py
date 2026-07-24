@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
-DERIVED_ARTIFACT_TIMEOUT_SEC = 10 * 60
+DERIVED_ARTIFACT_TIMEOUT_SEC = 30 * 60
 
 
 def _is_non_empty_file(path: str) -> bool:
