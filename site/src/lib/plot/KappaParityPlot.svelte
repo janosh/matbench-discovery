@@ -125,7 +125,7 @@
       const [base_asset, model_asset, srme_map] = await Promise.all([
         load_kappa_parity_base(),
         load_kappa_parity_model(model_key),
-        load_kappa_srme_map(model_key),
+        load_kappa_srme_map(model_key).catch(() => undefined),
       ])
       if (!is_current()) return
       base = base_asset

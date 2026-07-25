@@ -246,7 +246,9 @@ def prepare_model_predictions(
     )
     bad_mask = abs(predictions - df_reference[MbdKey.e_form_dft]) > max_error_threshold
     predictions = predictions.mask(bad_mask).round(3)
-    metric_reference = df_reference.round(3)
+    metric_reference = df_reference.loc[
+        :, [MbdKey.each_true, MbdKey.e_form_dft, MbdKey.uniq_proto]
+    ].round(3)
     subset_indices = discovery_subset_indices(metric_reference, predictions)
     return metric_reference, predictions, subset_indices
 

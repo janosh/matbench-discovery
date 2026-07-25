@@ -106,9 +106,20 @@ def main() -> int:
         run_args = dependency_run_args(
             args,
             args.model,
-            {"private-ref-file": args.private_ref_file},
-            ("dry-run",),
+            {
+                "out-dir": args.out_dir,
+                "ref-file": args.ref_file,
+                "private-ref-file": args.private_ref_file,
+                "n-steps": args.n_steps,
+                "time-step-fs": args.time_step_fs,
+                "record-interval": args.record_interval,
+                "seed": args.seed,
+                "dtype": args.dtype,
+            },
+            ("write-yaml", "dry-run"),
         )
+        if args.systems is not None:
+            run_args.extend(("--systems", *args.systems))
         print_dependency_command(
             CALCULATORS[args.model].uv_run_cmd("models/run_md.py", *run_args)
         )
