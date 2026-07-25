@@ -4,20 +4,24 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.21
+    rev: v0.16.0
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: v0.0.59
+    rev: v0.0.63
     hooks:
       - id: ty
         # --isolated: don't create/update uv.lock or the local .venv
-        # --extra test: make pytest and phonon deps resolvable by ty
-        args: [--isolated, --extra, test]
-        env: { UV_FROZEN: "0" } # prek-only: override global UV_FROZEN=1 which would require a uv.lock
+        args: [--isolated]
+        env:
+          # uv check treats tool.uv.managed=false as outside a project, so point ty
+          # at its dedicated config explicitly.
+          TY_CONFIG_FILE: ty.toml
+          # prek-only: override global UV_FROZEN=1, which would require a uv.lock.
+          UV_FROZEN: "0"
 
   - repo: https://github.com/janosh/format-ipy-cells
     rev: v0.1.11
@@ -59,7 +63,7 @@ repos:
         pass_filenames: false
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
         stages: [pre-commit, commit-msg]
@@ -68,7 +72,7 @@ repos:
         args: [--check-filenames]
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.49.0
+    rev: v0.49.1
     hooks:
       - id: markdownlint
         # MD013: line too long

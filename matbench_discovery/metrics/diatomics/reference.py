@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from itertools import pairwise
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -295,15 +295,18 @@ def _best_neighbor_spin_replacement(
 ) -> tuple[str, CurvePoint | None]:
     """Return the neighbor spin point closest to the local expected energy."""
     middle_key = distance_key(point_distance(point))
-    candidates = [
-        (spin, candidate_lookup[(spin, middle_key)])
-        for spin in dict.fromkeys((left_spin, right_spin))
-        if (spin, middle_key) in candidate_lookup
-    ]
+    candidates: list[tuple[str, CurvePoint]] = []
+    for spin in dict.fromkeys((left_spin, right_spin)):
+        candidate = candidate_lookup.get((spin, middle_key))
+        if candidate is not None:
+            candidates.append((spin, candidate))
     if not candidates:
         return "", None
     return min(
-        candidates, key=lambda item: abs(point_energy(item[1]) - expected_energy)
+        candidates,
+        key=lambda item: abs(
+            point_energy(cast("CurvePoint", item[1])) - expected_energy
+        ),
     )
 
 
