@@ -13,7 +13,7 @@ There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for f
 
 ## ✨ &thinsp; How to submit a new model
 
-To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch][repo] that includes the 3 required items:
+To submit a new model to this benchmark and add it to our leaderboard, please create a [model-submission pull request][model-pr] to the [`main` branch][repo] that includes the 3 required items:
 
 1. You should share your model's predictions through a cloud storage service (we recommend [Figshare](https://figshare.com)) and include the stable direct-download links in your model YAML. Each artifact lives directly under `models/<family>/<model_key>/` and follows the canonical filename grammar:
 
@@ -300,7 +300,7 @@ Upload the canonical prediction artifacts for each submitted task to [Figshare](
 
 ### Step 4: Open a PR to the [Matbench Discovery repo][repo]
 
-Commit your files to the repo on a branch called `<model_key>` and create a pull request (PR) to the Matbench repository.
+Commit your files to the repo on a branch called `<model_key>` and [create a model-submission pull request][model-pr] to the Matbench repository. The model checklist is loaded only through this link; regular pull requests start with a blank description.
 
 ```sh
 git add models/<family>/<model_key>.yml models/<family>/readme.md
@@ -356,4 +356,5 @@ Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic P
 
 Having problems? [Open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). We're happy to help! 😊
 
+[model-pr]: https://github.com/janosh/matbench-discovery/compare?expand=1&template=new_model.md
 [repo]: https://github.com/janosh/matbench-discovery

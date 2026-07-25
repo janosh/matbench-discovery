@@ -186,7 +186,9 @@ def test_shared_runner_is_only_executable(task: str) -> None:
     assert os.path.isfile(f"{ROOT}/models/run_{task}.py")
     assert not glob(f"{ROOT}/models/**/test_*_{task}.py", recursive=True)
     if task == "discovery":
-        with open(f"{ROOT}/.github/pull_request_template.md") as file:
+        with open(
+            f"{ROOT}/.github/PULL_REQUEST_TEMPLATE/new_model.md", encoding="utf-8"
+        ) as file:
             assert "test_<arch_name>_discovery.py" not in file.read()
 
 

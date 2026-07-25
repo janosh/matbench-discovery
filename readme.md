@@ -29,6 +29,6 @@ To cite Matbench Discovery, use:
 
 > Riebesell, J., Goodall, R.E.A., Benner, P. et al. A framework to evaluate machine learning crystal stability predictions. Nat Mach Intell 7, 836–847 (2025). https://doi.org/10.1038/s42256-025-01055-1
 
-We welcome new models additions to the leaderboard through GitHub PRs. See the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details and ask support questions via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions).
+Are you submitting a new model? Then see the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) and use the [model-submission PR flow](https://github.com/janosh/matbench-discovery/compare?expand=1&template=new_model.md), which loads the model checklist. For other changes, [open a regular PR](https://github.com/janosh/matbench-discovery/compare) with a blank description. Ask support questions via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions).
 
 > Disclaimer: We evaluate how accurately ML models predict several material properties like thermodynamic stability, thermal conductivity, and atomic positions, in all cases using PBE DFT as reference data. Although these properties are important for high-throughput materials discovery, the ranking cannot give a complete picture of a model's overall ability to drive materials research. A high ranking does not constitute endorsement by the Materials Project.
