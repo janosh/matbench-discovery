@@ -1,7 +1,8 @@
 <script lang="ts">
-  import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
   import { by_benchmark_added_desc, MetricsTable, ModelSelect, ACTIVE_MODELS } from '$lib'
   import type { ModelData } from '$lib'
+  import { get_error_message } from '$lib/asset-loader'
+  import { load_kappa_analysis, type KappaAnalysis } from '$lib/parity/kappa-analysis'
   import { DynamicScatter, KappaParityPlot } from '$lib/plot'
   import { make_table_filters } from '$lib/models.svelte'
   import type { SortState } from '$lib/url-state.svelte'
@@ -18,6 +19,8 @@
     task_page_visible_cols,
   } from '$lib/labels'
   import { format_num } from 'matterviz'
+  import { Spinner } from 'matterviz/feedback'
+  import { onMount } from 'svelte'
   import KappaSrmeScatter from './KappaSrmeScatter.svelte'
   import PhononFreqParity from './PhononFreqParity.svelte'
 
@@ -65,9 +68,16 @@
     date: by_benchmark_added_desc,
   }
   let sorted_models = $derived(leaderboard_models.toSorted(sort_compare[sort_mode]))
+  let kappa_analysis = $state<KappaAnalysis>()
+  let analysis_error = $state(``)
+  onMount(() => {
+    void load_kappa_analysis()
+      .then((analysis) => (kappa_analysis = analysis))
+      .catch((error) => (analysis_error = get_error_message(error)))
+  })
   // per-material diagnostics (SRME scatter + frequency parity) for the selected model
   let selected_diagnostics = $derived(
-    kappa_103_analysis.models.find((entry) => entry.key === selected_key),
+    kappa_analysis?.models.find((entry) => entry.key === selected_key),
   )
   // Model options include the value currently used for sorting (except A–Z).
   let model_options = $derived(
@@ -213,8 +223,8 @@
     </select>
   </label>
 
-  {#if selected_diagnostics}
-    <KappaParityPlot model={selected_model} />
+  <KappaParityPlot model={selected_model} />
+  {#if kappa_analysis && selected_diagnostics}
     <h3 class="diagnostics-heading">
       Per-material κ<sub>SRME</sub> and phonon spectrum parity
     </h3>
@@ -227,15 +237,19 @@
     <div class="diagnostics-grid bleed-1400">
       <KappaSrmeScatter
         entry={selected_diagnostics}
-        base={kappa_103_analysis}
+        base={kappa_analysis}
         style="height: 420px"
       />
       <PhononFreqParity
         entry={selected_diagnostics}
-        base={kappa_103_analysis}
+        base={kappa_analysis}
         style="height: 420px"
       />
     </div>
+  {:else if analysis_error}
+    <p role="alert">{analysis_error}</p>
+  {:else}
+    <Spinner text="Loading per-material phonon diagnostics..." />
   {/if}
 {/if}
 

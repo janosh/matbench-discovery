@@ -28,6 +28,7 @@ from matbench_discovery.data import (
     iter_file_refs,
     load_df_wbm_with_preds,
     make_file_ref,
+    merge_file_ref,
     parse_artifact_filename,
     round_trip_yaml,
     task_coverage,
@@ -59,19 +60,22 @@ def dummy_atoms_zip(tmp_path: Path) -> Path:
 
 
 def test_as_dict_handler() -> None:
-    class C:
+    """Objects with ``as_dict`` serialize while unsupported values become null."""
+
+    class Serializable:
+        """Minimal MSON-style object for serialization."""
+
         @staticmethod
         def as_dict() -> dict[str, Any]:
             return {"foo": "bar"}
 
-    assert as_dict_handler(C()) == {"foo": "bar"}
-    assert as_dict_handler(1) is None
-    assert as_dict_handler("foo") is None
-    assert as_dict_handler([1, 2, 3]) is None
-    assert as_dict_handler({"foo": "bar"}) is None
+    assert as_dict_handler(Serializable()) == {"foo": "bar"}
+    for unsupported in (1, "foo", [1, 2, 3], {"foo": "bar"}):
+        assert as_dict_handler(unsupported) is None
 
 
 def test_df_wbm() -> None:
+    """The canonical WBM dataframe has its expected shape and core columns."""
     assert df_wbm.shape == (256_963, 18)
     assert df_wbm.index.name == Key.mat_id
     assert set(df_wbm) > {Key.formula, Key.mat_id, Key.bandgap_pbe}
@@ -90,24 +94,23 @@ def test_glob_to_df(
     pattern: str,
     tmp_path: Path,
     df_mixed: pd.DataFrame,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    os.makedirs(tmp_path, exist_ok=True)
+    """CSV and JSON glob patterns load dataframes with matching columns."""
     df_mixed.to_csv(f"{tmp_path}/dummy_df.csv", index=False)
     df_mixed.to_json(f"{tmp_path}/dummy_df.json")
 
-    df_out = glob_to_df(f"{tmp_path}/{pattern}")
-    assert df_out.shape == df_mixed.shape
-    assert list(df_out) == list(df_mixed)
+    df_loaded = glob_to_df(f"{tmp_path}/{pattern}")
+    assert df_loaded.shape == df_mixed.shape
+    assert list(df_loaded) == list(df_mixed)
 
+
+def test_glob_to_df_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unsupported patterns and absent files raise their specific errors."""
     with pytest.raises(ValueError, match="Unsupported file extension in pattern='foo'"):
         glob_to_df("foo")
 
-    # Mock sys.modules without pytest to test file not found error
     mock_modules = dict(sys.modules)
-    mock_modules.pop("pytest", None)  # remove pytest since glob_to_df returns mock data
-    # if if finds pytest imported
-    # also remove CI from os.environ
+    mock_modules.pop("pytest", None)
     monkeypatch.delenv("CI", raising=False)
     with (
         patch("sys.modules", mock_modules),
@@ -228,11 +231,19 @@ def test_ase_atoms_from_zip_with_slice_limit(
     reason="CI uses mock data so don't check length against on-the-fly "
     "downloaded actual df_wbm",
 )
-@pytest.mark.parametrize("models", [[], ["wrenformer"]])
-@pytest.mark.parametrize("max_error_threshold", [None, 5.0, 1.0])
+@pytest.mark.parametrize(
+    ("models", "max_error_threshold"),
+    [
+        ([], None),
+        (["wrenformer"], None),
+        (["wrenformer"], 5.0),
+        (["wrenformer"], 1.0),
+    ],
+)
 def test_load_df_wbm_with_preds(
     models: list[str], max_error_threshold: float | None
 ) -> None:
+    """Model selection and outlier thresholds preserve the canonical WBM rows."""
     df_wbm_with_preds = load_df_wbm_with_preds(
         models=models, max_error_threshold=max_error_threshold
     )
@@ -280,17 +291,19 @@ def test_load_df_wbm_with_preds_mock_data_models() -> None:
     "CI" in os.environ, reason="CI uses mock data where other error thresholds apply"
 )
 def test_load_df_wbm_max_error_threshold() -> None:
-    models: dict[str, int] = {  # map model to number of max allowed missing preds
-        Model.mace_mp_0.label: 38  # before error is raised
-    }
-    df_no_thresh = load_df_wbm_with_preds(models=list(models))
-    df_high_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=10)
-    df_low_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=0.1)
+    """Tighter outlier thresholds monotonically increase missing predictions."""
+    model = Model.mace_mp_0
+    df_no_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=None)
+    df_high_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=10)
+    df_low_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=0.1)
 
-    for model, n_missing in models.items():
-        assert df_no_thresh[model].isna().sum() == n_missing
-        assert df_high_thresh[model].isna().sum() <= df_no_thresh[model].isna().sum()
-        assert df_high_thresh[model].isna().sum() <= df_low_thresh[model].isna().sum()
+    n_no_threshold = df_no_threshold[model.label].isna().sum()
+    assert n_no_threshold == 38
+    assert df_high_threshold[model.label].isna().sum() <= n_no_threshold
+    assert (
+        df_high_threshold[model.label].isna().sum()
+        <= df_low_threshold[model.label].isna().sum()
+    )
 
 
 def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
@@ -324,9 +337,15 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
 def test_load_df_wbm_with_preds_subset(
     subset: str | TestSubset | list[str] | None,
 ) -> None:
-    """Test subset handling in load_df_wbm_with_preds."""
-    df_wbm = load_df_wbm_with_preds(subset=subset)
-    assert isinstance(df_wbm, pd.DataFrame)
+    """Subset selectors return exactly the requested WBM material IDs."""
+    df_subset = load_df_wbm_with_preds(subset=subset)
+    if subset is None:
+        expected_index = df_wbm.index
+    elif isinstance(subset, list):
+        expected_index = df_wbm.loc[subset].index
+    else:
+        expected_index = df_wbm.query(MbdKey.uniq_proto).index
+    assert df_subset.index.equals(expected_index)
 
 
 def test_update_yaml_file(tmp_path: Path) -> None:
@@ -406,7 +425,7 @@ metrics:
     assert updated["metrics"]["discovery"] == {"mae": 0.6}
 
     with pytest.raises(FileNotFoundError):
-        update_yaml_file("non-existent.yml", "path", {"data": 1})
+        update_yaml_file(tmp_path / "non-existent.yml", "path", {"data": 1})
 
     for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
         with pytest.raises(ValueError, match="Invalid dotted_path="):
@@ -414,6 +433,10 @@ metrics:
 
 
 # --- model artifact filenames / FileRef helpers ---
+
+FILE_REF_PATH = "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz"
+UPDATED_FILE_REF_PATH = "models/mace/mace-mp-0/2026-07-02-discovery.csv.gz"
+FILE_REF_URL = "https://figshare.com/files/1"
 
 
 @pytest.mark.parametrize(
@@ -471,27 +494,54 @@ def test_artifact_filename_geo_opt_analysis_round_trip() -> None:
 
 def test_make_file_ref() -> None:
     """Omit unset optionals; reject unpaired size/md5."""
-    path = "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz"
-    assert make_file_ref(path) == {"name": path}
-    assert make_file_ref(
-        path, url="https://figshare.com/files/1", size=10, md5="a" * 32
-    ) == {
-        "name": path,
-        "url": "https://figshare.com/files/1",
+    assert make_file_ref(FILE_REF_PATH) == {"name": FILE_REF_PATH}
+    assert make_file_ref(FILE_REF_PATH, url=FILE_REF_URL, size=10, md5="a" * 32) == {
+        "name": FILE_REF_PATH,
+        "url": FILE_REF_URL,
         "size": 10,
         "md5": "a" * 32,
     }
     for size, md5 in ((10, None), (None, "a" * 32)):
         with pytest.raises(ValueError, match="size and md5"):
-            make_file_ref(path, size=size, md5=md5)
+            make_file_ref(FILE_REF_PATH, size=size, md5=md5)
+
+
+@pytest.mark.parametrize(
+    ("same_name", "url", "replace", "preserve_metadata"),
+    [
+        (True, None, False, True),
+        (True, "https://figshare.com/files/2", False, True),
+        (False, None, False, False),
+        (True, None, True, False),
+    ],
+    ids=("unchanged", "new-url", "new-name", "replace"),
+)
+def test_merge_file_ref(
+    same_name: bool,
+    url: str | None,
+    replace: bool,
+    preserve_metadata: bool,
+) -> None:
+    """File-ref updates preserve metadata only for an unchanged artifact."""
+    name = FILE_REF_PATH if same_name else UPDATED_FILE_REF_PATH
+    existing = make_file_ref(
+        FILE_REF_PATH,
+        url=FILE_REF_URL,
+        size=10,
+        md5="a" * 32,
+    )
+    expected = make_file_ref(
+        name,
+        url=(url or FILE_REF_URL) if preserve_metadata else url,
+        size=10 if preserve_metadata else None,
+        md5="a" * 32 if preserve_metadata else None,
+    )
+    assert merge_file_ref(existing, name, url=url, replace=replace) == expected
 
 
 def test_file_ref_accessors() -> None:
     """Nested file refs expose names/URLs and can be traversed."""
-    nested = {
-        "name": "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
-        "url": "https://figshare.com/files/1",
-    }
+    nested = {"name": FILE_REF_PATH, "url": FILE_REF_URL}
     assert file_ref_name(nested) == nested["name"]
     assert file_ref_url(nested) == nested["url"]
     assert file_ref_name("legacy/path.csv.gz") is None

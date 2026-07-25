@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { load_kappa_srme_map } from '$lib/parity/kappa-analysis'
   import {
     as_phonon_dos,
     build_kappa_parity_series,
@@ -13,7 +14,7 @@
     KappaParityPoint,
     PhononDos,
   } from '$lib/parity/kappa-parity'
-  import { get_error_message, type LoadStatus } from '$lib/asset-loader'
+  import { ParityLoadController } from '$lib/parity/load-controller.svelte'
   import { parity_diagonal } from '$lib/fig-helpers'
   import { get_nested_number, is_finite_num } from '$lib/metrics'
   import type { ModelData } from '$lib/types'
@@ -28,8 +29,7 @@
   let { model, ...rest }: HTMLAttributes<HTMLElement> & { model: ModelData } = $props()
 
   const KappaScatter = ScatterPlot<KappaParityPoint>
-  let status = $state<LoadStatus>(`idle`)
-  let error_message = $state(``)
+  const load_controller = new ParityLoadController()
   let base = $state<KappaParityBase>()
   let parity_model = $state<KappaParityModel>()
   let selected_idx = $state<number | null>(null)
@@ -37,7 +37,6 @@
   // undefined until loaded or when the model has no analysis entry
   let srme_by_id = $state<Map<string, number | null>>()
   let color_metric = $state<`srme` | `sre`>(`srme`)
-  let load_id = 0
 
   let model_label = $derived(parity_model?.model_label ?? model.model_name)
   // precomputed phonon metrics: κ_SRME (mode-resolved symmetric relative mean error)
@@ -116,49 +115,24 @@
     return phonon_dos
   })
 
-  // dynamic import so the ~160 kB gz analysis payload becomes its own chunk fetched
-  // only when a kappa plot mounts, instead of bloating every model page's bundle
-  async function load_srme_map(model_key: string) {
-    const analysis = (await import(`$figs/kappa-103-analysis.jsonl`)).default
-    const model_analysis = analysis.models.find(
-      (model_data) => model_data.key === model_key,
-    )
-    if (!model_analysis) return undefined
-    return new Map(
-      analysis.material_ids.map((material_id, idx) => [
-        material_id,
-        model_analysis.srme[idx],
-      ]),
-    )
-  }
-
   async function load_data(model_key: string) {
-    const current_load_id = ++load_id
     selected_idx = null
     if (!has_kappa_parity_model(model_key)) {
-      status = `error`
-      error_message = `${model.model_name} has no κ parity data`
+      load_controller.set_error(`${model.model_name} has no κ parity data`)
       return
     }
-    status = `loading`
-    error_message = ``
-    try {
+    await load_controller.run(async (is_current) => {
       const [base_asset, model_asset, srme_map] = await Promise.all([
         load_kappa_parity_base(),
         load_kappa_parity_model(model_key),
-        load_srme_map(model_key),
+        load_kappa_srme_map(model_key).catch(() => undefined),
       ])
-      if (current_load_id !== load_id) return
+      if (!is_current()) return
       base = base_asset
       parity_model = model_asset
       srme_by_id = srme_map
       if (!srme_map) color_metric = `sre` // no per-material SRME -> only SRE offered
-      status = `ready`
-    } catch (error) {
-      if (current_load_id !== load_id) return
-      status = `error`
-      error_message = get_error_message(error)
-    }
+    })
   }
 
   $effect(() => {
@@ -170,11 +144,11 @@
 <section class="kappa-parity-plot" {...rest}>
   <h2 class="toc-exclude">ML vs DFT Lattice Thermal Conductivity</h2>
 
-  {#if status === `error`}
+  {#if load_controller.status === `error`}
     <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
-      {error_message}
+      {load_controller.error_message}
     </p>
-  {:else if status !== `ready` || !parity}
+  {:else if load_controller.status !== `ready` || !parity}
     <div class="plot-state">
       <Spinner text="Loading κ parity data..." />
     </div>

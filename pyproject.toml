@@ -83,6 +83,7 @@ ignore = [
   "C408", # unnecessary-collection-call
   "C901",
   "COM812",
+  "CPY001", # missing-copyright-notice (repo has no per-file headers)
   "D205", # blank-line-after-summary
   "EM101",
   "EM102",
@@ -93,6 +94,7 @@ ignore = [
   "PLR0913",
   "PLR0915",
   "PLR0912",
+  "PLR0917",
   "PT006", # pytest-parametrize-names-wrong-type
   "PTH",
   "S108",
@@ -119,12 +121,6 @@ pythonpath = ["."]
 
 [tool.codespell]
 ignore-words-list = "nd,te,fpr,matris,titel"
-
-[tool.ty.rules]
-# heavy optional model deps (chgnet, mace, alignn, ...) aren't installable in the
-# pre-commit hook environment
-unresolved-import = "ignore"
-unused-ignore-comment = "ignore"
 
 [dependency-groups]
 dev = ["prek>=0.4.5", "ty>=0.0.56"]

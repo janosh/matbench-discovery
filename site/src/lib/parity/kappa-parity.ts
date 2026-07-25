@@ -7,9 +7,10 @@ import {
   parity_asset_resolver,
 } from '../asset-loader'
 import type { ParityBase, ParityModel, ParityPoint } from '../asset-loader'
-import { kappa_parity_manifest } from './kappa-parity-manifest'
+import kappa_parity_manifest_json from './kappa-parity-manifest.json'
 import { is_finite_num } from '../metrics'
 
+export const kappa_parity_manifest = kappa_parity_manifest_json
 // raw phonon DOS as stored in assets (histogram of mesh frequencies in THz)
 export interface RawDos {
   frequencies: number[]

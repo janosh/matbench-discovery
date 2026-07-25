@@ -30,6 +30,7 @@ from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from tqdm import tqdm
 
 from matbench_discovery import today
+from matbench_discovery.hpc import COST_PROVENANCE_KEYS
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
@@ -292,14 +293,10 @@ def run_info_path(traj_path: str) -> str:
     return f"{traj_path.removesuffix('.extxyz')}-run-info.json"
 
 
-# sidecar keys copied into per-system metric rows (the rest is audit-only provenance)
-RUN_INFO_METRIC_KEYS = ("run_time_sec", "max_rss_gb", "max_gpu_mem_gb", "hardware")
-
-
 def collect_run_info(rollout_sec: float) -> dict[str, object]:
     """Assemble a completed rollout's run-info sidecar contents.
 
-    Cost fields (RUN_INFO_METRIC_KEYS) flow into the per-system metric CSVs:
+    Cost fields (COST_PROVENANCE_KEYS) flow into the per-system metric CSVs:
     ``run_time_sec`` (wall time, accumulated across resumes by the caller),
     ``max_rss_gb`` (host RSS high-water mark since process start - exact per system in
     one-system-per-job cluster runs), ``max_gpu_mem_gb`` (peak CUDA memory since the
@@ -635,7 +632,7 @@ def run_md_benchmark(
     labeled reference file is provided, diagnostic energy/force RMSEs are computed from
     that file's hidden labels. Writes one gzipped per-system metrics CSV and returns
     the per-system DataFrame. Each row also carries ``n_atoms`` plus the rollout's cost
-    provenance (RUN_INFO_METRIC_KEYS: wall time, peak host/GPU memory, hardware) read
+    provenance (COST_PROVENANCE_KEYS: wall time, peak host/GPU memory, hardware) read
     from the trajectory's run-info sidecar, which survives metric-recompute jobs that
     reuse cached rollouts.
 
@@ -777,7 +774,7 @@ def run_md_benchmark(
         }
         if not dry_run:  # rollout cost provenance (absent for legacy trajectories)
             run_info = read_run_info(pred_traj_path)
-            for key in RUN_INFO_METRIC_KEYS:
+            for key in COST_PROVENANCE_KEYS:
                 if isinstance(value := run_info.get(key), str | int | float):
                     row[key] = value
         rows.append(row | system_metrics)
