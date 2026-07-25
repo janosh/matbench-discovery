@@ -121,6 +121,29 @@ def make_file_ref(
     return ref
 
 
+def merge_file_ref(
+    existing: object,
+    name: str,
+    *,
+    url: str | None = None,
+    replace: bool = False,
+) -> FileRef:
+    """Build an updated file ref, retaining metadata when its path is unchanged.
+
+    An explicit URL replaces the existing URL. Without one, the existing URL and
+    checksum pair survive only when ``name`` still identifies the same artifact.
+    ``replace=True`` deliberately drops all old metadata.
+    """
+    size = md5 = None
+    if not replace and file_ref_name(existing) == name:
+        url = url or file_ref_url(existing)
+        if isinstance(existing, dict):
+            existing_size, existing_md5 = existing.get("size"), existing.get("md5")
+            if isinstance(existing_size, int) and isinstance(existing_md5, str):
+                size, md5 = existing_size, existing_md5
+    return make_file_ref(name, url=url, size=size, md5=md5)
+
+
 def file_ref_name(ref: object) -> str | None:
     """Return the local path from a nested file reference."""
     name = ref.get("name") if isinstance(ref, dict) else None

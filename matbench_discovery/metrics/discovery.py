@@ -9,10 +9,8 @@ import pandas as pd
 from sklearn.metrics import r2_score
 
 from matbench_discovery import STABILITY_THRESHOLD
+from matbench_discovery.data import MAX_E_FORM_ERROR_THRESHOLD
 from matbench_discovery.enums import MbdKey, Model, TestSubset
-
-__author__ = "Janosh Riebesell"
-__date__ = "2023-02-01"
 
 
 def classify_stable(
@@ -227,6 +225,30 @@ def discovery_subset_indices(
         TestSubset.uniq_protos: uniq_proto_idx,
         TestSubset.most_stable_10k: most_stable_10k_idx,
     }
+
+
+def prepare_model_predictions(
+    df_reference: pd.DataFrame,
+    model_preds: pd.Series,
+    *,
+    max_error_threshold: float = MAX_E_FORM_ERROR_THRESHOLD,
+) -> tuple[pd.DataFrame, pd.Series, dict[TestSubset, pd.Index]]:
+    """Clean and align discovery predictions using the leaderboard convention.
+
+    Predictions more than ``max_error_threshold`` eV/atom from DFT are masked.
+    Reference columns and predictions are then rounded to three decimals before
+    deriving the canonical test-subset indices.
+    """
+    if max_error_threshold < 0:
+        raise ValueError(f"{max_error_threshold=} must be nonnegative")
+    predictions = pd.to_numeric(
+        model_preds.reindex(df_reference.index), errors="coerce"
+    )
+    bad_mask = abs(predictions - df_reference[MbdKey.e_form_dft]) > max_error_threshold
+    predictions = predictions.mask(bad_mask).round(3)
+    metric_reference = df_reference.round(3)
+    subset_indices = discovery_subset_indices(metric_reference, predictions)
+    return metric_reference, predictions, subset_indices
 
 
 def calc_discovery_metrics(

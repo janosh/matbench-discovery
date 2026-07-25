@@ -24,10 +24,11 @@ if __name__ == "__main__":
     for model in models:
         try:
             print(f"\nProcessing {model.label}...")
-            model_preds = df_preds[model.label]
-            subset_indices = discovery.discovery_subset_indices(df_preds, model_preds)
+            metric_reference, model_preds, subset_indices = (
+                discovery.prepare_model_predictions(df_preds, df_preds[model.label])
+            )
             metrics_by_subset = discovery.calc_discovery_metrics(
-                df_preds,
+                metric_reference,
                 model_preds,
                 subset_indices=subset_indices,
                 uniq_proto_prevalence=uniq_proto_prevalence,
@@ -35,7 +36,7 @@ if __name__ == "__main__":
             discovery.write_all_metrics_to_yaml(
                 model,
                 metrics_by_subset,
-                df_preds,
+                metric_reference,
                 model_preds,
                 subset_indices=subset_indices,
             )

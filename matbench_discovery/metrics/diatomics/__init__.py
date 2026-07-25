@@ -19,11 +19,11 @@ from matbench_discovery import repo_relative_path
 from matbench_discovery.data import (
     FileRef,
     file_ref_name,
-    file_ref_url,
-    make_file_ref,
+    merge_file_ref,
     update_yaml_file,
 )
 from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.hpc import COST_PROVENANCE_KEYS
 from matbench_discovery.metrics.diatomics.energy import (
     calc_energy_diff_flips,
     calc_energy_jump,
@@ -478,26 +478,18 @@ def write_metrics_to_yaml(
     run_metadata = run_metadata or {}
     block: dict[str, DiatomicsYamlValue] = {}
     existing_pred_file = existing.get("pred_file")
-    existing_name = file_ref_name(existing_pred_file)
-    pred_name = existing_name
+    pred_name = file_ref_name(existing_pred_file)
     if pred_file_path is not None:
         pred_name = repo_relative_path(pred_file_path)
-    pred_file_url = run_metadata.get("pred_file_url")
-    if pred_file_url is None and pred_name == existing_name:
-        pred_file_url = file_ref_url(existing_pred_file)
     if pred_name is not None:
-        url = pred_file_url if isinstance(pred_file_url, str) else None
-        size = md5 = None
-        if pred_name == existing_name and isinstance(existing_pred_file, dict):
-            size, md5 = existing_pred_file.get("size"), existing_pred_file.get("md5")
-            if not (isinstance(size, int) and isinstance(md5, str)):
-                size = md5 = None
-        block["pred_file"] = make_file_ref(pred_name, url=url, size=size, md5=md5)
+        pred_file_url = run_metadata.get("pred_file_url")
+        block["pred_file"] = merge_file_ref(
+            existing_pred_file,
+            pred_name,
+            url=pred_file_url if isinstance(pred_file_url, str) else None,
+        )
 
-    run_metadata_keys = (
-        *("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"),
-        "excluded_formula_reasons",
-    )
+    run_metadata_keys = (*COST_PROVENANCE_KEYS, "excluded_formula_reasons")
     for key in run_metadata_keys:
         if (val := run_metadata.get(key)) is None:
             val = existing.get(key)

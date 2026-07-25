@@ -30,7 +30,6 @@ Model dependency trees conflict, so each model resolves its own environment via
 
 import argparse
 import os
-import shlex
 
 from matbench_discovery import today
 from matbench_discovery.calculators import (
@@ -40,6 +39,7 @@ from matbench_discovery.calculators import (
 )
 from matbench_discovery.data import artifact_filename
 from matbench_discovery.md import run_md_benchmark
+from matbench_discovery.runner_cli import dependency_run_args, print_dependency_command
 
 module_dir = os.path.dirname(__file__)
 
@@ -103,15 +103,14 @@ def main() -> int:
         )
 
     if args.print_cmd:
-        run_args = ["--model", args.model]
-        if args.dry_run:
-            run_args.append("--dry-run")
-        if args.private_ref_file:
-            run_args.extend(["--private-ref-file", args.private_ref_file])
-        print(
-            shlex.join(
-                CALCULATORS[args.model].uv_run_cmd("models/run_md.py", *run_args)
-            )
+        run_args = dependency_run_args(
+            args,
+            args.model,
+            {"private-ref-file": args.private_ref_file},
+            ("dry-run",),
+        )
+        print_dependency_command(
+            CALCULATORS[args.model].uv_run_cmd("models/run_md.py", *run_args)
         )
         return 0
 

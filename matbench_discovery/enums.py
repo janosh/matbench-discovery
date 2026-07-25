@@ -467,53 +467,31 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
 
 class DataFiles(Files):
-    """Enum of data files with associated file directories and URLs."""
+    """Data-file registry whose paths and metadata come from ``data-files.yml``."""
 
-    mp_computed_structure_entries = (
-        auto(),
-        "mp/2023-02-07-mp-computed-structure-entries.json.gz",
-    )
-    mp_elemental_ref_entries = (
-        auto(),
-        "mp/2023-02-07-mp-elemental-reference-entries.json.gz",
-    )
-    # this file was originally generated on 2023-01-10, but was updated on 2025-02-01
-    # to include moyopy-powered symmetry analysis of MP ground state structures
-    mp_energies = auto(), "mp/2025-02-01-mp-energies.csv.gz"
-    mp_patched_phase_diagram = auto(), "mp/2023-02-07-ppd-mp.pkl.gz"
-    mp_trj_json_gz = auto(), "mp/2022-09-16-mp-trj.json.gz"
-    mp_trj_extxyz = auto(), "mp/2024-09-03-mp-trj.extxyz.zip"
-    # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
-    all_mp_tasks = auto(), "mp/2023-03-16-all-mp-tasks.zip"
+    def __new__(cls, val: str) -> Self:
+        """Create a registry member identified only by its stable YAML key."""
+        obj = str.__new__(cls, val)
+        obj._value_ = val
+        return obj
 
-    wbm_computed_structure_entries = (
-        auto(),
-        "wbm/2022-10-19-wbm-computed-structure-entries.jsonl.gz",
-    )
-    wbm_relaxed_atoms = auto(), "wbm/2024-08-04-wbm-relaxed-atoms.extxyz.zip"
-    wbm_initial_structures = auto(), "wbm/2022-10-19-wbm-init-structs.jsonl.gz"
-    wbm_initial_atoms = auto(), "wbm/2024-08-04-wbm-initial-atoms.extxyz.zip"
-    wbm_summary = auto(), "wbm/2023-12-13-wbm-summary.csv.gz"
-    phonondb_pbe_103_structures = (
-        auto(),
-        "phonons/2024-11-09-phononDB-PBE-103-structures.extxyz",
-    )
-    phonondb_pbe_103_kappa_no_nac = (
-        auto(),
-        "phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz",
-    )
-    wbm_dft_geo_opt_symprec_1e_2 = (
-        auto(),
-        "data/wbm/dft-geo-opt-symprec=1e-2-moyo=0.3.1.csv.gz",
-    )
-    wbm_dft_geo_opt_symprec_1e_5 = (
-        auto(),
-        "data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz",
-    )
-    dynamat_v1_0_md_trajectories = (
-        auto(),
-        "md/2026-06-29-dynamat-v1.0-reference-trajectories.h5",
-    )
+    all_mp_tasks = auto()
+    mp_computed_structure_entries = auto()
+    mp_elemental_ref_entries = auto()
+    mp_energies = auto()
+    mp_patched_phase_diagram = auto()
+    mp_trj_original = auto()
+    mp_trj_extxyz = auto()
+    wbm_computed_structure_entries = auto()
+    wbm_relaxed_atoms = auto()
+    wbm_initial_structures = auto()
+    wbm_initial_atoms = auto()
+    wbm_summary = auto()
+    phonondb_pbe_103_structures = auto()
+    phonondb_pbe_103_kappa_no_nac = auto()
+    wbm_dft_geo_opt_symprec_1e_2 = auto()
+    wbm_dft_geo_opt_symprec_1e_5 = auto()
+    dynamat_v1_0_md_trajectories = auto()
 
     @functools.cached_property
     def yaml(self) -> dict[str, dict[str, str]]:
@@ -547,14 +525,19 @@ class DataFiles(Files):
         return self.yaml[self.name]["description"]
 
     @property
+    def rel_path(self) -> str:
+        """Path from the canonical ``data-files.yml`` registry entry."""
+        rel_path = self.yaml[self.name].get("path")
+        if not isinstance(rel_path, str):
+            raise TypeError(f"{self.name!r} does not have a string path")
+        return rel_path
+
+    @property
     def path(self) -> str:
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
         key, rel_path = self.name, self.rel_path
-
-        if rel_path not in self.yaml[key]["path"]:
-            raise ValueError(f"{rel_path=} does not match {self.yaml[key]['path']}")
 
         abs_path = f"{type(self).base_dir}/{rel_path}"
         if not os.path.isfile(abs_path):
