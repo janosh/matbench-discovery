@@ -143,9 +143,17 @@ def test_corrected_model_factory_contracts() -> None:
         assert value == expected or str(value).endswith(expected)
     assert "orb-v3-conservative-inf-mpa" in Model.orb_v3.metadata["checkpoint_url"]
     assert {"md", "diatomics"}.isdisjoint(Model.orb_v3.metrics)
-    # TACE v1 pins torch 2.9.1 while AOTI export needs >=2.11, so it must stay eager
-    tace_v1_calc = CALCULATORS["tace_v1_oam_m"].make_calc
-    assert inspect.getclosurevars(tace_v1_calc).nonlocals["accelerate"] is False
+    # superseded TACE models pin torch 2.9.1 while AOTI export needs >=2.11, so they
+    # must stay eager, while the active ones opt into the OEQ/AOTI path
+    for model_key, expected_accelerate in {
+        "tace_v1_oam_m": False,
+        "tace_oam_rra_preview": False,
+        "tace_oam_l": True,
+        "tece_oam_rra_1_0": True,
+    }.items():
+        make_calc = CALCULATORS[model_key].make_calc
+        accelerate = inspect.getclosurevars(make_calc).nonlocals["accelerate"]
+        assert accelerate is expected_accelerate, model_key
 
 
 def test_alphanet_factory_honors_requested_dtype(

@@ -934,15 +934,16 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "equiformer_v3_oam": _named_spec(
             _fairchem, "equiformer_v3_oam", checkpoint=True, requires_checkpoint=True
         ),
-        # v1's env pins torch 2.9.1; TACE's AOTI export needs torch>=2.11, so it
-        # keeps the eager calculator its published metrics were measured with
+        # superseded TACE models stay eager: their envs pin torch 2.9.1, which predates
+        # the torch>=2.11 that AOTI export needs, and keeping that stack reproduces the
+        # metrics they were published with. Only active models move to OEQ/AOTI.
         "tace_v1_oam_m": _checkpoint_spec(
             "tace_v1_oam_m", _tace("tace_v1_oam_m", accelerate=False)
         ),
-        "tace_oam_l": _named_spec(_tace, "tace_oam_l", checkpoint=True),
-        "tace_oam_rra_preview": _named_spec(
-            _tace, "tace_oam_rra_preview", checkpoint=True
+        "tace_oam_rra_preview": _checkpoint_spec(
+            "tace_oam_rra_preview", _tace("tace_oam_rra_preview", accelerate=False)
         ),
+        "tace_oam_l": _named_spec(_tace, "tace_oam_l", checkpoint=True),
         "tece_oam_rra_1_0": _named_spec(_tace, "tece_oam_rra_1_0", checkpoint=True),
         "dpa_3_1_mptrj": _deepmd_spec("dpa_3_1_mptrj"),
         "dpa_3_1_3m_ft": _deepmd_spec("dpa_3_1_3m_ft"),
