@@ -12,6 +12,7 @@ import inspect
 import os
 import shutil
 import subprocess
+import sys
 import zipfile
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
+# generous: AOTInductor exports (TACE) compile every kernel ahead of time
 DERIVED_ARTIFACT_TIMEOUT_SEC = 30 * 60
 
 
@@ -157,8 +159,13 @@ def _run_to_atomic_output(
     *,
     source_paths: Sequence[str] = (),
     tool_packages: Sequence[str] = (),
+    env_overrides: "Mapping[str, str] | None" = None,
 ) -> None:
-    """Atomically cache output by command, source contents, and tool versions."""
+    """Atomically cache output by command, source contents, and tool versions.
+
+    env_overrides reach the child process only (never os.environ). They are not part
+    of the cache recipe, so callers must encode them in dest to keep variants apart.
+    """
     if command.count("{output}") != 1:
         raise ValueError("Atomic output command must contain one {output} placeholder")
     os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
@@ -202,7 +209,10 @@ def _run_to_atomic_output(
                 tmp_dest if argument == "{output}" else argument for argument in command
             ]
             subprocess.run(
-                rendered_command, check=True, timeout=DERIVED_ARTIFACT_TIMEOUT_SEC
+                rendered_command,
+                check=True,
+                timeout=DERIVED_ARTIFACT_TIMEOUT_SEC,
+                env={**os.environ, **env_overrides} if env_overrides else None,
             )
             if not _is_non_empty_file(tmp_dest):
                 command_text = " ".join(rendered_command)
@@ -589,35 +599,24 @@ def _deepmd_freeze(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _tace(model_key: str) -> Callable[..., "Calculator"]:
+def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., "Calculator"]:
     def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
-        import sys
-
+        import torch
         from tace.interface.ase import TACEAseCalc
 
         checkpoint = checkpoint or download_checkpoint(model_key)
-        if model_key == "tace_v1_oam_m":
+        torch_device = torch.device(device)
+        # OpenEquivariance kernels are CUDA-only, so CPU runs stay on the eager path
+        if not accelerate or torch_device.type != "cuda":
             return TACEAseCalc(checkpoint, device=device)
-
-        # Configure acceleration before loading the source checkpoint. The export
-        # subprocess inherits these variables, so its graph contains OEQ operators
-        # and uses TACE's compile-compatible model path.
-        os.environ["TACE_USE_OEQ"] = "1"
-        os.environ["TACE_USE_COMPILE"] = "1"
 
         # A user-supplied .pt2 is already deployable. Otherwise export from scratch.
         # Cache the package outside benchmark timing and rebuild it when the source
-        # or toolchain changes.
-        if checkpoint.endswith(".pt2"):
-            compiled = checkpoint
-        else:
-            import torch
-
-            torch_device = torch.device(device)
-            device_tag = torch_device.type
-            if torch_device.type == "cuda":
-                major, minor = torch.cuda.get_device_capability(torch_device)
-                device_tag = f"cuda-sm{major}{minor}"
+        # or toolchain changes. The exported graph is compute-capability specific.
+        compiled = checkpoint
+        if not checkpoint.endswith(".pt2"):
+            sm_major, sm_minor = torch.cuda.get_device_capability(torch_device)
+            device_tag = f"cuda-sm{sm_major}{sm_minor}"
             compiled = f"{CHECKPOINT_DIR}/{model_key}-{device_tag}-oeq-aoti.pt2"
             _run_to_atomic_output(
                 [
@@ -636,12 +635,13 @@ def _tace(model_key: str) -> Callable[..., "Calculator"]:
                 compiled,
                 source_paths=(checkpoint,),
                 tool_packages=("tace", "torch", "openequivariance"),
+                # the export script only reads acceleration flags from the env, while
+                # TACEAseCalc takes them as kwargs. Keep them out of our own process:
+                # TACE never unsets them, which would silently accelerate later calcs.
+                env_overrides={"TACE_USE_OEQ": "1", "TACE_USE_COMPILE": "1"},
             )
         return TACEAseCalc(
-            compiled,
-            device=device,
-            enable_oeq=True,
-            enable_compile=True,
+            compiled, device=device, enable_oeq=True, enable_compile=True
         )
 
     return make_calc
@@ -934,7 +934,11 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "equiformer_v3_oam": _named_spec(
             _fairchem, "equiformer_v3_oam", checkpoint=True, requires_checkpoint=True
         ),
-        "tace_v1_oam_m": _named_spec(_tace, "tace_v1_oam_m", checkpoint=True),
+        # v1's env pins torch 2.9.1; TACE's AOTI export needs torch>=2.11, so it
+        # keeps the eager calculator its published metrics were measured with
+        "tace_v1_oam_m": _checkpoint_spec(
+            "tace_v1_oam_m", _tace("tace_v1_oam_m", accelerate=False)
+        ),
         "tace_oam_l": _named_spec(_tace, "tace_oam_l", checkpoint=True),
         "tace_oam_rra_preview": _named_spec(
             _tace, "tace_oam_rra_preview", checkpoint=True

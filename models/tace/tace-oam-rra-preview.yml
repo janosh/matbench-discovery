@@ -45,9 +45,9 @@ license:
 environment:
   # Exact torch and OEQ versions are test pins, not TACE compatibility bounds.
   dependencies:
-  - tace @ git+https://github.com/xvzemin/tace
+  - tace @ git+https://github.com/xvzemin/tace@81f65a4c188bd09cec8d1419388f7afdcc1b6fd0
   - openequivariance==0.6.4
-  - torch==2.13
+  - torch==2.13.0
   python_version: '3.13'
 openness: OSOD
 architecture_types: [gnn]
@@ -102,8 +102,6 @@ metrics:
       url: https://figshare.com/files/66108713
       size: 221195
       md5: 5064467b273a7d51a1a09cc1dde89e3f
-    # hardware: NVIDIA H200
-    # run_time_sec: 4432.1
     pbe_wall_dist_mae: 0.4054
     pbe_energy_mae: 4.896
     pbe_bond_length_error: 0.6183

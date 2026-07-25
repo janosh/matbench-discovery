@@ -143,6 +143,9 @@ def test_corrected_model_factory_contracts() -> None:
         assert value == expected or str(value).endswith(expected)
     assert "orb-v3-conservative-inf-mpa" in Model.orb_v3.metadata["checkpoint_url"]
     assert {"md", "diatomics"}.isdisjoint(Model.orb_v3.metrics)
+    # TACE v1 pins torch 2.9.1 while AOTI export needs >=2.11, so it must stay eager
+    tace_v1_calc = CALCULATORS["tace_v1_oam_m"].make_calc
+    assert inspect.getclosurevars(tace_v1_calc).nonlocals["accelerate"] is False
 
 
 def test_alphanet_factory_honors_requested_dtype(
@@ -233,15 +236,17 @@ def test_pet_factory_casts_exported_model(
 def test_tace_factory_acceleration_paths(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """TACE use cached AOTI packages; v1 remains eager."""
-    calculator_calls: list[tuple[str, dict[str, object]]] = []
-    export_calls: list[tuple[list[str], str]] = []
+    """TACE exports a cached AOTI package on CUDA; v1 and CPU stay eager."""
+    calc_calls: list[tuple[str, dict[str, object]]] = []
+    export_calls: list[tuple[list[str], str, dict[str, str]]] = []
     ase_module = ModuleType("tace.interface.ase")
-    ase_module.__dict__["TACEAseCalc"] = lambda model, **kwargs: (
-        calculator_calls.append((model, kwargs))
+    ase_module.__dict__["TACEAseCalc"] = lambda model, **kwargs: calc_calls.append(
+        (model, kwargs)
     )
     torch_module = ModuleType("torch")
-    torch_module.__dict__["device"] = lambda _device: SimpleNamespace(type="cuda")
+    torch_module.__dict__["device"] = lambda device: SimpleNamespace(
+        type=device.split(":")[0]
+    )
     torch_module.__dict__["cuda"] = SimpleNamespace(
         get_device_capability=lambda _device: (8, 9)
     )
@@ -253,46 +258,46 @@ def test_tace_factory_acceleration_paths(
     }.items():
         monkeypatch.setitem(sys.modules, module_name, module)
 
-    monkeypatch.delenv("TACE_USE_OEQ", raising=False)
-    monkeypatch.delenv("TACE_USE_COMPILE", raising=False)
+    accel_flags = {"TACE_USE_OEQ": "1", "TACE_USE_COMPILE": "1"}
+    for flag in accel_flags:
+        monkeypatch.delenv(flag, raising=False)
     monkeypatch.setattr(calculators, "CHECKPOINT_DIR", str(tmp_path))
     monkeypatch.setattr(
         calculators,
         "_run_to_atomic_output",
-        lambda command, dest, **_kwargs: export_calls.append((command, dest)),
+        lambda command, dest, **kwargs: export_calls.append(
+            (list(command), dest, dict(kwargs["env_overrides"]))
+        ),
     )
-    checkpoint = tmp_path / "model.pt"
-    checkpoint.write_bytes(b"checkpoint")
+    checkpoint = str(tmp_path / "model.pt")
+    Path(checkpoint).write_bytes(b"checkpoint")
 
-    calculators._tace("tace_oam_l")(  # noqa: SLF001
-        "cuda", checkpoint=str(checkpoint)
-    )
+    calculators._tace("tace_oam_l")("cuda", checkpoint=checkpoint)  # noqa: SLF001
 
-    compiled = str(tmp_path / "tace_oam_l-cuda-sm89-oeq-aoti.pt2")
-    assert os.environ["TACE_USE_OEQ"] == "1"
-    assert os.environ["TACE_USE_COMPILE"] == "1"
-    assert calculator_calls == [
-        (
-            compiled,
-            {"device": "cuda", "enable_oeq": True, "enable_compile": True},
-        )
-    ]
-    command = export_calls[0][0]
+    compiled = f"{tmp_path}/tace_oam_l-cuda-sm89-oeq-aoti.pt2"
+    command, dest, env_overrides = export_calls[0]
     assert command[:3] == [sys.executable, "-m", "tace.scripts.export_eval"]
     assert command[-4:] == ["--backend", "aoti", "--device", "cuda"]
-    assert export_calls[0][1] == compiled
+    assert (dest, env_overrides) == (compiled, accel_flags)
+    # TACE never unsets these, so leaking them would accelerate later eager calcs
+    assert accel_flags.keys().isdisjoint(os.environ)
+    accelerated = {"device": "cuda", "enable_oeq": True, "enable_compile": True}
+    assert calc_calls == [(compiled, accelerated)]
 
-    packaged = tmp_path / "ready.pt2"
-    packaged.write_bytes(b"package")
-    calculators._tace("tace_oam_l")(  # noqa: SLF001
-        "cuda", checkpoint=str(packaged)
+    # a pre-compiled .pt2 and both eager paths (v1, CPU) skip the export
+    packaged = str(tmp_path / "ready.pt2")
+    Path(packaged).write_bytes(b"package")
+    calculators._tace("tace_oam_l")("cuda", checkpoint=packaged)  # noqa: SLF001
+    calculators._tace("tace_v1_oam_m", accelerate=False)(  # noqa: SLF001
+        "cuda", checkpoint=checkpoint
     )
-    calculators._tace("tace_v1_oam_m")(  # noqa: SLF001
-        "cuda", checkpoint=str(checkpoint)
-    )
+    calculators._tace("tace_oam_l")("cpu", checkpoint=checkpoint)  # noqa: SLF001
     assert len(export_calls) == 1
-    assert calculator_calls[-2][0] == str(packaged)
-    assert calculator_calls[-1] == (str(checkpoint), {"device": "cuda"})
+    assert calc_calls[1:] == [
+        (packaged, accelerated),
+        (checkpoint, {"device": "cuda"}),
+        (checkpoint, {"device": "cpu"}),
+    ]
 
 
 @pytest.mark.parametrize(
@@ -337,12 +342,20 @@ def test_atomic_command_output_recovers_after_timeout(
     """Timed-out compilers leave no accepted partial cache and can retry."""
     destination = tmp_path / "fresh" / "compiled.nequip.pth"
     n_calls = 0
+    seen_envs: list[dict[str, str] | None] = []
 
-    def run_stub(command: list[str], *, check: bool, timeout: float) -> None:
+    def run_stub(
+        command: list[str],
+        *,
+        check: bool,
+        timeout: float,
+        env: dict[str, str] | None,
+    ) -> None:
         """Write a partial first result and a complete retry result."""
         nonlocal n_calls
         assert check
         assert timeout == calculators.DERIVED_ARTIFACT_TIMEOUT_SEC
+        seen_envs.append(env)
         n_calls += 1
         output_path = next(argument for argument in command if ".tmp." in argument)
         Path(output_path).write_bytes(b"partial" if n_calls == 1 else b"complete")
@@ -398,6 +411,15 @@ def test_atomic_command_output_recovers_after_timeout(
             tool_packages=("compiler",),
         )
         assert n_calls == 4 + len(seen_tool_versions)
+
+    # env_overrides reach only the child process, merged over the inherited env
+    assert all(env is None for env in seen_envs)
+    source.write_bytes(b"version 3")
+    calculators._run_to_atomic_output(  # noqa: SLF001
+        command, str(destination), source_paths=(str(source),), env_overrides={"X": "1"}
+    )
+    assert seen_envs[-1] == {**os.environ, "X": "1"}
+    assert "X" not in os.environ
 
 
 def test_download_checkpoint_replaces_zero_byte_cache(
