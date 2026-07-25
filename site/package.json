@@ -14,7 +14,8 @@
     "test": "vp test --run",
     "check": "vp check",
     "lint": "vp lint",
-    "fmt": "vp fmt --write"
+    "fmt": "vp fmt --write",
+    "fetch:github-activity": "node --experimental-strip-types scripts/fetch-mlip-repos-github-activity.ts"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",
@@ -48,7 +49,7 @@
     "typescript": "6.0.3",
     "unified": "^11.0.5",
     "vite": "^8.1.5",
-    "vite-plus": "^0.2.4",
+    "vite-plus": "^0.2.5",
     "vitest": "^4.1.10"
   },
   "packageManager": "pnpm@11.9.0",

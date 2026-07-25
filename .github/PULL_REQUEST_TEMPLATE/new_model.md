@@ -8,10 +8,10 @@ Please open PRs as `draft` and only mark as `ready to review` after checking off
 
 - [ ] I created a new folder and YAML metadata file `models/<arch_name>/<model_variant>.yml` for my submission. `arch_name` is the name of the architecture and `model_variant.yml` includes things like author details, training set names and important hyperparameters.
 - [ ] I uploaded all applicable prediction files to Figshare or another cloud storage service:
-  - [ ] WBM energy/force/stress predictions (`<yyyy-mm-dd>-<model_variant>-preds.csv.gz`).
-  - [ ] Model-relaxed structures in [JSON Lines format](https://jsonlines.org) (`<yyyy-mm-dd>-wbm-IS2RE-FIRE.jsonl.gz`).
-  - [ ] Normalized 103-material phonon predictions (`<yyyy-mm-dd>-phonondb-kappa-103.json.gz`), with any force sets in a separate artifact.
-  - [ ] Molecular-dynamics predictions (`<yyyy-mm-dd>-<model_name>-md-metrics.csv.gz`).
+  - [ ] WBM discovery predictions (`<yyyy-mm-dd>-discovery.csv.gz`).
+  - [ ] Model-relaxed structures in [JSON Lines format](https://jsonlines.org) (`<yyyy-mm-dd>-geo-opt.jsonl.gz`).
+  - [ ] Normalized 103-material phonon predictions (`<yyyy-mm-dd>-phonons-kappa-103.json.gz`), with any force sets in a separate artifact.
+  - [ ] Molecular-dynamics predictions (`<yyyy-mm-dd>-md-metrics.csv.gz`).
   - [ ] Diatomic predictions (`<yyyy-mm-dd>-diatomics.json.gz`).
 - [ ] I included the urls to the Figshare files in the YAML metadata file (`models/<arch_name>/<model_variant>.yml`). If not using Figshare I have included the urls to the cloud storage service in the description of the PR.
 - [ ] I followed the [shared-runner requirements](https://github.com/janosh/matbench-discovery/blob/main/contributing.md) for calculator registration, kappa settings, and smoke tests.

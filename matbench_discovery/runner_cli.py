@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import glob
 import os
+import shlex
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -50,3 +51,20 @@ def dependency_run_args(
         f"--{flag}" for flag in flags if getattr(args, flag.replace("-", "_"))
     )
     return run_args
+
+
+def print_dependency_command(command: Sequence[str]) -> None:
+    """Print a dependency-isolated command with shell-safe quoting."""
+    print(shlex.join(command))
+
+
+def validate_sharded_write_args(
+    parser: argparse.ArgumentParser, args: argparse.Namespace
+) -> None:
+    """Reject write/merge/shard combinations shared by sharded runners."""
+    if args.write_yaml and not args.merge_shards:
+        parser.error("--write-yaml is only supported with --merge-shards")
+    if args.write_yaml and args.dry_run:
+        parser.error("--write-yaml is incompatible with --dry-run")
+    if args.merge_shards and args.shard_index is not None:
+        parser.error("--shard-index is incompatible with --merge-shards")

@@ -416,7 +416,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if checks.n_failed:
         print(
             "\n⚠️  Some checks failed. Please review the PR checklist:\n"
-            "   https://github.com/janosh/matbench-discovery/blob/main/.github/pull_request_template.md"
+            "   https://github.com/janosh/matbench-discovery/blob/main/"
+            ".github/PULL_REQUEST_TEMPLATE/new_model.md"
         )
         return 1
     print("\n✅ All required checks passed!")

@@ -335,7 +335,7 @@ describe(`fig-helpers payload styling`, () => {
 
     expect(styled.shared).toBe(1) // non-model shared fields are preserved
     const ordered_f1 = styled.models.map((mdl) => f1(mdl.key))
-    expect(ordered_f1).toEqual([...ordered_f1].sort((row_a, row_b) => row_b - row_a))
+    expect(ordered_f1).toEqual([...ordered_f1].toSorted((row_a, row_b) => row_b - row_a))
     for (const mdl of styled.models) {
       expect(mdl.color).toBe(MODELS.find((model) => model.model_key === mdl.key)?.color)
     }

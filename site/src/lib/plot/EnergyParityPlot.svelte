@@ -15,6 +15,7 @@
     EnergyParityPoint,
     StructurePopupPlacement,
   } from '$lib/parity/energy-parity'
+  import { ParityLoadController } from '$lib/parity/load-controller.svelte'
   import { get_error_message, type LoadStatus } from '$lib/asset-loader'
   import type { ModelData } from '$lib/types'
   import { compact_formula, format_num, sanitize_compact_formula } from 'matterviz'
@@ -84,9 +85,8 @@
       )
     })
 
-  let status = $state<LoadStatus>(`idle`)
-  $effect(() => onstatus?.(status))
-  let error_message = $state(``)
+  const load_controller = new ParityLoadController()
+  $effect(() => onstatus?.(load_controller.status))
   let base = $state<EnergyParityBase | undefined>()
   let parity_model = $state<EnergyParityModel | undefined>()
   let selected_point = $state<EnergyParityPoint | null>(null)
@@ -94,7 +94,6 @@
   let structure_error = $state(``)
   let structure_loading = $state(false)
   let plot_wrap = $state<HTMLElement>()
-  let load_id = 0
   // three.js stack (~MBs) loads only when a structure is first clicked, keeping it
   // out of every page's initial chunk graph
   let StructurePopup =
@@ -149,34 +148,25 @@
   })
 
   async function load_plot_data(model_key: string) {
-    const current_load_id = ++load_id
     if (base && parity_model?.model_key === model_key) {
-      status = `ready`
+      load_controller.set_ready()
       return
     }
 
-    status = `loading`
-    error_message = ``
     clear_selection()
-    try {
+    await load_controller.run(async (is_current) => {
       await wait_for_loading_paint()
-      if (current_load_id !== load_id) return
+      if (!is_current()) return
       const [base_asset, model_asset] = await Promise.all([
         load_energy_parity_base(),
         load_energy_parity_model(model_key),
       ])
-      if (current_load_id !== load_id) return
+      if (!is_current()) return
       base = base_asset
       parity_model = model_asset
       // Keep status=loading while the expensive derived series and plot DOM render.
       await tick()
-      if (current_load_id !== load_id) return
-      status = `ready`
-    } catch (error) {
-      if (current_load_id !== load_id) return
-      status = `error`
-      error_message = get_error_message(error)
-    }
+    })
   }
 
   $effect(() => {
@@ -279,7 +269,7 @@
   }
 
   $effect(() => {
-    if (status !== `ready` || !plot_wrap) return
+    if (load_controller.status !== `ready` || !plot_wrap) return
     // the colorbar mounts late and moves on zoom/resize (all via inline-style
     // updates), so watch mutations involving it instead of enumerating triggers.
     // Cheap filter keeps tooltip style churn from forcing layout on every mousemove.
@@ -312,9 +302,9 @@ title, so label the section for screen readers instead -->
   bind:this={plot_wrap}
   {...rest}
 >
-  {#if status === `error`}
+  {#if load_controller.status === `error`}
     <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
-      {error_message}
+      {load_controller.error_message}
     </p>
   {:else if !parity || parity_model?.model_key !== model.model_key}
     <div class="plot-state">

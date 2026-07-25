@@ -5,8 +5,8 @@ phononDB-PBE materials, plus per-material structures and phonon DOS (DFT and ML)
 for the click-to-inspect popups. These are compact derivatives (~57 KiB/model) of
 the full kappa prediction files (12-18 MB/model), which are too large to ship to
 the browser. Like the energy-parity assets, the generated .json.gz are uploaded to
-the GitHub release and downloaded in CI (see .github/workflows/gh-pages.yml); only
-manifest.json and the TS manifest are committed.
+the GitHub release and downloaded in CI (see .github/workflows/gh-pages.yml); only the
+JSON manifest is committed.
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     from matbench_discovery.enums import Model
 
 OUT_DIR: Final = "site/static/kappa-parity"
-MANIFEST_TS: Final = "site/src/lib/parity/kappa-parity-manifest.ts"
+MANIFEST_PATH: Final = "site/src/lib/parity/kappa-parity-manifest.json"
 ASSET_PREFIX: Final = "kappa-parity-phonondb-v1"
 LOCAL_ASSET_BASE_URL: Final = "/kappa-parity/assets"
 # round conductivities to 0.0001 W/mK and structure positions to 0.001 A
@@ -76,7 +76,7 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--out-dir", default=OUT_DIR)
-    parser.add_argument("--manifest-ts", default=MANIFEST_TS)
+    parser.add_argument("--manifest", default=MANIFEST_PATH)
     parser.add_argument("--asset-prefix", default=ASSET_PREFIX)
     parser.add_argument("--local-asset-base-url", default=LOCAL_ASSET_BASE_URL)
     return parser.parse_args()
@@ -200,7 +200,7 @@ def main() -> None:
     """Generate base (DFT) and per-model kappa parity assets plus manifests."""
     args = parse_args()
     out_dir = Path(args.out_dir)
-    manifest_ts = Path(args.manifest_ts)
+    manifest_path = Path(args.manifest)
     asset_dir = out_dir / "assets"
     models = resolve_models(args.models)
 
@@ -227,7 +227,6 @@ def main() -> None:
     # a full run (no --models) regenerates everything; a partial run keeps existing
     # model assets so submitting a single model doesn't wipe the others
     regenerate_all = not args.models
-    manifest_path = out_dir / "manifest.json"
     model_assets: dict[str, dict[str, str | int]] = {}
     if regenerate_all:
         for path in asset_dir.glob(f"{args.asset_prefix}-*.json.gz"):
@@ -283,13 +282,7 @@ def main() -> None:
         "base": base_meta,
         "model_assets": model_assets,
     }
-    write_manifest(
-        out_dir,
-        manifest_ts,
-        manifest,
-        export_name="kappa_parity_manifest",
-        generated_by="site/scripts/generate-kappa-parity-assets.py",
-    )
+    write_manifest(manifest_path, manifest)
 
 
 def _kappa_path(model: Model) -> str | None:

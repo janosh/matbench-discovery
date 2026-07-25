@@ -26,12 +26,36 @@ from matbench_discovery.metrics.discovery import (
     calc_discovery_metrics,
     classify_stable,
     discovery_subset_indices,
+    prepare_model_predictions,
     stable_metrics,
 )
 
 df_preds, df_each_pred, df_each_err = load_discovery_predictions()
 df_full_discovery_metrics = metrics_df_from_yaml(["discovery.full_test_set"])
 full_discovery_model_labels = set(df_full_discovery_metrics.index)
+
+
+def test_prepare_model_predictions_masks_rounds_and_aligns() -> None:
+    """Discovery preparation applies one canonical cleaning convention."""
+    material_ids = pd.Index(["wbm-1", "wbm-2"])
+    df_reference = pd.DataFrame(
+        {
+            MbdKey.e_form_dft: [0.0004, 0.0],
+            MbdKey.each_true: [0.1004, 0.2],
+            MbdKey.uniq_proto: [True, False],
+        },
+        index=material_ids,
+    )
+    model_preds = pd.Series([6.0, 0.1236], index=material_ids[::-1])
+
+    rounded_reference, cleaned_preds, subset_indices = prepare_model_predictions(
+        df_reference, model_preds
+    )
+
+    assert rounded_reference[MbdKey.each_true].tolist() == [0.1, 0.2]
+    assert cleaned_preds.loc["wbm-1"] == pytest.approx(0.124)
+    assert pd.isna(cleaned_preds.loc["wbm-2"])
+    assert subset_indices[TestSubset.full_test_set].equals(material_ids)
 
 
 @pytest.mark.parametrize(
