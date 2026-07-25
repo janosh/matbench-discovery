@@ -13,7 +13,7 @@ There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for f
 
 ## ✨ &thinsp; How to submit a new model
 
-To submit a new model to this benchmark and add it to our leaderboard, please create a [model-submission pull request][model-pr] to the [`main` branch][repo] that includes the 3 required items:
+To submit a new model to this benchmark and add it to our leaderboard, please create a model-submission pull request to the [`main` branch][repo] as described in [Step 4](#step-4-open-a-pr-to-the-matbench-discovery-repo). The PR must include the 3 required items:
 
 1. You should share your model's predictions through a cloud storage service (we recommend [Figshare](https://figshare.com)) and include the stable direct-download links in your model YAML. Each artifact lives directly under `models/<family>/<model_key>/` and follows the canonical filename grammar:
 
@@ -300,11 +300,27 @@ Upload the canonical prediction artifacts for each submitted task to [Figshare](
 
 ### Step 4: Open a PR to the [Matbench Discovery repo][repo]
 
-Commit your files to the repo on a branch called `<model_key>` and [create a model-submission pull request][model-pr] to the Matbench repository. The model checklist is loaded only through this link; regular pull requests start with a blank description.
+Commit and push your files on a branch called `<model_key>`:
 
 ```sh
 git add models/<family>/<model_key>.yml models/<family>/readme.md
 git commit -m 'add <model_key> to Matbench Discovery leaderboard'
+git push -u origin <model_key>
+```
+
+Then replace `YOUR_GITHUB_USER` and `MODEL_KEY` in this branch-specific URL. The
+explicit base and head branches ensure GitHub loads the model checklist:
+
+```text
+https://github.com/janosh/matbench-discovery/compare/main...YOUR_GITHUB_USER:MODEL_KEY?expand=1&template=new_model.md
+```
+
+Alternatively, use the GitHub CLI from the repository checkout:
+
+```sh
+gh pr create --repo janosh/matbench-discovery --base main \
+  --head YOUR_GITHUB_USER:MODEL_KEY --draft \
+  --template .github/PULL_REQUEST_TEMPLATE/new_model.md
 ```
 
 And you're done! Once tests pass, a maintainer triggers automated ingestion on your PR (see below) and after merge your model appears on the leaderboard and in all site figures! 🎉
@@ -356,5 +372,4 @@ Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic P
 
 Having problems? [Open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). We're happy to help! 😊
 
-[model-pr]: https://github.com/janosh/matbench-discovery/compare?expand=1&template=new_model.md
 [repo]: https://github.com/janosh/matbench-discovery
