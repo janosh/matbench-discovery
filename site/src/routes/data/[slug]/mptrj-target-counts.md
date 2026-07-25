@@ -4,7 +4,7 @@
 
 ## Target Distributions
 
-The MPtrj dataset [available on figshare]({data_files.mp_trj_json_gz.figshare}) contains
+The MPtrj dataset [available on figshare]({data_files.mp_trj_original.figshare}) contains
 
 - 1,580,395 structures
 - 1,580,395 energies

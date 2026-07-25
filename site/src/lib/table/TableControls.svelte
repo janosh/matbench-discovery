@@ -204,7 +204,7 @@
       Presets
     </summary>
     <div class="dropdown">
-      {#each Object.entries( { ...BUILTIN_PRESETS, ...user_presets }, ) as [name, preset] (name)}
+      {#each Object.entries( { ...BUILTIN_PRESETS, ...user_presets } ) as [name, preset] (name)}
         <span class="filter-row">
           <button
             class="preset"

@@ -3,6 +3,7 @@ import {
   build_kappa_parity_series,
   get_kappa_parity_point,
   has_kappa_parity_model,
+  kappa_parity_manifest,
   kappa_model_asset,
   kappa_parity_asset_url,
   kappa_structure,
@@ -11,7 +12,6 @@ import {
 } from '$lib/parity/kappa-parity'
 import type { KappaParityBase, KappaParityModel } from '$lib/parity/kappa-parity'
 import { clear_asset_cache } from '$lib/asset-loader'
-import { kappa_parity_manifest } from '$lib/parity/kappa-parity-manifest'
 import type { AnyStructure } from 'matterviz/structure'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gzipped_json_response, request_url } from '../index'

@@ -27,7 +27,7 @@ describe(`Data Page`, () => {
       `mp_elemental_ref_entries`,
       `mp_energies`,
       `mp_patched_phase_diagram`,
-      `mp_trj_json_gz`,
+      `mp_trj_original`,
       `mp_trj_extxyz`,
       `wbm_computed_structure_entries`,
       `wbm_relaxed_atoms`,

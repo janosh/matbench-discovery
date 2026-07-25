@@ -11,6 +11,15 @@ from matbench_discovery.calculators import CALCULATORS
 from tests.utils import import_repo_script
 
 RUN_MD = import_repo_script("run_md", "models/run_md.py")
+DEFAULT_MD_OPTIONS = shlex.split(
+    "--n-steps 80000 --time-step-fs 0.25 --record-interval 10 --seed 0 --dtype float64"
+)
+CUSTOM_MD_OPTIONS = shlex.split(
+    "--out-dir /tmp/md-out --ref-file /tmp/ref.h5 "
+    "--private-ref-file /tmp/private-ref.h5 --n-steps 123 --time-step-fs 0.5 "
+    "--record-interval 4 --seed 7 --dtype float32 --dry-run --systems bulkAu bulkCu"
+)
+WRITE_MD_OPTIONS = [*DEFAULT_MD_OPTIONS, "--write-yaml"]
 
 
 def test_run_md_cli_write_yaml_skips_non_submission_model(
@@ -46,9 +55,15 @@ def test_run_md_cli_write_yaml_skips_non_submission_model(
             None,
         ),
         (
-            ["run_md", "--print-cmd", "--model", "mace-mp-0"],
+            ["run_md", "--print-cmd", "--model", "mace-mp-0", *CUSTOM_MD_OPTIONS],
             CALCULATORS["mace_mp_0"].uv_run_cmd(
-                "models/run_md.py", "--model", "mace_mp_0"
+                "models/run_md.py", "--model", "mace_mp_0", *CUSTOM_MD_OPTIONS
+            ),
+        ),
+        (
+            ["run_md", "--print-cmd", "--model", "mace-mp-0", *WRITE_MD_OPTIONS],
+            CALCULATORS["mace_mp_0"].uv_run_cmd(
+                "models/run_md.py", "--model", "mace_mp_0", *WRITE_MD_OPTIONS
             ),
         ),
     ],

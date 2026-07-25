@@ -25,8 +25,9 @@ import pandas as pd
 from pymatviz.enums import Key
 from scipy.stats import wasserstein_distance
 
-from matbench_discovery.data import file_ref_name, make_file_ref
+from matbench_discovery.data import file_ref_name, make_file_ref, merge_file_ref
 from matbench_discovery.enums import DataFiles, MbdKey, Model
+from matbench_discovery.hpc import COST_PROVENANCE_KEYS
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
 KAPPA_ERROR_MAX = 2.0
@@ -532,18 +533,11 @@ def write_metrics_to_yaml(
         run_pred_url = run_metadata.get("pred_file_url") if run_metadata else None
         pred_file_url = run_pred_url if isinstance(run_pred_url, str) else None
         if replace_pred_file or existing_pred_name is None or pred_file_url is not None:
-            size = md5 = None
-            if (
-                not replace_pred_file
-                and existing_pred_name == pred_file_path
-                and isinstance(existing_pred_file, dict)
-            ):
-                existing_size = existing_pred_file.get("size")
-                existing_md5 = existing_pred_file.get("md5")
-                if isinstance(existing_size, int) and isinstance(existing_md5, str):
-                    size, md5 = existing_size, existing_md5
-            kappa_103["pred_file"] = make_file_ref(
-                pred_file_path, url=pred_file_url, size=size, md5=md5
+            kappa_103["pred_file"] = merge_file_ref(
+                existing_pred_file,
+                pred_file_path,
+                url=pred_file_url,
+                replace=replace_pred_file,
             )
         for artifact_key, artifact_path in (
             ("force_file", force_file_path),
@@ -558,7 +552,7 @@ def write_metrics_to_yaml(
                     kappa_103[artifact_key] = make_file_ref(relative_path)
             elif replace_pred_file:
                 kappa_103.pop(artifact_key, None)
-        for key in ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"):
+        for key in COST_PROVENANCE_KEYS:
             if run_metadata is not None and key in run_metadata:
                 kappa_103[key] = run_metadata[key]
             elif replace_pred_file:

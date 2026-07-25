@@ -19,6 +19,22 @@ export const CPS_CONFIG: CpsConfig = $state(structuredClone(DEFAULT_CPS_CONFIG))
 const is_valid_score = (value: number | undefined, max = Infinity): value is number =>
   value !== undefined && Number.isFinite(value) && value >= 0 && value <= max
 
+type WeightedTerm = { weight: number; value: number | null }
+
+// Weighted mean shared by CPS, CMDS and CDS. Missing values invalidate only terms
+// whose weight is non-zero; an all-zero weight vector has no defined score.
+const weighted_mean = (terms: WeightedTerm[]): number | null => {
+  let weighted_sum = 0
+  let total_weight = 0
+  for (const { weight, value } of terms) {
+    total_weight += weight
+    if (weight === 0) continue
+    if (value === null || !Number.isFinite(value)) return null
+    weighted_sum += value * weight
+  }
+  return total_weight === 0 ? null : weighted_sum / total_weight
+}
+
 // F1 score is between 0-1 where higher is better (no normalization needed)
 const normalize_f1 = (value: number | undefined): number =>
   is_valid_score(value, 1) ? value : 0
@@ -42,27 +58,14 @@ export function calculate_cps(
   cps_config: CpsConfig, // Weights for each metric
 ): number | null {
   const { F1, RMSD, κ_SRME } = cps_config
-
-  // Any metric with non-zero weight must be present, else the score is undefined
-  if (
-    (F1.weight > 0 && !is_valid_score(f1, 1)) ||
-    (RMSD.weight > 0 && !is_valid_score(rmsd)) ||
-    (κ_SRME.weight > 0 && !is_valid_score(kappa, 2))
-  )
-    return null
-
-  // all-zero weights leave the score undefined rather than tying every model at 0
-  // (matches calculate_cmds; unreachable via UI, which rejects all-zero weights)
-  const total_weight = F1.weight + RMSD.weight + κ_SRME.weight
-  if (total_weight === 0) return null
-
-  // zero-weight metrics contribute 0 regardless of value (normalizers map undefined to 0)
-  const weighted_sum =
-    normalize_f1(f1) * F1.weight +
-    normalize_rmsd(rmsd) * RMSD.weight +
-    normalize_kappa_srme(kappa) * κ_SRME.weight
-
-  return weighted_sum / total_weight
+  return weighted_mean([
+    { weight: F1.weight, value: is_valid_score(f1, 1) ? normalize_f1(f1) : null },
+    { weight: RMSD.weight, value: is_valid_score(rmsd) ? normalize_rmsd(rmsd) : null },
+    {
+      weight: κ_SRME.weight,
+      value: is_valid_score(kappa, 2) ? normalize_kappa_srme(kappa) : null,
+    },
+  ])
 }
 
 // Combined MD score (CMDS): like CPS/CDS, computed on the fly from the stored
@@ -118,23 +121,23 @@ export function calculate_cmds(
   values: Partial<Record<keyof CmdsConfig, number>>,
   cmds_config: CmdsConfig,
 ): number | null {
-  let weighted_sum = 0
-  let total_weight = 0
+  const terms: WeightedTerm[] = []
   for (const key of Object.keys(cmds_config) as (keyof CmdsConfig)[]) {
     const { weight } = cmds_config[key]
-    total_weight += weight
-    if (weight === 0) continue
     const value = values[key]
     // any missing/invalid component with non-zero weight invalidates the score
-    if (typeof value !== `number` || !isFinite(value)) return null
+    if (typeof value !== `number` || !Number.isFinite(value)) {
+      terms.push({ weight, value: null })
+      continue
+    }
     if (key === `run_time_sec`) {
-      if (value <= 0) return null // log scale needs a positive wall time
-      weighted_sum += subscore(CMDS_SPEED, value) * weight
-    } else weighted_sum += Math.max(0, 1 - value / 100) * weight
+      terms.push({
+        weight,
+        value: value > 0 ? subscore(CMDS_SPEED, value) : null,
+      })
+    } else terms.push({ weight, value: Math.max(0, 1 - value / 100) })
   }
-  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
-  if (total_weight === 0) return null
-  return weighted_sum / total_weight
+  return weighted_mean(terms)
 }
 
 // Recompute a task's on-the-fly combined_score into every model's
@@ -250,26 +253,30 @@ export const CDS_CONFIG: CdsConfig = $state(structuredClone(DEFAULT_CDS_CONFIG))
 // the model completed. Any missing/NaN component in a non-zero-weight pillar invalidates
 // the score (matches calculate_cps/calculate_cmds).
 export function calculate_cds(values: CdsValues, cds_config: CdsConfig): number | null {
-  let weighted_sum = 0
-  let total_weight = 0
+  const terms: WeightedTerm[] = []
   for (const pillar of Object.keys(cds_config) as CdsPillar[]) {
     const { weight } = cds_config[pillar]
-    total_weight += weight
-    if (weight === 0) continue
     let pillar_score = 0
+    let valid = true
     for (const component of CDS_COMPONENTS[pillar]) {
       const value = values[component.key]
-      if (typeof value !== `number` || !isFinite(value) || (component.log && value <= 0))
-        return null
+      if (
+        typeof value !== `number` ||
+        !Number.isFinite(value) ||
+        (component.log && value <= 0)
+      ) {
+        valid = false
+        break
+      }
       pillar_score += subscore(component, value) * component.weight
     }
-    weighted_sum += pillar_score * weight
+    terms.push({ weight, value: valid ? pillar_score : null })
   }
-  // all-zero weights leave the score undefined, not 0 (which would rank as worst)
-  if (total_weight === 0) return null
+  const score = weighted_mean(terms)
+  if (score === null) return null
   const n_excluded = Object.keys(values.excluded_formula_reasons ?? {}).length
   const coverage = Math.max(0, 1 - n_excluded / N_SCORED_DIATOMIC_ELEMENTS)
-  return (weighted_sum / total_weight) * coverage
+  return score * coverage
 }
 
 export const update_models_cds = (models: ModelData[], config: CdsConfig) =>

@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import shlex
 from typing import TYPE_CHECKING
 
 from matbench_discovery import today
@@ -46,7 +45,12 @@ from matbench_discovery.phonons.pipeline import (
     run_kappa_shard,
     write_kappa_artifacts,
 )
-from matbench_discovery.runner_cli import dependency_run_args, resolve_sharded_prefix
+from matbench_discovery.runner_cli import (
+    dependency_run_args,
+    print_dependency_command,
+    resolve_sharded_prefix,
+    validate_sharded_write_args,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -226,12 +230,7 @@ def validate_cli_args(
     parser: argparse.ArgumentParser, args: argparse.Namespace
 ) -> None:
     """Reject incompatible runner modes before loading model dependencies."""
-    if args.write_yaml and not args.merge_shards:
-        parser.error("--write-yaml is only supported with --merge-shards")
-    if args.write_yaml and args.dry_run:
-        parser.error("--write-yaml is incompatible with --dry-run")
-    if args.merge_shards and args.shard_index is not None:
-        parser.error("--shard-index is incompatible with --merge-shards")
+    validate_sharded_write_args(parser, args)
     if args.merge_shards and args.retry_failures:
         parser.error("--retry-failures is incompatible with --merge-shards")
     if args.dry_run_size < 1:
@@ -278,7 +277,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         command = CALCULATORS[model_key].uv_run_cmd(
             "models/run_kappa.py", *print_cmd_args(args, model_key)
         )
-        print(shlex.join(command))
+        print_dependency_command(command)
         return 0
 
     out_dir = args.out_dir or os.path.splitext(model.yaml_path)[0]

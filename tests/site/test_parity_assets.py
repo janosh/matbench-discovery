@@ -32,7 +32,9 @@ INGEST_HINT = (
 
 def parity_manifest(kind: str) -> dict[str, Any]:
     """Load the committed energy or kappa parity asset manifest."""
-    with open(f"{ROOT}/site/static/{kind}-parity/manifest.json") as file:
+    with open(
+        f"{ROOT}/site/src/lib/parity/{kind}-parity-manifest.json", encoding="utf-8"
+    ) as file:
         return json.load(file)
 
 

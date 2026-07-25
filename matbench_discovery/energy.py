@@ -32,27 +32,38 @@ def get_elemental_ref_entries(
     Returns:
         dict[str, Entry]: Map from element symbol to its lowest energy entry.
     """
-    entries = [
+    normalized_entries: list[Entry] = [
         PDEntry.from_dict(cast("dict[str, Any]", entry))
         if isinstance(entry, dict)
-        else entry
+        else cast("Entry", entry)
         for entry in entries
     ]
-    elements = {elems for entry in entries for elems in entry.composition.elements}
+    elements = {
+        element
+        for entry in normalized_entries
+        for element in entry.composition.elements
+    }
     dim = len(elements)
 
     if verbose:
-        print(f"Sorting {len(entries)} entries with {dim} dimensions...", flush=True)
+        print(
+            f"Sorting {len(normalized_entries)} entries with {dim} dimensions...",
+            flush=True,
+        )
 
-    entries = sorted(entries, key=lambda e: e.composition.reduced_composition)
+    sorted_entries = sorted(
+        normalized_entries, key=lambda entry: entry.composition.reduced_composition
+    )
 
     elemental_ref_entries = {}
     for composition, entry_group in tqdm(
-        itertools.groupby(entries, key=lambda e: e.composition.reduced_composition),
+        itertools.groupby(
+            sorted_entries, key=lambda entry: entry.composition.reduced_composition
+        ),
         disable=not verbose,
         desc="Finding elemental reference entries",
     ):
-        min_entry = min(entry_group, key=lambda e: e.energy_per_atom)
+        min_entry = min(entry_group, key=lambda entry: entry.energy_per_atom)
         if composition.is_element:
             elem_symb = str(composition.elements[0])
             elemental_ref_entries[elem_symb] = min_entry

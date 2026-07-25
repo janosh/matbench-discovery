@@ -1,7 +1,7 @@
 all_mp_tasks:
   url: https://figshare.com/files/43350447
   path: mp/2023-03-16-all-mp-tasks.json.gz
-  description: Complete copy of the Materials Project database on 2023-03-16 (14 GB) (release [v2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28))
+  description: Complete copy of the Materials Project database on 2023-03-16 (14 GB), exported through now-retired direct database access and preserved on Figshare (release [v2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28)).
   md5: e301824b358fb5cecfb5e1f769f025dd
 
 mp_computed_structure_entries:
@@ -28,7 +28,7 @@ mp_patched_phase_diagram:
   description: '[`PatchedPhaseDiagram`] constructed from all MP `pymatgen` `ComputedStructureEntries`'
   md5: 60d19d691fa1d338aa496a40a9641bef
 
-mp_trj_json_gz:
+mp_trj_original:
   title: Materials Project Trajectory (MPtrj) Dataset
   url: https://figshare.com/files/43302033
   figshare: https://figshare.com/articles/dataset/23713842

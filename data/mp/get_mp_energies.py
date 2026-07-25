@@ -30,9 +30,6 @@ from matbench_discovery import STABILITY_THRESHOLD, today
 from matbench_discovery.data import DataFiles
 from matbench_discovery.structure import prototype
 
-__author__ = "Janosh Riebesell"
-__date__ = "2023-01-10"
-
 module_dir = os.path.dirname(__file__)
 potcar_spec_key = "potcar_spec"
 fields = {

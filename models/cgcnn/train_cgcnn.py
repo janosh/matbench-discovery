@@ -36,9 +36,6 @@ from matbench_discovery import timestamp, today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.hpc import slurm_submit
 
-__author__ = "Janosh Riebesell"
-__date__ = "2022-06-13"
-
 np_rng = np.random.default_rng(seed=0)  # ensure reproducible structure perturbations
 
 
