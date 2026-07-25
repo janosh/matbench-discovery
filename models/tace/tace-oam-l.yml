@@ -207,21 +207,20 @@ metrics:
         md5: 41799783e40720c96e191d8921bbc432
   md:
     pred_file:
-      name: models/tace/tace-oam-l/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048938
-      size: 1583
-      md5: f08d7b7ed68e032e925b6982d3e4b683
+      name: models/tace/tace-oam-l/2026-07-25-md-metrics.csv.gz
     hardware: NVIDIA H200
-    run_time_sec: 199194.77
+    run_time_sec: 33626.25 # s
     energy_rmse: 0.5479
     force_rmse: 60.1476
-    rdf_error: 3.4228
-    adf_error: 1.3286
-    vdos_error: 22.4849
-    pressure_mae: 0.7461
-    pressure_wasserstein: 0.7541
-    pressure_error: 42.6072
-    n_systems: 17
+    max_rss_gb: 2.753 # GB
+    max_gpu_mem_gb: 4.391 # GB
+    rdf_error: 3.4301 # %
+    adf_error: 1.376 # %
+    vdos_error: 22.2472 # %
+    pressure_mae: 0.7434 # GPa
+    pressure_wasserstein: 0.7531 # GPa
+    pressure_error: 42.4932 # %
+    n_systems: 17 # count
   phonons:
     kappa_103:
       pred_file:
