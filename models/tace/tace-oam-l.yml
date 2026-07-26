@@ -97,12 +97,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/tace/tace-oam-l/2026-06-29-diatomics.json.gz
-      url: https://figshare.com/files/66104666
-      size: 223996
-      md5: f1f24220e1e26ea1b58ea30b0e145dca
+      name: models/tace/tace-oam-l/2026-07-25-diatomics.json.gz
     hardware: NVIDIA H200
-    run_time_sec: 1300.3
+    run_time_sec: 771.62
+    max_rss_gb: 2.007
+    max_gpu_mem_gb: 0.048
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.1119
     pbe_energy_mae: 0.9634
     pbe_bond_length_error: 0.2021
