@@ -98,6 +98,9 @@ metrics:
   diatomics:
     pred_file:
       name: models/tace/tace-oam-l/2026-07-25-diatomics.json.gz
+      url: https://figshare.com/files/66987014
+      size: 230378
+      md5: 7b6e333b95fcaf75ea1291c67adaf4a4
     hardware: NVIDIA H200
     run_time_sec: 771.62
     max_rss_gb: 2.007
@@ -207,13 +210,16 @@ metrics:
         md5: 41799783e40720c96e191d8921bbc432
   md:
     pred_file:
-      name: models/tace/tace-oam-l/2026-07-25-md-metrics.csv.gz
+      name: models/tace/tace-oam-l/2026-07-26-md-metrics.csv.gz
+      url: https://figshare.com/files/66987020
+      size: 1856
+      md5: 7fcefe95986dc13f0c1e3b1cbf079717
     hardware: NVIDIA H200
     run_time_sec: 33626.25 # s
-    energy_rmse: 0.5479
-    force_rmse: 60.1476
     max_rss_gb: 2.753 # GB
     max_gpu_mem_gb: 4.391 # GB
+    energy_rmse: 0.5479 # meV/atom
+    force_rmse: 60.1476 # meV/Å
     rdf_error: 3.4301 # %
     adf_error: 1.376 # %
     vdos_error: 22.2472 # %
