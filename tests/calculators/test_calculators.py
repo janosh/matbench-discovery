@@ -252,9 +252,6 @@ def test_tace_factory_acceleration_paths(
         (model, kwargs)
     )
     torch_module = ModuleType("torch")
-    torch_module.__dict__["device"] = lambda device: SimpleNamespace(
-        type=device.split(":")[0]
-    )
     torch_module.__dict__["cuda"] = SimpleNamespace(
         get_device_capability=lambda _device: (8, 9)
     )

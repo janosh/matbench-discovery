@@ -601,13 +601,11 @@ def _deepmd_freeze(model_key: str) -> Callable[..., "Calculator"]:
 
 def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., "Calculator"]:
     def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
-        import torch
         from tace.interface.ase import TACEAseCalc
 
         checkpoint = checkpoint or download_checkpoint(model_key)
-        torch_device = torch.device(device)
         # OpenEquivariance kernels are CUDA-only, so CPU runs stay on the eager path
-        if not accelerate or torch_device.type != "cuda":
+        if not accelerate or not device.startswith("cuda"):
             return TACEAseCalc(checkpoint, device=device)
 
         # A user-supplied .pt2 is already deployable. Otherwise export from scratch.
@@ -615,9 +613,10 @@ def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., "Calculat
         # or toolchain changes. The exported graph is compute-capability specific.
         compiled = checkpoint
         if not checkpoint.endswith(".pt2"):
-            sm_major, sm_minor = torch.cuda.get_device_capability(torch_device)
-            device_tag = f"cuda-sm{sm_major}{sm_minor}"
-            compiled = f"{CHECKPOINT_DIR}/{model_key}-{device_tag}-oeq-aoti.pt2"
+            import torch
+
+            arch = "".join(map(str, torch.cuda.get_device_capability(device)))
+            compiled = f"{CHECKPOINT_DIR}/{model_key}-cuda-sm{arch}-oeq-aoti.pt2"
             _run_to_atomic_output(
                 [
                     sys.executable,
@@ -934,9 +933,8 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "equiformer_v3_oam": _named_spec(
             _fairchem, "equiformer_v3_oam", checkpoint=True, requires_checkpoint=True
         ),
-        # superseded TACE models stay eager: their envs pin torch 2.9.1, which predates
-        # the torch>=2.11 that AOTI export needs, and keeping that stack reproduces the
-        # metrics they were published with. Only active models move to OEQ/AOTI.
+        # superseded TACE models keep the eager stack their metrics were published
+        # with: their torch 2.9.1 pins predate the torch>=2.11 AOTI export needs
         "tace_v1_oam_m": _checkpoint_spec(
             "tace_v1_oam_m", _tace("tace_v1_oam_m", accelerate=False)
         ),
