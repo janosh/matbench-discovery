@@ -40,7 +40,7 @@ from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
 round_trip_yaml.preserve_quotes = True
 round_trip_yaml.width = 1000  # avoid changing line wrapping
-round_trip_yaml.indent(mapping=2, sequence=4, offset=2)
+round_trip_yaml.indent(mapping=2, sequence=2, offset=0)
 
 ISO_DATE_PATTERN: Final = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MOYO_VERSION_PATTERN: Final = re.compile(
