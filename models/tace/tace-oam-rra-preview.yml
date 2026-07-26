@@ -31,8 +31,8 @@ trained_by:
 
 repo: https://github.com/xvzemin/tace
 doi: https://doi.org/10.57967/hf/7458
-paper: https://arxiv.org/abs/2509.14961
-docs: https://github.com/xvzemin/tace
+paper: https://arxiv.org/abs/2607.10664
+docs: https://tace.readthedocs.io/en/latest/index.html
 pr_url: https://github.com/janosh/matbench-discovery/pull/353
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TACE-OAM-RRA-Preview.pt
 license:
@@ -43,6 +43,8 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
+  # superseded by TECE-OAM-RRA-1.0, so this stays on the eager stack its published
+  # metrics were measured with rather than moving to the OEQ/AOTI pins
   dependencies:
   - tace @ git+https://github.com/xvzemin/tace@c669bee71c2f157dce80d80e8a8f0a08ddfc124c
   - torch==2.9.1
@@ -59,8 +61,8 @@ model_params: 213690158
 training_cost:
   entries:
   - hardware: NVIDIA H20
-    count: 8
-    hours_per_device: 330.0
+    count: 32
+    hours_per_device: 82
 hyperparams:
   evaluation:
     max_force: 0.02

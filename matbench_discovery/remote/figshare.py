@@ -4,6 +4,7 @@ import difflib
 import hashlib
 import json
 import os
+import time
 from collections.abc import Mapping, Sequence
 from typing import Any, Final
 
@@ -80,13 +81,13 @@ def make_request(
     )
     try:
         response.raise_for_status()
-        try:
-            return json.loads(response.content)
-        except ValueError:
-            return response.content
     except requests.HTTPError as exc:
         exc.add_note(f"body={response.content.decode()}")
         raise
+    try:
+        return json.loads(response.content)
+    except ValueError:
+        return response.content
 
 
 def create_article(
@@ -121,7 +122,7 @@ def get_file_hash_and_size(
     Returns:
         tuple[str, int]: MD5 hash and file size in bytes.
     """
-    md5 = hashlib.md5()  # noqa: S324
+    md5 = hashlib.md5(usedforsecurity=False)
     size = 0
     with open(file_name, mode="rb") as file:
         while data := file.read(chunk_size):
@@ -180,11 +181,33 @@ def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
             chunk = file.read(chunk_len)
             make_request("PUT", part_url, data=chunk, binary=True)
             pbar.update(len(chunk))
-            pbar.set_postfix_str(f"{pbar.n / 1024**2:.2f}/{size / 1024**2:.2f} MB")
 
     # Complete upload
     make_request("POST", f"{endpoint}/{file_info['id']}")
+    verify_upload(article_id, file_info["id"], md5)
     return file_info["id"]
+
+
+def verify_upload(
+    article_id: int, file_id: int, expected_md5: str, *, attempts: int = 5
+) -> None:
+    """Raise unless Figshare's own checksum matches the local file.
+
+    Completing a multipart upload does not confirm what landed, so without this a
+    corrupted part would silently publish a model card pointing at a broken download.
+    Figshare hashes asynchronously, hence the short backoff before giving up.
+    """
+    endpoint = f"{BASE_URL}/account/articles/{article_id}/files/{file_id}"
+    for attempt in range(attempts):
+        if remote_md5 := make_request("GET", endpoint).get("computed_md5"):
+            if remote_md5 != expected_md5:
+                raise ValueError(
+                    f"Figshare stored {remote_md5=} for {file_id=}, expected "
+                    f"{expected_md5}; the upload was corrupted"
+                )
+            return
+        time.sleep(2**attempt)
+    raise ValueError(f"Figshare reported no checksum for {file_id=} after {attempts=}")
 
 
 def article_exists(article_id: int | str) -> bool:
@@ -368,11 +391,11 @@ def delete_file(article_id: int, file_id: int) -> bool:
     url = f"{BASE_URL}/account/articles/{article_id}/files/{file_id}"
     try:
         make_request("DELETE", url)  # should return None
-        print(f"Successfully deleted file with ID {file_id} from article {article_id}")
-        return True  # noqa: TRY300
     except requests.RequestException as exc:
         print(f"Failed to delete file with ID {file_id}: {exc}")
         return False
+    print(f"Successfully deleted file with ID {file_id} from article {article_id}")
+    return True
 
 
 def upload_file_if_needed(
