@@ -58,6 +58,9 @@ environment:
   dependencies:
   - bam-torch @ git+https://github.com/myung-group/BAM-torch@3c477f59fd4dae20e66aefc712b01e1964755992
   - torch>=2.5.1
+  # bam-torch leaves e3nn unpinned, which resolves to 0.4.4 whose o3._wigner calls
+  # torch.load without weights_only=False and so fails to import on torch>=2.6
+  - e3nn==0.5.6
   - ase>=3.26.0
   - pymatgen>=2025.10.7
   python_version: '3.12'
