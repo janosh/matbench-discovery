@@ -1,5 +1,5 @@
 // Auto-generates mlip-github-activity.json from models/*.yml (non-superseded only)
-// Usage: npx tsx scripts/fetch-mlip-repos-github-activity.ts [--force-refresh]
+// Usage: pnpm fetch:github-activity [--force-refresh]
 // Set GITHUB_TOKEN env var to avoid rate limits
 import { load as parseYAML } from 'js-yaml'
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
@@ -37,18 +37,16 @@ const load_repos_from_models = async (): Promise<ModelInfo[]> => {
   // Map repo -> model info, preferring non-superseded models
   const repos_map = new Map<string, ModelInfo>()
 
-  const model_dirs = (await readdir(models_dir, { withFileTypes: true }))
-    .filter((d) => d.isDirectory())
-    // @ts-expect-error CI lint TypeScript lib lacks Array.prototype.toSorted.
-    .toSorted((a, b) => a.name.localeCompare(b.name))
+  const model_dirs = (await readdir(models_dir, { withFileTypes: true })).filter(
+    (dir_entry) => dir_entry.isDirectory(),
+  )
+  model_dirs.sort((left_dir, right_dir) => left_dir.name.localeCompare(right_dir.name))
 
   for (const dir_entry of model_dirs) {
     const model_dir = join(models_dir, dir_entry.name)
     const files = await readdir(model_dir)
-    const yml_files = files
-      .filter((file) => file.endsWith(`.yml`))
-      // @ts-expect-error CI lint TypeScript lib lacks Array.prototype.toSorted.
-      .toSorted((a, b) => a.localeCompare(b))
+    const yml_files = files.filter((file) => file.endsWith(`.yml`))
+    yml_files.sort((left_file, right_file) => left_file.localeCompare(right_file))
 
     for (const yml_file of yml_files) {
       try {
