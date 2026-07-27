@@ -22,9 +22,9 @@
   let mp_trj_elem_counts = $derived(elem_counts[elem_counts_key] ?? {})
 
   // narrow instead of casting: the data-files.yml index signature is DataFile | string
-  const mp_trj_data = data_files[`mp_trj_json_gz`]
+  const mp_trj_data = data_files[`mp_trj_original`]
   if (!mp_trj_data || typeof mp_trj_data === `string`) {
-    throw new Error(`mp_trj_json_gz not found in data-files.yml`)
+    throw new Error(`mp_trj_original not found in data-files.yml`)
   }
 </script>
 

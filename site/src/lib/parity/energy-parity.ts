@@ -8,9 +8,10 @@ import {
   parity_asset_resolver,
 } from '../asset-loader'
 import type { ParityBase, ParityModel, ParityPoint } from '../asset-loader'
-import { energy_parity_manifest } from './energy-parity-manifest'
+import energy_parity_manifest_json from './energy-parity-manifest.json'
 import { is_finite_num } from '../metrics'
 
+export const energy_parity_manifest = energy_parity_manifest_json
 export type EnergyKind = `e-form` | `each`
 
 export interface EnergyParityBase extends ParityBase {

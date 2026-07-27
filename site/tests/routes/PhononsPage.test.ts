@@ -3,7 +3,7 @@ import { ACTIVE_MODELS } from '$lib'
 import { make_table_filters } from '$lib/models.svelte'
 import PhononsPage from '$routes/tasks/phonons/+page.svelte'
 import { tick } from 'svelte'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   checkbox_for,
   doc_query,
@@ -46,7 +46,7 @@ const heading_texts = (): (string | undefined)[] =>
   )
 
 describe(`Phonons Task Page`, () => {
-  it(`renders the task narrative, scatter, and diagnostics`, () => {
+  it(`renders the task narrative, scatter, and diagnostics`, async () => {
     mount(PhononsPage, { target: document.body })
 
     expect(doc_query(`h1`).textContent).toContain(`MLFF Phonon Modeling Metrics`)
@@ -61,6 +61,9 @@ describe(`Phonons Task Page`, () => {
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
 
     // SRME-vs-kappa scatter and frequency parity plot side by side.
+    await vi.waitFor(() =>
+      expect(document.querySelector(`.diagnostics-grid`)).not.toBeNull(),
+    )
     expect(doc_query(`.diagnostics-grid`).querySelectorAll(`div.scatter`)).toHaveLength(2)
   })
 

@@ -27,7 +27,6 @@ import argparse
 import gzip
 import json
 import os
-import shlex
 import time
 from glob import glob
 
@@ -48,11 +47,13 @@ from matbench_discovery.diatomics import (
     homo_nuc,
 )
 from matbench_discovery.hpc import detect_hardware, merge_run_metadata, peak_memory_gb
-from matbench_discovery.metrics.diatomics import (
-    DIATOMIC_WALL_R_MIN_FACTOR,
-    NON_MP_ELEMENTS,
-    eval_window,
+from matbench_discovery.metrics.diatomics import DIATOMIC_WALL_R_MIN_FACTOR, eval_window
+from matbench_discovery.metrics.diatomics.exclusions import (
+    drop_metric_exclusions,
+    get_excluded_formula_reasons,
+    is_non_mp_formula,
 )
+from matbench_discovery.runner_cli import dependency_run_args, print_dependency_command
 
 module_dir = os.path.dirname(__file__)
 
@@ -82,48 +83,6 @@ def trim_curve_to_finite(formula: str, curve: CurveDict) -> CurveDict | None:
         "distances": distances[finite].tolist(),
         "energies": energies[finite].tolist(),
         "forces": forces[finite].tolist(),
-    }
-
-
-def is_non_mp_formula(formula: str) -> bool:
-    """Whether a diatomic formula involves an element outside the MP element set."""
-    return any(elem in NON_MP_ELEMENTS for elem in formula.split("-"))
-
-
-def get_excluded_formula_reasons(
-    model_key: str, invalid_formulas: tuple[str, ...] | list[str] = ()
-) -> dict[str, str]:
-    """Map excluded diatomic formulas to reasons: YAML-curated + run-discovered.
-
-    Curated reasons (the model YAML's excluded_formula_reasons) take precedence over
-    invalid_formulas found in this run. Non-MP formulas are never recorded: the metrics
-    skip those elements benchmark-wide, so per-model exclusions would be redundant.
-    """
-    from matbench_discovery.enums import Model
-
-    try:
-        diatomics_metrics = Model.from_ref(model_key).metrics.get("diatomics") or {}
-    except ValueError:  # debug models like emt have no Model enum entry
-        diatomics_metrics = {}
-    curated_reasons = diatomics_metrics.get("excluded_formula_reasons", {})
-    reasons = dict.fromkeys(invalid_formulas, "invalid or unsupported curve")
-    reasons |= curated_reasons
-    return {
-        formula: reasons[formula]
-        for formula in sorted(reasons)
-        if not is_non_mp_formula(formula)
-    }
-
-
-def drop_metric_exclusions(
-    model_key: str, metrics: dict[str, dict[str, float]]
-) -> dict[str, dict[str, float]]:
-    """Remove model-specific pathological curves before metric aggregation."""
-    excluded = set(get_excluded_formula_reasons(model_key))
-    return {
-        key: val
-        for key, val in metrics.items()
-        if key not in excluded and f"{key}-{key}" not in excluded
     }
 
 
@@ -193,15 +152,22 @@ def main() -> int:
         parser.error("--write-yaml is only supported by the --merge-shards task")
 
     if args.print_cmd:
-        run_args = ["--model", args.model, "--dtype", args.dtype]
-        for name in ("min-dist", "max-dist", "n-points", "max-z", "out-dir"):
-            if (val := getattr(args, name.replace("-", "_"))) is not None:
-                run_args += [f"--{name}", str(val)]
-        for flag in ("dry-run", "merge-shards", "write-yaml"):
-            if getattr(args, flag.replace("-", "_")):
-                run_args.append(f"--{flag}")
-        cmd = CALCULATORS[args.model].uv_run_cmd("models/run_diatomics.py", *run_args)
-        print(shlex.join(cmd))
+        run_args = dependency_run_args(
+            args,
+            args.model,
+            {
+                "dtype": args.dtype,
+                "min-dist": args.min_dist,
+                "max-dist": args.max_dist,
+                "n-points": args.n_points,
+                "max-z": args.max_z,
+                "out-dir": args.out_dir,
+            },
+            ("dry-run", "merge-shards", "write-yaml"),
+        )
+        print_dependency_command(
+            CALCULATORS[args.model].uv_run_cmd("models/run_diatomics.py", *run_args)
+        )
         return 0
 
     from matbench_discovery.enums import Model

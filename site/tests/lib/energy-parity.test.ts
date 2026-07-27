@@ -1,5 +1,6 @@
 import {
   build_energy_parity_series,
+  energy_parity_manifest,
   energy_parity_asset_url,
   energy_parity_stats,
   get_energy_parity_point,
@@ -13,7 +14,6 @@ import {
 } from '$lib/parity/energy-parity'
 import type { EnergyParityBase, EnergyParityModel } from '$lib/parity/energy-parity'
 import { clear_asset_cache, load_json_asset } from '$lib/asset-loader'
-import { energy_parity_manifest } from '$lib/parity/energy-parity-manifest'
 import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gzipped_json_response, request_url } from '../index'

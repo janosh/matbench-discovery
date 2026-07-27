@@ -30,8 +30,8 @@ trained_by:
 
 repo: https://github.com/xvzemin/tace
 doi: https://doi.org/10.57967/hf/7458
-paper: https://arxiv.org/abs/2509.14961
-docs: https://github.com/xvzemin/tace
+paper: https://arxiv.org/abs/2607.10664
+docs: https://tace.readthedocs.io/en/latest/index.html
 pr_url: https://github.com/janosh/matbench-discovery/pull/365
 checkpoint_url: https://huggingface.co/xvzemin/tace-foundations/resolve/main/TECE-OAM-RRA-1.0.pt
 license:
@@ -42,12 +42,12 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
+  # Exact torch and OEQ versions are test pins, not TACE compatibility bounds.
   dependencies:
-  - tace @ git+https://github.com/xvzemin/tace@88d8dcd5724e94751783b0a3405cb49573af1583
-  - torch==2.9.1
-  - torch-geometric==2.7.0
-  - pytorch-lightning==2.5.5
-  python_version: '3.12'
+  - tace @ git+https://github.com/xvzemin/tace@81f65a4c188bd09cec8d1419388f7afdcc1b6fd0
+  - openequivariance==0.6.4
+  - torch==2.13.0
+  python_version: '3.13'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -96,23 +96,26 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/tace/tece-oam-rra-1.0/2026-07-05-diatomics.json.gz
-      url: https://figshare.com/files/66313844
-      size: 219926
-      md5: b9f172f5a1a2c092eb09ebe1df9f9664
-    hardware: NVIDIA GeForce RTX 4090
-    run_time_sec: 4505.61
+      name: models/tace/tece-oam-rra-1.0/2026-07-25-diatomics.json.gz
+      url: https://figshare.com/files/66987017
+      size: 282601
+      md5: 1e7d9eee1ba37829c2c6c72da250a02f
+    hardware: NVIDIA H200
+    run_time_sec: 987.06
+    max_rss_gb: 2.547
+    max_gpu_mem_gb: 0.117
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.3074
     pbe_energy_mae: 3.918
     pbe_bond_length_error: 0.6948
-    pbe_well_depth_error: 0.7725
-    pbe_vib_freq_error: 82.38
+    pbe_well_depth_error: 0.7726
+    pbe_vib_freq_error: 82.39
     tortuosity: 1.335
     energy_diff_flips: 3.805
-    energy_jump: 2.718
+    energy_jump: 2.716
     force_flips: 3.586
     force_total_variation: 299.6
-    force_jump: 70.17
+    force_jump: 70.13
     pbe_force_mae: 2.315
   discovery:
     pred_file:
@@ -206,21 +209,23 @@ metrics:
         md5: 1e2da838262b15a68fddbb3fd27247ba
   md:
     pred_file:
-      name: models/tace/tece-oam-rra-1.0/2026-07-05-md-metrics.csv.gz
-      url: https://figshare.com/files/66323729
-      size: 1576
-      md5: 57292c80cf74b7b273a084c7b87f6c96
+      name: models/tace/tece-oam-rra-1.0/2026-07-26-md-metrics.csv.gz
+      url: https://figshare.com/files/66987023
+      size: 1867
+      md5: 3d44e2492f29ced1e3c6e5f4a45e9f81
     hardware: NVIDIA H200
-    run_time_sec: 401724.73
-    energy_rmse: 0.4353
-    force_rmse: 42.3737
-    rdf_error: 3.1337
-    adf_error: 1.3021
-    vdos_error: 21.6274
-    pressure_mae: 0.81
-    pressure_wasserstein: 0.8162
-    pressure_error: 44.5257
-    n_systems: 17
+    run_time_sec: 187996.78 # s
+    max_rss_gb: 3.3 # GB
+    max_gpu_mem_gb: 19.209 # GB
+    energy_rmse: 0.4353 # meV/atom
+    force_rmse: 42.387 # meV/Å
+    rdf_error: 3.1921 # %
+    adf_error: 1.3553 # %
+    vdos_error: 21.6055 # %
+    pressure_mae: 0.799 # GPa
+    pressure_wasserstein: 0.8023 # GPa
+    pressure_error: 43.1188 # %
+    n_systems: 17 # count
   phonons:
     kappa_103:
       pred_file:

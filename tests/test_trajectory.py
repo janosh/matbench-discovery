@@ -277,37 +277,47 @@ def test_from_extxyz_real_format_stress_energy(tmp_path: Path) -> None:
     [
         # frame 1 has a different number of atom lines -> fails the frame-stride check
         (
-            '3\nLattice="4 0 0 0 4 0 0 0 4" '
-            'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
-            "Cu 0 0 0\nCu 1 1 1\nCu 2 2 2\n",
+            (
+                '3\nLattice="4 0 0 0 4 0 0 0 4" '
+                'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
+                "Cu 0 0 0\nCu 1 1 1\nCu 2 2 2\n"
+            ),
             "not a multiple of frame stride",
         ),
         # same atom count but different species composition
         (
-            '2\nLattice="4 0 0 0 4 0 0 0 4" '
-            'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
-            "Ag 0 0 0\nAg 1 1 1\n",
+            (
+                '2\nLattice="4 0 0 0 4 0 0 0 4" '
+                'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
+                "Ag 0 0 0\nAg 1 1 1\n"
+            ),
             "species differ",
         ),
         # different periodic boundary conditions
         (
-            '2\nLattice="4 0 0 0 4 0 0 0 4" '
-            'Properties=species:S:1:pos:R:3 pbc="T T F"\n'
-            "Cu 0 0 0\nCu 1 1 1\n",
+            (
+                '2\nLattice="4 0 0 0 4 0 0 0 4" '
+                'Properties=species:S:1:pos:R:3 pbc="T T F"\n'
+                "Cu 0 0 0\nCu 1 1 1\n"
+            ),
             "pbc differs",
         ),
         # different Properties header (column layout)
         (
-            '2\nLattice="4 0 0 0 4 0 0 0 4" '
-            'Properties=species:S:1:pos:R:3:forces:R:3 pbc="T T T"\n'
-            "Cu 0 0 0\nCu 1 1 1\n",
+            (
+                '2\nLattice="4 0 0 0 4 0 0 0 4" '
+                'Properties=species:S:1:pos:R:3:forces:R:3 pbc="T T T"\n'
+                "Cu 0 0 0\nCu 1 1 1\n"
+            ),
             "Properties header differs",
         ),
         # count line value disagrees with frame 0 while the frame stride still aligns
         (
-            '5\nLattice="4 0 0 0 4 0 0 0 4" '
-            'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
-            "Cu 0 0 0\nCu 1 1 1\n",
+            (
+                '5\nLattice="4 0 0 0 4 0 0 0 4" '
+                'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
+                "Cu 0 0 0\nCu 1 1 1\n"
+            ),
             "count line says 5 atoms",
         ),
     ],

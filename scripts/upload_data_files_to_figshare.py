@@ -13,9 +13,6 @@ from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.remote import figshare
 
-__author__ = "Janosh Riebesell"
-__date__ = "2023-04-27"
-
 
 def main(
     yaml_path: str,

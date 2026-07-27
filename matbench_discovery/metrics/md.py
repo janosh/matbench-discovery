@@ -23,6 +23,7 @@ from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery import repo_relative_path
 from matbench_discovery.data import make_file_ref, update_yaml_file
+from matbench_discovery.hpc import COST_PROVENANCE_KEYS
 from matbench_discovery.trajectory import Trajectory
 
 if TYPE_CHECKING:
@@ -73,11 +74,11 @@ METRIC_UNITS = {
     "pressure_error": "%",  # pressure-histogram overlap error (paper Eq. 9)
     "n_systems": "count",
 }
-# run-provenance columns aggregated by sum/max/passthrough instead of the mean
-RUN_PROVENANCE_COLS = ("run_time_sec", "max_rss_gb", "max_gpu_mem_gb", "hardware")
 # mean-aggregated per-system error columns
 PER_SYSTEM_METRIC_COLS = tuple(
-    key for key in METRIC_UNITS if key != "n_systems" and key not in RUN_PROVENANCE_COLS
+    key
+    for key in METRIC_UNITS
+    if key != "n_systems" and key not in COST_PROVENANCE_KEYS
 )
 
 
@@ -715,7 +716,7 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
     module docstring). Private-label energy/force RMSE rows are in eV but reported
     here in meV for readability.
 
-    Run provenance columns (RUN_PROVENANCE_COLS) aggregate differently:
+    Run provenance columns (COST_PROVENANCE_KEYS) aggregate differently:
     ``run_time_sec`` is summed over systems (parallel per-system jobs ~ one serial
     sweep, mirroring the diatomics shard merge), the memory peaks take the max over
     systems (the largest system sets the hardware requirement) and ``hardware``

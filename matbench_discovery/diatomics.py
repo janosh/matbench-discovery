@@ -20,7 +20,6 @@ if TYPE_CHECKING:
 
     from ase.calculators.calculator import Calculator
 
-__date__ = "2024-03-31"
 DiatomicsType = Literal["homo-nuclear", "hetero-nuclear"]
 homo_nuc = get_args(DiatomicsType)[0]
 atom_num_symbol_map = dict(enumerate(chemical_symbols, start=0))

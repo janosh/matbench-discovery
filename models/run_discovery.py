@@ -27,14 +27,11 @@ from __future__ import annotations
 import argparse
 import glob
 import os
-import shlex
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-
-import pandas as pd
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.calculators import (
@@ -60,11 +57,16 @@ from matbench_discovery.discovery import (
     run_discovery_shard,
     write_discovery_artifacts,
 )
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import Model
 from matbench_discovery.hpc import effective_shard_args as _effective_shard_args
 from matbench_discovery.hpc import partition_material_ids
 from matbench_discovery.hpc import slurm_shard_selection as _slurm_shard_selection
-from matbench_discovery.runner_cli import dependency_run_args, resolve_sharded_prefix
+from matbench_discovery.runner_cli import (
+    dependency_run_args,
+    print_dependency_command,
+    resolve_sharded_prefix,
+    validate_sharded_write_args,
+)
 
 module_dir = os.path.dirname(__file__)
 
@@ -211,20 +213,13 @@ def _write_yaml_results(
     run_metadata: Mapping[str, Any] | None = None,
 ) -> None:
     """Update artifact paths, cost provenance, and all three discovery subsets."""
-    from matbench_discovery.data import MAX_E_FORM_ERROR_THRESHOLD, df_wbm
+    from matbench_discovery.data import df_wbm
     from matbench_discovery.metrics import discovery as discovery_metrics
 
-    # mirror load_df_wbm_with_preds's outlier masking and .round(3) convention so
-    # metrics written here match a later scripts/evals/discovery.py recompute
-    model_preds = artifacts.predictions[DISCOVERY_PRED_COL].copy()
-    bad_mask = abs(model_preds - df_wbm[MbdKey.e_form_dft]) > MAX_E_FORM_ERROR_THRESHOLD
-    model_preds.loc[bad_mask] = pd.NA
-    metric_reference = df_wbm.round(3)
-    model_preds = pd.to_numeric(
-        model_preds.round(3).reindex(metric_reference.index), errors="coerce"
-    )
-    subset_indices = discovery_metrics.discovery_subset_indices(
-        metric_reference, model_preds
+    metric_reference, model_preds, subset_indices = (
+        discovery_metrics.prepare_model_predictions(
+            df_wbm, artifacts.predictions[DISCOVERY_PRED_COL]
+        )
     )
     metrics_by_subset = discovery_metrics.calc_discovery_metrics(
         metric_reference,
@@ -276,18 +271,13 @@ def main(raw_args: Sequence[str] | None = None) -> int:
     )
     if model_key is None:
         return 0
-    if args.write_yaml and not args.merge_shards:
-        parser.error("--write-yaml is only supported with --merge-shards")
-    if args.write_yaml and args.dry_run:
-        parser.error("--write-yaml is incompatible with --dry-run")
-    if args.merge_shards and args.shard_index is not None:
-        parser.error("--shard-index is incompatible with --merge-shards")
+    validate_sharded_write_args(parser, args)
 
     if args.print_cmd:
         command = CALCULATORS[model_key].uv_run_cmd(
             "models/run_discovery.py", *_print_cmd_args(args, model_key)
         )
-        print(shlex.join(command))
+        print_dependency_command(command)
         return 0
 
     try:

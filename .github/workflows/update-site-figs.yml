@@ -210,8 +210,7 @@ jobs:
           done
           cp matbench_discovery/enums.py pr-tree/matbench_discovery/enums.py
           rsync -a --delete site/src/figs/ pr-tree/site/src/figs/
-          rsync -aR site/src/lib/parity/*-parity-manifest.ts \
-            site/static/*-parity/manifest.json \
+          rsync -aR site/src/lib/parity/*-parity-manifest.json \
             site/src/routes/models/per-element-each-errors.jsonl pr-tree/
 
       - name: Commit updated assets to the PR
@@ -224,9 +223,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add matbench_discovery/enums.py models site/src/figs site/src/lib \
-            site/src/routes/models \
-            site/static/energy-parity/manifest.json \
-            site/static/kappa-parity/manifest.json
+            site/src/routes/models
           if git diff --cached --quiet; then
             echo "Everything already up to date - nothing to commit"
             exit 0

@@ -40,7 +40,7 @@ from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
 round_trip_yaml.preserve_quotes = True
 round_trip_yaml.width = 1000  # avoid changing line wrapping
-round_trip_yaml.indent(mapping=2, sequence=4, offset=2)
+round_trip_yaml.indent(mapping=2, sequence=2, offset=0)
 
 ISO_DATE_PATTERN: Final = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MOYO_VERSION_PATTERN: Final = re.compile(
@@ -119,6 +119,29 @@ def make_file_ref(
     if size is not None and md5 is not None:
         ref["size"], ref["md5"] = size, md5
     return ref
+
+
+def merge_file_ref(
+    existing: object,
+    name: str,
+    *,
+    url: str | None = None,
+    replace: bool = False,
+) -> FileRef:
+    """Build an updated file ref, retaining metadata when its path is unchanged.
+
+    An explicit URL replaces the existing URL. Without one, the existing URL and
+    checksum pair survive only when ``name`` still identifies the same artifact.
+    ``replace=True`` deliberately drops all old metadata.
+    """
+    size = md5 = None
+    if not replace and file_ref_name(existing) == name:
+        url = url or file_ref_url(existing)
+        if isinstance(existing, dict):
+            existing_size, existing_md5 = existing.get("size"), existing.get("md5")
+            if isinstance(existing_size, int) and isinstance(existing_md5, str):
+                size, md5 = existing_size, existing_md5
+    return make_file_ref(name, url=url, size=size, md5=md5)
 
 
 def file_ref_name(ref: object) -> str | None:

@@ -1,5 +1,6 @@
 """Unit tests for Figshare API helper functions."""
 
+import hashlib
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -8,6 +9,9 @@ import pytest
 import requests
 
 from matbench_discovery.remote import figshare
+
+ARTICLE_URL = f"{figshare.ARTICLE_URL_PREFIX}/12345"
+KAPPA_FILE = "models/model1/ver1/file-kappa-103.json.gz"
 
 
 @pytest.mark.parametrize(
@@ -141,9 +145,16 @@ def test_upload_file_to_figshare_variants(
     test_file = tmp_path / "upload_test_file"
     test_file.write_bytes(b"test data")
 
+    # computed_md5 satisfies the post-upload verification in upload_file
+    file_md5 = hashlib.md5(test_file.read_bytes(), usedforsecurity=False).hexdigest()
     mock_responses = {
         "POST": {"location": "file_location"},
-        "GET": {"id": 67890, "upload_url": "upload_url", "parts": file_parts},
+        "GET": {
+            "id": 67890,
+            "upload_url": "upload_url",
+            "parts": file_parts,
+            "computed_md5": file_md5,
+        },
         "PUT": None,  # PUT requests return None on success
     }
 
@@ -166,6 +177,33 @@ def test_upload_file_to_figshare_variants(
         ),
     ):
         assert figshare.upload_file(12345, str(test_file), file_name=file_name) == 67890
+
+
+@pytest.mark.parametrize(
+    ("remote_responses", "expected_error"),
+    [
+        ([{"computed_md5": "abc123"}], None),  # matches on first poll
+        ([{}, {"computed_md5": "abc123"}], None),  # md5 appears once hashing finishes
+        ([{"computed_md5": "corrupt"}], "Figshare stored"),
+        ([{}, {}, {}], "reported no checksum"),  # never hashed
+    ],
+)
+def test_verify_upload(
+    remote_responses: list[dict[str, str]], expected_error: str | None
+) -> None:
+    """Post-upload verification accepts a matching checksum and rejects the rest."""
+    with (
+        patch(
+            "matbench_discovery.remote.figshare.make_request",
+            side_effect=remote_responses,
+        ),
+        patch("matbench_discovery.remote.figshare.time.sleep"),  # skip the backoff
+    ):
+        if expected_error:
+            with pytest.raises(ValueError, match=expected_error):
+                figshare.verify_upload(1, 2, "abc123", attempts=len(remote_responses))
+        else:
+            figshare.verify_upload(1, 2, "abc123", attempts=len(remote_responses))
 
 
 DUMMY_FILES = [
@@ -268,25 +306,19 @@ def test_file_exists_with_same_hash_reuses_inventory() -> None:
     get_existing_files.assert_not_called()
 
 
-def test_delete_file_success() -> None:
-    """Successful deletion calls the expected article endpoint."""
+@pytest.mark.parametrize(
+    "side_effect,expected",
+    [(None, True), (requests.RequestException("API Error"), False)],
+)
+def test_delete_file(side_effect: Exception | None, expected: bool) -> None:
+    """Deletion hits the file endpoint and reports API errors as failure."""
     with patch(
-        "matbench_discovery.remote.figshare.make_request", return_value=None
-    ) as mock_make_request:
-        assert figshare.delete_file(12345, 67890) is True
-        mock_make_request.assert_called_once_with(
-            "DELETE", f"{figshare.BASE_URL}/account/articles/12345/files/67890"
-        )
-
-
-def test_delete_file_error() -> None:
-    """Test delete_file function with error during deletion."""
-    with patch(
-        "matbench_discovery.remote.figshare.make_request",
-        side_effect=requests.RequestException("API Error"),
+        "matbench_discovery.remote.figshare.make_request", side_effect=side_effect
     ) as mock_request:
-        assert figshare.delete_file(12345, 67890) is False
-        mock_request.assert_called_once()
+        assert figshare.delete_file(12345, 67890) is expected
+    mock_request.assert_called_once_with(
+        "DELETE", f"{figshare.BASE_URL}/account/articles/12345/files/67890"
+    )
 
 
 @pytest.mark.parametrize(
@@ -345,76 +377,45 @@ def test_upload_file_if_needed(
 
 
 @pytest.mark.parametrize(
-    "success,verbose",
+    "success,verbose,expected_stdout",
     [
-        (True, True),  # Successful publish with verbose output
-        (True, False),  # Successful publish without verbose output
-        (False, True),  # Failed publish with verbose output
-        (False, False),  # Failed publish without verbose output
+        (True, True, f"Successfully published article 12345 at {ARTICLE_URL}"),
+        (False, True, "Failed to publish article 12345: Test error"),
+        (True, False, ""),  # verbose=False stays silent either way
+        (False, False, ""),
     ],
 )
 def test_publish_article(
-    success: bool, verbose: bool, capsys: pytest.CaptureFixture
+    success: bool, verbose: bool, expected_stdout: str, capsys: pytest.CaptureFixture
 ) -> None:
-    """Test publish_article function with different combinations of parameters."""
-    article_id = 12345
-    err_msg = "Test error"
-
+    """Publishing returns its outcome and reports it only when verbose."""
     with patch(
         "matbench_discovery.remote.figshare.make_request",
-        side_effect=None if success else requests.RequestException(err_msg),
+        side_effect=None if success else requests.RequestException("Test error"),
     ):
-        assert figshare.publish_article(article_id, verbose=verbose) is success
+        assert figshare.publish_article(12345, verbose=verbose) is success
 
-        stdout, _ = capsys.readouterr()
-        if success and verbose:
-            expected_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"
-            assert (
-                f"Successfully published article {article_id} at {expected_url}"
-                in stdout
-            )
-        elif not success and verbose:
-            assert f"Failed to publish article {article_id}: {err_msg}" in stdout
-        else:
-            assert stdout == ""
+    stdout, _ = capsys.readouterr()
+    assert expected_stdout in stdout
+    assert verbose or stdout == ""
 
 
 @pytest.mark.parametrize(
     "filename,existing_files,expected_similar,threshold",
     [
-        # Empty files case
-        ("models/model1/ver1/file-kappa-103.json.gz", {}, [], 0.7),
-        # Different model family - no match
-        (
-            "models/model1/ver1/file-kappa-103.json.gz",
-            {"models/model2/ver1/file-kappa-103.json.gz": {"id": 123}},
-            [],
-            0.7,
-        ),
-        # Different task type - no match
-        (
-            "models/model1/ver1/file-kappa-103.json.gz",
-            {"models/model1/ver1/file-phonon-50.json.gz": {"id": 123}},
-            [],
-            0.7,
-        ),
-        # Different subfolder - no match
-        (
-            "models/model1/ver1/file-kappa-103.json.gz",
-            {"models/model1/ver2/file-kappa-103.json.gz": {"id": 123}},
-            [],
-            0.7,
-        ),
-        # High similarity, same task - match
+        (KAPPA_FILE, {}, [], 0.7),  # no candidates
+        # a match needs same family, same subfolder, same task and high similarity
+        (KAPPA_FILE, {"models/model2/ver1/f-kappa-103.json.gz": {"id": 1}}, [], 0.7),
+        (KAPPA_FILE, {"models/model1/ver1/f-phonon-50.json.gz": {"id": 1}}, [], 0.7),
+        (KAPPA_FILE, {"models/model1/ver2/f-kappa-103.json.gz": {"id": 1}}, [], 0.7),
         (
             "models/model1/ver1/file-kappa-103-v1.json.gz",
             {"models/model1/ver1/file-kappa-103-v2.json.gz": {"id": 123}},
             [("models/model1/ver1/file-kappa-103-v2.json.gz", 123)],
             0.7,
         ),
-        # Multiple matches
-        (
-            "models/model1/ver1/file-kappa-103.json.gz",
+        (  # every qualifying candidate is returned
+            KAPPA_FILE,
             {
                 "models/model1/ver1/file1-kappa-103.json.gz": {"id": 123},
                 "models/model1/ver1/file2-kappa-103.json.gz": {"id": 456},
@@ -426,9 +427,8 @@ def test_publish_article(
             ],
             0.7,
         ),
-        # Higher threshold excludes matches
-        (
-            "models/model1/ver1/file-kappa-103.json.gz",
+        (  # same candidate as the match case above, excluded by a stricter threshold
+            KAPPA_FILE,
             {"models/model1/ver1/similar-kappa-103.json.gz": {"id": 123}},
             [],
             0.95,

@@ -30,9 +30,6 @@ from matbench_discovery import today
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import slurm_submit
 
-__author__ = "Philipp Benner, Janosh Riebesell"
-__date__ = "2023-06-03"
-
 module_dir = os.path.dirname(__file__)
 
 

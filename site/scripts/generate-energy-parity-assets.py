@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 OUT_DIR: Final = "site/static/energy-parity"
-MANIFEST_TS: Final = "site/src/lib/parity/energy-parity-manifest.ts"
+MANIFEST_PATH: Final = "site/src/lib/parity/energy-parity-manifest.json"
 ASSET_PREFIX: Final = "energy-parity-wbm-v1"
 LOCAL_ASSET_BASE_URL: Final = "/energy-parity/assets"
 STRUCTURE_SHARD_SIZE: Final = 512
@@ -55,7 +55,7 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--out-dir", default=OUT_DIR)
-    parser.add_argument("--manifest-ts", default=MANIFEST_TS)
+    parser.add_argument("--manifest", default=MANIFEST_PATH)
     parser.add_argument("--asset-prefix", default=ASSET_PREFIX)
     parser.add_argument("--local-asset-base-url", default=LOCAL_ASSET_BASE_URL)
     parser.add_argument("--limit-rows", type=int, default=None)
@@ -100,9 +100,8 @@ def remove_stale_assets(
             path.unlink()
 
 
-def read_previous_manifest(out_dir: Path) -> dict[str, Any] | None:
+def read_previous_manifest(manifest_path: Path) -> dict[str, Any] | None:
     """Read an existing manifest when structure assets should be reused."""
-    manifest_path = out_dir / "manifest.json"
     if not manifest_path.is_file():
         return None
     return json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -147,7 +146,7 @@ def main() -> None:
     """Generate base data, model prediction assets, structures, and manifests."""
     args = parse_args()
     out_dir = Path(args.out_dir)
-    manifest_ts = Path(args.manifest_ts)
+    manifest_path = Path(args.manifest)
     models = resolve_models(args.models)
     df_preds = load_df_wbm_with_preds(models=models, pbar=True)
     if args.limit_rows is not None:
@@ -157,7 +156,7 @@ def main() -> None:
     # hash material IDs in row order to detect stale asset manifests
     material_ids_sha256 = hashlib.sha256("\n".join(material_ids).encode()).hexdigest()
     asset_dir = out_dir / "assets"
-    previous_manifest = read_previous_manifest(out_dir)
+    previous_manifest = read_previous_manifest(manifest_path)
 
     rows_match = (
         previous_manifest is not None
@@ -231,13 +230,7 @@ def main() -> None:
         "model_assets": model_assets,
         "structure_bundles": structure_bundles,
     }
-    write_manifest(
-        out_dir,
-        manifest_ts,
-        manifest,
-        export_name="energy_parity_manifest",
-        generated_by="site/scripts/generate-energy-parity-assets.py",
-    )
+    write_manifest(manifest_path, manifest)
 
 
 if __name__ == "__main__":

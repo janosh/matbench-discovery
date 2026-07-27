@@ -183,6 +183,15 @@ def test_data_files_enum() -> None:
     assert DataFiles.wbm_summary.url.startswith("https://figshare.com/files/")
 
 
+def test_data_files_members_match_yaml_registry() -> None:
+    """Every public data-files YAML entry has exactly one enum member."""
+    yaml_data = DataFiles.mp_energies.yaml
+    public_keys = {key for key in yaml_data if not key.startswith("_")}
+    assert set(DataFiles.__members__) == public_keys
+    for data_file in DataFiles:
+        assert data_file.rel_path == yaml_data[data_file.name]["path"]
+
+
 def test_data_files_path_raises_when_md5_download_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
@@ -283,7 +292,7 @@ def test_data_files_md5_matches_figshare(
     file_id = data_file.url.rsplit("/", maxsplit=1)[-1]
     if (computed_md5 := figshare_data_file_md5s.get(file_id)) is None:
         # file lives in an external Figshare article this repo doesn't control
-        # (e.g. mp_trj_json_gz in the original MPtrj article), can't enforce md5
+        # (e.g. mp_trj_original in the original MPtrj article), can't enforce md5
         pytest.skip(f"{data_file.name} file id {file_id} not in data-files article")
     declared_md5 = data_file.yaml[data_file.name].get("md5")
     assert declared_md5 == computed_md5, (

@@ -12,8 +12,8 @@ from matbench_discovery.data import file_ref_name, file_ref_url
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
+from matbench_discovery.metrics.diatomics.exclusions import drop_metric_exclusions
 from matbench_discovery.remote.fetch import maybe_auto_download_file
-from models.run_diatomics import drop_metric_exclusions
 
 models_to_evaluate = cli_args.models
 print(f"Evaluating diatomic metrics for {len(models_to_evaluate)} model(s)...")
