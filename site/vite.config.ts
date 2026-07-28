@@ -1,4 +1,4 @@
-import { config } from '@janosh/vite-config'
+import { make_config } from 'svelte-widgets/vite-config'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { load as load_yaml } from 'js-yaml'
 import type { JSONSchema4 } from 'json-schema'
@@ -179,8 +179,10 @@ function yaml_schema_to_typescript_plugin(): Plugin {
   }
 }
 
+const config = make_config()
+
 export default {
-  ...config, // shared lint/fmt/build from @janosh/vite-config (dotfiles)
+  ...config, // shared lint/fmt/build
   fmt: {
     ...config.fmt,
     ignorePatterns: [`src/routes/**/*.json`],

@@ -16,10 +16,12 @@
     const data = icon_data[name]
     const fill = `stroke` in data ? `none` : `currentColor`
     const stroke = `stroke` in data ? `stroke="currentColor"` : ``
+    // a glyph is either one path `d` or its own markup, never both
+    const inner = `markup` in data ? data.markup : `<path d="${data.d}" />`
     return `<svg fill="${fill}" ${stroke} ${
       color ? `style="color:${color}"` : ``
     } width="1em" height="1em" viewBox="${data.viewBox}">
-    ${data.markup ?? `<path d="${data.d}" />`}
+    ${inner}
     </svg>`
   }
 

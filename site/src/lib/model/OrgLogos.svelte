@@ -22,9 +22,10 @@
   const logo_html = (logo: OrgLogo): string => {
     const style = `height: 1.1em; width: auto; flex: 0 0 auto; vertical-align: middle`
     if (logo.validated_icon && logo.validated_icon in icon_data) {
-      const { d, markup, viewBox } = icon_data[logo.validated_icon]
-      const inner = markup ?? `<path d="${d}" />`
-      return `<svg viewBox="${viewBox}" fill="currentColor" style="${style}">${inner}</svg>`
+      // a glyph is either one path `d` or its own markup, never both
+      const entry = icon_data[logo.validated_icon]
+      const inner = `markup` in entry ? entry.markup : `<path d="${entry.d}" />`
+      return `<svg viewBox="${entry.viewBox}" fill="currentColor" style="${style}">${inner}</svg>`
     }
     if (logo.src) {
       return `<img src="${escape_html(logo.src)}" alt="" style="${style}; filter: grayscale(100%)" />`
