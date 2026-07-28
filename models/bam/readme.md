@@ -22,7 +22,10 @@ forces, and stress (`free_energy` is set equal to `energy` for ASE compatibility
 
 ## Training configuration
 
-- 48 epochs, trained on NVIDIA H100 GPUs
+- Training was configured for up to 100 epochs with `restart: true`, but the job
+  reached its wall-time limit after 48 completed epochs. The submitted checkpoint
+  is both the final checkpoint from that run and the best-validation checkpoint.
+  Training used NVIDIA H100 GPUs.
 - Loss: Huber (`delta=0.01`) with weights energy 10, force 1, stress 10
 
 ## Checkpoint

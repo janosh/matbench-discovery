@@ -56,7 +56,8 @@ license:
 
 environment:
   dependencies:
-  - bam-torch @ git+https://github.com/myung-group/BAM-torch@3c477f59fd4dae20e66aefc712b01e1964755992
+  - bam-torch @ git+https://github.com/myung-group/BAM-torch@9329db2cec33715f89efa3f560d3e0f791b3f528
+  - e3nn>=0.5.6
   - torch>=2.5.1
   # bam-torch leaves e3nn unpinned, which resolves to 0.4.4 whose o3._wigner calls
   # torch.load without weights_only=False and so fails to import on torch>=2.6
@@ -106,6 +107,8 @@ metrics:
       url: https://figshare.com/files/66975401
       size: 1343396
       md5: 667f4600dd149a8199e187ae391a092e
+    hardware: NVIDIA H100
+    run_time_sec: 24257
     full_test_set:
       F1: 0.618
       DAF: 3.268
@@ -166,6 +169,8 @@ metrics:
       url: https://figshare.com/files/66975404
       size: 104612192
       md5: 1cae3b39310d1a7835cee16961db9a5a
+    hardware: NVIDIA H100
+    run_time_sec: 24257
     symprec=1e-5:
       rmsd: 0.0863
       n_sym_ops_mae: 1.8906
@@ -197,6 +202,8 @@ metrics:
         url: https://figshare.com/files/65859111
         size: 7770664
         md5: 42e5c1b3f3273827bc2f08ec22ee2d68
+      hardware: NVIDIA A100
+      run_time_sec: 28459
       κ_SRME: 0.8475
       κ_SRE: 0.7192
       κ_SRD: -0.6633
