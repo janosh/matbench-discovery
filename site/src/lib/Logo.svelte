@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { OrgLogo } from '$lib/labels'
-  import { Icon } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
 
   // show_title controls the native title attribute. Disable it when the logo is
   // rendered inside another element that already provides a richer tooltip to

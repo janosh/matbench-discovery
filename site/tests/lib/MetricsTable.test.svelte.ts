@@ -102,9 +102,9 @@ describe(`MetricsTable`, () => {
     expect(dropdown).toBeDefined()
     expect(dropdown?.textContent).toContain(`Files for`)
 
-    // Simulate clicking outside (assuming click_outside works correctly)
-    // We can simulate this by clicking the body or another element
-    document.body.click()
+    // click_outside dismisses on pointerdown, not click, so a bare body.click() is
+    // not enough to close the dropdown
+    document.body.dispatchEvent(new PointerEvent(`pointerdown`, { bubbles: true }))
     await tick()
 
     // Dropdown should be gone after clicking outside

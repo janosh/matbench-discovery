@@ -1,6 +1,7 @@
 <script lang="ts">
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
-  import { type IconName, SubpageGrid } from 'matterviz'
+  import { SubpageGrid } from 'matterviz'
+  import type { IconName } from 'svelte-widgets'
 
   const task_icons: Record<string, IconName> = {
     discovery: `Search`,

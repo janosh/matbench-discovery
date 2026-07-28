@@ -2,7 +2,7 @@
   import { ACTIVE_MODELS } from '$lib/models.svelte'
   import { model_metric_ranks, RANKED_METRICS } from '$lib/rankings'
   import { format_num } from 'matterviz'
-  import { tooltip } from 'svelte-multiselect/attachments'
+  import { tooltip } from 'svelte-widgets/attachments'
 
   let { model_key }: { model_key: string } = $props()
 

@@ -2,8 +2,9 @@
   import { arr_to_str, DATASETS, format_date } from '$lib'
   import { DATASET_METADATA_COLS, title_case } from '$lib/labels'
   import pkg from '$site/package.json'
-  import type { IconName, RowData } from 'matterviz'
-  import { HeatmapTable, Icon, ICON_DATA } from 'matterviz'
+  import type { RowData } from 'matterviz'
+  import { Icon, icon_data, type IconName } from 'svelte-widgets'
+  import { HeatmapTable } from 'matterviz'
 
   const license_map: Record<string, string> = {
     'CC-BY-4.0': `Creative Commons Attribution 4.0 International`,
@@ -12,13 +13,13 @@
   }
 
   const icon = (name: IconName, color?: string): string => {
-    const data = ICON_DATA[name]
+    const data = icon_data[name]
     const fill = `stroke` in data ? `none` : `currentColor`
     const stroke = `stroke` in data ? `stroke="currentColor"` : ``
     return `<svg fill="${fill}" ${stroke} ${
       color ? `style="color:${color}"` : ``
     } width="1em" height="1em" viewBox="${data.viewBox}">
-    ${data.path.trim().startsWith(`<`) ? data.path : `<path d="${data.path}" />`}
+    ${data.markup ?? `<path d="${data.d}" />`}
     </svg>`
   }
 

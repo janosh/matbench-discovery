@@ -34,10 +34,11 @@
   import type { DiscoverySet, Label, ModelData, SortDir } from '$lib/types'
   import Readme from '$root/readme.md'
   import MdNote from '$routes/tasks/md/md-note.md'
-  import { format_num, Icon } from 'matterviz'
+  import { format_num } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
   import { onMount } from 'svelte'
   import { slide } from 'svelte/transition'
-  import { tooltip } from 'svelte-multiselect/attachments'
+  import { tooltip } from 'svelte-widgets/attachments'
   import type { Snapshot } from './$types'
   import github_activity_data from './models/mlip-github-activity.json'
 

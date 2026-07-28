@@ -44,7 +44,7 @@ const scatter_y_for = (model_key: string): number | undefined =>
   )?.y[0]
 
 const active_toggle = (): string | undefined =>
-  document.querySelector(`button.active`)?.textContent?.trim()
+  document.querySelector(`button[aria-pressed="true"]`)?.textContent?.trim()
 
 const button_for = (label: string): HTMLButtonElement => {
   const button = [...document.querySelectorAll<HTMLButtonElement>(`button`)].find(

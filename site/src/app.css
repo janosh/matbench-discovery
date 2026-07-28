@@ -305,7 +305,7 @@ blockquote > :is(:first-child, :last-child) {
 :where(h2, h3, h4, h5, h6).toc-clicked {
   color: var(--link-hover);
 }
-/* style heading anchors added by heading_anchors attachment from svelte-multiselect */
+/* style heading anchors added by heading_anchors attachment from svelte-widgets */
 :where(h1, h2, h3, h4, h5, h6, strong) a[aria-hidden='true'] {
   transition: 0.3s;
   margin-left: 6pt;
@@ -354,13 +354,13 @@ input {
   color: var(--text-color);
   transition: background 0.2s;
 }
-/* don't change background color for svelte-multiselect */
+/* don't change background color for svelte-widgets MultiSelect */
 ul.selected input {
   background: inherit;
 }
-/* svelte-multiselect renders a hidden form-validation input holding the
-   JSON-serialized selection (e.g. ["interpolateViridis"]). Its own scoped CSS
-   that hides this input isn't emitted for the matterviz-nested copy under pnpm
+/* MultiSelect renders a hidden form-validation input holding the JSON-serialized
+   selection (e.g. ["interpolateViridis"]). Its own scoped CSS that hides this input
+   isn't emitted for the svelte-multiselect copy still nested under matterviz via pnpm
    link, so re-assert the hide here to stop it leaking into the layout. */
 div.multiselect > input.form-control {
   position: absolute;

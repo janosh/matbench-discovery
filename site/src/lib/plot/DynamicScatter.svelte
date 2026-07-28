@@ -7,7 +7,7 @@
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
-  import Select from 'svelte-multiselect'
+  import Select from 'svelte-widgets'
   import {
     ALL_METRICS,
     DISCOVERY_SET_LABELS,

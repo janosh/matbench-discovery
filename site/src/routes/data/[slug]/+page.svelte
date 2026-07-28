@@ -1,8 +1,9 @@
 <script lang="ts">
   import { arr_to_str, DATASETS, format_date } from '$lib'
-  import { format_num, format_relative_time, Icon } from 'matterviz'
+  import { format_num, format_relative_time } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
   import pkg from '$site/package.json'
-  import { tooltip } from 'svelte-multiselect/attachments'
+  import { tooltip } from 'svelte-widgets/attachments'
   import type { PageData } from './$types'
   import MPtrjTargetDistros from './MPtrjTargetDistros.svelte'
 

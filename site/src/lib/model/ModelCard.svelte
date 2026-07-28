@@ -4,8 +4,9 @@
   import { parse_dependency_spec } from '$lib/environment'
   import { get_nested_number, label_data_path } from '$lib/metrics'
   import pkg from '$site/package.json'
-  import { format_num, Icon } from 'matterviz'
-  import { tooltip } from 'svelte-multiselect/attachments'
+  import { format_num } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
+  import { tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
   import { fade, slide } from 'svelte/transition'
 

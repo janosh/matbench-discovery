@@ -23,8 +23,9 @@
     TableLabel,
   } from '$lib/types'
   import type { CellSnippetArgs, Label as MattervizLabel } from 'matterviz'
-  import { HeatmapTable, Icon } from 'matterviz'
-  import { click_outside, tooltip } from 'svelte-multiselect/attachments'
+  import { HeatmapTable } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
+  import { click_outside, tooltip } from 'svelte-widgets/attachments'
   import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
   import { SvelteSet } from 'svelte/reactivity'

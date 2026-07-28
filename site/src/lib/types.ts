@@ -1,4 +1,5 @@
-import type { IconName, Label as MattervizLabel } from 'matterviz'
+import type { Label as MattervizLabel } from 'matterviz'
+import type { IconName } from 'svelte-widgets'
 import type { Label1 as LabelType } from './schema/label'
 import type { ModelMetadata, Person } from './schema/model'
 
