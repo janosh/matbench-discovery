@@ -169,8 +169,6 @@ metrics:
       url: https://figshare.com/files/67080092
       size: 104612192
       md5: 1cae3b39310d1a7835cee16961db9a5a
-    hardware: NVIDIA H100
-    run_time_sec: 484948
     symprec=1e-5:
       rmsd: 0.0863
       n_sym_ops_mae: 1.8906
