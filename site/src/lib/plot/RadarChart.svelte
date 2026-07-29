@@ -2,8 +2,9 @@
   import type { CpsConfig } from '$lib/combined-scores.svelte'
   import { ALL_METRICS } from '$lib/labels'
   import type { Label } from '$lib/types'
-  import { format_num, Icon, type Point } from 'matterviz'
-  import { tooltip } from 'svelte-multiselect/attachments'
+  import { format_num, type Point } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
+  import { tooltip } from 'svelte-widgets/attachments'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { ACTIVE_MODELS, update_models_cps } from '$lib/models.svelte'
 

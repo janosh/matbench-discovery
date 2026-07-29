@@ -46,7 +46,7 @@ describe(`SelectToggle.svelte`, () => {
 
       // Verify active state
       expect(
-        [...buttons].map((button) => button.classList.contains(`active`)),
+        [...buttons].map((button) => button.getAttribute(`aria-pressed`) === `true`),
       ).toStrictEqual(options.map((_, idx) => idx === expectedActiveIndex))
 
       // Check HTML rendering if expected
@@ -72,8 +72,8 @@ describe(`SelectToggle.svelte`, () => {
 
     // Verify initial active state
     let buttons = document.querySelectorAll(`button`)
-    expect(buttons[0].classList.contains(`active`)).toBe(true)
-    expect(buttons[1].classList.contains(`active`)).toBe(false)
+    expect(buttons[0].getAttribute(`aria-pressed`)).toBe(`true`)
+    expect(buttons[1].getAttribute(`aria-pressed`)).toBe(`false`)
 
     // Remount with option2 selected to simulate state change
     document.body.innerHTML = ``
@@ -86,8 +86,8 @@ describe(`SelectToggle.svelte`, () => {
 
     // Verify updated active state
     buttons = document.querySelectorAll(`button`)
-    expect(buttons[0].classList.contains(`active`)).toBe(false)
-    expect(buttons[1].classList.contains(`active`)).toBe(true)
+    expect(buttons[0].getAttribute(`aria-pressed`)).toBe(`false`)
+    expect(buttons[1].getAttribute(`aria-pressed`)).toBe(`true`)
   })
 
   it.each([
@@ -118,6 +118,8 @@ describe(`SelectToggle.svelte`, () => {
       const links = document.querySelectorAll(`a`)
 
       expect(links).toHaveLength(expectNoLink ? 0 : 1)
+      // interactive content inside a <button> is an invalid HTML content model
+      expect(links[0]?.closest(`button`) ?? null).toBeNull()
       expect(links[0]?.getAttribute(`href`) ?? null).toBe(
         expectedLinkAttributes?.href ?? null,
       )

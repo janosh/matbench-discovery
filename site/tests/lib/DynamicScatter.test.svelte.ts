@@ -147,7 +147,8 @@ it.each([
   },
 )
 
-it(`opens the model legend from the controls row`, async () => {
+it(`opens the model legend from the controls row and collapses it again on a click
+    anywhere but the legend`, async () => {
   vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
   mount(DynamicScatter, {
@@ -163,4 +164,15 @@ it(`opens the model legend from the controls row`, async () => {
   await tick()
   expect(document.querySelector(`.scatter > .legend:has(.legend-item)`)).not.toBeNull()
   expect(document.querySelector(`button.models-toggle`)).toBeNull()
+
+  const click = () => new MouseEvent(`click`, { bubbles: true })
+  doc_query(`.scatter > .legend .legend-item`).dispatchEvent(click())
+  await tick()
+  expect(document.querySelector(`button.models-toggle`)).toBeNull()
+
+  // the controls row sits inside the same wrapper the attachment is on, so only the
+  // legend itself may count as inside — everything else collapses it
+  doc_query(`.collapsible-legend .controls-row`).dispatchEvent(click())
+  await tick()
+  expect(document.querySelector(`button.models-toggle`)).not.toBeNull()
 })

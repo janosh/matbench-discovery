@@ -84,12 +84,15 @@ jobs:
           [ -z "$GENERATOR_PATTERN" ] && { echo "::error::Empty generator pattern"; exit 1; }
           MODEL_YAML_PATTERN='^models/[A-Za-z0-9][A-Za-z0-9_.+@-]*/[A-Za-z0-9][A-Za-z0-9_.+@-]*\.yml$'
           TRUSTED_CODE_PATTERN='^(\.github/(payload-generator-paths\.regex|workflows/update-site-figs\.yml)|matbench_discovery/.*\.py|scripts/(apply_pr_models_overlay|generate_model_enum|summarize_payload_changes|upload_model_preds_to_figshare)\.py|pyproject\.toml|models/run_[A-Za-z0-9_.-]+\.py)$'
-          BLOCKED=$(jq -r --arg calculator matbench_discovery/calculators.py \
-            '.[][] | select(.filename != $calculator or (.status != "added" and .status != "modified")) | .filename, (.previous_filename // empty)' \
+          # Safe: the overlay copies model YAMLs only, so these are never executed.
+          # enums.py is regenerated below, so the bot's copy must not block re-ingestion.
+          EXEMPT_PATHS='["matbench_discovery/calculators.py","matbench_discovery/enums.py"]'
+          BLOCKED=$(jq -r --argjson exempt "$EXEMPT_PATHS" \
+            '.[][] | . as $file | select(($exempt | index($file.filename)) == null or ($file.status != "added" and $file.status != "modified")) | $file.filename, ($file.previous_filename // empty)' \
             "$RUNNER_TEMP/pr-files.json" |
             grep -E "($GENERATOR_PATTERN)|($TRUSTED_CODE_PATTERN)" || true)
           if [ -n "$BLOCKED" ]; then
-            echo "::error::This PR changes privileged or payload-generating code. Calculator integration is the only code allowed alongside model YAMLs."
+            echo "::error::This PR changes privileged or payload-generating code. Only calculator integration and the generated Model enum may accompany model YAMLs."
             echo "$BLOCKED"
             exit 1
           fi

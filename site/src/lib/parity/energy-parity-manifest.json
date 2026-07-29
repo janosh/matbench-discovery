@@ -35,6 +35,11 @@
       "bytes": 644526,
       "sha256": "b0587f375e9497e9c8d5125f753e1ed72e5f99a6b564a9c13033e13b5c2dbe91"
     },
+    "bam-mp-core": {
+      "asset": "energy-parity-wbm-v1-model-bam-mp-core.json.gz",
+      "bytes": 646364,
+      "sha256": "d9816013c61dd2f04bfb59ad67c44631d40dfd121c14f8fce178c5aa31a04a94"
+    },
     "bowsr": {
       "asset": "energy-parity-wbm-v1-model-bowsr.json.gz",
       "bytes": 628889,
@@ -65,26 +70,6 @@
       "bytes": 643656,
       "sha256": "0ca9091f15bb86b48a1bc30f3055d6ae22da053b9736498f5afa4e6a1c3b7fe6"
     },
-    "esen-30m-mp": {
-      "asset": "energy-parity-wbm-v1-model-eSEN-30m-mp.json.gz",
-      "bytes": 643323,
-      "sha256": "4d374fd8dc09c0c80976d42cfda5e4e052782c93e8f25fded70b900a734d44b9"
-    },
-    "esen-30m-oam": {
-      "asset": "energy-parity-wbm-v1-model-eSEN-30m-oam.json.gz",
-      "bytes": 643257,
-      "sha256": "335d510cb392719f6f23c9343178e8af4cd4b5abf54c11a61a007270f6128218"
-    },
-    "eqv2-m-omat-salex-mp": {
-      "asset": "energy-parity-wbm-v1-model-eqV2-m-omat-salex-mp.json.gz",
-      "bytes": 647380,
-      "sha256": "6a260b3f555d7d5a5ddaebb3268c6a1a05a8c2073da343d8c7dc23618db47959"
-    },
-    "eqv2-s-dens-mp": {
-      "asset": "energy-parity-wbm-v1-model-eqV2-s-dens-mp.json.gz",
-      "bytes": 647501,
-      "sha256": "ca44544ec934fae2e717e88f983a4a6e2636f3bb2647c72f80174c7fa65351a4"
-    },
     "eqnorm-mptrj": {
       "asset": "energy-parity-wbm-v1-model-eqnorm-mptrj.json.gz",
       "bytes": 644454,
@@ -109,6 +94,26 @@
       "asset": "energy-parity-wbm-v1-model-equiformer-v3-oam.json.gz",
       "bytes": 643094,
       "sha256": "a9fcfff67782c5963efcacd46b9370ed3b048d514eba7d8bb9b1d4a726c79590"
+    },
+    "eqv2-m-omat-salex-mp": {
+      "asset": "energy-parity-wbm-v1-model-eqV2-m-omat-salex-mp.json.gz",
+      "bytes": 647380,
+      "sha256": "6a260b3f555d7d5a5ddaebb3268c6a1a05a8c2073da343d8c7dc23618db47959"
+    },
+    "eqv2-s-dens-mp": {
+      "asset": "energy-parity-wbm-v1-model-eqV2-s-dens-mp.json.gz",
+      "bytes": 647501,
+      "sha256": "ca44544ec934fae2e717e88f983a4a6e2636f3bb2647c72f80174c7fa65351a4"
+    },
+    "esen-30m-mp": {
+      "asset": "energy-parity-wbm-v1-model-eSEN-30m-mp.json.gz",
+      "bytes": 643323,
+      "sha256": "4d374fd8dc09c0c80976d42cfda5e4e052782c93e8f25fded70b900a734d44b9"
+    },
+    "esen-30m-oam": {
+      "asset": "energy-parity-wbm-v1-model-eSEN-30m-oam.json.gz",
+      "bytes": 643257,
+      "sha256": "335d510cb392719f6f23c9343178e8af4cd4b5abf54c11a61a007270f6128218"
     },
     "esnet": {
       "asset": "energy-parity-wbm-v1-model-esnet.json.gz",

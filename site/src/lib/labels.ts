@@ -1,6 +1,6 @@
 import type { DiscoverySet, Label } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { ICON_DATA, type IconName } from 'matterviz'
+import { icon_data, type IconName } from 'svelte-widgets'
 import type {
   DatasetMetadataLabels,
   DiscoveryMetricsLabels,
@@ -923,11 +923,11 @@ export function get_org_logo(affiliation: string): OrgLogo | undefined {
       } else if (logo_val.startsWith(`icon:`)) {
         const icon_name = logo_val.replace(`icon:`, ``)
         const validated_icon =
-          icon_name in ICON_DATA ? (icon_name as IconName) : undefined
+          icon_name in icon_data ? (icon_name as IconName) : undefined
         if (!validated_icon && !import.meta.env.PROD) {
           console.warn(
             `Invalid icon name "${icon_name}" for org "${key_val}". ` +
-              `Valid names: ${Object.keys(ICON_DATA).slice(0, 10).join(`, `)}...`,
+              `Valid names: ${Object.keys(icon_data).slice(0, 10).join(`, `)}...`,
           )
         }
         return { name: key_val, id: logo_val, validated_icon }

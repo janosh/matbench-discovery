@@ -13,16 +13,16 @@
     series_red,
   } from '$lib/fig-helpers'
   import type { ElementSymbol } from 'matterviz'
-  import { ColorScaleSelect, Icon } from 'matterviz'
+  import { ColorScaleSelect } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { BarPlot, sunburst_from_labels_parents, Sunburst } from 'matterviz/plot'
-  import Select from 'svelte-multiselect'
+  import Select, { Icon } from 'svelte-widgets'
   import {
     bind_url_params,
     url_color_scale,
     valid_query_param,
   } from '$lib/url-state.svelte'
-  import { tooltip } from 'svelte-multiselect/attachments'
+  import { tooltip } from 'svelte-widgets/attachments'
   import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './[slug]/MpTrjNSitesHist.svelte'
   import DataFilesDirectDownload from './data-files-direct-download.md'

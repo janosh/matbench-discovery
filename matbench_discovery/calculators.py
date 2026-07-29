@@ -828,6 +828,21 @@ def _equflash(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
+def _bam(model_key: str) -> Callable[..., "Calculator"]:
+    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+        # BAM-torch's RACECalculator (bam_torch.tase.base_calculator) already
+        # exposes energy/forces/stress plus free_energy and defaults missing
+        # periodic stress to zero, so no monkey-patching or subclassing here.
+        from bam_torch.tase.base_calculator import RACECalculator
+
+        return RACECalculator(
+            model=checkpoint or download_checkpoint(model_key, ext=".pkl"),
+            device=device,
+        )
+
+    return make_calc
+
+
 def _emt(device: str) -> "Calculator":  # noqa: ARG001 - CPU only, debug model
     from ase.calculators.emt import EMT
 
@@ -943,6 +958,7 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         ),
         "tace_oam_l": _named_spec(_tace, "tace_oam_l", checkpoint=True),
         "tece_oam_rra_1_0": _named_spec(_tace, "tece_oam_rra_1_0", checkpoint=True),
+        "bam_mp_core": _named_spec(_bam, "bam_mp_core", checkpoint=True, ext=".pkl"),
         "dpa_3_1_mptrj": _deepmd_spec("dpa_3_1_mptrj"),
         "dpa_3_1_3m_ft": _deepmd_spec("dpa_3_1_3m_ft"),
         "dpa3_v2_mptrj": _deepmd_spec("dpa3_v2_mptrj"),

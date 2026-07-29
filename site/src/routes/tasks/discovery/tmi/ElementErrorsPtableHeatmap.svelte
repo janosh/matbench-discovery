@@ -6,7 +6,7 @@
   import { ColorBar, format_num, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
-  import Select from 'svelte-multiselect'
+  import Select from 'svelte-widgets'
   import { per_element_each_errors as each_errors } from '$lib/per-element-errors'
 
   const models_with_errors = ACTIVE_MODELS.filter(
@@ -36,7 +36,7 @@
     color_scale?: D3InterpolateName | ((num: number) => string)
     active_element?: ChemicalElement | null
     models?: string[]
-    // Must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
+    // Must be string[] instead of string for svelte-widgets to be correctly restored by snapshot
     current_model?: string[]
     manual_cbar_max?: boolean
     normalized?: boolean

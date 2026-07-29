@@ -27,7 +27,7 @@ const get_headers = (root: ParentNode) =>
 const kappa_sort_select = (): HTMLSelectElement =>
   doc_query<HTMLSelectElement>(`.kappa-model-select select`)
 
-// the model picker is a svelte-multiselect; its selected chip lives in this ul
+// the model picker is a svelte-widgets MultiSelect; its selected chip lives in this ul
 const kappa_selected_model = (): string | null =>
   doc_query(`.kappa-model-select ul[aria-label="selected options"]`).textContent
 

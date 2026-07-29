@@ -3,21 +3,22 @@
 {"key":"allegro-mp-l-0.1","label":"Allegro-MP-L","quantiles":[-0.125,-0.038,-0.01,0.008,0.062]}
 {"key":"allegro-oam-l-0.1","label":"Allegro-OAM-L","quantiles":[-0.046,-0.01,-0.003,0.004,0.028]}
 {"key":"alphanet-v1-oam","label":"AlphaNet-v1-OAM","quantiles":[-0.072,-0.011,-0.003,0.002,0.025]}
+{"key":"bam-mp-core","label":"BAM-MP-core","quantiles":[-0.15,-0.056,-0.015,0.019,0.102]}
 {"key":"bowsr","label":"BOWSR","quantiles":[-0.311,-0.132,-0.058,0.0,0.19]}
 {"key":"cgcnn","label":"CGCNN","quantiles":[-0.193,-0.055,0.007,0.109,0.47]}
 {"key":"cgcnn-p","label":"CGCNN+P","quantiles":[-0.268,-0.094,-0.028,0.027,0.269]}
 {"key":"chgnet-0.3.0","label":"CHGNet","quantiles":[-0.173,-0.071,-0.027,0.006,0.071]}
 {"key":"dpa-3.1-3m-ft","label":"DPA-3.1-3M-FT","quantiles":[-0.045,-0.011,-0.002,0.007,0.034]}
 {"key":"dpa-4.0.1-pro-mptrj","label":"DPA-4.0.1-Pro-MPtrj","quantiles":[-0.064,-0.016,-0.002,0.007,0.053]}
-{"key":"esen-30m-mp","label":"eSEN-30M-MP","quantiles":[-0.084,-0.023,-0.005,0.007,0.055]}
-{"key":"esen-30m-oam","label":"eSEN-30M-OAM","quantiles":[-0.04,-0.004,0.0,0.005,0.02]}
-{"key":"eqv2-m-omat-salex-mp","label":"eqV2 M","quantiles":[-0.023,-0.003,0.001,0.006,0.042]}
-{"key":"eqv2-s-dens-mp","label":"eqV2 S DeNS","quantiles":[-0.08,-0.024,-0.006,0.008,0.069]}
 {"key":"eqnorm-mptrj","label":"Eqnorm MPtrj","quantiles":[-0.1,-0.031,-0.007,0.008,0.065]}
 {"key":"equflash-29m-oam","label":"EquFlash","quantiles":[-0.038,-0.006,0.0,0.005,0.025]}
 {"key":"equflashv2-45m-oam","label":"EquFlashV2","quantiles":[-0.033,-0.004,0.0,0.004,0.021]}
 {"key":"equiformer-v3-mp","label":"EquiformerV3+DeNS-MP","quantiles":[-0.071,-0.019,-0.004,0.004,0.042]}
 {"key":"equiformer-v3-oam","label":"EquiformerV3+DeNS-OAM","quantiles":[-0.037,-0.004,0.0,0.004,0.019]}
+{"key":"eqv2-m-omat-salex-mp","label":"eqV2 M","quantiles":[-0.023,-0.003,0.001,0.006,0.042]}
+{"key":"eqv2-s-dens-mp","label":"eqV2 S DeNS","quantiles":[-0.08,-0.024,-0.006,0.008,0.069]}
+{"key":"esen-30m-mp","label":"eSEN-30M-MP","quantiles":[-0.084,-0.023,-0.005,0.007,0.055]}
+{"key":"esen-30m-oam","label":"eSEN-30M-OAM","quantiles":[-0.04,-0.004,0.0,0.005,0.02]}
 {"key":"esnet","label":"ESNet","quantiles":[-0.14,-0.038,0.011,0.09,0.361]}
 {"key":"gnome","label":"GNoME","quantiles":[-0.128,-0.015,0.0,0.012,0.049]}
 {"key":"grace-1l-oam","label":"GRACE-1L-OAM","quantiles":[-0.091,-0.017,-0.002,0.01,0.045]}

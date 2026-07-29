@@ -17,9 +17,9 @@
     TRAIN_FILTER_MODES,
   } from '$lib/url-state.svelte'
   import type { TargetOutput, UrlTableFilters } from '$lib/url-state.svelte'
-  import { Icon } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
   import { ToggleMenu } from 'matterviz/table'
-  import { click_outside, tooltip } from 'svelte-multiselect/attachments'
+  import { click_outside, tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
   let {

@@ -4,8 +4,8 @@ import { mdsvex } from 'mdsvex'
 import pkg from './package.json' with { type: 'json' }
 import katex from 'rehype-katex-svelte'
 import math from 'remark-math' // Remark-math@3.0.0 pinned due to mdsvex, see https://github.com/kwshi/rehype-katex-svelte#usage
-import { heading_ids } from 'svelte-multiselect/heading-anchors' // Adds IDs to headings at build time
-import { starry_night_highlighter } from 'svelte-multiselect/live-examples'
+import { heading_ids } from 'svelte-widgets/heading-anchors' // Adds IDs to headings at build time
+import { starry_night_highlighter } from 'svelte-widgets/live-examples'
 
 export default {
   extensions: [`.svelte`, `.svx`, `.md`, `.html`],
