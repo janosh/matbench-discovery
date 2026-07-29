@@ -93,7 +93,7 @@ hyperparams:
       save_forces: true
   architecture:
     graph_construction_radius: 6.0
-    max_neighbors: null
+    max_neighbors:
 notes:
   description: |
     BAM-MP-core is a universal interatomic potential implemented in the
@@ -104,7 +104,7 @@ metrics:
   discovery:
     pred_file:
       name: models/bam/bam-mp-core/2026-05-09-discovery.csv.gz
-      url: https://figshare.com/files/66975401
+      url: https://figshare.com/files/67080089
       size: 1343396
       md5: 667f4600dd149a8199e187ae391a092e
     hardware: NVIDIA H100
@@ -166,11 +166,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/bam/bam-mp-core/2026-05-09-geo-opt.jsonl.gz
-      url: https://figshare.com/files/66975404
+      url: https://figshare.com/files/67080092
       size: 104612192
       md5: 1cae3b39310d1a7835cee16961db9a5a
-    hardware: NVIDIA H100
-    run_time_sec: 24257
     symprec=1e-5:
       rmsd: 0.0863
       n_sym_ops_mae: 1.8906
@@ -180,7 +178,7 @@ metrics:
       n_structures: 256963
       analysis_file:
         name: models/bam/bam-mp-core/2026-05-09-geo-opt-symprec=1e-5-moyo=0.12.0.csv.gz
-        url: https://figshare.com/files/65862759
+        url: https://figshare.com/files/67080095
         size: 7204479
         md5: 03b61dcdc05459c04eafbef3609aefe6
     symprec=1e-2:
@@ -192,14 +190,14 @@ metrics:
       n_structures: 256963
       analysis_file:
         name: models/bam/bam-mp-core/2026-05-09-geo-opt-symprec=1e-2-moyo=0.12.0.csv.gz
-        url: https://figshare.com/files/65862762
+        url: https://figshare.com/files/67080098
         size: 7230718
         md5: 3fff37eaa297fa215212377d9b2b8d75
   phonons:
     kappa_103:
       pred_file:
         name: models/bam/bam-mp-core/2026-05-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/65859111
+        url: https://figshare.com/files/67080101
         size: 7770664
         md5: 42e5c1b3f3273827bc2f08ec22ee2d68
       hardware: NVIDIA A100
