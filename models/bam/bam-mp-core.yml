@@ -108,7 +108,7 @@ metrics:
       size: 1343396
       md5: 667f4600dd149a8199e187ae391a092e
     hardware: NVIDIA H100
-    run_time_sec: 24257
+    run_time_sec: 484948
     full_test_set:
       F1: 0.618
       DAF: 3.268
@@ -169,6 +169,8 @@ metrics:
       url: https://figshare.com/files/67080092
       size: 104612192
       md5: 1cae3b39310d1a7835cee16961db9a5a
+    hardware: NVIDIA H100
+    run_time_sec: 484948
     symprec=1e-5:
       rmsd: 0.0863
       n_sym_ops_mae: 1.8906
