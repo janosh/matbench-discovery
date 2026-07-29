@@ -6,7 +6,6 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { MODELS } from './models.svelte'
 
-export { default as Footer } from './Footer.svelte'
 export { default as AuthorBrief } from './model/ModelAuthor.svelte'
 export { default as GeoOptMetricsTable } from './table/GeoOptMetricsTable.svelte'
 export { default as MetricsTable } from './table/MetricsTable.svelte'

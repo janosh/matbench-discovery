@@ -6,7 +6,7 @@
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { BarPlot } from 'matterviz/plot'
-  import { Toggle } from 'svelte-multiselect'
+  import { Toggle } from 'svelte-widgets'
   import {
     bind_url_params,
     bool_from_param,

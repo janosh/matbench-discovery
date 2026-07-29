@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { Icon } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
   import pkg from '$site/package.json'
 
   let online: boolean = $state(true)

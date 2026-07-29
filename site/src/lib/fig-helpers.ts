@@ -3,6 +3,7 @@ import { MODELS } from '$lib/models.svelte'
 import type { LegendConfig, RefLine } from 'matterviz/plot'
 import type { Attachment } from 'svelte/attachments'
 import { SvelteSet } from 'svelte/reactivity'
+import { dismiss_on_outside_press } from 'svelte-widgets/attachments'
 
 // === multi-model payload styling ===
 // .jsonl payloads hold position-independent data only (no color/order) so models merge
@@ -85,20 +86,19 @@ export const make_models_legend = (legend_group = `Toggle Models`) => {
     style: `${wide_legend.style} --plot-legend-bg-color: light-dark(rgb(255, 255, 255), rgb(40, 40, 40))`,
     on_group_toggle: toggle_group,
   }
-  // Capture-phase listener also sees clicks whose inner handlers stop propagation.
-  const collapse_on_outside_click: Attachment = (node) => {
-    const on_click = (event: MouseEvent) => {
-      if (collapsed_groups.has(legend_group)) return
-      const target = event.target
-      if (!(target instanceof Node)) return
-      const legend_el = node.querySelector(`.legend`)
-      if (legend_el && !legend_el.contains(target)) {
-        collapsed_groups.add(legend_group)
-      }
-    }
-    document.addEventListener(`click`, on_click, true)
-    return () => document.removeEventListener(`click`, on_click, true)
-  }
+  // Only the legend counts as inside — a click on the plot or the controls above it
+  // collapses too — so pass the surface as `inside` rather than attaching to `node`
+  // (which click_outside would treat as inside). `scope` keeps a sibling figure's
+  // legend from counting. `release` listens for click, not pointerdown, matching the
+  // legend's own toggles, and the listener is capture-phase either way, so it still
+  // sees clicks whose inner handlers stop propagation.
+  const collapse_on_outside_click: Attachment = (node) =>
+    dismiss_on_outside_press({
+      inside: [`.legend`],
+      scope: node,
+      dismiss_on: `release`,
+      callback: () => collapsed_groups.add(legend_group),
+    })
   return { legend_group, legend, collapse_on_outside_click, toggle }
 }
 

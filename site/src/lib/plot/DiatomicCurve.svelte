@@ -2,7 +2,7 @@
   import { MODELS } from '$lib'
   import { type InternalPoint, ScatterPlot } from 'matterviz'
   import { element_data, type ChemicalElement } from 'matterviz/element'
-  import { tooltip as add_tooltip } from 'svelte-multiselect/attachments'
+  import { tooltip as add_tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
   let {

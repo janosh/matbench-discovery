@@ -1,6 +1,6 @@
 <script lang="ts" generics="T extends Option">
-  import Select from 'svelte-multiselect'
-  import type { MultiSelectProps, Option } from 'svelte-multiselect'
+  import Select from 'svelte-widgets'
+  import type { MultiSelectProps, Option } from 'svelte-widgets'
 
   // only the bound props need the precise T; pass-through props (handlers etc.) use the
   // base Option generic so spreading them onto Select type-checks without a cast

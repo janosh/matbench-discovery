@@ -7,7 +7,7 @@ type AfterNavigateCallback = (navigation: unknown) => void
 
 let after_navigate_callbacks: AfterNavigateCallback[] = []
 
-// MatchMedia mock for Svelte MediaQuery - needed for svelte-multiselect
+// MatchMedia mock for Svelte MediaQuery - needed for svelte-widgets
 Object.defineProperty(globalThis, `matchMedia`, {
   writable: true,
   value: (query: string) => ({

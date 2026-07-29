@@ -1,4 +1,4 @@
-import type { ObjectOption } from 'svelte-multiselect'
+import type { ObjectOption } from 'svelte-widgets'
 import { untrack } from 'svelte'
 
 type ModelSelectionConfig<T extends ObjectOption> = {

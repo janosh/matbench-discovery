@@ -10,18 +10,12 @@
   import { EnergyParityPlot, KappaParityPlot } from '$lib/plot'
   import { get_pred_file_urls } from '$lib/models.svelte'
   import pkg from '$site/package.json'
-  import type { ChemicalElement, IconName } from 'matterviz'
-  import {
-    format_num,
-    format_relative_time,
-    HeatmapTable,
-    Icon,
-    ColorBar,
-  } from 'matterviz'
+  import type { ChemicalElement } from 'matterviz'
+  import { CopyButton, Icon, type IconName } from 'svelte-widgets'
+  import { format_num, format_relative_time, HeatmapTable, ColorBar } from 'matterviz'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { CopyButton } from 'svelte-multiselect'
-  import { click_outside, tooltip } from 'svelte-multiselect/attachments'
+  import { click_outside, tooltip } from 'svelte-widgets/attachments'
   import { SvelteSet } from 'svelte/reactivity'
   import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import type { LoadStatus } from '$lib/asset-loader'
@@ -493,24 +487,26 @@
   :global(.energy-parity-tabs.selection-toggle) {
     gap: 0;
   }
-  :global(.energy-parity-tabs.selection-toggle button) {
-    padding: 2px 12px;
+  :global(.energy-parity-tabs.selection-toggle .option) {
     border-radius: 0;
     border-width: 0.5px; /* hairline on HiDPI, incl. the active colored border */
   }
-  /* fuse adjacent borders; the active button sits on top so its colored border
+  :global(.energy-parity-tabs.selection-toggle .option button) {
+    padding: 2px 12px;
+  }
+  /* fuse adjacent borders; the active option sits on top so its colored border
   wins the shared edge regardless of which side is selected */
-  :global(.energy-parity-tabs.selection-toggle button + button) {
+  :global(.energy-parity-tabs.selection-toggle .option + .option) {
     margin-left: -0.5px;
   }
-  :global(.energy-parity-tabs.selection-toggle button.active) {
+  :global(.energy-parity-tabs.selection-toggle .option.active) {
     position: relative;
     z-index: 1;
   }
-  :global(.energy-parity-tabs.selection-toggle button:first-child) {
+  :global(.energy-parity-tabs.selection-toggle .option:first-child) {
     border-radius: 9999px 0 0 9999px;
   }
-  :global(.energy-parity-tabs.selection-toggle button:last-child) {
+  :global(.energy-parity-tabs.selection-toggle .option:last-child) {
     border-radius: 0 9999px 9999px 0;
   }
   /* version numbers as light code, less prominent than the package name */

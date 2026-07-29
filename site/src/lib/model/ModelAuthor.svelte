@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Author } from '$lib'
   import { get_org_logo } from '$lib/labels'
-  import { Icon } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
   import type { HTMLAttributes } from 'svelte/elements'
   import Logo from '../Logo.svelte'
 

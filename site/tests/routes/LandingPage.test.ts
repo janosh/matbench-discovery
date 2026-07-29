@@ -120,13 +120,13 @@ describe(`Landing Page`, () => {
       )
     const [full_test_button, unique_protos_button] = toggle_buttons(`Full Test Set`)
     expect(test_set_shown()).toBe(true)
-    expect(unique_protos_button.classList.contains(`active`)).toBe(true)
-    expect(full_test_button.classList.contains(`active`)).toBe(false)
+    expect(unique_protos_button.getAttribute(`aria-pressed`)).toBe(`true`)
+    expect(full_test_button.getAttribute(`aria-pressed`)).toBe(`false`)
 
     full_test_button.click()
     await tick()
-    expect(unique_protos_button.classList.contains(`active`)).toBe(false)
-    expect(full_test_button.classList.contains(`active`)).toBe(true)
+    expect(unique_protos_button.getAttribute(`aria-pressed`)).toBe(`false`)
+    expect(full_test_button.getAttribute(`aria-pressed`)).toBe(`true`)
 
     await select_preset(`MD`)
     expect(test_set_shown()).toBe(false)

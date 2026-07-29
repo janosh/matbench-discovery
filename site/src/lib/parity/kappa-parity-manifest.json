@@ -25,6 +25,11 @@
       "bytes": 59291,
       "sha256": "5914dd57a0733585b5b01bce5ed431a90e7b02cb67a286c21169566d61bf2af3"
     },
+    "bam-mp-core": {
+      "asset": "kappa-parity-phonondb-v1-model-bam-mp-core.json.gz",
+      "bytes": 55448,
+      "sha256": "62df3c863322b6a2a20001a99bcb5e9607977682a97b784fc160288fe5ec5f50"
+    },
     "chgnet-0.3.0": {
       "asset": "kappa-parity-phonondb-v1-model-chgnet-0.3.0.json.gz",
       "bytes": 59446,
@@ -39,26 +44,6 @@
       "asset": "kappa-parity-phonondb-v1-model-dpa-4.0.1-pro-mptrj.json.gz",
       "bytes": 59233,
       "sha256": "6582ac2990e237438e54740a3f55e3635b01c322f233f6498d49e3205ed6df25"
-    },
-    "esen-30m-mp": {
-      "asset": "kappa-parity-phonondb-v1-model-eSEN-30m-mp.json.gz",
-      "bytes": 58338,
-      "sha256": "077b15119ee2c6c4344fbae851ab1e87645718525f7ac5ef8f3e7bb50d8b0f5d"
-    },
-    "esen-30m-oam": {
-      "asset": "kappa-parity-phonondb-v1-model-eSEN-30m-oam.json.gz",
-      "bytes": 58598,
-      "sha256": "6fab01939dcf5aa8b2ed919c05ed4389dfc9778e30c63c9db456a478d36d7d91"
-    },
-    "eqv2-m-omat-salex-mp": {
-      "asset": "kappa-parity-phonondb-v1-model-eqV2-m-omat-salex-mp.json.gz",
-      "bytes": 48136,
-      "sha256": "88a44bad336429aefa05688ab27e14b6a5fe878acdfeb631dcdffeb4ae7f5925"
-    },
-    "eqv2-s-dens-mp": {
-      "asset": "kappa-parity-phonondb-v1-model-eqV2-s-dens-mp.json.gz",
-      "bytes": 52506,
-      "sha256": "70129c69d0934a6e42755d45d3bb47d63eeac6c0b4d9ffa262243226d1c4f8e1"
     },
     "eqnorm-mptrj": {
       "asset": "kappa-parity-phonondb-v1-model-eqnorm-mptrj.json.gz",
@@ -84,6 +69,26 @@
       "asset": "kappa-parity-phonondb-v1-model-equiformer-v3-oam.json.gz",
       "bytes": 59452,
       "sha256": "57789022dd8ff9f508243b427bc472505e1eda89fe8664edc7630eb1a6f8ee52"
+    },
+    "eqv2-m-omat-salex-mp": {
+      "asset": "kappa-parity-phonondb-v1-model-eqV2-m-omat-salex-mp.json.gz",
+      "bytes": 48136,
+      "sha256": "88a44bad336429aefa05688ab27e14b6a5fe878acdfeb631dcdffeb4ae7f5925"
+    },
+    "eqv2-s-dens-mp": {
+      "asset": "kappa-parity-phonondb-v1-model-eqV2-s-dens-mp.json.gz",
+      "bytes": 52506,
+      "sha256": "70129c69d0934a6e42755d45d3bb47d63eeac6c0b4d9ffa262243226d1c4f8e1"
+    },
+    "esen-30m-mp": {
+      "asset": "kappa-parity-phonondb-v1-model-eSEN-30m-mp.json.gz",
+      "bytes": 58338,
+      "sha256": "077b15119ee2c6c4344fbae851ab1e87645718525f7ac5ef8f3e7bb50d8b0f5d"
+    },
+    "esen-30m-oam": {
+      "asset": "kappa-parity-phonondb-v1-model-eSEN-30m-oam.json.gz",
+      "bytes": 58598,
+      "sha256": "6fab01939dcf5aa8b2ed919c05ed4389dfc9778e30c63c9db456a478d36d7d91"
     },
     "grace-1l-oam": {
       "asset": "kappa-parity-phonondb-v1-model-grace-1l-oam.json.gz",

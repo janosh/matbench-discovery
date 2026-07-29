@@ -17,7 +17,7 @@
   const fp_diff_label = `|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|`
 
   // per-figure model selection via dropdowns (faster than the old all-series-behind-a-
-  // huge-legend figs). bind the model labels (svelte-multiselect string options; binding
+  // huge-legend figs). bind the model labels (svelte-widgets string options; binding
   // the model objects directly would JSON-serialize their arrays into the DOM via the
   // hidden form-validation input) and look up the matching model object(s) for plotting.
   const find_model = <T extends { label: string }>(models: T[], label: string): T =>

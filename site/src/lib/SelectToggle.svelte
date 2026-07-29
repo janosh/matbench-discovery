@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { Icon } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
   import { Spinner } from 'matterviz/feedback'
-  import { tooltip as tip } from 'svelte-multiselect/attachments'
+  import { tooltip as tip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
   interface OptionInfo {
@@ -26,24 +26,32 @@
 
 <div role="group" {...rest} class={[`selection-toggle`, rest.class]}>
   {#each options as { value, label, tooltip, link, loading } (value)}
-    <button
-      class:active={selected === value}
-      aria-pressed={selected === value}
-      onclick={() => (selected = value)}
-      {@attach tip({ allow_html: true, content: tooltip, placement: tooltip_placement })}
-    >
-      {@html label}
-      {#if loading}
-        <Spinner
-          style="--spinner-size: 0.9em; --spinner-border-width: 2px; --spinner-margin: 0"
-        />
-      {/if}
+    <!-- the info link is a sibling of the button, not a child: interactive content
+    inside a <button> is invalid HTML. .option carries the pill styling so the icon
+    still renders inside the border. -->
+    <span class="option" class:active={selected === value}>
+      <button
+        aria-pressed={selected === value}
+        onclick={() => (selected = value)}
+        {@attach tip({
+          allow_html: true,
+          content: tooltip,
+          placement: tooltip_placement,
+        })}
+      >
+        {@html label}
+        {#if loading}
+          <Spinner
+            style="--spinner-size: 0.9em; --spinner-border-width: 2px; --spinner-margin: 0"
+          />
+        {/if}
+      </button>
       {#if link}
-        <a href={link} onclick={(event) => event.stopPropagation()} {...target}>
+        <a href={link} {...target}>
           <Icon icon="Info" style="transform: translateY(-1px)" />
         </a>
       {/if}
-    </button>
+    </span>
   {/each}
 </div>
 
@@ -54,20 +62,44 @@
     place-content: center;
     gap: 8pt;
   }
-  .selection-toggle button {
+  /* the pill: border and state colors live here so the info link renders inside them,
+  but padding stays on the button so clicking the pill's edges still toggles */
+  .selection-toggle .option {
+    display: inline-flex;
+    align-items: stretch;
+    border: 0.5px solid var(--border);
+    border-radius: 3pt;
+    color: var(--btn-text);
+  }
+  .selection-toggle .option:hover {
+    background: var(--nav-bg);
+  }
+  .selection-toggle .option.active {
+    border-color: var(--link-color);
+    background: color-mix(in oklab, var(--link-color) 8%, var(--nav-bg));
+    color: var(--link-color);
+  }
+  .selection-toggle button,
+  .selection-toggle button:hover {
     display: inline-flex;
     align-items: center;
     gap: 0.5ex;
     padding: 4px 8px;
-    border: 0.5px solid var(--border);
+    border: none;
+    border-radius: 0;
     background: transparent;
+    color: inherit;
   }
-  .selection-toggle button:hover {
-    background: var(--nav-bg);
+  /* 0.83em ≈ the UA font size <button> labels render at, so the info icon (which now
+  sits outside the button) still matches them instead of the larger page font. The
+  button's right padding shrinks to the gap the icon used to have inside it. */
+  .selection-toggle .option:has(a) button {
+    padding-right: 0.5ex;
   }
-  .selection-toggle button.active {
-    border-color: var(--link-color);
-    background: color-mix(in oklab, var(--link-color) 8%, var(--nav-bg));
-    color: var(--link-color);
+  .selection-toggle .option a {
+    display: inline-flex;
+    align-items: center;
+    padding-right: 8px;
+    font-size: 0.83em;
   }
 </style>

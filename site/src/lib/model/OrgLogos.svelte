@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { Author } from '$lib'
   import { get_org_logo, type OrgLogo } from '$lib/labels'
-  import { escape_html, ICON_DATA } from 'matterviz'
-  import { tooltip } from 'svelte-multiselect/attachments'
+  import { escape_html } from 'matterviz'
+  import { icon_data } from 'svelte-widgets'
+  import { tooltip } from 'svelte-widgets/attachments'
   import Logo from '../Logo.svelte'
 
   // org_logos = deduped, logo-matched affiliations shown as a compact preview strip.
@@ -20,10 +21,11 @@
   // innerHTML into document.body, so component-scoped styles don't apply — inline only).
   const logo_html = (logo: OrgLogo): string => {
     const style = `height: 1.1em; width: auto; flex: 0 0 auto; vertical-align: middle`
-    if (logo.validated_icon && logo.validated_icon in ICON_DATA) {
-      const { path, viewBox } = ICON_DATA[logo.validated_icon]
-      const inner = path.trim().startsWith(`<`) ? path : `<path d="${path}" />`
-      return `<svg viewBox="${viewBox}" fill="currentColor" style="${style}">${inner}</svg>`
+    if (logo.validated_icon && logo.validated_icon in icon_data) {
+      // a glyph is either one path `d` or its own markup, never both
+      const entry = icon_data[logo.validated_icon]
+      const inner = `markup` in entry ? entry.markup : `<path d="${entry.d}" />`
+      return `<svg viewBox="${entry.viewBox}" fill="currentColor" style="${style}">${inner}</svg>`
     }
     if (logo.src) {
       return `<img src="${escape_html(logo.src)}" alt="" style="${style}; filter: grayscale(100%)" />`

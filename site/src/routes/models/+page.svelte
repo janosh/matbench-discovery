@@ -10,9 +10,10 @@
     valid_query_param,
   } from '$lib/url-state.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
-  import { ColorBar, Icon, pick_contrast_color } from 'matterviz'
+  import { ColorBar, pick_contrast_color } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
   import { untrack } from 'svelte'
-  import { tooltip } from 'svelte-multiselect/attachments'
+  import { tooltip } from 'svelte-widgets/attachments'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
 

@@ -1,25 +1,46 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import { Footer } from '$lib'
   import { MODELS } from '$lib/models.svelte'
+  import {
+    CommandMenu,
+    CopyButton,
+    Footer,
+    type FooterLink,
+    GitHubCorner,
+    Icon,
+    type IconName,
+    Nav,
+    ThemeToggle,
+    Toc,
+  } from 'svelte-widgets'
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
   import pkg from '$site/package.json'
   import type { Snippet } from 'svelte'
-  import {
-    CmdPalette,
-    CopyButton,
-    GitHubCorner,
-    Nav,
-    ThemeToggle,
-  } from 'svelte-multiselect'
-  import { heading_anchors } from 'svelte-multiselect/heading-anchors'
-  import Toc from 'svelte-toc'
+  import { heading_anchors } from 'svelte-widgets/heading-anchors'
   // oxlint-disable-next-line no-unassigned-import
   import '../app.css'
 
   let { children }: { children?: Snippet } = $props()
   let toc_desktop = $state(true)
+
+  // icon narrowed to names both packages ship so the `item` snippet below can render
+  // them with matterviz's Icon, which is where every other icon on the site comes from
+  const footer_links: (FooterLink & { icon: IconName })[] = [
+    { href: `${pkg.repository}/issues`, label: `Issues`, icon: `Issues` },
+    {
+      href: `mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery`,
+      label: `Contact`,
+      icon: `Contact`,
+    },
+    { href: `/changelog`, label: `Changelog`, icon: `Changelog` },
+    {
+      href: `/rss.xml`,
+      label: `RSS`,
+      icon: `RSS`,
+      title: `Be notified of new model submissions`,
+    },
+  ]
 
   // show full task titles from modeling-tasks.yml instead of capitalized URL slugs
   const task_labels = Object.fromEntries(
@@ -89,7 +110,7 @@
     )
 </script>
 
-<CmdPalette
+<CommandMenu
   {actions}
   placeholder="Go to..."
   dialog_style="top: 15vh; bottom: auto; overflow: visible"
@@ -153,4 +174,22 @@
   {@render children?.()}
 </main>
 
-<Footer />
+<Footer links={footer_links} style="--footer-bg: var(--shadow)">
+  {#snippet item({ link })}
+    {@const icon = footer_links.find((entry) => entry.href === link.href)?.icon}
+    <a href={link.href} title={link.title}>
+      {#if icon}<Icon {icon} style="margin-right: 3pt" />{/if}
+      {link.label}
+    </a>
+  {/snippet}
+  <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle" />
+  &ensp;{pkg.title} &ensp; | &ensp; ©
+  <a href={pkg[`author-url`]}>{pkg.author.split(`<`)[0]}</a>
+  (<a href="{pkg.repository}/blob/-/license">2022</a>)
+</Footer>
+
+<style>
+  :root[data-theme='light'] img {
+    filter: brightness(0.2);
+  }
+</style>
