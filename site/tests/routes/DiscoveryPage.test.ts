@@ -46,6 +46,11 @@ const scatter_y_for = (model_key: string): number | undefined =>
 const active_toggle = (): string | undefined =>
   document.querySelector(`button[aria-pressed="true"]`)?.textContent?.trim()
 
+const toggle_labels = (): (string | undefined)[] =>
+  [...document.querySelectorAll(`.selection-toggle button`)].map((button) =>
+    button.textContent?.trim(),
+  )
+
 const button_for = (label: string): HTMLButtonElement => {
   const button = [...document.querySelectorAll<HTMLButtonElement>(`button`)].find(
     (candidate) => candidate.textContent?.trim() === label,
@@ -117,12 +122,8 @@ describe(`Discovery Task Page`, () => {
       mount(DiscoveryPage, { target: document.body })
       await tick()
 
-      const button_texts = [...document.querySelectorAll(`button`)].map((button) =>
-        button.textContent?.trim(),
-      )
-      expect(button_texts).toEqual(
-        expect.arrayContaining([`Unique Prototypes`, `Full Test Set`, `10k Most Stable`]),
-      )
+      // exact match so a resurrected discovery set can't slip in unnoticed
+      expect(toggle_labels()).toEqual([`Full Test Set`, `Unique Prototypes`])
       expect(active_toggle()).toBe(`Unique Prototypes`)
       expect(scatter_y_for(model_key)).toBe(discovery.unique_prototypes?.F1)
 
@@ -154,9 +155,13 @@ describe(`Discovery Task Page`, () => {
     expect(header?.textContent).toContain(`F1`)
     expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
 
-    button_for(`10k Most Stable`).click()
+    // the default set is dropped from the URL, any other set is written back
+    button_for(`Unique Prototypes`).click()
     await tick()
+    expect(new URL(location.href).searchParams.get(`set`)).toBeNull()
 
-    expect(new URL(location.href).searchParams.get(`set`)).toBe(`most_stable_10k`)
+    button_for(`Full Test Set`).click()
+    await tick()
+    expect(new URL(location.href).searchParams.get(`set`)).toBe(`full_test_set`)
   })
 })

@@ -165,24 +165,6 @@ metrics:
       RMSE: 0.066 # eV/atom
       R2: 0.872 # dimensionless
       missing_preds: 0 # count
-    most_stable_10k:
-      F1: 0.985  # fraction
-      DAF: 6.342 # dimensionless
-      Precision: 0.97 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.97 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9695 # count
-      FP: 305 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.019 # eV/atom
-      RMSE: 0.075 # eV/atom
-      R2: 0.878 # dimensionless
-      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/nequip/nequip-oam-xl-0.1/2025-11-30-geo-opt.jsonl.gz

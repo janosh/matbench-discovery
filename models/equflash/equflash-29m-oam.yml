@@ -118,24 +118,6 @@ metrics:
       RMSE: 0.066 # eV/atom
       R2: 0.871 # dimensionless
       missing_preds: 0 # count
-    most_stable_10k:
-      F1: 0.985  # fraction
-      DAF: 6.353 # dimensionless
-      Precision: 0.971 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.971 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9712 # count
-      FP: 288 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.017 # eV/atom
-      RMSE: 0.067 # eV/atom
-      R2: 0.902 # dimensionless
-      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt.jsonl.gz

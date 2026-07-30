@@ -774,12 +774,6 @@ export const DISCOVERY_SET_LABELS: Record<
       Use this to avoid counting similar structures that should relax to same ground state multiple times.`,
     link: `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
   },
-  most_stable_10k: {
-    label: `10k Most Stable`,
-    description: `<strong>Top 10k predictions by model</strong><br/>
-      Each model's structures by lowest predicted energy above hull.<br/>
-      Use this to evaluate discovery performance in an actual discovery campaign at fixed compute budget e.g. for DFT validation.`,
-  },
 } as const
 
 // SelectToggle options for switching between WBM test subsets

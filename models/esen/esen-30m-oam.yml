@@ -136,24 +136,6 @@ metrics:
       RMSE: 0.067 # eV/atom
       R2: 0.866 # dimensionless
       missing_preds: 0 # count
-    most_stable_10k:
-      F1: 0.985  # fraction
-      DAF: 6.35 # dimensionless
-      Precision: 0.971 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.971 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9708 # count
-      FP: 292 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.016 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.898 # dimensionless
-      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/esen/esen-30m-oam/2025-03-17-geo-opt.jsonl.gz

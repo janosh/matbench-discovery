@@ -24,21 +24,16 @@ if __name__ == "__main__":
     for model in models:
         try:
             print(f"\nProcessing {model.label}...")
-            metric_reference, model_preds, subset_indices = (
-                discovery.prepare_model_predictions(df_preds, df_preds[model.label])
+            metric_reference, model_preds = discovery.prepare_model_predictions(
+                df_preds, df_preds[model.label]
             )
             metrics_by_subset = discovery.calc_discovery_metrics(
                 metric_reference,
                 model_preds,
-                subset_indices=subset_indices,
                 uniq_proto_prevalence=uniq_proto_prevalence,
             )
             discovery.write_all_metrics_to_yaml(
-                model,
-                metrics_by_subset,
-                metric_reference,
-                model_preds,
-                subset_indices=subset_indices,
+                model, metrics_by_subset, metric_reference, model_preds
             )
             for test_subset in metrics_by_subset:
                 print(f"\tUpdated discovery metrics for {test_subset}")

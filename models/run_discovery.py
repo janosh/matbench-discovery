@@ -212,19 +212,16 @@ def _write_yaml_results(
     artifacts: DiscoveryArtifacts,
     run_metadata: Mapping[str, Any] | None = None,
 ) -> None:
-    """Update artifact paths, cost provenance, and all three discovery subsets."""
+    """Update artifact paths, cost provenance, and all discovery subsets."""
     from matbench_discovery.data import df_wbm
     from matbench_discovery.metrics import discovery as discovery_metrics
 
-    metric_reference, model_preds, subset_indices = (
-        discovery_metrics.prepare_model_predictions(
-            df_wbm, artifacts.predictions[DISCOVERY_PRED_COL]
-        )
+    metric_reference, model_preds = discovery_metrics.prepare_model_predictions(
+        df_wbm, artifacts.predictions[DISCOVERY_PRED_COL]
     )
     metrics_by_subset = discovery_metrics.calc_discovery_metrics(
         metric_reference,
         model_preds,
-        subset_indices=subset_indices,
         uniq_proto_prevalence=discovery_metrics.wbm_uniq_proto_prevalence(),
     )
 
@@ -249,11 +246,7 @@ def _write_yaml_results(
         )
         print(f"Updated {task}.pred_file; re-upload if a prior Figshare URL existed")
     discovery_metrics.write_all_metrics_to_yaml(
-        model,
-        metrics_by_subset,
-        metric_reference,
-        model_preds,
-        subset_indices=subset_indices,
+        model, metrics_by_subset, metric_reference, model_preds
     )
 
 

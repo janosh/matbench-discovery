@@ -166,24 +166,6 @@ metrics:
       RMSE: 0.076 # eV/atom
       R2: 0.831 # dimensionless
       missing_preds: 0 # count
-    most_stable_10k:
-      F1: 0.982  # fraction
-      DAF: 6.312 # dimensionless
-      Precision: 0.965 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.965 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9650 # count
-      FP: 350 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.02 # eV/atom
-      RMSE: 0.074 # eV/atom
-      R2: 0.882 # dimensionless
-      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/alphanet/alphanet-v1-oam/2025-07-24-geo-opt.jsonl.gz

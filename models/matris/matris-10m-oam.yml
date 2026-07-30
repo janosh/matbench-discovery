@@ -155,24 +155,6 @@ metrics:
       RMSE: 0.066 # eV/atom
       R2: 0.871 # dimensionless
       missing_preds: 0 # count
-    most_stable_10k:
-      F1: 0.986  # fraction
-      DAF: 6.366 # dimensionless
-      Precision: 0.973 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.973 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9732 # count
-      FP: 268 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.015 # eV/atom
-      RMSE: 0.066 # eV/atom
-      R2: 0.904 # dimensionless
-      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/matris/matris-10m-oam/2025-10-29-geo-opt.jsonl.gz

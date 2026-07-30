@@ -21,11 +21,7 @@ export type Author = Person
 export type Label = LabelType & Pick<MattervizLabel, `color_scale`>
 export type TableLabel = Omit<Label, `better`> & MattervizLabel
 
-export const DISCOVERY_SETS = [
-  `full_test_set`,
-  `unique_prototypes`,
-  `most_stable_10k`,
-] as const
+export const DISCOVERY_SETS = [`full_test_set`, `unique_prototypes`] as const
 export type DiscoverySet = (typeof DISCOVERY_SETS)[number]
 
 export type SortDir = `asc` | `desc`

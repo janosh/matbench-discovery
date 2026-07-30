@@ -170,24 +170,6 @@ metrics:
       RMSE: 0.086 # eV/atom
       R2: 0.782 # dimensionless
       missing_preds: 0 # count
-    most_stable_10k:
-      F1: 0.953  # fraction
-      DAF: 5.949 # dimensionless
-      Precision: 0.91 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.91 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9095 # count
-      FP: 905 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.051 # eV/atom
-      RMSE: 0.117 # eV/atom
-      R2: 0.734 # dimensionless
-      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/nequix/nequix-mp-1/2025-08-17-geo-opt.jsonl.gz

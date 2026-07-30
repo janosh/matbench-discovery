@@ -142,24 +142,6 @@ metrics:
       RMSE: 0.099
       R2: 0.712
       missing_preds: 0
-    most_stable_10k:
-      F1: 0.891
-      DAF: 5.259
-      Precision: 0.804
-      Recall: 1.0
-      Accuracy: 0.804
-      TPR: 1.0
-      FPR: 1.0
-      TNR: 0.0
-      FNR: 0.0
-      TP: 8040
-      FP: 1960
-      TN: 0
-      FN: 0
-      MAE: 0.079
-      RMSE: 0.132
-      R2: 0.675
-      missing_preds: 0
   geo_opt:
     pred_file:
       name: models/bam/bam-mp-core/2026-05-09-geo-opt.jsonl.gz

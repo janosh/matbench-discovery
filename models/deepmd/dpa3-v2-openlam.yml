@@ -132,24 +132,6 @@ metrics:
       RMSE: 0.067 # eV/atom
       R2: 0.863 # dimensionless
       missing_preds: 2 # count
-    most_stable_10k:
-      F1: 0.986  # fraction
-      DAF: 6.367 # dimensionless
-      Precision: 0.973 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.973 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9733 # count
-      FP: 267 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.018 # eV/atom
-      RMSE: 0.063 # eV/atom
-      R2: 0.913 # dimensionless
-      missing_preds: 0 # count
     unique_prototypes:
       F1: 0.89  # fraction
       DAF: 5.747 # dimensionless

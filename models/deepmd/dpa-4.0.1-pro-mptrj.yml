@@ -180,24 +180,6 @@ metrics:
       RMSE: 0.074 # eV/atom
       R2: 0.836 # dimensionless
       missing_preds: 0 # count
-    most_stable_10k:
-      F1: 0.986  # fraction
-      DAF: 6.361 # dimensionless
-      Precision: 0.972 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.972 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9724 # count
-      FP: 276 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.027 # eV/atom
-      RMSE: 0.102 # eV/atom
-      R2: 0.774 # dimensionless
-      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt.jsonl.gz

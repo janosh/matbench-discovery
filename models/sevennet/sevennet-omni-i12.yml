@@ -182,24 +182,6 @@ metrics:
       RMSE: 0.067 # eV/atom
       R2: 0.868 # dimensionless
       missing_preds: 0 # count
-    most_stable_10k:
-      F1: 0.985  # fraction
-      DAF: 6.352 # dimensionless
-      Precision: 0.971 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.971 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9711 # count
-      FP: 289 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.019 # eV/atom
-      RMSE: 0.078 # eV/atom
-      R2: 0.868 # dimensionless
-      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt.jsonl.gz

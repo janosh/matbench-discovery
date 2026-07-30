@@ -310,8 +310,6 @@ definitions:
         type: number
       full_test_set:
         $ref: '#/definitions/DiscoveryMetricsSet'
-      most_stable_10k:
-        $ref: '#/definitions/DiscoveryMetricsSet'
       unique_prototypes:
         $ref: '#/definitions/DiscoveryMetricsSet'
     allOf: *task_status_reason_rule

@@ -78,7 +78,7 @@ describe(`format_property_path`, () => {
     // Discovery metrics
     [`discovery.unique_prototypes.F1`, `Discovery > Unique Prototypes > F1`],
     [`discovery.full_test_set.RMSE`, `Discovery > Full Test Set > RMSE`],
-    [`discovery.most_stable_10k.Precision`, `Discovery > 10k Most Stable > Prec`],
+    [`discovery.unique_prototypes.Precision`, `Discovery > Unique Prototypes > Prec`],
     // Hyperparams
     [`hyperparams.training.learning_rate`, `Hyperparams > training > LR`],
     [

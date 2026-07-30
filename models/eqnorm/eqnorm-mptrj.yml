@@ -174,24 +174,6 @@ metrics:
       RMSE: 0.083 # eV/atom
       R2: 0.799 # dimensionless
       missing_preds: 0 # count
-    most_stable_10k:
-      F1: 0.97  # fraction
-      DAF: 6.156 # dimensionless
-      Precision: 0.941 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.941 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9411 # count
-      FP: 589 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.039 # eV/atom
-      RMSE: 0.105 # eV/atom
-      R2: 0.775 # dimensionless
-      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/eqnorm/eqnorm-mptrj/2025-06-16-geo-opt.jsonl.gz
