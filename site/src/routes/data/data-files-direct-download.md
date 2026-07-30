@@ -78,7 +78,7 @@ assert len(wbm_init_atoms) == 256_963
 
 ## 📥 &thinsp; Direct Download
 
-You can also directly download Matbench Discovery data files from [this Figshare article](https://figshare.com/articles/dataset/23713842).
+You can also directly download Matbench Discovery data files from [this Figshare article](https://figshare.com/articles/dataset/22715158).
 
 <ol class="data-files-list">
 {#each Object.entries(data_files).filter(([key]) => !key.startsWith(`_`)) as [key, { url, path, html }]}
