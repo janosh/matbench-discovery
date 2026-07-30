@@ -1,3 +1,4 @@
+import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
 import Page from '$routes/+page.svelte'
 import { tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -12,6 +13,11 @@ const toggle_buttons = (label: string): HTMLButtonElement[] => {
   if (!toggle) throw new Error(`No selection toggle contains ${label}`)
   return [...toggle.querySelectorAll<HTMLButtonElement>(`button`)]
 }
+// label of the active button in the toggle group containing `label`
+const pressed_toggle = (label: string): string | undefined =>
+  toggle_buttons(label)
+    .find((button) => button.getAttribute(`aria-pressed`) === `true`)
+    ?.textContent?.trim()
 const preset_button = (label: string): HTMLButtonElement => {
   const button = toggle_buttons(label).find(
     (candidate) => candidate.textContent?.trim() === label,
@@ -32,10 +38,13 @@ const expect_sort = (label: string, direction: `ascending` | `descending`) => {
   expect(header?.getAttribute(`aria-sort`)).toBe(direction)
 }
 
+const mount_page = () => mount(Page, { target: document.body })
+
 describe(`Landing Page`, () => {
+  let page_component: ReturnType<typeof mount_page>
   // happy-dom mounts of the full-column metrics table are slow in CI
   beforeEach(() => {
-    mount(Page, { target: document.body })
+    page_component = mount_page()
   }, 30_000)
 
   const select_preset = async (label: string) => {
@@ -118,18 +127,38 @@ describe(`Landing Page`, () => {
       [...document.querySelectorAll(`.selection-toggle`)].some((toggle) =>
         toggle.textContent?.includes(`Full Test Set`),
       )
-    const [full_test_button, unique_protos_button] = toggle_buttons(`Full Test Set`)
+    const [full_test_button] = toggle_buttons(`Full Test Set`)
     expect(test_set_shown()).toBe(true)
-    expect(unique_protos_button.getAttribute(`aria-pressed`)).toBe(`true`)
-    expect(full_test_button.getAttribute(`aria-pressed`)).toBe(`false`)
+    expect(pressed_toggle(`Full Test Set`)).toBe(`Unique Prototypes`)
 
     full_test_button.click()
     await tick()
-    expect(unique_protos_button.getAttribute(`aria-pressed`)).toBe(`false`)
-    expect(full_test_button.getAttribute(`aria-pressed`)).toBe(`true`)
+    expect(pressed_toggle(`Full Test Set`)).toBe(`Full Test Set`)
 
     await select_preset(`MD`)
     expect(test_set_shown()).toBe(false)
+  })
+
+  it(`ignores snapshot values that no longer exist`, async () => {
+    const model_count = document.querySelectorAll(`tbody tr`).length
+
+    // a snapshot captured before a deploy that renamed/removed these
+    page_component.snapshot.restore({
+      discovery_set: `most_stable_10k`,
+      col_preset: `Removed Preset`,
+      // openness left unrestricted so the row count only reflects the unknown dataset
+      filters: {
+        training: { RenamedDataset: `require` },
+        openness: [...OPENNESS_OPTIONS],
+      },
+    })
+    await tick()
+
+    // a restored set/preset that matches no option leaves its toggle with nothing pressed
+    expect(pressed_toggle(`Full Test Set`)).toBe(`Unique Prototypes`)
+    expect(pressed_toggle(`Discovery`)).toBe(`Discovery`)
+    // requiring the unknown dataset would leave just the empty-state row
+    expect(document.querySelectorAll(`tbody tr`)).toHaveLength(model_count)
   })
 
   it(`auto-sorts presets until the user manually sorts the table`, async () => {
@@ -208,8 +237,6 @@ describe(`Landing Page`, () => {
   it(`renders table downloads section`, () => {
     const download_section = doc_query(`.downloads`)
     const download_buttons = download_section.querySelectorAll(`.download-btn`)
-    expect(download_buttons).toHaveLength(5)
-
     const buttons = [...download_buttons].map((button) => button.textContent?.trim())
     expect(buttons).toStrictEqual([`SVG`, `PNG`, `CSV`, `Excel`, `RSS`])
   })

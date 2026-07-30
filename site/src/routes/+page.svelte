@@ -208,23 +208,24 @@
       custom_col_config,
       sort,
       auto_sort_enabled,
-      training_filter: { ...filters.training },
-      openness: [...filters.openness],
-      targets: { ...filters.targets },
-      fs_mode: filters.fs_mode,
+      filters: filters.as_preset,
       show_heatmap: filters.show_heatmap,
     }),
+    // Snapshots outlive deploys, so a stored discovery set, column preset or dataset
+    // key may since have been renamed or removed. Restoring one would filter every
+    // model away or leave a toggle with nothing selected, and the user has no way to
+    // see why. So each value is only restored if it still names something real,
+    // otherwise the freshly-mounted default stands as if no snapshot existed.
     restore: (values) => {
       custom_col_config = values.custom_col_config ?? custom_col_config
       auto_sort_enabled = values.auto_sort_enabled ?? auto_sort_enabled
       sort = values.sort ?? sort
-      discovery_set = values.discovery_set ?? discovery_set
-      col_preset = values.col_preset ?? col_preset
+      if (valid_sets.has(values.discovery_set)) discovery_set = values.discovery_set
+      col_preset =
+        col_preset_names.find((preset) => preset === values.col_preset) ?? col_preset
       previous_col_preset = col_preset
-      filters.training = values.training_filter ?? filters.training
-      filters.openness = values.openness ?? filters.openness
-      filters.targets = values.targets ?? filters.targets
-      filters.fs_mode = values.fs_mode ?? filters.fs_mode
+      // apply() drops unknown dataset keys, targets and openness values itself
+      if (values.filters) filters.apply(values.filters)
       filters.show_heatmap = values.show_heatmap ?? filters.show_heatmap
     },
   }
