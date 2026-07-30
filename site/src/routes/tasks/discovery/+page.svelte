@@ -74,9 +74,8 @@
       DFT-computed Materials Project convex hull while minimizing costly false positives.
     </p>
     <p>
-      Switch between the full test set, unique prototypes, and each model's 10,000
-      most-stable predictions to compare overall accuracy, structural diversity, and
-      fixed-budget discovery performance. See
+      Switch between the full test set and unique prototypes to compare overall accuracy
+      against performance on the deduplicated, more out-of-distribution subset. See
       <a href="/tasks/discovery/tmi">Discovery TMI</a> for calibration, element-level, and error-distribution
       diagnostics.
     </p>

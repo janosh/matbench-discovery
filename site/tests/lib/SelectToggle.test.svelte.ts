@@ -1,4 +1,5 @@
 import SelectToggle from '$lib/SelectToggle.svelte'
+import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { mount } from '../index'
 
@@ -40,11 +41,8 @@ describe(`SelectToggle.svelte`, () => {
         props: { selected, options },
       })
 
-      // Check that all options are rendered as buttons
+      // one button per option, only the selected one pressed
       const buttons = document.querySelectorAll(`button`)
-      expect(buttons).toHaveLength(options.length)
-
-      // Verify active state
       expect(
         [...buttons].map((button) => button.getAttribute(`aria-pressed`) === `true`),
       ).toStrictEqual(options.map((_, idx) => idx === expectedActiveIndex))
@@ -56,38 +54,28 @@ describe(`SelectToggle.svelte`, () => {
     },
   )
 
-  it(`updates button active state when selection changes`, () => {
-    const options = [
-      { value: `option1`, label: `Option 1` },
-      { value: `option2`, label: `Option 2` },
-    ]
-
-    // Start with option1 selected
-    let selected = `option1`
-
+  it(`updates aria-pressed on the same buttons when one is clicked`, async () => {
     mount(SelectToggle, {
       target: document.body,
-      props: { selected, options },
+      props: {
+        selected: `option1`,
+        options: [
+          { value: `option1`, label: `Option 1` },
+          { value: `option2`, label: `Option 2` },
+        ],
+      },
     })
 
-    // Verify initial active state
-    let buttons = document.querySelectorAll(`button`)
-    expect(buttons[0].getAttribute(`aria-pressed`)).toBe(`true`)
-    expect(buttons[1].getAttribute(`aria-pressed`)).toBe(`false`)
+    // captured before the click so the assertions prove the existing nodes update
+    // in place rather than the each block re-creating them
+    const buttons = [...document.querySelectorAll(`button`)]
+    const pressed = () => buttons.map((button) => button.getAttribute(`aria-pressed`))
+    expect(pressed()).toStrictEqual([`true`, `false`])
 
-    // Remount with option2 selected to simulate state change
-    document.body.innerHTML = ``
-    selected = `option2`
+    buttons[1].click()
+    await tick()
 
-    mount(SelectToggle, {
-      target: document.body,
-      props: { selected, options },
-    })
-
-    // Verify updated active state
-    buttons = document.querySelectorAll(`button`)
-    expect(buttons[0].getAttribute(`aria-pressed`)).toBe(`false`)
-    expect(buttons[1].getAttribute(`aria-pressed`)).toBe(`true`)
+    expect(pressed()).toStrictEqual([`false`, `true`])
   })
 
   it.each([

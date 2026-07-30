@@ -92,10 +92,6 @@ metrics:
       Precision: 0.637 # fraction
       Recall: 0.746 # fraction
       Accuracy: 0.884 # fraction
-      TPR: 0.746 # fraction
-      FPR: 0.088 # fraction
-      TNR: 0.912 # fraction
-      FNR: 0.254 # fraction
       TP: 32880 # count
       FP: 18721 # count
       TN: 194150 # count
@@ -104,34 +100,12 @@ metrics:
       RMSE: 0.092 # eV/atom
       R2: 0.74 # dimensionless
       missing_preds: 128 # count
-    most_stable_10k:
-      F1: 0.914  # fraction
-      DAF: 5.503 # dimensionless
-      Precision: 0.841 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.841 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 8413 # count
-      FP: 1587 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.065 # eV/atom
-      RMSE: 0.133 # eV/atom
-      R2: 0.641 # dimensionless
-      missing_preds: 0 # count
     unique_prototypes:
       F1: 0.691  # fraction
       DAF: 4.163 # dimensionless
       Precision: 0.636 # fraction
       Recall: 0.757 # fraction
       Accuracy: 0.895 # fraction
-      TPR: 0.757 # fraction
-      FPR: 0.079 # fraction
-      TNR: 0.921 # fraction
-      FNR: 0.243 # fraction
       TP: 25255 # count
       FP: 14425 # count
       TN: 167689 # count

@@ -90,16 +90,6 @@ def complete_models() -> list[Model]:
     ]
 
 
-def shared_payload_test_subset() -> TestSubset:
-    """Return the selected subset if it has one shared cohort across models."""
-    if cli_args.test_subset == TestSubset.most_stable_10k:
-        raise ValueError(
-            "most_stable_10k is model-specific and cannot be represented in a shared "
-            "multi-model payload"
-        )
-    return cli_args.test_subset
-
-
 # Set env var to auto-confirm file downloads when --auto-download is passed
 if cli_args.auto_download:
     os.environ["MBD_AUTO_DOWNLOAD_FILES"] = "true"

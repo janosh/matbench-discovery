@@ -106,12 +106,10 @@ def test_test_subset() -> None:
     # Test basic enum functionality
     assert TestSubset.uniq_protos == "unique_prototypes"
     assert TestSubset.uniq_protos.label == "Unique Structure Prototypes"
-    assert TestSubset.most_stable_10k == "most_stable_10k"
-    assert TestSubset.most_stable_10k.label == "10k Most Stable Materials"
+    assert TestSubset.full_test_set == "full_test_set"
 
     # Test subset descriptions make sense
     assert "Unique" in TestSubset.uniq_protos.label
-    assert "Stable" in TestSubset.most_stable_10k.label
     assert "Full" in TestSubset.full_test_set.label
 
 

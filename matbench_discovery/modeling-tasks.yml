@@ -14,10 +14,8 @@ discovery:
       - R<sup>2</sup> # need both R2 and HTML version for different parts of the code
       - Recall
       - TN
-      - TNR
       - TP
-      - TPR
-    lower_is_better: [MAE, RMSE, FPR, FNR, FP, FN]
+    lower_is_better: [MAE, RMSE, FP, FN]
 
 geo_opt:
   label: Geometry Optimization

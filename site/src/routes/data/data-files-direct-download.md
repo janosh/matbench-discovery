@@ -32,12 +32,16 @@ assert tuple(df_wbm) == (
     "e_above_hull_mp2020_corrected_ppd_mp",
     "site_stats_fingerprint_init_final_norm_diff",
     "protostructure_spglib",
-    "unique_prototype"
+    "unique_prototype",
 )
 
 # WBM initial structures in pymatgen JSON format
 df_init_structs = pd.read_json(DataFiles.wbm_initial_structures.path, lines=True)
-assert tuple(df_init_structs) == ("material_id", "formula_from_cse", "initial_structure")
+assert tuple(df_init_structs) == (
+    "material_id",
+    "formula_from_cse",
+    "initial_structure",
+)
 # WBM initial structures as ASE Atoms
 wbm_init_atoms = ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path)
 assert len(wbm_init_atoms) == 256_963
@@ -74,7 +78,7 @@ assert len(wbm_init_atoms) == 256_963
 
 ## 📥 &thinsp; Direct Download
 
-You can also directly download Matbench Discovery data files from [this Figshare article](https://figshare.com/articles/dataset/23713842).
+You can also directly download Matbench Discovery data files from [this Figshare article](https://figshare.com/articles/dataset/22715158).
 
 <ol class="data-files-list">
 {#each Object.entries(data_files).filter(([key]) => !key.startsWith(`_`)) as [key, { url, path, html }]}

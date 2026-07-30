@@ -8,31 +8,20 @@ type ElemCounts = Record<ElementSymbol, number>
 const sample_values = { H: 100, C: 250, O: 300, Fe: 150 } as ElemCounts
 
 describe(`PtableHeatmap.svelte`, () => {
-  it(`mounts and renders without errors`, () => {
-    expect(() => {
-      mount(PtableHeatmap, {
-        target: document.body,
-        props: { heatmap_values: sample_values },
-      })
-    }).not.toThrow()
-    expect(document.body.innerHTML.length).toBeGreaterThan(0)
-  })
-
   it(`renders log scale checkbox with label`, () => {
     mount(PtableHeatmap, {
       target: document.body,
       props: { heatmap_values: sample_values },
     })
 
-    const checkbox = document.querySelector<HTMLInputElement>(`input#log`)
-    const label = document.querySelector(`label[for="log"]`)
-
-    expect(checkbox).toBeDefined()
-    expect(label?.textContent).toContain(`Log color scale`)
+    const checkbox = document.querySelector(`input#log`)
+    expect(checkbox).toBeInstanceOf(HTMLInputElement)
+    expect(document.querySelector(`label[for="log"]`)?.textContent).toContain(
+      `Log color scale`,
+    )
   })
 
   it(`checkbox reflects log prop and toggles on click`, async () => {
-    // Test default (false)
     mount(PtableHeatmap, {
       target: document.body,
       props: { heatmap_values: sample_values },
@@ -40,7 +29,6 @@ describe(`PtableHeatmap.svelte`, () => {
     const checkbox = document.querySelector<HTMLInputElement>(`input#log`)
     expect(checkbox?.checked).toBe(false)
 
-    // Test toggling
     checkbox?.click()
     await tick()
     expect(checkbox?.checked).toBe(true)
@@ -49,7 +37,6 @@ describe(`PtableHeatmap.svelte`, () => {
     await tick()
     expect(checkbox?.checked).toBe(false)
 
-    // Test log=true prop
     document.body.innerHTML = ``
     mount(PtableHeatmap, {
       target: document.body,
@@ -82,13 +69,16 @@ describe(`PtableHeatmap.svelte`, () => {
     })
   })
 
+  // colorbar range is [0, Math.max(0, ...values)]; without the 0 seed, empty → -Infinity
   it.each([
-    { heatmap_values: {} as ElemCounts, desc: `empty` },
-    { heatmap_values: { Fe: 100 } as ElemCounts, desc: `single element` },
-    { heatmap_values: { Fe: 0, O: 0 } as ElemCounts, desc: `zero values` },
-  ])(`mounts without error for $desc heatmap_values`, ({ heatmap_values }) => {
-    expect(() => {
-      mount(PtableHeatmap, { target: document.body, props: { heatmap_values } })
-    }).not.toThrow()
+    { vals: {} as ElemCounts, max: 0 },
+    { vals: { Fe: 100 } as ElemCounts, max: 100 },
+    { vals: { Fe: 0, O: 0 } as ElemCounts, max: 0 },
+  ])(`colorbar max tick is $max`, ({ vals, max }) => {
+    mount(PtableHeatmap, { target: document.body, props: { heatmap_values: vals } })
+    const ticks = [...document.querySelectorAll(`.colorbar .tick-label`)].map((label) =>
+      Number(label.textContent),
+    )
+    expect(Math.max(...ticks)).toBe(max)
   })
 })

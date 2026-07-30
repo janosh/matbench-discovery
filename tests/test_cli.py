@@ -30,11 +30,11 @@ from matbench_discovery.enums import Model, TestSubset
                 str(Model.chgnet_0_3_0),
                 str(Model.m3gnet),
                 "--test-subset",
-                "most_stable_10k",
+                "full_test_set",
             ],
             {
                 "models": [Model.chgnet_0_3_0, Model.m3gnet],
-                "test_subset": TestSubset.most_stable_10k,
+                "test_subset": TestSubset.full_test_set,
             },
             set(),
         ),
@@ -80,15 +80,6 @@ def test_cli_parser_invalid_args(
         error = capsys.readouterr().err
         assert err_snip in error
         assert "None" not in error
-
-
-def test_shared_payload_test_subset_rejects_model_specific_cohort(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Shared payloads reject the per-model most-stable cohort."""
-    monkeypatch.setattr(cli.cli_args, "test_subset", TestSubset.most_stable_10k)
-    with pytest.raises(ValueError, match="model-specific"):
-        cli.shared_payload_test_subset()
 
 
 @pytest.mark.parametrize(

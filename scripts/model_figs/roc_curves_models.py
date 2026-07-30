@@ -4,12 +4,12 @@
 import sklearn.metrics as sk_metrics
 
 from matbench_discovery import STABILITY_THRESHOLD, figs
-from matbench_discovery.cli import complete_models, shared_payload_test_subset
+from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, TestSubset
 
 df_preds, df_each_pred, _df_each_err = load_discovery_predictions()
-test_subset = shared_payload_test_subset()
+test_subset = cli_args.test_subset
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]

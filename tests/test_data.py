@@ -1,13 +1,16 @@
 """Tests for data loading and IO helpers."""
 
+import io
 import os
 import sys
+import tempfile
 import zipfile
 from datetime import date
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Self, cast
 from unittest.mock import patch
 
+import ase.io
 import numpy as np
 import pandas as pd
 import pytest
@@ -15,11 +18,10 @@ from ase import Atoms
 from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
+from matbench_discovery import data as data_module
 from matbench_discovery.data import (
     artifact_filename,
-    as_dict_handler,
     ase_atoms_from_zip,
-    ase_atoms_to_zip,
     canonical_scientific_notation,
     df_wbm,
     file_ref_name,
@@ -51,27 +53,21 @@ atoms2.info["magmoms"] = np.array([0.1, -0.1, 0.1])
 dummy_atoms = [atoms1, atoms2]
 
 
+def write_atoms_zip(atoms_list: list[Atoms], zip_path: Path) -> None:
+    """Write each Atoms object to its own extXYZ member named after its material ID."""
+    with zipfile.ZipFile(zip_path, mode="w") as zip_file:
+        for atoms in atoms_list:
+            buffer = io.StringIO()
+            ase.io.write(buffer, atoms, format="extxyz", write_info=True)
+            zip_file.writestr(f"{atoms.info[Key.mat_id]}.extxyz", buffer.getvalue())
+
+
 @pytest.fixture
 def dummy_atoms_zip(tmp_path: Path) -> Path:
     """ZIP containing the module-level dummy_atoms structures."""
     zip_path = tmp_path / "test_structures.zip"
-    ase_atoms_to_zip(dummy_atoms, zip_path)
+    write_atoms_zip(dummy_atoms, zip_path)
     return zip_path
-
-
-def test_as_dict_handler() -> None:
-    """Objects with ``as_dict`` serialize while unsupported values become null."""
-
-    class Serializable:
-        """Minimal MSON-style object for serialization."""
-
-        @staticmethod
-        def as_dict() -> dict[str, Any]:
-            return {"foo": "bar"}
-
-    assert as_dict_handler(Serializable()) == {"foo": "bar"}
-    for unsupported in (1, "foo", [1, 2, 3], {"foo": "bar"}):
-        assert as_dict_handler(unsupported) is None
 
 
 def test_df_wbm() -> None:
@@ -119,23 +115,12 @@ def test_glob_to_df_errors(monkeypatch: pytest.MonkeyPatch) -> None:
         glob_to_df("foo.csv")
 
 
-@pytest.mark.parametrize(
-    "atoms_payload",
-    [dummy_atoms, {"atoms1": atoms1, "atoms2": atoms2}],
-)
-def test_atoms_zip_round_trip(
-    tmp_path: Path, atoms_payload: dict[str, Atoms] | list[Atoms]
-) -> None:
-    """List and dict ASE payloads round-trip through zip without info drift."""
-    zip_path = tmp_path / "test_structures.zip"
-    ase_atoms_to_zip(atoms_payload, zip_path)
-    read_atoms = ase_atoms_from_zip(zip_path)
-    assert len(read_atoms) == len(atoms_payload)
+def test_atoms_zip_round_trip(dummy_atoms_zip: Path) -> None:
+    """Zipped extXYZ structures load back without Atoms.info drift."""
+    read_atoms = ase_atoms_from_zip(dummy_atoms_zip)
+    assert len(read_atoms) == len(dummy_atoms)
 
-    orig_atoms = (
-        atoms_payload.values() if isinstance(atoms_payload, dict) else atoms_payload
-    )
-    for original, read in zip(orig_atoms, read_atoms, strict=True):
+    for original, read in zip(dummy_atoms, read_atoms, strict=True):
         assert original.get_chemical_formula() == read.get_chemical_formula()
         assert np.allclose(original.get_positions(), read.get_positions())
         assert np.allclose(original.get_cell(), read.get_cell())
@@ -221,7 +206,7 @@ def test_ase_atoms_from_zip_with_slice_limit(
         atoms.info[Key.mat_id] = f"slice_test_{idx}"
 
     zip_path = tmp_path / "slice_test_structures.zip"
-    ase_atoms_to_zip(more_atoms, zip_path)
+    write_atoms_zip(more_atoms, zip_path)
     read_atoms = ase_atoms_from_zip(zip_path, limit=slice_limit)
     assert [atoms.get_chemical_formula() for atoms in read_atoms] == expected_formulas
 
@@ -367,6 +352,10 @@ def test_update_yaml_file(tmp_path: Path) -> None:
     updated_yaml = update_yaml_file(test_file, "metrics.new.nested.path", {"value": 42})
     assert updated_yaml["metrics"]["new"]["nested"]["path"] == {"value": 42}
 
+    # the write lock must not be left next to the target, which for real model YAMLs
+    # would leave an untracked .yml.lock sitting in the repo
+    assert sorted(os.listdir(tmp_path)) == ["test.yml"]
+
     yaml_with_comments = """
 metrics:
   discovery:  # Discovery metrics
@@ -430,6 +419,46 @@ metrics:
     for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
         with pytest.raises(ValueError, match="Invalid dotted_path="):
             update_yaml_file(test_file, path, {"data": 1})
+
+
+def test_update_yaml_file_lock_survives_differing_tmpdir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Concurrent writers must share one lock even under different TMPDIR.
+
+    Slurm sets TMPDIR per job and macOS per user, so a tempdir-derived lock path
+    hands them separate locks and lets their read-modify-write cycles interleave
+    into a corrupt YAML file.
+    """
+    test_file = f"{tmp_path}/test.yml"
+    with open(test_file, mode="w") as file:
+        round_trip_yaml.dump({"metrics": {}}, file)
+
+    lock_paths: list[str] = []
+
+    class RecordingLock:
+        """Stand-in for FileLock that records the lock path it would take."""
+
+        def __init__(self, lock_file: str, *_args: object, **_kwargs: object) -> None:
+            lock_paths.append(str(lock_file))
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *_exc_info: object) -> None:
+            return
+
+    monkeypatch.setattr(data_module, "FileLock", RecordingLock)
+    for job_dir in ("slurm-job-a", "slurm-job-b"):
+        # gettempdir() silently falls back when TMPDIR is missing, so it must exist
+        tmpdir = tmp_path / job_dir
+        tmpdir.mkdir()
+        monkeypatch.setenv("TMPDIR", str(tmpdir))
+        monkeypatch.setattr(tempfile, "tempdir", None)  # drop gettempdir()'s cache
+        update_yaml_file(test_file, "metrics.discovery", {"mae": 0.1})
+
+    assert lock_paths[0] == lock_paths[1]
+    assert tmp_path.as_posix() not in lock_paths[0]  # never beside the target
 
 
 # --- model artifact filenames / FileRef helpers ---
