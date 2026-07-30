@@ -491,27 +491,18 @@ export async function generate_excel({
   }
 }
 
-export const handle_export =
-  <T extends ExportOptions>(
-    generator: (args: T) => ExportResult | null | Promise<ExportResult | null>,
-    fmt: string,
-    state: { export_error: string | null } & T,
-  ) =>
-  async () => {
-    try {
-      state.export_error = null // Reset error state before trying
-      // Extract only ExportOptions keys — T extends ExportOptions so this is safe
-      const generator_args = {
-        discovery_set: state.discovery_set,
-      } as T // unavoidable: TS can't prove ExportOptions subset satisfies generic T
-      const result = await generator(generator_args)
-      if (!result) {
-        state.export_error = `Failed to generate ${fmt}. The export function returned null.`
-      }
-    } catch (error) {
-      state.export_error = `Error exporting ${fmt}: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-      console.error(`Error exporting ${fmt}:`, error)
-    }
+export async function handle_export(
+  generator: (args: ExportOptions) => ExportResult | null | Promise<ExportResult | null>,
+  fmt: string,
+  opts: ExportOptions,
+): Promise<string | null> {
+  try {
+    if (await generator(opts)) return null
+    return `Failed to generate ${fmt}. The export function returned null.`
+  } catch (error) {
+    console.error(`Error exporting ${fmt}:`, error)
+    return `Error exporting ${fmt}: ${
+      error instanceof Error ? error.message : String(error)
+    }`
   }
+}

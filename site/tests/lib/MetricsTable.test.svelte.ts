@@ -785,9 +785,7 @@ describe(`MetricsTable`, () => {
       `F1`, // ALL_METRICS (Discovery - short)
       `DAF`, // ALL_METRICS (Discovery)
       `Prec`, // ALL_METRICS (Discovery - short)
-      // Recall is visible: false
-      `TNR`, // ALL_METRICS (Discovery)
-      `TPR`, // ALL_METRICS (Discovery)
+      `Recall`, // ALL_METRICS (Discovery)
       `MAE`, // ALL_METRICS (Discovery)
       `R2`, // ALL_METRICS (Discovery)
       `RMSE`, // ALL_METRICS (Discovery)

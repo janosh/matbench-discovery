@@ -6,12 +6,12 @@ data set and separate true/false positives/negatives.
 
 # %%
 from matbench_discovery import figs
-from matbench_discovery.cli import complete_models, shared_payload_test_subset
+from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import classify_stable
 
-test_subset = shared_payload_test_subset()
+test_subset = cli_args.test_subset
 model_f1_pairs = []
 for model in complete_models():
     discovery_metrics = model.metrics.get("discovery") or {}

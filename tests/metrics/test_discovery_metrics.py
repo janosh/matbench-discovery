@@ -20,7 +20,6 @@ from sklearn.metrics import (
 from matbench_discovery import ROOT
 from matbench_discovery.data import df_wbm, load_discovery_predictions
 from matbench_discovery.enums import MbdKey, Model, TestSubset
-from matbench_discovery.metrics import discovery as discovery_module
 from matbench_discovery.metrics import metrics_df_from_yaml
 from matbench_discovery.metrics.discovery import (
     calc_discovery_metrics,
@@ -28,6 +27,7 @@ from matbench_discovery.metrics.discovery import (
     discovery_subset_indices,
     prepare_model_predictions,
     stable_metrics,
+    write_all_metrics_to_yaml,
 )
 
 df_preds, df_each_pred, df_each_err = load_discovery_predictions()
@@ -48,14 +48,16 @@ def test_prepare_model_predictions_masks_rounds_and_aligns() -> None:
     )
     model_preds = pd.Series([6.0, 0.1236], index=material_ids[::-1])
 
-    rounded_reference, cleaned_preds, subset_indices = prepare_model_predictions(
+    rounded_reference, cleaned_preds = prepare_model_predictions(
         df_reference, model_preds
     )
 
     assert rounded_reference[MbdKey.each_true].tolist() == [0.1, 0.2]
     assert cleaned_preds.loc["wbm-1"] == pytest.approx(0.124)
     assert pd.isna(cleaned_preds.loc["wbm-2"])
+    subset_indices = discovery_subset_indices(rounded_reference)
     assert subset_indices[TestSubset.full_test_set].equals(material_ids)
+    assert subset_indices[TestSubset.uniq_protos].equals(material_ids[:1])
 
 
 @pytest.mark.parametrize(
@@ -125,12 +127,12 @@ def test_classify_stable_nullable_inputs(
         (
             [0.1, 0.2, 0.3],
             [-0.1, -0.2, -0.3],
-            (0.0, 1.0, 0.0, np.nan, np.nan, np.nan, np.nan),
+            (0.0, np.nan, np.nan, np.nan, 0, 3, 0, 0),
         ),
         (
             [-0.1, -0.2, -0.3],
             [0.1, 0.2, 0.3],
-            (np.nan, np.nan, np.nan, 0.0, 1.0, np.nan, np.nan),
+            (np.nan, 0.0, np.nan, np.nan, 0, 0, 0, 3),
         ),
     ],
     ids=["no-actual-stable", "no-actual-unstable"],
@@ -142,7 +144,7 @@ def test_stable_metrics_zero_class(
 ) -> None:
     """Metrics handle absent stable or unstable classes."""
     metrics = stable_metrics(each_true, each_pred, stability_threshold=0.0, fillna=True)
-    metric_keys = ("Precision", "FPR", "TNR", "Recall", "FNR", "DAF", "F1")
+    metric_keys = ("Precision", "Recall", "DAF", "F1", "TP", "FP", "TN", "FN")
     assert tuple(metrics[key] for key in metric_keys) == pytest.approx(
         expected, nan_ok=True
     )
@@ -166,10 +168,10 @@ def test_stable_metrics_nan_handling() -> None:
 
     assert metrics_no_fill["Precision"] == metrics_fill["Precision"]
     assert metrics_no_fill["DAF"] > metrics_fill["DAF"]
-    assert metrics_no_fill["TNR"] == 0.5
-    assert metrics_no_fill["FNR"] == 0
-    assert metrics_fill["TNR"] == 2 / 3
-    assert metrics_fill["FNR"] == 1 / 2
+    # full confusion matrix: filling NaNs moves both missing preds to the unstable side
+    confusion = ("TP", "FP", "TN", "FN")
+    assert tuple(metrics_no_fill[key] for key in confusion) == (1, 1, 1, 0)
+    assert tuple(metrics_fill[key] for key in confusion) == (1, 1, 2, 1)
     for metric in ("MAE", "RMSE", "R2"):
         assert metrics_no_fill[metric] == metrics_fill[metric]
 
@@ -200,42 +202,10 @@ def test_stable_metrics_matches_sklearn() -> None:
     assert {key: metrics[key] for key in expected} == pytest.approx(expected)
 
 
-def test_most_stable_10k_includes_missing_predictions_last() -> None:
-    """Missing predictions fill remaining 10k slots after ranked predictions."""
-    material_ids = pd.Index([f"wbm-{idx}" for idx in range(10_001)])
-    df_test = pd.DataFrame(
-        {MbdKey.each_true: 0.0, MbdKey.e_form_dft: 0.0, MbdKey.uniq_proto: True},
-        index=material_ids,
-    )
-    model_preds = pd.Series(
-        [*range(9_999), np.nan, np.nan], index=material_ids, dtype=float
-    )
-
-    subset_idx = discovery_subset_indices(df_test, model_preds)[
-        TestSubset.most_stable_10k
-    ]
-    assert len(subset_idx) == 10_000
-    assert subset_idx[:-1].equals(material_ids[:9_999])
-    assert pd.isna(model_preds.loc[subset_idx[-1]])
-
-
-def test_most_stable_10k_preserves_unique_prototype_order_for_ties() -> None:
-    """Equal predictions preserve the original unique-prototype order."""
-    material_ids = pd.Index([f"wbm-{idx}" for idx in range(10_001)])
-    df_test = pd.DataFrame(
-        {MbdKey.each_true: 0.0, MbdKey.e_form_dft: 0.0, MbdKey.uniq_proto: True},
-        index=material_ids,
-    )
-    model_preds = pd.Series(0.0, index=material_ids)
-
-    subset_idx = discovery_subset_indices(df_test, model_preds)[
-        TestSubset.most_stable_10k
-    ]
-    assert subset_idx.equals(material_ids[:10_000])
-
-
-def test_calc_discovery_metrics_matches_manual_three_subset_calculation() -> None:
-    """Reusable three-subset metrics preserve the former eval-script semantics."""
+def test_discovery_metrics_match_manual_calculation_and_round_trip(
+    tmp_path: Path,
+) -> None:
+    """Per-subset metrics and their YAML round-trip preserve eval-script semantics."""
     material_ids = pd.Index([f"wbm-{idx}" for idx in range(6)])
     df_test = pd.DataFrame(
         {
@@ -245,18 +215,18 @@ def test_calc_discovery_metrics_matches_manual_three_subset_calculation() -> Non
         },
         index=material_ids,
     )
-    model_preds = pd.Series([-1.1, -0.7, -0.9, -0.6, np.nan, -0.4], index=material_ids)
+    # NaNs in both a uniq-proto and a non-uniq-proto row give distinct missing counts
+    model_preds = pd.Series(
+        [-1.1, -0.7, np.nan, -0.6, np.nan, -0.4], index=material_ids
+    )
     metrics_by_subset = calc_discovery_metrics(df_test, model_preds)
-    subset_indices = discovery_subset_indices(df_test, model_preds)
+    subset_indices = discovery_subset_indices(df_test)
     each_pred = df_test[MbdKey.each_true] + model_preds - df_test[MbdKey.e_form_dft]
 
     assert set(metrics_by_subset) == set(TestSubset)
-    wbm_ids = list(subset_indices[TestSubset.most_stable_10k])
-    assert wbm_ids == ["wbm-0", "wbm-1", "wbm-3", "wbm-4"]
-    assert metrics_by_subset[TestSubset.most_stable_10k]["DAF"] == pytest.approx(4 / 3)
-    uniq_prevalence = (
-        df_test.loc[subset_indices[TestSubset.uniq_protos], MbdKey.each_true] <= 0
-    ).mean()
+    uniq_proto_idx = subset_indices[TestSubset.uniq_protos]
+    assert list(uniq_proto_idx) == ["wbm-0", "wbm-1", "wbm-3", "wbm-4"]
+    uniq_prevalence = (df_test.loc[uniq_proto_idx, MbdKey.each_true] <= 0).mean()
     for subset, subset_idx in subset_indices.items():
         expected = stable_metrics(
             df_test.loc[subset_idx, MbdKey.each_true],
@@ -270,70 +240,29 @@ def test_calc_discovery_metrics_matches_manual_three_subset_calculation() -> Non
     # an explicit prevalence (e.g. from unrounded WBM hull distances) overrides the
     # denominator derived from the possibly-rounded reference frame
     overridden = calc_discovery_metrics(df_test, model_preds, uniq_proto_prevalence=0.5)
-    for subset in (TestSubset.uniq_protos, TestSubset.most_stable_10k):
-        assert overridden[subset]["DAF"] == pytest.approx(
-            overridden[subset]["Precision"] / 0.5
-        )
-
-
-def test_precomputed_discovery_subset_indices_are_reused(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Metric calculation and YAML writing reuse one normalized subset ranking."""
-    material_ids = pd.Index([f"wbm-{idx}" for idx in range(5)])
-    df_test = pd.DataFrame(
-        {
-            MbdKey.each_true: [-0.2, 0.1, -0.1, 0.2, 0.3],
-            MbdKey.e_form_dft: [0.0] * 5,
-            MbdKey.uniq_proto: [True] * 5,
-        },
-        index=material_ids,
-    )
-    model_preds = pd.Series(
-        [0.0, 0.0, None, 0.0, None], index=material_ids, dtype=float
-    )
-    expected_by_subset = {
-        TestSubset.full_test_set: (material_ids, (1, 1, 3), 2),
-        TestSubset.uniq_protos: (material_ids[[0, 1, 2]], (1, 1, 1), 1),
-        TestSubset.most_stable_10k: (material_ids[[0, 1]], (1, 0, 1), 0),
-    }
-    subset_indices = {
-        test_subset: expected[0] for test_subset, expected in expected_by_subset.items()
-    }
-
-    def reject_recomputation(
-        _df_wbm: pd.DataFrame, _model_preds: pd.Series
-    ) -> dict[TestSubset, pd.Index]:
-        """Fail if either public operation recalculates subset rankings."""
-        raise AssertionError("subset rankings were recomputed")
-
-    monkeypatch.setattr(
-        discovery_module, "discovery_subset_indices", reject_recomputation
-    )
-    metrics_by_subset = discovery_module.calc_discovery_metrics(
-        df_test, model_preds, subset_indices=subset_indices
+    uniq_proto_metrics = overridden[TestSubset.uniq_protos]
+    assert uniq_proto_metrics["DAF"] == pytest.approx(
+        uniq_proto_metrics["Precision"] / 0.5
     )
 
+    # Seed deprecated keys older YAML still carried; a recompute must drop them.
     test_yaml = tmp_path / "test_model.yml"
-    test_yaml.write_text("metrics:\n  discovery: {}\n")
-    mock_model = cast("Model", SimpleNamespace(yaml_path=str(test_yaml)))
-    written_metrics = discovery_module.write_all_metrics_to_yaml(
-        mock_model,
-        metrics_by_subset,
-        df_test,
-        model_preds,
-        subset_indices=subset_indices,
+    test_yaml.write_text(
+        "metrics:\n  discovery:\n"
+        "    most_stable_10k: {F1: 0.9}\n"
+        "    unique_prototypes: {TPR: 0.2, F1: 0.1}\n"
     )
-    assert set(written_metrics) == set(TestSubset)
-    for test_subset, (_, expected_counts, missing_count) in expected_by_subset.items():
-        assert (
-            tuple(metrics_by_subset[test_subset][key] for key in ("TP", "FN", "TN"))
-            == expected_counts
-        )
-        assert written_metrics[test_subset][str(MbdKey.missing_preds)] == missing_count
-    yaml_content = test_yaml.read_text()
-    assert "full_test_set:" in yaml_content
-    assert f"{MbdKey.missing_preds}:" in yaml_content
+    mock_model = cast("Model", SimpleNamespace(yaml_path=str(test_yaml)))
+    written = write_all_metrics_to_yaml(
+        mock_model, metrics_by_subset, df_test, model_preds
+    )
+    assert written[TestSubset.full_test_set][str(MbdKey.missing_preds)] == 2
+    assert written[TestSubset.uniq_protos][str(MbdKey.missing_preds)] == 1
+    yaml_text = test_yaml.read_text()
+    assert "most_stable_10k" not in yaml_text
+    assert "TPR:" not in yaml_text
+    assert "Recall:" in yaml_text
+    assert "full_test_set:" in yaml_text
 
 
 def test_df_discovery_metrics() -> None:

@@ -272,35 +272,6 @@ def get_fc2_and_freqs(
     return ph3, fc2_set, freqs
 
 
-def load_force_sets(
-    ph3: Phono3py, fc2_set: np.ndarray, fc3_set: np.ndarray
-) -> Phono3py:
-    """Load pre-computed force sets into Phono3py object.
-
-    Args:
-        ph3 (Phono3py): Phono3py object to load force sets into
-        fc2_set (np.ndarray): 2nd order force constants array
-        fc3_set (np.ndarray): 3rd order force constants array
-
-    Returns:
-        Phono3py: Phono3py object with loaded force sets
-    """
-    ph3.phonon_forces = _validate_forces(
-        fc2_set,
-        (len(ph3.phonon_supercells_with_displacements), len(ph3.phonon_supercell), 3),
-        "FC2",
-    )
-    ph3.forces = _validate_forces(
-        fc3_set,
-        (len(ph3.supercells_with_displacements), len(ph3.supercell), 3),
-        "FC3",
-    )
-    ph3.produce_fc2(symmetrize_fc2=True)
-    ph3.produce_fc3(symmetrize_fc3r=True)
-
-    return ph3
-
-
 def calculate_conductivity(
     ph3: Phono3py,
     temperatures: Sequence[float],

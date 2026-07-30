@@ -140,8 +140,6 @@ export interface DiscoveryMetricsLabels {
   DAF: Label1
   Precision: Label1
   Recall: Label1
-  TNR: Label1
-  TPR: Label1
   MAE: Label1
   R2: Label1
   RMSE: Label1

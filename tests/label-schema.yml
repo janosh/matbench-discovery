@@ -54,12 +54,10 @@ definitions:
       DAF: { $ref: '#/definitions/Label' }
       Precision: { $ref: '#/definitions/Label' }
       Recall: { $ref: '#/definitions/Label' }
-      TNR: { $ref: '#/definitions/Label' }
-      TPR: { $ref: '#/definitions/Label' }
       MAE: { $ref: '#/definitions/Label' }
       R2: { $ref: '#/definitions/Label' }
       RMSE: { $ref: '#/definitions/Label' }
-    required: [Accuracy, F1, DAF, Precision, Recall, TNR, TPR, MAE, R2, RMSE]
+    required: [Accuracy, F1, DAF, Precision, Recall, MAE, R2, RMSE]
     additionalProperties: false
 
   MetadataLabels:

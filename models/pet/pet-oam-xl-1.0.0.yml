@@ -99,10 +99,6 @@ metrics:
       Precision: 0.912 # fraction
       Recall: 0.897 # fraction
       Accuracy: 0.967 # fraction
-      TPR: 0.897 # fraction
-      FPR: 0.018 # fraction
-      TNR: 0.982 # fraction
-      FNR: 0.103 # fraction
       TP: 39542 # count
       FP: 3839 # count
       TN: 209032 # count
@@ -117,10 +113,6 @@ metrics:
       Precision: 0.929 # fraction
       Recall: 0.92 # fraction
       Accuracy: 0.977 # fraction
-      TPR: 0.92 # fraction
-      FPR: 0.013 # fraction
-      TNR: 0.987 # fraction
-      FNR: 0.08 # fraction
       TP: 30700 # count
       FP: 2359 # count
       TN: 179755 # count
@@ -128,24 +120,6 @@ metrics:
       MAE: 0.019 # eV/atom
       RMSE: 0.068 # eV/atom
       R2: 0.864 # dimensionless
-      missing_preds: 0 # count
-    most_stable_10k:
-      F1: 0.986  # fraction
-      DAF: 6.365 # dimensionless
-      Precision: 0.973 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.973 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9731 # count
-      FP: 269 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.015 # eV/atom
-      RMSE: 0.065 # eV/atom
-      R2: 0.906 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:

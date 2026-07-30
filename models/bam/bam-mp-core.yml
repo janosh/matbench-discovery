@@ -112,10 +112,6 @@ metrics:
       Precision: 0.561
       Recall: 0.687
       Accuracy: 0.854
-      TPR: 0.687
-      FPR: 0.111
-      TNR: 0.889
-      FNR: 0.313
       TP: 30290
       FP: 23721
       TN: 189150
@@ -130,10 +126,6 @@ metrics:
       Precision: 0.563
       Recall: 0.698
       Accuracy: 0.869
-      TPR: 0.698
-      FPR: 0.099
-      TNR: 0.901
-      FNR: 0.302
       TP: 23282
       FP: 18081
       TN: 164033
@@ -141,24 +133,6 @@ metrics:
       MAE: 0.06
       RMSE: 0.099
       R2: 0.712
-      missing_preds: 0
-    most_stable_10k:
-      F1: 0.891
-      DAF: 5.259
-      Precision: 0.804
-      Recall: 1.0
-      Accuracy: 0.804
-      TPR: 1.0
-      FPR: 1.0
-      TNR: 0.0
-      FNR: 0.0
-      TP: 8040
-      FP: 1960
-      TN: 0
-      FN: 0
-      MAE: 0.079
-      RMSE: 0.132
-      R2: 0.675
       missing_preds: 0
   geo_opt:
     pred_file:

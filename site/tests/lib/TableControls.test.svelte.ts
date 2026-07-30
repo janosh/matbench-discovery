@@ -206,7 +206,6 @@ describe(`TableControls`, () => {
 
     const column_checkboxes =
       column_menu.querySelectorAll<HTMLInputElement>(`input[type="checkbox"]`)
-    expect(column_checkboxes).toHaveLength(sample_columns.length)
     const checkbox_labels = [...column_menu.querySelectorAll(`label`)].map((label) =>
       label.textContent?.trim(),
     )

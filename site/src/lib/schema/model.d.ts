@@ -198,7 +198,6 @@ export type DiscoveryMetrics = Record<string, unknown> & {
   max_rss_gb?: number
   max_gpu_mem_gb?: number
   full_test_set?: DiscoveryMetricsSet
-  most_stable_10k?: DiscoveryMetricsSet
   unique_prototypes?: DiscoveryMetricsSet
 }
 /**
@@ -484,10 +483,6 @@ export interface DiscoveryMetricsSet {
   Precision: number
   Recall: number
   Accuracy: number
-  TPR: number
-  FPR: number
-  TNR: number
-  FNR: number
   TP: number
   FP: number
   TN: number

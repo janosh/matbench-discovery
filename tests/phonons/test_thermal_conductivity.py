@@ -153,38 +153,6 @@ def test_get_fc2_and_freqs(test_ph3: Phono3py, test_calculator: EMT) -> None:
     assert freqs.shape == (n_bz_grid, n_bands)
 
 
-def test_load_force_sets(test_ph3: Phono3py) -> None:
-    """Test loading pre-computed force sets.
-
-    We need to match the exact force set structure that Phono3py expects:
-    - One force set per displacement
-    - Forces must be in the correct shape for the supercell
-    - Forces must be consistent with the symmetry of the crystal
-    """
-    # Get the actual number of atoms in the supercell
-    n_atoms_fc2 = len(test_ph3.phonon_supercell)
-    n_atoms_fc3 = len(test_ph3.supercell)
-    # Create arrays of zeros for fc2 and fc3 force sets
-    n_fc2_disp = len(test_ph3.phonon_supercells_with_displacements)
-    n_fc3_disp = len(test_ph3.supercells_with_displacements)
-    # Initialize force arrays
-    fc2_set = np.zeros((n_fc2_disp, n_atoms_fc2, 3))
-    fc3_set = np.zeros((n_fc3_disp, n_atoms_fc3, 3))
-
-    # Create masks for non-None displacements
-    fc2_mask = [sc is not None for sc in test_ph3.phonon_supercells_with_displacements]
-    fc3_mask = [sc is not None for sc in test_ph3.supercells_with_displacements]
-
-    # Generate random forces for displaced atoms
-    fc2_set[fc2_mask, 0] = NP_RNG.random((sum(fc2_mask), 3)) * 0.1
-    fc3_set[fc3_mask, 0] = NP_RNG.random((sum(fc3_mask), 3)) * 0.1
-
-    ph3 = ltc.load_force_sets(test_ph3, fc2_set, fc3_set)
-    assert isinstance(ph3, Phono3py)
-    np.testing.assert_array_equal(ph3.phonon_forces, fc2_set)
-    np.testing.assert_array_equal(ph3.forces, fc3_set)
-
-
 def test_calculate_conductivity(test_ph3: Phono3py, test_calculator: EMT) -> None:
     """Test thermal conductivity calculation."""
     # First need to compute force constants
@@ -194,9 +162,10 @@ def test_calculate_conductivity(test_ph3: Phono3py, test_calculator: EMT) -> Non
 
     fc3_set = ltc.calculate_fc3_set(test_ph3, calculator=test_calculator)
 
+    test_ph3.phonon_forces = fc2_set
+    test_ph3.forces = fc3_set
+    test_ph3.produce_fc2(symmetrize_fc2=True)
     test_ph3.produce_fc3(symmetrize_fc3r=True)
-
-    test_ph3 = ltc.load_force_sets(test_ph3, fc2_set, fc3_set)
 
     ph3, kappa_dict, kappa = ltc.calculate_conductivity(test_ph3, [300])
 

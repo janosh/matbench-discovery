@@ -284,8 +284,6 @@ export function assemble_row_data(
       Precision: discovery_metrics?.Precision,
       Recall: discovery_metrics?.Recall,
       Accuracy: discovery_metrics?.Accuracy,
-      TPR: discovery_metrics?.TPR,
-      TNR: discovery_metrics?.TNR,
       MAE: discovery_metrics?.MAE,
       RMSE: discovery_metrics?.RMSE,
       R2: discovery_metrics?.R2,

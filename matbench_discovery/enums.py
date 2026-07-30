@@ -174,7 +174,6 @@ class TestSubset(LabelEnum):
     __test__ = False  # stop pytest from thinking this is a unit test
 
     uniq_protos = "unique_prototypes", "Unique Structure Prototypes"
-    most_stable_10k = "most_stable_10k", "10k Most Stable Materials"
     full_test_set = "full_test_set", "Full Test Set"
 
 

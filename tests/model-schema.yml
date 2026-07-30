@@ -249,14 +249,6 @@ definitions:
         type: number
       Accuracy:
         type: number
-      TPR:
-        type: number
-      FPR:
-        type: number
-      TNR:
-        type: number
-      FNR:
-        type: number
       TP:
         type: integer
       FP:
@@ -279,10 +271,6 @@ definitions:
       - Precision
       - Recall
       - Accuracy
-      - TPR
-      - FPR
-      - TNR
-      - FNR
       - TP
       - FP
       - TN
@@ -309,8 +297,6 @@ definitions:
       max_gpu_mem_gb:
         type: number
       full_test_set:
-        $ref: '#/definitions/DiscoveryMetricsSet'
-      most_stable_10k:
         $ref: '#/definitions/DiscoveryMetricsSet'
       unique_prototypes:
         $ref: '#/definitions/DiscoveryMetricsSet'

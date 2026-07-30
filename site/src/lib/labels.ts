@@ -58,21 +58,6 @@ export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
     description: `Recall of classifying thermodynamic stability`,
     path: `metrics.discovery.unique_prototypes`,
     better: `higher`,
-    visible: false,
-  },
-  TNR: {
-    key: `TNR`,
-    label: `TNR`,
-    description: `True Negative Rate`,
-    path: `metrics.discovery.unique_prototypes`,
-    better: `higher`,
-  },
-  TPR: {
-    key: `TPR`,
-    label: `TPR`,
-    description: `True Positive Rate`,
-    path: `metrics.discovery.unique_prototypes`,
-    better: `higher`,
   },
   MAE: {
     key: `MAE`,
@@ -773,12 +758,6 @@ export const DISCOVERY_SET_LABELS: Record<
       Deduplicated by matching Aflow-style prototypes.<br/>
       Use this to avoid counting similar structures that should relax to same ground state multiple times.`,
     link: `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
-  },
-  most_stable_10k: {
-    label: `10k Most Stable`,
-    description: `<strong>Top 10k predictions by model</strong><br/>
-      Each model's structures by lowest predicted energy above hull.<br/>
-      Use this to evaluate discovery performance in an actual discovery campaign at fixed compute budget e.g. for DFT validation.`,
   },
 } as const
 

@@ -125,10 +125,6 @@ metrics:
       Precision: 0.814 # fraction
       Recall: 0.852 # fraction
       Accuracy: 0.941 # fraction
-      TPR: 0.852 # fraction
-      FPR: 0.04 # fraction
-      TNR: 0.96 # fraction
-      FNR: 0.148 # fraction
       TP: 37548 # count
       FP: 8583 # count
       TN: 204288 # count
@@ -143,10 +139,6 @@ metrics:
       Precision: 0.829 # fraction
       Recall: 0.865 # fraction
       Accuracy: 0.951 # fraction
-      TPR: 0.865 # fraction
-      FPR: 0.033 # fraction
-      TNR: 0.967 # fraction
-      FNR: 0.135 # fraction
       TP: 28872 # count
       FP: 5960 # count
       TN: 176154 # count
@@ -155,24 +147,6 @@ metrics:
       RMSE: 0.077 # eV/atom
       R2: 0.824 # dimensionless
       missing_preds: 25 # count
-    most_stable_10k:
-      F1: 0.99  # fraction
-      DAF: 6.414 # dimensionless
-      Precision: 0.98 # fraction
-      Recall: 1.0 # fraction
-      Accuracy: 0.98 # fraction
-      TPR: 1.0 # fraction
-      FPR: 1.0 # fraction
-      TNR: 0.0 # fraction
-      FNR: 0.0 # fraction
-      TP: 9805 # count
-      FP: 195 # count
-      TN: 0 # count
-      FN: 0 # count
-      MAE: 0.02 # eV/atom
-      RMSE: 0.05 # eV/atom
-      R2: 0.942 # dimensionless
-      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/matris/matris-10m-mp/2025-10-29-geo-opt.jsonl.gz
