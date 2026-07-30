@@ -3,10 +3,11 @@
 import io
 import os
 import sys
+import tempfile
 import zipfile
 from datetime import date
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Self, cast
 from unittest.mock import patch
 
 import ase.io
@@ -17,6 +18,7 @@ from ase import Atoms
 from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
+from matbench_discovery import data as data_module
 from matbench_discovery.data import (
     artifact_filename,
     ase_atoms_from_zip,
@@ -417,6 +419,46 @@ metrics:
     for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
         with pytest.raises(ValueError, match="Invalid dotted_path="):
             update_yaml_file(test_file, path, {"data": 1})
+
+
+def test_update_yaml_file_lock_survives_differing_tmpdir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Concurrent writers must share one lock even under different TMPDIR.
+
+    Slurm sets TMPDIR per job and macOS per user, so a tempdir-derived lock path
+    hands them separate locks and lets their read-modify-write cycles interleave
+    into a corrupt YAML file.
+    """
+    test_file = f"{tmp_path}/test.yml"
+    with open(test_file, mode="w") as file:
+        round_trip_yaml.dump({"metrics": {}}, file)
+
+    lock_paths: list[str] = []
+
+    class RecordingLock:
+        """Stand-in for FileLock that records the lock path it would take."""
+
+        def __init__(self, lock_file: str, *_args: object, **_kwargs: object) -> None:
+            lock_paths.append(str(lock_file))
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *_exc_info: object) -> None:
+            return
+
+    monkeypatch.setattr(data_module, "FileLock", RecordingLock)
+    for job_dir in ("slurm-job-a", "slurm-job-b"):
+        # gettempdir() silently falls back when TMPDIR is missing, so it must exist
+        tmpdir = tmp_path / job_dir
+        tmpdir.mkdir()
+        monkeypatch.setenv("TMPDIR", str(tmpdir))
+        monkeypatch.setattr(tempfile, "tempdir", None)  # drop gettempdir()'s cache
+        update_yaml_file(test_file, "metrics.discovery", {"mae": 0.1})
+
+    assert lock_paths[0] == lock_paths[1]
+    assert tmp_path.as_posix() not in lock_paths[0]  # never beside the target
 
 
 # --- model artifact filenames / FileRef helpers ---

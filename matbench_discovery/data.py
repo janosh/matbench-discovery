@@ -16,7 +16,6 @@ import io
 import os
 import re
 import sys
-import tempfile
 import zipfile
 from collections.abc import Callable, Iterator, Sequence
 from datetime import date
@@ -42,6 +41,10 @@ round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata fil
 round_trip_yaml.preserve_quotes = True
 round_trip_yaml.width = 1000  # avoid changing line wrapping
 round_trip_yaml.indent(mapping=2, sequence=2, offset=0)
+
+# fixed home for YAML write locks, deliberately independent of TMPDIR (see
+# update_yaml_file) and outside the repo
+YAML_LOCK_DIR: Final = os.path.expanduser("~/.cache/matbench-discovery/locks")
 
 ISO_DATE_PATTERN: Final = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MOYO_VERSION_PATTERN: Final = re.compile(
@@ -517,10 +520,14 @@ def update_yaml_file(
     if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
         raise ValueError(f"Invalid {dotted_path=}")
 
-    # Lock in the temp dir rather than beside the target: filelock never removes the
-    # lock file, so locking a tracked YAML in place litters the repo with .yml.lock
-    lock_digest = hashlib.sha256(os.path.abspath(file_path).encode()).hexdigest()[:16]
-    with FileLock(f"{tempfile.gettempdir()}/mbd-yaml-{lock_digest}.lock"):
+    # Lock outside the repo, since filelock never removes its lock file and locking a
+    # tracked YAML in place litters the repo with .yml.lock. Not tempfile.gettempdir():
+    # Slurm sets TMPDIR per job and macOS per user, so concurrent writers would take
+    # different locks and interleave their read-modify-write into a corrupt file.
+    # realpath so two spellings of one file (symlink, relative) share a lock.
+    os.makedirs(YAML_LOCK_DIR, exist_ok=True)
+    lock_digest = hashlib.sha256(os.path.realpath(file_path).encode()).hexdigest()[:16]
+    with FileLock(f"{YAML_LOCK_DIR}/{lock_digest}.lock"):
         with open(file_path, encoding="utf-8") as file:
             yaml_data = round_trip_yaml.load(file)
 
