@@ -11,12 +11,13 @@ Environment Variables:
         ~/.cache/matbench-discovery.
 """
 
+import hashlib
 import io
 import os
 import re
 import sys
+import tempfile
 import zipfile
-from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -266,17 +267,6 @@ with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
     DATASETS = yaml.safe_load(stream=file)
 
 
-def as_dict_handler(obj: object) -> dict[str, Any] | None:
-    """Pass this to json.dump(default=) or as pandas.to_json(default_handler=) to
-    serialize Python classes with as_dict(). Warning: Objects without a as_dict() method
-    are replaced with None in the serialized data.
-    """
-    as_dict = getattr(obj, "as_dict", None)  # all MSONable objects implement as_dict()
-    # objects without as_dict() serialize to None, which drops e.g. non-serializable
-    # AseAtoms from M3GNet relaxation trajectories
-    return as_dict() if callable(as_dict) else None
-
-
 def glob_to_df(
     pattern: str,
     *,
@@ -377,51 +367,6 @@ def ase_atoms_from_zip(
                         atom.info["filename"] = filename
                 atoms_list.extend(atoms)
     return atoms_list
-
-
-def ase_atoms_to_zip(
-    atoms_set: list[Atoms] | dict[str, Atoms], zip_filename: str | Path
-) -> None:
-    """Write ASE Atoms objects to a ZIP archive with each Atoms object as a separate
-    extXYZ file, grouped by mat_id.
-
-    Args:
-        atoms_set (list[Atoms] | dict[str, Atoms]): Either a list of ASE Atoms objects
-            (which should have a 'material_id' in their Atoms.info dictionary) or a
-            dictionary mapping material IDs to Atoms objects.
-        zip_filename (str | Path): Path to the ZIP file to write.
-    """
-    # Group atoms by mat_id to avoid overwriting files with the same name
-
-    atoms_dict: dict[str, list[Atoms]]
-    if isinstance(atoms_set, dict):
-        atoms_dict = {material_id: [atoms] for material_id, atoms in atoms_set.items()}
-    else:
-        atoms_dict = defaultdict(list)
-
-        # If input is a list, get material ID from atoms.info falling back to formula
-        # if missing
-        for atoms in atoms_set:
-            material_id = atoms.info.get(
-                Key.mat_id, f"no-id-{atoms.get_chemical_formula()}"
-            )
-            atoms_dict[material_id].append(atoms)
-
-    # Write grouped atoms to the ZIP archive
-    with zipfile.ZipFile(
-        zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED
-    ) as zip_file:
-        for material_id, atoms_list in tqdm(
-            atoms_dict.items(), desc=f"Writing ASE Atoms to {zip_filename=}"
-        ):
-            buffer = io.StringIO()  # string buffer to write the extxyz content
-            for atoms in atoms_list:
-                ase.io.write(
-                    buffer, atoms, format="extxyz", append=True, write_info=True
-                )
-
-            # Write the combined buffer content to the ZIP file
-            zip_file.writestr(f"{material_id}.extxyz", buffer.getvalue())
 
 
 # str() around Key.mat_id added for https://github.com/janosh/matbench-discovery/issues/81
@@ -572,9 +517,10 @@ def update_yaml_file(
     if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
         raise ValueError(f"Invalid {dotted_path=}")
 
-    # Use a lock file to prevent race conditions
-    lock_path = f"{file_path}.lock"
-    with FileLock(lock_path):
+    # Lock in the temp dir rather than beside the target: filelock never removes the
+    # lock file, so locking a tracked YAML in place litters the repo with .yml.lock
+    lock_digest = hashlib.sha256(os.path.abspath(file_path).encode()).hexdigest()[:16]
+    with FileLock(f"{tempfile.gettempdir()}/mbd-yaml-{lock_digest}.lock"):
         with open(file_path, encoding="utf-8") as file:
             yaml_data = round_trip_yaml.load(file)
 
