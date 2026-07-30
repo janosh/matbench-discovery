@@ -109,11 +109,7 @@ def stable_metrics(
 
     Returns:
         dict[str, float]: dictionary of classification metrics with keys DAF, Precision,
-            Recall, Accuracy, F1, TPR, FPR, TNR, FNR, MAE, RMSE, R2.
-
-    Raises:
-        ValueError: If FPR + TNR don't add up to 1.
-        ValueError: If TPR + FNR don't add up to 1.
+            Recall, Accuracy, F1, TP, FP, TN, FN, MAE, RMSE, R2.
     """
     n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(
         sum,
@@ -139,19 +135,6 @@ def stable_metrics(
     )
     recall = n_true_pos / n_total_pos if n_total_pos > 0 else float("nan")
 
-    TPR = recall  # noqa: N806
-    FPR = n_false_pos / n_total_neg if n_total_neg > 0 else float("nan")  # noqa: N806
-    TNR = n_true_neg / n_total_neg if n_total_neg > 0 else float("nan")  # noqa: N806
-    FNR = n_false_neg / n_total_pos if n_total_pos > 0 else float("nan")  # noqa: N806
-
-    # sanity check: false positives + true negatives = all negatives
-    if FPR > 0 and TNR > 0 and FPR + TNR != 1:
-        raise ValueError(f"{FPR=} {TNR=} don't add up to 1")
-
-    # sanity check: true positives + false negatives = all positives
-    if TPR > 0 and FNR > 0 and TPR + FNR != 1:
-        raise ValueError(f"{TPR=} {FNR=} don't add up to 1")
-
     # Drop NaNs to calculate regression metrics
     each_true_arr = pd.to_numeric(pd.Series(each_true), errors="coerce")
     each_pred_arr = pd.to_numeric(pd.Series(each_pred), errors="coerce")
@@ -174,7 +157,6 @@ def stable_metrics(
             if (n_total_pos + n_total_neg > 0)
             else float("nan")
         ),
-        **dict(TPR=TPR, FPR=FPR, TNR=TNR, FNR=FNR),
         **dict(TP=n_true_pos, FP=n_false_pos, TN=n_true_neg, FN=n_false_neg),
         MAE=np.abs(each_true - each_pred).mean(),
         RMSE=((each_true - each_pred) ** 2).mean() ** 0.5,
@@ -340,10 +322,6 @@ def write_metrics_to_yaml(
         "Recall": "fraction",
         "Accuracy": "fraction",
         "F1": "fraction",
-        "TPR": "fraction",
-        "FPR": "fraction",
-        "TNR": "fraction",
-        "FNR": "fraction",
         str(MbdKey.missing_preds): "count",
         "TP": "count",
         "FP": "count",

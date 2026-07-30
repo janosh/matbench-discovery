@@ -127,12 +127,12 @@ def test_classify_stable_nullable_inputs(
         (
             [0.1, 0.2, 0.3],
             [-0.1, -0.2, -0.3],
-            (0.0, 1.0, 0.0, np.nan, np.nan, np.nan, np.nan),
+            (0.0, np.nan, np.nan, np.nan, 0, 3, 0, 0),
         ),
         (
             [-0.1, -0.2, -0.3],
             [0.1, 0.2, 0.3],
-            (np.nan, np.nan, np.nan, 0.0, 1.0, np.nan, np.nan),
+            (np.nan, 0.0, np.nan, np.nan, 0, 0, 0, 3),
         ),
     ],
     ids=["no-actual-stable", "no-actual-unstable"],
@@ -144,7 +144,7 @@ def test_stable_metrics_zero_class(
 ) -> None:
     """Metrics handle absent stable or unstable classes."""
     metrics = stable_metrics(each_true, each_pred, stability_threshold=0.0, fillna=True)
-    metric_keys = ("Precision", "FPR", "TNR", "Recall", "FNR", "DAF", "F1")
+    metric_keys = ("Precision", "Recall", "DAF", "F1", "TP", "FP", "TN", "FN")
     assert tuple(metrics[key] for key in metric_keys) == pytest.approx(
         expected, nan_ok=True
     )
@@ -168,10 +168,8 @@ def test_stable_metrics_nan_handling() -> None:
 
     assert metrics_no_fill["Precision"] == metrics_fill["Precision"]
     assert metrics_no_fill["DAF"] > metrics_fill["DAF"]
-    assert metrics_no_fill["TNR"] == 0.5
-    assert metrics_no_fill["FNR"] == 0
-    assert metrics_fill["TNR"] == 2 / 3
-    assert metrics_fill["FNR"] == 1 / 2
+    assert (metrics_no_fill["TN"], metrics_no_fill["FN"]) == (1, 0)
+    assert (metrics_fill["TN"], metrics_fill["FN"]) == (2, 1)
     for metric in ("MAE", "RMSE", "R2"):
         assert metrics_no_fill[metric] == metrics_fill[metric]
 

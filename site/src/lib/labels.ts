@@ -58,21 +58,6 @@ export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
     description: `Recall of classifying thermodynamic stability`,
     path: `metrics.discovery.unique_prototypes`,
     better: `higher`,
-    visible: false,
-  },
-  TNR: {
-    key: `TNR`,
-    label: `TNR`,
-    description: `True Negative Rate`,
-    path: `metrics.discovery.unique_prototypes`,
-    better: `higher`,
-  },
-  TPR: {
-    key: `TPR`,
-    label: `TPR`,
-    description: `True Positive Rate`,
-    path: `metrics.discovery.unique_prototypes`,
-    better: `higher`,
   },
   MAE: {
     key: `MAE`,

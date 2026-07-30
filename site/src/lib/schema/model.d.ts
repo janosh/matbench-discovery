@@ -483,10 +483,6 @@ export interface DiscoveryMetricsSet {
   Precision: number
   Recall: number
   Accuracy: number
-  TPR: number
-  FPR: number
-  TNR: number
-  FNR: number
   TP: number
   FP: number
   TN: number

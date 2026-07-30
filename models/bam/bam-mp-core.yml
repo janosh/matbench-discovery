@@ -112,10 +112,6 @@ metrics:
       Precision: 0.561
       Recall: 0.687
       Accuracy: 0.854
-      TPR: 0.687
-      FPR: 0.111
-      TNR: 0.889
-      FNR: 0.313
       TP: 30290
       FP: 23721
       TN: 189150
@@ -130,10 +126,6 @@ metrics:
       Precision: 0.563
       Recall: 0.698
       Accuracy: 0.869
-      TPR: 0.698
-      FPR: 0.099
-      TNR: 0.901
-      FNR: 0.302
       TP: 23282
       FP: 18081
       TN: 164033

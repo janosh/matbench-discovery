@@ -81,10 +81,6 @@ metrics:
       Precision: 0.541 # fraction
       Recall: 0.597 # fraction
       Accuracy: 0.844 # fraction
-      TPR: 0.597 # fraction
-      FPR: 0.105 # fraction
-      TNR: 0.895 # fraction
-      FNR: 0.403 # fraction
       TP: 26327 # count
       FP: 22360 # count
       TN: 190511 # count
@@ -99,10 +95,6 @@ metrics:
       Precision: 0.535 # fraction
       Recall: 0.614 # fraction
       Accuracy: 0.857 # fraction
-      TPR: 0.614 # fraction
-      FPR: 0.098 # fraction
-      TNR: 0.902 # fraction
-      FNR: 0.386 # fraction
       TP: 20485 # count
       FP: 17823 # count
       TN: 164291 # count

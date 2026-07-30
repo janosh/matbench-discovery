@@ -46,9 +46,7 @@
   const n_wbm_uniq_protos = DATASETS.WBM.n_materials
 
   const supplementary_hidden = new Set(
-    [DISCOVERY_METRICS.TPR, DISCOVERY_METRICS.TNR, DISCOVERY_METRICS.RMSE].map(
-      (metric) => metric.key,
-    ),
+    [DISCOVERY_METRICS.RMSE].map((metric) => metric.key),
   )
   const metadata_keys = new Set([
     ...Object.values(METADATA_COLS).map((col) => col.key),
