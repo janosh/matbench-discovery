@@ -8,16 +8,6 @@ type ElemCounts = Record<ElementSymbol, number>
 const sample_values = { H: 100, C: 250, O: 300, Fe: 150 } as ElemCounts
 
 describe(`PtableHeatmap.svelte`, () => {
-  it(`mounts and renders without errors`, () => {
-    expect(() => {
-      mount(PtableHeatmap, {
-        target: document.body,
-        props: { heatmap_values: sample_values },
-      })
-    }).not.toThrow()
-    expect(document.body.innerHTML.length).toBeGreaterThan(0)
-  })
-
   it(`renders log scale checkbox with label`, () => {
     mount(PtableHeatmap, {
       target: document.body,
@@ -82,13 +72,25 @@ describe(`PtableHeatmap.svelte`, () => {
     })
   })
 
+  // the colorbar range is [0, Math.max(0, ...values)]; without the 0 seed an empty
+  // value set gives -Infinity and the colorbar renders no ticks at all
   it.each([
-    { heatmap_values: {} as ElemCounts, desc: `empty` },
-    { heatmap_values: { Fe: 100 } as ElemCounts, desc: `single element` },
-    { heatmap_values: { Fe: 0, O: 0 } as ElemCounts, desc: `zero values` },
-  ])(`mounts without error for $desc heatmap_values`, ({ heatmap_values }) => {
-    expect(() => {
+    { heatmap_values: {} as ElemCounts, desc: `empty`, ticks: [`0`] },
+    {
+      heatmap_values: { Fe: 100 } as ElemCounts,
+      desc: `single element`,
+      ticks: [`0`, `20`, `40`, `60`, `80`, `100`],
+    },
+    { heatmap_values: { Fe: 0, O: 0 } as ElemCounts, desc: `zero values`, ticks: [`0`] },
+  ])(
+    `renders finite colorbar ticks for $desc heatmap_values`,
+    ({ heatmap_values, ticks }) => {
       mount(PtableHeatmap, { target: document.body, props: { heatmap_values } })
-    }).not.toThrow()
-  })
+
+      const tick_labels = [...document.querySelectorAll(`.colorbar .tick-label`)].map(
+        (label) => label.textContent?.trim(),
+      )
+      expect(tick_labels).toStrictEqual(ticks)
+    },
+  )
 })
