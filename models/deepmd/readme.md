@@ -31,10 +31,10 @@ from ase import Atoms
 from deepmd.calculator import DP
 
 water = Atoms(
-   "H2O",
-   positions=[(0.7601, 1.9270, 1), (1.9575, 1, 1), (1.0, 1.0, 1.0)],
-   cell=[100, 100, 100],
-   calculator=DP(model="dpa-3.1-mptrj.pth"),
+    "H2O",
+    positions=[(0.7601, 1.9270, 1), (1.9575, 1, 1), (1.0, 1.0, 1.0)],
+    cell=[100, 100, 100],
+    calculator=DP(model="dpa-3.1-mptrj.pth"),
 )
 
 print(water.get_potential_energy())

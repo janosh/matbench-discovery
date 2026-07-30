@@ -154,10 +154,10 @@ describe(`Landing Page`, () => {
     })
     await tick()
 
-    // a restored set/preset that matches no option leaves its toggle with nothing pressed
+    // the stale set and preset fall back to the defaults the page mounted with
     expect(pressed_toggle(`Full Test Set`)).toBe(`Unique Prototypes`)
     expect(pressed_toggle(`Discovery`)).toBe(`Discovery`)
-    // requiring the unknown dataset would leave just the empty-state row
+    // the unknown dataset is ignored, leaving the row count unchanged
     expect(document.querySelectorAll(`tbody tr`)).toHaveLength(model_count)
   })
 
