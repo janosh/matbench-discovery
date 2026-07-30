@@ -80,6 +80,11 @@ def classify_stable(
     return true_pos, false_neg, false_pos, true_neg
 
 
+def _safe_div(numerator: float, denominator: float) -> float:
+    """Ratio of two counts, NaN when the denominator is zero (or NaN)."""
+    return numerator / denominator if denominator > 0 else float("nan")
+
+
 def stable_metrics(
     each_true: Sequence[float | None] | pd.Series | np.ndarray,
     each_pred: Sequence[float | None] | pd.Series | np.ndarray,
@@ -120,20 +125,12 @@ def stable_metrics(
 
     n_total_pos = n_true_pos + n_false_neg
     n_total_neg = n_true_neg + n_false_pos
+    n_total = n_total_pos + n_total_neg
     # prevalence: dummy discovery rate of stable crystals by selecting randomly from
     # all materials
-    prevalence = (
-        n_total_pos / (n_total_pos + n_total_neg)
-        if (n_total_pos + n_total_neg) > 0
-        else float("nan")
-    )
-    # Calculate ratios with guards against division by zero
-    precision = (
-        n_true_pos / (n_true_pos + n_false_pos)
-        if (n_true_pos + n_false_pos) > 0
-        else float("nan")
-    )
-    recall = n_true_pos / n_total_pos if n_total_pos > 0 else float("nan")
+    prevalence = _safe_div(n_total_pos, n_total)
+    precision = _safe_div(n_true_pos, n_true_pos + n_false_pos)
+    recall = _safe_div(n_true_pos, n_total_pos)
 
     # Drop NaNs to calculate regression metrics
     each_true_arr = pd.to_numeric(pd.Series(each_true), errors="coerce")
@@ -142,22 +139,16 @@ def stable_metrics(
     each_true = each_true_arr[~is_nan].to_numpy()
     each_pred = each_pred_arr[~is_nan].to_numpy()
 
-    if precision + recall == 0:  # Calculate F1 score, handling division by zero
-        f1_score = float("nan")
-    else:
-        f1_score = 2 * (precision * recall) / (precision + recall)
-
     return dict(
-        F1=f1_score,
-        DAF=precision / prevalence if prevalence > 0 else float("nan"),
+        F1=_safe_div(2 * precision * recall, precision + recall),
+        DAF=_safe_div(precision, prevalence),
         Precision=precision,
         Recall=recall,
-        Accuracy=(
-            (n_true_pos + n_true_neg) / (n_total_pos + n_total_neg)
-            if (n_total_pos + n_total_neg > 0)
-            else float("nan")
-        ),
-        **dict(TP=n_true_pos, FP=n_false_pos, TN=n_true_neg, FN=n_false_neg),
+        Accuracy=_safe_div(n_true_pos + n_true_neg, n_total),
+        TP=n_true_pos,
+        FP=n_false_pos,
+        TN=n_true_neg,
+        FN=n_false_neg,
         MAE=np.abs(each_true - each_pred).mean(),
         RMSE=((each_true - each_pred) ** 2).mean() ** 0.5,
         R2=r2_score(each_true, each_pred) if len(each_true) > 1 else float("nan"),
