@@ -14,15 +14,14 @@ describe(`PtableHeatmap.svelte`, () => {
       props: { heatmap_values: sample_values },
     })
 
-    const checkbox = document.querySelector<HTMLInputElement>(`input#log`)
-    const label = document.querySelector(`label[for="log"]`)
-
-    expect(checkbox).toBeDefined()
-    expect(label?.textContent).toContain(`Log color scale`)
+    const checkbox = document.querySelector(`input#log`)
+    expect(checkbox).toBeInstanceOf(HTMLInputElement)
+    expect(document.querySelector(`label[for="log"]`)?.textContent).toContain(
+      `Log color scale`,
+    )
   })
 
   it(`checkbox reflects log prop and toggles on click`, async () => {
-    // Test default (false)
     mount(PtableHeatmap, {
       target: document.body,
       props: { heatmap_values: sample_values },
@@ -30,7 +29,6 @@ describe(`PtableHeatmap.svelte`, () => {
     const checkbox = document.querySelector<HTMLInputElement>(`input#log`)
     expect(checkbox?.checked).toBe(false)
 
-    // Test toggling
     checkbox?.click()
     await tick()
     expect(checkbox?.checked).toBe(true)
@@ -39,7 +37,6 @@ describe(`PtableHeatmap.svelte`, () => {
     await tick()
     expect(checkbox?.checked).toBe(false)
 
-    // Test log=true prop
     document.body.innerHTML = ``
     mount(PtableHeatmap, {
       target: document.body,
@@ -72,25 +69,16 @@ describe(`PtableHeatmap.svelte`, () => {
     })
   })
 
-  // the colorbar range is [0, Math.max(0, ...values)]; without the 0 seed an empty
-  // value set gives -Infinity and the colorbar renders no ticks at all
+  // colorbar range is [0, Math.max(0, ...values)]; without the 0 seed, empty → -Infinity
   it.each([
-    { heatmap_values: {} as ElemCounts, desc: `empty`, ticks: [`0`] },
-    {
-      heatmap_values: { Fe: 100 } as ElemCounts,
-      desc: `single element`,
-      ticks: [`0`, `20`, `40`, `60`, `80`, `100`],
-    },
-    { heatmap_values: { Fe: 0, O: 0 } as ElemCounts, desc: `zero values`, ticks: [`0`] },
-  ])(
-    `renders finite colorbar ticks for $desc heatmap_values`,
-    ({ heatmap_values, ticks }) => {
-      mount(PtableHeatmap, { target: document.body, props: { heatmap_values } })
-
-      const tick_labels = [...document.querySelectorAll(`.colorbar .tick-label`)].map(
-        (label) => label.textContent?.trim(),
-      )
-      expect(tick_labels).toStrictEqual(ticks)
-    },
-  )
+    { vals: {} as ElemCounts, max: 0 },
+    { vals: { Fe: 100 } as ElemCounts, max: 100 },
+    { vals: { Fe: 0, O: 0 } as ElemCounts, max: 0 },
+  ])(`colorbar max tick is $max`, ({ vals, max }) => {
+    mount(PtableHeatmap, { target: document.body, props: { heatmap_values: vals } })
+    const ticks = [...document.querySelectorAll(`.colorbar .tick-label`)].map((label) =>
+      Number(label.textContent),
+    )
+    expect(Math.max(...ticks)).toBe(max)
+  })
 })

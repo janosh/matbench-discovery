@@ -45,8 +45,9 @@
   const n_wbm_stable_uniq_protos = 32_942
   const n_wbm_uniq_protos = DATASETS.WBM.n_materials
 
+  // landing hid TPR; keep its Recall replacement supplementary too
   const supplementary_hidden = new Set(
-    [DISCOVERY_METRICS.RMSE].map((metric) => metric.key),
+    [DISCOVERY_METRICS.Recall, DISCOVERY_METRICS.RMSE].map((metric) => metric.key),
   )
   const metadata_keys = new Set([
     ...Object.values(METADATA_COLS).map((col) => col.key),
@@ -165,8 +166,6 @@
       [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
     ],
   )
-
-  let export_state = $derived({ export_error, discovery_set })
 
   const preset_metric_value = (
     model: ModelData,
@@ -289,7 +288,9 @@
     {#each [[`SVG`, generate_svg], [`PNG`, generate_png], [`CSV`, generate_csv], [`Excel`, generate_excel]] as const as [label, generate_fn] (label)}
       <button
         class="download-btn"
-        onclick={handle_export(generate_fn, label, export_state)}
+        onclick={async () => {
+          export_error = await handle_export(generate_fn, label, { discovery_set })
+        }}
       >
         {label}
       </button>

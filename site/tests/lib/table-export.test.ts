@@ -207,7 +207,7 @@ describe(`Table Export Functionality`, () => {
       `handles %s case correctly`,
       async (_test_name, generator_result, expected_error) => {
         const generator_spy = vi.fn()
-        const state = { export_error: null, discovery_set: `test` }
+        const opts = { discovery_set: `test` }
 
         if (generator_result instanceof Error || typeof generator_result === `string`) {
           generator_spy.mockRejectedValue(generator_result)
@@ -216,13 +216,8 @@ describe(`Table Export Functionality`, () => {
         }
 
         const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
-        const handler = handle_export(generator_spy, `fmt`, state)
-        await handler()
-
-        expect(generator_spy).toHaveBeenCalledWith({
-          discovery_set: state.discovery_set,
-        })
-        expect(state.export_error).toBe(expected_error)
+        expect(await handle_export(generator_spy, `fmt`, opts)).toBe(expected_error)
+        expect(generator_spy).toHaveBeenCalledWith(opts)
 
         console_spy.mockRestore()
       },

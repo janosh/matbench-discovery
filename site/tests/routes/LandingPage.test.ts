@@ -123,6 +123,9 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles the discovery set and hides it outside Discovery`, async () => {
+    expect(header_text()).toMatch(/F1.*DAF.*Prec/)
+    expect(header_text()).not.toContain(`Recall`)
+
     const test_set_shown = () =>
       [...document.querySelectorAll(`.selection-toggle`)].some((toggle) =>
         toggle.textContent?.includes(`Full Test Set`),
@@ -234,11 +237,22 @@ describe(`Landing Page`, () => {
     expect(selected_scatter_label()).toContain(`${filtered_model_count} models`)
   })
 
+  it(`surfaces export failures in the UI`, async () => {
+    doc_query(`section.full-bleed table`).remove()
+    doc_query(`.download-btn`).click() // SVG is first
+    await tick()
+    await tick()
+    expect(document.querySelector(`.export-error`)?.textContent).toContain(
+      `Failed to generate SVG`,
+    )
+  })
+
   it(`renders table downloads section`, () => {
-    const download_section = doc_query(`.downloads`)
-    const download_buttons = download_section.querySelectorAll(`.download-btn`)
-    const buttons = [...download_buttons].map((button) => button.textContent?.trim())
-    expect(buttons).toStrictEqual([`SVG`, `PNG`, `CSV`, `Excel`, `RSS`])
+    expect(
+      [...doc_query(`.downloads`).querySelectorAll(`.download-btn`)].map((button) =>
+        button.textContent?.trim(),
+      ),
+    ).toStrictEqual([`SVG`, `PNG`, `CSV`, `Excel`, `RSS`])
   })
 })
 

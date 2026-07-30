@@ -273,71 +273,49 @@ def write_all_metrics_to_yaml(
     df_wbm: pd.DataFrame,
     model_preds: pd.Series,
 ) -> dict[TestSubset, dict[str, str | float]]:
-    """Round and write all canonical discovery subsets to one model YAML."""
-    model_preds = _align_preds(df_wbm, model_preds)
-    subset_indices = discovery_subset_indices(df_wbm)
-    return {
-        test_subset: write_metrics_to_yaml(
-            model,
-            {key: round(float(value), 3) for key, value in metrics.items()},
-            model_preds.reindex(subset_indices[test_subset]),
-            test_subset,
-        )
-        for test_subset, metrics in metrics_by_subset.items()
-    }
+    """Round and rewrite metrics.discovery in one locked update.
 
-
-def write_metrics_to_yaml(
-    model: Model,
-    metrics: dict[str, str | float],
-    df_model_preds: pd.Series,
-    test_subset: TestSubset,
-) -> dict[str, str | float]:
-    """Write discovery metrics to model's YAML file.
-
-    Args:
-        model (Model): Model to write metrics for.
-        metrics (dict[str, float]): Metrics for this model and test subset.
-        df_model_preds (pd.Series): Model predictions for this test subset.
-        test_subset (TestSubset): Which test subset these metrics are for.
-
-    Returns:
-        dict[str, str | float]: Discovery metrics for this model and test subset.
+    Replaces every subset block (dropping deprecated rate keys) and removes
+    obsolete siblings like most_stable_10k; keeps pred_file and cost provenance.
     """
     from ruamel.yaml.comments import CommentedMap
 
     from matbench_discovery.data import update_yaml_file
 
-    # calculate number of missing predictions
-    n_missing = int(df_model_preds.isna().sum())
-    metrics[str(MbdKey.missing_preds)] = n_missing
-
-    # Define metric units for end-of-line comments
-    metric_units = {
+    units = {
         "MAE": "eV/atom",
         "RMSE": "eV/atom",
         "R2": "dimensionless",
         "DAF": "dimensionless",
-        "Precision": "fraction",
-        "Recall": "fraction",
-        "Accuracy": "fraction",
-        "F1": "fraction",
-        str(MbdKey.missing_preds): "count",
-        "TP": "count",
-        "FP": "count",
-        "TN": "count",
-        "FN": "count",
+        **dict.fromkeys(("Precision", "Recall", "Accuracy", "F1"), "fraction"),
+        **dict.fromkeys(("TP", "FP", "TN", "FN", str(MbdKey.missing_preds)), "count"),
     }
+    model_preds = _align_preds(df_wbm, model_preds)
+    subset_indices = discovery_subset_indices(df_wbm)
+    written: dict[TestSubset, dict[str, str | float]] = {}
+    for test_subset, metrics in metrics_by_subset.items():
+        block = CommentedMap(
+            {key: round(float(value), 3) for key, value in metrics.items()}
+        )
+        block[str(MbdKey.missing_preds)] = int(
+            model_preds.reindex(subset_indices[test_subset]).isna().sum()
+        )
+        for key, unit in units.items():
+            if key in block:
+                block.yaml_add_eol_comment(unit, key, column=1)
+        written[test_subset] = block
 
-    # Create CommentedMap and add units as end-of-line comments
-    commented_metrics = CommentedMap(metrics)
-    for key in metrics:
-        if unit := metric_units.get(key):
-            commented_metrics.yaml_add_eol_comment(unit, key, column=1)
-
-    # Write back to file
+    # Metric subset blocks always carry F1; pred_file / hardware do not.
     update_yaml_file(
-        model.yaml_path, f"metrics.discovery.{test_subset}", commented_metrics
+        model.yaml_path,
+        "metrics.discovery",
+        lambda section: {
+            **{
+                key: val
+                for key, val in section.items()
+                if not (isinstance(val, Mapping) and "F1" in val)
+            },
+            **{str(subset): block for subset, block in written.items()},
+        },
     )
-
-    return commented_metrics
+    return written

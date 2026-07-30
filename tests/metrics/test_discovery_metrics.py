@@ -168,8 +168,10 @@ def test_stable_metrics_nan_handling() -> None:
 
     assert metrics_no_fill["Precision"] == metrics_fill["Precision"]
     assert metrics_no_fill["DAF"] > metrics_fill["DAF"]
-    assert (metrics_no_fill["TN"], metrics_no_fill["FN"]) == (1, 0)
-    assert (metrics_fill["TN"], metrics_fill["FN"]) == (2, 1)
+    # full confusion matrix: filling NaNs moves both missing preds to the unstable side
+    confusion = ("TP", "FP", "TN", "FN")
+    assert tuple(metrics_no_fill[key] for key in confusion) == (1, 1, 1, 0)
+    assert tuple(metrics_fill[key] for key in confusion) == (1, 1, 2, 1)
     for metric in ("MAE", "RMSE", "R2"):
         assert metrics_no_fill[metric] == metrics_fill[metric]
 
@@ -243,19 +245,24 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
         uniq_proto_metrics["Precision"] / 0.5
     )
 
+    # Seed deprecated keys older YAML still carried; a recompute must drop them.
     test_yaml = tmp_path / "test_model.yml"
-    test_yaml.write_text("metrics:\n  discovery: {}\n")
+    test_yaml.write_text(
+        "metrics:\n  discovery:\n"
+        "    most_stable_10k: {F1: 0.9}\n"
+        "    unique_prototypes: {TPR: 0.2, F1: 0.1}\n"
+    )
     mock_model = cast("Model", SimpleNamespace(yaml_path=str(test_yaml)))
-    written_metrics = write_all_metrics_to_yaml(
+    written = write_all_metrics_to_yaml(
         mock_model, metrics_by_subset, df_test, model_preds
     )
-    assert {
-        subset: written[str(MbdKey.missing_preds)]
-        for subset, written in written_metrics.items()
-    } == {TestSubset.full_test_set: 2, TestSubset.uniq_protos: 1}
-    yaml_content = test_yaml.read_text()
-    assert "full_test_set:" in yaml_content
-    assert f"{MbdKey.missing_preds}:" in yaml_content
+    assert written[TestSubset.full_test_set][str(MbdKey.missing_preds)] == 2
+    assert written[TestSubset.uniq_protos][str(MbdKey.missing_preds)] == 1
+    yaml_text = test_yaml.read_text()
+    assert "most_stable_10k" not in yaml_text
+    assert "TPR:" not in yaml_text
+    assert "Recall:" in yaml_text
+    assert "full_test_set:" in yaml_text
 
 
 def test_df_discovery_metrics() -> None:
