@@ -57,8 +57,7 @@ def test_prepare_model_predictions_masks_rounds_and_aligns() -> None:
     assert rounded_reference.index.equals(material_ids)
     assert rounded_reference[MbdKey.uniq_proto].tolist() == [True, False]
 
-    # prepare_model_predictions reindexes onto the reference, so the alignment guard
-    # can only fire for callers that go straight to the public entry points
+    # Alignment fires at public entry points (prepare reindexes onto the reference)
     foreign_preds = pd.Series([0.1], index=pd.Index(["wbm-3"]))
     with pytest.raises(ValueError, match=r"unknown material IDs: \['wbm-3'\]"):
         calc_discovery_metrics(df_reference, foreign_preds)
@@ -230,11 +229,10 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
     uniq_proto_idx = df_test.index[df_test[MbdKey.uniq_proto]]
     assert list(uniq_proto_idx) == ["wbm-0", "wbm-1", "wbm-3", "wbm-4"]
     uniq_prevalence = (df_test.loc[uniq_proto_idx, MbdKey.each_true] <= 0).mean()
-    subset_indices = {
-        TestSubset.full_test_set: material_ids,
-        TestSubset.uniq_protos: uniq_proto_idx,
-    }
-    for subset, subset_idx in subset_indices.items():
+    for subset, subset_idx in (
+        (TestSubset.full_test_set, material_ids),
+        (TestSubset.uniq_protos, uniq_proto_idx),
+    ):
         expected = stable_metrics(
             df_test.loc[subset_idx, MbdKey.each_true],
             each_pred.loc[subset_idx],

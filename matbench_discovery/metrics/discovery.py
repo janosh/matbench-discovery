@@ -220,9 +220,11 @@ def calc_discovery_metrics(
     to all published DAF values. Defaults to the prevalence of the (possibly rounded)
     ``df_wbm`` frame, intended for synthetic test data only.
     """
-    required_cols = set(
-        map(str, (MbdKey.each_true, MbdKey.e_form_dft, MbdKey.uniq_proto))
-    )
+    required_cols = {
+        str(MbdKey.each_true),
+        str(MbdKey.e_form_dft),
+        str(MbdKey.uniq_proto),
+    }
     if missing_cols := required_cols - set(df_wbm):
         raise ValueError(f"WBM dataframe missing columns: {sorted(missing_cols)}")
 
@@ -238,8 +240,9 @@ def calc_discovery_metrics(
     }
 
     if uniq_proto_prevalence is None:
-        each_true_uniq = each_true.loc[uniq_proto_idx]
-        uniq_proto_prevalence = (each_true_uniq <= STABILITY_THRESHOLD).mean()
+        uniq_proto_prevalence = (
+            each_true.loc[uniq_proto_idx] <= STABILITY_THRESHOLD
+        ).mean()
     daf_denominator = (
         uniq_proto_prevalence if uniq_proto_prevalence > 0 else float("nan")
     )
@@ -272,10 +275,11 @@ def write_all_metrics_to_yaml(
         **dict.fromkeys(("TP", "FP", "TN", "FN", str(MbdKey.missing_preds)), "count"),
     }
     model_preds = _align_preds(df_wbm, model_preds)
+    missing = model_preds.isna()
     uniq_proto_mask = df_wbm[MbdKey.uniq_proto].astype(bool)
     n_missing = {
-        TestSubset.full_test_set: int(model_preds.isna().sum()),
-        TestSubset.uniq_protos: int(model_preds[uniq_proto_mask].isna().sum()),
+        TestSubset.full_test_set: int(missing.sum()),
+        TestSubset.uniq_protos: int(missing[uniq_proto_mask].sum()),
     }
     written: dict[TestSubset, dict[str, str | float]] = {}
     for test_subset, metrics in metrics_by_subset.items():

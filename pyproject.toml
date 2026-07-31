@@ -120,6 +120,19 @@ ignore-words-list = "nd,te,fpr,matris,titel"
 [dependency-groups]
 dev = ["prek>=0.4.5", "ty>=0.0.56"]
 
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+# PEP 723 model scripts carry their own requires-python / deps; type-check the library instead.
+exclude-scripts = true
+
+[tool.ty.rules]
+# Heavy optional model dependencies (chgnet, mace, alignn, ...) aren't
+# installable in the pre-commit hook environment.
+unresolved-import = "ignore"
+unused-ignore-comment = "ignore"
+
 [tool.typos.default]
 locale = "en-us"
 extend-ignore-re = [

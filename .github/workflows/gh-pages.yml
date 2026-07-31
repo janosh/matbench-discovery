@@ -30,6 +30,8 @@ jobs:
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v9.0.0
+        with:
+          python-version: "3.14"
 
       - name: Install dependencies
         # use the project's pinned pnpm (packageManager field) via corepack
