@@ -89,8 +89,8 @@ describe(`Diatomics Page URL state`, () => {
   it(`restores selected element subset from the elements query param`, async () => {
     await mount_page(`?elements=halogen`)
 
-    expect(button_for(`All`).getAttribute(`aria-pressed`)).toBe(`false`)
-    expect(button_for(`Halogens`).getAttribute(`aria-pressed`)).toBe(`true`)
+    expect(button_for(`All`).getAttribute(`aria-checked`)).toBe(`false`)
+    expect(button_for(`Halogens`).getAttribute(`aria-checked`)).toBe(`true`)
   })
 
   it(`syncs selected element subset back to the elements query param`, async () => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricsTable, ACTIVE_MODELS, SelectToggle } from '$lib'
+  import { MetricsTable, ACTIVE_MODELS, DiscoverySetToggle } from '$lib'
   import { make_table_filters } from '$lib/models.svelte'
   import { DynamicScatter } from '$lib/plot'
   import type { SortState } from '$lib/url-state.svelte'
@@ -87,10 +87,7 @@
   <HullConstructionNote />
 </details>
 
-<SelectToggle
-  bind:selected={discovery_set}
-  options={labels.discovery_set_toggle_options}
-/>
+<DiscoverySetToggle bind:selected={discovery_set} />
 <section class="full-bleed">
   <MetricsTable
     col_filter={(col) =>

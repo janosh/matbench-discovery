@@ -1,8 +1,7 @@
 <script lang="ts">
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
-  // IconName from matterviz, not svelte-widgets: SubpageGrid is matterviz's and the two
-  // packages ship different icon sets until matterviz's own migration is released
-  import { type IconName, SubpageGrid } from 'matterviz'
+  import { SubpageGrid } from 'matterviz'
+  import type { IconName } from 'svelte-widgets'
 
   const task_icons: Record<string, IconName> = {
     discovery: `Search`,

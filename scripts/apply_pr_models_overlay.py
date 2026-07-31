@@ -1,8 +1,9 @@
 """Overlay changed model YAMLs from an untrusted PR without executing its code.
 
 Used by .github/workflows/update-site-figs.yml ingest mode: the workflow checks out
-main (trusted code) plus the PR head into a side directory, then runs this script to
-apply canonical ``models/<arch>/<model>.yml`` changes reported by the GitHub API.
+main (trusted code), fetches allow-listed model YAMLs from the PR tip via the GitHub
+Contents API into a side directory, then runs this script to apply canonical
+``models/<arch>/<model>.yml`` changes.
 
 This makes secrets exposure during ingestion safe by construction: all *executed*
 code comes from main; the PR contributes data only.

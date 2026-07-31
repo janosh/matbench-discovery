@@ -16,7 +16,7 @@ export { ACTIVE_MODELS, MODELS } from './models.svelte'
 export { default as OrgLogos } from './model/OrgLogos.svelte'
 export { default as PtableHeatmap } from './PtableHeatmap.svelte'
 export { default as PtableInset } from './PtableInset.svelte'
-export { default as SelectToggle } from './SelectToggle.svelte'
+export { default as DiscoverySetToggle } from './DiscoverySetToggle.svelte'
 export { default as TableControls } from './table/TableControls.svelte'
 export * from './types'
 // these resolve to the same singleton module objects enriched in-place below

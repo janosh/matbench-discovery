@@ -59,10 +59,10 @@ class Trajectory:
     positions: np.ndarray
     cell: np.ndarray
     pbc: np.ndarray
-    energy: "np.ndarray | None" = None
-    forces: "np.ndarray | None" = None
-    stress: "np.ndarray | None" = None
-    md_step: "np.ndarray | None" = None
+    energy: np.ndarray | None = None
+    forces: np.ndarray | None = None
+    stress: np.ndarray | None = None
+    md_step: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         """Validate array shapes are mutually consistent."""
@@ -89,7 +89,7 @@ class Trajectory:
         """Number of atoms per frame."""
         return len(self.atomic_numbers)
 
-    def __getitem__(self, frames: "slice | int") -> "Trajectory":
+    def __getitem__(self, frames: slice | int) -> Trajectory:
         """Sub-trajectory over a frame slice (int selects a single-frame trajectory,
         supporting Python's negative indexing).
         """
@@ -105,11 +105,11 @@ class Trajectory:
         }
         return Trajectory(atomic_numbers=self.atomic_numbers, pbc=self.pbc, **sliced)
 
-    def frame_as_atoms(self, idx: int) -> "Atoms":
+    def frame_as_atoms(self, idx: int) -> Atoms:
         """The idx-th frame as an ASE ``Atoms`` (with results attached if present)."""
         return self[idx].to_ase()[0]
 
-    def to_ase(self) -> "list[Atoms]":
+    def to_ase(self) -> list[Atoms]:
         """Convert all frames to ASE ``Atoms`` with a SinglePointCalculator carrying
         energy/forces/stress when available. Used for interop and to feed calculators
         (energy/force RMSE); not on the hot read path.
@@ -138,7 +138,7 @@ class Trajectory:
         return out
 
     @classmethod
-    def from_ase(cls, frames: "Sequence[Atoms]") -> "Trajectory":
+    def from_ase(cls, frames: Sequence[Atoms]) -> Trajectory:
         """Build a Trajectory from ASE frames, extracting energy/forces/stress/md_step
         where present (e.g. from a SinglePointCalculator on extxyz frames).
         """
@@ -161,7 +161,7 @@ class Trajectory:
         positions = np.array([atoms.positions for atoms in frames])
         cell = np.array([atoms.cell.array for atoms in frames])
 
-        def stack(getter: "Callable[[Atoms], np.ndarray]") -> "np.ndarray | None":
+        def stack(getter: Callable[[Atoms], np.ndarray]) -> np.ndarray | None:
             """Stack a per-frame quantity. Returns None if no frame has it; raises on
             mixed availability (so a partially-labeled trajectory fails loud instead
             of silently dropping the field) and on genuine calculator backend errors.
@@ -204,7 +204,7 @@ class Trajectory:
         )
 
     @classmethod
-    def from_extxyz(cls, path: str) -> "Trajectory":
+    def from_extxyz(cls, path: str) -> Trajectory:
         """Bulk-parse a (optionally xz/gz/bz2-compressed) extxyz trajectory into stacked
         arrays without building one ASE ``Atoms`` per frame.
 
@@ -311,7 +311,7 @@ class Trajectory:
         # per-frame floats parsed from the comment lines
         def comment_field(
             pattern: str, width: int, *, drop_if_partial: bool = False
-        ) -> "np.ndarray | None":
+        ) -> np.ndarray | None:
             """Flat (n_frames * width,) floats from a per-frame comment field, or None
             if no frame carries it. Mixed availability raises (matching from_ase) unless
             ``drop_if_partial``, which returns None instead (md_step's looser rule).
@@ -364,7 +364,7 @@ class Trajectory:
             md_step=md_step,
         )
 
-    def write_to_h5_group(self, group: "h5py.Group") -> None:
+    def write_to_h5_group(self, group: h5py.Group) -> None:
         """Write this trajectory's arrays + metadata into an open HDF5 group.
 
         An ``h5py.File`` is also a ``Group``, so this backs both single-trajectory
@@ -384,8 +384,8 @@ class Trajectory:
 
     @classmethod
     def read_from_h5_group(
-        cls, group: "h5py.Group", *, frames: slice = slice(None)
-    ) -> "Trajectory":
+        cls, group: h5py.Group, *, frames: slice = slice(None)
+    ) -> Trajectory:
         """Read (a slice of) frames from an HDF5 group written by ``write_to_h5_group``.
 
         Only the requested frames are read/decompressed, so strided or head reads of
@@ -415,7 +415,7 @@ class Trajectory:
         os.replace(tmp_path, path)
 
     @classmethod
-    def read_hdf5(cls, path: str, *, frames: slice = slice(None)) -> "Trajectory":
+    def read_hdf5(cls, path: str, *, frames: slice = slice(None)) -> Trajectory:
         """Read (a slice of) frames from an HDF5 file written by ``write_hdf5``."""
         with h5py.File(path, "r") as file:
             return cls.read_from_h5_group(file, frames=frames)

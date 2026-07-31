@@ -7,6 +7,7 @@ Factories import packages lazily so listing models needs only core deps.
 Registry keys are Model enum names so metrics write to the right YAML.
 """
 
+import argparse
 import hashlib
 import inspect
 import os
@@ -14,20 +15,14 @@ import shutil
 import subprocess
 import sys
 import zipfile
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
-from typing import TYPE_CHECKING
 
+from ase.calculators.calculator import Calculator
 from filelock import FileLock
 
 from matbench_discovery import DEFAULT_CACHE_DIR
-
-if TYPE_CHECKING:
-    import argparse
-    from collections.abc import Mapping
-
-    from ase.calculators.calculator import Calculator
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
 # generous: AOTInductor exports (TACE) compile every kernel ahead of time
@@ -67,7 +62,7 @@ def _cached_file_sha256(path: str) -> tuple[str, tuple[int, int, int]] | None:
     """Hash an existing cache entry, tolerating a concurrent atomic replacement."""
     try:
         return _stable_file_sha256(path) if _is_non_empty_file(path) else None
-    except (FileNotFoundError, RuntimeError):
+    except FileNotFoundError, RuntimeError:
         return None
 
 
@@ -159,7 +154,7 @@ def _run_to_atomic_output(
     *,
     source_paths: Sequence[str] = (),
     tool_packages: Sequence[str] = (),
-    env_overrides: "Mapping[str, str] | None" = None,
+    env_overrides: Mapping[str, str] | None = None,
 ) -> None:
     """Atomically cache output by command, source contents, and tool versions.
 
@@ -234,7 +229,7 @@ def _run_to_atomic_output(
 class CalcSpec:
     """A registered MLIP calculator and its YAML-owned runtime environment."""
 
-    make_calc: Callable[..., "Calculator"]
+    make_calc: Callable[..., Calculator]
     deps: tuple[str, ...] = ()  # extra uv requirements beyond CORE_DEPS
     find_links: tuple[str, ...] = ()  # uv --find-links (e.g. PyG/dgl wheel pages)
     extra_index_url: tuple[str, ...] = ()  # uv --extra-index-url entries
@@ -267,7 +262,7 @@ class CalcSpec:
 
 def _runtime_calc_spec(
     model_key: str,
-    make_calc: Callable[..., "Calculator"],
+    make_calc: Callable[..., Calculator],
     *,
     requires_checkpoint: bool = False,
     auto_checkpoint: bool = False,
@@ -300,7 +295,7 @@ def _runtime_calc_spec(
 
 def _checkpoint_spec(
     model_key: str,
-    make_calc: Callable[..., "Calculator"],
+    make_calc: Callable[..., Calculator],
     *,
     ext: str | None = None,
     requires_checkpoint: bool = False,
@@ -316,7 +311,7 @@ def _checkpoint_spec(
 
 
 def _named_spec(
-    factory: Callable[[str], Callable[..., "Calculator"]],
+    factory: Callable[[str], Callable[..., Calculator]],
     model_key: str,
     *,
     checkpoint: bool = False,
@@ -402,10 +397,8 @@ def resolve_device(model_key: str, device: str | None = None) -> str:
     return "cpu" if model_key == "emt" else _detect_device()
 
 
-def _mace(
-    checkpoint: str, head: str | None = None
-) -> Callable[[str, str], "Calculator"]:
-    def make_calc(device: str, dtype: str = "float64") -> "Calculator":
+def _mace(checkpoint: str, head: str | None = None) -> Callable[[str, str], Calculator]:
+    def make_calc(device: str, dtype: str = "float64") -> Calculator:
         from mace.calculators import mace_mp
 
         kwargs = {"head": head} if head else {}
@@ -420,8 +413,8 @@ def _mace(
     return make_calc
 
 
-def _orb(variant: str) -> Callable[[str], "Calculator"]:
-    def make_calc(device: str) -> "Calculator":
+def _orb(variant: str) -> Callable[[str], Calculator]:
+    def make_calc(device: str) -> Calculator:
         from orb_models.forcefield.calculator import ORBCalculator
         from orb_models.forcefield.pretrained import ORB_PRETRAINED_MODELS
 
@@ -432,8 +425,8 @@ def _orb(variant: str) -> Callable[[str], "Calculator"]:
     return make_calc
 
 
-def _mattersim(checkpoint: str) -> Callable[[str], "Calculator"]:
-    def make_calc(device: str) -> "Calculator":
+def _mattersim(checkpoint: str) -> Callable[[str], Calculator]:
+    def make_calc(device: str) -> Calculator:
         from mattersim.forcefield import MatterSimCalculator
 
         return MatterSimCalculator(load_path=checkpoint, device=device)
@@ -443,8 +436,8 @@ def _mattersim(checkpoint: str) -> Callable[[str], "Calculator"]:
 
 def _sevennet(
     model: str, modal: str | None = None, *, from_url: bool = False
-) -> Callable[..., "Calculator"]:
-    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+) -> Callable[..., Calculator]:
+    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
         """Construct SevenNet, locking package downloads or resolving a YAML URL."""
         from sevenn.calculator import SevenNetCalculator
 
@@ -461,8 +454,8 @@ def _sevennet(
     return make_calc
 
 
-def _grace(model_name: str) -> Callable[[str], "Calculator"]:
-    def make_calc(device: str) -> "Calculator":  # noqa: ARG001 - TF picks the device
+def _grace(model_name: str) -> Callable[[str], Calculator]:
+    def make_calc(device: str) -> Calculator:  # noqa: ARG001 - TF picks the device
         from tensorpotential.calculator import grace_fm
 
         return grace_fm(model_name)
@@ -470,8 +463,8 @@ def _grace(model_name: str) -> Callable[[str], "Calculator"]:
     return make_calc
 
 
-def _fairchem(model_key: str) -> Callable[..., "Calculator"]:
-    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+def _fairchem(model_key: str) -> Callable[..., Calculator]:
+    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
         from fairchem.core import OCPCalculator
 
         if checkpoint is None and model_key.startswith("equiformer_v3"):
@@ -485,11 +478,11 @@ def _fairchem(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _deepmd(model_key: str) -> Callable[..., "Calculator"]:
+def _deepmd(model_key: str) -> Callable[..., Calculator]:
     def make_calc(
         device: str,  # noqa: ARG001 - DP picks the device
         checkpoint: str | None = None,
-    ) -> "Calculator":
+    ) -> Calculator:
         from deepmd.calculator import DP
 
         # DP selects its backend by file suffix, so force '.pth' (figshare URLs are
@@ -556,13 +549,13 @@ def _extract_single_deepmd_model(archive_path: str) -> str:
             shutil.rmtree(tmp_extract_dir, ignore_errors=True)
 
 
-def _deepmd_archive(model_key: str) -> Callable[..., "Calculator"]:
+def _deepmd_archive(model_key: str) -> Callable[..., Calculator]:
     """Build a DeePMD calculator from a downloadable model archive."""
 
     def make_calc(
         device: str,  # noqa: ARG001 - DP picks the device
         checkpoint: str | None = None,
-    ) -> "Calculator":
+    ) -> Calculator:
         """Extract the model archive when needed and load its frozen artifact."""
         from deepmd.calculator import DP
 
@@ -574,11 +567,11 @@ def _deepmd_archive(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _deepmd_freeze(model_key: str) -> Callable[..., "Calculator"]:
+def _deepmd_freeze(model_key: str) -> Callable[..., Calculator]:
     def make_calc(
         device: str,  # noqa: ARG001 - DP picks the device
         checkpoint: str | None = None,
-    ) -> "Calculator":
+    ) -> Calculator:
         from deepmd.calculator import DP
 
         # figshare ships a training checkpoint (state dict), so freeze it to the
@@ -599,8 +592,8 @@ def _deepmd_freeze(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., "Calculator"]:
-    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., Calculator]:
+    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
         from tace.interface.ase import TACEAseCalc
 
         checkpoint = checkpoint or download_checkpoint(model_key)
@@ -646,8 +639,8 @@ def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., "Calculat
     return make_calc
 
 
-def _hienet(model_key: str) -> Callable[..., "Calculator"]:
-    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+def _hienet(model_key: str) -> Callable[..., Calculator]:
+    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
         from hienet.hienet_calculator import HIENetCalculator
 
         checkpoint = checkpoint or download_checkpoint(model_key)
@@ -656,8 +649,8 @@ def _hienet(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _nequip(model_key: str) -> Callable[[str], "Calculator"]:
-    def make_calc(device: str) -> "Calculator":
+def _nequip(model_key: str) -> Callable[[str], Calculator]:
+    def make_calc(device: str) -> Calculator:
         from nequip.ase import NequIPCalculator
 
         from matbench_discovery.enums import Model
@@ -692,8 +685,8 @@ def _nequip(model_key: str) -> Callable[[str], "Calculator"]:
     return make_calc
 
 
-def _eqnorm(model_key: str, model_variant: str) -> Callable[..., "Calculator"]:
-    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+def _eqnorm(model_key: str, model_variant: str) -> Callable[..., Calculator]:
+    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
         from eqnorm.calculator import EqnormCalculator
 
         # EqnormCalculator downloads via the wget package, which figshare's WAF serves
@@ -707,11 +700,11 @@ def _eqnorm(model_key: str, model_variant: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _nequix(model_key: str) -> Callable[..., "Calculator"]:
+def _nequix(model_key: str) -> Callable[..., Calculator]:
     def make_calc(
         device: str,  # noqa: ARG001 - jax picks the device
         checkpoint: str | None = None,
-    ) -> "Calculator":
+    ) -> Calculator:
         from nequix.calculator import NequixCalculator
 
         # NequixCalculator auto-downloads by name via figshare (WAF can serve 0 bytes);
@@ -724,8 +717,8 @@ def _nequix(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _matris(model: str, cache_name: str) -> Callable[..., "Calculator"]:
-    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+def _matris(model: str, cache_name: str) -> Callable[..., Calculator]:
+    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
         from matris.applications import MatRISCalculator
 
         # MatRIS.load() only takes a registered model name and resolves it to
@@ -741,10 +734,10 @@ def _matris(model: str, cache_name: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _alphanet(model_key: str, config_url: str) -> Callable[..., "Calculator"]:
+def _alphanet(model_key: str, config_url: str) -> Callable[..., Calculator]:
     def make_calc(
         device: str, dtype: str = "float64", checkpoint: str | None = None
-    ) -> "Calculator":
+    ) -> Calculator:
         from alphanet.config import All_Config
         from alphanet.infer.calc import AlphaNetCalculator
 
@@ -769,10 +762,10 @@ def _alphanet(model_key: str, config_url: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _pet(model_key: str) -> Callable[..., "Calculator"]:
+def _pet(model_key: str) -> Callable[..., Calculator]:
     def make_calc(
         device: str, dtype: str = "float64", checkpoint: str | None = None
-    ) -> "Calculator":
+    ) -> Calculator:
         import torch
         from metatomic.torch import load_atomistic_model
         from metatomic.torch.ase_calculator import MetatomicCalculator
@@ -799,13 +792,13 @@ def _pet(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _chgnet(device: str) -> "Calculator":
+def _chgnet(device: str) -> Calculator:
     from chgnet.model.dynamics import CHGNetCalculator
 
     return CHGNetCalculator(use_device=device)
 
 
-def _m3gnet(device: str) -> "Calculator":  # noqa: ARG001 - matgl manages device
+def _m3gnet(device: str) -> Calculator:  # noqa: ARG001 - matgl manages device
     import matgl
     from matgl.ext.ase import PESCalculator
 
@@ -816,8 +809,8 @@ def _m3gnet(device: str) -> "Calculator":  # noqa: ARG001 - matgl manages device
     return PESCalculator(matgl.load_model("M3GNet-MP-2021.2.8-PES"))
 
 
-def _equflash(model_key: str) -> Callable[..., "Calculator"]:
-    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+def _equflash(model_key: str) -> Callable[..., Calculator]:
+    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
         from GGNN.common.calculator import UCalculator
 
         # UCalculator is an ASE Calculator (the kappa task drives phonopy with it);
@@ -828,8 +821,8 @@ def _equflash(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _bam(model_key: str) -> Callable[..., "Calculator"]:
-    def make_calc(device: str, checkpoint: str | None = None) -> "Calculator":
+def _bam(model_key: str) -> Callable[..., Calculator]:
+    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
         # BAM-torch's RACECalculator (bam_torch.tase.base_calculator) already
         # exposes energy/forces/stress plus free_energy and defaults missing
         # periodic stress to zero, so no monkey-patching or subclassing here.
@@ -843,7 +836,7 @@ def _bam(model_key: str) -> Callable[..., "Calculator"]:
     return make_calc
 
 
-def _emt(device: str) -> "Calculator":  # noqa: ARG001 - CPU only, debug model
+def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
     from ase.calculators.emt import EMT
 
     return EMT()
@@ -868,7 +861,7 @@ _ALPHANET_PRETRAINED = (
 
 def _deepmd_spec(
     model_key: str,
-    factory: Callable[[str], Callable[..., "Calculator"]] = _deepmd,
+    factory: Callable[[str], Callable[..., Calculator]] = _deepmd,
     *,
     ext: str = ".pth",
 ) -> Callable[[], CalcSpec]:
@@ -1005,11 +998,11 @@ def resolve_calculator_key(model_ref: str) -> str:
 
 
 def resolve_cli_calculator(
-    parser: "argparse.ArgumentParser",
+    parser: argparse.ArgumentParser,
     model_ref: str | None,
     *,
     list_models: bool = False,
-    archived_reasons: "Mapping[str, str] | None" = None,
+    archived_reasons: Mapping[str, str] | None = None,
     task: str = "task",
 ) -> str | None:
     """Shared-runner CLI preamble: print the registry or resolve --model.
@@ -1042,7 +1035,7 @@ def load_calculator(
     device: str | None = None,
     dtype: str = "float64",
     checkpoint: str | None = None,
-) -> "Calculator":
+) -> Calculator:
     """Instantiate the ASE calculator for a registered model.
 
     Args:

@@ -24,7 +24,6 @@ from matbench_discovery.metrics import metrics_df_from_yaml
 from matbench_discovery.metrics.discovery import (
     calc_discovery_metrics,
     classify_stable,
-    discovery_subset_indices,
     prepare_model_predictions,
     stable_metrics,
     write_all_metrics_to_yaml,
@@ -55,9 +54,13 @@ def test_prepare_model_predictions_masks_rounds_and_aligns() -> None:
     assert rounded_reference[MbdKey.each_true].tolist() == [0.1, 0.2]
     assert cleaned_preds.loc["wbm-1"] == pytest.approx(0.124)
     assert pd.isna(cleaned_preds.loc["wbm-2"])
-    subset_indices = discovery_subset_indices(rounded_reference)
-    assert subset_indices[TestSubset.full_test_set].equals(material_ids)
-    assert subset_indices[TestSubset.uniq_protos].equals(material_ids[:1])
+    assert rounded_reference.index.equals(material_ids)
+    assert rounded_reference[MbdKey.uniq_proto].tolist() == [True, False]
+
+    # Alignment fires at public entry points (prepare reindexes onto the reference)
+    foreign_preds = pd.Series([0.1], index=pd.Index(["wbm-3"]))
+    with pytest.raises(ValueError, match=r"unknown material IDs: \['wbm-3'\]"):
+        calc_discovery_metrics(df_reference, foreign_preds)
 
 
 @pytest.mark.parametrize(
@@ -220,14 +223,16 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
         [-1.1, -0.7, np.nan, -0.6, np.nan, -0.4], index=material_ids
     )
     metrics_by_subset = calc_discovery_metrics(df_test, model_preds)
-    subset_indices = discovery_subset_indices(df_test)
     each_pred = df_test[MbdKey.each_true] + model_preds - df_test[MbdKey.e_form_dft]
 
     assert set(metrics_by_subset) == set(TestSubset)
-    uniq_proto_idx = subset_indices[TestSubset.uniq_protos]
+    uniq_proto_idx = df_test.index[df_test[MbdKey.uniq_proto]]
     assert list(uniq_proto_idx) == ["wbm-0", "wbm-1", "wbm-3", "wbm-4"]
     uniq_prevalence = (df_test.loc[uniq_proto_idx, MbdKey.each_true] <= 0).mean()
-    for subset, subset_idx in subset_indices.items():
+    for subset, subset_idx in (
+        (TestSubset.full_test_set, material_ids),
+        (TestSubset.uniq_protos, uniq_proto_idx),
+    ):
         expected = stable_metrics(
             df_test.loc[subset_idx, MbdKey.each_true],
             each_pred.loc[subset_idx],

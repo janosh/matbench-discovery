@@ -127,8 +127,10 @@ describe(`ALL_METRICS`, () => {
 })
 
 describe(`get_org_logo`, () => {
+  const src_logo = (name: string, src: string) => ({ name, src })
+
   it.each([
-    [`Google DeepMind`, { name: `Google DeepMind`, src: `/logos/deepmind.svg` }],
+    [`Google DeepMind`, src_logo(`Google DeepMind`, `/logos/google-deepmind.svg`)],
     [
       `FAIR at Meta`,
       { name: `FAIR at Meta`, id: `icon:LogoMeta`, validated_icon: `LogoMeta` },
@@ -136,9 +138,27 @@ describe(`get_org_logo`, () => {
     [`Some unknown university`, undefined],
     [
       `Massachusetts Institute of Technology, USA`,
-      { name: `Massachusetts Institute of Technology`, src: `/logos/mit.svg` },
+      src_logo(
+        `Massachusetts Institute of Technology`,
+        `/logos/massachusetts-institute-of-technology.svg`,
+      ),
     ],
-    [`DeePMD`, { name: `DeePMD`, src: `/logos/deepmd.svg` }],
+    [
+      `Department of Energy Science, Sungkyunkwan University`,
+      src_logo(`Sungkyunkwan University`, `/logos/sungkyunkwan-university.svg`),
+    ],
+    [
+      `Aberystwyth University, UK`,
+      src_logo(`Aberystwyth University`, `/logos/aberystwyth-university.svg`),
+    ],
+    [
+      `Rutherford Appleton Laboratory, UK`,
+      src_logo(
+        `Rutherford Appleton Laboratory`,
+        `/logos/science-and-technology-facilities-council.svg`,
+      ),
+    ],
+    [`DeePMD`, src_logo(`DeePMD`, `/logos/deepmd.svg`)],
   ])(`returns correct logo data for '%s'`, (input: string, expected: unknown) => {
     expect(get_org_logo(input)).toStrictEqual(expected)
   })

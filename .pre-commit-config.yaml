@@ -17,9 +17,6 @@ repos:
         # --isolated: don't create/update uv.lock or the local .venv
         args: [--isolated]
         env:
-          # uv check treats tool.uv.managed=false as outside a project, so point ty
-          # at its dedicated config explicitly.
-          TY_CONFIG_FILE: ty.toml
           # prek-only: override global UV_FROZEN=1, which would require a uv.lock.
           UV_FROZEN: "0"
 

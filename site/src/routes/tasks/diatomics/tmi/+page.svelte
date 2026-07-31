@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SelectToggle from '$lib/SelectToggle.svelte'
+  import { ButtonGroup } from 'svelte-widgets'
   import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import { ScatterPlot } from 'matterviz'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
@@ -121,8 +121,8 @@
   {/each}
 </div>
 
-<SelectToggle
-  aria-label="Element group filter"
+<ButtonGroup
+  label="Element group filter"
   options={element_groups}
   bind:selected={selected_element_group}
   style="margin-block: 1em"

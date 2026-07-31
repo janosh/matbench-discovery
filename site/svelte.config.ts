@@ -2,10 +2,11 @@ import type { Config } from '@sveltejs/kit'
 import adapter from '@sveltejs/adapter-static'
 import { mdsvex } from 'mdsvex'
 import pkg from './package.json' with { type: 'json' }
-import katex from 'rehype-katex-svelte'
-import math from 'remark-math' // Remark-math@3.0.0 pinned due to mdsvex, see https://github.com/kwshi/rehype-katex-svelte#usage
 import { heading_ids } from 'svelte-widgets/heading-anchors' // Adds IDs to headings at build time
+import { katex_preprocess } from 'svelte-widgets/katex'
 import { starry_night_highlighter } from 'svelte-widgets/live-examples'
+
+const { before: katex_before, after: katex_after } = katex_preprocess()
 
 export default {
   extensions: [`.svelte`, `.svx`, `.md`, `.html`],
@@ -16,15 +17,12 @@ export default {
     {
       markup: ({ content }) => ({ code: content.replaceAll(pkg.homepage, ``) }),
     },
+    katex_before,
     mdsvex({
-      // cast bridges katex's unified version to the one mdsvex bundles
-      rehypePlugins: [katex] as NonNullable<
-        Parameters<typeof mdsvex>[0]
-      >[`rehypePlugins`],
-      remarkPlugins: [math],
       extensions: [`.svx`, `.md`],
       highlight: { highlighter: starry_night_highlighter },
     }),
+    katex_after,
     heading_ids(), // Runs after mdsvex converts markdown to HTML
     {
       markup: (file) => {

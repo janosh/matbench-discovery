@@ -20,15 +20,12 @@ keywords = [
 classifiers = [
   "Intended Audience :: Science/Research",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Topic :: Scientific/Engineering :: Chemistry",
   "Topic :: Scientific/Engineering :: Physics",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dependencies = [
   "ase>=3.28",
   "filelock>=3.29",
@@ -96,6 +93,9 @@ ignore = [
   "S603", # subprocess-without-shell-equals-true
   "SIM105", # suppressible-exception (try/except/pass is clearer with a why-comment)
   "T201",
+  "TC001", # typing-only-first-party-import (TYPE_CHECKING blocks cost more lines than they save)
+  "TC002", # typing-only-third-party-import
+  "TC003", # typing-only-standard-library-import
   "TD",
   "TRY003",
   "TRY301",
@@ -118,7 +118,20 @@ pythonpath = ["."]
 ignore-words-list = "nd,te,fpr,matris,titel"
 
 [dependency-groups]
-dev = ["prek>=0.4.5", "ty>=0.0.56"]
+dev = ["prek>=0.4.5", "ty>=0.0.64"]
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+# PEP 723 model scripts carry their own requires-python / deps; type-check the library instead.
+exclude-scripts = true
+
+[tool.ty.rules]
+# pre-commit runs `ty --isolated` (no project deps in the ephemeral env), so third-party
+# imports are unresolved there even when they resolve in a normal project install.
+unresolved-import = "ignore"
+unused-ignore-comment = "ignore"
 
 [tool.typos.default]
 locale = "en-us"
@@ -150,6 +163,7 @@ nd = "nd"
 MatRIS = "MatRIS" # Model name
 matris = "matris"
 titel = "titel"
+centre = "centre" # ICAMS official spelling in logo filename
 
 [tool.typos.default.extend-identifiers]
 FPR = "FPR" # False Positive Rate

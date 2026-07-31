@@ -1,5 +1,0 @@
-[rules]
-# Heavy optional model dependencies (chgnet, mace, alignn, ...) aren't
-# installable in the pre-commit hook environment.
-unresolved-import = "ignore"
-unused-ignore-comment = "ignore"

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AuthorBrief, DATASETS, ModelRankCard, PtableInset, SelectToggle } from '$lib'
+  import { AuthorBrief, DATASETS, ModelRankCard, PtableInset } from '$lib'
   import {
     discovery_task_tooltips,
     model_role_from_targets,
@@ -11,7 +11,7 @@
   import { get_pred_file_urls } from '$lib/models.svelte'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'matterviz'
-  import { CopyButton, Icon, type IconName } from 'svelte-widgets'
+  import { ButtonGroup, CopyButton, Icon, type IconName } from 'svelte-widgets'
   import { format_num, format_relative_time, HeatmapTable, ColorBar } from 'matterviz'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -244,9 +244,10 @@
     <!-- segmented tab bar controls the parity plot; the active button shows a
     spinner while its plot's data is still loading -->
     <div class="energy-parity-controls">
-      <SelectToggle
+      <ButtonGroup
         class="energy-parity-tabs"
         bind:selected={energy_parity_tab}
+        label="Energy parity diagnostics"
         options={energy_parity_options.map((option) => ({
           ...option,
           loading:
@@ -484,29 +485,23 @@
     font-size: 0.8em;
     font-weight: lighter;
   }
-  :global(.energy-parity-tabs.selection-toggle) {
-    gap: 0;
+  /* segmented energy-parity tabs: fused borders, pill ends, active on top */
+  :global(.energy-parity-tabs.button-group) {
+    --btn-group-gap: 0;
+    --btn-group-btn-padding: 2px 12px;
+    --btn-group-btn-radius: 0;
   }
-  :global(.energy-parity-tabs.selection-toggle .option) {
-    border-radius: 0;
-    border-width: 0.5px; /* hairline on HiDPI, incl. the active colored border */
-  }
-  :global(.energy-parity-tabs.selection-toggle .option button) {
-    padding: 2px 12px;
-  }
-  /* fuse adjacent borders; the active option sits on top so its colored border
-  wins the shared edge regardless of which side is selected */
-  :global(.energy-parity-tabs.selection-toggle .option + .option) {
+  :global(.energy-parity-tabs.button-group .options > button + button) {
     margin-left: -0.5px;
   }
-  :global(.energy-parity-tabs.selection-toggle .option.active) {
+  :global(.energy-parity-tabs.button-group .options > button[aria-checked='true']) {
     position: relative;
     z-index: 1;
   }
-  :global(.energy-parity-tabs.selection-toggle .option:first-child) {
+  :global(.energy-parity-tabs.button-group .options > button:first-child) {
     border-radius: 9999px 0 0 9999px;
   }
-  :global(.energy-parity-tabs.selection-toggle .option:last-child) {
+  :global(.energy-parity-tabs.button-group .options > button:last-child) {
     border-radius: 0 9999px 9999px 0;
   }
   /* version numbers as light code, less prominent than the package name */

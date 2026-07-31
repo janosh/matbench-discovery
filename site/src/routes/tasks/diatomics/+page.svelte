@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { MetricsTable, ModelSelect, ACTIVE_MODELS, SelectToggle } from '$lib'
+  import { MetricsTable, ModelSelect, ACTIVE_MODELS } from '$lib'
+  import { ButtonGroup } from 'svelte-widgets'
   import {
     CDS_CONFIG,
     DEFAULT_CDS_CONFIG,
@@ -249,8 +250,8 @@
 {/if}
 
 <div class="controls">
-  <SelectToggle
-    aria-label="Element group filter"
+  <ButtonGroup
+    label="Element group filter"
     options={element_groups}
     bind:selected={selected_element_group}
   />

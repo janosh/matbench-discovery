@@ -277,7 +277,7 @@ def calculate_conductivity(
     temperatures: Sequence[float],
     boundary_mfp: float = 1e6,
     mode_kappa_thresh: float = 1e-6,
-) -> tuple[Phono3py, dict[str, np.ndarray], "RTACalculator | LBTECalculator"]:
+) -> tuple[Phono3py, dict[str, np.ndarray], RTACalculator | LBTECalculator]:
     """Calculate thermal conductivity.
 
     Args:

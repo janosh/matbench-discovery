@@ -37,5 +37,5 @@ if __name__ == "__main__":
             )
             for test_subset in metrics_by_subset:
                 print(f"\tUpdated discovery metrics for {test_subset}")
-        except (ValueError, OSError, KeyError):
+        except ValueError, OSError, KeyError:
             print(f"\tError processing {model.label}: {traceback.format_exc()}")

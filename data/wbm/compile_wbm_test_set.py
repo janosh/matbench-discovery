@@ -147,7 +147,7 @@ def increment_wbm_material_id(wbm_id: str) -> str:
     """Map step_1_0, step_1_1, ... to wbm-1-1, wbm-1-2, ..."""
     try:
         prefix, step_num, material_num = wbm_id.split("_")
-    except (ValueError, AttributeError):
+    except ValueError, AttributeError:
         print(f"bad {wbm_id=}")
         return wbm_id
 
