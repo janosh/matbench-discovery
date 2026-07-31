@@ -176,14 +176,6 @@ def wbm_uniq_proto_prevalence() -> float:
     return float((each_true_uniq <= STABILITY_THRESHOLD).mean())
 
 
-def discovery_subset_indices(df_wbm: pd.DataFrame) -> dict[TestSubset, pd.Index]:
-    """Return canonical WBM subset indices."""
-    return {
-        TestSubset.full_test_set: df_wbm.index,
-        TestSubset.uniq_protos: df_wbm.index[df_wbm[MbdKey.uniq_proto].astype(bool)],
-    }
-
-
 def prepare_model_predictions(
     df_reference: pd.DataFrame,
     model_preds: pd.Series,
@@ -228,27 +220,25 @@ def calc_discovery_metrics(
     to all published DAF values. Defaults to the prevalence of the (possibly rounded)
     ``df_wbm`` frame, intended for synthetic test data only.
     """
-    required_cols = {
-        str(MbdKey.each_true),
-        str(MbdKey.e_form_dft),
-        str(MbdKey.uniq_proto),
-    }
+    required_cols = set(
+        map(str, (MbdKey.each_true, MbdKey.e_form_dft, MbdKey.uniq_proto))
+    )
     if missing_cols := required_cols - set(df_wbm):
         raise ValueError(f"WBM dataframe missing columns: {sorted(missing_cols)}")
 
     model_preds = _align_preds(df_wbm, model_preds)
     each_true = df_wbm[MbdKey.each_true]
     each_pred = each_true + model_preds - df_wbm[MbdKey.e_form_dft]
-    subset_indices = discovery_subset_indices(df_wbm)
+    uniq_proto_idx = df_wbm.index[df_wbm[MbdKey.uniq_proto].astype(bool)]
     metrics_by_subset = {
-        subset: stable_metrics(
-            each_true.loc[subset_idx], each_pred.loc[subset_idx], fillna=True
-        )
-        for subset, subset_idx in subset_indices.items()
+        TestSubset.full_test_set: stable_metrics(each_true, each_pred, fillna=True),
+        TestSubset.uniq_protos: stable_metrics(
+            each_true.loc[uniq_proto_idx], each_pred.loc[uniq_proto_idx], fillna=True
+        ),
     }
 
     if uniq_proto_prevalence is None:
-        each_true_uniq = each_true.loc[subset_indices[TestSubset.uniq_protos]]
+        each_true_uniq = each_true.loc[uniq_proto_idx]
         uniq_proto_prevalence = (each_true_uniq <= STABILITY_THRESHOLD).mean()
     daf_denominator = (
         uniq_proto_prevalence if uniq_proto_prevalence > 0 else float("nan")
@@ -282,15 +272,17 @@ def write_all_metrics_to_yaml(
         **dict.fromkeys(("TP", "FP", "TN", "FN", str(MbdKey.missing_preds)), "count"),
     }
     model_preds = _align_preds(df_wbm, model_preds)
-    subset_indices = discovery_subset_indices(df_wbm)
+    uniq_proto_mask = df_wbm[MbdKey.uniq_proto].astype(bool)
+    n_missing = {
+        TestSubset.full_test_set: int(model_preds.isna().sum()),
+        TestSubset.uniq_protos: int(model_preds[uniq_proto_mask].isna().sum()),
+    }
     written: dict[TestSubset, dict[str, str | float]] = {}
     for test_subset, metrics in metrics_by_subset.items():
         block = CommentedMap(
             {key: round(float(value), 3) for key, value in metrics.items()}
         )
-        block[str(MbdKey.missing_preds)] = int(
-            model_preds.reindex(subset_indices[test_subset]).isna().sum()
-        )
+        block[str(MbdKey.missing_preds)] = n_missing[test_subset]
         for key, unit in units.items():
             if key in block:
                 block.yaml_add_eol_comment(unit, key, column=1)

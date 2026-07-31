@@ -75,7 +75,7 @@ def download_file(
         # .part file is deliberately kept so it doesn't have to be re-fetched
         download_finished = True
         os.replace(tmp_file_path, file_path)
-    except (OSError, requests.RequestException):
+    except OSError, requests.RequestException:
         error_msg = traceback.format_exc()
         if not download_finished:
             try:

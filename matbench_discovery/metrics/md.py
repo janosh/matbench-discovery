@@ -552,7 +552,7 @@ def calc_pressure_histogram_error(
 
 
 def calc_energy_force_rmse(
-    trajectory: TrajectoryLike, calculator: "Calculator"
+    trajectory: TrajectoryLike, calculator: Calculator
 ) -> dict[str, float]:
     """Private-label energy-fluctuation (eV/atom) and force (eV/Å) RMSE of calculator
     single-points on labeled reference frames.
@@ -768,7 +768,7 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
 
 
 def write_metrics_to_yaml(
-    model: "Model",
+    model: Model,
     metrics: dict[str, float | str],
     pred_file_path: str | None = None,
     pred_file_url: str | None = None,

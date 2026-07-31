@@ -188,7 +188,7 @@ class MetaFiles(EnumType):
         bases: tuple[type, ...],
         namespace: _EnumDict,
         base_dir: str = DEFAULT_CACHE_DIR,
-    ) -> "MetaFiles":
+    ) -> MetaFiles:
         """Create new Files enum with given base directory."""
         obj = super().__new__(cls, name, bases, namespace)
         obj._base_dir = base_dir

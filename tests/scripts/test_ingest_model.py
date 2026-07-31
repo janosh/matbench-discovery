@@ -10,7 +10,7 @@ import scripts.upload_model_preds_to_figshare as upload
 from matbench_discovery.enums import Model
 
 
-def msgs(checks: "ingest.Checklist", status: str) -> list[str]:
+def msgs(checks: ingest.Checklist, status: str) -> list[str]:
     """Return checklist messages with the requested status."""
     return [msg for stat, msg in checks.results if stat == status]
 

@@ -289,7 +289,7 @@ def _kappa_path(model: Model) -> str | None:
     """Resolve a model's kappa_103 prediction file path, or None if unavailable."""
     try:
         path = model.kappa_103_path
-    except (ValueError, FileNotFoundError):
+    except ValueError, FileNotFoundError:
         return None
     return path if isinstance(path, str) and Path(path).is_file() else None
 

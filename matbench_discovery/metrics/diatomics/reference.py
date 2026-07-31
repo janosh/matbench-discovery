@@ -65,7 +65,7 @@ def finite_energy_points(points: Sequence[Mapping[str, Any]]) -> list[CurvePoint
         try:
             point_energy(point)
             point_distance(point)
-        except (KeyError, TypeError, ValueError):
+        except KeyError, TypeError, ValueError:
             continue
         finite_points.append(dict(point))
     return finite_points

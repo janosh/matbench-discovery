@@ -84,7 +84,7 @@ def load_candidate_points(
             point_distance(point)
             if not has_finite_forces(point.get("forces")):
                 continue
-        except (KeyError, TypeError, ValueError):
+        except KeyError, TypeError, ValueError:
             continue
         clean_point = dict(point)
         if "magmoms" in clean_point:

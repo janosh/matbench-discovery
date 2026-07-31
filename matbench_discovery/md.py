@@ -329,7 +329,7 @@ def read_run_info(traj_path: str) -> dict[str, object]:
     try:
         with open(run_info_path(traj_path), encoding="utf-8") as file:
             run_info = json.load(file)
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return {}
     return run_info if isinstance(run_info, dict) else {}
 
@@ -381,7 +381,7 @@ def _load_checkpoint(
     try:
         schema = int(ckpt["schema"])
         ase_version = str(ckpt["ase_version"])
-    except (KeyError, TypeError, ValueError):
+    except KeyError, TypeError, ValueError:
         print(f"  ignoring checkpoint {ckpt_path}: missing/corrupt schema metadata")
         return None
     if schema != CHECKPOINT_SCHEMA or ase_version != ase.__version__:
@@ -410,7 +410,7 @@ def _load_checkpoint(
             and np.allclose(ckpt["cell"], atoms.cell.array)
             and np.array_equal(ckpt["pbc"], atoms.pbc)
         )
-    except (KeyError, TypeError, ValueError):
+    except KeyError, TypeError, ValueError:
         consistent = False
     if not consistent:
         print(f"  ignoring checkpoint {ckpt_path}: schema/version/parameters mismatch")

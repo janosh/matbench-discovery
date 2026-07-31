@@ -61,7 +61,7 @@ def voigt_6_to_full_3x3(tensor: object) -> object:
     """
     try:
         tensor_array = np.asarray(tensor, dtype=float)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return tensor
     if tensor_array.ndim == 0 or tensor_array.shape[-1] != 6:
         return tensor
@@ -78,7 +78,7 @@ def _values_equal(first: object, second: object) -> bool:
             return bool(np.array_equal(first_array, second_array, equal_nan=True))
         except TypeError:
             return bool(np.array_equal(first_array, second_array))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return False
 
 

@@ -55,7 +55,7 @@ def canonical_spacegroup_numbers(
         value = df_reference.loc[material_id].get(Key.init_spg_num)
         try:
             numeric_value = float(value)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             numeric_value = float("nan")
         if (
             isinstance(value, bool | np.bool_)
@@ -153,7 +153,7 @@ def main() -> int:
     for model in cli_args.models:
         try:
             kappa_path = model.kappa_103_path
-        except (ValueError, FileNotFoundError):
+        except ValueError, FileNotFoundError:
             kappa_path = None
         if kappa_path is None:
             print(f"Skipping {model.label}: no kappa_103 predictions")

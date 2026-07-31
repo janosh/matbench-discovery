@@ -42,7 +42,7 @@ def _finite_array(value: object, *, nonnegative: bool = False) -> np.ndarray | N
     """Return finite numeric data, or None for malformed values."""
     try:
         values = np.asarray(value, dtype=float)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     if values.size == 0 or np.any(~np.isfinite(values)):
         return None
@@ -304,7 +304,7 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
         raise ValueError(
             f"expected shape (..., 3, 3), (..., 6) or (..., 3), got {kappa_arr.shape}"
         )
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         warnings.warn(
             f"Failed to calculate kappa_avg: {traceback.format_exc()}", stacklevel=2
         )
@@ -331,7 +331,7 @@ def _mode_kappa_values(kappas: pd.Series) -> np.ndarray | None:
                     kappas[Key.heat_capacity],
                 )
             )
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
         return _finite_array(mode_kappa)
     return None
@@ -381,7 +381,7 @@ def _calc_kappa_srme_dataframes(
             result = np.ravel(calc_kappa_srme(row_pred, row_true, nan_on_invalid=True))
         except InvalidKappaReferenceError:
             raise
-        except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        except KeyError, TypeError, ValueError, ZeroDivisionError:
             result = np.array([np.nan])
         # bool(...) not `is True`: a column with missing values deserializes as
         # float (1.0/NaN), which an identity check would silently score leniently

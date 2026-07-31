@@ -442,9 +442,7 @@ def merge_audit_metadata(
     return merged
 
 
-def df_slurm_chunk(
-    df_in: "pd.DataFrame", n_chunks: int, task_id: int
-) -> "pd.DataFrame":
+def df_slurm_chunk(df_in: pd.DataFrame, n_chunks: int, task_id: int) -> pd.DataFrame:
     """Get the chunk a 1-based slurm array task should process, i.e. the
     (task_id - 1)-th of n_chunks roughly equal row-wise splits of df_in.
 
@@ -458,7 +456,7 @@ def df_slurm_chunk(
     return df_in.iloc[row_indices]
 
 
-def chunk_by_lens(
+def chunk_by_lens[HasLen: Sized](
     inputs: Sequence[HasLen],
     *,  # force keyword-only arguments
     n_chunks: int | None = None,
