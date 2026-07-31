@@ -163,6 +163,7 @@ nd = "nd"
 MatRIS = "MatRIS" # Model name
 matris = "matris"
 titel = "titel"
+centre = "centre" # ICAMS official spelling in logo filename
 
 [tool.typos.default.extend-identifiers]
 FPR = "FPR" # False Positive Rate
