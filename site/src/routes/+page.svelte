@@ -35,6 +35,7 @@
   import MdNote from '$routes/tasks/md/md-note.md'
   import { format_num } from 'matterviz'
   import { ButtonGroup, Icon } from 'svelte-widgets'
+  import { RSS } from 'svelte-widgets/icons'
   import { onMount } from 'svelte'
   import { slide } from 'svelte/transition'
   import { tooltip } from 'svelte-widgets/attachments'
@@ -81,10 +82,16 @@
     ),
   )
   const preset_default_sorts = Object.fromEntries(
-    Object.entries(preset_primary_metrics).map(([preset, metric]) => [
-      preset,
-      { column: metric.key, dir: metric.better === `lower` ? `asc` : `desc` },
-    ]),
+    Object.entries(preset_primary_metrics).map(([preset, primary_metric]) => {
+      const sort_metric = preset === `Discovery` ? ALL_METRICS.CPS : primary_metric
+      return [
+        preset,
+        {
+          column: sort_metric.key,
+          dir: sort_metric.better === `lower` ? `asc` : `desc`,
+        },
+      ]
+    }),
   ) as Record<ColPreset, { column: string; dir: SortDir }>
   const filters = make_table_filters()
   const col_preset_options = col_preset_names.map((name) => ({
@@ -239,7 +246,7 @@
       bind:selected={col_preset}
       label="Column presets"
       options={col_preset_options}
-      tooltip_placement="top"
+      tooltip_options={{ placement: `top` }}
     />
   </div>
   <!-- the test-set selector only affects discovery metrics, so only show it in the
@@ -299,7 +306,7 @@
       title="Be notified of new model submissions through an RSS reader"
       {@attach tooltip()}
     >
-      <Icon icon="RSS" /> RSS
+      <Icon icon={RSS} /> RSS
     </a>
   </div>
 

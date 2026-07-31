@@ -223,6 +223,21 @@ describe(`make_table_filters`, () => {
     filters.clear()
     expect(filters.n_active).toBe(0)
   })
+
+  it(`apply drops stale dataset keys and invalid modes from presets`, () => {
+    const filters = make_table_filters()
+    filters.apply({
+      // deleted-dataset key and garbage mode could come from stale localStorage
+      training: {
+        MPtrj: `require`,
+        'Renamed Dataset': `exclude`,
+        OMat24: `bogus` as `exclude`,
+      },
+      openness: [`OSOD`, `bogus` as `OSCD`],
+    })
+    expect(filters.training).toStrictEqual({ MPtrj: `require` })
+    expect(filters.openness).toStrictEqual([`OSOD`])
+  })
 })
 
 describe(`ALL_TRAINING_SETS`, () => {

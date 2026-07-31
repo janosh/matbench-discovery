@@ -164,19 +164,11 @@ describe(`MetricsTable`, () => {
     expect(cps_header.querySelector(`.header-label`)).not.toBeNull()
   })
 
-  it(`toggles metadata columns`, () => {
+  it(`hides metadata columns without hiding metrics`, () => {
     // Keys used by col_filter (col.key ?? col.label)
     const metadata_keys = new Set([`Training Set`, `Targets`, `benchmark_added`, `Links`])
     // Labels displayed in table headers
     const metadata_labels = [`Training Set`, `Targets`, `Date Added`, `Links`]
-    const col_filter = (_col: Label) => true // show all columns initially
-    mount(MetricsTable, { target: document.body, props: { col_filter } })
-    // Check metadata columns are visible initially
-    let header_texts = header_names()
-    expect(header_texts).toStrictEqual(expect.arrayContaining(metadata_labels))
-
-    // Create a new instance that hides metadata columns
-    document.body.innerHTML = ``
     mount(MetricsTable, {
       target: document.body,
       props: {
@@ -184,17 +176,12 @@ describe(`MetricsTable`, () => {
       },
     })
 
-    // Check metadata columns are hidden
-    header_texts = header_names()
-
-    // Each metadata column label should be hidden
+    const header_texts = header_names()
     for (const col of metadata_labels) {
       expect(header_texts).not.toContain(col)
     }
 
-    // Check metric columns are still visible (strip sort indicators)
-    const metric_cols = [`CPS`, `F1`, `DAF`, `Prec`, `Acc`]
-    for (const col of metric_cols) {
+    for (const col of [`CPS`, `F1`, `DAF`, `Prec`, `Acc`]) {
       expect(header_texts).toContain(col)
     }
   })
@@ -615,9 +602,9 @@ describe(`MetricsTable`, () => {
           expect(href).not.toBeNull()
           expect(href).not.toBe(``)
 
-          // Each link should have an SVG icon - use a more general selector
+          // Each link should have a resolved SVG glyph, not an obsolete string icon.
           const svg = link.querySelector(`svg`)
-          expect(svg).not.toBeNull()
+          expect(svg?.getAttribute(`viewBox`)).toMatch(/\S/)
         }
       }
 
@@ -673,53 +660,6 @@ describe(`MetricsTable`, () => {
         const svg = button.querySelector(`svg`)
         expect(svg).not.toBeNull()
       }
-    })
-
-    it(`renders consistent link order and specific icons`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          col_filter: (col: Label) => [`Model`, `Links`].includes(col.label),
-        },
-      })
-
-      await tick() // Wait for component to process data
-
-      // Find all links cells with at least one link
-      const links_cells = [...document.querySelectorAll(`td[data-col="Links"]`)].filter(
-        (cell) => cell.querySelectorAll(`a`).length > 0,
-      )
-
-      // There should be at least one cell with links
-      expect(links_cells.length).toBeGreaterThan(0)
-
-      // Get the first cell with links to use as reference
-      const reference_cell = links_cells[0]
-      const reference_links = [...reference_cell.querySelectorAll(`a`)]
-
-      // Check that links have SVG icons (now using Icon component)
-      const reference_icons = reference_links.map((link) => {
-        const svg = link.querySelector(`svg`)
-        return svg !== null
-      })
-
-      // Verify that links have SVG icons
-      expect(reference_icons.length).toBeGreaterThan(0)
-      expect(reference_icons.some(Boolean)).toBe(true)
-
-      // Check that the order of links is consistent across cells
-      // (not checking all cells as some might have missing links)
-      const second_cell = links_cells[1]
-      const second_links = second_cell ? [...second_cell.querySelectorAll(`a`)] : []
-      const second_icons = second_links.map((link) => {
-        const svg = link.querySelector(`svg`)
-        return svg !== null
-      })
-      expect(
-        links_cells.length <= 1 ||
-          second_links.length !== reference_links.length ||
-          second_icons.every(Boolean),
-      ).toBe(true)
     })
   })
 

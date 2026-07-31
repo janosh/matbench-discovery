@@ -1,9 +1,13 @@
 import type { Label as MattervizLabel } from 'matterviz'
-import type { IconName } from 'svelte-widgets'
+import type { IconData } from 'svelte-widgets'
 import type { Label1 as LabelType } from './schema/label'
 import type { ModelMetadata, Person } from './schema/model'
 
 export type { Dataset } from './schema/dataset'
+
+export type OrgLogo =
+  | { name: string; src: string; icon?: never }
+  | { name: string; icon: IconData; src?: never }
 
 export type ModelData = ModelMetadata & {
   // These fields are populated in MODELS variable in models.svelte.ts
@@ -12,7 +16,7 @@ export type ModelData = ModelMetadata & {
   color?: string
   n_training_materials?: number
   n_training_structures?: number
-  org_logos?: { name: string; id?: string; src?: string; validated_icon?: IconName }[]
+  org_logos?: OrgLogo[]
   CPS?: number
 }
 
@@ -30,15 +34,6 @@ export interface DiatomicsCurves {
   distances: number[]
   'homo-nuclear': Record<string, { energies: number[]; forces: number[][] }>
   'hetero-nuclear'?: Record<string, { energies: number[]; forces: number[][] }>
-}
-
-// Links data structure used for model resource links
-export type LinkData = {
-  paper: { url: string | null; title: string; icon: IconName }
-  repo: { url: string | null; title: string; icon: IconName }
-  pr_url: { url: string | null; title: string; icon: IconName }
-  checkpoint?: { url: string | null; title: string; icon: IconName }
-  pred_files: { files: { name: string; url: string }[]; name: string }
 }
 
 export interface GitHubActivityData {

@@ -212,7 +212,7 @@ const main = async () => {
   console.info(`Saved ${results.length}/${repos.length} repos`)
 }
 
-main().catch((error) => {
+main().catch((error: unknown) => {
   console.error(`Fatal:`, error)
   process.exitCode = 1
 })

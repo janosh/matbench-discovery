@@ -16,7 +16,8 @@
   import { ColorScaleSelect } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { BarPlot, sunburst_from_labels_parents, Sunburst } from 'matterviz/plot'
-  import Select, { Icon } from 'svelte-widgets'
+  import { Icon, MultiSelect } from 'svelte-widgets'
+  import { Info } from 'svelte-widgets/icons'
   import {
     bind_url_params,
     url_color_scale,
@@ -111,7 +112,7 @@
     >
       Count Mode
     </label>
-    <Select
+    <MultiSelect
       id="count-mode"
       bind:value={count_mode}
       options={count_modes}
@@ -125,10 +126,10 @@
           <code>composition</code> mode maps it to <code>{`{Fe: 2, O: 3}`}</code>."
           {@attach tooltip({ allow_html: true })}
         >
-          <Icon icon="Info" style="color: var(--link-color)" />
+          <Icon icon={Info} style="color: var(--link-color)" />
         </span>
       {/snippet}
-    </Select>
+    </MultiSelect>
     <ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />
     <PtableHeatmap
       heatmap_values={wbm_elem_counts}

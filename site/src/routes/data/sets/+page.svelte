@@ -3,7 +3,18 @@
   import { DATASET_METADATA_COLS, title_case } from '$lib/labels'
   import pkg from '$site/package.json'
   import type { RowData } from 'matterviz'
-  import { Icon, icon_data, type IconName } from 'svelte-widgets'
+  import { Icon, type IconData } from 'svelte-widgets'
+  import {
+    API,
+    CheckCircle,
+    Databases,
+    DOI,
+    Download,
+    Edit,
+    Globe,
+    Optimade,
+    XCircle,
+  } from 'svelte-widgets/icons'
   import { HeatmapTable } from 'matterviz'
 
   const license_map: Record<string, string> = {
@@ -12,27 +23,22 @@
     MIT: `MIT License`,
   }
 
-  const icon = (name: IconName, color?: string): string => {
-    const data = icon_data[name]
-    const fill = `stroke` in data ? `none` : `currentColor`
-    const stroke = `stroke` in data ? `stroke="currentColor"` : ``
-    // a glyph is either one path `d` or its own markup, never both
+  const icon_html = (data: IconData, color?: string): string => {
+    const fill = data.fill ?? (data.stroke ? `none` : `currentColor`)
+    const stroke = data.stroke ? ` stroke="${data.stroke}"` : ``
+    const style = color ? ` style="color:${color}"` : ``
     const inner = `markup` in data ? data.markup : `<path d="${data.d}" />`
-    return `<svg fill="${fill}" ${stroke} ${
-      color ? `style="color:${color}"` : ``
-    } width="1em" height="1em" viewBox="${data.viewBox}">
-    ${inner}
-    </svg>`
+    return `<svg fill="${fill}"${stroke}${style} width="1em" height="1em" viewBox="${data.viewBox}">${inner}</svg>`
   }
 
   const icon_link = (
     href: string | null | undefined,
     title: string,
-    icon_name: IconName,
+    glyph: IconData,
     require_http = false,
   ): string | false => {
     if (!href || (require_http && !href.startsWith(`http`))) return false
-    return `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${title}" aria-label="${title}">${icon(icon_name)}</a>`
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${title}" aria-label="${title}">${icon_html(glyph)}</a>`
   }
 
   const join_links = (links: (string | false)[]): string =>
@@ -51,13 +57,13 @@
     const created_timestamp = date_created ? new Date(date_created).getTime() : null
 
     const api_links = join_links([
-      icon_link(set.native_api, `Native API`, `API`, true),
-      icon_link(set.optimade_api, `OPTIMADE API`, `Optimade`, true),
+      icon_link(set.native_api, `Native API`, API, true),
+      icon_link(set.optimade_api, `OPTIMADE API`, Optimade, true),
     ])
     const resource_links = join_links([
-      icon_link(set.url, `Website`, `Globe`),
-      icon_link(set.download_url, `Download`, `Download`),
-      icon_link(set.doi, `DOI`, `DOI`),
+      icon_link(set.url, `Website`, Globe),
+      icon_link(set.download_url, `Download`, Download),
+      icon_link(set.doi, `DOI`, DOI),
     ])
 
     return {
@@ -66,12 +72,12 @@
         `<a href="/data/${slug}" title="${set.name}">${key}</a>`,
       Structures: set.n_structures || null,
       Materials: set.n_materials || null,
-      Open: icon(
-        set.open ? `CheckCircle` : `XCircle`,
+      Open: icon_html(
+        set.open ? CheckCircle : XCircle,
         set.open ? `lightgreen` : `lightcoral`,
       ),
-      Static: icon(
-        set.static ? `CheckCircle` : `XCircle`,
+      Static: icon_html(
+        set.static ? CheckCircle : XCircle,
         set.static ? `lightgreen` : `lightcoral`,
       ),
       Created: date_created
@@ -95,7 +101,7 @@
 </svelte:head>
 
 <h1>
-  <Icon icon="Databases" style="vertical-align: -3pt" /> Datasets
+  <Icon icon={Databases} style="vertical-align: -3pt" /> Datasets
 </h1>
 
 <p>
@@ -113,7 +119,7 @@
 </section>
 
 <p>
-  <Icon icon="Edit" />
+  <Icon icon={Edit} />
   See incorrect data or a dataset that's missing from this list? Suggest an edit to
   <a href={yaml_url} target="_blank" rel="noopener noreferrer">
     {yaml_url.split(`/`).pop()}

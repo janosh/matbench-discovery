@@ -67,16 +67,15 @@
 <h1>Molecular Dynamics Metrics <span class="beta-badge">beta</span></h1>
 
 <p>
-  This task evaluates how well machine-learning interatomic potentials reproduce
-  structural, thermodynamic and vibrational observables of ab-initio molecular dynamics
-  (AIMD) trajectories at finite temperature. Each model runs NVT simulations from the same
-  initial structures and thermodynamic conditions as the reference first-principles
-  trajectories. The resulting trajectories are compared via radial distribution functions
-  (RDF), angular distribution functions (ADF), pressure distributions from the stress
-  tensor trace, and the vibrational density of states (vDOS) obtained from the velocity
-  autocorrelation function. Energy-fluctuation and force RMSEs are shown as
-  maintainer-computed private-label diagnostics when available, but they are excluded from
-  CMDS.
+  This task evaluates how well ML force fields reproduce structural, thermodynamic and
+  vibrational observables of ab-initio molecular dynamics (AIMD) trajectories at finite
+  temperature. Each model runs NVT simulations from the same initial structures and
+  thermodynamic conditions as the reference first-principles trajectories. The resulting
+  trajectories are compared via radial distribution functions (RDF), angular distribution
+  functions (ADF), pressure distributions from the stress tensor trace, and the
+  vibrational density of states (vDOS) obtained from the velocity autocorrelation
+  function. Energy-fluctuation and force RMSEs are shown as maintainer-computed
+  private-label diagnostics when available, but they are excluded from CMDS.
   {#if !ACTIVE_MODELS.some(has_md_metrics)}
     No models have reported MD metrics yet.
   {/if}

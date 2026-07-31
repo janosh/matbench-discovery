@@ -1,5 +1,5 @@
 import { default as DATASETS } from '$data/datasets.yml'
-import type { ModelData } from '$lib/types'
+import type { ModelData, OrgLogo } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import type { CpsConfig } from '$lib/combined-scores.svelte'
 import {
@@ -10,7 +10,7 @@ import {
   CMDS_CONFIG,
   update_models_cmds,
 } from './combined-scores.svelte'
-import { get_org_logo, type OrgLogo } from './labels'
+import { get_org_logo } from './labels'
 import { UrlTableFilters } from './url-state.svelte'
 
 export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(

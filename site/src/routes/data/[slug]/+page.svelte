@@ -2,6 +2,22 @@
   import { arr_to_str, DATASETS, format_date } from '$lib'
   import { format_num, format_relative_time } from 'matterviz'
   import { Icon } from 'svelte-widgets'
+  import {
+    Calendar,
+    CalendarPlus,
+    Code,
+    Contact,
+    DOI,
+    Database,
+    Download,
+    GitHub,
+    Globe,
+    Lattice,
+    License,
+    Lock,
+    Orcid,
+    Unlock,
+  } from 'svelte-widgets/icons'
   import pkg from '$site/package.json'
   import { tooltip } from 'svelte-widgets/attachments'
   import type { PageData } from './$types'
@@ -13,6 +29,17 @@
 
   let created_ago = $derived(format_relative_time(dataset.date_created))
   let added_ago = $derived(format_relative_time(dataset.date_added))
+  let dataset_links = $derived([
+    [dataset.url, `Website`, Globe, `View dataset website`],
+    [dataset.download_url, `Download`, Download, `Download dataset`],
+    [dataset.doi, `DOI`, DOI, `Digital Object Identifier`],
+    [
+      `${pkg.repository}/blob/main/data/datasets.yml`,
+      `Source`,
+      Code,
+      `View source YAML file`,
+    ],
+  ] as const)
 
   // Format the params object into a readable list
   function format_params(params: Record<string, unknown> | undefined): string[] {
@@ -36,23 +63,23 @@
   {/if}
 
   <span title={created_ago} {@attach tooltip()}>
-    <Icon icon="Calendar" /> Created: {format_date(dataset.date_created)}
+    <Icon icon={Calendar} /> Created: {format_date(dataset.date_created)}
   </span>
 
   {#if dataset.date_added}
     <span title={added_ago} {@attach tooltip()}>
-      <Icon icon="CalendarPlus" /> Added: {format_date(dataset.date_added)}
+      <Icon icon={CalendarPlus} /> Added: {format_date(dataset.date_added)}
     </span>
   {/if}
 
   <span title={dataset.n_structures.toLocaleString()} {@attach tooltip()}>
-    <Icon icon="Database" />
+    <Icon icon={Database} />
     {format_num(dataset.n_structures, `.3~s`)} structures
   </span>
 
   {#if dataset.n_materials}
     <span title={dataset.n_materials.toLocaleString()} {@attach tooltip()}>
-      <Icon icon="Lattice" />
+      <Icon icon={Lattice} />
       {format_num(dataset.n_materials, `.3~s`)} materials
     </span>
   {/if}
@@ -61,48 +88,22 @@
     title="The dataset is {dataset.open ? `freely ` : `in`}accessible"
     {@attach tooltip()}
   >
-    <Icon icon={dataset.open ? `Unlock` : `Lock`} />
+    <Icon icon={dataset.open ? Unlock : Lock} />
     {dataset.open ? `Open` : `Closed`}
   </span>
 
-  <span><Icon icon="License" /> {dataset.license}</span>
+  <span><Icon icon={License} /> {dataset.license}</span>
 </section>
 
 <section class="links">
-  <a href={dataset.url} {...link_props} title="View dataset website" {@attach tooltip()}>
-    <Icon icon="Globe" /> Website
-  </a>
-
-  {#if dataset.download_url}
-    <a
-      href={dataset.download_url}
-      {...link_props}
-      title="Download dataset"
-      {@attach tooltip()}
-    >
-      <Icon icon="Download" /> Download
-    </a>
-  {/if}
-
-  {#if dataset.doi}
-    <a
-      href={dataset.doi}
-      {...link_props}
-      title="Digital Object Identifier"
-      {@attach tooltip()}
-    >
-      <Icon icon="DOI" /> DOI
-    </a>
-  {/if}
-
-  <a
-    href="{pkg.repository}/blob/main/data/datasets.yml"
-    {...link_props}
-    title="View source YAML file"
-    {@attach tooltip()}
-  >
-    <Icon icon="Code" /> Source
-  </a>
+  {#each dataset_links as [href, label, icon, title] (label)}
+    {#if href}
+      <a {href} {...link_props} {title} {@attach tooltip()}>
+        <Icon {icon} />
+        {label}
+      </a>
+    {/if}
+  {/each}
 </section>
 
 <section class="description">
@@ -173,21 +174,21 @@
           {/if}
           {#if person.email}
             <a href="mailto:{person.email}" aria-label="Email">
-              <Icon icon="Contact" />
+              <Icon icon={Contact} />
             </a>
           {/if}
           {#if person.github}
             <a href={person.github} {...link_props} aria-label="GitHub">
-              <Icon icon="GitHub" />
+              <Icon icon={GitHub} />
             </a>
           {/if}
           {#if person.orcid}
             <a href={person.orcid} {...link_props} aria-label="ORCID">
-              <Icon icon="Orcid" />
+              <Icon icon={Orcid} />
             </a>{/if}
           {#if person.url}
             <a href={person.url} {...link_props} aria-label="Website">
-              <Icon icon="Globe" />
+              <Icon icon={Globe} />
             </a>{/if}
         </li>
       {/each}

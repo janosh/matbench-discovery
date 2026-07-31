@@ -6,7 +6,7 @@
   import { ColorBar, format_num, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
-  import Select from 'svelte-widgets'
+  import { MultiSelect } from 'svelte-widgets'
   import { per_element_each_errors as each_errors } from '$lib/per-element-errors'
 
   const models_with_errors = ACTIVE_MODELS.filter(
@@ -109,7 +109,7 @@
   each element tile splits into one segment per model.
 </p>
 
-<Select bind:selected={current_model} options={models} maxSelect={4} minSelect={1} />
+<MultiSelect bind:selected={current_model} options={models} maxSelect={4} minSelect={1} />
 
 {#if selected_models.length > 1}
   <div class="split-legend">

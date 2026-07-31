@@ -2,7 +2,7 @@ import { HYPERPARAMS, METADATA_COLS, scatter_options } from '$lib/labels'
 import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { tick } from 'svelte'
-import { afterEach, expect, it, vi } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import { doc_query, mount } from '../index'
 
 const make_models = (min_value: number, max_value: number): ModelData[] =>
@@ -22,7 +22,6 @@ const scatter_props = {
   color_key: METADATA_COLS.n_training_structures.key,
   show_model_labels: false,
 }
-afterEach(() => vi.restoreAllMocks())
 
 it.each([
   {

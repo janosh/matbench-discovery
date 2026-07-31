@@ -139,6 +139,8 @@ describe(`kappa parity data helpers`, () => {
   it(`returns null (not throws) for an unparsable structure payload`, () => {
     // runs inside a $derived in the component, so a throw would crash the plot
     const bad_base = { ...base, structures: { 'mp-x': `not a valid structure` } }
+    vi.spyOn(console, `error`).mockImplementation(() => {})
+    vi.spyOn(console, `warn`).mockImplementation(() => {})
     expect(kappa_structure(bad_base, `mp-x`)).toBeNull()
   })
 

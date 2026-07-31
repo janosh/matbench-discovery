@@ -67,7 +67,6 @@ describe(`Table Export Functionality`, () => {
   let create_object_url_spy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    vi.restoreAllMocks()
     mount_table()
 
     vi.mocked(toSvg).mockResolvedValue(`data:image/svg+xml;base64,test`)
@@ -215,11 +214,9 @@ describe(`Table Export Functionality`, () => {
           generator_spy.mockResolvedValue(generator_result)
         }
 
-        const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
+        vi.spyOn(console, `error`).mockImplementation(() => {})
         expect(await handle_export(generator_spy, `fmt`, opts)).toBe(expected_error)
         expect(generator_spy).toHaveBeenCalledWith(opts)
-
-        console_spy.mockRestore()
       },
     )
   })

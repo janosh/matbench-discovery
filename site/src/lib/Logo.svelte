@@ -1,18 +1,16 @@
 <script lang="ts">
-  import type { OrgLogo } from '$lib/labels'
+  import type { OrgLogo } from '$lib'
   import { Icon } from 'svelte-widgets'
 
-  // show_title controls the native title attribute. Disable it when the logo is
-  // rendered inside another element that already provides a richer tooltip to
-  // avoid duplicate/competing tooltips.
+  // Suppress native titles when a parent supplies a richer tooltip.
   let { logo, show_title = true }: { logo: OrgLogo; show_title?: boolean } = $props()
 </script>
 
-{#if logo.validated_icon}
+{#if logo.icon}
   <span title={show_title ? logo.name : undefined} class="org-logo">
-    <Icon icon={logo.validated_icon} />
+    <Icon icon={logo.icon} aria-label="{logo.name} logo" />
   </span>
-{:else if logo.src}
+{:else}
   <img
     src={logo.src}
     alt="{logo.name} logo"

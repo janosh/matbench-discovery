@@ -1,4 +1,6 @@
-import { default as DATASETS } from '$data/datasets.yml'
+import DATASETS from '$data/datasets.yml'
+import { storage_get_json, storage_set_json } from 'svelte-widgets/storage'
+import { is_object } from 'svelte-widgets/utils'
 import { ALL_TRAINING_SETS } from './models.svelte'
 import type { FilterPreset } from './url-state.svelte'
 
@@ -14,35 +16,35 @@ export const BUILTIN_PRESETS: Record<string, FilterPreset> = {
       ]),
     ),
     openness: [`OSOD`],
-    description:
-      `Open source + open data models trained exclusively on MP-anchored datasets ` +
-      `(the former "compliant" leaderboard cohort)`,
+    description: `Open source + open data models trained exclusively on MP-anchored datasets (the former "compliant" leaderboard cohort)`,
   },
 }
 
 const STORAGE_KEY = `metrics-table-filter-presets`
 
+const is_plain_object = (value: unknown): value is Record<string, unknown> =>
+  is_object(value) && !Array.isArray(value)
+
+// UrlTableFilters.apply validates modes and keys; reject only malformed shapes here.
+const is_filter_preset = (value: unknown): value is FilterPreset =>
+  is_plain_object(value) &&
+  is_plain_object(value.training) &&
+  Array.isArray(value.openness)
+
 function load_user_presets(): Record<string, FilterPreset> {
-  try {
-    // globalThis guard: localStorage doesn't exist during SSR/prerendering
-    return JSON.parse(globalThis.localStorage?.getItem(STORAGE_KEY) ?? `{}`)
-  } catch {
-    return {}
-  }
+  const stored = storage_get_json(STORAGE_KEY, {})
+  if (!is_plain_object(stored)) return {}
+  return Object.fromEntries(
+    Object.entries(stored).filter((entry): entry is [string, FilterPreset] =>
+      is_filter_preset(entry[1]),
+    ),
+  )
 }
 
 // User-defined presets, persisted to localStorage and shared by all metrics tables
 export const user_presets = $state<Record<string, FilterPreset>>(load_user_presets())
 
-function persist(): void {
-  // setItem can throw (Safari private mode, quota exceeded); losing persistence
-  // shouldn't crash the save/delete click handlers
-  try {
-    globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(user_presets))
-  } catch (error) {
-    console.error(`Failed to persist filter presets:`, error)
-  }
-}
+const persist = (): void => storage_set_json(STORAGE_KEY, user_presets)
 
 export function save_user_preset(name: string, preset: FilterPreset): void {
   user_presets[name] = preset

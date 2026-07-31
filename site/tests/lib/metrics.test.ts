@@ -207,6 +207,7 @@ describe(`assemble_row_data`, () => {
     expect(cps_vals).toStrictEqual(
       cps_vals.toSorted((score_1, score_2) => score_2 - score_1),
     )
+    expect(JSON.stringify(mace_row?.Links)).not.toMatch(/icon|title|viewBox/)
   })
 
   it(`includes task-only models without discovery metrics`, () => {

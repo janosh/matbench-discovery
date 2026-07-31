@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import zlib from 'node:zlib'
 import type { Plugin } from 'vite'
 
@@ -180,6 +181,8 @@ function yaml_schema_to_typescript_plugin(): Plugin {
 }
 
 const config = make_config()
+const matterviz_dist = path.dirname(fileURLToPath(import.meta.resolve(`matterviz`)))
+const three_compat = path.resolve(matterviz_dist, `scene/three-compat.js`)
 
 export default {
   ...config, // shared lint/fmt/build
@@ -208,6 +211,7 @@ export default {
     environment: `happy-dom`, // Faster than jsdom
     css: true,
     pool: `threads`,
+    testTimeout: 15_000,
     coverage: {
       reporter: [`text`, `json-summary`],
     },
@@ -227,5 +231,7 @@ export default {
 
   resolve: {
     conditions: process.env.VITEST ? [`browser`] : undefined,
+    // Keep bare Three imports on Matterviz's WebGPU-compatible build to avoid duplicates.
+    alias: [{ find: /^three$/, replacement: three_compat }],
   },
 }

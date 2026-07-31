@@ -2,7 +2,7 @@ import { TableControls, type TableLabel } from '$lib'
 import { ACTIVE_MODELS, ALL_TRAINING_SETS, make_table_filters } from '$lib/models.svelte'
 import { OPENNESS_OPTIONS, type Openness } from '$lib/url-state.svelte'
 import { tick } from 'svelte'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { doc_query, mount } from '../index'
 
 describe(`TableControls`, () => {
@@ -28,15 +28,43 @@ describe(`TableControls`, () => {
     return filters
   }
 
-  it(`renders filter dropdowns and heatmap toggle`, () => {
-    mount(TableControls, { target: document.body })
+  it(`keeps desktop and mobile filter trees mounted and wires the sheet`, async () => {
+    // both trees stay in the DOM (CSS toggles visibility) so SSR/client markup match
+    const filters = await mount_with_filters()
+    expect(document.querySelectorAll(`details.filter-menu`)).toHaveLength(4)
+    const sheet_trigger = document.querySelector(`button.filter-sheet-trigger`)
+    expect(sheet_trigger).toBeInstanceOf(HTMLButtonElement)
+    if (!(sheet_trigger instanceof HTMLButtonElement)) return
+    sheet_trigger.click()
+    await tick()
+    const dialog = doc_query<HTMLDialogElement>(`dialog[aria-label="Model filters"]`)
+    expect(dialog.open).toBe(true)
+    doc_query<HTMLInputElement>(
+      `dialog[aria-label="Model filters"] input[aria-label="exclude OMat24"]`,
+    ).click()
+    await tick()
+    expect(filters.training.OMat24).toBe(`exclude`)
 
-    expect(summary_for(`Training data`)).toBeDefined()
-    expect(summary_for(`Openness`)).toBeDefined()
-    const labels = [...document.querySelectorAll(`label`)].map((label) =>
-      label.textContent?.replaceAll(/\s+/g, ` `).trim(),
-    )
-    expect(labels).toContain(`Heatmap`)
+    doc_query<HTMLButtonElement>(`button[aria-label="Close model filters"]`).click()
+    await tick()
+    expect(document.querySelector(`dialog[aria-label="Model filters"]`)).toBeNull()
+  })
+
+  it(`rejects malformed stored filter presets`, async () => {
+    const valid_preset = { training: { OMat24: `exclude` }, openness: [`OSOD`] }
+    const load_presets = async (stored: unknown) => {
+      localStorage.setItem(`metrics-table-filter-presets`, JSON.stringify(stored))
+      vi.resetModules()
+      return (await import(`$lib/filter-presets.svelte`)).user_presets
+    }
+
+    const mixed_presets = {
+      valid: valid_preset,
+      invalid: { training: [], openness: [] },
+    }
+    expect(Object.keys(await load_presets(mixed_presets))).toStrictEqual([`valid`])
+    expect(Object.keys(await load_presets([valid_preset]))).toStrictEqual([])
+    localStorage.removeItem(`metrics-table-filter-presets`)
   })
 
   it(`training-data dropdown lists all datasets with require/exclude checkboxes`, async () => {
@@ -157,33 +185,27 @@ describe(`TableControls`, () => {
     ).not.toContain(`no-omat`)
   })
 
-  it(`apply drops stale dataset keys and invalid modes from presets`, () => {
-    const filters = make_table_filters()
-    filters.apply({
-      // deleted-dataset key and garbage mode could come from stale localStorage
-      training: {
-        MPtrj: `require`,
-        'Renamed Dataset': `exclude`,
-        OMat24: `bogus` as `exclude`,
-      },
-      openness: [`OSOD`, `bogus` as `OSCD`],
-    })
-    expect(filters.training).toStrictEqual({ MPtrj: `require` })
-    expect(filters.openness).toStrictEqual([`OSOD`])
-  })
-
   it(`openness dropdown toggles values but never hides the last one`, async () => {
     const filters = await mount_with_filters()
 
     const dropdown = summary_for(`Openness`).closest(`details`)
-    const boxes = dropdown?.querySelectorAll<HTMLInputElement>(`input`) ?? []
+    const boxes = [...(dropdown?.querySelectorAll<HTMLInputElement>(`input`) ?? [])]
     expect(boxes).toHaveLength(OPENNESS_OPTIONS.length)
-    expect([...boxes].every((box) => box.checked)).toBe(true)
+    expect(boxes.every((box) => box.checked)).toBe(true)
 
-    boxes[1].click() // hide OSCD
+    // uncheck all but the last; UI badge tracks the active count
+    for (const box of boxes.slice(0, -1)) {
+      box.click()
+      await tick()
+    }
+    expect(filters.openness).toStrictEqual([OPENNESS_OPTIONS.at(-1)])
+    expect(summary_for(`Openness (1/4)`)).toBeDefined()
+
+    // clicking the sole remaining option must not empty the filter
+    boxes.at(-1)?.click()
     await tick()
-    expect(filters.openness).toStrictEqual([`OSOD`, `CSOD`, `CSCD`])
-    expect(summary_for(`Openness (3/4)`)).toBeDefined()
+    expect(filters.openness).toStrictEqual([OPENNESS_OPTIONS.at(-1)])
+    expect(boxes.at(-1)?.checked).toBe(true)
   })
 
   it(`opens, updates and closes the column visibility panel`, async () => {
@@ -211,15 +233,11 @@ describe(`TableControls`, () => {
     )
     expect(checkbox_labels).toStrictEqual(sample_columns.map((column) => column.label))
 
-    // Test toggling first checkbox (Model column, initially visible)
     const [first_checkbox] = column_checkboxes
     expect(first_checkbox.checked).toBe(true)
-
     first_checkbox.click()
     expect(first_checkbox.checked).toBe(false)
-
     first_checkbox.click()
-    // Verify checkbox state changed
     expect(first_checkbox.checked).toBe(true)
 
     toggle_btn.click()

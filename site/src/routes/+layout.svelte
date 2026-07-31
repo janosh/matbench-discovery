@@ -5,39 +5,41 @@
   import {
     CommandMenu,
     CopyButton,
+    FindBar,
     Footer,
-    type FooterLink,
     GitHubCorner,
     Icon,
-    type IconName,
     Nav,
     ThemeToggle,
     Toc,
   } from 'svelte-widgets'
+  import type { FooterLink } from 'svelte-widgets'
+  import { Changelog, Contact, Issues, RSS, Search } from 'svelte-widgets/icons'
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
   import pkg from '$site/package.json'
-  import type { Snippet } from 'svelte'
+  import { tick, type Snippet } from 'svelte'
   import { heading_anchors } from 'svelte-widgets/heading-anchors'
   // oxlint-disable-next-line no-unassigned-import
   import '../app.css'
 
   let { children }: { children?: Snippet } = $props()
   let toc_desktop = $state(true)
+  let find_open = $state(false)
+  let find_bar = $state<ReturnType<typeof FindBar>>()
+  let main_element = $state<HTMLElement>()
 
-  // icon narrowed to names both packages ship so the `item` snippet below can render
-  // them with matterviz's Icon, which is where every other icon on the site comes from
-  const footer_links: (FooterLink & { icon: IconName })[] = [
-    { href: `${pkg.repository}/issues`, label: `Issues`, icon: `Issues` },
+  const footer_links: FooterLink[] = [
+    { href: `${pkg.repository}/issues`, label: `Issues`, icon: Issues },
     {
       href: `mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery`,
       label: `Contact`,
-      icon: `Contact`,
+      icon: Contact,
     },
-    { href: `/changelog`, label: `Changelog`, icon: `Changelog` },
+    { href: `/changelog`, label: `Changelog`, icon: Changelog },
     {
       href: `/rss.xml`,
       label: `RSS`,
-      icon: `RSS`,
+      icon: RSS,
       title: `Be notified of new model submissions`,
     },
   ]
@@ -73,7 +75,19 @@
     )
 
   let url = $derived(page.url.pathname)
-  let headingSelector = $derived(`main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4)`)
+  let heading_selector = $derived(`main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4)`)
+  let find_enabled = $derived([`/api`, `/changelog`, `/contribute`].includes(url))
+
+  const open_find = async (): Promise<void> => {
+    find_open = true
+    await tick()
+    find_bar?.focus_input()
+  }
+
+  // Reset so leaving and returning to a searchable route does not reopen the bar.
+  $effect(() => {
+    if (!find_enabled) find_open = false
+  })
 
   const base_description = `Matbench Discovery - ${pkg.description}`
   const descriptions: Record<string, string> = {
@@ -83,7 +97,7 @@
     '/api': `API docs for the Matbench Discovery PyPI package.`,
     '/contribute': `Steps for contributing a new model to the benchmark.`,
     '/models': `Details on each model sortable by metrics.`,
-    '/tasks': `Overview of all benchmark tasks for machine-learning interatomic potentials.`,
+    '/tasks': `Overview of all benchmark tasks for ML force fields.`,
     '/tasks/discovery': `Metrics and analysis of crystal stability prediction on the WBM test set.`,
     '/tasks/discovery/tmi': `Detailed diagnostics for the crystal discovery task.`,
     '/tasks/diatomics': `Metrics and analysis of predicting diatomic energies.`,
@@ -113,7 +127,7 @@
 <CommandMenu
   {actions}
   placeholder="Go to..."
-  dialog_style="top: 15vh; bottom: auto; overflow: visible"
+  dialog_props={{ style: `top: 15vh; bottom: auto; overflow: visible` }}
 />
 <CopyButton global />
 
@@ -124,7 +138,7 @@
 
 {#if ![`/`, `/models`, `/tasks/diatomics`, `/tasks/geo-opt`].includes(url)}
   <Toc
-    {headingSelector}
+    headingSelector={heading_selector}
     breakpoint={1350}
     minItems={3}
     hideOnIntersect="section.full-bleed .table-container, .bleed-1400"
@@ -167,21 +181,38 @@
   --nav-dropdown-link-padding="2pt 4pt"
   --nav-link-active-color="var(--link-color)"
 >
+  {#if find_enabled}
+    <button
+      aria-label="Find in page"
+      class="find-page"
+      onclick={open_find}
+      title="Find in page"
+      type="button"
+    >
+      <Icon icon={Search} />
+    </button>
+  {/if}
   <ThemeToggle style="transform: scale(1.25)" />
 </Nav>
 
-<main class:bleed-1400={url === `/tasks/diatomics`} {@attach heading_anchors()}>
+<main
+  bind:this={main_element}
+  class:bleed-1400={url === `/tasks/diatomics`}
+  {@attach heading_anchors()}
+>
+  {#if find_open}
+    <FindBar
+      bind:this={find_bar}
+      root={main_element}
+      on_close={() => (find_open = false)}
+      also_ignore="[role='search']"
+      style="position: sticky; inset-inline: auto 0; margin-inline-start: auto; top: 0.5rem;"
+    />
+  {/if}
   {@render children?.()}
 </main>
 
 <Footer links={footer_links} style="--footer-bg: var(--shadow)">
-  {#snippet item({ link })}
-    {@const icon = footer_links.find((entry) => entry.href === link.href)?.icon}
-    <a href={link.href} title={link.title}>
-      {#if icon}<Icon {icon} style="margin-right: 3pt" />{/if}
-      {link.label}
-    </a>
-  {/snippet}
   <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle" />
   &ensp;{pkg.title} &ensp; | &ensp; ©
   <a href={pkg[`author-url`]}>{pkg.author.split(`<`)[0]}</a>
@@ -189,6 +220,23 @@
 </Footer>
 
 <style>
+  button.find-page {
+    display: inline-grid;
+    place-items: center;
+    width: 1.8em;
+    height: 1.8em;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+  }
+  button.find-page:hover {
+    background: light-dark(rgba(0, 0, 100, 0.1), rgba(200, 200, 255, 0.1));
+  }
+  :global(::highlight(find-match)) {
+    color: light-dark(#161000, #fff7c2);
+    background: light-dark(#ffe066, #8a6500);
+  }
   :root[data-theme='light'] img {
     filter: brightness(0.2);
   }

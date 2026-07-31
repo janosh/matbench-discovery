@@ -6,6 +6,21 @@
   import pkg from '$site/package.json'
   import { format_num } from 'matterviz'
   import { Icon } from 'svelte-widgets'
+  import {
+    ArrowDown,
+    ArrowUp,
+    Calendar,
+    CalendarCheck,
+    Database,
+    Directory,
+    Docs,
+    Download,
+    Forest,
+    GitHub,
+    Info,
+    NeuralNetwork,
+    Paper,
+  } from 'svelte-widgets/icons'
   import { tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
   import { fade, slide } from 'svelte/transition'
@@ -31,11 +46,11 @@
   let env_packages = $derived(model.environment.dependencies.map(parse_dependency_spec))
 
   let links = $derived([
-    [model.repo, `Repo`, `GitHub`],
-    [model.paper, `Paper`, `Paper`],
-    [model.docs, `Docs`, `Docs`],
-    [model.checkpoint_url, `Checkpoint`, `Download`],
-    [`${pkg.repository}/tree/HEAD/models/${model.dirname}`, `Files`, `Directory`],
+    [model.repo, `Repo`, GitHub],
+    [model.paper, `Paper`, Paper],
+    [model.docs, `Docs`, Docs],
+    [model.checkpoint_url, `Checkpoint`, Download],
+    [`${pkg.repository}/tree/HEAD/models/${model.dirname}`, `Files`, Directory],
   ] as const)
   const target = { target: `_blank`, rel: `noopener` }
   let n_model_params = $derived(format_num(model_params, `.3~s`))
@@ -53,13 +68,13 @@
     title={expand_title}
     style={title_style}
   >
-    <Icon icon="Arrow{show_details ? `Up` : `Down`}" />
+    <Icon icon={show_details ? ArrowUp : ArrowDown} />
   </button>
 </h2>
 <nav>
-  {#each links.filter( ([href]) => href?.startsWith(`http`) ) as [href, title, icon] (title)}
+  {#each links.filter( ([href]) => href?.startsWith(`http`) ) as [href, title, link_icon] (title)}
     <a {href} {...target}>
-      <Icon {icon} />
+      <Icon icon={link_icon} />
       {title}
     </a>
   {/each}
@@ -67,7 +82,7 @@
 
 <section class="metadata" {...rest}>
   <span style="grid-column: span 2">
-    <Icon icon="Database" />
+    <Icon icon={Database} />
     Training data:
     {#each training_sets as train_set_key, idx (train_set_key)}
       {#if idx > 0}
@@ -85,28 +100,28 @@
     {/each}
   </span>
   <span title="Date added">
-    <Icon icon="Calendar" />
+    <Icon icon={Calendar} />
     Added {model.dates.benchmark_added}
   </span>
   {#if model.dates.paper_published}
     <span title="Date published">
-      <Icon icon="CalendarCheck" />
+      <Icon icon={CalendarCheck} />
       Published {model.dates.paper_published}
     </span>
   {/if}
   <span>
-    <Icon icon="NeuralNetwork" />
+    <Icon icon={NeuralNetwork} />
     {n_model_params} params
   </span>
   {#if (model.n_estimators ?? 1) > 1}
     <span>
-      <Icon icon="Forest" />
+      <Icon icon={Forest} />
       Ensemble of {model.n_estimators}
       <span
         title="This result used a model ensemble with {model.n_estimators} members with {n_model_params} parameters each."
         {@attach tooltip()}
       >
-        &nbsp;<Icon icon="Info" />
+        &nbsp;<Icon icon={Info} />
       </span>
     </span>
   {/if}

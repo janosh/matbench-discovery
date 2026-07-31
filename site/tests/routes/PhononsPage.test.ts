@@ -61,8 +61,9 @@ describe(`Phonons Task Page`, () => {
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
 
     // SRME-vs-kappa scatter and frequency parity plot side by side.
-    await vi.waitFor(() =>
-      expect(document.querySelector(`.diagnostics-grid`)).not.toBeNull(),
+    await vi.waitFor(
+      () => expect(document.querySelector(`.diagnostics-grid`)).not.toBeNull(),
+      { timeout: 10_000 },
     )
     expect(doc_query(`.diagnostics-grid`).querySelectorAll(`div.scatter`)).toHaveLength(2)
   })

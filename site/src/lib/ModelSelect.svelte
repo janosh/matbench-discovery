@@ -1,9 +1,9 @@
 <script lang="ts" generics="T extends Option">
-  import Select from 'svelte-widgets'
+  import { MultiSelect } from 'svelte-widgets'
   import type { MultiSelectProps, Option } from 'svelte-widgets'
 
   // only the bound props need the precise T; pass-through props (handlers etc.) use the
-  // base Option generic so spreading them onto Select type-checks without a cast
+  // base Option generic so spreading them onto MultiSelect type-checks without a cast
   let {
     options,
     selected = $bindable([]),
@@ -15,4 +15,4 @@
     Omit<MultiSelectProps<Option>, `options` | `selected` | `value`> = $props()
 </script>
 
-<Select {options} bind:selected bind:value {placeholder} {style} {...rest} />
+<MultiSelect {options} bind:selected bind:value {placeholder} {style} {...rest} />

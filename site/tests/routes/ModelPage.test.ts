@@ -3,16 +3,8 @@ import { get_org_logo } from '$lib/labels'
 import { RANKED_METRICS } from '$lib/rankings'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { tick } from 'svelte'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, mount_with_url } from '../index'
-
-beforeEach(() =>
-  vi.stubGlobal(
-    `fetch`,
-    vi.fn(() => Promise.resolve(new Response(`missing`, { status: 404 }))),
-  ),
-)
-afterEach(() => vi.unstubAllGlobals())
 
 const test_model = MODELS.find((model) =>
   model.authors.some((author) => author.affiliation === `Mirror Physics`),

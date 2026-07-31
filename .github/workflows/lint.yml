@@ -25,6 +25,8 @@ jobs:
 
       - name: Install site dependencies
         # use the project's pinned pnpm (packageManager field) via corepack
+        env:
+          PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
         run: corepack enable && pnpm install
         working-directory: site
 

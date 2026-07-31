@@ -92,7 +92,7 @@ export function load_json_asset<T>(url: string): Promise<T> {
   if (!asset) {
     asset = read_asset_text(url)
       .then((text) => JSON.parse(text) as T)
-      .catch((error) => {
+      .catch((error: unknown) => {
         asset_cache.delete(url)
         throw error
       })

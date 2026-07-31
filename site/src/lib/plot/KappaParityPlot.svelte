@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Icon } from 'svelte-widgets'
+  import { Cross } from 'svelte-widgets/icons'
   import { load_kappa_srme_map } from '$lib/parity/kappa-analysis'
   import {
     as_phonon_dos,
@@ -19,7 +21,6 @@
   import { get_nested_number, is_finite_num } from '$lib/metrics'
   import type { ModelData } from '$lib/types'
   import { Dos, format_num, sanitize_compact_formula } from 'matterviz'
-  import { Icon } from 'svelte-widgets'
   import { Spinner } from 'matterviz/feedback'
   import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, RefLine } from 'matterviz/plot'
@@ -247,7 +248,7 @@
             title="Close"
             onclick={() => (selected_idx = null)}
           >
-            <Icon icon="Cross" />
+            <Icon icon={Cross} />
           </button>
         </header>
         {#if selected_structure && Structure}

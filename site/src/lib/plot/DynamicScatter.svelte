@@ -7,7 +7,7 @@
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
-  import Select from 'svelte-widgets'
+  import { MultiSelect } from 'svelte-widgets'
   import {
     ALL_METRICS,
     DISCOVERY_SET_LABELS,
@@ -330,7 +330,7 @@
 >
   <div class="controls-row">
     <label for="size-select">Marker Size</label>
-    <Select
+    <MultiSelect
       options={scatter_options}
       id="size-select"
       bind:value={size_prop}
@@ -356,7 +356,7 @@
           </span>
         </span>
       {/snippet}
-    </Select>
+    </MultiSelect>
     {#if supported_log_dims.length}
       <div class="log-controls" role="group" aria-label="Logarithmic scales">
         <strong>Log Scale</strong>

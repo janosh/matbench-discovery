@@ -10,9 +10,9 @@ import {
 } from '$lib/labels'
 import type { ModelMetadata, TargetType } from '$lib/schema/model'
 import { get_pred_file_urls } from '$lib/models.svelte'
-import type { DiscoverySet, Label, LinkData, ModelData } from '$lib/types'
+import type { DiscoverySet, Label, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { escape_html, format_num, type RowData } from 'matterviz'
+import { escape_html, format_num, type CellVal } from 'matterviz'
 
 // Model target type descriptions
 export const targets_tooltips: Record<TargetType, string> = {
@@ -169,11 +169,15 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 // NB: cell background/text colors are computed by matterviz's HeatmapTable internally
 // (calc_cell_color in matterviz/table) — no local color logic needed
 
-type MetricsRowData = RowData & {
+type MetricsRowData = Pick<ModelData, `org_logos` | `authors`> & {
   model_name: string
   Model: string
-  CPS: number | undefined
+  CPS: ModelData[`CPS`]
   class?: string
+  Links: Record<`paper` | `repo` | `pr_url` | `checkpoint`, string | null> & {
+    pred_files: { files: { name: string; url: string }[]; name: string }
+  }
+  [key: string]: CellVal | ModelData[`org_logos` | `authors`]
 }
 
 // Calculate table data for the metrics table with combined scores
@@ -309,20 +313,12 @@ export function assemble_row_data(
       [METADATA_COLS.benchmark_added.key]:
         `<span title="${model.dates.benchmark_added ? format_date(model.dates.benchmark_added) : `Unknown`}" data-sort-value="${new Date(model.dates.benchmark_added ?? ``).getTime()}">${model.dates.benchmark_added ?? `n/a`}</span>`,
       Links: {
-        paper: {
-          url: model.paper ?? model.doi,
-          title: `Read model paper`,
-          icon: `Paper`,
-        },
-        repo: { url: model.repo, title: `View source code`, icon: `Code` },
-        pr_url: { url: model.pr_url, title: `View pull request`, icon: `PullRequest` },
-        checkpoint: {
-          url: model.checkpoint_url,
-          title: `Download model checkpoint`,
-          icon: `Download`,
-        },
+        paper: model.paper ?? model.doi,
+        repo: model.repo,
+        pr_url: model.pr_url,
+        checkpoint: model.checkpoint_url,
         pred_files: { files: get_pred_file_urls(model), name: model.model_name },
-      } satisfies LinkData,
+      },
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
       [HYPERPARAMS.graph_construction_radius.key]: r_cut_str,

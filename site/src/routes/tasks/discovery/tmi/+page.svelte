@@ -7,7 +7,6 @@
   import { dashed, series_blue, series_red, wide_legend } from '$lib/fig-helpers'
   import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import type { UrlParamEntry } from '$lib/url-state.svelte'
-  import { extent } from 'd3-array'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
   import DiscoveryMetricFigs from './discovery-metric-figs.md'
   import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
@@ -67,9 +66,6 @@
   const fp_diff_active = $derived(find_model(fp_diff.models, picked.fp_model))
   const each_errors_active = $derived(find_model(each_errors.models, picked.each_model))
   const hist_largest_active = $derived(find_model(hist_largest.models, picked.hist_model))
-
-  // x extent of the shared fingerprint-diff values for the MAE ref line
-  const [fp_diff_min = 0, fp_diff_max = 0] = extent(fp_diff.fp_diff)
 
   const numeric_pairs = (
     x_values: (number | null)[],
@@ -177,11 +173,9 @@ plotting against that the absolute E<sub>above hull</sub> errors for each model.
   overlays={{
     ref_lines: [
       {
-        x1: fp_diff_min,
-        y1: fp_diff_active.mae,
-        x2: fp_diff_max,
-        y2: fp_diff_active.mae,
-        ...dashed,
+        type: `horizontal`,
+        y: fp_diff_active.mae,
+        style: dashed,
       },
     ],
   }}

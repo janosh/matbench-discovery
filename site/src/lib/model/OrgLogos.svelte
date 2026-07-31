@@ -1,14 +1,10 @@
 <script lang="ts">
-  import type { Author } from '$lib'
-  import { get_org_logo, type OrgLogo } from '$lib/labels'
+  import type { Author, OrgLogo } from '$lib'
+  import { get_org_logo } from '$lib/labels'
   import { escape_html } from 'matterviz'
-  import { icon_data } from 'svelte-widgets'
   import { tooltip } from 'svelte-widgets/attachments'
   import Logo from '../Logo.svelte'
 
-  // org_logos = deduped, logo-matched affiliations shown as a compact preview strip.
-  // authors = full author list used to build the richer hover tooltip (full org
-  // names + which authors are affiliated where) without widening the table column.
   let {
     org_logos = [],
     authors = [],
@@ -17,25 +13,20 @@
     authors?: Author[]
   } = $props()
 
-  // Render a logo as a standalone HTML string (the tooltip content is injected via
-  // innerHTML into document.body, so component-scoped styles don't apply — inline only).
+  // Tooltip HTML is injected outside component scope, so styles must be inline.
   const logo_html = (logo: OrgLogo): string => {
     const style = `height: 1.1em; width: auto; flex: 0 0 auto; vertical-align: middle`
-    if (logo.validated_icon && logo.validated_icon in icon_data) {
-      // a glyph is either one path `d` or its own markup, never both
-      const entry = icon_data[logo.validated_icon]
-      const inner = `markup` in entry ? entry.markup : `<path d="${entry.d}" />`
-      return `<svg viewBox="${entry.viewBox}" fill="currentColor" style="${style}">${inner}</svg>`
+    if (logo.icon) {
+      const { icon } = logo
+      const fill = icon.fill ?? (icon.stroke ? `none` : `currentColor`)
+      const stroke = icon.stroke ? ` stroke="${icon.stroke}"` : ``
+      const inner = `markup` in icon ? icon.markup : `<path d="${icon.d}" />`
+      return `<svg viewBox="${icon.viewBox}" fill="${fill}"${stroke} style="${style}">${inner}</svg>`
     }
-    if (logo.src) {
-      return `<img src="${escape_html(logo.src)}" alt="" style="${style}; filter: grayscale(100%)" />`
-    }
-    return ``
+    return `<img src="${escape_html(logo.src)}" alt="" style="${style}; filter: grayscale(100%)" />`
   }
 
-  // One tooltip entry per affiliation: its logo, full name, and the authors there.
-  // Authors are grouped by affiliation (preserving first-seen order); falls back to
-  // the matched org logos when no author metadata is available.
+  // Group authors by affiliation; fall back to supplied logos.
   let entries = $derived.by(() => {
     const groups: { logo?: OrgLogo; label: string; names: string[] }[] = []
     for (const { name, affiliation } of authors) {

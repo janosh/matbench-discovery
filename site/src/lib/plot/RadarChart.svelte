@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { CpsConfig } from '$lib/combined-scores.svelte'
+  import { Icon } from 'svelte-widgets'
+  import { Info, Reset } from 'svelte-widgets/icons'
   import { ALL_METRICS } from '$lib/labels'
   import type { Label } from '$lib/types'
   import { format_num, type Point } from 'matterviz'
-  import { Icon } from 'svelte-widgets'
   import { tooltip } from 'svelte-widgets/attachments'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { ACTIVE_MODELS, update_models_cps } from '$lib/models.svelte'
@@ -282,7 +283,7 @@
       {@attach tooltip()}
     >
       {@html title_label.label ?? title_label.key}
-      <Icon icon="Info" />
+      <Icon icon={Info} />
     </span>
     {#if has_custom_weights}
       <button
@@ -290,7 +291,7 @@
         onclick={reset_weights}
         aria-label="Reset to default weights"
       >
-        <Icon icon="Reset" />
+        <Icon icon={Reset} />
       </button>
     {/if}
   </div>

@@ -14,17 +14,18 @@
   import { append_better_hint, metric_better_as } from '$lib/metrics'
   import { make_table_filters } from '$lib/models.svelte'
   import type { UrlTableFilters } from '$lib/url-state.svelte'
-  import type {
-    DiscoverySet,
-    Label,
-    LinkData,
-    ModelData,
-    SortDir,
-    TableLabel,
-  } from '$lib/types'
-  import type { CellSnippetArgs, Label as MattervizLabel } from 'matterviz'
+  import type { DiscoverySet, Label, ModelData, SortDir, TableLabel } from '$lib/types'
+  import type { CellSnippetArgs, Label as MattervizLabel, RowData } from 'matterviz'
   import { HeatmapTable } from 'matterviz'
   import { Icon } from 'svelte-widgets'
+  import {
+    Code,
+    Download,
+    Graph,
+    Paper,
+    PullRequest,
+    Unavailable,
+  } from 'svelte-widgets/icons'
   import { click_outside, tooltip } from 'svelte-widgets/attachments'
   import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -34,7 +35,15 @@
   import { heatmap_class } from '../table-export'
 
   type HeaderLabel = MattervizLabel & { tooltip_description?: string }
+  type MetricsRow = ReturnType<typeof assemble_row_data>[number]
+  type LinkData = MetricsRow[`Links`]
   type PredFilesDropdown = LinkData[`pred_files`] & { x: number; y: number }
+  const resource_links = [
+    [`paper`, `Read model paper`, Paper],
+    [`repo`, `View source code`, Code],
+    [`pr_url`, `View pull request`, PullRequest],
+    [`checkpoint`, `Download model checkpoint`, Download],
+  ] as const
 
   let {
     discovery_set = $bindable(`unique_prototypes`),
@@ -71,7 +80,6 @@
   // re-sorts happen as delete+recreate with no row-movement animation. Cached rows
   // must be $state proxies: in-place updates on plain objects wouldn't trigger
   // fine-grained re-renders of changed cells (same object identity = no signal).
-  type MetricsRow = ReturnType<typeof assemble_row_data>[number]
   const row_cache = new Map<string, MetricsRow>()
   function build_rows(): MetricsRow[] {
     // tracked snapshot of selections: reads inside the untrack block below wouldn't
@@ -196,37 +204,31 @@
 />
 
 {#snippet affiliation_cell({ row }: CellSnippetArgs)}
-  {@const { org_logos = [], authors = [] } = row as Pick<
-    ModelData,
-    `org_logos` | `authors`
-  >}
-  <OrgLogos {org_logos} {authors} />
+  {@const metrics_row = row as MetricsRow}
+  <OrgLogos org_logos={metrics_row.org_logos} authors={metrics_row.authors} />
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}
   {@const links = val as LinkData}
-  {#if links}
-    {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
-      {#if `url` in link && link.url}
-        <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
-          <Icon icon={link.icon} />
-        </a>
-      {:else}
-        <span title="{key} not available">
-          <Icon icon="Unavailable" />
-        </span>
-      {/if}
-    {/each}
-    {#if links.pred_files}
-      <button
-        class="pred-files-btn"
-        aria-label="Download model prediction files"
-        onclick={(event) => show_dropdown(event, links)}
-      >
-        <Icon icon="Graph" />
-      </button>
+  {#each resource_links as [key, title, icon] (key)}
+    {@const href = links[key]}
+    {#if href}
+      <a {href} target="_blank" rel="noopener noreferrer" {title}>
+        <Icon {icon} />
+      </a>
+    {:else}
+      <span title="{key} not available">
+        <Icon icon={Unavailable} />
+      </span>
     {/if}
-  {/if}
+  {/each}
+  <button
+    class="pred-files-btn"
+    aria-label="Download model prediction files"
+    onclick={(event) => show_dropdown(event, links)}
+  >
+    <Icon icon={Graph} />
+  </button>
 {/snippet}
 
 {#snippet header_cell({ col }: { col: HeaderLabel })}
@@ -236,7 +238,7 @@
 {/snippet}
 
 <HeatmapTable
-  data={metrics_data}
+  data={metrics_data as RowData[]}
   columns={table_columns}
   bind:sort
   special_cells={{

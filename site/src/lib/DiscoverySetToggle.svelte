@@ -2,6 +2,7 @@
   import { DISCOVERY_SET_LABELS, discovery_set_toggle_options } from '$lib/labels'
   import type { DiscoverySet } from '$lib/types'
   import { ButtonGroup, Icon } from 'svelte-widgets'
+  import { Info } from 'svelte-widgets/icons'
   import type { HTMLAttributes } from 'svelte/elements'
 
   let {
@@ -27,7 +28,7 @@
         aria-label="About {option.label ?? option.value}"
         style="display: inline-flex; align-items: center; padding-right: 8px; font-size: 0.83em"
       >
-        <Icon icon="Info" style="transform: translateY(-1px)" />
+        <Icon icon={Info} style="transform: translateY(-1px)" />
       </a>
     {/if}
   {/snippet}

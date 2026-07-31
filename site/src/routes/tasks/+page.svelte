@@ -1,27 +1,32 @@
 <script lang="ts">
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
   import { SubpageGrid } from 'matterviz'
-  import type { IconName } from 'svelte-widgets'
+  import {
+    Molecule,
+    Phonons,
+    RulerSquareCompass,
+    Search,
+    Thermometer,
+  } from 'svelte-widgets/icons'
 
-  const task_icons: Record<string, IconName> = {
-    discovery: `Search`,
-    geo_opt: `RulerSquareCompass`,
-    phonons: `Phonons`,
-    diatomics: `Molecule`,
-    md: `Thermometer`,
-  }
-  const subpages = Object.entries(MODELING_TASKS)
-    .filter(([key]) => key in task_icons) // CPS has no dedicated page
-    .map(([key, task]) => ({
-      href: `/tasks/${key.replaceAll(`_`, `-`)}`,
-      title: task.label,
-      description: task.description,
-      icon: task_icons[key],
-    }))
+  // CPS has no dedicated page
+  const task_page_icons = [
+    [`discovery`, Search],
+    [`geo_opt`, RulerSquareCompass],
+    [`phonons`, Phonons],
+    [`diatomics`, Molecule],
+    [`md`, Thermometer],
+  ] as const
+  const subpages = task_page_icons.map(([key, icon]) => ({
+    href: `/tasks/${key.replaceAll(`_`, `-`)}`,
+    title: MODELING_TASKS[key].label,
+    description: MODELING_TASKS[key].description,
+    icon,
+  }))
 </script>
 
 <SubpageGrid
   title="Benchmark Tasks"
-  subtitle="Each task probes a different aspect of machine-learning interatomic potentials, from ground-state stability prediction to finite-temperature dynamics."
+  subtitle="Each task probes a different aspect of ML force fields, from ground-state stability prediction to finite-temperature dynamics."
   {subpages}
 />

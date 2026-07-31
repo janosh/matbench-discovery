@@ -72,6 +72,8 @@ beforeAll(() => {
 
 beforeEach(() => {
   document.body.innerHTML = ``
+  const fetch_mock = vi.fn(async () => Response.error())
+  vi.stubGlobal(`fetch`, fetch_mock)
   app_mocks.state.page.url = new URL(`http://localhost/`)
   after_navigate_callbacks = []
   history.replaceState(null, ``, `/`)
@@ -141,6 +143,7 @@ export function checkbox_for(label_text: string): HTMLInputElement {
 afterEach(async () => {
   const instances = mounted_components.splice(0)
   await Promise.all(instances.map((instance) => unmount(instance)))
+  vi.restoreAllMocks()
 })
 
 // gzipped 200 Response for stubbing fetch() of .json.gz assets

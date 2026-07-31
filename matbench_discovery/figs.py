@@ -5,8 +5,8 @@ All presentation (axes, ref lines, legends, per-model colors, render order, defa
 visibility) lives inline in the Svelte pages that import these files.
 site/src/figs/payloads.d.ts documents the expected payload shapes.
 
-Static payloads are committed as a single gzipped site/src/figs/<name>.json.gz.
-Multi-model payloads are committed as line-delimited site/src/figs/<name>.jsonl: one
+Static payloads are committed as a single gzipped ``site/src/figs/<name>.json.gz``.
+Multi-model payloads are committed as line-delimited ``site/src/figs/<name>.jsonl``: one
 JSON object per line (a lone ``{"_base": {...}}`` line for shared fields + one line per
 model). Two submissions that each add a model insert different lines, which git merges
 cleanly rather than colliding on one un-mergeable gzipped blob. The json_payload
@@ -262,8 +262,10 @@ def write_jsonl_payload(
 def write_site_payload(
     name: str, payload: dict[str, Any], *, id_field: str = "key"
 ) -> int:
-    """Write a multi-model figure payload as one JSONL file, site/src/figs/<name>.jsonl
-    (thin wrapper over ``write_jsonl_payload``; full vs subset run from CLI --models).
+    """Write a figure payload to ``site/src/figs/<name>.jsonl``.
+
+    This thin wrapper delegates to ``write_jsonl_payload``; CLI --models selects full
+    vs subset runs.
     """
     from matbench_discovery import SITE_FIG_DATA
     from matbench_discovery.cli import is_full_model_run

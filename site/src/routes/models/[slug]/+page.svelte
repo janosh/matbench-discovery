@@ -11,7 +11,27 @@
   import { get_pred_file_urls } from '$lib/models.svelte'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'matterviz'
-  import { ButtonGroup, CopyButton, Icon, type IconName } from 'svelte-widgets'
+  import { ButtonGroup, CopyButton, Icon } from 'svelte-widgets'
+  import {
+    Alert,
+    Calendar,
+    CalendarCheck,
+    Check,
+    Copy,
+    Directory,
+    Docs,
+    DOI,
+    Download,
+    Forest,
+    GitHub,
+    Graph,
+    MissingMetadata,
+    NeuralNetwork,
+    Paper,
+    PullRequest,
+    PyPI,
+    Versions,
+  } from 'svelte-widgets/icons'
   import { format_num, format_relative_time, HeatmapTable, ColorBar } from 'matterviz'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -24,12 +44,6 @@
   import type { PageData } from './$types'
 
   type ModelInfoItem = readonly [key: string, value: string, title?: string | null]
-  type ExternalLink = {
-    href?: string | null
-    icon: IconName
-    label: string
-    title: string
-  }
 
   let { data }: { data: PageData } = $props()
 
@@ -107,33 +121,21 @@
     model.dates.benchmark_added ? format_relative_time(model.dates.benchmark_added) : ``,
   )
   // rendered in order; links whose href isn't an http(s) URL are skipped
-  let external_links: ExternalLink[] = $derived([
-    {
-      href: model.repo,
-      icon: `GitHub`,
-      label: `Repo`,
-      title: `View source code repository`,
-    },
-    { href: model.paper, icon: `Paper`, label: `Paper`, title: `Read model paper` },
-    { href: model.docs, icon: `Docs`, label: `Docs`, title: `View model documentation` },
-    { href: model.doi, icon: `DOI`, label: `DOI`, title: `Digital Object Identifier` },
-    {
-      href: model.dirname
-        ? `${pkg.repository}/tree/HEAD/models/${model.dirname}`
-        : undefined,
-      icon: `Directory`,
-      label: `Files`,
-      title: `Browse model submission files`,
-    },
-    { href: model.pypi, icon: `PyPI`, label: `PyPI`, title: `Python package on PyPI` },
-    { href: model.pr_url, icon: `PullRequest`, label: `PR`, title: `View pull request` },
-    {
-      href: model.checkpoint_url,
-      icon: `Download`,
-      label: `Checkpoint`,
-      title: `Download model checkpoint`,
-    },
-  ])
+  let external_links = $derived([
+    [model.repo, `Repo`, GitHub, `View source code repository`],
+    [model.paper, `Paper`, Paper, `Read model paper`],
+    [model.docs, `Docs`, Docs, `View model documentation`],
+    [model.doi, `DOI`, DOI, `Digital Object Identifier`],
+    [
+      model.dirname ? `${pkg.repository}/tree/HEAD/models/${model.dirname}` : undefined,
+      `Files`,
+      Directory,
+      `Browse model submission files`,
+    ],
+    [model.pypi, `PyPI`, PyPI, `Python package on PyPI`],
+    [model.pr_url, `PR`, PullRequest, `View pull request`],
+    [model.checkpoint_url, `Checkpoint`, Download, `Download model checkpoint`],
+  ] as const)
   let model_role = $derived(model_role_from_targets(model.targets))
   let model_info_items: ModelInfoItem[] = $derived([
     [`Version`, model.model_version ?? `Unknown`],
@@ -153,7 +155,7 @@
 
   <section class="meta-info">
     <span>
-      <Icon icon="Versions" />
+      <Icon icon={Versions} />
       Version: {#if model.repo?.startsWith(`http`) && model.model_version}
         <a
           href="{model.repo}/releases/tag/{model.model_version}"
@@ -168,24 +170,24 @@
     </span>
 
     <span title={added_ago} {@attach tooltip()}
-      ><Icon icon="Calendar" />
+      ><Icon icon={Calendar} />
       Added: {model.dates.benchmark_added ?? `Unknown`}
     </span>
 
     {#if model.dates.paper_published}
       <span title={format_relative_time(model.dates.paper_published)} {@attach tooltip()}>
-        <Icon icon="CalendarCheck" /> Published: {model.dates.paper_published}
+        <Icon icon={CalendarCheck} /> Published: {model.dates.paper_published}
       </span>
     {/if}
 
     <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
-      <Icon icon="NeuralNetwork" />
+      <Icon icon={NeuralNetwork} />
       {format_num(model.model_params, `.3~s`)}
       parameters
     </span>
 
     {#if (model.n_estimators ?? 1) > 1}
-      <span><Icon icon="Forest" /> Ensemble of {model.n_estimators} models</span>
+      <span><Icon icon={Forest} /> Ensemble of {model.n_estimators} models</span>
     {/if}
 
     {#if model.pypi}
@@ -195,9 +197,9 @@
         <CopyButton
           content={pip_cmd}
           labels={{
-            ready: { icon: `Copy`, text: `` },
-            success: { icon: `Check`, text: `` },
-            error: { icon: `Alert`, text: `` },
+            ready: { icon: Copy, text: `` },
+            success: { icon: Check, text: `` },
+            error: { icon: Alert, text: `` },
           }}
         />
       </code>
@@ -205,7 +207,7 @@
   </section>
 
   <section class="links" {@attach tooltip()}>
-    {#each external_links as { href, icon, label, title } (label)}
+    {#each external_links as [href, label, icon, title] (label)}
       {#if href?.startsWith(`http`)}
         <a {href} target="_blank" rel="noopener noreferrer" {title}>
           <Icon {icon} />
@@ -221,7 +223,7 @@
           {@attach click_outside({ callback: (node) => (node.open = false) })}
         >
           <summary>
-            <Icon icon="Graph" /> Predictions
+            <Icon icon={Graph} /> Predictions
           </summary>
           <div class="dropdown">
             {#each pred_files as { name, url } (url)}
@@ -263,7 +265,7 @@
             content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances.`,
           })}
         >
-          <Icon icon="MissingMetadata" />
+          <Icon icon={MissingMetadata} />
           Missing preds: {format_num(missing_preds, `,.0f`)}
           {#if missing_preds != 0}
             <small>

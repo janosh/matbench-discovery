@@ -4,7 +4,7 @@
   import { METRICS_TABLE_ROOT_STYLE } from '$lib/table/MetricsTable.svelte'
   import type { SortState, UrlTableFilters } from '$lib/url-state.svelte'
   import type { Label, TableLabel } from '$lib/types'
-  import { HeatmapTable } from 'matterviz'
+  import { HeatmapTable, type RowData } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
   import {
     ALL_METRICS,
@@ -96,7 +96,7 @@
 </script>
 
 <HeatmapTable
-  data={metrics_data}
+  data={metrics_data as RowData[]}
   {columns}
   bind:sort
   default_num_format=".3f"

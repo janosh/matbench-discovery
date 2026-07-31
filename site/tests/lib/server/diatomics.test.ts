@@ -7,7 +7,6 @@ describe(`diatomics server data loader`, () => {
   const tmp_dirs: string[] = []
 
   afterEach(async () => {
-    vi.restoreAllMocks()
     await Promise.all(
       tmp_dirs.map((tmp_dir) => rm(tmp_dir, { recursive: true, force: true })),
     )

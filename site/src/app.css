@@ -372,17 +372,6 @@ input {
 ul.selected input {
   background: inherit;
 }
-/* MultiSelect renders a hidden form-validation input holding the JSON-serialized
-   selection (e.g. ["interpolateViridis"]). Its own scoped CSS that hides this input
-   isn't emitted for the svelte-multiselect copy still nested under matterviz via pnpm
-   link, so re-assert the hide here to stop it leaking into the layout. */
-div.multiselect > input.form-control {
-  position: absolute;
-  width: 2em;
-  opacity: 0;
-  z-index: -1;
-  pointer-events: none;
-}
 input:focus {
   outline: none;
   background: var(--nav-bg);

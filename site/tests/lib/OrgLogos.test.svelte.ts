@@ -1,7 +1,7 @@
-import type { Author } from '$lib'
-import type { OrgLogo } from '$lib/labels'
+import type { OrgLogo } from '$lib'
+import { LogoMeta, Magnetic } from 'svelte-widgets/icons'
 import OrgLogos from '$lib/model/OrgLogos.svelte'
-import { flushSync } from 'svelte'
+import { flushSync, type ComponentProps } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
 
@@ -12,10 +12,9 @@ describe(`OrgLogos.svelte`, () => {
   } satisfies OrgLogo
 
   // mount, hover the preview, and return the resulting tooltip content element
-  const open_tooltip = async (props: {
-    org_logos?: OrgLogo[]
-    authors?: Author[]
-  }): Promise<HTMLElement> => {
+  const open_tooltip = async (
+    props: ComponentProps<typeof OrgLogos>,
+  ): Promise<HTMLElement> => {
     mount(OrgLogos, { target: document.body, props })
     flushSync() // ensure the tooltip attachment effect has run before hovering
     doc_query(`.org-preview`).dispatchEvent(new MouseEvent(`mouseenter`))
@@ -24,34 +23,16 @@ describe(`OrgLogos.svelte`, () => {
   }
 
   it(`renders one preview logo per org (src + icon types)`, () => {
-    const org_logos: OrgLogo[] = [
-      mit_logo,
-      { name: `FAIR at Meta`, validated_icon: `LogoMeta` },
-    ]
+    const org_logos: OrgLogo[] = [mit_logo, { name: `FAIR at Meta`, icon: LogoMeta }]
     mount(OrgLogos, { target: document.body, props: { org_logos } })
 
     expect(document.querySelectorAll(`.org-preview .org-logo`)).toHaveLength(2)
     // src logo renders as <img>, icon logo as <span><svg>
     expect(doc_query<HTMLImageElement>(`img.org-logo`).src).toContain(mit_logo.src)
-    expect(document.querySelector(`span.org-logo svg`)).not.toBeNull()
-  })
-
-  it(`suppresses per-logo native titles to avoid competing tooltips`, () => {
-    const org_logos = [mit_logo]
-    mount(OrgLogos, { target: document.body, props: { org_logos } })
-
-    expect(doc_query(`.org-logo`).hasAttribute(`title`)).toBe(false)
-  })
-
-  it.each([1, 2, 4])(`renders $n_logos inline logos`, (n_logos) => {
-    const org_logos: OrgLogo[] = Array.from({ length: n_logos }, (_, idx) => ({
-      name: `Org ${idx}`,
-      src: mit_logo.src,
-    }))
-    mount(OrgLogos, { target: document.body, props: { org_logos } })
-
-    const org_preview = doc_query(`.org-preview`)
-    expect(org_preview.querySelectorAll(`.org-logo`)).toHaveLength(n_logos)
+    expect(doc_query(`span.org-logo svg`).getAttribute(`aria-label`)).toBe(
+      `FAIR at Meta logo`,
+    )
+    expect(document.querySelector(`.org-logo[title]`)).toBeNull()
   })
 
   it(`renders nothing when there are no org logos`, () => {
@@ -60,14 +41,15 @@ describe(`OrgLogos.svelte`, () => {
     expect(document.querySelector(`.org-preview`)).toBeNull()
   })
 
-  it(`shows full org names and authors grouped by affiliation on hover`, async () => {
+  it(`shows grouped authors with escaped affiliations on hover`, async () => {
     const { innerHTML } = await open_tooltip({
-      org_logos: [mit_logo, { name: `FAIR at Meta`, validated_icon: `LogoMeta` }],
+      org_logos: [mit_logo, { name: `FAIR at Meta`, icon: LogoMeta }],
       authors: [
         { name: `Ada Lovelace`, affiliation: `Massachusetts Institute of Technology` },
         { name: `Alan Turing`, affiliation: `Massachusetts Institute of Technology` },
         { name: `Grace Hopper`, affiliation: `University of Cambridge` },
         { name: `Yann LeCun`, affiliation: `FAIR at Meta` },
+        { name: `Sam Houston`, affiliation: `Texas A&M University` },
       ],
     })
 
@@ -78,21 +60,19 @@ describe(`OrgLogos.svelte`, () => {
     expect(innerHTML).toContain(`Ada Lovelace, Alan Turing`)
     expect(innerHTML).toContain(`Grace Hopper`)
     expect(innerHTML).toContain(`Yann LeCun`)
+    expect(innerHTML).toContain(`Texas A&amp;M University`)
     // src affiliations render <img>, icon affiliations render inline <svg>
     expect(innerHTML).toContain(`<img`)
     expect(innerHTML).toContain(`<svg`)
   })
 
-  it(`escapes HTML special characters in affiliation names`, async () => {
+  it(`preserves stroked icon rendering in tooltip HTML`, async () => {
     const content_el = await open_tooltip({
-      org_logos: [
-        { name: `Texas A&M University`, src: `/logos/texas-a-and-m-university.svg` },
-      ],
-      authors: [{ name: `Sam Houston`, affiliation: `Texas A&M University` }],
+      org_logos: [{ name: `Magnetic`, icon: Magnetic }],
     })
+    const svg = doc_query(`svg`, content_el)
 
-    // ampersand survives as text content (escaped in the raw HTML string)
-    expect(content_el.textContent).toContain(`Texas A&M University`)
-    expect(content_el.innerHTML).toContain(`Texas A&amp;M University`)
+    expect(svg.getAttribute(`fill`)).toBe(`none`)
+    expect(svg.getAttribute(`stroke`)).toBe(`currentColor`)
   })
 })

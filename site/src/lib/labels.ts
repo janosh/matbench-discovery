@@ -1,6 +1,7 @@
-import type { DiscoverySet, Label } from '$lib/types'
+import type { DiscoverySet, Label, OrgLogo } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { icon_data, type IconName } from 'svelte-widgets'
+import { LogoMeta, LogoMicrosoft } from 'svelte-widgets/icons'
+
 import type {
   DatasetMetadataLabels,
   DiscoveryMetricsLabels,
@@ -835,16 +836,7 @@ const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
 export const title_case = (str: string) =>
   str.replaceAll(`_`, ` `).split(` `).map(to_title).join(` `)
 
-// Return type for get_org_logo function
-export interface OrgLogo {
-  name: string
-  id?: string
-  src?: string
-  validated_icon?: IconName
-}
-
-// Map of author affiliations in model YAMLs to SVG icons (either inline symbol ID
-// Or external file path under /static/logos/) and full affiliation names for tooltips.
+// Affiliation substrings mapped to static files or bundled icons.
 const org_logos = {
   'Aberystwyth University': `/logos/aberystwyth-university.svg`,
   'AI for Science Institute, Beijing': `/logos/beijing-ai-for-science-institute.svg`,
@@ -855,13 +847,13 @@ const org_logos = {
   'DAMO Academy, Alibaba Inc': `/logos/damo-academy-alibaba.svg`,
   'Deep Principle': `/logos/deep-principle.svg`,
   DeePMD: `/logos/deepmd.svg`,
-  'FAIR at Meta': `icon:LogoMeta`,
+  'FAIR at Meta': LogoMeta,
   'Google DeepMind': `/logos/google-deepmind.svg`,
   'ICAMS, Ruhr University Bochum': `/logos/interdisciplinary-centre-for-advanced-materials-simulation-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
   'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/institute-of-computing-technology-chinese-academy-of-sciences-beijing.svg`,
   'Massachusetts Institute of Technology': `/logos/massachusetts-institute-of-technology.svg`,
-  'Microsoft Research': `icon:LogoMicrosoft`,
+  'Microsoft Research': LogoMicrosoft,
   'MIR Group, Harvard University': `/logos/materials-intelligence-research-group-harvard-university.svg`,
   'Mirror Physics': `/logos/mirror-physics.svg`,
   'National Institute of Standards and Technology': `/logos/national-institute-of-standards-and-technology.svg`,
@@ -889,32 +881,13 @@ const org_logos = {
   'Nanjing University': `/logos/nanjing-university.svg`,
 } as const
 
-// Attempts to find a matching logo data (ID or src) and name for a given affiliation string.
-// Performs a case-insensitive search for keywords defined in org_logos.
-// Returns object with logo name and either SVG ID or src path, or undefined if no match.
-// For icon references (icon:*), validates against matterviz IconName and includes validated_icon.
 export function get_org_logo(affiliation: string): OrgLogo | undefined {
   if (!affiliation) return undefined
 
-  for (const [key_val, logo_val] of Object.entries(org_logos)) {
-    // Check if lowercased affiliation string includes lowercased org key
-    if (affiliation.toLowerCase().includes(key_val.toLowerCase())) {
-      if (logo_val.startsWith(`/logos/`)) {
-        return { name: key_val, src: logo_val }
-      } else if (logo_val.startsWith(`icon:`)) {
-        const icon_name = logo_val.replace(`icon:`, ``)
-        const validated_icon =
-          icon_name in icon_data ? (icon_name as IconName) : undefined
-        if (!validated_icon && !import.meta.env.PROD) {
-          console.warn(
-            `Invalid icon name "${icon_name}" for org "${key_val}". ` +
-              `Valid names: ${Object.keys(icon_data).slice(0, 10).join(`, `)}...`,
-          )
-        }
-        return { name: key_val, id: logo_val, validated_icon }
-      }
-      return { name: key_val, id: logo_val }
-    }
+  const affiliation_lower = affiliation.toLowerCase()
+  for (const [name, logo] of Object.entries(org_logos)) {
+    if (!affiliation_lower.includes(name.toLowerCase())) continue
+    return typeof logo === `string` ? { name, src: logo } : { name, icon: logo }
   }
   return undefined
 }

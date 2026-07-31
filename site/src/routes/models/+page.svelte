@@ -1,5 +1,7 @@
 <script lang="ts">
   import { type Label, ModelCard } from '$lib'
+  import { Icon } from 'svelte-widgets'
+  import { Info } from 'svelte-widgets/icons'
   import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { MODELS } from '$lib/models.svelte'
@@ -11,7 +13,6 @@
   } from '$lib/url-state.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
   import { ColorBar, pick_contrast_color } from 'matterviz'
-  import { Icon } from 'svelte-widgets'
   import { untrack } from 'svelte'
   import { tooltip } from 'svelte-widgets/attachments'
   import { flip } from 'svelte/animate'
@@ -125,7 +126,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
               {@attach tooltip({ content: description, allow_html: true })}
               style="width: 8pt; height: 8pt; position: absolute; top: -4pt; right: -4pt; background: var(--page-bg); border-radius: 50%"
             >
-              <Icon icon="Info" />
+              <Icon icon={Info} />
             </span>
           {/if}
         </button>

@@ -1,7 +1,7 @@
 import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
 import Page from '$routes/+page.svelte'
 import { tick } from 'svelte'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { doc_query, mount, mount_with_url, sorted_header } from '../index'
 
 const header_text = () =>
@@ -170,7 +170,14 @@ describe(`Landing Page`, () => {
   })
 
   it(`auto-sorts presets until the user manually sorts the table`, async () => {
-    expect(header_text()).toContain(`F1 ↑`)
+    const cps_values = [...document.querySelectorAll(`td[data-col="CPS"]`)]
+      .map((cell) => Number(cell.textContent?.trim()))
+      .filter(Number.isFinite)
+    expect(cps_values.length).toBeGreaterThan(1)
+    expect(cps_values).toStrictEqual(
+      [...cps_values].toSorted((value_1, value_2) => value_2 - value_1),
+    )
+    expect_sort(`CPS`, `descending`)
 
     doc_query(`section.full-bleed`).click()
     await tick()
@@ -243,6 +250,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`surfaces export failures in the UI`, async () => {
+    vi.spyOn(console, `error`).mockImplementation(() => {})
     doc_query(`section.full-bleed table`).remove()
     doc_query(`.download-btn`).click() // SVG is first
     await tick()
