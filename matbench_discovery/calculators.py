@@ -7,6 +7,7 @@ Factories import packages lazily so listing models needs only core deps.
 Registry keys are Model enum names so metrics write to the right YAML.
 """
 
+import argparse
 import hashlib
 import inspect
 import os
@@ -14,20 +15,14 @@ import shutil
 import subprocess
 import sys
 import zipfile
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
-from typing import TYPE_CHECKING
 
+from ase.calculators.calculator import Calculator
 from filelock import FileLock
 
 from matbench_discovery import DEFAULT_CACHE_DIR
-
-if TYPE_CHECKING:
-    import argparse
-    from collections.abc import Mapping
-
-    from ase.calculators.calculator import Calculator
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
 # generous: AOTInductor exports (TACE) compile every kernel ahead of time
