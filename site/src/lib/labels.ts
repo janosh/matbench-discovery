@@ -761,9 +761,8 @@ export const DISCOVERY_SET_LABELS: Record<
   },
 } as const
 
-// SelectToggle options for switching between WBM test subsets
 export const discovery_set_toggle_options = Object.entries(DISCOVERY_SET_LABELS).map(
-  ([value, { label, description: tooltip, link }]) => ({ value, label, tooltip, link }),
+  ([value, { label, description: tooltip }]) => ({ value, label, tooltip }),
 )
 
 // Slowdown columns are roster-dependent (computed per filtered table view, not

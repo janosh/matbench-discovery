@@ -198,8 +198,8 @@ describe(`Model Detail Page`, () => {
     const tab_buttons = document.querySelectorAll<HTMLButtonElement>(
       `.energy-parity-tabs button`,
     )
-    expect(tab_buttons[0].getAttribute(`aria-pressed`)).toBe(`false`)
-    expect(tab_buttons[1].getAttribute(`aria-pressed`)).toBe(`true`)
+    expect(tab_buttons[0].getAttribute(`aria-checked`)).toBe(`false`)
+    expect(tab_buttons[1].getAttribute(`aria-checked`)).toBe(`true`)
 
     // clicking back to the default tab drops the param from the URL
     tab_buttons[0].click()

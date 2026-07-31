@@ -7,16 +7,16 @@ import { doc_query, mount, mount_with_url, sorted_header } from '../index'
 const header_text = () =>
   [...document.querySelectorAll(`thead th`)].map((header) => header.textContent).join(` `)
 const toggle_buttons = (label: string): HTMLButtonElement[] => {
-  const toggle = [...document.querySelectorAll(`.selection-toggle`)].find((element) =>
+  const toggle = [...document.querySelectorAll(`.button-group`)].find((element) =>
     element.textContent?.includes(label),
   )
-  if (!toggle) throw new Error(`No selection toggle contains ${label}`)
+  if (!toggle) throw new Error(`No button group contains ${label}`)
   return [...toggle.querySelectorAll<HTMLButtonElement>(`button`)]
 }
 // label of the active button in the toggle group containing `label`
 const pressed_toggle = (label: string): string | undefined =>
   toggle_buttons(label)
-    .find((button) => button.getAttribute(`aria-pressed`) === `true`)
+    .find((button) => button.getAttribute(`aria-checked`) === `true`)
     ?.textContent?.trim()
 const preset_button = (label: string): HTMLButtonElement => {
   const button = toggle_buttons(label).find(
@@ -127,7 +127,7 @@ describe(`Landing Page`, () => {
     expect(header_text()).not.toContain(`Recall`)
 
     const test_set_shown = () =>
-      [...document.querySelectorAll(`.selection-toggle`)].some((toggle) =>
+      [...document.querySelectorAll(`.button-group`)].some((toggle) =>
         toggle.textContent?.includes(`Full Test Set`),
       )
     const [full_test_button] = toggle_buttons(`Full Test Set`)

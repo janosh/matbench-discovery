@@ -45,7 +45,7 @@ it(`filters TMI elements and functionals while preserving curve gaps`, async () 
     },
   )
 
-  expect(button_for(`Halogens`).getAttribute(`aria-pressed`)).toBe(`true`)
+  expect(button_for(`Halogens`).getAttribute(`aria-checked`)).toBe(`true`)
   const pbe = button_for(`PBE`, `.legend button`)
   expect(plotted_series()).toHaveLength(4)
   expect(plotted_series()[0]).toMatchObject({ x: [1, 2], y: [1, Number.NaN] })

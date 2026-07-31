@@ -1,12 +1,11 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { DATASETS, DISCOVERY_SETS, MetricsTable, SelectToggle } from '$lib'
+  import { DATASETS, DISCOVERY_SETS, DiscoverySetToggle, MetricsTable } from '$lib'
   import { DynamicScatter, GitHubActivityScatter, RadarChart } from '$lib/plot'
   import {
     ALL_METRICS,
     DIATOMICS_METRICS,
     DISCOVERY_METRICS,
-    discovery_set_toggle_options,
     GEO_OPT_SYMMETRY_METRICS,
     HYPERPARAMS,
     MD_METRICS,
@@ -35,7 +34,7 @@
   import Readme from '$root/readme.md'
   import MdNote from '$routes/tasks/md/md-note.md'
   import { format_num } from 'matterviz'
-  import { Icon } from 'svelte-widgets'
+  import { ButtonGroup, Icon } from 'svelte-widgets'
   import { onMount } from 'svelte'
   import { slide } from 'svelte/transition'
   import { tooltip } from 'svelte-widgets/attachments'
@@ -236,7 +235,7 @@
 <figure style="margin-top: 3em" id="metrics-table">
   <div class="toggle-row">
     <span>Column presets:</span>
-    <SelectToggle
+    <ButtonGroup
       bind:selected={col_preset}
       options={col_preset_options}
       tooltip_placement="top"
@@ -247,10 +246,7 @@
   {#if col_preset === `Discovery`}
     <div class="toggle-row" in:slide={{ duration: 250 }}>
       <span>Discovery test set:</span>
-      <SelectToggle
-        bind:selected={discovery_set}
-        options={discovery_set_toggle_options}
-      />
+      <DiscoverySetToggle bind:selected={discovery_set} />
     </div>
   {/if}
 

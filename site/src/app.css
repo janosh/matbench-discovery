@@ -138,6 +138,17 @@
   --radio-btn-color: var(--text-color);
   --radio-btn-padding: 0 4pt;
 
+  /* ButtonGroup site theme */
+  --btn-group-display: flex;
+  --btn-group-gap: 8pt;
+  --btn-group-btn-border: 0.5px solid var(--border);
+  --btn-group-btn-color: var(--btn-text);
+  --btn-group-btn-padding: 4px 8px;
+  --btn-group-btn-hover-bg: var(--nav-bg);
+  --btn-group-btn-active-border-color: var(--link-color);
+  --btn-group-btn-active-bg: color-mix(in oklab, var(--link-color) 8%, var(--nav-bg));
+  --btn-group-btn-active-color: var(--link-color);
+
   /* can be increased on pages without much text like /models */
   --main-max-width: 50rem;
   --main-padding: 3rex;
@@ -191,6 +202,9 @@ button {
 }
 button:hover {
   background: var(--btn-bg-hover);
+}
+.button-group {
+  justify-content: center;
 }
 /* matterviz sizes the DraggablePane control-tab buttons in em but they inherit the UA button
    font-size (~13px), so the close/reset icons render smaller than the 16px drag handle. Inherit

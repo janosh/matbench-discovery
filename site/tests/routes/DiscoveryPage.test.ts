@@ -44,10 +44,10 @@ const scatter_y_for = (model_key: string): number | undefined =>
   )?.y[0]
 
 const active_toggle = (): string | undefined =>
-  document.querySelector(`button[aria-pressed="true"]`)?.textContent?.trim()
+  document.querySelector(`button[aria-checked="true"]`)?.textContent?.trim()
 
 const toggle_labels = (): (string | undefined)[] =>
-  [...document.querySelectorAll(`.selection-toggle button`)].map((button) =>
+  [...document.querySelectorAll(`.button-group button`)].map((button) =>
     button.textContent?.trim(),
   )
 
