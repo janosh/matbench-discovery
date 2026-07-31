@@ -26,14 +26,14 @@ jobs:
     timeout-minutes: 150
     steps:
       - name: Check out trusted repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       # Pinned to the SHA reviewed when the label event fired. The live-head check
       # below and final non-forced push reject later force-pushes.
       - name: Check out submission PR head (data only)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
@@ -41,12 +41,12 @@ jobs:
           persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v8.3.0
+        uses: astral-sh/setup-uv@v9.0.0
         with:
           python-version: "3.14"
 
       - name: Cache stable site input data
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             data/mp
@@ -141,7 +141,7 @@ jobs:
           echo "Detected submitted models: ${MODELS:-<roster-only>}"
 
       - name: Cache model prediction + analysis files
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             models/**/*.csv.gz

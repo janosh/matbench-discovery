@@ -43,10 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
 
@@ -61,17 +61,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v8.3.0
+        uses: astral-sh/setup-uv@v9.0.0
         with:
           python-version: "3.14"
 
       # same cache as update-site-figs.yml: scripts/evals/discovery.py downloads
       # every active model's WBM predictions, several GB on a cold cache
       - name: Cache model prediction + analysis files
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             models/**/*.csv.gz
