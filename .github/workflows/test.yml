@@ -33,7 +33,7 @@ jobs:
     uses: janosh/workflows/.github/workflows/pytest.yml@main
     with:
       os: ${{ matrix.os }}
-      python-version: "3.11"
+      python-version: "3.14"
       install-cmd: uv pip install -e .[test,symmetry] --system
 
   vitest:
@@ -66,7 +66,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.3.0
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       # same cache as update-site-figs.yml: scripts/evals/discovery.py downloads
       # every active model's WBM predictions, several GB on a cold cache
