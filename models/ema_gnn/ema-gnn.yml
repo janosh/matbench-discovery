@@ -20,7 +20,7 @@ trained_by:
 repo: https://github.com/submerged-in-matrix/gnome-repro-structural
 doi: https://doi.org/10.6084/m9.figshare.33111509
 paper:
-pr_url: https://github.com/janosh/matbench-discovery/pull/386
+pr_url: https://github.com/janosh/matbench-discovery/pull/387
 checkpoint_url: https://figshare.com/files/67085774 # https://doi.org/10.6084/m9.figshare.33111509
 license:
   code: MIT
