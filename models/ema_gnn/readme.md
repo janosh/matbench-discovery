@@ -12,7 +12,7 @@ edge-to-node messages normalized by the dataset-average adjacency so that messag
 magnitude does not scale with coordination number.
 
 | Property | Value |
-|---|---|
+| --- | --- |
 | Task | `IS2E` |
 | Targets | `E` |
 | Training set | Materials Project 2022, relaxed structures |
@@ -42,7 +42,7 @@ random seed and sharing the same training split. Held-out MAE per seed, meV/atom
 23.32, 24.02, 24.09, 24.33, 23.78, 24.41 — a spread of 1.1 meV with no diverged
 run.
 
-```
+```txt
 optimizer          Adam
 learning rate      5.5e-4, LinearLR to 0.1x final
 epochs             500
