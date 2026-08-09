@@ -2,8 +2,8 @@ model_name: EMA-GNN
 model_key: ema-gnn
 model_version: v0.1.0
 dates:
-  benchmark_added: 2026-08-08
-  paper_published:
+  benchmark_added: '2026-08-08'
+  paper_published: null
 lifecycle: active
 authors:
 - name: Md. Saidul Islam
