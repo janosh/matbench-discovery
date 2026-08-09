@@ -10,6 +10,7 @@
 {"key":"chgnet-0.3.0","label":"CHGNet","quantiles":[-0.173,-0.071,-0.027,0.006,0.071]}
 {"key":"dpa-3.1-3m-ft","label":"DPA-3.1-3M-FT","quantiles":[-0.045,-0.011,-0.002,0.007,0.034]}
 {"key":"dpa-4.0.1-pro-mptrj","label":"DPA-4.0.1-Pro-MPtrj","quantiles":[-0.064,-0.016,-0.002,0.007,0.053]}
+{"key":"ema-gnn","label":"EMA-GNN","quantiles":[-0.216,-0.087,-0.034,0.005,0.138]}
 {"key":"eqnorm-mptrj","label":"Eqnorm MPtrj","quantiles":[-0.1,-0.031,-0.007,0.008,0.065]}
 {"key":"equflash-29m-oam","label":"EquFlash","quantiles":[-0.038,-0.006,0.0,0.005,0.025]}
 {"key":"equflashv2-45m-oam","label":"EquFlashV2","quantiles":[-0.033,-0.004,0.0,0.004,0.021]}
