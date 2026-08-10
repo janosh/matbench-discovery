@@ -319,7 +319,7 @@
             <ColorBar
               title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
               title_side="top"
-              {color_scale}
+              scale={color_scale}
               range={[0, Math.max(0, ...Object.values(heatmap_values))]}
               style="width: 80%; margin: 0 2em"
             />

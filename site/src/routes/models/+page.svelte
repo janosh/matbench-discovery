@@ -141,7 +141,10 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     <ColorBar
       title="Card titles colored by {sort_by.label}"
       title_style="font-size: 1.5em;"
-      color_scale={lower_is_better ? (t) => interpolateRdBu(1 - t) : interpolateRdBu}
+      scale={{
+        interpolator: (fraction) =>
+          interpolateRdBu(lower_is_better ? 1 - fraction : fraction),
+      }}
       style="min-width: min(70vw, 400px)"
       bar_style="height: 14pt;"
       range={lower_is_better ? [worst_val, best_val] : [best_val, worst_val]}
@@ -155,7 +158,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
       {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
       {@const bg_clr = bg_color(metric_val as number, best_val, worst_val)}
-      {@const text_color = pick_contrast_color({ bg_color: bg_clr })}
+      {@const text_color = pick_contrast_color({ background: bg_clr })}
       <li
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}
