@@ -1,6 +1,6 @@
 import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
 import Page from '$routes/+page.svelte'
-import { tick } from 'svelte'
+import { flushSync, tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { doc_query, mount, mount_with_url, sorted_header } from '../index'
 
@@ -81,6 +81,7 @@ describe(`Landing Page`, () => {
     [`MD`, `Molecular Dynamics`],
   ])(`expands %s in its tooltip`, async (label, expanded_label) => {
     const button = preset_button(label)
+    flushSync()
     button.dispatchEvent(new PointerEvent(`pointerover`))
     await vi.waitFor(() => {
       const tooltip_id = button.getAttribute(`aria-describedby`)

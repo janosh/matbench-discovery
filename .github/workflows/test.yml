@@ -36,9 +36,6 @@ jobs:
       install-cmd: uv pip install -e .[test,symmetry] --system
 
   vitest:
-    env:
-      PNPM_CONFIG_BLOCK_EXOTIC_SUBDEPS: "false"
-      PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
     defaults:
       run:
         working-directory: site
@@ -56,6 +53,10 @@ jobs:
 
       - name: Install dependencies
         # use the project's pinned pnpm (packageManager field) via corepack
+        env:
+          # MatterViz currently references the reviewed svelte-widgets git dependency.
+          PNPM_CONFIG_BLOCK_EXOTIC_SUBDEPS: "false"
+          PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
         run: corepack enable && pnpm install
 
       - name: Run unit tests

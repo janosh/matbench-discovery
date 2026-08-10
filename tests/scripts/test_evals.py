@@ -24,7 +24,7 @@ Outcome = str | Exception | None  # skip reason, raised error, or success
 def test_evaluate_models_exit_code(
     models: list[Model], outcomes: dict[Model, Outcome], expected_code: int
 ) -> None:
-    """Errors fail the sweep even alongside successes; skips and empty runs don't."""
+    """Errors fail; all-skipped non-empty runs return 1, while empty runs return 0."""
 
     def evaluate_one(model: Model) -> str | None:
         outcome = outcomes[model]
