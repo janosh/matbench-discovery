@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shlex
 from typing import TYPE_CHECKING
 
 from matbench_discovery import today
@@ -46,8 +47,9 @@ from matbench_discovery.phonons.pipeline import (
     write_kappa_artifacts,
 )
 from matbench_discovery.runner_cli import (
+    add_common_runner_args,
+    add_shard_args,
     dependency_run_args,
-    print_dependency_command,
     resolve_sharded_prefix,
     validate_sharded_write_args,
 )
@@ -58,22 +60,19 @@ if TYPE_CHECKING:
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the unified kappa command-line parser."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", help="Calculator key, model key, or model label")
-    parser.add_argument(
-        "--list-models",
-        action="store_true",
-        help="Print calculators with verified hyperparams.evaluation.kappa settings",
+    parser = add_common_runner_args(
+        argparse.ArgumentParser(description=__doc__),
+        dry_run_help="Run a bounded one-structure end-to-end smoke test",
+        list_models_help=(
+            "Print calculators with verified hyperparams.evaluation.kappa settings"
+        ),
     )
-    parser.add_argument(
-        "--print-cmd",
-        action="store_true",
-        help="Print the dependency-isolated uv command and exit",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Run a bounded one-structure end-to-end smoke test",
+    add_shard_args(
+        parser,
+        merge_shards_help="Strictly merge complete records and write final artifacts",
+        write_yaml_help=(
+            "On a complete 103-structure merge, update metrics and provenance"
+        ),
     )
     parser.add_argument(
         "--dry-run-size",
@@ -82,22 +81,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Number of structures retained by --dry-run",
     )
     parser.add_argument(
-        "--merge-shards",
-        action="store_true",
-        help="Strictly merge complete records and write final artifacts",
-    )
-    parser.add_argument(
-        "--write-yaml",
-        action="store_true",
-        help="On a complete 103-structure merge, update metrics and provenance",
-    )
-    parser.add_argument(
         "--retry-failures",
         action="store_true",
         help="Recompute existing records that contain a persisted error",
     )
-    parser.add_argument("--out-dir", help="Defaults to models/<arch>/<model>")
-    parser.add_argument("--shard-dir", help="Override the resumable run directory")
     parser.add_argument(
         "--dataset",
         help="Override the canonical PhononDB 103-structure extxyz path",
@@ -105,18 +92,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--checkpoint",
         help="Override the model checkpoint/artifact for supported calculators",
-    )
-    parser.add_argument("--dtype", choices=("float64", "float32"), default="float64")
-    parser.add_argument("--device", choices=("cpu", "cuda"))
-    parser.add_argument(
-        "--n-shards",
-        type=int,
-        help="Number of atom-balanced shards; defaults to Slurm task count or 1",
-    )
-    parser.add_argument(
-        "--shard-index",
-        type=int,
-        help="Zero-based shard index; defaults to normalized Slurm array task ID",
     )
     return parser
 
@@ -277,7 +252,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         command = CALCULATORS[model_key].uv_run_cmd(
             "models/run_kappa.py", *print_cmd_args(args, model_key)
         )
-        print_dependency_command(command)
+        print(shlex.join(command))
         return 0
 
     out_dir = args.out_dir or os.path.splitext(model.yaml_path)[0]

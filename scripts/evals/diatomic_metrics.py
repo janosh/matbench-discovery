@@ -4,24 +4,18 @@ import gzip
 import json
 import numbers
 import os
-import sys
 
 from matbench_discovery import ROOT
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import file_ref_name, file_ref_url
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
 from matbench_discovery.metrics.diatomics.exclusions import drop_metric_exclusions
 from matbench_discovery.remote.fetch import maybe_auto_download_file
+from scripts.evals import evaluate_models
 
-models_to_evaluate = cli_args.models
-print(f"Evaluating diatomic metrics for {len(models_to_evaluate)} model(s)...")
-
-n_success = 0
-n_skipped = 0
-
-metrics_to_write: dict[str, dict[str, object]] = {
+METRICS_TO_WRITE: dict[str, dict[str, object]] = {
     metric: {}
     for metric in (
         MbdKey.tortuosity,
@@ -39,64 +33,55 @@ metrics_to_write: dict[str, dict[str, object]] = {
     )
 }
 
-pbe_ref_curves = diatomics.load_dft_reference_curves("PBE")
 
-for model in models_to_evaluate:
-    if not os.path.isfile(model.yaml_path):
-        print(f"Skipping {model.label}: YAML file not found")
-        n_skipped += 1
-        continue
+def main() -> int:
+    """Evaluate diatomic metrics, returning 0 if any model succeeds and 1 otherwise."""
+    pbe_ref_curves = diatomics.load_dft_reference_curves("PBE")
 
-    diatomics_metrics = model.metrics.get("diatomics") or {}
-    if not diatomics_metrics:
-        print(f"Skipping {model.label}: no diatomics metrics config in YAML")
-        n_skipped += 1
-        continue
+    def evaluate_one(model: Model) -> str | None:
+        if not os.path.isfile(model.yaml_path):
+            return "YAML file not found"
 
-    pred_name = file_ref_name(diatomics_metrics.get("pred_file"))
-    if pred_name is None:
-        print(f"Skipping {model.label}: no pred_file in diatomics config")
-        n_skipped += 1
-        continue
+        diatomics_metrics = model.metrics.get("diatomics") or {}
+        if not diatomics_metrics:
+            return "no diatomics metrics config in YAML"
 
-    abs_path = f"{ROOT}/{pred_name}"
-    pred_file_url = file_ref_url(diatomics_metrics.get("pred_file"))
+        pred_file = diatomics_metrics.get("pred_file")
+        pred_name = file_ref_name(pred_file)
+        if pred_name is None:
+            return "no pred_file in diatomics config"
 
-    # Try to download if file doesn't exist and URL is available
-    if not os.path.isfile(abs_path) and pred_file_url:
-        maybe_auto_download_file(
-            pred_file_url, abs_path, label=f"{model.label} diatomics"
+        prediction_path = f"{ROOT}/{pred_name}"
+        pred_file_url = file_ref_url(pred_file)
+
+        if not os.path.isfile(prediction_path) and pred_file_url:
+            maybe_auto_download_file(
+                pred_file_url, prediction_path, label=f"{model.label} diatomics"
+            )
+
+        if not os.path.isfile(prediction_path):
+            return f"prediction file not found at {pred_name}"
+
+        with gzip.open(prediction_path, mode="rb") as file:
+            pred_data = json.load(file) or {}
+
+        metrics = diatomics.calc_diatomic_metrics(
+            ref_curves=pbe_ref_curves,
+            pred_curves=DiatomicCurves.from_dict(pred_data),
+            metrics=METRICS_TO_WRITE,
+            interpolate=200,
         )
+        metrics = drop_metric_exclusions(model.name, metrics)
+        # Preserve source metadata by leaving run_metadata unset.
+        mean_metrics = diatomics.write_metrics_to_yaml(model, metrics)
+        print(f"{model.label}:")
+        for metric, value in mean_metrics.items():
+            value_str = f"{value:.5}" if isinstance(value, numbers.Real) else str(value)
+            print(f"  {metric}: {value_str}")
+        return None
 
-    if not os.path.isfile(abs_path):
-        print(f"Skipping {model.label}: prediction file not found at {pred_name}")
-        n_skipped += 1
-        continue
+    return evaluate_models("diatomic", cli_args.models, evaluate_one)
 
-    # Load predicted curves
-    with gzip.open(abs_path, mode="rb") as file:
-        pred_data = json.load(file) or {}
 
-    pred_curves = DiatomicCurves.from_dict(pred_data)
-
-    metrics = diatomics.calc_diatomic_metrics(
-        ref_curves=pbe_ref_curves,
-        pred_curves=pred_curves,
-        metrics=metrics_to_write,
-        interpolate=200,
-    )
-    metrics = drop_metric_exclusions(model.name, metrics)
-    # write_metrics_to_yaml preserves source run metadata (hardware, run time,
-    # excluded formula reasons) when we don't pass run_metadata
-    mean_metrics = diatomics.write_metrics_to_yaml(model, metrics)
-    print(f"{model.label}:")
-    for metric, val in mean_metrics.items():
-        value_str = f"{val:.5}" if isinstance(val, numbers.Real) else str(val)
-        print(f"  {metric}: {value_str}")
-    n_success += 1
-
-# Exit with error if no models were successfully evaluated
-if n_success == 0:
-    print(f"\nNo models evaluated successfully ({n_skipped} skipped)")
-    sys.exit(1)
-print(f"\nSuccessfully evaluated {n_success} model(s), {n_skipped} skipped")
+if __name__ == "__main__":
+    raise SystemExit(main())

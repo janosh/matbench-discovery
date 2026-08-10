@@ -1,8 +1,8 @@
 import type { OrgLogo } from '$lib'
-import { LogoMeta, Magnetic } from 'svelte-widgets/icons'
+import { Magnetic, Meta } from 'svelte-widgets/icons'
 import OrgLogos from '$lib/model/OrgLogos.svelte'
 import { flushSync, type ComponentProps } from 'svelte'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { doc_query, mount } from '../index'
 
 describe(`OrgLogos.svelte`, () => {
@@ -17,13 +17,12 @@ describe(`OrgLogos.svelte`, () => {
   ): Promise<HTMLElement> => {
     mount(OrgLogos, { target: document.body, props })
     flushSync() // ensure the tooltip attachment effect has run before hovering
-    doc_query(`.org-preview`).dispatchEvent(new MouseEvent(`mouseenter`))
-    await new Promise((resolve) => setTimeout(resolve, 200))
-    return doc_query(`.custom-tooltip .tooltip-content`)
+    doc_query(`.org-preview`).dispatchEvent(new PointerEvent(`pointerover`))
+    return vi.waitFor(() => doc_query(`.custom-tooltip .tooltip-content`))
   }
 
   it(`renders one preview logo per org (src + icon types)`, () => {
-    const org_logos: OrgLogo[] = [mit_logo, { name: `FAIR at Meta`, icon: LogoMeta }]
+    const org_logos: OrgLogo[] = [mit_logo, { name: `FAIR at Meta`, icon: Meta }]
     mount(OrgLogos, { target: document.body, props: { org_logos } })
 
     expect(document.querySelectorAll(`.org-preview .org-logo`)).toHaveLength(2)
@@ -43,7 +42,7 @@ describe(`OrgLogos.svelte`, () => {
 
   it(`shows grouped authors with escaped affiliations on hover`, async () => {
     const { innerHTML } = await open_tooltip({
-      org_logos: [mit_logo, { name: `FAIR at Meta`, icon: LogoMeta }],
+      org_logos: [mit_logo, { name: `FAIR at Meta`, icon: Meta }],
       authors: [
         { name: `Ada Lovelace`, affiliation: `Massachusetts Institute of Technology` },
         { name: `Alan Turing`, affiliation: `Massachusetts Institute of Technology` },

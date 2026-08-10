@@ -182,7 +182,9 @@
         <ColorBar
           title={cbar_title}
           title_side="top"
-          {color_scale}
+          scale={typeof color_scale === `string`
+            ? color_scale
+            : { interpolator: color_scale }}
           tick_labels={5}
           range={cs_range}
           style="width: 85%; margin: 0 2em"

@@ -30,6 +30,7 @@ Model dependency trees conflict, so each model resolves its own environment via
 
 import argparse
 import os
+import shlex
 
 from matbench_discovery import today
 from matbench_discovery.calculators import (
@@ -39,29 +40,18 @@ from matbench_discovery.calculators import (
 )
 from matbench_discovery.data import artifact_filename
 from matbench_discovery.md import run_md_benchmark
-from matbench_discovery.runner_cli import dependency_run_args, print_dependency_command
+from matbench_discovery.runner_cli import add_common_runner_args, dependency_run_args
 
 module_dir = os.path.dirname(__file__)
 
 
 def main() -> int:
     """Parse args and run (or dry-run) the MD benchmark for one model."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", help="Model key, see --list-models")
-    parser.add_argument(
-        "--list-models", action="store_true", help="Print registered models and exit"
+    parser = add_common_runner_args(
+        argparse.ArgumentParser(description=__doc__),
+        dry_run_help="Smoke test: 1 system, a few MD steps, capped reference slice",
+        out_dir_help="Defaults to models/<arch>/<today>-md-nvt",
     )
-    parser.add_argument(
-        "--print-cmd",
-        action="store_true",
-        help="Print the 'uv run --with ...' command for --model and exit",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Smoke test: 1 system, a few MD steps, capped reference slice",
-    )
-    parser.add_argument("--out-dir", help="Defaults to models/<arch>/<today>-md-nvt")
     parser.add_argument(
         "--ref-file",
         help="Reference HDF5. Defaults to auto-downloaded DynaMat v1.0 set",
@@ -79,12 +69,6 @@ def main() -> int:
     parser.add_argument("--time-step-fs", type=float, default=0.25)
     parser.add_argument("--record-interval", type=int, default=10)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument(
-        "--dtype",
-        default="float64",
-        choices=("float64", "float32"),
-        help="Calculator float precision. default float64",
-    )
     parser.add_argument(
         "--write-yaml", action="store_true", help="Write metrics to the model YAML"
     )
@@ -120,8 +104,10 @@ def main() -> int:
         )
         if args.systems is not None:
             run_args.extend(("--systems", *args.systems))
-        print_dependency_command(
-            CALCULATORS[args.model].uv_run_cmd("models/run_md.py", *run_args)
+        print(
+            shlex.join(
+                CALCULATORS[args.model].uv_run_cmd("models/run_md.py", *run_args)
+            )
         )
         return 0
 

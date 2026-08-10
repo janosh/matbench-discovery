@@ -101,7 +101,7 @@
   let selectable_options = $derived(
     selectable_names.map((model_name) => {
       const model_color = color_for(model_name)
-      const text_color = pick_contrast_color({ bg_color: model_color })
+      const text_color = pick_contrast_color({ background: model_color })
       return {
         label: `${model_name}${reference_names.includes(model_name) ? ` (DFT)` : ``}`,
         value: model_name,

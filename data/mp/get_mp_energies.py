@@ -140,7 +140,7 @@ df_elem_refs = pd.DataFrame(docs).set_index(Key.mat_id, drop=False)
 df_elem_refs[Key.atomic_number] = [Element(el).Z for el in df_elem_refs["chemsys"]]
 df_elem_refs[potcar_spec_key] = [
     ", ".join(
-        potcar["titel"]  # codespell:ignore
+        potcar["titel"]  # VASP's own (misspelled) POTCAR field name
         for potcar in next(iter(entry.values())).parameters["potcar_spec"]
     )
     for entry in df_elem_refs["entries"]

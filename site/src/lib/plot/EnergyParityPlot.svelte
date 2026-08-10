@@ -333,8 +333,8 @@ title, so label the section for screen readers instead -->
       y_axis={{ label: y_label, format: `.2f`, range: extent }}
       density={{
         color_scale: { type: `log`, scheme: `interpolateMagma` },
-        color_bar: { title: `Density`, class: colorbar_class },
       }}
+      color_bar={{ title: `Density`, class: colorbar_class }}
       size_scale={{ radius_range: [2, 18], pick_radius: `auto` }}
       overlays={parity_overlays}
       on_point_click={({ point }) => void show_structure(Number(point.point_id))}

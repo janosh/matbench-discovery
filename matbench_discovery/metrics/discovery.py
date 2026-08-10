@@ -262,9 +262,7 @@ def write_all_metrics_to_yaml(
     Replaces every subset block (dropping deprecated rate keys) and removes
     obsolete siblings like most_stable_10k; keeps pred_file and cost provenance.
     """
-    from ruamel.yaml.comments import CommentedMap
-
-    from matbench_discovery.data import update_yaml_file
+    from matbench_discovery.data import commented_map_with_units, update_yaml_file
 
     units = {
         "MAE": "eV/atom",
@@ -283,14 +281,9 @@ def write_all_metrics_to_yaml(
     }
     written: dict[TestSubset, dict[str, str | float]] = {}
     for test_subset, metrics in metrics_by_subset.items():
-        block = CommentedMap(
-            {key: round(float(value), 3) for key, value in metrics.items()}
-        )
-        block[str(MbdKey.missing_preds)] = n_missing[test_subset]
-        for key, unit in units.items():
-            if key in block:
-                block.yaml_add_eol_comment(unit, key, column=1)
-        written[test_subset] = block
+        rounded = {key: round(float(value), 3) for key, value in metrics.items()}
+        rounded[str(MbdKey.missing_preds)] = n_missing[test_subset]
+        written[test_subset] = commented_map_with_units(rounded, units)
 
     # Metric subset blocks always carry F1; pred_file / hardware do not.
     update_yaml_file(

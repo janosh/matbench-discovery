@@ -26,6 +26,8 @@ jobs:
       - name: Install site dependencies
         # use the project's pinned pnpm (packageManager field) via corepack
         env:
+          # MatterViz currently references the reviewed svelte-widgets git dependency.
+          PNPM_CONFIG_BLOCK_EXOTIC_SUBDEPS: "false"
           PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
         run: corepack enable && pnpm install
         working-directory: site

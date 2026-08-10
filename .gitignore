@@ -36,5 +36,5 @@ models/**/*.json*
 # WIP model submissions
 models/_*
 
-# auto-generated docs
-site/src/routes/api/*.md
+# generated API module docs
+site/src/routes/api/modules/

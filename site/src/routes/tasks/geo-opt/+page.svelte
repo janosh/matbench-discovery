@@ -66,7 +66,7 @@
     .toSorted(([key_1], [key_2]) => benchmark_added_ms(key_2) - benchmark_added_ms(key_1))
     .map(([key, label]) => {
       const model_color = model_by_key.get(key)?.color ?? `gray`
-      const text_color = pick_contrast_color({ bg_color: model_color })
+      const text_color = pick_contrast_color({ background: model_color })
       return {
         label,
         value: key,
