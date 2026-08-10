@@ -2,7 +2,6 @@
 non-analytical correction term (NAC).
 """
 
-# %%
 import os
 
 from matbench_discovery.cli import cli_args
