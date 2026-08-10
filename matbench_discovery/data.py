@@ -17,7 +17,7 @@ import os
 import re
 import sys
 import zipfile
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from functools import cache
@@ -32,6 +32,7 @@ from ase import Atoms
 from filelock import FileLock
 from pymatviz.enums import Key
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
 from tqdm import tqdm
 
 from matbench_discovery import DATA_DIR, TEST_FILES
@@ -71,6 +72,23 @@ _FILE_REF_KEYS: Final = frozenset(
 # Tasks that require forces (not applicable when targets == "E")
 FORCE_TASKS: Final = frozenset({"geo_opt", "phonons", "md", "diatomics"})
 _COVERAGE_META_KEYS: Final = frozenset({"status", "reason"})
+
+
+def file_sha256(path: str) -> str:
+    """Stream a file into a SHA-256 digest."""
+    with open(path, mode="rb") as file:
+        return hashlib.file_digest(file, "sha256").hexdigest()
+
+
+def commented_map_with_units(
+    mapping: Mapping[str, Any], units: Mapping[str, str]
+) -> CommentedMap:
+    """Build a YAML block with unit comments on matching keys."""
+    block = CommentedMap(mapping)
+    for key in block:
+        if unit := units.get(key):
+            block.yaml_add_eol_comment(unit, key, column=1)
+    return block
 
 
 class FileRef(TypedDict):

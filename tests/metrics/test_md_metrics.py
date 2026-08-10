@@ -206,12 +206,21 @@ def test_calc_rdf_error(
     err = md_metrics.calc_rdf_error(radii, np.array(g_r_ref), np.array(g_r_pred))
     assert err == pytest.approx(expected)
 
-    with pytest.raises(ValueError, match="differ"):  # mismatched grid lengths
-        md_metrics.calc_rdf_error(radii, np.ones(3), np.ones(4))
-    with pytest.raises(ValueError, match="negative"):
-        md_metrics.calc_rdf_error(radii, np.array([0.0, -1.0, 1.0]), np.ones(3))
-    with pytest.raises(ValueError, match="non-finite"):
-        md_metrics.calc_rdf_error(radii, np.array([0.0, np.inf, 1.0]), np.ones(3))
+
+@pytest.mark.parametrize(
+    ("g_r_ref", "g_r_pred", "err_msg"),
+    [
+        (np.ones(3), np.ones(4), "differ"),  # mismatched grid lengths
+        (np.array([0.0, -1.0, 1.0]), np.ones(3), "negative"),
+        (np.array([0.0, np.inf, 1.0]), np.ones(3), "non-finite"),
+    ],
+)
+def test_calc_rdf_error_invalid_input(
+    g_r_ref: np.ndarray, g_r_pred: np.ndarray, err_msg: str
+) -> None:
+    """RDF error should reject mismatched, negative and non-finite distributions."""
+    with pytest.raises(ValueError, match=err_msg):
+        md_metrics.calc_rdf_error(np.array([1.0, 2.0, 3.0]), g_r_ref, g_r_pred)
 
 
 # === ADF ===
@@ -765,9 +774,18 @@ def test_matched_frame_counts(
     )
     assert result == expected
 
-    with pytest.raises(ValueError, match="must be positive"):  # zero time step
+
+@pytest.mark.parametrize(("ref_dt", "pred_dt"), [(0, 1), (1, 0)])
+def test_matched_frame_counts_rejects_zero_time_step(
+    ref_dt: float, pred_dt: float
+) -> None:
+    """A zero time step has no common grid, so it must raise rather than divide by 0."""
+    with pytest.raises(ValueError, match="must be positive"):
         md_metrics.matched_frame_counts(
-            n_ref_frames=5, n_pred_frames=5, ref_time_step_fs=0, pred_time_step_fs=1
+            n_ref_frames=5,
+            n_pred_frames=5,
+            ref_time_step_fs=ref_dt,
+            pred_time_step_fs=pred_dt,
         )
 
 

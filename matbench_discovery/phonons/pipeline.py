@@ -29,6 +29,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT
 from matbench_discovery.ase_relax import canonical_filter_name, canonical_optimizer_name
+from matbench_discovery.data import file_sha256
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import (
     detect_hardware,
@@ -367,12 +368,6 @@ class KappaArtifacts:
 def material_id_digest(material_ids: Sequence[str]) -> str:
     """Return an order-sensitive digest for the canonical dataset ID sequence."""
     return hashlib.sha256("\n".join(map(str, material_ids)).encode()).hexdigest()
-
-
-def file_sha256(path: str) -> str:
-    """Stream a file into a SHA-256 digest."""
-    with open(path, mode="rb") as file:
-        return hashlib.file_digest(file, "sha256").hexdigest()
 
 
 def checkpoint_digest(checkpoint: str | None) -> str | None:

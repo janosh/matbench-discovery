@@ -18,12 +18,12 @@ from pymatviz.enums import Key
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.phonons.adapters import (
     FairchemKappaAdapter,
-    RelaxationResult,
     StandardKappaAdapter,
     get_kappa_adapter,
 )
 from matbench_discovery.phonons.adapters.equflash import EquFlashKappaAdapter
 from matbench_discovery.phonons.adapters.pet import PetKappaAdapter
+from matbench_discovery.phonons.adapters.standard import RelaxationResult
 from matbench_discovery.phonons.pipeline import (
     DRY_RUN_MAX_FC3_EVALUATIONS,
     KAPPA_PROTOCOL,

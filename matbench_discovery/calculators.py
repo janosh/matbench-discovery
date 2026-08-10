@@ -23,6 +23,7 @@ from ase.calculators.calculator import Calculator
 from filelock import FileLock
 
 from matbench_discovery import DEFAULT_CACHE_DIR
+from matbench_discovery.data import file_sha256
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
 # generous: AOTInductor exports (TACE) compile every kernel ahead of time
@@ -34,15 +35,6 @@ def _is_non_empty_file(path: str) -> bool:
     return os.path.isfile(path) and os.path.getsize(path) > 0
 
 
-def _file_sha256(path: str) -> str:
-    """Return a file's SHA-256 digest."""
-    digest = hashlib.sha256()
-    with open(path, mode="rb") as file:
-        for chunk in iter(lambda: file.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def _file_state(path: str) -> tuple[int, int, int]:
     """Return cheap fields that change whenever normal file writes occur."""
     file_stat = os.stat(path)
@@ -52,7 +44,7 @@ def _file_state(path: str) -> tuple[int, int, int]:
 def _stable_file_sha256(path: str) -> tuple[str, tuple[int, int, int]]:
     """Hash a file outside locks and reject concurrent mutation."""
     state = _file_state(path)
-    digest = _file_sha256(path)
+    digest = file_sha256(path)
     if _file_state(path) != state:
         raise RuntimeError(f"File changed while hashing: {path}")
     return digest, state
@@ -216,7 +208,7 @@ def _run_to_atomic_output(
                 _file_state(path) != state for path, _digest, state in source_identities
             ):
                 raise RuntimeError(f"Source changed while creating {dest}")
-            output_hash = _file_sha256(tmp_dest)
+            output_hash = file_sha256(tmp_dest)
             os.replace(tmp_dest, dest)
             with open(identity_path, mode="w", encoding="utf-8") as file:
                 file.write(f"{recipe_hash}\n{output_hash}")
