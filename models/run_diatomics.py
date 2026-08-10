@@ -27,6 +27,7 @@ import argparse
 import gzip
 import json
 import os
+import shlex
 import time
 from glob import glob
 
@@ -53,7 +54,7 @@ from matbench_discovery.metrics.diatomics.exclusions import (
     get_excluded_formula_reasons,
     is_non_mp_formula,
 )
-from matbench_discovery.runner_cli import dependency_run_args, print_dependency_command
+from matbench_discovery.runner_cli import add_common_runner_args, dependency_run_args
 
 module_dir = os.path.dirname(__file__)
 
@@ -88,22 +89,10 @@ def trim_curve_to_finite(formula: str, curve: CurveDict) -> CurveDict | None:
 
 def main() -> int:
     """Parse args and run (or dry-run) the diatomic curve sweep for one model."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", help="Model key, see --list-models")
-    parser.add_argument(
-        "--list-models", action="store_true", help="Print registered models and exit"
+    parser = add_common_runner_args(
+        argparse.ArgumentParser(description=__doc__),
+        dry_run_help="Smoke test: a few elements at a few distances",
     )
-    parser.add_argument(
-        "--print-cmd",
-        action="store_true",
-        help="Print the 'uv run --with ...' command for --model and exit",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Smoke test: a few elements at a few distances",
-    )
-    parser.add_argument("--out-dir", help="Defaults to models/<arch>/<model>")
     parser.add_argument(
         "--max-z",
         type=int,
@@ -118,12 +107,6 @@ def main() -> int:
     )
     parser.add_argument(
         "--n-points", type=int, default=119, help="Number of log-spaced distances"
-    )
-    parser.add_argument(
-        "--dtype",
-        default="float64",
-        choices=("float64", "float32"),
-        help="Calculator float precision. default float64",
     )
     parser.add_argument(
         "--write-yaml",
@@ -165,8 +148,10 @@ def main() -> int:
             },
             ("dry-run", "merge-shards", "write-yaml"),
         )
-        print_dependency_command(
-            CALCULATORS[args.model].uv_run_cmd("models/run_diatomics.py", *run_args)
+        print(
+            shlex.join(
+                CALCULATORS[args.model].uv_run_cmd("models/run_diatomics.py", *run_args)
+            )
         )
         return 0
 
@@ -202,12 +187,7 @@ def main() -> int:
 
     if args.merge_shards:
         shard_metadatas: list[dict[str, object]] = []
-        expected_formulas = {
-            f"{chemical_symbols[z_value]}-{chemical_symbols[z_value]}"
-            for z_value in z_values
-        }
-        # normpath both sides: glob returns OS-native separators on Windows, which
-        # would never compare equal to the /-joined expected paths
+        # Normalize both sides because glob returns OS-native separators on Windows.
         expected_paths = [
             os.path.normpath(f"{shard_dir}/Z{z_value:03d}-diatomics.json.gz")
             for z_value in z_values
@@ -227,7 +207,10 @@ def main() -> int:
                 parser.error(f"Inconsistent distances in {shard_path}")
             curves.update(shard.get(homo_nuc, {}))
             shard_metadatas.append(shard.get("run_metadata", {}))
-
+        expected_formulas = {
+            f"{chemical_symbols[z_value]}-{chemical_symbols[z_value]}"
+            for z_value in z_values
+        }
         missing_formulas = {
             formula
             for formula in expected_formulas - set(curves)
@@ -304,10 +287,9 @@ def main() -> int:
             return 0
         from matbench_discovery.metrics import diatomics
 
-        pred_curves = diatomics.DiatomicCurves.from_dict(results)
         metrics = diatomics.calc_diatomic_metrics(
             ref_curves=diatomics.load_dft_reference_curves("PBE"),
-            pred_curves=pred_curves,
+            pred_curves=diatomics.DiatomicCurves.from_dict(results),
             interpolate=200,
         )
         metrics = drop_metric_exclusions(args.model, metrics)

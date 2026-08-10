@@ -4,12 +4,61 @@ from __future__ import annotations
 
 import glob
 import os
-import shlex
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import argparse
     from collections.abc import Mapping, Sequence
+
+
+def add_common_runner_args(
+    parser: argparse.ArgumentParser,
+    *,
+    dry_run_help: str,
+    out_dir_help: str = "Defaults to models/<arch>/<model>",
+    list_models_help: str = "Print registered models and exit",
+) -> argparse.ArgumentParser:
+    """Add the model-selection and dependency-isolation flags every runner shares."""
+    parser.add_argument("--model", help="Calculator key, model key, or model label")
+    parser.add_argument("--list-models", action="store_true", help=list_models_help)
+    parser.add_argument(
+        "--print-cmd",
+        action="store_true",
+        help="Print the dependency-isolated uv command and exit",
+    )
+    parser.add_argument("--dry-run", action="store_true", help=dry_run_help)
+    parser.add_argument("--out-dir", help=out_dir_help)
+    parser.add_argument(
+        "--dtype",
+        choices=("float64", "float32"),
+        default="float64",
+        help="Calculator float precision. default float64",
+    )
+    return parser
+
+
+def add_shard_args(
+    parser: argparse.ArgumentParser, *, merge_shards_help: str, write_yaml_help: str
+) -> None:
+    """Add the merge/shard flags that sharded runners layer on the common flags."""
+    parser.add_argument("--merge-shards", action="store_true", help=merge_shards_help)
+    parser.add_argument("--write-yaml", action="store_true", help=write_yaml_help)
+    parser.add_argument("--shard-dir", help="Override the resumable shard directory")
+    parser.add_argument(
+        "--device", choices=("cpu", "cuda"), help="Calculator device. default auto"
+    )
+    parser.add_argument(
+        "--n-shards",
+        type=int,
+        help="Number of atom-balanced shards; defaults to Slurm task count or 1. "
+        "When rerunning a subset of shards, pass the original value so task IDs "
+        "keep their original shard indices",
+    )
+    parser.add_argument(
+        "--shard-index",
+        type=int,
+        help="Zero-based shard index; defaults to normalized Slurm array task ID",
+    )
 
 
 def resolve_sharded_prefix(
@@ -51,11 +100,6 @@ def dependency_run_args(
         f"--{flag}" for flag in flags if getattr(args, flag.replace("-", "_"))
     )
     return run_args
-
-
-def print_dependency_command(command: Sequence[str]) -> None:
-    """Print a dependency-isolated command with shell-safe quoting."""
-    print(shlex.join(command))
 
 
 def validate_sharded_write_args(

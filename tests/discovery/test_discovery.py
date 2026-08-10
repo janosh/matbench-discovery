@@ -21,6 +21,7 @@ from pymatviz.enums import Key
 
 import matbench_discovery.discovery as discovery_core
 import models.run_discovery as discovery_runner
+from matbench_discovery import ROOT
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import file_ref_name, file_ref_url, make_file_ref
 from matbench_discovery.discovery import (
@@ -37,7 +38,11 @@ from matbench_discovery.discovery import (
 )
 from matbench_discovery.energy import calc_energy_from_e_refs
 from matbench_discovery.enums import MbdKey, Model, TestSubset
-from matbench_discovery.hpc import partition_material_ids
+from matbench_discovery.hpc import (
+    effective_shard_args,
+    partition_material_ids,
+    slurm_shard_selection,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -181,29 +186,16 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
     assert int(geo["n_steps"]) == 4
 
 
-def test_runner_normalizes_artifact_paths(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Artifact paths use POSIX repo-relative identity where possible."""
+def test_runner_normalizes_artifact_paths(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Normalize in-repo, relative, and external artifact paths."""
     rel_path = "models/mace/mace-mp-0/2026-07-02-discovery.csv.gz"
     normalize = discovery_runner._repo_relative_path  # noqa: SLF001
-    # The YAML integration test below pins stale URL replacement.
-    assert normalize(f"{discovery_runner.ROOT}/{rel_path}") == rel_path
+    assert normalize(f"{ROOT}/{rel_path}") == rel_path
+    monkeypatch.chdir(ROOT)
+    assert normalize(rel_path) == rel_path
 
-    def windows_relpath(_path: str, _start: str) -> str:
-        """Return a Windows-style relative artifact path."""
-        return rel_path.replace("/", "\\")
-
-    monkeypatch.setattr(discovery_runner.os.path, "relpath", windows_relpath)
-    assert normalize(f"{discovery_runner.ROOT}/{rel_path}") == rel_path
-
-    def raise_cross_drive(_path: str, _start: str) -> str:
-        """Mimic relpath failing across Windows drives."""
-        raise ValueError("path is on mount 'C:', start on mount 'D:'")
-
-    monkeypatch.setattr(discovery_runner.os.path, "relpath", raise_cross_drive)
-    external_path = "/mnt/c/tmp/preds.csv.gz"
-    assert normalize(external_path) == os.path.abspath(external_path)
+    for external_path in ("/mnt/c/tmp/preds.csv.gz", f"{ROOT}/../outside.csv.gz"):
+        assert normalize(external_path) == os.path.abspath(external_path)
 
 
 def test_write_yaml_results_masks_outliers_and_updates_yaml(
@@ -545,9 +537,7 @@ def test_implicit_slurm_dry_run_uses_only_first_task(
     monkeypatch.setenv("SLURM_ARRAY_TASK_COUNT", "20")
     monkeypatch.setenv("SLURM_ARRAY_TASK_MIN", "5")
     monkeypatch.setenv("SLURM_ARRAY_TASK_ID", str(task_id))
-    assert discovery_runner._effective_shard_args(  # noqa: SLF001
-        None, None, dry_run=True
-    ) == (1, 0, should_skip)
+    assert effective_shard_args(None, None, dry_run=True) == (1, 0, should_skip)
 
 
 @pytest.mark.parametrize(
@@ -576,14 +566,9 @@ def test_slurm_shard_selection(
     monkeypatch.setenv("SLURM_ARRAY_TASK_ID", str(task_id))
     if isinstance(expected, str):
         with pytest.raises(ValueError, match=expected):
-            discovery_runner._slurm_shard_selection(n_shards, None)  # noqa: SLF001
+            slurm_shard_selection(n_shards, None)
     else:
-        assert (
-            discovery_runner._slurm_shard_selection(  # noqa: SLF001
-                n_shards, None
-            )
-            == expected
-        )
+        assert slurm_shard_selection(n_shards, None) == expected
 
 
 def test_shard_resume_preserves_success_and_failure_records(tmp_path: Path) -> None:
