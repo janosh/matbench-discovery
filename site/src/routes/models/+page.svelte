@@ -158,7 +158,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
       {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
       {@const bg_clr = bg_color(metric_val as number, best_val, worst_val)}
-      {@const text_color = pick_contrast_color({ background: bg_clr })}
+      {@const text_color = pick_contrast_color({ background: bg_clr, backdrop: `white` })}
       <li
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}

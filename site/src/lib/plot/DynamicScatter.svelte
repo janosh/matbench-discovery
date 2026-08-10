@@ -2,8 +2,8 @@
   import { goto } from '$app/navigation'
   import type { ModelData } from '$lib'
   import { extent } from 'd3-array'
+  import { interpolateViridis } from 'd3-scale-chromatic'
   import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
-  import { create_color_scale } from 'matterviz/plot'
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
@@ -200,11 +200,16 @@
     scheme: `interpolateViridis` as const,
     type: scale_of(`color`),
   })
-  let legend_color_scale = $derived.by(() => {
-    const [min, max] = extent(plot_data, (item) => item.color_value)
-    return create_color_scale(color_scale, [min ?? 0, max ?? 1])
-  })
-  const point_fill = (value: number) => legend_color_scale(value) ?? `gray`
+  let color_domain = $derived(extent(plot_data, (item) => item.color_value))
+  const point_fill = (value: number) => {
+    const [min = 0, max = 1] = color_domain
+    if (min === max) return interpolateViridis(0.5)
+    const fraction =
+      color_scale.type === `log`
+        ? Math.log(value / min) / Math.log(max / min)
+        : (value - min) / (max - min)
+    return interpolateViridis(fraction)
+  }
 
   // Staircase through the non-dominated models, tracing the boundary of the dominated
   // region. With a date on the x-axis it becomes the running best over time (records

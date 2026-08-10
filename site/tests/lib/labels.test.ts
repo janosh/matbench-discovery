@@ -4,7 +4,7 @@ import {
   format_property_path,
   get_org_logo,
 } from '$lib/labels'
-import { LogoMeta, LogoMicrosoft } from 'svelte-widgets/icons'
+import { Meta, Microsoft } from 'svelte-widgets/icons'
 import { describe, expect, it } from 'vitest'
 
 describe(`format_power_ten`, () => {
@@ -132,10 +132,10 @@ describe(`get_org_logo`, () => {
 
   it.each([
     [`Google DeepMind`, src_logo(`Google DeepMind`, `/logos/google-deepmind.svg`)],
-    [`FAIR at Meta`, { name: `FAIR at Meta`, icon: LogoMeta }],
+    [`FAIR at Meta`, { name: `FAIR at Meta`, icon: Meta }],
     [
       `Microsoft Research AI for Science`,
-      { name: `Microsoft Research`, icon: LogoMicrosoft },
+      { name: `Microsoft Research`, icon: Microsoft },
     ],
     [`Some unknown university`, undefined],
     [

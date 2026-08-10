@@ -6,16 +6,16 @@
     Calendar,
     CalendarPlus,
     Code,
-    Contact,
     DOI,
     Database,
     Download,
+    Email,
     GitHub,
     Globe,
     Lattice,
     License,
     Lock,
-    Orcid,
+    ORCID,
     Unlock,
   } from 'svelte-widgets/icons'
   import pkg from '$site/package.json'
@@ -174,7 +174,7 @@
           {/if}
           {#if person.email}
             <a href="mailto:{person.email}" aria-label="Email">
-              <Icon icon={Contact} />
+              <Icon icon={Email} />
             </a>
           {/if}
           {#if person.github}
@@ -184,7 +184,7 @@
           {/if}
           {#if person.orcid}
             <a href={person.orcid} {...link_props} aria-label="ORCID">
-              <Icon icon={Orcid} />
+              <Icon icon={ORCID} />
             </a>{/if}
           {#if person.url}
             <a href={person.url} {...link_props} aria-label="Website">

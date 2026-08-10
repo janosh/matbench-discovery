@@ -81,14 +81,14 @@ describe(`Landing Page`, () => {
     [`MD`, `Molecular Dynamics`],
   ])(`expands %s in its tooltip`, async (label, expanded_label) => {
     const button = preset_button(label)
-    button.dispatchEvent(new MouseEvent(`mouseenter`))
-    await new Promise((resolve) => setTimeout(resolve, 110))
-
-    const tooltip_id = button.getAttribute(`aria-describedby`)
-    expect(tooltip_id).not.toBeNull()
-    expect(document.querySelector(`[id="${tooltip_id}"]`)?.textContent).toContain(
-      expanded_label,
-    )
+    button.dispatchEvent(new PointerEvent(`pointerover`))
+    await vi.waitFor(() => {
+      const tooltip_id = button.getAttribute(`aria-describedby`)
+      expect(tooltip_id).not.toBeNull()
+      expect(document.querySelector(`[id="${tooltip_id}"]`)?.textContent).toContain(
+        expanded_label,
+      )
+    })
   })
 
   // Each non-default task preset reveals one of its signature columns.

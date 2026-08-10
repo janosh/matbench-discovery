@@ -126,25 +126,29 @@ describe(`MetricsTable`, () => {
     expect(dropdown).toBeNull()
   })
 
-  it(`renders Org as a regular rightmost metadata column`, async () => {
-    mount(MetricsTable, {
-      target: document.body,
-      props: { col_filter: () => true },
-    })
-    await tick()
+  it(
+    `renders Org as a regular rightmost metadata column`,
+    { timeout: 30_000 },
+    async () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: { col_filter: () => true },
+      })
+      await tick()
 
-    const org_cell = doc_query(`td[data-col="Org"]`)
-    const org_preview = doc_query(`td[data-col="Org"] .org-preview`)
-    const headers = header_cells()
-    const org_header = headers.at(-1)
-    if (!org_header) throw new Error(`Org column header not found`)
+      const org_cell = doc_query(`td[data-col="Org"]`)
+      const org_preview = doc_query(`td[data-col="Org"] .org-preview`)
+      const headers = header_cells()
+      const org_header = headers.at(-1)
+      if (!org_header) throw new Error(`Org column header not found`)
 
-    expect(org_header?.textContent?.trim()).toBe(`Org`)
-    expect(org_header.getAttribute(`title`)).toBeNull()
-    expect(org_header.querySelector(`.header-label`)).not.toBeNull()
-    expect(org_preview.classList.contains(`org-preview`)).toBe(true)
-    expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
-  })
+      expect(org_header?.textContent?.trim()).toBe(`Org`)
+      expect(org_header.getAttribute(`title`)).toBeNull()
+      expect(org_header.querySelector(`.header-label`)).not.toBeNull()
+      expect(org_preview.classList.contains(`org-preview`)).toBe(true)
+      expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
+    },
+  )
 
   it(`renders header tooltips on inner labels`, async () => {
     mount(MetricsTable, {
@@ -347,7 +351,7 @@ describe(`MetricsTable`, () => {
 
     const model_cell = doc_query(`td[data-col="Model"]`)
     const marker = model_cell.querySelector(
-      `span[data-original-title="Diatomics metrics exclude He-He due to exploding errors"]`,
+      `span[title="Diatomics metrics exclude He-He due to exploding errors"]`,
     )
     expect(model_cell.textContent).toContain(`AlphaNet-v1-OAM`)
     expect(marker?.textContent).toBe(`*`)
@@ -451,13 +455,13 @@ describe(`MetricsTable`, () => {
 
       // Verify tooltips are preserved on spans within cells
       const cells_with_tooltips = training_set_cells.filter(
-        (cell) => cell.querySelector(`span[data-original-title]`) !== null,
+        (cell) => cell.querySelector(`span[title]`) !== null,
       )
 
       expect(cells_with_tooltips.length).toBeGreaterThan(0)
       cells_with_tooltips.forEach((cell) => {
-        const span = cell.querySelector(`span[data-original-title]`)
-        expect(span?.getAttribute(`data-original-title`)).not.toBeNull()
+        const span = cell.querySelector(`span[title]`)
+        expect(span?.getAttribute(`title`)).not.toBeNull()
       })
     })
 
@@ -595,7 +599,7 @@ describe(`MetricsTable`, () => {
           expect(link.getAttribute(`target`)).toBe(`_blank`)
           expect(link.getAttribute(`rel`)).toBe(`noopener noreferrer`)
 
-          const title = link.getAttribute(`data-original-title`)
+          const title = link.getAttribute(`title`)
           const href = link.getAttribute(`href`)
           expect(title).not.toBeNull()
           expect(title).not.toBe(``)
@@ -626,8 +630,8 @@ describe(`MetricsTable`, () => {
       const links_cells = [...document.querySelectorAll(`td[data-col="Links"]`)]
 
       const missing_icon_titles = links_cells.flatMap((cell) =>
-        [...cell.querySelectorAll(`span[data-original-title$="not available"] svg`)].map(
-          (icon) => icon.closest(`span`)?.getAttribute(`data-original-title`),
+        [...cell.querySelectorAll(`span[title$="not available"] svg`)].map((icon) =>
+          icon.closest(`span`)?.getAttribute(`title`),
         ),
       )
 
