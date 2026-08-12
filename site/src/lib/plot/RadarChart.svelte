@@ -28,8 +28,6 @@
     on_change?: (config: WeightsConfig) => void
   } = $props()
 
-  // State for the draggable point
-  let is_dragging = $state(false)
   // A pointer interaction that starts on the knob makes the browser fire a
   // trailing click on the SVG. Dropping the knob updates the weights and can
   // reflow the page (shifting the SVG), so handling that click would remap the
@@ -196,42 +194,34 @@
     update_weights_from_point()
   }
 
-  // Visually move the knob during a drag without touching weights (see end_drag)
-  function move_point_to_position(x: number, y: number) {
-    point = clamp_to_polygon(x, y)
-  }
+  let drag_pointer_id: number | undefined
 
-  function start_drag(event: MouseEvent | TouchEvent) {
+  function start_drag(event: PointerEvent) {
     event.preventDefault()
-    is_dragging = true
+    if (drag_pointer_id !== undefined) return
     suppress_next_click = true
-
-    globalThis.addEventListener(`mousemove`, handle_drag)
-    globalThis.addEventListener(`touchmove`, handle_drag, { passive: false })
-    globalThis.addEventListener(`mouseup`, end_drag)
-    globalThis.addEventListener(`touchend`, end_drag)
+    drag_pointer_id = event.pointerId
+    const knob = event.currentTarget as SVGCircleElement
+    knob.setPointerCapture(event.pointerId)
   }
 
-  function handle_drag(event: MouseEvent | TouchEvent) {
-    if (!is_dragging) return
+  function handle_drag(event: PointerEvent) {
+    if (event.pointerId !== drag_pointer_id) return
     event.preventDefault()
     if (!svg_element) return
 
     const rect = svg_element.getBoundingClientRect()
-    const { clientX, clientY } = event instanceof MouseEvent ? event : event.touches[0]
-    move_point_to_position(clientX - rect.left, clientY - rect.top)
+    // Visually move the knob without touching weights until end_drag.
+    point = clamp_to_polygon(event.clientX - rect.left, event.clientY - rect.top)
   }
 
-  function end_drag() {
-    if (!is_dragging) return
-    is_dragging = false
+  function end_drag(event: PointerEvent) {
+    if (event.pointerId !== drag_pointer_id) return
+    drag_pointer_id = undefined
+    suppress_next_click = event.type === `pointerup`
     // Update weights only on drag end: doing it live would rerender the table
     // and scroll the viewport mid-drag
     update_weights_from_point()
-    globalThis.removeEventListener(`mousemove`, handle_drag)
-    globalThis.removeEventListener(`touchmove`, handle_drag)
-    globalThis.removeEventListener(`mouseup`, end_drag)
-    globalThis.removeEventListener(`touchend`, end_drag)
   }
 
   // Convex polygon with consistently ordered vertices: pt is inside iff it lies on
@@ -372,8 +362,11 @@
         cx={point.x}
         cy={point.y}
         style="cursor: move"
-        onmousedown={start_drag}
-        ontouchstart={start_drag}
+        onpointerdown={start_drag}
+        onpointermove={handle_drag}
+        onpointerup={end_drag}
+        onpointercancel={end_drag}
+        onlostpointercapture={end_drag}
         role="button"
         tabindex="0"
         aria-label="Drag to adjust weight balance"

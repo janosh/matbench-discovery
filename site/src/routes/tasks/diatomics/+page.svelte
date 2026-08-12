@@ -261,12 +261,12 @@
 
 <div class="diatomics-grid bleed-1400">
   {#each diatomics_to_render as formula (formula)}
+    {@const is_visible = visible_diatomics.has(formula)}
     <div
-      class="diatomic-plot-shell"
-      class:diatomic-plot-placeholder={!visible_diatomics.has(formula)}
+      class={[`diatomic-plot-shell`, { 'diatomic-plot-placeholder': !is_visible }]}
       {@attach observe_plot(formula)}
     >
-      {#if visible_diatomics.has(formula)}
+      {#if is_visible}
         <DiatomicCurve
           {formula}
           curves={curves_for_formula(formula)}

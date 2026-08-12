@@ -82,7 +82,7 @@
   )
 </script>
 
-<div {...rest} class="diatomic-plot {rest.class ?? ``}">
+<div {...rest} class={[`diatomic-plot`, rest.class]}>
   <h3
     class="diatomic-plot-title"
     aria-label={header_title}

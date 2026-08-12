@@ -163,25 +163,35 @@ describe(`RadarChart`, () => {
       cx: Number(knob.getAttribute(`cx`)),
       cy: Number(knob.getAttribute(`cy`)),
     })
+    const dispatch_pointer = (type: string, init: PointerEventInit) =>
+      knob.dispatchEvent(
+        new PointerEvent(type, { bubbles: true, cancelable: true, ...init }),
+      )
 
     // press the knob, drag to an interior point, release (size=200 -> center (100,100))
-    knob.dispatchEvent(new MouseEvent(`mousedown`, { bubbles: true, cancelable: true }))
-    globalThis.dispatchEvent(
-      new MouseEvent(`mousemove`, {
-        bubbles: true,
-        cancelable: true,
-        clientX: 90,
-        clientY: 110,
-      }),
-    )
+    const pointer_id = 7
+    const initial = read()
+    dispatch_pointer(`pointerdown`, { pointerId: pointer_id })
+    expect(knob.hasPointerCapture(pointer_id)).toBe(true)
+    dispatch_pointer(`pointermove`, {
+      pointerId: pointer_id + 1,
+      clientX: 40,
+      clientY: 40,
+    })
+    flushSync()
+    expect(read()).toEqual(initial)
+
+    dispatch_pointer(`pointermove`, {
+      pointerId: pointer_id,
+      clientX: 90,
+      clientY: 110,
+    })
     flushSync()
     const dropped = read()
     expect(dropped.cx).toBeCloseTo(90, 0)
     expect(dropped.cy).toBeCloseTo(110, 0)
 
-    globalThis.dispatchEvent(
-      new MouseEvent(`mouseup`, { bubbles: true, cancelable: true }),
-    )
+    dispatch_pointer(`pointerup`, { pointerId: pointer_id })
     flushSync()
     expect(read()).toEqual(dropped) // drag-end round-trip must not move the knob
 
