@@ -95,7 +95,7 @@ notes:
     test-time augmentation per structure aggregated by minimum, with the
     ensemble combined by median.
 
-    The existing GNoME entry on this leaderboard is a different model from the
+    The existing NequIP-GNoME entry on this leaderboard is a different model from the
     same paper: the NequIP-type interatomic potential that performs structure
     relaxation, submitted as IS2RE-SR with targets EF_G. The structural GNN
     benchmarked here predicts energy directly from an unrelaxed input and was not

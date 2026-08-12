@@ -1,4 +1,4 @@
-model_name: GNoME
+model_name: NequIP-GNoME
 model_key: gnome
 model_version:
 dates:
@@ -61,7 +61,7 @@ hyperparams:
     n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
 notes:
   description: |
-    GNoME is an equivariant Nequip-type graph neural network implemented in e3nn-jax.
+    NequIP-GNoME is an equivariant NequIP-type graph neural network implemented in e3nn-jax.
   training: Using pre-trained model released with "Scaling deep learning for materials discovery" paper. Training set unpublished as of 2024-02-03. The model was trained 1.5 years prior to submission to Matbench Discovery according to private communication.
   missing_preds: According to the authors, the 1744 missing WBM predictions are mostly due out-of-memory (OOM) errors. The model was evaluated on A100s but without neighbor lists. The plan is to backfill the missing predictions once H100s are available or neighbor list implementation goes live.
 

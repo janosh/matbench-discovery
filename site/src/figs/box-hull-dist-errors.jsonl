@@ -21,7 +21,7 @@
 {"key":"esen-30m-mp","label":"eSEN-30M-MP","quantiles":[-0.084,-0.023,-0.005,0.007,0.055]}
 {"key":"esen-30m-oam","label":"eSEN-30M-OAM","quantiles":[-0.04,-0.004,0.0,0.005,0.02]}
 {"key":"esnet","label":"ESNet","quantiles":[-0.14,-0.038,0.011,0.09,0.361]}
-{"key":"gnome","label":"GNoME","quantiles":[-0.128,-0.015,0.0,0.012,0.049]}
+{"key":"gnome","label":"NequIP-GNoME","quantiles":[-0.128,-0.015,0.0,0.012,0.049]}
 {"key":"grace-1l-oam","label":"GRACE-1L-OAM","quantiles":[-0.091,-0.017,-0.002,0.01,0.045]}
 {"key":"grace-2l-mptrj","label":"GRACE-2L-MPtrj","quantiles":[-0.141,-0.045,-0.01,0.014,0.091]}
 {"key":"grace-2l-oam","label":"GRACE-2L-OAM","quantiles":[-0.049,-0.01,0.0,0.008,0.038]}
