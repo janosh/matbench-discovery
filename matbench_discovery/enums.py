@@ -286,6 +286,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
     dpa_4_0_1_pro_mptrj = auto(), "deepmd/dpa-4.0.1-pro-mptrj.yml"
     dpa_4_0_pro_mptrj = auto(), "deepmd/dpa-4.0-pro-mptrj.yml"
+    ema_gnn = auto(), "ema_gnn/ema-gnn.yml"
     eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
     equflash_29m_oam = auto(), "equflash/equflash-29m-oam.yml"
     equflashv2_45m_oam = auto(), "equflash/equflashv2-45m-oam.yml"

@@ -27,7 +27,7 @@
     BinnedPointPayload,
     DensePointSeries,
   } from 'matterviz/plot'
-  import { onMount, tick, untrack } from 'svelte'
+  import { tick, untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
 
   let {
@@ -238,11 +238,6 @@
     }
   }
 
-  onMount(() => {
-    globalThis.addEventListener(`resize`, update_popup_placement)
-    return () => globalThis.removeEventListener(`resize`, update_popup_placement)
-  })
-
   // matterviz auto-places the density colorbar in whichever corner least occludes
   // data, so the MAE/R² annotation claims the diagonally opposite corner to
   // guarantee the two never overlap. Insets clear the axes + their tick labels.
@@ -294,13 +289,20 @@
   })
 </script>
 
+<svelte:window onresize={update_popup_placement} />
+
 <!-- the plot has no visible heading of its own: the model page's tab bar acts as its
 title, so label the section for screen readers instead -->
 <section
-  class="energy-parity-plot"
   aria-label="ML vs DFT {energy_label} parity plot"
   bind:this={plot_wrap}
   {...rest}
+  class={[`energy-parity-plot`, rest.class]}
+  {@attach (node) => {
+    const observer = new ResizeObserver(update_popup_placement)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }}
 >
   {#if load_controller.status === `error`}
     <p class="plot-state" role="alert" style="min-height: 0; margin: 0">

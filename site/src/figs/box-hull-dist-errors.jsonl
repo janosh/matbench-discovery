@@ -10,6 +10,7 @@
 {"key":"chgnet-0.3.0","label":"CHGNet","quantiles":[-0.173,-0.071,-0.027,0.006,0.071]}
 {"key":"dpa-3.1-3m-ft","label":"DPA-3.1-3M-FT","quantiles":[-0.045,-0.011,-0.002,0.007,0.034]}
 {"key":"dpa-4.0.1-pro-mptrj","label":"DPA-4.0.1-Pro-MPtrj","quantiles":[-0.064,-0.016,-0.002,0.007,0.053]}
+{"key":"ema-gnn","label":"EMA-GNN","quantiles":[-0.216,-0.087,-0.034,0.005,0.138]}
 {"key":"eqnorm-mptrj","label":"Eqnorm MPtrj","quantiles":[-0.1,-0.031,-0.007,0.008,0.065]}
 {"key":"equflash-29m-oam","label":"EquFlash","quantiles":[-0.038,-0.006,0.0,0.005,0.025]}
 {"key":"equflashv2-45m-oam","label":"EquFlashV2","quantiles":[-0.033,-0.004,0.0,0.004,0.021]}
@@ -20,7 +21,7 @@
 {"key":"esen-30m-mp","label":"eSEN-30M-MP","quantiles":[-0.084,-0.023,-0.005,0.007,0.055]}
 {"key":"esen-30m-oam","label":"eSEN-30M-OAM","quantiles":[-0.04,-0.004,0.0,0.005,0.02]}
 {"key":"esnet","label":"ESNet","quantiles":[-0.14,-0.038,0.011,0.09,0.361]}
-{"key":"gnome","label":"GNoME","quantiles":[-0.128,-0.015,0.0,0.012,0.049]}
+{"key":"gnome","label":"NequIP-GNoME","quantiles":[-0.128,-0.015,0.0,0.012,0.049]}
 {"key":"grace-1l-oam","label":"GRACE-1L-OAM","quantiles":[-0.091,-0.017,-0.002,0.01,0.045]}
 {"key":"grace-2l-mptrj","label":"GRACE-2L-MPtrj","quantiles":[-0.141,-0.045,-0.01,0.014,0.091]}
 {"key":"grace-2l-oam","label":"GRACE-2L-OAM","quantiles":[-0.049,-0.01,0.0,0.008,0.038]}

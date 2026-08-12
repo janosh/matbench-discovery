@@ -70,6 +70,11 @@
       "bytes": 643656,
       "sha256": "0ca9091f15bb86b48a1bc30f3055d6ae22da053b9736498f5afa4e6a1c3b7fe6"
     },
+    "ema-gnn": {
+      "asset": "energy-parity-wbm-v1-model-ema-gnn.json.gz",
+      "bytes": 961960,
+      "sha256": "57c591863932eedb4ddc8a5e4224c732f34e891f5689c56408e4c59ff9773707"
+    },
     "eqnorm-mptrj": {
       "asset": "energy-parity-wbm-v1-model-eqnorm-mptrj.json.gz",
       "bytes": 644454,

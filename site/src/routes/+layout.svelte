@@ -14,7 +14,7 @@
     Toc,
   } from 'svelte-widgets'
   import type { FooterLink } from 'svelte-widgets'
-  import { Changelog, Email, Issues, RSS, Search } from 'svelte-widgets/icons'
+  import { Changelog, Email, GitHub, RSS, Search } from 'svelte-widgets/icons'
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
   import pkg from '$site/package.json'
   import { tick, type Snippet } from 'svelte'
@@ -29,7 +29,7 @@
   let main_element = $state<HTMLElement>()
 
   const footer_links: FooterLink[] = [
-    { href: `${pkg.repository}/issues`, label: `Issues`, icon: Issues },
+    { href: `${pkg.repository}/issues`, label: `Issues`, icon: GitHub },
     {
       href: `mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery`,
       label: `Contact`,
@@ -192,7 +192,7 @@
       <Icon icon={Search} />
     </button>
   {/if}
-  <ThemeToggle style="transform: scale(1.25)" />
+  <ThemeToggle />
 </Nav>
 
 <main

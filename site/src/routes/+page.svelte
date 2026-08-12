@@ -134,8 +134,6 @@
 
   const valid_sets = new Set(DISCOVERY_SETS)
   onMount(() => {
-    // MatterViz portals column toggle inputs to document.body, outside the table section.
-    document.addEventListener(`click`, handle_table_event, { capture: true })
     const params = page.url.searchParams
     const next_preset =
       col_preset_names.find((preset) => preset === params.get(`preset`)) ??
@@ -150,8 +148,6 @@
     filters.read(params)
     col_preset = next_preset
     previous_col_preset = next_preset
-    return () =>
-      document.removeEventListener(`click`, handle_table_event, { capture: true })
   })
 
   // Sync table state back to URL query params after the initial URL read (table state
@@ -234,6 +230,9 @@
   }
 </script>
 
+<!-- MatterViz portals column toggle inputs to document.body, outside the table section. -->
+<svelte:document onclickcapture={handle_table_event} />
+
 <h1>
   <img src="/favicon.svg" alt="Matbench Discovery Logo" width="60px" />
   Matbench Discovery
@@ -265,7 +264,6 @@
 
   <section
     class="full-bleed"
-    onclickcapture={handle_table_event}
     onchangecapture={handle_table_event}
     onkeydowncapture={handle_table_event}
   >

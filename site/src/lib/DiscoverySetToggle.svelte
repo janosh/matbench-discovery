@@ -26,9 +26,9 @@
         target="_blank"
         rel="noopener noreferrer"
         aria-label="About {option.label ?? option.value}"
-        style="display: inline-flex; align-items: center; padding-right: 8px; font-size: 0.83em"
+        style="display: inline-flex; align-self: stretch; align-items: center; padding-right: 8px"
       >
-        <Icon icon={Info} style="transform: translateY(-1px)" />
+        <Icon icon={Info} />
       </a>
     {/if}
   {/snippet}

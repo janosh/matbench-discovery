@@ -205,7 +205,9 @@ const main = async () => {
     const stats = await get_github_stats(info, token, cache_file)
     const result = stats ?? merged_existing
     if (result) results.push(result)
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    await new Promise((resolve) => {
+      setTimeout(resolve, 300)
+    })
   }
 
   await writeFile(output_file, `${JSON.stringify(results, null, 2)}\n`)

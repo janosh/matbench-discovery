@@ -70,6 +70,12 @@
   const { checkpoint_license, code_license, org } = METADATA_COLS
   const { graph_construction_radius, model_params } = HYPERPARAMS
   const pinned_col_rank = (col: Label): number => (col.label === model_name.label ? 0 : 1)
+  const heatmap_disabled_cols = new SvelteSet([
+    training_sets.key,
+    graph_construction_radius.key,
+    benchmark_added.key,
+    model_params.key,
+  ])
 
   let selected_count = $derived(selected_models.size)
   let pred_files_dropdown = $state<PredFilesDropdown | null>(null)
@@ -143,6 +149,7 @@
         return {
           ...col,
           better,
+          color_scale: heatmap_disabled_cols.has(col.key) ? null : col.color_scale,
           description: append_better_hint(col, better),
           visible,
           // tuck the Model cells (always adjacent to the rank column, being pinned
@@ -154,13 +161,11 @@
       .toSorted((col1, col2) => pinned_col_rank(col1) - pinned_col_rank(col2)),
   )
   let table_columns = $derived(
-    columns.map(
-      (col): HeaderLabel => ({
-        ...col,
-        description: undefined,
-        tooltip_description: col.description,
-      }),
-    ),
+    columns.map((col): HeaderLabel => ({
+      ...col,
+      description: undefined,
+      tooltip_description: col.description,
+    })),
   )
 
   type ButtonMouseEvent = MouseEvent & { currentTarget: HTMLButtonElement }

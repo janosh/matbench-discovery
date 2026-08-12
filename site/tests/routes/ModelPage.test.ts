@@ -3,7 +3,7 @@ import { get_org_logo } from '$lib/labels'
 import { RANKED_METRICS } from '$lib/rankings'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { tick } from 'svelte'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, mount_with_url } from '../index'
 
 const test_model = MODELS.find((model) =>
@@ -164,7 +164,8 @@ describe(`Model Detail Page`, () => {
     expect(headers).not.toContain(`ΔP (%)`)
   })
 
-  it(`lazy-mounts energy parity tab plots`, async () => {
+  it(`lazy-mounts energy parity plots and observes their size`, async () => {
+    const observe = vi.spyOn(ResizeObserver.prototype, `observe`)
     mount(ModelPage, { target: document.body, props: { data: test_page_data } })
     await tick()
 
@@ -178,6 +179,9 @@ describe(`Model Detail Page`, () => {
     tab_buttons[0].click()
     await tick()
     expect(document.querySelectorAll(`section.energy-parity-plot`)).toHaveLength(2)
+    expect(observe).toHaveBeenCalledWith(
+      document.querySelector(`section.energy-parity-plot`),
+    )
   })
 
   it(`restores the active energy parity tab from the energy_tab URL param`, async () => {

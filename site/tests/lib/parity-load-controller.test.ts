@@ -5,7 +5,9 @@ it(`cancels an older request when cached data becomes ready`, async () => {
   const controller = new ParityLoadController()
   let release_load = (): void => {}
   const pending_load = controller.run(async (is_current) => {
-    await new Promise<void>((resolve) => (release_load = resolve))
+    await new Promise<void>((resolve) => {
+      release_load = resolve
+    })
     expect(is_current()).toBe(false)
   })
 

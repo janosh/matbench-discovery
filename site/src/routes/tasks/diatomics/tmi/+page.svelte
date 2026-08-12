@@ -65,13 +65,11 @@
           x: curve.distances,
           y: curve.magmoms.map((moments) => moments?.[atom_idx] ?? Number.NaN),
           markers: `line+points` as const,
-          metadata: curve.distances.map(
-            (_, point_idx): PointMeta => ({
-              functional,
-              atom_idx: atom_idx + 1,
-              spin_candidate: curve.spin_candidates[point_idx],
-            }),
-          ),
+          metadata: curve.distances.map((_, point_idx): PointMeta => ({
+            functional,
+            atom_idx: atom_idx + 1,
+            spin_candidate: curve.spin_candidates[point_idx],
+          })),
           point_style: {
             fill: xc_colors[functional] ?? `gray`,
             radius: 1.5,
