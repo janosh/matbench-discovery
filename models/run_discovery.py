@@ -27,13 +27,14 @@ from __future__ import annotations
 import argparse
 import glob
 import os
+import shlex
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import repo_relative_path, today
 from matbench_discovery.calculators import (
     CALCULATORS,
     load_calculator,
@@ -58,12 +59,15 @@ from matbench_discovery.discovery import (
     write_discovery_artifacts,
 )
 from matbench_discovery.enums import Model
-from matbench_discovery.hpc import effective_shard_args as _effective_shard_args
-from matbench_discovery.hpc import partition_material_ids
-from matbench_discovery.hpc import slurm_shard_selection as _slurm_shard_selection
+from matbench_discovery.hpc import (
+    effective_shard_args,
+    partition_material_ids,
+    slurm_shard_selection,
+)
 from matbench_discovery.runner_cli import (
+    add_common_runner_args,
+    add_shard_args,
     dependency_run_args,
-    print_dependency_command,
     resolve_sharded_prefix,
     validate_sharded_write_args,
 )
@@ -73,57 +77,27 @@ module_dir = os.path.dirname(__file__)
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the discovery runner command-line parser."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", help="Calculator key, model key, or model label")
-    parser.add_argument(
-        "--list-models", action="store_true", help="Print registered calculators"
+    parser = add_common_runner_args(
+        argparse.ArgumentParser(description=__doc__),
+        dry_run_help="Relax four WBM structures for at most two optimizer steps",
     )
-    parser.add_argument(
-        "--print-cmd",
-        action="store_true",
-        help="Print the dependency-isolated uv command and exit",
+    add_shard_args(
+        parser,
+        merge_shards_help="Strictly merge complete shards and write final artifacts",
+        write_yaml_help=(
+            "On a complete merge, update artifact paths and discovery metrics"
+        ),
     )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Relax four WBM structures for at most two optimizer steps",
-    )
-    parser.add_argument(
-        "--merge-shards",
-        action="store_true",
-        help="Strictly merge complete shards and write final artifacts",
-    )
-    parser.add_argument(
-        "--write-yaml",
-        action="store_true",
-        help="On a complete merge, update artifact paths and discovery metrics",
-    )
-    parser.add_argument("--out-dir", help="Defaults to models/<arch>/<model>")
-    parser.add_argument("--shard-dir", help="Override the resumable shard directory")
     parser.add_argument("--pred-file", help="Override the final prediction CSV path")
     parser.add_argument(
         "--geo-opt-file", help="Override the final relaxed-structure JSONL path"
     )
-    parser.add_argument("--dtype", choices=("float64", "float32"), default="float64")
-    parser.add_argument("--device", choices=("cpu", "cuda"))
     parser.add_argument("--max-force", type=float)
     parser.add_argument("--max-steps", type=int)
     parser.add_argument("--ase-optimizer")
     parser.add_argument(
         "--cell-filter",
         help="ASE filter class name, or 'none' for fixed-cell relaxation",
-    )
-    parser.add_argument(
-        "--n-shards",
-        type=int,
-        help="Number of atom-balanced shards; defaults to Slurm task count or 1. "
-        "When rerunning a subset of shards, pass the original value so task IDs "
-        "keep their original shard indices",
-    )
-    parser.add_argument(
-        "--shard-index",
-        type=int,
-        help="Zero-based shard index; defaults to normalized Slurm array task ID",
     )
     return parser
 
@@ -185,12 +159,13 @@ def _print_cmd_args(args: argparse.Namespace, model_key: str) -> list[str]:
 
 def _repo_relative_path(path: str) -> str:
     """Return a repository-relative path, preserving external absolute paths."""
+    # resolve against the cwd (not ROOT) before the containment check, so a relative
+    # --out-dir keeps pointing at what the caller meant
     absolute_path = os.path.abspath(path)
     try:
-        relative_path = os.path.relpath(absolute_path, ROOT).replace("\\", "/")
-    except ValueError:  # Windows: path and repo root are on different drives
+        return repo_relative_path(absolute_path)
+    except ValueError:  # outside the repo (or a different Windows drive)
         return absolute_path
-    return relative_path if not relative_path.startswith("../") else absolute_path
 
 
 def _update_artifact_metadata(
@@ -270,7 +245,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         command = CALCULATORS[model_key].uv_run_cmd(
             "models/run_discovery.py", *_print_cmd_args(args, model_key)
         )
-        print_dependency_command(command)
+        print(shlex.join(command))
         return 0
 
     try:
@@ -344,13 +319,13 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         return 0
 
     try:
-        n_shards_arg, shard_index_arg, skip_task = _effective_shard_args(
+        n_shards_arg, shard_index_arg, skip_task = effective_shard_args(
             args.n_shards, args.shard_index, dry_run=args.dry_run
         )
         if skip_task:
             print("Skipping redundant dry run outside the first Slurm array task")
             return 0
-        n_shards, shard_index = _slurm_shard_selection(n_shards_arg, shard_index_arg)
+        n_shards, shard_index = slurm_shard_selection(n_shards_arg, shard_index_arg)
         atoms_by_id = load_wbm_atoms(model_key, dry_run=args.dry_run)
         shard_assignments = partition_material_ids(atoms_by_id, n_shards)
     except ValueError as exc:
@@ -361,9 +336,8 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         material_id: atoms_by_id[material_id] for material_id in assigned_material_ids
     }
     shard_path = f"{shard_dir}/shard-{shard_index:03d}-of-{n_shards:03d}.jsonl"
-    calculator = load_calculator(model_key, device=args.device, dtype=args.dtype)
     shard = run_discovery_shard(
-        calculator=calculator,
+        calculator=load_calculator(model_key, device=args.device, dtype=args.dtype),
         model_key=model_key,
         atoms_by_id=atoms_by_id,
         assigned_material_ids=assigned_material_ids,

@@ -2,7 +2,7 @@
   import type { Author } from '$lib'
   import { get_org_logo } from '$lib/labels'
   import { Icon } from 'svelte-widgets'
-  import { Contact, GitHub, Globe, Orcid } from 'svelte-widgets/icons'
+  import { Email, GitHub, Globe, ORCID } from 'svelte-widgets/icons'
   import type { HTMLAttributes } from 'svelte/elements'
   import Logo from '../Logo.svelte'
 
@@ -19,8 +19,8 @@
     show_affiliation && affiliation ? get_org_logo(affiliation) : undefined,
   )
   let author_links = $derived([
-    [email ? `mailto:${email}` : undefined, `Email`, Contact],
-    [orcid, `Orcid`, Orcid],
+    [email ? `mailto:${email}` : undefined, `Email`, Email],
+    [orcid, `Orcid`, ORCID],
     [url, `Website`, Globe],
     [github, `GitHub`, GitHub],
   ] as const)

@@ -14,7 +14,7 @@
     Toc,
   } from 'svelte-widgets'
   import type { FooterLink } from 'svelte-widgets'
-  import { Changelog, Contact, Issues, RSS, Search } from 'svelte-widgets/icons'
+  import { Changelog, Email, Issues, RSS, Search } from 'svelte-widgets/icons'
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
   import pkg from '$site/package.json'
   import { tick, type Snippet } from 'svelte'
@@ -33,7 +33,7 @@
     {
       href: `mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery`,
       label: `Contact`,
-      icon: Contact,
+      icon: Email,
     },
     { href: `/changelog`, label: `Changelog`, icon: Changelog },
     {

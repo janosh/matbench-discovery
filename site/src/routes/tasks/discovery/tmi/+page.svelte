@@ -169,7 +169,8 @@ plotting against that the absolute E<sub>above hull</sub> errors for each model.
   ]}
   x_axis={{ label: fp_diff_label }}
   y_axis={{ label: `|E<sub>above hull</sub> error| (eV/atom)` }}
-  density={{ color_scale: { type: `log`, scheme: `interpolateMagma` }, color_bar: null }}
+  density={{ color_scale: { type: `log`, scheme: `interpolateMagma` } }}
+  color_bar={null}
   overlays={{
     ref_lines: [
       {

@@ -157,7 +157,7 @@ metrics:
   discovery:
     pred_file:
       name: models/ema_gnn/ema-gnn/2026-07-29-discovery.csv.gz
-      url: https://figshare.com/files/67085690
+      url: https://figshare.com/files/67473963
       size: 3021075
       md5: b9519003656f1083e1a8dcc7c3915944
     full_test_set:

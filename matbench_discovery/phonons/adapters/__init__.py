@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from matbench_discovery.phonons.adapters.standard import (
     FairchemKappaAdapter,
-    RelaxationResult,
     StandardKappaAdapter,
 )
 
@@ -22,10 +21,3 @@ def get_kappa_adapter(model_key: str) -> StandardKappaAdapter:
     if model_key.startswith(("eqv2_", "esen_", "equiformer_v3_")):
         return FairchemKappaAdapter()
     return StandardKappaAdapter()
-
-
-__all__ = [
-    "RelaxationResult",
-    "StandardKappaAdapter",
-    "get_kappa_adapter",
-]

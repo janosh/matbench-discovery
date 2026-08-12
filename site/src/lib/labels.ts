@@ -1,6 +1,6 @@
 import type { DiscoverySet, Label, OrgLogo } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { LogoMeta, LogoMicrosoft } from 'svelte-widgets/icons'
+import { Meta, Microsoft } from 'svelte-widgets/icons'
 
 import type {
   DatasetMetadataLabels,
@@ -847,13 +847,13 @@ const org_logos = {
   'DAMO Academy, Alibaba Inc': `/logos/damo-academy-alibaba.svg`,
   'Deep Principle': `/logos/deep-principle.svg`,
   DeePMD: `/logos/deepmd.svg`,
-  'FAIR at Meta': LogoMeta,
+  'FAIR at Meta': Meta,
   'Google DeepMind': `/logos/google-deepmind.svg`,
   'ICAMS, Ruhr University Bochum': `/logos/interdisciplinary-centre-for-advanced-materials-simulation-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
   'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/institute-of-computing-technology-chinese-academy-of-sciences-beijing.svg`,
   'Massachusetts Institute of Technology': `/logos/massachusetts-institute-of-technology.svg`,
-  'Microsoft Research': LogoMicrosoft,
+  'Microsoft Research': Microsoft,
   'MIR Group, Harvard University': `/logos/materials-intelligence-research-group-harvard-university.svg`,
   'Mirror Physics': `/logos/mirror-physics.svg`,
   'National Institute of Standards and Technology': `/logos/national-institute-of-standards-and-technology.svg`,

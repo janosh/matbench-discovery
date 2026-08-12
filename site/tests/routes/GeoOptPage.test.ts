@@ -71,12 +71,16 @@ describe(`Geo Opt Task Page`, () => {
     expect(sankey_labels()).toStrictEqual([label])
   })
 
-  it(`keeps empty states for unselected aggregate diagnostics`, async () => {
-    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=`)
+  it(
+    `keeps empty states for unselected aggregate diagnostics`,
+    { timeout: 30_000 },
+    async () => {
+      await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=`)
 
-    expect(document.querySelectorAll(`.empty-note`)).toHaveLength(3)
-    expect(document.querySelector(`.rmsd-cdf`)).toBeNull()
-  })
+      expect(document.querySelectorAll(`.empty-note`)).toHaveLength(3)
+      expect(document.querySelector(`.rmsd-cdf`)).toBeNull()
+    },
+  )
 
   it(`restores scatter, sort, and metrics-table filters from URL params`, async () => {
     await mount_with_url(

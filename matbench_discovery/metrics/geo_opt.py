@@ -2,11 +2,11 @@
 
 import pandas as pd
 from pymatviz.enums import Key
-from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery import repo_relative_path
 from matbench_discovery.data import (
     canonical_scientific_notation,
+    commented_map_with_units,
     make_file_ref,
     update_yaml_file,
 )
@@ -52,11 +52,7 @@ def write_metrics_to_yaml(
         str(Key.n_structures): int(df_geo_opt[Key.n_structures].iloc[0]),
         "analysis_file": make_file_ref(analysis_file_path),
     }
-    metrics_for_symprec = CommentedMap(metrics_for_symprec)
-    symprec_key = f"symprec={canonical_scientific_notation(symprec)}"
-
-    # Define units for metrics
-    metric_units = {
+    metric_units: dict[str, str] = {
         Key.rmsd: "unitless",
         Key.n_sym_ops_mae: "unitless",
         Key.symmetry_decrease: "fraction",
@@ -64,10 +60,8 @@ def write_metrics_to_yaml(
         Key.symmetry_increase: "fraction",
         Key.n_structures: "count",
     }
-    # Add units as YAML end-of-line comments
-    for key in metrics_for_symprec:
-        if unit := metric_units.get(key):
-            metrics_for_symprec.yaml_add_eol_comment(unit, key, column=1)
+    metrics_for_symprec = commented_map_with_units(metrics_for_symprec, metric_units)
+    symprec_key = f"symprec={canonical_scientific_notation(symprec)}"
 
     update_yaml_file(
         model.yaml_path, f"metrics.geo_opt.{symprec_key}", metrics_for_symprec

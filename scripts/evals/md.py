@@ -12,18 +12,15 @@ from matbench_discovery.data import artifact_filename, file_ref_name, file_ref_u
 from matbench_discovery.enums import Model
 from matbench_discovery.md import default_md_reference_path, list_reference_systems
 from matbench_discovery.metrics import md as md_metrics
+from scripts.evals import evaluate_models
 
 
 def resolve_metrics(
     model: Model, md_yaml: dict[str, Any]
 ) -> tuple[pd.DataFrame, str, str | None, bool] | None:
-    """Load a model's per-system MD metrics indexed by system, or None to skip.
+    """Load per-system metrics when available, else the submitted combined CSV.
 
-    Prefers per-system CSVs from parallel single-system runs (combined into one frame);
-    falls back to the model's submitted combined CSV (``md_path``). Returns
-    ``(df_md, pred_file, pred_file_url, is_fresh_combine)``; ``is_fresh_combine`` flags
-    the combined-from-per-system case, whose CSV the caller persists after the coverage
-    check (and which carries no ``pred_file_url`` yet, so a stale one isn't reused).
+    The final return flag marks a fresh combination that the caller must persist.
     """
     arch_dir = os.path.dirname(model.rel_path)
     # one row each, excluding multi-system subset files that share this filename shape
@@ -48,14 +45,12 @@ def resolve_metrics(
 
 
 def coverage_problems(index: pd.Index, expected: set[str]) -> list[str]:
-    """Reasons a per-system metric index isn't exactly the expected DynaMat v1.0 set
-    (duplicate, missing or unexpected systems); an empty list means exact coverage.
-    """
+    """Return duplicate, missing, and unexpected system coverage problems."""
     present = set(index)
     problems = []
     if index.has_duplicates:
-        dups = sorted(index[index.duplicated()].unique())
-        problems.append(f"duplicate systems {dups}")
+        duplicates = sorted(index[index.duplicated()].unique())
+        problems.append(f"duplicate systems {duplicates}")
     if missing := expected - present:
         problems.append(f"{len(missing)} missing e.g. {sorted(missing)[:3]}")
     if extra := present - expected:
@@ -64,64 +59,39 @@ def coverage_problems(index: pd.Index, expected: set[str]) -> list[str]:
 
 
 def main() -> int:
-    """Evaluate MD metrics and update model YAML files.
+    """Evaluate MD metrics, returning 0 if any model succeeds and 1 otherwise."""
+    expected: set[str] | None = None
 
-    Returns:
-        Exit code: 0 if at least one model was evaluated, 1 otherwise.
-    """
-    models_to_evaluate = cli_args.models
-    print(f"Evaluating MD metrics for {len(models_to_evaluate)} model(s)...")
+    def evaluate_one(model: Model) -> str | None:
+        nonlocal expected
+        resolved = resolve_metrics(model, model.metrics.get("md") or {})
+        if resolved is None:
+            return "no per-system CSVs or md_path"
+        df_md, pred_file, pred_file_url, is_fresh_combine = resolved
 
-    n_success = 0
-    n_skipped = 0
-    expected: set[str] | None = None  # DynaMat v1.0 system set, resolved lazily once
+        # Resolve the canonical set only after finding an artifact.
+        if expected is None:
+            expected = set(list_reference_systems(default_md_reference_path()))
+        if problems := coverage_problems(df_md.index, expected):
+            return "; ".join(problems)
 
-    for model in models_to_evaluate:
-        md_yaml = model.metrics.get("md") or {}
-        try:
-            # resolve inside the try so a malformed CSV skips only this model
-            resolved = resolve_metrics(model, md_yaml)
-            if resolved is None:
-                print(f"Skipping {model.label}: no per-system CSVs or md_path")
-                n_skipped += 1
-                continue
-            df_md, pred_file, pred_file_url, is_fresh_combine = resolved
+        if is_fresh_combine:
+            out_csv = f"{ROOT}/{pred_file}"
+            os.makedirs(os.path.dirname(out_csv), exist_ok=True)
+            df_md.to_csv(out_csv)
+            print(f"\n{model.label}: combined {len(df_md)} systems")
 
-            # only persist metrics from exact DynaMat v1.0 coverage: missing systems
-            # give uneven means across models, while duplicate or unexpected (e.g.
-            # debug) rows silently skew them. Guards fresh and submitted CSVs alike.
-            if expected is None:
-                # canonical DynaMat v1.0 names (downloads reference if not cached)
-                expected = set(list_reference_systems(default_md_reference_path()))
-            if problems := coverage_problems(df_md.index, expected):
-                print(f"Skipping {model.label}: " + "; ".join(problems))
-                n_skipped += 1
-                continue
+        metrics = md_metrics.calc_md_metrics(df_md)
+        for key, value in metrics.items():
+            shown = f"{value:.4f}" if isinstance(value, float) else value
+            print(f"\t{key}={shown}")
+        md_metrics.write_metrics_to_yaml(
+            model, metrics, pred_file_path=pred_file, pred_file_url=pred_file_url
+        )
+        print(f"\tUpdated {model.yaml_path}")
+        return None
 
-            if is_fresh_combine:  # persist the freshly combined per-system metrics
-                out_csv = f"{ROOT}/{pred_file}"
-                os.makedirs(os.path.dirname(out_csv), exist_ok=True)
-                df_md.to_csv(out_csv)
-                print(f"\n{model.label}: combined {len(df_md)} systems")
-
-            metrics = md_metrics.calc_md_metrics(df_md)
-            for key, value in metrics.items():
-                shown = f"{value:.4f}" if isinstance(value, float) else value
-                print(f"\t{key}={shown}")
-            md_metrics.write_metrics_to_yaml(
-                model, metrics, pred_file_path=pred_file, pred_file_url=pred_file_url
-            )
-            print(f"\tUpdated {model.yaml_path}")
-            n_success += 1
-        except (ValueError, OSError, KeyError) as exc:
-            print(f"\tError processing {model.label}: {exc}")
-            n_skipped += 1
-
-    if n_success == 0:
-        print(f"\nNo models evaluated successfully ({n_skipped} skipped)")
-        return 1
-    print(f"\nSuccessfully evaluated {n_success} model(s), {n_skipped} skipped")
-    return 0
+    return evaluate_models("MD", cli_args.models, evaluate_one)
 
 
 if __name__ == "__main__":

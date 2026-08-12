@@ -2,8 +2,8 @@
   import { goto } from '$app/navigation'
   import type { ModelData } from '$lib'
   import { extent } from 'd3-array'
+  import { interpolateViridis } from 'd3-scale-chromatic'
   import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
-  import { create_color_scale } from 'matterviz/plot'
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
@@ -54,7 +54,6 @@
   let {
     models,
     model_filter = () => true,
-    point_color = null,
     show_model_labels = true,
     // Bindable so page headings can track user-selected axes.
     x_key = $bindable(ALL_METRICS.κ_SRME.key),
@@ -67,7 +66,6 @@
   }: ComponentProps<typeof ScatterPlot> & {
     models: ModelData[]
     model_filter?: (model: ModelData) => boolean
-    point_color?: string | null
     show_model_labels?: boolean
     x_key?: string
     y_key?: string
@@ -148,7 +146,7 @@
         !is_finite_num(x) ||
         !is_finite_num(y) ||
         !is_finite_num(size_value) ||
-        (point_color === null && !is_finite_num(color_value))
+        !is_finite_num(color_value)
       ) {
         return []
       }
@@ -171,7 +169,7 @@
     prop: Label | undefined,
     value_key: `x` | `y` | `color_value` | `size_value`,
   ): boolean => {
-    const [min, max] = extent(plot_data, (point) => point[value_key] as number)
+    const [min, max] = extent(plot_data, (point) => point[value_key])
     return (
       !label_data_path(prop).includes(`date`) &&
       min !== undefined &&
@@ -202,12 +200,16 @@
     scheme: `interpolateViridis` as const,
     type: scale_of(`color`),
   })
-  let legend_color_scale = $derived.by(() => {
-    const [min, max] = extent(plot_data, (item) => item.color_value as number)
-    return create_color_scale(color_scale, [min ?? 0, max ?? 1])
-  })
-  const point_fill = (color_value: unknown): string =>
-    point_color ?? (legend_color_scale(color_value as number) as string) ?? `gray`
+  let color_domain = $derived(extent(plot_data, (item) => item.color_value))
+  const point_fill = (value: number) => {
+    const [min = 0, max = 1] = color_domain
+    if (min === max) return interpolateViridis(0.5)
+    const fraction =
+      color_scale.type === `log`
+        ? Math.log(value / min) / Math.log(max / min)
+        : (value - min) / (max - min)
+    return interpolateViridis(fraction)
+  }
 
   // Staircase through the non-dominated models, tracing the boundary of the dominated
   // region. With a date on the x-axis it becomes the running best over time (records
@@ -260,7 +262,7 @@
       // uniform circles: color and size already encode data, and cycling 7 shapes
       // across 30+ models distinguished nothing while adding visual noise
       point_style: { fill: point_fill(item.color_value), symbol_type: `Circle` as const },
-      color_values: point_color === null ? [item.color_value as number] : undefined,
+      color_values: [item.color_value],
       size_values: axes.size_value ? [item.size_value] : undefined,
       point_label: show_model_labels
         ? [

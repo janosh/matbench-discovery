@@ -19,10 +19,13 @@ import pandas as pd
 from ase import Atoms, units
 from ase.data import atomic_masses, covalent_radii
 from ase.geometry import find_mic, get_distances, minkowski_reduce
-from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery import repo_relative_path
-from matbench_discovery.data import make_file_ref, update_yaml_file
+from matbench_discovery.data import (
+    commented_map_with_units,
+    make_file_ref,
+    update_yaml_file,
+)
 from matbench_discovery.hpc import COST_PROVENANCE_KEYS
 from matbench_discovery.trajectory import Trajectory
 
@@ -776,21 +779,18 @@ def write_metrics_to_yaml(
     """Write model-level MD metrics from calc_md_metrics to the metrics.md section
     of a model YAML file, with unit comments and optional pred_file references.
     """
-    yaml_metrics = CommentedMap()
+    block: dict[str, Any] = {}
     if pred_file_path is not None:
         relative_path = repo_relative_path(pred_file_path)
-        yaml_metrics["pred_file"] = make_file_ref(relative_path, url=pred_file_url)
+        block["pred_file"] = make_file_ref(relative_path, url=pred_file_url)
     elif pred_file_url is not None:
         raise ValueError("pred_file_url requires pred_file_path")
     for key, value in metrics.items():
         if key == "n_systems":
-            yaml_metrics[key] = int(value)
-        elif isinstance(value, str):  # e.g. hardware
-            yaml_metrics[key] = value
+            block[key] = int(value)
         else:
-            yaml_metrics[key] = float(round(value, 4))
-        if unit := METRIC_UNITS.get(key):
-            yaml_metrics.yaml_add_eol_comment(unit, key, column=1)
+            block[key] = value if isinstance(value, str) else float(round(value, 4))
+    yaml_metrics = commented_map_with_units(block, METRIC_UNITS)
 
     update_yaml_file(model.yaml_path, "metrics.md", yaml_metrics)
     return yaml_metrics

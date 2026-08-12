@@ -1,15 +1,20 @@
 <script lang="ts">
   import type { Component } from 'svelte'
+  import Intro from './intro.md'
 
-  const modules = import.meta.glob<Component>(`./*.md`, {
-    eager: true,
-    import: 'default',
-  })
+  const modules = Object.entries(
+    import.meta.glob<Component>(`./modules/*.md`, {
+      eager: true,
+      import: 'default',
+    }),
+  ).toSorted(([path_a], [path_b]) => path_a.localeCompare(path_b))
 </script>
 
 <h1 class="toc-exclude">API</h1>
 
-{#each Object.entries(modules) as [path, MdFile] (path)}
+<Intro />
+
+{#each modules as [path, MdFile] (path)}
   <MdFile />
 {/each}
 

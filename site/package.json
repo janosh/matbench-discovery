@@ -42,7 +42,7 @@
     "remark-rehype": "^11.1.2",
     "svelte": "^5.56.8",
     "svelte-check-rs": "0.11.0",
-    "svelte-widgets": "^1.4.0",
+    "svelte-widgets": "github:janosh/svelte-widgets#main",
     "typescript": "6.0.3",
     "unified": "^11.0.5",
     "vite": "^8.2.0",

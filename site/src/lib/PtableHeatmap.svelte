@@ -50,7 +50,7 @@
       <ColorBar
         title="Count"
         title_side="top"
-        {color_scale}
+        scale={color_scale}
         tick_labels={5}
         range={[0, Math.max(0, ...(Object.values(heatmap_values) as number[]))]}
         style="width: 85%; margin: 0 2em 2em"
