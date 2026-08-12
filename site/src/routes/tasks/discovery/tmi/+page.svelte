@@ -55,9 +55,11 @@
   }
   bind_url_params(read_url_params, () => [
     [`models`, elem_prev_param(elem_prev_selected), elem_prev_param(default_elem_prev)],
-    ...Object.entries(single_selects).map(
-      ([key, model_labels]): UrlParamEntry => [key, picked[key], model_labels[0]],
-    ),
+    ...Object.entries(single_selects).map(([key, model_labels]): UrlParamEntry => [
+      key,
+      picked[key],
+      model_labels[0],
+    ]),
   ])
 
   const elem_prev_models = $derived(

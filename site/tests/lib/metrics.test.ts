@@ -625,7 +625,7 @@ describe(`Model Sorting Logic`, () => {
 
     // Expect an error when trying to sort number and string
     expect(() =>
-      models_with_mixed_types.sort(sort_models(`some_metric`, `desc`)),
+      models_with_mixed_types.toSorted(sort_models(`some_metric`, `desc`)),
     ).toThrow(/Unexpected type.*encountered sorting by key/)
   })
 

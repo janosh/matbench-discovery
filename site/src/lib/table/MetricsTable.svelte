@@ -154,13 +154,11 @@
       .toSorted((col1, col2) => pinned_col_rank(col1) - pinned_col_rank(col2)),
   )
   let table_columns = $derived(
-    columns.map(
-      (col): HeaderLabel => ({
-        ...col,
-        description: undefined,
-        tooltip_description: col.description,
-      }),
-    ),
+    columns.map((col): HeaderLabel => ({
+      ...col,
+      description: undefined,
+      tooltip_description: col.description,
+    })),
   )
 
   type ButtonMouseEvent = MouseEvent & { currentTarget: HTMLButtonElement }
