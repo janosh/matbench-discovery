@@ -1,95 +1,27 @@
 # EMA-GNN
 
-Structural graph neural network for direct formation-energy prediction from
-unrelaxed crystal structures.
+EMA-GNN is a six-model structural GNN ensemble that predicts relaxed formation energy per atom directly from unrelaxed structures (`IS2E`, target `E`), without relaxation at inference time.
 
-## Model
+## Architecture and training
 
-EMA-GNN maps an unrelaxed input structure to the formation energy per atom of the
-corresponding relaxed crystal, with no relaxation step at inference time. Each
-message-passing block updates edge, node and global features in sequence, with
-edge-to-node messages normalized by the dataset-average adjacency so that message
-magnitude does not scale with coordination number.
+- 2,209,793 parameters per estimator, three message-passing blocks, 256 hidden features, and a 4.0 Å graph radius
+- Sequential edge, node, and global updates with adjacency-normalized edge-to-node messages
+- Six independently seeded estimators trained for 500 epochs on Materials Project 2022 relaxed structures and evaluated with EMA weights
 
-| Property | Value |
-| --- | --- |
-| Task | `IS2E` |
-| Targets | `E` |
-| Training set | Materials Project 2022, relaxed structures |
-| Parameters | 2,209,793 |
-| Ensemble | 6 independently seeded models |
-| Cutoff radius | 4.0 Å |
-| Hidden dimension | 256 |
-| Message-passing blocks | 3 |
+The architecture follows the structural GNN in Merchant et al., ["Scaling deep learning for materials discovery"](https://www.nature.com/articles/s41586-023-06735-9). The existing GNoME leaderboard entry is the paper's separate NequIP-type interatomic potential. EMA-GNN uses six estimators instead of ten and 500 epochs instead of 1000. Exact hyperparameters, validation results, and ablations are recorded in [`ema-gnn.yml`](ema-gnn.yml).
 
-The architecture follows the structural GNN described in Merchant et al.,
-["Scaling deep learning for materials discovery"](https://www.nature.com/articles/s41586-023-06735-9),
-Nature 624 (2023). That paper describes two models; the entry on this leaderboard
-under the name GNoME is the other one — a NequIP-type interatomic potential
-submitted as `IS2RE-SR` with targets `EF_G`. The structural GNN benchmarked here
-predicts energy directly from an unrelaxed input and had not previously been
-submitted.
-
-The published architecture was the starting point, not an assumption. An anchored
-coordinate search over hidden-layer width, activation, network depth and learning
-rate was run on a stratified subset held out from training, with WBM withheld
-throughout. Every axis converged to the configuration reported in the paper.
-
-## Training
-
-Six models trained serially on a single NVIDIA RTX 4070 Ti, differing only in
-random seed and sharing the same training split. Held-out MAE per seed, meV/atom:
-23.32, 24.02, 24.09, 24.33, 23.78, 24.41 — a spread of 1.1 meV with no diverged
-run.
-
-```txt
-optimizer          Adam
-learning rate      5.5e-4, LinearLR to 0.1x final
-epochs             500
-batch size         128 x 2 accumulation steps (effective 256)
-gradient clip      1.0
-loss               L1 on standardized targets
-EMA decay          0.999
-early stopping     disabled
-weights evaluated  EMA
-```
-
-Two deviations from the reference description, both compute-driven: six ensemble
-members rather than ten, and 500 training epochs rather than 1000. Exponential
-moving average of the weights is an addition to the published recipe; a single-seed
-comparison recorded a best EMA validation MAE of 23.77 meV/atom at epoch 386 against
-a final-epoch raw MAE of 24.31, and EMA continued improving past the point where the
-raw weights plateaued, which is why early stopping was disabled.
+Per-seed held-out MAEs were 23.32, 24.02, 24.09, 24.33, 23.78, and 24.41 meV/atom.
 
 ## Inference
 
-Twenty-point isotropic volume test-time augmentation per structure (0.8–1.2x
-volume, linear in volume), aggregated by minimum per model, then by median across
-the six models. This is the paper's protocol. Median rather than mean across
-ensemble members prevents a single out-of-distribution failure from displacing the
-ensemble prediction.
+Each estimator takes the minimum prediction across 20 isotropic volume augmentations linearly spaced from 0.8–1.2x volume; the ensemble combines estimators by median.
 
-## Predictions
+## Artifacts and reproduction
 
-Predictions on the WBM test set are hosted on Figshare and linked from
-[`ema-gnn.yml`](ema-gnn.yml). Checkpoints for all six seeds are archived in the
-same item: <https://doi.org/10.6084/m9.figshare.33111509>
+- [Model metadata, metrics, and predictions](ema-gnn.yml)
+- [Checkpoints](https://doi.org/10.6084/m9.figshare.33111509)
+- [Training and evaluation code](https://github.com/submerged-in-matrix/gnome-repro-structural)
 
-Loading a checkpoint requires `strict=False`, because `avg_adjacency` is registered
-as a buffer but supplied through the constructor from the checkpoint's `stats` dict,
-and is therefore absent from `model_state`.
+Checkpoint loading requires `strict=False`: `avg_adjacency` is registered as a buffer but supplied through the constructor from the checkpoint's `stats` dictionary, so it is absent from `model_state`.
 
-## Notes for reviewers
-
-EMA-GNN is an archived direct-prediction submission and does not expose an ASE
-calculator for `models/run_discovery.py`. That runner obtains a total energy from a
-calculator, applies `MaterialsProject2020Compatibility`, then subtracts Materials
-Project elemental references to derive `e_form_per_atom`. EMA-GNN emits
-`e_form_per_atom` directly, so routing it through the runner would require
-inverting the reference subtraction and would apply MP2020 corrections on top of a
-quantity that already implicitly contains them. Predictions are submitted as a
-hosted artifact, following the precedent of other `IS2E` entries.
-
-Training and evaluation code, including the scoring script used to produce the
-metrics in `ema-gnn.yml`, is at
-<https://github.com/submerged-in-matrix/gnome-repro-structural>.
+EMA-GNN is an archived direct predictor rather than an ASE calculator. `models/run_discovery.py` derives formation energy from calculator total energy after Materials Project compatibility corrections; passing EMA-GNN's formation-energy output through that route would apply incompatible corrections.
