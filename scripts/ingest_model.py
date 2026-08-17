@@ -7,12 +7,14 @@ formatting.
 Usage:
     uv run scripts/ingest_model.py <model>            # check+evals+figs+payloads
     uv run scripts/ingest_model.py <model> --archive  # + figshare/release upload
-    uv run scripts/ingest_model.py --payloads-only    # full payload regen
-    uv run scripts/ingest_model.py <model> --payloads-only  # merge one model
+    uv run scripts/ingest_model.py --payloads-only --full-roster
+    uv run scripts/ingest_model.py --payloads-only --migrate-provenance
+    uv run scripts/ingest_model.py <models...> --payloads-only  # merge models
 """
 
 import argparse
 import glob
+import json
 import os
 import shlex
 import subprocess
@@ -302,61 +304,118 @@ def run_archive(model: Model, checks: Checklist) -> None:
             checks.fail(f"Publishing parity assets from {assets_dir} failed")
 
 
-def run_payload_refresh(checks: Checklist, model: Model | None = None) -> None:
+def run_payload_refresh(
+    checks: Checklist,
+    models: Sequence[Model] = (),
+    *,
+    mode_args: Sequence[str] = (),
+) -> None:
     """Refresh site/src/figs/*.jsonl plus route-local JSONL payloads, then test.
 
-    With a model given, payload scripts run with --models <model> and splice only that
-    model's freshly computed entries into the committed payloads (no other model's
-    prediction files needed, see figs.write_site_payload); without one, payloads are
-    regenerated from the full active roster.
+    With models given, payload scripts splice only those freshly computed entries into
+    the committed payloads. Without models, they regenerate the full active roster.
     """
-    suffix = f" for {model.name}" if model else ""
+    if not models and not mode_args:
+        raise ValueError("A full payload refresh requires an explicit mode")
+    if models and mode_args:
+        raise ValueError("A targeted payload refresh cannot use a full mode")
+    suffix = f" for {', '.join(model.name for model in models)}" if models else ""
     banner(f"Refreshing multi-model site figure payloads{suffix}")
-    model_args = ("--models", model.name) if model else ()
-    scripts: list[tuple[str, tuple[str, ...]]] = [
-        (script, ("--auto-download",)) for script in PAYLOAD_SCRIPTS
-    ]
-    if model is None:
-        scripts.extend((step[3], ()) for step in FIG_STEPS)
-    for script, script_flags in scripts:
-        if not run_cmd(*uv_run_args(script), *script_flags, *model_args):
+    payload_args = (
+        ("--models", *(model.name for model in models)) if models else mode_args
+    )
+    for script in PAYLOAD_SCRIPTS:
+        if not run_cmd(*uv_run_args(script), "--auto-download", *payload_args):
             checks.fail(f"{script} failed")
             return
+    if not run_cmd(*uv_run_args("scripts/summarize_payload_changes.py")):
+        checks.fail("Payload change report failed")
+        return
     if run_cmd(*uv_run_args("--with pytest pytest tests/site/test_fig_payloads.py -q")):
         checks.ok("Multi-model payloads regenerated + shape tests passed")
     else:
         checks.fail("Payload shape tests failed after regeneration")
 
 
-def map_yaml_paths(paths: Sequence[str]) -> list[str]:
-    """Map model YAML paths (as in a PR diff) to generated enum names.
+def read_head_yaml(path: str) -> dict[str, object] | None:
+    """Read one model YAML from HEAD, returning None when it is newly added."""
+    git_command = ["git", "show", f"HEAD:{path}"]
+    result = subprocess.run(
+        git_command,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    metadata = yaml.safe_load(result.stdout)
+    if not isinstance(metadata, dict):
+        raise TypeError(f"HEAD:{path} does not contain model metadata")
+    return metadata
 
-    Aborted models are omitted; unknown active paths fail closed.
-    """
-    enum_names_by_path = {f"models/{model.rel_path}": model.name for model in Model}
-    names: list[str] = []
-    for path in paths:
-        if enum_name := enum_names_by_path.get(path):
-            names.append(enum_name)
-            continue
-        try:
-            with open(f"{ROOT}/{path}", encoding="utf-8") as file:
-                metadata = yaml.safe_load(file)
-        except OSError as exc:
-            raise SystemExit(f"Unknown model YAML: {path}") from exc
-        if not (isinstance(metadata, dict) and metadata.get("lifecycle") == "aborted"):
-            raise SystemExit(f"{path} is not in the generated Model enum")
-    return list(dict.fromkeys(names))
+
+def classify_yaml_changes(
+    changed_paths: Sequence[str], removed_paths: Sequence[str]
+) -> dict[str, object]:
+    """Classify model-YAML changes into targeted, full-roster, or no refresh."""
+    new_by_key: dict[str, dict[str, object]] = {}
+    old_by_key: dict[str, dict[str, object]] = {}
+    for path in changed_paths:
+        with open(f"{ROOT}/{path}", encoding="utf-8") as file:
+            metadata = yaml.safe_load(file)
+        if not isinstance(metadata, dict) or not isinstance(
+            model_key := metadata.get("model_key"), str
+        ):
+            raise TypeError(f"{path} does not contain a string model_key")
+        new_by_key[model_key] = metadata
+        if (old_metadata := read_head_yaml(path)) is not None:
+            old_key = old_metadata.get("model_key")
+            if old_key != model_key:
+                raise ValueError(
+                    f"Automated ingestion cannot change model_key in {path}: "
+                    f"{old_key!r} -> {model_key!r}; use explicit key migration"
+                )
+            old_by_key[model_key] = old_metadata
+    for path in removed_paths:
+        if (old_metadata := read_head_yaml(path)) is None:
+            raise ValueError(f"Removed model YAML not found in HEAD: {path}")
+        old_key = old_metadata.get("model_key")
+        if not isinstance(old_key, str):
+            raise TypeError(f"HEAD:{path} does not contain a string model_key")
+        old_by_key[old_key] = old_metadata
+
+    old_keys, new_keys = set(old_by_key), set(new_by_key)
+    removed_keys = old_keys - new_keys
+    for new_key in new_keys - old_keys:
+        aliases = new_by_key[new_key].get("model_key_aliases", [])
+        if removed_keys & set(aliases if isinstance(aliases, list) else []):
+            raise ValueError(
+                "Automated ingestion cannot perform a model-key alias migration; "
+                "run --migrate-model-key manually"
+            )
+
+    lifecycle_changed = any(
+        old_by_key[key].get("lifecycle") != new_by_key[key].get("lifecycle")
+        for key in old_keys & new_keys
+    )
+    return {
+        "full_roster": bool(removed_keys or lifecycle_changed),
+        "targeted_models": [
+            Model.from_ref(key).name
+            for key, metadata in sorted(new_by_key.items())
+            if old_by_key.get(key) != metadata and metadata.get("lifecycle") == "active"
+        ],
+    }
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    # Model(...) invokes _missing_ to normalize punctuation/casing
     parser.add_argument(
-        "model",
-        nargs="?",
-        type=Model,  # ty: ignore[invalid-argument-type]
-        help="Model enum name (dashes ok)",
+        "models",
+        nargs="*",
+        type=Model.from_ref,
+        help="Model enum names (multiple allowed with --payloads-only)",
     )
     parser.add_argument(
         "--overwrite", action="store_true", help="Overwrite existing eval outputs"
@@ -365,27 +424,61 @@ def main(argv: Sequence[str] | None = None) -> int:
     for mode in ("archive", "archive-only", "validate-only", "payloads-only"):
         mode_group.add_argument(f"--{mode}", action="store_true")
     mode_group.add_argument(
-        "--map-yaml-paths",
-        nargs="+",
+        "--classify-yaml-changes",
+        nargs="*",
         metavar="PATH",
-        help="Print enum names for model YAML paths (used by CI model detection)",
+        help="Print JSON payload-refresh classification for overlaid model YAMLs.",
     )
+    parser.add_argument("--removed-yaml-paths", nargs="*", default=[])
+    payload_mode_group = parser.add_mutually_exclusive_group()
+    payload_mode_group.add_argument("--full-roster", action="store_true")
+    payload_mode_group.add_argument("--migrate-provenance", action="store_true")
+    payload_mode_group.add_argument("--migrate-model-key", metavar="OLD=NEW")
     args = parser.parse_args(argv)
 
-    if args.map_yaml_paths:
-        print(" ".join(map_yaml_paths(args.map_yaml_paths)))
+    payload_mode_args = (
+        ("--full-roster",)
+        if args.full_roster
+        else ("--migrate-provenance",)
+        if args.migrate_provenance
+        else ("--migrate-model-key", args.migrate_model_key)
+        if args.migrate_model_key
+        else ()
+    )
+    if payload_mode_args and not args.payloads_only:
+        parser.error("payload generation modes require --payloads-only")
+    if payload_mode_args and args.models:
+        parser.error("model-targeted refresh cannot use a full payload mode")
+
+    if args.classify_yaml_changes is not None:
+        print(
+            json.dumps(
+                classify_yaml_changes(
+                    args.classify_yaml_changes, args.removed_yaml_paths
+                ),
+                sort_keys=True,
+            )
+        )
         return 0
 
     checks = Checklist()
-    model: Model | None = args.model
+    models: list[Model] = args.models
+    if len(models) > 1 and not args.payloads_only:
+        parser.error("multiple models are supported only with --payloads-only")
+    model = models[0] if models else None
     if model is None:
         if not args.payloads_only:
             parser.error("model is required unless --payloads-only")
-        run_payload_refresh(checks)
+        if not payload_mode_args:
+            parser.error(
+                "full payload refresh requires --full-roster, "
+                "--migrate-provenance, or --migrate-model-key OLD=NEW"
+            )
+        run_payload_refresh(checks, mode_args=payload_mode_args)
     elif (args.archive or args.archive_only) and not os.getenv("FIGSHARE_TOKEN"):
         parser.error("FIGSHARE_TOKEN must be set for archival")
     elif args.payloads_only:
-        run_payload_refresh(checks, model=model)
+        run_payload_refresh(checks, models)
     elif args.archive_only:
         run_archive(model, checks)
     else:
@@ -409,7 +502,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.archive:
             checks.skip("Archival skipped because validation failed")
         if not args.validate_only and not checks.n_failed:
-            run_payload_refresh(checks, model=model)
+            run_payload_refresh(checks, (model,))
 
     banner("SUMMARY")
     print(checks.summary())

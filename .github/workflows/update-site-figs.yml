@@ -98,9 +98,6 @@ jobs:
             echo "::error::No model YAML changes found in PR #$PR"
             exit 1
           fi
-          jq -r --arg pat "$MODEL_YAML_PATTERN" \
-            'any(.[][]; .status != "added" and (.filename | test($pat)))' \
-            "$RUNNER_TEMP/pr-files.json" > "$RUNNER_TEMP/full-payload-refresh"
 
       - name: Prepare submitted models
         id: detect
@@ -129,21 +126,14 @@ jobs:
             check-jsonschema --schemafile tests/model-schema.yml "${CHANGED_YML[@]}"
           fi
           uv run --with-editable . scripts/generate_model_enum.py
-          MODELS=""
-          if (( ${#CHANGED_YML[@]} )); then
-            MODELS=$(uv run --with-editable . scripts/ingest_model.py \
-              --map-yaml-paths "${CHANGED_YML[@]}")
-          fi
-          read -r -a DETECTED_MODELS <<< "$MODELS"
-          FULL_PAYLOAD_REFRESH=$(<"$RUNNER_TEMP/full-payload-refresh")
-          if (( ${#REMOVED_YML[@]} ||
-                ${#DETECTED_MODELS[@]} != ${#CHANGED_YML[@]} ||
-                ${#DETECTED_MODELS[@]} > 1 )); then
-            FULL_PAYLOAD_REFRESH=true
-          fi
+          CLASSIFICATION=$(uv run --with-editable . scripts/ingest_model.py \
+            --classify-yaml-changes "${CHANGED_YML[@]}" \
+            --removed-yaml-paths "${REMOVED_YML[@]}")
+          MODELS=$(jq -r '.targeted_models | join(" ")' <<< "$CLASSIFICATION")
+          FULL_PAYLOAD_REFRESH=$(jq -r .full_roster <<< "$CLASSIFICATION")
           echo "models=$MODELS" >> "$GITHUB_OUTPUT"
           echo "full_payload_refresh=$FULL_PAYLOAD_REFRESH" >> "$GITHUB_OUTPUT"
-          echo "Detected submitted models: ${MODELS:-<roster-only>}"
+          echo "Payload classification: $CLASSIFICATION"
 
       - name: Cache model prediction + analysis files
         uses: actions/cache@v6
@@ -203,11 +193,13 @@ jobs:
           MODELS: ${{ steps.detect.outputs.models }}
         run: |
           if [ "$FULL_PAYLOAD_REFRESH" = "true" ]; then
-            uv run --with-editable . scripts/ingest_model.py --payloads-only
+            uv run --with-editable . scripts/ingest_model.py \
+              --payloads-only --full-roster
+          elif [ -n "$MODELS" ]; then
+            uv run --with-editable . scripts/ingest_model.py \
+              $MODELS --payloads-only
           else
-            for model in $MODELS; do
-              uv run --with-editable . scripts/ingest_model.py "$model" --payloads-only
-            done
+            echo "Pure model-YAML path move: no payload refresh"
           fi
 
       # Labeled tip only, after all generation — used solely for git commit/push.

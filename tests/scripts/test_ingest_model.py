@@ -1,5 +1,6 @@
 """Tests for the model submission-ingestion checklist without running evaluations."""
 
+import json
 import subprocess
 from pathlib import Path
 
@@ -90,7 +91,10 @@ def test_unregistered_discovery_model_validation(
     monkeypatch: pytest.MonkeyPatch, validate_runner: bool, should_fail: bool
 ) -> None:
     """Trusted artifact validation does not require PR calculator code."""
-    monkeypatch.delitem(ingest.CALCULATORS, Model.mace_mpa_0.name)
+    monkeypatch.delitem(
+        ingest.CALCULATORS,  # ty: ignore[invalid-argument-type]
+        Model.mace_mpa_0.name,
+    )
     checks = ingest.Checklist()
     ingest.check_submission(Model.mace_mpa_0, checks, validate_runner=validate_runner)
     failures = "\n".join(msgs(checks, ingest.FAIL))
@@ -181,8 +185,10 @@ def test_malformed_file_ref_fails_checklist(monkeypatch: pytest.MonkeyPatch) -> 
     [
         ["definitely-not-a-model"],
         [],
+        ["--payloads-only"],
         ["mace-mpa-0", "--archive"],
         ["mace-mpa-0", "--archive-only"],
+        ["mace-mpa-0", "--full-roster"],
     ],
 )
 def test_cli_rejects_invalid_args(
@@ -194,13 +200,11 @@ def test_cli_rejects_invalid_args(
         ingest.main(argv)
 
 
-def test_run_payload_refresh_models_flag(run_cmd_calls: list[tuple[str, ...]]) -> None:
-    """Payload refresh passes --models for single-model runs (merge mode) and omits
-    it for full regens; the final command runs the payload shape tests either way.
-    """
-    checks = ingest.Checklist()
-    ingest.run_payload_refresh(checks, model=Model.mace_mpa_0)
-    *script_calls, test_call = run_cmd_calls
+def test_run_payload_refresh_modes(run_cmd_calls: list[tuple[str, ...]]) -> None:
+    """Targeted and complete refreshes pass explicit modes and emit reports."""
+    models = (Model.mace_mpa_0, Model.mace_mp_0)
+    assert ingest.main([*(model.name for model in models), "--payloads-only"]) == 0
+    *script_calls, report_call, test_call = run_cmd_calls
     assert len(script_calls) == len(ingest.PAYLOAD_SCRIPTS)
     assert any(
         "single_model_per_element_errors.py" in " ".join(cmd) for cmd in script_calls
@@ -208,7 +212,7 @@ def test_run_payload_refresh_models_flag(run_cmd_calls: list[tuple[str, ...]]) -
     assert all(
         cmd[2] == "--with-editable"
         and cmd[3].startswith(".")
-        and cmd[-2:] == ("--models", "mace_mpa_0")
+        and cmd[-3:] == ("--models", *(model.name for model in models))
         for cmd in script_calls
     )
     kappa_call = next(
@@ -218,14 +222,19 @@ def test_run_payload_refresh_models_flag(run_cmd_calls: list[tuple[str, ...]]) -
     )
     assert kappa_call[2:4] == ("--with-editable", ".[phonons]")
     assert "--extra" not in kappa_call
+    assert "summarize_payload_changes.py" in " ".join(report_call)
     assert "pytest" in test_call
     assert test_call[2:4] == ("--with-editable", ".")
-    assert checks.n_failed == 0
-
-    run_cmd_calls.clear()
-    ingest.run_payload_refresh(ingest.Checklist())
-    assert len(run_cmd_calls) == len(ingest.PAYLOAD_SCRIPTS) + len(ingest.FIG_STEPS) + 1
-    assert all("--models" not in cmd for cmd in run_cmd_calls)
+    for mode_args in (
+        ("--full-roster",),
+        ("--migrate-provenance",),
+        ("--migrate-model-key", "old-key=new-key"),
+    ):
+        run_cmd_calls.clear()
+        ingest.run_payload_refresh(ingest.Checklist(), mode_args=mode_args)
+        script_calls = run_cmd_calls[:-2]
+        assert len(run_cmd_calls) == len(ingest.PAYLOAD_SCRIPTS) + 2
+        assert all(command[-len(mode_args) :] == mode_args for command in script_calls)
 
 
 def test_run_model_steps_installs_project_extras(
@@ -278,14 +287,50 @@ def test_uv_run_args_rejects_empty_extra(args: str) -> None:
         ingest.uv_run_args(args)
 
 
-def test_map_yaml_paths() -> None:
-    """--map-yaml-paths resolves active names and omits inactive models."""
-    active_path = f"models/{Model.mace_mpa_0.rel_path}"
-    assert ingest.map_yaml_paths(
-        [active_path, active_path, "models/alignn_ff/alignn-ff.yml"]
-    ) == ["mace_mpa_0"]
-    with pytest.raises(SystemExit, match="Unknown model YAML"):
-        ingest.map_yaml_paths(["models/new-arch/missing.yml"])
+def test_classify_yaml_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Classification separates targeted, lifecycle, moves, and key migrations."""
+    model_key = Model.mace_mpa_0.key
+    active: dict[str, object] = {"model_key": model_key, "lifecycle": "active"}
+    monkeypatch.setattr(ingest, "ROOT", str(tmp_path))
+
+    def classify(
+        new_files: dict[str, dict[str, object]],
+        old_files: dict[str, dict[str, object]],
+        removed: list[str] | None = None,
+    ) -> dict[str, object]:
+        """Write current files and classify them against supplied HEAD metadata."""
+        for relative_path, metadata in new_files.items():
+            yaml_path = tmp_path / relative_path
+            yaml_path.parent.mkdir(parents=True, exist_ok=True)
+            yaml_path.write_text(json.dumps(metadata))
+        monkeypatch.setattr(ingest, "read_head_yaml", old_files.get)
+        return ingest.classify_yaml_changes(list(new_files), removed or [])
+
+    path = "models/edit/model.yml"
+    assert classify({path: active | {"value": 2}}, {path: active | {"value": 1}}) == {
+        "full_roster": False,
+        "targeted_models": [Model.mace_mpa_0.name],
+    }
+    old_path, new_path = "models/old/model.yml", "models/new/model.yml"
+    assert classify({new_path: active}, {old_path: active}, [old_path]) == {
+        "full_roster": False,
+        "targeted_models": [],
+    }
+    assert classify({}, {old_path: active}, [old_path])["full_roster"] is True
+    assert (
+        classify({path: active | {"lifecycle": "aborted"}}, {path: active})[
+            "full_roster"
+        ]
+        is True
+    )
+    with pytest.raises(ValueError, match="cannot change model_key"):
+        classify({path: active}, {path: active | {"model_key": "old-key"}})
+    with pytest.raises(ValueError, match="cannot perform a model-key alias migration"):
+        classify(
+            {new_path: active | {"model_key_aliases": ["old-key"]}},
+            {old_path: active | {"model_key": "old-key"}},
+            [old_path],
+        )
 
 
 @pytest.mark.parametrize("force_reupload", [False, True])
