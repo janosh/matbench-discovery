@@ -6,6 +6,7 @@ import gzip
 import json
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -112,7 +113,9 @@ def test_artifact_manifest_hashes_and_sizes_one_open_file(
         "getsize",
         lambda _path: pytest.fail("artifact manifest must not reopen the path"),
     )
-    assert figs.artifact_manifest("input", str(path))["size"] == 4
+    with patch("builtins.open", wraps=open) as mock_open:
+        assert figs.artifact_manifest("input", str(path))["size"] == 4
+    mock_open.assert_called_once_with(str(path), "rb")
 
 
 @pytest.mark.parametrize(
