@@ -2,7 +2,6 @@
 
 import multiprocessing as mp
 import os
-import sys
 from argparse import ArgumentParser, ArgumentTypeError
 
 from matbench_discovery.enums import Model, TestSubset
@@ -98,7 +97,7 @@ payload_mode_group.add_argument(
     help="Explicitly migrate one immutable model key and its payload records.",
 )
 cli_args, _ignore_unknown = cli_parser.parse_known_args()
-models_were_explicit = any(arg.partition("=")[0] == "--models" for arg in sys.argv)
+models_were_explicit = cli_args.models is not models_arg.default
 
 
 def payload_mode() -> PayloadMode:

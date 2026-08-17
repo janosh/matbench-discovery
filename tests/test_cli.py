@@ -66,6 +66,8 @@ def test_cli_parser(
     for key, val in expected.items():
         assert getattr(parsed_args, key) == val
     assert set(leftover) == unknown
+    explicit_models = any(arg.partition("=")[0] == "--models" for arg in args)
+    assert (parsed_args.models is not cli.models_arg.default) is explicit_models
 
 
 @pytest.mark.parametrize(

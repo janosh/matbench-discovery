@@ -232,9 +232,11 @@ def test_run_payload_refresh_modes(run_cmd_calls: list[tuple[str, ...]]) -> None
     ):
         run_cmd_calls.clear()
         ingest.run_payload_refresh(ingest.Checklist(), mode_args=mode_args)
-        script_calls = run_cmd_calls[:-2]
-        assert len(run_cmd_calls) == len(ingest.PAYLOAD_SCRIPTS) + 2
-        assert all(command[-len(mode_args) :] == mode_args for command in script_calls)
+        payload_calls = run_cmd_calls[: len(ingest.PAYLOAD_SCRIPTS)]
+        parity_calls = run_cmd_calls[len(ingest.PAYLOAD_SCRIPTS) : -2]
+        assert len(parity_calls) == len(ingest.FIG_STEPS)
+        assert all("--models" not in command for command in parity_calls)
+        assert all(command[-len(mode_args) :] == mode_args for command in payload_calls)
 
 
 def test_run_model_steps_installs_project_extras(
@@ -331,6 +333,29 @@ def test_classify_yaml_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
             {old_path: active | {"model_key": "old-key"}},
             [old_path],
         )
+
+
+@pytest.mark.parametrize(
+    ("stderr", "raises"),
+    [
+        ("fatal: path 'new.yml' does not exist in 'HEAD'", False),
+        ("fatal: bad object HEAD", True),
+    ],
+)
+def test_read_head_yaml_only_ignores_missing_paths(
+    monkeypatch: pytest.MonkeyPatch, stderr: str, raises: bool
+) -> None:
+    """Only an absent path is treated as a newly added YAML file."""
+    monkeypatch.setattr(
+        ingest.subprocess,
+        "run",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess([], 128, stderr=stderr),
+    )
+    if raises:
+        with pytest.raises(subprocess.CalledProcessError):
+            ingest.read_head_yaml("new.yml")
+    else:
+        assert ingest.read_head_yaml("new.yml") is None
 
 
 @pytest.mark.parametrize("force_reupload", [False, True])

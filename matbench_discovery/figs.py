@@ -60,7 +60,8 @@ def artifact_manifest(role: str, path: str) -> dict[str, str | int]:
         raise FileNotFoundError(f"Payload input file not found: {path!r}")
     with open(path, "rb") as file:
         sha256 = hashlib.file_digest(file, "sha256").hexdigest()
-    return {"role": role, "sha256": sha256, "size": os.path.getsize(path)}
+        size = os.fstat(file.fileno()).st_size
+    return {"role": role, "sha256": sha256, "size": size}
 
 
 def model_payload_identity(
@@ -480,18 +481,11 @@ def write_jsonl_payload(
                         aliases = set(Model.from_ref(model_key).key_aliases)
                     except ValueError:
                         aliases = set()
-                    for old_key in committed_keys - fresh_keys:
-                        comparable_old = dict(
-                            committed_by_key[old_key], model_key=model_key
+                    for old_key in (committed_keys - fresh_keys) & aliases:
+                        raise ValueError(
+                            f"{path}: model key replacement {old_key!r} -> "
+                            f"{model_key!r} requires --migrate-model-key"
                         )
-                        if old_key in aliases or _records_equal_except_label(
-                            comparable_old, fresh_by_key[model_key]
-                        ):
-                            raise ValueError(
-                                f"{path}: model key replacement {old_key!r} -> "
-                                f"{model_key!r} requires "
-                                "--migrate-model-key"
-                            )
                 output_models = fresh_models
 
     output_models.sort(key=lambda model: model["model_key"])

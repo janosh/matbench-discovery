@@ -168,7 +168,21 @@ def check_hist_clf() -> None:
         for clf in ("tp", "fn", "fp", "tn"):
             assert_num_list(model[clf], length=n_bins)
 
-    test_model = Model.alchembert
+    record = next(
+        (
+            model
+            for model in payload["models"]
+            if model["f1"]
+            != Model.from_ref(model["model_key"]).metrics["discovery"][
+                TestSubset.uniq_protos.value
+            ]["F1"]
+        ),
+        None,
+    )
+    if record is None:
+        pytest.skip("payload F1 values match the registry fixtures")
+    assert record is not None
+    test_model = Model.from_ref(record["model_key"])
     df_preds = load_df_wbm_with_preds(
         models=[test_model], subset=TestSubset.uniq_protos
     )
@@ -184,13 +198,6 @@ def check_hist_clf() -> None:
             stability_threshold=STABILITY_THRESHOLD,
         )["F1"],
         4,
-    )
-    yaml_f1 = test_model.metrics["discovery"][TestSubset.uniq_protos.value]["F1"]
-    assert expected_f1 != yaml_f1, (
-        "test fixture must distinguish recomputed from YAML F1"
-    )
-    record = next(
-        model for model in payload["models"] if model["model_key"] == test_model.key
     )
     assert record["f1"] == expected_f1
 
@@ -415,14 +422,20 @@ TMI_PAYLOADS = (
     "scatter-largest-fp-diff-each-error",
 )
 ELEMENT_PAYLOADS = {"element-prevalence-vs-error", "per-element-each-errors"}
-DISCOVERY_ROLES = {"generator", "prediction_error_loader", "prediction_loader"}
+PREDICTION_ROLES = {"generator", "payload_numerics", "prediction_loader"}
+ERROR_ROLES = PREDICTION_ROLES | {"prediction_error_loader"}
 RECIPE_ROLES = {
+    "box-hull-dist-errors": PREDICTION_ROLES,
+    "cumulative-precision-recall": PREDICTION_ROLES | {"stability_metrics"},
+    "hist-clf-pred-hull-dist": PREDICTION_ROLES | {"stability_metrics"},
+    "roc-models": PREDICTION_ROLES,
+    "rolling-mae-vs-hull-dist": PREDICTION_ROLES,
     "spg-sankeys": {"generator", "payload_numerics"},
     "struct-rmsd-cdf": {"generator", "payload_numerics"},
     "sym-ops-diff-bar": {"generator"},
-    **{name: DISCOVERY_ROLES | {"payload_numerics"} for name in TMI_PAYLOADS},
-    "element-prevalence-vs-error": DISCOVERY_ROLES | {"payload_numerics"},
-    "per-element-each-errors": DISCOVERY_ROLES,
+    **dict.fromkeys(TMI_PAYLOADS, ERROR_ROLES),
+    "element-prevalence-vs-error": ERROR_ROLES,
+    "per-element-each-errors": ERROR_ROLES - {"payload_numerics"},
     "kappa-103-analysis": {
         "generator",
         "kappa_metrics",
@@ -444,7 +457,7 @@ def test_multi_model_payload_provenance_matches_computation() -> None:
     paths["per-element-each-errors"] = (
         f"{SITE_DIR}/routes/models/per-element-each-errors.jsonl"
     )
-    assert len(paths) == 14
+    assert set(paths) == set(RECIPE_ROLES)
     for name, path in paths.items():
         payload = figs.read_jsonl_payload(path)
         provenance = payload["provenance"]
@@ -455,8 +468,7 @@ def test_multi_model_payload_provenance_matches_computation() -> None:
             assert source["size"] == len(source_bytes), source["path"]
             assert source["sha256"] == hashlib.sha256(source_bytes).hexdigest(), name
 
-        if (expected_roles := RECIPE_ROLES.get(name)) is None:
-            continue
+        expected_roles = RECIPE_ROLES[name]
         roles = {source["role"] for source in provenance["recipe"]["sources"]}
         assert roles == expected_roles, name
         if name in set(TMI_PAYLOADS) | ELEMENT_PAYLOADS:

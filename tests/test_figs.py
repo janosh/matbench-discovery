@@ -101,6 +101,20 @@ def test_write_json_gz_roundtrip(tmp_path: Path) -> None:
         assert file.read() == first_bytes
 
 
+def test_artifact_manifest_hashes_and_sizes_one_open_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Artifact sizes come from the file descriptor used for hashing."""
+    path = tmp_path / "artifact.csv"
+    path.write_text("data")
+    monkeypatch.setattr(
+        figs.os.path,
+        "getsize",
+        lambda _path: pytest.fail("artifact manifest must not reopen the path"),
+    )
+    assert figs.artifact_manifest("input", str(path))["size"] == 4
+
+
 @pytest.mark.parametrize(
     ("existing_bytes", "preserve_existing"),
     [
@@ -335,6 +349,13 @@ def test_full_roster_adds_and_removes_records(tmp_path: Path) -> None:
         "model-b",
         "model-c",
     }
+
+    old = make_model(tmp_path, "old-key", [4], input_content="same-input")
+    new = make_model(tmp_path, "new-key", [4], input_content="same-input")
+    write_test_payload(path, tmp_path, [old], mode=figs.PayloadMode.full_roster)
+    assert write_test_payload(path, tmp_path, [new], mode=figs.PayloadMode.full_roster)[
+        "models"
+    ] == [new]
 
 
 @pytest.mark.parametrize("identity_field", ["benchmark", "parameters", "runtime"])

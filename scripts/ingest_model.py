@@ -261,18 +261,19 @@ def check_submission(
 def run_model_steps(
     title: str,
     steps: Sequence[tuple[str, bool, bool, str]],
-    model: Model,
+    model: Model | None,
     checks: Checklist,
     *,
     energy_only: bool,
     extra_args: Sequence[str] = (),
 ) -> None:
-    """Run a table of per-model commands, recording pass/fail/skip for each."""
+    """Run model-specific or complete-roster commands, recording each result."""
     banner(title)
+    model_args = ("--models", model.name) if model else ()
     for label, needs_forces, fatal, args in steps:
         if needs_forces and energy_only:
             checks.skip(f"{label} skipped (targets=E, no forces)")
-        elif run_cmd(*uv_run_args(args), "--models", model.name, *extra_args):
+        elif run_cmd(*uv_run_args(args), *model_args, *extra_args):
             checks.ok(f"{label} completed")
         elif fatal:
             checks.fail(f"{label} failed")
@@ -328,6 +329,12 @@ def run_payload_refresh(
         if not run_cmd(*uv_run_args(script), "--auto-download", *payload_args):
             checks.fail(f"{script} failed")
             return
+    if not models:
+        run_model_steps(
+            "Refreshing parity manifests", FIG_STEPS, None, checks, energy_only=False
+        )
+        if checks.n_failed:
+            return
     if not run_cmd(*uv_run_args("scripts/summarize_payload_changes.py")):
         checks.fail("Payload change report failed")
         return
@@ -348,7 +355,9 @@ def read_head_yaml(path: str) -> dict[str, object] | None:
         check=False,
     )
     if result.returncode != 0:
-        return None
+        if result.stderr.strip() == f"fatal: path '{path}' does not exist in 'HEAD'":
+            return None
+        result.check_returncode()
     metadata = yaml.safe_load(result.stdout)
     if not isinstance(metadata, dict):
         raise TypeError(f"HEAD:{path} does not contain model metadata")
