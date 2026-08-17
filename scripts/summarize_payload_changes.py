@@ -222,14 +222,18 @@ def summarize() -> str:
         payload_name = os.path.basename(path).removesuffix(".jsonl")
         if row := _changed_row(payload_name, "<shared>", old_base, new_base):
             delta_rows.append(row)
-        for model_key in sorted(set(old_models) | set(new_models)):
-            if row := _changed_row(
-                payload_name,
-                model_key,
-                old_models.get(model_key),
-                new_models.get(model_key),
-            ):
-                delta_rows.append(row)  # noqa: PERF401 - filter may return None
+        delta_rows.extend(
+            row
+            for model_key in sorted(set(old_models) | set(new_models))
+            if (
+                row := _changed_row(
+                    payload_name,
+                    model_key,
+                    old_models.get(model_key),
+                    new_models.get(model_key),
+                )
+            )
+        )
 
         old_keys, new_keys = set(old_models), set(new_models)
         if old_keys != new_keys:

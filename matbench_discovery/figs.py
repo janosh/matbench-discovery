@@ -357,6 +357,20 @@ def _assert_unchanged_record(
         )
 
 
+def _assert_stable_overlap(
+    path: str,
+    old_base: Mapping[str, Any],
+    new_base: Mapping[str, Any],
+    old_by_key: Mapping[str, Mapping[str, Any]],
+    new_by_key: Mapping[str, Mapping[str, Any]],
+) -> None:
+    """Reject derived-data edits when overlapping records keep the same fingerprint."""
+    for model_key in old_by_key.keys() & new_by_key.keys():
+        _assert_unchanged_record(
+            path, old_base, new_base, old_by_key[model_key], new_by_key[model_key]
+        )
+
+
 def write_jsonl_payload(
     path: str,
     payload: dict[str, Any],
@@ -406,8 +420,7 @@ def write_jsonl_payload(
         )
 
     if committed_base is None:
-        output_base = fresh_base
-        output_models = fresh_models
+        output_base, output_models = fresh_base, fresh_models
     else:
         _validate_payload(committed_base, committed_models)
         committed_by_key = {model["model_key"]: model for model in committed_models}
@@ -422,14 +435,9 @@ def write_jsonl_payload(
                     f"{path}: provenance migration cannot change the model roster; "
                     "run lifecycle changes separately with --full-roster"
                 )
-            for model_key, committed_model in committed_by_key.items():
-                _assert_unchanged_record(
-                    path,
-                    committed_base,
-                    fresh_base,
-                    committed_model,
-                    fresh_by_key[model_key],
-                )
+            _assert_stable_overlap(
+                path, committed_base, fresh_base, committed_by_key, fresh_by_key
+            )
             if (
                 canonical_json(old_base["provenance"])
                 == canonical_json(new_base["provenance"])
@@ -438,8 +446,7 @@ def write_jsonl_payload(
                 raise ValueError(
                     f"{path}: shared derived data changed with unchanged provenance"
                 )
-            output_base = fresh_base
-            output_models = fresh_models
+            output_base, output_models = fresh_base, fresh_models
         elif base_changed:
             raise ValueError(
                 f"{path}: shared payload provenance or derived data changed. "
@@ -448,14 +455,9 @@ def write_jsonl_payload(
         else:
             output_base = committed_base
             if mode != PayloadMode.migrate_model_key:
-                for model_key in committed_keys & fresh_keys:
-                    _assert_unchanged_record(
-                        path,
-                        committed_base,
-                        fresh_base,
-                        committed_by_key[model_key],
-                        fresh_by_key[model_key],
-                    )
+                _assert_stable_overlap(
+                    path, committed_base, fresh_base, committed_by_key, fresh_by_key
+                )
             if mode == PayloadMode.targeted:
                 output_models = list((committed_by_key | fresh_by_key).values())
             elif mode == PayloadMode.migrate_model_key:
@@ -515,13 +517,15 @@ def write_jsonl_payload(
     return n_bytes
 
 
-def write_site_payload(name: str, payload: dict[str, Any]) -> int:
-    """Write one strict multi-model payload to ``site/src/figs/<name>.jsonl``."""
+def write_site_payload(
+    name: str, payload: dict[str, Any], *, directory: str | None = None
+) -> int:
+    """Write one strict multi-model payload to ``<directory>/<name>.jsonl``."""
     from matbench_discovery import SITE_FIG_DATA
     from matbench_discovery.cli import cli_args, payload_mode
 
     mode = payload_mode()
-    path = f"{SITE_FIG_DATA}/{name}.jsonl"
+    path = f"{directory or SITE_FIG_DATA}/{name}.jsonl"
     return write_jsonl_payload(
         path,
         payload,

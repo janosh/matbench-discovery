@@ -471,11 +471,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             return ref
         if member := cls.__members__.get(ref):
             return member
-        if member := next(
-            (model for model in cls if ref == model.key or ref in model.key_aliases),
-            None,
-        ):
-            return member
+        for model in cls:
+            if ref == model.key or ref in model.key_aliases:
+                return model
         if member := cls._missing_(ref):
             return member
         raise ValueError(f"{ref!r} not found in Model enum names, keys, or aliases")

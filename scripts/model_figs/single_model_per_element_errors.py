@@ -6,7 +6,7 @@ import json
 import pandas as pd
 
 from matbench_discovery import SITE_DIR, figs, payload_numerics, preds
-from matbench_discovery.cli import cli_args, payload_mode
+from matbench_discovery.cli import cli_args
 
 models_to_plot = cli_args.models
 
@@ -75,7 +75,6 @@ if missing_cols := expected_cols - {*df_elem_err}:
 if any(df_elem_err.isna().sum() > 35):
     raise ValueError("Too many NaNs in df_elem_err")
 
-payload_path = f"{SITE_DIR}/routes/models/per-element-each-errors.jsonl"
 elem_err_models = [
     {
         **model_identities[model.key],
@@ -83,28 +82,22 @@ elem_err_models = [
     }
     for model in models_to_plot
 ]
-provenance = figs.build_discovery_payload_provenance(
-    generator=__file__,
-    test_subset=cli_args.test_subset.value,
-    benchmark_inputs={"mp_element_occurrences": preds.MP_COUNTS_PATH},
-    source_files=element_sources,
-    parameters={"output_decimals": 4},
-    packages=("pymatgen",),
-)
-mode = payload_mode()
-figs.write_jsonl_payload(
-    payload_path,
+figs.write_site_payload(
+    "per-element-each-errors",
     {
-        "provenance": provenance,
+        "provenance": figs.build_discovery_payload_provenance(
+            generator=__file__,
+            test_subset=cli_args.test_subset.value,
+            benchmark_inputs={"mp_element_occurrences": preds.MP_COUNTS_PATH},
+            source_files=element_sources,
+            parameters={"output_decimals": 4},
+            packages=("pymatgen",),
+        ),
         "mp_occurrences": json.loads(df_elem_err[preds.TRAIN_COUNT_COL].to_json()),
         "test_set_standard_deviation": json.loads(
             df_elem_err[preds.TEST_SET_STD_COL].to_json()
         ),
         "models": elem_err_models,
     },
-    mode=mode,
-    key_migration=cli_args.migrate_model_key,
-    target_keys={model.key for model in models_to_plot}
-    if mode == figs.PayloadMode.targeted
-    else None,
+    directory=f"{SITE_DIR}/routes/models",
 )

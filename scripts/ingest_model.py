@@ -445,15 +445,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     payload_mode_group.add_argument("--migrate-model-key", metavar="OLD=NEW")
     args = parser.parse_args(argv)
 
-    payload_mode_args = (
-        ("--full-roster",)
-        if args.full_roster
-        else ("--migrate-provenance",)
-        if args.migrate_provenance
-        else ("--migrate-model-key", args.migrate_model_key)
-        if args.migrate_model_key
-        else ()
-    )
+    if args.full_roster:
+        payload_mode_args = ("--full-roster",)
+    elif args.migrate_provenance:
+        payload_mode_args = ("--migrate-provenance",)
+    elif args.migrate_model_key:
+        payload_mode_args = ("--migrate-model-key", args.migrate_model_key)
+    else:
+        payload_mode_args = ()
     if payload_mode_args and not args.payloads_only:
         parser.error("payload generation modes require --payloads-only")
     if payload_mode_args and args.models:
