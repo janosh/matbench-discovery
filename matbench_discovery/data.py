@@ -411,8 +411,9 @@ def load_df_wbm_with_preds(
 
     Args:
         models (Sequence[str | Model] | None, optional): Models to load, given as
-            Model members, enum names, or display labels. Defaults to active models
-            when None. Pass an empty sequence to load no model predictions.
+            Model members, enum names, canonical keys, or key aliases. Defaults to
+            active models when None. Pass an empty sequence to load no model
+            predictions.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
         subset (pd.Index | Sequence[str] | 'uniq_protos' | None, optional):

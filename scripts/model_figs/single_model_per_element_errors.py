@@ -91,6 +91,7 @@ provenance = figs.build_discovery_payload_provenance(
     parameters={"output_decimals": 4},
     packages=("pymatgen",),
 )
+mode = payload_mode()
 figs.write_jsonl_payload(
     payload_path,
     {
@@ -101,6 +102,9 @@ figs.write_jsonl_payload(
         ),
         "models": elem_err_models,
     },
-    mode=payload_mode(),
+    mode=mode,
     key_migration=cli_args.migrate_model_key,
+    target_keys={model.key for model in models_to_plot}
+    if mode == figs.PayloadMode.targeted
+    else None,
 )

@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, Any, Final, TypeGuard
 from matbench_discovery.enums import Model
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Collection, Mapping, Sequence
 
 PAYLOAD_SCHEMA_VERSION: Final = 2
 
@@ -363,6 +363,7 @@ def write_jsonl_payload(
     *,
     mode: PayloadMode,
     key_migration: tuple[str, str] | None = None,
+    target_keys: Collection[str] | None = None,
 ) -> int:
     """Write a strict, deterministic, key-addressed multi-model JSONL payload."""
     if not isinstance(mode, PayloadMode):
@@ -383,6 +384,14 @@ def write_jsonl_payload(
     }
     _validate_payload(fresh_base, fresh_models)
     fresh_by_key = {model["model_key"]: model for model in fresh_models}
+    if mode == PayloadMode.targeted:
+        if target_keys is None:
+            raise ValueError("targeted payload writes require selected model keys")
+        unexpected = set(fresh_by_key) - set(target_keys)
+        if unexpected:
+            raise ValueError(
+                f"{path}: targeted payload contains unselected model keys {unexpected}"
+            )
 
     committed_base: dict[str, Any] | None = None
     committed_models: list[dict[str, Any]] = []
@@ -511,10 +520,14 @@ def write_site_payload(name: str, payload: dict[str, Any]) -> int:
     from matbench_discovery import SITE_FIG_DATA
     from matbench_discovery.cli import cli_args, payload_mode
 
+    mode = payload_mode()
     path = f"{SITE_FIG_DATA}/{name}.jsonl"
     return write_jsonl_payload(
         path,
         payload,
-        mode=payload_mode(),
+        mode=mode,
         key_migration=cli_args.migrate_model_key,
+        target_keys={model.key for model in cli_args.models}
+        if mode == PayloadMode.targeted
+        else None,
     )

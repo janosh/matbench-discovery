@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 def resolve_models(model_refs: Iterable[str]) -> tuple[Model, ...]:
-    """Resolve model names, keys, or labels to model enum members."""
+    """Resolve model enum names, canonical keys, or key aliases to members."""
     if not model_refs:
         return Model.active()
     return tuple(map(Model.from_ref, model_refs))

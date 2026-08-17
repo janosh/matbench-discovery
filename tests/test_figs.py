@@ -197,8 +197,11 @@ def write_test_payload(
     shared: object = 1,
     provenance: dict[str, Any] | None = None,
     key_migration: tuple[str, str] | None = None,
+    target_keys: set[str] | None = None,
 ) -> dict[str, Any]:
     """Write and read one complete test payload."""
+    if mode == figs.PayloadMode.targeted and target_keys is None:
+        target_keys = {str(model["model_key"]) for model in models}
     figs.write_jsonl_payload(
         path,
         {
@@ -208,6 +211,7 @@ def write_test_payload(
         },
         mode=mode,
         key_migration=key_migration,
+        target_keys=target_keys,
     )
     return figs.read_jsonl_payload(path)
 
@@ -336,6 +340,31 @@ def test_targeted_input_change_is_isolated_to_one_model(tmp_path: Path) -> None:
     assert after_by_key["model-a"] == changed_a
     assert after_by_key["model-b"] == before_by_key["model-b"]
     assert before | {"models": after["models"]} == after
+
+
+def test_targeted_update_rejects_unselected_model(tmp_path: Path) -> None:
+    """A targeted writer cannot accidentally rewrite an unselected peer record."""
+    path = f"{tmp_path}/payload.jsonl"
+    model_a = make_model(tmp_path, "model-a", [1])
+    model_b = make_model(tmp_path, "model-b", [2])
+    write_test_payload(path, tmp_path, [model_a, model_b])
+    with pytest.raises(ValueError, match="require selected model keys"):
+        figs.write_jsonl_payload(
+            path,
+            {"provenance": make_provenance(tmp_path), "models": [model_a]},
+            mode=figs.PayloadMode.targeted,
+        )
+    changed_b = make_model(
+        tmp_path, "model-b", [9], input_content="changed-model-b-input"
+    )
+    with pytest.raises(ValueError, match="unselected model keys"):
+        write_test_payload(
+            path,
+            tmp_path,
+            [model_a, changed_b],
+            mode=figs.PayloadMode.targeted,
+            target_keys={"model-a"},
+        )
 
 
 def test_full_roster_adds_and_removes_records(tmp_path: Path) -> None:
