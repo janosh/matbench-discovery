@@ -1,17 +1,16 @@
-"""Tests for the data-only figure payload exporter in matbench_discovery.figs."""
+"""Tests for deterministic data-only figure payload export."""
 
 from __future__ import annotations
 
 import gzip
 import json
-import os
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
 
-from matbench_discovery import figs
-from matbench_discovery.cli import cli_args
+from matbench_discovery import figs, payload_numerics
 from matbench_discovery.enums import Model
 
 if TYPE_CHECKING:
@@ -25,48 +24,62 @@ if TYPE_CHECKING:
         ([1.23456789, 2.0], [1.23457, 2.0]),
         ([1.0, float("nan"), float("inf")], [1.0, None, None]),
         (["Fe", "Co"], ["Fe", "Co"]),
-        (None, []),  # None -> [] so a missing trace field stays JSON-serializable
+        (None, []),
     ],
 )
 def test_round_list(values: list[Any] | None, expected: list[Any]) -> None:
-    """round_list rounds floats, nulls non-finite values, keeps ints/strings."""
-    assert figs.round_list(values) == expected
+    """round_list rounds floats, nulls non-finite values, and keeps other scalars."""
+    assert payload_numerics.round_list(values) == expected
 
 
-def test_lttb_keeps_endpoints_and_count() -> None:
-    """LTTB down-samples to the requested count while preserving first/last points."""
-    x = np.linspace(0, 10, 1000)
-    y = np.sin(x)
-    ds_x, ds_y = figs.lttb(x, y, 50)
-    # LTTB targets n_out points but may drop a duplicate bucket index after dedup
-    assert 48 <= len(ds_x) <= 50
-    assert ds_x[0] == x[0]
-    assert ds_x[-1] == x[-1]
-    assert ds_y[0] == y[0]
-    assert ds_y[-1] == y[-1]
+@pytest.mark.parametrize(
+    ("n_values", "n_out", "expected"),
+    [(6, 4, [0, 1, 3, 5]), (3, 5, [0, 1, 2]), (1, 5, [0])],
+)
+def test_evenly_spaced_indices_are_distinct_and_bounded(
+    n_values: int, n_out: int, expected: list[int]
+) -> None:
+    """Index sampling caps output at the number of distinct available entries."""
+    assert payload_numerics.evenly_spaced_indices(n_values, n_out).tolist() == expected
+
+
+@pytest.mark.parametrize(
+    ("n_values", "n_out"), [(6, 5), (10, 5), (100, 20), (1000, 50)]
+)
+def test_lttb_keeps_endpoints_and_exact_count(n_values: int, n_out: int) -> None:
+    """LTTB keeps both endpoints and returns exactly the requested sample count."""
+    x_values = np.linspace(0, 10, n_values)
+    y_values = np.sin(x_values)
+    downsampled_x, downsampled_y = payload_numerics.lttb(x_values, y_values, n_out)
+    assert len(downsampled_x) == len(downsampled_y) == n_out
+    assert np.all(np.diff(downsampled_x) > 0)
+    assert downsampled_x[0] == x_values[0]
+    assert downsampled_x[-1] == x_values[-1]
+    assert downsampled_y[0] == y_values[0]
+    assert downsampled_y[-1] == y_values[-1]
 
 
 def test_histogram_bins_raw_values() -> None:
-    """Histogram returns bin centers, integer counts and bar width, dropping NaNs."""
-    values = [0.0, 0.1, 0.1, 0.9, float("nan")]
-    result = figs.histogram(values, bins=10, value_range=(0, 1))
+    """Histogram returns centers, integer counts and width while dropping NaNs."""
+    result = payload_numerics.histogram(
+        [0.0, 0.1, 0.1, 0.9, float("nan")], bins=10, value_range=(0, 1)
+    )
     assert set(result) == {"x", "y", "bar_width"}
     assert len(result["x"]) == len(result["y"]) == 10
-    assert sum(result["y"]) == 4  # NaN dropped
+    assert sum(result["y"]) == 4
     assert result["bar_width"] == pytest.approx(0.1)
-    assert result["x"][0] == pytest.approx(0.05)  # first bin center
+    assert result["x"][0] == pytest.approx(0.05)
 
 
 def test_sankey_flow_canonicalization() -> None:
     """Sankey flow data drops unused nodes and sorts links deterministically."""
-    # "X" is unreferenced; links are deliberately non-canonical.
     flow_data = {
         "labels": ["A", "B", "X", "C"],
         "source_indices": [1, 0],
         "target_indices": [3, 3],
         "value": [4.0, 3.0],
     }
-    assert figs.sankey_payload_from_flow(flow_data) == {
+    assert payload_numerics.sankey_payload_from_flow(flow_data) == {
         "labels": ["A", "B", "C"],
         "source": [0, 1],
         "target": [2, 2],
@@ -75,14 +88,12 @@ def test_sankey_flow_canonicalization() -> None:
 
 
 def test_write_json_gz_roundtrip(tmp_path: Path) -> None:
-    """write_json_gz writes deterministic gzipped JSON parseable back unchanged."""
+    """write_json_gz writes deterministic gzip bytes parseable unchanged."""
     payload = {"models": [{"label": "demo", "x": [1, 2], "y": [3.5, 4.5]}]}
-    out_path = f"{tmp_path}/sub/dir/demo.json.gz"  # also creates parent dirs
-    size = figs.write_json_gz(out_path, payload)
-    assert size > 0
+    out_path = f"{tmp_path}/sub/dir/demo.json.gz"
+    assert figs.write_json_gz(out_path, payload) > 0
     with gzip.open(out_path) as file:
         assert json.load(file) == payload
-    # deterministic output: same payload -> identical bytes (mtime pinned)
     with open(out_path, "rb") as file:
         first_bytes = file.read()
     figs.write_json_gz(out_path, payload)
@@ -109,214 +120,298 @@ def test_write_json_gz_handles_existing_file(
     tmp_path: Path, existing_bytes: bytes, preserve_existing: bool
 ) -> None:
     """write_json_gz preserves equivalent gzip bytes and rewrites corrupt files."""
-    payload = {"y": [1, 2]}
     path = f"{tmp_path}/demo.json.gz"
     with open(path, "wb") as file:
         file.write(existing_bytes)
-
-    figs.write_json_gz(path, payload)
+    figs.write_json_gz(path, {"y": [1, 2]})
     with open(path, "rb") as file:
         written_bytes = file.read()
     if preserve_existing:
-        assert written_bytes == existing_bytes  # content-equal -> bytes untouched
-        return
-    with gzip.open(path) as file:
-        assert json.load(file) == payload
+        assert written_bytes == existing_bytes
+    else:
+        with gzip.open(path) as file:
+            assert json.load(file) == {"y": [1, 2]}
 
 
-# === multi-model site payload writing (JSONL: full-run vs subset-run splice) ===
-@pytest.fixture
-def site_fig_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Redirect write_site_payload's IO to a temp dir and default to a full --models run
-    (subset tests narrow cli_args.models themselves).
-    """
-    import matbench_discovery
-
-    monkeypatch.setattr(matbench_discovery, "SITE_FIG_DATA", str(tmp_path))
-    monkeypatch.setattr(cli_args, "models", list(Model.active()))
-    return tmp_path
-
-
-def test_read_jsonl_payload_roundtrip(tmp_path: Path) -> None:
-    """read_jsonl_payload routes the lone {"_base": ...} line to shared fields and every
-    other line to models, regardless of line order, skipping blank lines.
-    """
-    path = f"{tmp_path}/fig.jsonl"
-    lines = [  # base line need not come first; trailing blank line is ignored
-        '{"key":"m-b","y":[2.0]}',
-        '{"_base":{"x":[0.0,1.0]}}',
-        '{"key":"m-a","y":[1.0]}',
-        "",
-    ]
-    with open(path, "w") as file:
-        file.write("\n".join(lines) + "\n")
-    restored = figs.read_jsonl_payload(path)
-    assert restored["x"] == [0.0, 1.0]
-    by_key = {model["key"]: model["y"] for model in restored["models"]}
-    assert by_key == {"m-a": [1.0], "m-b": [2.0]}
-
-
-def test_write_site_payload_full_run_writes_jsonl_and_strips(
-    site_fig_dir: Path,
-) -> None:
-    """Full runs write a lone _base line for shared fields + one line per model, sorted
-    by id and stripped of color/visible so lines stay position-independent.
-    """
-    model_a, model_b = list(Model.active())[:2]
-    figs.write_site_payload(
-        "demo",
-        {
-            "shared": [1],
-            "models": [
-                {"key": model_b.key, "y": [2], "color": "#x", "visible": False},
-                {"key": model_a.key, "y": [1]},
-            ],
-        },
+def make_provenance(
+    tmp_path: Path,
+    *,
+    benchmark_content: str = "benchmark",
+    parameters: dict[str, object] | None = None,
+) -> dict[str, Any]:
+    """Build valid test provenance from exact benchmark and source bytes."""
+    benchmark_path = tmp_path / "benchmark.csv"
+    benchmark_path.write_text(benchmark_content)
+    return figs.build_payload_provenance(
+        generator=__file__,
+        benchmark_inputs={"benchmark": str(benchmark_path)},
+        source_files={},
+        parameters=parameters or {"rounding_decimals": 5},
+        packages=(),
     )
-    path = f"{site_fig_dir}/demo.jsonl"
-    with open(path) as file:
-        raw = file.read().splitlines()
-    assert json.loads(raw[0]) == {"_base": {"shared": [1]}}  # _base line written first
-    models = [json.loads(line) for line in raw[1:]]
-    # presentation stripped + models sorted by id
-    assert all("color" not in mdl and "visible" not in mdl for mdl in models)
-    assert [mdl["key"] for mdl in models] == sorted([model_a.key, model_b.key])
-    restored = figs.read_jsonl_payload(path)
-    assert restored["shared"] == [1]
-    by_key = {mdl["key"]: mdl["y"] for mdl in restored["models"]}
-    assert by_key == {model_a.key: [1], model_b.key: [2]}
 
 
-def test_write_site_payload_no_base_line_without_shared(site_fig_dir: Path) -> None:
-    """No _base line is written when the payload carries no fields beyond models."""
-    model_a = next(iter(Model.active()))
-    figs.write_site_payload("demo", {"models": [{"key": model_a.key, "y": [1]}]})
-    with open(f"{site_fig_dir}/demo.jsonl") as file:
-        raw = file.read().splitlines()
-    assert all("_base" not in line for line in raw)
-
-
-def test_write_site_payload_full_run_prunes_dropped_models(site_fig_dir: Path) -> None:
-    """A later full run rewrites the whole roster, dropping models no longer present."""
-    model_a, model_b = list(Model.active())[:2]
-    figs.write_site_payload(
-        "demo", {"models": [{"key": model_a.key}, {"key": model_b.key}]}
-    )
-    figs.write_site_payload("demo", {"models": [{"key": model_b.key}]})  # shrunk roster
-    reread = figs.read_jsonl_payload(f"{site_fig_dir}/demo.jsonl")
-    assert {model["key"] for model in reread["models"]} == {model_b.key}
-
-
-@pytest.mark.parametrize("id_field", ["key", "label"])
-def test_write_site_payload_subset_run_splices(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch, id_field: str
-) -> None:
-    """Subset runs (--models) splice fresh entries into the committed file by id_field
-    (key- or label-keyed payloads): update their own line, add new ones, leave every
-    other model untouched.
-    """
-    figs.write_site_payload(
-        "demo",
-        {"models": [{id_field: "m-a", "y": [0]}, {id_field: "m-b", "y": [1]}]},
-        id_field=id_field,
-    )
-    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
-    figs.write_site_payload(
-        "demo",
-        {"models": [{id_field: "m-a", "y": [9]}, {id_field: "m-c", "y": [3]}]},
-        id_field=id_field,
-    )
-    reread = figs.read_jsonl_payload(f"{site_fig_dir}/demo.jsonl")
-    by_id = {model[id_field]: model["y"] for model in reread["models"]}
-    assert by_id == {"m-a": [9], "m-b": [1], "m-c": [3]}
-
-
-@pytest.mark.parametrize("id_field", ["key", "label"])
-def test_write_site_payload_subset_run_prunes_inactive_models(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch, id_field: str
-) -> None:
-    """Subset runs drop committed entries of superseded/inactive models (by key or
-    label) while preserving unknown reference lines like 'Test set standard deviation'.
-    """
-    inactive = next(model for model in Model if not model.is_active)
-    stale_id = getattr(inactive, id_field)
-    figs.write_site_payload(
-        "demo",
-        {
-            "models": [
-                {id_field: "m-a", "y": [0]},
-                {id_field: stale_id, "y": [1]},
-                {id_field: "Test set standard deviation", "y": [2]},
-            ]
-        },
-        id_field=id_field,
-    )
-    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
-    figs.write_site_payload(
-        "demo", {"models": [{id_field: "m-a", "y": [9]}]}, id_field=id_field
-    )
-    reread = figs.read_jsonl_payload(f"{site_fig_dir}/demo.jsonl")
-    by_id = {model[id_field]: model["y"] for model in reread["models"]}
-    assert by_id == {"m-a": [9], "Test set standard deviation": [2]}
-
-
-def test_write_site_payload_subset_noop_does_not_rewrite(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A content-identical subset run preserves the file and its modification time.
-
-    The shared _base line and untouched models must also remain in the payload.
-    """
-    path = f"{site_fig_dir}/demo.jsonl"
-    payload = {
-        "shared": [1],
-        "models": [{"key": "m-b", "y": [2]}, {"key": "m-a", "y": [1]}],
+def make_model(
+    tmp_path: Path,
+    model_key: str,
+    value: object,
+    *,
+    label: str | None = None,
+    input_content: str | None = None,
+) -> dict[str, Any]:
+    """Build one valid model record with a path-free input manifest."""
+    content = input_content or f"input-{model_key}"
+    input_path = tmp_path / f"{model_key}.csv"
+    input_path.write_text(content)
+    return {
+        "model_key": model_key,
+        "label": label or model_key.upper(),
+        "input_artifacts": [figs.artifact_manifest("predictions", str(input_path))],
+        "value": value,
     }
-    figs.write_site_payload("demo", payload)
-    os.utime(path, ns=(1_000_000_000, 1_000_000_000))
+
+
+def write_test_payload(
+    path: str,
+    tmp_path: Path,
+    models: list[dict[str, Any]],
+    *,
+    mode: figs.PayloadMode = figs.PayloadMode.migrate_provenance,
+    shared: object = 1,
+    provenance: dict[str, Any] | None = None,
+    key_migration: tuple[str, str] | None = None,
+) -> dict[str, Any]:
+    """Write and read one complete test payload."""
+    figs.write_jsonl_payload(
+        path,
+        {
+            "provenance": provenance or make_provenance(tmp_path),
+            "shared": shared,
+            "models": models,
+        },
+        mode=mode,
+        key_migration=key_migration,
+    )
+    return figs.read_jsonl_payload(path)
+
+
+def test_fingerprint_excludes_source_commit(tmp_path: Path) -> None:
+    """Informational source_commit never changes complete computation identity."""
+    provenance = make_provenance(tmp_path)
+    model = make_model(tmp_path, "model-a", [1])
+    base_a = {"provenance": provenance | {"source_commit": "a" * 40}}
+    base_b = {"provenance": provenance | {"source_commit": "b" * 40}}
+    assert figs.computation_fingerprint(base_a, model) == figs.computation_fingerprint(
+        base_b, model
+    )
+
+
+def test_write_jsonl_is_canonical_and_byte_deterministic(tmp_path: Path) -> None:
+    """Schema-v2 JSONL is base-first, sorted, canonical, terminated and stable."""
+    path = f"{tmp_path}/payload.jsonl"
+    models = [
+        make_model(tmp_path, "model-b", [2]) | {"color": "red"},
+        make_model(tmp_path, "model-a", [1]) | {"visible": False},
+    ]
+    write_test_payload(path, tmp_path, models)
     with open(path, "rb") as file:
-        full = file.read()
-    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
-    figs.write_site_payload(
-        "demo", {"shared": [1], "models": [{"key": "m-a", "y": [1]}]}
-    )
+        first_bytes = file.read()
+    assert first_bytes.endswith(b"\n")
+    assert b"\r" not in first_bytes
+    lines = first_bytes.decode().splitlines()
+    assert list(json.loads(lines[0])) == ["_base"]
+    assert [json.loads(line)["model_key"] for line in lines[1:]] == [
+        "model-a",
+        "model-b",
+    ]
+    assert all(line == figs.canonical_json(json.loads(line)) for line in lines)
+    assert all("color" not in line and "visible" not in line for line in lines[1:])
+    write_test_payload(path, tmp_path, models, mode=figs.PayloadMode.full_roster)
     with open(path, "rb") as file:
-        assert file.read() == full  # m-a unchanged, m-b + _base preserved
-    assert os.stat(path).st_mtime_ns == 1_000_000_000
+        assert file.read() == first_bytes
 
 
-def test_write_site_payload_subset_preserves_committed_base(
-    site_fig_dir: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    ("overrides", "count", "match"),
+    [
+        ({"input_artifacts": []}, 1, "non-empty"),
+        ({}, 2, "unique"),
+        ({"key": "model-a"}, 1, "Legacy"),
+    ],
+)
+def test_writer_rejects_invalid_model_identity(
+    tmp_path: Path, overrides: dict[str, object], count: int, match: str
 ) -> None:
-    """Subset runs keep the committed shared _base; fresh shared fields are ignored
-    (shared data is model-independent - changing it needs a full run).
-    """
-    figs.write_site_payload(
-        "demo", {"shared": [1, 2], "models": [{"key": "m-a", "y": [0]}]}
-    )
-    monkeypatch.setattr(cli_args, "models", list(Model.active())[:1])  # subset run
-    figs.write_site_payload(
-        "demo", {"shared": [9, 9], "models": [{"key": "m-a", "y": [1]}]}
-    )
-    restored = figs.read_jsonl_payload(f"{site_fig_dir}/demo.jsonl")
-    assert restored["shared"] == [1, 2]  # committed _base preserved, fresh ignored
-    assert restored["models"] == [{"key": "m-a", "y": [1]}]  # model line updated
+    """Every model line needs one unique canonical key and non-empty artifacts."""
+    model = make_model(tmp_path, "model-a", [1]) | overrides
+    with pytest.raises(ValueError, match=match):
+        write_test_payload(f"{tmp_path}/bad.jsonl", tmp_path, [model] * count)
 
 
-@pytest.mark.usefixtures("site_fig_dir")
-def test_write_site_payload_subset_run_requires_existing_file(
-    monkeypatch: pytest.MonkeyPatch,
+def test_label_only_targeted_update_preserves_every_other_byte(tmp_path: Path) -> None:
+    """An unchanged fingerprint permits exactly a presentation-label replacement."""
+    path = f"{tmp_path}/payload.jsonl"
+    old = make_model(tmp_path, "model-a", [1], label="Old label")
+    old_record = write_test_payload(path, tmp_path, [old])["models"][0]
+    new = make_model(tmp_path, "model-a", [1], label="New label")
+    new_record = write_test_payload(
+        path, tmp_path, [new], mode=figs.PayloadMode.targeted
+    )["models"][0]
+    assert old_record | {"label": "New label"} == new_record
+
+
+def test_unchanged_fingerprint_rejects_derived_mutation(tmp_path: Path) -> None:
+    """Fixed computation identity rejects mutations in ordinary and migration runs."""
+    path = f"{tmp_path}/payload.jsonl"
+    model = make_model(tmp_path, "model-a", [1])
+    write_test_payload(path, tmp_path, [model])
+    with pytest.raises(ValueError, match="unchanged complete fingerprint"):
+        write_test_payload(
+            path,
+            tmp_path,
+            [model | {"value": [2]}],
+            mode=figs.PayloadMode.targeted,
+        )
+    with pytest.raises(ValueError, match="unchanged complete fingerprint"):
+        write_test_payload(path, tmp_path, [model | {"value": [999]}])
+    with pytest.raises(ValueError, match="shared derived data"):
+        write_test_payload(path, tmp_path, [model], shared=999)
+
+
+@pytest.mark.parametrize(
+    "models",
+    [
+        pytest.param([], id="remove"),
+        pytest.param(["model-a", "model-b"], id="add"),
+        pytest.param(["model-b"], id="replace"),
+    ],
+)
+def test_provenance_migration_rejects_roster_changes(
+    tmp_path: Path, models: list[str]
 ) -> None:
-    """Subset runs can't create a payload from scratch (would ship a partial roster)."""
-    monkeypatch.setattr(cli_args, "models", [next(iter(Model.active()))])
-    with pytest.raises(FileNotFoundError, match="splice into an existing"):
-        figs.write_site_payload("missing", {"models": []})
+    """Provenance migration cannot also add, remove, or replace model keys."""
+    path = f"{tmp_path}/payload.jsonl"
+    write_test_payload(path, tmp_path, [make_model(tmp_path, "model-a", [1])])
+    changed_provenance = make_provenance(tmp_path, parameters={"version": 2})
+    with pytest.raises(ValueError, match="cannot change the model roster"):
+        write_test_payload(
+            path,
+            tmp_path,
+            [make_model(tmp_path, model_key, [1]) for model_key in models],
+            provenance=changed_provenance,
+        )
 
 
-def test_payload_writers_reject_nan(site_fig_dir: Path) -> None:
-    """Both writers fail loudly on NaN (invalid JSON) instead of writing NaN tokens."""
-    nan_payload = {"models": [{"key": "m-a", "y": [float("nan")]}]}
+def test_targeted_input_change_is_isolated_to_one_model(tmp_path: Path) -> None:
+    """A changed model artifact updates only its keyed line and preserves peers/base."""
+    path = f"{tmp_path}/payload.jsonl"
+    model_a = make_model(tmp_path, "model-a", [1])
+    model_b = make_model(tmp_path, "model-b", [2])
+    before = write_test_payload(path, tmp_path, [model_a, model_b])
+    changed_a = make_model(
+        tmp_path, "model-a", [9], input_content="changed-model-a-input"
+    )
+    after = write_test_payload(
+        path, tmp_path, [changed_a], mode=figs.PayloadMode.targeted
+    )
+    before_by_key = {record["model_key"]: record for record in before["models"]}
+    after_by_key = {record["model_key"]: record for record in after["models"]}
+    assert after_by_key["model-a"] == changed_a
+    assert after_by_key["model-b"] == before_by_key["model-b"]
+    assert before | {"models": after["models"]} == after
+
+
+def test_full_roster_adds_and_removes_records(tmp_path: Path) -> None:
+    """Full-roster mode owns lifecycle additions/removals under fixed provenance."""
+    path = f"{tmp_path}/payload.jsonl"
+    model_a = make_model(tmp_path, "model-a", [1])
+    model_b = make_model(tmp_path, "model-b", [2])
+    write_test_payload(path, tmp_path, [model_a, model_b])
+    model_c = make_model(tmp_path, "model-c", [3])
+    updated = write_test_payload(
+        path, tmp_path, [model_b, model_c], mode=figs.PayloadMode.full_roster
+    )
+    assert {record["model_key"] for record in updated["models"]} == {
+        "model-b",
+        "model-c",
+    }
+
+
+@pytest.mark.parametrize("identity_field", ["benchmark", "parameters", "runtime"])
+def test_shared_identity_change_requires_provenance_migration(
+    tmp_path: Path, identity_field: str
+) -> None:
+    """Benchmark, parameter, and runtime changes fail outside migration mode."""
+    path = f"{tmp_path}/payload.jsonl"
+    model = make_model(tmp_path, "model-a", [1])
+    old_provenance = make_provenance(tmp_path)
+    write_test_payload(path, tmp_path, [model], provenance=old_provenance)
+    if identity_field == "benchmark":
+        new_provenance = make_provenance(tmp_path, benchmark_content="changed")
+    else:
+        new_provenance = json.loads(figs.canonical_json(old_provenance))
+        if identity_field == "parameters":
+            new_provenance["parameters"]["rounding_decimals"] = 4
+        else:
+            new_provenance["runtime"]["python"] = "0.0.0"
+    changed_payload = {
+        "provenance": new_provenance,
+        "shared": 1,
+        "models": [model],
+    }
+    with pytest.raises(ValueError, match="--migrate-provenance"):
+        figs.write_jsonl_payload(
+            path, changed_payload, mode=figs.PayloadMode.full_roster
+        )
+    written_provenance = write_test_payload(
+        path, tmp_path, [model], provenance=new_provenance
+    )["provenance"]
+    assert written_provenance == new_provenance
+
+
+def test_explicit_key_migration_requires_alias_and_exact_record(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Key migration accepts only an aliased exact identity rewrite."""
+    monkeypatch.setattr(
+        Model,
+        "from_ref",
+        staticmethod(
+            lambda model_key: SimpleNamespace(key=model_key, key_aliases=("old-key",))
+        ),
+    )
+    path = f"{tmp_path}/payload.jsonl"
+    old = make_model(tmp_path, "old-key", [1], input_content="same-input")
+    write_test_payload(path, tmp_path, [old])
+
+    new = make_model(tmp_path, "new-key", [1], input_content="same-input")
+    for _attempt in range(2):
+        migrated = write_test_payload(
+            path,
+            tmp_path,
+            [new],
+            mode=figs.PayloadMode.migrate_model_key,
+            key_migration=("old-key", "new-key"),
+        )
+        assert migrated["models"] == [new]
+
+    path = f"{tmp_path}/peers.jsonl"
+    peer = make_model(tmp_path, "peer", [2])
+    write_test_payload(path, tmp_path, [old, peer])
+    with pytest.raises(ValueError, match="peer record"):
+        write_test_payload(
+            path,
+            tmp_path,
+            [new, peer | {"value": [999]}],
+            mode=figs.PayloadMode.migrate_model_key,
+            key_migration=("old-key", "new-key"),
+        )
+
+
+def test_payload_writers_reject_nan(tmp_path: Path) -> None:
+    """Both payload writers reject non-standard NaN JSON tokens."""
     with pytest.raises(ValueError, match="Out of range float"):
-        figs.write_json_gz(f"{site_fig_dir}/bad.json.gz", {"y": [float("nan")]})
+        figs.write_json_gz(f"{tmp_path}/bad.json.gz", {"y": [float("nan")]})
+    model = make_model(tmp_path, "model-a", [float("nan")])
     with pytest.raises(ValueError, match="Out of range float"):
-        figs.write_site_payload("bad", nan_payload)
+        write_test_payload(f"{tmp_path}/bad.jsonl", tmp_path, [model])

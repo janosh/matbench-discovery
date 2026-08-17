@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
 
-from matbench_discovery import figs
+from matbench_discovery import ROOT, figs, payload_numerics
 from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 
@@ -79,7 +79,11 @@ def row_flag(row: pd.Series, col: str) -> bool | None:
 
 
 def model_payload(
-    model: Model, df_ml: pd.DataFrame, df_dft: pd.DataFrame, material_ids: list[str]
+    model: Model,
+    input_path: str,
+    df_ml: pd.DataFrame,
+    df_dft: pd.DataFrame,
+    material_ids: list[str],
 ) -> dict[str, Any]:
     """Per-material diagnostics for one model, aligned to the DFT material order."""
     from matbench_discovery.metrics import phonons as phonon_metrics
@@ -131,8 +135,7 @@ def model_payload(
 
     finite_w1 = [val for val in cols["freq_w1"] if val is not None]
     return {
-        "key": model.key,
-        "label": model.label,
+        **figs.model_payload_identity(model, "kappa_predictions", input_path),
         **cols,
         "freq_w1_mean": round(float(np.mean(finite_w1)), KAPPA_DECIMALS)
         if finite_w1
@@ -151,19 +154,13 @@ def main() -> int:
 
     models: list[dict[str, Any]] = []
     for model in cli_args.models:
-        try:
-            kappa_path = model.kappa_103_path
-        except ValueError, FileNotFoundError:
-            kappa_path = None
+        kappa_path = model.kappa_103_path
         if kappa_path is None:
             print(f"Skipping {model.label}: no kappa_103 predictions")
             continue
-        try:
-            df_ml = read_kappa_json(kappa_path)
-            models.append(model_payload(model, df_ml, df_dft, material_ids))
-            print(f"Processed {model.label}")
-        except (ValueError, KeyError, OSError) as exc:
-            print(f"Skipping {model.label}: {exc!r}")
+        df_ml = read_kappa_json(kappa_path)
+        models.append(model_payload(model, kappa_path, df_ml, df_dft, material_ids))
+        print(f"Processed {model.label}")
 
     if not models:
         print("No models with kappa_103 predictions found")
@@ -171,7 +168,35 @@ def main() -> int:
         # merge, which is fine; a full run yielding no models is a config error
         return 1 if is_full_model_run() else 0
 
+    from matbench_discovery.metrics.phonons import KAPPA_ERROR_MAX
+
+    provenance = figs.build_payload_provenance(
+        generator=__file__,
+        benchmark_inputs={
+            "phonondb_pbe_103_kappa_no_nac": (
+                DataFiles.phonondb_pbe_103_kappa_no_nac.path
+            )
+        },
+        source_files={
+            "kappa_metrics": f"{ROOT}/matbench_discovery/metrics/phonons.py",
+            "payload_numerics": payload_numerics.__file__,
+            "phonon_reader": f"{ROOT}/matbench_discovery/phonons/__init__.py",
+            "phonon_schema": f"{ROOT}/matbench_discovery/phonons/schema.py",
+            "thermal_conductivity": (
+                f"{ROOT}/matbench_discovery/phonons/thermal_conductivity.py"
+            ),
+        },
+        parameters={
+            "failure_flags": dict(FAILURE_FLAG_COLS),
+            "frequency_decimals": FREQ_DECIMALS,
+            "kappa_error_max": KAPPA_ERROR_MAX,
+            "kappa_decimals": KAPPA_DECIMALS,
+            "qq_levels": payload_numerics.round_list(QQ_LEVELS),
+        },
+        packages=("numpy", "pandas", "pymatviz", "scipy"),
+    )
     payload = {
+        "provenance": provenance,
         "material_ids": material_ids,
         "formulas": [str(df_dft.loc[mid].get("name", "")) for mid in material_ids],
         "spg_nums": spg_nums,

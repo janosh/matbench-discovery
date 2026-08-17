@@ -376,8 +376,9 @@ export function sync_url_params(entries: UrlParamEntry[], state: PageState): voi
   // ?weights=0.5%2C0.4%2C0.1. Decoding is value-preserving since URLSearchParams
   // parses literal and encoded commas identically
   const query = params.toString().replaceAll(`%2C`, `,`)
-  const next_url = query ? `${location.pathname}?${query}` : location.pathname
-  if (next_url !== `${location.pathname}${location.search}`) replaceState(next_url, state)
+  const next_url = `${query ? `${location.pathname}?${query}` : location.pathname}${location.hash}`
+  if (next_url !== `${location.pathname}${location.search}${location.hash}`)
+    replaceState(next_url, state)
 }
 
 // Two-way URL query-param binding shared by all task pages. Reads state from the URL in

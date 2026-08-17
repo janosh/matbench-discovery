@@ -19,6 +19,7 @@ from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery import data as data_module
+from matbench_discovery import preds
 from matbench_discovery.data import (
     artifact_filename,
     ase_atoms_from_zip,
@@ -331,6 +332,47 @@ def test_load_df_wbm_with_preds_subset(
     else:
         expected_index = df_wbm.query(MbdKey.uniq_proto).index
     assert df_subset.index.equals(expected_index)
+
+
+def test_prediction_errors_and_element_enrichment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Prediction errors stay independent from optional per-element enrichment."""
+    models = [Model.mace_mp_0, Model.mace_mpa_0]
+    raw = pd.DataFrame(
+        {
+            Key.formula: ["Fe2O3", "FeO"],
+            MbdKey.each_true: [0.1234, 0.4567],
+            MbdKey.e_form_dft: [-1.2344, -2.3456],
+            models[0].label: [-1.1111, -2.1111],
+            models[1].label: [-1.0111, -2.0111],
+        },
+        index=pd.Index(["wbm-1", "wbm-2"], name=Key.mat_id),
+    )
+    monkeypatch.setattr(preds, "load_df_wbm_with_preds", lambda **_kwargs: raw)
+
+    predictions, errors = preds.load_prediction_errors(models)
+    expected_predictions = raw.round(3)
+    expected_errors = expected_predictions[[model.label for model in models]].sub(
+        expected_predictions[MbdKey.e_form_dft], axis="index"
+    )
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
+    pd.testing.assert_frame_equal(errors, expected_errors)
+
+    monkeypatch.setattr(
+        preds.pd,
+        "read_json",
+        lambda *_args, **_kwargs: pd.Series({"Fe": 10, "O": 20}),
+    )
+    compositions, element_data = preds.derive_element_data(predictions)
+    assert compositions.to_dict("index") == {
+        "wbm-1": {"Fe": 2.0, "O": 3.0},
+        "wbm-2": {"Fe": 1.0, "O": 1.0},
+    }
+    assert element_data[preds.TRAIN_COUNT_COL].to_dict() == {"Fe": 10, "O": 20}
+    assert element_data[preds.TEST_SET_STD_COL].to_dict() == pytest.approx(
+        {"Fe": 0.2361736649163069, "O": 0.2361736649163069}
+    )
 
 
 def test_update_yaml_file(tmp_path: Path) -> None:

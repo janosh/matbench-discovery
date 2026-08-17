@@ -1,6 +1,7 @@
 """Enums used as keys/accessors for dicts and dataframes across Matbench Discovery."""
 
 import functools
+import hashlib
 import os
 import re
 from enum import EnumType, StrEnum, _EnumDict, auto, unique
@@ -14,6 +15,31 @@ from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 eV_per_atom = pmv.enums.eV_per_atom  # noqa: N816
 T = TypeVar("T", bound="Files")
+
+
+def resolve_verified_file(
+    abs_path: str,
+    *,
+    url: str | None,
+    label: str,
+    md5: str | None,
+) -> str:
+    """Resolve a cached file and reject it unless its declared MD5 verifies."""
+    if url is not None:
+        maybe_auto_download_file(url, abs_path, label=label, md5=md5)
+    if not os.path.isfile(abs_path):
+        raise FileNotFoundError(
+            f"Failed to resolve {label!r} at {abs_path} with {url=}"
+        )
+    if md5 is not None:
+        with open(abs_path, "rb") as file:
+            actual_md5 = hashlib.file_digest(file, "md5").hexdigest()
+        if actual_md5 != md5:
+            raise ValueError(
+                f"Stale cached file for {label!r} at {abs_path}: "
+                f"expected MD5 {md5}, got {actual_md5}"
+            )
+    return abs_path
 
 
 class LabelEnum(StrEnum):
@@ -361,6 +387,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return self.metadata["model_key"]
 
     @property
+    def key_aliases(self) -> tuple[str, ...]:
+        """Historical URL slugs that resolve to this model's canonical key."""
+        return tuple(self.metadata.get("model_key_aliases", ()))
+
+    @property
     def family(self) -> str:
         """Model family directory derived from the YAML parent path."""
         return os.path.basename(os.path.dirname(self.rel_path))
@@ -396,14 +427,12 @@ class Model(Files, base_dir=f"{ROOT}/models"):
                 )
             return None
         abs_path = f"{ROOT}/{rel_path}"
-        if file_url := file_ref_url(pred_file):
-            maybe_auto_download_file(
-                file_url,
-                abs_path,
-                label=self.label,
-                md5=pred_file.get("md5"),
-            )
-        return abs_path
+        return resolve_verified_file(
+            abs_path,
+            url=file_ref_url(pred_file),
+            label=self.label,
+            md5=pred_file.get("md5"),
+        )
 
     @property
     def discovery_path(self) -> str:
@@ -437,21 +466,19 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     @classmethod
     def from_ref(cls, ref: str | Self) -> Self:
-        """Resolve an enum name, value (case/dash-insensitive), key, or label to a
-        member.
-
-        Raises:
-            ValueError: For unresolvable refs (with close-match suggestions).
-        """
+        """Resolve an enum name, normalized value, canonical key, or key alias."""
         if isinstance(ref, cls):
             return ref
-        if member := cls.__members__.get(ref) or cls._missing_(ref):
+        if member := cls.__members__.get(ref):
             return member
         if member := next(
-            (model for model in cls if ref in (model.key, model.label)), None
+            (model for model in cls if ref == model.key or ref in model.key_aliases),
+            None,
         ):
             return member
-        return cls.from_label(ref)
+        if member := cls._missing_(ref):
+            return member
+        raise ValueError(f"{ref!r} not found in Model enum names, keys, or aliases")
 
     @classmethod
     def _missing_(cls, value: object) -> Self | None:
@@ -535,18 +562,11 @@ class DataFiles(Files):
 
     @property
     def path(self) -> str:
-        """File path associated with the file URL if it exists, otherwise
-        download the file first, then return the path.
-        """
-        key, rel_path = self.name, self.rel_path
-
-        abs_path = f"{type(self).base_dir}/{rel_path}"
-        if not os.path.isfile(abs_path):
-            expected_md5 = self.yaml[key].get("md5")
-            maybe_auto_download_file(self.url, abs_path, label=key, md5=expected_md5)
-            if not os.path.isfile(abs_path):
-                raise FileNotFoundError(
-                    f"Failed to download and verify {key!r} from {self.url} "
-                    f"to {abs_path} with {expected_md5=}."
-                )
-        return abs_path
+        """Return the downloaded file only after validating its declared MD5."""
+        abs_path = f"{type(self).base_dir}/{self.rel_path}"
+        return resolve_verified_file(
+            abs_path,
+            url=self.url,
+            label=self.name,
+            md5=self.yaml[self.name].get("md5"),
+        )

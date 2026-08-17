@@ -5,6 +5,7 @@
   import fp_diff from '$figs/scatter-largest-fp-diff-each-error.jsonl'
   import { ModelSelect } from '$lib'
   import { dashed, series_blue, series_red, wide_legend } from '$lib/fig-helpers'
+  import { UrlModelSelection } from '$lib/model-selection.svelte'
   import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
   import type { UrlParamEntry } from '$lib/url-state.svelte'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
@@ -15,59 +16,67 @@
   // json_payload plugin, so each dropdown below defaults to a top model
   const fp_diff_label = `|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|`
 
-  // per-figure model selection via dropdowns (faster than the old all-series-behind-a-
-  // huge-legend figs). bind the model labels (svelte-widgets string options; binding
-  // the model objects directly would JSON-serialize their arrays into the DOM via the
-  // hidden form-validation input) and look up the matching model object(s) for plotting.
-  const find_model = <T extends { label: string }>(models: T[], label: string): T =>
-    models.find((model) => model.label === label) ?? models[0]
+  // Selections and URL state use immutable model keys; labels remain display-only.
+  const find_model = <T extends { model_key: string }>(
+    models: T[],
+    model_key: string,
+  ): T => models.find((model) => model.model_key === model_key) ?? models[0]
+  type ModelOption = { label: string; value: string }
+  const model_options = (models: { model_key: string; label: string }[]): ModelOption[] =>
+    models.map(({ model_key, label }) => ({ label, value: model_key }))
 
-  const elem_prev_labels = elem_prev.models.map((model) => model.label)
-  const default_elem_prev = elem_prev_labels.slice(0, 3)
+  const elem_prev_options = model_options(elem_prev.models)
+  const elem_prev_selection = new UrlModelSelection(() => ({
+    options: elem_prev_options,
+    defaults: elem_prev_options.slice(0, 3).map(({ value }) => value),
+  }))
   // per-figure single-model dropdowns: one URL param each, defaulting to the top model
-  const single_selects: Record<string, string[]> = {
-    fp_model: fp_diff.models.map((model) => model.label),
-    each_model: each_errors.models.map((model) => model.label),
-    hist_model: hist_largest.models.map((model) => model.label),
+  const single_selects = {
+    fp_model: model_options(fp_diff.models),
+    each_model: model_options(each_errors.models),
+    hist_model: model_options(hist_largest.models),
   }
 
-  let elem_prev_selected = $state([...default_elem_prev])
-  let picked = $state(
+  let picked = $state<Record<string, ModelOption[]>>(
     Object.fromEntries(
-      Object.entries(single_selects).map(([key, model_labels]) => [key, model_labels[0]]),
+      Object.entries(single_selects).map(([key, options]) => [key, [options[0]]]),
     ),
   )
 
-  // serialize the multi-select in canonical payload order so URL comparison against
-  // the default is insensitive to the order models were clicked in
-  const elem_prev_param = (selected: string[]): string =>
-    elem_prev_labels.filter((label) => selected.includes(label)).join(`,`)
-
   const read_url_params = (params: URLSearchParams) => {
-    const parsed = params
-      .get(`models`)
-      ?.split(`,`)
-      .filter((label) => elem_prev_labels.includes(label))
-    elem_prev_selected = parsed?.length ? parsed : [...default_elem_prev]
-    for (const [key, model_labels] of Object.entries(single_selects)) {
-      picked[key] = valid_query_param(params, key, model_labels[0], new Set(model_labels))
+    elem_prev_selection.read(params)
+    if (!elem_prev_selection.selected.length) {
+      elem_prev_selection.selected = elem_prev_options.slice(0, 3)
+    }
+    for (const [key, options] of Object.entries(single_selects)) {
+      const options_by_key = Object.fromEntries(
+        options.map((option) => [option.value, option]),
+      )
+      const model_key = valid_query_param(params, key, options[0].value, options_by_key)
+      picked[key] = [options_by_key[model_key]]
     }
   }
   bind_url_params(read_url_params, () => [
-    [`models`, elem_prev_param(elem_prev_selected), elem_prev_param(default_elem_prev)],
-    ...Object.entries(single_selects).map(([key, model_labels]): UrlParamEntry => [
+    elem_prev_selection.url_entry,
+    ...Object.entries(single_selects).map(([key, options]): UrlParamEntry => [
       key,
-      picked[key],
-      model_labels[0],
+      picked[key][0].value,
+      options[0].value,
     ]),
   ])
 
   const elem_prev_models = $derived(
-    elem_prev.models.filter((model) => elem_prev_selected.includes(model.label)),
+    elem_prev.models.filter(({ model_key }) =>
+      elem_prev_selection.values.includes(model_key),
+    ),
   )
-  const fp_diff_active = $derived(find_model(fp_diff.models, picked.fp_model))
-  const each_errors_active = $derived(find_model(each_errors.models, picked.each_model))
-  const hist_largest_active = $derived(find_model(hist_largest.models, picked.hist_model))
+  const fp_diff_active = $derived(find_model(fp_diff.models, picked.fp_model[0].value))
+  const each_errors_active = $derived(
+    find_model(each_errors.models, picked.each_model[0].value),
+  )
+  const hist_largest_active = $derived(
+    find_model(hist_largest.models, picked.hist_model[0].value),
+  )
 
   const numeric_pairs = (
     x_values: (number | null)[],
@@ -116,8 +125,8 @@ dependent on geometry than chemistry.
 <label>
   Models
   <ModelSelect
-    options={elem_prev_labels}
-    bind:selected={elem_prev_selected}
+    options={elem_prev_options}
+    bind:selected={elem_prev_selection.selected}
     minSelect={1}
   />
 </label>
@@ -155,7 +164,7 @@ plotting against that the absolute E<sub>above hull</sub> errors for each model.
   Model
   <ModelSelect
     options={single_selects.fp_model}
-    bind:value={picked.fp_model}
+    bind:selected={picked.fp_model}
     minSelect={1}
     maxSelect={1}
   />
@@ -193,7 +202,7 @@ errors.
   Model
   <ModelSelect
     options={single_selects.each_model}
-    bind:value={picked.each_model}
+    bind:selected={picked.each_model}
     minSelect={1}
     maxSelect={1}
   />
@@ -223,7 +232,7 @@ each model and the mean of all models.
   Model
   <ModelSelect
     options={single_selects.hist_model}
-    bind:value={picked.hist_model}
+    bind:selected={picked.hist_model}
     minSelect={1}
     maxSelect={1}
   />

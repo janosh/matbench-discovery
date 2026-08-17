@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricsTable, type ModelData, ACTIVE_MODELS } from '$lib'
+  import { MetricsTable, type ModelData, ACTIVE_MODELS, MODELS } from '$lib'
   import {
     MD_METRICS,
     METADATA_COLS,
@@ -91,7 +91,7 @@
       config={CMDS_CONFIG}
       default_config={DEFAULT_CMDS_CONFIG}
       title_label={MD_METRICS.md_combined_score}
-      on_change={(cfg) => update_models_cmds(ACTIVE_MODELS, cfg as typeof CMDS_CONFIG)}
+      on_change={(cfg) => update_models_cmds(MODELS, cfg as typeof CMDS_CONFIG)}
     />
     <figcaption>
       Drag the knob to reweight which CMDS components matter to you; the table and plots

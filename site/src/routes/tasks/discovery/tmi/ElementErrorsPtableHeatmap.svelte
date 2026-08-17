@@ -1,19 +1,21 @@
 <script lang="ts">
-  import { ACTIVE_MODELS, PtableInset } from '$lib'
+  import { ACTIVE_MODELS, ModelSelect, PtableInset } from '$lib'
   import type { ModelData } from '$lib/types'
   import { max } from 'd3-array'
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
   import { ColorBar, format_num, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
-  import { MultiSelect } from 'svelte-widgets'
   import { per_element_each_errors as each_errors } from '$lib/per-element-errors'
 
   const models_with_errors = ACTIVE_MODELS.filter(
     (model): model is ModelData & { model_key: string } =>
       typeof model.model_key === `string` && model.model_key in each_errors,
   )
-  const model_names_with_errors = models_with_errors.map((model) => model.model_name)
+  type ModelOption = { label: string; value: string }
+  const model_options = models_with_errors.map(
+    ({ model_key, model_name }): ModelOption => ({ label: model_name, value: model_key }),
+  )
 
   // where each model's value lands in a split tile, keyed by selection count
   // (matches matterviz ElementTile's auto layouts: 2=diagonal, 3=horizontal, 4=quadrant)
@@ -26,8 +28,8 @@
   let {
     color_scale = $bindable(`interpolateViridis`),
     active_element = $bindable(null),
-    models = $bindable(model_names_with_errors),
-    current_model = $bindable([models[0] ?? ``]),
+    models = $bindable(model_options),
+    current_model = $bindable(models.slice(0, 1)),
     manual_cbar_max = $bindable(false),
     normalized = $bindable(true),
     cbar_max = $bindable(0.3),
@@ -35,9 +37,9 @@
   }: ComponentProps<typeof PeriodicTable> & {
     color_scale?: D3InterpolateName | ((num: number) => string)
     active_element?: ChemicalElement | null
-    models?: string[]
-    // Must be string[] instead of string for svelte-widgets to be correctly restored by snapshot
-    current_model?: string[]
+    models?: ModelOption[]
+    // Must be an array for svelte-widgets to restore it correctly from snapshots.
+    current_model?: ModelOption[]
     manual_cbar_max?: boolean
     normalized?: boolean
     cbar_max?: number | null
@@ -48,7 +50,7 @@
   // selected models resolved in selection order (drives segment order in split tiles)
   let selected_models = $derived.by(() => {
     const resolved = current_model
-      .map((name) => models_with_errors.find((model) => model.model_name === name))
+      .map(({ value }) => models_with_errors.find((model) => model.model_key === value))
       .filter((model) => model !== undefined)
     return resolved.length > 0 ? resolved : models_with_errors.slice(0, 1)
   })
@@ -109,7 +111,7 @@
   each element tile splits into one segment per model.
 </p>
 
-<MultiSelect bind:selected={current_model} options={models} maxSelect={4} minSelect={1} />
+<ModelSelect bind:selected={current_model} options={models} maxSelect={4} minSelect={1} />
 
 {#if selected_models.length > 1}
   <div class="split-legend">

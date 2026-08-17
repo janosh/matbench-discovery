@@ -45,8 +45,8 @@ const json_payload_plugin = (): Plugin => ({
     if (file.endsWith(`.jsonl`)) {
       const base: Record<string, unknown> = {}
       const models: unknown[] = []
-      // trim each line (CRLF checkouts leave a trailing \r) before JSON.parse, matching
-      // read_jsonl_payload's line.strip() in matbench_discovery/figs.py
+      // Python payload validation enforces canonical LF records. The build loader trims
+      // lines only to tolerate checkout line-ending conversion while reconstructing data.
       for (const raw of fs.readFileSync(file, `utf8`).split(`\n`)) {
         const line = raw.trim()
         if (!line) continue

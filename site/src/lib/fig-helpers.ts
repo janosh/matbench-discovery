@@ -11,26 +11,20 @@ import { dismiss_on_outside_press } from 'svelte-widgets/attachments'
 // import, so pages get models pre-colored in discovery-F1-desc leaderboard order;
 // order_models re-sorts the few figures wanting a different order (MAE, AUC, sigma).
 
-// stable color + discovery metrics (unique-prototypes test set) per model, indexed by
-// both model_key and display name so key- and label-keyed payloads both resolve
+// stable color + discovery metrics (unique-prototypes test set), keyed only by the
+// immutable model_key. Display labels are presentation and never identify records.
 const model_meta: Record<string, { color?: string; f1: number; mae: number }> = {}
 for (const model of MODELS) {
   const metrics = model.metrics?.discovery?.unique_prototypes
-  for (const id of [model.model_key, model.model_name]) {
-    if (id) {
-      model_meta[id] = {
-        color: model.color,
-        f1: metrics?.F1 ?? -Infinity,
-        mae: metrics?.MAE ?? Infinity,
-      }
-    }
+  model_meta[model.model_key] = {
+    color: model.color,
+    f1: metrics?.F1 ?? -Infinity,
+    mae: metrics?.MAE ?? Infinity,
   }
 }
-// look up a model's MODELS metadata by key or display label
-const meta = (model: { key?: string; label?: string }) =>
-  model_meta[model.key ?? model.label ?? ``]
+const meta = (model: { model_key: string }) => model_meta[model.model_key]
 // discovery MAE key (ascending = best first) for the hull-dist box + rolling figures
-export const model_mae = (model: { key?: string; label?: string }): number =>
+export const model_mae = (model: { model_key: string }): number =>
   meta(model)?.mae ?? Infinity
 
 // non-mutating re-sort by a numeric key (ascending = first), e.g. model_mae or
@@ -42,7 +36,7 @@ export const order_models = <T>(models: T[], order: (model: T) => number): T[] =
 // and sort into discovery-F1-desc leaderboard order. Deriving it on import keeps the
 // committed .jsonl position-independent and merge-friendly.
 export const attach_style = <
-  T extends { key?: string; label?: string },
+  T extends { model_key: string; label: string },
   P extends { models: T[] },
 >(
   payload: P,

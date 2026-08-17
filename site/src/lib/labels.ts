@@ -842,6 +842,7 @@ const org_logos = {
   'AI for Science Institute, Beijing': `/logos/beijing-ai-for-science-institute.svg`,
   'Argonne National Laboratory': `/logos/argonne-national-laboratory.svg`,
   'Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)': `/logos/beijing-institute-of-applied-physics-and-computational-mathematics.svg`,
+  'Christian-Albrechts-Universität zu Kiel': `/logos/christian-albrechts-university-kiel.svg`,
   'Chinese Academy of Sciences': `/logos/chinese-academy-of-sciences.svg`,
   'Cornell University': `/logos/cornell-university.svg`,
   'DAMO Academy, Alibaba Inc': `/logos/damo-academy-alibaba.svg`,

@@ -1,7 +1,7 @@
 """Generate per-model hull-distance error box statistics for the site."""
 
 # %%
-from matbench_discovery import figs
+from matbench_discovery import figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -16,9 +16,8 @@ if test_subset == TestSubset.uniq_protos:
 # %%
 box_models: list[dict[str, object]] = [
     {
-        "key": model.key,
-        "label": model.label,
-        "quantiles": figs.round_list(
+        **figs.discovery_model_identity(model),
+        "quantiles": payload_numerics.round_list(
             df_each_err[model.label].quantile((0.05, 0.25, 0.5, 0.75, 0.95))
         ),
     }
@@ -27,4 +26,15 @@ box_models: list[dict[str, object]] = [
 
 
 # %%
-figs.write_site_payload("box-hull-dist-errors", {"models": box_models})
+provenance = figs.build_discovery_payload_provenance(
+    generator=__file__,
+    test_subset=test_subset.value,
+    source_files={"payload_numerics": payload_numerics.__file__},
+    parameters={
+        "coordinate_decimals": payload_numerics.COORD_DECIMALS,
+        "quantiles": [0.05, 0.25, 0.5, 0.75, 0.95],
+    },
+)
+figs.write_site_payload(
+    "box-hull-dist-errors", {"provenance": provenance, "models": box_models}
+)

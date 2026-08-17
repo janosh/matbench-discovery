@@ -154,6 +154,13 @@ describe(`get_org_logo`, () => {
       src_logo(`Aberystwyth University`, `/logos/aberystwyth-university.svg`),
     ],
     [
+      `Independent Researcher in Data-driven Materials Discovery, M.Sc in Materials Science and Engineering, Christian-Albrechts-Universität zu Kiel`,
+      src_logo(
+        `Christian-Albrechts-Universität zu Kiel`,
+        `/logos/christian-albrechts-university-kiel.svg`,
+      ),
+    ],
+    [
       `Rutherford Appleton Laboratory, UK`,
       src_logo(
         `Rutherford Appleton Laboratory`,

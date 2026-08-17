@@ -7,8 +7,7 @@
 // shape) so concurrent model submissions git-merge cleanly. Both are loaded at build by
 // the json_payload plugin (vite.config.ts) and import as a parsed default export. The
 // plugin pipes each .jsonl payload through attach_style, so models arrive in leaderboard
-// (discovery-F1-desc) order with the `color` it injects, typed on KeyedModel and on the
-// label-only payloads that read it.
+// (discovery-F1-desc) order with the `color` it injects, typed on KeyedModel.
 //
 // This file must stay import/export-free at the top level so the helper interfaces below
 // are global and the module declarations stay ambient.
@@ -28,19 +27,37 @@ interface HistBins extends XY {
   bar_width: number
 }
 
-// per-model entry in the discovery/diagnostic payloads: `key` (= MODELS model_key, used
-// e.g. for the compliance join in discovery-metric-figs.md), a display `label`, and the
-// stable `color` attach_style injects on import (undefined if the model isn't in MODELS;
-// presentation, not committed data). Label-only payloads below inline color where read.
+interface ArtifactManifest {
+  role: string
+  sha256: string
+  size: number
+}
+
+interface PayloadBase {
+  schema_version: 2
+  provenance: {
+    benchmark_inputs: ArtifactManifest[]
+    recipe: {
+      sources: (ArtifactManifest & { path: string })[]
+      sha256: string
+    }
+    parameters: Record<string, unknown>
+    runtime: { python: string; packages: Record<string, string> }
+    source_commit?: string
+  }
+}
+
+// Per-model payload entry. model_key is the immutable identity; label is display-only.
 interface KeyedModel {
-  key: string
+  model_key: string
   label: string
+  input_artifacts: ArtifactManifest[]
   color: string | undefined
 }
 
 // === tasks/discovery/tmi metrics ===
 declare module '$figs/box-hull-dist-errors.jsonl' {
-  const data: {
+  const data: PayloadBase & {
     // quantiles = [q05, q25, median, q75, q95] of each model's hull distance error
     models: (KeyedModel & { quantiles: number[] })[]
   }
@@ -48,7 +65,7 @@ declare module '$figs/box-hull-dist-errors.jsonl' {
 }
 
 declare module '$figs/cumulative-precision-recall.jsonl' {
-  const data: {
+  const data: PayloadBase & {
     n_stable: number // number of stable materials in the WBM test set
     models: (KeyedModel & {
       x: number[] // number of materials validated, ranked most to least stable
@@ -62,7 +79,7 @@ declare module '$figs/cumulative-precision-recall.jsonl' {
 }
 
 declare module '$figs/roc-models.jsonl' {
-  const data: {
+  const data: PayloadBase & {
     models: (KeyedModel & {
       auc: number
       fpr: number[]
@@ -73,7 +90,7 @@ declare module '$figs/roc-models.jsonl' {
 }
 
 declare module '$figs/rolling-mae-vs-hull-dist.jsonl' {
-  const data: {
+  const data: PayloadBase & {
     x: number[] // shared E above hull values (eV/atom)
     models: (KeyedModel & {
       y: number[]
@@ -84,7 +101,7 @@ declare module '$figs/rolling-mae-vs-hull-dist.jsonl' {
 }
 
 declare module '$figs/hist-clf-pred-hull-dist.jsonl' {
-  const data: {
+  const data: PayloadBase & {
     bin_centers: number[] // shared hull-dist bins (eV/atom)
     // per-model stability-classification counts per bin
     models: (KeyedModel & { f1: number } & Record<`tp` | `fn` | `fp` | `tn`, number[]>)[]
@@ -94,38 +111,36 @@ declare module '$figs/hist-clf-pred-hull-dist.jsonl' {
 
 // === tasks/discovery/tmi extras ===
 declare module '$figs/element-prevalence-vs-error.jsonl' {
-  const data: {
+  const data: PayloadBase & {
     elements: string[] // element symbols, same order as occurrences
     occurrences: (number | null)[] // MP training-set occurrence count per element
     // mean error per element (color read by the per-element scatter)
-    models: { label: string; color: string | undefined; y: (number | null)[] }[]
+    models: (KeyedModel & { y: (number | null)[] })[]
   }
   export default data
 }
 
 declare module '$figs/scatter-largest-fp-diff-each-error.jsonl' {
-  const data: {
+  const data: PayloadBase & {
     fp_diff: number[] // shared |SSFP_initial - SSFP_final| values
-    models: {
-      label: string
-      color: string | undefined
+    models: (KeyedModel & {
       mae: number
       y: (number | null)[]
-    }[]
+    })[]
   }
   export default data
 }
 
 declare module '$figs/scatter-largest-each-errors-fp-diff.jsonl' {
-  const data: { models: (LabeledXY & { mae: number })[] }
+  const data: PayloadBase & { models: (KeyedModel & LabeledXY & { mae: number })[] }
   export default data
 }
 
 declare module '$figs/hist-largest-each-errors-fp-diff.jsonl' {
-  const data: {
+  const data: PayloadBase & {
     // fingerprint-diff histograms for each model's 100 worst (err_max) and best
     // (err_min) hull-dist predictions
-    models: { label: string; err_min: HistBins; err_max: HistBins }[]
+    models: (KeyedModel & { err_min: HistBins; err_max: HistBins })[]
   }
   export default data
 }
@@ -196,7 +211,7 @@ declare module '$figs/kappa-103-analysis.jsonl' {
   // per-material kappa-103 diagnostics vs the phononDB-PBE reference. All
   // per-material arrays are aligned to material_ids; null = material missing from
   // the model's predictions (or the value couldn't be computed)
-  const data: {
+  const data: PayloadBase & {
     material_ids: string[]
     formulas: string[]
     spg_nums: number[] // spacegroup numbers (client derives crystal system)
@@ -220,20 +235,20 @@ declare module '$figs/kappa-103-analysis.jsonl' {
 
 // === geo-opt ===
 declare module '$figs/struct-rmsd-cdf.jsonl' {
-  const data: { models: (LabeledXY & { auc: number })[] }
+  const data: PayloadBase & { models: (KeyedModel & LabeledXY & { auc: number })[] }
   export default data
 }
 
 declare module '$figs/sym-ops-diff-bar.jsonl' {
   // histogram of symmetry-operation count changes during relaxation (symprec=1e-5)
-  const data: { models: (LabeledXY & { sigma: number })[] }
+  const data: PayloadBase & { models: (KeyedModel & LabeledXY & { sigma: number })[] }
   export default data
 }
 
 declare module '$figs/spg-sankeys.jsonl' {
-  // DFT vs model spacegroup flows (symprec=1e-5); key matches MODELS model_key. flat
+  // DFT vs model spacegroup flows (symprec=1e-5), keyed by MODELS model_key. flat
   // arrays; matterviz sankey_from_links(source, target, value, labels) builds the graph
-  const data: {
+  const data: PayloadBase & {
     models: (KeyedModel & {
       labels: string[]
       source: number[]

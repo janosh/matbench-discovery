@@ -109,7 +109,7 @@ export async function mount_with_url(
 ): Promise<ReturnType<typeof svelte_mount>> {
   const next_url = new URL(url)
   app_mocks.state.page.url = next_url
-  history.replaceState(null, ``, `${next_url.pathname}${next_url.search}`)
+  history.replaceState(null, ``, `${next_url.pathname}${next_url.search}${next_url.hash}`)
   const instance = tracked_mount(
     component as Parameters<typeof svelte_mount>[0],
     { ...options, target: document.body } as Parameters<typeof svelte_mount>[1],

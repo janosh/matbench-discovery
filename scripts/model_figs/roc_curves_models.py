@@ -3,7 +3,7 @@
 # %%
 import sklearn.metrics as sk_metrics
 
-from matbench_discovery import STABILITY_THRESHOLD, figs
+from matbench_discovery import STABILITY_THRESHOLD, figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -27,13 +27,24 @@ for model in complete_models():
     fpr, tpr, _thresholds = sk_metrics.roc_curve(targets, model_scores)
     auc = sk_metrics.roc_auc_score(targets, model_scores)
     # ROC staircases at full resolution are ~4x over-resolved for a 480px panel
-    fpr, tpr = figs.lttb(fpr, tpr, 200)
+    fpr, tpr = payload_numerics.lttb(fpr, tpr, 200)
     model_data: dict[str, object] = {
-        "key": model.key,
-        "label": model.label,
+        **figs.discovery_model_identity(model),
         "auc": round(float(auc), 2),
-        "fpr": figs.round_list(fpr),
-        "tpr": figs.round_list(tpr),
+        "fpr": payload_numerics.round_list(fpr),
+        "tpr": payload_numerics.round_list(tpr),
     }
     roc_models.append(model_data)
-figs.write_site_payload("roc-models", {"models": roc_models})
+provenance = figs.build_discovery_payload_provenance(
+    generator=__file__,
+    test_subset=test_subset.value,
+    source_files={"payload_numerics": payload_numerics.__file__},
+    parameters={
+        "auc_decimals": 2,
+        "coordinate_decimals": payload_numerics.COORD_DECIMALS,
+        "lttb_points": 200,
+        "stability_threshold": STABILITY_THRESHOLD,
+    },
+    packages=("scikit-learn",),
+)
+figs.write_site_payload("roc-models", {"provenance": provenance, "models": roc_models})

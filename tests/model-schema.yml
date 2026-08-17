@@ -579,6 +579,13 @@ properties:
     # canonical /models/<model_key> URL slug: lowercase alphanumeric segments
     # separated by single hyphens or dots (dots keep readable version tokens)
     pattern: '^[a-z0-9]+(?:[.-][a-z0-9]+)*$'
+  model_key_aliases:
+    type: array
+    description: Historical model URL slugs redirected to model_key.
+    uniqueItems: true
+    items:
+      type: string
+      pattern: '^[a-z0-9]+(?:[.-][a-z0-9]+)*$'
   model_version:
     type: [string, 'null']
     description: Upstream package / checkpoint version label (semver, date, tag, …).

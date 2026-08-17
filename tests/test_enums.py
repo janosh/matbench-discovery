@@ -1,5 +1,6 @@
 """Test enums module."""
 
+import hashlib
 import os
 from enum import auto
 from pathlib import Path
@@ -9,6 +10,7 @@ from unittest.mock import patch
 import pytest
 import requests
 import requests.adapters
+import yaml
 
 import scripts.generate_model_enum as model_enum_generator
 from matbench_discovery import DATA_DIR, ROOT
@@ -23,6 +25,7 @@ from matbench_discovery.enums import (
     Open,
     Task,
     TestSubset,
+    resolve_verified_file,
 )
 from matbench_discovery.remote import figshare
 from matbench_discovery.remote.fetch import maybe_auto_download_file
@@ -213,7 +216,7 @@ def test_data_files_path_raises_when_md5_download_fails(
 
     with (
         patch("requests.get", return_value=make_mock_response(b"bad data")),
-        pytest.raises(FileNotFoundError, match="Failed to download and verify"),
+        pytest.raises(FileNotFoundError, match="Failed to resolve"),
     ):
         _ = data_file.path
 
@@ -221,6 +224,44 @@ def test_data_files_path_raises_when_md5_download_fails(
     assert f"expected {expected_md5}" in stdout
     assert stderr == ""
     assert not os.path.isfile(f"{tmp_path}/{data_file.rel_path}")
+
+
+@pytest.mark.parametrize("repair_succeeds", [True, False])
+def test_resolve_verified_file_rechecks_stale_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, repair_succeeds: bool
+) -> None:
+    """A stale artifact is returned only after a successful verified repair."""
+    from matbench_discovery import enums as enums_mod
+
+    abs_path = f"{tmp_path}/artifact.csv"
+    Path(abs_path).write_bytes(b"stale")
+    expected_md5 = hashlib.md5(b"fresh", usedforsecurity=False).hexdigest()
+    actual_md5 = hashlib.md5(b"stale", usedforsecurity=False).hexdigest()
+
+    def repair_file(_url: str, repair_path: str, **_kwargs: object) -> None:
+        """Replace stale bytes only in the successful repair case."""
+        if repair_succeeds:
+            Path(repair_path).write_bytes(b"fresh")
+
+    monkeypatch.setattr(enums_mod, "maybe_auto_download_file", repair_file)
+
+    def resolve() -> str:
+        """Resolve the test artifact with its expected checksum."""
+        return resolve_verified_file(
+            abs_path,
+            url="https://example.com/artifact.csv",
+            label="artifact",
+            md5=expected_md5,
+        )
+
+    if repair_succeeds:
+        assert resolve() == abs_path
+        assert Path(abs_path).read_bytes() == b"fresh"
+    else:
+        with pytest.raises(
+            ValueError, match=f"expected MD5 {expected_md5}, got {actual_md5}"
+        ):
+            resolve()
 
 
 def test_model_md_path_returns_none_when_absent(
@@ -233,10 +274,9 @@ def test_model_md_path_returns_none_when_absent(
 
 
 def test_model_md_path_returns_path_for_dict_md(
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """md_path resolves local pred_file without downloading when no URL is available."""
-    from matbench_discovery import ROOT
     from matbench_discovery import enums as enums_mod
 
     model = Model.mace_mp_0
@@ -251,7 +291,11 @@ def test_model_md_path_returns_path_for_dict_md(
         "maybe_auto_download_file",
         lambda *args, **_kwargs: download_calls.append(args),
     )
-    assert model.md_path == f"{ROOT}/models/x/md.csv.gz"
+    monkeypatch.setattr(enums_mod, "ROOT", str(tmp_path))
+    expected_path = f"{tmp_path}/models/x/md.csv.gz"
+    Path(expected_path).parent.mkdir(parents=True)
+    Path(expected_path).write_bytes(b"md")
+    assert model.md_path == expected_path
     assert download_calls == []
 
 
@@ -399,6 +443,43 @@ def test_generated_model_enum_is_current() -> None:
     with open(f"{ROOT}/matbench_discovery/enums.py", encoding="utf-8") as file:
         source = file.read()
     assert model_enum_generator.generate_source(source) == source
+
+
+def test_model_enum_generator_rejects_global_key_alias_collisions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Canonical keys and aliases are unique across active and aborted YAMLs."""
+    metadata_by_path = {
+        "active/model-a.yml": {
+            "model_key": "model-a",
+            "model_key_aliases": ["legacy"],
+            "lifecycle": "active",
+        },
+        "aborted/model-b.yml": {"model_key": "legacy", "lifecycle": "aborted"},
+    }
+    for relative_path, metadata in metadata_by_path.items():
+        path = tmp_path / "models" / relative_path
+        path.parent.mkdir(parents=True)
+        path.write_text(yaml.safe_dump(metadata))
+    monkeypatch.setattr(model_enum_generator, "ROOT", str(tmp_path))
+    source = (
+        f"class Model:\n{model_enum_generator.BEGIN_MARKER}\n"
+        f"{model_enum_generator.END_MARKER}\n"
+    )
+    with pytest.raises(ValueError, match="collides"):
+        model_enum_generator.generate_source(source)
+
+
+def test_model_from_ref_prefers_exact_alias_over_normalized_enum_value(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Exact alias slugs cannot be shadowed by punctuation normalization."""
+    monkeypatch.setitem(
+        Model.mace_mp_0.__dict__,
+        "metadata",
+        {"model_key": "mace-mp-0", "model_key_aliases": ["chgnet.0.3.0"]},
+    )
+    assert Model.from_ref("chgnet.0.3.0") is Model.mace_mp_0
 
 
 @pytest.mark.parametrize(

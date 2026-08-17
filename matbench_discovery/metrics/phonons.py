@@ -220,6 +220,8 @@ def weighted_quantiles(
     weight_sum = weights.sum()
     if weight_sum <= 0:
         raise ValueError("weights must sum to a positive value")
+    positive_weight_mask = weights > 0
+    values, weights = values[positive_weight_mask], weights[positive_weight_mask]
     order = np.argsort(values)
     values, weights = values[order], weights[order]
     cdf = np.cumsum(weights) / weight_sum
