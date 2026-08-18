@@ -38,6 +38,7 @@ from matbench_discovery.data import (
     update_yaml_file,
 )
 from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.preds import elements
 
 atoms1 = Atoms("H2O", positions=[[0, 0, 0], [0, 0, 1], [0, 1, 0]], cell=[5, 5, 5])
 atoms1.info[Key.mat_id] = "structure1"
@@ -373,6 +374,9 @@ def test_prediction_errors_and_element_enrichment(
     assert element_data[preds.TEST_SET_STD_COL].to_dict() == pytest.approx(
         {"Fe": 0.2361736649163069, "O": 0.2361736649163069}
     )
+    assert elements.mean_abs_error_by_element(
+        compositions, pd.Series([2.0, float("nan")], index=raw.index)
+    ).to_dict() == {"Fe": 2.0, "O": 2.0}
 
 
 def test_update_yaml_file(tmp_path: Path) -> None:

@@ -434,7 +434,7 @@ RECIPE_ROLES = {
     "struct-rmsd-cdf": {"generator", "payload_numerics"},
     "sym-ops-diff-bar": {"generator"},
     **dict.fromkeys(TMI_PAYLOADS, ERROR_ROLES),
-    "element-prevalence-vs-error": ERROR_ROLES,
+    "element-prevalence-vs-error": ERROR_ROLES | {"element_error_analysis"},
     "per-element-each-errors": {"generator", "prediction_error_loader"},
     "kappa-103-analysis": {
         "generator",

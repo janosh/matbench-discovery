@@ -7,6 +7,7 @@ import pandas as pd
 
 from matbench_discovery import SITE_DIR, figs, payload_numerics, preds
 from matbench_discovery.cli import cli_args
+from matbench_discovery.preds import elements
 
 models_to_plot = cli_args.models
 
@@ -14,7 +15,7 @@ df_predictions, df_each_err = preds.load_prediction_errors(
     models_to_plot, subset=cli_args.test_subset
 )
 df_comp, df_elem_err = preds.derive_element_data(df_predictions)
-element_sources = {"prediction_error_loader": preds.__file__}
+prediction_error_source = {"prediction_error_loader": preds.__file__}
 model_identities = {
     model.key: figs.discovery_model_identity(model) for model in models_to_plot
 }
@@ -22,12 +23,9 @@ model_identities = {
 
 # %%
 # Mean model error for structures containing each element against MP prevalence.
-df_elem_present = df_comp.notna()
-elem_present_counts = df_elem_present.sum()
 element_prevalence_errors = {
-    model.key: (
-        df_elem_present.multiply(df_each_err[model.label].abs(), axis=0).sum()
-        / elem_present_counts
+    model.key: elements.mean_abs_error_by_element(
+        df_comp, df_each_err[model.label]
     ).reindex(df_elem_err.index)
     for model in models_to_plot
 }
@@ -46,8 +44,11 @@ figs.write_site_payload(
             generator=__file__,
             test_subset=cli_args.test_subset.value,
             benchmark_inputs={"mp_element_occurrences": preds.MP_COUNTS_PATH},
-            source_files=element_sources
-            | {"payload_numerics": payload_numerics.__file__},
+            source_files=prediction_error_source
+            | {
+                "element_error_analysis": elements.__file__,
+                "payload_numerics": payload_numerics.__file__,
+            },
             parameters={
                 "analysis": "element_prevalence",
                 "coordinate_decimals": payload_numerics.COORD_DECIMALS,
@@ -89,7 +90,7 @@ figs.write_site_payload(
             generator=__file__,
             test_subset=cli_args.test_subset.value,
             benchmark_inputs={"mp_element_occurrences": preds.MP_COUNTS_PATH},
-            source_files=element_sources,
+            source_files=prediction_error_source,
             parameters={"output_decimals": 4},
             packages=("pymatgen",),
         ),
