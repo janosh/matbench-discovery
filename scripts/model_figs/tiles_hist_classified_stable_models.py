@@ -74,7 +74,7 @@ provenance = figs.build_discovery_payload_provenance(
 figs.write_site_payload(
     "hist-clf-pred-hull-dist",
     {
-        "provenance": provenance,
+        **provenance,
         "bin_centers": bin_centers,
         "models": clf_models,
     },

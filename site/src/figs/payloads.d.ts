@@ -35,13 +35,15 @@ interface ArtifactManifest {
 
 interface PayloadBase {
   schema_version: 2
-  provenance: {
+  identity: {
     benchmark_inputs: ArtifactManifest[]
     recipe: {
       sources: (ArtifactManifest & { path: string })[]
       sha256: string
     }
     parameters: Record<string, unknown>
+  }
+  audit: {
     runtime: { python: string; packages: Record<string, string> }
     source_commit?: string
   }

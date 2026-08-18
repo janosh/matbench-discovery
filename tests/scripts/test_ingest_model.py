@@ -232,11 +232,12 @@ def test_run_payload_refresh_modes(run_cmd_calls: list[tuple[str, ...]]) -> None
     ):
         run_cmd_calls.clear()
         ingest.run_payload_refresh(ingest.Checklist(), mode_args=mode_args)
-        payload_calls = run_cmd_calls[: len(ingest.PAYLOAD_SCRIPTS)]
-        parity_calls = run_cmd_calls[len(ingest.PAYLOAD_SCRIPTS) : -2]
-        assert len(parity_calls) == len(ingest.FIG_STEPS)
-        assert all("--models" not in command for command in parity_calls)
+        *payload_calls, report_call, test_call = run_cmd_calls
+        assert len(payload_calls) == len(ingest.PAYLOAD_SCRIPTS)
+        assert all("--models" not in command for command in payload_calls)
         assert all(command[-len(mode_args) :] == mode_args for command in payload_calls)
+        assert "summarize_payload_changes.py" in " ".join(report_call)
+        assert "pytest" in test_call
 
 
 def test_run_model_steps_installs_project_extras(
@@ -330,6 +331,12 @@ def test_classify_yaml_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     with pytest.raises(ValueError, match="cannot perform a model-key alias migration"):
         classify(
             {new_path: active | {"model_key_aliases": ["old-key"]}},
+            {old_path: active | {"model_key": "old-key"}},
+            [old_path],
+        )
+    with pytest.raises(TypeError, match=r"model_key_aliases.*must be a list"):
+        classify(
+            {new_path: active | {"model_key_aliases": "old-key"}},
             {old_path: active | {"model_key": "old-key"}},
             [old_path],
         )

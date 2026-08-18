@@ -66,7 +66,7 @@ provenance = figs.build_discovery_payload_provenance(
 figs.write_site_payload(
     "rolling-mae-vs-hull-dist",
     {
-        "provenance": provenance,
+        **provenance,
         "x": payload_numerics.round_list(rolling_x),
         "models": rolling_models,
         "density": density,

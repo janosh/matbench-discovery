@@ -329,12 +329,6 @@ def run_payload_refresh(
         if not run_cmd(*uv_run_args(script), "--auto-download", *payload_args):
             checks.fail(f"{script} failed")
             return
-    if not models:
-        run_model_steps(
-            "Refreshing parity manifests", FIG_STEPS, None, checks, energy_only=False
-        )
-        if checks.n_failed:
-            return
     if not run_cmd(*uv_run_args("scripts/summarize_payload_changes.py")):
         checks.fail("Payload change report failed")
         return
@@ -398,7 +392,9 @@ def classify_yaml_changes(
     removed_keys = old_keys - new_keys
     for new_key in new_keys - old_keys:
         aliases = new_by_key[new_key].get("model_key_aliases", [])
-        if removed_keys & set(aliases if isinstance(aliases, list) else []):
+        if not isinstance(aliases, list):
+            raise TypeError(f"model_key_aliases for {new_key!r} must be a list")
+        if removed_keys & set(aliases):
             raise ValueError(
                 "Automated ingestion cannot perform a model-key alias migration; "
                 "run --migrate-model-key manually"

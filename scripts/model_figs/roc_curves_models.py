@@ -47,4 +47,4 @@ provenance = figs.build_discovery_payload_provenance(
     },
     packages=("scikit-learn",),
 )
-figs.write_site_payload("roc-models", {"provenance": provenance, "models": roc_models})
+figs.write_site_payload("roc-models", {**provenance, "models": roc_models})

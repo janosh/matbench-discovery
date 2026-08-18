@@ -62,7 +62,7 @@ for model in models_to_plot:
 figs.write_site_payload(
     "hist-largest-each-errors-fp-diff",
     {
-        "provenance": payload_provenance(
+        **payload_provenance(
             {
                 "histogram_bins": 100,
                 "histogram_range": "per_model_data_min_max",
@@ -94,9 +94,7 @@ for model in models_to_plot:
 figs.write_site_payload(
     "scatter-largest-each-errors-fp-diff",
     {
-        "provenance": payload_provenance(
-            {"mae_decimals": 4, "selected_structures": n_structs}
-        ),
+        **payload_provenance({"mae_decimals": 4, "selected_structures": n_structs}),
         "models": each_errors_models,
     },
 )
@@ -124,9 +122,7 @@ for model in models_to_plot:
 figs.write_site_payload(
     "scatter-largest-fp-diff-each-error",
     {
-        "provenance": payload_provenance(
-            {"mae_decimals": 4, "selected_structures": n_points}
-        ),
+        **payload_provenance({"mae_decimals": 4, "selected_structures": n_points}),
         "fp_diff": payload_numerics.round_list(df_largest_fp_diff.values),
         "models": fp_diff_models,
     },

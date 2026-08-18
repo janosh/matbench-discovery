@@ -81,5 +81,5 @@ provenance = figs.build_discovery_payload_provenance(
 )
 figs.write_site_payload(
     "cumulative-precision-recall",
-    {"provenance": provenance, "n_stable": n_stable, "models": cum_pr_models},
+    {**provenance, "n_stable": n_stable, "models": cum_pr_models},
 )

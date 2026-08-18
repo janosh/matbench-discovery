@@ -29,8 +29,8 @@ const yaml_plugin = (): Plugin => ({
 
 // Load committed data payloads as parsed ES modules. Figure payloads in site/src/figs
 // are typed per payload in src/figs/payloads.d.ts. Two formats: <name>.json.gz
-// (static, gzipped) and <name>.jsonl (multi-model, one model per line + a {"_base": {...}} shared-fields line,
-// reassembled to { ...shared, models: [...] } - the format that git-merges cleanly).
+// (static, gzipped) and <name>.jsonl (multi-model, one model per line + a {"_base": {...}} line,
+// reassembled with _base.derived flattened beside its identity/audit metadata).
 // Both embed as JSON.parse('...') (cheap V8 parse; @__PURE__ drops unused payloads).
 // .jsonl goes through attach_style ($lib/fig-helpers) so pages import pre-styled models.
 const json_payload_plugin = (): Plugin => ({
@@ -53,7 +53,11 @@ const json_payload_plugin = (): Plugin => ({
         const entry = JSON.parse(line) as Record<string, unknown>
         if (`_base` in entry && Object.keys(entry).length === 1) {
           // oxlint-disable-next-line no-underscore-dangle -- _base is the shared-fields sentinel
-          Object.assign(base, entry._base as Record<string, unknown>)
+          const { derived, ...metadata } = entry._base as Record<string, unknown>
+          if (!derived || typeof derived !== `object` || Array.isArray(derived)) {
+            throw new TypeError(`${file}: _base.derived must be an object`)
+          }
+          Object.assign(base, metadata, derived)
         } else models.push(entry)
       }
       const json = JSON.stringify({ ...base, models })

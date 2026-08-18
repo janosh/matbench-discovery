@@ -22,7 +22,7 @@ import re
 import sys
 import zlib
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Final, TypeGuard
+from typing import TYPE_CHECKING, Any, Final
 
 from matbench_discovery.enums import Model
 
@@ -96,7 +96,7 @@ def build_payload_provenance(
     parameters: Mapping[str, Any],
     packages: Sequence[str],
 ) -> dict[str, Any]:
-    """Describe exact shared inputs, recipe bytes, parameters, and runtime."""
+    """Build separate computation identity and informational runtime audit data."""
     if not benchmark_inputs:
         raise ValueError("Payload provenance requires at least one benchmark input")
     if "generator" in source_files:
@@ -113,17 +113,21 @@ def build_payload_provenance(
         key=lambda entry: str(entry["role"]),
     )
     return {
-        "benchmark_inputs": benchmark_manifest,
-        "recipe": {
-            "sources": source_manifest,
-            "sha256": canonical_sha256(source_manifest),
+        "identity": {
+            "benchmark_inputs": benchmark_manifest,
+            "recipe": {
+                "sources": source_manifest,
+                "sha256": canonical_sha256(source_manifest),
+            },
+            "parameters": dict(parameters),
         },
-        "parameters": dict(parameters),
-        "runtime": {
-            "python": sys.version.split()[0],
-            "packages": {
-                package: importlib.metadata.version(package)
-                for package in sorted(set(packages))
+        "audit": {
+            "runtime": {
+                "python": sys.version.split()[0],
+                "packages": {
+                    package: importlib.metadata.version(package)
+                    for package in sorted(set(packages))
+                },
             },
         },
     }
@@ -139,8 +143,7 @@ def build_discovery_payload_provenance(
     packages: Sequence[str] = (),
     prediction_round_decimals: int | None = 3,
 ) -> dict[str, Any]:
-    """Build provenance with the shared discovery benchmark and loader inputs."""
-    from matbench_discovery import ROOT
+    """Build discovery identity from benchmark, generator, and caller recipe sources."""
     from matbench_discovery.data import MAX_E_FORM_ERROR_THRESHOLD
     from matbench_discovery.enums import DataFiles
 
@@ -148,8 +151,7 @@ def build_discovery_payload_provenance(
         generator=generator,
         benchmark_inputs={"wbm_summary": DataFiles.wbm_summary.path}
         | dict(benchmark_inputs or {}),
-        source_files={"prediction_loader": f"{ROOT}/matbench_discovery/data.py"}
-        | dict(source_files or {}),
+        source_files=source_files or {},
         parameters={
             "max_formation_energy_error": MAX_E_FORM_ERROR_THRESHOLD,
             "prediction_round_decimals": prediction_round_decimals,
@@ -164,13 +166,9 @@ def computation_fingerprint(
     base: Mapping[str, Any], model_record: Mapping[str, Any]
 ) -> str:
     """Hash the complete shared and per-model computation identity."""
-    provenance = base["provenance"]
     return canonical_sha256(
         {
-            "benchmark_inputs": provenance["benchmark_inputs"],
-            "recipe_sha256": provenance["recipe"]["sha256"],
-            "parameters": provenance["parameters"],
-            "runtime": provenance["runtime"],
+            "identity": base["identity"],
             "input_artifacts": model_record["input_artifacts"],
         }
     )
@@ -214,102 +212,112 @@ def _read_jsonl_records(path: str) -> tuple[dict[str, Any], list[dict[str, Any]]
     return base, models
 
 
-def _validate_artifact_manifest(
-    entries: object, *, source_files: bool = False
-) -> list[dict[str, Any]]:
-    """Validate and return a canonical artifact or recipe-source manifest."""
-    if not isinstance(entries, list) or not entries:
+def _validate_artifact_manifest(entries: object, *, source_files: bool = False) -> None:
+    """Validate a canonical artifact or recipe-source manifest."""
+    if not isinstance(entries, list):
+        raise TypeError("Artifact manifests must be lists")
+    if not entries:
         raise ValueError("Artifact manifests must be non-empty lists")
     expected_keys = {"role", "sha256", "size"} | ({"path"} if source_files else set())
-    manifest_entries = [
-        entry for entry in entries if _is_manifest_entry(entry, expected_keys)
-    ]
-    if len(manifest_entries) != len(entries):
-        raise ValueError(f"Manifest entries must contain {sorted(expected_keys)}")
-    roles = [entry["role"] for entry in manifest_entries]
+    roles: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise TypeError("Manifest entries must be objects")
+        if set(entry) != expected_keys:
+            raise ValueError(f"Manifest entries must contain {sorted(expected_keys)}")
+        manifest_entry: dict[str, Any] = {
+            str(key): value for key, value in entry.items()
+        }
+        role = manifest_entry["role"]
+        if not isinstance(role, str) or re.fullmatch(r"[A-Za-z0-9_.-]+", role) is None:
+            raise ValueError(f"Invalid manifest role: {role!r}")
+        sha256 = manifest_entry["sha256"]
+        if not isinstance(sha256, str) or re.fullmatch(r"[0-9a-f]{64}", sha256) is None:
+            raise ValueError(f"Invalid manifest SHA-256 for role {role!r}")
+        if type(manifest_entry["size"]) is not int or manifest_entry["size"] < 0:
+            raise ValueError(f"Invalid manifest byte size for role {role!r}")
+        if source_files:
+            path = manifest_entry["path"]
+            if (
+                not isinstance(path, str)
+                or not path
+                or os.path.isabs(path)
+                or "\\" in path
+                or path != posixpath.normpath(path)
+                or path in (".", "..")
+                or path.startswith("../")
+            ):
+                raise ValueError(
+                    f"Recipe source path must be repo-relative POSIX: {path!r}"
+                )
+        roles.append(role)
     if roles != sorted(set(roles)):
         raise ValueError("Manifest roles must be unique and sorted")
-    if any(
-        not isinstance(role, str) or re.fullmatch(r"[A-Za-z0-9_.-]+", role) is None
-        for role in roles
-    ):
-        raise ValueError(f"Invalid manifest roles: {roles}")
-    if any(
-        not isinstance(entry["sha256"], str)
-        or re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]) is None
-        or type(entry["size"]) is not int
-        or entry["size"] < 0
-        for entry in manifest_entries
-    ):
-        raise ValueError("Manifest SHA-256 or byte size is invalid")
-    if source_files and any(
-        not isinstance(path := entry["path"], str)
-        or not path
-        or os.path.isabs(path)
-        or "\\" in path
-        or path != posixpath.normpath(path)
-        or path in (".", "..")
-        or path.startswith("../")
-        for entry in manifest_entries
-    ):
-        raise ValueError("Recipe source paths must be repo-relative POSIX")
-    return manifest_entries
-
-
-def _is_manifest_entry(
-    entry: object, expected_keys: set[str]
-) -> TypeGuard[dict[str, Any]]:
-    """Return whether ``entry`` is a manifest object with exactly expected keys."""
-    return isinstance(entry, dict) and set(entry) == expected_keys
 
 
 def _validate_payload(base: dict[str, Any], models: list[dict[str, Any]]) -> None:
     """Validate the strict schema-v2 payload contract."""
+    if set(base) != {"schema_version", "identity", "audit", "derived"}:
+        raise ValueError(
+            "Payload _base must contain schema_version, identity, audit, and derived"
+        )
     if base.get("schema_version") != PAYLOAD_SCHEMA_VERSION:
         raise ValueError(f"Expected payload schema_version={PAYLOAD_SCHEMA_VERSION}")
-    provenance = base.get("provenance")
-    if not isinstance(provenance, dict):
-        raise TypeError("Payload _base.provenance must be an object")
-    expected_fields = {"benchmark_inputs", "recipe", "parameters", "runtime"}
-    if set(provenance) - {"source_commit"} != expected_fields:
-        raise ValueError(f"Payload provenance must contain {sorted(expected_fields)}")
-    _validate_artifact_manifest(provenance["benchmark_inputs"])
-    recipe = provenance["recipe"]
+    identity = base["identity"]
+    if not isinstance(identity, dict):
+        raise TypeError("Payload _base.identity must be an object")
+    expected_identity = {"benchmark_inputs", "recipe", "parameters"}
+    if set(identity) != expected_identity:
+        raise ValueError(f"Payload identity must contain {sorted(expected_identity)}")
+    _validate_artifact_manifest(identity["benchmark_inputs"])
+    recipe = identity["recipe"]
     if not isinstance(recipe, dict) or set(recipe) != {"sources", "sha256"}:
         raise ValueError("Payload recipe must contain sources and sha256")
     _validate_artifact_manifest(recipe["sources"], source_files=True)
     if recipe["sha256"] != canonical_sha256(recipe["sources"]):
         raise ValueError("Payload recipe SHA-256 does not match its source manifest")
-    if not isinstance(provenance["parameters"], dict):
-        raise TypeError("Payload provenance parameters must be an object")
-    runtime = provenance["runtime"]
+    if not isinstance(identity["parameters"], dict):
+        raise TypeError("Payload identity parameters must be an object")
+    audit = base["audit"]
     if (
-        not isinstance(runtime, dict)
-        or set(runtime) != {"python", "packages"}
-        or not isinstance(runtime["python"], str)
-        or not isinstance(runtime["packages"], dict)
-        or not all(
-            isinstance(package, str) and isinstance(version, str)
-            for package, version in runtime["packages"].items()
-        )
+        not isinstance(audit, dict)
+        or "runtime" not in audit
+        or set(audit) - {"runtime", "source_commit"}
     ):
+        raise ValueError(
+            "Payload audit must contain runtime and optional source_commit"
+        )
+    runtime = audit.get("runtime")
+    if not isinstance(runtime, dict) or set(runtime) != {"python", "packages"}:
         raise ValueError("Payload runtime must contain Python and package versions")
-    source_commit = provenance.get("source_commit")
+    if not isinstance(runtime["python"], str) or not runtime["python"]:
+        raise ValueError("Payload runtime Python version must be a non-empty string")
+    packages = runtime["packages"]
+    if not isinstance(packages, dict):
+        raise TypeError("Payload runtime packages must be an object")
+    for package, version in packages.items():
+        if not isinstance(package, str) or not isinstance(version, str):
+            raise TypeError(
+                "Payload runtime package names and versions must be strings"
+            )
+    source_commit = audit.get("source_commit")
     if source_commit is not None and (
         not isinstance(source_commit, str)
         or re.fullmatch(r"[0-9a-f]{40}", source_commit) is None
     ):
         raise ValueError(f"Invalid informational source_commit: {source_commit!r}")
+    if not isinstance(base["derived"], dict):
+        raise TypeError("Payload _base.derived must be an object")
     for model in models:
         if "key" in model:
             raise ValueError("Legacy payload field 'key' is forbidden; use model_key")
         model_key = model.get("model_key")
-        if (
-            not isinstance(model_key, str)
-            or re.fullmatch(r"[a-z0-9]+(?:[.-][a-z0-9]+)*", model_key) is None
-        ):
+        if not isinstance(model_key, str):
+            raise TypeError(f"Invalid canonical model_key: {model_key!r}")
+        if re.fullmatch(r"[a-z0-9]+(?:[.-][a-z0-9]+)*", model_key) is None:
             raise ValueError(f"Invalid canonical model_key: {model_key!r}")
-        if not isinstance(model.get("label"), str) or not model["label"]:
+        label = model.get("label")
+        if not isinstance(label, str) or not label:
             raise ValueError(f"Payload record {model_key!r} has no display label")
         _validate_artifact_manifest(model.get("input_artifacts"))
     if len(models) != len({model["model_key"] for model in models}):
@@ -320,14 +328,13 @@ def read_jsonl_payload(path: str) -> dict[str, Any]:
     """Read and validate a schema-v2 JSONL figure payload."""
     base, models = _read_jsonl_records(path)
     _validate_payload(base, models)
-    return {**base, "models": models}
-
-
-def _base_without_source_commit(base: Mapping[str, Any]) -> dict[str, Any]:
-    """Copy base data while excluding informational Git metadata."""
-    provenance = dict(base["provenance"])
-    provenance.pop("source_commit", None)
-    return {**base, "provenance": provenance}
+    return {
+        "schema_version": base["schema_version"],
+        "identity": base["identity"],
+        "audit": base["audit"],
+        **base["derived"],
+        "models": models,
+    }
 
 
 def _records_equal_except_label(
@@ -357,20 +364,6 @@ def _assert_unchanged_record(
         )
 
 
-def _assert_stable_overlap(
-    path: str,
-    old_base: Mapping[str, Any],
-    new_base: Mapping[str, Any],
-    old_by_key: Mapping[str, Mapping[str, Any]],
-    new_by_key: Mapping[str, Mapping[str, Any]],
-) -> None:
-    """Reject derived-data edits when overlapping records keep the same fingerprint."""
-    for model_key in old_by_key.keys() & new_by_key.keys():
-        _assert_unchanged_record(
-            path, old_base, new_base, old_by_key[model_key], new_by_key[model_key]
-        )
-
-
 def write_jsonl_payload(
     path: str,
     payload: dict[str, Any],
@@ -386,15 +379,25 @@ def write_jsonl_payload(
         raise ValueError("key_migration is only valid in migrate-model-key mode")
     if mode == PayloadMode.migrate_model_key and key_migration is None:
         raise ValueError("migrate-model-key mode requires an OLD=NEW mapping")
-    if "provenance" not in payload:
-        raise ValueError("Payload generation must provide shared provenance")
+    missing_sections = {"identity", "audit", "models"} - set(payload)
+    if missing_sections:
+        raise ValueError(f"Payload generation is missing {sorted(missing_sections)}")
+    if "provenance" in payload:
+        raise ValueError("Payload provenance must be split into identity and audit")
 
     fresh_models = [
         {key: value for key, value in model.items() if key not in ("color", "visible")}
         for model in payload["models"]
     ]
-    fresh_base = {key: value for key, value in payload.items() if key != "models"} | {
-        "schema_version": PAYLOAD_SCHEMA_VERSION
+    fresh_base = {
+        "schema_version": PAYLOAD_SCHEMA_VERSION,
+        "identity": payload["identity"],
+        "audit": payload["audit"],
+        "derived": {
+            key: value
+            for key, value in payload.items()
+            if key not in {"schema_version", "identity", "audit", "models"}
+        },
     }
     _validate_payload(fresh_base, fresh_models)
     fresh_by_key = {model["model_key"]: model for model in fresh_models}
@@ -419,85 +422,79 @@ def write_jsonl_payload(
             f"{path} not found: {mode.value} runs require an existing payload"
         )
 
-    if committed_base is None:
-        output_base, output_models = fresh_base, fresh_models
-    else:
+    output_base, output_models = fresh_base, fresh_models
+    if committed_base is not None:
         _validate_payload(committed_base, committed_models)
         committed_by_key = {model["model_key"]: model for model in committed_models}
         committed_keys = set(committed_by_key)
         fresh_keys = set(fresh_by_key)
-        old_base = _base_without_source_commit(committed_base)
-        new_base = _base_without_source_commit(fresh_base)
-        base_changed = canonical_json(old_base) != canonical_json(new_base)
+        identity_changed = canonical_json(committed_base["identity"]) != canonical_json(
+            fresh_base["identity"]
+        )
+        derived_changed = canonical_json(committed_base["derived"]) != canonical_json(
+            fresh_base["derived"]
+        )
         if mode == PayloadMode.migrate_provenance:
             if committed_keys != fresh_keys:
                 raise ValueError(
                     f"{path}: provenance migration cannot change the model roster; "
                     "run lifecycle changes separately with --full-roster"
                 )
-            _assert_stable_overlap(
-                path, committed_base, fresh_base, committed_by_key, fresh_by_key
-            )
-            if (
-                canonical_json(old_base["provenance"])
-                == canonical_json(new_base["provenance"])
-                and base_changed
-            ):
-                raise ValueError(
-                    f"{path}: shared derived data changed with unchanged provenance"
-                )
-            output_base, output_models = fresh_base, fresh_models
-        elif base_changed:
+        elif identity_changed:
             raise ValueError(
-                f"{path}: shared payload provenance or derived data changed. "
-                "Regenerate explicitly with --migrate-provenance."
+                f"{path}: computation identity changed. Regenerate explicitly with "
+                "--migrate-provenance."
             )
-        else:
-            output_base = committed_base
-            if mode != PayloadMode.migrate_model_key:
-                _assert_stable_overlap(
-                    path, committed_base, fresh_base, committed_by_key, fresh_by_key
+        if derived_changed and not identity_changed:
+            raise ValueError(
+                f"{path}: shared derived data changed with unchanged identity"
+            )
+
+        if mode != PayloadMode.migrate_model_key:
+            for model_key in committed_by_key.keys() & fresh_by_key.keys():
+                _assert_unchanged_record(
+                    path,
+                    committed_base,
+                    fresh_base,
+                    committed_by_key[model_key],
+                    fresh_by_key[model_key],
                 )
-            if mode == PayloadMode.targeted:
-                output_models = list((committed_by_key | fresh_by_key).values())
-            elif mode == PayloadMode.migrate_model_key:
-                if key_migration is None:
+        if mode == PayloadMode.targeted:
+            output_models = list((committed_by_key | fresh_by_key).values())
+        elif mode == PayloadMode.migrate_model_key:
+            if key_migration is None:
+                raise ValueError("migrate-model-key mode requires an OLD=NEW mapping")
+            old_key, new_key = key_migration
+            new_model = Model.from_ref(new_key)
+            if new_model.key != new_key or old_key not in new_model.key_aliases:
+                raise ValueError(
+                    f"Key migration {old_key!r} -> {new_key!r} requires "
+                    "model_key_aliases to contain the old key"
+                )
+            if old_key in committed_by_key and new_key in committed_by_key:
+                raise ValueError(
+                    f"Invalid key migration state for {old_key!r} -> {new_key!r}"
+                )
+            expected = dict(committed_by_key)
+            if old_key in expected:
+                expected[new_key] = dict(expected.pop(old_key), model_key=new_key)
+            if fresh_keys != set(expected):
+                raise ValueError(f"{path}: key migration changed the model roster")
+            for model_key, old in expected.items():
+                if not _records_equal_except_label(old, fresh_by_key[model_key]):
+                    kind = "migrated" if model_key == new_key else "peer"
+                    raise ValueError(f"{path}: key migration changed {kind} record")
+        else:
+            for model_key in fresh_keys - committed_keys:
+                try:
+                    aliases = set(Model.from_ref(model_key).key_aliases)
+                except ValueError:
+                    aliases = set()
+                for old_key in (committed_keys - fresh_keys) & aliases:
                     raise ValueError(
-                        "migrate-model-key mode requires an OLD=NEW mapping"
+                        f"{path}: model key replacement {old_key!r} -> "
+                        f"{model_key!r} requires --migrate-model-key"
                     )
-                old_key, new_key = key_migration
-                new_model = Model.from_ref(new_key)
-                if new_model.key != new_key or old_key not in new_model.key_aliases:
-                    raise ValueError(
-                        f"Key migration {old_key!r} -> {new_key!r} requires "
-                        "model_key_aliases to contain the old key"
-                    )
-                if old_key in committed_by_key and new_key in committed_by_key:
-                    raise ValueError(
-                        f"Invalid key migration state for {old_key!r} -> {new_key!r}"
-                    )
-                expected = dict(committed_by_key)
-                if old_key in expected:
-                    expected[new_key] = dict(expected.pop(old_key), model_key=new_key)
-                if fresh_keys != set(expected):
-                    raise ValueError(f"{path}: key migration changed the model roster")
-                for model_key, old in expected.items():
-                    if not _records_equal_except_label(old, fresh_by_key[model_key]):
-                        kind = "migrated" if model_key == new_key else "peer"
-                        raise ValueError(f"{path}: key migration changed {kind} record")
-                output_models = fresh_models
-            else:
-                for model_key in fresh_keys - committed_keys:
-                    try:
-                        aliases = set(Model.from_ref(model_key).key_aliases)
-                    except ValueError:
-                        aliases = set()
-                    for old_key in (committed_keys - fresh_keys) & aliases:
-                        raise ValueError(
-                            f"{path}: model key replacement {old_key!r} -> "
-                            f"{model_key!r} requires --migrate-model-key"
-                        )
-                output_models = fresh_models
 
     output_models.sort(key=lambda model: model["model_key"])
     records = [{"_base": output_base}, *output_models]

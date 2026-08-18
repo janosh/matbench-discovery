@@ -35,6 +35,4 @@ provenance = figs.build_discovery_payload_provenance(
         "quantiles": [0.05, 0.25, 0.5, 0.75, 0.95],
     },
 )
-figs.write_site_payload(
-    "box-hull-dist-errors", {"provenance": provenance, "models": box_models}
-)
+figs.write_site_payload("box-hull-dist-errors", {**provenance, "models": box_models})

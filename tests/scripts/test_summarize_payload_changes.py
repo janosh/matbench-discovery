@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from scripts.summarize_payload_changes import compare_values, summarize
+from scripts.summarize_payload_changes import _parse_payload, compare_values, summarize
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -54,18 +54,29 @@ def test_compare_values_reports_numeric_and_structural_deltas() -> None:
     assert shape_delta.max_relative_error == 97 / 99
 
 
+def test_parse_payload_maps_historical_identity_fields() -> None:
+    """The reporter maps historical key and label records to current model keys."""
+    _base, models = _parse_payload(
+        '{"key":"legacy-key"}\n{"label":"Old display name"}\n',
+        {"Old display name": "current-key"},
+    )
+    assert set(models) == {"current-key", "legacy-key"}
+
+
 def payload_text(
     models: dict[str, int],
     *,
     shared: int = 1,
     labels: dict[str, str] | None = None,
-    provenance: dict[str, object] | None = None,
+    identity: dict[str, object] | None = None,
+    audit: dict[str, object] | None = None,
 ) -> str:
     """Serialize a minimal schema-v2-like JSONL fixture for report tests."""
     base = {
         "schema_version": 2,
-        "provenance": provenance or {"recipe": {"sha256": "a" * 64}},
-        "shared": shared,
+        "identity": identity or {"recipe": {"sha256": "a" * 64}},
+        "audit": audit or {"runtime": {"python": "3.14", "packages": {}}},
+        "derived": {"shared": shared},
     }
     records = [{"_base": base}] + [
         {
@@ -84,19 +95,26 @@ def write_payload(
     *,
     shared: int = 1,
     labels: dict[str, str] | None = None,
-    provenance: dict[str, object] | None = None,
+    identity: dict[str, object] | None = None,
+    audit: dict[str, object] | None = None,
 ) -> None:
     """Write one minimal JSONL payload fixture."""
     with open(path, "w", encoding="utf-8") as file:
         file.write(
-            payload_text(models, shared=shared, labels=labels, provenance=provenance)
+            payload_text(
+                models,
+                shared=shared,
+                labels=labels,
+                identity=identity,
+                audit=audit,
+            )
         )
 
 
 def test_summarize_diffs_working_tree_against_head(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """End-to-end report includes record, roster, provenance and numerical deltas."""
+    """End-to-end report includes record, roster, identity and numerical deltas."""
     monkeypatch.chdir(tmp_path)
     fig_dir = "site/src/figs"
     per_element_file = "site/src/routes/models/per-element-each-errors.jsonl"
@@ -104,13 +122,18 @@ def test_summarize_diffs_working_tree_against_head(
     os.makedirs(os.path.dirname(per_element_file))
     demo_path = f"{fig_dir}/demo.jsonl"
     deleted_path = f"{fig_dir}/deleted.jsonl"
-    provenance: dict[str, Any] = {
+    identity: dict[str, Any] = {
         "benchmark_inputs": [{"role": "bench", "sha256": "0" * 64, "size": 1}],
         "parameters": {"rounding": 3},
         "recipe": {"sha256": "a" * 64},
-        "runtime": {"python": "3.14"},
     }
-    write_payload(demo_path, {"model-a": 1, "model-b": 2}, provenance=provenance)
+    audit: dict[str, Any] = {"runtime": {"python": "3.14", "packages": {}}}
+    write_payload(
+        demo_path,
+        {"model-a": 1, "model-b": 2},
+        identity=identity,
+        audit=audit,
+    )
     write_payload(per_element_file, {"model-a": 1})
     write_payload(deleted_path, {"model-a": 1})
 
@@ -118,16 +141,18 @@ def test_summarize_diffs_working_tree_against_head(
     for command in (["init", "-q"], ["add", "-A"], ["commit", "-qm", "init"]):
         subprocess.run(git_config + command, check=True)
 
-    changed_provenance = json.loads(json.dumps(provenance))
-    changed_provenance["benchmark_inputs"][0]["sha256"] = "1" * 64
-    changed_provenance["parameters"]["rounding"] = 4
-    changed_provenance["runtime"]["python"] = "3.15"
+    changed_identity = json.loads(json.dumps(identity))
+    changed_identity["benchmark_inputs"][0]["sha256"] = "1" * 64
+    changed_identity["parameters"]["rounding"] = 4
+    changed_audit = json.loads(json.dumps(audit))
+    changed_audit["runtime"]["python"] = "3.15"
     write_payload(
         demo_path,
         {"model-a": 1, "model-c": 4},
         shared=3,
         labels={"model-a": "Renamed A"},
-        provenance=changed_provenance,
+        identity=changed_identity,
+        audit=changed_audit,
     )
     write_payload(f"{fig_dir}/new-fig.jsonl", {"model-a": 1})
     write_payload(per_element_file, {"model-a": 2})
@@ -140,5 +165,5 @@ def test_summarize_diffs_working_tree_against_head(
     assert "`new-fig` roster 0 -> 1; added: model-a; removed: —" in report
     assert "`deleted` roster 1 -> 0; added: —; removed: model-a" in report
     assert "Max symmetric relative error" in report
-    assert "benchmark_inputs, parameters, runtime" in report
+    assert "benchmark_inputs, parameters" in report
     assert "| `per-element-each-errors` | `model-a` |" in report

@@ -131,7 +131,7 @@ def payload_provenance(
 figs.write_site_payload(
     "spg-sankeys",
     {
-        "provenance": payload_provenance(
+        **payload_provenance(
             {
                 "coordinate_decimals": payload_numerics.COORD_DECIMALS,
                 "top_spacegroup_pairs": 10,
@@ -167,7 +167,7 @@ for raw_model_key, std_dev in models_by_std:
 figs.write_site_payload(
     "sym-ops-diff-bar",
     {
-        "provenance": payload_provenance({"sigma_significant_digits": 3}),
+        **payload_provenance({"sigma_significant_digits": 3}),
         "models": sym_ops_models,
     },
 )
@@ -210,7 +210,7 @@ for model_key in model_keys:
 figs.write_site_payload(
     "struct-rmsd-cdf",
     {
-        "provenance": payload_provenance(
+        **payload_provenance(
             {
                 "auc_significant_digits": 3,
                 "cdf_samples": 200,

@@ -422,7 +422,7 @@ TMI_PAYLOADS = (
     "scatter-largest-fp-diff-each-error",
 )
 ELEMENT_PAYLOADS = {"element-prevalence-vs-error", "per-element-each-errors"}
-PREDICTION_ROLES = {"generator", "payload_numerics", "prediction_loader"}
+PREDICTION_ROLES = {"generator", "payload_numerics"}
 ERROR_ROLES = PREDICTION_ROLES | {"prediction_error_loader"}
 RECIPE_ROLES = {
     "box-hull-dist-errors": PREDICTION_ROLES,
@@ -435,7 +435,7 @@ RECIPE_ROLES = {
     "sym-ops-diff-bar": {"generator"},
     **dict.fromkeys(TMI_PAYLOADS, ERROR_ROLES),
     "element-prevalence-vs-error": ERROR_ROLES,
-    "per-element-each-errors": ERROR_ROLES - {"payload_numerics"},
+    "per-element-each-errors": {"generator", "prediction_error_loader"},
     "kappa-103-analysis": {
         "generator",
         "kappa_metrics",
@@ -460,8 +460,9 @@ def test_multi_model_payload_provenance_matches_computation() -> None:
     assert set(paths) == set(RECIPE_ROLES)
     for name, path in paths.items():
         payload = figs.read_jsonl_payload(path)
-        provenance = payload["provenance"]
-        sources = provenance["recipe"]["sources"]
+        identity = payload["identity"]
+        audit = payload["audit"]
+        sources = identity["recipe"]["sources"]
         for source in sources:
             with open(f"{ROOT}/{source['path']}", "rb") as file:
                 source_bytes = file.read()
@@ -469,18 +470,16 @@ def test_multi_model_payload_provenance_matches_computation() -> None:
             assert source["sha256"] == hashlib.sha256(source_bytes).hexdigest(), name
 
         expected_roles = RECIPE_ROLES[name]
-        roles = {source["role"] for source in provenance["recipe"]["sources"]}
+        roles = {source["role"] for source in sources}
         assert roles == expected_roles, name
         if name in set(TMI_PAYLOADS) | ELEMENT_PAYLOADS:
             is_element_payload = name in ELEMENT_PAYLOADS
-            benchmark_roles = {item["role"] for item in provenance["benchmark_inputs"]}
+            benchmark_roles = {item["role"] for item in identity["benchmark_inputs"]}
             expected_benchmarks = {"wbm_summary"} | (
                 {"mp_element_occurrences"} if is_element_payload else set()
             )
             assert benchmark_roles == expected_benchmarks, name
-            assert (
-                "pymatgen" in provenance["runtime"]["packages"]
-            ) is is_element_payload
+            assert ("pymatgen" in audit["runtime"]["packages"]) is is_element_payload
 
 
 @pytest.mark.parametrize("name", GEO_OPT_PAYLOADS)

@@ -1,4 +1,4 @@
-"""Report structural, roster, provenance, and numerical JSONL payload changes.
+"""Report structural, roster, identity, and numerical JSONL payload changes.
 
 This script is stdlib-only because trusted CI runs it from the pull-request worktree.
 """
@@ -13,8 +13,8 @@ from dataclasses import dataclass, field
 from glob import glob
 from typing import TypeGuard
 
-IDENTITY_FIELDS = frozenset(
-    {"schema_version", "provenance", "model_key", "label", "input_artifacts"}
+METADATA_FIELDS = frozenset(
+    {"schema_version", "identity", "audit", "model_key", "label", "input_artifacts"}
 )
 
 
@@ -44,6 +44,11 @@ def _is_number(value: object) -> TypeGuard[int | float]:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+def _is_object(value: object) -> TypeGuard[dict[object, object]]:
+    """Return whether value is a JSON object."""
+    return isinstance(value, dict)
+
+
 def compare_values(
     old: object,
     new: object,
@@ -67,8 +72,8 @@ def compare_values(
             f"{path} (type {type(old).__name__} -> {type(new).__name__})"
         )
         return delta
-    if isinstance(old, dict) and isinstance(new, dict):
-        for key in sorted(set(old) | set(new), key=str):
+    if _is_object(old) and _is_object(new):
+        for key in sorted(old.keys() | new.keys(), key=str):
             child_path = f"{path}.{key}"
             if key not in old:
                 delta.structural_paths.append(f"{child_path} (added)")
@@ -80,7 +85,7 @@ def compare_values(
                     new[key],
                     path=child_path,
                     delta=delta,
-                    exclude_numeric=exclude_numeric or key in IDENTITY_FIELDS,
+                    exclude_numeric=exclude_numeric or key in METADATA_FIELDS,
                 )
         return delta
     if isinstance(old, list) and isinstance(new, list):
@@ -110,12 +115,11 @@ def _parse_payload(
         if set(record) == {"_base"}:
             base = record["_base"]
             continue
-        # Historical ``key`` is accepted only here so schema migrations can be
-        # reviewed against Git history. Runtime payload readers remain schema-v2-only.
+        # The reporter reads historical Git payloads while reviewing the schema-v2
+        # migration. Runtime payload readers remain schema-v2-only.
         model_key = record.get("model_key", record.get("key"))
         if not isinstance(model_key, str) and isinstance(record.get("label"), str):
-            label = record["label"]
-            model_key = (label_keys or {}).get(label, label)
+            model_key = (label_keys or {}).get(record["label"], record["label"])
         if not isinstance(model_key, str):
             raise TypeError(f"Payload record has no model_key: {record!r}")
         models[model_key] = record
@@ -129,32 +133,23 @@ def _format_paths(paths: list[str]) -> str:
     return "; ".join(f"`{path}`" for path in visible) + suffix if paths else "—"
 
 
-def _provenance_identity(provenance: object) -> object:
-    """Return complete computation provenance without informational Git metadata."""
-    return (
-        {key: value for key, value in provenance.items() if key != "source_commit"}
-        if isinstance(provenance, dict)
-        else provenance
-    )
-
-
-def _provenance_hash(provenance: object) -> str:
-    """Hash complete computation provenance for compact reporting."""
-    if provenance is None:
+def _identity_hash(identity: object) -> str:
+    """Hash complete computation identity for compact reporting."""
+    if identity is None:
         return "none"
-    identity = canonical_json(_provenance_identity(provenance)).encode()
-    return hashlib.sha256(identity).hexdigest()
+    return hashlib.sha256(canonical_json(identity).encode()).hexdigest()
 
 
-def _changed_provenance_components(old: object, new: object) -> str:
-    """List changed top-level computation-provenance components."""
+def _changed_identity_components(old: object, new: object) -> str:
+    """List changed top-level computation-identity components."""
     if not isinstance(old, dict) or not isinstance(new, dict):
         return "record"
-    keys = (old.keys() | new.keys()) - {"source_commit"}
     changed = [
-        str(key) for key in sorted(keys, key=str) if old.get(key) != new.get(key)
+        str(key)
+        for key in sorted(old.keys() | new.keys(), key=str)
+        if old.get(key) != new.get(key)
     ]
-    return ", ".join(changed) or "informational only"
+    return ", ".join(changed) or "none"
 
 
 def _changed_row(
@@ -213,7 +208,7 @@ def summarize() -> str:
             else ""
         )
         new_base, new_models = _parse_payload(new_text)
-        label_keys: dict[str, str] = {
+        label_keys = {
             label: model_key
             for model_key, model in new_models.items()
             if isinstance(label := model.get("label"), str)
@@ -243,21 +238,19 @@ def summarize() -> str:
                 f"- `{payload_name}` roster {len(old_keys)} -> {len(new_keys)}; "
                 f"added: {added}; removed: {removed}"
             )
-        old_provenance = old_base.get("provenance")
-        new_provenance = new_base.get("provenance")
-        if canonical_json(_provenance_identity(old_provenance)) != canonical_json(
-            _provenance_identity(new_provenance)
-        ):
+        old_identity = old_base.get("identity")
+        new_identity = new_base.get("identity")
+        if canonical_json(old_identity) != canonical_json(new_identity):
             summaries.append(
-                f"- `{payload_name}` provenance `{_provenance_hash(old_provenance)}` "
-                f"-> `{_provenance_hash(new_provenance)}`; changed: "
-                f"{_changed_provenance_components(old_provenance, new_provenance)}"
+                f"- `{payload_name}` identity `{_identity_hash(old_identity)}` "
+                f"-> `{_identity_hash(new_identity)}`; changed: "
+                f"{_changed_identity_components(old_identity, new_identity)}"
             )
 
-    summary = "\n".join(summaries) or "_No roster or provenance changes._"
+    summary = "\n".join(summaries) or "_No roster or identity changes._"
     rows = "\n".join(delta_rows) or "_No payload records changed._"
     return (
-        f"### Roster and provenance changes\n\n{summary}\n\n"
+        f"### Roster and identity changes\n\n{summary}\n\n"
         "### Payload record deltas\n\n"
         "| Payload | Record | Structural paths | Numeric leaves | Max abs error | "
         "Max symmetric relative error |\n"

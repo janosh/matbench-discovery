@@ -42,7 +42,7 @@ figs.write_site_payload(
             | {"y": payload_numerics.round_list(element_prevalence_errors[model.key])}
             for model in models_to_plot
         ],
-        "provenance": figs.build_discovery_payload_provenance(
+        **figs.build_discovery_payload_provenance(
             generator=__file__,
             test_subset=cli_args.test_subset.value,
             benchmark_inputs={"mp_element_occurrences": preds.MP_COUNTS_PATH},
@@ -85,7 +85,7 @@ elem_err_models = [
 figs.write_site_payload(
     "per-element-each-errors",
     {
-        "provenance": figs.build_discovery_payload_provenance(
+        **figs.build_discovery_payload_provenance(
             generator=__file__,
             test_subset=cli_args.test_subset.value,
             benchmark_inputs={"mp_element_occurrences": preds.MP_COUNTS_PATH},

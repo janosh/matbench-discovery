@@ -196,7 +196,7 @@ def main() -> int:
         packages=("numpy", "pandas", "pymatviz", "scipy"),
     )
     payload = {
-        "provenance": provenance,
+        **provenance,
         "material_ids": material_ids,
         "formulas": [str(df_dft.loc[mid].get("name", "")) for mid in material_ids],
         "spg_nums": spg_nums,

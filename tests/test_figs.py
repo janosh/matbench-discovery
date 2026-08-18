@@ -118,6 +118,24 @@ def test_artifact_manifest_hashes_and_sizes_one_open_file(
     mock_open.assert_called_once_with(str(path), "rb")
 
 
+def test_discovery_provenance_hashes_only_caller_recipe_sources() -> None:
+    """Discovery identity does not hash data.py or invent unused recipe sources."""
+    with patch.object(figs, "build_payload_provenance", return_value={}) as builder:
+        figs.build_discovery_payload_provenance(
+            generator=__file__, test_subset="test", parameters={}
+        )
+        assert builder.call_args.kwargs["source_files"] == {}
+        figs.build_discovery_payload_provenance(
+            generator=__file__,
+            test_subset="test",
+            parameters={},
+            source_files={"payload_numerics": payload_numerics.__file__},
+        )
+    assert builder.call_args.kwargs["source_files"] == {
+        "payload_numerics": payload_numerics.__file__
+    }
+
+
 @pytest.mark.parametrize(
     ("existing_bytes", "preserve_existing"),
     [
@@ -150,13 +168,13 @@ def test_write_json_gz_handles_existing_file(
             assert json.load(file) == {"y": [1, 2]}
 
 
-def make_provenance(
+def make_metadata(
     tmp_path: Path,
     *,
     benchmark_content: str = "benchmark",
     parameters: dict[str, object] | None = None,
 ) -> dict[str, Any]:
-    """Build valid test provenance from exact benchmark and source bytes."""
+    """Build valid test identity and audit metadata from exact source bytes."""
     benchmark_path = tmp_path / "benchmark.csv"
     benchmark_path.write_text(benchmark_content)
     return figs.build_payload_provenance(
@@ -195,7 +213,7 @@ def write_test_payload(
     *,
     mode: figs.PayloadMode = figs.PayloadMode.migrate_provenance,
     shared: object = 1,
-    provenance: dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None,
     key_migration: tuple[str, str] | None = None,
     target_keys: set[str] | None = None,
 ) -> dict[str, Any]:
@@ -205,7 +223,7 @@ def write_test_payload(
     figs.write_jsonl_payload(
         path,
         {
-            "provenance": provenance or make_provenance(tmp_path),
+            **(metadata or make_metadata(tmp_path)),
             "shared": shared,
             "models": models,
         },
@@ -216,12 +234,18 @@ def write_test_payload(
     return figs.read_jsonl_payload(path)
 
 
-def test_fingerprint_excludes_source_commit(tmp_path: Path) -> None:
-    """Informational source_commit never changes complete computation identity."""
-    provenance = make_provenance(tmp_path)
+def test_fingerprint_excludes_audit_metadata(tmp_path: Path) -> None:
+    """Runtime and source commit never change complete computation identity."""
+    metadata = make_metadata(tmp_path)
     model = make_model(tmp_path, "model-a", [1])
-    base_a = {"provenance": provenance | {"source_commit": "a" * 40}}
-    base_b = {"provenance": provenance | {"source_commit": "b" * 40}}
+    base_a = metadata
+    base_b = {
+        "identity": metadata["identity"],
+        "audit": {
+            "runtime": {"python": "0.0.0", "packages": {}},
+            "source_commit": "b" * 40,
+        },
+    }
     assert figs.computation_fingerprint(base_a, model) == figs.computation_fingerprint(
         base_b, model
     )
@@ -241,6 +265,12 @@ def test_write_jsonl_is_canonical_and_byte_deterministic(tmp_path: Path) -> None
     assert b"\r" not in first_bytes
     lines = first_bytes.decode().splitlines()
     assert list(json.loads(lines[0])) == ["_base"]
+    assert set(json.loads(lines[0])["_base"]) == {
+        "schema_version",
+        "identity",
+        "audit",
+        "derived",
+    }
     assert [json.loads(line)["model_key"] for line in lines[1:]] == [
         "model-a",
         "model-b",
@@ -313,13 +343,13 @@ def test_provenance_migration_rejects_roster_changes(
     """Provenance migration cannot also add, remove, or replace model keys."""
     path = f"{tmp_path}/payload.jsonl"
     write_test_payload(path, tmp_path, [make_model(tmp_path, "model-a", [1])])
-    changed_provenance = make_provenance(tmp_path, parameters={"version": 2})
+    changed_metadata = make_metadata(tmp_path, parameters={"version": 2})
     with pytest.raises(ValueError, match="cannot change the model roster"):
         write_test_payload(
             path,
             tmp_path,
             [make_model(tmp_path, model_key, [1]) for model_key in models],
-            provenance=changed_provenance,
+            metadata=changed_metadata,
         )
 
 
@@ -351,7 +381,7 @@ def test_targeted_update_rejects_unselected_model(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="require selected model keys"):
         figs.write_jsonl_payload(
             path,
-            {"provenance": make_provenance(tmp_path), "models": [model_a]},
+            {**make_metadata(tmp_path), "models": [model_a]},
             mode=figs.PayloadMode.targeted,
         )
     changed_b = make_model(
@@ -390,25 +420,22 @@ def test_full_roster_adds_and_removes_records(tmp_path: Path) -> None:
     ] == [new]
 
 
-@pytest.mark.parametrize("identity_field", ["benchmark", "parameters", "runtime"])
+@pytest.mark.parametrize("identity_field", ["benchmark", "parameters"])
 def test_shared_identity_change_requires_provenance_migration(
     tmp_path: Path, identity_field: str
 ) -> None:
-    """Benchmark, parameter, and runtime changes fail outside migration mode."""
+    """Benchmark and parameter changes fail outside provenance migration mode."""
     path = f"{tmp_path}/payload.jsonl"
     model = make_model(tmp_path, "model-a", [1])
-    old_provenance = make_provenance(tmp_path)
-    write_test_payload(path, tmp_path, [model], provenance=old_provenance)
+    old_metadata = make_metadata(tmp_path)
+    write_test_payload(path, tmp_path, [model], metadata=old_metadata)
     if identity_field == "benchmark":
-        new_provenance = make_provenance(tmp_path, benchmark_content="changed")
+        new_metadata = make_metadata(tmp_path, benchmark_content="changed")
     else:
-        new_provenance = json.loads(figs.canonical_json(old_provenance))
-        if identity_field == "parameters":
-            new_provenance["parameters"]["rounding_decimals"] = 4
-        else:
-            new_provenance["runtime"]["python"] = "0.0.0"
+        new_metadata = json.loads(figs.canonical_json(old_metadata))
+        new_metadata["identity"]["parameters"]["rounding_decimals"] = 4
     changed_payload = {
-        "provenance": new_provenance,
+        **new_metadata,
         "shared": 1,
         "models": [model],
     }
@@ -416,10 +443,27 @@ def test_shared_identity_change_requires_provenance_migration(
         figs.write_jsonl_payload(
             path, changed_payload, mode=figs.PayloadMode.full_roster
         )
-    written_provenance = write_test_payload(
-        path, tmp_path, [model], provenance=new_provenance
-    )["provenance"]
-    assert written_provenance == new_provenance
+    written = write_test_payload(path, tmp_path, [model], metadata=new_metadata)
+    assert written["identity"] == new_metadata["identity"]
+
+
+@pytest.mark.parametrize(
+    "mode", [figs.PayloadMode.targeted, figs.PayloadMode.full_roster]
+)
+def test_audit_updates_without_identity_migration(
+    tmp_path: Path, mode: figs.PayloadMode
+) -> None:
+    """Targeted and full-roster writes replace audit metadata without a migration."""
+    path = f"{tmp_path}/payload.jsonl"
+    model = make_model(tmp_path, "model-a", [1])
+    before = write_test_payload(path, tmp_path, [model])
+    updated_metadata = make_metadata(tmp_path)
+    updated_metadata["audit"]["runtime"]["python"] = "0.0.0"
+    updated_metadata["audit"]["source_commit"] = "b" * 40
+    after = write_test_payload(
+        path, tmp_path, [model], mode=mode, metadata=updated_metadata
+    )
+    assert after == before | {"audit": updated_metadata["audit"]}
 
 
 def test_explicit_key_migration_requires_alias_and_exact_record(
