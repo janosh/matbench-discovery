@@ -16,7 +16,7 @@ export async function load_kappa_srme_map(
 ): Promise<Map<string, number | null> | undefined> {
   const analysis = await load_kappa_analysis()
   const model_analysis = analysis.models.find(
-    (model_data) => model_data.key === model_key,
+    (model_data) => model_data.model_key === model_key,
   )
   if (!model_analysis) return undefined
   return new Map(

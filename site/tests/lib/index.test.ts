@@ -106,7 +106,7 @@ describe(`sort_from_query`, () => {
 
 describe(`sync_url_params`, () => {
   it(`preserves unrelated params and omits defaults`, () => {
-    history.replaceState(null, ``, `/tasks/md?keep=1&x=old&y=default`)
+    history.replaceState(null, ``, `/tasks/md?keep=1&x=old&y=default#matrix`)
 
     sync_url_params(
       [
@@ -117,6 +117,7 @@ describe(`sync_url_params`, () => {
     )
 
     expect(location.search).toBe(`?keep=1&x=new`)
+    expect(location.hash).toBe(`#matrix`)
   })
 
   it(`does not replace URL when params are unchanged`, () => {

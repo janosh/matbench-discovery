@@ -346,13 +346,18 @@ describe(`fig-helpers payload styling`, () => {
     const f1 = (key: string) =>
       MODELS.find((model) => model.model_key === key)?.metrics?.discovery
         ?.unique_prototypes?.F1 ?? -Infinity
-    const styled = attach_style({ shared: 1, models: keys.map((key) => ({ key })) })
+    const styled = attach_style({
+      shared: 1,
+      models: keys.map((model_key) => ({ model_key, label: model_key })),
+    })
 
     expect(styled.shared).toBe(1) // non-model shared fields are preserved
-    const ordered_f1 = styled.models.map((mdl) => f1(mdl.key))
+    const ordered_f1 = styled.models.map((model) => f1(model.model_key))
     expect(ordered_f1).toEqual([...ordered_f1].toSorted((row_a, row_b) => row_b - row_a))
-    for (const mdl of styled.models) {
-      expect(mdl.color).toBe(MODELS.find((model) => model.model_key === mdl.key)?.color)
+    for (const model of styled.models) {
+      expect(model.color).toBe(
+        MODELS.find((metadata) => metadata.model_key === model.model_key)?.color,
+      )
     }
   })
 })

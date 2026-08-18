@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
         nargs="*",
         default=[],
         help=(
-            "Model enum names, model keys, or display labels. "
+            "Model enum names, canonical keys, or key aliases. "
             "Defaults to active models."
         ),
     )

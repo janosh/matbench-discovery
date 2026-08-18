@@ -1,52 +1,53 @@
-{"key":"alchembert","label":"AlchemBERT","quantiles":[-0.337,-0.14,-0.053,0.007,0.118]}
-{"key":"alignn","label":"ALIGNN","quantiles":[-0.213,-0.066,-0.012,0.04,0.225]}
-{"key":"allegro-mp-l-0.1","label":"Allegro-MP-L","quantiles":[-0.125,-0.038,-0.01,0.008,0.062]}
-{"key":"allegro-oam-l-0.1","label":"Allegro-OAM-L","quantiles":[-0.046,-0.01,-0.003,0.004,0.028]}
-{"key":"alphanet-v1-oam","label":"AlphaNet-v1-OAM","quantiles":[-0.072,-0.011,-0.003,0.002,0.025]}
-{"key":"bam-mp-core","label":"BAM-MP-core","quantiles":[-0.15,-0.056,-0.015,0.019,0.102]}
-{"key":"bowsr","label":"BOWSR","quantiles":[-0.311,-0.132,-0.058,0.0,0.19]}
-{"key":"cgcnn","label":"CGCNN","quantiles":[-0.193,-0.055,0.007,0.109,0.47]}
-{"key":"cgcnn-p","label":"CGCNN+P","quantiles":[-0.268,-0.094,-0.028,0.027,0.269]}
-{"key":"chgnet-0.3.0","label":"CHGNet","quantiles":[-0.173,-0.071,-0.027,0.006,0.071]}
-{"key":"dpa-3.1-3m-ft","label":"DPA-3.1-3M-FT","quantiles":[-0.045,-0.011,-0.002,0.007,0.034]}
-{"key":"dpa-4.0.1-pro-mptrj","label":"DPA-4.0.1-Pro-MPtrj","quantiles":[-0.064,-0.016,-0.002,0.007,0.053]}
-{"key":"ema-gnn","label":"EMA-GNN","quantiles":[-0.216,-0.087,-0.034,0.005,0.138]}
-{"key":"eqnorm-mptrj","label":"Eqnorm MPtrj","quantiles":[-0.1,-0.031,-0.007,0.008,0.065]}
-{"key":"equflash-29m-oam","label":"EquFlash","quantiles":[-0.038,-0.006,0.0,0.005,0.025]}
-{"key":"equflashv2-45m-oam","label":"EquFlashV2","quantiles":[-0.033,-0.004,0.0,0.004,0.021]}
-{"key":"equiformer-v3-mp","label":"EquiformerV3+DeNS-MP","quantiles":[-0.071,-0.019,-0.004,0.004,0.042]}
-{"key":"equiformer-v3-oam","label":"EquiformerV3+DeNS-OAM","quantiles":[-0.037,-0.004,0.0,0.004,0.019]}
-{"key":"eqv2-m-omat-salex-mp","label":"eqV2 M","quantiles":[-0.023,-0.003,0.001,0.006,0.042]}
-{"key":"eqv2-s-dens-mp","label":"eqV2 S DeNS","quantiles":[-0.08,-0.024,-0.006,0.008,0.069]}
-{"key":"esen-30m-mp","label":"eSEN-30M-MP","quantiles":[-0.084,-0.023,-0.005,0.007,0.055]}
-{"key":"esen-30m-oam","label":"eSEN-30M-OAM","quantiles":[-0.04,-0.004,0.0,0.005,0.02]}
-{"key":"esnet","label":"ESNet","quantiles":[-0.14,-0.038,0.011,0.09,0.361]}
-{"key":"gnome","label":"NequIP-GNoME","quantiles":[-0.128,-0.015,0.0,0.012,0.049]}
-{"key":"grace-1l-oam","label":"GRACE-1L-OAM","quantiles":[-0.091,-0.017,-0.002,0.01,0.045]}
-{"key":"grace-2l-mptrj","label":"GRACE-2L-MPtrj","quantiles":[-0.141,-0.045,-0.01,0.014,0.091]}
-{"key":"grace-2l-oam","label":"GRACE-2L-OAM","quantiles":[-0.049,-0.01,0.0,0.008,0.038]}
-{"key":"grace-2l-oam-l","label":"GRACE-2L-OAM-L","quantiles":[-0.045,-0.008,0.001,0.008,0.035]}
-{"key":"grace-3l-oam-l","label":"GRACE-3L-OAM-L","quantiles":[-0.036,-0.005,0.0,0.005,0.021]}
-{"key":"hienet","label":"HIENet","quantiles":[-0.099,-0.03,-0.005,0.012,0.077]}
-{"key":"m3gnet","label":"M3GNet","quantiles":[-0.21,-0.09,-0.035,0.001,0.074]}
-{"key":"mace-mp-0","label":"MACE-MP-0","quantiles":[-0.158,-0.056,-0.016,0.009,0.077]}
-{"key":"mace-mpa-0","label":"MACE-MPA-0","quantiles":[-0.066,-0.014,-0.001,0.01,0.047]}
-{"key":"matris-10m-mp","label":"MatRIS-10M-MP","quantiles":[-0.068,-0.019,-0.003,0.007,0.055]}
-{"key":"matris-10m-oam","label":"MatRIS-10M-OAM","quantiles":[-0.036,-0.005,0.0,0.005,0.024]}
-{"key":"mattersim-v1-5m","label":"MatterSim v1 5M","quantiles":[-0.051,-0.009,0.0,0.01,0.039]}
-{"key":"megnet","label":"MEGNet","quantiles":[-0.26,-0.05,0.017,0.105,0.374]}
-{"key":"nequip-mp-l-0.1","label":"Nequip-MP-L","quantiles":[-0.111,-0.035,-0.007,0.01,0.071]}
-{"key":"nequip-oam-l-0.1","label":"Nequip-OAM-L","quantiles":[-0.041,-0.008,0.0,0.007,0.032]}
-{"key":"nequip-oam-xl-0.1","label":"Nequip-OAM-XL","quantiles":[-0.043,-0.007,-0.001,0.005,0.025]}
-{"key":"nequix-mp-1","label":"Nequix MP","quantiles":[-0.12,-0.04,-0.011,0.007,0.064]}
-{"key":"nequix-mp-1-pft","label":"Nequix MP PFT","quantiles":[-0.116,-0.037,-0.009,0.009,0.07]}
-{"key":"orb-v2","label":"ORB v2 MPA","quantiles":[-0.033,-0.003,0.004,0.016,0.083]}
-{"key":"orb-v2-mptrj","label":"ORB v2 MPtrj","quantiles":[-0.112,-0.033,-0.006,0.011,0.082]}
-{"key":"orb-v3","label":"ORB v3","quantiles":[-0.075,-0.007,0.0,0.005,0.024]}
-{"key":"pet-oam-xl-1.0.0","label":"PET-OAM-XL","quantiles":[-0.043,-0.004,0.0,0.004,0.021]}
-{"key":"sevennet-l3i5","label":"SevenNet-l3i5","quantiles":[-0.113,-0.036,-0.008,0.009,0.071]}
-{"key":"sevennet-omni-i12","label":"SevenNet-Omni-i12","quantiles":[-0.041,-0.007,0.0,0.006,0.028]}
-{"key":"tace-oam-l","label":"TACE-OAM-L","quantiles":[-0.04,-0.007,-0.001,0.005,0.025]}
-{"key":"tece-oam-rra-1.0","label":"TECE-OAM-RRA-1.0","quantiles":[-0.033,-0.004,0.0,0.004,0.021]}
-{"key":"voronoi-rf","label":"Voronoi RF","quantiles":[-0.404,-0.164,-0.048,0.036,0.22]}
-{"key":"wrenformer","label":"Wrenformer","quantiles":[-0.304,-0.125,-0.047,0.003,0.116]}
+{"_base":{"audit":{"runtime":{"packages":{"numpy":"2.5.1","pandas":"3.0.5","pymatviz":"0.18.0"},"python":"3.14.6"}},"derived":{},"identity":{"benchmark_inputs":[{"role":"wbm_summary","sha256":"adbdd8b24086d4888195d8894c77f6d5fb29ce33bbb5d7d3898b4d79e964dc54","size":12745623}],"parameters":{"coordinate_decimals":5,"max_formation_energy_error":5.0,"prediction_round_decimals":3,"quantiles":[0.05,0.25,0.5,0.75,0.95],"test_subset":"unique_prototypes"},"recipe":{"sha256":"fe9678ca64d9ac157a2dd90e3ae78ce436d5abf3a69f91719e8b5dc250720cc5","sources":[{"path":"scripts/model_figs/hull_dist_box_plot.py","role":"generator","sha256":"60dae6043c2d30f5813df41d1b48d7e2301fe74e36bcd9f109376a85e9ad5204","size":1255},{"path":"matbench_discovery/payload_numerics.py","role":"payload_numerics","sha256":"9d627bd1ff80a67eb8f18dbc654b31bc175b7ee9e11fbe273606e99aa430ec5e","size":4233}]}},"schema_version":2}}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"3c7ebd6951126d5501ee223152b45869b3045a2a27c32f481a7736b592494a73","size":2985758}],"label":"AlchemBERT","model_key":"alchembert","quantiles":[-0.337,-0.14,-0.053,0.007,0.118]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"0a2373733f7b33ec704afa2fee2303a422bb46d91c21d4f31e6ca0c736fd9874","size":1318215}],"label":"ALIGNN","model_key":"alignn","quantiles":[-0.213,-0.066,-0.012,0.04,0.225]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"d77d991782b841077d01b75300f5dd505ae38630347cf22c9a2380db454d9820","size":1661321}],"label":"Allegro-MP-L","model_key":"allegro-mp-l-0.1","quantiles":[-0.125,-0.038,-0.01,0.008,0.062]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"6bc8378f03ef2b6f3fceab7e6d0c04bf0330ba077257a4ca2063491e603438b8","size":1579616}],"label":"Allegro-OAM-L","model_key":"allegro-oam-l-0.1","quantiles":[-0.046,-0.01,-0.003,0.004,0.028]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"776bd000d190cecf002040781b2aff900210ba4ca4aeeb20aad902cfb705cef1","size":1300590}],"label":"AlphaNet-v1-OAM","model_key":"alphanet-v1-oam","quantiles":[-0.072,-0.011,-0.003,0.002,0.025]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"9a7d804687516cefd8c8d1b0eba4bf614646c975add1f7bdc9ae621ac9c0851b","size":1343396}],"label":"BAM-MP-core","model_key":"bam-mp-core","quantiles":[-0.15,-0.056,-0.015,0.019,0.102]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"45d6edccc064ec5fa2fb1cde13bf09aa1caae17ee4df8e3f42cf4c177f19be35","size":1293275}],"label":"BOWSR","model_key":"bowsr","quantiles":[-0.311,-0.132,-0.058,0.0,0.19]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"d2d444bb2015c0238588c2d4cdf6c3059d7d7f1918392156ea34d1654ddeb52e","size":1610939}],"label":"CGCNN","model_key":"cgcnn","quantiles":[-0.193,-0.055,0.007,0.109,0.47]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"54ef352e20852bff043447b7779896e6c9908d96aafadb2d87bb06c78c45a01b","size":1320526}],"label":"CGCNN+P","model_key":"cgcnn-p","quantiles":[-0.268,-0.094,-0.028,0.027,0.269]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"b04ce3b031827fcd532e22058d06dc77fb4705ce8b12aea54652a14504e41f16","size":1320974}],"label":"CHGNet","model_key":"chgnet-0.3.0","quantiles":[-0.173,-0.071,-0.027,0.006,0.071]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"76b8ccb0a4334d71d85d772f0027f35ff56afd3b7c6377e6e1df76e9ac3582c5","size":1319461}],"label":"DPA-3.1-3M-FT","model_key":"dpa-3.1-3m-ft","quantiles":[-0.045,-0.011,-0.002,0.007,0.034]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"66de43d3eeecff0fcd454371da570beaa3e3a2c4ac60f17f2221594b6da3581c","size":1316682}],"label":"DPA-4.0.1-Pro-MPtrj","model_key":"dpa-4.0.1-pro-mptrj","quantiles":[-0.064,-0.016,-0.002,0.007,0.053]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"8674461a153f48ff5e346afcc8de2e707dc6c5605a24f1ae49b17a8b1f200cf8","size":3021075}],"label":"EMA-GNN","model_key":"ema-gnn","quantiles":[-0.216,-0.087,-0.034,0.005,0.138]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"41630d48ec3b49bc94bbf0d392dda6356ea74b77def25ffd29d4130fddbd7707","size":1510639}],"label":"Eqnorm MPtrj","model_key":"eqnorm-mptrj","quantiles":[-0.1,-0.031,-0.007,0.008,0.065]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"b1eecb4a236ee794bc88a9048f0ec1582568c205a7f95b593f61e80bfdc7d8c8","size":2771470}],"label":"EquFlash","model_key":"equflash-29m-oam","quantiles":[-0.038,-0.006,0.0,0.005,0.025]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"7d026883006b851e7bb5020faf77164dd976d43d528030c59806827698b33729","size":2576423}],"label":"EquFlashV2","model_key":"equflashv2-45m-oam","quantiles":[-0.033,-0.004,0.0,0.004,0.021]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"2ec83e5dfd89591158107ee38cd6d9e97b7eb7dbb63274f221e62b9e198eb825","size":1554589}],"label":"EquiformerV3+DeNS-MP","model_key":"equiformer-v3-mp","quantiles":[-0.071,-0.019,-0.004,0.004,0.042]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"f9b7990642deba60d6f9e09f315789c87fa8a649382408cf5c5c927b02423b59","size":1654051}],"label":"EquiformerV3+DeNS-OAM","model_key":"equiformer-v3-oam","quantiles":[-0.037,-0.004,0.0,0.004,0.019]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"b21f337b05bb5043d47ea17e3e61aa819bb3c46e2cb18923d9f07829b3cce11e","size":1327151}],"label":"eqV2 M","model_key":"eqv2-m-omat-salex-mp","quantiles":[-0.023,-0.003,0.001,0.006,0.042]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"bce95bddfafcfa1d8b031451ec73c6277085be26dd199518ff21b79424265ed3","size":1326011}],"label":"eqV2 S DeNS","model_key":"eqv2-s-dens-mp","quantiles":[-0.08,-0.024,-0.006,0.008,0.069]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"c88d0be3887c6423a9dcdd10a7c1558d60f12b0c91033ace2b3d63695c9ba133","size":1316973}],"label":"eSEN-30M-MP","model_key":"esen-30m-mp","quantiles":[-0.084,-0.023,-0.005,0.007,0.055]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"291a4458266e730a877c96c2536942ce840b256a9be1355133f6bdc1638d0459","size":1318830}],"label":"eSEN-30M-OAM","model_key":"esen-30m-oam","quantiles":[-0.04,-0.004,0.0,0.005,0.02]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"e59f6c2f0e0b2943cda6f4ce7a608c46d95a7f0da59ab7402cc54fc090da860b","size":1333389}],"label":"ESNet","model_key":"esnet","quantiles":[-0.14,-0.038,0.011,0.09,0.361]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"964446ef272f547f896f1acc08a0142e15b082fe683e89bd6cbb62f887df8cdf","size":2184112}],"label":"NequIP-GNoME","model_key":"gnome","quantiles":[-0.128,-0.015,0.0,0.012,0.049]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"648824d38e6fef004d0a52b523ac80e81700ba0461a679accf28d48f151542c0","size":2763538}],"label":"GRACE-1L-OAM","model_key":"grace-1l-oam","quantiles":[-0.091,-0.017,-0.002,0.01,0.045]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"8b6036f73c75963d18b654898392992a78205ed5cf7402cc6218dd82d9782ef4","size":1321082}],"label":"GRACE-2L-MPtrj","model_key":"grace-2l-mptrj","quantiles":[-0.141,-0.045,-0.01,0.014,0.091]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"70d970ea2d6baab5438dabf7d6faa57c73e1ef5e13530a8e19aefbb5a22668c9","size":2763931}],"label":"GRACE-2L-OAM","model_key":"grace-2l-oam","quantiles":[-0.049,-0.01,0.0,0.008,0.038]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"66a12568b9cdea8b6d607f403a5900d82dda691d183302c63daf3c00fc6c99b5","size":1657157}],"label":"GRACE-2L-OAM-L","model_key":"grace-2l-oam-l","quantiles":[-0.045,-0.008,0.001,0.008,0.035]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"ddb5007d235f25b68a09b9c07fdce595320f4d50af1fa63ae357a454ce01208f","size":2889887}],"label":"GRACE-3L-OAM-L","model_key":"grace-3l-oam-l","quantiles":[-0.036,-0.005,0.0,0.005,0.021]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"fb7b844726e2612f4afaf53afd57961ca6fc9c638547353aece4ea6afb385742","size":1322880}],"label":"HIENet","model_key":"hienet","quantiles":[-0.099,-0.03,-0.005,0.012,0.077]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"dd04ce627453b529d50725db27d00c32ff2ad8d3a956ee103c999258ef903448","size":1320744}],"label":"M3GNet","model_key":"m3gnet","quantiles":[-0.21,-0.09,-0.035,0.001,0.074]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"527c62dcdc7a726bc069848bf3e44f53d3f70860396ea3b7efcf6cca3ea26144","size":1322814}],"label":"MACE-MP-0","model_key":"mace-mp-0","quantiles":[-0.158,-0.056,-0.016,0.009,0.077]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"8b6ae303e9dad595d10d449ba8b23f80aae377b537a94d5da84c98e895f75fd6","size":1324924}],"label":"MACE-MPA-0","model_key":"mace-mpa-0","quantiles":[-0.066,-0.014,-0.001,0.01,0.047]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"503c76758613aad3a013e6c723f28ceea8ce732a9a049b976ce2d8a4f52d7070","size":1318519}],"label":"MatRIS-10M-MP","model_key":"matris-10m-mp","quantiles":[-0.068,-0.019,-0.003,0.007,0.055]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"a550f13dd3139704a3b4af5fa0f53989e7a174db4e07ccc001f03d514e7a5dd8","size":1317288}],"label":"MatRIS-10M-OAM","model_key":"matris-10m-oam","quantiles":[-0.036,-0.005,0.0,0.005,0.024]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"4eb48d82656eb17f5aebdbda8aca77b69b523fcfd755bbc960684394dcd0fcde","size":2894333}],"label":"MatterSim v1 5M","model_key":"mattersim-v1-5m","quantiles":[-0.051,-0.009,0.0,0.01,0.039]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"0848d06abd413a9a5cf608dc35dd2b9c4d022e839ad3758e2c640fee8f2722d8","size":1336003}],"label":"MEGNet","model_key":"megnet","quantiles":[-0.26,-0.05,0.017,0.105,0.374]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"9f1021e0a71cb244b085ac04aaf72b71913d950b5df1447f094c78a50bdc59a5","size":1661375}],"label":"Nequip-MP-L","model_key":"nequip-mp-l-0.1","quantiles":[-0.111,-0.035,-0.007,0.01,0.071]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"692322cdb020acb4720c9875a57a4220415cbedc2049d3c88b3893a12ce73e85","size":1579363}],"label":"Nequip-OAM-L","model_key":"nequip-oam-l-0.1","quantiles":[-0.041,-0.008,0.0,0.007,0.032]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"ae6db4555f846e58d61507f0efe9e875e3a404ddeb391732ec513aa12f3b9c7f","size":1571114}],"label":"Nequip-OAM-XL","model_key":"nequip-oam-xl-0.1","quantiles":[-0.043,-0.007,-0.001,0.005,0.025]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"b92a390fb6f4855154693ac10d6adc17a163e23a8ec6de8666b193dd1b0f6fad","size":1376646}],"label":"Nequix MP","model_key":"nequix-mp-1","quantiles":[-0.12,-0.04,-0.011,0.007,0.064]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"c34fda2301b3f172cdbb964e2c0cf36c76f55bcb24a80bbcd47e993212b78553","size":1511054}],"label":"Nequix MP PFT","model_key":"nequix-mp-1-pft","quantiles":[-0.116,-0.037,-0.009,0.009,0.07]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"d3d2dbe2238678cbfed93487e886312c2f6611e9fc7daa03f5765e81dcf56d53","size":1325696}],"label":"ORB v2 MPA","model_key":"orb-v2","quantiles":[-0.033,-0.003,0.004,0.016,0.083]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"76c2258e9338012f1d2fd287ef0e3455f3a57114a1e6330f0e2f23ea57cc0e89","size":1325089}],"label":"ORB v2 MPtrj","model_key":"orb-v2-mptrj","quantiles":[-0.112,-0.033,-0.006,0.011,0.082]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"1f9fa1c95470cdc97a255ecee887d34790825d46bbc625d707ce01af0397bdfb","size":1658080}],"label":"ORB v3","model_key":"orb-v3","quantiles":[-0.075,-0.007,0.0,0.005,0.024]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"86e76986aa13086f454af593a1dfd70ff5eac7927ce6f1b0b94e0c5f186ac53c","size":1315508}],"label":"PET-OAM-XL","model_key":"pet-oam-xl-1.0.0","quantiles":[-0.043,-0.004,0.0,0.004,0.021]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"5fff80afe82bea6b2297c1b65fc924bc9b8ebad8ecaa9405bd964a3efc872061","size":1657501}],"label":"SevenNet-l3i5","model_key":"sevennet-l3i5","quantiles":[-0.113,-0.036,-0.008,0.009,0.071]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"7d4a681056941622d23b5df698b4e49cd9f7fac84abeec04be881e76acf8ecf1","size":1338289}],"label":"SevenNet-Omni-i12","model_key":"sevennet-omni-i12","quantiles":[-0.041,-0.007,0.0,0.006,0.028]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"368a1c5bfa20fc9b7cbe0898505ae6bb24f188c27edd15afc26f3d5ab67c6272","size":1648063}],"label":"TACE-OAM-L","model_key":"tace-oam-l","quantiles":[-0.04,-0.007,-0.001,0.005,0.025]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"a41737ad814c16af7b1f012ee9e840fda0e0b493d8b50d15b48fa4742402be58","size":1648875}],"label":"TECE-OAM-RRA-1.0","model_key":"tece-oam-rra-1.0","quantiles":[-0.033,-0.004,0.0,0.004,0.021]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"3c29f747ca42f43bf6a1ecab7ae673e7ab43545c8b0668737ad8874309bbef6b","size":1316225}],"label":"Voronoi RF","model_key":"voronoi-rf","quantiles":[-0.404,-0.164,-0.048,0.036,0.22]}
+{"input_artifacts":[{"role":"discovery_predictions","sha256":"c7963d6fe64d67b79b7a11a2c7b3b42bc5b6943dc939475db90b328bad523dfa","size":1619355}],"label":"Wrenformer","model_key":"wrenformer","quantiles":[-0.304,-0.125,-0.047,0.003,0.116]}

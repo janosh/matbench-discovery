@@ -9,7 +9,7 @@ expected hit rate for a given DFT calculation budget.
 # %%
 import numpy as np
 
-from matbench_discovery import STABILITY_THRESHOLD, figs
+from matbench_discovery import ROOT, STABILITY_THRESHOLD, figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -51,11 +51,10 @@ for model in complete_models():
     )
     cum_pr_models.append(
         {
-            "key": model.key,
-            "label": model.label,
-            "x": figs.round_list(xs),
-            "precision": figs.round_list(precision),
-            "recall": figs.round_list(recall),
+            **figs.discovery_model_identity(model),
+            "x": payload_numerics.round_list(xs),
+            "precision": payload_numerics.round_list(precision),
+            "recall": payload_numerics.round_list(recall),
             # [n materials predicted stable, precision there, recall there]
             "end": [
                 n_pred_stable,
@@ -65,7 +64,22 @@ for model in complete_models():
         }
     )
 n_stable = int((df_preds[MbdKey.each_true] <= STABILITY_THRESHOLD).sum())
+provenance = figs.build_discovery_payload_provenance(
+    generator=__file__,
+    test_subset=test_subset.value,
+    source_files={
+        "payload_numerics": payload_numerics.__file__,
+        "stability_metrics": f"{ROOT}/matbench_discovery/metrics/discovery.py",
+    },
+    parameters={
+        "coordinate_decimals": payload_numerics.COORD_DECIMALS,
+        "curve_end_decimals": 5,
+        "log_sample_count": 100,
+        "stability_threshold": STABILITY_THRESHOLD,
+    },
+    packages=("scikit-learn",),
+)
 figs.write_site_payload(
     "cumulative-precision-recall",
-    {"n_stable": n_stable, "models": cum_pr_models},
+    {**provenance, "n_stable": n_stable, "models": cum_pr_models},
 )

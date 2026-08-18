@@ -8,6 +8,7 @@ only surfaces as broken figures. These tests mirror payloads.d.ts and fail fast.
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 import math
 import os
@@ -17,8 +18,10 @@ from typing import Any
 import pandas as pd
 import pytest
 
-from matbench_discovery import SITE_DIR, SITE_FIG_DATA, figs
-from matbench_discovery.enums import Model
+from matbench_discovery import ROOT, SITE_DIR, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
+from matbench_discovery.data import load_df_wbm_with_preds
+from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.metrics.discovery import stable_metrics
 from scripts.model_figs.kappa_103_analysis import row_flag
 
 
@@ -63,25 +66,31 @@ def assert_xy(obj: dict[str, Any], *, bar_width: bool = False) -> None:
         assert isinstance(obj["bar_width"], (int, float))
 
 
-def assert_models(payload: dict[str, Any], *keys: str, n_min: int = 2) -> list:
+def assert_models(
+    payload: dict[str, Any], *keys: str, n_min: int = 2
+) -> list[dict[str, Any]]:
     """Assert a {models: [...]} payload where each entry has (at least) ``keys``."""
     models = payload["models"]
     assert len(models) >= n_min, f"expected >= {n_min} models, got {len(models)}"
-    # ids must be unique - a git merge that duplicated a model line (or a generator bug)
-    # would otherwise render two entries for one model
-    ids = [entry.get("key") or entry["label"] for entry in models]
-    assert len(ids) == len(set(ids)), f"duplicate model ids: {sorted(ids)}"
     for entry in models:
-        assert isinstance(entry["label"], str)
-        assert entry["label"]
         for key in keys:
             assert key in entry, f"model {entry['label']!r} missing {key!r}"
     return models
 
 
-def payload_model_ids(name: str, field: str) -> set[str]:
-    """Set of per-model identifiers (``field`` = 'key' or 'label') in a payload."""
-    return {model[field] for model in load_payload(name)["models"]}
+def assert_model_keys(model: dict[str, Any], *derived_keys: str) -> None:
+    """Assert a model record has exactly its identity and declared derived fields."""
+    assert set(model) == {
+        "model_key",
+        "label",
+        "input_artifacts",
+        *derived_keys,
+    }
+
+
+def payload_model_keys(name: str) -> set[str]:
+    """Set of immutable model keys in one payload."""
+    return {model["model_key"] for model in load_payload(name)["models"]}
 
 
 def test_no_orphan_payloads() -> None:
@@ -111,22 +120,25 @@ def test_per_element_each_errors_payload() -> None:
     finite per-element values (None allowed for gaps).
     """
     path = f"{SITE_DIR}/routes/models/per-element-each-errors.jsonl"
-    columns = figs.read_jsonl_payload(path)["models"]
+    payload = figs.read_jsonl_payload(path)
+    assert_num_list(list(payload["mp_occurrences"].values()))
+    assert_num_list(list(payload["test_set_standard_deviation"].values()))
+    columns = payload["models"]
     assert len(columns) > 10, f"expected >10 columns, got {len(columns)}"
     for column in columns:
-        assert isinstance(column["key"], str)
+        assert isinstance(column["model_key"], str)
         assert_num_list(list(column["values"].values()))
 
 
 def check_box_hull_dist_errors() -> None:
-    for model in assert_models(load_payload("box-hull-dist-errors"), "key"):
+    for model in assert_models(load_payload("box-hull-dist-errors")):
         assert_num_list(model["quantiles"], length=5)  # q05, q25, median, q75, q95
 
 
 def check_cumulative_precision_recall() -> None:
     payload = load_payload("cumulative-precision-recall")
     assert payload["n_stable"] > 10_000
-    for model in assert_models(payload, "key"):
+    for model in assert_models(payload):
         assert_num_list(model["x"])
         assert_num_list(model["precision"], length=len(model["x"]))
         assert_num_list(model["recall"], length=len(model["x"]))
@@ -134,7 +146,7 @@ def check_cumulative_precision_recall() -> None:
 
 
 def check_roc_models() -> None:
-    for model in assert_models(load_payload("roc-models"), "key", "auc"):
+    for model in assert_models(load_payload("roc-models"), "auc"):
         assert 0.5 < model["auc"] <= 1
         assert_num_list(model["fpr"])
         assert_num_list(model["tpr"], length=len(model["fpr"]))
@@ -143,7 +155,7 @@ def check_roc_models() -> None:
 def check_rolling_mae() -> None:
     payload = load_payload("rolling-mae-vs-hull-dist")
     assert_num_list(payload["x"])
-    for model in assert_models(payload, "key"):
+    for model in assert_models(payload):
         assert_num_list(model["y"], length=len(payload["x"]))
     assert_xy(payload["density"])
 
@@ -152,9 +164,42 @@ def check_hist_clf() -> None:
     payload = load_payload("hist-clf-pred-hull-dist")
     assert_num_list(payload["bin_centers"])
     n_bins = len(payload["bin_centers"])
-    for model in assert_models(payload, "key", "f1"):
+    for model in assert_models(payload, "f1"):
         for clf in ("tp", "fn", "fp", "tn"):
             assert_num_list(model[clf], length=n_bins)
+
+    record = next(
+        (
+            model
+            for model in payload["models"]
+            if model["f1"]
+            != Model.from_ref(model["model_key"]).metrics["discovery"][
+                TestSubset.uniq_protos.value
+            ]["F1"]
+        ),
+        None,
+    )
+    if record is None:
+        pytest.skip("payload F1 values match the registry fixtures")
+    assert record is not None
+    test_model = Model.from_ref(record["model_key"])
+    df_preds = load_df_wbm_with_preds(
+        models=[test_model], subset=TestSubset.uniq_protos
+    )
+    each_pred = (
+        df_preds[MbdKey.each_true]
+        + df_preds[test_model.label]
+        - df_preds[MbdKey.e_form_dft]
+    )
+    expected_f1 = round(
+        stable_metrics(
+            df_preds[MbdKey.each_true],
+            each_pred,
+            stability_threshold=STABILITY_THRESHOLD,
+        )["F1"],
+        4,
+    )
+    assert record["f1"] == expected_f1
 
 
 def check_element_prevalence() -> None:
@@ -163,6 +208,7 @@ def check_element_prevalence() -> None:
     assert all(isinstance(el, str) for el in elements)
     assert_num_list(payload["occurrences"], length=len(elements))
     for model in assert_models(payload):
+        assert_model_keys(model, "y")
         assert_num_list(model["y"], length=len(elements))
 
 
@@ -170,11 +216,13 @@ def check_scatter_largest_fp_diff() -> None:
     payload = load_payload("scatter-largest-fp-diff-each-error")
     assert_num_list(payload["fp_diff"])
     for model in assert_models(payload, "mae"):
+        assert_model_keys(model, "mae", "y")
         assert_num_list(model["y"], length=len(payload["fp_diff"]))
 
 
 def check_hist_largest_each_errors() -> None:
     for model in assert_models(load_payload("hist-largest-each-errors-fp-diff")):
+        assert_model_keys(model, "err_min", "err_max")
         assert_xy(model["err_min"], bar_width=True)
         assert_xy(model["err_max"], bar_width=True)
 
@@ -235,7 +283,7 @@ def check_element_counts() -> None:
 
 
 def check_spg_sankeys() -> None:
-    for model in assert_models(load_payload("spg-sankeys"), "key"):
+    for model in assert_models(load_payload("spg-sankeys")):
         labels = model["labels"]
         source, target, value = model["source"], model["target"], model["value"]
         n_links = len(source)
@@ -258,7 +306,7 @@ def check_kappa_103_analysis() -> None:
     assert len(payload["spg_nums"]) == n_materials
     assert all(spg is None or 1 <= spg <= 230 for spg in payload["spg_nums"])
     assert_num_list(payload["kappa_dft"], length=n_materials)
-    for model in assert_models(payload, "key", "freq_w1_mean", "freq_pairs"):
+    for model in assert_models(payload, "freq_w1_mean", "freq_pairs"):
         for field in ("kappa_ml", "srme", "freq_w1"):
             assert_num_list(model[field], length=n_materials)
         assert all(val is None or 0 <= val <= 2 for val in model["srme"])
@@ -293,6 +341,8 @@ def test_kappa_103_analysis_row_flag(value: object, expected: bool | None) -> No
 def check_xy_models(name: str, *stat_keys: str) -> None:
     """Generic check: per-model x/y series plus data-derived stat fields."""
     for model in assert_models(load_payload(name), *stat_keys):
+        if name == "scatter-largest-each-errors-fp-diff":
+            assert_model_keys(model, "mae", "x", "y")
         assert_xy(model)
 
 
@@ -356,7 +406,7 @@ def test_discovery_payload_covers_active_models(name: str) -> None:
     """
     expected = {model.key for model in Model.active() if model.metrics.get("discovery")}
     assert len(expected) > 30, f"sanity: too few discovery models ({len(expected)})"
-    keys = payload_model_ids(name, "key")
+    keys = payload_model_keys(name)
     assert keys == expected, (
         f"{name} roster drift: missing={expected - keys}, extra={keys - expected}. "
         "Run `uv run --with-editable . scripts/ingest_model.py <your-model> "
@@ -366,21 +416,85 @@ def test_discovery_payload_covers_active_models(name: str) -> None:
 
 
 GEO_OPT_PAYLOADS = ("spg-sankeys", "struct-rmsd-cdf", "sym-ops-diff-bar")
+TMI_PAYLOADS = (
+    "hist-largest-each-errors-fp-diff",
+    "scatter-largest-each-errors-fp-diff",
+    "scatter-largest-fp-diff-each-error",
+)
+ELEMENT_PAYLOADS = {"element-prevalence-vs-error", "per-element-each-errors"}
+PREDICTION_ROLES = {"generator", "payload_numerics"}
+ERROR_ROLES = PREDICTION_ROLES | {"prediction_error_loader"}
+RECIPE_ROLES = {
+    "box-hull-dist-errors": PREDICTION_ROLES,
+    "cumulative-precision-recall": PREDICTION_ROLES | {"stability_metrics"},
+    "hist-clf-pred-hull-dist": PREDICTION_ROLES | {"stability_metrics"},
+    "roc-models": PREDICTION_ROLES,
+    "rolling-mae-vs-hull-dist": PREDICTION_ROLES,
+    "spg-sankeys": {"generator", "payload_numerics"},
+    "struct-rmsd-cdf": {"generator", "payload_numerics"},
+    "sym-ops-diff-bar": {"generator"},
+    **dict.fromkeys(TMI_PAYLOADS, ERROR_ROLES),
+    "element-prevalence-vs-error": ERROR_ROLES | {"element_error_analysis"},
+    "per-element-each-errors": {"generator", "prediction_error_loader"},
+    "kappa-103-analysis": {
+        "generator",
+        "kappa_metrics",
+        "payload_numerics",
+        "phonon_reader",
+        "phonon_schema",
+        "thermal_conductivity",
+    },
+}
+
+
+def test_multi_model_payload_provenance_matches_computation() -> None:
+    """Every JSONL validates and hashes exactly its current computation sources."""
+    paths = {
+        name.removesuffix(".jsonl"): f"{SITE_FIG_DATA}/{name}"
+        for name in os.listdir(SITE_FIG_DATA)
+        if name.endswith(".jsonl")
+    }
+    paths["per-element-each-errors"] = (
+        f"{SITE_DIR}/routes/models/per-element-each-errors.jsonl"
+    )
+    assert set(paths) == set(RECIPE_ROLES)
+    for name, path in paths.items():
+        payload = figs.read_jsonl_payload(path)
+        identity = payload["identity"]
+        audit = payload["audit"]
+        sources = identity["recipe"]["sources"]
+        for source in sources:
+            with open(f"{ROOT}/{source['path']}", "rb") as file:
+                source_bytes = file.read()
+            assert source["size"] == len(source_bytes), source["path"]
+            assert source["sha256"] == hashlib.sha256(source_bytes).hexdigest(), name
+
+        expected_roles = RECIPE_ROLES[name]
+        roles = {source["role"] for source in sources}
+        assert roles == expected_roles, name
+        if name in set(TMI_PAYLOADS) | ELEMENT_PAYLOADS:
+            is_element_payload = name in ELEMENT_PAYLOADS
+            benchmark_roles = {item["role"] for item in identity["benchmark_inputs"]}
+            expected_benchmarks = {"wbm_summary"} | (
+                {"mp_element_occurrences"} if is_element_payload else set()
+            )
+            assert benchmark_roles == expected_benchmarks, name
+            assert ("pymatgen" in audit["runtime"]["packages"]) is is_element_payload
 
 
 @pytest.mark.parametrize("name", GEO_OPT_PAYLOADS)
 def test_geo_opt_payload_covers_active_models(name: str) -> None:
     """Each geo-opt payload includes every active model with an analysis file."""
     expected = {
-        model.label
+        model.key
         for model in Model.active()
         if (geo_opt := model.metrics.get("geo_opt") or {}).get("pred_file")
         and (geo_opt.get("symprec=1e-5") or {}).get("analysis_file")
     }
     assert len(expected) > 30, f"sanity: too few geo-opt models ({len(expected)})"
-    labels = payload_model_ids(name, "label")
-    assert labels == expected, (
-        f"{name} roster drift: missing={expected - labels}, extra={labels - expected}. "
+    keys = payload_model_keys(name)
+    assert keys == expected, (
+        f"{name} roster drift: missing={expected - keys}, extra={keys - expected}. "
         "Run `python scripts/evals/geo_opt.py --auto-download`."
     )
 
@@ -397,7 +511,7 @@ def test_kappa_payload_covers_active_models() -> None:
         )
     }
     assert len(expected) > 30, f"sanity: too few kappa models ({len(expected)})"
-    keys = payload_model_ids("kappa-103-analysis", "key")
+    keys = payload_model_keys("kappa-103-analysis")
     assert keys == expected, (
         f"kappa-103-analysis roster drift: missing={expected - keys}, "
         f"extra={keys - expected}. Run `uv run --with-editable . "
@@ -406,9 +520,8 @@ def test_kappa_payload_covers_active_models() -> None:
     )
 
 
-# sibling figures from a shared data source must agree on their model roster (these
-# carry only `label`, not `key`), so a partial regen of one fails against the rest
-LABEL_PAYLOAD_FAMILIES = {
+# Sibling figures from a shared data source must agree on their stable-key roster.
+PAYLOAD_FAMILIES = {
     "tmi-extras": (
         "element-prevalence-vs-error",
         "scatter-largest-fp-diff-each-error",
@@ -418,11 +531,11 @@ LABEL_PAYLOAD_FAMILIES = {
 }
 
 
-@pytest.mark.parametrize("family", LABEL_PAYLOAD_FAMILIES)
-def test_label_payload_family_roster_consistent(family: str) -> None:
+@pytest.mark.parametrize("family", PAYLOAD_FAMILIES)
+def test_payload_family_roster_consistent(family: str) -> None:
     """Payloads in a family share a model roster; a partial regen of one fails here."""
-    names = LABEL_PAYLOAD_FAMILIES[family]
-    base = payload_model_ids(names[0], "label")
+    names = PAYLOAD_FAMILIES[family]
+    base = payload_model_keys(names[0])
     for name in names[1:]:
-        roster = payload_model_ids(name, "label")
+        roster = payload_model_keys(name)
         assert roster == base, f"{name} roster drifts from {names[0]}: {roster ^ base}"

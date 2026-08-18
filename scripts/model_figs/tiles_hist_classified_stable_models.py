@@ -5,21 +5,14 @@ data set and separate true/false positives/negatives.
 """
 
 # %%
-from matbench_discovery import figs
+from matbench_discovery import ROOT, STABILITY_THRESHOLD, figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.metrics.discovery import classify_stable
+from matbench_discovery.metrics.discovery import classify_stable, stable_metrics
 
 test_subset = cli_args.test_subset
-model_f1_pairs = []
-for model in complete_models():
-    discovery_metrics = model.metrics.get("discovery") or {}
-    if (subset_metrics := discovery_metrics.get(test_subset)) is None:
-        continue
-    model_f1_pairs.append((model, float(subset_metrics["F1"])))
-
-models_to_plot = [model for model, _f1_score in model_f1_pairs]
+models_to_plot = complete_models()
 load_subset = test_subset if test_subset == TestSubset.uniq_protos else None
 df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=load_subset)
 
@@ -30,19 +23,27 @@ df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=load_subset)
 n_bins = 64
 hist_range = (-0.45, 0.45)
 clf_models: list[dict[str, object]] = []
-for model, f1_score in model_f1_pairs:
+for model in models_to_plot:
     each_pred = (
         df_preds[MbdKey.each_true] + df_preds[model.label] - df_preds[MbdKey.e_form_dft]
     )
     true_pos, false_neg, false_pos, true_neg = classify_stable(
         df_preds[MbdKey.each_true], each_pred
     )
+    f1_score = stable_metrics(
+        df_preds[MbdKey.each_true],
+        each_pred,
+        stability_threshold=STABILITY_THRESHOLD,
+    )["F1"]
     clf_models.append(
-        {"key": model.key, "label": model.label, "f1": round(f1_score, 4)}
+        {
+            **figs.discovery_model_identity(model),
+            "f1": round(f1_score, 4),
+        }
         | {
-            key: figs.histogram(each_pred[mask], bins=n_bins, value_range=hist_range)[
-                "y"
-            ]
+            key: payload_numerics.histogram(
+                each_pred[mask], bins=n_bins, value_range=hist_range
+            )["y"]
             for key, mask in (
                 ("tp", true_pos),
                 ("fn", false_neg),
@@ -52,8 +53,29 @@ for model, f1_score in model_f1_pairs:
         }
     )
 # bin centers depend only on the bin count/range, not the per-model data
-bin_centers = figs.histogram([], bins=n_bins, value_range=hist_range)["x"]
+bin_centers = payload_numerics.histogram([], bins=n_bins, value_range=hist_range)["x"]
+provenance = figs.build_discovery_payload_provenance(
+    generator=__file__,
+    test_subset=test_subset.value,
+    source_files={
+        "payload_numerics": payload_numerics.__file__,
+        "stability_metrics": f"{ROOT}/matbench_discovery/metrics/discovery.py",
+    },
+    parameters={
+        "coordinate_decimals": payload_numerics.COORD_DECIMALS,
+        "f1_decimals": 4,
+        "histogram_bins": n_bins,
+        "histogram_range": list(hist_range),
+        "stability_threshold": STABILITY_THRESHOLD,
+    },
+    packages=("scikit-learn",),
+    prediction_round_decimals=None,
+)
 figs.write_site_payload(
     "hist-clf-pred-hull-dist",
-    {"bin_centers": bin_centers, "models": clf_models},
+    {
+        **provenance,
+        "bin_centers": bin_centers,
+        "models": clf_models,
+    },
 )

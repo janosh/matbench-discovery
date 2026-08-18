@@ -3,7 +3,7 @@
 # %%
 import numpy as np
 
-from matbench_discovery import figs
+from matbench_discovery import figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -30,9 +30,8 @@ for model in complete_models():
     ]
     rolling_models.append(
         {
-            "key": model.key,
-            "label": model.label,
-            "y": figs.round_list(rolling_mae),
+            **figs.discovery_model_identity(model),
+            "y": payload_numerics.round_list(rolling_mae),
         }
     )
 
@@ -44,8 +43,32 @@ counts, bins = np.histogram(
     range=(-0.7, 0.7),
 )
 # rolling count of test-set structures per hull-dist bin (drawn on y2)
-density = {"x": figs.round_list((bins[:-1] + bins[1:]) / 2), "y": counts.tolist()}
+density = {
+    "x": payload_numerics.round_list((bins[:-1] + bins[1:]) / 2),
+    "y": counts.tolist(),
+}
+provenance = figs.build_discovery_payload_provenance(
+    generator=__file__,
+    test_subset=test_subset.value,
+    source_files={"payload_numerics": payload_numerics.__file__},
+    parameters={
+        "coordinate_decimals": payload_numerics.COORD_DECIMALS,
+        "density_bins": 200,
+        "density_range": [-0.7, 0.7],
+        "noise_magnitude": 1e-12,
+        "noise_seed": 0,
+        "rolling_start": -0.2,
+        "rolling_step": 0.005,
+        "rolling_stop": 0.2,
+        "rolling_window": window,
+    },
+)
 figs.write_site_payload(
     "rolling-mae-vs-hull-dist",
-    {"x": figs.round_list(rolling_x), "models": rolling_models, "density": density},
+    {
+        **provenance,
+        "x": payload_numerics.round_list(rolling_x),
+        "models": rolling_models,
+        "density": density,
+    },
 )

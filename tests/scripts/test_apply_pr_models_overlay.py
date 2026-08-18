@@ -108,7 +108,13 @@ def test_ingest_guard_exempts_only_files_the_overlay_never_copies() -> None:
     for path in exempt_paths:  # exempt only because the overlay refuses to copy them
         assert overlay.MODEL_YAML_PATTERN.fullmatch(path) is None
 
-    # enums.py stays a payload generator so model-pr-guard still demands payload regen
+    # Central recipe sources stay guarded so stale committed manifests cannot ship.
     with open(f"{gh_dir}/payload-generator-paths.regex", encoding="utf-8") as file:
         generator_pattern = file.read().strip()
-    assert re.fullmatch(generator_pattern, "matbench_discovery/enums.py")
+    for path in (
+        "matbench_discovery/data.py",
+        "matbench_discovery/enums.py",
+        "matbench_discovery/payload_numerics.py",
+        "matbench_discovery/preds/__init__.py",
+    ):
+        assert re.fullmatch(generator_pattern, path)

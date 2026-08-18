@@ -58,14 +58,14 @@ describe(`Geo Opt Task Page`, () => {
   it(`filters every aggregate plot from the models query param`, async () => {
     const shared_model = spg_sankeys.models.find(
       (model) =>
-        struct_rmsd_cdf.models.some((entry) => entry.label === model.label) &&
-        sym_ops_diff.models.some((entry) => entry.label === model.label),
+        struct_rmsd_cdf.models.some((entry) => entry.model_key === model.model_key) &&
+        sym_ops_diff.models.some((entry) => entry.model_key === model.model_key),
     )
     if (!shared_model) throw new Error(`No model shared by all geo-opt payloads`)
-    const { key, label } = shared_model
-    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=${key}`)
+    const { model_key, label } = shared_model
+    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=${model_key}`)
 
-    expect(selected_text()).toContain(label_by_model_key.get(key) ?? label)
+    expect(selected_text()).toContain(label_by_model_key.get(model_key) ?? label)
     expect(cdf_labels()).toStrictEqual([label])
     expect(histogram_labels()).toStrictEqual([label])
     expect(sankey_labels()).toStrictEqual([label])

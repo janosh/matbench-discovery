@@ -4,6 +4,7 @@ import pytest
 
 from matbench_discovery import cli
 from matbench_discovery.enums import Model, TestSubset
+from matbench_discovery.figs import PayloadMode
 
 
 @pytest.mark.parametrize(
@@ -48,11 +49,16 @@ from matbench_discovery.enums import Model, TestSubset
             {"models": [Model.chgnet_0_3_0]},
             {"--f=/path/to/kernel.json", "--ip=127.0.0.1"},
         ),
+        (
+            ["--migrate-model-key", "old-key=new-key"],
+            {"migrate_model_key": ("old-key", "new-key")},
+            set(),
+        ),
     ],
 )
 def test_cli_parser(
     args: list[str],
-    expected: dict[str, TestSubset | list[Model]],
+    expected: dict[str, object],
     unknown: set[str],
 ) -> None:
     """Parse known args; unrecognized Jupyter flags stay in unknown."""
@@ -60,6 +66,8 @@ def test_cli_parser(
     for key, val in expected.items():
         assert getattr(parsed_args, key) == val
     assert set(leftover) == unknown
+    explicit_models = any(arg.partition("=")[0] == "--models" for arg in args)
+    assert (parsed_args.models is not cli.models_arg.default) is explicit_models
 
 
 @pytest.mark.parametrize(
@@ -83,15 +91,37 @@ def test_cli_parser_invalid_args(
 
 
 @pytest.mark.parametrize(
-    ("models", "is_full"),
-    [(list(Model.active()), True), ([Model.chgnet_0_3_0], False)],
+    ("selection", "expected"),
+    [
+        ("models", PayloadMode.targeted),
+        ("full_roster", PayloadMode.full_roster),
+        ("migrate_provenance", PayloadMode.migrate_provenance),
+        ("migrate_model_key", PayloadMode.migrate_model_key),
+        (None, None),
+    ],
 )
-def test_is_full_model_run(
-    monkeypatch: pytest.MonkeyPatch, models: list[Model], is_full: bool
+def test_payload_mode_is_explicit(
+    monkeypatch: pytest.MonkeyPatch,
+    selection: str | None,
+    expected: PayloadMode | None,
 ) -> None:
-    """is_full_model_run is true only when all active models are selected."""
-    monkeypatch.setattr(cli.cli_args, "models", models)
-    assert cli.is_full_model_run() is is_full
+    """Payload mode distinguishes targeted, roster, and migration operations."""
+    monkeypatch.setattr(cli, "models_were_explicit", selection == "models")
+    monkeypatch.setattr(cli.cli_args, "full_roster", False)
+    monkeypatch.setattr(cli.cli_args, "migrate_provenance", False)
+    monkeypatch.setattr(cli.cli_args, "migrate_model_key", None)
+    if selection not in (None, "models"):
+        monkeypatch.setattr(
+            cli.cli_args,
+            selection,
+            ("old-key", "new-key") if selection == "migrate_model_key" else True,
+        )
+    if expected is None:
+        with pytest.raises(SystemExit, match="2"):
+            cli.payload_mode()
+    else:
+        assert cli.payload_mode() == expected
+        assert cli.is_full_model_run() is (expected != PayloadMode.targeted)
 
 
 def test_complete_models_drops_inactive(monkeypatch: pytest.MonkeyPatch) -> None:

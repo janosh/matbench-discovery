@@ -9,8 +9,8 @@ describe(`ElementErrorsPtableHeatmap`, () => {
     const component = mount(ElementErrorsPtableHeatmap, { target: document.body })
 
     const [current_model] = component.snapshot.capture().current_model
-    const model = MODELS.find((candidate) => candidate.model_name === current_model)
-    if (!model) throw new Error(`missing model for ${current_model}`)
+    const model = MODELS.find((candidate) => candidate.model_key === current_model.value)
+    if (!model) throw new Error(`missing model for ${current_model.value}`)
 
     expect(per_elem_each_errors).toHaveProperty(model.model_key)
   })

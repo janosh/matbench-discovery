@@ -1,148 +1,177 @@
-"""Export analysis data as compact gzipped JSON payloads for the Svelte site.
+"""Export deterministic analysis payloads for the Svelte site.
 
 Payloads are *data-only*: series arrays plus data-derived stats (MAE, AUC, F1, ...).
 All presentation (axes, ref lines, legends, per-model colors, render order, default
 visibility) lives inline in the Svelte pages that import these files.
 site/src/figs/payloads.d.ts documents the expected payload shapes.
 
-Static payloads are committed as a single gzipped ``site/src/figs/<name>.json.gz``.
-Multi-model payloads are committed as line-delimited ``site/src/figs/<name>.jsonl``: one
-JSON object per line (a lone ``{"_base": {...}}`` line for shared fields + one line per
-model). Two submissions that each add a model insert different lines, which git merges
-cleanly rather than colliding on one un-mergeable gzipped blob. The json_payload
-Vite plugin (site/vite.config.ts) loads both; .jsonl reassembles into the aggregate.
-
-Helpers:
-- ``write_json_gz(path, payload)``: deterministic gzipped JSON writer
-- ``write_site_payload(name, payload)``: write a multi-model payload as line-delimited
-  JSONL (position-independent data; presentation applied client-side)
-- ``read_jsonl_payload(path)``: reassemble a .jsonl payload into ``{**shared, models}``
-- ``histogram(values)``: bin raw values into ``{x, y, bar_width}`` (HistBins shape)
-- ``lttb``: down-sample over-resolved line series
-- ``sankey_payload_from_flow``: canonicalize ``pymatviz.sankey_flow_data`` output
+Static payloads use deterministic gzip. Multi-model payloads use canonical JSONL with
+one shared ``_base`` record followed by one line per immutable ``model_key``.
 """
 
 from __future__ import annotations
 
 import contextlib
 import gzip
+import hashlib
+import importlib.metadata
 import json
-import math
 import os
+import posixpath
+import re
+import sys
 import zlib
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Final
 
-import numpy as np
+from matbench_discovery.enums import Model
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Collection, Mapping, Sequence
 
-    import numpy.typing as npt
-
-COORD_DECIMALS: Final = 5
-DEFAULT_HIST_BINS: Final = 100
+PAYLOAD_SCHEMA_VERSION: Final = 2
 
 
-def round_list(values: npt.ArrayLike | None) -> list[Any]:
-    """Convert an array-like to a JSON-safe list: round floats to COORD_DECIMALS,
-    keep ints/strings, replace non-finite numbers with None. ``None`` -> ``[]`` (so a
-    missing trace field surfaces as an empty list, not a TypeError on iteration).
+class PayloadMode(StrEnum):
+    """Allowed update modes for multi-model JSONL payloads."""
 
-    Don't replace calls with plain ``.tolist()``: rounding cuts gzipped payload sizes
-    to ~1/3 (full float64 repr keeps 17 significant digits) and NaN -> None is required
-    since write_json_gz uses ``json.dumps(allow_nan=False)`` which raises on NaN.
-    """
-    if values is None:
-        return []
-    return [
-        (round(val, COORD_DECIMALS) if math.isfinite(val) else None)
-        if isinstance(val, float)
-        else val
-        for val in np.asarray(values).tolist()
-    ]
+    targeted = "targeted"
+    full_roster = "full-roster"
+    migrate_provenance = "migrate-provenance"
+    migrate_model_key = "migrate-model-key"
 
 
-# === down-sampling ===
-def lttb(x: np.ndarray, y: np.ndarray, n_out: int) -> tuple[np.ndarray, np.ndarray]:
-    """Largest-Triangle-Three-Buckets down-sampling preserving visual line shape."""
-    n = len(x)
-    if n_out >= n or n_out < 3:
-        return x, y
-    sampled_idx = [0]
-    bucket_size = (n - 2) / (n_out - 2)
-    pos_a = 0
-    for bucket in range(n_out - 2):
-        lo = math.floor((bucket + 1) * bucket_size) + 1
-        hi = min(math.floor((bucket + 2) * bucket_size) + 1, n)
-        if hi > lo:
-            avg_x, avg_y = float(np.mean(x[lo:hi])), float(np.mean(y[lo:hi]))
-            candidates = range(lo, hi)
-        else:
-            avg_x, avg_y = float(x[-1]), float(y[-1])
-            candidates = range(lo, lo + 1)
-        ax, ay = float(x[pos_a]), float(y[pos_a])
-        best_area, best_idx = -1.0, lo
-        for cand in candidates:
-            if cand >= n:
-                break
-            area = abs(
-                (ax - avg_x) * (float(y[cand]) - ay)
-                - (ax - float(x[cand])) * (avg_y - ay)
-            )
-            if area > best_area:
-                best_area, best_idx = area, cand
-        sampled_idx.append(best_idx)
-        pos_a = best_idx
-    sampled_idx.append(n - 1)
-    idx = np.asarray(sorted(set(sampled_idx)))
-    return x[idx], y[idx]
+def canonical_json(data: object) -> str:
+    """Serialize JSON data canonically for hashing and exact comparisons."""
+    return json.dumps(data, allow_nan=False, separators=(",", ":"), sort_keys=True)
 
 
-# === data builders ===
-def histogram(
-    values: npt.ArrayLike,
-    *,
-    bins: int = DEFAULT_HIST_BINS,
-    value_range: tuple[float, float] | None = None,
+def canonical_sha256(data: object) -> str:
+    """Return SHA-256 of the UTF-8 canonical JSON representation of ``data``."""
+    return hashlib.sha256(canonical_json(data).encode()).hexdigest()
+
+
+def artifact_manifest(role: str, path: str) -> dict[str, str | int]:
+    """Build a path-free content manifest for one benchmark or model artifact."""
+    if not role or "/" in role or "\\" in role:
+        raise ValueError(f"Artifact role must be a non-empty logical name: {role!r}")
+    path = os.path.abspath(path)
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Payload input file not found: {path!r}")
+    with open(path, "rb") as file:
+        sha256 = hashlib.file_digest(file, "sha256").hexdigest()
+        size = os.fstat(file.fileno()).st_size
+    return {"role": role, "sha256": sha256, "size": size}
+
+
+def model_payload_identity(
+    model: Model, artifact_role: str, artifact_path: str
 ) -> dict[str, Any]:
-    """Bin raw values into the HistBins payload shape: pre-computed bin centers,
-    counts and bar width (drops NaN/inf values before binning).
-    """
-    arr = np.asarray(values, dtype=float)
-    arr = arr[np.isfinite(arr)]
-    counts, edges = np.histogram(arr, bins=bins, range=value_range)
+    """Return mandatory stable identity and input provenance for one model record."""
     return {
-        "x": round_list((edges[:-1] + edges[1:]) / 2),
-        "y": counts.tolist(),  # np.histogram counts are already int64
-        "bar_width": round(float(edges[1] - edges[0]), 6),
+        "model_key": model.key,
+        "label": model.label,
+        "input_artifacts": [artifact_manifest(artifact_role, artifact_path)],
     }
 
 
-def sankey_payload_from_flow(flow_data: Mapping[str, Any]) -> dict[str, Any]:
-    """Canonicalize ``pymatviz.sankey_flow_data`` output for a site payload."""
-    labels = [str(label) for label in flow_data["labels"]]
-    src_idx = np.asarray(flow_data["source_indices"], dtype=int).tolist()
-    tgt_idx = np.asarray(flow_data["target_indices"], dtype=int).tolist()
-    values = round_list(flow_data["value"])
-    if not labels or not src_idx or not tgt_idx:
-        raise ValueError("sankey flow has no nodes or links")
-    used = sorted({*src_idx, *tgt_idx})
-    remap = {old: new for new, old in enumerate(used)}
-    links = sorted(
-        zip(
-            (remap[src] for src in src_idx),
-            (remap[tgt] for tgt in tgt_idx),
-            values,
-            strict=True,
-        )
+def discovery_model_identity(model: Model) -> dict[str, Any]:
+    """Return payload identity for a model's discovery predictions."""
+    return model_payload_identity(model, "discovery_predictions", model.discovery_path)
+
+
+def _source_manifest(role: str, path: str) -> dict[str, str | int]:
+    """Build a content manifest for one repo-owned recipe source file."""
+    from matbench_discovery import ROOT, repo_relative_path
+
+    relative_path = repo_relative_path(path)
+    return artifact_manifest(role, f"{ROOT}/{relative_path}") | {"path": relative_path}
+
+
+def build_payload_provenance(
+    *,
+    generator: str,
+    benchmark_inputs: Mapping[str, str],
+    source_files: Mapping[str, str],
+    parameters: Mapping[str, Any],
+    packages: Sequence[str],
+) -> dict[str, Any]:
+    """Build separate computation identity and informational runtime audit data."""
+    if not benchmark_inputs:
+        raise ValueError("Payload provenance requires at least one benchmark input")
+    if "generator" in source_files:
+        raise ValueError("Recipe source role 'generator' is reserved")
+    benchmark_manifest = sorted(
+        (artifact_manifest(role, path) for role, path in benchmark_inputs.items()),
+        key=lambda entry: str(entry["role"]),
     )
-    sources, targets, values = map(list, zip(*links, strict=True))
+    source_manifest = sorted(
+        (
+            _source_manifest(role, path)
+            for role, path in {"generator": generator, **source_files}.items()
+        ),
+        key=lambda entry: str(entry["role"]),
+    )
     return {
-        "labels": [labels[idx] for idx in used],
-        "source": sources,
-        "target": targets,
-        "value": values,
+        "identity": {
+            "benchmark_inputs": benchmark_manifest,
+            "recipe": {
+                "sources": source_manifest,
+                "sha256": canonical_sha256(source_manifest),
+            },
+            "parameters": dict(parameters),
+        },
+        "audit": {
+            "runtime": {
+                "python": sys.version.split()[0],
+                "packages": {
+                    package: importlib.metadata.version(package)
+                    for package in sorted(set(packages))
+                },
+            },
+        },
     }
+
+
+def build_discovery_payload_provenance(
+    *,
+    generator: str,
+    test_subset: str,
+    parameters: Mapping[str, Any],
+    benchmark_inputs: Mapping[str, str] | None = None,
+    source_files: Mapping[str, str] | None = None,
+    packages: Sequence[str] = (),
+    prediction_round_decimals: int | None = 3,
+) -> dict[str, Any]:
+    """Build discovery identity from benchmark, generator, and caller recipe sources."""
+    from matbench_discovery.data import MAX_E_FORM_ERROR_THRESHOLD
+    from matbench_discovery.enums import DataFiles
+
+    return build_payload_provenance(
+        generator=generator,
+        benchmark_inputs={"wbm_summary": DataFiles.wbm_summary.path}
+        | dict(benchmark_inputs or {}),
+        source_files=source_files or {},
+        parameters={
+            "max_formation_energy_error": MAX_E_FORM_ERROR_THRESHOLD,
+            "prediction_round_decimals": prediction_round_decimals,
+            "test_subset": test_subset,
+            **parameters,
+        },
+        packages=("numpy", "pandas", "pymatviz", *packages),
+    )
+
+
+def computation_fingerprint(
+    base: Mapping[str, Any], model_record: Mapping[str, Any]
+) -> str:
+    """Hash the complete shared and per-model computation identity."""
+    return canonical_sha256(
+        {
+            "identity": base["identity"],
+            "input_artifacts": model_record["input_artifacts"],
+        }
+    )
 
 
 # === IO ===
@@ -166,111 +195,340 @@ def write_json_gz(path: str, data: dict[str, Any]) -> int:
         return file.write(compressed)
 
 
-def read_jsonl_payload(path: str) -> dict[str, Any]:
-    """Read a JSONL figure payload (from ``write_site_payload``) into the aggregate
-    ``{**shared, models: [...]}`` dict. One JSON object per line; the lone
-    ``{"_base": {...}}`` line carries shared fields, every other line is a model entry.
-    Mirrors the site's jsonl Vite loader (site/vite.config.ts).
-    """
-    base: dict[str, Any] = {}
-    models: list[dict[str, Any]] = []
+def _read_jsonl_records(path: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Read a schema-v2 base record followed by model records."""
     with open(path, encoding="utf-8") as file:
-        for line in file:
-            if not (line := line.strip()):
-                continue
-            entry = json.loads(line)
-            if set(entry) == {"_base"}:
-                base = entry["_base"]
-            else:
-                models.append(entry)
-    return {**base, "models": models}
+        records = [json.loads(line) for line in file if line.strip()]
+    if not records or not isinstance(records[0], dict) or set(records[0]) != {"_base"}:
+        raise ValueError(f"{path}: _base must be the first JSONL record")
+    base, models = records[0]["_base"], records[1:]
+    if not isinstance(base, dict) or not all(
+        isinstance(model, dict) for model in models
+    ):
+        raise TypeError(f"{path}: JSONL records must be objects")
+    model_keys = [model.get("model_key") for model in models]
+    if model_keys != sorted(model_keys, key=str):
+        raise ValueError(f"{path}: model records are not sorted by model_key")
+    return base, models
+
+
+def _validate_artifact_manifest(entries: object, *, source_files: bool = False) -> None:
+    """Validate a canonical artifact or recipe-source manifest."""
+    if not isinstance(entries, list):
+        raise TypeError("Artifact manifests must be lists")
+    if not entries:
+        raise ValueError("Artifact manifests must be non-empty lists")
+    expected_keys = {"role", "sha256", "size"} | ({"path"} if source_files else set())
+    roles: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise TypeError("Manifest entries must be objects")
+        if set(entry) != expected_keys:
+            raise ValueError(f"Manifest entries must contain {sorted(expected_keys)}")
+        manifest_entry: dict[str, Any] = {
+            str(key): value for key, value in entry.items()
+        }
+        role = manifest_entry["role"]
+        if not isinstance(role, str) or re.fullmatch(r"[A-Za-z0-9_.-]+", role) is None:
+            raise ValueError(f"Invalid manifest role: {role!r}")
+        sha256 = manifest_entry["sha256"]
+        if not isinstance(sha256, str) or re.fullmatch(r"[0-9a-f]{64}", sha256) is None:
+            raise ValueError(f"Invalid manifest SHA-256 for role {role!r}")
+        if type(manifest_entry["size"]) is not int or manifest_entry["size"] < 0:
+            raise ValueError(f"Invalid manifest byte size for role {role!r}")
+        if source_files:
+            path = manifest_entry["path"]
+            if (
+                not isinstance(path, str)
+                or not path
+                or os.path.isabs(path)
+                or "\\" in path
+                or path != posixpath.normpath(path)
+                or path in (".", "..")
+                or path.startswith("../")
+            ):
+                raise ValueError(
+                    f"Recipe source path must be repo-relative POSIX: {path!r}"
+                )
+        roles.append(role)
+    if roles != sorted(set(roles)):
+        raise ValueError("Manifest roles must be unique and sorted")
+
+
+def _validate_payload(base: dict[str, Any], models: list[dict[str, Any]]) -> None:
+    """Validate the strict schema-v2 payload contract."""
+    if set(base) != {"schema_version", "identity", "audit", "derived"}:
+        raise ValueError(
+            "Payload _base must contain schema_version, identity, audit, and derived"
+        )
+    if base.get("schema_version") != PAYLOAD_SCHEMA_VERSION:
+        raise ValueError(f"Expected payload schema_version={PAYLOAD_SCHEMA_VERSION}")
+    identity = base["identity"]
+    if not isinstance(identity, dict):
+        raise TypeError("Payload _base.identity must be an object")
+    expected_identity = {"benchmark_inputs", "recipe", "parameters"}
+    if set(identity) != expected_identity:
+        raise ValueError(f"Payload identity must contain {sorted(expected_identity)}")
+    _validate_artifact_manifest(identity["benchmark_inputs"])
+    recipe = identity["recipe"]
+    if not isinstance(recipe, dict) or set(recipe) != {"sources", "sha256"}:
+        raise ValueError("Payload recipe must contain sources and sha256")
+    _validate_artifact_manifest(recipe["sources"], source_files=True)
+    if recipe["sha256"] != canonical_sha256(recipe["sources"]):
+        raise ValueError("Payload recipe SHA-256 does not match its source manifest")
+    if not isinstance(identity["parameters"], dict):
+        raise TypeError("Payload identity parameters must be an object")
+    audit = base["audit"]
+    if (
+        not isinstance(audit, dict)
+        or "runtime" not in audit
+        or set(audit) - {"runtime", "source_commit"}
+    ):
+        raise ValueError(
+            "Payload audit must contain runtime and optional source_commit"
+        )
+    runtime = audit.get("runtime")
+    if not isinstance(runtime, dict) or set(runtime) != {"python", "packages"}:
+        raise ValueError("Payload runtime must contain Python and package versions")
+    if not isinstance(runtime["python"], str) or not runtime["python"]:
+        raise ValueError("Payload runtime Python version must be a non-empty string")
+    packages = runtime["packages"]
+    if not isinstance(packages, dict):
+        raise TypeError("Payload runtime packages must be an object")
+    for package, version in packages.items():
+        if not isinstance(package, str) or not isinstance(version, str):
+            raise TypeError(
+                "Payload runtime package names and versions must be strings"
+            )
+    source_commit = audit.get("source_commit")
+    if source_commit is not None and (
+        not isinstance(source_commit, str)
+        or re.fullmatch(r"[0-9a-f]{40}", source_commit) is None
+    ):
+        raise ValueError(f"Invalid informational source_commit: {source_commit!r}")
+    if not isinstance(base["derived"], dict):
+        raise TypeError("Payload _base.derived must be an object")
+    for model in models:
+        if "key" in model:
+            raise ValueError("Legacy payload field 'key' is forbidden; use model_key")
+        model_key = model.get("model_key")
+        if not isinstance(model_key, str):
+            raise TypeError(f"Invalid canonical model_key: {model_key!r}")
+        if re.fullmatch(r"[a-z0-9]+(?:[.-][a-z0-9]+)*", model_key) is None:
+            raise ValueError(f"Invalid canonical model_key: {model_key!r}")
+        label = model.get("label")
+        if not isinstance(label, str) or not label:
+            raise ValueError(f"Payload record {model_key!r} has no display label")
+        _validate_artifact_manifest(model.get("input_artifacts"))
+    if len(models) != len({model["model_key"] for model in models}):
+        raise ValueError("Payload model_key values must be unique")
+
+
+def read_jsonl_payload(path: str) -> dict[str, Any]:
+    """Read and validate a schema-v2 JSONL figure payload."""
+    base, models = _read_jsonl_records(path)
+    _validate_payload(base, models)
+    return {
+        "schema_version": base["schema_version"],
+        "identity": base["identity"],
+        "audit": base["audit"],
+        **base["derived"],
+        "models": models,
+    }
+
+
+def _records_equal_except_label(
+    left: Mapping[str, Any], right: Mapping[str, Any]
+) -> bool:
+    """Return whether two records have identical canonical non-label content."""
+    return canonical_json(
+        {key: value for key, value in left.items() if key != "label"}
+    ) == canonical_json({key: value for key, value in right.items() if key != "label"})
+
+
+def _assert_unchanged_record(
+    path: str,
+    old_base: Mapping[str, Any],
+    new_base: Mapping[str, Any],
+    old: Mapping[str, Any],
+    new: Mapping[str, Any],
+) -> None:
+    """Require byte-stable derived data when the computation fingerprint is fixed."""
+    if computation_fingerprint(old_base, old) == computation_fingerprint(
+        new_base, new
+    ) and not _records_equal_except_label(old, new):
+        model_key = new["model_key"]
+        raise ValueError(
+            f"{path}: {model_key!r} changed derived data with an unchanged complete "
+            "fingerprint. Only label may change."
+        )
 
 
 def write_jsonl_payload(
-    path: str, payload: dict[str, Any], *, id_field: str = "key", full_run: bool
+    path: str,
+    payload: dict[str, Any],
+    *,
+    mode: PayloadMode,
+    key_migration: tuple[str, str] | None = None,
+    target_keys: Collection[str] | None = None,
 ) -> int:
-    """Write a multi-model payload as line-delimited JSONL at ``path`` (shared writer
-    behind ``write_site_payload``; also used for the per-element-errors payload).
+    """Write a strict, deterministic, key-addressed multi-model JSONL payload."""
+    if not isinstance(mode, PayloadMode):
+        raise TypeError(f"mode must be a PayloadMode, got {mode!r}")
+    if mode != PayloadMode.migrate_model_key and key_migration is not None:
+        raise ValueError("key_migration is only valid in migrate-model-key mode")
+    if mode == PayloadMode.migrate_model_key and key_migration is None:
+        raise ValueError("migrate-model-key mode requires an OLD=NEW mapping")
+    missing_sections = {"identity", "audit", "models"} - set(payload)
+    if missing_sections:
+        raise ValueError(f"Payload generation is missing {sorted(missing_sections)}")
+    if "provenance" in payload:
+        raise ValueError("Payload provenance must be split into identity and audit")
 
-    One JSON object per line - a lone ``{"_base": {...}}`` shared-fields line plus one
-    line per model, sorted by ``id_field`` and stripped of presentation (applied
-    client-side). ``full_run`` rewrites the whole roster; subset --models runs splice
-    fresh entries into the committed file by ``id_field``, keeping the committed _base
-    and dropping entries of models that are no longer active (e.g. superseded by the
-    spliced-in model - a splice alone could never prune them). Content-identical output
-    leaves the existing file untouched.
-    """
-
-    def model_id(model: dict[str, Any]) -> str:
-        return str(model.get(id_field) or model["label"])
-
-    # strip presentation fields so lines stay position-independent (set client-side)
-    models = [
-        {key: val for key, val in model.items() if key not in ("color", "visible")}
+    fresh_models = [
+        {key: value for key, value in model.items() if key not in ("color", "visible")}
         for model in payload["models"]
     ]
-    shared_from = payload  # full runs take shared fields from the fresh payload
-    if not full_run:  # splice fresh entries into the committed file by id
-        if not os.path.isfile(path):
-            raise FileNotFoundError(
-                f"{path} not found: subset runs (--models) splice into an existing "
-                "payload. Run without --models to regenerate from scratch."
+    fresh_base = {
+        "schema_version": PAYLOAD_SCHEMA_VERSION,
+        "identity": payload["identity"],
+        "audit": payload["audit"],
+        "derived": {
+            key: value
+            for key, value in payload.items()
+            if key not in {"schema_version", "identity", "audit", "models"}
+        },
+    }
+    _validate_payload(fresh_base, fresh_models)
+    fresh_by_key = {model["model_key"]: model for model in fresh_models}
+    if mode == PayloadMode.targeted:
+        if target_keys is None:
+            raise ValueError("targeted payload writes require selected model keys")
+        unexpected = set(fresh_by_key) - set(target_keys)
+        if unexpected:
+            raise ValueError(
+                f"{path}: targeted payload contains unselected model keys {unexpected}"
             )
-        committed = read_jsonl_payload(path)
-        fresh = {model_id(model): model for model in models}
-        # prune committed entries of known-but-inactive models (matched by key or
-        # label so both id spaces are covered); unknown ids such as reference lines
-        # ('Test set standard deviation') are preserved as-is
-        from matbench_discovery.enums import Model
 
-        inactive_ids = {
-            id_attr
-            for model in Model
-            if not model.is_active
-            for id_attr in (model.key, model.label)
-        }
-        models = [
-            fresh.pop(model_id(old), old)
-            for old in committed["models"]
-            if model_id(old) not in inactive_ids
-        ]
-        models += list(fresh.values())
-        # shared fields are model-independent; keep the committed _base so a subset run
-        # only rewrites model lines (no churn from fresh dict order / float noise)
-        shared_from = committed
-    shared = {key: val for key, val in shared_from.items() if key != "models"}
-
-    models.sort(key=model_id)
-    # a lone _base line (when shared fields exist) followed by one line per model
-    records = [{"_base": shared}, *models] if shared else models
-    body = "".join(
-        json.dumps(record, allow_nan=False, separators=(",", ":")) + "\n"
-        for record in records
-    )
-    n_bytes = len(body.encode())
+    committed_base: dict[str, Any] | None = None
+    committed_models: list[dict[str, Any]] = []
     if os.path.isfile(path):
-        with open(path, encoding="utf-8") as file:
+        committed_base, committed_models = _read_jsonl_records(path)
+    if (
+        mode in (PayloadMode.targeted, PayloadMode.migrate_model_key)
+        and committed_base is None
+    ):
+        raise FileNotFoundError(
+            f"{path} not found: {mode.value} runs require an existing payload"
+        )
+
+    output_base, output_models = fresh_base, fresh_models
+    if committed_base is not None:
+        _validate_payload(committed_base, committed_models)
+        committed_by_key = {model["model_key"]: model for model in committed_models}
+        committed_keys = set(committed_by_key)
+        fresh_keys = set(fresh_by_key)
+        identity_changed = canonical_json(committed_base["identity"]) != canonical_json(
+            fresh_base["identity"]
+        )
+        derived_changed = canonical_json(committed_base["derived"]) != canonical_json(
+            fresh_base["derived"]
+        )
+        if mode == PayloadMode.migrate_provenance:
+            if committed_keys != fresh_keys:
+                raise ValueError(
+                    f"{path}: provenance migration cannot change the model roster; "
+                    "run lifecycle changes separately with --full-roster"
+                )
+        elif identity_changed:
+            raise ValueError(
+                f"{path}: computation identity changed. Regenerate explicitly with "
+                "--migrate-provenance."
+            )
+        if derived_changed and not identity_changed:
+            raise ValueError(
+                f"{path}: shared derived data changed with unchanged identity"
+            )
+
+        if mode != PayloadMode.migrate_model_key:
+            for model_key in committed_by_key.keys() & fresh_by_key.keys():
+                _assert_unchanged_record(
+                    path,
+                    committed_base,
+                    fresh_base,
+                    committed_by_key[model_key],
+                    fresh_by_key[model_key],
+                )
+        if mode == PayloadMode.targeted:
+            output_models = list((committed_by_key | fresh_by_key).values())
+        elif mode == PayloadMode.migrate_model_key:
+            if key_migration is None:
+                raise ValueError("migrate-model-key mode requires an OLD=NEW mapping")
+            old_key, new_key = key_migration
+            new_model = Model.from_ref(new_key)
+            if new_model.key != new_key or old_key not in new_model.key_aliases:
+                raise ValueError(
+                    f"Key migration {old_key!r} -> {new_key!r} requires "
+                    "model_key_aliases to contain the old key"
+                )
+            if old_key in committed_by_key and new_key in committed_by_key:
+                raise ValueError(
+                    f"Invalid key migration state for {old_key!r} -> {new_key!r}"
+                )
+            expected = dict(committed_by_key)
+            if old_key in expected:
+                expected[new_key] = dict(expected.pop(old_key), model_key=new_key)
+            if fresh_keys != set(expected):
+                raise ValueError(f"{path}: key migration changed the model roster")
+            for model_key, old in expected.items():
+                if not _records_equal_except_label(old, fresh_by_key[model_key]):
+                    kind = "migrated" if model_key == new_key else "peer"
+                    raise ValueError(f"{path}: key migration changed {kind} record")
+        else:
+            for model_key in fresh_keys - committed_keys:
+                try:
+                    aliases = set(Model.from_ref(model_key).key_aliases)
+                except ValueError:
+                    aliases = set()
+                for old_key in (committed_keys - fresh_keys) & aliases:
+                    raise ValueError(
+                        f"{path}: model key replacement {old_key!r} -> "
+                        f"{model_key!r} requires --migrate-model-key"
+                    )
+
+    output_models.sort(key=lambda model: model["model_key"])
+    records = [{"_base": output_base}, *output_models]
+    body = "".join(canonical_json(record) + "\n" for record in records).encode()
+    n_bytes = len(body)
+    if os.path.isfile(path):
+        with open(path, "rb") as file:
             if file.read() == body:
                 return n_bytes
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w", encoding="utf-8") as file:
+    with open(path, "wb") as file:
         file.write(body)
-    print(f"Wrote {os.path.basename(path)} ({n_bytes:,} bytes, {len(models)} models)")
+    print(
+        f"Wrote {os.path.basename(path)} "
+        f"({n_bytes:,} bytes, {len(output_models)} models)"
+    )
     return n_bytes
 
 
 def write_site_payload(
-    name: str, payload: dict[str, Any], *, id_field: str = "key"
+    name: str, payload: dict[str, Any], *, directory: str | None = None
 ) -> int:
-    """Write a figure payload to ``site/src/figs/<name>.jsonl``.
-
-    This thin wrapper delegates to ``write_jsonl_payload``; CLI --models selects full
-    vs subset runs.
-    """
+    """Write one strict multi-model payload to ``<directory>/<name>.jsonl``."""
     from matbench_discovery import SITE_FIG_DATA
-    from matbench_discovery.cli import is_full_model_run
+    from matbench_discovery.cli import cli_args, payload_mode
 
-    path = f"{SITE_FIG_DATA}/{name}.jsonl"
+    mode = payload_mode()
+    path = f"{directory or SITE_FIG_DATA}/{name}.jsonl"
     return write_jsonl_payload(
-        path, payload, id_field=id_field, full_run=is_full_model_run()
+        path,
+        payload,
+        mode=mode,
+        key_migration=cli_args.migrate_model_key,
+        target_keys={model.key for model in cli_args.models}
+        if mode == PayloadMode.targeted
+        else None,
     )

@@ -7,7 +7,7 @@
   import { format_num, type Point } from 'matterviz'
   import { tooltip } from 'svelte-widgets/attachments'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
-  import { ACTIVE_MODELS, update_models_cps } from '$lib/models.svelte'
+  import { MODELS, update_models_cps } from '$lib/models.svelte'
 
   // any weighted score with >= 3 components works (CPS is the default; CMDS and CDS
   // use the same UI with 3 and 4 corners respectively)
@@ -18,8 +18,7 @@
     config = CPS_CONFIG,
     default_config = DEFAULT_CPS_CONFIG,
     title_label = ALL_METRICS.CPS,
-    on_change = (cfg: WeightsConfig) =>
-      update_models_cps(ACTIVE_MODELS, cfg as CpsConfig),
+    on_change = (cfg: WeightsConfig) => update_models_cps(MODELS, cfg as CpsConfig),
   }: {
     size?: number
     config?: WeightsConfig

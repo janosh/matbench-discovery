@@ -250,7 +250,7 @@ style="height: 700px"
 />
 
 <div class="fig-grid three-col">
-  {#each hist_clf_styled as model (model.label)}
+  {#each hist_clf_styled as model (model.model_key)}
   <figure>
     <figcaption>{model.label} · F1={model.f1}</figcaption>
     <BarPlot

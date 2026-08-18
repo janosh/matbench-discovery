@@ -5,6 +5,10 @@ export type ModelMetadata = Record<string, unknown> & {
   model_name: string
   model_key: string
   /**
+   * Historical model URL slugs redirected to model_key.
+   */
+  model_key_aliases?: string[]
+  /**
    * Upstream package / checkpoint version label (semver, date, tag, …).
    */
   model_version: string | null

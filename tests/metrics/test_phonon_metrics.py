@@ -140,8 +140,8 @@ def test_weighted_quantiles_uniform_matches_numpy_inverted_cdf(n_levels: int) ->
 
 def test_weighted_quantiles_integer_weights_equal_repetition() -> None:
     """Integer weights are equivalent to repeating samples that many times."""
-    values = np.array([1.0, 2.0, 4.0, 8.0])
-    weights = np.array([1.0, 3.0, 2.0, 1.0])
+    values = np.array([0.0, 1.0, 2.0, 4.0, 8.0, 16.0])
+    weights = np.array([0.0, 1.0, 3.0, 2.0, 1.0, 0.0])
     repeated = np.repeat(values, weights.astype(int))
     levels = np.linspace(0, 1, 29)
     result = phonon_metrics.weighted_quantiles(values, weights, levels)
@@ -652,7 +652,7 @@ def test_kappa_analysis_uses_shared_spectrum_helpers(
         return 0.12345
 
     monkeypatch.setattr(phonon_metrics, "phonon_spectrum_w1", shared_w1)
-    payload = model_payload(Model.mace_mp_0, df_pred, df_true, material_ids)
+    payload = model_payload(Model.mace_mp_0, __file__, df_pred, df_true, material_ids)
 
     assert call_count == len(material_ids)
     assert payload["srme_censored"] == [False, False]

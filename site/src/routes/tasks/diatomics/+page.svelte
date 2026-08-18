@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricsTable, ModelSelect, ACTIVE_MODELS } from '$lib'
+  import { MetricsTable, ModelSelect, ACTIVE_MODELS, MODELS } from '$lib'
   import { ButtonGroup } from 'svelte-widgets'
   import {
     CDS_CONFIG,
@@ -206,7 +206,7 @@
       config={CDS_CONFIG}
       default_config={DEFAULT_CDS_CONFIG}
       title_label={DIATOMICS_METRICS.diatomics_combined_score}
-      on_change={(cfg) => update_models_cds(ACTIVE_MODELS, cfg as typeof CDS_CONFIG)}
+      on_change={(cfg) => update_models_cds(MODELS, cfg as typeof CDS_CONFIG)}
     />
     <figcaption>
       Drag the knob to reweight the four CDS pillars (see &#9432; for definitions); the

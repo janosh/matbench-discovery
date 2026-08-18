@@ -1,56 +1,104 @@
-"""Analyze structures and composition with largest mean error across all models.
-Maybe there's some chemistry/region of materials space that all models struggle with?
-Might point to deficiencies in the data or models architecture.
-"""
+"""Generate per-element discovery-error payloads."""
 
 # %%
 import json
-from typing import cast
 
-from tqdm.auto import tqdm
+import pandas as pd
 
-from matbench_discovery import SITE_DIR, figs
-from matbench_discovery.cli import cli_args, is_full_model_run
-from matbench_discovery.preds import (
-    load_per_element_errors,
-    test_set_std_col,
-    train_count_col,
-)
+from matbench_discovery import SITE_DIR, figs, payload_numerics, preds
+from matbench_discovery.cli import cli_args
+from matbench_discovery.preds import elements
 
 models_to_plot = cli_args.models
 
-_df_preds, df_each_err, df_comp, df_elem_err = load_per_element_errors(
+df_predictions, df_each_err = preds.load_prediction_errors(
     models_to_plot, subset=cli_args.test_subset
+)
+df_comp, df_elem_err = preds.derive_element_data(df_predictions)
+prediction_error_source = {"prediction_error_loader": preds.__file__}
+model_identities = {
+    model.key: figs.discovery_model_identity(model) for model in models_to_plot
+}
+
+
+# %%
+# Mean model error for structures containing each element against MP prevalence.
+element_prevalence_errors = {
+    model.key: elements.mean_abs_error_by_element(
+        df_comp, df_each_err[model.label]
+    ).reindex(df_elem_err.index)
+    for model in models_to_plot
+}
+
+figs.write_site_payload(
+    "element-prevalence-vs-error",
+    {
+        "elements": [str(symbol) for symbol in df_elem_err.index],
+        "occurrences": payload_numerics.round_list(df_elem_err[preds.TRAIN_COUNT_COL]),
+        "models": [
+            model_identities[model.key]
+            | {"y": payload_numerics.round_list(element_prevalence_errors[model.key])}
+            for model in models_to_plot
+        ],
+        **figs.build_discovery_payload_provenance(
+            generator=__file__,
+            test_subset=cli_args.test_subset.value,
+            benchmark_inputs={"mp_element_occurrences": preds.MP_COUNTS_PATH},
+            source_files=prediction_error_source
+            | {
+                "element_error_analysis": elements.__file__,
+                "payload_numerics": payload_numerics.__file__,
+            },
+            parameters={
+                "analysis": "element_prevalence",
+                "coordinate_decimals": payload_numerics.COORD_DECIMALS,
+            },
+            packages=("pymatgen",),
+        ),
+    },
 )
 
 
 # %%
-for model in tqdm(models_to_plot, desc="Processing models"):
-    df_elem_err[model.key] = (
-        df_comp * df_each_err[model.label].abs().to_numpy()[:, None]
-    ).mean()
+model_element_errors = pd.DataFrame(
+    {
+        model.key: (df_comp * df_each_err[model.label].abs().to_numpy()[:, None]).mean()
+        for model in models_to_plot
+    }
+)
+df_elem_err = pd.concat([df_elem_err, model_element_errors], axis="columns")
 
 
 # %%
-expected_cols = {
-    *[model.key for model in models_to_plot],
-    train_count_col,
-    test_set_std_col,
-}
+expected_cols = {preds.TRAIN_COUNT_COL, preds.TEST_SET_STD_COL, *model_identities}
 if missing_cols := expected_cols - {*df_elem_err}:
     raise ValueError(f"{missing_cols=} not in {df_elem_err.columns=}")
 if any(df_elem_err.isna().sum() > 35):
     raise ValueError("Too many NaNs in df_elem_err")
 
-# Each column (model key or metadata col) is one JSONL line, so concurrent
-# submissions add different lines that git merges cleanly instead of rewriting one
-# un-mergeable blob. Subset runs splice only their columns; full runs rewrite the
-# roster. round(4) trims size; to_json maps NaN -> null; json.loads -> plain dict.
-payload_path = f"{SITE_DIR}/routes/models/per-element-each-errors.jsonl"
 elem_err_models = [
-    {"key": str(col), "values": json.loads(cast("str", series.round(4).to_json()))}
-    for col, series in df_elem_err.items()
+    {
+        **model_identities[model.key],
+        "values": json.loads(df_elem_err[model.key].round(4).to_json()),
+    }
+    for model in models_to_plot
 ]
-figs.write_jsonl_payload(
-    payload_path, {"models": elem_err_models}, full_run=is_full_model_run()
+figs.write_site_payload(
+    "per-element-each-errors",
+    {
+        **figs.build_discovery_payload_provenance(
+            generator=__file__,
+            test_subset=cli_args.test_subset.value,
+            benchmark_inputs={"mp_element_occurrences": preds.MP_COUNTS_PATH},
+            source_files=prediction_error_source,
+            parameters={"output_decimals": 4},
+            packages=("pymatgen",),
+        ),
+        "mp_occurrences": json.loads(df_elem_err[preds.TRAIN_COUNT_COL].to_json()),
+        "test_set_standard_deviation": json.loads(
+            df_elem_err[preds.TEST_SET_STD_COL].to_json()
+        ),
+        "models": elem_err_models,
+    },
+    directory=f"{SITE_DIR}/routes/models",
 )

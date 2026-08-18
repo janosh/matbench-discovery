@@ -132,9 +132,11 @@ describe(`Phonons Task Page`, () => {
       ]) {
         expect(values).toHaveLength(n_materials)
       }
-      const model = ACTIVE_MODELS.find((candidate) => candidate.model_key === entry.key)
+      const model = ACTIVE_MODELS.find(
+        (candidate) => candidate.model_key === entry.model_key,
+      )
       const metrics = model?.metrics?.phonons?.kappa_103
-      if (!metrics) throw new Error(`missing phonon metrics for ${entry.key}`)
+      if (!metrics) throw new Error(`missing phonon metrics for ${entry.model_key}`)
       const payload_failure_rate =
         entry.srme_censored.filter((value) => value === true).length / n_materials
       expect(payload_failure_rate).toBeCloseTo(metrics.κ_failure_rate, 4)

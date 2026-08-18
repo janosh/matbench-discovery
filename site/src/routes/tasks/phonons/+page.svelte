@@ -77,7 +77,7 @@
   })
   // per-material diagnostics (SRME scatter + frequency parity) for the selected model
   let selected_diagnostics = $derived(
-    kappa_analysis?.models.find((entry) => entry.key === selected_key),
+    kappa_analysis?.models.find((entry) => entry.model_key === selected_key),
   )
   // Model options include the value currently used for sorting (except A–Z).
   let model_options = $derived(

@@ -11,7 +11,7 @@ from pymatgen.core import Composition
 from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import spg_to_crystal_sys
 
-from matbench_discovery import figs
+from matbench_discovery import payload_numerics
 from matbench_discovery.enums import MbdKey
 
 if TYPE_CHECKING:
@@ -31,11 +31,11 @@ def build_wbm_hull_dist_hist(each_true: pd.Series) -> dict[str, Any]:
     return {
         "bar_width": round(float(bins[1] - bins[0]), 6),
         "stable": {
-            "x": figs.round_list(bins[bins < 0]),
+            "x": payload_numerics.round_list(bins[bins < 0]),
             "y": counts[bins < 0].tolist(),
         },
         "unstable": {
-            "x": figs.round_list(bins[bins >= 0]),
+            "x": payload_numerics.round_list(bins[bins >= 0]),
             "y": counts[bins >= 0].tolist(),
         },
         "mean": round(float(mean), 5),
@@ -47,7 +47,7 @@ def build_wbm_e_form_hist(e_form_wbm: pd.Series) -> dict[str, Any]:
     """Build the WBM uncorrected formation-energy histogram payload."""
     counts, bins = np.histogram(e_form_wbm, bins=300, range=(-5.5, 5.5))
     return {
-        "x": figs.round_list(bins[:-1]),
+        "x": payload_numerics.round_list(bins[:-1]),
         "y": counts.tolist(),
         "bar_width": round(float(bins[1] - bins[0]), 6),
     }
@@ -127,8 +127,8 @@ def build_arity_hist_payload(
             {
                 "label": label,
                 "color": color,
-                "x": figs.round_list(df_arity.index),
-                "y": figs.round_list(df_arity[label]),
+                "x": payload_numerics.round_list(df_arity.index),
+                "y": payload_numerics.round_list(df_arity[label]),
             }
             for label, color in zip(df_arity.columns, SERIES_COLORS, strict=True)
         ]
@@ -143,17 +143,19 @@ def build_mp_trj_hist_payload(df_mp_trj: pd.DataFrame) -> dict[str, Any]:
     )
     cumulative = n_sites_hist.cumsum() / n_sites_hist.sum()
     return {
-        "e-form": figs.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300),
-        "forces": figs.histogram(
+        "e-form": payload_numerics.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300),
+        "forces": payload_numerics.histogram(
             df_mp_trj[Key.forces].explode().explode().abs(), bins=300
         ),
-        "stresses": figs.histogram(df_mp_trj[Key.stress_trace], bins=300),
-        "magmoms": figs.histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300),
+        "stresses": payload_numerics.histogram(df_mp_trj[Key.stress_trace], bins=300),
+        "magmoms": payload_numerics.histogram(
+            df_mp_trj[Key.magmoms].dropna().explode(), bins=300
+        ),
         "n-sites": {
-            "x": figs.round_list(n_sites_bins[:-1]),
+            "x": payload_numerics.round_list(n_sites_bins[:-1]),
             "y": n_sites_hist.tolist(),
             "bar_width": int(n_sites_bins[1] - n_sites_bins[0]),
-            "cumulative": figs.round_list(cumulative),
+            "cumulative": payload_numerics.round_list(cumulative),
         },
     }
 
@@ -218,7 +220,7 @@ def build_element_counts_payload(
                 "x": [
                     str(symbol) for symbol in scaled_counts[dataset].sort_values().index
                 ],
-                "y": figs.round_list(scaled_counts[dataset].sort_values()),
+                "y": payload_numerics.round_list(scaled_counts[dataset].sort_values()),
             }
             for dataset in ("WBM", "MP")
         ]

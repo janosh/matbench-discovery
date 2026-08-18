@@ -2,6 +2,7 @@
 
 import keyword
 import os
+import re
 from glob import glob
 
 import yaml
@@ -10,6 +11,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENUM_PATH = f"{ROOT}/matbench_discovery/enums.py"
 BEGIN_MARKER = "    # BEGIN GENERATED MODEL MEMBERS"
 END_MARKER = "    # END GENERATED MODEL MEMBERS"
+MODEL_KEY_PATTERN = re.compile(r"[a-z0-9]+(?:[.-][a-z0-9]+)*")
 
 
 def generate_source(source: str) -> str:
@@ -20,16 +22,32 @@ def generate_source(source: str) -> str:
     _, suffix = remainder.split(END_MARKER)
     members: list[tuple[str, str]] = []
     seen_names: set[str] = set()
+    key_owners: dict[str, str] = {}
     for yaml_path in sorted(glob(f"{ROOT}/models/[!_]*/[!_]*.yml")):
         with open(yaml_path, encoding="utf-8") as file:
             metadata = yaml.safe_load(file)
         if not isinstance(metadata, dict):
             raise TypeError(f"{yaml_path} must contain a YAML mapping")
+        model_key = metadata.get("model_key")
+        aliases = metadata.get("model_key_aliases", [])
+        if (
+            not isinstance(model_key, str)
+            or MODEL_KEY_PATTERN.fullmatch(model_key) is None
+        ):
+            raise TypeError(f"{yaml_path} has invalid {model_key=}")
+        if not isinstance(aliases, list) or not all(
+            isinstance(alias, str) and MODEL_KEY_PATTERN.fullmatch(alias)
+            for alias in aliases
+        ):
+            raise TypeError(f"{yaml_path} has invalid {aliases=}")
+        for key in (model_key, *aliases):
+            if owner := key_owners.get(key):
+                raise ValueError(
+                    f"Model key or alias {key!r} collides in {owner} and {yaml_path}"
+                )
+            key_owners[key] = yaml_path
         if metadata.get("lifecycle") == "aborted":
             continue
-        model_key = metadata.get("model_key")
-        if not isinstance(model_key, str):
-            raise TypeError(f"{yaml_path} has invalid {model_key=}")
         name = model_key.replace("-", "_").replace(".", "_")
         if not name.isidentifier() or keyword.iskeyword(name) or name in seen_names:
             raise ValueError(f"{yaml_path} has invalid or duplicate enum name {name!r}")

@@ -39,24 +39,12 @@
     dir: `asc`,
   }
   const model_by_key = new Map(ACTIVE_MODELS.map((model) => [model.model_key, model]))
-  const model_key_by_label = new Map(
-    ACTIVE_MODELS.map((model) => [model.model_name, model.model_key]),
-  )
   const plot_label_by_key = new Map([
-    ...struct_rmsd_cdf.models.map(
-      ({ label }) => [model_key_by_label.get(label) ?? label, label] as const,
-    ),
-    ...sym_ops_diff.models.map(
-      ({ label }) => [model_key_by_label.get(label) ?? label, label] as const,
-    ),
-    ...spg_sankeys.models.map(({ key, label }) => [key, label] as const),
+    ...struct_rmsd_cdf.models.map(({ model_key, label }) => [model_key, label] as const),
+    ...sym_ops_diff.models.map(({ model_key, label }) => [model_key, label] as const),
+    ...spg_sankeys.models.map(({ model_key, label }) => [model_key, label] as const),
   ])
   const selectable_model_keys = new Set(plot_label_by_key.keys())
-
-  const resolve_model_key = (key_or_label: string): string | undefined => {
-    const model_key = model_key_by_label.get(key_or_label) ?? key_or_label
-    return selectable_model_keys.has(model_key) ? model_key : undefined
-  }
 
   const benchmark_added_ms = (key: string): number =>
     Date.parse(model_by_key.get(key)?.dates.benchmark_added ?? ``) || 0
@@ -84,21 +72,18 @@
   const model_selection = new UrlModelSelection(() => ({
     options: selectable_options,
     defaults: default_selected_keys,
-    from_url: resolve_model_key,
+    from_url: (model_key) =>
+      selectable_model_keys.has(model_key) ? model_key : undefined,
   }))
   let selected_model_key_set = $derived(new Set(model_selection.values))
-  const is_selected_label = (label: string): boolean => {
-    const model_key = resolve_model_key(label)
-    return model_key ? selected_model_key_set.has(model_key) : false
-  }
   let filtered_struct_rmsd_sorted = $derived(
-    struct_rmsd_sorted.filter(({ label }) => is_selected_label(label)),
+    struct_rmsd_sorted.filter(({ model_key }) => selected_model_key_set.has(model_key)),
   )
   let filtered_sym_ops_sorted = $derived(
-    sym_ops_sorted.filter(({ label }) => is_selected_label(label)),
+    sym_ops_sorted.filter(({ model_key }) => selected_model_key_set.has(model_key)),
   )
   let filtered_spg_sankeys = $derived(
-    spg_sankeys.models.filter(({ key }) => selected_model_key_set.has(key)),
+    spg_sankeys.models.filter(({ model_key }) => selected_model_key_set.has(model_key)),
   )
 
   const filters = make_table_filters()
@@ -208,7 +193,7 @@
   {/snippet}
   {#snippet spg_sankeys()}
     <ul class="spg-sankeys bleed-1400">
-      {#each filtered_spg_sankeys as { key, label, labels, source, target, value } (key)}
+      {#each filtered_spg_sankeys as { model_key, label, labels, source, target, value } (model_key)}
         {@const n_labels = labels.length}
         {@const data = sankey_from_links(
           source,
