@@ -272,7 +272,7 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
 
 def test_df_discovery_metrics() -> None:
     """Discovery metrics stored in model YAML files are complete and valid."""
-    assert {model.key for model in Model.active()} <= full_discovery_model_keys
+    assert {model.key for model in Model.active()} == full_discovery_model_keys
     assert df_full_discovery_metrics.MAE.between(0, 0.2).all()
     assert df_full_discovery_metrics.R2.between(-1.5, 1).all()
     assert df_full_discovery_metrics.RMSE.between(0, 0.3).all()

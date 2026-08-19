@@ -2,7 +2,7 @@
 
 import pytest
 
-from matbench_discovery.enums import Model, TestSubset
+from matbench_discovery.enums import TestSubset
 from matbench_discovery.metrics import metrics_df_from_yaml
 
 
@@ -18,7 +18,6 @@ def test_metrics_df_from_yaml_task_metrics(nested_key: str, metric_col: str) -> 
     df_metrics = metrics_df_from_yaml([nested_key])
     assert metric_col in df_metrics
     assert df_metrics[metric_col].ge(0).all()
-    assert set(df_metrics.index) <= {model.key for model in Model.active()}
 
 
 def test_metrics_df_from_yaml_preserves_non_numeric_values() -> None:

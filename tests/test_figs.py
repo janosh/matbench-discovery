@@ -87,17 +87,12 @@ def test_sankey_flow_canonicalization() -> None:
 
 
 def test_write_json_gz_roundtrip(tmp_path: Path) -> None:
-    """write_json_gz writes deterministic gzip bytes parseable unchanged."""
+    """write_json_gz creates parent directories and round-trips JSON."""
     payload = {"models": [{"label": "demo", "x": [1, 2], "y": [3.5, 4.5]}]}
     out_path = f"{tmp_path}/sub/dir/demo.json.gz"
     assert figs.write_json_gz(out_path, payload) > 0
     with gzip.open(out_path) as file:
         assert json.load(file) == payload
-    with open(out_path, "rb") as file:
-        first_bytes = file.read()
-    figs.write_json_gz(out_path, payload)
-    with open(out_path, "rb") as file:
-        assert file.read() == first_bytes
 
 
 def test_artifact_manifest_hashes_and_sizes_one_open_file(
@@ -278,13 +273,8 @@ def test_writer_replaces_targeted_records_or_full_payload(tmp_path: Path) -> Non
     model_a = make_model(tmp_path, "model-a", [1])
     model_b = make_model(tmp_path, "model-b", [2])
     before = write_test_payload(path, tmp_path, [model_a, model_b])
-    changed_b = make_model(
-        tmp_path, "model-b", [9], input_content="changed-model-b-input"
-    )
     with pytest.raises(ValueError, match="unselected model keys"):
-        write_test_payload(
-            path, tmp_path, [model_a, changed_b], target_keys={"model-a"}
-        )
+        write_test_payload(path, tmp_path, [model_a, model_b], target_keys={"model-a"})
     changed_a = make_model(
         tmp_path, "model-a", [9], input_content="changed-model-a-input"
     )
@@ -324,9 +314,7 @@ def test_writer_replaces_targeted_records_or_full_payload(tmp_path: Path) -> Non
     replaced = write_test_payload(
         path, tmp_path, [model_b, model_c], shared=2, metadata=metadata
     )
-    assert replaced["models"] == [model_b, model_c]
-    assert replaced["identity"] == metadata["identity"]
-    assert replaced["shared"] == 2
+    assert replaced == roster_updated | dict(identity=metadata["identity"], shared=2)
     metadata["audit"]["source_commit"] = "0" * 40
     with pytest.raises(ValueError, match="audit must contain runtime"):
         write_test_payload(

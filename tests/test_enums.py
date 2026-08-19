@@ -10,7 +10,6 @@ from unittest.mock import patch
 import pytest
 import requests
 import requests.adapters
-import yaml
 
 import scripts.generate_model_enum as model_enum_generator
 from matbench_discovery import DATA_DIR, ROOT
@@ -449,14 +448,10 @@ def test_model_enum_generator_rejects_global_key_collisions(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Canonical keys are unique across active and aborted YAMLs."""
-    metadata_by_path = {
-        "active/model-a.yml": {"model_key": "model-a", "lifecycle": "active"},
-        "aborted/model-b.yml": {"model_key": "model-a", "lifecycle": "aborted"},
-    }
-    for relative_path, metadata in metadata_by_path.items():
-        path = tmp_path / "models" / relative_path
+    for lifecycle in ("active", "aborted"):
+        path = tmp_path / "models" / lifecycle / "model.yml"
         path.parent.mkdir(parents=True)
-        path.write_text(yaml.safe_dump(metadata))
+        path.write_text(f"model_key: model-a\nlifecycle: {lifecycle}\n")
     monkeypatch.setattr(model_enum_generator, "ROOT", str(tmp_path))
     source = (
         f"class Model:\n{model_enum_generator.BEGIN_MARKER}\n"

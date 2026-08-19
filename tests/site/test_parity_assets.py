@@ -92,19 +92,14 @@ def test_parity_manifest_matches_active_models(kind: str) -> None:
     manifest = parity_manifest(kind)
     assert manifest["schema_version"] == 2
     in_manifest = set(manifest["model_assets"])
-    missing = expected - in_manifest
-    assert not missing, (
-        f"models never ingested: {sorted(missing)}. To fix, {INGEST_HINT}"
-    )
-    stale = in_manifest - expected
-    assert not stale, (
-        f"{kind} parity manifest has entries for models that are no longer active: "
-        f"{sorted(stale)}. To fix, rerun site/scripts/generate-{kind}-parity-assets.py "
-        "(it prunes inactive models) and commit the refreshed manifests"
+    assert in_manifest == expected, (
+        f"missing models: {sorted(expected - in_manifest)}; "
+        f"stale models: {sorted(in_manifest - expected)}. To fix, {INGEST_HINT}"
     )
     prefix = manifest["asset_prefix"]
-    base = manifest["base"]
-    assert asset_helpers.is_content_addressed_name(f"{prefix}-base", base["asset"])
+    assert asset_helpers.is_content_addressed_name(
+        f"{prefix}-base", manifest["base"]["asset"]
+    )
     for model_key, asset in manifest["model_assets"].items():
         assert asset_helpers.is_content_addressed_name(
             f"{prefix}-model-{model_key}", asset["asset"]

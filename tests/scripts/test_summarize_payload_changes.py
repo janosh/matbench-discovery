@@ -3,14 +3,11 @@
 import json
 import os
 import subprocess
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pytest
 
 from scripts.summarize_payload_changes import _parse_payload, summarize
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def test_parse_payload_requires_unique_model_keys() -> None:

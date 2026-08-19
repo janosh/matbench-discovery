@@ -159,12 +159,7 @@
       const { model_name, model_key } = model
       const benchmark_added = model.dates.benchmark_added
       const days_ago = benchmark_added ? format_relative_time(benchmark_added) : ``
-      const metadata: PointMetadata = {
-        model_key,
-        model_name,
-        days_ago,
-        size_value,
-      }
+      const metadata: PointMetadata = { model_key, model_name, days_ago, size_value }
       return [{ x, y, color_value, size_value, metadata }]
     }),
   )
@@ -271,7 +266,7 @@
       // across 30+ models distinguished nothing while adding visual noise
       point_style: { fill: point_fill(item.color_value), symbol_type: `Circle` as const },
       color_values: [item.color_value],
-      size_values: axes.size_value ? [item.size_value] : undefined,
+      size_values: [item.size_value],
       point_label: show_model_labels
         ? [
             {

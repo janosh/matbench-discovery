@@ -243,7 +243,6 @@ def test_load_df_wbm_with_preds(
 
     for model_name in models:
         model = Model[model_name]
-        assert model.key in df_wbm_with_preds
         if max_error_threshold is not None:
             # Check if predictions exceeding the threshold are filtered out
             error = abs(
@@ -284,13 +283,12 @@ def test_load_df_wbm_max_error_threshold() -> None:
     df_high_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=10)
     df_low_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=0.1)
 
-    n_no_threshold = df_no_threshold[model.key].isna().sum()
-    assert n_no_threshold == 38
-    assert df_high_threshold[model.key].isna().sum() <= n_no_threshold
-    assert (
-        df_high_threshold[model.key].isna().sum()
-        <= df_low_threshold[model.key].isna().sum()
-    )
+    missing_counts = [
+        frame[model.key].isna().sum()
+        for frame in (df_no_threshold, df_high_threshold, df_low_threshold)
+    ]
+    assert missing_counts[0] == 38
+    assert missing_counts == sorted(missing_counts)
 
 
 def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:

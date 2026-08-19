@@ -198,9 +198,8 @@ def load_reference() -> tuple[
 def main(argv: Sequence[str] | None = None) -> None:
     """Generate base (DFT) and per-model kappa parity assets plus manifests."""
     args = parse_args(argv)
-    out_dir = Path(args.out_dir)
     manifest_path = Path(args.manifest)
-    asset_dir = out_dir / "assets"
+    asset_dir = Path(args.out_dir) / "assets"
     models = resolve_models(args.models)
     target_keys = {model.key for model in models} if args.models else set()
 

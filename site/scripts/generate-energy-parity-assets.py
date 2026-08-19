@@ -141,7 +141,6 @@ def write_structure_shards(
 def main(argv: Sequence[str] | None = None) -> None:
     """Generate base data, model prediction assets, structures, and manifests."""
     args = parse_args(argv)
-    out_dir = Path(args.out_dir)
     manifest_path = Path(args.manifest)
     models = resolve_models(args.models)
     df_preds = load_df_wbm_with_preds(models=models, pbar=True)
@@ -151,7 +150,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     material_ids = df_preds[Key.mat_id].astype(str).tolist()
     # hash material IDs in row order to detect stale asset manifests
     material_ids_sha256 = hashlib.sha256("\n".join(material_ids).encode()).hexdigest()
-    asset_dir = out_dir / "assets"
+    asset_dir = Path(args.out_dir) / "assets"
     previous_manifest = read_manifest(manifest_path)
     target_keys = {model.key for model in models} if args.models else set()
     structure_identity = {
