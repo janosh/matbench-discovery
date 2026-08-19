@@ -178,6 +178,8 @@ def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
     assert "jq -er" in deploy
     assert 'mapfile -t assets < "$assets_file"' in deploy
     assert '"${#assets[@]}" -gt 0' in deploy
+    assert '"$asset" != "$asset_prefix"-*' in deploy
+    assert "[0-9a-f]{16}\\.json\\.gz" in deploy
     assert "-*.json.gz" not in deploy
     with open(f"{ROOT}/.github/workflows/model-pr-guard.yml") as file:
         guard = file.read()

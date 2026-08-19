@@ -47,6 +47,7 @@ jobs:
             manifest="src/lib/parity/$kind-parity-manifest.json"
             asset_dir="static/$kind-parity/assets"
             mkdir -p "$asset_dir"
+            asset_prefix=$(jq -er '.asset_prefix | select(type == "string" and test("^[A-Za-z0-9._-]+$"))' "$manifest")
             assets_file="$RUNNER_TEMP/$kind-parity-assets"
             jq -er '[.base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)]
               | if length > 0 and all(.[]; type == "string" and length > 0)
@@ -59,6 +60,10 @@ jobs:
             }
             patterns=()
             for asset in "${assets[@]}"; do
+              if [[ "$asset" != "$asset_prefix"-* || ! "$asset" =~ ^[A-Za-z0-9._-]+-[0-9a-f]{16}\.json\.gz$ ]]; then
+                echo "::error::$manifest contains invalid release asset $asset"
+                exit 1
+              fi
               patterns+=(--pattern "$asset")
             done
             gh release download v1.0.0 \
