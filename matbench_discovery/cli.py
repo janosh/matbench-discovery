@@ -81,10 +81,8 @@ models_were_explicit = cli_args.models is not models_arg.default
 
 def is_full_model_run() -> bool:
     """Return whether payload generation explicitly selected the complete roster."""
-    if cli_args.full_roster and models_were_explicit:
-        cli_parser.error("--full-roster cannot be combined with --models")
-    if not cli_args.full_roster and not models_were_explicit:
-        cli_parser.error("payload generation requires --models or --full-roster")
+    if cli_args.full_roster == models_were_explicit:
+        cli_parser.error("select exactly one of --models or --full-roster")
     return cli_args.full_roster
 
 

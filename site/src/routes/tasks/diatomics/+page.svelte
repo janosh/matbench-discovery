@@ -164,17 +164,15 @@
       const model_curves = diatomic_curves[model_key]
       const curve = model_curves?.[homo_nuc_key]?.[formula]
       if (!curve?.energies.length) return []
-      // DFT references carry per-formula distances; models share one grid
-      const distances = curve.distances ?? model_curves.distances
-      const line_width = reference_names.includes(model_key) ? 2.5 : undefined
       return [
         {
           model_key,
           label: label_for(model_key),
-          distances,
+          // DFT references carry per-formula distances; models share one grid
+          distances: curve.distances ?? model_curves.distances,
           energies: curve.energies,
           color: color_for(model_key),
-          line_width,
+          line_width: reference_names.includes(model_key) ? 2.5 : undefined,
         },
       ]
     })

@@ -490,10 +490,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--full-roster", action="store_true")
     args = parser.parse_args(argv)
 
-    if args.full_roster and not args.payloads_only:
-        parser.error("--full-roster requires --payloads-only")
-    if args.full_roster and args.models:
-        parser.error("model-targeted refresh cannot use --full-roster")
+    if args.full_roster and (not args.payloads_only or args.models):
+        parser.error("--full-roster requires --payloads-only without models")
     if args.publish_parity and args.models:
         parser.error("--publish-parity does not accept models")
 

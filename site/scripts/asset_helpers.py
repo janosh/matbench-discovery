@@ -147,10 +147,7 @@ def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str]:
     with open(asset_path, "rb") as file:
         sha256 = hashlib.file_digest(file, "sha256").hexdigest()
     print(f"Wrote {asset_path} ({n_bytes / 1024:.1f} KiB)")
-    return {
-        "asset": asset_name,
-        "sha256": sha256,
-    }
+    return {"asset": asset_name, "sha256": sha256}
 
 
 def write_manifest(path: Path, manifest: Mapping[str, object]) -> None:

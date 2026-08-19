@@ -49,21 +49,15 @@ jobs:
             mkdir -p "$asset_dir"
             asset_prefix=$(jq -er '.asset_prefix | select(type == "string" and test("^[A-Za-z0-9._-]+$"))' "$manifest")
             assets_file="$RUNNER_TEMP/$kind-parity-assets"
-            jq -er '[.base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)]
-              | if length > 0 and all(.[]; type == "string" and length > 0)
+            jq -er --arg prefix "$asset_prefix" \
+              '[.base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)]
+              | if all(.[]; type == "string" and startswith($prefix + "-")
+                and test("^[A-Za-z0-9._-]+-[0-9a-f]{16}\\.json\\.gz$"))
                 then .[] else error("invalid parity asset manifest") end' \
               "$manifest" > "$assets_file"
             mapfile -t assets < "$assets_file"
-            [ "${#assets[@]}" -gt 0 ] || {
-              echo "::error::$manifest contains no release assets"
-              exit 1
-            }
             patterns=()
             for asset in "${assets[@]}"; do
-              if [[ "$asset" != "$asset_prefix"-* || ! "$asset" =~ ^[A-Za-z0-9._-]+-[0-9a-f]{16}\.json\.gz$ ]]; then
-                echo "::error::$manifest contains invalid release asset $asset"
-                exit 1
-              fi
               patterns+=(--pattern "$asset")
             done
             gh release download v1.0.0 \

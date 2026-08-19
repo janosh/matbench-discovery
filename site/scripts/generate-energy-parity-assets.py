@@ -58,7 +58,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--models",
         nargs="+",
         default=[],
-        help=("Model enum names or canonical keys. Defaults to active models."),
+        help="Model enum names or canonical keys. Defaults to active models.",
     )
     parser.add_argument("--out-dir", default=OUT_DIR)
     parser.add_argument("--manifest", default=MANIFEST_PATH)
@@ -72,23 +72,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--structure-bundle-size", type=positive_int, default=STRUCTURE_BUNDLE_SIZE
     )
     return parser.parse_args(argv)
-
-
-def remove_stale_assets(
-    asset_dir: Path, asset_prefix: str, *, keep_models: bool, keep_structures: bool
-) -> None:
-    """Delete old generated assets before writing a fresh manifest."""
-    patterns: list[str] = []
-    if not keep_models:
-        patterns += [
-            f"{asset_prefix}-base*.json.gz",
-            f"{asset_prefix}-model-*.json.gz",
-        ]
-    if not keep_structures:
-        patterns.append(f"{asset_prefix}-structures-*.json.gz")
-    for pattern in patterns:
-        for path in asset_dir.glob(pattern):
-            path.unlink()
 
 
 def valid_structure_bundles(
@@ -195,12 +178,17 @@ def main(argv: Sequence[str] | None = None) -> None:
         base_meta, model_assets = retained_parity_assets(
             previous_manifest, target_keys, base, args.asset_prefix
         )
-    remove_stale_assets(
-        asset_dir,
-        args.asset_prefix,
-        keep_models=bool(args.models),
-        keep_structures=reused_bundles is not None,
-    )
+    stale_patterns: list[str] = []
+    if not args.models:
+        stale_patterns += [
+            f"{args.asset_prefix}-base*.json.gz",
+            f"{args.asset_prefix}-model-*.json.gz",
+        ]
+    if reused_bundles is None:
+        stale_patterns.append(f"{args.asset_prefix}-structures-*.json.gz")
+    for pattern in stale_patterns:
+        for path in asset_dir.glob(pattern):
+            path.unlink()
     remove_model_assets(asset_dir, args.asset_prefix, target_keys)
     if base_meta is None:
         base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)

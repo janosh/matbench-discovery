@@ -222,19 +222,16 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # a full run (no --models) regenerates everything; a partial run keeps existing
     # model assets so submitting a single model doesn't wipe the others
-    base_meta: dict[str, str] | None = None
-    model_assets: dict[str, dict[str, str]] = {}
-    if not args.models:
-        for path in asset_dir.glob(f"{args.asset_prefix}-*.json.gz"):
-            path.unlink()
-    else:
+    if args.models:
         base_meta, model_assets = retained_parity_assets(
             read_manifest(manifest_path), target_keys, base, args.asset_prefix
         )
-    remove_model_assets(asset_dir, args.asset_prefix, target_keys)
-
-    if base_meta is None:
+    else:
+        for path in asset_dir.glob(f"{args.asset_prefix}-*.json.gz"):
+            path.unlink()
+        model_assets = {}
         base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
+    remove_model_assets(asset_dir, args.asset_prefix, target_keys)
 
     for model in models:
         kappa_path = model.kappa_103_path

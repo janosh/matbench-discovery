@@ -116,12 +116,10 @@ def test_release_has_all_parity_manifest_assets(
 ) -> None:
     """Release assets match manifest hashes and embed canonical model keys."""
     manifest = parity_manifest(kind)
-    entries = manifest["model_assets"].values()
-    bundles = manifest.get("structure_bundles", ())
-    entries = (manifest["base"], *entries, *bundles)
-    expected = {entry["asset"] for entry in entries}
+    entries = [manifest["base"], *manifest["model_assets"].values()]
+    entries.extend(manifest.get("structure_bundles", ()))
     # a truncated assets listing fails here (never false-passes)
-    missing = expected - published_release_assets.keys()
+    missing = {entry["asset"] for entry in entries} - published_release_assets.keys()
     assert not missing, (
         f"{kind} parity manifest references unpublished release assets: "
         f"{sorted(missing)}. To fix, {INGEST_HINT}"
@@ -176,10 +174,9 @@ def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
         in deploy
     )
     assert "jq -er" in deploy
+    assert 'startswith($prefix + "-")' in deploy
     assert 'mapfile -t assets < "$assets_file"' in deploy
-    assert '"${#assets[@]}" -gt 0' in deploy
-    assert '"$asset" != "$asset_prefix"-*' in deploy
-    assert "[0-9a-f]{16}\\.json\\.gz" in deploy
+    assert "[0-9a-f]{16}\\\\.json\\\\.gz" in deploy
     assert "-*.json.gz" not in deploy
     with open(f"{ROOT}/.github/workflows/model-pr-guard.yml") as file:
         guard = file.read()
