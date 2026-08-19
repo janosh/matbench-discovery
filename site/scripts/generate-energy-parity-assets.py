@@ -16,7 +16,7 @@ from asset_helpers import (
     read_manifest,
     remove_model_assets,
     resolve_models,
-    retained_model_assets,
+    retained_parity_assets,
     write_json_gz,
     write_manifest,
 )
@@ -85,9 +85,12 @@ def remove_stale_assets(
     asset_dir: Path, asset_prefix: str, *, keep_models: bool, keep_structures: bool
 ) -> None:
     """Delete old generated assets before writing a fresh manifest."""
-    patterns = [f"{asset_prefix}-base*.json.gz"]
+    patterns: list[str] = []
     if not keep_models:
-        patterns.append(f"{asset_prefix}-model-*.json.gz")
+        patterns += [
+            f"{asset_prefix}-base*.json.gz",
+            f"{asset_prefix}-model-*.json.gz",
+        ]
     if not keep_structures:
         patterns.append(f"{asset_prefix}-structures-*.json.gz")
     for pattern in patterns:
@@ -164,18 +167,6 @@ def main() -> None:
         )
         else None
     )
-    model_assets: dict[str, dict[str, str]] = {}
-    if args.models:
-        model_assets = retained_model_assets(
-            previous_manifest, target_keys, row_identity, args.asset_prefix
-        )
-    remove_stale_assets(
-        asset_dir,
-        args.asset_prefix,
-        keep_models=bool(args.models),
-        keep_structures=reused_bundles is not None,
-    )
-    remove_model_assets(asset_dir, args.asset_prefix, target_keys)
     base = {
         "material_ids": material_ids,
         "formulas": df_preds[Key.formula].astype(str).tolist(),
@@ -184,7 +175,21 @@ def main() -> None:
         "each_true": clean_floats(df_preds[MbdKey.each_true], ENERGY_DECIMALS),
         "structure_shard_size": args.structure_shard_size,
     }
-    base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
+    base_meta: dict[str, str] | None = None
+    model_assets: dict[str, dict[str, str]] = {}
+    if args.models:
+        base_meta, model_assets = retained_parity_assets(
+            previous_manifest, target_keys, base, args.asset_prefix
+        )
+    remove_stale_assets(
+        asset_dir,
+        args.asset_prefix,
+        keep_models=bool(args.models),
+        keep_structures=reused_bundles is not None,
+    )
+    remove_model_assets(asset_dir, args.asset_prefix, target_keys)
+    if base_meta is None:
+        base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
 
     for model in models:
         asset_name = f"{args.asset_prefix}-model-{model.key}.json.gz"

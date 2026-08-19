@@ -183,8 +183,8 @@ def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
     assert "parity/(energy|kappa)-parity-manifest" in guard
 
 
-def test_targeted_parity_requires_matching_base_rows() -> None:
-    """Targeted parity keeps peers only with an existing, row-aligned manifest."""
+def test_targeted_parity_requires_matching_base() -> None:
+    """Targeted parity keeps immutable base and peer assets from an exact manifest."""
     assert asset_helpers.resolve_models(["mace_mp_0", "mace-mp-0"]) == (
         Model.mace_mp_0,
     )
@@ -195,39 +195,45 @@ def test_targeted_parity_requires_matching_base_rows() -> None:
         ),
         "sha256": "a" * 64,
     }
+    base = {"material_ids": ["material-1", "material-2"]}
+    base_asset = {
+        "asset": asset_helpers.content_addressed_name(
+            "parity-v1-base", asset_helpers.json_content_sha256(base)
+        ),
+        "sha256": "d" * 64,
+    }
     manifest = {
         "schema_version": 2,
         "asset_prefix": "parity-v1",
         "row_count": 2,
         "material_ids_sha256": "rows",
+        "base": base_asset,
         "model_assets": {model_key: model_asset},
     }
-    row_identity = (2, "rows")
-    assert asset_helpers.retained_model_assets(
-        manifest, (), row_identity, "parity-v1"
-    ) == {model_key: model_asset}
+    assert asset_helpers.retained_parity_assets(manifest, (), base, "parity-v1") == (
+        base_asset,
+        {model_key: model_asset},
+    )
     with pytest.raises(FileNotFoundError, match="existing manifest"):
-        asset_helpers.retained_model_assets(
-            None, (model_key,), row_identity, "parity-v1"
-        )
-    with pytest.raises(ValueError, match="base rows changed"):
-        asset_helpers.retained_model_assets(
-            manifest, (model_key,), (3, "changed"), "parity-v1"
-        )
+        asset_helpers.retained_parity_assets(None, (model_key,), base, "parity-v1")
     with pytest.raises(ValueError, match="asset prefix changed"):
-        asset_helpers.retained_model_assets(
-            manifest, (model_key,), row_identity, "parity-v2"
-        )
+        asset_helpers.retained_parity_assets(manifest, (model_key,), base, "parity-v2")
     with pytest.raises(ValueError, match="predates content-addressed assets"):
-        asset_helpers.retained_model_assets(
-            manifest | {"schema_version": 1}, (model_key,), row_identity, "parity-v1"
+        asset_helpers.retained_parity_assets(
+            manifest | {"schema_version": 1}, (model_key,), base, "parity-v1"
+        )
+    with pytest.raises(ValueError, match="base content changed"):
+        asset_helpers.retained_parity_assets(
+            manifest, (model_key,), base | {"values": [1]}, "parity-v1"
         )
 
     for script_name in ("energy", "kappa"):
         with open(
             f"{ROOT}/site/scripts/generate-{script_name}-parity-assets.py"
         ) as file:
-            assert "retained_model_assets(" in file.read()
+            source = file.read()
+        assert "base_meta, model_assets = retained_parity_assets(" in source
+        assert "if base_meta is None:" in source
 
 
 @pytest.mark.parametrize(
@@ -276,7 +282,11 @@ def test_targeted_kappa_fails_on_declared_artifact_errors(
     )
     monkeypatch.setattr(kappa_assets, "load_reference", lambda: (reference, {}, {}))
     monkeypatch.setattr(kappa_assets, "read_manifest", lambda _path: {})
-    monkeypatch.setattr(kappa_assets, "retained_model_assets", lambda *_args: {})
+    monkeypatch.setattr(
+        kappa_assets,
+        "retained_parity_assets",
+        lambda *_args: ({"asset": "base.json.gz", "sha256": "a" * 64}, {}),
+    )
     monkeypatch.setattr(kappa_assets, "remove_model_assets", lambda *_args: None)
 
     def read_kappa_json(_path: str) -> pd.DataFrame:
@@ -289,7 +299,7 @@ def test_targeted_kappa_fails_on_declared_artifact_errors(
     monkeypatch.setattr(
         kappa_assets,
         "write_json_gz",
-        lambda *_args: {"asset": "base.json.gz", "sha256": "a" * 64},
+        lambda *_args: pytest.fail("targeted run rewrote the retained base"),
     )
     monkeypatch.setattr(kappa_assets, "write_manifest", lambda *_args: None)
     artifact_error = resolution_error or read_error

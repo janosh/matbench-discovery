@@ -33,10 +33,10 @@ describe(`DiatomicCurve`, () => {
     expect(get_scatter_plot_props(plot_mocks.ScatterPlot)).toMatchObject({
       series: [
         {
+          id: `unknown-model`,
           x: [0.2, 1.0, 6.0],
           y: [2, 5, 0],
           markers: `line+points`,
-          metadata: { model_key: `unknown-model` },
           point_style: { fill: `#123456`, radius: 1.5, stroke_width: 0 },
           line_style: { stroke: `#123456` },
         },

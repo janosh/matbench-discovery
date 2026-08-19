@@ -54,7 +54,6 @@
         x: points.map((point) => point.distance),
         y: points.map((point) => point.energy - ref_energy),
         markers: `line+points` as const,
-        metadata: { model_key: curve.model_key },
         point_style: { fill: curve.color, radius: 1.5, stroke_width: 0 },
         line_style: {
           stroke: curve.color,

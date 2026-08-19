@@ -10,7 +10,6 @@ import hashlib
 import json
 import math
 import re
-import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -54,26 +53,40 @@ def read_manifest(path: Path) -> dict[str, Any] | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
 
 
-def retained_model_assets(
+def json_content_sha256(data: Mapping[str, object]) -> str:
+    """Hash the canonical uncompressed JSON used for parity asset names."""
+    return hashlib.sha256(
+        json.dumps(dict(data), allow_nan=False, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def retained_parity_assets(
     manifest: dict[str, Any] | None,
     target_keys: Iterable[str],
-    row_identity: tuple[int, str],
+    base: Mapping[str, object],
     asset_prefix: str,
-) -> dict[str, dict[str, str]]:
-    """Retain peer assets only when they align exactly with the current base rows."""
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
+    """Retain the immutable base and peer models from a compatible manifest."""
     if manifest is None:
         raise FileNotFoundError("Targeted parity refresh requires an existing manifest")
     if manifest.get("schema_version") != 2:
         raise ValueError(
             "Parity manifest predates content-addressed assets; run a full refresh"
         )
-    if (
-        manifest.get("row_count"),
-        manifest.get("material_ids_sha256"),
-    ) != row_identity:
-        raise ValueError("Parity base rows changed; run a full refresh")
     if manifest.get("asset_prefix") != asset_prefix:
         raise ValueError("Parity asset prefix changed; run a full refresh")
+    base_asset = manifest.get("base")
+    if not isinstance(base_asset, dict) or not is_content_addressed_name(
+        f"{asset_prefix}-base", str(base_asset.get("asset"))
+    ):
+        raise ValueError(
+            "Parity base asset name is not content-addressed; run a full refresh"
+        )
+    expected_base_name = content_addressed_name(
+        f"{asset_prefix}-base", json_content_sha256(base)
+    )
+    if base_asset["asset"] != expected_base_name:
+        raise ValueError("Parity base content changed; run a full refresh")
     model_assets = manifest.get("model_assets")
     if not isinstance(model_assets, dict):
         raise TypeError("Parity manifest model_assets must be an object")
@@ -87,7 +100,7 @@ def retained_model_assets(
                 "Parity model asset names are not content-addressed; run a full refresh"
             )
     active_keys = {model.key for model in Model.active()} - set(target_keys)
-    return {
+    return dict(base_asset), {
         model_key: dict(asset)
         for model_key, asset in model_assets.items()
         if model_key in active_keys
@@ -124,8 +137,7 @@ def clean_ints(series: pd.Series) -> list[int | None]:
 def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str]:
     """Write content-addressed gzipped JSON and return release metadata."""
     payload = dict(data)
-    content = json.dumps(payload, allow_nan=False, separators=(",", ":")).encode()
-    content_sha256 = hashlib.sha256(content).hexdigest()
+    content_sha256 = json_content_sha256(payload)
     suffix = ".json.gz"
     if not path.name.endswith(suffix):
         raise ValueError(f"Parity asset path must end with {suffix}: {path}")
@@ -142,27 +154,11 @@ def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str]:
 
 
 def write_manifest(path: Path, manifest: Mapping[str, object]) -> None:
-    """Write and format the single JSON manifest consumed by Python and TypeScript."""
+    """Write the single JSON manifest consumed by Python and TypeScript."""
     manifest_json = json.dumps(manifest, indent=2, sort_keys=True)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f"{manifest_json}\n", encoding="utf-8")
     print(f"Wrote {path}")
-    format_manifest_files([path])
-
-
-def format_manifest_files(paths: Iterable[Path]) -> None:
-    """Format generated manifests with the site's configured formatter."""
-    site_dir = Path("site")
-    vp_bin = (site_dir / "node_modules/.bin/vp").resolve()
-    fmt_paths = [
-        str(path.relative_to(site_dir) if path.is_relative_to(site_dir) else path)
-        for path in paths
-    ]
-    subprocess.run(
-        [str(vp_bin), "fmt", "--write", *fmt_paths],
-        cwd=site_dir,
-        check=True,
-    )
 
 
 def compact_extxyz(text: str, decimals: int = 3) -> str:

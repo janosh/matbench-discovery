@@ -327,6 +327,11 @@ def test_writer_replaces_targeted_records_or_full_payload(tmp_path: Path) -> Non
     assert replaced["models"] == [model_b, model_c]
     assert replaced["identity"] == metadata["identity"]
     assert replaced["shared"] == 2
+    metadata["audit"]["source_commit"] = "0" * 40
+    with pytest.raises(ValueError, match="audit must contain runtime"):
+        write_test_payload(
+            path, tmp_path, [model_b, model_c], shared=2, metadata=metadata
+        )
 
 
 @pytest.mark.parametrize("target_keys", [None, {"model-a"}], ids=["full", "targeted"])

@@ -255,13 +255,8 @@ def _validate_payload(base: dict[str, Any], models: list[dict[str, Any]]) -> Non
     if not isinstance(identity["parameters"], dict):
         raise TypeError("Payload identity parameters must be an object")
     audit = base["audit"]
-    if not isinstance(audit, dict) or set(audit) not in (
-        {"runtime"},
-        {"runtime", "source_commit"},
-    ):
-        raise ValueError(
-            "Payload audit must contain runtime and optional source_commit"
-        )
+    if not isinstance(audit, dict) or set(audit) != {"runtime"}:
+        raise ValueError("Payload audit must contain runtime")
     runtime = audit["runtime"]
     if not isinstance(runtime, dict) or set(runtime) != {"python", "packages"}:
         raise ValueError("Payload runtime must contain Python and package versions")
@@ -275,12 +270,6 @@ def _validate_payload(base: dict[str, Any], models: list[dict[str, Any]]) -> Non
         for package, version in packages.items()
     ):
         raise TypeError("Payload runtime package names and versions must be strings")
-    source_commit = audit.get("source_commit")
-    if source_commit is not None and (
-        not isinstance(source_commit, str)
-        or re.fullmatch(r"[0-9a-f]{40}", source_commit) is None
-    ):
-        raise ValueError(f"Invalid informational source_commit: {source_commit!r}")
     if not isinstance(base["derived"], dict):
         raise TypeError("Payload _base.derived must be an object")
     for model in models:

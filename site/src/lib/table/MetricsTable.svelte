@@ -88,21 +88,18 @@
   // fine-grained re-renders of changed cells (same object identity = no signal).
   const row_cache = new SvelteMap<string, MetricsRow>()
   function build_rows(): MetricsRow[] {
-    // tracked snapshot of selections: reads inside the untrack block below wouldn't
-    // subscribe, but selection changes must re-run this sync
-    const selected_keys = new SvelteSet(selected_models)
     const fresh_rows = assemble_row_data(
       discovery_set,
       model_filter,
       filters.matches,
-    ).filter((row) => !show_selected_only || selected_keys.has(row.model_key))
+    ).filter((row) => selected_models.has(row.model_key) || !show_selected_only)
     // cache access is untracked so callers don't subscribe to the very row signals
     // this merge writes (which would re-trigger them and double-render the table)
     return untrack(() =>
       fresh_rows.map((row) => {
         // Only apply selected styles when not filtering to show only selected models
         row.class =
-          !show_selected_only && selected_keys.has(row.model_key)
+          !show_selected_only && selected_models.has(row.model_key)
             ? `highlight`
             : undefined
         const cached = row_cache.get(row.model_key)
@@ -185,10 +182,8 @@
   const close_dropdown = () => (pred_files_dropdown = null)
 
   function toggle_model_selection(model_key: string) {
-    const new_selected = new SvelteSet(selected_models)
-    if (new_selected.has(model_key)) new_selected.delete(model_key)
-    else new_selected.add(model_key)
-    selected_models = new_selected
+    if (selected_models.has(model_key)) selected_models.delete(model_key)
+    else selected_models.add(model_key)
   }
 
   const header_tooltip = (content: string | undefined) => (node: Element) => {

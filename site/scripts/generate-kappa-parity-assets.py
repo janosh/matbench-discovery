@@ -27,7 +27,7 @@ from asset_helpers import (
     read_manifest,
     remove_model_assets,
     resolve_models,
-    retained_model_assets,
+    retained_parity_assets,
     write_json_gz,
     write_manifest,
 )
@@ -206,7 +206,6 @@ def main() -> None:
     df_dft, structures, meta = load_reference()
     material_ids = [str(mat_id) for mat_id in df_dft.index]
     material_ids_sha256 = hashlib.sha256("\n".join(material_ids).encode()).hexdigest()
-    row_identity = (len(material_ids), material_ids_sha256)
 
     base = {
         "material_ids": material_ids,
@@ -226,17 +225,19 @@ def main() -> None:
 
     # a full run (no --models) regenerates everything; a partial run keeps existing
     # model assets so submitting a single model doesn't wipe the others
+    base_meta: dict[str, str] | None = None
     model_assets: dict[str, dict[str, str]] = {}
     if not args.models:
         for path in asset_dir.glob(f"{args.asset_prefix}-*.json.gz"):
             path.unlink()
     else:
-        model_assets = retained_model_assets(
-            read_manifest(manifest_path), target_keys, row_identity, args.asset_prefix
+        base_meta, model_assets = retained_parity_assets(
+            read_manifest(manifest_path), target_keys, base, args.asset_prefix
         )
     remove_model_assets(asset_dir, args.asset_prefix, target_keys)
 
-    base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
+    if base_meta is None:
+        base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
 
     for model in models:
         kappa_path = model.kappa_103_path
