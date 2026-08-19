@@ -26,7 +26,7 @@ from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import DataFiles, MbdKey
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
 OUT_DIR: Final = "site/static/energy-parity"
 MANIFEST_PATH: Final = "site/src/lib/parity/energy-parity-manifest.json"
@@ -42,7 +42,7 @@ ENERGY_DECIMALS: Final = 6
 STRUCTURE_DECIMALS: Final = 3
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command-line options for generating energy parity assets."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Reuse matching structure bundles; targeted runs require them.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def chunked(items: list[int], chunk_size: int) -> Iterable[tuple[int, list[int]]]:
@@ -130,9 +130,9 @@ def write_structure_shards(
     return structure_bundles
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> None:
     """Generate base data, model prediction assets, structures, and manifests."""
-    args = parse_args()
+    args = parse_args(argv)
     out_dir = Path(args.out_dir)
     manifest_path = Path(args.manifest)
     models = resolve_models(args.models)
@@ -146,11 +146,10 @@ def main() -> None:
     asset_dir = out_dir / "assets"
     previous_manifest = read_manifest(manifest_path)
     target_keys = {model.key for model in models} if args.models else set()
-    row_identity = (len(material_ids), material_ids_sha256)
     structure_identity = {
         "schema_version": 2,
-        "row_count": row_identity[0],
-        "material_ids_sha256": row_identity[1],
+        "row_count": len(material_ids),
+        "material_ids_sha256": material_ids_sha256,
         "structure_shard_size": args.structure_shard_size,
         "structure_bundle_size": args.structure_bundle_size,
     }

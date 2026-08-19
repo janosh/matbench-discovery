@@ -17,10 +17,8 @@ import gzip
 import hashlib
 import json
 import os
-import sys
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
-from types import ModuleType, SimpleNamespace
 from typing import Any
 
 import pandas as pd
@@ -235,63 +233,40 @@ def test_targeted_parity_requires_matching_base() -> None:
         asset_helpers.retained_parity_assets(
             manifest, (model_key,), base | {"values": [1]}, "parity-v1"
         )
-    with pytest.raises(ValueError, match="base asset metadata is invalid"):
-        asset_helpers.retained_parity_assets(
-            manifest | {"base": base_asset | {"sha256": None}},
-            (model_key,),
-            base,
-            "parity-v1",
-        )
-    with pytest.raises(ValueError, match="model asset metadata is invalid"):
-        asset_helpers.retained_parity_assets(
-            manifest | {"model_assets": {model_key: model_asset | {"sha256": None}}},
-            (),
-            base,
-            "parity-v1",
-        )
-
-    for script_name in ("energy", "kappa"):
-        with open(
-            f"{ROOT}/site/scripts/generate-{script_name}-parity-assets.py"
-        ) as file:
-            source = file.read()
-        assert "base_meta, model_assets = retained_parity_assets(" in source
-        assert "if base_meta is None:" in source
+    invalid_sections = {
+        "base": {"base": base_asset | {"sha256": None}},
+        "model": {"model_assets": {model_key: model_asset | {"sha256": None}}},
+    }
+    for section, update in invalid_sections.items():
+        with pytest.raises(ValueError, match=f"{section} asset metadata is invalid"):
+            asset_helpers.retained_parity_assets(
+                manifest | update, (), base, "parity-v1"
+            )
 
 
 def test_targeted_energy_requires_matching_structure_bundles(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A targeted energy refresh cannot recreate shared structure assets."""
-    cli_args = SimpleNamespace(
-        out_dir="",
-        manifest="",
-        models=[Model.mace_mp_0.name],
-        asset_prefix="parity-v1",
-        limit_rows=None,
-        structure_shard_size=512,
-        structure_bundle_size=50,
-        skip_structures=False,
-    )
     df_preds = pd.DataFrame({energy_assets.Key.mat_id: ["material-1"]})
-    monkeypatch.setattr(energy_assets, "parse_args", lambda: cli_args)
     monkeypatch.setattr(
         energy_assets, "load_df_wbm_with_preds", lambda **_kwargs: df_preds
     )
     monkeypatch.setattr(energy_assets, "read_manifest", lambda _path: {})
 
     with pytest.raises(ValueError, match="structures changed; run a full refresh"):
-        energy_assets.main()
+        energy_assets.main(["--models", Model.mace_mp_0.name])
 
 
-@pytest.mark.parametrize("generator", [energy_assets, kappa_assets])
+@pytest.mark.parametrize(
+    "parse_args", [energy_assets.parse_args, kappa_assets.parse_args]
+)
 def test_parity_generators_reject_empty_target_lists(
-    generator: ModuleType, monkeypatch: pytest.MonkeyPatch
+    parse_args: Callable[[list[str]], object],
 ) -> None:
     """An explicit empty --models cannot silently become a full refresh."""
-    monkeypatch.setattr(sys, "argv", ["generator", "--models"])
     with pytest.raises(SystemExit):
-        generator.parse_args()
+        parse_args(["--models"])
 
 
 @pytest.mark.parametrize(
@@ -303,7 +278,6 @@ def test_parity_generators_reject_empty_target_lists(
     ],
 )
 def test_targeted_kappa_fails_on_declared_artifact_errors(
-    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     resolution_error: Exception | None,
     read_error: Exception | None,
@@ -323,17 +297,6 @@ def test_targeted_kappa_fails_on_declared_artifact_errors(
                 raise resolution_error
             return "prediction.json.gz"
 
-    monkeypatch.setattr(
-        kappa_assets,
-        "parse_args",
-        lambda: SimpleNamespace(
-            out_dir=str(tmp_path),
-            manifest=str(tmp_path / "manifest.json"),
-            models=[BrokenModel.key],
-            asset_prefix="parity-v1",
-            local_asset_base_url="/assets",
-        ),
-    )
     monkeypatch.setattr(kappa_assets, "resolve_models", lambda _refs: (BrokenModel(),))
     reference = pd.DataFrame(
         {kappa_assets.KAPPA_TOT_AVG: [[1.0]]}, index=["material-1"]
@@ -363,4 +326,4 @@ def test_targeted_kappa_fails_on_declared_artifact_errors(
     artifact_error = resolution_error or read_error
     assert artifact_error is not None
     with pytest.raises(type(artifact_error), match=str(artifact_error)):
-        kappa_assets.main()
+        kappa_assets.main(["--models", BrokenModel.key])

@@ -336,18 +336,16 @@ def publish_parity_assets(checks: Checklist) -> None:
             name = entry["asset"]
             asset_path = f"{assets_dir}/{name}"
             expected_digest = f"sha256:{entry['sha256']}"
-            if name in published:
-                if published[name] != expected_digest:
-                    conflicts.append(name)
-            elif os.path.isfile(asset_path):
+            actual_digest = published.get(name)
+            if name not in published and os.path.isfile(asset_path):
                 with open(asset_path, "rb") as file:
-                    digest = f"sha256:{hashlib.file_digest(file, 'sha256').hexdigest()}"
-                if digest == expected_digest:
-                    pending.append(asset_path)
-                else:
-                    conflicts.append(name)
-            else:
+                    actual_digest = (
+                        f"sha256:{hashlib.file_digest(file, 'sha256').hexdigest()}"
+                    )
+            if actual_digest != expected_digest:
                 conflicts.append(name)
+            elif name not in published:
+                pending.append(asset_path)
         if conflicts:
             checks.fail(
                 f"{parity_type} parity assets missing locally or conflict with "

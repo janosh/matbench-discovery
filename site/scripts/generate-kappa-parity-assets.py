@@ -39,6 +39,8 @@ from matbench_discovery.enums import DataFiles, MbdKey
 from matbench_discovery.phonons import read_kappa_json
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import numpy.typing as npt
     import pandas as pd
 
@@ -60,7 +62,7 @@ KAPPA_TOT_AVG: Final = str(MbdKey.kappa_tot_avg)
 PH_FREQS: Final = str(Key.ph_freqs)
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command-line options for generating kappa parity assets."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -77,7 +79,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", default=MANIFEST_PATH)
     parser.add_argument("--asset-prefix", default=ASSET_PREFIX)
     parser.add_argument("--local-asset-base-url", default=LOCAL_ASSET_BASE_URL)
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def scalar_from_avg(value: npt.ArrayLike) -> float | None:
@@ -194,9 +196,9 @@ def load_reference() -> tuple[
     return df_dft, structures, meta
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> None:
     """Generate base (DFT) and per-model kappa parity assets plus manifests."""
-    args = parse_args()
+    args = parse_args(argv)
     out_dir = Path(args.out_dir)
     manifest_path = Path(args.manifest)
     asset_dir = out_dir / "assets"
