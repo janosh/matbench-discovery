@@ -43,6 +43,14 @@ ENERGY_DECIMALS: Final = 6
 STRUCTURE_DECIMALS: Final = 3
 
 
+def positive_int(value: str) -> int:
+    """Parse a positive integer for an argparse option."""
+    number = int(value)
+    if number <= 0:
+        raise argparse.ArgumentTypeError(f"expected a positive integer, got {value}")
+    return number
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command-line options for generating energy parity assets."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -58,10 +66,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--local-asset-base-url", default=LOCAL_ASSET_BASE_URL)
     parser.add_argument("--limit-rows", type=int, default=None)
     parser.add_argument(
-        "--structure-shard-size", type=int, default=STRUCTURE_SHARD_SIZE
+        "--structure-shard-size", type=positive_int, default=STRUCTURE_SHARD_SIZE
     )
     parser.add_argument(
-        "--structure-bundle-size", type=int, default=STRUCTURE_BUNDLE_SIZE
+        "--structure-bundle-size", type=positive_int, default=STRUCTURE_BUNDLE_SIZE
     )
     return parser.parse_args(argv)
 
@@ -105,8 +113,6 @@ def write_structure_shards(
     bundle_size: int,
 ) -> list[dict[str, str]]:
     """Write compressed structure bundles grouped by shard ranges."""
-    if bundle_size <= 0:
-        raise ValueError(f"{bundle_size=} must be positive")
     zip_path = Path(DataFiles.wbm_initial_atoms.path)
     structure_bundles: list[dict[str, str]] = []
     with ZipFile(zip_path) as zip_file:

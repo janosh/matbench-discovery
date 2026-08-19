@@ -180,6 +180,9 @@ def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
         ".base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)"
         in deploy
     )
+    assert "jq -er" in deploy
+    assert 'mapfile -t assets < "$assets_file"' in deploy
+    assert '"${#assets[@]}" -gt 0' in deploy
     assert "-*.json.gz" not in deploy
     with open(f"{ROOT}/.github/workflows/model-pr-guard.yml") as file:
         guard = file.read()
@@ -285,6 +288,16 @@ def test_parity_generators_reject_empty_target_lists(
     """An explicit empty --models cannot silently become a full refresh."""
     with pytest.raises(SystemExit):
         parse_args(["--models"])
+
+
+@pytest.mark.parametrize(
+    "option", ["--structure-shard-size", "--structure-bundle-size"]
+)
+@pytest.mark.parametrize("value", ["0", "-1"])
+def test_energy_rejects_non_positive_structure_sizes(option: str, value: str) -> None:
+    """Structure shard and bundle sizes must be positive."""
+    with pytest.raises(SystemExit):
+        energy_assets.parse_args([option, value])
 
 
 @pytest.mark.parametrize("missing", ["structure", "metadata"])

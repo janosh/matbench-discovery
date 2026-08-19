@@ -47,10 +47,16 @@ jobs:
             manifest="src/lib/parity/$kind-parity-manifest.json"
             asset_dir="static/$kind-parity/assets"
             mkdir -p "$asset_dir"
-            mapfile -t assets < <(
-              jq -r '.base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)' \
-                "$manifest"
-            )
+            assets_file="$RUNNER_TEMP/$kind-parity-assets"
+            jq -er '[.base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)]
+              | if length > 0 and all(.[]; type == "string" and length > 0)
+                then .[] else error("invalid parity asset manifest") end' \
+              "$manifest" > "$assets_file"
+            mapfile -t assets < "$assets_file"
+            [ "${#assets[@]}" -gt 0 ] || {
+              echo "::error::$manifest contains no release assets"
+              exit 1
+            }
             patterns=()
             for asset in "${assets[@]}"; do
               patterns+=(--pattern "$asset")
