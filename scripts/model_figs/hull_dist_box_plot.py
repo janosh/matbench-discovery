@@ -18,7 +18,7 @@ box_models: list[dict[str, object]] = [
     {
         **figs.discovery_model_identity(model),
         "quantiles": payload_numerics.round_list(
-            df_each_err[model.label].quantile((0.05, 0.25, 0.5, 0.75, 0.95))
+            df_each_err[model.key].quantile((0.05, 0.25, 0.5, 0.75, 0.95))
         ),
     }
     for model in complete_models()

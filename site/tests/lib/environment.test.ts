@@ -31,6 +31,24 @@ describe(`parse_dependency_spec`, () => {
       },
     },
     {
+      // GitHub commit locators use the repository's browser URL shape
+      dep: `tace @ git+https://github.com/xvzemin/tace@81f65a4c188bd09cec8d1419388f7afdcc1b6fd0`,
+      expected: {
+        name: `tace`,
+        detail: `git+https://github.com/xvzemin/tace@81f65a4c188bd09cec8d1419388f7afdcc1b6fd0`,
+        href: `https://github.com/xvzemin/tace/commit/81f65a4c188bd09cec8d1419388f7afdcc1b6fd0`,
+      },
+    },
+    {
+      // symbolic GitHub revisions link to the corresponding repository tree
+      dep: `aviary @ git+https://github.com/CompRhys/aviary.git@v0.1.0`,
+      expected: {
+        name: `aviary`,
+        detail: `git+https://github.com/CompRhys/aviary.git@v0.1.0`,
+        href: `https://github.com/CompRhys/aviary/tree/v0.1.0`,
+      },
+    },
+    {
       // plain https locator used as-is
       dep: `aviary @ https://github.com/CompRhys/aviary/releases/tag/v0.1.0`,
       expected: {

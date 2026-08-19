@@ -10,8 +10,8 @@ from matbench_discovery.enums import Model
 def metrics_df_from_yaml(nested_keys: Sequence[str]) -> pd.DataFrame:
     """Extract metrics from Model enum metadata into a DataFrame.
 
-    Returns a DataFrame with models as rows and metrics as columns. To calculate and
-    write discovery metrics into the model YAML files in the first place, run
+    Returns a DataFrame indexed by ``model_key`` with metrics as columns. To calculate
+    and write discovery metrics into the model YAML files in the first place, run
     python scripts/evals/discovery.py --models model1 model2 ...
     where the model names are Model enum values.
     """
@@ -30,7 +30,7 @@ def metrics_df_from_yaml(nested_keys: Sequence[str]) -> pd.DataFrame:
                 if isinstance(metrics, dict):
                     combined_metrics.update(metrics)
             if combined_metrics:
-                out_dict[model.label] = combined_metrics
+                out_dict[model.key] = combined_metrics
 
         except Exception as exc:
             exc.add_note(f"{model.label=}")

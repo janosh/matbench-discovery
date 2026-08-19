@@ -29,13 +29,14 @@ const base: KappaParityBase = {
   material_ids: [`mp-1`, `mp-2`, `mp-3`],
   formulas: [`Si2`, `Ge2`, `Sn2`],
   kappa_dft: [10, 5, null],
+  n_sites: [8, 4, 2],
+  spacegroups: [225, 186, 1],
   structures: { 'mp-1': dummy_structure },
   dft_dos: { 'mp-1': { frequencies: [0, 1, 2], densities: [0, 1, 0] } },
 }
 
 const model: KappaParityModel = {
   model_key: `test-model`,
-  model_label: `Test Model`,
   kappa_ml: [8, null, 6],
   ml_dos: { 'mp-1': { frequencies: [0, 1, 2], densities: [0, 0.5, 0] } },
 }
@@ -49,6 +50,8 @@ function manifest_sized_base(overrides: Partial<KappaParityBase> = {}): KappaPar
     material_ids: Array<string>(row_count).fill(`mp-test`),
     formulas: Array<string>(row_count).fill(`Si2`),
     kappa_dft: Array<number | null>(row_count).fill(1),
+    n_sites: Array<number | null>(row_count).fill(2),
+    spacegroups: Array<number | null>(row_count).fill(225),
     structures: {},
     dft_dos: {},
     ...overrides,
@@ -59,7 +62,6 @@ const manifest_sized_model = (
   overrides: Partial<KappaParityModel> = {},
 ): KappaParityModel => ({
   model_key: first_model_key,
-  model_label: `Test Model`,
   kappa_ml: Array<number | null>(kappa_parity_manifest.row_count).fill(1),
   ml_dos: {},
   ...overrides,
@@ -102,16 +104,10 @@ describe(`kappa parity data helpers`, () => {
     expect(point).toBeNull()
   })
 
-  it(`carries n_sites/spacegroup, defaulting to null for older assets`, () => {
-    const enriched = { ...base, n_sites: [8, 4, 2], spacegroups: [225, 186, 1] }
-    const point = get_kappa_parity_point(enriched, model, 0)
+  it(`carries n_sites and spacegroup metadata`, () => {
+    const point = get_kappa_parity_point(base, model, 0)
     expect(point?.n_sites).toBe(8)
     expect(point?.spacegroup).toBe(225)
-
-    // base without the optional arrays (older asset) must not throw and yields null
-    const bare = get_kappa_parity_point(base, model, 0)
-    expect(bare?.n_sites).toBeNull()
-    expect(bare?.spacegroup).toBeNull()
   })
 
   it(`only reports models present in the manifest`, () => {
@@ -170,27 +166,28 @@ describe(`kappa parity data helpers`, () => {
     await expect(load_kappa_parity_model(first_model_key)).resolves.toEqual(valid_model)
   })
 
-  it.each([
-    {
-      kind: `base`,
-      response: () => gzipped_json_response(manifest_sized_base({ kappa_dft: [1] })),
-      load: () => load_kappa_parity_base(),
-      error: `Invalid kappa parity kappa_dft: expected ${kappa_parity_manifest.row_count} rows`,
-    },
-    {
-      kind: `model`,
-      response: () =>
-        gzipped_json_response({ model: manifest_sized_model({ kappa_ml: [1] }) }),
-      load: () => load_kappa_parity_model(first_model_key),
-      error:
-        `Invalid kappa parity ${first_model_key}.kappa_ml: ` +
-        `expected ${kappa_parity_manifest.row_count} rows`,
-    },
-  ])(
-    `rejects $kind assets with the wrong row count`,
-    async ({ response, load, error }) => {
-      vi.stubGlobal(`fetch`, vi.fn(response))
-      await expect(load()).rejects.toThrow(error)
+  it.each([`kappa_dft`, `n_sites`, `spacegroups`] as const)(
+    `rejects base %s with the wrong row count`,
+    async (field) => {
+      vi.stubGlobal(
+        `fetch`,
+        vi.fn(() => gzipped_json_response(manifest_sized_base({ [field]: [1] }))),
+      )
+      await expect(load_kappa_parity_base()).rejects.toThrow(
+        `Invalid kappa parity ${field}: expected ${kappa_parity_manifest.row_count} rows`,
+      )
     },
   )
+
+  it(`rejects model data with the wrong row count`, async () => {
+    vi.stubGlobal(
+      `fetch`,
+      vi.fn(() =>
+        gzipped_json_response({ model: manifest_sized_model({ kappa_ml: [1] }) }),
+      ),
+    )
+    await expect(load_kappa_parity_model(first_model_key)).rejects.toThrow(
+      `Invalid kappa parity ${first_model_key}.kappa_ml: expected ${kappa_parity_manifest.row_count} rows`,
+    )
+  })
 })

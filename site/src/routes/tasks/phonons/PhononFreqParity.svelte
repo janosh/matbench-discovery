@@ -4,7 +4,7 @@
   import { parity_diagonal } from '$lib/fig-helpers'
   import { format_num, sanitize_compact_formula } from 'matterviz'
   import { DEFAULT_SERIES_SYMBOLS, ScatterPlot, type DataSeries } from 'matterviz/plot'
-  import { spacegroup_num_to_crystal_sys } from 'matterviz/symmetry'
+  import { spacegroup_to_crystal_sys } from 'matterviz/symmetry'
   import type { HTMLAttributes } from 'svelte/elements'
 
   type KappaModelEntry = (typeof kappa_data)[`models`][number]
@@ -58,7 +58,7 @@
       const freq_w1 = entry.freq_w1[mat_idx]
       if (freq_w1 === null) continue
       const spg_num = base.spg_nums[mat_idx]
-      const system = spacegroup_num_to_crystal_sys(spg_num)
+      const system = spacegroup_to_crystal_sys(spg_num)
       const dft = pairs.dft.slice(pair_idx, pair_idx + n_quantiles)
       const ml = pairs.ml.slice(pair_idx, pair_idx + n_quantiles)
       pair_idx += n_quantiles

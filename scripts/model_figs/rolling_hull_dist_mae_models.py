@@ -18,7 +18,7 @@ window = 0.04
 rolling_x = np.arange(-0.2, 0.2, 0.005)
 rolling_models: list[dict[str, object]] = []
 for model in complete_models():
-    each_pred = df_each_pred[model.label].dropna()
+    each_pred = df_each_pred[model.key].dropna()
     each_true = df_preds[MbdKey.each_true].loc[each_pred.index]
     abs_error = (each_pred - each_true).abs()
     rolling_mae = [

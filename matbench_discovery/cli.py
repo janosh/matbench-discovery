@@ -5,7 +5,6 @@ import os
 from argparse import ArgumentParser, ArgumentTypeError
 
 from matbench_discovery.enums import Model, TestSubset
-from matbench_discovery.figs import PayloadMode
 
 
 def parse_model(value: str) -> Model:
@@ -14,14 +13,6 @@ def parse_model(value: str) -> Model:
         return Model.from_ref(value)
     except ValueError as exc:
         raise ArgumentTypeError(f"invalid model: {value}") from exc
-
-
-def parse_key_migration(value: str) -> tuple[str, str]:
-    """Parse one explicit ``OLD=NEW`` model-key migration."""
-    old_key, separator, new_key = value.partition("=")
-    if separator != "=" or not old_key or not new_key:
-        raise ArgumentTypeError("model key migration must have the form OLD=NEW")
-    return old_key, new_key
 
 
 cli_parser = ArgumentParser(
@@ -79,49 +70,20 @@ payload_group.add_argument(
     "Training sets like MPtrj, sAlex and Omat24 were filtered to remove protostructures"
     " overlap with WBM, resulting in a slightly more out-of-distribution test set.",
 )
-payload_mode_group = payload_group.add_mutually_exclusive_group()
-payload_mode_group.add_argument(
+payload_group.add_argument(
     "--full-roster",
     action="store_true",
-    help="Regenerate the full model roster without changing shared provenance.",
-)
-payload_mode_group.add_argument(
-    "--migrate-provenance",
-    action="store_true",
-    help="Explicitly replace payload-wide computation provenance.",
-)
-payload_mode_group.add_argument(
-    "--migrate-model-key",
-    type=parse_key_migration,
-    metavar="OLD=NEW",
-    help="Explicitly migrate one immutable model key and its payload records.",
+    help="Regenerate the complete payload roster instead of selected model records.",
 )
 cli_args, _ignore_unknown = cli_parser.parse_known_args()
 models_were_explicit = cli_args.models is not models_arg.default
 
 
-def payload_mode() -> PayloadMode:
-    """Return the one explicitly selected payload generation mode."""
-    for selected, mode in (
-        (cli_args.full_roster, PayloadMode.full_roster),
-        (cli_args.migrate_provenance, PayloadMode.migrate_provenance),
-        (cli_args.migrate_model_key, PayloadMode.migrate_model_key),
-    ):
-        if selected:
-            if models_were_explicit:
-                cli_parser.error(f"--{mode.value} cannot be combined with --models")
-            return mode
-    if models_were_explicit:
-        return PayloadMode.targeted
-    return cli_parser.error(
-        "payload generation requires --models, --full-roster, "
-        "--migrate-provenance, or --migrate-model-key"
-    )
-
-
 def is_full_model_run() -> bool:
-    """Return whether the explicit payload mode covers the complete model roster."""
-    return payload_mode() != PayloadMode.targeted
+    """Return whether payload generation explicitly selected the complete roster."""
+    if cli_args.full_roster == models_were_explicit:
+        cli_parser.error("select exactly one of --models or --full-roster")
+    return cli_args.full_roster
 
 
 def complete_models() -> list[Model]:

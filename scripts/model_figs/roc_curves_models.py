@@ -22,7 +22,7 @@ binary_targets = (df_preds[MbdKey.each_true] > STABILITY_THRESHOLD).astype(int)
 # %%
 roc_models: list[dict[str, object]] = []
 for model in complete_models():
-    model_scores = df_each_pred[model.label].dropna()
+    model_scores = df_each_pred[model.key].dropna()
     targets = binary_targets.loc[model_scores.index]
     fpr, tpr, _thresholds = sk_metrics.roc_curve(targets, model_scores)
     auc = sk_metrics.roc_auc_score(targets, model_scores)

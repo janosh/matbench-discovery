@@ -45,7 +45,6 @@ interface PayloadBase {
   }
   audit: {
     runtime: { python: string; packages: Record<string, string> }
-    source_commit?: string
   }
 }
 

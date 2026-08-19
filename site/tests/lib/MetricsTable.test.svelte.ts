@@ -3,6 +3,7 @@ import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
 import { tick } from 'svelte'
+import { SvelteSet } from 'svelte/reactivity'
 import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
 
@@ -87,7 +88,9 @@ describe(`MetricsTable`, () => {
     expect(metric_order).toStrictEqual([...metric_order].toSorted((n1, n2) => n1 - n2))
 
     // Test prediction files dropdown interaction
-    const pred_files_button = doc_query<HTMLButtonElement>(`tbody .pred-files-btn`)
+    const pred_files_button = doc_query<HTMLButtonElement>(
+      `tbody button[aria-label="Download model prediction files"]`,
+    )
     expect(pred_files_button).toBeDefined() // Ensure at least one button exists
 
     // Dropdown should not exist initially
@@ -653,7 +656,11 @@ describe(`MetricsTable`, () => {
       await tick() // Wait for component to process data
 
       // Find all pred_files buttons (every row renders one)
-      const pred_file_buttons = [...document.querySelectorAll(`.pred-files-btn`)]
+      const pred_file_buttons = [
+        ...document.querySelectorAll(
+          `button[aria-label="Download model prediction files"]`,
+        ),
+      ]
       expect(pred_file_buttons).toHaveLength(visible_row_count())
 
       // Check button attributes
@@ -821,14 +828,20 @@ describe(`MetricsTable`, () => {
     const double_click_row = (row: Element) => {
       row.dispatchEvent(new MouseEvent(`dblclick`, { bubbles: true }))
     }
+    const row_key = (row: Element) =>
+      doc_query<HTMLAnchorElement>(`a[href^="/models/"]`, row).pathname.replace(
+        `/models/`,
+        ``,
+      )
 
     it(
       `selects and deselects models on double-click with proper state management`,
       { timeout: 30_000 },
       async () => {
+        const selected_models = new SvelteSet<string>()
         mount(MetricsTable, {
           target: document.body,
-          props: { col_filter: () => true },
+          props: { col_filter: () => true, selected_models },
         })
         await tick() // Wait for initial render
 
@@ -843,12 +856,16 @@ describe(`MetricsTable`, () => {
         double_click_row(get_rows()[0])
         await tick()
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
+        const first_key = row_key(get_rows()[0])
+        expect([...selected_models]).toEqual([first_key])
 
         // Select second row
         double_click_row(get_rows()[1])
         await tick()
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
         expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
+        const second_key = row_key(get_rows()[1])
+        expect([...selected_models]).toEqual([first_key, second_key])
 
         // Deselect first row
         double_click_row(get_rows()[0])

@@ -22,6 +22,46 @@ Object.defineProperty(globalThis, `matchMedia`, {
   }),
 })
 
+// happy-dom lacks the Popover API that svelte-widgets >=1.6 tooltips use for their
+// top-layer surface. Minimal polyfill: open state lives in a `data-popover-open` attribute
+// (happy-dom can't match `:popover-open`, so `matches()` rewrites it to that attribute),
+// and show/hide dispatch `toggle` so anything listening for popover state still hears it.
+export const POPOVER_OPEN_ATTR = `data-popover-open`
+if (!(`showPopover` in HTMLElement.prototype)) {
+  const set_popover_open = (el: HTMLElement, open: boolean) => {
+    if (!el.hasAttribute(`popover`)) {
+      throw new DOMException(`Element is not a popover`, `NotSupportedError`)
+    }
+    if (el.hasAttribute(POPOVER_OPEN_ATTR) === open) return
+    el.toggleAttribute(POPOVER_OPEN_ATTR, open)
+    el.dispatchEvent(new Event(`toggle`))
+  }
+  Object.assign(HTMLElement.prototype, {
+    showPopover(this: HTMLElement) {
+      set_popover_open(this, true)
+    },
+    hidePopover(this: HTMLElement) {
+      set_popover_open(this, false)
+    },
+    togglePopover(this: HTMLElement, force?: boolean) {
+      const open = force ?? !this.hasAttribute(POPOVER_OPEN_ATTR)
+      set_popover_open(this, open)
+      return open
+    },
+  })
+  const native_matches = Element.prototype.matches
+  Object.defineProperty(Element.prototype, `matches`, {
+    configurable: true,
+    writable: true,
+    value(this: Element, selectors: string) {
+      return native_matches.call(
+        this,
+        selectors.replaceAll(`:popover-open`, `[${POPOVER_OPEN_ATTR}]`),
+      )
+    },
+  })
+}
+
 // Hoisted mocks for SvelteKit $app modules - more efficient than vi.mock at top level
 const app_mocks = vi.hoisted(() => ({
   state: {

@@ -3,7 +3,7 @@
   import type { ModelData } from '$lib'
   import { extent } from 'd3-array'
   import { interpolateViridis } from 'd3-scale-chromatic'
-  import { format_num, format_relative_time, ScatterPlot } from 'matterviz'
+  import { format_num, ScatterPlot } from 'matterviz'
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
@@ -12,6 +12,7 @@
     ALL_METRICS,
     DISCOVERY_SET_LABELS,
     format_property_path,
+    format_relative_time,
     HYPERPARAMS,
     scatter_axis_label,
     scatter_options,
@@ -93,6 +94,11 @@
   let display = $state({ x_grid: true, y_grid: true })
 
   let filtered_models = $derived(models.filter(model_filter))
+  let duplicate_model_names = $derived(
+    filtered_models
+      .map(({ model_name }) => model_name)
+      .filter((name, idx, names) => names.indexOf(name) !== idx),
+  )
   let model_counts_by_prop = $derived(
     Object.fromEntries(
       scatter_options.map((prop) => [
@@ -130,10 +136,10 @@
     (prop?.format ?? `.2~f`).replace(/(?<precision>\.\d+)f$/, `$<precision>~f`)
 
   interface PointMetadata extends Record<string, unknown> {
+    model_key: string
     model_name: string
-    benchmark_added: string | null
     days_ago: string
-    model_key?: string
+    size_value: number
   }
 
   let plot_data = $derived(
@@ -154,12 +160,7 @@
       const { model_name, model_key } = model
       const benchmark_added = model.dates.benchmark_added
       const days_ago = benchmark_added ? format_relative_time(benchmark_added) : ``
-      const metadata: PointMetadata = {
-        model_name,
-        benchmark_added,
-        days_ago,
-        model_key,
-      }
+      const metadata: PointMetadata = { model_key, model_name, days_ago, size_value }
       return [{ x, y, color_value, size_value, metadata }]
     }),
   )
@@ -253,9 +254,12 @@
   // One series per model enables per-model legend toggles.
   let series: DataSeries<PointMetadata>[] = $derived([
     ...plot_data.map((item) => ({
+      id: item.metadata.model_key,
       x: [item.x],
       y: [item.y],
-      label: item.metadata.model_name,
+      label: duplicate_model_names.includes(item.metadata.model_name)
+        ? `${item.metadata.model_name} (${item.metadata.model_key})`
+        : item.metadata.model_name,
       legend_group,
       markers: `points` as const,
       metadata: [item.metadata],
@@ -263,7 +267,7 @@
       // across 30+ models distinguished nothing while adding visual noise
       point_style: { fill: point_fill(item.color_value), symbol_type: `Circle` as const },
       color_values: [item.color_value],
-      size_values: axes.size_value ? [item.size_value] : undefined,
+      size_values: [item.size_value],
       point_label: show_model_labels
         ? [
             {
@@ -451,23 +455,20 @@
       </label>
     {/snippet}
 
-    {#snippet tooltip({ x_formatted, y_formatted, metadata })}
+    {#snippet tooltip({ color_value, x_formatted, y_formatted, metadata })}
       {#if metadata}
-        {@const point = plot_data.find(
-          (item) => item.metadata.model_name === metadata.model_name,
-        )}
         <strong>{metadata.model_name}</strong><br />
         {@html axes.x?.label}: {x_formatted}
         {#if axes.x?.key === `benchmark_added` && metadata.days_ago}
           <small>({metadata.days_ago})</small>{/if}<br />
         {@html axes.y?.label}: {y_formatted}<br />
-        {#if ![`model_params`, `benchmark_added`].includes(axes.color_value?.key ?? ``) && point?.color_value !== undefined}
+        {#if color_value != null && ![`model_params`, `benchmark_added`].includes(axes.color_value?.key ?? ``)}
           {@html axes.color_value?.label}:
-          {format_num(point.color_value as number)}<br />
+          {format_num(color_value)}<br />
         {/if}
-        {#if axes.size_value && point?.size_value !== undefined}
+        {#if is_finite_num(metadata.size_value)}
           {@html axes.size_value.label}:
-          {format_num(point.size_value)}<br />
+          {format_num(metadata.size_value)}<br />
         {/if}
       {/if}
     {/snippet}
@@ -499,22 +500,17 @@
   div.log-controls label {
     gap: 0.25em;
   }
-  div.log-controls input {
-    margin: 0;
-  }
   div.controls-row label {
     font-weight: 500;
     font-size: 14px;
   }
   button.models-toggle {
     padding: 2px 4px;
-    border: 0;
     background: none;
     color: inherit;
     font: inherit;
     font-size: 14px;
     white-space: nowrap;
-    cursor: pointer;
   }
   /* align ScatterPlot's expanded legend with the controls row */
   div.bleed-1400 :global(.scatter > .legend) {
@@ -542,8 +538,8 @@
     top: 0;
     z-index: 1;
     padding: 0;
-    background: var(--dropdown-bg, white);
-    border-bottom: 1px solid var(--dropdown-border, #ccc);
+    background: var(--dropdown-bg);
+    border-bottom: 1px solid var(--dropdown-border);
   }
   :global(.portal-select-filter input) {
     display: block;
@@ -551,10 +547,9 @@
     width: 100%;
     height: 100%;
     padding: var(--dropdown-padding-v, 3px) var(--dropdown-padding-h, 10px);
-    border: 0;
     border-radius: 0;
-    background: var(--dropdown-bg, white);
-    color: var(--dropdown-color, black);
+    background: var(--dropdown-bg);
+    color: var(--dropdown-color);
     font: inherit;
   }
 </style>

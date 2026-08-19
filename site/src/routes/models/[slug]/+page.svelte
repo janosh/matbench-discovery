@@ -32,7 +32,8 @@
     PyPI,
     Versions,
   } from 'svelte-widgets/icons'
-  import { format_num, format_relative_time, HeatmapTable, ColorBar } from 'matterviz'
+  import { format_relative_time } from '$lib/labels'
+  import { format_num, HeatmapTable, ColorBar } from 'matterviz'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { click_outside, tooltip } from 'svelte-widgets/attachments'
@@ -438,7 +439,17 @@
           <li>
             {name}
             {#if detail}
-              <a {href} target="_blank" rel="noopener noreferrer">{detail}</a>
+              <a
+                class="dependency-detail"
+                {href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={detail}
+                title={detail}
+              >
+                <span aria-hidden="true">{detail.slice(0, -10)}</span>
+                <span aria-hidden="true">{detail.slice(-10)}</span>
+              </a>
             {/if}
           </li>
         {/each}
@@ -508,10 +519,22 @@
   }
   /* version numbers as light code, less prominent than the package name */
   section.deps ul li a {
+    display: flex;
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
     font-weight: normal;
     font-family: var(--font-mono, monospace);
     font-size: 0.9em;
     opacity: 0.85;
+  }
+  .dependency-detail span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dependency-detail span:last-child {
+    flex: none;
   }
   :is(.meta-info, .links) {
     display: flex;
@@ -530,7 +553,6 @@
   }
   .links details {
     position: relative;
-    cursor: pointer;
   }
   .links .dropdown {
     position: absolute;

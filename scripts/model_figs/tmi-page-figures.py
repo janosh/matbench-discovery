@@ -49,8 +49,8 @@ _predictions, df_each_err = preds.load_prediction_errors(
 n_structs = 1000
 hist_largest_models: list[dict[str, object]] = []
 for model in models_to_plot:
-    large_errors = df_each_err[model.label].abs().nlargest(n_structs)
-    small_errors = df_each_err[model.label].abs().nsmallest(n_structs)
+    large_errors = df_each_err[model.key].abs().nlargest(n_structs)
+    small_errors = df_each_err[model.key].abs().nsmallest(n_structs)
     hist_entry = dict(model_identities[model.key])
     for label, errors in (("min", small_errors), ("max", large_errors)):
         fp_diff_values = df_wbm.loc[errors.index][fp_diff_col].to_numpy()
@@ -78,7 +78,7 @@ figs.write_site_payload(
 n_structs = 100
 each_errors_models: list[dict[str, object]] = []
 for model in models_to_plot:
-    errors = df_each_err[model.label].abs().nlargest(n_structs)
+    errors = df_each_err[model.key].abs().nlargest(n_structs)
     model_mae = errors.mean()
     each_errors_models.append(
         model_identities[model.key]
@@ -109,7 +109,7 @@ df_largest_fp_diff = df_wbm.loc[
 
 fp_diff_models: list[dict[str, object]] = []
 for model in models_to_plot:
-    abs_errors = df_each_err[model.label].loc[df_largest_fp_diff.index].abs()
+    abs_errors = df_each_err[model.key].loc[df_largest_fp_diff.index].abs()
     model_mae = abs_errors.mean()
     fp_diff_models.append(
         model_identities[model.key]

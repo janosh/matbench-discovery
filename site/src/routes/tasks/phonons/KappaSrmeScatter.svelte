@@ -3,10 +3,7 @@
   import type kappa_data from '$figs/kappa-103-analysis.jsonl'
   import { format_num, sanitize_compact_formula } from 'matterviz'
   import { ScatterPlot, type DataSeries } from 'matterviz/plot'
-  import {
-    CRYSTAL_SYSTEM_COLORS,
-    spacegroup_num_to_crystal_sys,
-  } from 'matterviz/symmetry'
+  import { CRYSTAL_SYSTEM_COLORS, spacegroup_to_crystal_sys } from 'matterviz/symmetry'
   import type { CrystalSystem } from 'matterviz/symmetry'
   import type { HTMLAttributes } from 'svelte/elements'
 
@@ -48,7 +45,7 @@
     const by_system = new Map<CrystalSystem, SrmePoint[]>()
     for (const [idx, mat_id] of base.material_ids.entries()) {
       const [kappa_dft, srme] = [base.kappa_dft[idx], entry.srme[idx]]
-      const system = spacegroup_num_to_crystal_sys(base.spg_nums[idx])
+      const system = spacegroup_to_crystal_sys(base.spg_nums[idx])
       if (kappa_dft === null || srme === null || !system) continue
       const flagged_failures = failure_labels
         .flatMap(([key, label]) => (entry[key][idx] === true ? [label] : []))

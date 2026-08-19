@@ -1,5 +1,6 @@
 """Tests for the model submission-ingestion checklist without running evaluations."""
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -188,6 +189,7 @@ def test_malformed_file_ref_fails_checklist(monkeypatch: pytest.MonkeyPatch) -> 
         ["--payloads-only"],
         ["mace-mpa-0", "--archive"],
         ["mace-mpa-0", "--archive-only"],
+        ["mace-mpa-0", "--publish-parity"],
         ["mace-mpa-0", "--full-roster"],
     ],
 )
@@ -200,8 +202,8 @@ def test_cli_rejects_invalid_args(
         ingest.main(argv)
 
 
-def test_run_payload_refresh_modes(run_cmd_calls: list[tuple[str, ...]]) -> None:
-    """Targeted and complete refreshes pass explicit modes and emit reports."""
+def test_run_payload_refresh_scopes(run_cmd_calls: list[tuple[str, ...]]) -> None:
+    """Targeted and complete refreshes pass explicit scopes and emit reports."""
     models = (Model.mace_mpa_0, Model.mace_mp_0)
     assert ingest.main([*(model.name for model in models), "--payloads-only"]) == 0
     *script_calls, report_call, test_call = run_cmd_calls
@@ -225,19 +227,11 @@ def test_run_payload_refresh_modes(run_cmd_calls: list[tuple[str, ...]]) -> None
     assert "summarize_payload_changes.py" in " ".join(report_call)
     assert "pytest" in test_call
     assert test_call[2:4] == ("--with-editable", ".")
-    for mode_args in (
-        ("--full-roster",),
-        ("--migrate-provenance",),
-        ("--migrate-model-key", "old-key=new-key"),
-    ):
-        run_cmd_calls.clear()
-        ingest.run_payload_refresh(ingest.Checklist(), mode_args=mode_args)
-        *payload_calls, report_call, test_call = run_cmd_calls
-        assert len(payload_calls) == len(ingest.PAYLOAD_SCRIPTS)
-        assert all("--models" not in command for command in payload_calls)
-        assert all(command[-len(mode_args) :] == mode_args for command in payload_calls)
-        assert "summarize_payload_changes.py" in " ".join(report_call)
-        assert "pytest" in test_call
+    run_cmd_calls.clear()
+    ingest.run_payload_refresh(ingest.Checklist())
+    *payload_calls, _report_call, _test_call = run_cmd_calls
+    assert len(payload_calls) == len(ingest.PAYLOAD_SCRIPTS)
+    assert all(command[-1] == "--full-roster" for command in payload_calls)
 
 
 def test_run_model_steps_installs_project_extras(
@@ -252,6 +246,58 @@ def test_run_model_steps_installs_project_extras(
     expected = uv_cmd(".[phonons]", "scripts/evals/kappa.py", "--models", "mace_mpa_0")
     assert run_cmd_calls == [expected]
     assert checks.n_failed == 0
+
+
+def test_publish_parity_assets_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """Parity publication uploads only absent immutable assets, once per type."""
+    asset_bytes = b"parity asset"
+    entry = {
+        "asset": "asset.json.gz",
+        "sha256": hashlib.sha256(asset_bytes).hexdigest(),
+    }
+    manifest = {"base": entry, "model_assets": {}}
+    asset_paths = []
+    for parity_type in ("energy", "kappa"):
+        manifest_path = (
+            tmp_path / f"site/src/lib/parity/{parity_type}-parity-manifest.json"
+        )
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        asset_path = (
+            tmp_path / f"site/static/{parity_type}-parity/assets/{entry['asset']}"
+        )
+        asset_path.parent.mkdir(parents=True, exist_ok=True)
+        asset_path.write_bytes(asset_bytes)
+        asset_paths.append(asset_path)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(ingest, "release_asset_digests", dict)
+    assert ingest.main(["--publish-parity"]) == 0
+    assert len(run_cmd_calls) == 2
+    assert all(
+        command[:4] == ("gh", "release", "upload", "v1.0.0")
+        for command in run_cmd_calls
+    )
+    assert all("--clobber" not in command for command in run_cmd_calls)
+
+    for asset_path in asset_paths:
+        asset_path.write_bytes(b"corrupt")
+    run_cmd_calls.clear()
+    assert ingest.main(["--publish-parity"]) == 1
+    assert not run_cmd_calls
+
+    published = {entry["asset"]: f"sha256:{entry['sha256']}"}
+    monkeypatch.setattr(ingest, "release_asset_digests", lambda: published)
+    run_cmd_calls.clear()
+    assert ingest.main(["--publish-parity"]) == 0
+    assert not run_cmd_calls
+
+    published[entry["asset"]] = "sha256:conflict"
+    assert ingest.main(["--publish-parity"]) == 1
+    assert not run_cmd_calls
 
 
 def uv_cmd(project_req: str, *args: str) -> tuple[str, ...]:
@@ -291,7 +337,7 @@ def test_uv_run_args_rejects_empty_extra(args: str) -> None:
 
 
 def test_classify_yaml_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Classification separates targeted, lifecycle, moves, and key migrations."""
+    """Classification targets metadata changes and rejects roster/key changes."""
     model_key = Model.mace_mpa_0.key
     active: dict[str, object] = {"model_key": model_key, "lifecycle": "active"}
     monkeypatch.setattr(ingest, "ROOT", str(tmp_path))
@@ -310,7 +356,8 @@ def test_classify_yaml_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         return ingest.classify_yaml_changes(list(new_files), removed or [])
 
     path = "models/edit/model.yml"
-    assert classify({path: active | {"value": 2}}, {path: active | {"value": 1}}) == {
+    old_geo_opt = {"metrics": {"geo_opt": {"pred_file": "old.json.gz"}}}
+    assert classify({path: active}, {path: active | old_geo_opt}) == {
         "full_roster": False,
         "targeted_models": [Model.mace_mpa_0.name],
     }
@@ -328,24 +375,13 @@ def test_classify_yaml_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     )
     with pytest.raises(ValueError, match="cannot change model_key"):
         classify({path: active}, {path: active | {"model_key": "old-key"}})
-    with pytest.raises(ValueError, match="cannot perform a model-key alias migration"):
-        classify(
-            {new_path: active | {"model_key_aliases": ["old-key"]}},
-            {old_path: active | {"model_key": "old-key"}},
-            [old_path],
-        )
-    with pytest.raises(TypeError, match=r"model_key_aliases.*must be a list"):
-        classify(
-            {new_path: active | {"model_key_aliases": "old-key"}},
-            {old_path: active | {"model_key": "old-key"}},
-            [old_path],
-        )
 
 
 @pytest.mark.parametrize(
     ("stderr", "raises"),
     [
         ("fatal: path 'new.yml' does not exist in 'HEAD'", False),
+        ("fatal: path 'new.yml' exists on disk, but not in 'HEAD'", False),
         ("fatal: bad object HEAD", True),
     ],
 )

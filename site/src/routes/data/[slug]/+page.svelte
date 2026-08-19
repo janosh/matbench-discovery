@@ -1,6 +1,7 @@
 <script lang="ts">
   import { arr_to_str, DATASETS, format_date } from '$lib'
-  import { format_num, format_relative_time } from 'matterviz'
+  import { format_relative_time } from '$lib/labels'
+  import { format_num } from 'matterviz'
   import { Icon } from 'svelte-widgets'
   import {
     Calendar,

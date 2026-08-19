@@ -150,7 +150,16 @@
         {#each env_packages as { name, detail, href } (name + detail)}
           <li style="font-size: smaller">
             {name}{#if detail}:
-              <a {href} {...target}>{detail}</a>{/if}
+              <a
+                class="dependency-detail"
+                {href}
+                {...target}
+                aria-label={detail}
+                title={detail}
+              >
+                <span aria-hidden="true">{detail.slice(0, -10)}</span>
+                <span aria-hidden="true">{detail.slice(-10)}</span>
+              </a>{/if}
           </li>
         {/each}
       </ul>
@@ -199,9 +208,6 @@
     padding: 0;
     font: inherit;
   }
-  ul {
-    list-style: disc;
-  }
   nav {
     font-weight: 250;
     display: flex;
@@ -225,7 +231,6 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 15pt;
-    justify-content: space-between;
   }
   small {
     font-weight: 100;
@@ -253,6 +258,21 @@
   }
   section.metrics > ul > li.active > label {
     font-weight: bold;
+  }
+  .dependency-detail {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    vertical-align: bottom;
+    white-space: nowrap;
+  }
+  .dependency-detail span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dependency-detail span:last-child {
+    flex: none;
   }
   /* prevent long from increasing ModelCard container width */
   :is(section, div, nav) {

@@ -1,6 +1,6 @@
 import { fsum, variance } from 'd3-array'
 import type { AnyStructure } from 'matterviz/structure'
-import { parse_any_structure } from 'matterviz/structure/parse'
+import { parse_structure_file } from 'matterviz/structure/parse'
 import {
   assert_array_length,
   load_json_asset,
@@ -245,9 +245,12 @@ export function structure_shard_idx(
 }
 
 export function structure_bundle_for_shard(shard_idx: number) {
-  const bundle = energy_parity_manifest.structure_bundles.find(
-    ({ start_shard, end_shard }) => start_shard <= shard_idx && shard_idx <= end_shard,
-  )
+  const { row_count, structure_shard_size, structure_bundle_size, structure_bundles } =
+    energy_parity_manifest
+  const bundle =
+    shard_idx < Math.ceil(row_count / structure_shard_size)
+      ? structure_bundles[Math.floor(shard_idx / structure_bundle_size)]
+      : undefined
   if (!bundle) throw new Error(`No structure bundle for shard ${shard_idx}`)
   return bundle
 }
@@ -265,7 +268,7 @@ export async function load_wbm_structure(
   if (!payload) throw new Error(`No structure found for ${material_id}`)
   if (typeof payload !== `string`) return payload
 
-  const structure = parse_any_structure(payload, `${material_id}.extxyz`)
+  const structure = parse_structure_file(payload, `${material_id}.extxyz`)
   if (!structure) throw new Error(`Could not parse structure for ${material_id}`)
   return structure
 }

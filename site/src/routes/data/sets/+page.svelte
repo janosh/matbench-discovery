@@ -113,7 +113,6 @@
     data={table_data}
     columns={Object.values(DATASET_METADATA_COLS)}
     initial_sort={{ column: `Created`, direction: `desc` }}
-    fixed_header={true}
     sort_hint=""
   />
 </section>

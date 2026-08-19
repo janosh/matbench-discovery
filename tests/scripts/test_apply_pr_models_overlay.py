@@ -116,5 +116,6 @@ def test_ingest_guard_exempts_only_files_the_overlay_never_copies() -> None:
         "matbench_discovery/enums.py",
         "matbench_discovery/payload_numerics.py",
         "matbench_discovery/preds/__init__.py",
+        "site/scripts/asset_helpers.py",
     ):
         assert re.fullmatch(generator_pattern, path)

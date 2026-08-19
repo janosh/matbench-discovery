@@ -21,7 +21,6 @@ export interface ParityBase {
 // fields shared by every per-model parity asset
 export interface ParityModel {
   model_key: string
-  model_label: string
 }
 // fields shared by every parity scatter point. Type alias (not interface) so
 // point types satisfy ScatterPlot's Record<string, unknown> metadata constraint
@@ -102,7 +101,7 @@ export function load_json_asset<T>(url: string): Promise<T> {
 }
 
 // Keys of TModel whose values are arrays, e.g. the per-row prediction columns. Excludes
-// scalar fields like model_key/model_label so only row-aligned fields can be validated.
+// scalar fields like model_key so only row-aligned fields can be validated.
 type ArrayKeys<TModel> = {
   [K in keyof TModel]: TModel[K] extends readonly unknown[] ? K : never
 }[keyof TModel] &

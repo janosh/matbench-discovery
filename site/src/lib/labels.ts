@@ -23,6 +23,55 @@ export const format_power_ten = (text: string): string =>
     )
     .replace(`1×10`, `10`)
 
+// Vendored from matterviz <0.6 (src/lib/time.ts), which dropped format_relative_time.
+// Parse and validate date, returns null if invalid.
+// Strings without timezone are treated as UTC (append Z if missing).
+const parse_date = (date?: Date | string): Date | null => {
+  if (!date) return null
+  if (typeof date === `string`) {
+    // If string lacks timezone indicator, treat as UTC by appending Z
+    // Matches ISO format without timezone: 2024-01-15T14:30:00 or 2024-01-15 14:30:00
+    const has_tz = /Z$|[+-]\d{2}:\d{2}$|[+-]\d{4}$/.test(date)
+    const normalized = has_tz ? date : `${date.replace(` `, `T`)}Z`
+    const parsed = new Date(normalized)
+    return isNaN(parsed.getTime()) ? null : parsed
+  }
+  return isNaN(date.getTime()) ? null : date
+}
+
+// Format date as UTC string: "2024-01-15 14:30:00 UTC".
+const format_utc_time = (date?: Date | string): string => {
+  if (!date) return `N/A`
+  const timestamp = typeof date === `string` ? new Date(date) : date
+  if (isNaN(timestamp.getTime())) return `N/A`
+  return timestamp
+    .toISOString()
+    .replace(`T`, ` `)
+    .replace(/\.\d+Z$/, ` UTC`)
+}
+
+// Format date as relative time: "5 hours ago", "2 days ago".
+// Dates treated as UTC to avoid timezone issues. Future dates return absolute UTC time.
+export const format_relative_time = (
+  date?: Date | string,
+  reference_date?: Date | string,
+): string => {
+  const timestamp = parse_date(date)
+  const now = reference_date ? parse_date(reference_date) : new Date()
+  if (!timestamp || !now) return `N/A`
+
+  const diff_ms = now.getTime() - timestamp.getTime()
+  if (diff_ms < 0) return format_utc_time(timestamp)
+
+  const diff_mins = Math.max(1, Math.floor(diff_ms / (1000 * 60)))
+  const diff_hours = Math.floor(diff_ms / (1000 * 60 * 60))
+  const diff_days = Math.floor(diff_ms / (1000 * 60 * 60 * 24))
+
+  if (diff_mins < 60) return `${diff_mins} minute${diff_mins === 1 ? `` : `s`} ago`
+  if (diff_hours < 24) return `${diff_hours} hour${diff_hours === 1 ? `` : `s`} ago`
+  return `${diff_days} day${diff_days === 1 ? `` : `s`} ago`
+}
+
 export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
   Accuracy: {
     key: `Accuracy`,

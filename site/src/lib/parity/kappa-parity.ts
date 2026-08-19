@@ -1,5 +1,5 @@
 import type { AnyStructure } from 'matterviz/structure'
-import { parse_any_structure } from 'matterviz/structure/parse'
+import { parse_structure_file } from 'matterviz/structure/parse'
 import {
   assert_array_length,
   load_json_asset,
@@ -24,10 +24,8 @@ export interface PhononDos extends RawDos {
 
 export interface KappaParityBase extends ParityBase {
   kappa_dft: (number | null)[]
-  // optional metadata for point styling (size by n_sites, color by crystal system);
-  // older assets may lack these, so the client falls back to default size/color
-  n_sites?: (number | null)[]
-  spacegroups?: (number | null)[]
+  n_sites: (number | null)[]
+  spacegroups: (number | null)[]
   structures: Record<string, AnyStructure | string | undefined>
   dft_dos: Record<string, RawDos | undefined>
 }
@@ -68,7 +66,13 @@ export async function load_kappa_parity_base(): Promise<KappaParityBase> {
     kappa_parity_asset_url(kappa_parity_manifest.base.asset),
   )
   const { row_count } = kappa_parity_manifest
-  for (const key of [`material_ids`, `formulas`, `kappa_dft`] as const) {
+  for (const key of [
+    `material_ids`,
+    `formulas`,
+    `kappa_dft`,
+    `n_sites`,
+    `spacegroups`,
+  ] as const) {
     assert_array_length(`kappa parity ${key}`, base[key], row_count)
   }
   return base
@@ -99,8 +103,8 @@ export function get_kappa_parity_point(
     kappa_dft: x,
     kappa_ml: y,
     sre: Math.abs((2 * (y - x)) / (x + y)),
-    n_sites: base.n_sites?.[row_idx] ?? null,
-    spacegroup: base.spacegroups?.[row_idx] ?? null,
+    n_sites: base.n_sites[row_idx] ?? null,
+    spacegroup: base.spacegroups[row_idx] ?? null,
   }
 }
 
@@ -133,7 +137,7 @@ export function kappa_structure(
   // runs inside a $derived in the component, so degrade gracefully on parse
   // failure (returning null hides the structure) instead of crashing the plot
   try {
-    return parse_any_structure(payload, `${material_id}.extxyz`)
+    return parse_structure_file(payload, `${material_id}.extxyz`)
   } catch (error) {
     console.warn(`Failed to parse structure for ${material_id}:`, error)
     return null

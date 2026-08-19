@@ -25,7 +25,7 @@ hist_range = (-0.45, 0.45)
 clf_models: list[dict[str, object]] = []
 for model in models_to_plot:
     each_pred = (
-        df_preds[MbdKey.each_true] + df_preds[model.label] - df_preds[MbdKey.e_form_dft]
+        df_preds[MbdKey.each_true] + df_preds[model.key] - df_preds[MbdKey.e_form_dft]
     )
     true_pos, false_neg, false_pos, true_neg = classify_stable(
         df_preds[MbdKey.each_true], each_pred

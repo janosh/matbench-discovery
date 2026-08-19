@@ -154,6 +154,8 @@
         : `font-size: 7pt; z-index: 10; padding: 1em;`,
     }}
     titleProps={{ style: `margin: 3pt` }}
+    --toc-title-font-weight="600"
+    --toc-li-color="var(--text-color)"
     --toc-active-color="var(--link-color)"
     --toc-padding="1em 1em 0 1.5em"
     --toc-mobile-width="min(80vw, 30em)"
@@ -220,13 +222,15 @@
 </Footer>
 
 <style>
+  :global(aside.toc > nav > ol > li > a) {
+    color: inherit;
+  }
   button.find-page {
     display: inline-grid;
     place-items: center;
     width: 1.8em;
     height: 1.8em;
     padding: 0;
-    border: 0;
     border-radius: 50%;
     background: transparent;
   }

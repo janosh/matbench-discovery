@@ -66,24 +66,20 @@
 
 <h1>Crystal Stability Prediction Metrics</h1>
 
-<div class="task-intro">
-  <div>
-    <p>
-      This task measures how effectively a model can triage hypothetical WBM crystals for
-      DFT validation. Models must identify structures that lie on or below a fixed
-      DFT-computed Materials Project convex hull while minimizing costly false positives.
-    </p>
-    <p>
-      Switch between the full test set and unique prototypes to compare overall accuracy
-      against performance on the deduplicated, more out-of-distribution subset. See
-      <a href="/tasks/discovery/tmi">Discovery TMI</a> for calibration, element-level, and error-distribution
-      diagnostics.
-    </p>
-  </div>
-</div>
+<p>
+  This task measures how effectively a model can triage hypothetical WBM crystals for DFT
+  validation. Models must identify structures that lie on or below a fixed DFT-computed
+  Materials Project convex hull while minimizing costly false positives.
+</p>
+<p>
+  Switch between the full test set and unique prototypes to compare overall accuracy
+  against performance on the deduplicated, more out-of-distribution subset. See
+  <a href="/tasks/discovery/tmi">Discovery TMI</a> for calibration, element-level, and error-distribution
+  diagnostics.
+</p>
 
-<details class="methodology">
-  <summary>Methodology: fixed DFT convex hull</summary>
+<details style="margin-block: 1em">
+  <summary style="font-weight: 600">Methodology: fixed DFT convex hull</summary>
   <HullConstructionNote />
 </details>
 
@@ -125,13 +121,3 @@ already the y-axis here, so it wastes the color channel) -->
   label_path_overrides={scatter_path_overrides}
   style="height: 800px"
 />
-
-<style>
-  .methodology {
-    margin-block: 1em;
-  }
-  .methodology summary {
-    cursor: pointer;
-    font-weight: 600;
-  }
-</style>

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { MODELS } from '$lib'
   import { type InternalPoint, ScatterPlot } from 'matterviz'
   import { element_data, type ChemicalElement } from 'matterviz/element'
   import { tooltip as add_tooltip } from 'svelte-widgets/attachments'
@@ -15,6 +14,7 @@
     formula: string
     curves: {
       model_key: string
+      label: string
       distances: number[]
       energies: number[]
       color: string
@@ -23,18 +23,6 @@
     tooltip_point?: InternalPoint | null
     hovered?: boolean
   } = $props()
-
-  function get_model_label(model_key: string): string {
-    const model =
-      MODELS.find(
-        (model_entry) =>
-          model_entry.model_name === model_key || model_entry.dirname === model_key,
-      ) ??
-      MODELS.toSorted(
-        (model_a, model_b) => model_b.dirname.length - model_a.dirname.length,
-      ).find((model_entry) => model_key.startsWith(model_entry.dirname))
-    return model ? (model.model_name ?? model.dirname) : model_key
-  }
 
   const x_range: [number, number] = [0.2, 6]
   const y_range: [number, number] = [-8, 20]
@@ -54,7 +42,6 @@
 
   let series = $derived(
     curves.map((curve) => {
-      const model_label = get_model_label(curve.model_key)
       // Keep only points within the x range, pairing each distance with its energy
       const points = curve.distances
         .map((distance, idx) => ({ distance, energy: curve.energies[idx] }))
@@ -63,14 +50,10 @@
 
       return {
         id: curve.model_key,
-        label: model_label,
+        label: curve.label,
         x: points.map((point) => point.distance),
         y: points.map((point) => point.energy - ref_energy),
         markers: `line+points` as const,
-        metadata: {
-          model_key: curve.model_key,
-          model_label,
-        },
         point_style: { fill: curve.color, radius: 1.5, stroke_width: 0 },
         line_style: {
           stroke: curve.color,
@@ -105,8 +88,8 @@
     point_tween={no_tween}
     line_tween={no_tween}
   >
-    {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-      <strong>{metadata?.model_label ?? ``}</strong><br />
+    {#snippet tooltip({ label, x_formatted, y_formatted })}
+      <strong>{label ?? ``}</strong><br />
       Distance = {x_formatted} Å<br />
       Energy = {y_formatted} eV
     {/snippet}

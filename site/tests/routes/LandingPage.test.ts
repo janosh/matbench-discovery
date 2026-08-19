@@ -2,7 +2,13 @@ import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
 import Page from '$routes/+page.svelte'
 import { flushSync, tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { doc_query, mount, mount_with_url, sorted_header } from '../index'
+import {
+  doc_query,
+  mount,
+  mount_with_url,
+  POPOVER_OPEN_ATTR,
+  sorted_header,
+} from '../index'
 
 const header_text = () =>
   [...document.querySelectorAll(`thead th`)].map((header) => header.textContent).join(` `)
@@ -83,12 +89,23 @@ describe(`Landing Page`, () => {
     const button = preset_button(label)
     flushSync()
     button.dispatchEvent(new PointerEvent(`pointerover`))
+    let tooltip: HTMLElement | undefined
     await vi.waitFor(() => {
       const tooltip_id = button.getAttribute(`aria-describedby`)
       expect(tooltip_id).not.toBeNull()
-      expect(document.querySelector(`[id="${tooltip_id}"]`)?.textContent).toContain(
-        expanded_label,
-      )
+      tooltip = doc_query(`[id="${tooltip_id}"]`)
+      expect(tooltip.textContent).toContain(expanded_label)
+    })
+    // svelte-widgets 1.6 shows the tooltip as a top-layer popover (polyfilled in tests/index.ts)
+    expect(tooltip?.hasAttribute(`popover`)).toBe(true)
+    expect(tooltip?.hasAttribute(POPOVER_OPEN_ATTR)).toBe(true)
+    expect(tooltip?.hidden).toBe(false)
+
+    button.dispatchEvent(new PointerEvent(`pointerout`))
+    await vi.waitFor(() => {
+      expect(button.hasAttribute(`aria-describedby`)).toBe(false)
+      expect(tooltip?.hasAttribute(POPOVER_OPEN_ATTR)).toBe(false)
+      expect(tooltip?.hidden).toBe(true)
     })
   })
 

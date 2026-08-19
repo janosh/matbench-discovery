@@ -23,7 +23,6 @@
   .org-logo {
     filter: grayscale(100%) brightness(var(--logo-brightness, 1));
     height: 1em;
-    width: auto;
     vertical-align: middle;
     margin: 0;
   }

@@ -170,6 +170,7 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 // (calc_cell_color in matterviz/table) — no local color logic needed
 
 type MetricsRowData = Pick<ModelData, `org_logos` | `authors`> & {
+  model_key: string
   model_name: string
   Model: string
   CPS: ModelData[`CPS`]
@@ -280,6 +281,7 @@ export function assemble_row_data(
     }
 
     return {
+      model_key: model.model_key,
       model_name: model.model_name,
       Model: `<a title="Version: ${model.model_version ?? `unknown`}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
       CPS: model.CPS,

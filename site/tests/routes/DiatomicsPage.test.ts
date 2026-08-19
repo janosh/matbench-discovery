@@ -1,6 +1,7 @@
 import type { ModelData } from '$lib/types'
 import DiatomicsPage from '$routes/tasks/diatomics/+page.svelte'
 import { tick } from 'svelte'
+import { PLOT_COLORS } from 'matterviz'
 import { describe, expect, it } from 'vitest'
 import { mount_with_url, sorted_header } from '../index'
 
@@ -12,7 +13,7 @@ const model_data = [
 const curve = { distances: [1], 'homo-nuclear': { 'H-H': { energies: [0] } } }
 const page_data = {
   diatomic_models: model_data,
-  diatomic_curves: { PBE: curve, r2SCAN: curve, 'Model A': curve, 'Model B': curve },
+  diatomic_curves: { PBE: curve, r2SCAN: curve, 'model-a': curve, 'model-b': curve },
   errors: {},
   reference_names: [`PBE`, `r2SCAN`],
 }
@@ -74,7 +75,8 @@ describe(`Diatomics Page URL state`, () => {
     expect(selected?.textContent).not.toContain(`PBE (DFT)`)
     expect(selected?.textContent).not.toContain(`r2SCAN (DFT)`)
     const selected_item = selected?.querySelector<HTMLLIElement>(`li`)
-    expect(selected_item?.style.background).toContain(`#68d391`)
+    // Model B is the second model, so it takes the second palette entry
+    expect(selected_item?.style.background).toContain(PLOT_COLORS[1])
     expect(selected_item?.style.color).not.toBe(``)
   })
 

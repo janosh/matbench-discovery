@@ -230,12 +230,3 @@
   inset shows that 82% have less than 50 sites and 97% of structures in MPtrj have less
   than 100 atoms.
 </p>
-
-<style>
-  label {
-    display: flex;
-    gap: 1ex;
-    place-content: center;
-    align-items: start;
-  }
-</style>

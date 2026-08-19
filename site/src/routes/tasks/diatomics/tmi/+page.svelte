@@ -189,9 +189,6 @@
       &.visible {
         opacity: 1;
       }
-      &:hover {
-        background: var(--btn-bg-hover);
-      }
     }
   }
   .swatch {
