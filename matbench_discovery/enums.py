@@ -387,11 +387,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return self.metadata["model_key"]
 
     @property
-    def key_aliases(self) -> tuple[str, ...]:
-        """Historical URL slugs that resolve to this model's canonical key."""
-        return tuple(self.metadata.get("model_key_aliases", ()))
-
-    @property
     def family(self) -> str:
         """Model family directory derived from the YAML parent path."""
         return os.path.basename(os.path.dirname(self.rel_path))
@@ -466,17 +461,17 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     @classmethod
     def from_ref(cls, ref: str | Self) -> Self:
-        """Resolve an enum name, normalized value, canonical key, or key alias."""
+        """Resolve an enum name, normalized value, or canonical model key."""
         if isinstance(ref, cls):
             return ref
         if member := cls.__members__.get(ref):
             return member
         for model in cls:
-            if ref == model.key or ref in model.key_aliases:
+            if ref == model.key:
                 return model
         if member := cls._missing_(ref):
             return member
-        raise ValueError(f"{ref!r} not found in Model enum names, keys, or aliases")
+        raise ValueError(f"{ref!r} not found in Model enum names or keys")
 
     @classmethod
     def _missing_(cls, value: object) -> Self | None:

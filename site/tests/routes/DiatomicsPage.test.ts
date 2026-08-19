@@ -12,7 +12,7 @@ const model_data = [
 const curve = { distances: [1], 'homo-nuclear': { 'H-H': { energies: [0] } } }
 const page_data = {
   diatomic_models: model_data,
-  diatomic_curves: { PBE: curve, r2SCAN: curve, 'Model A': curve, 'Model B': curve },
+  diatomic_curves: { PBE: curve, r2SCAN: curve, 'model-a': curve, 'model-b': curve },
   errors: {},
   reference_names: [`PBE`, `r2SCAN`],
 }

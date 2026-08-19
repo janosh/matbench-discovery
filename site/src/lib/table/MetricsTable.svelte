@@ -29,7 +29,7 @@
   import { click_outside, tooltip } from 'svelte-widgets/attachments'
   import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
-  import { SvelteSet } from 'svelte/reactivity'
+  import { SvelteMap, SvelteSet } from 'svelte/reactivity'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '../labels'
   import { assemble_row_data } from '../metrics'
   import { heatmap_class } from '../table-export'
@@ -61,7 +61,7 @@
     col_filter?: (col: Label) => boolean
     filters?: UrlTableFilters
     show_selected_only?: boolean
-    selected_models?: Set<string>
+    selected_models?: SvelteSet<string>
     column_order?: string[]
     sort?: { column: string; dir: SortDir }
   } = $props()
@@ -86,29 +86,26 @@
   // re-sorts happen as delete+recreate with no row-movement animation. Cached rows
   // must be $state proxies: in-place updates on plain objects wouldn't trigger
   // fine-grained re-renders of changed cells (same object identity = no signal).
-  const row_cache = new Map<string, MetricsRow>()
+  const row_cache = new SvelteMap<string, MetricsRow>()
   function build_rows(): MetricsRow[] {
-    // tracked snapshot of selections: reads inside the untrack block below wouldn't
-    // subscribe, but selection changes must re-run this sync
-    const selected_names = new Set(selected_models)
     const fresh_rows = assemble_row_data(
       discovery_set,
       model_filter,
       filters.matches,
-    ).filter((row) => !show_selected_only || selected_names.has(row.model_name))
+    ).filter((row) => selected_models.has(row.model_key) || !show_selected_only)
     // cache access is untracked so callers don't subscribe to the very row signals
     // this merge writes (which would re-trigger them and double-render the table)
     return untrack(() =>
       fresh_rows.map((row) => {
         // Only apply selected styles when not filtering to show only selected models
         row.class =
-          !show_selected_only && selected_names.has(row.model_name)
+          !show_selected_only && selected_models.has(row.model_key)
             ? `highlight`
             : undefined
-        const cached = row_cache.get(row.model_name)
+        const cached = row_cache.get(row.model_key)
         if (!cached) {
           const proxied = $state(row) // deep proxy for fine-grained cell updates
-          row_cache.set(row.model_name, proxied)
+          row_cache.set(row.model_key, proxied)
           return proxied
         }
         // blank keys absent from the fresh row (e.g. after a discovery-set switch);
@@ -184,11 +181,9 @@
   }
   const close_dropdown = () => (pred_files_dropdown = null)
 
-  function toggle_model_selection(row_model_name: string) {
-    const new_selected = new SvelteSet(selected_models)
-    if (new_selected.has(row_model_name)) new_selected.delete(row_model_name)
-    else new_selected.add(row_model_name)
-    selected_models = new_selected
+  function toggle_model_selection(model_key: string) {
+    if (selected_models.has(model_key)) selected_models.delete(model_key)
+    else selected_models.add(model_key)
   }
 
   const header_tooltip = (content: string | undefined) => (node: Element) => {
@@ -228,7 +223,7 @@
     {/if}
   {/each}
   <button
-    class="pred-files-btn"
+    style="background: none; padding: 0"
     aria-label="Download model prediction files"
     onclick={(event) => show_dropdown(event, links)}
   >
@@ -237,7 +232,11 @@
 {/snippet}
 
 {#snippet header_cell({ col }: { col: HeaderLabel })}
-  <span class="header-label" {@attach header_tooltip(col.tooltip_description)}>
+  <span
+    class="header-label"
+    style="display: inline-block"
+    {@attach header_tooltip(col.tooltip_description)}
+  >
     {@html col.label}
   </span>
 {/snippet}
@@ -257,9 +256,9 @@
   {heatmap_class}
   {header_cell}
   onrowdblclick={(event, row) => {
-    if (typeof row.model_name === `string`) {
+    if (typeof row.model_key === `string`) {
       event.preventDefault()
-      toggle_model_selection(row.model_name)
+      toggle_model_selection(row.model_key)
     }
   }}
   {...rest}
@@ -292,13 +291,6 @@
 {/if}
 
 <style>
-  .header-label {
-    display: inline-block;
-  }
-  .pred-files-btn {
-    background: none;
-    padding: 0;
-  }
   .pred-files-dropdown {
     transform: translateX(-100%);
     margin-left: 20px;

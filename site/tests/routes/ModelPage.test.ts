@@ -1,6 +1,8 @@
 import { MODELS } from '$lib'
+import { parse_dependency_spec } from '$lib/environment'
 import { get_org_logo } from '$lib/labels'
 import { RANKED_METRICS } from '$lib/rankings'
+import layout_source from '$routes/+layout.svelte?raw'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
@@ -11,8 +13,21 @@ const test_model = MODELS.find((model) =>
 )
 if (!test_model) throw new Error(`missing Mirror Physics model`)
 const test_page_data = { model: test_model, md_per_system: null }
+const locator_model = MODELS.find((model) => model.model_key === `tace-oam-l`)
+if (!locator_model) throw new Error(`missing TACE-OAM-L model`)
+const locator_dependency = locator_model.environment.dependencies[0]
+if (!locator_dependency) throw new Error(`missing TACE-OAM-L dependency`)
+const locator_detail = parse_dependency_spec(locator_dependency).detail
 
 describe(`Model Detail Page`, () => {
+  it(`styles the TOC title and links`, () => {
+    expect(layout_source).toContain(`--toc-title-font-weight="600"`)
+    expect(layout_source).toContain(`--toc-li-color="var(--text-color)"`)
+    expect(layout_source).toContain(`--toc-active-color="var(--link-color)"`)
+    expect(layout_source).toContain(`:global(aside.toc > nav > ol > li > a) {`)
+    expect(layout_source).toContain(`color: inherit;`)
+  })
+
   it(`renders model details correctly`, () => {
     mount(ModelPage, { target: document.body, props: { data: test_page_data } })
 
@@ -59,9 +74,12 @@ describe(`Model Detail Page`, () => {
         !yaml_author.affiliation ||
           author_elem.textContent?.includes(yaml_author.affiliation),
       ).toBe(true)
-      expect(Boolean(author_elem.querySelector(`[href^="mailto:"]`))).toBe(
-        Boolean(yaml_author.email),
-      )
+      const email_link = author_elem.querySelector<HTMLElement>(`[href^="mailto:"]`)
+      expect(Boolean(email_link)).toBe(Boolean(yaml_author.email))
+      if (email_link) {
+        expect(email_link.style.fontSize).toBe(`1.1em`)
+        expect(email_link.style.paddingRight).toBe(`0.2em`)
+      }
       expect(Boolean(author_elem.querySelector(`[href="${yaml_author.github}"]`))).toBe(
         Boolean(yaml_author.github),
       )
@@ -113,6 +131,23 @@ describe(`Model Detail Page`, () => {
     // null md_per_system page data -> no per-system MD section
     expect(document.querySelector(`section.md-per-system`)).toBeNull()
   }, 10_000)
+
+  it(`preserves both ends of overflowing dependency details`, () => {
+    mount(ModelPage, {
+      target: document.body,
+      props: { data: { model: locator_model, md_per_system: null } },
+    })
+
+    const link = document.querySelector<HTMLAnchorElement>(`.deps .dependency-detail`)
+    if (!link) throw new Error(`missing dependency detail link`)
+    const [leading, trailing] = link.querySelectorAll(`span`)
+    if (!leading || !trailing) throw new Error(`missing dependency detail spans`)
+    expect(link.ariaLabel).toBe(locator_detail)
+    expect(link.title).toBe(locator_detail)
+    expect(leading.textContent).toBe(locator_detail.slice(0, -10))
+    expect(trailing.textContent).toBe(locator_detail.slice(-10))
+    expect(getComputedStyle(leading).textOverflow).toBe(`ellipsis`)
+  })
 
   it(`renders leaderboard rank card with task-prefixed metric labels`, () => {
     mount(ModelPage, { target: document.body, props: { data: test_page_data } })

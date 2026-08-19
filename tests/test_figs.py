@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import gzip
 import json
-from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
@@ -12,7 +11,6 @@ import numpy as np
 import pytest
 
 from matbench_discovery import figs, payload_numerics
-from matbench_discovery.enums import Model
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -89,17 +87,12 @@ def test_sankey_flow_canonicalization() -> None:
 
 
 def test_write_json_gz_roundtrip(tmp_path: Path) -> None:
-    """write_json_gz writes deterministic gzip bytes parseable unchanged."""
+    """write_json_gz creates parent directories and round-trips JSON."""
     payload = {"models": [{"label": "demo", "x": [1, 2], "y": [3.5, 4.5]}]}
     out_path = f"{tmp_path}/sub/dir/demo.json.gz"
     assert figs.write_json_gz(out_path, payload) > 0
     with gzip.open(out_path) as file:
         assert json.load(file) == payload
-    with open(out_path, "rb") as file:
-        first_bytes = file.read()
-    figs.write_json_gz(out_path, payload)
-    with open(out_path, "rb") as file:
-        assert file.read() == first_bytes
 
 
 def test_artifact_manifest_hashes_and_sizes_one_open_file(
@@ -171,12 +164,11 @@ def test_write_json_gz_handles_existing_file(
 def make_metadata(
     tmp_path: Path,
     *,
-    benchmark_content: str = "benchmark",
     parameters: dict[str, object] | None = None,
 ) -> dict[str, Any]:
     """Build valid test identity and audit metadata from exact source bytes."""
     benchmark_path = tmp_path / "benchmark.csv"
-    benchmark_path.write_text(benchmark_content)
+    benchmark_path.write_text("benchmark")
     return figs.build_payload_provenance(
         generator=__file__,
         benchmark_inputs={"benchmark": str(benchmark_path)},
@@ -191,7 +183,6 @@ def make_model(
     model_key: str,
     value: object,
     *,
-    label: str | None = None,
     input_content: str | None = None,
 ) -> dict[str, Any]:
     """Build one valid model record with a path-free input manifest."""
@@ -200,7 +191,7 @@ def make_model(
     input_path.write_text(content)
     return {
         "model_key": model_key,
-        "label": label or model_key.upper(),
+        "label": model_key.upper(),
         "input_artifacts": [figs.artifact_manifest("predictions", str(input_path))],
         "value": value,
     }
@@ -211,15 +202,11 @@ def write_test_payload(
     tmp_path: Path,
     models: list[dict[str, Any]],
     *,
-    mode: figs.PayloadMode = figs.PayloadMode.migrate_provenance,
     shared: object = 1,
     metadata: dict[str, Any] | None = None,
-    key_migration: tuple[str, str] | None = None,
     target_keys: set[str] | None = None,
 ) -> dict[str, Any]:
     """Write and read one complete test payload."""
-    if mode == figs.PayloadMode.targeted and target_keys is None:
-        target_keys = {str(model["model_key"]) for model in models}
     figs.write_jsonl_payload(
         path,
         {
@@ -227,28 +214,9 @@ def write_test_payload(
             "shared": shared,
             "models": models,
         },
-        mode=mode,
-        key_migration=key_migration,
         target_keys=target_keys,
     )
     return figs.read_jsonl_payload(path)
-
-
-def test_fingerprint_excludes_audit_metadata(tmp_path: Path) -> None:
-    """Runtime and source commit never change complete computation identity."""
-    metadata = make_metadata(tmp_path)
-    model = make_model(tmp_path, "model-a", [1])
-    base_a = metadata
-    base_b = {
-        "identity": metadata["identity"],
-        "audit": {
-            "runtime": {"python": "0.0.0", "packages": {}},
-            "source_commit": "b" * 40,
-        },
-    }
-    assert figs.computation_fingerprint(base_a, model) == figs.computation_fingerprint(
-        base_b, model
-    )
 
 
 def test_write_jsonl_is_canonical_and_byte_deterministic(tmp_path: Path) -> None:
@@ -277,7 +245,7 @@ def test_write_jsonl_is_canonical_and_byte_deterministic(tmp_path: Path) -> None
     ]
     assert all(line == figs.canonical_json(json.loads(line)) for line in lines)
     assert all("color" not in line and "visible" not in line for line in lines[1:])
-    write_test_payload(path, tmp_path, models, mode=figs.PayloadMode.full_roster)
+    write_test_payload(path, tmp_path, models)
     with open(path, "rb") as file:
         assert file.read() == first_bytes
 
@@ -299,209 +267,79 @@ def test_writer_rejects_invalid_model_identity(
         write_test_payload(f"{tmp_path}/bad.jsonl", tmp_path, [model] * count)
 
 
-def test_label_only_targeted_update_preserves_every_other_byte(tmp_path: Path) -> None:
-    """An unchanged fingerprint permits exactly a presentation-label replacement."""
-    path = f"{tmp_path}/payload.jsonl"
-    old = make_model(tmp_path, "model-a", [1], label="Old label")
-    old_record = write_test_payload(path, tmp_path, [old])["models"][0]
-    new = make_model(tmp_path, "model-a", [1], label="New label")
-    new_record = write_test_payload(
-        path, tmp_path, [new], mode=figs.PayloadMode.targeted
-    )["models"][0]
-    assert old_record | {"label": "New label"} == new_record
-
-
-def test_unchanged_fingerprint_rejects_derived_mutation(tmp_path: Path) -> None:
-    """Fixed computation identity rejects mutations in ordinary and migration runs."""
-    path = f"{tmp_path}/payload.jsonl"
-    model = make_model(tmp_path, "model-a", [1])
-    write_test_payload(path, tmp_path, [model])
-    with pytest.raises(ValueError, match="unchanged complete fingerprint"):
-        write_test_payload(
-            path,
-            tmp_path,
-            [model | {"value": [2]}],
-            mode=figs.PayloadMode.targeted,
-        )
-    with pytest.raises(ValueError, match="unchanged complete fingerprint"):
-        write_test_payload(path, tmp_path, [model | {"value": [999]}])
-    with pytest.raises(ValueError, match="shared derived data"):
-        write_test_payload(path, tmp_path, [model], shared=999)
-
-
-@pytest.mark.parametrize(
-    "models",
-    [
-        pytest.param([], id="remove"),
-        pytest.param(["model-a", "model-b"], id="add"),
-        pytest.param(["model-b"], id="replace"),
-    ],
-)
-def test_provenance_migration_rejects_roster_changes(
-    tmp_path: Path, models: list[str]
-) -> None:
-    """Provenance migration cannot also add, remove, or replace model keys."""
-    path = f"{tmp_path}/payload.jsonl"
-    write_test_payload(path, tmp_path, [make_model(tmp_path, "model-a", [1])])
-    changed_metadata = make_metadata(tmp_path, parameters={"version": 2})
-    with pytest.raises(ValueError, match="cannot change the model roster"):
-        write_test_payload(
-            path,
-            tmp_path,
-            [make_model(tmp_path, model_key, [1]) for model_key in models],
-            metadata=changed_metadata,
-        )
-
-
-def test_targeted_input_change_is_isolated_to_one_model(tmp_path: Path) -> None:
-    """A changed model artifact updates only its keyed line and preserves peers/base."""
+def test_writer_replaces_targeted_records_or_full_payload(tmp_path: Path) -> None:
+    """Targeted writes preserve peers while full writes replace the payload."""
     path = f"{tmp_path}/payload.jsonl"
     model_a = make_model(tmp_path, "model-a", [1])
     model_b = make_model(tmp_path, "model-b", [2])
     before = write_test_payload(path, tmp_path, [model_a, model_b])
+    with pytest.raises(ValueError, match="unselected model keys"):
+        write_test_payload(path, tmp_path, [model_a, model_b], target_keys={"model-a"})
     changed_a = make_model(
         tmp_path, "model-a", [9], input_content="changed-model-a-input"
     )
+    metadata = make_metadata(tmp_path)
+    metadata["audit"]["runtime"]["python"] = "0.0.0"
     after = write_test_payload(
-        path, tmp_path, [changed_a], mode=figs.PayloadMode.targeted
+        path,
+        tmp_path,
+        [changed_a],
+        metadata=metadata,
+        target_keys={"model-a"},
     )
-    before_by_key = {record["model_key"]: record for record in before["models"]}
-    after_by_key = {record["model_key"]: record for record in after["models"]}
-    assert after_by_key["model-a"] == changed_a
-    assert after_by_key["model-b"] == before_by_key["model-b"]
-    assert before | {"models": after["models"]} == after
-
-
-def test_targeted_update_rejects_unselected_model(tmp_path: Path) -> None:
-    """A targeted writer cannot accidentally rewrite an unselected peer record."""
-    path = f"{tmp_path}/payload.jsonl"
-    model_a = make_model(tmp_path, "model-a", [1])
-    model_b = make_model(tmp_path, "model-b", [2])
-    write_test_payload(path, tmp_path, [model_a, model_b])
-    with pytest.raises(ValueError, match="require selected model keys"):
-        figs.write_jsonl_payload(
-            path,
-            {**make_metadata(tmp_path), "models": [model_a]},
-            mode=figs.PayloadMode.targeted,
-        )
-    changed_b = make_model(
-        tmp_path, "model-b", [9], input_content="changed-model-b-input"
-    )
-    with pytest.raises(ValueError, match="unselected model keys"):
+    assert after["models"] == [changed_a, model_b]
+    assert before | {"audit": metadata["audit"], "models": after["models"]} == after
+    with pytest.raises(ValueError, match="identity changed"):
         write_test_payload(
             path,
             tmp_path,
-            [model_a, changed_b],
-            mode=figs.PayloadMode.targeted,
+            [changed_a],
+            metadata=make_metadata(tmp_path, parameters={"changed": True}),
             target_keys={"model-a"},
         )
-
-
-def test_full_roster_adds_and_removes_records(tmp_path: Path) -> None:
-    """Full-roster mode owns lifecycle additions/removals under fixed provenance."""
-    path = f"{tmp_path}/payload.jsonl"
-    model_a = make_model(tmp_path, "model-a", [1])
-    model_b = make_model(tmp_path, "model-b", [2])
-    write_test_payload(path, tmp_path, [model_a, model_b])
+    with pytest.raises(ValueError, match="shared data changed"):
+        write_test_payload(
+            path, tmp_path, [changed_a], shared=999, target_keys={"model-a"}
+        )
+    removed = write_test_payload(path, tmp_path, [], target_keys={"model-a"})
+    assert removed["models"] == [model_b]
     model_c = make_model(tmp_path, "model-c", [3])
-    updated = write_test_payload(
-        path, tmp_path, [model_b, model_c], mode=figs.PayloadMode.full_roster
+    metadata = make_metadata(tmp_path, parameters={"version": 2})
+    with pytest.raises(ValueError, match="identity and roster changed together"):
+        write_test_payload(
+            path, tmp_path, [model_b, model_c], shared=2, metadata=metadata
+        )
+    roster_updated = write_test_payload(path, tmp_path, [model_b, model_c])
+    assert roster_updated["models"] == [model_b, model_c]
+    replaced = write_test_payload(
+        path, tmp_path, [model_b, model_c], shared=2, metadata=metadata
     )
-    assert {record["model_key"] for record in updated["models"]} == {
-        "model-b",
-        "model-c",
-    }
-
-    old = make_model(tmp_path, "old-key", [4], input_content="same-input")
-    new = make_model(tmp_path, "new-key", [4], input_content="same-input")
-    write_test_payload(path, tmp_path, [old], mode=figs.PayloadMode.full_roster)
-    assert write_test_payload(path, tmp_path, [new], mode=figs.PayloadMode.full_roster)[
-        "models"
-    ] == [new]
+    assert replaced == roster_updated | dict(identity=metadata["identity"], shared=2)
+    metadata["audit"].pop("runtime")
+    with pytest.raises(ValueError, match="audit must contain runtime"):
+        write_test_payload(
+            path, tmp_path, [model_b, model_c], shared=2, metadata=metadata
+        )
 
 
-@pytest.mark.parametrize("identity_field", ["benchmark", "parameters"])
-def test_shared_identity_change_requires_provenance_migration(
-    tmp_path: Path, identity_field: str
+@pytest.mark.parametrize("target_keys", [None, {"model-a"}], ids=["full", "targeted"])
+def test_writer_allows_labels_but_rejects_data_changes_with_unchanged_inputs(
+    tmp_path: Path, target_keys: set[str] | None
 ) -> None:
-    """Benchmark and parameter changes fail outside provenance migration mode."""
+    """Stable computation inputs permit labels but not derived-data changes."""
     path = f"{tmp_path}/payload.jsonl"
     model = make_model(tmp_path, "model-a", [1])
-    old_metadata = make_metadata(tmp_path)
-    write_test_payload(path, tmp_path, [model], metadata=old_metadata)
-    if identity_field == "benchmark":
-        new_metadata = make_metadata(tmp_path, benchmark_content="changed")
-    else:
-        new_metadata = json.loads(figs.canonical_json(old_metadata))
-        new_metadata["identity"]["parameters"]["rounding_decimals"] = 4
-    changed_payload = {
-        **new_metadata,
-        "shared": 1,
-        "models": [model],
-    }
-    with pytest.raises(ValueError, match="--migrate-provenance"):
-        figs.write_jsonl_payload(
-            path, changed_payload, mode=figs.PayloadMode.full_roster
-        )
-    written = write_test_payload(path, tmp_path, [model], metadata=new_metadata)
-    assert written["identity"] == new_metadata["identity"]
-
-
-@pytest.mark.parametrize(
-    "mode", [figs.PayloadMode.targeted, figs.PayloadMode.full_roster]
-)
-def test_audit_updates_without_identity_migration(
-    tmp_path: Path, mode: figs.PayloadMode
-) -> None:
-    """Targeted and full-roster writes replace audit metadata without a migration."""
-    path = f"{tmp_path}/payload.jsonl"
-    model = make_model(tmp_path, "model-a", [1])
-    before = write_test_payload(path, tmp_path, [model])
-    updated_metadata = make_metadata(tmp_path)
-    updated_metadata["audit"]["runtime"]["python"] = "0.0.0"
-    updated_metadata["audit"]["source_commit"] = "b" * 40
-    after = write_test_payload(
-        path, tmp_path, [model], mode=mode, metadata=updated_metadata
+    write_test_payload(path, tmp_path, [model])
+    relabeled = write_test_payload(
+        path, tmp_path, [model | {"label": "Renamed"}], target_keys=target_keys
     )
-    assert after == before | {"audit": updated_metadata["audit"]}
-
-
-def test_explicit_key_migration_requires_alias_and_exact_record(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Key migration accepts only an aliased exact identity rewrite."""
-    monkeypatch.setattr(
-        Model,
-        "from_ref",
-        staticmethod(
-            lambda model_key: SimpleNamespace(key=model_key, key_aliases=("old-key",))
-        ),
-    )
-    path = f"{tmp_path}/payload.jsonl"
-    old = make_model(tmp_path, "old-key", [1], input_content="same-input")
-    write_test_payload(path, tmp_path, [old])
-
-    new = make_model(tmp_path, "new-key", [1], input_content="same-input")
-    for _attempt in range(2):
-        migrated = write_test_payload(
-            path,
-            tmp_path,
-            [new],
-            mode=figs.PayloadMode.migrate_model_key,
-            key_migration=("old-key", "new-key"),
-        )
-        assert migrated["models"] == [new]
-
-    path = f"{tmp_path}/peers.jsonl"
-    peer = make_model(tmp_path, "peer", [2])
-    write_test_payload(path, tmp_path, [old, peer])
-    with pytest.raises(ValueError, match="peer record"):
+    assert relabeled["models"][0]["label"] == "Renamed"
+    with pytest.raises(ValueError, match="changed data with unchanged inputs"):
         write_test_payload(
             path,
             tmp_path,
-            [new, peer | {"value": [999]}],
-            mode=figs.PayloadMode.migrate_model_key,
-            key_migration=("old-key", "new-key"),
+            [model | {"value": [2]}],
+            target_keys=target_keys,
         )
 
 

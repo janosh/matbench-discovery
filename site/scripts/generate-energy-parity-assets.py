@@ -4,19 +4,20 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import math
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Final, TypeGuard
 from zipfile import ZipFile
 
 from asset_helpers import (
-    active_model_assets,
-    asset_safe_key,
     clean_floats,
     clean_ints,
     compact_extxyz,
+    is_asset_metadata,
+    read_manifest,
+    remove_model_assets,
     resolve_models,
+    retained_parity_assets,
     write_json_gz,
     write_manifest,
 )
@@ -26,7 +27,7 @@ from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import DataFiles, MbdKey
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Sequence
 
 OUT_DIR: Final = "site/static/energy-parity"
 MANIFEST_PATH: Final = "site/src/lib/parity/energy-parity-manifest.json"
@@ -42,17 +43,22 @@ ENERGY_DECIMALS: Final = 6
 STRUCTURE_DECIMALS: Final = 3
 
 
-def parse_args() -> argparse.Namespace:
+def positive_int(value: str) -> int:
+    """Parse a positive integer for an argparse option."""
+    number = int(value)
+    if number <= 0:
+        raise argparse.ArgumentTypeError(f"expected a positive integer, got {value}")
+    return number
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command-line options for generating energy parity assets."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--models",
-        nargs="*",
+        nargs="+",
         default=[],
-        help=(
-            "Model enum names, canonical keys, or key aliases. "
-            "Defaults to active models."
-        ),
+        help="Model enum names or canonical keys. Defaults to active models.",
     )
     parser.add_argument("--out-dir", default=OUT_DIR)
     parser.add_argument("--manifest", default=MANIFEST_PATH)
@@ -60,51 +66,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--local-asset-base-url", default=LOCAL_ASSET_BASE_URL)
     parser.add_argument("--limit-rows", type=int, default=None)
     parser.add_argument(
-        "--structure-shard-size", type=int, default=STRUCTURE_SHARD_SIZE
+        "--structure-shard-size", type=positive_int, default=STRUCTURE_SHARD_SIZE
     )
     parser.add_argument(
-        "--structure-bundle-size", type=int, default=STRUCTURE_BUNDLE_SIZE
+        "--structure-bundle-size", type=positive_int, default=STRUCTURE_BUNDLE_SIZE
     )
-    parser.add_argument(
-        "--skip-structures",
-        action="store_true",
-        help=(
-            "Reuse existing structure shards when they still match the base rows. "
-            "Falls back to regenerating them if missing or stale."
-        ),
-    )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def chunked(items: list[int], chunk_size: int) -> Iterable[tuple[int, list[int]]]:
-    """Yield indexed chunks from a list of integer row or shard IDs."""
-    if chunk_size <= 0:
-        raise ValueError(f"{chunk_size=} must be positive")
-    for idx, start in enumerate(range(0, len(items), chunk_size)):
-        yield idx, items[start : start + chunk_size]
-
-
-def remove_stale_assets(
-    asset_dir: Path, asset_prefix: str, *, keep_models: bool, keep_structures: bool
-) -> None:
-    """Delete old generated assets before writing a fresh manifest."""
-    patterns = [f"{asset_prefix}-base.json.gz"]
-    if not keep_models:
-        patterns.extend(
-            (f"{asset_prefix}-model-*.json.gz", f"{asset_prefix}-models-*.json.gz")
+def valid_structure_bundles(
+    bundles: object, asset_prefix: str, n_bundles: int
+) -> TypeGuard[list[dict[str, str]]]:
+    """Whether ordered structure bundle metadata is complete and valid."""
+    return (
+        isinstance(bundles, list)
+        and len(bundles) == n_bundles
+        and all(
+            is_asset_metadata(bundle, f"{asset_prefix}-structures-{idx:03d}")
+            for idx, bundle in enumerate(bundles)
         )
-    if not keep_structures:
-        patterns.append(f"{asset_prefix}-structures-*.json.gz")
-    for pattern in patterns:
-        for path in asset_dir.glob(pattern):
-            path.unlink()
-
-
-def read_previous_manifest(manifest_path: Path) -> dict[str, Any] | None:
-    """Read an existing manifest when structure assets should be reused."""
-    if not manifest_path.is_file():
-        return None
-    return json.loads(manifest_path.read_text(encoding="utf-8"))
+    )
 
 
 def write_structure_shards(
@@ -113,13 +94,16 @@ def write_structure_shards(
     asset_prefix: str,
     shard_size: int,
     bundle_size: int,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, str]]:
     """Write compressed structure bundles grouped by shard ranges."""
     zip_path = Path(DataFiles.wbm_initial_atoms.path)
-    structure_bundles: list[dict[str, Any]] = []
+    structure_bundles: list[dict[str, str]] = []
     with ZipFile(zip_path) as zip_file:
         shard_idxs = list(range(math.ceil(len(material_ids) / shard_size)))
-        for bundle_idx, bundle_shard_idxs in chunked(shard_idxs, bundle_size):
+        for bundle_idx, bundle_start in enumerate(
+            range(0, len(shard_idxs), bundle_size)
+        ):
+            bundle_shard_idxs = shard_idxs[bundle_start : bundle_start + bundle_size]
             shards: dict[str, dict[str, str]] = {}
             for shard_idx in bundle_shard_idxs:
                 start = shard_idx * shard_size
@@ -131,21 +115,15 @@ def write_structure_shards(
                     for material_id in material_ids[start : start + shard_size]
                 }
             asset_name = f"{asset_prefix}-structures-{bundle_idx:03d}.json.gz"
-            meta = write_json_gz(asset_dir / asset_name, {"shards": shards})
             structure_bundles.append(
-                {
-                    **meta,
-                    "start_shard": bundle_shard_idxs[0],
-                    "end_shard": bundle_shard_idxs[-1],
-                }
+                write_json_gz(asset_dir / asset_name, {"shards": shards})
             )
     return structure_bundles
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> None:
     """Generate base data, model prediction assets, structures, and manifests."""
-    args = parse_args()
-    out_dir = Path(args.out_dir)
+    args = parse_args(argv)
     manifest_path = Path(args.manifest)
     models = resolve_models(args.models)
     df_preds = load_df_wbm_with_preds(models=models, pbar=True)
@@ -155,36 +133,37 @@ def main() -> None:
     material_ids = df_preds[Key.mat_id].astype(str).tolist()
     # hash material IDs in row order to detect stale asset manifests
     material_ids_sha256 = hashlib.sha256("\n".join(material_ids).encode()).hexdigest()
-    asset_dir = out_dir / "assets"
-    previous_manifest = read_previous_manifest(manifest_path)
-
-    rows_match = (
-        previous_manifest is not None
-        and previous_manifest.get("row_count") == len(material_ids)
-        and previous_manifest.get("material_ids_sha256") == material_ids_sha256
+    asset_dir = Path(args.out_dir) / "assets"
+    previous_manifest = read_manifest(manifest_path)
+    target_keys = {model.key for model in models} if args.models else set()
+    structure_identity = {
+        "schema_version": 2,
+        "row_count": len(material_ids),
+        "material_ids_sha256": material_ids_sha256,
+        "structure_shard_size": args.structure_shard_size,
+        "structure_bundle_size": args.structure_bundle_size,
+    }
+    previous_bundles = (
+        previous_manifest.get("structure_bundles")
+        if previous_manifest is not None
+        else None
     )
-    reused_bundles = None
-    if (
-        args.skip_structures
-        and rows_match
-        and previous_manifest is not None
-        and previous_manifest.get("structure_shard_size") == args.structure_shard_size
-    ):
-        reused_bundles = previous_manifest.get("structure_bundles") or None
-    model_assets: dict[str, dict[str, str | int]] = {}
-    if (
-        args.models
-        and rows_match
-        and previous_manifest is not None
-        and isinstance(previous_assets := previous_manifest.get("model_assets"), dict)
-    ):
-        model_assets = active_model_assets(previous_assets)
-    remove_stale_assets(
-        asset_dir,
-        args.asset_prefix,
-        keep_models=bool(args.models),
-        keep_structures=reused_bundles is not None,
+    n_bundles = math.ceil(
+        len(material_ids) / args.structure_shard_size / args.structure_bundle_size
     )
+    reused_bundles = (
+        previous_bundles
+        if previous_manifest is not None
+        and previous_manifest.get("asset_prefix") == args.asset_prefix
+        and all(
+            previous_manifest.get(key) == value
+            for key, value in structure_identity.items()
+        )
+        and valid_structure_bundles(previous_bundles, args.asset_prefix, n_bundles)
+        else None
+    )
+    if args.models and reused_bundles is None:
+        raise ValueError("Parity structures changed; run a full refresh")
     base = {
         "material_ids": material_ids,
         "formulas": df_preds[Key.formula].astype(str).tolist(),
@@ -193,18 +172,32 @@ def main() -> None:
         "each_true": clean_floats(df_preds[MbdKey.each_true], ENERGY_DECIMALS),
         "structure_shard_size": args.structure_shard_size,
     }
-    base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
+    base_meta: dict[str, str] | None = None
+    model_assets: dict[str, dict[str, str]] = {}
+    if args.models:
+        base_meta, model_assets = retained_parity_assets(
+            previous_manifest, target_keys, base, args.asset_prefix
+        )
+    stale_patterns: list[str] = []
+    if not args.models:
+        stale_patterns += [
+            f"{args.asset_prefix}-base*.json.gz",
+            f"{args.asset_prefix}-model-*.json.gz",
+        ]
+    if reused_bundles is None:
+        stale_patterns.append(f"{args.asset_prefix}-structures-*.json.gz")
+    for pattern in stale_patterns:
+        for path in asset_dir.glob(pattern):
+            path.unlink()
+    remove_model_assets(asset_dir, args.asset_prefix, target_keys)
+    if base_meta is None:
+        base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
 
-    asset_names: set[str] = set()
     for model in models:
-        asset_name = f"{args.asset_prefix}-model-{asset_safe_key(model.key)}.json.gz"
-        if asset_name in asset_names:
-            raise ValueError(f"Duplicate model asset name {asset_name!r}")
-        asset_names.add(asset_name)
+        asset_name = f"{args.asset_prefix}-model-{model.key}.json.gz"
         model_payload = {
             "model_key": model.key,
-            "model_label": model.label,
-            "e_form_pred": clean_floats(df_preds[model.label], ENERGY_DECIMALS),
+            "e_form_pred": clean_floats(df_preds[model.key], ENERGY_DECIMALS),
         }
         meta = write_json_gz(asset_dir / asset_name, {"model": model_payload})
         model_assets[model.key] = meta
@@ -218,14 +211,9 @@ def main() -> None:
     )
 
     manifest = {
-        "schema_version": 1,
-        "benchmark": "wbm",
-        "dataset": "wbm",
+        **structure_identity,
         "asset_prefix": args.asset_prefix,
         "local_asset_base_url": args.local_asset_base_url.rstrip("/"),
-        "row_count": len(material_ids),
-        "material_ids_sha256": material_ids_sha256,
-        "structure_shard_size": args.structure_shard_size,
         "base": base_meta,
         "model_assets": model_assets,
         "structure_bundles": structure_bundles,

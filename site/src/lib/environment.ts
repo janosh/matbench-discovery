@@ -8,13 +8,27 @@ const PIN_SPEC = new RegExp(`^${PKG}\\s*(==|>=|<=|!=|~=|<|>)\\s*(.+)$`)
 const pypi_href = (name: string, version = ``): string =>
   `https://pypi.org/project/${name.replace(/\[[^\]]*\]$/, ``)}/${version}`
 
+const vcs_browser_href = (locator: string): string => {
+  const url = locator.replace(/^git\+/, ``)
+  const github_match =
+    /^https:\/\/github\.com\/(?<owner>[^/]+)\/(?<repo>[^/@]+)@(?<revision>[^#]+)(?<fragment>#.*)?$/.exec(
+      url,
+    )
+  if (!github_match?.groups) return url
+
+  const { owner, revision, fragment = `` } = github_match.groups
+  const repo = github_match.groups.repo.replace(/\.git$/, ``)
+  const revision_kind = /^[0-9a-f]{7,40}$/i.test(revision) ? `commit` : `tree`
+  return `https://github.com/${owner}/${repo}/${revision_kind}/${revision}${fragment}`
+}
+
 export function parse_dependency_spec(dep: string) {
   const trimmed = dep.trim()
   const at_match = AT_SPEC.exec(trimmed)
   if (at_match) {
     const name = at_match[1]
     const locator = at_match[2].trim()
-    const url = locator.replace(/^git\+/, ``) // "git+https://..." -> "https://..."
+    const url = vcs_browser_href(locator)
     const href = url.startsWith(`http`) ? url : pypi_href(name)
     return { name, detail: locator, href }
   }

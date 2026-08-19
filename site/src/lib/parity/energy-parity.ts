@@ -245,9 +245,12 @@ export function structure_shard_idx(
 }
 
 export function structure_bundle_for_shard(shard_idx: number) {
-  const bundle = energy_parity_manifest.structure_bundles.find(
-    ({ start_shard, end_shard }) => start_shard <= shard_idx && shard_idx <= end_shard,
-  )
+  const { row_count, structure_shard_size, structure_bundle_size, structure_bundles } =
+    energy_parity_manifest
+  const bundle =
+    shard_idx < Math.ceil(row_count / structure_shard_size)
+      ? structure_bundles[Math.floor(shard_idx / structure_bundle_size)]
+      : undefined
   if (!bundle) throw new Error(`No structure bundle for shard ${shard_idx}`)
   return bundle
 }

@@ -236,8 +236,6 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
     gap: 3em 2em;
-  }
-  .spg-sankeys li {
     list-style: none;
   }
   .spg-sankeys h3 {

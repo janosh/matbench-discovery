@@ -21,24 +21,14 @@ import posixpath
 import re
 import sys
 import zlib
-from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Final
 
 from matbench_discovery.enums import Model
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Mapping, Sequence
+    from collections.abc import Mapping, Sequence
 
 PAYLOAD_SCHEMA_VERSION: Final = 2
-
-
-class PayloadMode(StrEnum):
-    """Allowed update modes for multi-model JSONL payloads."""
-
-    targeted = "targeted"
-    full_roster = "full-roster"
-    migrate_provenance = "migrate-provenance"
-    migrate_model_key = "migrate-model-key"
 
 
 def canonical_json(data: object) -> str:
@@ -162,18 +152,6 @@ def build_discovery_payload_provenance(
     )
 
 
-def computation_fingerprint(
-    base: Mapping[str, Any], model_record: Mapping[str, Any]
-) -> str:
-    """Hash the complete shared and per-model computation identity."""
-    return canonical_sha256(
-        {
-            "identity": base["identity"],
-            "input_artifacts": model_record["input_artifacts"],
-        }
-    )
-
-
 # === IO ===
 def write_json_gz(path: str, data: dict[str, Any]) -> int:
     """Write deterministic gzipped JSON; return compressed byte size.
@@ -225,19 +203,17 @@ def _validate_artifact_manifest(entries: object, *, source_files: bool = False) 
             raise TypeError("Manifest entries must be objects")
         if set(entry) != expected_keys:
             raise ValueError(f"Manifest entries must contain {sorted(expected_keys)}")
-        manifest_entry: dict[str, Any] = {
-            str(key): value for key, value in entry.items()
-        }
-        role = manifest_entry["role"]
+        manifest = {str(key): value for key, value in entry.items()}
+        role = manifest["role"]
         if not isinstance(role, str) or re.fullmatch(r"[A-Za-z0-9_.-]+", role) is None:
             raise ValueError(f"Invalid manifest role: {role!r}")
-        sha256 = manifest_entry["sha256"]
+        sha256 = manifest["sha256"]
         if not isinstance(sha256, str) or re.fullmatch(r"[0-9a-f]{64}", sha256) is None:
             raise ValueError(f"Invalid manifest SHA-256 for role {role!r}")
-        if type(manifest_entry["size"]) is not int or manifest_entry["size"] < 0:
+        if type(manifest["size"]) is not int or manifest["size"] < 0:
             raise ValueError(f"Invalid manifest byte size for role {role!r}")
         if source_files:
-            path = manifest_entry["path"]
+            path = manifest["path"]
             if (
                 not isinstance(path, str)
                 or not path
@@ -279,15 +255,9 @@ def _validate_payload(base: dict[str, Any], models: list[dict[str, Any]]) -> Non
     if not isinstance(identity["parameters"], dict):
         raise TypeError("Payload identity parameters must be an object")
     audit = base["audit"]
-    if (
-        not isinstance(audit, dict)
-        or "runtime" not in audit
-        or set(audit) - {"runtime", "source_commit"}
-    ):
-        raise ValueError(
-            "Payload audit must contain runtime and optional source_commit"
-        )
-    runtime = audit.get("runtime")
+    if not isinstance(audit, dict) or set(audit) != {"runtime"}:
+        raise ValueError("Payload audit must contain runtime")
+    runtime = audit["runtime"]
     if not isinstance(runtime, dict) or set(runtime) != {"python", "packages"}:
         raise ValueError("Payload runtime must contain Python and package versions")
     if not isinstance(runtime["python"], str) or not runtime["python"]:
@@ -295,17 +265,11 @@ def _validate_payload(base: dict[str, Any], models: list[dict[str, Any]]) -> Non
     packages = runtime["packages"]
     if not isinstance(packages, dict):
         raise TypeError("Payload runtime packages must be an object")
-    for package, version in packages.items():
-        if not isinstance(package, str) or not isinstance(version, str):
-            raise TypeError(
-                "Payload runtime package names and versions must be strings"
-            )
-    source_commit = audit.get("source_commit")
-    if source_commit is not None and (
-        not isinstance(source_commit, str)
-        or re.fullmatch(r"[0-9a-f]{40}", source_commit) is None
+    if not all(
+        isinstance(package, str) and isinstance(version, str)
+        for package, version in packages.items()
     ):
-        raise ValueError(f"Invalid informational source_commit: {source_commit!r}")
+        raise TypeError("Payload runtime package names and versions must be strings")
     if not isinstance(base["derived"], dict):
         raise TypeError("Payload _base.derived must be an object")
     for model in models:
@@ -328,57 +292,17 @@ def read_jsonl_payload(path: str) -> dict[str, Any]:
     """Read and validate a schema-v2 JSONL figure payload."""
     base, models = _read_jsonl_records(path)
     _validate_payload(base, models)
-    return {
-        "schema_version": base["schema_version"],
-        "identity": base["identity"],
-        "audit": base["audit"],
-        **base["derived"],
-        "models": models,
-    }
-
-
-def _records_equal_except_label(
-    left: Mapping[str, Any], right: Mapping[str, Any]
-) -> bool:
-    """Return whether two records have identical canonical non-label content."""
-    return canonical_json(
-        {key: value for key, value in left.items() if key != "label"}
-    ) == canonical_json({key: value for key, value in right.items() if key != "label"})
-
-
-def _assert_unchanged_record(
-    path: str,
-    old_base: Mapping[str, Any],
-    new_base: Mapping[str, Any],
-    old: Mapping[str, Any],
-    new: Mapping[str, Any],
-) -> None:
-    """Require byte-stable derived data when the computation fingerprint is fixed."""
-    if computation_fingerprint(old_base, old) == computation_fingerprint(
-        new_base, new
-    ) and not _records_equal_except_label(old, new):
-        model_key = new["model_key"]
-        raise ValueError(
-            f"{path}: {model_key!r} changed derived data with an unchanged complete "
-            "fingerprint. Only label may change."
-        )
+    derived = base.pop("derived")
+    return base | derived | {"models": models}
 
 
 def write_jsonl_payload(
     path: str,
     payload: dict[str, Any],
     *,
-    mode: PayloadMode,
-    key_migration: tuple[str, str] | None = None,
-    target_keys: Collection[str] | None = None,
+    target_keys: set[str] | None,
 ) -> int:
-    """Write a strict, deterministic, key-addressed multi-model JSONL payload."""
-    if not isinstance(mode, PayloadMode):
-        raise TypeError(f"mode must be a PayloadMode, got {mode!r}")
-    if mode != PayloadMode.migrate_model_key and key_migration is not None:
-        raise ValueError("key_migration is only valid in migrate-model-key mode")
-    if mode == PayloadMode.migrate_model_key and key_migration is None:
-        raise ValueError("migrate-model-key mode requires an OLD=NEW mapping")
+    """Replace a full payload or splice records selected by immutable model key."""
     missing_sections = {"identity", "audit", "models"} - set(payload)
     if missing_sections:
         raise ValueError(f"Payload generation is missing {sorted(missing_sections)}")
@@ -401,103 +325,63 @@ def write_jsonl_payload(
     }
     _validate_payload(fresh_base, fresh_models)
     fresh_by_key = {model["model_key"]: model for model in fresh_models}
-    if mode == PayloadMode.targeted:
-        if target_keys is None:
-            raise ValueError("targeted payload writes require selected model keys")
-        unexpected = set(fresh_by_key) - set(target_keys)
+    if target_keys is not None:
+        unexpected = set(fresh_by_key) - target_keys
         if unexpected:
             raise ValueError(
-                f"{path}: targeted payload contains unselected model keys {unexpected}"
+                f"{path}: targeted payload contains unselected model keys "
+                f"{sorted(unexpected)}"
             )
 
     committed_base: dict[str, Any] | None = None
-    committed_models: list[dict[str, Any]] = []
+    committed_by_key: dict[str, dict[str, Any]] = {}
     if os.path.isfile(path):
         committed_base, committed_models = _read_jsonl_records(path)
-    if (
-        mode in (PayloadMode.targeted, PayloadMode.migrate_model_key)
-        and committed_base is None
-    ):
-        raise FileNotFoundError(
-            f"{path} not found: {mode.value} runs require an existing payload"
-        )
-
-    output_base, output_models = fresh_base, fresh_models
-    if committed_base is not None:
         _validate_payload(committed_base, committed_models)
         committed_by_key = {model["model_key"]: model for model in committed_models}
-        committed_keys = set(committed_by_key)
-        fresh_keys = set(fresh_by_key)
+    elif target_keys is not None:
+        raise FileNotFoundError(
+            f"{path} not found: targeted runs require an existing payload"
+        )
+
+    if committed_base is not None:
         identity_changed = canonical_json(committed_base["identity"]) != canonical_json(
             fresh_base["identity"]
         )
-        derived_changed = canonical_json(committed_base["derived"]) != canonical_json(
-            fresh_base["derived"]
-        )
-        if mode == PayloadMode.migrate_provenance:
-            if committed_keys != fresh_keys:
-                raise ValueError(
-                    f"{path}: provenance migration cannot change the model roster; "
-                    "run lifecycle changes separately with --full-roster"
-                )
-        elif identity_changed:
+        if target_keys is not None and identity_changed:
             raise ValueError(
-                f"{path}: computation identity changed. Regenerate explicitly with "
-                "--migrate-provenance."
+                f"{path}: targeted payload identity changed; use --full-roster"
             )
-        if derived_changed and not identity_changed:
+        if (
+            target_keys is None
+            and identity_changed
+            and committed_by_key.keys() != fresh_by_key.keys()
+        ):
             raise ValueError(
-                f"{path}: shared derived data changed with unchanged identity"
+                f"{path}: payload identity and roster changed together; "
+                "commit them separately"
             )
-
-        if mode != PayloadMode.migrate_model_key:
+        if not identity_changed:
+            if canonical_json(committed_base["derived"]) != canonical_json(
+                fresh_base["derived"]
+            ):
+                raise ValueError(f"{path}: shared data changed with unchanged identity")
             for model_key in committed_by_key.keys() & fresh_by_key.keys():
-                _assert_unchanged_record(
-                    path,
-                    committed_base,
-                    fresh_base,
-                    committed_by_key[model_key],
-                    fresh_by_key[model_key],
-                )
-        if mode == PayloadMode.targeted:
-            output_models = list((committed_by_key | fresh_by_key).values())
-        elif mode == PayloadMode.migrate_model_key:
-            if key_migration is None:
-                raise ValueError("migrate-model-key mode requires an OLD=NEW mapping")
-            old_key, new_key = key_migration
-            new_model = Model.from_ref(new_key)
-            if new_model.key != new_key or old_key not in new_model.key_aliases:
-                raise ValueError(
-                    f"Key migration {old_key!r} -> {new_key!r} requires "
-                    "model_key_aliases to contain the old key"
-                )
-            if old_key in committed_by_key and new_key in committed_by_key:
-                raise ValueError(
-                    f"Invalid key migration state for {old_key!r} -> {new_key!r}"
-                )
-            expected = dict(committed_by_key)
-            if old_key in expected:
-                expected[new_key] = dict(expected.pop(old_key), model_key=new_key)
-            if fresh_keys != set(expected):
-                raise ValueError(f"{path}: key migration changed the model roster")
-            for model_key, old in expected.items():
-                if not _records_equal_except_label(old, fresh_by_key[model_key]):
-                    kind = "migrated" if model_key == new_key else "peer"
-                    raise ValueError(f"{path}: key migration changed {kind} record")
-        else:
-            for model_key in fresh_keys - committed_keys:
-                try:
-                    aliases = set(Model.from_ref(model_key).key_aliases)
-                except ValueError:
-                    aliases = set()
-                for old_key in (committed_keys - fresh_keys) & aliases:
+                old_model = committed_by_key[model_key]
+                new_model = fresh_by_key[model_key]
+                expected = old_model | {"label": new_model["label"]}
+                if old_model["input_artifacts"] == new_model[
+                    "input_artifacts"
+                ] and canonical_json(expected) != canonical_json(new_model):
                     raise ValueError(
-                        f"{path}: model key replacement {old_key!r} -> "
-                        f"{model_key!r} requires --migrate-model-key"
+                        f"{path}: {model_key!r} changed data with unchanged inputs"
                     )
-
-    output_models.sort(key=lambda model: model["model_key"])
-    records = [{"_base": output_base}, *output_models]
+        if target_keys is not None:
+            for model_key in target_keys:
+                committed_by_key.pop(model_key, None)
+            fresh_models = list((committed_by_key | fresh_by_key).values())
+    fresh_models.sort(key=lambda model: model["model_key"])
+    records = [{"_base": fresh_base}, *fresh_models]
     body = "".join(canonical_json(record) + "\n" for record in records).encode()
     n_bytes = len(body)
     if os.path.isfile(path):
@@ -509,7 +393,7 @@ def write_jsonl_payload(
         file.write(body)
     print(
         f"Wrote {os.path.basename(path)} "
-        f"({n_bytes:,} bytes, {len(output_models)} models)"
+        f"({n_bytes:,} bytes, {len(fresh_models)} models)"
     )
     return n_bytes
 
@@ -519,16 +403,13 @@ def write_site_payload(
 ) -> int:
     """Write one strict multi-model payload to ``<directory>/<name>.jsonl``."""
     from matbench_discovery import SITE_FIG_DATA
-    from matbench_discovery.cli import cli_args, payload_mode
+    from matbench_discovery.cli import cli_args, is_full_model_run
 
-    mode = payload_mode()
-    path = f"{directory or SITE_FIG_DATA}/{name}.jsonl"
+    target_keys = None
+    if not is_full_model_run():
+        target_keys = {model.key for model in cli_args.models}
     return write_jsonl_payload(
-        path,
+        f"{directory or SITE_FIG_DATA}/{name}.jsonl",
         payload,
-        mode=mode,
-        key_migration=cli_args.migrate_model_key,
-        target_keys={model.key for model in cli_args.models}
-        if mode == PayloadMode.targeted
-        else None,
+        target_keys=target_keys,
     )

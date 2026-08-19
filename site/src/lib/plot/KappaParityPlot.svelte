@@ -40,7 +40,6 @@
   let srme_by_id = $state<Map<string, number | null>>()
   let color_metric = $state<`srme` | `sre`>(`srme`)
 
-  let model_label = $derived(parity_model?.model_label ?? model.model_name)
   // precomputed phonon metrics: κ_SRME (mode-resolved symmetric relative mean error)
   // and κ_SRE (symmetric relative error of the scalar lattice thermal conductivity)
   let kappa_srme = $derived(get_nested_number(model, `metrics.phonons.kappa_103.κ_SRME`))
@@ -81,7 +80,7 @@
             y: parity.y,
             metadata: parity.points,
             markers: `points`,
-            label: model_label,
+            label: model.model_name,
             size_values: parity.points.map((point) => point.n_sites),
             color_values,
             point_style: { radius: 6, stroke: `white`, stroke_width: 0.5 },
@@ -113,7 +112,7 @@
     const dft = as_phonon_dos(base.dft_dos[selected.material_id])
     const ml = as_phonon_dos(parity_model.ml_dos[selected.material_id])
     if (dft) phonon_dos[`DFT (PBE)`] = dft
-    if (ml) phonon_dos[model_label] = ml
+    if (ml) phonon_dos[model.model_name] = ml
     return phonon_dos
   })
 
@@ -166,7 +165,7 @@
         range: extent,
       }}
       y_axis={{
-        label: `${model_label} κ<sub>L</sub> (W/mK)`,
+        label: `${model.model_name} κ<sub>L</sub> (W/mK)`,
         scale_type: `log`,
         format: `~s`,
         range: extent,
@@ -200,7 +199,8 @@
           <strong>{point.material_id}</strong>
           {@html sanitize_compact_formula(point.formula)}<br />
           PBE κ: {format_num(point.kappa_dft, `.3~`)} <small>W/mK</small><br />
-          {model_label} κ: {format_num(point.kappa_ml, `.3~`)} <small>W/mK</small><br />
+          {model.model_name} κ: {format_num(point.kappa_ml, `.3~`)} <small>W/mK</small><br
+          />
           {@const material_srme = srme_by_id?.get(point.material_id)}
           κ<sub>SRE</sub>: {format_num(point.sre, `.3~`)}
           {#if material_srme != null}
@@ -237,9 +237,8 @@
                 selected.formula,
               )}){/if}
             &mdash; PBE κ {format_num(selected.kappa_dft, `.3~`)},
-            {model_label} κ {format_num(selected.kappa_ml, `.3~`)} <small>W/mK</small>, κ<sub
-              >SRE</sub
-            >
+            {model.model_name} κ {format_num(selected.kappa_ml, `.3~`)}
+            <small>W/mK</small>, κ<sub>SRE</sub>
             {format_num(selected.sre, `.3~`)}
           </span>
           <button

@@ -25,7 +25,7 @@ model_identities = {
 # Mean model error for structures containing each element against MP prevalence.
 element_prevalence_errors = {
     model.key: elements.mean_abs_error_by_element(
-        df_comp, df_each_err[model.label]
+        df_comp, df_each_err[model.key]
     ).reindex(df_elem_err.index)
     for model in models_to_plot
 }
@@ -62,7 +62,7 @@ figs.write_site_payload(
 # %%
 model_element_errors = pd.DataFrame(
     {
-        model.key: (df_comp * df_each_err[model.label].abs().to_numpy()[:, None]).mean()
+        model.key: (df_comp * df_each_err[model.key].abs().to_numpy()[:, None]).mean()
         for model in models_to_plot
     }
 )

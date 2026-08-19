@@ -28,7 +28,7 @@ def main() -> int:
     def evaluate_one(model: Model) -> None:
         print(f"\nProcessing {model.label}...")
         metric_reference, model_preds = discovery.prepare_model_predictions(
-            df_preds, df_preds[model.label]
+            df_preds, df_preds[model.key]
         )
         metrics_by_subset = discovery.calc_discovery_metrics(
             metric_reference, model_preds, uniq_proto_prevalence=uniq_proto_prevalence

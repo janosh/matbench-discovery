@@ -12,9 +12,7 @@ JSON manifest is committed.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import io
-import json
 import math
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
@@ -23,11 +21,12 @@ import ase.io
 import numpy as np
 from ase import Atoms
 from asset_helpers import (
-    active_model_assets,
-    asset_safe_key,
     clean_float,
     compact_extxyz,
+    read_manifest,
+    remove_model_assets,
     resolve_models,
+    retained_parity_assets,
     write_json_gz,
     write_manifest,
 )
@@ -39,10 +38,10 @@ from matbench_discovery.enums import DataFiles, MbdKey
 from matbench_discovery.phonons import read_kappa_json
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import numpy.typing as npt
     import pandas as pd
-
-    from matbench_discovery.enums import Model
 
 OUT_DIR: Final = "site/static/kappa-parity"
 MANIFEST_PATH: Final = "site/src/lib/parity/kappa-parity-manifest.json"
@@ -62,15 +61,15 @@ KAPPA_TOT_AVG: Final = str(MbdKey.kappa_tot_avg)
 PH_FREQS: Final = str(Key.ph_freqs)
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command-line options for generating kappa parity assets."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--models",
-        nargs="*",
+        nargs="+",
         default=[],
         help=(
-            "Model enum names, canonical keys, or key aliases. "
+            "Model enum names or canonical keys. "
             "Defaults to active models. Models without kappa_103 predictions are "
             "skipped."
         ),
@@ -79,7 +78,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", default=MANIFEST_PATH)
     parser.add_argument("--asset-prefix", default=ASSET_PREFIX)
     parser.add_argument("--local-asset-base-url", default=LOCAL_ASSET_BASE_URL)
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def scalar_from_avg(value: npt.ArrayLike) -> float | None:
@@ -196,27 +195,24 @@ def load_reference() -> tuple[
     return df_dft, structures, meta
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> None:
     """Generate base (DFT) and per-model kappa parity assets plus manifests."""
-    args = parse_args()
-    out_dir = Path(args.out_dir)
+    args = parse_args(argv)
     manifest_path = Path(args.manifest)
-    asset_dir = out_dir / "assets"
+    asset_dir = Path(args.out_dir) / "assets"
     models = resolve_models(args.models)
+    target_keys = {model.key for model in models} if args.models else set()
 
     df_dft, structures, meta = load_reference()
     material_ids = [str(mat_id) for mat_id in df_dft.index]
-    material_ids_sha256 = hashlib.sha256("\n".join(material_ids).encode()).hexdigest()
 
     base = {
         "material_ids": material_ids,
-        "formulas": [meta.get(mid, {}).get("formula", "") for mid in material_ids],
-        "n_sites": [meta.get(mid, {}).get("n_sites") for mid in material_ids],
-        "spacegroups": [meta.get(mid, {}).get("spacegroup") for mid in material_ids],
+        "formulas": [meta[mid]["formula"] for mid in material_ids],
+        "n_sites": [meta[mid]["n_sites"] for mid in material_ids],
+        "spacegroups": [meta[mid]["spacegroup"] for mid in material_ids],
         "kappa_dft": [row_scalar_kappa(df_dft.loc[mid]) for mid in material_ids],
-        "structures": {
-            mid: structures[mid] for mid in material_ids if mid in structures
-        },
+        "structures": {mid: structures[mid] for mid in material_ids},
         "dft_dos": {
             mid: dos
             for mid in material_ids
@@ -226,27 +222,23 @@ def main() -> None:
 
     # a full run (no --models) regenerates everything; a partial run keeps existing
     # model assets so submitting a single model doesn't wipe the others
-    regenerate_all = not args.models
-    model_assets: dict[str, dict[str, str | int]] = {}
-    if regenerate_all:
+    if args.models:
+        base_meta, model_assets = retained_parity_assets(
+            read_manifest(manifest_path), target_keys, base, args.asset_prefix
+        )
+    else:
         for path in asset_dir.glob(f"{args.asset_prefix}-*.json.gz"):
             path.unlink()
-    elif manifest_path.is_file():
-        previous = json.loads(manifest_path.read_text(encoding="utf-8"))
-        model_assets = active_model_assets(previous.get("model_assets", {}))
-
-    base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
+        model_assets = {}
+        base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
+    remove_model_assets(asset_dir, args.asset_prefix, target_keys)
 
     for model in models:
-        kappa_path = _kappa_path(model)
+        kappa_path = model.kappa_103_path
         if kappa_path is None:
             print(f"Skipping {model.label}: no kappa_103 predictions")
             continue
-        try:
-            df_ml = read_kappa_json(kappa_path)
-        except (ValueError, KeyError, OSError) as exc:
-            print(f"Skipping {model.label}: failed reading {kappa_path}: {exc!r}")
-            continue
+        df_ml = read_kappa_json(kappa_path)
 
         kappa_ml = [
             row_scalar_kappa(df_ml.loc[mid]) if mid in df_ml.index else None
@@ -257,7 +249,6 @@ def main() -> None:
             continue
         model_payload = {
             "model_key": model.key,
-            "model_label": model.label,
             "kappa_ml": kappa_ml,
             "ml_dos": {
                 mid: dos
@@ -266,32 +257,20 @@ def main() -> None:
                 and (dos := dos_from_row(df_ml.loc[mid])) is not None
             },
         }
-        asset_name = f"{args.asset_prefix}-model-{asset_safe_key(model.key)}.json.gz"
+        asset_name = f"{args.asset_prefix}-model-{model.key}.json.gz"
         model_assets[model.key] = write_json_gz(
             asset_dir / asset_name, {"model": model_payload}
         )
 
     manifest = {
-        "schema_version": 1,
-        "benchmark": "phonons",
-        "dataset": "phonondb",
+        "schema_version": 2,
         "asset_prefix": args.asset_prefix,
         "local_asset_base_url": args.local_asset_base_url.rstrip("/"),
         "row_count": len(material_ids),
-        "material_ids_sha256": material_ids_sha256,
         "base": base_meta,
         "model_assets": model_assets,
     }
     write_manifest(manifest_path, manifest)
-
-
-def _kappa_path(model: Model) -> str | None:
-    """Resolve a model's kappa_103 prediction file path, or None if unavailable."""
-    try:
-        path = model.kappa_103_path
-    except ValueError, FileNotFoundError:
-        return None
-    return path if isinstance(path, str) and Path(path).is_file() else None
 
 
 if __name__ == "__main__":

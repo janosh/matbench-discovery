@@ -24,8 +24,8 @@ def load_prediction_errors(
     uses the same fixed DFT convex hull.
     """
     predictions = load_df_wbm_with_preds(models=models, subset=subset).round(3)
-    model_labels = [model.label for model in models]
-    errors = predictions[model_labels].sub(predictions[MbdKey.e_form_dft], axis="index")
+    model_keys = [model.key for model in models]
+    errors = predictions[model_keys].sub(predictions[MbdKey.e_form_dft], axis="index")
     return predictions, errors
 
 

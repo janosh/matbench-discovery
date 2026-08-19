@@ -335,7 +335,6 @@
   details.filter-menu {
     position: relative;
     summary {
-      cursor: pointer;
       list-style: none;
       padding: 1pt 6pt;
       border-radius: 4px;

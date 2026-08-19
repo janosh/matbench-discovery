@@ -24,10 +24,8 @@ export interface PhononDos extends RawDos {
 
 export interface KappaParityBase extends ParityBase {
   kappa_dft: (number | null)[]
-  // optional metadata for point styling (size by n_sites, color by crystal system);
-  // older assets may lack these, so the client falls back to default size/color
-  n_sites?: (number | null)[]
-  spacegroups?: (number | null)[]
+  n_sites: (number | null)[]
+  spacegroups: (number | null)[]
   structures: Record<string, AnyStructure | string | undefined>
   dft_dos: Record<string, RawDos | undefined>
 }
@@ -68,7 +66,13 @@ export async function load_kappa_parity_base(): Promise<KappaParityBase> {
     kappa_parity_asset_url(kappa_parity_manifest.base.asset),
   )
   const { row_count } = kappa_parity_manifest
-  for (const key of [`material_ids`, `formulas`, `kappa_dft`] as const) {
+  for (const key of [
+    `material_ids`,
+    `formulas`,
+    `kappa_dft`,
+    `n_sites`,
+    `spacegroups`,
+  ] as const) {
     assert_array_length(`kappa parity ${key}`, base[key], row_count)
   }
   return base
@@ -99,8 +103,8 @@ export function get_kappa_parity_point(
     kappa_dft: x,
     kappa_ml: y,
     sre: Math.abs((2 * (y - x)) / (x + y)),
-    n_sites: base.n_sites?.[row_idx] ?? null,
-    spacegroup: base.spacegroups?.[row_idx] ?? null,
+    n_sites: base.n_sites[row_idx] ?? null,
+    spacegroup: base.spacegroups[row_idx] ?? null,
   }
 }
 

@@ -10,7 +10,6 @@ from unittest.mock import patch
 import pytest
 import requests
 import requests.adapters
-import yaml
 
 import scripts.generate_model_enum as model_enum_generator
 from matbench_discovery import DATA_DIR, ROOT
@@ -445,22 +444,14 @@ def test_generated_model_enum_is_current() -> None:
     assert model_enum_generator.generate_source(source) == source
 
 
-def test_model_enum_generator_rejects_global_key_alias_collisions(
+def test_model_enum_generator_rejects_global_key_collisions(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Canonical keys and aliases are unique across active and aborted YAMLs."""
-    metadata_by_path = {
-        "active/model-a.yml": {
-            "model_key": "model-a",
-            "model_key_aliases": ["legacy"],
-            "lifecycle": "active",
-        },
-        "aborted/model-b.yml": {"model_key": "legacy", "lifecycle": "aborted"},
-    }
-    for relative_path, metadata in metadata_by_path.items():
-        path = tmp_path / "models" / relative_path
+    """Canonical keys are unique across active and aborted YAMLs."""
+    for lifecycle in ("active", "aborted"):
+        path = tmp_path / "models" / lifecycle / "model.yml"
         path.parent.mkdir(parents=True)
-        path.write_text(yaml.safe_dump(metadata))
+        path.write_text(f"model_key: model-a\nlifecycle: {lifecycle}\n")
     monkeypatch.setattr(model_enum_generator, "ROOT", str(tmp_path))
     source = (
         f"class Model:\n{model_enum_generator.BEGIN_MARKER}\n"
@@ -468,18 +459,6 @@ def test_model_enum_generator_rejects_global_key_alias_collisions(
     )
     with pytest.raises(ValueError, match="collides"):
         model_enum_generator.generate_source(source)
-
-
-def test_model_from_ref_prefers_exact_alias_over_normalized_enum_value(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Exact alias slugs cannot be shadowed by punctuation normalization."""
-    monkeypatch.setitem(
-        Model.mace_mp_0.__dict__,
-        "metadata",
-        {"model_key": "mace-mp-0", "model_key_aliases": ["chgnet.0.3.0"]},
-    )
-    assert Model.from_ref("chgnet.0.3.0") is Model.mace_mp_0
 
 
 @pytest.mark.parametrize(

@@ -36,7 +36,6 @@ const base: EnergyParityBase = {
 
 const model: EnergyParityModel = {
   model_key: `test-model`,
-  model_label: `Test Model`,
   e_form_pred: [0.4, null, 0.9],
 }
 
@@ -68,7 +67,6 @@ const manifest_sized_model = (
   overrides: Partial<EnergyParityModel> = {},
 ): EnergyParityModel => ({
   model_key,
-  model_label: `Test Model`,
   e_form_pred: Array<number | null>(energy_parity_manifest.row_count).fill(0),
   ...overrides,
 })
@@ -213,6 +211,12 @@ describe(`energy parity data helpers`, () => {
     expect(structure_shard_idx(base, 1)).toBe(0) // mid-shard row (distinguishes floor from ceil)
     expect(structure_shard_idx(base, 2)).toBe(1)
     expect(structure_bundle_for_shard(1)).toBe(first_structure_bundle)
+    const n_shards = Math.ceil(
+      energy_parity_manifest.row_count / energy_parity_manifest.structure_shard_size,
+    )
+    expect(() => structure_bundle_for_shard(n_shards)).toThrow(
+      `No structure bundle for shard ${n_shards}`,
+    )
   })
 
   it(`loads structures from the shard nested inside a bundle`, async () => {

@@ -9,9 +9,9 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import subprocess
+import re
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 import numpy as np
 import pandas as pd
@@ -22,24 +22,99 @@ from matbench_discovery.figs import write_json_gz as write_shared_json_gz
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
+CONTENT_HASH_LENGTH = 16
+
+
+def content_addressed_name(stem: str, content_sha256: str) -> str:
+    """Return an immutable asset name keyed by its uncompressed JSON content."""
+    return f"{stem}-{content_sha256[:CONTENT_HASH_LENGTH]}.json.gz"
+
+
+def is_content_addressed_name(stem: str, name: str) -> bool:
+    """Whether an asset name ends in a lowercase hexadecimal content hash."""
+    return bool(
+        re.fullmatch(
+            rf"{re.escape(stem)}-[0-9a-f]{{{CONTENT_HASH_LENGTH}}}\.json\.gz", name
+        )
+    )
+
+
+def is_asset_metadata(value: object, stem: str) -> TypeGuard[dict[str, str]]:
+    """Whether a manifest entry has a content-addressed name and SHA-256 digest."""
+    return (
+        isinstance(value, dict)
+        and set(value) == {"asset", "sha256"}
+        and is_content_addressed_name(stem, str(value.get("asset")))
+        and isinstance(sha256 := value.get("sha256"), str)
+        and re.fullmatch(r"[0-9a-f]{64}", sha256) is not None
+    )
+
 
 def resolve_models(model_refs: Iterable[str]) -> tuple[Model, ...]:
-    """Resolve model enum names, canonical keys, or key aliases to members."""
-    if not model_refs:
-        return Model.active()
-    return tuple(map(Model.from_ref, model_refs))
+    """Resolve model enum names or canonical keys to members."""
+    return tuple(dict.fromkeys(map(Model.from_ref, model_refs))) or Model.active()
 
 
-def active_model_assets(
-    model_assets: Mapping[str, Mapping[str, str | int]],
-) -> dict[str, dict[str, str | int]]:
-    """Keep only manifest assets belonging to currently active model keys."""
-    active_keys = {model.key for model in Model.active()}
-    return {
+def read_manifest(path: Path) -> dict[str, Any] | None:
+    """Read an existing parity manifest when present."""
+    return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+
+
+def json_content_sha256(data: Mapping[str, object]) -> str:
+    """Hash the canonical uncompressed JSON used for parity asset names."""
+    return hashlib.sha256(
+        json.dumps(dict(data), allow_nan=False, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def retained_parity_assets(
+    manifest: dict[str, Any] | None,
+    target_keys: Iterable[str],
+    base: Mapping[str, object],
+    asset_prefix: str,
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
+    """Retain the immutable base and peer models from a compatible manifest."""
+    if manifest is None:
+        raise FileNotFoundError("Targeted parity refresh requires an existing manifest")
+    if manifest.get("schema_version") != 2:
+        raise ValueError(
+            "Parity manifest predates content-addressed assets; run a full refresh"
+        )
+    if manifest.get("asset_prefix") != asset_prefix:
+        raise ValueError("Parity asset prefix changed; run a full refresh")
+    base_asset = manifest.get("base")
+    if not is_asset_metadata(base_asset, f"{asset_prefix}-base"):
+        raise ValueError("Parity base asset metadata is invalid; run a full refresh")
+    expected_base_name = content_addressed_name(
+        f"{asset_prefix}-base", json_content_sha256(base)
+    )
+    if base_asset["asset"] != expected_base_name:
+        raise ValueError("Parity base content changed; run a full refresh")
+    model_assets = manifest.get("model_assets")
+    if not isinstance(model_assets, dict):
+        raise TypeError("Parity manifest model_assets must be an object")
+    for model_key, asset in model_assets.items():
+        if not isinstance(model_key, str):
+            raise TypeError("Parity model assets must map string keys to objects")
+        if not is_asset_metadata(asset, f"{asset_prefix}-model-{model_key}"):
+            raise ValueError(
+                "Parity model asset metadata is invalid; run a full refresh"
+            )
+    active_keys = {model.key for model in Model.active()} - set(target_keys)
+    return dict(base_asset), {
         model_key: dict(asset)
         for model_key, asset in model_assets.items()
         if model_key in active_keys
     }
+
+
+def remove_model_assets(
+    asset_dir: Path, asset_prefix: str, model_keys: Iterable[str]
+) -> None:
+    """Remove generated files replaced by a targeted model refresh."""
+    for model_key in model_keys:
+        for path in asset_dir.glob(f"{asset_prefix}-model-{model_key}-*.json.gz"):
+            path.unlink()
 
 
 def clean_float(value: float | np.floating, decimals: int = 6) -> float | None:
@@ -60,48 +135,27 @@ def clean_ints(series: pd.Series) -> list[int | None]:
     return [int(val) if np.isfinite(val) else None for val in nums]
 
 
-def asset_safe_key(model_key: str) -> str:
-    """Convert a model key into a filesystem-safe asset name segment."""
-    return "".join(
-        char if char.isalnum() or char in "._-" else "_" for char in model_key
-    ).strip("._-")
-
-
-def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str | int]:
-    """Write deterministic gzipped JSON and return release manifest metadata."""
-    n_bytes = write_shared_json_gz(str(path), dict(data))
-    with open(path, "rb") as file:
+def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str]:
+    """Write content-addressed gzipped JSON and return release metadata."""
+    payload = dict(data)
+    content_sha256 = json_content_sha256(payload)
+    asset_name = content_addressed_name(
+        path.name.removesuffix(".json.gz"), content_sha256
+    )
+    asset_path = path.with_name(asset_name)
+    n_bytes = write_shared_json_gz(str(asset_path), payload)
+    with open(asset_path, "rb") as file:
         sha256 = hashlib.file_digest(file, "sha256").hexdigest()
-    print(f"Wrote {path} ({n_bytes / 1024:.1f} KiB)")
-    return {
-        "asset": path.name,
-        "bytes": n_bytes,
-        "sha256": sha256,
-    }
+    print(f"Wrote {asset_path} ({n_bytes / 1024:.1f} KiB)")
+    return {"asset": asset_name, "sha256": sha256}
 
 
 def write_manifest(path: Path, manifest: Mapping[str, object]) -> None:
-    """Write and format the single JSON manifest consumed by Python and TypeScript."""
+    """Write the single JSON manifest consumed by Python and TypeScript."""
     manifest_json = json.dumps(manifest, indent=2, sort_keys=True)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f"{manifest_json}\n", encoding="utf-8")
     print(f"Wrote {path}")
-    format_manifest_files([path])
-
-
-def format_manifest_files(paths: Iterable[Path]) -> None:
-    """Format generated manifests with the site's configured formatter."""
-    site_dir = Path("site")
-    vp_bin = (site_dir / "node_modules/.bin/vp").resolve()
-    fmt_paths = [
-        str(path.relative_to(site_dir) if path.is_relative_to(site_dir) else path)
-        for path in paths
-    ]
-    subprocess.run(
-        [str(vp_bin), "fmt", "--write", *fmt_paths],
-        cwd=site_dir,
-        check=True,
-    )
 
 
 def compact_extxyz(text: str, decimals: int = 3) -> str:

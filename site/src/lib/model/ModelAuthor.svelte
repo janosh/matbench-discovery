@@ -32,7 +32,12 @@
   {#if show_affiliation && org_logo}&nbsp;<Logo logo={org_logo} />{/if}
   {#each author_links as [href, label, icon] (label)}
     {#if href}
-      <a {href} aria-label={label}><Icon {icon} /></a>
+      <a
+        {href}
+        aria-label={label}
+        style={label === `Email` ? `font-size: 1.1em; padding-right: 0.2em` : undefined}
+        ><Icon {icon} /></a
+      >
     {/if}
   {/each}
 </span>

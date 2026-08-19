@@ -38,10 +38,15 @@
   let diatomic_models = $derived(data?.diatomic_models ?? [])
   let diatomic_curves = $derived(data?.diatomic_curves ?? {})
   let reference_names = $derived(data?.reference_names ?? [])
+  let model_idx_by_key = $derived(
+    Object.fromEntries(diatomic_models.map(({ model_key }, idx) => [model_key, idx])),
+  )
+  const label_for = (key: string): string =>
+    diatomic_models[model_idx_by_key[key] ?? -1]?.model_name ?? key
   let errors = $derived(data?.errors ?? {})
   let error_entries = $derived(Object.entries(errors))
   let error_title = $derived(
-    error_entries.map(([model_name, error]) => `${model_name}: ${error}`).join(`\n`),
+    error_entries.map(([key, error]) => `${label_for(key)}: ${error}`).join(`\n`),
   )
 
   const homo_nuc_key = `homo-nuclear`
@@ -62,20 +67,13 @@
 
   const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
 
-  let model_colors = $derived(
-    new Map<string, string>(
-      diatomic_models.map((model, idx) => [
-        model.model_name,
-        PLOT_COLORS[idx % PLOT_COLORS.length],
-      ]),
-    ),
-  )
-
   // DFT references get fixed, high-contrast colors (not in the model palette) so they
   // read as ground truth
   const ref_colors: Record<string, string> = { PBE: `#000000`, r2SCAN: `#f032e6` }
   const color_for = (key: string): string =>
-    ref_colors[key] ?? model_colors.get(key) ?? `gray`
+    ref_colors[key] ??
+    PLOT_COLORS[(model_idx_by_key[key] ?? -1) % PLOT_COLORS.length] ??
+    `gray`
 
   let selected_element_group = $state(`all`)
   let selected_group = $derived(
@@ -86,25 +84,19 @@
   // default to the 5 most recently added models with curve data (diatomic_models is
   // sorted newest-first); every other model stays toggleable in the buttons below
   const default_n_models = 5
-  const model_name_by_key = $derived(
-    new Map(diatomic_models.map((model) => [model.model_key, model.model_name])),
-  )
-  const model_key_by_name = $derived(
-    new Map(diatomic_models.map((model) => [model.model_name, model.model_key])),
-  )
-  let selectable_names = $derived([
+  let selectable_keys = $derived([
     ...reference_names,
     ...diatomic_models
-      .map((model) => model.model_name)
-      .filter((model_name) => model_name in diatomic_curves && !errors[model_name]),
+      .map((model) => model.model_key)
+      .filter((model_key) => model_key in diatomic_curves && !errors[model_key]),
   ])
   let selectable_options = $derived(
-    selectable_names.map((model_name) => {
-      const model_color = color_for(model_name)
+    selectable_keys.map((model_key) => {
+      const model_color = color_for(model_key)
       const text_color = pick_contrast_color({ background: model_color })
       return {
-        label: `${model_name}${reference_names.includes(model_name) ? ` (DFT)` : ``}`,
-        value: model_name,
+        label: `${label_for(model_key)}${reference_names.includes(model_key) ? ` (DFT)` : ``}`,
+        value: model_key,
         style: {
           selected: `background: ${model_color}; color: ${text_color};`,
           option: ``,
@@ -114,25 +106,18 @@
   )
 
   // DFT references on by default, plus the newest models with curve data
-  let default_selected_names = $derived([
+  let default_selected_keys = $derived([
     ...reference_names,
-    ...selectable_names
-      .filter((model_name) => !reference_names.includes(model_name))
+    ...selectable_keys
+      .filter((model_key) => !reference_names.includes(model_key))
       .slice(0, default_n_models),
   ])
 
   const model_selection = new UrlModelSelection(() => ({
     options: selectable_options,
-    defaults: default_selected_names,
-    // accept model keys (canonical) or display names in the URL, drop unknowns
-    from_url: (token) => {
-      const model_name = model_name_by_key.get(token) ?? token
-      return selectable_names.includes(model_name) ? model_name : undefined
-    },
-    // serialize display names back to model keys (DFT references have no key)
-    to_url: (model_name) => model_key_by_name.get(model_name) ?? model_name,
+    defaults: default_selected_keys,
   }))
-  let selected_model_names = $derived(model_selection.values)
+  let selected_model_keys = $derived(model_selection.values)
   const visible_diatomics = new SvelteSet<string>()
   const observe_plot = make_plot_observer(visible_diatomics)
   let diatomics_to_render = $derived(
@@ -143,9 +128,9 @@
       return (
         element &&
         selected_group.includes(element) &&
-        selected_model_names.some(
-          (model) =>
-            diatomic_curves[model]?.[homo_nuc_key]?.[formula]?.energies?.length > 0,
+        selected_model_keys.some(
+          (model_key) =>
+            diatomic_curves[model_key]?.[homo_nuc_key]?.[formula]?.energies?.length > 0,
         )
       )
     }),
@@ -175,20 +160,19 @@
   ])
 
   const curves_for_formula = (formula: string) =>
-    selected_model_names.flatMap((model) => {
-      const model_curves = diatomic_curves[model]
+    selected_model_keys.flatMap((model_key) => {
+      const model_curves = diatomic_curves[model_key]
       const curve = model_curves?.[homo_nuc_key]?.[formula]
       if (!curve?.energies.length) return []
-      // DFT references carry per-formula distances; models share one grid
-      const distances = curve.distances ?? model_curves.distances
-      const line_width = reference_names.includes(model) ? 2.5 : undefined
       return [
         {
-          model_key: model,
-          distances,
+          model_key,
+          label: label_for(model_key),
+          // DFT references carry per-formula distances; models share one grid
+          distances: curve.distances ?? model_curves.distances,
           energies: curve.energies,
-          color: color_for(model),
-          line_width,
+          color: color_for(model_key),
+          line_width: reference_names.includes(model_key) ? 2.5 : undefined,
         },
       ]
     })
@@ -196,7 +180,7 @@
 
 <h1>Diatomics</h1>
 
-<div class="task-intro">
+<div class="task-intro" style="margin-bottom: 1em">
   <!-- wrapper div: the markdown renders multiple top-level elements which would
   otherwise each become their own flex item -->
   <div><DiatomicsNote /></div>
@@ -282,9 +266,6 @@
 <style>
   h1 {
     margin: 0;
-  }
-  .task-intro {
-    margin-bottom: 1em;
   }
   .controls {
     display: flex;

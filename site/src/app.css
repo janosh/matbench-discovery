@@ -1,51 +1,7 @@
-@import '@wooorm/starry-night/style/dark';
+@import '@wooorm/starry-night/style/core';
 
 :root {
-  /* Light theme palette */
-  --light-page-bg: #fefefe; /* softer than pure white */
-  --light-surface-bg: #eee; /* softer than pure white */
-  --light-text: #1f2937; /* gray-800 */
-  --light-text-secondary: #4b5563; /* gray-600 */
-  --light-link: #1367c0; /* toned-down blue */
-  --light-link-hover: mediumseagreen; /* muted orange */
-  --light-code-bg: rgba(0, 0, 0, 0.05); /* gentle blue tint */
-  --light-pre-bg: rgba(0, 0, 0, 0.04); /* soft panel bg */
-  --light-btn-bg: rgba(0, 0, 0, 0.04); /* calm teal */
-  --light-btn-bg-hover: rgba(0, 0, 0, 0.1);
-  --light-btn-text: #27323f; /* readable on teal */
-  --light-border: rgba(0, 0, 0, 0.2);
-  --light-highlight: seagreen; /* cyan-teal accent */
-  --light-blockquote-bg: rgba(0, 0, 0, 0.03);
-  --light-table-odd: rgba(0, 0, 0, 0.03);
-  --light-nav-bg: rgba(0, 0, 0, 0.06); /* lighter surface tint */
-  --light-card-bg: rgba(255, 255, 255, 0.4);
-  --light-card-border: rgba(0, 0, 0, 0.12);
-  /* strong enough to be visible on white (0.06 made light-mode shadows invisible) */
-  --light-shadow: rgba(0, 0, 0, 0.2);
-
-  /* Dark theme palette matches current site appearance */
-  --dark-page-bg: #061e25;
-  --dark-surface-bg: #222; /* == --night */
-  --dark-text: rgb(208, 208, 208);
-  --dark-text-secondary: rgb(140, 140, 140);
-  --dark-link: cornflowerblue;
-  --dark-link-hover: orange;
-  --dark-code-bg: rgba(255, 255, 255, 0.1);
-  --dark-pre-bg: rgba(255, 255, 255, 0.05);
-  --dark-btn-bg: rgba(255, 255, 255, 0.08);
-  --dark-btn-bg-hover: rgba(255, 255, 255, 0.2);
-  --dark-btn-text: rgb(208, 208, 208);
-  --dark-border: rgba(255, 255, 255, 0.125);
-  --dark-highlight: mediumseagreen;
-  --dark-blockquote-bg: rgba(255, 255, 255, 0.05);
-  --dark-table-odd: rgba(0, 0, 0, 0.5);
-  --dark-nav-bg: rgba(255, 255, 255, 0.08);
-  --dark-card-bg: rgba(0, 0, 0, 0.3);
-  --dark-chip-bg: rgba(255, 255, 255, 0.08); /* card-bg reads near-black on small chips */
-  --dark-card-border: rgba(255, 255, 255, 0.1);
-  --dark-shadow: rgba(0, 0, 0, 0.5);
-
-  /* Starry Night syntax colors used by @wooorm/starry-night/style/dark */
+  /* Theme-aware colors consumed by Starry Night's core styles */
   --color-prettylights-syntax-brackethighlighter-angle: light-dark(#59636e, #9198a1);
   --color-prettylights-syntax-brackethighlighter-unmatched: light-dark(#82071e, #f85149);
   --color-prettylights-syntax-carriage-return-bg: light-dark(#cf222e, #b62324);
@@ -77,34 +33,30 @@
   --color-prettylights-syntax-sublimelinter-gutter-mark: light-dark(#818b98, #3d444d);
   --color-prettylights-syntax-variable: light-dark(#953800, #ffa657);
 
-  /* Theme-aware aliases */
-  --page-bg: light-dark(var(--light-page-bg), var(--dark-page-bg));
-  --surface-bg: light-dark(var(--light-surface-bg), var(--dark-surface-bg));
-  --text-color: light-dark(var(--light-text), var(--dark-text));
-  --text-secondary: light-dark(var(--light-text-secondary), var(--dark-text-secondary));
-  --link-color: light-dark(var(--light-link), var(--dark-link));
-  --link-hover: light-dark(var(--light-link-hover), var(--dark-link-hover));
-  --code-bg: light-dark(var(--light-code-bg), var(--dark-code-bg));
-  --pre-bg: light-dark(var(--light-pre-bg), var(--dark-pre-bg));
-  --btn-bg: light-dark(var(--light-btn-bg), var(--dark-btn-bg));
-  --btn-text: light-dark(var(--light-btn-text), var(--dark-btn-text));
-  --btn-bg-hover: light-dark(var(--light-btn-bg-hover), var(--dark-btn-bg-hover));
-  --border: light-dark(var(--light-border), var(--dark-border));
-  --highlight: light-dark(var(--light-highlight), var(--dark-highlight));
-  --blockquote-bg: light-dark(var(--light-blockquote-bg), var(--dark-blockquote-bg));
-  --table-odd: light-dark(var(--light-table-odd), var(--dark-table-odd));
-  --nav-bg: light-dark(var(--light-nav-bg), var(--dark-nav-bg));
-  --card-bg: light-dark(var(--light-card-bg), var(--dark-card-bg));
-  /* small chips/pills (deps, model info, external links): lightly shaded in dark mode */
-  --chip-bg: light-dark(var(--light-card-bg), var(--dark-chip-bg));
-  --card-border: light-dark(var(--light-card-border), var(--dark-card-border));
-  --shadow: light-dark(var(--light-shadow), var(--dark-shadow));
-  --struct-bg: light-dark(var(--light-pre-bg), var(--dark-pre-bg));
+  /* Site theme */
+  --page-bg: light-dark(#fefefe, #061e25);
+  --surface-bg: light-dark(#eee, #222);
+  --text-color: light-dark(#1f2937, rgb(208, 208, 208));
+  --text-secondary: light-dark(#4b5563, rgb(140, 140, 140));
+  --link-color: light-dark(#1367c0, cornflowerblue);
+  --link-hover: light-dark(mediumseagreen, orange);
+  --code-bg: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.1));
+  --pre-bg: light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.05));
+  --btn-bg: light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.08));
+  --btn-text: light-dark(#27323f, rgb(208, 208, 208));
+  --btn-bg-hover: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.2));
+  --border: light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.125));
+  --highlight: light-dark(seagreen, mediumseagreen);
+  --table-odd: light-dark(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.5));
+  --nav-bg: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
+  --card-bg: light-dark(rgba(255, 255, 255, 0.4), rgba(0, 0, 0, 0.3));
+  --chip-bg: light-dark(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.08));
+  --shadow: light-dark(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.5));
+  --struct-bg: var(--pre-bg);
 
   /* Component variables and layout */
   --github-corner-color: var(--page-bg);
   --github-corner-bg: var(--text-color);
-  --footer-bg: light-dark(#edf4f4, var(--dark-shadow));
   --tooltip-bg: var(--surface-bg);
   --tooltip-shadow: drop-shadow(0 1px 8px var(--shadow));
 
@@ -133,12 +85,6 @@
   --tgl-dropdown-border: var(--border);
   --tgl-dropdown-shadow: 0 4px 12px var(--shadow);
 
-  --radio-btn-bg: var(--btn-bg);
-  --radio-btn-checked-shadow: none;
-  --radio-btn-checked-bg: var(--btn-bg-hover);
-  --radio-btn-color: var(--text-color);
-  --radio-btn-padding: 0 4pt;
-
   /* ButtonGroup site theme */
   --btn-group-display: flex;
   --btn-group-gap: 8pt;
@@ -152,7 +98,6 @@
 
   /* can be increased on pages without much text like /models */
   --main-max-width: 50rem;
-  --main-padding: 3rex;
 
   --text-muted: var(--text-secondary);
 }
@@ -179,7 +124,7 @@ body {
     background-color 0.2s;
 }
 main {
-  padding: var(--main-padding);
+  padding: 3rex;
   flex: 1;
   container-type: inline-size;
   box-sizing: border-box;
@@ -217,17 +162,17 @@ button:hover {
 .draggable-pane.plot-controls-pane input.range-input[type='number'] {
   width: 3.5em;
 }
-:is(div.multiselect) button {
+div.multiselect button {
   background: transparent;
 }
-:is(div.multiselect) ul {
+div.multiselect ul {
   padding: 0;
 }
-:is(div.multiselect) ul sub {
+div.multiselect ul sub {
   /* fixes κ<sub>SRME</sub> looking more like super than subscript in multiselect */
   transform: translateY(0.5em);
 }
-:is(ul.options) {
+ul.options {
   border: 1px solid var(--border) !important;
   box-shadow: none !important;
 }
@@ -266,6 +211,9 @@ ul {
 label {
   cursor: pointer;
 }
+summary {
+  cursor: pointer;
+}
 img {
   max-width: 100%;
   margin-block: 1em;
@@ -298,7 +246,7 @@ blockquote {
   border-left: 3pt solid cornflowerblue;
   padding: 4pt 4pt 4pt 9pt;
   margin: 1em auto;
-  background-color: var(--blockquote-bg);
+  background-color: light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.05));
 }
 blockquote > :is(:first-child, :last-child) {
   margin: 0 auto;
@@ -337,14 +285,8 @@ strong a[aria-hidden='true'] {
   left: 0;
 }
 
-caption {
-  display: block;
-}
-
 @keyframes highlight-scroll-target {
-  0% {
-    color: orange;
-  }
+  0%,
   90% {
     color: orange;
   }
@@ -443,7 +385,6 @@ kbd {
 }
 .diatomic-plot {
   --scatter-font-size: 14px;
-
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -463,7 +404,7 @@ kbd {
   font-size: 0.8em;
   pointer-events: none;
   border-radius: 4px;
-  background: color-mix(in srgb, var(--surface-bg, white) 60%, transparent);
+  background: color-mix(in srgb, var(--surface-bg) 60%, transparent);
   backdrop-filter: blur(4px);
 }
 /* Collapsible model legends: hide the collapsed panel bg and pad expanded items. */

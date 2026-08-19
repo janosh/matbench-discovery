@@ -155,7 +155,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
   </legend>
 
   <ol class="models full-bleed">
-    {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
+    {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_key)}
       {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
       {@const bg_clr = bg_color(metric_val as number, best_val, worst_val)}
       {@const text_color = pick_contrast_color({ background: bg_clr, backdrop: `white` })}
@@ -178,7 +178,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
 </div>
 
 <!-- link to ALL model pages with hidden links for the SvelteKit crawler -->
-{#each MODELS as model (model.model_name)}
+{#each MODELS as model (model.model_key)}
   <a href="/models/{model.model_key}" hidden>
     {model.model_name}
   </a>
@@ -189,7 +189,6 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     display: flex;
     gap: 8pt;
     place-content: center;
-    opacity: 0.8;
     margin: 2em auto;
     font-weight: lighter;
     align-items: end;
@@ -210,7 +209,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     place-content: center;
   }
   ul > li button {
-    transition: all 0.2s;
+    transition: 0.2s;
   }
   /* plain --btn-bg was invisible here since it's already every button's default
   background; blue tint + inset ring (theme link color) marks the active sort */
@@ -224,8 +223,8 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   }
   ol > li {
-    background-color: light-dark(var(--light-surface-bg), var(--dark-blockquote-bg));
-    border: 1px solid var(--card-border);
+    background-color: light-dark(#eee, rgba(255, 255, 255, 0.05));
+    border: 1px solid light-dark(rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.1));
     padding: 6pt 10pt 14pt;
     border-radius: 3pt;
     display: grid;
@@ -238,9 +237,6 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     gap: 5pt;
     place-items: center;
     place-content: center;
-  }
-  .radio-group {
-    gap: 5pt;
   }
   input[type='number'] {
     text-align: center;

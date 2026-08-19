@@ -391,8 +391,8 @@
     grid-column: 2;
   }
   svg {
-    touch-action: none; /* Prevents default touch behaviors */
-    cursor: pointer; /* Show pointer cursor to hint clickability */
+    touch-action: none;
+    cursor: pointer;
     overflow: visible;
   }
   svg:focus:not(:focus-visible) {

@@ -237,22 +237,21 @@ def test_load_df_wbm_with_preds(
     assert len(df_wbm_with_preds) == len(df_wbm)
 
     assert list(df_wbm_with_preds) == list(df_wbm) + [
-        Model[model].label for model in models
+        Model[model].key for model in models
     ]
     assert df_wbm_with_preds.index.name == Key.mat_id
 
     for model_name in models:
         model = Model[model_name]
-        assert model.label in df_wbm_with_preds
         if max_error_threshold is not None:
             # Check if predictions exceeding the threshold are filtered out
             error = abs(
-                df_wbm_with_preds[model.label] - df_wbm_with_preds[MbdKey.e_form_dft]
+                df_wbm_with_preds[model.key] - df_wbm_with_preds[MbdKey.e_form_dft]
             )
             assert np.all(error[~error.isna()] <= max_error_threshold)
         else:
             # If no threshold is set, all predictions should be present
-            assert df_wbm_with_preds[model.label].isna().sum() == 0
+            assert df_wbm_with_preds[model.key].isna().sum() == 0
 
 
 def test_load_df_wbm_with_preds_mock_data_models() -> None:
@@ -267,11 +266,11 @@ def test_load_df_wbm_with_preds_mock_data_models() -> None:
         ]
 
     default_cols = list(df_default)
-    assert default_cols == [*df_wbm, *(model.label for model in Model.active())]
+    assert default_cols == [*df_wbm, *(model.key for model in Model.active())]
     assert set(default_cols).isdisjoint(
-        model.label for model in Model if not model.is_active
+        model.key for model in Model if not model.is_active
     )
-    assert inactive_cols == [[*df_wbm, inactive_model.label]] * len(inactive_model_refs)
+    assert inactive_cols == [[*df_wbm, inactive_model.key]] * len(inactive_model_refs)
 
 
 @pytest.mark.skipif(
@@ -284,13 +283,12 @@ def test_load_df_wbm_max_error_threshold() -> None:
     df_high_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=10)
     df_low_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=0.1)
 
-    n_no_threshold = df_no_threshold[model.label].isna().sum()
-    assert n_no_threshold == 38
-    assert df_high_threshold[model.label].isna().sum() <= n_no_threshold
-    assert (
-        df_high_threshold[model.label].isna().sum()
-        <= df_low_threshold[model.label].isna().sum()
-    )
+    missing_counts = [
+        frame[model.key].isna().sum()
+        for frame in (df_no_threshold, df_high_threshold, df_low_threshold)
+    ]
+    assert missing_counts[0] == 38
+    assert missing_counts == sorted(missing_counts)
 
 
 def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
@@ -345,8 +343,8 @@ def test_prediction_errors_and_element_enrichment(
             Key.formula: ["Fe2O3", "FeO"],
             MbdKey.each_true: [0.1234, 0.4567],
             MbdKey.e_form_dft: [-1.2344, -2.3456],
-            models[0].label: [-1.1111, -2.1111],
-            models[1].label: [-1.0111, -2.0111],
+            models[0].key: [-1.1111, -2.1111],
+            models[1].key: [-1.0111, -2.0111],
         },
         index=pd.Index(["wbm-1", "wbm-2"], name=Key.mat_id),
     )
@@ -354,7 +352,7 @@ def test_prediction_errors_and_element_enrichment(
 
     predictions, errors = preds.load_prediction_errors(models)
     expected_predictions = raw.round(3)
-    expected_errors = expected_predictions[[model.label for model in models]].sub(
+    expected_errors = expected_predictions[[model.key for model in models]].sub(
         expected_predictions[MbdKey.e_form_dft], axis="index"
     )
     pd.testing.assert_frame_equal(predictions, expected_predictions)

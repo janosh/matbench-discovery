@@ -144,7 +144,7 @@
   </div>
 </div>
 
-<blockquote class="task-note">
+<blockquote style="margin-block: 1em 2em">
   κ<sub>SRME</sub> follows the method of
   <a href="https://arxiv.org/abs/2408.00755v4">Póta et al.</a>. See the implementations
   for
@@ -225,7 +225,7 @@
 
   <KappaParityPlot model={selected_model} />
   {#if kappa_analysis && selected_diagnostics}
-    <h3 class="diagnostics-heading">
+    <h3 style="text-align: center; margin-top: 1.5em">
       Per-material κ<sub>SRME</sub> and phonon spectrum parity
     </h3>
     <p>
@@ -254,9 +254,6 @@
 {/if}
 
 <style>
-  .task-note {
-    margin-block: 1em 2em;
-  }
   .kappa-model-select {
     display: flex;
     flex-wrap: wrap;
@@ -264,10 +261,6 @@
     align-items: center;
     justify-content: center;
     margin-top: 1em;
-  }
-  .diagnostics-heading {
-    text-align: center;
-    margin-top: 1.5em;
   }
   .diagnostics-grid {
     display: grid;

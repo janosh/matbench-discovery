@@ -63,7 +63,7 @@
         type: `diagonal`,
         slope: 1,
         intercept: 0,
-        style: { color: `var(--text-color, currentColor)` },
+        style: { color: `var(--text-color)` },
       },
     ],
   }
@@ -100,7 +100,6 @@
     $state<(typeof import('matterviz/convex-hull'))['StructurePopup']>()
   let popup_placement = $state<StructurePopupPlacement>({ side: `left`, left: 0, top: 0 })
 
-  let model_label = $derived(parity_model?.model_label ?? model.model_name)
   let parity = $derived(
     base && parity_model
       ? build_energy_parity_series(base, parity_model, energy_kind)
@@ -115,7 +114,7 @@
             y: parity.y,
             point_ids: parity.point_ids,
             size_values: parity.size_values,
-            label: model_label,
+            label: model.model_name,
             color: model.color ?? `#4dabf7`,
           },
         ]
@@ -128,7 +127,7 @@
     energy_kind === `e-form` ? `formation energy` : `convex hull distance`,
   )
   let x_label = $derived(`PBE ${axis_label}`)
-  let y_label = $derived(`${model_label} ${axis_label}`)
+  let y_label = $derived(`${model.model_name} ${axis_label}`)
   // manual min/max loop (not Math.min(...arr)) because WBM x/y arrays are too large
   // to spread as function args without overflowing the call stack
   let extent = $derived.by((): [number, number] => {
@@ -318,9 +317,9 @@ title, so label the section for screen readers instead -->
   {:else}
     {#snippet energy_point_label({ point_data }: EnergyParityPayload)}
       {#if point_data}
-        <span class="point-label-id">{point_data.material_id}</span>
+        <span style="font-weight: 650">{point_data.material_id}</span>
         {#if point_data.formula}
-          <br /><span class="point-label-formula"
+          <br /><span style="font-weight: 400"
             >{@html sanitize_compact_formula(point_data.formula)}</span
           >
         {/if}
@@ -394,7 +393,7 @@ title, so label the section for screen readers instead -->
               {/if}
               PBE {@html axis_label}: {format_num(point.x, `.3~`)}
               <small>eV/atom</small><br />
-              {model_label}
+              {model.model_name}
               {@html axis_label}:
               {format_num(point.y, `.3~`)} <small>eV/atom</small><br />
               MLFF - DFT error: {format_num(point.y - point.x, `+.3~`)}
@@ -428,8 +427,8 @@ title, so label the section for screen readers instead -->
   /* matterviz only sets the tooltip background inline via bg_color, which the binned
      plot omits for per-point tooltips -> give them a readable theme-aware fallback */
   .energy-parity-plot :global(.plot-tooltip) {
-    background: var(--tooltip-bg, light-dark(#f5f5f7, #2a2a2e));
-    box-shadow: 0 4px 12px var(--shadow, rgba(0, 0, 0, 0.15));
+    background: var(--tooltip-bg);
+    box-shadow: 0 4px 12px var(--shadow);
   }
   /* the binned plot pins the y-axis title 20px left of the plot edge, ignoring both
      tick-label width and axis label_shift, so long model names overlap the tick
@@ -445,10 +444,10 @@ title, so label the section for screen readers instead -->
     z-index: 3;
   }
   .structure-status {
-    background: var(--surface-bg, rgba(255, 255, 255, 0.95));
+    background: var(--surface-bg);
     border: 1px solid var(--border);
     border-radius: 4px;
-    box-shadow: 0 16px 24px var(--shadow, rgba(0, 0, 0, 0.15));
+    box-shadow: 0 16px 24px var(--shadow);
     min-width: 220px;
     padding: 0.75em 1em;
     position: absolute;
@@ -468,11 +467,5 @@ title, so label the section for screen readers instead -->
   :global(.energy-parity-plot .structure-popup:hover .control-buttons) {
     opacity: 1;
     pointer-events: auto;
-  }
-  .point-label-id {
-    font-weight: 650;
-  }
-  .point-label-formula {
-    font-weight: 400;
   }
 </style>

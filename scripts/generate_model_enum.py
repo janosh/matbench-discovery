@@ -29,23 +29,16 @@ def generate_source(source: str) -> str:
         if not isinstance(metadata, dict):
             raise TypeError(f"{yaml_path} must contain a YAML mapping")
         model_key = metadata.get("model_key")
-        aliases = metadata.get("model_key_aliases", [])
         if (
             not isinstance(model_key, str)
             or MODEL_KEY_PATTERN.fullmatch(model_key) is None
         ):
             raise TypeError(f"{yaml_path} has invalid {model_key=}")
-        if not isinstance(aliases, list) or not all(
-            isinstance(alias, str) and MODEL_KEY_PATTERN.fullmatch(alias)
-            for alias in aliases
-        ):
-            raise TypeError(f"{yaml_path} has invalid {aliases=}")
-        for key in (model_key, *aliases):
-            if owner := key_owners.get(key):
-                raise ValueError(
-                    f"Model key or alias {key!r} collides in {owner} and {yaml_path}"
-                )
-            key_owners[key] = yaml_path
+        if owner := key_owners.get(model_key):
+            raise ValueError(
+                f"Model key {model_key!r} collides in {owner} and {yaml_path}"
+            )
+        key_owners[model_key] = yaml_path
         if metadata.get("lifecycle") == "aborted":
             continue
         name = model_key.replace("-", "_").replace(".", "_")

@@ -12,6 +12,10 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     if: ${{ !github.event.pull_request.head.repo.fork }}
@@ -43,21 +47,35 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p static/{energy,kappa}-parity/assets
-          gh release download v1.0.0 \
-            --repo janosh/matbench-discovery \
-            --pattern 'energy-parity-wbm-v1-*.json.gz' \
-            --dir static/energy-parity/assets \
-            --clobber
-          compgen -G 'static/energy-parity/assets/energy-parity-wbm-v1-*.json.gz' > /dev/null \
-            || { echo '::error::No energy parity assets in release v1.0.0'; exit 1; }
-          gh release download v1.0.0 \
-            --repo janosh/matbench-discovery \
-            --pattern 'kappa-parity-phonondb-v1-*.json.gz' \
-            --dir static/kappa-parity/assets \
-            --clobber
-          compgen -G 'static/kappa-parity/assets/kappa-parity-phonondb-v1-*.json.gz' > /dev/null \
-            || { echo '::error::No kappa parity assets in release v1.0.0'; exit 1; }
+          for kind in energy kappa; do
+            manifest="src/lib/parity/$kind-parity-manifest.json"
+            asset_dir="static/$kind-parity/assets"
+            mkdir -p "$asset_dir"
+            asset_prefix=$(jq -er '.asset_prefix | select(type == "string" and test("^[A-Za-z0-9._-]+$"))' "$manifest")
+            assets_file="$RUNNER_TEMP/$kind-parity-assets"
+            jq -er --arg prefix "$asset_prefix" \
+              '[.base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)]
+              | if all(.[]; type == "string" and startswith($prefix + "-")
+                and test("^[A-Za-z0-9._-]+-[0-9a-f]{16}\\.json\\.gz$"))
+                then .[] else error("invalid parity asset manifest") end' \
+              "$manifest" > "$assets_file"
+            mapfile -t assets < "$assets_file"
+            patterns=()
+            for asset in "${assets[@]}"; do
+              patterns+=(--pattern "$asset")
+            done
+            gh release download v1.0.0 \
+              --repo janosh/matbench-discovery \
+              "${patterns[@]}" \
+              --dir "$asset_dir" \
+              --clobber
+            for asset in "${assets[@]}"; do
+              [ -f "$asset_dir/$asset" ] || {
+                echo "::error::$manifest references missing release asset $asset"
+                exit 1
+              }
+            done
+          done
 
       - name: Build site
         run: |
@@ -81,3 +99,48 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  prune-parity-assets:
+    if: github.ref == 'refs/heads/main'
+    needs: deploy
+    permissions:
+      contents: write
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete unreferenced parity assets
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          manifest_assets() {
+            jq -er '.base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)'
+          }
+          protected=$(mktemp)
+          for manifest in site/src/lib/parity/{energy,kappa}-parity-manifest.json; do
+            gh api --method GET "repos/$GH_REPO/contents/$manifest?ref=$GITHUB_SHA" \
+              --jq .content | base64 --decode | manifest_assets
+          done > "$protected"
+          gh pr list --state open --limit 1000 \
+            --json headRefOid,headRepository \
+            --jq '.[] | [.headRepository.nameWithOwner, .headRefOid] | @tsv' |
+            while IFS=$'\t' read -r repo sha; do
+              for manifest in site/src/lib/parity/{energy,kappa}-parity-manifest.json; do
+                if ! gh api --method GET "repos/$repo/contents/$manifest?ref=$sha" \
+                  --jq .content | base64 --decode | manifest_assets; then
+                  echo "::warning::Skipping unavailable or invalid $repo@$sha $manifest" >&2
+                fi
+              done
+            done >> "$protected"
+          sort -u -o "$protected" "$protected"
+          gh release view v1.0.0 --json assets \
+            --jq '.assets[] | select((.createdAt | fromdateiso8601) < (now - 3600)) | .name' |
+            sort -u | comm -23 - "$protected" |
+            while IFS= read -r asset; do
+              [[ "$asset" == energy-parity-* || "$asset" == kappa-parity-* ]] || continue
+              [[ "$asset" =~ -[0-9a-f]{16}\.json\.gz$ ]] || {
+                echo "::error::Refusing to delete invalid parity asset name: $asset"
+                exit 1
+              }
+              gh release delete-asset v1.0.0 "$asset" --yes
+            done

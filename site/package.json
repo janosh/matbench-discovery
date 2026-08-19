@@ -35,7 +35,7 @@
     "js-yaml": "^5.2.3",
     "json-schema-to-typescript": "^15.0.4",
     "katex": "^0.18.4",
-    "matterviz": ">=0.5.0",
+    "matterviz": "0.5.0",
     "mdsvex": "^0.12.8",
     "rehype-stringify": "^10.0.1",
     "remark-parse": "^11.0.0",

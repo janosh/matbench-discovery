@@ -1,5 +1,4 @@
 import { DATASETS, ModelCard, MODELS } from '$lib'
-import { parse_dependency_spec } from '$lib/environment'
 import { ALL_METRICS } from '$lib/labels'
 import { format_num } from 'matterviz'
 import type { ComponentProps } from 'svelte'
@@ -130,7 +129,15 @@ describe(`ModelCard`, () => {
 
   describe(`Expandable Details`, () => {
     it(`displays authors and package versions correctly`, () => {
-      mount_card({ show_details: true })
+      const detail = `git+https://github.com/xvzemin/tace@81f65a4c188bd09cec8d1419388f7afdcc1b6fd0`
+      const model_with_locator: typeof model = {
+        ...model,
+        environment: {
+          ...model.environment,
+          dependencies: [`tace @ ${detail}`],
+        },
+      }
+      mount_card({ model: model_with_locator, show_details: true })
 
       // Check author info within the list item
       const author_li = document.querySelector(`section:first-child ul li`)
@@ -138,12 +145,14 @@ describe(`ModelCard`, () => {
 
       // Check package versions
       const packages = [...document.querySelectorAll(`section:nth-child(2) li`)]
-      const expected = model.environment.dependencies
-      expect(packages).toHaveLength(expected.length)
-      const first_dep = expected[0] ?? ``
-      expect(packages[0]?.textContent?.trim() ?? ``).toContain(
-        parse_dependency_spec(first_dep).name,
-      )
+      expect(packages).toHaveLength(1)
+      expect(packages[0]?.textContent).toContain(`tace`)
+      const link = packages[0]?.querySelector<HTMLAnchorElement>(`.dependency-detail`)
+      if (!link) throw new Error(`missing dependency detail link`)
+      const [leading, trailing] = link.querySelectorAll(`span`)
+      expect(link.ariaLabel).toBe(detail)
+      expect(leading?.textContent).toBe(detail.slice(0, -10))
+      expect(trailing?.textContent).toBe(detail.slice(-10))
     })
   })
 })
