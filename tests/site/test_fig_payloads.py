@@ -188,7 +188,7 @@ def check_hist_clf() -> None:
     )
     each_pred = (
         df_preds[MbdKey.each_true]
-        + df_preds[test_model.label]
+        + df_preds[test_model.key]
         - df_preds[MbdKey.e_form_dft]
     )
     expected_f1 = round(

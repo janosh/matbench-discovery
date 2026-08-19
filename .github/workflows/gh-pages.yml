@@ -43,21 +43,31 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p static/{energy,kappa}-parity/assets
-          gh release download v1.0.0 \
-            --repo janosh/matbench-discovery \
-            --pattern 'energy-parity-wbm-v1-*.json.gz' \
-            --dir static/energy-parity/assets \
-            --clobber
-          compgen -G 'static/energy-parity/assets/energy-parity-wbm-v1-*.json.gz' > /dev/null \
-            || { echo '::error::No energy parity assets in release v1.0.0'; exit 1; }
-          gh release download v1.0.0 \
-            --repo janosh/matbench-discovery \
-            --pattern 'kappa-parity-phonondb-v1-*.json.gz' \
-            --dir static/kappa-parity/assets \
-            --clobber
-          compgen -G 'static/kappa-parity/assets/kappa-parity-phonondb-v1-*.json.gz' > /dev/null \
-            || { echo '::error::No kappa parity assets in release v1.0.0'; exit 1; }
+          for kind in energy kappa; do
+            manifest="src/lib/parity/$kind-parity-manifest.json"
+            asset_dir="static/$kind-parity/assets"
+            mkdir -p "$asset_dir"
+            assets=()
+            patterns=()
+            while IFS= read -r asset; do
+              assets+=("$asset")
+              patterns+=(--pattern "$asset")
+            done < <(
+              jq -r '.base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)' \
+                "$manifest"
+            )
+            gh release download v1.0.0 \
+              --repo janosh/matbench-discovery \
+              "${patterns[@]}" \
+              --dir "$asset_dir" \
+              --clobber
+            for asset in "${assets[@]}"; do
+              [ -f "$asset_dir/$asset" ] || {
+                echo "::error::$manifest references missing release asset $asset"
+                exit 1
+              }
+            done
+          done
 
       - name: Build site
         run: |

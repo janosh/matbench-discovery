@@ -186,6 +186,7 @@ describe(`assemble_row_data`, () => {
     const chgnet_row = rows.find((row) => row.Model.includes(`chgnet-0.3.0`))
 
     expect(mace_row?.Model).toContain(`mace-mp-0`)
+    expect(mace_row?.model_key).toBe(`mace-mp-0`)
     expect(mace_row?.graph_construction_radius).toBe(
       `<span data-sort-value="6">6 Å</span>`,
     )

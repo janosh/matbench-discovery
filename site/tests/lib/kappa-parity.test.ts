@@ -29,6 +29,8 @@ const base: KappaParityBase = {
   material_ids: [`mp-1`, `mp-2`, `mp-3`],
   formulas: [`Si2`, `Ge2`, `Sn2`],
   kappa_dft: [10, 5, null],
+  n_sites: [8, 4, 2],
+  spacegroups: [225, 186, 1],
   structures: { 'mp-1': dummy_structure },
   dft_dos: { 'mp-1': { frequencies: [0, 1, 2], densities: [0, 1, 0] } },
 }
@@ -49,6 +51,8 @@ function manifest_sized_base(overrides: Partial<KappaParityBase> = {}): KappaPar
     material_ids: Array<string>(row_count).fill(`mp-test`),
     formulas: Array<string>(row_count).fill(`Si2`),
     kappa_dft: Array<number | null>(row_count).fill(1),
+    n_sites: Array<number | null>(row_count).fill(2),
+    spacegroups: Array<number | null>(row_count).fill(225),
     structures: {},
     dft_dos: {},
     ...overrides,
@@ -102,16 +106,10 @@ describe(`kappa parity data helpers`, () => {
     expect(point).toBeNull()
   })
 
-  it(`carries n_sites/spacegroup, defaulting to null for older assets`, () => {
-    const enriched = { ...base, n_sites: [8, 4, 2], spacegroups: [225, 186, 1] }
-    const point = get_kappa_parity_point(enriched, model, 0)
+  it(`carries n_sites and spacegroup metadata`, () => {
+    const point = get_kappa_parity_point(base, model, 0)
     expect(point?.n_sites).toBe(8)
     expect(point?.spacegroup).toBe(225)
-
-    // base without the optional arrays (older asset) must not throw and yields null
-    const bare = get_kappa_parity_point(base, model, 0)
-    expect(bare?.n_sites).toBeNull()
-    expect(bare?.spacegroup).toBeNull()
   })
 
   it(`only reports models present in the manifest`, () => {
@@ -176,6 +174,18 @@ describe(`kappa parity data helpers`, () => {
       response: () => gzipped_json_response(manifest_sized_base({ kappa_dft: [1] })),
       load: () => load_kappa_parity_base(),
       error: `Invalid kappa parity kappa_dft: expected ${kappa_parity_manifest.row_count} rows`,
+    },
+    {
+      kind: `base n_sites`,
+      response: () => gzipped_json_response(manifest_sized_base({ n_sites: [1] })),
+      load: () => load_kappa_parity_base(),
+      error: `Invalid kappa parity n_sites: expected ${kappa_parity_manifest.row_count} rows`,
+    },
+    {
+      kind: `base spacegroups`,
+      response: () => gzipped_json_response(manifest_sized_base({ spacegroups: [1] })),
+      load: () => load_kappa_parity_base(),
+      error: `Invalid kappa parity spacegroups: expected ${kappa_parity_manifest.row_count} rows`,
     },
     {
       kind: `model`,

@@ -62,9 +62,9 @@ jobs:
           GENERATOR_PATTERN=$(<.github/payload-generator-paths.regex)
           [ -z "$GENERATOR_PATTERN" ] && { echo "::error::Empty generator pattern"; exit 1; }
           GEN=$(grep -E "$GENERATOR_PATTERN" <<< "$CHANGED" || true)
-          PAYLOADS=$(grep -E '^(site/src/figs/.*\.(jsonl|json\.gz)|site/src/routes/(data/.*\.json|models/per-element-each-errors\.jsonl)|site/src/lib/diatomics-dft\.json\.gz)$' <<< "$CHANGED" || true)
+          PAYLOADS=$(grep -E '^(site/src/figs/.*\.(jsonl|json\.gz)|site/src/routes/(data/.*\.json|models/per-element-each-errors\.jsonl)|site/src/lib/(diatomics-dft\.json\.gz|parity/(energy|kappa)-parity-manifest\.json))$' <<< "$CHANGED" || true)
           if [ -n "$GEN" ] && [ -z "$PAYLOADS" ]; then
-            echo "::error::PR changes payload-generating code ($(tr '\n' ' ' <<< "$GEN")) but no committed generated payloads (site/src/figs data files, route-local JSON, site/src/routes/models/per-element-each-errors.jsonl, or diatomics-dft.json.gz). Regenerate the affected payloads locally, or apply the 'payloads-unchanged' label if output is provably unchanged."
+            echo "::error::PR changes payload-generating code ($(tr '\n' ' ' <<< "$GEN")) but no committed generated payloads (site/src/figs data files, route-local JSON, parity manifests, or diatomics-dft.json.gz). Regenerate the affected payloads locally, or apply the 'payloads-unchanged' label if output is provably unchanged."
             exit 1
           fi
 

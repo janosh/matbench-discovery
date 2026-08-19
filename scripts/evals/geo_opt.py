@@ -66,10 +66,9 @@ for model in cli_args.models:
     )
 
 if not model_data:
-    print("No geo-opt analysis data for requested models, nothing to do")
-    # on subset runs (e.g. ingesting an energy-only model) there's nothing to merge
-    # into the site payloads, which is fine; a full run with no data is a config error
-    raise SystemExit(1 if is_full_model_run() else 0)
+    print("No geo-opt analysis data for requested models")
+    if is_full_model_run():
+        raise SystemExit(1)
 
 model_keys = tuple(model_data)
 print(f"\nLoaded {len(model_data)=} models, joined with DFT data into df_all")
@@ -144,8 +143,12 @@ figs.write_site_payload(
 
 
 # %% Difference in symmetry-operation counts for ML vs DFT-relaxed structures
-df_sym_ops_diff = df_all.drop(Key.dft.label, level=Key.model, axis="columns").xs(
-    MbdKey.n_sym_ops_diff, level=metric_lvl, axis="columns"
+df_sym_ops_diff = (
+    df_all.drop(Key.dft.label, level=Key.model, axis="columns").xs(
+        MbdKey.n_sym_ops_diff, level=metric_lvl, axis="columns"
+    )
+    if model_keys
+    else pd.DataFrame()
 )
 models_by_std = sorted(df_sym_ops_diff.std().items(), key=lambda item: item[1])
 sym_ops_models: list[dict[str, object]] = []

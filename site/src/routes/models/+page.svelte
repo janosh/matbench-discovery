@@ -155,7 +155,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
   </legend>
 
   <ol class="models full-bleed">
-    {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
+    {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_key)}
       {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
       {@const bg_clr = bg_color(metric_val as number, best_val, worst_val)}
       {@const text_color = pick_contrast_color({ background: bg_clr, backdrop: `white` })}
@@ -178,7 +178,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
 </div>
 
 <!-- link to ALL model pages with hidden links for the SvelteKit crawler -->
-{#each MODELS as model (model.model_name)}
+{#each MODELS as model (model.model_key)}
   <a href="/models/{model.model_key}" hidden>
     {model.model_name}
   </a>

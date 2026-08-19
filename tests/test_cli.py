@@ -4,7 +4,6 @@ import pytest
 
 from matbench_discovery import cli
 from matbench_discovery.enums import Model, TestSubset
-from matbench_discovery.figs import PayloadMode
 
 
 @pytest.mark.parametrize(
@@ -49,11 +48,6 @@ from matbench_discovery.figs import PayloadMode
             {"models": [Model.chgnet_0_3_0]},
             {"--f=/path/to/kernel.json", "--ip=127.0.0.1"},
         ),
-        (
-            ["--migrate-model-key", "old-key=new-key"],
-            {"migrate_model_key": ("old-key", "new-key")},
-            set(),
-        ),
     ],
 )
 def test_cli_parser(
@@ -91,37 +85,28 @@ def test_cli_parser_invalid_args(
 
 
 @pytest.mark.parametrize(
-    ("selection", "expected"),
+    ("models_explicit", "full_roster", "expected"),
     [
-        ("models", PayloadMode.targeted),
-        ("full_roster", PayloadMode.full_roster),
-        ("migrate_provenance", PayloadMode.migrate_provenance),
-        ("migrate_model_key", PayloadMode.migrate_model_key),
-        (None, None),
+        (True, False, False),
+        (False, True, True),
+        (False, False, None),
+        (True, True, None),
     ],
 )
-def test_payload_mode_is_explicit(
+def test_payload_scope_is_explicit(
     monkeypatch: pytest.MonkeyPatch,
-    selection: str | None,
-    expected: PayloadMode | None,
+    models_explicit: bool,
+    full_roster: bool,
+    expected: bool | None,
 ) -> None:
-    """Payload mode distinguishes targeted, roster, and migration operations."""
-    monkeypatch.setattr(cli, "models_were_explicit", selection == "models")
-    monkeypatch.setattr(cli.cli_args, "full_roster", False)
-    monkeypatch.setattr(cli.cli_args, "migrate_provenance", False)
-    monkeypatch.setattr(cli.cli_args, "migrate_model_key", None)
-    if selection not in (None, "models"):
-        monkeypatch.setattr(
-            cli.cli_args,
-            selection,
-            ("old-key", "new-key") if selection == "migrate_model_key" else True,
-        )
+    """Payload generation requires exactly one targeted or full-roster scope."""
+    monkeypatch.setattr(cli, "models_were_explicit", models_explicit)
+    monkeypatch.setattr(cli.cli_args, "full_roster", full_roster)
     if expected is None:
         with pytest.raises(SystemExit, match="2"):
-            cli.payload_mode()
+            cli.is_full_model_run()
     else:
-        assert cli.payload_mode() == expected
-        assert cli.is_full_model_run() is (expected != PayloadMode.targeted)
+        assert cli.is_full_model_run() is expected
 
 
 def test_complete_models_drops_inactive(monkeypatch: pytest.MonkeyPatch) -> None:

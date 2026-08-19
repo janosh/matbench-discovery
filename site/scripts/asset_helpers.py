@@ -9,9 +9,10 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -22,24 +23,84 @@ from matbench_discovery.figs import write_json_gz as write_shared_json_gz
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
+CONTENT_HASH_LENGTH = 16
+
+
+def content_addressed_name(stem: str, content_sha256: str) -> str:
+    """Return an immutable asset name keyed by its uncompressed JSON content."""
+    return f"{stem}-{content_sha256[:CONTENT_HASH_LENGTH]}.json.gz"
+
+
+def is_content_addressed_name(stem: str, name: str) -> bool:
+    """Whether an asset name ends in a lowercase hexadecimal content hash."""
+    return bool(
+        re.fullmatch(
+            rf"{re.escape(stem)}-[0-9a-f]{{{CONTENT_HASH_LENGTH}}}\.json\.gz", name
+        )
+    )
+
 
 def resolve_models(model_refs: Iterable[str]) -> tuple[Model, ...]:
-    """Resolve model enum names, canonical keys, or key aliases to members."""
-    if not model_refs:
-        return Model.active()
-    return tuple(map(Model.from_ref, model_refs))
+    """Resolve model enum names or canonical keys to members."""
+    return (
+        tuple(dict.fromkeys(map(Model.from_ref, model_refs)))
+        if model_refs
+        else Model.active()
+    )
 
 
-def active_model_assets(
-    model_assets: Mapping[str, Mapping[str, str | int]],
-) -> dict[str, dict[str, str | int]]:
-    """Keep only manifest assets belonging to currently active model keys."""
-    active_keys = {model.key for model in Model.active()}
+def read_manifest(path: Path) -> dict[str, Any] | None:
+    """Read an existing parity manifest when present."""
+    return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+
+
+def retained_model_assets(
+    manifest: dict[str, Any] | None,
+    target_keys: Iterable[str],
+    row_identity: tuple[int, str],
+    asset_prefix: str,
+) -> dict[str, dict[str, str]]:
+    """Retain peer assets only when they align exactly with the current base rows."""
+    if manifest is None:
+        raise FileNotFoundError("Targeted parity refresh requires an existing manifest")
+    if manifest.get("schema_version") != 2:
+        raise ValueError(
+            "Parity manifest predates content-addressed assets; run a full refresh"
+        )
+    if (
+        manifest.get("row_count"),
+        manifest.get("material_ids_sha256"),
+    ) != row_identity:
+        raise ValueError("Parity base rows changed; run a full refresh")
+    if manifest.get("asset_prefix") != asset_prefix:
+        raise ValueError("Parity asset prefix changed; run a full refresh")
+    model_assets = manifest.get("model_assets")
+    if not isinstance(model_assets, dict):
+        raise TypeError("Parity manifest model_assets must be an object")
+    for model_key, asset in model_assets.items():
+        if not isinstance(model_key, str) or not isinstance(asset, dict):
+            raise TypeError("Parity model assets must map string keys to objects")
+        if not is_content_addressed_name(
+            f"{asset_prefix}-model-{model_key}", str(asset.get("asset"))
+        ):
+            raise ValueError(
+                "Parity model asset names are not content-addressed; run a full refresh"
+            )
+    active_keys = {model.key for model in Model.active()} - set(target_keys)
     return {
         model_key: dict(asset)
         for model_key, asset in model_assets.items()
         if model_key in active_keys
     }
+
+
+def remove_model_assets(
+    asset_dir: Path, asset_prefix: str, model_keys: Iterable[str]
+) -> None:
+    """Remove generated files replaced by a targeted model refresh."""
+    for model_key in model_keys:
+        for path in asset_dir.glob(f"{asset_prefix}-model-{model_key}-*.json.gz"):
+            path.unlink()
 
 
 def clean_float(value: float | np.floating, decimals: int = 6) -> float | None:
@@ -60,22 +121,22 @@ def clean_ints(series: pd.Series) -> list[int | None]:
     return [int(val) if np.isfinite(val) else None for val in nums]
 
 
-def asset_safe_key(model_key: str) -> str:
-    """Convert a model key into a filesystem-safe asset name segment."""
-    return "".join(
-        char if char.isalnum() or char in "._-" else "_" for char in model_key
-    ).strip("._-")
-
-
-def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str | int]:
-    """Write deterministic gzipped JSON and return release manifest metadata."""
-    n_bytes = write_shared_json_gz(str(path), dict(data))
-    with open(path, "rb") as file:
+def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str]:
+    """Write content-addressed gzipped JSON and return release metadata."""
+    payload = dict(data)
+    content = json.dumps(payload, allow_nan=False, separators=(",", ":")).encode()
+    content_sha256 = hashlib.sha256(content).hexdigest()
+    suffix = ".json.gz"
+    if not path.name.endswith(suffix):
+        raise ValueError(f"Parity asset path must end with {suffix}: {path}")
+    asset_name = content_addressed_name(path.name.removesuffix(suffix), content_sha256)
+    asset_path = path.with_name(asset_name)
+    n_bytes = write_shared_json_gz(str(asset_path), payload)
+    with open(asset_path, "rb") as file:
         sha256 = hashlib.file_digest(file, "sha256").hexdigest()
-    print(f"Wrote {path} ({n_bytes / 1024:.1f} KiB)")
+    print(f"Wrote {asset_path} ({n_bytes / 1024:.1f} KiB)")
     return {
-        "asset": path.name,
-        "bytes": n_bytes,
+        "asset": asset_name,
         "sha256": sha256,
     }
 

@@ -8,15 +8,14 @@ Usage:
     uv run scripts/ingest_model.py <model>            # check+evals+figs+payloads
     uv run scripts/ingest_model.py <model> --archive  # + figshare/release upload
     uv run scripts/ingest_model.py --payloads-only --full-roster
-    uv run scripts/ingest_model.py --payloads-only --migrate-provenance
     uv run scripts/ingest_model.py <models...> --payloads-only  # merge models
 """
 
 import argparse
-import glob
 import json
 import os
 import shlex
+import shutil
 import subprocess
 from collections import Counter
 from collections.abc import Sequence
@@ -261,15 +260,15 @@ def check_submission(
 def run_model_steps(
     title: str,
     steps: Sequence[tuple[str, bool, bool, str]],
-    model: Model | None,
+    model: Model,
     checks: Checklist,
     *,
     energy_only: bool,
     extra_args: Sequence[str] = (),
 ) -> None:
-    """Run model-specific or complete-roster commands, recording each result."""
+    """Run model-specific commands, recording each result."""
     banner(title)
-    model_args = ("--models", model.name) if model else ()
+    model_args = ("--models", model.name)
     for label, needs_forces, fatal, args in steps:
         if needs_forces and energy_only:
             checks.skip(f"{label} skipped (targets=E, no forces)")
@@ -282,11 +281,8 @@ def run_model_steps(
 
 
 def run_archive(model: Model, checks: Checklist) -> None:
-    """Archive the model's prediction files to the project's figshare articles (one
-    per prediction task) for longevity - rewrites the YAML's *_url keys - and publish
-    new parity assets to the GitHub release the site build downloads from.
-    """
-    banner("STEP 4: Archiving prediction files + publishing parity assets")
+    """Archive model predictions to project Figshare articles for longevity."""
+    banner("STEP 4: Archiving prediction files")
     if run_cmd(
         *uv_run_args("scripts/upload_model_preds_to_figshare.py"),
         *("--models", model.name, "--no-interactive"),
@@ -295,12 +291,64 @@ def run_archive(model: Model, checks: Checklist) -> None:
     else:
         checks.fail("Figshare archival failed")
 
+
+def release_asset_digests() -> dict[str, str | None]:
+    """Return each shared GitHub release asset's SHA-256 digest."""
+    gh_path = shutil.which("gh")
+    if gh_path is None:
+        raise FileNotFoundError("GitHub CLI executable 'gh' not found")
+    output = subprocess.check_output(
+        (gh_path, "release", "view", "v1.0.0", "--json", "assets"),
+        text=True,
+    )
+    return {
+        asset["name"]: asset.get("digest") for asset in json.loads(output)["assets"]
+    }
+
+
+def publish_parity_assets(checks: Checklist) -> None:
+    """Publish new parity assets without overwriting immutable release objects."""
+    banner("Publishing parity assets")
+    try:
+        published = release_asset_digests()
+    except (
+        OSError,
+        subprocess.CalledProcessError,
+        json.JSONDecodeError,
+        KeyError,
+    ) as exc:
+        checks.fail(f"Reading published parity assets failed: {exc}")
+        return
     for parity_type in ("energy", "kappa"):
         assets_dir = f"site/static/{parity_type}-parity/assets"
-        if not (assets := glob.glob(f"{assets_dir}/*.json.gz")):
-            continue
-        if run_cmd("gh", "release", "upload", "v1.0.0", *assets, "--clobber"):
-            checks.ok(f"{len(assets)} parity assets from {assets_dir} published")
+        manifest_path = f"site/src/lib/parity/{parity_type}-parity-manifest.json"
+        with open(manifest_path, encoding="utf-8") as file:
+            manifest = json.load(file)
+        entries = [
+            manifest["base"],
+            *manifest["model_assets"].values(),
+            *manifest.get("structure_bundles", ()),
+        ]
+        pending: list[str] = []
+        conflicts: list[str] = []
+        for entry in entries:
+            name = entry["asset"]
+            asset_path = f"{assets_dir}/{name}"
+            if name not in published and os.path.isfile(asset_path):
+                pending.append(asset_path)
+            elif published.get(name) != f"sha256:{entry['sha256']}":
+                conflicts.append(name)
+        if conflicts:
+            checks.fail(
+                f"{parity_type} parity assets missing locally or conflict with "
+                f"immutable release objects: {', '.join(conflicts)}"
+            )
+        elif not pending:
+            checks.ok(
+                f"All {len(entries)} {parity_type} parity assets already published"
+            )
+        elif run_cmd("gh", "release", "upload", "v1.0.0", *sorted(pending)):
+            checks.ok(f"{len(pending)} parity assets from {assets_dir} published")
         else:
             checks.fail(f"Publishing parity assets from {assets_dir} failed")
 
@@ -308,22 +356,18 @@ def run_archive(model: Model, checks: Checklist) -> None:
 def run_payload_refresh(
     checks: Checklist,
     models: Sequence[Model] = (),
-    *,
-    mode_args: Sequence[str] = (),
 ) -> None:
     """Refresh site/src/figs/*.jsonl plus route-local JSONL payloads, then test.
 
     With models given, payload scripts splice only those freshly computed entries into
     the committed payloads. Without models, they regenerate the full active roster.
     """
-    if not models and not mode_args:
-        raise ValueError("A full payload refresh requires an explicit mode")
-    if models and mode_args:
-        raise ValueError("A targeted payload refresh cannot use a full mode")
     suffix = f" for {', '.join(model.name for model in models)}" if models else ""
     banner(f"Refreshing multi-model site figure payloads{suffix}")
     payload_args = (
-        ("--models", *(model.name for model in models)) if models else mode_args
+        ("--models", *(model.name for model in models))
+        if models
+        else ("--full-roster",)
     )
     for script in PAYLOAD_SCRIPTS:
         if not run_cmd(*uv_run_args(script), "--auto-download", *payload_args):
@@ -340,16 +384,20 @@ def run_payload_refresh(
 
 def read_head_yaml(path: str) -> dict[str, object] | None:
     """Read one model YAML from HEAD, returning None when it is newly added."""
-    git_command = ["git", "show", f"HEAD:{path}"]
+    command = ["git", "show", f"HEAD:{path}"]
     result = subprocess.run(
-        git_command,
+        command,
         cwd=ROOT,
         capture_output=True,
         text=True,
         check=False,
     )
     if result.returncode != 0:
-        if result.stderr.strip() == f"fatal: path '{path}' does not exist in 'HEAD'":
+        stderr = result.stderr.strip()
+        missing_path = f"path '{path}'"
+        if missing_path in stderr and stderr.endswith(
+            ("does not exist in 'HEAD'", "not in 'HEAD'")
+        ):
             return None
         result.check_returncode()
     metadata = yaml.safe_load(result.stdout)
@@ -377,7 +425,7 @@ def classify_yaml_changes(
             if old_key != model_key:
                 raise ValueError(
                     f"Automated ingestion cannot change model_key in {path}: "
-                    f"{old_key!r} -> {model_key!r}; use explicit key migration"
+                    f"{old_key!r} -> {model_key!r}; model keys are immutable"
                 )
             old_by_key[model_key] = old_metadata
     for path in removed_paths:
@@ -388,21 +436,11 @@ def classify_yaml_changes(
             raise TypeError(f"HEAD:{path} does not contain a string model_key")
         old_by_key[old_key] = old_metadata
 
-    old_keys, new_keys = set(old_by_key), set(new_by_key)
-    removed_keys = old_keys - new_keys
-    for new_key in new_keys - old_keys:
-        aliases = new_by_key[new_key].get("model_key_aliases", [])
-        if not isinstance(aliases, list):
-            raise TypeError(f"model_key_aliases for {new_key!r} must be a list")
-        if removed_keys & set(aliases):
-            raise ValueError(
-                "Automated ingestion cannot perform a model-key alias migration; "
-                "run --migrate-model-key manually"
-            )
-
+    old_keys = set(old_by_key)
+    removed_keys = old_keys - new_by_key.keys()
     lifecycle_changed = any(
         old_by_key[key].get("lifecycle") != new_by_key[key].get("lifecycle")
-        for key in old_keys & new_keys
+        for key in old_keys & new_by_key.keys()
     )
     return {
         "full_roster": bool(removed_keys or lifecycle_changed),
@@ -426,7 +464,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--overwrite", action="store_true", help="Overwrite existing eval outputs"
     )
     mode_group = parser.add_mutually_exclusive_group()
-    for mode in ("archive", "archive-only", "validate-only", "payloads-only"):
+    for mode in (
+        "archive",
+        "archive-only",
+        "validate-only",
+        "payloads-only",
+        "publish-parity",
+    ):
         mode_group.add_argument(f"--{mode}", action="store_true")
     mode_group.add_argument(
         "--classify-yaml-changes",
@@ -435,24 +479,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Print JSON payload-refresh classification for overlaid model YAMLs.",
     )
     parser.add_argument("--removed-yaml-paths", nargs="*", default=[])
-    payload_mode_group = parser.add_mutually_exclusive_group()
-    payload_mode_group.add_argument("--full-roster", action="store_true")
-    payload_mode_group.add_argument("--migrate-provenance", action="store_true")
-    payload_mode_group.add_argument("--migrate-model-key", metavar="OLD=NEW")
+    parser.add_argument("--full-roster", action="store_true")
     args = parser.parse_args(argv)
 
-    if args.full_roster:
-        payload_mode_args = ("--full-roster",)
-    elif args.migrate_provenance:
-        payload_mode_args = ("--migrate-provenance",)
-    elif args.migrate_model_key:
-        payload_mode_args = ("--migrate-model-key", args.migrate_model_key)
-    else:
-        payload_mode_args = ()
-    if payload_mode_args and not args.payloads_only:
-        parser.error("payload generation modes require --payloads-only")
-    if payload_mode_args and args.models:
-        parser.error("model-targeted refresh cannot use a full payload mode")
+    if args.full_roster and not args.payloads_only:
+        parser.error("--full-roster requires --payloads-only")
+    if args.full_roster and args.models:
+        parser.error("model-targeted refresh cannot use --full-roster")
+    if args.publish_parity and args.models:
+        parser.error("--publish-parity does not accept models")
 
     if args.classify_yaml_changes is not None:
         print(
@@ -470,19 +505,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if len(models) > 1 and not args.payloads_only:
         parser.error("multiple models are supported only with --payloads-only")
     model = models[0] if models else None
-    if model is None:
-        if not args.payloads_only:
-            parser.error("model is required unless --payloads-only")
-        if not payload_mode_args:
-            parser.error(
-                "full payload refresh requires --full-roster, "
-                "--migrate-provenance, or --migrate-model-key OLD=NEW"
-            )
-        run_payload_refresh(checks, mode_args=payload_mode_args)
+    if args.payloads_only:
+        if not models and not args.full_roster:
+            parser.error("full payload refresh requires --full-roster")
+        run_payload_refresh(checks, models)
+    elif args.publish_parity:
+        publish_parity_assets(checks)
+    elif model is None:
+        parser.error("model is required unless --payloads-only")
     elif (args.archive or args.archive_only) and not os.getenv("FIGSHARE_TOKEN"):
         parser.error("FIGSHARE_TOKEN must be set for archival")
-    elif args.payloads_only:
-        run_payload_refresh(checks, models)
     elif args.archive_only:
         run_archive(model, checks)
     else:
@@ -503,6 +535,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )  # fmt: skip
         if args.archive and not checks.n_failed:
             run_archive(model, checks)
+            publish_parity_assets(checks)
         elif args.archive:
             checks.skip("Archival skipped because validation failed")
         if not args.validate_only and not checks.n_failed:

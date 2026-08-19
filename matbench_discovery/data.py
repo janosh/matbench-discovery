@@ -411,9 +411,8 @@ def load_df_wbm_with_preds(
 
     Args:
         models (Sequence[str | Model] | None, optional): Models to load, given as
-            Model members, enum names, canonical keys, or key aliases. Defaults to
-            active models when None. Pass an empty sequence to load no model
-            predictions.
+            Model members, enum names, or canonical keys. Defaults to active models
+            when None. Pass an empty sequence to load no model predictions.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
         subset (pd.Index | Sequence[str] | 'uniq_protos' | None, optional):
@@ -435,7 +434,7 @@ def load_df_wbm_with_preds(
         ValueError: On unknown model names.
 
     Returns:
-        pd.DataFrame: WBM summary dataframe with model predictions.
+        pd.DataFrame: WBM summary with prediction columns keyed by ``model_key``.
     """
     models_to_load = (
         Model.active() if models is None else tuple(map(Model.from_ref, models))
@@ -450,13 +449,13 @@ def load_df_wbm_with_preds(
     try:
         prog_bar = tqdm(models_to_load, disable=not pbar, desc="Loading preds")
         for model in prog_bar:
-            model_name = model.name
+            model_key, model_name = model.key, model.name
             prog_bar.set_postfix_str(model_name)
 
             pred_path = model.discovery_path
             df_preds = glob_to_df(pred_path, pbar=False, nrows=nrows)
             try:
-                df_out[model.label] = df_preds.set_index(id_col)["e_form_per_atom"]
+                df_out[model_key] = df_preds.set_index(id_col)["e_form_per_atom"]
             except KeyError as exc:
                 raise ValueError(
                     f"e_form_per_atom column not found in {pred_path}"
@@ -464,11 +463,11 @@ def load_df_wbm_with_preds(
             if max_error_threshold is not None:
                 # Apply centralized model prediction cleaning criterion (see doc string)
                 bad_mask = (
-                    abs(df_out[model.label] - df_out[MbdKey.e_form_dft])
+                    abs(df_out[model_key] - df_out[MbdKey.e_form_dft])
                     > max_error_threshold
                 )
-                df_out.loc[bad_mask, model.label] = pd.NA
-                n_preds, n_bad = len(df_out[model.label].dropna()), sum(bad_mask)
+                df_out.loc[bad_mask, model_key] = pd.NA
+                n_preds, n_bad = len(df_out[model_key].dropna()), sum(bad_mask)
                 if n_bad > 0:
                     print(
                         f"{n_bad:,} of {n_preds:,} unrealistic preds for {model_name}"
@@ -493,10 +492,10 @@ def load_discovery_predictions() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFra
     models_to_load = complete_models()
     df_preds = load_df_wbm_with_preds(models=models_to_load).round(3)
 
-    model_labels = [model.label for model in models_to_load]
+    model_keys = [model.key for model in models_to_load]
     each_shift = df_preds[MbdKey.each_true] - df_preds[MbdKey.e_form_dft]
-    df_each_pred = df_preds[model_labels].add(each_shift, axis=0)
-    df_each_err = df_preds[model_labels].sub(df_preds[MbdKey.e_form_dft], axis=0)
+    df_each_pred = df_preds[model_keys].add(each_shift, axis=0)
+    df_each_err = df_preds[model_keys].sub(df_preds[MbdKey.e_form_dft], axis=0)
     df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
         df_each_err.abs().mean(axis=1)
     )

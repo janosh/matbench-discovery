@@ -164,9 +164,8 @@ def main() -> int:
 
     if not models:
         print("No models with kappa_103 predictions found")
-        # on subset runs (e.g. ingesting an energy-only model) there's nothing to
-        # merge, which is fine; a full run yielding no models is a config error
-        return 1 if is_full_model_run() else 0
+        if is_full_model_run():
+            return 1
 
     from matbench_discovery.metrics.phonons import KAPPA_ERROR_MAX
 

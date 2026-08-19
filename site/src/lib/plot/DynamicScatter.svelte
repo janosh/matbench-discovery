@@ -7,6 +7,7 @@
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
+  import { SvelteSet } from 'svelte/reactivity'
   import { MultiSelect } from 'svelte-widgets'
   import {
     ALL_METRICS,
@@ -93,6 +94,13 @@
   let display = $state({ x_grid: true, y_grid: true })
 
   let filtered_models = $derived(models.filter(model_filter))
+  let duplicate_model_names = $derived(
+    new SvelteSet(
+      filtered_models
+        .map(({ model_name }) => model_name)
+        .filter((name, idx, names) => names.indexOf(name) !== idx),
+    ),
+  )
   let model_counts_by_prop = $derived(
     Object.fromEntries(
       scatter_options.map((prop) => [
@@ -130,10 +138,11 @@
     (prop?.format ?? `.2~f`).replace(/(?<precision>\.\d+)f$/, `$<precision>~f`)
 
   interface PointMetadata extends Record<string, unknown> {
+    model_key: string
     model_name: string
     benchmark_added: string | null
     days_ago: string
-    model_key?: string
+    size_value: number
   }
 
   let plot_data = $derived(
@@ -159,6 +168,7 @@
         benchmark_added,
         days_ago,
         model_key,
+        size_value,
       }
       return [{ x, y, color_value, size_value, metadata }]
     }),
@@ -253,9 +263,12 @@
   // One series per model enables per-model legend toggles.
   let series: DataSeries<PointMetadata>[] = $derived([
     ...plot_data.map((item) => ({
+      id: item.metadata.model_key,
       x: [item.x],
       y: [item.y],
-      label: item.metadata.model_name,
+      label: duplicate_model_names.has(item.metadata.model_name)
+        ? `${item.metadata.model_name} (${item.metadata.model_key})`
+        : item.metadata.model_name,
       legend_group,
       markers: `points` as const,
       metadata: [item.metadata],
@@ -451,23 +464,20 @@
       </label>
     {/snippet}
 
-    {#snippet tooltip({ x_formatted, y_formatted, metadata })}
+    {#snippet tooltip({ color_value, x_formatted, y_formatted, metadata })}
       {#if metadata}
-        {@const point = plot_data.find(
-          (item) => item.metadata.model_name === metadata.model_name,
-        )}
         <strong>{metadata.model_name}</strong><br />
         {@html axes.x?.label}: {x_formatted}
         {#if axes.x?.key === `benchmark_added` && metadata.days_ago}
           <small>({metadata.days_ago})</small>{/if}<br />
         {@html axes.y?.label}: {y_formatted}<br />
-        {#if ![`model_params`, `benchmark_added`].includes(axes.color_value?.key ?? ``) && point?.color_value !== undefined}
+        {#if color_value != null && ![`model_params`, `benchmark_added`].includes(axes.color_value?.key ?? ``)}
           {@html axes.color_value?.label}:
-          {format_num(point.color_value as number)}<br />
+          {format_num(color_value)}<br />
         {/if}
-        {#if axes.size_value && point?.size_value !== undefined}
+        {#if axes.size_value && is_finite_num(metadata.size_value)}
           {@html axes.size_value.label}:
-          {format_num(point.size_value)}<br />
+          {format_num(metadata.size_value)}<br />
         {/if}
       {/if}
     {/snippet}

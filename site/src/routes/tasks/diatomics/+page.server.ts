@@ -43,10 +43,10 @@ export const load: PageServerLoad = async () => {
         const curves = await fetch_diatomics_data({
           pred_file: model.metrics?.diatomics?.pred_file,
         })
-        diatomic_curves[model.model_name] = to_page_curves(curves)
+        diatomic_curves[model.model_key] = to_page_curves(curves)
       } catch (error) {
         console.error(`Failed to fetch data for ${model.model_name}:`, error)
-        errors[model.model_name] = error instanceof Error ? error.message : String(error)
+        errors[model.model_key] = error instanceof Error ? error.message : String(error)
       }
     }),
   )

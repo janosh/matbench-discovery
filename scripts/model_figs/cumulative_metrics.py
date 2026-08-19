@@ -26,7 +26,7 @@ if test_subset == TestSubset.uniq_protos:
 cum_pr_models = []
 for model in complete_models():
     each_pred = (
-        df_each_pred[model.label].sort_index(kind="stable").sort_values(kind="stable")
+        df_each_pred[model.key].sort_index(kind="stable").sort_values(kind="stable")
     )
     each_true = df_preds[MbdKey.each_true].loc[each_pred.index]
     true_pos, false_neg, false_pos, _true_neg = classify_stable(

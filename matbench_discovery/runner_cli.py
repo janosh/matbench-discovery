@@ -19,7 +19,7 @@ def add_common_runner_args(
     list_models_help: str = "Print registered models and exit",
 ) -> argparse.ArgumentParser:
     """Add the model-selection and dependency-isolation flags every runner shares."""
-    parser.add_argument("--model", help="Calculator name, model key, or key alias")
+    parser.add_argument("--model", help="Calculator name or model key")
     parser.add_argument("--list-models", action="store_true", help=list_models_help)
     parser.add_argument(
         "--print-cmd",

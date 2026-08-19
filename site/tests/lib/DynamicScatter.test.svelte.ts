@@ -146,26 +146,45 @@ it.each([
   },
 )
 
-it(`opens the model legend from the controls row and collapses it again on a click
-    anywhere but the legend`, async () => {
+it(`keeps duplicate-label series distinct and collapses their legend`, async () => {
   vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
+  const models = make_models(10, 20)
+  models.forEach((model, idx) => {
+    model.model_name = `Duplicate label`
+    model.n_training_materials = 5
+    model.n_training_structures = 100 * (idx + 1)
+  })
   mount(DynamicScatter, {
     target: document.body,
     props: {
-      models: make_models(1, 100),
-      x_key: HYPERPARAMS.model_params.key,
+      models,
+      x_key: METADATA_COLS.benchmark_added.key,
       ...scatter_props,
     },
   })
+  await tick()
+
+  const plot = doc_query(`.scatter`)
+  doc_query(`svg[role="application"]`, plot).dispatchEvent(new MouseEvent(`mouseenter`))
+  const markers = plot.querySelectorAll<SVGGElement>(`g[role="button"]:has(path.marker)`)
+  expect(markers).toHaveLength(2)
+  markers[1].dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
+  await tick()
+  const tooltip = doc_query(`.plot-tooltip`, plot).textContent ?? ``
+  expect(tooltip).toContain(`200`)
+  expect(tooltip).not.toContain(`100`)
 
   doc_query(`button.models-toggle`).click()
   await tick()
-  expect(document.querySelector(`.scatter > .legend:has(.legend-item)`)).not.toBeNull()
+  const legend = doc_query(`.scatter > .legend:has(.legend-item)`)
+  expect(
+    [...legend.querySelectorAll(`.legend-item`)].map((item) => item.textContent?.trim()),
+  ).toEqual(models.map(({ model_name, model_key }) => `${model_name} (${model_key})`))
   expect(document.querySelector(`button.models-toggle`)).toBeNull()
 
   const click = () => new MouseEvent(`click`, { bubbles: true })
-  doc_query(`.scatter > .legend .legend-item`).dispatchEvent(click())
+  doc_query(`.legend-item`, legend).dispatchEvent(click())
   await tick()
   expect(document.querySelector(`button.models-toggle`)).toBeNull()
 

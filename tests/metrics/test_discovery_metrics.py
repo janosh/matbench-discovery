@@ -31,7 +31,7 @@ from matbench_discovery.metrics.discovery import (
 
 df_preds, df_each_pred, df_each_err = load_discovery_predictions()
 df_full_discovery_metrics = metrics_df_from_yaml(["discovery.full_test_set"])
-full_discovery_model_labels = set(df_full_discovery_metrics.index)
+full_discovery_model_keys = set(df_full_discovery_metrics.index)
 
 
 def test_prepare_model_predictions_masks_rounds_and_aligns() -> None:
@@ -272,7 +272,7 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
 
 def test_df_discovery_metrics() -> None:
     """Discovery metrics stored in model YAML files are complete and valid."""
-    assert {model.label for model in Model.active()} <= full_discovery_model_labels
+    assert {model.key for model in Model.active()} <= full_discovery_model_keys
     assert df_full_discovery_metrics.MAE.between(0, 0.2).all()
     assert df_full_discovery_metrics.R2.between(-1.5, 1).all()
     assert df_full_discovery_metrics.RMSE.between(0, 0.3).all()
@@ -301,8 +301,8 @@ def test_discovery_eval_skips_incomplete_cli_model() -> None:
 @pytest.mark.parametrize(
     ("df_values", "expected_columns"),
     [
-        (df_each_pred, full_discovery_model_labels),
-        (df_each_err, full_discovery_model_labels | {str(MbdKey.each_err_models)}),
+        (df_each_pred, full_discovery_model_keys),
+        (df_each_err, full_discovery_model_keys | {str(MbdKey.each_err_models)}),
     ],
     ids=["predictions", "hull-errors"],
 )

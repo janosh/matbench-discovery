@@ -52,19 +52,24 @@ describe(`Models Page`, () => {
   })
 
   it(`renders model cards`, () => {
-    mount(ModelsPage, { target: document.body })
+    const original_name = MODELS[1].model_name
+    MODELS[1].model_name = MODELS[0].model_name
+    try {
+      mount(ModelsPage, { target: document.body })
+      const model_cards = document.querySelectorAll(`ol > li`)
+      expect(model_cards).toHaveLength(MODELS.length)
 
-    const model_cards = document.querySelectorAll(`ol > li`)
-    expect(model_cards).toHaveLength(MODELS.length)
-
-    // Test first model card structure
-    const first_card = model_cards[0]
-    const first_link = doc_query<HTMLAnchorElement>(`h2 a`, first_card)
-    expect(first_link.getAttribute(`href`)).toMatch(/^\/models\/[^/]+$/)
-    expect(first_link.textContent?.trim()).toMatch(/\S/)
-    expect(doc_query(`nav`, first_card).querySelectorAll(`a`).length).toBeGreaterThan(0)
-    expect(doc_query(`.metrics`, first_card).textContent).toContain(`CPS`)
-    expect(first_card.textContent).not.toContain(`Missing preds`)
+      // Test first model card structure
+      const first_card = model_cards[0]
+      const first_link = doc_query<HTMLAnchorElement>(`h2 a`, first_card)
+      expect(first_link.getAttribute(`href`)).toMatch(/^\/models\/[^/]+$/)
+      expect(first_link.textContent?.trim()).toMatch(/\S/)
+      expect(doc_query(`nav`, first_card).querySelectorAll(`a`).length).toBeGreaterThan(0)
+      expect(doc_query(`.metrics`, first_card).textContent).toContain(`CPS`)
+      expect(first_card.textContent).not.toContain(`Missing preds`)
+    } finally {
+      MODELS[1].model_name = original_name
+    }
   })
 
   it(`sorts models by selected metric`, async () => {

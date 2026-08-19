@@ -6,7 +6,6 @@ const plot_mocks = vi.hoisted(() => ({
   ScatterPlot: vi.fn(),
 }))
 
-vi.mock(`$lib`, () => ({ MODELS: [] }))
 vi.mock(`matterviz`, () => ({ ScatterPlot: plot_mocks.ScatterPlot }))
 
 describe(`DiatomicCurve`, () => {
@@ -19,6 +18,7 @@ describe(`DiatomicCurve`, () => {
         curves: [
           {
             model_key: `unknown-model`,
+            label: `Unknown model`,
             distances: [0.1, 0.2, 1.0, 6.0, 6.1],
             energies: [100, 5, 8, 3, 100],
             color: `#123456`,
@@ -36,7 +36,7 @@ describe(`DiatomicCurve`, () => {
           x: [0.2, 1.0, 6.0],
           y: [2, 5, 0],
           markers: `line+points`,
-          metadata: { model_key: `unknown-model`, model_label: `unknown-model` },
+          metadata: { model_key: `unknown-model` },
           point_style: { fill: `#123456`, radius: 1.5, stroke_width: 0 },
           line_style: { stroke: `#123456` },
         },
