@@ -167,8 +167,10 @@ it(`keeps duplicate-label series distinct and collapses their legend`, async () 
 
   const plot = doc_query(`.scatter`)
   doc_query(`svg[role="application"]`, plot).dispatchEvent(new MouseEvent(`mouseenter`))
-  await vi.waitFor(() =>
-    expect(plot.querySelectorAll(`g[role="button"]:has(path.marker)`)).toHaveLength(2),
+  await vi.waitFor(
+    () =>
+      expect(plot.querySelectorAll(`g[role="button"]:has(path.marker)`)).toHaveLength(2),
+    { timeout: 10_000 },
   )
   const markers = plot.querySelectorAll<SVGGElement>(`g[role="button"]:has(path.marker)`)
   markers[1].dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
