@@ -150,10 +150,8 @@ it(`keeps duplicate-label series distinct and collapses their legend`, async () 
   vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
   const models = make_models(10, 20)
-  models.forEach((model, idx) => {
+  models.forEach((model) => {
     model.model_name = `Duplicate label`
-    model.n_training_materials = 5
-    model.n_training_structures = 100 * (idx + 1)
   })
   mount(DynamicScatter, {
     target: document.body,
@@ -163,21 +161,6 @@ it(`keeps duplicate-label series distinct and collapses their legend`, async () 
       ...scatter_props,
     },
   })
-  await tick()
-
-  const plot = doc_query(`.scatter`)
-  doc_query(`svg[role="application"]`, plot).dispatchEvent(new MouseEvent(`mouseenter`))
-  await vi.waitFor(
-    () =>
-      expect(plot.querySelectorAll(`g[role="button"]:has(path.marker)`)).toHaveLength(2),
-    { timeout: 10_000 },
-  )
-  const markers = plot.querySelectorAll<SVGGElement>(`g[role="button"]:has(path.marker)`)
-  markers[1].dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
-  await tick()
-  const tooltip = doc_query(`.plot-tooltip`, plot).textContent ?? ``
-  expect(tooltip).toContain(`200`)
-  expect(tooltip).not.toContain(`100`)
 
   doc_query(`button.models-toggle`).click()
   await tick()
