@@ -7,7 +7,6 @@
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import { tick } from 'svelte'
-  import { SvelteSet } from 'svelte/reactivity'
   import { MultiSelect } from 'svelte-widgets'
   import {
     ALL_METRICS,
@@ -95,11 +94,9 @@
 
   let filtered_models = $derived(models.filter(model_filter))
   let duplicate_model_names = $derived(
-    new SvelteSet(
-      filtered_models
-        .map(({ model_name }) => model_name)
-        .filter((name, idx, names) => names.indexOf(name) !== idx),
-    ),
+    filtered_models
+      .map(({ model_name }) => model_name)
+      .filter((name, idx, names) => names.indexOf(name) !== idx),
   )
   let model_counts_by_prop = $derived(
     Object.fromEntries(
@@ -140,7 +137,6 @@
   interface PointMetadata extends Record<string, unknown> {
     model_key: string
     model_name: string
-    benchmark_added: string | null
     days_ago: string
     size_value: number
   }
@@ -164,10 +160,9 @@
       const benchmark_added = model.dates.benchmark_added
       const days_ago = benchmark_added ? format_relative_time(benchmark_added) : ``
       const metadata: PointMetadata = {
-        model_name,
-        benchmark_added,
-        days_ago,
         model_key,
+        model_name,
+        days_ago,
         size_value,
       }
       return [{ x, y, color_value, size_value, metadata }]
@@ -266,7 +261,7 @@
       id: item.metadata.model_key,
       x: [item.x],
       y: [item.y],
-      label: duplicate_model_names.has(item.metadata.model_name)
+      label: duplicate_model_names.includes(item.metadata.model_name)
         ? `${item.metadata.model_name} (${item.metadata.model_key})`
         : item.metadata.model_name,
       legend_group,
@@ -475,7 +470,7 @@
           {@html axes.color_value?.label}:
           {format_num(color_value)}<br />
         {/if}
-        {#if axes.size_value && is_finite_num(metadata.size_value)}
+        {#if is_finite_num(metadata.size_value)}
           {@html axes.size_value.label}:
           {format_num(metadata.size_value)}<br />
         {/if}

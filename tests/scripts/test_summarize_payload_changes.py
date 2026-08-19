@@ -80,13 +80,13 @@ def test_summarize_diffs_working_tree_against_head(
     os.remove(deleted_path)
 
     report = summarize()
-    assert (
-        "`demo`: identity (parameters); shared data (max |Δ|=1, max rel=0.5); "
+    assert report == (
+        "### Payload changes\n\n"
+        "- `deleted`: identity; shared data; removed: model-a\n"
+        "- `demo`: identity (parameters); shared data (max |Δ|=1, max rel=0.5); "
         "added: model-c; removed: model-b; updated: model-a "
-        "(max |Δ|=2, max rel=0.666667)" in report
-    )
-    assert "`new`: identity; shared data; added: model-a" in report
-    assert "`deleted`: identity; shared data; removed: model-a" in report
-    assert (
-        "`per-element-each-errors`: updated: model-a (max |Δ|=1, max rel=0.5)" in report
+        "(max |Δ|=2, max rel=0.666667)\n"
+        "- `new`: identity; shared data; added: model-a\n"
+        "- `per-element-each-errors`: updated: model-a "
+        "(max |Δ|=1, max rel=0.5)"
     )

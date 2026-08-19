@@ -12,7 +12,6 @@ JSON manifest is committed.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import io
 import math
 from pathlib import Path
@@ -207,17 +206,14 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     df_dft, structures, meta = load_reference()
     material_ids = [str(mat_id) for mat_id in df_dft.index]
-    material_ids_sha256 = hashlib.sha256("\n".join(material_ids).encode()).hexdigest()
 
     base = {
         "material_ids": material_ids,
-        "formulas": [meta.get(mid, {}).get("formula", "") for mid in material_ids],
-        "n_sites": [meta.get(mid, {}).get("n_sites") for mid in material_ids],
-        "spacegroups": [meta.get(mid, {}).get("spacegroup") for mid in material_ids],
+        "formulas": [meta[mid]["formula"] for mid in material_ids],
+        "n_sites": [meta[mid]["n_sites"] for mid in material_ids],
+        "spacegroups": [meta[mid]["spacegroup"] for mid in material_ids],
         "kappa_dft": [row_scalar_kappa(df_dft.loc[mid]) for mid in material_ids],
-        "structures": {
-            mid: structures[mid] for mid in material_ids if mid in structures
-        },
+        "structures": {mid: structures[mid] for mid in material_ids},
         "dft_dos": {
             mid: dos
             for mid in material_ids
@@ -257,7 +253,6 @@ def main(argv: Sequence[str] | None = None) -> None:
             continue
         model_payload = {
             "model_key": model.key,
-            "model_label": model.label,
             "kappa_ml": kappa_ml,
             "ml_dos": {
                 mid: dos
@@ -276,7 +271,6 @@ def main(argv: Sequence[str] | None = None) -> None:
         "asset_prefix": args.asset_prefix,
         "local_asset_base_url": args.local_asset_base_url.rstrip("/"),
         "row_count": len(material_ids),
-        "material_ids_sha256": material_ids_sha256,
         "base": base_meta,
         "model_assets": model_assets,
     }

@@ -84,29 +84,21 @@ def test_cli_parser_invalid_args(
         assert "None" not in error
 
 
-@pytest.mark.parametrize(
-    ("models_explicit", "full_roster", "expected"),
-    [
-        (True, False, False),
-        (False, True, True),
-        (False, False, None),
-        (True, True, None),
-    ],
-)
+@pytest.mark.parametrize("models_explicit", [False, True])
+@pytest.mark.parametrize("full_roster", [False, True])
 def test_payload_scope_is_explicit(
     monkeypatch: pytest.MonkeyPatch,
     models_explicit: bool,
     full_roster: bool,
-    expected: bool | None,
 ) -> None:
     """Payload generation requires exactly one targeted or full-roster scope."""
     monkeypatch.setattr(cli, "models_were_explicit", models_explicit)
     monkeypatch.setattr(cli.cli_args, "full_roster", full_roster)
-    if expected is None:
+    if models_explicit == full_roster:
         with pytest.raises(SystemExit, match="2"):
             cli.is_full_model_run()
     else:
-        assert cli.is_full_model_run() is expected
+        assert cli.is_full_model_run() is full_roster
 
 
 def test_complete_models_drops_inactive(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -222,69 +222,47 @@
   "structure_bundles": [
     {
       "asset": "energy-parity-wbm-v1-structures-000-346b0bbe42f20b42.json.gz",
-      "end_shard": 49,
-      "sha256": "6983f9778caa7252800327738738b11ac2fec44a3b0f3280a43b0f1e4deb594b",
-      "start_shard": 0
+      "sha256": "6983f9778caa7252800327738738b11ac2fec44a3b0f3280a43b0f1e4deb594b"
     },
     {
       "asset": "energy-parity-wbm-v1-structures-001-0b9952de3988f18b.json.gz",
-      "end_shard": 99,
-      "sha256": "044982f6e8c953bebe0c57ce7a43031c56d900359c0c02fc243cd1a00bb6afc0",
-      "start_shard": 50
+      "sha256": "044982f6e8c953bebe0c57ce7a43031c56d900359c0c02fc243cd1a00bb6afc0"
     },
     {
       "asset": "energy-parity-wbm-v1-structures-002-c24c9359ae2fbdd3.json.gz",
-      "end_shard": 149,
-      "sha256": "b685602f7398bdc46418b679a9dcee0e0e162d21fb4c23a31af4443bb451eac1",
-      "start_shard": 100
+      "sha256": "b685602f7398bdc46418b679a9dcee0e0e162d21fb4c23a31af4443bb451eac1"
     },
     {
       "asset": "energy-parity-wbm-v1-structures-003-464449fa3063093a.json.gz",
-      "end_shard": 199,
-      "sha256": "0c2e45877a8e0c5bfc2a83b872fdaa69dc93cbafa0340123d94fce89113c2645",
-      "start_shard": 150
+      "sha256": "0c2e45877a8e0c5bfc2a83b872fdaa69dc93cbafa0340123d94fce89113c2645"
     },
     {
       "asset": "energy-parity-wbm-v1-structures-004-d94cc26b47adae14.json.gz",
-      "end_shard": 249,
-      "sha256": "e430773c7c01c0a4daf391d6adc2556e6769d37d5460b6a6e1e8ff3e558cbbf5",
-      "start_shard": 200
+      "sha256": "e430773c7c01c0a4daf391d6adc2556e6769d37d5460b6a6e1e8ff3e558cbbf5"
     },
     {
       "asset": "energy-parity-wbm-v1-structures-005-654cd61b1f14e69a.json.gz",
-      "end_shard": 299,
-      "sha256": "dff2f7e938bb21427ad9dbd22e6ca180ba4d9c68ffe365e5f68c489f5173ecf3",
-      "start_shard": 250
+      "sha256": "dff2f7e938bb21427ad9dbd22e6ca180ba4d9c68ffe365e5f68c489f5173ecf3"
     },
     {
       "asset": "energy-parity-wbm-v1-structures-006-087958e4d774d7ab.json.gz",
-      "end_shard": 349,
-      "sha256": "f3c1ca06e7e51089fd9184a281c01c4e2736de5ebaa84abbbafa2094a340760c",
-      "start_shard": 300
+      "sha256": "f3c1ca06e7e51089fd9184a281c01c4e2736de5ebaa84abbbafa2094a340760c"
     },
     {
       "asset": "energy-parity-wbm-v1-structures-007-c493bc6a796b7e67.json.gz",
-      "end_shard": 399,
-      "sha256": "4bc75e380566f687302ce3867c2dad7c1a6bc3b0192cf59a0b6cc544785b7948",
-      "start_shard": 350
+      "sha256": "4bc75e380566f687302ce3867c2dad7c1a6bc3b0192cf59a0b6cc544785b7948"
     },
     {
       "asset": "energy-parity-wbm-v1-structures-008-2aad45e4e0c16d7a.json.gz",
-      "end_shard": 449,
-      "sha256": "d58ace4c59352ad350b047b3a100189481136a3d7a1be03d12b732e7f5fecf54",
-      "start_shard": 400
+      "sha256": "d58ace4c59352ad350b047b3a100189481136a3d7a1be03d12b732e7f5fecf54"
     },
     {
       "asset": "energy-parity-wbm-v1-structures-009-c588b6c2e0d4283d.json.gz",
-      "end_shard": 499,
-      "sha256": "a1373e88838f08e1fa7c2524ca896a62791d658dc697f9a47cb50dcfa2a974e7",
-      "start_shard": 450
+      "sha256": "a1373e88838f08e1fa7c2524ca896a62791d658dc697f9a47cb50dcfa2a974e7"
     },
     {
       "asset": "energy-parity-wbm-v1-structures-010-c91747baf35363f7.json.gz",
-      "end_shard": 501,
-      "sha256": "14b2a114cc7304cff454d9fbff2a501944d85e47f70a6f191bb6952cde018b42",
-      "start_shard": 500
+      "sha256": "14b2a114cc7304cff454d9fbff2a501944d85e47f70a6f191bb6952cde018b42"
     }
   ],
   "structure_shard_size": 512

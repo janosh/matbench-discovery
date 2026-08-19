@@ -6,13 +6,14 @@ import argparse
 import hashlib
 import math
 from pathlib import Path
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, TypeGuard
 from zipfile import ZipFile
 
 from asset_helpers import (
     clean_floats,
     clean_ints,
     compact_extxyz,
+    is_asset_metadata,
     read_manifest,
     remove_model_assets,
     resolve_models,
@@ -26,7 +27,7 @@ from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import DataFiles, MbdKey
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Sequence
 
 OUT_DIR: Final = "site/static/energy-parity"
 MANIFEST_PATH: Final = "site/src/lib/parity/energy-parity-manifest.json"
@@ -62,20 +63,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--structure-bundle-size", type=int, default=STRUCTURE_BUNDLE_SIZE
     )
-    parser.add_argument(
-        "--skip-structures",
-        action="store_true",
-        help="Reuse matching structure bundles; targeted runs require them.",
-    )
     return parser.parse_args(argv)
-
-
-def chunked(items: list[int], chunk_size: int) -> Iterable[tuple[int, list[int]]]:
-    """Yield indexed chunks from a list of integer row or shard IDs."""
-    if chunk_size <= 0:
-        raise ValueError(f"{chunk_size=} must be positive")
-    for idx, start in enumerate(range(0, len(items), chunk_size)):
-        yield idx, items[start : start + chunk_size]
 
 
 def remove_stale_assets(
@@ -95,19 +83,38 @@ def remove_stale_assets(
             path.unlink()
 
 
+def valid_structure_bundles(
+    bundles: object, asset_prefix: str, n_bundles: int
+) -> TypeGuard[list[dict[str, str]]]:
+    """Whether ordered structure bundle metadata is complete and valid."""
+    return (
+        isinstance(bundles, list)
+        and len(bundles) == n_bundles
+        and all(
+            is_asset_metadata(bundle, f"{asset_prefix}-structures-{idx:03d}")
+            for idx, bundle in enumerate(bundles)
+        )
+    )
+
+
 def write_structure_shards(
     material_ids: list[str],
     asset_dir: Path,
     asset_prefix: str,
     shard_size: int,
     bundle_size: int,
-) -> list[dict[str, str | int]]:
+) -> list[dict[str, str]]:
     """Write compressed structure bundles grouped by shard ranges."""
+    if bundle_size <= 0:
+        raise ValueError(f"{bundle_size=} must be positive")
     zip_path = Path(DataFiles.wbm_initial_atoms.path)
-    structure_bundles: list[dict[str, str | int]] = []
+    structure_bundles: list[dict[str, str]] = []
     with ZipFile(zip_path) as zip_file:
         shard_idxs = list(range(math.ceil(len(material_ids) / shard_size)))
-        for bundle_idx, bundle_shard_idxs in chunked(shard_idxs, bundle_size):
+        for bundle_idx, bundle_start in enumerate(
+            range(0, len(shard_idxs), bundle_size)
+        ):
+            bundle_shard_idxs = shard_idxs[bundle_start : bundle_start + bundle_size]
             shards: dict[str, dict[str, str]] = {}
             for shard_idx in bundle_shard_idxs:
                 start = shard_idx * shard_size
@@ -119,13 +126,8 @@ def write_structure_shards(
                     for material_id in material_ids[start : start + shard_size]
                 }
             asset_name = f"{asset_prefix}-structures-{bundle_idx:03d}.json.gz"
-            meta = write_json_gz(asset_dir / asset_name, {"shards": shards})
             structure_bundles.append(
-                {
-                    **meta,
-                    "start_shard": bundle_shard_idxs[0],
-                    "end_shard": bundle_shard_idxs[-1],
-                }
+                write_json_gz(asset_dir / asset_name, {"shards": shards})
             )
     return structure_bundles
 
@@ -153,15 +155,23 @@ def main(argv: Sequence[str] | None = None) -> None:
         "structure_shard_size": args.structure_shard_size,
         "structure_bundle_size": args.structure_bundle_size,
     }
+    previous_bundles = (
+        previous_manifest.get("structure_bundles")
+        if previous_manifest is not None
+        else None
+    )
+    n_bundles = math.ceil(
+        len(material_ids) / args.structure_shard_size / args.structure_bundle_size
+    )
     reused_bundles = (
-        previous_manifest.get("structure_bundles") or None
-        if (args.models or args.skip_structures)
-        and previous_manifest is not None
+        previous_bundles
+        if previous_manifest is not None
         and previous_manifest.get("asset_prefix") == args.asset_prefix
         and all(
             previous_manifest.get(key) == value
             for key, value in structure_identity.items()
         )
+        and valid_structure_bundles(previous_bundles, args.asset_prefix, n_bundles)
         else None
     )
     if args.models and reused_bundles is None:
@@ -194,7 +204,6 @@ def main(argv: Sequence[str] | None = None) -> None:
         asset_name = f"{args.asset_prefix}-model-{model.key}.json.gz"
         model_payload = {
             "model_key": model.key,
-            "model_label": model.label,
             "e_form_pred": clean_floats(df_preds[model.key], ENERGY_DECIMALS),
         }
         meta = write_json_gz(asset_dir / asset_name, {"model": model_payload})

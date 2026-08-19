@@ -149,10 +149,10 @@ it.each([
 it(`keeps duplicate-label series distinct and collapses their legend`, async () => {
   vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
-  const models = make_models(10, 20)
-  models.forEach((model) => {
-    model.model_name = `Duplicate label`
-  })
+  const models = make_models(10, 20).map((model) => ({
+    ...model,
+    model_name: `Duplicate label`,
+  }))
   mount(DynamicScatter, {
     target: document.body,
     props: {

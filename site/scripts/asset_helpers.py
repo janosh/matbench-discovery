@@ -11,7 +11,7 @@ import json
 import math
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 import numpy as np
 import pandas as pd
@@ -39,13 +39,20 @@ def is_content_addressed_name(stem: str, name: str) -> bool:
     )
 
 
+def is_asset_metadata(value: object, stem: str) -> TypeGuard[dict[str, str]]:
+    """Whether a manifest entry has a content-addressed name and SHA-256 digest."""
+    return (
+        isinstance(value, dict)
+        and set(value) == {"asset", "sha256"}
+        and is_content_addressed_name(stem, str(value.get("asset")))
+        and isinstance(sha256 := value.get("sha256"), str)
+        and re.fullmatch(r"[0-9a-f]{64}", sha256) is not None
+    )
+
+
 def resolve_models(model_refs: Iterable[str]) -> tuple[Model, ...]:
     """Resolve model enum names or canonical keys to members."""
-    return (
-        tuple(dict.fromkeys(map(Model.from_ref, model_refs)))
-        if model_refs
-        else Model.active()
-    )
+    return tuple(dict.fromkeys(map(Model.from_ref, model_refs))) or Model.active()
 
 
 def read_manifest(path: Path) -> dict[str, Any] | None:
@@ -76,13 +83,7 @@ def retained_parity_assets(
     if manifest.get("asset_prefix") != asset_prefix:
         raise ValueError("Parity asset prefix changed; run a full refresh")
     base_asset = manifest.get("base")
-    if (
-        not isinstance(base_asset, dict)
-        or not isinstance(base_asset.get("sha256"), str)
-        or not is_content_addressed_name(
-            f"{asset_prefix}-base", str(base_asset.get("asset"))
-        )
-    ):
+    if not is_asset_metadata(base_asset, f"{asset_prefix}-base"):
         raise ValueError("Parity base asset metadata is invalid; run a full refresh")
     expected_base_name = content_addressed_name(
         f"{asset_prefix}-base", json_content_sha256(base)
@@ -93,11 +94,9 @@ def retained_parity_assets(
     if not isinstance(model_assets, dict):
         raise TypeError("Parity manifest model_assets must be an object")
     for model_key, asset in model_assets.items():
-        if not isinstance(model_key, str) or not isinstance(asset, dict):
+        if not isinstance(model_key, str):
             raise TypeError("Parity model assets must map string keys to objects")
-        if not isinstance(asset.get("sha256"), str) or not is_content_addressed_name(
-            f"{asset_prefix}-model-{model_key}", str(asset.get("asset"))
-        ):
+        if not is_asset_metadata(asset, f"{asset_prefix}-model-{model_key}"):
             raise ValueError(
                 "Parity model asset metadata is invalid; run a full refresh"
             )
@@ -140,10 +139,9 @@ def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str]:
     """Write content-addressed gzipped JSON and return release metadata."""
     payload = dict(data)
     content_sha256 = json_content_sha256(payload)
-    suffix = ".json.gz"
-    if not path.name.endswith(suffix):
-        raise ValueError(f"Parity asset path must end with {suffix}: {path}")
-    asset_name = content_addressed_name(path.name.removesuffix(suffix), content_sha256)
+    asset_name = content_addressed_name(
+        path.name.removesuffix(".json.gz"), content_sha256
+    )
     asset_path = path.with_name(asset_name)
     n_bytes = write_shared_json_gz(str(asset_path), payload)
     with open(asset_path, "rb") as file:

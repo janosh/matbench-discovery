@@ -114,12 +114,10 @@ def _change_summary(
         changes.append("shared data" + _numeric_delta(old_derived, new_derived))
     if canonical_json(old_base.get("audit")) != canonical_json(new_base.get("audit")):
         changes.append("audit")
-    for prefix, keys in (
-        ("added", new_keys - old_keys),
-        ("removed", old_keys - new_keys),
-    ):
-        if keys:
-            changes.append(f"{prefix}: {', '.join(sorted(keys))}")
+    if added := new_keys - old_keys:
+        changes.append(f"added: {', '.join(sorted(added))}")
+    if removed := old_keys - new_keys:
+        changes.append(f"removed: {', '.join(sorted(removed))}")
     if updated:
         changes.append(f"updated: {', '.join(updated)}")
     return f"- `{name}`: {'; '.join(changes)}" if changes else None
@@ -158,9 +156,8 @@ def summarize() -> str:
         if row := _change_summary(name, old_base, new_base, old_models, new_models):
             rows.append(row)
 
-    return "### Payload changes\n\n" + (
-        "\n".join(rows) or "_No payload records changed._"
-    )
+    body = "\n".join(rows) or "_No payload records changed._"
+    return f"### Payload changes\n\n{body}"
 
 
 if __name__ == "__main__":

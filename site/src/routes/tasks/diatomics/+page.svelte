@@ -38,18 +38,11 @@
   let diatomic_models = $derived(data?.diatomic_models ?? [])
   let diatomic_curves = $derived(data?.diatomic_curves ?? {})
   let reference_names = $derived(data?.reference_names ?? [])
-  let model_display = $derived(
-    Object.fromEntries(
-      diatomic_models.map(({ model_key, model_name }, idx) => [
-        model_key,
-        {
-          label: model_name,
-          color: PLOT_COLORS[idx % PLOT_COLORS.length],
-        },
-      ]),
-    ),
+  let model_idx_by_key = $derived(
+    Object.fromEntries(diatomic_models.map(({ model_key }, idx) => [model_key, idx])),
   )
-  const label_for = (key: string): string => model_display[key]?.label ?? key
+  const label_for = (key: string): string =>
+    diatomic_models[model_idx_by_key[key] ?? -1]?.model_name ?? key
   let errors = $derived(data?.errors ?? {})
   let error_entries = $derived(Object.entries(errors))
   let error_title = $derived(
@@ -78,7 +71,9 @@
   // read as ground truth
   const ref_colors: Record<string, string> = { PBE: `#000000`, r2SCAN: `#f032e6` }
   const color_for = (key: string): string =>
-    ref_colors[key] ?? model_display[key]?.color ?? `gray`
+    ref_colors[key] ??
+    PLOT_COLORS[(model_idx_by_key[key] ?? -1) % PLOT_COLORS.length] ??
+    `gray`
 
   let selected_element_group = $state(`all`)
   let selected_group = $derived(

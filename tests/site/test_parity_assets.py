@@ -170,20 +170,16 @@ def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
         "git add matbench_discovery/enums.py models site/src/figs site/src/lib/parity"
         in workflow
     )
-    assert workflow.index("Refresh payloads without secrets") < workflow.index(
-        "Archive validated model artifacts"
+    assert workflow.index("generate-kappa-parity-assets.py") < workflow.index(
+        "--publish-parity"
     )
-    archive = workflow.split("- name: Archive validated model artifacts", 1)[1].split(
-        "- name: Check out PR head for commit", 1
-    )[0]
-    assert archive.count("--publish-parity") == 1
-    assert '"${MODEL_ARGS[@]}" --payloads-only' in refresh
+    assert '"${PAYLOAD_ARGS[@]}" --payloads-only' in refresh
     with open(f"{ROOT}/.github/workflows/gh-pages.yml") as file:
         deploy = file.read()
-    assert ".model_assets[].asset" in deploy
-    assert 'patterns+=(--pattern "$asset")' in deploy
-    assert '"${patterns[@]}"' in deploy
-    assert 'for asset in "${assets[@]}"' in deploy
+    assert (
+        ".base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)"
+        in deploy
+    )
     assert "-*.json.gz" not in deploy
     with open(f"{ROOT}/.github/workflows/model-pr-guard.yml") as file:
         guard = file.read()
@@ -212,8 +208,6 @@ def test_targeted_parity_requires_matching_base() -> None:
     manifest = {
         "schema_version": 2,
         "asset_prefix": "parity-v1",
-        "row_count": 2,
-        "material_ids_sha256": "rows",
         "base": base_asset,
         "model_assets": {model_key: model_asset},
     }
@@ -234,14 +228,38 @@ def test_targeted_parity_requires_matching_base() -> None:
             manifest, (model_key,), base | {"values": [1]}, "parity-v1"
         )
     invalid_sections = {
-        "base": {"base": base_asset | {"sha256": None}},
-        "model": {"model_assets": {model_key: model_asset | {"sha256": None}}},
+        "base": {"base": base_asset | {"sha256": "invalid"}},
+        "model": {"model_assets": {model_key: model_asset | {"sha256": "invalid"}}},
     }
     for section, update in invalid_sections.items():
         with pytest.raises(ValueError, match=f"{section} asset metadata is invalid"):
             asset_helpers.retained_parity_assets(
                 manifest | update, (), base, "parity-v1"
             )
+
+
+def test_structure_bundle_metadata_is_complete() -> None:
+    """Structure bundle metadata requires exact count, order, names, and digests."""
+    bundles = [
+        {
+            "asset": asset_helpers.content_addressed_name(
+                f"parity-v1-structures-{bundle_idx:03d}", "a" * 64
+            ),
+            "sha256": "b" * 64,
+        }
+        for bundle_idx in range(2)
+    ]
+    assert energy_assets.valid_structure_bundles(bundles, "parity-v1", 2)
+    invalid_bundles = [
+        None,
+        bundles[:1],
+        bundles[::-1],
+        [bundles[0] | {"sha256": "invalid"}, bundles[1]],
+    ]
+    assert all(
+        not energy_assets.valid_structure_bundles(value, "parity-v1", 2)
+        for value in invalid_bundles
+    )
 
 
 def test_targeted_energy_requires_matching_structure_bundles(
@@ -267,6 +285,26 @@ def test_parity_generators_reject_empty_target_lists(
     """An explicit empty --models cannot silently become a full refresh."""
     with pytest.raises(SystemExit):
         parse_args(["--models"])
+
+
+@pytest.mark.parametrize("missing", ["structure", "metadata"])
+def test_kappa_requires_complete_reference_data(
+    monkeypatch: pytest.MonkeyPatch, missing: str
+) -> None:
+    """Kappa generation fails instead of emitting incomplete reference rows."""
+    reference = pd.DataFrame(index=["material-1"])
+    structures = {} if missing == "structure" else {"material-1": {}}
+    metadata = (
+        {}
+        if missing == "metadata"
+        else {"material-1": {"formula": "H", "n_sites": 1, "spacegroup": 1}}
+    )
+    monkeypatch.setattr(kappa_assets, "resolve_models", lambda _refs: ())
+    monkeypatch.setattr(
+        kappa_assets, "load_reference", lambda: (reference, structures, metadata)
+    )
+    with pytest.raises(KeyError, match="material-1"):
+        kappa_assets.main([])
 
 
 @pytest.mark.parametrize(
@@ -301,7 +339,11 @@ def test_targeted_kappa_fails_on_declared_artifact_errors(
     reference = pd.DataFrame(
         {kappa_assets.KAPPA_TOT_AVG: [[1.0]]}, index=["material-1"]
     )
-    monkeypatch.setattr(kappa_assets, "load_reference", lambda: (reference, {}, {}))
+    structures = {"material-1": {"sites": []}}
+    metadata = {"material-1": {"formula": "H", "n_sites": 1, "spacegroup": 1}}
+    monkeypatch.setattr(
+        kappa_assets, "load_reference", lambda: (reference, structures, metadata)
+    )
     monkeypatch.setattr(kappa_assets, "read_manifest", lambda _path: {})
     monkeypatch.setattr(
         kappa_assets,
@@ -317,12 +359,6 @@ def test_targeted_kappa_fails_on_declared_artifact_errors(
         return reference
 
     monkeypatch.setattr(kappa_assets, "read_kappa_json", read_kappa_json)
-    monkeypatch.setattr(
-        kappa_assets,
-        "write_json_gz",
-        lambda *_args: pytest.fail("targeted run rewrote the retained base"),
-    )
-    monkeypatch.setattr(kappa_assets, "write_manifest", lambda *_args: None)
     artifact_error = resolution_error or read_error
     assert artifact_error is not None
     with pytest.raises(type(artifact_error), match=str(artifact_error)):

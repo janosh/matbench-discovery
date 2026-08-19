@@ -832,18 +832,10 @@ describe(`MetricsTable`, () => {
       `selects and deselects models on double-click with proper state management`,
       { timeout: 30_000 },
       async () => {
-        const state = $state({ selected_models: new SvelteSet<string>() })
+        const selected_models = new SvelteSet<string>()
         mount(MetricsTable, {
           target: document.body,
-          props: {
-            col_filter: () => true,
-            get selected_models() {
-              return state.selected_models
-            },
-            set selected_models(value) {
-              state.selected_models = value
-            },
-          },
+          props: { col_filter: () => true, selected_models },
         })
         await tick() // Wait for initial render
 
@@ -859,7 +851,7 @@ describe(`MetricsTable`, () => {
         await tick()
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
         const first_key = row_key(get_rows()[0])
-        expect([...state.selected_models]).toEqual([first_key])
+        expect([...selected_models]).toEqual([first_key])
 
         // Select second row
         double_click_row(get_rows()[1])
@@ -867,7 +859,7 @@ describe(`MetricsTable`, () => {
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
         expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
         const second_key = row_key(get_rows()[1])
-        expect([...state.selected_models]).toEqual([first_key, second_key])
+        expect([...selected_models]).toEqual([first_key, second_key])
 
         // Deselect first row
         double_click_row(get_rows()[0])

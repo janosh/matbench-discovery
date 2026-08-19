@@ -34,6 +34,7 @@ describe(`DiatomicCurve`, () => {
       series: [
         {
           id: `unknown-model`,
+          label: `Unknown model`,
           x: [0.2, 1.0, 6.0],
           y: [2, 5, 0],
           markers: `line+points`,

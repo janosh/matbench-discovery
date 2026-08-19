@@ -37,7 +37,6 @@ const base: KappaParityBase = {
 
 const model: KappaParityModel = {
   model_key: `test-model`,
-  model_label: `Test Model`,
   kappa_ml: [8, null, 6],
   ml_dos: { 'mp-1': { frequencies: [0, 1, 2], densities: [0, 0.5, 0] } },
 }
@@ -63,7 +62,6 @@ const manifest_sized_model = (
   overrides: Partial<KappaParityModel> = {},
 ): KappaParityModel => ({
   model_key: first_model_key,
-  model_label: `Test Model`,
   kappa_ml: Array<number | null>(kappa_parity_manifest.row_count).fill(1),
   ml_dos: {},
   ...overrides,
@@ -168,39 +166,28 @@ describe(`kappa parity data helpers`, () => {
     await expect(load_kappa_parity_model(first_model_key)).resolves.toEqual(valid_model)
   })
 
-  it.each([
-    {
-      kind: `base`,
-      response: () => gzipped_json_response(manifest_sized_base({ kappa_dft: [1] })),
-      load: () => load_kappa_parity_base(),
-      error: `Invalid kappa parity kappa_dft: expected ${kappa_parity_manifest.row_count} rows`,
-    },
-    {
-      kind: `base n_sites`,
-      response: () => gzipped_json_response(manifest_sized_base({ n_sites: [1] })),
-      load: () => load_kappa_parity_base(),
-      error: `Invalid kappa parity n_sites: expected ${kappa_parity_manifest.row_count} rows`,
-    },
-    {
-      kind: `base spacegroups`,
-      response: () => gzipped_json_response(manifest_sized_base({ spacegroups: [1] })),
-      load: () => load_kappa_parity_base(),
-      error: `Invalid kappa parity spacegroups: expected ${kappa_parity_manifest.row_count} rows`,
-    },
-    {
-      kind: `model`,
-      response: () =>
-        gzipped_json_response({ model: manifest_sized_model({ kappa_ml: [1] }) }),
-      load: () => load_kappa_parity_model(first_model_key),
-      error:
-        `Invalid kappa parity ${first_model_key}.kappa_ml: ` +
-        `expected ${kappa_parity_manifest.row_count} rows`,
-    },
-  ])(
-    `rejects $kind assets with the wrong row count`,
-    async ({ response, load, error }) => {
-      vi.stubGlobal(`fetch`, vi.fn(response))
-      await expect(load()).rejects.toThrow(error)
+  it.each([`kappa_dft`, `n_sites`, `spacegroups`] as const)(
+    `rejects base %s with the wrong row count`,
+    async (field) => {
+      vi.stubGlobal(
+        `fetch`,
+        vi.fn(() => gzipped_json_response(manifest_sized_base({ [field]: [1] }))),
+      )
+      await expect(load_kappa_parity_base()).rejects.toThrow(
+        `Invalid kappa parity ${field}: expected ${kappa_parity_manifest.row_count} rows`,
+      )
     },
   )
+
+  it(`rejects model data with the wrong row count`, async () => {
+    vi.stubGlobal(
+      `fetch`,
+      vi.fn(() =>
+        gzipped_json_response({ model: manifest_sized_model({ kappa_ml: [1] }) }),
+      ),
+    )
+    await expect(load_kappa_parity_model(first_model_key)).rejects.toThrow(
+      `Invalid kappa parity ${first_model_key}.kappa_ml: expected ${kappa_parity_manifest.row_count} rows`,
+    )
+  })
 })

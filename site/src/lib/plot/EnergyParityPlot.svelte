@@ -100,7 +100,6 @@
     $state<(typeof import('matterviz/convex-hull'))['StructurePopup']>()
   let popup_placement = $state<StructurePopupPlacement>({ side: `left`, left: 0, top: 0 })
 
-  let model_label = $derived(parity_model?.model_label ?? model.model_name)
   let parity = $derived(
     base && parity_model
       ? build_energy_parity_series(base, parity_model, energy_kind)
@@ -115,7 +114,7 @@
             y: parity.y,
             point_ids: parity.point_ids,
             size_values: parity.size_values,
-            label: model_label,
+            label: model.model_name,
             color: model.color ?? `#4dabf7`,
           },
         ]
@@ -128,7 +127,7 @@
     energy_kind === `e-form` ? `formation energy` : `convex hull distance`,
   )
   let x_label = $derived(`PBE ${axis_label}`)
-  let y_label = $derived(`${model_label} ${axis_label}`)
+  let y_label = $derived(`${model.model_name} ${axis_label}`)
   // manual min/max loop (not Math.min(...arr)) because WBM x/y arrays are too large
   // to spread as function args without overflowing the call stack
   let extent = $derived.by((): [number, number] => {
@@ -394,7 +393,7 @@ title, so label the section for screen readers instead -->
               {/if}
               PBE {@html axis_label}: {format_num(point.x, `.3~`)}
               <small>eV/atom</small><br />
-              {model_label}
+              {model.model_name}
               {@html axis_label}:
               {format_num(point.y, `.3~`)} <small>eV/atom</small><br />
               MLFF - DFT error: {format_num(point.y - point.x, `+.3~`)}

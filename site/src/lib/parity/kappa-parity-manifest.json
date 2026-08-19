@@ -5,7 +5,6 @@
     "sha256": "280a766bc4bcb55db17368ffccf0d7ef00d725328bbc4eb17bdb5eb2c795b666"
   },
   "local_asset_base_url": "/kappa-parity/assets",
-  "material_ids_sha256": "d70679a288207c8adbe66c722a63c0b934290ff6f7a8b29f51f160f021e2a5f1",
   "model_assets": {
     "allegro-mp-l-0.1": {
       "asset": "kappa-parity-phonondb-v1-model-allegro-mp-l-0.1-c93000e44a9004f1.json.gz",

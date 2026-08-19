@@ -143,12 +143,8 @@ figs.write_site_payload(
 
 
 # %% Difference in symmetry-operation counts for ML vs DFT-relaxed structures
-df_sym_ops_diff = (
-    df_all.drop(Key.dft.label, level=Key.model, axis="columns").xs(
-        MbdKey.n_sym_ops_diff, level=metric_lvl, axis="columns"
-    )
-    if model_keys
-    else pd.DataFrame()
+df_sym_ops_diff = pd.DataFrame(
+    {model_key: df_all[model_key, MbdKey.n_sym_ops_diff] for model_key in model_keys}
 )
 models_by_std = sorted(df_sym_ops_diff.std().items(), key=lambda item: item[1])
 sym_ops_models: list[dict[str, object]] = []

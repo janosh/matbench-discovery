@@ -65,7 +65,7 @@ FIG_STEPS = (
         "Energy parity assets",
         False,
         True,
-        "site/scripts/generate-energy-parity-assets.py --skip-structures",
+        "site/scripts/generate-energy-parity-assets.py",
     ),
     (
         "Kappa parity assets",

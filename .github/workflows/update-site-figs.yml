@@ -158,22 +158,22 @@ jobs:
           FULL_PAYLOAD_REFRESH: ${{ steps.detect.outputs.full_payload_refresh }}
           MODELS: ${{ steps.detect.outputs.models }}
         run: |
+          PAYLOAD_ARGS=(--full-roster)
           PARITY_ARGS=()
-          if [ "$FULL_PAYLOAD_REFRESH" = "true" ]; then
-            uv run --with-editable . scripts/ingest_model.py \
-              --payloads-only --full-roster
-          elif [ -n "$MODELS" ]; then
+          if [ "$FULL_PAYLOAD_REFRESH" != "true" ]; then
+            if [ -z "$MODELS" ]; then
+              echo "Pure model-YAML path move: no payload refresh"
+              exit 0
+            fi
             read -ra MODEL_ARGS <<< "$MODELS"
-            uv run --with-editable . scripts/ingest_model.py \
-              "${MODEL_ARGS[@]}" --payloads-only
+            PAYLOAD_ARGS=("${MODEL_ARGS[@]}")
             PARITY_ARGS=(--models "${MODEL_ARGS[@]}")
-          else
-            echo "Pure model-YAML path move: no payload refresh"
-            exit 0
           fi
+          uv run --with-editable . scripts/ingest_model.py \
+            "${PAYLOAD_ARGS[@]}" --payloads-only
           MBD_AUTO_DOWNLOAD_FILES=true uv run --with-editable . \
             site/scripts/generate-energy-parity-assets.py \
-            "${PARITY_ARGS[@]}" --skip-structures
+            "${PARITY_ARGS[@]}"
           MBD_AUTO_DOWNLOAD_FILES=true uv run --with-editable ".[phonons]" \
             site/scripts/generate-kappa-parity-assets.py "${PARITY_ARGS[@]}"
 
