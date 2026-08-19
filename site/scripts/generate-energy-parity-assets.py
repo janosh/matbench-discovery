@@ -47,7 +47,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--models",
-        nargs="*",
+        nargs="+",
         default=[],
         help=("Model enum names or canonical keys. Defaults to active models."),
     )
@@ -65,10 +65,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--skip-structures",
         action="store_true",
-        help=(
-            "Reuse existing structure shards when they still match the base rows. "
-            "Falls back to regenerating them if missing or stale."
-        ),
+        help="Reuse matching structure bundles; targeted runs require them.",
     )
     return parser.parse_args()
 
@@ -159,14 +156,17 @@ def main() -> None:
     }
     reused_bundles = (
         previous_manifest.get("structure_bundles") or None
-        if args.skip_structures
+        if (args.models or args.skip_structures)
         and previous_manifest is not None
+        and previous_manifest.get("asset_prefix") == args.asset_prefix
         and all(
             previous_manifest.get(key) == value
             for key, value in structure_identity.items()
         )
         else None
     )
+    if args.models and reused_bundles is None:
+        raise ValueError("Parity structures changed; run a full refresh")
     base = {
         "material_ids": material_ids,
         "formulas": df_preds[Key.formula].astype(str).tolist(),

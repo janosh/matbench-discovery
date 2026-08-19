@@ -76,12 +76,14 @@ def retained_parity_assets(
     if manifest.get("asset_prefix") != asset_prefix:
         raise ValueError("Parity asset prefix changed; run a full refresh")
     base_asset = manifest.get("base")
-    if not isinstance(base_asset, dict) or not is_content_addressed_name(
-        f"{asset_prefix}-base", str(base_asset.get("asset"))
-    ):
-        raise ValueError(
-            "Parity base asset name is not content-addressed; run a full refresh"
+    if (
+        not isinstance(base_asset, dict)
+        or not isinstance(base_asset.get("sha256"), str)
+        or not is_content_addressed_name(
+            f"{asset_prefix}-base", str(base_asset.get("asset"))
         )
+    ):
+        raise ValueError("Parity base asset metadata is invalid; run a full refresh")
     expected_base_name = content_addressed_name(
         f"{asset_prefix}-base", json_content_sha256(base)
     )
@@ -93,11 +95,11 @@ def retained_parity_assets(
     for model_key, asset in model_assets.items():
         if not isinstance(model_key, str) or not isinstance(asset, dict):
             raise TypeError("Parity model assets must map string keys to objects")
-        if not is_content_addressed_name(
+        if not isinstance(asset.get("sha256"), str) or not is_content_addressed_name(
             f"{asset_prefix}-model-{model_key}", str(asset.get("asset"))
         ):
             raise ValueError(
-                "Parity model asset names are not content-addressed; run a full refresh"
+                "Parity model asset metadata is invalid; run a full refresh"
             )
     active_keys = {model.key for model in Model.active()} - set(target_keys)
     return dict(base_asset), {

@@ -17,9 +17,10 @@ import gzip
 import hashlib
 import json
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any
 
 import pandas as pd
@@ -31,6 +32,10 @@ from matbench_discovery.enums import Model
 from tests.utils import import_repo_script
 
 asset_helpers = import_repo_script("asset_helpers", "site/scripts/asset_helpers.py")
+energy_assets = import_repo_script(
+    "generate_energy_parity_assets",
+    "site/scripts/generate-energy-parity-assets.py",
+)
 kappa_assets = import_repo_script(
     "generate_kappa_parity_assets", "site/scripts/generate-kappa-parity-assets.py"
 )
@@ -130,7 +135,11 @@ def test_release_has_all_parity_manifest_assets(
     )
     for entry in entries:
         released = published_release_assets[entry["asset"]]
-        assert released.get("digest") == f"sha256:{entry['sha256']}"
+        expected_digest = f"sha256:{entry['sha256']}"
+        assert released.get("digest") == expected_digest, (
+            f"{entry['asset']}: release digest {released.get('digest')!r} != "
+            f"manifest digest {expected_digest!r}"
+        )
 
     def verify_model_asset(item: tuple[str, dict[str, Any]]) -> None:
         """Download one model asset and validate its bytes and identity."""
@@ -226,6 +235,20 @@ def test_targeted_parity_requires_matching_base() -> None:
         asset_helpers.retained_parity_assets(
             manifest, (model_key,), base | {"values": [1]}, "parity-v1"
         )
+    with pytest.raises(ValueError, match="base asset metadata is invalid"):
+        asset_helpers.retained_parity_assets(
+            manifest | {"base": base_asset | {"sha256": None}},
+            (model_key,),
+            base,
+            "parity-v1",
+        )
+    with pytest.raises(ValueError, match="model asset metadata is invalid"):
+        asset_helpers.retained_parity_assets(
+            manifest | {"model_assets": {model_key: model_asset | {"sha256": None}}},
+            (),
+            base,
+            "parity-v1",
+        )
 
     for script_name in ("energy", "kappa"):
         with open(
@@ -234,6 +257,41 @@ def test_targeted_parity_requires_matching_base() -> None:
             source = file.read()
         assert "base_meta, model_assets = retained_parity_assets(" in source
         assert "if base_meta is None:" in source
+
+
+def test_targeted_energy_requires_matching_structure_bundles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A targeted energy refresh cannot recreate shared structure assets."""
+    cli_args = SimpleNamespace(
+        out_dir="",
+        manifest="",
+        models=[Model.mace_mp_0.name],
+        asset_prefix="parity-v1",
+        limit_rows=None,
+        structure_shard_size=512,
+        structure_bundle_size=50,
+        skip_structures=False,
+    )
+    df_preds = pd.DataFrame({energy_assets.Key.mat_id: ["material-1"]})
+    monkeypatch.setattr(energy_assets, "parse_args", lambda: cli_args)
+    monkeypatch.setattr(
+        energy_assets, "load_df_wbm_with_preds", lambda **_kwargs: df_preds
+    )
+    monkeypatch.setattr(energy_assets, "read_manifest", lambda _path: {})
+
+    with pytest.raises(ValueError, match="structures changed; run a full refresh"):
+        energy_assets.main()
+
+
+@pytest.mark.parametrize("generator", [energy_assets, kappa_assets])
+def test_parity_generators_reject_empty_target_lists(
+    generator: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An explicit empty --models cannot silently become a full refresh."""
+    monkeypatch.setattr(sys, "argv", ["generator", "--models"])
+    with pytest.raises(SystemExit):
+        generator.parse_args()
 
 
 @pytest.mark.parametrize(

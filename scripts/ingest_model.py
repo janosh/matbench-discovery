@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import hashlib
 import json
 import os
 import shlex
@@ -334,9 +335,18 @@ def publish_parity_assets(checks: Checklist) -> None:
         for entry in entries:
             name = entry["asset"]
             asset_path = f"{assets_dir}/{name}"
-            if name not in published and os.path.isfile(asset_path):
-                pending.append(asset_path)
-            elif published.get(name) != f"sha256:{entry['sha256']}":
+            expected_digest = f"sha256:{entry['sha256']}"
+            if name in published:
+                if published[name] != expected_digest:
+                    conflicts.append(name)
+            elif os.path.isfile(asset_path):
+                with open(asset_path, "rb") as file:
+                    digest = f"sha256:{hashlib.file_digest(file, 'sha256').hexdigest()}"
+                if digest == expected_digest:
+                    pending.append(asset_path)
+                else:
+                    conflicts.append(name)
+            else:
                 conflicts.append(name)
         if conflicts:
             checks.fail(

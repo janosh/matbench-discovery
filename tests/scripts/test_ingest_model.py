@@ -1,5 +1,6 @@
 """Tests for the model submission-ingestion checklist without running evaluations."""
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -248,13 +249,31 @@ def test_run_model_steps_installs_project_extras(
 
 
 def test_publish_parity_assets_once(
-    monkeypatch: pytest.MonkeyPatch, run_cmd_calls: list[tuple[str, ...]]
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    run_cmd_calls: list[tuple[str, ...]],
 ) -> None:
     """Parity publication uploads only absent immutable assets, once per type."""
-    entry = {"asset": "asset.json.gz", "sha256": "a" * 64}
+    asset_bytes = b"parity asset"
+    entry = {
+        "asset": "asset.json.gz",
+        "sha256": hashlib.sha256(asset_bytes).hexdigest(),
+    }
     manifest = {"base": entry, "model_assets": {}}
-    monkeypatch.setattr(ingest.os.path, "isfile", lambda _path: True)
-    monkeypatch.setattr(ingest.json, "load", lambda _file: manifest)
+    asset_paths = []
+    for parity_type in ("energy", "kappa"):
+        manifest_path = (
+            tmp_path / f"site/src/lib/parity/{parity_type}-parity-manifest.json"
+        )
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        asset_path = (
+            tmp_path / f"site/static/{parity_type}-parity/assets/{entry['asset']}"
+        )
+        asset_path.parent.mkdir(parents=True, exist_ok=True)
+        asset_path.write_bytes(asset_bytes)
+        asset_paths.append(asset_path)
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(ingest, "release_asset_digests", dict)
     assert ingest.main(["--publish-parity"]) == 0
     assert len(run_cmd_calls) == 2
@@ -263,6 +282,12 @@ def test_publish_parity_assets_once(
         for command in run_cmd_calls
     )
     assert all("--clobber" not in command for command in run_cmd_calls)
+
+    for asset_path in asset_paths:
+        asset_path.write_bytes(b"corrupt")
+    run_cmd_calls.clear()
+    assert ingest.main(["--publish-parity"]) == 1
+    assert not run_cmd_calls
 
     published = {entry["asset"]: f"sha256:{entry['sha256']}"}
     monkeypatch.setattr(ingest, "release_asset_digests", lambda: published)
