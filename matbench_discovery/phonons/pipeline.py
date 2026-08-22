@@ -57,6 +57,20 @@ KAPPA_FORCE_DIR = "forces"
 DRY_RUN_MAX_FC3_EVALUATIONS = 8
 KAPPA_PROTOCOL = "phonondb-v1"
 
+# Published kappa artifacts which cannot be rerun through the shared calculator
+# pipeline. Keep reasons explicit so submission checks distinguish intentional
+# artifact routing from a missing calculator registration.
+ARCHIVED_KAPPA_MODELS: dict[str, str] = {
+    "dpa_eqv3_mptrj_ensemble": (
+        "direct artifact ensemble with no single calculator; kappa outputs are the "
+        "fixed aligned 50/50 mean of the published DPA-4.0.1-Pro-MPtrj and "
+        "EquiformerV3+DeNS-MP predictions"
+    ),
+    "matris_v050_mptrj": (
+        "superseded prediction artifact predates the shared kappa runner"
+    ),
+}
+
 RelaxationMode = Literal["single-stage", "two-stage", "none"]
 PlusMinusSetting = bool | Literal["auto"]
 

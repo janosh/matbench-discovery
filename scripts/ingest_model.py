@@ -34,7 +34,7 @@ from matbench_discovery.data import (
 )
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS, RelaxationSettings
 from matbench_discovery.enums import Model
-from matbench_discovery.phonons.pipeline import KappaSettings
+from matbench_discovery.phonons.pipeline import ARCHIVED_KAPPA_MODELS, KappaSettings
 
 PASS, FAIL, SKIP = "✓", "✗", "○"
 # task_coverage statuses that mean the task has results worth checking artifacts for
@@ -223,6 +223,9 @@ def check_submission(
 
         if task == "kappa" and not phonons_available:
             checks.skip("kappa shared runner check skipped (phonons unavailable)")
+            continue
+        if task == "kappa" and (reason := ARCHIVED_KAPPA_MODELS.get(model.name)):
+            checks.skip(f"kappa is archived: {reason}")
             continue
 
         if calc_spec is None:

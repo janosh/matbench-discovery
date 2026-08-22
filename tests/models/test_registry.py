@@ -17,6 +17,7 @@ from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import DATASETS, iter_file_refs, parse_artifact_filename
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
 from matbench_discovery.enums import ArchitectureType, Model, Open, Targets, Task
+from matbench_discovery.phonons.pipeline import ARCHIVED_KAPPA_MODELS
 
 with open(f"{ROOT}/tests/model-schema.yml", encoding="utf-8") as file:
     MODEL_SCHEMA: dict[str, Any] = yaml.safe_load(file)
@@ -144,7 +145,9 @@ def test_model_registry_identity() -> None:
         # yaml_path is base_dir + rel_path, so rel_path pins the full path
         assert model.rel_path == f"{family_dir}/{model_key}.yml"
 
-    registry_keys = set(CALCULATORS) | set(ARCHIVED_DISCOVERY_MODELS)
+    registry_keys = (
+        set(CALCULATORS) | set(ARCHIVED_DISCOVERY_MODELS) | set(ARCHIVED_KAPPA_MODELS)
+    )
     assert registry_keys - {"emt"} <= Model.__members__.keys()
     active_families = {model.family for model in Model.active()}
     # normpath: Windows globs may end in `\`; basename of a trailing-sep path is "".
@@ -210,7 +213,11 @@ def test_runnable_kappa_models_have_complete_shared_contract() -> None:
         for model in Model
         if model.metrics.get("phonons", {}).get("kappa_103")
     }
-    assert prediction_models - configured_models == {"matris_v050_mptrj"}
+    archived_models = set(ARCHIVED_KAPPA_MODELS)
+    assert prediction_models <= configured_models | archived_models
+    assert archived_models <= prediction_models
+    for model_key in archived_models:
+        assert Model[model_key].metrics["phonons"]["kappa_103"].get("pred_file")
 
 
 @pytest.mark.parametrize("model", Model.active())

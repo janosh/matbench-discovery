@@ -1,0 +1,193 @@
+model_name: DPA4–EqV3 MPtrj Ensemble
+model_key: dpa-eqv3-mptrj-ensemble
+model_version: v2026.08.22
+dates:
+  benchmark_added: '2026-08-22'
+  paper_published:
+lifecycle: active
+authors:
+- name: zihenglutech
+  github: https://github.com/zihenglutech
+
+trained_by:
+- name: Tiancheng Li
+  affiliation: AI for Science Institute, Beijing; Peking University
+  email: LTC201806070316@outlook.com
+  orcid: https://orcid.org/0009-0009-2459-0635
+  github: https://github.com/OutisLi
+- name: Yi-Lun Liao
+  affiliation: Massachusetts Institute of Technology
+  email: ylliao@mit.edu
+
+repo: https://github.com/zihenglutech/matbench-discovery
+doi:
+paper:
+docs: https://github.com/janosh/matbench-discovery/discussions/313
+pr_url:
+checkpoint_url:
+license:
+  code: MIT
+  code_url: https://github.com/janosh/matbench-discovery/blob/main/license
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+environment:
+  dependencies:
+  - 'matbench-discovery[phonons]==1.3.1'
+  - moyopy==0.7.9
+  python_version: '3.14'
+openness: OSOD
+architecture_types: [gnn, transformer]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj]
+model_params: 53086304
+n_estimators: 2
+hyperparams:
+  upstream_config:
+    prediction_ensemble:
+      components:
+      - model_key: dpa-4.0.1-pro-mptrj
+        weight: 0.5
+      - model_key: equiformer-v3-mp
+        weight: 0.5
+      discovery:
+        operator: aligned_formation_energy_mean_v1
+        output_round_decimals: 4
+      geo_opt:
+        operator: periodic_fractional_structure_midpoint_v1
+        site_correspondence: published_site_order
+        lattice: elementwise_arithmetic_mean
+        fractional_coordinates: shortest_periodic_midpoint
+      phonons:
+        operator: aligned_phonon_output_mean_v1
+        alignment: [material_id, q_points, published_band_order]
+        averaged_fields:
+        - ph_freqs
+        - kappa_tot_rta
+        - kappa_p_rta
+        - kappa_c
+        - mode_kappa_tot_rta
+
+notes:
+  description: |
+    A fixed task-level output ensemble with reference-free generation from two
+    compliant MPtrj-only models. Every submitted task uses equal 0.5/0.5 weights
+    over the two components' already-published prediction artifacts.
+  author_credit: |
+    The listed author is the submitter of this artifact combination. The
+    component model authors are credited through trained_by and the linked
+    upstream model cards.
+  task_level_outputs: |
+    Discovery formation energies are the aligned arithmetic mean, rounded to
+    four decimal places. Geometry uses the elementwise lattice midpoint and the
+    shortest-periodic fractional-coordinate midpoint under the published site
+    order. Phonon outputs are averaged after exact material-ID, q-grid, tensor,
+    and published band-order alignment; the imaginary-mode flag is recomputed
+    from the averaged frequencies and conservatively ORed with both input flags.
+  label_separation: |
+    The components were selected with their already-public leaderboard results
+    known. Equal weights, alignment rules, operators, and discovery rounding were
+    frozen before any composite metric was evaluated. No WBM or PhononDB DFT
+    target value, and no feedback from a composite score, was used to generate or
+    tune the submitted predictions.
+  limitations: |
+    This is a direct task-level output composite, not one interatomic potential
+    or ASE calculator. It does not average forces or force constants. The
+    geometry midpoint is not asserted to be a stationary point; its endpoint
+    energy is the mean of the two raw endpoint energies and is not recomputed at
+    the midpoint. Legacy geometry sources lack real converged and n_steps fields,
+    which are declared missing rather than invented. Mode-resolved phonon means
+    rely on the common q-grid and published band order and are not invariant to
+    an arbitrary band permutation or degenerate-subspace rotation.
+  component_sources: |
+    DPA-4.0.1-Pro-MPtrj model card:
+    models/deepmd/dpa-4.0.1-pro-mptrj.yml
+    EquiformerV3+DeNS-MP model card:
+    models/equiformer_v3/equiformer-v3-mp.yml
+
+metrics:
+  discovery:
+    pred_file:
+      name: models/ensemble/dpa-eqv3-mptrj-ensemble/2026-08-22-discovery.csv.gz
+      url: https://github.com/zihenglutech/matbench-discovery/releases/download/dpa-eqv3-mptrj-ensemble-v2026.08.22/2026-08-22-discovery.csv.gz
+      size: 1306730
+      md5: cd0a2d8a084c611306e0a0624602edb0
+    full_test_set:
+      F1: 0.85 # fraction
+      DAF: 4.901 # dimensionless
+      Precision: 0.841 # fraction
+      Recall: 0.86 # fraction
+      Accuracy: 0.948 # fraction
+      TP: 37929 # count
+      FP: 7175 # count
+      TN: 205696 # count
+      FN: 6163 # count
+      MAE: 0.027 # eV/atom
+      RMSE: 0.071 # eV/atom
+      R2: 0.846 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.868 # fraction
+      DAF: 5.627 # dimensionless
+      Precision: 0.86 # fraction
+      Recall: 0.876 # fraction
+      Accuracy: 0.959 # fraction
+      TP: 29231 # count
+      FP: 4753 # count
+      TN: 177361 # count
+      FN: 4143 # count
+      MAE: 0.028 # eV/atom
+      RMSE: 0.071 # eV/atom
+      R2: 0.85 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/ensemble/dpa-eqv3-mptrj-ensemble/2026-08-22-geo-opt.jsonl.gz
+      url: https://github.com/zihenglutech/matbench-discovery/releases/download/dpa-eqv3-mptrj-ensemble-v2026.08.22/2026-08-22-geo-opt.jsonl.gz
+      size: 137638265
+      md5: 02f7e920df50b927731b8c21a6aebdc5
+    symprec=1e-2:
+      rmsd: 0.0666
+      n_sym_ops_mae: 2.2248
+      symmetry_decrease: 0.1872
+      symmetry_match: 0.6863
+      symmetry_increase: 0.106
+      n_structures: 256963
+      analysis_file:
+        name: models/ensemble/dpa-eqv3-mptrj-ensemble/2026-08-22-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
+        url: https://github.com/zihenglutech/matbench-discovery/releases/download/dpa-eqv3-mptrj-ensemble-v2026.08.22/2026-08-22-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
+        size: 7426684
+        md5: 31a481710aafd7b731d5ec251402b690
+    symprec=1e-5:
+      rmsd: 0.0666
+      n_sym_ops_mae: 3.771
+      symmetry_decrease: 0.4356
+      symmetry_match: 0.3813
+      symmetry_increase: 0.128
+      n_structures: 256963
+      analysis_file:
+        name: models/ensemble/dpa-eqv3-mptrj-ensemble/2026-08-22-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
+        url: https://github.com/zihenglutech/matbench-discovery/releases/download/dpa-eqv3-mptrj-ensemble-v2026.08.22/2026-08-22-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
+        size: 7223436
+        md5: daaad8d3951152c4bc11706889c8eb47
+  phonons:
+    kappa_103:
+      κ_SRME: 0.2112
+      κ_SRE: 0.08
+      κ_SRD: 0.0027
+      κ_failure_rate: 0.0
+      imaginary_mode_rate: 0.0
+      spectrum_w1: 0.1622
+      pred_file:
+        name: models/ensemble/dpa-eqv3-mptrj-ensemble/2026-08-22-phonons-kappa-103.json.gz
+        url: https://github.com/zihenglutech/matbench-discovery/releases/download/dpa-eqv3-mptrj-ensemble-v2026.08.22/2026-08-22-phonons-kappa-103.json.gz
+        size: 11993708
+        md5: 5dc13488f0c412d67203a1e78a1efdea
+  md:
+    status: not_available
+    reason: This direct composite was not evaluated on the molecular-dynamics task.
+  diatomics:
+    status: not_available
+    reason: This direct composite was not evaluated on the diatomics task.

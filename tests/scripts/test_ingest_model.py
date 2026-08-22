@@ -85,6 +85,16 @@ def test_archived_discovery_models_skip_shared_runner() -> None:
     )
 
 
+def test_direct_output_ensemble_skips_archived_shared_runners() -> None:
+    """Direct output ensembles report both runner exceptions explicitly."""
+    checks = ingest.Checklist()
+    ingest.check_submission(Model.dpa_eqv3_mptrj_ensemble, checks)
+    skips = msgs(checks, ingest.SKIP)
+    assert any("discovery is archived:" in msg for msg in skips)
+    assert any("kappa is archived:" in msg for msg in skips)
+    assert not msgs(checks, ingest.FAIL)
+
+
 @pytest.mark.parametrize(
     ("validate_runner", "should_fail"), [(True, True), (False, False)]
 )

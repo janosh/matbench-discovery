@@ -73,6 +73,11 @@ ARCHIVED_DISCOVERY_MODELS: dict[str, str] = {
         ("equiformer_v3_mp", "equiformer_v3_oam"),
         "no stable checkpoint artifact or isolated runtime",
     ),
+    "dpa_eqv3_mptrj_ensemble": (
+        "direct artifact ensemble with no single ASE calculator; discovery energies "
+        "are the fixed 50/50 mean of the published DPA-4.0.1-Pro-MPtrj and "
+        "EquiformerV3+DeNS-MP predictions"
+    ),
     "gnome": "model weights were not released",
 }
 
