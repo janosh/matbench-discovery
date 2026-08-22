@@ -157,7 +157,7 @@ metrics:
       n_structures: 256963
       analysis_file:
         name: models/ensemble/dpa-eqv3-mptrj-ensemble/2026-08-22-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
-        url: https://github.com/zihenglutech/matbench-discovery/releases/download/dpa-eqv3-mptrj-ensemble-v2026.08.22/2026-08-22-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
+        url: https://github.com/zihenglutech/matbench-discovery/releases/download/dpa-eqv3-mptrj-ensemble-v2026.08.22/2026-08-22-geo-opt-symprec.1e-2-moyo.0.7.9.csv.gz
         size: 7426684
         md5: 31a481710aafd7b731d5ec251402b690
     symprec=1e-5:
@@ -169,7 +169,7 @@ metrics:
       n_structures: 256963
       analysis_file:
         name: models/ensemble/dpa-eqv3-mptrj-ensemble/2026-08-22-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
-        url: https://github.com/zihenglutech/matbench-discovery/releases/download/dpa-eqv3-mptrj-ensemble-v2026.08.22/2026-08-22-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
+        url: https://github.com/zihenglutech/matbench-discovery/releases/download/dpa-eqv3-mptrj-ensemble-v2026.08.22/2026-08-22-geo-opt-symprec.1e-5-moyo.0.7.9.csv.gz
         size: 7223436
         md5: daaad8d3951152c4bc11706889c8eb47
   phonons:
