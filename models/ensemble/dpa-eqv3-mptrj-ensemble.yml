@@ -23,7 +23,7 @@ repo: https://github.com/zihenglutech/matbench-discovery
 doi:
 paper:
 docs: https://github.com/janosh/matbench-discovery/discussions/313
-pr_url:
+pr_url: https://github.com/janosh/matbench-discovery/pull/391
 checkpoint_url:
 license:
   code: MIT
