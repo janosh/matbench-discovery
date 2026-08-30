@@ -161,6 +161,16 @@ export async function mount_with_url(
 export const sorted_header = (): HTMLTableCellElement | null =>
   document.querySelector(`thead th[aria-sort]:not([aria-sort="none"])`)
 
+// column label alone: HeatmapTable appends a sort indicator (↓/↑ plus rank <sup>) and,
+// for date columns, a format menu, both inside the <th>
+export function header_name(header: Element): string {
+  const label = header.cloneNode(true) as Element
+  for (const control of label.querySelectorAll(`.header-popover, .resize-handle`)) {
+    control.remove()
+  }
+  return (label.textContent ?? ``).trim().replace(/\s*[↓↑]\d*$/u, ``)
+}
+
 // text of a table-controls filter dropdown summary (e.g. `Training data (2)`)
 export function filter_summary_badge(menu_name: string): string {
   const summary = [...document.querySelectorAll(`details.filter-menu summary`)].find(

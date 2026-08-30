@@ -257,7 +257,9 @@
   <button
     class="compare"
     onclick={() => (comparison.open = true)}
-    title="Compare models side by side (double-click table rows to select them)"
+    title={selected_count
+      ? `Open the side-by-side comparison of the ${selected_count} selected model${selected_count === 1 ? `` : `s`}`
+      : `Compare models side by side. Select them by hovering a row and clicking its ⚖ button, right-clicking a row, or double-clicking it`}
     {@attach tooltip()}
   >
     <Icon icon={Scale} /> Compare{selected_count ? ` (${selected_count})` : ``}
@@ -429,8 +431,22 @@
     background: none;
     padding: 0;
   }
+  /* the one action here that isn't a filter: filled so it reads as primary, and set off
+     from the filter cluster by a divider */
   button.compare {
-    padding: 1pt 6pt;
+    position: relative;
+    padding: 1pt 8pt;
+    border-radius: 1em;
+    background: var(--link-color);
+    color: var(--page-bg);
+    font-weight: 600;
+    &::after {
+      content: '';
+      position: absolute;
+      right: -6pt; /* centered in the 12pt column gap */
+      height: 1.2em;
+      border-left: 1px solid var(--border);
+    }
   }
   .filter-row button.preset {
     flex: 1;

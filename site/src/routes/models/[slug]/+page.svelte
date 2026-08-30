@@ -208,7 +208,7 @@
   </section>
 
   <section class="links" {@attach tooltip()}>
-    <CompareToggle model_key={model.model_key} />
+    <CompareToggle model_key={model.model_key} open_dialog />
     {#each external_links as [href, label, icon, title] (label)}
       {#if href?.startsWith(`http`)}
         <a {href} target="_blank" rel="noopener noreferrer" {title}>

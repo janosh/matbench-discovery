@@ -10,13 +10,13 @@
 </script>
 
 <script lang="ts">
-  import { OrgLogos, TableControls } from '$lib'
+  import { CompareToggle, ModelRowMenu, OrgLogos, TableControls } from '$lib'
   import { append_better_hint, metric_better_as } from '$lib/metrics'
   import { mark_compared_rows, toggle_row_model } from '$lib/model-comparison.svelte'
   import { make_table_filters } from '$lib/models.svelte'
   import type { UrlTableFilters } from '$lib/url-state.svelte'
   import type { DiscoverySet, Label, ModelData, SortDir, TableLabel } from '$lib/types'
-  import type { CellSnippetArgs, Label as MattervizLabel, RowData } from 'matterviz'
+  import type { CellSnippetArgs, RowData } from 'matterviz'
   import { HeatmapTable } from 'matterviz'
   import { Icon } from 'svelte-widgets'
   import {
@@ -27,15 +27,13 @@
     PullRequest,
     Unavailable,
   } from 'svelte-widgets/icons'
-  import { click_outside, tooltip } from 'svelte-widgets/attachments'
+  import { click_outside } from 'svelte-widgets/attachments'
   import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
   import { SvelteMap, SvelteSet } from 'svelte/reactivity'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '../labels'
   import { assemble_row_data } from '../metrics'
-  import { heatmap_class } from '../table-export'
 
-  type HeaderLabel = MattervizLabel & { tooltip_description?: string }
   type MetricsRow = ReturnType<typeof assemble_row_data>[number]
   type LinkData = MetricsRow[`Links`]
   type PredFilesDropdown = LinkData[`pred_files`] & { x: number; y: number }
@@ -149,13 +147,6 @@
       // Keep the sticky model column first, preserving definition order for the rest.
       .toSorted((col1, col2) => pinned_col_rank(col1) - pinned_col_rank(col2)),
   )
-  let table_columns = $derived(
-    columns.map((col): HeaderLabel => ({
-      ...col,
-      description: undefined,
-      tooltip_description: col.description,
-    })),
-  )
 
   type ButtonMouseEvent = MouseEvent & { currentTarget: HTMLButtonElement }
   function show_dropdown(event: ButtonMouseEvent, link_data: LinkData) {
@@ -172,13 +163,6 @@
     }
   }
   const close_dropdown = () => (pred_files_dropdown = null)
-
-  const header_tooltip = (content: string | undefined) => (node: Element) => {
-    const header_cell = node.closest(`th`)
-    return header_cell instanceof HTMLElement
-      ? tooltip({ allow_html: true, content, placement: `top` })(header_cell)
-      : undefined
-  }
 </script>
 
 <svelte:window
@@ -193,6 +177,13 @@
 {#snippet affiliation_cell({ row }: CellSnippetArgs)}
   {@const metrics_row = row as MetricsRow}
   <OrgLogos org_logos={metrics_row.org_logos} authors={metrics_row.authors} />
+{/snippet}
+
+<!-- model link plus a compare button that appears on row hover -->
+{#snippet model_cell({ row, val }: CellSnippetArgs)}
+  {@const { model_key, model_name } = row as MetricsRow}
+  {@html String(val)}
+  <CompareToggle {model_key} {model_name} compact />
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}
@@ -218,38 +209,30 @@
   </button>
 {/snippet}
 
-{#snippet header_cell({ col }: { col: HeaderLabel })}
-  <span
-    class="header-label"
-    style="display: inline-block"
-    {@attach header_tooltip(col.tooltip_description)}
+<ModelRowMenu>
+  <HeatmapTable
+    data={metrics_data as RowData[]}
+    {columns}
+    bind:sort
+    special_cells={{
+      Links: links_cell,
+      Org: affiliation_cell,
+      [model_name.label]: model_cell,
+    }}
+    show_row_numbers
+    default_num_format=".3f"
+    bind:show_heatmap={filters.show_heatmap}
+    bind:column_order
+    on_row_double_click={toggle_row_model}
+    {...rest}
+    class={[`leaderboard`, rest.class]}
+    root_style={METRICS_TABLE_ROOT_STYLE}
   >
-    {@html col.label}
-  </span>
-{/snippet}
-
-<HeatmapTable
-  data={metrics_data as RowData[]}
-  columns={table_columns}
-  bind:sort
-  special_cells={{
-    Links: links_cell,
-    Org: affiliation_cell,
-  }}
-  show_row_numbers
-  default_num_format=".3f"
-  bind:show_heatmap={filters.show_heatmap}
-  bind:column_order
-  {heatmap_class}
-  {header_cell}
-  on_row_double_click={toggle_row_model}
-  {...rest}
-  root_style={METRICS_TABLE_ROOT_STYLE}
->
-  {#snippet controls()}
-    <TableControls bind:columns bind:show_selected_only {filters} />
-  {/snippet}
-</HeatmapTable>
+    {#snippet controls()}
+      <TableControls bind:columns bind:show_selected_only {filters} />
+    {/snippet}
+  </HeatmapTable>
+</ModelRowMenu>
 
 {#if pred_files_dropdown}
   {@const { x, y, name, files } = pred_files_dropdown}

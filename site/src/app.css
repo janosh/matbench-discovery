@@ -238,6 +238,12 @@ tbody tr:nth-child(odd) {
 tbody tr:hover {
   background-color: var(--nav-bg);
 }
+/* matterviz hides table toolbars until hover; the leaderboards' filters and Compare
+button are primary navigation, so keep theirs visible */
+.table-container.leaderboard > .control-buttons {
+  opacity: 1;
+  pointer-events: auto;
+}
 
 h1 {
   text-align: center;

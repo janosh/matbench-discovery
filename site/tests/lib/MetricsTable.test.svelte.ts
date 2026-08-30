@@ -5,15 +5,13 @@ import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
 import { tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { doc_query, mount } from '../index'
+import { doc_query, header_name, mount } from '../index'
 
 // all header cells except the structural rank (#) column HeatmapTable renders
 // for show_row_numbers
 const header_cells = () => [
   ...document.querySelectorAll<HTMLTableCellElement>(`th:not(.row-num-col)`),
 ]
-const header_name = (header: HTMLTableCellElement) =>
-  header.querySelector(`.header-label`)?.textContent?.trim()
 const header_names = () => header_cells().map(header_name)
 
 // table filters restricted to models trained (at least in part) on MPtrj
@@ -36,13 +34,16 @@ const all_targets_filters = () => {
 }
 
 describe(`MetricsTable`, () => {
-  const parse_integer_sort_value = (cell: Element): number | null => {
-    const sort_value = cell.getAttribute(`data-sort-value`)
-    if (!sort_value) return null
-
-    const parsed_value = Math.trunc(Number(sort_value))
-    return Number.isNaN(parsed_value) ? null : parsed_value
-  }
+  // model behind each rendered row, resolved from its Model-cell link
+  const row_models = (): ModelData[] =>
+    [
+      ...document.querySelectorAll(`tbody tr td[data-col="Model"] a[href^="/models/"]`),
+    ].map((link) => {
+      const model_key = link.getAttribute(`href`)?.slice(`/models/`.length)
+      const model = ACTIVE_MODELS.find((md) => md.model_key === model_key)
+      if (!model) throw new Error(`no model for row link ${link.outerHTML}`)
+      return model
+    })
 
   it(`renders with default props`, async () => {
     mount(MetricsTable, {
@@ -146,14 +147,13 @@ describe(`MetricsTable`, () => {
       if (!org_header) throw new Error(`Org column header not found`)
 
       expect(org_header?.textContent?.trim()).toBe(`Org`)
-      expect(org_header.getAttribute(`title`)).toBeNull()
-      expect(org_header.querySelector(`.header-label`)).not.toBeNull()
+      expect(org_header.getAttribute(`title`)).toBe(`Model author affiliations`)
       expect(org_preview.classList.contains(`org-preview`)).toBe(true)
       expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
     },
   )
 
-  it(`renders header tooltips on inner labels`, async () => {
+  it(`exposes column descriptions with better-as hints as header titles`, async () => {
     mount(MetricsTable, {
       target: document.body,
       props: { col_filter: () => true },
@@ -165,10 +165,7 @@ describe(`MetricsTable`, () => {
     )
     if (!cps_header) throw new Error(`CPS column header not found`)
 
-    cps_header.dispatchEvent(new MouseEvent(`mouseover`, { bubbles: true }))
-    await tick()
-    expect(cps_header.getAttribute(`title`)).toBeNull()
-    expect(cps_header.querySelector(`.header-label`)).not.toBeNull()
+    expect(cps_header.getAttribute(`title`)).toContain(`(higher=better)`)
   })
 
   it(`hides metadata columns without hiding metrics`, () => {
@@ -367,17 +364,23 @@ describe(`MetricsTable`, () => {
       {
         col_key: `benchmark_added`,
         header: `Date Added`,
-        data_col: `Date Added`,
+        sort_key: (model: ModelData) => Date.parse(model.dates.benchmark_added ?? ``),
       },
-      { col_key: `Training Set`, header: `Training Set`, data_col: `Training Set` },
+      {
+        col_key: `Training Set`,
+        header: `Training Set`,
+        // mirrors format_train_set: materials count, falling back to structures count
+        sort_key: ({ n_training_materials = 0, n_training_structures = 0 }: ModelData) =>
+          n_training_materials > 0 ? n_training_materials : n_training_structures,
+      },
       {
         col_key: HYPERPARAMS.model_params.key,
         header: `Params`,
-        data_col: HYPERPARAMS.model_params.label,
+        sort_key: (model: ModelData) => model.model_params,
       },
     ])(
       `sorts $header numerically via data-sort-value`,
-      async ({ col_key, header, data_col }) => {
+      async ({ col_key, header, sort_key }) => {
         mount(MetricsTable, {
           target: document.body,
           props: {
@@ -388,15 +391,7 @@ describe(`MetricsTable`, () => {
         const sort_header = header_cells().find((th) => th.textContent?.includes(header))
         if (!sort_header) throw new Error(`${header} column not found`)
 
-        const cell_values = () =>
-          [...document.querySelectorAll(`td[data-col="${data_col}"]`)]
-            .map((cell) => {
-              const sortable = cell.querySelector(`[data-sort-value]`)
-              if (sortable) return parse_integer_sort_value(sortable)
-              const timestamp = Date.parse(cell.textContent?.trim() ?? ``)
-              return Number.isNaN(timestamp) ? null : timestamp
-            })
-            .filter((val) => val !== null)
+        const cell_values = () => row_models().map(sort_key)
 
         sort_header.click()
         await tick()
@@ -414,58 +409,25 @@ describe(`MetricsTable`, () => {
       },
     )
 
-    it(`properly handles HTML content in cells without using it for data-sort-value`, async () => {
+    it(`renders Training Set cells as dataset links with the sort value on the td`, async () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
           col_filter: (col: Label) => [`Model`, `Training Set`].includes(col.label),
         },
       })
-
       await tick()
 
-      // Find all Training Set cells
       const training_set_cells = [
         ...document.querySelectorAll(`td[data-col="Training Set"]`),
       ]
-
-      // Find cells with HTML content (looking for cells containing spans with tooltips)
-      const html_cells = training_set_cells.filter(
-        (cell) => cell.innerHTML.includes(`<span`) && cell.innerHTML.includes(`title=`),
-      )
-
-      // Ensure we found some cells with HTML content
-      expect(html_cells.length).toBeGreaterThan(0)
-
-      // Check that data-sort-value attribute on the td is not the full HTML
-      html_cells.forEach((cell) => {
-        const data_sort_value = cell.getAttribute(`data-sort-value`)
-
-        // The data-sort-value should not contain HTML tags if present
-        expect(
-          data_sort_value == null ||
-            (!/[<>]/.test(data_sort_value) && !data_sort_value.includes(`span`)),
-        ).toBe(true)
-
-        // The inner span should have its own data-sort-value
-        const inner_span = cell.querySelector(`span[data-sort-value]`)
-        const span_sort_value = inner_span?.getAttribute(`data-sort-value`)
-        expect(
-          inner_span === null ||
-            (span_sort_value !== null && !Number.isNaN(Number(span_sort_value))),
-        ).toBe(true)
-      })
-
-      // Verify tooltips are preserved on spans within cells
-      const cells_with_tooltips = training_set_cells.filter(
-        (cell) => cell.querySelector(`span[title]`) !== null,
-      )
-
-      expect(cells_with_tooltips.length).toBeGreaterThan(0)
-      cells_with_tooltips.forEach((cell) => {
-        const span = cell.querySelector(`span[title]`)
-        expect(span?.getAttribute(`title`)).not.toBeNull()
-      })
+      expect(training_set_cells.length).toBeGreaterThan(0)
+      for (const cell of training_set_cells) {
+        // HeatmapTable sanitizes cell HTML: the data-sort-value span is gone and only
+        // the dataset links remain, so the td itself must not carry raw markup
+        expect(cell.getAttribute(`data-sort-value`) ?? ``).not.toMatch(/[<>]/)
+        expect(cell.querySelector(`a[href^="/data/"]`)).not.toBeNull()
+      }
     })
 
     it.each([
@@ -792,16 +754,14 @@ describe(`MetricsTable`, () => {
       expected_core_columns.toSorted(compare_labels),
     )
 
-    // Header tooltip content is attached to inner labels so HeatmapTable's
-    // generic title-based tooltip doesn't flash below before our desired top placement.
-    header_elements.forEach((th) => {
-      const title = th.getAttribute(`title`)
-      expect(title, `Header ${th.textContent} has stale title`).toBeNull()
+    // every column carries a description that HeatmapTable renders as tooltip
+    for (const th of header_elements) {
       expect(
-        th.querySelector(`.header-label`),
-        `Header ${th.textContent} has no tooltip label`,
-      ).not.toBeNull()
-    })
+        th.getAttribute(`title`),
+        `Header ${th.textContent} has no tooltip`,
+      ).not.toBe(``)
+      expect(th.getAttribute(`title`)).not.toBeNull()
+    }
   })
 
   it(`shows rank numbers 1..N in row order`, () => {
@@ -914,13 +874,73 @@ describe(`MetricsTable`, () => {
         expect(get_toggle()).toBeNull()
         expect(compare_btn.textContent?.trim()).toBe(`Compare`)
 
-        // the compare button opens the comparison drawer
+        // the compare button opens the comparison dialog
         expect(comparison.open).toBe(false)
         compare_btn.click()
         expect(comparison.open).toBe(true)
         comparison.open = false
       },
     )
+
+    it(`toggles models via the per-row compare button and the row context menu`, async () => {
+      mount(MetricsTable, { target: document.body, props: { col_filter: () => true } })
+      await tick()
+      // the toolbar with the Compare button is opted out of matterviz's hover-reveal
+      expect(document.querySelector(`.table-container.leaderboard`)).not.toBeNull()
+
+      const [row_1, row_2] = get_rows()
+      const row_button = doc_query<HTMLButtonElement>(
+        `td[data-col="Model"] button.compact`,
+        row_1,
+      )
+      const name_1 = doc_query(`a[href^="/models/"]`, row_1).textContent
+      expect(row_button.getAttribute(`aria-label`)).toBe(`Compare ${name_1}`)
+      row_button.click()
+      await tick()
+      expect([...comparison.keys]).toEqual([row_key(row_1)])
+      expect(row_button.classList.contains(`selected`)).toBe(true)
+
+      // right-clicking a non-link cell opens the row menu (deferred a tick past the
+      // contextmenu event); links keep the browser's own menu
+      const menu_items = () =>
+        [...document.querySelectorAll(`menu [role="menuitem"]`)].map((el) =>
+          el.textContent?.trim(),
+        )
+      const right_click = (el: Element) =>
+        el.dispatchEvent(
+          new MouseEvent(`contextmenu`, {
+            bubbles: true,
+            cancelable: true,
+            clientX: 5,
+            clientY: 5,
+          }),
+        )
+      const flush_timers = () =>
+        new Promise((resolve) => {
+          setTimeout(resolve, 0)
+        })
+      right_click(doc_query(`td[data-col="Model"] a`, row_2))
+      await flush_timers()
+      await tick()
+      expect(menu_items()).toEqual([])
+      const cells = row_2.querySelectorAll(`td`)
+      const link_event = new MouseEvent(`contextmenu`, {
+        bubbles: true,
+        cancelable: true,
+      })
+      cells[cells.length - 1].dispatchEvent(link_event)
+      expect(link_event.defaultPrevented).toBe(true)
+      await flush_timers()
+      await tick()
+      const items = menu_items()
+      expect(items[0]).toContain(`to comparison`)
+      expect(items[1]).toContain(`with…`)
+      expect(items[2]).toContain(`model page`)
+      document.querySelector<HTMLButtonElement>(`menu [role="menuitem"]`)?.click()
+      await tick()
+      expect([...comparison.keys]).toEqual([row_key(row_1), row_key(row_2)])
+      expect(document.querySelector(`menu`)).toBeNull()
+    })
 
     it(
       `toggles filter state and updates UI labels correctly`,

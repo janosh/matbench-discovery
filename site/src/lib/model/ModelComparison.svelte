@@ -10,14 +10,14 @@
     row_value,
     type CompareRow,
   } from '$lib/model-comparison.svelte'
-  import ModelSelect from '$lib/ModelSelect.svelte'
   import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
   import { rank_color, RANKED_METRICS } from '$lib/rankings'
   import { pareto_staircase } from '$lib/sota'
   import type { ModelData } from '$lib/types'
-  import { ScatterPlot, strip_html } from 'matterviz'
+  import { format_num, ScatterPlot, strip_html } from 'matterviz'
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
-  import { Icon, Sheet } from 'svelte-widgets'
+  import { tick } from 'svelte'
+  import { Dialog, Icon, MultiSelect } from 'svelte-widgets'
   import { tooltip } from 'svelte-widgets/attachments'
   import { Cross, Scale } from 'svelte-widgets/icons'
 
@@ -36,12 +36,33 @@
   )
 
   // MultiSelect matches options by value, so chips may be rebuilt from the selection
-  const option_for = ({ model_key, model_name, lifecycle }: ModelData) => ({
+  const option_for = ({ model_key, model_name, lifecycle, CPS, dates }: ModelData) => ({
     value: model_key,
     label: `${model_name}${lifecycle === `active` ? `` : ` (${lifecycle})`}`,
+    cps: CPS,
+    added: dates.benchmark_added ?? ``,
   })
-  const model_options = MODELS.map(option_for)
+  type ModelOption = ReturnType<typeof option_for>
+  // dropdown order: best CPS first (unscored models last) or most recently added first
+  let option_sort = $state<`cps` | `added`>(`cps`)
+  const by_cps = (opt_1: ModelOption, opt_2: ModelOption) =>
+    (is_finite_num(opt_2.cps) ? opt_2.cps : -Infinity) -
+    (is_finite_num(opt_1.cps) ? opt_1.cps : -Infinity)
+  const by_added = (opt_1: ModelOption, opt_2: ModelOption) =>
+    opt_2.added.localeCompare(opt_1.added)
+  // CPS is live-reweighted, so options are derived rather than built once
+  let model_options = $derived(
+    MODELS.map(option_for).toSorted(option_sort === `cps` ? by_cps : by_added),
+  )
   let selected_options = $derived(models.map(option_for))
+  const external = { target: `_blank`, rel: `noopener` }
+  // opened with nothing to compare yet (empty or a single model), the picker is the next
+  // step, so it takes focus (which also drops its option list open)
+  let picker_input = $state<HTMLInputElement | null>(null)
+  $effect(() => {
+    if (comparison.open && n_models <= 1) void tick().then(() => picker_input?.focus())
+  })
+  const MAX_TRAY_CHIPS = 4
 
   // --- cost vs accuracy scatter: whole leaderboard in grey, compared models on top ---
   const all_rows = COMPARE_GROUPS.flatMap((group) => group.rows)
@@ -51,7 +72,7 @@
     `${label}${unit ? ` (${unit})` : ``}`
   let x_key = $state(COST_ROWS[0].key)
   let y_key = $state<string>()
-  // until the user picks one, the y-axis follows the task page the drawer was opened on
+  // until the user picks one, the y-axis follows the task page the dialog was opened on
   let page_metric = $derived(
     RANKED_METRICS.find((metric) => metric.rank_href === page.url.pathname)?.key ??
       ALL_METRICS.CPS.key,
@@ -104,16 +125,38 @@
   })
 </script>
 
-<Sheet
+<Dialog
   bind:open={comparison.open}
   aria-label="Model comparison"
-  style="--sheet-size: min(68rem, 100vw); --sheet-bg: var(--page-bg); --sheet-section-padding: 0.75rem 1rem; --sheet-content-padding: 0 1rem 1rem"
+  style="--dialog-width: min(68rem, calc(100vw - 2rem)); --dialog-radius: 12px; --dialog-bg: var(--page-bg); --dialog-section-padding: 0.5rem 1rem 0; --dialog-content-padding: 0 1rem 1rem"
 >
+  <!-- selection tray: shows up with the first pick so the next step is never a guess -->
   {#snippet trigger(trigger_props)}
     {#if n_models > 0 && !comparison.open}
-      <div class="launcher">
-        <button {...trigger_props}>
-          <Icon icon={Scale} /> Compare {n_models} model{n_models === 1 ? `` : `s`}
+      <div class="tray" role="status" aria-label="Models selected for comparison">
+        <ul>
+          {#each models.slice(0, MAX_TRAY_CHIPS) as model (model.model_key)}
+            <li>
+              <span style:color={model.color} aria-hidden="true">●</span>
+              {model.model_name}
+              <button
+                aria-label="Remove {model.model_name} from comparison"
+                onclick={() => comparison.toggle(model.model_key)}
+              >
+                <Icon icon={Cross} />
+              </button>
+            </li>
+          {/each}
+          {#if n_models > MAX_TRAY_CHIPS}
+            <li>+{n_models - MAX_TRAY_CHIPS} more</li>
+          {/if}
+        </ul>
+        {#if n_models === 1}
+          <span class="hint">Pick a 2nd model to compare against</span>
+        {/if}
+        <button class="open" {...trigger_props}>
+          <Icon icon={Scale} />
+          {n_models === 1 ? `Open comparison` : `Compare ${n_models} models →`}
         </button>
         <button
           aria-label="Clear model comparison"
@@ -127,16 +170,37 @@
   {#snippet header({ close })}
     <div class="head">
       <h2>Compare models</h2>
-      <ModelSelect
+      <MultiSelect
         options={model_options}
         placeholder="Add models…"
         style="flex: 1; min-width: min(20rem, 100%); border: 1px solid var(--border)"
+        bind:input={picker_input}
         bind:selected={
           () => selected_options,
-          (options: typeof model_options) =>
-            comparison.set(options.map((opt) => opt.value))
+          (options: ModelOption[]) => comparison.set(options.map((opt) => opt.value))
         }
-      />
+      >
+        {#snippet children({ option: opt, type }: { option: ModelOption; type: string })}
+          {opt.label}
+          {#if type === `option`}
+            <small class="option-detail">
+              {#if is_finite_num(opt.cps)}{format_num(opt.cps, `.3f`)}{/if}
+              {#if option_sort === `added`}· {opt.added}{/if}
+            </small>
+          {/if}
+        {/snippet}
+      </MultiSelect>
+      <label class="option-sort">
+        Sort
+        <select
+          value={option_sort}
+          onchange={(event) =>
+            (option_sort = event.currentTarget.value === `added` ? `added` : `cps`)}
+        >
+          <option value="cps">by CPS</option>
+          <option value="added">by newest</option>
+        </select>
+      </label>
       <button aria-label="Close model comparison" onclick={close}>
         <Icon icon={Cross} />
       </button>
@@ -145,8 +209,9 @@
 
   {#if n_models === 0}
     <p class="empty">
-      Pick models above, double-click rows in any leaderboard table, or use the Compare
-      button on model pages.
+      Pick models above. In any leaderboard table you can also hover a row and click its
+      <Icon icon={Scale} style="vertical-align: middle" /> button, right-click the row, or double-click
+      it.
     </p>
   {:else}
     <table>
@@ -182,7 +247,26 @@
               </th>
               {#each compare_cells(row, models) as cell, idx (models[idx].model_key)}
                 <td class:best={cell.best} class:text={!row.better}>
-                  {cell.text}
+                  {#if cell.parts}
+                    {#each cell.parts as part, part_idx (part_idx)}
+                      {#if part.href}
+                        <a
+                          href={part.href}
+                          title={part.title}
+                          {...part.href.startsWith(`http`) ? external : {}}
+                          {@attach tooltip()}>{part.text}</a
+                        >
+                      {:else if part.title}
+                        <span title={part.title} {@attach tooltip()}>{part.text}</span>
+                      {:else}{part.text}{/if}
+                    {/each}
+                  {:else if cell.title}
+                    <span title={cell.title} {@attach tooltip({ allow_html: true })}>
+                      {cell.text}
+                    </span>
+                  {:else}
+                    {cell.text}
+                  {/if}
                   {#if cell.rank && cell.n}
                     <small
                       style:color={rank_color(cell.rank, cell.n)}
@@ -254,30 +338,59 @@
       {/snippet}
     </ScatterPlot>
   {/if}
-</Sheet>
+</Dialog>
 
 <style>
-  .launcher {
+  .tray {
     position: fixed;
     z-index: 20;
-    inset: auto 1rem 1rem auto;
+    inset: auto 0 1rem;
+    width: fit-content;
+    max-width: calc(100vw - 2rem);
+    margin-inline: auto;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
+    gap: 0.3em 0.6em;
+    padding: 0.4em 0.5em 0.4em 0.7em;
     border: 1px solid var(--link-color);
     border-radius: 2em;
     background: var(--page-bg);
     box-shadow: 0 4px 18px var(--shadow);
+    font-size: 0.95em;
+    transition:
+      translate 0.25s,
+      opacity 0.25s;
+    @starting-style {
+      translate: 0 1rem;
+      opacity: 0;
+    }
   }
-  .launcher button {
+  .tray ul {
+    display: contents;
+  }
+  .tray li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.1em 0.2em 0.1em 0.5em;
+    border-radius: 1em;
+    background: var(--chip-bg);
+    white-space: nowrap;
+  }
+  .tray .hint {
+    color: var(--text-secondary);
+  }
+  .tray button.open {
     display: inline-flex;
     align-items: center;
     gap: 0.4em;
-    padding: 0.55em 0.9em;
-    color: var(--link-color);
+    padding: 0.4em 0.9em;
+    border-radius: 2em;
+    background: var(--link-color);
+    color: var(--page-bg);
     font-weight: 600;
-  }
-  .launcher button + button {
-    padding-left: 0;
   }
   .head {
     display: flex;
@@ -293,7 +406,7 @@
   button {
     background: transparent;
   }
-  :is(.head, thead) button {
+  :is(.head, thead, .tray) button {
     padding: 3pt;
     vertical-align: middle;
   }
@@ -306,13 +419,13 @@
     text-align: center;
     color: var(--text-secondary);
   }
-  /* undo the global block+scroll table reset: the sheet body is the scroll container so
+  /* undo the global block+scroll table reset: the dialog body is the scroll container so
      the sticky header row and metric column stay put while scrolling */
   table {
     display: table;
     overflow: visible;
     width: 100%;
-    margin: 1rem 0 2rem;
+    margin: 0 0 2rem;
     font-size: 0.9em;
   }
   tbody tr {
@@ -351,6 +464,19 @@
     padding-top: 1.2em;
     font-weight: 600;
     color: var(--text-color);
+  }
+  tbody:first-of-type tr.group th {
+    padding-top: 0.4em;
+  }
+  .option-detail {
+    margin-left: 0.5em;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .option-sort {
+    margin: 0;
+    font-size: 0.85em;
+    color: var(--text-secondary);
   }
   td.text {
     white-space: normal;

@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   checkbox_for,
   filter_summary_badge,
+  header_name,
   mount,
   mount_with_url,
   sorted_header,
@@ -78,9 +79,7 @@ describe(`Discovery Task Page`, () => {
     const table = document.querySelector(`section.full-bleed table`)
     expect(table).not.toBeNull()
 
-    const headers = [...document.querySelectorAll(`th .header-label`)].map((header) =>
-      header.textContent?.trim(),
-    )
+    const headers = [...document.querySelectorAll(`th`)].map(header_name)
     for (const col of [`Model`, `F1`, `DAF`, `Links`, `Date Added`]) {
       expect(headers).toContain(col)
     }
