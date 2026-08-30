@@ -24,6 +24,12 @@ export const RANKED_METRICS: (Label & { rank_href: string })[] = [
   },
 ]
 
+// Mix theme-aware link blue (best) through muted purple to red (worst).
+export const rank_color = (rank: number, n_models: number): string => {
+  const frac = n_models > 1 ? (rank - 1) / (n_models - 1) : 0
+  return `color-mix(in oklab, var(--link-color) ${Math.round(100 * (1 - frac))}%, hsl(0, 65%, 45%))`
+}
+
 // Compute the model's rank among `models` for each metric it has a value for.
 // Resolve the model from the supplied cohort so computed-on-the-fly scores are used.
 export function model_metric_ranks<M extends Label>(

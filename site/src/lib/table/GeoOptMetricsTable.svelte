@@ -1,5 +1,6 @@
 <script lang="ts">
   import { TableControls } from '$lib'
+  import { mark_compared_rows, toggle_row_model } from '$lib/model-comparison.svelte'
   import { make_table_filters } from '$lib/models.svelte'
   import { METRICS_TABLE_ROOT_STYLE } from '$lib/table/MetricsTable.svelte'
   import type { SortState, UrlTableFilters } from '$lib/url-state.svelte'
@@ -17,11 +18,13 @@
   let {
     column_order = $bindable([]),
     filters = make_table_filters(),
+    show_selected_only = $bindable(false),
     sort = $bindable({ column: ALL_METRICS.RMSD.key, dir: `asc` }),
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     column_order?: string[]
     filters?: UrlTableFilters
+    show_selected_only?: boolean
     sort?: SortState
   } = $props()
 
@@ -82,10 +85,13 @@
   )
 
   let metrics_data = $derived(
-    assemble_row_data(
-      `full_test_set`,
-      (model) => model.metrics?.geo_opt != null,
-      filters.matches,
+    mark_compared_rows(
+      assemble_row_data(
+        `full_test_set`,
+        (model) => model.metrics?.geo_opt != null,
+        filters.matches,
+      ),
+      show_selected_only,
     ).map((row) => {
       for (const [from, to] of Object.entries(key_remap)) {
         if (from in row) row[to] = row[from]
@@ -102,11 +108,17 @@
   default_num_format=".3f"
   bind:column_order
   bind:show_heatmap={filters.show_heatmap}
+  on_row_double_click={toggle_row_model}
   {...rest}
   root_style={METRICS_TABLE_ROOT_STYLE}
 >
   {#snippet controls()}
     <!-- z-index > 2 to sit above sticky table headers (z-index: 2) -->
-    <TableControls bind:columns {filters} style="position: relative; z-index: 5" />
+    <TableControls
+      bind:columns
+      bind:show_selected_only
+      {filters}
+      style="position: relative; z-index: 5"
+    />
   {/snippet}
 </HeatmapTable>

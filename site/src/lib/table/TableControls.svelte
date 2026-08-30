@@ -7,6 +7,7 @@
     user_presets,
   } from '$lib/filter-presets.svelte'
   import { openness_tooltips } from '$lib/metrics'
+  import { comparison } from '$lib/model-comparison.svelte'
   import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
   import {
     DEFAULT_TARGETS_PARAM,
@@ -18,7 +19,7 @@
   } from '$lib/url-state.svelte'
   import type { TargetOutput, UrlTableFilters } from '$lib/url-state.svelte'
   import { Icon, Sheet } from 'svelte-widgets'
-  import { Cross, Filter } from 'svelte-widgets/icons'
+  import { Cross, Filter, Scale } from 'svelte-widgets/icons'
   import { ToggleMenu } from 'matterviz/table'
   import type { Snippet } from 'svelte'
   import { click_outside, tooltip } from 'svelte-widgets/attachments'
@@ -28,14 +29,13 @@
     columns = $bindable([]),
     filters = make_table_filters(),
     show_selected_only = $bindable(false),
-    selected_count = 0,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     columns?: TableLabel[]
     filters?: UrlTableFilters
     show_selected_only?: boolean
-    selected_count?: number
   } = $props()
+  let selected_count = $derived(comparison.keys.size)
 
   const close_on_outside_click = click_outside({
     callback: (node) => node.removeAttribute(`open`),
@@ -254,6 +254,14 @@
 {/snippet}
 
 <div class="table-controls" {...rest}>
+  <button
+    class="compare"
+    onclick={() => (comparison.open = true)}
+    title="Compare models side by side (double-click table rows to select them)"
+    {@attach tooltip()}
+  >
+    <Icon icon={Scale} /> Compare{selected_count ? ` (${selected_count})` : ``}
+  </button>
   {#if selected_count > 0 || show_selected_only}
     <label>
       <input
@@ -411,7 +419,7 @@
       justify-content: end;
     }
   }
-  :is(button.clear-filters, button.filter-sheet-trigger) {
+  :is(button.clear-filters, button.filter-sheet-trigger, button.compare) {
     display: inline-flex;
     gap: 3pt;
     align-items: center;
@@ -420,6 +428,9 @@
   button.clear-filters {
     background: none;
     padding: 0;
+  }
+  button.compare {
+    padding: 1pt 6pt;
   }
   .filter-row button.preset {
     flex: 1;

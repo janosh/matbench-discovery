@@ -12,6 +12,7 @@
 <script lang="ts">
   import { OrgLogos, TableControls } from '$lib'
   import { append_better_hint, metric_better_as } from '$lib/metrics'
+  import { mark_compared_rows, toggle_row_model } from '$lib/model-comparison.svelte'
   import { make_table_filters } from '$lib/models.svelte'
   import type { UrlTableFilters } from '$lib/url-state.svelte'
   import type { DiscoverySet, Label, ModelData, SortDir, TableLabel } from '$lib/types'
@@ -51,7 +52,6 @@
     col_filter = $bindable(() => true),
     filters = make_table_filters(),
     show_selected_only = $bindable(false),
-    selected_models = $bindable(new SvelteSet<string>()),
     column_order = $bindable([]),
     sort = $bindable({ ...DEFAULT_TABLE_SORT }),
     ...rest
@@ -61,7 +61,6 @@
     col_filter?: (col: Label) => boolean
     filters?: UrlTableFilters
     show_selected_only?: boolean
-    selected_models?: SvelteSet<string>
     column_order?: string[]
     sort?: { column: string; dir: SortDir }
   } = $props()
@@ -77,7 +76,6 @@
     model_params.key,
   ])
 
-  let selected_count = $derived(selected_models.size)
   let pred_files_dropdown = $state<PredFilesDropdown | null>(null)
 
   // Reuse one row object per model across rebuilds: HeatmapTable keys its {#each}
@@ -88,20 +86,14 @@
   // fine-grained re-renders of changed cells (same object identity = no signal).
   const row_cache = new SvelteMap<string, MetricsRow>()
   function build_rows(): MetricsRow[] {
-    const fresh_rows = assemble_row_data(
-      discovery_set,
-      model_filter,
-      filters.matches,
-    ).filter((row) => selected_models.has(row.model_key) || !show_selected_only)
+    const fresh_rows = mark_compared_rows(
+      assemble_row_data(discovery_set, model_filter, filters.matches),
+      show_selected_only,
+    )
     // cache access is untracked so callers don't subscribe to the very row signals
     // this merge writes (which would re-trigger them and double-render the table)
     return untrack(() =>
       fresh_rows.map((row) => {
-        // Only apply selected styles when not filtering to show only selected models
-        row.class =
-          !show_selected_only && selected_models.has(row.model_key)
-            ? `highlight`
-            : undefined
         const cached = row_cache.get(row.model_key)
         if (!cached) {
           const proxied = $state(row) // deep proxy for fine-grained cell updates
@@ -181,11 +173,6 @@
   }
   const close_dropdown = () => (pred_files_dropdown = null)
 
-  function toggle_model_selection(model_key: string) {
-    if (selected_models.has(model_key)) selected_models.delete(model_key)
-    else selected_models.add(model_key)
-  }
-
   const header_tooltip = (content: string | undefined) => (node: Element) => {
     const header_cell = node.closest(`th`)
     return header_cell instanceof HTMLElement
@@ -255,17 +242,12 @@
   bind:column_order
   {heatmap_class}
   {header_cell}
-  on_row_double_click={(event, row) => {
-    if (typeof row.model_key === `string`) {
-      event.preventDefault()
-      toggle_model_selection(row.model_key)
-    }
-  }}
+  on_row_double_click={toggle_row_model}
   {...rest}
   root_style={METRICS_TABLE_ROOT_STYLE}
 >
   {#snippet controls()}
-    <TableControls bind:columns bind:show_selected_only {filters} {selected_count} />
+    <TableControls bind:columns bind:show_selected_only {filters} />
   {/snippet}
 </HeatmapTable>
 

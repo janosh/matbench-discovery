@@ -1,10 +1,10 @@
 import { HYPERPARAMS } from '$lib/labels'
+import { comparison } from '$lib/model-comparison.svelte'
 import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
 import { tick } from 'svelte'
-import { SvelteSet } from 'svelte/reactivity'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
 
 // all header cells except the structural rank (#) column HeatmapTable renders
@@ -819,6 +819,7 @@ describe(`MetricsTable`, () => {
   })
 
   describe(`Double-click selection functionality`, () => {
+    beforeEach(() => comparison.keys.clear()) // module-level store persists across tests
     const get_rows = () => document.querySelectorAll(`tbody tr`)
     const get_toggle = () =>
       document.querySelector<HTMLInputElement>(
@@ -838,10 +839,9 @@ describe(`MetricsTable`, () => {
       `selects and deselects models on double-click with proper state management`,
       { timeout: 30_000 },
       async () => {
-        const selected_models = new SvelteSet<string>()
         mount(MetricsTable, {
           target: document.body,
-          props: { col_filter: () => true, selected_models },
+          props: { col_filter: () => true },
         })
         await tick() // Wait for initial render
 
@@ -857,7 +857,7 @@ describe(`MetricsTable`, () => {
         await tick()
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
         const first_key = row_key(get_rows()[0])
-        expect([...selected_models]).toEqual([first_key])
+        expect([...comparison.keys]).toEqual([first_key])
 
         // Select second row
         double_click_row(get_rows()[1])
@@ -865,13 +865,14 @@ describe(`MetricsTable`, () => {
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
         expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
         const second_key = row_key(get_rows()[1])
-        expect([...selected_models]).toEqual([first_key, second_key])
+        expect([...comparison.keys]).toEqual([first_key, second_key])
 
         // Deselect first row
         double_click_row(get_rows()[0])
         await tick()
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
         expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
+        expect([...comparison.keys]).toEqual([second_key])
       },
     )
 
@@ -884,14 +885,17 @@ describe(`MetricsTable`, () => {
           props: { col_filter: () => true },
         })
 
-        // Initially no toggle
+        // Initially no toggle, compare button shows no count
         expect(get_toggle()).toBeNull()
+        const compare_btn = doc_query<HTMLButtonElement>(`button.compare`)
+        expect(compare_btn.textContent?.trim()).toBe(`Compare`)
 
         // Select one model
         double_click_row(get_rows()[0])
         await tick()
         expect(get_toggle()).not.toBeNull()
         expect(get_toggle_label()?.textContent).toContain(`1 selected`)
+        expect(compare_btn.textContent).toContain(`Compare (1)`)
 
         // Select second model
         double_click_row(get_rows()[1])
@@ -908,6 +912,13 @@ describe(`MetricsTable`, () => {
         await tick()
 
         expect(get_toggle()).toBeNull()
+        expect(compare_btn.textContent?.trim()).toBe(`Compare`)
+
+        // the compare button opens the comparison drawer
+        expect(comparison.open).toBe(false)
+        compare_btn.click()
+        expect(comparison.open).toBe(true)
+        comparison.open = false
       },
     )
 

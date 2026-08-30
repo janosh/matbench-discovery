@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Label, ModelData } from '$lib'
-  import { AuthorBrief, DATASETS } from '$lib'
+  import { AuthorBrief, CompareToggle, DATASETS } from '$lib'
   import { parse_dependency_spec } from '$lib/environment'
   import { get_nested_number, label_data_path } from '$lib/metrics'
   import pkg from '$site/package.json'
@@ -72,6 +72,7 @@
   </button>
 </h2>
 <nav>
+  <CompareToggle {model_key} style="background: none; padding: 0" />
   {#each links.filter( ([href]) => href?.startsWith(`http`) ) as [href, title, link_icon] (title)}
     <a {href} {...target}>
       <Icon icon={link_icon} />
