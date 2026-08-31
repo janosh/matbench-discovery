@@ -1,9 +1,10 @@
 import { afterNavigate } from '$app/navigation'
 import { page } from '$app/state'
-import { DATASETS, MODELS } from '$lib'
+import { ACTIVE_MODELS, DATASETS, MODELS } from '$lib'
 import {
   bind_comparison_url,
   COMPARE_GROUPS,
+  COST_ROWS,
   compare_cells,
   comparison,
   mark_compared_rows,
@@ -23,9 +24,23 @@ vi.mock(`matterviz`, async (import_original) => ({
   ScatterPlot: plot_mocks.ScatterPlot,
 }))
 type PlotProps = {
-  series: { x: number[]; markers: string; point_style?: { radius: number }[] }[]
-  x_axis: { label: string; scale_type: string }
-  y_axis: { label: string }
+  series: {
+    id?: string
+    markers: string
+    point_style?: { stroke?: string; fill_opacity?: number }
+    point_label?: unknown[]
+  }[]
+  x_axis: {
+    label: string
+    scale_type: string
+    selected_key: string
+    options: { key: string }[]
+  }
+  y_axis: { label: string; selected_key: string }
+  data_loader: (axis: string, key: string) => Promise<unknown>
+  point_events: {
+    onclick: (payload: { point: { metadata: { model_key: string } } }) => void
+  }
 }
 
 const [key_a, key_b, key_c] = MODELS.map((model) => model.model_key)
@@ -344,36 +359,55 @@ describe(`ModelComparison dialog`, () => {
     expect(comparison.open).toBe(false)
   })
 
-  it(`picks scatter axes via selects, y defaulting to the current task page's metric`, async () => {
+  it(`plots cost vs accuracy via DynamicScatter, y defaulting to the current task page's metric`, async () => {
     Object.assign(page, { url: new URL(`http://localhost/tasks/phonons`) })
     const with_kappa = MODELS.filter((model) => model.metrics?.phonons?.kappa_103?.κ_SRME)
-    comparison.set(with_kappa.slice(0, 2).map((model) => model.model_key))
+    const compared = with_kappa.slice(0, 2).map((model) => model.model_key)
+    comparison.set(compared)
     comparison.open = true
     mount(ModelComparison, { target: document.body })
     await tick()
-    const [x_select, y_select] = document.querySelectorAll<HTMLSelectElement>(
-      `dialog :not(.option-sort) > select`,
-    )
-    const selected = (select: HTMLSelectElement) => select.selectedOptions[0]?.textContent
-    expect(selected(x_select)).toBe(`Params`)
-    expect(selected(y_select)).toBe(`κSRME`)
     const plot = () => get_scatter_plot_props(plot_mocks.ScatterPlot) as PlotProps
-    expect(plot().x_axis).toMatchObject({ label: `Params`, scale_type: `log` })
-    expect(plot().y_axis.label).toBe(`κ<sub>SRME</sub>`)
-    // grey field + dashed Pareto frontier; compared models drawn last and larger
-    const [field, frontier] = plot().series
-    expect(frontier.markers).toBe(`line`)
-    expect(field.point_style?.map((style) => style.radius).slice(-2)).toEqual([7, 7])
+    // cost rows lead the in-plot axis menus, then the regular scatter options
+    expect(plot().x_axis).toMatchObject({
+      label: `Params`,
+      scale_type: `log`,
+      selected_key: `model_params`,
+    })
+    expect(
+      plot()
+        .x_axis.options.slice(0, 2)
+        .map((opt) => opt.key),
+    ).toEqual([`model_params`, `n_training_materials`])
+    expect(plot().x_axis.options.length).toBeGreaterThan(COST_ROWS.length)
+    expect(plot().y_axis).toMatchObject({
+      label: `κ<sub>SRME</sub>`,
+      selected_key: `κ_SRME`,
+    })
+    // one series per model with the dimmed field first, highlighted (ringed, labeled)
+    // compared models last, then the dashed Pareto frontier
+    const series = plot().series
+    const frontier = series.at(-1)
+    expect(frontier?.markers).toBe(`line`)
+    // only models with finite x, y, color and size values get a point
+    const model_series = series.slice(0, -1)
+    expect(model_series.length).toBeGreaterThan(compared.length)
+    expect(model_series.length).toBeLessThanOrEqual(ACTIVE_MODELS.length)
+    const highlighted = model_series.filter((trace) => trace.point_style?.stroke)
+    expect(highlighted.map((trace) => trace.id)).toEqual(compared)
+    expect(model_series.slice(-2)).toEqual(highlighted)
+    expect(highlighted.every((trace) => trace.point_label?.length === 1)).toBe(true)
+    const dimmed = model_series.slice(0, -2)
+    expect(dimmed.every((trace) => trace.point_style?.fill_opacity === 0.3)).toBe(true)
+    expect(dimmed.every((trace) => trace.point_label?.length === 0)).toBe(true)
 
-    const pick = (select: HTMLSelectElement, text: string) => {
-      select.value =
-        [...select.options].find((opt) => opt.textContent === text)?.value ?? ``
-      select.dispatchEvent(new Event(`change`, { bubbles: true })) // Svelte delegates onchange
-    }
-    pick(x_select, `Training Materials`)
-    pick(y_select, `F1`)
+    // the axis menus drive the plot through data_loader; clicking a point toggles the model
+    await plot().data_loader(`x`, `n_training_materials`)
+    await plot().data_loader(`y`, `F1`)
     await tick()
     expect(plot().x_axis.label).toBe(`Training Materials`)
     expect(plot().y_axis.label).toBe(`F1`)
+    plot().point_events.onclick({ point: { metadata: { model_key: compared[0] } } })
+    expect([...comparison.keys]).toEqual([compared[1]])
   })
 })

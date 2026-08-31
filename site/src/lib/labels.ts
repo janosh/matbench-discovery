@@ -179,6 +179,14 @@ export const METADATA_COLS: MetadataLabels = {
     description: `Number of training structures`,
     format: `~s`,
   },
+  training_gpu_hours: {
+    key: `training_gpu_hours`,
+    label: `Training Compute`,
+    unit: `GPU·h`,
+    format: `.3~s`,
+    better: `lower`,
+    description: `Reported training cost summed over all listed devices (device count × hours per device)`,
+  },
   checkpoint_license: {
     key: `Ckpt License`,
     label: `Ckpt License`,
@@ -828,6 +836,7 @@ export const scatter_options = [
   METADATA_COLS.benchmark_added,
   METADATA_COLS.n_training_materials,
   METADATA_COLS.n_training_structures,
+  METADATA_COLS.training_gpu_hours,
   HYPERPARAMS.graph_construction_radius,
   HYPERPARAMS.max_force,
   HYPERPARAMS.max_steps,

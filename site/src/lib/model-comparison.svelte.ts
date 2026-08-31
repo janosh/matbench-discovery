@@ -101,7 +101,7 @@ export function bind_comparison_url(): void {
 // with a hover tooltip carrying details that don't fit in the cell
 export type CellPart = { text: string; href?: string; title?: string }
 // A comparison row is a metric/metadata label, optionally with a custom accessor for
-// values not addressable by a dotted path (derived costs, protocol summaries). `parts`
+// values not addressable by a dotted path (protocol summaries). `parts`
 // renders text cells richly (links, tooltips); `title` adds a tooltip to numeric cells.
 export type CompareRow = Label & {
   value?: (model: ModelData) => unknown
@@ -168,20 +168,7 @@ export const COST_ROWS: CompareRow[] = [
   },
   { ...METADATA_COLS.n_training_materials, better: `lower` },
   { ...METADATA_COLS.n_training_structures, better: `lower` },
-  {
-    key: `training_gpu_hours`,
-    label: `Training compute`,
-    unit: `GPU·h`,
-    format: `.3~s`,
-    better: `lower`,
-    description: `Reported training cost summed over all listed devices (device count × hours per device)`,
-    value: (model) =>
-      model.training_cost?.entries.reduce(
-        (sum, { count, hours_per_device }) => sum + count * hours_per_device,
-        0,
-      ),
-    title: training_cost_title,
-  },
+  { ...METADATA_COLS.training_gpu_hours, title: training_cost_title },
   { ...ALL_METRICS.md_run_time_sec, label: `MD speed` },
   { ...ALL_METRICS.md_max_gpu_mem_gb, label: `MD VRAM` },
   { ...ALL_METRICS.diatomics_run_time_sec, label: `Diatomics speed` },

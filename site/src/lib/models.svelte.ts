@@ -83,6 +83,10 @@ function to_model_data([key, metadata]: [string, ModelData], index: number): Mod
     n_estimators: metadata.n_estimators ?? 1,
     n_training_materials: sizes.total_materials,
     n_training_structures: sizes.total_structures,
+    training_gpu_hours: metadata.training_cost?.entries.reduce(
+      (sum, { count, hours_per_device }) => sum + count * hours_per_device,
+      0,
+    ),
     org_logos,
   }
 }

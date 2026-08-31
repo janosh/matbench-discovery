@@ -14,9 +14,7 @@
     format_property_path,
     format_relative_time,
     HYPERPARAMS,
-    scatter_axis_label,
     scatter_options,
-    scatter_options_by_key,
   } from '$lib/labels'
   import { get_nested_value, is_finite_num, label_data_path } from '$lib/metrics'
   import { make_models_legend } from '$lib/fig-helpers'
@@ -33,6 +31,8 @@
       `Geo Opt`,
     )
   }
+
+  type ScatterOption = (typeof scatter_options)[number]
 
   const get_label_path = (label: Label | undefined): string =>
     label_path_overrides[label?.key ?? ``] ?? label_data_path(label)
@@ -60,9 +60,13 @@
     x_key = $bindable(ALL_METRICS.κ_SRME.key),
     y_key = $bindable(ALL_METRICS.CPS.key),
     color_key = $bindable(ALL_METRICS.F1.key),
+    options = scatter_options,
     label_path_overrides = {},
     show_pareto_frontier = false,
+    highlight_keys,
     select_filter_threshold = 10,
+    legend = models_legend,
+    bleed = true,
     ...rest
   }: ComponentProps<typeof ScatterPlot> & {
     models: ModelData[]
@@ -71,22 +75,30 @@
     x_key?: string
     y_key?: string
     color_key?: string
+    // Labels selectable for the axes, color and size; keys must be unique
+    options?: ScatterOption[]
     // Override data paths by label key, e.g. for discovery-set-dependent metrics.
     label_path_overrides?: Record<string, string>
     // trace the staircase of non-dominated models (needs better-direction on both axes)
     show_pareto_frontier?: boolean
+    // when given, only these models are labeled and drawn at full opacity with a ring,
+    // the rest recede into a translucent field
+    highlight_keys?: Set<string>
     // Show a text filter in axis/color dropdowns with more than this many options.
     select_filter_threshold?: number
+    // span the full viewport width (the default on task pages, off inside dialogs)
+    bleed?: boolean
   } = $props()
 
   const log_dims = [`x`, `y`, `color`, `size`] as const
   const log_dim_labels = { x: `X`, y: `Y`, color: `Color`, size: `Size` } as const
-  let size_prop = $state(HYPERPARAMS.model_params as (typeof scatter_options)[number])
+  let size_prop = $state(HYPERPARAMS.model_params as ScatterOption)
 
+  let options_by_key = $derived(Object.fromEntries(options.map((opt) => [opt.key, opt])))
   let axes = $derived({
-    x: scatter_options_by_key[x_key],
-    y: scatter_options_by_key[y_key],
-    color_value: scatter_options_by_key[color_key],
+    x: options_by_key[x_key],
+    y: options_by_key[y_key],
+    color_value: options_by_key[color_key],
     size_value: size_prop,
   })
 
@@ -101,7 +113,7 @@
   )
   let model_counts_by_prop = $derived(
     Object.fromEntries(
-      scatter_options.map((prop) => [
+      options.map((prop) => [
         prop.key,
         filtered_models.filter(
           (model) => get_nested_value(model, get_label_path(prop)) !== undefined,
@@ -112,7 +124,7 @@
 
   // Axis/color-select options with model counts.
   let prop_options = $derived(
-    scatter_options.map((prop) => ({
+    options.map((prop) => ({
       key: prop.key,
       label: `${prop.label} (${model_counts_by_prop[prop.key]} models)`,
       unit: prop.unit,
@@ -125,7 +137,7 @@
     else if (axis === `y`) y_key = key
 
     await tick()
-    return { series, axis_label: scatter_axis_label(key) }
+    return { series, axis_label: options_by_key[key]?.label ?? key }
   }
 
   const format_label_title = (prop: Label | undefined): string =>
@@ -251,33 +263,51 @@
     if (tooltip_point && !tooltip_point.metadata) tooltip_point = null
   })
 
-  // One series per model enables per-model legend toggles.
+  // without highlight_keys every model is in focus
+  const is_dimmed = ({ model_key }: PointMetadata) =>
+    highlight_keys !== undefined && !highlight_keys.has(model_key)
+  // One series per model enables per-model legend toggles. Highlighted models come last
+  // so they paint over the dimmed field.
   let series: DataSeries<PointMetadata>[] = $derived([
-    ...plot_data.map((item) => ({
-      id: item.metadata.model_key,
-      x: [item.x],
-      y: [item.y],
-      label: duplicate_model_names.includes(item.metadata.model_name)
-        ? `${item.metadata.model_name} (${item.metadata.model_key})`
-        : item.metadata.model_name,
-      legend_group,
-      markers: `points` as const,
-      metadata: [item.metadata],
-      // uniform circles: color and size already encode data, and cycling 7 shapes
-      // across 30+ models distinguished nothing while adding visual noise
-      point_style: { fill: point_fill(item.color_value), symbol_type: `Circle` as const },
-      color_values: [item.color_value],
-      size_values: [item.size_value],
-      point_label: show_model_labels
-        ? [
-            {
-              text: item.metadata.model_name,
-              font_size: `12px`,
-              auto_placement: true,
-            },
-          ]
-        : [],
-    })),
+    ...plot_data
+      .toSorted(
+        (pt1, pt2) => Number(is_dimmed(pt2.metadata)) - Number(is_dimmed(pt1.metadata)),
+      )
+      .map((item) => {
+        const dimmed = is_dimmed(item.metadata)
+        return {
+          id: item.metadata.model_key,
+          x: [item.x],
+          y: [item.y],
+          label: duplicate_model_names.includes(item.metadata.model_name)
+            ? `${item.metadata.model_name} (${item.metadata.model_key})`
+            : item.metadata.model_name,
+          legend_group,
+          markers: `points` as const,
+          metadata: [item.metadata],
+          // uniform circles: color and size already encode data, and cycling 7 shapes
+          // across 30+ models distinguished nothing while adding visual noise
+          point_style: {
+            fill: point_fill(item.color_value),
+            symbol_type: `Circle` as const,
+            ...(dimmed
+              ? { fill_opacity: 0.3 }
+              : highlight_keys && { stroke: `currentColor`, stroke_width: 1.5 }),
+          },
+          color_values: [item.color_value],
+          size_values: [item.size_value],
+          point_label:
+            show_model_labels && !dimmed
+              ? [
+                  {
+                    text: item.metadata.model_name,
+                    font_size: `12px`,
+                    auto_placement: true,
+                  },
+                ]
+              : [],
+        }
+      }),
     ...(pareto_series ? [pareto_series] : []),
   ])
 
@@ -313,7 +343,8 @@
     filter_input.focus()
   }
 
-  // Matterviz portals axis/color dropdowns directly to document.body.
+  // Matterviz portals axis/color dropdowns to document.body, or to the enclosing open
+  // <dialog> (a modal's top layer would otherwise render a body portal inert)
   function observe_select_dropdowns(element: HTMLElement): () => void {
     const observer = new MutationObserver(() => {
       queueMicrotask(() => {
@@ -323,13 +354,13 @@
         if (open_trigger) add_select_filter()
       })
     })
-    observer.observe(document.body, { childList: true })
+    observer.observe(element.closest(`dialog`) ?? document.body, { childList: true })
     return () => observer.disconnect()
   }
 </script>
 
 <div
-  class="bleed-1400 collapsible-legend"
+  class={[`dynamic-scatter collapsible-legend`, bleed && `bleed-1400`]}
   style="margin-block: 2em"
   {@attach observe_select_dropdowns}
   {@attach collapse_on_outside_click}
@@ -337,24 +368,18 @@
   <div class="controls-row">
     <label for="size-select">Marker Size</label>
     <MultiSelect
-      options={scatter_options}
+      {options}
       id="size-select"
       bind:value={size_prop}
       maxSelect={1}
       minSelect={1}
-      key={(opt: (typeof scatter_options)[number]) => opt.key}
+      key={(opt: ScatterOption) => opt.key}
       style="flex: 1; max-width: 300px; margin: 0; line-height: normal; --sms-min-height: 24px"
       ulSelectedStyle="flex-wrap: nowrap; overflow: hidden; min-width: 0;"
       liSelectedStyle="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"
       liOptionStyle="font-size: 13px;"
     >
-      {#snippet children({
-        option: prop,
-        type,
-      }: {
-        option: (typeof scatter_options)[number]
-        type: string
-      })}
+      {#snippet children({ option: prop, type }: { option: ScatterOption; type: string })}
         <span class:selected-label={type === `selected`}>
           {@html format_size_option_path(label_data_path(prop))}
           <span style="font-size: smaller; color: gray">
@@ -374,7 +399,7 @@
         {/each}
       </div>
     {/if}
-    {#if models_legend.collapsed_groups?.has(legend_group)}
+    {#if legend && models_legend.collapsed_groups?.has(legend_group)}
       <button
         type="button"
         class="models-toggle"
@@ -390,7 +415,7 @@
     style="height: 600px"
     bind:series
     bind:tooltip_point
-    legend={models_legend}
+    {legend}
     padding={{ b: 70 }}
     x_axis={{
       label: axes.x?.label,
@@ -425,7 +450,7 @@
       selected_property_key: color_key,
       data_loader: async (key) => {
         color_key = key
-        const prop = scatter_options_by_key[key]
+        const prop = options_by_key[key]
         const values = filtered_models
           .map((model) => get_label_value(model, prop))
           .filter((val): val is number => typeof val === `number` && isFinite(val))
@@ -512,17 +537,17 @@
     white-space: nowrap;
   }
   /* align ScatterPlot's expanded legend with the controls row */
-  div.bleed-1400 :global(.scatter > .legend) {
+  div.dynamic-scatter :global(.scatter > .legend) {
     top: -42px !important;
     bottom: auto !important;
     font-size: 14px;
   }
   /* the controls-row button replaces the collapsed legend shell */
-  div.bleed-1400:has(button.models-toggle) :global(.scatter > .legend) {
+  div.dynamic-scatter:has(button.models-toggle) :global(.scatter > .legend) {
     display: none !important;
   }
   /* expanded: wrap model items across the plot width */
-  div.bleed-1400 :global(.scatter > .legend:has(.legend-item)) {
+  div.dynamic-scatter :global(.scatter > .legend:has(.legend-item)) {
     left: 10px !important;
     width: calc(100% - 20px) !important;
   }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { ALL_METRICS } from '$lib/labels'
+  import { ALL_METRICS, HYPERPARAMS, scatter_options } from '$lib/labels'
   import { is_finite_num } from '$lib/metrics'
   import {
     COMPARE_GROUPS,
@@ -11,11 +11,10 @@
     type CompareRow,
   } from '$lib/model-comparison.svelte'
   import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
+  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
   import { rank_color, RANKED_METRICS } from '$lib/rankings'
-  import { pareto_staircase } from '$lib/sota'
   import type { ModelData } from '$lib/types'
-  import { format_num, ScatterPlot, strip_html } from 'matterviz'
-  import type { DataSeries, InternalPoint } from 'matterviz/plot'
+  import { format_num } from 'matterviz'
   import { tick, untrack } from 'svelte'
   import { Dialog, Icon, MultiSelect, type Option } from 'svelte-widgets'
   import { tooltip } from 'svelte-widgets/attachments'
@@ -66,71 +65,27 @@
     }
   })
 
-  // --- cost vs accuracy scatter: whole leaderboard in grey, compared models on top ---
-  const all_rows = COMPARE_GROUPS.flatMap((group) => group.rows)
-  const row_by_key = Object.fromEntries(all_rows.map((row) => [row.key, row]))
-  const accuracy_rows = all_rows.filter((row) => row.better && !COST_ROWS.includes(row))
-  const axis_label = ({ label, unit }: CompareRow) =>
-    `${label}${unit ? ` (${unit})` : ``}`
-  let x_key = $state(COST_ROWS[0].key)
+  // --- cost vs accuracy scatter: whole leaderboard dimmed, compared models on top ---
+  // cost rows lead the axis menus and carry lower=better so the Pareto frontier can be
+  // traced against them; the rest of the usual scatter options follow
+  const cost_keys = new Set(COST_ROWS.map((row) => row.key))
+  const scatter_axis_options = [
+    ...COST_ROWS,
+    ...scatter_options.filter((opt) => !cost_keys.has(opt.key)),
+  ]
+  let x_key = $state(HYPERPARAMS.model_params.key)
   let y_key = $state<string>()
   // until the user picks one, the y-axis follows the task page the dialog was opened on
   let page_metric = $derived(
     RANKED_METRICS.find((metric) => metric.rank_href === page.url.pathname)?.key ??
       ALL_METRICS.CPS.key,
   )
-  let x_row = $derived(row_by_key[x_key])
-  let y_row = $derived(row_by_key[y_key ?? page_metric])
-
-  // compared models last so they paint over the field
-  let points = $derived(
-    [...new Set([...ACTIVE_MODELS, ...models])]
-      .flatMap((model) => {
-        const [x, y] = [row_value(x_row, model), row_value(y_row, model)]
-        if (!is_finite_num(x) || !is_finite_num(y)) return []
-        return [{ x, y, model, compared: comparison.keys.has(model.model_key) }]
-      })
-      .toSorted((pt1, pt2) => Number(pt1.compared) - Number(pt2.compared)),
-  )
-  // log scale when all positive and spanning at least two decades (params, wall times)
-  const log_scale = (values: number[]) => {
-    const [min, max] = [Math.min(...values), Math.max(...values)]
-    return min > 0 && max >= 100 * min ? `log` : `linear`
-  }
-  let series: DataSeries<ModelData>[] = $derived.by(() => {
-    const field: DataSeries<ModelData> = {
-      x: points.map((pt) => pt.x),
-      y: points.map((pt) => pt.y),
-      markers: `points`,
-      metadata: points.map((pt) => pt.model),
-      point_style: points.map(({ model, compared }) =>
-        compared
-          ? { fill: model.color, radius: 7, stroke: `white`, stroke_width: 1.5 }
-          : { fill: `gray`, radius: 3.5, fill_opacity: 0.4 },
-      ),
-      point_label: points.map(({ model, compared }) =>
-        compared
-          ? { text: model.model_name, font_size: `12px`, auto_placement: true }
-          : {},
-      ),
-    }
-    const frontier =
-      x_row.better && y_row.better && pareto_staircase(points, x_row.better, y_row.better)
-    if (!frontier) return [field]
-    const line_style = { stroke: `gray`, stroke_width: 1, line_dash: `4 3` }
-    return [field, { ...frontier, markers: `line`, line_style }]
-  })
-  // frontier corners aren't models: don't snap the tooltip to them
-  let tooltip_point: InternalPoint<ModelData> | null = $state(null)
-  $effect(() => {
-    if (tooltip_point && !tooltip_point.metadata) tooltip_point = null
-  })
 </script>
 
 <Dialog
   bind:open={comparison.open}
   aria-label="Model comparison"
-  style="--dialog-width: min(68rem, calc(100vw - 2rem)); --dialog-radius: 12px; --dialog-bg: var(--page-bg); --dialog-section-padding: 0.5rem 1rem 0; --dialog-content-padding: 0 1rem 1rem; min-height: min(65vh, calc(100vh - 2rem))"
+  style="--dialog-width: min(68rem, calc(100vw - 2rem)); --dialog-section-padding: 0.5rem 1rem 0; --dialog-content-padding: 0 1rem 1rem;"
 >
   {#snippet header({ close })}
     <div class="head">
@@ -140,7 +95,6 @@
       <MultiSelect
         options={model_options}
         placeholder="Add models…"
-        style="flex: 1; min-width: min(20rem, 100%); border: 1px solid var(--border); --sms-options-max-height: 45vh; --sms-selected-bg: transparent; --sms-selected-li-padding: 0 0 0 3pt"
         bind:input={picker_input}
         bind:selected={
           () => selected_options,
@@ -253,62 +207,26 @@
 
     <h3>Cost vs accuracy</h3>
     <p>
-      Every leaderboard model in grey, compared models highlighted; the dashed line traces
+      Every leaderboard model dimmed, compared models highlighted; the dashed line traces
       the Pareto frontier. Click a point to add or remove its model.
     </p>
-    <!-- plain selects: matterviz's in-plot axis menus portal to <body>, which a modal
-    dialog renders inert -->
-    <label>
-      X axis
-      <select value={x_key} onchange={(event) => (x_key = event.currentTarget.value)}>
-        {#each COST_ROWS as row (row.key)}
-          <option value={row.key}>{strip_html(axis_label(row))}</option>
-        {/each}
-      </select>
-    </label>
-    <label>
-      Y axis
-      <select value={y_row.key} onchange={(event) => (y_key = event.currentTarget.value)}>
-        {#each accuracy_rows as row (row.key)}
-          <option value={row.key}>{strip_html(axis_label(row))}</option>
-        {/each}
-      </select>
-    </label>
-    <ScatterPlot
-      {series}
-      bind:tooltip_point
-      style="height: 360px"
-      show_controls={false}
+    <DynamicScatter
+      models={[...new Set([...ACTIVE_MODELS, ...models])]}
+      options={scatter_axis_options}
+      highlight_keys={comparison.keys}
+      show_pareto_frontier
+      bleed={false}
       legend={null}
-      x_axis={{
-        label: axis_label(x_row),
-        format: x_row.format,
-        scale_type: log_scale(points.map((pt) => pt.x)),
-      }}
-      y_axis={{
-        label: axis_label(y_row),
-        format: y_row.format,
-        scale_type: log_scale(points.map((pt) => pt.y)),
-      }}
+      style="height: 420px"
+      bind:x_key
+      bind:y_key={() => y_key ?? page_metric, (key) => (y_key = key)}
       point_events={{
         onclick: ({ point }) => {
           const key = point.metadata?.model_key
           if (typeof key === `string`) comparison.toggle(key)
         },
       }}
-    >
-      {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-        {#if metadata}
-          <strong>{metadata.model_name}</strong><br />
-          {@html x_row.label}: {x_formatted}<br />
-          {@html y_row.label}: {y_formatted}<br />
-          {@const verb = comparison.keys.has(String(metadata.model_key))
-            ? `remove`
-            : `add`}
-          <small>click to {verb}</small>
-        {/if}
-      {/snippet}
-    </ScatterPlot>
+    />
   {/if}
 </Dialog>
 
@@ -425,12 +343,5 @@
     margin: 0 0 0.5em;
     font-size: 0.9em;
     color: var(--text-secondary);
-  }
-  label {
-    margin-right: 1.5em;
-    font-size: 0.9em;
-  }
-  select {
-    margin-left: 0.3em;
   }
 </style>

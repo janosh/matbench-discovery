@@ -181,3 +181,40 @@ it(`keeps duplicate-label series distinct and collapses their legend`, async () 
   await tick()
   expect(document.querySelector(`button.models-toggle`)).not.toBeNull()
 })
+
+it(`dims and unlabels models outside highlight_keys, drawing highlighted ones last`, async () => {
+  vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
+  vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
+  const models = make_models(1, 100)
+  mount(DynamicScatter, {
+    target: document.body,
+    props: {
+      models,
+      x_key: HYPERPARAMS.model_params.key,
+      highlight_keys: new Set([models[0].model_key]),
+      ...scatter_props,
+      show_model_labels: true,
+      bleed: false,
+      legend: null,
+    },
+  })
+  await tick()
+
+  const markers = [...document.querySelectorAll<SVGPathElement>(`path.marker`)]
+  const style_of = (marker: SVGPathElement) => ({
+    fill_opacity: marker.getAttribute(`fill-opacity`),
+    stroke: marker.getAttribute(`stroke`),
+  })
+  // the dimmed model paints first (default stroke), the ringed highlighted one on top
+  expect(markers.map(style_of)).toEqual([
+    { fill_opacity: `0.3`, stroke: `#000` },
+    { fill_opacity: `1`, stroke: `currentColor` },
+  ])
+  const labels = [...document.querySelectorAll(`.scatter text`)]
+    .map((text) => text.textContent?.trim())
+    .filter((text) => text?.startsWith(`Model `))
+  expect(labels).toEqual([models[0].model_name])
+  // no full-bleed wrapper and no collapsed-legend toggle inside dialogs
+  expect(document.querySelector(`.bleed-1400`)).toBeNull()
+  expect(document.querySelector(`button.models-toggle`)).toBeNull()
+})

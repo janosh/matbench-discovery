@@ -16,6 +16,8 @@ export type ModelData = ModelMetadata & {
   color?: string
   n_training_materials?: number
   n_training_structures?: number
+  // training_cost summed over devices (count × hours per device), undefined if unreported
+  training_gpu_hours?: number
   org_logos?: OrgLogo[]
   CPS?: number
 }
