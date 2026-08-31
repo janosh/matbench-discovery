@@ -1,9 +1,8 @@
 <script lang="ts">
-  // Right-click menu for leaderboard rows: wraps a HeatmapTable and resolves the clicked
-  // row to its model via the model-page link every row carries. Links, buttons and inputs
+  // Right-click menu for leaderboard rows: wraps a HeatmapTable. Links, buttons and inputs
   // keep the browser's own menu (open in new tab, copy link).
   import { goto } from '$app/navigation'
-  import { comparison } from '$lib/model-comparison.svelte'
+  import { comparison, row_model_key } from '$lib/model-comparison.svelte'
   import { MODELS } from '$lib/models.svelte'
   import type { Snippet } from 'svelte'
   import { ActionMenu } from 'svelte-widgets'
@@ -47,14 +46,11 @@
   function open_menu(event: MouseEvent) {
     const target = event.target instanceof Element ? event.target : null
     if (!target || target.closest(`a, button, input, select`)) return
-    const href = target
-      .closest(`tbody tr`)
-      ?.querySelector(`a[href^="/models/"]`)
-      ?.getAttribute(`href`)
-    if (!href) return
+    const key = row_model_key(target.closest(`tbody tr`))
+    if (!key) return
     event.preventDefault()
     event.stopPropagation() // capture phase: preempts HeatmapTable's column menu
-    model_key = href.slice(`/models/`.length)
+    model_key = key
     at = { x: event.clientX, y: event.clientY }
   }
 </script>
@@ -72,5 +68,5 @@ svelte-widgets' menu padding (3pt) and item padding (2pt 6pt) defaults are overr
   trigger="none"
   dismiss={{ dismiss_on: `press` }}
   aria-label="Model row actions"
-  style="font-size: 12px; --action-menu-padding: 0; --action-menu-item-padding: 3pt 8pt; --action-menu-z-index: 200"
+  style="font-size: 12px; --action-menu-padding: 0; --action-menu-item-padding: 3pt 8pt"
 />

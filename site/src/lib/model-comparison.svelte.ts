@@ -49,6 +49,13 @@ export const comparison = new Comparison()
 
 // Leaderboard table hooks shared by MetricsTable and GeoOptMetricsTable: double-clicking
 // a row toggles its model; `show_only` drops non-compared rows, else they get highlighted.
+// HeatmapTable exposes neither its sorted rows nor row data on DOM events, so DOM-side
+// code resolves a <tr> to its model via the model-page link every row carries.
+export const row_model_key = (row: Element | null | undefined): string | undefined =>
+  row
+    ?.querySelector(`a[href^="/models/"]`)
+    ?.getAttribute(`href`)
+    ?.slice(`/models/`.length)
 export const toggle_row_model = (event: Event, row: RowData): void => {
   if (typeof row.model_key !== `string`) return
   event.preventDefault()

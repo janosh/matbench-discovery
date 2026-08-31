@@ -7,7 +7,7 @@
     user_presets,
   } from '$lib/filter-presets.svelte'
   import { openness_tooltips } from '$lib/metrics'
-  import { comparison } from '$lib/model-comparison.svelte'
+  import { comparison, row_model_key } from '$lib/model-comparison.svelte'
   import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
   import {
     DEFAULT_TARGETS_PARAM,
@@ -38,21 +38,15 @@
   let selected_count = $derived(comparison.keys.size)
 
   // Nothing selected yet: seed the comparison with the table's top rows in its current
-  // sort order so the dialog opens on a real comparison instead of an empty picker.
-  // HeatmapTable doesn't expose its sorted rows, so read them off the rendered model
-  // links (same trick as ModelRowMenu)
+  // sort order so the dialog opens on a real comparison instead of an empty picker
   const N_SEED_MODELS = 3
   const open_comparison = (event: MouseEvent & { currentTarget: HTMLElement }) => {
     if (selected_count === 0) {
-      const links =
-        event.currentTarget
-          .closest(`.table-container`)
-          ?.querySelectorAll(`tbody tr a[href^="/models/"]`) ?? []
-      const keys = [...links].flatMap((link) => {
-        const href = link.getAttribute(`href`)
-        return href ? [href.slice(`/models/`.length)] : []
-      })
-      comparison.set([...new Set(keys)].slice(0, N_SEED_MODELS))
+      const rows = event.currentTarget
+        .closest(`.table-container`)
+        ?.querySelectorAll(`tbody tr`)
+      const keys = [...(rows ?? [])].flatMap((row) => row_model_key(row) ?? [])
+      comparison.set(keys.slice(0, N_SEED_MODELS))
     }
     comparison.open = true
   }
@@ -451,15 +445,11 @@
     background: none;
     padding: 0;
   }
-  /* the one action here that isn't a filter: filled so it reads as primary, and set off
-     from the filter cluster by a divider */
+  /* the one action here that isn't a filter, so set off from the filter cluster by a divider */
   button.compare {
     position: relative;
     padding: 1pt 8pt;
     border-radius: 1em;
-    background: var(--link-color);
-    color: var(--page-bg);
-    font-weight: 600;
     &::after {
       content: '';
       position: absolute;
