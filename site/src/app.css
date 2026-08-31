@@ -162,6 +162,12 @@ button:hover {
 .draggable-pane.plot-controls-pane input.range-input[type='number'] {
   width: 3.5em;
 }
+/* svelte-widgets ActionMenu hardcodes a 3pt item radius (no CSS var); rounded hover
+   highlights leave notches against the menu's straight edges. Selector needs to beat the
+   scoped `.action-menu.svelte-x button` (0,2,1). */
+menu.action-menu button[role^='menuitem'] {
+  border-radius: 0;
+}
 div.multiselect button {
   background: transparent;
 }
