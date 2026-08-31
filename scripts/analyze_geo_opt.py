@@ -144,11 +144,9 @@ def analyze_model_symprec(
         print(f"{model.label} already analyzed at {geo_opt_csv_path}")
         df_ml_geo_analysis = pd.read_csv(geo_opt_csv_path, index_col=0)
     else:
-        action = (
-            "Overwriting"
-            if overwrite and os.path.isfile(geo_opt_csv_path)
-            else "Analyzing"
-        )
+        # only reached without a cached CSV or with overwrite=True, so an existing
+        # file here is always being overwritten
+        action = "Overwriting" if os.path.isfile(geo_opt_csv_path) else "Analyzing"
         print(f"{action} {model.label} for {symprec=}")
 
         # Analyze symmetry for current symprec
