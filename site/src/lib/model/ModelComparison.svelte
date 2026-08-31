@@ -220,9 +220,8 @@
 
   {#if n_models === 0}
     <p class="empty">
-      Pick models above. In any leaderboard table you can also hover a row and click its
-      <Icon icon={Scale} style="vertical-align: middle" /> button, right-click the row, or double-click
-      it.
+      Pick models above. In any leaderboard table you can also right-click or double-click
+      a row to add its model.
     </p>
   {:else}
     <table>
