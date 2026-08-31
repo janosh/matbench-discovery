@@ -151,11 +151,9 @@ class PipelineAdapterStub(StandardKappaAdapter):
         phono3py: Phono3py,
         calculator: Calculator,
         settings: KappaSettings,
-        *,
-        progress: dict[str, Any] | None = None,
     ) -> tuple[Phono3py, np.ndarray, np.ndarray]:
         """Return configured mode frequencies and a deterministic FC2 force set."""
-        del calculator, settings, progress
+        del calculator, settings
         return phono3py, np.ones((1, 1, 3)), np.array([self.fc2_frequencies])
 
     def calculate_fc3(
@@ -164,11 +162,10 @@ class PipelineAdapterStub(StandardKappaAdapter):
         calculator: Calculator,
         settings: KappaSettings,
         *,
-        progress: dict[str, Any] | None = None,
         max_evaluations: int | None = None,
     ) -> np.ndarray:
         """Record and return one deterministic FC3 force set."""
-        del phono3py, calculator, settings, progress, max_evaluations
+        del phono3py, calculator, settings, max_evaluations
         self.n_fc3_calls += 1
         return np.full((1, 1, 3), 3.0)
 

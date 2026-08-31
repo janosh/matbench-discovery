@@ -16,8 +16,8 @@
   import type { ModelData } from '$lib/types'
   import { format_num, ScatterPlot, strip_html } from 'matterviz'
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
-  import { tick } from 'svelte'
-  import { Dialog, Icon, MultiSelect } from 'svelte-widgets'
+  import { tick, untrack } from 'svelte'
+  import { Dialog, Icon, MultiSelect, type Option } from 'svelte-widgets'
   import { tooltip } from 'svelte-widgets/attachments'
   import { Cross, Scale } from 'svelte-widgets/icons'
 
@@ -57,10 +57,13 @@
   let selected_options = $derived(models.map(option_for))
   const external = { target: `_blank`, rel: `noopener` }
   // opened with nothing to compare yet (empty or a single model), the picker is the next
-  // step, so it takes focus (which also drops its option list open)
+  // step, so it takes focus (which also drops its option list open). n_models is untracked
+  // so removing models while the dialog is open doesn't yank focus to the picker
   let picker_input = $state<HTMLInputElement | null>(null)
   $effect(() => {
-    if (comparison.open && n_models <= 1) void tick().then(() => picker_input?.focus())
+    if (comparison.open && untrack(() => n_models) <= 1) {
+      void tick().then(() => picker_input?.focus())
+    }
   })
   const MAX_TRAY_CHIPS = 4
 
@@ -133,7 +136,13 @@
   <!-- selection tray: shows up with the first pick so the next step is never a guess -->
   {#snippet trigger(trigger_props)}
     {#if n_models > 0 && !comparison.open}
-      <div class="tray" role="status" aria-label="Models selected for comparison">
+      <div class="tray">
+        <!-- text-only live region: a status role on the whole tray would re-announce every
+        chip and button label on each add/remove -->
+        <span class="visually-hidden" role="status">
+          {n_models}
+          {n_models === 1 ? `model` : `models`} selected for comparison
+        </span>
         <ul>
           {#each models.slice(0, MAX_TRAY_CHIPS) as model (model.model_key)}
             <li>
@@ -180,7 +189,9 @@
           (options: ModelOption[]) => comparison.set(options.map((opt) => opt.value))
         }
       >
-        {#snippet children({ option: opt, type }: { option: ModelOption; type: string })}
+        {#snippet children({ option, type }: { option: Option; type: string })}
+          <!-- MultiSelect isn't generic over our option shape, only ever fed model_options -->
+          {@const opt = option as ModelOption}
           {opt.label}
           {#if type === `option`}
             <small class="option-detail">
@@ -317,7 +328,11 @@
         format: x_row.format,
         scale_type: log_scale(points.map((pt) => pt.x)),
       }}
-      y_axis={{ label: axis_label(y_row), format: y_row.format }}
+      y_axis={{
+        label: axis_label(y_row),
+        format: y_row.format,
+        scale_type: log_scale(points.map((pt) => pt.y)),
+      }}
       point_events={{
         onclick: ({ point }) => {
           const key = point.metadata?.model_key
@@ -381,6 +396,13 @@
   }
   .tray .hint {
     color: var(--text-secondary);
+  }
+  .tray .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
   .tray button.open {
     display: inline-flex;

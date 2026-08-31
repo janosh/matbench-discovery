@@ -140,13 +140,14 @@ def write_diatomics_shard(
 
 
 @pytest.mark.parametrize(
-    ("model_key", "second_shard_metadata", "should_raise", "shard_date"),
+    ("model_key", "second_shard_metadata", "should_raise", "shard_date", "dry_run"),
     [
         (
             "alphanet_v1_oam",
             {"excluded_formula_reasons": {"H-H": "must not leak"}},
             False,
             None,
+            False,
         ),
         # shards written on an earlier date are picked up via resolve_sharded_prefix
         # and the merged artifact inherits their date
@@ -155,15 +156,33 @@ def write_diatomics_shard(
             {"excluded_formula_reasons": {"H-H": "must not leak"}},
             False,
             "2020-01-02",
+            False,
         ),
-        ("emt", {"excluded_formula_reasons": {"He-He": "invalid curve"}}, True, None),
+        # dry runs merge only *-dry-run-shards and write into dry-run/, so a smoke test
+        # can neither read nor clobber a real run's shards or artifact
+        (
+            "alphanet_v1_oam",
+            {"excluded_formula_reasons": {"H-H": "must not leak"}},
+            False,
+            None,
+            True,
+        ),
+        (
+            "emt",
+            {"excluded_formula_reasons": {"He-He": "invalid curve"}},
+            True,
+            None,
+            False,
+        ),
     ],
+    ids=["curated", "prior-date-shards", "dry-run-isolated", "uncurated-raises"],
 )
 def test_run_diatomics_merge_shards_exclusion_gate(
     model_key: str,
     second_shard_metadata: dict[str, object],
     should_raise: bool,
     shard_date: str | None,
+    dry_run: bool,
     run_diatomics: ModuleType,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -171,7 +190,8 @@ def test_run_diatomics_merge_shards_exclusion_gate(
 ) -> None:
     """merge-shards accepts missing formulas only when YAML-curated."""
     shard_date = shard_date or run_diatomics.today
-    shard_dir = tmp_path / f"{shard_date}-diatomics-shards"
+    dry_suffix = "-dry-run" if dry_run else ""
+    shard_dir = tmp_path / f"{shard_date}-diatomics{dry_suffix}-shards"
     curves = {
         "H-H": {
             "energies": [0.0, 1.0],
@@ -180,8 +200,13 @@ def test_run_diatomics_merge_shards_exclusion_gate(
     }
     write_diatomics_shard(shard_dir, 1, curves)
     write_diatomics_shard(shard_dir, 2, {}, run_metadata=second_shard_metadata)
-    cli = f"run_diatomics --model {model_key} --merge-shards --max-z 2 --out-dir"
-    monkeypatch.setattr(sys, "argv", [*cli.split(), str(tmp_path)])
+    cli = f"run_diatomics --model {model_key} --merge-shards --max-z 2"
+    if dry_run:  # --dry-run forces max-z 3, so Li-Li must be present too
+        write_diatomics_shard(shard_dir, 3, {"Li-Li": curves["H-H"]})
+        # a real run's shards from the same day must be left alone
+        write_diatomics_shard(tmp_path / f"{shard_date}-diatomics-shards", 1, curves)
+        cli += " --dry-run"
+    monkeypatch.setattr(sys, "argv", [*cli.split(), "--out-dir", str(tmp_path)])
 
     if should_raise:
         with pytest.raises(SystemExit) as exc_info:
@@ -192,7 +217,10 @@ def test_run_diatomics_merge_shards_exclusion_gate(
         assert "He-He" in stderr
     else:
         assert run_diatomics.main() == 0
-        merged_path = tmp_path / f"{shard_date}-diatomics.json.gz"
+        merged_name = f"{shard_date}-diatomics.json.gz"
+        merged_path = tmp_path / ("dry-run" if dry_run else "") / merged_name
+        if dry_run:
+            assert not (tmp_path / merged_name).is_file()
         with gzip.open(merged_path, mode="rt") as file:
             merged_data = json.load(file)
         assert merged_data["run_metadata"]["excluded_formula_reasons"] == {

@@ -32,7 +32,11 @@ def repo_relative_path(file_path: str, root: str = ROOT) -> str:
 def file_digest(path: str, algorithm: str = "sha256") -> str:
     """Stream a file into a hex digest (``md5`` is only ever used for cache checks)."""
     with open(path, mode="rb") as file:
-        return hashlib.file_digest(file, algorithm).hexdigest()
+        # usedforsecurity=False keeps md5 cache checks working on FIPS-only builds
+        digest = hashlib.file_digest(
+            file, lambda: hashlib.new(algorithm, usedforsecurity=False)
+        )
+    return digest.hexdigest()
 
 
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data

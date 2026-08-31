@@ -1,10 +1,11 @@
+import { goto } from '$app/navigation'
 import { HYPERPARAMS } from '$lib/labels'
 import { comparison } from '$lib/model-comparison.svelte'
 import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { Label, ModelData } from '$lib/types'
 import { tick } from 'svelte'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { doc_query, header_name, mount } from '../index'
 
 // all header cells except the structural rank (#) column HeatmapTable renders
@@ -34,6 +35,11 @@ const all_targets_filters = () => {
 }
 
 describe(`MetricsTable`, () => {
+  // the module-level comparison store persists across tests
+  beforeEach(() => {
+    comparison.keys.clear()
+    comparison.open = false
+  })
   // model behind each rendered row, resolved from its Model-cell link
   const row_models = (): ModelData[] =>
     [
@@ -409,7 +415,7 @@ describe(`MetricsTable`, () => {
       },
     )
 
-    it(`renders Training Set cells as dataset links with the sort value on the td`, async () => {
+    it(`renders Training Set cells as dataset links`, async () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
@@ -423,9 +429,9 @@ describe(`MetricsTable`, () => {
       ]
       expect(training_set_cells.length).toBeGreaterThan(0)
       for (const cell of training_set_cells) {
-        // HeatmapTable sanitizes cell HTML: the data-sort-value span is gone and only
-        // the dataset links remain, so the td itself must not carry raw markup
-        expect(cell.getAttribute(`data-sort-value`) ?? ``).not.toMatch(/[<>]/)
+        // HTML cells get no td[data-sort-value] (HeatmapTable reads it off the inner
+        // span instead), so a value there would mean raw markup leaked onto the td
+        expect(cell.hasAttribute(`data-sort-value`)).toBe(false)
         expect(cell.querySelector(`a[href^="/data/"]`)).not.toBeNull()
       }
     })
@@ -779,7 +785,6 @@ describe(`MetricsTable`, () => {
   })
 
   describe(`Double-click selection functionality`, () => {
-    beforeEach(() => comparison.keys.clear()) // module-level store persists across tests
     const get_rows = () => document.querySelectorAll(`tbody tr`)
     const get_toggle = () =>
       document.querySelector<HTMLInputElement>(
@@ -936,10 +941,20 @@ describe(`MetricsTable`, () => {
       expect(items[0]).toContain(`to comparison`)
       expect(items[1]).toContain(`with…`)
       expect(items[2]).toContain(`model page`)
-      document.querySelector<HTMLButtonElement>(`menu [role="menuitem"]`)?.click()
+      const menu_item = (idx: number) =>
+        document.querySelectorAll<HTMLButtonElement>(`menu [role="menuitem"]`)[idx]
+      menu_item(0).click()
       await tick()
       expect([...comparison.keys]).toEqual([row_key(row_1), row_key(row_2)])
       expect(document.querySelector(`menu`)).toBeNull()
+      // the model-page item navigates in-app
+      cells[cells.length - 1].dispatchEvent(
+        new MouseEvent(`contextmenu`, { bubbles: true }),
+      )
+      await flush_timers()
+      await tick()
+      menu_item(2).click()
+      expect(vi.mocked(goto)).toHaveBeenCalledWith(`/models/${row_key(row_2)}`)
     })
 
     it(

@@ -10,6 +10,7 @@ import {
   targets_tooltips,
 } from '$lib/metrics'
 import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
+import { competition_rank } from '$lib/rankings'
 import type { Author, Label, ModelData } from '$lib/types'
 import { bind_url_params } from '$lib/url-state.svelte'
 import { format_num } from 'matterviz'
@@ -407,7 +408,10 @@ export function compare_cells(
     const title = row.title?.(model)
     const cell: CompareCell = title ? { text, title } : { text }
     if (!row.better) return cell
-    const rank = field_nums.filter((other) => sign * other > sign * value).length + 1
-    return { ...cell, rank, n: field_nums.length, best: sign * value === best }
+    // a compared model outside the field (superseded/deprecated) ranks against the field
+    // plus itself so rank never exceeds n
+    const nums = field.includes(model) ? field_nums : [...field_nums, value]
+    const { rank, n_models } = competition_rank(value, nums, row.better)
+    return { ...cell, rank, n: n_models, best: sign * value === best }
   })
 }

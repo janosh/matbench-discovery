@@ -187,18 +187,22 @@ def main() -> int:
     # wiggles and discontinuities are most diagnostic (matches the MACE-MP convention)
     distances = np.geomspace(args.min_dist, args.max_dist, n_points)
     # reuse one prior shard dir (or --shard-dir) so shards written on an earlier date
-    # can be resumed/merged; the merged artifact inherits that dir's date
+    # can be resumed/merged; the merged artifact inherits that dir's date. Like
+    # run_discovery, dry runs get their own shard dirs and a dry-run/ artifact dir so
+    # a 10-point smoke test can never clobber (or be merged into) a real run.
+    dry_suffix = "-dry-run" if args.dry_run else ""
     try:
         shard_dir, artifact_prefix = resolve_sharded_prefix(
-            default_prefix=f"{out_dir}/{today}-diatomics",
-            prior_shard_pattern=f"{out_dir}/*-diatomics-shards",
+            default_prefix=f"{out_dir}/{today}-diatomics{dry_suffix}",
+            prior_shard_pattern=f"{out_dir}/*-diatomics{dry_suffix}-shards",
             task="diatomics",
             shard_dir=args.shard_dir,
         )
     except ValueError as exc:
         parser.error(str(exc))
     artifact_date = artifact_date_from_prefix(artifact_prefix, fallback=today)
-    json_path = f"{out_dir}/{artifact_filename(artifact_date, 'diatomics')}"
+    artifact_dir = f"{out_dir}/dry-run" if args.dry_run else out_dir
+    json_path = f"{artifact_dir}/{artifact_filename(artifact_date, 'diatomics')}"
     n_pairs = len(z_values)
     run_metadata: dict[str, str | float | dict[str, str]]
     curves: DiatomicResults = {}

@@ -71,28 +71,35 @@ def test_calc_geo_opt_metrics_parametrized(
     assert results[str(MbdKey.structure_rmsd_vs_dft)] == pytest.approx(expected_rmsd)
 
 
+_GEO_REF_WITH_META = make_file_ref(
+    _GEO, url="https://figshare.com/files/1", size=7, md5="a" * 32
+)
+_FULL_METRICS = {
+    MbdKey.structure_rmsd_vs_dft: 0.1,
+    Key.n_sym_ops_mae: 0.2,
+    Key.symmetry_decrease: 0.3,
+    Key.symmetry_match: 0.4,
+    Key.symmetry_increase: 0.0,
+    Key.n_structures: 0,
+}
+_FULL_BLOCK = {
+    Key.rmsd: 0.1,
+    Key.n_sym_ops_mae: 0.2,
+    Key.symmetry_decrease: 0.3,
+    Key.symmetry_match: 0.4,
+    Key.symmetry_increase: 0.0,
+    Key.n_structures: 0,
+}
+
+
 @pytest.mark.parametrize(
-    ("metrics_data", "expected_block", "analysis_file_path"),
+    ("metrics_data", "expected_block", "analysis_file_path", "existing_ref"),
     [
         (
-            {
-                MbdKey.structure_rmsd_vs_dft: 0.1,
-                Key.n_sym_ops_mae: 0.2,
-                Key.symmetry_decrease: 0.3,
-                Key.symmetry_match: 0.4,
-                Key.symmetry_increase: 0.0,
-                Key.n_structures: 0,
-            },
-            {
-                Key.rmsd: 0.1,
-                Key.n_sym_ops_mae: 0.2,
-                Key.symmetry_decrease: 0.3,
-                Key.symmetry_match: 0.4,
-                Key.symmetry_increase: 0.0,
-                Key.n_structures: 0,
-                "analysis_file": make_file_ref(_GEO),
-            },
+            _FULL_METRICS,
+            {**_FULL_BLOCK, "analysis_file": make_file_ref(_GEO)},
             _GEO,
+            None,
         ),
         (
             {
@@ -110,16 +117,27 @@ def test_calc_geo_opt_metrics_parametrized(
                 Key.symmetry_match: 0.0,
                 Key.symmetry_increase: 0.0,
                 Key.n_structures: 0,
+                # renamed analysis file drops the stale url/size/md5
                 "analysis_file": make_file_ref(_GEO_NAN),
             },
             _GEO_NAN,
+            _GEO_REF_WITH_META,
+        ),
+        # same file name (metrics re-derived from a cached CSV) keeps its Figshare ref
+        (
+            _FULL_METRICS,
+            {**_FULL_BLOCK, "analysis_file": _GEO_REF_WITH_META},
+            _GEO,
+            _GEO_REF_WITH_META,
         ),
     ],
+    ids=["fresh", "nan-renamed-file", "cached-keeps-ref"],
 )
 def test_write_geo_opt_metrics_to_yaml(
     metrics_data: dict[MbdKey | Key, float],
     expected_block: dict[MbdKey | Key | str, float | str | None],
     analysis_file_path: str,
+    existing_ref: dict[str, object] | None,
 ) -> None:
     """Test saving geometry optimization metrics to YAML files with edge cases."""
     symprec = 1e-2
@@ -130,8 +148,10 @@ def test_write_geo_opt_metrics_to_yaml(
         patch("builtins.open", mock_open()) as mock_file,
         patch("matbench_discovery.data.round_trip_yaml") as mock_yaml,
     ):
-        # Configure mock YAML load to return empty dict
-        mock_yaml.load.return_value = {}
+        prior_block = {"analysis_file": existing_ref} if existing_ref else {}
+        mock_yaml.load.return_value = {
+            "metrics": {"geo_opt": {symprec_key: prior_block}}
+        }
 
         # Call the function
         geo_opt.write_metrics_to_yaml(

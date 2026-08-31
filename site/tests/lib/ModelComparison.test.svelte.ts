@@ -47,6 +47,14 @@ beforeEach(() => {
 
 describe(`compare_cells`, () => {
   const field = as_models([0.5, 1, 2, 3, 7, null])
+  // compared models are field members where the value exists there (like active models on
+  // the real leaderboard), else stand-ins outside the field (superseded/deprecated models)
+  const pick = (vals: readonly unknown[]) =>
+    vals.map(
+      (val) =>
+        field.find((model) => (model as unknown as { val: unknown }).val === val) ??
+        as_models([val])[0],
+    )
   test.each([
     // ranks numbers against the field, flags the best compared value, passes text through
     [
@@ -62,10 +70,19 @@ describe(`compare_cells`, () => {
     ],
     // higher=better flips the rank; a lone numeric value is never "best"
     [`higher`, [3, `x`], [{ text: `3`, rank: 2, n: 5, best: false }, { text: `x` }]],
+    // a model outside the field is ranked against the field plus itself (never rank > n)
+    [
+      `lower`,
+      [10, 0.1],
+      [
+        { text: `10`, rank: 6, n: 6, best: false },
+        { text: `0.1`, rank: 1, n: 6, best: true },
+      ],
+    ],
     // rows without a direction get neither rank nor best
     [null, [3, 1], [{ text: `3` }, { text: `1` }]],
   ] as const)(`better=%s -> %j`, (better, values, expected) => {
-    expect(compare_cells(row(better), as_models([...values]), field)).toEqual(expected)
+    expect(compare_cells(row(better), pick(values), field)).toEqual(expected)
   })
 
   it(`renders text rows as parts and attaches titles to numeric cells`, () => {
@@ -89,15 +106,17 @@ describe(`compare_cells`, () => {
       title: (model) =>
         (model as unknown as { val: number }).val > 1 ? `big` : undefined,
     }
-    expect(compare_cells(titled_row, as_models([3, 1]), field)).toEqual([
+    expect(compare_cells(titled_row, pick([3, 1]), field)).toEqual([
       { text: `3`, title: `big`, rank: 4, n: 5, best: false },
       { text: `1`, rank: 2, n: 5, best: true },
     ])
   })
 
   it(`links training sets, papers, repos and authors of real models`, () => {
-    const model = MODELS.find((md) => md.paper && md.repo && md.authors[0].url)
-    if (!model) throw new Error(`no model with paper, repo and author URL`)
+    const model = MODELS.find(
+      (md) => md.paper && md.repo && md.authors[0].url && md.authors.length > 3,
+    )
+    if (!model) throw new Error(`no model with paper, repo, author URL and >3 authors`)
     const rows = Object.fromEntries(
       COMPARE_GROUPS[0].rows.map((cmp_row) => [
         cmp_row.key,
@@ -122,9 +141,7 @@ describe(`compare_cells`, () => {
       href: model.authors[0].url,
       title: model.authors[0].affiliation,
     })
-    if (model.authors.length > 3) {
-      expect(rows.authors.parts?.at(-1)?.text).toBe(`+${model.authors.length - 3} more`)
-    }
+    expect(rows.authors.parts?.at(-1)?.text).toBe(`+${model.authors.length - 3} more`)
     expect(rows.targets.parts).toEqual([
       { text: model.targets, title: expect.stringMatching(/^Energy/) },
     ])
@@ -158,21 +175,21 @@ describe(`bind_comparison_url`, () => {
   // simulate SvelteKit: its page.url is a $state.raw holding a fresh URL object per navigation
   // (kit/src/runtime/client/client.js), so swap the object, mirror it into location, then
   // fire the afterNavigate hooks registered by bind_comparison_url
-  const kit_page = new (class {
-    url = $state.raw(new URL(`http://localhost/`))
-  })()
+  let kit_url = $state.raw(new URL(`http://localhost/`))
   const hooks = vi.mocked(afterNavigate).mock.calls
   const navigate = (url: string, type: `enter` | `link`, from_hook = 0) => {
-    kit_page.url = new URL(url, `http://localhost`)
-    history.replaceState(null, ``, `${kit_page.url.pathname}${kit_page.url.search}`)
+    kit_url = new URL(url, `http://localhost`)
+    history.replaceState(null, ``, `${kit_url.pathname}${kit_url.search}`)
     for (const [callback] of hooks.slice(from_hook)) callback({ type } as never)
     flushSync()
   }
+  let cleanup = () => {}
 
   beforeEach(() => {
-    Object.defineProperty(page, `url`, { get: () => kit_page.url, configurable: true })
+    Object.defineProperty(page, `url`, { get: () => kit_url, configurable: true })
   })
   afterEach(() => {
+    cleanup() // tear down the effect root even when an assertion above it failed
     // back to the plain, assignable mock property other tests (and tests/index) rely on
     Object.defineProperty(page, `url`, {
       value: new URL(`http://localhost/`),
@@ -184,7 +201,7 @@ describe(`bind_comparison_url`, () => {
 
   it(`reads shared links, keeps the selection across in-app navigation and re-applies it`, () => {
     const n_hooks = hooks.length
-    const cleanup = $effect.root(() => bind_comparison_url())
+    cleanup = $effect.root(() => bind_comparison_url())
     navigate(`/?compare=${key_a},no-such-model,${key_b}`, `enter`, n_hooks)
     expect([...comparison.keys]).toEqual([key_a, key_b])
     expect(comparison.open).toBe(true) // shared link with >1 model opens the dialog
@@ -210,7 +227,6 @@ describe(`bind_comparison_url`, () => {
     navigate(`/?compare=${key_c}`, `enter`, n_hooks) // a single model is nothing to compare yet
     expect([...comparison.keys]).toEqual([key_c])
     expect(comparison.open).toBe(false)
-    cleanup()
   })
 })
 
@@ -225,7 +241,8 @@ describe(`ModelComparison dialog`, () => {
     expect(tray_text).toContain(`Pick a 2nd model`)
     expect(tray_text).toContain(`Open comparison`)
     document.querySelector<HTMLButtonElement>(`.tray button.open`)?.click()
-    // a few flushes: a reactive write-back loop would hang here instead of settling
+    // a few flushes: a reactive write-back loop would throw effect_update_depth_exceeded
+    // here instead of settling
     for (let idx = 0; idx < 5; idx++) await tick()
 
     expect(comparison.open).toBe(true)
@@ -285,10 +302,7 @@ describe(`ModelComparison dialog`, () => {
     mount(ModelComparison, { target: document.body })
     await tick()
     expect(document.querySelectorAll(`thead th a`)).toHaveLength(3)
-    // centered dialog (not a side sheet); dataset links stay in-app, paper/repo open new tabs
-    const dialog = document.querySelector(`dialog`)
-    expect(dialog?.classList.contains(`sheet`)).toBe(false)
-    expect(dialog?.getAttribute(`style`)).toContain(`--dialog-radius`)
+    // dataset links stay in-app, paper/repo open new tabs
     const data_links =
       document.querySelectorAll<HTMLAnchorElement>(`td a[href^="/data/"]`)
     expect(data_links.length).toBeGreaterThan(0)
@@ -296,12 +310,22 @@ describe(`ModelComparison dialog`, () => {
     const ext_link = document.querySelector<HTMLAnchorElement>(`td a[href^="http"]`)
     expect(ext_link?.target).toBe(`_blank`)
 
-    document
-      .querySelector<HTMLButtonElement>(`thead th button[aria-label^="Remove"]`)
-      ?.click()
+    const remove_first = () =>
+      document
+        .querySelector<HTMLButtonElement>(`thead th button[aria-label^="Remove"]`)
+        ?.click()
+    remove_first()
     await tick()
     expect([...comparison.keys]).toEqual([key_b, key_c])
     expect(document.querySelectorAll(`thead th a`)).toHaveLength(2)
+    // dropping to a single model mid-session must not yank focus to the picker (that
+    // only happens when the dialog is opened with <=1 models)
+    remove_first()
+    for (let idx = 0; idx < 3; idx++) await tick()
+    expect([...comparison.keys]).toEqual([key_c])
+    expect(document.activeElement).not.toBe(
+      document.querySelector(`dialog input[role="combobox"]`),
+    )
 
     // dropdown lists models by CPS (best first, gray score after the name) until the sort
     // toggle switches it to newest first
@@ -330,8 +354,17 @@ describe(`ModelComparison dialog`, () => {
     expect(option_labels()[0]).toContain(`${newest.model_name} `)
     expect(option_labels()[0]).toContain(`· ${newest.dates.benchmark_added}`)
 
-    comparison.open = false
+    // picking an option adds that model (MultiSelect's bind:selected writes back to the
+    // store), and the dialog's own close button closes it
+    document.querySelector<HTMLLIElement>(`dialog ul.options li`)?.click()
     await tick()
+    expect([...comparison.keys]).toEqual([key_c, newest.model_key])
+    expect(document.querySelectorAll(`thead th a`)).toHaveLength(2)
+    document
+      .querySelector<HTMLButtonElement>(`button[aria-label="Close model comparison"]`)
+      ?.click()
+    await tick()
+    expect(comparison.open).toBe(false)
     document
       .querySelector<HTMLButtonElement>(
         `.tray button[aria-label="Clear model comparison"]`,
