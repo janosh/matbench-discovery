@@ -887,23 +887,18 @@ describe(`MetricsTable`, () => {
       },
     )
 
-    it(`toggles models via the per-row compare button and the row context menu`, async () => {
+    it(`toggles models via the row context menu`, async () => {
       mount(MetricsTable, { target: document.body, props: { col_filter: () => true } })
       await tick()
       // the toolbar with the Compare button is opted out of matterviz's hover-reveal
       expect(document.querySelector(`.table-container.leaderboard`)).not.toBeNull()
 
       const [row_1, row_2] = get_rows()
-      const row_button = doc_query<HTMLButtonElement>(
-        `td[data-col="Model"] button.compact`,
-        row_1,
-      )
-      const name_1 = doc_query(`a[href^="/models/"]`, row_1).textContent
-      expect(row_button.getAttribute(`aria-label`)).toBe(`Compare ${name_1}`)
-      row_button.click()
+      // model cells hold only the link: no per-row buttons that could flash or take space
+      expect(row_1.querySelector(`td[data-col="Model"] button`)).toBeNull()
+      double_click_row(row_1)
       await tick()
       expect([...comparison.keys]).toEqual([row_key(row_1)])
-      expect(row_button.classList.contains(`selected`)).toBe(true)
 
       // right-clicking a non-link cell opens the row menu (deferred a tick past the
       // contextmenu event); links keep the browser's own menu

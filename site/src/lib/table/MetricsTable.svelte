@@ -10,7 +10,7 @@
 </script>
 
 <script lang="ts">
-  import { CompareToggle, ModelRowMenu, OrgLogos, TableControls } from '$lib'
+  import { ModelRowMenu, OrgLogos, TableControls } from '$lib'
   import { append_better_hint, metric_better_as } from '$lib/metrics'
   import { mark_compared_rows, toggle_row_model } from '$lib/model-comparison.svelte'
   import { make_table_filters } from '$lib/models.svelte'
@@ -179,13 +179,6 @@
   <OrgLogos org_logos={metrics_row.org_logos} authors={metrics_row.authors} />
 {/snippet}
 
-<!-- model link plus a compare button that appears on row hover -->
-{#snippet model_cell({ row, val }: CellSnippetArgs)}
-  {@const { model_key, model_name } = row as MetricsRow}
-  {@html String(val)}
-  <CompareToggle {model_key} {model_name} compact />
-{/snippet}
-
 {#snippet links_cell({ val }: CellSnippetArgs)}
   {@const links = val as LinkData}
   {#each resource_links as [key, title, icon] (key)}
@@ -217,7 +210,6 @@
     special_cells={{
       Links: links_cell,
       Org: affiliation_cell,
-      [model_name.label]: model_cell,
     }}
     show_row_numbers
     default_num_format=".3f"

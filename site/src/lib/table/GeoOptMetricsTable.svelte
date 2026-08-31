@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { CompareToggle, ModelRowMenu, TableControls } from '$lib'
+  import { ModelRowMenu, TableControls } from '$lib'
   import { mark_compared_rows, toggle_row_model } from '$lib/model-comparison.svelte'
   import { make_table_filters } from '$lib/models.svelte'
   import { METRICS_TABLE_ROOT_STYLE } from '$lib/table/MetricsTable.svelte'
   import type { SortState, UrlTableFilters } from '$lib/url-state.svelte'
   import type { Label, TableLabel } from '$lib/types'
-  import { HeatmapTable, type CellSnippetArgs, type RowData } from 'matterviz'
+  import { HeatmapTable, type RowData } from 'matterviz'
   import type { HTMLAttributes } from 'svelte/elements'
   import {
     ALL_METRICS,
@@ -101,19 +101,11 @@
   )
 </script>
 
-<!-- model link plus a compare button that appears on row hover -->
-{#snippet model_cell({ row, val }: CellSnippetArgs)}
-  {@const { model_key, model_name } = row as { model_key: string; model_name: string }}
-  {@html String(val)}
-  <CompareToggle {model_key} {model_name} compact />
-{/snippet}
-
 <ModelRowMenu>
   <HeatmapTable
     data={metrics_data as RowData[]}
     {columns}
     bind:sort
-    special_cells={{ [METADATA_COLS.model_name.label]: model_cell }}
     default_num_format=".3f"
     bind:column_order
     bind:show_heatmap={filters.show_heatmap}

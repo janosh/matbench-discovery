@@ -7,14 +7,11 @@
   let {
     model_key,
     model_name = model_key,
-    compact = false,
     open_dialog = false,
     ...rest
   }: HTMLButtonAttributes & {
     model_key: string
     model_name?: string
-    // icon-only variant for table rows: hidden until the row is hovered, unless selected
-    compact?: boolean
     // model pages: always add (never remove) the model and open the comparison dialog,
     // so the click lands the user in the picker instead of silently changing a set
     open_dialog?: boolean
@@ -38,7 +35,6 @@
 
 <button
   class:selected
-  class:compact
   aria-pressed={open_dialog ? undefined : selected}
   aria-label={open_dialog ? undefined : `${label} ${model_name}`}
   {title}
@@ -46,7 +42,7 @@
   {...rest}
 >
   <Icon icon={selected && !open_dialog ? Check : Scale} />
-  {#if !compact}{label}{/if}
+  {label}
 </button>
 
 <style>
@@ -63,24 +59,5 @@
   button.selected {
     color: var(--link-color);
     box-shadow: inset 0 0 0 1px var(--link-color);
-  }
-  /* row action: takes up its space always (no layout shift) but only shows on row hover,
-     keyboard focus, when selected, or on touch devices which have no hover */
-  button.compact {
-    margin-left: 4pt;
-    padding: 0 2pt;
-    background: none;
-    vertical-align: middle;
-    opacity: 0;
-    transition: opacity 0.15s;
-  }
-  :global(tr:is(:hover, :focus-within)) button.compact,
-  button.compact:is(.selected, :focus-visible) {
-    opacity: 1;
-  }
-  @media (hover: none) {
-    button.compact {
-      opacity: 1;
-    }
   }
 </style>
