@@ -1,4 +1,5 @@
 import { arr_to_str, DATASETS } from '$lib'
+import type { Dataset } from '$lib/types'
 import Page from '$routes/data/[slug]/+page.svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
@@ -33,7 +34,7 @@ describe(`Dataset Detail Page`, () => {
   it(`lists method params with title-cased keys and colon-safe values`, () => {
     const dataset = DATASETS.WBM
     if (!dataset) throw new Error(`WBM not found in DATASETS`)
-    const params = {
+    const params: Dataset[`params`] = {
       code: `VASP`,
       cutoff_energy: `520 eV: hard`,
       pseudopotentials: [`PBE`],
