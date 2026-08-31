@@ -19,7 +19,7 @@
   import { tick, untrack } from 'svelte'
   import { Dialog, Icon, MultiSelect, type Option } from 'svelte-widgets'
   import { tooltip } from 'svelte-widgets/attachments'
-  import { Cross, Scale } from 'svelte-widgets/icons'
+  import { Cross } from 'svelte-widgets/icons'
 
   let models = $derived(comparison.models)
   let n_models = $derived(models.length)
@@ -65,7 +65,6 @@
       void tick().then(() => picker_input?.focus())
     }
   })
-  const MAX_TRAY_CHIPS = 4
 
   // --- cost vs accuracy scatter: whole leaderboard in grey, compared models on top ---
   const all_rows = COMPARE_GROUPS.flatMap((group) => group.rows)
@@ -133,49 +132,6 @@
   aria-label="Model comparison"
   style="--dialog-width: min(68rem, calc(100vw - 2rem)); --dialog-radius: 12px; --dialog-bg: var(--page-bg); --dialog-section-padding: 0.5rem 1rem 0; --dialog-content-padding: 0 1rem 1rem; min-height: min(65vh, calc(100vh - 2rem))"
 >
-  <!-- selection tray: shows up with the first pick so the next step is never a guess -->
-  {#snippet trigger(trigger_props)}
-    {#if n_models > 0 && !comparison.open}
-      <div class="tray">
-        <!-- text-only live region: a status role on the whole tray would re-announce every
-        chip and button label on each add/remove -->
-        <span class="visually-hidden" role="status">
-          {n_models}
-          {n_models === 1 ? `model` : `models`} selected for comparison
-        </span>
-        <ul>
-          {#each models.slice(0, MAX_TRAY_CHIPS) as model (model.model_key)}
-            <li>
-              <span style:color={model.color} aria-hidden="true">●</span>
-              {model.model_name}
-              <button
-                aria-label="Remove {model.model_name} from comparison"
-                onclick={() => comparison.toggle(model.model_key)}
-              >
-                <Icon icon={Cross} />
-              </button>
-            </li>
-          {/each}
-          {#if n_models > MAX_TRAY_CHIPS}
-            <li>+{n_models - MAX_TRAY_CHIPS} more</li>
-          {/if}
-        </ul>
-        {#if n_models === 1}
-          <span class="hint">Pick a 2nd model to compare against</span>
-        {/if}
-        <button class="open" {...trigger_props}>
-          <Icon icon={Scale} />
-          {n_models === 1 ? `Open comparison` : `Compare ${n_models} models →`}
-        </button>
-        <button
-          aria-label="Clear model comparison"
-          onclick={() => comparison.keys.clear()}
-        >
-          <Icon icon={Cross} />
-        </button>
-      </div>
-    {/if}
-  {/snippet}
   {#snippet header({ close })}
     <div class="head">
       <h2>Compare models</h2>
@@ -357,64 +313,6 @@
 </Dialog>
 
 <style>
-  .tray {
-    position: fixed;
-    z-index: 20;
-    inset: auto 0 1rem;
-    width: fit-content;
-    max-width: calc(100vw - 2rem);
-    margin-inline: auto;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 0.3em 0.6em;
-    padding: 0.4em 0.5em 0.4em 0.7em;
-    border: 1px solid var(--link-color);
-    border-radius: 2em;
-    background: var(--page-bg);
-    box-shadow: 0 4px 18px var(--shadow);
-    font-size: 0.95em;
-    transition:
-      translate 0.25s,
-      opacity 0.25s;
-    @starting-style {
-      translate: 0 1rem;
-      opacity: 0;
-    }
-  }
-  .tray ul {
-    display: contents;
-  }
-  .tray li {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3em;
-    padding: 0.1em 0.2em 0.1em 0.5em;
-    border-radius: 1em;
-    background: var(--chip-bg);
-    white-space: nowrap;
-  }
-  .tray .hint {
-    color: var(--text-secondary);
-  }
-  .tray .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-  }
-  .tray button.open {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4em;
-    padding: 0.4em 0.9em;
-    border-radius: 2em;
-    background: var(--link-color);
-    color: var(--page-bg);
-    font-weight: 600;
-  }
   .head {
     display: flex;
     flex-wrap: wrap;
@@ -429,7 +327,7 @@
   button {
     background: transparent;
   }
-  :is(.head, thead, .tray) button {
+  :is(.head, thead) button {
     padding: 3pt;
     vertical-align: middle;
   }

@@ -235,12 +235,10 @@ describe(`ModelComparison dialog`, () => {
     comparison.toggle(key_a)
     mount(ModelComparison, { target: document.body })
     await tick()
-    // a lone pick shows the tray with its chip and a hint about the next step
-    const tray_text = document.querySelector(`.tray`)?.textContent ?? ``
-    expect(tray_text).toContain(MODELS[0].model_name)
-    expect(tray_text).toContain(`Pick a 2nd model`)
-    expect(tray_text).toContain(`Open comparison`)
-    document.querySelector<HTMLButtonElement>(`.tray button.open`)?.click()
+    // a selection alone renders nothing outside the dialog (no floating tray)
+    expect(document.querySelector(`dialog[open]`)).toBeNull()
+    expect(document.body.textContent).not.toContain(MODELS[0].model_name)
+    comparison.open = true
     // a few flushes: a reactive write-back loop would throw effect_update_depth_exceeded
     // here instead of settling
     for (let idx = 0; idx < 5; idx++) await tick()
@@ -249,31 +247,10 @@ describe(`ModelComparison dialog`, () => {
     expect([...comparison.keys]).toEqual([key_a])
     const header_cells = [...document.querySelectorAll(`thead th a`)]
     expect(header_cells.map((el) => el.textContent)).toEqual([MODELS[0].model_name])
-    expect(document.querySelector(`.tray`)).toBeNull() // hidden while the dialog is open
     // with nothing to compare yet, the model picker is the next step and takes focus
     expect(document.activeElement).toBe(
       document.querySelector(`dialog input[role="combobox"]`),
     )
-  })
-
-  it(`tray lists chips with remove buttons and counts the rest`, async () => {
-    const keys = MODELS.slice(0, 6).map((model) => model.model_key)
-    comparison.set(keys)
-    mount(ModelComparison, { target: document.body })
-    await tick()
-    const chips = () => [...document.querySelectorAll(`.tray li`)]
-    expect(chips().map((li) => li.textContent?.trim())).toEqual([
-      ...MODELS.slice(0, 4).map((model) => `● ${model.model_name}`),
-      `+2 more`,
-    ])
-    expect(document.querySelector(`.tray button.open`)?.textContent).toContain(
-      `Compare 6 models`,
-    )
-    expect(document.querySelector(`.tray .hint`)).toBeNull()
-    chips()[1].querySelector(`button`)?.click()
-    await tick()
-    expect([...comparison.keys]).toEqual(keys.filter((key) => key !== keys[1]))
-    expect(chips()).toHaveLength(5) // 4 chips + "+1 more"
   })
 
   it(`CompareToggle in open_dialog mode adds the model and opens the dialog`, async () => {
@@ -296,7 +273,7 @@ describe(`ModelComparison dialog`, () => {
     expect([...comparison.keys]).toEqual([key_a, key_b])
   })
 
-  it(`removes models via the header buttons and clears via the tray`, async () => {
+  it(`removes models via the header buttons and adds via the picker`, async () => {
     comparison.set([key_a, key_b, key_c])
     comparison.open = true
     mount(ModelComparison, { target: document.body })
@@ -365,14 +342,6 @@ describe(`ModelComparison dialog`, () => {
       ?.click()
     await tick()
     expect(comparison.open).toBe(false)
-    document
-      .querySelector<HTMLButtonElement>(
-        `.tray button[aria-label="Clear model comparison"]`,
-      )
-      ?.click()
-    await tick()
-    expect(comparison.keys.size).toBe(0)
-    expect(document.querySelector(`.tray`)).toBeNull()
   })
 
   it(`picks scatter axes via selects, y defaulting to the current task page's metric`, async () => {
