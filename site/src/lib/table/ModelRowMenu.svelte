@@ -55,14 +55,21 @@
     event.preventDefault()
     event.stopPropagation() // capture phase: preempts HeatmapTable's column menu
     model_key = href.slice(`/models/`.length)
-    const point = { x: event.clientX, y: event.clientY }
-    // Chromium fires contextmenu before pointerup; opening now would let that pointerup
-    // light-dismiss the menu it just opened
-    setTimeout(() => (at = point), 0)
+    at = { x: event.clientX, y: event.clientY }
   }
 </script>
 
 <div style="display: contents" oncontextmenucapture={open_menu}>
   {@render children()}
 </div>
-<ActionMenu {actions} bind:at trigger="none" aria-label="Model row actions" />
+<!-- press dismissal (pointerdown outside or Escape) instead of the popover's native
+light-dismiss: on macOS/Linux contextmenu fires on mousedown, so the same gesture's mouseup
+would otherwise close the menu it just opened. Sized like the table rather than body prose. -->
+<ActionMenu
+  {actions}
+  bind:at
+  trigger="none"
+  dismiss={{ dismiss_on: `press` }}
+  aria-label="Model row actions"
+  style="font-size: 0.85em"
+/>
