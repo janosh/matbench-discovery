@@ -64,12 +64,13 @@
 </div>
 <!-- press dismissal (pointerdown outside or Escape) instead of the popover's native
 light-dismiss: on macOS/Linux contextmenu fires on mousedown, so the same gesture's mouseup
-would otherwise close the menu it just opened. Sized like the table rather than body prose. -->
+would otherwise close the menu it just opened. Sized like the table rather than body prose;
+svelte-widgets' menu padding (3pt) and item padding (2pt 6pt) defaults are overridden. -->
 <ActionMenu
   {actions}
   bind:at
   trigger="none"
   dismiss={{ dismiss_on: `press` }}
   aria-label="Model row actions"
-  style="font-size: 0.85em"
+  style="font-size: 12px; --action-menu-padding: 0; --action-menu-item-padding: 3pt 8pt; --action-menu-z-index: 200"
 />
