@@ -62,6 +62,26 @@ if (!(`showPopover` in HTMLElement.prototype)) {
   })
 }
 
+// happy-dom stubs `nodeName` as '' on Node.prototype and overrides it per subclass
+// (Element, Text, ...). DOMPurify >= 3.4 reads nodeName through the Node.prototype getter
+// it cached at construction (clobber-safe), so under happy-dom every node looks nameless
+// and gets stripped, e.g. matterviz's sanitize_html(`r<sub>cut</sub>`) -> `cut`. Route the
+// base getter to the nearest subclass getter so table headers keep their leading text.
+if (Object.getOwnPropertyDescriptor(Node.prototype, `nodeName`)?.get?.call({}) === ``) {
+  Object.defineProperty(Node.prototype, `nodeName`, {
+    configurable: true,
+    get(this: Node): string {
+      let proto: object | null = Object.getPrototypeOf(this)
+      while (proto && proto !== Node.prototype) {
+        const getter = Object.getOwnPropertyDescriptor(proto, `nodeName`)?.get
+        if (getter) return getter.call(this)
+        proto = Object.getPrototypeOf(proto)
+      }
+      return ``
+    },
+  })
+}
+
 // Hoisted mocks for SvelteKit $app modules - more efficient than vi.mock at top level
 const app_mocks = vi.hoisted(() => ({
   state: {

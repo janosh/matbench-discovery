@@ -66,12 +66,17 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
     geo_opt_path = write_geo_opt_file(tmp_path / "model", material_ids)
     analysis_name = f"2026-07-01-geo-opt-symprec=1e-2-moyo={MOYO_VERSION}.csv.gz"
     full_csv_path = tmp_path / "model" / analysis_name
-    debug_csv_path = tmp_path / "model" / "debug" / analysis_name
+    debug_csv_path = tmp_path / "model" / "debug" / str(debug_mode) / analysis_name
     expected_csv_path = debug_csv_path if debug_mode else full_csv_path
     n_analyzed = debug_mode or len(material_ids)
     if cached:
         expected_csv_path.parent.mkdir(parents=True, exist_ok=True)
         fake_analysis(material_ids[:n_analyzed]).to_csv(expected_csv_path)
+    if debug_mode:
+        # a cached CSV from a different subset size must not be picked up
+        other_debug_csv = tmp_path / "model" / "debug" / "10" / analysis_name
+        other_debug_csv.parent.mkdir(parents=True)
+        fake_analysis(material_ids[:4]).to_csv(other_debug_csv)
 
     def fake_pred_vs_ref(
         df_model_analysis: pd.DataFrame, *_args: object, **_kwargs: object
@@ -121,4 +126,6 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
         mock_write.assert_not_called()
     else:
         mock_write.assert_called_once()
-        assert mock_write.call_args.args[3] == str(full_csv_path)
+        # script joins with "/", so normalize before comparing (Windows uses "\")
+        written_csv_path = os.path.normpath(mock_write.call_args.args[3])
+        assert written_csv_path == os.path.normpath(full_csv_path)

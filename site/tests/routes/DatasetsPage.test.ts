@@ -89,9 +89,9 @@ describe(`Datasets Page`, () => {
       .flatMap((dataset) => [dataset.native_api, dataset.optimade_api])
       .filter((href): href is string => Boolean(href))
       .toSorted(by_string)
-    expect(api_links.map((link) => link.href).toSorted(by_string)).toStrictEqual(
-      expected_api_hrefs,
-    )
+    // raw attribute, since `.href` normalizes bare origins with a trailing slash
+    const api_hrefs = api_links.map((link) => link.getAttribute(`href`) ?? ``)
+    expect(api_hrefs.toSorted(by_string)).toStrictEqual(expected_api_hrefs)
 
     for (const link of api_links) {
       expect(link.getAttribute(`target`)).toBe(`_blank`)
