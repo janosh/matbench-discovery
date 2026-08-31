@@ -259,7 +259,7 @@
     onclick={() => (comparison.open = true)}
     title={selected_count
       ? `Open the side-by-side comparison of the ${selected_count} selected model${selected_count === 1 ? `` : `s`}`
-      : `Compare models side by side. Select them by hovering a row and clicking its ⚖ button, right-clicking a row, or double-clicking it`}
+      : `Compare models side by side. Select them by double-clicking a row or from its right-click menu`}
     {@attach tooltip()}
   >
     <Icon icon={Scale} /> Compare{selected_count ? ` (${selected_count})` : ``}
