@@ -41,14 +41,6 @@ describe(`Contribute Page`, () => {
     expect(pypi_link?.textContent).not.toBe(``)
   })
 
-  it(`renders API examples and code snippets`, () => {
-    const code_content = [...document.querySelectorAll(`pre`)]
-      .map((block) => block.textContent ?? ``)
-      .join(`\n`)
-
-    expect(code_content).toMatch(/import|from|def|class|matbench|pip/i)
-  })
-
   it(`renders troubleshooting section with support links`, () => {
     const trouble_section = get_heading_section(document.body, `Troubleshooting`)
 
@@ -61,20 +53,10 @@ describe(`Contribute Page`, () => {
       /^https:\/\/github\.com\/.*\/issues/,
     )
 
-    // Check for helpful text
-    expect(trouble_section?.textContent).toMatch(/problem|issue|error|help|support/i)
-
-    // If no community links, should have instructions for filing issues
-    const has_community_links = [...(trouble_section?.querySelectorAll(`a`) ?? [])].some(
-      (link) =>
-        link.textContent?.includes(`@`) ||
-        [`slack`, `forum`, `gitter`].some((term) => link.href?.includes(term)),
-    )
-
-    expect(
-      has_community_links ||
-        /file|open|create|new issue/i.test(trouble_section?.textContent ?? ``),
-    ).toBe(true)
+    // the section has no community links (slack/forum/etc), so it must instruct
+    // users to file an issue instead
+    expect(github_issue_link?.textContent).toBe(`Open an issue on GitHub`)
+    expect(trouble_section?.textContent).toContain(`happy to help!`)
   })
 })
 

@@ -24,6 +24,25 @@ export const RANKED_METRICS: (Label & { rank_href: string })[] = [
   },
 ]
 
+// Mix theme-aware link blue (best) through muted purple to red (worst).
+export const rank_color = (rank: number, n_models: number): string => {
+  const frac = n_models > 1 ? (rank - 1) / (n_models - 1) : 0
+  return `color-mix(in oklab, var(--link-color) ${Math.round(100 * (1 - frac))}%, hsl(0, 65%, 45%))`
+}
+
+// 1-based competition rank of `value` among `all_values` (ties share the better rank);
+// n_models counts the values ranked against, which must include `value` itself
+export const competition_rank = (
+  value: number,
+  all_values: readonly number[],
+  better: Label[`better`],
+) => {
+  const n_better = all_values.filter((other) =>
+    better === `lower` ? other < value : other > value,
+  ).length
+  return { rank: n_better + 1, n_models: all_values.length }
+}
+
 // Compute the model's rank among `models` for each metric it has a value for.
 // Resolve the model from the supplied cohort so computed-on-the-fly scores are used.
 export function model_metric_ranks<M extends Label>(
@@ -41,11 +60,6 @@ export function model_metric_ranks<M extends Label>(
     const all_values = models
       .map((entry) => get_nested_number(entry, path))
       .filter(is_finite_num)
-    const n_better = all_values.filter((other) =>
-      metric.better === `lower` ? other < value : other > value,
-    ).length
-    // rank is 1-based competition ranking (ties share the better rank);
-    // n_models counts models with a finite value for this metric
-    return [{ metric, rank: n_better + 1, n_models: all_values.length, value }]
+    return [{ metric, ...competition_rank(value, all_values, metric.better), value }]
   })
 }

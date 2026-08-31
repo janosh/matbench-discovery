@@ -30,6 +30,7 @@ const mount_table = (): HTMLTableElement => {
           <th>Links</th>
           <th>CPS</th>
           <th>R<sup>2</sup></th>
+          <th>Params</th>
         </tr>
       </thead>
       <tbody>
@@ -42,6 +43,7 @@ const mount_table = (): HTMLTableElement => {
           <td><a href="https://example.com">Link</a></td>
           <td data-sort-value="1.235">1.235</td>
           <td>0.75</td>
+          <td><span title="4,700,000 params" data-sort-value="4700000">4.7M</span></td>
         </tr>
         <tr>
           <td class="row-num-col">2</td>
@@ -52,6 +54,7 @@ const mount_table = (): HTMLTableElement => {
           <td><a href="https://example.org">Link</a></td>
           <td data-sort-value="0.987">0.987</td>
           <td>0.25</td>
+          <td><span data-sort-value="900">900</span></td>
         </tr>
       </tbody>
     </table>
@@ -147,12 +150,17 @@ describe(`Table Export Functionality`, () => {
     expect(click_spy).toHaveBeenCalled()
 
     const csv_content = await exported_blob().text()
-    expect(csv_content).toContain(`Model,F1,DAF,CPS,R2`)
+    expect(csv_content).toContain(`Model,F1,DAF,CPS,R2,Params`)
     expect(csv_content).not.toContain(`Org`)
     expect(csv_content).not.toContain(`Links`)
     expect(csv_content).not.toContain(`#`) // rank column excluded
     expect(csv_content).toContain(`Model A`)
     expect(csv_content).toContain(`"Model ""Special"""`)
+    // HTML-string cells carry their raw value on an inner span, not the <td>: export the
+    // unformatted number (rendered per the Params '~s' spec) rather than the display text
+    expect(csv_content).toContain(`4.70e+6`)
+    expect(csv_content).not.toContain(`4.7M`)
+    expect(csv_content).toContain(`,900`)
   })
 
   it(`cleans text cells: ignores data-sort-value="null", collapses whitespace, decodes entities`, async () => {

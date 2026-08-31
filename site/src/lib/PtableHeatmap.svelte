@@ -1,5 +1,6 @@
 <script lang="ts">
   import { PtableInset } from '$lib'
+  import { extent } from 'd3-array'
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
   import { ColorBar, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -12,7 +13,7 @@
     log = $bindable(false),
     colorbar = {},
     ...rest
-  }: ComponentProps<typeof PeriodicTable> & {
+  }: Omit<ComponentProps<typeof PeriodicTable>, `heatmap_values`> & {
     heatmap_values: Record<ElementSymbol, number>
     color_scale?: D3InterpolateName
     active_element?: ChemicalElement | null
@@ -20,11 +21,15 @@
     colorbar?: ComponentProps<typeof ColorBar>
   } = $props()
 
-  export const snapshot = {
-    capture: () => ({ color_scale, log }),
-    restore: (values: { color_scale: D3InterpolateName; log: boolean }) =>
-      ({ color_scale, log } = values),
-  }
+  // legend span mirrors the tile color ramp: PeriodicTable spans the finite data extent
+  // and drops non-positive values in log mode (they have no log image)
+  let colorbar_range = $derived.by((): [number, number] => {
+    const finite_values = Object.values(heatmap_values).filter(
+      (value) => Number.isFinite(value) && (!log || value > 0),
+    )
+    const [min, max] = extent(finite_values)
+    return [min ?? 0, max ?? 0]
+  })
 </script>
 
 <PeriodicTable
@@ -39,8 +44,8 @@
   {#snippet inset()}
     {@const style = `height: 1.5em; visibility: ${active_element ? `visible` : `hidden`};`}
     <TableInset>
-      <label for="log">
-        Log color scale<input id="log" type="checkbox" bind:checked={log} />
+      <label>
+        Log color scale<input type="checkbox" bind:checked={log} />
       </label>
       {#if active_element}
         <PtableInset element={active_element} elem_counts={heatmap_values} {style} />
@@ -51,8 +56,9 @@
         title="Count"
         title_side="top"
         scale={color_scale}
+        scale_type={log ? `log` : `linear`}
         tick_labels={5}
-        range={[0, Math.max(0, ...(Object.values(heatmap_values) as number[]))]}
+        range={colorbar_range}
         style="width: 85%; margin: 0 2em 2em"
         {...colorbar}
       />

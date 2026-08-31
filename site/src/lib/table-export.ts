@@ -352,8 +352,12 @@ function extract_table_data(): { headers: string[]; rows: (string | number)[][] 
 // Convert a table cell to its exported value: numbers (from data-sort-value or
 // text) are formatted per the column's label spec; otherwise return cleaned text
 function format_cell(cell: Element, header: string): string | number {
-  // Prefer data-sort-value attribute (holds the unformatted number)
-  const sort_value = cell.getAttribute(`data-sort-value`)
+  // Prefer data-sort-value attribute (holds the unformatted number). HeatmapTable leaves
+  // it null on the <td> for HTML-string cells, whose raw value metrics.ts puts on an
+  // inner <span data-sort-value> instead (model_params, training set, r_cut, ...)
+  const sort_value =
+    cell.getAttribute(`data-sort-value`) ??
+    cell.querySelector(`[data-sort-value]`)?.getAttribute(`data-sort-value`)
   if (sort_value && sort_value !== `null`) {
     const num_value = Number(sort_value)
     return isNaN(num_value) ? sort_value : format_value_for_export(num_value, header)

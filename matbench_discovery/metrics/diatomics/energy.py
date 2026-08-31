@@ -8,21 +8,16 @@ PBE_WALL_ENERGY_THRESHOLDS_EV: tuple[float, ...] = (1, 5, 10, 20, 50, 100)
 
 
 def _validate_diatomic_curve(
-    xs: ArrayLike,
-    ys: ArrayLike,
-    *,
-    normalize_energy: bool = False,
+    xs: ArrayLike, ys: ArrayLike
 ) -> tuple[np.ndarray, np.ndarray]:
     """Validate curve input data.
 
     Args:
         xs (ArrayLike[float]): interatomic distances
         ys (ArrayLike[Any]): Energies or forces
-        normalize_energy (bool): Whether to shift energies to zero at largest separation
-            distance (far field). Only applies when ys are energies, not forces.
 
     Returns:
-        tuple[np.ndarray, np.ndarray]: Validated and sorted x and y arrays
+        tuple[np.ndarray, np.ndarray]: Validated x and y arrays sorted by ascending x
 
     Raises:
         ValueError: If input data is invalid
@@ -45,90 +40,74 @@ def _validate_diatomic_curve(
         raise ValueError(f"xs contains {len(xs_arr) - n_unique} duplicates")
 
     sort_idx = np.argsort(xs_arr)  # ascending order
-    xs_arr = xs_arr[sort_idx]
-    ys_arr = ys_arr[sort_idx]
-
-    # If these are energies (rank 1 array), normalize to zero at far field
-    if normalize_energy and ys_arr.ndim == 1:
-        # shift to zero at largest separation (last after ascending sort)
-        ys_arr = ys_arr - ys_arr[-1]
-
-    return xs_arr, ys_arr
+    return xs_arr[sort_idx], ys_arr[sort_idx]
 
 
 def _validate_curve_pair(
     seps_ref: ArrayLike,
-    e_ref: ArrayLike,
+    ys_ref: ArrayLike,
     seps_pred: ArrayLike,
-    e_pred: ArrayLike,
+    ys_pred: ArrayLike,
     *,
     interpolate: bool | int,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Validate/sort a ref/pred curve pair, requiring same x-grid if not
-    interpolating. Returns sorted (seps_ref, e_ref, seps_pred, e_pred) arrays.
+    interpolating. Returns sorted (seps_ref, ys_ref, seps_pred, ys_pred) arrays.
     """
-    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref, normalize_energy=False)
-    seps_pred, e_pred = _validate_diatomic_curve(
-        seps_pred, e_pred, normalize_energy=False
-    )
+    seps_ref, ys_ref = _validate_diatomic_curve(seps_ref, ys_ref)
+    seps_pred, ys_pred = _validate_diatomic_curve(seps_pred, ys_pred)
     if not interpolate and not np.array_equal(seps_ref, seps_pred):
         raise ValueError(
             f"Reference and predicted distances must be same when {interpolate=}\n"
             f"{seps_ref=}, {seps_pred=}"
         )
-    return seps_ref, e_ref, seps_pred, e_pred
+    return seps_ref, ys_ref, seps_pred, ys_pred
 
 
-def _interp_common_grid(
-    seps_ref: np.ndarray,
-    e_ref: np.ndarray,
-    seps_pred: np.ndarray,
-    e_pred: np.ndarray,
-    seps_min: float,
-    seps_max: float,
-    *,
-    interpolate: bool | int,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Interpolate both curves onto a shared linspace grid, returning the grid
-    points and both curves' energies on it.
+def _interp_curve(seps_new: np.ndarray, seps: np.ndarray, ys: np.ndarray) -> np.ndarray:
+    """Linearly interpolate a curve onto new distances, one trailing component at a
+    time so energies (n_seps,) and forces (n_seps, n_atoms, 3) share one code path.
     """
-    n_points = 100 if interpolate is True else int(interpolate)
-    seps_interp = np.linspace(seps_min, seps_max, n_points)
-    e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
-    e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
-    return seps_interp, e_ref_interp, e_pred_interp
+    ys_columns = ys.reshape(len(seps), -1)
+    ys_interp = np.stack(
+        [np.interp(seps_new, seps, column) for column in ys_columns.T], axis=1
+    )
+    return ys_interp.reshape(len(seps_new), *ys.shape[1:])
 
 
-def _common_grid_energy_pair(
+def _common_grid_pair(
     seps_ref: ArrayLike,
-    energy_ref: ArrayLike,
+    ys_ref: ArrayLike,
     seps_pred: ArrayLike,
-    energy_pred: ArrayLike,
+    ys_pred: ArrayLike,
     *,
     interpolate: bool | int,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Return ref/pred energies on their shared distance range."""
-    seps_ref, energy_ref, seps_pred, energy_pred = _validate_curve_pair(
-        seps_ref, energy_ref, seps_pred, energy_pred, interpolate=interpolate
+    """Return ref/pred energies or forces on their shared distance range.
+
+    Without interpolation both curves must share one distance grid, which is returned
+    as is. Otherwise both are interpolated onto a linspace of 100 (interpolate=True)
+    or `interpolate` points spanning the overlap of the sampled ranges.
+    """
+    seps_ref, ys_ref, seps_pred, ys_pred = _validate_curve_pair(
+        seps_ref, ys_ref, seps_pred, ys_pred, interpolate=interpolate
     )
     if not interpolate:
-        return seps_ref, energy_ref, energy_pred
+        return seps_ref, ys_ref, ys_pred
 
     data_min = max(seps_ref.min(), seps_pred.min())
     data_max = min(seps_ref.max(), seps_pred.max())
+    # >= (not >) to also reject a single shared point: interpolating one point across
+    # a grid is meaningless.
     if data_min >= data_max:
         raise ValueError(
             f"Cannot interpolate curves with no overlap: {data_min=}, {data_max=}"
         )
-    return _interp_common_grid(
-        seps_ref,
-        energy_ref,
-        seps_pred,
-        energy_pred,
-        data_min,
-        data_max,
-        interpolate=interpolate,
-    )
+    n_points = 100 if interpolate is True else int(interpolate)
+    seps_interp = np.linspace(data_min, data_max, n_points)
+    ys_ref_interp = _interp_curve(seps_interp, seps_ref, ys_ref)
+    ys_pred_interp = _interp_curve(seps_interp, seps_pred, ys_pred)
+    return seps_interp, ys_ref_interp, ys_pred_interp
 
 
 def _binding_energy(energies: np.ndarray) -> float:
@@ -140,7 +119,7 @@ def _quadratic_well_fit(
     seps: ArrayLike, energies: ArrayLike, n_fit_points: int = 5
 ) -> tuple[float, float]:
     """Estimate equilibrium separation and curvature from a local quadratic fit."""
-    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
+    seps, energies = _validate_diatomic_curve(seps, energies)
     min_idx = int(np.argmin(energies))
     if len(seps) < 3:
         return float(seps[min_idx]), np.nan
@@ -168,7 +147,7 @@ def _repulsive_radius_at_threshold(
     seps: ArrayLike, energies: ArrayLike, threshold_ev: float
 ) -> float:
     """Invert the repulsive branch to r at E_min + threshold_ev."""
-    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
+    seps, energies = _validate_diatomic_curve(seps, energies)
     min_idx = int(np.argmin(energies))
     if min_idx == 0:
         return np.nan
@@ -219,7 +198,7 @@ def calc_pbe_energy_mae(
     interpolate: bool | int = 200,
 ) -> float:
     """Mean absolute PBE energy error after aligning both curves at dissociation."""
-    _, energy_ref, energy_pred = _common_grid_energy_pair(
+    _, energy_ref, energy_pred = _common_grid_pair(
         seps_ref, energy_ref, seps_pred, energy_pred, interpolate=interpolate
     )
     energy_ref = energy_ref - energy_ref[-1]
@@ -236,12 +215,8 @@ def calc_pbe_bond_length_error(
     min_ref_binding_ev: float = 0.05,
 ) -> float:
     """Absolute equilibrium bond-length error relative to PBE."""
-    seps_ref, energy_ref = _validate_diatomic_curve(
-        seps_ref, energy_ref, normalize_energy=False
-    )
-    seps_pred, energy_pred = _validate_diatomic_curve(
-        seps_pred, energy_pred, normalize_energy=False
-    )
+    seps_ref, energy_ref = _validate_diatomic_curve(seps_ref, energy_ref)
+    seps_pred, energy_pred = _validate_diatomic_curve(seps_pred, energy_pred)
     if _binding_energy(energy_ref) < min_ref_binding_ev:
         return np.nan
     ref_dist = _quadratic_well_fit(seps_ref, energy_ref)[0]
@@ -258,12 +233,8 @@ def calc_pbe_well_depth_error(
     min_ref_binding_ev: float = 0.05,
 ) -> float:
     """Absolute well-depth error, D_e = E(r_max) - E_min, relative to PBE."""
-    _, energy_ref = _validate_diatomic_curve(
-        seps_ref, energy_ref, normalize_energy=False
-    )
-    _, energy_pred = _validate_diatomic_curve(
-        seps_pred, energy_pred, normalize_energy=False
-    )
+    _, energy_ref = _validate_diatomic_curve(seps_ref, energy_ref)
+    _, energy_pred = _validate_diatomic_curve(seps_pred, energy_pred)
     ref_depth = _binding_energy(energy_ref)
     if ref_depth < min_ref_binding_ev:
         return np.nan
@@ -293,12 +264,8 @@ def calc_pbe_vib_freq_error(
     min_ref_binding_ev: float = 0.05,
 ) -> float:
     """Absolute harmonic vibrational-frequency error near the PBE well."""
-    seps_ref, energy_ref = _validate_diatomic_curve(
-        seps_ref, energy_ref, normalize_energy=False
-    )
-    seps_pred, energy_pred = _validate_diatomic_curve(
-        seps_pred, energy_pred, normalize_energy=False
-    )
+    seps_ref, energy_ref = _validate_diatomic_curve(seps_ref, energy_ref)
+    seps_pred, energy_pred = _validate_diatomic_curve(seps_pred, energy_pred)
     if _binding_energy(energy_ref) < min_ref_binding_ev:
         return np.nan
     ref_curvature = _quadratic_well_fit(seps_ref, energy_ref)[1]
@@ -327,7 +294,7 @@ def calc_tortuosity(seps: ArrayLike, energies: ArrayLike) -> float:
     Returns:
         float: tortuosity value (ratio of total variation to direct energy difference).
     """
-    _, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
+    _, energies = _validate_diatomic_curve(seps, energies)
 
     tv_energy = np.sum(np.abs(np.diff(energies)))
     e_min = np.min(energies)
@@ -369,7 +336,7 @@ def calc_energy_diff_flips(seps: ArrayLike, energies: ArrayLike) -> float:
     Returns:
         float: Number of energy difference sign flips.
     """
-    _, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
+    _, energies = _validate_diatomic_curve(seps, energies)
     _, _, flips = _threshold_diff_signs(energies)
     return float(np.sum(flips))
 
@@ -385,6 +352,6 @@ def calc_energy_jump(seps: ArrayLike, energies: ArrayLike) -> float:
     Returns:
         float: Sum of absolute energy differences at flip points.
     """
-    _, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
+    _, energies = _validate_diatomic_curve(seps, energies)
     diffs, _, flips = _threshold_diff_signs(energies)
     return float(np.abs(diffs[:-1][flips]).sum() + np.abs(diffs[1:][flips]).sum())

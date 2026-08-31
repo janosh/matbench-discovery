@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from itertools import pairwise
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -302,12 +302,12 @@ def _best_neighbor_spin_replacement(
             candidates.append((spin, candidate))
     if not candidates:
         return "", None
-    return min(
-        candidates,
-        key=lambda item: abs(
-            point_energy(cast("CurvePoint", item[1])) - expected_energy
-        ),
+    # bind before returning so the lambda's item type comes from candidates, not from
+    # the declared `CurvePoint | None` return type
+    spin, best_point = min(
+        candidates, key=lambda item: abs(point_energy(item[1]) - expected_energy)
     )
+    return spin, best_point
 
 
 def merge_postprocessed_min_energy_curve(

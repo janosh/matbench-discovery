@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import h5py
 import numpy as np
 import pytest
 from ase import Atoms
@@ -89,9 +90,11 @@ def test_trajectory_hdf5_roundtrip(tmp_path: Path, *, results: bool) -> None:
     """Full and strided HDF5 reads reproduce the written arrays exactly."""
     traj = make_traj(n_frames=20, n_atoms=5, results=results)
     path = str(tmp_path / "traj.h5")
-    traj.write_hdf5(path)
+    with h5py.File(path, "w") as file:
+        traj.write_to_h5_group(file)
 
-    full = Trajectory.read_hdf5(path)
+    with h5py.File(path, "r") as file:
+        full = Trajectory.read_from_h5_group(file)
     np.testing.assert_array_equal(full.positions, traj.positions)
     np.testing.assert_array_equal(full.cell, traj.cell)
     assert (full.atomic_numbers == traj.atomic_numbers).all()
@@ -102,21 +105,23 @@ def test_trajectory_hdf5_roundtrip(tmp_path: Path, *, results: bool) -> None:
         else:
             assert getattr(full, field) is None
 
-    strided = Trajectory.read_hdf5(path, frames=slice(0, 20, 4))
+    with h5py.File(path, "r") as file:
+        strided = Trajectory.read_from_h5_group(file, frames=slice(0, 20, 4))
     assert strided.n_frames == 5
     np.testing.assert_array_equal(strided.positions, traj.positions[0:20:4])
 
 
-def test_read_hdf5_schema_mismatch(tmp_path: Path) -> None:
-    """A trajectory file with an unexpected schema fails closed."""
-    import h5py
-
+def test_read_from_h5_group_schema_mismatch(tmp_path: Path) -> None:
+    """A trajectory group with an unexpected schema fails closed."""
     path = str(tmp_path / "traj.h5")
-    make_traj().write_hdf5(path)
-    with h5py.File(path, "r+") as file:
+    with h5py.File(path, "w") as file:
+        make_traj().write_to_h5_group(file)
         file.attrs["schema"] = TRAJECTORY_SCHEMA + 1
-    with pytest.raises(ValueError, match="trajectory schema"):
-        Trajectory.read_hdf5(path)
+    with (
+        h5py.File(path, "r") as file,
+        pytest.raises(ValueError, match="trajectory schema"),
+    ):
+        Trajectory.read_from_h5_group(file)
 
 
 def test_trajectory_ase_roundtrip() -> None:

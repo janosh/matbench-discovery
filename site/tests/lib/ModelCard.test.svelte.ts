@@ -40,6 +40,10 @@ describe(`ModelCard`, () => {
       const links = document.querySelectorAll<HTMLAnchorElement>(`nav a`)
       expect(links).toHaveLength(nav_link_count(model))
       expect(links[0].href).toBe(model.repo ?? ``)
+      // every card's compare button reads "Compare" but must name its model for AT users
+      expect(
+        document.querySelector(`nav button[aria-pressed]`)?.getAttribute(`aria-label`),
+      ).toBe(`Compare ${model.model_name}`)
       expect(document.body.textContent).toContain(`Added ${model.dates.benchmark_added}`)
       if (model.dates.paper_published) {
         expect(document.body.textContent).toContain(

@@ -11,14 +11,10 @@ describe(`RSS feed endpoint`, () => {
     return match?.groups?.cdata ?? ``
   }
 
-  it(`should return response with correct content type`, () => {
+  it(`should return valid XML with expected structure and content type`, async () => {
     const response = GET()
     expect(response.headers.get(`Content-Type`)).toBe(`application/xml`)
     expect(response.status).toBe(200)
-  })
-
-  it(`should return valid XML with expected structure`, async () => {
-    const response = GET()
     const xml = await response.text()
 
     // Check RSS basics with exact matches
@@ -94,14 +90,27 @@ describe(`RSS feed endpoint`, () => {
     expect(xml).toContain(model.model_name)
     expect(xml).toContain(`models/${model.model_key}`)
 
-    // Check for links to paper and repo in the description if available
-    const cdata_content = extract_first_cdata(xml)
+    // every item's description links exactly to its detail page plus the model's
+    // paper and repo when set (some models, e.g. EMA-GNN, have paper: null)
+    const descriptions = [
+      ...xml.matchAll(/<description><!\[CDATA\[(?<cdata>[\s\S]*?)\]\]><\/description>/g),
+    ].map((match) => match.groups?.cdata ?? ``)
+    const sorted_models = MODELS.toSorted(by_benchmark_added_desc)
+    expect(descriptions).toHaveLength(sorted_models.length)
+    expect(sorted_models.some((model_data) => model_data.paper)).toBe(true)
 
-    // Check for link patterns
-    expect(
-      !cdata_content.includes(`paper`) ||
-        /href="https?:\/\/[^"]+">[^<]+<\/a>/.test(cdata_content),
-    ).toBe(true)
+    for (const [idx, model_data] of sorted_models.entries()) {
+      const links = [...descriptions[idx].matchAll(/<a href="[^"]+">[^<]+<\/a>/g)].map(
+        (match) => match[0],
+      )
+      expect(links, model_data.model_key).toStrictEqual([
+        `<a href="${base_url}models/${model_data.model_key}">View model details</a>`,
+        ...(model_data.paper ? [`<a href="${model_data.paper}">Read paper</a>`] : []),
+        ...(model_data.repo
+          ? [`<a href="${model_data.repo}">View code repository</a>`]
+          : []),
+      ])
+    }
   })
 
   it(`should include underscore-containing hyperparams in descriptions`, async () => {

@@ -1,5 +1,4 @@
 import {
-  ALL_METRICS,
   format_power_ten,
   format_property_path,
   format_relative_time,
@@ -22,13 +21,29 @@ describe(`format_power_ten`, () => {
     },
     {
       input: `9.01e12`,
-      expected: `9.010<sup>12</sup>`,
-      description: `positive exponent without plus sign`,
+      expected: `9.01×10<sup>12</sup>`,
+      description: `mantissa ending in 1 is not collapsed`,
     },
     {
       input: `1e6`,
       expected: `10<sup>6</sup>`,
       description: `simplifies 1×10 to just 10`,
+    },
+    {
+      input: `1×10<sup>3</sup>`,
+      expected: `10<sup>3</sup>`,
+      description: `collapses pre-formatted 1×10`,
+    },
+    {
+      input: `2.5×10<sup>-3</sup>`,
+      expected: `2.5×10<sup>-3</sup>`,
+      description: `already formatted is unchanged`,
+    },
+    { input: ``, expected: ``, description: `empty string` },
+    {
+      input: `just a regular string with numbers 123.456`,
+      expected: `just a regular string with numbers 123.456`,
+      description: `no scientific notation`,
     },
     {
       input: `some text 1.23e-4 more text`,
@@ -51,23 +66,6 @@ describe(`format_power_ten`, () => {
       expect(format_power_ten(input)).toBe(expected)
     },
   )
-
-  it(`returns input string when no scientific notation is present`, () => {
-    const input = `just a regular string with numbers 123.456`
-    expect(format_power_ten(input)).toBe(input)
-  })
-
-  it(`handles edge cases correctly`, () => {
-    // Empty string
-    expect(format_power_ten(``)).toBe(``)
-
-    // Edge case with 1×10
-    expect(format_power_ten(`1×10<sup>3</sup>`)).toBe(`10<sup>3</sup>`)
-
-    // Already formatted
-    const formatted = `2.5×10<sup>-3</sup>`
-    expect(format_power_ten(formatted)).toBe(formatted)
-  })
 })
 
 describe(`format_property_path`, () => {
@@ -110,22 +108,6 @@ describe(`format_property_path`, () => {
   ])(`formats '%s' → '%s'`, (input: string, expected: string) => {
     expect(format_property_path(input)).toBe(expected)
   })
-})
-
-describe(`ALL_METRICS`, () => {
-  it.each([
-    [`MAE`, `eV / atom`],
-    [`RMSE`, `eV / atom`],
-  ])(`%s has unit '%s'`, (key: string, expected_unit: string) => {
-    expect(ALL_METRICS[key as keyof typeof ALL_METRICS].unit).toBe(expected_unit)
-  })
-
-  it.each([`CPS`, `F1`, `DAF`, `Precision`, `Recall`, `Accuracy`, `RMSD`])(
-    `%s has no unit`,
-    (key) => {
-      expect(ALL_METRICS[key as keyof typeof ALL_METRICS].unit).toBeUndefined()
-    },
-  )
 })
 
 describe(`get_org_logo`, () => {

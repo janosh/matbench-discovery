@@ -19,6 +19,7 @@ import pandas as pd
 from ase import Atoms, units
 from ase.data import atomic_masses, covalent_radii
 from ase.geometry import find_mic, get_distances, minkowski_reduce
+from scipy.stats import wasserstein_distance
 
 from matbench_discovery import repo_relative_path
 from matbench_discovery.data import (
@@ -118,8 +119,9 @@ def calc_rdf(
     """Time-averaged all-pair radial distribution function g(r) of a trajectory.
 
     Returns bin-center distances r in Angstrom and g(r), histogrammed into n_bins
-    between 0 and r_max. r_max defaults to half the smallest cell length of the
-    first frame, the validity limit of minimum-image distances.
+    between 0 and r_max. r_max defaults to the minimum-image radius (half the
+    shortest lattice vector, minimized over all frames, see min_image_radius) and
+    raises if set above it.
     """
     traj = _as_trajectory(trajectory)
     if traj.n_frames == 0:
@@ -281,8 +283,6 @@ def calc_adf_error(
     of a histogram-binning noise floor keeps resolving the small angular errors that
     separate otherwise-good MLIPs.
     """
-    from scipy.stats import wasserstein_distance
-
     if not len(angles) == len(adf_ref) == len(adf_pred):
         raise ValueError(f"{len(angles)=}, {len(adf_ref)=}, {len(adf_pred)=} differ")
 
@@ -419,8 +419,6 @@ def calc_vdos_error(
     single-frequency reference (zero spread) returns 0 if the prediction matches it else
     100; a prediction with no power in the reference band also returns 100.
     """
-    from scipy.stats import wasserstein_distance
-
     if not 0 < band_frac <= 1:
         raise ValueError(f"band_frac must be in (0, 1], got {band_frac}")
     f_max = min(np.max(freqs_ref), np.max(freqs_pred))
@@ -511,8 +509,6 @@ def calc_pressure_metrics(
     noise rather than model bias. W1 and E_P compare the full pressure distributions,
     capturing both the mean offset and fluctuation-width differences.
     """
-    from scipy.stats import wasserstein_distance
-
     pressures_ref, pressures_pred = map(np.asarray, (pressures_ref, pressures_pred))
     if len(pressures_ref) == 0 or len(pressures_pred) == 0:
         raise ValueError("Cannot compute pressure metrics of empty pressure arrays")

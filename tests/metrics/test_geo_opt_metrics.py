@@ -15,49 +15,6 @@ _GEO = "models/alignn/alignn/2026-07-01-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz"
 _GEO_NAN = "models/alignn/alignn/2026-07-02-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz"
 
 
-@pytest.fixture
-def df_geo_opt() -> pd.DataFrame:
-    """Create a DataFrame simulating geometry optimization data for a single model."""
-    return pd.DataFrame(
-        {
-            MbdKey.structure_rmsd_vs_dft: [0.1, 0.2, 0.3],
-            MbdKey.spg_num_diff: [0, -1, 2],
-            MbdKey.n_sym_ops_diff: [0, -2, 4],
-        }
-    )
-
-
-def test_calc_geo_opt_metrics(df_geo_opt: pd.DataFrame) -> None:
-    """Test calc_geo_opt_metrics with a single model."""
-    results = geo_opt.calc_geo_opt_metrics(df_geo_opt)
-
-    # Check symmetry change metrics
-    assert results[str(Key.symmetry_decrease)] == pytest.approx(1 / 3)
-    assert results[str(Key.symmetry_match)] == pytest.approx(1 / 3)
-    assert results[str(Key.symmetry_increase)] == pytest.approx(1 / 3)
-    assert results[str(Key.n_structures)] == 3
-
-    # Test 2: Verify n_structures is based on valid symmetry data (non-NaN spg_diff)
-    # with different NaN patterns in RMSD vs symmetry data
-    nan_data = {
-        # RMSD has 4 non-NaN values
-        MbdKey.structure_rmsd_vs_dft: [0.1, 0.2, 0.3, 0.4, np.nan, np.nan],
-        # spg_diff has 5 non-NaN values (different pattern than RMSD)
-        MbdKey.spg_num_diff: [0, 1, np.nan, -1, 2, 3],
-        # n_sym_ops_diff follows same pattern as spg_diff
-        MbdKey.n_sym_ops_diff: [0, 2, np.nan, -2, 4, 6],
-    }
-    df_mixed_nan = pd.DataFrame(nan_data)
-    mixed_results = geo_opt.calc_geo_opt_metrics(df_mixed_nan)
-    # n_structures should be 5 (the number of non-NaN spg_diff values)
-    assert mixed_results[str(Key.n_structures)] == 5
-    # Verify symmetry metrics are calculated only on valid symmetry data
-    # There are 5 non-NaN spg_diff values with: 1 match, 1 decrease, 3 increases
-    assert mixed_results[str(Key.symmetry_match)] == pytest.approx(1 / 5)
-    assert mixed_results[str(Key.symmetry_decrease)] == pytest.approx(1 / 5)
-    assert mixed_results[str(Key.symmetry_increase)] == pytest.approx(3 / 5)
-
-
 @pytest.mark.parametrize(
     (
         "spg_diffs",
@@ -79,6 +36,8 @@ def test_calc_geo_opt_metrics(df_geo_opt: pd.DataFrame) -> None:
         ([1, -1, 0], [0, 0, 0], 0, 1 / 3, 0),
         # Include some NaN values
         ([0, np.nan, 1], [0, np.nan, 2], 0.0, 0.5, 0.5),
+        # NaN in the middle: 5 valid rows with 1 match, 1 decrease, 3 increases
+        ([0, 1, np.nan, -1, 2, 3], [0, 2, np.nan, -2, 4, 6], 1 / 5, 1 / 5, 3 / 5),
     ],
 )
 def test_calc_geo_opt_metrics_parametrized(
@@ -89,9 +48,13 @@ def test_calc_geo_opt_metrics_parametrized(
     expected_increase: float,
 ) -> None:
     """Test calc_geo_opt_metrics with various symmetry difference patterns."""
+    # RMSD NaN pattern deliberately differs from the spg NaN pattern: n_structures
+    # must count valid symmetry rows only and NaN RMSDs are filled with 1.0 (the
+    # StructureMatcher stol) before averaging
+    rmsds = [0.1] * (len(spg_diffs) - 1) + [np.nan]
     df_geo_opt = pd.DataFrame(
         {
-            MbdKey.structure_rmsd_vs_dft: [0.1] * len(spg_diffs),
+            MbdKey.structure_rmsd_vs_dft: rmsds,
             MbdKey.spg_num_diff: spg_diffs,
             MbdKey.n_sym_ops_diff: n_sym_ops_diffs,
         }
@@ -104,30 +67,39 @@ def test_calc_geo_opt_metrics_parametrized(
     assert results[str(Key.symmetry_increase)] == pytest.approx(expected_increase)
     # n_structures should be the number of non-NaN spg_diff values
     assert results[str(Key.n_structures)] == np.count_nonzero(pd.notna(spg_diffs))
+    expected_rmsd = (0.1 * (len(spg_diffs) - 1) + 1.0) / len(spg_diffs)
+    assert results[str(MbdKey.structure_rmsd_vs_dft)] == pytest.approx(expected_rmsd)
+
+
+_GEO_REF_WITH_META = make_file_ref(
+    _GEO, url="https://figshare.com/files/1", size=7, md5="a" * 32
+)
+_FULL_METRICS = {
+    MbdKey.structure_rmsd_vs_dft: 0.1,
+    Key.n_sym_ops_mae: 0.2,
+    Key.symmetry_decrease: 0.3,
+    Key.symmetry_match: 0.4,
+    Key.symmetry_increase: 0.0,
+    Key.n_structures: 0,
+}
+_FULL_BLOCK = {
+    Key.rmsd: 0.1,
+    Key.n_sym_ops_mae: 0.2,
+    Key.symmetry_decrease: 0.3,
+    Key.symmetry_match: 0.4,
+    Key.symmetry_increase: 0.0,
+    Key.n_structures: 0,
+}
 
 
 @pytest.mark.parametrize(
-    ("metrics_data", "expected_block", "analysis_file_path"),
+    ("metrics_data", "expected_block", "analysis_file_path", "existing_ref"),
     [
         (
-            {
-                MbdKey.structure_rmsd_vs_dft: 0.1,
-                Key.n_sym_ops_mae: 0.2,
-                Key.symmetry_decrease: 0.3,
-                Key.symmetry_match: 0.4,
-                Key.symmetry_increase: 0.0,
-                Key.n_structures: 0,
-            },
-            {
-                Key.rmsd: 0.1,
-                Key.n_sym_ops_mae: 0.2,
-                Key.symmetry_decrease: 0.3,
-                Key.symmetry_match: 0.4,
-                Key.symmetry_increase: 0.0,
-                Key.n_structures: 0,
-                "analysis_file": make_file_ref(_GEO),
-            },
+            _FULL_METRICS,
+            {**_FULL_BLOCK, "analysis_file": make_file_ref(_GEO)},
             _GEO,
+            None,
         ),
         (
             {
@@ -145,16 +117,27 @@ def test_calc_geo_opt_metrics_parametrized(
                 Key.symmetry_match: 0.0,
                 Key.symmetry_increase: 0.0,
                 Key.n_structures: 0,
+                # renamed analysis file drops the stale url/size/md5
                 "analysis_file": make_file_ref(_GEO_NAN),
             },
             _GEO_NAN,
+            _GEO_REF_WITH_META,
+        ),
+        # same file name (metrics re-derived from a cached CSV) keeps its Figshare ref
+        (
+            _FULL_METRICS,
+            {**_FULL_BLOCK, "analysis_file": _GEO_REF_WITH_META},
+            _GEO,
+            _GEO_REF_WITH_META,
         ),
     ],
+    ids=["fresh", "nan-renamed-file", "cached-keeps-ref"],
 )
 def test_write_geo_opt_metrics_to_yaml(
     metrics_data: dict[MbdKey | Key, float],
     expected_block: dict[MbdKey | Key | str, float | str | None],
     analysis_file_path: str,
+    existing_ref: dict[str, object] | None,
 ) -> None:
     """Test saving geometry optimization metrics to YAML files with edge cases."""
     symprec = 1e-2
@@ -165,8 +148,10 @@ def test_write_geo_opt_metrics_to_yaml(
         patch("builtins.open", mock_open()) as mock_file,
         patch("matbench_discovery.data.round_trip_yaml") as mock_yaml,
     ):
-        # Configure mock YAML load to return empty dict
-        mock_yaml.load.return_value = {}
+        prior_block = {"analysis_file": existing_ref} if existing_ref else {}
+        mock_yaml.load.return_value = {
+            "metrics": {"geo_opt": {symprec_key: prior_block}}
+        }
 
         # Call the function
         geo_opt.write_metrics_to_yaml(
@@ -177,15 +162,14 @@ def test_write_geo_opt_metrics_to_yaml(
         actual_yaml = mock_yaml.dump.call_args[0][0]
 
         # Compare metrics while handling NaN values
-        for key, value in actual_yaml["metrics"]["geo_opt"][symprec_key].items():
-            expected_val = expected_block[key]
+        actual_block = actual_yaml["metrics"]["geo_opt"][symprec_key]
+        assert set(actual_block) == set(expected_block)
+        for key, expected_val in expected_block.items():
+            value = actual_block[key]
             if key in {"analysis_file", "pred_file", "force_file", "run_info_file"}:
                 assert value == expected_val
-                continue
-            if isinstance(value, float) and np.isnan(value):
-                assert np.isnan(expected_val)
             else:
-                assert value == pytest.approx(expected_val)
+                assert value == pytest.approx(expected_val, nan_ok=True)
 
         # Verify file operations
         mock_file.assert_called()

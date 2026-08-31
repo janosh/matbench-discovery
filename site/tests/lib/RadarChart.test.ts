@@ -9,7 +9,6 @@ import {
 } from '$lib/combined-scores.svelte'
 import { ALL_METRICS } from '$lib/labels'
 import { update_models_cps } from '$lib/models.svelte'
-import { format_num } from 'matterviz'
 import { flushSync } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
 import { doc_query, mount } from '../index'
@@ -46,7 +45,27 @@ describe(`RadarChart`, () => {
     expect(triangle_area.getAttribute(`stroke`)).toBe(`var(--border)`)
 
     // Check that the draggable point is rendered
-    expect(svg.querySelectorAll(`circle[role="button"]`)).toHaveLength(2)
+    expect(svg.querySelectorAll(`circle[aria-hidden="true"]`)).toHaveLength(2)
+
+    // Info icon is part of the metric-name tooltip
+    const metric_name = doc_query(`.metric-name`)
+    expect(metric_name.textContent?.trim()).toContain(ALL_METRICS.CPS.key)
+    expect(metric_name.querySelector(`svg`)).toBeInstanceOf(SVGSVGElement)
+
+    // Check for the triangle path
+    expect(document.querySelector(`path[d^="M"][d$="Z"]`)).toBeInstanceOf(SVGPathElement)
+
+    // Check for the colored metric areas (should be 3 paths)
+    const colored_areas = document.querySelectorAll(`path[fill^="rgb"][opacity="0.5"]`)
+    expect(colored_areas).toHaveLength(3)
+
+    // Check for the grid circles
+    const grid_circles = document.querySelectorAll(`circle[fill="none"]`)
+    expect(grid_circles).toHaveLength(4) // Should be 4 grid circles
+    // Verify stroke properties for each grid circle
+    grid_circles.forEach((circle) => {
+      expect(circle.getAttribute(`stroke`)).toBe(`var(--border)`)
+    })
   })
 
   it(`accepts size prop`, () => {
@@ -95,22 +114,6 @@ describe(`RadarChart`, () => {
     expect(document.activeElement).toBe(doc_query(`.metric-name`))
   })
 
-  it(`displays correct weight percentages`, () => {
-    mount(RadarChart, { target: document.body })
-
-    // Check that the weight percentages are displayed correctly
-    const weight_values = [...document.querySelectorAll(`svg foreignObject`)]
-      .map((el) => el.querySelector(`small`)?.textContent)
-      .filter(Boolean)
-
-    // mirrors the component's format_num(weight, `.0%`) rendering
-    const expected_values = Object.values(DEFAULT_CPS_CONFIG).map((part) =>
-      format_num(part.weight, `.0%`),
-    )
-
-    expect(weight_values).toStrictEqual(expected_values)
-  })
-
   it(`renders axis labels with correct content`, () => {
     mount(RadarChart, { target: document.body })
 
@@ -125,40 +128,11 @@ describe(`RadarChart`, () => {
     expect(label_texts).toStrictEqual([`F1 50%`, `κSRME 40%`, `RMSD 10%`])
   })
 
-  it(`renders correct visualization elements`, () => {
-    mount(RadarChart, { target: document.body })
-
-    // Info icon is part of the metric-name tooltip
-    expect(document.querySelector(`.metric-name svg`)).toBeInstanceOf(SVGSVGElement)
-
-    // Check for the triangle path
-    expect(document.querySelector(`path[d^="M"][d$="Z"]`)).toBeInstanceOf(SVGPathElement)
-
-    // Check for the colored metric areas (should be 3 paths)
-    const colored_areas = document.querySelectorAll(`path[fill^="rgb"][opacity="0.5"]`)
-    expect(colored_areas).toHaveLength(3)
-
-    // Check for the grid circles
-    const grid_circles = document.querySelectorAll(`circle[fill="none"]`)
-    expect(grid_circles).toHaveLength(4) // Should be 4 grid circles
-    // Verify stroke properties for each grid circle
-    grid_circles.forEach((circle) => {
-      expect(circle.getAttribute(`stroke`)).toBe(`var(--border)`)
-    })
-  })
-
-  it(`displays the metric name`, () => {
-    mount(RadarChart, { target: document.body })
-
-    const metric_name = doc_query(`.metric-name`)
-    expect(metric_name.textContent?.trim()).toContain(ALL_METRICS.CPS.key)
-  })
-
   it(`keeps the knob at the drop point and ignores the trailing click after a drag`, () => {
     mount(RadarChart, { target: document.body })
     flushSync() // let the bind:this effect set svg_element before dragging
     const svg = doc_query<SVGSVGElement>(`svg[aria-label^="Radar chart"]`)
-    const knob = doc_query<SVGCircleElement>(`circle[role="button"]`, svg)
+    const knob = doc_query<SVGCircleElement>(`circle[aria-hidden="true"]`, svg)
     const read = () => ({
       cx: Number(knob.getAttribute(`cx`)),
       cy: Number(knob.getAttribute(`cy`)),

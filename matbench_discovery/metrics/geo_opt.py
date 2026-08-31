@@ -1,5 +1,7 @@
 """Functions to calculate and save geometry optimization metrics."""
 
+from typing import Any
+
 import pandas as pd
 from pymatviz.enums import Key
 
@@ -7,7 +9,7 @@ from matbench_discovery import repo_relative_path
 from matbench_discovery.data import (
     canonical_scientific_notation,
     commented_map_with_units,
-    make_file_ref,
+    merge_file_ref,
     update_yaml_file,
 )
 from matbench_discovery.enums import MbdKey, Model
@@ -20,6 +22,10 @@ def write_metrics_to_yaml(
     analysis_file_path: str,
 ) -> dict[str, object]:
     """Write geometric optimization metrics to model's YAML file.
+
+    The analysis_file ref keeps its Figshare url/size/md5 while the file name is
+    unchanged (e.g. metrics re-derived from a cached CSV); a renamed analysis file
+    (new date or moyo version) drops them until the next upload.
 
     Args:
         df_geo_opt (pd.DataFrame): Geometric optimization metrics
@@ -50,7 +56,6 @@ def write_metrics_to_yaml(
             float(df_geo_opt[Key.symmetry_increase].iloc[0]), 4
         ),
         str(Key.n_structures): int(df_geo_opt[Key.n_structures].iloc[0]),
-        "analysis_file": make_file_ref(analysis_file_path),
     }
     metric_units: dict[str, str] = {
         Key.rmsd: "unitless",
@@ -63,9 +68,16 @@ def write_metrics_to_yaml(
     metrics_for_symprec = commented_map_with_units(metrics_for_symprec, metric_units)
     symprec_key = f"symprec={canonical_scientific_notation(symprec)}"
 
-    update_yaml_file(
-        model.yaml_path, f"metrics.geo_opt.{symprec_key}", metrics_for_symprec
-    )
+    def merge_block(previous: dict[str, Any]) -> dict[str, Any]:
+        """Merge new metrics over the prior block under update_yaml_file's lock."""
+        metrics_for_symprec["analysis_file"] = merge_file_ref(
+            previous.get("analysis_file"), analysis_file_path
+        )
+        for key, val in previous.items():  # keep prior keys not emitted here
+            metrics_for_symprec.setdefault(key, val)
+        return metrics_for_symprec
+
+    update_yaml_file(model.yaml_path, f"metrics.geo_opt.{symprec_key}", merge_block)
     return metrics_for_symprec
 
 
@@ -78,7 +90,6 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
             - structure_rmsd_vs_dft: RMSD between predicted and DFT structures
             - n_sym_ops_diff: Difference in number of symmetry operations vs DFT
             - spg_num_diff: Difference in space group number vs DFT
-        model_name (str): Name of the model being analyzed.
 
     Returns:
         dict[str, float]: Geometry optimization metrics with keys:

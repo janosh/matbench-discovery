@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { arr_to_str, DATASETS, format_date } from '$lib'
+  import { arr_to_str, DATASETS } from '$lib'
   import { DATASET_METADATA_COLS, title_case } from '$lib/labels'
   import pkg from '$site/package.json'
-  import type { RowData } from 'matterviz'
-  import { Icon, type IconData } from 'svelte-widgets'
+  import type { CellSnippetArgs, RowData } from 'matterviz'
+  import { HeatmapTable } from 'matterviz'
+  import { Icon } from 'svelte-widgets'
   import {
     API,
     CheckCircle,
@@ -15,7 +16,6 @@
     Optimade,
     XCircle,
   } from 'svelte-widgets/icons'
-  import { HeatmapTable } from 'matterviz'
 
   const license_map: Record<string, string> = {
     'CC-BY-4.0': `Creative Commons Attribution 4.0 International`,
@@ -23,26 +23,21 @@
     MIT: `MIT License`,
   }
 
-  const icon_html = (data: IconData, color?: string): string => {
-    const fill = data.fill ?? (data.stroke ? `none` : `currentColor`)
-    const stroke = data.stroke ? ` stroke="${data.stroke}"` : ``
-    const style = color ? ` style="color:${color}"` : ``
-    const inner = `markup` in data ? data.markup : `<path d="${data.d}" />`
-    return `<svg fill="${fill}"${stroke}${style} width="1em" height="1em" viewBox="${data.viewBox}">${inner}</svg>`
-  }
-
-  const icon_link = (
-    href: string | null | undefined,
-    title: string,
-    glyph: IconData,
-    require_http = false,
-  ): string | false => {
-    if (!href || (require_http && !href.startsWith(`http`))) return false
-    return `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${title}" aria-label="${title}">${icon_html(glyph)}</a>`
-  }
-
-  const join_links = (links: (string | false)[]): string =>
-    links.filter(Boolean).join(` `)
+  // icon links per cell: [key in the cell's link record, tooltip, icon]. Rendered via
+  // snippets since HeatmapTable sanitizes HTML strings (dropping inline <svg>)
+  const api_links = [
+    [`native_api`, `Native API`, API],
+    [`optimade_api`, `OPTIMADE API`, Optimade],
+  ] as const
+  const resource_links = [
+    [`url`, `Website`, Globe],
+    [`download_url`, `Download`, Download],
+    [`doi`, `DOI`, DOI],
+  ] as const
+  type LinkRecord = Partial<Record<string, string | null>>
+  // some API fields hold notes rather than URLs; only link actual http(s) URLs
+  const http_url = (url: string | null | undefined): string | null =>
+    url?.startsWith(`http`) ? url : null
 
   const table_data: RowData[] = Object.entries(DATASETS).map(([key, set]) => {
     const { date_created, license, method, slug } = set
@@ -54,17 +49,6 @@
       )
       .join(`&#013;`)
     const method_str = arr_to_str(method)
-    const created_timestamp = date_created ? new Date(date_created).getTime() : null
-
-    const api_links = join_links([
-      icon_link(set.native_api, `Native API`, API, true),
-      icon_link(set.optimade_api, `OPTIMADE API`, Optimade, true),
-    ])
-    const resource_links = join_links([
-      icon_link(set.url, `Website`, Globe),
-      icon_link(set.download_url, `Download`, Download),
-      icon_link(set.doi, `DOI`, DOI),
-    ])
 
     return {
       key,
@@ -72,24 +56,16 @@
         `<a href="/data/${slug}" title="${set.name}">${key}</a>`,
       Structures: set.n_structures || null,
       Materials: set.n_materials || null,
-      Open: icon_html(
-        set.open ? CheckCircle : XCircle,
-        set.open ? `lightgreen` : `lightcoral`,
-      ),
-      Static: icon_html(
-        set.static ? CheckCircle : XCircle,
-        set.static ? `lightgreen` : `lightcoral`,
-      ),
-      Created: date_created
-        ? `<span data-sort-value="${created_timestamp}" title="${format_date(
-            date_created,
-            { weekday: `long` },
-          )}">${format_date(date_created)}</span>`
-        : `n/a`,
+      Created: date_created ?? null, // ISO date: HeatmapTable formats and sorts it
+      Open: set.open,
+      Static: set.static ?? false,
       License: license_full ? `<span title="${license_full}">${license}</span>` : license,
       Method: `<span title="${method_str}&#013;${params_tooltip}">${method_str}</span>`,
-      API: api_links,
-      Links: resource_links,
+      API: {
+        native_api: http_url(set.native_api),
+        optimade_api: http_url(set.optimade_api),
+      },
+      Links: { url: set.url, download_url: set.download_url, doi: set.doi },
     }
   })
 
@@ -99,6 +75,36 @@
 <svelte:head>
   <title>Training Sets | MatBench Discovery</title>
 </svelte:head>
+
+{#snippet bool_cell({ val }: CellSnippetArgs)}
+  <Icon
+    icon={val ? CheckCircle : XCircle}
+    style="color: {val ? `lightgreen` : `lightcoral`}"
+  />
+{/snippet}
+
+{#snippet icon_links(
+  val: CellSnippetArgs[`val`],
+  links: typeof api_links | typeof resource_links,
+)}
+  {@const record = val as LinkRecord}
+  {#each links as [link_key, title, icon] (link_key)}
+    {@const href = record[link_key]}
+    {#if href}
+      <a {href} target="_blank" rel="noopener noreferrer" {title} aria-label={title}>
+        <Icon {icon} />
+      </a>
+    {/if}
+  {/each}
+{/snippet}
+
+{#snippet api_cell({ val }: CellSnippetArgs)}
+  {@render icon_links(val, api_links)}
+{/snippet}
+
+{#snippet links_cell({ val }: CellSnippetArgs)}
+  {@render icon_links(val, resource_links)}
+{/snippet}
 
 <h1>
   <Icon icon={Databases} style="vertical-align: -3pt" /> Datasets
@@ -114,6 +120,12 @@
     columns={Object.values(DATASET_METADATA_COLS)}
     initial_sort={{ column: `Created`, direction: `desc` }}
     sort_hint=""
+    special_cells={{
+      [DATASET_METADATA_COLS.open.label]: bool_cell,
+      [DATASET_METADATA_COLS.static.label]: bool_cell,
+      [DATASET_METADATA_COLS.api.label]: api_cell,
+      [DATASET_METADATA_COLS.links.label]: links_cell,
+    }}
   />
 </section>
 

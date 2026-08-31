@@ -2,6 +2,8 @@
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
   import { MODELS } from '$lib/models.svelte'
+  import { bind_comparison_url } from '$lib/model-comparison.svelte'
+  import ModelComparison from '$lib/model/ModelComparison.svelte'
   import {
     CommandMenu,
     CopyButton,
@@ -27,6 +29,7 @@
   let find_open = $state(false)
   let find_bar = $state<ReturnType<typeof FindBar>>()
   let main_element = $state<HTMLElement>()
+  bind_comparison_url()
 
   const footer_links: FooterLink[] = [
     { href: `${pkg.repository}/issues`, label: `Issues`, icon: GitHub },
@@ -213,6 +216,8 @@
   {/if}
   {@render children?.()}
 </main>
+
+<ModelComparison />
 
 <Footer links={footer_links} style="--footer-bg: var(--shadow)">
   <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle" />

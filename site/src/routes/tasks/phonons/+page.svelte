@@ -248,6 +248,11 @@
     </div>
   {:else if analysis_error}
     <p role="alert">{analysis_error}</p>
+  {:else if kappa_analysis}
+    <!-- analysis loaded but has no entry for this model: don't spin forever -->
+    <p style="text-align: center; color: var(--text-muted)">
+      No per-material phonon diagnostics available for {selected_model.model_name}.
+    </p>
   {:else}
     <Spinner text="Loading per-material phonon diagnostics..." />
   {/if}

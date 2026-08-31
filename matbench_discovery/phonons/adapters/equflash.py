@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from matbench_discovery.phonons.adapters.standard import StandardKappaAdapter
 from matbench_discovery.phonons.thermal_conductivity import batched_displacement_forces
@@ -27,7 +27,6 @@ class EquFlashKappaAdapter(StandardKappaAdapter):
         calculator: Calculator,
         settings: KappaSettings,
         *,
-        progress: dict[str, Any] | None = None,  # noqa: ARG002
         max_evaluations: int | None = None,
     ) -> np.ndarray:
         """Evaluate EquFlash FC3 displacement graphs in GPU batches."""

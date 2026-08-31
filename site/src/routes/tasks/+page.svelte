@@ -1,6 +1,7 @@
 <script lang="ts">
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
-  import { SubpageGrid } from 'matterviz'
+  import type { ComponentProps } from 'svelte'
+  import { SubpageGrid } from 'svelte-widgets'
   import {
     Molecule,
     Phonons,
@@ -17,12 +18,15 @@
     [`diatomics`, Molecule],
     [`md`, Thermometer],
   ] as const
-  const subpages = task_page_icons.map(([key, icon]) => ({
-    href: `/tasks/${key.replaceAll(`_`, `-`)}`,
-    title: MODELING_TASKS[key].label,
-    description: MODELING_TASKS[key].description,
-    icon,
-  }))
+  // SubpageGrid takes [title, href, description, icon] tuples
+  const subpages: ComponentProps<typeof SubpageGrid>[`subpages`] = task_page_icons.map(
+    ([key, icon]) => [
+      MODELING_TASKS[key].label,
+      `/tasks/${key.replaceAll(`_`, `-`)}`,
+      MODELING_TASKS[key].description,
+      icon,
+    ],
+  )
 </script>
 
 <SubpageGrid

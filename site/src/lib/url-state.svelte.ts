@@ -1,5 +1,6 @@
 import { afterNavigate, replaceState } from '$app/navigation'
 import { page } from '$app/state'
+import type { AfterNavigate } from '@sveltejs/kit'
 import * as d3_sc from 'd3-scale-chromatic'
 import type { D3InterpolateName } from 'matterviz/colors'
 import type { SortDir } from './types'
@@ -386,15 +387,16 @@ export function sync_url_params(entries: UrlParamEntry[], state: PageState): voi
 // navigations), then keeps the URL in sync with page state via replaceState. Gating
 // writes on the first afterNavigate ensures the sync $effect never runs during the
 // initial mount flush, which would throw "before router is initialized". Must be
-// called during component init.
+// called during component init. read_params also receives the navigation (e.g. to tell
+// a shared-link `enter` from in-app navigation).
 export function bind_url_params(
-  read_params: ((params: URLSearchParams) => void) | null,
+  read_params: ((params: URLSearchParams, navigation: AfterNavigate) => void) | null,
   entries: () => UrlParamEntry[],
 ): void {
   let url_ready = $state(false)
 
-  afterNavigate(() => {
-    read_params?.(page.url.searchParams)
+  afterNavigate((navigation) => {
+    read_params?.(page.url.searchParams, navigation)
     url_ready = true
   })
 

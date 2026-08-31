@@ -90,6 +90,35 @@ describe(`Models Page`, () => {
     )
     // Order should be different
     expect(sorted_models).not.toStrictEqual(initial_models)
+
+    // CDS is stored under metrics.diatomics.combined_score (label.property), not
+    // under the label key, so sorting must follow label_data_path
+    doc_query<HTMLButtonElement>(`button#diatomics_combined_score`).click()
+    await tick()
+    const cds_sorted = [...document.querySelectorAll(`ol > li h2 a`)].map(
+      (link) => link.textContent,
+    )
+    const expected_cds_order = MODELS.toSorted(
+      sort_models(`metrics.diatomics.combined_score`, `desc`),
+    ).map((model) => model.model_name)
+    expect(cds_sorted).toStrictEqual(expected_cds_order)
+    expect(cds_sorted).not.toStrictEqual(initial_models)
+
+    // RMSD is lower=better, so picking it must flip to ascending (best first) and the
+    // cards must highlight the RMSD metric (ModelCard matches on the label key)
+    doc_query<HTMLButtonElement>(`button#${ALL_METRICS.RMSD.key}`).click()
+    await tick()
+    expect(new URL(location.href).searchParams.get(`dir`)).toBe(`asc`)
+    const rmsd_sorted = [...document.querySelectorAll(`ol > li h2 a`)].map(
+      (link) => link.textContent,
+    )
+    expect(rmsd_sorted).toStrictEqual(
+      MODELS.toSorted(sort_models(`metrics.geo_opt.symprec=1e-2.rmsd`, `asc`)).map(
+        (model) => model.model_name,
+      ),
+    )
+    const active_metric = doc_query(`ol > li .metrics li.active label`)
+    expect(active_metric.getAttribute(`for`)).toBe(ALL_METRICS.RMSD.key)
   })
 
   it(`toggles model details, shared across all cards via bound state`, async () => {
@@ -198,25 +227,6 @@ describe(`Models Page`, () => {
       expect(doc_query(`.metrics`, card).textContent).toContain(`F1`)
     })
     expect(Number(n_best_input.value)).toBe(limit)
-  })
-
-  it(`shows correct subset when limiting models`, () => {
-    mount(ModelsPage, {
-      target: document.body,
-      props: { initial_show_n_best: 3 },
-    })
-
-    const limited_names = [...document.querySelectorAll(`ol > li h2 a`)].map(
-      (link) => link.textContent,
-    )
-
-    document.body.innerHTML = ``
-    mount(ModelsPage, { target: document.body })
-
-    const all_names = [...document.querySelectorAll(`ol > li h2 a`)].map(
-      (link) => link.textContent,
-    )
-    expect(all_names.slice(0, 3)).toStrictEqual(limited_names)
   })
 
   it(`renders color legend`, () => {

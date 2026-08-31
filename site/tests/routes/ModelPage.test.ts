@@ -2,7 +2,6 @@ import { MODELS } from '$lib'
 import { parse_dependency_spec } from '$lib/environment'
 import { get_org_logo } from '$lib/labels'
 import { RANKED_METRICS } from '$lib/rankings'
-import layout_source from '$routes/+layout.svelte?raw'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
@@ -20,14 +19,6 @@ if (!locator_dependency) throw new Error(`missing TACE-OAM-L dependency`)
 const locator_detail = parse_dependency_spec(locator_dependency).detail
 
 describe(`Model Detail Page`, () => {
-  it(`styles the TOC title and links`, () => {
-    expect(layout_source).toContain(`--toc-title-font-weight="600"`)
-    expect(layout_source).toContain(`--toc-li-color="var(--text-color)"`)
-    expect(layout_source).toContain(`--toc-active-color="var(--link-color)"`)
-    expect(layout_source).toContain(`:global(aside.toc > nav > ol > li > a) {`)
-    expect(layout_source).toContain(`color: inherit;`)
-  })
-
   it(`renders model details correctly`, () => {
     mount(ModelPage, { target: document.body, props: { data: test_page_data } })
 

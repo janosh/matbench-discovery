@@ -17,6 +17,11 @@ describe(`Data TMI Page`, () => {
     const default_filter = radio_values().find((value) => value.startsWith(`arity=`))
     expect(checked_radio()?.value).toBe(default_filter)
     expect(checkbox_for(`Normalize by data set size`).checked).toBe(false)
+    expect(checkbox_for(`Log color scale`).checked).toBe(false)
+    // shared PtableHeatmap renders the count color bar with the filter in its title
+    expect(document.querySelector(`.periodic-table .colorbar`)?.textContent).toContain(
+      `WBM element counts for ${default_filter}`,
+    )
   })
 
   it(`restores filter and toggles from URL params`, async () => {
@@ -35,6 +40,7 @@ describe(`Data TMI Page`, () => {
 
     expect(checked_radio()?.value).toBe(target_filter)
     expect(checkbox_for(`Normalize by data set size`).checked).toBe(true)
+    expect(checkbox_for(`Log color scale`).checked).toBe(true)
   })
 
   it(`falls back to the default filter for unknown values`, async () => {

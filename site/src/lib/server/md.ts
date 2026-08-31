@@ -5,7 +5,7 @@ import { gunzipSync } from 'node:zlib'
 
 const repo_root = resolve(import.meta.dirname, `../../../..`)
 
-export type MdPerSystemRow = Record<string, number | string>
+type MdPerSystemRow = Record<string, number | string>
 
 // per-system energy/force RMSEs are stored in eV; report meV to match the model-level
 // MD table units

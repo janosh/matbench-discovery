@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -62,13 +62,9 @@ class PetKappaAdapter(StandardKappaAdapter):
 
         if isinstance(calculator, SymmetrizedCalculator):
             return calculator
-        return cast(
-            "Calculator",
-            SymmetrizedCalculator(
-                calculator,
-                batch_size=settings.batch_size,
-                include_inversion=False,
-            ),
+        # SymmetrizedCalculator subclasses ase Calculator, so no cast is needed
+        return SymmetrizedCalculator(
+            calculator, batch_size=settings.batch_size, include_inversion=False
         )
 
     def calculate_fc2(
@@ -76,8 +72,6 @@ class PetKappaAdapter(StandardKappaAdapter):
         phono3py: Phono3py,
         calculator: Calculator,
         settings: KappaSettings,
-        *,
-        progress: dict[str, Any] | None = None,  # noqa: ARG002
     ) -> tuple[Phono3py, np.ndarray, np.ndarray]:
         """Calculate PET FC2 and frequencies with batched force calls."""
         force_set = _batched_force_set(
@@ -99,7 +93,6 @@ class PetKappaAdapter(StandardKappaAdapter):
         calculator: Calculator,
         settings: KappaSettings,
         *,
-        progress: dict[str, Any] | None = None,  # noqa: ARG002
         max_evaluations: int | None = None,
     ) -> np.ndarray:
         """Calculate PET FC3 with batched force calls."""

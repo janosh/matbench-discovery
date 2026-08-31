@@ -6,11 +6,15 @@ import { mount } from '../index'
 
 describe(`ElementErrorsPtableHeatmap`, () => {
   it(`defaults to a model with per-element error data`, () => {
-    const component = mount(ElementErrorsPtableHeatmap, { target: document.body })
+    mount(ElementErrorsPtableHeatmap, { target: document.body })
 
-    const [current_model] = component.snapshot.capture().current_model
-    const model = MODELS.find((candidate) => candidate.model_key === current_model.value)
-    if (!model) throw new Error(`missing model for ${current_model.value}`)
+    // the ModelSelect's single selected chip names the default model (its remove button
+    // is icon-only, so the chip text is exactly the model name)
+    const chips = document.querySelectorAll(`ul[aria-label="selected options"] li`)
+    expect(chips).toHaveLength(1)
+    const selected_name = chips[0].textContent?.trim()
+    const model = MODELS.find((candidate) => candidate.model_name === selected_name)
+    if (!model) throw new Error(`no model named like selected chip ${selected_name}`)
 
     expect(per_elem_each_errors).toHaveProperty(model.model_key)
   })

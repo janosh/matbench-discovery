@@ -27,9 +27,8 @@ from filelock import FileLock
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, file_digest
 from matbench_discovery.ase_relax import canonical_filter_name, canonical_optimizer_name
-from matbench_discovery.data import file_sha256
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import (
     detect_hardware,
@@ -376,7 +375,7 @@ def checkpoint_digest(checkpoint: str | None) -> str | None:
         return None
     if os.path.isfile(checkpoint):
         if sys.platform == "win32":
-            return file_sha256(checkpoint)
+            return file_digest(checkpoint)
         file_stats = os.stat(checkpoint)
         cache_path = f"{checkpoint}.sha256.json"
         try:
@@ -395,7 +394,7 @@ def checkpoint_digest(checkpoint: str | None) -> str | None:
                             and all(char in "0123456789abcdef" for char in cached_hash)
                         ):
                             return cached_hash
-                digest = file_sha256(checkpoint)
+                digest = file_digest(checkpoint)
                 atomic_write_json(
                     cache_path,
                     {
@@ -407,7 +406,7 @@ def checkpoint_digest(checkpoint: str | None) -> str | None:
                 )
                 return digest
         except OSError, TypeError, ValueError:
-            return file_sha256(checkpoint)
+            return file_digest(checkpoint)
     return hashlib.sha256(checkpoint.encode()).hexdigest()
 
 
@@ -510,7 +509,7 @@ def build_kappa_manifest(
     manifest = KappaRunManifest(
         model_key=model_key,
         dataset_path=os.path.abspath(dataset_path),
-        dataset_hash=file_sha256(dataset_path),
+        dataset_hash=file_digest(dataset_path),
         material_ids=material_ids,
         material_id_hash=material_id_digest(material_ids),
         n_shards=n_shards,

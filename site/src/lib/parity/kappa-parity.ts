@@ -12,7 +12,7 @@ import { is_finite_num } from '../metrics'
 
 export const kappa_parity_manifest = kappa_parity_manifest_json
 // raw phonon DOS as stored in assets (histogram of mesh frequencies in THz)
-export interface RawDos {
+interface RawDos {
   frequencies: number[]
   densities: number[]
 }
@@ -45,7 +45,7 @@ export type KappaParityPoint = ParityPoint & {
   spacegroup: number | null
 }
 
-export interface KappaParitySeries {
+interface KappaParitySeries {
   x: number[]
   y: number[]
   points: KappaParityPoint[]

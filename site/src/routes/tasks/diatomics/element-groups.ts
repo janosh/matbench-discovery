@@ -3,7 +3,7 @@ import type { ChemicalElement, ElementCategory } from 'matterviz/element'
 
 export { element_by_symbol } from 'matterviz/element'
 
-export type ElementGroup = {
+type ElementGroup = {
   value: string
   label: string
   tooltip?: string

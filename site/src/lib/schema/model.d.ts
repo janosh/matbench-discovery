@@ -1,7 +1,7 @@
 // This file is auto-generated from model-schema.yml. Do not edit directly.
 // oxlint-disable typescript/no-redundant-type-constituents
 
-export type ModelMetadata = Record<string, unknown> & {
+export type ModelMetadata = {
   model_name: string
   model_key: string
   /**
@@ -17,7 +17,7 @@ export type ModelMetadata = Record<string, unknown> & {
   /**
    * @minItems 1
    */
-  authors: Record<string, unknown> & [Person, ...Person[]]
+  authors: [Person, ...Person[]]
   trained_by?: Person[]
   repo: NullableHttpUrl
   doi: NullableHttpUrl
@@ -148,7 +148,7 @@ export type TargetType =
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "PhononMetrics".
  */
-export type PhononMetrics = Record<string, unknown> & {
+export type PhononMetrics = {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   kappa_103?: KappaMetrics
@@ -162,7 +162,7 @@ export type NullableFileRef = FileRef | null
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "GeoOptMetrics".
  */
-export type GeoOptMetrics = Record<string, unknown> & {
+export type GeoOptMetrics = {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   pred_file?: NullableFileRef
@@ -189,7 +189,7 @@ export type GeoOptMetrics = Record<string, unknown> & {
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "DiscoveryMetrics".
  */
-export type DiscoveryMetrics = Record<string, unknown> & {
+export type DiscoveryMetrics = {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   pred_file?: NullableFileRef
@@ -204,7 +204,7 @@ export type DiscoveryMetrics = Record<string, unknown> & {
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "DiatomicsMetrics".
  */
-export type DiatomicsMetrics = Record<string, unknown> & {
+export type DiatomicsMetrics = {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   pred_file?: NullableFileRef
@@ -230,7 +230,7 @@ export type DiatomicsMetrics = Record<string, unknown> & {
  * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "MdMetrics".
  */
-export type MdMetrics = Record<string, unknown> & {
+export type MdMetrics = {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   pred_file?: NullableFileRef

@@ -4,6 +4,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from matbench_discovery.metrics.diatomics.energy import (
+    _common_grid_pair,
     _threshold_diff_signs,
     _validate_diatomic_curve,
 )
@@ -34,49 +35,10 @@ def calc_force_mae(
     Returns:
         float: Mean absolute error between the curves (eV/Å).
     """
-    # Validate and sort both curves
-    seps_ref, f_ref = _validate_diatomic_curve(seps_ref, f_ref, normalize_energy=False)
-    seps_pred, f_pred = _validate_diatomic_curve(
-        seps_pred, f_pred, normalize_energy=False
+    _, f_ref, f_pred = _common_grid_pair(
+        seps_ref, f_ref, seps_pred, f_pred, interpolate=interpolate
     )
-
-    # Check if interpolation is needed
-    if not interpolate:
-        # If no interpolation is needed and distances match, calculate MAE directly
-        if np.array_equal(seps_ref, seps_pred):
-            return float(np.mean(np.abs(f_ref - f_pred)))
-        raise ValueError(
-            f"Reference and predicted distances must be same when {interpolate=}\n"
-            f"{seps_ref=}, {seps_pred=}"
-        )
-
-    data_min = max(seps_ref.min(), seps_pred.min())
-    data_max = min(seps_ref.max(), seps_pred.max())
-    # >= (not >) to also reject a single shared point: interpolating one point across
-    # grid is meaningless. Matches the energy metrics' overlap check.
-    if data_min >= data_max:
-        raise ValueError(
-            f"Cannot interpolate force curves with no overlap: {data_min=}, {data_max=}"
-        )
-
-    # Create grid for interpolation over the shared sampled distance range.
-    n_points = 100 if interpolate is True else interpolate
-    seps_interp = np.linspace(data_min, data_max, n_points)
-
-    # Interpolate each component separately
-    f_ref_interp = np.zeros((len(seps_interp), *f_ref.shape[1:]))
-    f_pred_interp = np.zeros((len(seps_interp), *f_pred.shape[1:]))
-    for atom_idx in range(f_ref.shape[1]):
-        for dim in range(3):
-            f_ref_interp[:, atom_idx, dim] = np.interp(
-                seps_interp, seps_ref, f_ref[:, atom_idx, dim]
-            )
-            f_pred_interp[:, atom_idx, dim] = np.interp(
-                seps_interp, seps_pred, f_pred[:, atom_idx, dim]
-            )
-
-    # Calculate MAE
-    return float(np.mean(np.abs(f_ref_interp - f_pred_interp)))
+    return float(np.mean(np.abs(f_ref - f_pred)))
 
 
 def calc_force_flips(
@@ -95,7 +57,7 @@ def calc_force_flips(
     Returns:
         float: Number of force direction changes.
     """
-    _, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
+    _, forces = _validate_diatomic_curve(seps, forces)
 
     fs = forces[:, 0, 0].copy()
     fs[np.abs(fs) < threshold] = 0
@@ -113,7 +75,7 @@ def calc_force_total_variation(seps: ArrayLike, forces: np.ndarray) -> float:
     Returns:
         float: Sum of absolute differences between consecutive force values.
     """
-    _, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
+    _, forces = _validate_diatomic_curve(seps, forces)
     forces_x = forces[:, 0, 0]  # x-component of force on first atom
     return float(np.sum(np.abs(np.diff(forces_x))))
 
@@ -128,6 +90,6 @@ def calc_force_jump(seps: ArrayLike, forces: np.ndarray) -> float:
     Returns:
         float: Sum of absolute force differences at flip points.
     """
-    _, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
+    _, forces = _validate_diatomic_curve(seps, forces)
     diffs, _, flips = _threshold_diff_signs(forces[:, 0, 0], threshold=0)
     return float(np.abs(diffs[:-1][flips]).sum() + np.abs(diffs[1:][flips]).sum())

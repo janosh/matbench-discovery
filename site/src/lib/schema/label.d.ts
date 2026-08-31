@@ -156,6 +156,7 @@ export interface MetadataLabels {
   links: Label1
   n_training_materials: Label1
   n_training_structures: Label1
+  training_gpu_hours: Label1
   checkpoint_license: Label1
   code_license: Label1
   'Run Time (h)': Label1

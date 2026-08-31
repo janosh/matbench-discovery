@@ -440,31 +440,31 @@ def test_figshare_dry_run_hashes_only_for_exact_match(
     ) is not force_reupload
 
 
-def test_archive_rejects_artifact_symlink_escape(tmp_path: Path) -> None:
-    """Archive paths cannot follow a submitted symlink outside the model directory."""
+@pytest.mark.parametrize(
+    ("yaml_name", "artifact_rel_path", "symlink_target"),
+    [
+        # a submitted symlink pointing outside the model directory
+        ("model.yml", "models/arch/model/leak", "secret"),
+        # a real file that belongs to a sibling model in the same family
+        ("model-b.yml", "models/arch/model-a/preds.csv.gz", None),
+    ],
+)
+def test_archive_rejects_artifact_escaping_model_dir(
+    yaml_name: str, artifact_rel_path: str, symlink_target: str | None, tmp_path: Path
+) -> None:
+    """Archive paths cannot escape the model directory via symlinks or siblings."""
     family_dir = tmp_path / "models/arch"
-    model_dir = family_dir / "model"
-    model_dir.mkdir(parents=True)
-    try:
-        (model_dir / "leak").symlink_to(tmp_path / "secret")
-    except OSError as exc:
-        pytest.skip(f"Symlinks unavailable: {exc}")
+    artifact_path = tmp_path / artifact_rel_path
+    artifact_path.parent.mkdir(parents=True)
+    if symlink_target is None:
+        artifact_path.touch()
+    else:
+        try:
+            artifact_path.symlink_to(tmp_path / symlink_target)
+        except OSError as exc:
+            pytest.skip(f"Symlinks unavailable: {exc}")
+
     with pytest.raises(ValueError, match="escapes model directory"):
         upload.resolve_artifact_path(
-            str(family_dir / "model.yml"), "models/arch/model/leak", str(tmp_path)
-        )
-
-
-def test_archive_rejects_sibling_model_artifact(tmp_path: Path) -> None:
-    """Archive paths cannot reference another model in the same family."""
-    family_dir = tmp_path / "models/arch"
-    sibling_file = family_dir / "model-a/preds.csv.gz"
-    sibling_file.parent.mkdir(parents=True)
-    sibling_file.touch()
-
-    with pytest.raises(ValueError, match="escapes model directory"):
-        upload.resolve_artifact_path(
-            str(family_dir / "model-b.yml"),
-            "models/arch/model-a/preds.csv.gz",
-            str(tmp_path),
+            str(family_dir / yaml_name), artifact_rel_path, str(tmp_path)
         )

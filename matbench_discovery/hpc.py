@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Iterable, Mapping, Sequence, Sized
-from typing import TYPE_CHECKING, Final, TypeVar
+from typing import TYPE_CHECKING, Final
 
 import numpy as np
 
@@ -114,7 +114,8 @@ SLURM_KEYS: Final[tuple[str, ...]] = (
     "array_task_id",
     "array_task_count",
     "mem_per_node",
-    "nodelistsubmit_host",
+    "job_nodelist",
+    "submit_host",
     "job_partition",
     "job_user",
     "job_account",
@@ -122,7 +123,6 @@ SLURM_KEYS: Final[tuple[str, ...]] = (
     "job_qos",
 )
 SLURM_SUBMIT_KEY: Final[str] = "slurm-submit"
-HasLen = TypeVar("HasLen", bound=Sized)
 COST_PROVENANCE_KEYS = ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb")
 
 
@@ -454,91 +454,3 @@ def df_slurm_chunk(df_in: pd.DataFrame, n_chunks: int, task_id: int) -> pd.DataF
         raise ValueError(f"expected {n_chunks=} >= 1 and 1 <= {task_id=} <= n_chunks")
     row_indices = np.array_split(np.arange(len(df_in)), n_chunks)[task_id - 1]
     return df_in.iloc[row_indices]
-
-
-def chunk_by_lens[HasLen: Sized](
-    inputs: Sequence[HasLen],
-    *,  # force keyword-only arguments
-    n_chunks: int | None = None,
-    chunk_size: int | None = None,
-    report: bool = True,
-) -> list[list[HasLen]]:
-    """Make a balanced partition. That is, split a list of pymatgen Structures or
-    ASE Atoms or anything with len() into chunks with roughly equal total length.
-
-    This is useful for distributing workload evenly among workers, since computational
-    cost often scales with the number of atoms in a structure.
-
-    Args:
-        inputs (Sequence[T]): List of objects with len() to split into chunks
-        n_chunks (int, optional): Number of chunks to create. Defaults to None.
-        chunk_size (int, optional): Target size for each chunk. Defaults to None.
-            Only one of n_chunks or chunk_size can be specified.
-        report (bool, optional): If True, print statistics about the chunk sizes.
-
-    Returns:
-        list[list[T]]: Each sublist contains objects and the sum of len() of objects
-            in each chunk is roughly equal.
-
-    Example:
-        >>> from ase.build import bulk
-        >>> structures = [bulk("Cu") * (i, i, 1) for i in range(1, 5)]
-        >>> # Split into 2 chunks
-        >>> chunks = chunk_by_lens(structures, n_chunks=2)
-        >>> [sum(len(atoms) for atoms in chunk) for chunk in chunks]
-        [14, 16]  # roughly equal total atom counts
-        >>> # Or split into chunks of ~10 atoms each
-        >>> chunks = chunk_by_lens(structures, chunk_size=10)
-        >>> [sum(len(atoms) for atoms in chunk) for chunk in chunks]
-        [12, 10, 8]  # roughly equal total atom counts
-
-    Raises:
-        ValueError: If neither or both n_chunks and chunk_size are specified.
-    """
-    if len(inputs) == 0:
-        return []
-
-    if n_chunks is not None and chunk_size is not None:
-        raise ValueError("Cannot specify both n_chunks and chunk_size")
-
-    # Get number of atoms in each structure
-    lens = np.array([len(obj) for obj in inputs])
-    total_size = lens.sum()
-
-    if chunk_size:
-        # Calculate n_chunks based on chunk_size
-        n_chunks = max(1, int(np.ceil(total_size / chunk_size)))
-    elif n_chunks:
-        # n_chunks is specified
-        if n_chunks < 1:
-            raise ValueError("n_chunks must be >= 1")
-        n_chunks = min(n_chunks, len(inputs))
-    else:
-        raise ValueError("n_chunks or chunk_size must be positive integer")
-
-    # Sort structures by size (largest first) to help achieve better balance
-    sort_idx = np.argsort(lens)[::-1]
-    sorted_inputs = [inputs[i] for i in sort_idx]
-
-    chunks: list[list[HasLen]] = [[] for _ in range(n_chunks)]
-    chunk_sizes = np.zeros(n_chunks, dtype=float)
-
-    # Assign each structure to the chunk with the smallest current total
-    for sized_obj in sorted_inputs:
-        smallest_chunk_idx = int(np.argmin(chunk_sizes))
-        chunks[smallest_chunk_idx].append(sized_obj)
-        chunk_sizes[smallest_chunk_idx] += len(sized_obj)
-
-    if report:
-        # Print statistics about the chunk sizes
-        mean, std = chunk_sizes.mean(), chunk_sizes.std()
-        min_chunk_size = float(np.min(chunk_sizes))
-        max_chunk_size = float(np.max(chunk_sizes))
-        cls_name = type(inputs[0]).__name__
-        print(
-            f"Split {len(inputs):,} structures into {n_chunks:,} chunks:\n"
-            f"Mean sum(len({cls_name})) per chunk: {mean:,.1f} ± {std:,.1f}, "
-            f"min: {min_chunk_size:,.0f}, max: {max_chunk_size:,.0f}"
-        )
-
-    return chunks

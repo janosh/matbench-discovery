@@ -63,13 +63,12 @@ def get_sym_info_from_structs(
         sym_info = {
             Key.spg_num: sym_data.number,
             Key.hall_num: sym_data.hall_number,
-            MbdKey.international_spg_name: sym_data.site_symmetry_symbols,
+            MbdKey.international_spg_name: hall_symbol_entry.hm_short,
             Key.wyckoff_symbols: sym_data.wyckoffs,
             Key.n_sym_ops: sym_ops.num_operations,
             Key.n_rot_syms: len(sym_ops.rotations),
             Key.n_trans_syms: len(sym_ops.translations),
-            Key.hall_symbol: hall_symbol_entry.hm_short,
-            Key.hall_num: hall_symbol_entry.hall_number,
+            Key.hall_symbol: hall_symbol_entry.hall_symbol,
         }
         results[struct_key] = sym_info | dict(
             symprec=symprec, angle_tolerance=angle_tolerance

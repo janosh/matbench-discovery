@@ -21,7 +21,8 @@ export const format_power_ten = (text: string): string =>
       /(?<base>\d+(?:\.\d+)?)e\+?(?<exponent>-?\d+)/gi,
       `$<base>×10<sup>$<exponent></sup>`,
     )
-    .replace(`1×10`, `10`)
+    // collapse a bare mantissa of 1 (1×10^n -> 10^n) without touching e.g. 9.01×10^n
+    .replaceAll(/(?<![\d.])1×10/g, `10`)
 
 // Vendored from matterviz <0.6 (src/lib/time.ts), which dropped format_relative_time.
 // Parse and validate date, returns null if invalid.
@@ -177,6 +178,14 @@ export const METADATA_COLS: MetadataLabels = {
     label: `Training Structures`,
     description: `Number of training structures`,
     format: `~s`,
+  },
+  training_gpu_hours: {
+    key: `training_gpu_hours`,
+    label: `Training Compute`,
+    unit: `GPU·h`,
+    format: `.3~s`,
+    better: `lower`,
+    description: `Reported training cost summed over all listed devices (device count × hours per device)`,
   },
   checkpoint_license: {
     key: `Ckpt License`,
@@ -827,6 +836,7 @@ export const scatter_options = [
   METADATA_COLS.benchmark_added,
   METADATA_COLS.n_training_materials,
   METADATA_COLS.n_training_structures,
+  METADATA_COLS.training_gpu_hours,
   HYPERPARAMS.graph_construction_radius,
   HYPERPARAMS.max_force,
   HYPERPARAMS.max_steps,

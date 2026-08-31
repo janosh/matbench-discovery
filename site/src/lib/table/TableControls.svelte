@@ -7,6 +7,7 @@
     user_presets,
   } from '$lib/filter-presets.svelte'
   import { openness_tooltips } from '$lib/metrics'
+  import { comparison, row_model_key } from '$lib/model-comparison.svelte'
   import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
   import {
     DEFAULT_TARGETS_PARAM,
@@ -18,7 +19,7 @@
   } from '$lib/url-state.svelte'
   import type { TargetOutput, UrlTableFilters } from '$lib/url-state.svelte'
   import { Icon, Sheet } from 'svelte-widgets'
-  import { Cross, Filter } from 'svelte-widgets/icons'
+  import { Cross, Filter, Scale } from 'svelte-widgets/icons'
   import { ToggleMenu } from 'matterviz/table'
   import type { Snippet } from 'svelte'
   import { click_outside, tooltip } from 'svelte-widgets/attachments'
@@ -28,14 +29,27 @@
     columns = $bindable([]),
     filters = make_table_filters(),
     show_selected_only = $bindable(false),
-    selected_count = 0,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     columns?: TableLabel[]
     filters?: UrlTableFilters
     show_selected_only?: boolean
-    selected_count?: number
   } = $props()
+  let selected_count = $derived(comparison.keys.size)
+
+  // Nothing selected yet: seed the comparison with the table's top rows in its current
+  // sort order so the dialog opens on a real comparison instead of an empty picker
+  const N_SEED_MODELS = 3
+  const open_comparison = (event: MouseEvent & { currentTarget: HTMLElement }) => {
+    if (selected_count === 0) {
+      const rows = event.currentTarget
+        .closest(`.table-container`)
+        ?.querySelectorAll(`tbody tr`)
+      const keys = [...(rows ?? [])].flatMap((row) => row_model_key(row) ?? [])
+      comparison.set(keys.slice(0, N_SEED_MODELS))
+    }
+    comparison.open = true
+  }
 
   const close_on_outside_click = click_outside({
     callback: (node) => node.removeAttribute(`open`),
@@ -254,6 +268,16 @@
 {/snippet}
 
 <div class="table-controls" {...rest}>
+  <button
+    class="compare"
+    onclick={open_comparison}
+    title={selected_count
+      ? `Open the side-by-side comparison of the ${selected_count} selected model${selected_count === 1 ? `` : `s`}`
+      : `Compare the top ${N_SEED_MODELS} models side by side. Pick others by double-clicking a row or from its right-click menu`}
+    {@attach tooltip()}
+  >
+    <Icon icon={Scale} /> Compare{selected_count ? ` (${selected_count})` : ``}
+  </button>
   {#if selected_count > 0 || show_selected_only}
     <label>
       <input
@@ -411,7 +435,7 @@
       justify-content: end;
     }
   }
-  :is(button.clear-filters, button.filter-sheet-trigger) {
+  :is(button.clear-filters, button.filter-sheet-trigger, button.compare) {
     display: inline-flex;
     gap: 3pt;
     align-items: center;
@@ -420,6 +444,19 @@
   button.clear-filters {
     background: none;
     padding: 0;
+  }
+  /* the one action here that isn't a filter, so set off from the filter cluster by a divider */
+  button.compare {
+    position: relative;
+    padding: 1pt 8pt;
+    border-radius: 1em;
+    &::after {
+      content: '';
+      position: absolute;
+      right: -6pt; /* centered in the 12pt column gap */
+      height: 1.2em;
+      border-left: 1px solid var(--border);
+    }
   }
   .filter-row button.preset {
     flex: 1;

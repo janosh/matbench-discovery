@@ -16,7 +16,7 @@ Typical cluster usage:
 """
 
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.14"
 # dependencies = ["ase>=3.27", "numpy", "pandas", "scipy", "tqdm", "matbench-discovery"]
 #
 # [tool.uv.sources]
@@ -40,7 +40,7 @@ from matbench_discovery.calculators import (
     load_calculator,
     resolve_cli_calculator,
 )
-from matbench_discovery.data import artifact_filename
+from matbench_discovery.data import artifact_date_from_prefix, artifact_filename
 from matbench_discovery.diatomics import (
     CurveDict,
     DiatomicResults,
@@ -54,7 +54,11 @@ from matbench_discovery.metrics.diatomics.exclusions import (
     get_excluded_formula_reasons,
     is_non_mp_formula,
 )
-from matbench_discovery.runner_cli import add_common_runner_args, dependency_run_args
+from matbench_discovery.runner_cli import (
+    add_common_runner_args,
+    dependency_run_args,
+    resolve_sharded_prefix,
+)
 
 module_dir = os.path.dirname(__file__)
 
@@ -116,6 +120,7 @@ def main() -> int:
     parser.add_argument(
         "--merge-shards", action="store_true", help="Merge Slurm shards"
     )
+    parser.add_argument("--shard-dir", help="Override the resumable shard directory")
     args = parser.parse_args()
 
     model_key = resolve_cli_calculator(parser, args.model, list_models=args.list_models)
@@ -145,6 +150,7 @@ def main() -> int:
                 "n-points": args.n_points,
                 "max-z": args.max_z,
                 "out-dir": args.out_dir,
+                "shard-dir": args.shard_dir,
             },
             ("dry-run", "merge-shards", "write-yaml"),
         )
@@ -180,7 +186,23 @@ def main() -> int:
     # geometric spacing densifies the short-range repulsive wall, where unphysical
     # wiggles and discontinuities are most diagnostic (matches the MACE-MP convention)
     distances = np.geomspace(args.min_dist, args.max_dist, n_points)
-    shard_dir = f"{out_dir}/{today}-diatomics-shards"
+    # reuse one prior shard dir (or --shard-dir) so shards written on an earlier date
+    # can be resumed/merged; the merged artifact inherits that dir's date. Like
+    # run_discovery, dry runs get their own shard dirs and a dry-run/ artifact dir so
+    # a 10-point smoke test can never clobber (or be merged into) a real run.
+    dry_suffix = "-dry-run" if args.dry_run else ""
+    try:
+        shard_dir, artifact_prefix = resolve_sharded_prefix(
+            default_prefix=f"{out_dir}/{today}-diatomics{dry_suffix}",
+            prior_shard_pattern=f"{out_dir}/*-diatomics{dry_suffix}-shards",
+            task="diatomics",
+            shard_dir=args.shard_dir,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+    artifact_date = artifact_date_from_prefix(artifact_prefix, fallback=today)
+    artifact_dir = f"{out_dir}/dry-run" if args.dry_run else out_dir
+    json_path = f"{artifact_dir}/{artifact_filename(artifact_date, 'diatomics')}"
     n_pairs = len(z_values)
     run_metadata: dict[str, str | float | dict[str, str]]
     curves: DiatomicResults = {}
@@ -224,7 +246,6 @@ def main() -> int:
         if unexpected_missing := missing_formulas - set(exclusion_reasons):
             parser.error(f"Missing curves in shards: {sorted(unexpected_missing)}")
         run_metadata = {**merge_run_metadata(shard_metadatas)}
-        json_path = f"{out_dir}/{artifact_filename(today, 'diatomics')}"
     else:
         start_time = time.perf_counter()
         calculator = load_calculator(args.model, dtype=args.dtype)
@@ -259,8 +280,6 @@ def main() -> int:
         }
         if slurm_task_id:
             json_path = f"{shard_dir}/Z{z_values[0]:03d}-diatomics.json.gz"
-        else:
-            json_path = f"{out_dir}/{artifact_filename(today, 'diatomics')}"
 
     run_metadata["excluded_formula_reasons"] = exclusion_reasons
     # flat on-disk schema read by DiatomicCurves.from_dict / the site's diatomics parser

@@ -8,6 +8,8 @@ import traceback
 
 import requests
 
+from matbench_discovery import file_digest
+
 
 def _headers_for_url(
     url: str, headers: dict[str, str] | None = None
@@ -101,9 +103,7 @@ def maybe_auto_download_file(
     if os.path.isfile(abs_path):
         if md5 is None:
             return
-        with open(abs_path, mode="rb") as file:
-            cached_md5 = hashlib.file_digest(file, "md5").hexdigest()
-        if cached_md5 == md5:
+        if (cached_md5 := file_digest(abs_path, "md5")) == md5:
             return
         print(
             f"Cached file {abs_path!r} has MD5 {cached_md5}, expected {md5}; "

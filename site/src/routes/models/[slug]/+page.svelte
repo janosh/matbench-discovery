@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AuthorBrief, DATASETS, ModelRankCard, PtableInset } from '$lib'
+  import { AuthorBrief, CompareToggle, DATASETS, ModelRankCard, PtableInset } from '$lib'
   import {
     discovery_task_tooltips,
     model_role_from_targets,
@@ -208,6 +208,7 @@
   </section>
 
   <section class="links" {@attach tooltip()}>
+    <CompareToggle model_key={model.model_key} open_dialog />
     {#each external_links as [href, label, icon, title] (label)}
       {#if href?.startsWith(`http`)}
         <a {href} target="_blank" rel="noopener noreferrer" {title}>

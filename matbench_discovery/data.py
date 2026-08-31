@@ -74,12 +74,6 @@ FORCE_TASKS: Final = frozenset({"geo_opt", "phonons", "md", "diatomics"})
 _COVERAGE_META_KEYS: Final = frozenset({"status", "reason"})
 
 
-def file_sha256(path: str) -> str:
-    """Stream a file into a SHA-256 digest."""
-    with open(path, mode="rb") as file:
-        return hashlib.file_digest(file, "sha256").hexdigest()
-
-
 def commented_map_with_units(
     mapping: Mapping[str, Any], units: Mapping[str, str]
 ) -> CommentedMap:
@@ -466,8 +460,8 @@ def load_df_wbm_with_preds(
                     abs(df_out[model_key] - df_out[MbdKey.e_form_dft])
                     > max_error_threshold
                 )
+                n_preds, n_bad = df_out[model_key].notna().sum(), bad_mask.sum()
                 df_out.loc[bad_mask, model_key] = pd.NA
-                n_preds, n_bad = len(df_out[model_key].dropna()), sum(bad_mask)
                 if n_bad > 0:
                     print(
                         f"{n_bad:,} of {n_preds:,} unrealistic preds for {model_name}"
@@ -476,7 +470,8 @@ def load_df_wbm_with_preds(
         exc.add_note(f"Failed to load {model_name=}")
         raise
 
-    if subset == TestSubset.uniq_protos:
+    # isinstance guard: a pd.Index subset would make the == comparison elementwise
+    if isinstance(subset, str) and subset == TestSubset.uniq_protos:
         df_out = df_out.query(MbdKey.uniq_proto)
     elif subset is not None:
         df_out = df_out.loc[subset]

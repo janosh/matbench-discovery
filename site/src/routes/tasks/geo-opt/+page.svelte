@@ -2,7 +2,12 @@
   import spg_sankeys from '$figs/spg-sankeys.jsonl'
   import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
   import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
-  import { GeoOptMetricsTable, ModelSelect, ACTIVE_MODELS } from '$lib'
+  import {
+    ACTIVE_MODELS,
+    by_benchmark_added_desc,
+    GeoOptMetricsTable,
+    ModelSelect,
+  } from '$lib'
   import { order_models } from '$lib/fig-helpers'
   import {
     ALL_METRICS,
@@ -46,12 +51,15 @@
   ])
   const selectable_model_keys = new Set(plot_label_by_key.keys())
 
-  const benchmark_added_ms = (key: string): number =>
-    Date.parse(model_by_key.get(key)?.dates.benchmark_added ?? ``) || 0
+  // plot-only models missing from ACTIVE_MODELS get a null date so they sort last
+  const undated_model = { dates: { benchmark_added: null } }
+  const model_or_undated = (key: string) => model_by_key.get(key) ?? undated_model
 
   // newest models first; plot-only models without a benchmark date sort last
   const selectable_options = [...plot_label_by_key]
-    .toSorted(([key_1], [key_2]) => benchmark_added_ms(key_2) - benchmark_added_ms(key_1))
+    .toSorted(([key_1], [key_2]) =>
+      by_benchmark_added_desc(model_or_undated(key_1), model_or_undated(key_2)),
+    )
     .map(([key, label]) => {
       const model_color = model_by_key.get(key)?.color ?? `gray`
       const text_color = pick_contrast_color({ background: model_color })

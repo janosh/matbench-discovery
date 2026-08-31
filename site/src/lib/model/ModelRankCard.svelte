@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ACTIVE_MODELS } from '$lib/models.svelte'
-  import { model_metric_ranks, RANKED_METRICS } from '$lib/rankings'
+  import { model_metric_ranks, rank_color, RANKED_METRICS } from '$lib/rankings'
   import { format_num } from 'matterviz'
   import { tooltip } from 'svelte-widgets/attachments'
 
@@ -8,12 +8,6 @@
 
   // Rank against the active leaderboard cohort and track live score weights.
   let ranks = $derived(model_metric_ranks(model_key, ACTIVE_MODELS, RANKED_METRICS))
-
-  // Mix theme-aware link blue (best) through muted purple to red (worst).
-  const rank_color = (rank: number, n_models: number): string => {
-    const frac = n_models > 1 ? (rank - 1) / (n_models - 1) : 0
-    return `color-mix(in oklab, var(--link-color) ${Math.round(100 * (1 - frac))}%, hsl(0, 65%, 45%))`
-  }
 
   // tooltip renders with allow_html, so use <br/> (not \r) for the line break
   const chip_title = ({ metric, rank, n_models, value }: (typeof ranks)[number]) =>

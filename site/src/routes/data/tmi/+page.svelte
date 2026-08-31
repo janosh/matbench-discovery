@@ -1,12 +1,11 @@
 <script lang="ts">
   import elem_counts_bar from '$figs/element-counts-mp-vs-wbm.json.gz'
-  import { PtableInset } from '$lib'
+  import { PtableHeatmap } from '$lib'
   import { series_blue, series_red } from '$lib/fig-helpers'
-  import type { ChemicalElement } from 'matterviz'
-  import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'
+  import type { ElementSymbol } from 'matterviz'
+  import { ColorScaleSelect } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { BarPlot } from 'matterviz/plot'
-  import { Toggle } from 'svelte-widgets'
   import {
     bind_url_params,
     bool_from_param,
@@ -15,12 +14,12 @@
     valid_query_param,
   } from '$lib/url-state.svelte'
 
-  const raw_counts = import.meta.glob<Record<string, number>>(
+  const raw_counts = import.meta.glob<Record<ElementSymbol, number>>(
     `../wbm-element-counts-*=*.json`,
     { eager: true, import: 'default' },
   )
   // key files by their `arity=N`/`batch=N` filename suffix
-  const elem_counts: Record<string, Record<string, number>> = $state({})
+  const elem_counts: Record<string, Record<ElementSymbol, number>> = {}
   for (const [key, value] of Object.entries(raw_counts)) {
     const short_key = key.split(`-`).at(-1)?.split(`.`)[0]
     if (short_key) elem_counts[short_key] = value
@@ -28,13 +27,12 @@
 
   const all_keys = Object.keys(elem_counts)
   const starts_with_arity = (key: string) => key.startsWith(`arity=`)
-  let arity_keys = all_keys.filter(starts_with_arity)
-  let batch_keys = all_keys.filter((key) => key.startsWith(`batch=`))
+  const arity_keys = all_keys.filter(starts_with_arity)
+  const batch_keys = all_keys.filter((key) => key.startsWith(`batch=`))
   const default_filter = all_keys.find(starts_with_arity) ?? all_keys[0] ?? ``
   let log = $state(false) // Log color scale
   let filter = $state(default_filter)
   let color_scale = $state<D3InterpolateName>(url_color_scale.default)
-  let active_element: ChemicalElement | null = $state(null)
   let active_counts = $derived(elem_counts[filter])
   let normalized_bar_counts: boolean = $state(false)
   const elem_count_series = $derived(
@@ -56,8 +54,6 @@
     bool_url_entry(`normalized`, normalized_bar_counts),
     url_color_scale.entry(color_scale),
   ])
-
-  const style = `display: flex; place-items: center; place-content: center;`
 </script>
 
 <h1>Too Much Information</h1>
@@ -67,9 +63,9 @@
 <h2>WBM Element Counts for <code>{filter}</code></h2>
 
 <p>
-  Filter WBM element counts by composition<strong>arity</strong> (how many elements in the
-  formula) or <strong>batch index</strong> (which iteration of elemental substitution the structure
-  was generated in).
+  Filter WBM element counts by composition <strong>arity</strong> (how many elements in
+  the formula) or <strong>batch index</strong> (which iteration of elemental substitution the
+  structure was generated in).
 </p>
 
 <ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />
@@ -95,23 +91,15 @@
   </span>
 </form>
 
-<PeriodicTable
+<PtableHeatmap
   heatmap_values={active_counts}
-  {log}
+  bind:log
   {color_scale}
-  bind:active_element
-  show_photo={false}
-  missing={{ color: `rgba(255,255,255,0.3)` }}
->
-  {#snippet inset()}
-    <TableInset>
-      {#if active_element}
-        <PtableInset element={active_element} elem_counts={active_counts} />
-      {/if}
-      <span {style}>Log color scale<Toggle bind:checked={log} /></span>
-    </TableInset>
-  {/snippet}
-</PeriodicTable>
+  colorbar={{
+    title: `WBM element counts for ${filter}`,
+    title_style: `font-size: 1.3em;`,
+  }}
+/>
 
 <h2>Element Counts</h2>
 

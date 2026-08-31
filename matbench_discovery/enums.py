@@ -1,20 +1,18 @@
 """Enums used as keys/accessors for dicts and dataframes across Matbench Discovery."""
 
 import functools
-import hashlib
 import os
 import re
 from enum import EnumType, StrEnum, _EnumDict, auto, unique
-from typing import Any, Self, TypeVar, cast
+from typing import Any, Self, cast
 
 import pymatviz as pmv
 import yaml
 
-from matbench_discovery import DEFAULT_CACHE_DIR, PKG_DIR, ROOT
+from matbench_discovery import DEFAULT_CACHE_DIR, PKG_DIR, ROOT, file_digest
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 eV_per_atom = pmv.enums.eV_per_atom  # noqa: N816
-T = TypeVar("T", bound="Files")
 
 
 def resolve_verified_file(
@@ -25,6 +23,13 @@ def resolve_verified_file(
     md5: str | None,
 ) -> str:
     """Resolve a cached file and reject it unless its declared MD5 verifies."""
+    # verified cache hit: return before maybe_auto_download_file hashes the file again
+    if (
+        md5 is not None
+        and os.path.isfile(abs_path)
+        and file_digest(abs_path, "md5") == md5
+    ):
+        return abs_path
     if url is not None:
         maybe_auto_download_file(url, abs_path, label=label, md5=md5)
     if not os.path.isfile(abs_path):
@@ -32,8 +37,7 @@ def resolve_verified_file(
             f"Failed to resolve {label!r} at {abs_path} with {url=}"
         )
     if md5 is not None:
-        with open(abs_path, "rb") as file:
-            actual_md5 = hashlib.file_digest(file, "md5").hexdigest()
+        actual_md5 = file_digest(abs_path, "md5")
         if actual_md5 != md5:
             raise ValueError(
                 f"Stale cached file for {label!r} at {abs_path}: "
@@ -268,19 +272,6 @@ class Files(StrEnum, metaclass=MetaFiles):
     def rel_path(self) -> str:
         """Path of the file relative to the repo's ROOT directory."""
         return self.__dict__["file_path"]
-
-    @classmethod
-    def from_label(cls, label: str) -> Self:
-        """Get enum member from pretty label."""
-        file = next((attr for attr in cls if attr.label == label), None)
-        if file is None:
-            import difflib
-
-            similar_labels = difflib.get_close_matches(label, [k.label for k in cls])
-            raise ValueError(
-                f"{label=} not found in {cls.__name__}. Did you mean one of {similar_labels}?"
-            )
-        return file
 
 
 # ruff: noqa: E501 (ignore long lines in class Model)

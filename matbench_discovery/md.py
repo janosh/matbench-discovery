@@ -304,9 +304,7 @@ def collect_run_info(rollout_sec: float) -> dict[str, object]:
     completion timestamp, host/job identity (how the 2026-07 timing salvage traced
     trajectories back to Slurm logs) and key package versions.
     """
-    from importlib.metadata import PackageNotFoundError, version
-
-    from matbench_discovery.hpc import detect_hardware, peak_memory_gb
+    from matbench_discovery.hpc import detect_hardware, package_versions, peak_memory_gb
 
     run_info: dict[str, object] = {
         "run_time_sec": round(rollout_sec, 2),
@@ -317,11 +315,7 @@ def collect_run_info(rollout_sec: float) -> dict[str, object]:
     }
     if slurm_job_id := os.getenv("SLURM_JOB_ID"):
         run_info["slurm_job_id"] = slurm_job_id
-    versions: dict[str, str] = {"python": platform.python_version()}
-    for pkg in ("ase", "numpy", "torch"):
-        with contextlib.suppress(PackageNotFoundError):
-            versions[pkg] = version(pkg)
-    return run_info | {"versions": versions}
+    return run_info | {"versions": package_versions(("ase", "numpy", "torch"))}
 
 
 def read_run_info(traj_path: str) -> dict[str, object]:

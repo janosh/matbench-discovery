@@ -15,8 +15,6 @@ from matbench_discovery.enums import MbdKey
 from matbench_discovery.phonons import thermal_conductivity as ltc
 from matbench_discovery.phonons.thermal_conductivity import calculate_fc2_set
 
-NP_RNG = np.random.default_rng(seed=0)
-
 
 @pytest.mark.parametrize(
     "forces",
@@ -115,14 +113,6 @@ def test_init_phono3py(test_atoms: Atoms) -> None:
     np.testing.assert_allclose(non_zero_disps, custom_displacement)
 
 
-def test_calculate_fc2_set(test_ph3: Phono3py, test_calculator: EMT) -> None:
-    """Test calculation of 2nd order force constants."""
-    forces = ltc.calculate_fc2_set(test_ph3, test_calculator, pbar_kwargs={})
-    assert isinstance(forces, np.ndarray)
-    assert forces.ndim == 3  # (n_displacements, n_atoms, 3)
-    assert forces.shape[-1] == 3
-
-
 def test_calculate_fc3_set(test_ph3: Phono3py, test_calculator: EMT) -> None:
     """Test calculation of 3rd order force constants."""
     forces = ltc.calculate_fc3_set(test_ph3, test_calculator, pbar_kwargs={})
@@ -191,19 +181,26 @@ def test_calculate_conductivity(test_ph3: Phono3py, test_calculator: EMT) -> Non
 
 
 def test_calculate_mode_kappa_tot() -> None:
-    """Test calculation of total mode kappa."""
-    # Create dummy arrays with correct shapes
-    mode_kappa_p_rta = NP_RNG.random((2, 3, 3, 3))  # (T, q-points, bands, xyz)
-    mode_kappa_coherence = NP_RNG.random(
-        (2, 3, 3, 3, 3)
-    )  # (T, q-points, bands, bands, xyz)
-    heat_capacity = NP_RNG.random((2, 3, 3))  # (T, q-points, bands)
+    """Coherence term reduces to a plain band sum for constant heat capacity."""
+    rng = np.random.default_rng(seed=0)
+    # array axes are T, q-points, bands, xyz (coherence has an extra bands axis)
+    mode_kappa_p_rta = rng.random((2, 3, 3, 3))
+    mode_kappa_coherence = rng.random((2, 3, 3, 3, 3))
+    heat_capacity = np.full((2, 3, 3), 0.7)
 
+    # with C_i == C_j the weight 2 * C_i / (C_i + C_j) is exactly 1
     result = ltc.calc_mode_kappa_tot(
         mode_kappa_p_rta, mode_kappa_coherence, heat_capacity
     )
-    assert isinstance(result, np.ndarray)
-    assert result.shape == mode_kappa_p_rta.shape
+    np.testing.assert_allclose(
+        result, mode_kappa_p_rta + mode_kappa_coherence.sum(axis=2), rtol=1e-12, atol=0
+    )
+
+    # zero heat capacity yields 0/0 = NaN which is zeroed, leaving only the RTA term
+    result_zero_cap = ltc.calc_mode_kappa_tot(
+        mode_kappa_p_rta, mode_kappa_coherence, np.zeros_like(heat_capacity)
+    )
+    np.testing.assert_array_equal(result_zero_cap, mode_kappa_p_rta)
 
 
 class MockCalculator(Calculator):

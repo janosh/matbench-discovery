@@ -62,6 +62,26 @@ if (!(`showPopover` in HTMLElement.prototype)) {
   })
 }
 
+// happy-dom stubs `nodeName` as '' on Node.prototype and overrides it per subclass
+// (Element, Text, ...). DOMPurify >= 3.4 reads nodeName through the Node.prototype getter
+// it cached at construction (clobber-safe), so under happy-dom every node looks nameless
+// and gets stripped, e.g. matterviz's sanitize_html(`r<sub>cut</sub>`) -> `cut`. Route the
+// base getter to the nearest subclass getter so table headers keep their leading text.
+if (Object.getOwnPropertyDescriptor(Node.prototype, `nodeName`)?.get?.call({}) === ``) {
+  Object.defineProperty(Node.prototype, `nodeName`, {
+    configurable: true,
+    get(this: Node): string {
+      let proto: object | null = Object.getPrototypeOf(this)
+      while (proto && proto !== Node.prototype) {
+        const getter = Object.getOwnPropertyDescriptor(proto, `nodeName`)?.get
+        if (getter) return getter.call(this)
+        proto = Object.getPrototypeOf(proto)
+      }
+      return ``
+    },
+  })
+}
+
 // Hoisted mocks for SvelteKit $app modules - more efficient than vi.mock at top level
 const app_mocks = vi.hoisted(() => ({
   state: {
@@ -160,6 +180,16 @@ export async function mount_with_url(
 
 export const sorted_header = (): HTMLTableCellElement | null =>
   document.querySelector(`thead th[aria-sort]:not([aria-sort="none"])`)
+
+// column label alone: HeatmapTable appends a sort indicator (↓/↑ plus rank <sup>) and,
+// for date columns, a format menu, both inside the <th>
+export function header_name(header: Element): string {
+  const label = header.cloneNode(true) as Element
+  for (const control of label.querySelectorAll(`.header-popover, .resize-handle`)) {
+    control.remove()
+  }
+  return (label.textContent ?? ``).trim().replace(/\s*[↓↑]\d*$/u, ``)
+}
 
 // text of a table-controls filter dropdown summary (e.g. `Training data (2)`)
 export function filter_summary_badge(menu_name: string): string {

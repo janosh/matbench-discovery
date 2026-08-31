@@ -68,11 +68,12 @@ const manifest_sized_model = (
 })
 
 describe(`kappa parity data helpers`, () => {
-  it(`builds the scatter dropping rows missing either conductivity`, () => {
+  it(`builds the scatter dropping rows missing either conductivity, carrying n_sites and spacegroup`, () => {
     const series = build_kappa_parity_series(base, model)
     expect(series.x).toEqual([10])
     expect(series.y).toEqual([8])
     expect(series.points.map((pt) => pt.material_id)).toEqual([`mp-1`])
+    expect(series.points[0]).toMatchObject({ n_sites: 8, spacegroup: 225 })
   })
 
   it.each([
@@ -102,12 +103,6 @@ describe(`kappa parity data helpers`, () => {
       0,
     )
     expect(point).toBeNull()
-  })
-
-  it(`carries n_sites and spacegroup metadata`, () => {
-    const point = get_kappa_parity_point(base, model, 0)
-    expect(point?.n_sites).toBe(8)
-    expect(point?.spacegroup).toBe(225)
   })
 
   it(`only reports models present in the manifest`, () => {

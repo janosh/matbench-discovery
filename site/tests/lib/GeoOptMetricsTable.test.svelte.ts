@@ -30,9 +30,12 @@ describe(`GeoOptMetricsTable`, () => {
     expect(header_texts).toContain(`Model`)
 
     // RMSD header omits the unit for a concise default column header
-    const rmsd_header = header_html.find((h) => h.includes(`RMSD`))
-    expect(rmsd_header).not.toContain(`unitless`)
-    expect(rmsd_header).not.toContain(`font-weight: 200`)
+    const rmsd_header = headers.find((header) => header.innerHTML.includes(`RMSD`))
+    if (!rmsd_header) throw new Error(`RMSD header not found`)
+    expect(rmsd_header.innerHTML).not.toContain(`unitless`)
+    expect(rmsd_header.innerHTML).not.toContain(`font-weight: 200`)
+    // initial sort is RMSD ascending
+    expect(rmsd_header.getAttribute(`aria-sort`)).toBe(`ascending`)
 
     // f_max header includes unit
     const fmax_header = header_html.find((h) => h.includes(`f<sub>max</sub>`))
@@ -64,17 +67,6 @@ describe(`GeoOptMetricsTable`, () => {
       .filter(Boolean)
     expect(group_texts).toContain(`Symmetry`)
     expect(group_texts).toContain(`Hyperparams`)
-  })
-
-  it(`sets initial sort to RMSD ascending`, async () => {
-    mount(GeoOptMetricsTable, { target: document.body })
-    await tick()
-
-    const rmsd_header = [...document.querySelectorAll(`th`)].find((header) =>
-      header.innerHTML.includes(`RMSD`),
-    )
-    if (!rmsd_header) throw new Error(`RMSD header not found`)
-    expect(rmsd_header.getAttribute(`aria-sort`)).toBe(`ascending`)
   })
 
   it(`renders geo-opt rows and excludes models without geo-opt metrics`, async () => {

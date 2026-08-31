@@ -1,6 +1,6 @@
 <script lang="ts">
   import { arr_to_str, DATASETS, format_date } from '$lib'
-  import { format_relative_time } from '$lib/labels'
+  import { format_relative_time, title_case } from '$lib/labels'
   import { format_num } from 'matterviz'
   import { Icon } from 'svelte-widgets'
   import {
@@ -42,18 +42,14 @@
     ],
   ] as const)
 
-  // Format the params object into a readable list
-  function format_params(params: Record<string, unknown> | undefined): string[] {
-    if (!params) return []
-
-    return Object.entries(params).map(([key, value]) => {
-      const formatted_key = key
-        .split(`_`)
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(` `)
-      return `${formatted_key}: ${arr_to_str(value)}`
-    })
-  }
+  // Format the params object into [label, value] pairs for a readable list
+  const format_params = (
+    params: Record<string, unknown> | undefined,
+  ): [string, string][] =>
+    Object.entries(params ?? {}).map(([key, value]) => [
+      title_case(key),
+      arr_to_str(value),
+    ])
 </script>
 
 <h1 style="font-size: 2.5em">{dataset.name}</h1>
@@ -152,8 +148,7 @@
         Method: <strong>{arr_to_str(dataset.method)}</strong>
       </li>
       {#if dataset.params}
-        {#each format_params(dataset.params) as param (param)}
-          {@const [key, value] = param.split(`:`)}
+        {#each format_params(dataset.params) as [key, value] (key)}
           <li>
             {key}: <strong>{value}</strong>
           </li>

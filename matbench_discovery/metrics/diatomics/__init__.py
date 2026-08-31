@@ -296,7 +296,9 @@ def calc_diatomic_metrics(
         {str(key) for key in metrics} if metrics is not None else DIATOMIC_METRIC_KEYS
     )
     if unknown_metrics := requested_metric_keys - DIATOMIC_METRIC_KEYS:
-        raise ValueError(f"{unknown_metrics=}. Valid metrics=")
+        raise ValueError(
+            f"{unknown_metrics=}. Valid keys: {sorted(DIATOMIC_METRIC_KEYS)}"
+        )
     requested_metrics = {MbdKey(key) for key in requested_metric_keys}
 
     results: dict[str, dict[str, float]] = {}

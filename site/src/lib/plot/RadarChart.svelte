@@ -1,12 +1,15 @@
 <script lang="ts">
-  import type { CpsConfig } from '$lib/combined-scores.svelte'
+  import {
+    CPS_CONFIG,
+    type CpsConfig,
+    DEFAULT_CPS_CONFIG,
+  } from '$lib/combined-scores.svelte'
   import { Icon } from 'svelte-widgets'
   import { Info, Reset } from 'svelte-widgets/icons'
   import { ALL_METRICS } from '$lib/labels'
   import type { Label } from '$lib/types'
   import { format_num, type Point } from 'matterviz'
   import { tooltip } from 'svelte-widgets/attachments'
-  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { MODELS, update_models_cps } from '$lib/models.svelte'
 
   // any weighted score with >= 3 components works (CPS is the default; CMDS and CDS
@@ -356,6 +359,8 @@
 
     <!-- Draggable knob: first element is larger invisible hit area for the smaller visible knob above it -->
     <!-- page-bg (not card-bg): the knob needs an opaque fill, card-bg is 0.3-0.4 alpha -->
+    <!-- pointer-only: keyboard users act on the focusable <svg> above, so the knobs stay
+         out of the a11y tree instead of being unreachable role=button stops -->
     {#each [{ fill: `transparent`, r: 20 }, { fill: `var(--page-bg)`, stroke: `var(--text-color)`, r: 7 }] as knob_style (knob_style.r)}
       <circle
         cx={point.x}
@@ -366,9 +371,7 @@
         onpointerup={end_drag}
         onpointercancel={end_drag}
         onlostpointercapture={end_drag}
-        role="button"
-        tabindex="0"
-        aria-label="Drag to adjust weight balance"
+        aria-hidden="true"
         {...knob_style}
       />
     {/each}

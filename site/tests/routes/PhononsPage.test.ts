@@ -1,9 +1,10 @@
 import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
 import { ACTIVE_MODELS } from '$lib'
 import { make_table_filters } from '$lib/models.svelte'
+import type * as KappaAnalysis from '$lib/parity/kappa-analysis'
 import PhononsPage from '$routes/tasks/phonons/+page.svelte'
 import { tick } from 'svelte'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   checkbox_for,
   doc_query,
@@ -12,6 +13,24 @@ import {
   mount_with_url,
   sorted_header,
 } from '../index'
+
+// per-test override of the analysis payload's model list (null = real payload)
+const analysis_mock = vi.hoisted(() => ({ models: null as unknown[] | null }))
+vi.mock(`$lib/parity/kappa-analysis`, async (import_original) => {
+  const actual = await import_original<typeof KappaAnalysis>()
+  return {
+    ...actual,
+    load_kappa_analysis: async () => {
+      const analysis = await actual.load_kappa_analysis()
+      return analysis_mock.models
+        ? { ...analysis, models: analysis_mock.models }
+        : analysis
+    },
+  }
+})
+afterEach(() => {
+  analysis_mock.models = null
+})
 
 const default_filters = make_table_filters()
 // Mirrors the page's model_filter plus MetricsTable's default filters.
@@ -66,6 +85,22 @@ describe(`Phonons Task Page`, () => {
       { timeout: 10_000 },
     )
     expect(doc_query(`.diagnostics-grid`).querySelectorAll(`div.scatter`)).toHaveLength(2)
+  })
+
+  // a leaderboard model absent from kappa-103-analysis.jsonl used to leave the spinner up forever
+  it(`tells the user when the analysis payload has no diagnostics for the selected model`, async () => {
+    analysis_mock.models = []
+    mount(PhononsPage, { target: document.body })
+
+    await vi.waitFor(() =>
+      expect(document.body.textContent).toContain(
+        `No per-material phonon diagnostics available for`,
+      ),
+    )
+    expect(document.body.textContent).not.toContain(
+      `Loading per-material phonon diagnostics`,
+    )
+    expect(document.querySelector(`.diagnostics-grid`)).toBeNull()
   })
 
   it(`shows only phonon leaderboard columns and rows with phonon metrics`, () => {

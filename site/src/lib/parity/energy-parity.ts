@@ -37,7 +37,7 @@ export interface EnergyParityPoint extends ParityPoint {
   error: number
 }
 
-export interface EnergyParitySeries {
+interface EnergyParitySeries {
   x: Float32Array
   y: Float32Array
   point_ids: Uint32Array
@@ -50,7 +50,7 @@ export interface StructurePopupPlacement {
   top: number
 }
 
-export interface StructurePopupPlacementOptions {
+interface StructurePopupPlacementOptions {
   viewport_width: number
   plot_left: number
   plot_width: number
@@ -211,7 +211,7 @@ export function build_energy_parity_series(
   }
 }
 
-export interface EnergyParityStats {
+interface EnergyParityStats {
   mae: number // mean absolute error of ML vs DFT energy
   r2: number // coefficient of determination, R^2 = 1 - SS_res / SS_tot
   n_points: number

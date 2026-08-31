@@ -68,7 +68,6 @@ def test_diatomic_classes() -> None:
         "hetero-nuclear": {"H-He": {"energies": energies, "forces": forces}},
     }
     curves = DiatomicCurves.from_dict(data)
-    assert "homo-nuclear" in data
     assert isinstance(curves.homo_nuclear["H"], DiatomicCurve)
     h_he_curve = curves.hetero_nuclear.get("H-He")
     assert isinstance(h_he_curve, DiatomicCurve)
@@ -335,7 +334,10 @@ def test_diatomic_curve_metrics(
 
     # Test with invalid metric name
     with pytest.raises(
-        ValueError, match=re.escape("unknown_metrics={'invalid'}. Valid metrics=")
+        ValueError,
+        match=re.escape(
+            "unknown_metrics={'invalid'}. Valid keys: ['energy_diff_flips'"
+        ),
     ):
         diatomics.calc_diatomic_metrics(
             ref_curves, pred_curves, metrics={"invalid": {}}
