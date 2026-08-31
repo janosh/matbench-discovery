@@ -18,15 +18,15 @@
   let {
     column_order = $bindable([]),
     filters = make_table_filters(),
-    show_selected_only = $bindable(false),
     sort = $bindable({ column: ALL_METRICS.RMSD.key, dir: `asc` }),
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     column_order?: string[]
     filters?: UrlTableFilters
-    show_selected_only?: boolean
     sort?: SortState
   } = $props()
+  // toggled from TableControls; no page binds it, so plain local state
+  let show_selected_only = $state(false)
 
   // Append unit in thin font and (higher/lower=better) hint to column tooltip
   function enrich_col(col: Label, overrides: Partial<Label> = {}): TableLabel {

@@ -72,7 +72,7 @@
   </button>
 </h2>
 <nav>
-  <CompareToggle {model_key} style="background: none; padding: 0" />
+  <CompareToggle {model_key} {model_name} style="background: none; padding: 0" />
   {#each links.filter( ([href]) => href?.startsWith(`http`) ) as [href, title, link_icon] (title)}
     <a {href} {...target}>
       <Icon icon={link_icon} />

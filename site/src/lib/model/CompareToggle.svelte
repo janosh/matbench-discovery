@@ -40,7 +40,7 @@
   class:selected
   class:compact
   aria-pressed={open_dialog ? undefined : selected}
-  aria-label={compact ? `${label} ${model_name}` : undefined}
+  aria-label={open_dialog ? undefined : `${label} ${model_name}`}
   {title}
   {onclick}
   {...rest}

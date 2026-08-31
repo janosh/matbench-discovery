@@ -49,7 +49,6 @@
     model_filter = $bindable(() => true),
     col_filter = $bindable(() => true),
     filters = make_table_filters(),
-    show_selected_only = $bindable(false),
     column_order = $bindable([]),
     sort = $bindable({ ...DEFAULT_TABLE_SORT }),
     ...rest
@@ -58,10 +57,11 @@
     model_filter?: (model: ModelData) => boolean
     col_filter?: (col: Label) => boolean
     filters?: UrlTableFilters
-    show_selected_only?: boolean
     column_order?: string[]
     sort?: { column: string; dir: SortDir }
   } = $props()
+  // toggled from TableControls; no page binds it, so plain local state
+  let show_selected_only = $state(false)
 
   const { model_name, training_sets, targets, benchmark_added, links } = METADATA_COLS
   const { checkpoint_license, code_license, org } = METADATA_COLS
