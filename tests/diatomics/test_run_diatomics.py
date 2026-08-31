@@ -29,13 +29,8 @@ def run_diatomics_fixture() -> ModuleType:
         ("--model emt --max-z 0", None),
         ("--model emt --n-points 1", None),
         ("--model mace-mp-0", "--model mace_mp_0"),
-        ("--model matris_10m_oam", "--model matris_10m_oam"),
-        ("--model matris_10m_mp", "--model matris_10m_mp"),
+        # shared-runner models are resolved by name, no per-model branching
         ("--model sevennet_0", "--model sevennet_0"),
-        ("--model sevennet_l3i5", "--model sevennet_l3i5"),
-        ("--model sevennet_mf_ompa", "--model sevennet_mf_ompa"),
-        ("--model sevennet_omni_i12", "--model sevennet_omni_i12"),
-        ("--model alphanet_v1_mptrj", "--model alphanet_v1_mptrj"),
         ("--model alphanet_v1_oam", "--model alphanet_v1_oam"),
         # --print-cmd must forward computation params, not just --model (else a copied
         # command silently runs with defaults)
@@ -145,27 +140,38 @@ def write_diatomics_shard(
 
 
 @pytest.mark.parametrize(
-    ("model_key", "second_shard_metadata", "should_raise"),
+    ("model_key", "second_shard_metadata", "should_raise", "shard_date"),
     [
         (
             "alphanet_v1_oam",
             {"excluded_formula_reasons": {"H-H": "must not leak"}},
             False,
+            None,
         ),
-        ("emt", {"excluded_formula_reasons": {"He-He": "invalid curve"}}, True),
+        # shards written on an earlier date are picked up via resolve_sharded_prefix
+        # and the merged artifact inherits their date
+        (
+            "alphanet_v1_oam",
+            {"excluded_formula_reasons": {"H-H": "must not leak"}},
+            False,
+            "2020-01-02",
+        ),
+        ("emt", {"excluded_formula_reasons": {"He-He": "invalid curve"}}, True, None),
     ],
 )
 def test_run_diatomics_merge_shards_exclusion_gate(
     model_key: str,
     second_shard_metadata: dict[str, object],
     should_raise: bool,
+    shard_date: str | None,
     run_diatomics: ModuleType,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """merge-shards accepts missing formulas only when YAML-curated."""
-    shard_dir = tmp_path / f"{run_diatomics.today}-diatomics-shards"
+    shard_date = shard_date or run_diatomics.today
+    shard_dir = tmp_path / f"{shard_date}-diatomics-shards"
     curves = {
         "H-H": {
             "energies": [0.0, 1.0],
@@ -186,7 +192,7 @@ def test_run_diatomics_merge_shards_exclusion_gate(
         assert "He-He" in stderr
     else:
         assert run_diatomics.main() == 0
-        merged_path = tmp_path / f"{run_diatomics.today}-diatomics.json.gz"
+        merged_path = tmp_path / f"{shard_date}-diatomics.json.gz"
         with gzip.open(merged_path, mode="rt") as file:
             merged_data = json.load(file)
         assert merged_data["run_metadata"]["excluded_formula_reasons"] == {

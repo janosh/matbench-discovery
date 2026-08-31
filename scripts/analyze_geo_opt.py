@@ -10,7 +10,8 @@ value) to properly account for structures that couldn't be matched.
 
 Example usage:
     python scripts/analyze_geo_opt.py --models mace_mp_0 m3gnet --symprec 1e-2 1e-5
-    python scripts/analyze_geo_opt.py --debug 10  # only analyze first 10 structures
+    # only analyze first 10 structures (CSV goes to a debug/ subdir, no YAML write)
+    python scripts/analyze_geo_opt.py --debug 10
     python scripts/analyze_geo_opt.py --workers 4  # use 4 CPU cores
 """
 
@@ -107,62 +108,81 @@ def analyze_model_symprec(
         symprec=symprec,
         moyo_version=moyo_version,
     )
-    geo_opt_csv_path = f"{os.path.dirname(geo_opt_path)}/{analysis_name}"
+    geo_opt_dir = os.path.dirname(geo_opt_path)
+    if debug_mode:
+        # a debug subset must never clobber the full analysis CSV (nor, below, the
+        # model YAML), so it lands in a sibling debug/ dir like run_discovery's dry-run/
+        geo_opt_csv_path = f"{geo_opt_dir}/debug/{analysis_name}"
+    else:
+        geo_opt_csv_path = f"{geo_opt_dir}/{analysis_name}"
 
-    # Try to download existing analysis file only if path matches exactly
-    symprec_metrics = geo_opt_metrics.get(symprec_str, {})
-    analysis_ref = symprec_metrics.get("analysis_file")
-    analysis_url = file_ref_url(analysis_ref)
-    analysis_file = file_ref_name(analysis_ref)
-    analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
+        # Try to download existing analysis file only if path matches exactly
+        symprec_metrics = geo_opt_metrics.get(symprec_str, {})
+        analysis_ref = symprec_metrics.get("analysis_file")
+        analysis_url = file_ref_url(analysis_ref)
+        analysis_file = file_ref_name(analysis_ref)
+        analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
 
-    if analysis_file_path == geo_opt_csv_path:
-        # Paths match - try to download if file missing
-        if not os.path.isfile(geo_opt_csv_path) and analysis_url:
-            maybe_auto_download_file(
-                analysis_url, geo_opt_csv_path, label=f"{model.label} {symprec_str}"
-            )
-    elif analysis_file:
-        # Paths differ (moyo version change, etc.) - will recompute
-        print(f"⚠️ {model.label} {symprec_str=} path mismatch, will recompute")
-        print(f"  - Expected: {geo_opt_csv_path}")
-        print(f"  - Found: {analysis_file_path}")
+        if analysis_file_path == geo_opt_csv_path:
+            # Paths match - try to download if file missing
+            if not os.path.isfile(geo_opt_csv_path) and analysis_url:
+                maybe_auto_download_file(
+                    analysis_url,
+                    geo_opt_csv_path,
+                    label=f"{model.label} {symprec_str}",
+                )
+        elif analysis_file:
+            # Paths differ (moyo version change, etc.) - will recompute
+            print(f"⚠️ {model.label} {symprec_str=} path mismatch, will recompute")
+            print(f"  - Expected: {geo_opt_csv_path}")
+            print(f"  - Found: {analysis_file_path}")
 
     if os.path.isfile(geo_opt_csv_path) and not overwrite:
+        # reuse the cached analysis but still (re)derive metrics from it below so the
+        # YAML never lags behind an already-analyzed CSV
         print(f"{model.label} already analyzed at {geo_opt_csv_path}")
-        return pd.read_csv(geo_opt_csv_path)
+        df_ml_geo_analysis = pd.read_csv(geo_opt_csv_path, index_col=0)
+    else:
+        action = (
+            "Overwriting"
+            if overwrite and os.path.isfile(geo_opt_csv_path)
+            else "Analyzing"
+        )
+        print(f"{action} {model.label} for {symprec=}")
 
-    action = (
-        "Overwriting" if overwrite and os.path.isfile(geo_opt_csv_path) else "Analyzing"
-    )
-    print(f"{action} {model.label} for {symprec=}")
+        # Analyze symmetry for current symprec
+        pbar_desc = f"Process {pbar_pos}: Analyzing {model.label} for {symprec=}"
+        df_model_analysis = symmetry.get_sym_info_from_structs(
+            model_structs,
+            pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
+            symprec=symprec,
+        )
 
-    # Analyze symmetry for current symprec
-    pbar_desc = f"Process {pbar_pos}: Analyzing {model.label} for {symprec=}"
-    df_model_analysis = symmetry.get_sym_info_from_structs(
-        model_structs,
-        pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
-        symprec=symprec,
-    )
+        # Compare with DFT reference
+        pbar_desc = f"Process {pbar_pos}: Comparing DFT vs {model.label} for {symprec=}"
+        df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
+            df_model_analysis,
+            df_dft_analysis,
+            model_structs,
+            dft_structs,
+            pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
+        )
 
-    # Compare with DFT reference
-    pbar_desc = f"Process {pbar_pos}: Comparing DFT vs {model.label} for {symprec=}"
-    df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
-        df_model_analysis,
-        df_dft_analysis,
-        model_structs,
-        dft_structs,
-        pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
-    )
-
-    # Save model results
-    df_ml_geo_analysis.to_csv(geo_opt_csv_path)
-    print(f"Completed {model.label} {symprec=} and saved results to {geo_opt_csv_path}")
+        # Save model results
+        os.makedirs(os.path.dirname(geo_opt_csv_path), exist_ok=True)
+        df_ml_geo_analysis.to_csv(geo_opt_csv_path)
+        print(f"Completed {model.label} {symprec=}, saved to {geo_opt_csv_path}")
 
     # Calculate metrics and write to YAML
     metrics_dict = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
     df_metrics = pd.DataFrame([metrics_dict])
-    geo_opt.write_metrics_to_yaml(df_metrics, model, symprec, geo_opt_csv_path)
+    if debug_mode:
+        print(
+            f"Debug mode ({debug_mode} structures): not writing metrics.geo_opt for "
+            f"{model.label} {symprec=} to YAML\n{df_metrics.T}"
+        )
+    else:
+        geo_opt.write_metrics_to_yaml(df_metrics, model, symprec, geo_opt_csv_path)
     return df_metrics
 
 

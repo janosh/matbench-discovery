@@ -36,7 +36,7 @@
   }: HTMLAttributes<HTMLElementTagNameMap[`section`]> & {
     model: ModelData
     metrics: readonly Label[]
-    sort_by: keyof ModelData
+    sort_by: string // metric label key (or `Model`) highlighted in the metrics list
     show_details?: boolean
     metrics_style?: string
     title_style?: string

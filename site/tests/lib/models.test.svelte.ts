@@ -19,32 +19,28 @@ import { per_element_each_errors as per_elem_each_errors } from '$lib/per-elemen
 import { load as yaml_load } from 'js-yaml'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 describe(`calculate_training_sizes`, () => {
-  it(`should return zeros for empty training sets`, () => {
-    const result = calculate_training_sizes([])
-    expect(result.total_materials).toBe(0)
-    expect(result.total_structures).toBe(0)
-  })
-
-  it(`should calculate totals correctly for a single dataset`, () => {
-    const result = calculate_training_sizes([`MP 2022`])
-    expect(result.total_materials).toBe(154_719)
-    expect(result.total_structures).toBe(154_719)
-  })
-
-  it(`should calculate totals correctly for multiple datasets`, () => {
-    const result = calculate_training_sizes([`MP 2022`, `MPtrj`])
-    expect(result.total_materials).toBe(300_642)
-    expect(result.total_structures).toBe(1_735_114)
-  })
-
-  it(`should use n_structures as n_materials when n_materials is not specified`, () => {
-    const result = calculate_training_sizes([`MPF`])
-    expect(result.total_materials).toBe(62_783) // Should equal n_structures
-    expect(result.total_structures).toBe(188_349)
-  })
+  it.each([
+    { training_sets: [], total_materials: 0, total_structures: 0 },
+    { training_sets: [`MP 2022`], total_materials: 154_719, total_structures: 154_719 },
+    {
+      training_sets: [`MP 2022`, `MPtrj`],
+      total_materials: 300_642,
+      total_structures: 1_735_114,
+    },
+    // MPF has no n_materials, so n_structures is used as n_materials
+    { training_sets: [`MPF`], total_materials: 62_783, total_structures: 188_349 },
+  ])(
+    `sums $training_sets to $total_materials materials / $total_structures structures`,
+    ({ training_sets, total_materials, total_structures }) => {
+      expect(calculate_training_sizes(training_sets)).toStrictEqual({
+        total_materials,
+        total_structures,
+      })
+    },
+  )
 
   it(`throws for unknown training sets`, () => {
     expect(() => calculate_training_sizes([`NonExistentDataset`, `MP 2022`])).toThrow(
@@ -54,21 +50,6 @@ describe(`calculate_training_sizes`, () => {
 })
 
 describe(`MODELS array`, () => {
-  it(`should be a non-empty array`, () => {
-    expect(Array.isArray(MODELS)).toBe(true)
-    expect(MODELS.length).toBeGreaterThan(0)
-  })
-
-  it(`should have processed models with calculated properties`, () => {
-    // Check that models have the expected structure
-    const model = MODELS[0]
-    expect(model).toHaveProperty(`dirname`)
-    expect(model).toHaveProperty(`metadata_file`)
-    expect(model).toHaveProperty(`color`)
-    expect(model).toHaveProperty(`n_training_materials`)
-    expect(model).toHaveProperty(`n_training_structures`)
-  })
-
   it(`includes logos from non-lead author affiliations`, () => {
     const mirror_physics_model = MODELS.find((model) =>
       model.authors?.some((author) => author.affiliation === `Mirror Physics`),
@@ -253,6 +234,14 @@ describe(`ALL_TRAINING_SETS`, () => {
 
 // NB: CPS_CONFIG defaults + reactivity are covered in combined-scores.test.ts
 describe(`update_models_cps`, () => {
+  // several tests below mutate the shared module-level CPS_CONFIG weights
+  afterEach(() => {
+    for (const [key, part] of Object.entries(DEFAULT_CPS_CONFIG)) {
+      CPS_CONFIG[key as keyof typeof CPS_CONFIG].weight = part.weight
+    }
+    update_models_cps(MODELS, CPS_CONFIG)
+  })
+
   it(`should update CPS for models based on metrics and current weights`, () => {
     // Act: Call the function under test
     update_models_cps(MODELS, CPS_CONFIG)

@@ -48,6 +48,7 @@ def artifact_manifest(role: str, path: str) -> dict[str, str | int]:
     path = os.path.abspath(path)
     if not os.path.isfile(path):
         raise FileNotFoundError(f"Payload input file not found: {path!r}")
+    # hash and stat the same open descriptor so size and digest describe one file state
     with open(path, "rb") as file:
         sha256 = hashlib.file_digest(file, "sha256").hexdigest()
         size = os.fstat(file.fileno()).st_size

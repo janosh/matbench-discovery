@@ -53,7 +53,7 @@
       ?.getAttribute(`href`)
     if (!href) return
     event.preventDefault()
-    event.stopPropagation() // capture phase: pre-empts HeatmapTable's column menu
+    event.stopPropagation() // capture phase: preempts HeatmapTable's column menu
     model_key = href.slice(`/models/`.length)
     const point = { x: event.clientX, y: event.clientY }
     // Chromium fires contextmenu before pointerup; opening now would let that pointerup

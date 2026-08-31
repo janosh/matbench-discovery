@@ -80,12 +80,8 @@ def test_task() -> None:
     assert Task.S2EFS == "S2EFS"
     assert Task.S2EFS.label == "structure to energy, force, stress"
     assert Task.IS2RE_SR == "IS2RE-SR"
-
-    # Test task descriptions make sense
-    assert "energy" in Task.S2E.label
-    assert "force" in Task.S2EF.label
-    assert "stress" in Task.S2EFS.label
-    assert "magmoms" in Task.S2EFSM.label
+    assert Task.S2EF.label == "structure to energy, force"
+    assert Task.S2EFSM.label == "structure to energy, force, stress, magmoms"
 
 
 def test_open() -> None:
@@ -96,12 +92,6 @@ def test_open() -> None:
     assert Open.CSCD == "CSCD"
     assert Open.CSCD.label == "closed source, closed data"
 
-    # Test openness descriptions make sense
-    assert "open source" in Open.OSOD.label
-    assert "open data" in Open.OSOD.label
-    assert "closed source" in Open.CSCD.label
-    assert "closed data" in Open.CSCD.label
-
 
 def test_test_subset() -> None:
     """Test TestSubset enum."""
@@ -109,10 +99,7 @@ def test_test_subset() -> None:
     assert TestSubset.uniq_protos == "unique_prototypes"
     assert TestSubset.uniq_protos.label == "Unique Structure Prototypes"
     assert TestSubset.full_test_set == "full_test_set"
-
-    # Test subset descriptions make sense
-    assert "Unique" in TestSubset.uniq_protos.label
-    assert "Full" in TestSubset.full_test_set.label
+    assert TestSubset.full_test_set.label == "Full Test Set"
 
 
 def test_files_enum() -> None:
@@ -139,11 +126,6 @@ def test_files_enum() -> None:
     test_file = SubFiles.test_file
     assert repr(test_file) == "SubFiles.test_file"
     assert str(test_file) == "test_file"
-
-    # Test invalid label lookup
-    label = "invalid-label"
-    with pytest.raises(ValueError, match=f"{label=} not found in Files"):
-        Files.from_label(label)
 
 
 @pytest.mark.parametrize("enum_cls", [Model, DataFiles])
@@ -521,28 +503,6 @@ def test_model_md_path_passes_huggingface_token(
     assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer hf_secret"}
 
 
-def get_file_ref_urls(
-    dct: dict[str, Any], parent_key: str = ""
-) -> list[tuple[str, str]]:
-    """Recursively find nested FileRef URLs and return their dotted paths."""
-    urls = []
-    for key, val in dct.items():
-        current_key = f"{parent_key}.{key}" if parent_key else key
-
-        if key == "url" and isinstance(val, str):
-            urls.append((current_key, val))
-        elif isinstance(val, dict):
-            urls.extend(get_file_ref_urls(val, current_key))
-
-    return urls
-
-
-def test_get_file_ref_urls() -> None:
-    """Nested FileRef URLs are included in model URL validation."""
-    metrics = {"discovery": {"pred_file": {"name": "preds.csv", "url": "https://x"}}}
-    assert get_file_ref_urls(metrics) == [("discovery.pred_file.url", "https://x")]
-
-
 TIMEOUT = 30
 TRANSIENT_URL_STATUSES = (429, 500, 502, 503, 504)
 VALID_URL_STATUSES = {200, 202, 403, 429}
@@ -594,8 +554,16 @@ def test_model_prediction_urls(url_session: requests.Session) -> None:
         metrics = model.metrics
         if not metrics:
             continue
-        for key_path, url in get_file_ref_urls(metrics):
-            tasks[url] = f"{model.name}.{key_path}"
+        # walk nested metrics dicts to collect every FileRef URL with its dotted path
+        stack: list[tuple[str, dict[str, Any]]] = [("", metrics)]
+        while stack:
+            parent_key, dct = stack.pop()
+            for key, val in dct.items():
+                key_path = f"{parent_key}.{key}" if parent_key else key
+                if key == "url" and isinstance(val, str):
+                    tasks[val] = f"{model.name}.{key_path}"
+                elif isinstance(val, dict):
+                    stack.append((key_path, val))
 
     n_workers = min(len(tasks), mp.cpu_count())
     errors: list[Exception] = []

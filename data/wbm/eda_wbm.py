@@ -247,6 +247,7 @@ df_2d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-2d.csv.gz")
 df_2d_tsne = df_2d_tsne.set_index(Key.mat_id)
 
 df_3d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-3d.csv.gz")
+df_3d_tsne = df_3d_tsne.set_index(Key.mat_id)  # align on material ID like the 2d frame
 
 df_wbm[list(df_2d_tsne)] = df_2d_tsne
 df_wbm[list(df_3d_tsne)] = df_3d_tsne
@@ -254,8 +255,10 @@ df_wbm[list(df_each_err.add_suffix(" abs EACH error"))] = df_each_err.abs()
 
 
 # %%
+# px only resolves column names, not the index name, so expose material_id as a column
+df_wbm_tsne = df_wbm.reset_index()
 fig = px.scatter(
-    df_wbm,
+    df_wbm_tsne,
     x="2d t-SNE 1",
     y="2d t-SNE 2",
     color="step",
@@ -267,19 +270,22 @@ fig.show()
 
 # %%
 fig = px.scatter_3d(
-    df_wbm,
+    df_wbm_tsne,
     x="3d t-SNE 1",
     y="3d t-SNE 2",
     z="3d t-SNE 3",
     color="step",
-    custom_data=[Key.mat_id, Key.formula, MbdKey.each_true],
+    # customdata columns are indexed positionally in the hovertemplate below
+    custom_data=[Key.mat_id, Key.formula, MbdKey.each_true, "step"],
 )
-fig.data[0].hovertemplate = (
-    "<b>material_id: %{customdata[0]}</b><br><br>"
-    "t-SNE: (%{x:.2f}, %{y:.2f}, %{z:.2f})<br>"
-    "Formula: %{customdata[1]}<br>"
-    "E<sub>above hull</sub>: %{customdata[2]:.2f}<br>"
-    "WBM step: %{customdata[3]:.2f}<br>"
+fig.update_traces(
+    hovertemplate=(
+        "<b>material_id: %{customdata[0]}</b><br><br>"
+        "t-SNE: (%{x:.2f}, %{y:.2f}, %{z:.2f})<br>"
+        "Formula: %{customdata[1]}<br>"
+        "E<sub>above hull</sub>: %{customdata[2]:.2f}<br>"
+        "WBM step: %{customdata[3]}<br>"
+    )
 )
 fig.show()
 

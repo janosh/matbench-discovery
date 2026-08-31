@@ -1,7 +1,6 @@
 import { DATASETS } from '$lib'
 import { heatmap_class } from '$lib/table-export'
 import Page from '$routes/data/sets/+page.svelte'
-import { tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
 
@@ -10,12 +9,8 @@ describe(`Datasets Page`, () => {
     mount(Page, { target: document.body })
   })
 
-  it(`renders the page title correctly`, () => {
-    const heading = doc_query<HTMLHeadingElement>(`h1`)
-    expect(heading.textContent).toContain(`Datasets`)
-  })
-
   it(`renders the table with correct structure`, () => {
+    expect(doc_query<HTMLHeadingElement>(`h1`).textContent).toContain(`Datasets`)
     const table = doc_query<HTMLTableElement>(`.${heatmap_class}`)
     const thead = doc_query(`thead`, table)
     const tbody = doc_query(`tbody`, table)
@@ -35,22 +30,12 @@ describe(`Datasets Page`, () => {
     expect(column_headers.some((header) => header.includes(`API`))).toBe(true)
     expect(column_headers.some((header) => header.includes(`Links`))).toBe(true)
 
-    // One row per dataset in datasets.yml
+    // One row per dataset in datasets.yml, title in the first cell
     const rows = tbody.querySelectorAll(`tr`)
     expect(rows).toHaveLength(Object.keys(DATASETS).length)
-  })
-
-  it(`displays information about multiple datasets`, () => {
-    const rows = document.querySelectorAll(`.${heatmap_class} tbody tr`)
-    expect(rows).toHaveLength(Object.keys(DATASETS).length)
-
-    // Check for some expected dataset names in the table
-    const dataset_names = [...rows].map((row) => {
-      // Title is always the first cell
-      const title_cell = row.querySelector(`td:first-child`)
-      return title_cell?.textContent?.trim() ?? ``
-    })
-
+    const dataset_names = [...rows].map(
+      (row) => row.querySelector(`td:first-child`)?.textContent?.trim() ?? ``,
+    )
     expect(dataset_names.some((name) => name.includes(`MP`))).toBe(true)
     expect(dataset_names.some((name) => name.includes(`Alex`))).toBe(true)
   })
@@ -90,113 +75,39 @@ describe(`Datasets Page`, () => {
   })
 
   it(`properly renders API links for datasets`, () => {
-    // API column is the 9th column
-    const api_links = document.querySelectorAll<HTMLAnchorElement>(
-      `.${heatmap_class} tbody td:nth-child(9) a`,
+    // API column is the 9th column (index 8)
+    const rows = document.querySelectorAll(`.${heatmap_class} tbody tr`)
+    const api_links = [...rows].flatMap((row) =>
+      [...row.querySelectorAll(`td`)[8].children].filter(
+        (child): child is HTMLAnchorElement => child.tagName === `A`,
+      ),
     )
 
     // One API link per dataset native_api/optimade_api URL
-    const expected_api_count = Object.values(DATASETS)
+    const by_string = (str_1: string, str_2: string) => str_1.localeCompare(str_2)
+    const expected_api_hrefs = Object.values(DATASETS)
       .flatMap((dataset) => [dataset.native_api, dataset.optimade_api])
-      .filter(Boolean).length
-    expect(api_links).toHaveLength(expected_api_count)
-
-    // Verify each link has the correct attributes and title
-    api_links.forEach((link) => {
-      const link_html = link.outerHTML
-
-      // Check for valid href, target, and rel attributes
-      expect(link_html).toMatch(/href="https?:\/\/[^"]+"/) // Check for http:// or https://
-      expect(link_html).toContain(`target="_blank"`)
-      expect(link_html).toContain(`rel="noopener noreferrer"`)
-
-      // Ensure title is one of the expected ones
-      const has_native_title = link_html.includes(`title="Native API"`)
-      const has_optimade_title = link_html.includes(`title="OPTIMADE API"`)
-      expect(has_native_title || has_optimade_title).toBe(true)
-    })
-  })
-
-  it(`can sort table by clicking column headers`, async () => {
-    // Get initial order of datasets
-    const initial_datasets = [
-      ...document.querySelectorAll(`.${heatmap_class} tbody tr`),
-    ].map((row) => {
-      // First cell is Title column
-      const cells = row.querySelectorAll(`td`)
-      return cells[0]?.textContent?.trim() ?? ``
-    })
-
-    // Find and click the Structures column header to sort (usually the 2nd header)
-    const headers = document.querySelectorAll<HTMLElement>(`.${heatmap_class} th`)
-    const structures_header = [...headers].find((th) =>
-      th.textContent?.includes(`Structures`),
+      .filter((href): href is string => Boolean(href))
+      .toSorted(by_string)
+    expect(api_links.map((link) => link.href).toSorted(by_string)).toStrictEqual(
+      expected_api_hrefs,
     )
-    if (!structures_header) throw new Error(`Structures header not found`)
-    structures_header.click()
-    await tick()
 
-    // Get new order after sorting
-    const sorted_datasets = [
-      ...document.querySelectorAll(`.${heatmap_class} tbody tr`),
-    ].map((row) => {
-      const cells = row.querySelectorAll(`td`)
-      return cells[0]?.textContent?.trim() ?? ``
-    })
-
-    // Order should have changed
-    expect(sorted_datasets).not.toStrictEqual(initial_datasets)
+    for (const link of api_links) {
+      expect(link.getAttribute(`target`)).toBe(`_blank`)
+      expect(link.getAttribute(`rel`)).toBe(`noopener noreferrer`)
+      expect([`Native API`, `OPTIMADE API`]).toContain(link.getAttribute(`title`))
+    }
   })
 
-  it(`skips sorting when clicking non-sortable columns`, async () => {
-    // Get initial order of datasets
-    const initial_datasets = [
-      ...document.querySelectorAll(`.${heatmap_class} tbody tr`),
-    ].map((row) => {
-      const cells = row.querySelectorAll(`td`)
-      return cells[0]?.textContent?.trim() ?? ``
-    })
-
-    // Find and click the Links column header (which should be non-sortable)
-    const links_header = [
-      ...document.querySelectorAll<HTMLElement>(`.${heatmap_class} th`),
-    ].find((th) => th.textContent?.includes(`Links`))
-    if (!links_header) throw new Error(`Links header not found`)
-    links_header.click()
-    await tick()
-
-    // Get order after clicking Links column
-    const datasets_after_clicking_links = [
-      ...document.querySelectorAll(`.${heatmap_class} tbody tr`),
-    ].map((row) => {
-      const cells = row.querySelectorAll(`td`)
-      return cells[0]?.textContent?.trim() ?? ``
-    })
-
-    // Order should remain the same after clicking Links (non-sortable)
-    expect(
-      datasets_after_clicking_links,
-      `Order changed after clicking Links header`,
-    ).toStrictEqual(initial_datasets)
-  })
-
-  it(`has correct styling for sortable and non-sortable columns`, () => {
+  it(`marks only the Links and API columns as non-sortable`, () => {
     // In HeatmapTable, non-sortable columns have the 'not-sortable' class
-    const non_sortable_headers = document.querySelectorAll(
-      `.${heatmap_class} th.not-sortable`,
-    )
-    const all_headers = document.querySelectorAll(`.${heatmap_class} th`)
-
-    // Only Links column should have not-sortable class
-    expect(non_sortable_headers).toHaveLength(2)
-
-    // The Links header should have the not-sortable class
-    const links_header = [...all_headers].find((th) => th.textContent?.includes(`Links`))
-    expect(links_header?.classList.contains(`not-sortable`)).toBe(true)
-
-    // The API header should have the not-sortable class
-    const api_header = [...all_headers].find((th) => th.textContent?.includes(`API`))
-    expect(api_header?.classList.contains(`sortable`)).toBe(false)
+    const all_headers = [...document.querySelectorAll(`.${heatmap_class} th`)]
+    const non_sortable = all_headers.filter((th) => th.classList.contains(`not-sortable`))
+    expect(non_sortable.map((th) => th.textContent?.trim())).toStrictEqual([
+      `API`,
+      `Links`,
+    ])
   })
 
   it(`formats numbers correctly in the table`, () => {

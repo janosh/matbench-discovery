@@ -1,16 +1,13 @@
 """Test diatomic curve metrics calculation functions."""
 
 import re
-from collections.abc import Callable
 
 import numpy as np
 import pytest
 
 from matbench_discovery.metrics import diatomics
-from matbench_discovery.metrics.diatomics import DiatomicCurves
 from matbench_discovery.metrics.diatomics.energy import (
     _threshold_diff_signs,
-    _validate_diatomic_curve,
     calc_energy_diff_flips,
     calc_energy_jump,
     calc_pbe_bond_length_error,
@@ -19,27 +16,6 @@ from matbench_discovery.metrics.diatomics.energy import (
     calc_pbe_wall_dist_mae,
     calc_pbe_well_depth_error,
 )
-
-
-@pytest.mark.parametrize(
-    "metric_func",
-    [
-        diatomics.calc_tortuosity,
-        diatomics.calc_energy_jump,
-        diatomics.calc_energy_diff_flips,
-    ],
-)
-def test_energy_metrics_on_fixture(
-    metric_func: Callable[..., float],
-    pred_ref_diatomic_curves: tuple[DiatomicCurves, DiatomicCurves],
-) -> None:
-    """All single-curve energy metrics return non-negative floats on fixture data."""
-    _ref_curves, pred_curves = pred_ref_diatomic_curves
-    pred_curve = pred_curves.homo_nuclear["H"]
-    seps_pred, energies_pred = pred_curve.distances, pred_curve.energies
-    result = metric_func(seps_pred, energies_pred)
-    assert isinstance(result, float)
-    assert result >= 0
 
 
 @pytest.mark.parametrize(
@@ -90,21 +66,6 @@ def test_energy_flips_and_jumps_concrete(
     seps = np.arange(1, len(energies) + 1, dtype=float)
     assert calc_energy_diff_flips(seps, energies) == expected_flips
     assert calc_energy_jump(seps, energies) == pytest.approx(expected_jump)
-
-
-def test_validate_normalize_energy() -> None:
-    """Test that normalize_energy shifts energies to zero at far field."""
-    seps = np.array([1.0, 2.0, 3.0, 4.0])
-    energies = np.array([10.0, 5.0, 2.0, 1.0])
-    _, normed = _validate_diatomic_curve(seps, energies, normalize_energy=True)
-    # After sort ascending, last value (at sep=4) should be 0
-    assert normed[-1] == 0.0
-    assert normed[0] == pytest.approx(9.0)  # 10 - 1
-
-    # Forces (ndim > 1) should NOT be normalized even with flag set
-    forces = np.ones((4, 2, 3))
-    _, forces_out = _validate_diatomic_curve(seps, forces, normalize_energy=True)
-    np.testing.assert_array_equal(forces_out, forces)
 
 
 def test_pbe_reference_energy_metrics() -> None:

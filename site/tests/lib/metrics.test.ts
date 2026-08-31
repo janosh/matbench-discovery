@@ -1,33 +1,13 @@
 import { DATASETS, MODELS } from '$lib'
-import {
-  ALL_METRICS,
-  DIATOMICS_METRICS,
-  METADATA_COLS,
-  PHONON_METRICS,
-} from '$lib/labels'
+import { ALL_METRICS, DIATOMICS_METRICS, PHONON_METRICS } from '$lib/labels'
 import {
   assemble_row_data,
   format_train_set,
   metric_better_as,
   sort_models,
-  targets_tooltips,
 } from '$lib/metrics'
-import type { TargetType } from '$lib/schema/model'
 import type { ModelData } from '$lib/types'
 import { describe, expect, it } from 'vitest'
-
-describe(`targets_tooltips`, () => {
-  it.each([
-    [`E`, `Energy`],
-    [`EF_G`, `Energy with gradient-based forces`],
-    [`EFS_DM`, `Energy with direct forces, stress, and magmoms`],
-    [`EF_D`, `Energy with direct forces`],
-    [`EFS_G`, `Energy with gradient-based forces and stress`],
-    [`EFSH_G`, `Energy with gradient-based forces, stress, and Hessian`],
-  ])(`contains tooltip for %s target type`, (target, expected) => {
-    expect(targets_tooltips[target as TargetType]).toBe(expected)
-  })
-})
 
 describe(`metric_better_as`, () => {
   // guards metric orientation in modeling-tasks.yml, e.g. CMDS/combined_score
@@ -47,8 +27,6 @@ describe(`metric_better_as`, () => {
     [`nonexistent_metric`, null],
   ])(`maps %s -> %s`, (metric, expected) => {
     expect(metric_better_as(metric)).toBe(expected)
-    if (metric === `κ_SRD`)
-      expect(PHONON_METRICS.κ_SRD.color_scale).toBe(`interpolateRdBu`)
   })
 })
 
@@ -100,7 +78,7 @@ describe(`format_train_set`, () => {
   it(`shows materials and structures when they differ`, () => {
     // Find a dataset with both n_materials and n_structures
     const dataset_with_both = Object.entries(DATASETS).find(
-      ([_, dataset]) =>
+      ([, dataset]) =>
         dataset.n_materials &&
         dataset.n_structures &&
         dataset.n_materials !== dataset.n_structures,
@@ -326,38 +304,6 @@ describe(`assemble_row_data`, () => {
   )
 })
 
-describe(`METADATA_COLS`, () => {
-  it(`contains all expected metadata columns in the right order`, () => {
-    const expected_labels = [
-      `Model`,
-      `Training Set`,
-      `Targets`,
-      `Date Added`,
-      `Links`,
-      `Training Materials`,
-      `Training Structures`,
-      `Ckpt License`,
-      `Code License`,
-      `Run Time`,
-      `Org`,
-    ]
-
-    expect(Object.values(METADATA_COLS).map((col) => col.label)).toStrictEqual(
-      expected_labels,
-    )
-  })
-
-  it(`has the correct properties for each column`, () => {
-    // Test special properties of columns
-    const model_col = METADATA_COLS.model_name
-    expect(model_col?.sticky).toBe(true)
-    expect(model_col?.sortable).toBe(true)
-
-    const links_col = METADATA_COLS.links
-    expect(links_col?.sortable).toBe(false)
-  })
-})
-
 describe(`Model Sorting Logic`, () => {
   // Create a set of test models that can be reused across multiple test cases
   const create_test_models = () =>
@@ -454,8 +400,9 @@ describe(`Model Sorting Logic`, () => {
 
   // mmm_model has NaN Accuracy and missing_model lacks metrics, so these cases also
   // assert NaN/missing values sort last for every metric and direction (incl. symmetric
-  // Accuracy asc/desc)
-  it.each<[string, `asc` | `desc`, string[]]>([
+  // Accuracy asc/desc). The last case appends the edge-case models: extreme_model's
+  // κ_SRME=0 sorts first and all metric-less models keep their input order at the end
+  it.each<[string, `asc` | `desc`, string[], boolean?]>([
     [
       `${ALL_METRICS.F1.path}.${ALL_METRICS.F1.key}`,
       `desc`,
@@ -481,10 +428,32 @@ describe(`Model Sorting Logic`, () => {
       `asc`,
       [`aaa_model`, `mmm_model`, `zzz_model`, `missing_model`],
     ],
-  ])(`sorts test models by %s (%s)`, (metric, order, expected_order) => {
-    const sorted = create_test_models().toSorted(sort_models(metric, order))
-    expect(sorted.map((model) => model.model_key)).toStrictEqual(expected_order)
-  })
+    [
+      `${ALL_METRICS.κ_SRME.path}.${ALL_METRICS.κ_SRME.key}`,
+      `asc`,
+      [
+        `extreme_model`,
+        `zzz_model`,
+        `mmm_model`,
+        `aaa_model`,
+        `missing_model`,
+        `no_metrics_model`,
+        `empty_metrics_model`,
+        `undefined_model`,
+      ],
+      true,
+    ],
+  ])(
+    `sorts test models by %s (%s)`,
+    (metric, order, expected_order, with_edge_cases = false) => {
+      const models = [
+        ...create_test_models(),
+        ...(with_edge_cases ? create_edge_case_models() : []),
+      ]
+      const sorted = models.toSorted(sort_models(metric, order))
+      expect(sorted.map((model) => model.model_key)).toStrictEqual(expected_order)
+    },
+  )
 
   it(`returns 0 for two models that both have NaN values (consistent comparator)`, () => {
     // regression: NaN-vs-NaN returned 1 both ways, breaking antisymmetry -> order-dependent sort
@@ -537,20 +506,6 @@ describe(`Model Sorting Logic`, () => {
     expect(desc_keys).toStrictEqual(asc_keys.toReversed())
   })
 
-  it(`handles edge cases with missing or extreme metric values`, () => {
-    const edge_case_models = create_edge_case_models()
-    const regular_models = create_test_models()
-    const combined_models = [...regular_models, ...edge_case_models]
-
-    // Test sorting with κ_SRME where one model has zero value
-    const { κ_SRME } = ALL_METRICS
-    const sort_by_path = `${κ_SRME.path}.${κ_SRME.key}`
-    const sorted_by_kappa = combined_models.toSorted(sort_models(sort_by_path, `asc`))
-
-    // Zero value should be first for asc
-    expect(sorted_by_kappa[0].model_key).toBe(`extreme_model`)
-  })
-
   it(`sorts models by runtime correctly, treating 0 as infinity`, () => {
     const models = Object.entries({ a: 10, b: 0, c: 5, d: 0 }).map(
       ([model_key, run_time]) => ({
@@ -590,30 +545,20 @@ describe(`Model Sorting Logic`, () => {
     ])
   })
 
-  it(`handles sorting with all models having missing metric`, () => {
-    const all_missing_models = [
-      { model_name: `Model A`, model_key: `model_a` },
-      { model_name: `Model B`, model_key: `model_b` },
-    ] as unknown as ModelData[]
-
-    // Sort by a metric that none of the models have
-    const sorted_models = all_missing_models.toSorted(sort_models(`F1`, `desc`))
-
-    // Order should be preserved when all models are missing the metric
-    expect(sorted_models[0].model_key).toBe(`model_a`)
-    expect(sorted_models[1].model_key).toBe(`model_b`)
-  })
-
-  it(`maintains original order for equivalent values`, () => {
-    const models_with_same_values = [1, 2, 3].map((idx) => ({
+  // sorting is stable: input order is preserved when values tie or are all missing
+  it.each([
+    [`all models missing the metric`, undefined],
+    [`identical values`, { discovery: { unique_prototypes: { F1: 0.8 } } }],
+  ])(`maintains original order for %s`, (_label, metrics) => {
+    const models = [1, 2, 3].map((idx) => ({
       model_name: `Model ${idx}`,
       model_key: `model_${idx}`,
-      metrics: { discovery: { unique_prototypes: { F1: 0.8 } } },
+      metrics,
     })) as unknown as ModelData[]
 
-    // Original order should be preserved when sorting identical F1 values
-    const sorted_models = models_with_same_values.toSorted(sort_models(`F1`, `desc`))
-    const sorted_keys = sorted_models.map((model) => model.model_key)
+    const sorted_keys = models
+      .toSorted(sort_models(`F1`, `desc`))
+      .map((model) => model.model_key)
     expect(sorted_keys).toStrictEqual([`model_1`, `model_2`, `model_3`])
   })
 

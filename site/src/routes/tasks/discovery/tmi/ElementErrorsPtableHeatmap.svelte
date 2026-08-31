@@ -38,7 +38,6 @@
     color_scale?: D3InterpolateName | ((num: number) => string)
     active_element?: ChemicalElement | null
     models?: ModelOption[]
-    // Must be an array for svelte-widgets to restore it correctly from snapshots.
     current_model?: ModelOption[]
     manual_cbar_max?: boolean
     normalized?: boolean
@@ -81,25 +80,12 @@
     manual_cbar_max ? (cbar_max ?? 0) : current_data_max,
   ])
   // selected_models (not current_model) so the title tracks the fallback model when
-  // the bound selection doesn't resolve, e.g. a stale snapshot-restored model name
+  // the bound selection doesn't resolve, e.g. a stale externally bound model name
   let cbar_title = $derived(
     selected_models.length === 1
       ? `${selected_models[0].model_name} (${normalized ? `normalized` : `eV/atom`})`
       : `Element-projected error (${normalized ? `normalized` : `eV/atom`})`,
   )
-
-  const snapshot_data = () => ({
-    color_scale,
-    current_model,
-    cbar_max,
-    manual_cbar_max,
-    normalized,
-  })
-  export const snapshot = {
-    capture: snapshot_data,
-    restore: (values: ReturnType<typeof snapshot_data>) =>
-      ({ color_scale, current_model, cbar_max, manual_cbar_max, normalized } = values),
-  }
 </script>
 
 <p>

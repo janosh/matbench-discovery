@@ -34,12 +34,12 @@
 
   type GitHubMetric = (typeof github_metrics)[keyof typeof github_metrics]
 
-  let axes = $state<Record<`x` | `y` | `color_value` | `size_value`, GitHubMetric>>({
+  const axes: Record<`x` | `y` | `color_value` | `size_value`, GitHubMetric> = {
     x: github_metrics.forks,
     y: github_metrics.stars,
     color_value: github_metrics.commits_last_year,
     size_value: github_metrics.contributors,
-  })
+  }
 
   let plot_data = $derived(
     github_data.flatMap((item) => {

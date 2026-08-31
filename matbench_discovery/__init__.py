@@ -1,5 +1,6 @@
 """Global variables used all across the matbench_discovery package."""
 
+import hashlib
 import os
 import warnings
 from datetime import UTC, datetime
@@ -26,6 +27,12 @@ def repo_relative_path(file_path: str, root: str = ROOT) -> str:
     except ValueError:  # commonpath raises across Windows drives
         pass
     raise ValueError(f"{file_path=} must be inside repo root {root!r}")
+
+
+def file_digest(path: str, algorithm: str = "sha256") -> str:
+    """Stream a file into a hex digest (``md5`` is only ever used for cache checks)."""
+    with open(path, mode="rb") as file:
+        return hashlib.file_digest(file, algorithm).hexdigest()
 
 
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data

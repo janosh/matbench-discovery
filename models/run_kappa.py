@@ -8,7 +8,7 @@ Examples:
 """
 
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.14"
 # dependencies = [
 #   "matbench-discovery[phonons,symmetry]",
 # ]
@@ -24,7 +24,7 @@ import os
 import shlex
 from typing import TYPE_CHECKING
 
-from matbench_discovery import today
+from matbench_discovery import file_digest, today
 from matbench_discovery.calculators import (
     CALCULATORS,
     load_calculator,
@@ -40,7 +40,6 @@ from matbench_discovery.phonons.pipeline import (
     KappaSettings,
     MergedKappaRun,
     checkpoint_digest,
-    file_sha256,
     load_phonondb_atoms,
     merge_kappa_shards,
     run_kappa_shard,
@@ -195,7 +194,7 @@ def validate_yaml_write_provenance(
     canonical_dataset_path = (
         canonical_dataset_path or DataFiles.phonondb_pbe_103_structures.path
     )
-    if merged_run.manifest.dataset_hash != file_sha256(canonical_dataset_path):
+    if merged_run.manifest.dataset_hash != file_digest(canonical_dataset_path):
         raise ValueError(
             "Cannot write kappa YAML metrics from a noncanonical PhononDB dataset"
         )
@@ -287,7 +286,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
                     f"Manifest has {merged_run.manifest.n_shards} shards, "
                     f"expected {args.n_shards}"
                 )
-            if merged_run.manifest.dataset_hash != file_sha256(dataset_path):
+            if merged_run.manifest.dataset_hash != file_digest(dataset_path):
                 raise ValueError(
                     "Current PhononDB dataset does not match the run manifest"
                 )

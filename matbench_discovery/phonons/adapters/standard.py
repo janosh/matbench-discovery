@@ -203,14 +203,12 @@ class StandardKappaAdapter:
         phono3py: Phono3py,
         calculator: Calculator,
         settings: KappaSettings,  # noqa: ARG002
-        *,
-        progress: dict[str, Any] | None = None,
     ) -> tuple[Phono3py, np.ndarray, np.ndarray]:
         """Calculate FC2 and frequencies with serial ASE force calls."""
         from matbench_discovery.phonons import thermal_conductivity as ltc
 
         return ltc.get_fc2_and_freqs(
-            phono3py, calculator, pbar_kwargs=progress or {"disable": True}
+            phono3py, calculator, pbar_kwargs={"disable": True}
         )
 
     def calculate_fc3(
@@ -219,7 +217,6 @@ class StandardKappaAdapter:
         calculator: Calculator,
         settings: KappaSettings,  # noqa: ARG002
         *,
-        progress: dict[str, Any] | None = None,
         max_evaluations: int | None = None,
     ) -> np.ndarray:
         """Calculate FC3 with serial ASE force calls."""
@@ -228,7 +225,7 @@ class StandardKappaAdapter:
         return ltc.calculate_fc3_set(
             phono3py,
             calculator,
-            pbar_kwargs=progress or {"disable": True},
+            pbar_kwargs={"disable": True},
             max_evaluations=max_evaluations,
         )
 

@@ -1,7 +1,6 @@
 """Helper functions for uploading files to Figshare via their API."""
 
 import difflib
-import hashlib
 import json
 import os
 import time
@@ -11,7 +10,7 @@ from typing import Any, Final
 import requests
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, repo_relative_path
+from matbench_discovery import ROOT, file_digest, repo_relative_path
 
 ENV_PATH: Final[str] = f"{ROOT}/site/.env"
 BASE_URL: Final[str] = "https://api.figshare.com/v2"
@@ -110,25 +109,9 @@ def create_article(
     return make_request("GET", result["location"])["id"]
 
 
-def get_file_hash_and_size(
-    file_name: str, chunk_size: int = 10_000_000
-) -> tuple[str, int]:
-    """Get the md5 hash and size of a file.
-
-    Args:
-        file_name (str): Path to the file.
-        chunk_size (int, optional): Size of chunks to read in bytes. Defaults to 10MB.
-
-    Returns:
-        tuple[str, int]: MD5 hash and file size in bytes.
-    """
-    md5 = hashlib.md5(usedforsecurity=False)
-    size = 0
-    with open(file_name, mode="rb") as file:
-        while data := file.read(chunk_size):
-            size += len(data)
-            md5.update(data)
-    return md5.hexdigest(), size
+def get_file_hash_and_size(file_name: str) -> tuple[str, int]:
+    """Get the MD5 hash (Figshare's integrity check) and size in bytes of a file."""
+    return file_digest(file_name, "md5"), os.path.getsize(file_name)
 
 
 def _repo_relative_name(file_path: str) -> str:

@@ -637,8 +637,8 @@ def test_calc_pressure_metrics_mae(
 
 
 def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
-    """W1 distance equals the mean offset; both W1 and the mean-bias MAE are frame-order
-    independent (they compare averaged/full distributions); empty pressure arrays raise.
+    """W1 distance equals the mean offset and is frame-order independent (compares full
+    distributions); empty pressure arrays raise. MAE rows live in the parametrized test.
     """
     p_ref = np.array([0.0, 1.0, 2.0, 3.0])
     p_shifted = p_ref + 0.5
@@ -646,11 +646,8 @@ def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
     assert md_metrics.calc_pressure_metrics(p_ref, p_ref)["pressure_wasserstein"] == 0
     shifted = md_metrics.calc_pressure_metrics(p_ref, p_shifted)
     assert shifted["pressure_wasserstein"] == pytest.approx(0.5)
-    assert shifted["pressure_mae"] == pytest.approx(0.5)
-    # both metrics are invariant to frame order (mean/distribution based)
     reversed_order = md_metrics.calc_pressure_metrics(p_ref, p_shifted[::-1])
     assert reversed_order["pressure_wasserstein"] == pytest.approx(0.5)
-    assert reversed_order["pressure_mae"] == pytest.approx(0.5)
 
     with pytest.raises(ValueError, match="empty"):
         md_metrics.calc_pressure_metrics(np.array([]), p_ref)

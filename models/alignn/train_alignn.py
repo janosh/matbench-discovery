@@ -1,7 +1,7 @@
 """Train ALIGNN on Materials Project formation energies."""
 
 # /// script
-# requires-python = ">=3.12,<3.13"
+# requires-python = ">=3.14"
 # dependencies = [
 #   "alignn==2026.5.20",
 #   "matbench-discovery",

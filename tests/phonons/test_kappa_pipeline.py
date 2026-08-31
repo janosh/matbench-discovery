@@ -15,6 +15,7 @@ import pytest
 from ase import Atoms
 from pymatviz.enums import Key
 
+from matbench_discovery import file_digest
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.phonons.adapters import (
     FairchemKappaAdapter,
@@ -33,7 +34,6 @@ from matbench_discovery.phonons.pipeline import (
     atomic_write_gzip_json,
     calculate_kappa_for_structure,
     checkpoint_digest,
-    file_sha256,
     merge_kappa_shards,
     read_kappa_record,
     record_path,
@@ -387,7 +387,7 @@ def test_yaml_write_requires_verified_settings_and_dataset(tmp_path: Path) -> No
     settings = KappaSettings.from_model("mace_mp_0")
     manifest = SimpleNamespace(
         settings=settings,
-        dataset_hash=file_sha256(dataset_path),
+        dataset_hash=file_digest(dataset_path),
     )
     merged_run = cast(
         "MergedKappaRun",
@@ -414,7 +414,7 @@ def test_yaml_write_requires_verified_settings_and_dataset(tmp_path: Path) -> No
             merged_run,
             canonical_dataset_path=dataset_path,
         )
-    manifest.dataset_hash = file_sha256(dataset_path)
+    manifest.dataset_hash = file_digest(dataset_path)
     merged_run.run_metadata["n_failed"] = 1
     with pytest.raises(ValueError, match="failed records"):
         run_kappa.validate_yaml_write_provenance(

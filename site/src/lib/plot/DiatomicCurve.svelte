@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type InternalPoint, ScatterPlot } from 'matterviz'
+  import { ScatterPlot } from 'matterviz'
   import { element_data, type ChemicalElement } from 'matterviz/element'
   import { tooltip as add_tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -7,8 +7,6 @@
   let {
     formula,
     curves,
-    tooltip_point = $bindable(null),
-    hovered = $bindable(false),
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     formula: string
@@ -20,8 +18,6 @@
       color: string
       line_width?: number
     }[]
-    tooltip_point?: InternalPoint | null
-    hovered?: boolean
   } = $props()
 
   const x_range: [number, number] = [0.2, 6]
@@ -82,8 +78,6 @@
       label_shift: { y: -30 },
     }}
     y_axis={{ label: `Energy (eV)`, format: `.2f`, range: y_range }}
-    bind:tooltip_point
-    bind:hovered
     legend={null}
     point_tween={no_tween}
     line_tween={no_tween}

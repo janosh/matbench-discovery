@@ -2,15 +2,20 @@ import { MODELS } from '$lib'
 import ElementErrorsPtableHeatmap from '$routes/tasks/discovery/tmi/ElementErrorsPtableHeatmap.svelte'
 import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
 import { describe, expect, it } from 'vitest'
-import { mount } from '../index'
+import { doc_query, mount } from '../index'
 
 describe(`ElementErrorsPtableHeatmap`, () => {
   it(`defaults to a model with per-element error data`, () => {
-    const component = mount(ElementErrorsPtableHeatmap, { target: document.body })
+    mount(ElementErrorsPtableHeatmap, { target: document.body })
 
-    const [current_model] = component.snapshot.capture().current_model
-    const model = MODELS.find((candidate) => candidate.model_key === current_model.value)
-    if (!model) throw new Error(`missing model for ${current_model.value}`)
+    // the ModelSelect's selected chip names the default model
+    const selected_name = doc_query(
+      `ul[aria-label="selected options"]`,
+    ).textContent?.trim()
+    const model = MODELS.find((candidate) =>
+      selected_name?.includes(candidate.model_name),
+    )
+    if (!model) throw new Error(`no model matches selected chip ${selected_name}`)
 
     expect(per_elem_each_errors).toHaveProperty(model.model_key)
   })

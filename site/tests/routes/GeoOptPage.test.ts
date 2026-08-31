@@ -1,7 +1,7 @@
 import spg_sankeys from '$figs/spg-sankeys.jsonl'
 import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
 import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
-import { MODELS } from '$lib'
+import { by_benchmark_added_desc, MODELS } from '$lib'
 import GeoOptPage from '$routes/tasks/geo-opt/+page.svelte'
 import { describe, expect, it } from 'vitest'
 import {
@@ -53,6 +53,34 @@ describe(`Geo Opt Task Page`, () => {
     expect(document.body.textContent).toContain(`RMSD is symprec-invariant`)
     expect(doc_query(`.collapsible-legend .scatter`)).toBeInstanceOf(HTMLElement)
     expect(cdf_labels().length).toBeGreaterThan(0)
+  })
+
+  // default selection = the 5 most recently added models among those with plot payloads
+  it(`preselects the newest models by benchmark_added`, async () => {
+    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt`)
+
+    const payload_keys = new Set(
+      [...struct_rmsd_cdf.models, ...sym_ops_diff.models, ...spg_sankeys.models].map(
+        (model) => model.model_key,
+      ),
+    )
+    // compare dates, not names: models added on the same day tie and may swap order
+    const expected_dates = MODELS.filter((model) => payload_keys.has(model.model_key))
+      .toSorted(by_benchmark_added_desc)
+      .slice(0, 5)
+      .map((model) => model.dates.benchmark_added)
+    const selected_dates = [
+      ...document.querySelectorAll(
+        `.plot-controls .multiselect ul[aria-label="selected options"] > li`,
+      ),
+    ].map((item) => {
+      const name = item.textContent?.trim()
+      const model = MODELS.find((candidate) => candidate.model_name === name)
+      if (!model) throw new Error(`unknown selected model ${name}`)
+      return model.dates.benchmark_added
+    })
+    expect(selected_dates).toStrictEqual(expected_dates)
+    expect(new Set(selected_dates).size).toBeGreaterThan(1)
   })
 
   it(`filters every aggregate plot from the models query param`, async () => {

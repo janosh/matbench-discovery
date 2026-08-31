@@ -5,7 +5,7 @@
 
   let {
     count_mode = `occurrence`,
-    log = false,
+    log = $bindable(false),
     color_scale = `interpolateViridis`,
   }: {
     count_mode?: string
@@ -36,7 +36,7 @@
 
 <PtableHeatmap
   heatmap_values={mp_trj_elem_counts}
-  {log}
+  bind:log
   {color_scale}
   colorbar={{
     title: `MPtrj element counts by ${count_mode}`,

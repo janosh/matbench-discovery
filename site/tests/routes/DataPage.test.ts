@@ -1,5 +1,6 @@
 import Page from '$routes/data/data-files-direct-download.md'
 import DataRoute from '$routes/data/+page.svelte'
+import { tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mount, mount_with_url } from '../index'
 
@@ -45,7 +46,7 @@ describe(`Data Page`, () => {
     })
 
     // Verify each item has a link
-    expect(list_items?.[0]?.querySelector(`a`)).toBeDefined()
+    expect(list_items?.[0]?.querySelector(`a`)).not.toBeNull()
   })
 
   it(`renders data files with valid and correctly formatted URLs`, () => {
@@ -102,5 +103,28 @@ describe(`Data Route URL state`, () => {
     await mount_with_url(DataRoute, `http://localhost/data${query}`)
 
     expect(count_mode_text()).toContain(expected_mode)
+  })
+
+  const log_checkboxes = (): HTMLInputElement[] =>
+    [...document.querySelectorAll(`label`)]
+      .filter((label) => label.textContent?.includes(`Log color scale`))
+      .map((label) => label.querySelector(`input[type="checkbox"]`))
+      .filter((input) => input instanceof HTMLInputElement)
+
+  // the three element-count heatmaps share one log toggle (two-way bound), also in the URL
+  it(`shares the log toggle across all heatmaps and syncs it to the URL`, async () => {
+    await mount_with_url(DataRoute, `http://localhost/data`)
+    const checkboxes = log_checkboxes()
+    expect(checkboxes).toHaveLength(3)
+    expect(checkboxes.map((box) => box.checked)).toEqual([false, false, false])
+
+    checkboxes[1].click()
+    await tick()
+    expect(checkboxes.map((box) => box.checked)).toEqual([true, true, true])
+    expect(new URL(location.href).searchParams.get(`log`)).toBe(`1`)
+
+    document.body.innerHTML = ``
+    await mount_with_url(DataRoute, `http://localhost/data?log=1`)
+    expect(log_checkboxes().map((box) => box.checked)).toEqual([true, true, true])
   })
 })

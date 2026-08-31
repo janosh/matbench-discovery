@@ -317,16 +317,22 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
 
 @pytest.mark.parametrize(
     "subset",
-    ["unique_prototypes", TestSubset.uniq_protos, ["wbm-1-1", "wbm-1-2"], None],
+    [
+        "unique_prototypes",
+        TestSubset.uniq_protos,
+        ["wbm-1-1", "wbm-1-2"],
+        pd.Index(["wbm-1-1", "wbm-1-2"]),
+        None,
+    ],
 )
 def test_load_df_wbm_with_preds_subset(
-    subset: str | TestSubset | list[str] | None,
+    subset: str | TestSubset | list[str] | pd.Index | None,
 ) -> None:
     """Subset selectors return exactly the requested WBM material IDs."""
     df_subset = load_df_wbm_with_preds(subset=subset)
     if subset is None:
         expected_index = df_wbm.index
-    elif isinstance(subset, list):
+    elif isinstance(subset, list | pd.Index):
         expected_index = df_wbm.loc[subset].index
     else:
         expected_index = df_wbm.query(MbdKey.uniq_proto).index

@@ -5,6 +5,7 @@
   import roc from '$figs/roc-models.jsonl'
   import rolling_mae from '$figs/rolling-mae-vs-hull-dist.jsonl'
   import { dashed, labeled_vline, model_mae, order_models, wide_legend } from '$lib/fig-helpers'
+  import { format_num } from 'matterviz'
   import { BarPlot, BoxPlot, PlotLegend, ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, FillRegion, LegendItem } from 'matterviz/plot'
 
@@ -43,31 +44,27 @@
   // one shared legend rendered once below both precision+recall plots (a per-plot legend
   // would sit under a single column and squish it). one entry per model line; the
   // unlabeled end-point dot series are intentionally excluded.
-  const cum_pr_legend: LegendItem[] = $derived(
-    cum_styled.map(({ label, color }, idx) => ({
-      label,
-      visible: true,
-      series_idx: idx * 2,
-      display_style: { line_color: color },
-    })),
-  )
+  const cum_pr_legend: LegendItem[] = cum_styled.map(({ label, color }, idx) => ({
+    label,
+    visible: true,
+    series_idx: idx * 2,
+    display_style: { line_color: color },
+  }))
 
-  const roc_series: DataSeries[] = $derived(
-    roc_styled.map(({ label, color, auc, fpr, tpr }) => ({
-      x: fpr,
-      y: tpr,
-      label: `${label} · AUC=${auc.toFixed(2)}`,
-      markers: `line` as const,
-      line_style: { stroke: color },
-    })),
-  )
+  const roc_series: DataSeries[] = roc_styled.map(({ label, color, auc, fpr, tpr }) => ({
+    x: fpr,
+    y: tpr,
+    label: `${label} · AUC=${format_num(auc, `.2f`)}`,
+    markers: `line` as const,
+    line_style: { stroke: color },
+  }))
 
   // densify the 3-vertex triangle outline (y = |x|) so spline interpolation of the
   // line and fill region renders straight edges instead of a parabola
   const triangle_x = Array.from({ length: 201 }, (_, idx) => (idx - 100) / 100)
   const triangle = { x: triangle_x, y: triangle_x.map(Math.abs) }
 
-  const rolling_mae_series: DataSeries[] = $derived([
+  const rolling_mae_series: DataSeries[] = [
     // 'triangle of peril' outline; the fill region below shades its inside
     {
       ...triangle,
@@ -84,7 +81,7 @@
       line_style: { stroke: color },
       visible: visible ?? true,
     })),
-  ])
+  ]
 
   // rolling count of test-set structures per hull-dist bin, drawn as a filled area in a
   // marginal panel above the main plot (sharing its x-axis) rather than overlaid on it

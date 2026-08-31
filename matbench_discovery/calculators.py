@@ -22,8 +22,7 @@ from importlib.metadata import PackageNotFoundError, version
 from ase.calculators.calculator import Calculator
 from filelock import FileLock
 
-from matbench_discovery import DEFAULT_CACHE_DIR
-from matbench_discovery.data import file_sha256
+from matbench_discovery import DEFAULT_CACHE_DIR, file_digest
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
 # generous: AOTInductor exports (TACE) compile every kernel ahead of time
@@ -44,7 +43,7 @@ def _file_state(path: str) -> tuple[int, int, int]:
 def _stable_file_sha256(path: str) -> tuple[str, tuple[int, int, int]]:
     """Hash a file outside locks and reject concurrent mutation."""
     state = _file_state(path)
-    digest = file_sha256(path)
+    digest = file_digest(path)
     if _file_state(path) != state:
         raise RuntimeError(f"File changed while hashing: {path}")
     return digest, state
@@ -208,7 +207,7 @@ def _run_to_atomic_output(
                 _file_state(path) != state for path, _digest, state in source_identities
             ):
                 raise RuntimeError(f"Source changed while creating {dest}")
-            output_hash = file_sha256(tmp_dest)
+            output_hash = file_digest(tmp_dest)
             os.replace(tmp_dest, dest)
             with open(identity_path, mode="w", encoding="utf-8") as file:
                 file.write(f"{recipe_hash}\n{output_hash}")
@@ -459,11 +458,8 @@ def _fairchem(model_key: str) -> Callable[..., Calculator]:
     def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
         from fairchem.core import OCPCalculator
 
-        if checkpoint is None and model_key.startswith("equiformer_v3"):
-            raise ValueError(
-                f"{model_key} requires --checkpoint because its YAML links to the "
-                "checkpoint repository, not a model artifact"
-            )
+        # equiformer_v3 specs set requires_checkpoint, so load_calculator already
+        # rejected a missing checkpoint before this runs
         checkpoint = checkpoint or download_checkpoint(model_key)
         return OCPCalculator(checkpoint_path=checkpoint, cpu=device == "cpu", seed=0)
 

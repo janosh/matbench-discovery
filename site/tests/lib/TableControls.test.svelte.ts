@@ -96,7 +96,7 @@ describe(`TableControls`, () => {
     await tick()
     expect(filters.training[first_dataset]).toBe(`require`)
     expect(require_box.checked).toBe(true)
-    expect(summary_for(`Training data (1)`)).toBeDefined()
+    expect(summary_for(`Training data`).textContent).toContain(`Training data (1)`)
 
     // checking `exclude` on the same dataset flips the mode (mutually exclusive)
     exclude_box.click()
@@ -199,7 +199,7 @@ describe(`TableControls`, () => {
       await tick()
     }
     expect(filters.openness).toStrictEqual([OPENNESS_OPTIONS.at(-1)])
-    expect(summary_for(`Openness (1/4)`)).toBeDefined()
+    expect(summary_for(`Openness`).textContent).toContain(`Openness (1/4)`)
 
     // clicking the sole remaining option must not empty the filter
     boxes.at(-1)?.click()

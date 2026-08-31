@@ -3,7 +3,7 @@
   import { Icon } from 'svelte-widgets'
   import { Info } from 'svelte-widgets/icons'
   import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
-  import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
+  import { get_nested_value, label_data_path, sort_models } from '$lib/metrics'
   import { MODELS } from '$lib/models.svelte'
   import {
     bind_url_params,
@@ -29,7 +29,8 @@
     Math.min(MODELS.length, Math.max(min_models, initial_show_n_best ?? MODELS.length)),
   )
   let show_n_best = $state(initial_n_best)
-  let sort_by_path = $derived(`${sort_by.path ?? ``}.${sort_by.key}`.replace(/^\./, ``))
+  // label_data_path honors `property` (e.g. CDS is stored as metrics.diatomics.combined_score)
+  let sort_by_path = $derived(label_data_path(sort_by))
 
   // One headline metric per task plus the overall CPS keeps the sort list balanced.
   const metrics = [
@@ -73,7 +74,9 @@
     return interpolateRdBu((val - min) / (max - min))
   }
 
-  let lower_is_better = $derived(metric_better_as(sort_by.key) === `lower`)
+  // labels carry `better` directly; metric_better_as() keys on yml names (RMSD), not
+  // label keys (rmsd), so it would misreport RMSD as higher=better
+  let lower_is_better = $derived(sort_by.better === `lower`)
 
   let models = $derived(MODELS.toSorted(sort_models(sort_by_path, order)))
 
@@ -114,7 +117,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
           onclick={() => {
             sort_by = prop
             // ascending for model name (alphabetical) and lower=better metrics
-            order = key === `Model` || metric_better_as(key) === `lower` ? `asc` : `desc`
+            order = key === `Model` || prop.better === `lower` ? `asc` : `desc`
           }}
           style="position: relative"
         >
@@ -168,7 +171,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
         <ModelCard
           {model}
           {metrics}
-          sort_by={sort_by_path}
+          sort_by={sort_by.key}
           bind:show_details
           title_style="background-color: {bg_clr}; color: {text_color};"
         />

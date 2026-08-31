@@ -8,30 +8,12 @@ import os
 from matbench_discovery import ROOT
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import file_ref_name, file_ref_url
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import Model
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
 from matbench_discovery.metrics.diatomics.exclusions import drop_metric_exclusions
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 from scripts.evals import evaluate_models
-
-METRICS_TO_WRITE: dict[str, dict[str, object]] = {
-    metric: {}
-    for metric in (
-        MbdKey.tortuosity,
-        MbdKey.energy_diff_flips,
-        MbdKey.energy_jump,
-        MbdKey.force_flips,
-        MbdKey.force_total_variation,
-        MbdKey.force_jump,
-        MbdKey.pbe_wall_dist_mae,
-        MbdKey.pbe_energy_mae,
-        MbdKey.pbe_bond_length_error,
-        MbdKey.pbe_well_depth_error,
-        MbdKey.pbe_force_mae,
-        MbdKey.pbe_vib_freq_error,
-    )
-}
 
 
 def main() -> int:
@@ -68,7 +50,7 @@ def main() -> int:
         metrics = diatomics.calc_diatomic_metrics(
             ref_curves=pbe_ref_curves,
             pred_curves=DiatomicCurves.from_dict(pred_data),
-            metrics=METRICS_TO_WRITE,
+            # default metrics=None scores every key in diatomics.DIATOMIC_METRIC_KEYS
             interpolate=200,
         )
         metrics = drop_metric_exclusions(model.name, metrics)

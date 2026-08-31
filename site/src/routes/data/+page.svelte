@@ -13,13 +13,15 @@
     series_red,
   } from '$lib/fig-helpers'
   import type { ElementSymbol } from 'matterviz'
-  import { ColorScaleSelect } from 'matterviz'
+  import { ColorScaleSelect, format_num } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { BarPlot, sunburst_from_labels_parents, Sunburst } from 'matterviz/plot'
   import { Icon, MultiSelect } from 'svelte-widgets'
   import { Info } from 'svelte-widgets/icons'
   import {
     bind_url_params,
+    bool_from_param,
+    bool_url_entry,
     url_color_scale,
     valid_query_param,
   } from '$lib/url-state.svelte'
@@ -36,9 +38,9 @@
 
   const { mean, std } = hist_hull_dist
   const hull_dist_refs = [
-    labeled_vline(mean - std, `mean - std = ${(mean - std).toFixed(2)}`),
-    labeled_vline(mean, `mean = ${mean.toFixed(2)}`),
-    labeled_vline(mean + std, `mean + std = ${(mean + std).toFixed(2)}`),
+    labeled_vline(mean - std, `mean - std = ${format_num(mean - std, `.2f`)}`),
+    labeled_vline(mean, `mean = ${format_num(mean, `.2f`)}`),
+    labeled_vline(mean + std, `mean + std = ${format_num(mean + std, `.2f`)}`),
     floating_label(mean - std, `stable`, series_blue),
     floating_label(mean + std, `unstable`, series_red),
   ]
@@ -59,10 +61,12 @@
       count_modes[0],
       new Set(count_modes),
     )
+    log_scale = bool_from_param(params, `log`)
     color_scale = url_color_scale.read(params)
   }
   bind_url_params(read_url_params, () => [
     [`count_mode`, count_mode, count_modes[0]],
+    bool_url_entry(`log`, log_scale),
     url_color_scale.entry(color_scale),
   ])
 
@@ -79,13 +83,6 @@
       throw new Error(`No MPtrj data for count mode ${count_mode}!`)
     if (!wbm_elem_counts) throw new Error(`No WBM data for count mode ${count_mode}!`)
   })
-
-  const capture_state = () => ({ color_scale, log_scale, count_mode })
-  export const snapshot = {
-    capture: capture_state,
-    restore: (values: ReturnType<typeof capture_state>) =>
-      ({ color_scale, log_scale, count_mode } = values),
-  }
 </script>
 
 <DataFilesDirectDownload />
@@ -138,7 +135,7 @@
         title: `WBM element counts by ${count_mode}`,
         title_style: `font-size: 1.3em;`,
       }}
-      log={log_scale}
+      bind:log={log_scale}
     />
   {/snippet}
 
@@ -150,12 +147,12 @@
         title: `MP element counts by ${count_mode}`,
         title_style: `font-size: 1.3em;`,
       }}
-      log={log_scale}
+      bind:log={log_scale}
     />
   {/snippet}
 
   {#snippet mp_trj_elements_heatmap()}
-    <MPtrjElemCountsPtable {count_mode} log={log_scale} {color_scale} />
+    <MPtrjElemCountsPtable {count_mode} bind:log={log_scale} {color_scale} />
   {/snippet}
 
   {#snippet hist_wbm_hull_dist()}

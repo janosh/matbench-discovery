@@ -21,7 +21,7 @@ from matbench_discovery.hpc import slurm_submit
 
 sys.path.append(f"{ROOT}/models")
 
-from . import featurizer
+from voronoi_rf import featurizer
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-26"

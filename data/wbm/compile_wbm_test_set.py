@@ -615,7 +615,10 @@ assert df_summary[MbdKey.protostructure_spglib].isna().sum() == 0
 
 # %%
 fingerprints_path = f"{WBM_DIR}/site-stats.json.gz"
-suggest = "not found, run scripts/compute_struct_fingerprints.py to generate"
+suggest = (
+    "not found; regenerate with scripts/attic/compute_struct_fingerprints.py from "
+    "git history (deleted in 17401a78)"
+)
 fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 try:
     df_fp = pd.read_json(fingerprints_path).set_index(Key.mat_id)

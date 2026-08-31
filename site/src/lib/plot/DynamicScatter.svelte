@@ -420,7 +420,6 @@
     }}
     color_bar={{
       title: format_label_title(axes.color_value),
-      margin: { t: 30, l: 80, b: 80, r: 50 },
       tick_format: colorbar_tick_format(axes.color_value),
       property_options: prop_options,
       selected_property_key: color_key,

@@ -1,7 +1,7 @@
 """Train a CGCNN ensemble on Materials Project formation energies."""
 
 # /// script
-# requires-python = ">=3.12,<3.13"
+# requires-python = ">=3.14"
 # dependencies = [
 #   "aviary-models==1.2.1",
 #   "matbench-discovery",

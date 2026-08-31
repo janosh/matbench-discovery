@@ -174,13 +174,6 @@ describe(`CPS_CONFIG reactivity`, () => {
       original_weights
   })
 
-  it(`can be modified and affects calculate_cps`, () => {
-    CPS_CONFIG.F1.weight = 1.0
-    CPS_CONFIG.RMSD.weight = 0
-    CPS_CONFIG.κ_SRME.weight = 0
-    expect(calculate_cps(0.6, 0, 0, CPS_CONFIG)).toBeCloseTo(0.6, 5)
-  })
-
   it(`weight edits must not corrupt DEFAULT_CPS_CONFIG`, () => {
     CPS_CONFIG.F1.weight = 0.9
     expect(DEFAULT_CPS_CONFIG.F1.weight).toBe(0.5)

@@ -368,8 +368,8 @@ class Trajectory:
         """Write this trajectory's arrays + metadata into an open HDF5 group.
 
         An ``h5py.File`` is also a ``Group``, so this backs both single-trajectory
-        files (``write_hdf5``) and per-system groups in a multi-trajectory reference
-        file. Frame-major chunking keeps strided/partial reads cheap.
+        files and per-system groups in a multi-trajectory reference file. Frame-major
+        chunking keeps strided/partial reads cheap.
         """
         chunk_frames = min(self.n_frames, 512) or 1
         chunks_for = _frame_field_shapes(chunk_frames, self.n_atoms)
@@ -403,19 +403,3 @@ class Trajectory:
             pbc=group["pbc"][:].astype(bool),
             **kwargs,
         )
-
-    def write_hdf5(self, path: str) -> None:
-        """Atomically write to a gzip-compressed, frame-chunked HDF5 file (tmp +
-        os.replace). Frame-major chunking keeps strided/partial reads cheap; metadata
-        (atomic_numbers, pbc, schema) lives alongside the per-frame datasets.
-        """
-        tmp_path = f"{path}.tmp"
-        with h5py.File(tmp_path, "w") as file:
-            self.write_to_h5_group(file)
-        os.replace(tmp_path, path)
-
-    @classmethod
-    def read_hdf5(cls, path: str, *, frames: slice = slice(None)) -> Trajectory:
-        """Read (a slice of) frames from an HDF5 file written by ``write_hdf5``."""
-        with h5py.File(path, "r") as file:
-            return cls.read_from_h5_group(file, frames=frames)

@@ -78,7 +78,6 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
             - structure_rmsd_vs_dft: RMSD between predicted and DFT structures
             - n_sym_ops_diff: Difference in number of symmetry operations vs DFT
             - spg_num_diff: Difference in space group number vs DFT
-        model_name (str): Name of the model being analyzed.
 
     Returns:
         dict[str, float]: Geometry optimization metrics with keys:

@@ -21,7 +21,8 @@ export const format_power_ten = (text: string): string =>
       /(?<base>\d+(?:\.\d+)?)e\+?(?<exponent>-?\d+)/gi,
       `$<base>×10<sup>$<exponent></sup>`,
     )
-    .replace(`1×10`, `10`)
+    // collapse a bare mantissa of 1 (1×10^n -> 10^n) without touching e.g. 9.01×10^n
+    .replaceAll(/(?<![\d.])1×10/g, `10`)
 
 // Vendored from matterviz <0.6 (src/lib/time.ts), which dropped format_relative_time.
 // Parse and validate date, returns null if invalid.

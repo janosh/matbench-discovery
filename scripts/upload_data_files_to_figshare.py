@@ -73,7 +73,7 @@ def main(
         article_is_new = True
         print(
             f"\n⚠️ Created new Figshare article with {article_id=}"
-            f"\nUpdate FIGSHARE_ARTICLE_ID in {__file__} with this ID!"
+            f"\nSet ARTICLE_IDS['data_files'] in {figshare.__file__} to this ID!"
         )
     article_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"
 

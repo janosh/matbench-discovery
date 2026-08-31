@@ -115,7 +115,7 @@ def test_get_file_hash_and_size_variants(
     test_file = tmp_path / "test_file"
     test_file.write_bytes(test_data)
 
-    md5, size = figshare.get_file_hash_and_size(str(test_file), chunk_size=5)
+    md5, size = figshare.get_file_hash_and_size(str(test_file))
     assert size == expected_size
     assert md5 == expected_md5
 
