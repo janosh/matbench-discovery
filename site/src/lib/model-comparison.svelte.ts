@@ -80,7 +80,10 @@ export function bind_comparison_url(): void {
       comparison.open = type === `enter` && comparison.keys.size > 1
     },
     () => {
-      void page.url.pathname // re-sync after navigations whose target URL lacked the param
+      // re-sync after navigations whose target URL lacked the param: SvelteKit assigns a
+      // fresh URL object to page.url per navigation (also same-path ones that only drop the
+      // query), so reading it re-runs this write-back
+      void page.url.href
       return [[`compare`, [...comparison.keys].join(`,`)]]
     },
   )

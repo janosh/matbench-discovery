@@ -13,8 +13,7 @@ import CompareToggle from '$lib/model/CompareToggle.svelte'
 import ModelComparison from '$lib/model/ModelComparison.svelte'
 import type { ModelData } from '$lib/types'
 import { flushSync, tick } from 'svelte'
-import { SvelteURL } from 'svelte/reactivity'
-import { beforeEach, describe, expect, it, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest'
 import { doc_query, get_scatter_plot_props, mount } from '../index'
 
 // happy-dom never measures the plot, so capture ScatterPlot's props instead of its SVG
@@ -156,18 +155,34 @@ describe(`comparison store`, () => {
 })
 
 describe(`bind_comparison_url`, () => {
-  // simulate SvelteKit: page.url is reactive there, so mutate one SvelteURL in place, mirror
-  // it into location, then fire the afterNavigate hooks registered by bind_comparison_url
+  // simulate SvelteKit: its page.url is a $state.raw holding a fresh URL object per navigation
+  // (kit/src/runtime/client/client.js), so swap the object, mirror it into location, then
+  // fire the afterNavigate hooks registered by bind_comparison_url
+  const kit_page = new (class {
+    url = $state.raw(new URL(`http://localhost/`))
+  })()
   const hooks = vi.mocked(afterNavigate).mock.calls
   const navigate = (url: string, type: `enter` | `link`, from_hook = 0) => {
-    page.url.href = new URL(url, `http://localhost`).href
-    history.replaceState(null, ``, `${page.url.pathname}${page.url.search}`)
+    kit_page.url = new URL(url, `http://localhost`)
+    history.replaceState(null, ``, `${kit_page.url.pathname}${kit_page.url.search}`)
     for (const [callback] of hooks.slice(from_hook)) callback({ type } as never)
     flushSync()
   }
 
+  beforeEach(() => {
+    Object.defineProperty(page, `url`, { get: () => kit_page.url, configurable: true })
+  })
+  afterEach(() => {
+    // back to the plain, assignable mock property other tests (and tests/index) rely on
+    Object.defineProperty(page, `url`, {
+      value: new URL(`http://localhost/`),
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    })
+  })
+
   it(`reads shared links, keeps the selection across in-app navigation and re-applies it`, () => {
-    Object.assign(page, { url: new SvelteURL(`http://localhost/`) }) // reactive like SvelteKit's
     const n_hooks = hooks.length
     const cleanup = $effect.root(() => bind_comparison_url())
     navigate(`/?compare=${key_a},no-such-model,${key_b}`, `enter`, n_hooks)
@@ -178,6 +193,11 @@ describe(`bind_comparison_url`, () => {
     navigate(`/tasks/md`, `link`, n_hooks) // absent param: selection follows the user, dialog closes
     expect([...comparison.keys]).toEqual([key_a, key_b])
     expect(comparison.open).toBe(false)
+    expect(location.search).toBe(`?compare=${key_a},${key_b}`)
+
+    // same-path navigation that only drops the query (nav link of the current page) must
+    // re-apply the param too
+    navigate(`/tasks/md`, `link`, n_hooks)
     expect(location.search).toBe(`?compare=${key_a},${key_b}`)
 
     comparison.toggle(key_b)
