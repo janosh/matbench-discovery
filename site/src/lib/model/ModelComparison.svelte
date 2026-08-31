@@ -7,8 +7,6 @@
     COST_ROWS,
     compare_cells,
     comparison,
-    row_value,
-    type CompareRow,
   } from '$lib/model-comparison.svelte'
   import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
   import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
@@ -22,39 +20,36 @@
 
   let models = $derived(comparison.models)
   let n_models = $derived(models.length)
-  const has_value = (row: CompareRow, model: ModelData) => {
-    const value = row_value(row, model)
-    return is_finite_num(value) || (typeof value === `string` && value !== ``)
-  }
-  // hide rows no compared model has a value for, then groups left empty
+  // hide rows no compared model has a value for (all cells `–`), then groups left empty
   let groups = $derived(
     COMPARE_GROUPS.map((group) => ({
       ...group,
-      rows: group.rows.filter((row) => models.some((model) => has_value(row, model))),
+      rows: group.rows
+        .map((row) => ({ row, cells: compare_cells(row, models) }))
+        .filter(({ cells }) => cells.some((cell) => cell.text !== `–`)),
     })).filter((group) => group.rows.length > 0),
   )
 
-  // MultiSelect matches options by value, so chips may be rebuilt from the selection
+  // MultiSelect matches options by value, so chips may be rebuilt from the selection.
+  // Unscored models get -Infinity so they sort last (and still fail is_finite_num)
   const option_for = ({ model_key, model_name, lifecycle, CPS, dates }: ModelData) => ({
     value: model_key,
     label: `${model_name}${lifecycle === `active` ? `` : ` (${lifecycle})`}`,
-    cps: CPS,
+    cps: is_finite_num(CPS) ? CPS : -Infinity,
     added: dates.benchmark_added ?? ``,
   })
   type ModelOption = ReturnType<typeof option_for>
-  // dropdown order: best CPS first (unscored models last) or most recently added first
+  // dropdown order: best CPS first or most recently added first. CPS is live-reweighted,
+  // so options are derived rather than built once
   let option_sort = $state<`cps` | `added`>(`cps`)
-  const by_cps = (opt_1: ModelOption, opt_2: ModelOption) =>
-    (is_finite_num(opt_2.cps) ? opt_2.cps : -Infinity) -
-    (is_finite_num(opt_1.cps) ? opt_1.cps : -Infinity)
-  const by_added = (opt_1: ModelOption, opt_2: ModelOption) =>
-    opt_2.added.localeCompare(opt_1.added)
-  // CPS is live-reweighted, so options are derived rather than built once
   let model_options = $derived(
-    MODELS.map(option_for).toSorted(option_sort === `cps` ? by_cps : by_added),
+    MODELS.map(option_for).toSorted((opt_1, opt_2) =>
+      option_sort === `cps`
+        ? opt_2.cps - opt_1.cps
+        : opt_2.added.localeCompare(opt_1.added),
+    ),
   )
   let selected_options = $derived(models.map(option_for))
-  const external = { target: `_blank`, rel: `noopener` }
   // opened with nothing to compare yet (empty or a single model), the picker is the next
   // step, so it takes focus (which also drops its option list open). n_models is untracked
   // so removing models while the dialog is open doesn't yank focus to the picker
@@ -68,15 +63,13 @@
   // --- cost vs accuracy scatter: whole leaderboard dimmed, compared models on top ---
   // cost rows lead the axis menus and carry lower=better so the Pareto frontier can be
   // traced against them; the rest of the usual scatter options follow
-  const cost_keys = new Set(COST_ROWS.map((row) => row.key))
   const scatter_axis_options = [
     ...COST_ROWS,
-    ...scatter_options.filter((opt) => !cost_keys.has(opt.key)),
+    ...scatter_options.filter((opt) => !COST_ROWS.some((row) => row.key === opt.key)),
   ]
   let x_key = $state(HYPERPARAMS.model_params.key)
-  let y_key = $state<string>()
-  // until the user picks one, the y-axis follows the task page the dialog was opened on
-  let page_metric = $derived(
+  // the y-axis follows the task page the dialog was opened on until the user picks one
+  let y_key = $derived(
     RANKED_METRICS.find((metric) => metric.rank_href === page.url.pathname)?.key ??
       ALL_METRICS.CPS.key,
   )
@@ -90,8 +83,6 @@
   {#snippet header({ close })}
     <div class="head">
       <h2>Compare models</h2>
-      <!-- the option list stays inside the dialog (overflow: hidden, no portal past a modal's
-        top layer), so its max height plus the header must fit the dialog's min-height -->
       <MultiSelect
         options={model_options}
         placeholder="Add models…"
@@ -115,6 +106,7 @@
       </MultiSelect>
       <label class="option-sort">
         Sort
+        <!-- not bind:value: Svelte reads `option:checked`, which happy-dom can't match -->
         <select
           value={option_sort}
           onchange={(event) =>
@@ -162,33 +154,31 @@
                 >{:else}{group.title}{/if}
             </th>
           </tr>
-          {#each group.rows as row (row.key)}
+          {#each group.rows as { row, cells } (row.key)}
             <tr>
               <th title={row.description} {@attach tooltip({ allow_html: true })}>
                 {@html row.label}{#if row.unit}<small> {row.unit}</small>{/if}
               </th>
-              {#each compare_cells(row, models) as cell, idx (models[idx].model_key)}
+              {#each cells as cell, idx (models[idx].model_key)}
                 <td class:best={cell.best} class:text={!row.better}>
-                  {#if cell.parts}
-                    {#each cell.parts as part, part_idx (part_idx)}
-                      {#if part.href}
-                        <a
-                          href={part.href}
-                          title={part.title}
-                          {...part.href.startsWith(`http`) ? external : {}}
-                          {@attach tooltip()}>{part.text}</a
-                        >
-                      {:else if part.title}
-                        <span title={part.title} {@attach tooltip()}>{part.text}</span>
-                      {:else}{part.text}{/if}
-                    {/each}
-                  {:else if cell.title}
-                    <span title={cell.title} {@attach tooltip({ allow_html: true })}>
-                      {cell.text}
-                    </span>
-                  {:else}
-                    {cell.text}
-                  {/if}
+                  {#each cell.parts ?? [{ text: cell.text, title: cell.title }] as part, part_idx (part_idx)}
+                    <!-- only our own numeric-cell/row titles carry HTML (<br>, <sub>) -->
+                    {#if part.href}
+                      <a
+                        href={part.href}
+                        title={part.title}
+                        {...part.href.startsWith(`http`)
+                          ? { target: `_blank`, rel: `noopener` }
+                          : {}}
+                        {@attach tooltip()}>{part.text}</a
+                      >
+                    {:else if part.title}
+                      <span
+                        title={part.title}
+                        {@attach tooltip({ allow_html: !cell.parts })}>{part.text}</span
+                      >
+                    {:else}{part.text}{/if}
+                  {/each}
                   {#if cell.rank && cell.n}
                     <small
                       style:color={rank_color(cell.rank, cell.n)}
@@ -219,7 +209,7 @@
       legend={null}
       style="height: 420px"
       bind:x_key
-      bind:y_key={() => y_key ?? page_metric, (key) => (y_key = key)}
+      bind:y_key
       point_events={{
         onclick: ({ point }) => {
           const key = point.metadata?.model_key

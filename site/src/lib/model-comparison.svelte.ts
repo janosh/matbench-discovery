@@ -131,6 +131,8 @@ const text_row = (
       ?.map((part) => part.text)
       .join(``),
 })
+// a single plain text cell, or none when the value is missing
+const text_part = (text: string | undefined): CellPart[] => (text ? [{ text }] : [])
 // interleave parts with a plain separator, e.g. `MPtrj + OMat24`
 const join_parts = (parts: CellPart[], separator: string): CellPart[] =>
   parts.flatMap((part, idx) => (idx > 0 ? [{ text: separator }, part] : [part]))
@@ -307,12 +309,12 @@ export const COMPARE_GROUPS: CompareGroup[] = [
         `relaxation`,
         `Relaxation`,
         `ASE optimizer, force threshold and step limit used to relax structures`,
-        (model) => {
-          const { ase_optimizer, max_force, max_steps } =
-            model.hyperparams?.evaluation ?? {}
-          if (!ase_optimizer) return []
-          const text = `${ase_optimizer} · f_max ${max_force ?? `?`} eV/Å · ${max_steps ?? `?`} steps`
-          return [{ text }]
+        ({ hyperparams }) => {
+          const { ase_optimizer, max_force, max_steps } = hyperparams?.evaluation ?? {}
+          return text_part(
+            ase_optimizer &&
+              `${ase_optimizer} · f_max ${max_force ?? `?`} eV/Å · ${max_steps ?? `?`} steps`,
+          )
         },
       ),
     ],
@@ -336,10 +338,7 @@ export const COMPARE_GROUPS: CompareGroup[] = [
         `md_hardware`,
         `Hardware`,
         `Device the MD rollouts were timed on`,
-        (model) => {
-          const hardware = model.metrics?.md?.hardware
-          return hardware ? [{ text: hardware }] : []
-        },
+        (model) => text_part(model.metrics?.md?.hardware),
       ),
     ],
   },
@@ -358,10 +357,7 @@ export const COMPARE_GROUPS: CompareGroup[] = [
         `diatomics_hardware`,
         `Hardware`,
         `Device the diatomic sweep was timed on`,
-        (model) => {
-          const hardware = model.metrics?.diatomics?.hardware
-          return hardware ? [{ text: hardware }] : []
-        },
+        (model) => text_part(model.metrics?.diatomics?.hardware),
       ),
     ],
   },

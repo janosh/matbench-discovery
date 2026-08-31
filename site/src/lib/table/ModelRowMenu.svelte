@@ -5,8 +5,7 @@
   import { comparison, row_model_key } from '$lib/model-comparison.svelte'
   import { MODELS } from '$lib/models.svelte'
   import type { Snippet } from 'svelte'
-  import { ActionMenu } from 'svelte-widgets'
-  import type { CmdAction } from 'svelte-widgets'
+  import { ActionMenu, type CmdAction } from 'svelte-widgets'
 
   let { children }: { children: Snippet } = $props()
 

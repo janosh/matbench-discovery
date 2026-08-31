@@ -24,13 +24,13 @@
   // Keep size-select labels short by dropping discovery-set segments and abbreviating
   // "Geometry Optimization" to "Geo Opt".
   const discovery_set_keys = Object.keys(DISCOVERY_SET_LABELS)
-  function format_size_option_path(path: string): string {
-    const parts = path.split(`.`).filter((part) => !discovery_set_keys.includes(part))
-    return format_property_path(parts.join(`.`)).replace(
-      `Geometry Optimization`,
-      `Geo Opt`,
-    )
-  }
+  const format_size_option_path = (path: string): string =>
+    format_property_path(
+      path
+        .split(`.`)
+        .filter((part) => !discovery_set_keys.includes(part))
+        .join(`.`),
+    ).replace(`Geometry Optimization`, `Geo Opt`)
 
   type ScatterOption = (typeof scatter_options)[number]
 
@@ -156,19 +156,11 @@
 
   let plot_data = $derived(
     filtered_models.flatMap((model) => {
-      const x = get_label_value(model, axes.x)
-      const y = get_label_value(model, axes.y)
-      const color_value = get_label_value(model, axes.color_value)
-      const size_value = get_label_value(model, axes.size_value)
-      if (
-        !is_finite_num(x) ||
-        !is_finite_num(y) ||
-        !is_finite_num(size_value) ||
-        !is_finite_num(color_value)
-      ) {
-        return []
-      }
-
+      const values = [axes.x, axes.y, axes.color_value, axes.size_value].map((label) =>
+        get_label_value(model, label),
+      )
+      if (!values.every(is_finite_num)) return []
+      const [x, y, color_value, size_value] = values
       const { model_name, model_key } = model
       const benchmark_added = model.dates.benchmark_added
       const days_ago = benchmark_added ? format_relative_time(benchmark_added) : ``
@@ -186,7 +178,6 @@
     return (
       !label_data_path(prop).includes(`date`) &&
       min !== undefined &&
-      max !== undefined &&
       min > 0 &&
       100 * min <= max
     )
@@ -348,10 +339,9 @@
   function observe_select_dropdowns(element: HTMLElement): () => void {
     const observer = new MutationObserver(() => {
       queueMicrotask(() => {
-        const open_trigger = element.querySelector(
-          `.portal-select-trigger[aria-expanded="true"]`,
-        )
-        if (open_trigger) add_select_filter()
+        if (element.querySelector(`.portal-select-trigger[aria-expanded="true"]`)) {
+          add_select_filter()
+        }
       })
     })
     observer.observe(element.closest(`dialog`) ?? document.body, { childList: true })
@@ -451,14 +441,12 @@
       data_loader: async (key) => {
         color_key = key
         const prop = options_by_key[key]
-        const values = filtered_models
-          .map((model) => get_label_value(model, prop))
-          .filter((val): val is number => typeof val === `number` && isFinite(val))
-        const [min, max] = extent(values)
-        return {
-          range: [min ?? 0, max ?? 1],
-          title: format_label_title(prop),
-        }
+        const [min = 0, max = 1] = extent(
+          filtered_models
+            .map((model) => get_label_value(model, prop))
+            .filter(is_finite_num),
+        )
+        return { range: [min, max], title: format_label_title(prop) }
       },
     }}
     label_placement_config={{

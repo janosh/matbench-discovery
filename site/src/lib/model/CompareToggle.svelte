@@ -29,8 +29,6 @@
       ? `Open the side-by-side comparison with this model`
       : `${selected ? `Remove from` : `Add to`} model comparison`,
   )
-  const onclick = () =>
-    open_dialog ? comparison.open_with(model_key) : comparison.toggle(model_key)
 </script>
 
 <button
@@ -38,7 +36,8 @@
   aria-pressed={open_dialog ? undefined : selected}
   aria-label={open_dialog ? undefined : `${label} ${model_name}`}
   {title}
-  {onclick}
+  onclick={() =>
+    open_dialog ? comparison.open_with(model_key) : comparison.toggle(model_key)}
   {...rest}
 >
   <Icon icon={selected && !open_dialog ? Check : Scale} />
