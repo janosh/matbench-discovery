@@ -255,8 +255,9 @@ df_wbm[list(df_each_err.add_suffix(" abs EACH error"))] = df_each_err.abs()
 
 
 # %%
-# px only resolves column names, not the index name, so expose material_id as a column
-df_wbm_tsne = df_wbm.reset_index()
+# px only resolves column names, not the index name; df_wbm keeps material_id as a
+# column (set_index(drop=False)), so drop the index rather than re-inserting it
+df_wbm_tsne = df_wbm.reset_index(drop=True)
 fig = px.scatter(
     df_wbm_tsne,
     x="2d t-SNE 1",

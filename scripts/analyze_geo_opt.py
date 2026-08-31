@@ -112,7 +112,8 @@ def analyze_model_symprec(
     if debug_mode:
         # a debug subset must never clobber the full analysis CSV (nor, below, the
         # model YAML), so it lands in a sibling debug/ dir like run_discovery's dry-run/
-        geo_opt_csv_path = f"{geo_opt_dir}/debug/{analysis_name}"
+        # keyed by subset size so --debug 3 doesn't reuse a cached --debug 10 CSV
+        geo_opt_csv_path = f"{geo_opt_dir}/debug/{debug_mode}/{analysis_name}"
     else:
         geo_opt_csv_path = f"{geo_opt_dir}/{analysis_name}"
 
