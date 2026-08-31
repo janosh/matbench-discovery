@@ -140,7 +140,7 @@
       <MultiSelect
         options={model_options}
         placeholder="Add models…"
-        style="flex: 1; min-width: min(20rem, 100%); border: 1px solid var(--border); --sms-options-max-height: 45vh"
+        style="flex: 1; min-width: min(20rem, 100%); border: 1px solid var(--border); --sms-options-max-height: 45vh; --sms-selected-bg: transparent; --sms-selected-li-padding: 0 0 0 3pt"
         bind:input={picker_input}
         bind:selected={
           () => selected_options,
@@ -388,6 +388,13 @@
   }
   tbody:first-of-type tr.group th {
     padding-top: 0.4em;
+  }
+  /* selected chips: smaller plain text, the shading moves onto a circular remove button */
+  .head :global(ul.selected > li) {
+    font-size: 0.85em;
+  }
+  .head :global(ul.selected > li button.remove) {
+    background: light-dark(rgba(100, 120, 140, 0.15), rgba(120, 170, 255, 0.2));
   }
   .option-detail {
     margin-left: 0.5em;
