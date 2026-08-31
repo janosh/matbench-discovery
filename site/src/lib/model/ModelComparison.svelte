@@ -131,7 +131,7 @@
 <Dialog
   bind:open={comparison.open}
   aria-label="Model comparison"
-  style="--dialog-width: min(68rem, calc(100vw - 2rem)); --dialog-radius: 12px; --dialog-bg: var(--page-bg); --dialog-section-padding: 0.5rem 1rem 0; --dialog-content-padding: 0 1rem 1rem"
+  style="--dialog-width: min(68rem, calc(100vw - 2rem)); --dialog-radius: 12px; --dialog-bg: var(--page-bg); --dialog-section-padding: 0.5rem 1rem 0; --dialog-content-padding: 0 1rem 1rem; min-height: min(65vh, calc(100vh - 2rem))"
 >
   <!-- selection tray: shows up with the first pick so the next step is never a guess -->
   {#snippet trigger(trigger_props)}
@@ -179,10 +179,12 @@
   {#snippet header({ close })}
     <div class="head">
       <h2>Compare models</h2>
+      <!-- the option list stays inside the dialog (overflow: hidden, no portal past a modal's
+        top layer), so its max height plus the header must fit the dialog's min-height -->
       <MultiSelect
         options={model_options}
         placeholder="Add models…"
-        style="flex: 1; min-width: min(20rem, 100%); border: 1px solid var(--border)"
+        style="flex: 1; min-width: min(20rem, 100%); border: 1px solid var(--border); --sms-options-max-height: 45vh"
         bind:input={picker_input}
         bind:selected={
           () => selected_options,

@@ -37,6 +37,26 @@
   } = $props()
   let selected_count = $derived(comparison.keys.size)
 
+  // Nothing selected yet: seed the comparison with the table's top rows in its current
+  // sort order so the dialog opens on a real comparison instead of an empty picker.
+  // HeatmapTable doesn't expose its sorted rows, so read them off the rendered model
+  // links (same trick as ModelRowMenu)
+  const N_SEED_MODELS = 3
+  const open_comparison = (event: MouseEvent & { currentTarget: HTMLElement }) => {
+    if (selected_count === 0) {
+      const links =
+        event.currentTarget
+          .closest(`.table-container`)
+          ?.querySelectorAll(`tbody tr a[href^="/models/"]`) ?? []
+      const keys = [...links].flatMap((link) => {
+        const href = link.getAttribute(`href`)
+        return href ? [href.slice(`/models/`.length)] : []
+      })
+      comparison.set([...new Set(keys)].slice(0, N_SEED_MODELS))
+    }
+    comparison.open = true
+  }
+
   const close_on_outside_click = click_outside({
     callback: (node) => node.removeAttribute(`open`),
   })
@@ -256,10 +276,10 @@
 <div class="table-controls" {...rest}>
   <button
     class="compare"
-    onclick={() => (comparison.open = true)}
+    onclick={open_comparison}
     title={selected_count
       ? `Open the side-by-side comparison of the ${selected_count} selected model${selected_count === 1 ? `` : `s`}`
-      : `Compare models side by side. Select them by double-clicking a row or from its right-click menu`}
+      : `Compare the top ${N_SEED_MODELS} models side by side. Pick others by double-clicking a row or from its right-click menu`}
     {@attach tooltip()}
   >
     <Icon icon={Scale} /> Compare{selected_count ? ` (${selected_count})` : ``}

@@ -879,10 +879,29 @@ describe(`MetricsTable`, () => {
         expect(get_toggle()).toBeNull()
         expect(compare_btn.textContent?.trim()).toBe(`Compare`)
 
-        // the compare button opens the comparison dialog
+        // with nothing selected, the compare button seeds the dialog with the top 3 rows
+        // in the table's current sort order (rather than opening an empty picker)
         expect(comparison.open).toBe(false)
         compare_btn.click()
         expect(comparison.open).toBe(true)
+        const top_3 = () => [...get_rows()].slice(0, 3).map(row_key)
+        const cps_top_3 = top_3()
+        expect([...comparison.keys]).toEqual(cps_top_3)
+        comparison.open = false
+
+        // the seed follows the table's sort: alphabetical by Model gives a different top 3
+        comparison.set([])
+        header_cells()[0].click()
+        await tick()
+        compare_btn.click()
+        expect(top_3()).not.toEqual(cps_top_3)
+        expect([...comparison.keys]).toEqual(top_3())
+        comparison.open = false
+
+        // an existing selection is left alone
+        comparison.set([cps_top_3[2]])
+        compare_btn.click()
+        expect([...comparison.keys]).toEqual([cps_top_3[2]])
         comparison.open = false
       },
     )
