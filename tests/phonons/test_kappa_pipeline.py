@@ -46,6 +46,7 @@ from matbench_discovery.phonons.schema import (
     normalize_kappa_result,
     voigt_6_to_full_3x3,
 )
+from tests.utils import make_harmonic_record
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -97,7 +98,12 @@ class ComputationStub:
             if settings.save_forces
             else None
         )
-        return KappaComputation(result=result, forces=forces, error=None)
+        return KappaComputation(
+            result=result,
+            forces=forces,
+            error=None,
+            phonons=make_harmonic_record(len(atoms)),
+        )
 
 
 class Phono3pyStub:
@@ -121,6 +127,7 @@ class PipelineAdapterStub(StandardKappaAdapter):
         self.phono3py = Phono3pyStub()
         self.fc2_frequencies = fc2_frequencies
         self.n_fc3_calls = 0
+        self.n_harmonic_calls = 0
 
     def relax(
         self,
@@ -155,6 +162,14 @@ class PipelineAdapterStub(StandardKappaAdapter):
         """Return configured mode frequencies and a deterministic FC2 force set."""
         del calculator, settings
         return phono3py, np.ones((1, 1, 3)), np.array([self.fc2_frequencies])
+
+    def harmonic_phonons(
+        self, phono3py: Phono3py, settings: KappaSettings
+    ) -> dict[str, Any]:
+        """Return a synthetic harmonic sidecar without running phonopy."""
+        del phono3py, settings
+        self.n_harmonic_calls += 1
+        return make_harmonic_record(1)
 
     def calculate_fc3(
         self,
@@ -535,6 +550,10 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
     assert computation.forces is not None
     assert np.asarray(computation.forces["fc2_set"]).shape == (1, 1, 3)
     assert np.asarray(computation.forces["fc3_set"]).size == adapter.n_fc3_calls * 3
+    # harmonic data is recorded for every material with an FC2, imaginary modes or not
+    assert adapter.n_harmonic_calls == 1
+    assert computation.phonons is not None
+    assert computation.phonons["band_path"]["segments"][0]["start_label"] == "GAMMA"
 
 
 def test_normalize_kappa_schema_aliases_and_voigt() -> None:
@@ -715,6 +734,33 @@ def test_resumable_shards_strict_merge_and_artifacts(
     with gzip.open(artifacts.force_file_path, mode="rt", encoding="utf-8") as file:
         force_rows = json.load(file)
     assert len(force_rows) == len(atoms_by_id)
+    # harmonic sidecars are always written and merged in ID order
+    assert artifacts.phonon_file_path == f"{stem}-phonons.json.gz"
+    assert all(record.phonon_file is not None for record in merged_run.records)
+    with gzip.open(artifacts.phonon_file_path, mode="rt", encoding="utf-8") as file:
+        phonon_rows = json.load(file)
+    assert [row[str(Key.mat_id)] for row in phonon_rows] == list(atoms_by_id)
+    for row, n_atoms in zip(phonon_rows, (1, 4, 2, 3), strict=True):
+        eigenvectors = np.asarray(row["band_path"]["eigenvectors"])
+        assert eigenvectors.shape == (4, 3 * n_atoms, n_atoms, 3, 2)
+        np.testing.assert_array_equal(
+            eigenvectors, make_harmonic_record(n_atoms)["band_path"]["eigenvectors"]
+        )
+        assert row["thermal_properties"]["temperatures"] == [0, 300]
+    # a successful record without its phonon sidecar is recomputed on resume and
+    # rejected by the strict merge
+    missing_sidecar_id = merged_run.records[1].material_id
+    missing_record_path = record_path(shard_dir, missing_sidecar_id)
+    missing_record = read_kappa_record(missing_record_path)
+    assert missing_record.phonon_file is not None
+    os.remove(f"{shard_dir}/{missing_record.phonon_file}")
+    with pytest.raises(ValueError, match="Invalid phonon_file sidecar"):
+        merge_kappa_shards(shard_dir, model_key="test_model")
+    n_calls_before = len(computation_stub.material_ids)
+    shard_env.run(settings=settings, n_shards=2)
+    shard_env.run(shard_index=1, settings=settings, n_shards=2)
+    assert computation_stub.material_ids[n_calls_before:] == [missing_sidecar_id]
+    merge_kappa_shards(shard_dir, model_key="test_model")
     with pytest.raises(ValueError, match="inside shard directory"):
         write_kappa_artifacts(
             merged_run,

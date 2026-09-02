@@ -46,13 +46,20 @@ if TYPE_CHECKING:
     from ase import Atoms
     from ase.calculators.calculator import Calculator
 
-KAPPA_RECORD_SCHEMA_VERSION = 1
+# v2: every successful record carries a harmonic phonon sidecar (phonon_file)
+KAPPA_RECORD_SCHEMA_VERSION = 2
 # v4: removed the per-model ignore_imaginary_freqs leniency from KappaSettings
 KAPPA_MANIFEST_SCHEMA_VERSION = 4
 PHONONDB_N_STRUCTURES = 103
 KAPPA_MANIFEST_FILE = "manifest.json"
 KAPPA_RECORD_DIR = "records"
-KAPPA_FORCE_DIR = "forces"
+# per-material sidecar folders inside a shard dir, keyed by the KappaRecord field that
+# stores the shard-relative path
+SidecarAttribute = Literal["force_file", "phonon_file"]
+SIDECAR_DIRS: dict[SidecarAttribute, str] = {
+    "force_file": "forces",
+    "phonon_file": "phonons",
+}
 DRY_RUN_MAX_FC3_EVALUATIONS = 8
 KAPPA_PROTOCOL = "phonondb-v1"
 
@@ -300,6 +307,14 @@ class KappaComputation:
     result: dict[str, Any]
     forces: dict[str, Any] | None
     error: str | None
+    # harmonic band path, eigenvectors, DOS and thermal properties from FC2
+    # (see matbench_discovery.phonons.harmonic); None only when FC2 failed
+    phonons: dict[str, Any] | None = None
+
+
+def _optional_str(value: object) -> str | None:
+    """Coerce a JSON value to str, keeping None."""
+    return None if value is None else str(value)
 
 
 @dataclass(frozen=True)
@@ -311,6 +326,7 @@ class KappaRecord:
     error: str | None
     run_metadata: dict[str, Any]
     force_file: str | None = None
+    phonon_file: str | None = None
     schema_version: int = KAPPA_RECORD_SCHEMA_VERSION
 
     @classmethod
@@ -325,9 +341,8 @@ class KappaRecord:
             result=normalize_kappa_result(result),
             error=str(data["error"]) if data.get("error") is not None else None,
             run_metadata=dict(metadata),
-            force_file=(
-                str(data["force_file"]) if data.get("force_file") is not None else None
-            ),
+            force_file=_optional_str(data.get("force_file")),
+            phonon_file=_optional_str(data.get("phonon_file")),
             schema_version=int(data["schema_version"]),
         )
         if record.schema_version != KAPPA_RECORD_SCHEMA_VERSION:
@@ -355,11 +370,12 @@ class MergedKappaRun:
 
 @dataclass(frozen=True)
 class KappaArtifacts:
-    """Final prediction, force-set, and provenance artifact paths."""
+    """Final prediction, force-set, harmonic-phonon, and provenance artifact paths."""
 
     pred_file_path: str
     run_info_path: str
     force_file_path: str | None
+    phonon_file_path: str
     predictions: pd.DataFrame
     n_failed: int
 
@@ -613,6 +629,7 @@ def calculate_kappa_for_structure(
         "error_traceback": [],
     }
     forces: dict[str, Any] | None = None
+    phonons: dict[str, Any] | None = None
     error: str | None = None
     error_stage = "Relax"
     try:
@@ -639,6 +656,11 @@ def calculate_kappa_for_structure(
             str(Key.has_imag_ph_modes): has_imaginary_modes,
             str(Key.ph_freqs): frequencies,
         }
+        # the harmonic sidecar (band path + eigenvectors + DOS + thermal properties) is
+        # recorded for every material with an FC2, including those with imaginary modes
+        error_stage = "Harmonic"
+        phonons = adapter.harmonic_phonons(phono3py, settings)
+        error_stage = "ForceConstant"
         should_calculate_conductivity_value = should_calculate_conductivity(
             has_imaginary_modes=has_imaginary_modes,
             broken_symmetry=bool(result["broken_symmetry"]),
@@ -670,7 +692,23 @@ def calculate_kappa_for_structure(
         error = f"{error_stage}Error: {type(exc).__name__}: {exc}"
         result["errors"].append(error)
         result["error_traceback"].append(traceback.format_exc())
-    return KappaComputation(normalize_kappa_result(result), forces, error)
+    return KappaComputation(
+        normalize_kappa_result(result), forces, error, phonons=phonons
+    )
+
+
+def _write_sidecar(
+    shard_dir: str,
+    attribute: SidecarAttribute,
+    material_id: str,
+    data: Mapping[str, Any] | None,
+) -> str | None:
+    """Write one per-material sidecar and return its shard-relative path (or None)."""
+    if data is None:
+        return None
+    relative_path = f"{SIDECAR_DIRS[attribute]}/{record_filename(material_id)}"
+    atomic_write_gzip_json(f"{shard_dir}/{relative_path}", data)
+    return relative_path
 
 
 def run_kappa_shard(
@@ -711,9 +749,8 @@ def run_kappa_shard(
             f"shard_index must be in [0, {n_shards - 1}], got {shard_index}"
         )
 
-    os.makedirs(f"{shard_dir}/{KAPPA_RECORD_DIR}", exist_ok=True)
-    if settings.save_forces:
-        os.makedirs(f"{shard_dir}/{KAPPA_FORCE_DIR}", exist_ok=True)
+    for sub_dir in (KAPPA_RECORD_DIR, *SIDECAR_DIRS.values()):
+        os.makedirs(f"{shard_dir}/{sub_dir}", exist_ok=True)
     calculator = adapter.prepare_calculator(calculator, settings)
     hardware = detect_hardware()
     versions = package_versions(model_key)
@@ -733,8 +770,14 @@ def run_kappa_shard(
                     existing_record.force_file is not None
                     and os.path.isfile(f"{shard_dir}/{existing_record.force_file}")
                 )
-                if existing_record.error is None and (
-                    not settings.save_forces or force_exists
+                phonon_exists = (
+                    existing_record.phonon_file is not None
+                    and os.path.isfile(f"{shard_dir}/{existing_record.phonon_file}")
+                )
+                if (
+                    existing_record.error is None
+                    and phonon_exists
+                    and (not settings.save_forces or force_exists)
                 ):
                     continue
                 if existing_record.error is not None and not retry_failures:
@@ -775,19 +818,17 @@ def run_kappa_shard(
                     else None
                 ),
             )
-            relative_force_path = None
-            if computation.forces is not None:
-                absolute_force_path = (
-                    f"{shard_dir}/{KAPPA_FORCE_DIR}/{record_filename(material_id)}"
-                )
-                atomic_write_gzip_json(absolute_force_path, computation.forces)
-                relative_force_path = os.path.relpath(absolute_force_path, shard_dir)
             record = KappaRecord(
                 material_id=material_id,
                 result=computation.result,
                 error=computation.error,
                 run_metadata=metadata,
-                force_file=relative_force_path,
+                force_file=_write_sidecar(
+                    shard_dir, "force_file", material_id, computation.forces
+                ),
+                phonon_file=_write_sidecar(
+                    shard_dir, "phonon_file", material_id, computation.phonons
+                ),
             )
             atomic_write_gzip_json(output_path, asdict(record))
 
@@ -826,6 +867,28 @@ def validate_record_provenance(record: KappaRecord, manifest: KappaRunManifest) 
             f"Record {record.material_id!r} provenance does not match manifest: "
             f"{mismatches}"
         )
+
+
+def _validate_sidecars(
+    records: Sequence[KappaRecord], *, shard_dir: str, attribute: SidecarAttribute
+) -> None:
+    """Require every successful record's sidecar to exist inside its shard folder."""
+    sidecar_root = os.path.realpath(f"{shard_dir}/{SIDECAR_DIRS[attribute]}")
+    for record in records:
+        relative_path: str | None = getattr(record, attribute)
+        if record.error is None and relative_path is None:
+            raise ValueError(
+                f"Successful record {record.material_id!r} is missing {attribute}"
+            )
+        if relative_path is None:
+            continue
+        source_path = os.path.realpath(f"{shard_dir}/{relative_path}")
+        if os.path.commonpath(
+            (sidecar_root, source_path)
+        ) != sidecar_root or not os.path.isfile(source_path):
+            raise ValueError(
+                f"Invalid {attribute} sidecar for {record.material_id}: {source_path}"
+            )
 
 
 def merge_kappa_shards(
@@ -888,22 +951,9 @@ def merge_kappa_shards(
             )
         validate_record_provenance(record, manifest)
 
+    _validate_sidecars(records, shard_dir=shard_dir, attribute="phonon_file")
     if manifest.settings.save_forces:
-        force_root = os.path.realpath(f"{shard_dir}/{KAPPA_FORCE_DIR}")
-        for record in records:
-            if record.error is None and record.force_file is None:
-                raise ValueError(
-                    f"Successful record {record.material_id!r} is missing force data"
-                )
-            if record.force_file is None:
-                continue
-            source_path = os.path.realpath(f"{shard_dir}/{record.force_file}")
-            if os.path.commonpath(
-                (force_root, source_path)
-            ) != force_root or not os.path.isfile(source_path):
-                raise ValueError(
-                    f"Invalid force sidecar for {record.material_id}: {source_path}"
-                )
+        _validate_sidecars(records, shard_dir=shard_dir, attribute="force_file")
 
     run_metadata: dict[str, Any] = {
         **merge_audit_metadata(
@@ -926,33 +976,30 @@ def merge_kappa_shards(
 
 
 def write_kappa_artifacts(
-    merged_run: MergedKappaRun,
-    *,
-    pred_file_path: str,
-    force_file_path: str | None = None,
-    run_info_path: str | None = None,
+    merged_run: MergedKappaRun, *, pred_file_path: str
 ) -> KappaArtifacts:
-    """Write normalized predictions plus separate force and provenance sidecars."""
+    """Write normalized predictions plus force, phonon and provenance sidecars.
+
+    Sidecar paths derive from the prediction file stem: ``{stem}-run-info.json``,
+    ``{stem}-phonons.json.gz`` and, when forces were saved, ``{stem}-forces.json.gz``.
+    """
     artifact_stem = (
         pred_file_path.removesuffix(".json.gz")
         if pred_file_path.endswith(".json.gz")
         else os.path.splitext(pred_file_path)[0]
     )
-    run_info_path = run_info_path or f"{artifact_stem}-run-info.json"
+    run_info_path = f"{artifact_stem}-run-info.json"
     candidate_force_path = (
-        force_file_path or f"{artifact_stem}-forces.json.gz"
+        f"{artifact_stem}-forces.json.gz"
         if merged_run.manifest.settings.save_forces
         else None
     )
-    artifact_paths = [
-        os.path.realpath(path)
-        for path in (pred_file_path, run_info_path, candidate_force_path)
-        if path is not None
-    ]
-    if len(set(artifact_paths)) != len(artifact_paths):
-        raise ValueError("Kappa artifact output paths must be distinct")
+    phonon_file_path = f"{artifact_stem}-phonons.json.gz"
     shard_dir = os.path.realpath(merged_run.shard_dir)
-    for artifact_path in artifact_paths:
+    for path in (pred_file_path, run_info_path, candidate_force_path, phonon_file_path):
+        if path is None:
+            continue
+        artifact_path = os.path.realpath(path)
         if os.path.commonpath((shard_dir, artifact_path)) == shard_dir:
             raise ValueError(
                 f"Refusing to write final artifact inside shard directory: "
@@ -971,11 +1018,18 @@ def write_kappa_artifacts(
     )
 
     if candidate_force_path is not None:
-        stream_force_artifact(
+        stream_sidecar_artifact(
             candidate_force_path,
             records=merged_run.records,
             shard_dir=merged_run.shard_dir,
+            attribute="force_file",
         )
+    stream_sidecar_artifact(
+        phonon_file_path,
+        records=merged_run.records,
+        shard_dir=merged_run.shard_dir,
+        attribute="phonon_file",
+    )
 
     df_predictions = pd.DataFrame(rows)
     df_predictions = df_predictions.set_index(str(Key.mat_id), drop=False)
@@ -983,6 +1037,7 @@ def write_kappa_artifacts(
         pred_file_path=pred_file_path,
         run_info_path=run_info_path,
         force_file_path=candidate_force_path,
+        phonon_file_path=phonon_file_path,
         predictions=df_predictions,
         n_failed=sum(record.error is not None for record in merged_run.records),
     )
@@ -1006,31 +1061,39 @@ def _atomic_output_path(path: str) -> Iterator[str]:
             os.remove(temporary_path)
 
 
-def stream_force_artifact(
+def stream_sidecar_artifact(
     path: str,
     *,
     records: Sequence[KappaRecord],
     shard_dir: str,
+    attribute: SidecarAttribute,
 ) -> None:
-    """Atomically stream per-material force sets into one gzip JSON array."""
+    """Atomically stream per-material sidecars into one gzip JSON array.
+
+    Records without the sidecar (failed before the producing stage) are skipped, so the
+    array may hold fewer entries than the prediction file; each entry carries its
+    material ID.
+    """
     with _atomic_output_path(path) as temporary_path:
         n_written = 0
         with gzip.open(temporary_path, mode="wt", encoding="utf-8") as output_file:
             output_file.write("[")
             for record in records:
-                if record.force_file is None:
+                relative_path: str | None = getattr(record, attribute)
+                if relative_path is None:
                     continue
-                source_path = f"{shard_dir}/{record.force_file}"
+                source_path = f"{shard_dir}/{relative_path}"
                 with gzip.open(source_path, mode="rt", encoding="utf-8") as source_file:
-                    force_data = json.load(source_file)
-                if not isinstance(force_data, dict):
+                    sidecar_data = json.load(source_file)
+                if not isinstance(sidecar_data, dict):
                     raise TypeError(
-                        f"Force sidecar for {record.material_id} must be a mapping"
+                        f"{attribute} sidecar for {record.material_id} must be a dict"
                     )
                 if n_written:
                     output_file.write(",")
                 json.dump(
-                    json_ready({str(Key.mat_id): record.material_id, **force_data}),
+                    # the record's ID is authoritative over any ID inside the sidecar
+                    json_ready({**sidecar_data, str(Key.mat_id): record.material_id}),
                     output_file,
                     sort_keys=True,
                     allow_nan=False,

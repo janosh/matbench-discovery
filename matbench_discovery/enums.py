@@ -398,18 +398,19 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         *,
         nested_key: str | None = None,
         required: bool = False,
+        file_key: str = "pred_file",
     ) -> str | None:
-        """Resolve metrics pred_file to a local path, downloading when a URL is set."""
+        """Resolve a metrics file ref to a local path, downloading when a URL is set."""
         from matbench_discovery.data import file_ref_name, file_ref_url
 
         section = self.metrics.get(metrics_key) or {}
         if nested_key is not None:
             section = section.get(nested_key) or {}
-        pred_file = section.get("pred_file") or {}
+        pred_file = section.get(file_key) or {}
         if not (rel_path := file_ref_name(pred_file)):
             if required:
                 raise ValueError(
-                    f"metrics.{metrics_key}.pred_file not found in {self.rel_path!r}"
+                    f"metrics.{metrics_key}.{file_key} not found in {self.rel_path!r}"
                 )
             return None
         abs_path = f"{ROOT}/{rel_path}"
@@ -434,6 +435,13 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def kappa_103_path(self) -> str | None:
         """Phonon kappa_103 prediction path, downloading when a URL is present."""
         return self._metric_pred_path("phonons", nested_key="kappa_103")
+
+    @property
+    def kappa_103_phonon_path(self) -> str | None:
+        """Harmonic phonon sidecar (band path, eigenvectors, DOS) for the kappa run."""
+        return self._metric_pred_path(
+            "phonons", nested_key="kappa_103", file_key="phonon_file"
+        )
 
     @property
     def md_path(self) -> str | None:

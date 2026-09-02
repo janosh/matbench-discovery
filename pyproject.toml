@@ -50,7 +50,8 @@ Package = "https://pypi.org/project/matbench-discovery"
 test = ["matbench-discovery[phonons]", "pytest-cov>=5", "pytest>=8.1", "jsonschema>=4"]
 fetch-wbm-data = ["gdown>=5.2"]
 # phono3py >=3.31 removed the MS-SMM19 RTA method used for Wigner transport.
-phonons = ["phono3py==3.30.0", "phonopy>=2.35"]
+# seekpath generates the high-symmetry q-path for the harmonic phonon sidecar
+phonons = ["phono3py==3.30.0", "phonopy>=2.35", "seekpath>=2.1"]
 # symmetry-analysis scripts + tests depend on moyopy
 symmetry = ["moyopy>=0.12"]
 

@@ -90,20 +90,39 @@ def retained_parity_assets(
     )
     if base_asset["asset"] != expected_base_name:
         raise ValueError("Parity base content changed; run a full refresh")
-    model_assets = manifest.get("model_assets")
-    if not isinstance(model_assets, dict):
-        raise TypeError("Parity manifest model_assets must be an object")
-    for model_key, asset in model_assets.items():
+    model_assets = retained_keyed_assets(
+        manifest, target_keys, asset_prefix, section="model_assets", infix="model"
+    )
+    return dict(base_asset), model_assets
+
+
+def retained_keyed_assets(
+    manifest: Mapping[str, Any],
+    target_keys: Iterable[str],
+    asset_prefix: str,
+    *,
+    section: str,
+    infix: str,
+) -> dict[str, dict[str, str]]:
+    """Retain one manifest section of per-model assets named ``{prefix}-{infix}-{key}``.
+
+    Peer models keep their entries; targeted and inactive models are dropped so the
+    caller regenerates or prunes them. A missing section counts as empty.
+    """
+    keyed_assets = manifest.get(section, {})
+    if not isinstance(keyed_assets, dict):
+        raise TypeError(f"Parity manifest {section} must be an object")
+    for model_key, asset in keyed_assets.items():
         if not isinstance(model_key, str):
-            raise TypeError("Parity model assets must map string keys to objects")
-        if not is_asset_metadata(asset, f"{asset_prefix}-model-{model_key}"):
+            raise TypeError(f"Parity {section} must map string keys to objects")
+        if not is_asset_metadata(asset, f"{asset_prefix}-{infix}-{model_key}"):
             raise ValueError(
-                "Parity model asset metadata is invalid; run a full refresh"
+                f"Parity {infix} asset metadata is invalid; run a full refresh"
             )
     active_keys = {model.key for model in Model.active()} - set(target_keys)
-    return dict(base_asset), {
+    return {
         model_key: dict(asset)
-        for model_key, asset in model_assets.items()
+        for model_key, asset in keyed_assets.items()
         if model_key in active_keys
     }
 
@@ -111,10 +130,17 @@ def retained_parity_assets(
 def remove_model_assets(
     asset_dir: Path, asset_prefix: str, model_keys: Iterable[str]
 ) -> None:
-    """Remove generated files replaced by a targeted model refresh."""
+    """Remove per-model `model`/`modes` assets replaced by a targeted model refresh.
+
+    Matches the exact content-hash suffix so a key never over-matches a peer model
+    whose key extends it (`orb-v2` vs `orb-v2-mptrj`).
+    """
+    hash_glob = "[0-9a-f]" * CONTENT_HASH_LENGTH
     for model_key in model_keys:
-        for path in asset_dir.glob(f"{asset_prefix}-model-{model_key}-*.json.gz"):
-            path.unlink()
+        for infix in ("model", "modes"):
+            pattern = f"{asset_prefix}-{infix}-{model_key}-{hash_glob}.json.gz"
+            for path in asset_dir.glob(pattern):
+                path.unlink()
 
 
 def clean_float(value: float | np.floating, decimals: int = 6) -> float | None:

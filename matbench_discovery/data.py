@@ -61,13 +61,14 @@ ARTIFACT_SUFFIXES: Final[dict[str, str]] = {
     "geo_opt": "geo-opt.jsonl.gz",
     "phonons_kappa_103": "phonons-kappa-103.json.gz",
     "phonons_kappa_103_forces": "phonons-kappa-103-forces.json.gz",
+    "phonons_kappa_103_phonons": "phonons-kappa-103-phonons.json.gz",
     "phonons_kappa_103_run_info": "phonons-kappa-103-run-info.json",
     "md_metrics": "md-metrics.csv.gz",
     "diatomics": "diatomics.json.gz",
 }
 
 _FILE_REF_KEYS: Final = frozenset(
-    {"pred_file", "analysis_file", "force_file", "run_info_file"}
+    {"pred_file", "analysis_file", "force_file", "phonon_file", "run_info_file"}
 )
 # Tasks that require forces (not applicable when targets == "E")
 FORCE_TASKS: Final = frozenset({"geo_opt", "phonons", "md", "diatomics"})

@@ -24,6 +24,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import pytest
 import requests
@@ -31,7 +32,7 @@ import yaml
 
 from matbench_discovery import ROOT
 from matbench_discovery.enums import Model
-from tests.utils import import_repo_script
+from tests.utils import import_repo_script, make_harmonic_record
 
 asset_helpers = import_repo_script("asset_helpers", "site/scripts/asset_helpers.py")
 energy_assets = import_repo_script(
@@ -112,6 +113,13 @@ def test_parity_manifest_matches_active_models(kind: str) -> None:
         assert asset_helpers.is_content_addressed_name(
             f"{prefix}-structures-{bundle_idx:03d}", asset["asset"]
         )
+    # mode assets exist only for models whose kappa run stored the harmonic sidecar
+    mode_assets = manifest.get("mode_assets", {})
+    assert set(mode_assets) <= in_manifest, "mode asset without a parity model asset"
+    for model_key, asset in mode_assets.items():
+        assert asset_helpers.is_content_addressed_name(
+            f"{prefix}-modes-{model_key}", asset["asset"]
+        )
 
 
 @pytest.mark.parametrize("kind", ["energy", "kappa"])
@@ -121,6 +129,7 @@ def test_release_has_all_parity_manifest_assets(
     """Release assets match manifest hashes and embed canonical model keys."""
     manifest = parity_manifest(kind)
     entries = [manifest["base"], *manifest["model_assets"].values()]
+    entries.extend(manifest.get("mode_assets", {}).values())
     entries.extend(manifest.get("structure_bundles", ()))
     # a truncated assets listing fails here (never false-passes)
     missing = {entry["asset"] for entry in entries} - published_release_assets.keys()
@@ -174,8 +183,8 @@ def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
     with open(f"{ROOT}/.github/workflows/gh-pages.yml") as file:
         deploy = file.read()
     assert (
-        ".base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)"
-        in deploy
+        ".base.asset, .model_assets[].asset, ((.mode_assets // {})[] | .asset), "
+        "((.structure_bundles // [])[] | .asset)" in deploy
     )
     assert "jq -er" in deploy
     assert 'startswith($prefix + "-")' in deploy
@@ -310,6 +319,122 @@ def test_targeted_parity_requires_matching_base() -> None:
             )
 
 
+def test_retained_keyed_assets_and_mode_asset_removal(tmp_path: Path) -> None:
+    """Targeted refreshes keep peer mode assets and drop only the targeted files."""
+    model_key = Model.mace_mp_0.key
+    peer_key = next(mdl.key for mdl in Model.active() if mdl.key != model_key)
+    make_asset = lambda key: {  # noqa: E731
+        "asset": asset_helpers.content_addressed_name(
+            f"parity-v1-modes-{key}", "b" * 64
+        ),
+        "sha256": "a" * 64,
+    }
+    manifest = {
+        "schema_version": 2,
+        "asset_prefix": "parity-v1",
+        "mode_assets": {
+            model_key: make_asset(model_key),
+            peer_key: make_asset(peer_key),
+            "retired-model": make_asset("retired-model"),
+        },
+    }
+    retained = asset_helpers.retained_keyed_assets(
+        manifest, (model_key,), "parity-v1", section="mode_assets", infix="modes"
+    )
+    assert retained == {peer_key: make_asset(peer_key)}
+    assert (
+        asset_helpers.retained_keyed_assets(
+            {"schema_version": 2, "asset_prefix": "parity-v1"},
+            (model_key,),
+            "parity-v1",
+            section="mode_assets",
+            infix="modes",
+        )
+        == {}
+    )
+    with pytest.raises(ValueError, match="modes asset metadata is invalid"):
+        asset_helpers.retained_keyed_assets(
+            manifest | {"mode_assets": {peer_key: {"asset": "wrong-name.json.gz"}}},
+            (model_key,),
+            "parity-v1",
+            section="mode_assets",
+            infix="modes",
+        )
+
+    # a peer whose key extends the target key must survive a targeted refresh
+    extended_key = f"{model_key}-variant"
+    for infix, key in (
+        ("model", model_key),
+        ("modes", model_key),
+        ("modes", peer_key),
+        ("model", extended_key),
+    ):
+        (tmp_path / f"parity-v1-{infix}-{key}-{'0' * 16}.json.gz").touch()
+    asset_helpers.remove_model_assets(tmp_path, "parity-v1", [model_key])
+    assert sorted(path.name for path in tmp_path.iterdir()) == sorted(
+        [
+            f"parity-v1-modes-{peer_key}-{'0' * 16}.json.gz",
+            f"parity-v1-model-{extended_key}-{'0' * 16}.json.gz",
+        ]
+    )
+
+
+def test_compact_phonon_modes_keeps_eigenvectors_at_labeled_points_only() -> None:
+    """The site modes asset drops eigenvectors between high-symmetry points."""
+    record = make_harmonic_record()
+    compact = kappa_assets.compact_phonon_modes(record)
+    assert set(compact) == {
+        "primitive",
+        "segments",
+        "q_points",
+        "distances",
+        "frequencies",
+        "eigenvectors",
+    }
+    assert compact["primitive"]["symbols"] == ["Na", "Cl"]
+    assert compact["primitive"]["lattice"][0][0] == round(3.123456789, 4)
+    assert compact["segments"] == record["band_path"]["segments"]
+    # every path point keeps frequencies but eigenvectors only survive at endpoints
+    assert len(compact["frequencies"]) == 4
+    assert set(compact["eigenvectors"]) == {"0", "1", "2", "3"}
+    np.testing.assert_allclose(
+        compact["frequencies"], record["band_path"]["frequencies"], atol=5e-5, rtol=0
+    )
+    for q_idx, vectors in compact["eigenvectors"].items():
+        np.testing.assert_allclose(
+            vectors, record["band_path"]["eigenvectors"][int(q_idx)], atol=5e-5, rtol=0
+        )
+    # extend the path so an interior point exists and check it is dropped
+    record["band_path"]["segments"][1]["end_index"] = 3
+    record["band_path"]["segments"][1]["start_index"] = 1
+    record["band_path"]["segments"][0]["end_index"] = 1
+    compact = kappa_assets.compact_phonon_modes(record)
+    assert set(compact["eigenvectors"]) == {"0", "1", "3"}
+    # JSON must round-trip (no numpy scalars/arrays left behind)
+    json.dumps(compact)
+
+    record["band_path"]["eigenvectors"] = np.zeros((4, 6, 3, 3, 2))
+    with pytest.raises(ValueError, match="shapes disagree"):
+        kappa_assets.compact_phonon_modes(record)
+    record["band_path"]["segments"] = []
+    with pytest.raises(ValueError, match="no band-path segments"):
+        kappa_assets.compact_phonon_modes(record)
+
+
+def test_load_phonon_modes(tmp_path: Path) -> None:
+    """A merged phonon sidecar loads into compact per-material modes keyed by ID."""
+    path = tmp_path / "model-phonons.json.gz"
+    with gzip.open(path, mode="wt", encoding="utf-8") as file:
+        json.dump(
+            [make_harmonic_record()],
+            file,
+            default=lambda value: np.asarray(value).tolist(),
+        )
+    modes = kappa_assets.load_phonon_modes(str(path))
+    assert list(modes) == ["material-1"]
+    assert modes["material-1"]["segments"][0]["start_label"] == "GAMMA"
+
+
 def test_structure_bundle_metadata_is_complete() -> None:
     """Structure bundle metadata requires exact count, order, names, and digests."""
     bundles = [
@@ -432,7 +557,9 @@ def test_targeted_kappa_fails_on_declared_artifact_errors(
         "retained_parity_assets",
         lambda *_args: ({"asset": "base.json.gz", "sha256": "a" * 64}, {}),
     )
-    monkeypatch.setattr(kappa_assets, "remove_model_assets", lambda *_args: None)
+    monkeypatch.setattr(
+        kappa_assets, "remove_model_assets", lambda *_args, **_kwargs: None
+    )
 
     def read_kappa_json(_path: str) -> pd.DataFrame:
         """Return reference data or raise the configured read failure."""

@@ -3,8 +3,14 @@
   import { Cross } from 'svelte-widgets/icons'
   import { load_kappa_srme_map } from '$lib/parity/kappa-analysis'
   import {
+    build_phonon_mode_data,
+    has_kappa_modes,
+    load_kappa_modes,
+  } from '$lib/parity/kappa-modes'
+  import {
     as_phonon_dos,
     build_kappa_parity_series,
+    dos_per_atom,
     has_kappa_parity_model,
     kappa_structure,
     load_kappa_parity_base,
@@ -16,14 +22,16 @@
     KappaParityPoint,
     PhononDos,
   } from '$lib/parity/kappa-parity'
+  import { get_error_message } from '$lib/asset-loader'
   import { ParityLoadController } from '$lib/parity/load-controller.svelte'
   import { parity_diagonal } from '$lib/fig-helpers'
   import { get_nested_number, is_finite_num } from '$lib/metrics'
   import type { ModelData } from '$lib/types'
-  import { Dos, format_num, sanitize_compact_formula } from 'matterviz'
+  import { Dos, format_num, sanitize_compact_formula, sanitize_html } from 'matterviz'
   import { Spinner } from 'matterviz/feedback'
   import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, RefLine } from 'matterviz/plot'
+  import { PhononModeExplorer, PhononThermalPlot } from 'matterviz/spectral'
   import { type CrystalSystem, spacegroup_to_crystal_sys } from 'matterviz/symmetry'
   import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -115,7 +123,16 @@
     if (ml) phonon_dos[model.model_name] = ml
     return phonon_dos
   })
-
+  // ML phonon modes (band path + eigenvectors) exist only for models whose kappa run
+  // stored the harmonic sidecar; the asset is several MB so it loads on first selection.
+  // The loader caches per URL and the promise only depends on whether anything is
+  // selected (not which point) so it isn't re-created on every click.
+  let has_selection = $derived(selected !== null)
+  let modes_promise = $derived(
+    has_selection && has_kappa_modes(model.model_key)
+      ? load_kappa_modes(model.model_key)
+      : null,
+  )
   async function load_data(model_key: string) {
     selected_idx = null
     if (!has_kappa_parity_model(model_key)) {
@@ -256,8 +273,62 @@
         {/if}
         {#if Object.keys(doses).length}
           <Dos {doses} style="height: 360px" padding={{ t: 20, b: 65, r: 10 }} />
+          <!-- thermal properties integrate each DOS, so one plot per source (DFT/ML)
+            keeps the curves comparable side by side; matterviz spans 0-1000 K -->
+          {#each Object.entries(doses) as [label, dos], plot_idx (label)}
+            <div class="thermal">
+              <h4>{label} harmonic thermal properties (per atom)</h4>
+              <!-- both plots share series/colors so only the last one shows a legend, pinned
+                inside the plot (top-left is empty: F and U start near zero) so the plot area
+                stays the same height as its legend-less sibling -->
+              <PhononThermalPlot
+                dos={dos_per_atom(dos)}
+                style="height: 340px"
+                padding={{ t: 10, b: 60, l: 70, r: 70 }}
+                legend={plot_idx === Object.keys(doses).length - 1
+                  ? { style: `top: 14px; left: 76px; font-size: 0.85em` }
+                  : null}
+              >
+                {#snippet tooltip(hp)}
+                  <!-- series order F, U (kJ/mol) then S, Cv (J/(K·mol)) follows matterviz's
+                    PhononThermalPlot; its labels carry <sub> markup -->
+                  {@const unit = hp.series_idx < 2 ? `kJ/mol` : `J/(K·mol)`}
+                  <strong>{@html sanitize_html(hp.label)}</strong><br />
+                  T: {hp.x_formatted} <small>K</small><br />
+                  {hp.y_formatted} <small>{unit}</small>
+                {/snippet}
+              </PhononThermalPlot>
+            </div>
+          {/each}
         {:else}
           <p class="plot-state">No phonon DOS available for this material.</p>
+        {/if}
+        {#if modes_promise}
+          <div class="modes">
+            <h4>{model.model_name} phonon modes along the high-symmetry path</h4>
+            {#await modes_promise}
+              <div class="plot-state"><Spinner text="Loading phonon modes..." /></div>
+            {:then modes_model}
+              {@const material = modes_model.materials[selected.material_id]}
+              {#if material}
+                <PhononModeExplorer
+                  dataset={{
+                    modes: build_phonon_mode_data(material),
+                    filename: `${selected.material_id}-${modes_model.model_key}`,
+                  }}
+                  style="height: 520px"
+                  auto_play
+                  supercell={[2, 2, 2]}
+                />
+              {:else}
+                <p class="plot-state">No phonon modes stored for this material.</p>
+              {/if}
+            {:catch error}
+              <p class="plot-state" role="alert">
+                Failed to load phonon modes: {get_error_message(error)}
+              </p>
+            {/await}
+          </div>
         {/if}
       </div>
     {/if}
@@ -308,5 +379,14 @@
   }
   .detail-panel header button:hover {
     color: var(--link-color);
+  }
+  .detail-panel .modes {
+    grid-column: 1 / -1;
+  }
+  .detail-panel h4 {
+    margin: 0.6em 0 0;
+    text-align: center;
+    font-weight: normal;
+    color: var(--text-muted);
   }
 </style>

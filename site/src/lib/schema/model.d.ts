@@ -451,6 +451,7 @@ export interface TrainingCostEntry {
 export interface KappaMetrics {
   pred_file?: NullableFileRef
   force_file?: NullableFileRef
+  phonon_file?: NullableFileRef
   run_info_file?: NullableFileRef
   hardware?: string
   run_time_sec?: number

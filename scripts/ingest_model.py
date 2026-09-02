@@ -328,6 +328,7 @@ def publish_parity_assets(checks: Checklist) -> None:
         entries = [
             manifest["base"],
             *manifest["model_assets"].values(),
+            *manifest.get("mode_assets", {}).values(),
             *manifest.get("structure_bundles", ()),
         ]
         pending: list[str] = []

@@ -4,18 +4,23 @@ Produces a DFT-vs-ML scatter of scalar lattice thermal conductivity for the 103
 phononDB-PBE materials, plus per-material structures and phonon DOS (DFT and ML)
 for the click-to-inspect popups. These are compact derivatives (~57 KiB/model) of
 the full kappa prediction files (12-18 MB/model), which are too large to ship to
-the browser. Like the energy-parity assets, the generated .json.gz are uploaded to
-the GitHub release and downloaded in CI (see .github/workflows/gh-pages.yml); only the
-JSON manifest is committed.
+the browser. Models whose kappa run recorded the harmonic phonon sidecar
+(``phonon_file``) additionally get a lazily loaded "modes" asset holding the
+high-symmetry band path per material with eigenvectors at the labeled q-points, which
+the site animates with matterviz's PhononModeExplorer. Like the energy-parity assets,
+the generated .json.gz are uploaded to the GitHub release and downloaded in CI (see
+.github/workflows/gh-pages.yml); only the JSON manifest is committed.
 """
 
 from __future__ import annotations
 
 import argparse
+import gzip
 import io
+import json
 import math
 from pathlib import Path
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import ase.io
 import numpy as np
@@ -26,6 +31,7 @@ from asset_helpers import (
     read_manifest,
     remove_model_assets,
     resolve_models,
+    retained_keyed_assets,
     retained_parity_assets,
     write_json_gz,
     write_manifest,
@@ -56,6 +62,10 @@ STRUCTURE_DECIMALS: Final = 3
 DOS_BINS: Final = 128
 DOS_FREQ_DECIMALS: Final = 3
 DOS_DENSITY_DECIMALS: Final = 4
+# harmonic band path shipped for the mode explorer: frequencies at every path q-point
+# but eigenvectors only at the labeled high-symmetry points (matterviz animates the
+# nearest q-point that has one), which keeps the per-model asset at a few MB
+MODES_DECIMALS: Final = 4
 
 KAPPA_TOT_AVG: Final = str(MbdKey.kappa_tot_avg)
 PH_FREQS: Final = str(Key.ph_freqs)
@@ -161,6 +171,63 @@ def dos_from_row(row: pd.Series) -> dict[str, list[float]] | None:
     return phonon_dos(row[PH_FREQS], weights)
 
 
+def round_nested(values: npt.ArrayLike) -> list:
+    """Round a numeric array to ``MODES_DECIMALS`` and convert to nested JSON lists."""
+    return np.round(np.asarray(values, dtype=float), MODES_DECIMALS).tolist()
+
+
+def compact_phonon_modes(record: dict[str, Any]) -> dict[str, object]:
+    """Reduce one harmonic sidecar record to what the mode explorer needs.
+
+    The pipeline stores eigenvectors as ``(n_q, n_bands, n_atoms, 3, [re, im])`` at
+    every band-path q-point; the site asset keeps them only at segment endpoints.
+    """
+    primitive, band_path = record["primitive"], record["band_path"]
+    segments: list[dict[str, int | str]] = band_path["segments"]
+    if not segments:
+        raise ValueError("harmonic record has no band-path segments")
+    frequencies = np.asarray(band_path["frequencies"], dtype=float)
+    eigenvectors = np.asarray(band_path["eigenvectors"], dtype=float)
+    n_atoms = len(primitive["symbols"])
+    expected_shape = (*frequencies.shape, n_atoms, 3, 2)
+    if frequencies.ndim != 2 or eigenvectors.shape != expected_shape:
+        raise ValueError(
+            f"harmonic record shapes disagree: frequencies {frequencies.shape}, "
+            f"eigenvectors {eigenvectors.shape}, {n_atoms} atoms"
+        )
+    labeled = {
+        int(seg[key]) for seg in segments for key in ("start_index", "end_index")
+    }
+    return {
+        "primitive": {
+            "lattice": round_nested(primitive["lattice"]),
+            "symbols": list(primitive["symbols"]),
+            "masses": round_nested(primitive["masses"]),
+            "frac_coords": round_nested(primitive["frac_coords"]),
+        },
+        "segments": segments,
+        # keep full precision: the explorer's supercell commensurability test needs
+        # exact rationals like 1/3, which 4-decimal rounding would break
+        "q_points": np.asarray(band_path["q_points"], dtype=float).tolist(),
+        "distances": round_nested(band_path["distances"]),
+        "frequencies": round_nested(frequencies),
+        # JSON object keys must be strings; the client indexes qpoints by number
+        "eigenvectors": {
+            str(q_idx): round_nested(eigenvectors[q_idx]) for q_idx in sorted(labeled)
+        },
+    }
+
+
+def load_phonon_modes(path: str) -> dict[str, dict[str, object]]:
+    """Read a merged ``*-phonons.json.gz`` sidecar into compact per-material modes.
+
+    The pipeline merge writes exactly one record per material, so IDs are unique.
+    """
+    with gzip.open(path, mode="rt", encoding="utf-8") as file:
+        records: list[dict[str, Any]] = json.load(file)
+    return {str(rec[str(Key.mat_id)]): compact_phonon_modes(rec) for rec in records}
+
+
 def load_reference() -> tuple[
     pd.DataFrame, dict[str, str], dict[str, dict[str, str | int]]
 ]:
@@ -223,13 +290,22 @@ def main(argv: Sequence[str] | None = None) -> None:
     # a full run (no --models) regenerates everything; a partial run keeps existing
     # model assets so submitting a single model doesn't wipe the others
     if args.models:
+        manifest_json = read_manifest(manifest_path)
         base_meta, model_assets = retained_parity_assets(
-            read_manifest(manifest_path), target_keys, base, args.asset_prefix
+            manifest_json, target_keys, base, args.asset_prefix
+        )
+        mode_assets = retained_keyed_assets(
+            manifest_json or {},
+            target_keys,
+            args.asset_prefix,
+            section="mode_assets",
+            infix="modes",
         )
     else:
         for path in asset_dir.glob(f"{args.asset_prefix}-*.json.gz"):
             path.unlink()
         model_assets = {}
+        mode_assets = {}
         base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
     remove_model_assets(asset_dir, args.asset_prefix, target_keys)
 
@@ -262,6 +338,21 @@ def main(argv: Sequence[str] | None = None) -> None:
             asset_dir / asset_name, {"model": model_payload}
         )
 
+        phonon_path = model.kappa_103_phonon_path
+        if phonon_path is None:
+            print(f"No harmonic phonon sidecar for {model.label}; skipping modes")
+            continue
+        materials = load_phonon_modes(phonon_path)
+        if unknown := set(materials) - set(material_ids):
+            raise ValueError(
+                f"{model.label} harmonic sidecar has unknown materials: "
+                f"{sorted(unknown)}"
+            )
+        mode_assets[model.key] = write_json_gz(
+            asset_dir / f"{args.asset_prefix}-modes-{model.key}.json.gz",
+            {"model": {"model_key": model.key, "materials": materials}},
+        )
+
     manifest = {
         "schema_version": 2,
         "asset_prefix": args.asset_prefix,
@@ -269,6 +360,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "row_count": len(material_ids),
         "base": base_meta,
         "model_assets": model_assets,
+        "mode_assets": mode_assets,
     }
     write_manifest(manifest_path, manifest)
 

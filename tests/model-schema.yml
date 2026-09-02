@@ -131,6 +131,8 @@ definitions:
         $ref: '#/definitions/nullable_file_ref'
       force_file:
         $ref: '#/definitions/nullable_file_ref'
+      phonon_file:
+        $ref: '#/definitions/nullable_file_ref'
       run_info_file:
         $ref: '#/definitions/nullable_file_ref'
       hardware:
