@@ -25,7 +25,9 @@ jobs:
 
       - name: Install site dependencies
         # use the project's pinned pnpm (packageManager field) via corepack
-        run: bash scripts/install-ci-deps.sh
+        run: |
+          corepack enable
+          pnpm install --config.dangerously-allow-all-builds=true --config.block-exotic-subdeps=false
         working-directory: site
 
       - name: Run prek

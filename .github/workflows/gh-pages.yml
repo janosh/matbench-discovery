@@ -41,7 +41,9 @@ jobs:
 
       - name: Install dependencies
         # use the project's pinned pnpm (packageManager field) via corepack
-        run: bash scripts/install-ci-deps.sh
+        run: |
+          corepack enable
+          pnpm install --config.dangerously-allow-all-builds=true --config.block-exotic-subdeps=false
 
       - name: Download parity assets
         env:
